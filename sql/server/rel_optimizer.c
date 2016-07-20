@@ -5348,18 +5348,26 @@ exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 	}
 }
 
+static void exps_used(list *l);
+
+static void
+exp_used(sql_exp *e)
+{
+	if (e) {
+		e->used = 1;
+		if ((e->type == e_func || e->type == e_aggr) && e->l)
+			exps_used(e->l);
+	}
+}
+
 static void
 exps_used(list *l)
 {
-	node *n;
-
 	if (l) {
-		for (n = l->h; n; n = n->next) {
-			sql_exp *e = n->data;
-	
-			if (e)
-				e->used = 1;
-		}
+		node *n;
+
+		for (n = l->h; n; n = n->next) 
+			exp_used(n->data);
 	}
 }
 
@@ -5374,6 +5382,8 @@ rel_used(sql_rel *rel)
 	} else if (is_topn(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		rel_used(rel->l);
 		rel = rel->l;
+	} else if (rel->op == op_table && rel->r) {
+		exp_used(rel->r);
 	}
 	if (rel->exps) {
 		exps_used(rel->exps);
@@ -5393,6 +5403,13 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	switch(rel->op) {
 	case op_basetable:
 	case op_table:
+
+		if (rel->op == op_table && rel->l) {
+			rel_used(rel);
+			if (rel->r)
+				exp_mark_used(rel->l, rel->r);
+			rel_mark_used(sql, rel->l, proj);
+		}
 		break;
 
 	case op_topn:
@@ -5603,6 +5620,8 @@ rel_dce_down(mvc *sql, sql_rel *rel, list *refs, int skip_proj)
 	case op_basetable:
 	case op_table:
 
+		if (skip_proj && rel->l && rel->op == op_table)
+			rel->l = rel_dce_down(sql, rel->l, refs, 0);
 		if (!skip_proj)
 			rel_dce_sub(sql, rel, refs);
 

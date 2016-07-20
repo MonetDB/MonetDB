@@ -29,10 +29,10 @@ Ready.
 
 #result of inline
 function user.tst():void;
-    X_5 := true:bit;
-    X_6:int  := 0;
-    X_6:int  := 100;
-    z := X_6;
+    X_3 := true:bit;
+    X_4:int := 0;
+    X_4:int := 100;
+    z := X_4;
 end user.tst;
 
 # 01:05:28 >  

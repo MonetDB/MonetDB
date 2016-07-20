@@ -46,20 +46,20 @@ exit MALException:str;                  	#[13] (0)  9
 exit (x:oid,z:int);                     	#[14] (0)  10 7 
 end user.help;                          	#[15] (0)  
 function user.qry():void;               	#[0] (0)  0 
-    X_3:bat[:int] := bat.new(:int);     	#[1] (0) CMDBATnew 3 <- 4 
-    X_5:bat[:int] := bat.new(:int);     	#[2] (0) CMDBATnew 5 <- 4 
-    bat.append(X_3:bat[:int],1:int);    	#[3] (0) BKCappend_val_wrap 6 <- 3 7 
-barrier (X_8:oid,X_9:int) := iterator.new(X_3:bat[:int]);	#[4] (0) ITRbunIterator 8 9 <- 3 
-    io.print(X_8:oid);                  	#[5] (0) IOprint_val 10 <- 8 
+    X_2:bat[:int] := bat.new(:int);     	#[1] (0) CMDBATnew 3 <- 4 
+    X_4:bat[:int] := bat.new(:int);     	#[2] (0) CMDBATnew 5 <- 4 
+    bat.append(X_2:bat[:int],1:int);    	#[3] (0) BKCappend_val_wrap 6 <- 3 7 
+barrier (X_7:oid,X_8:int) := iterator.new(X_2:bat[:int]);	#[4] (0) ITRbunIterator 8 9 <- 3 
+    io.print(X_7:oid);                  	#[5] (0) IOprint_val 10 <- 8 
 catch MALException:str;                 	#[6] (0)  11 
 exit MALException:str;                  	#[7] (0)  11 
-exit (X_8:oid,X_9:int);                 	#[8] (0)  8 9 
-barrier (X_12:oid,X_9:int) := iterator.new(X_5:bat[:int]);	#[9] (0) ITRbunIterator 12 9 <- 5 
-    io.print(X_12:oid);                 	#[10] (0) IOprint_val 13 <- 12 
-    redo (X_12:oid,X_9:int) := iterator.next(X_5:bat[:int]);	#[11] (0) ITRbunNext 12 9 <- 5 
+exit (X_7:oid,X_8:int);                 	#[8] (0)  8 9 
+barrier (X_10:oid,X_8:int) := iterator.new(X_4:bat[:int]);	#[9] (0) ITRbunIterator 12 9 <- 5 
+    io.print(X_10:oid);                 	#[10] (0) IOprint_val 13 <- 12 
+    redo (X_10:oid,X_8:int) := iterator.next(X_4:bat[:int]);	#[11] (0) ITRbunNext 12 9 <- 5 
 catch MALException:str;                 	#[12] (0)  11 
 exit MALException:str;                  	#[13] (0)  11 
-exit (X_12:oid,X_9:int);                	#[14] (0)  12 9 
+exit (X_10:oid,X_8:int);                	#[14] (0)  12 9 
 end user.qry;                           	#[15] (0)  
 
 # 00:18:07 >  

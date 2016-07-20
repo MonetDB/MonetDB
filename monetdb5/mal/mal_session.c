@@ -257,8 +257,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			/* this is kind of awful, but we need to get rid of this
 			 * message */
 			fprintf(stderr, "!SABAOTHgetMyStatus: %s\n", err);
-			if (err != M5OutOfMemory)
-				GDKfree(err);
+			freeException(err);
 			mnstr_printf(fout, "!internal server error, "
 						 "please try again later\n");
 			exit_streams(fin, fout);
@@ -388,7 +387,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 		used[i] = 1;
 	if (mb->errors == 0)
 		for (i = start; i < mb->vtop; i++) {
-			if (used[i] || !isTmpVar(mb, i)) {
+			if (used[i] || !isTmpVar(mb,i)){
 				assert(!mb->var[i]->value.vtype || isVarConstant(mb, i));
 				used[i] = 1;
 			}
@@ -447,7 +446,8 @@ MSserveClient(void *dummy)
 	} else {
 		do {
 			do {
-				runScenario(c);
+				msg = runScenario(c);
+				freeException(msg);
 				if (c->mode == FINISHCLIENT)
 					break;
 				resetScenario(c);

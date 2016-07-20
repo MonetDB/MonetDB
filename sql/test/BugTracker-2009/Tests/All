@@ -84,7 +84,6 @@ assert_in_update.SF-2807336
 prepare_commit_execute.SF-2606020
 ambiguous_order_by.SF-2827916
 except_error_wrong.SF-2808409
-table-leftovers.SF-2779462
 Floating_point_exception.SF-2791356
 Division_by_zero_error.SF-2791361
 copy_into_error_off_by_one.SF-2833696

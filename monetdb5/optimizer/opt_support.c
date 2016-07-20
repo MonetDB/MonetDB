@@ -153,7 +153,6 @@ struct OPTcatalog {
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
-{"recycler",	0,	0,	0,	DEBUG_OPT_RECYCLE},
 {"reduce",		0,	0,	0,	DEBUG_OPT_REDUCE},
 {"remap",		0,	0,	0,	DEBUG_OPT_REMAP},
 {"remote",		0,	0,	0,	DEBUG_OPT_REMOTE},
@@ -203,6 +202,24 @@ OPTsetDebugStr(void *ret, str *nme)
 	return MAL_SUCCEED;
 }
 
+/* some optimizers can only be applied once.
+ * The optimizer trace at the end of the MAL block
+ * can be used to check for this.
+ */
+int
+optimizerIsApplied(MalBlkPtr mb, str optname)
+{
+	InstrPtr p;
+	int i;
+	for( i = mb->stop; i < mb->ssize; i++){
+		p = getInstrPtr(mb,i);
+		if( p == NULL)
+			return 0;
+		if (getModuleId(p) == optimizerRef && p->token == REMsymbol && strcmp(getFunctionId(p),optname) == 0) 
+			return 1;
+	}
+	return 0;
+}
 /*
  * All optimizers should pass the optimizerCheck for defense against
  * incomplete and malicious MAL code.
@@ -540,7 +557,6 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == optimizerRef ||
 		getModuleId(p) == lockRef ||
 		getModuleId(p) == semaRef ||
-		getModuleId(p) == recycleRef ||
 		getModuleId(p) == alarmRef)
 		return TRUE;
 		
@@ -589,8 +605,6 @@ hasSideEffects(InstrPtr p, int strict)
 		return TRUE;
 
 	if ( getModuleId(p) == remoteRef)
-		return TRUE;
-	if ( getModuleId(p) == recycleRef)
 		return TRUE;
 	return FALSE;
 }

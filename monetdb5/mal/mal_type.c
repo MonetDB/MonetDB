@@ -183,12 +183,6 @@ findGDKtype(int type)
 	return ATOMtype(type);
 }
 
-inline int
-isTmpName(const char *n)
-{
-	return n && *n == TMPMARKER ;
-}
-
 int
 isIdentifier(str s)
 {

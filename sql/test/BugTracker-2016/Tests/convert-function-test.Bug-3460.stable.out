@@ -1,0 +1,7233 @@
+stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 19:10:34 >  
+# 19:10:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37752" "--set" "mapi_usock=/var/tmp/mtest-10540/.s.monetdb.37752" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 19:10:34 >  
+
+# MonetDB 5 server v11.23.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:37752/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10540/.s.monetdb.37752
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 19:10:35 >  
+# 19:10:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10540" "--port=37752"
+# 19:10:35 >  
+
+#CREATE TABLE T_boolean (v boolean);
+#INSERT into T_boolean VALUES (true), (false);
+[ 2	]
+#INSERT into T_boolean VALUES (1), (0);
+[ 2	]
+#INSERT into T_boolean VALUES (null);
+[ 1	]
+#SELECT v FROM T_boolean ORDER BY v;
+% sys.t_boolean # table_name
+% v # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ false	]
+[ false	]
+[ true	]
+[ true	]
+#SELECT v, convert(v, boolean) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	boolean # type
+% 5,	5 # length
+[ true,	true	]
+[ false,	false	]
+[ true,	true	]
+[ false,	false	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, tinyint) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	tinyint # type
+% 5,	1 # length
+[ true,	1	]
+[ false,	0	]
+[ true,	1	]
+[ false,	0	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, smallint) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	smallint # type
+% 5,	1 # length
+[ true,	1	]
+[ false,	0	]
+[ true,	1	]
+[ false,	0	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, integer) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	int # type
+% 5,	1 # length
+[ true,	1	]
+[ false,	0	]
+[ true,	1	]
+[ false,	0	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, bigint) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	bigint # type
+% 5,	1 # length
+[ true,	1	]
+[ false,	0	]
+[ true,	1	]
+[ false,	0	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, char) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	char # type
+% 5,	1 # length
+[ true,	"1"	]
+[ false,	"0"	]
+[ true,	"1"	]
+[ false,	"0"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, varchar(6)) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	varchar # type
+% 5,	1 # length
+[ true,	"1"	]
+[ false,	"0"	]
+[ true,	"1"	]
+[ false,	"0"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	clob # type
+% 5,	1 # length
+[ true,	"1"	]
+[ false,	"0"	]
+[ true,	"1"	]
+[ false,	"0"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	clob # type
+% 5,	1 # length
+[ true,	"1"	]
+[ false,	"0"	]
+[ true,	"1"	]
+[ false,	"0"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as boolean) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	boolean # type
+% 5,	5 # length
+[ true,	true	]
+[ false,	false	]
+[ true,	true	]
+[ false,	false	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as tinyint) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	tinyint # type
+% 5,	1 # length
+[ true,	1	]
+[ false,	0	]
+[ true,	1	]
+[ false,	0	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as smallint) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	smallint # type
+% 5,	1 # length
+[ true,	1	]
+[ false,	0	]
+[ true,	1	]
+[ false,	0	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as integer) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	int # type
+% 5,	1 # length
+[ true,	1	]
+[ false,	0	]
+[ true,	1	]
+[ false,	0	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as bigint) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	bigint # type
+% 5,	1 # length
+[ true,	1	]
+[ false,	0	]
+[ true,	1	]
+[ false,	0	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as char) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	char # type
+% 5,	1 # length
+[ true,	"1"	]
+[ false,	"0"	]
+[ true,	"1"	]
+[ false,	"0"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as varchar(6)) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	varchar # type
+% 5,	1 # length
+[ true,	"1"	]
+[ false,	"0"	]
+[ true,	"1"	]
+[ false,	"0"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	clob # type
+% 5,	1 # length
+[ true,	"1"	]
+[ false,	"0"	]
+[ true,	"1"	]
+[ false,	"0"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_BOOLEAN;
+% sys.t_boolean,	sys.L1 # table_name
+% v,	L1 # name
+% boolean,	clob # type
+% 5,	1 # length
+[ true,	"1"	]
+[ false,	"0"	]
+[ true,	"1"	]
+[ false,	"0"	]
+[ NULL,	NULL	]
+#DROP TABLE T_BOOLEAN;
+#CREATE TABLE T_blob (v BLOB);
+#INSERT into T_blob VALUES ('00'), ('11'), ('0123456789'), ('A0B2C3D4F5'), ('');
+[ 5	]
+#INSERT into T_blob VALUES (null);
+[ 1	]
+#SELECT v FROM T_blob ORDER BY v;
+% sys.t_blob # table_name
+% v # name
+% blob # type
+% 0 # length
+[ 00	]
+[ 11	]
+[ 0123456789	]
+[ A0B2C3D4F5	]
+[ 	]
+[ NULL	]
+#SELECT v, convert(v, varchar(16)) from T_blob;
+% sys.t_blob,	sys.L1 # table_name
+% v,	L1 # name
+% blob,	varchar # type
+% 0,	10 # length
+[ 00,	"00"	]
+[ 11,	"11"	]
+[ 0123456789,	"0123456789"	]
+[ A0B2C3D4F5,	"A0B2C3D4F5"	]
+[ ,	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_blob;
+% sys.t_blob,	sys.L1 # table_name
+% v,	L1 # name
+% blob,	clob # type
+% 0,	10 # length
+[ 00,	"00"	]
+[ 11,	"11"	]
+[ 0123456789,	"0123456789"	]
+[ A0B2C3D4F5,	"A0B2C3D4F5"	]
+[ ,	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_blob;
+% sys.t_blob,	sys.L1 # table_name
+% v,	L1 # name
+% blob,	clob # type
+% 0,	10 # length
+[ 00,	"00"	]
+[ 11,	"11"	]
+[ 0123456789,	"0123456789"	]
+[ A0B2C3D4F5,	"A0B2C3D4F5"	]
+[ ,	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Blob) from T_blob;
+% sys.t_blob,	sys.L1 # table_name
+% v,	L1 # name
+% blob,	blob # type
+% 0,	0 # length
+[ 00,	00	]
+[ 11,	11	]
+[ 0123456789,	0123456789	]
+[ A0B2C3D4F5,	A0B2C3D4F5	]
+[ ""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as varchar(16)) from T_blob;
+% sys.t_blob,	sys.L1 # table_name
+% v,	L1 # name
+% blob,	varchar # type
+% 0,	10 # length
+[ 00,	"00"	]
+[ 11,	"11"	]
+[ 0123456789,	"0123456789"	]
+[ A0B2C3D4F5,	"A0B2C3D4F5"	]
+[ ,	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_blob;
+% sys.t_blob,	sys.L1 # table_name
+% v,	L1 # name
+% blob,	clob # type
+% 0,	10 # length
+[ 00,	"00"	]
+[ 11,	"11"	]
+[ 0123456789,	"0123456789"	]
+[ A0B2C3D4F5,	"A0B2C3D4F5"	]
+[ ,	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_blob;
+% sys.t_blob,	sys.L1 # table_name
+% v,	L1 # name
+% blob,	clob # type
+% 0,	10 # length
+[ 00,	"00"	]
+[ 11,	"11"	]
+[ 0123456789,	"0123456789"	]
+[ A0B2C3D4F5,	"A0B2C3D4F5"	]
+[ ,	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Blob) from T_blob;
+% sys.t_blob,	sys.L1 # table_name
+% v,	L1 # name
+% blob,	blob # type
+% 0,	0 # length
+[ 00,	00	]
+[ 11,	11	]
+[ 0123456789,	0123456789	]
+[ A0B2C3D4F5,	A0B2C3D4F5	]
+[ ""	]
+[ NULL,	NULL	]
+#DROP TABLE T_blob;
+#CREATE TABLE T_tinyint (v tinyint);
+#INSERT into T_tinyint VALUES (1), (0), (-1), (-127), (127);
+[ 5	]
+#INSERT into T_tinyint VALUES (null);
+[ 1	]
+#SELECT v FROM T_tinyint ORDER BY v;
+% sys.t_tinyint # table_name
+% v # name
+% tinyint # type
+% 4 # length
+[ NULL	]
+[ -127	]
+[ -1	]
+[ 0	]
+[ 1	]
+[ 127	]
+#SELECT v, convert(v, boolean) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	boolean # type
+% 4,	5 # length
+[ 1,	true	]
+[ 0,	false	]
+[ -1,	true	]
+[ -127,	true	]
+[ 127,	true	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, tinyint) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	tinyint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, smallint) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	smallint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, integer) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	int # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, bigint) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	bigint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	double # type
+% 4,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float(24)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	real # type
+% 4,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, real) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	real # type
+% 4,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	double # type
+% 4,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double precision) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	double # type
+% 4,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(7)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	8 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(9)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	10 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(12,0)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(15,3)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, char) from T_tinyint where v between 0 and 1;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	char # type
+% 1,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+#SELECT v, convert(v, varchar(6)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	varchar # type
+% 4,	4 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	clob # type
+% 4,	4 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	clob # type
+% 4,	4 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as boolean) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	boolean # type
+% 4,	5 # length
+[ 1,	true	]
+[ 0,	false	]
+[ -1,	true	]
+[ -127,	true	]
+[ 127,	true	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as tinyint) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	tinyint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as smallint) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	smallint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as integer) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	int # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as bigint) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	bigint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	double # type
+% 4,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float(24)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	real # type
+% 4,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as real) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	real # type
+% 4,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	double # type
+% 4,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double precision) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	double # type
+% 4,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(7)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	8 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(9)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	10 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(12,0)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(15,3)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	decimal # type
+% 4,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as char) from T_tinyint where v between 0 and 1;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	char # type
+% 1,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+#SELECT v, cast(v as varchar(6)) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	varchar # type
+% 4,	4 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	clob # type
+% 4,	4 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_tinyint;
+% sys.t_tinyint,	sys.L1 # table_name
+% v,	L1 # name
+% tinyint,	clob # type
+% 4,	4 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ NULL,	NULL	]
+#DROP TABLE T_tinyint;
+#CREATE TABLE T_smallint (v smallint);
+#INSERT into T_smallint VALUES (1), (0), (-1), (-127), (127), (-32767), (32767);
+[ 7	]
+#INSERT into T_smallint VALUES (null);
+[ 1	]
+#SELECT v FROM T_smallint ORDER BY v;
+% sys.t_smallint # table_name
+% v # name
+% smallint # type
+% 6 # length
+[ NULL	]
+[ -32767	]
+[ -127	]
+[ -1	]
+[ 0	]
+[ 1	]
+[ 127	]
+[ 32767	]
+#SELECT v, convert(v, boolean) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	boolean # type
+% 6,	5 # length
+[ 1,	true	]
+[ 0,	false	]
+[ -1,	true	]
+[ -127,	true	]
+[ 127,	true	]
+[ -32767,	true	]
+[ 32767,	true	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, tinyint) from T_smallint where v between -127 and 127;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	tinyint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+#SELECT v, convert(v, smallint) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	smallint # type
+% 6,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, integer) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	int # type
+% 6,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, bigint) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	bigint # type
+% 6,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	double # type
+% 6,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float(24)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	real # type
+% 6,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, real) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	real # type
+% 6,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	double # type
+% 6,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double precision) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	double # type
+% 6,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(7)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	8 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(9)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	10 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(12,0)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(15,3)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, char) from T_smallint where v between 0 and 1;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	char # type
+% 1,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+#SELECT v, convert(v, varchar(6)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	varchar # type
+% 6,	6 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	clob # type
+% 6,	6 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	clob # type
+% 6,	6 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as boolean) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	boolean # type
+% 6,	5 # length
+[ 1,	true	]
+[ 0,	false	]
+[ -1,	true	]
+[ -127,	true	]
+[ 127,	true	]
+[ -32767,	true	]
+[ 32767,	true	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as tinyint) from T_smallint where v between -127 and 127;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	tinyint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+#SELECT v, cast(v as smallint) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	smallint # type
+% 6,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as integer) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	int # type
+% 6,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as bigint) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	bigint # type
+% 6,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	double # type
+% 6,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float(24)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	real # type
+% 6,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as real) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	real # type
+% 6,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	double # type
+% 6,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double precision) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	double # type
+% 6,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(7)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	8 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(9)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	10 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(12,0)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(15,3)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	decimal # type
+% 6,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as char) from T_smallint where v between 0 and 1;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	char # type
+% 1,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+#SELECT v, cast(v as varchar(6)) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	varchar # type
+% 6,	6 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	clob # type
+% 6,	6 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_smallint;
+% sys.t_smallint,	sys.L1 # table_name
+% v,	L1 # name
+% smallint,	clob # type
+% 6,	6 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ NULL,	NULL	]
+#DROP TABLE T_smallint;
+#CREATE TABLE T_int (v int);
+#INSERT into T_int VALUES (1), (0), (-1), (-127), (127), (-32767), (32767), (-2147483647), (2147483647);
+[ 9	]
+#INSERT into T_int VALUES (null);
+[ 1	]
+#SELECT v FROM T_int ORDER BY v;
+% sys.t_int # table_name
+% v # name
+% int # type
+% 11 # length
+[ NULL	]
+[ -2147483647	]
+[ -32767	]
+[ -127	]
+[ -1	]
+[ 0	]
+[ 1	]
+[ 127	]
+[ 32767	]
+[ 2147483647	]
+#SELECT v, convert(v, boolean) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	boolean # type
+% 11,	5 # length
+[ 1,	true	]
+[ 0,	false	]
+[ -1,	true	]
+[ -127,	true	]
+[ 127,	true	]
+[ -32767,	true	]
+[ 32767,	true	]
+[ -2147483647,	true	]
+[ 2147483647,	true	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, tinyint) from T_int where v between -127 and 127;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	tinyint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+#SELECT v, convert(v, smallint) from T_int where v between -32767 and 32767;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	smallint # type
+% 6,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+#SELECT v, convert(v, integer) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	int # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, bigint) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	bigint # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float(24)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, real) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double precision) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(10)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(11)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(12,0)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(15,3)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, char) from T_int where v between 0 and 1;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	char # type
+% 1,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+#SELECT v, convert(v, varchar(16)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	varchar # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as boolean) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	boolean # type
+% 11,	5 # length
+[ 1,	true	]
+[ 0,	false	]
+[ -1,	true	]
+[ -127,	true	]
+[ 127,	true	]
+[ -32767,	true	]
+[ 32767,	true	]
+[ -2147483647,	true	]
+[ 2147483647,	true	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as tinyint) from T_int where v between -127 and 127;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	tinyint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+#SELECT v, cast(v as smallint) from T_int where v between -32767 and 32767;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	smallint # type
+% 6,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+#SELECT v, cast(v as integer) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	int # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as bigint) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	bigint # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float(24)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as real) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double precision) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(10)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(11)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(12,0)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(15,3)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	decimal # type
+% 11,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as char) from T_int where v between 0 and 1;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	char # type
+% 1,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+#SELECT v, cast(v as varchar(16)) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	varchar # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_int;
+% sys.t_int,	sys.L1 # table_name
+% v,	L1 # name
+% int,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#DROP TABLE T_int;
+#CREATE TABLE T_bigint (v bigint);
+#INSERT into T_bigint VALUES (1), (0), (-1), (-127), (127), (-32767), (32767), (-2147483647), (2147483647);
+[ 9	]
+#INSERT into T_bigint VALUES (null);
+[ 1	]
+#SELECT v FROM T_bigint ORDER BY v;
+% sys.t_bigint # table_name
+% v # name
+% bigint # type
+% 11 # length
+[ NULL	]
+[ -2147483647	]
+[ -32767	]
+[ -127	]
+[ -1	]
+[ 0	]
+[ 1	]
+[ 127	]
+[ 32767	]
+[ 2147483647	]
+#SELECT v, convert(v, boolean) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	boolean # type
+% 11,	5 # length
+[ 1,	true	]
+[ 0,	false	]
+[ -1,	true	]
+[ -127,	true	]
+[ 127,	true	]
+[ -32767,	true	]
+[ 32767,	true	]
+[ -2147483647,	true	]
+[ 2147483647,	true	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, tinyint) from T_bigint where v between -127 and 127;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	tinyint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+#SELECT v, convert(v, smallint) from T_bigint where v between -32767 and 32767;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	smallint # type
+% 6,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+#SELECT v, convert(v, integer) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	int # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, bigint) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	bigint # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float(24)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, real) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double precision) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(10)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(11)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(12,0)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(15,3)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, char) from T_bigint where v between 0 and 1;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	char # type
+% 1,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+#SELECT v, convert(v, varchar(16)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	varchar # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as boolean) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	boolean # type
+% 11,	5 # length
+[ 1,	true	]
+[ 0,	false	]
+[ -1,	true	]
+[ -127,	true	]
+[ 127,	true	]
+[ -32767,	true	]
+[ 32767,	true	]
+[ -2147483647,	true	]
+[ 2147483647,	true	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as tinyint) from T_bigint where v between -127 and 127;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	tinyint # type
+% 4,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+#SELECT v, cast(v as smallint) from T_bigint where v between -32767 and 32767;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	smallint # type
+% 6,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+#SELECT v, cast(v as integer) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	int # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as bigint) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	bigint # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float(24)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as real) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double precision) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(10)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(11)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(12,0)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(15,3)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	decimal # type
+% 11,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as char) from T_bigint where v between 0 and 1;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	char # type
+% 1,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+#SELECT v, cast(v as varchar(16)) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	varchar # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_bigint;
+% sys.t_bigint,	sys.L1 # table_name
+% v,	L1 # name
+% bigint,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#DROP TABLE T_bigint;
+#CREATE TABLE T_float (v FLOAT);
+#INSERT into T_float VALUES (1), (0), (-1), (-127), (127), (-32767), (32767), (-2147483647), (2147483647);
+[ 9	]
+#INSERT into T_float VALUES (null);
+[ 1	]
+#SELECT v FROM T_float ORDER BY v;
+% sys.t_float # table_name
+% v # name
+% double # type
+% 24 # length
+[ NULL	]
+[ -2147483647	]
+[ -32767	]
+[ -127	]
+[ -1	]
+[ 0	]
+[ 1	]
+[ 127	]
+[ 32767	]
+[ 2147483647	]
+#SELECT v, convert(v, tinyint) from T_float where v between -127 and 127;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	tinyint # type
+% 24,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+#SELECT v, convert(v, smallint) from T_float where v between -32767 and 32767;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	smallint # type
+% 24,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+#SELECT v, convert(v, integer) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	int # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, bigint) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	bigint # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float(24)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	real # type
+% 24,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, real) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	real # type
+% 24,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double precision) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(10)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(11)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(12,0)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(15,3)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, char) from T_float where v between 0 and 1;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	char # type
+% 24,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+#SELECT v, convert(v, varchar(16)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	varchar # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	clob # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	clob # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as tinyint) from T_float where v between -127 and 127;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	tinyint # type
+% 24,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+#SELECT v, cast(v as smallint) from T_float where v between -32767 and 32767;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	smallint # type
+% 24,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+#SELECT v, cast(v as integer) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	int # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as bigint) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	bigint # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float(24)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	real # type
+% 24,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as real) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	real # type
+% 24,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double precision) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(10)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(11)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(12,0)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(15,3)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as char) from T_float where v between 0 and 1;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	char # type
+% 24,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+#SELECT v, cast(v as varchar(16)) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	varchar # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	clob # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_float;
+% sys.t_float,	sys.L1 # table_name
+% v,	L1 # name
+% double,	clob # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ NULL,	NULL	]
+#DROP TABLE T_float;
+#CREATE TABLE T_real (v REAL);
+#INSERT into T_real VALUES (1.0), (0.0), (-1.0), (-127.0), (127.0), (-32767.0), (32767.0), (-2147483647.0), (2147483647.0), (0.12), (-3.1415629);
+[ 11	]
+#INSERT into T_real VALUES (null);
+[ 1	]
+#SELECT v FROM T_real ORDER BY v;
+% sys.t_real # table_name
+% v # name
+% real # type
+% 15 # length
+[ NULL	]
+[ -2.1475e+09	]
+[ -32767	]
+[ -127	]
+[ -3.1416	]
+[ -1	]
+[ 0	]
+[ 0.12	]
+[ 1	]
+[ 127	]
+[ 32767	]
+[ 2.1475e+09	]
+#SELECT v, convert(v, tinyint) from T_real where v between -127 and 127;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	tinyint # type
+% 15,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+#SELECT v, convert(v, smallint) from T_real where v between -32767 and 32767;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	smallint # type
+% 15,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+#SELECT v, convert(v, bigint) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	bigint # type
+% 15,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	double # type
+% 15,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0.1199999973	]
+[ -3.1416,	-3.141562939	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float(24)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	real # type
+% 15,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2.1475e+09	]
+[ 2.1475e+09,	2.1475e+09	]
+[ 0.12,	0.12	]
+[ -3.1416,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, real) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	real # type
+% 15,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2.1475e+09	]
+[ 2.1475e+09,	2.1475e+09	]
+[ 0.12,	0.12	]
+[ -3.1416,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	double # type
+% 15,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0.1199999973	]
+[ -3.1416,	-3.141562939	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double precision) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	double # type
+% 15,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0.1199999973	]
+[ -3.1416,	-3.141562939	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2.1475e+09,	-2147483648.000	]
+[ 2.1475e+09,	2147483648.000	]
+[ 0.12,	0.120	]
+[ -3.1416,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2.1475e+09,	-2147483648.000	]
+[ 2.1475e+09,	2147483648.000	]
+[ 0.12,	0.120	]
+[ -3.1416,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(10)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(11)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(12,0)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(15,3)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2.1475e+09,	-2147483648.000	]
+[ 2.1475e+09,	2147483648.000	]
+[ 0.12,	0.120	]
+[ -3.1416,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, varchar(16)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	varchar # type
+% 15,	14 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2.1475e+09,	"-2.1474836e+09"	]
+[ 2.1475e+09,	"2.1474836e+09"	]
+[ 0.12,	"0.12"	]
+[ -3.1416,	"-3.141563"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	clob # type
+% 15,	14 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2.1475e+09,	"-2.1474836e+09"	]
+[ 2.1475e+09,	"2.1474836e+09"	]
+[ 0.12,	"0.12"	]
+[ -3.1416,	"-3.141563"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	clob # type
+% 15,	14 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2.1475e+09,	"-2.1474836e+09"	]
+[ 2.1475e+09,	"2.1474836e+09"	]
+[ 0.12,	"0.12"	]
+[ -3.1416,	"-3.141563"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as tinyint) from T_real where v between -127 and 127;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	tinyint # type
+% 15,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+#SELECT v, cast(v as smallint) from T_real where v between -32767 and 32767;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	smallint # type
+% 15,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+#SELECT v, cast(v as bigint) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	bigint # type
+% 15,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	double # type
+% 15,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0.1199999973	]
+[ -3.1416,	-3.141562939	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float(24)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	real # type
+% 15,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2.1475e+09	]
+[ 2.1475e+09,	2.1475e+09	]
+[ 0.12,	0.12	]
+[ -3.1416,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as real) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	real # type
+% 15,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2.1475e+09	]
+[ 2.1475e+09,	2.1475e+09	]
+[ 0.12,	0.12	]
+[ -3.1416,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	double # type
+% 15,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0.1199999973	]
+[ -3.1416,	-3.141562939	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double precision) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	double # type
+% 15,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0.1199999973	]
+[ -3.1416,	-3.141562939	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2.1475e+09,	-2147483648.000	]
+[ 2.1475e+09,	2147483648.000	]
+[ 0.12,	0.120	]
+[ -3.1416,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2.1475e+09,	-2147483648.000	]
+[ 2.1475e+09,	2147483648.000	]
+[ 0.12,	0.120	]
+[ -3.1416,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(10)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(11)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(12,0)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2.1475e+09,	-2147483648	]
+[ 2.1475e+09,	2147483648	]
+[ 0.12,	0	]
+[ -3.1416,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(15,3)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	decimal # type
+% 15,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2.1475e+09,	-2147483648.000	]
+[ 2.1475e+09,	2147483648.000	]
+[ 0.12,	0.120	]
+[ -3.1416,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as varchar(16)) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	varchar # type
+% 15,	14 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2.1475e+09,	"-2.1474836e+09"	]
+[ 2.1475e+09,	"2.1474836e+09"	]
+[ 0.12,	"0.12"	]
+[ -3.1416,	"-3.141563"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	clob # type
+% 15,	14 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2.1475e+09,	"-2.1474836e+09"	]
+[ 2.1475e+09,	"2.1474836e+09"	]
+[ 0.12,	"0.12"	]
+[ -3.1416,	"-3.141563"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_real;
+% sys.t_real,	sys.L1 # table_name
+% v,	L1 # name
+% real,	clob # type
+% 15,	14 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2.1475e+09,	"-2.1474836e+09"	]
+[ 2.1475e+09,	"2.1474836e+09"	]
+[ 0.12,	"0.12"	]
+[ -3.1416,	"-3.141563"	]
+[ NULL,	NULL	]
+#DROP TABLE T_real;
+#CREATE TABLE T_double (v DOUBLE);
+#INSERT into T_double VALUES (1.0), (0.0), (-1.0), (-127.0), (127.0), (-32767.0), (32767.0), (-2147483647.0), (2147483647.0), (0.12), (-3.1415629);
+[ 11	]
+#INSERT into T_double VALUES (null);
+[ 1	]
+#SELECT v FROM T_double ORDER BY v;
+% sys.t_double # table_name
+% v # name
+% double # type
+% 24 # length
+[ NULL	]
+[ -2147483647	]
+[ -32767	]
+[ -127	]
+[ -3.1415629	]
+[ -1	]
+[ 0	]
+[ 0.12	]
+[ 1	]
+[ 127	]
+[ 32767	]
+[ 2147483647	]
+#SELECT v, convert(v, tinyint) from T_double where v between -127 and 127;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	tinyint # type
+% 24,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+#SELECT v, convert(v, smallint) from T_double where v between -32767 and 32767;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	smallint # type
+% 24,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+#SELECT v, convert(v, integer) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	int # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, bigint) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	bigint # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float(24)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	real # type
+% 24,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ 0.12,	0.12	]
+[ -3.1415629,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, real) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	real # type
+% 24,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ 0.12,	0.12	]
+[ -3.1415629,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double precision) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ 0.12,	0.120	]
+[ -3.1415629,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ 0.12,	0.120	]
+[ -3.1415629,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(10)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(11)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(12,0)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(15,3)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ 0.12,	0.120	]
+[ -3.1415629,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, varchar(16)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	varchar # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ 0.12,	"0.12"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	clob # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ 0.12,	"0.12"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	clob # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ 0.12,	"0.12"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as tinyint) from T_double where v between -127 and 127;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	tinyint # type
+% 24,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+#SELECT v, cast(v as smallint) from T_double where v between -32767 and 32767;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	smallint # type
+% 24,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+#SELECT v, cast(v as integer) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	int # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as bigint) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	bigint # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float(24)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	real # type
+% 24,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ 0.12,	0.12	]
+[ -3.1415629,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as real) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	real # type
+% 24,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ 0.12,	0.12	]
+[ -3.1415629,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double precision) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ 0.12,	0.120	]
+[ -3.1415629,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ 0.12,	0.120	]
+[ -3.1415629,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(10)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(11)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(12,0)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ -1,	-1	]
+[ -127,	-127	]
+[ 127,	127	]
+[ -32767,	-32767	]
+[ 32767,	32767	]
+[ -2147483647,	-2147483647	]
+[ 2147483647,	2147483647	]
+[ 0.12,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(15,3)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	decimal # type
+% 24,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ -1,	-1.000	]
+[ -127,	-127.000	]
+[ 127,	127.000	]
+[ -32767,	-32767.000	]
+[ 32767,	32767.000	]
+[ -2147483647,	-2147483647.000	]
+[ 2147483647,	2147483647.000	]
+[ 0.12,	0.120	]
+[ -3.1415629,	-3.141	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as varchar(16)) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	varchar # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ 0.12,	"0.12"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	clob # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ 0.12,	"0.12"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_double;
+% sys.t_double,	sys.L1 # table_name
+% v,	L1 # name
+% double,	clob # type
+% 24,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ -1,	"-1"	]
+[ -127,	"-127"	]
+[ 127,	"127"	]
+[ -32767,	"-32767"	]
+[ 32767,	"32767"	]
+[ -2147483647,	"-2147483647"	]
+[ 2147483647,	"2147483647"	]
+[ 0.12,	"0.12"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#DROP TABLE T_double;
+#CREATE TABLE T_num (v NUMERIC(10,0));
+#INSERT into T_num VALUES (1.0), (0.0), (-1.0), (-127.0), (127.0), (-32767.0), (32767.0), (-2147483647.0), (2147483647.0), (0.12), (-3.1415629);
+[ 11	]
+#INSERT into T_num VALUES (null);
+[ 1	]
+#SELECT v FROM T_num ORDER BY v;
+% sys.t_num # table_name
+% v # name
+% decimal # type
+% 11 # length
+[ NULL	]
+[ -2147483646	]
+[ -32766	]
+[ -126	]
+[ -2	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 1	]
+[ 127	]
+[ 32767	]
+[ 2147483647	]
+#SELECT v, convert(v, tinyint) from T_num where v between -127 and 127;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	tinyint # type
+% 11,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ 0,	0	]
+[ -2,	-2	]
+#SELECT v, convert(v, smallint) from T_num where v between -32767 and 32767;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	smallint # type
+% 11,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ 0,	0	]
+[ -2,	-2	]
+#SELECT v, convert(v, integer) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	int # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, bigint) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	bigint # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float(24)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, real) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double precision) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ 0,	0.000	]
+[ -126,	-126.000	]
+[ 127,	127.000	]
+[ -32766,	-32766.000	]
+[ 32767,	32767.000	]
+[ -2147483646,	-2147483646.000	]
+[ 2147483647,	2147483647.000	]
+[ 0,	0.000	]
+[ -2,	-2.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ 0,	0.000	]
+[ -126,	-126.000	]
+[ 127,	127.000	]
+[ -32766,	-32766.000	]
+[ 32767,	32767.000	]
+[ -2147483646,	-2147483646.000	]
+[ 2147483647,	2147483647.000	]
+[ 0,	0.000	]
+[ -2,	-2.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(10)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(11)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(12,0)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(15,3)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ 0,	0.000	]
+[ -126,	-126.000	]
+[ 127,	127.000	]
+[ -32766,	-32766.000	]
+[ 32767,	32767.000	]
+[ -2147483646,	-2147483646.000	]
+[ 2147483647,	2147483647.000	]
+[ 0,	0.000	]
+[ -2,	-2.000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, char) from T_num where v between 0 and 1;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	char # type
+% 11,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ 0,	"0"	]
+[ 0,	"0"	]
+#SELECT v, convert(v, varchar(16)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	varchar # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ 0,	"0"	]
+[ -126,	"-126"	]
+[ 127,	"127"	]
+[ -32766,	"-32766"	]
+[ 32767,	"32767"	]
+[ -2147483646,	"-2147483646"	]
+[ 2147483647,	"2147483647"	]
+[ 0,	"0"	]
+[ -2,	"-2"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ 0,	"0"	]
+[ -126,	"-126"	]
+[ 127,	"127"	]
+[ -32766,	"-32766"	]
+[ 32767,	"32767"	]
+[ -2147483646,	"-2147483646"	]
+[ 2147483647,	"2147483647"	]
+[ 0,	"0"	]
+[ -2,	"-2"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ 0,	"0"	]
+[ -126,	"-126"	]
+[ 127,	"127"	]
+[ -32766,	"-32766"	]
+[ 32767,	"32767"	]
+[ -2147483646,	"-2147483646"	]
+[ 2147483647,	"2147483647"	]
+[ 0,	"0"	]
+[ -2,	"-2"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as tinyint) from T_num where v between -127 and 127;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	tinyint # type
+% 11,	4 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ 0,	0	]
+[ -2,	-2	]
+#SELECT v, cast(v as smallint) from T_num where v between -32767 and 32767;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	smallint # type
+% 11,	6 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ 0,	0	]
+[ -2,	-2	]
+#SELECT v, cast(v as integer) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	int # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as bigint) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	bigint # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float(24)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as real) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	real # type
+% 11,	15 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2.1475e+09	]
+[ 2147483647,	2.1475e+09	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double precision) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 11,	24 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ 0,	0.000	]
+[ -126,	-126.000	]
+[ 127,	127.000	]
+[ -32766,	-32766.000	]
+[ 32767,	32767.000	]
+[ -2147483646,	-2147483646.000	]
+[ 2147483647,	2147483647.000	]
+[ 0,	0.000	]
+[ -2,	-2.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	20 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ 0,	0.000	]
+[ -126,	-126.000	]
+[ 127,	127.000	]
+[ -32766,	-32766.000	]
+[ 32767,	32767.000	]
+[ -2147483646,	-2147483646.000	]
+[ 2147483647,	2147483647.000	]
+[ 0,	0.000	]
+[ -2,	-2.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(10)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	11 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(11)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	12 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(12,0)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	13 # length
+[ 1,	1	]
+[ 0,	0	]
+[ 0,	0	]
+[ -126,	-126	]
+[ 127,	127	]
+[ -32766,	-32766	]
+[ 32767,	32767	]
+[ -2147483646,	-2147483646	]
+[ 2147483647,	2147483647	]
+[ 0,	0	]
+[ -2,	-2	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(15,3)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 11,	17 # length
+[ 1,	1.000	]
+[ 0,	0.000	]
+[ 0,	0.000	]
+[ -126,	-126.000	]
+[ 127,	127.000	]
+[ -32766,	-32766.000	]
+[ 32767,	32767.000	]
+[ -2147483646,	-2147483646.000	]
+[ 2147483647,	2147483647.000	]
+[ 0,	0.000	]
+[ -2,	-2.000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as char) from T_num where v between 0 and 1;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	char # type
+% 11,	1 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ 0,	"0"	]
+[ 0,	"0"	]
+#SELECT v, cast(v as varchar(16)) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	varchar # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ 0,	"0"	]
+[ -126,	"-126"	]
+[ 127,	"127"	]
+[ -32766,	"-32766"	]
+[ 32767,	"32767"	]
+[ -2147483646,	"-2147483646"	]
+[ 2147483647,	"2147483647"	]
+[ 0,	"0"	]
+[ -2,	"-2"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ 0,	"0"	]
+[ -126,	"-126"	]
+[ 127,	"127"	]
+[ -32766,	"-32766"	]
+[ 32767,	"32767"	]
+[ -2147483646,	"-2147483646"	]
+[ 2147483647,	"2147483647"	]
+[ 0,	"0"	]
+[ -2,	"-2"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_num;
+% sys.t_num,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	clob # type
+% 11,	11 # length
+[ 1,	"1"	]
+[ 0,	"0"	]
+[ 0,	"0"	]
+[ -126,	"-126"	]
+[ 127,	"127"	]
+[ -32766,	"-32766"	]
+[ 32767,	"32767"	]
+[ -2147483646,	"-2147483646"	]
+[ 2147483647,	"2147483647"	]
+[ 0,	"0"	]
+[ -2,	"-2"	]
+[ NULL,	NULL	]
+#DROP TABLE T_num;
+#CREATE TABLE T_dec (v DECIMAL(17,7));
+#INSERT into T_dec VALUES (1), (0), (-1), (-127), (127), (-32767), (32767), (-2147483647), (2147483647), (0.12), (-3.1415629);
+[ 11	]
+#INSERT into T_dec VALUES (null);
+[ 1	]
+#SELECT v FROM T_dec ORDER BY v;
+% sys.t_dec # table_name
+% v # name
+% decimal # type
+% 19 # length
+[ NULL	]
+[ -2147483647.0000000	]
+[ -32767.0000000	]
+[ -127.0000000	]
+[ -3.1415629	]
+[ -1.0000000	]
+[ 0.0000000	]
+[ 0.1200000	]
+[ 1.0000000	]
+[ 127.0000000	]
+[ 32767.0000000	]
+[ 2147483647.0000000	]
+#SELECT v, convert(v, tinyint) from T_dec where v between -127 and 127;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	tinyint # type
+% 19,	4 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+#SELECT v, convert(v, smallint) from T_dec where v between -32767 and 32767;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	smallint # type
+% 19,	6 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+#SELECT v, convert(v, integer) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	int # type
+% 19,	11 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, bigint) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	bigint # type
+% 19,	11 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 19,	24 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, float(24)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	real # type
+% 19,	15 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2.1475e+09	]
+[ 2147483647.0000000,	2.1475e+09	]
+[ 0.1200000,	0.12	]
+[ -3.1415629,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, real) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	real # type
+% 19,	15 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2.1475e+09	]
+[ 2147483647.0000000,	2.1475e+09	]
+[ 0.1200000,	0.12	]
+[ -3.1415629,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 19,	24 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, double precision) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 19,	24 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	20 # length
+[ 1.0000000,	1.000	]
+[ 0.0000000,	0.000	]
+[ -1.0000000,	-1.000	]
+[ -127.0000000,	-127.000	]
+[ 127.0000000,	127.000	]
+[ -32767.0000000,	-32767.000	]
+[ 32767.0000000,	32767.000	]
+[ -2147483647.0000000,	-2147483647.000	]
+[ 2147483647.0000000,	2147483647.000	]
+[ 0.1200000,	0.120	]
+[ -3.1415629,	-3.142	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	20 # length
+[ 1.0000000,	1.000	]
+[ 0.0000000,	0.000	]
+[ -1.0000000,	-1.000	]
+[ -127.0000000,	-127.000	]
+[ 127.0000000,	127.000	]
+[ -32767.0000000,	-32767.000	]
+[ 32767.0000000,	32767.000	]
+[ -2147483647.0000000,	-2147483647.000	]
+[ 2147483647.0000000,	2147483647.000	]
+[ 0.1200000,	0.120	]
+[ -3.1415629,	-3.142	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(10)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	11 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(11)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	12 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, numeric(12,0)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	13 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, decimal(15,3)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	17 # length
+[ 1.0000000,	1.000	]
+[ 0.0000000,	0.000	]
+[ -1.0000000,	-1.000	]
+[ -127.0000000,	-127.000	]
+[ 127.0000000,	127.000	]
+[ -32767.0000000,	-32767.000	]
+[ 32767.0000000,	32767.000	]
+[ -2147483647.0000000,	-2147483647.000	]
+[ 2147483647.0000000,	2147483647.000	]
+[ 0.1200000,	0.120	]
+[ -3.1415629,	-3.142	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, varchar(16)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	varchar # type
+% 19,	14 # length
+[ 1.0000000,	"1.0000000"	]
+[ 0.0000000,	"0.0000000"	]
+[ -1.0000000,	"-1.0000000"	]
+[ -127.0000000,	"-127.0000000"	]
+[ 127.0000000,	"127.0000000"	]
+[ -32767.0000000,	"-32767.0000000"	]
+[ 32767.0000000,	"32767.0000000"	]
+[ -2147483647.0000000,	NULL	]
+[ 2147483647.0000000,	NULL	]
+[ 0.1200000,	"0.1200000"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	clob # type
+% 19,	19 # length
+[ 1.0000000,	"1.0000000"	]
+[ 0.0000000,	"0.0000000"	]
+[ -1.0000000,	"-1.0000000"	]
+[ -127.0000000,	"-127.0000000"	]
+[ 127.0000000,	"127.0000000"	]
+[ -32767.0000000,	"-32767.0000000"	]
+[ 32767.0000000,	"32767.0000000"	]
+[ -2147483647.0000000,	"-2147483647.0000000"	]
+[ 2147483647.0000000,	"2147483647.0000000"	]
+[ 0.1200000,	"0.1200000"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	clob # type
+% 19,	19 # length
+[ 1.0000000,	"1.0000000"	]
+[ 0.0000000,	"0.0000000"	]
+[ -1.0000000,	"-1.0000000"	]
+[ -127.0000000,	"-127.0000000"	]
+[ 127.0000000,	"127.0000000"	]
+[ -32767.0000000,	"-32767.0000000"	]
+[ 32767.0000000,	"32767.0000000"	]
+[ -2147483647.0000000,	"-2147483647.0000000"	]
+[ 2147483647.0000000,	"2147483647.0000000"	]
+[ 0.1200000,	"0.1200000"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as tinyint) from T_dec where v between -127 and 127;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	tinyint # type
+% 19,	4 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+#SELECT v, cast(v as smallint) from T_dec where v between -32767 and 32767;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	smallint # type
+% 19,	6 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+#SELECT v, cast(v as integer) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	int # type
+% 19,	11 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as bigint) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	bigint # type
+% 19,	11 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 19,	24 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as float(24)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	real # type
+% 19,	15 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2.1475e+09	]
+[ 2147483647.0000000,	2.1475e+09	]
+[ 0.1200000,	0.12	]
+[ -3.1415629,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as real) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	real # type
+% 19,	15 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2.1475e+09	]
+[ 2147483647.0000000,	2.1475e+09	]
+[ 0.1200000,	0.12	]
+[ -3.1415629,	-3.1416	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 19,	24 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as double precision) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	double # type
+% 19,	24 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0.12	]
+[ -3.1415629,	-3.1415629	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	20 # length
+[ 1.0000000,	1.000	]
+[ 0.0000000,	0.000	]
+[ -1.0000000,	-1.000	]
+[ -127.0000000,	-127.000	]
+[ 127.0000000,	127.000	]
+[ -32767.0000000,	-32767.000	]
+[ 32767.0000000,	32767.000	]
+[ -2147483647.0000000,	-2147483647.000	]
+[ 2147483647.0000000,	2147483647.000	]
+[ 0.1200000,	0.120	]
+[ -3.1415629,	-3.142	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	20 # length
+[ 1.0000000,	1.000	]
+[ 0.0000000,	0.000	]
+[ -1.0000000,	-1.000	]
+[ -127.0000000,	-127.000	]
+[ 127.0000000,	127.000	]
+[ -32767.0000000,	-32767.000	]
+[ 32767.0000000,	32767.000	]
+[ -2147483647.0000000,	-2147483647.000	]
+[ 2147483647.0000000,	2147483647.000	]
+[ 0.1200000,	0.120	]
+[ -3.1415629,	-3.142	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(10)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	11 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(11)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	12 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as numeric(12,0)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	13 # length
+[ 1.0000000,	1	]
+[ 0.0000000,	0	]
+[ -1.0000000,	-1	]
+[ -127.0000000,	-127	]
+[ 127.0000000,	127	]
+[ -32767.0000000,	-32767	]
+[ 32767.0000000,	32767	]
+[ -2147483647.0000000,	-2147483647	]
+[ 2147483647.0000000,	2147483647	]
+[ 0.1200000,	0	]
+[ -3.1415629,	-3	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as decimal(15,3)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	decimal # type
+% 19,	17 # length
+[ 1.0000000,	1.000	]
+[ 0.0000000,	0.000	]
+[ -1.0000000,	-1.000	]
+[ -127.0000000,	-127.000	]
+[ 127.0000000,	127.000	]
+[ -32767.0000000,	-32767.000	]
+[ 32767.0000000,	32767.000	]
+[ -2147483647.0000000,	-2147483647.000	]
+[ 2147483647.0000000,	2147483647.000	]
+[ 0.1200000,	0.120	]
+[ -3.1415629,	-3.142	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as varchar(16)) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	varchar # type
+% 19,	14 # length
+[ 1.0000000,	"1.0000000"	]
+[ 0.0000000,	"0.0000000"	]
+[ -1.0000000,	"-1.0000000"	]
+[ -127.0000000,	"-127.0000000"	]
+[ 127.0000000,	"127.0000000"	]
+[ -32767.0000000,	"-32767.0000000"	]
+[ 32767.0000000,	"32767.0000000"	]
+[ -2147483647.0000000,	NULL	]
+[ 2147483647.0000000,	NULL	]
+[ 0.1200000,	"0.1200000"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	clob # type
+% 19,	19 # length
+[ 1.0000000,	"1.0000000"	]
+[ 0.0000000,	"0.0000000"	]
+[ -1.0000000,	"-1.0000000"	]
+[ -127.0000000,	"-127.0000000"	]
+[ 127.0000000,	"127.0000000"	]
+[ -32767.0000000,	"-32767.0000000"	]
+[ 32767.0000000,	"32767.0000000"	]
+[ -2147483647.0000000,	"-2147483647.0000000"	]
+[ 2147483647.0000000,	"2147483647.0000000"	]
+[ 0.1200000,	"0.1200000"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_dec;
+% sys.t_dec,	sys.L1 # table_name
+% v,	L1 # name
+% decimal,	clob # type
+% 19,	19 # length
+[ 1.0000000,	"1.0000000"	]
+[ 0.0000000,	"0.0000000"	]
+[ -1.0000000,	"-1.0000000"	]
+[ -127.0000000,	"-127.0000000"	]
+[ 127.0000000,	"127.0000000"	]
+[ -32767.0000000,	"-32767.0000000"	]
+[ 32767.0000000,	"32767.0000000"	]
+[ -2147483647.0000000,	"-2147483647.0000000"	]
+[ 2147483647.0000000,	"2147483647.0000000"	]
+[ 0.1200000,	"0.1200000"	]
+[ -3.1415629,	"-3.1415629"	]
+[ NULL,	NULL	]
+#DROP TABLE T_dec;
+#CREATE TABLE T_char (v CHAR(33));
+#INSERT into T_char VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), ('~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
+[ 6	]
+#INSERT into T_char VALUES (null);
+[ 1	]
+#SELECT v FROM T_char ORDER BY v;
+% sys.t_char # table_name
+% v # name
+% char # type
+% 33 # length
+[ NULL	]
+[ ""	]
+[ "0"	]
+[ "0123456789"	]
+[ "1"	]
+[ "AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+#SELECT v, convert(v, boolean) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	boolean # type
+% 33,	5 # length
+[ "0",	false	]
+[ "1",	true	]
+#SELECT v, convert(v, tinyint) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	tinyint # type
+% 33,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, smallint) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	smallint # type
+% 33,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, integer) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	int # type
+% 33,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, bigint) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	bigint # type
+% 33,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, float) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	double # type
+% 33,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, float(24)) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	real # type
+% 33,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, real) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	real # type
+% 33,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, double) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	double # type
+% 33,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, double precision) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	double # type
+% 33,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, numeric) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, convert(v, decimal) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, convert(v, numeric(10)) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	11 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, decimal(11)) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	12 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, numeric(12,0)) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	13 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, decimal(15,3)) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	17 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, convert(v, char) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	char # type
+% 33,	1 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+#SELECT v, convert(v, varchar(36)) from T_char;
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	varchar # type
+% 33,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_char;
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	clob # type
+% 33,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_char;
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	clob # type
+% 33,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Blob) from T_char where v in ('0123456789');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	blob # type
+% 33,	0 # length
+[ "0123456789",	0123456789	]
+#SELECT v, cast(v as boolean) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	boolean # type
+% 33,	5 # length
+[ "0",	false	]
+[ "1",	true	]
+#SELECT v, cast(v as tinyint) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	tinyint # type
+% 33,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as smallint) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	smallint # type
+% 33,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as integer) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	int # type
+% 33,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as bigint) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	bigint # type
+% 33,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as float) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	double # type
+% 33,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as float(24)) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	real # type
+% 33,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as real) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	real # type
+% 33,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as double) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	double # type
+% 33,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as double precision) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	double # type
+% 33,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as numeric) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, cast(v as decimal) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, cast(v as numeric(10)) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	11 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as decimal(11)) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	12 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as numeric(12,0)) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	13 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as decimal(15,3)) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	decimal # type
+% 33,	17 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, cast(v as char) from T_char where v in ('0', '1');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	char # type
+% 33,	1 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+#SELECT v, cast(v as varchar(36)) from T_char;
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	varchar # type
+% 33,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_char;
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	clob # type
+% 33,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_char;
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	clob # type
+% 33,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Blob) from T_char where v in ('0123456789');
+% sys.t_char,	sys.L1 # table_name
+% v,	L1 # name
+% char,	blob # type
+% 33,	0 # length
+[ "0123456789",	0123456789	]
+#DROP TABLE T_char;
+#CREATE TABLE T_varchar (v VARCHAR(33));
+#INSERT into T_varchar VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), ('~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
+[ 6	]
+#INSERT into T_varchar VALUES (null);
+[ 1	]
+#SELECT v FROM T_varchar ORDER BY v;
+% sys.t_varchar # table_name
+% v # name
+% varchar # type
+% 26 # length
+[ NULL	]
+[ ""	]
+[ "0"	]
+[ "0123456789"	]
+[ "1"	]
+[ "AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+#SELECT v, convert(v, boolean) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	boolean # type
+% 1,	5 # length
+[ "0",	false	]
+[ "1",	true	]
+#SELECT v, convert(v, tinyint) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	tinyint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, smallint) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	smallint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, integer) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	int # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, bigint) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	bigint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, float) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, float(24)) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	real # type
+% 1,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, real) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	real # type
+% 1,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, double) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, double precision) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, numeric) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, convert(v, decimal) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, convert(v, numeric(10)) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	11 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, decimal(11)) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	12 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, numeric(12,0)) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	13 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, decimal(15,3)) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	17 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, convert(v, char) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	char # type
+% 1,	1 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+#SELECT v, convert(v, varchar(36)) from T_varchar;
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	varchar # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_varchar;
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	clob # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_varchar;
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	clob # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Blob) from T_varchar where v in ('0123456789');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	blob # type
+% 10,	0 # length
+[ "0123456789",	0123456789	]
+#SELECT v, cast(v as boolean) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	boolean # type
+% 1,	5 # length
+[ "0",	false	]
+[ "1",	true	]
+#SELECT v, cast(v as tinyint) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	tinyint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as smallint) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	smallint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as integer) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	int # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as bigint) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	bigint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as float) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as float(24)) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	real # type
+% 1,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as real) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	real # type
+% 1,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as double) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as double precision) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as numeric) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, cast(v as decimal) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, cast(v as numeric(10)) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	11 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as decimal(11)) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	12 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as numeric(12,0)) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	13 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as decimal(15,3)) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	decimal # type
+% 1,	17 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, cast(v as char) from T_varchar where v in ('0', '1');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	char # type
+% 1,	1 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+#SELECT v, cast(v as varchar(36)) from T_varchar;
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	varchar # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_varchar;
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	clob # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_varchar;
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	clob # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Blob) from T_varchar where v in ('0123456789');
+% sys.t_varchar,	sys.L1 # table_name
+% v,	L1 # name
+% varchar,	blob # type
+% 10,	0 # length
+[ "0123456789",	0123456789	]
+#DROP TABLE T_varchar;
+#CREATE TABLE T_clob (v CLOB);
+#INSERT into T_clob VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), ('~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
+[ 6	]
+#INSERT into T_clob VALUES (null);
+[ 1	]
+#SELECT v FROM T_clob ORDER BY v;
+% sys.t_clob # table_name
+% v # name
+% clob # type
+% 26 # length
+[ NULL	]
+[ ""	]
+[ "0"	]
+[ "0123456789"	]
+[ "1"	]
+[ "AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+#SELECT v, convert(v, boolean) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	boolean # type
+% 1,	5 # length
+[ "0",	false	]
+[ "1",	true	]
+#SELECT v, convert(v, tinyint) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	tinyint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, smallint) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	smallint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, integer) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	int # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, bigint) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	bigint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, float) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, float(24)) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	real # type
+% 1,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, real) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	real # type
+% 1,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, double) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, double precision) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, numeric) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, convert(v, decimal) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, convert(v, numeric(10)) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	11 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, decimal(11)) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	12 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, numeric(12,0)) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	13 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, convert(v, decimal(15,3)) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	17 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, convert(v, char) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	char # type
+% 1,	1 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+#SELECT v, convert(v, varchar(36)) from T_clob;
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	varchar # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_clob;
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	clob # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_clob;
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	clob # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Blob) from T_clob where v in ('0123456789');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	blob # type
+% 10,	0 # length
+[ "0123456789",	0123456789	]
+#SELECT v, cast(v as boolean) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	boolean # type
+% 1,	5 # length
+[ "0",	false	]
+[ "1",	true	]
+#SELECT v, cast(v as tinyint) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	tinyint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as smallint) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	smallint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as integer) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	int # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as bigint) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	bigint # type
+% 1,	1 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as float) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as float(24)) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	real # type
+% 1,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as real) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	real # type
+% 1,	15 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as double) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as double precision) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	double # type
+% 1,	24 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as numeric) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, cast(v as decimal) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	20 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, cast(v as numeric(10)) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	11 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as decimal(11)) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	12 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as numeric(12,0)) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	13 # length
+[ "0",	0	]
+[ "1",	1	]
+#SELECT v, cast(v as decimal(15,3)) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	decimal # type
+% 1,	17 # length
+[ "0",	0.000	]
+[ "1",	1.000	]
+#SELECT v, cast(v as char) from T_clob where v in ('0', '1');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	char # type
+% 1,	1 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+#SELECT v, cast(v as varchar(36)) from T_clob;
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	varchar # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_clob;
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	clob # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_clob;
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	clob # type
+% 26,	26 # length
+[ "0",	"0"	]
+[ "1",	"1"	]
+[ "0123456789",	"0123456789"	]
+[ "AaZz",	"AaZz"	]
+[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "",	""	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Blob) from T_clob where v in ('0123456789');
+% sys.t_clob,	sys.L1 # table_name
+% v,	L1 # name
+% clob,	blob # type
+% 10,	0 # length
+[ "0123456789",	0123456789	]
+#DROP TABLE T_clob;
+#CREATE TABLE T_date (v DATE);
+#INSERT into T_date VALUES (date '1999-12-31'), (date '2016-01-01'), (date '2016-02-29'), (date '2016-12-31');
+[ 4	]
+#INSERT into T_date VALUES (null);
+[ 1	]
+#SELECT v FROM T_date ORDER BY v;
+% sys.t_date # table_name
+% v # name
+% date # type
+% 10 # length
+[ NULL	]
+[ 1999-12-31	]
+[ 2016-01-01	]
+[ 2016-02-29	]
+[ 2016-12-31	]
+#SELECT v, convert(v, varchar(36)) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	varchar # type
+% 10,	10 # length
+[ 1999-12-31,	"1999-12-31"	]
+[ 2016-01-01,	"2016-01-01"	]
+[ 2016-02-29,	"2016-02-29"	]
+[ 2016-12-31,	"2016-12-31"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	clob # type
+% 10,	10 # length
+[ 1999-12-31,	"1999-12-31"	]
+[ 2016-01-01,	"2016-01-01"	]
+[ 2016-02-29,	"2016-02-29"	]
+[ 2016-12-31,	"2016-12-31"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	clob # type
+% 10,	10 # length
+[ 1999-12-31,	"1999-12-31"	]
+[ 2016-01-01,	"2016-01-01"	]
+[ 2016-02-29,	"2016-02-29"	]
+[ 2016-12-31,	"2016-12-31"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, date) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	date # type
+% 10,	10 # length
+[ 1999-12-31,	1999-12-31	]
+[ 2016-01-01,	2016-01-01	]
+[ 2016-02-29,	2016-02-29	]
+[ 2016-12-31,	2016-12-31	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, timestamp) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	timestamp # type
+% 10,	26 # length
+[ 1999-12-31,	1999-12-31 00:00:00.000000	]
+[ 2016-01-01,	2016-01-01 00:00:00.000000	]
+[ 2016-02-29,	2016-02-29 00:00:00.000000	]
+[ 2016-12-31,	2016-12-31 00:00:00.000000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, timestamptz) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	timestamptz # type
+% 10,	32 # length
+[ 1999-12-31,	1999-12-31 02:00:00.000000+02:00	]
+[ 2016-01-01,	2016-01-01 02:00:00.000000+02:00	]
+[ 2016-02-29,	2016-02-29 02:00:00.000000+02:00	]
+[ 2016-12-31,	2016-12-31 02:00:00.000000+02:00	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as varchar(36)) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	varchar # type
+% 10,	10 # length
+[ 1999-12-31,	"1999-12-31"	]
+[ 2016-01-01,	"2016-01-01"	]
+[ 2016-02-29,	"2016-02-29"	]
+[ 2016-12-31,	"2016-12-31"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	clob # type
+% 10,	10 # length
+[ 1999-12-31,	"1999-12-31"	]
+[ 2016-01-01,	"2016-01-01"	]
+[ 2016-02-29,	"2016-02-29"	]
+[ 2016-12-31,	"2016-12-31"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	clob # type
+% 10,	10 # length
+[ 1999-12-31,	"1999-12-31"	]
+[ 2016-01-01,	"2016-01-01"	]
+[ 2016-02-29,	"2016-02-29"	]
+[ 2016-12-31,	"2016-12-31"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as date) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	date # type
+% 10,	10 # length
+[ 1999-12-31,	1999-12-31	]
+[ 2016-01-01,	2016-01-01	]
+[ 2016-02-29,	2016-02-29	]
+[ 2016-12-31,	2016-12-31	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as timestamp) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	timestamp # type
+% 10,	26 # length
+[ 1999-12-31,	1999-12-31 00:00:00.000000	]
+[ 2016-01-01,	2016-01-01 00:00:00.000000	]
+[ 2016-02-29,	2016-02-29 00:00:00.000000	]
+[ 2016-12-31,	2016-12-31 00:00:00.000000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as timestamptz) from T_date;
+% sys.t_date,	sys.L1 # table_name
+% v,	L1 # name
+% date,	timestamptz # type
+% 10,	32 # length
+[ 1999-12-31,	1999-12-31 02:00:00.000000+02:00	]
+[ 2016-01-01,	2016-01-01 02:00:00.000000+02:00	]
+[ 2016-02-29,	2016-02-29 02:00:00.000000+02:00	]
+[ 2016-12-31,	2016-12-31 02:00:00.000000+02:00	]
+[ NULL,	NULL	]
+#DROP TABLE T_date;
+#CREATE TABLE T_time (v TIME);
+#INSERT into T_time VALUES (time '00:00:00'), (time '23:59:58');
+[ 2	]
+#INSERT into T_time VALUES (null);
+[ 1	]
+#SELECT v FROM T_time ORDER BY v;
+% sys.t_time # table_name
+% v # name
+% time # type
+% 8 # length
+[ NULL	]
+[ 00:00:00	]
+[ 23:59:58	]
+#SELECT v, convert(v, varchar(36)) from T_time;
+% sys.t_time,	sys.L1 # table_name
+% v,	L1 # name
+% time,	varchar # type
+% 8,	8 # length
+[ 00:00:00,	"00:00:00"	]
+[ 23:59:58,	"23:59:58"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_time;
+% sys.t_time,	sys.L1 # table_name
+% v,	L1 # name
+% time,	clob # type
+% 8,	8 # length
+[ 00:00:00,	"00:00:00"	]
+[ 23:59:58,	"23:59:58"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_time;
+% sys.t_time,	sys.L1 # table_name
+% v,	L1 # name
+% time,	clob # type
+% 8,	8 # length
+[ 00:00:00,	"00:00:00"	]
+[ 23:59:58,	"23:59:58"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, time) from T_time;
+% sys.t_time,	sys.L1 # table_name
+% v,	L1 # name
+% time,	time # type
+% 8,	8 # length
+[ 00:00:00,	00:00:00	]
+[ 23:59:58,	23:59:58	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, timetz) from T_time;
+% sys.t_time,	sys.L1 # table_name
+% v,	L1 # name
+% time,	timetz # type
+% 8,	21 # length
+[ 00:00:00,	02:00:00.000000+02:00	]
+[ 23:59:58,	01:59:58.000000+02:00	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as varchar(36)) from T_time;
+% sys.t_time,	sys.L1 # table_name
+% v,	L1 # name
+% time,	varchar # type
+% 8,	8 # length
+[ 00:00:00,	"00:00:00"	]
+[ 23:59:58,	"23:59:58"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_time;
+% sys.t_time,	sys.L1 # table_name
+% v,	L1 # name
+% time,	clob # type
+% 8,	8 # length
+[ 00:00:00,	"00:00:00"	]
+[ 23:59:58,	"23:59:58"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_time;
+% sys.t_time,	sys.L1 # table_name
+% v,	L1 # name
+% time,	clob # type
+% 8,	8 # length
+[ 00:00:00,	"00:00:00"	]
+[ 23:59:58,	"23:59:58"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as time) from T_time;
+% sys.t_time,	sys.L1 # table_name
+% v,	L1 # name
+% time,	time # type
+% 8,	8 # length
+[ 00:00:00,	00:00:00	]
+[ 23:59:58,	23:59:58	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as timetz) from T_time;
+% sys.t_time,	sys.L1 # table_name
+% v,	L1 # name
+% time,	timetz # type
+% 8,	21 # length
+[ 00:00:00,	02:00:00.000000+02:00	]
+[ 23:59:58,	01:59:58.000000+02:00	]
+[ NULL,	NULL	]
+#DROP TABLE T_time;
+#CREATE TABLE T_timestamp (v TIMESTAMP);
+#INSERT into T_timestamp VALUES (timestamp '1999-12-31 23:59:59'), (timestamp '2016-01-01 00:00:00'), (timestamp '2016-02-29 00:00:00'), (timestamp '2016-12-31 23:59:58');
+[ 4	]
+#INSERT into T_timestamp VALUES (null);
+[ 1	]
+#SELECT v FROM T_timestamp ORDER BY v;
+% sys.t_timestamp # table_name
+% v # name
+% timestamp # type
+% 26 # length
+[ NULL	]
+[ 1999-12-31 23:59:59.000000	]
+[ 2016-01-01 00:00:00.000000	]
+[ 2016-02-29 00:00:00.000000	]
+[ 2016-12-31 23:59:58.000000	]
+#SELECT v, convert(v, varchar(36)) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	varchar # type
+% 26,	26 # length
+[ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
+[ 2016-01-01 00:00:00.000000,	"2016-01-01 00:00:00.000000"	]
+[ 2016-02-29 00:00:00.000000,	"2016-02-29 00:00:00.000000"	]
+[ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	clob # type
+% 26,	26 # length
+[ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
+[ 2016-01-01 00:00:00.000000,	"2016-01-01 00:00:00.000000"	]
+[ 2016-02-29 00:00:00.000000,	"2016-02-29 00:00:00.000000"	]
+[ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	clob # type
+% 26,	26 # length
+[ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
+[ 2016-01-01 00:00:00.000000,	"2016-01-01 00:00:00.000000"	]
+[ 2016-02-29 00:00:00.000000,	"2016-02-29 00:00:00.000000"	]
+[ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, date) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	date # type
+% 26,	10 # length
+[ 1999-12-31 23:59:59.000000,	1999-12-31	]
+[ 2016-01-01 00:00:00.000000,	2016-01-01	]
+[ 2016-02-29 00:00:00.000000,	2016-02-29	]
+[ 2016-12-31 23:59:58.000000,	2016-12-31	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, time) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	time # type
+% 26,	8 # length
+[ 1999-12-31 23:59:59.000000,	23:59:59	]
+[ 2016-01-01 00:00:00.000000,	00:00:00	]
+[ 2016-02-29 00:00:00.000000,	00:00:00	]
+[ 2016-12-31 23:59:58.000000,	23:59:58	]
+[ NULL,	00:00:00	]
+#SELECT v, convert(v, timestamp) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 1999-12-31 23:59:59.000000,	1999-12-31 23:59:59.000000	]
+[ 2016-01-01 00:00:00.000000,	2016-01-01 00:00:00.000000	]
+[ 2016-02-29 00:00:00.000000,	2016-02-29 00:00:00.000000	]
+[ 2016-12-31 23:59:58.000000,	2016-12-31 23:59:58.000000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, timetz) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	timetz # type
+% 26,	21 # length
+[ 1999-12-31 23:59:59.000000,	01:59:59.000000+02:00	]
+[ 2016-01-01 00:00:00.000000,	02:00:00.000000+02:00	]
+[ 2016-02-29 00:00:00.000000,	02:00:00.000000+02:00	]
+[ 2016-12-31 23:59:58.000000,	01:59:58.000000+02:00	]
+[ NULL,	02:00:00.000000+02:00	]
+#SELECT v, convert(v, timestamptz) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	timestamptz # type
+% 26,	32 # length
+[ 1999-12-31 23:59:59.000000,	2000-01-01 01:59:59.000000+02:00	]
+[ 2016-01-01 00:00:00.000000,	2016-01-01 02:00:00.000000+02:00	]
+[ 2016-02-29 00:00:00.000000,	2016-02-29 02:00:00.000000+02:00	]
+[ 2016-12-31 23:59:58.000000,	2017-01-01 01:59:58.000000+02:00	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as varchar(36)) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	varchar # type
+% 26,	26 # length
+[ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
+[ 2016-01-01 00:00:00.000000,	"2016-01-01 00:00:00.000000"	]
+[ 2016-02-29 00:00:00.000000,	"2016-02-29 00:00:00.000000"	]
+[ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	clob # type
+% 26,	26 # length
+[ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
+[ 2016-01-01 00:00:00.000000,	"2016-01-01 00:00:00.000000"	]
+[ 2016-02-29 00:00:00.000000,	"2016-02-29 00:00:00.000000"	]
+[ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	clob # type
+% 26,	26 # length
+[ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
+[ 2016-01-01 00:00:00.000000,	"2016-01-01 00:00:00.000000"	]
+[ 2016-02-29 00:00:00.000000,	"2016-02-29 00:00:00.000000"	]
+[ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as date) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	date # type
+% 26,	10 # length
+[ 1999-12-31 23:59:59.000000,	1999-12-31	]
+[ 2016-01-01 00:00:00.000000,	2016-01-01	]
+[ 2016-02-29 00:00:00.000000,	2016-02-29	]
+[ 2016-12-31 23:59:58.000000,	2016-12-31	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as time) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	time # type
+% 26,	8 # length
+[ 1999-12-31 23:59:59.000000,	23:59:59	]
+[ 2016-01-01 00:00:00.000000,	00:00:00	]
+[ 2016-02-29 00:00:00.000000,	00:00:00	]
+[ 2016-12-31 23:59:58.000000,	23:59:58	]
+[ NULL,	00:00:00	]
+#SELECT v, cast(v as timestamp) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	timestamp # type
+% 26,	26 # length
+[ 1999-12-31 23:59:59.000000,	1999-12-31 23:59:59.000000	]
+[ 2016-01-01 00:00:00.000000,	2016-01-01 00:00:00.000000	]
+[ 2016-02-29 00:00:00.000000,	2016-02-29 00:00:00.000000	]
+[ 2016-12-31 23:59:58.000000,	2016-12-31 23:59:58.000000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as timetz) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	timetz # type
+% 26,	21 # length
+[ 1999-12-31 23:59:59.000000,	01:59:59.000000+02:00	]
+[ 2016-01-01 00:00:00.000000,	02:00:00.000000+02:00	]
+[ 2016-02-29 00:00:00.000000,	02:00:00.000000+02:00	]
+[ 2016-12-31 23:59:58.000000,	01:59:58.000000+02:00	]
+[ NULL,	02:00:00.000000+02:00	]
+#SELECT v, cast(v as timestamptz) from T_timestamp;
+% sys.t_timestamp,	sys.L1 # table_name
+% v,	L1 # name
+% timestamp,	timestamptz # type
+% 26,	32 # length
+[ 1999-12-31 23:59:59.000000,	2000-01-01 01:59:59.000000+02:00	]
+[ 2016-01-01 00:00:00.000000,	2016-01-01 02:00:00.000000+02:00	]
+[ 2016-02-29 00:00:00.000000,	2016-02-29 02:00:00.000000+02:00	]
+[ 2016-12-31 23:59:58.000000,	2017-01-01 01:59:58.000000+02:00	]
+[ NULL,	NULL	]
+#DROP TABLE T_timestamp;
+#CREATE TABLE T_timetz (v TIMETZ);
+#INSERT into T_timetz VALUES (timetz '00:00:00'), (timetz '23:59:58');
+[ 2	]
+#INSERT into T_timetz VALUES (null);
+[ 1	]
+#SELECT v FROM T_timetz ORDER BY v;
+% sys.t_timetz # table_name
+% v # name
+% timetz # type
+% 21 # length
+[ NULL	]
+[ 02:00:00.000000+02:00	]
+[ 01:59:58.000000+02:00	]
+#SELECT v, convert(v, varchar(36)) from T_timetz;
+% sys.t_timetz,	sys.L1 # table_name
+% v,	L1 # name
+% timetz,	varchar # type
+% 21,	21 # length
+[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
+[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timetz;
+% sys.t_timetz,	sys.L1 # table_name
+% v,	L1 # name
+% timetz,	clob # type
+% 21,	21 # length
+[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
+[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_timetz;
+% sys.t_timetz,	sys.L1 # table_name
+% v,	L1 # name
+% timetz,	clob # type
+% 21,	21 # length
+[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
+[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, time) from T_timetz;
+% sys.t_timetz,	sys.L1 # table_name
+% v,	L1 # name
+% timetz,	time # type
+% 21,	8 # length
+[ 02:00:00.000000+02:00,	00:00:00	]
+[ 01:59:58.000000+02:00,	23:59:58	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, timetz) from T_timetz;
+% sys.t_timetz,	sys.L1 # table_name
+% v,	L1 # name
+% timetz,	timetz # type
+% 21,	21 # length
+[ 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
+[ 01:59:58.000000+02:00,	01:59:58.000000+02:00	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as varchar(36)) from T_timetz;
+% sys.t_timetz,	sys.L1 # table_name
+% v,	L1 # name
+% timetz,	varchar # type
+% 21,	21 # length
+[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
+[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timetz;
+% sys.t_timetz,	sys.L1 # table_name
+% v,	L1 # name
+% timetz,	clob # type
+% 21,	21 # length
+[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
+[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_timetz;
+% sys.t_timetz,	sys.L1 # table_name
+% v,	L1 # name
+% timetz,	clob # type
+% 21,	21 # length
+[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
+[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as time) from T_timetz;
+% sys.t_timetz,	sys.L1 # table_name
+% v,	L1 # name
+% timetz,	time # type
+% 21,	8 # length
+[ 02:00:00.000000+02:00,	00:00:00	]
+[ 01:59:58.000000+02:00,	23:59:58	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as timetz) from T_timetz;
+% sys.t_timetz,	sys.L1 # table_name
+% v,	L1 # name
+% timetz,	timetz # type
+% 21,	21 # length
+[ 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
+[ 01:59:58.000000+02:00,	01:59:58.000000+02:00	]
+[ NULL,	NULL	]
+#DROP TABLE T_timetz;
+#CREATE TABLE T_timestamptz (v TIMESTAMPTZ);
+#INSERT into T_timestamptz VALUES (timestamptz '1999-12-31 23:59:59'), (timestamptz '2016-01-01 00:00:00'), (timestamptz '2016-02-29 00:00:00'), (timestamptz '2016-12-31 23:59:58');
+[ 4	]
+#INSERT into T_timestamptz VALUES (null);
+[ 1	]
+#SELECT v FROM T_timestamptz ORDER BY v;
+% sys.t_timestamptz # table_name
+% v # name
+% timestamptz # type
+% 32 # length
+[ NULL	]
+[ 2000-01-01 01:59:59.000000+02:00	]
+[ 2016-01-01 02:00:00.000000+02:00	]
+[ 2016-02-29 02:00:00.000000+02:00	]
+[ 2017-01-01 01:59:58.000000+02:00	]
+#SELECT v, convert(v, varchar(36)) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	varchar # type
+% 32,	32 # length
+[ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
+[ 2016-01-01 02:00:00.000000+02:00,	"2016-01-01 02:00:00.000000+02:00"	]
+[ 2016-02-29 02:00:00.000000+02:00,	"2016-02-29 02:00:00.000000+02:00"	]
+[ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	clob # type
+% 32,	32 # length
+[ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
+[ 2016-01-01 02:00:00.000000+02:00,	"2016-01-01 02:00:00.000000+02:00"	]
+[ 2016-02-29 02:00:00.000000+02:00,	"2016-02-29 02:00:00.000000+02:00"	]
+[ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, Clob) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	clob # type
+% 32,	32 # length
+[ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
+[ 2016-01-01 02:00:00.000000+02:00,	"2016-01-01 02:00:00.000000+02:00"	]
+[ 2016-02-29 02:00:00.000000+02:00,	"2016-02-29 02:00:00.000000+02:00"	]
+[ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, date) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	date # type
+% 32,	10 # length
+[ 2000-01-01 01:59:59.000000+02:00,	1999-12-31	]
+[ 2016-01-01 02:00:00.000000+02:00,	2016-01-01	]
+[ 2016-02-29 02:00:00.000000+02:00,	2016-02-29	]
+[ 2017-01-01 01:59:58.000000+02:00,	2016-12-31	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, time) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	time # type
+% 32,	8 # length
+[ 2000-01-01 01:59:59.000000+02:00,	23:59:59	]
+[ 2016-01-01 02:00:00.000000+02:00,	00:00:00	]
+[ 2016-02-29 02:00:00.000000+02:00,	00:00:00	]
+[ 2017-01-01 01:59:58.000000+02:00,	23:59:58	]
+[ NULL,	00:00:00	]
+#SELECT v, convert(v, timestamp) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	timestamp # type
+% 32,	26 # length
+[ 2000-01-01 01:59:59.000000+02:00,	1999-12-31 23:59:59.000000	]
+[ 2016-01-01 02:00:00.000000+02:00,	2016-01-01 00:00:00.000000	]
+[ 2016-02-29 02:00:00.000000+02:00,	2016-02-29 00:00:00.000000	]
+[ 2017-01-01 01:59:58.000000+02:00,	2016-12-31 23:59:58.000000	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, timetz) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	timetz # type
+% 32,	21 # length
+[ 2000-01-01 01:59:59.000000+02:00,	01:59:59.000000+02:00	]
+[ 2016-01-01 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
+[ 2016-02-29 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
+[ 2017-01-01 01:59:58.000000+02:00,	01:59:58.000000+02:00	]
+[ NULL,	02:00:00.000000+02:00	]
+#SELECT v, convert(v, timestamptz) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	timestamptz # type
+% 32,	32 # length
+[ 2000-01-01 01:59:59.000000+02:00,	2000-01-01 01:59:59.000000+02:00	]
+[ 2016-01-01 02:00:00.000000+02:00,	2016-01-01 02:00:00.000000+02:00	]
+[ 2016-02-29 02:00:00.000000+02:00,	2016-02-29 02:00:00.000000+02:00	]
+[ 2017-01-01 01:59:58.000000+02:00,	2017-01-01 01:59:58.000000+02:00	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as varchar(36)) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	varchar # type
+% 32,	32 # length
+[ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
+[ 2016-01-01 02:00:00.000000+02:00,	"2016-01-01 02:00:00.000000+02:00"	]
+[ 2016-02-29 02:00:00.000000+02:00,	"2016-02-29 02:00:00.000000+02:00"	]
+[ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	clob # type
+% 32,	32 # length
+[ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
+[ 2016-01-01 02:00:00.000000+02:00,	"2016-01-01 02:00:00.000000+02:00"	]
+[ 2016-02-29 02:00:00.000000+02:00,	"2016-02-29 02:00:00.000000+02:00"	]
+[ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as Clob) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	clob # type
+% 32,	32 # length
+[ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
+[ 2016-01-01 02:00:00.000000+02:00,	"2016-01-01 02:00:00.000000+02:00"	]
+[ 2016-02-29 02:00:00.000000+02:00,	"2016-02-29 02:00:00.000000+02:00"	]
+[ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as date) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	date # type
+% 32,	10 # length
+[ 2000-01-01 01:59:59.000000+02:00,	1999-12-31	]
+[ 2016-01-01 02:00:00.000000+02:00,	2016-01-01	]
+[ 2016-02-29 02:00:00.000000+02:00,	2016-02-29	]
+[ 2017-01-01 01:59:58.000000+02:00,	2016-12-31	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as time) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	time # type
+% 32,	8 # length
+[ 2000-01-01 01:59:59.000000+02:00,	23:59:59	]
+[ 2016-01-01 02:00:00.000000+02:00,	00:00:00	]
+[ 2016-02-29 02:00:00.000000+02:00,	00:00:00	]
+[ 2017-01-01 01:59:58.000000+02:00,	23:59:58	]
+[ NULL,	00:00:00	]
+#SELECT v, cast(v as timestamp) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	timestamp # type
+% 32,	26 # length
+[ 2000-01-01 01:59:59.000000+02:00,	1999-12-31 23:59:59.000000	]
+[ 2016-01-01 02:00:00.000000+02:00,	2016-01-01 00:00:00.000000	]
+[ 2016-02-29 02:00:00.000000+02:00,	2016-02-29 00:00:00.000000	]
+[ 2017-01-01 01:59:58.000000+02:00,	2016-12-31 23:59:58.000000	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as timetz) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	timetz # type
+% 32,	21 # length
+[ 2000-01-01 01:59:59.000000+02:00,	01:59:59.000000+02:00	]
+[ 2016-01-01 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
+[ 2016-02-29 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
+[ 2017-01-01 01:59:58.000000+02:00,	01:59:58.000000+02:00	]
+[ NULL,	02:00:00.000000+02:00	]
+#SELECT v, cast(v as timestamptz) from T_timestamptz;
+% sys.t_timestamptz,	sys.L1 # table_name
+% v,	L1 # name
+% timestamptz,	timestamptz # type
+% 32,	32 # length
+[ 2000-01-01 01:59:59.000000+02:00,	2000-01-01 01:59:59.000000+02:00	]
+[ 2016-01-01 02:00:00.000000+02:00,	2016-01-01 02:00:00.000000+02:00	]
+[ 2016-02-29 02:00:00.000000+02:00,	2016-02-29 02:00:00.000000+02:00	]
+[ 2017-01-01 01:59:58.000000+02:00,	2017-01-01 01:59:58.000000+02:00	]
+[ NULL,	NULL	]
+#DROP TABLE T_timestamptz;
+
+# 19:10:37 >  
+# 19:10:37 >  "Done."
+# 19:10:37 >  
+

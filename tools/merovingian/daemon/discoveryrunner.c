@@ -392,12 +392,18 @@ discoveryRunner(void *d)
 		pthread_mutex_unlock(&_mero_remotedb_lock);
 
 		peer_addr_len = sizeof(struct sockaddr_storage);
-		FD_ZERO(&fds);
-		FD_SET(sock, &fds);
 		/* Wait up to 5 seconds. */
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
-		nread = select(sock + 1, &fds, NULL, NULL, &tv);
+		for (s = 0; s < 5; s++) {
+			FD_ZERO(&fds);
+			FD_SET(sock, &fds);
+			tv.tv_sec = 1;
+			tv.tv_usec = 0;
+			nread = select(sock + 1, &fds, NULL, NULL, &tv);
+			if (nread != 0)
+				break;
+			if (!_mero_keep_listening)
+				goto breakout;
+		}
 		if (nread <= 0) {  /* assume only failure is EINTR */
 			/* nothing interesting has happened */
 			buf[0] = '\0';
@@ -493,6 +499,7 @@ discoveryRunner(void *d)
 					"%s:%s: '%s'\n", host, service, buf);
 		}
 	}
+  breakout:
 
 	/* now notify of our soon to be absence ;) */
 

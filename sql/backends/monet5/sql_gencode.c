@@ -467,7 +467,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			int varid = 0;
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
-			varid = newVariable(curBlk, _STRDUP(nme), type);
+			varid = newVariable(curBlk, (char *)nme, strlen(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -554,7 +554,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 			int varid = 0;
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
-			varid = newVariable(curBlk, _STRDUP(nme), type);
+			varid = newVariable(curBlk, (char*) nme,strlen(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -2867,7 +2867,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int varid = 0;
 
 			snprintf(arg, IDLENGTH, "A%d", argc);
-			a->varid = varid = newVariable(mb, _STRDUP(arg), type);
+			a->varid = varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			if (curInstr == NULL)
 				return NULL;
@@ -2882,7 +2882,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int varid = 0;
 
 			snprintf(arg, IDLENGTH, "A%d", argc);
-			varid = newVariable(mb, _STRDUP(arg), type);
+			varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			if (curInstr == NULL)
 				return NULL;
@@ -3131,7 +3131,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			char *buf = GDKmalloc(MAXIDENTLEN);
 
 			(void) snprintf(buf, MAXIDENTLEN, "A%d", argc);
-			varid = newVariable(curBlk, buf, type);
+			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -3154,7 +3154,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 				(void) snprintf(buf, MAXIDENTLEN, "A%s", a->name);
 			else
 				(void) snprintf(buf, MAXIDENTLEN, "A%d", argc);
-			varid = newVariable(curBlk, buf, type);
+			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);

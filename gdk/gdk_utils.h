@@ -80,6 +80,9 @@ gdk_export size_t _MT_pagesize;
 gdk_export void MT_init(void);	/*  init the package. */
 gdk_export int GDKinit(opt *set, int setlen);
 
+/* used for testing only */
+gdk_export void GDKsetmemorylimit(lng nbytes);
+
 /*
  * Upon closing the session, all persistent BATs should be saved and
  * the transient BATs should be removed.  The buffer pool manager

@@ -43,7 +43,7 @@ isExceptionVariable(str nme){
 	return 0;
 }
 
-char *M5OutOfMemory = "Memory allocation failed.";
+static char *M5OutOfMemory = "Memory allocation failed.";
 
 /**
  * Internal helper function for createException and
@@ -60,7 +60,7 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 
 	message = GDKmalloc(GDKMAXERRLEN);
 	if (message == NULL)
-		return M5OutOfMemory;
+		return M5OutOfMemory;	/* last resort */
 	len = snprintf(message, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
 	if (len >= GDKMAXERRLEN)	/* shouldn't happen */
 		return message;
@@ -95,6 +95,13 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	va_end(ap);
 
 	return(ret);
+}
+
+void
+freeException(str msg)
+{
+	if (msg != MAL_SUCCEED && msg != M5OutOfMemory)
+		GDKfree(msg);
 }
 
 /**
@@ -141,7 +148,7 @@ showException(stream *out, enum malexception type, const char *fcn, const char *
 	va_end(ap);
 
 	dumpExceptionsToStream(out, msg);
-	GDKfree(msg);
+	freeException(msg);
 }
 
 /**

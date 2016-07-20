@@ -448,6 +448,8 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 	FILE *pfile = NULL;
 	char buf[8];
 	pid_t daemon;
+	struct timeval tv;
+	int i;
 
 	if (argc != 2) {
 		command_help(2, &argv[-1]);
@@ -497,6 +499,15 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 		fprintf(stderr, "unable to shut down monetdbd[%d]: %s\n",
 				(int)daemon, strerror(errno));
 		return(1);
+	}
+
+	/* wait up to 5 seconds for monetdbd to actually stop */
+	for (i = 0; i < 10; i++) {
+		tv.tv_sec = 0;
+		tv.tv_usec = 500;
+		select(0, NULL, NULL, NULL, &tv);
+		if (kill(daemon, 0) == -1)
+			break;
 	}
 
 	return(0);

@@ -252,10 +252,10 @@ typedef enum mnstr_errors {
  * private pointer is passed on to the callback functions when they
  * are invoked. */
 stream_export stream *callback_stream(
-	void *private,
-	ssize_t (*read) (void *private, void *buf, size_t elmsize, size_t cnt),
-	void (*close) (void *private),
-	void (*destroy) (void *private),
+	void *priv,
+	ssize_t (*read) (void *priv, void *buf, size_t elmsize, size_t cnt),
+	void (*close) (void *priv),
+	void (*destroy) (void *priv),
 	const char *name);
 
 stream_export stream* stream_blackhole_create(void);

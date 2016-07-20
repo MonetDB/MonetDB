@@ -23,6 +23,7 @@
 #include "monetdb_config.h"
 #include "mal_builder.h"
 #include "mal_debugger.h"
+#include "mal_runtime.h"
 #include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
@@ -162,7 +163,6 @@ optimizeQuery(Client c)
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
-	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
 	mb = c->curprg->def;
 	chkProgram(c->fdout, c->nspace, mb);

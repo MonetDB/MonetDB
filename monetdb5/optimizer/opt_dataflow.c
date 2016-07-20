@@ -208,6 +208,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (GDKnr_threads <= 1)
 		return 0;
 
+	if ( optimizerIsApplied(mb,"dataflow"))
+		return 0;
 	(void) stk;
 	/* inlined functions will get their dataflow control later */
 	if ( mb->inlineProp)

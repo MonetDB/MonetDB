@@ -35,16 +35,12 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	if( p->retc > 1) strcat(msg,"(");
 	len= (int) strlen(msg);
 	for (k = 0; k < p->retc; k++) {
-		VarPtr v = getVar(mb, getArg(p, k));
 		if( isVarUDFtype(mb, getArg(p,k)) ){
 			str tpe = getTypeName(getVarType(mb, getArg(p, k)));
-			sprintf(msg+len, "%s:%s ", v->name, tpe);
+			sprintf(msg+len, "%s:%s ", getVarName(mb, getArg(p,k)), tpe);
 			GDKfree(tpe);
 		} else
-		if (isTmpVar(mb, getArg(p,k)))
-			sprintf(msg+len, "%c%d", refMarker(mb, getArg(p,k)), v->tmpindex);
-		else
-			sprintf(msg+len, "%s", v->name);
+			sprintf(msg+len, "%s", getVarName(mb,getArg(p,k)));
 		if (k < p->retc - 1)
 			strcat(msg,",");
 		len= (int) strlen(msg);
@@ -67,10 +63,8 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 					GDKfree(cv);
 				}
 
-			} else if (isTmpVar(mb, getArg(p,k)))
-				sprintf(msg+len, "%c%d", refMarker(mb,getArg(p,k)), v->tmpindex);
-			else
-				sprintf(msg+len, "%s", v->name);
+			} else
+				sprintf(msg+len, "%s", v->id);
 			if (k < p->argc - 1)
 				strcat(msg,",");
 			len= (int) strlen(msg);

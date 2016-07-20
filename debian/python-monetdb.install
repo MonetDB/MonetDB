@@ -1,3 +1,0 @@
-# usr/lib/python2.*/*-packages/* EXCEPT: MonetDBtesting
-debian/tmp/usr/lib/python2.*/*-packages/monetdb/*
-debian/tmp/usr/lib/python2.*/*-packages/python_monetdb-*.egg-info

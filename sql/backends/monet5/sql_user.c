@@ -22,7 +22,6 @@
 #include "bat5.h"
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
-#include "mal_recycle.h"
 #include "mcrypt.h"
 
 #if 0

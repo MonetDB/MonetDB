@@ -411,7 +411,7 @@ str RMTprelude(void *ret) {
 #else
 	type |= RMTT_32_BITS;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_INT || defined(MONET_OID32)
+#if SIZEOF_SIZE_T == SIZEOF_INT
 	type |= RMTT_32_OIDS;
 #else
 	type |= RMTT_64_OIDS;
@@ -1297,7 +1297,7 @@ str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #else
 	type |= RMTT_32_BITS;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_INT || defined(MONET_OID32)
+#if SIZEOF_SIZE_T == SIZEOF_INT
 	type |= RMTT_32_OIDS;
 #else
 	type |= RMTT_64_OIDS;

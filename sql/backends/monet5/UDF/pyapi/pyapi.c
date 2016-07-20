@@ -1242,6 +1242,8 @@ wrapup:
                 GDKreleasemmap(mmap_ptrs[i], mmap_sizes[i], mmap_id + i, &msg);
             }
         }
+        if (mmap_ptrs) GDKfree(mmap_ptrs);
+        if (mmap_sizes) GDKfree(mmap_sizes);
         if (query_sem > 0) {
             GDKreleasesem(query_sem, &msg);
         }
@@ -1283,7 +1285,7 @@ wrapup:
     GDKfree(pyreturn_values);
     GDKfree(pyinput_values);
     for (i = 0; i < pci->argc; i++)
-        if (args[i] != NULL)
+        if (args[i])
             GDKfree(args[i]);
     GDKfree(args);
     GDKfree(pycall);

@@ -31,8 +31,8 @@ Ready.
 
 [ "mTests_monetdb5_modules_mal_monetdb_0" ]
 [ "rmt1_b_bat_str"	]
-[ "rmt2_X_16_str"	]
-[ "rmt3_X_12_str"	]
+[ "rmt2_X_12_str"	]
+[ "rmt3_X_8_str"	]
 #--------------------------#
 # h	t	  # name
 # void	oid  # type

@@ -280,19 +280,12 @@ create_winconfig_conds_new_py:
 !IFDEF BITS32
 	$(ECHO) BITS32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) BITS32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !IFDEF BITS64
 	$(ECHO) BITS64_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!IFDEF MONET_OID32
-	$(ECHO) BITS64OID32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !ELSE
 	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !ENDIF
 !IFDEF CROSS_COMPILING
@@ -520,16 +513,6 @@ MAKEDEBUG=DEBUG=1
 !ENDIF
 
 PSAPILIB = psapi.lib
-
-# When compiled with plain `nmake`,
-# 64-bit OIDs are used by default on 64-bit Windows
-# (see monetdb_config.h.in for details);
-# compile with `nmake MONET_OID32=1` to use 32-bit OIDs on 64-bit Windows.
-!IF $(bits) == 64
-!IFDEF MONET_OID32
-CFLAGS = $(CFLAGS) -DMONET_OID32
-!ENDIF
-!ENDIF
 
 CONFIG_H = monetdb_config.h
 
