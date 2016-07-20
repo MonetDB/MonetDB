@@ -261,7 +261,6 @@ gdk_return GDKreleasesem(int sem_id, str *msg);
 void GDKreset(int status);
 void GDKsetenv(str name, str value);
 void GDKsetmemorylimit(lng nbytes);
-void GDKsetmemorylimit(lng nbytes){ GDK_mallocedbytes_limit = nbytes;
 ssize_t GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len);
 str GDKstrdup(const char *s) __attribute__((__warn_unused_result__));
 str GDKstrndup(const char *s, size_t n) __attribute__((__warn_unused_result__));

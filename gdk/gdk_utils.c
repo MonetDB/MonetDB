@@ -1682,7 +1682,9 @@ GDKmalloc_prefixsize(size_t size)
 	return s;
 }
 
-gdk_export void GDKsetmemorylimit(lng nbytes) {
+void
+GDKsetmemorylimit(lng nbytes)
+{
 	GDK_mallocedbytes_limit = nbytes;
 }
 
@@ -1706,7 +1708,8 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	}
 #ifndef NDEBUG
 	/* fail malloc for testing purposes depending on set limit */
-	if (GDK_mallocedbytes_limit >= 0 && size >(size_t) GDK_mallocedbytes_limit) {
+	if (GDK_mallocedbytes_limit >= 0 &&
+	    size > (size_t) GDK_mallocedbytes_limit) {
 		return NULL;
 	}
 #endif
