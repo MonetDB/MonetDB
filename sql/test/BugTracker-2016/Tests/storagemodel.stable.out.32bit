@@ -74,7 +74,7 @@ Ready.
 [ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0,	true	]
 [ "sys",	"_tables",	"name",	"varchar",	"writable",	8,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"query",	"varchar",	"writable",	45,	0,	false,	0,	false	]
+[ "sys",	"_tables",	"query",	"varchar",	"writable",	34,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0,	false	]

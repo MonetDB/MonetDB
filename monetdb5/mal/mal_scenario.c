@@ -551,8 +551,7 @@ runScenarioBody(Client c)
 /* we should actually show it [postponed]
 			mnstr_printf(c->fdout,"!%s\n",msg);
 */
-			if (msg != M5OutOfMemory)
-				GDKfree(msg);
+			freeException(msg);
 			msg = MAL_SUCCEED;
 		}
 		if (!c->state[0] &&

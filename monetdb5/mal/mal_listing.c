@@ -162,42 +162,42 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 	}
 
 	advance(t,base,len);
-	if (p->varargs & VARARGS)
+	if (p->varargs & VARARGS && t < base + len -3)
 		sprintf(t, "...");
 	advance(t,base,len);
 
-	if (p->retc == 1) {
+	if (p->retc == 1 && t < base +len) {
 		*t++ = ')';
 		tpe = getTypeName(getVarType(mb, getArg(p,0)));
 		snprintf(t,(len-(t-base)),":%s", tpe);
 		advance(t,base,len);
 		GDKfree(tpe);
-		if (p->varargs & VARRETS)
+		if (p->varargs & VARRETS && t < base + len -3)
 			sprintf(t, "...");
 		advance(t,base,len);
 	} else {
-		sprintf(t, ") (");
+		if( t < base +len -3) sprintf(t, ") (");
 		t += 3;
 		for (i = 0; i < p->retc; i++) {
 			arg = renderTerm(mb, 0, p, i, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_PROPS));
 			snprintf(t,(len-(t-base)),"%s", arg);
 			advance(t,base,len);
 			GDKfree(arg);
-			if( i<p->retc-1) {
+			if( i<p->retc-1 && t < base + len) {
 				sprintf(t,",");
 				advance(t,base,len);
 			}
 		}
-		if (p->varargs & VARRETS)
+		if (p->varargs & VARRETS && t < base +len -3)
 			sprintf(t, "...");
 		advance(t,base,len);
-		*t++ = ')';
+		if(t < base + len) *t++ = ')';
 	}
 
 	if (mb->binding)
 		snprintf(t,(len-(t-base))," address %s;", mb->binding);
 	else
-		sprintf(t, ";");
+		if( t <base + len) sprintf(t, ";");
 	return s;
 }
 
@@ -290,22 +290,24 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 
 		/* display multi-assignment list */
 		if (p->retc > 1)
-			*t++ = '(';
+			if( t< base+len) *t++ = '(';
 
 		for (i = 0; i < p->retc; i++) {
 			arg= renderTerm(mb, stk, p, i, flg);
 			snprintf(t,(len-(t-base)), "%s", arg);
 			GDKfree(arg);
 			advance(t,base,len);
-			if (i < p->retc - 1)
+			if ( t < base+len && i < p->retc - 1)
 				*t++ = ',';
 		}
 		if (p->retc > 1)
-			*t++ = ')';
+			if( t< base+len) *t++ = ')';
 
 		if (p->argc > p->retc || getFunctionId(p)) {
-			sprintf(t, " := ");
-			t += 4;
+			if( t< base+len-4) {
+				sprintf(t, " := ");
+				t += 4;
+			}
 		}
 		*t = 0;
 		break;
@@ -350,7 +352,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		GDKfree(arg);
 		advance(t,base,len);
 
-		if (i < p->argc -1){
+		if (i < p->argc -1 && t < base + len){
 			snprintf(t, (len-(t-base)), ",");
 			advance(t,base,len);
 		}
@@ -451,7 +453,7 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 
 	/* display optional multi-assignment list */
 	if( getArgType(mb,p,0) != TYPE_void){
-		if (p->retc > 1){
+		if (p->retc > 1 && t < base + len-1){
 			*t++ = '(';
 			*t=0;
 		}
@@ -462,11 +464,11 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 			GDKfree(nme);
 			advance(t,base,len);
 		}
-		if (p->retc > 1)
+		if (p->retc > 1 && t< base+len)
 			*t++ = ')';
-		*t++ = ':';
-		*t++ = '=';
-		*t++ = ' ';
+		if( t < base +len) *t++ = ':';
+		if( t < base +len) *t++ = '=';
+		if( t < base +len) *t++ = ' ';
 	}
 	*t =0;
 
@@ -479,17 +481,17 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 
 	// handle the arguments, constants should  be shown including their non-default type
 	/* display optional multi-assignment list */
-	*t++ = '(';
+	if( t< base + len) *t++ = '(';
 	for (i = p->retc; i < p->argc; i++) {
 		nme = shortRenderingTerm(mb, stk, p,i);
 		snprintf(t,(len-(t-base)), "%c%s", (i!= p->retc? ',':' '), nme);
 		GDKfree(nme);
 		advance(t,base,len);
-		if (i < p->retc - 1)
+		if (i < p->retc - 1 && t < base+len)
 			*t++ = ',';
 	}
-	*t++ = ' ';
-	*t++ = ')';
+	if( t < base + len) *t++ = ' ';
+	if( t < base + len) *t++ = ')';
 	*t=0;
 
 	if (t >= s + len)

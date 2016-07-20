@@ -588,6 +588,7 @@ main(int argc, char *argv[])
 				/* the parent, we want it to die, after we know the child
 				 * has a good time */
 				close(pfd[1]); /* close unused write end */
+				freeConfFile(ckv); /* make debug tools happy */
 				if (read(pfd[0], &buf, 1) != 1) {
 					Mfprintf(stderr, "unable to retrieve startup status\n");
 					return(1);
@@ -1072,7 +1073,6 @@ shutdown:
 	unlink(".merovingian_lock");
 	if (pidfilename != NULL) {
 		unlink(pidfilename);
-		free(pidfilename);
 	}
 
 	/* mostly for valgrind... */

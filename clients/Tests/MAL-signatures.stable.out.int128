@@ -20,7 +20,7 @@ Ready.
 # 15:16:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9622" "--port=32080"
 # 15:16:50 >  
 
-command aggr.avg(b:bat[:hge],g:bat[:oid],e:bat[:any_1]) (X_4:bat[:dbl],X_5:bat[:lng]) 
+command aggr.avg(b:bat[:hge],g:bat[:oid],e:bat[:any_1]) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRavg23_dbl;
 comment Grouped tail average on hge, also returns count
 
@@ -28,7 +28,7 @@ command aggr.avg(b:bat[:hge],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl;
 comment Grouped tail average on hge
 
-command aggr.avg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1]) (X_4:bat[:dbl],X_5:bat[:lng]) 
+command aggr.avg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1]) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRavg23_dbl;
 comment Grouped tail average on dbl, also returns count
 
@@ -36,7 +36,7 @@ command aggr.avg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl;
 comment Grouped tail average on dbl
 
-command aggr.avg(b:bat[:flt],g:bat[:oid],e:bat[:any_1]) (X_4:bat[:dbl],X_5:bat[:lng]) 
+command aggr.avg(b:bat[:flt],g:bat[:oid],e:bat[:any_1]) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRavg23_dbl;
 comment Grouped tail average on flt, also returns count
 
@@ -44,7 +44,7 @@ command aggr.avg(b:bat[:flt],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl;
 comment Grouped tail average on flt
 
-command aggr.avg(b:bat[:lng],g:bat[:oid],e:bat[:any_1]) (X_4:bat[:dbl],X_5:bat[:lng]) 
+command aggr.avg(b:bat[:lng],g:bat[:oid],e:bat[:any_1]) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRavg23_dbl;
 comment Grouped tail average on lng, also returns count
 
@@ -52,7 +52,7 @@ command aggr.avg(b:bat[:lng],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl;
 comment Grouped tail average on lng
 
-command aggr.avg(b:bat[:int],g:bat[:oid],e:bat[:any_1]) (X_4:bat[:dbl],X_5:bat[:lng]) 
+command aggr.avg(b:bat[:int],g:bat[:oid],e:bat[:any_1]) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRavg23_dbl;
 comment Grouped tail average on int, also returns count
 
@@ -60,7 +60,7 @@ command aggr.avg(b:bat[:int],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl;
 comment Grouped tail average on int
 
-command aggr.avg(b:bat[:sht],g:bat[:oid],e:bat[:any_1]) (X_4:bat[:dbl],X_5:bat[:lng]) 
+command aggr.avg(b:bat[:sht],g:bat[:oid],e:bat[:any_1]) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRavg23_dbl;
 comment Grouped tail average on sht, also returns count
 
@@ -68,7 +68,7 @@ command aggr.avg(b:bat[:sht],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl;
 comment Grouped tail average on sht
 
-command aggr.avg(b:bat[:bte],g:bat[:oid],e:bat[:any_1]) (X_4:bat[:dbl],X_5:bat[:lng]) 
+command aggr.avg(b:bat[:bte],g:bat[:oid],e:bat[:any_1]) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRavg23_dbl;
 comment Grouped tail average on bte, also returns count
 
@@ -1012,11 +1012,11 @@ command aggr.stdev(b:bat[:hge],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRstdev3_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on hge
 
-command aggr.subavg(b:bat[:hge],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:dbl],X_8:bat[:lng]) 
+command aggr.subavg(b:bat[:hge],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2cand_dbl;
 comment Grouped average aggregate with candidates list, also returns count
 
-command aggr.subavg(b:bat[:hge],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:dbl],X_7:bat[:lng]) 
+command aggr.subavg(b:bat[:hge],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2_dbl;
 comment Grouped average aggregate, also returns count
 
@@ -1248,11 +1248,11 @@ command aggr.stdev(b:bat[:dbl],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRstdev3_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on dbl
 
-command aggr.subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:dbl],X_8:bat[:lng]) 
+command aggr.subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2cand_dbl;
 comment Grouped average aggregate with candidates list, also returns count
 
-command aggr.subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:dbl],X_7:bat[:lng]) 
+command aggr.subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2_dbl;
 comment Grouped average aggregate, also returns count
 
@@ -1304,11 +1304,11 @@ command aggr.stdev(b:bat[:flt],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRstdev3_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on flt
 
-command aggr.subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:dbl],X_8:bat[:lng]) 
+command aggr.subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2cand_dbl;
 comment Grouped average aggregate with candidates list, also returns count
 
-command aggr.subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:dbl],X_7:bat[:lng]) 
+command aggr.subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2_dbl;
 comment Grouped average aggregate, also returns count
 
@@ -1360,11 +1360,11 @@ command aggr.stdev(b:bat[:lng],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRstdev3_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on lng
 
-command aggr.subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:dbl],X_8:bat[:lng]) 
+command aggr.subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2cand_dbl;
 comment Grouped average aggregate with candidates list, also returns count
 
-command aggr.subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:dbl],X_7:bat[:lng]) 
+command aggr.subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2_dbl;
 comment Grouped average aggregate, also returns count
 
@@ -1416,11 +1416,11 @@ command aggr.stdev(b:bat[:int],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRstdev3_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on int
 
-command aggr.subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:dbl],X_8:bat[:lng]) 
+command aggr.subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2cand_dbl;
 comment Grouped average aggregate with candidates list, also returns count
 
-command aggr.subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:dbl],X_7:bat[:lng]) 
+command aggr.subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2_dbl;
 comment Grouped average aggregate, also returns count
 
@@ -1472,11 +1472,11 @@ command aggr.stdev(b:bat[:sht],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRstdev3_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on sht
 
-command aggr.subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:dbl],X_8:bat[:lng]) 
+command aggr.subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2cand_dbl;
 comment Grouped average aggregate with candidates list, also returns count
 
-command aggr.subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:dbl],X_7:bat[:lng]) 
+command aggr.subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2_dbl;
 comment Grouped average aggregate, also returns count
 
@@ -1528,11 +1528,11 @@ command aggr.stdev(b:bat[:bte],g:bat[:oid],e:bat[:any_1]):bat[:dbl]
 address AGGRstdev3_dbl;
 comment Grouped tail standard deviation (sample/non-biased) on bte
 
-command aggr.subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_7:bat[:dbl],X_8:bat[:lng]) 
+command aggr.subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2cand_dbl;
 comment Grouped average aggregate with candidates list, also returns count
 
-command aggr.subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_6:bat[:dbl],X_7:bat[:lng]) 
+command aggr.subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (X_0:bat[:dbl],X_1:bat[:lng]) 
 address AGGRsubavg2_dbl;
 comment Grouped average aggregate, also returns count
 
@@ -1904,15 +1904,15 @@ command algebra.exist(b:bat[:any_1],val:any_1):bit
 address ALGexist;
 comment Returns whether 'val' occurs in b.
 
-pattern algebra.firstn(b:bat[:any],s:bat[:oid],g:bat[:oid],n:lng,asc:bit,distinct:bit) (X_7:bat[:oid],X_8:bat[:oid]) 
+pattern algebra.firstn(b:bat[:any],s:bat[:oid],g:bat[:oid],n:lng,asc:bit,distinct:bit) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:any],s:bat[:oid],n:lng,asc:bit,distinct:bit) (X_6:bat[:oid],X_7:bat[:oid]) 
+pattern algebra.firstn(b:bat[:any],s:bat[:oid],n:lng,asc:bit,distinct:bit) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B with candidate list S
 
-pattern algebra.firstn(b:bat[:any],n:lng,asc:bit,distinct:bit) (X_5:bat[:oid],X_6:bat[:oid]) 
+pattern algebra.firstn(b:bat[:any],n:lng,asc:bit,distinct:bit) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ALGfirstn;
 comment Calculate first N values of B
 
@@ -1940,9 +1940,9 @@ command algebra.groupby(gids:bat[:oid],cnts:bat[:lng]):bat[:oid]
 address ALGgroupby;
 comment Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 
-command algebra.ilikesubjoin(l:bat[:str],r:bat[:str],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid],X_8:bat[:oid]) 
+command algebra.ilikesubjoin(l:bat[:str],r:bat[:str],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ILIKEsubjoin1;
-command algebra.ilikesubjoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid],X_9:bat[:oid]) 
+command algebra.ilikesubjoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ILIKEsubjoin;
 comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case insensitive match.The result is two aligned bats with oids of matching rows.
 
@@ -1954,9 +1954,9 @@ command algebra.ilike(s:str,pat:str):bit
 address PCREilike2;
 command algebra.ilike(s:str,pat:str,esc:str):bit 
 address PCREilike3;
-command algebra.likesubjoin(l:bat[:str],r:bat[:str],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid],X_8:bat[:oid]) 
+command algebra.likesubjoin(l:bat[:str],r:bat[:str],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address LIKEsubjoin1;
-command algebra.likesubjoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid],X_9:bat[:oid]) 
+command algebra.likesubjoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address LIKEsubjoin;
 comment Join the string bat L with the pattern bat Rwith optional candidate lists SL and SR using pattern escape string ESCand doing a case sensitive match.The result is two aligned bats with oids of matching rows.
 
@@ -2028,32 +2028,32 @@ command algebra.subdiff(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],ni
 address ALGsubdiff;
 comment Difference of l and r with candidate lists
 
-command algebra.subrangejoin(l:bat[:any_1],r1:bat[:any_1],r2:bat[:any_1],sl:bat[:oid],sr:bat[:oid],li:bit,hi:bit,estimate:lng) (X_9:bat[:oid],X_10:bat[:oid]) 
+command algebra.subrangejoin(l:bat[:any_1],r1:bat[:any_1],r2:bat[:any_1],sl:bat[:oid],sr:bat[:oid],li:bit,hi:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ALGsubrangejoin;
 comment Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2
 
-command algebra.subbandjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (X_10:bat[:oid],X_11:bat[:oid]) 
+command algebra.subbandjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ALGsubbandjoin;
 comment Band join: values in l and r match if r - c1 <[=] l <[=] r + c2
 
-function algebra.subantijoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid],X_8:bat[:oid]);
-command algebra.subthetajoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],op:int,nil_matches:bit,estimate:lng) (X_8:bat[:oid],X_9:bat[:oid]) 
+function algebra.subantijoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]);
+command algebra.subthetajoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],op:int,nil_matches:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ALGsubthetajoin;
 comment Theta join with candidate lists
 
-command algebra.subsemijoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid],X_8:bat[:oid]) 
+command algebra.subsemijoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ALGsubsemijoin;
 comment Semi join with candidate lists
 
-command algebra.subouterjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid],X_8:bat[:oid]) 
+command algebra.subouterjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ALGsubouterjoin;
 comment Left outer join with candidate lists
 
-command algebra.subleftjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid],X_8:bat[:oid]) 
+command algebra.subleftjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ALGsubleftjoin;
 comment Left join with candidate lists
 
-command algebra.subjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid],X_8:bat[:oid]) 
+command algebra.subjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_0:bat[:oid],X_1:bat[:oid]) 
 address ALGsubjoin;
 comment Join
 
@@ -2065,11 +2065,11 @@ command algebra.subunique(b:bat[:any_1],s:bat[:oid]):bat[:oid]
 address ALGsubunique2;
 comment Select all unique values from the tail of the first input.	Input is a dense-headed BAT, the second input is a	dense-headed BAT with sorted tail, output is a dense-headed	BAT with in the tail the head value of the input BAT that was	selected.  The output BAT is sorted on the tail value.  The	second input BAT is a list of candidates.
 
-command algebra.subsort(b:bat[:any_1],o:bat[:oid],g:bat[:oid],reverse:bit,stable:bit) (X_6:bat[:any_1],X_7:bat[:oid],X_8:bat[:oid]) 
+command algebra.subsort(b:bat[:any_1],o:bat[:oid],g:bat[:oid],reverse:bit,stable:bit) (X_0:bat[:any_1],X_1:bat[:oid],X_2:bat[:oid]) 
 address ALGsubsort33;
 comment Returns a copy of the BAT sorted on tail values, a BAT that specifies         how the input was reordered, and a BAT with group information.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
 
-command algebra.subsort(b:bat[:any_1],o:bat[:oid],g:bat[:oid],reverse:bit,stable:bit) (X_6:bat[:any_1],X_7:bat[:oid]) 
+command algebra.subsort(b:bat[:any_1],o:bat[:oid],g:bat[:oid],reverse:bit,stable:bit) (X_0:bat[:any_1],X_1:bat[:oid]) 
 address ALGsubsort32;
 comment Returns a copy of the BAT sorted on tail values and a BAT that         specifies how the input was reordered.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
 
@@ -2077,11 +2077,11 @@ command algebra.subsort(b:bat[:any_1],o:bat[:oid],g:bat[:oid],reverse:bit,stable
 address ALGsubsort31;
 comment Returns a copy of the BAT sorted on tail values.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
 
-command algebra.subsort(b:bat[:any_1],o:bat[:oid],reverse:bit,stable:bit) (X_5:bat[:any_1],X_6:bat[:oid],X_7:bat[:oid]) 
+command algebra.subsort(b:bat[:any_1],o:bat[:oid],reverse:bit,stable:bit) (X_0:bat[:any_1],X_1:bat[:oid],X_2:bat[:oid]) 
 address ALGsubsort23;
 comment Returns a copy of the BAT sorted on tail values, a BAT that specifies         how the input was reordered, and a BAT with group information.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
 
-command algebra.subsort(b:bat[:any_1],o:bat[:oid],reverse:bit,stable:bit) (X_5:bat[:any_1],X_6:bat[:oid]) 
+command algebra.subsort(b:bat[:any_1],o:bat[:oid],reverse:bit,stable:bit) (X_0:bat[:any_1],X_1:bat[:oid]) 
 address ALGsubsort22;
 comment Returns a copy of the BAT sorted on tail values and a BAT that         specifies how the input was reordered.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
 
@@ -2089,11 +2089,11 @@ command algebra.subsort(b:bat[:any_1],o:bat[:oid],reverse:bit,stable:bit):bat[:a
 address ALGsubsort21;
 comment Returns a copy of the BAT sorted on tail values.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
 
-command algebra.subsort(b:bat[:any_1],reverse:bit,stable:bit) (X_4:bat[:any_1],X_5:bat[:oid],X_6:bat[:oid]) 
+command algebra.subsort(b:bat[:any_1],reverse:bit,stable:bit) (X_0:bat[:any_1],X_1:bat[:oid],X_2:bat[:oid]) 
 address ALGsubsort13;
 comment Returns a copy of the BAT sorted on tail values, a BAT that specifies         how the input was reordered, and a BAT with group information.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
 
-command algebra.subsort(b:bat[:any_1],reverse:bit,stable:bit) (X_4:bat[:any_1],X_5:bat[:oid]) 
+command algebra.subsort(b:bat[:any_1],reverse:bit,stable:bit) (X_0:bat[:any_1],X_1:bat[:oid]) 
 address ALGsubsort12;
 comment Returns a copy of the BAT sorted on tail values and a BAT that         specifies how the input was reordered.         The input and output are (must be) dense headed.         The order is descending if the reverse bit is set.		 This is a stable sort if the stable bit is set.
 
@@ -2480,15 +2480,15 @@ function batgeom.YMaxFromWKB(g:bat[:wkb]):bat[:dbl];
 function batgeom.YMinFromWKB(g:bat[:wkb]):bat[:dbl];
 function batgeom.Y(w:bat[:wkb]):bat[:dbl];
 function batgeom.Z(w:bat[:wkb]):bat[:dbl];
-command batgeom.coordinateFromMBR(X_1:bat[:mbr],X_2:int):bat[:dbl] 
+command batgeom.coordinateFromMBR(X_0:bat[:mbr],X_1:int):bat[:dbl] 
 address wkbCoordinateFromMBR_bat;
 comment returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr
 
-command batgeom.coordinateFromWKB(X_1:bat[:wkb],X_2:int):bat[:dbl] 
+command batgeom.coordinateFromWKB(X_0:bat[:wkb],X_1:int):bat[:dbl] 
 address wkbCoordinateFromWKB_bat;
 comment returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry
 
-command batgeom.mbr(X_1:bat[:wkb]):bat[:mbr] 
+command batgeom.mbr(X_0:bat[:wkb]):bat[:mbr] 
 address wkbMBR_bat;
 comment Creates the mbr for the given wkb.
 
@@ -20114,11 +20114,11 @@ pattern batcalc.>(b1:bat[:uuid],b2:bat[:uuid]):bat[:bit]
 address CMDbatGT;
 comment Return B1 > B2
 
-pattern batcalc.avg(b:bat[:dbl],s:bat[:oid]) (X_3:dbl,X_4:lng) 
+pattern batcalc.avg(b:bat[:dbl],s:bat[:oid]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:dbl]) (X_2:dbl,X_3:lng) 
+pattern batcalc.avg(b:bat[:dbl]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B
 
@@ -20130,11 +20130,11 @@ pattern batcalc.avg(b:bat[:dbl]):dbl
 address CMDcalcavg;
 comment average of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:flt],s:bat[:oid]) (X_3:dbl,X_4:lng) 
+pattern batcalc.avg(b:bat[:flt],s:bat[:oid]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:flt]) (X_2:dbl,X_3:lng) 
+pattern batcalc.avg(b:bat[:flt]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B
 
@@ -20146,11 +20146,11 @@ pattern batcalc.avg(b:bat[:flt]):dbl
 address CMDcalcavg;
 comment average of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:lng],s:bat[:oid]) (X_3:dbl,X_4:lng) 
+pattern batcalc.avg(b:bat[:lng],s:bat[:oid]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:lng]) (X_2:dbl,X_3:lng) 
+pattern batcalc.avg(b:bat[:lng]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B
 
@@ -20162,11 +20162,11 @@ pattern batcalc.avg(b:bat[:lng]):dbl
 address CMDcalcavg;
 comment average of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:int],s:bat[:oid]) (X_3:dbl,X_4:lng) 
+pattern batcalc.avg(b:bat[:int],s:bat[:oid]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:int]) (X_2:dbl,X_3:lng) 
+pattern batcalc.avg(b:bat[:int]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B
 
@@ -20178,11 +20178,11 @@ pattern batcalc.avg(b:bat[:int]):dbl
 address CMDcalcavg;
 comment average of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:sht],s:bat[:oid]) (X_3:dbl,X_4:lng) 
+pattern batcalc.avg(b:bat[:sht],s:bat[:oid]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:sht]) (X_2:dbl,X_3:lng) 
+pattern batcalc.avg(b:bat[:sht]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B
 
@@ -20194,11 +20194,11 @@ pattern batcalc.avg(b:bat[:sht]):dbl
 address CMDcalcavg;
 comment average of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:bte],s:bat[:oid]) (X_3:dbl,X_4:lng) 
+pattern batcalc.avg(b:bat[:bte],s:bat[:oid]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:bte]) (X_2:dbl,X_3:lng) 
+pattern batcalc.avg(b:bat[:bte]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B
 
@@ -21242,11 +21242,11 @@ pattern batcalc.abs(b:bat[:bte]):bat[:bte]
 address CMDbatABS;
 comment Unary abs over the tail of the bat
 
-pattern batcalc.avg(b:bat[:hge],s:bat[:oid]) (X_3:dbl,X_4:lng) 
+pattern batcalc.avg(b:bat[:hge],s:bat[:oid]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B with candidates list
 
-pattern batcalc.avg(b:bat[:hge]) (X_2:dbl,X_3:lng) 
+pattern batcalc.avg(b:bat[:hge]) (X_0:dbl,X_1:lng) 
 address CMDcalcavg;
 comment average and number of non-nil values of B
 
@@ -31773,7 +31773,7 @@ command bat.isaKey(b:bat[:any_1]):bit
 address BKCgetKey;
 comment Return whether the column tail values are unique (key).
 
-command bat.info(b:bat[:any_1]) (X_2:bat[:str],X_3:bat[:str]) 
+command bat.info(b:bat[:any_1]) (X_0:bat[:str],X_1:bat[:str]) 
 address BKCinfo;
 comment Produce a table containing information about a BAT in [attribute,value] format.         It contains all properties of the BAT record. 
 
@@ -36585,7 +36585,7 @@ command calc.int(v:void,digits:int):int
 address nil_2num_int;
 comment cast to int and check for overflow
 
-command calc.identity(X_1:any_2):oid 
+command calc.identity(X_0:any_2):oid 
 address SQLidentity;
 comment Returns a unique row identitfier.
 
@@ -38193,7 +38193,7 @@ pattern clients.changeUsername(old:str,new:str):void
 address CLTchangeUsername;
 comment Change the username of the user into the new string
 
-pattern clients.getUsers() (X_1:bat[:oid],X_2:bat[:str]) 
+pattern clients.getUsers() (X_0:bat[:oid],X_1:bat[:str]) 
 address CLTgetUsers;
 comment return a BAT with user id and one with name available in the system
 
@@ -38233,7 +38233,7 @@ pattern clients.getScenario():str
 address CLTgetScenario;
 comment Retrieve current scenario name.
 
-pattern clients.getInfo() (X_1:bat[:str],X_2:bat[:str]) 
+pattern clients.getInfo() (X_0:bat[:str],X_1:bat[:str]) 
 address CLTInfo;
 comment Pseudo bat with client attributes.
 
@@ -38799,7 +38799,7 @@ command geom.ExteriorRing(w:wkb):wkb
 address wkbExteriorRing;
 comment Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.
 
-command geom.EnvelopeFromCoordinates(X_1:dbl,X_2:dbl,X_3:dbl,X_4:dbl,X_5:int):wkb 
+command geom.EnvelopeFromCoordinates(X_0:dbl,X_1:dbl,X_2:dbl,X_3:dbl,X_4:int):wkb 
 address wkbEnvelopeFromCoordinates;
 comment A polygon created by the provided coordinates
 
@@ -38889,7 +38889,7 @@ comment Returns the cartesian 2D length of the geometry if it is a linestrin or 
 
 function geom.LineFromText(wkt:str):wkb;
 function geom.LineFromText(wkt:str,srid:int):wkb;
-command geom.MakeBox2D(X_1:wkb,X_2:wkb):mbr 
+command geom.MakeBox2D(X_0:wkb,X_1:wkb):mbr 
 address wkbBox2D;
 comment Creates an mbr from the two 2D points
 
@@ -38947,7 +38947,7 @@ command geom.PointsNum(w:wkb,check:int):int
 address wkbNumPoints;
 comment The number of points in the Geometry. If check=1, the geometry should be a linestring
 
-command geom.Polygon(X_1:wkb,X_2:bat[:wkb],X_3:int):wkb 
+command geom.Polygon(X_0:wkb,X_1:bat[:wkb],X_2:int):wkb 
 address wkbMakePolygon;
 comment Returns a Polygon created from the provided LineStrings
 
@@ -39014,11 +39014,11 @@ function geom.YMaxFromWKB(g:wkb):dbl;
 function geom.YMinFromWKB(g:wkb):dbl;
 function geom.Y(w:wkb):dbl;
 function geom.Z(w:wkb):dbl;
-command geom.coordinateFromMBR(X_1:mbr,X_2:int):dbl 
+command geom.coordinateFromMBR(X_0:mbr,X_1:int):dbl 
 address wkbCoordinateFromMBR;
 comment returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr
 
-command geom.coordinateFromWKB(X_1:wkb,X_2:int):dbl 
+command geom.coordinateFromWKB(X_0:wkb,X_1:int):dbl 
 address wkbCoordinateFromWKB;
 comment returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry
 
@@ -39144,7 +39144,7 @@ command geom.mbrOverlaps(geom1:wkb,geom2:wkb):bit
 address mbrOverlaps_wkb;
 comment Returns true if the mbr of geom1 overlaps the mbr of geom2
 
-command geom.mbr(X_1:wkb):mbr 
+command geom.mbr(X_0:wkb):mbr 
 address wkbMBR;
 comment Creates the mbr for the given wkb.
 
@@ -39310,11 +39310,11 @@ command inet.>(v:inet,w:inet):bit
 address INET_comp_GT;
 comment Whether v is greater than w
 
-command inet.abbrev(X_1:inet):str 
+command inet.abbrev(X_0:inet):str 
 address INETabbrev;
 comment Abbreviated display format as text
 
-command inet.broadcast(X_1:inet):inet 
+command inet.broadcast(X_0:inet):inet 
 address INETbroadcast;
 comment Returns the broadcast address for network
 
@@ -39324,11 +39324,11 @@ command inet.#fromstr():void
 address INETfromString;
 comment Convert a string to an inet
 
-command inet.hostmask(X_1:inet):inet 
+command inet.hostmask(X_0:inet):inet 
 address INEThostmask;
 comment Construct host mask for network
 
-command inet.host(X_1:inet):str 
+command inet.host(X_0:inet):str 
 address INEThost;
 comment Extract IP address as text
 
@@ -39336,15 +39336,15 @@ command inet.isnil(v:inet):bit
 address INET_isnil;
 comment Nil test for inet value
 
-command inet.masklen(X_1:inet):int 
+command inet.masklen(X_0:inet):int 
 address INETmasklen;
 comment Extract netmask length
 
-command inet.network(X_1:inet):inet 
+command inet.network(X_0:inet):inet 
 address INETnetwork;
 comment Extract network part of address
 
-command inet.netmask(X_1:inet):inet 
+command inet.netmask(X_0:inet):inet 
 address INETnetmask;
 comment Construct netmask for network
 
@@ -39354,11 +39354,11 @@ comment Create an inet from a string literal
 
 command inet.#null():void 
 address INETnull;
-command inet.setmasklen(X_1:inet,X_2:int):inet 
+command inet.setmasklen(X_0:inet,X_1:int):inet 
 address INETsetmasklen;
 comment Set netmask length for inet value
 
-command inet.text(X_1:inet):str 
+command inet.text(X_0:inet):str 
 address INETtext;
 comment Extract IP address and netmask length as text
 
@@ -39406,6 +39406,10 @@ pattern io.print(val:any_1,lst:any...):void
 address IOprint_val;
 comment Print a MAL value tuple .
 
+command io.setmemorylimit(nbytes:lng):void 
+address IOsetmemorylimit;
+comment Set memory limit for testing
+
 pattern io.stdout():streams 
 address io_stdout;
 comment return the output stream for the database client
@@ -39446,11 +39450,11 @@ pattern iterator.new(b:bat[:any_2]) (h:oid,t:any_2)
 address ITRbunIterator;
 comment Process the buns one by one extracted from a void table.
 
-command iterator.next(b:bat[:any_2],size:lng) (X_3:lng,X_4:bat[:any_2]) 
+command iterator.next(b:bat[:any_2],size:lng) (X_0:lng,X_1:bat[:any_2]) 
 address ITRnextChunk;
 comment Produce the next chunk for processing.
 
-command iterator.new(b:bat[:any_2],size:lng) (X_3:lng,X_4:bat[:any_2]) 
+command iterator.new(b:bat[:any_2],size:lng) (X_0:lng,X_1:bat[:any_2]) 
 address ITRnewChunk;
 comment Create an iterator with fixed granule size.	  The result is a view.
 
@@ -39910,7 +39914,7 @@ pattern mat.pack(b:bat[:any_2]...):bat[:any_2]
 address MATpack;
 comment Materialize the MAT into a BAT
 
-pattern mat.pack(X_1:any_2...):bat[:any_2] 
+pattern mat.pack(X_0:any_2...):bat[:any_2] 
 address MATpackValues;
 comment Materialize the MAT (of values) into a BAT
 
@@ -39972,13 +39976,13 @@ pattern mdb.getDefinition():bat[:str]
 address MDBgetDefinition;
 comment Returns a string representation of the current function 	with typing information attached
 
-pattern mdb.getStackTrace() (X_1:bat[:int],X_2:bat[:str]) 
+pattern mdb.getStackTrace() (X_0:bat[:int],X_1:bat[:str]) 
 address MDBStkTrace;
-pattern mdb.getStackFrame() (X_1:bat[:str],X_2:bat[:str]) 
+pattern mdb.getStackFrame() (X_0:bat[:str],X_1:bat[:str]) 
 address MDBgetStackFrame;
 comment Collect variable binding of current (n-th) stack frame.
 
-pattern mdb.getStackFrame(i:int) (X_2:bat[:str],X_3:bat[:str]) 
+pattern mdb.getStackFrame(i:int) (X_0:bat[:str],X_1:bat[:str]) 
 address MDBgetStackFrameN;
 pattern mdb.getStackDepth():int 
 address MDBStkDepth;
@@ -40414,9 +40418,9 @@ command mtime.daytime(h:int,m:int,s:int,mi:int):daytime
 address MTIMEdaytime_create;
 comment creates a time from (hours,minutes,	seconds,milliseconds) parameters.
 
-command mtime.daytime(X_1:lng):daytime 
+command mtime.daytime(X_0:lng):daytime 
 address MTIMEsecs2daytime;
-command mtime.daytime(X_1:daytime):daytime 
+command mtime.daytime(X_0:daytime):daytime 
 address MTIMEdaytime2daytime;
 command mtime.daytime(s:str):daytime 
 address MTIMEdaytime_fromstr;
@@ -40430,11 +40434,11 @@ command mtime.date(s:str):date
 address MTIMEdate_fromstr;
 comment convert the string to a type date value
 
-command mtime.date(X_1:void):date 
+command mtime.date(X_0:void):date 
 address MTIMEnil2date;
 comment generate the nil date
 
-command mtime.date(X_1:date):date 
+command mtime.date(X_0:date):date 
 address MTIMEdate2date;
 comment generate the nil date
 
@@ -41172,11 +41176,11 @@ command remote.disconnect(conn:str):void
 address RMTdisconnect;
 comment disconnects the connection pointed to by handle (received from a call to connect()
 
-pattern remote.exec(conn:str,mod:str,func:str,X_4:str...):str... 
+pattern remote.exec(conn:str,mod:str,func:str,X_0:str...):str... 
 address RMTexec;
 comment remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result
 
-pattern remote.exec(conn:str,mod:str,func:str,X_4:str...):str 
+pattern remote.exec(conn:str,mod:str,func:str,X_0:str...):str 
 address RMTexec;
 comment remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result
 
@@ -41215,30 +41219,6 @@ comment register <mod>.<fcn> at the remote site
 command remote.resolve(pattern:str):bat[:str] 
 address RMTresolve;
 comment resolve a pattern against Merovingian and return the URIs
-
-pattern recycle.append(delta:int,sname:str,tbl:str,col:str,val:any):void 
-address RECYCLEappendSQL;
-comment Correct recycle pool for SQL append statement
-
-pattern recycle.drop():void 
-address RECYCLEdropWrap;
-comment Remove the recycle cache
-
-pattern recycle.delete(delta:int,sname:str,tbl:str,col:str):void 
-address RECYCLEdeleteSQL;
-comment Correct recycle pool for SQL delete statement
-
-pattern recycle.dump():void 
-address RECYCLEdumpWrap;
-comment Dump summary of recycle table
-
-pattern recycle.reset(bid:bat[:any]):void 
-address RECYCLEresetBATwrap;
-comment Reset a recycled bat variable
-
-pattern recycle.setCache(clines:int):void 
-address RECYCLEsetCache;
-comment Set recycler cache line parameter
 
 command sample.subuniform(b:bat[:any],p:dbl):bat[:oid] 
 address SAMPLEuniform_dbl;
@@ -41698,7 +41678,7 @@ comment return the next value of the sequence
 
 pattern sql.optimizer_updates():void 
 address SQLoptimizersUpdate;
-command sql.optimizers() (X_1:bat[:str],X_2:bat[:str],X_3:bat[:str]) 
+command sql.optimizers() (X_0:bat[:str],X_1:bat[:str],X_2:bat[:str]) 
 address getPipeCatalog;
 command sql.prelude():void 
 address SQLprelude;
@@ -42106,19 +42086,19 @@ command str.unicodeAt(s:str,index:int):int
 address STRWChrAt;
 comment get a unicode character	(as an int) from a string position.
 
-command status.batStatistics() (X_1:bat[:str],X_2:bat[:str]) 
+command status.batStatistics() (X_0:bat[:str],X_1:bat[:str]) 
 address SYSgdkEnv;
 comment Show distribution of bats by kind
 
-command status.cpuStatistics() (X_1:bat[:str],X_2:bat[:int]) 
+command status.cpuStatistics() (X_0:bat[:str],X_1:bat[:int]) 
 address SYScpuStatistics;
 comment Global cpu usage information
 
-command status.getThreads() (X_1:bat[:int],X_2:bat[:str]) 
+command status.getThreads() (X_0:bat[:int],X_1:bat[:str]) 
 address SYSgdkThread;
 comment Produce overview of active threads
 
-command status.ioStatistics() (X_1:bat[:str],X_2:bat[:int]) 
+command status.ioStatistics() (X_0:bat[:str],X_1:bat[:int]) 
 address SYSioStatistics;
 comment Global IO activity information
 
@@ -42134,11 +42114,11 @@ command status.mem_cursize():lng
 address SYSgetmem_cursize;
 comment The amount of physical swapspace in KB that is currently in use
 
-command status.memUsage(minsize:lng) (X_2:bat[:str],X_3:bat[:lng]) 
+command status.memUsage(minsize:lng) (X_0:bat[:str],X_1:bat[:lng]) 
 address SYSmem_usage;
 comment Get a split-up of how much memory blocks are in use
 
-command status.memStatistics() (X_1:bat[:str],X_2:bat[:lng]) 
+command status.memStatistics() (X_0:bat[:str],X_1:bat[:lng]) 
 address SYSmemStatistics;
 comment Global memory usage information
 
@@ -42154,7 +42134,7 @@ command status.vm_cursize():lng
 address SYSgetvm_cursize;
 comment The amount of logical VM space in KB that is currently in use
 
-command status.vmStatistics(minsize:lng) (X_2:bat[:str],X_3:bat[:lng]) 
+command status.vmStatistics(minsize:lng) (X_0:bat[:str],X_1:bat[:lng]) 
 address SYSvm_usage;
 comment Get a split-up of how much virtual memory blocks are in use
 
@@ -42372,7 +42352,7 @@ command txtsim.levenshtein(s:str,t:str,insdel_cost:int,replace_cost:int,transpos
 address levenshtein_impl;
 comment Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)
 
-command txtsim.qgramselfjoin(qgram:bat[:oid],id:bat[:oid],pos:bat[:int],len:bat[:int],c:flt,k:int) (X_7:bat[:int],X_8:bat[:int]) 
+command txtsim.qgramselfjoin(qgram:bat[:oid],id:bat[:oid],pos:bat[:int],len:bat[:int],c:flt,k:int) (X_0:bat[:int],X_1:bat[:int]) 
 address CMDqgramselfjoin;
 comment QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions
 
@@ -42674,7 +42654,7 @@ command zorder.decode_x(z:oid):int
 address ZORDdecode_int_oid_x;
 comment Derive the z-order x-coordinate
 
-command zorder.decode(z:bat[:oid]) (X_2:bat[:int],X_3:bat[:int]) 
+command zorder.decode(z:bat[:oid]) (X_0:bat[:int],X_1:bat[:int]) 
 address ZORDbatdecode_int_oid;
 comment Derive the z-order pair
 

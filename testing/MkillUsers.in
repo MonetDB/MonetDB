@@ -71,7 +71,7 @@ if [   "$TEMPLATE_BUILD" ] ; then BINPATH="$BINPATH   $TEMPLATE_BUILD/src/tools 
 if [        "$SQL_BUILD" ] ; then BINPATH="$BINPATH        $SQL_BUILD/src/tools        $SQL_BUILD/src/tools/.libs" ; fi
 if [       "$GEOM_BUILD" ] ; then BINPATH="$BINPATH       $GEOM_BUILD/src/tools       $GEOM_BUILD/src/tools/.libs" ; fi
 for b in $BINPATH ; do
-	files="$files `ls $b/* 2>/dev/null | egrep '/(lt-)?(mserver5|Mserver|mclient|mclient\.py|Mdiff|Mlog|Mtimeout|pf|actuator|sensor)$'`"
+	files="$files `ls $b/* 2>/dev/null | egrep '/(lt-)?(mserver5|mclient|mclient\.py|Mdiff|Mlog|Mtimeout)$'`"
 done
 
 if type -p fuser >/dev/null
