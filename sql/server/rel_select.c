@@ -1360,8 +1360,10 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			exps = nexps;
 		}
 	}
-	if (!f)
+	if (!f) {
+		return sql_error(sql, 02, "SELECT: no such FILTER function '%s'", filter_op);
 		return NULL;
+	}
 	e = exp_filter(sql->sa, l, r, f, anti);
 
 	/* atom or row => select */
