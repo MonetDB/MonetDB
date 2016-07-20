@@ -5884,7 +5884,7 @@ wkbDWithinXYZ(bit *out, wkb **geomWKB_a, dbl *x, dbl *y, dbl *z, int *srid, doub
 {
 	double distanceComputed;
 	str err;
-    wkb **geomWKB_b = NULL;
+    wkb *geomWKB_b = NULL;
 
 	GEOSGeom geosGeometry_b;
 	GEOSCoordSeq seq;
@@ -5921,15 +5921,21 @@ wkbDWithinXYZ(bit *out, wkb **geomWKB_a, dbl *x, dbl *y, dbl *z, int *srid, doub
 
     if (*srid != int_nil)
     	GEOSSetSRID(geosGeometry_b, *srid);
+    
+    if ((geomWKB_b = geos2wkb(geosGeometry_b)) == NULL) {
+        GEOSGeom_destroy(geosGeometry_b);
+		throw(MAL, "wkbDWithinXYZ", "geos2wkb failed");
+    }
 
-	if (wkb_isnil(*geomWKB_a) || wkb_isnil(*geomWKB_b) || *distance == dbl_nil) {
-		*out = bit_nil;
-		return MAL_SUCCEED;
+	if (wkb_isnil(*geomWKB_a) || wkb_isnil(geomWKB_b) || *distance == dbl_nil) {
+        GEOSGeom_destroy(geosGeometry_b);
+		throw(MAL, "wkbDWithinXYZ", "one of the arguments is NULL");
 	}
-	if ((err = wkbDistance(&distanceComputed, geomWKB_a, geomWKB_b)) != MAL_SUCCEED) {
+	if ((err = wkbDistance(&distanceComputed, geomWKB_a, &geomWKB_b)) != MAL_SUCCEED) {
 		return err;
 	}
 
+    GEOSGeom_destroy(geosGeometry_b);
 	*out = (distanceComputed <= *distance);
 
 	return MAL_SUCCEED;
