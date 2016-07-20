@@ -2558,7 +2558,7 @@ char *buffer_get_buf(buffer *b);
 void buffer_init(buffer *b, char *buf, size_t size);
 stream *buffer_rastream(buffer *b, const char *name);
 stream *buffer_wastream(buffer *b, const char *name);
-stream *callback_stream(void *private, ssize_t( *read)(void *private, void *buf, size_t elmsize, size_t cnt), void( *close)(void *private), void( *destroy)(void *private), const char *name);
+stream *callback_stream(void *priv, ssize_t( *read)(void *priv, void *buf, size_t elmsize, size_t cnt), void( *close)(void *priv), void( *destroy)(void *priv), const char *name);
 void close_stream(stream *s);
 stream *file_rastream(FILE *fp, const char *name);
 stream *file_rstream(FILE *fp, const char *name);

@@ -1247,7 +1247,7 @@ gdk_export bte ATOMelmshift(int sz);
 
 #define bunfastapp(b, t)						\
 	do {								\
-		register BUN _p = BUNlast(b);				\
+		BUN _p = BUNlast(b);					\
 		if (_p >= BATcapacity(b)) {				\
 			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
 				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
@@ -2475,7 +2475,7 @@ gdk_export void *THRdata[THREADDATA];
 #ifndef GDK_NOLINK
 
 static inline bat
-BBPcheck(register bat x, register const char *y)
+BBPcheck(bat x, const char *y)
 {
 	if (x && x != bat_nil) {
 		assert(x > 0);
@@ -2490,9 +2490,9 @@ BBPcheck(register bat x, register const char *y)
 }
 
 static inline BAT *
-BATdescriptor(register bat i)
+BATdescriptor(bat i)
 {
-	register BAT *b = NULL;
+	BAT *b = NULL;
 
 	if (BBPcheck(i, "BATdescriptor")) {
 		BBPfix(i);
