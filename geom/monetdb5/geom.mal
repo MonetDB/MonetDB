@@ -754,6 +754,9 @@ function Translate(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dz:dbl) :bat[:wkb];
 	return x;
 end Translate;
 
+command DWithin(a:bat[:wkb], b:bat[:wkb], dst:dbl) :bat[:bit] address wkbDWithin_bat
+comment "Returns true if the two geometries are within the specifies distance from each other";
+
 command GeometryN(w:bat[:wkb], n:int) :bat[:wkb] address wkbGeometryN_bat
 comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL";
 command NumGeometries(w:bat[:wkb]) :bat[:int] address wkbNumGeometries_bat
