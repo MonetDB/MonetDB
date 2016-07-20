@@ -163,7 +163,9 @@ geom_export str wkbRelate(bit*, wkb**, wkb**, str*);
 geom_export str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbDWithin(bit*, wkb**, wkb**, dbl*);
+geom_export str wkbDWithinXYZ(bit*, wkb**, dbl*, dbl*, dbl*, int*, dbl*);
 geom_export str wkbDWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, dbl*);
+geom_export str wkbDWithinXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz, int* srid, dbl* dist);
 
 //LocateAlong
 //LocateBetween

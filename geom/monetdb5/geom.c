@@ -5756,7 +5756,63 @@ wkbIntersects(bit *out, wkb **geomWKB_a, wkb **geomWKB_b)
 str
 wkbIntersectsXYZ(bit *out, wkb **geomWKB_a, dbl *x, dbl *y, dbl *z, int *srid)
 {
-	return wkbspatialXYZ(out, geomWKB_a, x, y, z, srid, GEOSIntersects, "geom.Intersects");
+	return wkbspatialXYZ(out, geomWKB_a, x, y, z, srid, GEOSIntersects, "geom.IntersectsXYZ");
+}
+
+str
+wkbDWithinXYZ(bit *out, wkb **geomWKB_a, dbl *x, dbl *y, dbl *z, int *srid, double *distance)
+{
+	double distanceComputed;
+	str err;
+    wkb **geomWKB_b = NULL;
+
+	GEOSGeom geosGeometry_b;
+	GEOSCoordSeq seq;
+
+	if (wkb_isnil(*geomWKB_a)) {
+		*out = bit_nil;
+		return MAL_SUCCEED;
+	}
+
+    /*Build Geometry b*/
+	if (*x == dbl_nil || *y == dbl_nil || *z == dbl_nil) {
+		*out = bit_nil;
+		return MAL_SUCCEED;
+	}
+
+	//create the point from the coordinates
+	seq = GEOSCoordSeq_create(1, 3);
+
+	if (seq == NULL) {
+		throw(MAL, "wkbDWithinXYZ", "GEOSCoordSeq_create failed");
+    }
+
+	if (!GEOSCoordSeq_setOrdinate(seq, 0, 0, *x) ||
+	    !GEOSCoordSeq_setOrdinate(seq, 0, 1, *y) ||
+        !GEOSCoordSeq_setOrdinate(seq, 0, 2, *z)) {
+		GEOSCoordSeq_destroy(seq);
+		throw(MAL, "wkbDWithinXYZ", "GEOSCoordSeq_setOrdinate failed");
+	}
+
+	if ((geosGeometry_b = GEOSGeom_createPoint(seq)) == NULL) {
+		GEOSCoordSeq_destroy(seq);
+		throw(MAL, "wkbDWithinXYZ", "Failed to create GEOSGeometry from the coordinates");
+	}
+
+    if (*srid != int_nil)
+    	GEOSSetSRID(geosGeometry_b, *srid);
+
+	if (wkb_isnil(*geomWKB_a) || wkb_isnil(*geomWKB_b) || *distance == dbl_nil) {
+		*out = bit_nil;
+		return MAL_SUCCEED;
+	}
+	if ((err = wkbDistance(&distanceComputed, geomWKB_a, geomWKB_b)) != MAL_SUCCEED) {
+		return err;
+	}
+
+	*out = (distanceComputed <= *distance);
+
+	return MAL_SUCCEED;
 }
 
 str
