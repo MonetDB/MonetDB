@@ -1021,3 +1021,11 @@ comment "Return the geometry pairs that intersect";
 command geom.IntersectsXYZsubjoin(l:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],sr:bat[:oid])
 address IntersectsXYZsubjoin
 comment "Return the geometry pairs that intersect";
+
+command geom.DWithinsubjoin(l:bat[:wkb], r:bat[:wkb], dist:dbl, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],rr:bat[:oid])
+address DWithinsubjoin
+comment "Returns the geometry pairs are withing distance dist";
+
+command geom.DWithinXYZsubjoin(l:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int, dist:dbl, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],sr:bat[:oid])
+address DWithinXYZsubjoin
+comment "Returns the geometry pairs are withing distance dist";

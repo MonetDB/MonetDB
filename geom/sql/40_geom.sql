@@ -4474,3 +4474,5 @@ CREATE FUNCTION Patch_to_Geom(a Geometry, x double, y double, z double) RETURNS 
 
 CREATE filter function Intersects(geom1 Geometry, geom2 Geometry) external name geom."Intersects";
 CREATE filter function Intersects(geom1 Geometry, x double, y double, z double, srid int) external name geom."IntersectsXYZ";
+CREATE filter function DWithin(geom1 Geometry, geom2 Geometry, dist double) external name geom."DWithin";
+CREATE filter function DWithin(geom1 Geometry, x double, y double, z double, srid int, dist double) external name geom."DWithinXYZ";
