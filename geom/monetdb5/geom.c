@@ -2084,6 +2084,124 @@ wkbDumpPointsP(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB,
 }
 
 static str
+wkbDumpRings_(bat *parentBAT_id, bat *geomBAT_id, wkb **geomWKB, int *parent)
+{
+	BAT *geomBAT = NULL, *parentBAT = NULL;
+	GEOSGeom geosGeometry;
+    const GEOSGeometry *ring;
+    wkb *geom;
+	unsigned int numInteriorRings, i;
+	str err;
+
+	if (wkb_isnil(*geomWKB)) {
+
+		//create new empty BAT for the output
+		if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
+			*geomBAT_id = bat_nil;
+			throw(MAL, "geom.DumpRings", "Error creating new BAT");
+		}
+
+        if (parent) {
+            if ((parentBAT = COLnew(0, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
+                BBPunfix(geomBAT->batCacheid);
+                *parentBAT_id = bat_nil;
+                throw(MAL, "geom.DumpRings", "Error creating new BAT");
+            }
+        }
+
+		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+        if (parent) {
+    		BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
+        }
+
+		return MAL_SUCCEED;
+	}
+
+    geosGeometry = wkb2geos(*geomWKB);
+	ring = GEOSGetExteriorRing(geosGeometry);
+	if(!ring) {
+        BBPunfix(geomBAT->batCacheid);
+        if (parent)
+            BBPunfix(parentBAT->batCacheid);
+		return createException(MAL, "geom.DumpRings","GEOSGetExteriorRing failed");
+	}
+    if((geom = geos2wkb(ring)) != NULL) {
+        BBPunfix(geomBAT->batCacheid);
+        if (parent)
+            BBPunfix(parentBAT->batCacheid);
+        return createException(MAL, "geom.DumpRings","geos2wkb failed");
+    }
+    if (BUNappend(geomBAT, geom, TRUE) != GDK_SUCCEED) {
+        BBPunfix(geomBAT->batCacheid);
+        if (parent)
+            BBPunfix(parentBAT->batCacheid);
+        return createException(MAL, "geom.DumpRings","BUNappend failed");
+    }
+
+	//check the interior rings
+	if ((numInteriorRings = GEOSGetNumInteriorRings(geosGeometry) == -1)) {
+        BBPunfix(geomBAT->batCacheid);
+        if (parent)
+            BBPunfix(parentBAT->batCacheid);
+		return createException(MAL, "geom.DumpRings","GEOSGetNumInteriorRings failed");
+    }
+
+	for(i=0; i<numInteriorRings; i++) {
+		ring = GEOSGetInteriorRingN(geosGeometry, i);
+        if (ring == NULL) {
+            BBPunfix(geomBAT->batCacheid);
+            if (parent)
+                BBPunfix(parentBAT->batCacheid);
+	    	return createException(MAL, "geom.DumpRings","GEOSGetInteriorRingN failed");
+        }
+        
+        if((geom = geos2wkb(ring)) != NULL) {
+            BBPunfix(geomBAT->batCacheid);
+            if (parent)
+                BBPunfix(parentBAT->batCacheid);
+	    	return createException(MAL, "geom.DumpRings","geos2wkb failed");
+        }
+        if (BUNappend(geomBAT, geom, TRUE) != GDK_SUCCEED) {
+            BBPunfix(geomBAT->batCacheid);
+            if (parent)
+                BBPunfix(parentBAT->batCacheid);
+	    	return createException(MAL, "geom.DumpRings","BUNappend failed");
+        }
+	}
+
+    if (parent) {
+        if ((parentBAT = COLnew(0, ATOMindex("int"), numInteriorRings+1, TRANSIENT)) == NULL) {
+            BBPunfix(geomBAT->batCacheid);
+            throw(MAL, "geom.DumpRings", "Error creating new BAT");
+        }
+        /*Get the tail and add parentID geometriesNum types*/
+        for (i = 0; i < numInteriorRings+1; i++) {
+            if (BUNappend(parentBAT, parent, TRUE) != GDK_SUCCEED) {
+                err = createException(MAL, "geom.DumpRings", "BUNappend failed");
+                BBPunfix(geomBAT->batCacheid);
+                if (parent)
+                    BBPunfix(parentBAT->batCacheid);
+                return err;
+            }
+        }
+    }
+
+	GEOSGeom_destroy(geosGeometry);
+	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+    if (parent)
+	    BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+
+str
+wkbDumpRings(bat *geomBAT_id, wkb **geomWKB) {
+    return wkbDumpRings_(NULL, geomBAT_id, geomWKB, NULL);
+}
+
+
+static str
 wkbPolygonize_(wkb** outWKB, wkb** geom1, wkb** geom2){
     str msg = MAL_SUCCEED;
 	GEOSGeom geos1Geometry = NULL, geos2Geometry = NULL;
@@ -4173,7 +4291,7 @@ wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, int *ringNum)
 	if (rN == -1) {
 		*interiorRingWKB = NULL;
 		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.InteriorRingN", "GEOSGetInteriorRingN failed.");
+		throw(MAL, "geom.InteriorRingN", "GEOSGetNumInteriorRings failed.");
 	}
 
 	if (rN < *ringNum || *ringNum <= 0) {

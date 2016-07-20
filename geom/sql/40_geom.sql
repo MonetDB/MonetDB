@@ -4371,7 +4371,7 @@ CREATE FUNCTION ST_Dump(geom Geometry) RETURNS TABLE(id string, polygonWKB Geome
 CREATE FUNCTION ST_Dump(geom Geometry, parent int) RETURNS TABLE(parent int, id string, polygonWKB Geometry) EXTERNAL NAME geom."DumpP";
 CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG Geometry) EXTERNAL NAME geom."DumpPoints";
 CREATE FUNCTION ST_DumpPoints(geom Geometry, parent int) RETURNS TABLE(parent int, path string, pointG Geometry) EXTERNAL NAME geom."DumpPointsP";
---CREATE FUNCTION ST_DumpRings RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_DumpRings RETURNS TABLE(polygonWKB Geometry) EXTERNAL NAME geom."DumpRings";
 --CREATE FUNCTION ST_FlipCoordinates RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Intersection(geog1 Geography, geog2 Geography) RETURNS Geography EXTERNAL NAME geom."Intersection";
 --CREATE FUNCTION ST_LineToCurve RETURNS EXTERNAL NAME

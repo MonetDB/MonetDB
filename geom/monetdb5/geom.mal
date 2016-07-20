@@ -358,6 +358,8 @@ command DumpPoints(a:wkb) (id:bat[:str], geom:bat[:wkb]) address wkbDumpPoints
 comment "Gets a Geometry and returns the Points in it";
 command DumpPointsP(a:wkb, p:int) (parent:bat[:int], id:bat[:str], geom:bat[:wkb]) address wkbDumpPointsP
 comment "Gets a Geometry and returns the Points in it";
+command DumpRings(a:wkb) (geom:bat[:wkb]) address wkbDumpRings
+comment "Gets a Polygon and returns the rings it";
 
 command Polygonize(a:wkb) :wkb address wkbPolygonize
 comment "Creates a GeometryCollection containing possible polygons formed from the constituent linework of a set of geometries.";
