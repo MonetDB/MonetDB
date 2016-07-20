@@ -907,8 +907,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		}
 		if (as.error) {
 			if( !best) sql_error(m, 500, "%s", as.error);
-			if (as.error != M5OutOfMemory)
-				GDKfree(as.error);
+			freeException(as.error);
 			as.error = NULL;
 		}
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {

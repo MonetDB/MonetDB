@@ -962,7 +962,7 @@ controlRunner(void *d)
 		FD_SET(usock, &fds);
 
 		/* Wait up to 5 seconds. */
-		tv.tv_sec = 5;
+		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 		retval = select(usock + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {

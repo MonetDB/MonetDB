@@ -1,0 +1,69 @@
+stdout of test 'querylog` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 15:31:52 >  
+# 15:31:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30257" "--set" "mapi_usock=/var/tmp/mtest-19785/.s.monetdb.30257" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_sql_test_BugTracker-2016"
+# 15:31:52 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30257/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19785/.s.monetdb.30257
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:31:52 >  
+# 15:31:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19785" "--port=30257"
+# 15:31:52 >  
+
+#select * from querylog_catalog;
+% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
+% 3,	0,	26,	0,	0,	0,	1,	1 # length
+#select * from querylog_calls;
+% .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
+% id,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
+% oid,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
+% 3,	26,	26,	0,	1,	1,	1,	1,	1 # length
+#select 1;
+% .L # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#select count(*) from tables;
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 2 # length
+[ 56	]
+#select id, owner,query,plan,mal from querylog_catalog;
+% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
+% id,	owner,	query,	plan,	mal # name
+% oid,	clob,	clob,	clob,	int # type
+% 3,	7,	54,	9,	3 # length
+[ 7@0,	"monetdb",	"select 1;",	"user.s4_1",	43	]
+[ 8@0,	"monetdb",	"select count(*) from tables;",	"user.s5_1",	151	]
+[ 9@0,	"monetdb",	"select id, owner,query,plan,mal from querylog_catalog;",	"user.s6_1",	76	]
+#select id, arguments, tuples,ship,cpu from querylog_calls;
+% .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
+% id,	arguments,	tuples,	ship,	cpu # name
+% oid,	clob,	bigint,	bigint,	int # type
+% 3,	23,	1,	1,	1 # length
+[ 7@0,	"user.s4_1(A0:bte):void;",	1,	0,	0	]
+[ 8@0,	"user.s5_1():void;",	1,	0,	0	]
+[ 9@0,	"user.s6_1():void;",	5,	1,	0	]
+
+# 15:31:52 >  
+# 15:31:52 >  "Done."
+# 15:31:52 >  
+
