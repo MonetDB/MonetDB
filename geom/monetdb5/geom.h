@@ -156,6 +156,7 @@ geom_export str wkbIntersectsXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_
 geom_export str wkbTouches(bit*, wkb**, wkb**);
 geom_export str wkbCrosses(bit*, wkb**, wkb**);
 geom_export str wkbWithin(bit*, wkb**, wkb**);
+geom_export str wkbWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id);
 geom_export str wkbContains(bit*, wkb**, wkb**);
 geom_export str wkbOverlaps(bit*, wkb**, wkb**);
 geom_export str wkbRelate(bit*, wkb**, wkb**, str*);

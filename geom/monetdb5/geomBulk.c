@@ -884,6 +884,12 @@ wkbIntersects_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	return WKBWKBtoBIT_bat(outBAT_id, aBAT_id, bBAT_id, wkbIntersects, "batgeom.wkbIntersects");
 }
 
+str
+wkbWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+{
+	return WKBWKBtoBIT_bat(outBAT_id, aBAT_id, bBAT_id, wkbWithin, "batgeom.wkbWithin");
+}
+
 /***************************************************************************/
 /******************* IN: wkb wkb - OUT: bit - flag: dbl ********************/
 /***************************************************************************/
