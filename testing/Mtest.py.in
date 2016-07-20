@@ -1522,7 +1522,7 @@ def returnCode(proc, f = None):
 def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     global setpgrp
     rtrn = 0
-    cmd = splitcommand(env['exe']['Mserver'][1])
+    cmd = splitcommand(env['exe']['mserver5'][1])
     cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
     if env.get('MULTIFARM'):
         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
@@ -1635,7 +1635,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
             rtrn = 1
     else:
         rtrn = 1
-        ErrMsg("No output from Mserver/mserver5 when checking for Bits, OIDs, Modules & Threads!?")
+        ErrMsg("No output from mserver5 when checking for Bits, OIDs, Modules & Threads!?")
         if qErr:
             STDERR.write(' '.join(cmd) + "\n\n")
             STDERR.write(qErr)
@@ -1917,10 +1917,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
         reason = "as %s is not available." % env['SQLDUMP'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif SERVER in ["MAL", "SQL"] and not env['exe']['Mserver'][0]:
+    elif SERVER in ["MAL", "SQL"] and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif EXT == ".malS" and not env['exe']['Mserver'][0]:
+    elif EXT == ".malS" and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
     elif CALL == "python"  and  not env['exe']['python'][0]:
@@ -2479,7 +2479,7 @@ def CheckSocket2(env,SERVER) :  #,SrvrErr) :
         os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
         op = 'port=%d' % port
         np = 'port=%s' % env[SERVER+'PORT']
-        env['exe']['Mserver']       = env['exe']['Mserver'][0]       , env['exe']['Mserver'][1].replace(op, np)
+        env['exe']['mserver5']      = env['exe']['mserver5'][0]      , env['exe']['mserver5'][1].replace(op, np)
         env['exe']['MAL_Client']    = env['exe']['MAL_Client'][0]    , env['exe']['MAL_Client'][1].replace(op, np)
         env['exe']['SQL_Client']    = env['exe']['SQL_Client'][0]    , env['exe']['SQL_Client'][1].replace(op, np)
         env['exe']['SQL_Dump']      = env['exe']['SQL_Dump'][0]      , env['exe']['SQL_Dump'][1].replace(op, np)
@@ -2508,7 +2508,7 @@ def CheckSocket3(env,SERVER,ErrFileName) :
         res = F_SOCK
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
-! %sPORT was not properly released by Mserver/mserver5 !
+! %sPORT was not properly released by mserver5 !
 """ % (SERVER, host, port, Serrno, Serrstr, SERVER)
         STDERR.write(Smsg)
         STDERR.flush()
@@ -2758,7 +2758,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if dbinit:
                     DBINIT = ['--dbinit=%s' % dbinit]
 
-            Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF
+            Srvr = splitcommand(exe['mserver5'][1]) + LOCAL_CONF
             if nomito:
                 try:
                     Srvr.remove('--forcemito')
@@ -2857,7 +2857,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
                 returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
-                cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + PRELUDE
+                cmd = splitcommand(exe['mserver5'][1]) + LOCAL_CONF + PRELUDE
                 cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
                 if env.get('MULTIFARM'):
                     cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
@@ -2946,7 +2946,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     pSrvr.stdin.flush()
                 except IOError as err:
                     EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(err.errno)+": '"+err.strerror+"'. !"
-                    EpiFailed = EpiFailed+"\n! Probably, Mserver/mserver5 has died before or during. !\n"
+                    EpiFailed = EpiFailed+"\n! Probably, mserver5 has died before or during. !\n"
                 ln="dummy"
                 while 0 < len(ln) and not ln.startswith('Done..'):
                     ln=pSrvr.stdout.readline()
@@ -3186,7 +3186,10 @@ def SetExecEnv(exe,verbose) :
     if verbose:
         STDERR.flush()
     for v in exe.keys():
-        V = v.upper()
+        if v == 'mserver5':
+            V = 'MSERVER'
+        else:
+            V = v.upper()
         if  v != 'Mtimeout':
             os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
         elif exe[v][0]:
@@ -3502,7 +3505,7 @@ def main(argv) :
              "debugger to start before each server"),
             ('echo-diff', None, 'echo-diff', None,
              "echo differences between stable and current test output to console (stdout)"),
-            ('mserver_set', None, 'mserver_set', '<Mserver_option>',
+            ('mserver_set', None, 'mserver_set', '<mserver5_option>',
              "This passes a single set to the server"),
             ('no-clean', None, 'no_clean', None, 'Do not clean up before test'),
             ('testweb', None, 'testweb', None, 'Optimize testing for testweb'),
@@ -3940,7 +3943,7 @@ def main(argv) :
 
             exe = {}
             exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s %s' % \
+            exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s %s' % \
                                                                    (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
             exe['python']        = CheckExec(sys.executable) , sys.executable
@@ -4101,7 +4104,7 @@ def main(argv) :
             env['TST_SINGLE'] = ""
             env['TST_THREADS'] = ""
             env['TST_STATIC'] = ""
-            cmd = splitcommand(env['exe']['Mserver'][1])
+            cmd = splitcommand(env['exe']['mserver5'][1])
             cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
             if env.get('MULTIFARM'):
                 cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
