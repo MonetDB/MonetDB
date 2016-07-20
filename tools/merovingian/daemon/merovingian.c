@@ -1071,7 +1071,6 @@ shutdown:
 	unlink(".merovingian_lock");
 	if (pidfilename != NULL) {
 		unlink(pidfilename);
-		free(pidfilename);
 	}
 
 	/* mostly for valgrind... */
