@@ -139,5 +139,4 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define getArgReference_str(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.sval)
 #endif
 
-#define FREE_EXCEPTION(p) do { if (p && p != M5OutOfMemory) GDKfree(p); } while (0)
 #endif /*  _MAL_INTERPRET_H*/

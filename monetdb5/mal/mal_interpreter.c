@@ -592,7 +592,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 		}
 
-		FREE_EXCEPTION(ret);
+		freeException(ret);
 		ret = 0;
 		switch (pci->token) {
 		case ASSIGNsymbol:
@@ -618,7 +618,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (lhs->vtype == TYPE_bat && lhs->val.bval != bat_nil)
 					BBPincref(lhs->val.bval, TRUE);
 			}
-			FREE_EXCEPTION(ret);
+			freeException(ret);
 			ret = 0;
 			break;
 		case PATcall:
@@ -867,7 +867,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			str oldret = ret;
 			ret = catchKernelException(cntxt, ret);
 			if (ret != oldret)
-				FREE_EXCEPTION(oldret);
+				freeException(oldret);
 		}
 
 		if (ret != MAL_SUCCEED) {
@@ -891,7 +891,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* Detect any exception received from the implementation. */
 			/* The first identifier is an optional exception name */
 			if (strstr(ret, "!skip-to-end")) {
-				GDKfree(ret);       /* no need to check for M5OutOfMemory */
+				freeException(ret);
 				ret = MAL_SUCCEED;
 				stkpc = mb->stop;
 				continue;
@@ -923,7 +923,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				MT_lock_set(&mal_contextLock);
 				v = &stk->stk[exceptionVar];
 				if (v->val.sval)
-					FREE_EXCEPTION(v->val.sval);    /* old exception*/
+					freeException(v->val.sval);    /* old exception*/
 				v->vtype = TYPE_str;
 				v->val.sval = ret;
 				v->len = (int)strlen(v->val.sval);
@@ -931,7 +931,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				MT_lock_unset(&mal_contextLock);
 			} else {
 				mnstr_printf(cntxt->fdout, "%s", ret);
-				FREE_EXCEPTION(ret);
+				freeException(ret);
 			}
 			/* position yourself at the catch instruction for further decisions */
 			/* skipToCatch(exceptionVar,@2,@3) */
@@ -1114,7 +1114,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		case RAISEsymbol:
 			exceptionVar = getDestVar(pci);
-			FREE_EXCEPTION(ret);
+			freeException(ret);
 			ret = NULL;
 			if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 				ret = createScriptException(mb, stkpc, MAL, NULL,
@@ -1213,7 +1213,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					NULL, "Exception not caught");
 			}
 		}
-		FREE_EXCEPTION(oldret);
+		freeException(oldret);
 	}
 	if ( backup != backups) GDKfree(backup);
 	if ( garbage != garbages) GDKfree(garbage);

@@ -257,8 +257,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			/* this is kind of awful, but we need to get rid of this
 			 * message */
 			fprintf(stderr, "!SABAOTHgetMyStatus: %s\n", err);
-			if (err != M5OutOfMemory)
-				GDKfree(err);
+			freeException(err);
 			mnstr_printf(fout, "!internal server error, "
 						 "please try again later\n");
 			exit_streams(fin, fout);

@@ -645,8 +645,7 @@ XMLfromString(str src, int *len, xml *x)
 	} else {
 		char *err = XMLstr2xml(x, &src);
 		if (err != MAL_SUCCEED) {
-			if (err != M5OutOfMemory)
-				GDKfree(err);
+			freeException(err);
 			return -1;
 		}
 	}
