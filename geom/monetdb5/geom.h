@@ -156,12 +156,16 @@ geom_export str wkbIntersectsXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_
 geom_export str wkbTouches(bit*, wkb**, wkb**);
 geom_export str wkbCrosses(bit*, wkb**, wkb**);
 geom_export str wkbWithin(bit*, wkb**, wkb**);
+geom_export str wkbWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id);
 geom_export str wkbContains(bit*, wkb**, wkb**);
 geom_export str wkbOverlaps(bit*, wkb**, wkb**);
 geom_export str wkbRelate(bit*, wkb**, wkb**, str*);
 geom_export str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbDWithin(bit*, wkb**, wkb**, dbl*);
+geom_export str wkbDWithinXYZ(bit*, wkb**, dbl*, dbl*, dbl*, int*, dbl*);
+geom_export str wkbDWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, dbl*);
+geom_export str wkbDWithinXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz, int* srid, dbl* dist);
 
 //LocateAlong
 //LocateBetween
@@ -250,6 +254,7 @@ geom_export str wkbPointOnSurface(wkb**, wkb**);
 geom_export str wkbForceDim(wkb**, wkb**, const int*);
 geom_export str wkbForceDim_bat(bat *outBAT_id, bat *inBAT_id, const int*);
 geom_export str wkbSegmentize(wkb**, wkb**, dbl*);
+geom_export str wkbSegmentize_bat(bat *outBAT_id, bat *inBAT_id, double *flag);
 
 geom_export str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb**);
 geom_export str wkbDumpP(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, wkb**, int* parent);
@@ -360,3 +365,6 @@ geom_export str wkbPatchToGeom(wkb **res, wkb **geom, dbl* px, dbl*py, dbl*pz);
 geom_export str wkbPatchToGeom_bat(wkb **res, wkb **geom, bat* px, bat* py, bat* pz);
 
 geom_export str Intersectssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
+geom_export str IntersectsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
+geom_export str DWithinsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, double *dist, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
+geom_export str DWithinXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, double *dist, bat *sl, bat *sr, bit *nil_matches, lng *estimate);

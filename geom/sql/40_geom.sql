@@ -4330,6 +4330,7 @@ CREATE FUNCTION ST_CoveredBy(geom1 Geometry, geom2 Geometry) RETURNS boolean EXT
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry) RETURNS double EXTERNAL NAME geom."Distance"
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry, use_spheroid boolean) RETURNS double EXTERNAL NAME geom."Distance"
 CREATE FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, dst double) RETURNS boolean EXTERNAL NAME geom."DWithin";
+CREATE FUNCTION ST_DWithin(geom1 Geometry, x double, y double, z double, srid int, dst double) RETURNS boolean EXTERNAL NAME geom."DWithinXYZ";
 --CREATE FUNCTION ST_HausdorffDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_MaxDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Distance_Sphere RETURNS EXTERNAL NAME
@@ -4472,3 +4473,6 @@ CREATE FUNCTION Patch_to_Geom(a Geometry, x double, y double, z double) RETURNS 
 -------------------------------------------------------------------------
 
 CREATE filter function Intersects(geom1 Geometry, geom2 Geometry) external name geom."Intersects";
+CREATE filter function Intersects(geom1 Geometry, x double, y double, z double, srid int) external name geom."IntersectsXYZ";
+CREATE filter function DWithin(geom1 Geometry, geom2 Geometry, dist double) external name geom."DWithin";
+CREATE filter function DWithin(geom1 Geometry, x double, y double, z double, srid int, dist double) external name geom."DWithinXYZ";
