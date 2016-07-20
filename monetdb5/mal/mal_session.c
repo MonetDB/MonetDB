@@ -447,8 +447,7 @@ MSserveClient(void *dummy)
 		do {
 			do {
 				msg = runScenario(c);
-				if (msg != MAL_SUCCEED && msg != M5OutOfMemory)
-					GDKfree(msg);
+				freeException(msg);
 				if (c->mode == FINISHCLIENT)
 					break;
 				resetScenario(c);

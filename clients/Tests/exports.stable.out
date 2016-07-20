@@ -1257,7 +1257,6 @@ str JSONvalueArray(json *ret, json *arg);
 str JSONvalueTable(bat *ret, json *j);
 str LIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 str LIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
-char *M5OutOfMemory;
 str MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t);
 int MAL_MAXCLIENTS;
 int MALadmission(lng argclaim, lng hotclaim);
