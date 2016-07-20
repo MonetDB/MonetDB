@@ -1307,7 +1307,7 @@ gdk_export bte ATOMelmshift(int sz);
 
 #define bunfastapp(b, t)						\
 	do {								\
-		register BUN _p = BUNlast(b);				\
+		BUN _p = BUNlast(b);					\
 		assert((b)->htype == TYPE_void);			\
 		if (_p >= BATcapacity(b)) {				\
 			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
@@ -2563,10 +2563,10 @@ gdk_export void *THRdata[THREADDATA];
 #ifndef GDK_NOLINK
 
 static inline bat
-BBPcheck(register bat x, register const char *y)
+BBPcheck(bat x, const char *y)
 {
 	if (x && x != bat_nil) {
-		register bat z = abs(x);
+		bat z = abs(x);
 
 		if (z >= getBBPsize() || BBP_logical(z) == NULL) {
 			CHECKDEBUG fprintf(stderr,"#%s: range error %d\n", y, (int) x);
@@ -2578,9 +2578,9 @@ BBPcheck(register bat x, register const char *y)
 }
 
 static inline BAT *
-BATdescriptor(register bat i)
+BATdescriptor(bat i)
 {
-	register BAT *b = NULL;
+	BAT *b = NULL;
 
 	if (BBPcheck(i, "BATdescriptor")) {
 		BBPfix(i);
@@ -2610,7 +2610,7 @@ Tpos(BATiter *bi, BUN p)
 }
 
 static inline BAT *
-BATmirror(register BAT *b)
+BATmirror(BAT *b)
 {
 	if (b == NULL)
 		return NULL;
