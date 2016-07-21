@@ -110,11 +110,11 @@ newComment(MalBlkPtr mb, const char *val)
 	getArg(q,0) = defConstant(mb,TYPE_str,&cst);
 	clrVarConstant(mb,getArg(q,0));
 	setVarDisabled(mb,getArg(q,0));
-	pushInstruction(mb, q);
 	if (mb->errors) {
 		freeInstruction(q);
 		return NULL;
 	}
+	pushInstruction(mb, q);
 	return q;
 }
 
