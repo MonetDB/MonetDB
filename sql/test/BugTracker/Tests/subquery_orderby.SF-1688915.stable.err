@@ -14,6 +14,7 @@ MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
 QUERY = select name from (select name, id from tables order by id) as x;
 
 
+
 # 10:11:41 >  
 # 10:11:41 >  Done.
 # 10:11:41 >  

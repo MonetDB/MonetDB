@@ -713,7 +713,7 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 		BUNappend(task->cntxt->error_msg, msg, FALSE);
 		BUNappend(task->cntxt->error_input, fcn, FALSE);
 		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL))
-			task->as->error = M5OutOfMemory;
+			task->as->error = createException(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 		if (row != lng_nil)
 			task->rowerror[row]++;
 #ifdef _DEBUG_TABLET_
@@ -725,7 +725,7 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 	} else {
 		MT_lock_set(&errorlock);
 		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL))
-			task->as->error = M5OutOfMemory;
+			task->as->error = createException(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 		task->errorcnt++;
 		MT_lock_unset(&errorlock);
 	}
@@ -908,7 +908,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			GDKfree(s);
 			buf[sizeof(buf)-1]=0;
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
-				task->as->error = M5OutOfMemory;
+				task->as->error = createException(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 			task->rowerror[idx]++;
 			task->errorcnt++;
 			if (BUNappend(task->cntxt->error_row, &row, FALSE) != GDK_SUCCEED ||
@@ -1706,7 +1706,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		task->fields[i] = GDKzalloc(sizeof(char *) * task->limit);
 		if (task->fields[i] == 0) {
 			if (task->as->error == NULL)
-				as->error = M5OutOfMemory;
+				as->error = createException(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 #ifdef MLOCK_TST
