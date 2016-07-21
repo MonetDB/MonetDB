@@ -310,7 +310,9 @@ int GDK_vm_trim = 1;
  * fall-back for other compilers. */
 #include "gdk_atomic.h"
 static volatile ATOMIC_TYPE GDK_mallocedbytes_estimate = 0;
+#ifndef NDEBUG
 static volatile lng GDK_mallocedbytes_limit = -1;
+#endif
 static volatile ATOMIC_TYPE GDK_vm_cursize = 0;
 #ifdef GDK_VM_KEEPHISTO
 volatile ATOMIC_TYPE GDK_vm_nallocs[MAX_BIT] = { 0 };
@@ -1683,8 +1685,13 @@ GDKmalloc_prefixsize(size_t size)
 	return s;
 }
 
-gdk_export void GDKsetmemorylimit(lng nbytes) {
+void
+GDKsetmemorylimit(lng nbytes)
+{
+	(void) nbytes;
+#ifndef NDEBUG
 	GDK_mallocedbytes_limit = nbytes;
+#endif
 }
 
 
@@ -1707,7 +1714,8 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	}
 #ifndef NDEBUG
 	/* fail malloc for testing purposes depending on set limit */
-	if (GDK_mallocedbytes_limit >= 0 && size >(size_t) GDK_mallocedbytes_limit) {
+	if (GDK_mallocedbytes_limit >= 0 &&
+	    size > (size_t) GDK_mallocedbytes_limit) {
 		return NULL;
 	}
 #endif

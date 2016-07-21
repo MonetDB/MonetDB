@@ -16,7 +16,6 @@
 #define TMPMARKER '_'
 #define REFMARKER 'X'
 #define REFMARKERC 'C'
-#define refMarker(M,I)  (isVarCList(M,I)? 'C':'X')
 
 #define newBatType(T)  (1<<16 |  (T & 0377) )
 #define getBatType(X)  ((X) & 0377 )

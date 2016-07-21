@@ -29,6 +29,7 @@ stderr of test 'querylog` in directory 'sql/test/BugTracker-2016` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-19785/.s.monetdb.30257
 QUERY = call sys.querylog_threshold(0);
+ERROR = !SELECT: no such unary operator 'querylog_threshold(tinyint)'
 
 
 # 15:31:52 >  
