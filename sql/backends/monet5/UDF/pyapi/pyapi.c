@@ -82,6 +82,7 @@ struct _AggrParams{
 };
 #define AggrParams struct _AggrParams
 static void ComputeParallelAggregation(AggrParams *p);
+static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase);
 
 static char* FunctionBasePath(void);
 static char* FunctionBasePath(void) {
@@ -575,6 +576,12 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             inp->count = BATcount(b);
             inp->bat_type = ATOMstorage(getBatType(getArgType(mb,pci,i)));
             inp->bat = b;
+            if (inp->count == 0) {
+                // one of the input BATs is empty, don't execute the function at all
+                // just return empty BATs
+                CreateEmptyReturn(mb, stk, pci, retcols, seqbase);
+                goto wrapup;
+            }
         }
         if (argnode) {
             inp->sql_subtype = &((sql_arg*)argnode->data)->type;
@@ -2872,6 +2879,20 @@ bool Python_ReleaseGIL(bool state)
     PyGILState_STATE gstate = state == 0 ? PyGILState_LOCKED : PyGILState_UNLOCKED;
     PyGILState_Release(gstate);
     return 0;
+}
+
+static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase) {
+    size_t i;
+    for (i = 0; i < retcols; i++) {
+        int bat_type = getBatType(getArgType(mb,pci,i));
+        BAT *b = COLnew(seqbase, bat_type, 0, TRANSIENT);
+        if (isaBatType(getArgType(mb,pci,i))) {
+            *getArgReference_bat(stk, pci, i) = b->batCacheid;
+            BBPkeepref(b->batCacheid);
+        } else { // single value return, only for non-grouped aggregations
+            VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0));
+        }
+    }
 }
 
 
