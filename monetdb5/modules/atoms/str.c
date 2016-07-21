@@ -1588,7 +1588,7 @@ STRConcat(str *res, const str *val1, const str *val2)
 str
 STRLength(int *res, const str *arg1)
 {
-	size_t l;
+	int l;
 	const char *s = *arg1;
 
 	if (strNil(s)) {
@@ -1597,7 +1597,7 @@ STRLength(int *res, const str *arg1)
 	}
 	l =  UTF8_strlen(s);
 	assert(l <INT_MAX);
-	*res = (int) l;
+	*res = l;
 	return MAL_SUCCEED;
 }
 
@@ -1622,9 +1622,7 @@ STRTail(str *res, const str *arg1, const int *offset)
 		*res = GDKstrdup(str_nil);
 	} else {
 		if (off < 0) {
-			size_t l = UTF8_strlen(s);
-			int len = (int) l;
-			assert(l < INT_MAX);
+			int len = UTF8_strlen(s);
 
 			if (len == int_nil) {
 				*res = GDKstrdup(str_nil);
