@@ -1064,7 +1064,7 @@ WKBWKBtoWKB_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (wkb **,
             msg = err;
             #pragma omp cancelregion
         }
-        BUNappend(outBAT, &outWKB, TRUE);	//add the result to the new BAT
+        BUNappend(outBAT, outWKB, TRUE);	//add the result to the new BAT
     }
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);

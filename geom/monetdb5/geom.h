@@ -43,6 +43,7 @@
     b->tnosorted = b->tnorevsorted = 1;                         \
     b->tkey |= 0;                                               \
     b->tnokey[0] = b->tnokey[1] = 1;                            \
+    b->tnonil = 0;                                             \
     b->tnodense = 1;                                            
 
 /* general functions */
