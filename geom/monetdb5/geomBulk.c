@@ -13,9 +13,9 @@
 #include "geom.h"
 #include <omp.h>
 
-#define GEOMBULK_DEBUG 1
-#define OPENCL_DYNAMIC 1
-#define OPENCL_THREADS 8
+//#define GEOMBULK_DEBUG 1
+#define OPENCL_DYNAMIC 0
+#define OPENCL_THREADS 1
 
 /*******************************/
 /********** One input **********/
@@ -61,7 +61,9 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
     for (p = 0; p < q; p++) {
 		str err = NULL;
 	    wkb *inWKB = NULL, *outWKB = NULL;
-
+        
+        if (msg)
+            continue;
 		//if for used --> inWKB = (wkb *) BUNtail(inBATi, i);
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		if ((err = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED) {	//check type
@@ -103,8 +105,8 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
     fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
 #endif
 
-	//BATsetcount(outBAT, BATcount(inBAT));
 	//BATrmprops(outBAT)
+	//BATsetcount(outBAT, BATcount(inBAT));
 	//BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -202,6 +204,8 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 		str err = NULL;
 	    mbr *inMBR = NULL;
 	    //double outDbl = 0.0;
+        if (msg)
+            continue;
 
 		inMBR = (mbr *) BUNtail(inBAT_iter, p);
 		//if ((err = wkbCoordinateFromMBR(&outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
@@ -225,8 +229,8 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
     }
 
 	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(inBAT));
 	BATrmprops(outBAT)
+	BATsetcount(outBAT, BATcount(inBAT));
 	BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -338,6 +342,8 @@ WKBtoDBL_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (dbl *, wkb **), const c
 		str err = NULL;
 	    wkb *inWKB = NULL;
 		//double outSingle;
+        if (msg)
+            continue;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		//if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
@@ -360,8 +366,8 @@ WKBtoDBL_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (dbl *, wkb **), const c
         return msg;
     }
 
-	BATsetcount(outBAT, BATcount(inBAT));
     BATrmprops(outBAT)
+	BATsetcount(outBAT, BATcount(inBAT));
     BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -420,6 +426,8 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 		str err = NULL;
 		wkb *outSingle;
 	    wkb *inWKB = NULL;
+        if (msg)
+            continue;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
@@ -462,8 +470,8 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 #endif
 
 	//set the number of elements in the outBAT
-	//BATsetcount(outBAT, BATcount(inBAT));
     //BATrmprops(outBAT)
+	//BATsetcount(outBAT, BATcount(inBAT));
     //BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -527,6 +535,8 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 		str err = NULL;
 		wkb *outSingle;
 	    wkb *inWKB = NULL;
+        if (msg)
+            continue;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
@@ -568,8 +578,8 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
     fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
 #endif
 
-	//BATsetcount(outBAT, BATcount(inBAT));
     //BATrmprops(outBAT)
+	//BATsetcount(outBAT, BATcount(inBAT));
     //BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -639,6 +649,8 @@ WKBtoWKBflagDBL_bat(bat *outBAT_id, bat *inBAT_id, double *flag, str (*func) (wk
 		str err = NULL;
 		wkb *outSingle;
 	    wkb *inWKB = NULL;
+        if (msg)
+            continue;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
@@ -680,8 +692,8 @@ WKBtoWKBflagDBL_bat(bat *outBAT_id, bat *inBAT_id, double *flag, str (*func) (wk
     fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
 #endif
 
-	//BATsetcount(outBAT, BATcount(inBAT));
     //BATrmprops(outBAT)
+	//BATsetcount(outBAT, BATcount(inBAT));
     //BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -739,6 +751,8 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
         str err = NULL;
 	    wkb *inWKB = NULL;
         //bit outSingle;
+        if (msg)
+            continue;
 
         inWKB = (wkb *) BUNtail(inBAT_iter, p);
         //if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
@@ -761,8 +775,8 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
         return msg;
     }
 
-	BATsetcount(outBAT, BATcount(inBAT));
     BATrmprops(outBAT)
+	BATsetcount(outBAT, BATcount(inBAT));
     BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -851,6 +865,8 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, 
         wkb *aWKB = NULL, *bWKB = NULL;
         //bit out;
         str err = NULL;
+        if (msg)
+            continue;
 
         aWKB = (wkb *) BUNtail(aBAT_iter, p);
         bWKB = (wkb *) BUNtail(bBAT_iter, p);
@@ -876,8 +892,8 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, 
         return msg;
     }
 
-    BATsetcount(outBAT, q);
     BATrmprops(outBAT)
+    BATsetcount(outBAT, q);
     BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -948,6 +964,8 @@ WKBWKBtoBITflagDBL_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, double *flag,
         wkb *aWKB = NULL, *bWKB = NULL;
         //bit out;
         str err = NULL;
+        if (msg)
+            continue;
 
         aWKB = (wkb *) BUNtail(aBAT_iter, p);
         bWKB = (wkb *) BUNtail(bBAT_iter, p);
@@ -973,8 +991,8 @@ WKBWKBtoBITflagDBL_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, double *flag,
         return msg;
     }
 
-    BATsetcount(outBAT, q);
     BATrmprops(outBAT)
+    BATsetcount(outBAT, q);
     BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -1037,6 +1055,8 @@ WKBWKBtoWKB_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (wkb **,
     for (p = 0; p < q; p++) {
         wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
         str err = NULL;
+        if (msg)
+            continue;
 
         aWKB = (wkb *) BUNtail(aBAT_iter, p);
         bWKB = (wkb *) BUNtail(bBAT_iter, p);
@@ -1160,6 +1180,8 @@ WKBDBLDBLDBLINTtoBIT_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
 	    wkb *inWKB = NULL;
 		//bit outSingle;
         double x, y, z;
+        if (msg)
+            continue;
 
 
         inWKB = (wkb *) BUNtail(inBAT_iter, p);
@@ -1202,8 +1224,8 @@ WKBDBLDBLDBLINTtoBIT_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
         BBPunfix(outBAT->batCacheid);
     }
 
-	BATsetcount(outBAT, BATcount(inBAT));
     BATrmprops(outBAT)
+	BATsetcount(outBAT, BATcount(inBAT));
     BATsettrivprop(outBAT);
     BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -1293,6 +1315,8 @@ WKBDBLDBLDBLINTtoBITflagDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, d
 	    wkb *inWKB = NULL;
 		//bit outSingle;
         double x, y, z;
+        if (msg)
+            continue;
 
 
         inWKB = (wkb *) BUNtail(inBAT_iter, p);
@@ -1335,8 +1359,8 @@ WKBDBLDBLDBLINTtoBITflagDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, d
         BBPunfix(outBAT->batCacheid);
     }
 
-	BATsetcount(outBAT, BATcount(inBAT));
     BATrmprops(outBAT)
+	BATsetcount(outBAT, BATcount(inBAT));
     BATsettrivprop(outBAT);
     BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -1394,6 +1418,8 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 		str err = NULL;
 	    wkb *inWKB = NULL;
 		//int outSingle;
+        if (msg)
+            continue;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		//if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
@@ -1416,8 +1442,8 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
         return msg;
     }
 
-	BATsetcount(outBAT, BATcount(inBAT));
     BATrmprops(outBAT)
+	BATsetcount(outBAT, BATcount(inBAT));
     BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -1482,6 +1508,8 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 		str err = NULL;
 	    wkb *inWKB = NULL;
 		//int outSingle;
+        if (msg)
+            continue;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		//if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
@@ -1505,8 +1533,8 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
     }
 
 	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
     BATrmprops(outBAT)
+	BATsetcount(outBAT, BATcount(inBAT));
     BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -1570,7 +1598,9 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 		str err = NULL;
 	    wkb *inWKB = NULL;
 	//	double outSingle;
-
+        if (msg)
+            continue;
+         
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		//if ((err = wkbGetCoordinate(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
 		if ((err = wkbGetCoordinate(&outs[p], &inWKB, flag)) != MAL_SUCCEED) {
@@ -1592,8 +1622,8 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
         return msg;
     }
 
-	BATsetcount(outBAT, BATcount(inBAT));
     BATrmprops(outBAT)
+	BATsetcount(outBAT, BATcount(inBAT));
     BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -1678,6 +1708,8 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
 	    wkb *inWKB = NULL;
 		wkb *outSingle;
         double x, y, z;
+        if (msg)
+            continue;
 
 
         inWKB = (wkb *) BUNtail(inBAT_iter, p);
@@ -1740,8 +1772,8 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
     fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
 #endif
 
-	//BATsetcount(outBAT, BATcount(inBAT));
     //BATrmprops(outBAT)
+	//BATsetcount(outBAT, BATcount(inBAT));
     //BATsettrivprop(outBAT);
     BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -1981,8 +2013,8 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 	}
 
 	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(inBAT));
 	BATrmprops(outBAT)
+	BATsetcount(outBAT, BATcount(inBAT));
 	BATsettrivprop(outBAT);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
@@ -2323,15 +2355,15 @@ wkbDump_bat(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id
 
     /*Set counts*/
     /*
-	BATsetcount(idBAT, geometriesCnt);
     BATrmprops(idBAT)
+	BATsetcount(idBAT, geometriesCnt);
     BATsettrivprop(idBAT);
-	BATsetcount(geomBAT, geometriesCnt);
     BATrmprops(geomBAT)
+	BATsetcount(geomBAT, geometriesCnt);
     BATsettrivprop(geomBAT);
     if (inParentBAT_id) {
-        BATsetcount(parentBAT, geometriesCnt);
         BATrmprops(parentBAT)
+        BATsetcount(parentBAT, geometriesCnt);
         BATsettrivprop(parentBAT);
     }
     */
@@ -2546,8 +2578,8 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 	}
 
 	//set some properties of the new BAT
-	//BATsetcount(outBAT, BATcount(inBAT));
 	//BATrmprops(outBAT)
+	//BATsetcount(outBAT, BATcount(inBAT));
 	//BATsettrivprop(outBAT);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
