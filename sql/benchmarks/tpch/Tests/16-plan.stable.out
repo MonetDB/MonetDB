@@ -58,7 +58,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 258 # length
+% 264 # length
 project (
 | group by (
 | | group by (
@@ -69,12 +69,12 @@ project (
 | | | | | | project (
 | | | | | | | select (
 | | | | | | | | table(sys.supplier) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.s_comment NOT NULL ] COUNT 
-| | | | | | | ) [ (char[supplier.s_comment NOT NULL] as supplier.s_comment) FILTER like (char "%Customer%Complaints%", char "") ]
+| | | | | | | ) [ (clob[char[supplier.s_comment NOT NULL]] as supplier.s_comment) FILTER like (clob "%Customer%Complaints%", clob "") ]
 | | | | | | ) [ supplier.s_suppkey NOT NULL HASHCOL  as L3.L2 ]
 | | | | | ) [ partsupp.ps_suppkey NOT NULL = L3.L2 NOT NULL HASHCOL  ],
 | | | | | select (
 | | | | | | table(sys.part) [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, part.%TID% NOT NULL ] COUNT 
-| | | | | ) [ part.p_brand NOT NULL != char(10) "Brand#45", (char[part.p_type NOT NULL] as part.p_type) ! FILTER like (char "MEDIUM POLISHED%", char ""), part.p_size NOT NULL in (int "49", int "14", int "23", int "45", int "19", int "3", int "36", int "9") ]
+| | | | | ) [ part.p_brand NOT NULL != char(10) "Brand#45", (clob[char[part.p_type NOT NULL]] as part.p_type) ! FILTER like (clob "MEDIUM POLISHED%", clob ""), part.p_size NOT NULL in (int "49", int "14", int "23", int "45", int "19", int "3", int "36", int "9") ]
 | | | | ) [ partsupp.%partsupp_ps_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_partkey_fkey ]
 | | | ) [ partsupp.ps_suppkey NOT NULL, part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL ]
 | | ) [ part.p_brand NOT NULL, partsupp.ps_suppkey NOT NULL as L5.L5, part.p_size NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, L5.L5 NOT NULL ]
