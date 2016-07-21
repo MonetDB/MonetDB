@@ -1346,19 +1346,33 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 	/* find filter function */
 	f = sql_bind_func_(sql->sa, s, filter_op, tl, F_FILT);
 
-	if (!f) {
-		if ((f = sql_find_func(sql->sa, s, filter_op, list_length(exps), F_FILT, NULL)) != NULL) { 
-			node *n,*m = f->func->ops->h;
-			list *nexps = sa_list(sql->sa);
-			for(n = exps->h, m = f->func->ops->h; m && n; m = m->next, n = n->next) {
-				sql_arg *a = m->data;
-				sql_exp *e = n->data;
+	if (!f) 
+		f = find_func(sql, s, filter_op, list_length(exps), F_FILT, NULL);
+	if (f) {
+		node *n,*m = f->func->ops->h;
+		list *nexps = sa_list(sql->sa);
 
-				e = rel_check_type(sql, &a->type, e, type_equal);
-				list_append(nexps, e);
-			}
-			exps = nexps;
+		for(n=l->h; m && n; m = m->next, n = n->next) {
+			sql_arg *a = m->data;
+			sql_exp *e = n->data;
+
+			e = rel_check_type(sql, &a->type, e, type_equal);
+			if (!e)
+				return NULL;
+			list_append(nexps, e);
 		}
+		l = nexps;
+		nexps = sa_list(sql->sa);
+		for(n=r->h; m && n; m = m->next, n = n->next) {
+			sql_arg *a = m->data;
+			sql_exp *e = n->data;
+
+			e = rel_check_type(sql, &a->type, e, type_equal);
+			if (!e)
+				return NULL;
+			list_append(nexps, e);
+		}
+		r = nexps;
 	}
 	if (!f) {
 		return sql_error(sql, 02, "SELECT: no such FILTER function '%s'", filter_op);
