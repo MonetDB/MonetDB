@@ -40,9 +40,9 @@
 
 #define BATrmprops(b)                                           \
     b->tsorted = b->trevsorted = 0;     \
-    b->tnosorted = b->tnorevsorted = 1;                         \
+    b->tnosorted = b->tnorevsorted = 0;                         \
     b->tkey |= 0;                                               \
-    b->tnokey[0] = b->tnokey[1] = 1;                            \
+    b->tnokey[0] = b->tnokey[1] = 0;                            \
     b->tnonil = 0;                                             \
     b->tnodense = 1;                                            
 
