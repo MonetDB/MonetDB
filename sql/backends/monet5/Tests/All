@@ -50,6 +50,7 @@ HAVE_LIBPY?pyapi26
 HAVE_LIBPY?pyapi27
 HAVE_LIBPY?pyapi28
 HAVE_LIBPY?pyapi29
+HAVE_LIBPY?pyapi32
 
 # should this work?
 #inlineUDF
