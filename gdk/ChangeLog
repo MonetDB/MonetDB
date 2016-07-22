@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Fri Jul 22 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed unused functions BBPhot and BBPcold.
+
 * Wed Jul  6 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Removed BATderiveTailProps and BATderiveProps.  Just set the properties
   you know about, or use BATsettrivprop.
