@@ -316,7 +316,7 @@ command Equals(a:wkb, b:wkb) :bit address wkbEquals
 comment "Returns true if the given geometries represent the same geometry. Directionality is ignored.";
 command Intersects(a:wkb, b:wkb) :bit address wkbIntersects
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
-command IntersectsXYZ(a:wkb, x:dbl, y:dbl, z:dbl, srid:int) :bit address wkbIntersectsXYZ
+command Intersects(a:wkb, x:dbl, y:dbl, z:dbl, srid:int) :bit address wkbIntersectsXYZ
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
 command Overlaps(a:wkb, b:wkb) :bit address wkbOverlaps
 comment " Returns TRUE if the Geometries intersect but are not completely contained by each other.";
@@ -333,7 +333,7 @@ comment "Returns TRUE if no point of geometry A is outside geometry B";
 
 command DWithin(a:wkb, b:wkb, dst:dbl) :bit address wkbDWithin
 comment "Returns true if the two geometries are within the specifies distance from each other";
-command DWithinXYZ(a:wkb, x:dbl, y:dbl, z:dbl, srid:int, dst:dbl) :bit address wkbDWithinXYZ
+command DWithin(a:wkb, x:dbl, y:dbl, z:dbl, srid:int, dst:dbl) :bit address wkbDWithinXYZ
 comment "Returns true if a geometry and a point are within the specifies distance from each other";
 
 command GeometryN(g:wkb, n:int) :wkb address wkbGeometryN
@@ -781,40 +781,40 @@ comment "Returns true if the two geometries are within the specifies distance fr
 command DWithin3D(g:bat[:wkb], dxBAT:bat[:dbl], dx:dbl, dyBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], dz:dbl, srid:int, dist:dbl) :bat[:bit] address wkbDWithinXYZ_bat
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
 
-function DWithinXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dzBAT:bat[:dbl], srid:int, dist:dbl) :bat[:bit];
+function DWithin(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dzBAT:bat[:dbl], srid:int, dist:dbl) :bat[:bit];
 	x := DWithin3D(g, dxBAT, 0:dbl, dyBAT, 0:dbl, dzBAT, 0:dbl, srid, dist);
 	return x;
-end DWithinXYZ;
+end DWithin;
 
-function DWithinXYZ(g:bat[:wkb], dx:dbl, dy:dbl, dzBAT:bat[:dbl], srid:int, dist:dbl) :bat[:bit];
+function DWithin(g:bat[:wkb], dx:dbl, dy:dbl, dzBAT:bat[:dbl], srid:int, dist:dbl) :bat[:bit];
 	x := DWithin3D(g, nil:bat, dx, nil:bat, dy, dzBAT, 0:dbl, srid, dist);
 	return x;
-end DWithinXYZ;
+end DWithin;
 
-function DWithinXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], srid:int, dist:dbl) :bat[:bit];
+function DWithin(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], srid:int, dist:dbl) :bat[:bit];
 	x := DWithin3D(g, dxBAT, 0:dbl, nil:bat, dy, dzBAT, 0:dbl, srid, dist);
 	return x;
-end DWithinXYZ;
+end DWithin;
 
-function DWithinXYZ(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dzBAT:bat[:dbl], srid:int, dist:dbl) :bat[:bit];
+function DWithin(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dzBAT:bat[:dbl], srid:int, dist:dbl) :bat[:bit];
 	x := DWithin3D(g, nil:bat, dx, dyBAT, 0:dbl, dzBAT, 0:dbl, srid, dist);
 	return x;
-end DWithinXYZ;
+end DWithin;
 
-function DWithinXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dz:dbl, srid:int, dist:dbl) :bat[:bit];
+function DWithin(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dz:dbl, srid:int, dist:dbl) :bat[:bit];
 	x := DWithin3D(g, dxBAT, 0:dbl, dyBAT, 0:dbl, nil:bat, dz, srid, dist);
 	return x;
-end DWithinXYZ;
+end DWithin;
 
-function DWithinXYZ(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dz:dbl, srid:int, dist:dbl) :bat[:bit];
+function DWithin(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dz:dbl, srid:int, dist:dbl) :bat[:bit];
 	x := DWithin3D(g, nil:bat, dx, dyBAT, 0:dbl, nil:bat, dz, srid, dist);
 	return x;
-end DWithinXYZ;
+end DWithin;
 
-function DWithinXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dz:dbl, srid:int, dist:dbl) :bat[:bit];
+function DWithin(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dz:dbl, srid:int, dist:dbl) :bat[:bit];
 	x := DWithin3D(g, dxBAT, 0:dbl, nil:bat, dy, nil:bat, dz, srid, dist);
 	return x;
-end DWithinXYZ;
+end DWithin;
 
 command GeometryN(w:bat[:wkb], n:int) :bat[:wkb] address wkbGeometryN_bat
 comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL";
@@ -933,40 +933,40 @@ comment "Returns true if these Geometries 'spatially intersect in 2D'";
 command Intersects3D(g:bat[:wkb], dxBAT:bat[:dbl], dx:dbl, dyBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit] address wkbIntersectsXYZ_bat
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
 
-function IntersectsXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dzBAT:bat[:dbl], srid:int) :bat[:bit];
+function Intersects(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dzBAT:bat[:dbl], srid:int) :bat[:bit];
 	x := Intersects3D(g, dxBAT, 0:dbl, dyBAT, 0:dbl, dzBAT, 0:dbl, srid);
 	return x;
-end IntersectsXYZ;
+end Intersects;
 
-function IntersectsXYZ(g:bat[:wkb], dx:dbl, dy:dbl, dzBAT:bat[:dbl], srid:int) :bat[:bit];
+function Intersects(g:bat[:wkb], dx:dbl, dy:dbl, dzBAT:bat[:dbl], srid:int) :bat[:bit];
 	x := Intersects3D(g, nil:bat, dx, nil:bat, dy, dzBAT, 0:dbl, srid);
 	return x;
-end IntersectsXYZ;
+end Intersects;
 
-function IntersectsXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], srid:int) :bat[:bit];
+function Intersects(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], srid:int) :bat[:bit];
 	x := Intersects3D(g, dxBAT, 0:dbl, nil:bat, dy, dzBAT, 0:dbl, srid);
 	return x;
-end IntersectsXYZ;
+end Intersects;
 
-function IntersectsXYZ(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dzBAT:bat[:dbl], srid:int) :bat[:bit];
+function Intersects(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dzBAT:bat[:dbl], srid:int) :bat[:bit];
 	x := Intersects3D(g, nil:bat, dx, dyBAT, 0:dbl, dzBAT, 0:dbl, srid);
 	return x;
-end IntersectsXYZ;
+end Intersects;
 
-function IntersectsXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit];
+function Intersects(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit];
 	x := Intersects3D(g, dxBAT, 0:dbl, dyBAT, 0:dbl, nil:bat, dz, srid);
 	return x;
-end IntersectsXYZ;
+end Intersects;
 
-function IntersectsXYZ(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit];
+function Intersects(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit];
 	x := Intersects3D(g, nil:bat, dx, dyBAT, 0:dbl, nil:bat, dz, srid);
 	return x;
-end IntersectsXYZ;
+end Intersects;
 
-function IntersectsXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dz:dbl, srid:int) :bat[:bit];
+function Intersects(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dz:dbl, srid:int) :bat[:bit];
 	x := Intersects3D(g, dxBAT, 0:dbl, nil:bat, dy, nil:bat, dz, srid);
 	return x;
-end IntersectsXYZ;
+end Intersects;
 
 module calc;
 
@@ -1032,7 +1032,7 @@ command geom.Intersectssubjoin(l:bat[:wkb], r:bat[:wkb], sl:bat[:oid], sr:bat[:o
 address Intersectssubjoin
 comment "Return the geometry pairs that intersect";
 
-command geom.IntersectsXYZsubjoin(l:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],sr:bat[:oid])
+command geom.Intersectssubjoin(l:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],sr:bat[:oid])
 address IntersectsXYZsubjoin
 comment "Return the geometry pairs that intersect";
 
@@ -1040,6 +1040,6 @@ command geom.DWithinsubjoin(l:bat[:wkb], r:bat[:wkb], dist:dbl, sl:bat[:oid], sr
 address DWithinsubjoin
 comment "Returns the geometry pairs are withing distance dist";
 
-command geom.DWithinXYZsubjoin(l:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int, dist:dbl, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],sr:bat[:oid])
+command geom.DWithinsubjoin(l:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int, dist:dbl, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],sr:bat[:oid])
 address DWithinXYZsubjoin
 comment "Returns the geometry pairs are withing distance dist";
