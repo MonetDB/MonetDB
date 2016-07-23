@@ -34,7 +34,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == subdeltaRef) 
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == emptycolumnRef && p->retc == 2) 
+			if(getFunctionId(p) == emptybindRef && p->retc == 2) 
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == bindRef && p->retc == 2) 
 				setVarCList(mb,getArg(p,0));

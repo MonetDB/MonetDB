@@ -17,13 +17,14 @@
  * All Rights Reserved.
  */
 
-#ifndef _MAL_EMPTYCOLUMN_
-#define _MAL_EMPTYCOLUMN_
+#ifndef _MAL_JIT_
+#define _MAL_JIT_
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-mal_export int OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export int OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGemptycolumn  if ( optDebug & ((lng) 1 <<DEBUG_OPT_EMPTYCOLUMN) )
+#define OPTDEBUGjit  if ( optDebug & ((lng) 1 <<DEBUG_OPT_JIT) )
+//#define OPTDEBUGjit  if (1)
 
 #endif

@@ -176,7 +176,7 @@ unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
-pattern emptycolumnidx(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]
+pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]
 address mvc_bind_idxbat_wrap;
 pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]
 address mvc_bind_idxbat_wrap
@@ -185,7 +185,7 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern emptycolumnidx(mvc:int, schema:str, table:str, index:str, access:int)(uid:bat[:oid],uval:bat[:any_1])
+pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int)(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_idxbat_wrap;
 pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int)(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_idxbat_wrap
@@ -194,7 +194,7 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern emptycolumnidx(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:any_1]
+pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:any_1]
 address mvc_bind_idxbat_wrap;
 pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:any_1]
 address mvc_bind_idxbat_wrap
@@ -203,7 +203,7 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern emptycolumnidx(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int)(uid:bat[:oid],uval:bat[:any_1])
+pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int)(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_idxbat_wrap;
 pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int)(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_idxbat_wrap
@@ -212,7 +212,7 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern emptycolumn(mvc:int, schema:str, table:str, column:str, access:int ):bat[:any_1]
+pattern emptybind(mvc:int, schema:str, table:str, column:str, access:int ):bat[:any_1]
 address mvc_bind_wrap;
 pattern bind(mvc:int, schema:str, table:str, column:str, access:int ):bat[:any_1]
 address mvc_bind_wrap
@@ -221,7 +221,7 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern emptycolumn(mvc:int, schema:str, table:str, column:str, access:int )(uid:bat[:oid],uval:bat[:any_1])
+pattern emptybind(mvc:int, schema:str, table:str, column:str, access:int )(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_wrap;
 pattern bind(mvc:int, schema:str, table:str, column:str, access:int )(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_wrap
@@ -230,7 +230,7 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern emptycolumn(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int ):bat[:any_1]
+pattern emptybind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int ):bat[:any_1]
 address mvc_bind_wrap;
 pattern bind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int ):bat[:any_1]
 address mvc_bind_wrap
@@ -239,7 +239,7 @@ comment "Bind the 'schema.table.column' BAT partition with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern emptycolumn(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int )(uid:bat[:oid],uval:bat[:any_1])
+pattern emptybind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int )(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_wrap;
 pattern bind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int )(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_wrap

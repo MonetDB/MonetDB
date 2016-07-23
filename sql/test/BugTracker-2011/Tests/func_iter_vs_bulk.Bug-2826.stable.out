@@ -35,7 +35,7 @@ Ready.
 % clob # type
 % 112 # length
 function user.s10_1():void;
-    X_38:void := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe",25);
+    X_38:void := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe",22);
     X_23 := bat.new(nil:str);
     X_30 := bat.append(X_23,"sys.tab_2826");
     X_25 := bat.new(nil:str);
@@ -49,10 +49,7 @@ function user.s10_1():void;
     X_0 := sql.mvc();
     X_1:bat[:oid] := sql.tid(X_0,"sys","tab_2826");
     X_4:bat[:dbl] := sql.bind(X_0,"sys","tab_2826","d",0);
-    (X_7,r1_9) := sql.bind(X_0,"sys","tab_2826","d",2);
-    X_10:bat[:dbl] := sql.bind(X_0,"sys","tab_2826","d",1);
-    X_12 := sql.delta(X_4,X_7,r1_9,X_10);
-    X_13 := algebra.projection(X_1,X_12);
+    X_13 := algebra.projection(X_1,X_4);
     X_14 := batcalc.flt(X_13);
     X_48:bat[:flt] := batmmath.log10(X_14);
     X_19 := algebra.thetasubselect(X_48,1,">");

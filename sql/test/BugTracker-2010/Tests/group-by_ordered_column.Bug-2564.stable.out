@@ -40,7 +40,7 @@ Ready.
 % clob # type
 % 113 # length
 function user.s10_1():void;
-    X_57:void := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",35);
+    X_57:void := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",26);
     X_40 := bat.new(nil:str);
     X_47 := bat.append(X_40,"sys.L1");
     X_42 := bat.new(nil:str);
@@ -54,20 +54,11 @@ function user.s10_1():void;
     X_0 := sql.mvc();
     X_1:bat[:oid] := sql.tid(X_0,"sys","t2564");
     X_4:bat[:int] := sql.bind(X_0,"sys","t2564","c3",0);
-    (X_7,r1_8) := sql.bind(X_0,"sys","t2564","c3",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","t2564","c3",1);
-    X_12 := sql.delta(X_4,X_7,r1_8,X_10);
-    X_13 := algebra.projection(X_1,X_12);
+    X_13 := algebra.projection(X_1,X_4);
     X_14:bat[:int] := sql.bind(X_0,"sys","t2564","c1",0);
-    (X_16,r1_17) := sql.bind(X_0,"sys","t2564","c1",2);
-    X_18:bat[:int] := sql.bind(X_0,"sys","t2564","c1",1);
-    X_19 := sql.delta(X_14,X_16,r1_17,X_18);
-    X_20 := algebra.projection(X_1,X_19);
+    X_20 := algebra.projection(X_1,X_14);
     X_21:bat[:int] := sql.bind(X_0,"sys","t2564","c2",0);
-    (X_23,r1_24) := sql.bind(X_0,"sys","t2564","c2",2);
-    X_25:bat[:int] := sql.bind(X_0,"sys","t2564","c2",1);
-    X_26 := sql.delta(X_21,X_23,r1_24,X_25);
-    X_27 := algebra.projection(X_1,X_26);
+    X_27 := algebra.projection(X_1,X_21);
     (X_28,r1_29,r2_29) := group.subgroup(X_27);
     (X_31,r1_32,r2_32) := group.subgroup(X_20,X_28);
     (X_34,r1_35,r2_35) := group.subgroupdone(X_13,X_31);

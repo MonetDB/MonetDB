@@ -98,13 +98,21 @@ pattern optimizer.derivePath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-#opt_emptycolumn.mal
+#opt_emptybind.mal
 
-pattern optimizer.emptycolumn():str
+pattern optimizer.emptybind():str
 address OPTwrapper;
-pattern optimizer.emptycolumn(mod:str, fcn:str):str
+pattern optimizer.emptybind(mod:str, fcn:str):str
 address OPTwrapper
 comment "Evaluate empty set expressions.";
+
+#opt_jit.mal
+
+pattern optimizer.jit():str
+address OPTwrapper;
+pattern optimizer.jit(mod:str, fcn:str):str
+address OPTwrapper
+comment "Propagate candidate lists in just-in-time optimization";
 
 #opt_evaluate.mal
 

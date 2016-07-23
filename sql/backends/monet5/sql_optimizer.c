@@ -26,28 +26,36 @@
  * and identify empty columns upfront for just in time optimizers.
  */
 static lng
-SQLgetColumnSize(sql_trans *tr, sql_column *c)
+SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 {
 	lng size = 0;
-	BAT *b = store_funcs.bind_col(tr, c, RDONLY);
-	if (b) {
-		size += getBatSpace(b);
-		BBPunfix(b->batCacheid);
-	}
-	b = store_funcs.bind_col(tr, c, RD_UPD_VAL);
-	if (b) {
-		size += getBatSpace(b);
-		BBPunfix(b->batCacheid);
-	}
-	b = store_funcs.bind_col(tr, c, RD_UPD_ID);
-	if (b) {
-		size+= getBatSpace(b);
-		BBPunfix(b->batCacheid);
-	}
-	b = store_funcs.bind_col(tr, c, RD_INS);
-	if (b) {
-		size+= getBatSpace(b);
-		BBPunfix(b->batCacheid);
+	BAT *b;
+	switch(access){
+	case 0:
+		b= store_funcs.bind_col(tr, c, RDONLY);
+		if (b) {
+			size += getBatSpace(b);
+			BBPunfix(b->batCacheid);
+		}
+		break;
+	case 1:
+		b = store_funcs.bind_col(tr, c, RD_INS);
+		if (b) {
+			size+= getBatSpace(b);
+			BBPunfix(b->batCacheid);
+		}
+		break;
+	case 2:
+		b = store_funcs.bind_col(tr, c, RD_UPD_VAL);
+		if (b) {
+			size += getBatSpace(b);
+			BBPunfix(b->batCacheid);
+		}
+		b = store_funcs.bind_col(tr, c, RD_UPD_ID);
+		if (b) {
+			size+= getBatSpace(b);
+			BBPunfix(b->batCacheid);
+		}
 	}
 	return size;
 }
@@ -83,12 +91,12 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 
 			/* we have to sum the cost of all three components of a BAT */
 			if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-				size = SQLgetColumnSize(tr, c);
-				if( access == 0)
+				size = SQLgetColumnSize(tr, c, access);
+				//if( access == 0)
 					space += size;	// accumulate once
 				if( !prepare && size == 0 ){
 					//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,cname,prepare,size);
-					setFunctionId(p, emptycolumnRef);
+					setFunctionId(p, emptybindRef);
 				}
 			}
 		}
@@ -96,6 +104,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
 			//char *tname = getVarConstant(mb, getArg(p, 2 + p->retc)).val.sval;
 			char *idxname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
+			int access = getVarConstant(mb, getArg(p, 4 + p->retc)).val.ival;
 			sql_schema *s = mvc_bind_schema(m, sname);
 			BAT *b;
 
@@ -108,11 +117,11 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 						space += (size =getBatSpace(b));
 						if (!size) {
 							sql_column *c = i->t->columns.set->h->data;
-							size = SQLgetColumnSize(tr, c);
+							size = SQLgetColumnSize(tr, c, access);
 						}
 
 						if( !prepare && size == 0){
-							setFunctionId(p, emptycolumnidxRef);
+							setFunctionId(p, emptybindidxRef);
 							//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,idxname,prepare,size);
 						}
 						BBPunfix(b->batCacheid);
@@ -172,11 +181,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 				q->token = REMsymbol;	/* they are ignored */
 		}
 	}
-	if (be->mvc->emod & mod_debug){
-		addtoMalBlkHistory(mb);
-		c->curprg->def->keephistory = TRUE;
-	} else
-		c->curprg->def->keephistory = FALSE;
+	addtoMalBlkHistory(mb);
 	return msg;
 }
 
@@ -196,7 +201,9 @@ SQLoptimizeFunction(Client c, MalBlkPtr mb)
 	msg = addOptimizers(c, mb, pipe, TRUE);
 	if (msg)
 		return msg;
+	mb->keephistory = be->mvc->emod & mod_debug;
 	msg = optimizeMALBlock(c, mb);
+	mb->keephistory = FALSE;
 	return msg;
 }
 
@@ -243,8 +250,6 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 void
 SQLaddQueryToCache(Client c)
 {
-	//str msg = NULL;
-
 	insertSymbol(c->nspace, c->curprg);
 }
 

@@ -28,18 +28,18 @@ Ready.
 #create table blabla(id integer);
 #~BeginVariableOutput~#
 function user.s8_1():void;
-"    X_23:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
+"    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
 "    sql.catalog(29,""sys"",nil,0);"
-"    X_6 := bat.new(nil:oid,nil:int);"
-"    C_8 := algebra.subselect(X_6,nil:int,nil:int,true,true,true);"
-"    X_10 := algebra.projection(C_8,X_6);"
-"    (X_11,r1_27,r2_27) := group.subgroupdone(X_10);"
-    X_14 := aggr.count(r2_27);
-    X_15:lng := aggr.sum(r2_27);
-    X_16:bit := calc.isnil(X_15);
-"    X_18:lng := calc.ifthenelse(X_16,0,X_15);"
-"    X_19:bit := calc.!=(X_14,X_18);"
-"    sql.assert(X_19,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+    X_19 := bat.new(nil:int);
+"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
+"    X_25 := algebra.projection(X_22,X_19);"
+"    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
+    X_29 := aggr.count(r2_27);
+    X_30:lng := aggr.sum(r2_27);
+    X_31:bit := calc.isnil(X_30);
+"    X_34:lng := calc.ifthenelse(X_31,0,X_30);"
+"    X_35:bit := calc.!=(X_29,X_34);"
+"    sql.assert(X_35,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s8_1;
 #inline               actions= 0 time=1 usec 
@@ -65,18 +65,18 @@ end user.s8_1;
 #garbagecollctor      actions= 1 time=10 usec 
 #total                actions= 1 time=224 usec 
 function user.s10_1():void;
-"    X_23:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
+"    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
 "    sql.catalog(29,""sys"",nil,0);"
-"    X_6 := bat.new(nil:oid,nil:int);"
-"    C_8 := algebra.subselect(X_6,nil:int,nil:int,true,true,true);"
-"    X_10 := algebra.projection(C_8,X_6);"
-"    (X_11,r1_27,r2_27) := group.subgroupdone(X_10);"
-    X_14 := aggr.count(r2_27);
-    X_15:lng := aggr.sum(r2_27);
-    X_16:bit := calc.isnil(X_15);
-"    X_18:lng := calc.ifthenelse(X_16,0,X_15);"
-"    X_19:bit := calc.!=(X_14,X_18);"
-"    sql.assert(X_19,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+    X_19 := bat.new(nil:int);
+"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
+"    X_25 := algebra.projection(X_22,X_19);"
+"    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
+    X_29 := aggr.count(r2_27);
+    X_30:lng := aggr.sum(r2_27);
+    X_31:bit := calc.isnil(X_30);
+"    X_34:lng := calc.ifthenelse(X_31,0,X_30);"
+"    X_35:bit := calc.!=(X_29,X_34);"
+"    sql.assert(X_35,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s10_1;
 #inline               actions= 0 time=1 usec 
@@ -104,18 +104,18 @@ end user.s10_1;
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 function user.s18_1():void;
-"    X_23:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
+"    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
 "    sql.catalog(29,""sys"",nil,0);"
-"    X_6 := bat.new(nil:oid,nil:int);"
-"    C_8 := algebra.subselect(X_6,nil:int,nil:int,true,true,true);"
-"    X_10 := algebra.projection(C_8,X_6);"
-"    (X_11,r1_27,r2_27) := group.subgroupdone(X_10);"
-    X_14 := aggr.count(r2_27);
-    X_15:lng := aggr.sum(r2_27);
-    X_16:bit := calc.isnil(X_15);
-"    X_18:lng := calc.ifthenelse(X_16,0,X_15);"
-"    X_19:bit := calc.!=(X_14,X_18);"
-"    sql.assert(X_19,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+    X_19 := bat.new(nil:int);
+"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
+"    X_25 := algebra.projection(X_22,X_19);"
+"    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
+    X_29 := aggr.count(r2_27);
+    X_30:lng := aggr.sum(r2_27);
+    X_31:bit := calc.isnil(X_30);
+"    X_34:lng := calc.ifthenelse(X_31,0,X_30);"
+"    X_35:bit := calc.!=(X_29,X_34);"
+"    sql.assert(X_35,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s18_1;
 #inline               actions= 0 time=1 usec 

@@ -34,12 +34,13 @@
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
-#include "opt_emptycolumn.h"
+#include "opt_emptybind.h"
 #include "opt_evaluate.h"
 #include "opt_factorize.h"
 #include "opt_garbageCollector.h"
 #include "opt_generator.h"
 #include "opt_inline.h"
+#include "opt_jit.h"
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
@@ -68,7 +69,7 @@ struct{
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
-	{"emptycolumn", &OPTemptycolumnImplementation},
+	{"emptybind", &OPTemptybindImplementation},
 	{"evaluate", &OPTevaluateImplementation},
 	{"factorize", &OPTfactorizeImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
@@ -77,6 +78,7 @@ struct{
 	{"projectionpath", &OPTprojectionpathImplementation},
 	{"matpack", &OPTmatpackImplementation},
 	{"json", &OPTjsonImplementation},
+	{"jit", &OPTjitImplementation},
 	{"mergetable", &OPTmergetableImplementation},
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},

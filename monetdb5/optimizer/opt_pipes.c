@@ -67,7 +67,7 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.emptycolumn();"
+	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
@@ -98,7 +98,7 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.emptycolumn();"
+	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
@@ -119,6 +119,7 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.jit();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
@@ -137,7 +138,7 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.emptycolumn();"
+	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
@@ -156,6 +157,7 @@ static struct PIPELINES {
 	 "optimizer.profiler();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
+	 "optimizer.jit();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /* The sequential pipe line is (and should be kept!) identical to the
@@ -174,7 +176,7 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.emptycolumn();"
+	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
@@ -192,6 +194,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.jit();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /* Experimental pipelines stressing various components under

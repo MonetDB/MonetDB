@@ -18,11 +18,15 @@
  */
 
 /* author M.Kersten
- * This optimizer hunts for the empty persistent tables accessed
- * and propagates them.
+ * This optimizer hunts for the empty persistent tables accessed and propagates them.
+ *
+ * Patterns to look for:
+ *  X_13 := algebra.projection(X_1,X_4);
+ *  where either argument is empty
+ *
  */
 #include "monetdb_config.h"
-#include "opt_emptycolumn.h"
+#include "opt_emptybind.h"
 #include "opt_aliases.h"
 #include "opt_deadcode.h"
 #include "mal_builder.h"
@@ -41,7 +45,7 @@
 
 
 int
-OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j;
 	int *marked;
@@ -53,7 +57,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int etop= 0, esize= 256;
 
 	// use an instruction reference table to keep
-	// track of where 'emptycolumn' results are produced
+	// track of where 'emptybind' results are produced
 	marked = (int *) GDKzalloc(mb->vsize * sizeof(int));
 	if ( marked == NULL)
 		return 0;
@@ -72,8 +76,8 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void) cntxt;
 	(void) pci;
 
-	OPTDEBUGemptycolumn{
-		mnstr_printf(GDKout, "Optimize Query Emptycolumn\n");
+	OPTDEBUGemptybind{
+		mnstr_printf(GDKout, "Optimize Query Emptybind\n");
 		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
 	}
 
@@ -98,7 +102,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
  		 * sequences to filter and replace results 
  		 */
 		if ( getModuleId(p) == batRef && getFunctionId(p) == newRef){
-			OPTDEBUGemptycolumn
+			OPTDEBUGemptybind
 				mnstr_printf(cntxt->fdout, "#empty bat  pc %d var %d\n",i , getArg(p,0) );
 			marked[getArg(p,0)] = i;
 			continue;
@@ -117,16 +121,16 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		}
 
 		/* restore the naming, dropping the runtime property 'marked' */
-		if (getFunctionId(p) == emptycolumnRef) {
-			OPTDEBUGemptycolumn
+		if (getFunctionId(p) == emptybindRef) {
+			OPTDEBUGemptybind
 				mnstr_printf(cntxt->fdout, "#empty bind  pc %d var %d\n",i , getArg(p,0) );
 			setFunctionId(p,bindRef);
 			p->typechk= TYPE_UNKNOWN;
 			marked[getArg(p,0)] = i;
 			if( p->retc == 2){
 				marked[getArg(p,1)] = i;
-				OPTDEBUGemptycolumn
-					mnstr_printf(cntxt->fdout, "#empty bind  pc %d var %d\n",i , getArg(p,1) );
+				OPTDEBUGemptybind
+					mnstr_printf(cntxt->fdout, "#empty update bind  pc %d var %d\n",i , getArg(p,1) );
 			}
 			// replace the call into a empty bat creation unless the table was updated already in the same query 
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
@@ -136,17 +140,25 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				if(q && getModuleId(q) == sqlRef && isUpdateInstruction(q)){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
 						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
+						OPTDEBUGemptybind
+							mnstr_printf(cntxt->fdout, "#reset mark empty variable pc %d var %d\n",i , getArg(p,0) );
 						marked[getArg(p,0)] = 0;
-						if( p->retc == 2)
+						if( p->retc == 2){
+							OPTDEBUGemptybind
+								mnstr_printf(cntxt->fdout, "#reset mark empty variable pc %d var %d\n",i , getArg(p,1) );
 							marked[getArg(p,1)] = 0;
+						}
 						break;
 					}
 				}
 				if(q && getModuleId(q) == sqlRef && getFunctionId(q) == catalogRef){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 ){
 						marked[getArg(p,0)] = 0;
-						if( p->retc == 2)
+						if( p->retc == 2){
+							OPTDEBUGemptybind
+								mnstr_printf(cntxt->fdout, "#reset mark empty variable pc %d var %d\n",i , getArg(p,1) );
 							marked[getArg(p,1)] = 0;
+						}
 						break;
 					}
 				}
@@ -172,8 +184,8 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			continue;
 		}
 
-		if (getFunctionId(p) == emptycolumnidxRef) {
-			OPTDEBUGemptycolumn
+		if (getFunctionId(p) == emptybindidxRef) {
+			OPTDEBUGemptybind
 				mnstr_printf(cntxt->fdout, "#empty bindidx  pc %d var %d\n",i , getArg(p,0) );
 			setFunctionId(p,bindidxRef);
 			p->typechk= TYPE_UNKNOWN;
@@ -186,9 +198,14 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				if(q && getModuleId(q) == sqlRef && (getFunctionId(q) == appendRef || getFunctionId(q) == updateRef )){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
 						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
+						OPTDEBUGemptybind
+							mnstr_printf(cntxt->fdout, "#reset mark empty variable pc %d var %d\n",i , getArg(p,0) );
 						marked[getArg(p,0)] = 0;
-						if( p->retc == 2)
+						if( p->retc == 2){
+							OPTDEBUGemptybind
+								mnstr_printf(cntxt->fdout, "#reset mark empty variable pc %d var %d\n",i , getArg(p,1) );
 							marked[getArg(p,1)] = 0;
+						}
 						break;
 					}
 				}
@@ -222,21 +239,23 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 		// delta operations without updates+ insert can be replaced by an assignment
 		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc ==5){
-			OPTDEBUGemptycolumn
-				mnstr_printf(cntxt->fdout, "#empty delta  pc %d var %d,%d,%d\n",i ,marked[getArg(p,2)], marked[getArg(p,3)], marked[getArg(p,4)] );
 			if( marked[getArg(p,2)] && marked[getArg(p,3)] && marked[getArg(p,4)] ){
-				OPTDEBUGemptycolumn
+				OPTDEBUGemptybind
+					mnstr_printf(cntxt->fdout, "#empty delta  pc %d var %d,%d,%d\n",i ,marked[getArg(p,2)], marked[getArg(p,3)], marked[getArg(p,4)] );
+				OPTDEBUGemptybind
 					mnstr_printf(cntxt->fdout, "#empty delta  pc %d var %d\n",i , getArg(p,0) );
 				clrFunction(p);
 				p->argc = 2;
-				marked[getArg(p,0)] = i;
+				if ( marked[getArg(p,1)] ){
+					marked[getArg(p,0)] = i;
+				}
 			}
 			continue;
 		}
 
 		if (getModuleId(p)== sqlRef && getFunctionId(p) == projectdeltaRef) {
 			if( marked[getArg(p,3)] && marked[getArg(p,4)] ){
-				OPTDEBUGemptycolumn
+				OPTDEBUGemptybind
 					mnstr_printf(cntxt->fdout, "#empty projectdelta  pc %d var %d\n",i , getArg(p,0) );
 					setModuleId(p,algebraRef);
 					setFunctionId(p,projectionRef);
@@ -248,7 +267,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		if (getModuleId(p)== algebraRef){
 			if( getFunctionId(p) == projectionRef) {
 				if( marked[getArg(p,1)] || marked[getArg(p,2)] ){
-					OPTDEBUGemptycolumn
+					OPTDEBUGemptybind
 						mnstr_printf(cntxt->fdout, "#empty projection  pc %d var %d\n",i , getArg(p,0) );
 					emptyresult(0);
 				}
@@ -256,7 +275,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		}
 	}
 
-	OPTDEBUGemptycolumn{
+	OPTDEBUGemptybind{
 		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
 		mnstr_printf(GDKout, "Optimize Query Emptybind done\n");
 		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
@@ -270,7 +289,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	chkFlow(cntxt->fdout, mb);
 	chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptycolumn",1,GDKusec() - usec);
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",1,GDKusec() - usec);
     newComment(mb,buf);
 	return 1;
 }
