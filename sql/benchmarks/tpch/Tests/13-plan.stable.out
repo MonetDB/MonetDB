@@ -48,7 +48,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 225 # length
+% 231 # length
 project (
 | group by (
 | | project (
@@ -56,7 +56,7 @@ project (
 | | | | left outer join (
 | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.%TID% NOT NULL ] COUNT ,
 | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_comment NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
-| | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey, (char[orders.o_comment NOT NULL] as orders.o_comment) ! FILTER like (char "%special%requests%", char "") ]
+| | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey, (clob[char[orders.o_comment NOT NULL]] as orders.o_comment) ! FILTER like (clob "%special%requests%", clob "") ]
 | | | ) [ customer.c_custkey NOT NULL HASHCOL  ] [ customer.c_custkey NOT NULL HASHCOL , sys.count no nil (orders.o_orderkey NOT NULL HASHCOL ) NOT NULL as L1.L1 ]
 | | ) [ L1 NOT NULL as c_orders.c_count ]
 | ) [ c_orders.c_count NOT NULL ] [ c_orders.c_count NOT NULL, sys.count() NOT NULL as L2.L2 ]

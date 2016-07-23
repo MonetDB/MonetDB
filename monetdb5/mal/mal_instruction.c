@@ -763,7 +763,7 @@ newVariable(MalBlkPtr mb, str name, size_t len, malType type)
 		}
 	}
 	if( name == 0 || len == 0)
-		(void) snprintf(mb->var[n]->id, IDLENGTH,"%c%c%d", REFMARKER,TMPMARKER,mb->vid++);
+		(void) snprintf(mb->var[n]->id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	else{
 		(void) strncpy( mb->var[n]->id, name,len);
 		mb->var[n]->id[len]=0;

@@ -1078,7 +1078,7 @@ TESTrenderer(MapiHdl hdl)
 				 strlen(s) < l ||
 				 /* start or end with white space? */
 				 my_isspace(*s) ||
-				 my_isspace(s[l - 1]) ||
+				 (l > 0 && my_isspace(s[l - 1])) ||
 				 /* timezone can have embedded comma */
 				 strcmp(tp, "timezone") == 0 ||
 				 /* a bunch of geom types */

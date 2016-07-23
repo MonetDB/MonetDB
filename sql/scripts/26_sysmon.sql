@@ -36,8 +36,3 @@ create procedure sys.resume(tag bigint)
 external name sql.sysmon_resume;
 create procedure sys.stop(tag bigint)
 external name sql.sysmon_stop;
-
---create function sysmon.connections()
---returns table(
---)
---external name sql.sql_sysmon_connections;

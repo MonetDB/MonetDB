@@ -84,9 +84,9 @@
 #define setVarConstant(M,I)		((M)->var[I]->flags |= VAR_CONSTANT)
 #define isVarConstant(M,I)		((M)->var[I]->flags & VAR_CONSTANT)
 
-#define clrVarCList(M,I)		((M)->var[I]->flags &= ~VAR_CLIST)
-#define setVarCList(M,I)		((M)->var[I]->flags |= VAR_CLIST)
-#define isVarCList(M,I)		((M)->var[I]->flags & VAR_CLIST)
+#define clrVarCList(M,I)		((M)->var[I]->id[0]= REFMARKER)
+#define setVarCList(M,I)		((M)->var[I]->id[0]= REFMARKERC)
+#define isVarCList(M,I)			((M)->var[I]->id[0] == REFMARKERC)
 
 #define getVarConstant(M,I)	((M)->var[I]->value)
 #define getVarValue(M,I)	VALget(&(M)->var[I]->value)
