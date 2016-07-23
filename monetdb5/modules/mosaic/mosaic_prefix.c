@@ -777,7 +777,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
     int residu;\
     TPE value;\
 	m = ~mask;\
-	residu = val & m;\
+	residu = (int)( val & m);\
 	val = val & mask;\
 	base = (BitVector) dst;\
 	low= hgh = TPE##_nil;\
