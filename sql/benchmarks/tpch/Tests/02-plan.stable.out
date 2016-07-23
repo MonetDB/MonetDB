@@ -90,7 +90,7 @@ top N (
 | | | | | | | | | | | table(sys.partsupp) [ partsupp.ps_supplycost NOT NULL, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey, partsupp.%partsupp_ps_partkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_partkey_fkey ] COUNT ,
 | | | | | | | | | | | select (
 | | | | | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_mfgr NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, part.%TID% NOT NULL ] COUNT 
-| | | | | | | | | | | ) [ part.p_size NOT NULL = int "15", (char[part.p_type NOT NULL] as part.p_type) FILTER like (char "%BRASS", char "") ]
+| | | | | | | | | | | ) [ part.p_size NOT NULL = int "15", (clob[char[part.p_type NOT NULL]] as part.p_type) FILTER like (clob "%BRASS", clob "") ]
 | | | | | | | | | | ) [ partsupp.%partsupp_ps_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_partkey_fkey ],
 | | | | | | | | | | table(sys.supplier) [ supplier.s_name NOT NULL, supplier.s_address NOT NULL, supplier.s_phone NOT NULL, supplier.s_acctbal NOT NULL, supplier.s_comment NOT NULL, supplier.%TID% NOT NULL, supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT 
 | | | | | | | | | ) [ partsupp.%partsupp_ps_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ],

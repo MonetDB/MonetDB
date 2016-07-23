@@ -1409,6 +1409,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					break;
 				case cmp_filter:
 					done = 1;
+
+					if (backend_create_subfunc(sql, s->op4.funcval, NULL) < 0)
+						return -1;
 					op = sql_func_imp(s->op4.funcval->func);
 					mod = sql_func_mod(s->op4.funcval->func);
 

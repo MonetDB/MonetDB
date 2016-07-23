@@ -1380,7 +1380,7 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, convert(v, varchar) from T_dec; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+MAPI  = (monetdb) /var/tmp/mtest-26956/.s.monetdb.37342
 QUERY = SELECT v, convert(v, longvarchar) from T_dec; -- LONGVARCHAR not valid data type
 ERROR = !type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
         !syntax error, unexpected FROM in: "from"
@@ -1441,7 +1441,7 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, cast(v as varchar) from T_dec; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+MAPI  = (monetdb) /var/tmp/mtest-26956/.s.monetdb.37342
 QUERY = SELECT v, cast(v as longvarchar) from T_dec; -- LONGVARCHAR not valid data type
 ERROR = !type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
         !syntax error, unexpected FROM in: "from"

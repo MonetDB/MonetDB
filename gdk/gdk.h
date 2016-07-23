@@ -1620,10 +1620,6 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  * @tab BBPincref (bat bi, int logical)
  * @item int
  * @tab BBPdecref (bat bi, int logical)
- * @item void
- * @tab BBPhot (bat bi)
- * @item void
- * @tab BBPcold (bat bi)
  * @item str
  * @tab BBPname (bat bi)
  * @item bat
@@ -1724,8 +1720,6 @@ gdk_export int BBPcurstamp(void);
 
 gdk_export void BBPlock(void);
 
-gdk_export void BBPhot(bat b);
-gdk_export void BBPcold(bat b);
 gdk_export void BBPunlock(void);
 
 gdk_export str BBPlogical(bat b, str buf);

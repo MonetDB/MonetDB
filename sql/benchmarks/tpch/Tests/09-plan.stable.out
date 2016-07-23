@@ -65,7 +65,7 @@ project (
 | | | | | | | join (
 | | | | | | | | select (
 | | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_name NOT NULL ] COUNT 
-| | | | | | | | ) [ (char[part.p_name NOT NULL] as part.p_name) FILTER like (char "%green%", char "") ],
+| | | | | | | | ) [ (clob[char[part.p_name NOT NULL]] as part.p_name) FILTER like (clob "%green%", clob "") ],
 | | | | | | | | table(sys.lineitem) [ lineitem.l_partkey NOT NULL, lineitem.l_suppkey NOT NULL, lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey, lineitem.%lineitem_l_partkey_l_suppkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_partkey_l_suppkey_fkey ] COUNT 
 | | | | | | | ) [ part.p_partkey NOT NULL HASHCOL  = lineitem.l_partkey NOT NULL ],
 | | | | | | | table(sys.supplier) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT 

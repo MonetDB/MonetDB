@@ -3229,45 +3229,6 @@ BBPtrim(size_t target)
 		MT_lock_unset(&GDKtrimLock(i));
 }
 
-void
-BBPhot(bat i)
-{
-	if (BBPcheck(i, "BBPhot")) {
-		int lock = locked_by ? MT_getpid() != locked_by : 1;
-
-		if (lock)
-			MT_lock_set(&GDKswapLock(i));
-		BBP_lastused(i) = BBPLASTUSED(BBPstamp() + 30000);
-		if (lock)
-			MT_lock_unset(&GDKswapLock(i));
-	}
-}
-
-void
-BBPcold(bat i)
-{
-	if (BBPcheck(i, "BBPcold")) {
-		MT_Id pid = MT_getpid();
-		int idx = threadmask(pid);
-		int lock = locked_by ? pid != locked_by : 1;
-
-		MT_lock_set(&GDKtrimLock(idx));
-		if (lock)
-			MT_lock_set(&GDKswapLock(i));
-		/* make very cold and insert on top of trim list */
-		BBP_lastused(i) = 0;
-		if (BBP_cache(i) && bbptrimlast < bbptrimmax) {
-			lastused[--bbptrimmax] = 0;
-			bbptrim[bbptrimmax].bid = i;
-			bbptrim[bbptrimmax].next = bbptrimfirst;
-			bbptrimfirst = bbptrimmax;
-		}
-		if (lock)
-			MT_lock_unset(&GDKswapLock(i));
-		MT_lock_unset(&GDKtrimLock(idx));
-	}
-}
-
 /*
  * BBPquickdesc loads a BAT descriptor without loading the entire BAT,
  * of which the result be used only for a *limited* number of

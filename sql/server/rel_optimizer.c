@@ -1427,12 +1427,12 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		
 		if (e->f){
 			sql_subfunc *f = e->f;
-			if (math_unsafe(f))
+			if (math_unsafe(f) || f->func->type != F_FUNC)
 				return 0;
 		}
 		if (l) for (n = l->h; n && res; n = n->next)
 			res &= can_push_func(n->data, rel, &lmust);
-		if (!lmust)
+		if (res && !lmust)
 			return 1;
 		(*must) |= lmust;
 		return res;
