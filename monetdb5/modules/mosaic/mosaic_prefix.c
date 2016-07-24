@@ -771,7 +771,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 { 	TPE low,hgh;\
     TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
     TPE2 mask = *dst++;\
-    TPE2  val  =  (TPE) *dst++,v;\
+    TPE2  val  = (TPE2)((TPE) *dst++),v;\
     TPE2 m;\
     BitVector base;\
     int residu;\
