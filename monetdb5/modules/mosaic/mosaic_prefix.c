@@ -641,7 +641,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 #define  subselect_prefix(TPE, TPE2) \
 {	TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
 	TPE2 mask = *dst++;\
-	TPE2  val  =  (TPE) *dst++,v;\
+	TPE2  val = *dst++,v;\
 	TPE2 m;\
 	BitVector base;\
 	int residu;\
@@ -771,7 +771,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 { 	TPE low,hgh;\
     TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
     TPE2 mask = *dst++;\
-    TPE2  val  = (TPE2)((TPE) *dst++),v;\
+    TPE2  val = *dst++,v;\
     TPE2 m;\
     BitVector base;\
     int residu;\
@@ -861,7 +861,7 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 {	TPE *r;\
     TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
     TPE2 mask = *dst++;\
-    TPE2  val  =  (TPE) *dst++,v;\
+    TPE2  val = *dst++,v;\
     TPE2 m;\
     BitVector base;\
     int residu;\
@@ -972,7 +972,7 @@ break;
 {   TPE *w;\
 	TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
 	TPE2 mask = *dst++;\
-	TPE2  val  =  (TPE2) *dst++,v;\
+	TPE2  val = *dst++,v;\
 	TPE2 m;\
 	BitVector base;\
 	int residu;\
@@ -1015,7 +1015,7 @@ MOSsubjoin_prefix(Client cntxt,  MOStask task)
 {   lng *w;
 	ulng *dst =  (ulng*)  (((char*) blk) + MosaicBlkSize);
 	ulng mask = *dst++;
-	ulng  val  =  (ulng) *dst++,v;
+	ulng  val = *dst++,v;
 	ulng m;
 	BitVector base;
 	int residu;
