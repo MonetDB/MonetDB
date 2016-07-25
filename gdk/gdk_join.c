@@ -490,6 +490,8 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 	} else {
 		cnt = lend - lstart;
 		HEAPfree(&r1->T->heap, 1);
+		r1->T->heap.storage = r1->T->heap.newstorage = STORE_MEM;
+		r1->T->heap.size = 0;
 		r1->ttype = TYPE_void;
 		r1->tvarsized = 1;
 		r1->T->width = 0;
@@ -503,6 +505,8 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 	BATseqbase(r1, 0);
 	if (r2) {
 		HEAPfree(&r2->T->heap, 1);
+		r2->T->heap.storage = r2->T->heap.newstorage = STORE_MEM;
+		r2->T->heap.size = 0;
 		r2->ttype = TYPE_void;
 		r2->tvarsized = 1;
 		r2->T->width = 0;
@@ -639,6 +643,9 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					 * the result is the other
 					 * range and thus dense */
 					HEAPfree(&r1->T->heap, 1);
+					r1->T->heap.storage = STORE_MEM;
+					r1->T->heap.newstorage = STORE_MEM;
+					r1->T->heap.size = 0;
 					r1->ttype = TYPE_void;
 					r1->tvarsized = 1;
 					r1->T->width = 0;
@@ -668,6 +675,9 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			r1->tdense = 1;
 			HEAPfree(&r1->T->heap, 1);
+			r1->T->heap.storage = STORE_MEM;
+			r1->T->heap.newstorage = STORE_MEM;
+			r1->T->heap.size = 0;
 			r1->ttype = TYPE_void;
 			r1->tvarsized = 1;
 			r1->T->width = 0;
@@ -712,6 +722,9 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (r2) {
 				r2->tdense = 1;
 				HEAPfree(&r2->T->heap, 1);
+				r2->T->heap.storage = STORE_MEM;
+				r2->T->heap.newstorage = STORE_MEM;
+				r2->T->heap.size = 0;
 				r2->ttype = TYPE_void;
 				r2->tvarsized = 1;
 				r2->T->width = 0;
