@@ -699,7 +699,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	char is_table = (res && res->token == SQL_TABLE);
 	char is_aggr = (type == F_AGGR);
 	char is_func = (type != F_PROC);
-	char is_loader = (type != F_LOADER);
+	char is_loader = (type == F_LOADER);
 
 	char *F = is_loader?"LOADER":(is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE"));
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
