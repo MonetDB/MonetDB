@@ -668,34 +668,47 @@ geom_sfcgal_version(char **ret)
 }
 
 /* SFCGDAL functionality */
+
 str
 geom_sfcgal_extrude(wkb **res, wkb **geom, double *ex, double *ey, double *ez)
 {
 	sfcgal_geometry_t *outGeom, *inGeom;
-	GEOSGeom inGeos = wkb2geos(*geom), outGeos;
+	GEOSGeom inGeos = NULL, outGeos = NULL;
+    str ret, msg;
     int srid;
 
-    if (wkbGetSRID(&srid, geom) != MAL_SUCCEED) {
-		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
+	if (wkb_isnil(*geom)) {
+        *res = geos2wkb(GEOSGeom_createEmptyPolygon());
+	    return MAL_SUCCEED;
     }
 
-	if (geom_to_sfcgal(&inGeom, inGeos) != MAL_SUCCEED) {
+    if ( !(inGeos = wkb2geos(*geom)) ) {
+        *res = NULL;
+		return createException(MAL, "geom.Extrude", "wkb2geos failed");
+    }
+    if ((ret = wkbGetSRID(&srid, geom)) != MAL_SUCCEED) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Extrude", "GEOSExtrude failed");
+        msg = createException(MAL, "geom.Extrude", "wkbGetSRID failed: %s", ret);
+        GDKfree(ret);
+		return msg;
+    }
+
+	if (( ret = geom_to_sfcgal(&inGeom, inGeos)) != MAL_SUCCEED) {
+		*res = NULL;
+        msg = createException(MAL, "geom.Extrude", "geom_to_sfcgal failed:%s", ret);
+        GDKfree(ret);
+		return msg;
 	}
 	if (!(outGeom = sfcgal_geometry_extrude (inGeom, *ex, *ey, *ez))) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Extrude", "GEOSExtrude failed");
+		return createException(MAL, "geom.Extrude", "sfcgal_geometry_extrude failed");
 	}
 
-    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0) != MAL_SUCCEED) {
+    if ( ( ret = sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0)) != MAL_SUCCEED) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Extrude", "GEOSExtrude failed");
+		msg = createException(MAL, "geom.Extrude", "GEOSExtrude failed:%s", ret);
+        GDKfree(ret);
+        return msg;
     }
 
 	*res = geos2wkb(outGeos);
@@ -706,30 +719,42 @@ str
 geom_sfcgal_straightSkeleton(wkb **res, wkb **geom)
 {
 	sfcgal_geometry_t *outGeom, *inGeom;
-	GEOSGeom inGeos = wkb2geos(*geom), outGeos;
+	GEOSGeom inGeos = NULL, outGeos = NULL;
+    str ret, msg;
     int srid;
 
-    if (wkbGetSRID(&srid, geom) != MAL_SUCCEED) {
-		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
+	if (wkb_isnil(*geom)) {
+        *res = geos2wkb(GEOSGeom_createEmptyPolygon());
+	    return MAL_SUCCEED;
     }
 
-	if (geom_to_sfcgal(&inGeom, inGeos) != MAL_SUCCEED) {
+    if ( !(inGeos = wkb2geos(*geom)) ) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.StraightSkeleton", "GEOSStraightSkeleton failed");
+		return createException(MAL, "geom.StraightSkeleton", "wkb2geos failed");
+    }
+    if ((ret = wkbGetSRID(&srid, geom)) != MAL_SUCCEED) {
+		*res = NULL;
+		msg = createException(MAL, "geom.Tesselate", "wkbGetSRID failed:%s", ret);
+        GDKfree(ret);
+        return msg;
+    }
+
+	if ( (ret = geom_to_sfcgal(&inGeom, inGeos)) != MAL_SUCCEED) {
+		*res = NULL;
+		msg = createException(MAL, "geom.StraightSkeleton", "geom_to_sfcgal failed:%s", ret);
+        GDKfree(ret);
+        return msg;
 	}
 	if (!(outGeom = sfcgal_geometry_straight_skeleton(inGeom))) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.StraightSkeleton", "GEOSStraightSkeleton failed");
+		return createException(MAL, "geom.StraightSkeleton", "sfcgal_geometry_straight_skeleton failed");
 	}
 
-    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0) != MAL_SUCCEED) {
+    if ( (ret = sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0)) != MAL_SUCCEED) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Extrude", "GEOSExtrude failed");
+		msg = createException(MAL, "geom.Extrude", "sfcgal_to_geom failed:%s", ret);
+        GDKfree(ret);
+        return msg;
     }
 
 	*res = geos2wkb(outGeos);
@@ -740,30 +765,42 @@ str
 geom_sfcgal_tesselate(wkb **res, wkb **geom)
 {
 	sfcgal_geometry_t *outGeom, *inGeom;
-	GEOSGeom inGeos = wkb2geos(*geom), outGeos;
+	GEOSGeom inGeos = NULL, outGeos = NULL;
+    str ret, msg;
     int srid;
 
-    if (wkbGetSRID(&srid, geom) != MAL_SUCCEED) {
-		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
+	if (wkb_isnil(*geom)) {
+        *res = geos2wkb(GEOSGeom_createEmptyPolygon());
+	    return MAL_SUCCEED;
     }
 
-	if (geom_to_sfcgal(&inGeom, inGeos) != MAL_SUCCEED) {
+    if ( !(inGeos = wkb2geos(*geom)) ) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
+		return createException(MAL, "geom.Tesselate", "wkb2geos failed");
+    }
+    if ( (ret = wkbGetSRID(&srid, geom)) != MAL_SUCCEED) {
+		*res = NULL;
+		msg = createException(MAL, "geom.Tesselate", "wkbGetSRID failed:%s", ret);
+        GDKfree(ret);
+        return msg;
+    }
+
+	if ( (ret = geom_to_sfcgal(&inGeom, inGeos)) != MAL_SUCCEED) {
+		*res = NULL;
+		msg = createException(MAL, "geom.Tesselate", "geom_to_sfcgal failed:%s", ret);
+        GDKfree(ret);
+        return msg;
 	}
 	if (!(outGeom = sfcgal_geometry_tesselate(inGeom))) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
+		return createException(MAL, "geom.Tesselate", "sfcgal_geometry_tesselate failed");
 	}
 
-    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0) != MAL_SUCCEED) {
+    if (  (ret = sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0)) != MAL_SUCCEED) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
+		msg = createException(MAL, "geom.Tesselate", "sfcgal_to_geom failed:%s", ret);
+        GDKfree(ret);
+        return msg;
     }
 
 	*res = geos2wkb(outGeos);
@@ -774,33 +811,44 @@ str
 geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom, int *flag)
 {
 	sfcgal_geometry_t *outGeom, *inGeom;
-	GEOSGeom inGeos = wkb2geos(*geom), outGeos;
+	GEOSGeom inGeos = NULL, outGeos = NULL;
+    str ret, msg;
     int srid;
 
-    if (wkbGetSRID(&srid, geom) != MAL_SUCCEED) {
-		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Triangulate2DZ", "GEOSTriangulate2DZ failed");
+	if (wkb_isnil(*geom)) {
+        *res = geos2wkb(GEOSGeom_createEmptyPolygon());
+	    return MAL_SUCCEED;
     }
 
-	if (geom_to_sfcgal(&inGeom, inGeos) != MAL_SUCCEED) {
+    if ( !(inGeos = wkb2geos(*geom)) ) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Triangulate2DZ", "GEOSTriangulate2DZ failed");
+		return createException(MAL, "geom.Triangulate2DZ", "wkb2geos failed");
+    }
+    if ( (ret = wkbGetSRID(&srid, geom)) != MAL_SUCCEED) {
+		*res = NULL;
+		msg = createException(MAL, "geom.Triangulate2DZ", "wkbGetSRID failed:%s", ret);
+        GDKfree(ret);
+        return msg;
+    }
+
+	if ( (ret = geom_to_sfcgal(&inGeom, inGeos)) != MAL_SUCCEED) {
+		*res = NULL;
+		msg = createException(MAL, "geom.Triangulate2DZ", "geom_to_sfcgal failed:%s", ret);
+        GDKfree(ret);
+        return msg;
 	}
 
-    //TODO
 	if (!(outGeom = sfcgal_geometry_triangulate_2dz(inGeom))) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
+		return createException(MAL, "geom.Tesselate", "sfcgal_geometry_triangulate_2dz failed");
 	}
 
 
-    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid, *flag) != MAL_SUCCEED) {
+    if (  (ret = sfcgal_to_geom(&outGeos, outGeom, 0, srid, *flag)) != MAL_SUCCEED) {
 		*res = NULL;
-        //TODO: free ret
-		return createException(MAL, "geom.Triangulate2DZ", "GEOSTriangulate2DZ failed");
+		msg = createException(MAL, "geom.Triangulate2DZ", "sfcgal_to_geom failed:%s", ret);
+        GDKfree(ret);
+        return msg;
     }
 
 	*res = geos2wkb(outGeos);
