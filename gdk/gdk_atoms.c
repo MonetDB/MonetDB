@@ -578,23 +578,6 @@ batWrite(const bat *a, stream *s, size_t cnt)
 	return mnstr_writeIntArray(s, (const int *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-#ifdef HAVE_HGE
-static hge h_pow(hge base, hge exp) {
-	hge result = 1;
-#else
-static lng h_pow(lng base, lng exp) {
-	lng result = 1;
-#endif
-    while (exp)
-    {
-        if (exp & 1)
-            result *= base;
-        exp >>= 1;
-        base *= base;
-    }
-    return result;
-}
-
 
 /*
  * numFromStr parses the head of the string for a number, accepting an
@@ -656,19 +639,34 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 		}
 		base = 10 * base + base10(*p);
 		p++;
+		/* Special case: xEy = x*10^y handling part 1 */
 		if (*p == 'E' || *p == 'e') {
+			// if there is a second E in the string we give up
+			if (expbase > -1) {
+				memcpy(*dst, ATOMnilptr(tp), sz);
+				return 0;
+			}
 			expbase = base;
 			base = 0;
 			p++;
 		}
 	} while (num10(*p));
+	/* Special case: xEy = x*10^y handling part 2 */
 	if (expbase > -1) {
-		dbl checkval = fabs(((dbl) expbase) * (dbl) pow(10, (dbl) base));
-		if (checkval >= maxdiv10 * 10) {
-			memcpy(*dst, ATOMnilptr(tp), sz);
-			return 0;
+#ifdef HAVE_HGE
+		hge res = expbase;
+#else
+		lng res = expbase;
+#endif
+		while (base > 0) {
+			if (res > maxdiv10) {
+				memcpy(*dst, ATOMnilptr(tp), sz);
+				return 0;
+			}
+			res *= 10L;
+			base--;
 		}
-		base = expbase * h_pow(10, base);
+		base = res;
 	}
 	base *= sign;
 
