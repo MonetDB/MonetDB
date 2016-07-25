@@ -59,6 +59,8 @@ virtualize(BAT *bn)
 			bn->tseqbase = * (const oid *) Tloc(bn, 0);
 		bn->tdense = 1;
 		HEAPfree(&bn->theap, 1);
+		bn->theap.storage = bn->theap.newstorage = STORE_MEM;
+		bn->theap.size = 0;
 		bn->ttype = TYPE_void;
 		bn->tvarsized = 1;
 		bn->twidth = 0;
