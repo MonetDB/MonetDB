@@ -227,12 +227,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	 * be aware, a user can introduce several modules 
 	 * that should be freed to avoid memory leaks */
 	if (c->nspace) {
-		Module m, nm;
-		for( m = c->nspace; m!= mal_scope; m= m->outer){
-			nm= m->outer;
-			freeModule(m);
-			m= nm;
-		}
+		freeModule(c->nspace);
 		c->nspace = 0;
 	}
 

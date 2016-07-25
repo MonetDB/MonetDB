@@ -24,7 +24,6 @@ typedef struct SCOPEDEF {
 	str help;   			/* short description of module functionality*/
 } *Module, ModuleRecord;
 
-mal_export Module mal_scope;
 
 mal_export void     setModuleJump(str nme, Module cur);
 mal_export Module   newModule(Module scope, str nme);
@@ -44,7 +43,6 @@ mal_export void 	dumpSearchTable(stream *f, str text);
 mal_export char **getHelp(Module m, str pat, int flag);
 mal_export char **getHelpMatch(char *pat);
 mal_export void showHelp(Module m, str txt,stream *fs);
-
 
 #define getSubScope(N)  (*(N))
 
