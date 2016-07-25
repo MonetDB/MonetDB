@@ -2363,6 +2363,7 @@ wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* 
 str wkbSimplify(wkb** outWKB, wkb** geom, float* tolerance){
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 	GEOSGeometry* outGeometry;
+    int srid;
 
 	if(!(outGeometry = GEOSSimplify(geosGeometry, *tolerance))) {
 		*outWKB = NULL;
@@ -2370,8 +2371,10 @@ str wkbSimplify(wkb** outWKB, wkb** geom, float* tolerance){
 		return createException(MAL, "geom.Simplify", "GEOSSimplify failed");
 	}
 
+    srid = GEOSGetSRID(geosGeometry);
 	GEOSGeom_destroy(geosGeometry);
 
+	GEOSSetSRID(outGeometry, srid);
 	*outWKB = geos2wkb(outGeometry);
 	GEOSGeom_destroy(outGeometry);
 
@@ -2381,6 +2384,7 @@ str wkbSimplify(wkb** outWKB, wkb** geom, float* tolerance){
 str wkbSimplifyPreserveTopology(wkb** outWKB, wkb** geom, float* tolerance){
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 	GEOSGeometry* outGeometry;
+    int srid;
 
 	if(!(outGeometry = GEOSTopologyPreserveSimplify(geosGeometry, *tolerance))) {
 		*outWKB = NULL;
@@ -2388,8 +2392,10 @@ str wkbSimplifyPreserveTopology(wkb** outWKB, wkb** geom, float* tolerance){
 		return createException(MAL, "geom.SimplifyPreserveTopology", "GEOSTopologyPreserveSimplify failed");
 	}
 
+    srid = GEOSGetSRID(geosGeometry);
 	GEOSGeom_destroy(geosGeometry);
 
+	GEOSSetSRID(outGeometry, srid);
 	*outWKB = geos2wkb(outGeometry);
 	GEOSGeom_destroy(outGeometry);
 
@@ -6036,6 +6042,8 @@ wkbGeometryN(wkb **out, wkb **geom, const int *geometryNum)
 {
 	int geometriesNum = -1;
 	GEOSGeom geosGeometry = NULL;
+	const GEOSGeometry *outGeometry = NULL;
+    str err = MAL_SUCCEED;
 
 	//no geometry at this position
 	if (wkb_isnil(*geom) || *geometryNum == int_nil || *geometryNum <= 0) {
@@ -6057,18 +6065,25 @@ wkbGeometryN(wkb **out, wkb **geom, const int *geometryNum)
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.GeometryN", "GEOSGetNumGeometries failed");
 	}
-	if (geometriesNum == 1 || //geometry is not a multi geometry
-	    geometriesNum < *geometryNum) { //no geometry at this position
+    
+	if (geometriesNum < *geometryNum) { //no geometry at this position
 		GEOSGeom_destroy(geosGeometry);
 		if ((*out = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.GeometryN", MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
-	*out = geos2wkb(GEOSGetGeometryN(geosGeometry, *geometryNum - 1));
+    if ( (outGeometry = GEOSGetGeometryN(geosGeometry, *geometryNum - 1)) == NULL) {
+		GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.GeometryN", "GEOSGetGeometryN failed");
+    }
+
+    if ( (*out = geos2wkb(outGeometry)) == NULL) {
+	    GEOSGeom_destroy(geosGeometry);
+		throw(MAL, "geom.GeometryN", "geos2wkb failed:%s", err);
+    }
+
 	GEOSGeom_destroy(geosGeometry);
-	if (*out == NULL)
-		throw(MAL, "geom.GeometryN", MAL_MALLOC_FAIL);
 
 	return MAL_SUCCEED;
 }
