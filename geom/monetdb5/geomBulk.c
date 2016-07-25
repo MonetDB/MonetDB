@@ -1218,6 +1218,7 @@ WKBDBLDBLDBLINTtoBIT_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
+        return msg;
     }
 
     BATrmprops(outBAT)
@@ -1353,6 +1354,7 @@ WKBDBLDBLDBLINTtoBITflagDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, d
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
+        return msg;
     }
 
     BATrmprops(outBAT)
