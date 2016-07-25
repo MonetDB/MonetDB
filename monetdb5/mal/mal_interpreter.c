@@ -667,7 +667,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					assert(bid == 0 ||
 						   bid == bat_nil ||
 						   t == TYPE_any ||
-						   ATOMtype(BBP_cache(bid)->ttype) == ATOMtype(t));
+						   ATOMtype(BBP_desc(bid)->ttype) == ATOMtype(t));
 				} else {
 					assert(t == stk->stk[a].vtype);
 				}
