@@ -38,6 +38,10 @@
 #define geom_export extern
 #endif
 
+#define GEOMBULK_DEBUG 1
+#define OPENCL_DYNAMIC 1
+#define OPENCL_THREADS 8
+
 #define BATrmprops(b)                                           \
     b->tsorted = b->trevsorted = 0;     \
     b->tnosorted = b->tnorevsorted = 0;                         \

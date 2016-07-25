@@ -13,10 +13,6 @@
 #include "geom.h"
 #include <omp.h>
 
-//#define GEOMBULK_DEBUG 1
-#define OPENCL_DYNAMIC 1
-#define OPENCL_THREADS 8
-
 /*******************************/
 /********** One input **********/
 /*******************************/
