@@ -114,7 +114,7 @@ pyapi_export bool Python_ReleaseGIL(bool);
 #define bit_TO_PYSCALAR(value) PyInt_FromLong(value)
 #define sht_TO_PYSCALAR(value) PyInt_FromLong(value)
 #define int_TO_PYSCALAR(value) PyInt_FromLong(value)
-#define lng_TO_PYSCALAR(value) PyLong_FromLong(value)
+#define lng_TO_PYSCALAR(value) PyLong_FromLongLong(value)
 #define flt_TO_PYSCALAR(value) PyFloat_FromDouble(value)
 #define dbl_TO_PYSCALAR(value) PyFloat_FromDouble(value)
 
