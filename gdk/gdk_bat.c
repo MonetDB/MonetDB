@@ -250,59 +250,59 @@ BATattach(int tt, const char *heapfile, int role)
 	struct stat st;
 	int atomsize;
 	BUN cap;
-	char *path;
+	char *p;
+	off_t n;
+	size_t m;
+	FILE *f;
 
 	ERRORcheck(tt <= 0 , "BATattach: bad tail type (<=0)\n", NULL);
 	ERRORcheck(ATOMvarsized(tt), "BATattach: bad tail type (varsized)\n", NULL);
 	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n", NULL);
 	ERRORcheck(role < 0 || role >= 32, "BATattach: role error\n", NULL);
-	if (lstat(heapfile, &st) < 0) {
-		GDKsyserror("BATattach: cannot stat heapfile\n");
+
+	if ((f = fopen(heapfile, "rb")) == NULL) {
+		GDKsyserror("BATattach: cannot open %s\n", heapfile);
+		return NULL;
+	}
+	if (fstat(fileno(f), &st) < 0) {
+		GDKsyserror("BATattach: cannot stat %s\n", heapfile);
+		fclose(f);
 		return NULL;
 	}
 	ERRORcheck(!S_ISREG(st.st_mode), "BATattach: heapfile must be a regular file\n", NULL);
-	ERRORcheck(st.st_nlink != 1, "BATattach: heapfile must have only one link\n", NULL);
 	atomsize = ATOMsize(tt);
 	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n", NULL);
 	ERRORcheck((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX, "BATattach: heapfile too large\n", NULL);
 	cap = (BUN) (st.st_size / atomsize);
-	bn = BATcreatedesc(0, tt, 1, role);
+	bn = COLnew(0, tt, cap, role);
 	if (bn == NULL)
 		return NULL;
-	BATsetdims(bn);
-	path = GDKfilepath(bn->theap.farmid, BATDIR, bn->theap.filename, "new");
-	GDKcreatedir(path);
-	if (rename(heapfile, path) < 0) {
-		GDKsyserror("BATattach: cannot rename heapfile\n");
-		GDKfree(path);
-		HEAPfree(&bn->theap, 1);
-		GDKfree(bn);
+	p = Tloc(bn, 0);
+	n = st.st_size;
+	while (n > 0 && (m = fread(p, 1, (size_t) MIN(1024*1024, n), f)) > 0) {
+		p += m;
+		n -= m;
+	}
+	fclose(f);
+	if (n > 0) {
+		GDKerror("BATattach: couldn't read the complete file\n");
+		BBPreclaim(bn);
 		return NULL;
 	}
-	GDKfree(path);
-	BATsetcapacity(bn, cap);
 	BATsetcount(bn, cap);
-	/*
-	 * Unless/until we invest in a scan to check that there indeed
-	 * are no NIL values, we cannot safely assume there are none.
-	 */
-	bn->tnonil = 0;
+
+	bn->tnonil = cap == 0;
 	bn->tnil = 0;
+	bn->tdense = 0;
 	if (cap > 1) {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
-		bn->tdense = 0;
 		bn->tkey = 0;
+	} else {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
 	}
-	bn->batRestricted = BAT_READ;
-	bn->theap.size = (size_t) st.st_size;
-	bn->theap.newstorage = bn->theap.storage = (bn->theap.size < GDK_mmap_minsize) ? STORE_MEM : STORE_MMAP;
-	if (HEAPload(&bn->theap, BBP_physical(bn->batCacheid), "tail", TRUE) != GDK_SUCCEED) {
-		HEAPfree(&bn->theap, 1);
-		GDKfree(bn);
-		return NULL;
-	}
-	BBPcacheit(bn, 1);
 	return bn;
 }
 
