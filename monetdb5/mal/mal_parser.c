@@ -927,33 +927,6 @@ parseAtom(Client cntxt)
 	return "";
 }
 
-static str
-parseLibrary(Client cntxt)
-{
-	str libnme = 0, s;
-	int l;
-	char *nxt;
-	ValRecord cst;
-
-	nxt = CURRENT(cntxt);
-	if ((l = idLength(cntxt)) <= 0) {
-		if ((l = cstToken(cntxt, &cst)) && cst.vtype == TYPE_str) {
-			advance(cntxt, l);
-			libnme = putNameLen(nxt + 1, l - 2);
-		} else
-			return parseError(cntxt, "<library name> or <library path> expected\n");
-	} else
-		libnme = putNameLen(nxt, l);
-	s = loadLibrary(libnme, TRUE);
-	(void) putNameLen(nxt, l);
-	if (s){
-		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
-		GDKfree(s);
-	}
-	advance(cntxt, l);
-	return "";
-}
-
 /*
  * It might be handy to clone a module.
  * It gets a copy of all functions known at the point of creation.
@@ -1872,10 +1845,6 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 				continue;
 			goto allLeft;
 		case 'L': case 'l':
-			if (MALkeyword(cntxt, "library", 7)) {
-				parseLibrary(cntxt);
-				continue;
-			}
 			if (MALkeyword(cntxt, "leave", 5))
 				cntrl = LEAVEsymbol;
 			goto allLeft;
