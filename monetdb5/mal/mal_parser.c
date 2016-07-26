@@ -182,7 +182,6 @@ MALlookahead(Client cntxt, str kw, int length)
 {
 	int i;
 
-	skipSpace(cntxt);
 	/* avoid double test or use lowercase only. */
 	if (currChar(cntxt) == *kw &&
 		strncmp(CURRENT(cntxt), kw, length) == 0 &&
