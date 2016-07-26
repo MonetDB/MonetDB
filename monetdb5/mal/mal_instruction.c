@@ -1525,9 +1525,13 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 		GDKfree(mb->stmt);
 		mb->stmt = newblk;
 	}
-	/* If the destination variable has not been set, introduce a
-	 * temporary variable to hold the result instead. */
-	assert(p->argc == 0 || p->argv[0] >= 0);
+	/* A destination variable should be set */
+	if(p->argc > 0 && p->argv[0] < 0){
+		mb->errors++;
+		showException(GDKout, MAL, "pushInstruction", "Illegal instruction (missing target variable)");
+		freeInstruction(p);
+		return;
+	}
 	if (mb->stmt[i]) {
 		/* if( getModuleId(mb->stmt[i] ) )
 		   printf("Garbage collect statement %s.%s\n",
