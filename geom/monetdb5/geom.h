@@ -226,6 +226,8 @@ geom_export str wkbArea_bat(bat *inBAT_id, bat *outBAT_id);
 geom_export str wkbCentroid(wkb **out, wkb **geom);
 geom_export str wkbCentroid_bat(bat *outBAT_id, bat *inBAT_id);
 geom_export str wkbDistance(dbl *out, wkb **a, wkb **b);
+geom_export str wkbDistanceXYZ(dbl *out, wkb **a, dbl *x, dbl *y, dbl *z, int *srid);
+geom_export str wkbDistanceXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz, int* srid);
 geom_export str wkbLength(dbl *out, wkb **a);
 geom_export str wkbConvexHull(wkb **out, wkb **geom);
 geom_export str wkbIntersection(wkb **out, wkb **a, wkb **b);

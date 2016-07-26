@@ -1592,38 +1592,38 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 {
 	char *newPath = NULL;
 	size_t pathLength = strlen(path);
-	wkb *singleWKB = geos2wkb(geosGeometry);
+	wkb *singleWKB = NULL;
 	str err = MAL_SUCCEED;
 
-	if (singleWKB == NULL)
-		throw(MAL, "geom.Dump", "geos2wkb failed");
+    if ( (singleWKB = geos2wkb(geosGeometry)) == NULL)
+        throw(MAL, "geom.Dump", "geos2wkb failed");
 
-	//change the path only if it is empty
-	if (pathLength == 0) {
-		int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
+    //change the path only if it is empty
+    if (pathLength == 0) {
+        int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 
-		(*lvl)++;
+        (*lvl)++;
 
-		newPath = GDKmalloc(lvlDigitsNum + 1);
-		if (newPath == NULL) {
-			GDKfree(singleWKB);
-			throw(MAL, "geom.Dump", MAL_MALLOC_FAIL);
-		}
-		snprintf(newPath, lvlDigitsNum + 1, "%u", *lvl);
-	} else {
-		//remove the comma at the end of the path
-		pathLength--;
-		newPath = GDKmalloc(pathLength + 1);
-		if (newPath == NULL) {
-			GDKfree(singleWKB);
-			throw(MAL, "geom.Dump", MAL_MALLOC_FAIL);
-		}
-		strncpy(newPath, path, pathLength);
-		newPath[pathLength] = '\0';
-	}
-	if (BUNappend(idBAT, newPath, TRUE) != GDK_SUCCEED ||
-	    BUNappend(geomBAT, singleWKB, TRUE) != GDK_SUCCEED)
-		err = createException(MAL, "geom.Dump", "BUNappend failed");
+        newPath = GDKmalloc(lvlDigitsNum + 1);
+        if (newPath == NULL) {
+            GDKfree(singleWKB);
+            throw(MAL, "geom.Dump", MAL_MALLOC_FAIL);
+        }
+        snprintf(newPath, lvlDigitsNum + 1, "%u", *lvl);
+    } else {
+        //remove the comma at the end of the path
+        pathLength--;
+        newPath = GDKmalloc(pathLength + 1);
+        if (newPath == NULL) {
+            GDKfree(singleWKB);
+            throw(MAL, "geom.Dump", MAL_MALLOC_FAIL);
+        }
+        strncpy(newPath, path, pathLength);
+        newPath[pathLength] = '\0';
+    }
+    if (BUNappend(idBAT, newPath, TRUE) != GDK_SUCCEED ||
+            BUNappend(geomBAT, singleWKB, TRUE) != GDK_SUCCEED)
+        err = createException(MAL, "geom.Dump", "BUNappend failed");
 
 	GDKfree(newPath);
 	GDKfree(singleWKB);
@@ -1694,8 +1694,10 @@ dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 		if (empty) {
 			str err;
 			//handle it as single
-			if ((err = dumpGeometriesSingle(idBAT, geomBAT, geosGeometry, &lvl, path)) != MAL_SUCCEED)
-				return err;
+			//return dumpGeometriesSingle(idBAT, geomBAT, geosGeometry, &lvl, path);
+            //When it is empty do not add it.
+            //TODO: check if this is correct.
+            return MAL_SUCCEED;
 		}
 
 		return dumpGeometriesMulti(idBAT, geomBAT, geosGeometry, path);
@@ -5892,13 +5894,22 @@ wkbDWithinXYZ(bit *out, wkb **geomWKB_a, dbl *x, dbl *y, dbl *z, int *srid, doub
 	str err;
     wkb *geomWKB_b = NULL;
 
-	GEOSGeom geosGeometry_b;
+	GEOSGeom geosGeometry_b, geosGeometry_a;
 	GEOSCoordSeq seq;
 
+    /*
 	if (wkb_isnil(*geomWKB_a)) {
 		*out = bit_nil;
 		return MAL_SUCCEED;
 	}
+    */
+	if (wkb_isnil(*geomWKB_a) || *distance == dbl_nil) {
+		throw(MAL, "wkbDWithinXYZ", "one of the arguments is NULL");
+	}
+
+    if ( (geosGeometry_a = wkb2geos(*geomWKB_a)) == NULL) {
+		throw(MAL, "wkbDWithinXYZ", "wkb2geos failed");
+    }
 
     /*Build Geometry b*/
 	if (*x == dbl_nil || *y == dbl_nil || *z == dbl_nil) {
@@ -5927,22 +5938,89 @@ wkbDWithinXYZ(bit *out, wkb **geomWKB_a, dbl *x, dbl *y, dbl *z, int *srid, doub
 
     if (*srid != int_nil)
     	GEOSSetSRID(geosGeometry_b, *srid);
-    
-    if ((geomWKB_b = geos2wkb(geosGeometry_b)) == NULL) {
-        GEOSGeom_destroy(geosGeometry_b);
-		throw(MAL, "wkbDWithinXYZ", "geos2wkb failed");
-    }
 
-	if (wkb_isnil(*geomWKB_a) || wkb_isnil(geomWKB_b) || *distance == dbl_nil) {
+	if (GEOSGetSRID(geosGeometry_a) != GEOSGetSRID(geosGeometry_b)) {
         GEOSGeom_destroy(geosGeometry_b);
-		throw(MAL, "wkbDWithinXYZ", "one of the arguments is NULL");
+        GEOSGeom_destroy(geosGeometry_a);
+		return createException(MAL, "geom.wkbDWithinXYZ", "Geometries of different SRID");
 	}
-	if ((err = wkbDistance(&distanceComputed, geomWKB_a, &geomWKB_b)) != MAL_SUCCEED) {
-		return err;
+    
+	//if ((err = wkbDistance(&distanceComputed, geomWKB_a, &geomWKB_b)) != MAL_SUCCEED) {
+	if (!GEOSDistance(geosGeometry_a, geosGeometry_b, &distanceComputed)) {
+        GEOSGeom_destroy(geosGeometry_b);
+        GEOSGeom_destroy(geosGeometry_a);
+		return createException(MAL, "geom.wkbDWithinXYZ", "GEOSDistance failed");
 	}
 
     GEOSGeom_destroy(geosGeometry_b);
+    GEOSGeom_destroy(geosGeometry_a);
 	*out = (distanceComputed <= *distance);
+
+	return MAL_SUCCEED;
+}
+
+str
+wkbDistanceXYZ(double *out, wkb **geomWKB_a, dbl *x, dbl *y, dbl *z, int *srid)
+{
+	double distanceComputed;
+	str err;
+    wkb *geomWKB_b = NULL;
+
+	GEOSGeom geosGeometry_b, geosGeometry_a;
+	GEOSCoordSeq seq;
+
+	if (wkb_isnil(*geomWKB_a)) {
+		throw(MAL, "wkbDistanceXYZ", "one of the arguments is NULL");
+	}
+
+    if ( (geosGeometry_a = wkb2geos(*geomWKB_a)) == NULL) {
+		throw(MAL, "wkbDistanceXYZ", "wkb2geos failed");
+    }
+
+    /*Build Geometry b*/
+	if (*x == dbl_nil || *y == dbl_nil || *z == dbl_nil) {
+		*out = bit_nil;
+		return MAL_SUCCEED;
+	}
+
+	//create the point from the coordinates
+	seq = GEOSCoordSeq_create(1, 3);
+
+	if (seq == NULL) {
+		throw(MAL, "wkbDistanceXYZ", "GEOSCoordSeq_create failed");
+    }
+
+	if (!GEOSCoordSeq_setOrdinate(seq, 0, 0, *x) ||
+	    !GEOSCoordSeq_setOrdinate(seq, 0, 1, *y) ||
+        !GEOSCoordSeq_setOrdinate(seq, 0, 2, *z)) {
+		GEOSCoordSeq_destroy(seq);
+		throw(MAL, "wkbDistanceXYZ", "GEOSCoordSeq_setOrdinate failed");
+	}
+
+	if ((geosGeometry_b = GEOSGeom_createPoint(seq)) == NULL) {
+		GEOSCoordSeq_destroy(seq);
+		throw(MAL, "wkbDistanceXYZ", "Failed to create GEOSGeometry from the coordinates");
+	}
+
+    if (*srid != int_nil)
+    	GEOSSetSRID(geosGeometry_b, *srid);
+    
+	if (GEOSGetSRID(geosGeometry_a) != GEOSGetSRID(geosGeometry_b)) {
+        GEOSGeom_destroy(geosGeometry_b);
+        GEOSGeom_destroy(geosGeometry_a);
+		return createException(MAL, "geom.wkbDistanceXYZ", "Geometries of different SRID");
+	}
+    
+	//if ((err = wkbDistance(&distanceComputed, geomWKB_a, &geomWKB_b)) != MAL_SUCCEED) {
+	if (!GEOSDistance(geosGeometry_a, geosGeometry_b, &distanceComputed)) {
+        GEOSGeom_destroy(geosGeometry_b);
+        GEOSGeom_destroy(geosGeometry_a);
+		return createException(MAL, "geom.wkbDistanceXYZ", "GEOSDistance failed");
+	}
+
+    GEOSGeom_destroy(geosGeometry_b);
+    GEOSGeom_destroy(geosGeometry_a);
+	*out = distanceComputed;
 
 	return MAL_SUCCEED;
 }

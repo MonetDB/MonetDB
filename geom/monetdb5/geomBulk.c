@@ -1371,6 +1371,142 @@ wkbDWithinXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat
 	return WKBDBLDBLDBLINTtoBITflagDBL_bat(outBAT_id, inBAT_id, inXBAT_id, dx, inYBAT_id, dy, inZBAT_id, dz, srid, distance, wkbDWithinXYZ, "batgeom.DWithinXYZ");
 }
 
+/******************************************************************************************/
+/************************* IN: wkb dbl dbl dbl int - OUT: dbl *****************************/
+/******************************************************************************************/
+
+static str
+WKBDBLDBLDBLINTtoDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double * dz, int *srid, str (*func) (dbl *, wkb **, double *x, double *y, double *z, int *srid), const char *name)
+{
+	BAT *outBAT = NULL, *inBAT = NULL, *inXBAT = NULL, *inYBAT = NULL, *inZBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter inBAT_iter, inXBAT_iter, inYBAT_iter, inZBAT_iter;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    dbl *outs = NULL;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if (*inXBAT_id != bat_nil && (inXBAT = BATdescriptor(*inXBAT_id)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if (*inYBAT_id != bat_nil && (inYBAT = BATdescriptor(*inYBAT_id)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+    		BBPunfix(inXBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if (*inZBAT_id != bat_nil && (inZBAT = BATdescriptor(*inZBAT_id)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+    		BBPunfix(inXBAT->batCacheid);
+        if (*inYBAT_id != bat_nil)
+	    	BBPunfix(inYBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+		    BBPunfix(inXBAT->batCacheid);
+        if (*inYBAT_id != bat_nil)
+    		BBPunfix(inYBAT->batCacheid);
+        if (*inZBAT_id != bat_nil)
+    		BBPunfix(inZBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+	//iterator over the input BAT
+	inBAT_iter = bat_iterator(inBAT);
+    
+    if (*inXBAT_id != bat_nil)
+    	inXBAT_iter = bat_iterator(inXBAT);
+    if (*inYBAT_id != bat_nil)
+    	inYBAT_iter = bat_iterator(inYBAT);
+    if (*inZBAT_id != bat_nil)
+        inZBAT_iter = bat_iterator(inZBAT);
+
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    q = BUNlast(inBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s, %d %d\n", name, p, q);
+    gettimeofday(&start, NULL);
+#endif
+	outs = (dbl *) Tloc(outBAT, 0);
+	//BATloop(inBAT, p, q) {	//iterate over all valid elements
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
+		str err = NULL;
+	    wkb *inWKB = NULL;
+		//bit outSingle;
+        double x, y, z;
+        if (msg)
+            continue;
+
+
+        inWKB = (wkb *) BUNtail(inBAT_iter, p);
+
+        if (*inXBAT_id != bat_nil)
+            x = *(double *) BUNtail(inXBAT_iter, p);
+        else
+            x = *dx;
+        if (*inYBAT_id != bat_nil)
+            y = *(double *) BUNtail(inYBAT_iter, p);
+        else
+            y = *dy;
+        if (*inZBAT_id != bat_nil)
+            z = *(double *) BUNtail(inZBAT_iter, p);
+        else
+            z = *dz;
+
+        //if ((err = (*func) (&outSingle, &inWKB, &x, &y, &z, srid)) != MAL_SUCCEED) {
+        if ((err = (*func) (&outs[p], &inWKB, &x, &y, &z, srid)) != MAL_SUCCEED) {
+            msg = err;
+            #pragma omp cancelregion
+		}
+		//BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
+	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+    BBPunfix(inBAT->batCacheid);
+    if (*inXBAT_id != bat_nil)
+        BBPunfix(inXBAT->batCacheid);
+    if (*inYBAT_id != bat_nil)
+        BBPunfix(inYBAT->batCacheid);
+    if (*inZBAT_id != bat_nil)
+        BBPunfix(inZBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+
+    BATrmprops(outBAT)
+	BATsetcount(outBAT, BATcount(inBAT));
+    BATsettrivprop(outBAT);
+    BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+wkbDistanceXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz, int* srid)
+{
+	return WKBDBLDBLDBLINTtoDBL_bat(outBAT_id, inBAT_id, inXBAT_id, dx, inYBAT_id, dy, inZBAT_id, dz, srid, wkbDistanceXYZ, "batgeom.DistanceXYZ");
+}
+
 /***************************************************************************/
 /*************************** IN: wkb - OUT: int ****************************/
 /***************************************************************************/

@@ -278,6 +278,8 @@ command Centroid(w:wkb) :wkb address wkbCentroid
 comment "Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.";
 command Distance(a:wkb, b:wkb) :dbl address wkbDistance
 comment "Returns the 2-dimensional minimum cartesian distance between the two geometries in projected units (spatial ref units.";
+command Distance(a:wkb, x:dbl, y:dbl, z:dbl, srid:int) :dbl address wkbDistanceXYZ
+comment "Returns the 2-dimensional minimum cartesian distance between the two geometries in projected units (spatial ref units.";
 command Length(w:wkb) :dbl address wkbLength
 comment "Returns the cartesian 2D length of the geometry if it is a linestrin or multilinestring";
 command ConvexHull(w:wkb) :wkb address wkbConvexHull
@@ -852,6 +854,14 @@ command Dimension(w:bat[:wkb]) :bat[:int] address wkbDimension_bat;
 command Distance(a:bat[:wkb], b:bat[:wkb]) :bat[:dbl] address wkbDistance_bat;
 command Distance(a:wkb, b:bat[:wkb]) :bat[:dbl] address wkbDistance_geom_bat;
 command Distance(a:bat[:wkb], b:wkb) :bat[:dbl] address wkbDistance_bat_geom;
+
+#TODO: It is necessary to handle all combinations
+command DistanceXYZ_bat(a:bat[:wkb], xb:bat[:dbl], x:dbl, yb:bat[:dbl], y:dbl, zb:bat[:dbl], z:dbl, srid:int) :bat[:dbl] address wkbDistanceXYZ_bat;
+
+function Distance(a:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int) :bat[:dbl];
+    x := DistanceXYZ_bat(a, x, 0:dbl, y, 0:dbl, z, 0:dbl, srid);
+    return x;
+end Distance;
 
 command Centroid(w:bat[:wkb]) :bat[:wkb] address wkbCentroid_bat
 comment "Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.";
