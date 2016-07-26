@@ -1500,7 +1500,7 @@ PyObject *PyArrayObject_FromScalar(PyInput* inp, char **return_message)
 #ifdef HAVE_HGE
         case TYPE_hge:
             vararray = PyLong_FromHge(*((hge *) inp->dataptr));
-            VERBOSE_MESSAGE(" [Value: Huge]\n");
+            VERBOSE_MESSAGE(" [Value: %.40g]\n", (dbl)(*((hge *) inp->dataptr)));
             break;
 #endif
         case TYPE_str:
