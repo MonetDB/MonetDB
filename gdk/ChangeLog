@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Jul 26 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed batStamp field from BAT descriptor, and removed the BBPcurstamp
+  function.
+
 * Fri Jul 22 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Removed unused functions BBPhot and BBPcold.
 

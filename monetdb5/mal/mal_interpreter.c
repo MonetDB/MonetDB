@@ -462,7 +462,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	InstrPtr pci = 0;
 	int exceptionVar;
 	str ret = 0, localGDKerrbuf= GDKerrbuf;
-	int stamp = -1;
 	ValRecord backups[16];
 	ValPtr backup;
 	int garbages[16], *garbage;
@@ -582,7 +581,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 				if (i < pci->retc && stk->stk[a].vtype == TYPE_bat) {
 					backup[i] = stk->stk[a];
-					stamp = BBPcurstamp();
 				} else if (i < pci->retc &&
 						   0 < stk->stk[a].vtype &&
 						   stk->stk[a].vtype < TYPE_any &&
@@ -808,17 +806,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
 							continue;
 						}
-						if (b->batStamp <= stamp) {
-							if (GDKdebug & PROPMASK) {
-								b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
-								BATassertProps(b);
-								BBPunfix(b->batCacheid);
-							}
-						} else if (GDKdebug & CHECKMASK) {
-							b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
-							BATassertProps(b);
-							BBPunfix(b->batCacheid);
-						}
+						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
+						BATassertProps(b);
+						BBPunfix(b->batCacheid);
 					}
 				}
 			}

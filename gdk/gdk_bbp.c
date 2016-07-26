@@ -181,10 +181,6 @@ getBBPsize(void)
 /*
  * other globals
  */
-#ifdef ATOMIC_LOCK
-static MT_Lock BBP_curstampLock MT_LOCK_INITIALIZER("BBP_curstampLock");
-#endif
-static volatile ATOMIC_TYPE BBP_curstamp = 0; /* unique stamp for creation of a bat */
 int BBP_dirty = 0;		/* BBP structures modified? */
 int BBPin = 0;			/* bats loaded statistic */
 int BBPout = 0;			/* bats saved statistic */
@@ -1982,12 +1978,6 @@ BBPgetsubdir(str s, bat i)
 	*s = 0;
 }
 
-int
-BBPcurstamp(void)
-{
-	return ATOMIC_GET(BBP_curstamp, BBP_curstampLock) & 0x7fffffff;
-}
-
 /* There are BBP_THREADMASK+1 (64) free lists, and ours (idx) is
  * empty.  Here we find a longish free list (at least 20 entries), and
  * if we can find one, we take one entry from that list.  If no long
@@ -2085,7 +2075,6 @@ BBPinsert(BAT *bn)
 
 	/* fill in basic BBP fields for the new bat */
 
-	bn->batStamp = ATOMIC_INC(BBP_curstamp, BBP_curstampLock) & 0x7fffffff;
 	bn->batCacheid = i;
 	bn->creator_tid = MT_getpid();
 
@@ -3754,7 +3743,6 @@ gdk_bbp_reset(void)
 	BBP_mask = 0;
 	stamp = 0;
 
-	BBP_curstamp = 0;
 	BBP_dirty = 0;
 	BBPin = 0;
 	BBPout = 0;

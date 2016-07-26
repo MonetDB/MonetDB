@@ -795,7 +795,6 @@ gdk_export int VALisnil(const ValRecord *v);
 typedef struct {
 	/* dynamic bat properties */
 	MT_Id tid;		/* which thread created it */
-	int stamp;		/* BAT recent creation stamp */
 	unsigned int
 	 copiedtodisk:1,	/* once written */
 	 dirty:2,		/* dirty wrt disk? */
@@ -884,7 +883,6 @@ typedef struct BATiter {
 #define batInserted	S.inserted
 #define batCount	S.count
 #define batCapacity	S.capacity
-#define batStamp	S.stamp
 #define batSharecnt	S.sharecnt
 #define batRestricted	S.restricted
 #define batRole		S.role
@@ -1702,7 +1700,6 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 /* macros that nicely check parameters */
 #define BBPcacheid(b)	((b)->batCacheid)
 #define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):-1)
-gdk_export int BBPcurstamp(void);
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
 #define BBPname(i)						\

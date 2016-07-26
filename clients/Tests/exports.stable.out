@@ -177,7 +177,6 @@ BAT *BATunique(BAT *b, BAT *s);
 BBPrec *BBP[N_BBPINIT];
 void BBPaddfarm(const char *dirname, int rolemask);
 void BBPclear(bat bid);
-int BBPcurstamp(void);
 int BBPdecref(bat b, int logical);
 BAT *BBPdescriptor(bat b);
 int BBPin;
