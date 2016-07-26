@@ -204,6 +204,7 @@ void insertSymbol(Module scope, Symbol prg){
 	t = getSubScope(getFunctionId(sig));
 	if( scope->subscope == NULL)
 		newSubScope(scope);
+	assert(scope->subscope);
 	if(scope->subscope[t] == prg){
 		/* already known, last inserted */
 	 } else  {
@@ -421,6 +422,8 @@ char **getHelp(Module m, str inputpat, int completion)
 						msg[top] =0;
 						if( top == maxhelp-1) {
 							msg= (char **) GDKrealloc(msg,sizeof(str)* maxhelp);
+							if( msg == NULL)
+								return NULL;
 							maxhelp+= MAXHELP;
 						}
 					}
@@ -506,6 +509,8 @@ char **getHelp(Module m, str inputpat, int completion)
 							}
 							if( top >= maxhelp-3){
 								msg= (char **) GDKrealloc(msg,sizeof(str)* (maxhelp+MAXHELP));
+								if( msg == NULL)
+									return NULL;
 								maxhelp+= MAXHELP;
 							}
 						}
@@ -575,6 +580,8 @@ char **getHelpMatch(char *pat){
 								msg[top] = 0;
 								if( top == maxhelp-1){
 									msg= (char **) GDKrealloc(msg,sizeof(str)* (maxhelp+MAXHELP));
+									if( msg == NULL)
+										return NULL;
 									maxhelp+= MAXHELP;
 								}
 							}

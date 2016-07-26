@@ -72,6 +72,8 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) pci;
 
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
+	if(series == NULL)
+		return 0;
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
