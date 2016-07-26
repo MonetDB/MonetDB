@@ -2519,7 +2519,7 @@ int timestamp_tz_fromstr(const char *buf, int *len, timestamp **ret);
 int timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezone);
 str transRef;
 void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
-void trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb);
+void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
 void typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent);
 int tzone_fromstr(const char *buf, int *len, tzone **d);
 tzone tzone_local;

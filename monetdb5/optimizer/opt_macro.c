@@ -132,8 +132,6 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			nv[n] = newVariable(mb, mc->var[n]->id, strlen(mc->var[n]->id), TYPE_str);
 			if (isVarUDFtype(mc,n))
 				setVarUDFtype(mb,nv[n]);
-			if (isVarUsed(mc,n))
-				setVarUsed(mb,nv[n]);
 		} else if (isVarTypedef(mc,n)) {
 			nv[n] = newTypeVariable(mb,getVarType(mc,n));
 		} else if (isVarConstant(mc,n)) {
@@ -142,8 +140,6 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
 			if (isVarUDFtype(mc,n))
 				setVarUDFtype(mb,nv[n]);
-			if (isVarUsed(mc,n))
-				setVarUsed(mb,nv[n]);
 		}
 	}
 

@@ -375,21 +375,16 @@ void
 MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i;
-	bit *used = GDKzalloc(mb->vtop * sizeof(bit));
-	if( used == NULL){
-		GDKerror("MSresetVariables" MAL_MALLOC_FAIL);
-		return;
-	}
 
 	for (i = 0; i < start && start < mb->vtop; i++)
-		used[i] = 1;
+		setVarUsed(mb,i);
 	if (mb->errors == 0)
 		for (i = start; i < mb->vtop; i++) {
-			if (used[i] || !isTmpVar(mb,i)){
+			if (isVarUsed(mb,i) || !isTmpVar(mb,i)){
 				assert(!mb->var[i]->value.vtype || isVarConstant(mb, i));
-				used[i] = 1;
+				setVarUsed(mb,i);
 			}
-			if (glb && !used[i]) {
+			if (glb && !isVarUsed(mb,i)) {
 				if (isVarConstant(mb, i))
 					garbageElement(cntxt, &glb->stk[i]);
 				/* clean stack entry */
@@ -400,8 +395,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 		}
 
 	if (mb->errors == 0)
-		trimMalVariables_(mb, used, glb);
-	GDKfree(used);
+		trimMalVariables_(mb, glb);
 }
 
 /*

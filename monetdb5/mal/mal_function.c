@@ -531,6 +531,19 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 
 void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
+	int i,j;
+	InstrPtr p;
+	// Set the used bits properly
+	for(i=0; i< mb->vtop; i++)
+		clrVarUsed(mb,i);
+	for(i=0; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		for(j= p->retc; j<p->argc; j++)
+			setVarUsed(mb, getArg(p,j));
+		if( p->barrier)
+			for(j= 0; j< p->retc; j++)
+				setVarUsed(mb, getArg(p,j));
+	}
 	listFunction(fd,mb,stk,flg,0,mb->stop);
 }
 

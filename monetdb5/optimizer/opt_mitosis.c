@@ -234,11 +234,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 			qv = getArg(q, 0) = newTmpVariable(mb, qtpe);
 			setVarUDFtype(mb, qv);
-			setVarUsed(mb, qv);
 			if (upd) {
 				rv = getArg(q, 1) = newTmpVariable(mb, rtpe);
 				setVarUDFtype(mb, rv);
-				setVarUsed(mb, rv);
 			}
 			pushInstruction(mb, q);
 			matq = pushArgument(mb, matq, qv);

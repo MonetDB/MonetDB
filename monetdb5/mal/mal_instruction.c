@@ -901,7 +901,7 @@ freeVariable(MalBlkPtr mb, int varid)
  * that do not contribute.
  */
 void
-trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
+trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 {
 	int *vars, cnt = 0, i, j;
 	int maxid = 0,m;
@@ -913,7 +913,7 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
-		if (used[i] == 0) {
+		if ( isVarUsed(mb,i) == 0) {
 			if (glb && isVarConstant(mb, i))
 				VALclear(&glb->stk[i]);
 			freeVariable(mb, i);
@@ -967,25 +967,20 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 void
 trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 {
-	bit *used;
 	int i, j;
 	InstrPtr q;
 
-	used = (bit *) GDKzalloc(mb->vtop);
-	if( used == NULL){
-		GDKerror("trimMalVariables" MAL_MALLOC_FAIL);
-		return;
-	}
-
+	/* reset the use bit */
+	for (i = 0; i < mb->vtop; i++) 
+		clrVarUsed(mb,i);
 	/* build the use table */
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 
 		for (j = 0; j < q->argc; j++)
-			used[getArg(q, j)] = 1;
+			setVarUsed(mb,getArg(q,j));
 	}
-	trimMalVariables_(mb, used, stk);
-	GDKfree(used);
+	trimMalVariables_(mb, stk);
 }
 
 /* MAL constants
