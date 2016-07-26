@@ -1053,3 +1053,8 @@ comment "Returns the geometry pairs are withing distance dist";
 command geom.DWithinsubjoin(l:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int, dist:dbl, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],sr:bat[:oid])
 address DWithinXYZsubjoin
 comment "Returns the geometry pairs are withing distance dist";
+
+command geom.Containssubjoin(l:bat[:wkb], r:bat[:wkb], sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],rr:bat[:oid])
+address Containssubjoin
+comment "Returns true if and only if no points of B lie in the exterior of A, and at least one point of the interior of B lies in the interior of A.";
+

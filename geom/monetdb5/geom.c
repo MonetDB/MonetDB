@@ -7810,8 +7810,13 @@ wkbPatchToGeom_bat(wkb **res, wkb **geom, bat* px, bat* py, bat* pz) {
 	return MAL_SUCCEED;
 }
 
+
+/***************************************************************************/
+/************************ IN: wkb wkb - OUT: bit ***************************/
+/***************************************************************************/
+
 static str
-Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
+WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
 {
 	BAT *xl, *xr, *bl, *br;
 	oid lo, ro;
@@ -7822,20 +7827,24 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
     mbr **rMBRs = NULL;
     int *rSRIDs = NULL;
     str msg = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 
 	if( (br= BATdescriptor(*rid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if ( xl == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
-		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -7843,7 +7852,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
 	/*iterator over the BATs*/
@@ -7862,7 +7871,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
     		BBPunfix(*rid);
     		BBPunfix(xl->batCacheid);
     		BBPunfix(xr->batCacheid);
-    		throw(MAL, "algebra.instersects", "wkb2geos failed");
+    		throw(MAL, name, "wkb2geos failed");
         }
         rMBRs[pr] = mbrFromGeos(rGeometries[pr]);
         if (rMBRs[pr] == NULL || mbr_isnil(rMBRs[pr])) {
@@ -7876,7 +7885,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
             BBPunfix(*rid);
             BBPunfix(xl->batCacheid);
             BBPunfix(xr->batCacheid);
-            throw(MAL, "algebra.instersects", "Failed to create mbrFromGeos");
+            throw(MAL, name, "Failed to create mbrFromGeos");
         }
         rSRIDs[pr] = GEOSGetSRID(rGeometries[pr]);
     }
@@ -7890,6 +7899,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 	    mbr *lMBR = NULL;
 	    GEOSGeom lGeometry = NULL;
         ro = br->hseqbase;
+        int lSRID = 0;
 
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
         lGeometry = wkb2geos(lWKB);
@@ -7904,7 +7914,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
     		BBPunfix(*rid);
     		BBPunfix(xl->batCacheid);
     		BBPunfix(xr->batCacheid);
-    		throw(MAL, "algebra.instersects", "wkb2geos failed");
+    		throw(MAL, name, "wkb2geos failed");
         }
 
 	    lMBR = mbrFromGeos(lGeometry);
@@ -7919,33 +7929,47 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
             BBPunfix(*rid);
             BBPunfix(xl->batCacheid);
             BBPunfix(xr->batCacheid);
-    		throw(MAL, "algebra.instersects", "mbrFromGeos failed");
+    		throw(MAL, name, "mbrFromGeos failed");
         }
+        lSRID = GEOSGetSRID(lGeometry);
 
+#ifdef GEOMBULK_DEBUG
+        fprintf(stdout, "%s %d %d %d\n", name, pl, ql, BATcount(br));
+        gettimeofday(&start, NULL);
+#endif
         for (j = 0; j < BATcount(br); j++, ro++) {
             bit out = 0;
             mbr *rMBR = NULL;
 	        GEOSGeom rGeometry = rGeometries[j];
 
             if (!lGeometry ||!rGeometry) {
-                msg = createException(MAL, "geom.Intersects", "One of the geometries is NULL");
+                msg = createException(MAL, name, "One of the geometries is NULL");
                 break;
             }
 
             //if (GEOSGetSRID(lGeometry) != GEOSGetSRID(rGeometry)) {
-            if (GEOSGetSRID(lGeometry) != rSRIDs[j]) {
-                msg = createException(MAL, "geom.Intersects", "Geometries of different SRID");
+            //if (GEOSGetSRID(lGeometry) != rSRIDs[j]) {
+            if (lSRID != rSRIDs[j]) {
+                msg = createException(MAL, name, "Geometries of different SRID");
                 break;
             }
 
+            /*
 	        err = mbrOverlaps(&out, &lMBR, &rMBRs[j]);
             if (err != MAL_SUCCEED) {
                 msg = err;
                 break;
             } else if (out) {
+            */
+            rMBR = rMBRs[j]; 
+            if ((out = !((rMBR)->ymax < (lMBR)->ymin ||
+                            (rMBR)->ymin > (lMBR)->ymax ||
+                            (rMBR)->xmax < (lMBR)->xmin ||
+                            (rMBR)->xmin > (lMBR)->xmax))) {
                 out = 0;
-                if ((out = GEOSIntersects(lGeometry, rGeometry)) == 2){
-                    msg = createException(MAL, "geom.Intersects", "GEOSIntersects failed");
+                //if ((out = GEOSIntersects(lGeometry, rGeometry)) == 2){
+                if ((out = (*func)(lGeometry, rGeometry)) == 2){
+                    msg = createException(MAL, name, "GEOSIntersects failed");
                     break;
                 }
                 if (out) {
@@ -7953,7 +7977,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
                     BUNappend(xr, &ro, FALSE);
                 }
             }
-	        GDKfree(rMBR);
+	        //GDKfree(rMBR);
         }
 
         if (msg) {
@@ -7976,6 +8000,12 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
             GEOSGeom_destroy(lGeometry);
         GDKfree(lMBR);
         lo++;
+
+#ifdef GEOMBULK_DEBUG
+        gettimeofday(&stop, NULL);
+        t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+        fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
 	}
 
     if (rGeometries) {
@@ -8008,7 +8038,17 @@ Intersectssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bi
     (void)sr;
     (void)nil_matches;
     (void)estimate;
-    return Intersectssubjoin_intern(lres, rres, lid, rid);
+    return WKBWKBtoBITsubjoin_intern(lres, rres, lid, rid, GEOSIntersects, "geom.Intersects");
+}
+
+str
+Containssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
+{
+    (void)sl;
+    (void)sr;
+    (void)nil_matches;
+    (void)estimate;
+    return WKBWKBtoBITsubjoin_intern(lres, rres, lid, rid, GEOSContains, "geom.Contains");
 }
 
 static str

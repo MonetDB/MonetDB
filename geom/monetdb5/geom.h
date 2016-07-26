@@ -38,9 +38,9 @@
 #define geom_export extern
 #endif
 
-//#define GEOMBULK_DEBUG 1
-#define OPENCL_DYNAMIC 0
-#define OPENCL_THREADS 1
+#define GEOMBULK_DEBUG 1
+#define OPENCL_DYNAMIC 1
+#define OPENCL_THREADS 8
 
 #define BATrmprops(b)                                           \
     b->tsorted = b->trevsorted = 0;     \
@@ -376,3 +376,4 @@ geom_export str Intersectssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat 
 geom_export str IntersectsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 geom_export str DWithinsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, double *dist, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 geom_export str DWithinXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, double *dist, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
+geom_export str Containssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);

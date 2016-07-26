@@ -4477,3 +4477,4 @@ CREATE filter function Intersects(geom1 Geometry, geom2 Geometry) external name 
 CREATE filter function Intersects(geom1 Geometry, x double, y double, z double, srid int) external name geom."Intersects";
 CREATE filter function DWithin(geom1 Geometry, geom2 Geometry, dist double) external name geom."DWithin";
 CREATE filter function DWithin(geom1 Geometry, x double, y double, z double, srid int, dist double) external name geom."DWithin";
+CREATE filter function Contains(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Contains";
