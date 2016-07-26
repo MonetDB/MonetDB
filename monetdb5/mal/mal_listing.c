@@ -46,6 +46,10 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	int varid = getArg(p,idx);
 
 	buf = GDKzalloc(maxlen);
+	if( buf== NULL){
+		GDKerror("renderTerm:Failed to allocate");
+		return 0;
+	}
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb,varid) && !isVarTypedef(mb,varid)) {
 		nme = getVarName(mb,varid);
