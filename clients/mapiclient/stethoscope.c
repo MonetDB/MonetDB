@@ -339,6 +339,9 @@ main(int argc, char **argv)
 	}
 	conn = mapi_get_from(dbh);
 	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
+		if (n == 0 &&
+		    (n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) <= 0)
+			break;
 		buffer[len + n] = 0;
 		response = buffer;
 		if( debug)
