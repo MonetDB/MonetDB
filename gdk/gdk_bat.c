@@ -247,63 +247,143 @@ BAT *
 BATattach(int tt, const char *heapfile, int role)
 {
 	BAT *bn;
-	struct stat st;
-	int atomsize;
-	BUN cap;
 	char *p;
-	off_t n;
 	size_t m;
 	FILE *f;
 
 	ERRORcheck(tt <= 0 , "BATattach: bad tail type (<=0)\n", NULL);
-	ERRORcheck(ATOMvarsized(tt), "BATattach: bad tail type (varsized)\n", NULL);
-	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n", NULL);
+	ERRORcheck(ATOMvarsized(tt) && ATOMstorage(tt) != TYPE_str, "BATattach: bad tail type (varsized and not str)\n", NULL);
+	ERRORcheck(heapfile == NULL, "BATattach: bad heapfile name\n", NULL);
 	ERRORcheck(role < 0 || role >= 32, "BATattach: role error\n", NULL);
 
 	if ((f = fopen(heapfile, "rb")) == NULL) {
 		GDKsyserror("BATattach: cannot open %s\n", heapfile);
 		return NULL;
 	}
-	if (fstat(fileno(f), &st) < 0) {
-		GDKsyserror("BATattach: cannot stat %s\n", heapfile);
-		fclose(f);
-		return NULL;
-	}
-	ERRORcheck(!S_ISREG(st.st_mode), "BATattach: heapfile must be a regular file\n", NULL);
-	atomsize = ATOMsize(tt);
-	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n", NULL);
-	ERRORcheck((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX, "BATattach: heapfile too large\n", NULL);
-	cap = (BUN) (st.st_size / atomsize);
-	bn = COLnew(0, tt, cap, role);
-	if (bn == NULL)
-		return NULL;
-	p = Tloc(bn, 0);
-	n = st.st_size;
-	while (n > 0 && (m = fread(p, 1, (size_t) MIN(1024*1024, n), f)) > 0) {
-		p += m;
-		n -= m;
-	}
-	fclose(f);
-	if (n > 0) {
-		GDKerror("BATattach: couldn't read the complete file\n");
-		BBPreclaim(bn);
-		return NULL;
-	}
-	BATsetcount(bn, cap);
+	if (ATOMstorage(tt) == TYPE_str) {
+		size_t n;
+		char *s;
+		int c, u;
 
-	bn->tnonil = cap == 0;
-	bn->tnil = 0;
-	bn->tdense = 0;
-	if (cap > 1) {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		if ((bn = COLnew(0, tt, 0, role)) == NULL) {
+			fclose(f);
+			return NULL;
+		}
+		m = 4096;
+		n = 0;
+		u = 0;
+		s = p = GDKmalloc(m);
+		if (p == NULL) {
+			fclose(f);
+			BBPreclaim(bn);
+			return NULL;
+		}
+		while ((c = getc(f)) != EOF) {
+			if (n == m) {
+				m += 4096;
+				p = GDKrealloc(p, m);
+				s = p + n;
+			}
+			if (c == '\n' && n > 0 && s[-1] == '\r') {
+				/* deal with CR-LF sequence */
+				s[-1] = c;
+			} else {
+				*s++ = c;
+				n++;
+			}
+			if (u) {
+				if ((c & 0xC0) == 0x80)
+					u--;
+				else
+					goto notutf8;
+			} else if ((c & 0xF8) == 0xF0)
+				u = 3;
+			else if ((c & 0xF0) == 0xE0)
+				u = 2;
+			else if ((c & 0xE0) == 0xC0)
+				u = 1;
+			else if ((c & 0x80) == 0x80)
+				goto notutf8;
+			else if (c == 0) {
+				if (BUNappend(bn, p, 0) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					fclose(f);
+					GDKfree(p);
+					return NULL;
+				}
+				s = p;
+				n = 0;
+			}
+		}
+		fclose(f);
+		GDKfree(p);
+		if (n > 0) {
+			BBPreclaim(bn);
+			GDKerror("BATattach: last string is not null-terminated\n");
+			return NULL;
+		}
 	} else {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		struct stat st;
+		int atomsize;
+		BUN cap;
+		off_t n;
+
+		if (fstat(fileno(f), &st) < 0) {
+			GDKsyserror("BATattach: cannot stat %s\n", heapfile);
+			fclose(f);
+			return NULL;
+		}
+		atomsize = ATOMsize(tt);
+		if (st.st_size % atomsize != 0) {
+			fclose(f);
+			GDKerror("BATattach: heapfile size not integral number of atoms\n");
+			return NULL;
+		}
+		if ((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX) {
+			fclose(f);
+			GDKerror("BATattach: heapfile too large\n");
+			return NULL;
+		}
+		cap = (BUN) (st.st_size / atomsize);
+		bn = COLnew(0, tt, cap, role);
+		if (bn == NULL) {
+			fclose(f);
+			return NULL;
+		}
+		p = Tloc(bn, 0);
+		n = st.st_size;
+		while (n > 0 && (m = fread(p, 1, (size_t) MIN(1024*1024, n), f)) > 0) {
+			p += m;
+			n -= m;
+		}
+		fclose(f);
+		if (n > 0) {
+			GDKerror("BATattach: couldn't read the complete file\n");
+			BBPreclaim(bn);
+			return NULL;
+		}
+		BATsetcount(bn, cap);
+		bn->tnonil = cap == 0;
+		bn->tnil = 0;
+		bn->tdense = 0;
+		if (cap > 1) {
+			bn->tsorted = 0;
+			bn->trevsorted = 0;
+			bn->tkey = 0;
+		} else {
+			bn->tsorted = 1;
+			bn->trevsorted = 1;
+			bn->tkey = 1;
+		}
 	}
 	return bn;
+
+  notutf8:
+	fclose(f);
+	BBPreclaim(bn);
+	GDKfree(p);
+	GDKerror("BATattach: input is not UTF-8\n");
+	return NULL;
 }
 
 /*
