@@ -917,10 +917,6 @@ partial:
 			}
 			continue;
 		}
-		case '?':
-			if (!isspace((int) b[1]))
-				showHelp(cntxt->nspace, b + 1, out);
-			continue;
 		case 'h':
 			if (strncmp("help", b, 2) == 0)
 				mdbHelp(out);
