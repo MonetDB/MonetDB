@@ -1667,7 +1667,6 @@ typedef struct {
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
-	int lastused;		/* BBP LRU stamp */
 	volatile int status;	/* status mask used for spin locking */
 	/* MT_Id pid;           non-zero thread-id if this BAT is private */
 } BBPrec;
@@ -1693,7 +1692,6 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_desc(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].desc
 #define BBP_refs(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].refs
 #define BBP_lrefs(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].lrefs
-#define BBP_lastused(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].lastused
 #define BBP_status(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].status
 #define BBP_pid(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].pid
 

@@ -31923,10 +31923,6 @@ command bbp.getDirty():bat[:str]
 address CMDbbpDirty;
 comment Create a BAT with the dirty/ diffs/clean status
 
-command bbp.getHeat():bat[:int] 
-address CMDbbpHeat;
-comment Create a BAT with the heat values
-
 command bbp.getLocation():bat[:str] 
 address CMDbbpLocation;
 comment Create a BAT with their disk locations

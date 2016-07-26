@@ -973,7 +973,6 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 str CMDbbpCount(bat *ret);
 str CMDbbpDirty(bat *ret);
 str CMDbbpDiskSpace(lng *ret);
-str CMDbbpHeat(bat *ret);
 str CMDbbpKind(bat *ret);
 str CMDbbpLRefCount(bat *ret);
 str CMDbbpLocation(bat *ret);

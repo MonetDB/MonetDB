@@ -185,37 +185,6 @@ CMDbbpLocation(bat *ret)
 	return MAL_SUCCEED;
 }
 
-#define monet_modulesilent (GDKdebug&PERFMASK)
-
-str
-CMDbbpHeat(bat *ret)
-{
-	BAT *b;
-	int i;
-
-	b = COLnew(0, TYPE_int, getBBPsize(), TRANSIENT);
-	if (b == 0)
-		throw(MAL, "catalog.bbpHeat", MAL_MALLOC_FAIL);
-
-	BBPlock();
-	for (i = 1; i < getBBPsize(); i++)
-		if (i != b->batCacheid) {
-			if (BBP_cache(i) && !monet_modulesilent) {
-				int heat = BBP_lastused(i);
-
-				BUNappend(b, &heat, FALSE);
-			} else if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				int zero = 0;
-
-				BUNappend(b, &zero, FALSE);
-			}
-		}
-	BBPunlock();
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
-	pseudo(ret,b,"bbp","heat");
-	return MAL_SUCCEED;
-}
-
 /*
  * The BAT dirty status:dirty => (mem != disk); diffs = not-committed
  */
@@ -415,7 +384,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 			bn = BATdescriptor(i);
 			if (bn) {
 				lng l = BATcount(bn);
-				int heat_ = BBP_lastused(i);
+				int heat_ = 0;
 				char *loc = BBP_cache(i) ? "load" : "disk";
 				char *mode = "persistent";
 				int refs = BBP_refs(i);

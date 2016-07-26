@@ -129,24 +129,6 @@ static int havehge = 0;
 
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? strtol((s) + 4, NULL, 8) : 0)
 
-#ifdef ATOMIC_LOCK
-static MT_Lock stampLock MT_LOCK_INITIALIZER("stampLock");
-#endif
-static volatile ATOMIC_TYPE stamp = 0;
-
-static inline int
-BBPstamp(void)
-{
-	return (int) ATOMIC_INC(stamp, stampLock);
-}
-
-static void
-BBPsetstamp(int newstamp)
-{
-	ATOMIC_SET(stamp, newstamp, stampLock);
-}
-
-
 static void
 BBP_insert(bat i)
 {
@@ -1054,7 +1036,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid)
 }
 
 static int
-BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpversion)
+BBPreadEntries(FILE *fp, int oidsize, int bbpversion)
 {
 	bat bid = 0;
 	char buf[4096];
@@ -1107,12 +1089,12 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 			   &map_theap,
 			   &nread) < 14 :
 		    sscanf(buf,
-			   "%lld %hu %128s %128s %d %u %lld %lld %lld"
+			   "%lld %hu %128s %128s %u %lld %lld %lld"
 			   "%n",
 			   &batid, &status, headname, filename,
-			   &lastused, &properties,
+			   &properties,
 			   &count, &capacity, &base,
-			   &nread) < 9)
+			   &nread) < 8)
 			GDKfatal("BBPinit: invalid format for BBP.dir%s", buf);
 
 		/* convert both / and \ path separators to our own DIR_SEP */
@@ -1195,11 +1177,6 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		BBP_options(bid) = NULL;
 		if (options)
 			BBP_options(bid) = GDKstrdup(options);
-		BBP_lastused(bid) = lastused;
-		if (lastused > *max_stamp)
-			*max_stamp = lastused;
-		if (lastused < *min_stamp)
-			*min_stamp = lastused;
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 	}
@@ -1320,8 +1297,6 @@ BBPinit(void)
 {
 	FILE *fp = NULL;
 	struct stat st;
-	int min_stamp = 0x7fffffff, max_stamp = 0;
-	bat bid;
 	int bbpversion;
 	int oidsize;
 	oid BBPoid;
@@ -1331,7 +1306,6 @@ BBPinit(void)
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
-	ATOMIC_INIT(stampLock);
 	ATOMIC_INIT(BBPsizeLock);
 #endif
 
@@ -1378,16 +1352,8 @@ BBPinit(void)
 	BBPextend(0, FALSE);		/* allocate BBP records */
 	ATOMIC_SET(BBPsize, 1, BBPsizeLock);
 
-	needcommit = BBPreadEntries(fp, &min_stamp, &max_stamp, oidsize, bbpversion);
+	needcommit = BBPreadEntries(fp, oidsize, bbpversion);
 	fclose(fp);
-
-	/* normalize saved LRU stamps */
-	if (min_stamp <= max_stamp) {
-		for (bid = 1; bid < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); bid++)
-			if (BBPvalid(bid))
-				BBP_lastused(bid) -= min_stamp;
-		BBPsetstamp(max_stamp - min_stamp);
-	}
 
 	BBPinithash(0);
 
@@ -1565,13 +1531,12 @@ new_bbpentry(FILE *fp, bat i)
 	}
 #endif
 
-	if (fprintf(fp, SSZFMT " %d %s %s %d %d " BUNFMT " "
+	if (fprintf(fp, SSZFMT " %d %s %s %d " BUNFMT " "
 		    BUNFMT " " OIDFMT, /* BAT info */
 		    (ssize_t) i,
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
 		    BBP_physical(i),
-		    BBP_lastused(i),
 		    BBP_desc(i)->batRestricted << 1,
 		    BBP_desc(i)->batCount,
 		    BBP_desc(i)->batCapacity,
@@ -2133,7 +2098,6 @@ BBPcacheit(BAT *bn, int lock)
 		MT_lock_set(&GDKswapLock(i));
 	mode = (BBP_status(i) | BBPLOADED) & ~(BBPLOADING | BBPDELETING);
 	BBP_status_set(i, mode, "BBPcacheit");
-	BBP_lastused(i) = BBPLASTUSED(BBPstamp() + ((mode == BBPLOADED) ? 150 : 0));
 	BBP_desc(i) = bn;
 
 	/* cache it! */
@@ -2499,14 +2463,8 @@ decref(bat i, int logical, int releaseShare, int lock)
 	 * if they have been made cold or are not dirty */
 	if (BBP_refs(i) > 0 ||
 	    (BBP_lrefs(i) > 0 &&
-	     BBP_lastused(i) != 0 &&
 	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT)))) {
-		/* bat cannot be swapped out. renew its last usage
-		 * stamp for the BBP LRU policy */
-		int sec = BBPLASTUSED(BBPstamp());
-
-		if (sec > BBPLASTUSED(BBP_lastused(i)))
-			BBP_lastused(i) = sec;
+		/* bat cannot be swapped out */
 	} else if (b || (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
 		 * while locked so no other thread thinks it's
@@ -3741,7 +3699,6 @@ gdk_bbp_reset(void)
 	memset(BBPfarms, 0, sizeof(BBPfarms));
 	BBP_hash = 0;
 	BBP_mask = 0;
-	stamp = 0;
 
 	BBP_dirty = 0;
 	BBPin = 0;
