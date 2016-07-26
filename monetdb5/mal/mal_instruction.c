@@ -16,6 +16,10 @@
 #include "mal_utils.h"
 #include "mal_exception.h"
 
+#define MAXSYMBOLS 12000 /* enough for the startup and some queries */
+static SymRecord symbolpool[MAXSYMBOLS];
+static int symboltop;
+
 Symbol
 newSymbol(str nme, int kind)
 {
@@ -25,7 +29,12 @@ newSymbol(str nme, int kind)
 		GDKerror("newSymbol:unexpected name (=null)\n");
 		return NULL;
 	}
-	cur = (Symbol) GDKzalloc(sizeof(SymRecord));
+	if( symboltop < MAXSYMBOLS){
+		cur = symbolpool + symboltop;
+		symboltop++;
+	} else
+		cur = (Symbol) GDKzalloc(sizeof(SymRecord));
+
 	if (cur == NULL) {
 		GDKerror("newSymbol:" MAL_MALLOC_FAIL);
 		return NULL;
@@ -50,7 +59,8 @@ freeSymbol(Symbol s)
 		freeMalBlk(s->def);
 		s->def = NULL;
 	}
-	GDKfree(s);
+	if( !( s >= symbolpool && s < symbolpool + MAXSYMBOLS))
+		GDKfree(s);
 }
 
 void
