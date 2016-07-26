@@ -1475,7 +1475,7 @@ parseEnd(Client cntxt)
 	if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1) { \
 		varid = newVariable(curBlk, CURRENT(cntxt),l, TYPE_any);	\
 		advance(cntxt, l);\
-		assert(varid >=  0);\
+		if(varid <  0) return;\
 	} else \
 		advance(cntxt, l);
 

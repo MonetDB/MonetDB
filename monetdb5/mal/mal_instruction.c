@@ -768,6 +768,7 @@ newVariable(MalBlkPtr mb, str name, size_t len, malType type)
 	if (getVar(mb, n) == NULL){
 		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) );
 		if ( getVar(mb,n) == NULL) {
+			mb->errors++;
 			GDKerror("newVariable:" MAL_MALLOC_FAIL);
 			return -1;
 		}
