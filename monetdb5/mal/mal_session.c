@@ -12,7 +12,6 @@
 #include "mal_session.h"
 #include "mal_instruction.h" /* for pushEndInstruction() */
 #include "mal_interpreter.h" /* for showErrors(), runMAL(), garbageElement() */
-#include "mal_linker.h"	     /* for initLibraries() */
 #include "mal_parser.h"	     /* for parseMAL() */
 #include "mal_namespace.h"
 #include "mal_readline.h"
@@ -41,7 +40,6 @@ malBootstrap(void)
 	c = MCinitClient((oid) 0, 0, 0);
 	assert(c != NULL);
 	c->nspace = newModule(NULL, putName("user"));
-	initLibraries();
 	if ( (msg = defaultScenario(c)) ) {
 		GDKfree(msg);
 		GDKerror("Failed to initialise default scenario");

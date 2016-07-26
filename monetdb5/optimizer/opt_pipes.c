@@ -319,7 +319,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
-		if (pipes[i].prerequisite && getAddress(GDKout, NULL, optimizerRef, pipes[i].prerequisite, TRUE) == NULL)
+		if (pipes[i].prerequisite && getAddress(GDKout, NULL, pipes[i].prerequisite, TRUE) == NULL)
 			continue;
 		BUNappend(b, pipes[i].name, FALSE);
 		BUNappend(bn, pipes[i].def, FALSE);
@@ -425,7 +425,7 @@ compileOptimizer(Client cntxt, str name)
 			(void) MCinitClientThread(&c);
 			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
 				if (pipes[j].mb == NULL) {
-					if (pipes[j].prerequisite && getAddress(c.fdout, NULL, optimizerRef, pipes[j].prerequisite, TRUE) == NULL)
+					if (pipes[j].prerequisite && getAddress(c.fdout, NULL, pipes[j].prerequisite, TRUE) == NULL)
 						continue;
 					MSinitClientPrg(&c, "user", pipes[j].name);
 					msg = compileString(&sym, &c, pipes[j].def);
