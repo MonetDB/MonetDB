@@ -84,6 +84,9 @@
 #define setVarConstant(M,I)		((M)->var[I]->flags |= VAR_CONSTANT)
 #define isVarConstant(M,I)		((M)->var[I]->flags & VAR_CONSTANT)
 
+#define setVarScope(M,I,S)		((M)->var[I]->depth = S)
+#define getVarScope(M,I)		((M)->var[I]->depth)
+
 #define clrVarCList(M,I)		((M)->var[I]->id[0]= REFMARKER)
 #define setVarCList(M,I)		((M)->var[I]->id[0]= REFMARKERC)
 #define isVarCList(M,I)			((M)->var[I]->id[0] == REFMARKERC)
