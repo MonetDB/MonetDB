@@ -2474,7 +2474,7 @@ WKBtoWKBSflagINT(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomB
 
         geometriesCnt += geometriesNum;
 
-        if ((err = dumpGeometriesGeometry(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED) {
+        if ((err = (*func)(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED) {
             BBPunfix(inGeomBAT->batCacheid);
             if (inParentBAT_id)
                 BBPunfix(inParentBAT->batCacheid);
