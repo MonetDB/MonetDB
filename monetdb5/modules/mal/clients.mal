@@ -14,10 +14,6 @@ comment "Turn on/off echo of MAL instructions:
 	4 - show details of type resolutoin, 
 	8 - show binding information.";
 
-pattern setHistory(s:str)
-address CLTsetHistory
-comment "Designate console history file for readline.";
-
 pattern getId():int
 address CLTgetClientId
 comment "Return a number that uniquely represents the current client.";

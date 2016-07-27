@@ -25,7 +25,7 @@ lib_monetdb5 = {
 		../../common/utils/libmsabaoth \
 		$(UUID_LIBS) $(curl_LIBS) \
 		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
-		$(DL_LIBS) $(READLINE_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
+		$(DL_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
 		$(LTLIBICONV) $(zlib_LIBS) $(libxml2_LIBS) \
 		$(libmicrohttpd_LIBS) $(liburiparser_LIBS)
 }
