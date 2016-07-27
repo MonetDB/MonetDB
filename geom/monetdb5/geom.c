@@ -1723,52 +1723,37 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 	unsigned int num_geoms = 0, i;
 	str err;
 
-	if (wkb_isnil(*geomWKB)) {
+    if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
+        *idBAT_id = bat_nil;
+        throw(MAL, "geom.Dump", "Error creating new BAT");
+    }
 
-		//create new empty BAT for the output
-		if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
-			*idBAT_id = bat_nil;
-			throw(MAL, "geom.Dump", "Error creating new BAT");
-		}
+    if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
+        BBPunfix(idBAT->batCacheid);
+        *geomBAT_id = bat_nil;
+        throw(MAL, "geom.Dump", "Error creating new BAT");
+    }
 
-		if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
-			BBPunfix(idBAT->batCacheid);
-			*geomBAT_id = bat_nil;
-			throw(MAL, "geom.Dump", "Error creating new BAT");
-		}
-
-        if (parent) {
-            if ((parentBAT = COLnew(0, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
-                BBPunfix(idBAT->batCacheid);
-                BBPunfix(geomBAT->batCacheid);
-                *parentBAT_id = bat_nil;
-                throw(MAL, "geom.Dump", "Error creating new BAT");
-            }
+    if (parent) {
+        if ((parentBAT = COLnew(0, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
+            BBPunfix(idBAT->batCacheid);
+            BBPunfix(geomBAT->batCacheid);
+            *parentBAT_id = bat_nil;
+            throw(MAL, "geom.Dump", "Error creating new BAT");
         }
+    }
 
+    if (wkb_isnil(*geomWKB)) {
+        //create new empty BAT for the output
 		BBPkeepref(*idBAT_id = idBAT->batCacheid);
-
 		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
-
         if (parent) {
     		BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
         }
-
 		return MAL_SUCCEED;
 	}
 
 	geosGeometry = wkb2geos(*geomWKB);
-
-	if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.Dump", "Error creating new BAT");
-	}
-
-	if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
-		BBPunfix(idBAT->batCacheid);
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.Dump", "Error creating new BAT");
-	}
 
 	if ((err = dumpGeometriesGeometry_(idBAT, geomBAT, geosGeometry, &num_geoms, "")) != MAL_SUCCEED) {
 		BBPunfix(idBAT->batCacheid);
@@ -1779,11 +1764,6 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 	}
 
     if (parent) {
-        if ((parentBAT = COLnew(0, ATOMindex("int"), num_geoms, TRANSIENT)) == NULL) {
-            BBPunfix(idBAT->batCacheid);
-            BBPunfix(geomBAT->batCacheid);
-            throw(MAL, "geom.Dump", "Error creating new BAT");
-        }
         /*Get the tail and add parentID geometriesNum types*/
         for (i = 0; i < num_geoms; i++) {
             if (BUNappend(parentBAT, parent, TRUE) != GDK_SUCCEED) {
@@ -1995,55 +1975,44 @@ wkbDumpPoints_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB,
 	str err;
     uint32_t num_points = 0;
 
-	if (wkb_isnil(*geomWKB)) {
+    if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
+        *idBAT_id = int_nil;
+        throw(MAL, "geom.DumpPoints", "Error creating new BAT");
+    }
 
-		//create new empty BAT for the output
-		if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
-			*idBAT_id = int_nil;
-			throw(MAL, "geom.DumpPoints", "Error creating new BAT");
-		}
+    if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
+        BBPunfix(idBAT->batCacheid);
+        *geomBAT_id = int_nil;
+        throw(MAL, "geom.DumpPoints", "Error creating new BAT");
+    }
 
-		if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
-			BBPunfix(idBAT->batCacheid);
-			*geomBAT_id = int_nil;
-			throw(MAL, "geom.DumpPoints", "Error creating new BAT");
-		}
-
-        if (parent) {
-            if ((parentBAT = COLnew(0, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
-                BBPunfix(idBAT->batCacheid);
-                BBPunfix(geomBAT->batCacheid);
-                *parentBAT_id = bat_nil;
-                throw(MAL, "geom.DumpPoints", "Error creating new BAT");
-            }
+    if (parent) {
+        if ((parentBAT = COLnew(0, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
+            BBPunfix(idBAT->batCacheid);
+            BBPunfix(geomBAT->batCacheid);
+            *parentBAT_id = bat_nil;
+            throw(MAL, "geom.DumpPoints", "Error creating new BAT");
         }
-
+    }
+	if (wkb_isnil(*geomWKB)) {
+		//create new empty BAT for the output
 		BBPkeepref(*idBAT_id = idBAT->batCacheid);
-
 		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
-
         if (parent) {
     		BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
         }
-
 		return MAL_SUCCEED;
 	}
 
-	geosGeometry = wkb2geos(*geomWKB);
-
-	if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.Dump", "Error creating new BAT");
-	}
-
-	if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
+	if ( (geosGeometry = wkb2geos(*geomWKB)) == NULL) {
 		BBPunfix(idBAT->batCacheid);
-		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.Dump", "Error creating new BAT");
-	}
+		BBPunfix(geomBAT->batCacheid);
+        if (parent)
+            BBPunfix(parentBAT->batCacheid);
+        throw(MAL, "geom.DumpPoints", "wkb2geos failed");
+    }
 
-	if ( (err = dumpPointsGeometry_(idBAT, geomBAT, geosGeometry, &num_points, "")) != MAL_SUCCEED )
-    {
+	if ( (err = dumpPointsGeometry_(idBAT, geomBAT, geosGeometry, &num_points, "")) != MAL_SUCCEED ) {
 		BBPunfix(idBAT->batCacheid);
 		BBPunfix(geomBAT->batCacheid);
         if (parent)
@@ -2051,11 +2020,6 @@ wkbDumpPoints_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB,
 		return err;
 	}
     if (parent) {
-        if ((parentBAT = COLnew(0, ATOMindex("int"), num_points, TRANSIENT)) == NULL) {
-            BBPunfix(idBAT->batCacheid);
-            BBPunfix(geomBAT->batCacheid);
-            throw(MAL, "geom.Dump", "Error creating new BAT");
-        }
         /*Get the tail and add parentID geometriesNum types*/
         for (i = 0; i < num_points; i++) {
             if (BUNappend(parentBAT, parent, TRUE) != GDK_SUCCEED) {
@@ -2089,109 +2053,156 @@ wkbDumpPointsP(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB,
 }
 
 static str
-wkbDumpRings_(bat *parentBAT_id, bat *geomBAT_id, wkb **geomWKB, int *parent)
+dumpRingsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_rings, const char *path)
 {
-	BAT *geomBAT = NULL, *parentBAT = NULL;
-	GEOSGeom geosGeometry;
+	char *newPath = NULL;
     const GEOSGeometry *ring;
     wkb *geom;
 	unsigned int numInteriorRings, i;
+    int lvlDigitsNum = 10, lvl=0;	//MAX_UNIT = 4,294,967,295
 	str err;
+    (void) path;
 
-	if (wkb_isnil(*geomWKB)) {
-
-		//create new empty BAT for the output
-		if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
-			*geomBAT_id = bat_nil;
-			throw(MAL, "geom.DumpRings", "Error creating new BAT");
-		}
-
-        if (parent) {
-            if ((parentBAT = COLnew(0, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
-                BBPunfix(geomBAT->batCacheid);
-                *parentBAT_id = bat_nil;
-                throw(MAL, "geom.DumpRings", "Error creating new BAT");
-            }
-        }
-
-		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
-        if (parent) {
-    		BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
-        }
-
-		return MAL_SUCCEED;
-	}
-
-    geosGeometry = wkb2geos(*geomWKB);
+    /*Check Type*/
+	if ( (GEOSGeomTypeId(geosGeometry) + 1) != wkbPolygon_mdb ) {
+		return createException(MAL, "geom.DumpRings","Geometry is not a Polygon");
+    }
+    
 	ring = GEOSGetExteriorRing(geosGeometry);
 	if(!ring) {
-        BBPunfix(geomBAT->batCacheid);
-        if (parent)
-            BBPunfix(parentBAT->batCacheid);
 		return createException(MAL, "geom.DumpRings","GEOSGetExteriorRing failed");
 	}
-    if((geom = geos2wkb(ring)) != NULL) {
-        BBPunfix(geomBAT->batCacheid);
-        if (parent)
-            BBPunfix(parentBAT->batCacheid);
+    if((geom = geos2wkb(ring)) == NULL) {
         return createException(MAL, "geom.DumpRings","geos2wkb failed");
     }
     if (BUNappend(geomBAT, geom, TRUE) != GDK_SUCCEED) {
-        BBPunfix(geomBAT->batCacheid);
-        if (parent)
-            BBPunfix(parentBAT->batCacheid);
         return createException(MAL, "geom.DumpRings","BUNappend failed");
     }
 
+    lvl++;
+    if ( (newPath = GDKmalloc(lvlDigitsNum + 1)) == NULL) {
+        throw(MAL, "geom.DumpRings", MAL_MALLOC_FAIL);
+    }
+    snprintf(newPath, lvlDigitsNum + 1, "%u", lvl);
+    if (BUNappend(idBAT, newPath, TRUE) != GDK_SUCCEED) {
+	    GDKfree(newPath);
+        throw(MAL, "geom.DumpRings", "BUNappend failed");
+    }
+	GDKfree(newPath);
+
 	//check the interior rings
 	if ((numInteriorRings = GEOSGetNumInteriorRings(geosGeometry) == -1)) {
-        BBPunfix(geomBAT->batCacheid);
-        if (parent)
-            BBPunfix(parentBAT->batCacheid);
 		return createException(MAL, "geom.DumpRings","GEOSGetNumInteriorRings failed");
     }
 
 	for(i=0; i<numInteriorRings; i++) {
 		ring = GEOSGetInteriorRingN(geosGeometry, i);
         if (ring == NULL) {
-            BBPunfix(geomBAT->batCacheid);
-            if (parent)
-                BBPunfix(parentBAT->batCacheid);
+	        GDKfree(newPath);
 	    	return createException(MAL, "geom.DumpRings","GEOSGetInteriorRingN failed");
         }
         
-        if((geom = geos2wkb(ring)) != NULL) {
-            BBPunfix(geomBAT->batCacheid);
-            if (parent)
-                BBPunfix(parentBAT->batCacheid);
+        if((geom = geos2wkb(ring)) == NULL) {
+	        GDKfree(newPath);
 	    	return createException(MAL, "geom.DumpRings","geos2wkb failed");
         }
         if (BUNappend(geomBAT, geom, TRUE) != GDK_SUCCEED) {
-            BBPunfix(geomBAT->batCacheid);
-            if (parent)
-                BBPunfix(parentBAT->batCacheid);
+	        GDKfree(newPath);
 	    	return createException(MAL, "geom.DumpRings","BUNappend failed");
         }
+        lvl++;
+        if ( (newPath = GDKmalloc(lvlDigitsNum + 1)) == NULL) {
+            throw(MAL, "geom.DumpRings", MAL_MALLOC_FAIL);
+        }
+        snprintf(newPath, lvlDigitsNum + 1, "%u", lvl);
+        if (BUNappend(idBAT, newPath, TRUE) != GDK_SUCCEED) {
+            GDKfree(newPath);
+            throw(MAL, "geom.DumpRings", "BUNappend failed");
+        }
+        GDKfree(newPath);
 	}
 
+    *num_rings = lvl;
+	return MAL_SUCCEED;
+}
+
+str
+dumpRingsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, uint32_t *num_rings, const char *path) {
+    return dumpRingsGeometry_(idBAT, geomBAT, geosGeometry, num_rings, path);
+}
+
+static str
+wkbDumpRings_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *parent)
+{
+	BAT *idBAT = NULL, *geomBAT = NULL, *parentBAT = NULL;
+	GEOSGeom geosGeometry;
+	char *path = NULL;
+    const GEOSGeometry *ring;
+    wkb *geom;
+	unsigned int numInteriorRings, i;
+    int num_rings=0;
+	str err;
+
+    if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
+        *idBAT_id = bat_nil;
+        throw(MAL, "geom.DumpRings", "Error creating new BAT");
+    }
+
+    if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
+        BBPunfix(idBAT->batCacheid);
+        *geomBAT_id = bat_nil;
+        throw(MAL, "geom.DumpRings", "Error creating new BAT");
+    }
+
     if (parent) {
-        if ((parentBAT = COLnew(0, ATOMindex("int"), numInteriorRings+1, TRANSIENT)) == NULL) {
+        if ((parentBAT = COLnew(0, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
+            BBPunfix(idBAT->batCacheid);
             BBPunfix(geomBAT->batCacheid);
+            *parentBAT_id = bat_nil;
             throw(MAL, "geom.DumpRings", "Error creating new BAT");
         }
+    }
+
+    if (wkb_isnil(*geomWKB)) {
+		//create new empty BAT for the output
+		BBPkeepref(*idBAT_id = idBAT->batCacheid);
+		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+        if (parent) {
+    		BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
+        }
+		return MAL_SUCCEED;
+	}
+
+    if ( (geosGeometry = wkb2geos(*geomWKB)) == NULL) {
+		BBPunfix(idBAT->batCacheid);
+		BBPunfix(geomBAT->batCacheid);
+        if (parent)
+            BBPunfix(parentBAT->batCacheid);
+        throw(MAL, "geom.DumpRings", "wkb2geos failed");
+    }
+
+	if ((err = dumpRingsGeometry_(idBAT, geomBAT, geosGeometry, &num_rings, "")) != MAL_SUCCEED ) {
+		BBPunfix(idBAT->batCacheid);
+		BBPunfix(geomBAT->batCacheid);
+        if (parent)
+		    BBPunfix(parentBAT->batCacheid);
+		return err;
+	}
+    if (parent) {
         /*Get the tail and add parentID geometriesNum types*/
         for (i = 0; i < numInteriorRings+1; i++) {
             if (BUNappend(parentBAT, parent, TRUE) != GDK_SUCCEED) {
-                err = createException(MAL, "geom.DumpRings", "BUNappend failed");
+                BBPunfix(idBAT->batCacheid);
                 BBPunfix(geomBAT->batCacheid);
                 if (parent)
                     BBPunfix(parentBAT->batCacheid);
-                return err;
+                throw(MAL, "geom.DumpRings", "BUNappend failed");
             }
         }
     }
 
 	GEOSGeom_destroy(geosGeometry);
+	BBPkeepref(*idBAT_id = idBAT->batCacheid);
 	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
     if (parent)
 	    BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
@@ -2199,10 +2210,14 @@ wkbDumpRings_(bat *parentBAT_id, bat *geomBAT_id, wkb **geomWKB, int *parent)
 	return MAL_SUCCEED;
 }
 
+str
+wkbDumpRings(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB) {
+    return wkbDumpRings_(NULL, idBAT_id, geomBAT_id, geomWKB, NULL);
+}
 
 str
-wkbDumpRings(bat *geomBAT_id, wkb **geomWKB) {
-    return wkbDumpRings_(NULL, geomBAT_id, geomWKB, NULL);
+wkbDumpRingsP(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *parent) {
+    return wkbDumpRings_(parentBAT_id, idBAT_id, geomBAT_id, geomWKB, parent);
 }
 
 

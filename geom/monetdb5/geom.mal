@@ -360,7 +360,9 @@ command DumpPoints(a:wkb) (id:bat[:str], geom:bat[:wkb]) address wkbDumpPoints
 comment "Gets a Geometry and returns the Points in it";
 command DumpPointsP(a:wkb, p:int) (parent:bat[:int], id:bat[:str], geom:bat[:wkb]) address wkbDumpPointsP
 comment "Gets a Geometry and returns the Points in it";
-command DumpRings(a:wkb) (geom:bat[:wkb]) address wkbDumpRings
+command DumpRings(a:wkb) (id:bat[:str], geom:bat[:wkb]) address wkbDumpRings
+comment "Gets a Polygon and returns the rings it";
+command DumpRings(a:wkb, p:int) (parent:bat[:int], id:bat[:str], geom:bat[:wkb]) address wkbDumpRingsP
 comment "Gets a Polygon and returns the rings it";
 
 command Polygonize(a:wkb) :wkb address wkbPolygonize
@@ -848,6 +850,11 @@ command DumpPoints(a:bat[:wkb]) (id:bat[:str], geom:bat[:wkb]) address wkbDumpPo
 comment "Gets a Geometry and returns the Points in it";
 command DumpPointsP(a:bat[:wkb], p:bat[:int]) (parent:bat[:int], id:bat[:str], geom:bat[:wkb]) address wkbDumpPointsP_bat
 comment "Gets a Geometry and returns the Points in it";
+
+command DumpRings(a:bat[:wkb]) (id:bat[:str], geom:bat[:wkb]) address wkbDumpRings_bat
+comment "Gets a Polygon and returns the rings in it";
+command DumpRingsP(a:bat[:wkb], p:bat[:int]) (parent:bat[:int], id:bat[:str], geom:bat[:wkb]) address wkbDumpRingsP_bat
+comment "Gets a Polygon and returns the rings in it";
 
 command Boundary(w:bat[:wkb]) :bat[:wkb] address wkbBoundary_bat;
 

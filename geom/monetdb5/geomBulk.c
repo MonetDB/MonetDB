@@ -2546,6 +2546,16 @@ wkbDumpPointsP_bat(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, bat* wkbB
     return WKBtoWKBSflagINT(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent, dumpPointsGeometry,"geom.DumpPointsP");
 }
 
+str
+wkbDumpRings_bat(bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id) {
+    return WKBtoWKBSflagINT(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL, dumpRingsGeometry, "geom.DumpRings");
+}
+
+str
+wkbDumpRingsP_bat(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id, bat *parent) {
+    return WKBtoWKBSflagINT(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent, dumpRingsGeometry,"geom.DumpRingsP");
+}
+
 
 /**
  * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
