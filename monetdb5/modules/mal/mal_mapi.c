@@ -117,7 +117,7 @@ doChallenge(void *data)
 	stream *fdin = block_stream(((struct challengedata *) data)->in);
 	stream *fdout = block_stream(((struct challengedata *) data)->out);
 	bstream *bs;
-	int len = 0;
+	ssize_t len = 0;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -155,7 +155,7 @@ doChallenge(void *data)
 	free(algos);
 	mnstr_flush(fdout);
 	/* get response */
-	if ((len = (int) mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
+	if ((len = mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
 		/* the client must have gone away, so no reason to write something */
 		mnstr_close(fdin);
 		mnstr_destroy(fdin);
