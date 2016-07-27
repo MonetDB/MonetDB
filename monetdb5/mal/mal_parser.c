@@ -918,7 +918,10 @@ parseAtom(Client cntxt)
 		tpe = TYPE_void;  /* no type qualifier */
 	else
 		tpe = parseTypeId(cntxt, TYPE_int);
-	malAtomDefinition(cntxt->fdout, modnme, tpe);
+	if( malAtomDefinition(cntxt->fdout, modnme, tpe) < 0){
+		skipToEnd(cntxt);
+		return 0;
+	}
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	cntxt->nspace->isAtomModule = TRUE;
 	skipSpace(cntxt);
@@ -927,8 +930,7 @@ parseAtom(Client cntxt)
 }
 
 /*
- * It might be handy to clone a module.
- * It gets a copy of all functions known at the point of creation.
+ * All modules, except 'user', should be global
  */
 static str parseModule(Client cntxt)
 {
