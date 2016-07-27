@@ -2384,7 +2384,7 @@ wkbDistance_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 }
 
 static str
-wkbDump_bat(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id, bat *inParentBAT_id)
+wkbDump_bat_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id, bat *inParentBAT_id)
 {
 	BAT *idBAT = NULL, *geomBAT = NULL, *parentBAT = NULL, *inParentBAT = NULL, *inGeomBAT = NULL;
     BATiter inGeomBAT_iter, inParentBAT_iter;
@@ -2511,6 +2511,15 @@ wkbDump_bat(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id
 	return MAL_SUCCEED;
 }
 
+str
+wkbDump_bat(bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id) {
+    return wkbDump_bat_(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL);
+}
+
+str
+wkbDumpP_bat(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id, bat *parent) {
+    return wkbDump_bat_(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent);
+}
 
 
 /**

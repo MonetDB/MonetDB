@@ -834,6 +834,10 @@ function NRings(w:bat[:wkb]) :bat[:int];
 	return x;
 end NRings;
 
+command Dump(a:bat[:wkb]) (id:bat[:str], geom:bat[:wkb]) address wkbDump_bat
+comment "Gets a MultiPolygon and returns the Polygons in it";
+command DumpP(a:bat[:wkb], p:bat[:int]) (parent:bat[:int], id:bat[:str], geom:bat[:wkb]) address wkbDumpP_bat
+comment "Gets a MultiPolygon and returns the Polygons in it";
 
 command Boundary(w:bat[:wkb]) :bat[:wkb] address wkbBoundary_bat;
 

@@ -264,7 +264,9 @@ geom_export str wkbSegmentize(wkb**, wkb**, dbl*);
 geom_export str wkbSegmentize_bat(bat *outBAT_id, bat *inBAT_id, double *flag);
 
 geom_export str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb**);
+geom_export str wkbDump_bat(bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id);
 geom_export str wkbDumpP(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, wkb**, int* parent);
+geom_export str wkbDumpP_bat(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id, bat *parent);
 geom_export str wkbDumpPoints(bat* idBAT_id, bat* geomBAT_id, wkb**);
 geom_export str wkbDumpPointsP(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, wkb**, int* parent);
 geom_export str wkbDumpRings(bat* geomBAT_id, wkb**);
