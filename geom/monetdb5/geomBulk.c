@@ -2383,8 +2383,12 @@ wkbDistance_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 	return wkbDistance_geom_bat(outBAT_id, geomWKB, inBAT_id);
 }
 
+/******************************************************************************************/
+/************************** IN: wkb - OUT: wkbs - flag: parent ****************************/
+/******************************************************************************************/
+
 static str
-wkbDump_bat_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id, bat *inParentBAT_id)
+WKBtoWKBSflagINT(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id, bat *inParentBAT_id, str (*func) (BAT*, BAT*, const GEOSGeometry*, const char*), const char *name)
 {
 	BAT *idBAT = NULL, *geomBAT = NULL, *parentBAT = NULL, *inParentBAT = NULL, *inGeomBAT = NULL;
     BATiter inGeomBAT_iter, inParentBAT_iter;
@@ -2394,12 +2398,12 @@ wkbDump_bat_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_i
 
     //Open input BATs
 	if ((inGeomBAT = BATdescriptor(*inGeomBAT_id)) == NULL) {
-		throw(MAL, "batgeom.Dump", "Problem retrieving BAT");
+		throw(MAL, name, "Problem retrieving BAT");
 	}
     if (inParentBAT_id) {
         if ((inParentBAT = BATdescriptor(*inParentBAT_id)) == NULL) {
             BBPunfix(inGeomBAT->batCacheid);
-            throw(MAL, "batgeom.Dump", "Problem retrieving BAT");
+            throw(MAL, name, "Problem retrieving BAT");
         }
     }
 
@@ -2409,7 +2413,7 @@ wkbDump_bat_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_i
 	    BBPunfix(inGeomBAT->batCacheid);
         if (inParentBAT_id)
     	    BBPunfix(inParentBAT->batCacheid);
-        throw(MAL, "geom.Dump", "Error creating new BAT");
+        throw(MAL, name, "Error creating new BAT");
     }
 
     if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
@@ -2418,7 +2422,7 @@ wkbDump_bat_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_i
 	        BBPunfix(inParentBAT->batCacheid);
         BBPunfix(idBAT->batCacheid);
         *geomBAT_id = bat_nil;
-        throw(MAL, "geom.Dump", "Error creating new BAT");
+        throw(MAL, name, "Error creating new BAT");
     }
 
     if (inParentBAT_id) {
@@ -2428,7 +2432,7 @@ wkbDump_bat_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_i
             BBPunfix(idBAT->batCacheid);
             BBPunfix(geomBAT->batCacheid);
             *parentBAT_id = bat_nil;
-            throw(MAL, "geom.Dump", "Error creating new BAT");
+            throw(MAL, name, "Error creating new BAT");
         }
     }
 
@@ -2455,7 +2459,7 @@ wkbDump_bat_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_i
         if (inParentBAT_id) {
             for (i = 0; i < geometriesNum; i++) {
                 if (BUNappend(parentBAT, &parent, TRUE) != GDK_SUCCEED) {
-                    err = createException(MAL, "geom.Dump", "BUNappend failed");
+                    err = createException(MAL, name, "BUNappend failed");
 	                BBPunfix(inGeomBAT->batCacheid);
                     if (inParentBAT_id)
             	        BBPunfix(inParentBAT->batCacheid);
@@ -2513,12 +2517,22 @@ wkbDump_bat_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_i
 
 str
 wkbDump_bat(bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id) {
-    return wkbDump_bat_(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL);
+    return WKBtoWKBSflagINT(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL, dumpGeometriesGeometry, "geom.Dump");
 }
 
 str
 wkbDumpP_bat(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id, bat *parent) {
-    return wkbDump_bat_(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent);
+    return WKBtoWKBSflagINT(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent, dumpGeometriesGeometry,"geom.DumpP");
+}
+
+str
+wkbDumpPoints_bat(bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id) {
+    return WKBtoWKBSflagINT(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL, dumpPointsGeometry, "geom.DumpPoints");
+}
+
+str
+wkbDumpPointsP_bat(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id, bat *parent) {
+    return WKBtoWKBSflagINT(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent, dumpPointsGeometry,"geom.DumpPointsP");
 }
 
 

@@ -1919,7 +1919,7 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	return MAL_SUCCEED;
 }
 
-static str dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
+static str dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
 static str
 dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
 {
@@ -1944,7 +1944,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 		sprintf(newPath, "%s%u%s", path, lvl, extraStr);
 
 		//*secondLevel = 0;
-		err = dumpPointsGeometry(idBAT, geomBAT, multiGeometry, newPath);
+		err = dumpPointsGeometry_(idBAT, geomBAT, multiGeometry, newPath);
 		GDKfree(newPath);
 		if (err != MAL_SUCCEED)
 			return err;
@@ -1954,7 +1954,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 }
 
 static str
-dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
+dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
 {
 	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
 	unsigned int lvl = 0;
@@ -1976,6 +1976,11 @@ dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, c
 	default:
 		throw(MAL, "geom.DumpPoints", "%s Unknown geometry type", geom_type2str(geometryType, 0));
 	}
+}
+
+str
+dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path) {
+    return dumpPointsGeometry_(idBAT, geomBAT, geosGeometry, path);
 }
 
 static str
@@ -2058,7 +2063,7 @@ wkbDumpPoints_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB,
         }
     }
 
-	if ( (err = dumpPointsGeometry(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED )
+	if ( (err = dumpPointsGeometry_(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED )
     {
 		BBPunfix(idBAT->batCacheid);
 		BBPunfix(geomBAT->batCacheid);

@@ -839,6 +839,11 @@ comment "Gets a MultiPolygon and returns the Polygons in it";
 command DumpP(a:bat[:wkb], p:bat[:int]) (parent:bat[:int], id:bat[:str], geom:bat[:wkb]) address wkbDumpP_bat
 comment "Gets a MultiPolygon and returns the Polygons in it";
 
+command DumpPoints(a:bat[:wkb]) (id:bat[:str], geom:bat[:wkb]) address wkbDumpPoints_bat
+comment "Gets a Geometry and returns the Points in it";
+command DumpPointsP(a:bat[:wkb], p:bat[:int]) (parent:bat[:int], id:bat[:str], geom:bat[:wkb]) address wkbDumpPointsP_bat
+comment "Gets a Geometry and returns the Points in it";
+
 command Boundary(w:bat[:wkb]) :bat[:wkb] address wkbBoundary_bat;
 
 command IsClosed(w:bat[:wkb]) :bat[:bit] address wkbIsClosed_bat;
