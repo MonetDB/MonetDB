@@ -77,7 +77,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) pci;
 
 	OPTDEBUGemptybind{
-		mnstr_printf(GDKout, "Optimize Query Emptybind\n");
+		mnstr_printf(GDKout, "#Optimize Query Emptybind\n");
 		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
 	}
 
@@ -277,7 +277,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	OPTDEBUGemptybind{
 		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
-		mnstr_printf(GDKout, "Optimize Query Emptybind done\n");
+		mnstr_printf(GDKout, "#Optimize Query Emptybind done\n");
 		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
 	}
 
