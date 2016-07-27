@@ -761,19 +761,19 @@ clearTrace(void)
 		return;     /* not initialized */
 	}
 	/* drop all trace tables */
-	BBPunfix(TRACE_id_event->batCacheid);
-	BBPunfix(TRACE_id_time->batCacheid);
-	BBPunfix(TRACE_id_pc->batCacheid);
-	BBPunfix(TRACE_id_thread->batCacheid);
-	BBPunfix(TRACE_id_ticks->batCacheid);
-	BBPunfix(TRACE_id_rssMB->batCacheid);
-	BBPunfix(TRACE_id_tmpspace->batCacheid);
-	BBPunfix(TRACE_id_inblock->batCacheid);
-	BBPunfix(TRACE_id_oublock->batCacheid);
-	BBPunfix(TRACE_id_minflt->batCacheid);
-	BBPunfix(TRACE_id_majflt->batCacheid);
-	BBPunfix(TRACE_id_nvcsw->batCacheid);
-	BBPunfix(TRACE_id_stmt->batCacheid);
+	BBPclear(TRACE_id_event->batCacheid);
+	BBPclear(TRACE_id_time->batCacheid);
+	BBPclear(TRACE_id_pc->batCacheid);
+	BBPclear(TRACE_id_thread->batCacheid);
+	BBPclear(TRACE_id_ticks->batCacheid);
+	BBPclear(TRACE_id_rssMB->batCacheid);
+	BBPclear(TRACE_id_tmpspace->batCacheid);
+	BBPclear(TRACE_id_inblock->batCacheid);
+	BBPclear(TRACE_id_oublock->batCacheid);
+	BBPclear(TRACE_id_minflt->batCacheid);
+	BBPclear(TRACE_id_majflt->batCacheid);
+	BBPclear(TRACE_id_nvcsw->batCacheid);
+	BBPclear(TRACE_id_stmt->batCacheid);
 	TRACE_init = 0;
 	MT_lock_unset(&mal_contextLock);
 	initTrace();
