@@ -29,10 +29,10 @@ Ready.
 #io.printf("#result of inline\n");
 #result of inline
 function user.tst():void;
-    X_3 := false:bit;
+    false:bit;
     X_5:int := 0;
-    X_10 := false:bit;
-    X_16 := -1:int;
+    false:bit;
+    -1:int;
     X_5:int := -1:int;
     z := X_5;
 end user.tst;

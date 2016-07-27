@@ -565,7 +565,6 @@ SYSgdkEnv(bat *ret, bat *ret2)
 {
 	int pbat = 0;
 	int pdisk = 0;
-	int pheat = 0;
 	bat i;
 	int tmp = 0, per = 0;
 	BAT *b,*bn;
@@ -582,7 +581,6 @@ SYSgdkEnv(bat *ret, bat *ret2)
 		if (BBPvalid(i)) {
 			pbat++;
 			if (BBP_cache(i)) {
-				pheat += BBP_lastused(i);
 				if (BBP_cache(i)->batPersistence == PERSISTENT)
 					per++;
 				else

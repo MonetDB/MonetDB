@@ -84,6 +84,9 @@
 #define setVarConstant(M,I)		((M)->var[I]->flags |= VAR_CONSTANT)
 #define isVarConstant(M,I)		((M)->var[I]->flags & VAR_CONSTANT)
 
+#define setVarScope(M,I,S)		((M)->var[I]->depth = S)
+#define getVarScope(M,I)		((M)->var[I]->depth)
+
 #define clrVarCList(M,I)		((M)->var[I]->id[0]= REFMARKER)
 #define setVarCList(M,I)		((M)->var[I]->id[0]= REFMARKERC)
 #define isVarCList(M,I)			((M)->var[I]->id[0] == REFMARKERC)
@@ -133,7 +136,7 @@ mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb);
 mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
-mal_export void trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb);
+mal_export void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
 mal_export void insertInstruction(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export void removeInstruction(MalBlkPtr mb, InstrPtr p);

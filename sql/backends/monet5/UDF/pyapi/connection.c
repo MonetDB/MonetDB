@@ -11,6 +11,7 @@
 
 CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult);
 CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern);
+CREATE_SQL_FUNCTION_PTR(str,create_table_from_emit);
 
 static PyObject *
 _connection_execute(Py_ConnectionObject *self, PyObject *args)
@@ -70,7 +71,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
             Py_RETURN_NONE;
         }
     }
-    else 
+    else
 #ifdef HAVE_FORK
     {
         str msg;
@@ -99,13 +100,13 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
 
         if (self->query_ptr->memsize > 0) // check if there are return values
         {
-            char *msg; 
+            char *msg;
             char *ptr;
             PyObject *numpy_array;
-            size_t position = 0; 
+            size_t position = 0;
             PyObject *result;
             int i;
-            
+
             // get a pointer to the shared memory holding the return values
             if (GDKinitmmap(self->query_ptr->mmapid + 0, self->query_ptr->memsize, (void**) &ptr, NULL, &msg) != GDK_SUCCEED) {
                 PyErr_Format(PyExc_Exception, "%s", msg);
@@ -200,7 +201,7 @@ PyTypeObject Py_ConnectionType = {
     0,
     0,
     0,
-    0, 
+    0,
     0,
     0
 #ifdef IS_PY3K
@@ -208,16 +209,19 @@ PyTypeObject Py_ConnectionType = {
 #endif
 };
 
-void _connection_cleanup_result(void* output) 
-{
+void _connection_cleanup_result(void* output) {
     (*SQLdestroyResult_ptr)((res_table*) output);
 }
 
-char* _connection_query(Client cntxt, char* query, res_table** result) {
+str _connection_query(Client cntxt, char* query, res_table** result) {
     str res = MAL_SUCCEED;
-    Client c = cntxt;
-    res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, result);
+    res = (*SQLstatementIntern_ptr)(cntxt, &query, "name", 1, 0, result);
     return res;
+}
+
+
+str _connection_create_table(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols) {
+	return (*create_table_from_emit_ptr)(cntxt, sname, tname, columns, ncols);
 }
 
 
@@ -246,8 +250,11 @@ str _connection_init(void)
 {
     str msg = MAL_SUCCEED;
     _connection_import_array();
+
     LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
     LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
+    LOAD_SQL_FUNCTION_PTR(create_table_from_emit);
+
     if (msg != MAL_SUCCEED) {
         return msg;
     }

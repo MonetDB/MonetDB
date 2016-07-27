@@ -43,7 +43,7 @@ create function sys.bbp ()
 	external name bbp.get;
 
 create function sys.malfunctions()
-	returns table("signature" string, "address" string, "comment" string)
+	returns table("module" string, "function" string, "signature" string, "address" string, "comment" string)
 	external name "manual"."functions";
 
 create procedure sys.evalAlgebra( ra_stmt string, opt bool)
@@ -56,3 +56,7 @@ create procedure sys.flush_log ()
 
 create function sys.debug(debug int) returns integer
 	external name mdb."setDebug";
+
+create procedure setmemorylimit(nbytes BIGINT) 
+	external name "io"."setmemorylimit";
+

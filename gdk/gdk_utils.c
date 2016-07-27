@@ -440,44 +440,6 @@ MT_init(void)
 
 #define CATNAP		50	/* time to sleep in ms for catnaps */
 
-static MT_Id GDKvmtrim_id;
-
-static void
-GDKvmtrim(void *limit)
-{
-	int highload = 0;
-	ssize_t prevmem = 0, prevrss = 0;
-
-	(void) limit;
-
-	do {
-		int t;
-		size_t rss;
-		ssize_t rssdiff, memdiff;
-		size_t cursize;
-
-		/* sleep using catnaps so we can exit in a timely fashion */
-		for (t = highload ? 500 : 5000; t > 0; t -= CATNAP) {
-			MT_sleep_ms(CATNAP);
-			if (GDKexiting())
-				return;
-		}
-		rss = MT_getrss();
-		rssdiff = (ssize_t) rss - (ssize_t) prevrss;
-		cursize = GDKvm_cursize();
-		memdiff = (ssize_t) cursize - (ssize_t) prevmem;
-		MEMDEBUG fprintf(stderr, "alloc = " SZFMT " %+zd rss = " SZFMT " %+zd\n", cursize, memdiff, rss, rssdiff);
-		prevmem = cursize;
-		prevrss = rss;
-		if (memdiff >= 0 && rssdiff < -32 * (ssize_t) MT_pagesize()) {
-			BBPtrim(rss);
-			highload = 1;
-		} else {
-			highload = 0;
-		}
-	} while (!GDKexiting());
-}
-
 static void THRinit(void);
 static void GDKlockHome(void);
 
@@ -640,24 +602,6 @@ GDKinit(opt *set, int setlen)
 		GDKsetenv("monet_pid", buf);
 	}
 
-	/* only start vmtrim thread when explicitly asked to do so or
-	 * when on a 32 bit architecture and not told to not start
-	 * it;
-	 * see also mo_builtin_settings() in common/options/monet_options.c
-	 */
-	p = mo_find_option(set, setlen, "gdk_vmtrim");
-	if (
-#if SIZEOF_VOID_P == 4
-	    /* 32 bit architecture */
-	    p == NULL ||	/* default is yes */
-#else
-	    /* 64 bit architecture */
-	    p != NULL &&	/* default is no */
-#endif
-	    strcasecmp(p, "yes") == 0)
-		MT_create_thread(&GDKvmtrim_id, GDKvmtrim, &GDK_mem_maxsize,
-				 MT_THR_JOINABLE);
-
 	return 1;
 }
 
@@ -690,8 +634,6 @@ GDKprepareExit(void)
 
 	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) != 0)
 		return;
-	if (GDKvmtrim_id)
-		MT_join_thread(GDKvmtrim_id);
 
 	MT_lock_set(&GDKthreadLock);
 	for (st = serverthread; st; st = serverthread) {
@@ -797,7 +739,6 @@ GDKreset(int status)
 #ifdef GDK_MEM_KEEPHISTO
 		memset((char*)GDK_nmallocs[MAX_BIT], 0, sizeof(GDK_nmallocs));
 #endif
-		GDKvmtrim_id =0;
 		GDKnr_threads = 0;
 		GDKnrofthreads = 0;
 		memset((char*) GDKbatLock,0, sizeof(GDKbatLock));
@@ -1592,12 +1533,9 @@ GDKmemdump(void)
  * greatly help enhance performance.
  *
  * The "added-value" of the GDKmalloc/GDKfree/GDKrealloc over the
- * standard OS primitives is that the GDK versions try to do recovery
- * from failure to malloc by initiating a BBPtrim. Also, big requests
- * are redirected to anonymous virtual memory. Finally, additional
- * information on block sizes is kept (helping efficient
- * reallocations) as well as some debugging that guards against
- * duplicate frees.
+ * standard OS primitives is that additional information on block
+ * sizes is kept (helping efficient reallocations) as well as some
+ * debugging that guards against duplicate frees.
  *
  * A number of different strategies are available using different
  * switches, however:
@@ -1628,8 +1566,6 @@ GDKmemdump(void)
 static void
 GDKmemfail(const char *s, size_t len)
 {
-	int bak = GDKdebug;
-
 	/* bumped your nose against the wall; try to prevent
 	 * repetition by adjusting maxsizes
 	   if (memtarget < 0.3 * GDKmem_cursize()) {
@@ -1647,13 +1583,6 @@ GDKmemfail(const char *s, size_t len)
 	 */
 
 	fprintf(stderr, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
-	GDKmemdump();
-/*	GDKdebug |= MEMMASK;  avoid debugging output */
-
-	BBPtrim(BBPTRIM_ALL);
-
-	GDKdebug = MIN(GDKdebug, bak);
-	fprintf(stderr, "#%s(" SZFMT ") result [mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 	GDKmemdump();
 }
 
@@ -1722,17 +1651,11 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	s = GDKmalloc_prefixsize(size);
 	if (s == NULL) {
 		GDKmemfail("GDKmalloc", size);
-		s = GDKmalloc_prefixsize(size);
-		if (s == NULL) {
-			if (emergency == 0) {
-				GDKerror("GDKmallocmax: failed for " SZFMT " bytes", size);
-				return NULL;
-			}
-			GDKfatal("GDKmallocmax: failed for " SZFMT " bytes", size);
-		} else {
-			/* TODO why are we printing this on stderr? */
-			fprintf(stderr, "#GDKmallocmax: recovery ok. Continuing..\n");
+		if (emergency == 0) {
+			GDKerror("GDKmallocmax: failed for " SZFMT " bytes", size);
+			return NULL;
 		}
+		GDKfatal("GDKmallocmax: failed for " SZFMT " bytes", size);
 	}
 	*maxsize = size;
 	heapinc(size + MALLOC_EXTRA_SPACE);
@@ -1809,7 +1732,6 @@ GDKfree(void *blk)
 ptr
 GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 {
-	void *oldblk = blk;
 	ssize_t oldsize = 0;
 	size_t newsize;
 
@@ -1837,20 +1759,12 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 		      newsize + GLIBC_BUG);
 	if (blk == NULL) {
 		GDKmemfail("GDKrealloc", newsize);
-		blk = realloc(((char *) oldblk) - MALLOC_EXTRA_SPACE,
-			      newsize);
-		if (blk == NULL) {
-			if (emergency == 0) {
-				GDKerror("GDKreallocmax: failed for "
-					 SZFMT " bytes", newsize);
-				return NULL;
-			}
-			GDKfatal("GDKreallocmax: failed for "
+		if (emergency == 0) {
+			GDKerror("GDKreallocmax: failed for "
 				 SZFMT " bytes", newsize);
-		} else {
-			fprintf(stderr, "#GDKremallocmax: "
-				"recovery ok. Continuing..\n");
+			return NULL;
 		}
+		GDKfatal("GDKreallocmax: failed for " SZFMT " bytes", newsize);
 	}
 	/* place MALLOC_EXTRA_SPACE bytes before it */
 	assert((((uintptr_t) blk) & 4) == 0);
@@ -1986,10 +1900,6 @@ GDKmmap(const char *path, int mode, size_t len)
 
 	if (ret == NULL) {
 		GDKmemfail("GDKmmap", len);
-		ret = MT_mmap(path, mode, len);
-		if (ret != NULL) {
-			fprintf(stderr, "#GDKmmap: recovery ok. Continuing..\n");
-		}
 	}
 	if (ret != NULL) {
 		meminc(len);
@@ -2018,9 +1928,6 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret == NULL) {
 		GDKmemfail("GDKmremap", *new_size);
-		ret = MT_mremap(path, mode, old_address, old_size, new_size);
-		if (ret != NULL)
-			fprintf(stderr, "#GDKmremap: recovery ok. Continuing..\n");
 	}
 	if (ret != NULL) {
 		memdec(old_size);

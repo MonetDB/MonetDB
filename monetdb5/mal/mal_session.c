@@ -12,7 +12,6 @@
 #include "mal_session.h"
 #include "mal_instruction.h" /* for pushEndInstruction() */
 #include "mal_interpreter.h" /* for showErrors(), runMAL(), garbageElement() */
-#include "mal_linker.h"	     /* for initLibraries() */
 #include "mal_parser.h"	     /* for parseMAL() */
 #include "mal_namespace.h"
 #include "mal_readline.h"
@@ -41,7 +40,6 @@ malBootstrap(void)
 	c = MCinitClient((oid) 0, 0, 0);
 	assert(c != NULL);
 	c->nspace = newModule(NULL, putName("user"));
-	initLibraries();
 	if ( (msg = defaultScenario(c)) ) {
 		GDKfree(msg);
 		GDKerror("Failed to initialise default scenario");
@@ -377,21 +375,16 @@ void
 MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i;
-	bit *used = GDKzalloc(mb->vtop * sizeof(bit));
-	if( used == NULL){
-		GDKerror("MSresetVariables" MAL_MALLOC_FAIL);
-		return;
-	}
 
 	for (i = 0; i < start && start < mb->vtop; i++)
-		used[i] = 1;
+		setVarUsed(mb,i);
 	if (mb->errors == 0)
 		for (i = start; i < mb->vtop; i++) {
-			if (used[i] || !isTmpVar(mb,i)){
+			if (isVarUsed(mb,i) || !isTmpVar(mb,i)){
 				assert(!mb->var[i]->value.vtype || isVarConstant(mb, i));
-				used[i] = 1;
+				setVarUsed(mb,i);
 			}
-			if (glb && !used[i]) {
+			if (glb && !isVarUsed(mb,i)) {
 				if (isVarConstant(mb, i))
 					garbageElement(cntxt, &glb->stk[i]);
 				/* clean stack entry */
@@ -402,8 +395,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 		}
 
 	if (mb->errors == 0)
-		trimMalVariables_(mb, used, glb);
-	GDKfree(used);
+		trimMalVariables_(mb, glb);
 }
 
 /*

@@ -16,6 +16,10 @@
 #include "mal_utils.h"
 #include "mal_exception.h"
 
+#define MAXSYMBOLS 12000 /* enough for the startup and some queries */
+static SymRecord symbolpool[MAXSYMBOLS];
+static int symboltop;
+
 Symbol
 newSymbol(str nme, int kind)
 {
@@ -25,7 +29,12 @@ newSymbol(str nme, int kind)
 		GDKerror("newSymbol:unexpected name (=null)\n");
 		return NULL;
 	}
-	cur = (Symbol) GDKzalloc(sizeof(SymRecord));
+	if( symboltop < MAXSYMBOLS){
+		cur = symbolpool + symboltop;
+		symboltop++;
+	} else
+		cur = (Symbol) GDKzalloc(sizeof(SymRecord));
+
 	if (cur == NULL) {
 		GDKerror("newSymbol:" MAL_MALLOC_FAIL);
 		return NULL;
@@ -33,7 +42,7 @@ newSymbol(str nme, int kind)
 	cur->name = putName(nme);
 	cur->kind = kind;
 	cur->peer = NULL;
-	cur->def = newMalBlk(kind == FUNCTIONsymbol?MAXVARS : MAXARG, kind == FUNCTIONsymbol? STMT_INCREMENT : 1);
+	cur->def = newMalBlk(kind == FUNCTIONsymbol?MAXVARS : MAXARG, kind == FUNCTIONsymbol? STMT_INCREMENT : 2);
 	if ( cur->def == NULL){
 		GDKfree(cur);
 		return NULL;
@@ -50,7 +59,8 @@ freeSymbol(Symbol s)
 		freeMalBlk(s->def);
 		s->def = NULL;
 	}
-	GDKfree(s);
+	if( !( s >= symbolpool && s < symbolpool + MAXSYMBOLS))
+		GDKfree(s);
 }
 
 void
@@ -758,6 +768,7 @@ newVariable(MalBlkPtr mb, str name, size_t len, malType type)
 	if (getVar(mb, n) == NULL){
 		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) );
 		if ( getVar(mb,n) == NULL) {
+			mb->errors++;
 			GDKerror("newVariable:" MAL_MALLOC_FAIL);
 			return -1;
 		}
@@ -891,7 +902,7 @@ freeVariable(MalBlkPtr mb, int varid)
  * that do not contribute.
  */
 void
-trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
+trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 {
 	int *vars, cnt = 0, i, j;
 	int maxid = 0,m;
@@ -903,7 +914,7 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
-		if (used[i] == 0) {
+		if ( isVarUsed(mb,i) == 0) {
 			if (glb && isVarConstant(mb, i))
 				VALclear(&glb->stk[i]);
 			freeVariable(mb, i);
@@ -957,25 +968,20 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 void
 trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 {
-	bit *used;
 	int i, j;
 	InstrPtr q;
 
-	used = (bit *) GDKzalloc(mb->vtop);
-	if( used == NULL){
-		GDKerror("trimMalVariables" MAL_MALLOC_FAIL);
-		return;
-	}
-
+	/* reset the use bit */
+	for (i = 0; i < mb->vtop; i++) 
+		clrVarUsed(mb,i);
 	/* build the use table */
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 
 		for (j = 0; j < q->argc; j++)
-			used[getArg(q, j)] = 1;
+			setVarUsed(mb,getArg(q,j));
 	}
-	trimMalVariables_(mb, used, stk);
-	GDKfree(used);
+	trimMalVariables_(mb, stk);
 }
 
 /* MAL constants
@@ -1520,9 +1526,13 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 		GDKfree(mb->stmt);
 		mb->stmt = newblk;
 	}
-	/* If the destination variable has not been set, introduce a
-	 * temporary variable to hold the result instead. */
-	assert(p->argc == 0 || p->argv[0] >= 0);
+	/* A destination variable should be set */
+	if(p->argc > 0 && p->argv[0] < 0){
+		mb->errors++;
+		showException(GDKout, MAL, "pushInstruction", "Illegal instruction (missing target variable)");
+		freeInstruction(p);
+		return;
+	}
 	if (mb->stmt[i]) {
 		/* if( getModuleId(mb->stmt[i] ) )
 		   printf("Garbage collect statement %s.%s\n",

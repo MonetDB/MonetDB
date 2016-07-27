@@ -1877,6 +1877,14 @@ pattern batpyapimap.subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
 address PyAPIevalAggrMap;
 comment grouped aggregates through Python
 
+pattern batpyapi.eval_loader(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalLoader;
+comment loader functions through Python
+
+pattern batpyapi.eval_loader(fptr:ptr,expr:str):any... 
+address PyAPIevalLoader;
+comment loader functions through Python
+
 pattern batpyapi.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
 address PyAPIevalAggr;
 comment grouped aggregates through Python
@@ -24056,10 +24064,6 @@ command bbp.getDirty():bat[:str]
 address CMDbbpDirty;
 comment Create a BAT with the dirty/ diffs/clean status
 
-command bbp.getHeat():bat[:int] 
-address CMDbbpHeat;
-comment Create a BAT with the heat values
-
 command bbp.getLocation():bat[:str] 
 address CMDbbpLocation;
 comment Create a BAT with their disk locations
@@ -31652,6 +31656,14 @@ comment Execute a simple Python script returning a single value
 pattern pyapimap.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
 address PyAPIevalAggrMap;
 comment grouped aggregates through Python
+
+pattern pyapi.eval_loader(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalLoader;
+comment loader functions through Python
+
+pattern pyapi.eval_loader(fptr:ptr,expr:str):any... 
+address PyAPIevalLoader;
+comment loader functions through Python
 
 pattern pyapi.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
 address PyAPIevalAggr;

@@ -806,12 +806,6 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bv, local_utoa(b->batInserted), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "ttop", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->theap.free), FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "batStamp", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(b->batStamp)), FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "lastUsed", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(BBP_lastused(b->batCacheid))), FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "curStamp", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(BBPcurstamp())), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCopiedtodisk", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t)(b->batCopiedtodisk)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "batDirtydesc", FALSE) != GDK_SUCCEED ||
