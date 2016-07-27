@@ -21,10 +21,18 @@
 Symbol newFunction(str mod, str nme,int kind){
 	Symbol s;
 	InstrPtr p;
+	int varid;
 
 	s = newSymbol(nme,kind);
 	if (s == NULL)
 		return NULL;
+
+	varid = newVariable(s->def,nme,strlen(nme),TYPE_any);
+	if( varid < 0){
+		freeSymbol(s);
+		return NULL;
+	}
+
 	p = newInstruction(NULL,kind);
 	if (p == NULL) {
 		freeSymbol(s);
@@ -32,7 +40,7 @@ Symbol newFunction(str mod, str nme,int kind){
 	}
 	setModuleId(p, mod);
 	setFunctionId(p, nme);
-	setDestVar(p, newVariable(s->def,nme,strlen(nme),TYPE_any));
+	setDestVar(p, varid);
 	pushInstruction(s->def,p);
 	return s;
 }
