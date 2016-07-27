@@ -161,27 +161,28 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
  * acceptable for the kernel.
  */
 
-void malAtomDefinition(stream *out, str name, int tpe)
+int
+malAtomDefinition(stream *out, str name, int tpe)
 {
 	int i;
 
 	if (strlen(name) >= IDLENGTH) {
 		showException(out, SYNTAX, "atomDefinition", "Atom name '%s' too long", name);
-		return;
+		return -1;
 	}
 	if (ATOMindex(name) >= 0) {
 #ifndef HAVE_EMBEDDED /* we can restart embedded MonetDB, making this an expected error */
 		showException(out, TYPE, "atomDefinition", "Redefinition of atom '%s'", name);
 #endif
-		return;
+		return -1;
 	}
 	if (tpe < 0 || tpe >= GDKatomcnt) {
 		showException(out, TYPE, "atomDefinition", "Undefined atom inheritance '%s'", name);
-		return;
+		return -1;
 	}
 
 	if (strlen(name) >= sizeof(BATatoms[0].name))
-		return;
+		return -1;
 	i = ATOMallocate(name);
 	/* overload atom ? */
 	if (tpe) {
@@ -193,6 +194,7 @@ void malAtomDefinition(stream *out, str name, int tpe)
 		BATatoms[i].storage = i;
 		BATatoms[i].linear = 0;
 	}
+	return 0;
 }
 /*
  * User defined modules may introduce fixed sized types

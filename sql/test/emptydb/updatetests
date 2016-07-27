@@ -11,7 +11,10 @@ case $# in
     fi
     ;;
 0)
-    if [ -f Tests/load.sql ] && [ -f Tests/check.SQL.py ]; then
+    case $0 in
+    */*) cd ${0%/*};;
+    esac
+    if [ -f Tests/load.sql ] && [ -f Tests/check.SQL.py.src ]; then
 	:
     else
 	echo "bad directory"

@@ -397,9 +397,9 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	s = findModule(cntxt->nspace, putName(mod));
 	if (s == 0)
 		return 0;
-	if (s->subscope) {
-		j = getSubScope(fcn);
-		for (t = s->subscope[j]; t != NULL; t = t->peer)
+	if (s->space) {
+		j = getSymbolIndex(fcn);
+		for (t = s->space[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol){
 					str msg = MACROprocessor(cntxt, target, t);
@@ -445,9 +445,9 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	s = findModule(cntxt->nspace, putName(mod));
 	if (s == 0)
 		return 0;
-	if (s->subscope) {
-		j = getSubScope(fcn);
-		for (t = s->subscope[j]; t != NULL; t = t->peer)
+	if (s->space) {
+		j = getSymbolIndex(fcn);
+		for (t = s->space[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol) {
 					msg =ORCAMprocessor(cntxt, target, t);

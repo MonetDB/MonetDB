@@ -56,7 +56,3 @@ create procedure sys.flush_log ()
 
 create function sys.debug(debug int) returns integer
 	external name mdb."setDebug";
-
-create procedure setmemorylimit(nbytes BIGINT) 
-	external name "io"."setmemorylimit";
-
