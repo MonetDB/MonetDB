@@ -23,7 +23,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *sx = getArgReference_bat(stk,pci,2);
 	bat *ax = getArgReference_bat(stk,pci,3);
 	bat *cx = getArgReference_bat(stk,pci,4);
-	Module s= cntxt->nspace;
+	Module s= getModuleChain();
 	int j, k, ftop, top=0;
 	Symbol t;
 	Module list[256]; 
@@ -49,16 +49,19 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(s==NULL){
 		return MAL_SUCCEED;
 	}
+	cntxt->nspace->next = s;
+	s = cntxt->nspace;
 	list[top++]=s;
-	while(s->outer && top < 256 ){ list[top++]= s->outer;s=s->outer;}
+	while(s->next && top < 256 ){ list[top++]= s->next;s=s->next;}
+	cntxt->nspace->next = NULL;
 
 	for(k=0;k<top;k++){
 		s= list[k];
 		ftop = 0;
-		if( s->subscope)
+		if( s->space)
 		for(j=0;j<MAXSCOPE;j++)
-		if(s->subscope[j]){
-			for(t= s->subscope[j];t!=NULL;t=t->peer) {
+		if(s->space[j]){
+			for(t= s->space[j];t!=NULL;t=t->peer) {
 				mtab[ftop]= t->def->stmt[0]->modname;
 				ftab[ftop]= t->def->stmt[0]->fcnname;
 				hlp[ftop]= t->def->help;

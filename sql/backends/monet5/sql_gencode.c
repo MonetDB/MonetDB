@@ -2987,9 +2987,9 @@ monet5_resolve_function(ptr M, sql_func *f)
 	   return 0;
 	 */
 
-	for (m = findModule(c->nspace, f->mod); m; m = m->outer) {
+	for (m = findModule(c->nspace, f->mod); m; m = m->link) {
 		if (strcmp(m->name, f->mod) == 0) {
-			Symbol s = m->subscope[(int) (getSubScope(f->imp))];
+			Symbol s = m->space[(int) (getSymbolIndex(f->imp))];
 			for (; s; s = s->peer) {
 				InstrPtr sig = getSignature(s);
 				int argc = sig->argc - sig->retc;

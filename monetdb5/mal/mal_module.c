@@ -8,7 +8,6 @@
 
 /*
  * (author) M. L. Kersten
- * For documentation see website
  */
 
 #include "monetdb_config.h"
@@ -20,37 +19,47 @@
 #include "mal_listing.h"
 #include "mal_private.h"
 
-Module mal_scope;    /* the root of the tree */
-Module scopeJump[256][256];  /* to speedup access to correct scope */
+// SHOULD BE PROTECTED WITH LOCKS
+/*
+ * Definition of a new module may interfere with concurrent actions.
+ * A jump table is mainted to provide a quick start in the module
+ * table to find the correct one. 
+ *
+ * All modules are persistent during a server session
+ */
+Module moduleIndex[256][256]; 	/* to speedup access to correct scope */
+Module moduleChain;				/* keep the modules in a chain as well */
 
-static void newSubScope(Module scope){
-	scope->subscope = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
+static void newModuleSpace(Module scope){
+	scope->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
+}
+
+Module
+getModuleChain(void){
+	return moduleChain;
 }
 
 void
 mal_module_reset(void)
 {
-	freeModuleList(mal_scope);
-	mal_scope = NULL;
-	memset((char*) scopeJump, 0, 256 * 256);
-}
-/*
- * Definition of a new module scope may interfere with concurrent
- * actions of multiple threads. This calls for a secure update
- * of the scope tree structure.
- * A jump table is mainted to provide a quick start in the module
- * table to find the correct one. This simple scheme safes about
- * 100ms/100K calls
- */
+	Module m,n;
 
-static void clrModuleJump(str nme, Module cur){
-		if( scopeJump[(int)(*nme)][(int)(*(nme+1))]== cur)
-			scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur->sibling;
+	for( m = moduleChain; m; ){
+		n = m->next;
+		freeModule(m);
+		m= n;
+	}
+	memset((char*) moduleIndex, 0, 256 * 256 * sizeof(Module));
 }
 
-void setModuleJump(str nme, Module cur){
-		cur->sibling= scopeJump[(int)(*nme)][(int)(*(nme+1))];
-		scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur;
+static void clrModuleIndex(str nme, Module cur){
+		if( moduleIndex[(int)(*nme)][(int)(*(nme+1))]== cur)
+			moduleIndex[(int)(*nme)][(int)(*(nme+1))]= cur->link;
+}
+
+static void setModuleIndex(str nme, Module cur){
+		cur->link= moduleIndex[(int)(*nme)][(int)(*(nme+1))];
+		moduleIndex[(int)(*nme)][(int)(*(nme+1))]= cur;
 }
 
 /*
@@ -69,82 +78,61 @@ Module newModule(Module scope, str nme){
 		GDKerror("newModule:"MAL_MALLOC_FAIL);
 	} else {
 		cur->name = nme;
-		cur->outer = NULL;
-		cur->sibling = NULL;
-		cur->subscope = NULL;
+		cur->next = NULL;
+		cur->link = NULL;
+		cur->space = NULL;
 		cur->isAtomModule = FALSE;
 	}
 	if ( cur == NULL)
 		return scope;
-	newSubScope(cur);
-	if( scope != NULL){
-		cur->outer = scope->outer;
-		scope->outer= cur;
-		setModuleJump(nme,cur);
+	newModuleSpace(cur);
+	// User modules are never global
+	if( strcmp(nme,"user")){
+		setModuleIndex(nme,cur);
+		if ( moduleChain)
+			cur->next = moduleChain;
+		moduleChain = cur;
 	}
 	return cur;
 }
 /*
- * The scope can be fixed. This is used by the parser to avoid creation of
- * a string structure when possible. Subsequently we can
- * replace the module name in the instructions to become a pointer
- * to the scope directly.
- * Reading a module often calls for opening a scope level
- * if it didn't exist.
+ * The scope can be fixed. This is used by the parser.
+ * Reading a module often calls for creation first.
  */
 Module fixModule(Module scope, str nme){
-	Module s= scope;
-	if( scopeJump[(int)(*nme)][(int)(*(nme+1))])
-		s= scopeJump[(int)(*nme)][(int)(*(nme+1))];
+	Module s= 0;
+	
+	if( strcmp(nme,"user")==0)
+		return scope;
+	if( moduleIndex[(int)(*nme)][(int)(*(nme+1))])
+		s= moduleIndex[(int)(*nme)][(int)(*(nme+1))];
 	while(s != NULL){
 		if( nme == s->name )
 			return s;
-		s= s->outer;
+		s= s->link;
 	}
 	return newModule(scope, nme);
 }
 /*
- * A derived module inherits copies of all known
- * functions in the parent module. These can be
- * refined or expanded.
- */
-void
-deriveModule(Module scope, str nme){
-	Module src= findModule(scope,nme);
-	Symbol s;
-	int i;
-	if( src == scope) return;
-	for(i=0; i<256; i++){
-		s= src->subscope[i];
-		while( s){
-			/* copy the symbol */
-			s= s->peer;
-		}
-	}
-}
-/*
  * The freeModule operation throws away a symbol without
  * concerns on it whereabouts in the scope structure.
- * This routine therefore assumes care in use.
- * The final action of the system is to remove all
- * instructions and procedures. This forcefull action
- * helps in localization of memory leakages.
  */
 static void freeSubScope(Module scope)
 {
 	int i;
 
-	if (scope->subscope == NULL) 
+	if (scope->space == NULL) 
 		return;
 	for(i=0;i<MAXSCOPE;i++) {
-		if( scope->subscope[i]){
-			freeSymbolList(scope->subscope[i]);
-			scope->subscope[i]= NULL;
+		if( scope->space[i]){
+			freeSymbolList(scope->space[i]);
+			scope->space[i]= NULL;
 		}
 	}
-	GDKfree(scope->subscope);
-	scope->subscope = 0;
+	GDKfree(scope->space);
+	scope->space = 0;
 }
+
 void freeModule(Module m)
 {
 	Symbol s;
@@ -162,24 +150,10 @@ void freeModule(Module m)
 		}
 	}
 	freeSubScope(m);
-	clrModuleJump(m->name, m);
+	clrModuleIndex(m->name, m);
 	if (m->help)
 		GDKfree(m->help);
 	GDKfree(m);
-}
-
-void freeModuleList(Module s){
-	Module t;
-	if (s == NULL) {
-		s = mal_scope;
-	}
-	t=s;
-	while(s){
-		t= s->outer;
-		s->outer= NULL;
-		freeModule(s);
-		s=t;
-	}
 }
 
 /*
@@ -201,15 +175,15 @@ void insertSymbol(Module scope, Symbol prg){
 		if ( c )
 			scope = c;
 	}
-	t = getSubScope(getFunctionId(sig));
-	if( scope->subscope == NULL)
-		newSubScope(scope);
-	assert(scope->subscope);
-	if(scope->subscope[t] == prg){
+	t = getSymbolIndex(getFunctionId(sig));
+	if( scope->space == NULL)
+		newModuleSpace(scope);
+	assert(scope->space);
+	if(scope->space[t] == prg){
 		/* already known, last inserted */
 	 } else  {
-		prg->peer= scope->subscope[t];
-		scope->subscope[t] = prg;
+		prg->peer= scope->space[t];
+		scope->space[t] = prg;
 		if( prg->peer &&
 			idcmp(prg->name,prg->peer->name) == 0)
 			prg->skip = prg->peer->skip;
@@ -237,12 +211,12 @@ void deleteSymbol(Module scope, Symbol prg){
 		if(c )
 			scope = c;
 	}
-	t = getSubScope(getFunctionId(sig));
-	if (scope->subscope[t] == prg) {
-		scope->subscope[t] = scope->subscope[t]->peer;
+	t = getSymbolIndex(getFunctionId(sig));
+	if (scope->space[t] == prg) {
+		scope->space[t] = scope->space[t]->peer;
 		freeSymbol(prg);
 	} else {
-		Symbol nxt = scope->subscope[t];
+		Symbol nxt = scope->space[t];
 		while (nxt->peer != NULL) {
 			if (nxt->peer == prg) {
 				nxt->peer = prg->peer;
@@ -266,11 +240,11 @@ void deleteSymbol(Module scope, Symbol prg){
 Module findModule(Module scope, str name){
 	Module def=scope;
 	if( name==NULL) return scope;
-	scope= scopeJump[(int)(*name)][(int)(*(name+1))];
+	scope= moduleIndex[(int)(*name)][(int)(*(name+1))];
 	while(scope != NULL){
 			if( name == scope->name )
 					return scope;
-			scope= scope->sibling;
+			scope= scope->link;
 	}
 	/* default is always matched with current */
 	if( def->name==NULL) return NULL;
@@ -279,18 +253,17 @@ Module findModule(Module scope, str name){
 int isModuleDefined(Module scope, str name){
 	if( name==NULL || scope==NULL) return FALSE;
 	if( name == scope->name) return TRUE;
-	scope= scopeJump[(int)(*name)][(int)(*(name+1))];
+	scope= moduleIndex[(int)(*name)][(int)(*(name+1))];
 	while(scope != NULL){
 			if( name == scope->name )
 					return TRUE;
-			scope= scope->sibling;
+			scope= scope->link;
 	}
 	return FALSE;
 }
 /*
  * The routine findSymbolInModule starts at a MAL scope level and searches
- * an element amongst the peers. If it fails, it will recursively
- * inspect the outer scopes.
+ * an element amongst the peers. 
  *
  * In principal, external variables are subject to synchronization actions
  * to avoid concurrency conflicts. This also implies, that any parallel
@@ -302,7 +275,7 @@ int isModuleDefined(Module scope, str name){
 Symbol findSymbolInModule(Module v, str fcn){
 	Symbol s;
 	if( v == NULL || fcn == NULL) return NULL;
-	s= v->subscope[(int)(*fcn)];
+	s= v->space[(int)(*fcn)];
 	while(s!=NULL){
 		if( idcmp(s->name,fcn)==0 ) return s;
 		s= s->skip;
@@ -321,9 +294,9 @@ findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci){
 	Symbol s;
 	int i,fnd;
 
-	for(m= findModule(scope,getModuleId(pci)); m; m= m->outer)
+	for(m= findModule(scope,getModuleId(pci)); m; m= m->link)
 	if( m->name == getModuleId(pci) ) {
-		s= m->subscope[(int)(getSubScope(getFunctionId(pci)))];
+		s= m->space[(int)(getSymbolIndex(getFunctionId(pci)))];
 		for(; s; s= s->peer)
 		if( getFunctionId(pci)==s->name && pci->argc == getSignature(s)->argc ){
 			/* found it check argtypes */

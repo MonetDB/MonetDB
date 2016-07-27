@@ -54,9 +54,9 @@ Symbol  getFunctionSymbol(Module scope, InstrPtr p){
 	Module m;
 	Symbol s;
 
-	for(m= findModule(scope,getModuleId(p)); m; m= m->outer)
+	for(m= findModule(scope,getModuleId(p)); m; m= m->link)
 		if(idcmp(m->name, getModuleId(p))==0 ) {
-			s= m->subscope[(int)(getSubScope(getFunctionId(p)))];
+			s= m->space[getSymbolIndex(getFunctionId(p))];
 			for(; s; s= s->peer)
 				if( getSignature(s)->fcn == p->fcn)
 					return s;
@@ -358,14 +358,14 @@ insertSymbolBefore(Module scope, Symbol prg, Symbol before)
 		if (c)
 			scope = c;
 	}
-	t = getSubScope(getFunctionId(sig));
-	assert(scope->subscope != NULL);
-	assert(scope->subscope[t] != NULL);
-	s = scope->subscope[t];
+	t = getSymbolIndex(getFunctionId(sig));
+	assert(scope->space != NULL);
+	assert(scope->space[t] != NULL);
+	s = scope->space[t];
 	prg->skip = before->skip;
 	prg->peer = before;
 	if (s == before) {
-		scope->subscope[t] = prg;
+		scope->space[t] = prg;
 	} else {
 		for (;;) {
 			assert(s != NULL);

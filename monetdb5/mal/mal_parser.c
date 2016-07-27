@@ -943,6 +943,8 @@ static str parseModule(Client cntxt)
 		return parseError(cntxt, "<module path> expected\n");
 	modnme = putNameLen(nxt, l);
 	advance(cntxt, l);
+	if( ! isModuleDefined(cntxt->nspace,modnme))
+		newModule(NULL,modnme);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	skipSpace(cntxt);
 	helpInfo(cntxt, &cntxt->nspace->help);
