@@ -326,7 +326,7 @@ BATattach(int tt, const char *heapfile, int role)
 		struct stat st;
 		int atomsize;
 		BUN cap;
-		off_t n;
+		lng n;
 
 		if (fstat(fileno(f), &st) < 0) {
 			GDKsyserror("BATattach: cannot stat %s\n", heapfile);
@@ -351,7 +351,7 @@ BATattach(int tt, const char *heapfile, int role)
 			return NULL;
 		}
 		p = Tloc(bn, 0);
-		n = st.st_size;
+		n = (lng) st.st_size;
 		while (n > 0 && (m = fread(p, 1, (size_t) MIN(1024*1024, n), f)) > 0) {
 			p += m;
 			n -= m;
