@@ -774,6 +774,11 @@ function Translate(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dz:dbl) :bat[:wkb];
 	return x;
 end Translate;
 
+function Translate(g:bat[:wkb], dx:dbl, dy:dbl, dz:dbl) :bat[:wkb];
+	x := Translate3D(g, nil:bat, dx, nil:bat, dy, nil:bat, dz);
+	return x;
+end Translate;
+
 command Within(a:bat[:wkb], b:bat[:wkb]) :bat[:bit] address wkbWithin_bat
 comment "Returns TRUE if the geometry A is completely inside geometry B";
 
