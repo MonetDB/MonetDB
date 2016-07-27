@@ -1956,7 +1956,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 }
 
 static str
-dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_points, const char *path)
+dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, uint32_t *num_points, const char *path)
 {
 	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
 	unsigned int lvl = 0;
@@ -1969,7 +1969,7 @@ dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, 
 	case wkbLinearRing_mdb:
 		return dumpPointsLineString(idBAT, geomBAT, geosGeometry, num_points, path);
 	case wkbPolygon_mdb:
-		return dumpPointsPolygon(idBAT, geomBAT, geosGeometry, num_points, &lvl, path);
+		return dumpPointsPolygon(idBAT, geomBAT, geosGeometry, &lvl, num_points, path);
 	case wkbMultiPoint_mdb:
 	case wkbMultiLineString_mdb:
 	case wkbMultiPolygon_mdb:
@@ -1981,7 +1981,7 @@ dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, 
 }
 
 str
-dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_points, const char *path) {
+dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, uint32_t *num_points, const char *path) {
     return dumpPointsGeometry_(idBAT, geomBAT, geosGeometry, num_points, path);
 }
 
