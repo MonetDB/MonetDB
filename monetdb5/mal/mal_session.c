@@ -291,7 +291,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		/* move this back !! */
 		if (c->nspace == 0) {
 			c->nspace = newModule(NULL, putName("user"));
-			c->nspace->outer = mal_clients[0].nspace->outer;
 		}
 
 		if ((s = setScenario(c, lang)) != NULL) {

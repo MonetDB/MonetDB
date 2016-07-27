@@ -88,12 +88,13 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
                 PyObject *key = PyList_GetItem(keys, i);
                 char *val;
                 bool found = false;
-                if (!PyString_CheckExact(key)) {
+
+                msg = pyobject_to_str(&key, 42, &val);
+                if (msg != MAL_SUCCEED) {
                     // one of the keys in the dictionary was not a string
-                    PyErr_Format(PyExc_TypeError, "Expected a string as dict key, but found %s", PyString_AsString(PyObject_Str(PyObject_Type(key))));
+                    PyErr_Format(PyExc_TypeError, "Could not convert object type %s to a string: %s", PyString_AsString(PyObject_Str(PyObject_Type(key))), msg);
                     goto loop_end;
                 }
-                val = PyString_AsString(key);
                 for(ai = 0; ai < self->ncols; ai++) {
                     if (strcmp(val, self->cols[ai].name) == 0) {
                         found = true;
@@ -129,13 +130,14 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
             PyObject *key = PyList_GetItem(keys, i);
             char *val;
             bool found = false;
-            if (!PyString_CheckExact(key)) {
+
+            msg = pyobject_to_str(&key, 42, &val);
+            if (msg != MAL_SUCCEED) {
                 // one of the keys in the dictionary was not a string
-                PyErr_Format(PyExc_TypeError, "Expected a string as dict key, but found %s", PyString_AsString(PyObject_Str(PyObject_Type(key))));
+                PyErr_Format(PyExc_TypeError, "Could not convert object type %s to a string: %s", PyString_AsString(PyObject_Str(PyObject_Type(key))), msg);
                 Py_DECREF(keys);
                 goto wrapup;
             }
-            val = PyString_AsString(key);
             for(ai = 0; ai < self->ncols; ai++) {
                 if (strcmp(val, self->cols[ai].name) == 0) {
                     found = true;

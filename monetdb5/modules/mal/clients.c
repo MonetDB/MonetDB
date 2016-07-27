@@ -27,11 +27,6 @@
 #include "mal_private.h"
 #include "mtime.h"
 
-#ifdef HAVE_LIBREADLINE
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif
-
 static void
 pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
@@ -273,29 +268,6 @@ CLTusers(bat *ret)
 	}
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","users");
-	return MAL_SUCCEED;
-}
-
-str
-CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str* fname = getArgReference_str(stk,pci,1);
-	(void) mb;
-
-	if( cntxt->history){
-#ifdef HAVE_LIBREADLINE
-		write_history(cntxt->history);
-#endif
-		GDKfree(cntxt->history);
-	}
-	if( *fname == str_nil)
-		cntxt->history = NULL;
-	else {
-		cntxt->history = GDKstrdup(*fname);
-#ifdef HAVE_LIBREADLINE
-		read_history(cntxt->history);
-#endif
-	}
 	return MAL_SUCCEED;
 }
 

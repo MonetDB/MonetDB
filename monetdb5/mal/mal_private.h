@@ -47,7 +47,7 @@ __hidden int moreClients(int reruns)
 __hidden void stopMALdataflow(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden void malAtomDefinition(stream *out, str name,int tpe)
+__hidden int malAtomDefinition(stream *out, str name,int tpe)
 	__attribute__((__visibility__("hidden")));
 __hidden int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));

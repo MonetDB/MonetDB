@@ -43,7 +43,7 @@ isExceptionVariable(str nme){
 	return 0;
 }
 
-static char *M5OutOfMemory = "Memory allocation failed.";
+static char *M5OutOfMemory = "Out of memory. Memory allocation failed.";
 
 /**
  * Internal helper function for createException and

@@ -27,12 +27,6 @@ stderr of test 'setmemorylimit-fail` in directory 'sql/test/malloc_fail` itself:
 # 15:41:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-56431" "--port=38119"
 # 15:41:50 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-56431/.s.monetdb.38119
-QUERY = create procedure setmemorylimit(nbytes BIGINT) external name "io"."setmemorylimit";
-ERROR = !CREATE PROCEDURE: name 'setmemorylimit' (bigint(64)) already in use
-MAPI  = (monetdb) /var/tmp/mtest-56431/.s.monetdb.38119
-QUERY = select name from tables where 1=0;
-ERROR = !Could not create SQL allocator
 
 # 15:41:50 >  
 # 15:41:50 >  "Done."

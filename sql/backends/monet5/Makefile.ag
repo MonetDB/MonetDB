@@ -17,8 +17,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../common/options \
 		   ../../../common/stream \
 		   ../../../common/utils \
-		   ../../../gdk \
-		   $(READLINE_INCS)
+		   ../../../gdk
 
 lib__sql = {
 	MODULE
@@ -37,7 +36,6 @@ lib__sql = {
 		sql_gencode.c sql_gencode.h \
 		sql_optimizer.c sql_optimizer.h \
 		sql_result.c sql_result.h \
-		sql_readline.c sql_readline.h \
 		sql_cast.c sql_cast.h \
 		sql_cast_impl_down_from_flt.h \
 		sql_cast_impl_down_from_int.h \
@@ -55,7 +53,7 @@ lib__sql = {
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmcrypt \
-		   $(READLINE_LIBS) $(PTHREAD_LIBS) \
+		   $(PTHREAD_LIBS) \
 		   $(openssl_LIBS) $(MATH_LIBS)
 }
 
