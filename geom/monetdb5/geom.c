@@ -15,7 +15,7 @@
 
 int TYPE_mbr;
 
-static str BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid min, oid max, BUN ngrp, BUN start, BUN end, wkb **empty_geoms, str (*func) (wkb **, wkb **, wkb**), const char* name);
+static str BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid min, oid max, BUN ngrp, BUN start, BUN end, wkb **empty_geoms, str (*func) (wkb **, wkb **, wkb**), char* name);
 
 static inline int
 geometryHasZ(int info)
@@ -1588,7 +1588,7 @@ wkbPointOnSurface(wkb **resWKB, wkb **geomWKB)
 }
 
 static str
-dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, const char *path)
+dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, unsigned *num_geoms, const char *path)
 {
 	char *newPath = NULL;
 	size_t pathLength = strlen(path);
@@ -1624,6 +1624,8 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
     if (BUNappend(idBAT, newPath, TRUE) != GDK_SUCCEED ||
             BUNappend(geomBAT, singleWKB, TRUE) != GDK_SUCCEED)
         err = createException(MAL, "geom.Dump", "BUNappend failed");
+    else
+        *num_geoms++;
 
 	GDKfree(newPath);
 	GDKfree(singleWKB);
@@ -1631,10 +1633,10 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 	return err;
 }
 
-static str dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
+static str dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_geoms, const char *path);
 
 static str
-dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
+dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_geoms, const char *path)
 {
 	int i;
 	const GEOSGeometry *multiGeometry = NULL;
@@ -1661,7 +1663,7 @@ dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, 
 		snprintf(newPath, pathLength, "%s%u,", path, lvl);
 
 		//*secondLevel = 0;
-		err = dumpGeometriesGeometry_(idBAT, geomBAT, multiGeometry, newPath);
+		err = dumpGeometriesGeometry_(idBAT, geomBAT, multiGeometry, num_geoms, newPath);
 		if (err != MAL_SUCCEED)
 			break;
 	}
@@ -1670,7 +1672,7 @@ dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, 
 }
 
 static str
-dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
+dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_geoms, const char *path)
 {
 	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
 	unsigned int lvl = 0;
@@ -1683,7 +1685,7 @@ dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 	case wkbLinearRing_mdb:
 	case wkbPolygon_mdb:
 		//Single Geometry
-		return dumpGeometriesSingle(idBAT, geomBAT, geosGeometry, &lvl, path);
+		return dumpGeometriesSingle(idBAT, geomBAT, geosGeometry, &lvl, num_geoms, path);
 	case wkbMultiPoint_mdb:
 	case wkbMultiLineString_mdb:
 	case wkbMultiPolygon_mdb:
@@ -1700,7 +1702,7 @@ dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
             return MAL_SUCCEED;
 		}
 
-		return dumpGeometriesMulti(idBAT, geomBAT, geosGeometry, path);
+		return dumpGeometriesMulti(idBAT, geomBAT, geosGeometry, num_geoms, path);
 	default:
 		throw(MAL, "geom.Dump", "%s Unknown geometry type", geom_type2str(geometryType, 0));
 	}
@@ -1708,9 +1710,9 @@ dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 }
 
 str
-dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
+dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_geoms, const char *path)
 {
-    return dumpGeometriesGeometry_(idBAT, geomBAT, geosGeometry, path);
+    return dumpGeometriesGeometry_(idBAT, geomBAT, geosGeometry, num_geoms, path);
 }
 
 static str
@@ -1718,7 +1720,7 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 {
 	BAT *idBAT = NULL, *geomBAT = NULL, *parentBAT = NULL;
 	GEOSGeom geosGeometry;
-	unsigned int geometriesNum, i;
+	unsigned int num_geoms = 0, i;
 	str err;
 
 	if (wkb_isnil(*geomWKB)) {
@@ -1757,28 +1759,33 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 
 	geosGeometry = wkb2geos(*geomWKB);
 
-	//count the number of geometries
-	geometriesNum = GEOSGetNumGeometries(geosGeometry);
-
-	if ((idBAT = COLnew(0, TYPE_str, geometriesNum, TRANSIENT)) == NULL) {
+	if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.Dump", "Error creating new BAT");
 	}
 
-	if ((geomBAT = COLnew(0, ATOMindex("wkb"), geometriesNum, TRANSIENT)) == NULL) {
+	if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
 		BBPunfix(idBAT->batCacheid);
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.Dump", "Error creating new BAT");
 	}
 
+	if ((err = dumpGeometriesGeometry_(idBAT, geomBAT, geosGeometry, &num_geoms, "")) != MAL_SUCCEED) {
+		BBPunfix(idBAT->batCacheid);
+		BBPunfix(geomBAT->batCacheid);
+        if (parent)
+		    BBPunfix(parentBAT->batCacheid);
+		return err;
+	}
+
     if (parent) {
-        if ((parentBAT = COLnew(0, ATOMindex("int"), geometriesNum, TRANSIENT)) == NULL) {
+        if ((parentBAT = COLnew(0, ATOMindex("int"), num_geoms, TRANSIENT)) == NULL) {
             BBPunfix(idBAT->batCacheid);
             BBPunfix(geomBAT->batCacheid);
             throw(MAL, "geom.Dump", "Error creating new BAT");
         }
         /*Get the tail and add parentID geometriesNum types*/
-        for (i = 0; i < geometriesNum; i++) {
+        for (i = 0; i < num_geoms; i++) {
             if (BUNappend(parentBAT, parent, TRUE) != GDK_SUCCEED) {
                 err = createException(MAL, "geom.Dump", "BUNappend failed");
                 BBPunfix(idBAT->batCacheid);
@@ -1790,13 +1797,6 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
         }
     }
 
-	if ((err = dumpGeometriesGeometry_(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED) {
-		BBPunfix(idBAT->batCacheid);
-		BBPunfix(geomBAT->batCacheid);
-        if (parent)
-		    BBPunfix(parentBAT->batCacheid);
-		return err;
-	}
 	GEOSGeom_destroy(geosGeometry);
 
 	BBPkeepref(*idBAT_id = idBAT->batCacheid);
@@ -1818,7 +1818,7 @@ wkbDumpP(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 }
 
 static str
-dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, const char *path)
+dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_points, unsigned int *lvl, const char *path)
 {
 	char *newPath = NULL;
 	size_t pathLength = strlen(path);
@@ -1834,6 +1834,8 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 	if (BUNappend(idBAT, newPath, TRUE) != GDK_SUCCEED ||
 	    BUNappend(geomBAT, pointWKB, TRUE) != GDK_SUCCEED)
 		err = createException(MAL, "geom.Dump", "BUNappend failed");
+    else
+        *num_points++;
 
 	GDKfree(newPath);
 	GDKfree(pointWKB);
@@ -1842,7 +1844,7 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 }
 
 static str
-dumpPointsLineString(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
+dumpPointsLineString(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_points, const char *path)
 {
 	int pointsNum = 0;
 	str err;
@@ -1862,7 +1864,7 @@ dumpPointsLineString(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 		if (pointGeometry == NULL)
 			throw(MAL, "geom.DumpPoints", "GEOSGeomGetPointN failed");
 
-		err = dumpPointsPoint(idBAT, geomBAT, pointGeometry, &lvl, path);
+		err = dumpPointsPoint(idBAT, geomBAT, pointGeometry, num_points, &lvl, path);
 		GEOSGeom_destroy(pointGeometry);
 	}
 
@@ -1870,7 +1872,7 @@ dumpPointsLineString(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 }
 
 static str
-dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, const char *path)
+dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, unsigned *num_points, const char *path)
 {
 	const GEOSGeometry *exteriorRingGeometry;
 	int numInteriorRings = 0, i = 0;
@@ -1892,7 +1894,7 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	sprintf(newPath, "%s%u%s", path, *lvl, extraStr);
 
 	//get the points in the exterior ring
-	err = dumpPointsLineString(idBAT, geomBAT, exteriorRingGeometry, newPath);
+	err = dumpPointsLineString(idBAT, geomBAT, exteriorRingGeometry, num_points, newPath);
 	GDKfree(newPath);
 	if (err != MAL_SUCCEED)
 		return err;
@@ -1910,7 +1912,7 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 		newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
 		sprintf(newPath, "%s%u%s", path, *lvl, extraStr);
 
-		err = dumpPointsLineString(idBAT, geomBAT, GEOSGetInteriorRingN(geosGeometry, i), newPath);
+		err = dumpPointsLineString(idBAT, geomBAT, GEOSGetInteriorRingN(geosGeometry, i), num_points, newPath);
 		GDKfree(newPath);
 		if (err != MAL_SUCCEED)
 			return err;
@@ -1919,9 +1921,9 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	return MAL_SUCCEED;
 }
 
-static str dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
+static str dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_points, const char *path);
 static str
-dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
+dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_points, const char *path)
 {
 	int geometriesNum, i;
 	const GEOSGeometry *multiGeometry = NULL;
@@ -1944,7 +1946,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 		sprintf(newPath, "%s%u%s", path, lvl, extraStr);
 
 		//*secondLevel = 0;
-		err = dumpPointsGeometry_(idBAT, geomBAT, multiGeometry, newPath);
+		err = dumpPointsGeometry_(idBAT, geomBAT, multiGeometry, num_points, newPath);
 		GDKfree(newPath);
 		if (err != MAL_SUCCEED)
 			return err;
@@ -1954,7 +1956,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 }
 
 static str
-dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
+dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_points, const char *path)
 {
 	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
 	unsigned int lvl = 0;
@@ -1962,25 +1964,25 @@ dumpPointsGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, 
 	//check the type of the geometry
 	switch (geometryType) {
 	case wkbPoint_mdb:
-		return dumpPointsPoint(idBAT, geomBAT, geosGeometry, &lvl, path);
+		return dumpPointsPoint(idBAT, geomBAT, geosGeometry, &lvl, num_points, path);
 	case wkbLineString_mdb:
 	case wkbLinearRing_mdb:
-		return dumpPointsLineString(idBAT, geomBAT, geosGeometry, path);
+		return dumpPointsLineString(idBAT, geomBAT, geosGeometry, num_points, path);
 	case wkbPolygon_mdb:
-		return dumpPointsPolygon(idBAT, geomBAT, geosGeometry, &lvl, path);
+		return dumpPointsPolygon(idBAT, geomBAT, geosGeometry, num_points, &lvl, path);
 	case wkbMultiPoint_mdb:
 	case wkbMultiLineString_mdb:
 	case wkbMultiPolygon_mdb:
 	case wkbGeometryCollection_mdb:
-		return dumpPointsMultiGeometry(idBAT, geomBAT, geosGeometry, path);
+		return dumpPointsMultiGeometry(idBAT, geomBAT, geosGeometry, num_points, path);
 	default:
 		throw(MAL, "geom.DumpPoints", "%s Unknown geometry type", geom_type2str(geometryType, 0));
 	}
 }
 
 str
-dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path) {
-    return dumpPointsGeometry_(idBAT, geomBAT, geosGeometry, path);
+dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned *num_points, const char *path) {
+    return dumpPointsGeometry_(idBAT, geomBAT, geosGeometry, num_points, path);
 }
 
 static str
@@ -1989,8 +1991,9 @@ wkbDumpPoints_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB,
 	BAT *idBAT = NULL, *geomBAT = NULL, *parentBAT = NULL;
 	GEOSGeom geosGeometry;
 	int check = 0;
-	int pointsNum, i = 0;
+	int i = 0;
 	str err;
+    uint32_t num_points = 0;
 
 	if (wkb_isnil(*geomWKB)) {
 
@@ -2028,30 +2031,33 @@ wkbDumpPoints_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB,
 
 	geosGeometry = wkb2geos(*geomWKB);
 
-	if ((err = wkbNumPoints(&pointsNum, geomWKB, &check)) != MAL_SUCCEED) {
-		GEOSGeom_destroy(geosGeometry);
-		return err;
-	}
-
-	if ((idBAT = COLnew(0, TYPE_str, pointsNum, TRANSIENT)) == NULL) {
+	if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.Dump", "Error creating new BAT");
 	}
 
-	if ((geomBAT = COLnew(0, ATOMindex("wkb"), pointsNum, TRANSIENT)) == NULL) {
+	if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
 		BBPunfix(idBAT->batCacheid);
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.Dump", "Error creating new BAT");
 	}
 
+	if ( (err = dumpPointsGeometry_(idBAT, geomBAT, geosGeometry, &num_points, "")) != MAL_SUCCEED )
+    {
+		BBPunfix(idBAT->batCacheid);
+		BBPunfix(geomBAT->batCacheid);
+        if (parent)
+		    BBPunfix(parentBAT->batCacheid);
+		return err;
+	}
     if (parent) {
-        if ((parentBAT = COLnew(0, ATOMindex("int"), pointsNum, TRANSIENT)) == NULL) {
+        if ((parentBAT = COLnew(0, ATOMindex("int"), num_points, TRANSIENT)) == NULL) {
             BBPunfix(idBAT->batCacheid);
             BBPunfix(geomBAT->batCacheid);
             throw(MAL, "geom.Dump", "Error creating new BAT");
         }
         /*Get the tail and add parentID geometriesNum types*/
-        for (i = 0; i < pointsNum; i++) {
+        for (i = 0; i < num_points; i++) {
             if (BUNappend(parentBAT, parent, TRUE) != GDK_SUCCEED) {
                 err = createException(MAL, "geom.Dump", "BUNappend failed");
                 BBPunfix(idBAT->batCacheid);
@@ -2063,14 +2069,6 @@ wkbDumpPoints_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB,
         }
     }
 
-	if ( (err = dumpPointsGeometry_(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED )
-    {
-		BBPunfix(idBAT->batCacheid);
-		BBPunfix(geomBAT->batCacheid);
-        if (parent)
-		    BBPunfix(parentBAT->batCacheid);
-		return err;
-	}
 	GEOSGeom_destroy(geosGeometry);
 
 	BBPkeepref(*idBAT_id = idBAT->batCacheid);
@@ -5283,7 +5281,7 @@ wkbCollectCascade(wkb **outWKB, bat *inBAT_id)
 static str wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB);
 
 static str
-BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid min, oid max, BUN ngrp, BUN start, BUN end, wkb **empty_geoms, str (*func) (wkb **, wkb **, wkb**), const char* name)
+BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid min, oid max, BUN ngrp, BUN start, BUN end, wkb **empty_geoms, str (*func) (wkb **, wkb **, wkb**), char* name)
 {
     BAT *outBAT = NULL;
     BATiter bBAT_iter;
@@ -5310,7 +5308,7 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
     outBAT = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT);
     if (outBAT == NULL) {
         *outBAT_id = bat_nil;
-        throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+        throw(MAL, name, MAL_MALLOC_FAIL);
     }
 
     if (BATtdense(g))
@@ -5322,20 +5320,20 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
     if ((aWKBs = (wkb **) GDKzalloc(sizeof(wkb*)*ngrp)) == NULL) {
         BBPunfix(outBAT->batCacheid);
         *outBAT_id = bat_nil;
-        throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+        throw(MAL, name, MAL_MALLOC_FAIL);
     }
     if ((outWKBs = (wkb **) GDKzalloc(sizeof(wkb*)*ngrp)) == NULL) {
         GDKfree(aWKBs);
         BBPunfix(outBAT->batCacheid);
         *outBAT_id = bat_nil;
-        throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+        throw(MAL, name, MAL_MALLOC_FAIL);
     }
     if ((grpWKBs = (wkb **) GDKzalloc(sizeof(wkb*)*ngrp)) == NULL) {
         GDKfree(aWKBs);
         GDKfree(outWKBs);
         BBPunfix(outBAT->batCacheid);
         *outBAT_id = bat_nil;
-        throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+        throw(MAL, name, MAL_MALLOC_FAIL);
     }
 
     bBAT_iter = bat_iterator(b);
@@ -5396,7 +5394,7 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
                             GDKfree(grpWKBs);
                             BBPunfix(outBAT->batCacheid);
                             outBAT = NULL;
-                            throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+                            throw(MAL, name, MAL_MALLOC_FAIL);
                         }
                         nils = 1;
                     }
@@ -5453,7 +5451,7 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
                             GDKfree(grpWKBs);
                             BBPunfix(outBAT->batCacheid);
                             outBAT = NULL;
-                            throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+                            throw(MAL, name, MAL_MALLOC_FAIL);
                         }
                         nils++;
                     }
@@ -5481,7 +5479,14 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
                 gid = gids ? gids[i] - min : (oid) i;
                 if (grpWKBs[gid] == NULL) {
                     bit empty = 0;
-                    assert(!wkb_isnil(outWKBs[gid]));
+                    if (wkb_isnil(outWKBs[gid])) {
+                        GDKfree(aWKBs);
+                        GDKfree(outWKBs);
+                        GDKfree(grpWKBs);
+                        BBPunfix(outBAT->batCacheid);
+                        outBAT = NULL;
+                		throw(MAL, name, "Out WKB is NULL, if not exception was thrown during the execution of %s it means not enough geometries for the aggregation", name);
+                    }
                     grpWKBs[gid] = outWKBs[gid];
                 }
             }
@@ -5498,7 +5503,7 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
             GDKfree(grpWKBs);
             BBPunfix(outBAT->batCacheid);
             outBAT = NULL;
-    		throw(MAL, "geom.", name, "wkbAsText failed");
+    		throw(MAL, name, "wkbAsText failed");
         }
         fprintf(stdout, "%d, %s\n", i, geomSTR);
     }
@@ -5512,7 +5517,7 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
             GDKfree(grpWKBs);
             BBPunfix(outBAT->batCacheid);
             outBAT = NULL;
-    		throw(MAL, "geom.", name, "BUNappend failed");
+    		throw(MAL, name, "BUNappend failed");
         }
     }
 
@@ -8222,6 +8227,9 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
         ro = bx->hseqbase;
 
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
+        /*TODO: check if you can jump over*/
+        if (wkb_isnil(lWKB))
+            continue;
 
         lGeometry = wkb2geos(lWKB);
         if ( !lGeometry ) {

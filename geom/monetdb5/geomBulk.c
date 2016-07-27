@@ -2388,12 +2388,13 @@ wkbDistance_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 /******************************************************************************************/
 
 static str
-WKBtoWKBSflagINT(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id, bat *inParentBAT_id, str (*func) (BAT*, BAT*, const GEOSGeometry*, const char*), const char *name)
+WKBtoWKBSflagINT(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id, bat *inParentBAT_id, str (*func) (BAT*, BAT*, const GEOSGeometry*, uint32_t *cnt, const char*), const char *name)
 {
 	BAT *idBAT = NULL, *geomBAT = NULL, *parentBAT = NULL, *inParentBAT = NULL, *inGeomBAT = NULL;
     BATiter inGeomBAT_iter, inParentBAT_iter;
 	BUN p = 0, q = 0;
-	int geometriesCnt, i;
+	int i;
+    uint32_t cnt = 0;
 	str err;
 
     //Open input BATs
@@ -2443,21 +2444,41 @@ WKBtoWKBSflagINT(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomB
 
 	BATloop(inGeomBAT, p, q) {	//iterate over all valid elements
 		str err = NULL;
-		int parent = 0, geometriesNum;
+		int parent = 0;
 	    GEOSGeom geosGeometry;
 
 		wkb *geomWKB = (wkb *) BUNtail(inGeomBAT_iter, p);
         if (inParentBAT_id)
 		    parent = *(int *) BUNtail(inParentBAT_iter, p);
 
-	    geosGeometry = wkb2geos(geomWKB);
+        /*TODO: check if you can jump over*/
+        if (wkb_isnil(geomWKB))
+            continue;
 
-    	//count the number of geometries
-    	geometriesNum = GEOSGetNumGeometries(geosGeometry);
+	    if ( (geosGeometry = wkb2geos(geomWKB)) == NULL) {
+            BBPunfix(inGeomBAT->batCacheid);
+            if (inParentBAT_id)
+                BBPunfix(inParentBAT->batCacheid);
+            BBPunfix(idBAT->batCacheid);
+            BBPunfix(geomBAT->batCacheid);
+            if (inParentBAT_id)
+                BBPunfix(parentBAT->batCacheid);
+            throw(MAL, name, "WKB failed");
+        }
 
-        /*Get the tail and add parentID geometriesNum types*/
+
+        if ((err = (*func)(idBAT, geomBAT, geosGeometry, &cnt, "")) != MAL_SUCCEED) {
+            BBPunfix(inGeomBAT->batCacheid);
+            if (inParentBAT_id)
+                BBPunfix(inParentBAT->batCacheid);
+            BBPunfix(idBAT->batCacheid);
+            BBPunfix(geomBAT->batCacheid);
+            if (inParentBAT_id)
+                BBPunfix(parentBAT->batCacheid);
+    		return err;
+    	}
         if (inParentBAT_id) {
-            for (i = 0; i < geometriesNum; i++) {
+            for (i = 0; i < cnt; i++) {
                 if (BUNappend(parentBAT, &parent, TRUE) != GDK_SUCCEED) {
                     err = createException(MAL, name, "BUNappend failed");
 	                BBPunfix(inGeomBAT->batCacheid);
@@ -2472,18 +2493,6 @@ WKBtoWKBSflagINT(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomB
             }
         }
 
-        geometriesCnt += geometriesNum;
-
-        if ((err = (*func)(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED) {
-            BBPunfix(inGeomBAT->batCacheid);
-            if (inParentBAT_id)
-                BBPunfix(inParentBAT->batCacheid);
-            BBPunfix(idBAT->batCacheid);
-            BBPunfix(geomBAT->batCacheid);
-            if (inParentBAT_id)
-                BBPunfix(parentBAT->batCacheid);
-    		return err;
-    	}
     }
 
     /*Release input BATs*/
