@@ -1625,7 +1625,7 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
             BUNappend(geomBAT, singleWKB, TRUE) != GDK_SUCCEED)
         err = createException(MAL, "geom.Dump", "BUNappend failed");
     else
-        *num_geoms++;
+        *num_geoms = *num_geoms+1;
 
 	GDKfree(newPath);
 	GDKfree(singleWKB);
@@ -1835,7 +1835,7 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 	    BUNappend(geomBAT, pointWKB, TRUE) != GDK_SUCCEED)
 		err = createException(MAL, "geom.Dump", "BUNappend failed");
     else
-        *num_points++;
+        *num_points = *num_points+1;
 
 	GDKfree(newPath);
 	GDKfree(pointWKB);

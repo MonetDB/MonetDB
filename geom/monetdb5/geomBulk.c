@@ -2492,7 +2492,7 @@ WKBtoWKBSflagINT(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomB
                 }
             }
         }
-
+        cnt = 0;
     }
 
     /*Release input BATs*/
@@ -2516,6 +2516,8 @@ WKBtoWKBSflagINT(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomB
     */
 
     /*Keep refs for output BATs*/
+    if ( !((BATcount(idBAT) == BATcount(geomBAT)) && (BATcount(idBAT) == BATcount(parentBAT))) )
+        assert(0);
 	BBPkeepref(*idBAT_id = idBAT->batCacheid);
 	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
     if (inParentBAT_id)
