@@ -137,10 +137,9 @@ exit_streams( bstream *fin, stream *fout )
 {
 	if (fout && fout != GDKstdout) {
 		mnstr_flush(fout);
-		mnstr_close(fout);
-		mnstr_destroy(fout);
+		close_stream(fout);
 	}
-	if (fin) 
+	if (fin)
 		(void) bstream_destroy(fin);
 }
 
