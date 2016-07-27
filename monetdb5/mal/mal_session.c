@@ -422,7 +422,7 @@ MSserveClient(void *dummy)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
 		showException(c->fdout, MAL, "serveClient", MAL_MALLOC_FAIL);
-		c->mode = FINISHCLIENT + 1; /* == RUNCLIENT */
+		c->mode = RUNCLIENT;
 	} else {
 		c->glb->stktop = mb->vtop;
 		c->glb->blk = mb;
@@ -432,7 +432,7 @@ MSserveClient(void *dummy)
 		msg = defaultScenario(c);
 	if (msg) {
 		showException(c->fdout, MAL, "serveClient", "could not initialize default scenario");
-		c->mode = FINISHCLIENT + 1; /* == RUNCLIENT */
+		c->mode = RUNCLIENT;
 		GDKfree(msg);
 	} else {
 		do {
