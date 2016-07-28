@@ -666,26 +666,16 @@ TRACEcreate(const char *hnme, const char *tnme, int tt)
 	char buf[BUFSIZ];
 
 	snprintf(buf, BUFSIZ, "trace_%s_%s", hnme, tnme);
-	b = BATdescriptor(BBPindex(buf));
-	if (b) {
-		BBPincref(b->batCacheid, TRUE);
-		return b;
-	}
 
-	b = BATnew(TYPE_void, tt, 1 << 16, PERSISTENT);
+	b = BATnew(TYPE_void, tt, 1 << 16, TRANSIENT);
 	if (b == NULL)
 		return NULL;
-
-	BATmode(b, PERSISTENT);
-	BATseqbase(b, 0);
-	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
-	BATcommit(b);
 	return b;
 }
 
 
-#define CLEANUPprofile(X)  if (X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence = TRANSIENT; } (X) = NULL;
+#define CLEANUPprofile(X)  if (X) { BBPunfix((X)->batCacheid); } (X) = NULL;
 
 static void
 _cleanupProfiler(void)
@@ -761,19 +751,7 @@ clearTrace(void)
 		return;     /* not initialized */
 	}
 	/* drop all trace tables */
-	BBPclear(TRACE_id_event->batCacheid);
-	BBPclear(TRACE_id_time->batCacheid);
-	BBPclear(TRACE_id_pc->batCacheid);
-	BBPclear(TRACE_id_thread->batCacheid);
-	BBPclear(TRACE_id_ticks->batCacheid);
-	BBPclear(TRACE_id_rssMB->batCacheid);
-	BBPclear(TRACE_id_tmpspace->batCacheid);
-	BBPclear(TRACE_id_inblock->batCacheid);
-	BBPclear(TRACE_id_oublock->batCacheid);
-	BBPclear(TRACE_id_minflt->batCacheid);
-	BBPclear(TRACE_id_majflt->batCacheid);
-	BBPclear(TRACE_id_nvcsw->batCacheid);
-	BBPclear(TRACE_id_stmt->batCacheid);
+	_cleanupProfiler();
 	TRACE_init = 0;
 	MT_lock_unset(&mal_contextLock);
 	initTrace();
