@@ -233,7 +233,6 @@ TABLETcollect(BAT **bats, Tablet *as)
 		BATsetaccess(fmt[i].c, BAT_READ);
 		fmt[i].c->tsorted = fmt[i].c->trevsorted = 0;
 		fmt[i].c->tkey = 0;
-		fmt[i].c->tnil = fmt[i].c->tnonil = 0;
 		BATsettrivprop(fmt[i].c);
 
 		if (cnt != BATcount(fmt[i].c))
@@ -260,7 +259,6 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		b = fmt[i].c;
 		b->tsorted = b->trevsorted = 0;
 		b->tkey = 0;
-		b->tnil = b->tnonil = 0;
 		BATsettrivprop(b);
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
