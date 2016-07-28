@@ -12,8 +12,8 @@
 #error this file should not be included outside its source directory
 #endif
 
-#ifdef FREECLIENT
-/* FREECLIENT is defined in the same file as Client */
+#ifdef _MAL_CLIENT_H_
+/* _MAL_CLIENT_H_ is defined in the same file as Client */
 __hidden void MCexitClient(Client c)
 	__attribute__((__visibility__("hidden")));
 __hidden int MCreadClient(Client c)
