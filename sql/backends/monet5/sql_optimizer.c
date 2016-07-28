@@ -92,9 +92,8 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			/* we have to sum the cost of all three components of a BAT */
 			if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
 				size = SQLgetColumnSize(tr, c, access);
-				//if( access == 0)
-					space += size;	// accumulate once
-				if( !prepare && size == 0 ){
+				space += size;	// accumulate once
+				if( !prepare && size == 0  && ! t->system){
 					//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,cname,prepare,size);
 					setFunctionId(p, emptybindRef);
 				}
@@ -120,7 +119,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 							size = SQLgetColumnSize(tr, c, access);
 						}
 
-						if( !prepare && size == 0){
+						if( !prepare && size == 0 && ! i->t->system){
 							setFunctionId(p, emptybindidxRef);
 							//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,idxname,prepare,size);
 						}

@@ -149,7 +149,7 @@ typedef struct VARRECORD {
 	int declared;				/* pc index when it was first assigned */
 	int updated;				/* pc index when it was first updated */
 	int eolife;					/* pc index when it should be garbage collected */
-	int depth;					/* scope block depth */
+	int depth;					/* scope block depth, set to -1 if not used */
 	int worker;					/* thread id of last worker producing it */
 	str stc;					/* rendering schema.table.column */
 	BUN rowcnt;					/* estimated row count*/

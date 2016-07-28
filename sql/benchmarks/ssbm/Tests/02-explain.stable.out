@@ -44,7 +44,7 @@ function user.s2_1():void;
     X_18:bat[:int] := sql.bind(X_6,"sys","lineorder","lo_discount",0);
     C_7:bat[:oid] := sql.tid(X_6,"sys","lineorder");
     C_72 := algebra.subselect(X_18,C_7,4,6,true,true,false);
-    (C_20,r1_24) := sql.bind(X_6,"sys","lineorder","lo_discount",2);
+    (C_18,r1_24) := sql.bind(X_0,"sys","lineorder","lo_discount",2);
     C_73 := algebra.subselect(r1_24,nil:bat[:oid],4,6,true,true,false);
     X_22:bat[:int] := sql.bind(X_6,"sys","lineorder","lo_discount",1);
     C_75 := algebra.subselect(X_22,C_7,4,6,true,true,false);

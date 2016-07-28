@@ -51,14 +51,14 @@ struct _PyInput{
     sql_subtype *sql_subtype;           //SQL typename (for _column_types)
     size_t count;                       //amount of elements in BAT
     bool scalar;                        //True if the input is a scalar (in this case, BAT* is NULL)
-    PyObject *result;                   //Converted PyObject, probably shouldn't be here 
+    PyObject *result;                   //Converted PyObject, probably shouldn't be here
 };
 #define PyInput struct _PyInput
 
 struct _QueryStruct{
     bool pending_query;
     char query[8192];
-    int nr_cols; 
+    int nr_cols;
     int mmapid;
     size_t memsize;
 };
@@ -98,7 +98,10 @@ pyapi_export PyObject *PyObject_CheckForConversion(PyObject *pResult, int expect
 pyapi_export bool PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values, int column_count, char **return_message);
 //! Create a BAT from the i'th PyReturn struct (filled by PyObject_PreprocessObject), with bat_type set to the expected BAT Type (set this to PyType_ToBat(ret->result_type) if there is no expected type), seqbase should be set to 0 unless you know what you're doing
 pyapi_export BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int index, oid seqbase, char **return_message, bool copy);
-
+//! Returns the size of the Python object when converted
+pyapi_export ssize_t PyType_Size(PyObject *obj);
+//! Populate a PyReturn object from a Python object
+pyapi_export str PyObject_GetReturnValues(PyObject *obj, PyReturn *return_value);
 pyapi_export char *BatType_Format(int);
 
 pyapi_export int PyType_ToBat(int);
@@ -111,7 +114,7 @@ pyapi_export bool Python_ReleaseGIL(bool);
 #define bit_TO_PYSCALAR(value) PyInt_FromLong(value)
 #define sht_TO_PYSCALAR(value) PyInt_FromLong(value)
 #define int_TO_PYSCALAR(value) PyInt_FromLong(value)
-#define lng_TO_PYSCALAR(value) PyLong_FromLong(value)
+#define lng_TO_PYSCALAR(value) PyLong_FromLongLong(value)
 #define flt_TO_PYSCALAR(value) PyFloat_FromDouble(value)
 #define dbl_TO_PYSCALAR(value) PyFloat_FromDouble(value)
 

@@ -96,10 +96,12 @@ pyapi_export str PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 pyapi_export str PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 pyapi_export str PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 pyapi_export str PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 pyapi_export str PyAPIprelude(void *ret);
 
 int PyAPIEnabled(void);
+int PyAPIInitialized(void);
 
 #ifdef WIN32
 #define CREATE_SQL_FUNCTION_PTR(retval, fcnname)     \
@@ -107,7 +109,7 @@ int PyAPIEnabled(void);
    fcnname##_ptr_tpe fcnname##_ptr = NULL;
 
 #define LOAD_SQL_FUNCTION_PTR(fcnname)                                             \
-    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress(NULL, "lib_sql.dll", NULL, #fcnname, 0); \
+    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress(NULL, "lib_sql.dll", #fcnname, 0); \
     if (fcnname##_ptr == NULL) {                                                           \
         msg = createException(MAL, "pyapi.eval", "Failed to load function %s", #fcnname);  \
     }
@@ -119,5 +121,12 @@ int PyAPIEnabled(void);
 #define LOAD_SQL_FUNCTION_PTR(fcnname) (void) fcnname
 #endif
 
+
+str _loader_init(void);
+
+pyapi_export char *PyError_CreateException(char *error_text, char *pycall);
+
+#define pyapi_enableflag "embedded_py"
+#define utf8string_minlength 256
 
 #endif /* _PYPI_LIB_ */

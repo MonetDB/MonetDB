@@ -37,6 +37,9 @@
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
 #define card_relation 	4
+#define card_loader 	5
+
+
 /* allowed to reduce (in the where and having parts we can reduce) */
 
 /* different query execution modes (emode) */

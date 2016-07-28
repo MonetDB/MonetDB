@@ -58,10 +58,10 @@ Ready.
 % .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
 % id,	arguments,	tuples,	ship,	cpu # name
 % oid,	clob,	bigint,	bigint,	int # type
-% 3,	23,	1,	1,	1 # length
-[ 7@0,	"user.s4_1(A0:bte):void;",	1,	0,	0	]
-[ 8@0,	"user.s5_1():void;",	1,	0,	0	]
-[ 9@0,	"user.s6_1():void;",	5,	1,	0	]
+% 3,	23,	1,	1,	2 # length
+[ 7@0,	"user.s4_1(A0:bte):void;",	1,	1,	0	]
+[ 8@0,	"user.s5_1():void;",	1,	1,	0	]
+[ 9@0,	"user.s6_1():void;",	5,	0,	50	]
 
 # 15:31:52 >  
 # 15:31:52 >  "Done."

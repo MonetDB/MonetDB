@@ -19,12 +19,16 @@ stdout of test 'setmemorylimit-fail` in directory 'sql/test/malloc_fail` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-!Memory allocation failed.
 
 # 15:41:50 >  
 # 15:41:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-56431" "--port=38119"
 # 15:41:50 >  
 
+#select name from tables where 1=0;
+% .tables # table_name
+% name # name
+% varchar # type
+% 0 # length
 
 # 15:41:50 >  
 # 15:41:50 >  "Done."

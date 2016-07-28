@@ -84,8 +84,6 @@ __hidden bat BBPinsert(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 __hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
-__hidden void BBPtrim(size_t delta)
-	__attribute__((__visibility__("hidden")));
 __hidden void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)

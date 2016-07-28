@@ -1,7 +1,7 @@
 # examples of non-bindable instructions
 
 #load unknown library
-library UNKNOWlib;
+include UNKNOWlib;
 
 command wrong()
 address UNKOWNaddress

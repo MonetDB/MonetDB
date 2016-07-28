@@ -559,6 +559,11 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == semaRef ||
 		getModuleId(p) == alarmRef)
 		return TRUE;
+		
+	if( getModuleId(p) == pyapiRef ||
+		getModuleId(p) == pyapimapRef ||
+		getModuleId(p) == rapiRef)
+		return TRUE;
 
 	if (getModuleId(p) == sqlRef){
 		if (getFunctionId(p) == tidRef) return FALSE;

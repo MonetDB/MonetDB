@@ -29,7 +29,7 @@ Ready.
 
 #result of inline
 function user.tst():void;
-    X_3 := true:bit;
+    true:bit;
     X_4:int := 0;
     X_4:int := 100;
     z := X_4;

@@ -342,7 +342,6 @@ MCforkClient(Client father)
 		/* reuse the scopes wherever possible */
 		if (son->nspace == 0)
 			son->nspace = newModule(NULL, putName("child"));
-		son->nspace->outer = father->nspace->outer;
 	}
 	return son;
 }
@@ -579,11 +578,6 @@ MCreadClient(Client c)
 			return MCreadClient(c);
 		}
 		return 0;
-	}
-	if (*CURRENT(c) == '?') {
-		showHelp(c->nspace, CURRENT(c) + 1, c->fdout);
-		in->pos = in->len;
-		return MCreadClient(c);
 	}
 #ifdef MAL_CLIENT_DEBUG
 	printf("# finished stream read %d %d\n", (int) in->pos, (int) in->len);

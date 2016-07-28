@@ -25,6 +25,8 @@
 #include "mal.h"		/* for have_hge */
 #endif
 
+#define check_card(card,f) ((card == card_none && !f->res) || (card != card_none && f->res) || card == card_loader)
+
 static void
 rel_setsubquery(sql_rel*r)
 {
@@ -582,13 +584,11 @@ static sql_exp *
 rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 {
 	sql_subfunc *f = NULL;
-	int type = (ek.card == card_none)?F_PROC:
-		   ((ek.card == card_relation)?F_UNION:F_FUNC);
+	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
+		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
 	f = sql_bind_func(sql->sa, s, fname, NULL, NULL, type);
-	if (f && 
-		((ek.card == card_none && !f->res) || 
-		 (ek.card != card_none && f->res))) {
+	if (f && check_card(ek.card, f)) {
 		return exp_op(sql->sa, NULL, f);
 	} else {
 		return sql_error(sql, 02,
@@ -2538,13 +2538,14 @@ rel_op(mvc *sql, symbol *se, exp_kind ek )
 	return rel_op_(sql, s, fname, ek);
 }
 
+
 sql_exp *
 rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card)
 {
 	sql_subfunc *f = NULL;
 	sql_subtype *t = NULL;
-	int type = (card == card_none)?F_PROC:
-		   ((card == card_relation)?F_UNION:F_FUNC);
+	int type = (card == card_loader)?F_LOADER:((card == card_none)?F_PROC:
+		   ((card == card_relation)?F_UNION:F_FUNC));
 
 	if (!s)
 		s = sql->session->schema;
@@ -2554,9 +2555,7 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card)
 	 * the value to the type needed by this function!
 	 */
 	if (!f &&
-	   (f = find_func(sql, s, fname, 1, type, NULL)) != NULL &&
-	   ((card == card_none && !f->res) || 
-	    (card != card_none && f->res))) {
+	   (f = find_func(sql, s, fname, 1, type, NULL)) != NULL && check_card(card, f)) {
 
 		if (!f->func->vararg) {
 			sql_arg *a = f->func->ops->h->data;
@@ -2566,9 +2565,7 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card)
 		if (!e) 
 			f = NULL;
 	}
-	if (f &&
-	   ((card == card_none && !f->res) || 
-	    (card != card_none && f->res))) {
+	if (f && check_card(card, f)) {
 		sql_arg *ares = f->func->res?f->func->res->h->data:NULL;
 		if (ares && ares->type.scale == INOUT) {
 			sql_subtype *res = f->res->h->data;
@@ -2603,7 +2600,7 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_exp *e = NULL;
 	sql_subfunc *f = NULL;
 	sql_subtype *t = NULL;
-	int type = (ek.card == card_none)?F_PROC:F_FUNC;
+	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
 
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
@@ -2667,9 +2664,11 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 	sql_exp *res = NULL;
 	sql_subtype *t1, *t2;
 	sql_subfunc *f = NULL;
-	int type = (card == card_none)?F_PROC:
-		   ((card == card_relation)?F_UNION:F_FUNC);
-
+	int type = (card == card_loader)?F_LOADER:((card == card_none)?F_PROC:
+		   ((card == card_relation)?F_UNION:F_FUNC));
+	if (card == card_loader) {
+		card = card_none;
+	}
 	t1 = exp_subtype(l);
 	t2 = exp_subtype(r);
 
@@ -2714,9 +2713,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 			r = res;
 		}
 	}
-	if (f && 
-	   ((card == card_none && !f->res) || 
-	    (card != card_none && f->res))) {
+	if (f && check_card(card,f)) {
 		if (f->func->fix_scale == SCALE_FIX) {
 			l = exp_fix_scale(sql, t2, l, 0, 0);
 			r = exp_fix_scale(sql, t1, r, 0, 0);
@@ -2786,8 +2783,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
-			if (!((card == card_none && !f->res) || 
-	    	    	      (card != card_none && f->res)))
+			if (!check_card(card,f))
 				continue;
 
 			prev = f;
@@ -2811,9 +2807,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 			t1 = exp_subtype(l);
 			t2 = exp_subtype(r);
 			f = bind_func(sql, s, fname, t1, t2, type);
-			if (f && 
-	     	    	   ((card == card_none && !f->res) || 
-	    	    	    (card != card_none && f->res))) {
+			if (f && check_card(card,f)) {
 				if (f->func->fix_scale == SCALE_FIX) {
 					l = exp_fix_scale(sql, t2, l, 0, 0);
 					r = exp_fix_scale(sql, t1, r, 0, 0);
@@ -2844,9 +2838,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		t1 = exp_subtype(l);
 		(void) exp_subtype(r);
 
-		if ((f = bind_member_func(sql, s, fname, t1, 2, NULL)) != NULL &&
-	     	   ((card == card_none && !f->res) || 
-	    	    (card != card_none && f->res))) {
+		if ((f = bind_member_func(sql, s, fname, t1, 2, NULL)) != NULL && check_card(card,f)) {
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
@@ -2864,9 +2856,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		l = ol;
 		r = or;
 		/* everything failed, fall back to bind on function name only */
-		if ((f = find_func(sql, s, fname, 2, type, NULL)) != NULL &&
-	     	   ((card == card_none && !f->res) || 
-	    	    (card != card_none && f->res))) {
+		if ((f = find_func(sql, s, fname, 2, type, NULL)) != NULL && check_card(card,f)) {
 
 			if (!f->func->vararg) {
 				node *m = f->func->ops->h;
@@ -2901,7 +2891,8 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	char *sname = qname_schema(dl->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
-	int type = (ek.card == card_none)?F_PROC:F_FUNC;
+	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
+
 	sql_subfunc *sf = NULL;
 
 	if (sname)
@@ -2976,8 +2967,8 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
 	int table_func = (ek.card == card_relation);
-	int type = (ek.card == card_none)?F_PROC:
-		   ((ek.card == card_relation)?F_UNION:F_FUNC);
+	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
+		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
 	for (; ops; ops = ops->next, nr_args++) {
 		sql_exp *e = rel_value_exp(sql, rel, ops->data.sym, fs, iek);

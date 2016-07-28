@@ -24,6 +24,4 @@ mal_export str shortStmtRendering(MalBlkPtr mb, MalStkPtr stl, InstrPtr p);
 mal_export str mal2str(MalBlkPtr mb, int first, int last);
 mal_export void showMalBlkHistory(stream *out, MalBlkPtr mb);
 
-mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
-mal_export void debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size);
 #endif /*  _MAL_LIST_H */

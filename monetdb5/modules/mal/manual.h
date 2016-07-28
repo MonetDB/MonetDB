@@ -18,6 +18,5 @@
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
-mal_export str MANUALhelp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _MANUAL_H */

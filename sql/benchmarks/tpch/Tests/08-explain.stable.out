@@ -159,7 +159,7 @@ function user.s2_1(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,A6:str):void;
     (X_168,r1_176,r2_176) := group.subgroupdone(X_165);
     X_171 := algebra.projection(r1_176,X_165);
     X_180:bat[:str] := sql.bind(X_0,"sys","nation","n_name",0);
-    (C_182,r1_190) := sql.bind(X_0,"sys","nation","n_name",2);
+    (C_182:bat[:oid],r1_190:bat[:str]) := sql.bind(X_0,"sys","nation","n_name",2);
     X_184:bat[:str] := sql.bind(X_0,"sys","nation","n_name",1);
     X_186 := sql.projectdelta(C_1,X_180,C_182,r1_190,X_184);
     X_187 := algebra.projection(r1_162,X_186);

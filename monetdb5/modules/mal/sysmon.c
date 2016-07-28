@@ -36,6 +36,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
+	MT_lock_set(&mal_delayLock);
 	tag = COLnew(0, TYPE_lng, 256, TRANSIENT);
 	user = COLnew(0, TYPE_str, 256, TRANSIENT);
 	started = COLnew(0, TYPE_timestamp, 256, TRANSIENT);
@@ -53,10 +54,10 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (estimate) BBPunfix(estimate->batCacheid);
 		if (progress) BBPunfix(progress->batCacheid);
 		if (oids) BBPunfix(oids->batCacheid);
+		MT_lock_unset(&mal_delayLock);
 		throw(MAL, "SYSMONqueue", MAL_MALLOC_FAIL);
 	}
 
-	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< QRYqueue[i].tag; i++)
 	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
 		now= (lng) time(0);

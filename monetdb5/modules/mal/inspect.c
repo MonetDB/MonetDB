@@ -56,17 +56,19 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (b == 0)
 		throw(MAL, "inspect.getgetFunctionId", MAL_MALLOC_FAIL );
+	cntxt->nspace->next = getModuleChain();
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
+			if (s->space[i]) {
+				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 					BUNappend(b, getFunctionId(sig), FALSE);
 				}
 			}
-		s = s->outer;
+		s = s->next;
 	}
+	cntxt->nspace->next = NULL;
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","symbol","function");
 
@@ -85,18 +87,20 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (b == 0)
 		throw(MAL, "inspect.getmodule", MAL_MALLOC_FAIL);
+	cntxt->nspace->next = getModuleChain();
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
+			if (s->space[i]) {
+				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 
 					BUNappend(b, getModuleId(sig), FALSE);
 				}
 			}
-		s = s->outer;
+		s = s->next;
 	}
+	cntxt->nspace->next = NULL;
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","symbol","module");
 
@@ -115,18 +119,20 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
+	cntxt->nspace->next = getModuleChain();
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
+			if (s->space[i]) {
+				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 					str kind = operatorName(sig->token);
 					BUNappend(b, kind, FALSE);
 				}
 			}
-		s = s->outer;
+		s = s->next;
 	}
+	cntxt->nspace->next = NULL;
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","symbol","kind");
 
@@ -147,19 +153,21 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
+	cntxt->nspace->next = getModuleChain();
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
+			if (s->space[i]) {
+				for (t = s->space[i]; t; t = t->peer) {
 					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if(a) *a = 0;
 					BUNappend(b, (a = strchr(sig, '(')) ? a : "", FALSE);
 				}
 			}
-		s = s->outer;
+		s = s->next;
 	}
+	cntxt->nspace->next = NULL;
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view"," symbol","address");
 
@@ -179,11 +187,12 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
+	cntxt->nspace->next = getModuleChain();
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
+			if (s->space[i]) {
+				for (t = s->space[i]; t; t = t->peer) {
 					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if( a)
@@ -192,8 +201,9 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BUNappend(b, (a? a: "nil"), FALSE);
 				}
 			}
-		s = s->outer;
+		s = s->next;
 	}
+	cntxt->nspace->next = NULL;
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view"," symbol","address");
 

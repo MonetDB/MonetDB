@@ -52,7 +52,6 @@
 #define BBPWAITING      (BBPUNLOADING|BBPLOADING|BBPSAVING|BBPDELETING)
 
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
-#define BBPLASTUSED(x)  ((x) & 0x7fffffff)	/* stamp is always a positive int */
 
 gdk_export int BBPin;		/* BATs swapped into BBP  */
 gdk_export int BBPout;		/* BATs swapped out of BBP */

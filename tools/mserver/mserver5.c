@@ -292,10 +292,12 @@ main(int argc, char **av)
 /* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
 		if (mallopt(M_MXFAST, 192)) {
 			fprintf(stderr, "!monet: mallopt(M_MXFAST,192) fails.\n");
+			exit(-1);
 		}
 #ifdef M_BLKSZ
 		if (mallopt(M_BLKSZ, 8 * 1024)) {
 			fprintf(stderr, "!monet: mallopt(M_BLKSZ,8*1024) fails.\n");
+			exit(-1);
 		}
 #endif
 	}
@@ -306,7 +308,8 @@ main(int argc, char **av)
 
 	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
 		perror("pwd");
-		GDKfatal("monet_init: could not determine current directory\n");
+		fprintf(stderr,"monet_init: could not determine current directory\n");
+		exit(-1);
 	}
 
 	/* retrieve binpath early (before monet_init) because some

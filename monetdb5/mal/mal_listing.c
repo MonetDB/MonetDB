@@ -46,6 +46,10 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	int varid = getArg(p,idx);
 
 	buf = GDKzalloc(maxlen);
+	if( buf== NULL){
+		GDKerror("renderTerm:Failed to allocate");
+		return 0;
+	}
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb,varid) && !isVarTypedef(mb,varid)) {
 		nme = getVarName(mb,varid);
@@ -569,7 +573,6 @@ printSignature(stream *fd, Symbol s, int flg)
 {
 	InstrPtr p;
 	str txt;
-	str addr="";
 
 	if ( s->def == 0 ){
 		mnstr_printf(fd, "missing definition of %s\n", s->name);
@@ -579,14 +582,7 @@ printSignature(stream *fd, Symbol s, int flg)
 	if( txt){
 		p = getSignature(s);
 		(void) fcnDefinition(s->def, p, txt, flg, txt, MAXLISTING);
-		switch( p->token){
-		case COMMANDsymbol:
-		case PATTERNsymbol:
-			if( p->fcn == NULL)
-				addr="#implementation missing";
-		
-		}
-		mnstr_printf(fd, "%s%s\n", txt,addr);
+		mnstr_printf(fd, "%s\n", txt);
 		GDKfree(txt);
 	} else GDKerror("printSignature"MAL_MALLOC_FAIL);
 }
@@ -612,70 +608,4 @@ void showMalBlkHistory(stream *out, MalBlkPtr mb)
 		} 
 		m= m->history;
 	}
-}
-
-void
-debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
-{
-	int i,j;
-	str ps;
-	InstrPtr p;
-
-	if (mb == NULL) {
-		mnstr_printf(fd, "# function definition missing\n");
-		return;
-	}
-	if ( flg == 0 || step < 0  || first < 0 )
-		return;
-
-	for (i = first; i < first +step && i < mb->stop; i++){
-		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), flg);
-		if (ps) {
-			if (p->token == REMsymbol)
-				mnstr_printf(fd,"%-40s\n",ps);
-			else {
-				mnstr_printf(fd,"%-40s\t#[%d] ("BUNFMT") %s ",ps, i, getRowCnt(mb,getArg(p,0)), (p->blk && p->blk->binding? p->blk->binding:""));
-				for(j =0; j < p->retc; j++)
-					mnstr_printf(fd,"%d ",getArg(p,j));
-				if( p->argc - p->retc > 0)
-					mnstr_printf(fd,"<- ");
-				for(; j < p->argc; j++)
-					mnstr_printf(fd,"%d ",getArg(p,j));
-				mnstr_printf(fd,"\n");
-			}
-			GDKfree(ps);
-		}
-	}
-}
-
-void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
-{
-	int i;
-	if (mb == NULL) {
-		mnstr_printf(fd, "# function definition missing\n");
-		return;
-	}
-	if ( flg == 0)
-		return;
-	if (flg & LIST_MAL_MAPI) {
-		size_t len = 0;
-		str ps;
-		mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
-				mb->stop, mb->stop);
-		mnstr_printf(fd, "%% .explain # table_name\n");
-		mnstr_printf(fd, "%% mal # name\n");
-		mnstr_printf(fd, "%% clob # type\n");
-		for (i = 0; i < mb->stop; i++) {
-			ps = instruction2str(mb, stk, getInstrPtr(mb, i), flg);
-			if (ps) {
-				size_t l = strlen(ps);
-				if (l > len)
-					len = l;
-				GDKfree(ps);
-			}
-		}
-		mnstr_printf(fd, "%% " SZFMT " # length\n", len);
-	}
-	for (i = 0; i < mb->stop; i++)
-		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }

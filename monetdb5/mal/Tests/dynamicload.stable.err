@@ -84,7 +84,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30911/.s.monetdb.34033
 QUERY = # examples of non-bindable instructions
         
         #load unknown library
-        library UNKNOWlib;
+        include UNKNOWlib;
         
         command wrong()
         address UNKOWNaddress

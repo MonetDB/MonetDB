@@ -25,6 +25,14 @@ pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
 address PyAPIevalAggr
 comment "grouped aggregates through Python";
 
+pattern eval_loader(fptr:ptr,expr:str):any...
+address PyAPIevalLoader
+comment "loader functions through Python";
+
+pattern eval_loader(fptr:ptr,expr:str,arg:any...):any...
+address PyAPIevalLoader
+comment "loader functions through Python";
+
 # initializer code
 command prelude() :void address PyAPIprelude;
 pyapi.prelude();
@@ -43,6 +51,15 @@ comment "grouped aggregates through Python";
 pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
 address PyAPIevalAggr
 comment "grouped aggregates through Python";
+
+pattern eval_loader(fptr:ptr,expr:str):any...
+address PyAPIevalLoader
+comment "loader functions through Python";
+
+pattern eval_loader(fptr:ptr,expr:str,arg:any...):any...
+address PyAPIevalLoader
+comment "loader functions through Python";
+
 
 module pyapimap;
 

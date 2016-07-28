@@ -47,7 +47,7 @@ __hidden int moreClients(int reruns)
 __hidden void stopMALdataflow(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden void malAtomDefinition(stream *out, str name,int tpe)
+__hidden int malAtomDefinition(stream *out, str name,int tpe)
 	__attribute__((__visibility__("hidden")));
 __hidden int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
@@ -70,6 +70,8 @@ __hidden Symbol cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr 
 __hidden int getBarrierEnvelop(MalBlkPtr mb)
 	__attribute__((__visibility__("hidden")));
 __hidden void malGarbageCollector(MalBlkPtr mb)
+	__attribute__((__visibility__("hidden")));
+__hidden void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
 	__attribute__((__visibility__("hidden")));
 
 /* mal_http_daemon.h */

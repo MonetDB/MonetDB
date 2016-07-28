@@ -607,9 +607,6 @@ DESCload(int i)
 	}
 	b->ttype = tt;
 	b->thash = NULL;
-	/* mil shouldn't mess with just loaded bats */
-	if (b->batStamp > 0)
-		b->batStamp = -b->batStamp;
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
