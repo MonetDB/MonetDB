@@ -632,17 +632,19 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 static int
 subjoin_split(Client cntxt, InstrPtr p, int args)
 {
-	char *name;
+	char *name = NULL;
 	int len, i, res = 0;
 	Symbol sym;
 	MalBlkPtr mb;
 	InstrPtr q;
 
-	if (args <= 2) /* we asume there are no 2x1 joins! */
+	if (args <= 3) /* we asume there are no 2x1 joins! */
 		return 1;
 
 	len = strlen( getFunctionId(p) );
 	name = GDKmalloc(len+3);
+	if (!name)
+		return -1;
 	strncpy(name, getFunctionId(p), len-7);
 	strcpy(name+len-7, "subselect");
 
@@ -657,6 +659,7 @@ subjoin_split(Client cntxt, InstrPtr p, int args)
 		else 
 			break;
 	}
+	GDKfree(name);
 	return res-1;
 }
 
@@ -700,6 +703,10 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		int split = subjoin_split(cntxt, p, args);
 		int nr_mv1 = split, nr_mv2 = nr_mats-split;
 
+		if (split < 0) {
+			mb->errors++;
+			return ;
+		}
 		/* now detect split point */
 		for(k=1; k<mat[mv1].mi->argc; k++) {
 			for (j=1; j<mat[mv2].mi->argc; j++) {
