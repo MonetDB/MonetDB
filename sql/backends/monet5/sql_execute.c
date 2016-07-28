@@ -23,7 +23,6 @@
 #include "sql_execute.h"
 #include "sql_env.h"
 #include "sql_mvc.h"
-#include "sql_readline.h"
 #include "sql_user.h"
 #include <sql_optimizer.h>
 #include <sql_datetime.h>

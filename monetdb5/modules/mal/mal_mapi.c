@@ -117,26 +117,27 @@ doChallenge(void *data)
 	stream *fdin = block_stream(((struct challengedata *) data)->in);
 	stream *fdout = block_stream(((struct challengedata *) data)->out);
 	bstream *bs;
-	int len = 0;
+	ssize_t len = 0;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif
-	GDKfree(data);
 	if (buf == NULL || fdin == NULL || fdout == NULL){
-		if (fdin) {
-			mnstr_close(fdin);
-			mnstr_destroy(fdin);
-		}
-		if (fdout) {
-			mnstr_close(fdout);
-			mnstr_destroy(fdout);
-		}
+		if (fdin)
+			close_stream(fdin);
+		else
+			close_stream(((struct challengedata *) data)->in);
+		if (fdout)
+			close_stream(fdout);
+		else
+			close_stream(((struct challengedata *) data)->out);
+		GDKfree(data);
 		if (buf)
 			GDKfree(buf);
 		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 		return;
 	}
+	GDKfree(data);
 
 	/* generate the challenge string */
 	generateChallenge(challenge, 8, 12);
@@ -155,12 +156,10 @@ doChallenge(void *data)
 	free(algos);
 	mnstr_flush(fdout);
 	/* get response */
-	if ((len = (int) mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
-		/* the client must have gone away, so no reason to write something */
-		mnstr_close(fdin);
-		mnstr_destroy(fdin);
-		mnstr_close(fdout);
-		mnstr_destroy(fdout);
+	if ((len = mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
+		/* the client must have gone away, so no reason to write anything */
+		close_stream(fdin);
+		close_stream(fdout);
 		GDKfree(buf);
 		return;
 	}
@@ -175,16 +174,9 @@ doChallenge(void *data)
 	bs = bstream_create(fdin, 128 * BLOCK);
 
 	if (bs == NULL){
-		if (fdin) {
-			mnstr_close(fdin);
-			mnstr_destroy(fdin);
-		}
-		if (fdout) {
-			mnstr_close(fdout);
-			mnstr_destroy(fdout);
-		}
-		if (buf)
-			GDKfree(buf);
+		close_stream(fdin);
+		close_stream(fdout);
+		GDKfree(buf);
 		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 		return;
 	}
@@ -365,7 +357,7 @@ SERVERlistenThread(SOCKET *Sock)
 		fflush(stdout);
 #endif
 		data = GDKmalloc(sizeof(*data));
-		if (!data) {
+		if (data == NULL) {
 			closesocket(msgsock);
 			showException(GDKstdout, MAL, "initClient",
 						  "cannot allocate memory");
@@ -373,13 +365,35 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 		data->in = socket_rastream(msgsock, "Server read");
 		data->out = socket_wastream(msgsock, "Server write");
-		if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {
+		if (data->in == NULL || data->out == NULL) {
+			if (data->out) {
+				/* send message if we can */
+				mnstr_printf(data->out,
+							 "!internal server error (cannot allocate "
+							 "enough memory), please try again later\n");
+				mnstr_flush(data->out);
+			}
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot allocate memory");
+			closesocket(msgsock);
+			if (data->in)
+				mnstr_destroy(data->in);
+			if (data->out)
+				mnstr_destroy(data->out);
+			GDKfree(data);
+			continue;
+		}
+		if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE) < 0) {
 			mnstr_printf(data->out, "!internal server error (cannot fork new "
 						 "client thread), please try again later\n");
 			mnstr_flush(data->out);
 			showException(GDKstdout, MAL, "initClient",
 						  "cannot fork new client thread");
+			closesocket(msgsock);
+			mnstr_destroy(data->in);
+			mnstr_destroy(data->out);
 			GDKfree(data);
+			continue;
 		}
 		GDKregister(tid);
 	} while (!ATOMIC_GET(serverexiting, atomicLock) &&

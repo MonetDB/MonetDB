@@ -20,7 +20,6 @@ INCLUDES = .. \
 	   ../../../../../common/stream \
 	   ../../../../../common/utils \
 	   ../../../../../gdk \
-	   $(READLINE_INCS) \
 	   $(netcdf_CFLAGS)
 
 lib__netcdf = {

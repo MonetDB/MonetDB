@@ -17,8 +17,6 @@
 #include <strings.h>		/* for strncasecmp */
 #endif
 
-/* #define _MAL_READLINE_DEBUG  */
-
 #ifndef S_ISCHR
 #define S_ISCHR(m)  (((m) & S_IFMT) == S_IFCHR)
 #endif

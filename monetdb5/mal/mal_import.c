@@ -112,7 +112,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 	bstream *oldfdin = c->fdin; \
 	int oldyycur = c->yycur; \
 	int oldlisting = c->listing; \
-	int oldmode = c->mode; \
+	enum clientmode oldmode = c->mode; \
 	int oldblkmode = c->blkmode; \
 	str oldsrcFile = c->srcFile; \
 	ClientInput *oldbak = c->bak; \
@@ -121,7 +121,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 	Symbol oldprg = c->curprg; \
 	MalStkPtr oldglb = c->glb	/* ; added by caller */
 #define restoreState3 \
-	int oldmode = c->mode; \
+	enum clientmode oldmode = c->mode; \
 	int oldblkmode = c->blkmode; \
 	str oldsrcFile = c->srcFile; \
 	Module oldnspace = c->nspace; \
@@ -174,7 +174,7 @@ malInclude(Client c, str name, int listing)
 	bstream *oldfdin = c->fdin;
 	int oldyycur = c->yycur;
 	int oldlisting = c->listing;
-	int oldmode = c->mode;
+	enum clientmode oldmode = c->mode;
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
 	str oldprompt = c->prompt;
