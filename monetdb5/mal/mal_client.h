@@ -18,10 +18,12 @@
 #define CONSOLE     0
 #define isAdministrator(X) (X==mal_clients)
 
-#define FREECLIENT  	0
-#define FINISHCLIENT	1   
-#define RUNCLIENT		2
-#define BLOCKCLIENT     3
+enum clientmode {
+	FREECLIENT,
+	FINISHCLIENT,
+	RUNCLIENT,
+	BLOCKCLIENT
+};
 
 #define PROCESSTIMEOUT  2   /* seconds */
 
@@ -125,7 +127,7 @@ typedef struct CLIENT {
 	int debug;
 	void  *mdb;            /* context upon suspend */
 	str    history;	       /* where to keep console history */
-	short  mode;           /* FREECLIENT..BLOCKED */
+	enum clientmode mode;  /* FREECLIENT..BLOCKED */
 	/*
 	 * Client records are organized into a two-level dependency tree,
 	 * where children may be created to deal with parallel processing
