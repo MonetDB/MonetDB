@@ -629,14 +629,61 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 	mat_add(ml, r, mat_none, getFunctionId(p));
 }
 
+static int
+subjoin_split(Client cntxt, InstrPtr p, int args)
+{
+	char *name;
+	int len, i, res = 0;
+	Symbol sym;
+	MalBlkPtr mb;
+	InstrPtr q;
+
+	if (args <= 2) /* we asume there are no 2x1 joins! */
+		return 1;
+
+	len = strlen( getFunctionId(p) );
+	name = GDKmalloc(len+3);
+	strncpy(name, getFunctionId(p), len-7);
+	strcpy(name+len-7, "subselect");
+
+	sym = findSymbol(cntxt->nspace, getModuleId(p), name);
+	assert(sym);
+	mb = sym->def;
+
+	q = mb->stmt[0];
+	for(i = q->retc; i<q->argc; i++ ) {
+		if (isaBatType(getArgType(mb,q,i)))
+			res++;
+		else 
+			break;
+	}
+	return res-1;
+}
+
+/* 1 or 2 mat lists: 
+ * 	in case of one take the second half of the code 
+ * 	in case of two we need to detect the list lengths.
+ *
+ * input is one list of arguments (just total length of mats) 
+ */
 static void
-mat_join3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
+mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 {
 	int tpe = getArgType(mb,p, 0), j,k, nr = 1;
 	InstrPtr l = newInstruction(mb, ASSIGNsymbol);
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 	mat_t *mat = ml->v;
+	int *mats = (int*)GDKzalloc(sizeof(int) * args); 
+	int nr_mats = 0, first = 0;
 
+	for(j=0;j<args;j++) {
+		mats[j] = is_a_mat(getArg(p,p->retc+j), ml);
+		if (mats[j] != -1) {
+			nr_mats++;
+			if (!first)
+				first = j;
+		}
+	}
 	setModuleId(l,matRef);
 	setFunctionId(l,packRef);
 	getArg(l,0) = getArg(p,0);
@@ -647,22 +694,27 @@ mat_join3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 
 	//printf("# %s.%s(%d,%d)", getModuleId(p), getFunctionId(p), m, n);
 	
-	assert(m>=0 || n>=0);
-	if (m >= 0 && n >= 0 && o >= 0) {
-		assert(mat[n].mi->argc == mat[o].mi->argc);
-		for(k=1; k<mat[m].mi->argc; k++) {
-			for (j=1; j<mat[n].mi->argc; j++) {
+	if (args == nr_mats) {
+		int mv1 = mats[0], i;
+		int mv2 = mats[args-1];
+		int split = subjoin_split(cntxt, p, args);
+		int nr_mv1 = split, nr_mv2 = nr_mats-split;
+
+		/* now detect split point */
+		for(k=1; k<mat[mv1].mi->argc; k++) {
+			for (j=1; j<mat[mv2].mi->argc; j++) {
 				InstrPtr q = copyInstruction(p);
 
 				getArg(q,0) = newTmpVariable(mb, tpe);
 				getArg(q,1) = newTmpVariable(mb, tpe);
-				getArg(q,2) = getArg(mat[m].mi,k);
-				getArg(q,3) = getArg(mat[n].mi,j);
-				getArg(q,4) = getArg(mat[o].mi,j);
+				for (i = 0; i < nr_mv1; i++ )
+					getArg(q,q->retc+i) = getArg(mat[mats[i]].mi,k);
+				for (i = 0; i < nr_mv2; i++ )
+					getArg(q,q->retc+split+i) = getArg(mat[mats[i]].mi,k);
 				pushInstruction(mb,q);
 	
-				propagatePartnr(ml, getArg(mat[m].mi, k), getArg(q,0), nr);
-				propagatePartnr(ml, getArg(mat[n].mi, j), getArg(q,1), nr);
+				propagatePartnr(ml, getArg(mat[mv1].mi, k), getArg(q,0), nr);
+				propagatePartnr(ml, getArg(mat[mv2].mi, j), getArg(q,1), nr);
 
 				/* add result to mat */
 				l = pushArgument(mb,l,getArg(q,0));
@@ -671,22 +723,23 @@ mat_join3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			}
 		}
 	} else {
-		int mv = (m>=0)?m:n;
-		int av = (m<0);
-		int bv = (m>=0);
+		/* only one side 
+		 * mats from first..first+nr_mats
+		 */
+		int mv = mats[first];
 
 		for(k=1; k<mat[mv].mi->argc; k++) {
 			InstrPtr q = copyInstruction(p);
 
 			getArg(q,0) = newTmpVariable(mb, tpe);
 			getArg(q,1) = newTmpVariable(mb, tpe);
-			getArg(q,p->retc+av) = getArg(mat[mv].mi, k);
-			if (o >= 0)
-				getArg(q,p->retc+2) = getArg(mat[o].mi, k);
+			for (j=0;j<nr_mats;j++) {
+				assert(mat[mats[first]].mi->argc == mat[mats[first+j]].mi->argc);
+				getArg(q,p->retc+first+j) = getArg(mat[mats[first+j]].mi, k);
+			}
+			propagatePartnr(ml, getArg(mat[mv].mi, k), getArg(q,(first!=0)), k);
+			propagatePartnr(ml, getArg(p, p->retc+(first)?nr_mats:0), getArg(q,(first==0)), k);
 			pushInstruction(mb,q);
-
-			propagatePartnr(ml, getArg(mat[mv].mi, k), getArg(q,av), k);
-			propagatePartnr(ml, getArg(p, p->retc+bv), getArg(q,bv), k);
 
 			/* add result to mat */
 			l = pushArgument(mb, l, getArg(q,0));
@@ -1575,17 +1628,20 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		bats = nr_of_bats(mb, p);
 
-		/* (l,r) Join (L, R, ..) */
-		if (match > 0 && isMatJoinOp(p) && p->argc >= 3 && p->retc == 2 &&
-				match <= 3 && bats >= 2) {
-		   	m = is_a_mat(getArg(p,p->retc), &ml);
-		   	n = is_a_mat(getArg(p,p->retc+1), &ml);
-		   	o = is_a_mat(getArg(p,p->retc+2), &ml);
-
-			if (bats == 3 && match >= 2)
-				mat_join3(mb, p, &ml, m, n, o);
-			else
+		/* (l,r) Join (L, R, ..)
+		 * 2 -> (l,r) equi/theta joins (l,r)
+		 * 3 -> (l,r) range-joins (l,r1,r2)
+		 * NxM -> (l,r) filter-joins (l1,..,ln,r1,..,rm)
+		 */
+		if (match > 0 && isMatJoinOp(p) && 
+		    p->argc >= 3 && p->retc == 2 && bats >= 2) {
+			if (bats == 2) {
+		   		m = is_a_mat(getArg(p,p->retc), &ml);
+		   		n = is_a_mat(getArg(p,p->retc+1), &ml);
 				mat_join2(mb, p, &ml, m, n);
+			} else {
+				mat_joinNxM(cntxt, mb, p, &ml, bats);
+			}
 			actions++;
 			continue;
 		}
