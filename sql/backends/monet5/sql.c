@@ -4907,7 +4907,7 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *oidx;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *revsort, *key, *oidx;
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
@@ -4928,7 +4928,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rphash = getArgReference_bat(stk, pci, 11);
 	bat *rimprints = getArgReference_bat(stk, pci, 12);
 	bat *rsort = getArgReference_bat(stk, pci, 13);
-	bat *roidx = getArgReference_bat(stk, pci, 14);
+	bat *rrevsort = getArgReference_bat(stk, pci, 14);
+	bat *rkey = getArgReference_bat(stk, pci, 15);
+	bat *roidx = getArgReference_bat(stk, pci, 16);
 	str sname = 0;
 	str tname = 0;
 	str cname = 0;
@@ -4953,10 +4955,13 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	phash = COLnew(0, TYPE_bit, 0, TRANSIENT);
 	imprints = COLnew(0, TYPE_lng, 0, TRANSIENT);
 	sort = COLnew(0, TYPE_bit, 0, TRANSIENT);
+	revsort = COLnew(0, TYPE_bit, 0, TRANSIENT);
+	key = COLnew(0, TYPE_bit, 0, TRANSIENT);
 	oidx = COLnew(0, TYPE_lng, 0, TRANSIENT);
 
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
-	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL || oidx == NULL) {
+	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL ||
+	    revsort == NULL || key == NULL || oidx == NULL) {
 		if (sch)
 			BBPunfix(sch->batCacheid);
 		if (tab)
@@ -4985,6 +4990,10 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(imprints->batCacheid);
 		if (sort)
 			BBPunfix(sort->batCacheid);
+		if (revsort)
+			BBPunfix(revsort->batCacheid);
+		if (key)
+			BBPunfix(key->batCacheid);
 		if (oidx)
 			BBPunfix(oidx->batCacheid);
 		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
@@ -5083,8 +5092,20 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap->size:0); */
 								/*printf("\n"); */
 
-								w = BATtordered(bn);
-								BUNappend(sort, &w, FALSE);
+								bitval = BATtordered(bn);
+								if (!bitval && bn->tnosorted == 0)
+									bitval = bit_nil;
+								BUNappend(sort, &bitval, FALSE);
+
+								bitval = BATtrevordered(bn);
+								if (!bitval && bn->tnorevsorted == 0)
+									bitval = bit_nil;
+								BUNappend(revsort, &bitval, FALSE);
+
+								bitval = BATtkey(bn);
+								if (!bitval && bn->tnokey[0] == 0 && bn->tnokey[1] == 0)
+									bitval = bit_nil;
+								BUNappend(key, &bitval, FALSE);
 
 								sz = bn->torderidx ? bn->torderidx->free : 0;
 								BUNappend(oidx, &sz, FALSE);
@@ -5162,8 +5183,18 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BUNappend(imprints, &sz, FALSE);
 									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap->size:0); */
 									/*printf("\n"); */
-									w = BATtordered(bn);
-									BUNappend(sort, &w, FALSE);
+									bitval = BATtordered(bn);
+									if (!bitval && bn->tnosorted == 0)
+										bitval = bit_nil;
+									BUNappend(sort, &bitval, FALSE);
+									bitval = BATtrevordered(bn);
+									if (!bitval && bn->tnorevsorted == 0)
+										bitval = bit_nil;
+									BUNappend(revsort, &bitval, FALSE);
+									bitval = BATtkey(bn);
+									if (!bitval && bn->tnokey[0] == 0 && bn->tnokey[1] == 0)
+										bitval = bit_nil;
+									BUNappend(key, &bitval, FALSE);
 									sz = bn->torderidx ? bn->torderidx->free : 0;
 									BUNappend(oidx, &sz, FALSE);
 									BBPunfix(bn->batCacheid);
@@ -5187,6 +5218,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rphash = phash->batCacheid);
 	BBPkeepref(*rimprints = imprints->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
+	BBPkeepref(*rrevsort = revsort->batCacheid);
+	BBPkeepref(*rkey = key->batCacheid);
 	BBPkeepref(*roidx = oidx->batCacheid);
 	return MAL_SUCCEED;
 }

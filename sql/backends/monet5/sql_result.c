@@ -641,7 +641,8 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		sql_column *col = (sql_column *) c->extra;
 		int len, slen;
 
-		for (e = s; *e; e++) ;
+		for (e = s; *e; e++)
+			;
 		len = (int) (e - s + 1);	/* 64bit: should check for overflow */
 
 		/* or shouldn't len rather be ssize_t, here? */
