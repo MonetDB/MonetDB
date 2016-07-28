@@ -775,6 +775,7 @@ clearTrace(void)
 	MT_lock_set(&mal_contextLock);
 	if (TRACE_init == 0) {
 		MT_lock_unset(&mal_contextLock);
+		initTrace();
 		return;     /* not initialized */
 	}
 	/* drop all trace tables */
