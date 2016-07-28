@@ -622,7 +622,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			int residu;
 
 			m = ~mask;
-			residu = val & m;
+			residu = (int) val & m;
 			val = val & mask;
 			base = (BitVector) dst;
 			//mnstr_printf(cntxt->fdout,"decompress residu %d mask %o val %d\n",residu,m,val);
