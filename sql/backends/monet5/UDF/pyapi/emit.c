@@ -86,7 +86,7 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
             PyObject *keys = PyDict_Keys(args);
             for(i = 0; i < (size_t) PyList_Size(keys); i++) {
                 PyObject *key = PyList_GetItem(keys, i);
-                char *val;
+                char *val = NULL;
                 bool found = false;
 
                 msg = pyobject_to_str(&key, 42, &val);
@@ -128,7 +128,7 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
         // create new columns based on the entries in the dictionary
         for(i = 0; i < (size_t) PyList_Size(keys); i++) {
             PyObject *key = PyList_GetItem(keys, i);
-            char *val;
+            char *val = NULL;
             bool found = false;
 
             msg = pyobject_to_str(&key, 42, &val);
