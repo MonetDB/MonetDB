@@ -7819,7 +7819,8 @@ wkbAsX3D(str *res, wkb **geomWKB, int *maxDecDigits, int *option)
 	}
 	if (empty) {
 		//the geometry is empty
-		(*res) = NULL;
+		if ((*res = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "geom.wkbAsX3D", MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
