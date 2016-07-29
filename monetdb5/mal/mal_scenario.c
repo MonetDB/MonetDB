@@ -145,12 +145,7 @@ static str fillScenario(Client c, Scenario scen);
 static MT_Lock scenarioLock MT_LOCK_INITIALIZER("scenarioLock");
 
 
-void
-mal_scenario_reset(void)
-{
-}
 /*
- * @-
  * Currently each user can define a new scenario, provided we have a free slot.
  * Scenarios not hardwired can always be dropped.
  */
@@ -175,7 +170,6 @@ getFreeScenario(void)
 }
 
 /*
- * @-
  * A scenario is initialized only once per session.
  * All other requests are silently ignored.
  * After initialization, all state functions should have been set.
@@ -240,7 +234,6 @@ defaultScenario(Client c)
 }
 
 /*
- * @-
  * The Monet debugger provides an option to inspect the scenarios currently
  * defined.
  *
@@ -282,7 +275,6 @@ findScenario(str nme)
 }
 
 /*
- * @-
  * Functions may become resolved only after the corresponding module
  * has been loaded. This should be announced as part of the module
  * prelude code.
@@ -366,7 +358,6 @@ str getScenarioLanguage(Client c){
 	return "mal";
 }
 /*
- * @-
  * Changing the scenario for a particular client invalidates the
  * state maintained for the previous scenario. The old scenario is
  * retained in the client record to facilitate propagation of
@@ -377,7 +368,6 @@ str getScenarioLanguage(Client c){
  * has been processed, the scenario phases are replaced with the
  * proper ones.
  *
- * @-
  * All client records should be initialized with a default
  * scenario, i.e. the first described in the scenario table.
  */
@@ -404,7 +394,6 @@ fillScenario(Client c, Scenario scen)
 }
 
 /*
- * @-
  * Setting a new scenario calls for saving the previous state
  * and execution of the initClientScenario routine.
  */
@@ -446,7 +435,6 @@ setScenario(Client c, str nme)
 }
 
 /*
- * @-
  * After finishing a session in a scenario, we should reset the
  * state of the previous one. But also call the exitClient
  * to garbage collect any scenario specific structures.
@@ -494,7 +482,6 @@ exitScenario(Client c)
 }
 
 /*
- * @-
  * The building blocks of scenarios are routines obeying a strict
  * name signature. They require exclusive access to the client
  * record. Any specific information should be accessible from
@@ -521,7 +508,6 @@ exitScenario(Client c)
  * The default is the MAL interpreter, which provides good balance
  * between speed and ability to analysis its behavior.
  *
- * @-
  */
 static str
 runPhase(Client c, int phase)
@@ -533,7 +519,6 @@ runPhase(Client c, int phase)
 }
 
 /*
- * @-
  * Access control enforcement. Except for the server owner
  * running a scenario should be explicitly permitted.
  */

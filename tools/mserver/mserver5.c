@@ -281,7 +281,9 @@ main(int argc, char **av)
 	_CrtSetReportMode(_CRT_ERROR, 0);
 	_CrtSetReportMode(_CRT_ASSERT, 0);
 	_set_invalid_parameter_handler(mserver_invalid_parameter_handler);
+#ifdef _TWO_DIGIT_EXPONENT
 	_set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
 #endif
 	if (setlocale(LC_CTYPE, "") == NULL) {
 		GDKfatal("cannot set locale\n");

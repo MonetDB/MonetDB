@@ -1066,6 +1066,11 @@ fcnHeader(Client cntxt, int kind)
 	if (currChar(cntxt) == '.') {
 		nextChar(cntxt); /* skip '.' */
 		modnme = fnme;
+		if (isModuleDefined(cntxt->nspace, modnme) == FALSE) {
+			parseError(cntxt, "<module> name not defined\n");
+			skipToEnd(cntxt);
+			return curBlk;
+		}
 		l = operatorLength(cntxt);
 		if (l == 0)
 			l = idLength(cntxt);
@@ -1076,7 +1081,8 @@ fcnHeader(Client cntxt, int kind)
 		}
 		fnme = putNameLen(((char *) CURRENT(cntxt)), l);
 		advance(cntxt, l);
-	}
+	} else 
+		modnme= cntxt->nspace->name;
 
 	/* temporary suspend capturing statements in main block */
 	if (cntxt->backup){
@@ -1084,38 +1090,20 @@ fcnHeader(Client cntxt, int kind)
 		skipToEnd(cntxt);
 		return 0;
 	}
-	cntxt->backup = cntxt->curprg;
-	cntxt->curprg = newFunction(putName("user"), fnme, kind);
-	curPrg = cntxt->curprg;
-	curBlk = curPrg->def;
-	curBlk->flowfixed = 0;
-	curBlk->typefixed = 0;
-	curInstr = getInstrPtr(curBlk, 0);
-
 	if (currChar(cntxt) != '('){
-		if (cntxt->backup) {
-			freeSymbol(cntxt->curprg);
-			cntxt->curprg = cntxt->backup;
-			cntxt->backup = 0;
-		}
 		parseError(cntxt, "function header '(' expected\n");
 		skipToEnd(cntxt);
 		return curBlk;
 	}
 	advance(cntxt, 1);
 
-	setModuleId(curInstr, modnme ? putName(modnme) :
-			putName(cntxt->nspace->name));
-
-	if (isModuleDefined(cntxt->nspace, getModuleId(curInstr)) == FALSE) {
-		if (cntxt->backup) {
-			freeSymbol(cntxt->curprg);
-			cntxt->curprg = cntxt->backup;
-			cntxt->backup = 0;
-		}
-		parseError(cntxt, "<module> name not defined\n");
-		return curBlk;
-	}
+	cntxt->backup = cntxt->curprg;
+	cntxt->curprg = newFunction( modnme, fnme, kind);
+	curPrg = cntxt->curprg;
+	curBlk = curPrg->def;
+	curBlk->flowfixed = 0;
+	curBlk->typefixed = 0;
+	curInstr = getInstrPtr(curBlk, 0);
 
 	/* get calling parameters */
 	ch = currChar(cntxt);
