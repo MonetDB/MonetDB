@@ -2327,8 +2327,6 @@ AM_CONDITIONAL(HAVE_LIBR, test x"$have_libr" != xno)
 
 # Python API (Python UDFs)
 have_libpy=no
-have_libpandas=no
-have_libscipy=no
 if test "x$enable_pyintegration" != xno; then
 	case "$enable_pyintegration" in
 	yes|auto)
@@ -2397,14 +2395,6 @@ if test "x$enable_pyintegration" != xno; then
 			AC_DEFINE(HAVE_LIBPY, 1, [Define if we can link to python])
 			AC_SUBST(libpy_CFLAGS, $libpy_CFLAGS)
 			AC_SUBST(libpy_LIBS, $libpy_LIBS)
-			PANDAS=`$PYTHON_CMD -c "import pandas; print(True)"`
-			if [test "x$PANDAS" = xTrue]; then
-				have_libpandas=yes
-			fi
-			SCIPY=`$PYTHON_CMD -c "import scipy; print(True)"`
-			if [test "x$SCIPY" = xTrue]; then
-				have_libscipy=yes
-			fi
 		else
 		  	if test "x$enable_pyintegration" = xyes; then
 				AC_MSG_ERROR([Python.h not found])
@@ -2418,8 +2408,6 @@ if test "x$enable_pyintegration" != xno; then
 	fi
 fi
 AM_CONDITIONAL(HAVE_LIBPY, test x"$have_libpy" != xno)
-AM_CONDITIONAL(HAVE_LIBPANDAS, test x"$have_libpandas" != xno)
-AM_CONDITIONAL(HAVE_LIBSCIPY, test x"$have_libscipy" != xno)
 
 AC_CHECK_HEADER([sys/sem.h], [SEMOP=True], [SEMOP=False])
 if [test "x$SEMOP" = "xTrue"]; then

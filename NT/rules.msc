@@ -351,14 +351,8 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_LIBBZ2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBPY
-!IFDEF HAVE_LIBPANDAS
-	$(ECHO) HAVE_LIBPANDAS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_LIBPANDAS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 	$(ECHO) HAVE_LIBPY_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) HAVE_LIBPANDAS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 	$(ECHO) HAVE_LIBPY_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBR

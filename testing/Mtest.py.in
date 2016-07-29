@@ -312,9 +312,7 @@ CONDITIONALS = {
     'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
-    'HAVE_LIBPANDAS'       : "@HAVE_LIBPANDAS_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
-    'HAVE_LIBSCIPY'        : "@HAVE_LIBSCIPY_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
@@ -342,6 +340,8 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
+    'HAVE_LIBPANDAS'       : "",
+    'HAVE_LIBSCIPY'        : "",
     'HAVE_PHP'             : "",
     'HAVE_PYMONETDB'       : "",
     'HAVE_RUBY'            : "",
@@ -3675,6 +3675,18 @@ def main(argv) :
         print('Python available, but pymonetdb package not available')
     else:
         CONDITIONALS['HAVE_PYMONETDB'] = '#'
+    try:
+        import scipy
+    except ImportError:
+        pass
+    else:
+        CONDITIONALS['HAVE_LIBSCIPY'] = '#'
+    try:
+        import pandas
+    except ImportError:
+        pass
+    else:
+        CONDITIONALS['HAVE_LIBPANDAS'] = '#'
     if CheckExec('php'):
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:
