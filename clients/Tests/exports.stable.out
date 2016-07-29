@@ -2219,7 +2219,6 @@ str mal_quote(const char *msg, size_t size);
 MT_Lock mal_remoteLock;
 void mal_resource_reset(void) __attribute__((__visibility__("hidden")));
 void mal_runtime_reset(void) __attribute__((__visibility__("hidden")));
-void mal_scenario_reset(void) __attribute__((__visibility__("hidden")));
 int mal_trace;
 void mal_unquote(char *msg);
 str manifoldRef;

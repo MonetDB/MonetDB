@@ -42,8 +42,6 @@ QUERY = # test definiton of a function in a unknown module
         end foo;
 ERROR = !SyntaxException:parseError:function wrong.message():void;
         !SyntaxException:parseError:                      ^<module> name not defined
-        !SyntaxException:parseError:	io.print("shouldn't come here");
-        !SyntaxException:parseError:^';' expected
         !SyntaxException:parseError:end message;
         !SyntaxException:parseError:   ^non matching end label
         !TypeException:user.foo[1]:'wrong.message' undefined in:     wrong.message();

@@ -29,6 +29,8 @@ drop function sys."storage"(string, string);
 drop function sys."storage"(string);
 drop view sys."storage";
 drop function sys."storage"();
+alter table sys.storagemodelinput add column "revsorted" boolean;
+alter table sys.storagemodelinput add column "unique" boolean;
 alter table sys.storagemodelinput add column "orderidx" bigint;
 create function sys."storage"()
 returns table (
@@ -46,6 +48,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -66,6 +70,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -85,6 +91,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -104,6 +112,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -111,7 +121,7 @@ create procedure sys.storagemodelinit()
 begin
  delete from sys.storagemodelinput;
  insert into sys.storagemodelinput
- select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.orderidx from sys."storage"() X;
+ select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X."unique", X.orderidx from sys."storage"() X;
  update sys.storagemodelinput
  set reference = true
  where concat(concat("schema","table"), "column") in (
@@ -140,6 +150,8 @@ returns table (
  hashes bigint,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint)
 begin
  return select I."schema", I."table", I."column", I."type", I."count",
@@ -147,7 +159,7 @@ begin
  heapsize(I."type", I."distinct", I."atomwidth"),
  hashsize(I."reference", I."count"),
  imprintsize(I."count",I."type"),
- I.sorted, I.orderidx
+ I.sorted, I.revsorted, I."unique", I.orderidx
  from sys.storagemodelinput I;
 end;
 create view sys.storagemodel as select * from sys.storagemodel();

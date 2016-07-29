@@ -279,6 +279,7 @@ Dependencies between database objects
 [ "owner",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "proj4text",	"getproj4",	"DEP_FUNC"	]
 [ "reference",	"storagemodel",	"DEP_FUNC"	]
+[ "revsorted",	"storagemodel",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_keys_on_foreignkeys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_tables_on_foreignkeys",	"DEP_FUNC"	]
@@ -292,6 +293,7 @@ Dependencies between database objects
 [ "table_id",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_tables_on_triggers",	"DEP_FUNC"	]
 [ "type",	"storagemodel",	"DEP_FUNC"	]
+[ "unique",	"storagemodel",	"DEP_FUNC"	]
 #SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
 % .c,	.tri,	.L1 # table_name
 % name,	name,	L1 # name
@@ -650,6 +652,7 @@ Cleanup
 [ "owner",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "proj4text",	"getproj4",	"DEP_FUNC"	]
 [ "reference",	"storagemodel",	"DEP_FUNC"	]
+[ "revsorted",	"storagemodel",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_keys_on_foreignkeys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_tables_on_foreignkeys",	"DEP_FUNC"	]
@@ -663,6 +666,7 @@ Cleanup
 [ "table_id",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_tables_on_triggers",	"DEP_FUNC"	]
 [ "type",	"storagemodel",	"DEP_FUNC"	]
+[ "unique",	"storagemodel",	"DEP_FUNC"	]
 #SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
 % .c,	.tri,	.L1 # table_name
 % name,	name,	L1 # name
