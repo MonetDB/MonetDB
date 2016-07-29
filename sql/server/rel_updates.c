@@ -1243,8 +1243,12 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	collist = check_table_columns(sql, t, columns, "COPY", tname);
 	if (!collist)
 		return NULL;
-	/* if collist has skip and different order (or format specification) use intermediate table */
+	/* If we have a header specification use intermediate table, for
+	 * column specification other then the default list we need to reorder
+	 */
 	nt = t;
+	if (headers || collist != t->columns.set) 
+		reorder = 1;
 	if (headers) {
 		int has_formats = 0;
 		dnode *n;
