@@ -28,8 +28,9 @@
         return NULL; \
     }}
 
-static PyObject *
-_emit_emit(Py_EmitObject *self, PyObject *args) {
+
+PyObject *
+PyEmit_Emit(PyEmitObject *self, PyObject *args) {
     size_t i, ai; // iterators
     ssize_t el_count = -1; // the amount of elements this emit call will write to the table
     size_t dict_elements, matched_elements;
@@ -306,15 +307,15 @@ wrapup:
 
 
 static PyMethodDef _emitObject_methods[] = {
-    {"emit", (PyCFunction)_emit_emit, METH_O,"emit(dictionary) -> returns parsed values for table insertion"},
+    {"emit", (PyCFunction)PyEmit_Emit, METH_O,"emit(dictionary) -> returns parsed values for table insertion"},
     {NULL,NULL,0,NULL}  /* Sentinel */
 };
 
-PyTypeObject Py_EmitType = {
+PyTypeObject PyEmitType = {
     PyObject_HEAD_INIT(NULL)
     0,
     "monetdb._emit",
-    sizeof(Py_EmitObject),
+    sizeof(PyEmitObject),
     0,
     0,                                          /* tp_dealloc */
     0,                                          /* tp_print */
@@ -366,14 +367,14 @@ PyTypeObject Py_EmitType = {
 
 
 
-PyObject *Py_Emit_Create(sql_emit_col *cols, size_t ncols)
+PyObject *PyEmit_Create(sql_emit_col *cols, size_t ncols)
 {
-    register Py_EmitObject *op;
+    register PyEmitObject *op;
 
-    op = (Py_EmitObject *)PyObject_MALLOC(sizeof(Py_EmitObject));
+    op = (PyEmitObject *)PyObject_MALLOC(sizeof(PyEmitObject));
     if (op == NULL)
         return PyErr_NoMemory();
-    PyObject_Init((PyObject*)op, &Py_EmitType);
+    PyObject_Init((PyObject*)op, &PyEmitType);
     op->cols = cols;
     op->ncols = ncols;
     op->maxcols = ncols;
@@ -385,7 +386,7 @@ PyObject *Py_Emit_Create(sql_emit_col *cols, size_t ncols)
 str _emit_init(void)
 {
     _import_array();
-    if (PyType_Ready(&Py_EmitType) < 0)
+    if (PyType_Ready(&PyEmitType) < 0)
         return createException(MAL, "pyapi.eval", "Failed to initialize emit type.");
     return MAL_SUCCEED;
 }
