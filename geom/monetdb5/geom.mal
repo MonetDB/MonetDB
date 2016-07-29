@@ -390,14 +390,9 @@ function Force3D(g:wkb) :wkb;
 	return x;
 end Force3D;
 
-command Contains(a:wkb, x:dbl, y:dbl) :bit
-address wkbContains_point
+command Contains(a:wkb, x:dbl, y:dbl, z:dbl, srid:int) :bit
+address wkbContainsXYZ
 comment "Returns true if the Geometry a 'spatially contains' Geometry b";
-
-command Contains(a:wkb, px:bat[:dbl], py:bat[:dbl]) :bat[:bit]
-address wkbContains_point_bat
-comment "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b";
-
 
 command Translate3D(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb address wkbTranslate
 comment "Moves all points of the geometry by dx, dy, dz";
@@ -411,11 +406,6 @@ function Translate(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb;
 	x := Translate3D(g,dx,dy,dz);
 	return x;
 end Translate;
-
-command Contains(a:wkb, px:bat[:dbl], py:bat[:dbl]) :bat[:bit]
-address wkbContains_point_bat
-comment "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b";
-
 
 command PointsNum(w:wkb, check:int) :int address wkbNumPoints
 comment "The number of points in the Geometry. If check=1, the geometry should be a linestring";
@@ -891,6 +881,24 @@ command Contains(a:bat[:wkb], b:bat[:wkb]) :bat[:bit] address wkbContains_bat;
 command Contains(a:wkb, b:bat[:wkb]) :bat[:bit] address wkbContains_geom_bat;
 command Contains(a:bat[:wkb], b:wkb) :bat[:bit] address wkbContains_bat_geom;
 
+#TODO: It is necessary to handle all combinations
+command ContainsXYZ_bat(ab:bat[:wkb], xb:bat[:dbl], x:dbl, yb:bat[:dbl], y:dbl, zb:bat[:dbl], z:dbl, srid:int) :bat[:bit] address wkbContainsXYZ_bat;
+
+function Contains(a:bat[:wkb], x:dbl, y:dbl, z:dbl, srid:int) :bat[:bit];
+    res := ContainsXYZ_bat(a, nil:bat, x, nil:bat, y, nil:bat, z, srid);
+    return res;
+end Contains;
+
+function Contains(a:bat[:wkb], px:bat[:dbl], py:bat[:dbl], pz:bat[:dbl], srid:int) :bat[:bit];
+    res := ContainsXYZ_bat(a, px, 0:dbl, py, 0:dbl, pz, 0:dbl, srid);
+    return res;
+end Contains;
+
+function Contains(a:bat[:wkb], px:bat[:dbl], py:bat[:dbl], srid:int) :bat[:bit];
+    res := ContainsXYZ_bat(a, px, 0:dbl, py, 0:dbl, nil:bat, 0:dbl, srid);
+    return res;
+end Contains;
+
 #only one argument should be BAT
 #command Filter(a:bat[:wkb], b:bat[:wkb]) (aFiltered:bat[:wkb], bFiltered:bat[:wkb]) address wkbFilter_bat
 #comment "Filters the points in the bats according to the MBR of the other bat.";
@@ -1078,4 +1086,8 @@ comment "Returns the geometry pairs are withing distance dist";
 command geom.Containssubjoin(l:bat[:wkb], r:bat[:wkb], sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],rr:bat[:oid])
 address Containssubjoin
 comment "Returns true if and only if no points of B lie in the exterior of A, and at least one point of the interior of B lies in the interior of A.";
+
+command geom.Containssubjoin(l:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],sr:bat[:oid])
+address ContainsXYZsubjoin
+comment "Returns true if and only if no points lie in the exterior of A";
 

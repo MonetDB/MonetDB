@@ -4464,7 +4464,7 @@ CREATE FUNCTION ST_SimplifyPreserveTopology(geom1 Geometry, tolerance real) RETU
 -------------------------------------------------------------------------
 ---------------------------- Miscellaneous ------------------------------
 -------------------------------------------------------------------------
-CREATE FUNCTION Contains(a Geometry, x double, y double) RETURNS BOOLEAN external name geom."Contains";
+CREATE FUNCTION Contains(a Geometry, x double, y double, z double, srid int) RETURNS BOOLEAN external name geom."Contains";
 CREATE FUNCTION ST_AsX3D(a Geometry, maxDecDigits int, options int) returns string external name geom."asX3D";
 CREATE FUNCTION ST_AsGeoJson(a Geometry, maxDecDigits int, options int) returns string external name geom."asGeoJson";
 CREATE FUNCTION Patch_to_Geom(a Geometry, x double, y double, z double) RETURNS Geometry external name geom."PatchToGeom";
@@ -4479,3 +4479,4 @@ CREATE filter function Intersects(geom1 Geometry, x double, y double, z double, 
 CREATE filter function DWithin(geom1 Geometry, geom2 Geometry, dist double) external name geom."DWithin";
 CREATE filter function DWithin(geom1 Geometry, x double, y double, z double, srid int, dist double) external name geom."DWithin";
 CREATE filter function Contains(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Contains";
+CREATE filter function Contains(geom1 Geometry, x double, y double, z double, srid int) EXTERNAL NAME geom."Contains";

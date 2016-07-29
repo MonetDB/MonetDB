@@ -163,6 +163,7 @@ geom_export str wkbCrosses(bit*, wkb**, wkb**);
 geom_export str wkbWithin(bit*, wkb**, wkb**);
 geom_export str wkbWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id);
 geom_export str wkbContains(bit*, wkb**, wkb**);
+geom_export str wkbContainsXYZ(bit *out, wkb **a, dbl *px, dbl *py, dbl *pz, int *srid);
 geom_export str wkbOverlaps(bit*, wkb**, wkb**);
 geom_export str wkbRelate(bit*, wkb**, wkb**, str*);
 geom_export str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
@@ -171,6 +172,16 @@ geom_export str wkbDWithin(bit*, wkb**, wkb**, dbl*);
 geom_export str wkbDWithinXYZ(bit*, wkb**, dbl*, dbl*, dbl*, int*, dbl*);
 geom_export str wkbDWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, dbl*);
 geom_export str wkbDWithinXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz, int* srid, dbl* dist);
+
+typedef struct {
+	int nvert;
+    int nholes;
+	double *vert_x;
+    double *vert_y;
+    double **holes_x;
+    double **holes_y;
+    int *holes_n;
+} vertexWKB;
 
 //LocateAlong
 //LocateBetween
@@ -331,6 +342,8 @@ geom_export str wkbDistance_bat_geom(bat* outBAT_id, bat* inBAT_id, wkb** geomWK
 geom_export str wkbContains_bat(bat* outBAT_id, bat*, bat*);
 geom_export str wkbContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* inBAT_id);
 geom_export str wkbContains_bat_geom(bat* outBAT_id, bat* inBAT_id, wkb** geomWKB);
+geom_export str wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y);
+geom_export str wkbContainsXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz, int* srid);
 
 //geom_export str wkbFilter_bat(bat* aBATfiltered_id, bat* bBATfiltered_id, bat* aBAT_id, bat* bBAT_id);
 geom_export str wkbFilter_geom_bat(bat* BATfiltered_id, wkb** geomWKB, bat* BAToriginal_id);
@@ -362,6 +375,8 @@ geom_export str geom_sql_upgrade(int);
 #define GEOM_X3D_USE_GEOCOORDS   (1<<1)
 #define X3D_USE_GEOCOORDS(x) ((x) & GEOM_X3D_USE_GEOCOORDS)
 
+#define POLY_NUM_VERT 120
+#define POLY_NUM_HOLE 10
 
 typedef struct {
     double xmin; 
@@ -386,3 +401,4 @@ geom_export str IntersectsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, b
 geom_export str DWithinsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, double *dist, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 geom_export str DWithinXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, double *dist, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 geom_export str Containssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
+geom_export str ContainsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
