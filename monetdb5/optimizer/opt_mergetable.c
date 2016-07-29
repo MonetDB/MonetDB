@@ -633,7 +633,8 @@ static int
 subjoin_split(Client cntxt, InstrPtr p, int args)
 {
 	char *name = NULL;
-	int len, i, res = 0;
+	size_t len;
+	int i, res = 0;
 	Symbol sym;
 	MalBlkPtr mb;
 	InstrPtr q;
