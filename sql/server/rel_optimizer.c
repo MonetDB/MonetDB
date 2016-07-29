@@ -7043,12 +7043,10 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					int skip = 0, j;
 
 					/* do not include empty partitions */
-					/*
 					if ((nrel || nt->next) && 
 					   pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 1)){
 						continue;
 					}
-					*/
 
 					MT_lock_set(&prel->exps->ht_lock);
 					prel->exps->ht = NULL;
