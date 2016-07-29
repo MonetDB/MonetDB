@@ -814,7 +814,7 @@ wkbIsValid_bat(bat *outBAT_id, bat *inBAT_id)
 /***************************************************************************/
 
 static str
-WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, wkb **, wkb **), const char *name)
+WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, wkb **b, str (*func) (bit *, wkb **, wkb **), const char *name)
 {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BUN p = 0, q = 0;
@@ -830,7 +830,7 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, 
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
-	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+	if ((*bBAT_id != bat_nil) && (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
@@ -838,13 +838,15 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
-		BBPunfix(bBAT->batCacheid);
+        if (*bBAT_id != bat_nil)
+    		BBPunfix(bBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
 	aBAT_iter = bat_iterator(aBAT);
-	bBAT_iter = bat_iterator(bBAT);
+    if (*bBAT_id != bat_nil)
+	    bBAT_iter = bat_iterator(bBAT);
 
     omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
     omp_set_num_threads(OPENCL_THREADS);
@@ -865,7 +867,10 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, 
             continue;
 
         aWKB = (wkb *) BUNtail(aBAT_iter, p);
-        bWKB = (wkb *) BUNtail(bBAT_iter, p);
+        if (*bBAT_id != bat_nil)
+            bWKB = (wkb *) BUNtail(bBAT_iter, p);
+        else
+            bWKB = *b;
         //if ((err = (*func) (&out, &aWKB, &bWKB)) != MAL_SUCCEED) {
         if ((err = (*func) (&outs[p], &aWKB, &bWKB)) != MAL_SUCCEED) {
             msg = err;
@@ -881,7 +886,8 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, 
 #endif
 
     BBPunfix(aBAT->batCacheid);
-    BBPunfix(bBAT->batCacheid);
+    if (*bBAT_id != bat_nil)
+        BBPunfix(bBAT->batCacheid);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -897,15 +903,15 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, 
 }
 
 str
-wkbIntersects_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+wkbIntersects_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, wkb **b)
 {
-	return WKBWKBtoBIT_bat(outBAT_id, aBAT_id, bBAT_id, wkbIntersects, "batgeom.wkbIntersects");
+	return WKBWKBtoBIT_bat(outBAT_id, aBAT_id, bBAT_id, b, wkbIntersects, "batgeom.wkbIntersects");
 }
 
 str
-wkbWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+wkbWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, wkb **b)
 {
-	return WKBWKBtoBIT_bat(outBAT_id, aBAT_id, bBAT_id, wkbWithin, "batgeom.wkbWithin");
+	return WKBWKBtoBIT_bat(outBAT_id, aBAT_id, bBAT_id, b, wkbWithin, "batgeom.wkbWithin");
 }
 
 /***************************************************************************/

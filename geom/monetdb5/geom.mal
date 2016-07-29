@@ -771,8 +771,18 @@ function Translate(g:bat[:wkb], dx:dbl, dy:dbl, dz:dbl) :bat[:wkb];
 	return x;
 end Translate;
 
-command Within(a:bat[:wkb], b:bat[:wkb]) :bat[:bit] address wkbWithin_bat
+command WithinWKB(a:bat[:wkb], b:bat[:wkb], w:wkb) :bat[:bit] address wkbWithin_bat
 comment "Returns TRUE if the geometry A is completely inside geometry B";
+
+function Within(a:bat[:wkb], b:bat[:wkb]) :bat[:bit];
+    res := WithinWKB(a, b, 0:dbl);
+    return res;
+end Within;
+
+function Withinsubselect(a:bat[:wkb], b:wkb) :bat[:bit];
+    res := WithinWKB(a, nil:bat, b);
+    return res;
+end Withinsubselect;
 
 command DWithin(a:bat[:wkb], b:bat[:wkb], dst:dbl) :bat[:bit] address wkbDWithin_bat
 comment "Returns true if the two geometries are within the specifies distance from each other";
@@ -966,8 +976,18 @@ end YMaxFromMBR;
 command Area(:bat[:wkb]) :bat[:dbl] address wkbArea_bat
 comment "Returns the area of the surface if it is a polygon or multi-polygon";
 
-command Intersects(a:bat[:wkb], b:bat[:wkb]) :bat[:bit] address wkbIntersects_bat
+command IntersectsWKB(a:bat[:wkb], b:bat[:wkb], w:wkb) :bat[:bit] address wkbIntersects_bat
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
+
+function Intersects(a:bat[:wkb], b:bat[:wkb]) :bat[:bit];
+    res := wkbIntersectsWKB(a, b, 0:dbl);
+    return res;
+end Intersects;
+
+function Intersects(a:bat[:wkb], w:wkb) :bat[:bit];
+    res := wkbIntersectsWKB(a, nil:bat, w);
+    return res;
+end Intersects;
 
 command Intersects3D(g:bat[:wkb], dxBAT:bat[:dbl], dx:dbl, dyBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit] address wkbIntersectsXYZ_bat
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
@@ -1006,6 +1026,11 @@ function Intersects(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dz:dbl, srid:int) :bat
 	x := Intersects3D(g, dxBAT, 0:dbl, nil:bat, dy, nil:bat, dz, srid);
 	return x;
 end Intersects;
+
+function Intersectssubselect(g:bat[:wkb], dx:dbl, dy:dbl, dz:dbl, srid:int) :bat[:bit];
+	x := Intersects3D(g, nil:bat, dx, nil:bat, dy, nil:bat, dz, srid);
+	return x;
+end Intersectssubselect;
 
 module calc;
 
