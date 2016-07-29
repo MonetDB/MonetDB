@@ -1667,6 +1667,11 @@ sql_update_default(Client c, mvc *sql)
 			" sum(case when sorted = false then 8 * count else 0 end) as auxiliary\n"
 			"from sys.storagemodel() group by \"schema\",\"table\";\n"
 			"update sys._tables set system = true where name in ('storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 80_statistics.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"alter table sys.statistics add column \"revsorted\" boolean;\n");
+
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'storagemodel') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_UNION);

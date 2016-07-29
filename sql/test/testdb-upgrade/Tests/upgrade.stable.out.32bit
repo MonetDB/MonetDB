@@ -172,6 +172,7 @@ as select "schema","table",max(count) as "count",
  sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";
 update sys._tables set system = true where name in ('storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+alter table sys.statistics add column "revsorted" boolean;
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
 delete from systemfunctions where function_id not in (select id from functions);
