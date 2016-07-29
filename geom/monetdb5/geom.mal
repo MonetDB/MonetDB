@@ -775,7 +775,7 @@ command WithinWKB(a:bat[:wkb], b:bat[:wkb], w:wkb) :bat[:bit] address wkbWithin_
 comment "Returns TRUE if the geometry A is completely inside geometry B";
 
 function Within(a:bat[:wkb], b:bat[:wkb]) :bat[:bit];
-    res := WithinWKB(a, b, 0:dbl);
+    res := WithinWKB(a, b, nil:wkb);
     return res;
 end Within;
 
@@ -980,14 +980,14 @@ command IntersectsWKB(a:bat[:wkb], b:bat[:wkb], w:wkb) :bat[:bit] address wkbInt
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
 
 function Intersects(a:bat[:wkb], b:bat[:wkb]) :bat[:bit];
-    res := wkbIntersectsWKB(a, b, 0:dbl);
+    res := IntersectsWKB(a, b, nil:wkb);
     return res;
 end Intersects;
 
-function Intersects(a:bat[:wkb], w:wkb) :bat[:bit];
-    res := wkbIntersectsWKB(a, nil:bat, w);
+function Intersectssubselect(a:bat[:wkb], w:wkb) :bat[:bit];
+    res := IntersectsWKB(a, nil:bat, w);
     return res;
-end Intersects;
+end Intersectssubselect;
 
 command Intersects3D(g:bat[:wkb], dxBAT:bat[:dbl], dx:dbl, dyBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit] address wkbIntersectsXYZ_bat
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
