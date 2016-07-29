@@ -7441,9 +7441,6 @@ wkbaHEAP(Heap *heap, size_t capacity)
 	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
 
-geom_export str wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y);
-geom_export str wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y);
-
 static inline double
 isLeft(double P0x, double P0y, double P1x, double P1y, double P2x, double P2y)
 {
@@ -7580,8 +7577,10 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 			}
 		}
 
-		if (wn)
+		if (wn) {
+		    *cs++ = 0;
 			continue;
+        }
 
 		/*If not in any of the holes, check inside the Polygon */
 		for (j = 0; j < nvert - 1; j++) {
@@ -7608,53 +7607,100 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	return MAL_SUCCEED;
 }
 
-#define POLY_NUM_VERT 120
-#define POLY_NUM_HOLE 10
-
-str
-wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
+static str
+pnpoly_(bit *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, double px, double py)
 {
-	double *vert_x, *vert_y, **holes_x = NULL, **holes_y = NULL;
-	int *holes_n = NULL, j;
-	wkb *geom = NULL;
-	str msg = NULL;
+    int j = 0, h = 0, wn = 0;
 
+    /*First check the holes */
+    for (h = 0; h < nholes; h++) {
+        int nv = hn[h] - 1;
+        wn = 0;
+        for (j = 0; j < nv; j++) {
+            if (hy[h][j] <= py) {
+                if (hy[h][j + 1] > py)
+                    if (isLeft(hx[h][j], hy[h][j], hx[h][j + 1], hy[h][j + 1], px, py) > 0)
+                        ++wn;
+            } else {
+                if (hy[h][j + 1] <= py)
+                    if (isLeft(hx[h][j], hy[h][j], hx[h][j + 1], hy[h][j + 1], px, py) < 0)
+                        --wn;
+            }
+        }
+
+        /*It is in one of the holes */
+        if (wn) {
+            break;
+        }
+    }
+
+    if (wn) {
+        *out = 0;
+        return MAL_SUCCEED;
+    }
+
+    /*If not in any of the holes, check inside the Polygon */
+    for (j = 0; j < nvert - 1; j++) {
+        if (vy[j] <= py) {
+            if (vy[j + 1] > py)
+                if (isLeft(vx[j], vy[j], vx[j + 1], vy[j + 1], px, py) > 0)
+                    ++wn;
+        } else {
+            if (vy[j + 1] <= py)
+                if (isLeft(vx[j], vy[j], vx[j + 1], vy[j + 1], px, py) < 0)
+                    --wn;
+        }
+    }
+    *out = wn & 1;
+
+    return MAL_SUCCEED;
+}
+
+
+/*TODO: better conversion from WKB*/
+/*TODO: Check if the allocations are working*/
+static str
+getVerts(wkb *geom, vertexWKB **res)
+{
 	str err = NULL;
 	str geom_str = NULL;
 	char *str2, *token, *subtoken;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
-	int nvert = 0, nholes = 0;
+    vertexWKB *verts = NULL;
 
-	geom = (wkb *) *a;
+    /*Check if it is a Polygon*/
 
 	if ((err = wkbAsText(&geom_str, &geom, NULL)) != MAL_SUCCEED) {
 		return err;
 	}
+
+    verts = (vertexWKB*) GDKzalloc(sizeof(vertexWKB));
+
 	geom_str = strchr(geom_str, '(');
 	geom_str += 2;
 
 	/*Lets get the polygon */
 	token = strtok_r(geom_str, ")", &saveptr1);
-	vert_x = GDKmalloc(POLY_NUM_VERT * sizeof(double));
-	vert_y = GDKmalloc(POLY_NUM_VERT * sizeof(double));
+	verts->vert_x = GDKmalloc(POLY_NUM_VERT * sizeof(double));
+	verts->vert_y = GDKmalloc(POLY_NUM_VERT * sizeof(double));
 
 	for (str2 = token;; str2 = NULL) {
 		subtoken = strtok_r(str2, ",", &saveptr2);
 		if (subtoken == NULL)
 			break;
-		sscanf(subtoken, "%lf %lf", &vert_x[nvert], &vert_y[nvert]);
-		nvert++;
-		if ((nvert % POLY_NUM_VERT) == 0) {
-			vert_x = GDKrealloc(vert_x, nvert * 2 * sizeof(double));
-			vert_y = GDKrealloc(vert_y, nvert * 2 * sizeof(double));
+		sscanf(subtoken, "%lf %lf", &(verts->vert_x[verts->nvert]), &(verts->vert_y[verts->nvert]));
+		verts->nvert++;
+		if ((verts->nvert % POLY_NUM_VERT) == 0) {
+			verts->vert_x = GDKrealloc(verts->vert_x, verts->nvert * 2 * sizeof(double));
+			verts->vert_y = GDKrealloc(verts->vert_y, verts->nvert * 2 * sizeof(double));
 		}
 	}
 
 	token = strtok_r(NULL, ")", &saveptr1);
 	if (token) {
-		holes_x = GDKzalloc(POLY_NUM_HOLE * sizeof(double *));
-		holes_y = GDKzalloc(POLY_NUM_HOLE * sizeof(double *));
-		holes_n = GDKzalloc(POLY_NUM_HOLE * sizeof(double *));
+		verts->holes_x = GDKzalloc(POLY_NUM_HOLE * sizeof(double *));
+		verts->holes_y = GDKzalloc(POLY_NUM_HOLE * sizeof(double *));
+		verts->holes_n = GDKzalloc(POLY_NUM_HOLE * sizeof(int *));
 	}
 	/*Lets get all the holes */
 	while (token) {
@@ -7664,61 +7710,95 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 			break;
 		token++;
 
-		if (!holes_x[nholes])
-			holes_x[nholes] = GDKzalloc(POLY_NUM_VERT * sizeof(double));
-		if (!holes_y[nholes])
-			holes_y[nholes] = GDKzalloc(POLY_NUM_VERT * sizeof(double));
+		if (!verts->holes_x[verts->nholes])
+			verts->holes_x[verts->nholes] = GDKzalloc(POLY_NUM_VERT * sizeof(double));
+		if (!verts->holes_y[verts->nholes])
+			verts->holes_y[verts->nholes] = GDKzalloc(POLY_NUM_VERT * sizeof(double));
 
 		for (str2 = token;; str2 = NULL) {
 			subtoken = strtok_r(str2, ",", &saveptr2);
 			if (subtoken == NULL)
 				break;
-			sscanf(subtoken, "%lf %lf", &holes_x[nholes][nhole], &holes_y[nholes][nhole]);
+			sscanf(subtoken, "%lf %lf", &(verts->holes_x[verts->nholes][nhole]), &(verts->holes_y[verts->nholes][nhole]));
 			nhole++;
 			if ((nhole % POLY_NUM_VERT) == 0) {
-				holes_x[nholes] = GDKrealloc(holes_x[nholes], nhole * 2 * sizeof(double));
-				holes_y[nholes] = GDKrealloc(holes_y[nholes], nhole * 2 * sizeof(double));
+				verts->holes_x[verts->nholes] = GDKrealloc(verts->holes_x[verts->nholes], nhole * 2 * sizeof(double));
+				verts->holes_y[verts->nholes] = GDKrealloc(verts->holes_y[verts->nholes], nhole * 2 * sizeof(double));
 			}
 		}
 
-		holes_n[nholes] = nhole;
-		nholes++;
-		if ((nholes % POLY_NUM_HOLE) == 0) {
-			holes_x = GDKrealloc(holes_x, nholes * 2 * sizeof(double *));
-			holes_y = GDKrealloc(holes_y, nholes * 2 * sizeof(double *));
-			holes_n = GDKrealloc(holes_n, nholes * 2 * sizeof(int));
+		verts->holes_n[verts->nholes] = nhole;
+		verts->nholes++;
+		if ((verts->nholes % POLY_NUM_HOLE) == 0) {
+			verts->holes_x = GDKrealloc(verts->holes_x, verts->nholes * 2 * sizeof(double *));
+			verts->holes_y = GDKrealloc(verts->holes_y, verts->nholes * 2 * sizeof(double *));
+			verts->holes_n = GDKrealloc(verts->holes_n, verts->nholes * 2 * sizeof(int));
 		}
 		token = strtok_r(NULL, ")", &saveptr1);
 	}
 
-	if (nholes)
-		msg = pnpolyWithHoles(out, (int) nvert, vert_x, vert_y, nholes, holes_x, holes_y, holes_n, point_x, point_y);
-	else {
-		msg = pnpoly(out, (int) nvert, vert_x, vert_y, point_x, point_y);
+    *res = verts;
+    return MAL_SUCCEED;
+}
+
+static void
+freeVerts(vertexWKB *verts)
+{
+    int j = 0;
+
+	GDKfree(verts->vert_x);
+	GDKfree(verts->vert_y);
+	if (verts->holes_x && verts->holes_y && verts->holes_n) {
+		for (j = 0; j < verts->nholes; j++) {
+			GDKfree(verts->holes_x[j]);
+			GDKfree(verts->holes_y[j]);
+		}
+		GDKfree(verts->holes_x);
+		GDKfree(verts->holes_y);
+		GDKfree(verts->holes_n);
 	}
 
-	GDKfree(vert_x);
-	GDKfree(vert_y);
-	if (holes_x && holes_y && holes_n) {
-		for (j = 0; j < nholes; j++) {
-			GDKfree(holes_x[j]);
-			GDKfree(holes_y[j]);
-		}
-		GDKfree(holes_x);
-		GDKfree(holes_y);
-		GDKfree(holes_n);
-	}
+    GDKfree(verts);
+}
+
+str
+wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
+{
+    vertexWKB *verts = NULL;
+	wkb *geom = NULL;
+	str msg = NULL;
+
+	geom = (wkb *) *a;
+    if ((msg = getVerts(geom, &verts)) != MAL_SUCCEED) {
+        return msg;
+    }
+         
+	msg = pnpolyWithHoles(out, (int) verts->nvert, verts->vert_x, verts->vert_y, verts->nholes, verts->holes_x, verts->holes_y, verts->holes_n, point_x, point_y);
+
+    if (verts)
+        freeVerts(verts);
 
 	return msg;
 }
 
 str
-wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y)
+wkbContainsXYZ(bit *out, wkb **a, dbl *px, dbl *py, dbl *pz, int *srid)
 {
-	(void) a;
-	(void) point_x;
-	(void) point_y;
-	*out = TRUE;
+    vertexWKB *verts = NULL;
+	wkb *geom = NULL;
+	str msg = NULL;
+	(void) pz;
+
+	geom = (wkb *) *a;
+    if ((msg = getVerts(geom, &verts)) != MAL_SUCCEED) {
+        return msg;
+    }
+         
+	msg = pnpoly_(out, (int) verts->nvert, verts->vert_x, verts->vert_y, verts->nholes, verts->holes_x, verts->holes_y, verts->holes_n, *px, *py);
+
+    if (verts)
+        freeVerts(verts);
+
 	return MAL_SUCCEED;
 }
 
@@ -8089,24 +8169,24 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
     int *rSRIDs = NULL;
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
 
 	if( (bx= BATdescriptor(*xid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (by= BATdescriptor(*yid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (bz= BATdescriptor(*zid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
 		BBPunfix(*yid);
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -8115,7 +8195,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 		BBPunfix(*xid);
 		BBPunfix(*yid);
 		BBPunfix(*zid);
-		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -8125,7 +8205,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 		BBPunfix(*yid);
 		BBPunfix(*zid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
 	}
 
 	/*iterator over the BATs*/
@@ -8167,7 +8247,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
                 BBPunfix(*zid);
                 BBPunfix(xl->batCacheid);
                 BBPunfix(xr->batCacheid);
-                throw(MAL, "algebra.instersects", "GEOSCoordSeq_create failed");
+                throw(MAL, "algebra.intersects", "GEOSCoordSeq_create failed");
             }
 
             if (!GEOSCoordSeq_setOrdinate(seq, 0, 0, *x) ||
@@ -8186,7 +8266,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
                 BBPunfix(xl->batCacheid);
                 BBPunfix(xr->batCacheid);
                 GEOSCoordSeq_destroy(seq);
-                throw(MAL, "algebra.instersects", "GEOSCoordSeq_setOrdinate failed");
+                throw(MAL, "algebra.intersects", "GEOSCoordSeq_setOrdinate failed");
             }
 
             if ((rGeos = GEOSGeom_createPoint(seq)) == NULL) {
@@ -8203,7 +8283,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
                 BBPunfix(xl->batCacheid);
                 BBPunfix(xr->batCacheid);
                 GEOSCoordSeq_destroy(seq);
-                throw(MAL, "algebra.instersects", "Failed to create GEOSGeometry from the coordinates");
+                throw(MAL, "algebra.intersects", "Failed to create GEOSGeometry from the coordinates");
             }
 
             if (*srid != int_nil)
@@ -8225,7 +8305,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
             BBPunfix(*zid);
             BBPunfix(xl->batCacheid);
             BBPunfix(xr->batCacheid);
-            throw(MAL, "algebra.instersects", "Failed to create mbrFromGeos");
+            throw(MAL, "algebra.intersects", "Failed to create mbrFromGeos");
         }
 
         rGeometries[px] = rGeos;
@@ -8260,7 +8340,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
             BBPunfix(*zid);
             BBPunfix(xl->batCacheid);
             BBPunfix(xr->batCacheid);
-            throw(MAL, "algebra.instersects", "wkb2geos failed");
+            throw(MAL, "algebra.intersects", "wkb2geos failed");
         }
 
 	    lMBR = mbrFromGeos(lGeometry);
@@ -8411,18 +8491,18 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 	GEOSGeom *rGeometries = NULL;
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
 
 	if( (br= BATdescriptor(*rid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if ( xl == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
-		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -8430,7 +8510,7 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
 	}
 
 	/*iterator over the BATs*/
@@ -8447,7 +8527,7 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
     		BBPunfix(*rid);
     		BBPunfix(xl->batCacheid);
     		BBPunfix(xr->batCacheid);
-    		throw(MAL, "algebra.instersects", "wkb2geos failed");
+    		throw(MAL, "algebra.intersects", "wkb2geos failed");
         }
     }
 
@@ -8470,7 +8550,7 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
             BBPunfix(*rid);
             BBPunfix(xl->batCacheid);
             BBPunfix(xr->batCacheid);
-            throw(MAL, "algebra.instersects", "wkb2geos failed");
+            throw(MAL, "algebra.intersects", "wkb2geos failed");
         }
 
         lMBR = mbrFromGeos(lGeometry);
@@ -8576,24 +8656,24 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 	GEOSGeom *rGeometries = NULL;
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
 
 	if( (bx= BATdescriptor(*xid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (by= BATdescriptor(*yid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (bz= BATdescriptor(*zid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
 		BBPunfix(*yid);
-		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -8602,7 +8682,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 		BBPunfix(*xid);
 		BBPunfix(*yid);
 		BBPunfix(*zid);
-		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -8612,7 +8692,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 		BBPunfix(*yid);
 		BBPunfix(*zid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
 	}
 
 	/*iterator over the BATs*/
@@ -8649,7 +8729,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 BBPunfix(*zid);
                 BBPunfix(xl->batCacheid);
                 BBPunfix(xr->batCacheid);
-                throw(MAL, "algebra.instersects", "GEOSCoordSeq_create failed");
+                throw(MAL, "algebra.intersects", "GEOSCoordSeq_create failed");
             }
 
             if (!GEOSCoordSeq_setOrdinate(seq, 0, 0, *x) ||
@@ -8666,7 +8746,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 BBPunfix(xl->batCacheid);
                 BBPunfix(xr->batCacheid);
                 GEOSCoordSeq_destroy(seq);
-                throw(MAL, "algebra.instersects", "GEOSCoordSeq_setOrdinate failed");
+                throw(MAL, "algebra.intersects", "GEOSCoordSeq_setOrdinate failed");
             }
 
             if ((rGeos = GEOSGeom_createPoint(seq)) == NULL) {
@@ -8681,7 +8761,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 BBPunfix(xl->batCacheid);
                 BBPunfix(xr->batCacheid);
                 GEOSCoordSeq_destroy(seq);
-                throw(MAL, "algebra.instersects", "Failed to create GEOSGeometry from the coordinates");
+                throw(MAL, "algebra.intersects", "Failed to create GEOSGeometry from the coordinates");
             }
 
             if (*srid != int_nil)
@@ -8713,7 +8793,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
             BBPunfix(*zid);
             BBPunfix(xl->batCacheid);
             BBPunfix(xr->batCacheid);
-            throw(MAL, "algebra.instersects", "wkb2geos failed");
+            throw(MAL, "algebra.intersects", "wkb2geos failed");
         }
 
 	    lMBR = mbrFromGeos(lGeometry);
@@ -8822,3 +8902,115 @@ DWithinXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, 
     return DWithinXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid, dist);
 }
 
+static str
+ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid)
+{
+	BAT *xl, *xr, *bl, *bx, *by;
+	oid lo, ro;
+	BATiter lBAT_iter, xBAT_iter, yBAT_iter;
+    uint32_t j = 0;
+    BUN px = 0, py = 0, pl = 0, qx = 0, qy = 0, ql = 0;
+	GEOSGeom *rGeometries = NULL;
+
+	if( (bl= BATdescriptor(*lid)) == NULL )
+		throw(MAL, "algebra.contains", RUNTIME_OBJECT_MISSING);
+
+	if( (bx= BATdescriptor(*xid)) == NULL ){
+		BBPunfix(*lid);
+		throw(MAL, "algebra.contains", RUNTIME_OBJECT_MISSING);
+	}
+
+	if( (by= BATdescriptor(*yid)) == NULL ){
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		throw(MAL, "algebra.contains", RUNTIME_OBJECT_MISSING);
+	}
+
+	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if ( xl == NULL){
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		throw(MAL, "algebra.contains", MAL_MALLOC_FAIL);
+	}
+
+	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if ( xr == NULL){
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		BBPunfix(xl->batCacheid);
+		throw(MAL, "algebra.contains", MAL_MALLOC_FAIL);
+	}
+
+	/*iterator over the BATs*/
+	lBAT_iter = bat_iterator(bl);
+	xBAT_iter = bat_iterator(bx);
+	yBAT_iter = bat_iterator(by);
+
+    lo = bl->hseqbase;
+    BATloop(bl, pl, ql) {
+        str err = NULL;
+        wkb *lWKB = NULL;
+        vertexWKB *verts = NULL;
+        ro = bx->hseqbase;
+
+        lWKB = (wkb *) BUNtail(lBAT_iter, pl);
+
+        /*TODO: check if you can jump over*/
+        if (wkb_isnil(lWKB))
+            continue;
+       
+       /*TODO: chekc if SRID is ok*/ 
+
+        if ((err = getVerts(lWKB, &verts)) != MAL_SUCCEED) {
+		    BBPunfix(*lid);
+    		BBPunfix(*xid);
+    		BBPunfix(*yid);
+    		BBPunfix(xl->batCacheid);
+            freeVerts(verts);
+		    throw(MAL, "algebra.contains", "getVerts failed");
+        }
+
+        for (j = 0; j < BATcount(bx); j++, ro++) {
+            bit out = 0;
+            double x, y;
+            x = *(double*) BUNtail(xBAT_iter, px);
+            y = *(double*) BUNtail(yBAT_iter, px);
+
+            if ( (err = pnpoly_(&out, (int) verts->nvert, verts->vert_x, verts->vert_y, verts->nholes, verts->holes_x, verts->holes_y, verts->holes_n, x, y)) != MAL_SUCCEED) {
+                BBPunfix(*lid);
+                BBPunfix(*xid);
+                BBPunfix(*yid);
+                BBPunfix(xl->batCacheid);
+                freeVerts(verts);
+                throw(MAL, "algebra.contains", "pnpoly failed");
+            }
+
+            if (out) {
+                BUNappend(xl, &lo, FALSE);
+                BUNappend(xr, &ro, FALSE);
+            }
+        }
+        lo++;
+        if (verts)
+            freeVerts(verts);
+	}
+
+    BBPunfix(*lid);
+    BBPunfix(*xid);
+    BBPunfix(*yid);
+	BBPkeepref(*lres = xl->batCacheid);
+	BBPkeepref(*rres = xr->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ContainsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
+{
+    (void)sl;
+    (void)sr;
+    (void)nil_matches;
+    (void)estimate;
+    return ContainsXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid);
+}

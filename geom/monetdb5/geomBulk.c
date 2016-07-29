@@ -1235,6 +1235,12 @@ wkbIntersectsXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, 
 	return WKBDBLDBLDBLINTtoBIT_bat(outBAT_id, inBAT_id, inXBAT_id, dx, inYBAT_id, dy, inZBAT_id, dz, srid, wkbIntersectsXYZ, "batgeom.IntersectsXYZ");
 }
 
+str
+wkbContainsXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz, int* srid)
+{
+    return WKBDBLDBLDBLINTtoBIT_bat(outBAT_id, inBAT_id, inXBAT_id, dx, inYBAT_id, dy, inZBAT_id, dz, srid, wkbContainsXYZ, "batgeom.ContainsXYZ");
+}
+
 /******************************************************************************************/
 /******************* IN: wkb dbl dbl dbl int - OUT: bit - flag dbl ************************/
 /******************************************************************************************/
