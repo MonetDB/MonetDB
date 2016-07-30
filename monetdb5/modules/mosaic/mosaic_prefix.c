@@ -23,7 +23,8 @@
  * Factor out the leading bits from a series of values.
  * The prefix size is determined by the first two non-identical values.
  * To use the bitvector, we limit the extracted tail to at most 32bits
- * Prefix (de-)compression does not require type knowledge
+ * The administration are 2 TPE values (mask,reference value)
+ * The size of the residu is stored in the reference value lower bits
  */
 
 #include "monetdb_config.h"
@@ -90,28 +91,28 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 		{	unsigned char *dst = (unsigned char*)  MOScodevector(task);
 			unsigned char mask = *dst++;
 			unsigned char val = *dst++;
-			bits = val & (~mask);
+			bits = (int)(val & (~mask));
 		}
 		break;
 	case 2:
 		{	unsigned short *dst = (unsigned short*)  MOScodevector(task);
 			unsigned short mask = *dst++;
 			unsigned short val = *dst++;
-			bits = val & (~mask);
+			bits = (int)(val & (~mask));
 		}
 		break;
 	case 4:
 		{	unsigned int *dst = (unsigned int*)  MOScodevector(task);
 			unsigned int mask = *dst++;
 			unsigned int val = *dst++;
-			bits = val & (~mask);
+			bits = (int)(val & (~mask));
 		}
 		break;
 	case 8:
 		{	ulng *dst = (ulng*)  MOScodevector(task);
 			ulng mask = *dst++;
 			ulng val = *dst++;
-			bits = val & (~mask);
+			bits = (int)(val & (~mask));
 		}
 	}
 	bytes = sizeof(int) * ((MOSgetCnt(task->blk) * bits)/32 + (((MOSgetCnt(task->blk) * bits) %32) != 0));
@@ -124,7 +125,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 void
 MOSadvance_prefix(Client cntxt, MOStask task)
 {
-	int bits, bytes;
+	int bits = 0, bytes;
 	int size;
 	(void) cntxt;
 
@@ -138,7 +139,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 		{	unsigned char *dst = (unsigned char*)  MOScodevector(task);
 			unsigned char mask = *dst++;
 			unsigned char val = *dst++;
-			bits = val & (~mask);
+			bits = (int)(val & (~mask));
 			// be aware that we use longs as bit vectors
 			bytes = sizeof(int) * ((MOSgetCnt(task->blk) * bits)/32 + (((MOSgetCnt(task->blk) * bits) %32) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
@@ -148,7 +149,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 		{	unsigned short *dst = (unsigned short*)  MOScodevector(task);
 			unsigned short mask = *dst++;
 			unsigned short val = *dst++;
-			bits = val & (~mask);
+			bits = (int)(val & (~mask));
 			bytes = sizeof(int) * ((MOSgetCnt(task->blk) * bits)/32 + (((MOSgetCnt(task->blk) * bits) %32) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 		}
@@ -157,7 +158,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 		{	unsigned int *dst = (unsigned int*)  MOScodevector(task);
 			unsigned int mask = *dst++;
 			unsigned int val = *dst++;
-			bits = val & (~mask);
+			bits = (int)(val & (~mask));
 			bytes = sizeof(int) * ((MOSgetCnt(task->blk) * bits)/32 + (((MOSgetCnt(task->blk) * bits) %32) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 		}
@@ -166,7 +167,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 		{	ulng *dst = (ulng*)  MOScodevector(task);
 			ulng mask = *dst++;
 			ulng val = *dst++;
-			bits = val & (~mask);
+			bits = (int)(val & (~mask));
 			bytes = sizeof(int) * ((MOSgetCnt(task->blk) * bits)/32 + (((MOSgetCnt(task->blk) * bits) %32) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 		}
@@ -376,7 +377,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 {
 	BUN limit, i, j =0 ;
 	int size;
-	int prefixbits,residu; 
+	int prefixbits,bits; 
 	BitVector base;
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = task->blk;
@@ -401,11 +402,11 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			}
 			w = v+1;
 			Prefix(prefixbits, mask, val, val2, 8);
-			residu = 8-prefixbits;
+			bits = 8-prefixbits;
 			*dst++ = mask;
 			val = *v & mask;	//reference value
 			*dst = val;
-			*dst = *dst | residu; // bits outside mask
+			*dst = *dst | bits; // bits outside mask
 			dst++;
 			base  = (BitVector) dst; // start of bit vector
 			
@@ -413,7 +414,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
-				compress(base, j, residu, (int)( *w & (~mask))); // residu
+				compress(base, j, bits, (int)( *w & (~mask))); // bits
 				hdr->checksum.sumbte += val;
 			}
 			MOSsetCnt(blk,j);
@@ -431,11 +432,11 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			}
 			w = v+1;
 			Prefix(prefixbits, mask, val, val2, 16);
-			residu = 16-prefixbits;
+			bits = 16-prefixbits;
 			*dst++ = mask;
 			val = *v & mask;	//reference value
 			*dst = val;
-			*dst = *dst | residu; // bits outside mask
+			*dst = *dst | bits; // bits outside mask
 			dst++;
 			base  = (BitVector) dst; // start of bit vector
 			
@@ -443,7 +444,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
-				compress(base,j,residu, (int)( *w & (~mask))); // residu
+				compress(base,j,bits, (int)( *w & (~mask))); 
 				hdr->checksum.sumsht += val;
 			}
 			MOSsetCnt(blk,j);
@@ -461,20 +462,20 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			}
 			w = v+1;
 			Prefix(prefixbits, mask, val, val2, 32);
-			residu = 32-prefixbits;
+			bits = 32-prefixbits;
 			*dst++ = mask;
 			val = *v & mask;	//reference value
 			*dst = val;
-			*dst = *dst | residu; // bits outside mask
+			*dst = *dst | bits; // bits outside mask
 			dst++;
 			base  = (BitVector) dst; // start of bit vector
 			
-			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, residu,mask);
+			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, bits,mask);
 			if( i < limit)
 			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
-				compress(base,j,residu, (int) (*w & (~mask))); // residu
+				compress(base,j,bits, (int) (*w & (~mask))); // bits
 				hdr->checksum.sumint += val;
 			}
 			MOSsetCnt(blk,j);
@@ -492,20 +493,20 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			}
 			w = v+1;
 			Prefix(prefixbits, mask, val, val2, 32);
-			residu = 64-prefixbits;
+			bits = 64-prefixbits;
 			*dst++ = mask;
 			val = *v & mask;	//reference value
 			*dst = val;
-			*dst = *dst | residu; // bits outside mask
+			*dst = *dst | bits; // bits outside mask
 			dst++;
 			base  = (BitVector) dst; // start of bit vector
 			
-			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, residu,mask);
+			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, bits,mask);
 			if( i < limit)
 			for(j=0, w = v, i = 0; i < limit; w++, i++,j++){
 				if ( val  != (*w & mask) )
 					break;
-				compress(base,j,residu, (int)(*w & (~mask))); // residu
+				compress(base,j,bits, (int)(*w & (~mask))); // bits
 				hdr->checksum.sumlng += val;
 			}
 			MOSsetCnt(blk,j);
@@ -524,7 +525,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
 	BUN i,lim;
-	int size;
+	int bits,size;
 	BitVector base;
 	(void) cntxt;
 
@@ -537,14 +538,13 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 		{	unsigned char *dst =  (unsigned char*)  MOScodevector(task);
 			unsigned char mask = *dst++, val  =  *dst++, v;
 			unsigned char *w = ((unsigned char*) task->src) + task->start;
-			unsigned char residu;
 
-			residu = val & (~mask);
+			bits =(int) (val & (~mask));
 			val = val & mask;
 			base = (BitVector) dst;
-			//mnstr_printf(cntxt->fdout,"decompress residu %d mask %o val %d\n",residu,m,val);
+			//mnstr_printf(cntxt->fdout,"decompress bits %d mask %o val %d\n",bits,m,val);
 			for(i = 0; i < lim; i++){
-				v = decompress(base,i,residu);
+				v = decompress(base,i,bits);
 				hdr->checksum.sumsht += v;
 				*w++ = v;
 			}
@@ -554,14 +554,13 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 		{	unsigned short *dst =  (unsigned short*)  (((char*) blk) + MosaicBlkSize);
 			unsigned short mask = *dst++, val  =  *dst++, v;
 			unsigned short *w = ((unsigned short*) task->src) + task->start;
-			unsigned short residu;
 
-			residu = val & (~mask);
+			bits = (int) (val & (~mask));
 			val = val & mask;
 			base = (BitVector) dst;
-			//mnstr_printf(cntxt->fdout,"decompress residu %d mask %o val %d\n",residu,m,val);
+			//mnstr_printf(cntxt->fdout,"decompress bits %d mask %o val %d\n",bits,m,val);
 			for(i = 0; i < lim; i++){
-				v =decompress(base,i,residu);
+				v =decompress(base,i,bits);
 				hdr->checksum.sumsht += v;
 				*w++ = v;
 			}
@@ -571,14 +570,13 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 		{	unsigned int *dst =  (unsigned int*)  MOScodevector(task);
 			unsigned int mask = *dst++, val  =  *dst++, v;
 			unsigned int *w = ((unsigned int*) task->src) + task->start;
-			unsigned int residu;
 
-			residu = val & (~mask);
+			bits = (int)(val & (~mask));
 			val = val & mask;
 			base = (BitVector) dst;
-			//mnstr_printf(cntxt->fdout,"decompress residu %d mask %o val %d\n",residu,m,val);
+			//mnstr_printf(cntxt->fdout,"decompress bits %d mask %o val %d\n",bits,m,val);
 			for(i = 0; i < lim; i++){
-				v = decompress(base,i,residu);
+				v = decompress(base,i,bits);
 				hdr->checksum.sumint += v;
 				*w++ = v;
 			}
@@ -588,14 +586,13 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 		{	ulng *dst =  (ulng*)  MOScodevector(task);
 			ulng mask = *dst++, val  =  *dst++, v;
 			ulng *w = ((ulng*) task->src) + task->start;
-			ulng residu;
 
-			residu = val & (~mask);
+			bits = (int)(val & (~mask));
 			val = val & mask;
 			base = (BitVector) dst;
-			//mnstr_printf(cntxt->fdout,"decompress residu %d mask %o val %d\n",residu,m,val);
+			//mnstr_printf(cntxt->fdout,"decompress bits %d mask %o val %d\n",bits,m,val);
 			for(i = 0; i < lim; i++){
-				v= decompress(base,i,residu);
+				v= decompress(base,i,bits);
 				hdr->checksum.sumlng += v;
 				*w++ = v;
 			}
@@ -609,9 +606,9 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 #define  subselect_prefix(TPE, TPE2) \
 {	TPE2 *dst =  (TPE2*)  MOScodevector(task);\
 	TPE2 mask = *dst++, val = *dst++,v;\
-	TPE2 residu;\
+	int bits;\
 	TPE value;\
-	residu = val & (~mask);\
+	bits = (int) (val & (~mask));\
 	val = val & mask;\
 	base = (BitVector) dst;\
 	if( !*anti){\
@@ -624,7 +621,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 		if( *(TPE*) low == TPE##_nil ){\
 			for( ; first < last; first++,i++){\
 				MOSskipit();\
-				v = decompress(base,i,residu);\
+				v = decompress(base,i,bits);\
 				value =  (TPE) ((TPE2)val |(TPE2) v);\
 				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh ));\
 				if (cmp )\
@@ -634,7 +631,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 		if( *(TPE*) hgh == TPE##_nil ){\
 			for( ; first < last; first++,i++){\
 				MOSskipit();\
-				v = decompress(base,i,residu);\
+				v = decompress(base,i,bits);\
 				value =  (TPE) ((TPE2)val |(TPE2) v);\
 				cmp  =  ((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
 				if (cmp )\
@@ -643,7 +640,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 		} else{\
 			for( ; first < last; first++,i++){\
 				MOSskipit();\
-				v = decompress(base,i,residu);\
+				v = decompress(base,i,bits);\
 				value =  (TPE) ((TPE2)val |(TPE2) v);\
 				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh )) &&\
 						((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
@@ -658,7 +655,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 		if( *(TPE*) low == TPE##_nil ){\
 			for( ; first < last; first++,i++){\
 				MOSskipit();\
-				v =decompress(base,i,residu);\
+				v =decompress(base,i,bits);\
 				value =  (TPE) ((TPE2)val |(TPE2) v);\
 				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh ));\
 				if ( !cmp )\
@@ -668,7 +665,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 		if( *(TPE*) hgh == TPE##_nil ){\
 			for( ; first < last; first++, val++,i++){\
 				MOSskipit();\
-				v = decompress(base,i,residu);\
+				v = decompress(base,i,bits);\
 				value =  (TPE) ((TPE2)val |(TPE2) v);\
 				cmp  =  ((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
 				if ( !cmp )\
@@ -677,7 +674,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 		} else{\
 			for( ; first < last; first++, val++,i++){\
 				MOSskipit();\
-				v = decompress(base,i,residu);\
+				v = decompress(base,i,bits);\
 				value =  (TPE) ((TPE2)val |(TPE2) v);\
 				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh )) &&\
 						((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
@@ -733,9 +730,9 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 { 	TPE low,hgh;\
     TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
     TPE2 mask = *dst++, val = *dst++,v;\
-    TPE2 residu;\
+    int bits;\
     TPE value;\
-	residu = (int)( val & (~mask));\
+	bits = (int)( val & (~mask));\
 	val = val & mask;\
 	base = (BitVector) dst;\
 	low= hgh = TPE##_nil;\
@@ -763,7 +760,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	if ( !anti)\
 		for( ; first < last; first++,i++){\
 			MOSskipit();\
-			v =decompress(base,i,residu);\
+			v =decompress(base,i,bits);\
 			value =  (TPE) ((TPE2)val |(TPE2) v);\
 			if( (low == TPE##_nil || value >= low) && (value <= hgh || hgh == TPE##_nil) )\
 			*o++ = (oid) first;\
@@ -771,7 +768,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	else\
 		for( ; first < last; first++,i++){\
 			MOSskipit();\
-			v = decompress(base,i,residu);\
+			v = decompress(base,i,bits);\
 			value =  (TPE) ((TPE2)val |(TPE2) v);\
 			if( !( (low == TPE##_nil || value >= low) && (value <= hgh || hgh == TPE##_nil) ))\
 				*o++ = (oid) first;\
@@ -819,15 +816,14 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 {	TPE *r;\
     TPE2 *dst =  (TPE2*)  MOScodevector(task);\
     TPE2 mask = *dst++, val = *dst++,v;\
-    TPE2 residu;\
     TPE value;\
-	residu = (int) val & (~mask);\
+	bits = (int) (val & (~mask));\
 	val = val & mask;\
 	base = (BitVector) dst;\
 	r= (TPE*) task->src;\
 	for(; first < last; first++,i++){\
 		MOSskipit();\
-		v = decompress(base,i,residu);\
+		v = decompress(base,i,bits);\
 		value =  (TPE) ((TPE2)val |(TPE2) v);\
 		*r++ = value;\
 		task->n--;\
@@ -839,7 +835,7 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 str
 MOSprojection_prefix(Client cntxt,  MOStask task)
 {
-	BUN i=0, first,last;
+	BUN bits,i=0, first,last;
     BitVector base;
 	(void) cntxt;
 
@@ -857,15 +853,14 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 {	flt *r;
     unsigned int *dst =  (unsigned int*)  MOScodevector(task);
     unsigned int mask = *dst++, val  =  *dst++,v;
-    unsigned int residu;
     flt value;
-	residu = val & (~mask);
+	bits = (int) val & (~mask);
 	val = val & mask;
 	base = (BitVector) dst;
 	r= (flt*) task->src;
 	for(; first < last; first++,i++){
 		MOSskipit();
-		v = decompress(base,i,residu);
+		v = decompress(base,i,bits);
 		value =  (flt) ((unsigned int)val |(unsigned int) v);
 		*r++ = value;
 		task->n--;
@@ -894,17 +889,16 @@ break;
 
 #define join_prefix(TPE,TPE2)\
 {   TPE *w;\
-	TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
+	TPE2 *dst =  (TPE2*)  MOScodevector(task);\
 	TPE2 mask = *dst++, val = *dst++,v;\
-	TPE2 residu;\
 	TPE value;\
-	residu = (val & (~mask));\
+	bits = (int) (val & (~mask));\
 	val = val & mask;\
 	base = (BitVector) dst;\
 	w = (TPE*) task->src;\
 	for(n = task->elm, o = 0; n -- > 0; w++,o++){\
 		for(i=0, oo= (oid) first; oo < (oid) last; v++, oo++,i++){\
-			v = decompress(base,i,residu);\
+			v = decompress(base,i,bits);\
 			value =  (TPE) ((TPE2)val |(TPE2) v);\
 			if ( *w == value){\
 				BUNappend(task->lbat, &oo, FALSE);\
@@ -917,8 +911,7 @@ break;
 str
 MOSsubjoin_prefix(Client cntxt,  MOStask task)
 {
-	BUN i= 0,n,first,last;
-	MosaicBlk blk= task->blk;
+	BUN bits,i= 0,n,first,last;
 	oid o, oo;
 	BitVector base;
 	(void) cntxt;
