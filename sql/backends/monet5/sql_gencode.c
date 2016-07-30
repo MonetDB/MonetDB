@@ -2853,8 +2853,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	node *n;
 
 	backup = c->curprg;
-
-	/* later we change this to a factory ? */
 	if (cq)
 		c->curprg = newFunction(userRef, putName(cq->name), FUNCTIONsymbol);
 	else
@@ -2880,8 +2878,9 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			snprintf(arg, IDLENGTH, "A%d", argc);
 			a->varid = varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
-			if (curInstr == NULL)
-				return NULL;
+			assert(curInstr);
+			if (curInstr == NULL) 
+				goto cleanup;
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb, 0);
 		}
@@ -2895,15 +2894,16 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			snprintf(arg, IDLENGTH, "A%d", argc);
 			varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
-			if (curInstr == NULL)
-				return NULL;
+			assert(curInstr);
+			if (curInstr == NULL) 
+				goto cleanup;
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb, varid);
 		}
 	}
 
-	if (backend_dumpstmt(be, mb, s, 1, 1) < 0)
-		return NULL;
+	if (backend_dumpstmt(be, mb, s, 1, 1) < 0) 
+		goto cleanup;
 
 	// Always keep the SQL query around for monitoring
 	// if (m->history || QLOGisset()) {
@@ -2922,7 +2922,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		q = newStmt(mb, "querylog", "define");
 		if (q == NULL) {
 			GDKfree(tt);
-			return NULL;
+			goto cleanup;
 		}
 		q->token = REMsymbol;	// will be patched
 		setVarType(mb, getArg(q, 0), TYPE_void);
@@ -2938,6 +2938,12 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	if (backup)
 		c->curprg = backup;
 	return curPrg;
+
+cleanup:
+	freeSymbol(curPrg);
+	if (backup)
+		c->curprg = backup;
+	return NULL;
 }
 
 void
