@@ -514,13 +514,14 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int var = getArg(p, 1);
 			InstrPtr r = old[vars[var]];
 			
-			if (isSlice(r) && rslices[getArg(p,1)] != 0 && getArg(r, 0) == getArg(p, 1)) {
+			if (r && isSlice(r) && rslices[getArg(p,1)] != 0 && getArg(r, 0) == getArg(p, 1)) {
 				InstrPtr q = newAssignment(mb);
 
 				getArg(q, 0) = getArg(p, 0); 
 				(void) pushArgument(mb, q, getArg(p, 2));
 				actions++;
 				freeInstruction(p);
+				old[i] = NULL;
 				continue;
 			}
 		} else if (p->argc >= 2 && slices[getArg(p, 1)] != 0) {
@@ -582,6 +583,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				u = pushArgument(mb, u, getArg(t,0));
 				pushInstruction(mb,u);	
 				freeInstruction(p);
+				old[i] = NULL;
 				continue;
 			}
 		}
