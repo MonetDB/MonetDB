@@ -47,7 +47,7 @@
 int
 OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,j, action =0;
+	int i,j, actions =0;
 	int *marked;
 	int limit = mb->stop;
 	InstrPtr p, q, *old = mb->stmt, *updated;
