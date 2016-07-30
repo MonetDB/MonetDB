@@ -129,8 +129,10 @@ monet5_find_user(ptr mp, str user)
 	Client c = MCgetClient(m->clientid);
 	str err;
 
-	if ((err = AUTHgetUsers(&uid, &nme, c)) != MAL_SUCCEED)
+	if ((err = AUTHgetUsers(&uid, &nme, c)) != MAL_SUCCEED) {
+		_DELETE(err);
 		return -1;
+	}
 	p = BUNfnd(nme, user);
 	BBPunfix(uid->batCacheid);
 	BBPunfix(nme->batCacheid);
