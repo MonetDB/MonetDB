@@ -3084,7 +3084,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	Symbol backup = NULL;
 	stmt *s;
 	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
-	sql_allocator *sa, *osa = m->sa;
+	sql_allocator *sa;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
 	if (!f->sql || (!vararg && f->sql > 1))
@@ -3094,7 +3094,6 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	sa = sa_create();
 	m->session->schema = f->s;
 	s = sql_parse(m, sa, f->query, m_instantiate);
-	m->sa = osa;
 	m->session->schema = schema;
 	if (s && !f->sql) {	/* native function */
 		sa_destroy(sa);
@@ -3190,8 +3189,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		curBlk->inlineProp =1;
 	if (sideeffects)
 		curBlk->unsafeProp = 1;
-	f->sa = sa;
-	m->sa = osa;
+	sa_destroy(sa);
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
