@@ -40,3 +40,4 @@ analyze-quotes-incorrectly.Bug-4021
 boolean-evaluation.Bug-4025
 HAVE_GEOM?nested-mal-with-multiplex.Bug-4035
 querylog
+trigger_bulk.Bug-4045

@@ -1,0 +1,46 @@
+stderr of test 'pyloader06` in directory 'sql/backends/monet5` itself:
+
+
+# 15:10:43 >  
+# 15:10:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39055" "--set" "mapi_usock=/var/tmp/mtest-23860/.s.monetdb.39055" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/myth/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:10:43 >  
+
+# builtin opt 	gdk_dbpath = /Users/myth/opt/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39055
+# cmdline opt 	mapi_usock = /var/tmp/mtest-23860/.s.monetdb.39055
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/myth/opt/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:10:44 >  
+# 15:10:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23860" "--port=39055"
+# 15:10:44 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-23860/.s.monetdb.39055
+QUERY = CREATE TABLE pyloader06table FROM LOADER pyloader06();
+ERROR = !No elements emitted by the loader.
+MAPI  = (monetdb) /var/tmp/mtest-23987/.s.monetdb.37585
+QUERY = CREATE TABLE pyloader06table FROM LOADER pyloader06();
+ERROR = !Python exception
+        !def pyfun(_emit,_conn):
+        !  return 3
+        !
+        !need dict
+
+# 15:10:44 >  
+# 15:10:44 >  "Done."
+# 15:10:44 >  
+

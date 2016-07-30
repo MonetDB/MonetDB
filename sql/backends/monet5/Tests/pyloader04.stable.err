@@ -39,11 +39,11 @@ ERROR = !Python exception
 MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
 QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
 ERROR = !Python exception
-        !def pyfun(_emit,_conn):
-        !  _emit.emit({'a1': 3, 'a2': 4, 3: 5})
-        !
-        !Expected a string as dict key, but found <type 'int'>
-MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+        !  1. def pyfun(_emit,_conn):
+        !  2.   _emit.emit({'a1': 3, 'a2': 4, 3: 5})
+        !> 3. 
+        !Unmatched element "3" in dict
+MAPI  = (monetdb) /var/tmp/mtest-79373/.s.monetdb.33370
 QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
 ERROR = !Python exception
         !

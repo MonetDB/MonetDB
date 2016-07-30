@@ -20,7 +20,7 @@
 #include "gdk_private.h"
 #include "mutils.h"
 #include <stdio.h>
-#include <unistd.h>		/* sbrk on Solaris */
+#include <unistd.h>
 #include <string.h>     /* strncpy */
 
 #ifdef HAVE_FCNTL_H

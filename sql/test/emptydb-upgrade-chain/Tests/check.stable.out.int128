@@ -745,7 +745,7 @@ CREATE TABLE "sys"."privileges" ("obj_id" INTEGER, "auth_id" INTEGER, "privilege
 CREATE TABLE "sys"."schemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN);
 CREATE TABLE "sys"."sequences" ("id" INTEGER, "schema_id" INTEGER, "name" VARCHAR(256), "start" BIGINT, "minvalue" BIGINT, "maxvalue" BIGINT, "increment" BIGINT, "cacheinc" BIGINT, "cycle" BOOLEAN);
 CREATE TABLE "sys"."spatial_ref_sys" ("srid" INTEGER NOT NULL, "auth_name" VARCHAR(256), "auth_srid" INTEGER, "srtext" VARCHAR(2048), "proj4text" VARCHAR(2048), CONSTRAINT "spatial_ref_sys_srid_pkey" PRIMARY KEY ("srid"));
-CREATE TABLE "sys"."statistics" ("column_id" INTEGER, "type" CHARACTER LARGE OBJECT, "width" INTEGER, "stamp" TIMESTAMP, "sample" BIGINT, "count" BIGINT, "unique" BIGINT, "nils" BIGINT, "minval" CHARACTER LARGE OBJECT, "maxval" CHARACTER LARGE OBJECT, "sorted" BOOLEAN);
+CREATE TABLE "sys"."statistics" ("column_id" INTEGER, "type" CHARACTER LARGE OBJECT, "width" INTEGER, "stamp" TIMESTAMP, "sample" BIGINT, "count" BIGINT, "unique" BIGINT, "nils" BIGINT, "minval" CHARACTER LARGE OBJECT, "maxval" CHARACTER LARGE OBJECT, "sorted" BOOLEAN, "revsorted" BOOLEAN);
 CREATE TABLE "sys"."storagemodelinput" ("schema" CHARACTER LARGE OBJECT, "table" CHARACTER LARGE OBJECT, "column" CHARACTER LARGE OBJECT, "type" CHARACTER LARGE OBJECT, "typewidth" INTEGER, "count" BIGINT, "distinct" BIGINT, "atomwidth" INTEGER, "reference" BOOLEAN, "sorted" BOOLEAN, "revsorted" BOOLEAN, "unique" BOOLEAN, "orderidx" BIGINT);
 CREATE TABLE "sys"."systemfunctions" ("function_id" INTEGER);
 CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
@@ -1479,6 +1479,7 @@ drop function pcre_replace(string, string, string, string);
 [ "statistics",	"minval",	"clob",	0,	0,	NULL,	true,	8,	NULL	]
 [ "statistics",	"maxval",	"clob",	0,	0,	NULL,	true,	9,	NULL	]
 [ "statistics",	"sorted",	"boolean",	1,	0,	NULL,	true,	10,	NULL	]
+[ "statistics",	"revsorted",	"boolean",	1,	0,	NULL,	true,	11,	NULL	]
 [ "storage",	"schema",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "storage",	"table",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "storage",	"column",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
