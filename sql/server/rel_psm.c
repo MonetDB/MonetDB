@@ -842,8 +842,8 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					sql_func *f = sf->func;
 					if (!f->mod || strcmp(f->mod, fmod))
 						f->mod = _STRDUP(fmod);
-					if (!f->imp || strcmp(f->imp, fnme))
-						f->imp = _STRDUP(fnme);
+					if (!f->imp || strcmp(f->imp, fnme)) 
+						f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
 					f->sql = 0; /* native */
 					f->lang = FUNC_LANG_INT;
 				}
