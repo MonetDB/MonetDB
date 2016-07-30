@@ -53,7 +53,7 @@ main(int argc, char **argv)
 	char DEFAULT[] = "-I'^#'";
 #endif
 	char ignoreWHITE[] = " -b -B";
-	char *old_fn, *new_fn, *html_fn, *caption = EMPTY, *revision = EMPTY, *ignoreEXP = DEFAULT, *ignore, *function = "";
+	char *old_fn, *new_fn, *html_fn, *caption = EMPTY, *revision = EMPTY, *ignoreEXP = DEFAULT, *ignore = NULL, *function = EMPTY;
 	int LWC = 1, context = 1, option, mindiff = 0, quiet = 0;
 
 	while ((option = getopt(argc, argv, "hdqA:C:I:F:t:r:")) != EOF)
@@ -108,6 +108,10 @@ main(int argc, char **argv)
 		case 'h':
 		default:
 			showUsage(argv[0]);
+			if (ignoreEXP != DEFAULT)
+				free(ignoreEXP);
+			if (function != EMPTY)
+				free(function);
 			exit(1);
 		}
 
@@ -142,6 +146,11 @@ main(int argc, char **argv)
 		}
 		break;
 	}
+	free(ignore);
+	if (ignoreEXP != DEFAULT)
+		free(ignoreEXP);
+	if (function != EMPTY)
+		free(function);
 
 	TRACE(fprintf(STDERR, "done.\n"));
 	return 0;
