@@ -716,6 +716,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		int nr_mv1 = split, nr_mv2 = nr_mats-split;
 
 		if (split < 0) {
+			GDKfree(mats);
 			mb->errors++;
 			return ;
 		}
@@ -767,6 +768,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 	}
 	mat_add(ml, l, mat_none, getFunctionId(p));
 	mat_add(ml, r, mat_none, getFunctionId(p));
+	GDKfree(mats);
 }
 
 
