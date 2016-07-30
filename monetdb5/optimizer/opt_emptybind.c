@@ -47,7 +47,7 @@
 int
 OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,j;
+	int i,j, action =0;
 	int *marked;
 	int limit = mb->stop;
 	InstrPtr p, q, *old = mb->stmt, *updated;
@@ -124,6 +124,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (getFunctionId(p) == emptybindRef) {
 			OPTDEBUGemptybind
 				mnstr_printf(cntxt->fdout, "#empty bind  pc %d var %d\n",i , getArg(p,0) );
+			actions++;
 			setFunctionId(p,bindRef);
 			p->typechk= TYPE_UNKNOWN;
 			marked[getArg(p,0)] = i;
@@ -187,6 +188,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (getFunctionId(p) == emptybindidxRef) {
 			OPTDEBUGemptybind
 				mnstr_printf(cntxt->fdout, "#empty bindidx  pc %d var %d\n",i , getArg(p,0) );
+			actions++;
 			setFunctionId(p,bindidxRef);
 			p->typechk= TYPE_UNKNOWN;
 			marked[getArg(p,0)] = i;
@@ -244,6 +246,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					mnstr_printf(cntxt->fdout, "#empty delta  pc %d var %d,%d,%d\n",i ,marked[getArg(p,2)], marked[getArg(p,3)], marked[getArg(p,4)] );
 				OPTDEBUGemptybind
 					mnstr_printf(cntxt->fdout, "#empty delta  pc %d var %d\n",i , getArg(p,0) );
+				actions++;
 				clrFunction(p);
 				p->argc = 2;
 				if ( marked[getArg(p,1)] ){
@@ -257,6 +260,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			if( marked[getArg(p,3)] && marked[getArg(p,4)] ){
 				OPTDEBUGemptybind
 					mnstr_printf(cntxt->fdout, "#empty projectdelta  pc %d var %d\n",i , getArg(p,0) );
+					actions++;
 					setModuleId(p,algebraRef);
 					setFunctionId(p,projectionRef);
 					p->argc = 3;
@@ -269,6 +273,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				if( marked[getArg(p,1)] || marked[getArg(p,2)] ){
 					OPTDEBUGemptybind
 						mnstr_printf(cntxt->fdout, "#empty projection  pc %d var %d\n",i , getArg(p,0) );
+					actions++;
 					emptyresult(0);
 				}
 			}
@@ -289,7 +294,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	chkFlow(cntxt->fdout, mb);
 	chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",1,GDKusec() - usec);
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",actions,GDKusec() - usec);
     newComment(mb,buf);
 	return 1;
 }
