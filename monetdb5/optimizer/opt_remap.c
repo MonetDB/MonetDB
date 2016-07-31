@@ -451,8 +451,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	for(; i<slimit; i++)
-	if( old[i])
-		freeInstruction(old[i]);
+		if( old[i])
+			freeInstruction(old[i]);
 	GDKfree(old);
 	OPTDEBUGremap
 	if (doit){
