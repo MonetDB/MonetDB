@@ -34,7 +34,7 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	int i, j, cnt, cand, actions = 1, marks = 0;
 	InstrPtr *old, q,p;
-	int limit;
+	int limit, slimit;
 	char *recycled;
 
 	(void) cntxt;
@@ -42,6 +42,7 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) pci;
 
 	limit = mb->stop;
+	slimit = mb->ssize;
 	old = mb->stmt;
 
 	/* watch out, newly created instructions may introduce new variables */
@@ -71,8 +72,10 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					actions++;
 				}
 				if (getModuleId(p) == sqlRef) {
+					/*
 					q= copyInstruction(p);
 					getModuleId(q) = recycleRef;
+					*/
 					actions++;
 				}
 			}
@@ -115,6 +118,9 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	for (; i < limit; i++) 
 		pushInstruction(mb, old[i]);
+	for (; i < slimit; i++) 
+		if (old[i])
+			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(recycled);
 	mb->recycle = marks > 0;

@@ -74,7 +74,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	
 	// Now we can simply copy the intructions and discard useless ones.
 	pushInstruction(mb, old[0]);
-	for (i = 1; i < limit; i++) 
+	for (i = 1; i < limit; i++) {
 		if ((p = old[i]) != NULL) {
 			if( p->token == ENDsymbol){
 				pushInstruction(mb,p);
@@ -96,6 +96,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				freeInstruction(p);
 			actions += se > 0;
 		}
+	}
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
