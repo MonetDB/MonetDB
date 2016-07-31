@@ -1131,7 +1131,6 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	bn->tnonil = b->tnonil;
 	bn->tnil = b->tnil;
 
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
@@ -1188,7 +1187,6 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
     bn->trevsorted = 0;
     bn->tdense = 0;
 
-    if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
@@ -1304,7 +1302,6 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
     bn->tdense = 0;
 	bn->tkey = b->tkey;
 
-    if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);
@@ -1366,7 +1363,6 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
     bn->trevsorted = 0;
     bn->tdense = 0;
 
-    if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(bs->batCacheid);

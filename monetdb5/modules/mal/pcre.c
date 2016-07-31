@@ -1180,8 +1180,6 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		r->trevsorted = 0;
 		BATkey(r,FALSE);
 
-		if (!(r->batDirty&2)) BATsetaccess(r, BAT_READ);
-
 		BBPkeepref(*ret = r->batCacheid);
 		BBPunfix(strs->batCacheid);
 		GDKfree(ppat);
@@ -1317,7 +1315,6 @@ PCRElikesubselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, con
 		return res;
 	assert(bn);
 	*ret = bn->batCacheid;
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }

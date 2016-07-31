@@ -129,9 +129,6 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	bn->trevsorted = 0;
 	BATkey(bn, FALSE);
 
-	if (!(bn->batDirty & 2))
-		BATsetaccess(bn, BAT_READ);
-
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;

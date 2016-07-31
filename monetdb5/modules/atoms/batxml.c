@@ -74,8 +74,6 @@ mal_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat
 #define finalizeResult(X,Y,Z)					\
 	do {										\
 		BATsetcount((Y), (Y)->batCount);		\
-		if (!((Y)->batDirty & 2))				\
-			BATsetaccess((Y), BAT_READ);		\
 		*(X) = (Y)->batCacheid;					\
 		BBPkeepref(*(X));						\
 		BBPunfix((Z)->batCacheid);				\
