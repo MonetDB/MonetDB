@@ -37,12 +37,8 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 
-	if ( alias == NULL || cst == NULL || index == NULL){
-		if( alias) GDKfree(alias);
-		if( cst) GDKfree(cst);
-		if( index) GDKfree(index);
-		return 0;
-	}
+	if ( alias == NULL || cst == NULL || index == NULL)
+		goto wrapup;
 
 	(void) stk;
 	(void) cntxt;
@@ -86,9 +82,6 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			for (k=0; k < p->argc; k++)
 				getArg(p,k) = alias[getArg(p,k)];
 		}
-	GDKfree(alias);
-	GDKfree(cst);
-	GDKfree(index);
     /* Defense line against incorrect plans */
 	/* Plan remains unaffected */
 	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
@@ -99,5 +92,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,GDKusec() - usec);
     newComment(mb,buf);
 
+wrapup:
+	if( alias) GDKfree(alias);
+	if( cst) GDKfree(cst);
+	if( index) GDKfree(index);
 	return actions;
 }
