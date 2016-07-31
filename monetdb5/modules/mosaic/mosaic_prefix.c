@@ -125,7 +125,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 void
 MOSadvance_prefix(Client cntxt, MOStask task)
 {
-	int bits = 0, bytes;
+	int bits = 0, bytes= 0;
 	int size;
 	(void) cntxt;
 
@@ -606,7 +606,6 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 #define  subselect_prefix(TPE, TPE2) \
 {	TPE2 *dst =  (TPE2*)  MOScodevector(task);\
 	TPE2 mask = *dst++, val = *dst++,v;\
-	int bits;\
 	TPE value;\
 	bits = (int) (val & (~mask));\
 	val = val & mask;\
@@ -688,7 +687,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 str
 MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
-	int cmp;
+	int bits,cmp;
 	BUN i = 0,first,last;
 	BitVector base;
 	// set the oid range covered
@@ -730,7 +729,6 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 { 	TPE low,hgh;\
     TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
     TPE2 mask = *dst++, val = *dst++,v;\
-    int bits;\
     TPE value;\
 	bits = (int)( val & (~mask));\
 	val = val & mask;\
@@ -779,7 +777,7 @@ str
 MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 {
 	oid *o;
-	int anti=0;
+	int bits, anti=0;
 	BUN i=0,first,last;
 	MosaicBlk blk = task->blk;
     BitVector base;
@@ -835,7 +833,8 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 str
 MOSprojection_prefix(Client cntxt,  MOStask task)
 {
-	BUN bits,i=0, first,last;
+	int bits; 
+	BUN i=0, first,last;
     BitVector base;
 	(void) cntxt;
 
@@ -911,7 +910,8 @@ break;
 str
 MOSsubjoin_prefix(Client cntxt,  MOStask task)
 {
-	BUN bits,i= 0,n,first,last;
+	int bits;
+	BUN i= 0,n,first,last;
 	oid o, oo;
 	BitVector base;
 	(void) cntxt;
