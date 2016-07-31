@@ -247,22 +247,34 @@ sql_trans_deref( sql_trans *tr )
 		for ( m = s->tables.set->h; m; m = m->next) {
 			sql_table *t = m->data;
 
-			if (t->po) 
+			if (t->po) { 
+				sql_table *p = t->po;
+
 				t->po = t->po->po;
+				table_destroy(p);
+			}
 
 			if (t->columns.set)
 			for ( o = t->columns.set->h; o; o = o->next) {
 				sql_column *c = o->data;
 
-				if (c->po) 
+				if (c->po) {
+					sql_column *p = c->po;
+
 					c->po = c->po->po;
+					column_destroy(p);
+				}
 			}
 			if (t->idxs.set)
 			for ( o = t->idxs.set->h; o; o = o->next) {
 				sql_idx *i = o->data;
 
-				if (i->po) 
+				if (i->po) {
+					sql_idx *p = i->po;
+
 					i->po = i->po->po;
+					idx_destroy(p);
+				}
 			}
 		}
 	}
@@ -310,13 +322,14 @@ build up the hash (not copied in the trans dup)) */
 	tr = tr->parent;
 	if (tr->parent) {
 		store_lock();
-		while (tr->parent != NULL && ok == SQL_OK) {
+		while (ctr->parent->parent != NULL && ok == SQL_OK) {
 			/* first free references to tr objects, ie
 			 * c->po = c->po->po etc
 			 */
 			ctr = sql_trans_deref(ctr);
-			tr = sql_trans_destroy(tr);
 		}
+		while (tr->parent != NULL && ok == SQL_OK) 
+			tr = sql_trans_destroy(tr);
 		store_unlock();
 	}
 	cur -> parent = tr;
