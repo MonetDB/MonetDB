@@ -142,8 +142,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if( mb->errors) 
 		return 0;
 
-	OPTDEBUGpushselect
+#ifdef DEBUG_OPT_PUSHSELECT
 		mnstr_printf(cntxt->fdout,"#Push select optimizer started\n");
+#endif
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);

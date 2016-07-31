@@ -1899,7 +1899,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * All other instructions should be checked for remaining MAT dependencies.
 		 * It requires MAT materialization.
 		 */
-		OPTDEBUGmergetable mnstr_printf(GDKout, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
+#ifdef DEBUG_OPT_MERGETABLE
+		mnstr_printf(GDKout, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
+#endif
 
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=is_a_mat(getArg(p,k), &ml)) >= 0){
@@ -1911,13 +1913,15 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) stk; 
 	chkTypes(cntxt->fdout, cntxt->nspace,mb, TRUE);
 
-	OPTDEBUGmergetable {
+#ifdef DEBUG_OPT_MERGETABLE
+	{
 		str err;
 		mnstr_printf(GDKout,"#Result of multi table optimizer\n");
 		err= optimizerCheck(cntxt,mb,"merge test",1,0);
 		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 		if( err) GDKfree(err);
 	}
+#endif
 
 	if ( mb->errors == 0) {
 		for(i=0; i<slimit; i++)

@@ -13,8 +13,6 @@
 #include "opt_deadcode.h"
 #include "opt_projectionpath.h"
 
-//#undef OPTDEBUGprojectionpath 
-//#define OPTDEBUGprojectionpath  if(1)
 
 // Common prefix reduction was not effective it is retained for 
 // future experiments.
@@ -38,8 +36,9 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 	slimit= mb->ssize;
 	if (newMalBlkStmt(mb,mb->ssize) < 0)
 		return 0;
-	OPTDEBUGprojectionpath 
-		mnstr_printf(cntxt->fdout,"#projectionpath find common prefix prefixlength %d\n", prefixlength);
+#ifdef DEBUG_OPT_PROJECTIONPATH
+	mnstr_printf(cntxt->fdout,"#projectionpath find common prefix prefixlength %d\n", prefixlength);
+#endif
  
 	for( i = 0; i < limit; i++){
 		p = old[i];
@@ -48,10 +47,10 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			pushInstruction(mb,p);
 			continue;
 		}
-		OPTDEBUGprojectionpath {
-			mnstr_printf(cntxt->fdout,"#projectionpath candidate prefix pc %d \n", i);
-			printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
-		}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+		mnstr_printf(cntxt->fdout,"#projectionpath candidate prefix pc %d \n", i);
+		printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+#endif
 		/* we fixed a projection path of the target prefixlength
 		 * Search now the remainder for at least one case where it
 		 * has a common prefix of prefixlength 
@@ -70,10 +69,10 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			/* at least one instruction has been found.
 			 * Inject the prefex projection path and replace all use cases
 			 */
-			OPTDEBUGprojectionpath {
-				mnstr_printf(cntxt->fdout,"#projectionpath found common prefix pc %d \n", j);
-				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
-			}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+			mnstr_printf(cntxt->fdout,"#projectionpath found common prefix pc %d \n", j);
+			printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+#endif
 			/* create the factored out prefix projection */
 			r = copyInstruction(p);
 			r->argc = prefixlength;
@@ -83,10 +82,10 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 				setFunctionId(r,projectionRef);
 			r->typechk = TYPE_UNKNOWN;
 			pushInstruction(mb,r);
-			OPTDEBUGprojectionpath  {
-				mnstr_printf(cntxt->fdout,"#projectionpath prefix instruction\n");
-				printInstruction(cntxt->fdout,mb, 0, r, LIST_MAL_ALL);
-			}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+			mnstr_printf(cntxt->fdout,"#projectionpath prefix instruction\n");
+			printInstruction(cntxt->fdout,mb, 0, r, LIST_MAL_ALL);
+#endif
 
 			/* patch all instructions with same prefix. */
 			for( ; j < limit; j++) {
@@ -97,10 +96,10 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 					match += getArg(q,k) == getArg(r,k);
 				if (match &&  match == prefixlength - r->retc ){
 					actions++;
-					OPTDEBUGprojectionpath {
-						mnstr_printf(cntxt->fdout,"#projectionpath before:");
-						printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
-					}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+					mnstr_printf(cntxt->fdout,"#projectionpath before:");
+					printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
+#endif
 					if( q->argc == r->argc ){
 						clrFunction(q);
 						getArg(q,q->retc) = getArg(r,0);
@@ -112,10 +111,10 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 						if( q->argc == 3)
 							setFunctionId(q,projectionRef);
 					}
-					OPTDEBUGprojectionpath {
-						mnstr_printf(cntxt->fdout,"#projectionpath after :");
-						printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
-					}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+					mnstr_printf(cntxt->fdout,"#projectionpath after :");
+					printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
+#endif
 				}
 			}
 			/* patch instruction p by deletion of common prefix */
@@ -136,11 +135,11 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 		}
 		pushInstruction(mb,p);
 	}
-	OPTDEBUGprojectionpath {
-		chkProgram(cntxt->fdout, cntxt->nspace, mb);
-		mnstr_printf(cntxt->fdout,"#projectionpath prefix actions %d\n",actions);
-		if(actions) printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
-	}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+	chkProgram(cntxt->fdout, cntxt->nspace, mb);
+	mnstr_printf(cntxt->fdout,"#projectionpath prefix actions %d\n",actions);
+	if(actions) printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
+#endif
 	for(; i<slimit; i++)
 		if(old[i])
 			freeInstruction(old[i]);
@@ -155,10 +154,10 @@ int
 OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, actions=0, maxprefixlength=0;
-	int *pc;
+	int *pc =0;
 	InstrPtr q,r;
-	InstrPtr *old;
-	int *varcnt;		/* use count */
+	InstrPtr *old=0;
+	int *varcnt= 0;		/* use count */
 	int limit,slimit;
 	char buf[256];
 	lng usec = GDKusec();
@@ -168,10 +167,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	if ( mb->inlineProp)
 		return 0;
 
-	OPTDEBUGprojectionpath {
-		mnstr_printf(cntxt->fdout,"#projectionpath optimizer start \n");
-		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
-	}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+	mnstr_printf(cntxt->fdout,"#projectionpath optimizer start \n");
+	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
+#endif
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit= mb->ssize;
@@ -181,11 +180,8 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
 	varcnt= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); 
-	if (pc == NULL || varcnt == NULL ){
-		if (pc ) GDKfree(pc);
-		if (varcnt ) GDKfree(varcnt);
-		return 0;
-	}
+	if (pc == NULL || varcnt == NULL )
+		goto wrapupall;
 
 	/*
 	 * Count the variable re-use  used as arguments first.
@@ -209,10 +205,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			 * Try to expand its argument list with what we have found so far.
 			 */
 			q = copyInstruction(p);
-			OPTDEBUGprojectionpath {
-				mnstr_printf(cntxt->fdout,"#before ");
-				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
-			}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+			mnstr_printf(cntxt->fdout,"#before ");
+			printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+#endif
 			q->argc=p->retc;
 			for(j=p->retc; j<p->argc; j++){
 				if (pc[getArg(p,j)] )
@@ -223,10 +219,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 					r = 0;
 				
 				/* inject the complete sub-path */
-				OPTDEBUGprojectionpath if( r) {
-					mnstr_printf(cntxt->fdout,"#inject ");
-					printInstruction(cntxt->fdout,mb, 0, r, LIST_MAL_ALL);
-				}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+				mnstr_printf(cntxt->fdout,"#inject ");
+				printInstruction(cntxt->fdout,mb, 0, r, LIST_MAL_ALL);
+#endif
 				if ( getFunctionId(p) == projectionRef){
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionpathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
@@ -257,10 +253,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if ( getFunctionId(q) == projectionRef )
 				setFunctionId(q,projectionpathRef);
 			q->typechk = TYPE_UNKNOWN;
-			OPTDEBUGprojectionpath {
-				mnstr_printf(cntxt->fdout,"#after ");
-				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
-			}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+			mnstr_printf(cntxt->fdout,"#after ");
+			printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
+#endif
 			freeInstruction(p);
 			p = q;
 			/* keep track of the longest projection path */
@@ -273,21 +269,19 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		for(j=0; j< p->retc; j++)
 		if( getModuleId(p)== algebraRef && ( getFunctionId(p)== projectionRef  || getFunctionId(p)== projectionpathRef) ){
 			pc[getArg(p,j)]= mb->stop-1;
-			OPTDEBUGprojectionpath {
-				mnstr_printf(cntxt->fdout,"#keep ");
-				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
-			}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+			mnstr_printf(cntxt->fdout,"#keep ");
+			printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+#endif
 		}
 	}
-	OPTDEBUGprojectionpath 
+#ifdef DEBUG_OPT_PROJECTIONPATH
 		mnstr_printf(cntxt->fdout,"#projection path prefixlength %d\n",maxprefixlength);
+#endif
 
 	for(; i<slimit; i++)
 		if(old[i])
 			freeInstruction(old[i]);
-	GDKfree(old);
-	GDKfree(pc);
-	if (varcnt ) GDKfree(varcnt);
 
 	/* All complete projection paths have been constructed.
 	 * There may be cases where there is a common prefix used multiple times.
@@ -307,10 +301,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			actions += OPTprojectionPrefix(cntxt, mb, maxprefixlength);
 	}
 #endif
-	OPTDEBUGprojectionpath {
-		mnstr_printf(cntxt->fdout,"#projectionpath optimizer result \n");
-		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
-	}
+#ifdef DEBUG_OPT_PROJECTIONPATH
+	mnstr_printf(cntxt->fdout,"#projectionpath optimizer result \n");
+	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
+#endif
 
     /* Defense line against incorrect plans */
     if( actions > 0){
@@ -321,6 +315,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
     /* keep all actions taken as a post block comment */
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","projectionpath",actions,GDKusec() - usec);
     newComment(mb,buf);
+wrapupall:
+	if (pc ) GDKfree(pc);
+	if (varcnt ) GDKfree(varcnt);
+	if(old) GDKfree(old);
 
 	return actions;
 }

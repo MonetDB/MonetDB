@@ -110,8 +110,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			freeInstruction(old[i]);
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 	GDKfree(old);
-	OPTDEBUGgarbageCollector{ 
-		int k;
+#ifdef DEBUG_OPT_GARBAGE
+	{ 	int k;
 		mnstr_printf(cntxt->fdout, "#Garbage collected BAT variables \n");
 		for ( k =0; k < vlimit; k++)
 		mnstr_printf(cntxt->fdout,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
@@ -121,6 +121,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 		mnstr_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
+#endif
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);

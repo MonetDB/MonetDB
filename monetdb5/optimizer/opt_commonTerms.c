@@ -37,22 +37,14 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	alias = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
 	vars = (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	if ( alias == NULL || list == NULL || vars == NULL){
-		if(alias) GDKfree(alias);
-		if(list) GDKfree(list);
-		if(vars) GDKfree(vars);
-		return 0;
-	}
+	if ( alias == NULL || list == NULL || vars == NULL)
+		goto wrapup;
 
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if ( newMalBlkStmt(mb, mb->ssize) < 0){
-		GDKfree(alias);
-		GDKfree(list);
-		GDKfree(vars);
-		return 0; 
-	}
+	if ( newMalBlkStmt(mb, mb->ssize) < 0)
+		goto wrapup;
 
 	for ( i = 0; i < limit; i++) {
 		p = old[i];
@@ -178,10 +170,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
-	GDKfree(list);
-	GDKfree(vars);
-	GDKfree(old);
-	GDKfree(alias);
     /* Defense line against incorrect plans */
     if( actions > 0){
         chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
@@ -192,5 +180,10 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","commonTerms",actions,GDKusec() - usec);
     newComment(mb,buf);
 
+wrapup:
+	if(alias) GDKfree(alias);
+	if(list) GDKfree(list);
+	if(vars) GDKfree(vars);
+	if(old) GDKfree(old);
 	return actions;
 }

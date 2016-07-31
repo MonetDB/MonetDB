@@ -16,5 +16,4 @@ mal_export int OPTisAlias(InstrPtr p);
 mal_export void OPTaliasRemap(InstrPtr p, int *alias);
 mal_export int OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGaliases  if ( optDebug & ((lng) 1 <<DEBUG_OPT_ALIASES) )
 #endif

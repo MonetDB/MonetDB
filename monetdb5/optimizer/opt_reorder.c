@@ -7,7 +7,7 @@
  */
 
 /*
- * @- The dataflow reorder
+ * The dataflow reorder
  * MAL programs are largely logical descriptions of an execution plan.
  * After the mitosis and mergetable optimizers we have a large program, which when
  * executed as is, does not necessarily benefit from the locality
@@ -309,10 +309,12 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* collect all seen sofar by backward grouping */
 			/* since p has side-effects, we should secure all seen sofar */
 			for(j=i-1; j>=start;j--) {
-				OPTDEBUGreorder if( old[j]){
+#ifdef DEBUG_OPT_REORDER
+				if( old[j]){
 					mnstr_printf(cntxt->fdout,"leftover: %d",start+1);
 					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_DEBUG);
 				}
+#endif
 				if (OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist) < 0) {
 					i = limit;	/* cause break from outer loop */
 					break;

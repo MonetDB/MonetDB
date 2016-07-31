@@ -16,6 +16,4 @@
 
 mal_export int OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGmitosis  if ( optDebug & ((lng)1 <<DEBUG_OPT_MITOSIS) )
-
 #endif

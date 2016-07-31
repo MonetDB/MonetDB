@@ -81,6 +81,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	InstrPtr *old = NULL;
 	int i, limit, slimit, actions = 0;
 
+	(void) cntxt;
 	(void) pci; /* Tell compilers that we know that we do not */
 	(void) stk; /* use these function parameters, here.       */
 
@@ -227,9 +228,9 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	GDKfree(old);
 
 	/* for statistics we return if/how many patches have been made */
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_sql_append: %d statements added\n",
-				actions);
+#ifdef DEBUG_OPT_OPTIMIZERS
+		mnstr_printf(cntxt->fdout,"#opt_sql_append: %d statements added\n", actions);
+#endif
 	return actions;
 }
 
@@ -258,9 +259,12 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng t,clk= GDKusec();
 	int actions = 0;
 
+	(void) cntxt;
 	if( p )
 		removeInstruction(mb, p);
-	OPTDEBUGsql_append mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER sql_append\n");
+#ifdef DEBUG_OPT_OPTIMIZERS
+	mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER sql_append\n");
+#endif
 	if( p && p->argc > 1 ){
 		if( getArgType(mb,p,1) != TYPE_str ||
 			getArgType(mb,p,2) != TYPE_str ||
@@ -293,12 +297,11 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 	actions= OPTsql_appendImplementation(cntxt, mb,stk,p);
 	msg= optimizerCheck(cntxt, mb, "optimizer.sql_append", actions, t=(GDKusec() - clk));
-	OPTDEBUGsql_append {
+#ifdef DEBUG_OPT_OPTIMIZERS
 		mnstr_printf(cntxt->fdout,"=FINISHED sql_append %d\n",actions);
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL );
-	}
-	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);
+#endif
 	QOTupdateStatistics("sql_append",actions,t);
 	addtoMalBlkHistory(mb);
 	return msg;

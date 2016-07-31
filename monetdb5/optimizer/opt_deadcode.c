@@ -34,10 +34,8 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if (newMalBlkStmt(mb, mb->ssize) < 0){
-		GDKfree(varused);
-		return 0;
-	}
+	if (newMalBlkStmt(mb, mb->ssize) < 0)
+		goto wrapup;
 
 	// Calculate the instructions in which a variable is used.
 	// Variables can be used multiple times in an instruction.
@@ -103,8 +101,6 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
-	GDKfree(old);
-	GDKfree(varused);
     /* Defense line against incorrect plans */
 	/* we don't create or change existing structures */
     //if( actions > 0){
@@ -116,5 +112,8 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, GDKusec() - usec);
     newComment(mb,buf);
 
+wrapup:
+	if(old) GDKfree(old);
+	if(varused) GDKfree(varused);
 	return actions;
 }
