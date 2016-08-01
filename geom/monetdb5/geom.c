@@ -8130,11 +8130,8 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
 	GEOSGeom *rGeometries = NULL;
     mbr **rMBRs = NULL;
     int *rSRIDs = NULL;
-    str msg = NULL;
-#ifdef GEOMBULK_DEBUG
-    static struct timeval start, stop;
-    unsigned long long t;
-#endif
+    str msg = MAL_SUCCEED;
+    bit* outs = NULL;
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
@@ -8159,43 +8156,78 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
+    if ( !BATcount(br) || !BATcount(bl)) {
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+        return MAL_SUCCEED;
+    }
+
 	/*iterator over the BATs*/
 	lBAT_iter = bat_iterator(bl);
 	rBAT_iter = bat_iterator(br);
 
     /*Get the Geometry for the inner BAT*/
-    rGeometries = (GEOSGeom*) GDKzalloc(sizeof(GEOSGeom) * BATcount(br));
-    rMBRs = (mbr**) GDKzalloc(sizeof(mbr*) * BATcount(br));
-    rSRIDs = (int*) GDKzalloc(sizeof(int) * BATcount(br));
+    if ( (rGeometries = (GEOSGeom*) GDKzalloc(sizeof(GEOSGeom) * BATcount(br))) == NULL) {
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    if ( (rMBRs = (mbr**) GDKzalloc(sizeof(mbr*) * BATcount(br))) == NULL) {
+        GDKfree(rGeometries);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    if ( (rSRIDs = (int*) GDKzalloc(sizeof(int) * BATcount(br))) == NULL) {
+        GDKfree(rGeometries);
+        GDKfree(rMBRs);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
     BATloop(br, pr, qr) {
         wkb *rWKB = (wkb *) BUNtail(rBAT_iter, pr);
         rGeometries[pr] = wkb2geos(rWKB);
-        if ( !rGeometries[pr] ) {
-		    BBPunfix(*lid);
-    		BBPunfix(*rid);
-    		BBPunfix(xl->batCacheid);
-    		BBPunfix(xr->batCacheid);
-    		throw(MAL, name, "wkb2geos failed");
+        if (!rGeometries[pr] ) {
+            for (j = 0; j < pr-1;j++) {
+                GEOSGeom_destroy(rGeometries[j]);
+            }
+    		msg = createException(MAL, name, "wkb2geos failed");
+            break;
         }
         rMBRs[pr] = mbrFromGeos(rGeometries[pr]);
         if (rMBRs[pr] == NULL || mbr_isnil(rMBRs[pr])) {
-            for (j = 0; j < BATcount(br);j++) {
+            for (j = 0; j < pr;j++) {
                 GEOSGeom_destroy(rGeometries[j]);
             }
-            GDKfree(rMBRs);
-            GDKfree(rSRIDs);
-            GDKfree(rGeometries);
-            BBPunfix(*lid);
-            BBPunfix(*rid);
-            BBPunfix(xl->batCacheid);
-            BBPunfix(xr->batCacheid);
-            throw(MAL, name, "Failed to create mbrFromGeos");
+            msg = createException(MAL, name, "Failed to create mbrFromGeos");
+            return msg;
         }
         rSRIDs[pr] = GEOSGetSRID(rGeometries[pr]);
     }
+    if ( (msg ==MAL_SUCCEED) && BATcount(br) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(br))) == NULL) {
+        msg = createException(MAL, name, MAL_MALLOC_FAIL);
+    }
 
-    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
-    omp_set_num_threads(OPENCL_THREADS);
+    if (msg != MAL_SUCCEED) {
+        GDKfree(rMBRs);
+        GDKfree(rSRIDs);
+        GDKfree(rGeometries);
+        BBPunfix(*lid);
+        BBPunfix(*rid);
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+        return msg;
+    }
+
     lo = bl->hseqbase;
     BATloop(bl, pl, ql) {
 		str err = NULL;
@@ -8208,110 +8240,68 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
         lGeometry = wkb2geos(lWKB);
         if ( !lGeometry ) {
-            for (j = 0; j < pl;j++) {
-                GEOSGeom_destroy(rGeometries[j]);
-            }
-	        GDKfree(rMBRs);
-            GDKfree(rSRIDs);
-            GDKfree(rGeometries);
-            BBPunfix(*lid);
-    		BBPunfix(*rid);
-    		BBPunfix(xl->batCacheid);
-    		BBPunfix(xr->batCacheid);
-    		throw(MAL, name, "wkb2geos failed");
-        }
-
-	    lMBR = mbrFromGeos(lGeometry);
-	    if (lMBR == NULL || mbr_isnil(lMBR)) {
-            for (j = 0; j < BATcount(br);j++) {
-                GEOSGeom_destroy(rGeometries[j]);
-            }
-            GDKfree(rMBRs);
-            GDKfree(rSRIDs);
-            GDKfree(rGeometries);
-            BBPunfix(*lid);
-            BBPunfix(*rid);
-            BBPunfix(xl->batCacheid);
-            BBPunfix(xr->batCacheid);
-    		throw(MAL, name, "mbrFromGeos failed");
+    		msg = createException(MAL, name, "wkb2geos failed");
+            break;
         }
         lSRID = GEOSGetSRID(lGeometry);
 
-#ifdef GEOMBULK_DEBUG
-        fprintf(stdout, "%s %d %d %d\n", name, pl, ql, BATcount(br));
-        gettimeofday(&start, NULL);
-#endif
-        for (j = 0; j < BATcount(br); j++, ro++) {
-            bit out = 0;
+	    lMBR = mbrFromGeos(lGeometry);
+	    if (lMBR == NULL || mbr_isnil(lMBR)) {
+            GEOSGeom_destroy(lGeometry);
+    		msg = createException(MAL, name, "mbrFromGeos failed");
+            break;
+        }
+
+        //for (j = 0; j < BATcount(br); j++, ro++) {
+        omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+        omp_set_num_threads(OPENCL_THREADS);
+        //#pragma omp parallel for
+        for (j = 0; j < BATcount(br); j++) {
             mbr *rMBR = NULL;
 	        GEOSGeom rGeometry = rGeometries[j];
+            outs[j] = 0;
 
-            if (!lGeometry ||!rGeometry) {
-                msg = createException(MAL, name, "One of the geometries is NULL");
-                break;
-            }
+            if (msg != MAL_SUCCEED)
+                continue;
 
-            //if (GEOSGetSRID(lGeometry) != GEOSGetSRID(rGeometry)) {
-            //if (GEOSGetSRID(lGeometry) != rSRIDs[j]) {
             if (lSRID != rSRIDs[j]) {
                 msg = createException(MAL, name, "Geometries of different SRID");
                 break;
             }
 
-            /*
-	        err = mbrOverlaps(&out, &lMBR, &rMBRs[j]);
-            if (err != MAL_SUCCEED) {
-                msg = err;
-                break;
-            } else if (out) {
-            */
             rMBR = rMBRs[j]; 
-            if ((out = !((rMBR)->ymax < (lMBR)->ymin ||
+            if ((outs[j] = !((rMBR)->ymax < (lMBR)->ymin ||
                             (rMBR)->ymin > (lMBR)->ymax ||
                             (rMBR)->xmax < (lMBR)->xmin ||
                             (rMBR)->xmin > (lMBR)->xmax))) {
-                out = 0;
-                //if ((out = GEOSIntersects(lGeometry, rGeometry)) == 2){
-                if ((out = (*func)(lGeometry, rGeometry)) == 2){
-                    msg = createException(MAL, name, "GEOSIntersects failed");
+                outs[j] = 0;
+                if ((outs[j] = (*func)(lGeometry, rGeometry)) == 2){
+                    msg = createException(MAL, name, "%s failed", name);
+                    //#pragma omp cancelregion
                     break;
                 }
-                if (out) {
-                    BUNappend(xl, &lo, FALSE);
-                    BUNappend(xr, &ro, FALSE);
-                }
             }
-	        //GDKfree(rMBR);
-        }
-
-        if (msg) {
-            if (lGeometry)
-                GEOSGeom_destroy(lGeometry);
-            for (j = 0; j < BATcount(br);j++) {
-                GEOSGeom_destroy(rGeometries[j]);
-            }
-            GDKfree(rMBRs);
-            GDKfree(rSRIDs);
-            GDKfree(rGeometries);
-            BBPunfix(*lid);
-            BBPunfix(*rid);
-            BBPunfix(xl->batCacheid);
-            BBPunfix(xr->batCacheid);
-            return msg;
         }
 
         if (lGeometry)
             GEOSGeom_destroy(lGeometry);
         GDKfree(lMBR);
+
+        if (msg != MAL_SUCCEED)
+            break;
+
+        for (j = 0; j < BATcount(br); j++ , ro++) {
+            bit out = outs[j];
+            if (out == 1) {
+                BUNappend(xl, &lo, FALSE);
+                BUNappend(xr, &ro, FALSE);
+                outs[j] = 0;
+            }
+        }
         lo++;
-
-#ifdef GEOMBULK_DEBUG
-        gettimeofday(&stop, NULL);
-        t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-        fprintf(stdout, "%s %llu ms\n", name, t);
-#endif
 	}
-
+    if (outs)
+        GDKfree(outs);
     if (rGeometries) {
         for (j = 0; j < BATcount(br);j++) {
             GEOSGeom_destroy(rGeometries[j]);
@@ -8322,17 +8312,18 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
 	    GDKfree(rMBRs);
     if (rSRIDs)
 	    GDKfree(rSRIDs);
-    /*
-    BATrmprops(xl)
-    BATsettrivprop(xl);
-    BATrmprops(xr)
-    BATsettrivprop(xr);
-    */
 	BBPunfix(*lid);
 	BBPunfix(*rid);
-	BBPkeepref(*lres = xl->batCacheid);
-	BBPkeepref(*rres = xr->batCacheid);
-	return MAL_SUCCEED;
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+    } else {
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+    }
+
+	return msg;
 }
 
 str
@@ -8358,6 +8349,7 @@ Containssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit 
 static str
 IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid)
 {
+    str msg = MAL_SUCCEED;
 	BAT *xl, *xr, *bl, *bx, *by, *bz;
 	oid lo, ro;
 	BATiter lBAT_iter, xBAT_iter, yBAT_iter, zBAT_iter;
@@ -8365,27 +8357,27 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
     BUN px = 0, py = 0, pz =0, pl = 0, qx = 0, qy = 0, qz = 0, ql = 0;
 	GEOSGeom *rGeometries = NULL;
     mbr **rMBRs = NULL;
-    int *rSRIDs = NULL;
+    bit *outs = NULL;
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.Intersects", RUNTIME_OBJECT_MISSING);
 
 	if( (bx= BATdescriptor(*xid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.Intersects", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (by= BATdescriptor(*yid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
-		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.Intersects", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (bz= BATdescriptor(*zid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
 		BBPunfix(*yid);
-		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.Intersects", RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -8394,7 +8386,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 		BBPunfix(*xid);
 		BBPunfix(*yid);
 		BBPunfix(*zid);
-		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -8404,8 +8396,18 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 		BBPunfix(*yid);
 		BBPunfix(*zid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
 	}
+
+    if ( !BATcount(bx) || !BATcount(bl)) {
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		BBPunfix(*zid);
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+        return MAL_SUCCEED;
+    }
 
 	/*iterator over the BATs*/
 	lBAT_iter = bat_iterator(bl);
@@ -8414,9 +8416,25 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 	zBAT_iter = bat_iterator(bz);
 
     /*Get the Geometry for the inner BAT*/
-    rGeometries = (GEOSGeom*) GDKzalloc(sizeof(GEOSGeom) * BATcount(bx));
-    rMBRs = (mbr**) GDKzalloc(sizeof(mbr*) * BATcount(bx));
-    rSRIDs = (int*) GDKzalloc(sizeof(int) * BATcount(bx));
+    if ( ( BATcount(bx)) && (rGeometries = (GEOSGeom*) GDKzalloc(sizeof(GEOSGeom) * BATcount(bx))) == NULL) {
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		BBPunfix(*zid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
+    }
+    if ( ( BATcount(bx)) && (rMBRs = (mbr**) GDKzalloc(sizeof(mbr*) * BATcount(bx))) == NULL) {
+        GDKfree(rGeometries);
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		BBPunfix(*zid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
+    }
     BATloop(bx, px, qx) {
         GEOSGeom rGeos = NULL;
         mbr *rMBR = NULL;
@@ -8434,55 +8452,29 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
             seq = GEOSCoordSeq_create(1, 3);
 
             if (seq == NULL) {
-                for (j = 0; j < px;j++) {
+                for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                GDKfree(rGeometries);
-                GDKfree(rMBRs);
-                GDKfree(rSRIDs);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                throw(MAL, "algebra.intersects", "GEOSCoordSeq_create failed");
+                msg = createException(MAL, "algebra.Intersects", "GEOSCoordSeq_create failed");
+                break;
             }
 
             if (!GEOSCoordSeq_setOrdinate(seq, 0, 0, *x) ||
                     !GEOSCoordSeq_setOrdinate(seq, 0, 1, *y) ||
                     !GEOSCoordSeq_setOrdinate(seq, 0, 2, *z)) {
-                for (j = 0; j < px;j++) {
+                for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                GDKfree(rGeometries);
-                GDKfree(rMBRs);
-                GDKfree(rSRIDs);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                GEOSCoordSeq_destroy(seq);
-                throw(MAL, "algebra.intersects", "GEOSCoordSeq_setOrdinate failed");
+                msg = createException(MAL, "algebra.Intersects", "GEOSCoordSeq_setOrdinate failed");
+                break;
             }
 
             if ((rGeos = GEOSGeom_createPoint(seq)) == NULL) {
-                for (j = 0; j < px;j++) {
+                for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                GDKfree(rGeometries);
-                GDKfree(rMBRs);
-                GDKfree(rSRIDs);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                GEOSCoordSeq_destroy(seq);
-                throw(MAL, "algebra.intersects", "Failed to create GEOSGeometry from the coordinates");
+                msg = createException(MAL, "algebra.Intersects", "Failed to create GEOSGeometry from the coordinates");
+                break;
             }
 
             if (*srid != int_nil)
@@ -8492,24 +8484,30 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 
         rMBR = mbrFromGeos(rGeos);
         if (rMBR == NULL || mbr_isnil(rMBR)) {
-            for (j = 0; j < BATcount(bx);j++) {
+            for (j = 0; j < px;j++) {
                 GEOSGeom_destroy(rGeometries[j]);
             }
-            GDKfree(rGeometries);
-            GDKfree(rMBRs);
-            GDKfree(rSRIDs);
-            BBPunfix(*lid);
-            BBPunfix(*xid);
-            BBPunfix(*yid);
-            BBPunfix(*zid);
-            BBPunfix(xl->batCacheid);
-            BBPunfix(xr->batCacheid);
-            throw(MAL, "algebra.intersects", "Failed to create mbrFromGeos");
+            msg = createException(MAL, "algebra.Intersects", "Failed to create mbrFromGeos");
+            break;
         }
 
         rGeometries[px] = rGeos;
         rMBRs[px] = rMBR;
-        rSRIDs[px] = GEOSGetSRID(rGeometries[px]);
+    }
+    if ( (msg ==MAL_SUCCEED) && BATcount(bx) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(bx))) == NULL) {
+        msg = createException(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
+    }
+
+    if (msg != MAL_SUCCEED) {
+        GDKfree(rGeometries);
+        GDKfree(rMBRs);
+        BBPunfix(*lid);
+        BBPunfix(*xid);
+        BBPunfix(*yid);
+        BBPunfix(*zid);
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+        return msg;
     }
 
     lo = bl->hseqbase;
@@ -8527,122 +8525,65 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 
         lGeometry = wkb2geos(lWKB);
         if ( !lGeometry ) {
-            for (j = 0; j < BATcount(bx);j++) {
-                GEOSGeom_destroy(rGeometries[j]);
-            }
-            GDKfree(rGeometries);
-            GDKfree(rMBRs);
-            GDKfree(rSRIDs);
-            BBPunfix(*lid);
-            BBPunfix(*xid);
-            BBPunfix(*yid);
-            BBPunfix(*zid);
-            BBPunfix(xl->batCacheid);
-            BBPunfix(xr->batCacheid);
-            throw(MAL, "algebra.intersects", "wkb2geos failed");
+            createException(MAL, "algebra.Intersects", "wkb2geos failed");
+            break;
+        }
+
+        if (GEOSGetSRID(lGeometry) != *srid) {
+            GEOSGeom_destroy(lGeometry);
+            msg = createException(MAL, "geom.Intersects", "Geometries of different SRID");
+            break;
         }
 
 	    lMBR = mbrFromGeos(lGeometry);
 	    if (lMBR == NULL || mbr_isnil(lMBR)) {
-            for (j = 0; j < BATcount(bx);j++) {
-                GEOSGeom_destroy(rGeometries[j]);
-            }
-            GDKfree(rGeometries);
-            GDKfree(rMBRs);
-            GDKfree(rSRIDs);
-            BBPunfix(*lid);
-            BBPunfix(*xid);
-            BBPunfix(*yid);
-            BBPunfix(*zid);
-            BBPunfix(xl->batCacheid);
-            BBPunfix(xr->batCacheid);
-            return err;
+            GEOSGeom_destroy(lGeometry);
+            msg  = createException(MAL, "algebra.Intersects", "mbrFromGeos failed");
+            break;
         }
 
-        for (j = 0; j < BATcount(bx); j++, ro++) {
-            bit out = 0;
+        //for (j = 0; j < BATcount(bx); j++, ro++) {
+        omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+        omp_set_num_threads(OPENCL_THREADS);
+        //#pragma omp parallel for
+        for (j = 0; j < BATcount(bx); j++) {
 	        GEOSGeom rGeometry = rGeometries[j];
-            if (!lGeometry ||!rGeometry) {
-                if (lGeometry)
-                    GEOSGeom_destroy(lGeometry);
-                for (j = 0; j < BATcount(bx);j++) {
-                    GEOSGeom_destroy(rGeometries[j]);
-                }
-                GDKfree(rGeometries);
-                GDKfree(rMBRs);
-                GDKfree(rSRIDs);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                throw(MAL, "geom.IntersectsXYZ", "One of the geometries is NULL");
-            }
+            outs[j] = 0;
+
+            if (msg != MAL_SUCCEED)
+                continue;
 
             //if (GEOSGetSRID(lGeometry) != GEOSGetSRID(rGeometry)) {
-            if (GEOSGetSRID(lGeometry) != rSRIDs[j]) {
-                GEOSGeom_destroy(lGeometry);
-                for (j = 0; j < BATcount(bx);j++) {
-                    GEOSGeom_destroy(rGeometries[j]);
-                }
-                GDKfree(rGeometries);
-                GDKfree(rMBRs);
-                GDKfree(rSRIDs);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                throw(MAL, "geom.IntersectsXYZ", "Geometries of different SRID");
-            }
-
-	        err = mbrOverlaps(&out, &lMBR, &rMBRs[j]);
-	        if (err != MAL_SUCCEED) {
-                GEOSGeom_destroy(lGeometry);
-                for (j = 0; j < BATcount(bx);j++) {
-                    GEOSGeom_destroy(rGeometries[j]);
-                }
-	            GDKfree(rMBRs);
-                GDKfree(rSRIDs);
-                GDKfree(rGeometries);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                return err;
-            } else if (out) {
-                out = 0;
-                if ((out = GEOSIntersects(lGeometry, rGeometry)) == 2){
-                    GEOSGeom_destroy(lGeometry);
-                    for (j = 0; j < BATcount(bx);j++) {
-                        GEOSGeom_destroy(rGeometries[j]);
-                    }
-	                GDKfree(rMBRs);
-                    GDKfree(rSRIDs);
-                    GDKfree(rGeometries);
-                    BBPunfix(*lid);
-                    BBPunfix(*xid);
-                    BBPunfix(*yid);
-                    BBPunfix(*zid);
-                    BBPunfix(xl->batCacheid);
-                    BBPunfix(xr->batCacheid);
-                    throw(MAL, "geom.IntersectsXYZ", "GEOSIntersects failed");
-                }
-                if (out) {
-                    BUNappend(xl, &lo, FALSE);
-                    BUNappend(xr, &ro, FALSE);
+	        if ( (err = mbrOverlaps(&outs[j], &lMBR, &rMBRs[j])) != MAL_SUCCEED) {
+                msg = err;
+                break;
+                //#pragma omp cancelregion
+            } else if (outs[j]) {
+                outs[j] = 0;
+                if ((outs[j] = GEOSIntersects(lGeometry, rGeometry)) == 2){
+                    msg = createException(MAL, "geom.Intersects", "GEOSIntersects failed");
+                    break;
+                    //#pragma omp cancelregion
                 }
             }
         }
         if (lGeometry)
             GEOSGeom_destroy(lGeometry);
         GDKfree(lMBR);
+        if (msg != MAL_SUCCEED)
+            break;
+        for (j = 0; j < BATcount(bx); j++ , ro++) {
+            bit out = outs[j];
+            if (out == 1) {
+                BUNappend(xl, &lo, FALSE);
+                BUNappend(xr, &ro, FALSE);
+                outs[j] = 0;
+            }
+        }
         lo++;
 	}
+    if (outs)
+        GDKfree(outs);
     if (rGeometries) {
         for (j = 0; j < BATcount(bx);j++) {
             GEOSGeom_destroy(rGeometries[j]);
@@ -8651,22 +8592,21 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
     }
     if (rMBRs)
 	    GDKfree(rMBRs);
-    if (rSRIDs)
-	    GDKfree(rSRIDs);
 
-    /*
-    BATrmprops(xl)
-    BATsettrivprop(xl);
-    BATrmprops(xr)
-    BATsettrivprop(xr);
-    */
     BBPunfix(*lid);
     BBPunfix(*xid);
     BBPunfix(*yid);
     BBPunfix(*zid);
-	BBPkeepref(*lres = xl->batCacheid);
-	BBPkeepref(*rres = xr->batCacheid);
-	return MAL_SUCCEED;
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+    } else {
+	    BBPkeepref(*lres = xl->batCacheid);
+	    BBPkeepref(*rres = xr->batCacheid);
+    }
+
+	return msg;
 }
 
 str
@@ -8682,26 +8622,29 @@ IntersectsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zi
 static str
 DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 {
+    str msg = MAL_SUCCEED;
 	BAT *xl, *xr, *bl, *br;
 	oid lo, ro;
 	BATiter lBAT_iter, rBAT_iter;
     uint32_t j = 0;
     BUN pr = 0, pl = 0, qr = 0, ql = 0;
 	GEOSGeom *rGeometries = NULL;
+    int *rSRIDs = NULL;
+    bit *outs = NULL;
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
 
 	if( (br= BATdescriptor(*rid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if ( xl == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
-		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -8709,129 +8652,133 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
 	}
 
+    if ( !BATcount(br) || !BATcount(bl)) {
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+        return MAL_SUCCEED;
+    }
 	/*iterator over the BATs*/
 	lBAT_iter = bat_iterator(bl);
 	rBAT_iter = bat_iterator(br);
 
     /*Get the Geometry for the inner BAT*/
-    rGeometries = (GEOSGeom*) GDKzalloc(sizeof(GEOSGeom) * BATcount(br));
+    if ( (rGeometries = (GEOSGeom*) GDKzalloc(sizeof(GEOSGeom) * BATcount(br))) == NULL) {
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+    }
+    if ( (rSRIDs = (int*) GDKzalloc(sizeof(int) * BATcount(br))) == NULL) {
+        GDKfree(rGeometries);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+    }
     BATloop(br, pr, qr) {
         wkb *rWKB = (wkb *) BUNtail(rBAT_iter, pr);
         rGeometries[pr] = wkb2geos(rWKB);
         if ( !rGeometries[pr] ) {
+            for (j = 0; j < pr-1;j++) {
+                GEOSGeom_destroy(rGeometries[j]);
+            }
+            GDKfree(rSRIDs);
 		    BBPunfix(*lid);
     		BBPunfix(*rid);
     		BBPunfix(xl->batCacheid);
     		BBPunfix(xr->batCacheid);
-    		throw(MAL, "algebra.intersects", "wkb2geos failed");
+    		throw(MAL, "algebra.DWithin", "wkb2geos failed");
         }
+        rSRIDs[pr] = GEOSGetSRID(rGeometries[pr]);
+    }
+    if ( (msg == MAL_SUCCEED) && BATcount(br) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(br))) == NULL) {
+        msg = createException(MAL,  "algebra.DWithin", MAL_MALLOC_FAIL);
     }
 
     lo = bl->hseqbase;
     BATloop(bl, pl, ql) {
-        str err = NULL;
         wkb *lWKB = NULL;
-        mbr *lMBR = NULL;
         GEOSGeom lGeometry = NULL;
         ro = br->hseqbase;
-
+        int lSRID = 0;
+        
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
         lGeometry = wkb2geos(lWKB);
-        if ( !lGeometry ) {
-            for (j = 0; j < pl;j++) {
-                GEOSGeom_destroy(rGeometries[j]);
-            }
-            GDKfree(rGeometries);
-            BBPunfix(*lid);
-            BBPunfix(*rid);
-            BBPunfix(xl->batCacheid);
-            BBPunfix(xr->batCacheid);
-            throw(MAL, "algebra.intersects", "wkb2geos failed");
+        if (!lGeometry ) {
+            msg = createException(MAL, "algebra.DWithin", "wkb2geos failed");
+            break;
         }
 
-        lMBR = mbrFromGeos(lGeometry);
-        if (lMBR == NULL || mbr_isnil(lMBR)) {
-            BBPunfix(*lid);
-            BBPunfix(*rid);
-            BBPunfix(xl->batCacheid);
-            BBPunfix(xr->batCacheid);
-            return err;
-        }
+        lSRID = GEOSGetSRID(lGeometry);
 
-        for (j = 0; j < BATcount(br); j++, ro++) {
-            bit out = 0;
+        //for (j = 0; j < BATcount(br); j++, ro++) {
+        omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+        omp_set_num_threads(OPENCL_THREADS);
+        //#pragma omp parallel for
+        for (j = 0; j < BATcount(br); j++) {
             double distance;
+            int res = 0;
             GEOSGeom rGeometry = rGeometries[j];
-            if (!lGeometry ||!rGeometry) {
-                if (lGeometry)
-                    GEOSGeom_destroy(lGeometry);
-                for (j = 0; j < BATcount(br);j++) {
-                    GEOSGeom_destroy(rGeometries[j]);
-                }
-                GDKfree(rGeometries);
-                BBPunfix(*lid);
-                BBPunfix(*rid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                throw(MAL, "geom.DWithin", "One of the geometries is NULL");
+            outs[j] = 0;
+
+            if (msg != MAL_SUCCEED)
+                continue;
+
+            if (lSRID != rSRIDs[j]) {
+                msg = createException(MAL, "geom.DWithin", "Geometries of different SRID");
+                //#pragma omp cancelregion
+                break;
             }
 
-            if (GEOSGetSRID(lGeometry) != GEOSGetSRID(rGeometry)) {
-                GEOSGeom_destroy(lGeometry);
-                for (j = 0; j < BATcount(br);j++) {
-                    GEOSGeom_destroy(rGeometries[j]);
-                }
-                GDKfree(rGeometries);
-                BBPunfix(*lid);
-                BBPunfix(*rid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                throw(MAL, "geom.DWithin", "Geometries of different SRID");
+            if ( (res = GEOSDistance(lGeometry, rGeometry, &distance)) == 0) {
+                msg = createException(MAL, "geom.DWithin", "GEOSDistance failed");
+                //#pragma omp cancelregion
+                break;
             }
-
-            if (!GEOSDistance(lGeometry, rGeometry, &distance)) {
-                GEOSGeom_destroy(lGeometry);
-                for (j = 0; j < BATcount(br);j++) {
-                    GEOSGeom_destroy(rGeometries[j]);
-                }
-                GDKfree(rGeometries);
-                BBPunfix(*lid);
-                BBPunfix(*rid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                throw(MAL, "geom.DWithinXYZ", "GEOSDistance failed");
-            }
-            out = (distance <= *dist);
-            if (out) {
-                BUNappend(xl, &lo, FALSE);
-                BUNappend(xr, &ro, FALSE);
-            }
+            outs[j] = (distance <= *dist);
         }
         if (lGeometry)
             GEOSGeom_destroy(lGeometry);
-        GDKfree(lMBR);
+        if (msg != MAL_SUCCEED)
+            break;
+        for (j = 0; j < BATcount(br); j++ , ro++) {
+            bit out = outs[j];
+            if (out == 1) {
+                BUNappend(xl, &lo, FALSE);
+                BUNappend(xr, &ro, FALSE);
+                outs[j] = 0;
+            }
+        }
         lo++;
     }
+    if (outs)
+        GDKfree(outs);
     if (rGeometries) {
         for (j = 0; j < BATcount(br);j++) {
             GEOSGeom_destroy(rGeometries[j]);
         }
         GDKfree(rGeometries);
     }
-    /*
-    BATrmprops(xl)
-    BATsettrivprop(xl);
-    BATrmprops(xr)
-    BATsettrivprop(xr);
-    */
+
+    if (rSRIDs)
+	    GDKfree(rSRIDs);
 	BBPunfix(*lid);
 	BBPunfix(*rid);
-	BBPkeepref(*lres = xl->batCacheid);
-	BBPkeepref(*rres = xr->batCacheid);
-	return MAL_SUCCEED;
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+    } else {
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+    }
+	return msg;
 }
 
 str
@@ -8847,32 +8794,34 @@ DWithinsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, double *dist, bat *sl, 
 static str
 DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid, double *dist)
 {
+    str msg = MAL_SUCCEED;
 	BAT *xl, *xr, *bl, *bx, *by, *bz;
 	oid lo, ro;
 	BATiter lBAT_iter, xBAT_iter, yBAT_iter, zBAT_iter;
     uint32_t j = 0;
     BUN px = 0, py = 0, pz =0, pl = 0, qx = 0, qy = 0, qz = 0, ql = 0;
 	GEOSGeom *rGeometries = NULL;
+    bit *outs = NULL;
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
 
 	if( (bx= BATdescriptor(*xid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (by= BATdescriptor(*yid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
-		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (bz= BATdescriptor(*zid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
 		BBPunfix(*yid);
-		throw(MAL, "algebra.intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -8881,7 +8830,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 		BBPunfix(*xid);
 		BBPunfix(*yid);
 		BBPunfix(*zid);
-		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -8891,8 +8840,18 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 		BBPunfix(*yid);
 		BBPunfix(*zid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.intersects", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
 	}
+
+    if ( !BATcount(bx) || !BATcount(bl)) {
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		BBPunfix(*zid);
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+        return MAL_SUCCEED;
+    }
 
 	/*iterator over the BATs*/
 	lBAT_iter = bat_iterator(bl);
@@ -8901,7 +8860,15 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 	zBAT_iter = bat_iterator(bz);
 
     /*Get the Geometry for the inner BAT*/
-    rGeometries = (GEOSGeom*) GDKzalloc(sizeof(GEOSGeom) * BATcount(bx));
+    if ( (BATcount(bx)) && (rGeometries = (GEOSGeom*) GDKzalloc(sizeof(GEOSGeom) * BATcount(bx))) == NULL) {
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		BBPunfix(*zid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+    }
     BATloop(bx, px, qx) {
         GEOSGeom rGeos = NULL;
         double *x, *y, *z;
@@ -8918,177 +8885,134 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
             seq = GEOSCoordSeq_create(1, 3);
 
             if (seq == NULL) {
-                for (j = 0; j < px;j++) {
+                GEOSCoordSeq_destroy(seq);
+                for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                GDKfree(rGeometries);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                throw(MAL, "algebra.intersects", "GEOSCoordSeq_create failed");
+                msg = createException(MAL, "algebra.DWithin", "GEOSCoordSeq_create failed");
+                break;
             }
 
             if (!GEOSCoordSeq_setOrdinate(seq, 0, 0, *x) ||
                     !GEOSCoordSeq_setOrdinate(seq, 0, 1, *y) ||
                     !GEOSCoordSeq_setOrdinate(seq, 0, 2, *z)) {
-                for (j = 0; j < px;j++) {
+                GEOSCoordSeq_destroy(seq);
+                for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                GDKfree(rGeometries);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                GEOSCoordSeq_destroy(seq);
-                throw(MAL, "algebra.intersects", "GEOSCoordSeq_setOrdinate failed");
+                msg = createException(MAL, "algebra.DWithin", "GEOSCoordSeq_setOrdinate failed");
+                break;
             }
 
             if ((rGeos = GEOSGeom_createPoint(seq)) == NULL) {
-                for (j = 0; j < px;j++) {
+                GEOSCoordSeq_destroy(seq);
+                for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                GDKfree(rGeometries);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                GEOSCoordSeq_destroy(seq);
-                throw(MAL, "algebra.intersects", "Failed to create GEOSGeometry from the coordinates");
+                msg = createException(MAL, "algebra.DWithin", "Failed to create GEOSGeometry from the coordinates");
+                break;
             }
 
             if (*srid != int_nil)
                 GEOSSetSRID(rGeos, *srid);
         }
-
         rGeometries[px] = rGeos;
+    }
+    if ( (msg ==MAL_SUCCEED) && BATcount(bx) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(bx))) == NULL) {
+        msg = createException(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+    }
+
+    if (msg != MAL_SUCCEED) {
+        GDKfree(rGeometries);
+        BBPunfix(*lid);
+        BBPunfix(*xid);
+        BBPunfix(*yid);
+        BBPunfix(*zid);
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+        return msg;
     }
 
     lo = bl->hseqbase;
     BATloop(bl, pl, ql) {
         str err = NULL;
         wkb *lWKB = NULL;
-        mbr *lMBR = NULL;
         GEOSGeom lGeometry = NULL;
         ro = bx->hseqbase;
+        int lSRID = 0;
 
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
 
         lGeometry = wkb2geos(lWKB);
         if ( !lGeometry ) {
-            for (j = 0; j < BATcount(bx);j++) {
-                GEOSGeom_destroy(rGeometries[j]);
-            }
-            GDKfree(rGeometries);
-            BBPunfix(*lid);
-            BBPunfix(*xid);
-            BBPunfix(*yid);
-            BBPunfix(*zid);
-            BBPunfix(xl->batCacheid);
-            BBPunfix(xr->batCacheid);
-            throw(MAL, "algebra.intersects", "wkb2geos failed");
+            msg = createException(MAL, "geom.DWithin", "wkb2geos failed");
+            break;
+        }
+        lSRID = GEOSGetSRID(lGeometry);
+        if (lSRID != *srid) {
+            GEOSGeom_destroy(lGeometry);
+            msg = createException(MAL, "geom.DWithinXYZ", "Geometries of different SRID");
+            break;
         }
 
-	    lMBR = mbrFromGeos(lGeometry);
-	    if (lMBR == NULL || mbr_isnil(lMBR)) {
-            for (j = 0; j < BATcount(bx);j++) {
-                GEOSGeom_destroy(rGeometries[j]);
-            }
-            GDKfree(rGeometries);
-            BBPunfix(*lid);
-            BBPunfix(*xid);
-            BBPunfix(*yid);
-            BBPunfix(*zid);
-            BBPunfix(xl->batCacheid);
-            BBPunfix(xr->batCacheid);
-            return err;
-        }
-
-        for (j = 0; j < BATcount(bx); j++, ro++) {
-            bit out = 0;
-            double distance;
+        //for (j = 0; j < BATcount(bx); j++, ro++) {
+        omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+        omp_set_num_threads(OPENCL_THREADS);
+        //#pragma omp parallel for
+        for (j = 0; j < BATcount(bx); j++) {
+            double distance = 0.0;
+            int res = 0;
             GEOSGeom rGeometry = rGeometries[j];
-            if (!lGeometry ||!rGeometry) {
-                if (lGeometry)
-                    GEOSGeom_destroy(lGeometry);
-                for (j = 0; j < BATcount(bx);j++) {
-                    GEOSGeom_destroy(rGeometries[j]);
-                }
-                GDKfree(rGeometries);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                throw(MAL, "geom.DWithinXYZ", "One of the geometries is NULL");
-            }
+            outs[j] = 0;
 
-            if (GEOSGetSRID(lGeometry) != GEOSGetSRID(rGeometry)) {
-                GEOSGeom_destroy(lGeometry);
-                for (j = 0; j < BATcount(bx);j++) {
-                    GEOSGeom_destroy(rGeometries[j]);
-                }
-                GDKfree(rGeometries);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                throw(MAL, "geom.DWithinXYZ", "Geometries of different SRID");
-            }
+            if (msg != MAL_SUCCEED)
+                continue;
 
-            if (!GEOSDistance(lGeometry, rGeometry, &distance)) {
-                GEOSGeom_destroy(lGeometry);
-                for (j = 0; j < BATcount(bx);j++) {
-                    GEOSGeom_destroy(rGeometries[j]);
-                }
-                GDKfree(rGeometries);
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(*zid);
-                BBPunfix(xl->batCacheid);
-                BBPunfix(xr->batCacheid);
-                throw(MAL, "geom.DWithinXYZ", "GEOSDistance failed");
+            if ( (res = GEOSDistance(lGeometry, rGeometry, &distance)) == 0) {
+                msg = createException(MAL, "geom.DWithinXYZ", "GEOSDistance failed");
+                break;
+                //#pragma omp cancelregion
             }
-            out = (distance <= *dist);
-            if (out) {
-                BUNappend(xl, &lo, FALSE);
-                BUNappend(xr, &ro, FALSE);
-            }
+            outs[j] = (distance <= *dist);
         }
         if (lGeometry)
             GEOSGeom_destroy(lGeometry);
-        GDKfree(lMBR);
+
+        if (msg != MAL_SUCCEED)
+            break;
+
+        for (j = 0; j < BATcount(bx); j++, ro++) {
+            bit out = outs[j];
+            if (out == 1) {
+                BUNappend(xl, &lo, FALSE);
+                BUNappend(xr, &ro, FALSE);
+                outs[j] = 0;
+            }
+        }
         lo++;
     }
+    if (outs)
+        GDKfree(outs);
     if (rGeometries) {
         for (j = 0; j < BATcount(bx);j++) {
             GEOSGeom_destroy(rGeometries[j]);
         }
         GDKfree(rGeometries);
     }
-    /*
-    BATrmprops(xl)
-    BATsettrivprop(xl);
-    BATrmprops(xr)
-    BATsettrivprop(xr);
-    */
     BBPunfix(*lid);
     BBPunfix(*xid);
     BBPunfix(*yid);
     BBPunfix(*zid);
-	BBPkeepref(*lres = xl->batCacheid);
-	BBPkeepref(*rres = xr->batCacheid);
-	return MAL_SUCCEED;
+
+    if (msg != MAL_SUCCEED) {
+	    BBPunfix(xl->batCacheid);
+    	BBPunfix(xr->batCacheid);
+    }  else {
+	    BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+    }
+
+	return msg;
 }
 
 str
@@ -9104,25 +9028,27 @@ DWithinXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, 
 static str
 ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid)
 {
+    str msg = MAL_SUCCEED;
 	BAT *xl, *xr, *bl, *bx, *by;
 	oid lo, ro;
 	BATiter lBAT_iter, xBAT_iter, yBAT_iter;
     uint32_t j = 0;
     BUN px = 0, py = 0, pl = 0, qx = 0, qy = 0, ql = 0;
 	GEOSGeom *rGeometries = NULL;
+    bit *outs = NULL;
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.contains", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.Contains", RUNTIME_OBJECT_MISSING);
 
 	if( (bx= BATdescriptor(*xid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.contains", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.Contains", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (by= BATdescriptor(*yid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
-		throw(MAL, "algebra.contains", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.Contains", RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -9130,7 +9056,7 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 		BBPunfix(*lid);
 		BBPunfix(*xid);
 		BBPunfix(*yid);
-		throw(MAL, "algebra.contains", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -9139,69 +9065,106 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 		BBPunfix(*xid);
 		BBPunfix(*yid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.contains", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
 	}
+
+    if ( !BATcount(bx) || !BATcount(bl)) {
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+        return MAL_SUCCEED;
+    }
 
 	/*iterator over the BATs*/
 	lBAT_iter = bat_iterator(bl);
 	xBAT_iter = bat_iterator(bx);
 	yBAT_iter = bat_iterator(by);
 
+    if ( (msg ==MAL_SUCCEED) &&  BATcount(bx) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(bx))) == NULL) {
+        msg = createException(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
+    }
+
     lo = bl->hseqbase;
     BATloop(bl, pl, ql) {
         str err = NULL;
         wkb *lWKB = NULL;
         vertexWKB *verts = NULL;
+        GEOSGeom lGeometry = NULL;
         ro = bx->hseqbase;
 
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
+        lGeometry = wkb2geos(lWKB);
+        if ( !lGeometry ) {
+    		msg = createException(MAL, "algebra.Contains", "wkb2geos failed");
+            break;
+        }
 
         /*TODO: check if you can jump over*/
         if (wkb_isnil(lWKB))
             continue;
        
-       /*TODO: chekc if SRID is ok*/ 
+        if ( GEOSGetSRID(lGeometry) != *srid) {
+            GEOSGeom_destroy(lGeometry);
+            msg = createException(MAL, "algebra.Contains", "Geometries of different SRID");
+            break;
+        }
+        GEOSGeom_destroy(lGeometry);
 
         if ((err = getVerts(lWKB, &verts)) != MAL_SUCCEED) {
-		    BBPunfix(*lid);
-    		BBPunfix(*xid);
-    		BBPunfix(*yid);
-    		BBPunfix(xl->batCacheid);
-            freeVerts(verts);
-		    throw(MAL, "algebra.contains", "getVerts failed");
+		    msg = createException(MAL, "algebra.Contains", "getVerts failedi:%s", err);
+            GDKfree(err);
+            break;
         }
 
-        for (j = 0; j < BATcount(bx); j++, ro++) {
-            bit out = 0;
+        //for (j = 0; j < BATcount(bx); j++, ro++) {
+        omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+        omp_set_num_threads(OPENCL_THREADS);
+        //#pragma omp parallel for
+        for (j = 0; j < BATcount(bx); j++) {
             double x, y;
+            outs[j] = 0;
             x = *(double*) BUNtail(xBAT_iter, px);
             y = *(double*) BUNtail(yBAT_iter, px);
 
-            if ( (err = pnpoly_(&out, (int) verts->nvert, verts->vert_x, verts->vert_y, verts->nholes, verts->holes_x, verts->holes_y, verts->holes_n, x, y)) != MAL_SUCCEED) {
-                BBPunfix(*lid);
-                BBPunfix(*xid);
-                BBPunfix(*yid);
-                BBPunfix(xl->batCacheid);
-                freeVerts(verts);
-                throw(MAL, "algebra.contains", "pnpoly failed");
-            }
+            if (msg != MAL_SUCCEED)
+                continue;
 
-            if (out) {
+            if ( (err = pnpoly_(&outs[j], (int) verts->nvert, verts->vert_x, verts->vert_y, verts->nholes, verts->holes_x, verts->holes_y, verts->holes_n, x, y)) != MAL_SUCCEED) {
+                msg = err;
+                //#pragma omp cancelregion
+                break;
+            }
+        }
+        if (verts)
+            freeVerts(verts);
+        if (msg != MAL_SUCCEED)
+            break;
+        for (j = 0; j < BATcount(bx); j++ , ro++) {
+            bit out = outs[j];
+            if (out == 1) {
                 BUNappend(xl, &lo, FALSE);
                 BUNappend(xr, &ro, FALSE);
+                outs[j] = 0;
             }
         }
         lo++;
-        if (verts)
-            freeVerts(verts);
 	}
 
+    if (outs)
+        GDKfree(outs);
     BBPunfix(*lid);
     BBPunfix(*xid);
     BBPunfix(*yid);
-	BBPkeepref(*lres = xl->batCacheid);
-	BBPkeepref(*rres = xr->batCacheid);
-	return MAL_SUCCEED;
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+    } else { 
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+    }
+	return msg;
 }
 
 str
