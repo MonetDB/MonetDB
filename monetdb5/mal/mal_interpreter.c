@@ -844,9 +844,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							}
 							if (garbage[i] >= 0) {
 								PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
-								bid = abs(stk->stk[garbage[i]].val.bval);
+								bid = stk->stk[garbage[i]].val.bval;
 								stk->stk[garbage[i]].val.bval = bat_nil;
-								BBPdecref(bid, TRUE);
+								if (bid != bat_nil)
+									BBPdecref(abs(bid), TRUE);
 							}
 						} else if (i < pci->retc &&
 								   0 < stk->stk[a].vtype &&
@@ -1394,12 +1395,13 @@ void garbageElement(Client cntxt, ValPtr v)
 		 * allowed during the execution of a GDK operation.
 		 * All references should be logical.
 		 */
-		bat bid = abs(v->val.bval);
+		bat bid = v->val.bval;
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
 		v->val.bval = bat_nil;
 		if (bid == bat_nil)
 			return;
+		bid = abs(bid);
 		if (!BBP_lrefs(bid))
 			return;
 		BBPdecref(bid, TRUE);
