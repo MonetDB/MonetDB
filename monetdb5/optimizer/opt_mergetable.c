@@ -713,7 +713,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		int mv1 = mats[0], i;
 		int mv2 = mats[args-1];
 		int split = subjoin_split(cntxt, p, args);
-		int nr_mv1 = split, nr_mv2 = nr_mats-split;
+		int nr_mv1 = split;
 
 		if (split < 0) {
 			GDKfree(mats);
@@ -729,8 +729,8 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 				getArg(q,1) = newTmpVariable(mb, tpe);
 				for (i = 0; i < nr_mv1; i++ )
 					getArg(q,q->retc+i) = getArg(mat[mats[i]].mi,k);
-				for (i = 0; i < nr_mv2; i++ )
-					getArg(q,q->retc+split+i) = getArg(mat[mats[i]].mi,k);
+				for (; i < nr_mats; i++ )
+					getArg(q,q->retc+i) = getArg(mat[mats[i]].mi,j);
 				pushInstruction(mb,q);
 	
 				propagatePartnr(ml, getArg(mat[mv1].mi, k), getArg(q,0), nr);
