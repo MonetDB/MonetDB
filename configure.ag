@@ -3213,6 +3213,8 @@ if test $mn_cv_have__sys_siglist = yes; then
 	AC_DEFINE(HAVE__SYS_SIGLIST, 1, [Define if you have _sys_siglist])
 fi
 
+AC_STRUCT_TIMEZONE
+
 dnl check dependencies (might need more than just SQL)
 if test x"$enable_sql" = xyes && test x"$enable_monetdb5" = x"no" ; then
 	AC_MSG_ERROR([MonetDB/SQL requires MonetDB5${disable_monetdb5:+ $disable_monetdb5}.])
