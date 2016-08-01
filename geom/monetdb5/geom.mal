@@ -909,6 +909,8 @@ function Contains(a:bat[:wkb], px:bat[:dbl], py:bat[:dbl], srid:int) :bat[:bit];
     return res;
 end Contains;
 
+command Contains(a:wkb, px:bat[:dbl], py:bat[:dbl], pz:bat[:dbl], srid:int) :bat[:bit] address wkbContains_point_bat;
+
 #only one argument should be BAT
 #command Filter(a:bat[:wkb], b:bat[:wkb]) (aFiltered:bat[:wkb], bFiltered:bat[:wkb]) address wkbFilter_bat
 #comment "Filters the points in the bats according to the MBR of the other bat.";

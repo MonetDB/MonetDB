@@ -7663,7 +7663,7 @@ static str
 getVerts(wkb *geom, vertexWKB **res)
 {
 	str err = NULL;
-	str geom_str = NULL;
+	str geom_str = NULL, str_pt = NULL;
 	char *str2, *token, *subtoken;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
     vertexWKB *verts = NULL;
@@ -7674,6 +7674,7 @@ getVerts(wkb *geom, vertexWKB **res)
 		return err;
 	}
 
+    str_pt = geom_str;
     verts = (vertexWKB*) GDKzalloc(sizeof(vertexWKB));
 
 	geom_str = strchr(geom_str, '(');
@@ -7736,6 +7737,9 @@ getVerts(wkb *geom, vertexWKB **res)
 		}
 		token = strtok_r(NULL, ")", &saveptr1);
 	}
+
+    if (str_pt)
+        GDKfree(str_pt);
 
     *res = verts;
     return MAL_SUCCEED;
@@ -7809,8 +7813,8 @@ wkbAsX3D(str *res, wkb **geomWKB, int *maxDecDigits, int *option)
 	str ret = MAL_SUCCEED;
     static const char* default_defid = ""; /* default defid */
     const char* defid = default_defid;
-	GEOSGeom geom = wkb2geos(*geomWKB);
-    int srid = (*geomWKB)->srid;
+	GEOSGeom geom = NULL;
+    int srid;
 	bit empty;
     
     //check if the geometry is empty
@@ -7824,14 +7828,24 @@ wkbAsX3D(str *res, wkb **geomWKB, int *maxDecDigits, int *option)
 		return MAL_SUCCEED;
 	}
 
+	if ( (geom = wkb2geos(*geomWKB)) == NULL) {
+			throw(MAL, "geom.wkbAsX3D", "wkb2geos failed");
+    }
+
+    srid = (*geomWKB)->srid;
     if (*option & GEOM_X3D_USE_GEOCOORDS) {
         if (srid != 4326) {
 		    throw(MAL, "geom.wkbAsX3D", "Only SRID 4326 is supported for geocoordinates.");
         }
     }
 
+
+
 	if ( (*res = geom_to_x3d_3(geom, *maxDecDigits, *option, defid)) == NULL )
 		throw(MAL, "geom.wkbAsX3D", "Failed, XML returned is NULL!!!");
+
+    GEOSGeom_destroy(geom);
+
 	return MAL_SUCCEED;
 }
 
