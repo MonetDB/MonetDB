@@ -3162,15 +3162,6 @@ AC_CHECK_FUNCS([\
 				])
 LIBS="$save_LIBS"
 
-dnl check for getopt in standard library
-AC_CHECK_HEADERS([getopt.h])
-AC_CHECK_FUNCS(getopt_long , need_getopt=, need_getopt=getopt; need_getopt=getopt1)
-if test x$need_getopt = xgetopt; then
-	AC_LIBOBJ(getopt)
-elif test x$need_getopt = xgetopt1; then
-	AC_LIBOBJ(getopt1)
-fi
-
 asctime_r3=yes
 AC_MSG_CHECKING(asctime_r3)
 AC_TRY_LINK([$ac_includes_default
