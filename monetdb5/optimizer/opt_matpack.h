@@ -19,6 +19,5 @@ mal_export int OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr st
 /* #define _DEBUG_OPT_MATPACK_ */
 #undef DEBUG_OPT_MATPACK
 #define DEBUG_OPT_MATPACK 1
-#define OPTDEBUGmatpack  if ( optDebug & ((lng) 1 <<DEBUG_OPT_MATPACK) )
 
 #endif

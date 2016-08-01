@@ -789,7 +789,8 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
-	 if (t->lang != FUNC_LANG_INT) {
+	t->sa = tr->sa;
+	if (t->lang != FUNC_LANG_INT) {
 		t->query = t->imp;
 		t->imp = NULL;
 	}
@@ -2430,6 +2431,7 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 			list_append(f->res, arg_dup(sa, n->data));
 	}
 	f->s = s;
+	f->sa = sa;
 	return f;
 }
 

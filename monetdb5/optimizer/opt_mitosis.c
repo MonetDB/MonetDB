@@ -148,7 +148,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (mito_size > 0) 
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 
-	OPTDEBUGmitosis
+#ifdef DEBUG_OPT_MITOSIS
 	mnstr_printf(cntxt->fdout, "#opt_mitosis: target is %s.%s "
 							   " with " BUNFMT " rows of size %d into " SZFMT
 								" rows/piece %d threads %d pieces"
@@ -156,6 +156,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				 getVarConstant(mb, getArg(target, 2)).val.sval,
 				 getVarConstant(mb, getArg(target, 3)).val.sval,
 				 rowcnt, row_size, m, threads, pieces, mito_parts, mito_size);
+#endif
 	if (pieces <= 1)
 		return 0;
 

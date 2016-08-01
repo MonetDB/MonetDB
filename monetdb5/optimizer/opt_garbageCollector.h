@@ -12,6 +12,4 @@
 
 mal_export int OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGgarbageCollector  if ( optDebug & ((lng) 1 <<DEBUG_OPT_GARBAGE) )
-
 #endif

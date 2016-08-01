@@ -567,6 +567,11 @@ SQLengineIntern(Client c, backend *be)
 #endif
 
 	if (c->curprg->def->stop == 1) {
+		if (mvc_status(m)) {
+			if (*m->errstr)
+				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+			goto cleanup_engine;
+		}
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}

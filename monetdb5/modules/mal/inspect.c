@@ -69,7 +69,6 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->next;
 	}
 	cntxt->nspace->next = NULL;
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","symbol","function");
 
 	return MAL_SUCCEED;
@@ -101,7 +100,6 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->next;
 	}
 	cntxt->nspace->next = NULL;
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","symbol","module");
 
 	return MAL_SUCCEED;
@@ -133,7 +131,6 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->next;
 	}
 	cntxt->nspace->next = NULL;
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","symbol","kind");
 
 	return MAL_SUCCEED;
@@ -168,7 +165,6 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->next;
 	}
 	cntxt->nspace->next = NULL;
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view"," symbol","address");
 
 	return MAL_SUCCEED;
@@ -204,7 +200,6 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->next;
 	}
 	cntxt->nspace->next = NULL;
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view"," symbol","address");
 
 	return MAL_SUCCEED;
@@ -239,7 +234,6 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		s = s->peer;
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","fcn","stmt");
 
 	return MAL_SUCCEED;
@@ -284,7 +278,6 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
@@ -330,7 +323,6 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
@@ -358,7 +350,6 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
@@ -428,7 +419,6 @@ INSPECTatom_names(bat *ret)
 	for (i = 0; i < GDKatomcnt; i++)
 		BUNappend(b, ATOMname(i), FALSE);
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","atom","name");
 
 	return MAL_SUCCEED;
@@ -484,7 +474,6 @@ INSPECTatom_sup_names(bat *ret)
 		BUNappend(b, ATOMname(k), FALSE);
 	}
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","atom","sup_name");
 
 	return MAL_SUCCEED;
@@ -505,7 +494,6 @@ INSPECTatom_sizes(bat *ret)
 		BUNappend(b, &s, FALSE);
 	}
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","atom","size");
 
 	return MAL_SUCCEED;

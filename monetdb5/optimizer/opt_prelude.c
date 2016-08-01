@@ -257,6 +257,7 @@ void optimizerInit(void)
 	attachRef = putName("attach");
 	avgRef = putName("avg");
 	arrayRef = putName("array");
+	batRef = putName("bat");
 	batcalcRef = putName("batcalc");
 	basketRef = putName("basket");
 	batstrRef = putName("batstr");
@@ -343,10 +344,12 @@ void optimizerInit(void)
 	languageRef= putName("language");
 	projectionRef = putName("projection");
 	likesubselectRef = putName("likesubselect");
-	ilikesubselectRef = putName("ilikesubselect");
 	listRef = putName("list");
 	likeRef = putName("like");
 	ilikeRef = putName("ilike");
+	ilikesubselectRef = putName("ilikesubselect");
+	likethetasubselectRef = putName("likethetasubselect");
+	ilikethetasubselectRef = putName("ilikethetasubselect");
 	not_likeRef = putName("not_like");
 	not_ilikeRef = putName("not_ilike");
 	lockRef = putName("lock");
@@ -457,25 +460,9 @@ void optimizerInit(void)
 	unpackRef = putName("unpack");
 	unpinRef = putName("unpin");
 	updateRef = putName("update");
+	userRef = putName("user");
 	subselectRef = putName("subselect");
 	thetasubselectRef = putName("thetasubselect");
-	likesubselectRef = putName("likesubselect");
-	likethetasubselectRef = putName("likethetasubselect");
-	ilikesubselectRef = putName("ilikesubselect");
-	ilikethetasubselectRef = putName("ilikethetasubselect");
 	vectorRef = putName("vector");
 	zero_or_oneRef = putName("zero_or_one");
-	userRef = putName("user");
-
-	/*
-	 * Set the optimizer debugging flag
-	 */
-	{
-		int ret;
-		str ref= GDKgetenv("opt_debug");
-		if ( ref)
-			OPTsetDebugStr(&ret,&ref);
-	}
-
-	batRef = putName("bat");
 }

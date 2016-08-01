@@ -171,8 +171,6 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 	BBPunfix(bx->batCacheid);
 	BBPunfix(by->batCacheid);
 
-	if (!(bz->batDirty&2)) 
-		BATsetaccess(bz, BAT_READ);
 	BATsetcount(bz, BATcount(bx));
 	bz->tsorted = 0;
 	bz->trevsorted = 0;
@@ -219,15 +217,11 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 			Zdecode_int_oid( x,y,z);
 	} 
 
-	if (!(bx->batDirty&2)) 
-		BATsetaccess(bx, BAT_READ);
 	BATsetcount(bx, BATcount(bz));
 	bx->tsorted = 0;
 	bx->trevsorted = 0;
 	bx->tnonil = bz->tnonil;
 
-	if (!(by->batDirty&2)) 
-		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
 	by->tsorted = 0;
 	by->trevsorted = 0;
@@ -271,8 +265,6 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 			Zdecode_int_oid_x(x,z);
 	} 
 
-	if (!(bx->batDirty&2)) 
-		BATsetaccess(bx, BAT_READ);
 	BATsetcount(bx, BATcount(bz));
 	bx->tsorted = 0;
 	bx->trevsorted = 0;
@@ -315,8 +307,6 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 			Zdecode_int_oid_y(y,z);
 	} 
 
-	if (!(by->batDirty&2)) 
-		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
 	by->tsorted = 0;
 	by->trevsorted = 0;
@@ -345,8 +335,6 @@ str ZORDslice_int(bat *r, int *xb, int *yb, int *xt, int *yt)
 		}
 	}
 
-	if (!(bn->batDirty&2)) 
-		BATsetaccess(bn, BAT_READ);
 	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }

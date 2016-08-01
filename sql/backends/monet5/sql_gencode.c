@@ -423,7 +423,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	backend *be = (backend *) c->sqlcontext;
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
-	Symbol backup = NULL;
+	Symbol backup = NULL, curPrg = NULL;
 	stmt *s;
 	int old_argc = be->mvc->argc;
 
@@ -443,7 +443,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	s = stmt_return(m->sa, s, 0);
 
 	backup = c->curprg;
-	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
+	curPrg = c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -475,12 +475,16 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	}
 
 	be->mvc->argc = 0;
-	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0) {
+		freeSymbol(curPrg);
+		if (backup)
+			c->curprg = backup;
 		return -1;
+	}
 	be->mvc->argc = old_argc;
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	if (inline_func)
-		curBlk->inlineProp =1;
+		curBlk->inlineProp = 1;
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
@@ -2848,8 +2852,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	node *n;
 
 	backup = c->curprg;
-
-	/* later we change this to a factory ? */
 	if (cq)
 		c->curprg = newFunction(userRef, putName(cq->name), FUNCTIONsymbol);
 	else
@@ -2875,8 +2877,9 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			snprintf(arg, IDLENGTH, "A%d", argc);
 			a->varid = varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
-			if (curInstr == NULL)
-				return NULL;
+			assert(curInstr);
+			if (curInstr == NULL) 
+				goto cleanup;
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb, 0);
 		}
@@ -2890,15 +2893,16 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			snprintf(arg, IDLENGTH, "A%d", argc);
 			varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
-			if (curInstr == NULL)
-				return NULL;
+			assert(curInstr);
+			if (curInstr == NULL) 
+				goto cleanup;
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb, varid);
 		}
 	}
 
-	if (backend_dumpstmt(be, mb, s, 1, 1) < 0)
-		return NULL;
+	if (backend_dumpstmt(be, mb, s, 1, 1) < 0) 
+		goto cleanup;
 
 	// Always keep the SQL query around for monitoring
 	// if (m->history || QLOGisset()) {
@@ -2917,7 +2921,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		q = newStmt(mb, querylogRef, defineRef);
 		if (q == NULL) {
 			GDKfree(tt);
-			return NULL;
+			goto cleanup;
 		}
 		q->token = REMsymbol;	// will be patched
 		setVarType(mb, getArg(q, 0), TYPE_void);
@@ -2933,6 +2937,12 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	if (backup)
 		c->curprg = backup;
 	return curPrg;
+
+cleanup:
+	freeSymbol(curPrg);
+	if (backup)
+		c->curprg = backup;
+	return NULL;
 }
 
 void
@@ -3078,10 +3088,10 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
 	mvc *m = be->mvc;
 	sql_schema *schema = m->session->schema;
-	MalBlkPtr curBlk = 0;
-	InstrPtr curInstr = 0;
+	MalBlkPtr curBlk = NULL;
+	InstrPtr curInstr = NULL;
 	Client c = be->client;
-	Symbol backup = NULL;
+	Symbol backup = NULL, curPrg = NULL;
 	stmt *s;
 	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
 	sql_allocator *sa;
@@ -3109,7 +3119,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	assert(s);
 
 	backup = c->curprg;
-	c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
+	curPrg = c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -3151,10 +3161,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			int varid = 0;
 			char *buf = GDKmalloc(MAXIDENTLEN);
 
-			if (buf == NULL) {
-				sa_destroy(sa);
-				return -1;
-			}
+			if (buf == NULL) 
+				goto cleanup;
 			if (a->name)
 				(void) snprintf(buf, MAXIDENTLEN, "A%s", a->name);
 			else
@@ -3167,10 +3175,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 	/* announce the transaction mode */
 
-	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0) {
-		sa_destroy(sa);
-		return -1;
-	}
+	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0) 
+		goto cleanup;
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
 	/* and only if we see a single return value */
@@ -3194,6 +3200,13 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (backup)
 		c->curprg = backup;
 	return 0;
+cleanup:
+	freeSymbol(curPrg);
+	sa_destroy(sa);
+	if (backup)
+		c->curprg = backup;
+	return -1;
+
 }
 
 /* TODO handle aggr */

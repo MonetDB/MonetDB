@@ -68,10 +68,10 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 */
 			if (isMultiplex(q)) {
 				if (OPTinlineMultiplex(cntxt,mb,q)) {
-					OPTDEBUGinline {
-						mnstr_printf(cntxt->fdout,"#multiplex inline function\n");
-						printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
-					}
+#ifdef DEBUG_OPT_INLINE
+					mnstr_printf(cntxt->fdout,"#multiplex inline function\n");
+					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
+#endif
 				}
 			} else
 			/*
@@ -82,11 +82,11 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				(void) inlineMALblock(mb,i,q->blk);
 				i--;
 				actions++;
-				OPTDEBUGinline {
-					mnstr_printf(cntxt->fdout,"#inline function at %d\n",i);
-					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-					printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
-				}
+#ifdef DEBUG_OPT_INLINE
+				mnstr_printf(cntxt->fdout,"#inline function at %d\n",i);
+				printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
+#endif
 			}
 		}
 	}
