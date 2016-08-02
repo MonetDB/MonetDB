@@ -147,6 +147,37 @@ AS_IF([test -f "$srcdir"/vertoo.data],
 	dft_optimize=no
 	dft_developer=no])
 
+AC_ARG_ENABLE([developer],
+	[AS_HELP_STRING([--enable-developer],
+		[enable support for MonetDB development (default=yes for development sources)])],
+	[enable_developer=$enableval],
+	[enable_developer=$dft_developer])
+
+dft_testing=auto
+AC_ARG_ENABLE([testing],
+	[AS_HELP_STRING([--enable-testing],
+		[enable support for testing (default=auto)])],
+	[enable_testing=$enableval],
+	[enable_testing=$dft_testing])
+
+dft_mapi=yes
+AC_ARG_ENABLE([mapi],
+	[AS_HELP_STRING([--enable-mapi],
+		[Enable MAPI (default=yes)])],
+	[enable_mapi=$enableval],
+	[enable_mapi=$dft_mapi])
+AM_CONDITIONAL([HAVE_MAPI], [test x$enable_mapi != xno])
+AS_VAR_IF([enable_mapi], [no],
+	[],
+	[AC_DEFINE([HAVE_MAPI], 1, [Enable MAPI])])
+
+dft_odbc=auto
+AC_ARG_ENABLE([odbc],
+	[AS_HELP_STRING([--enable-odbc],
+		[compile the MonetDB ODBC driver (default=auto)])],
+	[enable_odbc=$enableval],
+	[enable_odbc=$dft_odbc])
+
 dft_gdk=yes
 AC_ARG_ENABLE([gdk],
 	[AS_HELP_STRING([--enable-gdk],
@@ -165,27 +196,6 @@ AS_CASE(["$enable_gdk-$enable_monetdb5"],
 	[no-auto], [
 		enable_monetdb5=no
 		disable_monetdb5="(MonetDB5 requires GDK.)"])
-
-dft_fits=auto
-AC_ARG_ENABLE([fits],
-	[AS_HELP_STRING([--enable-fits],
-		[enable support for FITS (default=auto)])],
-	[enable_fits=$enableval],
-	[enable_fits=$dft_fits])
-
-dft_netcdf=auto
-AC_ARG_ENABLE([netcdf],
-	[AS_HELP_STRING([--enable-netcdf],
-		[enable support for netcdf (default=auto)])],
-	[enable_netcdf=$enableval],
-	[enable_netcdf=$dft_netcdf])
-
-dft_lidar=auto
-AC_ARG_ENABLE([lidar],
-	[AS_HELP_STRING([--enable-lidar],
-		[enable support for LiDAR data (default=auto)])],
-	[have_lidar=$enableval],
-	[have_lidar=$dft_lidar])
 
 dft_sql=yes
 AC_ARG_ENABLE([sql],
@@ -213,6 +223,27 @@ AS_CASE(["$enable_monetdb5-$enable_geom"],
 	enable_geom=no
 	disable_geom="(geom module requires MonetDB5)"])
 
+dft_fits=auto
+AC_ARG_ENABLE([fits],
+	[AS_HELP_STRING([--enable-fits],
+		[enable support for FITS (default=auto)])],
+	[enable_fits=$enableval],
+	[enable_fits=$dft_fits])
+
+dft_netcdf=auto
+AC_ARG_ENABLE([netcdf],
+	[AS_HELP_STRING([--enable-netcdf],
+		[enable support for netcdf (default=auto)])],
+	[enable_netcdf=$enableval],
+	[enable_netcdf=$dft_netcdf])
+
+dft_lidar=auto
+AC_ARG_ENABLE([lidar],
+	[AS_HELP_STRING([--enable-lidar],
+		[enable support for LiDAR data (default=auto)])],
+	[have_lidar=$enableval],
+	[have_lidar=$dft_lidar])
+
 dft_shp=auto
 AC_ARG_ENABLE([shp],
 	[AS_HELP_STRING([--enable-shp],
@@ -226,15 +257,12 @@ AS_CASE(["$enable_geom-$have_shp"],
 	have_shp=no
 	disable_shp="(ESRI Shapefile vault requires the geom module)"])
 
-dft_mapi=yes
-AC_ARG_ENABLE([mapi],
-	[AS_HELP_STRING([--enable-mapi],
-		[Enable MAPI (default=yes)])],
-	[enable_mapi=$enableval],
-	[enable_mapi=$dft_mapi])
-AM_CONDITIONAL([HAVE_MAPI], [test x$enable_mapi != xno])
-AS_VAR_IF([enable_mapi], [no], [],
-	[AC_DEFINE([HAVE_MAPI], 1, [Enable MAPI])])
+dft_gsl=auto
+AC_ARG_ENABLE([gsl],
+	[AS_HELP_STRING([--enable-gsl],
+		[enable support for GSL (default=auto)])],
+	[enable_gsl=$enableval],
+	[enable_gsl=$dft_gsl])
 
 dft_embedded=no
 AC_ARG_ENABLE([embedded],
@@ -256,13 +284,6 @@ AM_CONDITIONAL([HAVE_EMBEDDED_R], [test x$enable_embedded_r != xno])
 AS_VAR_IF([enable_embedded_r], [no], [],
 	[AC_DEFINE([HAVE_EMBEDDED_R], 1, [Support for MonetDB as a library for R])])
 
-dft_gsl=auto
-AC_ARG_ENABLE([gsl],
-	[AS_HELP_STRING([--enable-gsl],
-		[enable support for GSL (default=auto)])],
-	[enable_gsl=$enableval],
-	[enable_gsl=$dft_gsl])
-
 dft_rintegration=auto
 AC_ARG_ENABLE([rintegration],
 	[AS_HELP_STRING([--enable-rintegration],
@@ -276,33 +297,6 @@ AC_ARG_ENABLE([pyintegration],
 		[enable support for Python integration into MonetDB (default=auto)])],
 	[enable_pyintegration=$enableval],
 	[enable_pyintegration=$dft_pyintegration])
-
-dft_odbc=auto
-AC_ARG_ENABLE([odbc],
-	[AS_HELP_STRING([--enable-odbc],
-		[compile the MonetDB ODBC driver (default=auto)])],
-	[enable_odbc=$enableval],
-	[enable_odbc=$dft_odbc])
-
-dft_testing=auto
-AC_ARG_ENABLE([testing],
-	[AS_HELP_STRING([--enable-testing],
-		[enable support for testing (default=auto)])],
-	[enable_testing=$enableval],
-	[enable_testing=$dft_testing])
-
-AC_ARG_ENABLE([developer],
-	[AS_HELP_STRING([--enable-developer],
-		[enable support for MonetDB development (default=yes for development sources)])],
-	[enable_developer=$enableval],
-	[enable_developer=$dft_developer])
-
-dft_sanitizer=no
-AC_ARG_ENABLE([sanitizer],
-	[AS_HELP_STRING([--enable-sanitizer],
-		[enable support for the GCC address sanitizer (default=no)])],
-	[enable_sanitizer=$enableval],
-	[enable_sanitizer=$dft_sanitizer])
 
 dnl  The console is a direct client hooked onto the kernel with full
 dnl  administrative privileges, bypassing any security checks.  It is
@@ -337,9 +331,62 @@ AS_CASE([$enable_control],
 	[yes|auto], [],
 	[enable_control=no])
 
+dft_int128=auto
+AC_ARG_ENABLE([int128],
+	[AS_HELP_STRING([--enable-int128],
+		[enable support for 128-bit integers (default=auto)])],
+	[enable_int128=$enableval],
+	[enable_int128=$dft_int128])
+
+AC_ARG_ENABLE([debug],
+	[AS_HELP_STRING([--enable-debug],
+		[enable full debugging (default=yes for development sources)])],
+	[enable_debug=$enableval],
+	[enable_debug=def_$dft_debug])
+
+AC_ARG_ENABLE([assert],
+	[AS_HELP_STRING([--enable-assert],
+		[enable assertions in the code (default=yes for development sources)])],
+	[enable_assert=$enableval],
+	[enable_assert=def_$dft_assert])
+
+AC_ARG_ENABLE([optimize],
+	[AS_HELP_STRING([--enable-optimize],
+		[enable extra optimization (default=no)])],
+	[enable_optimize=$enableval],
+	[enable_optimize=def_$dft_optimize])
+
+AC_ARG_ENABLE([strict],
+	[AS_HELP_STRING([--enable-strict],
+		[enable strict compiler flags (default=yes for development sources)])],
+	[enable_strict=$enableval],
+	[enable_strict=$dft_strict])
+
+dft_sanitizer=no
+AC_ARG_ENABLE([sanitizer],
+	[AS_HELP_STRING([--enable-sanitizer],
+		[enable support for the GCC address sanitizer (default=no)])],
+	[enable_sanitizer=$enableval],
+	[enable_sanitizer=$dft_sanitizer])
+
 AC_ARG_ENABLE([static-analysis],
 	[AS_HELP_STRING([--enable-static-analysis], [configure for static code analysis (use only if you know what you are doing)])],
 	AC_DEFINE([STATIC_CODE_ANALYSIS], 1, [compiling for static code analysis]))
+
+need_profile=no
+dft_profile=$need_profile
+AC_ARG_ENABLE([profile],
+	[AS_HELP_STRING([--enable-profile], [enable profiling (default=no)])],
+	[enable_profile=$enableval],
+	[enable_profile=def_$dft_profile])
+
+need_instrument=no
+dft_instrument=$need_instrument
+AC_ARG_ENABLE([instrument],
+	[AS_HELP_STRING([--enable-instrument],
+		[enable instrument (default=no)])],
+	[enable_instrument=$enableval],
+	[enable_instrument=def_$dft_instrument])
 
 dnl  RIPEMD160 is patent free, academic and European, but unfortunately
 dnl  can't use it by default, as that would exclude JDBC usage (Java
@@ -355,7 +402,8 @@ AS_CASE(["$password_backend"],
 	[MD5|SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512],
 		[MONETDB5_PASSWDHASH="$password_backend"],
 	[AC_MSG_ERROR(['$password_backend' invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
-AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH], ["$MONETDB5_PASSWDHASH"], [The used password hash algorithm])
+AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH], ["$MONETDB5_PASSWDHASH"],
+	[The used password hash algorithm])
 AC_SUBST([MONETDB5_PASSWDHASH])
 
 AC_DISABLE_STATIC
@@ -546,12 +594,6 @@ AC_DEFUN([MCHECK_ADD_FLAG], [
 	eval "test \"x\$${cache_var}\" = xyes && X_CFLAGS=\"${X_CFLAGS} $1\""
 ])
 
-dnl  --enable-strict
-AC_ARG_ENABLE([strict],
-	[AS_HELP_STRING([--enable-strict],
-		[enable strict compiler flags (default=yes for development sources)])],
-	[enable_strict=$enableval],
-	[enable_strict=$dft_strict])
 dnl  Set compiler switches.
 dnl  The idea/goal is to be as strict as possible, i.e., enable preferably
 dnl  *all* warnings and make them errors. This should help keep the code
@@ -771,39 +813,6 @@ AC_ARG_WITH([anttranslatepath],
 		[program to translate paths from configure-time format to a format that can be given to the ant program (default: 'readlink -f' or value for --with-translatepath)])],
 	[anttranslatepath="$withval"])
 AC_SUBST([anttranslatepath])
-
-AC_ARG_ENABLE([debug],
-	[AS_HELP_STRING([--enable-debug],
-		[enable full debugging (default=yes for development sources)])],
-	[enable_debug=$enableval],
-	[enable_debug=def_$dft_debug])
-
-AC_ARG_ENABLE([assert],
-	[AS_HELP_STRING([--enable-assert],
-		[enable assertions in the code (default=yes for development sources)])],
-	[enable_assert=$enableval],
-	[enable_assert=def_$dft_assert])
-
-AC_ARG_ENABLE([optimize],
-	[AS_HELP_STRING([--enable-optimize],
-		[enable extra optimization (default=no)])],
-	[enable_optimize=$enableval],
-	[enable_optimize=def_$dft_optimize])
-
-need_profile=no
-dft_profile=$need_profile
-AC_ARG_ENABLE([profile],
-	[AS_HELP_STRING([--enable-profile], [enable profiling (default=no)])],
-	[enable_profile=$enableval],
-	[enable_profile=def_$dft_profile])
-
-need_instrument=no
-dft_instrument=$need_instrument
-AC_ARG_ENABLE([instrument],
-	[AS_HELP_STRING([--enable-instrument],
-		[enable instrument (default=no)])],
-	[enable_instrument=$enableval],
-	[enable_instrument=def_$dft_instrument])
 
 dnl  check whether no (explictly chosen) mutual exclusive combinations
 dnl  were made, compatability matrix:
@@ -2626,13 +2635,6 @@ AC_TYPE_PID_T
 AC_TYPE_OFF_T
 
 AC_CHECK_TYPES([__int64, long long])
-
-dft_int128=auto
-AC_ARG_ENABLE([int128],
-	[AS_HELP_STRING([--enable-int128],
-		[enable support for 128-bit integers (default=auto)])],
-	[enable_int128=$enableval],
-	[enable_int128=$dft_int128])
 
 AS_CASE(["$enable_int128"],
 [yes|auto], [
