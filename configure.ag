@@ -1771,7 +1771,9 @@ AS_VAR_IF([have_readline], [no],
 	 AC_CHECK_LIB([readline], [rl_completion_matches],
 		[AC_MSG_CHECKING([whether rl_completion_func_t exists])
 		 AC_COMPILE_IFELSE(
-		 	[AC_LANG_PROGRAM([[@%:@include <readline/readline.h>]],
+		 	[AC_LANG_PROGRAM(
+				[[$ac_includes_default
+				  @%:@include <readline/readline.h>]],
 		 		[[rl_completion_func_t *func = NULL;]])],
 			[AC_MSG_RESULT([yes])],
 			[AS_VAR_IF([have_readline], [auto],
