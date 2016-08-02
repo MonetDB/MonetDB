@@ -12,6 +12,7 @@
  */
 
 #include "geom.h"
+#define GEOMBULK_DEBUG 1
 
 int TYPE_mbr;
 
@@ -8132,6 +8133,10 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
     int *rSRIDs = NULL;
     str msg = MAL_SUCCEED;
     bit* outs = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
@@ -8193,31 +8198,43 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
 		BBPunfix(xr->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
     }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
     BATloop(br, pr, qr) {
         wkb *rWKB = (wkb *) BUNtail(rBAT_iter, pr);
+
+        if (msg != MAL_SUCCEED)
+            continue;
+
         rGeometries[pr] = wkb2geos(rWKB);
         if (!rGeometries[pr] ) {
-            for (j = 0; j < pr-1;j++) {
-                GEOSGeom_destroy(rGeometries[j]);
-            }
     		msg = createException(MAL, name, "wkb2geos failed");
             break;
         }
         rMBRs[pr] = mbrFromGeos(rGeometries[pr]);
-        if (rMBRs[pr] == NULL || mbr_isnil(rMBRs[pr])) {
-            for (j = 0; j < pr;j++) {
-                GEOSGeom_destroy(rGeometries[j]);
-            }
+        //if (rMBRs[pr] == NULL || mbr_isnil(rMBRs[pr])) {
+        if (mbr_isnil(rMBRs[pr])) {
             msg = createException(MAL, name, "Failed to create mbrFromGeos");
-            return msg;
+            break;
         }
-        rSRIDs[pr] = GEOSGetSRID(rGeometries[pr]);
+        //rSRIDs[pr] = GEOSGetSRID(rGeometries[pr]);
+        rSRIDs[pr] = rWKB->srid;
     }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s first BATloop %llu ms\n", name, t);
+#endif
     if ( (msg ==MAL_SUCCEED) && BATcount(br) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(br))) == NULL) {
         msg = createException(MAL, name, MAL_MALLOC_FAIL);
     }
 
     if (msg != MAL_SUCCEED) {
+        for (j = 0; j < pr;j++) {
+            if (rGeometries[j])
+                GEOSGeom_destroy(rGeometries[j]);
+        }
         GDKfree(rMBRs);
         GDKfree(rSRIDs);
         GDKfree(rGeometries);
@@ -8228,6 +8245,9 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
         return msg;
     }
 
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
     lo = bl->hseqbase;
     BATloop(bl, pl, ql) {
 		str err = NULL;
@@ -8253,9 +8273,11 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
         }
 
         //for (j = 0; j < BATcount(br); j++, ro++) {
+#ifdef OPENMP
         omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
         omp_set_num_threads(OPENCL_THREADS);
-        //#pragma omp parallel for
+        #pragma omp parallel for
+#endif
         for (j = 0; j < BATcount(br); j++) {
             mbr *rMBR = NULL;
 	        GEOSGeom rGeometry = rGeometries[j];
@@ -8266,7 +8288,11 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
 
             if (lSRID != rSRIDs[j]) {
                 msg = createException(MAL, name, "Geometries of different SRID");
+#ifdef OPENMP
+                #pragma omp cancelregion
+#else
                 break;
+#endif
             }
 
             rMBR = rMBRs[j]; 
@@ -8277,8 +8303,11 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
                 outs[j] = 0;
                 if ((outs[j] = (*func)(lGeometry, rGeometry)) == 2){
                     msg = createException(MAL, name, "%s failed", name);
-                    //#pragma omp cancelregion
+#ifdef OPENMP
+                    #pragma omp cancelregion
+#else
                     break;
+#endif
                 }
             }
         }
@@ -8300,6 +8329,11 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
         }
         lo++;
 	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s second BATloop %llu ms\n", name, t);
+#endif
     if (outs)
         GDKfree(outs);
     if (rGeometries) {
@@ -8358,6 +8392,10 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 	GEOSGeom *rGeometries = NULL;
     mbr **rMBRs = NULL;
     bit *outs = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
 		throw(MAL, "algebra.Intersects", RUNTIME_OBJECT_MISSING);
@@ -8435,6 +8473,9 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 		BBPunfix(xr->batCacheid);
 		throw(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
     }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
     BATloop(bx, px, qx) {
         GEOSGeom rGeos = NULL;
         mbr *rMBR = NULL;
@@ -8494,6 +8535,11 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
         rGeometries[px] = rGeos;
         rMBRs[px] = rMBR;
     }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "IntersectsXYZ first BATloop %llu ms\n", t);
+#endif
     if ( (msg ==MAL_SUCCEED) && BATcount(bx) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(bx))) == NULL) {
         msg = createException(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
     }
@@ -8511,6 +8557,9 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
     }
 
     lo = bl->hseqbase;
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
     BATloop(bl, pl, ql) {
         str err = NULL;
         wkb *lWKB = NULL;
@@ -8543,9 +8592,11 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
         }
 
         //for (j = 0; j < BATcount(bx); j++, ro++) {
+#ifdef OPENMP
         omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
         omp_set_num_threads(OPENCL_THREADS);
-        //#pragma omp parallel for
+        #pragma omp parallel for
+#endif
         for (j = 0; j < BATcount(bx); j++) {
 	        GEOSGeom rGeometry = rGeometries[j];
             outs[j] = 0;
@@ -8556,14 +8607,20 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
             //if (GEOSGetSRID(lGeometry) != GEOSGetSRID(rGeometry)) {
 	        if ( (err = mbrOverlaps(&outs[j], &lMBR, &rMBRs[j])) != MAL_SUCCEED) {
                 msg = err;
+#ifdef OPENMP
+                #pragma omp cancelregion
+#else
                 break;
-                //#pragma omp cancelregion
+#endif
             } else if (outs[j]) {
                 outs[j] = 0;
                 if ((outs[j] = GEOSIntersects(lGeometry, rGeometry)) == 2){
                     msg = createException(MAL, "geom.Intersects", "GEOSIntersects failed");
+#ifdef OPENMP
+                    #pragma omp cancelregion
+#else
                     break;
-                    //#pragma omp cancelregion
+#endif
                 }
             }
         }
@@ -8582,6 +8639,11 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
         }
         lo++;
 	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "IntersectsXYZ second BATloop %llu ms\n", t);
+#endif
     if (outs)
         GDKfree(outs);
     if (rGeometries) {
@@ -8631,6 +8693,10 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 	GEOSGeom *rGeometries = NULL;
     int *rSRIDs = NULL;
     bit *outs = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
 		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
@@ -8682,6 +8748,9 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 		BBPunfix(xr->batCacheid);
 		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
     }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
     BATloop(br, pr, qr) {
         wkb *rWKB = (wkb *) BUNtail(rBAT_iter, pr);
         rGeometries[pr] = wkb2geos(rWKB);
@@ -8698,10 +8767,18 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
         }
         rSRIDs[pr] = GEOSGetSRID(rGeometries[pr]);
     }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "DWithin first BATloop %llu ms\n", t);
+#endif
     if ( (msg == MAL_SUCCEED) && BATcount(br) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(br))) == NULL) {
         msg = createException(MAL,  "algebra.DWithin", MAL_MALLOC_FAIL);
     }
 
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
     lo = bl->hseqbase;
     BATloop(bl, pl, ql) {
         wkb *lWKB = NULL;
@@ -8719,9 +8796,11 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
         lSRID = GEOSGetSRID(lGeometry);
 
         //for (j = 0; j < BATcount(br); j++, ro++) {
+#ifdef OPENMP
         omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
         omp_set_num_threads(OPENCL_THREADS);
-        //#pragma omp parallel for
+        #pragma omp parallel for
+#endif
         for (j = 0; j < BATcount(br); j++) {
             double distance;
             int res = 0;
@@ -8733,14 +8812,20 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 
             if (lSRID != rSRIDs[j]) {
                 msg = createException(MAL, "geom.DWithin", "Geometries of different SRID");
-                //#pragma omp cancelregion
+#ifdef OPENMP
+                #pragma omp cancelregion
+#else
                 break;
+#endif
             }
 
             if ( (res = GEOSDistance(lGeometry, rGeometry, &distance)) == 0) {
                 msg = createException(MAL, "geom.DWithin", "GEOSDistance failed");
-                //#pragma omp cancelregion
+#ifdef OPENMP
+                #pragma omp cancelregion
+#else
                 break;
+#endif
             }
             outs[j] = (distance <= *dist);
         }
@@ -8758,6 +8843,11 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
         }
         lo++;
     }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "DWithin second BATloop %llu ms\n", t);
+#endif
     if (outs)
         GDKfree(outs);
     if (rGeometries) {
@@ -8802,6 +8892,10 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
     BUN px = 0, py = 0, pz =0, pl = 0, qx = 0, qy = 0, qz = 0, ql = 0;
 	GEOSGeom *rGeometries = NULL;
     bit *outs = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
 		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
@@ -8869,6 +8963,9 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 		BBPunfix(xr->batCacheid);
 		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
     }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
     BATloop(bx, px, qx) {
         GEOSGeom rGeos = NULL;
         double *x, *y, *z;
@@ -8918,6 +9015,11 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
         }
         rGeometries[px] = rGeos;
     }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "DWithinXYZ first BATloop %llu ms\n", t);
+#endif
     if ( (msg ==MAL_SUCCEED) && BATcount(bx) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(bx))) == NULL) {
         msg = createException(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
     }
@@ -8934,6 +9036,9 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
     }
 
     lo = bl->hseqbase;
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
     BATloop(bl, pl, ql) {
         str err = NULL;
         wkb *lWKB = NULL;
@@ -8956,9 +9061,11 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
         }
 
         //for (j = 0; j < BATcount(bx); j++, ro++) {
+#ifdef OPENMP                
         omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
         omp_set_num_threads(OPENCL_THREADS);
-        //#pragma omp parallel for
+        #pragma omp parallel for
+#endif
         for (j = 0; j < BATcount(bx); j++) {
             double distance = 0.0;
             int res = 0;
@@ -8970,8 +9077,11 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 
             if ( (res = GEOSDistance(lGeometry, rGeometry, &distance)) == 0) {
                 msg = createException(MAL, "geom.DWithinXYZ", "GEOSDistance failed");
+#ifdef OPENMP                
+                #pragma omp cancelregion
+#else
                 break;
-                //#pragma omp cancelregion
+#endif
             }
             outs[j] = (distance <= *dist);
         }
@@ -8991,6 +9101,11 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
         }
         lo++;
     }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "DWithinXYZ second BATloop %llu ms\n", t);
+#endif
     if (outs)
         GDKfree(outs);
     if (rGeometries) {
@@ -9036,6 +9151,10 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
     BUN px = 0, py = 0, pl = 0, qx = 0, qy = 0, ql = 0;
 	GEOSGeom *rGeometries = NULL;
     bit *outs = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
 		throw(MAL, "algebra.Contains", RUNTIME_OBJECT_MISSING);
@@ -9087,6 +9206,9 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
     }
 
     lo = bl->hseqbase;
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
     BATloop(bl, pl, ql) {
         str err = NULL;
         wkb *lWKB = NULL;
@@ -9119,9 +9241,11 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
         }
 
         //for (j = 0; j < BATcount(bx); j++, ro++) {
+#ifdef OPENMP
         omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
         omp_set_num_threads(OPENCL_THREADS);
-        //#pragma omp parallel for
+        #pragma omp parallel for
+#endif
         for (j = 0; j < BATcount(bx); j++) {
             double x, y;
             outs[j] = 0;
@@ -9133,8 +9257,11 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 
             if ( (err = pnpoly_(&outs[j], (int) verts->nvert, verts->vert_x, verts->vert_y, verts->nholes, verts->holes_x, verts->holes_y, verts->holes_n, x, y)) != MAL_SUCCEED) {
                 msg = err;
-                //#pragma omp cancelregion
+#ifdef OPENMP
+                #pragma omp cancelregion
+#else
                 break;
+#endif
             }
         }
         if (verts)
@@ -9151,6 +9278,11 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
         }
         lo++;
 	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "ContainsXYZ first BATloop %llu ms\n", t);
+#endif
 
     if (outs)
         GDKfree(outs);
