@@ -847,7 +847,7 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 	GEOSCoordSeq gcs_new;
 	unsigned int pointsNum = 0, additionalPoints = 0, i = 0, j = 0;
 	double xl = 0.0, yl = 0.0, zl = 0.0;
-	double *xCoords_org, *yCoords_org, *zCoords_org;
+	double *xCoords_org = NULL, *yCoords_org = NULL, *zCoords_org = NULL;
 	str err = MAL_SUCCEED;
 
 	//get the number of coordinates the geometry has
@@ -872,7 +872,7 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 		*outGeometry = NULL;
 		throw(MAL, "geom.Segmentize", "Could not allocate memory for %d double values", pointsNum);
 	}
-	if ((zCoords_org = GDKmalloc(pointsNum * sizeof(double))) == NULL) {
+	if ((zCoords_org = GDKzalloc(pointsNum * sizeof(double))) == NULL) {
 		GDKfree(xCoords_org);
 		GDKfree(yCoords_org);
 		*outGeometry = NULL;
@@ -894,7 +894,8 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 
 	xl = xCoords_org[0];
 	yl = yCoords_org[0];
-	zl = zCoords_org[0];
+    if (coordinatesNum > 2)
+    	zl = zCoords_org[0];
 
 	//check how many new points should be added
 	for (i = 1; i < pointsNum; i++) {
@@ -914,18 +915,21 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 		}
 
 		//compute the distance of the current point to the last added one
-		while ((dist = sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2) + pow(zl - zCoords_org[i], 2))) > sz) {
-//fprintf(stderr, "OLD : (%f, %f, %f) vs (%f, %f, %f) = %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
+		//while ((dist = sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2) + pow(zl - zCoords_org[i], 2))) > sz) {
+		while ((dist = (coordinatesNum > 2) ? sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2) + pow(zl - zCoords_org[i], 2)) : sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2))) > sz ) {
+            //fprintf(stderr, "OLD : (%f, %f, %f) vs (%f, %f, %f) = %f and %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist, sz);
 			additionalPoints++;
 			//compute the point
 			xl = xl + (xCoords_org[i] - xl) * sz / dist;
 			yl = yl + (yCoords_org[i] - yl) * sz / dist;
-			zl = zl + (zCoords_org[i] - zl) * sz / dist;
+            if (coordinatesNum > 2)
+			    zl = zl + (zCoords_org[i] - zl) * sz / dist;
 		}
 
 		xl = xCoords_org[i];
-		yl = yCoords_org[i];
-		zl = zCoords_org[i];
+        yl = yCoords_org[i];
+        if (coordinatesNum > 2)
+            zl = zCoords_org[i];
 
 	}
 //fprintf(stderr, "Adding %d\n", additionalPoints);
@@ -953,21 +957,24 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 	}
 
 	xl = xCoords_org[0];
-	yl = yCoords_org[0];
-	zl = zCoords_org[0];
+    yl = yCoords_org[0];
+    if (coordinatesNum > 2)
+        zl = zCoords_org[0];
 
 	//check and add the rest of the points
 	for (i = 1; i < pointsNum; i++) {
 		//compute the distance of the current point to the last added one
 		double dist;
-		while ((dist = sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2) + pow(zl - zCoords_org[i], 2))) > sz) {
-//fprintf(stderr, "OLD : (%f, %f, %f) vs (%f, %f, %f) = %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
+		//while ((dist = sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2) + pow(zl - zCoords_org[i], 2))) > sz) {
+		while ((dist = (coordinatesNum > 2) ? sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2) + pow(zl - zCoords_org[i], 2)) : sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2))) > sz ) {
+            //fprintf(stderr, "OLD : (%f, %f, %f) vs (%f, %f, %f) = %f and sz%f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist, sz);
 			assert(j < additionalPoints);
 
 			//compute intermediate point
 			xl = xl + (xCoords_org[i] - xl) * sz / dist;
-			yl = yl + (yCoords_org[i] - yl) * sz / dist;
-			zl = zl + (zCoords_org[i] - zl) * sz / dist;
+            yl = yl + (yCoords_org[i] - yl) * sz / dist;
+            if (coordinatesNum > 2)
+                zl = zl + (zCoords_org[i] - zl) * sz / dist;
 
 			//add the intermediate point
 			if (!GEOSCoordSeq_setX(gcs_new, i + j, xl)) {
@@ -1007,8 +1014,9 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 		}
 
 		xl = xCoords_org[i];
-		yl = yCoords_org[i];
-		zl = zCoords_org[i];
+        yl = yCoords_org[i];
+        if (coordinatesNum > 2)
+            zl = zCoords_org[i];
 
 	}
 
