@@ -23,7 +23,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int actions = 0;
 	int limit, slimit;
 	int *alias;
-	InstrPtr *old;
+	InstrPtr *old = NULL;
 	int *list;	
 	/* link all final constant expressions in a list */
 	/* it will help to find duplicate sql.bind calls */
@@ -43,8 +43,10 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if ( newMalBlkStmt(mb, mb->ssize) < 0)
+	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
+		old = NULL;
 		goto wrapup;
+	}
 
 	for ( i = 0; i < limit; i++) {
 		p = old[i];

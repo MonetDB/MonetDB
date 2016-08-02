@@ -187,6 +187,11 @@
 /* Define to 1 if you have the `getaddrinfo' function. */
 #define HAVE_GETADDRINFO 1
 
+/* Define to 1 if you have the `GetDynamicTimeZoneInformation' function. */
+#ifdef _MSC_VER
+#define HAVE_GETDYNAMICTIMEZONEINFORMATION 1
+#endif
+
 /* Define to 1 if you have the `getexecname' function. */
 /* #undef HAVE_GETEXECNAME */
 
@@ -204,11 +209,6 @@
 
 /* Define to 1 if you have the `gettimeofday' function. */
 /* #undef HAVE_GETTIMEOFDAY */
-
-/* Define to 1 if you have the `_get_timezone' function. */
-#ifdef _MSC_VER
-#define HAVE__GET_TIMEZONE 1
-#endif
 
 /* Define to 1 if you have the `getuid' function. */
 /* #undef HAVE_GETUID */
