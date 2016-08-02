@@ -1449,29 +1449,30 @@ AC_ARG_WITH([java],
 	[have_java=$org_have_java])
 JPATH=$PATH
 AS_CASE([$have_java],
-[yes|no|auto], [],
-[
-	JPATH="$withval/bin:$JPATH"])
+	[yes|no|auto], [],
+	[JPATH="$withval/bin:$JPATH"])
 AS_VAR_IF([have_java], [no], [], [
 	AC_PATH_PROG([JAVA], [java], [], [$JPATH])
-	AS_VAR_IF([JAVA], [], [], [
-		JAVA_VERSION=[`"$JAVA" -version 2>&1 | grep '[0-9]\.[0-9]' | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]])
+	AS_VAR_IF([JAVA], [],
+		[],
+		[JAVA_VERSION=[`"$JAVA" -version 2>&1 | grep '[0-9]\.[0-9]' | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]])
 
 	AC_PATH_PROG([JAVAC], [javac], [], [$JPATH])
 	AC_PATH_PROG([JAR], [jar], [], [$JPATH])
 	AC_PATH_PROG([JAVADOC], [javadoc], [], [$JPATH])
-	AS_VAR_IF([have_java], [yes], [
-		JAVA_HOME="`echo $JAVAC | sed 's:/bin/javac$::'`"])
+	AS_VAR_IF([have_java], [yes],
+		[JAVA_HOME="`echo $JAVAC | sed 's:/bin/javac$::'`"])
 	AS_VAR_IF([JAVAC], [], [
-		AS_VAR_IF([have_java], [yes], [
-			AC_MSG_ERROR([No javac found])])
+		AS_VAR_IF([have_java], [yes],
+			[AC_MSG_ERROR([No javac found])])
 		have_java=no
-		why_have_java="(no javac found)"], [test "x$JAR" = "x"], [
-		AS_VAR_IF([have_java], [yes], [
-			AC_MSG_ERROR([No jar found])])
-		have_java=no
-		why_have_java="(no jar found)"], [
-		 have_java=yes])
+		why_have_java="(no javac found)"],
+		[AS_VAR_IF([JAR], [], [
+			AS_VAR_IF([have_java], [yes],
+				[AC_MSG_ERROR([No jar found])])
+			have_java=no
+			why_have_java="(no jar found)"],
+			[have_java=yes])])
 
 	AS_VAR_IF([have_java], [yes], [], [
 		JAVA_VERSION=""
@@ -1495,44 +1496,44 @@ AC_SUBST([JAVA_HOME])
 org_have_java_jdbc=no
 have_java_jdbc=$org_have_java_jdbc
 AS_CASE([$have_java-$enable_jdbc],
-[*-no], [],
-[no-yes], [
-	AC_MSG_ERROR([MonetDB JDBC requires ant and Java])],
-[no-*], [
-	enable_jdbc=no
-	AS_VAR_IF([ANT], [no], [
-		disable_jdbc="(ant is required to build MonetDB JDBC)"], [
-		disable_jdbc="(Java is required to build MonetDB JDBC)"])],
-[
-	have_java_jdbc=yes
-	AS_VERSION_COMPARE([$JAVA_VERSION], [1.7],
-		[have_java_jdbc=no
-		AS_VAR_IF([enable_jdbc], [yes],
-			[AC_MSG_ERROR([MonetDB JDBC requires ant and Java 7 or higher])],
-			[enable_jdbc=no
-			disable_jdbc="(MonetDB JDBC currently requires Java 7 or higher to build)"])])])
+	[*-no], [],
+	[no-yes], [AC_MSG_ERROR([MonetDB JDBC requires ant and Java])],
+	[no-*], [
+		enable_jdbc=no
+		AS_VAR_IF([ANT], [no],
+			[disable_jdbc="(ant is required to build MonetDB JDBC)"],
+			[disable_jdbc="(Java is required to build MonetDB JDBC)"])],
+	[
+		AS_VERSION_COMPARE([$JAVA_VERSION], [1.7],
+			AS_VAR_IF([have_java_jdbc], [yes],
+				[AS_VAR_IF([enable_jdbc], [yes],
+					[AC_MSG_ERROR([MonetDB JDBC requires ant and Java 7 or higher])],
+					[enable_jdbc=no
+					 disable_jdbc="(MonetDB JDBC currently requires Java 7 or higher to build)"])]),
+			[have_java_jdbc=yes],
+			[have_java_jdbc=yes])
+		])
 AM_CONDITIONAL([HAVE_JAVAJDBC], [test x$have_java_jdbc != xno])
 
 org_have_java_control=no
 have_java_control=$org_have_java_control
 AS_CASE([$have_java-$enable_control],
-[*-no], [],
-[no-yes], [
-	AC_MSG_ERROR([Merovingian control requires ant and Java])],
-[no-*], [
-	enable_control=no
-	AS_VAR_IF([ANT], [no], [
-		disable_control="(ant is required to build merovingian Java control library)"], [
-		disable_control="(Java is required to build merovingian Java control library)"])],
-[
-	req_java_ver_min=1.7 dnl  >= $req_java_ver_min required
-	have_java_control=yes
-	AS_VERSION_COMPARE([$JAVA_VERSION], [$req_java_ver_min],
-		[have_java_control=no
-		AS_VAR_IF([enable_control], [yes],
-			[AC_MSG_ERROR([Merovingian control requires ant and Java >= $req_java_ver_min.])],
-			[enable_control=no
-			disable_control="(merovingian Java control library requires Java >= $req_java_ver_min)"])])])
+	[*-no], [],
+	[no-yes], [AC_MSG_ERROR([Merovingian control requires ant and Java])],
+	[no-*], [
+		enable_control=no
+		AS_VAR_IF([ANT], [no],
+			[disable_control="(ant is required to build merovingian Java control library)"],
+			[disable_control="(Java is required to build merovingian Java control library)"])],
+	[
+		req_java_ver_min=1.7 dnl  >= $req_java_ver_min required
+		AS_VERSION_COMPARE([$JAVA_VERSION], [$req_java_ver_min],
+			[AS_VAR_IF([enable_control], [yes],
+				[AC_MSG_ERROR([Merovingian control requires ant and Java >= $req_java_ver_min.])],
+				[enable_control=no
+				 disable_control="(merovingian Java control library requires Java >= $req_java_ver_min)"])],
+			[have_java_control=yes],
+			[have_java_control=yes])])
 AM_CONDITIONAL([HAVE_JAVAMEROCONTROL], [test x$have_java_control != xno])
 
 AS_VAR_IF([have_java_jdbc], [no], [
@@ -2365,17 +2366,16 @@ AS_CASE(["$have_lidar"],
 	dnl  locate liblas-config
 	AS_VAR_IF([have_liblas], [no], [], [
 		AS_CASE(["$have_liblas"],
-		[yes|auto], [
-			XPATH="$PATH"],
+		[yes|auto], [XPATH="$PATH"],
 		[
 			XPATH="$have_liblas/bin"
 			have_liblas=yes])
 		AC_PATH_PROG([LIBLAS_CONFIG], [liblas-config], [], [$XPATH])
-		AS_VAR_IF([LIBLAS_CONFIG], [], [
-			AS_VAR_IF([have_liblas], [yes], [
-				AC_MSG_ERROR([liblas-config not found in $XPATH])], [
-				have_liblas=no
-				why_have_liblas="(liblas-config not found)"])])])
+		AS_VAR_IF([LIBLAS_CONFIG], [],
+			[AS_VAR_IF([have_liblas], [yes],
+				[AC_MSG_ERROR([liblas-config not found in $XPATH])],
+				[have_liblas=no
+				 why_have_liblas="(liblas-config not found)"])])])
 	dnl  check the version if liblas
 	AS_VAR_IF([have_liblas], [no], [], [
 		AC_MSG_CHECKING([for liblas >= $LIBLAS_VERSION_REQUIRED_MIN])
@@ -2385,26 +2385,26 @@ AS_CASE(["$have_lidar"],
 			[AS_VAR_IF([have_liblas], [yes],
 				[AC_MSG_ERROR([liblas version $LIBLAS_VERSION is too old])],
 				[have_liblas=no
-				why_have_liblas="(liblas version $LIBLAS_VERSION is older than required version $LIBLAS_VERSION_REQUIRED_MIN)"])])])
+				 why_have_liblas="(liblas version $LIBLAS_VERSION is older than required version $LIBLAS_VERSION_REQUIRED_MIN)"])])])
 	dnl  read include dirs, libs and cflags
 	AS_VAR_IF([have_liblas], [no], [], [
 		LIBLAS_INCS="`$LIBLAS_CONFIG --includes`"
 		LIBLAS_LIBS="`$LIBLAS_CONFIG --libs`"])
 	dnl  if lidar is enabled and liblas was not found abort
 	AS_VAR_IF([have_liblas], [no], [
-		AS_VAR_IF([have_lidar], [yes], [
-			AC_MSG_ERROR([liblas library required for lidar module])])
+		AS_VAR_IF([have_lidar], [yes],
+			[AC_MSG_ERROR([liblas library required for lidar module])])
 		dnl  no liblas, so don't compile lidar
 		have_lidar=no
-		AS_VAR_IF([disable_lidar], [], [
-			disable_lidar=${why_have_liblas:-"(liblas library required for lidar module)"}])])],
+		AS_VAR_IF([disable_lidar], [],
+			[disable_lidar=${why_have_liblas:-"(liblas library required for lidar module)"}])])],
 [no], [
 	have_lidar=no
 	have_liblas=no
 	why_have_liblas="(lidar module is disabled)"])
-AS_CASE(["$have_lidar"],
-[no], [	LIBLAS_RPM=without],
-[	LIBLAS_RPM=with])
+AS_VAR_IF([have_lidar], [no],
+	[LIBLAS_RPM=without],
+	[LIBLAS_RPM=with])
 dnl  this is only used in rpm.mk.in to maybe avoid building MonetDB-lidar
 AC_SUBST([LIBLAS_RPM])
 
@@ -3248,7 +3248,7 @@ for comp in \
 		[-no-no], [	why="(by default)"],
 		[-no-*], [	why="(by command line option)"])
 	echo $ECHO_N "    $comp = $ECHO_C"
-	AS_VAR_IF([have], [no], [], [ echo "yes"], [ echo "no  $why"])
+	AS_VAR_IF([have], [no], [echo "no  $why"], [echo "yes"])
 done
 AS_VAR_IF([have_hge], [yes], [
 	hge_bits='128'
