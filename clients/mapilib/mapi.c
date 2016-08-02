@@ -2535,6 +2535,8 @@ mapi_reconnect(Mapi mid)
 
 	mid->connected = 1;
 
+	// FIXME: these need to become snappy streams (framing2)
+
 	if (!isa_block_stream(mid->to)) {
 		mid->to = block_stream(mid->to);
 		check_stream(mid, mid->to, mnstr_error(mid->to), "mapi_reconnect", mid->error);
@@ -3930,6 +3932,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			break;
 		case '%':
 		case '#':
+			//FIXME: add new result set parsing
 		case '&':
 			if (lookahead < 0)
 				lookahead = 1;

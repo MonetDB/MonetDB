@@ -114,6 +114,8 @@ doChallenge(void *data)
 	char *buf = (char *) GDKmalloc(BLOCK + 1);
 	char challenge[13];
 	char *algos;
+
+	// FIXME: make this a snappy stream as well
 	stream *fdin = block_stream(((struct challengedata *) data)->in);
 	stream *fdout = block_stream(((struct challengedata *) data)->out);
 	bstream *bs;
@@ -142,8 +144,10 @@ doChallenge(void *data)
 	/* generate the challenge string */
 	generateChallenge(challenge, 8, 12);
 	algos = mcrypt_getHashAlgorithms();
+	// FIXME: add the newproto flag to algos and rename to 'capabilities' to hide the crime
+
 	/* note that we claim to speak proto 9 here for hashed passwords */
-	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
+	mnstr_printf(fdout, "%s:mserver:10:%s:%s:%s:",
 			challenge,
 			algos,
 #ifdef WORDS_BIGENDIAN
@@ -171,6 +175,7 @@ doChallenge(void *data)
 	mnstr_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
 	mnstr_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
 #endif
+	// FIXME: how can we avoid this
 	bs = bstream_create(fdin, 128 * BLOCK);
 
 	if (bs == NULL){

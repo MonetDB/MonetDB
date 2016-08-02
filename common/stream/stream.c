@@ -3921,6 +3921,11 @@ bs_clrerr(stream *s)
 		mnstr_clearerr(((bs *) s->stream_data.p)->s);
 }
 
+
+// FIXME: patch bs_read/bs_write etc
+// 10 MB max buffer size or so
+// unsigned int length or so
+
 stream *
 block_stream(stream *s)
 {

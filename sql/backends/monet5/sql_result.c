@@ -1313,6 +1313,8 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 	return (ok) ? 0 : -1;
 }
 
+
+//FIXME: rewrite this into something new
 static int
 mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, char *btag, char *sep, char *rsep, char *ssep, char *ns)
 {
