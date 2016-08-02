@@ -1377,7 +1377,7 @@ AS_CASE(["$host_os"],
 	dnl  Mac OS 9 stuff
 	DIRSEP=':'
 	QDIRSEP=':'
-	AC_ERROR([mac not supported])],
+	AC_MSG_ERROR([mac not supported])],
 [*cygwin*], [
 	DIRSEP='/'
 	QDIRSEP='/'
@@ -1608,8 +1608,12 @@ AC_SUBST([KVM_LIBS])
 save_LIBS="$LIBS"
 LIBS="$LIBS $MALLOC_LIBS"
 AC_CHECK_FUNCS([mallopt])
-AC_CHECK_FUNC([mallinfo], AC_TRY_COMPILE([$ac_includes_default
-@%:@include <malloc.h>], [struct mallinfo m;int x[[1+sizeof(m.usmblks)-sizeof(void *)]]], [AC_DEFINE([HAVE_USEFUL_MALLINFO], 1, [Define if you have mallinfo])]))
+AC_CHECK_FUNC([mallinfo],
+	[AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM([[@%:@include <malloc.h>]],
+			[[struct mallinfo m;int x[1+sizeof(m.usmblks)-sizeof(void *)]]])],
+		[AC_DEFINE([HAVE_USEFUL_MALLINFO], 1,
+			[Define if you have mallinfo])])])
 LIBS="$save_LIBS"
 
 dnl  libpthread
@@ -1757,25 +1761,27 @@ AS_VAR_IF([have_readline], [no], [], [
 		  have_readline=no
 		  why_have_readline="(readline header file not found)" ])])
 
-AS_VAR_IF([have_readline], [no], [], [
-	dnl  provide an ACTION-IF-FOUND, or else all subsequent checks
-	dnl  that involve linking will fail!
-	AC_CHECK_LIB([readline], [rl_completion_matches],
+AS_VAR_IF([have_readline], [no],
+	[],
+	[
+	 dnl  provide an ACTION-IF-FOUND, or else all subsequent checks
+	 dnl  that involve linking will fail!
+	 AC_CHECK_LIB([readline], [rl_completion_matches],
 		[AC_MSG_CHECKING([whether rl_completion_func_t exists])
-		 AC_TRY_COMPILE([$ac_includes_default
-@%:@include <readline/readline.h>], [
-	rl_completion_func_t *func = NULL;],
+		 AC_COMPILE_IFELSE(
+		 	[AC_LANG_PROGRAM([[@%:@include <readline/readline.h>]],
+		 		[[rl_completion_func_t *func = NULL;]])],
 			[AC_MSG_RESULT([yes])],
-			[ AS_VAR_IF([have_readline], [auto], [], [
-				AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?])], [
-				AC_MSG_RESULT([no])])
-			  have_readline=no
-			  why_have_readline="(readline/readline.h does not contain rl_completion_func_t, is it GNU readline?)" ])],
-		[ AS_VAR_IF([have_readline], [auto], [], [
+			[AS_VAR_IF([have_readline], [auto],
+				[AC_MSG_RESULT([no])
+				 have_readline=no
+				 why_have_readline="(readline/readline.h does not contain rl_completion_func_t, is it GNU readline?)"],
+				[AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?])])])],
+		[AS_VAR_IF([have_readline], [auto], [], [
 			AC_MSG_ERROR([readline library does not contain rl_completion_matches])])
-		  have_readline=no
-		  why_have_readline="(readline library does not contain rl_completion_matches)" ],
-		  [$READLINE_LIBS])])
+		 have_readline=no
+		 why_have_readline="(readline library does not contain rl_completion_matches)" ],
+		[$READLINE_LIBS])])
 CPPFLAGS="$save_CPPFLAGS"
 LIBS="$save_LIBS"
 
@@ -2768,22 +2774,29 @@ LIBS="$save_LIBS"
 
 asctime_r3=yes
 AC_MSG_CHECKING([asctime_r3])
-AC_TRY_LINK([$ac_includes_default
-@%:@include <time.h>],
-[char buf[26]; struct tm t; asctime_r(&t,buf,26);],
-[AC_DEFINE([HAVE_ASCTIME_R3], 1, [Define if you have asctime_r(struct tm*,char *buf,size_t s)])], [asctime_r3=no])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[@%:@include <time.h>]],
+		[[char buf[26]; struct tm t; asctime_r(&t,buf,26);]])],
+	[AC_DEFINE([HAVE_ASCTIME_R3], 1,
+		[Define if you have asctime_r(struct tm*,char *buf,size_t s)])],
+	[asctime_r3=no])
 AC_MSG_RESULT([$asctime_r3])
 
 ctime_r3=yes
 AC_MSG_CHECKING([ctime_r3])
-AC_TRY_LINK([$ac_includes_default
-@%:@include <time.h>],
-[char buf[26]; time_t t; ctime_r(&t,buf,26);],
-[AC_DEFINE([HAVE_CTIME_R3], 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[@%:@include <time.h>]],
+		[[char buf[26]; time_t t; ctime_r(&t,buf,26);]])],
+	[AC_DEFINE([HAVE_CTIME_R3], 1,
+		[Define if you have ctime_r(time_t*,char *buf,size_t s)])],
+	[ctime_r3=no])
 AC_MSG_RESULT([$ctime_r3])
 
 AC_CACHE_CHECK([for _sys_siglist], [mn_cv_have__sys_siglist], [
-AC_TRY_LINK([$ac_includes_default], [printf("%s\n", _sys_siglist[0]);], [mn_cv_have__sys_siglist=yes], [mn_cv_have__sys_siglist=no])])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[]], [[printf("%s\n", _sys_siglist[0]);]])],
+	[mn_cv_have__sys_siglist=yes],
+	[mn_cv_have__sys_siglist=no])])
 AS_VAR_IF([mn_cv_have__sys_siglist], [yes],
 	[AC_DEFINE([HAVE__SYS_SIGLIST], 1, [Define if you have _sys_siglist])])
 
