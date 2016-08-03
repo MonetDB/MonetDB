@@ -266,8 +266,20 @@ command IsRing(w:wkb) :bit address wkbIsRing
 comment "Returns TRUE if this LINESTRING is both closed and simple.";
 command IsSimple(w:wkb) :bit address wkbIsSimple
 comment "Returns (TRUE) if this Geometry has no anomalous geometric points, such as self intersection or self tangency.";
-command IsValid(w:wkb) :bit address wkbIsValid
+
+command IsValidWKB(w:wkb) :bit address wkbIsValid
 comment "Returns true if the ST_Geometry is well formed.";
+
+function IsValidD(w1:wkb, w2:wkb) :bit;
+    res := IsValidWKB(w1);
+    return res;
+end IsValidD; 
+
+function IsValid(w1:wkb) :bit;
+    res := IsValidWKB(w1);
+    return res;
+end IsValid; 
+
 command IsValidReason(w:wkb) :str address wkbIsValidReason
 comment "Returns text stating if a geometry is valid or not and if not valid, a reason why.";
 command IsValidDetail(w:wkb) :str address wkbIsValidDetail
@@ -771,6 +783,14 @@ function Translate(g:bat[:wkb], dx:dbl, dy:dbl, dz:dbl) :bat[:wkb];
 	return x;
 end Translate;
 
+command IsTypeWKB(a:bat[:wkb], b:bat[:str], w:str) :bat[:bit] address wkbIsType_bat
+comment "Returns TRUE if the geometry A is of type B";
+
+function IsType(a:bat[:wkb], b:bat[:str]) :bat[:bit];
+    res := IsTypeWKB(a, b, nil:str);
+    return res;
+end IsType;
+
 command WithinWKB(a:bat[:wkb], b:bat[:wkb], w:wkb) :bat[:bit] address wkbWithin_bat
 comment "Returns TRUE if the geometry A is completely inside geometry B";
 
@@ -778,11 +798,6 @@ function Within(a:bat[:wkb], b:bat[:wkb]) :bat[:bit];
     res := WithinWKB(a, b, nil:wkb);
     return res;
 end Within;
-
-function Withinsubselect(a:bat[:wkb], b:wkb) :bat[:bit];
-    res := WithinWKB(a, nil:bat, b);
-    return res;
-end Withinsubselect;
 
 command DWithin(a:bat[:wkb], b:bat[:wkb], dst:dbl) :bat[:bit] address wkbDWithin_bat
 comment "Returns true if the two geometries are within the specifies distance from each other";
@@ -862,7 +877,19 @@ command IsClosed(w:bat[:wkb]) :bat[:bit] address wkbIsClosed_bat;
 command IsEmpty(w:bat[:wkb]) :bat[:bit] address wkbIsEmpty_bat;
 command IsSimple(w:bat[:wkb]) :bat[:bit] address wkbIsSimple_bat;
 command IsRing(w:bat[:wkb]) :bat[:bit] address wkbIsRing_bat;
-command IsValid(w:bat[:wkb]) :bat[:bit] address wkbIsValid_bat;
+
+command IsValidWKB_bat(w:bat[:wkb]) :bat[:bit] address wkbIsValid_bat;
+
+function IsValidD(w1:bat[:wkb], w2:bat[:wkb]) :bat[:bit];
+    res := IsValidWKB_bat(w1);
+    return res;
+end IsValidD; 
+
+function IsValid(w1:bat[:wkb]) :bat[:bit];
+    res := IsValidWKB_bat(w1);
+    return res;
+end IsValid; 
+
 
 command MakeBox2D(p1:bat[:wkb],p2:bat[:wkb]) :bat[:mbr] address wkbBox2D_bat;
 
@@ -986,11 +1013,6 @@ function Intersects(a:bat[:wkb], b:bat[:wkb]) :bat[:bit];
     return res;
 end Intersects;
 
-function Intersectssubselect(a:bat[:wkb], w:wkb) :bat[:bit];
-    res := IntersectsWKB(a, nil:bat, w);
-    return res;
-end Intersectssubselect;
-
 command Intersects3D(g:bat[:wkb], dxBAT:bat[:dbl], dx:dbl, dyBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit] address wkbIntersectsXYZ_bat
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
 
@@ -1028,11 +1050,6 @@ function Intersects(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dz:dbl, srid:int) :bat
 	x := Intersects3D(g, dxBAT, 0:dbl, nil:bat, dy, nil:bat, dz, srid);
 	return x;
 end Intersects;
-
-function Intersectssubselect(g:bat[:wkb], dx:dbl, dy:dbl, dz:dbl, srid:int) :bat[:bit];
-	x := Intersects3D(g, nil:bat, dx, nil:bat, dy, nil:bat, dz, srid);
-	return x;
-end Intersectssubselect;
 
 module calc;
 
@@ -1092,7 +1109,88 @@ command Intersection(a:bat[:wkb], b:bat[:wkb], sa:bat[:oid], sb:bat[:oid]) :bat[
 comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
 
 
-#Filter functions and joins
+module geom;
+#Filter functions (subselects with candidate lists)
+
+command wkbIsValidsubselect(lb:bat[:wkb], sl:bat[:oid], nil_matches:bit) :bat[:oid] address IsValidsubselect
+comment "Returns TRUE if the geometry is valid"d;
+
+function geom.IsValidDsubselect(lb:bat[:wkb], b:wkb) :bat[:oid];
+    res := wkbIsValidsubselect(lb, nil:bat, 0:bit);
+    return res;
+end geom.IsValidDsubselect;
+
+function geom.IsValidDsubselect(lb:bat[:wkb], sl:bat[:oid], b:wkb, nil_matches:bit) :bat[:oid];
+    res := wkbIsValidsubselect(lb, sl, nil_matches);
+    return res;
+end geom.IsValidDsubselect;
+
+command wkbIsTypesubselect(lb:bat[:wkb], sl:bat[:oid], b:str, nil_matches:bit) :bat[:oid] address IsTypesubselect
+comment "Returns TRUE if the geometry A is of type B";
+
+function geom.IsTypesubselect(lb:bat[:wkb], b:str) :bat[:oid];
+    res := wkbIsTypesubselect(lb, nil:bat, b, 0:bit);
+    return res;
+end geom.IsTypesubselect;
+
+function geom.IsTypesubselect(lb:bat[:wkb], sl:bat[:oid], b:str, nil_matches:bit) :bat[:oid];
+    res := wkbIsTypesubselect(lb, sl, b, nil_matches);
+    return res;
+end geom.IsTypesubselect;
+
+command wkb.Withinsubselect(lb:bat[:wkb], sl:bat[:oid], b:wkb, nil_matches:bit) :bat[:oid] address Withinsubselect
+comment "Returns TRUE if the geometry A is completely inside geometry B";
+
+function geom.Withinsubselect(lb:bat[:wkb], b:wkb) :bat[:oid];
+    res := wkbWithinsubselect(lb, nil:bat, b, 0:bit);
+    return res;
+end geom.Withinsubselect;
+
+function geom.Withinsubselect(lb:bat[:wkb], sl:bat[:oid], b:wkb, nil_matches:bit) :bat[:oid];
+    res := wkbWithinsubselect(lb, sl, b, nil_matches);
+    return res;
+end geom.Withinsubselect;
+
+command wkb.Intersectssubselect(lb:bat[:wkb], sl:bat[:oid], b:wkb, nil_matches:bit) :bat[:oid] address Intersectssubselect
+comment "Returns true if these Geometries 'spatially intersect in 2D'";
+
+function geom.Intersectssubselect(lb:bat[:wkb], b:wkb) :bat[:oid];
+    res := wkbIntersectssubselect(lb, nil:bat, b, 0:bit);
+    return res;
+end geom.Intersectssubselect;
+
+function geom.Intersectssubselect(lb:bat[:wkb], sl:bat[:oid], b:wkb, nil_matches:bit) :bat[:oid];
+    res := Intersectssubselect(lb, sl, b, nil_matches);
+    return res;
+end geom.Intersectssubselect;
+
+command wkb.IntersectsXYZsubselect(lb:bat[:wkb], sl:bat[:oid], x:dbl, y:dbl, z:dbl, srid:int, nil_matches:bit) :bat[:oid] address IntersectsXYZsubselect
+comment "Returns true if these Geometries 'spatially intersect in 2D'";
+
+function geom.IntersectsXYZsubselect(lb:bat[:wkb], x:dbl, y:dbl, z:dbl, srid:int) :bat[:oid];
+    res := wkbIntersectsXYZsubselect(lb, nil:bat, x, y, z, srid, 0:bit);
+    return res;
+end geom.IntersectsXYZsubselect;
+
+function geom.IntersectsXYZsubselect(lb:bat[:wkb], sl:bat[:oid], x:dbl, y:dbl, z:dbl, srid:int, nil_matches:bit) :bat[:oid];
+    res := IntersectsXYZsubselect(lb, sl, x, y, z, srid, nil_matches);
+    return res;
+end geom.IntersectsXYZsubselect;
+
+command wkb.ContainsXYZsubselect(lb:bat[:wkb], sl:bat[:oid], x:dbl, y:dbl, z:dbl, srid:int, nil_matches:bit) :bat[:oid] address ContainsXYZsubselect
+comment "Returns true if and only if no points of B lie in the exterior of A, and at least one point of the interior of B lies in the interior of A.";
+
+function geom.ContainsXYZsubselect(lb:bat[:wkb], x:dbl, y:dbl, z:dbl, srid:int) :bat[:oid];
+    res := wkbContainsXYZsubselect(lb, nil:bat, x, y, z, srid, 0:bit);
+    return res;
+end geom.ContainsXYZsubselect;
+
+function geom.ContainsXYZsubselect(lb:bat[:wkb], sl:bat[:oid], x:dbl, y:dbl, z:dbl, srid:int, nil_matches:bit) :bat[:oid];
+    res := ContainsXYZsubselect(lb, sl, x, y, z, srid, nil_matches);
+    return res;
+end geom.ContainsXYZsubselect;
+
+#Filter joins (subjoin withtou candidate lists)
 
 command geom.Intersectssubjoin(l:bat[:wkb], r:bat[:wkb], sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],rr:bat[:oid])
 address Intersectssubjoin
@@ -1117,4 +1215,12 @@ comment "Returns true if and only if no points of B lie in the exterior of A, an
 command geom.Containssubjoin(l:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],sr:bat[:oid])
 address ContainsXYZsubjoin
 comment "Returns true if and only if no points lie in the exterior of A";
+
+command geom.IsValidDsubjoin(l:bat[:wkb], r:bat[:wkb], sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],rr:bat[:oid])
+address IsValidsubjoin
+comment "Returns true if the geometry is Valid";
+
+command geom.IsTypesubjoin(l:bat[:wkb], r:bat[:str], sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],rr:bat[:oid])
+address IsTypesubjoin
+comment "Returns true if the geometry has the indicated type";
 
