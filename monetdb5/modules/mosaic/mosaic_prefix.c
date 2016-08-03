@@ -77,7 +77,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
-	int bits, bytes;
+	int bits =0, bytes=0;
 	int size = ATOMsize(task->type);
 
 	(void) cntxt;
