@@ -139,7 +139,7 @@ begin
 	delete from sys.storagemodelinput;
 
 	insert into sys.storagemodelinput
-	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.orderidx, X.compressed from sys."storage"() X;
+	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X."unique", X.orderidx, X.compressed from sys."storage"() X;
 
 	update sys.storagemodelinput
 	set reference = true
