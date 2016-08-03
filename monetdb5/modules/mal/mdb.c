@@ -108,7 +108,6 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( stk->cmd == 0)
 		stk->cmd = 'n';
 	cntxt->itrace = stk->cmd;
-	cntxt->debugOptimizer= TRUE;
 	(void) mb;
 	(void) p;
 	return MAL_SUCCEED;
@@ -129,7 +128,6 @@ MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	stk->cmd = 0;
 	cntxt->itrace = 0;
-	cntxt->debugOptimizer= FALSE;
 	mnstr_printf(cntxt->fdout,"mdb>#EOD\n");
 	(void) mb;
 	(void) p;

@@ -73,7 +73,6 @@ typedef struct CLIENT {
 	sht	stage;	   /* keep track of the phase being ran */
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
-	short   debugOptimizer,debugScheduler;
 	/*
 	 * For program debugging we need information on the timer and memory
 	 * usage patterns.

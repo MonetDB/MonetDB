@@ -29,6 +29,5 @@ struct {
 } runtime;
 
 mal_export str MALpipeline(Client c);
-mal_export str debugScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* MAL_SCEDULER */

@@ -42,27 +42,6 @@ optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 
-int debugOpt = 0;
-str
-QOTdebugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	debugOptimizers(cntxt, mb, stk, pci);
-	debugOpt = 1;
-	return MAL_SUCCEED;
-}
-
-str
-QOTclrdebugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	debugOpt = 0;
-	return MAL_SUCCEED;
-}
-
 /*
  * MAL functions can be optimized explicitly using the routines below.
  * Beware, the function names should be known as literal strings, because

@@ -1134,12 +1134,10 @@ runMALDebugger(Client cntxt, MalBlkPtr mb)
 {
 	str oldprompt= cntxt->prompt;
 	int oldtrace = cntxt->itrace;
-	int oldopt = cntxt->debugOptimizer;
 	int oldhist = cntxt->curprg->def->keephistory;
 	str msg;
 
 	cntxt->itrace = 'n';
-	cntxt->debugOptimizer = TRUE;
 	cntxt->curprg->def->keephistory = TRUE;
 
 	msg = runMAL(cntxt, mb, 0, 0);
@@ -1147,7 +1145,6 @@ runMALDebugger(Client cntxt, MalBlkPtr mb)
 	cntxt->curprg->def->keephistory = oldhist;
 	cntxt->prompt =oldprompt;
 	cntxt->itrace = oldtrace;
-	cntxt->debugOptimizer = oldopt;
 	mnstr_printf(cntxt->fdout, "mdb>#EOD\n");
 	return msg;
 }
@@ -1400,14 +1397,3 @@ mdbHelp(stream *f)
  * make it thread safe by assigning it to a client record.
  */
 int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
-
-str
-debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) stk;
-
-	cntxt->debugOptimizer = cntxt->debugOptimizer ? FALSE : TRUE;
-	if (pci)
-		removeInstruction(mb, pci);
-	return MAL_SUCCEED;
-}
