@@ -120,7 +120,8 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->vtop = 0;
 	mb->vid = 0;
 	mb->vsize = maxvars;
-	mb->help = mb->binding = NULL;
+	mb->help = NULL;
+	mb->binding[0] = 0;
 	mb->tag = 0;
 	mb->errors = 0;
 	mb->alternative = NULL;
@@ -215,9 +216,7 @@ freeMalBlk(MalBlkPtr mb)
 
 	if (mb->history)
 		freeMalBlk(mb->history);
-	if (mb->binding)
-		GDKfree(mb->binding);
-	mb->binding = 0;
+	mb->binding[0] = 0;
 	mb->tag = 0;
 	if (mb->help)
 		GDKfree(mb->help);
@@ -282,7 +281,7 @@ copyMalBlk(MalBlkPtr old)
 		mb->stmt[i] = copyInstruction(old->stmt[i]);
 
 	mb->help = old->help ? GDKstrdup(old->help) : NULL;
-	mb->binding = old->binding ? GDKstrdup(old->binding) : NULL;
+	strncpy(mb->binding,  old->binding, IDLENGTH);
 	mb->errors = old->errors;
 	mb->tag = old->tag;
 	mb->typefixed = old->typefixed;
@@ -816,8 +815,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 		setVarUDFtype(tm, res);
 	if (isVarCleanup(mb, x))
 		setVarCleanup(tm, res);
-	if ( getSTC(mb,x) )
-		setSTC(mb,x, getSTC(mb,x));
+	strncpy(getSTC(tm,x),getSTC(mb,x), 2 *IDLENGTH);
 	return res;
 }
 
@@ -876,15 +874,13 @@ clearVariable(MalBlkPtr mb, int varid)
 	v = getVar(mb, varid);
 	if (v == 0)
 		return;
-	if (v->stc)
-		GDKfree(v->stc);
 	if (isVarConstant(mb, varid) || isVarDisabled(mb, varid))
 		VALclear(&v->value);
 	v->type = 0;
 	v->flags = 0;
 	v->rowcnt = 0;
 	v->eolife = 0;
-	v->stc = 0;
+	v->stc[0] = 0;
 }
 
 void

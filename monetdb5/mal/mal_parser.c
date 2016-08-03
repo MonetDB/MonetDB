@@ -171,8 +171,6 @@ idCopy(Client cntxt, int length)
 	memcpy(s, CURRENT(cntxt), (size_t) length);
 	s[length] = 0;
 	/* avoid a clash with old temporaries */
-	if (s[0] == TMPMARKER)
-		s[0] = REFMARKER;
 	advance(cntxt, length);
 	return s;
 }
@@ -1314,7 +1312,6 @@ parseCommandPattern(Client cntxt, int kind)
  * [note, command and patterns do not have a MAL block]
  */
 	if (MALkeyword(cntxt, "address", 7)) {
-		str nme;
 		int i;
 		i = idLength(cntxt);
 		if (i == 0) {
@@ -1322,13 +1319,17 @@ parseCommandPattern(Client cntxt, int kind)
 			return 0;
 		}
 		cntxt->blkmode = 0;
-		nme = idCopy(cntxt, i);
 		if (getModuleId(curInstr))
 			setModuleId(curInstr, NULL);
 		setModuleScope(curInstr,
 				findModule(cntxt->nspace, modnme));
-		curInstr->fcn = getAddress(cntxt->fdout, cntxt->srcFile, nme, 0);
-		curBlk->binding = nme;
+
+		memcpy(curBlk->binding, CURRENT(cntxt), (size_t)(i < IDLENGTH? i:IDLENGTH-1));
+		curBlk->binding[(i< IDLENGTH? i:IDLENGTH-1)] = 0;
+		/* avoid a clash with old temporaries */
+		advance(cntxt, i);
+		curInstr->fcn = getAddress(cntxt->fdout, cntxt->srcFile, curBlk->binding, 0);
+
 		if (cntxt->nspace->isAtomModule) {
 			if (curInstr->fcn == NULL) {
 				parseError(cntxt, "<address> not found\n");
