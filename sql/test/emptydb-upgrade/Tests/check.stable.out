@@ -308,9 +308,6 @@ Ready.
 \dSf sys."var"
 \dSf sys."var_pop"
 \dSf sys."var_samp"
-\dSf sys."zorder_decode_x"
-\dSf sys."zorder_decode_y"
-\dSf sys."zorder_encode"
 SYSTEM SCHEMA  json
 SYSTEM SCHEMA profiler
 SYSTEM SCHEMA  sys
@@ -721,9 +718,6 @@ SYSTEM FUNCTION sys.weekofyear
 SYSTEM FUNCTION sys.xor
 SYSTEM FUNCTION sys.year
 SYSTEM FUNCTION sys.zero_or_one
-SYSTEM FUNCTION  sys.zorder_decode_x
-SYSTEM FUNCTION  sys.zorder_decode_y
-SYSTEM FUNCTION  sys.zorder_encode
 CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 CREATE SCHEMA "profiler" AUTHORIZATION "monetdb";
 CREATE SCHEMA "sys";
@@ -1103,9 +1097,6 @@ create aggregate var_samp(val double) returns double external name "aggr"."varia
 create aggregate var_samp(val date) returns double external name "aggr"."variance";
 create aggregate var_samp(val time) returns double external name "aggr"."variance";
 create aggregate var_samp(val timestamp) returns double external name "aggr"."variance";
-create function zorder_decode_x(z oid) returns integer external name zorder.decode_x;
-create function zorder_decode_y(z oid) returns integer external name zorder.decode_y;
-create function zorder_encode(x integer, y integer) returns oid external name zorder.encode;
 
 -- helper function
 create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;
@@ -3109,9 +3100,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"year",	"year",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"year",	"year",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"zero_or_one",	"zero_or_one",	"sql",	0,	3,	false,	false,	false	]
-[ "sys",	"zorder_decode_x",	"create function zorder_decode_x(z oid) returns integer external name zorder.decode_x;",	"zorder",	1,	1,	false,	false,	false	]
-[ "sys",	"zorder_decode_y",	"create function zorder_decode_y(z oid) returns integer external name zorder.decode_y;",	"zorder",	1,	1,	false,	false,	false	]
-[ "sys",	"zorder_encode",	"create function zorder_encode(x integer, y integer) returns oid external name zorder.encode;",	"zorder",	1,	1,	false,	false,	false	]
 #with
 #arg1 (id, id1, name1, type1, type_digits1, type_scale1, inout1) as (select f.id, a1.id, a1.name, a1.type, a1.type_digits, a1.type_scale, a1.inout from sys.functions f left outer join args a1 on a1.func_id = f.id and a1.number = 1),
 #arg2 (id, id1, name1, type1, type_digits1, type_scale1, inout1, id2, name2, type2, type_digits2, type_scale2, inout2) as (select arg1.*, a2.id, a2.name, a2.type, a2.type_digits, a2.type_scale, a2.inout from arg1 left outer join args a2 on a2.func_id = arg1.id and a2.number = 2),
@@ -4642,9 +4630,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"year",	"arg_1",	"timestamp",	7,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"year",	"arg_1",	"timestamptz",	7,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"zero_or_one",	"arg",	"any",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"zorder_decode_x",	"z",	"oid",	63,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"zorder_decode_y",	"z",	"oid",	63,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"zorder_encode",	"x",	"int",	32,	0,	1,	"y",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select name, grantor from sys.auths;
 % sys.auths,	sys.auths # table_name
 % name,	grantor # name
@@ -5055,9 +5040,6 @@ drop function pcre_replace(string, string, string, string);
 [ "time_to_str",	"public",	16,	"monetdb",	0	]
 [ "times",	"public",	16,	"monetdb",	0	]
 [ "timestamp_to_str",	"public",	16,	"monetdb",	0	]
-[ "zorder_decode_x",	"public",	16,	"monetdb",	0	]
-[ "zorder_decode_y",	"public",	16,	"monetdb",	0	]
-[ "zorder_encode",	"public",	16,	"monetdb",	0	]
 #select s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc, q.cycle from sys.sequences q left outer join sys.schemas s on q.schema_id = s.id order by s.name, q.name;
 % .s,	.q,	.q,	.q,	.q,	.q,	.q,	.q # table_name
 % name,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
@@ -6602,9 +6584,6 @@ drop function pcre_replace(string, string, string, string);
 [ "year"	]
 [ "year"	]
 [ "zero_or_one"	]
-[ "zorder_decode_x"	]
-[ "zorder_decode_y"	]
-[ "zorder_encode"	]
 #select t.name, g.name, g.time, g.orientation, g.event, g.old_name, g.new_name, g.condition, g.statement from sys.triggers g left outer join sys._tables t on g.table_id = t.id order by t.name, g.name;
 % .t,	.g,	.g,	.g,	.g,	.g,	.g,	.g,	.g # table_name
 % name,	name,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name

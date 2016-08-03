@@ -30,6 +30,9 @@ create procedure sys.createorderindex(sys string, tab string, col string)
 external name sql.createorderindex;
 create procedure sys.droporderindex(sys string, tab string, col string)
 external name sql.droporderindex;
+drop function sys.zorder_decode_y;
+drop function sys.zorder_decode_x;
+drop function sys.zorder_encode;
 drop view sys.tablestoragemodel;
 drop view sys.storagemodel;
 drop function sys.storagemodel();
