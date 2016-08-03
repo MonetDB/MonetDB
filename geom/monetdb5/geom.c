@@ -12,7 +12,7 @@
  */
 
 #include "geom.h"
-#define GEOMBULK_DEBUG 1
+//#define GEOMBULK_DEBUG 1
 
 int TYPE_mbr;
 
@@ -8304,11 +8304,6 @@ IsValidsubselect_intern(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, char (*fun
         return msg;
     }
 
-    /*
-    BATrmprops(lresBAT)
-    BATsetcount(lresBAT, q);
-    BATsettrivprop(lresBAT);
-    */
 	BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -8497,11 +8492,6 @@ IsTypesubselect_intern(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, str *b, con
         return msg;
     }
 
-    /*
-    BATrmprops(lresBAT)
-    BATsetcount(lresBAT, q);
-    BATsettrivprop(lresBAT);
-    */
 	BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -8677,11 +8667,6 @@ WKBWKBtoBIT_bat(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, wkb **b, str (*fun
         return msg;
     }
 
-    /*
-    BATrmprops(lresBAT)
-    BATsetcount(lresBAT, q);
-    BATsettrivprop(lresBAT);
-    */
 	BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -8873,11 +8858,6 @@ WKBDBLDBLDBLINTtoBIT_bat(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, double *d
         return msg;
     }
 
-    /*
-    BATrmprops(lresBAT)
-    BATsetcount(lresBAT, q);
-    BATsettrivprop(lresBAT);
-    */
 	BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -9167,12 +9147,10 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
             break;
         }
         rMBRs[pr] = mbrFromGeos(rGeometries[pr]);
-        //if (rMBRs[pr] == NULL || mbr_isnil(rMBRs[pr])) {
         if (mbr_isnil(rMBRs[pr])) {
             msg = createException(MAL, name, "Failed to create mbrFromGeos");
             break;
         }
-        //rSRIDs[pr] = GEOSGetSRID(rGeometries[pr]);
         rSRIDs[pr] = rWKB->srid;
     }
 #ifdef GEOMBULK_DEBUG
@@ -10218,7 +10196,8 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
     str msg = MAL_SUCCEED;
 	BAT *xl, *xr, *bl, *bx, *by;
 	oid lo, ro;
-	BATiter lBAT_iter, xBAT_iter, yBAT_iter;
+	BATiter lBAT_iter, *xBAT_iters = NULL, *yBAT_iters = NULL;
+    int numIters = 1;
     uint32_t j = 0;
     BUN px = 0, py = 0, pl = 0, qx = 0, qy = 0, ql = 0;
 	GEOSGeom *rGeometries = NULL;
@@ -10267,14 +10246,45 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
     	BBPkeepref(*rres = xr->batCacheid);
         return MAL_SUCCEED;
     }
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
 	/*iterator over the BATs*/
 	lBAT_iter = bat_iterator(bl);
-	xBAT_iter = bat_iterator(bx);
-	yBAT_iter = bat_iterator(by);
+    if ( (xBAT_iters = GDKmalloc(sizeof(BATiter) * numIters)) == NULL) {
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
+    }
+
+    if ( (yBAT_iters = GDKmalloc(sizeof(BATiter) * numIters)) == NULL) {
+        GDKfree(xBAT_iters);
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
+    }
+
+    for (j = 0; j < numIters; j++) {
+    	xBAT_iters[j] = bat_iterator(bx);
+	    yBAT_iters[j] = bat_iterator(by);
+    }
 
     if ( (msg ==MAL_SUCCEED) &&  BATcount(bx) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(bx))) == NULL) {
-        msg = createException(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
+        GDKfree(xBAT_iters);
+        GDKfree(yBAT_iters);
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
     }
 
     lo = bl->hseqbase;
@@ -10321,8 +10331,13 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
         for (j = 0; j < BATcount(bx); j++) {
             double x, y;
             outs[j] = 0;
-            x = *(double*) BUNtail(xBAT_iter, px);
-            y = *(double*) BUNtail(yBAT_iter, px);
+            int tNum = 0;
+
+#ifdef OPENMP
+            tNum = omp_get_thread_num();
+#endif
+            x = *(double*) BUNtail(xBAT_iters[tNum], px);
+            y = *(double*) BUNtail(yBAT_iters[tNum], px);
 
             if (msg != MAL_SUCCEED)
                 continue;
@@ -10358,6 +10373,8 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 
     if (outs)
         GDKfree(outs);
+    GDKfree(xBAT_iters);
+    GDKfree(yBAT_iters);
     BBPunfix(*lid);
     BBPunfix(*xid);
     BBPunfix(*yid);
