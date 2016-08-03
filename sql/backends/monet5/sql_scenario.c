@@ -189,10 +189,12 @@ SQLepilogue(void *ret)
 	str res;
 
 	(void) ret;
+	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized) {
 		mvc_exit();
 		SQLinitialized = FALSE;
 	}
+	MT_lock_unset(&sql_contextLock);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
 	res = msab_retreatScenario(m);

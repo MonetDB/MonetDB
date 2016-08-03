@@ -2150,7 +2150,6 @@ str exportOperationRef;
 str export_tableRef;
 str fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len);
 int findGDKtype(int type);
-int findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci);
 Module findModule(Module scope, str name);
 str findRef;
 Scenario findScenario(str nme);

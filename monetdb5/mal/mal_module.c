@@ -288,26 +288,3 @@ Symbol findSymbol(Module nspace, str mod, str fcn){
 	return findSymbolInModule(m,fcn);
 }
 
-int
-findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci){
-	Module m;
-	Symbol s;
-	int i,fnd;
-
-	for(m= findModule(scope,getModuleId(pci)); m; m= m->link)
-	if( m->name == getModuleId(pci) ) {
-		s= m->space[(int)(getSymbolIndex(getFunctionId(pci)))];
-		for(; s; s= s->peer)
-		if( getFunctionId(pci)==s->name && pci->argc == getSignature(s)->argc ){
-			/* found it check argtypes */
-			for( fnd=1, i = 0; i < pci->argc; i++)
-				if ( getArgType(mb,pci,i) != getArgType(s->def,getSignature(s),i))
-					fnd = 0;
-			if( fnd)
-				return 1;
-		}
-	}
-
-	return 0;
-}
-
