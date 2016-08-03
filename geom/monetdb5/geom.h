@@ -160,6 +160,7 @@ geom_export str wkbIntersects_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, wk
 geom_export str wkbIntersectsXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz, int* srid);
 geom_export str wkbTouches(bit*, wkb**, wkb**);
 geom_export str wkbCrosses(bit*, wkb**, wkb**);
+geom_export str wkbIsType_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str *b);
 geom_export str wkbWithin(bit*, wkb**, wkb**);
 geom_export str wkbWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, wkb **b);
 geom_export str wkbContains(bit*, wkb**, wkb**);
@@ -396,9 +397,20 @@ geom_export str wkbAsGeoJson(str *res, wkb **geom, int *maxDecDigits, int *optio
 geom_export str wkbPatchToGeom(wkb **res, wkb **geom, dbl* px, dbl*py, dbl*pz);
 geom_export str wkbPatchToGeom_bat(wkb **res, wkb **geom, bat* px, bat* py, bat* pz);
 
+/*Filter functions - subselect*/
+geom_export str IsValidsubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, bit *nil_matches);
+geom_export str IsTypesubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, str *b, bit *nil_matches);
+geom_export str Withinsubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, wkb **b, bit *nil_matches);
+geom_export str Intersectssubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, wkb **b, bit *nil_matches);
+geom_export str IntersectsXYZsubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, dbl *x, dbl *y, dbl *z, int *srid, bit *nil_matches);
+geom_export str ContainsXYZsubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, dbl *x, dbl *y, dbl *z, int *srid, bit *nil_matches);
+
+/*Filter joins - subjoin*/
 geom_export str Intersectssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 geom_export str IntersectsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 geom_export str DWithinsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, double *dist, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 geom_export str DWithinXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, double *dist, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 geom_export str Containssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 geom_export str ContainsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
+geom_export str IsValidsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
+geom_export str IsTypesubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
