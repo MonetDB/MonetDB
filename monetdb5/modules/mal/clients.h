@@ -22,7 +22,6 @@ mal_export str CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 mal_export str CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CLTusers(bat *ret);
-mal_export str CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CLTLogin(bat *ret, bat *nme);
 mal_export str CLTLastCommand(bat *ret);

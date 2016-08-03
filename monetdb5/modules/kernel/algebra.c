@@ -202,7 +202,6 @@ ALGgroupby(bat *res, const bat *gids, const bat *cnts)
 		throw(MAL, "algebra.groupby",GDK_EXCEPTION);
 	}
 	if( bn){
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*res = bn->batCacheid;
 		BBPkeepref(bn->batCacheid);
 	}
@@ -261,7 +260,6 @@ ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
@@ -292,7 +290,6 @@ ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val,
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
@@ -323,7 +320,6 @@ ALGselectNotNil(bat *result, const bat *bid)
 		}
 		BBPunfix(b->batCacheid);
 		if (bn) {
-			if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 			*result = bn->batCacheid;
 			BBPkeepref(*result);
 			return MAL_SUCCEED;
@@ -404,13 +400,9 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 		result2 = NULL;
 	}
 	*r1 = result1->batCacheid;
-	if (!(result1->batDirty&2))
-		BATsetaccess(result1, BAT_READ);
 	BBPkeepref(*r1);
 	if (r2) {
 		*r2 = result2->batCacheid;
-		if (!(result2->batDirty&2))
-			BATsetaccess(result2, BAT_READ);
 		BBPkeepref(*r2);
 	}
 	BBPunfix(left->batCacheid);
@@ -593,8 +585,6 @@ ALGunary(bat *result, const bat *bid, BAT *(*func)(BAT *), const char *name)
 	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, name, GDK_EXCEPTION);
-	if (!(bn->batDirty&2))
-		BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
@@ -617,8 +607,6 @@ ALGbinary(bat *result, const bat *lid, const bat *rid, BAT *(*func)(BAT *, BAT *
 	BBPunfix(right->batCacheid);
 	if (bn == NULL)
 		throw(MAL, name, GDK_EXCEPTION);
-	if (!(bn->batDirty&2))
-		BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
@@ -654,8 +642,6 @@ ALGsubunique2(bat *result, const bat *bid, const bat *sid)
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "algebra.subunique", GDK_EXCEPTION);
-	if (!(bn->batDirty & 2))
-		BATsetaccess(bn, BAT_READ);
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
@@ -837,7 +823,6 @@ ALGtmark(bat *result, const bat *bid, const oid *base)
 	bn = BATdense(b->hseqbase, *base, BATcount(b));
 	if (bn != NULL) {
 		BBPunfix(b->batCacheid);
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
@@ -880,7 +865,6 @@ ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
 	}
 	if (slice(&bn, b, *start, *end) == GDK_SUCCEED) {
-		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
 		BBPunfix(b->batCacheid);
@@ -961,12 +945,14 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 		ptr _src = BUNtail(bi,pos);
 		int _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
+		assert(_dst);
 		memcpy(_dst, _src, _len);
 		*(ptr*) ret = _dst;
 	} else {
 		int _s = ATOMsize(ATOMtype(b->ttype));
 		if (ATOMvarsized(b->ttype)) {
 			memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtvar(bi, pos), _s);
+			assert(ret);
 		} else if (b->ttype == TYPE_void) {
 			*(oid*) ret = b->tseqbase;
 			if (b->tseqbase != oid_nil)
@@ -1071,8 +1057,6 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ret = bat_nil;
 		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
 	}
-	if (!(bn->batDirty&2))
-		BATsetaccess(bn, BAT_READ);
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);

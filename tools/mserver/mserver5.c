@@ -281,6 +281,9 @@ main(int argc, char **av)
 	_CrtSetReportMode(_CRT_ERROR, 0);
 	_CrtSetReportMode(_CRT_ASSERT, 0);
 	_set_invalid_parameter_handler(mserver_invalid_parameter_handler);
+#ifdef _TWO_DIGIT_EXPONENT
+	_set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
 #endif
 	if (setlocale(LC_CTYPE, "") == NULL) {
 		GDKfatal("cannot set locale\n");
@@ -292,10 +295,12 @@ main(int argc, char **av)
 /* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
 		if (mallopt(M_MXFAST, 192)) {
 			fprintf(stderr, "!monet: mallopt(M_MXFAST,192) fails.\n");
+			exit(-1);
 		}
 #ifdef M_BLKSZ
 		if (mallopt(M_BLKSZ, 8 * 1024)) {
 			fprintf(stderr, "!monet: mallopt(M_BLKSZ,8*1024) fails.\n");
+			exit(-1);
 		}
 #endif
 	}
@@ -306,7 +311,8 @@ main(int argc, char **av)
 
 	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
 		perror("pwd");
-		GDKfatal("monet_init: could not determine current directory\n");
+		fprintf(stderr,"monet_init: could not determine current directory\n");
+		exit(-1);
 	}
 
 	/* retrieve binpath early (before monet_init) because some

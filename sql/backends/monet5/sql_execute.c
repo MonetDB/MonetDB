@@ -23,7 +23,6 @@
 #include "sql_execute.h"
 #include "sql_env.h"
 #include "sql_mvc.h"
-#include "sql_readline.h"
 #include "sql_user.h"
 #include <sql_optimizer.h>
 #include <sql_datetime.h>
@@ -77,7 +76,7 @@ SQLsetTrace(Client cntxt)
 	int k;
 
 	startTrace("sql_traces");
-	initTrace();
+	clearTrace();
 
 	for(k= mb->stop-1; k>0; k--)
 		if( getInstrPtr(mb,k)->token ==ENDsymbol)
@@ -570,6 +569,11 @@ SQLengineIntern(Client c, backend *be)
 #endif
 
 	if (c->curprg->def->stop == 1) {
+		if (mvc_status(m)) {
+			if (*m->errstr)
+				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+			goto cleanup_engine;
+		}
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}

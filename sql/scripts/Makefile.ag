@@ -23,7 +23,6 @@ headers_sql = {
 		21_dependency_functions.sql \
 		22_clients.sql \
 		23_skyserver.sql \
-		24_zorder.sql \
 		25_debug.sql \
 		26_sysmon.sql \
 		27_rejects.sql \

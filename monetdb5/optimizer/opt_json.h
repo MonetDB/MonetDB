@@ -19,6 +19,5 @@ mal_export int OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 /* #define _DEBUG_OPT_JSON_ */
 #undef DEBUG_OPT_JSON
 #define DEBUG_OPT_JSON 1
-#define OPTDEBUGjson  if ( optDebug & ((lng) 1 <<DEBUG_OPT_JSON) )
 
 #endif

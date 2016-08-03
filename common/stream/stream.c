@@ -776,6 +776,14 @@ file_close(stream *s)
 }
 
 static void
+file_destroy(stream *s)
+{
+	file_close(s);
+	destroy(s);
+}
+
+
+static void
 file_clrerr(stream *s)
 {
 	FILE *fp = (FILE *) s->stream_data.p;
@@ -918,6 +926,7 @@ open_stream(const char *filename, const char *flags)
 	s->read = file_read;
 	s->write = file_write;
 	s->close = file_close;
+	s->destroy = file_destroy;
 	s->clrerr = file_clrerr;
 	s->flush = file_flush;
 	s->fsync = file_fsync;
@@ -2872,6 +2881,7 @@ file_stream(const char *name)
 	s->read = file_read;
 	s->write = file_write;
 	s->close = file_close;
+	s->destroy = file_destroy;
 	s->flush = file_flush;
 	s->fsync = file_fsync;
 	s->fgetpos = file_fgetpos;
@@ -3229,9 +3239,17 @@ ic_close(stream *s)
 		ic_flush(s);
 		iconv_close(ic->cd);
 		mnstr_close(ic->s);
+		mnstr_destroy(ic->s);
 		free(s->stream_data.p);
 		s->stream_data.p = NULL;
 	}
+}
+
+static void
+ic_destroy(stream *s)
+{
+	ic_close(s);
+	destroy(s);
 }
 
 static void
@@ -3280,6 +3298,7 @@ ic_open(iconv_t cd, stream *ss, const char *name)
 	s->read = ic_read;
 	s->write = ic_write;
 	s->close = ic_close;
+	s->destroy = ic_destroy;
 	s->clrerr = ic_clrerr;
 	s->flush = ic_flush;
 	s->update_timeout = ic_update_timeout;

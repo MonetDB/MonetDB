@@ -17,22 +17,30 @@
 str
 MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sig, *adr, *com;
-	bat *sx = getArgReference_bat(stk,pci,0);
-	bat *ax = getArgReference_bat(stk,pci,1);
-	bat *cx = getArgReference_bat(stk,pci,2);
-	Module s= cntxt->nspace;
+	BAT *mod, *fcn, *sig, *adr, *com;
+	bat *mx = getArgReference_bat(stk,pci,0);
+	bat *fx = getArgReference_bat(stk,pci,1);
+	bat *sx = getArgReference_bat(stk,pci,2);
+	bat *ax = getArgReference_bat(stk,pci,3);
+	bat *cx = getArgReference_bat(stk,pci,4);
+	Module s= getModuleChain();
 	int j, k, ftop, top=0;
 	Symbol t;
 	Module list[256]; 
 	MalBlkPtr blks[25000];
+	str mtab[25000];
+	str ftab[25000];
 	str hlp[25000];
 	char buf[BUFSIZ], *tt;
 
+	mod = COLnew(0, TYPE_str, 0, TRANSIENT);
+	fcn = COLnew(0, TYPE_str, 0, TRANSIENT);
 	sig = COLnew(0, TYPE_str, 0, TRANSIENT);
 	adr = COLnew(0, TYPE_str, 0, TRANSIENT);
 	com = COLnew(0, TYPE_str, 0, TRANSIENT);
 	if( sig == NULL || adr == NULL || com == NULL){
+		if(mod) BBPunfix(mod->batCacheid);
+		if(fcn) BBPunfix(fcn->batCacheid);
 		if(sig) BBPunfix(sig->batCacheid);
 		if(adr) BBPunfix(adr->batCacheid);
 		if(com) BBPunfix(com->batCacheid);
@@ -41,16 +49,21 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(s==NULL){
 		return MAL_SUCCEED;
 	}
+	cntxt->nspace->next = s;
+	s = cntxt->nspace;
 	list[top++]=s;
-	while(s->outer && top < 256 ){ list[top++]= s->outer;s=s->outer;}
+	while(s->next && top < 256 ){ list[top++]= s->next;s=s->next;}
+	cntxt->nspace->next = NULL;
 
 	for(k=0;k<top;k++){
 		s= list[k];
 		ftop = 0;
-		if( s->subscope)
+		if( s->space)
 		for(j=0;j<MAXSCOPE;j++)
-		if(s->subscope[j]){
-			for(t= s->subscope[j];t!=NULL;t=t->peer) {
+		if(s->space[j]){
+			for(t= s->space[j];t!=NULL;t=t->peer) {
+				mtab[ftop]= t->def->stmt[0]->modname;
+				ftab[ftop]= t->def->stmt[0]->fcnname;
 				hlp[ftop]= t->def->help;
 				blks[ftop]= t->def;
 				ftop++;
@@ -60,6 +73,8 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		for(j=0; j<ftop; j++){
+			BUNappend(mod,mtab[j],TRUE);
+			BUNappend(fcn,ftab[j],TRUE);
 			buf[0]=0;
 			BUNappend(com, hlp[j] ? hlp[j]:buf, TRUE);
 			fcnDefinition(blks[j], getInstrPtr(blks[j],0), buf, TRUE, buf, BUFSIZ);
@@ -74,30 +89,11 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
+	BBPkeepref( *mx = mod->batCacheid);
+	BBPkeepref( *fx = fcn->batCacheid);
 	BBPkeepref( *sx = sig->batCacheid);
 	BBPkeepref( *ax = adr->batCacheid);
 	BBPkeepref( *cx = com->batCacheid);
 	(void)mb;
-	return MAL_SUCCEED;
-}
-
-str
-MANUALhelp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	char **msg;
-	int i;
-	str *text= getArgReference_str(stk,pci,1);
-	(void) mb;		/* fool compiler */
-
-	msg= getHelp(cntxt->nspace,*text,1);
-	if( msg && msg[0] ){
-		for(i=0; msg[i];i++){
-			mal_unquote(msg[i]);
-			mnstr_printf(cntxt->fdout,"%s\n",msg[i]);
-			GDKfree(msg[i]);
-		}
-	}
-	if( msg)
-		GDKfree(msg);
 	return MAL_SUCCEED;
 }

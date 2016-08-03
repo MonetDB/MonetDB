@@ -80,15 +80,15 @@ function user.s2_1(A0:str,A1:str,A2:bte,A3:bte,A4:str,A5:str,A6:bte,A7:bte,A8:st
     X_4:bat[:str] := sql.bind(X_0,"sys","lineitem","l_shipmode",0);
     X_15:bat[:date] := sql.bind(X_0,"sys","lineitem","l_receiptdate",0);
     X_26:bat[:date] := sql.bind(X_0,"sys","lineitem","l_commitdate",0);
-    (C_28,r1_42) := sql.bind(X_0,"sys","lineitem","l_commitdate",2);
+    (C_28:bat[:oid],r1_42:bat[:date]) := sql.bind(X_0,"sys","lineitem","l_commitdate",2);
     X_30:bat[:date] := sql.bind(X_0,"sys","lineitem","l_commitdate",1);
     X_31 := sql.delta(X_26,C_28,r1_42,X_30);
     X_33:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",0);
-    (C_35,r1_49) := sql.bind(X_0,"sys","lineitem","l_shipdate",2);
+    (C_35:bat[:oid],r1_49:bat[:date]) := sql.bind(X_0,"sys","lineitem","l_shipdate",2);
     X_37:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",1);
     X_38 := sql.delta(X_33,C_35,r1_49,X_37);
     X_47:bat[:bit] := batcalc.>(X_31,X_38);
-    (C_17,r1_31) := sql.bind(X_0,"sys","lineitem","l_receiptdate",2);
+    (C_17:bat[:oid],r1_31:bat[:date]) := sql.bind(X_0,"sys","lineitem","l_receiptdate",2);
     X_19:bat[:date] := sql.bind(X_0,"sys","lineitem","l_receiptdate",1);
     X_20 := sql.delta(X_15,C_17,r1_31,X_19);
     X_40:bat[:bit] := batcalc.<(X_31,X_20);
@@ -101,7 +101,7 @@ function user.s2_1(A0:str,A1:str,A2:bte,A3:bte,A4:str,A5:str,A6:bte,A7:bte,A8:st
     C_189 := algebra.subselect(X_19,C_49,A10,X_25,true,false,false);
     C_50 := sql.subdelta(C_186,C_49,C_17,C_187,C_189);
     C_190 := algebra.subselect(X_4,C_50,A8,A8,true,false,false);
-    (C_7,r1_21) := sql.bind(X_0,"sys","lineitem","l_shipmode",2);
+    (C_7:bat[:oid],r1_21:bat[:str]) := sql.bind(X_0,"sys","lineitem","l_shipmode",2);
     C_191 := algebra.subselect(r1_21,nil:bat[:oid],A8,A8,true,false,false);
     X_10:bat[:str] := sql.bind(X_0,"sys","lineitem","l_shipmode",1);
     C_193 := algebra.subselect(X_10,C_50,A8,A8,true,false,false);
@@ -122,7 +122,7 @@ function user.s2_1(A0:str,A1:str,A2:bte,A3:bte,A4:str,A5:str,A6:bte,A7:bte,A8:st
     (X_72,r1_86,r2_86) := group.subgroupdone(X_71);
     X_75 := algebra.projection(r1_86,X_71);
     X_83:bat[:str] := sql.bind(X_0,"sys","orders","o_orderpriority",0);
-    (C_85,r1_99) := sql.bind(X_0,"sys","orders","o_orderpriority",2);
+    (C_85:bat[:oid],r1_99:bat[:str]) := sql.bind(X_0,"sys","orders","o_orderpriority",2);
     X_87:bat[:str] := sql.bind(X_0,"sys","orders","o_orderpriority",1);
     X_89 := sql.projectdelta(C_63,X_83,C_85,r1_99,X_87);
     X_90 := algebra.projection(r1_79,X_89);

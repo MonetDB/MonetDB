@@ -583,7 +583,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TEMP TEMPORARY STREAM MERGE REMOTE REPLICA
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
-%token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
+%token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
 %token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
@@ -1304,6 +1304,13 @@ table_def:
 	  append_string(l, NULL);
 	  append_list(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ |  TABLE qname FROM sqlLOADER func_ref
+    {
+      dlist *l = L();
+      append_list(l, $2);
+      append_symbol(l, $5);
+      $$ = _symbol_create_list( SQL_CREATE_TABLE_LOADER, l);
+    }
  |  STREAM TABLE qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
 	  dlist *l = L();
@@ -1752,6 +1759,7 @@ function_body:
 |	string
 ;
 
+
 func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
@@ -1892,7 +1900,29 @@ func_def:
 				append_int(f, F_PROC);
 				append_int(f, FUNC_LANG_SQL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
- ;
+  |	create sqlLOADER qname
+	'(' opt_paramlist ')'
+    LANGUAGE IDENT function_body { 
+			int lang = 0;
+			dlist *f = L();
+			char l = *$8;
+			/* other languages here if we ever get to it */
+			if (l == 'P' || l == 'p')
+            {
+                lang = FUNC_LANG_PY;
+            }
+			else
+				yyerror(m, sql_message("Language name P(ython) expected, received '%c'", l));
+
+			append_list(f, $3);
+			append_list(f, $5);
+			append_symbol(f, NULL);
+			append_list(f, NULL); 
+			append_list(f, append_string(L(), $9));
+			append_int(f, F_LOADER);
+			append_int(f, lang);
+			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+;
 
 routine_body:
 	procedure_statement 
@@ -2318,6 +2348,12 @@ routine_designator:
 	  append_list(l, $3 );
 	  append_int(l, F_PROC );
 	  $$ = l; }
+ |	sqlLOADER qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $2 );	
+	  append_list(l, $3 );
+	  append_int(l, F_LOADER );
+	  $$ = l; }
  ;
 
 drop_statement:
@@ -2360,6 +2396,14 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_PROC );
+	  append_int(l, 1 );
+	  append_int(l, $5 );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | drop ALL sqlLOADER qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_list(l, NULL );
+	  append_int(l, F_LOADER );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2511,6 +2555,11 @@ copyfrom_stmt:
 	  append_int(l, $13);
 	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+  | COPY sqlLOADER INTO qname FROM func_ref
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_symbol(l, $6);
+	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
 	  if ($2 != NULL) {

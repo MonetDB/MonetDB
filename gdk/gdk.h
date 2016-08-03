@@ -796,7 +796,6 @@ gdk_export int VALisnil(const ValRecord *v);
 typedef struct {
 	/* dynamic bat properties */
 	MT_Id tid;		/* which thread created it */
-	int stamp;		/* BAT recent creation stamp */
 	unsigned int
 	 copiedtodisk:1,	/* once written */
 	 dirty:2,		/* dirty wrt disk? */
@@ -886,7 +885,6 @@ typedef struct BATiter {
 #define batInserted	S.inserted
 #define batCount	S.count
 #define batCapacity	S.capacity
-#define batStamp	S.stamp
 #define batSharecnt	S.sharecnt
 #define batRestricted	S.restricted
 #define batRole		S.role
@@ -1623,10 +1621,6 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  * @tab BBPincref (bat bi, int logical)
  * @item int
  * @tab BBPdecref (bat bi, int logical)
- * @item void
- * @tab BBPhot (bat bi)
- * @item void
- * @tab BBPcold (bat bi)
  * @item str
  * @tab BBPname (bat bi)
  * @item bat
@@ -1676,7 +1670,6 @@ typedef struct {
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
-	int lastused;		/* BBP LRU stamp */
 	volatile int status;	/* status mask used for spin locking */
 	/* MT_Id pid;           non-zero thread-id if this BAT is private */
 } BBPrec;
@@ -1702,14 +1695,12 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_desc(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].desc
 #define BBP_refs(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].refs
 #define BBP_lrefs(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].lrefs
-#define BBP_lastused(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].lastused
 #define BBP_status(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].status
 #define BBP_pid(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].pid
 
 /* macros that nicely check parameters */
 #define BBPcacheid(b)	((b)->batCacheid)
 #define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):-1)
-gdk_export int BBPcurstamp(void);
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
 #define BBPname(i)						\
@@ -1727,8 +1718,6 @@ gdk_export int BBPcurstamp(void);
 
 gdk_export void BBPlock(void);
 
-gdk_export void BBPhot(bat b);
-gdk_export void BBPcold(bat b);
 gdk_export void BBPunlock(void);
 
 gdk_export str BBPlogical(bat b, str buf);

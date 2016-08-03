@@ -1,0 +1,64 @@
+stdout of test 'columns` in directory 'sql/test/copy` itself:
+
+
+# 09:30:18 >  
+# 09:30:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36199" "--set" "mapi_usock=/var/tmp/mtest-15100/.s.monetdb.36199" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_copy" "--set" "embedded_r=yes"
+# 09:30:18 >  
+
+# MonetDB 5 server v11.23.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_copy', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36199/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15100/.s.monetdb.36199
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:30:19 >  
+# 09:30:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15100" "--port=36199"
+# 09:30:19 >  
+
+#create table tbl (i int, s string, d decimal(5, 2));
+#drop table tbl;
+#create table tbl (i int, s string, d decimal(5, 2));
+#copy 3 records into tbl (i, d) from stdin delimiters ',','\n';
+#1,"test",2.0
+#2,"test1",2.1
+#3,"test",2.2
+[ 3	]
+#select * from tbl;
+% sys.tbl,	sys.tbl,	sys.tbl # table_name
+% i,	s,	d # name
+% int,	clob,	decimal # type
+% 1,	0,	7 # length
+[ 1,	NULL,	2.00	]
+[ 2,	NULL,	2.10	]
+[ 3,	NULL,	2.20	]
+#drop table tbl;
+#create table tbl (i int, s string, d decimal(5, 2));
+#copy 3 records into tbl (i, d) from stdin (i, d) delimiters ',','\n';
+#1,2.0
+#2,2.1
+#3,2.2
+[ 3	]
+#select * from tbl;
+% sys.tbl,	sys.tbl,	sys.tbl # table_name
+% i,	s,	d # name
+% int,	clob,	decimal # type
+% 1,	0,	7 # length
+[ 1,	NULL,	2.00	]
+[ 2,	NULL,	2.10	]
+[ 3,	NULL,	2.20	]
+#drop table tbl;
+
+# 09:30:19 >  
+# 09:30:19 >  "Done."
+# 09:30:19 >  
+

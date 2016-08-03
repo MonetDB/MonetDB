@@ -23,12 +23,8 @@
 
 /* #define DEBUG_MAL_LINKER */
 #define MONET64 1
-mal_export MALfcn getAddress(stream *out, str filename, str modnme, str fcnname,int silent);
+mal_export MALfcn getAddress(stream *out, str filename, str fcnname,int silent);
 mal_export char *MSP_locate_sqlscript(const char *mod_name, bit recurse);
 mal_export str loadLibrary(str modulename, int flag);
-mal_export void unloadLibraries(void);
-mal_export void initLibraries(void);
-mal_export int isPreloaded(str nme);
-mal_export int isLoaded(str modulename);
 mal_export char *locate_file(const char *basename, const char *ext, bit recurse);
 #endif /* _MAL_LINKER_H */

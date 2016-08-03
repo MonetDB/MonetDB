@@ -27,11 +27,6 @@
 #include "mal_private.h"
 #include "mtime.h"
 
-#ifdef HAVE_LIBREADLINE
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif
-
 static void
 pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
@@ -162,7 +157,6 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	CLTtimeConvert((time_t) cntxt->login,s);
 	BUNappend(b, "login", FALSE);
 	BUNappend(bn, s, FALSE);
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","info");
 	BBPkeepref(*ret2= bn->batCacheid);
 	return MAL_SUCCEED;
@@ -190,8 +184,6 @@ CLTLogin(bat *nme, bat *ret)
 			BUNappend(u, &c->user, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
-	if (!(u->batDirty&2)) BATsetaccess(u, BAT_READ);
 	pseudo(ret,b,"client","login");
 	pseudo(nme,u,"client","name");
 	return MAL_SUCCEED;
@@ -213,7 +205,6 @@ CLTLastCommand(bat *ret)
 			BUNappend(b, s, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","lastcommand");
 	return MAL_SUCCEED;
 }
@@ -232,7 +223,6 @@ CLTActions(bat *ret)
 			BUNappend(b, &c->actions, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","actions");
 	return MAL_SUCCEED;
 }
@@ -250,7 +240,6 @@ CLTTime(bat *ret)
 			BUNappend(b, &c->totaltime, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","usec");
 	return MAL_SUCCEED;
 }
@@ -271,31 +260,7 @@ CLTusers(bat *ret)
 		if (c->mode >= RUNCLIENT && c->user != oid_nil)
 			BUNappend(b, &i, FALSE);
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","users");
-	return MAL_SUCCEED;
-}
-
-str
-CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str* fname = getArgReference_str(stk,pci,1);
-	(void) mb;
-
-	if( cntxt->history){
-#ifdef HAVE_LIBREADLINE
-		write_history(cntxt->history);
-#endif
-		GDKfree(cntxt->history);
-	}
-	if( *fname == str_nil)
-		cntxt->history = NULL;
-	else {
-		cntxt->history = GDKstrdup(*fname);
-#ifdef HAVE_LIBREADLINE
-		read_history(cntxt->history);
-#endif
-	}
 	return MAL_SUCCEED;
 }
 

@@ -353,9 +353,6 @@ Ready.
 \dSf sys."var"
 \dSf sys."var_pop"
 \dSf sys."var_samp"
-\dSf sys."zorder_decode_x"
-\dSf sys."zorder_decode_y"
-\dSf sys."zorder_encode"
 SYSTEM SCHEMA  bam
 SYSTEM SCHEMA  json
 SYSTEM SCHEMA  profiler
@@ -781,9 +778,6 @@ SYSTEM FUNCTION  sys.weekofyear
 SYSTEM FUNCTION  sys.xor
 SYSTEM FUNCTION  sys.year
 SYSTEM FUNCTION  sys.zero_or_one
-SYSTEM FUNCTION  sys.zorder_decode_x
-SYSTEM FUNCTION  sys.zorder_decode_y
-SYSTEM FUNCTION  sys.zorder_encode
 CREATE SCHEMA "bam" AUTHORIZATION "monetdb";
 CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 CREATE SCHEMA "profiler" AUTHORIZATION "monetdb";
@@ -816,8 +810,8 @@ CREATE TABLE "sys"."privileges" ("obj_id" INTEGER, "auth_id" INTEGER, "privilege
 CREATE TABLE "sys"."schemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN);
 CREATE TABLE "sys"."sequences" ("id" INTEGER, "schema_id" INTEGER, "name" VARCHAR(256), "start" BIGINT, "minvalue" BIGINT, "maxvalue" BIGINT, "increment" BIGINT, "cacheinc" BIGINT, "cycle" BOOLEAN);
 CREATE TABLE "sys"."spatial_ref_sys" ("srid" INTEGER NOT NULL, "auth_name" VARCHAR(256), "auth_srid" INTEGER, "srtext" VARCHAR(2048), "proj4text" VARCHAR(2048), CONSTRAINT "spatial_ref_sys_srid_pkey" PRIMARY KEY ("srid"));
-CREATE TABLE "sys"."statistics" ("column_id" INTEGER, "type" CHARACTER LARGE OBJECT, "width" INTEGER, "stamp" TIMESTAMP, "sample" BIGINT, "count" BIGINT, "unique" BIGINT, "nils" BIGINT, "minval" CHARACTER LARGE OBJECT, "maxval" CHARACTER LARGE OBJECT, "sorted" BOOLEAN);
-CREATE TABLE "sys"."storagemodelinput" ("schema" CHARACTER LARGE OBJECT, "table" CHARACTER LARGE OBJECT, "column" CHARACTER LARGE OBJECT, "type" CHARACTER LARGE OBJECT, "typewidth" INTEGER, "count" BIGINT, "distinct" BIGINT, "atomwidth" INTEGER, "reference" BOOLEAN, "sorted" BOOLEAN, "orderidx" BIGINT);
+CREATE TABLE "sys"."statistics" ("column_id" INTEGER, "type" CHARACTER LARGE OBJECT, "width" INTEGER, "stamp" TIMESTAMP, "sample" BIGINT, "count" BIGINT, "unique" BIGINT, "nils" BIGINT, "minval" CHARACTER LARGE OBJECT, "maxval" CHARACTER LARGE OBJECT, "sorted" BOOLEAN, "revsorted" BOOLEAN);
+CREATE TABLE "sys"."storagemodelinput" ("schema" CHARACTER LARGE OBJECT, "table" CHARACTER LARGE OBJECT, "column" CHARACTER LARGE OBJECT, "type" CHARACTER LARGE OBJECT, "typewidth" INTEGER, "count" BIGINT, "distinct" BIGINT, "atomwidth" INTEGER, "reference" BOOLEAN, "sorted" BOOLEAN, "revsorted" BOOLEAN, "unique" BOOLEAN, "orderidx" BIGINT);
 CREATE TABLE "sys"."systemfunctions" ("function_id" INTEGER);
 CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
 CREATE TABLE "sys"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
@@ -951,7 +945,7 @@ create filter function "like"(val string, pat string) external name algebra."lik
 
 create procedure listdir(dirname string) external name fits.listdir;
 create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;
-create function sys.malfunctions() returns table("signature" string, "address" string, "comment" string) external name "manual"."functions";
+create function sys.malfunctions() returns table("module" string, "function" string, "signature" string, "address" string, "comment" string) external name "manual"."functions";
 create function "masklen" (p inet) returns int external name inet."masklen";
 create function mbr(geom geometry) returns mbr external name geom."mbr";
 create function sys.md5(v string) returns string external name clients.md5sum;
@@ -1159,12 +1153,12 @@ create aggregate stddev_samp(val timestamp) returns double external name "aggr".
 create aggregate stddev_samp(val hugeint) returns double external name "aggr"."stdev";
 create procedure sys.stop(tag int) external name sql.sysmon_stop;
 create procedure sys.stop(tag bigint) external name sql.sysmon_stop;
-create function sys."storage"() returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, orderidx bigint) external name sql."storage";
-create function sys."storage"(sname string) returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, orderidx bigint) external name sql."storage";
-create function sys."storage"(sname string, tname string) returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, orderidx bigint) external name sql."storage";
-create function sys."storage"(sname string, tname string, cname string) returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, orderidx bigint) external name sql."storage";
-create function sys.storagemodel() returns table ("schema" string, "table" string, "column" string, "type" string, "count" bigint, columnsize bigint, heapsize bigint, hashes bigint, "imprints" bigint, sorted boolean, orderidx bigint) begin return select i."schema", i."table", i."column", i."type", i."count", columnsize(i."type", i.count, i."distinct"), heapsize(i."type", i."distinct", i."atomwidth"), hashsize(i."reference", i."count"), imprintsize(i."count",i."type"), i.sorted, i.orderidx from sys.storagemodelinput i; end;
-create procedure sys.storagemodelinit() begin delete from sys.storagemodelinput; insert into sys.storagemodelinput select x."schema", x."table", x."column", x."type", x.typewidth, x.count, 0, x.typewidth, false, x.sorted, x.orderidx from sys."storage"() x; update sys.storagemodelinput set reference = true where concat(concat("schema","table"), "column") in (select concat(concat("fkschema"."name", "fktable"."name"), "fkkeycol"."name") from "sys"."keys" as "fkkey", "sys"."objects" as "fkkeycol", "sys"."tables" as "fktable", "sys"."schemas" as "fkschema" where "fktable"."id" = "fkkey"."table_id" and "fkkey"."id" = "fkkeycol"."id" and "fkschema"."id" = "fktable"."schema_id" and "fkkey"."rkey" > -1); update sys.storagemodelinput set "distinct" = "count" where "type" = 'varchar' or "type"='clob'; end;
+create function sys."storage"() returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, revsorted boolean, "unique" boolean, orderidx bigint) external name sql."storage";
+create function sys."storage"(sname string) returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, revsorted boolean, "unique" boolean, orderidx bigint) external name sql."storage";
+create function sys."storage"(sname string, tname string) returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, revsorted boolean, "unique" boolean, orderidx bigint) external name sql."storage";
+create function sys."storage"(sname string, tname string, cname string) returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, revsorted boolean, "unique" boolean, orderidx bigint) external name sql."storage";
+create function sys.storagemodel() returns table ("schema" string, "table" string, "column" string, "type" string, "count" bigint, columnsize bigint, heapsize bigint, hashes bigint, "imprints" bigint, sorted boolean, revsorted boolean, "unique" boolean, orderidx bigint) begin return select i."schema", i."table", i."column", i."type", i."count", columnsize(i."type", i.count, i."distinct"), heapsize(i."type", i."distinct", i."atomwidth"), hashsize(i."reference", i."count"), imprintsize(i."count",i."type"), i.sorted, i.revsorted, i."unique", i.orderidx from sys.storagemodelinput i; end;
+create procedure sys.storagemodelinit() begin delete from sys.storagemodelinput; insert into sys.storagemodelinput select x."schema", x."table", x."column", x."type", x.typewidth, x.count, 0, x.typewidth, false, x.sorted, x.revsorted, x."unique", x.orderidx from sys."storage"() x; update sys.storagemodelinput set reference = true where concat(concat("schema","table"), "column") in (select concat(concat("fkschema"."name", "fktable"."name"), "fkkeycol"."name") from "sys"."keys" as "fkkey", "sys"."objects" as "fkkeycol", "sys"."tables" as "fktable", "sys"."schemas" as "fkschema" where "fktable"."id" = "fkkey"."table_id" and "fkkey"."id" = "fkkeycol"."id" and "fkschema"."id" = "fktable"."schema_id" and "fkkey"."rkey" > -1); update sys.storagemodelinput set "distinct" = "count" where "type" = 'varchar' or "type"='clob'; end;
 create function str_to_date(s string, format string) returns date external name mtime."str_to_date";
 create function str_to_time(s string, format string) returns time external name mtime."str_to_time";
 create function str_to_timestamp(s string, format string) returns timestamp external name mtime."str_to_timestamp";
@@ -1196,9 +1190,6 @@ create aggregate var_samp(val date) returns double external name "aggr"."varianc
 create aggregate var_samp(val time) returns double external name "aggr"."variance";
 create aggregate var_samp(val timestamp) returns double external name "aggr"."variance";
 create aggregate var_samp(val hugeint) returns double external name "aggr"."variance";
-create function zorder_decode_x(z oid) returns integer external name zorder.decode_x;
-create function zorder_decode_y(z oid) returns integer external name zorder.decode_y;
-create function zorder_encode(x integer, y integer) returns oid external name zorder.encode;
 
 -- helper function
 create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;
@@ -1638,6 +1629,7 @@ drop function pcre_replace(string, string, string, string);
 [ "statistics",	"minval",	"clob",	0,	0,	NULL,	true,	8,	NULL	]
 [ "statistics",	"maxval",	"clob",	0,	0,	NULL,	true,	9,	NULL	]
 [ "statistics",	"sorted",	"boolean",	1,	0,	NULL,	true,	10,	NULL	]
+[ "statistics",	"revsorted",	"boolean",	1,	0,	NULL,	true,	11,	NULL	]
 [ "storage",	"schema",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "storage",	"table",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "storage",	"column",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
@@ -1652,7 +1644,9 @@ drop function pcre_replace(string, string, string, string);
 [ "storage",	"phash",	"boolean",	1,	0,	NULL,	true,	11,	NULL	]
 [ "storage",	"imprints",	"bigint",	64,	0,	NULL,	true,	12,	NULL	]
 [ "storage",	"sorted",	"boolean",	1,	0,	NULL,	true,	13,	NULL	]
-[ "storage",	"orderidx",	"bigint",	64,	0,	NULL,	true,	14,	NULL	]
+[ "storage",	"revsorted",	"boolean",	1,	0,	NULL,	true,	14,	NULL	]
+[ "storage",	"unique",	"boolean",	1,	0,	NULL,	true,	15,	NULL	]
+[ "storage",	"orderidx",	"bigint",	64,	0,	NULL,	true,	16,	NULL	]
 [ "storagemodel",	"schema",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "storagemodel",	"table",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "storagemodel",	"column",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
@@ -1663,7 +1657,9 @@ drop function pcre_replace(string, string, string, string);
 [ "storagemodel",	"hashes",	"bigint",	64,	0,	NULL,	true,	7,	NULL	]
 [ "storagemodel",	"imprints",	"bigint",	64,	0,	NULL,	true,	8,	NULL	]
 [ "storagemodel",	"sorted",	"boolean",	1,	0,	NULL,	true,	9,	NULL	]
-[ "storagemodel",	"orderidx",	"bigint",	64,	0,	NULL,	true,	10,	NULL	]
+[ "storagemodel",	"revsorted",	"boolean",	1,	0,	NULL,	true,	10,	NULL	]
+[ "storagemodel",	"unique",	"boolean",	1,	0,	NULL,	true,	11,	NULL	]
+[ "storagemodel",	"orderidx",	"bigint",	64,	0,	NULL,	true,	12,	NULL	]
 [ "storagemodelinput",	"schema",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "storagemodelinput",	"table",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "storagemodelinput",	"column",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
@@ -1674,7 +1670,9 @@ drop function pcre_replace(string, string, string, string);
 [ "storagemodelinput",	"atomwidth",	"int",	32,	0,	NULL,	true,	7,	NULL	]
 [ "storagemodelinput",	"reference",	"boolean",	1,	0,	NULL,	true,	8,	NULL	]
 [ "storagemodelinput",	"sorted",	"boolean",	1,	0,	NULL,	true,	9,	NULL	]
-[ "storagemodelinput",	"orderidx",	"bigint",	64,	0,	NULL,	true,	10,	NULL	]
+[ "storagemodelinput",	"revsorted",	"boolean",	1,	0,	NULL,	true,	10,	NULL	]
+[ "storagemodelinput",	"unique",	"boolean",	1,	0,	NULL,	true,	11,	NULL	]
+[ "storagemodelinput",	"orderidx",	"bigint",	64,	0,	NULL,	true,	12,	NULL	]
 [ "systemfunctions",	"function_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "table_types",	"table_type_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
 [ "table_types",	"table_type_name",	"varchar",	25,	0,	NULL,	false,	1,	NULL	]
@@ -1747,7 +1745,7 @@ drop function pcre_replace(string, string, string, string);
 % .s,	.f,	.L,	.f,	.f,	.f,	.f,	.f,	.f # table_name
 % name,	name,	query,	mod,	language,	type,	side_effect,	varres,	vararg # name
 % varchar,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean # type
-% 8,	35,	806,	9,	1,	1,	5,	5,	5 # length
+% 8,	35,	831,	9,	1,	1,	5,	5,	5 # length
 [ "bam",	"bam_drop_file",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint) external name bam.bam_drop_file;",	"bam",	1,	2,	true,	false,	false	]
 [ "bam",	"bam_export",	"create procedure bam.bam_export(output_path string) external name bam.bam_export;",	"bam",	1,	2,	true,	false,	false	]
 [ "bam",	"bam_flag",	"create function bam.bam_flag(flag smallint, name string) returns boolean external name bam.bam_flag;",	"bam",	1,	1,	false,	false,	false	]
@@ -2122,7 +2120,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"ltrim",	"ltrim",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"ltrim",	"ltrim",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"ltrim",	"ltrim",	"str",	0,	1,	false,	false,	false	]
-[ "sys",	"malfunctions",	"create function sys.malfunctions() returns table(\"signature\" string, \"address\" string, \"comment\" string) external name \"manual\".\"functions\";",	"manual",	1,	5,	false,	false,	false	]
+[ "sys",	"malfunctions",	"create function sys.malfunctions() returns table(\"module\" string, \"function\" string, \"signature\" string, \"address\" string, \"comment\" string) external name \"manual\".\"functions\";",	"manual",	1,	5,	false,	false,	false	]
 [ "sys",	"masklen",	"create function \"masklen\" (p inet) returns int external name inet.\"masklen\";",	"inet",	1,	1,	false,	false,	false	]
 [ "sys",	"max",	"max",	"aggr",	0,	3,	false,	false,	false	]
 [ "sys",	"mbr",	"create function mbr(geom geometry) returns mbr external name geom.\"mbr\";",	"geom",	1,	1,	false,	false,	false	]
@@ -3379,12 +3377,12 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"stddev_samp",	"create aggregate stddev_samp(val tinyint) returns double external name \"aggr\".\"stdev\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stop",	"create procedure sys.stop(tag bigint) external name sql.sysmon_stop;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"stop",	"create procedure sys.stop(tag int) external name sql.sysmon_stop;",	"sql",	1,	2,	true,	false,	false	]
-[ "sys",	"storage",	"create function sys.\"storage\"() returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
-[ "sys",	"storage",	"create function sys.\"storage\"(sname string) returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
-[ "sys",	"storage",	"create function sys.\"storage\"(sname string, tname string) returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
-[ "sys",	"storage",	"create function sys.\"storage\"(sname string, tname string, cname string) returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
-[ "sys",	"storagemodel",	"create function sys.storagemodel() returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"count\" bigint, columnsize bigint, heapsize bigint, hashes bigint, \"imprints\" bigint, sorted boolean, orderidx bigint) begin return select i.\"schema\", i.\"table\", i.\"column\", i.\"type\", i.\"count\", columnsize(i.\"type\", i.count, i.\"distinct\"), heapsize(i.\"type\", i.\"distinct\", i.\"atomwidth\"), hashsize(i.\"reference\", i.\"count\"), imprintsize(i.\"count\",i.\"type\"), i.sorted, i.orderidx from sys.storagemodelinput i; end;",	"user",	2,	5,	false,	false,	false	]
-[ "sys",	"storagemodelinit",	"create procedure sys.storagemodelinit() begin delete from sys.storagemodelinput; insert into sys.storagemodelinput select x.\"schema\", x.\"table\", x.\"column\", x.\"type\", x.typewidth, x.count, 0, x.typewidth, false, x.sorted, x.orderidx from sys.\"storage\"() x; update sys.storagemodelinput set reference = true where concat(concat(\"schema\",\"table\"), \"column\") in (select concat(concat(\"fkschema\".\"name\", \"fktable\".\"name\"), \"fkkeycol\".\"name\") from \"sys\".\"keys\" as \"fkkey\", \"sys\".\"objects\" as \"fkkeycol\", \"sys\".\"tables\" as \"fktable\", \"sys\".\"schemas\" as \"fkschema\" where \"fktable\".\"id\" = \"fkkey\".\"table_id\" and \"fkkey\".\"id\" = \"fkkeycol\".\"id\" and \"fkschema\".\"id\" = \"fktable\".\"schema_id\" and \"fkkey\".\"rkey\" > -1); update sys.storagemodelinput set \"distinct\" = \"count\" where \"type\" = 'varchar' or \"type\"='clob'; end;",	"user",	2,	2,	true,	false,	false	]
+[ "sys",	"storage",	"create function sys.\"storage\"() returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, revsorted boolean, \"unique\" boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
+[ "sys",	"storage",	"create function sys.\"storage\"(sname string) returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, revsorted boolean, \"unique\" boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
+[ "sys",	"storage",	"create function sys.\"storage\"(sname string, tname string) returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, revsorted boolean, \"unique\" boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
+[ "sys",	"storage",	"create function sys.\"storage\"(sname string, tname string, cname string) returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, revsorted boolean, \"unique\" boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
+[ "sys",	"storagemodel",	"create function sys.storagemodel() returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"count\" bigint, columnsize bigint, heapsize bigint, hashes bigint, \"imprints\" bigint, sorted boolean, revsorted boolean, \"unique\" boolean, orderidx bigint) begin return select i.\"schema\", i.\"table\", i.\"column\", i.\"type\", i.\"count\", columnsize(i.\"type\", i.count, i.\"distinct\"), heapsize(i.\"type\", i.\"distinct\", i.\"atomwidth\"), hashsize(i.\"reference\", i.\"count\"), imprintsize(i.\"count\",i.\"type\"), i.sorted, i.revsorted, i.\"unique\", i.orderidx from sys.storagemodelinput i; end;",	"user",	2,	5,	false,	false,	false	]
+[ "sys",	"storagemodelinit",	"create procedure sys.storagemodelinit() begin delete from sys.storagemodelinput; insert into sys.storagemodelinput select x.\"schema\", x.\"table\", x.\"column\", x.\"type\", x.typewidth, x.count, 0, x.typewidth, false, x.sorted, x.revsorted, x.\"unique\", x.orderidx from sys.\"storage\"() x; update sys.storagemodelinput set reference = true where concat(concat(\"schema\",\"table\"), \"column\") in (select concat(concat(\"fkschema\".\"name\", \"fktable\".\"name\"), \"fkkeycol\".\"name\") from \"sys\".\"keys\" as \"fkkey\", \"sys\".\"objects\" as \"fkkeycol\", \"sys\".\"tables\" as \"fktable\", \"sys\".\"schemas\" as \"fkschema\" where \"fktable\".\"id\" = \"fkkey\".\"table_id\" and \"fkkey\".\"id\" = \"fkkeycol\".\"id\" and \"fkschema\".\"id\" = \"fktable\".\"schema_id\" and \"fkkey\".\"rkey\" > -1); update sys.storagemodelinput set \"distinct\" = \"count\" where \"type\" = 'varchar' or \"type\"='clob'; end;",	"user",	2,	2,	true,	false,	false	]
 [ "sys",	"str_to_date",	"create function str_to_date(s string, format string) returns date external name mtime.\"str_to_date\";",	"mtime",	1,	1,	false,	false,	false	]
 [ "sys",	"str_to_time",	"create function str_to_time(s string, format string) returns time external name mtime.\"str_to_time\";",	"mtime",	1,	1,	false,	false,	false	]
 [ "sys",	"str_to_timestamp",	"create function str_to_timestamp(s string, format string) returns timestamp external name mtime.\"str_to_timestamp\";",	"mtime",	1,	1,	false,	false,	false	]
@@ -3472,16 +3470,13 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"year",	"year",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"year",	"year",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"zero_or_one",	"zero_or_one",	"sql",	0,	3,	false,	false,	false	]
-[ "sys",	"zorder_decode_x",	"create function zorder_decode_x(z oid) returns integer external name zorder.decode_x;",	"zorder",	1,	1,	false,	false,	false	]
-[ "sys",	"zorder_decode_y",	"create function zorder_decode_y(z oid) returns integer external name zorder.decode_y;",	"zorder",	1,	1,	false,	false,	false	]
-[ "sys",	"zorder_encode",	"create function zorder_encode(x integer, y integer) returns oid external name zorder.encode;",	"zorder",	1,	1,	false,	false,	false	]
 #with
 #arg1 (id, id1, name1, type1, type_digits1, type_scale1, inout1) as (select f.id, a1.id, a1.name, a1.type, a1.type_digits, a1.type_scale, a1.inout from sys.functions f left outer join args a1 on a1.func_id = f.id and a1.number = 1),
 #arg2 (id, id1, name1, type1, type_digits1, type_scale1, inout1, id2, name2, type2, type_digits2, type_scale2, inout2) as (select arg1.*, a2.id, a2.name, a2.type, a2.type_digits, a2.type_scale, a2.inout from arg1 left outer join args a2 on a2.func_id = arg1.id and a2.number = 2),
 % sys.s,	sys.f,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16,	.arg16 # table_name
 % name,	name,	name1,	type1,	type_digits1,	type_scale1,	inout1,	name2,	type2,	type_digits2,	type_scale2,	inout2,	name3,	type3,	type_digits3,	type_scale3,	inout3,	name4,	type4,	type_digits4,	type_scale4,	inout4,	name5,	type5,	type_digits5,	type_scale5,	inout5,	name6,	type6,	type_digits6,	type_scale6,	inout6,	name7,	type7,	type_digits7,	type_scale7,	inout7,	name8,	type8,	type_digits8,	type_scale8,	inout8,	name9,	type9,	type_digits9,	type_scale9,	inout9,	name10,	type10,	type_digits10,	type_scale10,	inout10,	name11,	type11,	type_digits11,	type_scale11,	inout11,	name12,	type12,	type_digits12,	type_scale12,	inout12,	name13,	type13,	type_digits13,	type_scale13,	inout13,	name14,	type14,	type_digits14,	type_scale14,	inout14,	name15,	type15,	type_digits15,	type_scale15,	inout15 # name
 % varchar,	varchar,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	varchar,	int,	int,	tinyint # type
-% 8,	35,	16,	14,	4,	1,	1,	16,	14,	3,	1,	1,	27,	12,	3,	1,	1,	12,	7,	2,	1,	1,	10,	7,	2,	1,	1,	8,	7,	2,	1,	1,	9,	6,	2,	1,	1,	10,	6,	2,	1,	1,	8,	7,	2,	1,	1,	8,	7,	2,	1,	1,	5,	7,	2,	1,	1,	8,	6,	2,	1,	1,	6,	7,	1,	1,	1,	8,	6,	2,	1,	1,	5,	4,	1,	1,	1 # length
+% 8,	35,	16,	14,	4,	1,	1,	16,	14,	3,	1,	1,	27,	12,	3,	1,	1,	12,	7,	2,	1,	1,	10,	7,	2,	1,	1,	8,	7,	2,	1,	1,	9,	6,	2,	1,	1,	10,	6,	2,	1,	1,	8,	7,	2,	1,	1,	9,	7,	2,	1,	1,	6,	7,	2,	1,	1,	8,	6,	2,	1,	1,	6,	7,	1,	1,	1,	9,	7,	1,	1,	1,	6,	7,	1,	1,	1 # length
 [ "bam",	"bam_drop_file",	"dbschema",	"smallint",	16,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"bam_export",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"bam_flag",	"flag",	"smallint",	16,	0,	1,	"name",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3856,7 +3851,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"ltrim",	"arg_1",	"clob",	0,	0,	1,	"arg_2",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"ltrim",	"arg_1",	"varchar",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"ltrim",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"malfunctions",	"address",	"clob",	0,	0,	0,	"comment",	"clob",	0,	0,	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"malfunctions",	"function",	"clob",	0,	0,	0,	"signature",	"clob",	0,	0,	0,	"address",	"clob",	0,	0,	0,	"comment",	"clob",	0,	0,	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"masklen",	"p",	"inet",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"max",	"arg",	"any",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"mbr",	"geom",	"geometry",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5113,11 +5108,11 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"stddev_samp",	"val",	"tinyint",	8,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"stop",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"stop",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"orderidx",	"bigint",	64,	0,	0,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"orderidx",	"bigint",	64,	0,	0,	"sname",	"clob",	0,	0,	1	]
-[ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"orderidx",	"bigint",	64,	0,	0,	"sname",	"clob",	0,	0,	1	]
-[ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"orderidx",	"bigint",	64,	0,	0,	"sname",	"clob",	0,	0,	1	]
-[ "sys",	"storagemodel",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"orderidx",	"bigint",	64,	0,	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"revsorted",	"boolean",	1,	0,	0,	"unique",	"boolean",	1,	0,	0	]
+[ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"revsorted",	"boolean",	1,	0,	0,	"unique",	"boolean",	1,	0,	0	]
+[ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"revsorted",	"boolean",	1,	0,	0,	"unique",	"boolean",	1,	0,	0	]
+[ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"revsorted",	"boolean",	1,	0,	0,	"unique",	"boolean",	1,	0,	0	]
+[ "sys",	"storagemodel",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"revsorted",	"boolean",	1,	0,	0,	"unique",	"boolean",	1,	0,	0,	"orderidx",	"bigint",	64,	0,	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"storagemodelinit",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"str_to_date",	"s",	"clob",	0,	0,	1,	"format",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"str_to_time",	"s",	"clob",	0,	0,	1,	"format",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5206,9 +5201,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"year",	"arg_1",	"timestamp",	7,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"year",	"arg_1",	"timestamptz",	7,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"zero_or_one",	"arg",	"any",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"zorder_decode_x",	"z",	"oid",	63,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"zorder_decode_y",	"z",	"oid",	63,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"zorder_encode",	"x",	"int",	32,	0,	1,	"y",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select name, grantor from sys.auths;
 % sys.auths,	sys.auths # table_name
 % name,	grantor # name
@@ -5386,21 +5378,25 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"storagemodelinput",	"distinct",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"orderidx",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"reference",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
+[ "sys",	"storagemodelinput",	"revsorted",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"schema",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"sorted",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"table",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"type",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
+[ "sys",	"storagemodelinput",	"unique",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"atomwidth",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"column",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"count",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"distinct",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"orderidx",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"reference",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"storagemodelinput",	"revsorted",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"schema",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"sorted",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"table",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"type",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"typewidth",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"storagemodelinput",	"unique",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 #select s1.name, f1.name, s2.name, t2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), schemas s1, functions f1, schemas s2, _tables t2, dependencies d where d.depend_type = dt.id and d.id = f1.id and f1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, f1.name;
 % sys.s1,	sys.f1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	name # name
@@ -5670,9 +5666,6 @@ drop function pcre_replace(string, string, string, string);
 [ "time_to_str",	"public",	16,	"monetdb",	0	]
 [ "times",	"public",	16,	"monetdb",	0	]
 [ "timestamp_to_str",	"public",	16,	"monetdb",	0	]
-[ "zorder_decode_x",	"public",	16,	"monetdb",	0	]
-[ "zorder_decode_y",	"public",	16,	"monetdb",	0	]
-[ "zorder_encode",	"public",	16,	"monetdb",	0	]
 #select s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc, q.cycle from sys.sequences q left outer join sys.schemas s on q.schema_id = s.id order by s.name, q.name;
 % .s,	.q,	.q,	.q,	.q,	.q,	.q,	.q # table_name
 % name,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
@@ -7418,9 +7411,6 @@ drop function pcre_replace(string, string, string, string);
 [ "year"	]
 [ "year"	]
 [ "zero_or_one"	]
-[ "zorder_decode_x"	]
-[ "zorder_decode_y"	]
-[ "zorder_encode"	]
 #select t.name, g.name, g.time, g.orientation, g.event, g.old_name, g.new_name, g.condition, g.statement from sys.triggers g left outer join sys._tables t on g.table_id = t.id order by t.name, g.name;
 % .t,	.g,	.g,	.g,	.g,	.g,	.g,	.g,	.g # table_name
 % name,	name,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name

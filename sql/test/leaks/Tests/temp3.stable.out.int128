@@ -38,7 +38,7 @@ Ready.
 % L1,	L2 # name
 % char,	bigint # type
 % 10,	3 # length
-[ "persistent",	263	]
+[ "persistent",	266	]
 
 # 16:21:18 >  
 # 16:21:18 >  "Done."

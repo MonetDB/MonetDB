@@ -126,6 +126,10 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 			GDKfree(*buf);
 			*len = 2 * l + 3;
 			*buf = GDKzalloc(*len);
+			if( buf == NULL){
+				GDKerror("Tabletadt_toStr" MAL_MALLOC_FAIL);
+				return 0;
+			}
 		}
 		dst = *buf;
 		dst[0] = '"';
@@ -229,7 +233,6 @@ TABLETcollect(BAT **bats, Tablet *as)
 		BATsetaccess(fmt[i].c, BAT_READ);
 		fmt[i].c->tsorted = fmt[i].c->trevsorted = 0;
 		fmt[i].c->tkey = 0;
-		fmt[i].c->tnil = fmt[i].c->tnonil = 0;
 		BATsettrivprop(fmt[i].c);
 
 		if (cnt != BATcount(fmt[i].c))
@@ -256,7 +259,6 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		b = fmt[i].c;
 		b->tsorted = b->trevsorted = 0;
 		b->tkey = 0;
-		b->tnil = b->tnonil = 0;
 		BATsettrivprop(b);
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
@@ -355,6 +357,8 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 				if (fill + l + f->seplen >= *len) {
 					/* extend the buffer */
 					*buf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+					if( buf == NULL)
+						return -1;
 					*len = fill + l + f->seplen + BUFSIZ;
 					if (*buf == NULL)
 						return -1;
@@ -395,6 +399,8 @@ output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *
 			if (fill + l + f->seplen >= *len) {
 				/* extend the buffer */
 				*buf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+				if( buf == NULL)
+					return 0;
 				*len = fill + l + f->seplen + BUFSIZ;
 				if (*buf == NULL)
 					return -1;
@@ -899,6 +905,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			if (s) {
 				size_t slen = mystrlen(s);
 				char *scpy = GDKmalloc(slen + 1);
+				assert(scpy);
 				if (scpy)
 					mycpstr(scpy, s);
 				s = scpy;
@@ -1722,6 +1729,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		}
 	}
 	task->rowerror = (bte *) GDKzalloc(sizeof(bte) * task->limit);
+	if( task->rowerror == NULL){
+		tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file:failed to alloc rowerror buffer");
+		goto bailout;
+	}
 
 	MT_create_thread(&task->tid, SQLproducer, (void *) task, MT_THR_JOINABLE);
 #ifdef _DEBUG_TABLET_

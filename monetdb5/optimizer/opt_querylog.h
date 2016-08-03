@@ -17,5 +17,4 @@
 
 mal_export int OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGquerylog  if ( optDebug & ((lng)1 <<DEBUG_OPT_HISTORY) )
 #endif

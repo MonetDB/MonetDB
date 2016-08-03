@@ -699,10 +699,12 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	char is_table = (res && res->token == SQL_TABLE);
 	char is_aggr = (type == F_AGGR);
 	char is_func = (type != F_PROC);
-	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
+	char is_loader = (type == F_LOADER);
+
+	char *F = is_loader?"LOADER":(is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE"));
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
 
-	assert(res || type == F_PROC || type == F_FILT);
+	assert(res || type == F_PROC || type == F_FILT || type == F_LOADER);
 
 	if (is_table)
 		type = F_UNION;
@@ -784,18 +786,18 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
      					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
 				sql->params = NULL;
 				if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, vararg);
+					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg);
 				} else if (!sf) {
 					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
-				} else {
+				} /*else {
 					sql_func *f = sf->func;
 					f->mod = _STRDUP("rapi");
 					f->imp = _STRDUP("eval");
 					if (res && restype)
 						f->res = restype;
-					f->sql = 0; /* native */
+					f->sql = 0;
 					f->lang = FUNC_LANG_INT;
-				}
+				}*/
 			} else if (body) {
 				sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
 				list *b = NULL;
@@ -843,8 +845,10 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
 				} else {
 					sql_func *f = sf->func;
-					f->mod = _STRDUP(fmod);
-					f->imp = _STRDUP(fnme);
+					if (!f->mod || strcmp(f->mod, fmod))
+						f->mod = _STRDUP(fmod);
+					if (!f->imp || strcmp(f->imp, fnme)) 
+						f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
 					f->sql = 0; /* native */
 					f->lang = FUNC_LANG_INT;
 				}
@@ -881,7 +885,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
 	char is_aggr = (type == F_AGGR);
-	char is_func = (type != F_PROC);
+	char is_func = (type != F_PROC && type != F_LOADER);
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
 	char *f = is_aggr?"aggregate":(is_func?"function":"procedure");
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
@@ -1216,6 +1220,38 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 	return rel_psm_block(sql->sa, analyze_calls);
 }
 
+static sql_rel*
+create_table_from_loader(mvc *sql, dlist *qname, symbol *fcall)
+{
+	sql_schema *s = NULL;
+	char *sname = qname_schema(qname);
+	char *tname = qname_table(qname);
+	sql_exp *import = NULL;
+	exp_kind ek = {type_value, card_loader, FALSE};
+	sql_rel *res = NULL;
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
+
+	if (mvc_bind_table(sql, s, tname)) {
+		return sql_error(sql, 02, "42S01!CREATE TABLE: name '%s' already in use", tname);
+	} else if (!mvc_schema_privs(sql, s)){
+		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	}
+
+	import = rel_value_exp(sql, &res, fcall, sql_sel, ek);
+	if (!import) {
+		return NULL;
+	}
+	((sql_subfunc*) import->f)->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
+	((sql_subfunc*) import->f)->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
+
+	if (sname) strcpy(((sql_subfunc*) import->f)->sname, sname);
+	if (tname) strcpy(((sql_subfunc*) import->f)->tname, tname);
+
+	return rel_psm_stmt(sql->sa, import);
+}
+
 sql_rel *
 rel_psm(mvc *sql, symbol *s)
 {
@@ -1262,6 +1298,15 @@ rel_psm(mvc *sql, symbol *s)
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
 		sql->type = Q_UPDATE;
 		break;
+	case SQL_CREATE_TABLE_LOADER:
+	{
+	    dlist *l = s->data.lval;
+	    dlist *qname = l->h->data.lval;
+	    symbol *sym = l->h->next->data.sym;
+
+	    ret = create_table_from_loader(sql, qname, sym);
+	    sql->type = Q_UPDATE;
+	}	break;
 	case SQL_CREATE_TRIGGER:
 	{
 		dlist *l = s->data.lval;

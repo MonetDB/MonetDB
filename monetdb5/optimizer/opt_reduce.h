@@ -12,8 +12,6 @@
 #include "opt_support.h"
 #include "mal_instruction.h"
 
-#define OPTDEBUGreduce  if ( optDebug & ((lng)1 <<DEBUG_OPT_REDUCE) )
-
 mal_export int OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

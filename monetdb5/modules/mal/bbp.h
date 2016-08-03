@@ -34,7 +34,6 @@ mal_export str CMDbbpNames(bat *ret);
 mal_export str CMDbbpName(str *ret, bat *bid);
 mal_export str CMDbbpCount(bat *ret);
 mal_export str CMDbbpLocation(bat *ret);
-mal_export str CMDbbpHeat(bat *ret);
 mal_export str CMDbbpDirty(bat *ret);
 mal_export str CMDbbpStatus(bat *ret);
 mal_export str CMDbbpKind(bat *ret);

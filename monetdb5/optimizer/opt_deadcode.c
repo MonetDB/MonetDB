@@ -34,10 +34,8 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if (newMalBlkStmt(mb, mb->ssize) < 0){
-		GDKfree(varused);
-		return 0;
-	}
+	if (newMalBlkStmt(mb, mb->ssize) < 0)
+		goto wrapup;
 
 	// Calculate the instructions in which a variable is used.
 	// Variables can be used multiple times in an instruction.
@@ -76,7 +74,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	
 	// Now we can simply copy the intructions and discard useless ones.
 	pushInstruction(mb, old[0]);
-	for (i = 1; i < limit; i++) 
+	for (i = 1; i < limit; i++) {
 		if ((p = old[i]) != NULL) {
 			if( p->token == ENDsymbol){
 				pushInstruction(mb,p);
@@ -99,11 +97,10 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				actions ++;
 			}
 		}
+	}
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
-	GDKfree(old);
-	GDKfree(varused);
     /* Defense line against incorrect plans */
 	/* we don't create or change existing structures */
     //if( actions > 0){
@@ -115,5 +112,8 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, GDKusec() - usec);
     newComment(mb,buf);
 
+wrapup:
+	if(old) GDKfree(old);
+	if(varused) GDKfree(varused);
 	return actions;
 }

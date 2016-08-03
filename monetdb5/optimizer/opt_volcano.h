@@ -14,6 +14,4 @@
 
 mal_export int OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGvolcano  if ( optDebug & ((lng) 1 <<DEBUG_OPT_VOLCANO) )
-
 #endif

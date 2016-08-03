@@ -13,6 +13,4 @@
 
 mal_export int OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGpushselect  if ( optDebug & (LL_CONSTANT(1) <<DEBUG_OPT_PUSHSELECT) )
-
 #endif

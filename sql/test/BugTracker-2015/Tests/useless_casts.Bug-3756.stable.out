@@ -58,7 +58,7 @@ function user.s3_1(A0:int):void;
     X_4:bat[:int] := sql.bind(X_0,"sys","test","value",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","test");
     C_45 := algebra.subselect(X_4,C_1,A0,A0,true,false,false);
-    (C_7,r1_9) := sql.bind(X_0,"sys","test","value",2);
+    (C_7:bat[:oid],r1_9:bat[:int]) := sql.bind(X_0,"sys","test","value",2);
     C_46 := algebra.subselect(r1_9,nil:bat[:oid],A0,A0,true,false,false);
     X_10:bat[:int] := sql.bind(X_0,"sys","test","value",1);
     C_48 := algebra.subselect(X_10,C_1,A0,A0,true,false,false);

@@ -186,8 +186,6 @@ SYScpuStatistics(bat *ret, bat *ret2)
 	BUNappend(bn, "elapsystem", FALSE);
 	BUNappend(b, &i, FALSE);
 #endif
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }
@@ -242,8 +240,6 @@ SYSmemStatistics(bat *ret, bat *ret2)
 	i = (lng) m.fordblks;
 	BUNappend(bn, "fordblks", FALSE);
 	BUNappend(b, &i, FALSE);
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }
@@ -369,10 +365,8 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	BUNappend(b, &tot, FALSE);
 
 	BBPunlock();
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	*ret2 = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 
@@ -446,10 +440,8 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 	BUNappend(b, &sz, FALSE);
 
 	BBPunlock();
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	*ret2 = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -554,8 +546,6 @@ SYSioStatistics(bat *ret, bat *ret2)
 	BUNappend(b, &i, FALSE);
 #endif
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }
@@ -565,7 +555,6 @@ SYSgdkEnv(bat *ret, bat *ret2)
 {
 	int pbat = 0;
 	int pdisk = 0;
-	int pheat = 0;
 	bat i;
 	int tmp = 0, per = 0;
 	BAT *b,*bn;
@@ -582,7 +571,6 @@ SYSgdkEnv(bat *ret, bat *ret2)
 		if (BBPvalid(i)) {
 			pbat++;
 			if (BBP_cache(i)) {
-				pheat += BBP_lastused(i);
 				if (BBP_cache(i)->batPersistence == PERSISTENT)
 					per++;
 				else
@@ -604,8 +592,6 @@ SYSgdkEnv(bat *ret, bat *ret2)
 	BUNappend(b, &BBPout, FALSE);
 	BUNappend(bn, "fromdisk", FALSE);
 	BUNappend(b, &BBPin, FALSE);
-	if (!(b->batDirty & 2)) BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,ret2, bn,b);
 	return MAL_SUCCEED;
 }
@@ -630,8 +616,6 @@ SYSgdkThread(bat *ret, bat *ret2)
 			BUNappend(b, GDKthreads[i].name? GDKthreads[i].name:"", FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }

@@ -102,7 +102,6 @@ CMDbbpNames(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","name");
 	return MAL_SUCCEED;
 }
@@ -148,7 +147,6 @@ CMDbbpCount(bat *ret)
 				}
 			}
 		}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","count");
 	return MAL_SUCCEED;
 }
@@ -180,39 +178,7 @@ CMDbbpLocation(bat *ret)
 			}
 		}
 	BBPunlock();
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","location");
-	return MAL_SUCCEED;
-}
-
-#define monet_modulesilent (GDKdebug&PERFMASK)
-
-str
-CMDbbpHeat(bat *ret)
-{
-	BAT *b;
-	int i;
-
-	b = COLnew(0, TYPE_int, getBBPsize(), TRANSIENT);
-	if (b == 0)
-		throw(MAL, "catalog.bbpHeat", MAL_MALLOC_FAIL);
-
-	BBPlock();
-	for (i = 1; i < getBBPsize(); i++)
-		if (i != b->batCacheid) {
-			if (BBP_cache(i) && !monet_modulesilent) {
-				int heat = BBP_lastused(i);
-
-				BUNappend(b, &heat, FALSE);
-			} else if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				int zero = 0;
-
-				BUNappend(b, &zero, FALSE);
-			}
-		}
-	BBPunlock();
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
-	pseudo(ret,b,"bbp","heat");
 	return MAL_SUCCEED;
 }
 
@@ -238,7 +204,6 @@ CMDbbpDirty(bat *ret)
 				BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
 			}
 	BBPunlock();
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","status");
 	return MAL_SUCCEED;
 }
@@ -265,7 +230,6 @@ CMDbbpStatus(bat *ret)
 				BUNappend(b, loc, FALSE);
 			}
 	BBPunlock();
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","status");
 	return MAL_SUCCEED;
 }
@@ -294,7 +258,6 @@ CMDbbpKind(bat *ret)
 					BUNappend(b, mode, FALSE);
 			}
 	BBPunlock();
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","kind");
 	return MAL_SUCCEED;
 }
@@ -317,7 +280,6 @@ CMDbbpRefCount(bat *ret)
 			BUNappend(b, &refs, FALSE);
 		}
 	BBPunlock();
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","refcnt");
 	return MAL_SUCCEED;
 }
@@ -340,7 +302,6 @@ CMDbbpLRefCount(bat *ret)
 			BUNappend(b, &refs, FALSE);
 		}
 	BBPunlock();
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","lrefcnt");
 	return MAL_SUCCEED;
 }
@@ -415,7 +376,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 			bn = BATdescriptor(i);
 			if (bn) {
 				lng l = BATcount(bn);
-				int heat_ = BBP_lastused(i);
+				int heat_ = 0;
 				char *loc = BBP_cache(i) ? "load" : "disk";
 				char *mode = "persistent";
 				int refs = BBP_refs(i);

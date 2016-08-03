@@ -120,6 +120,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 	}
 
 	qtop = j;
+	QRYqueue[qtop].query = NULL; /* sentinel for SYSMONqueue() */
 	MT_lock_unset(&mal_delayLock);
 }
 

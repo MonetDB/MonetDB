@@ -30,12 +30,12 @@ Ready.
 #result of inline
 #mdb.list("user","tst");
 function user.tst():void;
-    X_3 := true:bit;
+    true:bit;
     z := 0:int;
 end user.tst;
 #mdb.list("user","tst");
 function user.tst():void;
-    X_3 := true:bit;
+    true:bit;
     z := 0:int;
 end user.tst;
 

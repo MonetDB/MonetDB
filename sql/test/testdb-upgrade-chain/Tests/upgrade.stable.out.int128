@@ -69,6 +69,9 @@ create procedure sys.createorderindex(sys string, tab string, col string)
 external name sql.createorderindex;
 create procedure sys.droporderindex(sys string, tab string, col string)
 external name sql.droporderindex;
+drop function sys.zorder_decode_y;
+drop function sys.zorder_decode_x;
+drop function sys.zorder_encode;
 drop view sys.tablestoragemodel;
 drop view sys.storagemodel;
 drop function sys.storagemodel();
@@ -78,6 +81,8 @@ drop function sys."storage"(string, string);
 drop function sys."storage"(string);
 drop view sys."storage";
 drop function sys."storage"();
+alter table sys.storagemodelinput add column "revsorted" boolean;
+alter table sys.storagemodelinput add column "unique" boolean;
 alter table sys.storagemodelinput add column "orderidx" bigint;
 create function sys."storage"()
 returns table (
@@ -95,6 +100,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -115,6 +122,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -134,6 +143,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -153,6 +164,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -160,7 +173,7 @@ create procedure sys.storagemodelinit()
 begin
  delete from sys.storagemodelinput;
  insert into sys.storagemodelinput
- select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.orderidx from sys."storage"() X;
+ select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X."unique", X.orderidx from sys."storage"() X;
  update sys.storagemodelinput
  set reference = true
  where concat(concat("schema","table"), "column") in (
@@ -189,6 +202,8 @@ returns table (
  hashes bigint,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint)
 begin
  return select I."schema", I."table", I."column", I."type", I."count",
@@ -196,7 +211,7 @@ begin
  heapsize(I."type", I."distinct", I."atomwidth"),
  hashsize(I."reference", I."count"),
  imprintsize(I."count",I."type"),
- I.sorted, I.orderidx
+ I.sorted, I.revsorted, I."unique", I.orderidx
  from sys.storagemodelinput I;
 end;
 create view sys.storagemodel as select * from sys.storagemodel();
@@ -209,6 +224,7 @@ as select "schema","table",max(count) as "count",
  sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";
 update sys._tables set system = true where name in ('storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+alter table sys.statistics add column "revsorted" boolean;
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
 delete from systemfunctions where function_id not in (select id from functions);

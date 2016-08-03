@@ -21,10 +21,18 @@
 Symbol newFunction(str mod, str nme,int kind){
 	Symbol s;
 	InstrPtr p;
+	int varid;
 
 	s = newSymbol(nme,kind);
 	if (s == NULL)
 		return NULL;
+
+	varid = newVariable(s->def,nme,strlen(nme),TYPE_any);
+	if( varid < 0){
+		freeSymbol(s);
+		return NULL;
+	}
+
 	p = newInstruction(NULL,kind);
 	if (p == NULL) {
 		freeSymbol(s);
@@ -32,7 +40,7 @@ Symbol newFunction(str mod, str nme,int kind){
 	}
 	setModuleId(p, mod);
 	setFunctionId(p, nme);
-	setDestVar(p, newVariable(s->def,nme,strlen(nme),TYPE_any));
+	setDestVar(p, varid);
 	pushInstruction(s->def,p);
 	return s;
 }
@@ -46,9 +54,9 @@ Symbol  getFunctionSymbol(Module scope, InstrPtr p){
 	Module m;
 	Symbol s;
 
-	for(m= findModule(scope,getModuleId(p)); m; m= m->outer)
+	for(m= findModule(scope,getModuleId(p)); m; m= m->link)
 		if(idcmp(m->name, getModuleId(p))==0 ) {
-			s= m->subscope[(int)(getSubScope(getFunctionId(p)))];
+			s= m->space[getSymbolIndex(getFunctionId(p))];
 			for(; s; s= s->peer)
 				if( getSignature(s)->fcn == p->fcn)
 					return s;
@@ -350,14 +358,14 @@ insertSymbolBefore(Module scope, Symbol prg, Symbol before)
 		if (c)
 			scope = c;
 	}
-	t = getSubScope(getFunctionId(sig));
-	assert(scope->subscope != NULL);
-	assert(scope->subscope[t] != NULL);
-	s = scope->subscope[t];
+	t = getSymbolIndex(getFunctionId(sig));
+	assert(scope->space != NULL);
+	assert(scope->space[t] != NULL);
+	s = scope->space[t];
 	prg->skip = before->skip;
 	prg->peer = before;
 	if (s == before) {
-		scope->subscope[t] = prg;
+		scope->space[t] = prg;
 	} else {
 		for (;;) {
 			assert(s != NULL);
@@ -531,6 +539,19 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 
 void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
+	int i,j;
+	InstrPtr p;
+	// Set the used bits properly
+	for(i=0; i< mb->vtop; i++)
+		clrVarUsed(mb,i);
+	for(i=0; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		for(j= p->retc; j<p->argc; j++)
+			setVarUsed(mb, getArg(p,j));
+		if( p->barrier)
+			for(j= 0; j< p->retc; j++)
+				setVarUsed(mb, getArg(p,j));
+	}
 	listFunction(fd,mb,stk,flg,0,mb->stop);
 }
 
@@ -540,16 +561,15 @@ setVariableScope(MalBlkPtr mb)
 {
 	int pc, k, depth=0, dflow= -1;
 	InstrPtr p;
-	str lang = putName("language"), dataflow= putName("dataflow");
 
 	/* reset the scope admin */
 	for (k = 0; k < mb->vtop; k++)
 	if( isVarConstant(mb,k)){
-		mb->var[k]->depth = 0;
+		setVarScope(mb,k,0);
 		mb->var[k]->declared = 0;
 		mb->var[k]->eolife = mb->stop;
 	} else {
-		mb->var[k]->depth = 0;
+		setVarScope(mb,k,0);
 		mb->var[k]->declared = 0;
 		mb->var[k]->eolife = 0;
 	}
@@ -560,7 +580,7 @@ setVariableScope(MalBlkPtr mb)
 			continue;
 
 		if( blockStart(p)){
-			if (getModuleId(p) == lang && getFunctionId(p) == dataflow){
+			if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")==0){
 				if( dflow != -1){
 					GDKerror("setLifeSpan nested dataflow blocks not allowed" );
 					mb->errors++;
@@ -577,14 +597,14 @@ setVariableScope(MalBlkPtr mb)
 
 			if (mb->var[v]->declared == 0 ){
 				mb->var[v]->declared = pc;
-				mb->var[v]->depth = depth;
+				setVarScope(mb,v,depth);
 			}
 			if (k < p->retc )
 				mb->var[v]->updated= pc;
-			if ( mb->var[v]->depth == depth )
+			if ( getVarScope(mb,v) == depth )
 				mb->var[v]->eolife = pc;
 
-			if ( k >= p->retc && mb->var[v]->depth < depth )
+			if ( k >= p->retc && getVarScope(mb,v) < depth )
 				mb->var[v]->eolife = -1;
 		}
 		/*
@@ -594,7 +614,7 @@ setVariableScope(MalBlkPtr mb)
 		 */
 		if( blockExit(p) ){
 			for (k = 0; k < mb->vtop; k++)
-			if ( mb->var[k]->eolife == 0 && mb->var[k]->depth==depth )
+			if ( mb->var[k]->eolife == 0 && getVarScope(mb,k) ==depth )
 				mb->var[k]->eolife = pc;
 			else if ( mb->var[k]->eolife == -1 )
 				mb->var[k]->eolife = pc;
@@ -715,22 +735,18 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 	int pc,i, k,l;
 	InstrPtr p;
 	short blks[MAXDEPTH], top= 0, blkId=1;
-	int *decl;
-	str lang = putName("language"), dataflow= putName("dataflow");
 	int dflow = -1;
 
-	decl = (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	if ( decl == NULL) {
-		showScriptException(out, mb,0,SYNTAX, MAL_MALLOC_FAIL);
-		mb->errors = 1;
-		return;
-	}
 	blks[top] = blkId;
+
+	/* initialize the scope */
+	for(i=0; i< mb->vtop; i++)
+		setVarScope(mb,i,0);
 
 	/* all signature variables are declared at outer level */
 	p= getInstrPtr(mb,0);
 	for(k=0;k<p->argc; k++)
-		decl[getArg(p,k)]= blkId;
+		setVarScope(mb, getArg(p,k), blkId);
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
@@ -740,7 +756,7 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 		for(k=p->retc;k<p->argc; k++) {
 			l=getArg(p,k);
 			setVarUsed(mb,l);
-			if( decl[l] == 0){
+			if( getVarScope(mb,l) == 0){
 				/*
 				 * The problem created here is that only variables are
 				 * recognized that are declared through instructions.
@@ -751,7 +767,7 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 				 * in the context of a global stack.
 				 */
 				if( p->barrier == CATCHsymbol){
-					decl[l] = blks[0];
+					setVarScope(mb, l, blks[0]);
 				} else
 				if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
 					!isVarInit(mb,l) ) {
@@ -764,9 +780,9 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 			if( !isVarInit(mb,l) ){
 			    /* is the block still active ? */
 			    for( i=0; i<= top; i++)
-					if( blks[i] == decl[l] )
+					if( blks[i] == getVarScope(mb,l) )
 						break;
-			    if( i> top || blks[i]!= decl[l] ){
+			    if( i> top || blks[i]!= getVarScope(mb,l) ){
 			            showScriptException(out, mb,pc,TYPE,
 							"'%s' used outside scope",
 							getVarName(mb,l));
@@ -779,22 +795,22 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 		/* define variables */
 		for(k=0; k<p->retc; k++){
 			l= getArg(p,k);
-			if (isVarInit(mb, l) && decl[l] == 0) {
+			if (isVarInit(mb, l) && getVarScope(mb,l) == 0) {
 				/* first time we see this variable and it is already
 				 * initialized: assume it exists globally */
-				decl[l] = blks[0];
+				setVarScope(mb, l, blks[0]);
 			}
 			setVarInit(mb,l);
-			if( decl[l] == 0){
+			if( getVarScope(mb,l) == 0){
 				/* variable has not been defined yet */
 				/* exceptions are always declared at level 1 */
 				if( p->barrier == CATCHsymbol)
-					decl[l] = blks[0];
+					setVarScope(mb, l, blks[0]);
 				else
-					decl[l] = blks[top];
+					setVarScope(mb, l, blks[top]);
 #ifdef DEBUG_MAL_FCN
 				mnstr_printf(out,"defined %s in block %d\n",
-					getVarName(mb,l),decl[l]);
+					getVarName(mb,l), getVarScope(mb,l));
 #endif
 			}
 			if( blockCntrl(p) || blockStart(p) )
@@ -805,11 +821,10 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 				if( top == MAXDEPTH-2){
 					showScriptException(out, mb,pc,SYNTAX, "too deeply nested  MAL program");
 					mb->errors++;
-					GDKfree(decl);
 					return;
 				}
 				blkId++;
-				if (getModuleId(p) == lang && getFunctionId(p) == dataflow){
+				if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")== 0){
 					if( dflow != -1){
 						GDKerror("setLifeSpan nested dataflow blocks not allowed" );
 						mb->errors++;
@@ -834,15 +849,14 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 				 * leading to uninitialized variables.
 				 */
 				for (l = 0; l < mb->vtop; l++)
-				if( decl[l] == blks[top]){
-					decl[l] =0;
+				if( getVarScope(mb,l) == blks[top]){
+					setVarScope(mb,l, 0);
 					clrVarInit(mb,l);
 				}
 			    top--;
 			}
 		}
 	}
-	GDKfree(decl);
 }
 
 /*

@@ -1092,7 +1092,7 @@ create_col(sql_trans *tr, sql_column *c)
 	int type = c->type.type->localtype;
 	sql_delta *bat = c->data;
 
-	if (!bat) {
+	if (!bat || !c->base.allocated) {
 		c->data = bat = ZNEW(sql_delta);
 		bat->wtime = c->base.wtime = tr->wstime;
 		c->base.allocated = 1;
@@ -1163,7 +1163,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	if (oid_index(ni->type))
 		type = TYPE_oid;
 
-	if (!bat) {
+	if (!bat || !ni->base.allocated) {
 		ni->data = bat = ZNEW(sql_delta);
 		bat->wtime = ni->base.wtime = tr->wstime;
 		ni->base.allocated = 1;
@@ -1882,6 +1882,9 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 	if (obat->bid)
 		cur = temp_descriptor(obat->bid);
 	if (!obat->bid && tr != gtrans) {
+		//if (obat->name)
+			destroy_delta(obat);
+			//_DELETE(obat->name);
 		*obat = *cbat;
 		cbat->bid = 0;
 		cbat->ibid = 0;

@@ -1078,7 +1078,7 @@ TESTrenderer(MapiHdl hdl)
 				 strlen(s) < l ||
 				 /* start or end with white space? */
 				 my_isspace(*s) ||
-				 my_isspace(s[l - 1]) ||
+				 (l > 0 && my_isspace(s[l - 1])) ||
 				 /* timezone can have embedded comma */
 				 strcmp(tp, "timezone") == 0 ||
 				 /* a bunch of geom types */
@@ -2849,15 +2849,33 @@ set_timezone(Mapi mid)
 	MapiHdl hdl;
 
 	/* figure out our current timezone */
-#ifdef HAVE__GET_TIMEZONE
-	__time64_t ltime, lt, gt;
-	struct tm loctime;
+#if defined HAVE_GETDYNAMICTIMEZONEINFORMATION
+	DYNAMIC_TIME_ZONE_INFORMATION tzinf;
 
-	_time64(&ltime);
-	_localtime64_s(&loctime, &ltime);
-	lt = _mktime64(&loctime);
-	gt = _mkgmtime64(&loctime);
-	tzone = (int) (lt - gt);
+	/* documentation says: UTC = localtime + Bias (in minutes),
+	 * but experimentation during DST period says, UTC = localtime
+	 * + Bias + DaylightBias, and presumably during non DST
+	 * period, UTC = localtime + Bias */
+	switch (GetDynamicTimeZoneInformation(&tzinf)) {
+	case TIME_ZONE_ID_STANDARD:
+	case TIME_ZONE_ID_UNKNOWN:
+		tzone = (int) tzinf.Bias * 60;
+		break;
+	case TIME_ZONE_ID_DAYLIGHT:
+		tzone = (int) (tzinf.Bias + tzinf.DaylightBias) * 60;
+		break;
+	default:
+		/* call failed, we don't know the time zone */
+		tzone = 0;
+		break;
+	}
+#elif defined HAVE_STRUCT_TM_TM_ZONE
+	time_t t;
+	struct tm *tmp;
+
+	t = time(NULL);
+	tmp = localtime(&t);
+	tzone = (int) -tmp->tm_gmtoff;
 #else
 	time_t t, lt, gt;
 	struct tm *tmp;

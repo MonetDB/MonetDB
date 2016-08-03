@@ -312,7 +312,6 @@ CONDITIONALS = {
     'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
-    'HAVE_LIBPANDAS'       : "@HAVE_LIBPANDAS_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
@@ -341,6 +340,8 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
+    'HAVE_LIBPANDAS'       : "",
+    'HAVE_LIBSCIPY'        : "",
     'HAVE_PHP'             : "",
     'HAVE_PYMONETDB'       : "",
     'HAVE_RUBY'            : "",
@@ -664,8 +665,8 @@ def CreateHtmlIndex (env, *body) :
         tr.addchildren(body)
         html = Element('html', {},
                        Element('head', {},
-                               Element('title', {},
-                                       Text(HTMLTITLE)),
+                               Element('meta', {'charset':'utf8'}),
+                               Element('title', {}, Text(HTMLTITLE)),
                                stylesheet),
                        Element('body',
                                {'bgcolor': white,
@@ -690,6 +691,7 @@ def CreateHtmlIndex (env, *body) :
             ROWS="54"
         html = Element('html', {},
                        Element('head', {},
+                               Element('meta', {'charset':'utf8'}),
                                Element('title', {}, Text(HTMLTITLE))),
                        Element('frameset',
                                {'rows': '%s,*' % ROWS,
@@ -2780,7 +2782,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             # enable Python integration in server
             if (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
                 Srvr.extend(['--set', 'embedded_py=true'])
-                
+
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"
             while 0 < len(ln) and not ln.startswith('Ready.'):
@@ -3673,6 +3675,18 @@ def main(argv) :
         print('Python available, but pymonetdb package not available')
     else:
         CONDITIONALS['HAVE_PYMONETDB'] = '#'
+    try:
+        import scipy
+    except ImportError:
+        pass
+    else:
+        CONDITIONALS['HAVE_LIBSCIPY'] = '#'
+    try:
+        import pandas
+    except ImportError:
+        pass
+    else:
+        CONDITIONALS['HAVE_LIBPANDAS'] = '#'
     if CheckExec('php'):
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:

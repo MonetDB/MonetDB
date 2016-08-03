@@ -223,6 +223,8 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
+		if (rel->op == op_table && rel->l) 
+			rel_properties(sql, gp, rel->l);
 		break;
 	case op_join: 
 	case op_left: 
@@ -7839,6 +7841,10 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
+		if (rel->op == op_table && rel->l) 
+			rel->l = rewrite(sql, rel->l, rewriter, has_changes);
+		if (rel->op == op_table && rel->l) 
+			rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
 		break;
 	case op_join: 
 	case op_left: 

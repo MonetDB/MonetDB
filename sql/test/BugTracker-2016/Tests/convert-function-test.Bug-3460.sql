@@ -1,6 +1,8 @@
 -- test SQL functions: convert(fromType, toType) and cast(fromType as toType) for all SQL data types and data values
 -- See also https://www.monetdb.org/bugzilla/show_bug.cgi?id=3460
 
+SET TIME ZONE INTERVAL '+02:00' HOUR TO MINUTE;
+
 -- BOOLEAN (true, false)
 CREATE TABLE T_boolean (v boolean);
 INSERT into T_boolean VALUES (true), (false);
@@ -1000,7 +1002,7 @@ SELECT v, convert(v, decimal(15,3)) from T_dec;
 
 SELECT v, convert(v, char) from T_dec where v between 0 and 1;
 SELECT v, convert(v, varchar) from T_dec; -- missing length specification
-SELECT v, convert(v, varchar(16)) from T_dec;
+SELECT v, convert(v, varchar(20)) from T_dec;
 SELECT v, convert(v, longvarchar) from T_dec; -- LONGVARCHAR not valid data type
 SELECT v, convert(v, long varchar) from T_dec; -- LONG VARCHAR not valid data type
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_dec;
@@ -1043,7 +1045,7 @@ SELECT v, cast(v as decimal(15,3)) from T_dec;
 
 SELECT v, cast(v as char) from T_dec where v between 0 and 1;
 SELECT v, cast(v as varchar) from T_dec; -- missing length specification
-SELECT v, cast(v as varchar(16)) from T_dec;
+SELECT v, cast(v as varchar(20)) from T_dec;
 SELECT v, cast(v as longvarchar) from T_dec; -- LONGVARCHAR not valid data type
 SELECT v, cast(v as long varchar) from T_dec; -- LONG VARCHAR not valid data type
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_dec;

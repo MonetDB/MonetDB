@@ -7,9 +7,6 @@
 #define PyString_FromStringAndSize PyUnicode_FromStringAndSize
 #endif
 
-const size_t additional_argcount = 3;
-const char * additional_args[] = {"_columns", "_column_types", "_conn"};
-
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
 #endif
@@ -61,7 +58,7 @@ PyObject *PyCodeObject_ParseString(char *string, char **msg)
     return code_object;
 }
 
-char* FormatCode(char* code, char **args, size_t argcount, size_t tabwidth, PyObject **code_object, char **msg)
+char* FormatCode(char* code, char **args, size_t argcount, size_t tabwidth, PyObject **code_object, char **msg, char** additional_args, size_t additional_argcount)
 {
     // Format the python code by fixing the indentation levels
     // We do two passes, first we get the length of the resulting formatted code and then we actually create the resulting code

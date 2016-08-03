@@ -33,6 +33,8 @@ returns table (
 	phash boolean,
 	"imprints" bigint,
 	sorted boolean,
+	revsorted boolean,
+	"unique" boolean,
 	orderidx bigint,
 	compressed boolean
 )
@@ -57,6 +59,8 @@ returns table (
 	phash boolean,
 	"imprints" bigint,
 	sorted boolean,
+	revsorted boolean,
+	"unique" boolean,
 	orderidx bigint,
 	compressed boolean
 )
@@ -78,6 +82,8 @@ returns table (
 	phash boolean,
 	"imprints" bigint,
 	sorted boolean,
+	revsorted boolean,
+	"unique" boolean,
 	orderidx bigint,
 	compressed boolean
 )
@@ -99,6 +105,8 @@ returns table (
 	phash boolean,
 	"imprints" bigint,
 	sorted boolean,
+	revsorted boolean,
+	"unique" boolean,
 	orderidx bigint,
 	compressed boolean
 )
@@ -118,6 +126,8 @@ create table sys.storagemodelinput(
 	"atomwidth" int,	-- average width of strings or clob
 	"reference" boolean,	-- used as foreign key reference
 	"sorted" boolean,	-- if set there is no need for an index
+	revsorted boolean,
+	"unique" boolean,
 	"orderidx" bigint,	-- an ordered oid index
 	"compressed" boolean -- comes with compressed store
 );
@@ -229,6 +239,8 @@ returns table (
 	hashes bigint,
 	"imprints" bigint,
 	sorted boolean,
+	revsorted boolean,
+	"unique" boolean,
 	orderidx bigint,
 	compressed boolean)
 begin
@@ -237,7 +249,7 @@ begin
 	heapsize(I."type", I."distinct", I."atomwidth"),
 	hashsize(I."reference", I."count"),
 	imprintsize(I."count",I."type"),
-	I.sorted, I.orderidx, I.compressed
+	I.sorted, I.revsorted,  I."unique", I.orderidx, I.compressed
 	from sys.storagemodelinput I;
 end;
 

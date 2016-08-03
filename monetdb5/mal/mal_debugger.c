@@ -517,7 +517,7 @@ retryRead:
 					continue;
 				}
 				for (i = 0; i < MAXSCOPE; i++) {
-					fs = fsym->subscope[i];
+					fs = fsym->space[i];
 					while (fs != NULL) {
 						printSignature(out, fs, 0);
 						fs = fs->peer;
@@ -525,13 +525,10 @@ retryRead:
 				}
 				continue;
 			} else{
-				Module s;
-				mnstr_printf(out,"#");
-				for( s= cntxt->nspace; s; s= s->outer) {
-					mnstr_printf(out,"%s",s->name);
-					if( s->subscope==0) mnstr_printf(out,"?");
-					if(s->outer) mnstr_printf(out,",");
-				}
+				Module m;
+				mnstr_printf(out,"#%s ",cntxt->nspace->name);
+				for( m = getModuleChain(); m; m = m->next)
+					mnstr_printf(out,"%s ",m->name);
 				mnstr_printf(out,"\n");
 			}
 		}
@@ -586,7 +583,7 @@ retryRead:
 						continue;
 					}
 					for (i = 0; i < MAXSCOPE; i++) {
-						fs = fsym->subscope[i];
+						fs = fsym->space[i];
 						while (fs != NULL) {
 							printStack(out, fs->def, 0);
 							fs = fs->peer;
@@ -603,7 +600,7 @@ retryRead:
 				}
 				/* display the overloaded symbol definition */
 				for (i = 0; i < MAXSCOPE; i++) {
-					fs = fsym->subscope[i];
+					fs = fsym->space[i];
 					while (fs != NULL) {
 						if (strcmp(fs->name, fcnname) == 0)
 							printStack(out, fs->def, 0);
@@ -874,7 +871,7 @@ retryRead:
 						continue;
 					}
 					for (i = 0; i < MAXSCOPE; i++) {
-						fs = fsym->subscope[i];
+						fs = fsym->space[i];
 						while (fs != NULL) {
 							printFunction(out, fs->def, 0, lstng);
 							fs = fs->peer;
@@ -917,10 +914,6 @@ partial:
 			}
 			continue;
 		}
-		case '?':
-			if (!isspace((int) b[1]))
-				showHelp(cntxt->nspace, b + 1, out);
-			continue;
 		case 'h':
 			if (strncmp("help", b, 2) == 0)
 				mdbHelp(out);
@@ -1289,7 +1282,7 @@ printBatDetails(stream *f, bat bid)
 
 	/* at this level we don't know bat kernel primitives */
 	mnstr_printf(f, "#Show info for %d\n", bid);
-	fcn = getAddress(f, "bat", "bat", "BKCinfo", 0);
+	fcn = getAddress(f, "bat", "BKCinfo", 0);
 	if (fcn) {
 		(*fcn)(&ret,&ret2, &bid);
 		b[0] = BATdescriptor(ret);
@@ -1323,7 +1316,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 		BUN p;
 
 		/* at this level we don't know bat kernel primitives */
-		fcn = getAddress(f, "bat", "bat", "BKCinfo", 0);
+		fcn = getAddress(f, "bat", "BKCinfo", 0);
 		if (fcn) {
 			BAT *b[2];
 			str res;

@@ -26,7 +26,6 @@
 #include "sql_execute.h"
 #include "sql_env.h"
 #include "sql_mvc.h"
-#include "sql_readline.h"
 #include "sql_user.h"
 #include "sql_datetime.h"
 #include "mal_io.h"
@@ -618,6 +617,7 @@ SQLexitClient(Client c)
 		c->sqlcontext = NULL;
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
+	MALexitClient(c);
 	return MAL_SUCCEED;
 }
 
@@ -763,7 +763,6 @@ SQLreader(Client c)
 #endif
 	/*
 	 * Distinguish between console reading and mclient connections.
-	 * The former comes with readline functionality.
 	 */
 	while (more) {
 		more = FALSE;

@@ -109,7 +109,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	int returns[256];
 	int *returntype = NULL;
 	/*
-	 * Within a module find the subscope to locate the element in its list
+	 * Within a module find the element in its list
 	 * of symbols. A skiplist is used to speed up the search for the
 	 * definition of the function.
 	 *
@@ -125,7 +125,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	 * Simplify polytype using a map into the concrete argument table.
 	 */
 	m = scope;
-	s = m->subscope[(int) (getSubScope(getFunctionId(p)))];
+	s = m->space[(int) (getSymbolIndex(getFunctionId(p)))];
 	if (s == 0)
 		return -1;
 

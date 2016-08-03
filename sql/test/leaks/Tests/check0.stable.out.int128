@@ -66,7 +66,7 @@ Ready.
 [ "int",	0	]
 [ "int",	1	]
 [ "int",	1	]
-[ "int",	253	]
+[ "int",	256	]
 [ "lng",	1	]
 [ "oid",	0	]
 [ "oid",	0	]
@@ -74,13 +74,13 @@ Ready.
 [ "str",	1	]
 [ "str",	1	]
 [ "str",	1	]
-[ "str",	253	]
+[ "str",	256	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 % .L1,	.L2 # table_name
 % L1,	L2 # name
 % char,	bigint # type
 % 9,	3 # length
-[ "transient",	548	]
+[ "transient",	554	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L1,	.L2 # table_name
 % L1,	L2 # name

@@ -19,8 +19,7 @@ INCLUDES = ../../../include \
 	   ../../../../common/options \
 	   ../../../../common/stream \
 	   ../../../../common/utils \
-	   ../../../../gdk \
-	   $(READLINE_INCS)
+	   ../../../../gdk
 
 lib__vault = {
 	MODULE

@@ -503,6 +503,8 @@ pattern storage()(
 	phash:bat[:bit],
 	imprints:bat[:lng],
 	sorted:bat[:bit],
+	revsorted:bat[:bit],
+	key:bat[:bit],
 	orderidx:bat[:lng],
 	compressed:bat[:bit])
 address sql_storage
@@ -523,6 +525,8 @@ pattern storage(sname:str)(
 	phash:bat[:bit],
 	imprints:bat[:lng],
 	sorted:bat[:bit],
+	revsorted:bat[:bit],
+	key:bat[:bit],
 	orderidx:bat[:lng],
 	compressed:bat[:bit])
 address sql_storage
@@ -543,6 +547,8 @@ pattern storage(sname:str, tname:str)(
 	phash:bat[:bit],
 	imprints:bat[:lng],
 	sorted:bat[:bit],
+	revsorted:bat[:bit],
+	key:bat[:bit],
 	orderidx:bat[:lng],
 	compressed:bat[:bit])
 address sql_storage
@@ -563,6 +569,8 @@ pattern storage(sname:str, tname:str, cname:str)(
 	phash:bat[:bit],
 	imprints:bat[:lng],
 	sorted:bat[:bit],
+	revsorted:bat[:bit],
+	key:bat[:bit],
 	orderidx:bat[:lng],
 	compressed:bat[:bit])
 address sql_storage

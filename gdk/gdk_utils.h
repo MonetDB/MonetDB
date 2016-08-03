@@ -53,10 +53,6 @@ gdk_export void GDKsetenv(str name, str value);
  *   comes from the heap and directly consumes physical memory
  *   resources.
  *
- * We check the resource consumption with preset target values, and if
- * these are exceeded, the routine BBPtrim is called that will unload
- * the least recently used BATs in order to decrease memory usage.
- *
  * The malloc routine checks the memory consumption every 1000 calls,
  * or for calls larger that 50000 bytes. Consequently, at least every
  * 50MB increase, alloc memory is checked. The VM calls always check

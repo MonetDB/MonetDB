@@ -115,12 +115,12 @@ int
 OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
-	int i, k, limit, *alias, barrier;
+	int i, k, limit, *alias = 0, barrier;
 	MalStkPtr env = NULL;
 	int profiler;
 	str msg;
 	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
-	int *assigned, use; 
+	int *assigned = 0, use; 
 	char buf[256];
 	lng usec = GDKusec();
 
@@ -132,17 +132,17 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return 0;
 
 	(void)cntxt;
-	OPTDEBUGevaluate mnstr_printf(cntxt->fdout, "Constant expression optimizer started\n");
+#ifdef DEBUG_OPT_EVALUATE
+	mnstr_printf(cntxt->fdout, "Constant expression optimizer started\n");
+#endif
 
 	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if (assigned == NULL)
 		return 0;
 
 	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
-	if (alias == NULL){
-		GDKfree(assigned);
-		return 0;
-	}
+	if (alias == NULL)
+		goto wrapup;
 
 	// arguments are implicitly assigned by context
 	p = getInstrPtr(mb, 0);
@@ -166,7 +166,9 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
-		OPTDEBUGevaluate printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#ifdef DEBUG_OPT_EVALUATE
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
 		/* be aware that you only assign once to a variable */
 		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
 			barrier = p->barrier;
@@ -180,10 +182,10 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			msg = reenterMAL(cntxt, mb, i, i + 1, env);
 			malProfileMode= profiler;
 			p->barrier = barrier;
-			OPTDEBUGevaluate {
-				mnstr_printf(cntxt->fdout, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
-				mnstr_printf(cntxt->fdout, "#result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
-			}
+#ifdef DEBUG_OPT_EVALUATE
+			mnstr_printf(cntxt->fdout, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
+			mnstr_printf(cntxt->fdout, "#result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
+#endif
 			if (msg == MAL_SUCCEED) {
 				int nvar;
 				ValRecord cst;
@@ -206,16 +208,19 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				/* freeze the type */
 				setVarFixed(mb,getArg(p,1));
 				setVarUDFtype(mb,getArg(p,1));
-				OPTDEBUGevaluate {
-					str tpename;
-					mnstr_printf(cntxt->fdout, "Evaluated new constant=%d -> %d:%s\n",
-						getArg(p, 0), getArg(p, 1), tpename = getTypeName(getArgType(mb, p, 1)));
-					GDKfree(tpename);
+#ifdef DEBUG_OPT_EVALUATE
+				{str tpename;
+				mnstr_printf(cntxt->fdout, "Evaluated new constant=%d -> %d:%s\n",
+					getArg(p, 0), getArg(p, 1), tpename = getTypeName(getArgType(mb, p, 1)));
+				GDKfree(tpename);
 				}
+#endif
 			} else {
 				/* if there is an error, we should postpone message handling,
 					as the actual error (eg. division by zero ) may not happen) */
-				OPTDEBUGevaluate mnstr_printf(cntxt->fdout, "Evaluated %s\n", msg);
+#ifdef DEBUG_OPT_EVALUATE
+				mnstr_printf(cntxt->fdout, "Evaluated %s\n", msg);
+#endif
 				GDKfree(msg);
 				mb->errors = 0;
 			}
@@ -225,10 +230,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	// produces errors in SQL when enabled
 	if ( constantblock)
 		actions += OPTremoveUnusedBlocks(cntxt, mb);
-	GDKfree(assigned);
-	GDKfree(alias);
-	if ( env) 
-		freeStack(env);
 	cntxt->itrace = debugstate;
 
     /* Defense line against incorrect plans */
@@ -241,5 +242,9 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,GDKusec() -usec);
     newComment(mb,buf);
 
+wrapup:
+	if ( env) freeStack(env);
+	if(assigned) GDKfree(assigned);
+	if(alias)	GDKfree(alias);
 	return actions;
 }

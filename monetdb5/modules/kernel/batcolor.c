@@ -56,8 +56,6 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 			FUNC(yp,x);													\
 		bunfastapp(bn, yp);												\
 	}																	\
-	if (!(bn->batDirty & 2))											\
-		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\
@@ -138,8 +136,6 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			FUNC(yp,x,x2,x3);											\
 		bunfastapp(bn, yp);												\
 	}																	\
-	if (!(bn->batDirty & 2))											\
-		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\

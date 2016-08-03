@@ -281,6 +281,7 @@ typedef struct sql_arg {
 #define F_FILT 4
 #define F_UNION 5
 #define F_ANALYTIC 6
+#define F_LOADER 7
 
 #define IS_FUNC(f) (f->type == F_FUNC)
 #define IS_PROC(f) (f->type == F_PROC)
@@ -288,6 +289,7 @@ typedef struct sql_arg {
 #define IS_FILT(f) (f->type == F_FILT)
 #define IS_UNION(f) (f->type == F_UNION)
 #define IS_ANALYTIC(f) (f->type == F_ANALYTIC)
+#define IS_LOADER(f) (f->type == F_LOADER)
 
 #define FUNC_LANG_INT 0	/* internal */
 #define FUNC_LANG_MAL 1 /* create sql external mod.func */
@@ -337,6 +339,8 @@ typedef struct sql_func {
 typedef struct sql_subfunc {
 	sql_func *func;
 	list *res;
+	list *colnames; /* we need this for copy into from loader */
+	char *sname, *tname; /* we need this for create table from loader */
 } sql_subfunc;
 
 typedef struct sql_subaggr {
@@ -578,5 +582,10 @@ extern list *find_all_sql_func(sql_schema * s, const char *tname, int type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
 extern node *find_sql_func_node(sql_schema *s, int id);
+
+typedef struct {
+	BAT *b;
+	char* name;
+} sql_emit_col;
 
 #endif /* SQL_CATALOG_H */

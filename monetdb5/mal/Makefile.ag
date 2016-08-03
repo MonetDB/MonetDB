@@ -9,8 +9,7 @@ INCLUDES = ../../common/options \
 		   ../../common/utils \
 		   ../../clients/mapilib \
 		   ../../gdk \
-		   ../optimizer \
-		   $(READLINE_INCS) 
+		   ../optimizer
 MTSAFE
 
 lib_mal = {
