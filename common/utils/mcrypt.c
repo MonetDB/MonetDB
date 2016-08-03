@@ -34,7 +34,13 @@ mcrypt_getHashAlgorithms(void)
 	 * Better/stronger/faster algorithms can be added in the future upon
 	 * desire.
 	 */
-	return strdup("RIPEMD160,SHA256,SHA1,MD5");
+#ifdef HAVE_LIBSNAPPY
+	// the server supports protocol 10 + compression
+	return strdup("RIPEMD160,SHA256,SHA1,MD5,PROT10,PROT10COMPR");
+#else
+	// the server only supports protocol 10
+	return strdup("RIPEMD160,SHA256,SHA1,MD5,PROT10");
+#endif
 }
 
 /**

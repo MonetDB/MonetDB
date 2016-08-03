@@ -146,8 +146,8 @@ doChallenge(void *data)
 	algos = mcrypt_getHashAlgorithms();
 	// FIXME: add the newproto flag to algos and rename to 'capabilities' to hide the crime
 
-	/* note that we claim to speak proto 9 here for hashed passwords */
-	mnstr_printf(fdout, "%s:mserver:10:%s:%s:%s:",
+	// send the challenge over the block stream
+	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
 			challenge,
 			algos,
 #ifdef WORDS_BIGENDIAN
@@ -168,6 +168,39 @@ doChallenge(void *data)
 		return;
 	}
 	buf[len] = 0;
+
+	if (strstr(buf, "PROT10")) {
+		// client requests switch to protocol 10
+		printf("Serving client with PROT10.\n");
+#if 0
+		// FIXME: destroy existing bstream and replace with byte or compressed stream stream
+		stream *client_in = NULL, *client_out = NULL;
+
+		close_stream(fdin);
+		close_stream(fdout);
+
+		if (!strstr(buf, "PROT10COMPRESSED")) {
+			// uncompressed protocol 10
+			client_in = byte_stream(((struct challengedata *) data)->in);
+			client_out = byte_stream(((struct challengedata *) data)->out);
+		} else {
+#ifdef HAVE_LIBSNAPPY
+			// compressed protocol 10
+			client_in = compressed_stream(((struct challengedata *) data)->in, COMPRESSION_SNAPPY);
+			client_out = compressed_stream(((struct challengedata *) data)->out, COMPRESSION_SNAPPY);
+#else
+			// client requested compressed protocol, but server does not support it
+			GDKsyserror("SERVERlisten:server does not support compressed protocol");
+#endif
+		}
+
+		if (client_null == NULL || client_out == NULL) {
+			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+			return;
+		}
+#endif
+	}
+
 #ifdef DEBUG_SERVER
 	printf("mal_mapi:Client accepted %s\n", buf);
 	fflush(stdout);

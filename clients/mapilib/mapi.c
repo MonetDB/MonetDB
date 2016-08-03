@@ -2193,6 +2193,12 @@ mapi_destroy(Mapi mid)
 	return MOK;
 }
 
+typedef enum {
+	prot9 = 1,
+	prot10 = 2,
+	prot10compressed = 3,
+} protocol_version;
+
 /* (Re-)establish a connection with the server. */
 MapiMsg
 mapi_reconnect(Mapi mid)
@@ -2207,6 +2213,7 @@ mapi_reconnect(Mapi mid)
 	char *server;
 	char *protover;
 	char *rest;
+	protocol_version prot_version = prot9;
 
 	if (mid->connected)
 		close_connection(mid);
@@ -2595,7 +2602,7 @@ mapi_reconnect(Mapi mid)
 		char **algs = algsv;
 		char *p;
 
-		/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
+		/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5,PROT10,PROT10COMPRESSED:LIT:SHA1: */
 
 		if (mid->username == NULL || mid->password == NULL) {
 			mapi_setError(mid, "username and password must be set",
@@ -2620,6 +2627,21 @@ mapi_reconnect(Mapi mid)
 			*hash = '\0';
 			rest = hash + 1;
 		}
+
+#ifdef HAVE_LIBSNAPPY
+		if (strstr(hashes, "PROT10COMPRESSED")) {
+			// both server and client support compressed protocol 10; use compressed version 
+			prot_version = prot10compressed;
+		} else
+#endif
+		if (strstr(hashes, "PROT10")) {
+			// both server and client support protocol 10; use protocol 10
+			prot_version = prot10;
+		} else {
+			// connecting to old server; use protocol 9
+			prot_version = prot9;
+		}
+
 		/* in rest now should be the byte order of the server */
 		byteo = rest;
 		hash = strchr(byteo, ':');
@@ -2705,20 +2727,37 @@ mapi_reconnect(Mapi mid)
 
 		/* note: if we make the database field an empty string, it
 		 * means we want the default.  However, it *should* be there. */
-		if (snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
-#ifdef WORDS_BIGENDIAN
-			     "BIG",
-#else
-			     "LIT",
-#endif
-			     mid->username, hash, mid->language,
-			     mid->database == NULL ? "" : mid->database) >= BLOCK) {;
-			mapi_setError(mid, "combination of database name and user name too long", "mapi_reconnect", MERROR);
-			free(hash);
-			close_connection(mid);
-			return mid->error;
+		{
+			int retval;
+			if (prot_version == prot10 || prot_version == prot10compressed) {
+				// if we are using protocol 10, we have to send either PROT10/PROT10COMPRESSED to the server
+				// so the server knows which protocol to use
+				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:\n",
+	#ifdef WORDS_BIGENDIAN
+				     "BIG",
+	#else
+				     "LIT",
+	#endif
+				     mid->username, hash, mid->language,
+				     mid->database == NULL ? "" : mid->database,
+				     prot_version == prot10 ? "PROT10" : "PROT10COMPRESSED");
+			} else {
+				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
+	#ifdef WORDS_BIGENDIAN
+				     "BIG",
+	#else
+				     "LIT",
+	#endif
+				     mid->username, hash, mid->language,
+				     mid->database == NULL ? "" : mid->database);
+			}
+			if (retval >= BLOCK) {;
+				mapi_setError(mid, "combination of database name and user name too long", "mapi_reconnect", MERROR);
+				free(hash);
+				close_connection(mid);
+				return mid->error;
+			}
 		}
-
 		free(hash);
 	} else {
 		/* because the headers changed, and because it makes no sense to
@@ -2740,6 +2779,33 @@ mapi_reconnect(Mapi mid)
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_reconnect", mid->error);
 	mnstr_flush(mid->to);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_reconnect", mid->error);
+
+	if (prot_version == prot10 || prot_version == prot10compressed) {
+		printf("Using protocol version %s.\n", prot_version == prot10  ? "PROT10" : "PROT10COMPRESSED");
+		// FIXME: destroy block streams and replace with appropriate streams
+#if 0
+		assert(isa_block_stream(mid->to));
+		assert(isa_block_stream(mid->from));
+
+		bs *bs_to = (bs*) mid->to;
+		bs *bs_from = (bs*) mid->from;
+
+		if (prot_version == prot10compressed) {
+#ifdef HAVE_LIBSNAPPY
+			mid->to = compressed_stream(bs_to->s, COMPRESSION_SNAPPY);
+			mid->from = compressed_stream(bs_from->s, COMPRESSION_SNAPPY);
+#else
+			assert(0);
+#endif
+		} else {
+			mid->to = byte_stream((bs_to->s);
+			mid->from = byte_stream(bs_from->s);
+		}
+
+		close_stream(bs_to);
+		close_stream(bs_from);
+#endif
+	}
 
 	/* consume the welcome message from the server */
 	hdl = mapi_new_handle(mid);
