@@ -915,6 +915,120 @@ wkbWithin_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, wkb **b)
 }
 
 /***************************************************************************/
+/*************************** IN: wkb str - OUT: bit ************************/
+/***************************************************************************/
+
+static str
+wkbIsType_bat_intern(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str *b, str (*func) (bit *, wkb **, str*), const char *name)
+{
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter aBAT_iter, bBAT_iter;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    bit *outs = NULL;
+    int globalRType;
+
+	//get the descriptor of the BAT
+	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if ((*bBAT_id != bat_nil) && (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+        if (*bBAT_id != bat_nil)
+    		BBPunfix(bBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+	//iterator over the input BAT
+	aBAT_iter = bat_iterator(aBAT);
+    if (*bBAT_id != bat_nil)
+	    bBAT_iter = bat_iterator(bBAT);
+    else {
+        globalRType = geom_str2type(*b, 1);
+    }
+
+
+    q = BUNlast(aBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s %d %d\n", name, p, q);
+    gettimeofday(&start, NULL);
+#endif
+	outs = (bit *) Tloc(outBAT, 0);
+#ifdef OPENMP
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    #pragma omp parallel for
+#endif
+    for (p = 0; p < q; p++) {
+        wkb *aWKB = NULL;
+        str bSTR = NULL;
+        str err = NULL;
+        int rType, lType;
+        GEOSGeom aGeometry = NULL;
+
+        if (msg != MAL_SUCCEED)
+            continue;
+
+        aWKB = (wkb *) BUNtail(aBAT_iter, p);
+        if (*bBAT_id != bat_nil) {
+            bSTR = *(str*) BUNtail(bBAT_iter, p);
+            rType = geom_str2type(bSTR, 1);
+        } else {
+            rType = globalRType;
+        }
+
+        aGeometry = wkb2geos(aWKB);
+        if ( !aGeometry ) {
+    		msg = createException(MAL, name, "wkb2geos failed");
+#ifdef OPENMP
+            #pragma omp cancelregion
+#else
+            break;
+#endif
+        }
+        lType = GEOSGeomTypeId(aGeometry) + 1;
+        outs[p] = (rType == lType) ? 1 :0;
+    }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+    BBPunfix(aBAT->batCacheid);
+    if (*bBAT_id != bat_nil)
+        BBPunfix(bBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+
+    BATrmprops(outBAT)
+    BATsetcount(outBAT, q);
+    BATsettrivprop(outBAT);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+wkbIsType_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str *b)
+{
+	return wkbIsType_bat_intern(outBAT_id, aBAT_id, bBAT_id, b, NULL, "batgeom.wkbIsType");
+}
+
+/***************************************************************************/
 /******************* IN: wkb wkb - OUT: bit - flag: dbl ********************/
 /***************************************************************************/
 
