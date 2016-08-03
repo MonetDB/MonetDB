@@ -4480,3 +4480,5 @@ CREATE filter function DWithin(geom1 Geometry, geom2 Geometry, dist double) exte
 CREATE filter function DWithin(geom1 Geometry, x double, y double, z double, srid int, dist double) external name geom."DWithin";
 CREATE filter function Contains(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Contains";
 CREATE filter function Contains(geom1 Geometry, x double, y double, z double, srid int) EXTERNAL NAME geom."Contains";
+CREATE filter function IsValidD(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."IsValidD";
+CREATE filter function IsType(geom1 Geometry, typ string) EXTERNAL NAME geom."IsType";
