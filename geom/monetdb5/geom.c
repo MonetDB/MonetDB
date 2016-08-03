@@ -8123,6 +8123,952 @@ wkbPatchToGeom_bat(wkb **res, wkb **geom, bat* px, bat* py, bat* pz) {
 	return MAL_SUCCEED;
 }
 
+/*
+ * Filter selects
+ *
+ */
+
+/***************************************************************************/
+/*************************** IN: wkb - OUT: bit ****************************/
+/***************************************************************************/
+
+static str
+IsValidsubselect_intern(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, char (*func) (const GEOSGeometry *), const char *name)
+{
+	BAT *lresBAT = NULL, *lBAT = NULL, *slBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter *lBAT_iters = NULL, *slBAT_iters = NULL;
+    int numIters = 1, j = 0;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    bit *outs = NULL;
+    oid *oids = NULL;
+    oid lo = 0;
+
+	//get the descriptor of the BAT
+	if ((lBAT = BATdescriptor(*lBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	if ((*slBAT_id != bat_nil) && (slBAT = BATdescriptor(*slBAT_id)) == NULL) {
+		BBPunfix(lBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((lresBAT = COLnew(0, TYPE_oid, 0, TRANSIENT)) == NULL) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+   		    BBPunfix(slBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+    if (!BATcount(lBAT)) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+       		BBPunfix(slBAT->batCacheid);
+	    BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
+        return MAL_SUCCEED;
+    }
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
+
+    if ( (lBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL ) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+       		BBPunfix(slBAT->batCacheid);
+   		BBPunfix(lresBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+
+    for (j = 0; j < numIters; j++) {
+	    lBAT_iters[j] = bat_iterator(lBAT);
+    }
+
+    if (*slBAT_id != bat_nil) {
+        if ( (slBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+            GDKfree(lBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+        for (j = 0; j < numIters; j++) {
+            slBAT_iters[j] = bat_iterator(slBAT);
+        }
+        q = BUNlast(slBAT);
+        if ( (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(slBAT))) == NULL) {
+            GDKfree(lBAT_iters);
+            GDKfree(slBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+    } else {
+        q = BUNlast(lBAT);
+        if ( (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(lBAT))) == NULL) {
+            GDKfree(lBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            if (*slBAT_id != bat_nil)
+       		    BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+    }
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+#ifdef OPENMP
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    #pragma omp parallel for
+#endif
+    for (p = 0; p < q; p++) {
+        oid slOID = 0;
+        wkb *aWKB = NULL;
+        str bSTR = NULL;
+        str err = NULL;
+        GEOSGeom aGeometry = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+        if (msg != MAL_SUCCEED)
+            continue;
+
+        if (*slBAT_id != bat_nil) {
+            slOID = *(oid *) BUNtail(slBAT_iters[tNum], p);
+        } else {
+            slOID = p;
+        }
+
+        aWKB = (wkb *) BUNtail(lBAT_iters[tNum], slOID);
+
+        aGeometry = wkb2geos(aWKB);
+        if ( !aGeometry ) {
+    		msg = createException(MAL, name, "wkb2geos failed");
+#ifdef OPENMP
+            #pragma omp cancelregion
+#else
+            break;
+#endif
+        }
+        if ((outs[p] = (*func)(aGeometry)) == 2){
+            GEOSGeom_destroy(aGeometry);
+            msg = createException(MAL, name, "%s failed", name);
+#ifdef OPENMP
+            #pragma omp cancelregion
+#else
+            break;
+#endif
+        }
+        if (aGeometry)
+            GEOSGeom_destroy(aGeometry);
+    }
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+    if (*slBAT_id != bat_nil) {
+	    slBAT_iters[0] = bat_iterator(slBAT);
+    }
+    lo = lBAT->hseqbase;
+    for (p = 0; p < q; p++, lo++) {
+        if (outs[p] == 1) {
+            if (*slBAT_id != bat_nil) {
+                lo = *(oid *) BUNtail(slBAT_iters[0], p);
+            }
+            BUNappend(lresBAT, &lo, FALSE);
+        }
+    }
+
+    BBPunfix(lBAT->batCacheid);
+    GDKfree(lBAT_iters);
+    if (*slBAT_id != bat_nil) {
+        GDKfree(slBAT_iters);
+        BBPunfix(slBAT->batCacheid);
+    }
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(lresBAT->batCacheid);
+        return msg;
+    }
+
+    /*
+    BATrmprops(lresBAT)
+    BATsetcount(lresBAT, q);
+    BATsettrivprop(lresBAT);
+    */
+	BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+IsValidsubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, bit *nil_matches)
+{
+    if (*nil_matches == bit_nil)
+        throw(MAL, "IsValidsubselect", "It has nil_matches");
+
+	return IsValidsubselect_intern(lresBAT_id, lBAT_id, slBAT_id, GEOSisValid, "geom.IsValidsubselect");
+}
+
+/***************************************************************************/
+/*************************** IN: wkb str - OUT: bit ************************/
+/***************************************************************************/
+
+static str
+IsTypesubselect_intern(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, str *b, const char *name)
+{
+	BAT *lresBAT = NULL, *lBAT = NULL, *slBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter *lBAT_iters = NULL, *slBAT_iters = NULL;
+    int numIters = 1, j = 0;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    bit *outs = NULL;
+    oid *oids = NULL;
+    oid lo = 0;
+    int globalRType;
+
+	//get the descriptor of the BAT
+	if ((lBAT = BATdescriptor(*lBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if ((*slBAT_id != bat_nil) && (slBAT = BATdescriptor(*slBAT_id)) == NULL) {
+		BBPunfix(lBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((lresBAT = COLnew(0, TYPE_oid, 0, TRANSIENT)) == NULL) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+   		    BBPunfix(slBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+    if (!BATcount(lBAT)) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+       		BBPunfix(slBAT->batCacheid);
+	    BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
+        return MAL_SUCCEED;
+    }
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
+
+    if ( (lBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL ) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+   		    BBPunfix(slBAT->batCacheid);
+   		BBPunfix(lresBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+
+    for (j = 0; j < numIters; j++) {
+	    lBAT_iters[j] = bat_iterator(lBAT);
+    }
+
+    if (*slBAT_id != bat_nil) {
+        if ( (slBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+            GDKfree(lBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+        for (j = 0; j < numIters; j++) {
+            slBAT_iters[j] = bat_iterator(slBAT);
+        }
+        q = BUNlast(slBAT);
+        if ( (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(slBAT))) == NULL) {
+            GDKfree(lBAT_iters);
+            GDKfree(slBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+    } else {
+        q = BUNlast(lBAT);
+        if ( (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(lBAT))) == NULL) {
+            GDKfree(lBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            if (*slBAT_id != bat_nil)
+                BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+    }
+
+    globalRType = geom_str2type(*b, 1);
+
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+#ifdef OPENMP
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    #pragma omp parallel for
+#endif
+    for (p = 0; p < q; p++) {
+        oid slOID = 0;
+        wkb *aWKB = NULL;
+        str bSTR = NULL;
+        str err = NULL;
+        int rType, lType;
+        GEOSGeom aGeometry = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
+        if (msg != MAL_SUCCEED)
+            continue;
+
+        if (*slBAT_id != bat_nil) {
+            slOID = *(oid *) BUNtail(slBAT_iters[tNum], p);
+        } else {
+            slOID = p;
+        }
+
+        aWKB = (wkb *) BUNtail(lBAT_iters[tNum], slOID);
+        rType = globalRType;
+
+        aGeometry = wkb2geos(aWKB);
+        if ( !aGeometry ) {
+    		msg = createException(MAL, name, "wkb2geos failed");
+#ifdef OPENMP
+            #pragma omp cancelregion
+#else
+            break;
+#endif
+        }
+        lType = GEOSGeomTypeId(aGeometry)+1;
+        outs[p] = ((rType == lType) ? 1 :0);
+        if (aGeometry)
+            GEOSGeom_destroy(aGeometry);
+    }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+    if (*slBAT_id != bat_nil) {
+	    slBAT_iters[0] = bat_iterator(slBAT);
+    }
+    lo = lBAT->hseqbase;
+    for (p = 0; p < q; p++, lo++) {
+        if (outs[p] == 1) {
+            if (*slBAT_id != bat_nil) {
+                lo = *(oid *) BUNtail(slBAT_iters[0], p);
+            }
+            BUNappend(lresBAT, &lo, FALSE);
+        }
+    }
+
+    BBPunfix(lBAT->batCacheid);
+    GDKfree(lBAT_iters);
+    if (*slBAT_id != bat_nil) {
+        GDKfree(slBAT_iters);
+        BBPunfix(slBAT->batCacheid);
+    }
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(lresBAT->batCacheid);
+        return msg;
+    }
+
+    /*
+    BATrmprops(lresBAT)
+    BATsetcount(lresBAT, q);
+    BATsettrivprop(lresBAT);
+    */
+	BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+IsTypesubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, str *b, bit *nil_matches)
+{
+    if (*nil_matches == bit_nil)
+        throw(MAL, "IsTypesubselect", "It has nil_matches");
+
+	return IsTypesubselect_intern(lresBAT_id, lBAT_id, slBAT_id, b, "geom.IsTypesubselect");
+}
+
+/***************************************************************************/
+/*************************** IN: wkb wkb - OUT: bit ****************************/
+/***************************************************************************/
+
+static str
+WKBWKBtoBIT_bat(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, wkb **b, str (*func) (bit *, wkb **, wkb **), const char *name)
+{
+	BAT *lresBAT = NULL, *lBAT = NULL, *slBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter *lBAT_iters = NULL, *slBAT_iters = NULL;
+    int numIters = 1, j = 0;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    bit *outs = NULL;
+    oid *oids = NULL;
+    oid lo = 0;
+
+	//get the descriptor of the BAT
+	if ((lBAT = BATdescriptor(*lBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if ((*slBAT_id != bat_nil) && (slBAT = BATdescriptor(*slBAT_id)) == NULL) {
+		BBPunfix(lBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((lresBAT = COLnew(0, TYPE_oid, 0, TRANSIENT)) == NULL) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+    		BBPunfix(slBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+    if (!BATcount(lBAT)) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+       		BBPunfix(slBAT->batCacheid);
+	    BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
+        return MAL_SUCCEED;
+    }
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
+
+    if ( (lBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL ) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+   		    BBPunfix(slBAT->batCacheid);
+   		BBPunfix(lresBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+
+    for (j = 0; j < numIters; j++) {
+	    lBAT_iters[j] = bat_iterator(lBAT);
+    }
+
+    if (*slBAT_id != bat_nil) {
+        if ( (slBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+            GDKfree(lBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+        for (j = 0; j < numIters; j++) {
+            slBAT_iters[j] = bat_iterator(slBAT);
+        }
+        q = BUNlast(slBAT);
+        if ( (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(slBAT))) == NULL) {
+            GDKfree(lBAT_iters);
+            GDKfree(slBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+    } else {
+        q = BUNlast(lBAT);
+        if ( (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(lBAT))) == NULL) {
+            GDKfree(lBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            if (*slBAT_id != bat_nil)
+                BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+    }
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+#ifdef OPENMP
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    #pragma omp parallel for
+#endif
+    for (p = 0; p < q; p++) {
+        oid slOID = 0;
+        wkb *aWKB = NULL, *bWKB = NULL;
+        str err = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
+        if (msg)
+            continue;
+
+        if (*slBAT_id != bat_nil) {
+            slOID = *(oid *) BUNtail(slBAT_iters[tNum], p);
+        } else {
+            slOID = p;
+        }
+
+        aWKB = (wkb *) BUNtail(lBAT_iters[tNum], slOID);
+        bWKB = *b;
+        if ((err = (*func) (&outs[p], &aWKB, &bWKB)) != MAL_SUCCEED) {
+            msg = err;
+#ifdef OPENMP
+            #pragma omp cancelregion
+#else
+            break;
+#endif
+        }
+    }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+    if (*slBAT_id != bat_nil) {
+	    slBAT_iters[0] = bat_iterator(slBAT);
+    }
+    lo = lBAT->hseqbase;
+    for (p = 0; p < q; p++, lo++) {
+        if (outs[p] == 1) {
+            if (*slBAT_id != bat_nil) {
+                lo = *(oid *) BUNtail(slBAT_iters[0], p);
+            }
+            BUNappend(lresBAT, &lo, FALSE);
+        }
+    }
+
+    BBPunfix(lBAT->batCacheid);
+    GDKfree(lBAT_iters);
+    if (*slBAT_id != bat_nil) {
+        GDKfree(slBAT_iters);
+        BBPunfix(slBAT->batCacheid);
+    }
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(lresBAT->batCacheid);
+        return msg;
+    }
+
+    /*
+    BATrmprops(lresBAT)
+    BATsetcount(lresBAT, q);
+    BATsettrivprop(lresBAT);
+    */
+	BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+Intersectssubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, wkb **b, bit *nil_matches)
+{
+    if (*nil_matches == bit_nil)
+        throw(MAL, "Intersectssubselect", "It has nil_matches");
+
+	return WKBWKBtoBIT_bat(lresBAT_id, lBAT_id, slBAT_id, b, wkbIntersects, "geom.Intersectssubselect");
+}
+
+str
+Withinsubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, wkb **b, bit *nil_matches)
+{
+    if (*nil_matches == bit_nil)
+        throw(MAL, "Withinsubselect", "It has nil_matches");
+
+	return WKBWKBtoBIT_bat(lresBAT_id, lBAT_id, slBAT_id, b, wkbWithin, "geom.Withinsubselect");
+}
+
+
+/******************************************************************************************/
+/************************* IN: wkb dbl dbl dbl int - OUT: bit *****************************/
+/******************************************************************************************/
+
+static str
+WKBDBLDBLDBLINTtoBIT_bat(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, double *dx, double *dy, double * dz, int *srid, str (*func) (bit *, wkb **, double *x, double *y, double *z, int *srid), const char *name)
+{
+	BAT *lresBAT = NULL, *lBAT = NULL, *slBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter *lBAT_iters = NULL, *slBAT_iters = NULL;
+    int numIters = 1, j = 0;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    bit *outs = NULL;
+    oid *oids = NULL;
+    oid lo = 0;
+
+	//get the descriptor of the BAT
+	if ((lBAT = BATdescriptor(*lBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if (*slBAT_id != bat_nil && (slBAT = BATdescriptor(*slBAT_id)) == NULL) {
+		BBPunfix(lBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((lresBAT = COLnew(0, TYPE_oid, 0, TRANSIENT)) == NULL) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+		    BBPunfix(slBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+    if (!BATcount(lBAT)) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+       		BBPunfix(slBAT->batCacheid);
+	    BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
+        return MAL_SUCCEED;
+    }
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
+
+    if ( (lBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL ) {
+		BBPunfix(lBAT->batCacheid);
+        if (*slBAT_id != bat_nil)
+   		    BBPunfix(slBAT->batCacheid);
+   		BBPunfix(lresBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+
+    for (j = 0; j < numIters; j++) {
+	    lBAT_iters[j] = bat_iterator(lBAT);
+    }
+
+    if (*slBAT_id != bat_nil) {
+        if ( (slBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+            GDKfree(lBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+        for (j = 0; j < numIters; j++) {
+            slBAT_iters[j] = bat_iterator(slBAT);
+        }
+        q = BUNlast(slBAT);
+        if ( (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(slBAT))) == NULL) {
+            GDKfree(lBAT_iters);
+            GDKfree(slBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+    } else {
+        q = BUNlast(lBAT);
+        if ( (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(lBAT))) == NULL) {
+            GDKfree(lBAT_iters);
+            BBPunfix(lBAT->batCacheid);
+            if (*slBAT_id != bat_nil)
+                BBPunfix(slBAT->batCacheid);
+            BBPunfix(lresBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+    }
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+#ifdef OPENMP
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    #pragma omp parallel for
+#endif
+    for (p = 0; p < q; p++) {
+        oid slOID = 0;
+		str err = NULL;
+	    wkb *aWKB = NULL;
+		//bit outSingle;
+        double x, y, z;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
+        if (msg)
+            continue;
+
+        if (*slBAT_id != bat_nil) {
+            slOID = *(oid *) BUNtail(slBAT_iters[tNum], p);
+        } else {
+            slOID = p;
+        }
+
+        aWKB = (wkb *) BUNtail(lBAT_iters[tNum], slOID);
+
+        x = *dx;
+        y = *dy;
+        z = *dz;
+
+        if ((err = (*func) (&outs[p], &aWKB, &x, &y, &z, srid)) != MAL_SUCCEED) {
+            msg = err;
+#ifdef OPENMP
+            #pragma omp cancelregion
+#else
+            break;
+#endif
+		}
+	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+    if (*slBAT_id != bat_nil) {
+	    slBAT_iters[0] = bat_iterator(slBAT);
+    }
+    lo = lBAT->hseqbase;
+    for (p = 0; p < q; p++, lo++) {
+        if (outs[p] == 1) {
+            if (*slBAT_id != bat_nil) {
+                lo = *(oid *) BUNtail(slBAT_iters[0], p);
+            }
+            BUNappend(lresBAT, &lo, FALSE);
+        }
+    }
+
+    BBPunfix(lBAT->batCacheid);
+    GDKfree(lBAT_iters);
+    if (*slBAT_id != bat_nil) {
+        GDKfree(slBAT_iters);
+        BBPunfix(slBAT->batCacheid);
+    }
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(lresBAT->batCacheid);
+        return msg;
+    }
+
+    /*
+    BATrmprops(lresBAT)
+    BATsetcount(lresBAT, q);
+    BATsettrivprop(lresBAT);
+    */
+	BBPkeepref(*lresBAT_id = lresBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+IntersectsXYZsubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, double *dx, double *dy, double *dz, int* srid, bit *nil_matches)
+{
+    if (*nil_matches == bit_nil)
+        throw(MAL, "IntersectsXYZsubselect", "It has nil_matches");
+
+	return WKBDBLDBLDBLINTtoBIT_bat(lresBAT_id, lBAT_id, slBAT_id, dx, dy, dz, srid, wkbIntersectsXYZ, "geom.IntersectsXYZsubselect");
+}
+
+str
+ContainsXYZsubselect(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, double *dx, double *dy, double *dz, int* srid, bit *nil_matches)
+{
+    if (*nil_matches == bit_nil)
+        throw(MAL, "ContainsXYZsubselect", "It has nil_matches");
+
+	return WKBDBLDBLDBLINTtoBIT_bat(lresBAT_id, lBAT_id, slBAT_id, dx, dy, dz, srid, wkbContainsXYZ, "geom.ContainsXYZsubselect");
+}
+
+/*
+ * Filter Joins
+ *
+ */
+
+
+/***************************************************************************/
+/************************ IN: wkb str - OUT: bit ***************************/
+/***************************************************************************/
+
+static str
+IsTypesubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func) (const GEOSGeometry *, str), const char *name)
+{
+	BAT *xl, *xr, *bl, *br;
+	oid lo, ro;
+	BATiter lBAT_iter, rBAT_iter;
+    uint32_t j = 0;
+    BUN pr = 0, pl = 0, qr = 0, ql = 0;
+	int *rTypes = NULL;
+    str msg = MAL_SUCCEED;
+    bit* outs = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+
+	if( (bl= BATdescriptor(*lid)) == NULL )
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+
+	if( (br= BATdescriptor(*rid)) == NULL ){
+		BBPunfix(*lid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if ( xl == NULL){
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if ( xr == NULL){
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+    if ( !BATcount(br) || !BATcount(bl)) {
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+        return MAL_SUCCEED;
+    }
+
+	/*iterator over the BATs*/
+	lBAT_iter = bat_iterator(bl);
+	rBAT_iter = bat_iterator(br);
+
+    /*Get the Geometry for the inner BAT*/
+    if ( (rTypes = (int*) GDKzalloc(sizeof(int) * BATcount(br))) == NULL) {
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+    BATloop(br, pr, qr) {
+        str *rType = (str*) BUNtail(rBAT_iter, pr);
+        rTypes[pr] = geom_str2type(*rType, 1);
+    }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s first BATloop %llu ms\n", name, t);
+#endif
+    if ((outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(br))) == NULL) {
+        GDKfree(rTypes);
+        BBPunfix(*lid);
+        BBPunfix(*rid);
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+        msg = createException(MAL, name, MAL_MALLOC_FAIL);
+        return msg;
+    }
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+    lo = bl->hseqbase;
+    BATloop(bl, pl, ql) {
+		wkb *lWKB = NULL;
+	    GEOSGeom lGeometry = NULL;
+        ro = br->hseqbase;
+        int lType = -1;
+
+        lWKB = (wkb *) BUNtail(lBAT_iter, pl);
+        lGeometry = wkb2geos(lWKB);
+        if ( !lGeometry ) {
+    		msg = createException(MAL, name, "wkb2geos failed");
+            break;
+        }
+        lType = GEOSGeomTypeId(lGeometry) + 1;
+
+#ifdef OPENMP
+        omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+        omp_set_num_threads(OPENCL_THREADS);
+        #pragma omp parallel for
+#endif
+        for (j = 0; j < BATcount(br); j++) {
+	        int rType = rTypes[j];
+            outs[j] = (rType == lType) ? 1 :0;
+        }
+
+        if (lGeometry)
+            GEOSGeom_destroy(lGeometry);
+
+        for (j = 0; j < BATcount(br); j++ , ro++) {
+            bit out = outs[j];
+            if (out == 1) {
+                BUNappend(xl, &lo, FALSE);
+                BUNappend(xr, &ro, FALSE);
+                outs[j] = 0;
+            }
+        }
+        lo++;
+	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s second BATloop %llu ms\n", name, t);
+#endif
+    if (outs)
+        GDKfree(outs);
+    if (rTypes)
+        GDKfree(rTypes);
+
+	BBPunfix(*lid);
+	BBPunfix(*rid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+    } else {
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+    }
+
+	return msg;
+}
+
+str
+IsTypesubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
+{
+    if (*sl != bat_nil || *sr != bat_nil)
+        throw(MAL, "IsTypesubjoin", "It has candidate lists");
+    if (*nil_matches == bit_nil)
+        throw(MAL, "IsTypesubjoin", "It has nil_matches");
+    if (*estimate != lng_nil)
+        throw(MAL, "IsTypesubjoin", "It has estimate");
+
+    return IsTypesubjoin_intern(lres, rres, lid, rid, NULL, "geom.IsType");
+}
 
 /***************************************************************************/
 /************************ IN: wkb wkb - OUT: bit ***************************/
@@ -8371,22 +9317,131 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
 str
 Intersectssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
 {
-    (void)sl;
-    (void)sr;
-    (void)nil_matches;
-    (void)estimate;
+    if (*sl != bat_nil || *sr != bat_nil)
+        throw(MAL, "Intersectssubjoin", "It has candidate lists");
+    if (*nil_matches == bit_nil)
+        throw(MAL, "Intersectssubjoin", "It has nil_matches");
+    if (*estimate != lng_nil)
+        throw(MAL, "Intersectssubjoin", "It has estimate");
+
     return WKBWKBtoBITsubjoin_intern(lres, rres, lid, rid, GEOSIntersects, "geom.Intersects");
 }
 
 str
 Containssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
 {
-    (void)sl;
-    (void)sr;
-    (void)nil_matches;
-    (void)estimate;
+    if (*sl != bat_nil || *sr != bat_nil)
+        throw(MAL, "Containssubjoin", "It has candidate lists");
+    if (*nil_matches == bit_nil)
+        throw(MAL, "Containssubjoin", "It has nil_matches");
+    if (*estimate != lng_nil)
+        throw(MAL, "Containssubjoin", "It has estimate");
+
     return WKBWKBtoBITsubjoin_intern(lres, rres, lid, rid, GEOSContains, "geom.Contains");
 }
+
+/***************************************************************************/
+/************************** IN: wkb - OUT: bit *****************************/
+/***************************************************************************/
+
+static str
+WKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, char (*func) (const GEOSGeometry *), const char *name)
+{
+	BAT *xl, *bl;
+	oid lo;
+	BATiter lBAT_iter;
+    uint32_t j = 0;
+    BUN pl = 0, ql = 0;
+    str msg = MAL_SUCCEED;
+    bit* outs = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+
+	if( (bl= BATdescriptor(*lid)) == NULL )
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+
+	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if ( xl == NULL){
+		BBPunfix(*lid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+    if (!BATcount(bl)) {
+		BBPunfix(*lid);
+    	BBPkeepref(*lres = xl->batCacheid);
+        return MAL_SUCCEED;
+    }
+
+	/*iterator over the BATs*/
+	lBAT_iter = bat_iterator(bl);
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+    lo = bl->hseqbase;
+    BATloop(bl, pl, ql) {
+        str err = NULL;
+        wkb *lWKB = NULL;
+        GEOSGeom lGeometry = NULL;
+        int lSRID = 0;
+        bit out = 0;
+
+        lWKB = (wkb *) BUNtail(lBAT_iter, pl);
+        lGeometry = wkb2geos(lWKB);
+        if ( !lGeometry ) {
+            msg = createException(MAL, name, "wkb2geos failed");
+            break;
+        }
+
+        if ((out = (*func)(lGeometry)) == 2){
+            GEOSGeom_destroy(lGeometry);
+            msg = createException(MAL, name, "%s failed", name);
+            break;
+        }
+        if (lGeometry)
+            GEOSGeom_destroy(lGeometry);
+
+        if (out == 1) {
+            BUNappend(xl, &lo, FALSE);
+        }
+        lo++;
+    }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s second BATloop %llu ms\n", name, t);
+#endif
+
+	BBPunfix(*lid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(xl->batCacheid);
+    } else {
+    	*rres = xl->batCacheid;
+    	BBPkeepref(*lres = xl->batCacheid);
+    }
+
+	return msg;
+}
+
+str
+IsValidsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
+{
+    if (*sl != bat_nil || *sr != bat_nil)
+        throw(MAL, "IsValidsubjoin", "It has candidate lists");
+    if (*nil_matches == bit_nil)
+        throw(MAL, "IsValidsubjoin", "It has nil_matches");
+    if (*estimate != lng_nil)
+        throw(MAL, "IsValidsubjoin", "It has estimate");
+
+    return WKBtoBITsubjoin_intern(lres, rres, lid, GEOSisValid, "geom.IsValid");
+}
+
+/***************************************************************************/
+/********************************* Others **********************************/
+/***************************************************************************/
 
 static str
 IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid)
@@ -8682,10 +9737,13 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 str
 IntersectsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
 {
-    (void)sl;
-    (void)sr;
-    (void)nil_matches;
-    (void)estimate;
+    if (*sl != bat_nil || *sr != bat_nil)
+        throw(MAL, "IntersectsXYZsubjoin", "It has candidate lists");
+    if (*nil_matches == bit_nil)
+        throw(MAL, "IntersectsXYZsubjoin", "It has nil_matches");
+    if (*estimate != lng_nil)
+        throw(MAL, "IntersectsXYZsubjoin", "It has estimate");
+
     return IntersectsXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid);
 }
 
@@ -8882,10 +9940,13 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 str
 DWithinsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, double *dist, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
 {
-    (void)sl;
-    (void)sr;
-    (void)nil_matches;
-    (void)estimate;
+    if (*sl != bat_nil || *sr != bat_nil)
+        throw(MAL, "DWithinsubjoin", "It has candidate lists");
+    if (*nil_matches == bit_nil)
+        throw(MAL, "DWithinsubjoin", "It has nil_matches");
+    if (*estimate != lng_nil)
+        throw(MAL, "DWithinsubjoin", "It has estimate");
+
     return DWithinsubjoin_intern(lres, rres, lid, rid, dist);
 }
 
@@ -9141,10 +10202,13 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 str
 DWithinXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, double *dist, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
 {
-    (void)sl;
-    (void)sr;
-    (void)nil_matches;
-    (void)estimate;
+    if (*sl != bat_nil || *sr != bat_nil)
+        throw(MAL, "DWithinXYZsubjoin", "It has candidate lists");
+    if (*nil_matches == bit_nil)
+        throw(MAL, "DWithinXYZsubjoin", "It has nil_matches");
+    if (*estimate != lng_nil)
+        throw(MAL, "DWithinXYZsubjoin", "It has estimate");
+
     return DWithinXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid, dist);
 }
 
@@ -9310,9 +10374,12 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 str
 ContainsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, int *srid, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
 {
-    (void)sl;
-    (void)sr;
-    (void)nil_matches;
-    (void)estimate;
+    if (*sl != bat_nil || *sr != bat_nil)
+        throw(MAL, "ContainsXYZsubjoin", "It has candidate lists");
+    if (*nil_matches == bit_nil)
+        throw(MAL, "ContainsXYZsubjoin", "It has nil_matches");
+    if (*estimate != lng_nil)
+        throw(MAL, "ContainsXYZsubjoin", "It has estimate");
+
     return ContainsXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid);
 }
