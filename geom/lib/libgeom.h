@@ -113,6 +113,7 @@ typedef enum wkb_type {
 } wkb_type;
 
 libgeom_export const char *geom_type2str(int t, int flag);
+libgeom_export int geom_str2type(const char* type, int flag);
 
 typedef struct wkb {
 	int len;

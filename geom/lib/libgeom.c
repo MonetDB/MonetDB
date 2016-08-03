@@ -188,6 +188,51 @@ geom_type2str(int t, int flag)
 	return "UKNOWN";
 }
 
+int
+geom_str2type(const char* type, int flag)
+{
+    if (flag == 0) {
+        //if (strcmp(type, "GEOMETRY") == 0)
+        //    return wkbGeometry;
+        if (strcmp(type, "POINT") == 0)
+            return wkbPoint_mdb;
+        if (strcmp(type, "LINESTRING") == 0)
+            return wkbLineString_mdb;
+        if (strcmp(type, "LINEARRING") == 0)
+            return wkbLinearRing_mdb;
+        if (strcmp(type, "POLYGON") == 0)
+            return wkbPolygon_mdb;
+        if (strcmp(type, "MULTIPOINT") == 0)
+            return wkbMultiPoint_mdb;
+        if (strcmp(type, "MULTILINESTRING") == 0)
+            return wkbMultiLineString_mdb;
+        if (strcmp(type, "MULTIPOLYGON") == 0)
+            return wkbMultiPolygon_mdb;
+        if (strcmp(type, "GEOMETRYCOLLECTION") == 0)
+            return wkbGeometryCollection_mdb;
+    } else if (flag == 1) {
+        //if (strcmp(type, "ST_Geometry") == 0)
+        //    return wkbGeometry;
+        if (strcmp(type, "ST_Point") == 0)
+            return wkbPoint_mdb;
+        if (strcmp(type, "ST_LineString") == 0)
+            return wkbLineString_mdb;
+        if (strcmp(type, "ST_LinearRing") == 0)
+            return wkbLinearRing_mdb;
+        if (strcmp(type, "ST_Polygon") == 0)
+            return wkbPolygon_mdb;
+        if (strcmp(type, "ST_MultiPoint") == 0)
+            return wkbMultiPoint_mdb;
+        if (strcmp(type, "ST_MultiLinestring") == 0)
+            return wkbMultiLineString_mdb;
+        if (strcmp(type, "ST_MultiPolygon") == 0)
+            return wkbMultiPolygon_mdb;
+        if (strcmp(type, "ST_GeometryCollection") == 0)
+            return wkbGeometryCollection_mdb;
+    }
+    return -1;
+}
+
 
 /*
 str
