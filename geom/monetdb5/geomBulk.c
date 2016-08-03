@@ -23,7 +23,8 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	BATiter *inBAT_iters = NULL;
+    int numIters = 1, j = 0;
     wkb **outs = NULL;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
@@ -41,9 +42,19 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batcalc.wkb", MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
 	//iterator over the BAT
-	inBAT_iter = bat_iterator(inBAT);
+	if ( (inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, "batcalc.wkb", MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+	    inBAT_iters[j] = bat_iterator(inBAT);
+    }
 
     q = BUNlast(inBAT);
 
@@ -60,11 +71,16 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
     for (p = 0; p < q; p++) {
 		str err = NULL;
 	    wkb *inWKB = NULL, *outWKB = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
         
         if (msg)
             continue;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 		if ((err = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED) {	//check type
             msg = err;
 #ifdef OPENMP
@@ -82,6 +98,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 #endif
 
 	BBPunfix(inBAT->batCacheid);
+    GDKfree(inBAT_iters);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -161,7 +178,8 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	BATiter *inBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -179,9 +197,19 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.coordinateFromMBR", MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
 	//iterator over the BAT
-	inBAT_iter = bat_iterator(inBAT);
+	if ( (inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, "batcalc.wkb", MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+	    inBAT_iters[j] = bat_iterator(inBAT);
+    }
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -197,10 +225,16 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
     for (p = 0; p < q; p++) {
 		str err = NULL;
 	    mbr *inMBR = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-		inMBR = (mbr *) BUNtail(inBAT_iter, p);
+		inMBR = (mbr *) BUNtail(inBAT_iters[tNum], p);
 		if ((err = wkbCoordinateFromMBR(&outs[p], &inMBR, coordinateIdx)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -217,6 +251,7 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 #endif
 
 	BBPunfix(inBAT->batCacheid);
+    GDKfree(inBAT_iters);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -298,7 +333,8 @@ WKBtoDBL_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (dbl *, wkb **), const c
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	BATiter *inBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -316,10 +352,20 @@ WKBtoDBL_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (dbl *, wkb **), const c
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
-	
+	//iterator over the BAT
+	if ( (inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, "batcalc.wkb", MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+	    inBAT_iters[j] = bat_iterator(inBAT);
+    }
+
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&start, NULL);
@@ -334,11 +380,16 @@ WKBtoDBL_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (dbl *, wkb **), const c
     for (p = 0; p < q; p++) {
 		str err = NULL;
 	    wkb *inWKB = NULL;
-		//double outSingle;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 		if ((err = (*func) (&outs[p], &inWKB)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -355,6 +406,7 @@ WKBtoDBL_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (dbl *, wkb **), const c
 #endif
 
 	BBPunfix(inBAT->batCacheid);
+    GDKfree(inBAT_iters);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -385,7 +437,8 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	BATiter *inBAT_iters = NULL;
+    int numIters = 1, j = 0;
     wkb **outs = NULL;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
@@ -403,10 +456,20 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
-	
+	//iterator over the BAT
+	if ( (inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+	    inBAT_iters[j] = bat_iterator(inBAT);
+    }
+
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&start, NULL);
@@ -422,10 +485,16 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 		str err = NULL;
 		wkb *outSingle;
 	    wkb *inWKB = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -443,6 +512,7 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 #endif
 
 	BBPunfix(inBAT->batCacheid);
+    GDKfree(inBAT_iters);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -492,7 +562,8 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	BATiter *inBAT_iters = NULL;
+    int numIters = 1, j = 0;
     wkb **outs = NULL;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
@@ -510,9 +581,19 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
+	//iterator over the BAT
+	if ( (inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+	    inBAT_iters[j] = bat_iterator(inBAT);
+    }
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -529,10 +610,16 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 		str err = NULL;
 		wkb *outSingle;
 	    wkb *inWKB = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -550,6 +637,7 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 #endif
 
 	BBPunfix(inBAT->batCacheid);
+    GDKfree(inBAT_iters);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -605,7 +693,8 @@ WKBtoWKBflagDBL_bat(bat *outBAT_id, bat *inBAT_id, double *flag, str (*func) (wk
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	BATiter *inBAT_iters = NULL;
+    int numIters = 1, j = 0;
     wkb **outs = NULL;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
@@ -623,9 +712,19 @@ WKBtoWKBflagDBL_bat(bat *outBAT_id, bat *inBAT_id, double *flag, str (*func) (wk
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
+	//iterator over the BAT
+	if ( (inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+	    inBAT_iters[j] = bat_iterator(inBAT);
+    }
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -642,10 +741,16 @@ WKBtoWKBflagDBL_bat(bat *outBAT_id, bat *inBAT_id, double *flag, str (*func) (wk
 		str err = NULL;
 		wkb *outSingle;
 	    wkb *inWKB = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -663,6 +768,7 @@ WKBtoWKBflagDBL_bat(bat *outBAT_id, bat *inBAT_id, double *flag, str (*func) (wk
 #endif
 
 	BBPunfix(inBAT->batCacheid);
+    GDKfree(inBAT_iters);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -706,7 +812,8 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	BATiter *inBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -724,9 +831,19 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
+	//iterator over the BAT
+	if ( (inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+	    inBAT_iters[j] = bat_iterator(inBAT);
+    }
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -742,10 +859,16 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
     for (p = 0; p < q; p++) {
         str err = NULL;
 	    wkb *inWKB = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-        inWKB = (wkb *) BUNtail(inBAT_iter, p);
+        inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
         if ((err = (*func) (&outs[p], &inWKB)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -762,6 +885,7 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 #endif
 
     BBPunfix(inBAT->batCacheid);
+    GDKfree(inBAT_iters);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -815,7 +939,8 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, wkb **b, str (*func)
 {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter aBAT_iter, bBAT_iter;
+	BATiter *aBAT_iters = NULL, *bBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -839,12 +964,32 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, wkb **b, str (*func)
     		BBPunfix(bBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
 	//iterator over the input BAT
-	aBAT_iter = bat_iterator(aBAT);
+    if ( (aBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+        if (*bBAT_id != bat_nil)
+    		BBPunfix(bBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
     if (*bBAT_id != bat_nil)
-	    bBAT_iter = bat_iterator(bBAT);
+        if ( (bBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+            GDKfree(aBAT_iters);
+            BBPunfix(aBAT->batCacheid);
+            BBPunfix(bBAT->batCacheid);
+            BBPunfix(outBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
 
+    for (j = 0; j < numIters; j++) {
+    	aBAT_iters[j] = bat_iterator(aBAT);
+        if (*bBAT_id != bat_nil)
+	        bBAT_iters[j] = bat_iterator(bBAT);
+    }
 
     q = BUNlast(aBAT);
 #ifdef GEOMBULK_DEBUG
@@ -860,12 +1005,18 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, wkb **b, str (*func)
     for (p = 0; p < q; p++) {
         wkb *aWKB = NULL, *bWKB = NULL;
         str err = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-        aWKB = (wkb *) BUNtail(aBAT_iter, p);
+        aWKB = (wkb *) BUNtail(aBAT_iters[tNum], p);
         if (*bBAT_id != bat_nil)
-            bWKB = (wkb *) BUNtail(bBAT_iter, p);
+            bWKB = (wkb *) BUNtail(bBAT_iters[tNum], p);
         else
             bWKB = *b;
         if ((err = (*func) (&outs[p], &aWKB, &bWKB)) != MAL_SUCCEED) {
@@ -884,8 +1035,11 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, wkb **b, str (*func)
 #endif
 
     BBPunfix(aBAT->batCacheid);
-    if (*bBAT_id != bat_nil)
+    GDKfree(aBAT_iters);
+    if (*bBAT_id != bat_nil) {
+        GDKfree(bBAT_iters);
         BBPunfix(bBAT->batCacheid);
+    }
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -921,7 +1075,8 @@ wkbIsType_bat_intern(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str *b, str (*f
 {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter aBAT_iter, bBAT_iter;
+	BATiter *aBAT_iters = NULL, *bBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -946,15 +1101,32 @@ wkbIsType_bat_intern(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str *b, str (*f
     		BBPunfix(bBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
 	//iterator over the input BAT
-	aBAT_iter = bat_iterator(aBAT);
-    if (*bBAT_id != bat_nil)
-	    bBAT_iter = bat_iterator(bBAT);
-    else {
-        globalRType = geom_str2type(*b, 1);
+    if ( (aBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+        if (*bBAT_id != bat_nil)
+    		BBPunfix(bBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
     }
+    if (*bBAT_id != bat_nil)
+        if ( (bBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+            GDKfree(aBAT_iters);
+            BBPunfix(aBAT->batCacheid);
+            BBPunfix(bBAT->batCacheid);
+            BBPunfix(outBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
 
+    for (j = 0; j < numIters; j++) {
+    	aBAT_iters[j] = bat_iterator(aBAT);
+        if (*bBAT_id != bat_nil)
+	        bBAT_iters[j] = bat_iterator(bBAT);
+    }
 
     q = BUNlast(aBAT);
 #ifdef GEOMBULK_DEBUG
@@ -973,13 +1145,18 @@ wkbIsType_bat_intern(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str *b, str (*f
         str err = NULL;
         int rType, lType;
         GEOSGeom aGeometry = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
 
         if (msg != MAL_SUCCEED)
             continue;
 
-        aWKB = (wkb *) BUNtail(aBAT_iter, p);
+        aWKB = (wkb *) BUNtail(aBAT_iters[tNum], p);
         if (*bBAT_id != bat_nil) {
-            bSTR = *(str*) BUNtail(bBAT_iter, p);
+            bSTR = *(str*) BUNtail(bBAT_iters[tNum], p);
             rType = geom_str2type(bSTR, 1);
         } else {
             rType = globalRType;
@@ -1004,8 +1181,11 @@ wkbIsType_bat_intern(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str *b, str (*f
 #endif
 
     BBPunfix(aBAT->batCacheid);
-    if (*bBAT_id != bat_nil)
+    GDKfree(aBAT_iters);
+    if (*bBAT_id != bat_nil) {
+        GDKfree(bBAT_iters);
         BBPunfix(bBAT->batCacheid);
+    }
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -1035,7 +1215,8 @@ WKBWKBtoBITflagDBL_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, double *flag,
 {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter aBAT_iter, bBAT_iter;
+	BATiter *aBAT_iters = NULL, *bBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -1058,11 +1239,32 @@ WKBWKBtoBITflagDBL_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, double *flag,
 		BBPunfix(bBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
 	//iterator over the input BAT
-	aBAT_iter = bat_iterator(aBAT);
-	bBAT_iter = bat_iterator(bBAT);
+    if ( (aBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+        if (*bBAT_id != bat_nil)
+    		BBPunfix(bBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    if (*bBAT_id != bat_nil)
+        if ( (bBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+            GDKfree(aBAT_iters);
+            BBPunfix(aBAT->batCacheid);
+            BBPunfix(bBAT->batCacheid);
+            BBPunfix(outBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
 
+    for (j = 0; j < numIters; j++) {
+    	aBAT_iters[j] = bat_iterator(aBAT);
+        if (*bBAT_id != bat_nil)
+	        bBAT_iters[j] = bat_iterator(bBAT);
+    }
 
     q = BUNlast(aBAT);
 #ifdef GEOMBULK_DEBUG
@@ -1078,11 +1280,17 @@ WKBWKBtoBITflagDBL_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, double *flag,
     for (p = 0; p < q; p++) {
         wkb *aWKB = NULL, *bWKB = NULL;
         str err = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-        aWKB = (wkb *) BUNtail(aBAT_iter, p);
-        bWKB = (wkb *) BUNtail(bBAT_iter, p);
+        aWKB = (wkb *) BUNtail(aBAT_iters[tNum], p);
+        bWKB = (wkb *) BUNtail(bBAT_iters[tNum], p);
         if ((err = (*func) (&outs[p], &aWKB, &bWKB, flag)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -1099,7 +1307,11 @@ WKBWKBtoBITflagDBL_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, double *flag,
 #endif
 
     BBPunfix(aBAT->batCacheid);
-    BBPunfix(bBAT->batCacheid);
+    GDKfree(aBAT_iters);
+    if (*bBAT_id != bat_nil) {
+        GDKfree(bBAT_iters);
+        BBPunfix(bBAT->batCacheid);
+    }
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -1129,7 +1341,8 @@ WKBWKBtoWKB_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (wkb **,
 {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter aBAT_iter, bBAT_iter;
+	BATiter *aBAT_iters = NULL, *bBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -1152,10 +1365,32 @@ WKBWKBtoWKB_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (wkb **,
 		BBPunfix(bBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
 	//iterator over the input BAT
-	aBAT_iter = bat_iterator(aBAT);
-	bBAT_iter = bat_iterator(bBAT);
+    if ( (aBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+        if (*bBAT_id != bat_nil)
+    		BBPunfix(bBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    if (*bBAT_id != bat_nil)
+        if ( (bBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+            GDKfree(aBAT_iters);
+            BBPunfix(aBAT->batCacheid);
+            BBPunfix(bBAT->batCacheid);
+            BBPunfix(outBAT->batCacheid);
+            throw(MAL, name, MAL_MALLOC_FAIL);
+        }
+
+    for (j = 0; j < numIters; j++) {
+    	aBAT_iters[j] = bat_iterator(aBAT);
+        if (*bBAT_id != bat_nil)
+	        bBAT_iters[j] = bat_iterator(bBAT);
+    }
 
     q = BUNlast(aBAT);
 #ifdef GEOMBULK_DEBUG
@@ -1171,11 +1406,17 @@ WKBWKBtoWKB_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (wkb **,
     for (p = 0; p < q; p++) {
         wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
         str err = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-        aWKB = (wkb *) BUNtail(aBAT_iter, p);
-        bWKB = (wkb *) BUNtail(bBAT_iter, p);
+        aWKB = (wkb *) BUNtail(aBAT_iters[tNum], p);
+        bWKB = (wkb *) BUNtail(bBAT_iters[tNum], p);
         if ((err = (*func) (&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -1193,7 +1434,11 @@ WKBWKBtoWKB_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (wkb **,
 #endif
 
     BBPunfix(aBAT->batCacheid);
-    BBPunfix(bBAT->batCacheid);
+    GDKfree(aBAT_iters);
+    if (*bBAT_id != bat_nil) {
+        GDKfree(bBAT_iters);
+        BBPunfix(bBAT->batCacheid);
+    }
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -1232,7 +1477,8 @@ WKBDBLDBLDBLINTtoBIT_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
 {
 	BAT *outBAT = NULL, *inBAT = NULL, *inXBAT = NULL, *inYBAT = NULL, *inZBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter, inXBAT_iter, inYBAT_iter, inZBAT_iter;
+	BATiter *inBAT_iters = NULL, *inXBAT_iters = NULL, *inYBAT_iters = NULL, *inZBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -1274,16 +1520,45 @@ WKBDBLDBLDBLINTtoBIT_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
     		BBPunfix(inZBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
-    
-    if (*inXBAT_id != bat_nil)
-    	inXBAT_iter = bat_iterator(inXBAT);
-    if (*inYBAT_id != bat_nil)
-    	inYBAT_iter = bat_iterator(inYBAT);
-    if (*inZBAT_id != bat_nil)
-        inZBAT_iter = bat_iterator(inZBAT);
+	if ( 
+        ((inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inXBAT_id != bat_nil) && (inXBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inYBAT_id != bat_nil) && (inYBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inZBAT_id != bat_nil) && (inZBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL)
+        ) {
+        if (inBAT_iters) 
+            GDKfree(inBAT_iters);
+        if (inXBAT_iters) 
+            GDKfree(inXBAT_iters);
+        if (inYBAT_iters) 
+            GDKfree(inYBAT_iters);
+        if (inZBAT_iters) 
+            GDKfree(inZBAT_iters);
+
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+		    BBPunfix(inXBAT->batCacheid);
+        if (*inYBAT_id != bat_nil)
+    		BBPunfix(inYBAT->batCacheid);
+        if (*inZBAT_id != bat_nil)
+    		BBPunfix(inZBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+
+    for (j = 0; j < numIters; j++) {
+        inBAT_iters[j] = bat_iterator(inBAT);
+        if (*inXBAT_id != bat_nil)
+            inXBAT_iters[j] = bat_iterator(inXBAT);
+        if (*inYBAT_id != bat_nil)
+            inYBAT_iters[j] = bat_iterator(inYBAT);
+        if (*inZBAT_id != bat_nil)
+            inZBAT_iters[j] = bat_iterator(inZBAT);
+    }
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -1300,21 +1575,27 @@ WKBDBLDBLDBLINTtoBIT_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
 		str err = NULL;
 	    wkb *inWKB = NULL;
         double x, y, z;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-        inWKB = (wkb *) BUNtail(inBAT_iter, p);
+        inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 
         if (*inXBAT_id != bat_nil)
-            x = *(double *) BUNtail(inXBAT_iter, p);
+            x = *(double *) BUNtail(inXBAT_iters[tNum], p);
         else
             x = *dx;
         if (*inYBAT_id != bat_nil)
-            y = *(double *) BUNtail(inYBAT_iter, p);
+            y = *(double *) BUNtail(inYBAT_iters[tNum], p);
         else
             y = *dy;
         if (*inZBAT_id != bat_nil)
-            z = *(double *) BUNtail(inZBAT_iter, p);
+            z = *(double *) BUNtail(inZBAT_iters[tNum], p);
         else
             z = *dz;
 
@@ -1334,12 +1615,19 @@ WKBDBLDBLDBLINTtoBIT_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
 #endif
 
     BBPunfix(inBAT->batCacheid);
-    if (*inXBAT_id != bat_nil)
+    GDKfree(inBAT_iters);
+    if (*inXBAT_id != bat_nil) {
         BBPunfix(inXBAT->batCacheid);
-    if (*inYBAT_id != bat_nil)
+        GDKfree(inXBAT_iters);
+    }
+    if (*inYBAT_id != bat_nil) {
         BBPunfix(inYBAT->batCacheid);
-    if (*inZBAT_id != bat_nil)
+        GDKfree(inYBAT_iters);
+    }
+    if (*inZBAT_id != bat_nil) {
         BBPunfix(inZBAT->batCacheid);
+        GDKfree(inZBAT_iters);
+    }
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -1375,7 +1663,8 @@ WKBDBLDBLDBLINTtoBITflagDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, d
 {
 	BAT *outBAT = NULL, *inBAT = NULL, *inXBAT = NULL, *inYBAT = NULL, *inZBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter, inXBAT_iter, inYBAT_iter, inZBAT_iter;
+	BATiter *inBAT_iters = NULL, *inXBAT_iters = NULL, *inYBAT_iters = NULL, *inZBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -1417,16 +1706,45 @@ WKBDBLDBLDBLINTtoBITflagDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, d
     		BBPunfix(inZBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
-    
-    if (*inXBAT_id != bat_nil)
-    	inXBAT_iter = bat_iterator(inXBAT);
-    if (*inYBAT_id != bat_nil)
-    	inYBAT_iter = bat_iterator(inYBAT);
-    if (*inZBAT_id != bat_nil)
-        inZBAT_iter = bat_iterator(inZBAT);
+	if ( 
+        ((inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inXBAT_id != bat_nil) && (inXBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inYBAT_id != bat_nil) && (inYBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inZBAT_id != bat_nil) && (inZBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL)
+        ) {
+        if (inBAT_iters) 
+            GDKfree(inBAT_iters);
+        if (inXBAT_iters) 
+            GDKfree(inXBAT_iters);
+        if (inYBAT_iters) 
+            GDKfree(inYBAT_iters);
+        if (inZBAT_iters) 
+            GDKfree(inZBAT_iters);
+
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+		    BBPunfix(inXBAT->batCacheid);
+        if (*inYBAT_id != bat_nil)
+    		BBPunfix(inYBAT->batCacheid);
+        if (*inZBAT_id != bat_nil)
+    		BBPunfix(inZBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+
+    for (j = 0; j < numIters; j++) {
+        inBAT_iters[j] = bat_iterator(inBAT);
+        if (*inXBAT_id != bat_nil)
+            inXBAT_iters[j] = bat_iterator(inXBAT);
+        if (*inYBAT_id != bat_nil)
+            inYBAT_iters[j] = bat_iterator(inYBAT);
+        if (*inZBAT_id != bat_nil)
+            inZBAT_iters[j] = bat_iterator(inZBAT);
+    }
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -1443,22 +1761,27 @@ WKBDBLDBLDBLINTtoBITflagDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, d
 		str err = NULL;
 	    wkb *inWKB = NULL;
         double x, y, z;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-
-        inWKB = (wkb *) BUNtail(inBAT_iter, p);
+        inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 
         if (*inXBAT_id != bat_nil)
-            x = *(double *) BUNtail(inXBAT_iter, p);
+            x = *(double *) BUNtail(inXBAT_iters[tNum], p);
         else
             x = *dx;
         if (*inYBAT_id != bat_nil)
-            y = *(double *) BUNtail(inYBAT_iter, p);
+            y = *(double *) BUNtail(inYBAT_iters[tNum], p);
         else
             y = *dy;
         if (*inZBAT_id != bat_nil)
-            z = *(double *) BUNtail(inZBAT_iter, p);
+            z = *(double *) BUNtail(inZBAT_iters[tNum], p);
         else
             z = *dz;
 
@@ -1478,12 +1801,24 @@ WKBDBLDBLDBLINTtoBITflagDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, d
 #endif
 
     BBPunfix(inBAT->batCacheid);
-    if (*inXBAT_id != bat_nil)
+    GDKfree(inBAT_iters);
+    if (*inXBAT_id != bat_nil) {
         BBPunfix(inXBAT->batCacheid);
-    if (*inYBAT_id != bat_nil)
+        GDKfree(inXBAT_iters);
+    }
+    if (*inYBAT_id != bat_nil) {
         BBPunfix(inYBAT->batCacheid);
-    if (*inZBAT_id != bat_nil)
+        GDKfree(inYBAT_iters);
+    }
+    if (*inZBAT_id != bat_nil) {
         BBPunfix(inZBAT->batCacheid);
+        GDKfree(inZBAT_iters);
+    }
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -1513,7 +1848,8 @@ WKBDBLDBLDBLINTtoDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
 {
 	BAT *outBAT = NULL, *inBAT = NULL, *inXBAT = NULL, *inYBAT = NULL, *inZBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter, inXBAT_iter, inYBAT_iter, inZBAT_iter;
+	BATiter *inBAT_iters = NULL, *inXBAT_iters = NULL, *inYBAT_iters = NULL, *inZBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -1555,16 +1891,46 @@ WKBDBLDBLDBLINTtoDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
     		BBPunfix(inZBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
-    
-    if (*inXBAT_id != bat_nil)
-    	inXBAT_iter = bat_iterator(inXBAT);
-    if (*inYBAT_id != bat_nil)
-    	inYBAT_iter = bat_iterator(inYBAT);
-    if (*inZBAT_id != bat_nil)
-        inZBAT_iter = bat_iterator(inZBAT);
+	if ( 
+        ((inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inXBAT_id != bat_nil) && (inXBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inYBAT_id != bat_nil) && (inYBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inZBAT_id != bat_nil) && (inZBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL)
+        ) {
+        if (inBAT_iters) 
+            GDKfree(inBAT_iters);
+        if (inXBAT_iters) 
+            GDKfree(inXBAT_iters);
+        if (inYBAT_iters) 
+            GDKfree(inYBAT_iters);
+        if (inZBAT_iters) 
+            GDKfree(inZBAT_iters);
+
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+		    BBPunfix(inXBAT->batCacheid);
+        if (*inYBAT_id != bat_nil)
+    		BBPunfix(inYBAT->batCacheid);
+        if (*inZBAT_id != bat_nil)
+    		BBPunfix(inZBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+
+    for (j = 0; j < numIters; j++) {
+        inBAT_iters[j] = bat_iterator(inBAT);
+        if (*inXBAT_id != bat_nil)
+            inXBAT_iters[j] = bat_iterator(inXBAT);
+        if (*inYBAT_id != bat_nil)
+            inYBAT_iters[j] = bat_iterator(inYBAT);
+        if (*inZBAT_id != bat_nil)
+            inZBAT_iters[j] = bat_iterator(inZBAT);
+    }
+
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -1581,21 +1947,27 @@ WKBDBLDBLDBLINTtoDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
 		str err = NULL;
 	    wkb *inWKB = NULL;
         double x, y, z;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-        inWKB = (wkb *) BUNtail(inBAT_iter, p);
+        inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 
         if (*inXBAT_id != bat_nil)
-            x = *(double *) BUNtail(inXBAT_iter, p);
+            x = *(double *) BUNtail(inXBAT_iters[tNum], p);
         else
             x = *dx;
         if (*inYBAT_id != bat_nil)
-            y = *(double *) BUNtail(inYBAT_iter, p);
+            y = *(double *) BUNtail(inYBAT_iters[tNum], p);
         else
             y = *dy;
         if (*inZBAT_id != bat_nil)
-            z = *(double *) BUNtail(inZBAT_iter, p);
+            z = *(double *) BUNtail(inZBAT_iters[tNum], p);
         else
             z = *dz;
 
@@ -1615,12 +1987,19 @@ WKBDBLDBLDBLINTtoDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *
 #endif
 
     BBPunfix(inBAT->batCacheid);
-    if (*inXBAT_id != bat_nil)
+    GDKfree(inBAT_iters);
+    if (*inXBAT_id != bat_nil) {
         BBPunfix(inXBAT->batCacheid);
-    if (*inYBAT_id != bat_nil)
+        GDKfree(inXBAT_iters);
+    }
+    if (*inYBAT_id != bat_nil) {
         BBPunfix(inYBAT->batCacheid);
-    if (*inZBAT_id != bat_nil)
+        GDKfree(inYBAT_iters);
+    }
+    if (*inZBAT_id != bat_nil) {
         BBPunfix(inZBAT->batCacheid);
+        GDKfree(inZBAT_iters);
+    }
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -1650,7 +2029,8 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	BATiter *inBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -1668,9 +2048,19 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
+	//iterator over the BAT
+	if ( (inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+	    inBAT_iters[j] = bat_iterator(inBAT);
+    }
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -1686,10 +2076,16 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
     for (p = 0; p < q; p++) {
 		str err = NULL;
 	    wkb *inWKB = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 		if ((err = (*func) (&outs[p], &inWKB)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -1706,6 +2102,7 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 #endif
 
 	BBPunfix(inBAT->batCacheid);
+    GDKfree(inBAT_iters);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -1742,7 +2139,8 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	BATiter *inBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -1760,9 +2158,19 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
+	//iterator over the BAT
+	if ( (inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+	    inBAT_iters[j] = bat_iterator(inBAT);
+    }
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -1778,10 +2186,16 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
     for (p = 0; p < q; p++) {
 		str err = NULL;
 	    wkb *inWKB = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 		if ((err = (*func) (&outs[p], &inWKB, flag)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -1798,6 +2212,7 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 #endif
 
 	BBPunfix(inBAT->batCacheid);
+    GDKfree(inBAT_iters);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -1834,7 +2249,8 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
+	BATiter *inBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
@@ -1852,9 +2268,19 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.wkbGetCoordinate", MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
+	//iterator over the BAT
+	if ( (inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, "batgeom.wkbGetCoordinate", MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+	    inBAT_iters[j] = bat_iterator(inBAT);
+    }
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -1870,10 +2296,16 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
     for (p = 0; p < q; p++) {
 		str err = NULL;
 	    wkb *inWKB = NULL;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
          
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 		if ((err = wkbGetCoordinate(&outs[p], &inWKB, flag)) != MAL_SUCCEED) {
             msg = err;
 #ifdef OPENMP
@@ -1890,6 +2322,7 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 #endif
 
 	BBPunfix(inBAT->batCacheid);
+    GDKfree(inBAT_iters);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -1913,7 +2346,8 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
 {
 	BAT *outBAT = NULL, *inBAT = NULL, *inXBAT = NULL, *inYBAT = NULL, *inZBAT = NULL;
 	BUN p = 0, q = 0;
-	BATiter inBAT_iter, inXBAT_iter, inYBAT_iter, inZBAT_iter;
+	BATiter *inBAT_iters = NULL, *inXBAT_iters = NULL, *inYBAT_iters = NULL, *inZBAT_iters = NULL;
+    int numIters = 1, j = 0;
 	str msg = MAL_SUCCEED;
     wkb **outs = NULL;
 #ifdef GEOMBULK_DEBUG
@@ -1955,17 +2389,47 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
     		BBPunfix(inZBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
 
-	//iterator over the input BAT
-	inBAT_iter = bat_iterator(inBAT);
-    
-    if (*inXBAT_id != bat_nil)
-    	inXBAT_iter = bat_iterator(inXBAT);
-    if (*inYBAT_id != bat_nil)
-    	inYBAT_iter = bat_iterator(inYBAT);
-    if (*inZBAT_id != bat_nil)
-        inZBAT_iter = bat_iterator(inZBAT);
+	if ( 
+        ((inBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inXBAT_id != bat_nil) && (inXBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inYBAT_id != bat_nil) && (inYBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) ||
+        ((*inZBAT_id != bat_nil) && (inZBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL)
+        ) {
+        if (inBAT_iters) 
+            GDKfree(inBAT_iters);
+        if (inXBAT_iters) 
+            GDKfree(inXBAT_iters);
+        if (inYBAT_iters) 
+            GDKfree(inYBAT_iters);
+        if (inZBAT_iters) 
+            GDKfree(inZBAT_iters);
 
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+		    BBPunfix(inXBAT->batCacheid);
+        if (*inYBAT_id != bat_nil)
+    		BBPunfix(inYBAT->batCacheid);
+        if (*inZBAT_id != bat_nil)
+    		BBPunfix(inZBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+
+    for (j = 0; j < numIters; j++) {
+        inBAT_iters[j] = bat_iterator(inBAT);
+        if (*inXBAT_id != bat_nil)
+            inXBAT_iters[j] = bat_iterator(inXBAT);
+        if (*inYBAT_id != bat_nil)
+            inYBAT_iters[j] = bat_iterator(inYBAT);
+        if (*inZBAT_id != bat_nil)
+            inZBAT_iters[j] = bat_iterator(inZBAT);
+    }
+
+    q = BUNlast(inBAT);
 
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
@@ -1983,22 +2447,27 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
 	    wkb *inWKB = NULL;
 		wkb *outSingle;
         double x, y, z;
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+
         if (msg)
             continue;
 
-
-        inWKB = (wkb *) BUNtail(inBAT_iter, p);
+        inWKB = (wkb *) BUNtail(inBAT_iters[tNum], p);
 
         if (*inXBAT_id != bat_nil)
-            x = *(double *) BUNtail(inXBAT_iter, p);
+            x = *(double *) BUNtail(inXBAT_iters[tNum], p);
         else
             x = *dx;
         if (*inYBAT_id != bat_nil)
-            y = *(double *) BUNtail(inYBAT_iter, p);
+            y = *(double *) BUNtail(inYBAT_iters[tNum], p);
         else
             y = *dy;
         if (*inZBAT_id != bat_nil)
-            z = *(double *) BUNtail(inZBAT_iter, p);
+            z = *(double *) BUNtail(inZBAT_iters[tNum], p);
         else
             z = *dz;
 
@@ -2019,12 +2488,19 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
 #endif
 
     BBPunfix(inBAT->batCacheid);
-    if (*inXBAT_id != bat_nil)
+    GDKfree(inBAT_iters);
+    if (*inXBAT_id != bat_nil) {
         BBPunfix(inXBAT->batCacheid);
-    if (*inYBAT_id != bat_nil)
+        GDKfree(inXBAT_iters);
+    }
+    if (*inYBAT_id != bat_nil) {
         BBPunfix(inYBAT->batCacheid);
-    if (*inZBAT_id != bat_nil)
+        GDKfree(inYBAT_iters);
+    }
+    if (*inZBAT_id != bat_nil) {
         BBPunfix(inZBAT->batCacheid);
+        GDKfree(inZBAT_iters);
+    }
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(outBAT->batCacheid);
@@ -2606,32 +3082,32 @@ WKBtoWKBSflagINT(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomB
 
 str
 wkbDump_bat(bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id) {
-    return WKBtoWKBSflagINT(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL, dumpGeometriesGeometry, "geom.Dump");
+    return WKBtoWKBSflagINT(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL, dumpGeometriesGeometry, "batgeom.Dump");
 }
 
 str
 wkbDumpP_bat(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id, bat *parent) {
-    return WKBtoWKBSflagINT(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent, dumpGeometriesGeometry,"geom.DumpP");
+    return WKBtoWKBSflagINT(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent, dumpGeometriesGeometry,"batgeom.DumpP");
 }
 
 str
 wkbDumpPoints_bat(bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id) {
-    return WKBtoWKBSflagINT(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL, dumpPointsGeometry, "geom.DumpPoints");
+    return WKBtoWKBSflagINT(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL, dumpPointsGeometry, "batgeom.DumpPoints");
 }
 
 str
 wkbDumpPointsP_bat(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id, bat *parent) {
-    return WKBtoWKBSflagINT(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent, dumpPointsGeometry,"geom.DumpPointsP");
+    return WKBtoWKBSflagINT(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent, dumpPointsGeometry,"batgeom.DumpPointsP");
 }
 
 str
 wkbDumpRings_bat(bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id) {
-    return WKBtoWKBSflagINT(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL, dumpRingsGeometry, "geom.DumpRings");
+    return WKBtoWKBSflagINT(NULL, idBAT_id, geomBAT_id, wkbBAT_id, NULL, dumpRingsGeometry, "batgeom.DumpRings");
 }
 
 str
 wkbDumpRingsP_bat(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, bat* wkbBAT_id, bat *parent) {
-    return WKBtoWKBSflagINT(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent, dumpRingsGeometry,"geom.DumpRingsP");
+    return WKBtoWKBSflagINT(partentBAT_id, idBAT_id, geomBAT_id, wkbBAT_id, parent, dumpRingsGeometry,"batgeom.DumpRingsP");
 }
 
 
@@ -2974,13 +3450,13 @@ wkbAsX3D_bat(bat *outBAT_id, bat *inBAT_id, int *maxDecDigits, int *options)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.SetSRID", "Problem retrieving BAT");
+		throw(MAL, "batgeom.wkbAsX3D", "Problem retrieving BAT");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.SetSRID", "Error creating new BAT");
+		throw(MAL, "batgeom.wkbAsX3D", "Error creating new BAT");
 	}
 	//set the first idx of the output BAT equal to that of the input BAT
 
