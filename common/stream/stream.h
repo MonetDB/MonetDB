@@ -239,6 +239,40 @@ stream_export void bstream_destroy(bstream *s);
 stream_export ssize_t bstream_read(bstream *s, size_t size);
 stream_export ssize_t bstream_next(bstream *s);
 
+/* Byte stream is a simple stream that sends a chunk of bytes prefixed
+   with a 64-bit integer describing the length of the chunk.
+
+   The maximum length of the byte stream must be specified upon
+   creation.
+ */
+
+stream_export stream *byte_stream(stream *s, size_t bufsize);
+stream_export int isa_byte_stream(stream *s);
+
+typedef struct bytestream {
+	stream *s;
+	char *buf;
+	size_t bufsize;
+	size_t bufpos;
+} bytestream;
+
+// overhead for bytestream messages
+#define BYTESTREAM_OVERHEAD sizeof(size_t);
+
+stream_export bytestream *bytestream_create(stream *s, size_t bufsize);
+stream_export void bytestream_destroy(bytestream *s);
+stream_export ssize_t bytestream_read(bytestream *s);
+
+typedef enum {
+	COMPRESSION_SNAPPY = 1
+} compression_method;
+
+#ifdef HAVE_LIBSNAPPY
+// todo: compressed streams
+
+#endif
+
+
 typedef enum mnstr_errors {
 	MNSTR_NO__ERROR = 0,
 	MNSTR_OPEN_ERROR,
