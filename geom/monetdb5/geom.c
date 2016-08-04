@@ -12,7 +12,7 @@
  */
 
 #include "geom.h"
-//#define GEOMBULK_DEBUG 1
+#define GEOMBULK_DEBUG 1
 
 int TYPE_mbr;
 
@@ -9047,7 +9047,7 @@ IsTypesubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *n
     if (*estimate != lng_nil)
         throw(MAL, "IsTypesubjoin", "It has estimate");
 
-    return IsTypesubjoin_intern(lres, rres, lid, rid, NULL, "geom.IsType");
+    return IsTypesubjoin_intern(lres, rres, lid, rid, NULL, "geom.IsTypesubjoin");
 }
 
 /***************************************************************************/
@@ -9302,7 +9302,7 @@ Intersectssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bi
     if (*estimate != lng_nil)
         throw(MAL, "Intersectssubjoin", "It has estimate");
 
-    return WKBWKBtoBITsubjoin_intern(lres, rres, lid, rid, GEOSIntersects, "geom.Intersects");
+    return WKBWKBtoBITsubjoin_intern(lres, rres, lid, rid, GEOSIntersects, "geom.Intersectssubjoin");
 }
 
 str
@@ -9315,7 +9315,7 @@ Containssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit 
     if (*estimate != lng_nil)
         throw(MAL, "Containssubjoin", "It has estimate");
 
-    return WKBWKBtoBITsubjoin_intern(lres, rres, lid, rid, GEOSContains, "geom.Contains");
+    return WKBWKBtoBITsubjoin_intern(lres, rres, lid, rid, GEOSContains, "geom.Containssubjoin");
 }
 
 /***************************************************************************/
@@ -9414,7 +9414,7 @@ IsValidsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *
     if (*estimate != lng_nil)
         throw(MAL, "IsValidsubjoin", "It has estimate");
 
-    return WKBtoBITsubjoin_intern(lres, rres, lid, GEOSisValid, "geom.IsValid");
+    return WKBtoBITsubjoin_intern(lres, rres, lid, GEOSisValid, "geom.IsValidsubjoin");
 }
 
 /***************************************************************************/
@@ -9422,7 +9422,7 @@ IsValidsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *
 /***************************************************************************/
 
 static str
-IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid)
+IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid, const char* name)
 {
     str msg = MAL_SUCCEED;
 	BAT *xl, *xr, *bl, *bx, *by, *bz;
@@ -9439,24 +9439,24 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 #endif
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.Intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 
 	if( (bx= BATdescriptor(*xid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.Intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (by= BATdescriptor(*yid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
-		throw(MAL, "algebra.Intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (bz= BATdescriptor(*zid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
 		BBPunfix(*yid);
-		throw(MAL, "algebra.Intersects", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -9465,7 +9465,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 		BBPunfix(*xid);
 		BBPunfix(*yid);
 		BBPunfix(*zid);
-		throw(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -9475,7 +9475,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 		BBPunfix(*yid);
 		BBPunfix(*zid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
     if ( !BATcount(bx) || !BATcount(bl)) {
@@ -9502,7 +9502,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 		BBPunfix(*zid);
 		BBPunfix(xl->batCacheid);
 		BBPunfix(xr->batCacheid);
-		throw(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
     }
     if ( ( BATcount(bx)) && (rMBRs = (mbr**) GDKzalloc(sizeof(mbr*) * BATcount(bx))) == NULL) {
         GDKfree(rGeometries);
@@ -9512,7 +9512,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 		BBPunfix(*zid);
 		BBPunfix(xl->batCacheid);
 		BBPunfix(xr->batCacheid);
-		throw(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
     }
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&start, NULL);
@@ -9537,7 +9537,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                msg = createException(MAL, "algebra.Intersects", "GEOSCoordSeq_create failed");
+                msg = createException(MAL, name, "GEOSCoordSeq_create failed");
                 break;
             }
 
@@ -9547,7 +9547,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                msg = createException(MAL, "algebra.Intersects", "GEOSCoordSeq_setOrdinate failed");
+                msg = createException(MAL, name, "GEOSCoordSeq_setOrdinate failed");
                 break;
             }
 
@@ -9555,7 +9555,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                msg = createException(MAL, "algebra.Intersects", "Failed to create GEOSGeometry from the coordinates");
+                msg = createException(MAL, name, "Failed to create GEOSGeometry from the coordinates");
                 break;
             }
 
@@ -9569,7 +9569,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
             for (j = 0; j < px;j++) {
                 GEOSGeom_destroy(rGeometries[j]);
             }
-            msg = createException(MAL, "algebra.Intersects", "Failed to create mbrFromGeos");
+            msg = createException(MAL, name, "Failed to create mbrFromGeos");
             break;
         }
 
@@ -9579,10 +9579,10 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "IntersectsXYZ first BATloop %llu ms\n", t);
+    fprintf(stdout, "%s first BATloop %llu ms\n", name, t);
 #endif
     if ( (msg ==MAL_SUCCEED) && BATcount(bx) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(bx))) == NULL) {
-        msg = createException(MAL, "algebra.Intersects", MAL_MALLOC_FAIL);
+        msg = createException(MAL, name, MAL_MALLOC_FAIL);
     }
 
     if (msg != MAL_SUCCEED) {
@@ -9615,20 +9615,20 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 
         lGeometry = wkb2geos(lWKB);
         if ( !lGeometry ) {
-            createException(MAL, "algebra.Intersects", "wkb2geos failed");
+            createException(MAL, name, "wkb2geos failed");
             break;
         }
 
         if (GEOSGetSRID(lGeometry) != *srid) {
             GEOSGeom_destroy(lGeometry);
-            msg = createException(MAL, "geom.Intersects", "Geometries of different SRID");
+            msg = createException(MAL, name, "Geometries of different SRID");
             break;
         }
 
 	    lMBR = mbrFromGeos(lGeometry);
 	    if (lMBR == NULL || mbr_isnil(lMBR)) {
             GEOSGeom_destroy(lGeometry);
-            msg  = createException(MAL, "algebra.Intersects", "mbrFromGeos failed");
+            msg  = createException(MAL, name, "mbrFromGeos failed");
             break;
         }
 
@@ -9656,7 +9656,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
             } else if (outs[j]) {
                 outs[j] = 0;
                 if ((outs[j] = GEOSIntersects(lGeometry, rGeometry)) == 2){
-                    msg = createException(MAL, "geom.Intersects", "GEOSIntersects failed");
+                    msg = createException(MAL, name, "GEOSIntersects failed");
 #ifdef OPENMP
                     #pragma omp cancelregion
 #else
@@ -9683,7 +9683,7 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "IntersectsXYZ second BATloop %llu ms\n", t);
+    fprintf(stdout, "%s second BATloop %llu ms\n", name, t);
 #endif
     if (outs)
         GDKfree(outs);
@@ -9722,11 +9722,11 @@ IntersectsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zi
     if (*estimate != lng_nil)
         throw(MAL, "IntersectsXYZsubjoin", "It has estimate");
 
-    return IntersectsXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid);
+    return IntersectsXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid, "geom.IntersectsXYZsubjoin");
 }
 
 static str
-DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
+DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist, const char *name)
 {
     str msg = MAL_SUCCEED;
 	BAT *xl, *xr, *bl, *br;
@@ -9743,18 +9743,18 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 #endif
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 
 	if( (br= BATdescriptor(*rid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if ( xl == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
-		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -9762,7 +9762,7 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
     if ( !BATcount(br) || !BATcount(bl)) {
@@ -9782,7 +9782,7 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 		BBPunfix(*rid);
 		BBPunfix(xl->batCacheid);
 		BBPunfix(xr->batCacheid);
-		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
     }
     if ( (rSRIDs = (int*) GDKzalloc(sizeof(int) * BATcount(br))) == NULL) {
         GDKfree(rGeometries);
@@ -9790,7 +9790,7 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 		BBPunfix(*rid);
 		BBPunfix(xl->batCacheid);
 		BBPunfix(xr->batCacheid);
-		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
     }
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&start, NULL);
@@ -9807,17 +9807,17 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
     		BBPunfix(*rid);
     		BBPunfix(xl->batCacheid);
     		BBPunfix(xr->batCacheid);
-    		throw(MAL, "algebra.DWithin", "wkb2geos failed");
+    		throw(MAL, name, "wkb2geos failed");
         }
         rSRIDs[pr] = GEOSGetSRID(rGeometries[pr]);
     }
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "DWithin first BATloop %llu ms\n", t);
+    fprintf(stdout, "%s first BATloop %llu ms\n", name, t);
 #endif
     if ( (msg == MAL_SUCCEED) && BATcount(br) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(br))) == NULL) {
-        msg = createException(MAL,  "algebra.DWithin", MAL_MALLOC_FAIL);
+        msg = createException(MAL,  name, MAL_MALLOC_FAIL);
     }
 
 #ifdef GEOMBULK_DEBUG
@@ -9833,7 +9833,7 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
         lGeometry = wkb2geos(lWKB);
         if (!lGeometry ) {
-            msg = createException(MAL, "algebra.DWithin", "wkb2geos failed");
+            msg = createException(MAL, name, "wkb2geos failed");
             break;
         }
 
@@ -9855,7 +9855,7 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
                 continue;
 
             if (lSRID != rSRIDs[j]) {
-                msg = createException(MAL, "geom.DWithin", "Geometries of different SRID");
+                msg = createException(MAL, name, "Geometries of different SRID");
 #ifdef OPENMP
                 #pragma omp cancelregion
 #else
@@ -9864,7 +9864,7 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
             }
 
             if ( (res = GEOSDistance(lGeometry, rGeometry, &distance)) == 0) {
-                msg = createException(MAL, "geom.DWithin", "GEOSDistance failed");
+                msg = createException(MAL, name, "GEOSDistance failed");
 #ifdef OPENMP
                 #pragma omp cancelregion
 #else
@@ -9890,7 +9890,7 @@ DWithinsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, double *dist)
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "DWithin second BATloop %llu ms\n", t);
+    fprintf(stdout, "%s second BATloop %llu ms\n", name, t);
 #endif
     if (outs)
         GDKfree(outs);
@@ -9925,11 +9925,11 @@ DWithinsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, double *dist, bat *sl, 
     if (*estimate != lng_nil)
         throw(MAL, "DWithinsubjoin", "It has estimate");
 
-    return DWithinsubjoin_intern(lres, rres, lid, rid, dist);
+    return DWithinsubjoin_intern(lres, rres, lid, rid, dist, "geom.DWithinsubjoin");
 }
 
 static str
-DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid, double *dist)
+DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid, double *dist, const char *name)
 {
     str msg = MAL_SUCCEED;
 	BAT *xl, *xr, *bl, *bx, *by, *bz;
@@ -9945,24 +9945,24 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 #endif
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 
 	if( (bx= BATdescriptor(*xid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (by= BATdescriptor(*yid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
-		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (bz= BATdescriptor(*zid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
 		BBPunfix(*yid);
-		throw(MAL, "algebra.DWithin", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -9971,7 +9971,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 		BBPunfix(*xid);
 		BBPunfix(*yid);
 		BBPunfix(*zid);
-		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -9981,7 +9981,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 		BBPunfix(*yid);
 		BBPunfix(*zid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
     if ( !BATcount(bx) || !BATcount(bl)) {
@@ -10008,7 +10008,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 		BBPunfix(*zid);
 		BBPunfix(xl->batCacheid);
 		BBPunfix(xr->batCacheid);
-		throw(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
     }
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&start, NULL);
@@ -10033,7 +10033,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                msg = createException(MAL, "algebra.DWithin", "GEOSCoordSeq_create failed");
+                msg = createException(MAL, name, "GEOSCoordSeq_create failed");
                 break;
             }
 
@@ -10044,7 +10044,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                msg = createException(MAL, "algebra.DWithin", "GEOSCoordSeq_setOrdinate failed");
+                msg = createException(MAL, name, "GEOSCoordSeq_setOrdinate failed");
                 break;
             }
 
@@ -10053,7 +10053,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
                 }
-                msg = createException(MAL, "algebra.DWithin", "Failed to create GEOSGeometry from the coordinates");
+                msg = createException(MAL, name, "Failed to create GEOSGeometry from the coordinates");
                 break;
             }
 
@@ -10065,10 +10065,10 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "DWithinXYZ first BATloop %llu ms\n", t);
+    fprintf(stdout, "%s first BATloop %llu ms\n", name, t);
 #endif
     if ( (msg ==MAL_SUCCEED) && BATcount(bx) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(bx))) == NULL) {
-        msg = createException(MAL, "algebra.DWithin", MAL_MALLOC_FAIL);
+        msg = createException(MAL, name, MAL_MALLOC_FAIL);
     }
 
     if (msg != MAL_SUCCEED) {
@@ -10097,13 +10097,13 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 
         lGeometry = wkb2geos(lWKB);
         if ( !lGeometry ) {
-            msg = createException(MAL, "geom.DWithin", "wkb2geos failed");
+            msg = createException(MAL, name, "wkb2geos failed");
             break;
         }
         lSRID = GEOSGetSRID(lGeometry);
         if (lSRID != *srid) {
             GEOSGeom_destroy(lGeometry);
-            msg = createException(MAL, "geom.DWithinXYZ", "Geometries of different SRID");
+            msg = createException(MAL, name, "Geometries of different SRID");
             break;
         }
 
@@ -10123,7 +10123,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 continue;
 
             if ( (res = GEOSDistance(lGeometry, rGeometry, &distance)) == 0) {
-                msg = createException(MAL, "geom.DWithinXYZ", "GEOSDistance failed");
+                msg = createException(MAL, name, "GEOSDistance failed");
 #ifdef OPENMP                
                 #pragma omp cancelregion
 #else
@@ -10151,7 +10151,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "DWithinXYZ second BATloop %llu ms\n", t);
+    fprintf(stdout, "%s second BATloop %llu ms\n", name, t);
 #endif
     if (outs)
         GDKfree(outs);
@@ -10187,11 +10187,11 @@ DWithinXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid, 
     if (*estimate != lng_nil)
         throw(MAL, "DWithinXYZsubjoin", "It has estimate");
 
-    return DWithinXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid, dist);
+    return DWithinXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid, dist, "geom.DWithinXYZsubjoin");
 }
 
 static str
-ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid)
+ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat *zid, int *srid, const char* name)
 {
     str msg = MAL_SUCCEED;
 	BAT *xl, *xr, *bl, *bx, *by;
@@ -10208,17 +10208,17 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 #endif
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.Contains", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 
 	if( (bx= BATdescriptor(*xid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.Contains", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (by= BATdescriptor(*yid)) == NULL ){
 		BBPunfix(*lid);
 		BBPunfix(*xid);
-		throw(MAL, "algebra.Contains", RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
 	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -10226,7 +10226,7 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 		BBPunfix(*lid);
 		BBPunfix(*xid);
 		BBPunfix(*yid);
-		throw(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
@@ -10235,7 +10235,7 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 		BBPunfix(*xid);
 		BBPunfix(*yid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
 
     if ( !BATcount(bx) || !BATcount(bl)) {
@@ -10258,7 +10258,7 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 		BBPunfix(*yid);
 		BBPunfix(xl->batCacheid);
 		BBPunfix(xr->batCacheid);
-		throw(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
     }
 
     if ( (yBAT_iters = GDKmalloc(sizeof(BATiter) * numIters)) == NULL) {
@@ -10268,7 +10268,7 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 		BBPunfix(*yid);
 		BBPunfix(xl->batCacheid);
 		BBPunfix(xr->batCacheid);
-		throw(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
     }
 
     for (j = 0; j < numIters; j++) {
@@ -10284,7 +10284,7 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 		BBPunfix(*yid);
 		BBPunfix(xl->batCacheid);
 		BBPunfix(xr->batCacheid);
-		throw(MAL, "algebra.Contains", MAL_MALLOC_FAIL);
+		throw(MAL, name, MAL_MALLOC_FAIL);
     }
 
     lo = bl->hseqbase;
@@ -10301,7 +10301,7 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
         lGeometry = wkb2geos(lWKB);
         if ( !lGeometry ) {
-    		msg = createException(MAL, "algebra.Contains", "wkb2geos failed");
+    		msg = createException(MAL, name, "wkb2geos failed");
             break;
         }
 
@@ -10311,13 +10311,13 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
        
         if ( GEOSGetSRID(lGeometry) != *srid) {
             GEOSGeom_destroy(lGeometry);
-            msg = createException(MAL, "algebra.Contains", "Geometries of different SRID");
+            msg = createException(MAL, name, "Geometries of different SRID");
             break;
         }
         GEOSGeom_destroy(lGeometry);
 
         if ((err = getVerts(lWKB, &verts)) != MAL_SUCCEED) {
-		    msg = createException(MAL, "algebra.Contains", "getVerts failedi:%s", err);
+		    msg = createException(MAL, name, "getVerts failedi:%s", err);
             GDKfree(err);
             break;
         }
@@ -10368,7 +10368,7 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "ContainsXYZ first BATloop %llu ms\n", t);
+    fprintf(stdout, "%s first BATloop %llu ms\n", name, t);
 #endif
 
     if (outs)
@@ -10398,5 +10398,5 @@ ContainsXYZsubjoin(bat *lres, bat *rres, bat *lid, bat *xid, bat *yid, bat *zid,
     if (*estimate != lng_nil)
         throw(MAL, "ContainsXYZsubjoin", "It has estimate");
 
-    return ContainsXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid);
+    return ContainsXYZsubjoin_intern(lres, rres, lid, xid, yid, zid, srid, "geom.ContainsXYZsubjoin");
 }
