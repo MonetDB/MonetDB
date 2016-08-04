@@ -3567,6 +3567,8 @@ buffer_wastream(buffer *b, const char *name)
 	return s;
 }
 
+
+
 /* ------------------------------------------------------------------ */
 
 /* A buffered stream consists of a sequence of blocks.  Each block
@@ -3885,6 +3887,20 @@ bs_isalive(stream *ss)
 }
 
 static void
+bs_close(stream *ss)
+{
+	bs *s;
+
+	s = (bs *) ss->stream_data.p;
+	assert(s);
+	if (s == NULL)
+		return;
+	assert(s->s);
+	if (s->s)
+		s->s->close(s->s);
+}
+
+static void
 bs_destroy(stream *ss)
 {
 	bs *s;
@@ -3900,24 +3916,6 @@ bs_destroy(stream *ss)
 	destroy(ss);
 }
 
-
-
-static void
-bs_close(stream *ss)
-{
-	bs *s;
-
-	s = (bs *) ss->stream_data.p;
-	assert(s);
-	if (s == NULL)
-		return;
-	assert(s->s);
-	if (s->s)
-		s->s->close(s->s);
-	bs_destroy(ss);
-}
-
-
 static void
 bs_clrerr(stream *s)
 {
@@ -3925,6 +3923,10 @@ bs_clrerr(stream *s)
 		mnstr_clearerr(((bs *) s->stream_data.p)->s);
 }
 
+stream* bs_stream(stream *s) {
+	assert(isa_block_stream(s));
+	return ((bs*)s->stream_data.p)->s;
+}
 
 // FIXME: patch bs_read/bs_write etc
 // 10 MB max buffer size or so
@@ -3966,208 +3968,308 @@ block_stream(stream *s)
 	return ns;
 }
 
-int
-isa_block_stream(stream *s)
-{
-	assert(s != NULL);
-	return s && (s->read == bs_read || s->write == bs_write);
-}
 
-/* ------------------------------------------------------------------ */
-/* Byte stream */
+typedef struct bs2 {
+	stream *s;		/* underlying stream */
+	size_t nr;		/* how far we got in buf */
+	size_t itotal;	/* amount available in current read block */
+	size_t bufsiz;
+	char buf[0];	/* the buffered data (minus the size of
+				 * size-short */
 
+} bs2;
 
-bytestream *
-bytestream_create(stream *s, size_t bufsize)
+static bs2 *
+bs2_create(stream *s, size_t bufsiz)
 {
 	/* should be a binary stream */
-	bytestream *ns;
-	assert(bufsize > BYTESTREAM_OVERHEAD);
+	bs2 *ns;
 
-	if ((ns = malloc(sizeof(*ns))) == NULL)
+	if ((ns = malloc(sizeof(*ns) + bufsiz)) == NULL)
 		return NULL;
 	ns->s = s;
-	ns->bufsize = bufsize;
-	ns->bufpos = BYTESTREAM_OVERHEAD;
-	ns->buf = malloc(bufsize);
-	ns->bufend = ns->bufpos;
-	if (ns->buf == NULL) {
-		free(ns);
-		return NULL;
-	}
+	ns->nr = 0;
+	ns->itotal = 0;
+	ns->bufsiz = bufsiz;
 	return ns;
 }
 
-static int
-bytestream_flush(stream *ss)
-{
-	bytestream *s;
-
-	s = (bytestream *) ss->stream_data.p;
-	if (s == NULL)
-		return -1;
-	assert(ss->access == ST_WRITE);
-	assert(s->bufpos < s->bufsize);
-
-	memcpy(s->buf, &s->bufpos, sizeof(size_t));
-
-
-	// FIXME: for compressed stream we can compress the buffer here before writing it
-	if (!s->s->write(s->s, s->buf, 1, s->bufpos)) {
-		ss->errnr = MNSTR_WRITE_ERROR;
-		return -1;
-	}
-	s->bufpos = BYTESTREAM_OVERHEAD;
-
-	return 0;
-}
-
+/* Collect data until the internal buffer is filled, then write the
+ * filled buffer to the underlying stream.
+ * Struct field usage:
+ * s - the underlying stream;
+ * buf - the buffer in which data is collected;
+ * nr - how much of buf is already filled (if nr == sizeof(buf) the
+ *      data is written to the underlying stream, so upon entry nr <
+ *      sizeof(buf));
+ * itotal - unused.
+ */
 static ssize_t
-bytestream_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
+bs2_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 {
-	bytestream *s;
+	bs2 *s;
 	size_t todo = cnt * elmsize;
+	lng blksize;
 
-	s = (bytestream *) ss->stream_data.p;
+	s = (bs2 *) ss->stream_data.p;
 	if (s == NULL)
 		return -1;
 	assert(ss->access == ST_WRITE);
-	assert(s->bufpos < s->bufsize);
-	if (todo > s->bufsize)
-		fprintf(stderr, "Content too big for buffer!\n");
-		ss->errnr = MNSTR_WRITE_ERROR;
-		return -1; // content does not fit into buffer
+	assert(s->nr < s->bufsiz);
+	while (todo > 0) {
+		size_t n = s->bufsiz - s->nr;
 
-	if (todo > s->bufsize - s->bufpos) {
-		// content does not fit into buffer currently, but will if we flush it first
-		bytestream_flush(ss);
-	}
+		if (todo < n)
+			n = todo;
+		memcpy(s->buf + s->nr, buf, n);
+		s->nr += n;
+		todo -= n;
+		buf = ((const char *) buf + n);
+		if (s->nr == s->bufsiz) {
 
-	// write the actual data into the buffer
-	memcpy(s->buf + s->bufpos, buf, todo);
-	s->bufpos += todo;
+#ifdef BSTREAM_DEBUG
+			{
+				size_t i;
 
-	if (s->bufpos >= s->bufsize) {
-		// we cannot fit any more packages in here
-		bytestream_flush(ss);
+				fprintf(stderr, "W %s %lu \"", ss->name, s->nr);
+				for (i = 0; i < s->nr; i++)
+					if (' ' <= s->buf[i] && s->buf[i] < 127)
+						putc(s->buf[i], stderr);
+					else
+						fprintf(stderr, "\\%03o", s->buf[i]);
+				fprintf(stderr, "\"\n");
+			}
+#endif
+
+
+			/* block is full, write it to the stream */
+
+			/* since the block is at max BLOCK (8K) - 2 size we can
+			 * store it in a two byte integer */
+			blksize = s->nr;
+			/* the last bit tells whether a flush is in there, it's not
+			 * at this moment, so shift it to the left */
+			blksize <<= 1;
+
+			if (!mnstr_writeLng(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
+				ss->errnr = MNSTR_WRITE_ERROR;
+				return -1;
+			}
+			s->nr = 0;
+		}
 	}
 	return (ssize_t) cnt;
 }
 
-
-
-ssize_t
-bytestream_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
+/* If the internal buffer is partially filled, write it to the
+ * underlying stream.  Then in any case write an empty buffer to the
+ * underlying stream to indicate to the receiver that the data was
+ * flushed.
+ */
+static int
+bs2_flush(stream *ss)
 {
-	bytestream *s;
-	size_t todo = cnt * elmsize;
-	lng size;
+	lng blksize;
+	bs2 *s;
 
-	s = (bytestream *) ss->stream_data.p;
+	s = (bs2 *) ss->stream_data.p;
 	if (s == NULL)
 		return -1;
+	assert(ss->access == ST_WRITE);
+	assert(s->nr < s->bufsiz);
+	if (ss->access == ST_WRITE) {
+		/* flush the rest of buffer (if s->nr > 0), then set the
+		 * last bit to 1 to to indicate user-instigated flush */
+#ifdef BSTREAM_DEBUG
+		if (s->nr > 0) {
+			size_t i;
 
-	assert(ss->access == ST_READ);
+			fprintf(stderr, "W %s %lu \"", ss->name, s->nr);
+			for (i = 0; i < s->nr; i++)
+				if (' ' <= s->buf[i] && s->buf[i] < 127)
+					putc(s->buf[i], stderr);
+				else
+					fprintf(stderr, "\\%03o", s->buf[i]);
+			fprintf(stderr, "\"\n");
+			fprintf(stderr, "W %s 0\n", ss->name);
+		}
+#endif
+		blksize = ((lng) s->nr) << 1;
+		/* indicate that this is the last buffer of a block by
+		 * setting the low-order bit */
+		blksize |= 1;
+		/* always flush (even empty blocks) needed for the protocol) */
 
-	if (s->bufpos == s->bufend) {
-	 	int ret = mnstr_readLng(ss, &size);
-	 	if (ret < 0) {
-			fprintf(stderr, "failed to read header\n");
-			ss->errnr = MNSTR_READ_ERROR;
+		if ((!mnstr_writeLng(s->s, blksize) ||
+		     (s->nr > 0 &&
+		      s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
+			ss->errnr = MNSTR_WRITE_ERROR;
 			return -1;
-	 	}
-	 	assert((size_t) size < s->bufsize);
-	 	s->s->read(s->s, s->buf, 1, size);
-	 	s->bufpos = 0;
-	 	s->bufend = size;
-	}
-
-	assert(s->bufend - s->bufpos >= todo);
-	memcpy(buf, s->buf + s->bufpos, todo);
-	s->bufpos += todo;
-	return (ssize_t) (elmsize > 0 ? cnt / elmsize : 0);
-}
-
- static void
- bytestream_update_timeout(stream *ss)
- {
-//	 bytestream *s;
-//
-// 	if ((s = ss->stream_data.p) != NULL && s->s) {
-// 		s->s->timeout = ss->timeout;
-// 		s->s->timeout_func = ss->timeout_func;
-// 		if (s->s->update_timeout)
-// 			(*s->s->update_timeout)(s->s);
-// 	}
-	 (void) ss;
-	 assert(0);
- }
-
-static int
-bytestream_isalive(stream *ss)
-{
-	bytestream *s;
-
-	if ((s = ss->stream_data.p) != NULL && s->s) {
-		if (s->s->isalive)
-			return (*s->s->isalive)(s->s);
-		return 1;
+		}
+		s->nr = 0;
 	}
 	return 0;
 }
 
-static void
-bytestream_close(stream *ss)
+/* Read buffered data and return the number of items read.  At the
+ * flush boundary we will return 0 to indicate the end of a block.
+ *
+ * Structure field usage:
+ * s - the underlying stream;
+ * buf - not used;
+ * itotal - the amount of data in the current block that hasn't yet
+ *          been read;
+ * nr - indicates whether the flush marker has to be returned.
+ */
+static ssize_t
+bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 {
-	bytestream *s;
+	bs2 *s;
+	size_t todo = cnt * elmsize;
+	size_t n;
 
-	s = (bytestream *) ss->stream_data.p;
-	assert(s);
+	s = (bs2 *) ss->stream_data.p;
 	if (s == NULL)
-		return;
-	assert(s->s);
-	if (s->s)
-		s->s->close(s->s);
-	bytestream_destroy(ss);
-}
+		return -1;
+	assert(ss->access == ST_READ);
+	assert(s->nr <= 1);
 
-void
-bytestream_destroy(stream *ss) {
-	bytestream *s;
+	if (s->itotal == 0) {
+		lng blksize = 0;
 
-	s = (bytestream *) ss->stream_data.p;
-	assert(s);
-	if (s) {
-		assert(s->s);
-		if (s->s)
-			s->s->destroy(s->s);
-		free(s->buf);
-		free(s);
+		if (s->nr) {
+			/* We read the closing block but hadn't
+			 * returned that yet. Return it now, and note
+			 * that we did by setting s->nr to 0. */
+			assert(s->nr == 1);
+			s->nr = 0;
+			return 0;
+		}
+
+		assert(s->nr == 0);
+
+		/* There is nothing more to read in the current block,
+		 * so read the count for the next block */
+		switch (mnstr_readLng(s->s, &blksize)) {
+		case -1:
+			ss->errnr = s->s->errnr;
+			return -1;
+		case 0:
+			return 0;
+		case 1:
+			break;
+		}
+		if (blksize < 0) {
+			ss->errnr = MNSTR_READ_ERROR;
+			return -1;
+		}
+#ifdef BSTREAM_DEBUG
+		fprintf(stderr, "R1 '%s' length: %lld, final: %s\n", ss->name, blksize >> 1, blksize & 1 ? "true" : "false");
+#endif
+		s->itotal = (size_t) (blksize >> 1);	/* amount readable */
+		/* store whether this was the last block or not */
+		s->nr = blksize & 1;
 	}
-	destroy(ss);
+
+	/* Fill the caller's buffer. */
+	cnt = 0;		/* count how much we put into the buffer */
+	while (todo > 0) {
+		/* there is more data waiting in the current block, so
+		 * read it */
+		n = todo < s->itotal ? todo : s->itotal;
+		while (n > 0) {
+			ssize_t m = s->s->read(s->s, buf, 1, n);
+
+			if (m <= 0) {
+				ss->errnr = s->s->errnr;
+				return -1;
+			}
+#ifdef BSTREAM_DEBUG
+			{
+				ssize_t i;
+
+				fprintf(stderr, "R2 '%s' %zd \"", ss->name, m);
+				for (i = 0; i < m; i++)
+					if (' ' <= ((char *) buf)[i] && ((char *) buf)[i] < 127)
+						putc(((char *) buf)[i], stderr);
+					else
+						fprintf(stderr, "\\%03o", ((char *) buf)[i]);
+				fprintf(stderr, "\"\n");
+			}
+#endif
+
+			buf = (void *) ((char *) buf + m);
+			cnt += m;
+			n -= m;
+			s->itotal -= m;
+			todo -= m;
+		}
+
+		if (s->itotal == 0) {
+			lng blksize = 0;
+
+			/* The current block has been completely read,
+			 * so read the count for the next block, only
+			 * if the previous was not the last one */
+			if (s->nr)
+				break;
+			switch (mnstr_readLng(s->s, &blksize)) {
+			case -1:
+				ss->errnr = s->s->errnr;
+				return -1;
+			case 0:
+				return 0;
+			case 1:
+				break;
+			}
+			if (blksize < 0) {
+				ss->errnr = MNSTR_READ_ERROR;
+				return -1;
+			}
+
+#ifdef BSTREAM_DEBUG
+			fprintf(stderr, "R3 '%s' length: %lld, final: %s\n", ss->name, blksize >> 1, blksize & 1 ? "true" : "false");
+#endif
+
+
+			s->itotal = (size_t) (blksize >> 1);	/* amount readable */
+			/* store whether this was the last block or not */
+			s->nr = blksize & 1;
+
+		}
+	}
+	/* if we got an empty block with the end-of-sequence marker
+	 * set (low-order bit) we must only return an empty read once,
+	 * so we must squash the flag that we still have to return an
+	 * empty read */
+	if (todo > 0 && cnt == 0)
+		s->nr = 0;
+	return (ssize_t) (elmsize > 0 ? cnt / elmsize : 0);
 }
 
-static void
-bytestream_clrerr(stream *s) {
-if (s->stream_data.p)
-	mnstr_clearerr(((bs *) s->stream_data.p)->s);
+
+int
+isa_block_stream(stream *s)
+{
+	assert(s != NULL);
+	return s && ((s->read == bs_read || s->write == bs_write) || (s->read == bs2_read || s->write == bs2_write));
 }
 
 
 stream *
-byte_stream(stream *s, size_t bufsize)
+block_stream2(stream *s, size_t bufsiz)
 {
 	stream *ns;
-	bytestream *b;
+	bs2 *b;
 
 	if (s == NULL)
 		return NULL;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "block_stream %s\n", s->name ? s->name : "<unnamed>");
+	fprintf(stderr, "block_stream2 %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	if ((ns = create_stream(s->name)) == NULL)
 		return NULL;
-	if ((b = bytestream_create(s, bufsize)) == NULL) {
+	if ((b = bs2_create(s, bufsiz)) == NULL) {
 		destroy(ns);
 		return NULL;
 	}
@@ -4177,28 +4279,19 @@ byte_stream(stream *s, size_t bufsize)
 #endif
 	ns->type = s->type;
 	ns->access = s->access;
-	ns->close = bytestream_close;
-	ns->clrerr = bytestream_clrerr;
-	ns->destroy = bytestream_destroy;
-	ns->flush = bytestream_flush;
-	ns->read = bytestream_read;
-	ns->write = bytestream_write;
-	ns->update_timeout = bytestream_update_timeout;
-	ns->isalive = bytestream_isalive;
+	ns->close = bs_close;
+	ns->clrerr = bs_clrerr;
+	ns->destroy = bs_destroy;
+	ns->flush = bs2_flush;
+	ns->read = bs2_read;
+	ns->write = bs2_write;
+	ns->update_timeout = bs_update_timeout;
+	ns->isalive = bs_isalive;
 	ns->stream_data.p = (void *) b;
 
 	return ns;
 }
 
-int
-isa_byte_stream(stream *s)
-{
-	assert(s != NULL);
-	return s && (s->read == bytestream_read || s->write == bytestream_write);
-}
-
-
-/* ------------------------------------------------------------------ */
 
 ssize_t
 mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
@@ -4308,6 +4401,7 @@ mnstr_writeLng(stream *s, lng val)
 		return 0;
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
+
 
 #ifdef HAVE_HGE
 int

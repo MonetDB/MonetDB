@@ -2214,6 +2214,8 @@ mapi_reconnect(Mapi mid)
 	char *protover;
 	char *rest;
 	protocol_version prot_version = prot9;
+	// FIXME: make this configurable
+	size_t block_size = 1024000;
 
 	if (mid->connected)
 		close_connection(mid);
@@ -2732,7 +2734,7 @@ mapi_reconnect(Mapi mid)
 			if (prot_version == prot10 || prot_version == prot10compressed) {
 				// if we are using protocol 10, we have to send either PROT10/PROT10COMPRESSED to the server
 				// so the server knows which protocol to use
-				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:\n",
+				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%zu:\n",
 	#ifdef WORDS_BIGENDIAN
 				     "BIG",
 	#else
@@ -2740,7 +2742,8 @@ mapi_reconnect(Mapi mid)
 	#endif
 				     mid->username, hash, mid->language,
 				     mid->database == NULL ? "" : mid->database,
-				     prot_version == prot10 ? "PROT10" : "PROT10COMPRESSED");
+				     prot_version == prot10 ? "PROT10" : "PROT10COMPRESSED",
+				    block_size);
 			} else {
 				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
 	#ifdef WORDS_BIGENDIAN
@@ -2781,15 +2784,13 @@ mapi_reconnect(Mapi mid)
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_reconnect", mid->error);
 
 	if (prot_version == prot10 || prot_version == prot10compressed) {
-		bstream *bs_to = (bstream*) mid->to;
-		bstream *bs_from = (bstream*) mid->from;
 
 		printf("Using protocol version %s.\n", prot_version == prot10  ? "PROT10" : "PROT10COMPRESSED");
 		assert(isa_block_stream(mid->to));
 		assert(isa_block_stream(mid->from));
 
 		if (prot_version == prot10compressed) {
-#ifdef HAVE_LIBSNAPPY
+#ifdef HAVE_LIBSNAPPY2
 			mid->to = compressed_stream(bs_to->s, COMPRESSION_SNAPPY);
 			mid->from = compressed_stream(bs_from->s, COMPRESSION_SNAPPY);
 #else
@@ -2797,14 +2798,15 @@ mapi_reconnect(Mapi mid)
 #endif
 		} else {
 			// FIXME: figure out proper stream sizes
-			mid->to = byte_stream(bs_to->s, 1024000);
-			mid->from = byte_stream(bs_from->s, 1024000);
-
+			mid->to = block_stream2(bs_stream(mid->to), block_size);
+			mid->from = block_stream2(bs_stream(mid->from), block_size);
 		}
-		bs_to->s = NULL;
-		bs_from->s = NULL;
-		close_stream((stream*) bs_to);
-		close_stream((stream*) bs_from);
+
+		// FIXME: this leaks
+//		bs_to->s = NULL;
+//		bs_from->s = NULL;
+//		close_stream((stream*) bs_to);
+//		close_stream((stream*) bs_from);
 
 	}
 

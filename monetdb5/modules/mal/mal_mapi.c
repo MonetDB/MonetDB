@@ -115,7 +115,6 @@ doChallenge(void *data)
 	char challenge[13];
 	char *algos;
 
-	// FIXME: make this a snappy stream as well
 	stream *fdin = block_stream(((struct challengedata *) data)->in);
 	stream *fdout = block_stream(((struct challengedata *) data)->out);
 	bstream *bs;
@@ -170,35 +169,51 @@ doChallenge(void *data)
 	buf[len] = 0;
 
 	if (strstr(buf, "PROT10")) {
-		// client requests switch to protocol 10
-		printf("Serving client with PROT10.\n");
-#if 0
-		// FIXME: destroy existing bstream and replace with byte or compressed stream stream
-		stream *client_in = NULL, *client_out = NULL;
+		size_t buflen = 0;
+		char *buflenstrend, *buflenstr = strstr(buf, "PROT10");
+		buflenstr = strchr(buflenstr, ':') + 1;
+		if (!buflenstr) {
+			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
+		buflenstrend = strchr(buflenstr, ':');
 
-		close_stream(fdin);
-		close_stream(fdout);
+		if (buflenstrend) buflenstrend[0] = '\0';
+		buflen = atol(buflenstr);
+		if (buflenstrend) buflenstrend[0] = ':';
+
+		// client requests switch to protocol 10
+		printf("Serving client with PROT10 buffer size %zu.\n", buflen);
+
+		// FIXME: this leaks a block stream header
+		if (buflen < BLOCK) {
+			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
 
 		if (!strstr(buf, "PROT10COMPRESSED")) {
 			// uncompressed protocol 10
-			client_in = byte_stream(((struct challengedata *) data)->in);
-			client_out = byte_stream(((struct challengedata *) data)->out);
+			fdin = block_stream2(bs_stream(fdin), buflen);
+			fdout = block_stream2(bs_stream(fdout), buflen);
 		} else {
-#ifdef HAVE_LIBSNAPPY
+#ifdef HAVE_LIBSNAPPY2
 			// compressed protocol 10
-			client_in = compressed_stream(((struct challengedata *) data)->in, COMPRESSION_SNAPPY);
-			client_out = compressed_stream(((struct challengedata *) data)->out, COMPRESSION_SNAPPY);
+			fdin = compressed_stream(((struct challengedata *) data)->in, COMPRESSION_SNAPPY);
+			fdout = compressed_stream(((struct challengedata *) data)->out, COMPRESSION_SNAPPY);
 #else
 			// client requested compressed protocol, but server does not support it
 			GDKsyserror("SERVERlisten:server does not support compressed protocol");
 #endif
 		}
 
-		if (client_null == NULL || client_out == NULL) {
+		if (fdin == NULL || fdout == NULL) {
 			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 			return;
 		}
-#endif
 	}
 
 #ifdef DEBUG_SERVER
@@ -208,7 +223,6 @@ doChallenge(void *data)
 	mnstr_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
 	mnstr_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
 #endif
-	// FIXME: how can we avoid this
 	bs = bstream_create(fdin, 128 * BLOCK);
 
 	if (bs == NULL){

@@ -110,6 +110,7 @@ stream_export int mnstr_readInt(stream *s, int *val);
 stream_export int mnstr_writeInt(stream *s, int val);
 stream_export int mnstr_readLng(stream *s, lng *val);
 stream_export int mnstr_writeLng(stream *s, lng val);
+
 #ifdef HAVE_HGE
 stream_export int mnstr_readHge(stream *s, hge *val);
 stream_export int mnstr_writeHge(stream *s, hge val);
@@ -220,7 +221,10 @@ stream_export buffer *mnstr_get_buffer(stream *s);
  */
 stream_export stream *wbstream(stream *s, size_t buflen);
 stream_export stream *block_stream(stream *s);
+stream_export stream *block_stream2(stream *s, size_t bufsiz);
 stream_export int isa_block_stream(stream *s);
+stream_export stream* bs_stream(stream *s);
+
 /* read block of data including the end of block marker */
 stream_export ssize_t mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
 
@@ -246,23 +250,6 @@ stream_export ssize_t bstream_next(bstream *s);
    creation.
  */
 
-stream_export stream *byte_stream(stream *s, size_t bufsize);
-stream_export int isa_byte_stream(stream *s);
-
-typedef struct bytestream {
-	stream *s;
-	char *buf;
-	size_t bufsize;
-	size_t bufpos;
-	size_t bufend;
-} bytestream;
-
-// overhead for bytestream messages
-#define BYTESTREAM_OVERHEAD sizeof(size_t)
-
-stream_export bytestream *bytestream_create(stream *s, size_t bufsize);
-stream_export void bytestream_destroy(stream *ss);
-stream_export ssize_t bytestream_read(stream *ss, void *buf, size_t elmsize, size_t cnt);
 
 typedef enum {
 	COMPRESSION_SNAPPY = 1
