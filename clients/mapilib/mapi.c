@@ -2781,14 +2781,12 @@ mapi_reconnect(Mapi mid)
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_reconnect", mid->error);
 
 	if (prot_version == prot10 || prot_version == prot10compressed) {
+		bstream *bs_to = (bstream*) mid->to;
+		bstream *bs_from = (bstream*) mid->from;
+
 		printf("Using protocol version %s.\n", prot_version == prot10  ? "PROT10" : "PROT10COMPRESSED");
-		// FIXME: destroy block streams and replace with appropriate streams
-#if 0
 		assert(isa_block_stream(mid->to));
 		assert(isa_block_stream(mid->from));
-
-		bs *bs_to = (bs*) mid->to;
-		bs *bs_from = (bs*) mid->from;
 
 		if (prot_version == prot10compressed) {
 #ifdef HAVE_LIBSNAPPY
@@ -2798,13 +2796,16 @@ mapi_reconnect(Mapi mid)
 			assert(0);
 #endif
 		} else {
-			mid->to = byte_stream((bs_to->s);
-			mid->from = byte_stream(bs_from->s);
-		}
+			// FIXME: figure out proper stream sizes
+			mid->to = byte_stream(bs_to->s, 1024000);
+			mid->from = byte_stream(bs_from->s, 1024000);
 
-		close_stream(bs_to);
-		close_stream(bs_from);
-#endif
+		}
+		bs_to->s = NULL;
+		bs_from->s = NULL;
+		close_stream((stream*) bs_to);
+		close_stream((stream*) bs_from);
+
 	}
 
 	/* consume the welcome message from the server */

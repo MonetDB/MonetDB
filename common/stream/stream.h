@@ -254,14 +254,15 @@ typedef struct bytestream {
 	char *buf;
 	size_t bufsize;
 	size_t bufpos;
+	size_t bufend;
 } bytestream;
 
 // overhead for bytestream messages
-#define BYTESTREAM_OVERHEAD sizeof(size_t);
+#define BYTESTREAM_OVERHEAD sizeof(size_t)
 
 stream_export bytestream *bytestream_create(stream *s, size_t bufsize);
-stream_export void bytestream_destroy(bytestream *s);
-stream_export ssize_t bytestream_read(bytestream *s);
+stream_export void bytestream_destroy(stream *ss);
+stream_export ssize_t bytestream_read(stream *ss, void *buf, size_t elmsize, size_t cnt);
 
 typedef enum {
 	COMPRESSION_SNAPPY = 1
