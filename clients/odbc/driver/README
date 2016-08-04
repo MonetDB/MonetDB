@@ -208,7 +208,7 @@ If you do not implement them you need an ODBC 3.0 (or higher) driver manager
 to do the mapping for you else old ODBC applications (pre ODBC 3.0)
 will not work with our ODBC driver.
 
-Not implementated ODBC API functions:
+Not implemented ODBC API functions:
 ------------------------------------------------------------------------
 On MS Windows the ODBC functions SQLDrivers(), SQLDataSources() and SQLFunctions()
 do not have to be implemented by the driver, those are always implemented
