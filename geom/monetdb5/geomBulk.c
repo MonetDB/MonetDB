@@ -12,7 +12,7 @@
 
 #include "geom.h"
 #include <omp.h>
-#define GEOMBULK_DEBUG 1
+//#define GEOMBULK_DEBUG 1
 
 /*******************************/
 /********** One input **********/
