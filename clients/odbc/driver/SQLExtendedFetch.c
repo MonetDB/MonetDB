@@ -18,7 +18,8 @@
 
 /**********************************************************************
  * SQLExtendedFetch
- * CLI Compliance: Deprecated
+ * CLI Compliance: Deprecated.
+ * In ODBC 3.x, SQLExtendedFetch has been replaced by SQLFetchScroll.
  *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
