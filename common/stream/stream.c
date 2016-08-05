@@ -4419,6 +4419,15 @@ mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
 	return len;
 }
 
+
+int
+mnstr_readChr(stream *s, char *val)
+{
+	if (s == NULL || val == NULL)
+		return -1;
+	return (int) s->read(s, (void *) val, sizeof(*val), 1);
+}
+
 int
 mnstr_readBte(stream *s, signed char *val)
 {
@@ -4485,6 +4494,29 @@ mnstr_writeInt(stream *s, int val)
 		return 0;
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
+
+int
+mnstr_writeStr(stream *s, const char* val)
+{
+	if (s == NULL || s->errnr)
+		return 0;
+	return s->write(s, (void *) val, strlen(val), (size_t) 1) == 1;
+}
+
+int
+mnstr_readStr(stream *s, char* val)
+{
+	if (s == NULL || s->errnr)
+		return 0;
+	do {
+		if (mnstr_readChr(s, val) != 1) {
+			return -1;
+		}
+		val++;
+	} while (*(val - 1) != '\0');
+	return 1;
+}
+
 
 int
 mnstr_readLng(stream *s, lng *val)

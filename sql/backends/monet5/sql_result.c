@@ -1858,12 +1858,105 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 	return res;
 }
 
-//static int mvc_export_resultset_prot10(res_table* table, stream* outputstream, size_t blocksize) {
-//	(void) table;
-//	(void) outputstream;
-//	(void) blocksize;
-//	return 42;
-//}
+static int write_str_term(stream* s, str val) {
+	return 	mnstr_writeStr(s, val) && mnstr_writeBte(s, 0);
+}
+
+static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
+	BAT *order;
+	lng count;
+	size_t i;
+	size_t row = 0;
+	size_t srow = 0;
+
+	BATiter *iterators;
+
+	iterators = GDKmalloc(sizeof(BATiter) * t->nr_cols);
+	if (!iterators) {
+		return -1;
+	}
+
+	(void) bsize;
+
+	if (t->order) {
+		order = BBPquickdesc(t->order, FALSE);
+		if (!order) {
+			return -1;
+		}
+		count = BATcount(order);
+	} else {
+		count = 1;
+	}
+
+	if (!mnstr_writeStr(s, "*\n") || !mnstr_writeInt(s, t->id) || !mnstr_writeLng(s, count) || !mnstr_writeLng(s, (lng) t->nr_cols)) {
+		return -1;
+	}
+
+	for (i = 0; i < (size_t) t->nr_cols; i++) {
+		res_col *c = t->cols + i;
+		int mtype = c->type.type->localtype;
+		int typelen = ATOMsize(mtype);
+		iterators[i] = bat_iterator(BATdescriptor(c->b));
+		if (ATOMvarsized(mtype)) {
+			typelen = -1;
+		}
+
+		if (!mnstr_writeLng(s, (lng)(strlen(c->tn) + strlen(c->name) + strlen(c->type.type->sqlname) + sizeof(int) + 3)) ||
+				!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, c->type.type->sqlname) ||
+				!mnstr_writeInt(s, typelen)) {
+			return -1;
+		}
+		// FIXME: null values
+	}
+	mnstr_flush(s);
+	while (row < (size_t) count)	{
+		size_t crow = 0;
+		size_t bytes_left = bsize;
+		// FIXME: this can be skipped if there are no variable-length types in the result set
+		while (row < (size_t) count) {
+			size_t rowsize = 0;
+			for (i = 0; i < (size_t) t->nr_cols; i++) {
+				res_col *c = t->cols + i;
+				int mtype = c->type.type->localtype;
+				if (ATOMvarsized(mtype)) {
+					// FIXME support other types than string
+					assert(mtype == TYPE_str);
+					rowsize += strlen((const char*) BUNtail(iterators[i], row)) + 1;
+				} else {
+					rowsize += ATOMsize(mtype);
+				}
+			}
+			if (bytes_left < rowsize) break;
+			bytes_left -= rowsize;
+			row++;
+		}
+		assert(row > 0);
+		if (!mnstr_writeLng(s, (lng) row)) {
+			return -1;
+		}
+
+		for (i = 0; i < (size_t) t->nr_cols; i++) {
+			res_col *c = t->cols + i;
+			int mtype = c->type.type->localtype;
+			if (ATOMvarsized(mtype)) {
+				// FIXME support other types than string
+				assert(mtype == TYPE_str);
+				for (crow = srow; crow < row; crow++) {
+					if (!write_str_term(s, (char*) BUNtail(iterators[i], crow))) {
+						return -1;
+					}
+				}
+			} else {
+				if (mnstr_write(s, Tloc(iterators[i].b, srow), ATOMsize(mtype), row - srow) != (ssize_t) (row - srow)) {
+					return -1;
+				}
+			}
+		}
+
+		mnstr_flush(s);
+	}
+	return 0;
+}
 
 int
 mvc_export_result(backend *b, stream *s, int res_id)
@@ -1889,13 +1982,15 @@ mvc_export_result(backend *b, stream *s, int res_id)
 
 	assert(!json); // so sue me
 
+	if (GDKgetenv_istrue("crazybitsonthewire") && ( b->client->protocol == prot10 || b->client->protocol == prot10compressed)) {
+		return mvc_export_resultset_prot10(t, s, b->client->blocksize);
+	}
+
 	if (!json) {
 		mvc_export_head(b, s, res_id, TRUE, TRUE);
 	}
 
-//	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
-//		return mvc_export_resultset_prot10(t, s, b->client->blocksize);
-//	}
+
 	assert(t->order);
 
 	order = BATdescriptor(t->order);

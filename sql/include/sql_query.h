@@ -16,7 +16,8 @@ typedef enum sql_query_t {
 	Q_SCHEMA = 3,
 	Q_TRANS = 4,
 	Q_PREPARE = 5,
-	Q_BLOCK = 6
+	Q_BLOCK = 6,
+	Q_BINARYTABLE = 7
 } sql_query_t;
 
 #endif /* _SQL_QUERY_H_ */

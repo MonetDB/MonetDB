@@ -29,6 +29,7 @@
 #include <signal.h>
 #include <limits.h>
 
+#define STREAM_DEBUG 1
 /* avoid using "#ifdef WIN32" so that this file does not need our config.h */
 #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
 # ifndef LIBSTREAM
@@ -103,6 +104,7 @@ stream_export int mnstr_init(void);
  * !0 on success
  */
 stream_export int mnstr_readBte(stream *s, signed char *val);
+stream_export int mnstr_readChr(stream *s, char *val);
 stream_export int mnstr_writeBte(stream *s, signed char val);
 stream_export int mnstr_readSht(stream *s, short *val);
 stream_export int mnstr_writeSht(stream *s, short val);
@@ -118,6 +120,9 @@ stream_export int mnstr_writeHge(stream *s, hge val);
 
 stream_export int mnstr_readBteArray(stream *s, signed char *val, size_t cnt);
 stream_export int mnstr_writeBteArray(stream *s, const signed char *val, size_t cnt);
+stream_export int mnstr_writeStr(stream *s, const char *val);
+stream_export int mnstr_readStr(stream *s, char* val);
+
 stream_export int mnstr_readShtArray(stream *s, short *val, size_t cnt);
 stream_export int mnstr_writeShtArray(stream *s, const short *val, size_t cnt);
 stream_export int mnstr_readIntArray(stream *s, int *val, size_t cnt);
