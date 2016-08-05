@@ -259,6 +259,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 			GDKfree(msg);
 	}
 #endif
+	c->blocksize = BLOCK;
+	c->protocol = prot9;
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
 }

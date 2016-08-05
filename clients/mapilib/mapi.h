@@ -129,13 +129,6 @@ typedef struct {		/* used by MAPI_DATETIME */
 	unsigned int fraction;	/* in 1000 millionths of a second (10e-9) */
 } MapiDateTime;
 
-typedef enum {
-	protauto = 0,
-	prot9 = 1,
-	prot10 = 2,
-	prot10compressed = 3,
-} protocol_version;
-
 /* connection-oriented functions */
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 mapi_export Mapi mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang);
@@ -240,7 +233,7 @@ mapi_export char *mapi_quote(const char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
 mapi_export MapiHdl mapi_get_active(Mapi mid);
 
-mapi_export void mapi_set_protocol(Mapi mid, protocol_version prot);
+mapi_export MapiMsg mapi_set_protocol(Mapi mid, const char* prot);
 mapi_export void mapi_set_blocksize(Mapi mid, size_t blocksize);
 
 #ifdef _MSC_VER

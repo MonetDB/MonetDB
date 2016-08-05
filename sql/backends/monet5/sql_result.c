@@ -1700,7 +1700,7 @@ export_error(BAT *order)
 }
 
 int
-mvc_export_head(backend *b, stream *s, int res_id, int only_header)
+mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths)
 {
 	mvc *m = b->mvc;
 	int i, res = 0;
@@ -1800,20 +1800,20 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 	}
 	if (mnstr_write(s, " # type\n% ", 10, 1) != 1)
 		return -1;
+	if (compute_lengths) {
+		for (i = 0; i < t->nr_cols; i++) {
+			res_col *c = t->cols + i;
+			int mtype = c->type.type->localtype;
+			int eclass = c->type.type->eclass;
 
-	for (i = 0; i < t->nr_cols; i++) {
-		res_col *c = t->cols + i;
-		int mtype = c->type.type->localtype;
-		int eclass = c->type.type->eclass;
-
-		if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
-			return -1;
-		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
+			if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
+				return -1;
+			if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
+				return -1;
+		}
+		if (mnstr_write(s, " # length\n", 10, 1) != 1)
 			return -1;
 	}
-	if (mnstr_write(s, " # length\n", 10, 1) != 1)
-		return -1;
-
 	if (m->sizeheader) {
 		if (mnstr_write(s, "% ", 2, 1) != 1)
 			return -1;
@@ -1841,7 +1841,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 
 	if (m->scanner.ws == s)
 		/* need header */
-		mvc_export_head(b, s, t->id, TRUE);
+		mvc_export_head(b, s, t->id, TRUE, TRUE);
 
 	if (!t->order) {
 		res = mvc_export_row(b, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
@@ -1857,6 +1857,13 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 	}
 	return res;
 }
+
+//static int mvc_export_resultset_prot10(res_table* table, stream* outputstream, size_t blocksize) {
+//	(void) table;
+//	(void) outputstream;
+//	(void) blocksize;
+//	return 42;
+//}
 
 int
 mvc_export_result(backend *b, stream *s, int res_id)
@@ -1880,9 +1887,15 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	if (t->tsep)
 		return mvc_export_file(b, s, t);
 
+	assert(!json); // so sue me
+
 	if (!json) {
-		mvc_export_head(b, s, res_id, TRUE);
+		mvc_export_head(b, s, res_id, TRUE, TRUE);
 	}
+
+//	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
+//		return mvc_export_resultset_prot10(t, s, b->client->blocksize);
+//	}
 	assert(t->order);
 
 	order = BATdescriptor(t->order);
@@ -1923,6 +1936,8 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	return res;
 }
 
+
+// FIXME: make sure set fetch size has no effect on protocol 10
 int
 mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 {

@@ -179,6 +179,9 @@ typedef struct CLIENT {
 	BAT *error_fld;
 	BAT *error_msg;
 	BAT *error_input;
+
+	size_t blocksize;
+	protocol_version protocol;
 } *Client, ClientRec;
 
 mal_export void    MCinit(void);

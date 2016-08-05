@@ -225,6 +225,13 @@ stream_export int isa_block_stream(stream *s);
 stream_export stream* bs_stream(stream *s);
 
 typedef enum {
+	protauto = 0,
+	prot9 = 1,
+	prot10 = 2,
+	prot10compressed = 3,
+} protocol_version;
+
+typedef enum {
 	COMPRESSION_NONE = 0,
 	COMPRESSION_SNAPPY = 1
 } compression_method;

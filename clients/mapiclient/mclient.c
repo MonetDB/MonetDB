@@ -3300,17 +3300,8 @@ main(int argc, char **argv)
 	}
 
 	if (protocol) {
-		if (strcasecmp(protocol, "prot9") == 0) {
-			mapi_set_protocol(mid, prot9);
-		}
-		else if (strcasecmp(protocol, "prot10") == 0) {
-			mapi_set_protocol(mid, prot10);
-		}
-		else if (strcasecmp(protocol, "prot10compressed") == 0) {
-			mapi_set_protocol(mid, prot10compressed);
-		}
-		else {
-			fprintf(stderr, "invalid protocol name '%s'\n", protocol);
+		if (mapi_set_protocol(mid, protocol) != 0) {
+			fprintf(stderr, "%s\n", mapi_error_str(mid));
 		}
 	}
 

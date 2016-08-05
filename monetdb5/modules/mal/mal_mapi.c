@@ -119,6 +119,8 @@ doChallenge(void *data)
 	stream *fdout = block_stream(((struct challengedata *) data)->out);
 	bstream *bs;
 	ssize_t len = 0;
+	protocol_version protocol = prot9;
+	size_t buflen = BLOCK;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -169,7 +171,6 @@ doChallenge(void *data)
 	buf[len] = 0;
 
 	if (strstr(buf, "PROT10")) {
-		size_t buflen = 0;
 		char *buflenstrend, *buflenstr = strstr(buf, "PROT10");
 		buflenstr = strchr(buflenstr, ':') + 1;
 		if (!buflenstr) {
@@ -194,16 +195,14 @@ doChallenge(void *data)
 		}
 
 		if (!strstr(buf, "PROT10COMPR")) {
-			printf("Serving client with PROT10 buffer size %zu.\n", buflen);
-
+			protocol = prot10;
 			// uncompressed protocol 10
 			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_NONE);
 			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_NONE);
 		} else {
 #ifdef HAVE_LIBSNAPPY
 			// client requests switch to protocol 10
-			printf("Serving client with PROT10COMPR buffer size %zu.\n", buflen);
-
+			protocol = prot10compressed;
 			// compressed protocol 10
 			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_SNAPPY);
 			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_SNAPPY);
@@ -239,7 +238,7 @@ doChallenge(void *data)
 		return;
 	}
 	bs->eof = 1;
-	MSscheduleClient(buf, challenge, bs, fdout);
+	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen);
 }
 
 static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */

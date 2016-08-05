@@ -3977,6 +3977,7 @@ typedef struct bs2 {
 	size_t nr;		/* how far we got in buf */
 	size_t itotal;	/* amount available in current read block */
 	size_t bufsiz;
+	size_t readpos;
 	compression_method comp;
 	char *compbuf;
 	size_t compbufsiz;
@@ -4047,6 +4048,7 @@ bs2_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 		s->nr += n;
 		todo -= n;
 		buf = ((const char *) buf + n);
+		/* block is full, write it to the stream */
 		if (s->nr == s->bufsiz) {
 
 #ifdef BSTREAM_DEBUG
@@ -4063,17 +4065,15 @@ bs2_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 			}
 #endif
 
-
-			/* block is full, write it to the stream */
-
 			writelen = s->nr;
 			blksize = s->nr;
 			writebuf = s->buf;
 
 			if (s->comp == COMPRESSION_SNAPPY) {
+				snappy_status ret;
 				size_t compressed_length = s->compbufsiz;
-				if (snappy_compress(s->buf, s->nr, s->compbuf, &compressed_length) != SNAPPY_OK) {
-					ss->errnr = -42;
+				if ((ret = snappy_compress(s->buf, s->nr, s->compbuf, &compressed_length)) != SNAPPY_OK) {
+					ss->errnr = (int) ret;
 					return -1;
 				}
 				writebuf = s->compbuf;
@@ -4137,8 +4137,9 @@ bs2_flush(stream *ss)
 
 		if (s->nr > 0 && s->comp == COMPRESSION_SNAPPY) {
 			size_t compressed_length = s->compbufsiz;
-			if (snappy_compress(s->buf, s->nr, s->compbuf, &compressed_length) != SNAPPY_OK) {
-				ss->errnr = -42;
+			snappy_status ret;
+			if ((ret = snappy_compress(s->buf, s->nr, s->compbuf, &compressed_length)) != SNAPPY_OK) {
+				ss->errnr = (int) ret;
 				return -1;
 			}
 			writebuf = s->compbuf;
@@ -4221,22 +4222,30 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		s->itotal = (size_t) (blksize >> 1);	/* amount readable */
 		/* store whether this was the last block or not */
 		s->nr = blksize & 1;
-	}
 
-	if (s->itotal > 0 && s->comp == COMPRESSION_SNAPPY) {
-		// read everything into the comp buf
-		size_t uncompressed_length = s->bufsiz;
-		ssize_t m = s->s->read(s->s, s->compbuf, 1, s->itotal);
-		if (m <= 0) {
-			ss->errnr = s->s->errnr;
-			return -1;
+
+		if (s->itotal > 0 && s->comp == COMPRESSION_SNAPPY) {
+			// read everything into the comp buf
+			size_t uncompressed_length = s->bufsiz;
+			size_t m = 0;
+			snappy_status ret;
+
+			while (m < s->itotal) {
+				ssize_t bytes_read = 0;
+				bytes_read = s->s->read(s->s, s->compbuf + m, 1, s->itotal - m);
+				if (bytes_read <= 0) {
+					ss->errnr = s->s->errnr;
+					return -1;
+				}
+				m += bytes_read;
+			}
+			if ((ret = snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length)) != SNAPPY_OK) {
+				ss->errnr = (int) ret;
+				return -1;
+			}
+			s->itotal = uncompressed_length;
+			s->readpos = 0;
 		}
-		// FIXME: err, we could have more bytes in the buffer than bufsiz and the uncompressed length could be even bigger. need another buffer.
-		if (snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length) != SNAPPY_OK) {
-			ss->errnr = -42;
-			return -1;
-		}
-		s->itotal = uncompressed_length;
 	}
 
 	/* Fill the caller's buffer. */
@@ -4246,11 +4255,13 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		 * read it */
 		n = todo < s->itotal ? todo : s->itotal;
 		if (s->comp == COMPRESSION_SNAPPY) {
-			memcpy(buf, s->buf, n);
+			memcpy(buf, s->buf + s->readpos, n);
 			buf = (void *) ((char *) buf + n);
 			cnt += n;
 			todo -= n;
+			s->readpos += n;
 			s->itotal -= n;
+
 		} else {
 			while (n > 0) {
 				ssize_t m = s->s->read(s->s, buf, 1, n);
@@ -4315,19 +4326,26 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 
 			if (s->itotal > 0 && s->comp == COMPRESSION_SNAPPY) {
 				// read everything into the comp buf
-				size_t uncompressed_length = 0;
-				ssize_t m = s->s->read(s->s, s->compbuf, 1, s->itotal);
-				if (m <= 0) {
-					ss->errnr = s->s->errnr;
-					return -1;
+				size_t uncompressed_length = s->bufsiz;
+				size_t m = 0;
+				snappy_status ret;
+
+				while (m < s->itotal) {
+					ssize_t bytes_read = 0;
+					bytes_read = s->s->read(s->s, s->compbuf + m, 1, s->itotal - m);
+					if (bytes_read <= 0) {
+						ss->errnr = s->s->errnr;
+						return -1;
+					}
+					m += bytes_read;
 				}
-				if (snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length) != SNAPPY_OK) {
-					ss->errnr = -42;
+				if ((ret = snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length)) != SNAPPY_OK) {
+					ss->errnr = (int) ret;
 					return -1;
 				}
 				s->itotal = uncompressed_length;
+				s->readpos = 0;
 			}
-
 		}
 	}
 	/* if we got an empty block with the end-of-sequence marker

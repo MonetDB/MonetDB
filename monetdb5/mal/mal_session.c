@@ -146,7 +146,7 @@ exit_streams( bstream *fin, stream *fout )
 const char* mal_enableflag = "mal_for_all";
 
 void
-MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
+MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s, *dbname;
@@ -326,6 +326,10 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	 * demand. */
 
 	/* fork a new thread to handle this client */
+
+	c->protocol = protocol;
+	c->blocksize = blocksize;
+
 	mnstr_settimeout(c->fdin->s, 50, GDKexiting);
 	MSserveClient(c);
 }

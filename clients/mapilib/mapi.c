@@ -5540,8 +5540,22 @@ mapi_get_active(Mapi mid)
 	return mid->active;
 }
 
-void mapi_set_protocol(Mapi mid, protocol_version prot) {
-	mid->protocol = prot;
+MapiMsg mapi_set_protocol(Mapi mid, const char* protocol) {
+	if (strcasecmp(protocol, "prot9") == 0) {
+		mid->protocol = prot9;
+	}
+	else if (strcasecmp(protocol, "prot10") == 0) {
+		mid->protocol = prot10;
+	}
+	else if (strcasecmp(protocol, "prot10compressed") == 0) {
+		mid->protocol = prot10compressed;
+	}
+	else {
+		mapi_setError(mid, "invalid protocol name", "mapi_set_protocol", MERROR);
+		return -1;
+	}
+
+	return 0;
 }
 
 void mapi_set_blocksize(Mapi mid, size_t blocksize) {
