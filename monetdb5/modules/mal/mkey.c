@@ -25,8 +25,6 @@
 #define MKEYHASH_hge(valp)	(((lng*)(valp))[0] ^ ((lng*)(valp))[1])
 #endif
 
-#undef GDK_ROTATE
-
 static inline lng
 GDK_ROTATE(lng x, int y, int z, lng m)
 {
