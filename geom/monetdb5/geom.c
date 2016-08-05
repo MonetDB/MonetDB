@@ -5546,7 +5546,7 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
                         GDKfree(grpWKBs);
                         BBPunfix(outBAT->batCacheid);
                         outBAT = NULL;
-                		throw(MAL, name, "Out WKB is NULL, if not exception was thrown during the execution of %s it means not enough geometries for the aggregation", name);
+                		throw(MAL, name, "Out WKB is NULL, if an exception wasn't thrown during the execution of %s it might means there is not enough geometries for the aggregation", name);
                     }
                     grpWKBs[gid] = outWKBs[gid];
                 }
