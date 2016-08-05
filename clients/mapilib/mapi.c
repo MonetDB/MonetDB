@@ -881,6 +881,7 @@ struct BlockCache {
 	int eos;		/* end of sequence */
 };
 
+
 /* A connection to a server is represented by a struct MapiStruct.  An
    application can have any number of connections to any number of
    servers.  Connections are completely independent of each other.
@@ -897,6 +898,8 @@ struct MapiStruct {
 	char *uri;
 	int languageId;
 	char *motd;		/* welcome message from server */
+	protocol_version protocol;
+	size_t blocksize;
 
 	int trace;		/* Trace Mapi interaction */
 	int auto_commit;
@@ -1884,6 +1887,9 @@ mapi_new(void)
 	mid->username = NULL;
 	mid->password = NULL;
 
+	mid->protocol = protauto;
+	mid->blocksize = 128*BLOCK; // 1 MB
+
 	mid->cachelimit = 100;
 	mid->redircnt = 0;
 	mid->redirmax = 10;
@@ -2193,11 +2199,6 @@ mapi_destroy(Mapi mid)
 	return MOK;
 }
 
-typedef enum {
-	prot9 = 1,
-	prot10 = 2,
-	prot10compressed = 3,
-} protocol_version;
 
 /* (Re-)establish a connection with the server. */
 MapiMsg
@@ -2214,8 +2215,6 @@ mapi_reconnect(Mapi mid)
 	char *protover;
 	char *rest;
 	protocol_version prot_version = prot9;
-	// FIXME: make this configurable
-	size_t block_size = 1024000;
 
 	if (mid->connected)
 		close_connection(mid);
@@ -2631,17 +2630,37 @@ mapi_reconnect(Mapi mid)
 		}
 
 #ifdef HAVE_LIBSNAPPY
-		if (strstr(hashes, "PROT10COMPRESSED")) {
+		if (strstr(hashes, "PROT10COMPR")) {
 			// both server and client support compressed protocol 10; use compressed version 
-			prot_version = prot10compressed;
+			if (mid->protocol == protauto) {
+				prot_version = prot10compressed;
+			} else {
+				prot_version = mid->protocol;
+			}
 		} else
 #endif
 		if (strstr(hashes, "PROT10")) {
 			// both server and client support protocol 10; use protocol 10
-			prot_version = prot10;
+			if (mid->protocol == protauto) {
+				prot_version = prot10;
+			} else {
+				if (mid->protocol == prot10compressed) {
+					mapi_setError(mid, "Either client or server do not support protocol compression", "mapi_reconnect", MERROR);
+					close_connection(mid);
+					return mid->error;
+				} else {
+					prot_version = mid->protocol;
+				}
+			}
 		} else {
 			// connecting to old server; use protocol 9
-			prot_version = prot9;
+			if (mid->protocol == prot9 || mid->protocol == protauto) {
+				prot_version = prot9;
+			} else {
+				mapi_setError(mid, "Either client or server do not support protocol compression", "mapi_reconnect", MERROR);
+				close_connection(mid);
+				return mid->error;
+			}
 		}
 
 		/* in rest now should be the byte order of the server */
@@ -2742,8 +2761,8 @@ mapi_reconnect(Mapi mid)
 	#endif
 				     mid->username, hash, mid->language,
 				     mid->database == NULL ? "" : mid->database,
-				     prot_version == prot10 ? "PROT10" : "PROT10COMPRESSED",
-				    block_size);
+				     prot_version == prot10 ? "PROT10" : "PROT10COMPR",
+				    mid->blocksize);
 			} else {
 				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
 	#ifdef WORDS_BIGENDIAN
@@ -2785,29 +2804,23 @@ mapi_reconnect(Mapi mid)
 
 	if (prot_version == prot10 || prot_version == prot10compressed) {
 
-		printf("Using protocol version %s.\n", prot_version == prot10  ? "PROT10" : "PROT10COMPRESSED");
+		printf("Using protocol version %s.\n", prot_version == prot10  ? "PROT10" : "PROT10COMPR");
 		assert(isa_block_stream(mid->to));
 		assert(isa_block_stream(mid->from));
 
 		if (prot_version == prot10compressed) {
-#ifdef HAVE_LIBSNAPPY2
-			mid->to = compressed_stream(bs_to->s, COMPRESSION_SNAPPY);
-			mid->from = compressed_stream(bs_from->s, COMPRESSION_SNAPPY);
+#ifdef HAVE_LIBSNAPPY
+			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, COMPRESSION_SNAPPY);
+			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, COMPRESSION_SNAPPY);
 #else
 			assert(0);
 #endif
 		} else {
-			// FIXME: figure out proper stream sizes
-			mid->to = block_stream2(bs_stream(mid->to), block_size);
-			mid->from = block_stream2(bs_stream(mid->from), block_size);
+			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, COMPRESSION_NONE);
+			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, COMPRESSION_NONE);
 		}
 
-		// FIXME: this leaks
-//		bs_to->s = NULL;
-//		bs_from->s = NULL;
-//		close_stream((stream*) bs_to);
-//		close_stream((stream*) bs_from);
-
+		// FIXME: this leaks a block stream header
 	}
 
 	/* consume the welcome message from the server */
@@ -5526,4 +5539,16 @@ mapi_get_active(Mapi mid)
 {
 	return mid->active;
 }
+
+void mapi_set_protocol(Mapi mid, protocol_version prot) {
+	mid->protocol = prot;
+}
+
+void mapi_set_blocksize(Mapi mid, size_t blocksize) {
+	if (blocksize >= BLOCK) {
+		mid->blocksize = blocksize;
+	}
+}
+
+
 

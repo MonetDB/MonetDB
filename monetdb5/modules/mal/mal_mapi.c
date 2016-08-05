@@ -184,8 +184,6 @@ doChallenge(void *data)
 		buflen = atol(buflenstr);
 		if (buflenstrend) buflenstrend[0] = ':';
 
-		// client requests switch to protocol 10
-		printf("Serving client with PROT10 buffer size %zu.\n", buflen);
 
 		// FIXME: this leaks a block stream header
 		if (buflen < BLOCK) {
@@ -195,18 +193,26 @@ doChallenge(void *data)
 			return;
 		}
 
-		if (!strstr(buf, "PROT10COMPRESSED")) {
+		if (!strstr(buf, "PROT10COMPR")) {
+			printf("Serving client with PROT10 buffer size %zu.\n", buflen);
+
 			// uncompressed protocol 10
-			fdin = block_stream2(bs_stream(fdin), buflen);
-			fdout = block_stream2(bs_stream(fdout), buflen);
+			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_NONE);
+			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_NONE);
 		} else {
-#ifdef HAVE_LIBSNAPPY2
+#ifdef HAVE_LIBSNAPPY
+			// client requests switch to protocol 10
+			printf("Serving client with PROT10COMPR buffer size %zu.\n", buflen);
+
 			// compressed protocol 10
-			fdin = compressed_stream(((struct challengedata *) data)->in, COMPRESSION_SNAPPY);
-			fdout = compressed_stream(((struct challengedata *) data)->out, COMPRESSION_SNAPPY);
+			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_SNAPPY);
+			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_SNAPPY);
 #else
 			// client requested compressed protocol, but server does not support it
-			GDKsyserror("SERVERlisten:server does not support compressed protocol");
+			mnstr_printf(fdout, "!server does not support compressed protocol\n");
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
 #endif
 		}
 

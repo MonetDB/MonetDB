@@ -93,6 +93,9 @@
 #ifdef HAVE_LIBLZMA
 #include <lzma.h>
 #endif
+#ifdef HAVE_LIBSNAPPY
+#include <snappy-c.h> // C forever
+#endif
 
 #ifdef HAVE_ICONV
 #ifdef HAVE_ICONV_H
@@ -3974,13 +3977,15 @@ typedef struct bs2 {
 	size_t nr;		/* how far we got in buf */
 	size_t itotal;	/* amount available in current read block */
 	size_t bufsiz;
+	compression_method comp;
+	char *compbuf;
+	size_t compbufsiz;
 	char buf[0];	/* the buffered data (minus the size of
 				 * size-short */
-
 } bs2;
 
 static bs2 *
-bs2_create(stream *s, size_t bufsiz)
+bs2_create(stream *s, size_t bufsiz, compression_method comp)
 {
 	/* should be a binary stream */
 	bs2 *ns;
@@ -3991,6 +3996,21 @@ bs2_create(stream *s, size_t bufsiz)
 	ns->nr = 0;
 	ns->itotal = 0;
 	ns->bufsiz = bufsiz;
+	ns->comp = comp;
+	ns->compbuf = NULL;
+	if (comp == COMPRESSION_SNAPPY) {
+#ifndef HAVE_LIBSNAPPY
+		free(ns);
+		return NULL;
+#else
+		ns->compbufsiz = snappy_max_compressed_length(ns->bufsiz);
+		ns->compbuf = malloc(ns->compbufsiz);
+		if (!ns->compbuf) {
+			free(ns);
+			return NULL;
+		}
+#endif
+	}
 	return ns;
 }
 
@@ -4010,6 +4030,8 @@ bs2_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 	bs2 *s;
 	size_t todo = cnt * elmsize;
 	lng blksize;
+	char* writebuf;
+	size_t writelen;
 
 	s = (bs2 *) ss->stream_data.p;
 	if (s == NULL)
@@ -4044,14 +4066,26 @@ bs2_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 
 			/* block is full, write it to the stream */
 
-			/* since the block is at max BLOCK (8K) - 2 size we can
-			 * store it in a two byte integer */
+			writelen = s->nr;
 			blksize = s->nr;
+			writebuf = s->buf;
+
+			if (s->comp == COMPRESSION_SNAPPY) {
+				size_t compressed_length = s->compbufsiz;
+				if (snappy_compress(s->buf, s->nr, s->compbuf, &compressed_length) != SNAPPY_OK) {
+					ss->errnr = -42;
+					return -1;
+				}
+				writebuf = s->compbuf;
+				blksize = (lng) compressed_length;
+				writelen = compressed_length;
+			}
+
 			/* the last bit tells whether a flush is in there, it's not
 			 * at this moment, so shift it to the left */
 			blksize <<= 1;
 
-			if (!mnstr_writeLng(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
+			if (!mnstr_writeLng(s->s, blksize) || s->s->write(s->s, writebuf, 1, writelen) != (ssize_t) writelen) {
 				ss->errnr = MNSTR_WRITE_ERROR;
 				return -1;
 			}
@@ -4071,6 +4105,8 @@ bs2_flush(stream *ss)
 {
 	lng blksize;
 	bs2 *s;
+	char* writebuf;
+	size_t writelen;
 
 	s = (bs2 *) ss->stream_data.p;
 	if (s == NULL)
@@ -4094,15 +4130,31 @@ bs2_flush(stream *ss)
 			fprintf(stderr, "W %s 0\n", ss->name);
 		}
 #endif
-		blksize = ((lng) s->nr) << 1;
+
+		writelen = s->nr;
+		blksize  = s->nr;
+		writebuf = s->buf;
+
+		if (s->nr > 0 && s->comp == COMPRESSION_SNAPPY) {
+			size_t compressed_length = s->compbufsiz;
+			if (snappy_compress(s->buf, s->nr, s->compbuf, &compressed_length) != SNAPPY_OK) {
+				ss->errnr = -42;
+				return -1;
+			}
+			writebuf = s->compbuf;
+			blksize = (lng) compressed_length;
+			writelen = compressed_length;
+		}
+
 		/* indicate that this is the last buffer of a block by
 		 * setting the low-order bit */
+		blksize <<= 1;
 		blksize |= 1;
 		/* always flush (even empty blocks) needed for the protocol) */
 
 		if ((!mnstr_writeLng(s->s, blksize) ||
 		     (s->nr > 0 &&
-		      s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
+		      s->s->write(s->s, writebuf, 1, writelen) != (ssize_t) writelen))) {
 			ss->errnr = MNSTR_WRITE_ERROR;
 			return -1;
 		}
@@ -4171,40 +4223,65 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		s->nr = blksize & 1;
 	}
 
+	if (s->itotal > 0 && s->comp == COMPRESSION_SNAPPY) {
+		// read everything into the comp buf
+		size_t uncompressed_length = s->bufsiz;
+		ssize_t m = s->s->read(s->s, s->compbuf, 1, s->itotal);
+		if (m <= 0) {
+			ss->errnr = s->s->errnr;
+			return -1;
+		}
+		// FIXME: err, we could have more bytes in the buffer than bufsiz and the uncompressed length could be even bigger. need another buffer.
+		if (snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length) != SNAPPY_OK) {
+			ss->errnr = -42;
+			return -1;
+		}
+		s->itotal = uncompressed_length;
+	}
+
 	/* Fill the caller's buffer. */
 	cnt = 0;		/* count how much we put into the buffer */
 	while (todo > 0) {
 		/* there is more data waiting in the current block, so
 		 * read it */
 		n = todo < s->itotal ? todo : s->itotal;
-		while (n > 0) {
-			ssize_t m = s->s->read(s->s, buf, 1, n);
+		if (s->comp == COMPRESSION_SNAPPY) {
+			memcpy(buf, s->buf, n);
+			buf = (void *) ((char *) buf + n);
+			cnt += n;
+			todo -= n;
+			s->itotal -= n;
+		} else {
+			while (n > 0) {
+				ssize_t m = s->s->read(s->s, buf, 1, n);
 
-			if (m <= 0) {
-				ss->errnr = s->s->errnr;
-				return -1;
-			}
+				if (m <= 0) {
+					ss->errnr = s->s->errnr;
+					return -1;
+				}
+
+
 #ifdef BSTREAM_DEBUG
-			{
-				ssize_t i;
+				{
+					ssize_t i;
 
-				fprintf(stderr, "R2 '%s' %zd \"", ss->name, m);
-				for (i = 0; i < m; i++)
-					if (' ' <= ((char *) buf)[i] && ((char *) buf)[i] < 127)
-						putc(((char *) buf)[i], stderr);
-					else
-						fprintf(stderr, "\\%03o", ((char *) buf)[i]);
-				fprintf(stderr, "\"\n");
-			}
+					fprintf(stderr, "R2 '%s' %zd \"", ss->name, m);
+					for (i = 0; i < m; i++)
+						if (' ' <= ((char *) buf)[i] && ((char *) buf)[i] < 127)
+							putc(((char *) buf)[i], stderr);
+						else
+							fprintf(stderr, "\\%03o", ((char *) buf)[i]);
+					fprintf(stderr, "\"\n");
+				}
 #endif
 
-			buf = (void *) ((char *) buf + m);
-			cnt += m;
-			n -= m;
-			s->itotal -= m;
-			todo -= m;
+				buf = (void *) ((char *) buf + m);
+				cnt += m;
+				n -= m;
+				s->itotal -= m;
+				todo -= m;
+			}
 		}
-
 		if (s->itotal == 0) {
 			lng blksize = 0;
 
@@ -4236,6 +4313,21 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			/* store whether this was the last block or not */
 			s->nr = blksize & 1;
 
+			if (s->itotal > 0 && s->comp == COMPRESSION_SNAPPY) {
+				// read everything into the comp buf
+				size_t uncompressed_length = 0;
+				ssize_t m = s->s->read(s->s, s->compbuf, 1, s->itotal);
+				if (m <= 0) {
+					ss->errnr = s->s->errnr;
+					return -1;
+				}
+				if (snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length) != SNAPPY_OK) {
+					ss->errnr = -42;
+					return -1;
+				}
+				s->itotal = uncompressed_length;
+			}
+
 		}
 	}
 	/* if we got an empty block with the end-of-sequence marker
@@ -4257,7 +4349,7 @@ isa_block_stream(stream *s)
 
 
 stream *
-block_stream2(stream *s, size_t bufsiz)
+block_stream2(stream *s, size_t bufsiz, compression_method comp)
 {
 	stream *ns;
 	bs2 *b;
@@ -4269,7 +4361,7 @@ block_stream2(stream *s, size_t bufsiz)
 #endif
 	if ((ns = create_stream(s->name)) == NULL)
 		return NULL;
-	if ((b = bs2_create(s, bufsiz)) == NULL) {
+	if ((b = bs2_create(s, bufsiz, comp)) == NULL) {
 		destroy(ns);
 		return NULL;
 	}

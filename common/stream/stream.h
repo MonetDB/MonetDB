@@ -221,9 +221,15 @@ stream_export buffer *mnstr_get_buffer(stream *s);
  */
 stream_export stream *wbstream(stream *s, size_t buflen);
 stream_export stream *block_stream(stream *s);
-stream_export stream *block_stream2(stream *s, size_t bufsiz);
 stream_export int isa_block_stream(stream *s);
 stream_export stream* bs_stream(stream *s);
+
+typedef enum {
+	COMPRESSION_NONE = 0,
+	COMPRESSION_SNAPPY = 1
+} compression_method;
+
+stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);
 
 /* read block of data including the end of block marker */
 stream_export ssize_t mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
@@ -251,14 +257,6 @@ stream_export ssize_t bstream_next(bstream *s);
  */
 
 
-typedef enum {
-	COMPRESSION_SNAPPY = 1
-} compression_method;
-
-#ifdef HAVE_LIBSNAPPY
-// todo: compressed streams
-
-#endif
 
 
 typedef enum mnstr_errors {

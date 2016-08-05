@@ -2932,6 +2932,10 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -E charset  | --encoding=charset specify encoding (character set) of the terminal\n");
 #endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
+
+	fprintf(stderr, " -P version  | --protocol=version specify protocol version {prot9,prot10,prot10compressed}\n");
+	fprintf(stderr, " -B size     | --blocksize=size   specify protocol block size (>= %d)\n", BLOCK);
+
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -i          | --interactive[=tm] interpret `\\' commands on stdin, use time formatting {ms,s,m}\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
@@ -2969,6 +2973,8 @@ main(int argc, char **argv)
 	char *command = NULL;
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
+	char *protocol = NULL;
+	size_t blocksize = 0;
 	FILE *fp = NULL;
 	int trace = 0;
 	int dump = 0;
@@ -2992,6 +2998,9 @@ main(int argc, char **argv)
 		{"encoding", 1, 0, 'E'},
 #endif
 		{"format", 1, 0, 'f'},
+		{"protocol", 1, 0, 'P'},
+		{"blocksize", 1, 0, 'B'},
+
 		{"help", 0, 0, '?'},
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
@@ -3124,6 +3133,16 @@ main(int argc, char **argv)
 			if (output != NULL)
 				free(output);
 			output = strdup(optarg);	/* output format */
+			break;
+		case 'P':
+			assert(optarg);
+			if (protocol != NULL)
+				free(protocol);
+			protocol = strdup(optarg);
+			break;
+		case 'B':
+			assert(optarg);
+			blocksize = (size_t) atol(optarg);
 			break;
 		case 'i':
 			interactive = 1;
@@ -3271,6 +3290,30 @@ main(int argc, char **argv)
 	if (passwd)
 		free(passwd);
 	passwd = NULL;
+
+	if (blocksize > 0) {
+		if (blocksize < BLOCK) {
+			fprintf(stderr, "invalid block size (needs to be bigger than %d)\n", BLOCK);
+		} else {
+			mapi_set_blocksize(mid, blocksize);
+		}
+	}
+
+	if (protocol) {
+		if (strcasecmp(protocol, "prot9") == 0) {
+			mapi_set_protocol(mid, prot9);
+		}
+		else if (strcasecmp(protocol, "prot10") == 0) {
+			mapi_set_protocol(mid, prot10);
+		}
+		else if (strcasecmp(protocol, "prot10compressed") == 0) {
+			mapi_set_protocol(mid, prot10compressed);
+		}
+		else {
+			fprintf(stderr, "invalid protocol name '%s'\n", protocol);
+		}
+	}
+
 	if (mid && mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
 
