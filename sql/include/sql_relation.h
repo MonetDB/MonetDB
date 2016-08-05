@@ -282,10 +282,11 @@ typedef struct relation {
 	void *r;
 	list *exps; 
 	int nrcols;	/* nr of cols */	
-	char flag;	/* EXP_DISTINCT */ 
-	char card;	/* 0, 1 (row), 2 aggr, 3 */
-	char processed; /* fully processed or still in the process of building */
-	char subquery;	/* is this part a subquery, this is needed for proper name binding */
+	unsigned int
+	 flag:8,	/* EXP_DISTINCT */ 
+	 card:4,	/* 0, 1 (row), 2 aggr, 3 */
+	 processed:1, /* fully processed or still in the process of building */
+	 subquery:1;	/* is this part a subquery, this is needed for proper name binding */
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

@@ -32,7 +32,7 @@ rel_psm_block(sql_allocator *sa, list *l)
 	return NULL;
 }
 
-static sql_rel *
+sql_rel *
 rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 {
 	if (e) {

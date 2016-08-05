@@ -1145,3 +1145,32 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 		return rel;
 	return _rel_add_identity(sql, rel, exp);
 }
+
+sql_exp *
+rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname )
+{
+	if (!rel)
+		return NULL;
+
+	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
+		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
+		if (e)
+			return exp_alias(sa, e->rname, exp_name(e), tname, cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+	}
+	if (is_project(rel->op) && rel->l) {
+		return rel_find_column(sa, rel->l, tname, cname);
+	} else if (is_join(rel->op)) {
+		sql_exp *e = rel_find_column(sa, rel->l, tname, cname);
+		if (!e)
+			e = rel_find_column(sa, rel->r, tname, cname);
+		return e;
+	} else if (is_set(rel->op) ||
+		   is_sort(rel) ||
+		   is_semi(rel->op) ||
+		   is_select(rel->op)) {
+		if (rel->l)
+			return rel_find_column(sa, rel->l, tname, cname);
+	}
+	return NULL;
+}
+

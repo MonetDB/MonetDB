@@ -567,8 +567,10 @@ exp_rel(mvc *sql, sql_rel *rel)
 {
 	sql_exp *e = exp_create(sql->sa, e_psm);
 
+	/*
 	rel = rel_optimizer(sql, rel);
 	rel = rel_distribute(sql, rel);
+	*/
 	e->l = rel;
 	e->flag = PSM_REL;
 	return e;

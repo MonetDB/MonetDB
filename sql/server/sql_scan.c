@@ -203,6 +203,7 @@ scanner_init_keywords(void)
 	keywords_insert("IS", IS);
 	keywords_insert("JOIN", JOIN);
 	keywords_insert("KEY", KEY);
+	keywords_insert("LATERAL", LATERAL);
 	keywords_insert("LEFT", LEFT);
 	keywords_insert("LIKE", LIKE);
 	keywords_insert("LIMIT", LIMIT);
@@ -962,6 +963,12 @@ int scanner_symbol(mvc * c, int cur)
 		utf8_putchar(lc, next); 
 		return scanner_token(lc, cur);
 	case '~': /* binary not */
+		lc->started = 1;
+		next = scanner_getc(lc);
+		if (next == '=') 
+			return scanner_token(lc, GEOM_MBR_EQUAL);
+		utf8_putchar(lc, next); 
+		return scanner_token(lc, cur);
 	case '^': /* binary xor */
 	case '*':
 	case '?':
