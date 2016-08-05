@@ -250,8 +250,11 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	for (; i < limit; i++) {
 		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
 			oid cnt = 0;
+			bat bt;
 
-			b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), TRUE);
+			if ((bt = stk->stk[getArg(pci, i)].val.bval) == bat_nil)
+				continue;
+			b = BBPquickdesc(abs(bt), TRUE);
 			if (b == NULL)
 				continue;
 			cnt = BATcount(b);

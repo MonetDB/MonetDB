@@ -34,6 +34,14 @@
 #endif
 #endif
 
+#undef GDK_ROTATE
+
+static inline wrd
+GDK_ROTATE(wrd x, int y, int z, wrd m)
+{
+	return ((wrd) ((ulng) x << y) & ~m) | ((x >> z) & m);
+}
+
 /* TODO: nil handling. however; we do not want to lose time in bulk_rotate_xor_hash with that */
 str
 MKEYrotate(wrd *res, const wrd *val, const int *n)
