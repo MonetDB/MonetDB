@@ -399,7 +399,7 @@ SQLGetFunctions(SQLHDBC ConnectionHandle,
 		UWORD *p;
 
 		for (p = FuncImplemented; p < &FuncImplemented[NFUNCIMPLEMENTED]; p++)
-			FuncExistMap[*p >> 4] |= 1 << (*p & 0xF);
+			FuncExistMap[*p >> 4] |= (UWORD) 1 << (*p & 0xF);
 	}
 
 	if (FunctionId == SQL_API_ODBC3_ALL_FUNCTIONS) {

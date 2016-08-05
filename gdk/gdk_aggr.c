@@ -235,8 +235,8 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 						}			\
 					} else {			\
 						if (nil_if_empty &&	\
-						    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-							seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+							seen[gid >> 5] |= 1U << (gid & 0x1F); \
 							sums[gid] = 0;	\
 						}			\
 						if (sums[gid] != TYPE2##_nil) { \
@@ -275,8 +275,8 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 						}			\
 					} else {			\
 						if (nil_if_empty &&	\
-						    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-							seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+							seen[gid >> 5] |= 1U << (gid & 0x1F); \
 							sums[gid] = 0;	\
 						}			\
 						if (sums[gid] != TYPE2##_nil) { \
@@ -679,8 +679,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					}				\
 				} else {				\
 					if (nil_if_empty &&		\
-					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
 					if (prods[gid] != TYPE2##_nil) { \
@@ -724,8 +724,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 						gid = (oid) i;		\
 				}					\
 				if (nil_if_empty &&			\
-				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-					seen[gid >> 5] |= 1 << (gid & 0x1F); \
+				    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+					seen[gid >> 5] |= 1U << (gid & 0x1F); \
 					prods[gid] = 1;			\
 				}					\
 				if (vals[i] == TYPE##_nil) {		\
@@ -776,8 +776,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					}				\
 				} else {				\
 					if (nil_if_empty &&		\
-					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
 					if (prods[gid] != lng_nil) {	\
@@ -826,8 +826,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					}				\
 				} else {				\
 					if (nil_if_empty && \
-					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
 					if (prods[gid] != TYPE2##_nil) { \

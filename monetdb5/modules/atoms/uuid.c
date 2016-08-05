@@ -231,10 +231,14 @@ UUIDhash(const void *v)
 	const uuid *u = (const uuid *) v;
 	unsigned int u1, u2, u3, u4;
 
-	u1 = u->u[0] << 24 | u->u[1] << 16 | u->u[2] << 8 | u->u[3];
-	u2 = u->u[4] << 24 | u->u[5] << 16 | u->u[6] << 8 | u->u[7];
-	u3 = u->u[8] << 24 | u->u[9] << 16 | u->u[10] << 8 | u->u[11];
-	u4 = u->u[12] << 24 | u->u[13] << 16 | u->u[14] << 8 | u->u[15];
+	u1 = (unsigned int) u->u[0] << 24 | (unsigned int) u->u[1] << 16 |
+		(unsigned int) u->u[2] << 8 | (unsigned int) u->u[3];
+	u2 = (unsigned int) u->u[4] << 24 | (unsigned int) u->u[5] << 16 |
+		(unsigned int) u->u[6] << 8 | (unsigned int) u->u[7];
+	u3 = (unsigned int) u->u[8] << 24 | (unsigned int) u->u[9] << 16 |
+		(unsigned int) u->u[10] << 8 | (unsigned int) u->u[11];
+	u4 = (unsigned int) u->u[12] << 24 | (unsigned int) u->u[13] << 16 |
+		(unsigned int) u->u[14] << 8 | (unsigned int) u->u[15];
 	return (BUN) mix_int(u1 ^ u2 ^ u3 ^ u4);
 }
 

@@ -121,7 +121,7 @@ gdk_export int escapedStr(char *dst, const char *src, int dstlen, const char *se
 #ifdef HAVE_HGE
 #define GDK_hge_max ((((hge) 1) << 126) - 1 + \
                      (((hge) 1) << 126))
-#define GDK_hge_min (((hge) 1) << 127)
+#define GDK_hge_min (-GDK_hge_max-1)
 #endif
 #define GDK_dbl_max ((dbl) DBL_MAX)
 #define GDK_dbl_min (-GDK_dbl_max)
