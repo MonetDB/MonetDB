@@ -49,34 +49,34 @@ Operation successful
 | mal                                                                 |
 +==================================================================================================+
 | function user.s2_1():void;                                                                       |
-|     X_41:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",27); |
-|     X_2:bat[:lng] := bat.new(nil:oid,nil:lng);                                                   |
-|     X_1 := sql.mvc();                                                                            |
-|     X_8:bat[:sht] := sql.bind(X_1,"sys","_tables","type",0);                                     |
-|     C_5:bat[:oid] := sql.tid(X_1,"sys","_tables");                                               |
-|     C_57 := algebra.subselect(X_8,C_5,2,2,true,true,true);                                       |
-|     (C_11,r1_11) := sql.bind(X_1,"sys","_tables","type",2);                                      |
-|     C_58 := algebra.subselect(r1_11,nil:bat[:oid],2,2,true,true,true);                           |
-|     X_14:bat[:sht] := sql.bind(X_1,"sys","_tables","type",1);                                    |
-|     C_60 := algebra.subselect(X_14,C_5,2,2,true,true,true);                                      |
-|     C_17 := sql.subdelta(C_57,C_5,C_11,C_58,C_60);                                               |
-|     X_19:bat[:int] := sql.bind(X_1,"sys","_tables","id",0);                                      |
-|     (C_21,r1_25) := sql.bind(X_1,"sys","_tables","id",2);                                        |
-|     X_23:bat[:int] := sql.bind(X_1,"sys","_tables","id",1);                                      |
-|     X_24 := sql.projectdelta(C_17,X_19,C_21,r1_25,X_23);                                         |
-|     X_25 := aggr.count(X_24);                                                                    |
-|     X_26 := sql.single(X_25);                                                                    |
-|     X_27 := bat.append(X_2,X_26,true);                                                           |
-|     C_28:bat[:oid] := sql.tid(X_1,"tmp","_tables");                                              |
-|     X_30:bat[:int] := sql.bind(X_1,"tmp","_tables","id",0);                                      |
-|     X_31 := algebra.projection(C_28,X_30);                                                    |
-|     X_32 := aggr.count(X_31);                                                                    |
-|     X_33 := bat.append(X_27,X_32,true);                                                          |
-|     X_34:lng := aggr.sum(X_33);                                                                  |
-|     sql.resultSet(".L3","L3","bigint",64,0,7,X_34);                                              |
+|     X_46:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",27); |
+|     X_1:bat[:lng] := bat.new(nil:lng);                                                           |
+|     X_0 := sql.mvc();                                                                            |
+|     X_6:bat[:sht] := sql.bind(X_0,"sys","_tables","type",0);                                     |
+|     C_3:bat[:oid] := sql.tid(X_0,"sys","_tables");                                               |
+|     C_57 := algebra.subselect(X_6,C_3,2,2,true,true,true);                                       |
+|     (C_9:bat[:oid],r1_10:bat[:sht]) := sql.bind(X_0,"sys","_tables","type",2);                   |
+|     C_58 := algebra.subselect(r1_10,nil:bat[:oid],2,2,true,true,true);                           |
+|     X_12:bat[:sht] := sql.bind(X_0,"sys","_tables","type",1);                                    |
+|     C_60 := algebra.subselect(X_12,C_3,2,2,true,true,true);                                      |
+|     C_18 := sql.subdelta(C_57,C_3,C_9,C_58,C_60);                                                |
+|     X_21:bat[:int] := sql.bind(X_0,"sys","_tables","id",0);                                      |
+|     (C_23:bat[:oid],r1_24:bat[:int]) := sql.bind(X_0,"sys","_tables","id",2);                    |
+|     X_25:bat[:int] := sql.bind(X_0,"sys","_tables","id",1);                                      |
+|     X_28 := sql.projectdelta(C_18,X_21,C_23,r1_24,X_25);                                         |
+|     X_29 := aggr.count(X_28);                                                                    |
+|     X_30 := sql.single(X_29);                                                                    |
+|     X_31 := bat.append(X_1,X_30,true);                                                           |
+|     C_32:bat[:oid] := sql.tid(X_0,"tmp","_tables");                                              |
+|     X_34:bat[:int] := sql.bind(X_0,"tmp","_tables","id",0);                                      |
+|     X_35 := algebra.projection(C_32,X_34);                                                       |
+|     X_36 := aggr.count(X_35);                                                                    |
+|     X_37 := bat.append(X_31,X_36,true);                                                          |
+|     X_38:lng := aggr.sum(X_37);                                                                  |
+|     sql.resultSet(".L3","L3","bigint",64,0,7,X_38);                                              |
 | end user.s2_1;                                                                                   |
 +--------------------------------------------------------------------------------------------------+
-51 rows
+49 rows
 
 
 # 19:39:11 >  

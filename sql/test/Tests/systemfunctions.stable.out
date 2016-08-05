@@ -4418,13 +4418,6 @@ Ready.
 [ "sys",	"year",	1,	"month_interval",	""	]
 [ "sys",	"zero_or_one",	0,	"any",	"zero_or_one"	]
 [ "sys",	"zero_or_one",	1,	"any",	""	]
-[ "sys",	"zorder_decode_x",	0,	"int",	"create function zorder_decode_x(z oid) returns integer\n    external name zorder.decode_x;"	]
-[ "sys",	"zorder_decode_x",	1,	"oid",	""	]
-[ "sys",	"zorder_decode_y",	0,	"int",	"create function zorder_decode_y(z oid) returns integer\n    external name zorder.decode_y;"	]
-[ "sys",	"zorder_decode_y",	1,	"oid",	""	]
-[ "sys",	"zorder_encode",	0,	"oid",	"create function zorder_encode(x integer, y integer) returns oid\n external name zorder.encode;"	]
-[ "sys",	"zorder_encode",	1,	"int",	""	]
-[ "sys",	"zorder_encode",	2,	"int",	""	]
 
 # 16:20:25 >  
 # 16:20:25 >  "Done."

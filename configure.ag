@@ -42,7 +42,8 @@ dnl  unbalanced parentheses (due to there not being loose case
 dnl  statements).  This makes editing easier.
 
 dnl  Also note that comments that start with # are copied to the
-dnl  configure file, whereas comments starting with dnl are elided.
+dnl  configure file, whereas comments starting with dnl are elided
+dnl  (including their trailing newline).
 
 AC_PREREQ([2.63])
 AC_INIT([MonetDB], [11.24.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
@@ -50,7 +51,7 @@ AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-dnl  use tar-ustar since we have long (longer than 99 characters) file names
+# use tar-ustar since we have long (longer than 99 characters) file names
 AM_INIT_AUTOMAKE([tar-ustar no-dist-gzip dist-bzip2])
 AC_CONFIG_SRCDIR([gdk/gdk.h])
 AC_CONFIG_HEADERS([monetdb_config.h])
@@ -78,13 +79,13 @@ PKG_PROG_PKG_CONFIG
 AS_VAR_IF([PKG_CONFIG], [],
 	[AC_MSG_ERROR([pkg-config is required to configure MonetDB])])
 
-dnl  BUILD and SOURCE are *only* used for testing.
+# BUILD and SOURCE are *only* used for testing.
 
-dnl  The Q versions of various variables are used in places where \'s
-dnl  need to be escapes with an extra \.  Configure does not support \'s
-dnl  in path names, so there is no need to do anything special here
-dnl  except set the variables.  The command to set them in case we do
-dnl  need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
+# The Q versions of various variables are used in places where \'s
+# need to be escapes with an extra \.  Configure does not support \'s
+# in path names, so there is no need to do anything special here
+# except set the variables.  The command to set them in case we do
+# need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
 BUILD=[`pwd`]
 AC_SUBST([BUILD])
 
@@ -97,29 +98,29 @@ AC_SUBST([MAPI_VERSION])
 AC_SUBST([MONETDB5_VERSION])
 AC_SUBST([STREAM_VERSION])
 
-dnl  if no --prefix option, we must set Qprefix to the default value
-dnl  the problem is that prefix is set very late in the process if it
-dnl  wasn't set by --prefix
+# if no --prefix option, we must set Qprefix to the default value
+# the problem is that prefix is set very late in the process if it
+# wasn't set by --prefix
 AS_VAR_IF([prefix], [NONE],
 	[Qprefix="${ac_default_prefix}"].
 	[Qprefix="${prefix}"])
 
 Qprefix="`echo "$Qprefix" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST([Qprefix])
-dnl  exec_prefix is created very late, so let make do the expansion
+# exec_prefix is created very late, so let make do the expansion
 AS_VAR_IF([exec_prefix], [NONE],
 	[Qexec_prefix='${prefix}'],
 	[Qexec_prefix="`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`"])
 AC_SUBST([Qexec_prefix])
 
-dnl  small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
-dnl  set GCC=yes if we use icc.
+# small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
+# set GCC=yes if we use icc.
 AS_CASE(["$CC"],
 	[*icc*-no-gcc*], [],
 	[*icc*], [
-		dnl   Since version 8.0, ecc/ecpc are also called icc/icpc,
-		dnl   and icc/icpc requires "-no-gcc" to avoid predefining
-		dnl   __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
+		#  Since version 8.0, ecc/ecpc are also called icc/icpc,
+		#  and icc/icpc requires "-no-gcc" to avoid predefining
+		#  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
 		icc_ver="`$CC -dumpversion 2>/dev/null`"
 		AS_CASE([$icc_ver],
 			[8.*], [CC="$CC -no-gcc"],
@@ -131,21 +132,52 @@ AS_CASE(["$CC"],
 
 AS_IF([test -f "$srcdir"/vertoo.data],
 	[
-	dnl  Developers compiling from Mercurial:
-	dnl  default is --enable-strict --enable-assert --enable-debug --disable-optimize --enable-developer
+	# Developers compiling from Mercurial:
+	# default is --enable-strict --enable-assert --enable-debug --disable-optimize --enable-developer
 	dft_strict=yes
 	dft_assert=yes
 	dft_debug=yes
 	dft_optimize=no
 	dft_developer=yes],
 	[
-	dnl  Users compiling from source tarball(s):
-	dnl  default is --disable-strict --disable-assert --disable-debug --disable-optimize --disable-developer
+	# Users compiling from source tarball(s):
+	# default is --disable-strict --disable-assert --disable-debug --disable-optimize --disable-developer
 	dft_strict=no
 	dft_assert=no
 	dft_debug=no
 	dft_optimize=no
 	dft_developer=no])
+
+AC_ARG_ENABLE([developer],
+	[AS_HELP_STRING([--enable-developer],
+		[enable support for MonetDB development (default=yes for development sources)])],
+	[enable_developer=$enableval],
+	[enable_developer=$dft_developer])
+
+dft_testing=auto
+AC_ARG_ENABLE([testing],
+	[AS_HELP_STRING([--enable-testing],
+		[enable support for testing (default=auto)])],
+	[enable_testing=$enableval],
+	[enable_testing=$dft_testing])
+
+dft_mapi=yes
+AC_ARG_ENABLE([mapi],
+	[AS_HELP_STRING([--enable-mapi],
+		[Enable MAPI (default=yes)])],
+	[enable_mapi=$enableval],
+	[enable_mapi=$dft_mapi])
+AM_CONDITIONAL([HAVE_MAPI], [test x$enable_mapi != xno])
+AS_VAR_IF([enable_mapi], [no],
+	[],
+	[AC_DEFINE([HAVE_MAPI], 1, [Enable MAPI])])
+
+dft_odbc=auto
+AC_ARG_ENABLE([odbc],
+	[AS_HELP_STRING([--enable-odbc],
+		[compile the MonetDB ODBC driver (default=auto)])],
+	[enable_odbc=$enableval],
+	[enable_odbc=$dft_odbc])
 
 dft_gdk=yes
 AC_ARG_ENABLE([gdk],
@@ -165,27 +197,6 @@ AS_CASE(["$enable_gdk-$enable_monetdb5"],
 	[no-auto], [
 		enable_monetdb5=no
 		disable_monetdb5="(MonetDB5 requires GDK.)"])
-
-dft_fits=auto
-AC_ARG_ENABLE([fits],
-	[AS_HELP_STRING([--enable-fits],
-		[enable support for FITS (default=auto)])],
-	[enable_fits=$enableval],
-	[enable_fits=$dft_fits])
-
-dft_netcdf=auto
-AC_ARG_ENABLE([netcdf],
-	[AS_HELP_STRING([--enable-netcdf],
-		[enable support for netcdf (default=auto)])],
-	[enable_netcdf=$enableval],
-	[enable_netcdf=$dft_netcdf])
-
-dft_lidar=auto
-AC_ARG_ENABLE([lidar],
-	[AS_HELP_STRING([--enable-lidar],
-		[enable support for LiDAR data (default=auto)])],
-	[have_lidar=$enableval],
-	[have_lidar=$dft_lidar])
 
 dft_sql=yes
 AC_ARG_ENABLE([sql],
@@ -213,6 +224,27 @@ AS_CASE(["$enable_monetdb5-$enable_geom"],
 	enable_geom=no
 	disable_geom="(geom module requires MonetDB5)"])
 
+dft_fits=auto
+AC_ARG_ENABLE([fits],
+	[AS_HELP_STRING([--enable-fits],
+		[enable support for FITS (default=auto)])],
+	[enable_fits=$enableval],
+	[enable_fits=$dft_fits])
+
+dft_netcdf=auto
+AC_ARG_ENABLE([netcdf],
+	[AS_HELP_STRING([--enable-netcdf],
+		[enable support for netcdf (default=auto)])],
+	[enable_netcdf=$enableval],
+	[enable_netcdf=$dft_netcdf])
+
+dft_lidar=auto
+AC_ARG_ENABLE([lidar],
+	[AS_HELP_STRING([--enable-lidar],
+		[enable support for LiDAR data (default=auto)])],
+	[have_lidar=$enableval],
+	[have_lidar=$dft_lidar])
+
 dft_shp=auto
 AC_ARG_ENABLE([shp],
 	[AS_HELP_STRING([--enable-shp],
@@ -226,15 +258,12 @@ AS_CASE(["$enable_geom-$have_shp"],
 	have_shp=no
 	disable_shp="(ESRI Shapefile vault requires the geom module)"])
 
-dft_mapi=yes
-AC_ARG_ENABLE([mapi],
-	[AS_HELP_STRING([--enable-mapi],
-		[Enable MAPI (default=yes)])],
-	[enable_mapi=$enableval],
-	[enable_mapi=$dft_mapi])
-AM_CONDITIONAL([HAVE_MAPI], [test x$enable_mapi != xno])
-AS_VAR_IF([enable_mapi], [no], [],
-	[AC_DEFINE([HAVE_MAPI], 1, [Enable MAPI])])
+dft_gsl=auto
+AC_ARG_ENABLE([gsl],
+	[AS_HELP_STRING([--enable-gsl],
+		[enable support for GSL (default=auto)])],
+	[enable_gsl=$enableval],
+	[enable_gsl=$dft_gsl])
 
 dft_embedded=no
 AC_ARG_ENABLE([embedded],
@@ -256,13 +285,6 @@ AM_CONDITIONAL([HAVE_EMBEDDED_R], [test x$enable_embedded_r != xno])
 AS_VAR_IF([enable_embedded_r], [no], [],
 	[AC_DEFINE([HAVE_EMBEDDED_R], 1, [Support for MonetDB as a library for R])])
 
-dft_gsl=auto
-AC_ARG_ENABLE([gsl],
-	[AS_HELP_STRING([--enable-gsl],
-		[enable support for GSL (default=auto)])],
-	[enable_gsl=$enableval],
-	[enable_gsl=$dft_gsl])
-
 dft_rintegration=auto
 AC_ARG_ENABLE([rintegration],
 	[AS_HELP_STRING([--enable-rintegration],
@@ -277,39 +299,12 @@ AC_ARG_ENABLE([pyintegration],
 	[enable_pyintegration=$enableval],
 	[enable_pyintegration=$dft_pyintegration])
 
-dft_odbc=auto
-AC_ARG_ENABLE([odbc],
-	[AS_HELP_STRING([--enable-odbc],
-		[compile the MonetDB ODBC driver (default=auto)])],
-	[enable_odbc=$enableval],
-	[enable_odbc=$dft_odbc])
-
-dft_testing=auto
-AC_ARG_ENABLE([testing],
-	[AS_HELP_STRING([--enable-testing],
-		[enable support for testing (default=auto)])],
-	[enable_testing=$enableval],
-	[enable_testing=$dft_testing])
-
-AC_ARG_ENABLE([developer],
-	[AS_HELP_STRING([--enable-developer],
-		[enable support for MonetDB development (default=yes for development sources)])],
-	[enable_developer=$enableval],
-	[enable_developer=$dft_developer])
-
-dft_sanitizer=no
-AC_ARG_ENABLE([sanitizer],
-	[AS_HELP_STRING([--enable-sanitizer],
-		[enable support for the GCC address sanitizer (default=no)])],
-	[enable_sanitizer=$enableval],
-	[enable_sanitizer=$dft_sanitizer])
-
-dnl  The console is a direct client hooked onto the kernel with full
-dnl  administrative privileges, bypassing any security checks.  It is
-dnl  handy only during development.
-dnl  We simply can't disable it for now because Testing gets hopelessly
-dnl  upset about it, but we can offer to the user to disable it for
-dnl  increased security.
+# The console is a direct client hooked onto the kernel with full
+# administrative privileges, bypassing any security checks.  It is
+# handy only during development.
+# We simply can't disable it for now because Testing gets hopelessly
+# upset about it, but we can offer to the user to disable it for
+# increased security.
 dft_console=yes
 AC_ARG_ENABLE([console],
 	[AS_HELP_STRING([--enable-console],
@@ -326,7 +321,7 @@ AC_ARG_ENABLE([jdbc],
 	[enable_jdbc=$dft_jdbc])
 AS_CASE([$enable_jdbc],
 	[yes|auto], [],
-	[ enable_jdbc=no])
+	[enable_jdbc=no])
 
 dft_control=auto
 AC_ARG_ENABLE([merocontrol],
@@ -337,13 +332,66 @@ AS_CASE([$enable_control],
 	[yes|auto], [],
 	[enable_control=no])
 
+dft_int128=auto
+AC_ARG_ENABLE([int128],
+	[AS_HELP_STRING([--enable-int128],
+		[enable support for 128-bit integers (default=auto)])],
+	[enable_int128=$enableval],
+	[enable_int128=$dft_int128])
+
+AC_ARG_ENABLE([debug],
+	[AS_HELP_STRING([--enable-debug],
+		[enable full debugging (default=yes for development sources)])],
+	[enable_debug=$enableval],
+	[enable_debug=def_$dft_debug])
+
+AC_ARG_ENABLE([assert],
+	[AS_HELP_STRING([--enable-assert],
+		[enable assertions in the code (default=yes for development sources)])],
+	[enable_assert=$enableval],
+	[enable_assert=def_$dft_assert])
+
+AC_ARG_ENABLE([optimize],
+	[AS_HELP_STRING([--enable-optimize],
+		[enable extra optimization (default=no)])],
+	[enable_optimize=$enableval],
+	[enable_optimize=def_$dft_optimize])
+
+AC_ARG_ENABLE([strict],
+	[AS_HELP_STRING([--enable-strict],
+		[enable strict compiler flags (default=yes for development sources)])],
+	[enable_strict=$enableval],
+	[enable_strict=$dft_strict])
+
+dft_sanitizer=no
+AC_ARG_ENABLE([sanitizer],
+	[AS_HELP_STRING([--enable-sanitizer],
+		[enable support for the GCC address sanitizer (default=no)])],
+	[enable_sanitizer=$enableval],
+	[enable_sanitizer=$dft_sanitizer])
+
 AC_ARG_ENABLE([static-analysis],
 	[AS_HELP_STRING([--enable-static-analysis], [configure for static code analysis (use only if you know what you are doing)])],
 	AC_DEFINE([STATIC_CODE_ANALYSIS], 1, [compiling for static code analysis]))
 
-dnl  RIPEMD160 is patent free, academic and European, but unfortunately
-dnl  can't use it by default, as that would exclude JDBC usage (Java
-dnl  doesn't natively support RIPEMD160).
+need_profile=no
+dft_profile=$need_profile
+AC_ARG_ENABLE([profile],
+	[AS_HELP_STRING([--enable-profile], [enable profiling (default=no)])],
+	[enable_profile=$enableval],
+	[enable_profile=def_$dft_profile])
+
+need_instrument=no
+dft_instrument=$need_instrument
+AC_ARG_ENABLE([instrument],
+	[AS_HELP_STRING([--enable-instrument],
+		[enable instrument (default=no)])],
+	[enable_instrument=$enableval],
+	[enable_instrument=def_$dft_instrument])
+
+# RIPEMD160 is patent free, academic and European, but unfortunately
+# can't use it by default, as that would exclude JDBC usage (Java
+# doesn't natively support RIPEMD160).
 MONETDB5_PASSWDHASH="SHA512"
 AC_ARG_WITH([password-backend],
 	[AS_HELP_STRING([--with-password-backend=HASHALG],
@@ -355,14 +403,15 @@ AS_CASE(["$password_backend"],
 	[MD5|SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512],
 		[MONETDB5_PASSWDHASH="$password_backend"],
 	[AC_MSG_ERROR(['$password_backend' invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
-AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH], ["$MONETDB5_PASSWDHASH"], [The used password hash algorithm])
+AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH], ["$MONETDB5_PASSWDHASH"],
+	[The used password hash algorithm])
 AC_SUBST([MONETDB5_PASSWDHASH])
 
 AC_DISABLE_STATIC
 AC_ENABLE_SHARED
 AM_CONDITIONAL([CROSS_COMPILING], [test x$cross_compiling = xyes])
 
-dnl  logs usually end up in /var/log
+# logs usually end up in /var/log
 logdir='${localstatedir}/log/monetdb'
 AC_ARG_WITH([logdir],
 	[AS_HELP_STRING([--with-logdir=DIR],
@@ -372,7 +421,7 @@ AC_ARG_WITH([logdir],
 		[AC_MSG_WARN([--with-logdir called without argument - will use default])],
 		[logdir="$withval"])])
 
-dnl  pidfiles usually end up in /var/run
+# pidfiles usually end up in /var/run
 rundir='${localstatedir}/run/monetdb'
 AC_ARG_WITH([rundir],
 	[AS_HELP_STRING([--with-rundir=DIR],
@@ -383,38 +432,38 @@ AC_ARG_WITH([rundir],
 		[rundir="$withval"])])
 
 
-dnl     checks for programs
+#    checks for programs
 AC_LANG([C])
 
-dnl  autoconf-2.60: enable extensions on systems that normally disable them
+# autoconf-2.60: enable extensions on systems that normally disable them
 AC_USE_SYSTEM_EXTENSIONS()
-dnl  enable 64-bits file offsets, check this early, since it breaks other
-dnl  stuff (in particular on Solaris), which we do not want to detect as
-dnl  usable below in that case
+# enable 64-bits file offsets, check this early, since it breaks other
+# stuff (in particular on Solaris), which we do not want to detect as
+# usable below in that case
 AC_SYS_LARGEFILE
 
 AC_PROG_CPP()
-dnl  check for compiler (also set GCC (yes/no)).
+# check for compiler (also set GCC (yes/no)).
 AC_PROG_CC()
 
-dnl  What do we need to get the msg_control and msg_controllen fields on
-dnl  struct msg (filedescriptor passing)?  In the future this could be a
-dnl  check to see if we can find it, such that we can disable it compile
-dnl  time if absent.  It looks however, as if it's available everywhere
-dnl  we try where UNIX domain sockets also exist.  So we go by the
-dnl  following simple implementation for now.
+# What do we need to get the msg_control and msg_controllen fields on
+# struct msg (filedescriptor passing)?  In the future this could be a
+# check to see if we can find it, such that we can disable it compile
+# time if absent.  It looks however, as if it's available everywhere
+# we try where UNIX domain sockets also exist.  So we go by the
+# following simple implementation for now.
 AS_CASE([$host],
 	[*-solaris*], [
-		dnl  Solaris needs this to get msg_control and msg_controllen;
-		dnl  it disables, however, the availability of madvise, which is
-		dnl  in use use by GDK, so we cannot just AC_DEFINE this, but
-		dnl  rather have to enable it where it is necessary
+		# Solaris needs this to get msg_control and msg_controllen;
+		# it disables, however, the availability of madvise, which is
+		# in use use by GDK, so we cannot just AC_DEFINE this, but
+		# rather have to enable it where it is necessary
 		MSGCONTROL_FLAGS="-D_XOPEN_SOURCE=500"
 		AC_SUBST([MSGCONTROL_FLAGS])])
 
-dnl  (try to) determine compiler type (gcc, icc, clang) (and version)
-dnl  independent of call ($CC) and result of AC_PROG_CC() ($GCC)
-dnl  (e.g., on OSX, Apple pretends its clang is gcc)
+# (try to) determine compiler type (gcc, icc, clang) (and version)
+# independent of call ($CC) and result of AC_PROG_CC() ($GCC)
+# (e.g., on OSX, Apple pretends its clang is gcc)
 AC_MSG_CHECKING([compiler type & version])
 gcc_ver=""
 icc_ver=""
@@ -428,14 +477,14 @@ AS_CASE(["$CC_version"],
 		icc_ver="`$CC -dumpversion 2>/dev/null`"
 		CC_ver="icc-$icc_ver"],
 	[*clang*], [
-	dnl  `clang -dumpversion` reports the original/old gcc version it is based on
+	# `clang -dumpversion` reports the original/old gcc version it is based on
 		gcc_ver="`$CC -v 2>&1 | grep -w '[[Vv]]ersion [[0-9]]\+\.[[0-9]]\+' | sed 's|^.*[[Vv]]ersion \([[0-9]][[0-9]]*\(\.[[0-9]][[0-9]]*\)\(\.[[0-9]][[0-9]]*\)*\).*$|\1|'`"
 		CC_ver="clang-$gcc_ver"],
 	[CC_V="`$CC -V 2>&1`"
 	AS_CASE(["$CC_V"],
 		[*'Sun Ceres C '*|*'Sun C '*], [
-			dnl  developer/sunstudioexpress and
-			dnl  developer/sunstudio12u1 respectively
+			# developer/sunstudioexpress and
+			# developer/sunstudio12u1 respectively
 			CC_ver="suncc-`echo "$CC_version" | sed -n 's/.*Sun Ceres C \(.*\) SunOS.*/\1/p;s/.*Sun C \(.*\) SunOS.*/\1/p'`"
 			CC_version="$CC_V"],
 		[AC_MSG_WARN([compiler not recognized:
@@ -445,7 +494,7 @@ $CC_version
 $CC_V])])])
 AC_MSG_RESULT([$CC_ver])
 
-dnl  sanity/consistency check
+# sanity/consistency check
 AS_CASE(["$GCC!$CC!$CC_ver"],
 	[yes!*clang*!clang-*], [],
 	[yes!*gcc*!clang-*], [],
@@ -470,11 +519,11 @@ AC_C_BIGENDIAN()
 LINUX_DIST=''
 AS_CASE(["$host_os"],
 	[linux*], [
-		dnl  Please keep this aligned / in sync with testing/Mtest.py.in !
+		# Please keep this aligned / in sync with testing/Mtest.py.in !
 		AC_MSG_CHECKING([which Linux distribution we're using])
 		AS_IF([test -s /etc/os-release], [
-				dnl  this is the new way of getting release information
-				dnl  works for Fedora >= 17, Ubuntu >= 12.04 (Precise Pangolin)
+				# this is the new way of getting release information
+				# works for Fedora >= 17, Ubuntu >= 12.04 (Precise Pangolin)
 				LINUX_DIST=`source /etc/os-release; echo ${ID}:${VERSION_ID}`],
 			[test -s /etc/fedora-release ], [
 				LINUX_DIST="`cat /etc/fedora-release | head -n1 \
@@ -513,9 +562,9 @@ AC_DEFUN([MCHECK_ADD_FLAG], [
 	cache_var=AS_TR_SH([m_cv_cc_has_$1])
 	AC_CACHE_CHECK([whether ${CC} supports $1], [${cache_var}], [
 		SAVE_FLAGS="${CFLAGS}"
-		dnl  compile a small program that has enough challenges to trigger
-		dnl  the compiler to actually do something, such that it needs to
-		dnl  actually look at the flags given
+		# compile a small program that has enough challenges to trigger
+		# the compiler to actually do something, such that it needs to
+		# actually look at the flags given
 		CFLAGS="${SAVE_FLAGS} ${X_CFLAGS} $1"
 		dnl  do not use AC_LANG_PROGRAM here, because it generates a program
 		dnl  with "int main() {" function, which triggers
@@ -546,27 +595,23 @@ AC_DEFUN([MCHECK_ADD_FLAG], [
 	eval "test \"x\$${cache_var}\" = xyes && X_CFLAGS=\"${X_CFLAGS} $1\""
 ])
 
-dnl  --enable-strict
-AC_ARG_ENABLE([strict],
-	[AS_HELP_STRING([--enable-strict],
-		[enable strict compiler flags (default=yes for development sources)])],
-	[enable_strict=$enableval],
-	[enable_strict=$dft_strict])
-dnl  Set compiler switches.
-dnl  The idea/goal is to be as strict as possible, i.e., enable preferably
-dnl  *all* warnings and make them errors. This should help keep the code
-dnl  as clean and portable as possible.
-dnl  It turned out, though, that this, especially turning all warnings into
-dnl  errors, is a bit too ambitious for configure/autoconf. Hence, we set
-dnl  all flags that enable specific warnings and those that make the
-dnl  compiler die on them (-Werror) in X_CFLAGS, which are added to the
-dnl  standard CFLAGS once configure/autoconf are done with their job,
-dnl  i.e., at the end of this configure[.ag] script.
-dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
+# Set compiler switches.
+# The idea/goal is to be as strict as possible, i.e., enable preferably
+# *all* warnings and make them errors. This should help keep the code
+# as clean and portable as possible.
+# It turned out, though, that this, especially turning all warnings into
+# errors, is a bit too ambitious for configure/autoconf. Hence, we set
+# all flags that enable specific warnings and those that make the
+# compiler die on them (-Werror) in X_CFLAGS, which are added to the
+# standard CFLAGS once configure/autoconf are done with their job,
+# i.e., at the end of this configure[.ag] script.
+# Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 AS_VAR_IF([enable_strict], [yes], [
 	AS_CASE(["$GCC-$CC-$host_os"],
 	[yes-*-*], [
-		MCHECK_ADD_FLAG([-Werror])  dnl  keep this one first
+		# keep this one first
+		MCHECK_ADD_FLAG([-Werror])
+
 		MCHECK_ADD_FLAG([-Wall])
 		MCHECK_ADD_FLAG([-Wextra])
 		MCHECK_ADD_FLAG([-W])
@@ -594,15 +639,15 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wmissing-include-dirs])
 		MCHECK_ADD_FLAG([-Wlogical-op])
 
-		dnl  With clang 2.8, 3.3, 5.0 (no other tested) and gcc < 4.5
-		dnl  (tested 3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
-		dnl  "-Wunreachable-code" triggers numerous "will never be
-		dnl  executed" (at least) in our stream code, mostly (if
-		dnl  not all) false positives, though, as well as in
-		dnl  YACC/BISON-generated code; thus, we do not use
-		dnl  "-Wunreachable-code" with clang and gcc < 4.5 .
-		dnl  At the same time, Apple deprecated OpenSSL in favour of
-		dnl  their own CommonCrypto API.  We don't mind about that.
+		# With clang 2.8, 3.3, 5.0 (no other tested) and gcc < 4.5
+		# (tested 3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
+		# "-Wunreachable-code" triggers numerous "will never be
+		# executed" (at least) in our stream code, mostly (if
+		# not all) false positives, though, as well as in
+		# YACC/BISON-generated code; thus, we do not use
+		# "-Wunreachable-code" with clang and gcc < 4.5 .
+		# At the same time, Apple deprecated OpenSSL in favour of
+		# their own CommonCrypto API.  We don't mind about that.
 		AS_CASE(["$CC_ver"],
 			[clang-*|gcc-[[0-3]].*|gcc-4.[[0-4]].*],
 				[MCHECK_ADD_FLAG([-Wno-deprecated-declarations])],
@@ -637,24 +682,24 @@ AS_VAR_IF([enable_strict], [yes], [
 		dnl  MCHECK_ADD_FLAG([-Wunsuffixed-float-constants])
 	],
 	[-*icc*-linux*|-*ecc*-linux*] ,[
-		dnl  Intel ([ie]cc/[ie]cpc on Linux)
+		# Intel ([ie]cc/[ie]cpc on Linux)
 		AS_CASE([$icc_ver],
 			[?.*],	[LDFLAGS="$LDFLAGS -i_dynamic"],
 			[??.*],	[LDFLAGS="$LDFLAGS -shared-intel"])
-		dnl  Let warning #140 "too many arguments in function call"
-		dnl  become an error to make configure tests work properly.
+		# Let warning #140 "too many arguments in function call"
+		# become an error to make configure tests work properly.
 		CFLAGS="$CFLAGS -we140"
-		dnl  Let warning #147 "declaration is incompatible"
-		dnl  become an error to make configure tests work properly.
+		# Let warning #147 "declaration is incompatible"
+		# become an error to make configure tests work properly.
 		CFLAGS="$CFLAGS -we147"
-		dnl  Check for PIC does not work with Version 8.1, unless we disable
-		dnl  remark #1418: external definition with no prior declaration ... !?
+		# Check for PIC does not work with Version 8.1, unless we disable
+		# remark #1418: external definition with no prior declaration ... !?
 		AS_CASE([$icc_ver],
 			[8.1*], [CFLAGS="$CFLAGS -wd1418"],
 			[9.*],  [CFLAGS="$CFLAGS -wd1418"],
 			[10.*], [CFLAGS="$CFLAGS -wd1418"],
 			[11.*], [CFLAGS="$CFLAGS -wd1418"])
-		dnl  Version 8.* doesn't find sigset_t when -ansi is set... !?
+		# Version 8.* doesn't find sigset_t when -ansi is set... !?
 		AS_CASE([$icc_ver],
 			[8.*],  [],
 			[9.*],  [],
@@ -662,24 +707,24 @@ AS_VAR_IF([enable_strict], [yes], [
 			[11.*], [],
 			[15.*], [],
 			[CFLAGS="$CFLAGS -ansi"])
-		dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
+		# Be picky; "-Werror" seems to be too rigid for autoconf...
 		CFLAGS="$CFLAGS -Wall -w2 -Wcheck"
-		dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
-		dnl  Let the follows remarks and warning become errors:
-		dnl  #266: "function declared implicitly"
-		dnl  #181: "argument is incompatible with corresponding format string conversion"
-		dnl  #810: "conversion from "." to "." may lose significant bits"
-		dnl  #111: "statement is unreachable"
-		dnl  #271: "trailing comma is nonstandard"
-		dnl  #593: "variable "." was set but never used"
+		# Be rigid; MonetDB code is supposed to adhere to this... ;-)
+		# Let the follows remarks and warning become errors:
+		# #266: "function declared implicitly"
+		# #181: "argument is incompatible with corresponding format string conversion"
+		# #810: "conversion from "." to "." may lose significant bits"
+		# #111: "statement is unreachable"
+		# #271: "trailing comma is nonstandard"
+		# #593: "variable "." was set but never used"
 		X_CFLAGS="$X_CFLAGS -we266,181,810,271,593"
 		X_CFLAGS="$X_CFLAGS -Werror -Werror-all"
-		dnl  ... however, some things aren't solved, yet:
-		dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
+		# ... however, some things aren't solved, yet:
+		# (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
 		X_CFLAGS="$X_CFLAGS -wd1418,1419,981,193,1357"
-		dnl  ICC 11 & 15 warn about non-pointer conversion from "<type>" to
-		dnl  "<smaller>" may lose significant bits, it does however, also for
-		dnl  constants like short s = 1234, which is too much
+		# ICC 11 & 15 warn about non-pointer conversion from "<type>" to
+		# "<smaller>" may lose significant bits, it does however, also for
+		# constants like short s = 1234, which is too much
 		AS_CASE([$icc_ver],
 			[11.*], [X_CFLAGS="$X_CFLAGS,2259"],
 			[15.*], [X_CFLAGS="$X_CFLAGS,2259"])
@@ -688,21 +733,21 @@ AS_VAR_IF([enable_strict], [yes], [
 			[9.[[1-9]]*], [X_CFLAGS="$X_CFLAGS,1572,1599"],
 			[10.*],       [X_CFLAGS="$X_CFLAGS,1572,1599"],
 			[11.*],       [X_CFLAGS="$X_CFLAGS,1572,1599"])
-		dnl  #1418: external definition with no prior declaration
-		dnl  #1419: external declaration in primary source file
-		dnl  # 981: operands are evaluated in unspecified order
-		dnl  # 193: zero used for undefined preprocessing identifier
-		dnl  #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
-		dnl  #1572: floating-point equality and inequality comparisons are unreliable
-		dnl  #1599: declaration hides variable
-		dnl  #2259: non-pointer conversion from "." to "." may lose significant bits
+		# #1418: external definition with no prior declaration
+		# #1419: external declaration in primary source file
+		# # 981: operands are evaluated in unspecified order
+		# # 193: zero used for undefined preprocessing identifier
+		# #1357: optimization disabled due to excessive resource requirements; contact Intel Premier Support for assistance
+		# #1572: floating-point equality and inequality comparisons are unreliable
+		# #1599: declaration hides variable
+		# #2259: non-pointer conversion from "." to "." may lose significant bits
 	])
 ])
 AS_VAR_IF([enable_sanitizer], [no], [], [
 	AS_CASE(["$GCC"],
 		[yes], [
-			dnl  if no specific sanitizer was specified, use
-			dnl  address sanitizer
+			# if no specific sanitizer was specified, use
+			# address sanitizer
 			AS_VAR_IF([enable_sanitizer], [yes],
 				[MCHECK_ADD_FLAG([-fsanitize=address])],
 				[MCHECK_ADD_FLAG([-fsanitize=$enable_sanitizer])
@@ -714,16 +759,16 @@ AS_VAR_IF([enable_sanitizer], [no], [], [
 AC_SUBST([CFLAGS])
 AC_SUBST([X_CFLAGS])
 
-dnl  icc needs -fPIC (but the current autoconf still uses -KPIC)
+# icc needs -fPIC (but the current autoconf still uses -KPIC)
 AS_CASE(["$GCC-$CC-$host_os"],
 	[-*icc*-linux*|-*ecc*-linux*], [
 		AS_CASE([$icc_ver],
 		[10.*], [CC="$CC -fPIC"],
 		[11.*], [CC="$CC -fPIC"])])
 
-dnl  some dirty hacks
+# some dirty hacks
 THREAD_SAVE_FLAGS="\$(thread_safe_flag_spec) -D_REENTRANT"
-dnl  only needed in monet
+# only needed in monet
 AS_CASE(["$host_os"],
 	[solaris*], [
 		AS_CASE(["$GCC"],
@@ -755,7 +800,7 @@ AC_SUBST([READLINK])
 translatepath=echo
 anttranslatepath=$READLINK
 
-dnl  --with-translatepath
+# --with-translatepath
 AC_ARG_WITH([translatepath],
 	[AS_HELP_STRING([--with-translatepath=PROG],
 		[program to translate paths from configure-time format to execute-time format.  Take care that this program can be given paths like ${prefix}/etc which should be translated carefully.])],
@@ -765,64 +810,31 @@ AC_ARG_WITH([translatepath],
 		[AC_MSG_WARN([Cross compiling, but no --with-translatepath option given])])])
 AC_SUBST([translatepath])
 
-dnl  --with-anttranslatepath
+# --with-anttranslatepath
 AC_ARG_WITH([anttranslatepath],
 	[AS_HELP_STRING([--with-anttranslatepath=PROG],
 		[program to translate paths from configure-time format to a format that can be given to the ant program (default: 'readlink -f' or value for --with-translatepath)])],
 	[anttranslatepath="$withval"])
 AC_SUBST([anttranslatepath])
 
-AC_ARG_ENABLE([debug],
-	[AS_HELP_STRING([--enable-debug],
-		[enable full debugging (default=yes for development sources)])],
-	[enable_debug=$enableval],
-	[enable_debug=def_$dft_debug])
+# check whether no (explictly chosen) mutual exclusive combinations
+# were made, compatability matrix:
+#                deb  ass  opt  pro  ins
+#  debug          \    C    X    C    C
+#  assert         C    \    C    C    C
+#  optimize       X    C    \    X    X
+#  profile        C    C    X    \    C
+#  instrument     C    C    X    C    \
 
-AC_ARG_ENABLE([assert],
-	[AS_HELP_STRING([--enable-assert],
-		[enable assertions in the code (default=yes for development sources)])],
-	[enable_assert=$enableval],
-	[enable_assert=def_$dft_assert])
-
-AC_ARG_ENABLE([optimize],
-	[AS_HELP_STRING([--enable-optimize],
-		[enable extra optimization (default=no)])],
-	[enable_optimize=$enableval],
-	[enable_optimize=def_$dft_optimize])
-
-need_profile=no
-dft_profile=$need_profile
-AC_ARG_ENABLE([profile],
-	[AS_HELP_STRING([--enable-profile], [enable profiling (default=no)])],
-	[enable_profile=$enableval],
-	[enable_profile=def_$dft_profile])
-
-need_instrument=no
-dft_instrument=$need_instrument
-AC_ARG_ENABLE([instrument],
-	[AS_HELP_STRING([--enable-instrument],
-		[enable instrument (default=no)])],
-	[enable_instrument=$enableval],
-	[enable_instrument=def_$dft_instrument])
-
-dnl  check whether no (explictly chosen) mutual exclusive combinations
-dnl  were made, compatability matrix:
-dnl                 deb  ass  opt  pro  ins
-dnl   debug          \    C    X    C    C
-dnl   assert         C    \    C    C    C
-dnl   optimize       X    C    \    X    X
-dnl   profile        C    C    X    \    C
-dnl   instrument     C    C    X    C    \
-
+# find conflicts
 AS_CASE(["x$enable_debug.$enable_optimize.$enable_profile.$enable_instrument"],
-	dnl  find conflicts
 	[xyes.yes.*.*],
 		[AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible])],
 	[x*.yes.yes.*],
 		[AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not possible])],
 	[x*.yes.*.yes],
 		[AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not possible])],
-	dnl  handle defaults after user requests
+	# handle defaults after user requests
 	[xyes.*.*.*], [
 		enable_debug=yes
 		AS_VAR_IF([enable_optimize], [no], [],
@@ -854,7 +866,7 @@ AS_CASE(["x$enable_debug.$enable_optimize.$enable_profile.$enable_instrument"],
 		enable_instrument="`echo $enable_instrument | sed 's:^def_::'`"
 		],
 	[x*.*yes.*.*], [
-		dnl  enable-optimize overrules other defaults
+		# enable-optimize overrules other defaults
 		enable_optimize=yes
 		AS_VAR_IF([enable_debug], [no], [],
 			[disable_debug="(as optimize is enabled)"])
@@ -868,18 +880,18 @@ AS_CASE(["x$enable_debug.$enable_optimize.$enable_profile.$enable_instrument"],
 		],
 	[x*],
 		[AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optimize.$enable_profile.$enable_instrument, please file a bug on bugs.monetdb.org])])
-dnl  make defaults real for flags which don't conflict with anything
+# make defaults real for flags which don't conflict with anything
 enable_assert="`echo $enable_assert | sed 's:^def_::'`"
 
 AC_MSG_CHECKING([for --enable-debug])
 AS_VAR_IF([enable_debug], [yes], [
 	origCFLAGS=$CFLAGS
-	dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
+	# remove "-Ox" as some compilers don't like "-g -Ox" combinations
 	CFLAGS=" $CFLAGS "
 	CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
 	JAVACFLAGS=" $JAVACFLAGS "
 	JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -O | |g' -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
-	dnl  add "-g"
+	# add "-g"
 	CFLAGS="$CFLAGS -g"
 	JAVACFLAGS="$JAVACFLAGS -g"
 	AS_CASE(["$GCC-$host_os"],
@@ -909,68 +921,69 @@ AS_VAR_IF([enable_assert], [no], [
 AC_MSG_CHECKING([for --enable-optimize])
 AS_VAR_IF([enable_optimize], [yes], [
 	origCFLAGS="$CFLAGS"
-	dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
-	dnl  remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
+	# remove "-g" as some compilers don't like "-g -Ox" combinations
+	# remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
 	CFLAGS=" $CFLAGS "
 	CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`"
 	JAVACFLAGS=" $JAVACFLAGS "
 	JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
-	dnl  Optimization flags
+	# Optimization flags
 	JAVACFLAGS="$JAVACFLAGS -g:none -O"
 	AS_CASE(["$GCC-$CC_ver"],
 		[yes-clang-*],
-			[CFLAGS="$CFLAGS -O3 -fomit-frame-pointer"], dnl  -finline-functions is no longer supported in llvm 3.6
+			[CFLAGS="$CFLAGS -O3 -fomit-frame-pointer" # -finline-functions is no longer supported in llvm 3.6
+			],
 		[yes-*], [
-			dnl  -fomit-frame-pointer crashes memprof
-			dnl  -O1 on gcc enables all slight optimisations:
-			dnl   -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop
-			dnl   -fdelayed-branch -fdse -fguess-branch-probability
-			dnl   -fif-conversion2 -fif-conversion -fipa-pure-const
-			dnl   -fipa-reference -fmerge-constants -fsplit-wide-types
-			dnl   -ftree-builtin-call-dce -ftree-ccp -ftree-ch
-			dnl   -ftree-copyrename -ftree-dce -ftree-dominator-opts
-			dnl   -ftree-dse -ftree-forwprop -ftree-fre -ftree-phiprop
-			dnl   -ftree-sra -ftree-pta -ftree-ter -funit-at-a-time
-			dnl  on top of this -fomit-frame-pointer is enabled on machines
-			dnl  where this does not interfere with debugging.
-			dnl  -O2 on gcc enables optimisations which do not involve a
-			dnl  speed-space tradeoff on top of -O1:
-			dnl   -fthread-jumps -falign-functions  -falign-jumps
-			dnl   -falign-loops -falign-labels -fcaller-saves -fcrossjumping
-			dnl   -fcse-follow-jumps  -fcse-skip-blocks
-			dnl   -fdelete-null-pointer-checks -fexpensive-optimizations
-			dnl   -fgcse -fgcse-lm -finline-small-functions
-			dnl   -findirect-inlining -fipa-sra -foptimize-sibling-calls
-			dnl   -fpeephole2 -fregmove -freorder-blocks -freorder-functions
-			dnl   -frerun-cse-after-loop -fsched-interblock -fsched-spec
-			dnl   -fschedule-insns -fschedule-insns2 -fstrict-aliasing
-			dnl   -fstrict-overflow -ftree-switch-conversion -ftree-pre
-			dnl   -ftree-vrp
-			dnl  (Gentoo enables -D_FORTIFY_SOURCE=2 starting at -O2)
-			dnl  -O3 on gcc enables some more expensive optimisations on top
-			dnl  of -O2:
-			dnl  -finline-functions, -funswitch-loops,
-			dnl  -fpredictive-commoning, -fgcse-after-reload,
-			dnl  -ftree-vectorize and -fipa-cp-clone
+			# -fomit-frame-pointer crashes memprof
+			# -O1 on gcc enables all slight optimisations:
+			#  -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop
+			#  -fdelayed-branch -fdse -fguess-branch-probability
+			#  -fif-conversion2 -fif-conversion -fipa-pure-const
+			#  -fipa-reference -fmerge-constants -fsplit-wide-types
+			#  -ftree-builtin-call-dce -ftree-ccp -ftree-ch
+			#  -ftree-copyrename -ftree-dce -ftree-dominator-opts
+			#  -ftree-dse -ftree-forwprop -ftree-fre -ftree-phiprop
+			#  -ftree-sra -ftree-pta -ftree-ter -funit-at-a-time
+			# on top of this -fomit-frame-pointer is enabled on machines
+			# where this does not interfere with debugging.
+			# -O2 on gcc enables optimisations which do not involve a
+			# speed-space tradeoff on top of -O1:
+			#  -fthread-jumps -falign-functions  -falign-jumps
+			#  -falign-loops -falign-labels -fcaller-saves -fcrossjumping
+			#  -fcse-follow-jumps  -fcse-skip-blocks
+			#  -fdelete-null-pointer-checks -fexpensive-optimizations
+			#  -fgcse -fgcse-lm -finline-small-functions
+			#  -findirect-inlining -fipa-sra -foptimize-sibling-calls
+			#  -fpeephole2 -fregmove -freorder-blocks -freorder-functions
+			#  -frerun-cse-after-loop -fsched-interblock -fsched-spec
+			#  -fschedule-insns -fschedule-insns2 -fstrict-aliasing
+			#  -fstrict-overflow -ftree-switch-conversion -ftree-pre
+			#  -ftree-vrp
+			# (Gentoo enables -D_FORTIFY_SOURCE=2 starting at -O2)
+			# -O3 on gcc enables some more expensive optimisations on top
+			# of -O2:
+			# -finline-functions, -funswitch-loops,
+			# -fpredictive-commoning, -fgcse-after-reload,
+			# -ftree-vectorize and -fipa-cp-clone
 			CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
-			dnl  because we explicitly disable debugging, we can explicitly
-			dnl  enable -fomit-frame-pointer here
-			dnl  notes on -funroll-all-loops:
-			dnl  - does nothing on i?86-linux and
-			dnl   x86_64-linux
-			dnl  - speeds up and causes crashes on
-			dnl   powerpc-linux
-			dnl  - slows down and makes output incorrect on
-			dnl   sparc-solaris
-			dnl  - speeds up and fixes some outputs on
-			dnl   sparcv9-solaris
-			dnl  notes on -fast for Darwin:
-			dnl  - ppc: -fast switch causes arithmetic
-			dnl   differences, and slower running code for
-			dnl   SQL, some faster for M5
-			dnl  - x86/x64: -fast switch results in json
-			dnl   code producing wrong results, or
-			dnl   segfaults (when used with Mtest)
+			# because we explicitly disable debugging, we can explicitly
+			# enable -fomit-frame-pointer here
+			# notes on -funroll-all-loops:
+			# - does nothing on i?86-linux and
+			#  x86_64-linux
+			# - speeds up and causes crashes on
+			#  powerpc-linux
+			# - slows down and makes output incorrect on
+			#  sparc-solaris
+			# - speeds up and fixes some outputs on
+			#  sparcv9-solaris
+			# notes on -fast for Darwin:
+			# - ppc: -fast switch causes arithmetic
+			#  differences, and slower running code for
+			#  SQL, some faster for M5
+			# - x86/x64: -fast switch results in json
+			#  code producing wrong results, or
+			#  segfaults (when used with Mtest)
 			],
 		[
 		AS_CASE(["$host-$icc_ver"],
@@ -994,16 +1007,16 @@ AS_VAR_IF([enable_optimize], [yes], [
 		  dnl   [x86_64-*-*-10.*], [CFLAGS="$CFLAGS                    -unroll                             "],
 		  dnl   [x86_64-*-*-10.*], [CFLAGS="$CFLAGS                                                -axWPT  "],
 
-			dnl  We need to use -mp instead of -mp1 as
-			dnl  otherwise nextafter() & nextafterf() do
-			dnl  not work correctly for 0
+			# We need to use -mp instead of -mp1 as
+			# otherwise nextafter() & nextafterf() do
+			# not work correctly for 0
 			[x86_64-*-*-11.*], [CFLAGS="$CFLAGS -mp  -O3 -restrict -unroll                     -axSSE4.2"],
-			dnl  -mp does no longer exist with icc 15;
-			dnl  using -mieee-fp, instead.  adding
-			dnl  -axSSE4.2 (or even -axCORE-AVX512)
-			dnl  results in errors like "error: ODBCFetch
-			dnl  has been targeted for automatic cpu
-			dnl  dispatch" ...
+			# -mp does no longer exist with icc 15;
+			# using -mieee-fp, instead.  adding
+			# -axSSE4.2 (or even -axCORE-AVX512)
+			# results in errors like "error: ODBCFetch
+			# has been targeted for automatic cpu
+			# dispatch" ...
 			[x86_64-*-*-15.*], [CFLAGS="$CFLAGS -mieee-fp -O3 -restrict -unroll -no-inline-max-size -no-inline-max-total-size -inline-level=1 -xHost"],
 
 			[i*86-*-*-8.*],    [CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB"],
@@ -1035,12 +1048,12 @@ AS_VAR_IF([enable_optimize], [yes], [
 
 			[i*86-*-*],        [CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW"],
 			[ia64-*-*],        [CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"]
-					 dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
-					 dnl  (Mserver produces some incorrect BATpropcheck warnings);
-					 dnl  hence, we use only "-O2", here.
+			# With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
+			# (Mserver produces some incorrect BATpropcheck warnings);
+			# hence, we use only "-O2", here.
 		)
 	])
-	dnl  for stack-traces with assert, we DO want a frame-pointer
+	# for stack-traces with assert, we DO want a frame-pointer
 	AS_VAR_IF([enable_assert], [yes],
 		[CFLAGS="`echo $CFLAGS | sed 's:-fomit-frame-pointer::'`"])
 	changedCFLAGS=
@@ -1057,12 +1070,12 @@ AS_VAR_IF([enable_optimize], [yes], [
 	changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
 	AC_MSG_RESULT([yes: $changedCFLAGS])
 
-	dnl  The default configure invocation when doing an rpmbuild also uses this.
-	dnl  In fact, rpmbuild uses -Wp,-D_FORTIFY_SOURCE=2 (cf. /usr/lib/rpm/redhat/macros),
-	dnl  but clang 3.3 complains about "argument unused during compilation";
-	dnl  hence, we resort to plain "-D_FORTIFY_SOURCE=2", which appears to work fine
-	dnl  also with `make rpm`. Well, worst case is that we miss a check that during
-	dnl  "normal" build, that is then caught by '-Wp,-D_FORTIFY_SOURCE=2' during `make rpm`.
+	# The default configure invocation when doing an rpmbuild also uses this.
+	# In fact, rpmbuild uses -Wp,-D_FORTIFY_SOURCE=2 (cf. /usr/lib/rpm/redhat/macros),
+	# but clang 3.3 complains about "argument unused during compilation";
+	# hence, we resort to plain "-D_FORTIFY_SOURCE=2", which appears to work fine
+	# also with `make rpm`. Well, worst case is that we miss a check that during
+	# "normal" build, that is then caught by '-Wp,-D_FORTIFY_SOURCE=2' during `make rpm`.
 	MCHECK_ADD_FLAG([-D_FORTIFY_SOURCE=2])],
 	[AC_MSG_RESULT([no])])
 
@@ -1084,8 +1097,8 @@ AS_VAR_IF([enable_instrument], [yes], [
 	AS_VAR_IF([GCC], [yes], [
 		CFLAGS="$CFLAGS -finstrument-functions -g"
 		AC_MSG_RESULT([yes: -finstrument-functions -g])], [
-		AC_MSG_RESULT([no])])], [
-	AC_MSG_RESULT([no])])
+		AC_MSG_RESULT([no])])],
+		[AC_MSG_RESULT([no])])
 
 AC_PATH_PROG([BASH], [bash], [/usr/bin/bash], [$PATH])
 AC_CHECK_PROG([RM], [rm], [rm -f])
@@ -1118,27 +1131,27 @@ AS_VAR_IF([have_perl], [no], [], [
 			have_perl=no
 			why_have_perl="(no Perl executable found)"])])])
 
-AS_VAR_IF([have_perl], [no], [], [
-	have_perl_libdir=auto
-	AC_ARG_WITH([perl-libdir],
+AS_VAR_IF([have_perl], [no],
+	[# no Perl implies no interpreter
+	 PERL=false],
+	[have_perl_libdir=auto
+	 AC_ARG_WITH([perl-libdir],
 		[AS_HELP_STRING([--with-perl-libdir=DIR],
 			[relative path for Perl library directory (where Perl modules should be installed)])],
 		[have_perl_libdir="$withval"])
 
-	AS_CASE(["$have_perl_libdir"],
+	 AS_CASE(["$have_perl_libdir"],
 		[yes|auto], [
 			AS_VAR_IF([cross_compiling], [yes], [
 				AC_MSG_ERROR([Must specify --with-perl-libdir when cross compiling])])
 			PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
-			dnl  On Darwin this starts with a slash, remove it
+			# On Darwin this starts with a slash, remove it
 			PERL_LIBDIR="${PERL_LIBDIR@%:@/}"
 			],
 		[no], [],
 		[
 			PERL_LIBDIR="$have_perl_libdir"
-			have_perl_libdir=yes])], [
-	dnl  no Perl implies no interpreter
-	PERL=false])
+			have_perl_libdir=yes])])
 
 AC_SUBST([PERL])
 AM_CONDITIONAL([HAVE_PERL], [test x"$have_perl" != xno])
@@ -1148,9 +1161,9 @@ XPERL_LIBDIR="`$translatepath "$QPERL_LIBDIR"`"
 QXPERL_LIBDIR="`echo "$XPERL_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST([QXPERL_LIBDIR])
 
-dnl  check major version of python
-dnl  check if python2 and python3 exist
-dnl  if python2 or python3 doesn't exist, use python if major matches
+# check major version of python
+# check if python2 and python3 exist
+# if python2 or python3 doesn't exist, use python if major matches
 
 org_have_python2=auto
 have_python2=$org_have_python2
@@ -1185,7 +1198,7 @@ AC_ARG_WITH([pyversion],
 	[AS_HELP_STRING([--with-pyversion=FILE], [python is installed as FILE])],
 	[have_pyversion="$withval"])
 
-dnl  Figure out a default for PYTHON2 or PYTHON3
+# Figure out a default for PYTHON2 or PYTHON3
 AC_PATH_PROG([PYTHON], [python], [no], [$PATH])
 PYTHON_MAJ=unknown
 AS_VAR_IF([PYTHON], [no], [], [
@@ -1215,39 +1228,37 @@ AS_VAR_IF([have_python2], [no], [], [
 					why_have_python2="(Python 2 executable too old)"], [
 					AC_MSG_ERROR([Python 2 executable too old])])])])])])
 
-AS_VAR_IF([have_python2], [no], [], [
-	have_python2_libdir=auto
-
-	AC_ARG_WITH([python2-libdir],
+AS_VAR_IF([have_python2], [no],
+	[# no Python 2 implies no Python 2 libraries
+	 have_python2_libdir=no
+	 PYTHON2_LIBDIR=""
+	 # and no interpreter
+	 PYTHON2=false],
+	[have_python2_libdir=auto
+	 AC_ARG_WITH([python2-libdir],
 		[AS_HELP_STRING([--with-python2-libdir=DIR],
 			[relative path for Python 2 library directory (where Python 2 modules should be installed)])],
 		[have_python2_libdir="$withval"])
-
-	AS_CASE(["$have_python2_libdir"],
+	 AS_CASE(["$have_python2_libdir"],
 		[yes|auto], [
-			AS_VAR_IF([cross_compiling], [yes], [
-				AC_MSG_ERROR([Must specify --with-python2-libdir when cross compiling])])
+			AS_VAR_IF([cross_compiling], [yes],
+				[AC_MSG_ERROR([Must specify --with-python2-libdir when cross compiling])])
 			AS_CASE(["$host_os-`"$PYTHON2" -V 2>&1`"],
 				[darwin9*-*2.5.1], [
-					dnl  This is the Python installed on OSX Leopard, in
-					dnl  later versions of OSX, Python is fixed to return
-					dnl  standard output
+					# This is the Python installed on OSX Leopard, in
+					# later versions of OSX, Python is fixed to return
+					# standard output
 					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"'"$Qprefix"'")' 2>/dev/null`/site-packages"],
 				[
-					dnl  Use prefix field for Ubuntu Python, bug #3207
+					# Use prefix field for Ubuntu Python, bug #3207
 					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'")' 2>/dev/null`"])
 			PYTHON2_LIBDIR=`echo "$PYTHON2_LIBDIR" | sed "s|^$Qprefix/||"`],
 		[no], [],
-		[$Qprefix/*], [ dnl  dubious
+		[$Qprefix/*], [ # dubious
 			PYTHON2_LIBDIR=`echo "$have_python2_libdir" | sed "s|^$Qprefix/||"`
 			have_python2_libdir=yes],
 		[	PYTHON2_LIBDIR="$have_python2_libdir"
-			have_python2_libdir=yes])], [
-	dnl  no Python 2 implies no Python 2 libraries
-	have_python2_libdir=no
-	PYTHON2_LIBDIR=""
-	dnl  and no interpreter
-	PYTHON2=false])
+			have_python2_libdir=yes])])
 
 AC_SUBST([PYTHON2])
 QPYTHON2="$PYTHON2"
@@ -1272,32 +1283,32 @@ AS_VAR_IF([have_python3], [no], [], [
 				have_python3=no
 				why_have_python3="(Python 3 executable not found)"])])])])
 
-AS_VAR_IF([have_python3], [no], [], [
-	have_python3_libdir=auto
+AS_VAR_IF([have_python3], [no],
+	[# no Python 3 implies no Python 3 libraries
+	 have_python3_libdir=no
+	 PYTHON3_LIBDIR=""
+	 # and no interpreter
+	 PYTHON3=false],
+	[have_python3_libdir=auto
 
-	AC_ARG_WITH([python3-libdir],
+	 AC_ARG_WITH([python3-libdir],
 		[AS_HELP_STRING([--with-python3-libdir=DIR],
 			[relative path for Python 3 library directory (where Python 3 modules should be installed)])],
 		[have_python3_libdir="$withval"])
 
-	AS_CASE(["$have_python3_libdir"],
+	 AS_CASE(["$have_python3_libdir"],
 		[yes|auto], [
-			AS_VAR_IF([cross_compiling], [yes], [
-				AC_MSG_ERROR([Must specify --with-python3-libdir when cross compiling])])
-			dnl  Use prefix field for Ubuntu Python, bug #3207
+			AS_VAR_IF([cross_compiling], [yes],
+				[AC_MSG_ERROR([Must specify --with-python3-libdir when cross compiling])])
+			# Use prefix field for Ubuntu Python, bug #3207
 			PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'"))' 2>/dev/null`"
 			PYTHON3_LIBDIR=`echo "$PYTHON3_LIBDIR" | sed "s|^$Qprefix/||"`],
 		[no], [],
-		[$Qprefix/*], [ dnl  dubious
+		[$Qprefix/*], [ # dubious
 			PYTHON3_LIBDIR=`echo "$have_python3_libdir" | sed "s|^$Qprefix/||"`
 			have_python3_libdir=yes],
 		[	PYTHON3_LIBDIR="$have_python3_libdir"
-			have_python3_libdir=yes])], [
-	dnl  no Python 3 implies no Python 3 libraries
-	have_python3_libdir=no
-	PYTHON3_LIBDIR=""
-	dnl  and no interpreter
-	PYTHON3=false])
+			have_python3_libdir=yes])])
 
 AC_SUBST([PYTHON3])
 QPYTHON3="$PYTHON3"
@@ -1313,32 +1324,35 @@ AC_SUBST([QXPYTHON3_LIBDIR])
 
 AM_CONDITIONAL([HAVE_PYTHON], [test x"$have_python2" != xno -o x"$have_python3" != xno])
 
-AS_VAR_IF([PYTHON], [no], [
-	AS_VAR_IF([PYTHON2], [no], [], [
-		PYTHON="$PYTHON2"], [test "x$PYTHON3" != xno], [
-		PYTHON="$PYTHON3"])])
+AS_VAR_IF([PYTHON], [no],
+	[AS_VAR_IF([PYTHON2], [no],
+		[AS_VAR_IF([PYTHON3], [no],
+			[]
+			[PYTHON="$PYTHON3"])],
+		[PYTHON="$PYTHON2"])])
 AC_SUBST([PYTHON])
 
-dnl  Mtest/Mfilter currently require Python 2
-AS_VAR_IF([enable_testing], [no], [], [
-	AS_VAR_IF([PYTHON2], [false], [
-		enable_testing=no])])
+# Mtest/Mfilter currently require Python 2
+AS_VAR_IF([enable_testing], [no],
+	[],
+	[AS_VAR_IF([PYTHON2], [false],
+		[enable_testing=no])])
 
 AC_PROG_YACC
 AS_CASE(["$YACC"],
 	[bison*],
 	[
-		dnl  Ubuntu still comes with an ancient bison that uses defines
-		dnl  without checking if they are defined.  This triggers a warning
-		dnl  from gcc with -Wundef.  If we have a bison < 2.4.3, then
-		dnl  disable the warning.
+		# Ubuntu still comes with an ancient bison that uses defines
+		# without checking if they are defined.  This triggers a warning
+		# from gcc with -Wundef.  If we have a bison < 2.4.3, then
+		# disable the warning.
 		BISON_VER=`$YACC --version | head -n1 | sed -e 's/^.* //'`
 		AS_VERSION_COMPARE([$BISON_VER],
 			[2.4.3],
 			[X_CFLAGS="`echo ${X_CFLAGS} | sed -e 's/-Wundef//g'`"])
 	],
 	[
-		dnl  in embedded mode, we ship the bison-generated files
+		# in embedded mode, we ship the bison-generated files
 		AS_VAR_IF([enable_embedded], [no], [
 			AS_VAR_IF([enable_sql], [yes], [
 				AC_MSG_ERROR([MonetDB/SQL requires bison])])
@@ -1365,10 +1379,10 @@ AC_SUBST([INSTALL_BACKUP])
 SOPREF=lib
 AS_CASE(["$host_os"],
 [mac*], [
-	dnl  Mac OS 9 stuff
+	# Mac OS 9 stuff
 	DIRSEP=':'
 	QDIRSEP=':'
-	AC_ERROR([mac not supported])],
+	AC_MSG_ERROR([mac not supported])],
 [*cygwin*], [
 	DIRSEP='/'
 	QDIRSEP='/'
@@ -1423,7 +1437,7 @@ AS_CASE(["$ANT"],
 	AC_PATH_PROG([ANT], [$ANT], [no], [$PATH])])
 AC_SUBST([ANT])
 
-dnl  default javac flags
+# default javac flags
 JAVACFLAGS="$JAVACFLAGS -g:none -O"
 AC_SUBST([JAVACFLAGS])
 
@@ -1440,29 +1454,30 @@ AC_ARG_WITH([java],
 	[have_java=$org_have_java])
 JPATH=$PATH
 AS_CASE([$have_java],
-[yes|no|auto], [],
-[
-	JPATH="$withval/bin:$JPATH"])
+	[yes|no|auto], [],
+	[JPATH="$withval/bin:$JPATH"])
 AS_VAR_IF([have_java], [no], [], [
 	AC_PATH_PROG([JAVA], [java], [], [$JPATH])
-	AS_VAR_IF([JAVA], [], [], [
-		JAVA_VERSION=[`"$JAVA" -version 2>&1 | grep '[0-9]\.[0-9]' | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]])
+	AS_VAR_IF([JAVA], [],
+		[],
+		[JAVA_VERSION=[`"$JAVA" -version 2>&1 | grep '[0-9]\.[0-9]' | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]])
 
 	AC_PATH_PROG([JAVAC], [javac], [], [$JPATH])
 	AC_PATH_PROG([JAR], [jar], [], [$JPATH])
 	AC_PATH_PROG([JAVADOC], [javadoc], [], [$JPATH])
-	AS_VAR_IF([have_java], [yes], [
-		JAVA_HOME="`echo $JAVAC | sed 's:/bin/javac$::'`"])
+	AS_VAR_IF([have_java], [yes],
+		[JAVA_HOME="`echo $JAVAC | sed 's:/bin/javac$::'`"])
 	AS_VAR_IF([JAVAC], [], [
-		AS_VAR_IF([have_java], [yes], [
-			AC_MSG_ERROR([No javac found])])
+		AS_VAR_IF([have_java], [yes],
+			[AC_MSG_ERROR([No javac found])])
 		have_java=no
-		why_have_java="(no javac found)"], [test "x$JAR" = "x"], [
-		AS_VAR_IF([have_java], [yes], [
-			AC_MSG_ERROR([No jar found])])
-		have_java=no
-		why_have_java="(no jar found)"], [
-		 have_java=yes])
+		why_have_java="(no javac found)"],
+		[AS_VAR_IF([JAR], [], [
+			AS_VAR_IF([have_java], [yes],
+				[AC_MSG_ERROR([No jar found])])
+			have_java=no
+			why_have_java="(no jar found)"],
+			[have_java=yes])])
 
 	AS_VAR_IF([have_java], [yes], [], [
 		JAVA_VERSION=""
@@ -1486,56 +1501,56 @@ AC_SUBST([JAVA_HOME])
 org_have_java_jdbc=no
 have_java_jdbc=$org_have_java_jdbc
 AS_CASE([$have_java-$enable_jdbc],
-[*-no], [],
-[no-yes], [
-	AC_MSG_ERROR([MonetDB JDBC requires ant and Java])],
-[no-*], [
-	enable_jdbc=no
-	AS_VAR_IF([ANT], [no], [
-		disable_jdbc="(ant is required to build MonetDB JDBC)"], [
-		disable_jdbc="(Java is required to build MonetDB JDBC)"])],
-[
-	have_java_jdbc=yes
-	AS_VERSION_COMPARE([$JAVA_VERSION], [1.7],
-		[have_java_jdbc=no
-		AS_VAR_IF([enable_jdbc], [yes],
-			[AC_MSG_ERROR([MonetDB JDBC requires ant and Java 7 or higher])],
-			[enable_jdbc=no
-			disable_jdbc="(MonetDB JDBC currently requires Java 7 or higher to build)"])])])
+	[*-no], [],
+	[no-yes], [AC_MSG_ERROR([MonetDB JDBC requires ant and Java])],
+	[no-*], [
+		enable_jdbc=no
+		AS_VAR_IF([ANT], [no],
+			[disable_jdbc="(ant is required to build MonetDB JDBC)"],
+			[disable_jdbc="(Java is required to build MonetDB JDBC)"])],
+	[
+		AS_VERSION_COMPARE([$JAVA_VERSION], [1.7],
+			AS_VAR_IF([have_java_jdbc], [yes],
+				[AS_VAR_IF([enable_jdbc], [yes],
+					[AC_MSG_ERROR([MonetDB JDBC requires ant and Java 7 or higher])],
+					[enable_jdbc=no
+					 disable_jdbc="(MonetDB JDBC currently requires Java 7 or higher to build)"])]),
+			[have_java_jdbc=yes],
+			[have_java_jdbc=yes])
+		])
 AM_CONDITIONAL([HAVE_JAVAJDBC], [test x$have_java_jdbc != xno])
 
 org_have_java_control=no
 have_java_control=$org_have_java_control
 AS_CASE([$have_java-$enable_control],
-[*-no], [],
-[no-yes], [
-	AC_MSG_ERROR([Merovingian control requires ant and Java])],
-[no-*], [
-	enable_control=no
-	AS_VAR_IF([ANT], [no], [
-		disable_control="(ant is required to build merovingian Java control library)"], [
-		disable_control="(Java is required to build merovingian Java control library)"])],
-[
-	req_java_ver_min=1.7 dnl  >= $req_java_ver_min required
-	have_java_control=yes
-	AS_VERSION_COMPARE([$JAVA_VERSION], [$req_java_ver_min],
-		[have_java_control=no
-		AS_VAR_IF([enable_control], [yes],
-			[AC_MSG_ERROR([Merovingian control requires ant and Java >= $req_java_ver_min.])],
-			[enable_control=no
-			disable_control="(merovingian Java control library requires Java >= $req_java_ver_min)"])])])
+	[*-no], [],
+	[no-yes], [AC_MSG_ERROR([Merovingian control requires ant and Java])],
+	[no-*], [
+		enable_control=no
+		AS_VAR_IF([ANT], [no],
+			[disable_control="(ant is required to build merovingian Java control library)"],
+			[disable_control="(Java is required to build merovingian Java control library)"])],
+	[
+		req_java_ver_min=1.7 # >= $req_java_ver_min required
+		AS_VERSION_COMPARE([$JAVA_VERSION], [$req_java_ver_min],
+			[AS_VAR_IF([enable_control], [yes],
+				[AC_MSG_ERROR([Merovingian control requires ant and Java >= $req_java_ver_min.])],
+				[enable_control=no
+				 disable_control="(merovingian Java control library requires Java >= $req_java_ver_min)"])],
+			[have_java_control=yes],
+			[have_java_control=yes])])
 AM_CONDITIONAL([HAVE_JAVAMEROCONTROL], [test x$have_java_control != xno])
 
 AS_VAR_IF([have_java_jdbc], [no], [
 	AS_VAR_IF([have_java_control], [no], [
-		dnl  no point doing anything with Java if all Java packages are disabled
+		# no point doing anything with Java if all Java packages are disabled
 		have_java=no
 		AS_VAR_IF([why_have_java], [], [
 			why_have_java="(have_java_jdbc = no && have_java_control = no)"])])])
 AM_CONDITIONAL([HAVE_JAVA], [test x$have_java != xno])
 
-dnl     checks for libraries
-dnl  check for bz2 (de)compression library
+#    checks for libraries
+# check for bz2 (de)compression library
 org_have_bz2=auto
 have_bz2=$org_have_bz2
 BZ_CFLAGS=""
@@ -1560,19 +1575,19 @@ AS_VAR_IF([have_bz2], [no], [], [
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
 @%:@include <bzlib.h>]], [[(void)BZ2_bzopen("","");]])],
 		BZ_LIBS="$BZ_LIBS -lbz2",
-		[ AS_VAR_IF([have_bz2], [auto], [], [
+		[AS_VAR_IF([have_bz2], [auto], [], [
 			AC_MSG_ERROR([bz2 library not found])])
 		  have_bz2=no
 		  why_have_bz2="(bz2 library not found)" ])
 	LIBS="$save_LIBS"
 	CPPFLAGS="$save_CPPFLAGS"])
 
-AS_VAR_IF([have_bz2], [no], [], [
-	AC_DEFINE([HAVE_LIBBZ2], 1, [Define if you have the bz2 library])
-	AC_MSG_RESULT([yes: $BZ_LIBS])], [
-	BZ_CFLAGS=""
-	BZ_LIBS=""
-	AC_MSG_RESULT([no])])
+AS_VAR_IF([have_bz2], [no],
+	[BZ_CFLAGS=""
+	 BZ_LIBS=""
+	 AC_MSG_RESULT([no])],
+	[AC_DEFINE([HAVE_LIBBZ2], 1, [Define if you have the bz2 library])
+	 AC_MSG_RESULT([yes: $BZ_LIBS])])
 
 AC_SUBST([BZ_CFLAGS])
 AC_SUBST([BZ_LIBS])
@@ -1627,31 +1642,35 @@ AM_CONDITIONAL([HAVE_LIBSNAPPY], [test x$have_snappy != xno])
 
 
 DL_LIBS=""
-AC_CHECK_LIB([dl], [dlopen], [ DL_LIBS="-ldl" ] )
+AC_CHECK_LIB([dl], [dlopen], [DL_LIBS="-ldl" ] )
 AC_SUBST([DL_LIBS])
 
 MATH_LIBS=""
-AC_CHECK_LIB([m], [sqrt], [ MATH_LIBS="-lm" ] )
+AC_CHECK_LIB([m], [sqrt], [MATH_LIBS="-lm" ] )
 AC_SUBST([MATH_LIBS])
 
 MALLOC_LIBS=""
-AC_CHECK_LIB([umem], [malloc], [ MALLOC_LIBS="-lumem" ],
-	AC_CHECK_LIB([mtmalloc], [malloc], [ MALLOC_LIBS="-lmtmalloc" ],
-		AC_CHECK_LIB([malloc], [malloc], [ MALLOC_LIBS="-lmalloc" ] )))
+AC_CHECK_LIB([umem], [malloc], [MALLOC_LIBS="-lumem" ],
+	AC_CHECK_LIB([mtmalloc], [malloc], [MALLOC_LIBS="-lmtmalloc" ],
+		AC_CHECK_LIB([malloc], [malloc], [MALLOC_LIBS="-lmalloc" ] )))
 AC_SUBST([MALLOC_LIBS])
 
 KVM_LIBS=""
-AC_CHECK_LIB([kvm], [kvm_open], [ KVM_LIBS="-lkvm" ] )
+AC_CHECK_LIB([kvm], [kvm_open], [KVM_LIBS="-lkvm" ] )
 AC_SUBST([KVM_LIBS])
 
 save_LIBS="$LIBS"
 LIBS="$LIBS $MALLOC_LIBS"
 AC_CHECK_FUNCS([mallopt])
-AC_CHECK_FUNC([mallinfo], AC_TRY_COMPILE([$ac_includes_default
-@%:@include <malloc.h>], [struct mallinfo m;int x[[1+sizeof(m.usmblks)-sizeof(void *)]]], [AC_DEFINE([HAVE_USEFUL_MALLINFO], 1, [Define if you have mallinfo])]))
+AC_CHECK_FUNC([mallinfo],
+	[AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM([[@%:@include <malloc.h>]],
+			[[struct mallinfo m;int x[1+sizeof(m.usmblks)-sizeof(void *)]]])],
+		[AC_DEFINE([HAVE_USEFUL_MALLINFO], 1,
+			[Define if you have mallinfo])])])
 LIBS="$save_LIBS"
 
-dnl  libpthread
+# libpthread
 org_have_pthread=auto
 have_pthread=$org_have_pthread
 PTHREAD_LIBS=""
@@ -1679,28 +1698,28 @@ AS_VAR_IF([have_pthread], [no], [], [
 	save_CPPFLAGS="$CPPFLAGS"
 	AS_CASE([$GCC-$have_pthread-$CC_ver],
 		[yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*|yes-auto-clang-7.*|yes-yes-clang-7.*], [
-			dnl  clang 5.*/6.*/7.* (Xcode 6.0) does not
-			dnl  seem to have / require -pthread as compiler
-			dnl  option; on Mac OS X Yosamite, "Apple LLVM
-			dnl  version 6.0 (clang-600.0.51) (based on LLVM 3.5svn)"
-			dnl  complains about "error: argument unused during
-			dnl  compilation: '-pthread'".
-			dnl  However, disabling -pthread completely might be
-			dnl  too redical/harsh; see also
-			dnl  https://www.monetdb.org/pipermail/developers-list/2014-March/004264.html
-			dnl  a better alternative might be required but is
-			dnl  still pending ...
+			# clang 5.*/6.*/7.* (Xcode 6.0) does not
+			# seem to have / require -pthread as compiler
+			# option; on Mac OS X Yosamite, "Apple LLVM
+			# version 6.0 (clang-600.0.51) (based on LLVM 3.5svn)"
+			# complains about "error: argument unused during
+			# compilation: '-pthread'".
+			# However, disabling -pthread completely might be
+			# too redical/harsh; see also
+			# https://www.monetdb.org/pipermail/developers-list/2014-March/004264.html
+			# a better alternative might be required but is
+			# still pending ...
 			],
 		[yes-auto-*|yes-yes-*], [
-			dnl  use GCC's knowledge about the target platform, sets flags
-			dnl  for both the preprocessor as well as the linker
+			# use GCC's knowledge about the target platform, sets flags
+			# for both the preprocessor as well as the linker
 			PTHREAD_INCS="-pthread"
 			PTHREAD_LIBS="-pthread"
 			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
 			LIBS="$LIBS $PTHREAD_LIBS"],
 		[
-			dnl  ok, do old-fashioned stuff
-			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS" dnl  in case user did --with-pthreads
+			# ok, do old-fashioned stuff
+			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS" # in case user did --with-pthreads
 			LIBS="$LIBS $PTHREAD_LIBS"
 			pthread_found=yes
 			AC_SEARCH_LIBS([sem_init], [pthreadGC2 pthreadGC1 pthreadGC pthread],
@@ -1708,14 +1727,14 @@ AS_VAR_IF([have_pthread], [no], [], [
 				[pthread_found=no])
 			AS_VAR_IF([pthread_found], [no], [
 				pthread_found=yes
-				dnl  sun
+				# sun
 				AC_SEARCH_LIBS([sem_post], [pthread],
 					[LIBS="$LIBS -lpthread -lposix4"],
 					[pthread_found=no],
 					["-lposix4"])])
 			AS_VAR_IF([pthread_found], [no], [
 				pthread_found=yes
-				dnl  hp-ux
+				# hp-ux
 				AC_SEARCH_LIBS([sem_post], [pthread],
 					[LIBS="$LIBS -lpthread -lrt"],
 					[pthread_found=no],
@@ -1733,28 +1752,28 @@ AS_VAR_IF([have_pthread], [no], [], [
 	AC_SEARCH_LIBS([pthread_sigmask], [],
 		[AC_DEFINE([HAVE_PTHREAD_SIGMASK], 1,
 			[Define if you have the pthread_sigmask function])])
-	dnl  this function very ugly is overloaded with semaphore stuff
-	dnl  so we DO need to check for it, for platforms which have it
-	dnl  in a separate lib, like Solaris
+	# this function very ugly is overloaded with semaphore stuff
+	# so we DO need to check for it, for platforms which have it
+	# in a separate lib, like Solaris
 	AC_SEARCH_LIBS([sem_wait], [rt])
 
 	LIBS="$save_LIBS"
 	CPPFLAGS="$save_CPPFLAGS"
 ])
 AC_MSG_CHECKING([whether we have pthread support])
-AS_VAR_IF([have_pthread], [no], [], [
-	AC_DEFINE([HAVE_LIBPTHREAD], 1, [Define if you have the pthread library])
-	PTHREAD_INCS="$PTHREAD_INCS $PTHREAD_EXTRA"
-	dnl  CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
-	AC_MSG_RESULT([yes: $PTHREAD_INCS $PTHREAD_LIBS])], [
-	PTHREAD_LIBS=""
-	PTHREAD_INCS=""
-	AC_MSG_RESULT([no])
-	AC_MSG_ERROR([MonetDB requires libpthread (try --with-pthreada)])])
+AS_VAR_IF([have_pthread], [no],
+	[PTHREAD_LIBS=""
+	 PTHREAD_INCS=""
+	 AC_MSG_RESULT([no])
+	 AC_MSG_ERROR([MonetDB requires libpthread (try --with-pthreada)])],
+	[AC_DEFINE([HAVE_LIBPTHREAD], 1, [Define if you have the pthread library])
+	 PTHREAD_INCS="$PTHREAD_INCS $PTHREAD_EXTRA"
+	 # CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
+	 AC_MSG_RESULT([yes: $PTHREAD_INCS $PTHREAD_LIBS])])
 AC_SUBST([PTHREAD_LIBS])
 AC_SUBST([PTHREAD_INCS])
 
-dnl  libreadline
+# libreadline
 org_have_readline=auto
 have_readline=$org_have_readline
 READLINE_LIBS=""
@@ -1775,54 +1794,58 @@ LIBS="$LIBS $READLINE_LIBS"
 save_CPPFLAGS="$CPPFLAGS"
 CPPFLAGS="$CPPFLAGS $READLINE_INCS"
 AS_VAR_IF([have_readline], [no], [], [
-	dnl  use different functions in the cascade of AC_CHECK_LIB
-	dnl  calls since configure may cache the results
+	# use different functions in the cascade of AC_CHECK_LIB
+	# calls since configure may cache the results
 	AC_CHECK_HEADER([readline/readline.h],
 		AC_CHECK_LIB([readline], [readline],
 			[READLINE_LIBS="$READLINE_LIBS -lreadline"],
-			[ AC_CHECK_LIB([readline], [rl_history_search_forward],
+			[AC_CHECK_LIB([readline], [rl_history_search_forward],
 				[READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap"],
-				[ AC_CHECK_LIB([readline], [rl_reverse_search_history],
+				[AC_CHECK_LIB([readline], [rl_reverse_search_history],
 					[READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses"],
-					[ AS_VAR_IF([have_readline], [yes], [
+					[AS_VAR_IF([have_readline], [yes], [
 						AC_MSG_ERROR([readline library not found])])
 					  have_readline=no
 					  why_have_readline="(readline library not found)" ],
 					[-lncurses])],
 				[-ltermcap])],
 			),
-		[ AS_VAR_IF([have_readline], [yes], [
+		[AS_VAR_IF([have_readline], [yes], [
 			AC_MSG_ERROR([readline header file not found])])
 		  have_readline=no
 		  why_have_readline="(readline header file not found)" ])])
 
-AS_VAR_IF([have_readline], [no], [], [
-	dnl  provide an ACTION-IF-FOUND, or else all subsequent checks
-	dnl  that involve linking will fail!
-	AC_CHECK_LIB([readline], [rl_completion_matches],
+AS_VAR_IF([have_readline], [no],
+	[],
+	[
+	 # provide an ACTION-IF-FOUND, or else all subsequent checks
+	 # that involve linking will fail!
+	 AC_CHECK_LIB([readline], [rl_completion_matches],
 		[AC_MSG_CHECKING([whether rl_completion_func_t exists])
-		 AC_TRY_COMPILE([$ac_includes_default
-@%:@include <readline/readline.h>], [
-	rl_completion_func_t *func = NULL;],
+		 AC_COMPILE_IFELSE(
+		 	[AC_LANG_PROGRAM(
+				[[$ac_includes_default
+				  @%:@include <readline/readline.h>]],
+		 		[[rl_completion_func_t *func = NULL;]])],
 			[AC_MSG_RESULT([yes])],
-			[ AS_VAR_IF([have_readline], [auto], [], [
-				AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?])], [
-				AC_MSG_RESULT([no])])
-			  have_readline=no
-			  why_have_readline="(readline/readline.h does not contain rl_completion_func_t, is it GNU readline?)" ])],
-		[ AS_VAR_IF([have_readline], [auto], [], [
+			[AS_VAR_IF([have_readline], [auto],
+				[AC_MSG_RESULT([no])
+				 have_readline=no
+				 why_have_readline="(readline/readline.h does not contain rl_completion_func_t, is it GNU readline?)"],
+				[AC_MSG_ERROR([readline/readline.h does not contain rl_completion_func_t, is it GNU readline?])])])],
+		[AS_VAR_IF([have_readline], [auto], [], [
 			AC_MSG_ERROR([readline library does not contain rl_completion_matches])])
-		  have_readline=no
-		  why_have_readline="(readline library does not contain rl_completion_matches)" ],
-		  [$READLINE_LIBS])])
+		 have_readline=no
+		 why_have_readline="(readline library does not contain rl_completion_matches)" ],
+		[$READLINE_LIBS])])
 CPPFLAGS="$save_CPPFLAGS"
 LIBS="$save_LIBS"
 
-AS_VAR_IF([have_readline], [no], [], [
-	AC_DEFINE([HAVE_LIBREADLINE], 1,
-		[Define if you have the readline library])], [
-	READLINE_LIBS=""
-	READLINE_INCS=""])
+AS_VAR_IF([have_readline], [no],
+	[READLINE_LIBS=""
+	 READLINE_INCS=""],
+	[AC_DEFINE([HAVE_LIBREADLINE], 1,
+		[Define if you have the readline library])])
 AC_SUBST([READLINE_LIBS])
 AC_SUBST([READLINE_INCS])
 
@@ -1843,9 +1866,9 @@ AC_ARG_WITH([uuid],
 		[include UUID support (default=yes)])],
 	[have_uuid=$withval])
 AS_VAR_IF([have_uuid], [no], [], [
-	dnl  UUID: remember that most UNIX systems have uuid_* functions in their
-	dnl       libc, not as separate library, such as from util-linux.  We
-	dnl       can't just use pkg-config check because of that.
+	# UUID: remember that most UNIX systems have uuid_* functions in their
+	#      libc, not as separate library, such as from util-linux.  We
+	#      can't just use pkg-config check because of that.
 	save_LIBS="$LIBS"
 	LIBS=
 	AC_SEARCH_LIBS([uuid_generate], [uuid], [AC_DEFINE([HAVE_UUID], 1, [uuid])])
@@ -1855,7 +1878,7 @@ AS_VAR_IF([have_uuid], [no], [], [
 AM_CONDITIONAL([HAVE_UUID], [test x"$have_uuid" != xno])
 
 
-dnl  OpenSSL library
+# OpenSSL library
 org_have_openssl=yes
 have_openssl=$org_have_openssl
 AC_ARG_WITH([openssl],
@@ -1895,8 +1918,8 @@ AS_VAR_IF([have_openssl], [no], [], [
 AM_CONDITIONAL([HAVE_OPENSSL], [test x"$have_openssl" != xno])
 
 
-dnl  PCRE library
-dnl  required for MonetDB5 (and SQL), optional otherwise
+# PCRE library
+# required for MonetDB5 (and SQL), optional otherwise
 req_pcre_ver='4.5'
 PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver],
 	[have_pcre=yes], [have_pcre=no; why_have_pcre="(libpcre >= $req_pcre_ver not found)"])
@@ -1960,10 +1983,12 @@ AM_CONDITIONAL([HAVE_CURL], [test x"$have_curl" != xno])
 
 
 PKG_CHECK_MODULES([zlib], [zlib], [have_zlib="yes"], [have_zlib="no"; why_have_zlib="(zlib not found)"])
-AS_VAR_IF([have_zlib], [no], [
-	dnl  Solaris doesn't provide zlib.pc, but zlib may well be present
-	AC_CHECK_LIB([z], [gzopen], [ have_zlib=yes zlib_LIBS="-lz" zlib_CFLAGS= ])], [test x"$have_zlib" = x"yes"], [
-	AC_SUBST([PKG_ZLIB], [zlib])])
+AS_CASE([$have_zlib],
+	[no],
+		[# Solaris doesn't provide zlib.pc, but zlib may well be present
+		 AC_CHECK_LIB([z], [gzopen], [have_zlib=yes zlib_LIBS="-lz" zlib_CFLAGS= ])],
+	[yes],
+		[AC_SUBST([PKG_ZLIB], [zlib])])
 AS_VAR_IF([have_zlib], [yes], [
 	AC_DEFINE([HAVE_LIBZ], 1, [Define if you have the z library])])
 AM_CONDITIONAL([HAVE_LIBZ], [test x"$have_zlib" != xno])
@@ -1991,9 +2016,9 @@ AC_ARG_WITH([valgrind],
 AS_VAR_IF([have_valgrind], [no], [], [
 	PKG_CHECK_MODULES([valgrind], [valgrind],
 		[AC_DEFINE([HAVE_VALGRIND], 1, [Define if you have valgrind installed and want to use it])],
-		[AS_VAR_IF([have_valgrind], [yes], [ AC_MSG_ERROR([no valgrind support found])])])])
+		[AS_VAR_IF([have_valgrind], [yes], [AC_MSG_ERROR([no valgrind support found])])])])
 
-dnl  check for sphinxclient
+# check for sphinxclient
 org_have_sphinxclient="auto"
 have_sphinxclient=$org_have_sphinxclient
 AC_ARG_WITH([sphinxclient],
@@ -2015,9 +2040,9 @@ AS_VAR_IF([have_sphinxclient], [no], [], [
 			[AC_DEFINE([HAVE_SPHINXCLIENT], 1, [Define if you have the sphinxclient library])]
 			[have_sphinxclient=yes]
 			[SPHINXCLIENT_LIBS="$SPHINXCLIENT_LIBS -lsphinxclient"],
-			[ AS_VAR_IF([have_sphinxclient], [auto], [], [ AC_MSG_ERROR([-lsphinxclient library not found])])
+			[AS_VAR_IF([have_sphinxclient], [auto], [], [AC_MSG_ERROR([-lsphinxclient library not found])])
 			  have_sphinxclient=no; why_have_sphinxclient="(sphinxclient library not found)" ]),
-		[ AS_VAR_IF([have_sphinxclient], [auto], [], [ AC_MSG_ERROR([sphinxclient.h header not found])])
+		[AS_VAR_IF([have_sphinxclient], [auto], [], [AC_MSG_ERROR([sphinxclient.h header not found])])
 		  have_sphinxclient=no; why_have_sphinxclient="(sphinxclient.h header not found)" ])
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"])
@@ -2025,34 +2050,32 @@ AC_SUBST([SPHINXCLIENT_CFLAGS], [$SPHINXCLIENT_CFLAGS])
 AC_SUBST([SPHINXCLIENT_LIBS], [$SPHINXCLIENT_LIBS])
 AM_CONDITIONAL([HAVE_SPHINXCLIENT], [test x"$have_sphinxclient" != xno])
 
-dnl  R API (R UDFs)
+# R API (R UDFs)
 have_libr=no
 AS_VAR_IF([enable_rintegration], [no], [], [
 	AS_CASE(["$enable_rintegration"],
-	[yes|auto], [
-		XPATH="$PATH"],
-	[/*], [
-		XPATH="$enable_rintegration"
-		enable_rintegration=yes],
-	[
-		AC_MSG_ERROR([--enable-rintegration value must be yes|no|auto|absolute path of R cmd])])
+		[yes|auto], [XPATH="$PATH"],
+		[/*],  [XPATH="$enable_rintegration"
+			enable_rintegration=yes],
+		[AC_MSG_ERROR([--enable-rintegration value must be yes|no|auto|absolute path of R cmd])])
    	AC_PATH_PROG([RCMD], [R], [], [$XPATH])
-   	AS_VAR_IF([RCMD], [], [
-      		AS_VAR_IF([enable_rintegration], [yes], [
-			AC_MSG_ERROR([libR library required for R integration support])], [
-			have_libr="no"
-		 	why_have_libr="(libR library not found)"
-			enable_rintegration=no
-			disable_rintegration="(libR library not found)"])], [RHOME=`$RCMD RHOME` && libr_CFLAGS=`$RCMD CMD config --cppflags` && libr_LIBS=`$RCMD CMD config --ldflags`], [
-		have_libr=yes
-		AC_DEFINE([HAVE_LIBR], 1, [Define if you have libR installed])
-		AC_SUBST([libr_CFLAGS], [$libr_CFLAGS])
-		AC_SUBST([libr_LIBS], [$libr_LIBS])
-		AC_SUBST([RHOME], [$RHOME])
-		AC_DEFINE_UNQUOTED([RHOME], ["$RHOME"], [The home of R])])])
+   	AS_VAR_IF([RCMD], [],
+		[AS_VAR_IF([enable_rintegration], [yes],
+			[AC_MSG_ERROR([libR library required for R integration support])],
+			[have_libr="no"
+			 why_have_libr="(libR library not found)"
+			 enable_rintegration=no
+			 disable_rintegration="(libR library not found)"])],
+		[AS_IF([RHOME=`$RCMD RHOME` && libr_CFLAGS=`$RCMD CMD config --cppflags` && libr_LIBS=`$RCMD CMD config --ldflags`],
+			[have_libr=yes
+			 AC_DEFINE([HAVE_LIBR], 1, [Define if you have libR installed])
+			 AC_SUBST([libr_CFLAGS], [$libr_CFLAGS])
+			 AC_SUBST([libr_LIBS], [$libr_LIBS])
+			 AC_SUBST([RHOME], [$RHOME])
+			 AC_DEFINE_UNQUOTED([RHOME], ["$RHOME"], [The home of R])])])])
 AM_CONDITIONAL([HAVE_LIBR], [test x"$have_libr" != xno])
 
-dnl  Python API (Python UDFs)
+# Python API (Python UDFs)
 have_libpy=no
 AS_VAR_IF([enable_pyintegration], [no], [], [
 	AS_CASE(["$enable_pyintegration"],
@@ -2075,9 +2098,9 @@ AS_VAR_IF([enable_pyintegration], [no], [], [
 		[PYTHON_CMD=$PYTHON2],
 		[PYTHON_CMD=$have_pyversion])
 	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)"`
-	dnl  check numpyconfig.h because autoconf tests includes by
-	dnl  compiling a small C program, and other numpy headers do
-	dnl  not compile without Python.h
+	# check numpyconfig.h because autoconf tests includes by
+	# compiling a small C program, and other numpy headers do
+	# not compile without Python.h
 	AC_CHECK_HEADER([numpy/numpyconfig.h],
 		[NUMPYHEADERS=True],
 		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))"`])
@@ -2118,17 +2141,19 @@ AS_VAR_IF([SEMOP], [True],
 	 AC_CHECK_FUNC([fork],
 	 	[AC_DEFINE([HAVE_FORK], 1, [Define if fork exists])])])
 
-dnl  ODBC, only used by ODBC driver
-AS_VAR_IF([enable_odbc], [no], [], [
-	have_unixodbc=auto
-	ODBC_INCS=''
-	ODBCINST_LIBS=''
-	ODBC_LIBS=''
-	AC_ARG_WITH([unixodbc],
+# ODBC, only used by ODBC driver
+AS_VAR_IF([enable_odbc], [no],
+	[have_unixodbc=no
+	 why_have_unixodbc="(ODBC disabled)"],
+	[have_unixodbc=auto
+	 ODBC_INCS=''
+	 ODBCINST_LIBS=''
+	 ODBC_LIBS=''
+	 AC_ARG_WITH([unixodbc],
 		[AS_HELP_STRING([--with-unixodbc=DIR],
 			[unixODBC library is installed in DIR])],
 		[have_unixodbc="$withval"])
-	AS_VAR_IF([have_unixodbc], [no], [], [
+	 AS_VAR_IF([have_unixodbc], [no], [], [
 		AS_CASE(["$have_unixodbc"],
 		[yes|auto], [],
 		[
@@ -2139,31 +2164,31 @@ AS_VAR_IF([enable_odbc], [no], [], [
 		CPPFLAGS="$CPPFLAGS $ODBC_INCS"
 		AC_CHECK_HEADER([odbcinst.h],
 			[AC_DEFINE([HAVE_ODBCINST_H], 1, [Define to 1 if you have the <odbcinst.h> header file.])],
-			[AS_VAR_IF([have_unixodbc], [auto], [], [ AC_MSG_ERROR([odbcinst.h not found])])
+			[AS_VAR_IF([have_unixodbc], [auto], [], [AC_MSG_ERROR([odbcinst.h not found])])
 			 have_unixodbc=no; why_have_unixodbc="(odbcinst.h not found)"])
 		CPPFLAGS="$save_CPPFLAGS"])
-	AS_VAR_IF([have_unixodbc], [no], [], [
+	 AS_VAR_IF([have_unixodbc], [no], [], [
 		save_LIBS="$LIBS"
 		LIBS="$LIBS $ODBCINST_LIBS"
 		AC_CHECK_LIB([odbcinst],
 			[SQLGetPrivateProfileString], [:],
-			[AS_VAR_IF([have_unixodbc], [auto], [], [ AC_MSG_ERROR([-lodbcinst not found])])
+			[AS_VAR_IF([have_unixodbc], [auto], [], [AC_MSG_ERROR([-lodbcinst not found])])
 			 have_unixodbc=no; why_have_unixodbc="(odbcinst library not found)"])
 		LIBS="$save_LIBS"])
-	AS_VAR_IF([have_unixodbc], [no], [], [
+	 AS_VAR_IF([have_unixodbc], [no], [], [
 		save_LIBS="$LIBS"
 		LIBS="$LIBS $ODBC_LIBS"
 		AC_CHECK_LIB([odbc],
 			[SQLGetDiagRec], [:],
-			[AS_VAR_IF([have_unixodbc], [auto], [], [ AC_MSG_ERROR([-lodbc not found])])
+			[AS_VAR_IF([have_unixodbc], [auto], [], [AC_MSG_ERROR([-lodbc not found])])
 			 have_unixodbc=no; why_have_unixodbc="(odbc library not found)"])
 		LIBS="$save_LIBS"])
-	AS_VAR_IF([have_unixodbc], [no], [], [
+	 AS_VAR_IF([have_unixodbc], [no], [], [
 		ODBCINST_LIBS="$ODBCINST_LIBS -lodbcinst"
 		ODBC_LIBS="$ODBC_LIBS -lodbc"
 		AC_DEFINE([HAVE_SQLGETPRIVATEPROFILESTRING], 1,
 			[Define if you have the SQLGetPrivateProfileString function])])
-	AS_VAR_IF([have_unixodbc], [no], [], [
+	 AS_VAR_IF([have_unixodbc], [no], [], [
 		AC_MSG_CHECKING([checking whether SQLColAttribute uses SQLLEN * or SQLPOINTER])
 		save_CPPFLAGS="$CPPFLAGS"
 		CPPFLAGS="$CPPFLAGS $ODBC_INCS"
@@ -2187,20 +2212,18 @@ AS_VAR_IF([enable_odbc], [no], [], [
 		AC_MSG_RESULT([using "$lenp_or_pointer_t"])
 		AC_DEFINE_UNQUOTED([LENP_OR_POINTER_T], [$lenp_or_pointer_t],
 			[Define as SQLLEN * or SQLPOINTER depending on the include file])])
-	AC_SUBST([ODBC_INCS])
-	AC_SUBST([ODBCINST_LIBS])
-	AC_SUBST([ODBC_LIBS])
-	AS_CASE(["x${enable_odbc}x${have_unixodbc}"],
+	 AC_SUBST([ODBC_INCS])
+	 AC_SUBST([ODBCINST_LIBS])
+	 AC_SUBST([ODBC_LIBS])
+	 AS_CASE(["x${enable_odbc}x${have_unixodbc}"],
 		[xautoxno], [
 			enable_odbc=no
 			disable_odbc="(unixODBC library required for ODBC driver)"],
 		[xyesxno], [
-			AC_MSG_ERROR([unixODBC required for building ODBC driver])])], [
-	have_unixodbc=no
-	why_have_unixodbc="(ODBC disabled)"])
+			AC_MSG_ERROR([unixODBC required for building ODBC driver])])])
 AM_CONDITIONAL([HAVE_ODBC], [test x$have_unixodbc != xno])
 
-dnl  proj only used in geom module
+# proj only used in geom module
 org_have_proj="auto"
 have_proj=$org_have_proj
 PROJ_INCS=''
@@ -2222,9 +2245,9 @@ AS_VAR_IF([have_proj], [no], [], [
 	AC_CHECK_HEADER([proj_api.h],
 		AC_CHECK_LIB([proj], [pj_init_plus],
 			[AC_DEFINE([HAVE_PROJ], 1, [Define if the proj library exists])],
-			[ AS_VAR_IF([have_proj], [auto], [], [ AC_MSG_ERROR([-lproj library not found])])
+			[AS_VAR_IF([have_proj], [auto], [], [AC_MSG_ERROR([-lproj library not found])])
 			have_proj=no; why_have_proj="(proj library not found)" ], ),
-		[ AS_VAR_IF([have_proj], [auto], [], [ AC_MSG_ERROR([proj_api.h header not found])])
+		[AS_VAR_IF([have_proj], [auto], [], [AC_MSG_ERROR([proj_api.h header not found])])
 		have_proj=no; why_have_proj="(proj_api.h header not found)" ])
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
@@ -2236,7 +2259,7 @@ AC_SUBST([PROJ_LIBS])
 AM_CONDITIONAL([HAVE_PROJ], [test x"$have_proj" != xno])
 
 
-dnl  samtools, only used by sql
+# samtools, only used by sql
 org_have_samtools="auto"
 have_samtools=$org_have_samtools
 AC_ARG_WITH([samtools],
@@ -2256,38 +2279,38 @@ AS_VAR_IF([have_samtools], [no], [], [
 	LDFLAGS="$LDFLAGS $SAMTOOLS_LIBS"
 
 	AC_CHECK_HEADER([samtools/bam.h],
-		[ why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BAM_H], 1, [Define to 1 if you have the <samtools/bam.h> header file.]) ],
-		[ why_have_samtools="bam.h header not found" ])
+		[why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BAM_H], 1, [Define to 1 if you have the <samtools/bam.h> header file.]) ],
+		[why_have_samtools="bam.h header not found" ])
 	AS_VAR_IF([why_have_samtools], [],
 		[],
 		[AC_CHECK_HEADER([bam/bam.h],
-			[ why_have_samtools=; AC_DEFINE([HAVE_BAM_BAM_H], 1, [Define to 1 if you have the <bam/bam.h> header file.]) ],
-			[ why_have_samtools="Neither samtools/bam.h nor bam/bam.h header found" ])])
+			[why_have_samtools=; AC_DEFINE([HAVE_BAM_BAM_H], 1, [Define to 1 if you have the <bam/bam.h> header file.]) ],
+			[why_have_samtools="Neither samtools/bam.h nor bam/bam.h header found" ])])
 
 	AS_VAR_IF([why_have_samtools], [],
 		[AC_CHECK_HEADER([samtools/sam.h],
-			[ why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_SAM_H], 1, [Define to 1 if you have the <samtools/sam.h> header file.]) ],
-			[ why_have_samtools="samtools/sam.h header not found" ])])
+			[why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_SAM_H], 1, [Define to 1 if you have the <samtools/sam.h> header file.]) ],
+			[why_have_samtools="samtools/sam.h header not found" ])])
 	AS_VAR_IF([why_have_samtools], [],
 		[],
 		[AC_CHECK_HEADER([bam/sam.h],
-			[ why_have_samtools=; AC_DEFINE([HAVE_BAM_SAM_H], 1, [Define to 1 if you have the <bam/sam.h> header file.]) ],
-			[ why_have_samtools="Neither samtools/sam.h nor bam/sam.h header found" ])])
+			[why_have_samtools=; AC_DEFINE([HAVE_BAM_SAM_H], 1, [Define to 1 if you have the <bam/sam.h> header file.]) ],
+			[why_have_samtools="Neither samtools/sam.h nor bam/sam.h header found" ])])
 
 	AS_VAR_IF([why_have_samtools], [],
 		[AC_CHECK_HEADER([samtools/bgzf.h],
-			[ why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BGZF_H], 1, [Define to 1 if you have the <samtools/bgzf.h> header file.]) ],
-			[ why_have_samtools="samtools/bgzf.h header not found" ])])
+			[why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BGZF_H], 1, [Define to 1 if you have the <samtools/bgzf.h> header file.]) ],
+			[why_have_samtools="samtools/bgzf.h header not found" ])])
 	AS_VAR_IF([why_have_samtools], [],
 		[],
 		[AC_CHECK_HEADER([bam/bgzf.h],
-			[ why_have_samtools=; AC_DEFINE([HAVE_BAM_BGZF_H], 1, [Define to 1 if you have the <bam/bgzf.h> header file.]) ],
-			[ why_have_samtools="Neither samtool/bgzf.h nor bam/bgzf.h header found" ])])
+			[why_have_samtools=; AC_DEFINE([HAVE_BAM_BGZF_H], 1, [Define to 1 if you have the <bam/bgzf.h> header file.]) ],
+			[why_have_samtools="Neither samtool/bgzf.h nor bam/bgzf.h header found" ])])
 
 	AS_VAR_IF([why_have_samtools], [],
 		[AC_CHECK_LIB([bam], [bam_header_read],
 			[AC_DEFINE([HAVE_SAMTOOLS], 1, [Define if you have the samtools version 0.1.x (providing the bam library)])],
-			[ why_have_samtools="bam library not found" ],
+			[why_have_samtools="bam library not found" ],
 			[-lm -lpthread -lz])])
 
 	AS_VAR_IF([why_have_samtools], [],
@@ -2307,7 +2330,7 @@ AC_SUBST([SAMTOOLS_CFLAGS], [$SAMTOOLS_CFLAGS])
 AC_SUBST([SAMTOOLS_LIBS], [$SAMTOOLS_LIBS])
 AM_CONDITIONAL([HAVE_SAMTOOLS], [test x"$have_samtools" != xno])
 
-dnl  geos, only used in geom module
+# geos, only used in geom module
 org_have_geos=auto
 have_geos=$org_have_geos
 GEOS_INCS=''
@@ -2318,7 +2341,7 @@ AC_ARG_WITH([geos],
 	[have_geos="$withval"])
 AS_CASE(["$enable_geom"],
 [yes|auto], [
-	dnl  geos >= 3.4.0 required for (a.o.) GEOSDelaunayTriangulation()
+	# geos >= 3.4.0 required for (a.o.) GEOSDelaunayTriangulation()
 	GEOS_VERSION_REQUIRED_MIN=3.4.0
 	GEOS_CONFIG=''
 	AS_VAR_IF([have_geos], [no], [], [
@@ -2351,25 +2374,25 @@ AS_CASE(["$enable_geom"],
 	AS_VAR_IF([have_geos], [no], [
 		AS_VAR_IF([enable_geom], [yes], [
 			AC_MSG_ERROR([geos library required for geom module])])
-		dnl  no geos, so don't compile geom
+		# no geos, so don't compile geom
 		enable_geom=no
 		AS_VAR_IF([disable_geom], [], [
 			disable_geom=${why_have_geos:-"(geos library required for geom module)"}])])])
 AC_SUBST([GEOS_INCS])
 AC_SUBST([GEOS_LIBS])
 
-dnl  fits, only used by sql
+# fits, only used by sql
 org_have_fits=no
 have_fits=$org_have_fits
 AS_VAR_IF([enable_fits], [no], [], [
 	PKG_CHECK_MODULES([cfitsio], [cfitsio],
 		[have_fits="yes"; AC_DEFINE([HAVE_FITS], 1, [Define if the fits module is to be enabled])],
 		[have_fits="no"; why_have_fits="(cfitsio library not found)"
-		 AS_VAR_IF([enable_fits], [yes], [ AC_MSG_ERROR([cfitsio library required for FITS support])]);
+		 AS_VAR_IF([enable_fits], [yes], [AC_MSG_ERROR([cfitsio library required for FITS support])]);
 		 enable_fits=no; disable_fits="(cfitsio library not found)"])])
 AM_CONDITIONAL([HAVE_FITS], [test x"$have_fits" != xno])
 
-dnl  netcdf, only used by sql
+# netcdf, only used by sql
 org_have_netcdf=no
 have_netcdf=$org_have_netcdf
 AS_VAR_IF([enable_netcdf], [no], [], [
@@ -2377,11 +2400,11 @@ AS_VAR_IF([enable_netcdf], [no], [], [
 	PKG_CHECK_MODULES([netcdf], [netcdf],
 		[have_netcdf="yes"; AC_DEFINE([HAVE_NETCDF], 1, [Define if the netcdf module is to be enabled])],
 		[have_netcdf="no"; why_have_netcdf="(netcdf library not found)"
-		 AS_VAR_IF([enable_netcdf], [yes], [ AC_MSG_ERROR([netcdf library required for NetCDF support])])
+		 AS_VAR_IF([enable_netcdf], [yes], [AC_MSG_ERROR([netcdf library required for NetCDF support])])
 		 enable_netcdf=no; disable_netcdf="(netcdf library not found)"])])
 AM_CONDITIONAL([HAVE_NETCDF], [test x"$have_netcdf" != xno])
 
-dnl  liblas, only used in lidar module
+# liblas, only used in lidar module
 org_have_liblas=auto
 have_liblas=$org_have_liblas
 LIBLAS_INCS=''
@@ -2392,24 +2415,23 @@ AC_ARG_WITH([liblas],
 	[have_liblas="$withval"])
 AS_CASE(["$have_lidar"],
 [yes|auto], [
-	dnl  liblas >= 1.8.0 required
+	# liblas >= 1.8.0 required
 	LIBLAS_VERSION_REQUIRED_MIN=1.8.0
 	LIBLAS_CONFIG=''
-	dnl  locate liblas-config
+	# locate liblas-config
 	AS_VAR_IF([have_liblas], [no], [], [
 		AS_CASE(["$have_liblas"],
-		[yes|auto], [
-			XPATH="$PATH"],
+		[yes|auto], [XPATH="$PATH"],
 		[
 			XPATH="$have_liblas/bin"
 			have_liblas=yes])
 		AC_PATH_PROG([LIBLAS_CONFIG], [liblas-config], [], [$XPATH])
-		AS_VAR_IF([LIBLAS_CONFIG], [], [
-			AS_VAR_IF([have_liblas], [yes], [
-				AC_MSG_ERROR([liblas-config not found in $XPATH])], [
-				have_liblas=no
-				why_have_liblas="(liblas-config not found)"])])])
-	dnl  check the version if liblas
+		AS_VAR_IF([LIBLAS_CONFIG], [],
+			[AS_VAR_IF([have_liblas], [yes],
+				[AC_MSG_ERROR([liblas-config not found in $XPATH])],
+				[have_liblas=no
+				 why_have_liblas="(liblas-config not found)"])])])
+	# check the version if liblas
 	AS_VAR_IF([have_liblas], [no], [], [
 		AC_MSG_CHECKING([for liblas >= $LIBLAS_VERSION_REQUIRED_MIN])
 		LIBLAS_VERSION="`$LIBLAS_CONFIG --version`"
@@ -2418,27 +2440,27 @@ AS_CASE(["$have_lidar"],
 			[AS_VAR_IF([have_liblas], [yes],
 				[AC_MSG_ERROR([liblas version $LIBLAS_VERSION is too old])],
 				[have_liblas=no
-				why_have_liblas="(liblas version $LIBLAS_VERSION is older than required version $LIBLAS_VERSION_REQUIRED_MIN)"])])])
-	dnl  read include dirs, libs and cflags
+				 why_have_liblas="(liblas version $LIBLAS_VERSION is older than required version $LIBLAS_VERSION_REQUIRED_MIN)"])])])
+	# read include dirs, libs and cflags
 	AS_VAR_IF([have_liblas], [no], [], [
 		LIBLAS_INCS="`$LIBLAS_CONFIG --includes`"
 		LIBLAS_LIBS="`$LIBLAS_CONFIG --libs`"])
-	dnl  if lidar is enabled and liblas was not found abort
+	# if lidar is enabled and liblas was not found abort
 	AS_VAR_IF([have_liblas], [no], [
-		AS_VAR_IF([have_lidar], [yes], [
-			AC_MSG_ERROR([liblas library required for lidar module])])
-		dnl  no liblas, so don't compile lidar
+		AS_VAR_IF([have_lidar], [yes],
+			[AC_MSG_ERROR([liblas library required for lidar module])])
+		# no liblas, so don't compile lidar
 		have_lidar=no
-		AS_VAR_IF([disable_lidar], [], [
-			disable_lidar=${why_have_liblas:-"(liblas library required for lidar module)"}])])],
+		AS_VAR_IF([disable_lidar], [],
+			[disable_lidar=${why_have_liblas:-"(liblas library required for lidar module)"}])])],
 [no], [
 	have_lidar=no
 	have_liblas=no
 	why_have_liblas="(lidar module is disabled)"])
-AS_CASE(["$have_lidar"],
-[no], [	LIBLAS_RPM=without],
-[	LIBLAS_RPM=with])
-dnl  this is only used in rpm.mk.in to maybe avoid building MonetDB-lidar
+AS_VAR_IF([have_lidar], [no],
+	[LIBLAS_RPM=without],
+	[LIBLAS_RPM=with])
+# this is only used in rpm.mk.in to maybe avoid building MonetDB-lidar
 AC_SUBST([LIBLAS_RPM])
 
 AC_SUBST([LIBLAS_INCS])
@@ -2449,14 +2471,14 @@ AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xau
 
 AC_MSG_CHECKING(['enable lidar: $have_lidar'])
 
-dnl  gdal
+# gdal
 org_have_gdal="auto"
 have_gdal=$org_have_gdal
 AC_ARG_WITH([gdal],
 	[AS_HELP_STRING([--with-gdal=DIR],
 		[gdal library is installed in DIR])],
 		[have_gdal="$withval"], [have_gdal="auto"])
-dnl  first autoconf for distributions that added a .pc file themselves (Fedora)
+# first autoconf for distributions that added a .pc file themselves (Fedora)
 AS_VAR_IF([have_gdal], [no], [], [
 	AS_CASE(["$have_gdal"],
 	[auto|yes], [
@@ -2464,7 +2486,7 @@ AS_VAR_IF([have_gdal], [no], [], [
 	[
 		GDAL_CFLAGS="-I$have_gdal/include"
 		GDAL_LIBS="-L$have_gdal/lib"])])
-dnl  try to detect it manually like upstream provides it
+# try to detect it manually like upstream provides it
 AS_VAR_IF([have_gdal], [no],
 	[],
 	[AS_VAR_IF([have_gdal], [pkgconf],
@@ -2512,11 +2534,11 @@ AC_SUBST([gdal_CFLAGS], [$GDAL_CFLAGS])
 AC_SUBST([gdal_LIBS], [$GDAL_LIBS])
 AM_CONDITIONAL([HAVE_GDAL], [test x"$have_gdal" != xno])
 
-dnl  if shp is enabled and gdal was not found abort
+# if shp is enabled and gdal was not found abort
 AS_VAR_IF([have_gdal], [no], [
 	AS_VAR_IF([have_shp], [yes], [
 		AC_MSG_ERROR([gdal library required for ESRI Shapefile vault])])
-	dnl  no gdal, so don't compile shp
+	# no gdal, so don't compile shp
 	have_shp=no
 	AS_VAR_IF([disable_shp], [], [
 		disable_shp=${why_have_shp:-"(gdal library required for ESRI Shapefile vault)"}])])
@@ -2527,18 +2549,18 @@ PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
 AS_VAR_IF([have_atomic_ops], [yes], [
 	AS_CASE([$GCC-$CC],
 	[-*icc*], [
-		dnl  Even with libatomic_ops available, compilation with
-		dnl  atomic_ops enabled fails with Intel's icc (version 11.1);
-		dnl  hence, we refrain from from using atomic_ops with icc.
+		# Even with libatomic_ops available, compilation with
+		# atomic_ops enabled fails with Intel's icc (version 11.1);
+		# hence, we refrain from from using atomic_ops with icc.
 		have_atomic_ops="no"
 		why_have_atomic_ops="(atomic_ops do not compile with Intel's icc)"],
 	[
-		dnl  On some systems, notably OpenIndiana, atomic_ops may
-		dnl  seem to be installed in that there is a pkg-config
-		dnl  file for it, but that file contains incorrect
-		dnl  information, and can not, in fact, be used.  The
-		dnl  bogus pkg-config file for atomic_ops is part of the
-		dnl  library/gc package.
+		# On some systems, notably OpenIndiana, atomic_ops may
+		# seem to be installed in that there is a pkg-config
+		# file for it, but that file contains incorrect
+		# information, and can not, in fact, be used.  The
+		# bogus pkg-config file for atomic_ops is part of the
+		# library/gc package.
 		save_CFLAGS="$CFLAGS"
 		CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
 		AC_CHECK_HEADERS([atomic_ops.h], [have_atomic_ops=yes], [have_atomic_ops=no why_have_atomic_ops="(atomic_ops was incorrectly installed (happens on at least Solaris/OpenIndiana))"])
@@ -2548,23 +2570,23 @@ AS_VAR_IF([have_atomic_ops], [yes], [
 			CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
 			LIBS="$LIBS $atomic_ops_LIBS"])])])
 
-dnl  Check for gsl library for statistical functions
+# Check for gsl library for statistical functions
 org_have_gsl=no
 have_gsl=$org_have_gsl
 AS_VAR_IF([enable_gsl], [no], [], [
 	PKG_CHECK_MODULES([gsl], [gsl],
 		[have_gsl=yes],
 		[have_gsl=no; why_have_gsl="(gsl library not found)"
-		 AS_VAR_IF([enable_gsl], [yes], [ AC_MSG_ERROR([gsl library required for GSL support])]);
+		 AS_VAR_IF([enable_gsl], [yes], [AC_MSG_ERROR([gsl library required for GSL support])])
 		 enable_gsl=no; disable_gsl="(gsl library not found)"])])
 AM_CONDITIONAL([HAVE_GSL], [test x"$have_gsl" != xno])
 
-dnl     checks for header files
+#    checks for header files
 AC_HEADER_STDBOOL
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_DIRENT
-dnl  NOTE: these header files are in alphabetical order to ease maintenance
+# NOTE: these header files are in alphabetical order to ease maintenance
 AC_CHECK_HEADERS([ \
 	dlfcn.h \
 	execinfo.h \
@@ -2614,7 +2636,7 @@ AC_CHECK_HEADERS([ \
 	winsock.h \
 	])
 
-dnl  on OpenBSD, sys/sysctl.h requires sys/param.h to be included beforehand
+# on OpenBSD, sys/sysctl.h requires sys/param.h to be included beforehand
 AC_CHECK_HEADERS([sys/sysctl.h], [], [],
 [
   @%:@ifdef HAVE_SYS_PARAM_H
@@ -2628,31 +2650,31 @@ org_have_setsockopt=no
 have_setsockopt=$org_have_setsockopt
 
 AC_CHECK_FUNC([gethostbyname_r], [], [
-  AC_CHECK_LIB([nsl_r], [gethostbyname_r], [ SOCKET_LIBS="-lnsl_r" ],
-	AC_CHECK_LIB([nsl], [gethostbyname_r], [ SOCKET_LIBS="-lnsl"   ] ))])
+  AC_CHECK_LIB([nsl_r], [gethostbyname_r], [SOCKET_LIBS="-lnsl_r" ],
+	AC_CHECK_LIB([nsl], [gethostbyname_r], [SOCKET_LIBS="-lnsl"   ] ))])
 AC_CHECK_FUNC([hstrerror], [], [
-  AC_CHECK_LIB([resolv], [hstrerror], [ SOCKET_LIBS="$SOCKET_LIBS -lresolv" ])])
+  AC_CHECK_LIB([resolv], [hstrerror], [SOCKET_LIBS="$SOCKET_LIBS -lresolv" ])])
 
 AS_VAR_IF([have_setsockopt], [no], [
 	AC_CHECK_FUNC([setsockopt], [],
-	  AC_CHECK_LIB([socket], [setsockopt], [ SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))])
+	  AC_CHECK_LIB([socket], [setsockopt], [SOCKET_LIBS="-lsocket $SOCKET_LIBS"; have_setsockopt=yes; ]))])
 
 org_have_getaddrinfo=no
 have_getaddrinfo=$org_have_getaddrinfo
 save_LIBS="$LIBS"
 LIBS="$LIBS $SOCKET_LIBS"
 
-AC_CHECK_FUNC([getaddrinfo], [ have_getaddrinfo=yes ], [
-  AC_CHECK_LIB([socket], [getaddrinfo], [ SOCKET_LIBS="$SOCKET_LIBS -lsocket"; have_getaddrinfo=yes ],
-	AC_CHECK_LIB([nsl],  [getaddrinfo], [ SOCKET_LIBS="$SOCKET_LIBS -lnsl"   ; have_getaddrinfo=yes ] ))])
+AC_CHECK_FUNC([getaddrinfo], [have_getaddrinfo=yes ], [
+  AC_CHECK_LIB([socket], [getaddrinfo], [SOCKET_LIBS="$SOCKET_LIBS -lsocket"; have_getaddrinfo=yes ],
+	AC_CHECK_LIB([nsl],  [getaddrinfo], [SOCKET_LIBS="$SOCKET_LIBS -lnsl"   ; have_getaddrinfo=yes ] ))])
 LIBS="$save_LIBS"
 
 AS_VAR_IF([have_getaddrinfo], [yes], [
 	AC_DEFINE([HAVE_GETADDRINFO], 1, [Define to 1 if you have the `getaddrinfo' function.])])
 
-dnl  On Windows we need to use try_link because Windows uses the
-dnl  Pascal style of function calls and naming scheme. Therefore the
-dnl  function needs to be compiled with the correct header
+# On Windows we need to use try_link because Windows uses the
+# Pascal style of function calls and naming scheme. Therefore the
+# function needs to be compiled with the correct header
 AC_CHECK_TYPE([SOCKET], [], [AC_DEFINE([SOCKET], [int], [type used for sockets])], [[@%:@ifdef HAVE_WINSOCK_H
 @%:@include <winsock.h>
 @%:@endif]])
@@ -2662,25 +2684,18 @@ AC_CHECK_TYPE([socklen_t],
 	[[@%:@include <sys/types.h>
 @%:@include <sys/socket.h>]])
 
-dnl  don't check for closesocket on Cygwin: it'll be found but we don't want to use it
+# don't check for closesocket on Cygwin: it'll be found but we don't want to use it
 AC_DEFINE([closesocket], [close], [function to close a socket])
 
 AC_SUBST([SOCKET_LIBS])
 
-dnl     checks for types
+#    checks for types
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_TYPE_PID_T
 AC_TYPE_OFF_T
 
 AC_CHECK_TYPES([__int64, long long])
-
-dft_int128=auto
-AC_ARG_ENABLE([int128],
-	[AS_HELP_STRING([--enable-int128],
-		[enable support for 128-bit integers (default=auto)])],
-	[enable_int128=$enableval],
-	[enable_int128=$dft_int128])
 
 AS_CASE(["$enable_int128"],
 [yes|auto], [
@@ -2718,8 +2733,8 @@ AC_C_CHAR_UNSIGNED
 AC_DEFINE([LLFMT], ["%lld"], [Format to print 64 bit signed integers.])
 AC_DEFINE([ULLFMT], ["%llu"], [Format to print 64 bit unsigned integers.])
 
-dnl     checks for structures
-dnl     checks for compiler characteristics
+#    checks for structures
+#    checks for compiler characteristics
 AC_C_CONST
 AC_C_INLINE
 AC_C_RESTRICT
@@ -2742,12 +2757,12 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	AC_DEFINE([__hidden], [/* empty */],
 		[Does your compiler support the `__hidden' specifier?])])
 
-dnl     checks for library functions
+#    checks for library functions
 AS_CASE([$host],
 	[*-darwin1[[012345]]*], [
-		dnl  OSX 10.6 (Snow Leopard) and up somehow makes
-		dnl  configure believe that fdatasync exists, in
-		dnl  reality however, it does not on this platform.
+		# OSX 10.6 (Snow Leopard) and up somehow makes
+		# configure believe that fdatasync exists, in
+		# reality however, it does not on this platform.
 		ac_cv_func_fdatasync=no],
 	[
 		AC_CHECK_FUNCS([fdatasync])])
@@ -2755,7 +2770,7 @@ AS_VAR_IF([ac_cv_func_fdatasync], [yes],
 	[AC_DEFINE([HAVE_FDATASYNC], 1, [If the system has a working fdatasync])])
 
 AC_FUNC_FSEEKO
-dnl  NOTE: these functions are in alphabetical order to ease maintenance
+# NOTE: these functions are in alphabetical order to ease maintenance
 save_LIBS="$LIBS"
 LIBS="$LIBS $MATH_LIBS"
 AC_CHECK_FUNCS([\
@@ -2814,28 +2829,35 @@ LIBS="$save_LIBS"
 
 asctime_r3=yes
 AC_MSG_CHECKING([asctime_r3])
-AC_TRY_LINK([$ac_includes_default
-@%:@include <time.h>],
-[char buf[26]; struct tm t; asctime_r(&t,buf,26);],
-[AC_DEFINE([HAVE_ASCTIME_R3], 1, [Define if you have asctime_r(struct tm*,char *buf,size_t s)])], [asctime_r3=no])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[@%:@include <time.h>]],
+		[[char buf[26]; struct tm t; asctime_r(&t,buf,26);]])],
+	[AC_DEFINE([HAVE_ASCTIME_R3], 1,
+		[Define if you have asctime_r(struct tm*,char *buf,size_t s)])],
+	[asctime_r3=no])
 AC_MSG_RESULT([$asctime_r3])
 
 ctime_r3=yes
 AC_MSG_CHECKING([ctime_r3])
-AC_TRY_LINK([$ac_includes_default
-@%:@include <time.h>],
-[char buf[26]; time_t t; ctime_r(&t,buf,26);],
-[AC_DEFINE([HAVE_CTIME_R3], 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[@%:@include <time.h>]],
+		[[char buf[26]; time_t t; ctime_r(&t,buf,26);]])],
+	[AC_DEFINE([HAVE_CTIME_R3], 1,
+		[Define if you have ctime_r(time_t*,char *buf,size_t s)])],
+	[ctime_r3=no])
 AC_MSG_RESULT([$ctime_r3])
 
 AC_CACHE_CHECK([for _sys_siglist], [mn_cv_have__sys_siglist], [
-AC_TRY_LINK([$ac_includes_default], [printf("%s\n", _sys_siglist[0]);], [mn_cv_have__sys_siglist=yes], [mn_cv_have__sys_siglist=no])])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[]], [[printf("%s\n", _sys_siglist[0]);]])],
+	[mn_cv_have__sys_siglist=yes],
+	[mn_cv_have__sys_siglist=no])])
 AS_VAR_IF([mn_cv_have__sys_siglist], [yes],
 	[AC_DEFINE([HAVE__SYS_SIGLIST], 1, [Define if you have _sys_siglist])])
 
 AC_STRUCT_TIMEZONE
 
-dnl  check dependencies (might need more than just SQL)
+# check dependencies (might need more than just SQL)
 AS_VAR_IF([enable_sql], [yes],
 	[AS_VAR_IF([enable_monetdb5], [no],
 		[AC_MSG_ERROR([MonetDB/SQL requires MonetDB5${disable_monetdb5:+ $disable_monetdb5}.])])])
@@ -2845,7 +2867,7 @@ AS_VAR_IF([enable_sql], [auto],
 		 AS_VAR_IF([disable_sql], [],
 			[disable_sql="(MonetDB/SQL requires MonetDB5)"])])])
 
-dnl     output
+#    output
 AM_CONDITIONAL([HAVE_GDK], [test "x$enable_gdk" = xyes -o "x$enable_gdk" = xauto])
 AM_CONDITIONAL([HAVE_MONETDB5], [test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto])
 AM_CONDITIONAL([HAVE_SQL], [test "x$enable_sql" = xyes -o "x$enable_sql" = xauto])
@@ -2870,7 +2892,7 @@ AS_VAR_IF([have_libxml2], [yes], [
         libxml2version="compiled with `pkg-config --modversion libxml-2.0 2>/dev/null`"])
 AC_SUBST([libxml2version])
 
-dnl  provide different versions of the paths derived above
+# provide different versions of the paths derived above
 AS_VAR_IF([prefix], [NONE],
 	[prefix="${ac_default_prefix}"
 	 Xprefix="`$translatepath "$Qprefix"`"
@@ -2903,13 +2925,13 @@ AC_SUBST([Elocalstatedir])
 AC_SUBST([QXlocalstatedir])
 Xlogdir="`$translatepath "$logdir"`"
 eval "Elogdir=${Xlogdir}"
-dnl  need second eval because localstatedir defaults to being ${prefix}/var
+# need second eval because localstatedir defaults to being ${prefix}/var
 eval "Elogdir=${Elogdir}"
 AC_SUBST([logdir])
 AC_SUBST([Elogdir])
 Xrundir="`$translatepath "$rundir"`"
 eval "Erundir=${Xrundir}"
-dnl  need second eval because localstatedir defaults to being ${prefix}/var
+# need second eval because localstatedir defaults to being ${prefix}/var
 eval "Erundir=${Erundir}"
 AC_SUBST([rundir])
 AC_SUBST([Erundir])
@@ -2996,19 +3018,19 @@ AC_DEFINE_UNQUOTED([DATA_DIR], ["$QEdatadir"], [read-only architecture-independe
 AC_DEFINE_UNQUOTED([BINDIR], ["$QEbindir"], [location where binaries are installed])
 AC_DEFINE_UNQUOTED([LIBDIR], ["$QElibdir"], [location where libraries are installed])
 
-dnl  On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
-dnl  or _POSIX_C_SOURCE >= 199506L is defined.  The latter is only
-dnl  defined on POSIX compliant Solaris systems (latest of the latest
-dnl  as of this writing), hence defining that here would cause a
-dnl  redefinition error.  To work around it, we define __MT__ here, as
-dnl  _REENTRANT might also enable stuff in other software packages.
+# On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
+# or _POSIX_C_SOURCE >= 199506L is defined.  The latter is only
+# defined on POSIX compliant Solaris systems (latest of the latest
+# as of this writing), hence defining that here would cause a
+# redefinition error.  To work around it, we define __MT__ here, as
+# _REENTRANT might also enable stuff in other software packages.
 AS_CASE(["$GCC-$host_os"],
 [yes-solaris2.11], [
 	AC_DEFINE([__MT__], 1, [libxml2 enable threading compiler flag])])
 
-dnl  add some includes that we want to be there always (by default)
-dnl  this is kind of bad practice, but consider it legacy that would be
-dnl  good to clean up some day
+# add some includes that we want to be there always (by default)
+# this is kind of bad practice, but consider it legacy that would be
+# good to clean up some day
 AH_TOP([
 @%:@ifndef _SEEN_MONETDB_CONFIG_H
 @%:@define _SEEN_MONETDB_CONFIG_H 1
@@ -3170,18 +3192,18 @@ typedef lng ptrdiff_t;
 @%:@endif /* _SEEN_MONETDB_CONFIG_H */
 ])
 
-dnl  Disabling the following warning is only required for the Intel compiler
-dnl  and if assertions are enabled.
+# Disabling the following warning is only required for the Intel compiler
+# and if assertions are enabled.
 AS_CASE(["$GCC-$CC-$enable_assert"],
 [-*icc*-yes|-*ecc*-yes], [
-	dnl  # 279: controlling expression is constant
+	# # 279: controlling expression is constant
 	X_CFLAGS="$X_CFLAGS -wd279"])
 
-dnl  CFLAGS for our code are stricter than what autoconf can cope with.
+# CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
 
-dnl  bootstrap adds a (long) list of file names inside the
-dnl  AC_CONFIG_FILES command
+# bootstrap adds a (long) list of file names inside the
+# AC_CONFIG_FILES command
 AC_CONFIG_FILES
 AC_OUTPUT
 
@@ -3210,10 +3232,10 @@ for comp in \
 	eval "enable=\$enable_$comp"
 	eval "disable=\$disable_$comp"
 	AS_CASE(["$disable-$enable-$dft"],
-		[-no-no], [	disable="(by default)"],
-		[-no-*], [	disable="(by command line option)"])
+		[-no-no], [disable="(by default)"],
+		[-no-*], [disable="(by command line option)"])
 	echo $ECHO_N "    $comp is $ECHO_C"
-	AS_VAR_IF([enable], [no], [ echo "disabled $disable"], [ echo "enabled"])
+	AS_VAR_IF([enable], [no], [echo "disabled $disable"], [echo "enabled"])
 done
 echo
 echo "* Enabled/disabled components:"
@@ -3235,10 +3257,10 @@ for comp in \
 	eval "enable=\$enable_$comp"
 	eval "disable=\$disable_$comp"
 	AS_CASE(["$disable-$enable-$dft"],
-		[-no-no], [	disable="(by default)"],
-		[-no-*], [	disable="(by command line option)"])
+		[-no-no], [disable="(by default)"],
+		[-no-*], [disable="(by command line option)"])
 	echo $ECHO_N "    $comp is $ECHO_C"
-	AS_VAR_IF([enable], [no], [ echo "disabled $disable"], [ echo "enabled"])
+	AS_VAR_IF([enable], [no], [echo "disabled $disable"], [echo "enabled"])
 done
 echo
 echo "* Available features/extensions:"
@@ -3279,10 +3301,10 @@ for comp in \
 	eval "why=\$why_have_$comp"
 
 	AS_CASE(["$why-$have-$org"],
-		[-no-no], [	why="(by default)"],
-		[-no-*], [	why="(by command line option)"])
+		[-no-no], [why="(by default)"],
+		[-no-*], [why="(by command line option)"])
 	echo $ECHO_N "    $comp = $ECHO_C"
-	AS_VAR_IF([have], [no], [], [ echo "yes"], [ echo "no  $why"])
+	AS_VAR_IF([have], [no], [echo "no  $why"], [echo "yes"])
 done
 AS_VAR_IF([have_hge], [yes], [
 	hge_bits='128'
@@ -3296,7 +3318,7 @@ echo "    largest integer type: ${hge_bits} bits"
 echo "    largest decimal type: ${hge_digits} digits"
 echo
 
-dnl  give some hints to the user
+# give some hints to the user
 AS_VAR_IF([enable_embedded_r], [no],
 	[AS_CASE(["`make -v 2>&1`"],
 		['GNU Make '*], [],

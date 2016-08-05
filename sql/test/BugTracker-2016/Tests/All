@@ -1,4 +1,4 @@
-convert-function-test.Bug-3460
+THREADS=1?convert-function-test.Bug-3460
 HAVE_HGE?convert-function-test-hge.Bug-3460
 HAVE_GEOM?storagemodel
 LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908

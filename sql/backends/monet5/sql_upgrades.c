@@ -1513,6 +1513,12 @@ sql_update_default(Client c, mvc *sql)
 			"create procedure sys.droporderindex(sys string, tab string, col string)\n"
 			"external name sql.droporderindex;\n");
 
+	/* 24_zorder.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.zorder_decode_y;\n"
+			"drop function sys.zorder_decode_x;\n"
+			"drop function sys.zorder_encode;\n");
+
 	/* 75_storagemodel.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop view sys.tablestoragemodel;\n"
