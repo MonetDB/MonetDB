@@ -7610,8 +7610,11 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	BAT *bo = NULL, *bpx = NULL, *bpy;
 	dbl *px = NULL, *py = NULL;
 	BUN i = 0, cnt = 0;
-	int j = 0, h = 0;
 	bit *cs = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	/*Get the BATs */
 	if ((bpx = BATdescriptor(*point_x)) == NULL) {
@@ -7641,8 +7644,17 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	py = (dbl *) Tloc(bpy, 0);
 	cnt = BATcount(bpx);
 	cs = (bit *) Tloc(bo, 0);
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+#ifdef OPENMP
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    #pragma omp parallel for
+#endif
 	for (i = 0; i < cnt; i++) {
 		int wn = 0;
+	    int j = 0, h = 0;
 
 		/*First check the holes */
 		for (h = 0; h < nholes; h++) {
@@ -7662,12 +7674,17 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 
 			/*It is in one of the holes */
 			if (wn) {
-				break;
+#ifdef OPENMP
+                #pragma omp cancelregion
+#else
+                break;
+#endif
 			}
 		}
 
 		if (wn) {
-		    *cs++ = 0;
+		    //*cs++ = 0;
+		    cs[i] = 0;
 			continue;
         }
 
@@ -7683,8 +7700,16 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 						--wn;
 			}
 		}
-		*cs++ = wn & 1;
+		//*cs++ = wn & 1;
+		cs[i] = wn & 1;
 	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+
 	bo->tsorted = bo->trevsorted = 0;
 	bo->tkey = 0;
 	BATrmprops(bo)
@@ -9053,6 +9078,250 @@ IsTypesubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *n
 /***************************************************************************/
 /************************ IN: wkb wkb - OUT: bit ***************************/
 /***************************************************************************/
+
+static str
+WKBWKBtoBITsubjoin_intern_light(bat *lres, bat *rres, bat *lid, bat *rid, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
+{
+	BAT *xl, *xr, *bl, *br;
+	oid lo, ro;
+	BATiter lBAT_iter, *rBAT_iters = NULL;
+    uint32_t j = 0;
+    BUN pr = 0, pl = 0, qr = 0, ql = 0;
+	GEOSGeom *rGeometries = NULL;
+    int *rSRIDs = NULL;
+    int numIters = 1;
+    str msg = MAL_SUCCEED;
+    bit* outs = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+
+	if( (bl= BATdescriptor(*lid)) == NULL )
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+
+	if( (br= BATdescriptor(*rid)) == NULL ){
+		BBPunfix(*lid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if ( xl == NULL){
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if ( xr == NULL){
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+    if ( !BATcount(br) || !BATcount(bl)) {
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+        return MAL_SUCCEED;
+    }
+#ifdef OPENMP
+    numIters = OPENCL_THREADS;
+#endif
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+	/*iterator over the BATs*/
+	lBAT_iter = bat_iterator(bl);
+	if ( (rBAT_iters = (BATiter*) GDKmalloc(sizeof(BATiter)*numIters)) == NULL) {
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    for (j = 0; j < numIters; j++) {
+        rBAT_iters[j] = bat_iterator(br);
+    }
+
+    /*Get the Geometry for the inner BAT*/
+    if ( (rGeometries = (GEOSGeom*) GDKzalloc(sizeof(GEOSGeom) * BATcount(br))) == NULL) {
+        GDKfree(rBAT_iters);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    if ( (rSRIDs = (int*) GDKzalloc(sizeof(int) * BATcount(br))) == NULL) {
+        GDKfree(rBAT_iters);
+        GDKfree(rGeometries);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
+    qr = BATcount(br);
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s allocations BATloop qr %d %llu ms\n", name, qr, t);
+#endif
+    //BATloop(br, pr, qr) {
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+#ifdef OPENMP
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    #pragma omp parallel for
+#endif
+    for (pr = 0; pr < BATcount(br); pr++) {
+        int tNum = 0;
+
+#ifdef OPENMP
+        tNum = omp_get_thread_num();
+#endif
+        wkb *rWKB = (wkb *) BUNtail(rBAT_iters[tNum], pr);
+
+        if (msg != MAL_SUCCEED)
+            continue;
+
+        rGeometries[pr] = wkb2geos(rWKB);
+        if (!rGeometries[pr] ) {
+    		msg = createException(MAL, name, "wkb2geos failed");
+#ifdef OPENMP
+            #pragma omp cancelregion
+#else
+            break;
+#endif
+        }
+        rSRIDs[pr] = rWKB->srid;
+    }
+
+    GDKfree(rBAT_iters);
+
+    if ( (msg ==MAL_SUCCEED) && BATcount(br) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(br))) == NULL) {
+        msg = createException(MAL, name, MAL_MALLOC_FAIL);
+    }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s first BATloop qr %d %llu ms\n", name, qr, t);
+#endif
+
+    if (msg != MAL_SUCCEED) {
+        for (j = 0; j < pr;j++) {
+            if (rGeometries[j])
+                GEOSGeom_destroy(rGeometries[j]);
+        }
+        GDKfree(rSRIDs);
+        GDKfree(rGeometries);
+        BBPunfix(*lid);
+        BBPunfix(*rid);
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+        return msg;
+    }
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+    lo = bl->hseqbase;
+    BATloop(bl, pl, ql) {
+		str err = NULL;
+		wkb *lWKB = NULL;
+	    GEOSGeom lGeometry = NULL;
+        ro = br->hseqbase;
+        int lSRID = 0;
+
+        lWKB = (wkb *) BUNtail(lBAT_iter, pl);
+        lGeometry = wkb2geos(lWKB);
+        if ( !lGeometry ) {
+    		msg = createException(MAL, name, "wkb2geos failed");
+            break;
+        }
+        lSRID = GEOSGetSRID(lGeometry);
+
+#ifdef OPENMP
+        omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+        omp_set_num_threads(OPENCL_THREADS);
+        #pragma omp parallel for
+#endif
+        for (j = 0; j < BATcount(br); j++) {
+	        GEOSGeom rGeometry = rGeometries[j];
+            outs[j] = 0;
+
+            if (msg != MAL_SUCCEED)
+                continue;
+
+            if (lSRID != rSRIDs[j]) {
+                msg = createException(MAL, name, "Geometries of different SRID");
+#ifdef OPENMP
+                #pragma omp cancelregion
+#else
+                break;
+#endif
+            }
+
+            if ((outs[j] = (*func)(lGeometry, rGeometry)) == 2){
+                msg = createException(MAL, name, "%s failed", name);
+#ifdef OPENMP
+                #pragma omp cancelregion
+#else
+                break;
+#endif
+            }
+        }
+
+        if (lGeometry)
+            GEOSGeom_destroy(lGeometry);
+
+        if (msg != MAL_SUCCEED)
+            break;
+
+        for (j = 0; j < BATcount(br); j++ , ro++) {
+            bit out = outs[j];
+            if (out == 1) {
+                BUNappend(xl, &lo, FALSE);
+                BUNappend(xr, &ro, FALSE);
+                outs[j] = 0;
+            }
+        }
+        lo++;
+	}
+    if (outs)
+        GDKfree(outs);
+    if (rGeometries) {
+        for (j = 0; j < BATcount(br);j++) {
+            GEOSGeom_destroy(rGeometries[j]);
+        }
+        GDKfree(rGeometries);
+    }
+    if (rSRIDs)
+	    GDKfree(rSRIDs);
+	BBPunfix(*lid);
+	BBPunfix(*rid);
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s second BATloop ql %d %llu ms\n", name, ql, t);
+#endif
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(xl->batCacheid);
+        BBPunfix(xr->batCacheid);
+    } else {
+    	BBPkeepref(*lres = xl->batCacheid);
+    	BBPkeepref(*rres = xr->batCacheid);
+    }
+
+	return msg;
+}
 
 static str
 WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
