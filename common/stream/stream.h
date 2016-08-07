@@ -29,7 +29,6 @@
 #include <signal.h>
 #include <limits.h>
 
-#define STREAM_DEBUG 1
 /* avoid using "#ifdef WIN32" so that this file does not need our config.h */
 #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
 # ifndef LIBSTREAM
@@ -227,6 +226,7 @@ stream_export buffer *mnstr_get_buffer(stream *s);
 stream_export stream *wbstream(stream *s, size_t buflen);
 stream_export stream *block_stream(stream *s);
 stream_export int isa_block_stream(stream *s);
+stream_export int isa_fixed_block_stream(stream *s);
 stream_export stream* bs_stream(stream *s);
 
 typedef enum {

@@ -4385,6 +4385,11 @@ isa_block_stream(stream *s)
 	return s && ((s->read == bs_read || s->write == bs_write) || (s->read == bs2_read || s->write == bs2_write));
 }
 
+int 
+isa_fixed_block_stream(stream *s) {
+	assert(s != NULL);
+	return s && ((s->read == bs_read || s->write == bs_write));
+}
 
 stream *
 block_stream2(stream *s, size_t bufsiz, compression_method comp)
@@ -4443,8 +4448,6 @@ mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt)
 int
 mnstr_readChr(stream *s, char *val)
 {
-	if (s == NULL || val == NULL)
-		return -1;
 	return (int) s->read(s, (void *) val, sizeof(*val), 1);
 }
 
