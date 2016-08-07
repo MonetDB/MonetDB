@@ -4070,6 +4070,7 @@ bs2_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 			writebuf = s->buf;
 
 			if (s->comp == COMPRESSION_SNAPPY) {
+#ifdef HAVE_LIBSNAPPY
 				snappy_status ret;
 				size_t compressed_length = s->compbufsiz;
 				if ((ret = snappy_compress(s->buf, s->nr, s->compbuf, &compressed_length)) != SNAPPY_OK) {
@@ -4079,6 +4080,10 @@ bs2_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 				writebuf = s->compbuf;
 				blksize = (lng) compressed_length;
 				writelen = compressed_length;
+#else
+				assert(0);
+				return -1;
+#endif
 			}
 
 			/* the last bit tells whether a flush is in there, it's not
@@ -4136,6 +4141,7 @@ bs2_flush(stream *ss)
 		writebuf = s->buf;
 
 		if (s->nr > 0 && s->comp == COMPRESSION_SNAPPY) {
+#ifdef HAVE_LIBSNAPPY
 			size_t compressed_length = s->compbufsiz;
 			snappy_status ret;
 			if ((ret = snappy_compress(s->buf, s->nr, s->compbuf, &compressed_length)) != SNAPPY_OK) {
@@ -4145,6 +4151,10 @@ bs2_flush(stream *ss)
 			writebuf = s->compbuf;
 			blksize = (lng) compressed_length;
 			writelen = compressed_length;
+#else
+			assert(0);
+			return -1;
+#endif
 		}
 
 		/* indicate that this is the last buffer of a block by
@@ -4225,6 +4235,7 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 
 
 		if (s->itotal > 0 && s->comp == COMPRESSION_SNAPPY) {
+#ifdef HAVE_LIBSNAPPY
 			// read everything into the comp buf
 			size_t uncompressed_length = s->bufsiz;
 			size_t m = 0;
@@ -4246,6 +4257,10 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			s->itotal = uncompressed_length;
 			s->readpos = 0;
 		}
+#else
+		assert(0);
+		return 0;
+#endif
 	}
 
 	/* Fill the caller's buffer. */
@@ -4325,6 +4340,7 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			s->nr = blksize & 1;
 
 			if (s->itotal > 0 && s->comp == COMPRESSION_SNAPPY) {
+#ifdef HAVE_LIBSNAPPY
 				// read everything into the comp buf
 				size_t uncompressed_length = s->bufsiz;
 				size_t m = 0;
@@ -4346,6 +4362,10 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 				s->itotal = uncompressed_length;
 				s->readpos = 0;
 			}
+#else
+			assert(0);
+			return -1;
+#endif
 		}
 	}
 	/* if we got an empty block with the end-of-sequence marker
