@@ -575,7 +575,7 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query, int lateral)
 			int nr = 0;
 			list *args = NULL, *nexps, *res; /* list of arguments, named A1 to AN? */
 			sql_func *f = NULL;
-			sql_exp *ie, *ae;
+			sql_exp *ie, *ae = NULL;
 			sql_arg *a;
 			node *n;
 			char *nfname = sa_strdup(sql->sa, fname);
@@ -612,6 +612,8 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query, int lateral)
 			nexps = sa_list(sql->sa);
 			/* project the result column, add table.column name */
 			res = new_exp_list(sql->sa);
+			if (!ie || !ae || !nexps || !res) 
+				return NULL;
 			for (m = sf->func->res->h; m; m = m->next) {
 				sql_exp *e;
 				sql_arg *a = m->data;
@@ -626,6 +628,8 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query, int lateral)
 
 			/* create sub function for lateral version of the table function */ 
 			sf = sql_dup_subfunc(sql->sa, f, tl, NULL);
+			if (!f->rel || !rel || !sf)
+				return NULL;
 		}
 		exps = list_dup(exps, NULL);
 		append(exps, tid);
