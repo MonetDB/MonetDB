@@ -1059,6 +1059,12 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 		rel_destroy(r);
 		append(nl, e);
 		l->exps = nl;
+		if (ll->op == l->op) {
+			list_merge(ll->exps,l->exps, (fdup)NULL);
+			l->l = NULL;
+			rel_destroy(l);
+			return ll;
+		}
 		return l;
 	}
 	l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
