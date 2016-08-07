@@ -172,7 +172,9 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 		}
 	}
+#ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
+#endif
 }
 
 void
@@ -352,7 +354,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				if ( val != (*w & mask) )
 					break;
 			}
-			bits = i * (32-prefixbits);
+			bits = (int)(i * (32-prefixbits));
 			store = bits/8 + ((bits % 8) >0);
 			store = wordaligned(MosaicBlkSize + 2 * sizeof(lng) + store,lng);
 			if( store >= (flt)i * sizeof(lng))
