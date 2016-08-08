@@ -433,7 +433,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 	while(task->start < task->stop ){
 		// default is to extend the non-compressed block with a single element
 		cand = MOSoptimizerCost(cntxt, task, typewidth);
-		if( task->dst >= bsrc->tmosaic->base + bsrc->tmosaic->size - (MosaicHdrSize + 2 * MosaicBlkSize) ){
+		if( task->dst >= bsrc->tmosaic->base + bsrc->tmosaic->size - 2 * MosaicBlkSize ){
 			MOSdestroy(bsrc);
 			msg= createException(MAL,"mosaic","abort compression due to size");
 			task->hdr = 0;
