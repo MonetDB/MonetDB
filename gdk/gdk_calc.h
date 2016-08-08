@@ -126,7 +126,7 @@ gdk_export BAT *BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double 
 gdk_export const char *BATgroupaggrinit(
 	BAT *b, BAT *g, BAT *e, BAT *s,
 	/* outputs: */
-	oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp, BUN *cntp,
+	oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp,
 	const oid **candp, const oid **candendp);
 
 gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
