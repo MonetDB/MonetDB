@@ -664,12 +664,6 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 		}
 	}
 
-	// continue with all work
-	bsrc->batDirty = 1;
-	BATsettrivprop(bsrc);
-
-	MCexitMaintenance(cntxt);
-	BBPkeepref( *ret = bsrc->batCacheid);
 	
 	error = 0;
 	switch( ATOMbasetype(task->type)){
@@ -700,7 +694,16 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 		mnstr_printf(cntxt->fdout,"#incompatible compression\n");
 
 	task->timer = GDKusec() - task->timer;
+
+	// remove the compressed mirror
 	GDKfree(task);
+	// continue with all work
+	bsrc->batDirty = 1;
+	MOSdestroy(bsrc);
+	BATsettrivprop(bsrc);
+	BBPkeepref( *ret = bsrc->batCacheid);
+
+	MCexitMaintenance(cntxt);
 	return MAL_SUCCEED;
 }
 
