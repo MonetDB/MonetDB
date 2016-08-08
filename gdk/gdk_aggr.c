@@ -1542,7 +1542,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			n++;						\
 		}							\
 		/* the sum fit, so now we can calculate the average */	\
-		*avg = (dbl) sum / n;					\
+		*avg = n > 0 ? (dbl) sum / n : dbl_nil;			\
 		if (0) {						\
 		  overflow##TYPE:					\
 			/* we get here if sum(x[0],...,x[i]) doesn't */	\
@@ -1551,6 +1551,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			/* the rest of the calculation is done */	\
 			/* according to the loop invariant described */	\
 			/* in the below loop */				\
+			/* note that n necessarily is > 0 (else no */	\
+			/* overflow possible) */			\
+			assert(n > 0);					\
 			if (sum >= 0) {					\
 				a = (TYPE) (sum / (lng_hge) n); /* this fits */ \
 				r = (BUN) (sum % (SBUN) n);		\
@@ -1566,24 +1569,25 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			if (cand)					\
 				--cand;					\
 									\
-			for (; i < end; i++) {				\
+			for (;;) {					\
 				/* loop invariant: */			\
 				/* a + r/n == average(x[0],...,x[n]); */ \
-				/* 0 <= r < n (if n > 0) */		\
-				/* or if n == 0: a == 0; r == 0 */	\
+				/* 0 <= r < n */			\
 				if (cand) {				\
-					if (i < *cand - b->hseqbase)	\
-						continue;		\
-					assert(i == *cand - b->hseqbase); \
-					if (++cand == candend)		\
-						end = i + 1;		\
+					if (cand == candend)		\
+						break;			\
+					i = *cand++ - b->hseqbase;	\
+				} else {				\
+					i = start++;			\
 				}					\
+				if (i >= end)				\
+					break;				\
 				x = ((const TYPE *) src)[i];		\
 				if (x == TYPE##_nil)			\
 					continue;			\
 				AVERAGE_ITER(TYPE, x, a, r, n);		\
 			}						\
-			*avg = n > 0 ? a + (dbl) r / n : dbl_nil;	\
+			*avg = a + (dbl) r / n;				\
 		}							\
 	} while (0)
 
