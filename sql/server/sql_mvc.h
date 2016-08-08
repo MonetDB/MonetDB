@@ -134,7 +134,7 @@ extern void mvc_exit(void);
 extern void mvc_logmanager(void);
 extern void mvc_minmaxmanager(void);
 
-extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
+extern mvc *mvc_create(int clientid, backend_stack stk, int debug, stream *rs, stream *ws);
 extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
 extern void mvc_destroy(mvc *c);
 

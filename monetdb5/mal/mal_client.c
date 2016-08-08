@@ -42,7 +42,6 @@
 /* (author) M.L. Kersten */
 #include "monetdb_config.h"
 #include "mal_client.h"
-#include "mal_readline.h"
 #include "mal_import.h"
 #include "mal_parser.h"
 #include "mal_namespace.h"
@@ -94,7 +93,7 @@ MCinit(void)
 }
 
 int
-MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
+MCpushClientInput(Client c, stream *new_input, int listing, char *prompt)
 {
 	ClientInput *x = (ClientInput *) GDKmalloc(sizeof(ClientInput));
 	if (x == 0)
@@ -119,7 +118,7 @@ MCpopClientInput(Client c)
 	ClientInput *x = c->bak;
 	if (c->fdin) {
 		/* missing protection against closing stdin stream */
-		(void) bstream_destroy(c->fdin);
+		(void) close_stream(c->fdin);
 	}
 	GDKfree(c->prompt);
 	c->fdin = x->fdin;
@@ -193,7 +192,7 @@ MCexitClient(Client c)
 		assert(c->bak == NULL);
 		if (c->fdin) {
 			/* missing protection against closing stdin stream */
-			(void) bstream_destroy(c->fdin);
+			(void) close_stream(c->fdin);
 		}
 		c->fdout = NULL;
 		c->fdin = NULL;
@@ -201,7 +200,7 @@ MCexitClient(Client c)
 }
 
 Client
-MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
+MCinitClientRecord(Client c, oid user, stream *fin, stream *fout)
 {
 	str prompt;
 
@@ -212,7 +211,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->srcFile = NULL;
 	c->blkmode = 0;
 
-	c->fdin = fin ? fin : bstream_create(GDKin, 0);
+	c->fdin = fin; // ? fin : bstream_create(GDKin, 0);
 	c->yycur = 0;
 	c->bak = NULL;
 
@@ -266,7 +265,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 }
 
 Client
-MCinitClient(oid user, bstream *fin, stream *fout)
+MCinitClient(oid user, stream *fin, stream *fout)
 {
 	Client c = NULL;
 
@@ -524,10 +523,16 @@ MCawakeClient(int id)
  * The next statement block is to be read. Send a prompt to warn the
  * front-end to issue the request.
  */
+
+// fixme: this will need to read a protocol message from the client and dump its contents into buf
 int
 MCreadClient(Client c)
+
 {
-	bstream *in = c->fdin;
+	assert(0);
+	(void) c;
+#if 0
+	buffer *in = &c->buf;
 
 #ifdef MAL_CLIENT_DEBUG
 	printf("# streamClient %d %d\n", c->idx, isa_block_stream(in->s));
@@ -538,21 +543,15 @@ MCreadClient(Client c)
 			in->buf[in->pos] == ';' || !in->buf[in->pos]))
 		in->pos++;
 
-	if (in->pos >= in->len || in->mode) {
+	if (in->pos >= in->len) {
 		ssize_t rd, sum = 0;
 
-		if (in->eof || !isa_block_stream(c->fdout)) {
-			if (!isa_block_stream(c->fdout) && c->promptlength > 0)
-				mnstr_write(c->fdout, c->prompt, c->promptlength, 1);
-			mnstr_flush(c->fdout);
-			in->eof = 0;
-		}
+	// FIXME:
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
 			sum += rd;
-			if (!in->mode) /* read one line at a time in line mode */
-				break;
+
 		}
-		if (in->mode) { /* find last new line */
+		{ /* find last new line */
 			char *p = in->buf + in->len - 1;
 
 			while (p > in->buf && *p != '\n') {
@@ -575,7 +574,7 @@ MCreadClient(Client c)
 #endif
 		if (c->bak) {
 			MCpopClientInput(c);
-			if (c->fdin == NULL)
+			if (c->buf.buf == NULL)
 				return 0;
 			return MCreadClient(c);
 		}
@@ -586,6 +585,8 @@ MCreadClient(Client c)
 	printf("#%s\n", in->buf);
 #endif
 	return 1;
+#endif
+	return 42;
 }
 
 

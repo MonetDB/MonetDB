@@ -483,7 +483,7 @@ mvc_release(mvc *m, const char *name)
 }
 
 mvc *
-mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
+mvc_create(int clientid, backend_stack stk, int debug, stream *rs, stream *ws)
 {
 	int i;
 	mvc *m;

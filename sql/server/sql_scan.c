@@ -472,7 +472,7 @@ scanner_init_keywords(void)
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
 
 void
-scanner_init(struct scanner *s, bstream *rs, stream *ws)
+scanner_init(struct scanner *s, stream *rs, stream *ws)
 {
 	s->rs = rs;
 	s->ws = ws;

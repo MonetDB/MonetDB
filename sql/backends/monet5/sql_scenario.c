@@ -437,11 +437,10 @@ SQLinitClient(Client c)
 	if (sqlinit) {		/* add sqlinit to the fdin stack */
 		buffer *b = (buffer *) GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
-		bstream *fdin;
+		stream *fdin;
 
 		buffer_init(b, _STRDUP(sqlinit), len);
-		fdin = bstream_create(buffer_rastream(b, "si"), b->len);
-		bstream_next(fdin);
+		fdin = buffer_rastream(b, "si");
 		MCpushClientInput(c, fdin, 0, "");
 	}
 	if (c->sqlcontext == 0) {
