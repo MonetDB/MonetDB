@@ -397,7 +397,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 #endif
     t0 = GDKusec();
 
-	if( bsrc->tmosaic == NULL && BATmosaic(bsrc,  BATcapacity(bsrc) + (MosaicHdrSize + MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL){
+	if( bsrc->tmosaic == NULL && BATmosaic(bsrc,  BATcapacity(bsrc) + (MosaicHdrSize + 2 * MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL){
 		// create the mosaic heap if not available.
 		// The final size should be smaller then the original
 		// It may, however, be the case that we mix a lot of LITERAL and, say, DELTA small blocks
@@ -433,7 +433,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 	while(task->start < task->stop ){
 		// default is to extend the non-compressed block with a single element
 		cand = MOSoptimizerCost(cntxt, task, typewidth);
-		if( task->dst >= bsrc->tmosaic->base + bsrc->tmosaic->size - 16 ){
+		if( task->dst >= bsrc->tmosaic->base + bsrc->tmosaic->size - (MosaicHdrSize + 2 * MosaicBlkSize) ){
 			MOSdestroy(bsrc);
 			msg= createException(MAL,"mosaic","abort compression due to size");
 			task->hdr = 0;
