@@ -66,12 +66,12 @@ getBitVector(BitVector vector, BUN i, int bits)
 	if ( (shift + bits) <= BITS){
 		// fits in a single cell
 		value = (vector[cid] >> shift) & masks[bits];
-		printf("#getBitVector %ld i "BUNFMT" bits %d value %3d cell %10d cid "BUNFMT" shift %d\n",(long)vector,i,bits, value, vector[cid],cid,shift);
+		//printf("#getBitVector %ld i "BUNFMT" bits %d value %3d cell %10d cid "BUNFMT" shift %d\n",(long)vector,i,bits, value, vector[cid],cid,shift);
 	}else{ 
 		// spread over two cells
 		m1 = BITS - shift;
 		value  = ((vector[cid] & (masks[m1]<<shift)) >> shift) | ((vector[cid+1] & masks[bits - m1]) << m1);
-		printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d %10d cid "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
+		//printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d %10d cid "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
 	  }
 	return value;
 }
