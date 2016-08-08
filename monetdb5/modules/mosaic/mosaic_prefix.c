@@ -32,6 +32,7 @@
 #include "mosaic_prefix.h"
 #include "gdk_bitvector.h"
 
+#define _DEBUG_MOSAIC_
 /* Beware, the dump routines use the compressed part of the task */
 void
 MOSdump_prefix(Client cntxt, MOStask task)
@@ -336,12 +337,14 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			}
 			if ( i == limit-1 )
 				break;
-			Prefix(prefixbits, mask, val, val2, 32); // at most 32bits for bitvector mask
+			Prefix(prefixbits, mask, val, val2, 64); 
 			if( prefixbits == 0)
 				break;
 
+			if( 64 - prefixbits > 32)	// bitvector is limited to 32 bits
+				return 0.0;
 			if( task->range[MOSAIC_PREFIX] > task->start + 1){
-				bits = (task->range[MOSAIC_PREFIX] - task->start) * (32-prefixbits);
+				bits = (task->range[MOSAIC_PREFIX] - task->start) * (64-prefixbits);
 				store = bits/8 + ((bits % 8) >0);
 				store = wordaligned( MosaicBlkSize + 2 * sizeof(lng) +  store,lng);
 				if( store >= (flt)i * sizeof(lng))
@@ -412,6 +415,9 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			dst++;
 			base  = (BitVector) dst; // start of bit vector
 			
+#ifdef _DEBUG_PREFIX_
+			mnstr_printf(cntxt->fdout,"#prefix compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, bits,mask);
+#endif
 			if( i < limit)
 			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
@@ -442,6 +448,9 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			dst++;
 			base  = (BitVector) dst; // start of bit vector
 			
+#ifdef _DEBUG_PREFIX_
+			mnstr_printf(cntxt->fdout,"#prefix compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, bits,mask);
+#endif
 			if( i < limit)
 			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
@@ -472,7 +481,9 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			dst++;
 			base  = (BitVector) dst; // start of bit vector
 			
-			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, bits,mask);
+#ifdef _DEBUG_PREFIX_
+			mnstr_printf(cntxt->fdout,"#prefix compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, bits,mask);
+#endif
 			if( i < limit)
 			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
@@ -503,7 +514,9 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			dst++;
 			base  = (BitVector) dst; // start of bit vector
 			
-			//mnstr_printf(cntxt->fdout,"compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, bits,mask);
+#ifdef _DEBUG_PREFIX_
+			mnstr_printf(cntxt->fdout,"#prefix compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, bits,mask);
+#endif
 			if( i < limit)
 			for(j=0, w = v, i = 0; i < limit; w++, i++,j++){
 				if ( val  != (*w & mask) )
