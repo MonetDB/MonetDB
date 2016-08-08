@@ -11,6 +11,18 @@
  * The width of the individual elements is limited to sizeof(int)
  * The meta-information is not stored within the vector.
  */
+/* Unit testing
+#include "stdio.h"
+#include "stdlib.h"
+#include "ctype.h"
+#include "math.h"
+#include "malloc.h"
+
+typedef unsigned int *BitVector;
+typedef unsigned long BUN;
+#define BUNFMT "%u"
+ */
+
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_bitvector.h"
@@ -42,25 +54,49 @@ newBitVector(BUN cnt, int width)
 	return m;
 }
 
-// set the bits of cell idx to the lower number of bits of the value
-void
-setBitVector(BitVector vector, const BUN i, const int bits, const int value)
+// get the bits of cell i 
+int
+getBitVector(BitVector vector, BUN i, int bits)
 {
 	BUN cid;
-	unsigned int m1,  m2;
+	unsigned int value = 0, shift, m1;
+	
+	cid = (i * bits) / BITS;
+	shift = ( i * bits) % BITS;
+	if ( (shift + bits) <= BITS){
+		// fits in a single cell
+		value = (vector[cid] >> shift) & masks[bits];
+		printf("#getBitVector %ld i "BUNFMT" bits %d value %3d cell %10d cid "BUNFMT" shift %d\n",(long)vector,i,bits, value, vector[cid],cid,shift);
+	}else{ 
+		// spread over two cells
+		m1 = BITS - shift;
+		value  = ((vector[cid] & (masks[m1]<<shift)) >> shift) | ((vector[cid+1] & masks[bits - m1]) << m1);
+		printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d %10d cid "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
+	  }
+	return value;
+}
+
+// set the bits of cell idx to the lower number of bits of the value
+void
+setBitVector(BitVector vector, const BUN i, const int bits, const unsigned int value)
+{
+	BUN cid;
+	unsigned int m1,  shift;
 
 	cid = (i * bits) / BITS;
-	m1  = ((i * bits) % BITS)/bits;
-    //mnstr_printf(GDKout,"#setBitVector %ld i "BUNFMT" bits %d value %d cid %d ",(long)vector,i,bits, value, vector[cid]);
-    if ( m1 * bits <= BITS)
-        vector[cid]= (vector[cid]  & ~( masks[bits] << (m1 * bits))) | ((value & masks[bits]) << (m1 * bits));
-    else{ 
-		m1 = (m1 * bits) % BITS;
-		m2 = bits - m1;
-        vector[cid]= (vector[cid]  & ~( masks[bits] << (m1 * bits))) | ( (value & masks[bits]) << (BITS-m1));
-        vector[cid+1]= 0 | ( (value & masks[bits])  >> m2);
+	shift = ( i * bits) % BITS;
+    if ( (shift + bits) <= BITS){
+		// fits in a single cell
+        vector[cid]= (vector[cid]  & ~( masks[bits] << shift)) | ((value & masks[bits]) << shift);
+		//printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d cid "BUNFMT" shift %d\n",(long)vector,i,bits, value, vector[cid],cid,shift);
+    } else{ 
+		// spread over two cells
+		m1 = BITS - shift;
+        vector[cid]= (vector[cid]  & ~( masks[m1] << shift)) | ( (value & masks[m1]) << shift);
+        vector[cid+1]= 0 | ( ((value>>m1) & masks[bits-m1]));
+		//printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d cid "BUNFMT" "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
 	}
-    //mnstr_printf(GDKout,"-> %o\n",vector[cid]);
+	//printf("#get it back %d\n",getBitVector(vector,i,bits));
 }
 
 // clear a cell
@@ -70,25 +106,6 @@ clrBitVector(BitVector vector, BUN i, int bits)
 	setBitVector(vector,i,bits, 0);
 }
 
-// get the bits of cell i 
-int
-getBitVector(BitVector vector, BUN i, int bits)
-{
-	BUN cid;
-	unsigned int value = 0, m1,m2;
-	
-	cid = (i * bits) / BITS;
-	m1  = ((i * bits) % BITS)/bits;
-	if ( m1 * bits <= BITS)
-		value = (vector[cid] >> (m1 * bits)) & masks[bits];
-	else{ 
-		m1 = (m1 * bits) % BITS;
-		m2 = bits - m1;
-		value  = (((vector[cid] >> (BITS - m1)) & masks[bits - m1]) << m2) | (vector[cid+1] & masks[m2]);
-	  }
-    //mnstr_printf(GDKout,"#getBitVector %ld i "BUNFMT" bits %d value %d cid %o\n",(long)vector,i,bits,value,vector[cid]);
-	return value;
-}
 
 int
 tstBitVector(BitVector m, BUN idx, int width)
