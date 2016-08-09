@@ -5454,48 +5454,80 @@ mapi_fetch_row(MapiHdl hdl)
 	struct MapiResultSet *result;
 
 	if (hdl->mid->protocol == prot10 || hdl->mid->protocol == prot10compressed) {
+#ifdef PROT10_DEBUG
+		char *initbuf;
+#endif
 		char* buf;
 
 		result = hdl->result;
-		result->rows_read++;
+		// check if we have read the entire result set
 		if (result->rows_read >= result->row_count) {
 			hdl->mid->active = NULL;
 			hdl->active = NULL;
+			bs2_resetbuf(hdl->mid->from);
 			return 0;
 		}
-		// do we have any rows in our cache
-		if (result->rows_read > result->tuple_count) {
-			// read block from socket
+		// if not, check if our cache is empty
+		if (result->rows_read >= result->tuple_count) {
+			// if our cache is empty, we read data from the socket
 			lng nrows = 0;
+			// first we write a prompt to the server indicating that we want another block of the result set
 			if (!mnstr_writeChr(hdl->mid->to, 42) || mnstr_flush(hdl->mid->to)) {
-				// FIXME: set hdl->mid to something
-
+				hdl->mid->errorstr = strdup("Failed to write confirm message to server.");
+				hdl->mid->error = 0;
+				fprintf(stderr, "Failure 2.\n");
 				return hdl->mid->error;
 			}
+
 			bs2_resetbuf(hdl->mid->from); // kinda a bit evil
-			// this actually triggers the read of the entire block from now we operate on buffer
+			assert(bs2_buffer(hdl->mid->from).pos == 0);
+
+			// this actually triggers the read of the entire block
+			// after this point we operate on the buffer
 			if (!mnstr_readLng(hdl->mid->from, &nrows)) {
 				// FIXME: set hdl->mid to something
+				hdl->mid->errorstr = strdup("Failed to read row response");
+				hdl->mid->error = 0;
+				fprintf(stderr, "Failure 3.\n");
 				return hdl->mid->error;
 			}
-			bs2_resetbuf(hdl->mid->from);
 
-//			fprintf(stderr, "nrows=%llu\n", nrows);
+
+			//bs2_resetbuf(hdl->mid->from);
+
+#ifdef PROT10_DEBUG
+			fprintf(stderr, "Read block: %llu - %llu (out of %lld, nrow=%lld)\n", result->rows_read, result->rows_read + nrows, result->row_count, nrows);
+			initbuf = (char*) bs2_getbuf(hdl->mid->from);
+#endif
+
 			buf = (char*) bs2_getbuf(hdl->mid->from) + sizeof(lng);
 
 			// iterate over cols
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
+#ifdef PROT10_DEBUG
+				fprintf(stderr, "Column %zu\n", i);
+#endif
 				result->fields[i].buffer_ptr = buf;
 				if (result->fields[i].columnlength < 0) {
 					// variable-length column
 					lng col_len = *((lng*) buf);
+#ifdef PROT10_DEBUG
+					fprintf(stderr, "Read lng %lld from position %zu\n", col_len, buf - initbuf);
+#endif
 					assert((size_t) col_len < hdl->mid->blocksize && col_len > 0);
 					result->fields[i].buffer_ptr += sizeof(lng);
 					buf += col_len + sizeof(lng);
+#ifdef PROT10_DEBUG
+					fprintf(stderr, "Read strings from position %zu\n", result->fields[i].buffer_ptr - initbuf);
+#endif
 				} else {
 					buf += nrows * result->fields[i].columnlength;
+#ifdef PROT10_DEBUG
+					fprintf(stderr, "Read elements from position %zu\n", result->fields[i].buffer_ptr - initbuf);
+#endif
 				}
 			}
+			assert(result->fields[result->fieldcnt - 1].buffer_ptr - result->fields[0].buffer_ptr < hdl->mid->blocksize);
 			result->tuple_count += nrows;
 		} else {
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
@@ -5507,6 +5539,7 @@ mapi_fetch_row(MapiHdl hdl)
 				}
 			}
 		}
+		result->rows_read++;
 		return result->fieldcnt;
 	}
 

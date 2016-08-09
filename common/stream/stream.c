@@ -4387,7 +4387,6 @@ bs2_getbuf(stream *ss)
 	return (void*) s->buf;
 }
 
-
 void
 bs2_resetbuf(stream *ss)
 {
@@ -4396,6 +4395,17 @@ bs2_resetbuf(stream *ss)
 	s->itotal = 0;
 	s->nr = 0;
 	s->readpos = 0;
+}
+
+buffer 
+bs2_buffer(stream *ss) {
+	bs2 *s = (bs2 *) ss->stream_data.p;
+	buffer b;
+	assert(ss->read == bs2_read);
+	b.buf = s->buf;
+	b.pos = s->nr;
+	b.len = s->bufsiz;
+	return b;
 }
 
 int

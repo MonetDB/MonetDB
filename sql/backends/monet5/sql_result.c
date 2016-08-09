@@ -1868,6 +1868,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	size_t i;
 	size_t row = 0;
 	size_t srow = 0;
+	size_t varsized = 0;
 	lng *var_col_len;
 	BATiter *iterators;
 	lng fixed_lengths = 0;
@@ -1878,8 +1879,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	if (!iterators || !var_col_len) {
 		return -1;
 	}
-
-	(void) bsize;
 
 	if (t->order) {
 		order = BBPquickdesc(t->order, FALSE);
@@ -1904,8 +1903,9 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
 			str res = MAL_SUCCEED;
 	        int bat_type = ATOMstorage(iterators[i].b->ttype);
-	        int hpos = c->type.scale; //this value isn't right, it's always 3. todo: find the right scale value (i.e. where the decimal point is)
+	        int hpos = c->type.scale;
 	        bat result = 0;
+
 	        //decimal values can be stored in various numeric fields, so check the numeric field and convert the one it's actually stored in
 	        switch(bat_type)
 	        {
@@ -1939,7 +1939,10 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		}
 
 		if (ATOMvarsized(mtype)) {
+			// FIXME support other types than string
+			assert(mtype == TYPE_str);
 			typelen = -1;
+			varsized++;
 		} else {
 			fixed_lengths += typelen;
 		}
@@ -1955,58 +1958,102 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 
 	while (row < (size_t) count)	{
 		size_t crow = 0;
-		size_t bytes_left = bsize;
+		size_t bytes_left = bsize - sizeof(lng);
 		char cont_req, dummy;
-		for (i = 0; i < (size_t) t->nr_cols; i++) {
-			var_col_len[i] = 0;
-		}
+#ifdef PROT10_DEBUG
+		size_t bufpos;
+#endif
 
-		// FIXME: this can be skipped if there are no variable-length types in the result set
-		while (row < (size_t) count) {
-			size_t rowsize = fixed_lengths;
+		if (varsized == 0) {
+			// no varsized elements, so we can immediately compute the amount of elements
+			row = srow + bytes_left / fixed_lengths;
+		} else {
+			// every varsized member has an 8-byte header indicating the length of the header in the block
+			// subtract this from the amount of bytes left
+			bytes_left -= varsized * sizeof(lng); 
+
 			for (i = 0; i < (size_t) t->nr_cols; i++) {
-				res_col *c = t->cols + i;
-				int mtype = c->type.type->localtype;
-				if (ATOMvarsized(mtype)) {
-					// FIXME support other types than string
-					size_t slen = strlen((const char*) BUNtail(iterators[i], row)) + 1;
-					assert(mtype == TYPE_str);
-					rowsize += slen;
-					var_col_len[i] += slen;
-				}
+				var_col_len[i] = 0;
 			}
-			if (bytes_left < rowsize) break;
-			bytes_left -= rowsize;
-			row++;
+
+			// we have varsized elements, so we have to loop to determine how many rows fit into a buffer
+			while (row < (size_t) count) {
+				size_t rowsize = fixed_lengths;
+				for (i = 0; i < (size_t) t->nr_cols; i++) {
+					res_col *c = t->cols + i;
+					int mtype = c->type.type->localtype;
+					if (ATOMvarsized(mtype)) {
+						size_t slen = strlen((const char*) BUNtail(iterators[i], row)) + 1;
+						rowsize += slen;
+						var_col_len[i] += slen;
+					}
+				}
+				if (bytes_left < rowsize) {
+					// since we are breaking, we have to adjust var_col_len and subtract the current string so it is accurate again
+					for (i = 0; i < (size_t) t->nr_cols; i++) {
+						res_col *c = t->cols + i;
+						int mtype = c->type.type->localtype;
+						if (ATOMvarsized(mtype)) {
+							size_t slen = strlen((const char*) BUNtail(iterators[i], row)) + 1;
+							var_col_len[i] -= slen;
+						}
+					}
+					break;
+				}
+				bytes_left -= rowsize;
+				row++;
+			}
+			assert(row > srow);
 		}
-		assert(row > 0);
 
 		if (!mnstr_readChr(c, &cont_req)) {
+			fprintf(stderr, "Received cancellation message.\n");
 			return -1;
 		}
+
 		// consume flush from client
 		mnstr_readChr(c, &dummy);
 
 		if (cont_req != 42) {
+			// received cancellation message, stop writing result
+			fprintf(stderr, "Received cancellation message.\n");
 			break;
 		}
 
+#ifdef PROT10_DEBUG
+		fprintf(stderr, "Write block: %zu - %zu (out of %lld, nrow=%lld)\n", srow, row, count, (lng)(row - srow));
+		bufpos = sizeof(lng);
+#endif
 
-		if (!mnstr_writeLng(s, (lng) row)) {
+		assert(bs2_buffer(s).pos == 0);
+
+		if (!mnstr_writeLng(s, (lng)(row - srow))) {
 			return -1;
 		}
 
 		for (i = 0; i < (size_t) t->nr_cols; i++) {
 			res_col *c = t->cols + i;
 			int mtype = c->type.type->localtype;
+#ifdef PROT10_DEBUG
+			fprintf(stderr, "Column %d\n", i);
+#endif
 			if (ATOMvarsized(mtype)) {
 				// FIXME support other types than string
 				assert(mtype == TYPE_str);
 				assert((size_t) var_col_len[i] < bsize);
+
+#ifdef PROT10_DEBUG
+				fprintf(stderr, "Write lng %lld to %zu\n", var_col_len[i], bufpos);
+				bufpos += sizeof(lng);
+				fprintf(stderr, "Write strings to %zu\n", bufpos);
+#endif
 				if (!mnstr_writeLng(s, var_col_len[i])) {
 					return -1;
 				}
 				for (crow = srow; crow < row; crow++) {
+#ifdef PROT10_DEBUG
+					bufpos += strlen((char*) BUNtail(iterators[i], crow)) + 1;
+#endif
 					if (!write_str_term(s, (char*) BUNtail(iterators[i], crow))) {
 						return -1;
 					}
@@ -2016,13 +2063,24 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
 					atom_size = sizeof(dbl);
 				}
+#ifdef PROT10_DEBUG
+				fprintf(stderr, "Write elements of size %zu to position %lld\n", atom_size * (row - srow), bufpos);
+				bufpos += (atom_size * (row - srow));
+#endif
 				if (mnstr_write(s, Tloc(iterators[i].b, srow), atom_size, row - srow) != (ssize_t) (row - srow)) {
 					return -1;
 				}
 			}
 		}
 
-		mnstr_flush(s);
+#ifdef PROT10_DEBUG
+		fprintf(stderr, "Flushing %zu bytes.\n", bs2_buffer(s).pos);
+#endif
+		if (mnstr_flush(s) < 0) {
+			fprintf(stderr, "Failed to flush.\n");
+			return -1;
+		}
+		srow = row;
 	}
 	return 0;
 }
