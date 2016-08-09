@@ -4764,6 +4764,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"keys",	"rkey",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"auths",	"id",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
 [ "sys",	"auths",	"name",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
+[ "sys",	"schemas",	"id",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
 [ "sys",	"schemas",	"name",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
 [ "sys",	"schemas",	"owner",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
 [ "sys",	"schemas",	"id",	"sys",	"dependencies_schemas_on_users",	"FUNC_DEPENDENCY"	]
