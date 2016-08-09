@@ -141,8 +141,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			unsigned char mask = *dst++;
 			unsigned char val = *dst++;
 			bits = (int)(val & (~mask));
-			// be aware that we use longs as bit vectors
-			bytes = sizeof(int) * ((MOSgetCnt(task->blk) * bits)/32 + (((MOSgetCnt(task->blk) * bits) %32) != 0));
+			bytes = getBitVectorSize(MOSgetCnt(task->blk),bits) + size;
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 		}
 		break;
@@ -151,7 +150,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			unsigned short mask = *dst++;
 			unsigned short val = *dst++;
 			bits = (int)(val & (~mask));
-			bytes = sizeof(int) * ((MOSgetCnt(task->blk) * bits)/32 + (((MOSgetCnt(task->blk) * bits) %32) != 0));
+			bytes = getBitVectorSize(MOSgetCnt(task->blk),bits) + size;
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 		}
 		break;
@@ -160,7 +159,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			unsigned int mask = *dst++;
 			unsigned int val = *dst++;
 			bits = (int)(val & (~mask));
-			bytes = sizeof(int) * ((MOSgetCnt(task->blk) * bits)/32 + (((MOSgetCnt(task->blk) * bits) %32) != 0));
+			bytes = getBitVectorSize(MOSgetCnt(task->blk),bits) + size;
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 		}
 		break;
@@ -169,7 +168,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			ulng mask = *dst++;
 			ulng val = *dst++;
 			bits = (int)(val & (~mask));
-			bytes = sizeof(int) * ((MOSgetCnt(task->blk) * bits)/32 + (((MOSgetCnt(task->blk) * bits) %32) != 0));
+			bytes = getBitVectorSize(MOSgetCnt(task->blk),bits) + size;
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 		}
 	}
@@ -203,8 +202,8 @@ flt
 MOSestimate_prefix(Client cntxt, MOStask task)
 {	BUN i = 0;
 	flt factor = 0.0;
-	int prefixbits = 0,bits, size;
-	lng store;
+	int prefixbits = 0,size;
+	lng bits,store;
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 	(void) cntxt;
 
@@ -221,6 +220,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				val2 = *w;
 				break;
 			}
+			// all are the same?
 			if ( i == limit -1)
 				break;
 			Prefix(bits, mask, val, val2, 8);
@@ -236,6 +236,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(bte))/ store;
 			}
 			
+			// calculate the number of values covered by this prefix
 			val = *v & mask;
 			for(w=v, i = 0; i < limit ; w++, i++){
 				if ( val != (*w & mask) )
@@ -274,6 +275,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(sht))/ store;
 			}
 			
+			// calculate the number of values covered by this prefix
 			val = *v & mask;
 			for(w=v,i = 0; i < limit ; w++, i++){
 				if ( val != (*w & mask) )
@@ -312,6 +314,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(int))/ store;
 			}
 			
+			// calculate the number of values covered by this prefix
 			val = *v & mask;
 			for(w=v,i = 0; i < limit; w++, i++){
 				if ( val != (*w & mask) )
@@ -337,12 +340,10 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			}
 			if ( i == limit-1 )
 				break;
-			Prefix(prefixbits, mask, val, val2, 64); 
-			if( prefixbits == 0)
+			Prefix(prefixbits, mask, val, val2, 32); // bitvector has limit of 32-bit fields
+			if( prefixbits == 0 || 64-prefixbits >= 32)
 				break;
 
-			if( 64 - prefixbits > 32)	// bitvector is limited to 32 bits
-				return 0.0;
 			if( task->range[MOSAIC_PREFIX] > task->start + 1){
 				bits = (task->range[MOSAIC_PREFIX] - task->start) * (64-prefixbits);
 				store = bits/8 + ((bits % 8) >0);
@@ -381,8 +382,8 @@ void
 MOScompress_prefix(Client cntxt, MOStask task)
 {
 	BUN limit, i, j =0 ;
-	int size;
-	int prefixbits,bits; 
+	int prefixbits; 
+	lng bits,size;
 	BitVector base;
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = task->blk;
@@ -507,22 +508,24 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			w = v+1;
 			Prefix(prefixbits, mask, val, val2, 32);
 			bits = 64-prefixbits;
-			*dst++ = mask;
-			val = *v & mask;	//reference value
-			*dst = val;
-			*dst = *dst | bits; // bits outside mask
-			dst++;
-			base  = (BitVector) dst; // start of bit vector
-			
+			if (bits <= 32){
+				*dst++ = mask;
+				val = *v & mask;	//reference value
+				*dst = val;
+				*dst = *dst | bits; // bits outside mask
+				dst++;
+				base  = (BitVector) dst; // start of bit vector
+				
 #ifdef _DEBUG_PREFIX_
-			mnstr_printf(cntxt->fdout,"#prefix compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, bits,mask);
+				mnstr_printf(cntxt->fdout,"#prefix compress %o %o val %d bits %d, %d mask %o\n",*v,*w,val,bits, bits,mask);
 #endif
-			if( i < limit)
-			for(j=0, w = v, i = 0; i < limit; w++, i++,j++){
-				if ( val  != (*w & mask) )
-					break;
-				compress(base,j,bits, (int)(*w & (~mask))); // bits
-				hdr->checksum.sumlng += val;
+				if( i < limit)
+				for(j=0, w = v, i = 0; i < limit; w++, i++,j++){
+					if ( val  != (*w & mask) )
+						break;
+					compress(base,j,bits, (int)(*w & (~mask))); // bits
+					hdr->checksum.sumlng += val;
+				}
 			}
 			MOSsetCnt(blk,j);
 		}
