@@ -32,7 +32,6 @@
 #include "mosaic_prefix.h"
 #include "gdk_bitvector.h"
 
-#define _DEBUG_MOSAIC_
 /* Beware, the dump routines use the compressed part of the task */
 void
 MOSdump_prefix(Client cntxt, MOStask task)
