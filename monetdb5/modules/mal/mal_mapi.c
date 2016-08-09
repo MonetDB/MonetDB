@@ -196,7 +196,7 @@ doChallenge(void *data)
 		// yeah yeah yeah
 		lng val = *((lng*) buf);
 		Mhapi__Message* resp = message_read_length(fdin, COMPRESSION_NONE, val);
-		if(resp->message_case != MHAPI__MESSAGE__MESSAGE_AUTHRESP) {
+		if(resp->message_case != MHAPI__MESSAGE__MESSAGE_AUTHRESP || !resp->authresp) {
 			close_stream(fdin);
 			close_stream(fdout);
 			GDKfree(buf);

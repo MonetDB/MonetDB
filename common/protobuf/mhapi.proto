@@ -1,0 +1,71 @@
+package mhapi;
+
+// this is very preliminary
+
+
+message AuthResponse {
+	enum Version {
+   		PROTO10 = 1;
+ 	}
+ 	optional Version protocol_version = 1;
+	optional string username = 2;
+	optional string password_hashed = 3;
+	optional string dbname = 4;
+	enum Scenario {
+    	MAL = 0;
+   		SQL = 1;
+ 	}
+	optional Scenario scenario = 5;
+	enum Compression {
+ 		NONE = 0;
+   		SNAPPY = 1;
+ 	}
+ 	optional Compression compression_method = 6;
+}
+
+message Error {
+	optional string message = 1;
+}
+
+message Warning {
+	optional string message = 1;
+}
+
+message Query {
+	optional string message = 1;
+}
+
+
+message QueryResult {
+	optional int64 rows = 1;
+	message Column {
+		optional string name = 1;
+		optional string sqltype = 2;
+
+		enum Type {
+			STRING = 1;
+			INTEGER = 2;
+			FLOAT = 3;
+			// more types added here...
+			// maybe these should be consistent with something else
+		}
+
+		optional Type type = 3;
+		repeated string stringValues = 10;
+		repeated int64 intValues = 11 [packed=true];
+		repeated double floatValues = 12 [packed=true];
+	}
+
+	repeated Column columns = 3;
+}
+
+
+message Message {
+	oneof message {
+		AuthResponse authresp = 2;
+		Query query = 3;
+		Error error = 5;
+		Warning warning = 6;
+		QueryResult queryresult = 7;
+	}
+}

@@ -1,0 +1,25 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+
+## Process this file with automake to produce Makefile.in
+
+MTSAFE
+
+INCLUDES = ../stream \
+		$(snappy_CFLAGS) \
+		$(protobuf_CFLAGS) 
+
+lib_protobuf  =  {
+	SOURCES = messages.c messages.h mhapi.pb-c.c mhapi.pb-c.h
+	LIBS = $(snappy_LIBS) \
+		   $(protobuf_LIBS)
+}
+
+headers_common = {
+	DIR = includedir/monetdb
+	HEADERS = h
+	SOURCES = messages.h mhapi.pb-c.h
+}
