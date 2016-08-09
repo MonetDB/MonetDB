@@ -39,7 +39,7 @@ void initBitMasks(void)
 	}
 }
 
-lng
+size_t
 getBitVectorSize(const BUN cnt, const int width)
 {
 	lng size;
