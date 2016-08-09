@@ -856,6 +856,7 @@ CSVrenderer(MapiHdl hdl)
 					     i == 0 ? "" : sep, s);
 		}
 		mnstr_printf(toConsole, "\n");
+		mnstr_flush(toConsole);
 	}
 }
 

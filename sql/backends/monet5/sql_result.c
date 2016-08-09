@@ -1862,7 +1862,7 @@ static int write_str_term(stream* s, str val) {
 	return 	mnstr_writeStr(s, val) && mnstr_writeBte(s, 0);
 }
 
-static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
+static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize) {
 	BAT *order;
 	lng count;
 	size_t i;
@@ -1912,9 +1912,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
 		// FIXME: null values
 	}
 	mnstr_flush(s);
+
 	while (row < (size_t) count)	{
 		size_t crow = 0;
 		size_t bytes_left = bsize;
+		char cont_req, dummy;
 		for (i = 0; i < (size_t) t->nr_cols; i++) {
 			var_col_len[i] = 0;
 		}
@@ -1930,7 +1932,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
 					size_t slen = strlen((const char*) BUNtail(iterators[i], row)) + 1;
 					assert(mtype == TYPE_str);
 					rowsize += slen;
-					var_col_len[i]+= slen;
+					var_col_len[i] += slen;
 				} else {
 					rowsize += ATOMsize(mtype);
 				}
@@ -1940,6 +1942,18 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
 			row++;
 		}
 		assert(row > 0);
+
+		if (!mnstr_readChr(c, &cont_req)) {
+			return -1;
+		}
+		// consume flush from client
+		mnstr_readChr(c, &dummy);
+
+		if (cont_req != 42) {
+			break;
+		}
+
+
 		if (!mnstr_writeLng(s, (lng) row)) {
 			return -1;
 		}
@@ -1950,6 +1964,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
 			if (ATOMvarsized(mtype)) {
 				// FIXME support other types than string
 				assert(mtype == TYPE_str);
+				assert((size_t) var_col_len[i] < bsize);
 				if (!mnstr_writeLng(s, var_col_len[i])) {
 					return -1;
 				}
@@ -1995,7 +2010,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	assert(!json); // so sue me
 
 	if (GDKgetenv_istrue("crazybitsonthewire") && ( b->client->protocol == prot10 || b->client->protocol == prot10compressed)) {
-		return mvc_export_resultset_prot10(t, s, b->client->blocksize);
+		return mvc_export_resultset_prot10(t, s, b->client->fdin->s, b->client->blocksize);
 	}
 
 	if (!json) {

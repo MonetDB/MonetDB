@@ -4378,6 +4378,26 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 }
 
 
+
+void*
+bs2_getbuf(stream *ss)
+{
+	bs2 *s = (bs2 *) ss->stream_data.p;
+	assert(ss->read == bs2_read);
+	return (void*) s->buf;
+}
+
+
+void
+bs2_resetbuf(stream *ss)
+{
+	bs2 *s = (bs2 *) ss->stream_data.p;
+	assert(ss->read == bs2_read);
+	s->itotal = 0;
+	s->nr = 0;
+	s->readpos = 0;
+}
+
 int
 isa_block_stream(stream *s)
 {
@@ -4449,6 +4469,14 @@ int
 mnstr_readChr(stream *s, char *val)
 {
 	return (int) s->read(s, (void *) val, sizeof(*val), 1);
+}
+
+int
+mnstr_writeChr(stream *s, char val)
+{
+	if (s == NULL || s->errnr)
+		return 0;
+	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
 }
 
 int

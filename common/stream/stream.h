@@ -104,6 +104,8 @@ stream_export int mnstr_init(void);
  */
 stream_export int mnstr_readBte(stream *s, signed char *val);
 stream_export int mnstr_readChr(stream *s, char *val);
+stream_export int mnstr_writeChr(stream *s, char val);
+
 stream_export int mnstr_writeBte(stream *s, signed char val);
 stream_export int mnstr_readSht(stream *s, short *val);
 stream_export int mnstr_writeSht(stream *s, short val);
@@ -242,6 +244,8 @@ typedef enum {
 } compression_method;
 
 stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);
+stream_export void* bs2_getbuf(stream *ss);
+stream_export void bs2_resetbuf(stream *ss);
 
 /* read block of data including the end of block marker */
 stream_export ssize_t mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
