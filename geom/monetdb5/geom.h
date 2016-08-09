@@ -42,6 +42,10 @@
 #define OPENCL_THREADS 8
 //#define OPENMP  1
 
+#ifdef OPENMP
+#include <omp.h>
+#endif
+
 #define BATrmprops(b)                                           \
     b->tsorted = b->trevsorted = 0;     \
     b->tnosorted = b->tnorevsorted = 0;                         \
