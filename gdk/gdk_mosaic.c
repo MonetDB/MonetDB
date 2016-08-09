@@ -84,16 +84,15 @@ BATmosaic(BAT *bn, BUN cap)
     m->parentid = bn->batCacheid;
 
 #ifdef PERSISTENTMOSAIC
-    if ((BBP_status(bn->batCacheid) & BBPEXISTING) &&
-        bn->batInserted == bn->batCount) {
-        MT_Id tid;
-        struct mosaicsync *hs = GDKmalloc(sizeof(*hs));
+    if ((BBP_status(bn->batCacheid) & BBPEXISTING) && bn->batInserted == bn->batCount) {
+        struct mosaicsync *hs = GDKzalloc(sizeof(*hs));
         if (hs != NULL) {
             BBPfix(bn->batCacheid);
             hs->id = bn->batCacheid;
             hs->hp = m;
             hs->func = "BATmosaic";
-            MT_create_thread(&tid, BATmosaicsync, hs, MT_THR_DETACHED);
+            //only for large ones  and when there is no concurrency: MT_create_thread(&tid, BATmosaicsync, hs, MT_THR_DETACHED);
+			BATmosaicsync(hs);
         }
     } else
         ALGODEBUG fprintf(stderr, "#BATmosaic: NOT persisting index %d\n", bn->batCacheid);
