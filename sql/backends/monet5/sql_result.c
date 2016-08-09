@@ -1868,11 +1868,13 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
 	size_t i;
 	size_t row = 0;
 	size_t srow = 0;
-
+	lng *var_col_len;
 	BATiter *iterators;
 
 	iterators = GDKmalloc(sizeof(BATiter) * t->nr_cols);
-	if (!iterators) {
+	var_col_len = GDKmalloc(sizeof(lng) * t->nr_cols);
+
+	if (!iterators || !var_col_len) {
 		return -1;
 	}
 
@@ -1897,6 +1899,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
 		int mtype = c->type.type->localtype;
 		int typelen = ATOMsize(mtype);
 		iterators[i] = bat_iterator(BATdescriptor(c->b));
+
 		if (ATOMvarsized(mtype)) {
 			typelen = -1;
 		}
@@ -1912,6 +1915,10 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
 	while (row < (size_t) count)	{
 		size_t crow = 0;
 		size_t bytes_left = bsize;
+		for (i = 0; i < (size_t) t->nr_cols; i++) {
+			var_col_len[i] = 0;
+		}
+
 		// FIXME: this can be skipped if there are no variable-length types in the result set
 		while (row < (size_t) count) {
 			size_t rowsize = 0;
@@ -1920,8 +1927,10 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
 				int mtype = c->type.type->localtype;
 				if (ATOMvarsized(mtype)) {
 					// FIXME support other types than string
+					size_t slen = strlen((const char*) BUNtail(iterators[i], row)) + 1;
 					assert(mtype == TYPE_str);
-					rowsize += strlen((const char*) BUNtail(iterators[i], row)) + 1;
+					rowsize += slen;
+					var_col_len[i]+= slen;
 				} else {
 					rowsize += ATOMsize(mtype);
 				}
@@ -1941,6 +1950,9 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, size_t bsize) {
 			if (ATOMvarsized(mtype)) {
 				// FIXME support other types than string
 				assert(mtype == TYPE_str);
+				if (!mnstr_writeLng(s, var_col_len[i])) {
+					return -1;
+				}
 				for (crow = srow; crow < row; crow++) {
 					if (!write_str_term(s, (char*) BUNtail(iterators[i], crow))) {
 						return -1;

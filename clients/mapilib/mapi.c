@@ -826,6 +826,7 @@ struct MapiColumn {
 	int columnlength;
 	int digits;
 	int scale;
+	void* dataprot10;
 };
 
 /* information about bound columns */
@@ -938,6 +939,7 @@ struct MapiResultSet {
 	struct MapiColumn *fields;
 	struct MapiRowBuf cache;
 	int commentonly;	/* only comments seen so far */
+	mapi_int64 rows_read;
 };
 
 struct MapiStatement {
@@ -4010,13 +4012,23 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			lng nr_rows;
 			lng nr_cols;
 			lng i;
+			result = malloc(sizeof(struct MapiResultSet));
+			if (!result) {
+				// TODO: actually set mid->error :)
+				return mid->error;
+			}
 			if (!mnstr_readInt(mid->from, &result_set_id) ||
 					!mnstr_readLng(mid->from, &nr_rows) ||
 					!mnstr_readLng(mid->from, &nr_cols)) {
 				return mid->error;
 			}
 			fprintf(stderr, "result_set_id=%d, nr_rows=%llu, nr_cols=%lld\n", result_set_id, nr_rows, nr_cols);
-
+			result->fieldcnt = nr_cols;
+			result->row_count = nr_rows;
+			result->fields = malloc(sizeof(struct MapiColumn) * result->fieldcnt);
+			result->tableid = result_set_id;
+			result->querytype = Q_TABLE;
+			result->tuple_count = 0;
 
 			for (i = 0; i < nr_cols; i++) {
 				lng col_info_length;
@@ -4040,18 +4052,19 @@ read_into_cache(MapiHdl hdl, int lookahead)
 						!mnstr_readInt(mid->from, &typelen)) {
 					return mid->error;
 				}
-				fprintf(stderr, "%lld col_info_length=%lld, table_name=%s, col_name=%s, type_sql_name=%s, type_len=%d\n", i, col_info_length, table_name, col_name, type_sql_name, typelen);
+				fprintf(stderr, "%lld col_info_length=%lld, table_name=%s, col_name=%s, type_sql_name=%s, type_len=%d\n",
+						i, col_info_length, table_name, col_name, type_sql_name, typelen);
+				result->fields[i].columnname = col_name;
+				result->fields[i].tablename = table_name;
+				result->fields[i].columntype = type_sql_name;
 			}
+			hdl->result = result;
+			hdl->active = result;
 
 			{
-				lng nrows = 0;
 				char dummy;
 				// we flush on the other side so this read will always fail
 				mnstr_readChr(mid->from, &dummy);
-				if (!mnstr_readLng(mid->from, &nrows)) {
-					return mid->error;
-				}
-				fprintf(stderr, "nrows=%llu\n", nrows);
 			}
 
 
@@ -5275,6 +5288,27 @@ mapi_fetch_row(MapiHdl hdl)
 	char *reply;
 	int n;
 	struct MapiResultSet *result;
+
+	if (hdl->mid->protocol == prot10) {
+		result = hdl->result;
+		result->rows_read++;
+		// do we have any rows in our cache
+		if (result->rows_read > result->tuple_count && result->rows_read < result->row_count) {
+			// read block from socket
+			lng nrows = 0;
+			// we flush on the other side so this read will always fail
+			if (!mnstr_readLng(mid->from, &nrows)) {
+				// FIXME: set hdl->mid to something
+				return hdl->mid->error;
+			}
+
+			fprintf(stderr, "nrows=%llu\n", nrows);
+
+
+			// iterate over cols
+		}
+		return result->fieldcnt;
+	}
 
 	mapi_hdl_check(hdl, "mapi_fetch_row");
 	do {

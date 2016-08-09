@@ -330,13 +330,16 @@ fetch_line(MapiHdl hdl)
 static int
 fetch_row(MapiHdl hdl)
 {
-	char *reply;
-
-	do {
-		if ((reply = fetch_line(hdl)) == NULL)
-			return 0;
-	} while (*reply != '[' && *reply != '=');
-	return mapi_split_line(hdl);
+	// yeah right. circumvent your own api...
+//	char *reply;
+//
+//	do {
+//		if ((reply = fetch_line(hdl)) == NULL)
+//			return 0;
+//	} while (*reply != '[' && *reply != '=');
+//	return mapi_split_line(hdl);
+//
+	return mapi_fetch_row(hdl);
 }
 
 static void
