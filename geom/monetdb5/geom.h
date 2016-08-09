@@ -40,7 +40,7 @@
 
 #define OPENCL_DYNAMIC 1
 #define OPENCL_THREADS 8
-#define OPENMP  1
+//#define OPENMP  1
 
 #ifdef OPENMP
 #include <omp.h>

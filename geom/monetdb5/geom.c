@@ -2160,7 +2160,7 @@ wkbDumpRings_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, 
 	char *path = NULL;
     const GEOSGeometry *ring;
     wkb *geom;
-	unsigned int numInteriorRings, i;
+	unsigned int i;
     int num_rings=0;
 	str err;
 
@@ -2211,7 +2211,7 @@ wkbDumpRings_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, 
 	}
     if (parent) {
         /*Get the tail and add parentID geometriesNum types*/
-        for (i = 0; i < numInteriorRings+1; i++) {
+        for (i = 0; i < num_rings; i++) {
             if (BUNappend(parentBAT, parent, TRUE) != GDK_SUCCEED) {
                 BBPunfix(idBAT->batCacheid);
                 BBPunfix(geomBAT->batCacheid);
@@ -2365,8 +2365,8 @@ wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* 
 {
     (void) flag;
     int skip_nils = 1, i = 0;
-    const char *msg = MAL_SUCCEED;
-    str err;
+    const char *err;
+    str msg = MAL_SUCCEED;
     BAT *b = NULL, *g = NULL, *e = NULL;
     oid min, max;
     BUN ngrp;
@@ -2387,10 +2387,11 @@ wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* 
 		throw(MAL, "geom.wkbPolygonize", RUNTIME_OBJECT_MISSING);
 	}
 
-    if ((msg = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
+    if ((err = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
                     &start, &end, &cnt,
-                    &cand, &candend)) != NULL) {
-        throw(MAL, "BATgroupPolygonize: %s\n", msg);
+                    &cand, &candend)) != MAL_SUCCEED) {
+        msg = createException(MAL, "wkbsubPolygonize", "BATgroupaggrinit failed:%s", err);
+        return msg;
     }
 
     /*Create the empty geoms*/
@@ -2400,7 +2401,7 @@ wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* 
     for (i = 0; i < ngrp; i++)
         empty_geoms[i] = geos2wkb(GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1));
 
-    err = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbPolygonize_, "wkbPolygonize");
+    msg = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbPolygonize_, "wkbsubPolygonize");
 	BBPkeepref(*outBAT_id);
 
     /*TODO: Maybe free all geoms*/
@@ -2409,7 +2410,7 @@ wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* 
     BBPunfix(g->batCacheid);
     BBPunfix(e->batCacheid);
 
-	return err;
+	return msg;
 }
 
 str wkbSimplify(wkb** outWKB, wkb** geom, float* tolerance){
@@ -3984,8 +3985,8 @@ wkbsubMakeLine(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fl
 {
     (void) flag;
     int skip_nils = 1, i = 0;
-    const char *msg = MAL_SUCCEED;
-    str err;
+    const char *err;
+    str msg = MAL_SUCCEED;
     BAT *b = NULL, *g = NULL, *e = NULL;
     oid min, max;
     BUN ngrp;
@@ -4006,13 +4007,14 @@ wkbsubMakeLine(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fl
 		throw(MAL, "geom.subMakeLine", RUNTIME_OBJECT_MISSING);
 	}
 
-    if ((msg = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
+    if ((err = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
                     &start, &end, &cnt,
-                    &cand, &candend)) != NULL) {
-        throw(MAL, "BATgroupMakeLine: %s\n", msg);
+                    &cand, &candend)) != MAL_SUCCEED) {
+        msg = createException(MAL, "wkbsubMakeLine", "BATgroupaggrinit failed:%s", err);
+        return msg;
     }
 
-    err = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbMakeLine, "wkbMakeLine");
+    msg = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbMakeLine, "wkbsubMakeLine");
 	BBPkeepref(*outBAT_id);
 
     GDKfree(empty_geoms);
@@ -4020,8 +4022,7 @@ wkbsubMakeLine(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fl
     BBPunfix(g->batCacheid);
     BBPunfix(e->batCacheid);
 
-	return err;
-    return MAL_SUCCEED;
+	return msg;
 }
 
 /* Returns the first or last point of a linestring */
@@ -5104,8 +5105,8 @@ str
 wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag) {
     (void) flag;
     int skip_nils = 1, i = 0;
-    const char *msg = MAL_SUCCEED;
-    str err;
+    const char *err;
+    str msg = MAL_SUCCEED;
     BAT *b = NULL, *g = NULL, *e = NULL;
     oid min, max;
     BUN ngrp;
@@ -5126,10 +5127,11 @@ wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag)
 		throw(MAL, "geom.wkbUnion", RUNTIME_OBJECT_MISSING);
 	}
 
-    if ((msg = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
+    if ((err = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
                     &start, &end, &cnt,
-                    &cand, &candend)) != NULL) {
-        throw(MAL, "BATgroupUnion: %s\n", msg);
+                    &cand, &candend)) != MAL_SUCCEED) {
+        msg = createException(MAL, "wkbsubUnion", "BATgroupaggrinit failed:%s", err);
+        return msg;
     }
 
     /*Create the empty geoms*/
@@ -5142,7 +5144,7 @@ wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag)
     for (i = 0; i < ngrp; i++)
         empty_geoms[i] = geos2wkb(GEOSGeom_createEmptyPolygon());
 
-    err = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbUnion, "wkbUnion");
+    msg = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbUnion, "wkbsubUnion");
 	BBPkeepref(*outBAT_id);
 
     if (empty_geoms)
@@ -5151,7 +5153,7 @@ wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag)
     BBPunfix(g->batCacheid);
     BBPunfix(e->batCacheid);
 
-	return err;
+	return msg;
 }
 
 str
@@ -5736,8 +5738,8 @@ str
 wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag) {
     (void) flag;
     int skip_nils = 1, i = 0;
-    const char *msg = MAL_SUCCEED;
-    str err;
+    const char* err;
+    str msg = MAL_SUCCEED;
     BAT *b = NULL, *g = NULL, *e = NULL;
     oid min, max;
     BUN ngrp = 0;
@@ -5758,10 +5760,11 @@ wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fla
 		throw(MAL, "geom.wkbCollect", RUNTIME_OBJECT_MISSING);
 	}
 
-    if ((msg = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
+    if ((err = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
                     &start, &end, &cnt,
-                    &cand, &candend)) != NULL) {
-        throw(MAL, "BATgroupCollect: %s\n", msg);
+                    &cand, &candend)) != MAL_SUCCEED) {
+        msg = createException(MAL, "wkbsubCollect", "BATgroupaggrinit failed:%s", err);
+        return msg;
     }
     
     /*Create the empty geoms*/
@@ -5774,7 +5777,7 @@ wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fla
     for (i = 0; i < ngrp; i++)
         empty_geoms[i] = geos2wkb(GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1));
 
-    err = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbCollectAppend, "wkbCollect");
+    msg = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbCollectAppend, "wkbsubCollect");
 	BBPkeepref(*outBAT_id);
 
     GDKfree(empty_geoms);
@@ -5782,7 +5785,7 @@ wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fla
     BBPunfix(g->batCacheid);
     BBPunfix(e->batCacheid);
 
-	return err;
+	return msg;
 }
 
 str
@@ -10582,8 +10585,7 @@ ContainsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat
 	BAT *xl, *xr, *bl, *bx, *by;
 	oid lo, ro;
 	BATiter lBAT_iter, *xBAT_iters = NULL, *yBAT_iters = NULL;
-    int numIters = 1;
-    uint32_t j = 0;
+    int numIters = 1, j = 0;
     BUN px = 0, py = 0, pl = 0, qx = 0, qy = 0, ql = 0;
 	GEOSGeom *rGeometries = NULL;
     bit *outs = NULL;
