@@ -12,9 +12,9 @@ returns table(technique string, "count" bigint, inputsize bigint, outputsize big
 external name sql.mosaiclayout;
 
 create function mosaic_analysis(sch string, tbl string, col string) 
-returns table(technique string, outputsize bigint, factor float, run bigint)
+returns table(technique string, outputsize bigint, factor float, runtime bigint)
 external name sql.mosaicanalysis;
 
 create function mosaic_analysis(sch string, tbl string, col string, compression string) 
-returns table(technique string, outputsize bigint, factor float, run bigint)
+returns table(technique string, outputsize bigint, factor float, runtime bigint)
 external name sql.mosaicanalysis;
