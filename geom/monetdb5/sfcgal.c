@@ -13,6 +13,28 @@
 
 #include "sfcgal.h"
 
+static inline int
+geometryHasZ(int info)
+{
+	return (info & 0x02);
+}
+
+static inline int
+geometryHasM(int info)
+{
+	return (info & 0x01);
+}
+static wkb wkb_nil = { ~0, 0 };
+
+static wkb *
+wkbNULLcopy(void)
+{
+	wkb *n = GDKmalloc(sizeof(wkb_nil));
+	if (n)
+		*n = wkb_nil;
+	return n;
+}
+
 static sfcgal_geometry_t* sfcgal_from_geom(str *ret, const GEOSGeometry *geom, int type);
 static str geom_to_sfcgal(sfcgal_geometry_t **res, const GEOSGeometry *geosGeometry);
 static str sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int srid, int flag);

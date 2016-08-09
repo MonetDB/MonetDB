@@ -54,27 +54,8 @@
     b->tnonil = 0;                                             \
     b->tnodense = 1;                                            
 
-static inline int
-geometryHasZ(int info)
-{
-	return (info & 0x02);
-}
-
-static inline int
-geometryHasM(int info)
-{
-	return (info & 0x01);
-}
-static wkb wkb_nil = { ~0, 0 };
-
-static wkb *
-wkbNULLcopy(void)
-{
-	wkb *n = GDKmalloc(sizeof(wkb_nil));
-	if (n)
-		*n = wkb_nil;
-	return n;
-}
+/*Necessary for external functionality*/
+geom_export str numPointsLineString(unsigned int *out, const GEOSGeometry *geosGeometry);
 
 /* general functions */
 geom_export str geoHasZ(int* res, int* info);

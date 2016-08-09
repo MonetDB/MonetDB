@@ -18,6 +18,27 @@ int TYPE_mbr;
 
 static str BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid min, oid max, BUN ngrp, BUN start, BUN end, wkb **empty_geoms, str (*func) (wkb **, wkb **, wkb**), char* name);
 
+static inline int
+geometryHasZ(int info)
+{
+	return (info & 0x02);
+}
+
+static inline int
+geometryHasM(int info)
+{
+	return (info & 0x01);
+}
+static wkb wkb_nil = { ~0, 0 };
+
+static wkb *
+wkbNULLcopy(void)
+{
+	wkb *n = GDKmalloc(sizeof(wkb_nil));
+	if (n)
+		*n = wkb_nil;
+	return n;
+}
 /* the first argument in the functions is the return variable */
 
 #ifdef HAVE_PROJ
@@ -4053,7 +4074,7 @@ wkbEndPoint(wkb **out, wkb **geom)
 	return wkbBorderPoint(out, geom, GEOSGeomGetEndPoint, "geom.EndPoint");
 }
 
-static str
+str
 numPointsLineString(unsigned int *out, const GEOSGeometry *geosGeometry)
 {
 	/* get the coordinates of the points comprising the geometry */

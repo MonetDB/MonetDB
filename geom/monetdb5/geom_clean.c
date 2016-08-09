@@ -1,49 +1,14 @@
 #include "geom.h"
 
-static str
-geos_verify(const GEOSGeometry **res, const GEOSGeometry *geom)
-{
-	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
-    str msg = MAL_SUCCEED;
-
-    switch (geom->type)
-    {
-        case POINTTYPE:
-        case MULTIPOINTTYPE:
-            *res = geom;
-            break;
-        case LINETYPE:
-            msg = geos_line_verify(res, geom);
-            break;
-        case POLYGONTYPE:
-            msg = geos_polygon_verify(res, geom);
-            break;
-        case MULTILINETYPE:
-        case MULTIPOLYGONTYPE:
-        case COLLECTIONTYPE:
-            msg = geos_collection_verify(res, geom);
-            break;
-        case CIRCSTRINGTYPE:
-        case COMPOUNDTYPE:
-        case CURVEPOLYTYPE:
-        case MULTISURFACETYPE:
-        case MULTICURVETYPE:
-        default:
-            *res = NULL;
-            msg = createException(MAL, "geos_verify", "Unknown geometry type");
-            break;
-    }
-    
-    return msg;
-}
+static str geos_geom_verify(GEOSGeometry **res, const GEOSGeometry *geosGeometry);
 
 static str
-geos_ring_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
+geos_ring_verify(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 {
     int closed = 0;
-	str err = MAL_SUCCEED;
+	str err = MAL_SUCCEED, msg = MAL_SUCCEED;
 	unsigned int pointsNum;
-    int srid = 0;
+    int srid = 0, j = 0;
 
     /*Check if the ring is closed*/ 
     if ((closed = GEOSisClosed(geosGeometry)) == 2)
@@ -51,20 +16,21 @@ geos_ring_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 
     /*If it is not closed, close it*/
     if (closed != 1) {
-        const GEOSCoordSequence *gcs_new = NULL, *gcs_old;
+        GEOSCoordSequence *gcs_new = NULL;
+        const GEOSCoordSequence *gcs_old = NULL;
         srid = GEOSGetSRID(geosGeometry);
         double x, y, z;
-        int lineDim = 0;
+        int lineDim = 0, i = 0;
 
         if ((err = numPointsLineString(&pointsNum, geosGeometry)) != MAL_SUCCEED) {
             *res = NULL;
-            msg = createException(MAL, "geos_ring_verify", "numPointsLineString failed:%s", err;
+            msg = createException(MAL, "geos_ring_verify", "numPointsLineString failed:%s", err);
             GDKfree(err);
             return msg;
         } else {
             assert(pointsNum < 4);
             //get the coordinate sequences of the LineString
-            if (!(gcs_old = GEOSGeom_getCoordSeq(line))) {
+            if (!(gcs_old = GEOSGeom_getCoordSeq(geosGeometry))) {
                 *res = NULL;
                 throw(MAL, "geom.AddPoint", "GEOSGeom_getCoordSeq failed");
             }
@@ -105,27 +71,26 @@ geos_ring_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
                 }
             }
             //Create new LineString
-            if (!(res = GEOSGeom_createLineString(gcs_new))) {
+            if (!(*res = GEOSGeom_createLineString(gcs_new))) {
                 throw(MAL, "geom.AddPoint", "GEOSGeom_createLineString failed");
             }
 
-    	    GEOSSetSRID(res, srid);
+    	    GEOSSetSRID(*res, srid);
         }
     } else {
-        /*We might have to clone it*/
-        *res = geosGeometry;
+        *res = GEOSGeom_clone(geosGeometry);
     }
 
 	return MAL_SUCCEED;
 }
 
-str
-geos_poly_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
+static str
+geos_polygon_verify(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 {
-	const GEOSGeometry *extRing = NULL, *extRres = NULL, **intRings = NULL;
-	int numInteriorRings = 0, i = 0, j = 0;
-	POINTARRAY **new_rings;
-	int i = 0, numIntRings = 0;
+	const GEOSGeometry *extRing = NULL;
+	GEOSGeometry *extRes = NULL, **intRings = NULL;
+	int i = 0, j = 0, numIntRings = 0;
+    str err = MAL_SUCCEED, msg = MAL_SUCCEED;
     bit untouched = 1;
 
 	/* get the exterior ring of the polygon */
@@ -141,30 +106,30 @@ geos_poly_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
         untouched = 0;
 
 	numIntRings = GEOSGetNumInteriorRings(geosGeometry);
-	if (numInteriorRings == -1) {
+	if (numIntRings == -1) {
 		*res = NULL;
 		throw(MAL, "geos_poly_verify", "GEOSGetNumInteriorRings failed.");
     } else if(numIntRings) {
 
-        if ( (intRings = (const GEOSGeometry **) GDKzalloc(sizeof(const GEOSGeometry *)*numInteriorRings)) == NULL) {
+        if ( (intRings = (GEOSGeometry **) GDKzalloc(sizeof(GEOSGeometry *)*numIntRings)) == NULL) {
             *res = NULL;
             throw(MAL, "geos_poly_verify", MAL_MALLOC_FAIL);
         }
 
-        for (i = 0; i < numInteriorRings; i++) {
+        for (i = 0; i < numIntRings; i++) {
             const GEOSGeometry *intRing = NULL;
             if ((intRing = GEOSGetInteriorRingN(geosGeometry, i)) == NULL) {
                 msg = createException(MAL, "geos_poly_verify", "GEOSGetInteriorRingN failed.");
                 break;
             }
-            if ( (msg = geos_ring_verify(intRings[i], intRing)) != MAL_SUCCEED) {
+            if ( (msg = geos_ring_verify(&intRings[i], intRing)) != MAL_SUCCEED) {
                 break;
             } else if (intRings[i] != intRing)
                 untouched = 0;
         }
         if (msg != MAL_SUCCEED) {
             *res = NULL;
-            /*TODO: You should destroy if you are cloning*/
+            /*TODO: You should only destroy if you have clonned it*/
             for (j = 0; j < i; j++)
                 GEOSGeom_destroy(intRings[j]);
             GDKfree(intRings);
@@ -174,19 +139,18 @@ geos_poly_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 
     /*Create a new geometry*/
     if (!untouched) {
-        if ( (*res = GEOSGeom_createPolygon(exteriorRingGeometry, intRings, numInteriorRings)) == NULL) {
-            GEOSGeom_destroy(exteriorRingGeometry);
-            if (numInteriorRings) {
-                /*TODO: You should destroy if you are cloning*/
-                for (i = 0; i < numInteriorRings; i++)
+        if ( (*res = GEOSGeom_createPolygon(extRes, intRings, numIntRings)) == NULL) {
+            GEOSGeom_destroy(extRes);
+            if (numIntRings) {
+                /*TODO: You should only destroy if you have clonned it*/
+                for (i = 0; i < numIntRings; i++)
                     GEOSGeom_destroy(intRings[i]);
                 GDKfree(intRings);
             }
             return createException(MAL, "geos_poly_verify", "GEOSGeom_createPolygon failed");
         }
     } else {
-        /*TODO: Maybe we should clone it*/
-        *res = geosGeometry;
+        *res = GEOSGeom_clone(geosGeometry);
     }
 
     if (intRings)
@@ -196,17 +160,17 @@ geos_poly_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 }
 
 /*Line has 0 or more than one point. If missing duplicate points*/
-str
-geos_line_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
+static str
+geos_line_verify(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 {
-    unsigned int *pointsN;
+    unsigned int pointsN;
 	GEOSGeom *ret;
-    str err = MAL_SUCCEED;
+    str err = MAL_SUCCEED, msg = MAL_SUCCEED;
     int srid = 0;
 
 
 	//get the points in the exterior ring
-	if ((err = numPointsLineString(pointsN, lineGeometry)) != MAL_SUCCEED) {
+	if ( (err = numPointsLineString(&pointsN, geosGeometry)) != MAL_SUCCEED) {
         msg = createException(MAL,"geos_line_verify", "numPointsLineString failed:%s", err);
         GDKfree(err);
         *res = NULL;
@@ -214,12 +178,13 @@ geos_line_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 	}
 
     if (pointsN == 1) {
-        const GEOSCoordSequence *gcs_new = NULL, *gcs_old;
+        GEOSCoordSequence *gcs_new = NULL;
+        const GEOSCoordSequence *gcs_old = NULL;
         srid = GEOSGetSRID(geosGeometry);
         double x, y, z;
         int lineDim = 0;
 
-        if (!(gcs_old = GEOSGeom_getCoordSeq(line))) {
+        if (!(gcs_old = GEOSGeom_getCoordSeq(geosGeometry))) {
             *res = NULL;
             throw(MAL, "geos_line_verify", "GEOSGeom_getCoordSeq failed");
         }
@@ -258,31 +223,31 @@ geos_line_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
         }
 
         //Create new LineString
-        if (!(res = GEOSGeom_createLineString(gcs_new))) {
+        if (!(*res = GEOSGeom_createLineString(gcs_new))) {
             throw(MAL, "geos_line_verify", "GEOSGeom_createLineString failed");
         }
 
-        GEOSSetSRID(res, srid);
+        GEOSSetSRID(*res, srid);
     }
 	else {
-		/*TODO: Maybe here we should clone it*/
-        *res = line;
+        *res = GEOSGeom_clone(geosGeometry);
 	}
 
     return MAL_SUCCEED;
 }
 
-str
-geos_collection_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometry)
+static str
+geos_collection_verify(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 {
-	GEOSGeom **newGeoms = NULL;
-	uint32_t i, numGeoms=0;
+	GEOSGeometry **newGeoms = NULL;
+	uint32_t i, j, numGeoms=0;
+    str err = MAL_SUCCEED, msg = MAL_SUCCEED;
 
     numGeoms = GEOSGetNumGeometries(geosGeometry);
     if (numGeoms < 0)
         throw(MAL, "geos_collection_verify", "GEOSGetNumGeometries failed");
 
-    if ( (newGeoms = (const GEOSGeometry **) GDKmalloc(sizeof(const GEOSGeometry *)*numGeoms)) == NULL) {
+    if ( (newGeoms = (GEOSGeometry **) GDKmalloc(sizeof(GEOSGeometry *)*numGeoms)) == NULL) {
         throw(MAL, "geos_collection_verify", MAL_MALLOC_FAIL);
     }
 
@@ -291,7 +256,7 @@ geos_collection_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometr
         if (!geom)
             throw(MAL, "geos_collection_verify", "GEOSGetGeometryN failed");
 
-        if ((err = geos_geom_verify(newGeoms[i], geom)) != MAL_SUCCEED) {
+        if ((err = geos_geom_verify(&newGeoms[i], geom)) != MAL_SUCCEED) {
             msg = createException(MAL, "geos_collection_verify", "geos_geom_verify failed:%s",err);
             for (j = 0; j < i; j++) {
                 GEOSGeom_destroy(newGeoms[j]);
@@ -301,7 +266,7 @@ geos_collection_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometr
         }
     }
 
-	if ( (*res = GEOSGeom_createCollection(GEOSGeomTypeId(collecGeom), geomGeometries, geometriesNum)) == NULL ) {
+	if ( (*res = GEOSGeom_createCollection(GEOS_GEOMETRYCOLLECTION, newGeoms, numGeoms)) == NULL ) {
         for (i = 0; i < numGeoms; i++)
             GEOSGeom_destroy(newGeoms[i]);
         GDKfree(newGeoms);
@@ -312,11 +277,44 @@ geos_collection_verify(const GEOSGeometry **res, const GEOSGeometry *geosGeometr
 }
 
 static str
+geos_geom_verify(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
+{
+	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
+    str msg = MAL_SUCCEED;
+
+    switch (geometryType)
+    {
+        case wkbPoint_mdb:
+	    case wkbMultiPoint_mdb:
+            *res = GEOSGeom_clone(geosGeometry);
+            break;
+	    case wkbLineString_mdb:
+    	case wkbLinearRing_mdb:
+            msg = geos_line_verify(res, geosGeometry);
+            break;
+	    case wkbPolygon_mdb:
+            msg = geos_polygon_verify(res, geosGeometry);
+            break;
+	    case wkbMultiLineString_mdb:
+    	case wkbMultiPolygon_mdb:
+    	case wkbGeometryCollection_mdb:
+            msg = geos_collection_verify(res, geosGeometry);
+            break;
+        default:
+            *res = NULL;
+            msg = createException(MAL, "geos_verify", "Unknown geometry type");
+            break;
+    }
+    
+    return msg;
+}
+
+static str
 GEOSGeom_GEOS_nodeLines(GEOSGeometry **res, const GEOSGeometry* lines)
 {
-	GEOSGeometry* geom = NULL, *point = NULL;
+	GEOSGeometry *geom = NULL, *point = NULL;
 
-	if ( (point = GEOSGeom_GEOS_getPointN(lines, 0)) == NULL) {
+	if ( (point = GEOSGeomGetPointN(lines, 0)) == NULL) {
         *res = NULL;
         return MAL_SUCCEED;
     }
@@ -331,12 +329,20 @@ GEOSGeom_GEOS_nodeLines(GEOSGeometry **res, const GEOSGeometry* lines)
 	return MAL_SUCCEED;
 }
 
+/*TODO: Find a way to clone it*/
+static GEOSGeometry*
+GEOSGeom_GEOS_buildArea(const GEOSGeometry* geom_in) {
+    return NULL;
+}
+
+
 static str
 GEOSGeom_GEOS_makeValidPolygon(GEOSGeometry **res, const GEOSGeometry *poly)
 {
 	GEOSGeom geosBound, geosCutEdges, geosArea, collapsePoints;
-	GEOSGeometry *vgeoms[3], *pi = NULL, *po = NULL;
+	GEOSGeometry *vgeoms[3], *uniqPointsBound = NULL, *uniqPointsEdges = NULL;
 	unsigned int nvgeoms=0;
+    str err = MAL_SUCCEED, msg = MAL_SUCCEED;
 
 	assert (GEOSGeomTypeId(geosGeometry) == GEOS_POLYGON || GEOSGeomTypeId(geosGeometry) == GEOS_MULTIPOLYGON);
 
@@ -345,31 +351,33 @@ GEOSGeom_GEOS_makeValidPolygon(GEOSGeometry **res, const GEOSGeometry *poly)
 		throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSBoundary failed");
     }
 
-	if ( (geosCutEdges = GEOSGeom_GEOS_nodeLines(geosBound)) == NULL) {
+	if ( (err = GEOSGeom_GEOS_nodeLines(&geosCutEdges, geosBound)) != MAL_SUCCEED) {
 		GEOSGeom_destroy(geosBound);
         *res = NULL;
-		throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSGeom_GEOS_nodeLines failed");
+		msg = createException(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSGeom_GEOS_nodeLines failed");
+        GDKfree(err);
+        return msg;
 	}
 
     if ( (uniqPointsBound = GEOSGeom_extractUniquePoints(geosBound)) == NULL) {
-        GEOSGeom_destroy(geosCutEdges);
+        GEOSGeom_destroy(geosCutEdges); //Check if needs to be removed
         GEOSGeom_destroy(geosBound);
         *res = NULL;
         throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSGeom_extractUniquePoints failed");
     }
 
     if ( (uniqPointsEdges = GEOSGeom_extractUniquePoints(geosCutEdges)) == NULL) {
+        GEOSGeom_destroy(geosCutEdges); //Check if needs to be removed
         GEOSGeom_destroy(uniqPointsBound);
-        GEOSGeom_destroy(geosCutEdges);
         GEOSGeom_destroy(geosBound);
         *res = NULL;
         throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSGeom_extractUniquePoints failed");
     }
 
     if ( (collapsePoints = GEOSDifference(uniqPointsBound, uniqPointsEdges)) == NULL) {
+        GEOSGeom_destroy(geosCutEdges); //Check if needs to be removed
         GEOSGeom_destroy(uniqPointsEdges);
         GEOSGeom_destroy(uniqPointsBound);
-        GEOSGeom_destroy(geosCutEdges);
         GEOSGeom_destroy(geosBound);
         *res = NULL;
         throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSDifference failed");
@@ -379,7 +387,7 @@ GEOSGeom_GEOS_makeValidPolygon(GEOSGeometry **res, const GEOSGeometry *poly)
     GEOSGeom_destroy(uniqPointsBound);
     GEOSGeom_destroy(geosBound);
 
-	if ( (polyArea = GEOSGeom_createEmptyPolygon()) == NULL) {
+	if ( (geosArea = GEOSGeom_createEmptyPolygon()) == NULL) {
         GEOSGeom_destroy(geosCutEdges);
         *res = NULL;
 		throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSGeom_createEmptyPolygon failed");
@@ -393,7 +401,7 @@ GEOSGeom_GEOS_makeValidPolygon(GEOSGeometry **res, const GEOSGeometry *poly)
 
 		if ( (newArea = GEOSGeom_GEOS_buildArea(geosCutEdges)) == NULL) {
 			GEOSGeom_destroy(geosCutEdges);
-			GEOSGeom_destroy(polyArea);
+			GEOSGeom_destroy(geosArea);
             *res = NULL;
 			throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSGeom_GEOS_buildArea failed");
 		}
@@ -405,29 +413,29 @@ GEOSGeom_GEOS_makeValidPolygon(GEOSGeometry **res, const GEOSGeometry *poly)
 
 		if ( (newAreaBound = GEOSBoundary(newArea)) == NULL ) {
 			GEOSGeom_destroy(newArea);
-			GEOSGeom_destroy(polyArea);
+			GEOSGeom_destroy(geosArea);
             *res = NULL;
 			throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSBoundary failed");
 		}
 
-		if ( (symdif = GEOSSymDifference(polyArea, newArea)) == NULL) {
+		if ( (symdif = GEOSSymDifference(geosArea, newArea)) == NULL) {
 			GEOSGeom_destroy(geosCutEdges);
 			GEOSGeom_destroy(newArea);
 			GEOSGeom_destroy(newAreaBound);
-			GEOSGeom_destroy(polyArea);
+			GEOSGeom_destroy(geosArea);
             *res = NULL;
 			throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSSymDifference failed");
 		}
 
-		GEOSGeom_destroy(polyArea);
+		GEOSGeom_destroy(geosArea);
 		GEOSGeom_destroy(newArea);
-		polyArea = symdif;
+		geosArea = symdif;
 		symdif = 0;
 
 		if ( (newCutEdges = GEOSDifference(geosCutEdges, newAreaBound)) == NULL) {
 		    GEOSGeom_destroy(newAreaBound);
 			GEOSGeom_destroy(geosCutEdges);
-			GEOSGeom_destroy(geos_area);
+			GEOSGeom_destroy(geosArea);
             *res = NULL;
 			throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSDifference failed");
 		}
@@ -436,7 +444,7 @@ GEOSGeom_GEOS_makeValidPolygon(GEOSGeometry **res, const GEOSGeometry *poly)
 		geosCutEdges = newCutEdges;
 	}
 
-	if ( !GEOSisEmpty(geos_area) ) {
+	if ( !GEOSisEmpty(geosArea) ) {
 		vgeoms[nvgeoms++] = geosArea;
 	}
 	else {
@@ -476,14 +484,15 @@ GEOSGeom_GEOS_makeValidLine(GEOSGeometry **res, const GEOSGeometry *geosGeometry
 	return GEOSGeom_GEOS_nodeLines(res, geosGeometry);
 }
 
-static GEOSGeometry*
+static str
 GEOSGeom_GEOS_makeValidMultiLine(GEOSGeometry **res, const GEOSGeometry* geomGeometry)
 {
 	GEOSGeometry **lines = NULL, **points = NULL;
 	GEOSGeometry *lineOut = NULL, *pointOut = NULL;
+    str err = MAL_SUCCEED, msg = MAL_SUCCEED;
 	uint32_t numLines=0, numLinesAlloc=0, numPoints=0, numGeoms=0, numSubGeoms=0, i, j;
 
-	numGeoms = GEOSGetNumGeometries(geosGeometry);
+	numGeoms = GEOSGetNumGeometries(geomGeometry);
 	numLinesAlloc = numGeoms;
 	if ( (lines = GDKmalloc(sizeof(GEOSGeometry*)*numLinesAlloc)) == NULL) {
         throw(MAL, "GEOSGeom_GEOS_makeValidMultiLine", MAL_MALLOC_FAIL);
@@ -495,9 +504,15 @@ GEOSGeom_GEOS_makeValidMultiLine(GEOSGeometry **res, const GEOSGeometry* geomGeo
 
 	for (i=0; i<numGeoms; ++i)
 	{
-		const GEOSGeometry* geom = GEOSGetGeometryN(geosGeometry, i);
+		const GEOSGeometry* geom = GEOSGetGeometryN(geomGeometry, i);
 		GEOSGeometry* vg;
-		vg = GEOSGeom_GEOS_makeValidLine(geom);
+		if ( (err = GEOSGeom_GEOS_makeValidLine(&vg, geom)) != MAL_SUCCEED ) {
+            GDKfree(lines);
+            GDKfree(points);
+            msg = createException(MAL, "GEOSGeom_GEOS_makeValidMultiLine", "GEOSGeom_GEOS_makeValidLine failed: %s", err);
+            GDKfree(err);
+            return msg;
+        }
 		if ( GEOSisEmpty(vg) ) {
 			GEOSGeom_destroy(vg);
 		}
@@ -520,7 +535,7 @@ GEOSGeom_GEOS_makeValidMultiLine(GEOSGeometry **res, const GEOSGeometry* geomGeo
 		else {
             GDKfree(lines);
             GDKfree(points);
-            throw(MAL, "GEOSGeom_GEOS_makeValidMultiLine", "%s Unknown geometry type", geom_type2str(GEOSGeomTypeId(vg,0)));
+            throw(MAL, "GEOSGeom_GEOS_makeValidMultiLine", "%s Unknown geometry type", geom_type2str(GEOSGeomTypeId(vg), 0));
 		}
 	}
 
@@ -561,24 +576,28 @@ GEOSGeom_GEOS_makeValidMultiLine(GEOSGeometry **res, const GEOSGeometry* geomGeo
 	return MAL_SUCCEED;
 }
 
+static str GEOSGeom_GEOS_makeValidCollection(GEOSGeometry **res, const GEOSGeometry* geosGeometry);
+
 static str
-GEOSGeom_GEOS_makeValid(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
+GEOSGeom_GEOS_makeValid(GEOSGeometry **res, const GEOSGeometry *geosGeometry, int sanity_check)
 {
 	char out = 0;
+    str err = MAL_SUCCEED, msg = MAL_SUCCEED;
 
 	if ( (out = GEOSisValid(geosGeometry)) == 2) {
         *res = NULL;
 		throw(MAL, "GEOSGeom_GEOS_makeValid", "GEOSisValid failed");
 	}
-	else if (out ) {
-        return GEOSGeom_clone(res, geosGeometry);
+	else if (out) {
+        *res = GEOSGeom_clone(geosGeometry);
+        return MAL_SUCCEED;
 	}
 
     switch (GEOSGeomTypeId(geosGeometry))
     {
         case GEOS_MULTIPOINT:
         case GEOS_POINT:
-            throw("Invalid Point, not clear how to make it valid");
+            throw(MAL, "GEOSGeom_GEOS_makeValid", "Invalid Point, not clear how to make it valid");
         case GEOS_LINESTRING:
             if ( (err = GEOSGeom_GEOS_makeValidLine(res, geosGeometry)) != MAL_SUCCEED ) {
                 msg = createException(MAL, "GEOSGeom_GEOS_makeValid", "GEOSGeom_GEOS_makeValidLine failed:%s", err);
@@ -618,7 +637,7 @@ GEOSGeom_GEOS_makeValid(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
             *res = NULL;
             throw(MAL, "GEOSGeom_GEOS_makeValid", "GEOSGeom_extractUniquePoints");
         }
-        if ( (po = GEOSGeom_extractUniquePoints(gout)) == NULL) {
+        if ( (po = GEOSGeom_extractUniquePoints(*res)) == NULL) {
             GEOSGeom_destroy(pi);
             *res = NULL;
             throw(MAL, "GEOSGeom_GEOS_makeValid", "GEOSGeom_extractUniquePoints");
@@ -649,6 +668,7 @@ GEOSGeom_GEOS_makeValidCollection(GEOSGeometry **res, const GEOSGeometry* geosGe
 	int nvgeoms;
 	GEOSGeometry **vgeoms;
 	unsigned int i;
+    str err = MAL_SUCCEED, msg = MAL_SUCCEED;
 
 	if ( (nvgeoms = GEOSGetNumGeometries(geosGeometry)) == -1) {
 		throw(MAL, "GEOSGeom_GEOS_makeValidCollection", "GEOSGetNumGeometries failed.");
@@ -659,16 +679,18 @@ GEOSGeom_GEOS_makeValidCollection(GEOSGeometry **res, const GEOSGeometry* geosGe
     }
 
 	for ( i=0; i<nvgeoms; ++i ) {
-		if ( (vgeoms[i] = GEOSGeom_GEOS_makeValid( GEOSGetGeometryN(geosGeometry, i) )) == NULL) {
+		if ( (err = GEOSGeom_GEOS_makeValid(&vgeoms[i], GEOSGetGeometryN(geosGeometry, i), false)) != MAL_SUCCEED) {
 			while (i--)
                 GEOSGeom_destroy(vgeoms[i]);
 			GDKfree(vgeoms);
 			*res = NULL;
-		    throw(MAL, "GEOSGeom_GEOS_makeValidCollection", "GEOSGeom_GEOS_makeValid failed");
+		    msg = createException(MAL, "GEOSGeom_GEOS_makeValidCollection", "GEOSGeom_GEOS_makeValid failed:%s", err);
+            GDKfree(err);
+            return msg;
 		}
 	}
 
-	if ( (res = GEOSGeom_createCollection(GEOS_GEOMETRYCOLLECTION, vgeoms, nvgeoms)) == NULL) {
+	if ( (*res = GEOSGeom_createCollection(GEOS_GEOMETRYCOLLECTION, vgeoms, nvgeoms)) == NULL) {
 		for ( i=0; i<nvgeoms; ++i )
             GEOSGeom_destroy(vgeoms[i]);
 		GDKfree(vgeoms);
@@ -681,52 +703,62 @@ GEOSGeom_GEOS_makeValidCollection(GEOSGeometry **res, const GEOSGeometry* geosGe
 }
 
 str
-geom_make_valid(GEOSGeom **res, GEOSGeom* geosGeometry)
+geom_make_valid(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 {
-	int is3d;
+	int hasZ;
 	GEOSGeom geosGeom;
-	GEOSGeometry* geosOut = NULL;
+    GEOSGeometry *geosOut = NULL;
     str err = MAL_SUCCEED, msg = MAL_SUCCEED;
 
-	is3d = FLAGS_GET_Z(geom_in->flags);
+	hasZ = GEOSHasZ(geosGeometry);
 
-	res = geosGeometry;
-	if( (geosGeom = GEOSGeom2GEOS(res, 0)) == NULL) {
-		if ( (res = geos_geom_verify(res)) == NULL) {
-			throw(MAL, "geom_make_valid", "It was not possible to make a valid geometry out of the input");
-		}
+    if ( (err = geos_geom_verify(&geosOut, geosGeometry)) != MAL_SUCCEED) {
+        throw(MAL, "geom_make_valid", "It was not possible to make a valid geometry out of the input");
+    }
 
-        /*Try again after some cleanning*/
-		if ( (geosGeom = GEOSGeom2GEOS(res, 0)) == NULL) {
-			throw(MAL, "geom_make_valid", "It was not possible to make a valid geometry out of the input");
-		}
-	} else {
-		res = geosGeometry;
-	}
-
-	if ( (err = GEOSGeom_GEOS_makeValid(&geosOut, geosGeom)) != MAL_SUCCEED ) {
-	    GEOSGeom_destroy(geosGeom);
+	if ( (err = GEOSGeom_GEOS_makeValid(res, geosOut, false)) != MAL_SUCCEED ) {
+	    GEOSGeom_destroy(geosOut);
         msg = createException(MAL, "geom_make_valid", "GEOSGeom_GEOS_makeValid failed: %s", err);
         GDKfree(err);
 		*res = NULL;
         return msg;
     }
-	GEOSGeom_destroy(geosGeom);
-
-	res = GEOS2GEOSGeom(geosOut, is3d);
 	GEOSGeom_destroy(geosOut);
 
-	if ( GEOSGeomTypeId(geosGeometry) == COLLECTION && GEOSGeomTypeId(res) != COLLECTION) {
-		GEOSGeom **ogeoms = GDKmalloc(sizeof(GEOSGeom*));
-		GEOSGeom *ogeom;
+	if ( (GEOSGeomTypeId(geosGeometry)+1) == wkbGeometryCollection_mdb && (GEOSGeomTypeId(*res) +1 ) != wkbGeometryCollection_mdb) {
+		GEOSGeom *ogeoms = (GEOSGeom *) GDKmalloc(sizeof(GEOSGeom*));
+        int geometryType = -1, type = -1;
 		assert(geom_in != res);
-		ogeoms[0] = res;
-        /*TODO: check if collection construction worked out*/
-		if ( (*res = (GEOSGeom*) collection_construct(MULTITYPE[res->type], res->srid, res->bbox, 1, ogeoms)) == NULL ) {
+        ogeoms[0] = *res;
+
+        geometryType = GEOSGeomTypeId(*res);
+            switch (geometryType + 1) {
+                case wkbPoint_mdb:
+                    type = wkbMultiPoint_mdb - 1;
+                    break;
+                case wkbLineString_mdb:
+                case wkbLinearRing_mdb:
+                    type = wkbMultiLineString_mdb - 1;
+                    break;
+                case wkbPolygon_mdb:
+                    type = wkbMultiPolygon_mdb - 1;
+                    break;
+                case wkbMultiPoint_mdb:
+                case wkbMultiLineString_mdb:
+                case wkbMultiPolygon_mdb:
+                    type = wkbGeometryCollection_mdb - 1;
+                    break;
+                default:
+                    *res = NULL;
+                    throw(MAL, "geom_make_valid", "Unknown geometry type");
+            }
+		if ( (*res = GEOSGeom_createCollection(type, ogeoms, 1)) == NULL ) {
+            *res = NULL;
+            throw(MAL, "geom_make_valid", "GEOSGeom_createCollection failed!!!");
         }
 	}
 
-	res->srid = geosGeometry->srid;
+	GEOSSetSRID(*res, GEOSGetSRID(geosGeometry));
 
 	return MAL_SUCCEED;
 }
