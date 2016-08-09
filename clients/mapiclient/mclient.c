@@ -806,7 +806,8 @@ CSVrenderer(MapiHdl hdl)
 	char *s;
 	char *sep = separator;
 	int i;
-
+	char buffer[100000];
+	char *buffer_ptr;
 	if (csvheader) {
 		fields = mapi_get_field_count(hdl);
 		for (i = 0; i < fields; i++) {
@@ -818,8 +819,18 @@ CSVrenderer(MapiHdl hdl)
 		mnstr_printf(toConsole, "\n");
 	}
 	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
+		buffer_ptr = buffer;
+
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
+			buffer_ptr = stpcpy(buffer_ptr, s);
+
+			if (i != 0) {
+				*buffer_ptr++ = *sep;
+			}
+
+			/*
+
 			if (s == NULL)
 				s = nullstring == default_nullstring ? "" : nullstring;
 			if (strchr(s, *sep) != NULL ||
@@ -853,10 +864,13 @@ CSVrenderer(MapiHdl hdl)
 				mnstr_write(toConsole, "\"", 1, 1);
 			} else
 				mnstr_printf(toConsole, "%s%s",
-					     i == 0 ? "" : sep, s);
+					     i == 0 ? "" : sep, s);*/
 		}
-		mnstr_printf(toConsole, "\n");
-		mnstr_flush(toConsole);
+		//mnstr_printf(toConsole, "\n");
+
+		*buffer_ptr++ = 0;
+		puts(buffer);
+
 	}
 }
 
