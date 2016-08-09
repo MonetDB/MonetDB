@@ -57,8 +57,6 @@
 # include <sys/uio.h>
 #endif
 
-#include "messages.h"
-
 #define SOCKPTR struct sockaddr *
 #ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
@@ -107,9 +105,6 @@ struct challengedata {
 	stream *out;
 };
 
-#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
-
-
 static void
 doChallenge(void *data)
 {
@@ -120,10 +115,12 @@ doChallenge(void *data)
 	char challenge[13];
 	char *algos;
 
-	stream *fdin = ((struct challengedata *) data)->in;
+	stream *fdin = block_stream(((struct challengedata *) data)->in);
 	stream *fdout = block_stream(((struct challengedata *) data)->out);
+	bstream *bs;
 	ssize_t len = 0;
 	protocol_version protocol = prot9;
+	size_t buflen = BLOCK;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -151,7 +148,7 @@ doChallenge(void *data)
 	// FIXME: add the newproto flag to algos and rename to 'capabilities' to hide the crime
 
 	// send the challenge over the block stream
-	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:\n",
+	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
 			challenge,
 			algos,
 #ifdef WORDS_BIGENDIAN
@@ -162,88 +159,86 @@ doChallenge(void *data)
 			MONETDB5_PASSWDHASH
 			);
 	free(algos);
-
 	mnstr_flush(fdout);
 	/* get response */
-
-	if (mnstr_read(fdin, buf, sizeof(lng), 1) != sizeof(len)) {
+	if ((len = mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
+		/* the client must have gone away, so no reason to write anything */
 		close_stream(fdin);
 		close_stream(fdout);
 		GDKfree(buf);
 		return;
 	}
-	// this is very black magic, it figures out whether the client only knows protocol version 9
-	// we know this is evil
-	if (strncmp(buf+2, "LIT", 3) == 0 || strncmp(buf+2, "BIG", 3) == 0) {
-		size_t i;
-		short val = *((short*) buf);
-
-		if (mnstr_byteorder(fdin) != 1234)
-			val = short_int_SWAP(val);
-		assert(val & 1);
-		val = (val >> 1) - 6;
-		for (i = 0; i < 6; i++) {
-			buf[i] = buf[i+2];
-		}
-		if (mnstr_read(fdin, buf + 6, val, 1) != val) {
-			close_stream(fdin);
-			close_stream(fdout);
-			GDKfree(buf);
-			return;
-		}
-		fdin = block_stream(fdin);
-	} else {
-		// yeah yeah yeah
-		lng val = *((lng*) buf);
-		Mhapi__Message* resp = message_read_length(fdin, COMPRESSION_NONE, val);
-		if(resp->message_case != MHAPI__MESSAGE__MESSAGE_AUTHRESP) {
-			close_stream(fdin);
-			close_stream(fdout);
-			GDKfree(buf);
-			return;
-		}
-		// simulate a oldschool authfstr to leave rest of this function alone
-		len = 0;
-		strcpy(buf + len, "LIT:");
-		len += 4;
-		strcpy(buf + len, resp->authresp->username);
-		len += strlen(resp->authresp->username);
-
-		buf[len++] = ':';
-		strcpy(buf + len, "{"MONETDB5_PASSWDHASH"}");
-		len += strlen(MONETDB5_PASSWDHASH) + 2;
-
-		strcpy(buf + len, resp->authresp->password_hashed);
-		len += strlen(resp->authresp->password_hashed);
-		buf[len++] = ':';
-
-		strcpy(buf + len, resp->authresp->scenario == MHAPI__AUTH_RESPONSE__SCENARIO__MAL? "mal" : "sql");
-		len += 3;
-		buf[len++] = ':';
-
-		strcpy(buf + len, resp->authresp->dbname);
-		len += strlen(resp->authresp->dbname);
-		buf[len++] = ':';
-
-		if (resp->authresp->protocol_version != MHAPI__AUTH_RESPONSE__VERSION__PROTO10) {
-			// TODO: complain
-		}
-		protocol = prot10;
-		if (resp->authresp->compression_method == MHAPI__AUTH_RESPONSE__COMPRESSION__SNAPPY) {
-			protocol = prot10compressed;
-		}
-		// FIXME: this leaks a block stream struct
-		fdout = bs_stream(fdout);
-	}
-
 	buf[len] = 0;
+
+	if (strstr(buf, "PROT10")) {
+		char *buflenstrend, *buflenstr = strstr(buf, "PROT10");
+		buflenstr = strchr(buflenstr, ':') + 1;
+		if (!buflenstr) {
+			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
+		buflenstrend = strchr(buflenstr, ':');
+
+		if (buflenstrend) buflenstrend[0] = '\0';
+		buflen = atol(buflenstr);
+		if (buflenstrend) buflenstrend[0] = ':';
+
+
+		// FIXME: this leaks a block stream header
+		if (buflen < BLOCK) {
+			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
+
+		if (!strstr(buf, "PROT10COMPR")) {
+			protocol = prot10;
+			// uncompressed protocol 10
+			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_NONE);
+			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_NONE);
+		} else {
+#ifdef HAVE_LIBSNAPPY
+			// client requests switch to protocol 10
+			protocol = prot10compressed;
+			// compressed protocol 10
+			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_SNAPPY);
+			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_SNAPPY);
+#else
+			// client requested compressed protocol, but server does not support it
+			mnstr_printf(fdout, "!server does not support compressed protocol\n");
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+#endif
+		}
+
+		if (fdin == NULL || fdout == NULL) {
+			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+			return;
+		}
+	}
 
 #ifdef DEBUG_SERVER
 	printf("mal_mapi:Client accepted %s\n", buf);
 	fflush(stdout);
-#endif
 
-	MSscheduleClient(buf, challenge, fdin, fdout, protocol);
+	mnstr_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
+	mnstr_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
+#endif
+	bs = bstream_create(fdin, 128 * BLOCK);
+
+	if (bs == NULL){
+		close_stream(fdin);
+		close_stream(fdout);
+		GDKfree(buf);
+		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+		return;
+	}
+	bs->eof = 1;
+	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen);
 }
 
 static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */

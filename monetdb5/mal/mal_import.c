@@ -78,11 +78,11 @@ malOpenSource(str file)
  * to find out how long the input is.
 */
 static str
-malLoadScript(Client c, str name, stream **fdin)
+malLoadScript(Client c, str name, bstream **fdin)
 {
 	stream *fd;
 	size_t sz;
-	char* buf;
+
 	fd = malOpenSource(name);
 	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		mnstr_destroy(fd);
@@ -93,18 +93,9 @@ malLoadScript(Client c, str name, stream **fdin)
 		mnstr_destroy(fd);
 		throw(MAL, "malInclude", "file %s too large to process", name);
 	}
-	buf = malloc(sz);
-	if (!buf) {
-		mnstr_destroy(fd);
-		throw(MAL, "malInclude", "memory allocation failure");
-	}
-
-	buffer_init(&c->buf, buf, sz);
-	*fdin = NULL;
-
-	if (mnstr_read(fd, buf, sz, 1) != (ssize_t) sz) {
+	*fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
+	if (bstream_next(*fdin) < 0)
 		mnstr_printf(c->fdout, "!WARNING: could not read %s\n", name);
-	}
 	return MAL_SUCCEED;
 }
 #endif
@@ -118,7 +109,7 @@ malLoadScript(Client c, str name, stream **fdin)
  * It should be reset before continuing.
 */
 #define restoreState \
-	stream *oldfdin = c->fdin; \
+	bstream *oldfdin = c->fdin; \
 	int oldyycur = c->yycur; \
 	int oldlisting = c->listing; \
 	enum clientmode oldmode = c->mode; \
@@ -139,7 +130,7 @@ malLoadScript(Client c, str name, stream **fdin)
 
 #define restoreClient1 \
 	if (c->fdin)  \
-		(void) close_stream(c->fdin); \
+		(void) bstream_destroy(c->fdin); \
 	c->fdin = oldfdin;  \
 	c->yycur = oldyycur;  \
 	c->listing = oldlisting; \
@@ -180,7 +171,7 @@ malInclude(Client c, str name, int listing)
 	str filename;
 	str p;
 
-	stream *oldfdin = c->fdin;
+	bstream *oldfdin = c->fdin;
 	int oldyycur = c->yycur;
 	int oldlisting = c->listing;
 	enum clientmode oldmode = c->mode;
@@ -204,16 +195,18 @@ malInclude(Client c, str name, int listing)
 	{
 		size_t mal_init_len = strlen(mal_init_inline);
 		buffer* mal_init_buf = buffer_create(mal_init_len);
+		stream* mal_init_stream = buffer_rastream(mal_init_buf, name);
 		buffer_init(mal_init_buf, mal_init_inline, mal_init_len);
 		c->srcFile = name;
 		c->yycur = 0;
 		c->bak = NULL;
-		c->fdin = NULL;
-		c->buf = *mal_init_buf;
+		c->fdin = bstream_create(mal_init_stream, mal_init_len);
+		bstream_next(c->fdin);
 		parseMAL(c, c->curprg, 1);
 		free(mal_init_buf);
+		free(mal_init_stream);
 		free(c->fdin);
-		c->buf.buf = NULL;
+		c->fdin = NULL;
 	}
 #else
 	if ((filename = malResolveFile(name)) != NULL) {
@@ -227,8 +220,7 @@ malInclude(Client c, str name, int listing)
 			c->bak = NULL;
 			if ((s = malLoadScript(c, filename, &c->fdin)) == MAL_SUCCEED) {
 				parseMAL(c, c->curprg, 1);
-				close_stream(c->fdin);
-				free(c->buf.buf);
+				bstream_destroy(c->fdin);
 			} else {
 				GDKfree(s); // not interested in error here
 				s = MAL_SUCCEED;
@@ -262,15 +254,9 @@ malInclude(Client c, str name, int listing)
  * stack frame. Life becomes a little complicated when the script contains
  * a definition.
  */
-// FIXME not needed for now I hope
 str
 evalFile(Client c, str fname, int listing)
 {
-	assert(0);
-	(void) c;
-	(void) fname;
-	(void) listing;
-#if 0
 	restoreState;
 	stream *fd;
 	str p;
@@ -331,8 +317,6 @@ evalFile(Client c, str fname, int listing)
 	restoreClient3;
 	restoreClient;
 	return msg;
-#endif
-	return 0;
 }
 
 /* patch a newline character if needed */
@@ -374,7 +358,7 @@ compileString(Symbol *fcn, Client c, str s)
 	}
 
 	buffer_init(b, qry, len);
-	if (MCpushClientInput(c, buffer_rastream(b, "compileString"), 0, "") < 0) {
+	if (MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "") < 0) {
 		GDKfree(qry);
 		GDKfree(b);
 		return MAL_MALLOC_FAIL;
@@ -437,7 +421,7 @@ callString(Client c, str s, int listing)
 		return -1;
 	}
 	buffer_init(b, qry, len);
-	if (MCpushClientInput(c, buffer_rastream(b, "callString"), listing, "") < 0) {
+	if (MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "") < 0) {
 		GDKfree(b);
 		GDKfree(qry);
 		return -1;

@@ -14,12 +14,11 @@
 #include "mal_interpreter.h" /* for showErrors(), runMAL(), garbageElement() */
 #include "mal_parser.h"	     /* for parseMAL() */
 #include "mal_namespace.h"
+#include "mal_readline.h"
 #include "mal_authorize.h"
 #include "mal_sabaoth.h"
 #include "mal_private.h"
 #include <gdk.h>	/* for opendir and friends */
-
-#include "messages.h"
 
 #ifdef HAVE_EMBEDDED
 // FIXME:
@@ -134,21 +133,20 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
  * endian:user:password:lang:database:
  */
 static void
-exit_streams( stream *fin, stream *fout )
+exit_streams( bstream *fin, stream *fout )
 {
 	if (fout && fout != GDKstdout) {
 		mnstr_flush(fout);
 		close_stream(fout);
 	}
-	if (fin) {
-		close_stream(fin);
-	}
+	if (fin)
+		(void) bstream_destroy(fin);
 }
 
 const char* mal_enableflag = "mal_for_all";
 
 void
-MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol_version protocol)
+MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s, *dbname;
@@ -160,10 +158,10 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 	s = strchr(user, ':');
 	if (s) {
 		*s = 0;
-		mnstr_set_byteorder(fin, strcmp(user, "BIG") == 0);
+		mnstr_set_byteorder(fin->s, strcmp(user, "BIG") == 0);
 		user = s + 1;
 	} else {
-		message_send_error(fout, protocol, "incomplete challenge '%s'", user);
+		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);
 		exit_streams(fin, fout);
 		GDKfree(command);
 		return;
@@ -176,7 +174,7 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 		passwd = s + 1;
 		/* decode algorithm, i.e. {plain}mypasswordchallenge */
 		if (*passwd != '{') {
-			message_send_error(fout, protocol, "invalid password entry");
+			mnstr_printf(fout, "!invalid password entry\n");
 			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
@@ -184,7 +182,7 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 		algo = passwd + 1;
 		s = strchr(algo, '}');
 		if (!s) {
-			message_send_error(fout, protocol, "invalid password entry");
+			mnstr_printf(fout, "!invalid password entry\n");
 			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
@@ -192,7 +190,7 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 		*s = 0;
 		passwd = s + 1;
 	} else {
-		message_send_error(fout, protocol, "incomplete challenge '%s'", user);
+		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);
 		exit_streams(fin, fout);
 		GDKfree(command);
 		return;
@@ -204,7 +202,7 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 		*s = 0;
 		lang = s + 1;
 	} else {
-		message_send_error(fout, protocol, "incomplete challenge, missing language");
+		mnstr_printf(fout, "!incomplete challenge, missing language\n");
 		exit_streams(fin, fout);
 		GDKfree(command);
 		return;
@@ -225,11 +223,10 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 	if (database != NULL && database[0] != '\0' &&
 		strcmp(database, dbname) != 0)
 	{
-		message_send_error(fout, protocol, "request for database '%s', "
-				   "but this is database '%s', "
-				   "did you mean to connect to monetdbd instead?",
-		database, dbname);
-
+		mnstr_printf(fout, "!request for database '%s', "
+						   "but this is database '%s', "
+						   "did you mean to connect to monetdbd instead?\n",
+				database, dbname);
 		/* flush the error to the client, and abort further execution */
 		exit_streams(fin, fout);
 		GDKfree(command);
@@ -245,7 +242,7 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 		 * database itself (one gets a redirect) */
 		err = AUTHcheckCredentials(&uid, root, &user, &passwd, &challenge, &algo);
 		if (err != MAL_SUCCEED) {
-			message_send_error(fout, protocol, err);
+			mnstr_printf(fout, "!%s\n", err);
 			exit_streams(fin, fout);
 			GDKfree(err);
 			GDKfree(command);
@@ -258,17 +255,19 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 			 * message */
 			fprintf(stderr, "!SABAOTHgetMyStatus: %s\n", err);
 			freeException(err);
-			message_send_error(fout, protocol, "internal server error, please try again later");
-
+			mnstr_printf(fout, "!internal server error, "
+						 "please try again later\n");
 			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
 		}
 		if (stats->locked == 1) {
 			if (uid == 0) {
-				message_send_warning(fout, protocol, "server is running in maintenance mode");
+				mnstr_printf(fout, "#server is running in "
+							 "maintenance mode\n");
 			} else {
-				message_send_error(fout, protocol, "server is running in maintenance mode, please try again later");
+				mnstr_printf(fout, "!server is running in "
+							 "maintenance mode, please try again later\n");
 				exit_streams(fin, fout);
 				SABAOTHfreeStatus(&stats);
 				GDKfree(command);
@@ -279,16 +278,14 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 
 		c = MCinitClient(uid, fin, fout);
 		if (c == NULL) {
-			if ( MCshutdowninprogress()) {
-				message_send_error(fout, protocol, "system shutdown in progress, please try again later");
-			}
-			else {
-				message_send_error(fout, protocol, "maximum concurrent client limit reached (%d), please try again later", MAL_MAXCLIENTS);
-			}
+			if ( MCshutdowninprogress())
+				mnstr_printf(fout, "!system shutdown in progress, please try again later\n");
+			else
+				mnstr_printf(fout, "!maximum concurrent client limit reached "
+								   "(%d), please try again later\n", MAL_MAXCLIENTS);
 			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
-
 		}
 		/* move this back !! */
 		if (c->nspace == 0) {
@@ -303,7 +300,9 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 		}
 		if (!GDKgetenv_isyes(mal_enableflag) &&
 				(strncasecmp("sql", lang, 3) != 0 && uid != 0)) {
-			message_send_error(fout, protocol, "only the 'monetdb' user can use non-sql languages. run mserver5 with --set %s=yes to change this.", mal_enableflag);
+
+			mnstr_printf(fout, "!only the 'monetdb' user can use non-sql languages. "
+					           "run mserver5 with --set %s=yes to change this.\n", mal_enableflag);
 			exit_streams(fin, fout);
 			GDKfree(command);
 			return;
@@ -329,8 +328,9 @@ MSscheduleClient(str command, str challenge, stream *fin, stream *fout, protocol
 	/* fork a new thread to handle this client */
 
 	c->protocol = protocol;
+	c->blocksize = blocksize;
 
-	mnstr_settimeout(c->fdin, 50, GDKexiting);
+	mnstr_settimeout(c->fdin->s, 50, GDKexiting);
 	MSserveClient(c);
 }
 
@@ -502,24 +502,23 @@ MALexitClient(Client c)
 str
 MALreader(Client c)
 {
-	/*
 	int r = 1;
 #ifndef HAVE_EMBEDDED
 	if (c == mal_clients) {
 		r = readConsole(c);
-		if (r < 0 && c->buf.pos < c->buf.len)
+		if (r < 0 && c->fdin->eof == 0)
 			r = MCreadClient(c);
 		if (r > 0)
 			return MAL_SUCCEED;
 	} else
-#endif*/
+#endif
 	if (MCreadClient(c) > 0)
 		return MAL_SUCCEED;
 	MT_lock_set(&mal_contextLock);
 	c->mode = FINISHCLIENT;
 	MT_lock_unset(&mal_contextLock);
 	if (c->fdin)
-		c->buf.buf[c->buf.pos] = 0;
+		c->fdin->buf[c->fdin->pos] = 0;
 	else
 		throw(MAL, "mal.reader", RUNTIME_IO_EOF);
 	return MAL_SUCCEED;
@@ -545,13 +544,13 @@ MALparser(Client c)
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
 		resetMalBlk(c->curprg->def, 1);
 		/* now the parsing is done we should advance the stream */
-		c->buf.pos += c->yycur;
+		c->fdin->pos += c->yycur;
 		c->yycur = 0;
 		throw(SYNTAX, "mal.parser", SYNTAX_GENERAL MANUAL_HELP);
 	}
 
 	/* now the parsing is done we should advance the stream */
-	c->buf.pos += c->yycur;
+	c->fdin->pos += c->yycur;
 	c->yycur = 0;
 
 	/* check for unfinished blocks */

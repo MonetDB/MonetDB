@@ -46,7 +46,7 @@
 str
 io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	stream **ret= (stream**) getArgReference(stk,pci,0);
+	bstream **ret= (bstream**) getArgReference(stk,pci,0);
 	(void) mb;
 	*ret = cntxt->fdin;
 	return MAL_SUCCEED;

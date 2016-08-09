@@ -41,7 +41,7 @@ enum clientmode {
  * initialization string. See the documentation on Scenarios.
  */
 typedef struct CLIENT_INPUT {
-	stream             *fdin;
+	bstream             *fdin;
 	int                 yycur;		
 	int                 listing;
 	char                *prompt;
@@ -92,8 +92,7 @@ typedef struct CLIENT {
 	 * It will simply terminate after consuming the input buffer.
 	 */
 	str       srcFile;  /* NULL for stdin, or file name */
-	stream  *fdin;
-	buffer  buf;
+	bstream  *fdin;
 	int       yycur;    /* the scanners current position */
 	/*
 	 * Keeping track of instructions executed is a valuable tool for
@@ -192,8 +191,8 @@ mal_export ClientRec *mal_clients;
 mal_export int MCdefault;
 
 mal_export Client  MCgetClient(int id);
-mal_export Client  MCinitClient(oid user, stream *fin, stream *fout);
-mal_export Client  MCinitClientRecord(Client c, oid user, stream *fin, stream *fout);
+mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
+mal_export Client  MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout);
 mal_export int     MCinitClientThread(Client c);
 mal_export Client  MCforkClient(Client father);
 mal_export void	   MCstopClients(Client c);
@@ -202,7 +201,7 @@ mal_export int	   MCactiveClients(void);
 mal_export void    MCcloseClient(Client c);
 mal_export str     MCsuspendClient(int id);
 mal_export str     MCawakeClient(int id);
-mal_export int     MCpushClientInput(Client c, stream *new_input, int listing, char *prompt);
+mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
 mal_export int	   MCvalid(Client c);
 
 mal_export str PROFinitClient(Client c);

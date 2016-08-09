@@ -318,7 +318,7 @@ lastline(Client cntxt)
 	str s = CURRENT(cntxt);
 	if (NL(*s))
 		s++;
-	while (s && s > cntxt->buf.buf && !NL(*s))
+	while (s && s > cntxt->fdin->buf && !NL(*s))
 		s--;
 	if (NL(*s))
 		s++;

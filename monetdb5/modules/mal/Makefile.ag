@@ -8,7 +8,6 @@ INCLUDES = ../../mal ../atoms ../kernel \
 	../../../clients/mapilib \
 	../../../common/options \
 	../../../common/stream \
-	../../../common/protobuf \
 	../../../common/utils \
 	../../../gdk \
 	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS) $(MSGCONTROL_FLAGS) \

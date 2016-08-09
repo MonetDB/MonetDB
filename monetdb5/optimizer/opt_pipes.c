@@ -441,7 +441,7 @@ compileOptimizer(Client cntxt, str name)
 			 * and must not delete that one */
 			c.mythread = 0;
 			/* destroy bstream using free */
-			free(c.buf.buf);
+			free(c.fdin->buf);
 			free(c.fdin);
 			/* remove garbage from previous connection */
 			if (c.nspace) {

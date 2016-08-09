@@ -68,9 +68,6 @@
  * used to issue a safe, but blocking get/put/exec/register request.
  */
 #ifdef HAVE_MAPI
-// fixme with new protocol
-#if 0
-
 
 static connection conns = NULL;
 static unsigned char localtype = 0177;
@@ -1335,4 +1332,3 @@ RMTisalive(int *ret, str *conn)
 }
 
 #endif // HAVE_MAPI
-#endif

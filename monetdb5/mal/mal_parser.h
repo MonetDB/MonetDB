@@ -13,9 +13,9 @@
 
 #define MAXERRORS 250
 
-#define CURRENT(c) (c->buf.buf + c->buf.pos + c->yycur)
+#define CURRENT(c) (c->fdin->buf + c->fdin->pos + c->yycur)
 #define currChar(X) (*CURRENT(X))
-#define peekChar(X) (*((X)->buf.buf + (X)->buf.pos + (X)->yycur+1))
+#define peekChar(X) (*((X)->fdin->buf + (X)->fdin->pos + (X)->yycur+1))
 #define nextChar(X) X->yycur++
 #define prevChar(X) if(X->yycur) X->yycur--
 

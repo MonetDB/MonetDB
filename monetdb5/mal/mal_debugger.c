@@ -12,6 +12,7 @@
  */
 #include "monetdb_config.h"
 #include "mal.h"
+#include "mal_readline.h"
 #include "mal_debugger.h"
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_linker.h"		/* for getAddress() */
@@ -385,7 +386,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	int stepsize = 1000;
 	char oldcmd[1024] = { 0 };
 	do {
-//		int r;
+		int r;
 		if (p != NULL) {
 			if (cntxt != mal_clients)
 				/* help mclients with fake prompt */
@@ -408,17 +409,17 @@ retryRead:
 			if (cntxt->mode == FINISHCLIENT)
 				break;
 			/* SQL patch, it should only react to Smessages, Xclose requests to be ignored */
-			if (strncmp(cntxt->buf.buf, "Xclose", 6) == 0) {
-				cntxt->buf.pos = cntxt->buf.len;
+			if (strncmp(cntxt->fdin->buf, "Xclose", 6) == 0) {
+				cntxt->fdin->pos = cntxt->fdin->len;
 				goto retryRead;
 			}
 		}
 #ifndef HAVE_EMBEDDED
 		else if (cntxt == mal_clients) {
 			/* switch to mdb streams */
-/*			r = readConsole(cntxt);
+			r = readConsole(cntxt);
 			if (r <= 0)
-				break; */
+				break;
 		}
 #endif
 		b = CURRENT(cntxt);
@@ -428,15 +429,15 @@ retryRead:
 		if (c) {
 			*c = 0;
 			strncpy(oldcmd, b, 1023);
-			cntxt->buf.pos += (c - b) + 1;
+			cntxt->fdin->pos += (c - b) + 1;
 		} else
-			cntxt->buf.pos = cntxt->buf.len;
+			cntxt->fdin->pos = cntxt->fdin->len;
 
 		skipBlanc(cntxt, b);
 		if (*b)
 			lastcmd = *b;
 		else
-			strcpy(b = cntxt->buf.buf, oldcmd);
+			strcpy(b = cntxt->fdin->buf, oldcmd);
 		b = oldcmd;
 		switch (*b) {
 		case 0:

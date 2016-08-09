@@ -59,5 +59,3 @@ autoconf
 if [ -f buildtools/conf/install-sh -a ! -x buildtools/conf/install-sh ]; then
     chmod +x buildtools/conf/install-sh
 fi
-
-protoc-c common/protobuf/mhapi.proto --c_out common/protobuf
