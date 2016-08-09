@@ -302,7 +302,7 @@ MOSoptimizerCost(Client cntxt, MOStask task, int typewidth)
 			cand = MOSAIC_PREFIX;
 			ratio = fac;
 		}
-		if ( fac  < 0.0)
+		if ( fac  <= 0.0)
 				task->filter[MOSAIC_PREFIX] = 0;
 	}
 	// max achievable compression factor is 8x
