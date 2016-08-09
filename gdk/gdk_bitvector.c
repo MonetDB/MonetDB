@@ -39,19 +39,22 @@ void initBitMasks(void)
 	}
 }
 
+lng
+getBitVectorSize(const BUN cnt, const int width)
+{
+	lng size;
+	size = ((cnt * width) / BITS + ((cnt * width) % BITS ) > 0) * sizeof(unsigned int);
+	return size;
+}
+
 BitVector
 newBitVector(BUN cnt, int width)  
-{   int size;
-	BitVector m;
+{   
 	if( (unsigned) width > BITS)
 		return 0;
 	
-	size = (cnt * width)/8 + ((cnt * width)%8) >0;
-	size = (size / sizeof(int)) * sizeof(int) + ((size % sizeof(int)) > 0) * sizeof(int);
-
-	m = (BitVector) GDKzalloc( size);
 	initBitMasks();
-	return m;
+	return (BitVector) GDKzalloc( getBitVectorSize(cnt,width));
 }
 
 // get the bits of cell i 
@@ -63,6 +66,12 @@ getBitVector(BitVector vector, BUN i, int bits)
 	
 	cid = (i * bits) / BITS;
 	shift = ( i * bits) % BITS;
+
+	if( bits == 1){
+		value = (vector[cid]  & (1 << shift));
+		return value;
+	}
+
 	if ( (shift + bits) <= BITS){
 		// fits in a single cell
 		value = (vector[cid] >> shift) & masks[bits];
@@ -85,6 +94,12 @@ setBitVector(BitVector vector, const BUN i, const int bits, const unsigned int v
 
 	cid = (i * bits) / BITS;
 	shift = ( i * bits) % BITS;
+
+	if( bits == 1){
+		vector[cid] = (vector[cid]  & ~(1 << shift)) | ((value > 0) <<shift);
+		return;
+	}
+
     if ( (shift + bits) <= BITS){
 		// fits in a single cell
         vector[cid]= (vector[cid]  & ~( masks[bits] << shift)) | ((value & masks[bits]) << shift);
