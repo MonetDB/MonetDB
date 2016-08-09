@@ -1870,6 +1870,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	size_t srow = 0;
 	lng *var_col_len;
 	BATiter *iterators;
+	lng fixed_lengths = 0;
 
 	iterators = GDKmalloc(sizeof(BATiter) * t->nr_cols);
 	var_col_len = GDKmalloc(sizeof(lng) * t->nr_cols);
@@ -1900,8 +1901,47 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		int typelen = ATOMsize(mtype);
 		iterators[i] = bat_iterator(BATdescriptor(c->b));
 
+		if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
+			str res = MAL_SUCCEED;
+	        int bat_type = ATOMstorage(iterators[i].b->ttype);
+	        int hpos = c->type.scale; //this value isn't right, it's always 3. todo: find the right scale value (i.e. where the decimal point is)
+	        bat result = 0;
+	        //decimal values can be stored in various numeric fields, so check the numeric field and convert the one it's actually stored in
+	        switch(bat_type)
+	        {
+	            case TYPE_bte:
+	                res = batbte_dec2_dbl(&result, &hpos, &iterators[i].b->batCacheid);
+	                break;
+	            case TYPE_sht:
+	                res = batsht_dec2_dbl(&result, &hpos, &iterators[i].b->batCacheid);
+	                break;
+	            case TYPE_int:
+	                res = batint_dec2_dbl(&result, &hpos, &iterators[i].b->batCacheid);
+	                break;
+	            case TYPE_lng:
+	                res = batlng_dec2_dbl(&result, &hpos, &iterators[i].b->batCacheid);
+	                break;
+	#ifdef HAVE_HGE
+	            case TYPE_hge:
+	                res = bathge_dec2_dbl(&result, &hpos, &iterators[i].b->batCacheid);
+	                break;
+	#endif
+	            default:
+	                return -1;
+	        }
+	        if (res == MAL_SUCCEED) {
+	        	typelen = sizeof(dbl);
+	        	BBPunfix(iterators[i].b->batCacheid);
+	            iterators[i].b = BATdescriptor(result);
+	        } else {
+	        	return -1;
+	        }
+		}
+
 		if (ATOMvarsized(mtype)) {
 			typelen = -1;
+		} else {
+			fixed_lengths += typelen;
 		}
 
 		if (!mnstr_writeLng(s, (lng)(strlen(c->tn) + strlen(c->name) + strlen(c->type.type->sqlname) + sizeof(int) + 3)) ||
@@ -1923,7 +1963,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 
 		// FIXME: this can be skipped if there are no variable-length types in the result set
 		while (row < (size_t) count) {
-			size_t rowsize = 0;
+			size_t rowsize = fixed_lengths;
 			for (i = 0; i < (size_t) t->nr_cols; i++) {
 				res_col *c = t->cols + i;
 				int mtype = c->type.type->localtype;
@@ -1933,8 +1973,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					assert(mtype == TYPE_str);
 					rowsize += slen;
 					var_col_len[i] += slen;
-				} else {
-					rowsize += ATOMsize(mtype);
 				}
 			}
 			if (bytes_left < rowsize) break;
@@ -1974,7 +2012,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					}
 				}
 			} else {
-				if (mnstr_write(s, Tloc(iterators[i].b, srow), ATOMsize(mtype), row - srow) != (ssize_t) (row - srow)) {
+				int atom_size = ATOMsize(mtype);
+				if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
+					atom_size = sizeof(dbl);
+				}
+				if (mnstr_write(s, Tloc(iterators[i].b, srow), atom_size, row - srow) != (ssize_t) (row - srow)) {
 					return -1;
 				}
 			}

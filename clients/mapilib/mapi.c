@@ -4001,6 +4001,11 @@ static char* mapi_convert_int(struct MapiColumn *col) {
 	return (char*) col->write_buf;
 }
 
+static char* mapi_convert_lng(struct MapiColumn *col) {
+	sprintf(col->write_buf, "%lld", *((lng*) col->buffer_ptr));
+	return (char*) col->write_buf;
+}
+
 static char* mapi_convert_smallint(struct MapiColumn *col) {
 	sprintf(col->write_buf, "%hd", *((short*) col->buffer_ptr));
 	return (char*) col->write_buf;
@@ -4008,6 +4013,11 @@ static char* mapi_convert_smallint(struct MapiColumn *col) {
 
 static char* mapi_convert_tinyint(struct MapiColumn *col) {
 	sprintf(col->write_buf, "%hhd", *((signed char*) col->buffer_ptr));
+	return (char*) col->write_buf;
+}
+
+static char* mapi_convert_double(struct MapiColumn *col) {
+	sprintf(col->write_buf, "%g", *((double*) col->buffer_ptr));
 	return (char*) col->write_buf;
 }
 
@@ -4019,6 +4029,86 @@ static char* mapi_convert_boolean(struct MapiColumn *col) {
 		return "false";
 	}
 }
+
+
+/* apologies for now */
+typedef int date;
+int date_nil = -1;
+
+static int
+leapyears(int year)
+{
+	/* count the 4-fold years that passed since jan-1-0 */
+	int y4 = year / 4;
+
+	/* count the 100-fold years */
+	int y100 = year / 100;
+
+	/* count the 400-fold years */
+	int y400 = year / 400;
+
+	return y4 + y400 - y100 + (year >= 0);	/* may be negative */
+}
+
+#define leapyear(y)		((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
+
+#define YEARDAYS(y)		(leapyear(y) ? 366 : 365)
+
+static int CUMDAYS[13] = {
+	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
+};
+static int CUMLEAPDAYS[13] = {
+	0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
+};
+
+
+static char*
+mapi_convert_date(struct MapiColumn *col){
+	int day, month, year;
+
+	date n = *((date*) col->buffer_ptr);
+
+	if (n == date_nil) {
+		return "NULL";
+	}
+	year = n / 365;
+	day = (n - year * 365) - leapyears(year >= 0 ? year - 1 : year);
+	if (n < 0) {
+		year--;
+		while (day >= 0) {
+			year++;
+			day -= YEARDAYS(year);
+		}
+		day = YEARDAYS(year) + day;
+	} else {
+		while (day < 0) {
+			year--;
+			day += YEARDAYS(year);
+		}
+	}
+
+	day++;
+	if (leapyear(year)) {
+		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
+			if (day > CUMLEAPDAYS[month - 1] && day <= CUMLEAPDAYS[month]) {
+				break;
+			}
+		day -= CUMLEAPDAYS[month - 1];
+	} else {
+		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
+			if (day > CUMDAYS[month - 1] && day <= CUMDAYS[month]) {
+				break;
+			}
+		day -= CUMDAYS[month - 1];
+	}
+
+	sprintf(col->write_buf, "%04d-%02d-%02d", year, month, day);
+
+	return col->write_buf;
+}
+
+
+/* end of apologies */
 
 static char* mapi_convert_unknown(struct MapiColumn *col) {
 	(void) col;
@@ -4117,6 +4207,14 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					result->fields[i].converter = (mapi_converter) mapi_convert_tinyint;
 				} else if (strcasecmp(type_sql_name, "boolean") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_boolean;
+				} else if (strcasecmp(type_sql_name, "decimal") == 0) {
+					result->fields[i].converter = (mapi_converter) mapi_convert_double;
+				} else if (strcasecmp(type_sql_name, "double") == 0) {
+					result->fields[i].converter = (mapi_converter) mapi_convert_double;
+				} else if (strcasecmp(type_sql_name, "date") == 0) {
+					result->fields[i].converter = (mapi_converter) mapi_convert_date;
+				} else if (strcasecmp(type_sql_name, "bigint") == 0) {
+					result->fields[i].converter = (mapi_converter) mapi_convert_lng;
 				} else {
 					result->fields[i].converter = (mapi_converter) mapi_convert_unknown;
 					// TODO: complain
@@ -5382,7 +5480,7 @@ mapi_fetch_row(MapiHdl hdl)
 			}
 			bs2_resetbuf(hdl->mid->from);
 
-			fprintf(stderr, "nrows=%llu\n", nrows);
+//			fprintf(stderr, "nrows=%llu\n", nrows);
 			buf = (char*) bs2_getbuf(hdl->mid->from) + sizeof(lng);
 
 			// iterate over cols
