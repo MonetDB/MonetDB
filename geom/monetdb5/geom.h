@@ -40,7 +40,7 @@
 
 #define OPENCL_DYNAMIC 1
 #define OPENCL_THREADS 8
-//#define OPENMP  1
+#define OPENMP  1
 
 #ifdef OPENMP
 #include <omp.h>
@@ -53,6 +53,28 @@
     b->tnokey[0] = b->tnokey[1] = 0;                            \
     b->tnonil = 0;                                             \
     b->tnodense = 1;                                            
+
+static inline int
+geometryHasZ(int info)
+{
+	return (info & 0x02);
+}
+
+static inline int
+geometryHasM(int info)
+{
+	return (info & 0x01);
+}
+static wkb wkb_nil = { ~0, 0 };
+
+static wkb *
+wkbNULLcopy(void)
+{
+	wkb *n = GDKmalloc(sizeof(wkb_nil));
+	if (n)
+		*n = wkb_nil;
+	return n;
+}
 
 /* general functions */
 geom_export str geoHasZ(int* res, int* info);

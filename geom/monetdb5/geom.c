@@ -18,28 +18,6 @@ int TYPE_mbr;
 
 static str BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid min, oid max, BUN ngrp, BUN start, BUN end, wkb **empty_geoms, str (*func) (wkb **, wkb **, wkb**), char* name);
 
-static inline int
-geometryHasZ(int info)
-{
-	return (info & 0x02);
-}
-
-static inline int
-geometryHasM(int info)
-{
-	return (info & 0x01);
-}
-static wkb wkb_nil = { ~0, 0 };
-
-static wkb *
-wkbNULLcopy(void)
-{
-	wkb *n = GDKmalloc(sizeof(wkb_nil));
-	if (n)
-		*n = wkb_nil;
-	return n;
-}
-
 /* the first argument in the functions is the return variable */
 
 #ifdef HAVE_PROJ
@@ -4290,6 +4268,7 @@ wkbExteriorRing(wkb **exteriorRingWKB, wkb **geom)
 	GEOSGeom geosGeometry;
 	const GEOSGeometry *exteriorRingGeometry;
 	str err = MAL_SUCCEED;
+    int type = -1;
 
 	if (wkb_isnil(*geom)) {
 		if ((*exteriorRingWKB = wkbNULLcopy()) == NULL)
@@ -4303,10 +4282,10 @@ wkbExteriorRing(wkb **exteriorRingWKB, wkb **geom)
 		throw(MAL, "geom.ExteriorRing", "wkb2geos failed");
 	}
 
-	if (GEOSGeomTypeId(geosGeometry) != GEOS_POLYGON) {
+	if ((type = GEOSGeomTypeId(geosGeometry)) != GEOS_POLYGON) {
 		*exteriorRingWKB = NULL;
 		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.ExteriorRing", "Geometry not a Polygon");
+		throw(MAL, "geom.ExteriorRing", "Geometry is not a Polygon, it is a %s", geom_type2str(type,0));
 
 	}
 	/* get the exterior ring of the geometry */
@@ -10418,7 +10397,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "%s first BATloop %llu ms\n", name, t);
+    fprintf(stdout, "%s first BATloop qx %d %llu ms\n", name, qx, t);
 #endif
     if ( (msg ==MAL_SUCCEED) && BATcount(bx) && (outs = (bit*) GDKzalloc(sizeof(bit)*BATcount(bx))) == NULL) {
         msg = createException(MAL, name, MAL_MALLOC_FAIL);
@@ -10531,7 +10510,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "%s second BATloop %llu ms\n", name, t);
+    fprintf(stdout, "%s second BATloop ql %d %llu ms\n", name, ql, t);
 #endif
 
 #ifdef OPENMP                
