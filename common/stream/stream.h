@@ -8,7 +8,7 @@
 
 #ifndef _STREAM_H_
 #define _STREAM_H_
-
+ 
 /*
  * File: stream.h
  * Auteur: Niels J. Nes
