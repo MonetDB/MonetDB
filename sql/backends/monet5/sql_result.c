@@ -1967,7 +1967,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		switch(ATOMstorage(mtype)) {
 			case TYPE_str:
 				retval = 1;
-				for(j = 0; j < nil_len; j++) {
+				for(j = 0; j < (size_t) nil_len; j++) {
 					retval = retval && mnstr_writeBte(s, str_nil[j]);
 				}
 				break;

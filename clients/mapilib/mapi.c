@@ -4000,14 +4000,16 @@ static char* mapi_convert_varchar(struct MapiColumn *col) {
 }
 
 // classic stackoverflow programming
-static char* itoa(int i, char b[]){
+static void itoa(int i, char b[]){
     char const digit[] = "0123456789";
+    int shifter;
     char* p = b;
+
     if(i<0){
         *p++ = '-';
         i *= -1;
     }
-    int shifter = i;
+    shifter = i;
     do{ //Move to where representation ends
         ++p;
         shifter = shifter/10;
@@ -4017,7 +4019,6 @@ static char* itoa(int i, char b[]){
         *--p = digit[i%10];
         i = i/10;
     }while(i);
-    return b;
 }
 
 static char* mapi_convert_int(struct MapiColumn *col) {
@@ -4045,9 +4046,11 @@ static char* mapi_convert_tinyint(struct MapiColumn *col) {
 }
 
 static char* mapi_convert_double(struct MapiColumn *col) {
+	char *dummy = NULL;
 	if (*((double*) col->buffer_ptr) == *((double*)col->null_value)) return NULL;
 	//sprintf(col->write_buf, "%g", *((double*) col->buffer_ptr));
-	gcvt(*((double*) col->buffer_ptr), 2, col->write_buf);
+	dummy = gcvt(*((double*) col->buffer_ptr), 2, col->write_buf);
+	(void) dummy;
 	return (char*) col->write_buf;
 }
 
