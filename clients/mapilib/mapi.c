@@ -3996,6 +3996,7 @@ static char* mapi_convert_varchar(struct MapiColumn *col) {
 	return col->buffer_ptr;
 }
 
+// classic stackoverflow programming
 static char* itoa(int i, char b[]){
     char const digit[] = "0123456789";
     char* p = b;
