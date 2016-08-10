@@ -1,6 +1,6 @@
 select1.test
 select2.test
 select3.test
-NOT_WIN32?select4.test
+select4.test
 select5.test
 
