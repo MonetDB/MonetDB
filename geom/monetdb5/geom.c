@@ -2370,7 +2370,7 @@ wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* 
     BAT *b = NULL, *g = NULL, *e = NULL;
     oid min, max;
     BUN ngrp;
-    BUN start, end, cnt;
+    BUN start, end;
     wkb **empty_geoms = NULL;
     const oid *cand = NULL, *candend = NULL;
 
@@ -2388,7 +2388,7 @@ wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* 
 	}
 
     if ((err = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
-                    &start, &end, &cnt,
+                    &start, &end,
                     &cand, &candend)) != MAL_SUCCEED) {
         msg = createException(MAL, "wkbsubPolygonize", "BATgroupaggrinit failed:%s", err);
         return msg;
@@ -3990,7 +3990,7 @@ wkbsubMakeLine(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fl
     BAT *b = NULL, *g = NULL, *e = NULL;
     oid min, max;
     BUN ngrp;
-    BUN start, end, cnt;
+    BUN start, end;
     wkb **empty_geoms = NULL;
     const oid *cand = NULL, *candend = NULL;
 
@@ -4008,7 +4008,7 @@ wkbsubMakeLine(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fl
 	}
 
     if ((err = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
-                    &start, &end, &cnt,
+                    &start, &end,
                     &cand, &candend)) != MAL_SUCCEED) {
         msg = createException(MAL, "wkbsubMakeLine", "BATgroupaggrinit failed:%s", err);
         return msg;
@@ -5110,7 +5110,7 @@ wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag)
     BAT *b = NULL, *g = NULL, *e = NULL;
     oid min, max;
     BUN ngrp;
-    BUN start, end, cnt;
+    BUN start, end;
     wkb **empty_geoms = NULL;
     const oid *cand = NULL, *candend = NULL;
 
@@ -5128,7 +5128,7 @@ wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag)
 	}
 
     if ((err = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
-                    &start, &end, &cnt,
+                    &start, &end,
                     &cand, &candend)) != MAL_SUCCEED) {
         msg = createException(MAL, "wkbsubUnion", "BATgroupaggrinit failed:%s", err);
         return msg;
@@ -5743,7 +5743,7 @@ wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fla
     BAT *b = NULL, *g = NULL, *e = NULL;
     oid min, max;
     BUN ngrp = 0;
-    BUN start, end, cnt;
+    BUN start, end;
     wkb **empty_geoms = NULL;
     const oid *cand = NULL, *candend = NULL;
 
@@ -5761,7 +5761,7 @@ wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fla
 	}
 
     if ((err = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
-                    &start, &end, &cnt,
+                    &start, &end,
                     &cand, &candend)) != MAL_SUCCEED) {
         msg = createException(MAL, "wkbsubCollect", "BATgroupaggrinit failed:%s", err);
         return msg;
