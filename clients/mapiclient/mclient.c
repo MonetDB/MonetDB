@@ -2954,7 +2954,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -E charset  | --encoding=charset specify encoding (character set) of the terminal\n");
 #endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
-
+	fprintf(stderr, " -C version  | --compression=type specify compression method {snappy,lz4}\n");
 	fprintf(stderr, " -P version  | --protocol=version specify protocol version {prot9,prot10,prot10compressed}\n");
 	fprintf(stderr, " -B size     | --blocksize=size   specify protocol block size (>= %d)\n", BLOCK);
 
@@ -2996,6 +2996,7 @@ main(int argc, char **argv)
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
 	char *protocol = NULL;
+	char *compression = NULL;
 	size_t blocksize = 0;
 	FILE *fp = NULL;
 	int trace = 0;
@@ -3022,7 +3023,7 @@ main(int argc, char **argv)
 		{"format", 1, 0, 'f'},
 		{"protocol", 1, 0, 'P'},
 		{"blocksize", 1, 0, 'B'},
-
+		{"compression", 1, 0, 'C'},
 		{"help", 0, 0, '?'},
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
@@ -3161,6 +3162,12 @@ main(int argc, char **argv)
 			if (protocol != NULL)
 				free(protocol);
 			protocol = strdup(optarg);
+			break;
+		case 'C':
+			assert(optarg);
+			if (compression != NULL)
+				free(compression);
+			compression = strdup(optarg);
 			break;
 		case 'B':
 			assert(optarg);
@@ -3323,6 +3330,11 @@ main(int argc, char **argv)
 
 	if (protocol) {
 		if (mapi_set_protocol(mid, protocol) != 0) {
+			fprintf(stderr, "%s\n", mapi_error_str(mid));
+		}
+	}
+	if (compression) {
+		if (mapi_set_compression(mid, compression) != 0) {
 			fprintf(stderr, "%s\n", mapi_error_str(mid));
 		}
 	}

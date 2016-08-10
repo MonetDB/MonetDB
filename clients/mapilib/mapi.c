@@ -906,6 +906,7 @@ struct MapiStruct {
 	int languageId;
 	char *motd;		/* welcome message from server */
 	protocol_version protocol;
+	compression_method comp;
 	size_t blocksize;
 
 	int trace;		/* Trace Mapi interaction */
@@ -1895,6 +1896,7 @@ mapi_new(void)
 	mid->username = NULL;
 	mid->password = NULL;
 
+	mid->comp = COMPRESSION_SNAPPY;
 	mid->protocol = protauto;
 	mid->blocksize = 128 * BLOCK; // 1 MB
 
@@ -2223,6 +2225,7 @@ mapi_reconnect(Mapi mid)
 	char *protover;
 	char *rest;
 	protocol_version prot_version = prot9;
+	compression_method comp = COMPRESSION_NONE;
 
 	if (mid->connected)
 		close_connection(mid);
@@ -2638,6 +2641,7 @@ mapi_reconnect(Mapi mid)
 #ifdef HAVE_LIBSNAPPY
 		if (strstr(hashes, "PROT10COMPR")) {
 			// both server and client support compressed protocol 10; use compressed version 
+			comp = mid->comp;
 			if (mid->protocol == protauto) {
 				prot_version = prot10compressed;
 			} else {
@@ -2760,7 +2764,7 @@ mapi_reconnect(Mapi mid)
 			if (prot_version == prot10 || prot_version == prot10compressed) {
 				// if we are using protocol 10, we have to send either PROT10/PROT10COMPRESSED to the server
 				// so the server knows which protocol to use
-				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%zu:\n",
+				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%s:%zu:\n",
 	#ifdef WORDS_BIGENDIAN
 				     "BIG",
 	#else
@@ -2769,6 +2773,7 @@ mapi_reconnect(Mapi mid)
 				     mid->username, hash, mid->language,
 				     mid->database == NULL ? "" : mid->database,
 				     prot_version == prot10 ? "PROT10" : "PROT10COMPR",
+				     comp == COMPRESSION_SNAPPY ? "SNAPPY" : (comp == COMPRESSION_LZ4 ? "LZ4" : ""),
 				    mid->blocksize);
 			} else {
 				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
@@ -2816,8 +2821,8 @@ mapi_reconnect(Mapi mid)
 
 		if (prot_version == prot10compressed) {
 #ifdef HAVE_LIBSNAPPY
-			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, COMPRESSION_LZ4);
-			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, COMPRESSION_LZ4);
+			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, comp);
+			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, comp);
 #else
 			assert(0);
 #endif
@@ -5965,6 +5970,21 @@ MapiMsg mapi_set_protocol(Mapi mid, const char* protocol) {
 	}
 	else {
 		mapi_setError(mid, "invalid protocol name", "mapi_set_protocol", MERROR);
+		return -1;
+	}
+
+	return 0;
+}
+
+
+MapiMsg mapi_set_compression(Mapi mid, const char* compression) {
+	if (strcasecmp(compression, "snappy") == 0) {
+		mid->comp = COMPRESSION_SNAPPY;
+	}
+	else if (strcasecmp(compression, "lz4") == 0) {
+		mid->comp = COMPRESSION_LZ4;
+	} else {
+		mapi_setError(mid, "invalid compression name", "mapi_set_compression", MERROR);
 		return -1;
 	}
 

@@ -173,6 +173,7 @@ doChallenge(void *data)
 	if (strstr(buf, "PROT10")) {
 		char *buflenstrend, *buflenstr = strstr(buf, "PROT10");
 		buflenstr = strchr(buflenstr, ':') + 1;
+		buflenstr = strchr(buflenstr, ':') + 1;
 		if (!buflenstr) {
 			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
 			close_stream(fdin);
@@ -200,12 +201,21 @@ doChallenge(void *data)
 			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_NONE);
 			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_NONE);
 		} else {
+			compression_method comp;
+			if (strstr(buf, "SNAPPY")) {
+				comp = COMPRESSION_SNAPPY;
+			} else if (strstr(buf, "LZ4")) {
+				comp = COMPRESSION_LZ4;
+			} else {
+				fprintf(stderr, "Unrecognized compression type!\n");
+				comp = COMPRESSION_SNAPPY;
+			}
 #ifdef HAVE_LIBSNAPPY
 			// client requests switch to protocol 10
 			protocol = prot10compressed;
 			// compressed protocol 10
-			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_LZ4);
-			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_LZ4);
+			fdin = block_stream2(bs_stream(fdin), buflen, comp);
+			fdout = block_stream2(bs_stream(fdout), buflen, comp);
 #else
 			// client requested compressed protocol, but server does not support it
 			mnstr_printf(fdout, "!server does not support compressed protocol\n");
