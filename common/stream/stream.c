@@ -4233,34 +4233,41 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		/* store whether this was the last block or not */
 		s->nr = blksize & 1;
 
-
-		if (s->itotal > 0 && s->comp == COMPRESSION_SNAPPY) {
-#ifdef HAVE_LIBSNAPPY
+		if (s->itotal > 0) {
 			// read everything into the comp buf
 			size_t uncompressed_length = s->bufsiz;
 			size_t m = 0;
+			char *buf = s->buf;
+			if (s->comp != COMPRESSION_NONE) {
+				buf = s->compbuf;
+			}
 			snappy_status ret;
 
 			while (m < s->itotal) {
 				ssize_t bytes_read = 0;
-				bytes_read = s->s->read(s->s, s->compbuf + m, 1, s->itotal - m);
+				bytes_read = s->s->read(s->s, buf + m, 1, s->itotal - m);
 				if (bytes_read <= 0) {
 					ss->errnr = s->s->errnr;
 					return -1;
 				}
 				m += bytes_read;
 			}
-			if ((ret = snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length)) != SNAPPY_OK) {
-				ss->errnr = (int) ret;
-				return -1;
+			if (s->comp == COMPRESSION_SNAPPY) {
+#ifdef HAVE_LIBSNAPPY
+				if ((ret = snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length)) != SNAPPY_OK) {
+					ss->errnr = (int) ret;
+					return -1;
+				}
+#else
+		assert(0);
+		return -1;
+#endif
+			} else {
+				uncompressed_length = m;
 			}
 			s->itotal = uncompressed_length;
 			s->readpos = 0;
 		}
-#else
-		assert(0);
-		return 0;
-#endif
 	}
 
 	/* Fill the caller's buffer. */
@@ -4269,45 +4276,14 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		/* there is more data waiting in the current block, so
 		 * read it */
 		n = todo < s->itotal ? todo : s->itotal;
-		if (s->comp == COMPRESSION_SNAPPY) {
-			memcpy(buf, s->buf + s->readpos, n);
-			buf = (void *) ((char *) buf + n);
-			cnt += n;
-			todo -= n;
-			s->readpos += n;
-			s->itotal -= n;
+		
+		memcpy(buf, s->buf + s->readpos, n);
+		buf = (void *) ((char *) buf + n);
+		cnt += n;
+		todo -= n;
+		s->readpos += n;
+		s->itotal -= n;
 
-		} else {
-			while (n > 0) {
-				ssize_t m = s->s->read(s->s, buf, 1, n);
-
-				if (m <= 0) {
-					ss->errnr = s->s->errnr;
-					return -1;
-				}
-
-
-#ifdef BSTREAM_DEBUG
-				{
-					ssize_t i;
-
-					fprintf(stderr, "R2 '%s' %zd \"", ss->name, m);
-					for (i = 0; i < m; i++)
-						if (' ' <= ((char *) buf)[i] && ((char *) buf)[i] < 127)
-							putc(((char *) buf)[i], stderr);
-						else
-							fprintf(stderr, "\\%03o", ((char *) buf)[i]);
-					fprintf(stderr, "\"\n");
-				}
-#endif
-
-				buf = (void *) ((char *) buf + m);
-				cnt += m;
-				n -= m;
-				s->itotal -= m;
-				todo -= m;
-			}
-		}
 		if (s->itotal == 0) {
 			lng blksize = 0;
 
@@ -4339,33 +4315,41 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			/* store whether this was the last block or not */
 			s->nr = blksize & 1;
 
-			if (s->itotal > 0 && s->comp == COMPRESSION_SNAPPY) {
-#ifdef HAVE_LIBSNAPPY
+			if (s->itotal > 0) {
 				// read everything into the comp buf
 				size_t uncompressed_length = s->bufsiz;
 				size_t m = 0;
+				char *buf = s->buf;
+				if (s->comp != COMPRESSION_NONE) {
+					buf = s->compbuf;
+				}
 				snappy_status ret;
 
 				while (m < s->itotal) {
 					ssize_t bytes_read = 0;
-					bytes_read = s->s->read(s->s, s->compbuf + m, 1, s->itotal - m);
+					bytes_read = s->s->read(s->s, buf + m, 1, s->itotal - m);
 					if (bytes_read <= 0) {
 						ss->errnr = s->s->errnr;
 						return -1;
 					}
 					m += bytes_read;
 				}
-				if ((ret = snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length)) != SNAPPY_OK) {
-					ss->errnr = (int) ret;
-					return -1;
-				}
-				s->itotal = uncompressed_length;
-				s->readpos = 0;
-			}
+				if (s->comp == COMPRESSION_SNAPPY) {
+#ifdef HAVE_LIBSNAPPY
+					if ((ret = snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length)) != SNAPPY_OK) {
+						ss->errnr = (int) ret;
+						return -1;
+					}
 #else
 			assert(0);
 			return -1;
 #endif
+				} else {
+					uncompressed_length = m;
+				}
+				s->itotal = uncompressed_length;
+				s->readpos = 0;
+			}
 		}
 	}
 	/* if we got an empty block with the end-of-sequence marker
@@ -4387,7 +4371,6 @@ bs2_getbuf(stream *ss)
 	return (void*) s->buf;
 }
 
-
 void
 bs2_resetbuf(stream *ss)
 {
@@ -4396,6 +4379,17 @@ bs2_resetbuf(stream *ss)
 	s->itotal = 0;
 	s->nr = 0;
 	s->readpos = 0;
+}
+
+buffer 
+bs2_buffer(stream *ss) {
+	bs2 *s = (bs2 *) ss->stream_data.p;
+	buffer b;
+	assert(ss->read == bs2_read);
+	b.buf = s->buf;
+	b.pos = s->nr;
+	b.len = s->bufsiz;
+	return b;
 }
 
 int

@@ -806,7 +806,7 @@ CSVrenderer(MapiHdl hdl)
 	char *s;
 	char *sep = separator;
 	int i;
-	char buffer[100000];
+	char buffer[BUFSIZ];
 	char *buffer_ptr;
 	if (csvheader) {
 		fields = mapi_get_field_count(hdl);
@@ -825,7 +825,7 @@ CSVrenderer(MapiHdl hdl)
 			s = mapi_fetch_field(hdl, i);
 			buffer_ptr = stpcpy(buffer_ptr, s);
 
-			if (i != 0) {
+			if (i != fields - 1) {
 				*buffer_ptr++ = *sep;
 			}
 

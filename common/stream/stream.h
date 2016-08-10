@@ -8,7 +8,7 @@
 
 #ifndef _STREAM_H_
 #define _STREAM_H_
-
+ 
 /*
  * File: stream.h
  * Auteur: Niels J. Nes
@@ -246,6 +246,8 @@ typedef enum {
 stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);
 stream_export void* bs2_getbuf(stream *ss);
 stream_export void bs2_resetbuf(stream *ss);
+stream_export buffer bs2_buffer(stream *s);
+
 
 /* read block of data including the end of block marker */
 stream_export ssize_t mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
