@@ -823,7 +823,11 @@ CSVrenderer(MapiHdl hdl)
 
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
-			buffer_ptr = stpcpy(buffer_ptr, s);
+			if (s) {
+				buffer_ptr = stpcpy(buffer_ptr, s);
+			} else {
+				buffer_ptr = stpcpy(buffer_ptr, default_nullstring);
+			}
 
 			if (i != fields - 1) {
 				*buffer_ptr++ = *sep;

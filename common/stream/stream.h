@@ -8,7 +8,7 @@
 
 #ifndef _STREAM_H_
 #define _STREAM_H_
- 
+
 /*
  * File: stream.h
  * Auteur: Niels J. Nes
@@ -113,6 +113,10 @@ stream_export int mnstr_readInt(stream *s, int *val);
 stream_export int mnstr_writeInt(stream *s, int val);
 stream_export int mnstr_readLng(stream *s, lng *val);
 stream_export int mnstr_writeLng(stream *s, lng val);
+
+
+int mnstr_writeFlt(stream *s, float val);
+int mnstr_writeDbl(stream *s, double val);
 
 #ifdef HAVE_HGE
 stream_export int mnstr_readHge(stream *s, hge *val);

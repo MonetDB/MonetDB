@@ -4590,6 +4590,22 @@ mnstr_writeLng(stream *s, lng val)
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
+int
+mnstr_writeFlt(stream *s, float val)
+{
+	if (s == NULL || s->errnr)
+		return 0;
+	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
+}
+
+int
+mnstr_writeDbl(stream *s, double val)
+{
+	if (s == NULL || s->errnr)
+		return 0;
+	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
+}
+
 
 #ifdef HAVE_HGE
 int

@@ -9,6 +9,7 @@
 /*
  * author N.J. Nes
  */
+ 
 
 #include "monetdb_config.h"
 #include "sql_result.h"
@@ -1865,7 +1866,7 @@ static int write_str_term(stream* s, str val) {
 static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize) {
 	BAT *order;
 	lng count;
-	size_t i;
+	size_t i, j;
 	size_t row = 0;
 	size_t srow = 0;
 	size_t varsized = 0;
@@ -1898,6 +1899,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		res_col *c = t->cols + i;
 		int mtype = c->type.type->localtype;
 		int typelen = ATOMsize(mtype);
+		int nil_len = -1;
+		int retval = -1;
 		iterators[i] = bat_iterator(BATdescriptor(c->b));
 
 		if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
@@ -1930,6 +1933,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	                return -1;
 	        }
 	        if (res == MAL_SUCCEED) {
+	        	mtype = TYPE_dbl;
 	        	typelen = sizeof(dbl);
 	        	BBPunfix(iterators[i].b->batCacheid);
 	            iterators[i].b = BATdescriptor(result);
@@ -1943,8 +1947,10 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			assert(mtype == TYPE_str);
 			typelen = -1;
 			varsized++;
+			nil_len = strlen(str_nil) + 1;
 		} else {
 			fixed_lengths += typelen;
+			nil_len = typelen;
 		}
 
 		if (!mnstr_writeLng(s, (lng)(strlen(c->tn) + strlen(c->name) + strlen(c->type.type->sqlname) + sizeof(int) + 3)) ||
@@ -1952,7 +1958,45 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				!mnstr_writeInt(s, typelen)) {
 			return -1;
 		}
-		// FIXME: null values
+		// write NULL values for this column to the stream
+		// NULL values are encoded as <size:int> <NULL value> (<size> is always <typelen> for fixed size columns)
+		if (!mnstr_writeInt(s, nil_len)) {
+			return -1;
+		}
+
+		switch(ATOMstorage(mtype)) {
+			case TYPE_str:
+				retval = 1;
+				for(j = 0; j < nil_len; j++) {
+					retval = retval && mnstr_writeBte(s, str_nil[j]);
+				}
+				break;
+			case TYPE_bit:
+			case TYPE_bte:
+				retval = mnstr_writeBte(s, bte_nil);
+				break;
+			case TYPE_sht:
+				retval = mnstr_writeSht(s, sht_nil);
+				break;
+			case TYPE_int:
+				retval = mnstr_writeInt(s, int_nil);
+				break;
+			case TYPE_lng:
+				retval = mnstr_writeLng(s, lng_nil);
+				break;
+			case TYPE_flt:
+				retval = mnstr_writeFlt(s, flt_nil);
+				break;
+			case TYPE_dbl:
+				retval = mnstr_writeDbl(s, dbl_nil);
+				break;
+			default:
+				assert(0);
+				return -1;
+		}
+		if (!retval) {
+			return -1;
+		}
 	}
 	mnstr_flush(s);
 
