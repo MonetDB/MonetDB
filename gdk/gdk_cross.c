@@ -17,6 +17,10 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 	BUN i, j;
 	oid *restrict p1, *restrict p2;
 
+	FORCEMITODEBUG if (BATcount(l) * BATcount(r) > 100000000) {
+		GDKerror("BATsubcross: crossproduct too large for testing ("BUNFMT"*"BUNFMT")\n", BATcount(l), BATcount(r));
+		return GDK_FAIL;
+	}
 	bn1 = COLnew(0, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
 	bn2 = COLnew(0, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
 	if (bn1 == NULL || bn2 == NULL) {
