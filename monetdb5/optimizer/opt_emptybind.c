@@ -260,11 +260,11 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			if( marked[getArg(p,3)] && marked[getArg(p,4)] ){
 				OPTDEBUGemptybind
 					mnstr_printf(cntxt->fdout, "#empty projectdelta  pc %d var %d\n",i , getArg(p,0) );
-					actions++;
-					setModuleId(p,algebraRef);
-					setFunctionId(p,projectionRef);
-					p->argc = 3;
-					p->typechk= TYPE_UNKNOWN;
+				actions++;
+				setModuleId(p,algebraRef);
+				setFunctionId(p,projectionRef);
+				p->argc = 3;
+				p->typechk= TYPE_UNKNOWN;
 			}
 			continue;
 		}
