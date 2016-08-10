@@ -244,7 +244,8 @@ typedef enum {
 
 typedef enum {
 	COMPRESSION_NONE = 0,
-	COMPRESSION_SNAPPY = 1
+	COMPRESSION_SNAPPY = 1,
+	COMPRESSION_LZ4 = 2
 } compression_method;
 
 stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);

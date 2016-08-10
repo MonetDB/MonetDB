@@ -2816,8 +2816,8 @@ mapi_reconnect(Mapi mid)
 
 		if (prot_version == prot10compressed) {
 #ifdef HAVE_LIBSNAPPY
-			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, COMPRESSION_SNAPPY);
-			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, COMPRESSION_SNAPPY);
+			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, COMPRESSION_LZ4);
+			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, COMPRESSION_LZ4);
 #else
 			assert(0);
 #endif
@@ -4003,11 +4003,11 @@ static char* mapi_convert_varchar(struct MapiColumn *col) {
 static char* itoa(int i, char b[]){
     char const digit[] = "0123456789";
     char* p = b;
+    int shifter = i;
     if(i<0){
         *p++ = '-';
         i *= -1;
     }
-    int shifter = i;
     do{ //Move to where representation ends
         ++p;
         shifter = shifter/10;

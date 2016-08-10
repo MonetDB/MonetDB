@@ -1639,6 +1639,48 @@ AC_SUBST([snappy_LIBS])
 AM_CONDITIONAL([HAVE_LIBSNAPPY], [test x$have_snappy != xno])
 
 
+dnl  check for lz4 (de)compression library
+org_have_lz4=auto
+have_lz4=$org_have_lz4
+lz4_CFLAGS=""
+lz4_LIBS=""
+AC_ARG_WITH([lz4],
+	[AS_HELP_STRING([--with-lz4=DIR],
+		[lz4 library is installed in DIR])],
+	[have_lz4="$withval"])
+
+AS_CASE(["$have_lz4"],
+	[yes|no|auto], [],
+	[
+		lz4_CFLAGS="-I$withval/include"
+		lz4_LIBS="-L$withval/lib"])
+
+AC_MSG_CHECKING([for lz4])
+AS_VAR_IF([have_lz4], [no], [], [
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $lz4_CFLAGS"
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $lz4_LIBS -llz4"
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
+@%:@include <lz4.h>]], [[(void)LZ4_compressBound(42);]])],
+		lz4_LIBS="$lz4_LIBS -llz4",
+		[ AS_VAR_IF([have_lz4], [auto], [], [
+			AC_MSG_ERROR([lz4 library not found])])
+		  have_lz4=no
+		  why_have_lz4="(lz4 library not found)" ])
+	LIBS="$save_LIBS"
+	CPPFLAGS="$save_CPPFLAGS"])
+
+AS_VAR_IF([have_lz4], [no], [], [
+	AC_DEFINE([HAVE_LIBLZ4], 1, [Define if you have the lz4 library])
+	AC_MSG_RESULT([yes: $lz4_LIBS])], [
+	lz4_CFLAGS=""
+	lz4_LIBS=""
+	AC_MSG_RESULT([no])])
+
+AC_SUBST([lz4_CFLAGS])
+AC_SUBST([lz4_LIBS])
+AM_CONDITIONAL([HAVE_LIBLZ4], [test x$have_lz4 != xno])
 
 
 DL_LIBS=""
@@ -3279,6 +3321,7 @@ for comp in \
 	'liblzma      ' \
 	'libxml2      ' \
 	'lidar        ' \
+	'lz4          ' \
 	'netcdf       ' \
 	'openssl      ' \
 	'pcre         ' \

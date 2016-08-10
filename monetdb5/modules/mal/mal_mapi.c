@@ -204,8 +204,8 @@ doChallenge(void *data)
 			// client requests switch to protocol 10
 			protocol = prot10compressed;
 			// compressed protocol 10
-			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_SNAPPY);
-			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_SNAPPY);
+			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_LZ4);
+			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_LZ4);
 #else
 			// client requested compressed protocol, but server does not support it
 			mnstr_printf(fdout, "!server does not support compressed protocol\n");
