@@ -3996,8 +3996,29 @@ static char* mapi_convert_varchar(struct MapiColumn *col) {
 	return col->buffer_ptr;
 }
 
+static char* itoa(int i, char b[]){
+    char const digit[] = "0123456789";
+    char* p = b;
+    if(i<0){
+        *p++ = '-';
+        i *= -1;
+    }
+    int shifter = i;
+    do{ //Move to where representation ends
+        ++p;
+        shifter = shifter/10;
+    }while(shifter);
+    *p = '\0';
+    do{ //Move back, inserting digits as u go
+        *--p = digit[i%10];
+        i = i/10;
+    }while(i);
+    return b;
+}
+
 static char* mapi_convert_int(struct MapiColumn *col) {
-	sprintf(col->write_buf, "%d", *((int*) col->buffer_ptr));
+	//sprintf(col->write_buf, "%d", *((int*) col->buffer_ptr));
+	itoa(*((int*) col->buffer_ptr), col->write_buf);
 	return (char*) col->write_buf;
 }
 
@@ -4017,7 +4038,8 @@ static char* mapi_convert_tinyint(struct MapiColumn *col) {
 }
 
 static char* mapi_convert_double(struct MapiColumn *col) {
-	sprintf(col->write_buf, "%g", *((double*) col->buffer_ptr));
+	//sprintf(col->write_buf, "%g", *((double*) col->buffer_ptr));
+	gcvt(*((double*) col->buffer_ptr), 2, col->write_buf);
 	return (char*) col->write_buf;
 }
 
@@ -4101,8 +4123,20 @@ mapi_convert_date(struct MapiColumn *col){
 			}
 		day -= CUMDAYS[month - 1];
 	}
+	// YYYY-MM-DD
+	col->write_buf[0] = (year/1000) + 48;
+	col->write_buf[1] = ((year/100) % 10) + 48;
+	col->write_buf[2] = ((year/10) % 10) + 48;
+	col->write_buf[3] = (year % 10) + 48;
+	col->write_buf[4] = '-';
+	col->write_buf[5] = (month/10) + 48;
+	col->write_buf[6] = (month % 10) + 48;
+	col->write_buf[7] = '-';
+	col->write_buf[8] = (day/10) + 48;
+	col->write_buf[9] = (day % 10) + 48;
+	col->write_buf[10] = 0;
 
-	sprintf(col->write_buf, "%04d-%02d-%02d", year, month, day);
+	//sprintf(col->write_buf, "%04d-%02d-%02d", year, month, day);
 
 	return col->write_buf;
 }
