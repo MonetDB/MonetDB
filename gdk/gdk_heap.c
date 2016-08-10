@@ -770,7 +770,7 @@ HEAPwarm(Heap *h)
 		int *lim = (int *) (h->base + h->free) - 4096;
 
 		for (; cur < lim; cur += 4096)	/* try to schedule 4 parallel memory accesses */
-			bogus_result += cur[0] + cur[1024] + cur[2048] + cur[3072];
+			bogus_result |= cur[0] | cur[1024] | cur[2048] | cur[3072];
 	}
 	return bogus_result;
 }

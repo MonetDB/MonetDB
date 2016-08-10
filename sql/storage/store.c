@@ -2618,7 +2618,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 						ts->nelm = tbn->next;
 					//if (tr->parent != gtrans) {
 						if (!ts->dset)
-							ts->dset = list_new(tr->sa, ts->destroy);
+							ts->dset = list_new(tr->parent->sa, ts->destroy);
 						list_move_data(ts->set, ts->dset, tb);
 					//} else {
 						//cs_remove_node(ts, tbn);

@@ -466,8 +466,10 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			int type = t->type->localtype;
 			int varid = 0;
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
+			char buf[64];
 
-			varid = newVariable(curBlk, (char *)nme, strlen(nme), type);
+			snprintf(buf,64,"A%s",nme);
+			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -557,8 +559,10 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 			int type = t->type->localtype;
 			int varid = 0;
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
+			char buf[64];
 
-			varid = newVariable(curBlk, (char*) nme,strlen(nme), type);
+			snprintf(buf,64,"A%s",nme);
+			varid = newVariable(curBlk, (char*) buf,strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -2178,8 +2182,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (monet5_create_relational_function(sql->mvc, mod, fimp, rel, s, 1) < 0)
 				 return -1;
 
-			q = newStmt(mb, mod, fimp);
+			if (s->flag) 
+				q = newStmt(mb, batmalRef, multiplexRef);
+			else
+				q = newStmt(mb, mod, fimp);
 			q = relational_func_create_result(sql->mvc, mb, q, rel);
+			if (s->flag) {
+				q = pushStr(mb, q, mod);
+				q = pushStr(mb, q, fimp);
+			}
 			if (s->op1)
 				for (n = s->op1->op4.lval->h; n; n = n->next) {
 					stmt *op = n->data;

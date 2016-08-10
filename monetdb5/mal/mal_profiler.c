@@ -54,10 +54,10 @@ static struct{
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
 
-#define logadd(...) {														\
+#define logadd(...) {													\
 	do {																\
-		loglen += snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__); \
-		assert(loglen < LOGLEN); \
+		if (loglen < LOGLEN)											\
+			loglen += snprintf(logbase+loglen, LOGLEN - loglen, __VA_ARGS__); \
 	} while (0);}
 
 

@@ -567,8 +567,10 @@ exp_rel(mvc *sql, sql_rel *rel)
 {
 	sql_exp *e = exp_create(sql->sa, e_psm);
 
+	/*
 	rel = rel_optimizer(sql, rel);
 	rel = rel_distribute(sql, rel);
+	*/
 	e->l = rel;
 	e->flag = PSM_REL;
 	return e;
@@ -1509,11 +1511,11 @@ exps_bind_alias( list *exps, const char *rname, const char *cname )
 	return NULL;
 }
 
-int
+unsigned int
 exps_card( list *l ) 
 {
 	node *n;
-	int card = CARD_ATOM;
+	unsigned int card = CARD_ATOM;
 
 	if (l) for(n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;

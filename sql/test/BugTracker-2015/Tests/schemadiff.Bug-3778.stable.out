@@ -23,13 +23,14 @@ stdout of test 'schemadiff.Bug-3778` in directory 'sql/test/BugTracker-2015` its
 
 Ready.
 
-# 15:29:05 >  
-# 15:29:05 >  "/usr/bin/python2" "schemadiff.Bug-3778.SQL.py" "schemadiff.Bug-3778"
-# 15:29:05 >  
+# 11:19:25 >  
+# 11:19:25 >  "/usr/bin/python2" "schemadiff.Bug-3778.SQL.py" "schemadiff.Bug-3778"
+# 11:19:25 >  
 
-(mapi:monetdb://monetdb@localhost/worker_0) 'user.l1' undefined in:     rmt5_X_1_bat_int:bat[:int] := user.l1();
+(mapi:monetdb://monetdb@localhost/worker_0) 'user.l1' undefined in:     rmt5_X_4_bat_int:bat[:int] := user.l1();
 
-# 15:29:06 >  
-# 15:29:06 >  "Done."
-# 15:29:06 >  
+
+# 11:19:26 >  
+# 11:19:26 >  "Done."
+# 11:19:26 >  
 

@@ -10,7 +10,7 @@
 
 rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpmbuild
 
-RPMBUILDARGS = --define="_tmppath /tmp" --define="_topdir $(rpmtopdir)" --define="tmpdir %{_tmppath}" --define="rpmcflags -O2 " --define="packager MonetDB Database System <info@monetdb.org>" --define="oid@oids@ 1" --define="_@LIBLAS_RPM@_lidar 1"
+RPMBUILDARGS = --define="_tmppath /tmp" --define="_topdir $(rpmtopdir)" --define="tmpdir %{_tmppath}" --define="rpmcflags -O2 " --define="packager MonetDB Database System <info@monetdb.org>" --define="_@LIBLAS_RPM@_lidar 1"
 
 $(top_builddir)/$(distdir).tar.bz2:
 	$(MAKE) $(AM_MAKEFLAGS) dist

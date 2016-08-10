@@ -235,7 +235,6 @@ int yydebug=1;
 	null
 	interval_expression
 	ordering_spec
-	simple_table
 	table_ref
 	opt_limit
 	opt_offset
@@ -248,6 +247,7 @@ int yydebug=1;
 	when_search
 	case_opt_else
 	table_name
+	opt_table_name
 	object_name
 	exec
 	exec_ref
@@ -437,6 +437,7 @@ int yydebug=1;
 	grantor
 	intval
 	join_type
+	opt_outer
 	non_second_datetime_field
 	nonzero
 	opt_bounds
@@ -523,7 +524,7 @@ int yydebug=1;
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION
 %token <sval> sqlDELETE UPDATE SELECT INSERT 
-%token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
+%token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
@@ -572,7 +573,7 @@ int yydebug=1;
 %left <operation> '~'
 
 %left <operatio> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT 
-%left <operatio> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW GEOM_ABOVE GEOM_DIST
+%left <operatio> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW GEOM_ABOVE GEOM_DIST GEOM_MBR_EQUAL
 
 /* literal keyword tokens */
 /*
@@ -2857,7 +2858,6 @@ joined_table:
    '(' joined_table ')'
 	{ $$ = $2; }
  |  table_ref CROSS JOIN table_ref
-
 	{ dlist *l = L();
 	  append_symbol(l, $1);
 	  append_symbol(l, $4);
@@ -2870,22 +2870,6 @@ joined_table:
 	  append_symbol(l, $3);
 	  append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_UNIONJOIN, l); }
- |  table_ref JOIN table_ref join_spec
-	{ dlist *l = L();
-	  append_symbol(l, $1);
-	  append_int(l, 0);
-	  append_int(l, 0);
-	  append_symbol(l, $3);
-	  append_symbol(l, $4);
-	  $$ = _symbol_create_list( SQL_JOIN, l); }
- |  table_ref NATURAL JOIN table_ref
-	{ dlist *l = L();
-	  append_symbol(l, $1);
-	  append_int(l, 1);
-	  append_int(l, 0);
-	  append_symbol(l, $4);
-	  append_symbol(l, NULL);
-	  $$ = _symbol_create_list( SQL_JOIN, l); }
  |  table_ref join_type JOIN table_ref join_spec
 	{ dlist *l = L();
 	  append_symbol(l, $1);
@@ -2905,9 +2889,14 @@ joined_table:
   ;
 
 join_type:
-    INNER			{ $$ = 0; }
-  | outer_join_type OUTER	{ $$ = 1 + $1; }
-  | outer_join_type		{ $$ = 1 + $1; }
+    /* empty */			{ $$ = 0; }
+  | INNER			{ $$ = 0; }
+  | outer_join_type opt_outer	{ $$ = 1 + $1; }
+  ;
+
+opt_outer:
+    /* empty */ 		{ $$ = 0; }
+  | OUTER			{ $$ = 0; }
   ;
 
 outer_join_type:
@@ -3113,28 +3102,24 @@ table_ref_commalist:
 			{ $$ = append_symbol($1, $3); }
  ;
 
-simple_table:
-   qname 			{ dlist *l = L();
-		  		  append_list(l, $1);
-		  	  	  append_symbol(l, NULL);
-		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- | qname table_name 		{ dlist *l = L();
-		  		  append_list(l, $1);
-		  	  	  append_symbol(l, $2);
-		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- | func_ref table_name		{ dlist *l = L();
-		  		  append_symbol(l, $1);
-		  	  	  append_symbol(l, $2);
-		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
- | func_ref 			{ dlist *l = L();
-		  		  append_symbol(l, $1);
-		  	  	  append_symbol(l, NULL);
-		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
- ;
-
 table_ref:
-    simple_table
- |  subquery table_name
+    qname opt_table_name 	{ dlist *l = L();
+		  		  append_list(l, $1);
+		  	  	  append_symbol(l, $2);
+		  		  $$ = _symbol_create_list(SQL_NAME, l); }
+ |  func_ref opt_table_name
+	 		        { dlist *l = L();
+		  		  append_symbol(l, $1);
+		  	  	  append_symbol(l, $2);
+		  	  	  append_int(l, 0);
+		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
+ |  LATERAL func_ref opt_table_name
+	 		        { dlist *l = L();
+		  		  append_symbol(l, $2);
+		  	  	  append_symbol(l, $3);
+		  	  	  append_int(l, 1);
+		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
+ |  subquery table_name		
 				{
 				  $$ = $1;
 				  if ($$->token == SQL_SELECT) {
@@ -3144,6 +3129,18 @@ table_ref:
 				  	append_symbol($1->data.lval, $2);
 				  }
 				}
+ |  LATERAL subquery table_name		
+				{
+				  $$ = $2;
+				  if ($$->token == SQL_SELECT) {
+				  	SelectNode *sn = (SelectNode*)$2;
+				  	sn->name = $3;
+					sn->lateral = 1;
+				  } else {
+				  	append_symbol($2->data.lval, $3);
+	  				append_int($2->data.lval, 1);
+				  }
+				}
  |  subquery
 				{ $$ = NULL;
 				  yyerror(m, "subquery table reference needs alias, use AS xxx");
@@ -3151,12 +3148,6 @@ table_ref:
 				}
  |  joined_table 		{ $$ = $1;
 				  append_symbol($1->data.lval, NULL); }
-/* the following rule seems to be redundant ?  
- |  '(' joined_table ')' table_name
-				{ $$ = $2;
-				  append_symbol($2->data.lval, $4); }
-*/
-
 /* Basket expression, TODO window */
  |  '[' 
 	{ m->caching = 0; }
@@ -3191,6 +3182,11 @@ table_name:
 		  		  append_string(l, $1);
 		  	  	  append_list(l, NULL);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
+ ;
+
+opt_table_name:
+	      /* empty */ 	{ $$ = NULL; }
+ | table_name			{ $$ = $1; }
  ;
 
 opt_group_by_clause:
@@ -3633,12 +3629,12 @@ simple_scalar_exp:
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
- |  scalar_exp '~''=' scalar_exp
+ |  scalar_exp GEOM_MBR_EQUAL scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_equal")));
 	  		  append_symbol(l, $1);
-	  		  append_symbol(l, $4);
+	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  '~' scalar_exp
 			{ dlist *l = L();

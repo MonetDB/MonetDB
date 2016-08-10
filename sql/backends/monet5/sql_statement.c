@@ -1124,7 +1124,7 @@ stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op)
 }
 
 stmt *
-stmt_func(sql_allocator *sa, stmt *ops, const char *name, sql_rel *rel)
+stmt_func(sql_allocator *sa, stmt *ops, const char *name, sql_rel *rel, int f_union)
 {
 	node *n;
 	stmt *o = NULL, *s = stmt_create(sa, st_func);
@@ -1132,6 +1132,7 @@ stmt_func(sql_allocator *sa, stmt *ops, const char *name, sql_rel *rel)
 	s->op1 = ops;
 	s->op2 = stmt_atom_string(sa, name);
 	s->op4.rel = rel;
+	s->flag = f_union;
 	if (ops && list_length(ops->op4.lval)) {
 		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
 			stmt *c = n->data;

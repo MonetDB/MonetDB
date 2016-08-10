@@ -1,0 +1,196 @@
+stdout of test 'lateral` in directory 'sql/test/lateral` itself:
+
+
+# 19:57:50 >  
+# 19:57:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35682" "--set" "mapi_usock=/var/tmp/mtest-27963/.s.monetdb.35682" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_lateral"
+# 19:57:50 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_lateral', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:35682/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27963/.s.monetdb.35682
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+#WARNING To speedup user.Lmps a bulk operator implementation is needed
+#    (X_17:bat[:str],X_18:bat[:oid]) := batmal.multiplex("user":str,"Lmps":str,X_13:bat[:int],X_1:bat[:oid]);
+
+# 19:57:50 >  
+# 19:57:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27963" "--port=35682"
+# 19:57:50 >  
+
+#CREATE function to_date(d string, dummy string) returns date
+#begin
+#	return str_to_date (d, '%d-%m-%Y');
+#end;
+#CREATE TABLE departments (
+#	  department_id   INTEGER CONSTRAINT departments_pk PRIMARY KEY,
+#	  department_name VARCHAR(14),
+#	  location        VARCHAR(13)
+#);
+#INSERT INTO departments VALUES (10,'ACCOUNTING','NEW YORK');
+[ 1	]
+#INSERT INTO departments VALUES (20,'RESEARCH','DALLAS');
+[ 1	]
+#INSERT INTO departments VALUES (30,'SALES','CHICAGO');
+[ 1	]
+#INSERT INTO departments VALUES (40,'OPERATIONS','BOSTON');
+[ 1	]
+#CREATE TABLE employees (
+#	  employee_id   INTEGER CONSTRAINT employees_pk PRIMARY KEY,
+#	  employee_name VARCHAR(10),
+#	  job           VARCHAR(9),
+#	  manager_id    INTEGER,
+#	  hiredate      DATE,
+#	  salary        DECIMAL(7,2),
+#	  commission    DECIMAL(7,2),
+#	  department_id integer CONSTRAINT emp_department_id_fk REFERENCES departments(department_id)
+#);
+#INSERT INTO employees VALUES (7369,'SMITH','CLERK',7902,to_date('17-12-1980','dd-mm-yyyy'),800,NULL,20);
+[ 1	]
+#INSERT INTO employees VALUES (7499,'ALLEN','SALESMAN',7698,to_date('20-2-1981','dd-mm-yyyy'),1600,300,30);
+[ 1	]
+#INSERT INTO employees VALUES (7521,'WARD','SALESMAN',7698,to_date('22-2-1981','dd-mm-yyyy'),1250,500,30);
+[ 1	]
+#INSERT INTO employees VALUES (7566,'JONES','MANAGER',7839,to_date('2-4-1981','dd-mm-yyyy'),2975,NULL,20);
+[ 1	]
+#INSERT INTO employees VALUES (7654,'MARTIN','SALESMAN',7698,to_date('28-9-1981','dd-mm-yyyy'),1250,1400,30);
+[ 1	]
+#INSERT INTO employees VALUES (7698,'BLAKE','MANAGER',7839,to_date('1-5-1981','dd-mm-yyyy'),2850,NULL,30);
+[ 1	]
+#INSERT INTO employees VALUES (7782,'CLARK','MANAGER',7839,to_date('9-6-1981','dd-mm-yyyy'),2450,NULL,10);
+[ 1	]
+#INSERT INTO employees VALUES (7788,'SCOTT','ANALYST',7566,to_date('13-6-87','dd-mm-rr')-85,3000,NULL,20);
+[ 1	]
+#INSERT INTO employees VALUES (7839,'KING','PRESIDENT',NULL,to_date('17-11-1981','dd-mm-yyyy'),5000,NULL,10);
+[ 1	]
+#INSERT INTO employees VALUES (7844,'TURNER','SALESMAN',7698,to_date('8-9-1981','dd-mm-yyyy'),1500,0,30);
+[ 1	]
+#INSERT INTO employees VALUES (7876,'ADAMS','CLERK',7788,to_date('13-6-87', 'dd-mm-rr')-51,1100,NULL,20);
+[ 1	]
+#INSERT INTO employees VALUES (7900,'JAMES','CLERK',7698,to_date('3-12-1981','dd-mm-yyyy'),950,NULL,30);
+[ 1	]
+#INSERT INTO employees VALUES (7902,'FORD','ANALYST',7566,to_date('3-12-1981','dd-mm-yyyy'),3000,NULL,20);
+[ 1	]
+#INSERT INTO employees VALUES (7934,'MILLER','CLERK',7782,to_date('23-1-1982','dd-mm-yyyy'),1300,NULL,10);
+[ 1	]
+#SELECT department_name, employee_name FROM 
+#	departments as d JOIN LATERAL (SELECT employee_name FROM   employees e WHERE  e.department_id = d.department_id) as e on TRUE
+#order by department_name, employee_name;
+% sys.d,	sys.e # table_name
+% department_name,	employee_name # name
+% varchar,	varchar # type
+% 10,	6 # length
+[ "ACCOUNTING",	"CLARK"	]
+[ "ACCOUNTING",	"KING"	]
+[ "ACCOUNTING",	"MILLER"	]
+[ "RESEARCH",	"ADAMS"	]
+[ "RESEARCH",	"FORD"	]
+[ "RESEARCH",	"JONES"	]
+[ "RESEARCH",	"SCOTT"	]
+[ "RESEARCH",	"SMITH"	]
+[ "SALES",	"ALLEN"	]
+[ "SALES",	"BLAKE"	]
+[ "SALES",	"JAMES"	]
+[ "SALES",	"MARTIN"	]
+[ "SALES",	"TURNER"	]
+[ "SALES",	"WARD"	]
+#SELECT department_name, employee_name FROM 
+#	departments as d, LATERAL (SELECT employee_name FROM   employees e WHERE  e.department_id = d.department_id) as e
+#order by department_name, employee_name;
+% sys.d,	sys.e # table_name
+% department_name,	employee_name # name
+% varchar,	varchar # type
+% 10,	6 # length
+[ "ACCOUNTING",	"CLARK"	]
+[ "ACCOUNTING",	"KING"	]
+[ "ACCOUNTING",	"MILLER"	]
+[ "RESEARCH",	"ADAMS"	]
+[ "RESEARCH",	"FORD"	]
+[ "RESEARCH",	"JONES"	]
+[ "RESEARCH",	"SCOTT"	]
+[ "RESEARCH",	"SMITH"	]
+[ "SALES",	"ALLEN"	]
+[ "SALES",	"BLAKE"	]
+[ "SALES",	"JAMES"	]
+[ "SALES",	"MARTIN"	]
+[ "SALES",	"TURNER"	]
+[ "SALES",	"WARD"	]
+#create function emps(dep_id integer) returns table(employee_name string)
+#begin
+#	return TABLE(select employee_name from employees e where e.department_id = dep_id);
+#end;
+#select department_name, employee_name from departments as d, LATERAL emps(d.department_id) order by department_name, employee_name;
+% sys.d,	.L # table_name
+% department_name,	employee_name # name
+% varchar,	clob # type
+% 10,	6 # length
+[ "ACCOUNTING",	"CLARK"	]
+[ "ACCOUNTING",	"KING"	]
+[ "ACCOUNTING",	"MILLER"	]
+[ "RESEARCH",	"ADAMS"	]
+[ "RESEARCH",	"FORD"	]
+[ "RESEARCH",	"JONES"	]
+[ "RESEARCH",	"SCOTT"	]
+[ "RESEARCH",	"SMITH"	]
+[ "SALES",	"ALLEN"	]
+[ "SALES",	"BLAKE"	]
+[ "SALES",	"JAMES"	]
+[ "SALES",	"MARTIN"	]
+[ "SALES",	"TURNER"	]
+[ "SALES",	"WARD"	]
+#DROP FUNCTION emps;
+#DROP TABLE employees;
+#DROP TABLE departments;
+#DROP FUNCTION to_date(string, string);
+
+# 19:57:51 >  
+# 19:57:51 >  "Done."
+# 19:57:51 >  
+
