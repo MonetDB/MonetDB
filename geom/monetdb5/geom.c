@@ -9350,6 +9350,7 @@ WKBWKBtoBITsubjoin_intern_light(bat *lres, bat *rres, bat *lid, bat *rid, char (
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
     fprintf(stdout, "%s second BATloop ql %d %llu ms\n", name, ql, t);
 #endif
+    GDKfree(lGeometries);
 
     if (msg != MAL_SUCCEED) {
         BBPunfix(xl->batCacheid);
@@ -10537,9 +10538,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
     fprintf(stdout, "%s second BATloop ql %d %llu ms\n", name, ql, t);
 #endif
 
-#ifdef OPENMP                
     GDKfree(lGeometries);
-#endif
 
     if (outs)
         GDKfree(outs);
