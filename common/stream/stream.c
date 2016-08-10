@@ -4315,7 +4315,6 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			ssize_t uncompressed_length = s->bufsiz;
 			size_t m = 0;
 			char *buf = s->buf;
-			snappy_status ret;
 
 			if (s->comp != COMPRESSION_NONE) {
 				buf = s->compbuf;
@@ -4394,7 +4393,6 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 				ssize_t uncompressed_length = s->bufsiz;
 				size_t m = 0;
 				char *buf = s->buf;
-				snappy_status ret;
 
 				if (s->comp != COMPRESSION_NONE) {
 					buf = s->compbuf;

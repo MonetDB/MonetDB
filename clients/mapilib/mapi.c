@@ -4002,9 +4002,8 @@ static char* mapi_convert_varchar(struct MapiColumn *col) {
 // classic stackoverflow programming
 static void itoa(int i, char b[]){
     char const digit[] = "0123456789";
-    int shifter;
-    char* p = b;
     int shifter = i;
+    char* p = b;
     if(i<0){
         *p++ = '-';
         i *= -1;
