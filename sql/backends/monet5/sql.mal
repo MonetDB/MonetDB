@@ -597,13 +597,15 @@ pattern mosaicanalysis(sch:str,tbl:str,col:str,compression:str)(
 	technique:bat[:str],
 	outputsize:bat[:lng],
 	factor:bat[:dbl],
-	run:bat[:lng])
+	compress:bat[:lng],
+	decompress:bat[:lng])
 address sql_mosaicAnalysis;
 pattern mosaicanalysis(sch:str,tbl:str,col:str)(
 	technique:bat[:str],
 	outputsize:bat[:lng],
 	factor:bat[:dbl],
-	run:bat[:lng])
+	compress:bat[:lng],
+	decompress:bat[:lng])
 address sql_mosaicAnalysis
 comment "Return a table with compression opportunities for the column";
 command calc.identity(:any_2) :oid 

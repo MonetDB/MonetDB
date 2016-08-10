@@ -682,9 +682,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					task->filter[i]= 1;
 
 			if( c->storage_type)
-				msg = MOScompressInternal(cntxt, &bid, &b->batCacheid, task, 0);
+				msg = MOScompressInternal(cntxt, &b->batCacheid, task, 0);
 			else
-				msg = MOSdecompressInternal(cntxt, &bid, &b->batCacheid);
+				msg = MOSdecompressInternal(cntxt, &b->batCacheid);
 			BBPunfix(b->batCacheid);
 			if (msg)
 				return msg;
