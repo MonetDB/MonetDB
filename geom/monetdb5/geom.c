@@ -9266,19 +9266,15 @@ WKBWKBtoBITsubjoin_intern_light(bat *lres, bat *rres, bat *lid, bat *rid, char (
         int lSRID = 0;
 
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
-        for (j = 0; j < numThreads; j++) {
-            lGeometries[j] = wkb2geos(lWKB);
-            if ( !lGeometries[j] ) {
-                for ( i = 0; i < j; i++ ){
-                    GEOSGeom_destroy(lGeometries[i]);
-                }
-                msg = createException(MAL, name, "wkb2geos failed");
-                break;
-            }
-        }
-        if (msg != MAL_SUCCEED)
+        lGeometries[0] = wkb2geos(lWKB);
+        if ( !lGeometries[0] ) {
+            msg = createException(MAL, name, "wkb2geos failed");
             break;
+        }
         lSRID = GEOSGetSRID(lGeometries[0]);
+        for (j = 1; j < numThreads; j++) {
+            lGeometries[j] = GEOSGeom_clone(lGeometries[0]);
+        }
 
 #ifdef OPENMP
         omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
@@ -9522,6 +9518,8 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
         for (j = 0; j < pr;j++) {
             if (rGeometries[j])
                 GEOSGeom_destroy(rGeometries[j]);
+            if (rMBRs[j])
+                GDKfree(rMBRs[j]);
         }
         GDKfree(rMBRs);
         GDKfree(rSRIDs);
@@ -9618,14 +9616,14 @@ WKBWKBtoBITsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid, char (*func)
 	}
     if (outs)
         GDKfree(outs);
-    if (rGeometries) {
-        for (j = 0; j < BATcount(br);j++) {
-            GEOSGeom_destroy(rGeometries[j]);
-        }
-        GDKfree(rGeometries);
+
+    for (j = 0; j < BATcount(br);j++) {
+        GEOSGeom_destroy(rGeometries[j]);
+        GDKfree(rMBRs[j]);
     }
-    if (rMBRs)
-	    GDKfree(rMBRs);
+    GDKfree(rGeometries);
+    GDKfree(rMBRs);
+
     if (rSRIDs)
 	    GDKfree(rSRIDs);
 	BBPunfix(*lid);
@@ -9657,7 +9655,8 @@ Intersectssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bi
     if (*estimate != lng_nil)
         throw(MAL, "Intersectssubjoin", "It has estimate");
 
-    return WKBWKBtoBITsubjoin_intern_light(lres, rres, lid, rid, GEOSIntersects, "geom.Intersectssubjoin");
+    return WKBWKBtoBITsubjoin_intern(lres, rres, lid, rid, GEOSIntersects, "geom.Intersectssubjoin");
+    //return WKBWKBtoBITsubjoin_intern_light(lres, rres, lid, rid, GEOSIntersects, "geom.Intersectssubjoin");
 }
 
 str
@@ -9891,6 +9890,8 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
             if (seq == NULL) {
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
+                    if (rMBRs[j])
+                        GDKfree(rMBRs[j]);
                 }
                 msg = createException(MAL, name, "GEOSCoordSeq_create failed");
                 break;
@@ -9901,6 +9902,8 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
                     !GEOSCoordSeq_setOrdinate(seq, 0, 2, *z)) {
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
+                    if (rMBRs[j])
+                        GDKfree(rMBRs[j]);
                 }
                 msg = createException(MAL, name, "GEOSCoordSeq_setOrdinate failed");
                 break;
@@ -9909,6 +9912,8 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
             if ((rGeos = GEOSGeom_createPoint(seq)) == NULL) {
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
+                    if (rMBRs[j])
+                        GDKfree(rMBRs[j]);
                 }
                 msg = createException(MAL, name, "Failed to create GEOSGeometry from the coordinates");
                 break;
@@ -9923,6 +9928,8 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
         if (rMBR == NULL || mbr_isnil(rMBR)) {
             for (j = 0; j < px;j++) {
                 GEOSGeom_destroy(rGeometries[j]);
+                if (rMBRs[j])
+                    GDKfree(rMBRs[j]);
             }
             msg = createException(MAL, name, "Failed to create mbrFromGeos");
             break;
@@ -9995,21 +10002,18 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 #endif
         for (j = 0; j < BATcount(bx); j++) {
 	        GEOSGeom rGeometry = rGeometries[j];
+            mbr *rMBR = NULL;
             outs[j] = 0;
 
             if (msg != MAL_SUCCEED)
                 continue;
 
-            //if (GEOSGetSRID(lGeometry) != GEOSGetSRID(rGeometry)) {
-	        if ( (err = mbrOverlaps(&outs[j], &lMBR, &rMBRs[j])) != MAL_SUCCEED) {
-                msg = err;
-#ifdef OPENMP
-                #pragma omp cancelregion
-#else
-                break;
-#endif
-            } else if (outs[j]) {
-                outs[j] = 0;
+            rMBR = rMBRs[j]; 
+            if ((outs[j] = !(rMBR->ymax < lMBR->ymin ||
+                            rMBR->ymin > lMBR->ymax ||
+                            rMBR->xmax < lMBR->xmin ||
+                            rMBR->xmin > lMBR->xmax))) {
+                 outs[j] = 0;
                 if ((outs[j] = GEOSIntersects(lGeometry, rGeometry)) == 2){
                     msg = createException(MAL, name, "GEOSIntersects failed");
 #ifdef OPENMP
@@ -10037,14 +10041,13 @@ IntersectsXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, b
 	}
     if (outs)
         GDKfree(outs);
-    if (rGeometries) {
-        for (j = 0; j < BATcount(bx);j++) {
-            GEOSGeom_destroy(rGeometries[j]);
-        }
-        GDKfree(rGeometries);
+
+    for (j = 0; j < BATcount(bx);j++) {
+        GEOSGeom_destroy(rGeometries[j]);
+        GDKfree(rMBRs[j]);
     }
-    if (rMBRs)
-	    GDKfree(rMBRs);
+    GDKfree(rGeometries);
+    GDKfree(rMBRs);
 
     BBPunfix(*lid);
     BBPunfix(*xid);
@@ -10293,6 +10296,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
     uint32_t j = 0;
     BUN px = 0, py = 0, pz =0, pl = 0, qx = 0, qy = 0, qz = 0, ql = 0;
 	GEOSGeom *rGeometries = NULL;
+    mbr **rMBRs = NULL;
     bit *outs = NULL;
     int numThreads = 1, i = 0;
     GEOSGeom *lGeometries = NULL;
@@ -10367,6 +10371,16 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 		BBPunfix(xr->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
     }
+    if ( (BATcount(bx)) && (rMBRs = (mbr**) GDKzalloc(sizeof(mbr*) * BATcount(bx))) == NULL) {
+        GDKfree(rGeometries);
+		BBPunfix(*lid);
+		BBPunfix(*xid);
+		BBPunfix(*yid);
+		BBPunfix(*zid);
+		BBPunfix(xl->batCacheid);
+		BBPunfix(xr->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+    }
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&start, NULL);
 #endif
@@ -10389,6 +10403,8 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 GEOSCoordSeq_destroy(seq);
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
+                    if (rMBRs[j])
+                        GDKfree(rMBRs[j]);
                 }
                 msg = createException(MAL, name, "GEOSCoordSeq_create failed");
                 break;
@@ -10400,6 +10416,8 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 GEOSCoordSeq_destroy(seq);
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
+                    if (rMBRs[j])
+                        GDKfree(rMBRs[j]);
                 }
                 msg = createException(MAL, name, "GEOSCoordSeq_setOrdinate failed");
                 break;
@@ -10409,6 +10427,8 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 GEOSCoordSeq_destroy(seq);
                 for (j = 0; j < px-1;j++) {
                     GEOSGeom_destroy(rGeometries[j]);
+                    if (rMBRs[j])
+                        GDKfree(rMBRs[j]);
                 }
                 msg = createException(MAL, name, "Failed to create GEOSGeometry from the coordinates");
                 break;
@@ -10418,6 +10438,16 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
                 GEOSSetSRID(rGeos, *srid);
         }
         rGeometries[px] = rGeos;
+        rMBRs[px] = mbrFromGeos(rGeometries[px]);
+        if (mbr_isnil(rMBRs[px])) {
+            for (j = 0; j < px;j++) {
+                GEOSGeom_destroy(rGeometries[j]);
+                if (rMBRs[j])
+                    GDKfree(rMBRs[j]);
+            }
+            msg = createException(MAL, name, "Failed to create mbrFromGeos");
+            break;
+        }
     }
 #ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
@@ -10430,6 +10460,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 
     if (msg != MAL_SUCCEED) {
         GDKfree(rGeometries);
+        GDKfree(rMBRs);
         BBPunfix(*lid);
         BBPunfix(*xid);
         BBPunfix(*yid);
@@ -10443,6 +10474,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 #endif
     if ( (lGeometries = GDKmalloc(sizeof(GEOSGeom) * numThreads)) == NULL) {
         GDKfree(rGeometries);
+        GDKfree(rMBRs);
         BBPunfix(*lid);
         BBPunfix(*xid);
         BBPunfix(*yid);
@@ -10458,23 +10490,17 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
     BATloop(bl, pl, ql) {
         str err = NULL;
         wkb *lWKB = NULL;
+	    mbr *lMBR = NULL;
         ro = bx->hseqbase;
         int lSRID = 0;
 
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
-
-        for (j = 0; j < numThreads; j++) {
-            lGeometries[j] = wkb2geos(lWKB);
-            if ( !lGeometries[j] ) {
-                for ( i = 0; i < j; i++ ){
-                    GEOSGeom_destroy(lGeometries[i]);
-                }
-                msg = createException(MAL, name, "wkb2geos failed");
-                break;
-            }
-        }
-        if (msg != MAL_SUCCEED)
+        lGeometries[0] = wkb2geos(lWKB);
+        if ( !lGeometries[0] ) {
+            msg = createException(MAL, name, "wkb2geos failed");
             break;
+        }
+
         lSRID = GEOSGetSRID(lGeometries[0]);
         if (lSRID != *srid) {
             for (j = 0; j < numThreads; j++) {
@@ -10484,6 +10510,17 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
             break;
         }
 
+	    lMBR = mbrFromGeos(lGeometries[0]);
+	    if (lMBR == NULL || mbr_isnil(lMBR)) {
+            GEOSGeom_destroy(lGeometries[0]);
+    		msg = createException(MAL, name, "mbrFromGeos failed");
+            break;
+        }
+
+        for (j = 1; j < numThreads; j++) {
+            lGeometries[j] = GEOSGeom_clone(lGeometries[0]);
+        }
+
         //for (j = 0; j < BATcount(bx); j++, ro++) {
 #ifdef OPENMP               
         omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
@@ -10491,6 +10528,7 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
         #pragma omp parallel for 
 #endif
         for (j = 0; j < BATcount(bx); j++) {
+            mbr *rMBR = NULL;
             double distance = 0.0;
             int res = 0;
             int tNum = 0;
@@ -10503,21 +10541,29 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
             if (msg != MAL_SUCCEED)
                 continue;
 
-            if ( (res = GEOSDistance(lGeometries[tNum], rGeometry, &distance)) == 0) {
-                msg = createException(MAL, name, "GEOSDistance failed");
+            rMBR = rMBRs[j]; 
+            if ((outs[j] = !(rMBR->ymax < (lMBR->ymin-*dist) ||
+                            rMBR->ymin > (lMBR->ymax+*dist) ||
+                            rMBR->xmax < (lMBR->xmin-*dist) ||
+                            rMBR->xmin > (lMBR->xmax+*dist)))) {
+                 outs[j] = 0;
+                if ( (res = GEOSDistance(lGeometries[tNum], rGeometry, &distance)) == 0) {
+                    msg = createException(MAL, name, "GEOSDistance failed");
 #ifdef OPENMP                
-                #pragma omp cancelregion
+                    #pragma omp cancelregion
 #else
-                break;
+                    break;
 #endif
+                }
+                outs[j] = (distance <= *dist);
             }
-            outs[j] = (distance <= *dist);
         }
 
         for (j = 0; j < numThreads; j++) {
             GEOSGeom_destroy(lGeometries[j]);
             lGeometries[j] = NULL;
         }
+        GDKfree(lMBR);
 
         if (msg != MAL_SUCCEED)
             break;
@@ -10542,12 +10588,14 @@ DWithinXYZsubjoin_intern(bat *lres, bat *rres, bat *lid, bat *xid, bat*yid, bat 
 
     if (outs)
         GDKfree(outs);
-    if (rGeometries) {
-        for (j = 0; j < BATcount(bx);j++) {
-            GEOSGeom_destroy(rGeometries[j]);
-        }
-        GDKfree(rGeometries);
+
+    for (j = 0; j < BATcount(bx);j++) {
+        GEOSGeom_destroy(rGeometries[j]);
+        GDKfree(rMBRs[j]);
     }
+    GDKfree(rGeometries);
+    GDKfree(rMBRs);
+    
     BBPunfix(*lid);
     BBPunfix(*xid);
     BBPunfix(*yid);
