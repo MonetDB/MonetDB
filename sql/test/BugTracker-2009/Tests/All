@@ -25,7 +25,7 @@ bool-str-bug
 rollback_bug
 update-crash
 correlated-selection-bug
-segfault_when_quitting_debugger.SF-2538837
+THREADS=1?segfault_when_quitting_debugger.SF-2538837
 row_number_bug.SF-2546109
 #set_history_and_drop_table.SF-2607045  not relevant anymore
 TypeException_having_count_distinct.SF-2494227
