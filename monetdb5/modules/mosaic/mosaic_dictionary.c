@@ -243,8 +243,10 @@ MOScreatedictionary(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: makeDict(hge); break;
 #endif
+#ifdef _DEBUG_MOSAIC_
 	default:
 		mnstr_printf(cntxt->fdout,"#does not support dictionary type %d\n",ATOMbasetype(task->type));
+#endif
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_dictionary(cntxt, task);
@@ -297,8 +299,10 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 			if(i) factor = (flt) ((lng)i * sizeof(lng)) / wordaligned( MosaicBlkSize + i,lng);
 		}
 		break;
+#ifdef _DEBUG_MOSAIC_
 	default:
 		mnstr_printf(cntxt->fdout,"#does not support dictionary type %d\n",ATOMbasetype(task->type));
+#endif
 	}
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate dict "BUNFMT" elm %4.2f factor\n", i, factor);
@@ -316,11 +320,11 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 	BitVector base = (BitVector) MOScodevector(task);\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
 	for(i =0; i<limit; i++, val++){\
-		hdr->checksum.sum##TPE += *val;\
 		MOSfind(j,task->hdr->dict.val##TPE,*val,0,hdr->dictsize);\
 		if(j == hdr->dictsize || task->hdr->dict.val##TPE[j] !=  *val) \
 			break;\
 		else {\
+			hdr->checksum.sum##TPE += *val;\
 			hdr->dictfreq[j]++;\
 			MOSincCnt(blk,1);\
 			setBitVector(base,i,hdr->bits,(unsigned int)j);\
@@ -348,24 +352,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: DICTcompress(sht); break;
 	case TYPE_int: DICTcompress(int); break;
-	case TYPE_lng: //DICTcompress(lng); break;
-{	lng *val = ((lng*)task->src) + task->start;
-	BitVector base = (BitVector) MOScodevector(task);\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
-	for(i =0; i<limit; i++, val++){
-		hdr->checksum.sumlng += *val;
-		MOSfind(j,task->hdr->dict.vallng,*val,0,hdr->dictsize);
-		if(j == hdr->dictsize || task->hdr->dict.vallng[j] !=  *val) 
-			break;
-		else {
-			hdr->dictfreq[j]++;
-			MOSincCnt(blk,1);
-			setBitVector(base,i,hdr->bits,(unsigned int)j);
-		}
-	}
-	assert(i);
-}
-break;
+	case TYPE_lng: DICTcompress(lng); break;
 	case TYPE_oid: DICTcompress(oid); break;
 	case TYPE_flt: DICTcompress(flt); break;
 	case TYPE_dbl: DICTcompress(dbl); break;

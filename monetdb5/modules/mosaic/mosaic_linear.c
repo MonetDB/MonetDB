@@ -239,9 +239,9 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	*(TYPE*) linear_base(blk) = val;\
 	*(TYPE*) linear_step(task,blk) = step;\
 	for(i=1; i<limit; i++, val = *v++){\
-		hdr->checksum.sum##TYPE += val;\
 		if (  *v - val != step)\
 			break;\
+		hdr->checksum.sum##TYPE += val;\
 	} MOSsetCnt(blk, i);\
 	task->dst = ((char*) blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(TYPE),MosaicBlkRec);\
 }
@@ -261,6 +261,7 @@ MOScompress_linear(Client cntxt, MOStask task)
 	case TYPE_bte: LINEARcompress(bte); break;
 	case TYPE_bit: LINEARcompress(bit); break;
 	case TYPE_sht: LINEARcompress(sht); break;
+	case TYPE_int: LINEARcompress(int); break;
 	case TYPE_oid: LINEARcompress(oid); break;
 	case TYPE_lng: LINEARcompress(lng); break;
 	case TYPE_flt: LINEARcompress(flt); break;
@@ -268,22 +269,6 @@ MOScompress_linear(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: LINEARcompress(hge); break;
 #endif
-	case TYPE_int:
-		{	int *v = ((int*) task->src) + task->start, val = *v++;\
-			int step = *v - val;\
-			BUN limit = task->stop - task->start >= task->start + MOSlimit()? MOSlimit():task->stop;
-			*(int*) linear_base(blk) = val;
-			*(int*) linear_step(task,blk) = step;
-			for(i=1; i<limit; i++, val = *v++){
-				hdr->checksum.sumint += val;
-				if ( *v-val != step)
-					break;
-			}
-			MOSsetCnt(blk,i);
-			//task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(int);
-			task->dst = ((char*) blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(int),MosaicBlkRec);\
-		}
-		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->bsrc->twidth){
