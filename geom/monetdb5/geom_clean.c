@@ -331,13 +331,13 @@ GEOSGeom_GEOS_nodeLines(GEOSGeometry **res, const GEOSGeometry* lines)
 
 /*TODO: Find a way to clone it*/
 static GEOSGeometry*
-GEOSGeom_GEOS_buildArea(const GEOSGeometry* geom_in) {
+GEOSGeom_GEOS_buildArea(const GEOSGeometry* geosGeometry) {
     return NULL;
 }
 
 
 static str
-GEOSGeom_GEOS_makeValidPolygon(GEOSGeometry **res, const GEOSGeometry *poly)
+GEOSGeom_GEOS_makeValidPolygon(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 {
 	GEOSGeom geosBound, geosCutEdges, geosArea, collapsePoints;
 	GEOSGeometry *vgeoms[3], *uniqPointsBound = NULL, *uniqPointsEdges = NULL;
@@ -346,7 +346,7 @@ GEOSGeom_GEOS_makeValidPolygon(GEOSGeometry **res, const GEOSGeometry *poly)
 
 	assert (GEOSGeomTypeId(geosGeometry) == GEOS_POLYGON || GEOSGeomTypeId(geosGeometry) == GEOS_MULTIPOLYGON);
 
-	if ( (geosBound = GEOSBoundary(poly)) == NULL) {
+	if ( (geosBound = GEOSBoundary(geosGeometry)) == NULL) {
         *res = NULL;
 		throw(MAL, "GEOSGeom_GEOS_makeValidPolygon", "GEOSBoundary failed");
     }
@@ -728,7 +728,7 @@ geom_make_valid(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 	if ( (GEOSGeomTypeId(geosGeometry)+1) == wkbGeometryCollection_mdb && (GEOSGeomTypeId(*res) +1 ) != wkbGeometryCollection_mdb) {
 		GEOSGeom *ogeoms = (GEOSGeom *) GDKmalloc(sizeof(GEOSGeom*));
         int geometryType = -1, type = -1;
-		assert(geom_in != res);
+		assert(geosGeometry != res);
         ogeoms[0] = *res;
 
         geometryType = GEOSGeomTypeId(*res);
