@@ -342,11 +342,11 @@ MOSestimate_frame(Client cntxt, MOStask task)
 	base[0]=0;\
 	for(i =0; i<limit; i++, val++){\
 		delta = *val - frame;\
-		hdr->checksum.sum##TPE += delta;\
 		MOSfind(j,task->hdr->frame.val##TPE,delta,0,hdr->framesize);\
 		if(j == hdr->framesize || task->hdr->frame.val##TPE[j] != delta) \
 			break;\
 		else {\
+			hdr->checksum.sum##TPE += delta;\
 			hdr->framefreq[j]++;\
 			MOSincCnt(blk,1);\
 			framecompress(base,i,hdr->framebits,j);\

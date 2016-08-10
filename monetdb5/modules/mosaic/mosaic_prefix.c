@@ -125,7 +125,8 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 void
 MOSadvance_prefix(Client cntxt, MOStask task)
 {
-	int bits = 0, bytes= 0;
+	int bits = 0;
+	size_t bytes= 0;
 	int size;
 	(void) cntxt;
 
@@ -562,7 +563,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress bits %d mask %o val %d\n",bits,m,val);
 			for(i = 0; i < lim; i++){
 				v = decompress(base,i,bits);
-				hdr->checksum.sumsht += v;
+				hdr->checksum2.sumsht += v;
 				*w++ = v;
 			}
 		}
@@ -578,7 +579,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress bits %d mask %o val %d\n",bits,m,val);
 			for(i = 0; i < lim; i++){
 				v =decompress(base,i,bits);
-				hdr->checksum.sumsht += v;
+				hdr->checksum2.sumsht += v;
 				*w++ = v;
 			}
 		}
@@ -594,7 +595,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress bits %d mask %o val %d\n",bits,m,val);
 			for(i = 0; i < lim; i++){
 				v = decompress(base,i,bits);
-				hdr->checksum.sumint += v;
+				hdr->checksum2.sumint += v;
 				*w++ = v;
 			}
 		}
@@ -610,7 +611,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			//mnstr_printf(cntxt->fdout,"decompress bits %d mask %o val %d\n",bits,m,val);
 			for(i = 0; i < lim; i++){
 				v= decompress(base,i,bits);
-				hdr->checksum.sumlng += v;
+				hdr->checksum2.sumlng += v;
 				*w++ = v;
 			}
 		}

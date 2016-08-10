@@ -176,12 +176,13 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit():task->stop - task->start;\
 	task->dst = MOScodevector(task); \
 	*(TYPE*)task->dst = val;\
+	hdr->checksum.sum##TYPE += *v;\
 	task->dst += sizeof(TYPE);\
 	for(v++,i =1; i<limit; i++,v++){\
-		hdr->checksum.sum##TYPE += *v;\
 		delta = *v -val;\
 		if ( EXPR )\
 			break;\
+		hdr->checksum.sum##TYPE += *v;\
 		*(bte*)task->dst++ = (bte) delta;\
 		val = *v;\
 	}\

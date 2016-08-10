@@ -390,17 +390,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: DICTdecompress(sht); break;
 	case TYPE_int: DICTdecompress(int); break;
-	case TYPE_lng: //DICTdecompress(lng); break;
-{	BUN lim = MOSgetCnt(blk);
-	base = (BitVector) MOScodevector(task);
-	for(i = 0; i < lim; i++){
-		j= getBitVector(base,i,(int) hdr->bits); 
-		((lng*)task->src)[i] = task->hdr->dict.vallng[j];
-		hdr->checksum2.sumlng += task->hdr->dict.vallng[j];
-	}
-	task->src += i * sizeof(lng);\
-}
-	break;
+	case TYPE_lng: DICTdecompress(lng); break;
 	case TYPE_oid: DICTdecompress(oid); break;
 	case TYPE_flt: DICTdecompress(flt); break;
 	case TYPE_dbl: DICTdecompress(dbl); break;

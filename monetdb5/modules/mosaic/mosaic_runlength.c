@@ -249,19 +249,7 @@ MOScompress_runlength(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: RLEcompress(hge); break;
 #endif
-	case TYPE_int:
-		{	int *v = ((int*) task->src)+task->start, val = *v;
-			int *dst = (int*) task->dst;
-			BUN limit = task->stop - task->start > MOSlimit() ? MOSlimit(): task->stop - task->start;
-			*dst = val;
-			for(v++,i = 1; i<limit; i++, v++)
-			if ( *v != val)
-				break;
-			hdr->checksum.sumint += (int)(i * val);
-			MOSsetCnt(blk,i);
-			task->dst +=  sizeof(int);
-		}
-		break;
+	case TYPE_int: RLEcompress(int); break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->bsrc->twidth){
