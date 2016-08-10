@@ -829,6 +829,7 @@ struct MapiColumn {
 	int columnlength;
 	int digits;
 	int scale;
+	void *null_value;
 	char* buffer_ptr;
 	char write_buf[50];
 	mapi_converter converter;
@@ -3993,6 +3994,8 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 */
 
 static char* mapi_convert_varchar(struct MapiColumn *col) {
+	if (strcmp(col->buffer_ptr, (char*)col->null_value) == 0) 
+		return NULL;
 	return col->buffer_ptr;
 }
 
@@ -4017,33 +4020,38 @@ static char* itoa(int i, char b[]){
 }
 
 static char* mapi_convert_int(struct MapiColumn *col) {
-	//sprintf(col->write_buf, "%d", *((int*) col->buffer_ptr));
+	if (*((int*) col->buffer_ptr) == *((int*)col->null_value)) return NULL;
 	itoa(*((int*) col->buffer_ptr), col->write_buf);
 	return (char*) col->write_buf;
 }
 
 static char* mapi_convert_lng(struct MapiColumn *col) {
+	if (*((lng*) col->buffer_ptr) == *((lng*)col->null_value)) return NULL;
 	sprintf(col->write_buf, "%lld", *((lng*) col->buffer_ptr));
 	return (char*) col->write_buf;
 }
 
 static char* mapi_convert_smallint(struct MapiColumn *col) {
+	if (*((short*) col->buffer_ptr) == *((short*)col->null_value)) return NULL;
 	sprintf(col->write_buf, "%hd", *((short*) col->buffer_ptr));
 	return (char*) col->write_buf;
 }
 
 static char* mapi_convert_tinyint(struct MapiColumn *col) {
+	if (*((signed char*) col->buffer_ptr) == *((signed char*)col->null_value)) return NULL;
 	sprintf(col->write_buf, "%hhd", *((signed char*) col->buffer_ptr));
 	return (char*) col->write_buf;
 }
 
 static char* mapi_convert_double(struct MapiColumn *col) {
+	if (*((double*) col->buffer_ptr) == *((double*)col->null_value)) return NULL;
 	//sprintf(col->write_buf, "%g", *((double*) col->buffer_ptr));
 	gcvt(*((double*) col->buffer_ptr), 2, col->write_buf);
 	return (char*) col->write_buf;
 }
 
 static char* mapi_convert_boolean(struct MapiColumn *col) {
+	if (*((signed char*) col->buffer_ptr) == *((signed char*)col->null_value)) return NULL;
 	if (*((signed char*) col->buffer_ptr) == 1) {
 		return "true";
 	}
@@ -4087,12 +4095,11 @@ static int CUMLEAPDAYS[13] = {
 static char*
 mapi_convert_date(struct MapiColumn *col){
 	int day, month, year;
-
 	date n = *((date*) col->buffer_ptr);
 
-	if (n == date_nil) {
-		return "NULL";
-	}
+	if (n == *((date*)col->null_value)) 
+		return NULL;
+
 	year = n / 365;
 	day = (n - year * 365) - leapyears(year >= 0 ? year - 1 : year);
 	if (n < 0) {
@@ -4196,16 +4203,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			result->querytype = Q_TABLE;
 			result->tuple_count = 0;
 			result->rows_read = 0;
-//			result->errorstr = NULL;
-//			result->cache.line = NULL;
-//			result->next = NULL;
-//			result->hdl = hdl;
 
 
 			for (i = 0; i < nr_cols; i++) {
 				lng col_info_length;
 				char *table_name, *col_name, *type_sql_name;
 				int typelen;
+				int null_len;
 
 				if (!mnstr_readLng(mid->from, &col_info_length)) {
 					return mid->error;
@@ -4224,6 +4228,21 @@ read_into_cache(MapiHdl hdl, int lookahead)
 						!mnstr_readInt(mid->from, &typelen)) {
 					return mid->error;
 				}
+
+				if (!mnstr_readInt(mid->from, &null_len)) {
+					return mid->error;
+				}
+				assert(null_len > 0);
+
+				result->fields[i].null_value = malloc(sizeof(char) * null_len);
+				if (!result->fields[i].null_value) {
+					return mid->error;
+				}
+
+				if (mnstr_read(mid->from, result->fields[i].null_value, null_len, 1) != 1) {
+					return mid->error;
+				}
+
 	//			fprintf(stderr, "%lld col_info_length=%lld, table_name=%s, col_name=%s, type_sql_name=%s, type_len=%d\n",
 	//					i, col_info_length, table_name, col_name, type_sql_name, typelen);
 				result->fields[i].columnname = col_name;
@@ -4253,7 +4272,6 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					result->fields[i].converter = (mapi_converter) mapi_convert_unknown;
 					// TODO: complain
 				}
-				// TODO: NULLs
 			}
 			hdl->result = result;
 			hdl->active = result;
