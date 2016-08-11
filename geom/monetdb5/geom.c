@@ -8063,8 +8063,6 @@ wkbAsX3D(str *res, wkb **geomWKB, int *maxDecDigits, int *option)
 	GEOSGeom geom = NULL;
     int srid;
 	bit empty;
-    int dimension = 0;
-    int type = -1;
     
     //check if the geometry is empty
 	if ((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
@@ -8088,10 +8086,7 @@ wkbAsX3D(str *res, wkb **geomWKB, int *maxDecDigits, int *option)
         }
     }
 
-    dimension= GEOS_getWKBOutputDims(geom);
-    type = GEOSGeomTypeId(geom)+1;
-
-    if (dimension == 2 && type == wkbMultiPolygon_mdb) {
+    if (GEOSGeom_getCoordinateDimension(geom) == 2 && (GEOSGeomTypeId(geom)+1) == wkbMultiPolygon_mdb) {
         throw(MAL, "geom.wkbAsX3D", "For a MultiPolygon the dimension should be 3.");
     }
 
