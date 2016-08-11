@@ -360,7 +360,8 @@ x3d_3_multi_buf(GEOSGeom col, char *output, int precision, int opts, const char 
     char *ptr, *x3dtype;
     int i;
     int ngeoms;
-    int dimension= GEOS_getWKBOutputDims(col);
+    //int dimension= GEOS_getWKBOutputDims(col);
+    int dimension= GEOSGeom_getCoordinateDimension(col);
     int type = GEOSGeomTypeId(col)+1;
 
     GEOSGeom subgeom;
@@ -712,7 +713,8 @@ geom_toX3D3(const GEOSGeometry *geom, char *output, int precision, int opts, int
 
     ptr = output;
 
-    if ( GEOS_getWKBOutputDims(geom) == 2)
+    //if ( GEOS_getWKBOutputDims(geom) == 2)
+    if ( GEOSGeom_getCoordinateDimension(geom) == 2)
     {
         for (i=0; i<npoints; i++)
         {
@@ -808,7 +810,8 @@ geom_X3Dsize(const GEOSGeometry *geom, int precision)
     uint32_t npoints = 0;
     numPointsGeometry(&npoints, geom);
 
-    if (GEOS_getWKBOutputDims(geom) == 2)
+    //if (GEOS_getWKBOutputDims(geom) == 2)
+    if (GEOSGeom_getCoordinateDimension(geom) == 2)
         return (OUT_MAX_DIGS_DOUBLE + precision + sizeof(" "))
             * 2 * npoints;
 
