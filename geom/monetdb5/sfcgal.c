@@ -324,6 +324,8 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
                 return ret;
             }
             *res = GEOSGeom_createCollection(type-1, geoms, ngeoms);
+            if (geoms)
+                GDKfree(geoms);
             break;
         case SFCGAL_TYPE_POLYHEDRALSURFACE:
             ngeoms = sfcgal_polyhedral_surface_num_polygons(geom);
@@ -346,6 +348,8 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
                 return ret;
             }
             *res = GEOSGeom_createCollection(type-1, geoms, ngeoms);
+            if (geoms)
+                GDKfree(geoms);
             break;
             /* Solid is map as a closed PolyhedralSurface (for now) */
         case SFCGAL_TYPE_SOLID:
@@ -378,6 +382,8 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
                 return ret;
             }
             *res = GEOSGeom_createCollection(type-1, geoms, ngeoms);
+            if (geoms)
+                GDKfree(geoms);
             //TODO: if (ngeoms) FLAGS_SET_SOLID( rgeom->flags, 1);
             break;
         case SFCGAL_TYPE_TRIANGULATEDSURFACE:
@@ -401,6 +407,8 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
                 return ret;
             }
             *res = GEOSGeom_createCollection(type-1, geoms, ngeoms);
+            if (geoms)
+                GDKfree(geoms);
             break;
             //Unsupported types.
         case SFCGAL_TYPE_MULTISOLID:
@@ -460,6 +468,7 @@ sfcgal_from_geom(str *ret, const GEOSGeometry *geom, int type)
                         sfcgal_linestring_add_point(line,
                                 sfcgal_point_create_from_xy(point_x, point_y));
                     }
+                    GEOSGeom_destroy(pointG);
                 }
 
                 return line;
@@ -720,17 +729,23 @@ geom_sfcgal_extrude(wkb **res, wkb **geom, double *ex, double *ey, double *ez)
         msg = createException(MAL, "geom_sfcgal_extrude", "geom_to_sfcgal failed:%s", ret);
         GDKfree(ret);
 		return msg;
-	}
+	} else {
+        GEOSGeom_destroy(inGeos);
+    }
 	if (!(outGeom = sfcgal_geometry_extrude (inGeom, *ex, *ey, *ez))) {
 		*res = NULL;
 		return createException(MAL, "geom_sfcgal_extrude", "sfcgal_geometry_extrude failed");
-	}
+	} else {
+        sfcgal_geometry_delete(inGeom);
+    }
 
     if ( ( ret = sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0)) != MAL_SUCCEED) {
 		*res = NULL;
 		msg = createException(MAL, "geom_sfcgal_extrude", "sfcgal_to_geom failed:%s", ret);
         GDKfree(ret);
         return msg;
+    } else {
+        sfcgal_geometry_delete(outGeom);
     }
 
 	*res = geos2wkb(outGeos);
@@ -766,17 +781,23 @@ geom_sfcgal_straightSkeleton(wkb **res, wkb **geom)
 		msg = createException(MAL, "geom_sfcgal_straightSkeleton", "geom_to_sfcgal failed:%s", ret);
         GDKfree(ret);
         return msg;
-	}
+	} else {
+        GEOSGeom_destroy(inGeos);
+    }
 	if (!(outGeom = sfcgal_geometry_straight_skeleton(inGeom))) {
 		*res = NULL;
 		return createException(MAL, "geom_sfcgal_straightSkeleton", "sfcgal_geometry_straight_skeleton failed");
-	}
+	} else {
+        sfcgal_geometry_delete(inGeom);
+    }
 
     if ( (ret = sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0)) != MAL_SUCCEED) {
 		*res = NULL;
 		msg = createException(MAL, "geom_sfcgal_straightSkeleton", "sfcgal_to_geom failed:%s", ret);
         GDKfree(ret);
         return msg;
+    } else {
+        sfcgal_geometry_delete(outGeom);
     }
 
 	*res = geos2wkb(outGeos);
@@ -812,17 +833,23 @@ geom_sfcgal_tesselate(wkb **res, wkb **geom)
 		msg = createException(MAL, "geom_sfcgal_tesselate", "geom_to_sfcgal failed:%s", ret);
         GDKfree(ret);
         return msg;
-	}
+	} else {
+        GEOSGeom_destroy(inGeos);
+    }
 	if (!(outGeom = sfcgal_geometry_tesselate(inGeom))) {
 		*res = NULL;
 		return createException(MAL, "geom_sfcgal_tesselate", "sfcgal_geometry_tesselate failed");
-	}
+	} else {
+        sfcgal_geometry_delete(inGeom);
+    }
 
     if (  (ret = sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0)) != MAL_SUCCEED) {
 		*res = NULL;
 		msg = createException(MAL, "geom_sfcgal_tesselate", "sfcgal_to_geom failed:%s", ret);
         GDKfree(ret);
         return msg;
+    } else {
+        sfcgal_geometry_delete(outGeom);
     }
 
 	*res = geos2wkb(outGeos);
@@ -858,7 +885,9 @@ geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom, int *flag)
 		msg = createException(MAL, "geom_sfcgal_triangulate2DZ", "geom_to_sfcgal failed:%s", ret);
         GDKfree(ret);
         return msg;
-	}
+	} else {
+        GEOSGeom_destroy(inGeos);
+    }
 
 	if (!(outGeom = sfcgal_geometry_triangulate_2dz(inGeom))) {
         /*TODO:Make sure you can jump over it*/
@@ -867,7 +896,9 @@ geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom, int *flag)
 		if ((*res = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom_sfcgal_triangulate2DZ", MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
-	}
+	} else {
+        sfcgal_geometry_delete(inGeom);
+    }
 
 
     if (  (ret = sfcgal_to_geom(&outGeos, outGeom, 0, srid, *flag)) != MAL_SUCCEED) {
@@ -875,8 +906,11 @@ geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom, int *flag)
 		msg = createException(MAL, "geom_sfcgal_triangulate2DZ", "sfcgal_to_geom failed:%s", ret);
         GDKfree(ret);
         return msg;
+    } else {
+        sfcgal_geometry_delete(outGeom);
     }
 
 	*res = geos2wkb(outGeos);
+    GEOSGeom_destroy(outGeos);
 	return MAL_SUCCEED;
 }
