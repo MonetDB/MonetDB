@@ -1670,31 +1670,176 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	/**
 	 * Gets the value of the designated column in the current row of this
 	 * ResultSet object as an Object in the Java programming language.
-	 * 
+	 *
 	 * This method will return the value of the given column as a Java object.
 	 * The type of the Java object will be the default Java object type
 	 * corresponding to the column's SQL type, following the mapping for
 	 * built-in types specified in the JDBC specification. If the value is
 	 * an SQL NULL, the driver returns a Java null.
-	 * 
+	 *
 	 * This method may also be used to read database-specific abstract data
 	 * types. In the JDBC 2.0 API, the behavior of method getObject is extended
 	 * to materialize data of SQL user-defined types. When a column contains a
 	 * structured or distinct value, the behavior of this method is as if it
-	 * were a call to: getObject(columnIndex,
-	 * this.getStatement().getConnection().getTypeMap()).
+	 * were a call to: getObject(columnIndex, this.getStatement().getConnection().getTypeMap()).
 	 *
 	 * @param columnIndex the first column is 1, the second is 2, ...
-	 * @return a java.lang.Object holding the column value
+	 * @return a java.lang.Object holding the column value or null
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
 	public Object getObject(int columnIndex) throws SQLException {
-		/* statement is null for MonetVirtualResultSet such as the ones that hold generated keys */
-		if (this.getStatement() == null) {
-			return getObject(columnIndex, new HashMap<String, Class<?>>());
+		// Many generic JDBC programs use getObject(colnr) to retrieve value objects from a resultset
+		// For speed the implementation should be as fast as possible, so avoid method calls (by inlining code) where possible
+		final String MonetDBType;
+		final int JdbcType;
+		try {
+			if (tlp.values[columnIndex - 1] == null) {
+				lastColumnRead = columnIndex - 1;
+				return null;
+			}
+			MonetDBType = types[columnIndex - 1];
+			JdbcType = getJavaType(MonetDBType);
+		} catch (IndexOutOfBoundsException e) {
+			throw new SQLException("No such column " + columnIndex, "M1M05");
 		}
-		return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
+
+		// for a few JdbcType cases we do not inline its code but invoke their getXxx(i) method:
+		switch(JdbcType) {
+			case Types.DATE:
+				return getDate(columnIndex);
+			case Types.TIME:
+				return getTime(columnIndex);
+			case Types.TIMESTAMP:
+				return getTimestamp(columnIndex);
+			case Types.BINARY:
+			case Types.VARBINARY:
+			case Types.LONGVARBINARY: // MonetDB doesn't use type LONGVARBINARY, it's here for completeness
+				return getBytes(columnIndex);
+			// for other cases continue and use inline code
+		}
+
+		// get the String value once and use it in all below JdbcType cases
+		final String val = getString(columnIndex);
+		if (val == null)
+			return null;
+
+		switch(JdbcType) {
+			case Types.BIT: // MonetDB doesn't use type BInary digiT, it's here for completeness
+			case Types.TINYINT:
+			case Types.SMALLINT:
+				try {
+					return Short.valueOf(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.INTEGER:
+				try {
+					return Integer.valueOf(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.BIGINT:
+				try {
+					return Long.valueOf(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.DOUBLE:
+			case Types.FLOAT:
+				try {
+					return Double.valueOf(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.REAL:
+				try {
+					return Float.valueOf(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.DECIMAL:
+			case Types.NUMERIC:
+				try {
+					return new BigDecimal(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.BOOLEAN:
+				return Boolean.valueOf(val);
+			case Types.VARCHAR:
+			{
+				// The MonetDB types: inet, json, url and uuid are all mapped to Types.VARCHAR in MonetDriver.typeMap
+				// For these MonetDB types (except json, see comments below) we try to create objects of the corresponding class.
+				// As in most cases when we get here the MonetDBtype will be "varchar". For efficiency we compare
+				// the MonetDBtype first letter to see if we can skip the three .equals(MonetDBType) method calls.
+				char firstletter = MonetDBType.charAt(0);
+				if (firstletter == 'i') {
+					if ("inet".equals(MonetDBType)) {
+						try {
+							nl.cwi.monetdb.jdbc.types.INET inet_obj = new nl.cwi.monetdb.jdbc.types.INET();
+							inet_obj.fromString(val);
+							return inet_obj;
+						} catch (Exception exc) {
+							// ignore exception and just return the val String object
+							return val;
+						}
+					}
+				}
+				else if (firstletter == 'u') {
+					if ("url".equals(MonetDBType)) {
+						try {
+							nl.cwi.monetdb.jdbc.types.URL url_obj = new nl.cwi.monetdb.jdbc.types.URL();
+							url_obj.fromString(val);
+							return url_obj;
+						} catch (MalformedURLException exc) {
+							// ignore exception and just return the val String object
+							return val;
+						} catch (Exception exc) {
+							// ignore exception and just return the val String object
+							return val;
+						}
+					}
+					if ("uuid".equals(MonetDBType)) {
+						try {
+							return java.util.UUID.fromString(val);
+						} catch (IllegalArgumentException exc) {
+							// ignore exception and just return the val String object
+							return val;
+						}
+					}
+				}
+//				else if (firstletter == 'j') {
+//					if ("json".equals(MonetDBType)) {
+						// There is no support for JSON in standard java class libraries.
+						// Possibly we could use org.json.simple.JSONObject or other/faster libs
+						// javax.json.Json is not released yet (see https://json-processing-spec.java.net/)
+						// see also https://github.com/fabienrenaud/java-json-benchmark
+						// Note that it would make our JDBC driver dependent of an external jar
+						// and we don't want that so simply return it as String object
+//						return val;
+//					}
+//				}
+				return val;
+			}
+			case Types.CHAR:
+			case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+				return val;
+			case Types.CLOB:
+				return new MonetClob(val);
+			case Types.BLOB:
+				return MonetBlob.create(val);
+			case Types.OTHER:
+			default:
+				// When we get here the column type is a non-standard JDBC SQL type, possibly a User Defined Type.
+				// Just call getObject(int, Map) for those rare cases.
+
+				/* note: statement will be null for a MonetVirtualResultSet, such as the ones that hold generated keys */
+				if (this.getStatement() == null) {	// prevent NPE
+					return val;
+				}
+				return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
+		}
 	}
 
 	private boolean classImplementsSQLData(Class<?> cl) {
