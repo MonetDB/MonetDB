@@ -1721,19 +1721,19 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			try {
 				switch (hlp.parse(tmpLine)) {
 					case HeaderLineParser.NAME:
-						name = (String[])(hlp.values.clone());
+						name = hlp.values.clone();
 						isSet[NAMES] = true;
 					break;
 					case HeaderLineParser.LENGTH:
-						columnLengths = (int[])(hlp.intValues.clone());
+						columnLengths = hlp.intValues.clone();
 						isSet[LENS] = true;
 					break;
 					case HeaderLineParser.TYPE:
-						type = (String[])(hlp.values.clone());
+						type = hlp.values.clone();
 						isSet[TYPES] = true;
 					break;
 					case HeaderLineParser.TABLE:
-						tableNames = (String[])(hlp.values.clone());
+						tableNames = hlp.values.clone();
 						isSet[TABLES] = true;
 					break;
 				}
@@ -2357,6 +2357,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @param the query to execute
 		 * @throws SQLException if a database error occurs
 		 */
+		@SuppressWarnings("fallthrough")
 		void executeQuery(String[] templ, String query)
 			throws SQLException
 		{
