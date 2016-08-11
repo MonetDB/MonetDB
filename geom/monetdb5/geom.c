@@ -2356,7 +2356,10 @@ wkbPolygonize_(wkb** outWKB, wkb** geom1, wkb** geom2){
 
 str
 wkbPolygonize(wkb** outWKB, wkb** geom1) {
-    wkb *geom2 = geos2wkb(GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1));
+    GEOSGeometry* emptyCol = GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1);
+    wkb *geom2 = geos2wkb(emptyCol);
+    GEOSGeom_destroy(emptyCol);
+
     return wkbPolygonize_(outWKB, geom1, &geom2);
 }
 
@@ -2398,8 +2401,11 @@ wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* 
     if ( ngrp && (empty_geoms = (wkb**) GDKmalloc(sizeof(wkb*)*ngrp)) == NULL) {
             throw(MAL, "geom.wkbPolygonize", MAL_MALLOC_FAIL);
     }
-    for (i = 0; i < ngrp; i++)
-        empty_geoms[i] = geos2wkb(GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1));
+    for (i = 0; i < ngrp; i++) {
+        GEOSGeometry* emptyCol = GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1);
+        empty_geoms[i] = geos2wkb(emptyCol);
+        GEOSGeom_destroy(emptyCol);
+    }
 
     msg = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbPolygonize_, "wkbsubPolygonize");
 	BBPkeepref(*outBAT_id);
@@ -5592,6 +5598,7 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
             outBAT = NULL;
     		throw(MAL, name, "BUNappend failed");
         }
+        GDKfree(grpWKBs[i]);
     }
 
     if (nils < BUN_NONE) {
@@ -5718,10 +5725,14 @@ wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
         geomGeometries[num_geoms] = geom2Geometry;
 
         if ( (outGeometry = GEOSGeom_createCollection(type, geomGeometries, num_geoms+1)) == NULL ) {
-            err = createException(MAL, "geom.Collect", "GEOSGeom_createCollection failed!!!");
+            GDKfree(geomGeometries);
+            GEOSGeom_destroy(geom1Geometry);
+            GEOSGeom_destroy(geom2Geometry);
+            throw(MAL, "geom.Collect", "GEOSGeom_createCollection failed!!!");
         } else {
 	        GEOSSetSRID(outGeometry, srid);
             *out = geos2wkb(outGeometry);
+            GEOSGeom_destroy(outGeometry);
         }
     }
 
@@ -5729,7 +5740,7 @@ wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
         GDKfree(geomGeometries);
 
     GEOSGeom_destroy(geom1Geometry);
-    GEOSGeom_destroy(geom2Geometry);
+    //GEOSGeom_destroy(geom2Geometry);
 
     return err;
 }
@@ -5774,12 +5785,17 @@ wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fla
         BBPunfix(e->batCacheid);
         throw(MAL, "geom.wkbsubCollect", MAL_MALLOC_FAIL);
     }
-    for (i = 0; i < ngrp; i++)
-        empty_geoms[i] = geos2wkb(GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1));
+    for (i = 0; i < ngrp; i++) {
+        GEOSGeometry* emptyCol = GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1);
+        empty_geoms[i] = geos2wkb(emptyCol);
+        GEOSGeom_destroy(emptyCol);
+    }
 
     msg = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbCollectAppend, "wkbsubCollect");
 	BBPkeepref(*outBAT_id);
 
+    for (i = 0; i < ngrp; i++)
+        GDKfree(empty_geoms[i]);
     GDKfree(empty_geoms);
     BBPunfix(b->batCacheid);
     BBPunfix(g->batCacheid);
@@ -8047,6 +8063,8 @@ wkbAsX3D(str *res, wkb **geomWKB, int *maxDecDigits, int *option)
 	GEOSGeom geom = NULL;
     int srid;
 	bit empty;
+    int dimension = 0;
+    int type = -1;
     
     //check if the geometry is empty
 	if ((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
@@ -8070,7 +8088,12 @@ wkbAsX3D(str *res, wkb **geomWKB, int *maxDecDigits, int *option)
         }
     }
 
+    dimension= GEOS_getWKBOutputDims(geom);
+    type = GEOSGeomTypeId(geom)+1;
 
+    if (dimension == 2 && type == wkbMultiPolygon_mdb) {
+        throw(MAL, "geom.wkbAsX3D", "For a MultiPolygon the dimension should be 3.");
+    }
 
 	if ( (*res = geom_to_x3d_3(geom, *maxDecDigits, *option, defid)) == NULL )
 		throw(MAL, "geom.wkbAsX3D", "Failed, XML returned is NULL!!!");
@@ -8332,6 +8355,7 @@ IsValidsubselect_intern(bat *lresBAT_id, bat *lBAT_id, bat *slBAT_id, char (*fun
 
     BBPunfix(lBAT->batCacheid);
     GDKfree(lBAT_iters);
+    GDKfree(outs);
     if (*slBAT_id != bat_nil) {
         GDKfree(slBAT_iters);
         BBPunfix(slBAT->batCacheid);
