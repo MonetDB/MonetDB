@@ -73,8 +73,8 @@ sfcgal_type_to_geom_type(int *res, sfcgal_geometry_type_t type)
         case SFCGAL_TYPE_GEOMETRYCOLLECTION:
         case SFCGAL_TYPE_POLYHEDRALSURFACE:
         case SFCGAL_TYPE_SOLID:
-            //*res = wkbPolyehdralSurface_mdb;
-            *res = wkbGeometryCollection_mdb;
+            *res = wkbPolyehdralSurface_mdb;
+            //*res = wkbGeometryCollection_mdb;
             break;
 
         case SFCGAL_TYPE_TRIANGULATEDSURFACE:
