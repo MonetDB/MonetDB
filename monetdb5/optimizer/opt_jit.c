@@ -46,10 +46,10 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) pci;
 
-	OPTDEBUGjit{
-		mnstr_printf(GDKout, "#Optimize JIT\n");
-		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
-	}
+#ifdef DEBUG_OPT_JIT
+	mnstr_printf(GDKout, "#Optimize JIT\n");
+	printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
+#endif
 	return 0; // temporary disabled
 
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
@@ -76,20 +76,20 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( q && getArg(q,0) == getArg(p,2) ){
 				getArg(p,2)=  getArg(q,2);
 				p= pushArgument(mb,p, getArg(q,1));
-				OPTDEBUGjit{
-					mnstr_printf(GDKout, "#Optimize JIT case 1\n");
-					printInstruction(cntxt->fdout, mb,0,p,LIST_MAL_DEBUG);
-				}
+#ifdef DEBUG_OPT_JIT
+				mnstr_printf(GDKout, "#Optimize JIT case 1\n");
+				printInstruction(cntxt->fdout, mb,0,p,LIST_MAL_DEBUG);
+#endif
 			}
 		}
 		pushInstruction(mb,p);
 	}
 
-	OPTDEBUGjit{
-		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
-		mnstr_printf(GDKout, "#Optimize JIT done\n");
-		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
-	}
+#ifdef DEBUG_OPT_JIT
+	chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
+	mnstr_printf(GDKout, "#Optimize JIT done\n");
+	printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
+#endif
 
 	GDKfree(old);
     /* Defense line against incorrect plans */

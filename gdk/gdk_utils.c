@@ -464,7 +464,6 @@ GDKinit(opt *set, int setlen)
 	assert(sizeof(oid) == SIZEOF_OID);
 	assert(sizeof(void *) == SIZEOF_VOID_P);
 	assert(sizeof(size_t) == SIZEOF_SIZE_T);
-	assert(sizeof(ptrdiff_t) == SIZEOF_PTRDIFF_T);
 	assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG);
 
 #ifdef NEED_MT_LOCK_INIT
@@ -1483,15 +1482,16 @@ GDKmemdump(void)
 	struct Mallinfo m = MT_mallinfo();
 
 	MEMDEBUG {
-		fprintf(stderr, "\n#mallinfo.arena = " SSZFMT "\n", (ssize_t) m.arena);
-		fprintf(stderr, "#mallinfo.ordblks = " SSZFMT "\n", (ssize_t) m.ordblks);
-		fprintf(stderr, "#mallinfo.smblks = " SSZFMT "\n", (ssize_t) m.smblks);
-		fprintf(stderr, "#mallinfo.hblkhd = " SSZFMT "\n", (ssize_t) m.hblkhd);
-		fprintf(stderr, "#mallinfo.hblks = " SSZFMT "\n", (ssize_t) m.hblks);
-		fprintf(stderr, "#mallinfo.usmblks = " SSZFMT "\n", (ssize_t) m.usmblks);
-		fprintf(stderr, "#mallinfo.fsmblks = " SSZFMT "\n", (ssize_t) m.fsmblks);
-		fprintf(stderr, "#mallinfo.uordblks = " SSZFMT "\n", (ssize_t) m.uordblks);
-		fprintf(stderr, "#mallinfo.fordblks = " SSZFMT "\n", (ssize_t) m.fordblks);
+		fprintf(stderr, "\n");
+		fprintf(stderr, "#mallinfo.arena = " SZFMT "\n", m.arena);
+		fprintf(stderr, "#mallinfo.ordblks = " SZFMT "\n", m.ordblks);
+		fprintf(stderr, "#mallinfo.smblks = " SZFMT "\n", m.smblks);
+		fprintf(stderr, "#mallinfo.hblkhd = " SZFMT "\n", m.hblkhd);
+		fprintf(stderr, "#mallinfo.hblks = " SZFMT "\n", m.hblks);
+		fprintf(stderr, "#mallinfo.usmblks = " SZFMT "\n", m.usmblks);
+		fprintf(stderr, "#mallinfo.fsmblks = " SZFMT "\n", m.fsmblks);
+		fprintf(stderr, "#mallinfo.uordblks = " SZFMT "\n", m.uordblks);
+		fprintf(stderr, "#mallinfo.fordblks = " SZFMT "\n", m.fordblks);
 	}
 #ifdef GDK_MEM_KEEPHISTO
 	{

@@ -11,8 +11,6 @@
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
-#define OPTDEBUGremote  if ( optDebug & ((lng) 1 <<DEBUG_OPT_REMOTE) )
-
 /*
  * The instruction sent is produced with a variation of call2str
  * from the debugger.
@@ -157,8 +155,9 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	cst.len = 0;
 
 
-	OPTDEBUGremoteQueries
+#ifdef DEBUG_OPT_REMOTEQUERIES
 	mnstr_printf(cntxt->fdout, "RemoteQueries optimizer started\n");
+#endif
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
@@ -267,10 +266,10 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				putRemoteVariables()
 				remoteAction()
 			} else {
-				OPTDEBUGremote {
-					fprintf(stderr, "found remote variable %s ad %d\n",
-						getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
-				}
+#ifdef DEBUG_OPT_REMOTEQUERIES
+				fprintf(stderr, "found remote variable %s ad %d\n",
+					getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
+#endif
 				pushInstruction(mb,p);
 			}
 		} else

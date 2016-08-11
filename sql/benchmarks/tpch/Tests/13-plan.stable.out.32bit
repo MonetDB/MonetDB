@@ -1,0 +1,68 @@
+stdout of test '13-plan` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:46:32 >  
+# 22:46:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31690" "--set" "mapi_usock=/var/tmp/mtest-6004/.s.monetdb.31690" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:46:32 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:31690/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6004/.s.monetdb.31690
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:46:32 >  
+# 22:46:32 >  "/usr/bin/python2" "13-plan.SQL.py" "13-plan"
+# 22:46:32 >  
+
+#plan select
+#	c_count,
+#	count(*) as custdist
+#from
+#	(
+#		select
+#			c_custkey,
+#			count(o_orderkey)
+#		from
+#			customer left outer join orders on
+#				c_custkey = o_custkey
+#				and o_comment not like '%special%requests%'
+#		group by
+#			c_custkey
+#	) as c_orders (c_custkey, c_count)
+#group by
+#	c_count
+#order by
+#	custdist desc,
+#	c_count desc;
+% .plan # table_name
+% rel # name
+% clob # type
+% 231 # length
+project (
+| group by (
+| | project (
+| | | group by (
+| | | | left outer join (
+| | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.%TID% NOT NULL ] COUNT ,
+| | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_comment NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
+| | | | ) [ (clob[char[orders.o_comment NOT NULL]] as orders.o_comment) ! FILTER like (clob "%special%requests%", clob ""), orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ]
+| | | ) [ customer.c_custkey NOT NULL HASHCOL  ] [ customer.c_custkey NOT NULL HASHCOL , sys.count no nil (orders.o_orderkey NOT NULL HASHCOL ) NOT NULL as L1.L1 ]
+| | ) [ L1 NOT NULL as c_orders.c_count ]
+| ) [ c_orders.c_count NOT NULL ] [ c_orders.c_count NOT NULL, sys.count() NOT NULL as L2.L2 ]
+) [ c_orders.c_count NOT NULL, L2 NOT NULL as L2.custdist ] [ L2.custdist NOT NULL, c_orders.c_count NOT NULL ]
+
+# 22:46:32 >  
+# 22:46:32 >  "Done."
+# 22:46:32 >  
+

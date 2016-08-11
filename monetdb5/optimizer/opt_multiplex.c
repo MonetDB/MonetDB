@@ -69,8 +69,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( i == pci->argc)
 		throw(MAL, "optimizer.multiplex", "Iterator BAT type is missing");
 
-	OPTDEBUGmultiplex {
-		char *tpenme;
+#ifdef DEBUG_OPT_MULTIPLEX
+	{	char *tpenme;
 		mnstr_printf(cntxt->fdout,"#calling the optimize multiplex script routine\n");
 		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL );
 		tpenme = getTypeName(getVarType(mb,iter));
@@ -78,6 +78,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(tpenme);
 		printInstruction(cntxt->fdout,mb, 0, pci,LIST_MAL_ALL);
 	}
+#endif
 	/*
 	 * Beware, the operator constant (arg=1) is passed along as well,
 	 * because in the end we issue a recursive function call that should
@@ -209,7 +210,7 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 int
 OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr *old, p;
+	InstrPtr *old = 0, p;
 	int i, limit, slimit, actions= 0;
 	str msg= MAL_SUCCEED;
 	char buf[256];
@@ -257,8 +258,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(msg);
 
     /* Defense line against incorrect plans */
-    if( mb->errors == 0 && actions > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+    if( mb->errors == 0 && actions > 0){ chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
         chkFlow(cntxt->fdout, mb);
         chkDeclarations(cntxt->fdout, mb);
     }

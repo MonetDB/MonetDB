@@ -15,7 +15,7 @@ import java.io.*;
 /**
  * The MonetBlob class implements the {@link java.sql.Blob} interface.  Because
  * MonetDB/SQL currently has no support for streams, this class is a
- * shallow wrapper of a {@link StringBuilder}.  It is more or less supplied to
+ * shallow wrapper of a byte[].  It is more or less supplied to
  * enable an application that depends on it to run.  It may be obvious
  * that it is a real resource expensive workaround that contradicts the
  * benefits for a Blob: avoidance of huge resource consumption.
@@ -43,7 +43,7 @@ public class MonetBlob implements Blob {
 	/**
 	 * This method frees the Blob object and releases the resources that
 	 * it holds. The object is invalid once the free method is called.
-	 * 
+	 *
 	 * After free has been called, any attempt to invoke a method other
 	 * than free will result in a SQLException being thrown. If free is
 	 * called multiple times, the subsequent calls to free are treated
@@ -88,7 +88,7 @@ public class MonetBlob implements Blob {
 	 *         read.
 	 * @throws SQLException if pos is less than 1 or if pos is
 	 *         greater than the number of bytes in the Blob or if pos +
-	 *         length is greater than the number of bytes in the Blob 
+	 *         length is greater than the number of bytes in the Blob
 	 * @throws SQLFeatureNotSupportedException if the JDBC driver does
 	 *         not support this method
 	 */

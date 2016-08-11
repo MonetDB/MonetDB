@@ -920,7 +920,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 			sql_rel *fnd = NULL;
 
 			for (n = fl->h; n && res; n = n->next) {
-				fnd = table_ref(sql, NULL, n->data.sym);
+				fnd = table_ref(sql, NULL, n->data.sym, 0);
 				if (fnd)
 					res = rel_crossproduct(sql->sa, res, fnd, op_join);
 			}
@@ -1288,8 +1288,12 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	collist = check_table_columns(sql, t, columns, "COPY", tname);
 	if (!collist)
 		return NULL;
-	/* if collist has skip and different order (or format specification) use intermediate table */
+	/* If we have a header specification use intermediate table, for
+	 * column specification other then the default list we need to reorder
+	 */
 	nt = t;
+	if (headers || collist != t->columns.set) 
+		reorder = 1;
 	if (headers) {
 		int has_formats = 0;
 		dnode *n;

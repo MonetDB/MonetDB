@@ -151,7 +151,7 @@ typedef struct VARRECORD {
 	int eolife;					/* pc index when it should be garbage collected */
 	int depth;					/* scope block depth, set to -1 if not used */
 	int worker;					/* thread id of last worker producing it */
-	str stc;					/* rendering schema.table.column */
+	char stc[2* IDLENGTH];		/* rendering schema.table.column, with little more space */
 	BUN rowcnt;					/* estimated row count*/
 } *VarPtr, VarRecord;
 
@@ -181,14 +181,14 @@ typedef struct {
 	lng rbytes;					/* accumulated number of bytes read, currently ignored */
 	lng wbytes;					/* accumulated number of bytes produced */
 	/* the core admin */
-	str modname;				/* module context */
-	str fcnname;				/* function name */
+	str modname;				/* module context, reference into namespace */
+	str fcnname;				/* function name, reference into namespace */
 	int argc, retc, maxarg;		/* total and result argument count */
 	int argv[FLEXIBLE_ARRAY_MEMBER]; /* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK {
-	str binding;				/* related C-function */
+	char binding[IDLENGTH];		/* related C-function */
 	str help;					/* supportive commentary */
 	oid tag;					/* unique block tag */
 	struct MALBLK *alternative;

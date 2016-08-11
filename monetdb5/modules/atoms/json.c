@@ -1862,7 +1862,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	BAT *bn = NULL, *t1, *t2 = NULL;
 	BATiter bi;
 	oid min, max;
-	BUN ngrp, start, end, cnt;
+	BUN ngrp, start, end;
 	BUN nils = 0;
 	int isnil;
 	const oid *cand = NULL, *candend = NULL;
@@ -1878,7 +1878,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	char temp[128] = "";
 	const double *val = NULL;
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end, &cnt, &cand, &candend)) !=NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end, &cand, &candend)) !=NULL) {
 		return err;
 	}
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);

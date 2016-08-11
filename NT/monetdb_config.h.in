@@ -187,6 +187,11 @@
 /* Define to 1 if you have the `getaddrinfo' function. */
 #define HAVE_GETADDRINFO 1
 
+/* Define to 1 if you have the `GetDynamicTimeZoneInformation' function. */
+#ifdef _MSC_VER
+#define HAVE_GETDYNAMICTIMEZONEINFORMATION 1
+#endif
+
 /* Define to 1 if you have the `getexecname' function. */
 /* #undef HAVE_GETEXECNAME */
 
@@ -202,22 +207,8 @@
 /* Define to 1 if you have the `getopt_long' function. */
 /* #undef HAVE_GETOPT_LONG */
 
-/* Define to 1 if you have the `getrlimit' function. */
-/* #undef HAVE_GETRLIMIT */
-
-/* Define to 1 if you have the `GetSystemInfo' function. */
-/* #undef HAVE_GETSYSTEMINFO */
-
 /* Define to 1 if you have the `gettimeofday' function. */
 /* #undef HAVE_GETTIMEOFDAY */
-
-/* Define to 1 if you have the `_get_timezone' function. */
-#ifdef _MSC_VER
-#define HAVE__GET_TIMEZONE 1
-#endif
-
-/* Define if you have the gsl library */
-/* #undef HAVE_GSL */
 
 /* Define to 1 if you have the `getuid' function. */
 /* #undef HAVE_GETUID */
@@ -245,9 +236,6 @@
 #if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_ISINF 1
 #endif
-
-/* Define to 1 if you have the `kill' function. */
-/* #undef HAVE_KILL */
 
 /* Define to 1 if you have the <kvm.h> header file. */
 /* #undef HAVE_KVM_H */
@@ -363,9 +351,6 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
-/* Define if the microhttpd server is to be enabled */
-/* #undef HAVE_MICROHTTPD */
-
 /* Define to 1 if you have the `mremap' function. */
 /* #undef HAVE_MREMAP */
 
@@ -404,8 +389,6 @@
 /* Define to 1 if you have the <perfmon/pfmlib.h> header file. */
 /* #undef HAVE_PERFMON_PFMLIB_H */
 
-/* Define to 1 if you have the `pipe' function. */
-#define HAVE_PIPE 1
 #ifdef pipe
 #undef pipe
 #endif
@@ -432,12 +415,6 @@
 /* Define if you have the pthread_kill function */
 /* #undef HAVE_PTHREAD_KILL */
 
-/* Define if you have the pthread_kill_other_threads_np function */
-/* #undef HAVE_PTHREAD_KILL_OTHER_THREADS_NP */
-
-/* Define if you have the pthread_setschedprio function */
-/* #undef HAVE_PTHREAD_SETSCHEDPRIO */
-
 /* Define if you have the pthread_sigmask function */
 /* #undef HAVE_PTHREAD_SIGMASK */
 
@@ -450,17 +427,11 @@
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
 
-/* Define to 1 if you have the <regex.h> header file. */
-/* #undef HAVE_REGEX_H */
-
 /* Define if the compiler supports the restrict keyword */
 /* #undef HAVE_RESTRICT */
 
 /* Define to 1 if you have the `RIPEMD160' function. */
 #define HAVE_RIPEMD160 1
-
-/* Define to 1 if you have the <rlimit.h> header file. */
-/* #undef HAVE_RLIMIT_H */
 
 /* Define to 1 if you have the `round' function. */
 #if !defined(_MSC_VER) || _MSC_VER > 1600
@@ -472,9 +443,6 @@
 
 /* Define to 1 if you have the <samtools/kstring.h> header file. */
 /* #undef HAVE_SAMTOOLS_KSTRING_H */
-
-/* Define to 1 if you have the `sbrk' function. */
-/* #undef HAVE_SBRK */
 
 /* Define to 1 if you have the <sched.h> header file. */
 /* #undef HAVE_SCHED_H */
@@ -514,9 +482,6 @@
 
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
-
-/* Define if your mallinfo struct has signed elements */
-/* #undef HAVE_SIGNED_MALLINFO */
 
 /* Define to 1 if the system has the type `socklen_t'. */
 #define HAVE_SOCKLEN_T 1
@@ -604,9 +569,6 @@
 #endif
 #endif
 
-/* Define if you have struct mallinfo */
-/* #undef HAVE_STRUCT_MALLINFO */
-
 /* Define to 1 if you have the `sysconf' function. */
 /* #undef HAVE_SYSCONF */
 
@@ -689,9 +651,6 @@
 /* Define if you have mallinfo */
 /* #undef HAVE_USEFUL_MALLINFO */
 
-/* Define to 1 if you have the <utime.h> header file. */
-/* #undef HAVE_UTIME_H */
-
 /* Define if you have the LibUriParser library */
 /* #undef HAVE_URIPARSER */
 
@@ -709,16 +668,8 @@
 #define HAVE__WFOPEN 1
 #endif
 
-/* Define to 1 if you have the <winsock2.h> header file. */
-#define HAVE_WINSOCK2_H 1
-
 /* Define to 1 if you have the <winsock.h> header file. */
 #define HAVE_WINSOCK_H 1
-
-/* Define to 1 if you have the <xmmintrin.h> header file. */
-#if !defined(_MSC_VER) || _MSC_VER > 1600
-#define HAVE_XMMINTRIN_H 1
-#endif
 
 /* Define to 1 if the system has the type `_Bool'. */
 /* #undef HAVE__BOOL */
@@ -852,24 +803,21 @@
 #define SIZEOF_LONG_LONG 8
 #endif
 
-/* The size of `ptrdiff_t', as computed by sizeof. */
-#ifdef _WIN64
-#define SIZEOF_PTRDIFF_T 8
-#else
-#define SIZEOF_PTRDIFF_T 4
-#endif
-
 /* The size of `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
 
 /* The size of `size_t', as computed by sizeof. */
-#define SIZEOF_SIZE_T SIZEOF_PTRDIFF_T
+#ifdef _WIN64
+#define SIZEOF_SIZE_T 8
+#else
+#define SIZEOF_SIZE_T 4
+#endif
 
 /* The size of `ssize_t', as computed by sizeof. */
-#define SIZEOF_SSIZE_T SIZEOF_PTRDIFF_T
+#define SIZEOF_SSIZE_T SIZEOF_SIZE_T
 
 /* The size of `void *', as computed by sizeof. */
-#define SIZEOF_VOID_P SIZEOF_PTRDIFF_T
+#define SIZEOF_VOID_P SIZEOF_SIZE_T
 
 /* The size of `__int64', as computed by sizeof. */
 #define SIZEOF___INT64 8
@@ -1104,10 +1052,7 @@ typedef __uint128_t uhge;
 #define ULLFMT "%I64u"
 
 /* define printf formats for printing size_t and ssize_t variables */
-#if defined(__MINGW32__)
-# define SZFMT "%u"
-# define SSZFMT "%ld"
-#elif SIZEOF_SIZE_T == SIZEOF_INT
+#if SIZEOF_SIZE_T == SIZEOF_INT
 # define SZFMT "%u"
 # define SSZFMT "%d"
 #elif SIZEOF_SIZE_T == SIZEOF_LONG
@@ -1120,15 +1065,7 @@ typedef __uint128_t uhge;
 # error no definition for SZFMT/SSZFMT
 #endif
 
-#if SIZEOF_PTRDIFF_T == SIZEOF_INT
-#define PDFMT "%d"
-#elif SIZEOF_PTRDIFF_T == SIZEOF_LONG
-#define PDFMT "%ld"
-#elif SIZEOF_PTRDIFF_T == SIZEOF_LONG_LONG || SIZEOF_PTRDIFF_T == SIZEOF___INT64
-#define PDFMT LLFMT
-#else
-#error no definition for PDFMT
-#endif
+#define PDFMT SSZFMT
 
 #define PTRFMT		"%p"
 #define PTRFMTCAST

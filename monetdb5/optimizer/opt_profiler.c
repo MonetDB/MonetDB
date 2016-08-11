@@ -69,36 +69,34 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			continue;
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== bindRef){
 			// we know the arguments are constant
-			snprintf(buf, BUFSIZ, "%s.%s.%s", 
+			snprintf(getSTC(mb,getArg(p,0)),  2 * IDLENGTH, "%s.%s.%s", 
 				getVarConstant(mb, getArg(p,p->retc +1)).val.sval,
 				getVarConstant(mb, getArg(p,p->retc +2)).val.sval,
 				getVarConstant(mb, getArg(p,p->retc +3)).val.sval);
-				setSTC(mb, getArg(p,0),GDKstrdup(buf));
 		} else
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== tidRef){
 			// we know the arguments are constant
-			snprintf(buf, BUFSIZ, "%s.%s", 
+			snprintf(getSTC(mb,getArg(p,0)), 2 * IDLENGTH, "%s.%s", 
 				getVarConstant(mb, getArg(p,2)).val.sval,
 				getVarConstant(mb, getArg(p,3)).val.sval);
-				setSTC(mb, getArg(p,0),GDKstrdup(buf));
 		} else
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== projectdeltaRef){
 			// inherit property of first argument
 			v = getSTC(mb,getArg(p,1));
 			if(v != NULL)
-				setSTC(mb, getArg(p,0),GDKstrdup(v));
+				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
 		} else
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== projectionRef){
 			// inherit property of last argument
 			v = getSTC(mb,getArg(p,p->argc-1));
 			if( v != NULL)
-				setSTC(mb, getArg(p,0), GDKstrdup(v));
+				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
 		} else
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== subjoinRef){
 			// inherit property of last argument
 			v = getSTC(mb,getArg(p,p->argc-1) );
 			if( v != NULL)
-				setSTC(mb, getArg(p,0), GDKstrdup(v));
+				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
 		} 
 	}
     /* Defense line against incorrect plans */

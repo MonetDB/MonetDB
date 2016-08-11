@@ -1,6 +1,6 @@
-convert-function-test.Bug-3460
-HAVE_HGE?convert-function-test-hge.Bug-3460
 HAVE_GEOM?storagemodel
+THREADS=1?convert-function-test.Bug-3460
+HAVE_HGE?convert-function-test-hge.Bug-3460
 LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908
 incorrect_column_name_in_OR_condition_of_LEFT-JOIN_crashes_mserver.Bug-3909
 copy_into_with_header.Bug-3910
@@ -40,3 +40,4 @@ analyze-quotes-incorrectly.Bug-4021
 boolean-evaluation.Bug-4025
 HAVE_GEOM?nested-mal-with-multiplex.Bug-4035
 querylog
+trigger_bulk.Bug-4045

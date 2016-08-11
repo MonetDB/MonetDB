@@ -18,6 +18,4 @@
 
 mal_export int OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGremap  if ( optDebug & ((lng)1 <<DEBUG_OPT_REMAP) )
-
 #endif

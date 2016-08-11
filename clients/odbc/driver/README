@@ -1,12 +1,13 @@
 This README describes the implementation of the ODBC driver code
-(sql/src/odbc/driver/*) for the MonetDB SQL frontend (sql/src/common/*)
-Both are available from  https://sourceforge.net/projects/monetdb/
+(clients/odbc/driver/*) for the MonetDB SQL frontend.
+It is available from
+http://dev.monetdb.org/hg/MonetDB/file/default/clients/odbc/driver
 
-This file is seriously out of date.
+This file maybe a little out of date.
 
 Author : Martin van Dinther
-Date   : 30 august 2002
-Version: 1.0
+Date   : 30 august 2002, updated 4 aug 2016
+Version: 2.0
 
 
 Introduction:
@@ -22,7 +23,9 @@ ODBC is chosen to be implemented first because:
   a JDBC driver implementation on top of an ODBC driver. This is not
   optimal for performance and stability but we don't have to build it
   ourselves to get this functionality now.
-
+Update 2016: the JDBC-ODBC bridge driver is no longer needed nor supported in JRE.
+We provide a 100% pure (type 4) JDBC driver implementation for MonetDB.
+See: https://www.monetdb.org/downloads/Java/Latest/
 
 Tip:
 =======================================================================
@@ -41,9 +44,9 @@ We use the ones distributed with unixODBC.
 At CWI these are located in /usr/include/
 
 
-Files organization (in sql/src/odbc/driver/*):
+Files organization (in clients/odbc/driver/*):
 =======================================================================
-All ODBC driver implementation files are located in sql/src/odbc/driver/
+All ODBC driver implementation files are located in clients/odbc/driver/
 
 Every ODBC API function which needs to be implemented by the driver
  has its own file with the same name as the function and suffix ".c".
@@ -66,19 +69,13 @@ In the implementation section below it is explained why these are necessary.
 For convenience there is also an ODBCUtil.[ch] which contains
  general ODBC specific utility functions.
 
-Next there are some files which were already there:
-- comm.[ch]		/* client connect(host, port) function. Used in SQLConnect.c */
-- catalog_client.c	/* catalog retrieval functions and types. Used in SQLConnect.c */
-- statement_dump.c	/* dumps a parsed SQL command. Used in SQLExecute.c */
-- prof.c		/* not used */
-
 Of course there is a Makefile. Because we use autoconf and automake
 the source file is Makefile.ag.
 
 Lastly there is this README documentation file:
 
 
-Implementation:
+MonetDB ODBC Driver Implementation:
 =======================================================================
 ODBC exists is several versions (1.0, 2.0, 2.1, 2.5, 3.0, 3.5, 3.51 and 3.52).
 The latest version was released by Microsoft around 1997.
@@ -129,21 +126,37 @@ specific handle (e.g. addDbcError()), to clear all errors on a handle
 
 Implementation of the ODBC API functions:
 ------------------------------------------------------------------------
-Although 73 SQL*() functions are implemented, many do not implement the
- requested behavior (e.g. SQLBindParameter()). They just set an error
+Although 73 SQL*() functions are implemented, some do not implement the
+ requested behavior or parameter option. They just set an error message code
 and return SQL_ERROR.
 
 The next ODBC API functions are functionally implemented (some with TODO's):
 ------------------------------------------------------------------------
 - SQLAllocEnv() - SQLAllocConnect() - SQLAllocStmt() - SQLAllocHanlde()
 - SQLFreeEnv()  - SQLFreeConnect()  - SQLFreeStmt()  - SQLFreeHanlde()
+- SQLGetEnvAttr() - SQLSetEnvAttr()
 - SQLConnect() - SQLDriverConnect() - SQLDisconnect()
+- SQLBrowseConnect()
+- SQLGetConnectAttr() - SQLGetConnectOption()
+- SQLSetConnectAttr() - SQLSetConnectOption()
+- SQLGetStmtAttr() - SQLGetStmtOption()
+- SQLSetStmtAttr() - SQLSetStmtOption()
+- SQLGetDescRec() - SQLGetDescField()
+- SQLSetDescRec() - SQLSetDescField()
 - SQLPrepare()
+- SQLBindParameter()   Note: only for InputOutputType: SQL_PARAM_INPUT
+- SQLDescribeParam()
+- SQLNumParams()
+- SQLParamOptions()
+- SQLCopyDesc()
 - SQLExecute()
 - SQLExecDirect()
-- SQLBindCol()
 - SQLNumResultCols()
-- SQLFetch() - SQLGetData()
+- SQLBindCol()
+- SQLSetPos()   Note: only for Operation: SQL_POSITION and LockType: SQL_LOCK_NO_CHANGE
+- SQLFetch()
+- SQLFetchScroll() - SQLExtendedFetch()   Note: FetchDirection SQL_FETCH_BOOKMARK is not implemented
+- SQLGetData()
 - SQLRowCount()
 - SQLCloseCursor()
 - SQLCancel()
@@ -152,8 +165,8 @@ The next ODBC API functions are functionally implemented (some with TODO's):
 - SQLColAttribute() - SQLColAttributes()
 - SQLDescribeCol()
 - SQLGetInfo()
-- SQLGetCursorName() - SQLSetCursorName()
 - SQLMoreResults()
+- SQLNativeSql()
 - all catalog retrieval functions:
   - SQLTables()
   - SQLColumns()
@@ -166,27 +179,25 @@ The next ODBC API functions are functionally implemented (some with TODO's):
   - SQLProcedures()
   - SQLProcedureColumns()
   - SQLGetTypeInfo()
+- The Unicode (UTF-16) variants of ODBC API functions which have wide character
+  strings (SQL_WCHAR) as arguments are supported. These functions are recognizable
+  on their W function name suffix (e.g. SQLConnectW()), see sqlucode.h.
+- The ANSI variants of ODBC API functions which have normal character
+  strings (SQL_CHAR) as arguments are supported. These functions are recognizable
+  on their A function name suffix (e.g. SQLConnectA()), see sqlucode.h.
 
-The next ODBC API functions always return SQL_ERROR or SQL_INVALID_HANDLE:
+
+The next ODBC API functions always return SQL_ERROR (or SQL_INVALID_HANDLE):
 ------------------------------------------------------------------------
-- SQLBrowseConnect()
-- SQLBindParameter() - SQLSetParam()
-- SQLNumParams() - SQLParamData() - SQLParamOptions() - SQLPutData()
 - SQLBulkOperations()
-- SQLDescribeParam()
-- SQLCopyDesc()
-- SQLExtendedFetch()
-- SQLFetchScroll()
-- SQLSetPos() - SQLSetScrollOptions()
-- SQLGetConnectAttr() - SQLGetConnectOption()
-- SQLSetConnectAttr() - SQLSetConnectOption()
-- SQLGetEnvAttr()
-- SQLSetEnvAttr()
-- SQLGetStmtAttr() - SQLGetStmtOption()
-- SQLSetStmtAttr() - SQLSetStmtOption()
-- SQLGetDescRec() - SQLGetDescField()
-- SQLSetDescRec() - SQLSetDescField()
-- SQLNativeSql()
+- SQLParamData()
+- SQLPutData()
+- SQLGetCursorName()
+- SQLSetCursorName()
+- SQLSetScrollOptions()
+- SQLSetParam()
+- SQLDrivers()       Note on MS Windows this is implemented by the ODBC Driver Manager
+- SQLDataSources()   Note on MS Windows this is implemented by the ODBC Driver Manager
 
 
 Implementation of the deprecated ODBC API functions:
@@ -197,79 +208,26 @@ If you do not implement them you need an ODBC 3.0 (or higher) driver manager
 to do the mapping for you else old ODBC applications (pre ODBC 3.0)
 will not work with our ODBC driver.
 
-Not implementation ODBC API functions:
+Not implemented ODBC API functions:
 ------------------------------------------------------------------------
-The ODBC functions SQLDrivers(), SQLDataSources() and SQLFunctions()
+On MS Windows the ODBC functions SQLDrivers(), SQLDataSources() and SQLFunctions()
 do not have to be implemented by the driver, those are always implemented
-in the driver manager (also with old ODBC 1.0 driver managers).
-
-The Unicode variants of ODBC API functions which have characters strings
-as argument are currently not supported. These functions are recognizable
-on their W function name suffix (e.g. SQLConnectW()), see sqlucode.h.
-
+in the ODBC Driver Manager (also with old ODBC 1.0 driver managers).
 
 
 TODO list:
 =======================================================================
 With a grep on TODO *.[ch] you will get all places and files in which
  some implementation has to be completed.
-Sometimes the TODO's are not critical or required (e.g. TODO in SQLEndTran()).
 
 TODO 1) Some ODBC API functions which are not implemented, limit the use
- of the ODBC driver functionality considerably.
+ of the ODBC driver functionality.
 Most important are:
-- SQLBindParameter()	/* needed for executing parametrized SQL commands */
-- more SQLGetInfo() types	/* needed by apps and JDBC-ODBC bridge */
-- SQLGetConnectAttr(), SQLSetConnectAttr()	/* especially AUTOCOMMIT */
-- SQLGetStmtAttr(), SQLSetStmtAttr()	/* especially ROW_ARRAY_SIZE */
-- SQLExentedFetch()			/* fetch multiple rows at once */
-- SQLAllocHandle(SQL_HANDLE_DESC)	/* support descriptor handles */
-- SQLFreeHandle(SQL_HANDLE_DESC)	/* support descriptor handles */
-- all the SQL*W() functions	/* the Unicode (UTF-16) variant API functions */
+- SQLBulkOperations()  for SQL_ADD to support bulk inserts
+- SQLParamData() and SQLPutData()   for providing data at execution
+- SQLBindParameter()   for SQL_PARAM_OUTPUT and SQL_PARAM_INPUT_OUTPUT
 
-When these SQL*W() functions are not implemented in a driver the driver
- manager (it must be ODBC 3.0 or higher) will convert those ODBC application
- SQL*W() calls to the ASCII variant (e.g. SQLConnect(), by converting the
- supplied UTF-16 strings to ASCII.
-
-TODO 2) Because MonetDB supports UTF-8 strings we should do the conversion
-and thus implement those functions ourselves.
-This can be done simply via a wrapper mechanism and two converter functions:
-  wchar * UCS2toUTF8(char * str)  and
-  char *  UTF8toUCS2(wchar * str).
-
-
-TODO 3) on MS Windows you need a dll instead of a lib as the resulting ODBC
- driver. This driver dll needs to be installed (placed in some dir and the
- registry needs to be updated). Only than the ODBC driver will be visible for
- the MS ODBC administrator (Control Panel, Data Sources (ODBC), Drivers tab)
- or simply type: odbcad32.exe  from a DOS command line.
-Also on MS Windows you need a setup dll which is called by the ODBC
- administrator when you want to add, modify or delete an ODBC data source
- for this ODBC driver. It should present a configuration dialog for
- entering data source configuration settings (such as host, port, default
- user, connection timeout duration, etc.)
-
-
-TODO 4) Besides the TODOs for increasing the functionality and ODBC compliant
- behavior there are also TODOs considering the performance.
-The performance depends a lot on:
-- what API the Monet SQL frontend provides (is data fetchable row wise, can multiple
- rows be returned at once, is data represented in the most optimal form (so
- as int or dbl instead of str) so extra conversions are eliminated)
-- how the communication with the SQL frontend is realized (is all SQL
- processing done on the client or done on the server (or both), how many
- network calls are needed for fetching 1 row of data, how many client memory)
-- how the SQL frontend converts the SQL table into bats and makes use of extra
- bats (indices) for faster joins/retrieval when executing an SQL statement.
-Up till now no performance analysis or tuning is done.
-On the ODBC level not much performance tuning can be done (ODBC is a thin
-wrapper around the Monet SQL frontend API). so it must be done in the SQL frontend,
-the communication APIs, SQL to MIL translator and possibly MonetDB.
-
-
-TODO 5) For ease of maintenance the functions which communicate with the SQL
- frontend (comm.[ch])
- should be placed in the SQL frontend lib or SQL client communications lib.
-This is a small cleanup to improve the layered architecture.
+TODO 2) No performance analysis or tuning is done yet.
+ On the ODBC level not much performance tuning can be done as ODBC is
+ a thin wrapper around the Monet SQL frontend API.
 

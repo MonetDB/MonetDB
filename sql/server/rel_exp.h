@@ -132,7 +132,7 @@ extern sql_exp *exps_bind_column( list *exps, const char *cname, int *ambiguous)
 extern sql_exp *exps_bind_column2( list *exps, const char *rname, const char *cname);
 extern sql_exp *exps_bind_alias( list *exps, const char *rname, const char *cname);
 
-extern int exps_card( list *l );
+extern unsigned int exps_card( list *l );
 extern void exps_fix_card( list *exps, int card);
 extern void exps_setcard( list *exps, int card);
 extern int exps_intern(list *exps);

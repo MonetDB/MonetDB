@@ -20,6 +20,8 @@
  * SQLBulkOperations()
  * CLI Compliance: ODBC (Microsoft)
  *
+ * Note: this function is not supported (yet), it returns error IM001.
+ *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002
  *

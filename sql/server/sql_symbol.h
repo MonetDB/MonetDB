@@ -65,6 +65,7 @@ typedef struct SelectNode {
 	symbol *offset;
 	symbol *sample;
 	int distinct;
+	int lateral;
 	struct dlist *selection;
 	struct dlist *into;	/* ?? */
 	symbol *from;

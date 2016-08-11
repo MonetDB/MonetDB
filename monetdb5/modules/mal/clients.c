@@ -157,7 +157,6 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	CLTtimeConvert((time_t) cntxt->login,s);
 	BUNappend(b, "login", FALSE);
 	BUNappend(bn, s, FALSE);
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","info");
 	BBPkeepref(*ret2= bn->batCacheid);
 	return MAL_SUCCEED;
@@ -185,8 +184,6 @@ CLTLogin(bat *nme, bat *ret)
 			BUNappend(u, &c->user, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
-	if (!(u->batDirty&2)) BATsetaccess(u, BAT_READ);
 	pseudo(ret,b,"client","login");
 	pseudo(nme,u,"client","name");
 	return MAL_SUCCEED;
@@ -208,7 +205,6 @@ CLTLastCommand(bat *ret)
 			BUNappend(b, s, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","lastcommand");
 	return MAL_SUCCEED;
 }
@@ -227,7 +223,6 @@ CLTActions(bat *ret)
 			BUNappend(b, &c->actions, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","actions");
 	return MAL_SUCCEED;
 }
@@ -245,7 +240,6 @@ CLTTime(bat *ret)
 			BUNappend(b, &c->totaltime, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","usec");
 	return MAL_SUCCEED;
 }
@@ -266,7 +260,6 @@ CLTusers(bat *ret)
 		if (c->mode >= RUNCLIENT && c->user != oid_nil)
 			BUNappend(b, &i, FALSE);
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","users");
 	return MAL_SUCCEED;
 }

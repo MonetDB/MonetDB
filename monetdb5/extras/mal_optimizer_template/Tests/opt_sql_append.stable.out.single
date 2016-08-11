@@ -61,7 +61,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 118 # length
+% 126 # length
 function user.s4_1():void;
     X_24:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",10);
     X_1 := sql.mvc();
@@ -120,7 +120,7 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 118 # length
+% 126 # length
 function user.s12_1():void;
     X_24:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",10);
     X_1 := sql.mvc();

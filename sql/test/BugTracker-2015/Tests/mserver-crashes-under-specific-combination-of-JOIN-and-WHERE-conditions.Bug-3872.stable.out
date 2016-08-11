@@ -80,7 +80,7 @@ Ready.
 #	WHERE A.startdate > '2010-10-01'
 #)
 #AND A.startdate >= B.startdate;
-% .L1 # table_name
+% sys.L1 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

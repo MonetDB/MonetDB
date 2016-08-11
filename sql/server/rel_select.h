@@ -30,6 +30,6 @@ extern sql_exp *rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char
 extern sql_exp *rel_nop_(mvc *sql, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, sql_schema *s, char *fname, int card);
 
 extern sql_rel *rel_with_query(mvc *sql, symbol *q);
-extern sql_rel *table_ref(mvc *sql, sql_rel *rel, symbol *tableref);
+extern sql_rel *table_ref(mvc *sql, sql_rel *rel, symbol *tableref, int lateral);
 
 #endif /*_REL_SELECT_H_*/

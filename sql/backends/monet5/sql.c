@@ -474,12 +474,13 @@ create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 }
 
 str 
-create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols) {	
-    size_t i;
-    sql_table *t;
-    sql_schema *s;
-    mvc *sql = NULL;
-    str msg = MAL_SUCCEED;
+create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols) 
+{
+    	size_t i;
+    	sql_table *t;
+    	sql_schema *s;
+    	mvc *sql = NULL;
+    	str msg = MAL_SUCCEED;
 
 	if ((msg = getSQLContext(cntxt, NULL, &sql, NULL)) != NULL)
 		return msg;
@@ -489,7 +490,8 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	/* for some reason we don't have an allocator here so make one */
 	sql->sa = sa_create();
 
-    if (!sname) sname = "sys";
+    	if (!sname) 
+		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname))) {
 		msg = sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
 		goto cleanup;
@@ -499,45 +501,45 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		goto cleanup;
 	}
 
-    for(i = 0; i < ncols; i++) {
-        BAT *b = columns[i].b;
-        sql_subtype *tpe = sql_bind_localtype(ATOMname(b->ttype));
-        sql_column *col = NULL;
+    	for(i = 0; i < ncols; i++) {
+        	BAT *b = columns[i].b;
+        	sql_subtype *tpe = sql_bind_localtype(ATOMname(b->ttype));
+        	sql_column *col = NULL;
 
-        if (!tpe) {
-    		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not find type for column");
-    		goto cleanup;
-        }
+        	if (!tpe) {
+    			msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not find type for column");
+    			goto cleanup;
+        	}
 
-        col = mvc_create_column(sql, t, columns[i].name, tpe);
-        if (!col) {
-    		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not create column %s", columns[i].name);
+        	col = mvc_create_column(sql, t, columns[i].name, tpe);
+        	if (!col) {
+    			msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not create column %s", columns[i].name);
+    			goto cleanup;
+        	}
+    	}
+    	msg = create_table_or_view(sql, sname, t, 0);
+    	if (msg != MAL_SUCCEED) {
     		goto cleanup;
-        }
-    }
-    msg = create_table_or_view(sql, sname, t, 0);
-    if (msg != MAL_SUCCEED) {
-    	goto cleanup;
-    }
-    t = mvc_bind_table(sql, s, tname);
-    if (!t) {
+    	}
+    	t = mvc_bind_table(sql, s, tname);
+    	if (!t) {
 		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind table %s", tname);
 		goto cleanup;
-    }
-    for(i = 0; i < ncols; i++) {
-        BAT *b = columns[i].b;
-        sql_column *col = NULL;
+    	}
+    	for(i = 0; i < ncols; i++) {
+        	BAT *b = columns[i].b;
+        	sql_column *col = NULL;
 
-        col = mvc_bind_column(sql,t, columns[i].name);
-        if (!col) {
-    		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind column %s", columns[i].name);
-    		goto cleanup;
-        }
-        msg = mvc_append_column(sql->session->tr, col, b);
-        if (msg != MAL_SUCCEED) {
-        	goto cleanup;
-        }
-    }
+        	col = mvc_bind_column(sql,t, columns[i].name);
+        	if (!col) {
+    			msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind column %s", columns[i].name);
+    			goto cleanup;
+        	}
+        	msg = mvc_append_column(sql->session->tr, col, b);
+        	if (msg != MAL_SUCCEED) {
+        		goto cleanup;
+        	}
+    	}
 
 cleanup:
     sa_destroy(sql->sa);
@@ -2379,7 +2381,6 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		BBPunfix(i->batCacheid);
 	}
 
-	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2510,7 +2511,6 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		res = u;
 	}
 	BATkey(res, TRUE);
-	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2642,7 +2642,6 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
 
-	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2707,7 +2706,6 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 	BBPunfix(c->batCacheid);
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
-	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*Res = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2784,7 +2782,6 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAThseqbase(diff, sb);
 		tids = diff;
 	}
-	if (!(tids->batDirty&2)) BATsetaccess(tids, BAT_READ);
 	BBPkeepref(*res = tids->batCacheid);
 	return MAL_SUCCEED;
 }

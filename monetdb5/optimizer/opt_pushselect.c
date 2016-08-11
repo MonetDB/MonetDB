@@ -142,8 +142,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if( mb->errors) 
 		return 0;
 
-	OPTDEBUGpushselect
+#ifdef DEBUG_OPT_PUSHSELECT
 		mnstr_printf(cntxt->fdout,"#Push select optimizer started\n");
+#endif
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
@@ -516,13 +517,14 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int var = getArg(p, 1);
 			InstrPtr r = old[vars[var]];
 			
-			if (isSlice(r) && rslices[getArg(p,1)] != 0 && getArg(r, 0) == getArg(p, 1)) {
+			if (r && isSlice(r) && rslices[getArg(p,1)] != 0 && getArg(r, 0) == getArg(p, 1)) {
 				InstrPtr q = newAssignment(mb);
 
 				getArg(q, 0) = getArg(p, 0); 
 				(void) pushArgument(mb, q, getArg(p, 2));
 				actions++;
 				freeInstruction(p);
+				old[i] = NULL;
 				continue;
 			}
 		} else if (p->argc >= 2 && slices[getArg(p, 1)] != 0) {
@@ -586,6 +588,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				u->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,u);	
 				freeInstruction(p);
+				old[i] = NULL;
 				continue;
 			}
 		}

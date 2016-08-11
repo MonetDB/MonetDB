@@ -32,7 +32,7 @@ rel_psm_block(sql_allocator *sa, list *l)
 	return NULL;
 }
 
-static sql_rel *
+sql_rel *
 rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 {
 	if (e) {
@@ -845,8 +845,10 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
 				} else {
 					sql_func *f = sf->func;
-					f->mod = _STRDUP(fmod);
-					f->imp = _STRDUP(fnme);
+					if (!f->mod || strcmp(f->mod, fmod))
+						f->mod = _STRDUP(fmod);
+					if (!f->imp || strcmp(f->imp, fnme)) 
+						f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
 					f->sql = 0; /* native */
 					f->lang = FUNC_LANG_INT;
 				}

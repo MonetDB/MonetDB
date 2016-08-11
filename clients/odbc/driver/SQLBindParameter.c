@@ -20,10 +20,7 @@
  * SQLBindParameter()
  * CLI Compliance: ODBC (Microsoft)
  *
- * Note: this function is not supported (yet), it returns an error.
- * So parametrized SQL commands are not possible!
- * TODO: implement this function and corresponding behavior in
- * SQLPrepare() and SQLExecute().
+ * Note: this function does not yet support Output parameters, only SQL_PARAM_INPUT.
  *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 Aug 2002

@@ -151,7 +151,7 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
         retvals = 0;
         create_table = true;
     }
-    pEmit = Py_Emit_Create(cols, retvals);
+    pEmit = PyEmit_Create(cols, retvals);
 
     if (!pConnection || !pEmit) {
         msg = createException(MAL, "pyapi.eval_loader", MAL_MALLOC_FAIL"python object");
@@ -168,7 +168,7 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     }
 
     {
-        PyObject *pFunc, *pModule, *v, *d;
+        PyObject *pFunc, *pModule, *v, *d, *ret;
 
         // First we will load the main module, this is required
         pModule = PyImport_AddModule("__main__");
@@ -200,17 +200,33 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
                 goto wrapup;
             }
         }
-        PyObject_CallObject(pFunc, pArgs);
+        ret = PyObject_CallObject(pFunc, pArgs);
 
-        cols = ((Py_EmitObject *) pEmit)->cols;
-        nval = ((Py_EmitObject *) pEmit)->nvals;
-        retvals = (int) ((Py_EmitObject *) pEmit)->ncols;
+        if (PyErr_Occurred()) {
+            Py_DECREF(pFunc);
+            Py_DECREF(pArgs);
+            msg = PyError_CreateException("Python exception", pycall);
+            if (code_object == NULL) { PyRun_SimpleString("del pyfun"); }
+            goto wrapup;
+        }
+
+        if (ret != Py_None) {
+            if (PyEmit_Emit((PyEmitObject *) pEmit, ret) == NULL) {
+                Py_DECREF(pFunc);
+                Py_DECREF(pArgs);
+                msg = PyError_CreateException("Python exception", pycall);
+                goto wrapup;
+            }
+        }
+
+        cols = ((PyEmitObject *) pEmit)->cols;
+        nval = ((PyEmitObject *) pEmit)->nvals;
+        retvals = (int) ((PyEmitObject *) pEmit)->ncols;
         Py_DECREF(pFunc);
         Py_DECREF(pArgs);
 
-        if (PyErr_Occurred()) {
-            msg = PyError_CreateException("Python exception", pycall);
-            if (code_object == NULL) { PyRun_SimpleString("del pyfun"); }
+        if (retvals == 0) {
+            msg = createException(MAL, "pyapi.eval_loader", "No elements emitted by the loader."); 
             goto wrapup;
         }
     }

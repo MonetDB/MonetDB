@@ -1411,7 +1411,6 @@ SERVERfetch_field_bat(bat *bid, int *key){
 		}
 		BUNappend(b,fld, FALSE);
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	*bid = b->batCacheid;
 	BBPkeepref(*bid);
 	return MAL_SUCCEED;
@@ -1634,7 +1633,6 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		SERVERfieldAnalysis(fld2, tt, &tval);
 		BUNappend(b,VALptr(&tval), FALSE);
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 

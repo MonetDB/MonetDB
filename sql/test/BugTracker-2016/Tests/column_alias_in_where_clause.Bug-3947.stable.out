@@ -79,8 +79,20 @@ Ready.
 % 2,	2,	4 # length
 [ 1,	10,	"tien"	]
 [ 11,	2,	"elf"	]
+#SELECT * FROM (SELECT a AS "A", b AS "B", c AS "C" FROM t_alias) T1 WHERE "A" < "B";
+% sys.t1,	sys.t1,	sys.t1 # table_name
+% A,	B,	C # name
+% int,	int,	varchar # type
+% 1,	2,	4 # length
+[ 1,	10,	"tien"	]
 #SELECT a AS "A", b * b AS "B", c AS "C" FROM t_alias WHERE "b" * b >99;
 % sys.L,	sys.L,	sys.L # table_name
+% A,	B,	C # name
+% int,	bigint,	varchar # type
+% 1,	3,	4 # length
+[ 1,	100,	"tien"	]
+#SELECT * FROM (SELECT a AS "A", b * b AS "B", c AS "C" FROM t_alias) T1 WHERE "B" >99;
+% sys.t1,	sys.t1,	sys.t1 # table_name
 % A,	B,	C # name
 % int,	bigint,	varchar # type
 % 1,	3,	4 # length
@@ -91,11 +103,34 @@ Ready.
 % int,	int,	varchar # type
 % 1,	2,	4 # length
 [ 1,	10,	"tien"	]
+#SELECT * FROM (SELECT a AS "A", b AS "B", c AS "C" FROM t_alias) T1 WHERE "C" LIKE '%en';
+% sys.t1,	sys.t1,	sys.t1 # table_name
+% A,	B,	C # name
+% int,	int,	varchar # type
+% 1,	2,	4 # length
+[ 1,	10,	"tien"	]
 #SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "c" = 'null';
 % .L1,	sys.L1,	sys.L1 # table_name
 % CAT,	A,	C # name
 % char,	int,	varchar # type
 % 1,	1,	0 # length
+#SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias) T1 WHERE "CAT" = NULL;
+% .t1,	sys.t1,	sys.t1 # table_name
+% CAT,	A,	C # name
+% char,	int,	varchar # type
+% 1,	1,	0 # length
+#SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias) T1 WHERE "CAT" IS NULL;
+% .t1,	sys.t1,	sys.t1 # table_name
+% CAT,	A,	C # name
+% char,	int,	varchar # type
+% 1,	1,	0 # length
+#SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias) T1 WHERE "CAT" IS NULL or "CAT" = NULL;
+% .t1,	sys.t1,	sys.t1 # table_name
+% CAT,	A,	C # name
+% char,	int,	varchar # type
+% 1,	2,	4 # length
+[ NULL,	1,	"tien"	]
+[ NULL,	11,	"elf"	]
 #SELECT a AS "A", b AS "B", c AS "C" FROM t_alias ORDER BY "C", "A", "B";
 % sys.L,	sys.L,	sys.L # table_name
 % A,	B,	C # name

@@ -17,6 +17,4 @@
 
 mal_export int OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGcostModel  if ( optDebug & ((lng) 1 <<DEBUG_OPT_COSTMODEL) )
-
 #endif /* _OPT_COSTMODEL_H_ */

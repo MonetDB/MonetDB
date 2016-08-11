@@ -13,6 +13,4 @@
 
 mal_export int OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGfactorize  if ( optDebug & ((lng) 1 <<DEBUG_OPT_FACTORIZE) )
-
 #endif

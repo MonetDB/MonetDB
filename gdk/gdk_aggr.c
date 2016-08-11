@@ -62,7 +62,7 @@ const char *
 BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 		 /* outputs: */
 		 oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp,
-		 BUN *cntp, const oid **candp, const oid **candendp)
+		 const oid **candp, const oid **candendp)
 {
 	oid min, max;
 	BUN i, ngrp;
@@ -130,7 +130,6 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 	*startp = start;
 	*endp = end;
-	*cntp = cnt;
 	*candp = cand;
 	*candendp = candend;
 
@@ -235,8 +234,8 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 						}			\
 					} else {			\
 						if (nil_if_empty &&	\
-						    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-							seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+							seen[gid >> 5] |= 1U << (gid & 0x1F); \
 							sums[gid] = 0;	\
 						}			\
 						if (sums[gid] != TYPE2##_nil) { \
@@ -275,8 +274,8 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 						}			\
 					} else {			\
 						if (nil_if_empty &&	\
-						    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-							seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+							seen[gid >> 5] |= 1U << (gid & 0x1F); \
 							sums[gid] = 0;	\
 						}			\
 						if (sums[gid] != TYPE2##_nil) { \
@@ -471,12 +470,12 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	BUN ngrp;
 	BUN nils;
 	BAT *bn;
-	BUN start, end, cnt;
+	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cnt, &cand, &candend)) != NULL) {
+				    &cand, &candend)) != NULL) {
 		GDKerror("BATgroupsum: %s\n", err);
 		return NULL;
 	}
@@ -535,13 +534,12 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 	oid min, max;
 	BUN ngrp;
 	BUN nils;
-	BUN start, end, cnt;
+	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp,
-				    &start, &end, &cnt,
-				    &cand, &candend)) != NULL) {
+				    &start, &end, &cand, &candend)) != NULL) {
 		GDKerror("BATsum: %s\n", err);
 		return GDK_FAIL;
 	}
@@ -679,8 +677,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					}				\
 				} else {				\
 					if (nil_if_empty &&		\
-					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
 					if (prods[gid] != TYPE2##_nil) { \
@@ -724,8 +722,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 						gid = (oid) i;		\
 				}					\
 				if (nil_if_empty &&			\
-				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-					seen[gid >> 5] |= 1 << (gid & 0x1F); \
+				    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+					seen[gid >> 5] |= 1U << (gid & 0x1F); \
 					prods[gid] = 1;			\
 				}					\
 				if (vals[i] == TYPE##_nil) {		\
@@ -776,8 +774,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					}				\
 				} else {				\
 					if (nil_if_empty &&		\
-					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
 					if (prods[gid] != lng_nil) {	\
@@ -826,8 +824,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					}				\
 				} else {				\
 					if (nil_if_empty && \
-					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
 					if (prods[gid] != TYPE2##_nil) { \
@@ -1075,12 +1073,12 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	BUN ngrp;
 	BUN nils;
 	BAT *bn;
-	BUN start, end, cnt;
+	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cnt, &cand, &candend)) != NULL) {
+				    &cand, &candend)) != NULL) {
 		GDKerror("BATgroupprod: %s\n", err);
 		return NULL;
 	}
@@ -1139,13 +1137,12 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 	oid min, max;
 	BUN ngrp;
 	BUN nils;
-	BUN start, end, cnt;
+	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp,
-				    &start, &end, &cnt,
-				    &cand, &candend)) != NULL) {
+				    &start, &end, &cand, &candend)) != NULL) {
 		GDKerror("BATprod: %s\n", err);
 		return GDK_FAIL;
 	}
@@ -1351,7 +1348,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	lng *restrict cnts = NULL;
 	dbl *restrict dbls;
 	BAT *bn = NULL;
-	BUN start, end, cnt;
+	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
@@ -1360,7 +1357,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 				 * functions) argument */
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cnt, &cand, &candend)) != NULL) {
+				    &cand, &candend)) != NULL) {
 		GDKerror("BATgroupavg: %s\n", err);
 		return GDK_FAIL;
 	}
@@ -1542,7 +1539,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			n++;						\
 		}							\
 		/* the sum fit, so now we can calculate the average */	\
-		*avg = (dbl) sum / n;					\
+		*avg = n > 0 ? (dbl) sum / n : dbl_nil;			\
 		if (0) {						\
 		  overflow##TYPE:					\
 			/* we get here if sum(x[0],...,x[i]) doesn't */	\
@@ -1551,6 +1548,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			/* the rest of the calculation is done */	\
 			/* according to the loop invariant described */	\
 			/* in the below loop */				\
+			/* note that n necessarily is > 0 (else no */	\
+			/* overflow possible) */			\
+			assert(n > 0);					\
 			if (sum >= 0) {					\
 				a = (TYPE) (sum / (lng_hge) n); /* this fits */ \
 				r = (BUN) (sum % (SBUN) n);		\
@@ -1566,24 +1566,25 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			if (cand)					\
 				--cand;					\
 									\
-			for (; i < end; i++) {				\
+			for (;;) {					\
 				/* loop invariant: */			\
 				/* a + r/n == average(x[0],...,x[n]); */ \
-				/* 0 <= r < n (if n > 0) */		\
-				/* or if n == 0: a == 0; r == 0 */	\
+				/* 0 <= r < n */			\
 				if (cand) {				\
-					if (i < *cand - b->hseqbase)	\
-						continue;		\
-					assert(i == *cand - b->hseqbase); \
-					if (++cand == candend)		\
-						end = i + 1;		\
+					if (cand == candend)		\
+						break;			\
+					i = *cand++ - b->hseqbase;	\
+				} else {				\
+					i = start++;			\
 				}					\
+				if (i >= end)				\
+					break;				\
 				x = ((const TYPE *) src)[i];		\
 				if (x == TYPE##_nil)			\
 					continue;			\
 				AVERAGE_ITER(TYPE, x, a, r, n);		\
 			}						\
-			*avg = n > 0 ? a + (dbl) r / n : dbl_nil;	\
+			*avg = a + (dbl) r / n;				\
 		}							\
 	} while (0)
 
@@ -1716,7 +1717,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 	BATiter bi;
-	BUN start, end, cnt;
+	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
@@ -1725,7 +1726,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	(void) abort_on_error;	/* functions) argument */
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cnt, &cand, &candend)) != NULL) {
+				    &cand, &candend)) != NULL) {
 		GDKerror("BATgroupcount: %s\n", err);
 		return NULL;
 	}
@@ -1829,7 +1830,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	const bit *restrict bits;
 	lng *restrict cnts;
 	BAT *bn = NULL;
-	BUN start, end, cnt;
+	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
@@ -1841,7 +1842,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	(void) skip_nils;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cnt, &cand, &candend)) != NULL) {
+				    &cand, &candend)) != NULL) {
 		GDKerror("BATgroupsize: %s\n", err);
 		return NULL;
 	}
@@ -2209,7 +2210,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 
 static BAT *
 BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
-	       int abort_on_error, 
+	       int abort_on_error,
 	       BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
 			     oid, oid, BUN, BUN, const oid *restrict,
 			     const oid *, BUN, int, int),
@@ -2221,7 +2222,7 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
 	oid *restrict oids;
 	BAT *bn = NULL;
 	BUN nils;
-	BUN start, end, cnt;
+	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
@@ -2236,7 +2237,7 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
 	}
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cnt, &cand, &candend)) != NULL) {
+				    &cand, &candend)) != NULL) {
 		GDKerror("%s: %s\n", name, err);
 		return NULL;
 	}
@@ -2258,7 +2259,8 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
 		gids = (const oid *) Tloc(g, start);
 
 	nils = (*minmax)(oids, b, gids, ngrp, min, max, start, end,
-			 cand, candend, cnt, skip_nils, g && BATtdense(g));
+			 cand, candend, BATcount(b), skip_nils,
+			 g && BATtdense(g));
 
 	BATsetcount(bn, ngrp);
 
@@ -2375,7 +2377,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	BUN ngrp;
 	BUN nils = 0;
 	BAT *bn = NULL;
-	BUN start, end, cnt;
+	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	BAT *t1, *t2;
 	BATiter bi;
@@ -2386,7 +2388,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	(void) abort_on_error;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cnt, &cand, &candend)) != NULL) {
+				    &cand, &candend)) != NULL) {
 		GDKerror("BATgroupquantile: %s\n", err);
 		return NULL;
 	}
@@ -2701,7 +2703,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	BUN *restrict cnts = NULL;
 	dbl *restrict dbls, *restrict mean, *restrict delta, *restrict m2;
 	BAT *bn = NULL;
-	BUN start, end, cnt;
+	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
@@ -2710,7 +2712,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 				 * functions) argument */
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cnt, &cand, &candend)) != NULL) {
+				    &cand, &candend)) != NULL) {
 		GDKerror("%s: %s\n", func, err);
 		return NULL;
 	}

@@ -1235,7 +1235,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
-	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *DBL, *DEC;
+	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *FLT, *DBL, *DEC;
 	sql_type *WRD;
 #ifdef HAVE_HGE
 	sql_type *HGE = NULL;
@@ -1314,7 +1314,7 @@ sqltypeinit( sql_allocator *sa)
 	/* this requires a type definition */
 
 	floats = t;
-	*t++ = sql_create_type(sa, "REAL", 24, SCALE_NOFIX, 2, EC_FLT, "flt");
+	FLT = *t++ = sql_create_type(sa, "REAL", 24, SCALE_NOFIX, 2, EC_FLT, "flt");
 	DBL = *t++ = sql_create_type(sa, "DOUBLE", 53, SCALE_NOFIX, 2, EC_FLT, "dbl");
 
 	dates = t;
@@ -1469,7 +1469,9 @@ sqltypeinit( sql_allocator *sa)
 	}
 	sql_create_aggr(sa, "sum", "aggr", "sum", MONINT, MONINT);
 	sql_create_aggr(sa, "sum", "aggr", "sum", SECINT, SECINT);
-	/*
+	/* do DBL first so that it is chosen as cast destination for
+	 * unknown types */
+	sql_create_aggr(sa, "avg", "aggr", "avg", DBL, DBL);
 	sql_create_aggr(sa, "avg", "aggr", "avg", BTE, DBL);
 	sql_create_aggr(sa, "avg", "aggr", "avg", SHT, DBL);
 	sql_create_aggr(sa, "avg", "aggr", "avg", INT, DBL);
@@ -1478,8 +1480,7 @@ sqltypeinit( sql_allocator *sa)
 	if (have_hge)
 		sql_create_aggr(sa, "avg", "aggr", "avg", HGE, DBL);
 #endif
-	*/
-	sql_create_aggr(sa, "avg", "aggr", "avg", DBL, DBL);
+	sql_create_aggr(sa, "avg", "aggr", "avg", FLT, DBL);
 
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", NULL, LNG);
 	sql_create_aggr(sa, "count", "aggr", "count", NULL, LNG);
