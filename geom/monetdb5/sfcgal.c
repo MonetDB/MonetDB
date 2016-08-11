@@ -432,7 +432,8 @@ sfcgal_from_geom(str *ret, const GEOSGeometry *geom, int type)
     int i;
     *ret = MAL_SUCCEED;
 
-    is_3d = GEOS_getWKBOutputDims(geom) == 3;
+    //is_3d = GEOS_getWKBOutputDims(geom) == 3;
+    is_3d = GEOSGeom_getCoordinateDimension(geom) == 3;
 
     switch (type)
     {
