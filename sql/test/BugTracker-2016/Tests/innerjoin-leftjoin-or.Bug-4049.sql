@@ -43,7 +43,7 @@ where dd.c = 1
    or dd.c = 3
   and d1.d = 1
   and (((dd.c = 1 or dd.c = 3) and d2.d is null) or ((dd.c = 1 or dd.c = 3) and d2.d = 2));
--- shows 4 rows instead of 1
+-- shows 4 rows instead of 2
 
 select *
  from test_dic1 as dd

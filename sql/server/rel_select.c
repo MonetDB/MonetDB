@@ -1406,7 +1406,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		/* push select into the given relation */
 		return rel_push_select(sql, rel, L, e);
 	} else { /* join */
-		if (is_semi(rel->op) || is_outerjoin(rel->op)) {
+		if (is_semi(rel->op) || (is_outerjoin(rel->op) && !is_processed(rel))) {
 			rel_join_add_exp(sql->sa, rel, e);
 			return rel;
 		}
@@ -2020,7 +2020,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		lr = rel;
 		rr = rel_dup(lr);
 
-		if (is_outerjoin(rel->op)) {
+		if (is_outerjoin(rel->op) && !is_processed(rel)) {
 			int pushdown = sql->pushdown;
 
 			exps = rel->exps;

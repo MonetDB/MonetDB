@@ -1046,6 +1046,8 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 		
 		rel_destroy(r);
 		append(nl, e);
+		if (is_outerjoin(l->op) && is_processed(l)) 
+			l = rel_select(sql->sa, l, NULL);
 		l->exps = nl;
 		return l;
 	}

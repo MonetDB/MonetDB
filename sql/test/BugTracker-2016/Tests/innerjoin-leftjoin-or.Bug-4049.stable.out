@@ -128,8 +128,6 @@ Ready.
 % 1,	1,	1,	1,	1,	1,	1,	1 # length
 [ 1,	1,	1,	2,	1,	1,	3,	2	]
 [ 1,	1,	1,	3,	2,	1,	3,	2	]
-[ 1,	2,	1,	2,	1,	NULL,	NULL,	NULL	]
-[ 1,	2,	1,	3,	2,	NULL,	NULL,	NULL	]
 #select *
 # from test_dic1 as dd
 #inner join test1 as d1 on d1.a = dd.a and d1.d = 1
