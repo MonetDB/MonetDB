@@ -4039,8 +4039,8 @@ decompress_stream_data(bs2 *s) {
 		return -1;
 #endif
 	} else if (s->comp == COMPRESSION_LZ4) {
-		int uncompressed_length = (int) s->bufsiz;
 #ifdef HAVE_LIBLZ4
+		int uncompressed_length = (int) s->bufsiz;
 		if ((uncompressed_length = LZ4_decompress_safe(s->compbuf, s->buf, s->itotal, uncompressed_length)) <= 0) {
 			s->s->errnr = uncompressed_length;
 			return -1;
