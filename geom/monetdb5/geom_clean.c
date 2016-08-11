@@ -728,7 +728,7 @@ geom_make_valid(GEOSGeometry **res, const GEOSGeometry *geosGeometry)
 	if ( (GEOSGeomTypeId(geosGeometry)+1) == wkbGeometryCollection_mdb && (GEOSGeomTypeId(*res) +1 ) != wkbGeometryCollection_mdb) {
 		GEOSGeom *ogeoms = (GEOSGeom *) GDKmalloc(sizeof(GEOSGeom*));
         int geometryType = -1, type = -1;
-		assert(geosGeometry != res);
+		assert(geosGeometry != *res);
         ogeoms[0] = *res;
 
         geometryType = GEOSGeomTypeId(*res);
