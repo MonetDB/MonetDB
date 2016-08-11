@@ -6647,6 +6647,56 @@ add_nulls(mvc *sql, sql_rel *rel, sql_rel *r)
 	}
 }
 
+static int
+exp_is_select(sql_exp *e, sql_rel *r)
+{
+	if (e->type == e_cmp && exp_card(e->r) <= CARD_AGGR &&
+	    rel_find_exp(r, e->l) && !e->f)
+		return 0;
+	if (e->type == e_cmp && e->flag == cmp_or) {
+		list *l = e->l;
+		node *n;
+		int ok = 1;
+
+		for (n = l->h; n && ok; n = n->next)
+			ok &= (exp_is_select(n->data, r) == 0);
+		l = e->r;
+		for (n = l->h; n && ok; n = n->next)
+			ok &= (exp_is_select(n->data, r) == 0);
+		if (ok)
+			return 0;
+	}
+	return -1;
+}
+
+static sql_rel *
+rel_split_outerjoin_exps(int *changes, mvc *sql, sql_rel *rel)
+{
+	if (rel->op == op_left  && list_length(rel->exps)) { 
+		/* find select expressions on left hand relation  */
+		list *exps = list_select(rel->exps, rel->l, (fcmp) &exp_is_select, (fdup)NULL);
+		/* if so introduce select operator and move these expressions */
+		if (!list_empty(exps)) { 
+			list_remove_list(rel->exps, exps);
+			rel = rel_select(sql->sa, rel, NULL);
+			rel->exps = exps;
+			(*changes)++;
+		}
+	} 
+	if (rel->op == op_right && list_length(rel->exps)) { 
+		/* find select expressions on right hand relation  */
+		list *exps = list_select(rel->exps, rel->r, (fcmp) &exp_is_select, (fdup)NULL);
+		/* if so introduce select operator and move these expressions */
+		if (!list_empty(exps)) { 
+			list_remove_list(rel->exps, exps);
+			rel = rel_select(sql->sa, rel, NULL);
+			rel->exps = exps;
+			(*changes)++;
+		}
+	}
+	return rel;
+}
+	
 static sql_rel *
 rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 {
@@ -6665,7 +6715,7 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 	       	e = rel->exps->h->data;
 		nll->exps = exps_copy(sql->sa, e->l);
 		nlr->exps = exps_copy(sql->sa, e->r);
-		nl = rel_or( sql, nll, nlr, NULL, e->l, e->r);
+		nl = rel_or( sql, nll, nlr, NULL, NULL, NULL);
 
 		if (rel->op == op_full) {
 			l = rel_dup(l);
@@ -7860,6 +7910,8 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
 	    gp.cnt[op_semi] || gp.cnt[op_anti] ||
 	    gp.cnt[op_select]) {
+		if (level <= 0 && 0)
+			rel = rewrite(sql, rel, &rel_split_outerjoin_exps, &changes);
 		rel = rewrite(sql, rel, &rel_find_range, &changes);
 		rel = rel_project_reduce_casts(&changes, sql, rel);
 		rel = rewrite(sql, rel, &rel_reduce_casts, &changes);
@@ -7886,6 +7938,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		if (level <= 0)
 			rel = rewrite_topdown(sql, rel, &rel_semijoin_use_fk, &changes);
 	}
+
 	if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) 
 		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
