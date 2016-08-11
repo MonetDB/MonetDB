@@ -2002,7 +2002,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 
 	while (row < (size_t) count)	{
 		size_t crow = 0;
-		size_t bytes_left = bsize - sizeof(lng);
+		size_t bytes_left = bsize - sizeof(lng) - 1;
 		char cont_req, dummy;
 #ifdef PROT10_DEBUG
 		size_t bufpos;
