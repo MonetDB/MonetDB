@@ -66,8 +66,8 @@ geom_to_x3d_3(GEOSGeom geom, int precision, int opts, const char *defid)
             return x3d_3_tin(geom, precision, opts, defid);
 
         case wkbGeometryCollection_mdb:
-            //return x3d_3_psurface(geom, precision, opts, defid);
-            return x3d_3_collection(geom, precision, opts, defid);
+            return x3d_3_psurface(geom, precision, opts, defid);
+            //return x3d_3_collection(geom, precision, opts, defid);
 
         default:
             assert(0);
@@ -395,12 +395,12 @@ x3d_3_multi_buf(GEOSGeom col, char *output, int precision, int opts, const char 
         default:
             assert(0);
     }
-    if (dimension == 3){
+    //if (dimension == 3){
         if ( X3D_USE_GEOCOORDS(opts) ) 
             ptr += sprintf(ptr, "<GeoCoordinate geoSystem='\"GD\" \"WE\" \"%s\"' point='", ((opts & GEOM_X3D_FLIP_XY) ? "latitude_first" : "longitude_first") );
         else
             ptr += sprintf(ptr, "<Coordinate point='");
-    }
+    //}
     ngeoms = GEOSGetNumGeometries(col);
     for (i=0; i<ngeoms; i++)
     {
