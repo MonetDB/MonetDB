@@ -1870,21 +1870,24 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	size_t row = 0;
 	size_t srow = 0;
 	size_t varsized = 0;
-	lng *var_col_len;
-	BATiter *iterators;
+	lng *var_col_len = NULL;
+	BATiter *iterators = NULL;
 	lng fixed_lengths = 0;
+	int fres = -1;
 
-	iterators = GDKmalloc(sizeof(BATiter) * t->nr_cols);
-	var_col_len = GDKmalloc(sizeof(lng) * t->nr_cols);
+	iterators = GDKzalloc(sizeof(BATiter) * t->nr_cols);
+	var_col_len = GDKzalloc(sizeof(lng) * t->nr_cols);
 
 	if (!iterators || !var_col_len) {
-		return -1;
+		fres = -1;
+		goto cleanup;
 	}
 
 	if (t->order) {
 		order = BBPquickdesc(t->order, FALSE);
 		if (!order) {
-			return -1;
+			fres = -1;
+			goto cleanup;
 		}
 		count = BATcount(order);
 	} else {
@@ -1892,7 +1895,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	}
 
 	if (!mnstr_writeStr(s, "*\n") || !mnstr_writeInt(s, t->id) || !mnstr_writeLng(s, count) || !mnstr_writeLng(s, (lng) t->nr_cols)) {
-		return -1;
+		fres = -1;
+		goto cleanup;
 	}
 
 	for (i = 0; i < (size_t) t->nr_cols; i++) {
@@ -1930,7 +1934,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	                break;
 	#endif
 	            default:
-	                return -1;
+					fres = -1;
+					goto cleanup;
 	        }
 	        if (res == MAL_SUCCEED) {
 	        	mtype = TYPE_dbl;
@@ -1938,7 +1943,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	        	BBPunfix(iterators[i].b->batCacheid);
 	            iterators[i].b = BATdescriptor(result);
 	        } else {
-	        	return -1;
+				fres = -1;
+				goto cleanup;
 	        }
 		}
 
@@ -1956,12 +1962,14 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		if (!mnstr_writeLng(s, (lng)(strlen(c->tn) + strlen(c->name) + strlen(c->type.type->sqlname) + sizeof(int) + 3)) ||
 				!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, c->type.type->sqlname) ||
 				!mnstr_writeInt(s, typelen)) {
-			return -1;
+			fres = -1;
+			goto cleanup;
 		}
 		// write NULL values for this column to the stream
 		// NULL values are encoded as <size:int> <NULL value> (<size> is always <typelen> for fixed size columns)
 		if (!mnstr_writeInt(s, nil_len)) {
-			return -1;
+			fres = -1;
+			goto cleanup;
 		}
 
 		switch(ATOMstorage(mtype)) {
@@ -1992,10 +2000,12 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				break;
 			default:
 				assert(0);
-				return -1;
+				fres = -1;
+				goto cleanup;
 		}
 		if (!retval) {
-			return -1;
+			fres = -1;
+			goto cleanup;
 		}
 	}
 	mnstr_flush(s);
@@ -2052,7 +2062,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 
 		if (!mnstr_readChr(c, &cont_req)) {
 			fprintf(stderr, "Received cancellation message.\n");
-			return -1;
+			fres = -1;
+			goto cleanup;
 		}
 
 		// consume flush from client
@@ -2072,7 +2083,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		assert(bs2_buffer(s).pos == 0);
 
 		if (!mnstr_writeLng(s, (lng)(row - srow))) {
-			return -1;
+			fres = -1;
+			goto cleanup;
 		}
 
 		for (i = 0; i < (size_t) t->nr_cols; i++) {
@@ -2092,14 +2104,16 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				fprintf(stderr, "Write strings to %zu\n", bufpos);
 #endif
 				if (!mnstr_writeLng(s, var_col_len[i])) {
-					return -1;
+					fres = -1;
+					goto cleanup;
 				}
 				for (crow = srow; crow < row; crow++) {
 #ifdef PROT10_DEBUG
 					bufpos += strlen((char*) BUNtail(iterators[i], crow)) + 1;
 #endif
 					if (!write_str_term(s, (char*) BUNtail(iterators[i], crow))) {
-						return -1;
+						fres = -1;
+						goto cleanup;
 					}
 				}
 			} else {
@@ -2112,7 +2126,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				bufpos += (atom_size * (row - srow));
 #endif
 				if (mnstr_write(s, Tloc(iterators[i].b, srow), atom_size, row - srow) != (ssize_t) (row - srow)) {
-					return -1;
+					fres = -1;
+					goto cleanup;
 				}
 			}
 		}
@@ -2122,11 +2137,23 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 #endif
 		if (mnstr_flush(s) < 0) {
 			fprintf(stderr, "Failed to flush.\n");
-			return -1;
+			fres = -1;
+			goto cleanup;
 		}
 		srow = row;
 	}
-	return 0;
+cleanup:
+	if (var_col_len) 
+		GDKfree(var_col_len);
+	if (iterators) {
+		for(i = 0; i < t->nr_cols; i++) {
+			if (iterators[i].b) {
+				BBPunfix(iterators[i].b->batCacheid);
+			}
+		}
+		GDKfree(iterators);
+	}
+	return fres;
 }
 
 int
