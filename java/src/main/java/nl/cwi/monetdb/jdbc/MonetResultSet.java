@@ -1589,7 +1589,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 					}
 				}
 				if (conn != null) {
-					Map map = conn.getTypeMap();
+					Map<String,Class<?>> map = conn.getTypeMap();
 					if (map != null && map.containsKey(MonetDBtype)) {
 						type = (Class)map.get(MonetDBtype);
 					}
@@ -1697,8 +1697,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
 	}
 
-	private boolean classImplementsSQLData(Class cl) {
-		Class[] cls = cl.getInterfaces();
+	private boolean classImplementsSQLData(Class<?> cl) {
+		Class<?>[] cls = cl.getInterfaces();
 		for (int i = 0; i < cls.length; i++) {
 			if (cls[i] == SQLData.class)
 				return true;
@@ -1736,6 +1736,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
+	@SuppressWarnings("unchecked")
 	public Object getObject(int i, Map<String,Class<?>> map)
 		throws SQLException
 	{
@@ -1801,6 +1802,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				throw new SQLException(iae.getMessage(), "M0M27");
 			} catch (InvocationTargetException ite) {
 				throw new SQLException(ite.getMessage(), "M0M27");
+			} catch (SecurityException se) {
+				throw new SQLException(se.getMessage(), "M0M27");
 			}
 			final int colnum = i;
 			final boolean valwasnull = wasNull();
@@ -3448,95 +3451,3 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 }
 
-/**
- * This internal subclass is not intended for normal use. Therefore it is restricted to
- * classes from the very same package only.
- *
- * Known issues with this class: some methods of the ResultSetMetaData object (obtained via getMetaData())
- * require that its statement argument (accessed via getStatement()) has a valid Statement object set.
- * Instances of this subclass do not have a valid Statement (see special constructor), so
- * those metadata methods do not return the correct values.
- * Special checks are programmed to prevent NullPointerExceptions, see above.
- *
- * As of Jun2016 this class is only used by MonetStatement.getGeneratedKeys()
- * TODO: try to eliminate the need for this class completely.
- */
-class MonetVirtualResultSet extends MonetResultSet {
-	private String results[][];
-	private boolean closed;
-
-	MonetVirtualResultSet(
-		String[] columns,
-		String[] types,
-		String[][] results
-	) throws IllegalArgumentException {
-		super(columns, types, results.length);
-
-		this.results = results;
-		closed = false;
-	}
-
-	/**
-	 * This method is overridden in order to let it use the results array
-	 * instead of the cache in the Statement object that created it.
-	 *
-	 * @param row the number of the row to which the cursor should move. A
-	 *        positive number indicates the row number counting from the
-	 *        beginning of the result set; a negative number indicates the row
-	 *        number counting from the end of the result set
-	 * @return true if the cursor is on the result set; false otherwise
-	 * @throws SQLException if a database error occurs
-	 */
- 	@Override
-	public boolean absolute(int row) throws SQLException {
-		if (closed)
-			throw new SQLException("ResultSet is closed!", "M1M20");
-
-		// first calculate what the JDBC row is
-		if (row < 0) {
-			// calculate the negatives...
-			row = tupleCount + row + 1;
-		}
-		// now place the row not farther than just before or after the result
-		if (row < 0) row = 0;	// before first
-		else if (row > tupleCount + 1) row = tupleCount + 1;	// after last
-
-		// store it
-		curRow = row;
-
-		// see if we have the row
-		if (row < 1 || row > tupleCount) return false;
-
-		for (int i = 0; i < results[row - 1].length; i++) {
-			tlp.values[i] = results[row - 1][i];
-		}
-
-		return true;
-	}
-
-	/**
-	 * Mainly here to prevent errors when the close method is called. There
-	 * is no real need for this object to close it. We simply remove our
-	 * resultset data.
-	 */
-	@Override
-	public void close() {
-		if (!closed) {
-			closed = true;
-			results = null;
-			// types and columns are MonetResultSets private parts
-		}
-	}
-
-	/**
-	 * Retrieves the fetch size for this ResultSet object, which will be
-	 * zero, since it's a virtual set.
-	 *
-	 * @return the current fetch size for this ResultSet object
-	 * @throws SQLException if a database access error occurs
-	 */
-	@Override
-	public int getFetchSize() throws SQLException {
-		return 0;
-	}
-}
