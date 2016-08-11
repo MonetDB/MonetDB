@@ -2180,7 +2180,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 
 	assert(!json); // so sue me
 
-	if (GDKgetenv_istrue("crazybitsonthewire") && ( b->client->protocol == prot10 || b->client->protocol == prot10compressed)) {
+	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
 		return mvc_export_resultset_prot10(t, s, b->client->fdin->s, b->client->blocksize);
 	}
 
