@@ -647,10 +647,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			BigDecimal bd;
 			try {
 				bd = new BigDecimal(decimal);
+				bd.setScale(scale);
 			} catch (NumberFormatException e) {
 				bd = BigDecimal.ZERO;
 			}
-			return bd.setScale(scale);
+			return bd;
 		}
 	}
 
