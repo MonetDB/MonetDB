@@ -3984,8 +3984,7 @@ typedef struct bs2 {
 	compression_method comp;
 	char *compbuf;
 	size_t compbufsiz;
-	char buf[0];	/* the buffered data (minus the size of
-				 * size-short */
+	char buf[1];	/* the buffered data */
 } bs2;
 
 

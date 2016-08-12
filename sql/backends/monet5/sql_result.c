@@ -2014,7 +2014,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	while (row < (size_t) count)	{
 		size_t crow = 0;
 		size_t bytes_left = bsize - sizeof(lng) - 1;
+#ifdef CONTINUATION_MESSAGE
 		char cont_req, dummy;
+#else
+		(void) c;
+#endif
 #ifdef PROT10_DEBUG
 		size_t bufpos;
 #endif
@@ -2149,7 +2153,7 @@ cleanup:
 	if (var_col_len) 
 		GDKfree(var_col_len);
 	if (iterators) {
-		for(i = 0; i < t->nr_cols; i++) {
+		for(i = 0; i < (size_t) t->nr_cols; i++) {
 			if (iterators[i].b) {
 				BBPunfix(iterators[i].b->batCacheid);
 			}

@@ -239,13 +239,14 @@ typedef enum {
 	protauto = 0,
 	prot9 = 1,
 	prot10 = 2,
-	prot10compressed = 3,
+	prot10compressed = 3
 } protocol_version;
 
 typedef enum {
 	COMPRESSION_NONE = 0,
 	COMPRESSION_SNAPPY = 1,
-	COMPRESSION_LZ4 = 2
+	COMPRESSION_LZ4 = 2,
+	COMPRESSION_UNKNOWN = 255
 } compression_method;
 
 stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);

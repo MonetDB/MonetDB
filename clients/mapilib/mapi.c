@@ -4048,7 +4048,7 @@ static char* mapi_convert_tinyint(struct MapiColumn *col) {
 }
 
 static char* mapi_convert_double(struct MapiColumn *col) {
-	char *dummy = NULL;
+	char *dummy;
 	if (*((double*) col->buffer_ptr) == *((double*)col->null_value)) return NULL;
 	//sprintf(col->write_buf, "%g", *((double*) col->buffer_ptr));
 	dummy = gcvt(*((double*) col->buffer_ptr), 2, col->write_buf);
@@ -4202,7 +4202,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			}
 		//	fprintf(stderr, "result_set_id=%d, nr_rows=%llu, nr_cols=%lld\n", result_set_id, nr_rows, nr_cols);
 			result->fieldcnt = nr_cols;
-			result->maxfields = nr_cols;
+			result->maxfields = (int) nr_cols;
 			result->row_count = nr_rows;
 			result->fields = malloc(sizeof(struct MapiColumn) * result->fieldcnt);
 			result->tableid = result_set_id;
@@ -4220,10 +4220,11 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				if (!mnstr_readLng(mid->from, &col_info_length)) {
 					return mid->error;
 				}
+				assert(col_info_length > 0);
 				// possible improvement, set col_info_length to max length of the three strings
-				table_name = malloc(col_info_length);
-				col_name = malloc(col_info_length);
-				type_sql_name = malloc(col_info_length);
+				table_name = malloc((size_t) col_info_length);
+				col_name = malloc((size_t) col_info_length);
+				type_sql_name = malloc((size_t) col_info_length);
 				if (!table_name || !col_name || !type_sql_name) {
 					return mid->error;
 				}
@@ -5704,6 +5705,10 @@ mapi_fetch_field_len(MapiHdl hdl, int fnr)
 {
 	int cr;
 	struct MapiResultSet *result;
+	if (hdl->mid->protocol == prot10 || hdl->mid->protocol == prot10compressed) {
+		// this really should not be called for the new protocol
+		return strlen(mapi_fetch_field(hdl, fnr));
+	}
 	mapi_hdl_check0(hdl, "mapi_fetch_field_len");
 
 	if ((result = hdl->result) == NULL ||

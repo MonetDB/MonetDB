@@ -1088,7 +1088,6 @@ ODBCFetch(ODBCStmt *stmt,
 
 	/* see SQLExecute.c for possible types */
 	switch (sql_type) {
-	case SQL_DECIMAL:
 	case SQL_TINYINT:
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
@@ -1139,6 +1138,7 @@ ODBCFetch(ODBCStmt *stmt,
 			break;
 		}
 		break;
+	case SQL_DECIMAL:
 	case SQL_DOUBLE:
 	case SQL_REAL:
 		if (!parsedouble(data, &fval)) {
@@ -1338,7 +1338,6 @@ ODBCFetch(ODBCStmt *stmt,
 				*lenp = j;
 			break;
 		}
-		case SQL_DECIMAL:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -1377,6 +1376,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		}
+		case SQL_DECIMAL:
 		case SQL_DOUBLE:
 		case SQL_REAL: {
 			data = (char *) ptr;
