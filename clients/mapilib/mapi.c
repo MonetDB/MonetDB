@@ -5532,12 +5532,15 @@ mapi_fetch_row(MapiHdl hdl)
 			// if our cache is empty, we read data from the socket
 			lng nrows = 0;
 			// first we write a prompt to the server indicating that we want another block of the result set
+
+#ifdef CONTINUATION_MESSAGE
 			if (!mnstr_writeChr(hdl->mid->to, 42) || mnstr_flush(hdl->mid->to)) {
 				hdl->mid->errorstr = strdup("Failed to write confirm message to server.");
 				hdl->mid->error = 0;
 				fprintf(stderr, "Failure 2.\n");
 				return hdl->mid->error;
 			}
+#endif
 
 			bs2_resetbuf(hdl->mid->from); // kinda a bit evil
 			assert(bs2_buffer(hdl->mid->from).pos == 0);
@@ -5551,6 +5554,8 @@ mapi_fetch_row(MapiHdl hdl)
 				fprintf(stderr, "Failure 3.\n");
 				return hdl->mid->error;
 			}
+
+			assert(nrows <= result->row_count);
 
 
 			//bs2_resetbuf(hdl->mid->from);
@@ -5699,8 +5704,6 @@ mapi_fetch_field_len(MapiHdl hdl, int fnr)
 {
 	int cr;
 	struct MapiResultSet *result;
-	// FIXME
-	assert(0);
 	mapi_hdl_check0(hdl, "mapi_fetch_field_len");
 
 	if ((result = hdl->result) == NULL ||

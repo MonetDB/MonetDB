@@ -1873,7 +1873,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	lng *var_col_len = NULL;
 	BATiter *iterators = NULL;
 	lng fixed_lengths = 0;
-	int fres = -1;
+	int fres = 0;
+
 
 	iterators = GDKzalloc(sizeof(BATiter) * t->nr_cols);
 	var_col_len = GDKzalloc(sizeof(lng) * t->nr_cols);
@@ -2060,6 +2061,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			assert(row > srow);
 		}
 
+#ifdef CONTINUATION_MESSAGE
 		if (!mnstr_readChr(c, &cont_req)) {
 			fprintf(stderr, "Received cancellation message.\n");
 			fres = -1;
@@ -2074,6 +2076,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			fprintf(stderr, "Received cancellation message.\n");
 			break;
 		}
+#endif
 
 #ifdef PROT10_DEBUG
 		fprintf(stderr, "Write block: %zu - %zu (out of %lld, nrow=%lld)\n", srow, row, count, (lng)(row - srow));
