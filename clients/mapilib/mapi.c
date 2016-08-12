@@ -3598,8 +3598,7 @@ read_line(Mapi mid)
 			if ((ret = mnstr_readChr(mid->from, mid->blk.buf + mid->blk.end)) != 1) {
 				if (ret == 0) {
 					mid->blk.buf[0] = PROMPTBEG;
-					mid->blk.buf[1] = '\n';
-					mid->blk.buf[2] = 0;
+					mid->blk.buf[1] = 0;
 					return mid->blk.buf;
 				}
 				return 0;
