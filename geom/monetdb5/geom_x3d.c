@@ -1,18 +1,18 @@
 #include "geom.h"
 
-static size_t x3d_3_point_size(GEOSGeom point, int precision);
-static char *x3d_3_point(GEOSGeom point, int precision, int opts);
-static size_t x3d_3_line_size(GEOSGeom line, int precision, int opts, const char *defid);
-static char *x3d_3_line(GEOSGeom line, int precision, int opts, const char *defid);
-static size_t x3d_3_poly_size(GEOSGeom poly, int precision, const char *defid);
-static size_t x3d_3_triangle_size(GEOSGeom triangle, int precision, const char *defid);
-static char *x3d_3_triangle(GEOSGeom triangle, int precision, int opts, const char *defid);
-static size_t x3d_3_multi_size(GEOSGeom col, int precisioSn, int opts, const char *defid);
-static char *x3d_3_multi(GEOSGeom col, int precision, int opts, const char *defid);
-static char *x3d_3_psurface(GEOSGeom psur, int precision, int opts, const char *defid);
-static char *x3d_3_tin(GEOSGeom tin, int precision, int opts, const char *defid);
-static size_t x3d_3_collection_size(GEOSGeom col, int precision, int opts, const char *defid);
-static char *x3d_3_collection(GEOSGeom col, int precision, int opts, const char *defid);
+static size_t x3d_3_point_size(const GEOSGeometry *point, int precision);
+static char *x3d_3_point(const GEOSGeometry *point, int precision, int opts);
+static size_t x3d_3_line_size(const GEOSGeometry *line, int precision, int opts, const char *defid);
+static char *x3d_3_line(const GEOSGeometry *line, int precision, int opts, const char *defid);
+static size_t x3d_3_poly_size(const GEOSGeometry *poly, int precision, const char *defid);
+static size_t x3d_3_triangle_size(const GEOSGeometry *triangle, int precision, const char *defid);
+static char *x3d_3_triangle(const GEOSGeometry *triangle, int precision, int opts, const char *defid);
+static size_t x3d_3_multi_size(const GEOSGeometry *col, int precisioSn, int opts, const char *defid);
+static char *x3d_3_multi(const GEOSGeometry *col, int precision, int opts, const char *defid);
+static char *x3d_3_psurface(const GEOSGeometry *psur, int precision, int opts, const char *defid);
+static char *x3d_3_tin(const GEOSGeometry *tin, int precision, int opts, const char *defid);
+static size_t x3d_3_collection_size(const GEOSGeometry *col, int precision, int opts, const char *defid);
+static char *x3d_3_collection(const GEOSGeometry *col, int precision, int opts, const char *defid);
 static size_t geom_toX3D3(const GEOSGeometry *geom, char *buf, int precision, int opts, int is_closed);
 
 static size_t geom_X3Dsize(const GEOSGeometry *geom, int precision);
@@ -76,7 +76,7 @@ geom_to_x3d_3(GEOSGeom geom, int precision, int opts, const char *defid)
 }
 
     static size_t
-x3d_3_point_size(GEOSGeom point, int precision)
+x3d_3_point_size(const GEOSGeometry *point, int precision)
 {
     int size;
     size = geom_X3Dsize(point, precision);
@@ -84,7 +84,7 @@ x3d_3_point_size(GEOSGeom point, int precision)
 }
 
     static size_t
-x3d_3_point_buf(GEOSGeom point, char *output, int precision, int opts)
+x3d_3_point_buf(const GEOSGeometry *point, char *output, int precision, int opts)
 {
     char *ptr = output;
     ptr += geom_toX3D3(point, ptr, precision, opts, 0);
@@ -92,7 +92,7 @@ x3d_3_point_buf(GEOSGeom point, char *output, int precision, int opts)
 }
 
     static char *
-x3d_3_point(GEOSGeom point, int precision, int opts)
+x3d_3_point(const GEOSGeometry *point, int precision, int opts)
 {
     char *output;
     int size;
@@ -105,7 +105,7 @@ x3d_3_point(GEOSGeom point, int precision, int opts)
 
 
     static size_t
-x3d_3_line_size(GEOSGeom line, int precision, int opts, const char *defid)
+x3d_3_line_size(const GEOSGeometry *line, int precision, int opts, const char *defid)
 {
     int size;
     size_t defidlen = strlen(defid);
@@ -127,7 +127,7 @@ x3d_3_line_size(GEOSGeom line, int precision, int opts, const char *defid)
 }
 
     static size_t
-x3d_3_line_buf(GEOSGeom line, char *output, int precision, int opts, const char *defid)
+x3d_3_line_buf(const GEOSGeometry *line, char *output, int precision, int opts, const char *defid)
 {
     char *ptr=output;
     uint32_t npoints = 0;
@@ -147,7 +147,7 @@ x3d_3_line_buf(GEOSGeom line, char *output, int precision, int opts, const char 
 }
 
     static size_t
-x3d_3_line_coords(GEOSGeom line, char *output, int precision, int opts)
+x3d_3_line_coords(const GEOSGeometry *line, char *output, int precision, int opts)
 {
     char *ptr=output;
     ptr += geom_toX3D3(line, ptr, precision, opts, GEOSisClosed(line));
@@ -155,18 +155,18 @@ x3d_3_line_coords(GEOSGeom line, char *output, int precision, int opts)
 }
 
     static size_t
-x3d_3_mline_coordindex(GEOSGeom mgeom, char *output)
+x3d_3_mline_coordindex(const GEOSGeometry *mgeom, char *output)
 {
     char *ptr=output;
     int i, j, si;
-    GEOSGeom geom;
+    const GEOSGeometry *geom;
     int ngeoms = GEOSGetNumGeometries(mgeom);
 
     j = 0;
     for (i=0; i < ngeoms; i++)
     {
         uint32_t k, npoints = 0;
-        geom = (GEOSGeom ) GEOSGetGeometryN(mgeom, i);
+        geom = GEOSGetGeometryN(mgeom, i);
         numPointsGeometry(&npoints, geom);
         si = j;
         for (k=0; k < npoints ; k++)
@@ -194,17 +194,17 @@ x3d_3_mline_coordindex(GEOSGeom mgeom, char *output)
 }
 
 static size_t
-x3d_3_mpoly_coordindex(GEOSGeom psur, char *output)
+x3d_3_mpoly_coordindex(const GEOSGeometry *psur, char *output)
 {
     char *ptr=output;
-    GEOSGeom geom;
+    const GEOSGeometry *geom;
     int i, j, l;
     int ngeoms = GEOSGetNumGeometries(psur);
     j = 0;
     for (i=0; i<ngeoms; i++)
     {
         int nrings;
-        geom = (GEOSGeom ) GEOSGetGeometryN(psur, i);
+        geom = GEOSGetGeometryN(psur, i);
         nrings = GEOSGetNumInteriorRings(geom) + 1;
         for (l=0; l < nrings; l++)
         {
@@ -240,7 +240,7 @@ x3d_3_mpoly_coordindex(GEOSGeom psur, char *output)
 }
 
 static char *
-x3d_3_line(GEOSGeom line, int precision, int opts, const char *defid)
+x3d_3_line(const GEOSGeometry *line, int precision, int opts, const char *defid)
 {
     char *output;
     int size;
@@ -252,7 +252,7 @@ x3d_3_line(GEOSGeom line, int precision, int opts, const char *defid)
 }
 
 static size_t
-x3d_3_poly_size(GEOSGeom poly,  int precision, const char *defid)
+x3d_3_poly_size(const GEOSGeometry *poly,  int precision, const char *defid)
 {
     size_t size;
     size_t defidlen = strlen(defid);
@@ -260,22 +260,22 @@ x3d_3_poly_size(GEOSGeom poly,  int precision, const char *defid)
 
     size = ( sizeof("<IndexedFaceSet></IndexedFaceSet>") + (defidlen*3) ) * 2 + 6 * (nrings - 1);
 
-    size += geom_X3Dsize((GEOSGeom)GEOSGetExteriorRing(poly), precision);
+    size += geom_X3Dsize(GEOSGetExteriorRing(poly), precision);
     for (i=0; i<nrings-1; i++)
-        size += geom_X3Dsize((GEOSGeom)GEOSGetInteriorRingN(poly, i), precision);
+        size += geom_X3Dsize(GEOSGetInteriorRingN(poly, i), precision);
 
     return size;
 }
 
 static size_t
-x3d_3_poly_buf(GEOSGeom poly, char *output, int precision, int opts)
+x3d_3_poly_buf(const GEOSGeometry *poly, char *output, int precision, int opts)
 {
     int i, nIntRings = GEOSGetNumInteriorRings(poly);
     char *ptr=output;
     const GEOSGeometry* exteriorRing;
     exteriorRing = GEOSGetExteriorRing(poly);
 
-    ptr += geom_toX3D3((GEOSGeom) exteriorRing, ptr, precision, opts, 1);
+    ptr += geom_toX3D3(exteriorRing, ptr, precision, opts, 1);
     for (i=0; i<nIntRings; i++)
     {
         ptr += sprintf(ptr, " ");
@@ -285,7 +285,7 @@ x3d_3_poly_buf(GEOSGeom poly, char *output, int precision, int opts)
 }
 
     static size_t
-x3d_3_triangle_size(GEOSGeom triangle, int precision, const char *defid)
+x3d_3_triangle_size(const GEOSGeometry *triangle, int precision, const char *defid)
 {
     size_t size;
     size_t defidlen = strlen(defid);
@@ -298,7 +298,7 @@ x3d_3_triangle_size(GEOSGeom triangle, int precision, const char *defid)
 }
 
     static size_t
-x3d_3_triangle_buf(GEOSGeom triangle, char *output, int precision, int opts)
+x3d_3_triangle_buf(const GEOSGeometry *triangle, char *output, int precision, int opts)
 {
     char *ptr=output;
     ptr += geom_toX3D3(triangle, ptr, precision, opts, 1);
@@ -307,7 +307,7 @@ x3d_3_triangle_buf(GEOSGeom triangle, char *output, int precision, int opts)
 }
 
     static char *
-x3d_3_triangle(GEOSGeom triangle, int precision, int opts, const char *defid)
+x3d_3_triangle(const GEOSGeometry *triangle, int precision, int opts, const char *defid)
 {
     char *output;
     int size;
@@ -320,12 +320,12 @@ x3d_3_triangle(GEOSGeom triangle, int precision, int opts, const char *defid)
 
 
 static size_t
-x3d_3_multi_size(GEOSGeom col, int precision, int opts, const char *defid)
+x3d_3_multi_size(const GEOSGeometry *col, int precision, int opts, const char *defid)
 {
     int i, ngeoms = GEOSGetNumGeometries(col);
     size_t size;
     size_t defidlen = strlen(defid);
-    GEOSGeom subgeom;
+    const GEOSGeometry *subgeom;
 
     if ( X3D_USE_GEOCOORDS(opts) )
         size = sizeof("<PointSet><GeoCoordinate geoSystem='\"GD\" \"WE\" \"longitude_first\"' point='' /></PointSet>");
@@ -335,7 +335,7 @@ x3d_3_multi_size(GEOSGeom col, int precision, int opts, const char *defid)
     for (i=0; i<ngeoms; i++)
     {
         int type;
-        subgeom = (GEOSGeom) GEOSGetGeometryN(col, i);
+        subgeom = GEOSGetGeometryN(col, i);
         type = GEOSGeomTypeId(subgeom)+1;
         if (type == wkbPoint_mdb)
         {
@@ -355,7 +355,7 @@ x3d_3_multi_size(GEOSGeom col, int precision, int opts, const char *defid)
 }
 
 static size_t
-x3d_3_multi_buf(GEOSGeom col, char *output, int precision, int opts, const char *defid)
+x3d_3_multi_buf(const GEOSGeometry *col, char *output, int precision, int opts, const char *defid)
 {
     char *ptr, *x3dtype;
     int i;
@@ -364,7 +364,7 @@ x3d_3_multi_buf(GEOSGeom col, char *output, int precision, int opts, const char 
     int dimension= GEOSGeom_getCoordinateDimension(col);
     int type = GEOSGeomTypeId(col)+1;
 
-    GEOSGeom subgeom;
+    const GEOSGeometry *subgeom;
     ptr = output;
     x3dtype="";
 
@@ -384,13 +384,13 @@ x3d_3_multi_buf(GEOSGeom col, char *output, int precision, int opts, const char 
         case wkbMultiLineString_mdb:
             x3dtype = "IndexedLineSet";
             ptr += sprintf(ptr, "<%s %s coordIndex='", x3dtype, defid);
-            ptr += x3d_3_mline_coordindex((GEOSGeom )col, ptr);
+            ptr += x3d_3_mline_coordindex(col, ptr);
             ptr += sprintf(ptr, "'>");
             break;
         case wkbMultiPolygon_mdb:
             x3dtype = "IndexedFaceSet";
             ptr += sprintf(ptr, "<%s %s convex='false' coordIndex='", x3dtype, defid);
-            ptr += x3d_3_mpoly_coordindex((GEOSGeom )col, ptr);
+            ptr += x3d_3_mpoly_coordindex(col, ptr);
             ptr += sprintf(ptr, "'>");
             break;
         default:
@@ -406,7 +406,7 @@ x3d_3_multi_buf(GEOSGeom col, char *output, int precision, int opts, const char 
     for (i=0; i<ngeoms; i++)
     {
         int type;
-        subgeom =  (GEOSGeom ) GEOSGetGeometryN(col, i);
+        subgeom =  GEOSGetGeometryN(col, i);
         type = GEOSGeomTypeId(subgeom)+1;
         if (type == wkbPoint_mdb)
         {
@@ -434,7 +434,7 @@ x3d_3_multi_buf(GEOSGeom col, char *output, int precision, int opts, const char 
 }
 
 static char *
-x3d_3_multi(GEOSGeom col, int precision, int opts, const char *defid)
+x3d_3_multi(const GEOSGeometry *col, int precision, int opts, const char *defid)
 {
     char *x3d;
     size_t size;
@@ -447,32 +447,38 @@ x3d_3_multi(GEOSGeom col, int precision, int opts, const char *defid)
 
 
     static size_t
-x3d_3_psurface_size(GEOSGeom psur, int precision, int opts, const char *defid)
+x3d_3_psurface_size(const GEOSGeometry *psur, int precision, int opts, const char *defid)
 {
     int i, ngeoms = GEOSGetNumGeometries(psur);
     size_t size;
     size_t defidlen = strlen(defid);
+    const GEOSGeometry *geom = NULL;
 
+    if ((GEOSGeomTypeId(psur) + 1) == wkbGeometryCollection_mdb && (geom = GEOSGetGeometryN(psur, 0)) != NULL && (GEOSGeomTypeId(geom)+1) == wkbGeometryCollection_mdb) 
+    	return x3d_3_collection_size(psur, precision, opts, defid);
+    	  
     if ( X3D_USE_GEOCOORDS(opts) ) size = sizeof("<IndexedFaceSet convex='false' coordIndex=''><GeoCoordinate geoSystem='\"GD\" \"WE\" \"longitude_first\"' point='' />") + defidlen;
     else size = sizeof("<IndexedFaceSet convex='false' coordIndex=''><Coordinate point='' />") + defidlen;
 
-
     for (i=0; i<ngeoms; i++)
-    {
-        size += x3d_3_poly_size((GEOSGeom) GEOSGetGeometryN(psur, i), precision, defid)*5;
-    }
+        	size += x3d_3_poly_size(GEOSGetGeometryN(psur, i), precision, defid)*5;
 
     return size;
 }
 
+static size_t x3d_3_collection_buf(const GEOSGeometry *col, char *output, int precision, int opts, const char *defid);
 
 static size_t
-x3d_3_psurface_buf(GEOSGeom psur, char *output, int precision, int opts, const char *defid)
+x3d_3_psurface_buf(const GEOSGeometry *psur, char *output, int precision, int opts, const char *defid)
 {
     char *ptr;
     int i, ngeoms = GEOSGetNumGeometries(psur);
     int j;
-    GEOSGeom geom;
+    const GEOSGeometry *geom = NULL;
+
+    if ((GEOSGeomTypeId(psur) + 1) == wkbGeometryCollection_mdb && (geom = GEOSGetGeometryN(psur, 0)) != NULL && (GEOSGeomTypeId(geom)+1) == wkbGeometryCollection_mdb) 
+    	return x3d_3_collection_buf(psur, output, precision, opts, defid);
+    	  
     ptr = output;
     ptr += sprintf(ptr, "<IndexedFaceSet convex='false' %s coordIndex='",defid);
 
@@ -481,7 +487,7 @@ x3d_3_psurface_buf(GEOSGeom psur, char *output, int precision, int opts, const c
     {
         uint32_t k, npoints = 0;
 	    const GEOSGeometry* ring;
-        geom = (GEOSGeom ) GEOSGetGeometryN(psur, i);
+        geom = GEOSGetGeometryN(psur, i);
         ring = GEOSGetExteriorRing(geom);
         numPointsGeometry(&npoints, ring);
 
@@ -506,7 +512,7 @@ x3d_3_psurface_buf(GEOSGeom psur, char *output, int precision, int opts, const c
 
     for (i=0; i<ngeoms; i++)
     {
-        ptr += x3d_3_poly_buf((GEOSGeom ) GEOSGetGeometryN(psur, i), ptr, precision, opts);
+        ptr += x3d_3_poly_buf(GEOSGetGeometryN(psur, i), ptr, precision, opts);
         if (i < (ngeoms - 1) )
         {
             ptr += sprintf(ptr, " ");
@@ -519,7 +525,7 @@ x3d_3_psurface_buf(GEOSGeom psur, char *output, int precision, int opts, const c
 }
 
 static char *
-x3d_3_psurface(GEOSGeom psur, int precision, int opts, const char *defid)
+x3d_3_psurface(const GEOSGeometry *psur, int precision, int opts, const char *defid)
 {
     char *x3d;
     size_t size;
@@ -532,7 +538,7 @@ x3d_3_psurface(GEOSGeom psur, int precision, int opts, const char *defid)
 
 
     static size_t
-x3d_3_tin_size(GEOSGeom tin, int precision, const char *defid)
+x3d_3_tin_size(const GEOSGeometry *tin, int precision, const char *defid)
 {
     int i, ngeoms = GEOSGetNumGeometries(tin);
     size_t size;
@@ -542,7 +548,7 @@ x3d_3_tin_size(GEOSGeom tin, int precision, const char *defid)
 
     for (i=0; i<ngeoms; i++)
     {
-        size += (x3d_3_triangle_size((GEOSGeom ) GEOSGetGeometryN(tin, i), precision, defid) * 20);
+        size += (x3d_3_triangle_size(GEOSGetGeometryN(tin, i), precision, defid) * 20);
     }
 
     return size;
@@ -550,7 +556,7 @@ x3d_3_tin_size(GEOSGeom tin, int precision, const char *defid)
 
 
 static size_t
-x3d_3_tin_buf(GEOSGeom tin, char *output, int precision, int opts, const char *defid)
+x3d_3_tin_buf(const GEOSGeometry *tin, char *output, int precision, int opts, const char *defid)
 {
     char *ptr;
     int i, ngeoms = GEOSGetNumGeometries(tin);
@@ -575,7 +581,7 @@ x3d_3_tin_buf(GEOSGeom tin, char *output, int precision, int opts, const char *d
 
     for (i=0; i<ngeoms; i++)
     {
-        ptr += x3d_3_triangle_buf((GEOSGeom ) GEOSGetGeometryN(tin, i), ptr, precision,
+        ptr += x3d_3_triangle_buf( GEOSGetGeometryN(tin, i), ptr, precision,
                 opts);
         if (i < (ngeoms - 1) )
         {
@@ -589,7 +595,7 @@ x3d_3_tin_buf(GEOSGeom tin, char *output, int precision, int opts, const char *d
 }
 
 static char *
-x3d_3_tin(GEOSGeom tin, int precision, int opts, const char *defid)
+x3d_3_tin(const GEOSGeometry *tin, int precision, int opts, const char *defid)
 {
     char *x3d;
     size_t size;
@@ -601,7 +607,7 @@ x3d_3_tin(GEOSGeom tin, int precision, int opts, const char *defid)
 }
 
 static size_t
-x3d_3_collection_size(GEOSGeom col, int precision, int opts, const char *defid)
+x3d_3_collection_size(const GEOSGeometry *col, int precision, int opts, const char *defid)
 {
     int i, ngeoms = GEOSGetNumGeometries(col);
     size_t size;
@@ -611,7 +617,7 @@ x3d_3_collection_size(GEOSGeom col, int precision, int opts, const char *defid)
     size = defidlen*2;
     for (i=0; i<ngeoms; i++)
     {
-        GEOSGeom subgeom = (GEOSGeom) GEOSGetGeometryN(col, i);
+        const GEOSGeometry *subgeom = GEOSGetGeometryN(col, i);
         size += ( sizeof("<Shape />") + defidlen ) * 2;
         switch (type) {
             case ( wkbPoint_mdb ):
@@ -631,7 +637,8 @@ x3d_3_collection_size(GEOSGeom col, int precision, int opts, const char *defid)
                 break;
             case ( wkbGeometryCollection_mdb ):
             case ( wkbMultiPolygon_mdb ):
-                size += x3d_3_multi_size(subgeom, precision, opts, defid);
+                //size += x3d_3_multi_size(subgeom, precision, opts, defid);
+                size += x3d_3_psurface_size(subgeom, precision, opts, defid);
                 break;
             default:
                 assert(0);
@@ -643,18 +650,18 @@ x3d_3_collection_size(GEOSGeom col, int precision, int opts, const char *defid)
 }
 
 static size_t
-x3d_3_collection_buf(GEOSGeom col, char *output, int precision, int opts, const char *defid)
+x3d_3_collection_buf(const GEOSGeometry *col, char *output, int precision, int opts, const char *defid)
 {
     char *ptr;
     int i, ngeoms = GEOSGetNumGeometries(col);
-    GEOSGeom subgeom;
+    const GEOSGeometry *subgeom;
     int type = GEOSGeomTypeId(col)+1;
 
     ptr = output;
 
     for (i=0; i<ngeoms; i++)
     {
-        subgeom = (GEOSGeom ) GEOSGetGeometryN(col, i);
+        subgeom = GEOSGetGeometryN(col, i);
         ptr += sprintf(ptr, "<Shape%s>", defid);
         switch (type) {
             case ( wkbPoint_mdb ):
@@ -673,7 +680,8 @@ x3d_3_collection_buf(GEOSGeom col, char *output, int precision, int opts, const 
                 ptr += x3d_3_psurface_buf(subgeom, ptr, precision, opts,  defid);
                 break;
             case ( wkbGeometryCollection_mdb ):
-                ptr += x3d_3_collection_buf(subgeom, ptr, precision, opts, defid);
+                //ptr += x3d_3_collection_buf(subgeom, ptr, precision, opts, defid);
+                ptr += x3d_3_psurface_buf(subgeom, ptr, precision, opts,  defid);
                 break;
             case wkbMultiPolygon_mdb:
                 ptr += x3d_3_multi_buf(subgeom, ptr, precision, opts, defid);
@@ -689,7 +697,7 @@ x3d_3_collection_buf(GEOSGeom col, char *output, int precision, int opts, const 
 }
 
 static char *
-x3d_3_collection(GEOSGeom col, int precision, int opts, const char *defid)
+x3d_3_collection(const GEOSGeometry *col, int precision, int opts, const char *defid)
 {
     char *x3d;
     size_t size;
