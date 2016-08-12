@@ -2637,7 +2637,6 @@ mapi_reconnect(Mapi mid)
 			*hash = '\0';
 			rest = hash + 1;
 		}
-
 #ifdef HAVE_LIBSNAPPY
 		if (strstr(hashes, "PROT10COMPR")) {
 			// both server and client support compressed protocol 10; use compressed version 
@@ -4876,7 +4875,9 @@ MapiMsg
 mapi_seek_row(MapiHdl hdl, mapi_int64 rownr, int whence)
 {
 	struct MapiResultSet *result;
-
+	if (hdl->mid->protocol != prot9) {
+		return 0;
+	}
 	mapi_hdl_check(hdl, "mapi_seek_row");
 	result = hdl->result;
 	switch (whence) {
