@@ -25,7 +25,7 @@
 #include "mal.h"		/* for have_hge */
 #endif
 
-#define check_card(card,f) ((card == card_none && !f->res) || (card != card_none && f->res) || card == card_loader)
+#define check_card(card,f) ((card == card_none && !f->res) || (card != card_none && (f->res || f->func->type == F_FILT)) || card == card_loader)
 
 static void
 rel_setsubquery(sql_rel*r)
@@ -1739,6 +1739,94 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 	return rel_compare_exp(sql, rel, ls, rs, compare_op, rs2, k.reduce);
 }
 
+static sql_exp*
+_rel_nop( mvc *sql, sql_schema *s, char *fname, list *tl, list *exps, sql_subtype *obj_type, int nr_args, exp_kind ek)
+{
+	sql_subfunc *f = NULL;
+	int table_func = (ek.card == card_relation);
+	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
+		   ((ek.card == card_relation)?F_UNION:F_FUNC));
+	int filt = (type == F_FUNC)?F_FILT:type;
+
+	f = bind_func_(sql, s, fname, tl, type);
+	if (f) {
+		return exp_op(sql->sa, exps, f);
+	} else if (obj_type && (f = bind_member_func(sql, s, fname, obj_type, nr_args, NULL)) != NULL) { 
+		sql_subfunc *prev = NULL;
+		node *n, *m;
+		list *nexps;
+
+		while((f = bind_member_func(sql, s, fname, obj_type, nr_args, prev)) != NULL) { 
+			prev = f;
+			if (f->func->type != type && f->func->type != filt)
+				continue;
+			if (f->func->vararg) 
+				return exp_op(sql->sa, exps, f);
+	       		nexps = new_exp_list(sql->sa);
+			for (n = exps->h, m = f->func->ops->h; n && m;
+				  	n = n->next, m = m->next) {
+				sql_arg *a = m->data;
+				sql_exp *e = n->data;
+
+				if (a->type.type->eclass == EC_ANY) {
+					sql_subtype *st = &e->tpe;
+					sql_init_subtype(&a->type, st->type, st->digits, st->scale);
+				}
+				e = rel_check_type(sql, &a->type, e, type_equal);
+				if (!e) {
+					nexps = NULL;
+					break;
+				}
+				if (table_func && e->card > CARD_ATOM) {
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+
+					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+				}
+				append(nexps, e);
+			}
+			if (nexps) 
+				return exp_op(sql->sa, nexps, f);
+		}
+	} else if ((f = find_func(sql, s, fname, nr_args, type, NULL)) != NULL) {
+		sql_subfunc *prev = NULL;
+		node *n, *m;
+		list *nexps;
+
+		while((f = find_func(sql, s, fname, nr_args, type, prev)) != NULL) { 
+			prev = f;
+			if (f->func->type != type && f->func->type != filt)
+				continue;
+			if (f->func->vararg) 
+				return exp_op(sql->sa, exps, f);
+	       		nexps = new_exp_list(sql->sa);
+			for (n = exps->h, m = f->func->ops->h; n && m;
+			  	n = n->next, m = m->next) {
+				sql_arg *a = m->data;
+				sql_exp *e = n->data;
+
+				if (a->type.type->eclass == EC_ANY) {
+					sql_subtype *st = &e->tpe;
+					sql_init_subtype(&a->type, st->type, st->digits, st->scale);
+				}
+				e = rel_check_type(sql, &a->type, e, type_equal);
+				if (!e) {
+					nexps = NULL;
+					break;
+				}
+				if (table_func && e->card > CARD_ATOM) {
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+	
+					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+				}
+				append(nexps, e);
+			}
+			if (nexps) 
+				return exp_op(sql->sa, nexps, f);
+		}
+	}
+	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+}
+
 sql_exp *
 rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 {
@@ -1766,6 +1854,48 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			return rel_binop_(sql, ls, rs, NULL, "or", card_value);
 		else
 			return rel_binop_(sql, ls, rs, NULL, "and", card_value);
+	}
+	case SQL_FILTER:
+		/* [ x,..] filter [ y,..] */
+		/* todo add anti, [ x,..] not filter [ y,...] */
+		/* no correlation */
+	{
+		dnode *ln = sc->data.lval->h->data.lval->h;
+		dnode *rn = sc->data.lval->h->next->next->data.lval->h;
+		dlist *filter_op = sc->data.lval->h->next->data.lval;
+		char *fname = qname_fname(filter_op);
+		char *sname = qname_schema(filter_op);
+		list *exps, *tl;
+		sql_schema *s = sql->session->schema;
+		sql_subtype *obj_type = NULL;
+
+		if (sname)
+			s = mvc_bind_schema(sql, sname);
+
+		exps = sa_list(sql->sa);
+		tl = sa_list(sql->sa);
+		for (; ln; ln = ln->next) {
+			symbol *sym = ln->data.sym;
+
+			sql_exp *e = rel_value_exp(sql, rel, sym, f, ek);
+			if (!e)
+				return NULL;
+			if (!obj_type)
+				obj_type = exp_subtype(e);
+			list_append(exps, e);
+			append(tl, exp_subtype(e));
+		}
+		for (; rn; rn = rn->next) {
+			symbol *sym = rn->data.sym;
+
+			sql_exp *e = rel_value_exp(sql, rel, sym, f, ek);
+			if (!e)
+				return NULL;
+			list_append(exps, e);
+			append(tl, exp_subtype(e));
+		}
+		/* find the predicate filter function */
+		return _rel_nop(sql, s, fname, tl, exps, obj_type, list_length(exps), ek);
 	}
 	case SQL_COMPARE:
 	{
@@ -3064,6 +3194,7 @@ rel_nop_(mvc *sql, sql_exp *a1, sql_exp *a2, sql_exp *a3, sql_exp *a4, sql_schem
 	return exp_op4(sql->sa, a1,a2,a3,a4,f);
 }
 
+
 static sql_exp *
 rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 {
@@ -3078,9 +3209,6 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
-	int table_func = (ek.card == card_relation);
-	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
-		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
 	for (; ops; ops = ops->next, nr_args++) {
 		sql_exp *e = rel_value_exp(sql, rel, ops->data.sym, fs, iek);
@@ -3101,84 +3229,8 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	f = find_func(sql, s, fname, nr_args, F_AGGR, NULL);
 	if (f)
 		return _rel_aggr(sql, rel, 0, s, fname, l->next->data.lval->h, fs);
+	return _rel_nop(sql, s, fname, tl, exps, obj_type, nr_args, ek);
 
-	f = bind_func_(sql, s, fname, tl, type);
-	if (f) {
-		return exp_op(sql->sa, exps, f);
-	} else if ((f = bind_member_func(sql, s, fname, obj_type, nr_args, NULL)) != NULL) { 
-		sql_subfunc *prev = NULL;
-		node *n, *m;
-		list *nexps;
-
-		while((f = bind_member_func(sql, s, fname, obj_type, nr_args, prev)) != NULL) { 
-			prev = f;
-			if (f->func->type != type)
-				continue;
-			if (f->func->vararg) 
-				return exp_op(sql->sa, exps, f);
-	       		nexps = new_exp_list(sql->sa);
-			for (n = exps->h, m = f->func->ops->h; n && m;
-				  	n = n->next, m = m->next) {
-				sql_arg *a = m->data;
-				sql_exp *e = n->data;
-
-				if (a->type.type->eclass == EC_ANY) {
-					sql_subtype *st = &e->tpe;
-					sql_init_subtype(&a->type, st->type, st->digits, st->scale);
-				}
-				e = rel_check_type(sql, &a->type, e, type_equal);
-				if (!e) {
-					nexps = NULL;
-					break;
-				}
-				if (table_func && e->card > CARD_ATOM) {
-					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
-
-					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
-				}
-				append(nexps, e);
-			}
-			if (nexps) 
-				return exp_op(sql->sa, nexps, f);
-		}
-	} else if ((f = find_func(sql, s, fname, nr_args, type, NULL)) != NULL) {
-		sql_subfunc *prev = NULL;
-		node *n, *m;
-		list *nexps;
-
-		while((f = find_func(sql, s, fname, nr_args, type, prev)) != NULL) { 
-			prev = f;
-			if (f->func->type != type)
-				continue;
-			if (f->func->vararg) 
-				return exp_op(sql->sa, exps, f);
-	       		nexps = new_exp_list(sql->sa);
-			for (n = exps->h, m = f->func->ops->h; n && m;
-			  	n = n->next, m = m->next) {
-				sql_arg *a = m->data;
-				sql_exp *e = n->data;
-
-				if (a->type.type->eclass == EC_ANY) {
-					sql_subtype *st = &e->tpe;
-					sql_init_subtype(&a->type, st->type, st->digits, st->scale);
-				}
-				e = rel_check_type(sql, &a->type, e, type_equal);
-				if (!e) {
-					nexps = NULL;
-					break;
-				}
-				if (table_func && e->card > CARD_ATOM) {
-					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
-	
-					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
-				}
-				append(nexps, e);
-			}
-			if (nexps) 
-				return exp_op(sql->sa, nexps, f);
-		}
-	}
-	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }
 
 static sql_exp *

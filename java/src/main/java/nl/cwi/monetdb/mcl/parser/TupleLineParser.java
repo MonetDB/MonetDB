@@ -134,13 +134,15 @@ public class TupleLineParser extends MCLParser {
 												try {
 													uesc.append((char)(Integer.parseInt("" + chrLine[pos] + chrLine[pos + 1] + chrLine[pos + 2], 8)));
 													pos += 2;
-													break;
 												} catch (NumberFormatException e) {
 													// hmmm, this point should never be reached actually...
 													throw new AssertionError("Flow error, should never try to parse non-number");
 												}
+											} else {
+												// do default action if number seems not to be correct
+												uesc.append(chrLine[pos]);
 											}
-											// do default action if number seems not to be correct
+										break;
 										default:
 											// this is wrong, just ignore the escape, and print the char
 											uesc.append(chrLine[pos]);
