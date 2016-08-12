@@ -6088,7 +6088,7 @@ wkbDistanceXYZ(double *out, wkb **geomWKB_a, dbl *x, dbl *y, dbl *z, int *srid)
 
     /*Build Geometry b*/
 	if (*x == dbl_nil || *y == dbl_nil || *z == dbl_nil) {
-		*out = bit_nil;
+		*out = dbl_nil;
 		return MAL_SUCCEED;
 	}
 
