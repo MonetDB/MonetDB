@@ -5520,9 +5520,11 @@ mapi_fetch_row(MapiHdl hdl)
 		result = hdl->result;
 		// check if we have read the entire result set
 		if (result->rows_read >= result->row_count) {
+			char dummy;
 			hdl->mid->active = NULL;
 			hdl->active = NULL;
 			bs2_resetbuf(hdl->mid->from);
+			mnstr_readChr(hdl->mid->from, &dummy);
 			return 0;
 		}
 		// if not, check if our cache is empty
