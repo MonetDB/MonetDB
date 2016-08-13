@@ -82,6 +82,7 @@ typedef struct MOSAICHEADER{
 	int dictsize;		// used by dictionary compression, it is a small table
 	int framesize;		// used by frame compression, it is a small table
 	union{
+		bte valbte[256];
 		sht valsht[256];
 		int valint[256];
 		lng vallng[256];
@@ -94,6 +95,7 @@ typedef struct MOSAICHEADER{
 	}dict;
 	lng dictfreq[256];// keep track on their use
 	union{
+		bte valbte[256];
 		sht valsht[256];
 		int valint[256];
 		lng vallng[256];
