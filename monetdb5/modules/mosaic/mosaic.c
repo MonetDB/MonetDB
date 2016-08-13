@@ -426,8 +426,10 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, int debug)
 		BBPunfix(bsrc->batCacheid);
 		throw(MAL, "mosaic.compress", "Can not claim server");
 	}
-	MOScreateframeDictionary(cntxt,task);
-	MOScreatedictionary(cntxt,task);
+	if( task->filter[MOSAIC_FRAME])
+		MOScreateframeDictionary(cntxt,task);
+	if( task->filter[MOSAIC_DICT])
+		MOScreatedictionary(cntxt,task);
 	// always start with an EOL block
 	MOSsetTag(task->blk,MOSAIC_EOL);
 
