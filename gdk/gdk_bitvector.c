@@ -42,7 +42,7 @@ void initBitMasks(void)
 size_t
 getBitVectorSize(const BUN cnt, const int width)
 {
-	lng size;
+	size_t size;
 	size = ((cnt * width) / BITS + ((cnt * width) % BITS ) > 0) * sizeof(unsigned int);
 	return size;
 }
