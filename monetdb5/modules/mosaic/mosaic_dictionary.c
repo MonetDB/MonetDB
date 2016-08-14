@@ -203,7 +203,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 // Create a larger dictionary buffer then we allow for in the mosaic header first
 // Store the most frequent ones in the compressed heap header directly based on estimated savings
 // Improve by using binary search rather then linear scan
-#define TMPDICT 256
+#define TMPDICT 16*256
 
 #define makeDict(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start,v,w;\
@@ -234,12 +234,12 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 } }
 
 
-/* take a larger sample before fixing the dictionary */
+/* Take a larger sample before fixing the dictionary */
 void
 MOScreatedictionary(Client cntxt, MOStask task)
 {
 	BUN i;
-	int j;
+	int j, k, max;
 	MosaicHdr hdr = task->hdr;
     union{
         bte valbte[TMPDICT];
@@ -254,11 +254,13 @@ MOScreatedictionary(Client cntxt, MOStask task)
 #endif
     }dict;
 	lng cnt[TMPDICT];
+	bte keep[TMPDICT];
 	int dictsize = 0;
 
 	(void) cntxt;
 	memset((char*) &dict, 0, TMPDICT * sizeof(lng));
 	memset((char*) cnt, 0, sizeof(cnt));
+	memset((char*) keep, 0, sizeof(keep));
 
 	hdr->dictsize = dictsize;
 	switch(ATOMbasetype(task->type)){
@@ -314,10 +316,35 @@ MOScreatedictionary(Client cntxt, MOStask task)
 	}
 	/* find the 256 most frequent values and save them in the mosaic header */
 	if( dictsize < 256){
+#ifdef HAVE_HGE
+		memcpy((char*)&task->hdr->dict,  (char*)&dict, dictsize * sizeof(hge));
+#else
 		memcpy((char*)&task->hdr->dict,  (char*)&dict, dictsize * sizeof(lng));
+#endif
 		memcpy((char*)task->hdr->dictfreq,  (char*)&cnt, dictsize * sizeof(lng));
 		hdr->dictsize = dictsize;
 	} else {
+		/* brute force search of the top-k */
+		for(j=0; j< 256; j++){
+			for(max = 0; max <dictsize && keep[max]; max++){}
+			for(k=0; k< dictsize; k++)
+			if( keep[k]==0){
+				if( cnt[k]> cnt[max]) max = k;
+			}
+			keep[max]=1;
+		}
+		/* keep the top-k, in order */
+		for( j=k=0; k<dictsize; k++)
+		if( keep[k]){
+#ifdef HAVE_HGE
+			task->hdr->dict.valhge[j] = dict.valhge[k];
+#else
+			task->hdr->dict.vallng[j] = dict.vallng[k];
+#endif
+			task->hdr->dictfreq[j] = cnt[k];
+		}
+		hdr->dictsize = j;
+		assert(j<256);
 	}
 	/* calculate the bit-width */
 	hdr->bits = 1;
