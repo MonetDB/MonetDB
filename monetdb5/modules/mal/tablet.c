@@ -59,7 +59,7 @@ void_bat_create(int adt, BUN nr)
 
 	/* check for correct structures */
 	if (b == NULL)
-		return b;
+		return NULL;
 	if (BATmirror(b))
 		BATseqbase(b, 0);
 	BATsetaccess(b, BAT_APPEND);
@@ -207,13 +207,13 @@ TABLETcreate_bats(Tablet *as, BUN est)
 		if (fmt[i].skip)
 			continue;
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
-		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
 			for (j = 0; j < i; j++)
 				if (!fmt[i].skip)
 					BBPdecref(fmt[j].c->batCacheid, FALSE);
 			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", as->nr);
 		}
+		fmt[i].ci = bat_iterator(fmt[i].c);
 	}
 	return MAL_SUCCEED;
 }
@@ -1588,13 +1588,9 @@ create_rejects_table(Client cntxt)
 	MT_lock_set(&mal_contextLock);
 	if (cntxt->error_row == NULL) {
 		cntxt->error_row = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-		BATseqbase(cntxt->error_row, 0);
 		cntxt->error_fld = BATnew(TYPE_void, TYPE_int, 0, TRANSIENT);
-		BATseqbase(cntxt->error_fld, 0);
 		cntxt->error_msg = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-		BATseqbase(cntxt->error_msg, 0);
 		cntxt->error_input = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-		BATseqbase(cntxt->error_input, 0);
 		if (cntxt->error_row == NULL || cntxt->error_fld == NULL || cntxt->error_msg == NULL || cntxt->error_input == NULL) {
 			if (cntxt->error_row)
 				BBPunfix(cntxt->error_row->batCacheid);
@@ -1605,6 +1601,10 @@ create_rejects_table(Client cntxt)
 			if (cntxt->error_input)
 				BBPunfix(cntxt->error_input->batCacheid);
 		} else {
+			BATseqbase(cntxt->error_row, 0);
+			BATseqbase(cntxt->error_fld, 0);
+			BATseqbase(cntxt->error_msg, 0);
+			BATseqbase(cntxt->error_input, 0);
 			BBPkeepref(cntxt->error_row->batCacheid);
 			BBPkeepref(cntxt->error_fld->batCacheid);
 			BBPkeepref(cntxt->error_msg->batCacheid);
