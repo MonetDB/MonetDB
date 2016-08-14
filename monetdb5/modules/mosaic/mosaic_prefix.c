@@ -223,7 +223,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			// all are the same?
 			if ( i == limit -1)
 				break;
-			Prefix(bits, mask, val, val2, 8);
+			Prefix(prefixbits, mask, val, val2, 8);
 			if( prefixbits == 0)
 				break;
 
@@ -301,7 +301,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			}
 			if ( i == limit-1)
 				break;
-			Prefix(bits, mask, val, val2, 32);
+			Prefix(prefixbits, mask, val, val2, 32);
 			if( prefixbits == 0)
 				break;
 
