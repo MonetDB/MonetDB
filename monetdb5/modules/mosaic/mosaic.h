@@ -37,7 +37,7 @@
 #define MOSAIC_THRESHOLD 1
 
 /* The compressor kinds currently hardwired */
-#define MOSAIC_METHODS	8
+#define MOSAIC_METHODS	9
 #define MOSAIC_NONE     0		// no compression at all
 #define MOSAIC_RLE      1		// use run-length encoding
 #define MOSAIC_DICT     2		// local dictionary encoding
@@ -45,7 +45,8 @@
 #define MOSAIC_LINEAR 	4		// use an encoding for a linear sequence
 #define MOSAIC_FRAME	5		// delta dictionary for frame of reference value
 #define MOSAIC_PREFIX	6		// prefix/postfix bitwise compression
-#define MOSAIC_EOL		7		// marker for the last block
+#define MOSAIC_CALENDAR	7		// compression of temporal elements
+#define MOSAIC_EOL		8		// marker for the last block
 
 //Compression should have a significant reduction to apply.
 #define COMPRESS_THRESHOLD 50   //percent
