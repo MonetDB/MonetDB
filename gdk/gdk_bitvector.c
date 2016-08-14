@@ -68,7 +68,7 @@ getBitVector(BitVector vector, BUN i, int bits)
 	shift = ( i * bits) % BITS;
 
 	if( bits == 1){
-		value = (vector[cid]  & (1 << shift));
+		value = (vector[cid]  & (1 << shift)) >>shift;
 		return value;
 	}
 
