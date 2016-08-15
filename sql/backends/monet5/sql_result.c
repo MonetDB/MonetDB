@@ -2150,7 +2150,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			assert(mhapi__query_result__get_packed_size(&msg) <= bsize);
 			assert(bs2_buffer(s).pos == 0);
 			bs2_setpos(s, mhapi__query_result__pack(&msg, (uint8_t*) bs2_buffer(s).buf));
-			mnstr_flush(s);
+			if (mnstr_flush(s) < 0) {
+				fprintf(stderr, "Failed to flush.\n");
+				fres = -1;
+				goto cleanup;
+			}
 // TODO: free columns
 			srow = row;
 

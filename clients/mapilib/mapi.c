@@ -5605,7 +5605,7 @@ mapi_fetch_row(MapiHdl hdl)
 				result->tuple_count += res->row_count;
 				result->rows_read++;
 				if(hdl->mid->protobuf_res) {
-					mhapi__query_result__free_unpacked(NULL, hdl->mid->protobuf_res);
+					mhapi__query_result__free_unpacked(hdl->mid->protobuf_res, NULL);
 				}
 				hdl->mid->protobuf_res = (void*) res;
 				return result->fieldcnt;
