@@ -31,9 +31,9 @@ lib_stream  =  {
 		   $(LTLIBICONV)
 }
 
-lib_stream_protobuf = {
+lib_protobuf = {
 	COND = HAVE_LIBPROTOBUF
-	SOURCES = mhapi.pb-c.h mhapi.pb-c.c
+	SOURCES = mhapi.c mhapi.h
 	VERSION = 42
 	LIBS =  $(protobuf_LIBS)
 }

@@ -53,7 +53,7 @@ lib__sql = {
  		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
-		   ../../../common/stream/libstream_protobuf \
+		   ../../../common/stream/libprotobuf \
 		   ../../../common/utils/libmcrypt \
 		   $(PTHREAD_LIBS) \
 		   $(protobuf_LIBS) \

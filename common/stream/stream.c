@@ -4457,7 +4457,7 @@ bs2_buffer(stream *ss) {
 	assert(ss->read == bs2_read);
 	b.buf = s->buf;
 	b.pos = s->nr;
-	b.len = s->bufsiz;
+	b.len = s->itotal;
 	return b;
 }
 

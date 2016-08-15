@@ -13,7 +13,7 @@ lib_mapi = {
 	VERSION = $(MAPI_VERSION)
 	SOURCES = mapi.c mapi.rc
 	LIBS = $(SOCKET_LIBS) ../../common/stream/libstream \
-		../../common/stream/libstream_protobuf \
+		../../common/stream/libprotobuf \
 		../../common/options/libmoptions \
 		../../common/utils/libmcrypt $(openssl_LIBS) $(pfor_LIBS) $(protobuf_LIBS)
 }

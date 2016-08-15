@@ -1868,7 +1868,7 @@ static int write_str_term(stream* s, str val) {
 }
 
 #ifdef HAVE_LIBPROTOBUF
-#include <mhapi.pb-c.h>
+#include <mhapi.h>
 #endif
 
 static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize) {
@@ -2098,16 +2098,17 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			mhapi__query_result__init(&msg);
 			msg.row_count = (int64_t)(row - srow);
 			msg.n_columns = t->nr_cols;
-			msg.columns = malloc(sizeof(Mhapi__QueryResult__Column)*t->nr_cols);
-			if (!msg.columns) {
-				// TODO complain
-			}
+			msg.columns = malloc(sizeof(Mhapi__QueryResult__Column*)*t->nr_cols);
+			assert(msg.columns);
+
 			for (i = 0; i < (size_t) t->nr_cols; i++) {
 				res_col *c = t->cols + i;
-				int local_type = c->type.type->localtype;
+				int local_type = ATOMstorage(c->type.type->localtype);
 
-
+				msg.columns[i] = malloc(sizeof(Mhapi__QueryResult__Column));
+				assert(msg.columns[i]);
 				Mhapi__QueryResult__Column *col = msg.columns[i];
+
 				mhapi__query_result__column__init(col);
 				if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
 					local_type = TYPE_dbl;
@@ -2116,9 +2117,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				case TYPE_str:
 				{
 					col->string_values = malloc(msg.row_count * sizeof(char*));
-					if (!col->string_values) {
-						//TODO complain
-					}
+					assert(col->string_values);
 					col->n_string_values = msg.row_count;
 					for (crow = srow; crow < row; crow++) {
 						col->string_values[crow-srow] = (char*) BUNtail(iterators[i], crow);
@@ -2144,15 +2143,15 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					break;
 				}
 				default:
-					// TODO: complain
+					assert(0);
 					break;
 				}
 			}
-			assert(mhapi__query_result__get_packed_size(&msg) <= bs2_buffer(s).len);
+			assert(mhapi__query_result__get_packed_size(&msg) <= bsize);
 			assert(bs2_buffer(s).pos == 0);
 			bs2_setpos(s, mhapi__query_result__pack(&msg, (uint8_t*) bs2_buffer(s).buf));
 			mnstr_flush(s);
-
+// TODO: free columns
 			srow = row;
 
 			continue;

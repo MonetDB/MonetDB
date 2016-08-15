@@ -5534,7 +5534,7 @@ mapi_split_line(MapiHdl hdl)
 }
 
 #ifdef HAVE_LIBPROTOBUF
-#include <mhapi.pb-c.h>
+#include <mhapi.h>
 #endif
 
 int
@@ -5577,11 +5577,16 @@ mapi_fetch_row(MapiHdl hdl)
 
 
 			if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF) {
-				buffer buf = bs2_buffer(hdl->mid->from);
+				char dummy;
+				buffer buf;
 #ifndef HAVE_LIBPROTOBUF
 				// TODO: complain
 #else
-				Mhapi__QueryResult *res = mhapi__query_result__unpack(NULL, buf.pos, (const uint8_t *) buf.buf);
+				bs2_resetbuf(hdl->mid->from);
+				mnstr_readChr(hdl->mid->from, &dummy);
+				buf =  bs2_buffer(hdl->mid->from);
+				Mhapi__QueryResult *res = mhapi__query_result__unpack(NULL, buf.len + buf.pos, (const uint8_t *) buf.buf);
+				assert(res);
 				assert(res->row_count <= result->row_count);
 				assert(res->n_columns == (size_t) result->fieldcnt);
 
@@ -5600,7 +5605,7 @@ mapi_fetch_row(MapiHdl hdl)
 				result->tuple_count += res->row_count;
 				result->rows_read++;
 				if(hdl->mid->protobuf_res) {
-					free(hdl->mid->protobuf_res);
+					mhapi__query_result__free_unpacked(NULL, hdl->mid->protobuf_res);
 				}
 				hdl->mid->protobuf_res = (void*) res;
 				return result->fieldcnt;

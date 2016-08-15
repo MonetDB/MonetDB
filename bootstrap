@@ -61,4 +61,4 @@ if [ -f buildtools/conf/install-sh -a ! -x buildtools/conf/install-sh ]; then
 fi
 
 
-protoc-c common/stream/mhapi.proto --c_out .
+# protoc-c common/stream/mhapi.proto --c_out .
