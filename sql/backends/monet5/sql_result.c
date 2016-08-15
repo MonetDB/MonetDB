@@ -1867,6 +1867,10 @@ static int write_str_term(stream* s, str val) {
 	return 	mnstr_writeStr(s, val) && mnstr_writeBte(s, 0);
 }
 
+#ifdef HAVE_LIBPROTOBUF
+#include <mhapi.pb-c.h>
+#endif
+
 static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize) {
 	BAT *order;
 	lng count;
@@ -2084,6 +2088,76 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 #endif
 
 		assert(bs2_buffer(s).pos == 0);
+
+		if (colcomp == COLUMN_COMPRESSION_PROTOBUF) {
+#ifndef HAVE_LIBPROTOBUF
+			fprintf(stderr, "Can't use protobuf stuff.\n");
+			goto cleanup;
+#else
+			Mhapi__QueryResult msg;
+			mhapi__query_result__init(&msg);
+			msg.row_count = (int64_t)(row - srow);
+			msg.n_columns = t->nr_cols;
+			msg.columns = malloc(sizeof(Mhapi__QueryResult__Column)*t->nr_cols);
+			if (!msg.columns) {
+				// TODO complain
+			}
+			for (i = 0; i < (size_t) t->nr_cols; i++) {
+				res_col *c = t->cols + i;
+				int local_type = c->type.type->localtype;
+
+
+				Mhapi__QueryResult__Column *col = msg.columns[i];
+				mhapi__query_result__column__init(col);
+				if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
+					local_type = TYPE_dbl;
+				}
+				switch (local_type) {
+				case TYPE_str:
+				{
+					col->string_values = malloc(msg.row_count * sizeof(char*));
+					if (!col->string_values) {
+						//TODO complain
+					}
+					col->n_string_values = msg.row_count;
+					for (crow = srow; crow < row; crow++) {
+						col->string_values[crow-srow] = (char*) BUNtail(iterators[i], crow);
+					}
+					break;
+				}
+				case TYPE_int:
+				{
+					col->n_int32_values = msg.row_count;
+					col->int32_values = (int32_t*) Tloc(iterators[i].b, srow);
+					break;
+				}
+				case TYPE_lng:
+				{
+					col->n_int64_values = msg.row_count;
+					col->int64_values = (int64_t*) Tloc(iterators[i].b, srow);
+					break;
+				}
+				case TYPE_dbl:
+				{
+					col->n_double_values = msg.row_count;
+					col->double_values = (double*) Tloc(iterators[i].b, srow);
+					break;
+				}
+				default:
+					// TODO: complain
+					break;
+				}
+			}
+			assert(mhapi__query_result__get_packed_size(&msg) <= bs2_buffer(s).len);
+			assert(bs2_buffer(s).pos == 0);
+			bs2_setpos(s, mhapi__query_result__pack(&msg, (uint8_t*) bs2_buffer(s).buf));
+			mnstr_flush(s);
+
+			srow = row;
+
+			continue;
+#endif
+		}
 
 		if (!mnstr_writeLng(s, (lng)(row - srow))) {
 			fres = -1;

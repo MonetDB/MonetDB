@@ -913,6 +913,7 @@ struct MapiStruct {
 	compression_method comp;
 	column_compression colcomp;
 	size_t blocksize;
+	void* protobuf_res;
 
 	int trace;		/* Trace Mapi interaction */
 	int auto_commit;
@@ -952,6 +953,8 @@ struct MapiResultSet {
 	struct MapiRowBuf cache;
 	int commentonly;	/* only comments seen so far */
 	mapi_int64 rows_read;
+	mapi_int64 cur_row;
+
 };
 
 struct MapiStatement {
@@ -1905,6 +1908,7 @@ mapi_new(void)
 	mid->protocol = protauto;
 	mid->colcomp = COLUMN_COMPRESSION_AUTO;
 	mid->blocksize = 128 * BLOCK; // 1 MB
+	mid->protobuf_res = NULL;
 
 	mid->cachelimit = 100;
 	mid->redircnt = 0;
@@ -2796,11 +2800,7 @@ mapi_reconnect(Mapi mid)
 				     mid->database == NULL ? "" : mid->database,
 				     prot_version == prot10 ? "PROT10" : "PROT10COMPR",
 				     comp == COMPRESSION_SNAPPY ? "SNAPPY" : (comp == COMPRESSION_LZ4 ? "LZ4" : ""),
-#ifdef HAVE_PFOR
-				     mid->colcomp == COLUMN_COMPRESSION_PFOR ? ",HAVEPFOR" : "",
-#else
-				     "",
-#endif
+				     mid->colcomp == COLUMN_COMPRESSION_PFOR ? ",HAVEPFOR" :    (mid->colcomp == COLUMN_COMPRESSION_PROTOBUF ? ",PROTOBUF" : ""),
 				    mid->blocksize);
 			} else {
 				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
@@ -4236,7 +4236,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			result->querytype = Q_TABLE;
 			result->tuple_count = 0;
 			result->rows_read = 0;
-
+			result->cur_row = 0;
 
 			for (i = 0; i < nr_cols; i++) {
 				lng col_info_length;
@@ -5533,6 +5533,10 @@ mapi_split_line(MapiHdl hdl)
 	return n;
 }
 
+#ifdef HAVE_LIBPROTOBUF
+#include <mhapi.pb-c.h>
+#endif
+
 int
 mapi_fetch_row(MapiHdl hdl)
 {
@@ -5558,6 +5562,8 @@ mapi_fetch_row(MapiHdl hdl)
 		if (result->rows_read >= result->tuple_count) {
 			// if our cache is empty, we read data from the socket
 			lng nrows = 0;
+			result->cur_row = 1;
+
 			// first we write a prompt to the server indicating that we want another block of the result set
 
 #ifdef CONTINUATION_MESSAGE
@@ -5569,8 +5575,39 @@ mapi_fetch_row(MapiHdl hdl)
 			}
 #endif
 
+
+			if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF) {
+				buffer buf = bs2_buffer(hdl->mid->from);
+#ifndef HAVE_LIBPROTOBUF
+				// TODO: complain
+#else
+				Mhapi__QueryResult *res = mhapi__query_result__unpack(NULL, buf.pos, (const uint8_t *) buf.buf);
+				assert(res->row_count <= result->row_count);
+				assert(res->n_columns == (size_t) result->fieldcnt);
+
+				for (i = 0; i < (size_t) result->fieldcnt; i++) {
+					Mhapi__QueryResult__Column *c = res->columns[i];
+					if (c->n_double_values > 0) {
+						result->fields[i].buffer_ptr = (char*) c->double_values;
+					} else if (c->n_int32_values > 0) {
+						result->fields[i].buffer_ptr =  (char*) c->int32_values;
+					} else if (c->n_int64_values > 0) {
+						result->fields[i].buffer_ptr =  (char*) c->int64_values;
+					}else if (c->n_string_values > 0) {
+						result->fields[i].buffer_ptr = (char*)  c->string_values[0];
+					}
+				}
+				result->tuple_count += res->row_count;
+				result->rows_read++;
+				if(hdl->mid->protobuf_res) {
+					free(hdl->mid->protobuf_res);
+				}
+				hdl->mid->protobuf_res = (void*) res;
+				return result->fieldcnt;
+#endif
+			}
+
 			bs2_resetbuf(hdl->mid->from); // kinda a bit evil
-			assert(bs2_buffer(hdl->mid->from).pos == 0);
 
 			// this actually triggers the read of the entire block
 			// after this point we operate on the buffer
@@ -5622,12 +5659,18 @@ mapi_fetch_row(MapiHdl hdl)
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
 				if (result->fields[i].columnlength < 0) {
 					// variable-length column
-					result->fields[i].buffer_ptr += strlen(result->fields[i].buffer_ptr) + 1;
+
+					if (hdl->mid->protobuf_res) {
+						result->fields[i].buffer_ptr = ((Mhapi__QueryResult*) hdl->mid->protobuf_res)->columns[i]->string_values[result->cur_row];
+					} else {
+						result->fields[i].buffer_ptr += strlen(result->fields[i].buffer_ptr) + 1;
+					}
 				} else {
 					result->fields[i].buffer_ptr += result->fields[i].columnlength;
 				}
 			}
 		}
+		result->cur_row++;
 		result->rows_read++;
 		return result->fieldcnt;
 	}
@@ -6038,6 +6081,8 @@ mapi_set_column_compression(Mapi mid, const char* colcomp) {
 	}
 	else if (strcasecmp(colcomp, "none") == 0) {
 		mid->colcomp = COLUMN_COMPRESSION_NONE;
+	} else if (strcasecmp(colcomp, "protobuf") == 0) {
+		mid->colcomp = COLUMN_COMPRESSION_PROTOBUF;
 	} else {
 		mapi_setError(mid, "invalid column compression type", "mapi_set_compression", MERROR);
 		return -1;

@@ -4461,6 +4461,12 @@ bs2_buffer(stream *ss) {
 	return b;
 }
 
+void bs2_setpos(stream *ss, size_t pos) {
+	bs2 *s = (bs2 *) ss->stream_data.p;
+	assert(pos < s->bufsiz);
+	s->nr = pos;
+}
+
 column_compression
 bs2_colcomp(stream *ss) {
 	bs2 *s = (bs2 *) ss->stream_data.p;

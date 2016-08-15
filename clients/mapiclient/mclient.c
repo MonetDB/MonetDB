@@ -2957,7 +2957,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -C version  | --compression=type specify compression method {snappy,lz4}\n");
 	fprintf(stderr, " -P version  | --protocol=version specify protocol version {prot9,prot10,prot10compressed}\n");
 	fprintf(stderr, " -B size     | --blocksize=size   specify protocol block size (>= %d)\n", BLOCK);
-	fprintf(stderr, " -c colcomp  | --colcomp=type     specify column compression type {none,pfor}");
+	fprintf(stderr, " -c colcomp  | --colcomp=type     specify column compression type {none,pfor,protobuf}");
 
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -i          | --interactive[=tm] interpret `\\' commands on stdin, use time formatting {ms,s,m}\n");

@@ -190,6 +190,9 @@ doChallenge(void *data)
 		if (strstr(buf, "PFOR")) {
 			colcomp = COLUMN_COMPRESSION_PFOR;
 		}
+		if (strstr(buf, "PROTOBUF")) {
+				colcomp = COLUMN_COMPRESSION_PROTOBUF;
+			}
 
 		// FIXME: this leaks a block stream header
 		if (buflen < BLOCK) {
