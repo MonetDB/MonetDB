@@ -89,11 +89,10 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 283555 # length
-REF 1 (2)
-left outer join (
-| left outer join (
-| | left outer join (
+% 2317 # length
+top N (
+| project (
+| | select (
 | | | left outer join (
 | | | | left outer join (
 | | | | | left outer join (

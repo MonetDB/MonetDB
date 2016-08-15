@@ -6701,7 +6701,7 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 	       	e = rel->exps->h->data;
 		nll->exps = exps_copy(sql->sa, e->l);
 		nlr->exps = exps_copy(sql->sa, e->r);
-		nl = rel_or( sql, nll, nlr, NULL, e->l, e->r);
+		nl = rel_or( sql, nll, nlr, NULL, NULL, NULL);
 
 		if (rel->op == op_full) {
 			l = rel_dup(l);
@@ -7928,6 +7928,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		if (level <= 0)
 			rel = rewrite_topdown(sql, rel, &rel_semijoin_use_fk, &changes);
 	}
+
 	if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) 
 		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
