@@ -1,0 +1,33 @@
+package mhapi;
+
+message QueryResult {
+	required int32 result_id = 1;
+	required int64 row_count = 2;
+	required int64 col_count = 3;
+
+	message Column {
+		required string table_name = 1;
+		required string column_name = 2;
+		required string type_name = 3;
+
+		repeated string string_values = 4;
+		repeated int64  int64_values = 5 [packed=true];
+		repeated int32  int32_value = 6 [packed=true];
+		repeated double double_values = 7 [packed=true];
+	}
+
+
+	message ColumnUnpacked {
+		required string table_name = 1;
+		required string column_name = 2;
+		required string type_name = 3;
+
+		repeated string string_values = 4;
+		repeated int64  int64_values = 5;
+		repeated int32  int32_value = 6;
+		repeated double double_values = 7;
+	}
+
+	repeated Column columns = 4;
+	repeated ColumnUnpacked columns_unpacked = 5;
+}

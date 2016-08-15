@@ -1726,6 +1726,49 @@ AC_SUBST([pfor_CFLAGS])
 AC_SUBST([pfor_LIBS])
 AM_CONDITIONAL([HAVE_PFOR], [test x$have_pfor != xno])
 
+dnl  check for protobuf-c serialization library
+org_have_protobuf=auto
+have_protobuf=$org_have_protobuf
+protobuf_CFLAGS=""
+protobuf_LIBS=""
+AC_ARG_WITH([protobuf],
+	[AS_HELP_STRING([--with-protobuf=DIR],
+		[protobuf library is installed in DIR])],
+	[have_protobuf="$withval"])
+
+AS_CASE(["$have_protobuf"],
+	[yes|no|auto], [],
+	[
+		protobuf_CFLAGS="-I$withval/include"
+		protobuf_LIBS="-L$withval/lib"])
+
+AC_MSG_CHECKING([for protobuf])
+AS_VAR_IF([have_protobuf], [no], [], [
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $protobuf_CFLAGS"
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $protobuf_LIBS -lprotobuf-c"
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
+@%:@include <protobuf-c/protobuf-c.h>]], [[(void)protobuf_c_version_number();]])],
+		protobuf_LIBS="$protobuf_LIBS -lprotobuf-c",
+		[ AS_VAR_IF([have_protobuf], [auto], [], [
+			AC_MSG_ERROR([protobuf library not found])])
+		  have_protobuf=no
+		  why_have_protobuf="(protobuf library not found)" ])
+	LIBS="$save_LIBS"
+	CPPFLAGS="$save_CPPFLAGS"])
+
+AS_VAR_IF([have_protobuf], [no], [], [
+	AC_DEFINE([HAVE_LIBPROTOBUF], 1, [Define if you have the protobuf library])
+	AC_MSG_RESULT([yes: $protobuf_LIBS])], [
+	protobuf_CFLAGS=""
+	protobuf_LIBS=""
+	AC_MSG_RESULT([no])])
+
+AC_SUBST([protobuf_CFLAGS])
+AC_SUBST([protobuf_LIBS])
+AM_CONDITIONAL([HAVE_LIBPROTOBUF], [test x$have_protobuf != xno])
+
 
 DL_LIBS=""
 AC_CHECK_LIB([dl], [dlopen], [DL_LIBS="-ldl" ] )
@@ -3371,6 +3414,7 @@ for comp in \
 	'pcre         ' \
 	'perl         ' \
 	'proj         ' \
+	'protobuf     ' \
 	'pthread      ' \
 	'python2      ' \
 	'python3      ' \

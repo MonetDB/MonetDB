@@ -14,6 +14,7 @@ INCLUDES = $(zlib_CFLAGS) \
    		   $(lz4_CFLAGS) \
 		   $(liblzma_CFLAGS) \
 		   $(openssl_CFLAGS) \
+		   $(protobuf_CFLAGS) \
 		   $(curl_CFLAGS)
 
 lib_stream  =  {
@@ -28,6 +29,13 @@ lib_stream  =  {
 		   $(openssl_LIBS) \
 		   $(curl_LIBS) \
 		   $(LTLIBICONV)
+}
+
+lib_stream_protobuf = {
+	COND = HAVE_LIBPROTOBUF
+	SOURCES = mhapi.pb-c.h mhapi.pb-c.c
+	VERSION = 42
+	LIBS =  $(protobuf_LIBS)
 }
 
 headers_common = {
