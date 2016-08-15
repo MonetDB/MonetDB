@@ -121,6 +121,7 @@ doChallenge(void *data)
 	ssize_t len = 0;
 	protocol_version protocol = prot9;
 	size_t buflen = BLOCK;
+	column_compression colcomp = COLUMN_COMPRESSION_NONE;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -186,6 +187,9 @@ doChallenge(void *data)
 		buflen = atol(buflenstr);
 		if (buflenstrend) buflenstrend[0] = ':';
 
+		if (strstr(buf, "PFOR")) {
+			colcomp = COLUMN_COMPRESSION_PFOR;
+		}
 
 		// FIXME: this leaks a block stream header
 		if (buflen < BLOCK) {
@@ -198,8 +202,8 @@ doChallenge(void *data)
 		if (!strstr(buf, "PROT10COMPR")) {
 			protocol = prot10;
 			// uncompressed protocol 10
-			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_NONE);
-			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_NONE);
+			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_NONE, colcomp);
+			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_NONE, colcomp);
 		} else {
 			compression_method comp = COMPRESSION_NONE;
 			if (strstr(buf, "SNAPPY")) {
@@ -229,8 +233,8 @@ doChallenge(void *data)
 			// client requests switch to protocol 10
 			protocol = prot10compressed;
 			// compressed protocol 10
-			fdin = block_stream2(bs_stream(fdin), buflen, comp);
-			fdout = block_stream2(bs_stream(fdout), buflen, comp);
+			fdin = block_stream2(bs_stream(fdin), buflen, comp, colcomp);
+			fdout = block_stream2(bs_stream(fdout), buflen, comp, colcomp);
 		}
 
 		if (fdin == NULL || fdout == NULL) {

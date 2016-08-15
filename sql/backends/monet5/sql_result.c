@@ -1878,6 +1878,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	BATiter *iterators = NULL;
 	lng fixed_lengths = 0;
 	int fres = 0;
+	column_compression colcomp = bs2_colcomp(s);
 
 
 	iterators = GDKzalloc(sizeof(BATiter) * t->nr_cols);
@@ -2133,7 +2134,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					atom_size = sizeof(dbl);
 				}
 #ifdef HAVE_PFOR
-				if (strcasecmp(c->type.type->sqlname, "int") == 0) {
+				if (colcomp == COLUMN_COMPRESSION_PFOR && strcasecmp(c->type.type->sqlname, "int") == 0) {
 					// use PFOR for integer columns
 					size_t N = row - srow;
 					char *datain = Tloc(iterators[i].b, srow);

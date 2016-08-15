@@ -911,6 +911,7 @@ struct MapiStruct {
 	char *motd;		/* welcome message from server */
 	protocol_version protocol;
 	compression_method comp;
+	column_compression colcomp;
 	size_t blocksize;
 
 	int trace;		/* Trace Mapi interaction */
@@ -1902,6 +1903,7 @@ mapi_new(void)
 
 	mid->comp = COMPRESSION_SNAPPY;
 	mid->protocol = protauto;
+	mid->colcomp = COLUMN_COMPRESSION_AUTO;
 	mid->blocksize = 128 * BLOCK; // 1 MB
 
 	mid->cachelimit = 100;
@@ -2641,6 +2643,23 @@ mapi_reconnect(Mapi mid)
 			*hash = '\0';
 			rest = hash + 1;
 		}
+#ifdef HAVE_PFOR
+		if (strstr(hashes, "PFOR")) {
+			if (mid->colcomp == COLUMN_COMPRESSION_AUTO) {
+				mid->colcomp = COLUMN_COMPRESSION_PFOR;
+			}
+		} else if (mid->colcomp == COLUMN_COMPRESSION_PFOR) {
+			mapi_setError(mid, "Client wants PFOR but server does not support it",
+					"mapi_reconnect", MERROR);
+			close_connection(mid);
+			return mid->error;
+		}
+#else
+		if (mid->colcomp == COLUMN_COMPRESSION_PFOR) {
+			fprintf(stderr, "Client does not support PFOR compression.\n");
+			exit(1);
+		}
+#endif
 #ifdef HAVE_LIBSNAPPY
 		if (strstr(hashes, "PROT10COMPR")) {
 			// both server and client support compressed protocol 10; use compressed version 
@@ -2767,7 +2786,7 @@ mapi_reconnect(Mapi mid)
 			if (prot_version == prot10 || prot_version == prot10compressed) {
 				// if we are using protocol 10, we have to send either PROT10/PROT10COMPRESSED to the server
 				// so the server knows which protocol to use
-				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%s:%zu:\n",
+				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%s%s:%zu:\n",
 	#ifdef WORDS_BIGENDIAN
 				     "BIG",
 	#else
@@ -2777,6 +2796,11 @@ mapi_reconnect(Mapi mid)
 				     mid->database == NULL ? "" : mid->database,
 				     prot_version == prot10 ? "PROT10" : "PROT10COMPR",
 				     comp == COMPRESSION_SNAPPY ? "SNAPPY" : (comp == COMPRESSION_LZ4 ? "LZ4" : ""),
+#ifdef HAVE_PFOR
+				     mid->colcomp == COLUMN_COMPRESSION_PFOR ? ",HAVEPFOR" : "",
+#else
+				     "",
+#endif
 				    mid->blocksize);
 			} else {
 				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
@@ -2824,14 +2848,14 @@ mapi_reconnect(Mapi mid)
 
 		if (prot_version == prot10compressed) {
 #ifdef HAVE_LIBSNAPPY
-			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, comp);
-			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, comp);
+			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, comp, mid->colcomp);
+			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, comp, mid->colcomp);
 #else
 			assert(0);
 #endif
 		} else {
-			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, COMPRESSION_NONE);
-			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, COMPRESSION_NONE);
+			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, COMPRESSION_NONE, mid->colcomp);
+			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, COMPRESSION_NONE, mid->colcomp);
 		}
 
 		// FIXME: this leaks a block stream header
@@ -5593,7 +5617,7 @@ mapi_fetch_row(MapiHdl hdl)
 #endif
 				} else {
 #ifdef HAVE_PFOR
-					if (strcasecmp(result->fields[i].columntype, "int") == 0) {
+					if (hdl->mid->colcomp == COLUMN_COMPRESSION_PFOR && strcasecmp(result->fields[i].columntype, "int") == 0) {
 						lng b = *((lng*) buf);
 						buf += sizeof(lng);
 						lng length = *((lng*)(buf));
@@ -6009,7 +6033,8 @@ MapiMsg mapi_set_protocol(Mapi mid, const char* protocol) {
 }
 
 
-MapiMsg mapi_set_compression(Mapi mid, const char* compression) {
+MapiMsg 
+mapi_set_compression(Mapi mid, const char* compression) {
 	if (strcasecmp(compression, "snappy") == 0) {
 		mid->comp = COMPRESSION_SNAPPY;
 	}
@@ -6023,11 +6048,26 @@ MapiMsg mapi_set_compression(Mapi mid, const char* compression) {
 	return 0;
 }
 
-void mapi_set_blocksize(Mapi mid, size_t blocksize) {
+void 
+mapi_set_blocksize(Mapi mid, size_t blocksize) {
 	if (blocksize >= BLOCK) {
 		mid->blocksize = blocksize;
 	}
 }
 
+MapiMsg 
+mapi_set_column_compression(Mapi mid, const char* colcomp) {
+	if (strcasecmp(colcomp, "pfor") == 0) {
+		mid->colcomp = COLUMN_COMPRESSION_PFOR;
+	}
+	else if (strcasecmp(colcomp, "none") == 0) {
+		mid->colcomp = COLUMN_COMPRESSION_NONE;
+	} else {
+		mapi_setError(mid, "invalid column compression type", "mapi_set_compression", MERROR);
+		return -1;
+	}
+
+	return 0;
+}
 
 

@@ -2957,6 +2957,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -C version  | --compression=type specify compression method {snappy,lz4}\n");
 	fprintf(stderr, " -P version  | --protocol=version specify protocol version {prot9,prot10,prot10compressed}\n");
 	fprintf(stderr, " -B size     | --blocksize=size   specify protocol block size (>= %d)\n", BLOCK);
+	fprintf(stderr, " -c colcomp  | --colcomp=type     specify column compression type {none,pfor}");
 
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -i          | --interactive[=tm] interpret `\\' commands on stdin, use time formatting {ms,s,m}\n");
@@ -2997,6 +2998,7 @@ main(int argc, char **argv)
 	char *output = NULL;	/* output format as string */
 	char *protocol = NULL;
 	char *compression = NULL;
+	char *colcomp = NULL;
 	size_t blocksize = 0;
 	FILE *fp = NULL;
 	int trace = 0;
@@ -3024,6 +3026,7 @@ main(int argc, char **argv)
 		{"protocol", 1, 0, 'P'},
 		{"blocksize", 1, 0, 'B'},
 		{"compression", 1, 0, 'C'},
+		{"colcomp", 1, 0, 'c'},
 		{"help", 0, 0, '?'},
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
@@ -3168,6 +3171,12 @@ main(int argc, char **argv)
 			if (compression != NULL)
 				free(compression);
 			compression = strdup(optarg);
+			break;
+		case 'c':
+			assert(optarg);
+			if (colcomp != NULL)
+				free(colcomp);
+			colcomp = strdup(optarg);
 			break;
 		case 'B':
 			assert(optarg);
@@ -3331,11 +3340,20 @@ main(int argc, char **argv)
 	if (protocol) {
 		if (mapi_set_protocol(mid, protocol) != 0) {
 			fprintf(stderr, "%s\n", mapi_error_str(mid));
+			exit(1);
 		}
 	}
 	if (compression) {
 		if (mapi_set_compression(mid, compression) != 0) {
 			fprintf(stderr, "%s\n", mapi_error_str(mid));
+			exit(1);
+		}
+	}
+
+	if (colcomp) {
+		if (mapi_set_column_compression(mid, colcomp) != 0) {
+			fprintf(stderr, "%s\n", mapi_error_str(mid));
+			exit(1);
 		}
 	}
 

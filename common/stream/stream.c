@@ -3982,6 +3982,7 @@ typedef struct bs2 {
 	size_t bufsiz;
 	size_t readpos;
 	compression_method comp;
+	column_compression colcomp;
 	char *compbuf;
 	size_t compbufsiz;
 	char buf[1];	/* the buffered data */
@@ -4460,6 +4461,12 @@ bs2_buffer(stream *ss) {
 	return b;
 }
 
+column_compression
+bs2_colcomp(stream *ss) {
+	bs2 *s = (bs2 *) ss->stream_data.p;
+	return s->colcomp;
+}
+
 int
 isa_block_stream(stream *s)
 {
@@ -4474,7 +4481,7 @@ isa_fixed_block_stream(stream *s) {
 }
 
 stream *
-block_stream2(stream *s, size_t bufsiz, compression_method comp)
+block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp)
 {
 	stream *ns;
 	bs2 *b;
@@ -4490,6 +4497,7 @@ block_stream2(stream *s, size_t bufsiz, compression_method comp)
 		destroy(ns);
 		return NULL;
 	}
+	b->colcomp = colcomp;
 	/* blocksizes have a fixed little endian byteorder */
 #ifdef WORDS_BIGENDIAN
 	s->byteorder = 3412;	/* simply != 1234 */

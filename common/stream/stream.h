@@ -249,11 +249,17 @@ typedef enum {
 	COMPRESSION_UNKNOWN = 255
 } compression_method;
 
-stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);
+typedef enum {
+	COLUMN_COMPRESSION_AUTO = 255,
+	COLUMN_COMPRESSION_NONE = 0,
+	COLUMN_COMPRESSION_PFOR = 1
+} column_compression;
+
+stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp);
 stream_export void* bs2_getbuf(stream *ss);
 stream_export void bs2_resetbuf(stream *ss);
 stream_export buffer bs2_buffer(stream *s);
-
+column_compression bs2_colcomp(stream *ss);
 
 /* read block of data including the end of block marker */
 stream_export ssize_t mnstr_read_block(stream *s, void *buf, size_t elmsize, size_t cnt);
