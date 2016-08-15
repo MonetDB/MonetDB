@@ -812,6 +812,10 @@
 # endif
 #endif
 
+#ifdef HAVE_PFOR
+#include <simdcomp.h>
+#endif
+
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET (-1)
 #endif
@@ -5588,13 +5592,31 @@ mapi_fetch_row(MapiHdl hdl)
 					fprintf(stderr, "Read strings from position %zu\n", result->fields[i].buffer_ptr - initbuf);
 #endif
 				} else {
+#ifdef HAVE_PFOR
+					if (strcasecmp(result->fields[i].columntype, "int") == 0) {
+						lng b = *((lng*) buf);
+						buf += sizeof(lng);
+						lng length = *((lng*)(buf));
+						buf += sizeof(lng);
+
+						uint8_t *resbuffer = malloc(nrows * sizeof(int));
+						simdunpack_length((const __m128i *)buf, nrows, (uint32_t*) resbuffer, b);
+						result->fields[i].buffer_ptr = resbuffer;
+#ifdef PROT10_DEBUG
+					fprintf(stderr, "Read PFOR compressed elements (b=%lld,length=%lld) from position %zu\n", b, length, (buf - 2 * sizeof(lng)) - initbuf);
+#endif
+						buf += length;
+					} else {
+#endif
 					buf += nrows * result->fields[i].columnlength;
 #ifdef PROT10_DEBUG
 					fprintf(stderr, "Read elements from position %zu\n", result->fields[i].buffer_ptr - initbuf);
 #endif
+#ifdef HAVE_PFOR
+					}
+#endif
 				}
 			}
-			assert(result->fields[result->fieldcnt - 1].buffer_ptr - result->fields[0].buffer_ptr < (long) hdl->mid->blocksize);
 			result->tuple_count += nrows;
 		} else {
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {

@@ -20,6 +20,10 @@
 #include <bat/bat_storage.h>
 #include <rel_exp.h>
 
+#ifdef HAVE_PFOR
+#include <simdcomp.h>
+#endif
+
 #ifndef HAVE_LLABS
 #define llabs(x)	((x) < 0 ? -(x) : (x))
 #endif
@@ -2128,6 +2132,38 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
 					atom_size = sizeof(dbl);
 				}
+#ifdef HAVE_PFOR
+				if (strcasecmp(c->type.type->sqlname, "int") == 0) {
+					// use PFOR for integer columns
+					size_t N = row - srow;
+					char *datain = Tloc(iterators[i].b, srow);
+					__m128i * endofbuf;
+					uint8_t * buffer;
+					uint32_t b;
+					lng length;
+
+					b = maxbits_length(datain, N);
+					buffer = malloc(simdpack_compressedbytes(N,b)); // allocate just enough memory
+					endofbuf = simdpack_length(datain, N, (__m128i *)buffer, b);
+					if (!buffer || !endofbuf || endofbuf <= buffer) {
+						printf("Compression failed!\n");
+						fres = -1;
+						goto cleanup;
+					}
+					length = (lng)((char*) endofbuf - (char*) buffer);
+					if (!mnstr_writeLng(s, b) || !mnstr_writeLng(s, length) || mnstr_write(s, buffer, length, 1) != 1) {
+						fres = -1;
+						printf("Compression failed.\n");
+						goto cleanup;
+					}
+#ifdef PROT10_DEBUG
+					fprintf(stderr, "Write PFOR compressed elements (b=%lld, length=%lld) to position %lld\n", b, length, bufpos);
+					bufpos += sizeof(lng) * 2 + length;
+#endif
+					free(buffer);
+
+				} else {
+#endif
 #ifdef PROT10_DEBUG
 				fprintf(stderr, "Write elements of size %zu to position %lld\n", atom_size * (row - srow), bufpos);
 				bufpos += (atom_size * (row - srow));
@@ -2136,6 +2172,9 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					fres = -1;
 					goto cleanup;
 				}
+#ifdef HAVE_PFOR
+			}
+#endif
 			}
 		}
 

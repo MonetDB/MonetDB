@@ -17,7 +17,8 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../common/options \
 		   ../../../common/stream \
 		   ../../../common/utils \
-		   ../../../gdk
+		   ../../../gdk \
+		   $(pfor_CFLAGS)
 
 lib__sql = {
 	MODULE
@@ -54,7 +55,7 @@ lib__sql = {
 		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmcrypt \
 		   $(PTHREAD_LIBS) \
-		   $(openssl_LIBS) $(MATH_LIBS)
+		   $(openssl_LIBS) $(MATH_LIBS) $(pfor_LIBS)
 }
 
 headers_mal = {
