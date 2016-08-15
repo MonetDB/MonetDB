@@ -3236,7 +3236,7 @@ ic_close(stream *s)
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
 
 	if (ic) {
-		if (ic->access == ST_WRITE)
+		if (s->access == ST_WRITE)
 			ic_flush(s);
 		iconv_close(ic->cd);
 		mnstr_close(ic->s);
