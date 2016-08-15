@@ -2024,10 +2024,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 #else
 		(void) c;
 #endif
-#ifdef PROT10_DEBUG
-		size_t bufpos;
-#endif
-
 		if (varsized == 0) {
 			// no varsized elements, so we can immediately compute the amount of elements
 			row = srow + bytes_left / fixed_lengths;
@@ -2087,11 +2083,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		}
 #endif
 
-#ifdef PROT10_DEBUG
-		fprintf(stderr, "Write block: %zu - %zu (out of %lld, nrow=%lld)\n", srow, row, count, (lng)(row - srow));
-		bufpos = sizeof(lng);
-#endif
-
 		assert(bs2_buffer(s).pos == 0);
 
 		if (!mnstr_writeLng(s, (lng)(row - srow))) {
@@ -2102,27 +2093,16 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		for (i = 0; i < (size_t) t->nr_cols; i++) {
 			res_col *c = t->cols + i;
 			int mtype = c->type.type->localtype;
-#ifdef PROT10_DEBUG
-			fprintf(stderr, "Column %d\n", i);
-#endif
 			if (ATOMvarsized(mtype)) {
 				// FIXME support other types than string
 				assert(mtype == TYPE_str);
 				assert((size_t) var_col_len[i] < bsize);
 
-#ifdef PROT10_DEBUG
-				fprintf(stderr, "Write lng %lld to %zu\n", var_col_len[i], bufpos);
-				bufpos += sizeof(lng);
-				fprintf(stderr, "Write strings to %zu\n", bufpos);
-#endif
 				if (!mnstr_writeLng(s, var_col_len[i])) {
 					fres = -1;
 					goto cleanup;
 				}
 				for (crow = srow; crow < row; crow++) {
-#ifdef PROT10_DEBUG
-					bufpos += strlen((char*) BUNtail(iterators[i], crow)) + 1;
-#endif
 					if (!write_str_term(s, (char*) BUNtail(iterators[i], crow))) {
 						fres = -1;
 						goto cleanup;
@@ -2157,17 +2137,9 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 						printf("Compression failed.\n");
 						goto cleanup;
 					}
-#ifdef PROT10_DEBUG
-					fprintf(stderr, "Write PFOR compressed elements (b=%lld, length=%lld) to position %lld\n", b, length, bufpos);
-					bufpos += sizeof(lng) * 2 + length;
-#endif
 					free(buffer);
 
 				} else {
-#endif
-#ifdef PROT10_DEBUG
-				fprintf(stderr, "Write elements of size %zu to position %lld\n", atom_size * (row - srow), bufpos);
-				bufpos += (atom_size * (row - srow));
 #endif
 				if (mnstr_write(s, Tloc(iterators[i].b, srow), atom_size, row - srow) != (ssize_t) (row - srow)) {
 					fres = -1;
@@ -2179,9 +2151,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			}
 		}
 
-#ifdef PROT10_DEBUG
-		fprintf(stderr, "Flushing %zu bytes.\n", bs2_buffer(s).pos);
-#endif
 		if (mnstr_flush(s) < 0) {
 			fprintf(stderr, "Failed to flush.\n");
 			fres = -1;

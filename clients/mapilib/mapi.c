@@ -5542,9 +5542,6 @@ mapi_fetch_row(MapiHdl hdl)
 	struct MapiResultSet *result;
 
 	if (hdl->mid->protocol == prot10 || hdl->mid->protocol == prot10compressed) {
-#ifdef PROT10_DEBUG
-		char *initbuf;
-#endif
 		char* buf;
 
 		result = hdl->result;
@@ -5589,32 +5586,17 @@ mapi_fetch_row(MapiHdl hdl)
 
 
 			//bs2_resetbuf(hdl->mid->from);
-
-#ifdef PROT10_DEBUG
-			fprintf(stderr, "Read block: %llu - %llu (out of %lld, nrow=%lld)\n", result->rows_read, result->rows_read + nrows, result->row_count, nrows);
-			initbuf = (char*) bs2_getbuf(hdl->mid->from);
-#endif
-
 			buf = (char*) bs2_getbuf(hdl->mid->from) + sizeof(lng);
 
 			// iterate over cols
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
-#ifdef PROT10_DEBUG
-				fprintf(stderr, "Column %zu\n", i);
-#endif
 				result->fields[i].buffer_ptr = buf;
 				if (result->fields[i].columnlength < 0) {
 					// variable-length column
 					lng col_len = *((lng*) buf);
-#ifdef PROT10_DEBUG
-					fprintf(stderr, "Read lng %lld from position %zu\n", col_len, buf - initbuf);
-#endif
 					assert((size_t) col_len < hdl->mid->blocksize && col_len > 0);
 					result->fields[i].buffer_ptr += sizeof(lng);
 					buf += col_len + sizeof(lng);
-#ifdef PROT10_DEBUG
-					fprintf(stderr, "Read strings from position %zu\n", result->fields[i].buffer_ptr - initbuf);
-#endif
 				} else {
 #ifdef HAVE_PFOR
 					if (hdl->mid->colcomp == COLUMN_COMPRESSION_PFOR && strcasecmp(result->fields[i].columntype, "int") == 0) {
@@ -5626,16 +5608,10 @@ mapi_fetch_row(MapiHdl hdl)
 						uint8_t *resbuffer = malloc(nrows * sizeof(int));
 						simdunpack_length((const __m128i *)buf, nrows, (uint32_t*) resbuffer, b);
 						result->fields[i].buffer_ptr = resbuffer;
-#ifdef PROT10_DEBUG
-					fprintf(stderr, "Read PFOR compressed elements (b=%lld,length=%lld) from position %zu\n", b, length, (buf - 2 * sizeof(lng)) - initbuf);
-#endif
 						buf += length;
 					} else {
 #endif
 					buf += nrows * result->fields[i].columnlength;
-#ifdef PROT10_DEBUG
-					fprintf(stderr, "Read elements from position %zu\n", result->fields[i].buffer_ptr - initbuf);
-#endif
 #ifdef HAVE_PFOR
 					}
 #endif
