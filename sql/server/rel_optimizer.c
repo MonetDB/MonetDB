@@ -591,34 +591,6 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 	return res;
 }
 
-static sql_exp *
-rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname )
-{
-	if (!rel)
-		return NULL;
-
-	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
-		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
-		if (e)
-			return exp_alias(sa, e->rname, exp_name(e), tname, cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
-	}
-	if (is_project(rel->op) && rel->l) {
-		return rel_find_column(sa, rel->l, tname, cname);
-	} else if (is_join(rel->op)) {
-		sql_exp *e = rel_find_column(sa, rel->l, tname, cname);
-		if (!e)
-			e = rel_find_column(sa, rel->r, tname, cname);
-		return e;
-	} else if (is_set(rel->op) ||
-		   is_sort(rel) ||
-		   is_semi(rel->op) ||
-		   is_select(rel->op)) {
-		if (rel->l)
-			return rel_find_column(sa, rel->l, tname, cname);
-	}
-	return NULL;
-}
-
 static int
 find_join_rels(list **L, list **R, list *exps, list *rels)
 {
@@ -6729,7 +6701,7 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 	       	e = rel->exps->h->data;
 		nll->exps = exps_copy(sql->sa, e->l);
 		nlr->exps = exps_copy(sql->sa, e->r);
-		nl = rel_or( sql, nll, nlr, NULL, e->l, e->r);
+		nl = rel_or( sql, nll, nlr, NULL, NULL, NULL);
 
 		if (rel->op == op_full) {
 			l = rel_dup(l);
@@ -7956,6 +7928,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		if (level <= 0)
 			rel = rewrite_topdown(sql, rel, &rel_semijoin_use_fk, &changes);
 	}
+
 	if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) 
 		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 

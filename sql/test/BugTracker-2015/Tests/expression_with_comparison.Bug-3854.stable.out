@@ -71,7 +71,7 @@ Ready.
 #      AND ((FALSE AND (TRUE OR FALSE))
 #        OR (15 > t.foo)
 #      );
-% .t,	.t # table_name
+% sys.t,	sys.t # table_name
 % id,	foo # name
 % int,	int # type
 % 1,	1 # length

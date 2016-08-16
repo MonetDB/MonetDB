@@ -115,7 +115,7 @@ gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN 
 int BATgetaccess(BAT *b);
 PROPrec *BATgetprop(BAT *b, int idx);
 gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
-const char *BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s, oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp, BUN *cntp, const oid **candp, const oid **candendp);
+const char *BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s, oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp, const oid **candp, const oid **candendp);
 gdk_return BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 BAT *BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 BAT *BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);

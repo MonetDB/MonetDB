@@ -479,6 +479,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			s = stmt_mirror(sql->sa, l->h->data);
 		else
 		*/
+		if (f->func->rel) 
+			s = stmt_func(sql->sa, stmt_list(sql->sa, l), sa_strdup(sql->sa, f->func->base.name), f->func->rel, (f->func->type == F_UNION));
+		else
 			s = stmt_Nop(sql->sa, stmt_list(sql->sa, l), e->f); 
 	} 	break;
 	case e_aggr: {
@@ -1425,8 +1428,18 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 				s = stmt_alias(sql->sa, s, rnme, a->name);
 				list_append(l, s);
 			}
+			if (list_length(f->res) == list_length(f->func->res) + 1) {
+				/* add missing %TID% column */
+				sql_subtype *t = f->res->t->data;
+				stmt *s = stmt_rs_column(sql->sa, psub, i, t); 
+				const char *rnme = exp_find_rel_name(op);
+	
+				s = stmt_alias(sql->sa, s, rnme, TID);
+				list_append(l, s);
+			}
 		}
-		if (!rel->flag && sub && sub->nrcols) { /* add sub, table func with table input, we expect alignment */
+		if (!rel->flag && sub && sub->nrcols) { 
+			assert(0);
 			list_merge(l, sub->op4.lval, NULL);
 			osub = sub;
 		}
@@ -1439,7 +1452,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 
 		l = rel2bin_args(sql, rel->l, sa_list(sql->sa));
 		sub = stmt_list(sql->sa, l);
-		sub = stmt_func(sql->sa, sub, sa_strdup(sql->sa, nme), rel->l);
+		sub = stmt_func(sql->sa, sub, sa_strdup(sql->sa, nme), rel->l, 0);
 		l = sa_list(sql->sa);
 		for(i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
 			sql_exp *c = n->data;

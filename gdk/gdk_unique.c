@@ -189,8 +189,8 @@ BATunique(BAT *b, BAT *s)
 					break;
 			}
 			val = ((const unsigned char *) vals)[i];
-			if (!(seen[val >> 4] & (1 << (val & 0xF)))) {
-				seen[val >> 4] |= 1 << (val & 0xF);
+			if (!(seen[val >> 4] & (1U << (val & 0xF)))) {
+				seen[val >> 4] |= 1U << (val & 0xF);
 				o = i + b->hseqbase;
 				bunfastapp(bn, &o);
 				if (bn->batCount == 256) {
@@ -226,8 +226,8 @@ BATunique(BAT *b, BAT *s)
 					break;
 			}
 			val = ((const unsigned short *) vals)[i];
-			if (!(seen[val >> 4] & (1 << (val & 0xF)))) {
-				seen[val >> 4] |= 1 << (val & 0xF);
+			if (!(seen[val >> 4] & (1U << (val & 0xF)))) {
+				seen[val >> 4] |= 1U << (val & 0xF);
 				o = i + b->hseqbase;
 				bunfastapp(bn, &o);
 				if (bn->batCount == 65536) {
@@ -316,18 +316,18 @@ BATunique(BAT *b, BAT *s)
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
 		if (ATOMbasetype(b->ttype) == TYPE_bte) {
-			mask = 1 << 8;
+			mask = (BUN) 1 << 8;
 			cmp = NULL; /* no compare needed, "hash" is perfect */
 		} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
-			mask = 1 << 16;
+			mask = (BUN) 1 << 16;
 			cmp = NULL; /* no compare needed, "hash" is perfect */
 		} else {
 			if (s)
 				mask = HASHmask(s->batCount);
 			else
 				mask = HASHmask(b->batCount);
-			if (mask < (1 << 16))
-				mask = 1 << 16;
+			if (mask < ((BUN) 1 << 16))
+				mask = (BUN) 1 << 16;
 		}
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||

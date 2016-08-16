@@ -22,7 +22,7 @@ Ready.
 
 #debug select * from tables;
 mdb>#X_0=0@0:void := user.s1_1();
-mdb>#X_271=0@0:void := querylog.define("debug select * from tables;","default_pipe",576);
+mdb>#X_271=0@0:void := querylog.define("debug select * from tables;","default_pipe",158);
 
 # 16:24:01 >  
 # 16:24:01 >  "Done."

@@ -1054,28 +1054,41 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 {
 	sql_rel *rel, *ll = l->l, *rl = r->l;
 
-	if (l == r && is_outerjoin(l->op)) { /* merge both lists */
+	assert(!lexps || l == r);
+	if (l == r && lexps) { /* merge both lists */
 		sql_exp *e = exp_or(sql->sa, lexps, rexps);
 		list *nl = oexps?oexps:new_exp_list(sql->sa); 
 		
 		rel_destroy(r);
 		append(nl, e);
+		if (is_outerjoin(l->op) && is_processed(l)) 
+			l = rel_select(sql->sa, l, NULL);
 		l->exps = nl;
 		return l;
 	}
 
-	if (l->op == r->op && 
-		((ll == rl && l->r == r->r && l->r == NULL /* or check if columns are equal*/) ||
-
-		(exps_card(l->exps) == exps_card(r->exps) && exps_card(l->exps) <= CARD_ATOM))) {
+	/* favor or expressions over union */
+	if (l->op == r->op && l->op == op_select &&
+	    ll == rl && !rel_is_ref(l) && !rel_is_ref(r)) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
 		list *nl = new_exp_list(sql->sa); 
 		
 		rel_destroy(r);
 		append(nl, e);
 		l->exps = nl;
+
+		/* merge and expressions */
+		ll = l->l;
+		while (ll && ll->op == op_select && !rel_is_ref(ll)) {
+			list_merge(l->exps, ll->exps, (fdup)NULL);
+			l->l = ll->l;
+			ll->l = NULL;
+			rel_destroy(ll);
+			ll = l->l;
+		}
 		return l;
 	}
+
 	l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
 	r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	set_processed(l);
@@ -1145,3 +1158,32 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 		return rel;
 	return _rel_add_identity(sql, rel, exp);
 }
+
+sql_exp *
+rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname )
+{
+	if (!rel)
+		return NULL;
+
+	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
+		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
+		if (e)
+			return exp_alias(sa, e->rname, exp_name(e), tname, cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+	}
+	if (is_project(rel->op) && rel->l) {
+		return rel_find_column(sa, rel->l, tname, cname);
+	} else if (is_join(rel->op)) {
+		sql_exp *e = rel_find_column(sa, rel->l, tname, cname);
+		if (!e)
+			e = rel_find_column(sa, rel->r, tname, cname);
+		return e;
+	} else if (is_set(rel->op) ||
+		   is_sort(rel) ||
+		   is_semi(rel->op) ||
+		   is_select(rel->op)) {
+		if (rel->l)
+			return rel_find_column(sa, rel->l, tname, cname);
+	}
+	return NULL;
+}
+

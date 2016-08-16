@@ -8,7 +8,7 @@ Type=forking
 User=monetdb
 Group=monetdb
 ExecStart=@Ebindir@/monetdbd start @Elocalstatedir@/monetdb5/dbfarm
-# no ExecStop since "monetdbd stop ..." is asynchronous
+ExecStop=@Ebindir@/monetdbd stop @Elocalstatedir@/monetdb5/dbfarm
 Restart=on-failure
 PIDFile=@Erundir@/merovingian.pid
 PrivateDevices=yes

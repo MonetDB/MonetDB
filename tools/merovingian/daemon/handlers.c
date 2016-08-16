@@ -25,15 +25,15 @@
 #include "handlers.h"
 
 
-static char *sigint  = "SIGINT";
-static char *sigterm = "SIGTERM";
-static char *sigquit = "SIGQUIT";
-static char *sighup  = "SIGHUP";
-static char *sigabrt = "SIGABRT";
-static char *sigsegv = "SIGSEGV";
-static char *sigbus  = "SIGBUS";
-static char *sigkill = "SIGKILL";
-static char *
+static const char *sigint  = "SIGINT";
+static const char *sigterm = "SIGTERM";
+static const char *sigquit = "SIGQUIT";
+static const char *sighup  = "SIGHUP";
+static const char *sigabrt = "SIGABRT";
+static const char *sigsegv = "SIGSEGV";
+static const char *sigbus  = "SIGBUS";
+static const char *sigkill = "SIGKILL";
+static const char *
 sigtostr(int sig)
 {
 	switch (sig) {
@@ -67,7 +67,7 @@ sigtostr(int sig)
 void
 handler(int sig)
 {
-	char *signame = sigtostr(sig);
+	const char *signame = sigtostr(sig);
 	if (signame == NULL) {
 		Mfprintf(stdout, "caught signal %d, starting shutdown sequence\n", sig);
 	} else {
@@ -192,7 +192,7 @@ childhandler(int sig, siginfo_t *si, void *unused)
 						"exit status %d\n", p->dbname,
 						(long long int)p->pid, si->si_status);
 			} else if (si->si_code == CLD_KILLED) {
-				char *sigstr = sigtostr(si->si_status);
+				const char *sigstr = sigtostr(si->si_status);
 				char signum[8];
 				if (sigstr == NULL) {
 					snprintf(signum, 8, "%d", si->si_status);

@@ -241,8 +241,10 @@ SQLinit(void)
 		SQLdebug |= 64;
 	if (readonly)
 		SQLdebug |= 32;
-	if ((SQLnewcatalog = mvc_init(SQLdebug, store_bat, readonly, single_user, 0)) < 0)
+	if ((SQLnewcatalog = mvc_init(SQLdebug, store_bat, readonly, single_user, 0)) < 0) {
+		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
+	}
 	SQLinitialized = TRUE;
 	MT_lock_unset(&sql_contextLock);
 	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE) != 0) {
