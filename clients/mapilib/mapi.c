@@ -2608,6 +2608,44 @@ mapi_reconnect(Mapi mid)
 	}
 	pversion = atoi(protover);
 
+#ifndef HACKY
+	// set protocol version using environment variables; should be removed in final version
+	{
+		char* env_protocol = getenv("MONETDB_PROTOCOL");
+		char* env_compression = getenv("MONETDB_COMPRESSION");
+		char* env_colcomp = getenv("MONETDB_COLCOMP");
+		if (env_protocol) {
+			if (strcasecmp(env_protocol, "prot10") == 0) {
+				mid->protocol = prot10;
+			} else if (strcasecmp(env_protocol, "prot10compressed") == 0) {
+				mid->protocol = prot10compressed;
+			} else if (strcasecmp(env_protocol, "prot9") == 0) {
+				mid->protocol = prot9;
+			}
+		}
+
+		if (env_compression) {
+			if (strcasecmp(env_compression, "none") == 0) {
+				mid->comp = COMPRESSION_NONE;
+			} else if (strcasecmp(env_compression, "snappy") == 0) {
+				mid->comp = COMPRESSION_SNAPPY;
+			} else if (strcasecmp(env_compression, "lz4") == 0) {
+				mid->comp = COMPRESSION_LZ4;
+			}
+		}
+
+		if (env_colcomp) {
+			if (strcasecmp(env_colcomp, "none") == 0) {
+				mid->colcomp = COLUMN_COMPRESSION_NONE;
+			} else if (strcasecmp(env_colcomp, "pfor") == 0) {
+				mid->colcomp = COLUMN_COMPRESSION_PFOR;
+			} else if (strcasecmp(env_colcomp, "protobuf") == 0) {
+				mid->colcomp = COLUMN_COMPRESSION_PROTOBUF;
+			}
+		}
+	}
+#endif
+
 	if (pversion == 9) {
 		char *hash = NULL;
 		char *hashes = NULL;
