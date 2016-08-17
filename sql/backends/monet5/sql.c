@@ -638,7 +638,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			mvc_null(sql, nc, c->null);
 			/* for non empty check for nulls */
 			if (c->null == 0) {
-				void *nilptr = ATOMnilptr(c->type.type->localtype);
+				const void *nilptr = ATOMnilptr(c->type.type->localtype);
 				rids *nils = table_funcs.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);
 				int has_nils = (table_funcs.rids_next(nils) != oid_nil);
 
@@ -3731,7 +3731,7 @@ zero_or_one(ptr ret, const bat *bid)
 {
 	BAT *b;
 	BUN c, _s;
-	ptr p;
+	const void *p;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "zero_or_one", "Cannot access descriptor");
@@ -3780,7 +3780,7 @@ SQLall(ptr ret, const bat *bid)
 {
 	BAT *b;
 	BUN c, _s;
-	ptr p;
+	const void *p;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "all", "Cannot access descriptor");

@@ -1142,11 +1142,11 @@ convert_atom(atom *a, sql_subtype *rt)
 {
 	if (atom_null(a)) {
 		if (a->data.vtype != rt->type->localtype) {
-			ptr p;
+			const void *p;
 
 			a->data.vtype = rt->type->localtype;
 			p = ATOMnilptr(a->data.vtype);
-			VALset(&a->data, a->data.vtype, p);
+			VALinit(&a->data, a->data.vtype, p);
 		}
 	}
 	a->tpe = *rt;

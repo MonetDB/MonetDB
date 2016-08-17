@@ -4640,7 +4640,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 		return col;	/* no change */
 
 	if (!col->def || !val || strcmp(col->def, val) != 0) {
-		void *p = val ? val : ATOMnilptr(TYPE_str);
+		void *p = val ? val : (void *) ATOMnilptr(TYPE_str);
 		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp"); 
 		sql_table *syscolumn = find_sql_table(syss, "_columns");
 		sql_column *col_ids = find_sql_column(syscolumn, "id");
@@ -4667,7 +4667,7 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 		return col;	/* no change */
 
 	if (!col->storage_type || !storage || strcmp(col->storage_type, storage) != 0) {
-		void *p = storage ? storage : ATOMnilptr(TYPE_str);
+		void *p = storage ? storage : (void *) ATOMnilptr(TYPE_str);
 		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp"); 
 		sql_table *syscolumn = find_sql_table(syss, "_columns");
 		sql_column *col_ids = find_sql_column(syscolumn, "id");
@@ -5155,7 +5155,7 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name,
 	sql_trigger *ni = SA_ZNEW(tr->sa, sql_trigger);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *systrigger = find_sql_table(syss, "triggers");
-	str nilptr = ATOMnilptr(TYPE_str);
+	const char *nilptr = ATOMnilptr(TYPE_str);
 
 	assert(name);
 	base_init(tr->sa, &ni->base, next_oid(), TR_NEW, name);

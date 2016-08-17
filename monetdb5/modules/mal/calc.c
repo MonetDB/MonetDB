@@ -646,7 +646,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return mythrow(MAL, "ifthenelse", SEMANTIC_TYPE_MISMATCH);
 
 	if (b == bit_nil) {
-		*(ptr**)retval = p = ATOMnilptr(t1);
+		VALinit(&stk->stk[pci->argv[0]], t1, ATOMnilptr(t1));
 		return MAL_SUCCEED;
 	}
 	if (b) {
@@ -670,9 +670,9 @@ str
 CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int t = getArgType(mb, pci, 1);
-	ptr p1 = getArgReference(stk, pci, 1);
-	ptr p2 = getArgReference(stk, pci, 2);
-	ptr nil;
+	const void *p1 = getArgReference(stk, pci, 1);
+	const void *p2 = getArgReference(stk, pci, 2);
+	const void *nil;
 
 	(void) cntxt;
 	if (t != getArgType(mb, pci, 2))
@@ -698,7 +698,7 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int t = getArgType(mb, pci, 1);
 	ptr p1 = getArgReference(stk, pci, 1);
 	ptr p2 = getArgReference(stk, pci, 2);
-	ptr nil;
+	const void *nil;
 
 	(void) cntxt;
 	if (t != getArgType(mb, pci, 2))
@@ -721,9 +721,9 @@ str
 CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int t = getArgType(mb, pci, 1);
-	ptr p1 = getArgReference(stk, pci, 1);
-	ptr p2 = getArgReference(stk, pci, 2);
-	ptr nil;
+	const void *p1 = getArgReference(stk, pci, 1);
+	const void *p2 = getArgReference(stk, pci, 2);
+	const void *nil;
 
 	(void) cntxt;
 	if (t != getArgType(mb, pci, 2))
@@ -749,7 +749,7 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int t = getArgType(mb, pci, 1);
 	ptr p1 = getArgReference(stk, pci, 1);
 	ptr p2 = getArgReference(stk, pci, 2);
-	ptr nil;
+	const void *nil;
 
 	(void) cntxt;
 	if (t != getArgType(mb, pci, 2))

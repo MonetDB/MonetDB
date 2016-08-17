@@ -266,8 +266,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			/*_DELETE(val);*/
 		}
 	} else { 
-		p = ATOMnilptr(a->data.vtype);
-		VALset(&a->data, a->data.vtype, p);
+		VALinit(&a->data, a->data.vtype, ATOMnilptr(a->data.vtype));
 		a->isnull = 1;
 	}
 	return a;
@@ -1102,12 +1101,9 @@ atom_cast(atom *a, sql_subtype *tp)
 			return 1;
 		}	
 	} else {
-		ptr p = NULL;
-
 		a->tpe = *tp;
 		a->data.vtype = tp->type->localtype;
-		p = ATOMnilptr(a->data.vtype);
-		VALset(&a->data, a->data.vtype, p);
+		VALinit(&a->data, a->data.vtype, ATOMnilptr(a->data.vtype));
 		return 1;
 	}
 	return 0;

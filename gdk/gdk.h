@@ -1879,7 +1879,7 @@ typedef struct {
 	short align;		/* alignment condition for values */
 
 	/* automatically generated fields */
-	ptr atomNull;		/* global nil value */
+	const void *atomNull;	/* global nil value */
 
 	/* generic (fixed + varsized atom) ADT functions */
 	int (*atomFromStr) (const char *src, int *len, ptr *dst);
