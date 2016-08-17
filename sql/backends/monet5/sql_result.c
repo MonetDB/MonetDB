@@ -2031,6 +2031,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		if (varsized == 0) {
 			// no varsized elements, so we can immediately compute the amount of elements
 			row = srow + bytes_left / fixed_lengths;
+			row = row > count ? count : row;
 		} else {
 			// every varsized member has an 8-byte header indicating the length of the header in the block
 			// subtract this from the amount of bytes left
