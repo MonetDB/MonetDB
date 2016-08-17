@@ -174,7 +174,7 @@ VALinit(ValPtr d, int tpe, const void *s)
 	} else if (s == 0) {
 		GDKerror("VALinit:unsupported init\n");
 		d->vtype = TYPE_int;
-	} else if (tpe >= TYPE_str && ATOMstorage(tpe) == TYPE_str) {
+	} else if (ATOMstorage(tpe) == TYPE_str) {
 		d->vtype = tpe;
 		d->val.sval = GDKstrdup(s);
 		d->len = strLen(s);
