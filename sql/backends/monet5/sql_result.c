@@ -1961,9 +1961,17 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		if (ATOMvarsized(mtype)) {
 			// FIXME support other types than string
 			assert(mtype == TYPE_str);
-			typelen = -1;
-			varsized++;
-			nil_len = strlen(str_nil) + 1;
+			if (mtype == TYPE_str && c->type.digits > 0) {
+				// varchar with fixed max length
+				typelen = c->type.digits;
+				fixed_lengths += typelen;
+				nil_len = typelen;
+			} else {
+				// variable length strings
+				typelen = -1;
+				varsized++;
+				nil_len = strlen(str_nil) + 1;
+			}
 		} else {
 			fixed_lengths += typelen;
 			nil_len = typelen;
@@ -2175,15 +2183,33 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				// FIXME support other types than string
 				assert(mtype == TYPE_str);
 				assert((size_t) var_col_len[i] < bsize);
-
-				if (!mnstr_writeLng(s, var_col_len[i])) {
-					fres = -1;
-					goto cleanup;
-				}
-				for (crow = srow; crow < row; crow++) {
-					if (!write_str_term(s, (char*) BUNtail(iterators[i], crow))) {
+				if (c->type.digits > 0) {
+					// varchar
+					size_t buflen = c->type.digits * (row - srow);
+					char *tmpbuf = malloc(buflen);
+					char *bufptr = tmpbuf;
+					assert(tmpbuf);
+					for(crow = srow; crow < row; crow++) {
+						strcpy(bufptr, (char*) BUNtail(iterators[i], crow));
+						bufptr += c->type.digits;
+					}
+					if (mnstr_write(s, tmpbuf, buflen, 1) != 1) {
+						fres = -1;
+						fprintf(stderr,"Sending data failed.\n");
+						goto cleanup;
+					}
+					free(tmpbuf);
+				} else {
+					// variable length string
+					if (!mnstr_writeLng(s, var_col_len[i])) {
 						fres = -1;
 						goto cleanup;
+					}
+					for (crow = srow; crow < row; crow++) {
+						if (!write_str_term(s, (char*) BUNtail(iterators[i], crow))) {
+							fres = -1;
+							goto cleanup;
+						}
 					}
 				}
 			} else {
@@ -2205,14 +2231,14 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					buffer = malloc(simdpack_compressedbytes(N,b)); // allocate just enough memory
 					endofbuf = simdpack_length(datain, N, (__m128i *)buffer, b);
 					if (!buffer || !endofbuf || endofbuf <= buffer) {
-						printf("Compression failed!\n");
+						fprintf(stderr,"Compression failed!\n");
 						fres = -1;
 						goto cleanup;
 					}
 					length = (lng)((char*) endofbuf - (char*) buffer);
 					if (!mnstr_writeLng(s, b) || !mnstr_writeLng(s, length) || mnstr_write(s, buffer, length, 1) != 1) {
 						fres = -1;
-						printf("Compression failed.\n");
+						fprintf(stderr,"Sending data failed.\n");
 						goto cleanup;
 					}
 					free(buffer);

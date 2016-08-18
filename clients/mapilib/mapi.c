@@ -4063,6 +4063,16 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 */
 
 static char* mapi_convert_varchar(struct MapiColumn *col) {
+	// FIXME write_buf needs to be variable per column if we want to keep this varchar representation, not limited to 50
+	memcpy(col->write_buf, col->buffer_ptr, col->columnlength);
+	col->write_buf[col->columnlength] = '\0';
+	if (strcmp(col->write_buf, (char*)col->null_value) == 0) 
+		return NULL;
+	return (char*) col->write_buf;
+}
+
+
+static char* mapi_convert_clob(struct MapiColumn *col) {
 	if (strcmp(col->buffer_ptr, (char*)col->null_value) == 0) 
 		return NULL;
 	return col->buffer_ptr;
@@ -4324,6 +4334,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 
 				if (strcasecmp(type_sql_name, "varchar") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_varchar;
+				} else if (strcasecmp(type_sql_name, "clob") == 0) {
+					// var length strings
+					result->fields[i].converter = (mapi_converter) mapi_convert_clob;
 				} else if (strcasecmp(type_sql_name, "int") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_int;
 				} else if (strcasecmp(type_sql_name, "smallint") == 0) {
@@ -5701,8 +5714,8 @@ mapi_fetch_row(MapiHdl hdl)
 		} else {
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
 				if (result->fields[i].columnlength < 0) {
+					printf("Bla2\n");
 					// variable-length column
-
 					if (hdl->mid->protobuf_res) {
 						result->fields[i].buffer_ptr = ((Mhapi__QueryResult*) hdl->mid->protobuf_res)->columns[i]->string_values[result->cur_row];
 					} else {
