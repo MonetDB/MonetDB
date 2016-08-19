@@ -41,31 +41,33 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 474 # length
+% 476 # length
 project (
 | group by (
-| | join (
+| | project (
 | | | join (
 | | | | join (
 | | | | | join (
-| | | | | | table(sys.lineorder) [ lineorder.lo_revenue, lineorder.lo_supplycost, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey, lineorder.%lineorder_lo_suppkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey, lineorder.%lineorder_lo_custkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey, lineorder.%lineorder_lo_partkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ] COUNT ,
+| | | | | | join (
+| | | | | | | table(sys.lineorder) [ lineorder.lo_revenue, lineorder.lo_supplycost, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey, lineorder.%lineorder_lo_suppkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey, lineorder.%lineorder_lo_custkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey, lineorder.%lineorder_lo_partkey_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ] COUNT ,
+| | | | | | | select (
+| | | | | | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
+| | | | | | | ) [ dwdate.d_year in (int "1997", int "1998") ]
+| | | | | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ],
 | | | | | | select (
-| | | | | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
-| | | | | | ) [ dwdate.d_year in (int "1997", int "1998") ]
-| | | | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ],
+| | | | | | | table(sys.part) [ part.p_mfgr, part.p_category, part.%TID% NOT NULL ] COUNT 
+| | | | | | ) [ part.p_mfgr in (clob "MFGR#1", clob "MFGR#2") ]
+| | | | | ) [ lineorder.%lineorder_lo_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ],
 | | | | | select (
-| | | | | | table(sys.part) [ part.p_mfgr, part.p_category, part.%TID% NOT NULL ] COUNT 
-| | | | | ) [ part.p_mfgr in (clob "MFGR#1", clob "MFGR#2") ]
-| | | | ) [ lineorder.%lineorder_lo_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_partkey_fkey ],
+| | | | | | table(sys.supplier) [ supplier.s_nation, supplier.s_region, supplier.%TID% NOT NULL ] COUNT 
+| | | | | ) [ supplier.s_region = clob "AMERICA" ]
+| | | | ) [ lineorder.%lineorder_lo_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey ],
 | | | | select (
-| | | | | table(sys.supplier) [ supplier.s_nation, supplier.s_region, supplier.%TID% NOT NULL ] COUNT 
-| | | | ) [ supplier.s_region = clob "AMERICA" ]
-| | | ) [ lineorder.%lineorder_lo_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey ],
-| | | select (
-| | | | table(sys.customer) [ customer.c_region, customer.%TID% NOT NULL ] COUNT 
-| | | ) [ customer.c_region = clob "AMERICA" ]
-| | ) [ lineorder.%lineorder_lo_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey ]
-| ) [ dwdate.d_year, supplier.s_nation, part.p_category ] [ dwdate.d_year, supplier.s_nation, part.p_category, sys.sum no nil (sys.sql_sub(bigint[lineorder.lo_revenue] as lineorder.lo_revenue, bigint[lineorder.lo_supplycost] as lineorder.lo_supplycost)) as L1.L1 ]
+| | | | | table(sys.customer) [ customer.c_region, customer.%TID% NOT NULL ] COUNT 
+| | | | ) [ customer.c_region = clob "AMERICA" ]
+| | | ) [ lineorder.%lineorder_lo_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey ]
+| | ) [ dwdate.d_year, supplier.s_nation, part.p_category, lineorder.lo_revenue, lineorder.lo_supplycost, bigint[lineorder.lo_revenue] as L2.L2, bigint[lineorder.lo_supplycost] as L3.L3, sys.sql_sub(L2.L2, L3.L3) as L4.L4 ]
+| ) [ dwdate.d_year, supplier.s_nation, part.p_category ] [ dwdate.d_year, supplier.s_nation, part.p_category, sys.sum no nil (L4.L4) as L1.L1 ]
 ) [ dwdate.d_year, supplier.s_nation, part.p_category, L1 as L1.profit1 ] [ dwdate.d_year ASC, supplier.s_nation ASC, part.p_category ASC ]
 
 # 23:08:59 >  

@@ -779,8 +779,9 @@ exp_match( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
+/* c refers to the parent p */
 int 
-exp_refers( sql_exp *c, sql_exp *p)
+exp_refers( sql_exp *p, sql_exp *c)
 {
 	if (c->type == e_column) {
 		if (!p->name || !c->r || strcmp(p->name, c->r) != 0)
@@ -1328,8 +1329,11 @@ exp_has_func( sql_exp *e )
 	case e_convert:
 		return exp_has_func(e->l);
 	case e_func:
-	case e_aggr:
 		return 1;
+	case e_aggr:
+		if (e->l)
+			return exps_has_func(e->l);
+		return 0;
 	case e_cmp:
 		if (e->flag == cmp_or) {
 			return (exps_has_func(e->l) || exps_has_func(e->r));

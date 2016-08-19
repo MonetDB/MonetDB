@@ -266,7 +266,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			/*_DELETE(val);*/
 		}
 	} else { 
-		VALinit(&a->data, a->data.vtype, ATOMnilptr(a->data.vtype));
+		VALset(&a->data, a->data.vtype, (ptr)ATOMnilptr(a->data.vtype));
 		a->isnull = 1;
 	}
 	return a;

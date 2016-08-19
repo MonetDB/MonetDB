@@ -34,6 +34,9 @@ plan select * from test where id between l and h;
 plan select * from test where id between 1 and 1000*10;
 plan select * from test where id between 1 and 100*10;
 
+plan select * from test where id in (1, 1022);
+plan select * from test where id in (1, 1000);
+
 drop table test;
 drop table mt1;
 drop table mt2;
