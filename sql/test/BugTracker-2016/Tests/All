@@ -39,3 +39,4 @@ analyze-quotes-incorrectly.Bug-4021
 boolean-evaluation.Bug-4025
 HAVE_GEOM?nested-mal-with-multiplex.Bug-4035
 innerjoin-leftjoin-or.Bug-4049
+create_merge_table_withdata.Bug-4041

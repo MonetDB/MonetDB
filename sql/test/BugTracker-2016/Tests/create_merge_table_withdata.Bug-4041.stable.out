@@ -1,0 +1,38 @@
+stdout of test 'create_merge_table_withdata.Bug-4041` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 15:43:39 >  
+# 15:43:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33213" "--set" "mapi_usock=/var/tmp/mtest-10452/.s.monetdb.33213" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 15:43:39 >  
+
+# MonetDB 5 server v11.23.8
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:33213/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10452/.s.monetdb.33213
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:43:40 >  
+# 15:43:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10452" "--port=33213"
+# 15:43:40 >  
+
+#create table other_table (i1 int, i2 int);
+#insert into other_table values(1,2);
+[ 1	]
+#create merge table mt as select * from other_table limit 1 with no data;
+#drop table mt;;
+#drop table other_table;;
+
+# 15:43:40 >  
+# 15:43:40 >  "Done."
+# 15:43:40 >  
+
