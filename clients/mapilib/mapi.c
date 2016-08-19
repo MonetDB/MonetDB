@@ -835,6 +835,7 @@ struct MapiColumn {
 	int scale;
 	void *null_value;
 	char* buffer_ptr;
+	char *dynamic_write_buf;
 	char write_buf[50];
 	mapi_converter converter;
 };
@@ -1628,6 +1629,8 @@ close_result(MapiHdl hdl)
 				free(result->fields[i].columnname);
 			if (result->fields[i].columntype)
 				free(result->fields[i].columntype);
+			if (result->fields[i].dynamic_write_buf)
+				free(result->fields[i].dynamic_write_buf);
 		}
 		free(result->fields);
 	}
@@ -4063,12 +4066,11 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 */
 
 static char* mapi_convert_varchar(struct MapiColumn *col) {
-	// FIXME write_buf needs to be variable per column if we want to keep this varchar representation, not limited to 50
-	memcpy(col->write_buf, col->buffer_ptr, col->columnlength);
-	col->write_buf[col->columnlength] = '\0';
-	if (strcmp(col->write_buf, (char*)col->null_value) == 0) 
+	memcpy(col->dynamic_write_buf, col->buffer_ptr, col->columnlength);
+	col->dynamic_write_buf[col->columnlength] = '\0';
+	if (strcmp(col->dynamic_write_buf, (char*)col->null_value) == 0) 
 		return NULL;
-	return (char*) col->write_buf;
+	return (char*) col->dynamic_write_buf;
 }
 
 
@@ -4120,6 +4122,43 @@ static char* mapi_convert_tinyint(struct MapiColumn *col) {
 	if (*((signed char*) col->buffer_ptr) == *((signed char*)col->null_value)) return NULL;
 	sprintf(col->write_buf, "%hhd", *((signed char*) col->buffer_ptr));
 	return (char*) col->write_buf;
+}
+
+static lng _scales(int scale) {
+	if (scale == 0) {
+		return 1;
+	} else {
+		return 10 * _scales(scale - 1);
+	}
+}
+
+#define DEC2_STRING(tpe, scale) {												\
+	double val = *((tpe*) col->buffer_ptr);										\
+	if (*((tpe*) col->buffer_ptr) == *((tpe*)col->null_value)) return NULL;		\
+	if (scale) {																\
+		val = val / _scales(scale);												\
+	}																			\
+	sprintf(col->write_buf, "%f", val);										\
+	return (char*) col->write_buf;												\
+}
+
+static char* mapi_convert_decimal(struct MapiColumn *col) {
+	switch(col->columnlength) {
+		case sizeof(signed char):
+			DEC2_STRING(signed char, col->scale);
+		case sizeof(short):
+			DEC2_STRING(short, col->scale);
+		case sizeof(int):
+			DEC2_STRING(int, col->scale);
+		case sizeof(lng):
+			DEC2_STRING(lng, col->scale);
+#ifdef HAVE_HGE
+		case sizeof(hge):
+			DEC2_STRING(hge, col->scale);
+#endif
+	}
+	fprintf(stderr, "Unrecognized typelen for decimal.\n");
+	return NULL;
 }
 
 static char* mapi_convert_double(struct MapiColumn *col) {
@@ -4286,6 +4325,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			result->rows_read = 0;
 			result->cur_row = 0;
 
+			assert(result->fields);
+
 			for (i = 0; i < nr_cols; i++) {
 				lng col_info_length;
 				char *table_name, *col_name, *type_sql_name;
@@ -4311,6 +4352,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					return mid->error;
 				}
 
+				if (strcasecmp(type_sql_name, "decimal") == 0) {
+					// decimal type, read the scale as well
+					if (!mnstr_readInt(mid->from, &result->fields[i].scale)) {
+						return mid->error;
+					}
+				}
+
 				if (!mnstr_readInt(mid->from, &null_len)) {
 					return mid->error;
 				}
@@ -4331,9 +4379,12 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				result->fields[i].tablename = table_name;
 				result->fields[i].columntype = type_sql_name;
 				result->fields[i].columnlength = typelen;
+				result->fields[i].dynamic_write_buf = NULL;
+				result->fields[i].converter = NULL;
 
 				if (strcasecmp(type_sql_name, "varchar") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_varchar;
+					result->fields[i].dynamic_write_buf = malloc(result->fields[i].columnlength * sizeof(char));
 				} else if (strcasecmp(type_sql_name, "clob") == 0) {
 					// var length strings
 					result->fields[i].converter = (mapi_converter) mapi_convert_clob;
@@ -4346,7 +4397,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				} else if (strcasecmp(type_sql_name, "boolean") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_boolean;
 				} else if (strcasecmp(type_sql_name, "decimal") == 0) {
-					result->fields[i].converter = (mapi_converter) mapi_convert_double;
+					result->fields[i].converter = (mapi_converter) mapi_convert_decimal;
 				} else if (strcasecmp(type_sql_name, "double") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_double;
 				} else if (strcasecmp(type_sql_name, "date") == 0) {
@@ -5633,10 +5684,11 @@ mapi_fetch_row(MapiHdl hdl)
 #ifndef HAVE_LIBPROTOBUF
 				// TODO: complain
 #else
+				Mhapi__QueryResult *res;
 				bs2_resetbuf(hdl->mid->from);
 				mnstr_readChr(hdl->mid->from, &dummy);
 				buf =  bs2_buffer(hdl->mid->from);
-				Mhapi__QueryResult *res = mhapi__query_result__unpack(NULL, buf.len + buf.pos, (const uint8_t *) buf.buf);
+				res = mhapi__query_result__unpack(NULL, buf.len + buf.pos, (const uint8_t *) buf.buf);
 				assert(res);
 				assert(res->row_count <= result->row_count);
 				assert(res->n_columns == (size_t) result->fieldcnt);
@@ -5714,7 +5766,6 @@ mapi_fetch_row(MapiHdl hdl)
 		} else {
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
 				if (result->fields[i].columnlength < 0) {
-					printf("Bla2\n");
 					// variable-length column
 					if (hdl->mid->protobuf_res) {
 						result->fields[i].buffer_ptr = ((Mhapi__QueryResult*) hdl->mid->protobuf_res)->columns[i]->string_values[result->cur_row];

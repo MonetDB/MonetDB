@@ -1917,7 +1917,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		int retval = -1;
 		iterators[i] = bat_iterator(BATdescriptor(c->b));
 
-		if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
+		/*if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
 			str res = MAL_SUCCEED;
 	        int bat_type = ATOMstorage(iterators[i].b->ttype);
 	        int hpos = c->type.scale;
@@ -1956,7 +1956,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				fres = -1;
 				goto cleanup;
 	        }
-		}
+		}*/
 
 		if (ATOMvarsized(mtype)) {
 			// FIXME support other types than string
@@ -1983,6 +1983,15 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			fres = -1;
 			goto cleanup;
 		}
+
+		if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
+			// if the type is a decimal, we write the scale as a 4-byte integer as well
+			if (!mnstr_writeInt(s, c->type.scale)) {
+				fres = -1;
+				goto cleanup;
+			}
+		}
+
 		// write NULL values for this column to the stream
 		// NULL values are encoded as <size:int> <NULL value> (<size> is always <typelen> for fixed size columns)
 		if (!mnstr_writeInt(s, nil_len)) {
@@ -2039,7 +2048,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		if (varsized == 0) {
 			// no varsized elements, so we can immediately compute the amount of elements
 			row = srow + bytes_left / fixed_lengths;
-			row = row > count ? count : row;
+			row = row > (size_t) count ? (size_t) count : row;
 		} else {
 			// every varsized member has an 8-byte header indicating the length of the header in the block
 			// subtract this from the amount of bytes left
@@ -2113,15 +2122,16 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			for (i = 0; i < (size_t) t->nr_cols; i++) {
 				res_col *c = t->cols + i;
 				int local_type = ATOMstorage(c->type.type->localtype);
+				Mhapi__QueryResult__Column *col;
 
 				msg.columns[i] = malloc(sizeof(Mhapi__QueryResult__Column));
 				assert(msg.columns[i]);
-				Mhapi__QueryResult__Column *col = msg.columns[i];
+				col = msg.columns[i];
 
 				mhapi__query_result__column__init(col);
-				if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
+				/*if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
 					local_type = TYPE_dbl;
-				}
+				}*/
 				switch (local_type) {
 				case TYPE_str:
 				{
