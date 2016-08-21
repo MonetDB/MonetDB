@@ -72,7 +72,7 @@ Ready.
 #drop table ff;
 #select (4-1)*5;
 % .L # table_name
-% sql_sub_single_value # name
+% single_value # name
 % smallint # type
 % 2 # length
 [ 15	]

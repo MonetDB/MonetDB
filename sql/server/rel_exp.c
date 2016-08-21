@@ -374,7 +374,7 @@ exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 		if (e->flag <= 1) /* global variable */
 			return stack_get_var(sql, e->r); 
 		return NULL; 
-	} else if (e->flag < maxarg) {
+	} else if (sql->emode == m_normal && e->flag < maxarg) { /* do not get the value in the prepared case */
 		return args[e->flag]; 
 	}
 	return NULL; 
@@ -1266,6 +1266,19 @@ exp_is_correlation(sql_exp *e, sql_rel *r )
 		}
 	}
 	return -1;
+}
+
+int
+exp_is_zero(mvc *sql, sql_exp *e) 
+{
+	if (e->type == e_atom) {
+		if (e->l) {
+			return atom_is_zero(e->l);
+		} else if(sql->emode == m_normal && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
+			return atom_is_zero(sql->args[e->flag]);
+		}
+	}
+	return 0;
 }
 
 int

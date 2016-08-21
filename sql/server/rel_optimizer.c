@@ -2670,6 +2670,203 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_exp *
+exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
+{
+	if (e->type == e_func || e->type == e_aggr) {
+		list *l = e->l;
+		sql_subfunc *f = e->f;
+		node *n;
+
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
+			sql_exp *le = l->h->data;
+			sql_exp *re = l->h->next->data;
+			if (exp_is_atom(le) && exp_is_zero(sql, le)) {
+				(*changes)++;
+				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+				return le;
+			}
+			if (exp_is_atom(re) && exp_is_zero(sql, re)) {
+				(*changes)++;
+				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
+				return re;
+			}
+			if (exp_is_atom(le) && exp_is_atom(re)) {
+				atom *la = exp_flatten(sql, le);
+				atom *ra = exp_flatten(sql, re);
+
+				if (la && ra) {
+					atom *a = atom_mul(la, ra);
+
+					if (a) {
+						sql_exp *ne = exp_atom(sql->sa, a);
+						(*changes)++;
+						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+						return ne;
+					}
+				}
+			}
+			/* change a*a into pow(a,2), later change pow(a,2) back into a*a */
+			if (exp_equal(le, re)==0 && exp_subtype(le)->type->eclass == EC_FLT) {
+				/* pow */
+				list *l;
+				sql_exp *ne;
+				sql_subfunc *pow = sql_bind_func(sql->sa, sql->session->schema, "power", exp_subtype(le), exp_subtype(re), F_FUNC);
+				assert(pow);
+				if (exp_subtype(le)->type->localtype == TYPE_flt)
+					re = exp_atom_flt(sql->sa, 2);
+				else
+					re = exp_atom_dbl(sql->sa, 2);
+				l = sa_list(sql->sa);
+				append(l, le);
+				append(l, re);
+				(*changes)++;
+				ne = exp_op(sql->sa, l, pow);
+				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+				return ne;
+			}
+			/* change a*pow(a,n) or pow(a,n)*a into pow(a,n+1) */
+			if (is_func(le->type)) { 
+				list *l = le->l;
+				sql_subfunc *f = le->f;
+
+				if (!f->func->s && !strcmp(f->func->base.name, "power") && list_length(l) == 2) {
+					sql_exp *lle = l->h->data;
+					sql_exp *lre = l->h->next->data;
+					if (exp_equal(re, lle)==0) {
+						atom_inc(exp_value(sql, lre, sql->args, sql->argc));
+						(*changes)++;
+						exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+						return le;
+					}
+				}
+				if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
+					sql_exp *lle = l->h->data;
+					sql_exp *lre = l->h->next->data;
+					if (!exp_is_atom(lle) && exp_is_atom(lre) && exp_is_atom(re)) {
+						/* (x*c1)*c2 -> x * (c1*c2) */
+						list *l = sa_list(sql->sa);
+						append(l, lre);
+						append(l, re);
+						le->l = l;
+						l = e->l;
+						l->h->data = lle;
+						l->h->next->data = le;
+						(*changes)++;
+						return e;
+					}
+				}
+			}
+		}
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(l) == 2) {
+			sql_exp *le = l->h->data;
+			sql_exp *re = l->h->next->data;
+			if (exp_is_atom(le) && exp_is_zero(sql, le)) {
+				(*changes)++;
+				return re;
+			}
+			if (exp_is_atom(re) && exp_is_zero(sql, re)) {
+				(*changes)++;
+				return le;
+			}
+			if (exp_is_atom(le) && exp_is_atom(re)) {
+				atom *la = exp_flatten(sql, le);
+				atom *ra = exp_flatten(sql, re);
+
+				if (la && ra) {
+					atom *a = atom_add(la, ra);
+
+					if (a) {
+						sql_exp *ne = exp_atom(sql->sa, a);
+						(*changes)++;
+						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+						return ne;
+					}
+				}
+			}
+			if (is_func(le->type)) {
+				list *l = le->l;
+				sql_subfunc *f = le->f;
+				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(l) == 2) {
+					sql_exp *lle = l->h->data;
+					sql_exp *lre = l->h->next->data;
+					if (!exp_is_atom(lle) && exp_is_atom(lre) && exp_is_atom(re)) {
+						/* (x+c1)+c2 -> x + (c1+c2) */
+						list *l = sa_list(sql->sa);
+						append(l, lre);
+						append(l, re);
+						le->l = l;
+						l = e->l;
+						l->h->data = lle;
+						l->h->next->data = le;
+						(*changes)++;
+						return e;
+					}
+				}
+			}
+		}
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_sub") && list_length(l) == 2) {
+			sql_exp *le = l->h->data;
+			sql_exp *re = l->h->next->data;
+
+			if (exp_is_atom(le) && exp_is_atom(re)) {
+				atom *la = exp_flatten(sql, le);
+				atom *ra = exp_flatten(sql, re);
+
+				if (la && ra) {
+					atom *a = atom_sub(la, ra);
+
+					if (a) {
+						sql_exp *ne = exp_atom(sql->sa, a);
+						(*changes)++;
+						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+						return ne;
+					}
+				}
+			}
+		}
+		if (l)
+			for (n = l->h; n; n = n->next) 
+				n->data = exp_simplify_math(sql, n->data, changes);
+	}
+	if (e->type == e_convert)
+		e->l = exp_simplify_math(sql, e->l, changes);
+	return e;
+}
+
+static sql_rel *
+rel_simplify_math(int *changes, mvc *sql, sql_rel *rel) 
+{
+	
+	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == DDL_PSM)) && rel->exps) {
+		list *exps = rel->exps;
+		node *n;
+		int needed = 0;
+
+		for (n = exps->h; n && !needed; n = n->next) { 
+			sql_exp *e = n->data;
+
+			if (e->type == e_func || e->type == e_convert ||
+			    e->type == e_aggr || e->type == e_psm) 
+				needed = 1;
+		}
+		if (!needed)
+			return rel;
+
+		rel->exps = new_exp_list(sql->sa); 
+		for (n = exps->h; n; n = n->next) { 
+			sql_exp *e = exp_simplify_math( sql, n->data, changes);
+		
+			if (!e) 
+				return NULL;
+			list_append(rel->exps, e);
+		}
+	} 
+	if (*changes) /* if rewritten don't cache this query */
+		sql->caching = 0;
+	return rel;
+}
+
 static sql_rel *
 rel_find_ref( sql_rel *r)
 {
@@ -8060,6 +8257,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_merge_projects, &changes);
 		if (level <= 0) {
 			rel = rewrite(sql, rel, &rel_case_fixup, &changes);
+			rel = rewrite(sql, rel, &rel_simplify_math, &changes);
 			rel = rewrite(sql, rel, &rel_distinct_project2groupby, &changes);
 		}
 	}
