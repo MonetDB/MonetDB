@@ -2196,19 +2196,24 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				if (c->type.digits > 0) {
 					// varchar
 					size_t buflen = c->type.digits * (row - srow);
-					char *tmpbuf = malloc(buflen);
+					char *tmpbuf = GDKmalloc(buflen);
 					char *bufptr = tmpbuf;
+					char *ptr;
 					assert(tmpbuf);
 					for(crow = srow; crow < row; crow++) {
-						strcpy(bufptr, (char*) BUNtail(iterators[i], crow));
+						ptr = stpcpy(bufptr, (char*) BUNtail(iterators[i], crow));
 						bufptr += c->type.digits;
+						while(ptr < bufptr) {
+							*ptr++ = '\0';
+						}
 					}
 					if (mnstr_write(s, tmpbuf, buflen, 1) != 1) {
+						GDKfree(tmpbuf);
 						fres = -1;
 						fprintf(stderr,"Sending data failed.\n");
 						goto cleanup;
 					}
-					free(tmpbuf);
+					GDKfree(tmpbuf);
 				} else {
 					// variable length string
 					if (!mnstr_writeLng(s, var_col_len[i])) {
