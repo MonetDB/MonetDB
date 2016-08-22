@@ -3332,6 +3332,7 @@ main(int argc, char **argv)
 	if (blocksize > 0) {
 		if (blocksize < BLOCK) {
 			fprintf(stderr, "invalid block size (needs to be bigger than %d)\n", BLOCK);
+			exit(1);
 		} else {
 			mapi_set_blocksize(mid, blocksize);
 		}
