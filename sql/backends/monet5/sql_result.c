@@ -1915,7 +1915,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		int typelen = ATOMsize(mtype);
 		int nil_len = -1;
 		int retval = -1;
-		char *sqlname = c->type.type->sqlname;
 		iterators[i] = bat_iterator(BATdescriptor(c->b));
 
 		/*if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
@@ -1962,16 +1961,13 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		if (ATOMvarsized(mtype)) {
 			// FIXME support other types than string
 			assert(mtype == TYPE_str);
-			if (mtype == TYPE_str && c->type.digits > 0 && c->type.digits < 255) {
+			if (mtype == TYPE_str && c->type.digits > 0) {
 				// varchar with fixed max length
 				typelen = c->type.digits;
 				fixed_lengths += typelen;
 				nil_len = typelen;
 			} else {
 				// variable length strings
-				if (c->type.digits > 0) {
-					sqlname = strdup("clob");
-				}
 				typelen = -1;
 				varsized++;
 				nil_len = strlen(str_nil) + 1;
@@ -1980,10 +1976,9 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			fixed_lengths += typelen;
 			nil_len = typelen;
 		}
-		//printf("%d: %zu\n", i, typelen);
 
 		if (!mnstr_writeLng(s, (lng)(strlen(c->tn) + strlen(c->name) + strlen(c->type.type->sqlname) + sizeof(int) + 3)) ||
-				!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, sqlname) ||
+				!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, c->type.type->sqlname) ||
 				!mnstr_writeInt(s, typelen)) {
 			fres = -1;
 			goto cleanup;
@@ -2051,7 +2046,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		(void) c;
 #endif
 		if (varsized == 0) {
-			//printf("Fixed Length: %zu, Bytes Left: %zu\n", fixed_lengths, bytes_left);
 			// no varsized elements, so we can immediately compute the amount of elements
 			row = srow + bytes_left / fixed_lengths;
 			row = row > (size_t) count ? (size_t) count : row;
@@ -2216,7 +2210,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					if (mnstr_write(s, tmpbuf, buflen, 1) != 1) {
 						GDKfree(tmpbuf);
 						fres = -1;
-						fprintf(stderr,"Sending string data failed, %zu.\n", buflen);
+						fprintf(stderr,"Sending string data failed.\n");
 						goto cleanup;
 					}
 					GDKfree(tmpbuf);
