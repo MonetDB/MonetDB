@@ -2193,7 +2193,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				// FIXME support other types than string
 				assert(mtype == TYPE_str);
 				assert((size_t) var_col_len[i] < bsize);
-				if (c->type.digits > 0 && c->type.digits < 255) {
+				if (c->type.digits > 0) {
 					// varchar
 					size_t buflen = c->type.digits * (row - srow);
 					char *tmpbuf = GDKmalloc(buflen);
