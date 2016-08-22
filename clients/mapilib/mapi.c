@@ -2617,6 +2617,7 @@ mapi_reconnect(Mapi mid)
 		char* env_protocol = getenv("MONETDB_PROTOCOL");
 		char* env_compression = getenv("MONETDB_COMPRESSION");
 		char* env_colcomp = getenv("MONETDB_COLCOMP");
+		char* env_blocksize = getenv("MONETDB_BLOCKSIZE");
 		if (env_protocol) {
 			if (strcasecmp(env_protocol, "prot10") == 0) {
 				mid->protocol = prot10;
@@ -2644,6 +2645,16 @@ mapi_reconnect(Mapi mid)
 				mid->colcomp = COLUMN_COMPRESSION_PFOR;
 			} else if (strcasecmp(env_colcomp, "protobuf") == 0) {
 				mid->colcomp = COLUMN_COMPRESSION_PROTOBUF;
+			}
+		}
+		if (env_blocksize) {
+			errno = 0;
+			size_t blocksize = (size_t) atol(env_blocksize);
+			if (errno != 0) {
+				errno = 0;
+				fprintf(stderr, "Incorrect block size: %s\n", env_blocksize);
+			} else {
+				mid->blocksize = blocksize;
 			}
 		}
 	}
