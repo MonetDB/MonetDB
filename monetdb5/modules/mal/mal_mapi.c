@@ -195,7 +195,7 @@ doChallenge(void *data)
 			}
 
 		// FIXME: this leaks a block stream header
-		if (buflen < BLOCK) {
+		if (buflen < 200) {
 			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
 			close_stream(fdin);
 			close_stream(fdout);

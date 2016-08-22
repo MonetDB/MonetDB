@@ -3329,6 +3329,8 @@ main(int argc, char **argv)
 		free(passwd);
 	passwd = NULL;
 
+
+
 	if (blocksize > 0) {
 		if (blocksize < BLOCK) {
 			fprintf(stderr, "invalid block size (needs to be bigger than %d)\n", BLOCK);
