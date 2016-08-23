@@ -419,6 +419,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			stmt *orderby = NULL;
 			stmt *col = NULL;
 		
+			assert(0);
 			if (exps) {
 				for (en = exps->h; en; en = en->next) {
 					stmt *es;

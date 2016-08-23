@@ -3025,10 +3025,10 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
+			prev = f;
 			if (!check_card(card,f))
 				continue;
 
-			prev = f;
 			l = rel_check_type(sql, &a->type, l, type_equal);
 			a = m->next->data;
 			r = rel_check_type(sql, &a->type, r, type_equal);

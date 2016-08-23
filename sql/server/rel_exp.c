@@ -374,7 +374,7 @@ exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 		if (e->flag <= 1) /* global variable */
 			return stack_get_var(sql, e->r); 
 		return NULL; 
-	} else if (e->flag < maxarg) {
+	} else if (sql->emode == m_normal && e->flag < maxarg) { /* do not get the value in the prepared case */
 		return args[e->flag]; 
 	}
 	return NULL; 
@@ -779,8 +779,9 @@ exp_match( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
+/* c refers to the parent p */
 int 
-exp_refers( sql_exp *c, sql_exp *p)
+exp_refers( sql_exp *p, sql_exp *c)
 {
 	if (c->type == e_column) {
 		if (!p->name || !c->r || strcmp(p->name, c->r) != 0)
@@ -1268,6 +1269,19 @@ exp_is_correlation(sql_exp *e, sql_rel *r )
 }
 
 int
+exp_is_zero(mvc *sql, sql_exp *e) 
+{
+	if (e->type == e_atom) {
+		if (e->l) {
+			return atom_is_zero(e->l);
+		} else if(sql->emode == m_normal && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
+			return atom_is_zero(sql->args[e->flag]);
+		}
+	}
+	return 0;
+}
+
+int
 exp_is_atom( sql_exp *e )
 {
 	switch (e->type) {
@@ -1328,8 +1342,11 @@ exp_has_func( sql_exp *e )
 	case e_convert:
 		return exp_has_func(e->l);
 	case e_func:
-	case e_aggr:
 		return 1;
+	case e_aggr:
+		if (e->l)
+			return exps_has_func(e->l);
+		return 0;
 	case e_cmp:
 		if (e->flag == cmp_or) {
 			return (exps_has_func(e->l) || exps_has_func(e->r));

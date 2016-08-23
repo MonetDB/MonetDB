@@ -42,3 +42,5 @@ HAVE_GEOM?nested-mal-with-multiplex.Bug-4035
 querylog
 trigger_bulk.Bug-4045
 innerjoin-leftjoin-or.Bug-4049
+create_merge_table_withdata.Bug-4041
+timestamp_with_tz_fromstr.Bug-4019

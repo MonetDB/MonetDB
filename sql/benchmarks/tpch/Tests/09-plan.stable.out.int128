@@ -54,7 +54,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 414 # length
+% 440 # length
 project (
 | group by (
 | | project (
@@ -76,7 +76,7 @@ project (
 | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
 | | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
 | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ]
-| | ) [ nation.n_name NOT NULL as profit.nation, sys.year(orders.o_orderdate NOT NULL) as profit.o_year, sys.sql_sub(sys.sql_mul(decimal(33,2)[lineitem.l_extendedprice NOT NULL] as lineitem.l_extendedprice, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL)), sys.sql_mul(decimal(30,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, lineitem.l_quantity NOT NULL)) as profit.amount ]
+| | ) [ nation.n_name NOT NULL as profit.nation, sys.year(orders.o_orderdate NOT NULL) as profit.o_year, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L2.L2, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L3.L3, decimal(30,2)[partsupp.ps_supplycost NOT NULL] as L4.L4, sys.sql_mul(L2.L2, L3.L3) as L5.L5, sys.sql_mul(L4.L4, lineitem.l_quantity NOT NULL) as L6.L6, sys.sql_sub(L5.L5, L6.L6) as profit.amount ]
 | ) [ profit.nation NOT NULL, profit.o_year ] [ profit.nation NOT NULL, profit.o_year, sys.sum no nil (profit.amount) as L1.L1 ]
 ) [ profit.nation NOT NULL, profit.o_year, L1 as L1.sum_profit ] [ profit.nation ASC NOT NULL, profit.o_year ]
 
