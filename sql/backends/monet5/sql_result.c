@@ -2245,7 +2245,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				}
 
 #ifdef HAVE_BINPACK
-				if (colcomp == COLUMN_COMPRESSION_BINPACK && strcasecmp(c->type.type->sqlname, "int") == 0) {
+				if (colcomp == COLUMN_COMPRESSION_BINPACK && (strcasecmp(c->type.type->sqlname, "int") == 0 || strcasecmp(c->type.type->sqlname, "date") == 0)) {
 					// simd binary packing for integer columns
 					size_t N = row - srow;
 					char *datain = Tloc(iterators[i].b, srow);
@@ -2274,7 +2274,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				} else {
 #endif
 #ifdef HAVE_PFOR
-				if (colcomp == COLUMN_COMPRESSION_PFOR && strcasecmp(c->type.type->sqlname, "int") == 0) {
+				if (colcomp == COLUMN_COMPRESSION_PFOR && (strcasecmp(c->type.type->sqlname, "int") == 0 || strcasecmp(c->type.type->sqlname, "date") == 0)) {
 					// turbo pfor for integer columns
 					size_t n = row - srow;
 					char *datain = Tloc(iterators[i].b, srow);

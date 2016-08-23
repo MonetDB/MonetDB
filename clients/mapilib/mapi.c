@@ -5778,7 +5778,7 @@ mapi_fetch_row(MapiHdl hdl)
 					buf += col_len + sizeof(lng);
 				} else {
 #ifdef HAVE_BINPACK
-					if (hdl->mid->colcomp == COLUMN_COMPRESSION_BINPACK && strcasecmp(result->fields[i].columntype, "int") == 0) {
+					if (hdl->mid->colcomp == COLUMN_COMPRESSION_BINPACK && (strcasecmp(result->fields[i].columntype, "int") == 0 || strcasecmp(result->fields[i].columntype, "date") == 0)) {
 						lng b = *((lng*) buf);
 						buf += sizeof(lng);
 						lng length = *((lng*)(buf));
@@ -5794,7 +5794,7 @@ mapi_fetch_row(MapiHdl hdl)
 					} else {
 #endif
 #ifdef HAVE_PFOR
-					if (hdl->mid->colcomp == COLUMN_COMPRESSION_PFOR && strcasecmp(result->fields[i].columntype, "int") == 0) {
+					if (hdl->mid->colcomp == COLUMN_COMPRESSION_PFOR && (strcasecmp(result->fields[i].columntype, "int") == 0 || strcasecmp(result->fields[i].columntype, "date") == 0)) {
 						size_t n = nrows;
 						// FIXME resbuffer is not freed
 						char *resbuffer = malloc(nrows * sizeof(int));
