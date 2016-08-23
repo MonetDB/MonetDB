@@ -20,8 +20,13 @@
 #include <bat/bat_storage.h>
 #include <rel_exp.h>
 
-#ifdef HAVE_PFOR
+#ifdef HAVE_BINPACK
 #include <simdcomp.h>
+#endif
+#ifdef HAVE_PFOR
+#include <vint.h>
+#include <vp4dc.h>
+#include <vp4dd.h>
 #endif
 
 #ifndef HAVE_LLABS
@@ -2088,6 +2093,12 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			assert(row > srow);
 		}
 
+		if (row <= srow) {
+			fprintf(stderr, "Buffer size to small for a single row.\n");
+			fres = -1;
+			goto cleanup;
+		}
+
 #ifdef CONTINUATION_MESSAGE
 		if (!mnstr_readChr(c, &cont_req)) {
 			fprintf(stderr, "Received cancellation message.\n");
@@ -2232,32 +2243,72 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
 					atom_size = sizeof(dbl);
 				}
-#ifdef HAVE_PFOR
-				if (colcomp == COLUMN_COMPRESSION_PFOR && strcasecmp(c->type.type->sqlname, "int") == 0) {
-					// use PFOR for integer columns
+
+#ifdef HAVE_BINPACK
+				if (colcomp == COLUMN_COMPRESSION_BINPACK && strcasecmp(c->type.type->sqlname, "int") == 0) {
+					// simd binary packing for integer columns
 					size_t N = row - srow;
 					char *datain = Tloc(iterators[i].b, srow);
-					__m128i * endofbuf;
-					uint8_t * buffer;
+					char *endofbuf;
 					uint32_t b;
 					lng length;
+					buffer buf = bs2_buffer(s);
+					char *bufstart = buf.buf + buf.pos + 2 * sizeof(lng);
 
 					b = maxbits_length(datain, N);
-					buffer = malloc(simdpack_compressedbytes(N,b)); // allocate just enough memory
-					endofbuf = simdpack_length(datain, N, (__m128i *)buffer, b);
-					if (!buffer || !endofbuf || endofbuf <= buffer) {
-						fprintf(stderr,"Compression failed!\n");
+					endofbuf = (char*)simdpack_length(datain, N, (__m128i *) bufstart, b);
+					if (!endofbuf || endofbuf <= bufstart) {
+						fprintf(stderr,"BINPACK compression failed!\n");
 						fres = -1;
 						goto cleanup;
 					}
-					length = (lng)((char*) endofbuf - (char*) buffer);
-					if (!mnstr_writeLng(s, b) || !mnstr_writeLng(s, length) || mnstr_write(s, buffer, length, 1) != 1) {
+					length = (lng)((char*) endofbuf - (char*) bufstart);
+					*((lng*) (buf.buf + buf.pos)) = b;
+					*((lng*) (buf.buf + buf.pos + sizeof(lng))) = length;
+					bs2_setpos(s, (char*) endofbuf - buf.buf);
+					if (atom_size * (row - srow) < 2 * sizeof(lng) + length && (row - srow) < (size_t) count) {
+						fprintf(stderr, "BINPACK compression too large!\n");
 						fres = -1;
-						fprintf(stderr,"Sending data failed.\n");
 						goto cleanup;
 					}
-					free(buffer);
+				} else {
+#endif
+#ifdef HAVE_PFOR
+				if (colcomp == COLUMN_COMPRESSION_PFOR && strcasecmp(c->type.type->sqlname, "int") == 0) {
+					// turbo pfor for integer columns
+					size_t n = row - srow;
+					char *datain = Tloc(iterators[i].b, srow);
+					buffer buf = bs2_buffer(s);
+					char *bufstart = buf.buf + buf.pos;
+					char *bufpos = bufstart;
+					lng length;
+					char *endptr = NULL;
 
+					while(n > 0) {
+						size_t elements = n > 128 ? 128 : n;
+						if (elements < 128) {
+							memcpy(bufpos, datain, elements * sizeof(int));
+							bufpos += elements * sizeof(int);
+							endptr = bufpos;
+						} else {
+							endptr = p4dencv32(datain, elements, bufpos);
+							if (!endptr) {
+								fres = -1;
+								fprintf(stderr, "PFOR compression failed.\n");
+								goto cleanup;
+							}
+							bufpos = endptr;
+						}
+						datain += elements * sizeof(int);
+						n -= elements;
+					}
+					bs2_setpos(s, endptr - buf.buf);
+					length = endptr - bufstart;
+					if (atom_size * (row - srow) < length && (row - srow) < (size_t) count) {
+						fprintf(stderr, "PFOR compression too large!\n");
+						fres = -1;
+						goto cleanup;
+					}
 				} else {
 #endif
 				if (mnstr_write(s, Tloc(iterators[i].b, srow), atom_size, row - srow) != (ssize_t) (row - srow)) {
@@ -2265,6 +2316,9 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					goto cleanup;
 				}
 #ifdef HAVE_PFOR
+			}
+#endif
+#ifdef HAVE_BINPACK
 			}
 #endif
 			}

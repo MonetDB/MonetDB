@@ -43,6 +43,10 @@ mcrypt_getHashAlgorithms(void)
 // the server supports PFOR
 		",PFOR"
 #endif
+#ifdef HAVE_BINPACK
+// the server supports bin packing
+		",BINPACK"
+#endif
 		);
 }
 

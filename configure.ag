@@ -1688,6 +1688,49 @@ AC_SUBST([lz4_CFLAGS])
 AC_SUBST([lz4_LIBS])
 AM_CONDITIONAL([HAVE_LIBLZ4], [test x$have_lz4 != xno])
 
+dnl  check for simd binpack (de)compression library
+org_have_binpack=auto
+have_binpack=$org_have_binpack
+binpack_CFLAGS=""
+binpack_LIBS=""
+AC_ARG_WITH([binpack],
+	[AS_HELP_STRING([--with-binpack=DIR],
+		[binpack library is installed in DIR])],
+	[have_binpack="$withval"])
+
+AS_CASE(["$have_binpack"],
+	[yes|no|auto], [],
+	[
+		binpack_CFLAGS="-I$withval/include"
+		binpack_LIBS="-L$withval"])
+
+AC_MSG_CHECKING([for binpack])
+AS_VAR_IF([have_binpack], [no], [], [
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $binpack_CFLAGS"
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $binpack_LIBS -lsimdcomp"
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
+@%:@include <simdcomputil.h>]], [[(void)bits(42);]])],
+		binpack_LIBS="$binpack_LIBS -lsimdcomp",
+		[ AS_VAR_IF([have_binpack], [auto], [], [
+			AC_MSG_ERROR([binpack library not found])])
+		  have_binpack=no
+		  why_have_binpack="(binpack library not found)" ])
+	LIBS="$save_LIBS"
+	CPPFLAGS="$save_CPPFLAGS"])
+
+AS_VAR_IF([have_binpack], [no], [], [
+	AC_DEFINE([HAVE_BINPACK], 1, [Define if you have the simd binpack library])
+	AC_MSG_RESULT([yes: $binpack_LIBS])], [
+	binpack_CFLAGS=""
+	binpack_LIBS=""
+	AC_MSG_RESULT([no])])
+
+AC_SUBST([binpack_CFLAGS])
+AC_SUBST([binpack_LIBS])
+AM_CONDITIONAL([HAVE_BINPACK], [test x$have_binpack != xno])
+
 
 dnl  check for pfor (de)compression library
 org_have_pfor=auto
@@ -1702,18 +1745,20 @@ AC_ARG_WITH([pfor],
 AS_CASE(["$have_pfor"],
 	[yes|no|auto], [],
 	[
-		pfor_CFLAGS="-I$withval/include"
-		pfor_LIBS="-L$withval"])
+		pfor_CFLAGS="-I$withval"
+		pfor_LIBS="-Wl,$withval/libpfor.so"])
 
 AC_MSG_CHECKING([for pfor])
 AS_VAR_IF([have_pfor], [no], [], [
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $pfor_CFLAGS"
 	save_LIBS="$LIBS"
-	LIBS="$LIBS $pfor_LIBS -lsimdcomp"
+	LIBS="$LIBS $pfor_LIBS"
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
-@%:@include <simdcomputil.h>]], [[(void)bits(42);]])],
-		pfor_LIBS="$pfor_LIBS -lsimdcomp",
+	@%:@include <vint.h>
+	@%:@include <vp4dc.h>
+	@%:@include <stdlib.h>]], [[int *ints = malloc(sizeof(int) * 10); char *buf = malloc(1000); char *endptr = p4denc32(ints, 10, buf);]])],
+		pfor_LIBS="$pfor_LIBS",
 		[ AS_VAR_IF([have_pfor], [auto], [], [
 			AC_MSG_ERROR([pfor library not found])])
 		  have_pfor=no
@@ -3401,6 +3446,7 @@ echo
 echo "* Available features/extensions:"
 for comp in \
 	'atomic_ops   ' \
+	'binpack      ' \
 	'bz2          ' \
 	'curl         ' \
 	'fits         ' \
@@ -3419,6 +3465,7 @@ for comp in \
 	'openssl      ' \
 	'pcre         ' \
 	'perl         ' \
+	'pfor         ' \
 	'proj         ' \
 	'protobuf     ' \
 	'pthread      ' \

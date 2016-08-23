@@ -18,7 +18,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../common/stream \
 		   ../../../common/utils \
 		   ../../../gdk \
-		   $(pfor_CFLAGS)
+		   $(pfor_CFLAGS) $(binpack_CFLAGS)
 
 lib__sql = {
 	MODULE
@@ -57,7 +57,7 @@ lib__sql = {
 		   ../../../common/utils/libmcrypt \
 		   $(PTHREAD_LIBS) \
 		   $(protobuf_LIBS) \
-		   $(openssl_LIBS) $(MATH_LIBS) $(pfor_LIBS)
+		   $(openssl_LIBS) $(MATH_LIBS) $(pfor_LIBS) $(binpack_LIBS)
 }
 
 headers_mal = {

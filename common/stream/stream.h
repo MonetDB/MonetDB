@@ -253,7 +253,8 @@ typedef enum {
 	COLUMN_COMPRESSION_AUTO = 255,
 	COLUMN_COMPRESSION_NONE = 0,
 	COLUMN_COMPRESSION_PFOR = 1,
-	COLUMN_COMPRESSION_PROTOBUF = 2
+	COLUMN_COMPRESSION_BINPACK = 2,
+	COLUMN_COMPRESSION_PROTOBUF = 3
 } column_compression;
 
 stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp);

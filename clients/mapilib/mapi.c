@@ -812,8 +812,12 @@
 # endif
 #endif
 
-#ifdef HAVE_PFOR
+#ifdef HAVE_BINPACK
 #include <simdcomp.h>
+#endif
+#ifdef HAVE_PFOR
+#include <vint.h>
+#include <vp4dd.h>
 #endif
 
 #ifndef INVALID_SOCKET
@@ -2643,6 +2647,8 @@ mapi_reconnect(Mapi mid)
 				mid->colcomp = COLUMN_COMPRESSION_NONE;
 			} else if (strcasecmp(env_colcomp, "pfor") == 0) {
 				mid->colcomp = COLUMN_COMPRESSION_PFOR;
+			} else if (strcasecmp(env_colcomp, "binpack") == 0) {
+				mid->colcomp = COLUMN_COMPRESSION_BINPACK;
 			} else if (strcasecmp(env_colcomp, "protobuf") == 0) {
 				mid->colcomp = COLUMN_COMPRESSION_PROTOBUF;
 			}
@@ -2713,6 +2719,23 @@ mapi_reconnect(Mapi mid)
 #else
 		if (mid->colcomp == COLUMN_COMPRESSION_PFOR) {
 			fprintf(stderr, "Client does not support PFOR compression.\n");
+			exit(1);
+		}
+#endif
+#ifdef HAVE_BINPACK
+		if (strstr(hashes, "BINPACK")) {
+			if (mid->colcomp == COLUMN_COMPRESSION_AUTO) {
+				mid->colcomp = COLUMN_COMPRESSION_BINPACK;
+			}
+		} else if (mid->colcomp == COLUMN_COMPRESSION_BINPACK) {
+			mapi_setError(mid, "Client wants BINPACK but server does not support it",
+					"mapi_reconnect", MERROR);
+			close_connection(mid);
+			return mid->error;
+		}
+#else
+		if (mid->colcomp == COLUMN_COMPRESSION_BINPACK) {
+			fprintf(stderr, "Client does not support BINPACK compression.\n");
 			exit(1);
 		}
 #endif
@@ -2852,7 +2875,7 @@ mapi_reconnect(Mapi mid)
 				     mid->database == NULL ? "" : mid->database,
 				     prot_version == prot10 ? "PROT10" : "PROT10COMPR",
 				     comp == COMPRESSION_SNAPPY ? "SNAPPY" : (comp == COMPRESSION_LZ4 ? "LZ4" : ""),
-				     mid->colcomp == COLUMN_COMPRESSION_PFOR ? ",HAVEPFOR" :    (mid->colcomp == COLUMN_COMPRESSION_PROTOBUF ? ",PROTOBUF" : ""),
+				     mid->colcomp == COLUMN_COMPRESSION_PFOR ? ",HAVEPFOR" : (mid->colcomp == COLUMN_COMPRESSION_BINPACK ? ",HAVEBINPACK" : (mid->colcomp == COLUMN_COMPRESSION_PROTOBUF ? ",PROTOBUF" : "")),
 				    mid->blocksize);
 			} else {
 				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
@@ -4329,7 +4352,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			result->fieldcnt = nr_cols;
 			result->maxfields = (int) nr_cols;
 			result->row_count = nr_rows;
-			result->fields = malloc(sizeof(struct MapiColumn) * result->fieldcnt);
+			result->fields = calloc(result->fieldcnt, sizeof(struct MapiColumn));
 			result->tableid = result_set_id;
 			result->querytype = Q_TABLE;
 			result->tuple_count = 0;
@@ -5754,21 +5777,50 @@ mapi_fetch_row(MapiHdl hdl)
 					result->fields[i].buffer_ptr += sizeof(lng);
 					buf += col_len + sizeof(lng);
 				} else {
-#ifdef HAVE_PFOR
-					if (hdl->mid->colcomp == COLUMN_COMPRESSION_PFOR && strcasecmp(result->fields[i].columntype, "int") == 0) {
+#ifdef HAVE_BINPACK
+					if (hdl->mid->colcomp == COLUMN_COMPRESSION_BINPACK && strcasecmp(result->fields[i].columntype, "int") == 0) {
 						lng b = *((lng*) buf);
 						buf += sizeof(lng);
 						lng length = *((lng*)(buf));
 						buf += sizeof(lng);
-
+						// FIXME resbuffer is not freed
 						uint8_t *resbuffer = malloc(nrows * sizeof(int));
+						if (!resbuffer) {
+							return 0;
+						}
 						simdunpack_length((const __m128i *)buf, nrows, (uint32_t*) resbuffer, b);
 						result->fields[i].buffer_ptr = resbuffer;
 						buf += length;
 					} else {
 #endif
+#ifdef HAVE_PFOR
+					if (hdl->mid->colcomp == COLUMN_COMPRESSION_PFOR && strcasecmp(result->fields[i].columntype, "int") == 0) {
+						size_t n = nrows;
+						// FIXME resbuffer is not freed
+						char *resbuffer = malloc(nrows * sizeof(int));
+						char *bufpos = resbuffer;
+						if (!resbuffer) {
+							return 0;
+						}
+						while(n > 0) {
+							size_t elements = n > 128 ? 128 : n;
+							if (elements < 128) {
+								memcpy(bufpos, buf, elements * sizeof(int));
+								buf += elements * sizeof(int);
+							} else {
+								buf = p4ddecv32(buf, elements, bufpos);
+							}
+							bufpos += elements * sizeof(int);
+							n -= elements;
+						}
+						result->fields[i].buffer_ptr = resbuffer;
+					} else {
+#endif
 					buf += nrows * result->fields[i].columnlength;
 #ifdef HAVE_PFOR
+					}
+#endif
+#ifdef HAVE_BINPACK
 					}
 #endif
 				}
@@ -6196,12 +6248,13 @@ MapiMsg
 mapi_set_column_compression(Mapi mid, const char* colcomp) {
 	if (strcasecmp(colcomp, "pfor") == 0) {
 		mid->colcomp = COLUMN_COMPRESSION_PFOR;
-	}
-	else if (strcasecmp(colcomp, "none") == 0) {
+	} else if (strcasecmp(colcomp, "none") == 0) {
 		mid->colcomp = COLUMN_COMPRESSION_NONE;
 	} else if (strcasecmp(colcomp, "protobuf") == 0) {
 		mid->colcomp = COLUMN_COMPRESSION_PROTOBUF;
-	} else {
+	} else if (strcasecmp(colcomp, "binpack") == 0) {
+		mid->colcomp = COLUMN_COMPRESSION_BINPACK;
+	}else {
 		mapi_setError(mid, "invalid column compression type", "mapi_set_compression", MERROR);
 		return -1;
 	}
