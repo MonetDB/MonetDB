@@ -872,11 +872,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			}
 		}
 		if (!exp && lrel) { 
+			char *cname;
 			old = *e;
 			*e = 0;
-			exp = rel_bind_column(sql, lrel, b, 0);
+			cname = sa_strdup(sql->sa, b);
+			exp = rel_bind_column(sql, lrel, cname, 0);
 			if (!exp && rrel)
-				exp = rel_bind_column(sql, rrel, b, 0);
+				exp = rel_bind_column(sql, rrel, cname, 0);
 			*e = old;
 			skipWS(r,pos);
 		}
