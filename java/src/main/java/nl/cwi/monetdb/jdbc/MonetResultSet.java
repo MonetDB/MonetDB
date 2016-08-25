@@ -3060,7 +3060,65 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		return absolute(curRow + rows);
 	}
 
-	/* these methods are all related to updateable result sets, which we
+	/**
+	 * Retrieves whether a row has been deleted. A deleted row may leave a visible "hole" in a result set.
+	 * This method can be used to detect holes in a result set.
+	 * The value returned depends on whether or not this ResultSet object can detect deletions.
+	 *
+	 * Note: Support for the rowDeleted method is optional with a result set concurrency of CONCUR_READ_ONLY
+	 *
+	 * Returns: true if the current row is detected to have been deleted by the owner or another; false otherwise
+	 *
+	 * Throws:
+	 *     SQLException - if a database access error occurs or this method is called on a closed result set
+	 *     SQLFeatureNotSupportedException - if the JDBC driver does not support this method
+	 * Since: 1.2
+	 * See Also: DatabaseMetaData.deletesAreDetected(int)
+	 */
+	@Override
+	public boolean rowDeleted() throws SQLException {
+		return false;
+	}
+
+	/**
+	 * Retrieves whether the current row has had an insertion.
+	 * The value returned depends on whether or not this ResultSet object can detect visible inserts.
+	 *
+	 * Note: Support for the rowInserted method is optional with a result set concurrency of CONCUR_READ_ONLY
+	 *
+	 * Returns: true if the current row is detected to have been inserted; false otherwise
+	 *
+	 * Throws:
+	 *     SQLException - if a database access error occurs or this method is called on a closed result set
+	 *     SQLFeatureNotSupportedException - if the JDBC driver does not support this method
+	 * Since: 1.2
+	 * See Also: DatabaseMetaData.insertsAreDetected(int)
+	 */
+	@Override
+	public boolean rowInserted() throws SQLException {
+		return false;
+	}
+
+	/**
+	 * Retrieves whether the current row has been updated.
+	 * The value returned depends on whether or not the result set can detect updates.
+	 *
+	 * Note: Support for the rowUpdated method is optional with a result set concurrency of CONCUR_READ_ONLY
+	 *
+	 * Returns: true if the current row is detected to have been visibly updated by the owner or another; false otherwise
+	 *
+	 * Throws:
+	 *     SQLException - if a database access error occurs or this method is called on a closed result set
+	 *     SQLFeatureNotSupportedException - if the JDBC driver does not support this method
+	 * Since: 1.2
+	 * See Also: DatabaseMetaData.updatesAreDetected(int)
+	 */
+	@Override
+	public boolean rowUpdated() throws SQLException {
+		return false;
+	}
+
+	/* the next methods are all related to updateable result sets, which we
 	   currently do not support */
 	@Override
 	public void cancelRowUpdates() throws SQLException {
@@ -3092,20 +3150,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		throw newSQLFeatureNotSupportedException("refreshRow");
 	}
 
-	@Override
-	public boolean rowDeleted() throws SQLException {
-		throw newSQLFeatureNotSupportedException("rowDeleted");
-	}
-
-	@Override
-	public boolean rowInserted() throws SQLException {
-		throw newSQLFeatureNotSupportedException("rowInserted");
-	}
-
-	@Override
-	public boolean rowUpdated() throws SQLException {
-		throw newSQLFeatureNotSupportedException("rowUpdated");
-	}
 
 	@Override
 	public void updateArray(int columnIndex, Array x) throws SQLException {
