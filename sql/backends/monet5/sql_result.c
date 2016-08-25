@@ -2000,6 +2000,12 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	while (row < (size_t) count) {
 		size_t crow = 0;
 		size_t bytes_left = bsize - sizeof(lng) - 1;
+
+
+		if (colcomp == COLUMN_COMPRESSION_BINPACK || colcomp == COLUMN_COMPRESSION_PFOR) {
+			// leave a bit of extra space in case the compression increases the size of the data
+			bytes_left = bytes_left / 2;
+		}
 #ifdef CONTINUATION_MESSAGE
 		char cont_req, dummy;
 #else
@@ -2222,11 +2228,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					*((lng*) (buf.buf + buf.pos)) = b;
 					*((lng*) (buf.buf + buf.pos + sizeof(lng))) = length;
 					bs2_setpos(s, (char*) endofbuf - buf.buf);
-					if (atom_size * (row - srow) < 2 * sizeof(lng) + length && (row - srow) < (size_t) count) {
+					/*if (atom_size * (row - srow) < 2 * sizeof(lng) + length && (row - srow) < (size_t) count) {
 						fprintf(stderr, "BINPACK compression too large!\n");
 						fres = -1;
 						goto cleanup;
-					}
+					}*/
 				} else {
 #endif
 #ifdef HAVE_PFOR
@@ -2260,11 +2266,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					}
 					bs2_setpos(s, endptr - buf.buf);
 					length = endptr - bufstart;
-					if (atom_size * (row - srow) < length && (row - srow) < (size_t) count) {
+					/*if (atom_size * (row - srow) < length && (row - srow) < (size_t) count) {
 						fprintf(stderr, "PFOR compression too large!\n");
 						fres = -1;
 						goto cleanup;
-					}
+					}*/
 				} else {
 #endif
 				if (mnstr_write(s, Tloc(iterators[i].b, srow), atom_size, row - srow) != (ssize_t) (row - srow)) {
