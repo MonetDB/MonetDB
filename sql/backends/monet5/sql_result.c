@@ -1922,47 +1922,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		int retval = -1;
 		iterators[i] = bat_iterator(BATdescriptor(c->b));
 
-		/*if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
-			str res = MAL_SUCCEED;
-	        int bat_type = ATOMstorage(iterators[i].b->ttype);
-	        int hpos = c->type.scale;
-	        bat result = 0;
-
-	        //decimal values can be stored in various numeric fields, so check the numeric field and convert the one it's actually stored in
-	        switch(bat_type)
-	        {
-	            case TYPE_bte:
-	                res = batbte_dec2_dbl(&result, &hpos, &iterators[i].b->batCacheid);
-	                break;
-	            case TYPE_sht:
-	                res = batsht_dec2_dbl(&result, &hpos, &iterators[i].b->batCacheid);
-	                break;
-	            case TYPE_int:
-	                res = batint_dec2_dbl(&result, &hpos, &iterators[i].b->batCacheid);
-	                break;
-	            case TYPE_lng:
-	                res = batlng_dec2_dbl(&result, &hpos, &iterators[i].b->batCacheid);
-	                break;
-	#ifdef HAVE_HGE
-	            case TYPE_hge:
-	                res = bathge_dec2_dbl(&result, &hpos, &iterators[i].b->batCacheid);
-	                break;
-	#endif
-	            default:
-					fres = -1;
-					goto cleanup;
-	        }
-	        if (res == MAL_SUCCEED) {
-	        	mtype = TYPE_dbl;
-	        	typelen = sizeof(dbl);
-	        	BBPunfix(iterators[i].b->batCacheid);
-	            iterators[i].b = BATdescriptor(result);
-	        } else {
-				fres = -1;
-				goto cleanup;
-	        }
-		}*/
-
 		if (ATOMvarsized(mtype)) {
 			// FIXME support other types than string
 			assert(mtype == TYPE_str);
@@ -1970,13 +1929,12 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				// varchar with fixed max length
 				typelen = c->type.digits;
 				fixed_lengths += typelen;
-				nil_len = typelen;
 			} else {
 				// variable length strings
 				typelen = -1;
 				varsized++;
-				nil_len = strlen(str_nil) + 1;
 			}
+			nil_len = strlen(str_nil) + 1;
 		} else {
 			fixed_lengths += typelen;
 			nil_len = typelen;
@@ -2006,10 +1964,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 
 		switch(ATOMstorage(mtype)) {
 			case TYPE_str:
-				retval = 1;
-				for(j = 0; j < (size_t) nil_len; j++) {
-					retval = retval && mnstr_writeBte(s, str_nil[j]);
-				}
+				retval = write_str_term(s, str_nil);
 				break;
 			case TYPE_bit:
 			case TYPE_bte:
@@ -2115,6 +2070,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			break;
 		}
 #endif
+		//printf("Rows: %zu\n", (size_t)(row - srow));
 
 		assert(bs2_buffer(s).pos == 0);
 
@@ -2207,7 +2163,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				if (c->type.digits > 0) {
 					// varchar
 					size_t buflen = c->type.digits * (row - srow);
-					char *tmpbuf = GDKmalloc(buflen);
+					char *tmpbuf = GDKmalloc(buflen * sizeof(char));
 					char *bufptr = tmpbuf;
 					char *ptr;
 					assert(tmpbuf);
@@ -2241,7 +2197,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			} else {
 				int atom_size = ATOMsize(mtype);
 				if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
-					atom_size = sizeof(dbl);
+					atom_size = ATOMsize(ATOMstorage(mtype));
 				}
 
 #ifdef HAVE_BINPACK

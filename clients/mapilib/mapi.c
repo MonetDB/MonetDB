@@ -4100,6 +4100,13 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 */
 
 static char* mapi_convert_varchar(struct MapiColumn *col) {
+	if (col->buffer_ptr[col->columnlength - 1] == '\0') {
+		// if the varchar buffer is not entirely filled, we can directly use the data as char*
+		if (strcmp(col->buffer_ptr, (char*)col->null_value) == 0) 
+			return NULL;
+		return (char*) col->buffer_ptr;
+	}
+	// if the buffer is filled, there is no null terminator so we have to copy the data
 	memcpy(col->dynamic_write_buf, col->buffer_ptr, col->columnlength);
 	col->dynamic_write_buf[col->columnlength] = '\0';
 	if (strcmp(col->dynamic_write_buf, (char*)col->null_value) == 0) 
@@ -4416,7 +4423,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				result->fields[i].dynamic_write_buf = NULL;
 				result->fields[i].converter = NULL;
 
-				if (strcasecmp(type_sql_name, "varchar") == 0) {
+				if (strcasecmp(type_sql_name, "varchar") == 0 || strcasecmp(type_sql_name, "char") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_varchar;
 					result->fields[i].dynamic_write_buf = malloc(result->fields[i].columnlength * sizeof(char));
 				} else if (strcasecmp(type_sql_name, "clob") == 0) {
@@ -4439,9 +4446,12 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				} else if (strcasecmp(type_sql_name, "bigint") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_lng;
 				} else {
+					fprintf(stderr, "Unrecognized sql type: %s\n", type_sql_name);
 					result->fields[i].converter = (mapi_converter) mapi_convert_unknown;
 					// TODO: complain
 				}
+
+				//printf("Column %d: %s - %s (%d)\n", i, col_name, type_sql_name, typelen);
 			}
 			hdl->result = result;
 			hdl->active = result;
