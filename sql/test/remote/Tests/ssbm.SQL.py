@@ -184,6 +184,9 @@ for workerrec in workers:
     c.execute(atable)
 
 # sanity check
+c.execute("select count(*) from lineorder_0")
+print str(c.fetchall()[0][0]) + ' rows in remote table'
+
 c.execute("select count(*) from lineorder")
 print str(c.fetchall()[0][0]) + ' rows in mergetable'
 

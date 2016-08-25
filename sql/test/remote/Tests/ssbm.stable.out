@@ -6,6 +6,11 @@ Ready.
 # 14:14:37 >  "/usr/local/opt/python/bin/python2.7" "ssbm.SQL.py" "ssbm"
 # 14:14:37 >  
 
+# 11:09:02 >  
+# 11:09:02 >  "/usr/bin/python2" "ssbm.SQL.py" "ssbm"
+# 11:09:02 >  
+
+12036 rows in remote table
 60175 rows in mergetable
 356
 356
