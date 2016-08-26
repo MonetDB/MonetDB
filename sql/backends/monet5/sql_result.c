@@ -1885,6 +1885,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	size_t row = 0;
 	size_t srow = 0;
 	size_t varsized = 0;
+	size_t length_prefixed = 0;
 	BATiter *iterators = NULL;
 	lng fixed_lengths = 0;
 	int fres = 0;
@@ -1928,13 +1929,17 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			typelen = -1;
 			if (mtype == TYPE_str && c->type.digits > 0) {
 				// varchar with fixed max length
-				fixed_lengths += c->type.digits + varint_size(c->type.digits);
+				fixed_lengths += c->type.digits + 1;
 				if (c->type.digits < VARCHAR_MAXIMUM_FIXED) {
 					typelen = c->type.digits;
+					fixed_lengths -= 1;
+				} else {
+					length_prefixed++;
 				}
 			} else {
 				// variable length strings
 				varsized++;
+				length_prefixed++;
 			}
 			nil_len = strlen(str_nil) + 1;
 		} else {
@@ -2004,10 +2009,14 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		size_t crow = 0;
 		size_t bytes_left = bsize - sizeof(lng) - 1;
 
-		if (colcomp == COLUMN_COMPRESSION_BINPACK || colcomp == COLUMN_COMPRESSION_PFOR) {
+		// every varsized member has an 8-byte header indicating the length of the header in the block
+		// subtract this from the amount of bytes left
+		bytes_left -= length_prefixed * sizeof(lng);
+
+		/*if (colcomp == COLUMN_COMPRESSION_BINPACK || colcomp == COLUMN_COMPRESSION_PFOR) {
 			// leave a bit of extra space in case the compression increases the size of the data
 			bytes_left = bytes_left / 2;
-		}
+		}*/
 #ifdef CONTINUATION_MESSAGE
 		char cont_req, dummy;
 #else
@@ -2018,10 +2027,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			row = srow + bytes_left / fixed_lengths;
 			row = row > (size_t) count ? (size_t) count : row;
 		} else {
-			// every varsized member has an 8-byte header indicating the length of the header in the block
-			// subtract this from the amount of bytes left
-			bytes_left -= varsized * sizeof(lng); 
-
 			// we have varsized elements, so we have to loop to determine how many rows fit into a buffer
 			while (row < (size_t) count) {
 				size_t rowsize = fixed_lengths;
@@ -2030,7 +2035,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					int mtype = c->type.type->localtype;
 					if (ATOMvarsized(mtype)) {
 						size_t slen = strlen((const char*) BUNtail(iterators[i], row));
-						rowsize += slen + varint_size(slen);
+						rowsize += slen + 1;
 					}
 				}
 				if (bytes_left < rowsize) {
@@ -2175,17 +2180,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					for (crow = srow; crow < row; crow++) {
 						int varsize;
 						char *str = (char*) BUNtail(iterators[i], crow);
-						if (c->type.digits > 0) {
-							char *endbuf;
-							varsize = varint_size(c->type.digits);
-							endbuf = stpcpy(buf + varsize, str);
-							write_varint(buf, endbuf - (buf + varsize));
-							assert(read_varint_value(buf) == strlen(str));
-							buf = endbuf;
-						} else {
-							varsize = write_varint(buf, strlen(str));
-							buf = stpcpy(buf + varsize, str);
-						}
+						buf = stpcpy(buf, str) + 1;
 					}
 					// after the loop we know the size of the column, so write it
 					*((lng*)startbuf) = buf - (startbuf + sizeof(lng));
@@ -2269,6 +2264,13 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 #endif
 			}
 		}
+
+		if (buf - bs2_buffer(s).buf > bsize) {
+			fprintf(stderr, "Too many bytes in the buffer.\n");
+			fres = -1;
+			goto cleanup;
+		}
+
 		bs2_setpos(s, buf - bs2_buffer(s).buf);
 		if (mnstr_flush(s) < 0) {
 			fprintf(stderr, "Failed to flush.\n");

@@ -4116,14 +4116,9 @@ static char* mapi_convert_varchar(struct MapiColumn *col) {
 
 
 static char* mapi_convert_clob(struct MapiColumn *col) {
-	int value;
-	int varsize = read_varint(col->buffer_ptr, &value);
-	col->dynamic_write_buf = malloc(value * sizeof(char) + 1);
-	memcpy(col->dynamic_write_buf, col->buffer_ptr + varsize, value * sizeof(char));
-	col->dynamic_write_buf[value] = '\0';
-	if (strcmp(col->dynamic_write_buf, (char*)col->null_value) == 0) 
+	if (strcmp(col->buffer_ptr, (char*)col->null_value) == 0) 
 		return NULL;
-	return col->dynamic_write_buf;
+	return col->buffer_ptr;
 }
 
 // classic stackoverflow programming
@@ -5852,10 +5847,7 @@ mapi_fetch_row(MapiHdl hdl)
 					if (hdl->mid->protobuf_res) {
 						result->fields[i].buffer_ptr = ((Mhapi__QueryResult*) hdl->mid->protobuf_res)->columns[i]->string_values[result->cur_row];
 					} else {
-						// FIXME: case where c->digits > 128 and there is a value < 128
-						int value;
-						int varsize = read_varint(result->fields[i].buffer_ptr, &value);
-						result->fields[i].buffer_ptr += value + varsize;
+						result->fields[i].buffer_ptr += strlen(result->fields[i].buffer_ptr) + 1;
 					}
 				} else {
 					result->fields[i].buffer_ptr += result->fields[i].columnlength;
