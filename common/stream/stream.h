@@ -257,6 +257,11 @@ typedef enum {
 	COLUMN_COMPRESSION_PROTOBUF = 3
 } column_compression;
 
+stream_export int varint_size(int varint);
+stream_export int write_varint(char *buf, int varint);
+stream_export int read_varint_value(char *buf);
+stream_export int read_varint(char *buf, int *value);
+
 stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp);
 stream_export void* bs2_getbuf(stream *ss);
 stream_export void bs2_resetbuf(stream *ss);

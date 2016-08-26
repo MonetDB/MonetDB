@@ -4116,9 +4116,14 @@ static char* mapi_convert_varchar(struct MapiColumn *col) {
 
 
 static char* mapi_convert_clob(struct MapiColumn *col) {
-	if (strcmp(col->buffer_ptr, (char*)col->null_value) == 0) 
+	int value;
+	int varsize = read_varint(col->buffer_ptr, &value);
+	col->dynamic_write_buf = malloc(value * sizeof(char) + 1);
+	memcpy(col->dynamic_write_buf, col->buffer_ptr + varsize, value * sizeof(char));
+	col->dynamic_write_buf[value] = '\0';
+	if (strcmp(col->dynamic_write_buf, (char*)col->null_value) == 0) 
 		return NULL;
-	return col->buffer_ptr;
+	return col->dynamic_write_buf;
 }
 
 // classic stackoverflow programming
@@ -4424,8 +4429,12 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				result->fields[i].converter = NULL;
 
 				if (strcasecmp(type_sql_name, "varchar") == 0 || strcasecmp(type_sql_name, "char") == 0) {
-					result->fields[i].converter = (mapi_converter) mapi_convert_varchar;
-					result->fields[i].dynamic_write_buf = malloc(result->fields[i].columnlength * sizeof(char));
+					if (typelen > 0) {
+						result->fields[i].converter = (mapi_converter) mapi_convert_varchar;
+						result->fields[i].dynamic_write_buf = malloc(result->fields[i].columnlength * sizeof(char));
+					} else {
+						result->fields[i].converter = (mapi_converter) mapi_convert_clob;
+					}
 				} else if (strcasecmp(type_sql_name, "clob") == 0) {
 					// var length strings
 					result->fields[i].converter = (mapi_converter) mapi_convert_clob;
@@ -5843,7 +5852,10 @@ mapi_fetch_row(MapiHdl hdl)
 					if (hdl->mid->protobuf_res) {
 						result->fields[i].buffer_ptr = ((Mhapi__QueryResult*) hdl->mid->protobuf_res)->columns[i]->string_values[result->cur_row];
 					} else {
-						result->fields[i].buffer_ptr += strlen(result->fields[i].buffer_ptr) + 1;
+						// FIXME: case where c->digits > 128 and there is a value < 128
+						int value;
+						int varsize = read_varint(result->fields[i].buffer_ptr, &value);
+						result->fields[i].buffer_ptr += value + varsize;
 					}
 				} else {
 					result->fields[i].buffer_ptr += result->fields[i].columnlength;

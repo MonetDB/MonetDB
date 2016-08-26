@@ -1876,6 +1876,8 @@ static int write_str_term(stream* s, str val) {
 #include <mhapi.h>
 #endif
 
+#define VARCHAR_MAXIMUM_FIXED 3
+
 static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize) {
 	BAT *order;
 	lng count;
@@ -1883,7 +1885,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	size_t row = 0;
 	size_t srow = 0;
 	size_t varsized = 0;
-	lng *var_col_len = NULL;
 	BATiter *iterators = NULL;
 	lng fixed_lengths = 0;
 	int fres = 0;
@@ -1891,9 +1892,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 
 
 	iterators = GDKzalloc(sizeof(BATiter) * t->nr_cols);
-	var_col_len = GDKzalloc(sizeof(lng) * t->nr_cols);
 
-	if (!iterators || !var_col_len) {
+	if (!iterators) {
 		fres = -1;
 		goto cleanup;
 	}
@@ -1925,13 +1925,15 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		if (ATOMvarsized(mtype)) {
 			// FIXME support other types than string
 			assert(mtype == TYPE_str);
+			typelen = -1;
 			if (mtype == TYPE_str && c->type.digits > 0) {
 				// varchar with fixed max length
-				typelen = c->type.digits;
-				fixed_lengths += typelen;
+				fixed_lengths += c->type.digits + varint_size(c->type.digits);
+				if (c->type.digits < VARCHAR_MAXIMUM_FIXED) {
+					typelen = c->type.digits;
+				}
 			} else {
 				// variable length strings
-				typelen = -1;
 				varsized++;
 			}
 			nil_len = strlen(str_nil) + 1;
@@ -1998,9 +2000,9 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	mnstr_flush(s);
 
 	while (row < (size_t) count) {
+		char *buf = bs2_buffer(s).buf;
 		size_t crow = 0;
 		size_t bytes_left = bsize - sizeof(lng) - 1;
-
 
 		if (colcomp == COLUMN_COMPRESSION_BINPACK || colcomp == COLUMN_COMPRESSION_PFOR) {
 			// leave a bit of extra space in case the compression increases the size of the data
@@ -2020,10 +2022,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			// subtract this from the amount of bytes left
 			bytes_left -= varsized * sizeof(lng); 
 
-			for (i = 0; i < (size_t) t->nr_cols; i++) {
-				var_col_len[i] = 0;
-			}
-
 			// we have varsized elements, so we have to loop to determine how many rows fit into a buffer
 			while (row < (size_t) count) {
 				size_t rowsize = fixed_lengths;
@@ -2031,21 +2029,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					res_col *c = t->cols + i;
 					int mtype = c->type.type->localtype;
 					if (ATOMvarsized(mtype)) {
-						size_t slen = strlen((const char*) BUNtail(iterators[i], row)) + 1;
-						rowsize += slen;
-						var_col_len[i] += slen;
+						size_t slen = strlen((const char*) BUNtail(iterators[i], row));
+						rowsize += slen + varint_size(slen);
 					}
 				}
 				if (bytes_left < rowsize) {
-					// since we are breaking, we have to adjust var_col_len and subtract the current string so it is accurate again
-					for (i = 0; i < (size_t) t->nr_cols; i++) {
-						res_col *c = t->cols + i;
-						int mtype = c->type.type->localtype;
-						if (ATOMvarsized(mtype)) {
-							size_t slen = strlen((const char*) BUNtail(iterators[i], row)) + 1;
-							var_col_len[i] -= slen;
-						}
-					}
 					break;
 				}
 				bytes_left -= rowsize;
@@ -2158,6 +2146,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			fres = -1;
 			goto cleanup;
 		}
+		buf += sizeof(lng);
 
 		for (i = 0; i < (size_t) t->nr_cols; i++) {
 			res_col *c = t->cols + i;
@@ -2165,40 +2154,41 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			if (ATOMvarsized(mtype)) {
 				// FIXME support other types than string
 				assert(mtype == TYPE_str);
-				assert((size_t) var_col_len[i] < bsize);
-				if (c->type.digits > 0) {
-					// varchar
-					size_t buflen = c->type.digits * (row - srow);
-					char *tmpbuf = GDKmalloc(buflen * sizeof(char));
-					char *bufptr = tmpbuf;
-					char *ptr;
-					assert(tmpbuf);
+				if (c->type.digits > 0 && c->type.digits < VARCHAR_MAXIMUM_FIXED) {
+					char *bufptr = buf;
+					// for small fixed size strings we use fixed width
 					for(crow = srow; crow < row; crow++) {
-						ptr = stpcpy(bufptr, (char*) BUNtail(iterators[i], crow));
+						buf = stpcpy(buf, (char*) BUNtail(iterators[i], crow));
 						bufptr += c->type.digits;
-						while(ptr < bufptr) {
-							*ptr++ = '\0';
+						while(buf < bufptr) {
+							*buf++ = '\0';
 						}
+						buf = bufptr;
 					}
-					if (mnstr_write(s, tmpbuf, buflen, 1) != 1) {
-						GDKfree(tmpbuf);
-						fres = -1;
-						fprintf(stderr,"Sending string data failed.\n");
-						goto cleanup;
-					}
-					GDKfree(tmpbuf);
 				} else {
-					// variable length string
-					if (!mnstr_writeLng(s, var_col_len[i])) {
-						fres = -1;
-						goto cleanup;
-					}
+					// for variable length strings and large fixed strings we use varints
+
+					// variable columns are prefixed by a length, 
+					// but since we don't know the length yet, just skip over it for now
+					char *startbuf = buf;
+					buf += sizeof(lng);
 					for (crow = srow; crow < row; crow++) {
-						if (!write_str_term(s, (char*) BUNtail(iterators[i], crow))) {
-							fres = -1;
-							goto cleanup;
+						int varsize;
+						char *str = (char*) BUNtail(iterators[i], crow);
+						if (c->type.digits > 0) {
+							char *endbuf;
+							varsize = varint_size(c->type.digits);
+							endbuf = stpcpy(buf + varsize, str);
+							write_varint(buf, endbuf - (buf + varsize));
+							assert(read_varint_value(buf) == strlen(str));
+							buf = endbuf;
+						} else {
+							varsize = write_varint(buf, strlen(str));
+							buf = stpcpy(buf + varsize, str);
 						}
 					}
+					// after the loop we know the size of the column, so write it
+					*((lng*)startbuf) = buf - (startbuf + sizeof(lng));
 				}
 			} else {
 				int atom_size = ATOMsize(mtype);
@@ -2214,8 +2204,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					char *endofbuf;
 					uint32_t b;
 					lng length;
-					buffer buf = bs2_buffer(s);
-					char *bufstart = buf.buf + buf.pos + 2 * sizeof(lng);
+					char *bufstart = buf + 2 * sizeof(lng);
 
 					b = maxbits_length(datain, N);
 					endofbuf = (char*)simdpack_length(datain, N, (__m128i *) bufstart, b);
@@ -2225,9 +2214,9 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 						goto cleanup;
 					}
 					length = (lng)((char*) endofbuf - (char*) bufstart);
-					*((lng*) (buf.buf + buf.pos)) = b;
-					*((lng*) (buf.buf + buf.pos + sizeof(lng))) = length;
-					bs2_setpos(s, (char*) endofbuf - buf.buf);
+					*((lng*) (buf)) = b;
+					*((lng*) (buf + sizeof(lng))) = length;
+					buf = endofbuf;
 					/*if (atom_size * (row - srow) < 2 * sizeof(lng) + length && (row - srow) < (size_t) count) {
 						fprintf(stderr, "BINPACK compression too large!\n");
 						fres = -1;
@@ -2240,9 +2229,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					// turbo pfor for integer columns
 					size_t n = row - srow;
 					char *datain = Tloc(iterators[i].b, srow);
-					buffer buf = bs2_buffer(s);
-					char *bufstart = buf.buf + buf.pos;
-					char *bufpos = bufstart;
+					char *bufpos = buf;
 					lng length;
 					char *endptr = NULL;
 
@@ -2264,8 +2251,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 						datain += elements * sizeof(int);
 						n -= elements;
 					}
-					bs2_setpos(s, endptr - buf.buf);
-					length = endptr - bufstart;
+					buf = endptr;
 					/*if (atom_size * (row - srow) < length && (row - srow) < (size_t) count) {
 						fprintf(stderr, "PFOR compression too large!\n");
 						fres = -1;
@@ -2273,10 +2259,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					}*/
 				} else {
 #endif
-				if (mnstr_write(s, Tloc(iterators[i].b, srow), atom_size, row - srow) != (ssize_t) (row - srow)) {
-					fres = -1;
-					goto cleanup;
-				}
+				memcpy(buf, Tloc(iterators[i].b, srow), (row - srow) * atom_size);
+				buf += (row - srow) * atom_size;
 #ifdef HAVE_PFOR
 			}
 #endif
@@ -2285,7 +2269,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 #endif
 			}
 		}
-
+		bs2_setpos(s, buf - bs2_buffer(s).buf);
 		if (mnstr_flush(s) < 0) {
 			fprintf(stderr, "Failed to flush.\n");
 			fres = -1;
@@ -2294,8 +2278,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		srow = row;
 	}
 cleanup:
-	if (var_col_len) 
-		GDKfree(var_col_len);
 	if (iterators) {
 		for(i = 0; i < (size_t) t->nr_cols; i++) {
 			if (iterators[i].b) {

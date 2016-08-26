@@ -3976,6 +3976,94 @@ block_stream(stream *s)
 }
 
 
+
+int 
+varint_size(int varint) {
+	if      (varint < 0x80)    return 1;
+    else if (varint < 0x800)   return 2;
+    else if (varint < 0x10000) return 3;
+    return 4;
+}
+
+int
+write_varint(char *buf, int varint) {
+	int varsize = varint_size(varint);
+    switch(varsize) {
+        case 4:
+            buf[3] = ((varint | 0x80) & 0xbf); varint >>= 6;
+            buf[2] = ((varint | 0x80) & 0xbf); varint >>= 6;
+            buf[1] = ((varint | 0x80) & 0xbf); varint >>= 6;
+            buf[0] =  (varint | 0xf0);
+            return varsize;
+        case 3:
+            buf[2] = ((varint | 0x80) & 0xbf); varint >>= 6;
+            buf[1] = ((varint | 0x80) & 0xbf); varint >>= 6;
+            buf[0] =  (varint | 0xe0);
+            return varsize;
+        case 2:
+            buf[1] = ((varint | 0x80) & 0xbf); varint >>= 6;
+            buf[0] =  (varint | 0xc0);
+            return varsize;
+        default:
+            buf[0] = (char)varint;
+            return varsize;
+    }
+}
+
+
+int
+read_varint_value(char *buf) {
+	int value;
+	if (read_varint(buf, &value) < 0) {
+		return -1;
+	}
+	return value;
+}
+
+int
+read_varint(char *buf, int *value) {
+    int varsize = 4;
+    *value = 0;
+    //the first byte tells us how many bytes the varint uses
+    if      (buf[0] < 0x80) varsize = 1;
+    else if (buf[0] < 0xe0) varsize = 2;
+    else if (buf[0] < 0xf0) varsize = 3;
+    else if (buf[0] < 0xf8) varsize = 4;
+    else return -1; //invalid varint, the maximum value of the first byte is 0xf7
+
+    
+    switch(varsize) {
+        case 4: 
+         	//invalid varint, the maximum value of the second, third and fourth bytes is 0xbf
+            if (buf[3] > 0xc0) return -1;
+        case 3: 
+            if (buf[2] > 0xc0) return -1;
+        case 2: 
+            if (buf[1] > 0xc0) return -1;
+    }
+
+    switch(varsize) {
+        case 4:
+            *value |= (0x3f & buf[3]);
+            *value |= (0x3f & buf[2]) << 6;
+            *value |= (0x3f & buf[1]) << 12;
+            *value |= (0x7 & buf[0]) << 18;
+            return varsize;
+        case 3:
+            *value |= (0x3f & buf[2]);
+            *value |= (0x3f & buf[1]) << 6;
+            *value |= (0xf & buf[0]) << 12;
+            return varsize;
+        case 2:
+            *value |= (0x3f & buf[1]);
+            *value |= (0x1f & buf[0]) << 6;
+            return varsize;
+        default:
+            *value |= 0x7f & buf[0];
+            return varsize;
+    }
+}
+
 typedef struct bs2 {
 	stream *s;		/* underlying stream */
 	size_t nr;		/* how far we got in buf */
