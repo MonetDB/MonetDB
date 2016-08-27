@@ -46,6 +46,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) pci;
 
+	return 0;
 	OPTDEBUGjit{
 		mnstr_printf(GDKout, "#Optimize JIT\n");
 		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
