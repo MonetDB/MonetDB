@@ -52,16 +52,18 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 813 # length
+% 722 # length
 project (
 | group by (
-| | join (
-| | | select (
-| | | | table(sys.lineitem) [ lineitem.l_shipdate NOT NULL, lineitem.l_commitdate NOT NULL, lineitem.l_receiptdate NOT NULL, lineitem.l_shipmode NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT 
-| | | ) [ lineitem.l_shipdate NOT NULL < lineitem.l_commitdate NOT NULL < lineitem.l_receiptdate NOT NULL, date "1994-01-01" <= lineitem.l_receiptdate NOT NULL < sys.sql_add(date "1994-01-01", month_interval "12"), lineitem.l_shipmode NOT NULL in (char(10) "MAIL", char(10) "SHIP") ],
-| | | table(sys.orders) [ orders.o_orderpriority NOT NULL, orders.%TID% NOT NULL ] COUNT 
-| | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ]
-| ) [ lineitem.l_shipmode NOT NULL ] [ lineitem.l_shipmode NOT NULL, sys.sum no nil (sys.ifthenelse(sys.ifthenelse(sys.isnull(sys.or(sys.=(orders.o_orderpriority NOT NULL, char(15) "1-URGENT"), sys.=(orders.o_orderpriority NOT NULL, char(15) "2-HIGH"))), boolean "false", sys.or(sys.=(orders.o_orderpriority NOT NULL, char(15) "1-URGENT"), sys.=(orders.o_orderpriority NOT NULL, char(15) "2-HIGH"))), tinyint "1", tinyint "0")) as L1.L1, sys.sum no nil (sys.ifthenelse(sys.ifthenelse(sys.isnull(sys.and(sys.<>(orders.o_orderpriority NOT NULL, char(15) "1-URGENT"), sys.<>(orders.o_orderpriority NOT NULL, char(15) "2-HIGH"))), boolean "false", sys.and(sys.<>(orders.o_orderpriority NOT NULL, char(15) "1-URGENT"), sys.<>(orders.o_orderpriority NOT NULL, char(15) "2-HIGH"))), tinyint "1", tinyint "0")) as L2.L2 ]
+| | project (
+| | | join (
+| | | | select (
+| | | | | table(sys.lineitem) [ lineitem.l_shipdate NOT NULL, lineitem.l_commitdate NOT NULL, lineitem.l_receiptdate NOT NULL, lineitem.l_shipmode NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT 
+| | | | ) [ lineitem.l_shipdate NOT NULL < lineitem.l_commitdate NOT NULL < lineitem.l_receiptdate NOT NULL, date "1994-01-01" <= lineitem.l_receiptdate NOT NULL < sys.sql_add(date "1994-01-01", month_interval "12"), lineitem.l_shipmode NOT NULL in (char(10) "MAIL", char(10) "SHIP") ],
+| | | | table(sys.orders) [ orders.o_orderpriority NOT NULL, orders.%TID% NOT NULL ] COUNT 
+| | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ]
+| | ) [ orders.o_orderpriority NOT NULL, lineitem.l_shipmode NOT NULL, sys.=(orders.o_orderpriority NOT NULL, char(15) "1-URGENT") as L3.L3, sys.=(orders.o_orderpriority NOT NULL, char(15) "2-HIGH") as L4.L4, sys.or(L3.L3, L4.L4) as L5.L5, sys.isnull(L5.L5) as L6.L6, sys.ifthenelse(L6.L6, boolean "false", L5.L5) as L7.L7, sys.ifthenelse(L7.L7, tinyint "1", tinyint "0") as L10.L10, sys.<>(orders.o_orderpriority NOT NULL, char(15) "1-URGENT") as L11.L11, sys.<>(orders.o_orderpriority NOT NULL, char(15) "2-HIGH") as L12.L12, sys.and(L11.L11, L12.L12) as L13.L13, sys.isnull(L13.L13) as L14.L14, sys.ifthenelse(L14.L14, boolean "false", L13.L13) as L15.L15, sys.ifthenelse(L15.L15, tinyint "1", tinyint "0") as L16.L16 ]
+| ) [ lineitem.l_shipmode NOT NULL ] [ lineitem.l_shipmode NOT NULL, sys.sum no nil (L10.L10) as L1.L1, sys.sum no nil (L16.L16) as L2.L2 ]
 ) [ lineitem.l_shipmode NOT NULL, L1 as L1.high_line_count, L2 as L2.low_line_count ] [ lineitem.l_shipmode ASC NOT NULL ]
 
 # 22:46:31 >  

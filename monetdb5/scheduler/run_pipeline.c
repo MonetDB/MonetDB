@@ -129,73 +129,12 @@
 #include "opt_prelude.h"
 #include "opt_macro.h"
 
-str
-debugScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) stk;
-
-	cntxt->debugScheduler = cntxt->debugScheduler ? FALSE : TRUE;
-	if(pci) {
-		removeInstruction(mb,pci);
-		chkFlow(cntxt->fdout, mb);
-	}
-	return MAL_SUCCEED;
-}
-
 /*
  * The implementation approach of the scheduler aligns with that of the
  * optimizer. We look for specific scheduler module calls and act accordingly.
  * The result should be a MAL block that can be executed by the corresponding
  * engine.
  */
-static str
-schedulerMALBlock(Client cntxt, MalBlkPtr mb)
-{
-	InstrPtr p;
-	int callMALinterpreter = 1, pc, cnt = 0;
-	str msg = MAL_SUCCEED;
-	int loops = 0;
-
-#ifdef DEBUG_MAL_SCHEDULER
-	int oldstop = mb->stop;
-#endif
-	/* update the runtime status */
-
-	do {
-		cnt = 0;
-		for (pc = 0; pc < mb->stop; pc++) {
-			p = getInstrPtr(mb, pc);
-			if (getModuleId(p) && idcmp(getModuleId(p), "scheduler") == 0) {
-				cnt++;
-				callMALinterpreter++;
-				if (p->fcn)
-					/* all schedulers should behave like patterns */
-					/* However, we don't have a stack now */
-					msg = (str) (*p->fcn) (mb, 0, p);
-				if (msg)
-					return msg;
-				pc--;	/*scheduler statement has been removed */
-			}
-		}
-	} while (cnt && loops++ < 64);
-	if (callMALinterpreter)
-		return MAL_SUCCEED;
-#ifdef DEBUG_MAL_SCHEDULER
-	if (cntxt->debugScheduler && oldstop != mb->stop) {
-		mnstr_printf(cntxt->fdout, "Scheduler effect %d -> %d instructions\n", oldstop, mb->stop);
-	}
-#endif
-	if (cnt >= 64)
-		throw(MAL, "scheduler.MALpipeline", OPERATION_FAILED "too many optimization cycles\n");
-	return MAL_SUCCEED;
-}
-
-str
-MALpipeline(Client c)
-{
-	return schedulerMALBlock(c, c->curprg->def);
-}
-
 /*
  * The second example is derived from the SQL environment, which
  * produces two MAL functions: one (already) stored in the query cache

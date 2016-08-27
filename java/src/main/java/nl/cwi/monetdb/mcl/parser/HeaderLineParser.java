@@ -89,30 +89,29 @@ public class HeaderLineParser extends MCLParser {
 				{
 					getValues(chrLine, 2, pos - 3);
 					type = NAME;
-					break;
 				}
+				break;
 			case 'l':
 				if (len - pos == 6 &&
 						source.regionMatches(pos + 1, "length", 1, 5))
 				{
 					getIntValues(chrLine, 2, pos - 3);
 					type = LENGTH;
-					break;
 				}
+				break;
 			case 't':
 				if (len - pos == 4 &&
 						source.regionMatches(pos + 1, "type", 1, 3))
 				{
 					getValues(chrLine, 2, pos - 3);
 					type = TYPE;
-					break;
 				} else if (len - pos == 10 &&
 						source.regionMatches(pos + 1, "table_name", 1, 9))
 				{
 					getValues(chrLine, 2, pos - 3);
 					type = TABLE;
-					break;
 				}
+				break;
 			default:
 				throw new MCLParseException("unknown header: " +
 						(new String(chrLine, pos, len - pos)));

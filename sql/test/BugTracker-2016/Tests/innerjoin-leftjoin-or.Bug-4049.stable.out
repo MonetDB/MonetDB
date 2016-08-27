@@ -1,0 +1,148 @@
+stdout of test 'innerjoin-leftjoin-or.Bug-4049` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 12:30:58 >  
+# 12:30:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37683" "--set" "mapi_usock=/var/tmp/mtest-32537/.s.monetdb.37683" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 12:30:58 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:37683/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32537/.s.monetdb.37683
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 12:30:59 >  
+# 12:30:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32537" "--port=37683"
+# 12:30:59 >  
+
+#create table test1 (a int, b int, d int);
+#create table test_dic1 (a int, c int);
+#insert into test_dic1 values (1, 1), (1, 2);
+[ 2	]
+#insert into test1 values (1, 2, 1), (1, 3, 2), (2, 2, 1), (2, 3, 2);
+[ 4	]
+#select dd.*
+# from test_dic1 as dd
+#inner join test1 as d1 on d1.a = dd.a and d1.d = 1
+# left join test1 as d2 on d2.a = dd.a and d2.d = 2
+#where dd.c = 1;
+% .dd,	.dd # table_name
+% a,	c # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+#select dd.*
+# from test_dic1 as dd
+#inner join test1 as d1 on d1.a = dd.a and d1.d = 1
+# left join test1 as d2 on d2.a = dd.a and d2.d = 2
+#where dd.c = 1
+#   or dd.c = 3;
+% .dd,	.dd # table_name
+% a,	c # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+#select *
+# from test_dic1 as dd
+#inner join test1 as d1 on d1.a = dd.a and d1.d = 1
+# left join test1 as d2 on d2.a = dd.a and d2.d = 2
+#where dd.c = 1
+#   or dd.c = 3;
+% .dd,	.dd,	.d1,	.d1,	.d1,	.d2,	.d2,	.d2 # table_name
+% a,	c,	a,	b,	d,	a,	b,	d # name
+% int,	int,	int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1 # length
+[ 1,	1,	1,	2,	1,	1,	3,	2	]
+#select *
+# from test_dic1 as dd
+#inner join test1 as d1 on d1.a = dd.a and d1.d = 1
+# left join test1 as d2 on d2.a = dd.a and d2.d = 2
+#where dd.c in (1, 3);
+% .dd,	.dd,	.d1,	.d1,	.d1,	.d2,	.d2,	.d2 # table_name
+% a,	c,	a,	b,	d,	a,	b,	d # name
+% int,	int,	int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1 # length
+[ 1,	1,	1,	2,	1,	1,	3,	2	]
+#select *
+# from test_dic1 as dd
+#inner join test1 as d1 on d1.a = dd.a
+# left join test1 as d2 on d2.a = dd.a and d2.d = 2
+#where dd.c = 1
+#   or dd.c = 3
+#  and d1.d = 1
+#  and (((dd.c = 1 or dd.c = 3) and d2.d is null) or ((dd.c = 1 or dd.c = 3) and d2.d = 2));
+% .dd,	.dd,	.d1,	.d1,	.d1,	.d2,	.d2,	.d2 # table_name
+% a,	c,	a,	b,	d,	a,	b,	d # name
+% int,	int,	int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1 # length
+[ 1,	1,	1,	2,	1,	1,	3,	2	]
+[ 1,	1,	1,	3,	2,	1,	3,	2	]
+#select *
+# from test_dic1 as dd
+#inner join test1 as d1 on d1.a = dd.a and d1.d = 1
+#inner join test1 as d2 on d2.a = dd.a and d2.d = 2
+#where dd.c = 1
+#   or dd.c = 3;
+% sys.dd,	sys.dd,	sys.d1,	sys.d1,	sys.d1,	sys.d2,	sys.d2,	sys.d2 # table_name
+% a,	c,	a,	b,	d,	a,	b,	d # name
+% int,	int,	int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1 # length
+[ 1,	1,	1,	2,	1,	1,	3,	2	]
+#drop table test1;
+#drop table test_dic1;
+
+# 12:30:59 >  
+# 12:30:59 >  "Done."
+# 12:30:59 >  
+

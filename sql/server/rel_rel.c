@@ -1054,34 +1054,41 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 {
 	sql_rel *rel, *ll = l->l, *rl = r->l;
 
-	if (l == r && is_outerjoin(l->op)) { /* merge both lists */
+	assert(!lexps || l == r);
+	if (l == r && lexps) { /* merge both lists */
 		sql_exp *e = exp_or(sql->sa, lexps, rexps);
 		list *nl = oexps?oexps:new_exp_list(sql->sa); 
 		
 		rel_destroy(r);
 		append(nl, e);
+		if (is_outerjoin(l->op) && is_processed(l)) 
+			l = rel_select(sql->sa, l, NULL);
 		l->exps = nl;
 		return l;
 	}
 
-	if (l->op == r->op && 
-		((ll == rl && l->r == r->r && l->r == NULL /* or check if columns are equal*/) ||
-
-		(exps_card(l->exps) == exps_card(r->exps) && exps_card(l->exps) <= CARD_ATOM))) {
+	/* favor or expressions over union */
+	if (l->op == r->op && l->op == op_select &&
+	    ll == rl && !rel_is_ref(l) && !rel_is_ref(r)) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
 		list *nl = new_exp_list(sql->sa); 
 		
 		rel_destroy(r);
 		append(nl, e);
 		l->exps = nl;
-		if (ll->op == l->op) {
-			list_merge(ll->exps,l->exps, (fdup)NULL);
-			l->l = NULL;
-			rel_destroy(l);
-			return ll;
+
+		/* merge and expressions */
+		ll = l->l;
+		while (ll && ll->op == op_select && !rel_is_ref(ll)) {
+			list_merge(l->exps, ll->exps, (fdup)NULL);
+			l->l = ll->l;
+			ll->l = NULL;
+			rel_destroy(ll);
+			ll = l->l;
 		}
 		return l;
 	}
+
 	l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
 	r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	set_processed(l);

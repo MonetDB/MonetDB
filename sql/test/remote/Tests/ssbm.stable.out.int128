@@ -2,6 +2,11 @@ stdout of test 'ssbm` in directory 'sql/test/remote` itself:
 
 Ready.
 
+# 11:09:02 >  
+# 11:09:02 >  "/usr/bin/python2" "ssbm.SQL.py" "ssbm"
+# 11:09:02 >  
+
+12036 rows in remote table
 60175 rows in mergetable
 356
 356

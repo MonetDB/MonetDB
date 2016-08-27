@@ -829,8 +829,8 @@ public class MonetPreparedStatement
 			 */
 			@Override
 			public String getParameterClassName(int param) throws SQLException {
-				Map map = getConnection().getTypeMap();
-				Class c;
+				Map<String,Class<?>> map = getConnection().getTypeMap();
+				Class<?> c;
 				if (map.containsKey(monetdbType[getParamIdx(param)])) {
 					c = (Class)map.get(monetdbType[getParamIdx(param)]);
 				} else {
@@ -1222,7 +1222,7 @@ public class MonetPreparedStatement
 	public void setCharacterStream(int parameterIndex, Reader reader)
 		throws SQLException
 	{
-		setCharacterStream(parameterIndex, reader, (int)0);
+		setCharacterStream(parameterIndex, reader, 0);
 	}
 
 	/**
@@ -1870,7 +1870,7 @@ public class MonetPreparedStatement
 					setShort(parameterIndex, (short)(val ? 1 : 0));
 				break;
 				case Types.INTEGER:
-					setInt(parameterIndex, (int)(val ? 1 : 0));
+					setInt(parameterIndex, (val ? 1 : 0));  // do not cast to (int) as it generates a compiler warning
 				break;
 				case Types.BIGINT:
 					setLong(parameterIndex, (long)(val ? 1 : 0));
@@ -1880,7 +1880,7 @@ public class MonetPreparedStatement
 				break;
 				case Types.FLOAT:
 				case Types.DOUBLE:
-					setDouble(parameterIndex, (double)(val ? 1.0 : 0.0));
+					setDouble(parameterIndex, (val ? 1.0 : 0.0));  // do no cast to (double) as it generates a compiler warning
 				break;
 				case Types.DECIMAL:
 				case Types.NUMERIC:
@@ -2387,6 +2387,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
+	@Deprecated
 	public void setUnicodeStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{

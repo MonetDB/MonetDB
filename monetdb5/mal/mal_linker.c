@@ -178,12 +178,18 @@ loadLibrary(str filename, int flag)
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
 		handle = dlopen(nme, mode);
+		if (handle == NULL && GDKfileexists(nme)) {
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
+		}
 		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
 			/* try .so */
 			snprintf(nme, PATHLENGTH, "%.*s%c%s_%s.so",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
+			if (handle == NULL && GDKfileexists(nme)) {
+				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
+			}
 		}
 #ifdef __APPLE__
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
@@ -192,6 +198,9 @@ loadLibrary(str filename, int flag)
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
+			if (handle == NULL && GDKfileexists(nme)) {
+				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
+			}
 		}
 #endif
 

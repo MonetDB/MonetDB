@@ -311,9 +311,8 @@ ALGselectNotNil(bat *result, const bat *bid)
 
 	if( BATcount_no_nil(b) != BATcount(b) ){
 		BAT *s = NULL;
-		ptr low = ATOMnilptr(b->ttype);
 
-		s = BATselect(b, s, low, NULL, TRUE, TRUE, TRUE);
+		s = BATselect(b, s, ATOMnilptr(b->ttype), NULL, TRUE, TRUE, TRUE);
 		if (s) {
 			bn = BATproject(s, b);
 			BBPunfix(s->batCacheid);

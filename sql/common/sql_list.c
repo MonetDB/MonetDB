@@ -256,6 +256,15 @@ list_remove_data(list *s, void *data)
 }
 
 void
+list_remove_list(list *l, list *data)
+{
+	node *n;
+
+	for (n=data->h; n; n = n->next)
+		list_remove_data(l, n->data);
+}
+
+void
 list_move_data(list *s, list *d, void *data)
 {
 	node *n;

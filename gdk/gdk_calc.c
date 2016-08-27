@@ -13371,7 +13371,7 @@ convert_any_str(int tp, const void *src, BAT *bn, BUN cnt,
 	int len = 0;
 	BUN nils = 0;
 	BUN i;
-	void *nil = ATOMnilptr(tp);
+	const void *nil = ATOMnilptr(tp);
 	int (*atomtostr)(str *, int *, const void *) = BATatoms[tp].atomToStr;
 	int size = ATOMsize(tp);
 

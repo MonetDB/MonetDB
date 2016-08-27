@@ -196,18 +196,20 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 
 	/* alloc the main heaps */
 	if (tt && HEAPalloc(&bn->theap, cap, bn->twidth) != GDK_SUCCEED) {
-		return NULL;
+		goto bailout;
 	}
 
 	if (ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
-		if (tt)
-			HEAPfree(&bn->theap, 1);
 		GDKfree(bn->tvheap);
-		return NULL;
+		goto bailout;
 	}
 	DELTAinit(bn);
 	BBPcacheit(bn, 1);
 	return bn;
+  bailout:
+	HEAPfree(&bn->theap, 1);
+	GDKfree(bn);
+	return NULL;
 }
 
 BAT *

@@ -51,7 +51,7 @@ Ready.
 [ 1	]
 #select mod(0.011 + 180, 360);
 % .L # table_name
-% sql_add_single_value # name
+% mod_single_value # name
 % decimal # type
 % 11 # length
 [ 180.011	]

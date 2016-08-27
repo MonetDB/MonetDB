@@ -290,12 +290,12 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 
 /* returns table rids, for the given select ranges */
 static rids *
-rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_value_high, ...)
+rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const void *key_value_high, ...)
 {
 	va_list va;
 	BAT *b = NULL, *r = NULL, *s = NULL;
 	rids *rs = ZNEW(rids);
-	void *kvl = key_value_low, *kvh = key_value_high;
+	const void *kvl = key_value_low, *kvh = key_value_high;
 	int hi = 0;
 
 	s = delta_cands(tr, key->t);

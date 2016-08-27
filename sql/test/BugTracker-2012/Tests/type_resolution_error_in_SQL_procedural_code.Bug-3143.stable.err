@@ -29,21 +29,6 @@ stderr of test 'type_resolution_error_in_SQL_procedural_code.Bug-3143` in direct
 # 16:19:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=33753"
 # 16:19:02 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = CREATE PROCEDURE enrich_b()
-        BEGIN
-            INSERT INTO sensors(ip, location, kind,value)
-                SELECT ip, substring(location,0,3), kind, value FROM istream;
-            IF (SELECT count(*) FROM area ) = 0
-            THEN
-                INSERT INTO area SELECT ip, substring(location,0,3) FROM
-        istream;
-            END IF;
-        END;
-ERROR = !IF THEN ELSE: No SELECT statements allowed within the IF condition
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = drop procedure enrich_b();
-ERROR = !DROP PROCEDURE: no such procedure 'enrich_b' ()
 
 
 # 15:17:52 >  

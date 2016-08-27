@@ -218,10 +218,15 @@ psm_if_then_else( mvc *sql, sql_subtype *res, list *restypelist, dnode *elseif, 
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, res, restypelist, n, is_func);
 
-		if (sql->session->status || !cond || !ifstmts || rel) {
-			if (rel)
-				return sql_error(sql, 02, "IF THEN: No SELECT statements allowed within the IF condition");
+		if (sql->session->status || !cond || !ifstmts) 
 			return NULL;
+		if (rel) {
+			sql_exp *er = exp_rel(sql, rel);
+			list *b = sa_list(sql->sa);
+
+			append(b, er);
+			append(b, exp_if(sql->sa, cond, ifstmts, elsestmts));
+			return b;
 		}
 		return append(sa_list(sql->sa), exp_if( sql->sa, cond, ifstmts, elsestmts));
 	} else { /* else */
@@ -249,10 +254,15 @@ rel_psm_if_then_else( mvc *sql, sql_subtype *res, list *restypelist, dnode *else
 		ifstmts = sequential_block(sql, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, res, restypelist, n, is_func);
-		if (sql->session->status || !cond || !ifstmts || rel) {
-			if (rel)
-				return sql_error(sql, 02, "IF THEN ELSE: No SELECT statements allowed within the IF condition");
+		if (sql->session->status || !cond || !ifstmts) 
 			return NULL;
+		if (rel) {
+			sql_exp *er = exp_rel(sql, rel);
+			list *b = sa_list(sql->sa);
+
+			append(b, er);
+			append(b, exp_if(sql->sa, cond, ifstmts, elsestmts));
+			return exp_rel(sql, rel_psm_block(sql->sa, b));
 		}
 		return exp_if( sql->sa, cond, ifstmts, elsestmts);
 	}

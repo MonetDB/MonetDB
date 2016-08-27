@@ -161,11 +161,6 @@ pattern optimize(mod:str, fcn:str)
 address QOToptimize
 comment "Optimize a specific operation";
 
-pattern setDebug():void 
-address QOTdebugOptimizers;
-pattern clrDebug():void 
-address QOTclrdebugOptimizers;
-
 pattern showFlowGraph(M:str,F:str,s:str):void 
 address QOTshowFlowGraph
 comment "Dump the data flow of the function 

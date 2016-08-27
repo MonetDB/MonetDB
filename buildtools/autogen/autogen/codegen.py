@@ -13,6 +13,7 @@ import sys
 
 from tokenize import tokenize
 from tokenize import NL
+from filesplit import split_filename
 
 
 # direct rules
@@ -74,13 +75,6 @@ scan_map = {
     'xsl': [ xsl_inc, None, '' ],
     'tex': [ tex_inc, None, '' ],
 }
-
-def split_filename(f):
-    base = f
-    ext = ""
-    if f.find(".") >= 0:
-        return f.split(".", 1)
-    return base,ext
 
 def readfile(f):
     src = open(f, 'r')

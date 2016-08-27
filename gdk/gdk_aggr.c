@@ -2279,7 +2279,7 @@ BATminmax(BAT *b, void *aggr,
 			const oid *, BUN, int, int))
 {
 	oid pos;
-	void *res;
+	const void *res;
 	int s;
 	int needdecref = 0;
 	BATiter bi;
