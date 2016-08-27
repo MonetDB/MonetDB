@@ -24,7 +24,6 @@
 
 mal_export int OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGjit  if ( optDebug & ((lng) 1 <<DEBUG_OPT_JIT) )
-//#define OPTDEBUGjit  if (1)
+#define OPTDEBUGjit  if (0)
 
 #endif

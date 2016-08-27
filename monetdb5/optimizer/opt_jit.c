@@ -46,12 +46,12 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) pci;
 
-#ifdef DEBUG_OPT_JIT
-	mnstr_printf(GDKout, "#Optimize JIT\n");
-	printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
-#endif
-	return 0; // temporary disabled
+	OPTDEBUGjit{
+		mnstr_printf(GDKout, "#Optimize JIT\n");
+		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
+	}
 
+	setVariableScope(mb);
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0;
 
@@ -73,23 +73,23 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q= getInstrPtr(mb, getVar(mb,getArg(p,2))->updated);
 			if ( q == 0)
 				q= getInstrPtr(mb, getVar(mb,getArg(p,2))->declared);
-			if( q && getArg(q,0) == getArg(p,2) ){
+			if( q && getArg(q,0) == getArg(p,2) && getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef ){
 				getArg(p,2)=  getArg(q,2);
 				p= pushArgument(mb,p, getArg(q,1));
-#ifdef DEBUG_OPT_JIT
-				mnstr_printf(GDKout, "#Optimize JIT case 1\n");
-				printInstruction(cntxt->fdout, mb,0,p,LIST_MAL_DEBUG);
-#endif
+				OPTDEBUGjit{
+					mnstr_printf(GDKout, "#Optimize JIT case 1\n");
+					printInstruction(cntxt->fdout, mb,0,p,LIST_MAL_DEBUG);
+				}
 			}
 		}
 		pushInstruction(mb,p);
 	}
 
-#ifdef DEBUG_OPT_JIT
-	chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
-	mnstr_printf(GDKout, "#Optimize JIT done\n");
-	printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
-#endif
+	OPTDEBUGjit{
+		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
+		mnstr_printf(GDKout, "#Optimize JIT done\n");
+		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
+	}
 
 	GDKfree(old);
     /* Defense line against incorrect plans */
