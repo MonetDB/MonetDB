@@ -13,7 +13,7 @@ bat.append(b,977);
 base:=algebra.copy(b);
 
 io.print(base);
-x:= mosaic.compress(b,"delta");
+mosaic.compress(b,"delta");
 
 c:= bat.new(:oid);
 bat.append(c,0@0);
@@ -21,10 +21,10 @@ bat.append(c,2@0);
 bat.append(c,5@0);
 io.print(c);
 
-#mosaic.dump(x);
+#mosaic.dump(b);
 s:= algebra.projection(c,base);
 io.print(s);
-xs:= mosaic.projection(c,x);
+xs:= mosaic.projection(c,b);
 io.print(xs);
 
 d:= bat.new(:int);
@@ -34,14 +34,14 @@ bat.append(d,nil:int);
 
 (jl,jr):= algebra.subjoin(base,d, nil:bat, nil:bat,false,0:lng);
 io.print(jl,jr);
-(ml,mr):= mosaic.subjoin(x,d, nil:bat, nil:bat,false,0:lng);
+(ml,mr):= mosaic.subjoin(b,d, nil:bat, nil:bat,false,0:lng);
 io.print(ml,mr);
 
 (kl,kr):= algebra.subjoin(d,base, nil:bat, nil:bat,false,0:lng);
 io.print(kl);
 io.print(kr);
 io.print(kl,kr);
-(nl,nr):= mosaic.subjoin(d,x, nil:bat, nil:bat,false,0:lng);
+(nl,nr):= mosaic.subjoin(d,b, nil:bat, nil:bat,false,0:lng);
 io.print(nl);
 io.print(nr);
 io.print(nl,nr);

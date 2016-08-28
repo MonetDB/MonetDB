@@ -7,10 +7,10 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-x:= mosaic.compress(b,"zone");
-mosaic.dump(x);
-z:= mosaic.decompress(x);
-io.print(z);
+mosaic.compress(b,"zone");
+mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
 bs:= bat.new(:timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
@@ -22,10 +22,10 @@ bat.append(bs,"2014-08-14 12:02:00":timestamp);
 bs:= bat.append(bs,bs);
 
 io.print(bs);
-xs:= mosaic.compress(bs,"zone");
-#mosaic.dump(x);
-zs:= mosaic.decompress(xs);
-io.print(zs);
+mosaic.compress(bs,"zone");
+#mosaic.dump(bs);
+mosaic.decompress(bs);
+io.print(bs);
 
 d:= bat.new(:date);
 bat.append(d,"2014-08-14":date);
@@ -36,7 +36,7 @@ bat.append(d,"2014-08-15":date);
 d:= bat.append(d,d);
 
 io.print(d);
-xd:= mosaic.compress(d,"zone");
-#mosaic.dump(xd);
-zd:= mosaic.decompress(xd);
-io.print(zd);
+mosaic.compress(d,"zone");
+#mosaic.dump(d);
+mosaic.decompress(d);
+io.print(d);

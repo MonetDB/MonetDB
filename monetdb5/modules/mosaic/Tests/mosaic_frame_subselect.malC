@@ -8,47 +8,47 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-x:= mosaic.compress(b,"frame");
-#mosaic.dump(x);
-z:= mosaic.decompress(x);
-io.print(z);
+mosaic.compress(b,"frame");
+#mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
 
 s:= algebra.subselect(base,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,false,false);
 io.print(s);
-xs:= mosaic.subselect(x,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,false,false);
+xs:= mosaic.subselect(b,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,false,false);
 io.print(xs);
 
 s:= algebra.subselect(base,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,false,false);
 io.print(s);
-xs:= mosaic.subselect(x,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,false,false);
+xs:= mosaic.subselect(b,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,false,false);
 io.print(xs);
 
 s:= algebra.subselect(base,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,true,false);
 io.print(s);
-xs:= mosaic.subselect(x,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,true,false);
+xs:= mosaic.subselect(b,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,true,false);
 io.print(xs);
 
 s:= algebra.subselect(base,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,true,false);
 io.print(s);
-xs:= mosaic.subselect(x,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,true,false);
+xs:= mosaic.subselect(b,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,true,false);
 io.print(xs);
 
 s:= algebra.subselect(base,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,false,true);
 io.print(s);
-xs:= mosaic.subselect(x,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,false,true);
+xs:= mosaic.subselect(b,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,false,true);
 io.print(xs);
 
 s:= algebra.subselect(base,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,false,true);
 io.print(s);
-xs:= mosaic.subselect(x,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,false,true);
+xs:= mosaic.subselect(b,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,false,true);
 io.print(xs);
 
 s:= algebra.subselect(base,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,true,true);
 io.print(s);
-xs:= mosaic.subselect(x,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,true,true);
+xs:= mosaic.subselect(b,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,true,true);
 io.print(xs);
 
 s:= algebra.subselect(base,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,true,true);
 io.print(s);
-xs:= mosaic.subselect(x,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,true,true);
+xs:= mosaic.subselect(b,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,true,true,true);
 io.print(xs);

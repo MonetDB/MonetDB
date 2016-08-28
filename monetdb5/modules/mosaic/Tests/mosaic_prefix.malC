@@ -27,10 +27,10 @@ bat.append(b,255:int);
 bat.append(b,255:int);
 
 io.print(b);
-x:= mosaic.compress(b,"prefix");
-#mosaic.dump(x);
-z:= mosaic.decompress(x);
-io.print(z);
+mosaic.compress(b,"prefix");
+#mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
 
 c:= bat.new(:sht);
 bat.append(c,50:sht);
@@ -61,7 +61,7 @@ bat.append(c,255:sht);
 bat.append(c,255:sht);
 
 io.print(c);
-xc:= mosaic.compress(c,"prefix");
-#mosaic.dump(xc);
-zc:= mosaic.decompress(xc);
-io.print(zc);
+mosaic.compress(c,"prefix");
+mosaic.dump(c);
+mosaic.decompress(c);
+io.print(c);

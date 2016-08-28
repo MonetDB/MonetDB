@@ -26,24 +26,24 @@ bat.append(b,255);
 bat.append(b,255);
 bat.append(b,255);
 
-x:= mosaic.compress(b,"prefix");
+mosaic.compress(b,"prefix");
 
 s:= algebra.subselect(b,60,68,false,false,false);
 io.print(s);
-xs:= mosaic.subselect(x,60,68,false,false,false);
+xs:= mosaic.subselect(b,60,68,false,false,false);
 io.print(xs);
 
 s:= algebra.subselect(b,51,62,false,false,false);
 io.print(s);
-xs:= mosaic.subselect(x,51,62,false,false,false);
+xs:= mosaic.subselect(b,51,62,false,false,false);
 io.print(xs);
 
 s:= algebra.subselect(b,60,68,true,true,false);
 io.print(s);
-xs:= mosaic.subselect(x,60,68,true,true,false);
+xs:= mosaic.subselect(b,60,68,true,true,false);
 io.print(xs);
 
 s:= algebra.subselect(b,51,62,true,true,false);
 io.print(s);
-xs:= mosaic.subselect(x,51,62,true,true,false);
+xs:= mosaic.subselect(b,51,62,true,true,false);
 io.print(xs);

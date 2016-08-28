@@ -8,10 +8,10 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-x:= mosaic.compress(b,"dictionary");
-#mosaic.dump(x);
-z:= mosaic.decompress(x);
-io.print(z);
+mosaic.compress(b,"dictionary");
+#mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
 
 d:= bat.new(:date);
 bat.append(d,"2014-08-14":date);
@@ -22,7 +22,7 @@ bat.append(d,"2014-08-15":date);
 d:= bat.append(d,d);
 
 io.print(d);
-xd:= mosaic.compress(d,"dictionary");
-mosaic.dump(xd);
-zd:= mosaic.decompress(xd);
-io.print(zd);
+mosaic.compress(d,"dictionary");
+mosaic.dump(d);
+mosaic.decompress(d);
+io.print(d);

@@ -7,10 +7,10 @@ bat.append(b,"2014-08-14 12:00:00":timestamp);
 b:= bat.append(b,b);
 base:= algebra.copy(b);
 
-x:= mosaic.compress(b,"frame");
-#mosaic.dump(x);
-z:= mosaic.decompress(x);
-io.print(base,z);
+mosaic.compress(b,"frame");
+#mosaic.dump(b);
+mosaic.decompress(b);
+io.print(base,b);
 
 d:= bat.new(:date);
 bat.append(d,"2014-08-14":date);
@@ -19,11 +19,12 @@ bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-15":date);
 d:= bat.append(d,d);
+dbase:= algebra.copy(d);
 
-xd:= mosaic.compress(d,"frame");
-#mosaic.dump(xd);
-zd:= mosaic.decompress(xd);
-io.print(d,zd);
+mosaic.compress(d,"frame");
+#mosaic.dump(d);
+mosaic.decompress(d);
+io.print(dbase,d);
 
 e:= bat.new(:date);
 bat.append(e,"1996-03-13":date);
@@ -127,8 +128,9 @@ bat.append(e,"1994-12-24":date);
 bat.append(e,"1994-12-01":date);
 bat.append(e,"1994-12-30":date);
 
-xe:= mosaic.compress(e,"frame");
-mosaic.dump(xe);
-zd:= mosaic.decompress(xe);
-io.print(e,zd);
+ebase:= algebra.copy(e);
+mosaic.compress(e,"frame");
+mosaic.dump(e);
+mosaic.decompress(e);
+io.print(ebase,e);
 #mosaic.analyse("frame prefix");

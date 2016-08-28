@@ -9,44 +9,44 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-x:= mosaic.compress(b,"runlength");
+mosaic.compress(b,"runlength");
 
 s:= algebra.subselect(base,0,50,false,false,false);
 io.print(s);
-xs:= mosaic.subselect(x,0,50,false,false,false);
+xs:= mosaic.subselect(b,0,50,false,false,false);
 io.print(xs);
 
 s:= algebra.subselect(base,0,50,false,true,false);
 io.print(s);
-xs:= mosaic.subselect(x,0,50,false,true,false);
+xs:= mosaic.subselect(b,0,50,false,true,false);
 io.print(xs);
 
 s:= algebra.subselect(base,0,50,true,false,false);
 io.print(s);
-xs:= mosaic.subselect(x,0,50,true,false,false);
+xs:= mosaic.subselect(b,0,50,true,false,false);
 io.print(xs);
 
 s:= algebra.subselect(base,0,50,true,true,false);
 io.print(s);
-xs:= mosaic.subselect(x,0,50,true,true,false);
+xs:= mosaic.subselect(b,0,50,true,true,false);
 io.print(xs);
 
 s:= algebra.subselect(base,nil:int,50,false,false,false);
 io.print(s);
-xs:= mosaic.subselect(x,nil:int,50,false,false,false);
+xs:= mosaic.subselect(b,nil:int,50,false,false,false);
 io.print(xs);
 
 s:= algebra.subselect(base,50,nil:int,false,false,false);
 io.print(s);
-xs:= mosaic.subselect(x,50,nil:int,false,false,false);
+xs:= mosaic.subselect(b,50,nil:int,false,false,false);
 io.print(xs);
 
 s:= algebra.subselect(base,nil:int,nil:int,false,false,false);
 io.print(s);
-xs:= mosaic.subselect(x,nil:int,nil:int,false,false,false);
+xs:= mosaic.subselect(b,nil:int,nil:int,false,false,false);
 io.print(xs);
 
 s:= algebra.subselect(base,nil:int,nil:int,false,false,true);
 io.print(s);
-xs:= mosaic.subselect(x,nil:int,nil:int,false,false,true);
+xs:= mosaic.subselect(b,nil:int,nil:int,false,false,true);
 io.print(xs);

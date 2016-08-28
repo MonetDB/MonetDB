@@ -8,21 +8,22 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-x:= mosaic.compress(b,"dictionary test 100");
-#mosaic.dump(x);
-z:= mosaic.decompress(x);
-io.print(z);
+mosaic.compress(b,"dictionary test 100");
+#mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
 
+mosaic.decompress(b);
 c:= bat.new(:oid);
 bat.append(c,0@0);
 bat.append(c,2@0);
 bat.append(c,4@0);
 io.print(c);
 
-#mosaic.dump(x);
+#mosaic.dump(b);
 s:= algebra.projection(c,base);
 io.print(s);
-xs:= mosaic.projection(c,x);
+xs:= mosaic.projection(c,b);
 io.print(xs);
 
 d:= bat.new(:timestamp);
@@ -32,14 +33,14 @@ bat.append(d,nil:timestamp);
 
 (jl,jr):= algebra.subjoin(base,d, nil:bat, nil:bat, false, 0:lng);
 io.print(jl,jr);
-(ml,mr):= mosaic.subjoin(x,d, nil:bat, nil:bat, false, 0:lng);
+(ml,mr):= mosaic.subjoin(b,d, nil:bat, nil:bat, false, 0:lng);
 io.print(ml,mr);
 
 (jl,jr):= algebra.subjoin(d,base, nil:bat, nil:bat, false, 0:lng);
 io.print(jl);
 io.print(jr);
 io.print(jl,jr);
-(ml,mr):= mosaic.subjoin(d,x, nil:bat, nil:bat, false, 0:lng);
+(ml,mr):= mosaic.subjoin(d,b, nil:bat, nil:bat, false, 0:lng);
 io.print(ml);
 io.print(mr);
 io.print(ml,mr);

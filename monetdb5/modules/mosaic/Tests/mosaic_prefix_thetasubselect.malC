@@ -26,15 +26,16 @@ bat.append(b,255);
 bat.append(b,255);
 bat.append(b,255);
 
-x:= mosaic.compress(b,"prefix");
+base:= algebra.copy(b);
+mosaic.compress(b,"prefix");
 
-s:= algebra.thetasubselect(b,52,"<");
+s:= algebra.thetasubselect(base,52,"<");
 io.print(s);
-xs:= mosaic.thetasubselect(x,52,"<");
+xs:= mosaic.thetasubselect(b,52,"<");
 io.print(xs);
 
-s:= algebra.thetasubselect(b,60,"<=");
+s:= algebra.thetasubselect(base,60,"<=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,60,"<=");
+xs:= mosaic.thetasubselect(b,60,"<=");
 io.print(xs);
 

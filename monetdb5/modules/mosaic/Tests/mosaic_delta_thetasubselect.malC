@@ -13,36 +13,36 @@ bat.append(b,977);
 base:= algebra.copy(b);
 
 io.print(base);
-x:= mosaic.compress(b,"delta");
+mosaic.compress(b,"delta");
 
 s:= algebra.thetasubselect(base,4,"<");
 io.print(s);
-xs:= mosaic.thetasubselect(x,4,"<");
+xs:= mosaic.thetasubselect(b,4,"<");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,4,"<=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,4,"<=");
+xs:= mosaic.thetasubselect(b,4,"<=");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,4,">");
 io.print(s);
-xs:= mosaic.thetasubselect(x,4,">");
+xs:= mosaic.thetasubselect(b,4,">");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,4,">=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,4,">=");
+xs:= mosaic.thetasubselect(b,4,">=");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,4,"==");
 io.print(s);
-xs:= mosaic.thetasubselect(x,4,"==");
+xs:= mosaic.thetasubselect(b,4,"==");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,4,"!=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,4,"!=");
+xs:= mosaic.thetasubselect(b,4,"!=");
 io.print(xs);
 
 c:= bat.new(:oid);
@@ -52,31 +52,31 @@ io.print(c);
 
 s:= algebra.thetasubselect(base,c,4,"<");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,4,"<");
+xs:= mosaic.thetasubselect(b,c,4,"<");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,c,4,"<=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,4,"<=");
+xs:= mosaic.thetasubselect(b,c,4,"<=");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,c,4,">");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,4,">");
+xs:= mosaic.thetasubselect(b,c,4,">");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,c,4,">=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,4,">=");
+xs:= mosaic.thetasubselect(b,c,4,">=");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,c,4,"==");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,4,"==");
+xs:= mosaic.thetasubselect(b,c,4,"==");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,c,4,"!=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,4,"!=");
+xs:= mosaic.thetasubselect(b,c,4,"!=");
 io.print(xs);
 

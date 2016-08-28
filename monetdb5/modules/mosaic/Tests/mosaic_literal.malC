@@ -6,10 +6,10 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(b);
-x:= mosaic.compress(b,"literal");
-#mosaic.dump(x);
-z:= mosaic.decompress(x);
-io.print(z);
+mosaic.compress(b,"literal");
+#mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
 
 
 s:= bat.new(:str);
@@ -18,6 +18,6 @@ bat.append(s,"big");
 bat.append(s,"brown");
 bat.append(s,"fox");
 
-y:= mosaic.compress(s,"literal");
-zs:= mosaic.decompress(y);
-io.print(zs);
+mosaic.compress(s,"literal");
+mosaic.decompress(s);
+io.print(s);

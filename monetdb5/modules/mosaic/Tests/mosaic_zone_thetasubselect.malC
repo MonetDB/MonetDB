@@ -8,36 +8,36 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-x:= mosaic.compress(b,"zone");
+mosaic.compress(b,"zone");
 
 s:= algebra.thetasubselect(base,50,"<");
 io.print(s);
-xs:= mosaic.thetasubselect(x,50,"<");
+xs:= mosaic.thetasubselect(b,50,"<");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,50,"<=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,50,"<=");
+xs:= mosaic.thetasubselect(b,50,"<=");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,50,">");
 io.print(s);
-xs:= mosaic.thetasubselect(x,50,">");
+xs:= mosaic.thetasubselect(b,50,">");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,50,">=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,50,">=");
+xs:= mosaic.thetasubselect(b,50,">=");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,50,"==");
 io.print(s);
-xs:= mosaic.thetasubselect(x,50,"==");
+xs:= mosaic.thetasubselect(b,50,"==");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,50,"!=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,50,"!=");
+xs:= mosaic.thetasubselect(b,50,"!=");
 io.print(xs);
 
 c:= bat.new(:oid);
@@ -47,31 +47,31 @@ io.print(c);
 
 s:= algebra.thetasubselect(base,c,50,"<");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,"<");
+xs:= mosaic.thetasubselect(b,c,50,"<");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,c,50,"<=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,"<=");
+xs:= mosaic.thetasubselect(b,c,50,"<=");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,c,50,">");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,">");
+xs:= mosaic.thetasubselect(b,c,50,">");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,c,50,">=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,">=");
+xs:= mosaic.thetasubselect(b,c,50,">=");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,c,50,"==");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,"==");
+xs:= mosaic.thetasubselect(b,c,50,"==");
 io.print(xs);
 
 s:= algebra.thetasubselect(base,c,50,"!=");
 io.print(s);
-xs:= mosaic.thetasubselect(x,c,50,"!=");
+xs:= mosaic.thetasubselect(b,c,50,"!=");
 io.print(xs);
 

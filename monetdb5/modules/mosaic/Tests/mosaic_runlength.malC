@@ -59,10 +59,10 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-x:= mosaic.compress(b,"runlength");
-#mosaic.dump(x);
-z:= mosaic.decompress(x);
-io.print(z);
+mosaic.compress(b,"runlength");
+#mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
 # OID list compressions
 
 
@@ -159,9 +159,9 @@ bat.append(f,0.317);
 
 
 io.print(f);
-xf:= mosaic.compress(f,"runlength");
-zf:= mosaic.decompress(xf);
-io.print(zf);
+mosaic.compress(f,"runlength");
+mosaic.decompress(f);
+io.print(f);
 
 bs:= bat.new(:timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
@@ -174,10 +174,10 @@ bat.append(bs,"2014-08-14 12:02:00":timestamp);
 bs:= bat.append(bs,bs);
 
 io.print(bs);
-xs:= mosaic.compress(bs,"runlength");
-#mosaic.dump(x);
-zs:= mosaic.decompress(xs);
-io.print(zs);
+mosaic.compress(bs,"runlength");
+#mosaic.dump(bs);
+mosaic.decompress(bs);
+io.print(bs);
 
 d:= bat.new(:date);
 bat.append(d,"2014-08-14":date);
@@ -188,10 +188,10 @@ bat.append(d,"2014-08-15":date);
 d:= bat.append(d,d);
 
 io.print(d);
-xd:= mosaic.compress(d,"runlength");
-#mosaic.dump(xd);
-zd:= mosaic.decompress(xd);
-io.print(zd);
+mosaic.compress(d,"runlength");
+#mosaic.dump(d);
+mosaic.decompress(d);
+io.print(d);
 
 
 # handle compression of strings
@@ -213,6 +213,6 @@ bat.append(s,"goodbye");
 bat.append(s,"goodbye");
 
 io.print(s);
-cs:= mosaic.compress(s);
-cc:= mosaic.decompress(s);
-io.print(cc);
+mosaic.compress(s);
+mosaic.decompress(s);
+io.print(s);

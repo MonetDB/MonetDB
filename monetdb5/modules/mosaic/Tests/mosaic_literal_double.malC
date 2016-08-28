@@ -6,12 +6,12 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-x:= mosaic.compress(b,"literal");
-mosaic.dump(x);
-xd := mosaic.decompress(x);
-io.print(xd);
+mosaic.compress(b,"literal");
+mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
 
-z:= mosaic.compress(x,"literal");
-mosaic.dump(z);
-zd := mosaic.decompress(z);
-io.print(zd);
+mosaic.compress(b,"literal");
+mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
