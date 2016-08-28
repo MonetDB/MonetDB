@@ -512,8 +512,8 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 			ptr p = ATOMnil(tpe);
 			VALset(&cst, tpe, p);
 		} else {
-			ptr p = ATOMnilptr(tpe);
-			VALset(&cst, tpe, p);
+			const void *p = ATOMnilptr(tpe);
+			VALinit(&cst, tpe, p);
 		}
 		_t = defConstant(mb,tpe,&cst);
 	} else {

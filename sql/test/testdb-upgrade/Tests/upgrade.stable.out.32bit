@@ -14,6 +14,7 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 
+Ready.
 Running database upgrade commands:
 set schema "sys";
 create procedure sys.createorderindex(sys string, tab string, col string)
@@ -217,11 +218,9 @@ delete from systemfunctions where function_id not in (select id from functions);
 set schema "testschema";
 
 
-Ready.
-
-# 17:14:41 >  
-# 17:14:41 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 17:14:41 >  
+# 17:51:09 >  
+# 17:51:09 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 17:51:09 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name

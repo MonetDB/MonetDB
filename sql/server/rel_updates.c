@@ -920,7 +920,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 			sql_rel *fnd = NULL;
 
 			for (n = fl->h; n && res; n = n->next) {
-				fnd = table_ref(sql, NULL, n->data.sym);
+				fnd = table_ref(sql, NULL, n->data.sym, 0);
 				if (fnd)
 					res = rel_crossproduct(sql->sa, res, fnd, op_join);
 			}

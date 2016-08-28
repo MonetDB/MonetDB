@@ -59,7 +59,7 @@ void_bat_create(int adt, BUN nr)
 
 	/* check for correct structures */
 	if (b == NULL)
-		return b;
+		return NULL;
 	BATsetaccess(b, BAT_APPEND);
 	if (nr > BATTINY && adt && BATextend(b, nr) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -202,13 +202,13 @@ TABLETcreate_bats(Tablet *as, BUN est)
 		if (fmt[i].skip)
 			continue;
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
-		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
 			for (j = 0; j < i; j++)
 				if (!fmt[i].skip)
 					BBPdecref(fmt[j].c->batCacheid, FALSE);
 			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", as->nr);
 		}
+		fmt[i].ci = bat_iterator(fmt[i].c);
 	}
 	return MAL_SUCCEED;
 }

@@ -508,6 +508,10 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 		select(0, NULL, NULL, NULL, &tv);
 		if (kill(daemon, 0) == -1)
 			break;
+		if (i == 9) {
+			/* done waiting, use harsher measures */
+			kill(daemon, SIGKILL);
+		}
 	}
 
 	return(0);

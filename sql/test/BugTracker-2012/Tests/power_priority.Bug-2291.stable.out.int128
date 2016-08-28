@@ -48,7 +48,7 @@ Ready.
 
 #select (4.4054292 - 4.40572025343667)^2 + (52.0903881 - 52.091375762174)^2;
 % .L # table_name
-% sql_sub_single_value # name
+% bit_xor_single_value # name
 % decimal # type
 % 20 # length
 [ -0.00076334574955	]

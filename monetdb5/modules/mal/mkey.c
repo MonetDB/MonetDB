@@ -25,6 +25,12 @@
 #define MKEYHASH_hge(valp)	(((lng*)(valp))[0] ^ ((lng*)(valp))[1])
 #endif
 
+static inline lng
+GDK_ROTATE(lng x, int y, int z, lng m)
+{
+	return ((lng) ((ulng) x << y) & ~m) | ((x >> z) & m);
+}
+
 /* TODO: nil handling. however; we do not want to lose time in bulk_rotate_xor_hash with that */
 str
 MKEYrotate(lng *res, const lng *val, const int *n)
@@ -152,7 +158,7 @@ MKEYbathash(bat *res, const bat *bid)
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 		int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-		void *nil = ATOMnilptr(b->ttype);
+		const void *nil = ATOMnilptr(b->ttype);
 		BUN i;
 		const void *v;
 

@@ -44,7 +44,7 @@ mal_module_reset(void)
 {
 	Module m,n;
 
-	for( m = moduleChain; m; ){
+	for( m = moduleChain, moduleChain = 0; m; ){
 		n = m->next;
 		freeModule(m);
 		m= n;

@@ -107,8 +107,6 @@
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 
-#define GDK_ROTATE(x,y,z,m) ((((x) << (y)) & ~(m)) | (((x) >> (z)) & (m)))
-
 mal_export str  MKEYrotate(lng *ret, const lng *v, const int *nbits);
 mal_export str  MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str  MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

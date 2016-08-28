@@ -7,6 +7,7 @@
 import string
 import os
 import re
+from filesplit import rsplit_filename, split_filename, automake_ext
 
 # the text that is put at the top of every generated Makefile.msc
 MAKEFILE_HEAD = '''
@@ -15,23 +16,6 @@ MAKEFILE_HEAD = '''
 # Nothing much configurable below
 
 '''
-
-automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'pm.i', '']
-
-def split_filename(f):
-    base = f
-    ext = ""
-    if f.find(".") >= 0:
-        return f.split(".", 1)
-    return base, ext
-
-def rsplit_filename(f):
-    base = f
-    ext = ""
-    s = f.rfind(".")
-    if s >= 0:
-        return f[:s], f[s+1:]
-    return base, ext
 
 def msc_basename(f):
     # return basename (i.e. just the file name part) of a path, no
