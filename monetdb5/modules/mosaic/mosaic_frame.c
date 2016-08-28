@@ -223,8 +223,6 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: makeFrame(hge); break;
 #endif
-	case TYPE_str:
-		;
 	}
 #ifdef _DEBUG_MOSAIC_
 	MOSdump_frame(cntxt, task);
@@ -236,7 +234,7 @@ flt
 MOSestimate_frame(Client cntxt, MOStask task)
 {	BUN i = 0;
 	int j;
-	flt factor= 1.0;
+	flt factor= 0.0;
 	MosaicHdr hdr = task->hdr;
 	(void) cntxt;
 
