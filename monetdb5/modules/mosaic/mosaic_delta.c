@@ -714,12 +714,14 @@ MOSprojection_delta(Client cntxt,  MOStask task)
 }
 
 #define join_delta(TPE)\
-{	TPE *v, *w;\
-	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	for(oo= (oid) first; first < last; first++, v++, oo++){\
+{	TPE *w,base;\
+	bte *v;\
+	base = *(int*) (((char*) task->blk) + MosaicBlkSize);\
+	v = (bte*) (((char*) task->blk) + MosaicBlkSize + sizeof(int));\
+	for(oo= (oid) first; first < last; first++, base += *v,v++, oo++){\
 		w = (TPE*) task->src;\
 		for(n = task->elm, o = 0; n -- > 0; w++,o++)\
-		if ( *w == *v){\
+		if ( *w == base){\
 			BUNappend(task->lbat, &oo, FALSE);\
 			BUNappend(task->rbat, &o, FALSE);\
 		}\
@@ -745,23 +747,6 @@ MOSsubjoin_delta(Client cntxt,  MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: join_delta(hge); break;
 #endif
-/*
-		case TYPE_int:
-		{	int *w,base;
-			bte *v;
-			base = *(int*) (((char*) task->blk) + MosaicBlkSize);
-			v = (bte*) (((char*) task->blk) + MosaicBlkSize + sizeof(int));
-			for(oo= (oid) first; first < last; first++, base += *v,v++, oo++){
-				w = (int*) task->src;
-				for(n = task->elm, o = 0; n -- > 0; w++,o++)
-				if ( *w == base){
-					BUNappend(task->lbat, &oo, FALSE);
-					BUNappend(task->rbat, &o, FALSE);
-				}
-			}
-		}
-		break;
-*/
 		case  TYPE_str:
 		// we only have to look at the index width, not the values
 			switch(task->bsrc->twidth){
