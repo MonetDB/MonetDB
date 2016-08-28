@@ -266,41 +266,35 @@ MOSoptimizerCost(Client cntxt, MOStask task, int typewidth)
 			ratio = fac;
 		}
 	}
-	// max achievable compression factor is 64x
 	if (ratio < typewidth && task->filter[MOSAIC_PREFIX]){
 		fac = MOSestimate_prefix(cntxt,task);
 		if ( fac > ratio ){
 			cand = MOSAIC_PREFIX;
 			ratio = fac;
 		}
-		if ( fac  <= 0.0)
-				task->filter[MOSAIC_PREFIX] = 0;
 	}
-	// max achievable compression factor is 8x
-	if (task->filter[MOSAIC_DICT]){
+	if (ratio < 64 && task->filter[MOSAIC_DICT]){
 		fac = MOSestimate_dictionary(cntxt,task);
 		if (fac > ratio){
 			cand = MOSAIC_DICT;
 			ratio = fac;
 		}
 	}
-	// max achievable compression factor is 8x
-	if (task->filter[MOSAIC_FRAME]){
+	if (ratio < 64 && task->filter[MOSAIC_FRAME]){
 		fac = MOSestimate_frame(cntxt,task);
 		if (fac > ratio){
 			cand = MOSAIC_FRAME;
 			ratio = fac;
 		}
 	}
-	// max achievable compression factor is 8x
-	if (task->filter[MOSAIC_DELTA]){
+	if (ratio < 64 && task->filter[MOSAIC_DELTA]){
 		fac = MOSestimate_delta(cntxt,task);
 		if ( fac > ratio ){
 			cand = MOSAIC_DELTA;
 			ratio = fac;
 		}
 	}
-	if (task->filter[MOSAIC_CALENDAR]){
+	if (ratio < 64 && task->filter[MOSAIC_CALENDAR]){
 		fac = MOSestimate_calendar(cntxt,task);
 		if (fac > ratio){
 			cand = MOSAIC_CALENDAR;
