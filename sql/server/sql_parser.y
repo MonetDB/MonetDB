@@ -4917,7 +4917,11 @@ data_type:
 			  }
 			}
 | GEOMETRY {
-		sql_find_subtype(&$$, "geometry", 0, 0 );
+		if (!sql_find_subtype(&$$, "geometry", 0, 0 )) {
+			yyerror(m, "\b22000!type (geometry) unknown");
+			$$.type = NULL;
+			YYABORT;
+		}
 	}
 | GEOMETRY '(' subgeometry_type ')' {
 		int geoSubType = $3; 
@@ -4950,7 +4954,11 @@ data_type:
 		}
 	}
 | GEOMETRYA {
-		sql_find_subtype(&$$, "geometrya", 0, 0 );
+		if (!sql_find_subtype(&$$, "geometrya", 0, 0 )) {
+			yyerror(m, "\b22000!type (geometrya) unknown");
+			$$.type = NULL;
+			YYABORT;
+		}
 	}
 | GEOMETRYSUBTYPE {
 	int geoSubType = find_subgeometry_type($1);
