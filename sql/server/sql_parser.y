@@ -1803,8 +1803,11 @@ func_def:
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
-			else
-				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+			else {
+				char *msg = sql_message("Language name R, C, or J(avascript):expected, received '%c'", l);
+				yyerror(m, msg);
+				_DELETE(msg);
+			}
 
 			append_list(f, $3);
 			append_list(f, $5);
@@ -1854,8 +1857,11 @@ func_def:
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
-			else
-				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+			else {
+				char *msg = sql_message("Language name R, C, or J(avascript):expected, received '%c'", l);
+				yyerror(m, msg);
+				_DELETE(msg);
+			}
 
 			append_list(f, $3);
 			append_list(f, $5);
