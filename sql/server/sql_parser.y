@@ -4962,7 +4962,7 @@ data_type:
 		_DELETE(msg);
 		YYABORT;
 	}  else if (!sql_find_subtype(&$$, "geometry", geoSubType, 0 )) {
-	char *msg = sql_message("\b22000!type (%s) unknown", $1);
+		char *msg = sql_message("\b22000!type (%s) unknown", $1);
 		yyerror(m, msg);
 		_DELETE(msg);
 		$$.type = NULL;
