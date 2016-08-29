@@ -612,7 +612,7 @@ BATdel(BAT *b, BAT *d)
 			nd++;
 			if (c == 0 || *o - b->hseqbase >= BATcount(b))
 				n = b->hseqbase + BATcount(b) - o[-1] - 1;
-			else if ((oid) (o - s) > *o - *s)
+			else if ((oid) (o - s) < *o - *s)
 				n = o[0] - o[-1] - 1;
 			else
 				n = 0;
@@ -636,6 +636,10 @@ BATdel(BAT *b, BAT *d)
 			b->tnonil = 1;
 		}
 	}
+	/* not sure about these anymore */
+	b->tnosorted = b->tnorevsorted = 0;
+	b->tnokey[0] = b->tnokey[1] = 0;
+
 	return GDK_SUCCEED;
 }
 
