@@ -4980,7 +4980,7 @@ subgeometry_type:
 		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
 		yyerror(m, msg);
 		_DELETE(msg);
-		
+		YYABORT;
 	} 
 	$$ = subtype;	
 }
@@ -4992,7 +4992,7 @@ subgeometry_type:
 		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
 		yyerror(m, msg);
 		_DELETE(msg);
-		
+		YYABORT;
 	} 
 	$$ = subtype;	
 }
