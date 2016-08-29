@@ -3337,9 +3337,7 @@ like_exp:
  |  scalar_exp ESCAPE string
  	{ const char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
-		char *msg = sql_message("\b22025!ESCAPE must be one character");
-		yyerror(m, msg);
-		_DELETE(msg);
+		yyerror(m, "\b22025!ESCAPE must be one character");
 		$$ = NULL;
 		YYABORT;
 	  } else {
@@ -3615,10 +3613,7 @@ simple_scalar_exp:
 				if (!atom_neg(a)) {
 					$$ = $2;
 				} else {
-					char *msg = sql_message("\b22003!value too large or not a number");
-
-					yyerror(m, msg);
-					_DELETE(msg);
+					yyerror(m, "\b22003!value too large or not a number");
 					$$ = NULL;
 					YYABORT;
 				}
