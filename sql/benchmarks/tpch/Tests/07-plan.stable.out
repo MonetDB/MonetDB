@@ -55,7 +55,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 293 # length
+% 309 # length
 project (
 | group by (
 | | project (
@@ -83,7 +83,7 @@ project (
 | | | | | ) [ n2.n_name NOT NULL in (char(25) "GERMANY", char(25) "FRANCE") ]
 | | | | ) [ customer.%customer_c_nationkey_fkey NOT NULL = n2.%TID% NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ]
 | | | ) [ (n1.n_name NOT NULL = char(25) "FRANCE", n2.n_name NOT NULL = char(25) "GERMANY") or (n1.n_name NOT NULL = char(25) "GERMANY", n2.n_name NOT NULL = char(25) "FRANCE") ]
-| | ) [ n1.n_name NOT NULL as shipping.supp_nation, n2.n_name NOT NULL as shipping.cust_nation, sys.year(lineitem.l_shipdate NOT NULL) as shipping.l_year, sys.sql_mul(lineitem.l_extendedprice NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL)) as shipping.volume ]
+| | ) [ n1.n_name NOT NULL as shipping.supp_nation, n2.n_name NOT NULL as shipping.cust_nation, sys.year(lineitem.l_shipdate NOT NULL) as shipping.l_year, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L2.L2, sys.sql_mul(lineitem.l_extendedprice NOT NULL, L2.L2) as shipping.volume ]
 | ) [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year ] [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year, sys.sum no nil (shipping.volume) as L1.L1 ]
 ) [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year, L1 as L1.revenue ] [ shipping.supp_nation ASC NOT NULL, shipping.cust_nation ASC NOT NULL, shipping.l_year ASC ]
 
