@@ -3980,16 +3980,16 @@ CREATE FUNCTION ST_Distance(box1 mbr, box2 mbr) RETURNS double EXTERNAL NAME geo
 -------------------------------------------------------------------------
 ------------------------- Management Functions- -------------------------
 -------------------------------------------------------------------------
---CREATE PROCEDURE AddGeometryColumn(table_name string, column_name string, srid integer, geometryType string, dimension integer) 
+--CREATE PROCEDURE AddGeometryColumn(table_name string, column_name string, srid integer, geometryType string, dimension integer)
 --CREATE FUNCTION AddGeometryColumn(table_name string, column_name string, srid integer, geometryType string, dimension integer) RETURNS string
 --BEGIN
 --	DECLARE column_type string;
 --	SET column_type = concat('geometry( ', geometryType);
 --	SET column_type = concat(column_type, ', ');
 --	SET column_type = concat(column_type, srid);
---	SET column_type = concat(column_type, ' )'); 
+--	SET column_type = concat(column_type, ' )');
 --	ALTER TABLE table_name ADD column_name column_type; --geometry('point', 28992);
---	
+--
 --	RETURN column_type;
 --END;
 
@@ -3998,7 +3998,7 @@ CREATE FUNCTION ST_Distance(box1 mbr, box2 mbr) RETURNS double EXTERNAL NAME geo
 --	ALTER TABLE table_name ADD column_name;
 --END;
 
---CREATE FUNCTION t(table_name string, column_name string, srid integer, type string, dimension integer) RETURNS string 
+--CREATE FUNCTION t(table_name string, column_name string, srid integer, type string, dimension integer) RETURNS string
 --BEGIN
 --	EXECUTE PROCEDURE AddGeometryColumn(table_name, column_name, srid, type, dimension);
 --	RETURN '';
@@ -4097,7 +4097,7 @@ END;
 CREATE FUNCTION ST_PatchN(geom Geometry, patchNum integer) RETURNS Geometry --EXTERNAL NAME geom."PatchN" --same with Surface
 BEGIN
 	RETURN SELECT ST_GeometryN(geom, patchNum);
-END; 
+END;
 --BoundingPolygons
 --IsClosed
 
@@ -4107,14 +4107,14 @@ END;
 
 --Construct a Geometry from a WKT
 CREATE FUNCTION ST_GeomFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomFromText";
-CREATE FUNCTION ST_PointFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."PointFromText"; 
+CREATE FUNCTION ST_PointFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."PointFromText";
 CREATE FUNCTION ST_LineFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."LineFromText";
 CREATE FUNCTION ST_PolygonFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."PolygonFromText";
 CREATE FUNCTION ST_MPointFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."MPointFromText";
 CREATE FUNCTION ST_MLineFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."MLineFromText";
 CREATE FUNCTION ST_MPolyFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."MPolyFromText";
 CREATE FUNCTION ST_GeomCollFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomCollFromText";
-CREATE FUNCTION ST_BdPolyFromText(wkt string, srid integer) RETURNS Geometry external name geom."BdPolyFromText"; 
+CREATE FUNCTION ST_BdPolyFromText(wkt string, srid integer) RETURNS Geometry external name geom."BdPolyFromText";
 CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid integer) RETURNS Geometry external name geom."BdMPolyFromText";
 
 --Construct a Geoemtry from a WKB
@@ -4126,7 +4126,7 @@ CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid integer) RETURNS Geometry ex
 --CREATE FUNCTION ST_MLineFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."MLineFromWKB";
 --CREATE FUNCTION ST_MPolyFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."MPolyFromWKB";
 --CREATE FUNCTION ST_GeomCollFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomCollFromWKB";
---CREATE FUNCTION ST_BdPolyFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry external name geom."BdPolyFromWKB"; 
+--CREATE FUNCTION ST_BdPolyFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry external name geom."BdPolyFromWKB";
 --CREATE FUNCTION ST_BdMPolyFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry external name geom."BdMPolyFromWKB";
 
 --CREATE FUNCTION ST_M(geom Geometry) RETURNS double EXTERNAL NAME geom."M"; --geos does not support M coordinate (at least in the c version)
@@ -4147,7 +4147,7 @@ CREATE FUNCTION ST_GeometryFromText(wkt string, srid integer) RETURNS Geometry E
 
 CREATE FUNCTION ST_GeomFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."GeomFromText";
 CREATE FUNCTION ST_GeometryFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."GeomFromText";
-CREATE FUNCTION ST_PointFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."PointFromText"; 
+CREATE FUNCTION ST_PointFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."PointFromText";
 CREATE FUNCTION ST_LineFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."LineFromText";
 CREATE FUNCTION ST_PolygonFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."PolygonFromText";
 CREATE FUNCTION ST_MPointFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."MPointFromText";
@@ -4168,7 +4168,7 @@ CREATE FUNCTION ST_GeomCollFromText(wkt string) RETURNS Geometry EXTERNAL NAME g
 --CREATE FUNCTION ST_GeogFromWKB(wkb_arr WHATEVER_IS_STORED_IN_DB) RETURNS Geography EXTERNAL NAME geom."GeogFromWKB";
 
 -- Create Geometry from simpler geometries
-CREATE FUNCTION ST_MakePoint(x double, y double) RETURNS Geometry EXTERNAL NAME geom."MakePoint"; 
+CREATE FUNCTION ST_MakePoint(x double, y double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
 CREATE FUNCTION ST_Point(x double, y double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
 CREATE FUNCTION ST_MakePoint(x double, y double, z double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
 CREATE FUNCTION ST_MakePoint(x double, y double, z double, m double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
@@ -4204,13 +4204,13 @@ CREATE FUNCTION ST_CoordDim(geom Geometry) RETURNS integer EXTERNAL NAME geom."C
 --CREATE FUNCTION ST_IsCollection(geom Geometry) RETURNS boolean EXTERNAL NAME
 CREATE FUNCTION ST_IsValid(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsValid";
 --CREATE FUNCTION ST_IsValid(geom Geometry, flags integer) RETURNS boolean EXTERNAL NAME
-CREATE FUNCTION ST_IsValidReason(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidReason"; 
+CREATE FUNCTION ST_IsValidReason(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidReason";
 --CREATE FUNCTION ST_IsValidReason(geom Geometry, flags integer) RETURNS string EXTERNAL NAME
---CREATE FUNCTION ST_IsValidDetail(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidDetail"; 
+--CREATE FUNCTION ST_IsValidDetail(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidDetail";
 --CREATE FUNCTION ST_IsValidDetail(geom Geometry, flags integer) RETURNS A_CUSTOM_ROW EXTERNAL NAME
 --CREATE FUNCTION ST_NDims(geom Geometry) RETURNS integer EXTERNAL NAME
 CREATE FUNCTION ST_NPoints(geom Geometry) RETURNS integer EXTERNAL NAME geom."NPoints";
-CREATE FUNCTION ST_NRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NRings"; --is meaningfull for polygon and multipolygon
+CREATE FUNCTION ST_NRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NRings"; --is meaningful for polygon and multipolygon
 CREATE FUNCTION ST_NumInteriorRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumInteriorRings";
 --CREATE FUNCTION ST_Summary(geom Geometry) RETURNS string EXTERNAL NAME
 CREATE FUNCTION ST_XMax(geom Geometry) RETURNS double EXTERNAL NAME geom."XMaxFromWKB";
@@ -4255,9 +4255,9 @@ CREATE FUNCTION ST_Segmentize(geom Geometry, sz double) RETURNS Geometry EXTERNA
 --CREATE FUNCTION ST_SetPoint RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_SnapToGrid RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Snap RETURNS EXTERNAL NAME
-CREATE FUNCTION getProj4(srid_in integer) RETURNS string 
+CREATE FUNCTION getProj4(srid_in integer) RETURNS string
 BEGIN
-	RETURN SELECT proj4text FROM spatial_ref_sys WHERE srid=srid_in; 
+	RETURN SELECT proj4text FROM spatial_ref_sys WHERE srid=srid_in;
 END;
 CREATE FUNCTION InternalTransform(geom Geometry, srid_src integer, srid_dest integer, proj4_src string, proj4_dest string) RETURNS Geometry EXTERNAL NAME geom."Transform";
 CREATE FUNCTION ST_Transform(geom Geometry, srid integer) RETURNS Geometry
@@ -4271,13 +4271,13 @@ BEGIN
 	SELECT getProj4(srid) INTO proj4_dest;
 
 	IF proj4_src IS NULL THEN
-		RETURN SELECT InternalTransform(geom, srid_src, srid, 'null', proj4_dest); 
+		RETURN SELECT InternalTransform(geom, srid_src, srid, 'null', proj4_dest);
 	ELSE
 		IF proj4_dest IS NULL THEN
-			RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, 'null'); 
+			RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, 'null');
 		ELSE
 			RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, proj4_dest);
-		END IF;	
+		END IF;
 	END IF;
 END;
 
@@ -4420,7 +4420,7 @@ CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG G
 -------------------------------------------------------------------------
 --CREATE FUNCTION UpdateGeometrySRID(catalogn_name varchar, schema_name varchar, table_name varchar, column_name varchar, new_srid_in integer) RETURNS text -- external name geom.updateGeometrySRID;
 --BEGIN
---	
+--
 --END;
 
 --CREATE FUNCTION UpdateGeometrySRID(schema_name varchar, table_name varchar, column_name varchar, new_srid_in integer) RETURNS text
