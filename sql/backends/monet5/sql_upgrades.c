@@ -1475,6 +1475,156 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_geom_jun2016_sp2(Client c, mvc *sql)
+{
+	size_t bufsize = 1000000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"GRANT EXECUTE ON FUNCTION sys.Has_Z(integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.Has_M(integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.get_type(integer, integer) TO PUBLIC;\n"
+			"GRANT SELECT ON sys.spatial_ref_sys TO PUBLIC;\n"
+			"GRANT SELECT ON sys.geometry_columns TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.mbr(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Overlaps(mbr, mbr) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Contains(mbr, mbr) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Equals(mbr, mbr) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Distance(mbr, mbr) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_WKTToSQL(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_WKBToSQL(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_AsText(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_AsBinary(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Dimension(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_GeometryType(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_SRID(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_SetSRID(Geometry, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_IsEmpty(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_IsSimple(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Boundary(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Envelope(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Equals(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Disjoint(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Intersects(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Touches(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Crosses(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Within(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Contains(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Overlaps(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Relate(Geometry, Geometry, string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Distance(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Intersection(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Difference(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Union(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_SymDifference(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Buffer(Geometry, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_ConvexHull(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_X(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Y(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Z(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_StartPoint(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_EndPoint(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_IsRing(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Length(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_IsClosed(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_NumPoints(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_PointN(Geometry, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Centroid(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_PointOnSurface(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Area(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_ExteriorRing(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_SetExteriorRing(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_NumInteriorRing(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_InteriorRingN(Geometry, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_InteriorRings(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_NumGeometries(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_GeometryN(Geometry, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_NumPatches(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_PatchN(Geometry, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_GeomFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_PointFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_LineFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_PolygonFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MPointFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MLineFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MPolyFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_GeomCollFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_BdPolyFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_BdMPolyFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_GeometryFromText(string, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_GeomFromText(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_GeometryFromText(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_PointFromText(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_LineFromText(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_PolygonFromText(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MPointFromText(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MLineFromText(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MPolyFromText(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_GeomCollFromText(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MakePoint(double, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Point(double, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MakePoint(double, double, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MakePoint(double, double, double, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MakePointM(double, double, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MakeLine(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MakeEnvelope(double, double, double, double, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MakeEnvelope(double, double, double, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MakePolygon(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Polygon(Geometry, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_MakeBox2D(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.GeometryType(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_CoordDim(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_IsValid(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_IsValidReason(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_NPoints(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_NRings(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_NumInteriorRings(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_XMax(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_XMax(mbr) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_XMin(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_XMin(mbr) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_YMax(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_YMax(mbr) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_YMin(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_YMin(mbr) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Force2D(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Force3D(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Segmentize(Geometry, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getProj4(integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.InternalTransform(Geometry, integer, integer, string, string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Transform(Geometry, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Translate(Geometry, double, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Translate(Geometry, double, double, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_AsEWKT(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Covers(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_CoveredBy(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_DWithin(Geometry, Geometry, double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Length2D(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Collect(Geometry, Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_DelaunayTriangles(Geometry, double, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_Dump(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.ST_DumpPoints(Geometry) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.Contains(Geometry, double, double) TO PUBLIC;\n");
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1583,6 +1733,15 @@ SQLupgrades(Client c, mvc *m)
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
+		}
+	}
+
+	if (sql_find_subtype(&tp, "geometry", 0, 0) &&
+	    (f = sql_bind_func(m->sa, s, "mbr", &tp, NULL, F_FUNC)) != NULL &&
+	    sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
+		if ((err = sql_update_geom_jun2016_sp2(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
 		}
 	}
 }
