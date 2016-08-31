@@ -194,7 +194,9 @@ doChallenge(void *data)
 		if (strstr(buf, "BINPACK")) {
 			colcomp = COLUMN_COMPRESSION_BINPACK;
 		}
-		if (strstr(buf, "PROTOBUF")) {
+		if (strstr(buf, "PROTOBUFNOPACK")) {
+			colcomp = COLUMN_COMPRESSION_PROTOBUF_NOPACK;
+		} else if (strstr(buf, "PROTOBUF")) {
 			colcomp = COLUMN_COMPRESSION_PROTOBUF;
 		}
 

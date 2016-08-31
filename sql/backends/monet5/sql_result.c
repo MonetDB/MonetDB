@@ -10,7 +10,6 @@
  * author N.J. Nes
  */
  
-
 #include "monetdb_config.h"
 #include "sql_result.h"
 #include <str.h>
@@ -1878,6 +1877,7 @@ static int write_str_term(stream* s, str val) {
 
 #define VARCHAR_MAXIMUM_FIXED 3
 
+
 static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize) {
 	BAT *order;
 	lng count;
@@ -1929,10 +1929,18 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			typelen = -1;
 			if (mtype == TYPE_str && c->type.digits > 0) {
 				// varchar with fixed max length
+#ifndef VARINT_PADDING
 				fixed_lengths += c->type.digits + 1;
+#else
+				fixed_lengths += c->type.digits + varint_size(c->type.digits);
+#endif
 				if (c->type.digits < VARCHAR_MAXIMUM_FIXED) {
 					typelen = c->type.digits;
+#ifndef VARINT_PADDING
 					fixed_lengths -= 1;
+#else
+					fixed_lengths -= varint_size(c->type.digits);
+#endif
 				} else {
 					length_prefixed++;
 				}
@@ -2013,10 +2021,10 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		// subtract this from the amount of bytes left
 		bytes_left -= length_prefixed * sizeof(lng);
 
-		/*if (colcomp == COLUMN_COMPRESSION_BINPACK || colcomp == COLUMN_COMPRESSION_PFOR) {
+		if (colcomp == COLUMN_COMPRESSION_BINPACK || colcomp == COLUMN_COMPRESSION_PFOR) {
 			// leave a bit of extra space in case the compression increases the size of the data
 			bytes_left = bytes_left / 2;
-		}*/
+		}
 #ifdef CONTINUATION_MESSAGE
 		char cont_req, dummy;
 #else
@@ -2035,7 +2043,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					int mtype = c->type.type->localtype;
 					if (ATOMvarsized(mtype)) {
 						size_t slen = strlen((const char*) BUNtail(iterators[i], row));
+#ifndef VARINT_PADDING
 						rowsize += slen + 1;
+#else
+						rowsize += slen + varint_size(slen);
+#endif
 					}
 				}
 				if (bytes_left < rowsize) {
@@ -2069,11 +2081,9 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			break;
 		}
 #endif
-		//printf("Rows: %zu\n", (size_t)(row - srow));
-
 		assert(bs2_buffer(s).pos == 0);
 
-		if (colcomp == COLUMN_COMPRESSION_PROTOBUF) {
+		if (colcomp == COLUMN_COMPRESSION_PROTOBUF || colcomp == COLUMN_COMPRESSION_PROTOBUF_NOPACK) {
 #ifndef HAVE_LIBPROTOBUF
 			fprintf(stderr, "Can't use protobuf stuff.\n");
 			goto cleanup;
@@ -2081,55 +2091,97 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			Mhapi__QueryResult msg;
 			mhapi__query_result__init(&msg);
 			msg.row_count = (int64_t)(row - srow);
-			msg.n_columns = t->nr_cols;
-			msg.columns = malloc(sizeof(Mhapi__QueryResult__Column*)*t->nr_cols);
-			assert(msg.columns);
-
-			for (i = 0; i < (size_t) t->nr_cols; i++) {
-				res_col *c = t->cols + i;
-				int local_type = ATOMstorage(c->type.type->localtype);
-				Mhapi__QueryResult__Column *col;
-
-				msg.columns[i] = malloc(sizeof(Mhapi__QueryResult__Column));
-				assert(msg.columns[i]);
-				col = msg.columns[i];
-
-				mhapi__query_result__column__init(col);
-				/*if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
-					local_type = TYPE_dbl;
-				}*/
-				switch (local_type) {
-				case TYPE_str:
-				{
-					col->string_values = malloc(msg.row_count * sizeof(char*));
-					assert(col->string_values);
-					col->n_string_values = msg.row_count;
-					for (crow = srow; crow < row; crow++) {
-						col->string_values[crow-srow] = (char*) BUNtail(iterators[i], crow);
+			if (colcomp == COLUMN_COMPRESSION_PROTOBUF) {
+				msg.n_columns = t->nr_cols;
+				msg.columns = malloc(sizeof(Mhapi__QueryResult__Column*)*t->nr_cols);
+				assert(msg.columns);
+				for (i = 0; i < (size_t) t->nr_cols; i++) {
+					res_col *c = t->cols + i;
+					int local_type = ATOMstorage(c->type.type->localtype);
+					Mhapi__QueryResult__Column *col;
+					msg.columns[i] = malloc(sizeof(Mhapi__QueryResult__Column));
+					assert(msg.columns[i]);
+					col = msg.columns[i];
+					mhapi__query_result__column__init(col);
+					switch (local_type) {
+					case TYPE_str:
+					{
+						col->string_values = malloc(msg.row_count * sizeof(char*));
+						assert(col->string_values);
+						col->n_string_values = msg.row_count;
+						for (crow = srow; crow < row; crow++) {
+							col->string_values[crow-srow] = (char*) BUNtail(iterators[i], crow);
+						}
+						break;
 					}
-					break;
+					case TYPE_int:
+					{
+						col->n_int32_values = msg.row_count;
+						col->int32_values = (int32_t*) Tloc(iterators[i].b, srow);
+						break;
+					}
+					case TYPE_lng:
+					{
+						col->n_int64_values = msg.row_count;
+						col->int64_values = (int64_t*) Tloc(iterators[i].b, srow);
+						break;
+					}
+					case TYPE_dbl:
+					{
+						col->n_double_values = msg.row_count;
+						col->double_values = (double*) Tloc(iterators[i].b, srow);
+						break;
+					}
+					default:
+						assert(0);
+						break;
+					}
 				}
-				case TYPE_int:
-				{
-					col->n_int32_values = msg.row_count;
-					col->int32_values = (int32_t*) Tloc(iterators[i].b, srow);
-					break;
-				}
-				case TYPE_lng:
-				{
-					col->n_int64_values = msg.row_count;
-					col->int64_values = (int64_t*) Tloc(iterators[i].b, srow);
-					break;
-				}
-				case TYPE_dbl:
-				{
-					col->n_double_values = msg.row_count;
-					col->double_values = (double*) Tloc(iterators[i].b, srow);
-					break;
-				}
-				default:
-					assert(0);
-					break;
+			} else {
+				msg.n_columns_unpacked = t->nr_cols;
+				msg.columns_unpacked = malloc(sizeof(Mhapi__QueryResult__ColumnUnpacked*)*t->nr_cols);
+				assert(msg.columns_unpacked);
+				for (i = 0; i < (size_t) t->nr_cols; i++) {
+					res_col *c = t->cols + i;
+					int local_type = ATOMstorage(c->type.type->localtype);
+					Mhapi__QueryResult__ColumnUnpacked *col;
+					msg.columns_unpacked[i] = malloc(sizeof(Mhapi__QueryResult__ColumnUnpacked));
+					assert(msg.columns_unpacked[i]);
+					col = msg.columns_unpacked[i];
+					mhapi__query_result__column__init(col);
+					switch (local_type) {
+					case TYPE_str:
+					{
+						col->string_values = malloc(msg.row_count * sizeof(char*));
+						assert(col->string_values);
+						col->n_string_values = msg.row_count;
+						for (crow = srow; crow < row; crow++) {
+							col->string_values[crow-srow] = (char*) BUNtail(iterators[i], crow);
+						}
+						break;
+					}
+					case TYPE_int:
+					{
+						col->n_int32_values = msg.row_count;
+						col->int32_values = (int32_t*) Tloc(iterators[i].b, srow);
+						break;
+					}
+					case TYPE_lng:
+					{
+						col->n_int64_values = msg.row_count;
+						col->int64_values = (int64_t*) Tloc(iterators[i].b, srow);
+						break;
+					}
+					case TYPE_dbl:
+					{
+						col->n_double_values = msg.row_count;
+						col->double_values = (double*) Tloc(iterators[i].b, srow);
+						break;
+					}
+					default:
+						assert(0);
+						break;
+					}
 				}
 			}
 			assert(mhapi__query_result__get_packed_size(&msg) <= bsize);
@@ -2168,7 +2220,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 						while(buf < bufptr) {
 							*buf++ = '\0';
 						}
-						buf = bufptr;
 					}
 				} else {
 					// for variable length strings and large fixed strings we use varints
@@ -2180,7 +2231,21 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					for (crow = srow; crow < row; crow++) {
 						int varsize;
 						char *str = (char*) BUNtail(iterators[i], crow);
+#ifndef VARINT_PADDING
 						buf = stpcpy(buf, str) + 1;
+#else
+ 						if (c->type.digits > 0) {
+ 							char *endbuf;
+ 							varsize = varint_size(c->type.digits);
+ 							endbuf = stpcpy(buf + varsize, str);
+ 							write_varint(buf, endbuf - (buf + varsize));
+ 							assert(read_varint_value(buf) == strlen(str));
+ 							buf = endbuf;
+ 						} else {
+ 							varsize = write_varint(buf, strlen(str));
+ 							buf = stpcpy(buf + varsize, str);
+ 						}
+ #endif
 					}
 					// after the loop we know the size of the column, so write it
 					*((lng*)startbuf) = buf - (startbuf + sizeof(lng));
@@ -2202,7 +2267,12 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					char *bufstart = buf + 2 * sizeof(lng);
 
 					b = maxbits_length(datain, N);
-					endofbuf = (char*)simdpack_length(datain, N, (__m128i *) bufstart, b);
+					if (b == 0) {
+						memcpy(bufstart, datain, N * sizeof(int));
+						endofbuf = bufstart + N * sizeof(int);
+					} else {
+						endofbuf = (char*)simdpack_length(datain, N, (__m128i *) bufstart, b);
+					}
 					if (!endofbuf || endofbuf <= bufstart) {
 						fprintf(stderr,"BINPACK compression failed!\n");
 						fres = -1;

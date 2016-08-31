@@ -2651,6 +2651,8 @@ mapi_reconnect(Mapi mid)
 				mid->colcomp = COLUMN_COMPRESSION_BINPACK;
 			} else if (strcasecmp(env_colcomp, "protobuf") == 0) {
 				mid->colcomp = COLUMN_COMPRESSION_PROTOBUF;
+			} else if (strcasecmp(env_colcomp, "protobufnopack") == 0) {
+				mid->colcomp = COLUMN_COMPRESSION_PROTOBUF_NOPACK;
 			}
 		}
 		if (env_blocksize) {
@@ -2875,7 +2877,7 @@ mapi_reconnect(Mapi mid)
 				     mid->database == NULL ? "" : mid->database,
 				     prot_version == prot10 ? "PROT10" : "PROT10COMPR",
 				     comp == COMPRESSION_SNAPPY ? "SNAPPY" : (comp == COMPRESSION_LZ4 ? "LZ4" : ""),
-				     mid->colcomp == COLUMN_COMPRESSION_PFOR ? ",HAVEPFOR" : (mid->colcomp == COLUMN_COMPRESSION_BINPACK ? ",HAVEBINPACK" : (mid->colcomp == COLUMN_COMPRESSION_PROTOBUF ? ",PROTOBUF" : "")),
+				     mid->colcomp == COLUMN_COMPRESSION_PFOR ? ",HAVEPFOR" : (mid->colcomp == COLUMN_COMPRESSION_BINPACK ? ",HAVEBINPACK" : (mid->colcomp == COLUMN_COMPRESSION_PROTOBUF ? ",PROTOBUF" : (mid->colcomp == COLUMN_COMPRESSION_PROTOBUF_NOPACK ? ",PROTOBUFNOPACK" : ""))),
 				    mid->blocksize);
 			} else {
 				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
@@ -4114,12 +4116,24 @@ static char* mapi_convert_varchar(struct MapiColumn *col) {
 	return (char*) col->dynamic_write_buf;
 }
 
-
+#ifndef VARINT_PADDING
 static char* mapi_convert_clob(struct MapiColumn *col) {
 	if (strcmp(col->buffer_ptr, (char*)col->null_value) == 0) 
 		return NULL;
 	return col->buffer_ptr;
 }
+#else
+static char* mapi_convert_clob(struct MapiColumn *col) {
+	int value;
+	int varsize = read_varint(col->buffer_ptr, &value);
+	col->dynamic_write_buf = malloc(value * sizeof(char) + 1);
+	memcpy(col->dynamic_write_buf, col->buffer_ptr + varsize, value * sizeof(char));
+	col->dynamic_write_buf[value] = '\0';
+	if (strcmp(col->dynamic_write_buf, (char*)col->null_value) == 0) 
+ 		return NULL;
+	return col->dynamic_write_buf;
+}
+#endif
 
 // classic stackoverflow programming
 static void itoa(int i, char b[]){
@@ -5726,7 +5740,7 @@ mapi_fetch_row(MapiHdl hdl)
 #endif
 
 
-			if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF) {
+			if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF || hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF_NOPACK) {
 				char dummy;
 				buffer buf;
 #ifndef HAVE_LIBPROTOBUF
@@ -5739,18 +5753,33 @@ mapi_fetch_row(MapiHdl hdl)
 				res = mhapi__query_result__unpack(NULL, buf.len + buf.pos, (const uint8_t *) buf.buf);
 				assert(res);
 				assert(res->row_count <= result->row_count);
-				assert(res->n_columns == (size_t) result->fieldcnt);
-
-				for (i = 0; i < (size_t) result->fieldcnt; i++) {
-					Mhapi__QueryResult__Column *c = res->columns[i];
-					if (c->n_double_values > 0) {
-						result->fields[i].buffer_ptr = (char*) c->double_values;
-					} else if (c->n_int32_values > 0) {
-						result->fields[i].buffer_ptr =  (char*) c->int32_values;
-					} else if (c->n_int64_values > 0) {
-						result->fields[i].buffer_ptr =  (char*) c->int64_values;
-					}else if (c->n_string_values > 0) {
-						result->fields[i].buffer_ptr = (char*)  c->string_values[0];
+				if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF) {
+					assert(res->n_columns == (size_t) result->fieldcnt);
+					for (i = 0; i < (size_t) result->fieldcnt; i++) {
+						Mhapi__QueryResult__Column *c = res->columns[i];
+						if (c->n_double_values > 0) {
+							result->fields[i].buffer_ptr = (char*) c->double_values;
+						} else if (c->n_int32_values > 0) {
+							result->fields[i].buffer_ptr =  (char*) c->int32_values;
+						} else if (c->n_int64_values > 0) {
+							result->fields[i].buffer_ptr =  (char*) c->int64_values;
+						}else if (c->n_string_values > 0) {
+							result->fields[i].buffer_ptr = (char*)  c->string_values[0];
+						}
+					}
+				} else {
+					assert(res->n_columns_unpacked == (size_t) result->fieldcnt);
+					for (i = 0; i < (size_t) result->fieldcnt; i++) {
+						Mhapi__QueryResult__ColumnUnpacked *c = res->columns_unpacked[i];
+						if (c->n_double_values > 0) {
+							result->fields[i].buffer_ptr = (char*) c->double_values;
+						} else if (c->n_int32_values > 0) {
+							result->fields[i].buffer_ptr =  (char*) c->int32_values;
+						} else if (c->n_int64_values > 0) {
+							result->fields[i].buffer_ptr =  (char*) c->int64_values;
+						}else if (c->n_string_values > 0) {
+							result->fields[i].buffer_ptr = (char*)  c->string_values[0];
+						}
 					}
 				}
 				result->tuple_count += res->row_count;
@@ -5797,13 +5826,17 @@ mapi_fetch_row(MapiHdl hdl)
 						buf += sizeof(lng);
 						lng length = *((lng*)(buf));
 						buf += sizeof(lng);
-						// FIXME resbuffer is not freed
-						uint8_t *resbuffer = malloc(nrows * sizeof(int));
-						if (!resbuffer) {
-							return 0;
+						if (b == 0) {
+							result->fields[i].buffer_ptr = buf;
+						} else {
+							// FIXME resbuffer is not freed
+							uint8_t *resbuffer = malloc(nrows * sizeof(int));
+							if (!resbuffer) {
+								return 0;
+							}
+							simdunpack_length((const __m128i *)buf, nrows, (uint32_t*) resbuffer, b);
+							result->fields[i].buffer_ptr = resbuffer;
 						}
-						simdunpack_length((const __m128i *)buf, nrows, (uint32_t*) resbuffer, b);
-						result->fields[i].buffer_ptr = resbuffer;
 						buf += length;
 					} else {
 #endif
@@ -5845,9 +5878,20 @@ mapi_fetch_row(MapiHdl hdl)
 				if (result->fields[i].columnlength < 0) {
 					// variable-length column
 					if (hdl->mid->protobuf_res) {
-						result->fields[i].buffer_ptr = ((Mhapi__QueryResult*) hdl->mid->protobuf_res)->columns[i]->string_values[result->cur_row];
+						if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF) {
+							result->fields[i].buffer_ptr = ((Mhapi__QueryResult*) hdl->mid->protobuf_res)->columns[i]->string_values[result->cur_row];
+						} else {
+							result->fields[i].buffer_ptr = ((Mhapi__QueryResult*) hdl->mid->protobuf_res)->columns_unpacked[i]->string_values[result->cur_row];
+						}
 					} else {
+#ifndef VARINT_PADDING
 						result->fields[i].buffer_ptr += strlen(result->fields[i].buffer_ptr) + 1;
+#else
+						// FIXME: case where c->digits > 128 and there is a value < 128
+						int value;
+						int varsize = read_varint(result->fields[i].buffer_ptr, &value);
+						result->fields[i].buffer_ptr += value + varsize;
+#endif
 					}
 				} else {
 					result->fields[i].buffer_ptr += result->fields[i].columnlength;
@@ -6266,6 +6310,8 @@ mapi_set_column_compression(Mapi mid, const char* colcomp) {
 		mid->colcomp = COLUMN_COMPRESSION_NONE;
 	} else if (strcasecmp(colcomp, "protobuf") == 0) {
 		mid->colcomp = COLUMN_COMPRESSION_PROTOBUF;
+	} else if (strcasecmp(colcomp, "protobufnopack") == 0) {
+		mid->colcomp = COLUMN_COMPRESSION_PROTOBUF_NOPACK;
 	} else if (strcasecmp(colcomp, "binpack") == 0) {
 		mid->colcomp = COLUMN_COMPRESSION_BINPACK;
 	}else {
