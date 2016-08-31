@@ -1494,7 +1494,6 @@ gdk_export size_t BATmemsize(BAT *b, int dirty);
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
-gdk_export int GDKfileexists(const char *path);
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
 gdk_export gdk_return GDKcreatedir(const char *nme);
 

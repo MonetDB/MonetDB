@@ -75,7 +75,7 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMextern(b->ttype))
             	u = (ptr) *(str *)u;
 	BUNappend(b, u, FALSE);
-	BBPincref(*ret = b->batCacheid, TRUE);
+	BBPkeepref(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
 

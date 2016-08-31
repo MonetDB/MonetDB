@@ -44,6 +44,21 @@ static FileRecord filesLoaded[MAXMODULES];
 static int maxfiles = MAXMODULES;
 static int lastfile = 0;
 
+/*
+ * returns 1 if the file exists
+ */
+#ifndef F_OK
+#define F_OK 0
+#endif
+#ifdef _MSC_VER
+#define access(f, m)	_access(f, m)
+#endif
+static inline int
+fileexists(const char *path)
+{
+	return access(path, F_OK) == 0;
+}
+
 /* Search for occurrence of the function in the library identified by the filename.  */
 MALfcn
 getAddress(stream *out, str modname, str fcnname, int silent)
@@ -178,7 +193,7 @@ loadLibrary(str filename, int flag)
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
 		handle = dlopen(nme, mode);
-		if (handle == NULL && GDKfileexists(nme)) {
+		if (handle == NULL && fileexists(nme)) {
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
 		}
 		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
@@ -187,7 +202,7 @@ loadLibrary(str filename, int flag)
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
-			if (handle == NULL && GDKfileexists(nme)) {
+			if (handle == NULL && fileexists(nme)) {
 				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
 			}
 		}
@@ -198,7 +213,7 @@ loadLibrary(str filename, int flag)
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
-			if (handle == NULL && GDKfileexists(nme)) {
+			if (handle == NULL && fileexists(nme)) {
 				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
 			}
 		}

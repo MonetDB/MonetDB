@@ -87,16 +87,6 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	return path;
 }
 
-/*
- * returns 1 if the file exists
- */
-int 
-GDKfileexists(const char *path) {
-	struct stat st;
-	int ret = stat(path, &st);
-	return (ret == 0);
-}
-
 /* make sure the parent directory of DIR exists (the argument itself
  * is usually a file that is to be created) */
 gdk_return
