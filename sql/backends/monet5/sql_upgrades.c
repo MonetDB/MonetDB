@@ -1710,6 +1710,167 @@ sql_update_geom_jun2016_sp2(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_jun2016_sp2(Client c, mvc *sql)
+{
+	size_t bufsize = 1000000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"GRANT EXECUTE ON FUNCTION sys.getAnchor(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getBasename(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getContent(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getContext(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getDomain(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getExtension(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getFile(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getHost(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getPort(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getProtocol(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getQuery(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getUser(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.getRobotURL(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.isaURL(url) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.newurl(STRING, STRING, INT, STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.newurl(STRING, STRING, STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"broadcast\"(inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"host\"(inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"masklen\"(inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"setmasklen\"(inet, int) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"netmask\"(inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"hostmask\"(inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"network\"(inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"text\"(inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"abbrev\"(inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"left_shift\"(inet, inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"right_shift\"(inet, inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"left_shift_assign\"(inet, inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.\"right_shift_assign\"(inet, inet) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(TINYINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(INTEGER) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(WRD) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(BIGINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(REAL) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(DATE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(TIME) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(TIMESTAMP) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(TINYINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(INTEGER) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(WRD) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(BIGINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(REAL) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(DATE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(TIME) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(TIMESTAMP) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_samp(TINYINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_samp(SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_samp(INTEGER) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_samp(WRD) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_samp(BIGINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_samp(REAL) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_samp(DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_samp(DATE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_samp(TIME) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_samp(TIMESTAMP) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_pop(TINYINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_pop(SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_pop(INTEGER) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_pop(WRD) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_pop(BIGINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_pop(REAL) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_pop(DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_pop(DATE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_pop(TIME) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.var_pop(TIMESTAMP) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(TINYINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(INTEGER) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(WRD) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(BIGINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(DECIMAL) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(REAL) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(DATE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(TIME) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.median(TIMESTAMP) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(TINYINT, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(SMALLINT, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(INTEGER, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(WRD, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(BIGINT, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(DECIMAL, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(REAL, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(DOUBLE, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(DATE, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(TIME, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.quantile(TIMESTAMP, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.corr(TINYINT, TINYINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.corr(SMALLINT, SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.corr(INTEGER, INTEGER) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.corr(WRD, WRD) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.corr(BIGINT, BIGINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.corr(REAL, REAL) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE sys.corr(DOUBLE, DOUBLE) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.filter(json, string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.filter(json, tinyint) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.filter(json, integer) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.filter(json, bigint) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.text(json, string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.number(json) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.\"integer\"(json) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.isvalid(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.isobject(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.isarray(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.isobject(json) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.isarray(json) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.length(json) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.keyarray(json) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.valuearray(json) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.text(json) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.text(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION json.text(int) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE json.output(json) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE json.tojsonarray(string) TO PUBLIC;\n"
+			"GRANT EXECUTE ON AGGREGATE json.tojsonarray(double) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.uuid() TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION sys.isaUUID(string) TO PUBLIC;\n");
+#ifdef HAVE_HGE
+	if (have_hge) {
+		pos += snprintf(buf + pos, bufsize - pos,
+				"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(HUGEINT) TO PUBLIC;\n"
+				"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(HUGEINT) TO PUBLIC;\n"
+				"GRANT EXECUTE ON AGGREGATE sys.var_samp(HUGEINT) TO PUBLIC;\n"
+				"GRANT EXECUTE ON AGGREGATE sys.var_pop(HUGEINT) TO PUBLIC;\n"
+				"GRANT EXECUTE ON AGGREGATE sys.median(HUGEINT) TO PUBLIC;\n"
+				"GRANT EXECUTE ON AGGREGATE sys.quantile(HUGEINT, DOUBLE) TO PUBLIC;\n"
+				"GRANT EXECUTE ON AGGREGATE sys.corr(HUGEINT, HUGEINT) TO PUBLIC;\n"
+				"GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;\n");
+	}
+#endif
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1722,7 +1883,7 @@ SQLupgrades(Client c, mvc *m)
 	 * update */
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!sql_bind_func(m->sa, s, "md5", &tp, NULL, F_FUNC)) {
-		if ((err = sql_update_oct2014(c, m)) !=NULL) {
+		if ((err = sql_update_oct2014(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
@@ -1730,7 +1891,7 @@ SQLupgrades(Client c, mvc *m)
 	/* if table returning function sys.environment() does not
 	 * exist, we need to update from oct2014->sp1 */
 	if (!sql_bind_func(m->sa, s, "environment", NULL, NULL, F_UNION)) {
-		if ((err = sql_update_oct2014_sp1(c, m)) !=NULL) {
+		if ((err = sql_update_oct2014_sp1(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
@@ -1738,7 +1899,7 @@ SQLupgrades(Client c, mvc *m)
 	/* if sys.tablestoragemodel.auxillary exists, we need
 	 * to update (note, the proper spelling is auxiliary) */
 	if (mvc_bind_column(m, mvc_bind_table(m, s, "tablestoragemodel"), "auxillary")) {
-		if ((err = sql_update_oct2014_sp2(c, m)) !=NULL) {
+		if ((err = sql_update_oct2014_sp2(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
@@ -1748,7 +1909,7 @@ SQLupgrades(Client c, mvc *m)
 	 * update */
 	sql_init_subtype(&tp, find_sql_type(s, "inet"), 0, 0);
 	if (!sql_bind_func(m->sa, s, "left_shift", &tp, &tp, F_FUNC)) {
-		if ((err = sql_update_oct2014_sp3(c, m)) !=NULL) {
+		if ((err = sql_update_oct2014_sp3(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
@@ -1769,7 +1930,7 @@ SQLupgrades(Client c, mvc *m)
 	/* add missing features needed beyond Oct 2014 */
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!sql_bind_func(m->sa, s, "like", &tp, &tp, F_FILT)) {
-		if ((err = sql_update_jul2015(c, m)) !=NULL) {
+		if ((err = sql_update_jul2015(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
@@ -1783,7 +1944,7 @@ SQLupgrades(Client c, mvc *m)
 
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!sql_bind_func(m->sa, s, "storage", &tp, NULL, F_UNION)) {
-		if ((err = sql_update_jun2016(c, m)) !=NULL) {
+		if ((err = sql_update_jun2016(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
@@ -1830,6 +1991,14 @@ SQLupgrades(Client c, mvc *m)
 	    (f = sql_bind_func(m->sa, s, "mbr", &tp, NULL, F_FUNC)) != NULL &&
 	    sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
 		if ((err = sql_update_geom_jun2016_sp2(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
+	}
+
+	if ((f = sql_bind_func(m->sa, s, "uuid", NULL, NULL, F_FUNC)) != NULL &&
+	    sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
+		if ((err = sql_update_jun2016_sp2(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
