@@ -14,13 +14,14 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 
+Ready.
 Running database upgrade commands:
 set schema "sys";
 GRANT EXECUTE ON FUNCTION sys.Has_Z(integer) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.Has_M(integer) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.get_type(integer, integer) TO PUBLIC;
-GRANT SELECT ON spatial_ref_sys TO PUBLIC;
-GRANT SELECT ON geometry_columns TO PUBLIC;
+GRANT SELECT ON sys.spatial_ref_sys TO PUBLIC;
+GRANT SELECT ON sys.geometry_columns TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.mbr(Geometry) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.ST_Overlaps(mbr, mbr) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.ST_Contains(mbr, mbr) TO PUBLIC;
@@ -143,11 +144,10 @@ GRANT EXECUTE ON FUNCTION sys.Contains(Geometry, double, double) TO PUBLIC;
 set schema "testschema";
 
 
-Ready.
 
-# 17:14:41 >  
-# 17:14:41 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 17:14:41 >  
+# 11:47:58 >  
+# 11:47:58 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 11:47:58 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name
