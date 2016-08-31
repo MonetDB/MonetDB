@@ -26,6 +26,18 @@ stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade-chain-hge` itsel
 Ready.
 Running database upgrade commands:
 set schema "sys";
+drop aggregate median(decimal(1));
+create aggregate median(val DECIMAL) returns DECIMAL external name "aggr"."median";
+drop aggregate quantile(decimal(1), double);
+create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL external name "aggr"."quantile";
+create aggregate median(val DATE) returns DATE external name "aggr"."median";
+create aggregate median(val TIME) returns TIME external name "aggr"."median";
+create aggregate median(val TIMESTAMP) returns TIMESTAMP external name "aggr"."median";
+insert into sys.systemfunctions (select id from sys.functions where name in ('median', 'quantile') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
 GRANT EXECUTE ON FUNCTION sys.Has_Z(integer) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.Has_M(integer) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.get_type(integer, integer) TO PUBLIC;

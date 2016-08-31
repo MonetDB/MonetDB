@@ -19,6 +19,14 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 # MonetDB/SQL module loaded
 
 Ready.
+Running database upgrade commands:
+set schema "sys";
+drop aggregate median(decimal(1));
+create aggregate median(val DECIMAL) returns DECIMAL external name "aggr"."median";
+drop aggregate quantile(decimal(1), double);
+create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL external name "aggr"."quantile";
+insert into sys.systemfunctions (select id from sys.functions where name in ('median', 'quantile') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+set schema "testschema";
 
 # 11:10:52 >  
 # 11:10:52 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
