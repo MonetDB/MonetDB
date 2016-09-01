@@ -9,6 +9,8 @@
 package nl.cwi.monetdb.util;
 
 public class OptionsException extends Exception {
+	static final long serialVersionUID = 42L;	// needed to prevent: warning: [serial] serializable class OptionsException has no definition of serialVersionUID
+
 	public OptionsException(String reason) {
 		super(reason);
 	}
