@@ -73,7 +73,7 @@ public class JdbcClient {
 				"Suppress printing the welcome header.");
 
 		// arguments which have zero to many arguments
-		copts.addOption("D", "dump", CmdLineOpts.CAR_ZERO_MANY, null, 
+		copts.addOption("D", "dump", CmdLineOpts.CAR_ZERO_MANY, null,
 				"Dumps the given table(s), or the complete database if " +
 				"none given.");
 
@@ -161,7 +161,7 @@ copts.produceHelpMessage()
 			// We cannot use the DatabaseMetaData here, because we
 			// cannot get a Connection.  So instead, we just get the
 			// values we want out of the Driver directly.
-			System.out.println("Driver: v" + 
+			System.out.println("Driver: v" +
 					nl.cwi.monetdb.jdbc.MonetDriver.getDriverVersion());
 			System.exit(0);
 		}
@@ -295,7 +295,7 @@ copts.produceHelpMessage()
 			if (copts.getOption("dump").getArgumentCount() > 0) { // yes we do
 				String[] dumpers = copts.getOption("dump").getArguments();
 				for (int i = 0; i < tables.size(); i++) {
-					Table ttmp = (Table)(tables.get(i));
+					Table ttmp = tables.get(i);
 					for (int j = 0; j < dumpers.length; j++) {
 						if (ttmp.getName().equalsIgnoreCase(dumpers[j].toString()) ||
 							ttmp.getFqname().equalsIgnoreCase(dumpers[j].toString()))
@@ -1188,7 +1188,7 @@ class Table {
 	static void checkForLoop(Table table, List<Table> parents) throws Exception {
 		parents.add(table);
 		for (int i = 0; i < table.needs.size(); i++) {
-			Table child = (Table)(table.needs.get(i));
+			Table child = table.needs.get(i);
 			if (parents.contains(child))
 				throw new Exception("Cyclic dependancy graphs are not supported (cycle detected for " + child.fqname + ")");
 			checkForLoop(child, parents);
