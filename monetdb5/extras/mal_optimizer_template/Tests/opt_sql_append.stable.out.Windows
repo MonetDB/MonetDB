@@ -63,17 +63,44 @@ Ready.
 % clob # type
 % 129 # length
 function user.s4_1():void;
-    X_38:void := querylog.define("explain copy into ttt from \\'a:\\\\tmp/xyz\\';","default_pipe",12);
-barrier X_57 := language.dataflow();
-    X_0 := sql.mvc();
-    (X_21:bat[:int],X_22:bat[:int],X_23:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","a:\\tmp/xyz",-1,0,0,0,nil:str);
-exit X_57;
-    X_25 := sql.append(X_0,"sys","ttt","a",X_21);
-    X_30 := sql.append(X_25,"sys","ttt","b",X_22);
-    X_33 := sql.append(X_30,"sys","ttt","c",X_23);
-    X_35 := aggr.count(X_23);
-    sql.affectedRows(X_33,X_35);
-end user.s4_1;
+    X_24:void := querylog.define("explain copy into ttt from \\'a:\\\\tmp/xyz\\';","default_pipe",12);
+barrier X_53 := language.dataflow();
+    X_1 := sql.mvc();
+    (X_11:bat[:int],X_12:bat[:int],X_13:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","a:\\tmp/xyz",-1,0,0,0);
+exit X_53;
+    X_14 := sql.append(X_1,"sys","ttt","a",X_11);
+    X_18 := sql.append(X_14,"sys","ttt","b",X_12);
+    X_20 := sql.append(X_18,"sys","ttt","c",X_13);
+    X_22 := aggr.count(X_13);
+    sql.affectedRows(X_20,X_22);
+end user.s8_1;
+#inline               actions= 0 time=1 usec 
+#candidates           actions= 1 time=14 usec 
+#remap                actions= 0 time=3 usec 
+#costModel            actions= 1 time=12 usec 
+#coercions            actions=10 time=13 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 0 time=4 usec 
+#mitosis              actions= 0 time=2 usec 
+#mergetable           actions= 0 time=17 usec 
+#deadcode             actions= 0 time=5 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 0 time=5 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=3 usec 
+#deadcode             actions= 0 time=4 usec 
+#reorder              actions= 1 time=19 usec 
+#reduce               actions=33 time=23 usec 
+#matpack              actions= 0 time=3 usec 
+#dataflow             actions=31 time=20 usec 
+#querylog             actions= 0 time=0 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=1 usec 
+#profiler             actions= 1 time=6 usec 
+#garbageCollector     actions= 1 time=13 usec 
+#total                actions= 1 time=245 usec 
 #declare opt_pipe_name string;
 #set opt_pipe_name = ( select optimizer );
 #declare opt_pipe_def  string;
@@ -97,17 +124,45 @@ end user.s4_1;
 % clob # type
 % 128 # length
 function user.s12_1():void;
-    X_38:void := querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';","user_1",12);
-barrier X_57 := language.dataflow();
-    X_0 := sql.mvc();
-    (X_21:bat[:int],X_22:bat[:int],X_23:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","Z:/tmp/xyz",-1,0,0,0,nil:str);
-exit X_57;
-    X_25 := sql.append(X_0,"sys","ttt","a",X_21);
-    X_30 := sql.append(X_25,"sys","ttt","b",X_22);
-    X_35 := aggr.count(X_23);
-    X_33 := sql.append(X_30,"sys","ttt","c",X_23);
-    sql.affectedRows(X_33,X_35);
-end user.s12_1;
+    X_24:void := querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';","user_1",12);
+barrier X_54 := language.dataflow();
+    X_1 := sql.mvc();
+    (X_11:bat[:int],X_12:bat[:int],X_13:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","Z:/tmp/xyz",-1,0,0,0);
+exit X_54;
+    X_14 := sql.append(X_1,"sys","ttt","a",X_11);
+    X_18 := sql.append(X_14,"sys","ttt","b",X_12);
+    X_22 := aggr.count(X_13);
+    X_20 := sql.append(X_18,"sys","ttt","c",X_13);
+    sql.affectedRows(X_20,X_22);
+end user.s24_1;
+#inline               actions= 0 time=1 usec 
+#candidates           actions= 1 time=14 usec 
+#remap                actions= 0 time=3 usec 
+#costModel            actions= 1 time=13 usec 
+#coercions            actions=10 time=14 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 0 time=3 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 0 time=4 usec 
+#mitosis              actions= 0 time=2 usec 
+#mergetable           actions= 0 time=16 usec 
+#deadcode             actions= 0 time=4 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 0 time=4 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=3 usec 
+#deadcode             actions= 0 time=4 usec 
+#reorder              actions= 1 time=19 usec 
+#reduce               actions=33 time=23 usec 
+#matpack              actions= 0 time=3 usec 
+#dataflow             actions=32 time=19 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=1 usec 
+#profiler             actions= 1 time=7 usec 
+#optimizer.sql_append actions= 1 time=8 usec 
+#garbageCollector     actions= 1 time=19 usec 
+#total                actions= 1 time=261 usec 
 #drop table ttt;
 
 # 22:58:58 >  

@@ -26,12 +26,14 @@ lib_optimizer = {
 		opt_costModel.c opt_costModel.h \
 		opt_dataflow.c opt_dataflow.h \
 		opt_deadcode.c opt_deadcode.h \
+		opt_emptybind.c opt_emptybind.h \
 		opt_evaluate.c opt_evaluate.h \
 		opt_factorize.c opt_factorize.h \
 		opt_garbageCollector.c opt_garbageCollector.h \
 		opt_generator.c opt_generator.h \
 		opt_querylog.c opt_querylog.h \
 		opt_inline.c opt_inline.h \
+		opt_jit.c opt_jit.h \
 		opt_projectionpath.c opt_projectionpath.h \
 		opt_macro.c opt_macro.h \
 		opt_matpack.c opt_matpack.h \

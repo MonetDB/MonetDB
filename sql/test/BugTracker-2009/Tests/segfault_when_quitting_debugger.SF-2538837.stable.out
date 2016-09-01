@@ -21,8 +21,8 @@ Ready.
 # 16:24:01 >  
 
 #debug select * from tables;
-mdb>#X_0=0@0:void := user.s1_1();
 mdb>#X_263=0@0:void := querylog.define("debug select * from tables;","default_pipe",158);
+mdb>#X_187=nil:bat[:str] := bat.new(nil:str);
 
 # 16:24:01 >  
 # 16:24:01 >  "Done."

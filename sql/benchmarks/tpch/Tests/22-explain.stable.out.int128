@@ -56,9 +56,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 710 # length
-function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:str,A9:str,A10:str,A11:bte,A12:int,A13:int,A14:str,A15:str,A16:str,A17:str,A18:str,A19:str,A20:str):void;
-    X_204:void := querylog.define("explain select\n cntrycode,\n count(*) as numcust,\n sum(c_acctbal) as totacctbal\nfrom\n (\n select\n substring(c_phone from 1 for 2) as cntrycode,\n c_acctbal\n from\n customer\n where\n substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n and c_acctbal > (\n select\n avg(c_acctbal)\n from\n customer\n where\n c_acctbal > 0.00\n and substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n )\n and not exists (\n select\n *\n from\n orders\n where\n o_custkey = c_custkey\n )\n ) as custsale\ngroup by\n cntrycode\norder by\n cntrycode;","sequential_pipe",102);
+% 709 # length
+function user.s4_1():void;
+    X_204:void := querylog.define("explain select\n cntrycode,\n count(*) as numcust,\n sum(c_acctbal) as totacctbal\nfrom\n (\n select\n substring(c_phone from 1 for 2) as cntrycode,\n c_acctbal\n from\n customer\n where\n substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n and c_acctbal > (\n select\n avg(c_acctbal)\n from\n customer\n where\n c_acctbal > 0.00\n and substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n )\n and not exists (\n select\n *\n from\n orders\n where\n o_custkey = c_custkey\n )\n ) as custsale\ngroup by\n cntrycode\norder by\n cntrycode;","sequential_pipe",88);
     X_168 := bat.new(nil:str);
     X_175 := bat.append(X_168,"sys.custsale");
     X_185 := bat.append(X_175,"sys.L2");
@@ -82,52 +82,41 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","customer");
     X_4:bat[:str] := sql.bind(X_0,"sys","customer","c_phone",0);
-    (C_7:bat[:oid],r1_29:bat[:str]) := sql.bind(X_0,"sys","customer","c_phone",2);
-    X_10:bat[:str] := sql.bind(X_0,"sys","customer","c_phone",1);
-    X_12 := sql.delta(X_4,C_7,r1_29,X_10);
-    X_13 := algebra.projection(C_1,X_12);
-    X_16:bat[:str] := batstr.substring(X_13,A2,A3);
-    C_20 := algebra.subselect(X_16,A4,A4,true,false,false);
-    C_25 := algebra.subselect(X_16,A5,A5,true,false,false);
+    X_13 := algebra.projection(C_1,X_4);
+    X_16:bat[:str] := batstr.substring(X_13,1,2);
+    C_20 := algebra.subselect(X_16,"13","13",true,false,false);
+    C_25 := algebra.subselect(X_16,"31","31",true,false,false);
     X_26 := bat.mergecand(C_20,C_25);
-    C_28 := algebra.subselect(X_16,A6,A6,true,false,false);
+    C_28 := algebra.subselect(X_16,"23","23",true,false,false);
     X_29 := bat.mergecand(X_26,C_28);
-    C_31 := algebra.subselect(X_16,A7,A7,true,false,false);
+    C_31 := algebra.subselect(X_16,"29","29",true,false,false);
     X_32 := bat.mergecand(X_29,C_31);
-    C_34 := algebra.subselect(X_16,A8,A8,true,false,false);
+    C_34 := algebra.subselect(X_16,"30","30",true,false,false);
     X_35 := bat.mergecand(X_32,C_34);
-    C_37 := algebra.subselect(X_16,A9,A9,true,false,false);
+    C_37 := algebra.subselect(X_16,"18","18",true,false,false);
     X_38 := bat.mergecand(X_35,C_37);
-    C_40 := algebra.subselect(X_16,A10,A10,true,false,false);
+    C_40 := algebra.subselect(X_16,"17","17",true,false,false);
     X_41 := bat.mergecand(X_38,C_40);
     X_42:bat[:int] := sql.bind(X_0,"sys","customer","c_custkey",0);
-    (C_44:bat[:oid],r1_66:bat[:int]) := sql.bind(X_0,"sys","customer","c_custkey",2);
-    X_46:bat[:int] := sql.bind(X_0,"sys","customer","c_custkey",1);
-    X_47 := sql.delta(X_42,C_44,r1_66,X_46);
-    X_49:bat[:int] := algebra.projectionpath(X_41,C_1,X_47);
+    X_49:bat[:int] := algebra.projectionpath(X_41,C_1,X_42);
     X_50 := bat.mirror(X_49);
     X_51:bat[:lng] := sql.bind(X_0,"sys","customer","c_acctbal",0);
-    (C_53:bat[:oid],r1_75:bat[:lng]) := sql.bind(X_0,"sys","customer","c_acctbal",2);
-    X_55:bat[:lng] := sql.bind(X_0,"sys","customer","c_acctbal",1);
-    X_56 := sql.delta(X_51,C_53,r1_75,X_55);
-    X_57 := algebra.projection(C_1,X_56);
+    X_57 := algebra.projection(C_1,X_51);
     X_58 := algebra.projection(X_41,X_57);
     X_59:bat[:dbl] := batcalc.dbl(2,X_58);
-    X_73:bat[:str] := batstr.substring(X_13,A12,A13);
-    X_84 := calc.lng(1,A11,15,2);
-    C_87 := algebra.thetasubselect(X_57,X_84,">");
-    C_89 := algebra.subselect(X_73,C_87,A14,A14,true,false,false);
-    C_94 := algebra.subselect(X_73,C_87,A15,A15,true,false,false);
+    C_87 := algebra.thetasubselect(X_57,0:lng,">");
+    C_89 := algebra.subselect(X_16,C_87,"13","13",true,false,false);
+    C_94 := algebra.subselect(X_16,C_87,"31","31",true,false,false);
     X_95 := bat.mergecand(C_89,C_94);
-    C_97 := algebra.subselect(X_73,C_87,A16,A16,true,false,false);
+    C_97 := algebra.subselect(X_16,C_87,"23","23",true,false,false);
     X_98 := bat.mergecand(X_95,C_97);
-    C_100 := algebra.subselect(X_73,C_87,A17,A17,true,false,false);
+    C_100 := algebra.subselect(X_16,C_87,"29","29",true,false,false);
     X_101 := bat.mergecand(X_98,C_100);
-    C_103 := algebra.subselect(X_73,C_87,A18,A18,true,false,false);
+    C_103 := algebra.subselect(X_16,C_87,"30","30",true,false,false);
     X_104 := bat.mergecand(X_101,C_103);
-    C_106 := algebra.subselect(X_73,C_87,A19,A19,true,false,false);
+    C_106 := algebra.subselect(X_16,C_87,"18","18",true,false,false);
     X_107 := bat.mergecand(X_104,C_106);
-    C_109 := algebra.subselect(X_73,C_87,A20,A20,true,false,false);
+    C_109 := algebra.subselect(X_16,C_87,"17","17",true,false,false);
     X_110 := bat.mergecand(X_107,C_109);
     X_111 := algebra.projection(X_110,X_57);
     X_112:bat[:dbl] := batcalc.dbl(2,X_111);
@@ -139,14 +128,11 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     X_128 := bat.mirror(X_127);
     C_129:bat[:oid] := sql.tid(X_0,"sys","orders");
     X_131:bat[:int] := sql.bind(X_0,"sys","orders","o_custkey",0);
-    (C_133:bat[:oid],r1_155:bat[:int]) := sql.bind(X_0,"sys","orders","o_custkey",2);
-    X_135:bat[:int] := sql.bind(X_0,"sys","orders","o_custkey",1);
-    X_136 := sql.delta(X_131,C_133,r1_155,X_135);
-    X_137 := algebra.projection(C_129,X_136);
+    X_137 := algebra.projection(C_129,X_131);
     (X_138,r1_160) := algebra.subjoin(X_127,X_137,nil:BAT,nil:BAT,false,nil:lng);
     X_140 := algebra.subdiff(X_128,X_138,nil:BAT,nil:BAT,false,nil:lng);
     X_143:bat[:str] := algebra.projectionpath(X_140,C_125,X_41,X_13);
-    X_146:bat[:str] := batstr.substring(X_143,A0,A1);
+    X_146:bat[:str] := batstr.substring(X_143,1,2);
     (X_149,r1_171,r2_171) := group.subgroupdone(X_146);
     X_152 := algebra.projection(r1_171,X_146);
     X_158:bat[:lng] := aggr.subcount(X_149,X_149,r1_171,false);
@@ -158,7 +144,32 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     X_160 := algebra.projection(r1_176,X_158);
     X_166 := algebra.projection(r1_176,X_163);
     sql.resultSet(X_194,X_196,X_198,X_200,X_202,X_157,X_160,X_166);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=7 usec 
+#candidates           actions= 1 time=68 usec 
+#remap                actions= 5 time=111 usec 
+#costModel            actions= 1 time=56 usec 
+#coercions            actions= 0 time=5 usec 
+#evaluate             actions=22 time=116 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=5 usec 
+#aliases              actions=28 time=66 usec 
+#mergetable           actions= 0 time=75 usec 
+#deadcode             actions=12 time=57 usec 
+#aliases              actions= 0 time=15 usec 
+#constants            actions=47 time=79 usec 
+#commonTerms          actions= 6 time=59 usec 
+#projectionpath       actions= 4 time=52 usec 
+#reorder              actions= 1 time=89 usec 
+#deadcode             actions=10 time=50 usec 
+#reduce               actions=126 time=96 usec 
+#matpack              actions= 0 time=7 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=41 usec 
+#garbageCollector     actions= 1 time=53 usec 
+#total                actions= 1 time=1199 usec 
 
 # 22:53:31 >  
 # 22:53:31 >  "Done."

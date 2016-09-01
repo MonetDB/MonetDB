@@ -59,29 +59,83 @@ Ready.
 % mal # name
 % clob # type
 % 89 # length
-function user.s2_1(A0:hge):void;
+function user.s4_1():void;
     X_7:void := querylog.define("explain set a = 1234567890987654321;","default_pipe",6);
     X_0 := sql.mvc();
-    sql.setVariable(X_0,"a",A0);
+    sql.setVariable(X_0,"a",1234567890987654321);
     sql.exportOperation();
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=14 usec 
+#remap                actions= 0 time=6 usec 
+#costModel            actions= 1 time=12 usec 
+#coercions            actions= 1 time=13 usec 
+#evaluate             actions= 1 time=40 usec 
+#emptybind            actions= 0 time=7 usec 
+#pushselect           actions= 0 time=5 usec 
+#aliases              actions= 1 time=16 usec 
+#mitosis              actions= 0 time=4 usec 
+#mergetable           actions= 0 time=26 usec 
+#deadcode             actions= 0 time=8 usec 
+#aliases              actions= 0 time=7 usec 
+#constants            actions= 1 time=13 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=28 usec 
+#reduce               actions=23 time=65 usec 
+#matpack              actions= 0 time=8 usec 
+#dataflow             actions=29 time=27 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=8 usec 
+#garbageCollector     actions= 1 time=21 usec 
+#total                actions= 1 time=474 usec 
 #explain SET b = 10000000000;
 % .explain # table_name
 % mal # name
 % clob # type
 % 81 # length
-function user.s3_1(A0:hge):void;
+function user.s6_1():void;
     X_7:void := querylog.define("explain set b = 10000000000;","default_pipe",6);
     X_0 := sql.mvc();
-    sql.setVariable(X_0,"b",A0);
+    sql.setVariable(X_0,"b",10000000000);
     sql.exportOperation();
-end user.s3_1;
+end user.s6_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=13 usec 
+#remap                actions= 0 time=5 usec 
+#costModel            actions= 1 time=22 usec 
+#coercions            actions= 1 time=13 usec 
+#evaluate             actions= 1 time=30 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 1 time=16 usec 
+#mitosis              actions= 0 time=4 usec 
+#mergetable           actions= 0 time=27 usec 
+#deadcode             actions= 0 time=8 usec 
+#aliases              actions= 0 time=6 usec 
+#constants            actions= 1 time=12 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=7 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=39 usec 
+#reduce               actions=23 time=30 usec 
+#matpack              actions= 0 time=7 usec 
+#dataflow             actions=29 time=28 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=6 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=7 usec 
+#garbageCollector     actions= 1 time=17 usec 
+#total                actions= 1 time=444 usec 
 #explain SET c = a * b;
 % .explain # table_name
 % mal # name
 % clob # type
 % 76 # length
-function user.s4_1():void;
+function user.s8_1():void;
     X_13:void := querylog.define("explain set c = a * b;","default_pipe",9);
     X_0 := sql.mvc();
     X_5:hge := sql.getVariable(X_0,"a");
@@ -89,13 +143,40 @@ function user.s4_1():void;
     X_9:hge := calc.*(X_5,X_8);
     sql.setVariable(X_0,"c",X_9);
     sql.exportOperation();
-end user.s4_1;
+end user.s8_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=22 usec 
+#remap                actions= 0 time=5 usec 
+#costModel            actions= 1 time=19 usec 
+#coercions            actions= 3 time=21 usec 
+#evaluate             actions= 0 time=4 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 0 time=7 usec 
+#mitosis              actions= 0 time=3 usec 
+#mergetable           actions= 0 time=34 usec 
+#deadcode             actions= 0 time=8 usec 
+#aliases              actions= 0 time=7 usec 
+#constants            actions= 0 time=4 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=48 usec 
+#reduce               actions=23 time=41 usec 
+#matpack              actions= 0 time=7 usec 
+#dataflow             actions=31 time=34 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=6 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=13 usec 
+#garbageCollector     actions= 1 time=23 usec 
+#total                actions= 1 time=457 usec 
 #explain SET d = c * b;
 % .explain # table_name
 % mal # name
 % clob # type
 % 76 # length
-function user.s5_1():void;
+function user.s10_1():void;
     X_13:void := querylog.define("explain set d = c * b;","default_pipe",9);
     X_0 := sql.mvc();
     X_5:hge := sql.getVariable(X_0,"c");
@@ -103,13 +184,40 @@ function user.s5_1():void;
     X_9:hge := calc.*(X_5,X_8);
     sql.setVariable(X_0,"d",X_9);
     sql.exportOperation();
-end user.s5_1;
+end user.s10_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=20 usec 
+#remap                actions= 0 time=6 usec 
+#costModel            actions= 1 time=19 usec 
+#coercions            actions= 3 time=20 usec 
+#evaluate             actions= 0 time=5 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=5 usec 
+#aliases              actions= 0 time=7 usec 
+#mitosis              actions= 0 time=4 usec 
+#mergetable           actions= 0 time=60 usec 
+#deadcode             actions= 0 time=9 usec 
+#aliases              actions= 0 time=7 usec 
+#constants            actions= 0 time=5 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=43 usec 
+#reduce               actions=23 time=19 usec 
+#matpack              actions= 0 time=8 usec 
+#dataflow             actions=31 time=34 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=14 usec 
+#garbageCollector     actions= 1 time=22 usec 
+#total                actions= 1 time=469 usec 
 #explain SET e = d + a;
 % .explain # table_name
 % mal # name
 % clob # type
 % 76 # length
-function user.s6_1():void;
+function user.s12_1():void;
     X_13:void := querylog.define("explain set e = d + a;","default_pipe",9);
     X_0 := sql.mvc();
     X_5:hge := sql.getVariable(X_0,"d");
@@ -117,7 +225,34 @@ function user.s6_1():void;
     X_9:hge := calc.+(X_5,X_8);
     sql.setVariable(X_0,"e",X_9);
     sql.exportOperation();
-end user.s6_1;
+end user.s12_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=19 usec 
+#remap                actions= 0 time=5 usec 
+#costModel            actions= 1 time=18 usec 
+#coercions            actions= 3 time=30 usec 
+#evaluate             actions= 0 time=4 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 0 time=7 usec 
+#mitosis              actions= 0 time=3 usec 
+#mergetable           actions= 0 time=32 usec 
+#deadcode             actions= 0 time=7 usec 
+#aliases              actions= 0 time=6 usec 
+#constants            actions= 0 time=4 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=37 usec 
+#reduce               actions=23 time=38 usec 
+#matpack              actions= 0 time=7 usec 
+#dataflow             actions=31 time=33 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=13 usec 
+#garbageCollector     actions= 1 time=21 usec 
+#total                actions= 1 time=430 usec 
 #SET a = 1234567890987654321;
 #SET b = 10000000000;
 #SET c = a * b;
@@ -141,12 +276,39 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 134 # length
-function user.s15_1(A0:hge):void;
+function user.s30_1():void;
     X_11:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);","default_pipe",6);
     X_0 := sql.mvc();
-    X_3 := sql.append(X_0,"sys","sql_int128","i",A0);
+    X_3 := sql.append(X_0,"sys","sql_int128","i",123456789098765432101234567890987654321);
     sql.affectedRows(X_3,1);
-end user.s15_1;
+end user.s30_1;
+# optimizer.mitosis()
+# optimizer.dataflow()
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=14 usec 
+#remap                actions= 0 time=5 usec 
+#costModel            actions= 1 time=11 usec 
+#coercions            actions= 1 time=12 usec 
+#evaluate             actions= 1 time=27 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 1 time=15 usec 
+#mergetable           actions= 0 time=24 usec 
+#deadcode             actions= 0 time=7 usec 
+#aliases              actions= 0 time=6 usec 
+#constants            actions= 1 time=13 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=6 usec 
+#reorder              actions= 1 time=26 usec 
+#reduce               actions=23 time=29 usec 
+#matpack              actions= 0 time=6 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=7 usec 
+#garbageCollector     actions= 1 time=14 usec 
+#total                actions= 1 time=344 usec 
 #INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321);
 [ 1	]
 #SELECT * FROM sql_int128;

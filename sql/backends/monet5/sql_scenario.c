@@ -889,7 +889,6 @@ cachable(mvc *m, stmt *s)
 	/* we don't store empty sequences, nor queries with a large footprint */
 	if( (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
 		return 0;
-	/* remainders covers: m_execute, m_inplace, m_normal*/
 	return 1;
 }
 
@@ -1067,12 +1066,9 @@ SQLparser(Client c)
 			sqlcleanup(m, err);
 			goto finalize;
 		}
-		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
-		if (!(m->emod & (mod_explain | mod_debug | mod_trace )))
-			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
 		sql_rel *r;
@@ -1102,8 +1098,12 @@ SQLparser(Client c)
 			 * and bake a MAL program for it.
 			 */
 			char *q = query_cleaned(QUERY(m->scanner));
+			char qname[IDLENGTH];
+			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
+
 			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 					  r,	/* keep relational query */
+					  qname, /* its MAL name) */
 					  m->sym,	/* the sql symbol tree */
 					  m->args,	/* the argument list */
 					  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
@@ -1119,12 +1119,8 @@ SQLparser(Client c)
 			/* passed over to query cache, used during dumpproc */
 			m->sa = NULL;
 			m->sym = NULL;
-
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name);
-			/* unless a query modifier has been set, we directly call the cached plan */
-			if (m->emode == m_normal && m->emod == mod_none)
-				m->emode = m_inplace;
 		}
 	}
 	if (err)
@@ -1132,11 +1128,10 @@ SQLparser(Client c)
 	if (err == 0) {
 		/* no parsing error encountered, finalize the code of the query wrapper */
 		if (be->q) {
-			if (m->emode == m_prepare)
+			if (m->emode == m_prepare){
 				/* For prepared queries, return a table with result set structure*/
+				/* optimize the code block and rename it */
 				err = mvc_export_prepare(m, c->fdout, be->q, "");
-			else if (m->emode == m_inplace) {
-				/* everything ready for a fast call */
 			} else if( m->emode == m_execute || m->emode == m_normal || m->emode == m_plan){
 				/* call procedure generation (only in cache mode) */
 				backend_call(be, c, be->q);
@@ -1144,13 +1139,12 @@ SQLparser(Client c)
 		}
 
 		pushEndInstruction(c->curprg->def);
-
 		/* check the query wrapper for errors */
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
-		if (opt && !c->curprg->def->errors ) {
-			str msg = optimizeQuery(c);
+		if (opt ) {
+			str msg = SQLoptimizeQuery(c, c->curprg->def);
 
 			if (msg != MAL_SUCCEED) {
 				sqlcleanup(m, err);

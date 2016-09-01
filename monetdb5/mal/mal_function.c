@@ -567,10 +567,12 @@ setVariableScope(MalBlkPtr mb)
 	if( isVarConstant(mb,k)){
 		setVarScope(mb,k,0);
 		mb->var[k]->declared = 0;
+		mb->var[k]->updated = 0;
 		mb->var[k]->eolife = mb->stop;
 	} else {
 		setVarScope(mb,k,0);
 		mb->var[k]->declared = 0;
+		mb->var[k]->updated = 0;
 		mb->var[k]->eolife = 0;
 	}
 

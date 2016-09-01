@@ -37,6 +37,7 @@
 #include "mal_debugger.h"
 #include <mtime.h>
 #include "optimizer.h"
+#include "opt_inline.h"
 #include <unistd.h>
 
 /*
@@ -68,11 +69,10 @@
  * of the query. 
  */
 static void
-SQLsetTrace(Client cntxt)
+SQLsetTrace(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr q, resultset;
 	InstrPtr tbls, cols, types, clen, scale;
-	MalBlkPtr mb = cntxt->curprg->def;
 	int k;
 
 	startTrace("sql_traces");
@@ -182,25 +182,161 @@ SQLsetTrace(Client cntxt)
 	chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
 }
 
+/*
+ * Execution of the SQL program is delegated to the MALengine.
+ * Different cases should be distinguished. The default is to
+ * hand over the MAL block derived by the parser for execution.
+ * However, when we received an Execute call, we make a shortcut
+ * and prepare the stack for immediate execution
+ */
 static str
-SQLrun(Client c, mvc *m){
+SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
+{
+	mvc *m = be->mvc;
+	int argc, parc;
+	ValPtr *argv, argvbuffer[MAXARG], v;
+	ValRecord *argrec, argrecbuffer[MAXARG];
+	MalStkPtr glb;
+	InstrPtr pci;
+	int i;
+	str ret;
+	cq *q= be->q;
+
+	pci = getInstrPtr(mb, 0);
+	if (pci->argc >= MAXARG)
+		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
+	else
+		argv = argvbuffer;
+
+	if (pci->retc >= MAXARG)
+		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
+	else
+		argrec = argrecbuffer;
+
+	/* prepare the target variables */
+	for (i = 0; i < pci->retc; i++) {
+		argv[i] = argrec + i;
+		argv[i]->vtype = getVarGDKType(mb, i);
+	}
+
+	argc = m->argc;
+	parc = q->paramlen;
+
+	if (argc != parc) {
+		if (pci->argc >= MAXARG)
+			GDKfree(argv);
+		if (pci->retc >= MAXARG)
+			GDKfree(argrec);
+		throw(SQL, "sql.prepare", "07001!EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
+	} else {
+		for (i = 0; i < m->argc; i++) {
+			atom *arg = m->args[i];
+			sql_subtype *pt = q->params + i;
+
+			if (!atom_cast(arg, pt)) {
+				/*sql_error(c, 003, buf); */
+				if (pci->argc >= MAXARG)
+					GDKfree(argv);
+				if (pci->retc >= MAXARG)
+					GDKfree(argrec);
+				throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "prepared statement: %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
+			}
+			argv[pci->retc + i] = &arg->data;
+		}
+	}
+	glb = (MalStkPtr) (q->stk);
+	ret = callMAL(c, mb, &glb, argv, (m->emod & mod_debug ? 'n' : 0));
+	/* cleanup the arguments */
+	for (i = pci->retc; i < pci->argc; i++) {
+		garbageElement(c, v = &glb->stk[pci->argv[i]]);
+		v->vtype = TYPE_int;
+		v->val.ival = int_nil;
+	}
+	if (glb && ret) /* error */
+		garbageCollector(c, mb, glb, glb != 0);
+	q->stk = (backend_stack) glb;
+	if (glb && SQLdebug & 1)
+		printStack(GDKstdout, mb, glb);
+	if (pci->argc >= MAXARG)
+		GDKfree(argv);
+	if (pci->retc >= MAXARG)
+		GDKfree(argrec);
+	return ret;
+}
+
+static str
+SQLrun(Client c, backend *be, mvc *m){
 	str msg= MAL_SUCCEED;
-	MalBlkPtr old;
+	MalBlkPtr mc = 0, mb=c->curprg->def;
+	InstrPtr p=0;
+	int i,j, retc;
+	ValPtr val;
 			
-	// first consider running in debug mode
+	if ( *m->errstr)
+		return createException(PARSE, "SQLparser", "%s", m->errstr);
+	// locate and inline the query template instruction
+	mb = copyMalBlk(c->curprg->def);
+
+	/* only consider a re-optimization when we are dealing with query templates */
+	for ( i= 1; i < mb->stop;i++){
+		p=getInstrPtr(mb,i);
+		if( getFunctionId(p) &&  qc_isapreparedquerytemplate(getFunctionId(p) ) ){
+			msg = SQLexecutePrepared(c, be, p->blk);
+			freeMalBlk(mb);
+			return msg;
+		}
+		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
+			mc= copyMalBlk(p->blk);
+			retc =p->retc;
+			freeMalBlk(mb);
+			mb= mc;
+			// declare the argument values as a constant
+			// We use the knowledge that the arguments are first on the stack
+			for (j = 0; j < m->argc; j++) {
+				sql_subtype *pt = be->q->params + j;
+				atom *arg = m->args[j];
+				
+				if (!atom_cast(arg, pt)) {
+					throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
+				}
+				val= (ValPtr) &arg->data;
+				VALcopy(&mb->var[j+retc]->value, val);
+				setVarConstant(mb, j+retc);
+				setVarFixed(mb, j+retc);
+			}
+			mb->stmt[0]->argc = 1;
+			break;
+		}
+	}
+	// JIT optimize the SQL query using all current information
+	// This include template constants, BAT sizes.
 	if( m->emod & mod_debug)
-		msg = runMALDebugger(c, c->curprg->def);
+		mb->keephistory = TRUE;
+	msg = SQLoptimizeQuery(c,mb);
+	mb->keephistory = FALSE;
+
+	if( mb->errors){
+		freeMalBlk(mb);
+		return msg;
+	}
+
+	if (m->emod & mod_explain) {
+		if (c->curprg->def)
+			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
+	} else
+	if( m->emod & mod_debug)
+		msg = runMALDebugger(c, mb);
 	 else{
 		if( m->emod & mod_trace){
-			c->curprg->def = copyMalBlk(old = c->curprg->def);
-			SQLsetTrace(c);
-			msg = runMAL(c, c->curprg->def, 0, 0);
+			SQLsetTrace(c,mb);
+			msg = runMAL(c, mb, 0, 0);
 			stopTrace(0);
-			freeMalBlk(c->curprg->def);
-			c->curprg->def = old;
 		} else
-			msg = runMAL(c, c->curprg->def, 0, 0);
+			msg = runMAL(c, mb, 0, 0);
 	}
+
+	// release the resources
+	freeMalBlk(mb);
 	return msg;
 }
 
@@ -339,11 +475,22 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			goto endofcompile;
 		}
 		/* generate MAL code */
+#ifdef _SQL_COMPILE
+		mnstr_printf(c->fdout, "#SQLstatement:pre-compile\n");
+		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
+#endif
 		if( backend_callinline(be, c) < 0 ||
 			backend_dumpstmt(be, c->curprg->def, s, 1, 1) < 0)
 			err = 1;
-		else
-			addQueryToCache(c);
+#ifdef _SQL_COMPILE
+		mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
+		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
+#endif
+		/* always keep it around for inspection */
+		SQLaddQueryToCache(c);
+		msg =SQLoptimizeFunction(c,c->curprg->def);
+		if( msg)
+			goto endofcompile;
 
 		if (err ||c->curprg->def->errors) {
 			/* restore the state */
@@ -363,7 +510,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		if (!output)
 			sql->out = NULL;	/* no output stream */
 		if (execute)
-			msg = SQLrun(c,m);
+			msg = SQLrun(c,be,m);
 
 		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c, c->curprg->def, NULL, oldvtop);
@@ -451,95 +598,6 @@ endofcompile:
 	return msg;
 }
 
-/*
- * Execution of the SQL program is delegated to the MALengine.
- * Different cases should be distinguished. The default is to
- * hand over the MAL block derived by the parser for execution.
- * However, when we received an Execute call, we make a shortcut
- * and prepare the stack for immediate execution
- */
-str
-SQLexecutePrepared(Client c, backend *be, cq *q)
-{
-	mvc *m = be->mvc;
-	int argc, parc;
-	ValPtr *argv, argvbuffer[MAXARG], v;
-	ValRecord *argrec, argrecbuffer[MAXARG];
-	MalBlkPtr mb;
-	MalStkPtr glb;
-	InstrPtr pci;
-	int i;
-	str ret;
-	Symbol qcode = q->code;
-
-	if (!qcode || qcode->def->errors) {
-		if (!qcode && *m->errstr)
-			return createException(PARSE, "SQLparser", "%s", m->errstr);
-		throw(SQL, "SQLengine", "39000!program contains errors");
-	}
-	mb = qcode->def;
-	pci = getInstrPtr(mb, 0);
-	if (pci->argc >= MAXARG)
-		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
-	else
-		argv = argvbuffer;
-
-	if (pci->retc >= MAXARG)
-		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
-	else
-		argrec = argrecbuffer;
-
-	/* prepare the target variables */
-	for (i = 0; i < pci->retc; i++) {
-		argv[i] = argrec + i;
-		argv[i]->vtype = getVarGDKType(mb, i);
-	}
-
-	argc = m->argc;
-	parc = q->paramlen;
-
-	if (argc != parc) {
-		if (pci->argc >= MAXARG)
-			GDKfree(argv);
-		if (pci->retc >= MAXARG)
-			GDKfree(argrec);
-		throw(SQL, "sql.prepare", "07001!EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
-	} else {
-		for (i = 0; i < m->argc; i++) {
-			atom *arg = m->args[i];
-			sql_subtype *pt = q->params + i;
-
-			if (!atom_cast(arg, pt)) {
-				/*sql_error(c, 003, buf); */
-				if (pci->argc >= MAXARG)
-					GDKfree(argv);
-				if (pci->retc >= MAXARG)
-					GDKfree(argrec);
-				throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "prepared statement: %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
-			}
-			argv[pci->retc + i] = &arg->data;
-		}
-	}
-	glb = (MalStkPtr) (q->stk);
-	ret = callMAL(c, mb, &glb, argv, (m->emod & mod_debug ? 'n' : 0));
-	/* cleanup the arguments */
-	for (i = pci->retc; i < pci->argc; i++) {
-		garbageElement(c, v = &glb->stk[pci->argv[i]]);
-		v->vtype = TYPE_int;
-		v->val.ival = int_nil;
-	}
-	if (glb && ret) /* error */
-		garbageCollector(c, mb, glb, glb != 0);
-	q->stk = (backend_stack) glb;
-	if (glb && SQLdebug & 1)
-		printStack(GDKstdout, mb, glb);
-	if (pci->argc >= MAXARG)
-		GDKfree(argv);
-	if (pci->retc >= MAXARG)
-		GDKfree(argrec);
-	return ret;
-}
-
 str
 SQLengineIntern(Client c, backend *be)
 {
@@ -553,15 +611,6 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	if (m->emod & mod_explain) {
-		if (be->q && be->q->code)
-			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  | LIST_MAL_MAPI);
-		else if (be->q)
-			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
-		else if (c->curprg->def)
-			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
-		goto cleanup_engine;
-	}
 #ifdef SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
@@ -574,11 +623,6 @@ SQLengineIntern(Client c, backend *be)
 		}
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
-	}
-
-	if (m->emode == m_inplace) {
-		msg = SQLexecutePrepared(c, be, be->q);
-		goto cleanup_engine;
 	}
 
 	if (m->emode == m_prepare)
@@ -595,7 +639,7 @@ SQLengineIntern(Client c, backend *be)
 	if (MALcommentsOnly(c->curprg->def)) 
 		msg = MAL_SUCCEED;
 	else 
-		msg = SQLrun(c,m);
+		msg = SQLrun(c,be,m);
 
 cleanup_engine:
 	if (m->type == Q_SCHEMA)
@@ -675,9 +719,11 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(  backend_callinline(b, c) < 0 ||
 			 backend_dumpstmt(b, c->curprg->def, s, 1, 1) < 0)
 			msg = createException(SQL,"RAstatement","Program contains errors");
-		else 
-			addQueryToCache(c);
-		SQLrun(c,m);
+		else {
+			SQLaddQueryToCache(c);
+			msg = SQLoptimizeFunction(c,c->curprg->def);
+		}
+			SQLrun(c,b,m);
 		if (!msg) {
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);

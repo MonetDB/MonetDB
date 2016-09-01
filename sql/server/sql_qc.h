@@ -44,9 +44,11 @@ extern void qc_destroy(qc *cache);
 extern void qc_clean(qc *cache);
 extern cq *qc_find(qc *cache, int id);
 extern cq *qc_match(qc *cache, symbol *s, atom **params, int plen, int key);
-extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr);
+extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr);
 extern void qc_delete(qc *cache, cq *q);
 extern int qc_size(qc *cache);
+extern int qc_isaquerytemplate(char *nme);
+extern int qc_isapreparedquerytemplate(char *nme);
 
 #endif /*_SQL_QC_H_*/
 

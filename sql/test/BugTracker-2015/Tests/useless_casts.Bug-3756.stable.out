@@ -42,8 +42,8 @@ Ready.
 % mal # name
 % clob # type
 % 98 # length
-function user.s3_1(A0:int):void;
-    X_36:void := querylog.define("explain select * from test where value = 1;","default_pipe",24);
+function user.s6_1():void;
+    X_36:void := querylog.define("explain select * from test where value = 1;","default_pipe",19);
     X_21 := bat.new(nil:str);
     X_28 := bat.append(X_21,"sys.test");
     X_23 := bat.new(nil:str);
@@ -57,15 +57,10 @@ function user.s3_1(A0:int):void;
     X_0 := sql.mvc();
     X_4:bat[:int] := sql.bind(X_0,"sys","test","value",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","test");
-    C_45 := algebra.subselect(X_4,C_1,A0,A0,true,false,false);
-    (C_7:bat[:oid],r1_9:bat[:int]) := sql.bind(X_0,"sys","test","value",2);
-    C_46 := algebra.subselect(r1_9,nil:bat[:oid],A0,A0,true,false,false);
-    X_10:bat[:int] := sql.bind(X_0,"sys","test","value",1);
-    C_48 := algebra.subselect(X_10,C_1,A0,A0,true,false,false);
-    C_15 := sql.subdelta(C_45,C_1,C_7,C_46,C_48);
-    X_19 := sql.projectdelta(C_15,X_4,C_7,r1_9,X_10);
+    C_15 := algebra.subselect(X_4,C_1,1,1,true,false,false);
+    X_19 := algebra.projection(C_15,X_4);
     sql.resultSet(X_28,X_30,X_31,X_33,X_35,X_19);
-end user.s3_1;
+end user.s6_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
 #select * from test where value > 12345678900; # value > INT_MAX
@@ -78,9 +73,9 @@ end user.s3_1;
 % mal # name
 % clob # type
 % 98 # length
-function user.s4_1(A0:int):void;
-    X_34:void := querylog.define("explain select * from test where value > 1;","default_pipe",57);
-barrier X_109 := language.dataflow();
+function user.s8_1():void;
+    X_34:void := querylog.define("explain select * from test where value > 1;","default_pipe",35);
+barrier X_81 := language.dataflow();
     X_19 := bat.new(nil:str);
     X_26 := bat.append(X_19,"sys.test");
     X_21 := bat.new(nil:str);
@@ -92,49 +87,54 @@ barrier X_109 := language.dataflow();
     X_25 := bat.new(nil:int);
     X_33 := bat.append(X_25,0);
     X_0 := sql.mvc();
-    X_56:bat[:int] := sql.bind(X_0,"sys","test","value",0,0,3);
+    X_55:bat[:int] := sql.bind(X_0,"sys","test","value",0,0,3);
     C_51:bat[:oid] := sql.tid(X_0,"sys","test",0,3);
-    C_69 := algebra.thetasubselect(X_56,C_51,A0,">");
-    (C_59:bat[:oid],X_60:bat[:int]) := sql.bind(X_0,"sys","test","value",2,0,3);
-    C_72 := algebra.thetasubselect(X_60,nil:bat[:oid],A0,">");
-    C_75 := sql.subdelta(C_69,C_51,C_59,C_72);
-    X_78 := sql.projectdelta(C_75,X_56,C_59,X_60);
-    X_57:bat[:int] := sql.bind(X_0,"sys","test","value",0,1,3);
-    C_53:bat[:oid] := sql.tid(X_0,"sys","test",1,3);
-    C_70 := algebra.thetasubselect(X_57,C_53,A0,">");
-    (C_61:bat[:oid],X_62:bat[:int]) := sql.bind(X_0,"sys","test","value",2,1,3);
-    C_73 := algebra.thetasubselect(X_62,nil:bat[:oid],A0,">");
-    C_76 := sql.subdelta(C_70,C_53,C_61,C_73);
-    X_79 := sql.projectdelta(C_76,X_57,C_61,X_62);
-    X_58:bat[:int] := sql.bind(X_0,"sys","test","value",0,2,3);
-    C_55:bat[:oid] := sql.tid(X_0,"sys","test",2,3);
-    C_71 := algebra.thetasubselect(X_58,C_55,A0,">");
-    (C_63:bat[:oid],X_64:bat[:int]) := sql.bind(X_0,"sys","test","value",2,2,3);
-    C_74 := algebra.thetasubselect(X_64,nil:bat[:oid],A0,">");
-    X_10:bat[:int] := sql.bind(X_0,"sys","test","value",1);
-    C_46 := algebra.thetasubselect(X_10,C_55,A0,">");
-    C_77 := sql.subdelta(C_71,C_55,C_63,C_74,C_46);
-    X_80 := sql.projectdelta(C_77,X_58,C_63,X_64,X_10);
-    X_90 := mat.packIncrement(X_78,3);
-    X_92 := mat.packIncrement(X_90,X_79);
-    X_17 := mat.packIncrement(X_92,X_80);
-    language.pass(C_51);
+    C_59 := algebra.thetasubselect(X_55,C_51,1,">");
+    X_62 := algebra.projection(C_59,X_55);
+    X_56:bat[:int] := sql.bind(X_0,"sys","test","value",0,1,3);
+    C_52:bat[:oid] := sql.tid(X_0,"sys","test",1,3);
+    C_60 := algebra.thetasubselect(X_56,C_52,1,">");
+    X_63 := algebra.projection(C_60,X_56);
+    X_57:bat[:int] := sql.bind(X_0,"sys","test","value",0,2,3);
+    C_54:bat[:oid] := sql.tid(X_0,"sys","test",2,3);
+    C_61 := algebra.thetasubselect(X_57,C_54,1,">");
+    X_64 := algebra.projection(C_61,X_57);
+    X_74 := mat.packIncrement(X_62,3);
+    X_75 := mat.packIncrement(X_74,X_63);
+    X_17 := mat.packIncrement(X_75,X_64);
+    language.pass(X_55);
     language.pass(X_56);
-    language.pass(C_59);
-    language.pass(X_60);
-    language.pass(C_53);
     language.pass(X_57);
-    language.pass(C_61);
-    language.pass(X_62);
-    language.pass(nil:bat[:oid]);
-    language.pass(C_55);
-    language.pass(X_58);
-    language.pass(C_63);
-    language.pass(X_64);
-    language.pass(X_10);
-exit X_109;
+exit X_81;
     sql.resultSet(X_26,X_28,X_29,X_31,X_33,X_17);
-end user.s4_1;
+end user.s8_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=20 usec 
+#remap                actions= 0 time=5 usec 
+#costModel            actions= 1 time=18 usec 
+#coercions            actions= 0 time=3 usec 
+#evaluate             actions= 1 time=34 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions= 2 time=24 usec 
+#aliases              actions= 3 time=21 usec 
+#mitosis              actions= 1 time=40 usec 
+#mergetable           actions= 2 time=81 usec 
+#deadcode             actions= 7 time=27 usec 
+#aliases              actions= 0 time=8 usec 
+#constants            actions= 4 time=32 usec 
+#commonTerms          actions= 0 time=8 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=16 usec 
+#reorder              actions= 1 time=42 usec 
+#reduce               actions=39 time=46 usec 
+#matpack              actions= 1 time=23 usec 
+#dataflow             actions=28 time=39 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=22 usec 
+#garbageCollector     actions= 1 time=29 usec 
+#total                actions= 1 time=646 usec 
 #select * from test where value >= 12345678900; # value > INT_MAX
 % sys.test # table_name
 % value # name
@@ -145,9 +145,9 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 99 # length
-function user.s5_1(A0:int):void;
-    X_34:void := querylog.define("explain select * from test where value >= 1;","default_pipe",57);
-barrier X_109 := language.dataflow();
+function user.s10_1():void;
+    X_34:void := querylog.define("explain select * from test where value >= 1;","default_pipe",35);
+barrier X_81 := language.dataflow();
     X_19 := bat.new(nil:str);
     X_26 := bat.append(X_19,"sys.test");
     X_21 := bat.new(nil:str);
@@ -159,49 +159,54 @@ barrier X_109 := language.dataflow();
     X_25 := bat.new(nil:int);
     X_33 := bat.append(X_25,0);
     X_0 := sql.mvc();
-    X_56:bat[:int] := sql.bind(X_0,"sys","test","value",0,0,3);
+    X_55:bat[:int] := sql.bind(X_0,"sys","test","value",0,0,3);
     C_51:bat[:oid] := sql.tid(X_0,"sys","test",0,3);
-    C_69 := algebra.thetasubselect(X_56,C_51,A0,">=");
-    (C_59:bat[:oid],X_60:bat[:int]) := sql.bind(X_0,"sys","test","value",2,0,3);
-    C_72 := algebra.thetasubselect(X_60,nil:bat[:oid],A0,">=");
-    C_75 := sql.subdelta(C_69,C_51,C_59,C_72);
-    X_78 := sql.projectdelta(C_75,X_56,C_59,X_60);
-    X_57:bat[:int] := sql.bind(X_0,"sys","test","value",0,1,3);
-    C_53:bat[:oid] := sql.tid(X_0,"sys","test",1,3);
-    C_70 := algebra.thetasubselect(X_57,C_53,A0,">=");
-    (C_61:bat[:oid],X_62:bat[:int]) := sql.bind(X_0,"sys","test","value",2,1,3);
-    C_73 := algebra.thetasubselect(X_62,nil:bat[:oid],A0,">=");
-    C_76 := sql.subdelta(C_70,C_53,C_61,C_73);
-    X_79 := sql.projectdelta(C_76,X_57,C_61,X_62);
-    X_58:bat[:int] := sql.bind(X_0,"sys","test","value",0,2,3);
-    C_55:bat[:oid] := sql.tid(X_0,"sys","test",2,3);
-    C_71 := algebra.thetasubselect(X_58,C_55,A0,">=");
-    (C_63:bat[:oid],X_64:bat[:int]) := sql.bind(X_0,"sys","test","value",2,2,3);
-    C_74 := algebra.thetasubselect(X_64,nil:bat[:oid],A0,">=");
-    X_10:bat[:int] := sql.bind(X_0,"sys","test","value",1);
-    C_46 := algebra.thetasubselect(X_10,C_55,A0,">=");
-    C_77 := sql.subdelta(C_71,C_55,C_63,C_74,C_46);
-    X_80 := sql.projectdelta(C_77,X_58,C_63,X_64,X_10);
-    X_90 := mat.packIncrement(X_78,3);
-    X_92 := mat.packIncrement(X_90,X_79);
-    X_17 := mat.packIncrement(X_92,X_80);
-    language.pass(C_51);
+    C_59 := algebra.thetasubselect(X_55,C_51,1,">=");
+    X_62 := algebra.projection(C_59,X_55);
+    X_56:bat[:int] := sql.bind(X_0,"sys","test","value",0,1,3);
+    C_52:bat[:oid] := sql.tid(X_0,"sys","test",1,3);
+    C_60 := algebra.thetasubselect(X_56,C_52,1,">=");
+    X_63 := algebra.projection(C_60,X_56);
+    X_57:bat[:int] := sql.bind(X_0,"sys","test","value",0,2,3);
+    C_54:bat[:oid] := sql.tid(X_0,"sys","test",2,3);
+    C_61 := algebra.thetasubselect(X_57,C_54,1,">=");
+    X_64 := algebra.projection(C_61,X_57);
+    X_74 := mat.packIncrement(X_62,3);
+    X_75 := mat.packIncrement(X_74,X_63);
+    X_17 := mat.packIncrement(X_75,X_64);
+    language.pass(X_55);
     language.pass(X_56);
-    language.pass(C_59);
-    language.pass(X_60);
-    language.pass(C_53);
     language.pass(X_57);
-    language.pass(C_61);
-    language.pass(X_62);
-    language.pass(nil:bat[:oid]);
-    language.pass(C_55);
-    language.pass(X_58);
-    language.pass(C_63);
-    language.pass(X_64);
-    language.pass(X_10);
-exit X_109;
+exit X_81;
     sql.resultSet(X_26,X_28,X_29,X_31,X_33,X_17);
-end user.s5_1;
+end user.s10_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=20 usec 
+#remap                actions= 0 time=4 usec 
+#costModel            actions= 1 time=18 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 1 time=31 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions= 2 time=23 usec 
+#aliases              actions= 3 time=21 usec 
+#mitosis              actions= 1 time=41 usec 
+#mergetable           actions= 2 time=63 usec 
+#deadcode             actions= 7 time=26 usec 
+#aliases              actions= 0 time=8 usec 
+#constants            actions= 4 time=23 usec 
+#commonTerms          actions= 0 time=8 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=8 usec 
+#reorder              actions= 1 time=63 usec 
+#reduce               actions=39 time=45 usec 
+#matpack              actions= 1 time=23 usec 
+#dataflow             actions=28 time=41 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=21 usec 
+#garbageCollector     actions= 1 time=28 usec 
+#total                actions= 1 time=620 usec 
 #select * from test where value < 12345678900; # value > INT_MAX
 % sys.test # table_name
 % value # name
@@ -215,9 +220,9 @@ end user.s5_1;
 % mal # name
 % clob # type
 % 98 # length
-function user.s6_1(A0:int):void;
-    X_34:void := querylog.define("explain select * from test where value < 1;","default_pipe",57);
-barrier X_109 := language.dataflow();
+function user.s12_1():void;
+    X_34:void := querylog.define("explain select * from test where value < 1;","default_pipe",35);
+barrier X_81 := language.dataflow();
     X_19 := bat.new(nil:str);
     X_26 := bat.append(X_19,"sys.test");
     X_21 := bat.new(nil:str);
@@ -229,49 +234,54 @@ barrier X_109 := language.dataflow();
     X_25 := bat.new(nil:int);
     X_33 := bat.append(X_25,0);
     X_0 := sql.mvc();
-    X_56:bat[:int] := sql.bind(X_0,"sys","test","value",0,0,3);
+    X_55:bat[:int] := sql.bind(X_0,"sys","test","value",0,0,3);
     C_51:bat[:oid] := sql.tid(X_0,"sys","test",0,3);
-    C_69 := algebra.thetasubselect(X_56,C_51,A0,"<");
-    (C_59:bat[:oid],X_60:bat[:int]) := sql.bind(X_0,"sys","test","value",2,0,3);
-    C_72 := algebra.thetasubselect(X_60,nil:bat[:oid],A0,"<");
-    C_75 := sql.subdelta(C_69,C_51,C_59,C_72);
-    X_78 := sql.projectdelta(C_75,X_56,C_59,X_60);
-    X_57:bat[:int] := sql.bind(X_0,"sys","test","value",0,1,3);
-    C_53:bat[:oid] := sql.tid(X_0,"sys","test",1,3);
-    C_70 := algebra.thetasubselect(X_57,C_53,A0,"<");
-    (C_61:bat[:oid],X_62:bat[:int]) := sql.bind(X_0,"sys","test","value",2,1,3);
-    C_73 := algebra.thetasubselect(X_62,nil:bat[:oid],A0,"<");
-    C_76 := sql.subdelta(C_70,C_53,C_61,C_73);
-    X_79 := sql.projectdelta(C_76,X_57,C_61,X_62);
-    X_58:bat[:int] := sql.bind(X_0,"sys","test","value",0,2,3);
-    C_55:bat[:oid] := sql.tid(X_0,"sys","test",2,3);
-    C_71 := algebra.thetasubselect(X_58,C_55,A0,"<");
-    (C_63:bat[:oid],X_64:bat[:int]) := sql.bind(X_0,"sys","test","value",2,2,3);
-    C_74 := algebra.thetasubselect(X_64,nil:bat[:oid],A0,"<");
-    X_10:bat[:int] := sql.bind(X_0,"sys","test","value",1);
-    C_46 := algebra.thetasubselect(X_10,C_55,A0,"<");
-    C_77 := sql.subdelta(C_71,C_55,C_63,C_74,C_46);
-    X_80 := sql.projectdelta(C_77,X_58,C_63,X_64,X_10);
-    X_90 := mat.packIncrement(X_78,3);
-    X_92 := mat.packIncrement(X_90,X_79);
-    X_17 := mat.packIncrement(X_92,X_80);
-    language.pass(C_51);
+    C_59 := algebra.thetasubselect(X_55,C_51,1,"<");
+    X_62 := algebra.projection(C_59,X_55);
+    X_56:bat[:int] := sql.bind(X_0,"sys","test","value",0,1,3);
+    C_52:bat[:oid] := sql.tid(X_0,"sys","test",1,3);
+    C_60 := algebra.thetasubselect(X_56,C_52,1,"<");
+    X_63 := algebra.projection(C_60,X_56);
+    X_57:bat[:int] := sql.bind(X_0,"sys","test","value",0,2,3);
+    C_54:bat[:oid] := sql.tid(X_0,"sys","test",2,3);
+    C_61 := algebra.thetasubselect(X_57,C_54,1,"<");
+    X_64 := algebra.projection(C_61,X_57);
+    X_74 := mat.packIncrement(X_62,3);
+    X_75 := mat.packIncrement(X_74,X_63);
+    X_17 := mat.packIncrement(X_75,X_64);
+    language.pass(X_55);
     language.pass(X_56);
-    language.pass(C_59);
-    language.pass(X_60);
-    language.pass(C_53);
     language.pass(X_57);
-    language.pass(C_61);
-    language.pass(X_62);
-    language.pass(nil:bat[:oid]);
-    language.pass(C_55);
-    language.pass(X_58);
-    language.pass(C_63);
-    language.pass(X_64);
-    language.pass(X_10);
-exit X_109;
+exit X_81;
     sql.resultSet(X_26,X_28,X_29,X_31,X_33,X_17);
-end user.s6_1;
+end user.s12_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=20 usec 
+#remap                actions= 0 time=4 usec 
+#costModel            actions= 1 time=19 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 1 time=33 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 2 time=24 usec 
+#aliases              actions= 3 time=20 usec 
+#mitosis              actions= 1 time=41 usec 
+#mergetable           actions= 2 time=64 usec 
+#deadcode             actions= 7 time=27 usec 
+#aliases              actions= 0 time=8 usec 
+#constants            actions= 4 time=24 usec 
+#commonTerms          actions= 0 time=8 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=8 usec 
+#reorder              actions= 1 time=42 usec 
+#reduce               actions=39 time=46 usec 
+#matpack              actions= 1 time=23 usec 
+#dataflow             actions=28 time=39 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=21 usec 
+#garbageCollector     actions= 1 time=29 usec 
+#total                actions= 1 time=600 usec 
 #select * from test where value <= 12345678900; # value > INT_MAX
 % sys.test # table_name
 % value # name
@@ -285,9 +295,9 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 99 # length
-function user.s7_1(A0:int):void;
-    X_34:void := querylog.define("explain select * from test where value <= 1;","default_pipe",57);
-barrier X_109 := language.dataflow();
+function user.s14_1():void;
+    X_34:void := querylog.define("explain select * from test where value <= 1;","default_pipe",35);
+barrier X_81 := language.dataflow();
     X_19 := bat.new(nil:str);
     X_26 := bat.append(X_19,"sys.test");
     X_21 := bat.new(nil:str);
@@ -299,49 +309,54 @@ barrier X_109 := language.dataflow();
     X_25 := bat.new(nil:int);
     X_33 := bat.append(X_25,0);
     X_0 := sql.mvc();
-    X_56:bat[:int] := sql.bind(X_0,"sys","test","value",0,0,3);
+    X_55:bat[:int] := sql.bind(X_0,"sys","test","value",0,0,3);
     C_51:bat[:oid] := sql.tid(X_0,"sys","test",0,3);
-    C_69 := algebra.thetasubselect(X_56,C_51,A0,"<=");
-    (C_59:bat[:oid],X_60:bat[:int]) := sql.bind(X_0,"sys","test","value",2,0,3);
-    C_72 := algebra.thetasubselect(X_60,nil:bat[:oid],A0,"<=");
-    C_75 := sql.subdelta(C_69,C_51,C_59,C_72);
-    X_78 := sql.projectdelta(C_75,X_56,C_59,X_60);
-    X_57:bat[:int] := sql.bind(X_0,"sys","test","value",0,1,3);
-    C_53:bat[:oid] := sql.tid(X_0,"sys","test",1,3);
-    C_70 := algebra.thetasubselect(X_57,C_53,A0,"<=");
-    (C_61:bat[:oid],X_62:bat[:int]) := sql.bind(X_0,"sys","test","value",2,1,3);
-    C_73 := algebra.thetasubselect(X_62,nil:bat[:oid],A0,"<=");
-    C_76 := sql.subdelta(C_70,C_53,C_61,C_73);
-    X_79 := sql.projectdelta(C_76,X_57,C_61,X_62);
-    X_58:bat[:int] := sql.bind(X_0,"sys","test","value",0,2,3);
-    C_55:bat[:oid] := sql.tid(X_0,"sys","test",2,3);
-    C_71 := algebra.thetasubselect(X_58,C_55,A0,"<=");
-    (C_63:bat[:oid],X_64:bat[:int]) := sql.bind(X_0,"sys","test","value",2,2,3);
-    C_74 := algebra.thetasubselect(X_64,nil:bat[:oid],A0,"<=");
-    X_10:bat[:int] := sql.bind(X_0,"sys","test","value",1);
-    C_46 := algebra.thetasubselect(X_10,C_55,A0,"<=");
-    C_77 := sql.subdelta(C_71,C_55,C_63,C_74,C_46);
-    X_80 := sql.projectdelta(C_77,X_58,C_63,X_64,X_10);
-    X_90 := mat.packIncrement(X_78,3);
-    X_92 := mat.packIncrement(X_90,X_79);
-    X_17 := mat.packIncrement(X_92,X_80);
-    language.pass(C_51);
+    C_59 := algebra.thetasubselect(X_55,C_51,1,"<=");
+    X_62 := algebra.projection(C_59,X_55);
+    X_56:bat[:int] := sql.bind(X_0,"sys","test","value",0,1,3);
+    C_52:bat[:oid] := sql.tid(X_0,"sys","test",1,3);
+    C_60 := algebra.thetasubselect(X_56,C_52,1,"<=");
+    X_63 := algebra.projection(C_60,X_56);
+    X_57:bat[:int] := sql.bind(X_0,"sys","test","value",0,2,3);
+    C_54:bat[:oid] := sql.tid(X_0,"sys","test",2,3);
+    C_61 := algebra.thetasubselect(X_57,C_54,1,"<=");
+    X_64 := algebra.projection(C_61,X_57);
+    X_74 := mat.packIncrement(X_62,3);
+    X_75 := mat.packIncrement(X_74,X_63);
+    X_17 := mat.packIncrement(X_75,X_64);
+    language.pass(X_55);
     language.pass(X_56);
-    language.pass(C_59);
-    language.pass(X_60);
-    language.pass(C_53);
     language.pass(X_57);
-    language.pass(C_61);
-    language.pass(X_62);
-    language.pass(nil:bat[:oid]);
-    language.pass(C_55);
-    language.pass(X_58);
-    language.pass(C_63);
-    language.pass(X_64);
-    language.pass(X_10);
-exit X_109;
+exit X_81;
     sql.resultSet(X_26,X_28,X_29,X_31,X_33,X_17);
-end user.s7_1;
+end user.s14_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=18 usec 
+#remap                actions= 0 time=4 usec 
+#costModel            actions= 1 time=17 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 1 time=31 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 2 time=39 usec 
+#aliases              actions= 3 time=20 usec 
+#mitosis              actions= 1 time=38 usec 
+#mergetable           actions= 2 time=71 usec 
+#deadcode             actions= 7 time=25 usec 
+#aliases              actions= 0 time=8 usec 
+#constants            actions= 4 time=22 usec 
+#commonTerms          actions= 0 time=8 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=40 usec 
+#reduce               actions=39 time=44 usec 
+#matpack              actions= 1 time=22 usec 
+#dataflow             actions=28 time=38 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=20 usec 
+#garbageCollector     actions= 1 time=28 usec 
+#total                actions= 1 time=600 usec 
 #select * from test where value <> 12345678900; # value > INT_MAX
 % sys.test # table_name
 % value # name
@@ -355,9 +370,9 @@ end user.s7_1;
 % mal # name
 % clob # type
 % 99 # length
-function user.s8_1(A0:int):void;
-    X_35:void := querylog.define("explain select * from test where value <> 1;","default_pipe",57);
-barrier X_110 := language.dataflow();
+function user.s16_1():void;
+    X_35:void := querylog.define("explain select * from test where value <> 1;","default_pipe",35);
+barrier X_82 := language.dataflow();
     X_20 := bat.new(nil:str);
     X_27 := bat.append(X_20,"sys.test");
     X_22 := bat.new(nil:str);
@@ -369,49 +384,54 @@ barrier X_110 := language.dataflow();
     X_26 := bat.new(nil:int);
     X_34 := bat.append(X_26,0);
     X_0 := sql.mvc();
-    X_57:bat[:int] := sql.bind(X_0,"sys","test","value",0,0,3);
+    X_56:bat[:int] := sql.bind(X_0,"sys","test","value",0,0,3);
     C_52:bat[:oid] := sql.tid(X_0,"sys","test",0,3);
-    C_70 := algebra.subselect(X_57,C_52,A0,A0,true,true,true);
-    (C_60:bat[:oid],X_61:bat[:int]) := sql.bind(X_0,"sys","test","value",2,0,3);
-    C_73 := algebra.subselect(X_61,nil:bat[:oid],A0,A0,true,true,true);
-    C_76 := sql.subdelta(C_70,C_52,C_60,C_73);
-    X_79 := sql.projectdelta(C_76,X_57,C_60,X_61);
-    X_58:bat[:int] := sql.bind(X_0,"sys","test","value",0,1,3);
-    C_54:bat[:oid] := sql.tid(X_0,"sys","test",1,3);
-    C_71 := algebra.subselect(X_58,C_54,A0,A0,true,true,true);
-    (C_62:bat[:oid],X_63:bat[:int]) := sql.bind(X_0,"sys","test","value",2,1,3);
-    C_74 := algebra.subselect(X_63,nil:bat[:oid],A0,A0,true,true,true);
-    C_77 := sql.subdelta(C_71,C_54,C_62,C_74);
-    X_80 := sql.projectdelta(C_77,X_58,C_62,X_63);
-    X_59:bat[:int] := sql.bind(X_0,"sys","test","value",0,2,3);
-    C_56:bat[:oid] := sql.tid(X_0,"sys","test",2,3);
-    C_72 := algebra.subselect(X_59,C_56,A0,A0,true,true,true);
-    (C_64:bat[:oid],X_65:bat[:int]) := sql.bind(X_0,"sys","test","value",2,2,3);
-    C_75 := algebra.subselect(X_65,nil:bat[:oid],A0,A0,true,true,true);
-    X_10:bat[:int] := sql.bind(X_0,"sys","test","value",1);
-    C_47 := algebra.subselect(X_10,C_56,A0,A0,true,true,true);
-    C_78 := sql.subdelta(C_72,C_56,C_64,C_75,C_47);
-    X_81 := sql.projectdelta(C_78,X_59,C_64,X_65,X_10);
-    X_91 := mat.packIncrement(X_79,3);
-    X_93 := mat.packIncrement(X_91,X_80);
-    X_18 := mat.packIncrement(X_93,X_81);
-    language.pass(C_52);
+    C_60 := algebra.subselect(X_56,C_52,1,1,true,true,true);
+    X_63 := algebra.projection(C_60,X_56);
+    X_57:bat[:int] := sql.bind(X_0,"sys","test","value",0,1,3);
+    C_53:bat[:oid] := sql.tid(X_0,"sys","test",1,3);
+    C_61 := algebra.subselect(X_57,C_53,1,1,true,true,true);
+    X_64 := algebra.projection(C_61,X_57);
+    X_58:bat[:int] := sql.bind(X_0,"sys","test","value",0,2,3);
+    C_55:bat[:oid] := sql.tid(X_0,"sys","test",2,3);
+    C_62 := algebra.subselect(X_58,C_55,1,1,true,true,true);
+    X_65 := algebra.projection(C_62,X_58);
+    X_75 := mat.packIncrement(X_63,3);
+    X_76 := mat.packIncrement(X_75,X_64);
+    X_18 := mat.packIncrement(X_76,X_65);
+    language.pass(X_56);
     language.pass(X_57);
-    language.pass(C_60);
-    language.pass(X_61);
-    language.pass(C_54);
     language.pass(X_58);
-    language.pass(C_62);
-    language.pass(X_63);
-    language.pass(nil:bat[:oid]);
-    language.pass(C_56);
-    language.pass(X_59);
-    language.pass(C_64);
-    language.pass(X_65);
-    language.pass(X_10);
-exit X_110;
+exit X_82;
     sql.resultSet(X_27,X_29,X_30,X_32,X_34,X_18);
-end user.s8_1;
+end user.s16_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=20 usec 
+#remap                actions= 0 time=4 usec 
+#costModel            actions= 1 time=18 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 1 time=31 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions= 2 time=25 usec 
+#aliases              actions= 3 time=20 usec 
+#mitosis              actions= 1 time=39 usec 
+#mergetable           actions= 2 time=63 usec 
+#deadcode             actions= 7 time=26 usec 
+#aliases              actions= 0 time=7 usec 
+#constants            actions= 5 time=23 usec 
+#commonTerms          actions= 0 time=8 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=8 usec 
+#reorder              actions= 1 time=41 usec 
+#reduce               actions=40 time=46 usec 
+#matpack              actions= 1 time=23 usec 
+#dataflow             actions=28 time=40 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=21 usec 
+#garbageCollector     actions= 1 time=29 usec 
+#total                actions= 1 time=585 usec 
 #drop table test;
 
 # 21:57:14 >  
