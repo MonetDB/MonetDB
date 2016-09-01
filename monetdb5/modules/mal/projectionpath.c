@@ -30,10 +30,10 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (b == NULL) {
 			error = 1;
 		} else {
-			joins[top++] = b;
 			if (i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid) {
 				error = 1;
 			}
+			else joins[top++] = b;
 		}
 		if (error) {
 			while (top-- > 0)
