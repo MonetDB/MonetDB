@@ -172,7 +172,8 @@ public class SQLExporter extends Exporter {
 			{
 				Map.Entry<Integer, Integer> e = it.next();
 				cols.absolute(e.getValue().intValue());
-				if (i > 0) out.print(", ");
+				if (i > 0)
+					out.print(", ");
 				out.print(dq(cols.getString("COLUMN_NAME")));
 			}
 			out.print(")");
@@ -189,11 +190,12 @@ public class SQLExporter extends Exporter {
 
 			boolean next;
 			while ((next = cols.next()) && idxname != null &&
-				idxname.equals(cols.getString("INDEX_NAME"))) {
+					idxname.equals(cols.getString("INDEX_NAME"))) {
 				out.print(", " + dq(cols.getString("COLUMN_NAME")));
 			}
 			// go back one, we've gone one too far
-			if (next) cols.previous();
+			if (next)
+				cols.previous();
 
 			out.print(")");
 		}
@@ -223,7 +225,7 @@ public class SQLExporter extends Exporter {
 			Iterator<String> it = fk.iterator();
 			for (i = 0; it.hasNext(); i++) {
 				if (i > 0) out.print(", ");
-				out.print(dq((String)it.next()));
+				out.print(dq(it.next()));
 			}
 			out.print(") ");
 
@@ -232,7 +234,7 @@ public class SQLExporter extends Exporter {
 			it = pk.iterator();
 			for (i = 0; it.hasNext(); i++) {
 				if (i > 0) out.print(", ");
-				out.print(dq((String)it.next()));
+				out.print(dq(it.next()));
 			}
 		 	out.print(")");
 		}
@@ -323,7 +325,7 @@ public class SQLExporter extends Exporter {
 	 * format.
 	 *
 	 * @param rs the ResultSet to convert into INSERT INTO statements
-	 * @param absolute if true, dumps table name prepended with schema name 
+	 * @param absolute if true, dumps table name prepended with schema name
 	 * @throws SQLException if a database related error occurs
 	 */
 	private void resultSetToSQL(ResultSet rs)
@@ -331,7 +333,11 @@ public class SQLExporter extends Exporter {
 	{
 		ResultSetMetaData rsmd = rs.getMetaData();
 		String statement = "INSERT INTO ";
-		if (!useSchema) statement += dq(rsmd.getSchemaName(1)) + ".";
+		if (!useSchema) {
+			String schema = rsmd.getSchemaName(1);
+			if (schema != null && schema.length() > 0)
+				statement += dq(schema) + ".";
+		}
 		statement += dq(rsmd.getTableName(1)) + " VALUES (";
 
 		int cols = rsmd.getColumnCount();
@@ -347,7 +353,7 @@ public class SQLExporter extends Exporter {
 				case Types.TIME:
 				case Types.TIMESTAMP:
 					types[i] = QUOTE;
-				break;
+					break;
 				case Types.NUMERIC:
 				case Types.DECIMAL:
 				case Types.BIT: // we don't use type BIT, it's here for completeness
@@ -360,32 +366,29 @@ public class SQLExporter extends Exporter {
 				case Types.FLOAT:
 				case Types.DOUBLE:
 					types[i] = AS_IS;
-				break;
-
+					break;
 				default:
 					types[i] = AS_IS;
 			}
 		}
 
+		StringBuilder strbuf = new StringBuilder(1024);
+		strbuf.append(statement);
 		while (rs.next()) {
-			out.print(statement);
 			for (int i = 1; i <= cols; i++) {
 				String val = rs.getString(i);
-				if (i > 1) out.print(", ");
+				if (i > 1)
+					strbuf.append(", ");
 				if (val == null || rs.wasNull()) {
-					out.print("NULL");
-					continue;
-				}
-				switch (types[i]) {
-					case AS_IS:
-						out.print(val);
-					break;
-					case QUOTE:
-						out.print(q(val));
-					break;
+					strbuf.append("NULL");
+				} else {
+					strbuf.append((types[i] == QUOTE) ? q(val) : val);
 				}
 			}
-			out.println(");");
+			strbuf.append(");");
+			out.println(strbuf.toString());
+			// clear the variable part of the buffer contents for next data row
+			strbuf.setLength(statement.length());
 		}
 	}
 
@@ -400,11 +403,12 @@ public class SQLExporter extends Exporter {
 	 * @param rs the ResultSet to write out
 	 */
 	public void resultSetToTable(ResultSet rs) throws SQLException {
+		long startTime = System.currentTimeMillis();
 		ResultSetMetaData md = rs.getMetaData();
 		int cols = md.getColumnCount();
 		// find the optimal display widths of the columns
 		int[] width = new int[cols + 1];
-		boolean[] isSigned = new boolean[cols + 1];
+		boolean[] isSigned = new boolean[cols + 1];	// used for controlling left or right alignment of data
 		for (int j = 1; j < width.length; j++) {
 			int coldisplaysize = md.getColumnDisplaySize(j);
 			int collabellength = md.getColumnLabel(j).length();
@@ -414,62 +418,68 @@ public class SQLExporter extends Exporter {
 			isSigned[j] = md.isSigned(j);
 		}
 
-		// print the header text
-		out.print("+");
-		for (int j = 1; j < width.length; j++)
-			out.print(repeat('-', width[j] + 1) + "-+");
-		out.println();
+		// use a buffer to construct the text lines
+		StringBuilder strbuf = new StringBuilder(1024);
 
-		out.print("|");
+		// construct the frame lines and header text
+		strbuf.append('+');
+		for (int j = 1; j < width.length; j++)
+			strbuf.append(repeat('-', width[j] + 1) + "-+");
+
+		String outsideLine = strbuf.toString();
+		String separatorLine = outsideLine.replace('-', '=');
+
+		strbuf.setLength(0);	// clear the buffer
+		strbuf.append('|');
 		for (int j = 1; j < width.length; j++) {
 			String colLabel = md.getColumnLabel(j);
-			out.print(" " + colLabel + repeat(' ', width[j] - colLabel.length()) +  " |");
+			strbuf.append(' ');
+			strbuf.append(colLabel);
+			strbuf.append(repeat(' ', width[j] - colLabel.length()));
+			strbuf.append(" |");
 		}
-		out.println();
+		// print the header text
+		out.println(outsideLine);
+		out.println(strbuf.toString());
+		out.println(separatorLine);
 
-		out.print("+");
-		for (int j = 1; j < width.length; j++)
-			out.print("=" + repeat('=', width[j]) + "=+");
-		out.println();
-
-		// print data of each row from resultset
-		int count = 0;
+		// print formatted data of each row from resultset
+		long count = 0;
 		for (; rs.next(); count++) {
-			out.print("|");
+			strbuf.setLength(0);	// clear the buffer
+			strbuf.append('|');
 			for (int j = 1; j < width.length; j++) {
-				Object rdata = rs.getObject(j);
-				String data;
-				if (rdata == null || rs.wasNull()) {
+				String data = rs.getString(j);
+				if (data == null || rs.wasNull()) {
 					data = "NULL";
-				} else {
-					data = rdata.toString();
-					if (data == null)
-						data = "NULL";
 				}
 
 				int filler_length = width[j] - data.length();
 				if (filler_length <= 0) {
-					out.print(" " + data + " |");
+					if (filler_length == 0) {
+						strbuf.append(' ');
+					}
+					strbuf.append(data);
 				} else {
+					strbuf.append(' ');
 					if (isSigned[j]) {
 						// we have a numeric type here, right align
-						out.print(" " + repeat(' ', filler_length) + data + " |");
+						strbuf.append(repeat(' ', filler_length));
+						strbuf.append(data);
 					} else {
 						// all other left align
-						out.print(" " + data + repeat(' ', filler_length) + " |");
+						strbuf.append(data);
+						strbuf.append(repeat(' ', filler_length));
 					}
 				}
+				strbuf.append(" |");
 			}
-			out.println();
+			out.println(strbuf.toString());
 		}
 
 		// print the footer text
-		out.print("+");
-		for (int j = 1; j < width.length; j++)
-			out.print(repeat('-', width[j] + 1) + "-+");
-		out.println();
-
-		out.println(count + " row" + (count != 1 ? "s" : ""));
+		out.println(outsideLine);
+		out.println(count + " tuple" + (count != 1 ? "s (" : " (") + (System.currentTimeMillis() - startTime) + " ms)");
 	}
 
 	private void changeSchema(String schema) {

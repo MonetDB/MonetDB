@@ -97,8 +97,7 @@ Operation successful
 |    6 |       2 |         2 |      1 | false    |
 |    7 |       2 |         2 |      2 | false    |
 +------+---------+-----------+--------+----------+
-7 rows
-
+7 tuples (1 ms)
 +------+---------+-----------+--------+
 | id   | subject | predicate | object |
 +======+=========+===========+========+
@@ -110,8 +109,7 @@ Operation successful
 |    6 |       1 |         2 |      1 |
 |    7 |       1 |         1 |      2 |
 +------+---------+-----------+--------+
-7 rows
-
+7 tuples (0 ms)
 Operation successful
 
 

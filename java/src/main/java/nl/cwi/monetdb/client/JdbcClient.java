@@ -794,7 +794,6 @@ copts.produceHelpMessage()
 				}
 			}
 
-			out.println();
 			out.flush();
 		} while ((nextRslt = stmt.getMoreResults()) ||
 				 (aff = stmt.getUpdateCount()) != -1);
