@@ -374,8 +374,9 @@ SERVERlistenThread(SOCKET *Sock)
 			showException(GDKstdout, MAL, "initClient",
 						  "cannot fork new client thread");
 			GDKfree(data);
-		}
-		GDKregister(tid);
+			closesocket(msgsock);
+		} else
+			GDKregister(tid);
 	} while (!ATOMIC_GET(serverexiting, atomicLock) &&
 			 !GDKexiting());
 	(void) ATOMIC_DEC(nlistener, atomicLock);
