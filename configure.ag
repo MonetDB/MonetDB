@@ -1147,6 +1147,13 @@ AS_VAR_IF([have_perl], [no],
 			PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
 			# On Darwin this starts with a slash, remove it
 			PERL_LIBDIR="${PERL_LIBDIR@%:@/}"
+			AS_VAR_IF([PERL_LIBDIR], [], [
+				# if empty (e.g. on FreeBSD) try something else
+				PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{sitelib}; $x =~ s|$Config{prefix}/||; print $x;' 2>/dev/null`
+					AS_VAR_IF([PERL_LIBDIR], [], [
+						# if still empty, give up
+						have_perl=no
+						why_have_perl='(cannot determine location for files)'])])
 			],
 		[no], [],
 		[
