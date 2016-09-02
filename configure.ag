@@ -1251,6 +1251,15 @@ if test "x$have_perl" != xno; then
 			PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
 			# On Darwin this starts with a slash, remove it
 			PERL_LIBDIR="${PERL_LIBDIR#/}"
+			if test "x$PERL_LIBDIR" = x; then
+				# if empty (e.g. on FreeBSD) try something else
+				PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{sitelib}; $x =~ s|$Config{prefix}/||; print $x;' 2>/dev/null`
+				if test "x$PERL_LIBDIR" = x; then
+					# if still empty, give up
+					have_perl=no
+					why_have_perl='(cannot determine location for files)'
+				fi
+			fi
 			;;
 		no)	;;
 		*)
