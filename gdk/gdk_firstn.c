@@ -663,6 +663,8 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	 * can use the base type */
 	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
 	groups = GDKmalloc(sizeof(*groups) * n);
+	if( groups == NULL)
+		return GDK_FAIL;
 	oldcand = cand;
 	if (asc) {
 		switch (tpe) {
@@ -971,6 +973,8 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	 * can use the base type */
 	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
 	groups = GDKmalloc(sizeof(*groups) * n);
+	if( groups == NULL)
+		return GDK_FAIL;
 	gv = (const oid *) Tloc(g, BUNfirst(g));
 	oldcand = cand;
 	if (asc) {
