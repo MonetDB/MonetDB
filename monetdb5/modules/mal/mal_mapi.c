@@ -384,9 +384,6 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 		if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE) < 0) {
-			mnstr_printf(data->out, "!internal server error (cannot fork new "
-						 "client thread), please try again later\n");
-			mnstr_flush(data->out);
 			showException(GDKstdout, MAL, "initClient",
 						  "cannot fork new client thread");
 			closesocket(msgsock);
