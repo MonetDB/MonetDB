@@ -290,8 +290,10 @@ evalFile(Client c, str fname, int listing)
 			c->yycur = 0;
 			c->bak = NULL;
 			MSinitClientPrg(c, "user", "main");     /* re-initialize context */
-			MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "");
-			msg = runScenario(c);
+			if( MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "") < 0){
+				msg = createException(MAL,"mal.eval", "WARNING: could not switch client input stream\n");
+			} else
+				msg = runScenario(c);
 			if (msg != MAL_SUCCEED) {
 				dumpExceptionsToStream(c->fdout, msg);
 				GDKfree(msg);
@@ -309,8 +311,10 @@ evalFile(Client c, str fname, int listing)
 		c->yycur = 0;
 		c->bak = NULL;
 		MSinitClientPrg(c, "user", "main");     /* re-initialize context */
-		MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "");
-		msg = runScenario(c);
+		if( MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "") < 0){
+				msg = createException(MAL,"mal.eval", "WARNING: could not switch client input stream\n");
+		} else
+			msg = runScenario(c);
 	}
 	GDKfree(fname);
 

@@ -963,12 +963,17 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 		ptr _src = BUNtail(bi,pos);
 		int _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
+		if( _dst == NULL)
+			throw(MAL,"doAlgFetch",MAL_MALLOC_FAIL);
 		memcpy(_dst, _src, _len);
 		*(ptr*) ret = _dst;
 	} else {
 		int _s = ATOMsize(ATOMtype(b->ttype));
 		if (ATOMvarsized(b->ttype)) {
-			memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtvar(bi, pos), _s);
+			ret = GDKmalloc(_s);
+			if( ret == NULL)
+				throw(MAL,"doAlgFetch",MAL_MALLOC_FAIL);
+			memcpy(*(ptr*) ret, BUNtvar(bi, pos), _s);
 		} else if (b->ttype == TYPE_void) {
 			*(oid*) ret = b->tseqbase;
 			if (b->tseqbase != oid_nil)

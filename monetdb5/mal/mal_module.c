@@ -25,6 +25,8 @@ Module scopeJump[256][256];  /* to speedup access to correct scope */
 
 static void newSubScope(Module scope){
 	scope->subscope = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
+	if( scope->subscope  == NULL)
+		GDKerror("newSubScope:"MAL_MALLOC_FAIL);
 }
 
 void

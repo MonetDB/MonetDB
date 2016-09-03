@@ -264,6 +264,8 @@ TKNZRappend(oid *pos, str *s)
 		for (i = tokenDepth; i < depth; i++) {
 			/* make new bat for value */
 			batname = (str) GDKmalloc(132 * sizeof(char));
+			if( batname == NULL)
+				throw(MAL,"TKNZappend",MAL_MALLOC_FAIL);
 			snprintf(batname, 128, "%s_%d", name, i);
 			bVal = BATnew(TYPE_void, TYPE_str, 1024, PERSISTENT);
 			if (bVal == NULL) {
@@ -471,9 +473,8 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	url = (str) GDKmalloc(sizeof(char) *
 			(strlen(*getArgReference_str(stk, pci, 1)) + 1));
-	if (url == NULL) {
+	if (url == NULL)
 		throw(MAL, "tokenizer.locate", MAL_MALLOC_FAIL);
-	}
 	strcpy(url, *getArgReference_str(stk, pci, 1));
 
 

@@ -191,6 +191,8 @@ blob_tostr(str *tostr, int *l, blob *p)
 		if (*tostr != NULL)
 			GDKfree(*tostr);
 		*tostr = (str) GDKmalloc(expectedlen);
+		if( *tostr == NULL)
+			return 0;
 		*l = (int) expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
@@ -233,6 +235,8 @@ sqlblob_tostr(str *tostr, int *l, const blob *p)
 		if (*tostr != NULL)
 			GDKfree(*tostr);
 		*tostr = (str) GDKmalloc(expectedlen);
+		if( *tostr == NULL)
+			return 0;
 		*l = (int) expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
@@ -299,6 +303,9 @@ blob_fromstr(char *instr, int *l, blob **val)
 		*val = (blob *) GDKmalloc(nbytes);
 		*l = (int) nbytes;
 	}
+	if( *val == NULL)
+		return 0;
+	
 	result = *val;
 	result->nitems = nitems;
 
@@ -383,6 +390,8 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 		*val = (blob *) GDKmalloc(nbytes);
 		*l = (int) nbytes;
 	}
+	if( *val == NULL)
+		return 0;
 	if (nil) {
 		**val = *blob_null();
 		return 0;
@@ -436,6 +445,8 @@ fromblob_idx(str *retval, blob *b, int *idx)
 			break;
 	}
 	*retval = s = (str) GDKmalloc(1 + r - p);
+	if( *retval == NULL)
+		return GDK_SUCCEED;
 	for (; p < r; p++, s++)
 		*s = *p;
 	*s = 0;
@@ -456,6 +467,8 @@ toblob(blob **retval, str s)
 	int len = strLen(s);
 	blob *b = (blob *) GDKmalloc(blobsize(len));
 
+	if( b == NULL)
+		return GDK_SUCCEED;
 	b->nitems = len;
 	memcpy(b->data, s, len);
 	*retval = b;
@@ -490,7 +503,8 @@ blob *
 BLOBnull(void)
 {
 	blob *b= (blob*) GDKmalloc(offsetof(blob, data));
-	b->nitems = ~(size_t) 0;
+	if( b )
+		b->nitems = ~(size_t) 0;
 	return b;
 }
 
@@ -587,6 +601,8 @@ BLOBblob_blob(blob **d, blob **s)
 		*d= BLOBnull();
 	} else {
 		*d= b= (blob *) GDKmalloc(len);
+		if( b == NULL)
+			throw(MAL,"blob_blob",MAL_MALLOC_FAIL);
 		b->nitems = len;
 		memcpy(b->data, (*s)->data, len);
 	}

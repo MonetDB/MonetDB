@@ -46,6 +46,8 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	int varid = getArg(p,idx);
 
 	buf = GDKzalloc(maxlen);
+	if( buf == NULL)
+		throw(MAL,"renderTerm",MAL_MALLOC_FAIL);
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb,varid) && !isVarTypedef(mb,varid)) {
 		nme = getVarName(mb,varid);
@@ -526,18 +528,20 @@ mal2str(MalBlkPtr mb, int first, int last)
 			totlen += len[i] = (int)strlen(txt[i]);
 	}
 	ps = GDKmalloc(totlen + mb->stop + 1);
-	if( ps == NULL)
+	if( ps == NULL){
 		GDKerror("mal2str: " MAL_MALLOC_FAIL);
+		GDKfree(len);
+		GDKfree(txt);
+		return NULL;
+	}
 
 	totlen = 0;
 	for (i = first; i < last; i++) {
 		if( txt[i]){
-			if( ps){
-				strncpy(ps + totlen, txt[i], len[i]);
-				ps[totlen + len[i]] = '\n';
-				ps[totlen + len[i] + 1] = 0;
-				totlen += len[i] + 1;
-			}
+			strncpy(ps + totlen, txt[i], len[i]);
+			ps[totlen + len[i]] = '\n';
+			ps[totlen + len[i] + 1] = 0;
+			totlen += len[i] + 1;
 			GDKfree(txt[i]);
 		}
 	}

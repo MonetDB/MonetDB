@@ -117,6 +117,10 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		return;
 	}
 	cntxt->curprg = newFunction(putName("user"), putName(nme), FUNCTIONsymbol);
+	if( cntxt->curprg == 0){
+		GDKerror("MSinitClientPrg" "Failed to create function");
+		return;
+	}
 	mb = cntxt->curprg->def;
 	p = getSignature(cntxt->curprg);
 	if (mod)

@@ -365,6 +365,11 @@ SERVERlistenThread(SOCKET *Sock)
 		fflush(stdout);
 #endif
 		data = GDKmalloc(sizeof(*data));
+		if( data == NULL){
+			mnstr_printf(data->out, "!internal server error (cannot allocate space)  please try again later\n");
+			mnstr_flush(data->out);
+			return;
+		}
 		data->in = socket_rastream(msgsock, "Server read");
 		data->out = socket_wastream(msgsock, "Server write");
 		if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {
@@ -760,6 +765,8 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	(void) res;
 	/* in embedded mode we allow just one client */
 	data = GDKmalloc(sizeof(*data));
+	if( data == NULL)
+		throw(MAL,"serverClient",MAL_MALLOC_FAIL);
 	data->in = *In;
 	data->out = *Out;
 	if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {

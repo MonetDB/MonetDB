@@ -386,6 +386,10 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	printInstruction(out,mb,0,p,LIST_MAL_ALL);
 #endif
 	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
+	if( new == NULL){
+		fprintf(stderr,"cloneFunction() failed");
+		return NULL;
+	}
 	freeMalBlk(new->def);
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
@@ -486,7 +490,7 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 				mnstr_printf(fd,"\n");
 			}
 			GDKfree(ps);
-		}
+		} else mnstr_printf(fd,"#failed instruction2str()\n");
 	}
 }
 
@@ -517,7 +521,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 				if (l > len)
 					len = l;
 				GDKfree(ps);
-			}
+			} else mnstr_printf(fd,"#failed instruction2str()\n");
 		}
 		mnstr_printf(fd, "%% " SZFMT " # length\n", len);
 	}

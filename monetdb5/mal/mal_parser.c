@@ -1142,6 +1142,11 @@ fcnHeader(Client cntxt, int kind)
 	}
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction(putName("user"), fnme, kind);
+	if( cntxt->curprg == NULL){
+		parseError(cntxt, "Failed to create a newFunction()\n");
+		skipToEnd(cntxt);
+		return 0;
+	}
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curBlk->flowfixed = 0;

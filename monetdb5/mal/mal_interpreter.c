@@ -482,7 +482,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		pci = getInstrPtr(mb, startpc);
 		if (pci->argc > 16) {
 			backup = GDKzalloc(pci->argc * sizeof(ValRecord));
+			if( backup == NULL)
+				throw(MAL,"mal.interpreter",MAL_MALLOC_FAIL);
 			garbage = (int*)GDKzalloc(pci->argc * sizeof(int));
+			if( garbage == NULL){
+				GDKfree(backup);
+				throw(MAL,"mal.interpreter",MAL_MALLOC_FAIL);
+			}
 		} else {
 			backup = backups;
 			garbage = garbages;
@@ -490,7 +496,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 	} else if ( mb->maxarg > 16 ){
 		backup = GDKzalloc(mb->maxarg * sizeof(ValRecord));
+		if( backup == NULL)
+			throw(MAL,"mal.interpreter",MAL_MALLOC_FAIL);
 		garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
+		if( garbage == NULL){
+			GDKfree(backup);
+			throw(MAL,"mal.interpreter",MAL_MALLOC_FAIL);
+		}
 	} else {
 		backup = backups;
 		garbage = garbages;
@@ -1344,12 +1356,15 @@ str catchKernelException(Client cntxt, str ret)
 				strcpy(z, ret);
 				if (z[strlen(z) - 1] != '\n') strcat(z, "\n");
 				strcat(z, errbuf);
-			}
+			} else // when malloc fails, leave it somewhere
+				fprintf(stderr,"!catchKernelException:%s\n",ret);
 		} else {
 			/* trap hidden (GDK) exception */
 			z = (char*)GDKmalloc(strlen("GDKerror:") + strlen(errbuf) + 2);
 			if (z)
 				sprintf(z, "GDKerror:%s", errbuf);
+			else
+				fprintf(stderr,"!catchKernelException:GDKerror:%s\n",errbuf);
 		}
 		/* did we eat the error away of not */
 		if (z)

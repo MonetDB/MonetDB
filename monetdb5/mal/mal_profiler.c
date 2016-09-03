@@ -192,9 +192,9 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 		c = stmt;
 
-		while (c && *c && isspace((int)*c))
+		while (stmt && *c && isspace((int)*c))
 			c++;
-		if( *c){
+		if( stmt && *c){
 			stmtq = mal_quote(c, strlen(c));
 			if (stmtq != NULL) {
 				logadd("\"stmt\":\"%s\",%s", stmtq,prettify);
