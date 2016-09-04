@@ -2100,6 +2100,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		sql_exp *le = rel_value_exp(sql, rel, lo, f, ek);
 		sql_exp *re, *ee = NULL;
 		char *like = insensitive ? (anti ? "not_ilike" : "ilike") : (anti ? "not_like" : "like");
+		sql_schema *sys = mvc_bind_schema(sql, "sys");
 
 		if (!le)
 			return NULL;
@@ -2126,8 +2127,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, escape)));
 		}
 		if (ee)
-			return rel_nop_(sql, le, re, ee, NULL, NULL, like, card_value);
-		return rel_binop_(sql, le, re, NULL, like, card_value);
+			return rel_nop_(sql, le, re, ee, NULL, sys, like, card_value);
+		return rel_binop_(sql, le, re, sys, like, card_value);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:
