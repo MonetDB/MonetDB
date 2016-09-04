@@ -6477,7 +6477,8 @@ rel_split_project(int *changes, mvc *sql, sql_rel *rel, int top)
 	}
 	/* TODO handle right (ie join/union) */
 	if (!is_basetable(rel->op) && rel->l)
-		rel->l = rel_split_project(changes, sql, rel->l, is_topn(rel->op)?top:0);
+		rel->l = rel_split_project(changes, sql, rel->l, 
+			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
 	return rel;
 }
 
