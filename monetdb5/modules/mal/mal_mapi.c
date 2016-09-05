@@ -366,9 +366,10 @@ SERVERlistenThread(SOCKET *Sock)
 #endif
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
-			mnstr_printf(data->out, "!internal server error (cannot allocate space)  please try again later\n");
-			mnstr_flush(data->out);
-			return;
+			closesocket(msgsock);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot allocate space");
+			continue;
 		}
 		data->in = socket_rastream(msgsock, "Server read");
 		data->out = socket_wastream(msgsock, "Server write");
