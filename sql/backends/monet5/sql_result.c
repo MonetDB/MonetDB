@@ -1875,9 +1875,6 @@ static int write_str_term(stream* s, str val) {
 #include <mhapi.h>
 #endif
 
-#define VARCHAR_MAXIMUM_FIXED 3
-
-
 static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize) {
 	BAT *order;
 	lng count;
@@ -1891,6 +1888,16 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	int fres = 0;
 	column_compression colcomp = bs2_colcomp(s);
 
+	int VARCHAR_MAXIMUM_FIXED = 0;
+	if (GDKgetenv("varchar_maximum_fixed") != NULL) {
+		str baseptr = GDKgetenv("varchar_maximum_fixed");
+		str endptr;
+		VARCHAR_MAXIMUM_FIXED = strtol(baseptr, &endptr, 0);
+		if (baseptr == endptr) {
+			VARCHAR_MAXIMUM_FIXED = 0;
+			errno = 0;
+		}
+	}
 
 	iterators = GDKzalloc(sizeof(BATiter) * t->nr_cols);
 
@@ -2238,18 +2245,9 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 #ifndef VARINT_PADDING
 						buf = stpcpy(buf, str) + 1;
 #else
- 						if (c->type.digits > 0) {
- 							char *endbuf;
- 							varsize = varint_size(c->type.digits);
- 							endbuf = stpcpy(buf + varsize, str);
- 							write_varint(buf, endbuf - (buf + varsize));
- 							assert(read_varint_value(buf) == strlen(str));
- 							buf = endbuf;
- 						} else {
- 							varsize = write_varint(buf, strlen(str));
- 							buf = stpcpy(buf + varsize, str);
- 						}
- #endif
+						varsize = write_varint(buf, strlen(str));
+						buf = stpcpy(buf + varsize, str);
+#endif
 					}
 					// after the loop we know the size of the column, so write it
 					*((lng*)startbuf) = buf - (startbuf + sizeof(lng));
