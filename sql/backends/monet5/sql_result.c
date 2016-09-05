@@ -1875,7 +1875,7 @@ static int write_str_term(stream* s, str val) {
 #include <mhapi.h>
 #endif
 
-#define VARCHAR_MAXIMUM_FIXED 3
+#define VARCHAR_MAXIMUM_FIXED 0
 
 
 static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize) {
@@ -2011,6 +2011,15 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		}
 	}
 	mnstr_flush(s);
+
+#ifdef NULL_BITMASK
+	// bitmask requires 1 bit per field for each row; for simplicity we round up to the nearest byte
+	fixed_lengths += (t->nr_cols / 8) + 1;
+#endif
+	char fname[1000];
+	snprintf(fname, 1000, "%s.proto", ((res_col*)t->cols)->tn);
+
+	FILE *f = fopen(fname, "wb");
 
 	while (row < (size_t) count) {
 		char *buf = bs2_buffer(s).buf;
@@ -2232,6 +2241,32 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					// but since we don't know the length yet, just skip over it for now
 					char *startbuf = buf;
 					buf += sizeof(lng);
+#ifdef NULL_BITMASK
+					size_t m, n;
+					const void *nil = ATOMnilptr(mtype); 
+					int (*atomcmp)(const void *, const void *) = ATOMcompare(mtype); 
+					// first write the bitmask
+					for(m = 0; m < (row - srow); m+=8) {
+						unsigned char byte = 0;
+						for(n = 0; n < 8 && (m + n < (row - srow)); n++) {
+							char *str = (char*) BUNtail(iterators[i], srow + m * 8 + n);
+							if (strcmp(str, str_nil) == 0) {
+								// null value
+								byte |= 1 << n;
+							}
+						}
+						memcpy(buf, &byte, 1);
+						buf += 1;
+					}
+					for(m = 0; m < (row - srow); m++) {
+						char *str = (char*) BUNtail(iterators[i], srow + m);
+						if (strcmp(str, str_nil) != 0) {
+							// not null value, so copy into buffer
+							buf = stpcpy(buf, str) + 1;
+						}
+					}
+					//printf("%s: %f\n", c->name, (buf - startbuf) / 1000.0);
+#else
 					for (crow = srow; crow < row; crow++) {
 						int varsize;
 						char *str = (char*) BUNtail(iterators[i], crow);
@@ -2251,6 +2286,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
  						}
  #endif
 					}
+ #endif
 					// after the loop we know the size of the column, so write it
 					*((lng*)startbuf) = buf - (startbuf + sizeof(lng));
 				}
@@ -2328,8 +2364,37 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					}*/
 				} else {
 #endif
+#ifdef NULL_BITMASK
+				const void *nil = ATOMnilptr(mtype); 
+				int (*atomcmp)(const void *, const void *) = ATOMcompare(mtype);
+				char *baseptr = Tloc(iterators[i].b, srow);
+				char *startbuf = buf;
+				size_t m, n;
+				// first write the bitmask
+				for(m = 0; m < (row - srow); m+=8) {
+					unsigned char byte = 0;
+					int base_index =  m * 8;
+					for(n = 0; n < 8 && (srow + base_index + n < row); n++) {
+						if ((*atomcmp)(baseptr + (base_index + n) * atom_size, nil) == 0) {
+							// null value
+							byte |= 1 << n;
+						}
+					}
+					memcpy(buf, &byte, 1);
+					buf += 1;
+				}
+				for(m = 0; m < (row - srow); m++) {
+					if ((*atomcmp)(baseptr + m * atom_size, nil) != 0) {
+						// not null value, so copy into buffer
+						memcpy(buf, baseptr + m * atom_size, atom_size);
+						buf += atom_size;
+					}
+				}
+				//printf("%s: %f\n", c->name, (buf - startbuf) / 1000.0);
+#else
 				memcpy(buf, Tloc(iterators[i].b, srow), (row - srow) * atom_size);
 				buf += (row - srow) * atom_size;
+#endif
 #ifdef HAVE_PFOR
 			}
 #endif
@@ -2345,14 +2410,21 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			goto cleanup;
 		}
 
-		bs2_setpos(s, buf - bs2_buffer(s).buf);
+		printf("Write rows %d-%d (%fKB)\n", srow, row, (buf - bs2_buffer(s).buf) / 1000.0);
+		fwrite(bs2_buffer(s).buf, buf - bs2_buffer(s).buf, 1, f);
+		bs2_setpos(s, 0);
+		/*bs2_setpos(s, buf - bs2_buffer(s).buf);
 		if (mnstr_flush(s) < 0) {
 			fprintf(stderr, "Failed to flush.\n");
 			fres = -1;
 			goto cleanup;
-		}
+		}*/
 		srow = row;
 	}
+	fclose(f);
+	fprintf(stderr, "Finished writing result.\n");
+	fres = -1;
+	goto cleanup;
 cleanup:
 	if (iterators) {
 		for(i = 0; i < (size_t) t->nr_cols; i++) {
