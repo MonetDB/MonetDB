@@ -46,8 +46,10 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	int varid = getArg(p,idx);
 
 	buf = GDKzalloc(maxlen);
-	if( buf == NULL)
-		throw(MAL,"renderTerm",MAL_MALLOC_FAIL);
+	if( buf == NULL) {
+		GDKerror("renderTerm:Failed to allocate");
+		return NULL;
+	}
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb,varid) && !isVarTypedef(mb,varid)) {
 		nme = getVarName(mb,varid);
@@ -73,7 +75,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 
 		if( buf == 0){
 			GDKerror("renderTerm:Failed to allocate");
-			return 0;
+			return NULL;
 		}
 		if( strcmp(cv,"nil") == 0){
 			strcat(buf+len,cv);
@@ -153,10 +155,12 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 	advance(t, base, len);
 
 	for (i = p->retc; i < p->argc; i++) {
-		arg = renderTerm(mb, 0, p, i, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_PROPS)); 
-		snprintf(t, (len-(t-base)),"%s", arg);
+		arg = renderTerm(mb, 0, p, i, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_PROPS));
+		if (arg) {
+			snprintf(t, (len-(t-base)),"%s", arg);
+			GDKfree(arg);
+		}
 		advance(t,  base, len);
-		GDKfree(arg);
 		if( i<p->argc-1) {
 			sprintf(t,",");
 			advance(t,base,len);
@@ -182,9 +186,11 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 		t += 3;
 		for (i = 0; i < p->retc; i++) {
 			arg = renderTerm(mb, 0, p, i, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_PROPS));
-			snprintf(t,(len-(t-base)),"%s", arg);
+			if (arg) {
+				snprintf(t,(len-(t-base)),"%s", arg);
+				GDKfree(arg);
+			}
 			advance(t,base,len);
-			GDKfree(arg);
 			if( i<p->retc-1) {
 				sprintf(t,",");
 				advance(t,base,len);
@@ -296,8 +302,10 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 
 		for (i = 0; i < p->retc; i++) {
 			arg= renderTerm(mb, stk, p, i, flg);
-			snprintf(t,(len-(t-base)), "%s", arg);
-			GDKfree(arg);
+			if (arg) {
+				snprintf(t,(len-(t-base)), "%s", arg);
+				GDKfree(arg);
+			}
 			advance(t,base,len);
 			if (i < p->retc - 1)
 				*t++ = ',';
@@ -348,8 +356,10 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 
 	for (i = p->retc; i < p->argc; i++) {
 		arg= renderTerm(mb, stk, p, i, flg);
-		snprintf(t,(len-(t-base)), "%s", arg);
-		GDKfree(arg);
+		if (arg) {
+			snprintf(t,(len-(t-base)), "%s", arg);
+			GDKfree(arg);
+		}
 		advance(t,base,len);
 
 		if (i < p->argc -1){
