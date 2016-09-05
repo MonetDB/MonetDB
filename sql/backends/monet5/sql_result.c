@@ -2021,7 +2021,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		// subtract this from the amount of bytes left
 		bytes_left -= length_prefixed * sizeof(lng);
 
-		if (colcomp == COLUMN_COMPRESSION_BINPACK || colcomp == COLUMN_COMPRESSION_PFOR) {
+		if (colcomp == COLUMN_COMPRESSION_BINPACK || colcomp == COLUMN_COMPRESSION_PFOR || colcomp == COLUMN_COMPRESSION_PROTOBUF_NOPACK) {
 			// leave a bit of extra space in case the compression increases the size of the data
 			bytes_left = bytes_left / 2;
 		}
@@ -2148,7 +2148,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					msg.columns_unpacked[i] = malloc(sizeof(Mhapi__QueryResult__ColumnUnpacked));
 					assert(msg.columns_unpacked[i]);
 					col = msg.columns_unpacked[i];
-					mhapi__query_result__column__init(col);
+					mhapi__query_result__column_unpacked__init(col);
 					switch (local_type) {
 					case TYPE_str:
 					{
@@ -2186,6 +2186,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			}
 			assert(mhapi__query_result__get_packed_size(&msg) <= bsize);
 			assert(bs2_buffer(s).pos == 0);
+			if (mhapi__query_result__get_packed_size(&msg) > bsize) {
+				fprintf(stderr, "Protobuf message too big!\n");
+				fres = -1;
+				goto cleanup;
+			}
 			bs2_setpos(s, mhapi__query_result__pack(&msg, (uint8_t*) bs2_buffer(s).buf));
 			if (mnstr_flush(s) < 0) {
 				fprintf(stderr, "Failed to flush.\n");
@@ -2223,7 +2228,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 					}
 				} else {
 					// for variable length strings and large fixed strings we use varints
-
 					// variable columns are prefixed by a length, 
 					// but since we don't know the length yet, just skip over it for now
 					char *startbuf = buf;

@@ -1,7 +1,7 @@
 package mhapi;
 
 message QueryResult {
-	required int64 row_count = 2;
+	required int64 row_count = 1;
 
 	message Column {
 		repeated string string_values = 4;
@@ -9,7 +9,6 @@ message QueryResult {
 		repeated int32  int32_values = 6 [packed=true];
 		repeated double double_values = 7 [packed=true];
 	}
-
 
 	message ColumnUnpacked {
 		repeated string string_values = 4;
