@@ -12,6 +12,8 @@
 #error this file should not be included outside its source directory
 #endif
 
+__hidden void join_detached_threads(void)
+	__attribute__((__visibility__("hidden")));
 __declspec(noreturn) void MT_exit_thread(int status)
 	__attribute__((__noreturn__));
 __hidden void MT_global_exit(int status)

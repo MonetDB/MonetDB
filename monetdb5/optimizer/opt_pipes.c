@@ -460,7 +460,10 @@ compileOptimizer(Client cntxt, str name)
 				MT_lock_unset(&pipeLock);
 				throw(MAL, "optimizer.addOptimizerPipe", "failed to set scenario");
 			}
-			(void) MCinitClientThread(&c);
+			if( MCinitClientThread(&c) < 0){
+				MT_lock_unset(&pipeLock);
+				throw(MAL, "optimizer.addOptimizerPipe", "failed to create client thread");
+			}
 			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
 				if (pipes[j].mb == NULL) {
 					if (pipes[j].prerequisite && getAddress(c.fdout, NULL, pipes[j].prerequisite, TRUE) == NULL)

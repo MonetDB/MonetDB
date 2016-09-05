@@ -1219,6 +1219,9 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	BATiter iter = (list_nme)?bat_iterator(list_nme):bat_iterator(list_bid);
 	gdk_return res;
 
+	if( n == NULL)
+		return GDK_FAIL;
+
 	n[i++] = 0;		/* n[0] is not used */
 	BATloop(list_bid, p, q) {
 		bat col = *(log_bid *) Tloc(list_bid, p);

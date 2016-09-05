@@ -443,6 +443,8 @@ BATprojectchain(BAT **bats)
 	for (n = 0; bats[n]; n++)
 		;
 	ba = GDKmalloc(sizeof(*ba) * n);
+	if( ba == NULL)
+		return NULL;
 	b = *bats++;
 	cnt = BATcount(b);	/* this will be the size of the output */
 	hseq = b->hseqbase;	/* this will be the seqbase of the output */

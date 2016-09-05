@@ -448,6 +448,8 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
+	if( curPrg == NULL)
+		return -1;
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -553,6 +555,8 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	name[0] = old;
 	backup = c->curprg;
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
+	if( c->curprg == NULL)
+		return -1;
 	name[0] = 'l';
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -3148,6 +3152,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
+	if( curPrg == NULL)
+		return -1;
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);

@@ -444,7 +444,8 @@ SQLinitClient(Client c)
 		buffer_init(b, _STRDUP(sqlinit), len);
 		fdin = bstream_create(buffer_rastream(b, "si"), b->len);
 		bstream_next(fdin);
-		MCpushClientInput(c, fdin, 0, "");
+		if( MCpushClientInput(c, fdin, 0, "") < 0)
+			fprintf(stderr, "SQLinitClient:Could not switch client input stream");
 	}
 	if (c->sqlcontext == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);

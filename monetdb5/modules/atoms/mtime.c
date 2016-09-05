@@ -541,7 +541,6 @@ timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
 
 /*
  * ADT implementations
- * @- date
  */
 int
 date_fromstr(const char *buf, int *len, date **d)
@@ -554,6 +553,8 @@ date_fromstr(const char *buf, int *len, date **d)
 		if (*d)
 			GDKfree(*d);
 		*d = (date *) GDKmalloc(*len = sizeof(date));
+		if( *d == NULL)
+			return 0;
 	}
 	**d = date_nil;
 	if (yearneg == 0 && !GDKisdigit(buf[0])) {
@@ -638,6 +639,8 @@ date_tostr(str *buf, int *len, const date *val)
 		if (*buf)
 			GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = 15);
+		if( *buf == NULL)
+			return 0;
 	}
 	if (*val == date_nil || !DATE(day, month, year)) {
 		strcpy(*buf, "nil");
@@ -659,6 +662,8 @@ daytime_fromstr(const char *buf, int *len, daytime **ret)
 		if (*ret)
 			GDKfree(*ret);
 		*ret = (daytime *) GDKmalloc(*len = sizeof(daytime));
+		if (*ret == NULL)
+			return 0;
 	}
 	**ret = daytime_nil;
 	if (!GDKisdigit(buf[pos])) {
@@ -745,6 +750,8 @@ daytime_tostr(str *buf, int *len, const daytime *val)
 		if (*buf)
 			GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = 13);
+		if( *buf == NULL)
+			return 0;
 	}
 	if (*val == daytime_nil || !TIME(hour, min, sec, msec)) {
 		strcpy(*buf, "nil");
@@ -769,6 +776,8 @@ timestamp_fromstr(const char *buf, int *len, timestamp **ret)
 		if (*ret)
 			GDKfree(*ret);
 		*ret = (timestamp *) GDKmalloc(*len = sizeof(timestamp));
+		if( *ret == NULL)
+			return 0;
 	}
 	d = &(*ret)->days;
 	t = &(*ret)->msecs;
@@ -872,6 +881,8 @@ timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezo
 			if (*buf)
 				GDKfree(*buf);
 			*buf = (str) GDKmalloc(*len = len1 + len2 + 2);
+			if( *buf == NULL)
+				return 0;
 		}
 		s = *buf;
 		if (ts_isnil(tmp)) {
@@ -928,6 +939,8 @@ rule_tostr(str *buf, int *len, const rule *r)
 		if (*buf)
 			GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = 64);
+		if( *buf == NULL)
+			return 0;
 	}
 	if (r->asint == int_nil) {
 		strcpy(*buf, "nil");
@@ -965,6 +978,8 @@ rule_fromstr(const char *buf, int *len, rule **d)
 		if (*d)
 			GDKfree(*d);
 		*d = (rule *) GDKmalloc(*len = sizeof(rule));
+		if( *d == NULL)
+			return 0;
 	}
 	(*d)->asint = int_nil;
 
@@ -1058,6 +1073,8 @@ tzone_fromstr(const char *buf, int *len, tzone **d)
 		if (*d)
 			GDKfree(*d);
 		*d = (tzone *) GDKmalloc(*len = sizeof(tzone));
+		if( *d == NULL)
+			return 0;
 	}
 	**d = *tzone_nil;
 
@@ -1124,6 +1141,8 @@ tzone_tostr(str *buf, int *len, const tzone *z)
 		if (*buf)
 			GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = 160);
+		if( *buf == NULL)
+			return 0;
 	}
 	s = *buf;
 	if (tz_isnil(*z)) {

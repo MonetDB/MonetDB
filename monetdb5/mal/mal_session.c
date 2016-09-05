@@ -42,11 +42,14 @@ malBootstrap(void)
 	c->nspace = newModule(NULL, putName("user"));
 	if ( (msg = defaultScenario(c)) ) {
 		GDKfree(msg);
-		GDKerror("Failed to initialise default scenario");
+		GDKerror("malBootstrap:Failed to initialise default scenario");
 		return 0;
 	}
 	MSinitClientPrg(c, "user", "main");
-	(void) MCinitClientThread(c);
+	if( MCinitClientThread(c) < 0){
+		GDKerror("malBootstrap:Failed to create client thread");
+		return 0;
+	}
 	s = malInclude(c, bootfile, 0);
 	if (s != NULL) {
 		mnstr_printf(GDKout, "!%s\n", s);
@@ -112,6 +115,10 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		return;
 	}
 	cntxt->curprg = newFunction(putName("user"), putName(nme), FUNCTIONsymbol);
+	if( cntxt->curprg == 0){
+		GDKerror("MSinitClientPrg" "Failed to create function");
+		return;
+	}
 	mb = cntxt->curprg->def;
 	p = getSignature(cntxt->curprg);
 	if (mod)
