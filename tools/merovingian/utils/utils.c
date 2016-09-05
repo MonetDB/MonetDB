@@ -118,25 +118,17 @@ freeConfFile(confkeyval *list) {
  */
 int
 defaultProperty(const char *property) {
-	// TODO: find a better way to do this
-	if (property != NULL && strcmp(property, "type") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "shared") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "nthreads") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "readonly") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "nclients") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "mfunnel") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "embedr") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "embedpy") == 0) {
-		return 1;
-	}
-	return 0;
+	if (property == NULL)
+		return 0;
+	return strcmp(property, "type") == 0 ||
+		strcmp(property, "shared") == 0 ||
+		strcmp(property, "nthreads") == 0 ||
+		strcmp(property, "readonly") == 0 ||
+		strcmp(property, "nclients") == 0 ||
+		strcmp(property, "mfunnel") == 0 ||
+		strcmp(property, "embedr") == 0 ||
+		strcmp(property, "embedpy") == 0 ||
+		strcmp(property, "optpipe") == 0;
 }
 
 /**
