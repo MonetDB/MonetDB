@@ -392,7 +392,7 @@ SERVERlistenThread(SOCKET *Sock)
 						  "cannot allocate stream");
 			continue;
 		}
-		if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {
+		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
@@ -401,7 +401,6 @@ SERVERlistenThread(SOCKET *Sock)
 						  "cannot fork new client thread");
 			continue;
 		}
-		GDKregister(tid);
 	} while (!ATOMIC_GET(serverexiting, atomicLock) &&
 			 !GDKexiting());
 	(void) ATOMIC_DEC(nlistener, atomicLock);
@@ -789,7 +788,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 		throw(MAL,"serverClient",MAL_MALLOC_FAIL);
 	data->in = *In;
 	data->out = *Out;
-	if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {
+	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
 		mnstr_printf(data->out, "!internal server error (cannot fork new "
 					 "client thread), please try again later\n");
 		mnstr_flush(data->out);
@@ -797,7 +796,6 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 					  "cannot fork new client thread");
 		free(data);
 	}
-	GDKregister(tid);
 	return MAL_SUCCEED;
 }
 

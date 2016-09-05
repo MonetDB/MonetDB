@@ -749,6 +749,7 @@ GDKreset(int status)
 		GDKfree(st);
 	}
 	MT_lock_unset(&GDKthreadLock);
+	join_detached_threads();
 
 	if (status == 0) {
 		/* they had their chance, now kill them */

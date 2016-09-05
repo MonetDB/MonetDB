@@ -497,6 +497,30 @@ join_threads(void)
 	pthread_mutex_unlock(&posthread_lock);
 }
 
+void
+join_detached_threads(void)
+{
+	struct posthread *p;
+	int waited;
+	pthread_t tid;
+
+	pthread_mutex_lock(&posthread_lock);
+	do {
+		waited = 0;
+		for (p = posthreads; p; p = p->next) {
+			tid = p->tid;
+			rm_posthread_locked(p);
+			free(p);
+			pthread_mutex_unlock(&posthread_lock);
+			pthread_join(tid, NULL);
+			pthread_mutex_lock(&posthread_lock);
+			waited = 1;
+			break;
+		}
+	} while (waited);
+	pthread_mutex_unlock(&posthread_lock);
+}
+
 int
 MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 {
