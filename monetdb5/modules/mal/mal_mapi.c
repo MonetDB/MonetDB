@@ -786,16 +786,20 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	/* in embedded mode we allow just one client */
 	data = GDKmalloc(sizeof(*data));
 	if( data == NULL)
-		throw(MAL,"serverClient",MAL_MALLOC_FAIL);
-	data->in = *In;
-	data->out = *Out;
+		throw(MAL, "mapi.SERVERclient", MAL_MALLOC_FAIL);
+	data->in = block_stream(*In);
+	data->out = block_stream(*Out);
+	if (data->in == NULL || data->out == NULL) {
+		mnstr_destroy(data->in);
+		mnstr_destroy(data->out);
+		GDKfree(data);
+		throw(MAL, "mapi.SERVERclient", MAL_MALLOC_FAIL);
+	}
 	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
-		mnstr_printf(data->out, "!internal server error (cannot fork new "
-					 "client thread), please try again later\n");
-		mnstr_flush(data->out);
-		showException(GDKstdout, MAL, "mapi.SERVERclient",
-					  "cannot fork new client thread");
+		mnstr_destroy(data->in);
+		mnstr_destroy(data->out);
 		free(data);
+		throw(MAL, "mapi.SERVERclient", "cannot fork new client thread");
 	}
 	return MAL_SUCCEED;
 }
