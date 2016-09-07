@@ -643,6 +643,7 @@ GDKprepareExit(void)
 		GDKfree(st);
 	}
 	MT_lock_unset(&GDKthreadLock);
+	join_detached_threads();
 }
 
 /* Register a thread that should be waited for in GDKreset.  The
