@@ -237,18 +237,25 @@ void
 join_detached_threads(void)
 {
 	struct winthread *w;
+	int waited;
 
-	EnterCriticalSection(&winthread_cs);
-	while (winthreads) {
-		w = winthreads;
-		winthreads = w->next;
-		LeaveCriticalSection(&winthread_cs);
-		WaitForSingleObject(w->hdl, INFINITE);
-		CloseHandle(w->hdl);
-		free(w);
+	do {
+		waited = 0;
 		EnterCriticalSection(&winthread_cs);
-	}
-	LeaveCriticalSection(&winthread_cs);
+		for (w = winthreads; w; w = w->next) {
+			if ((w->flags & (DETACHED | WAITING)) == DETACHED) {
+				w->flags |= WAITING;
+				LeaveCriticalSection(&winthread_cs);
+				WaitForSingleObject(w->hdl, INFINITE);
+				CloseHandle(w->hdl);
+				rm_winthread(w);
+				waited = 1;
+				EnterCriticalSection(&winthread_cs);
+				break;
+			}
+		}
+		LeaveCriticalSection(&winthread_cs);
+	} while (waited);
 }
 
 int
