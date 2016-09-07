@@ -646,7 +646,8 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return mythrow(MAL, "ifthenelse", SEMANTIC_TYPE_MISMATCH);
 
 	if (b == bit_nil) {
-		VALinit(&stk->stk[pci->argv[0]], t1, ATOMnilptr(t1));
+		if (VALinit(&stk->stk[pci->argv[0]], t1, ATOMnilptr(t1)) == NULL)
+			return mythrow(MAL, "ifthenelse", MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (b) {
@@ -686,7 +687,8 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) > 0)
 		p1 = p2;
-	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
+	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+		return mythrow(MAL, "calc.min", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -711,7 +713,8 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMcmp(t, p1, nil) == 0 ||
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
 		p1 = p2;
-	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
+	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+		return mythrow(MAL, "calc.min", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -737,7 +740,8 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) < 0)
 		p1 = p2;
-	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
+	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+		return mythrow(MAL, "calc.max", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -762,7 +766,8 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMcmp(t, p1, nil) == 0 ||
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
 		p1 = p2;
-	VALinit(&stk->stk[getArg(pci, 0)], t, p1);
+	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+		return mythrow(MAL, "calc.max", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
