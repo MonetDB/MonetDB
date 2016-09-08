@@ -3,5 +3,4 @@
 
 * Thu Sep  1 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Improved fetching and output speed of JdbcClient program for query results.
-  Added also timing information for JdbcClient query results (like in mclient).
 

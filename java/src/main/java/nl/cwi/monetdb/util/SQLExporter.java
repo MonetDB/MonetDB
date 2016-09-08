@@ -403,7 +403,6 @@ public class SQLExporter extends Exporter {
 	 * @param rs the ResultSet to write out
 	 */
 	public void resultSetToTable(ResultSet rs) throws SQLException {
-		long startTime = System.currentTimeMillis();
 		ResultSetMetaData md = rs.getMetaData();
 		int cols = md.getColumnCount();
 		// find the optimal display widths of the columns
@@ -427,7 +426,6 @@ public class SQLExporter extends Exporter {
 			strbuf.append(repeat('-', width[j] + 1) + "-+");
 
 		String outsideLine = strbuf.toString();
-		String separatorLine = outsideLine.replace('-', '=');
 
 		strbuf.setLength(0);	// clear the buffer
 		strbuf.append('|');
@@ -441,7 +439,7 @@ public class SQLExporter extends Exporter {
 		// print the header text
 		out.println(outsideLine);
 		out.println(strbuf.toString());
-		out.println(separatorLine);
+		out.println(outsideLine.replace('-', '='));
 
 		// print formatted data of each row from resultset
 		long count = 0;
@@ -479,7 +477,7 @@ public class SQLExporter extends Exporter {
 
 		// print the footer text
 		out.println(outsideLine);
-		out.println(count + " tuple" + (count != 1 ? "s (" : " (") + (System.currentTimeMillis() - startTime) + " ms)");
+		out.println(count + " row" + (count != 1 ? "s" : ""));
 	}
 
 	private void changeSchema(String schema) {

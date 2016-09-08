@@ -5,21 +5,75 @@ stdout of test 'explain.SF-1739353` in directory 'sql/test/BugTracker` itself:
 # 15:15:36 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33159 --set xrpc_port=45591 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
 # 15:15:36 >  
 
-# MonetDB server v5.16.0, based on kernel v1.34.0
-# Serving database 'mTests_src_test_BugTracker', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Detected 7.753 GiB (8324386816 bytes) main-memory.
+# 12:04:36 >  
+# 12:04:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39801" "--set" "mapi_usock=/var/tmp/mtest-31630/.s.monetdb.39801" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 12:04:36 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:33159/
-# MonetDB/SQL module v2.34.0 loaded
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:39801/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31630/.s.monetdb.39801
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
 
+# 12:04:37 >  
+# 12:04:37 >  "./explain.SF-1739353.SQL.sh" "explain.SF-1739353"
+# 12:04:37 >  
+
+
+# 12:04:37 >  
+# 12:04:37 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h toulouse -p 39801 -d mTests_sql_test_BugTracker -f "../../../../../dev/sql/test/BugTracker/Tests/explain.SF-1739353-data.sql"
+# 12:04:37 >  
 
 Operation successful
 
@@ -84,7 +138,6 @@ Operation successful
 | #total                actions= 1 time=285 usec                                                       |
 +------------------------------------------------------------------------------------------------------+
 56 rows
-
 
 # 15:15:37 >  
 # 15:15:37 >  Done.
