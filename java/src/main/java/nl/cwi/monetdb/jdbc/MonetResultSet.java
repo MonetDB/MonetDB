@@ -371,22 +371,25 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public InputStream getBinaryStream(int columnIndex) throws SQLException {
-		switch (getJavaType(types[columnIndex - 1])) {
-			case Types.BLOB:
-				Blob blob = getBlob(columnIndex);
-				if (blob == null)
-					return null;
-				return blob.getBinaryStream();
-			case Types.BINARY:
-			case Types.VARBINARY:
-			case Types.LONGVARBINARY:
-				byte[] bte = getBytes(columnIndex);
-				if (bte == null)
-					return null;
-				return new ByteArrayInputStream(bte);
+		try {
+			switch (getJavaType(types[columnIndex - 1])) {
+				case Types.BLOB:
+					Blob blob = getBlob(columnIndex);
+					if (blob == null)
+						return null;
+					return blob.getBinaryStream();
+				case Types.BINARY:
+				case Types.VARBINARY:
+				case Types.LONGVARBINARY:
+					byte[] bte = getBytes(columnIndex);
+					if (bte == null)
+						return null;
+					return new ByteArrayInputStream(bte);
+			}
+			throw new SQLException("Cannot operate on " + types[columnIndex - 1] + " type", "M1M05");
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
-		throw new SQLException("Cannot operate on " +
-				types[columnIndex - 1] + " type", "M1M05");
 	}
 	
 	/**
@@ -437,7 +440,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			lastReadWasNull = false;
 			return new StringReader(val);
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -515,7 +518,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			lastReadWasNull = false;
 			return MonetBlob.create(val);
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -556,7 +559,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			lastReadWasNull = false;
 			return new MonetClob(val);
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -635,7 +638,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return BigDecimal.ZERO;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -669,7 +672,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return BigDecimal.ZERO;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -770,7 +773,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 					throw new SQLException("Conversion from " + types[columnIndex - 1] + " to boolean type not supported", "M1M05");
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -813,7 +816,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return (byte) 0;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -871,7 +874,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 					throw new SQLException("Cannot operate on " + types[columnIndex - 1] + " type", "M1M05");
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -962,7 +965,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return 0;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -1089,7 +1092,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return 0;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -1132,7 +1135,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return 0;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -1183,7 +1186,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return 0;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -1232,7 +1235,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			private void fetchColumnInfo(int column) throws SQLException
 			{
 				if (column <= 0 || column > columns.length)
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 
 				_is_fetched[column] = true;
 				_precision[column] = 0;
@@ -1412,7 +1415,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				try {
 					ret = header.getColumnLengths()[column - 1];
 				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 				}
 
 				return ret;
@@ -1440,7 +1443,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 						return (dot >= 0) ? schema.substring(0, dot) : "";
 					}
 				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 				}
 
 				return "";
@@ -1467,7 +1470,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 						return (dot >= 0) ? table.substring(dot + 1) : table;
 					}
 				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 				}
 
 				return "";
@@ -1698,7 +1701,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				try {
 					return columns[column - 1];
 				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 				}
 			}
 
@@ -1728,7 +1731,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				try {
 					return types[column - 1];
 				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 				}
 			}
 
@@ -1772,7 +1775,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			MonetDBType = types[columnIndex - 1];
 			JdbcType = getJavaType(MonetDBType);
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 
 		switch(JdbcType) {
@@ -1957,7 +1960,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			lastReadWasNull = false;
 			MonetDBtype = types[columnIndex - 1];
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 
 		Class<?> type = null;
@@ -2389,7 +2392,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return 0;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -2440,7 +2443,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			lastReadWasNull = false;
 			return val;
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -2579,7 +2582,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				JdbcType = type;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 
 		// we know whether we have a time with or without
@@ -2969,7 +2972,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				throw new SQLException(e.getMessage(), "M1M05");
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -3710,12 +3713,23 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	/**
+	 * Small helper method that formats the "Invalid Column Index number ..." message
+	 * and creates a new SQLException object whose SQLState is set to "M1M05".
+	 *
+	 * @param name the method name
+	 * @return a new created SQLException object with SQLState M1M05
+	 */
+	private final static SQLException newSQLInvalidColumnIndexException(int colIdx) {
+		return new SQLException("Invalid Column Index number: " + colIdx, "M1M05");
+	}
+
+	/**
 	 * Small helper method that formats the "Method ... not implemented" message
 	 * and creates a new SQLFeatureNotSupportedException object
 	 * whose SQLState is set to "0A000".
 	 *
 	 * @param name the method name
-	 * @return a new created SQLFeatureNotSupportedException object with SQLState 0A000 
+	 * @return a new created SQLFeatureNotSupportedException object with SQLState 0A000
 	 */
 	private final static SQLFeatureNotSupportedException newSQLFeatureNotSupportedException(String name) {
 		return new SQLFeatureNotSupportedException("Method " + name + " not implemented", "0A000");
