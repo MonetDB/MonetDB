@@ -276,6 +276,8 @@ copts.produceHelpMessage()
 					tbl.getString("TABLE_NAME"),
 					tbl.getString("TABLE_TYPE")));
 			}
+			tbl.close();
+			tbl = null;
 
 			if (xmlMode) {
 				e = new XMLExporter(out);
@@ -324,6 +326,8 @@ copts.produceHelpMessage()
 					// add PK table dependancy to FK table
 					fk.addDependancy(pk);
 				}
+				tbl.close();
+				tbl = null;
 
 				// search for cycles of type a -> (x ->)+ b probably not
 				// the most optimal way, but it works by just scanning
@@ -791,6 +795,7 @@ copts.produceHelpMessage()
 						out.println(aff + " affected row" +
 								(aff != 1 ? "s" : ""));
 					}
+					rs.close();
 				}
 			}
 
