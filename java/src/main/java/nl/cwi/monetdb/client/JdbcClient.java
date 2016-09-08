@@ -22,11 +22,12 @@ import java.net.*;
  * it demonstrates the power of the JDBC interface since it built on top
  * of JDBC only.
  *
- * @author Fabian Groffen
- * @version 1.2
+ * @author Fabian Groffen, Martin van Dinther
+ * @version 1.3
  */
 
-public class JdbcClient {
+public final class JdbcClient {
+
 	private static Connection con;
 	private static Statement stmt;
 	private static BufferedReader in;
@@ -109,7 +110,8 @@ public class JdbcClient {
 		// look for a file called .monetdb in the current dir or in the
 		// user's homedir and read its preferences
 		File pref = new File(".monetdb");
-		if (!pref.exists()) pref = new File(System.getProperty("user.home"), ".monetdb");
+		if (!pref.exists())
+			pref = new File(System.getProperty("user.home"), ".monetdb");
 		if (pref.exists()) {
 			try {
 				copts.processFile(pref);
@@ -135,34 +137,33 @@ public class JdbcClient {
 
 		if (copts.getOption("help").isPresent()) {
 			System.out.print(
-"Usage java -jar jdbcclient.jar\n" +
-"                  [-h host[:port]] [-p port] [-f file] [-u user]\n" +
-"                  [-l language] [-d database] [-e] [-D [table]]\n" +
-"                  [-X<opt>]\n" +
-"or using long option equivalents --host --port --file --user --language\n" +
-"--dump --echo --database.\n" +
-"Arguments may be written directly after the option like -p50000.\n" +
-"\n" +
-"If no host and port are given, localhost and 50000 are assumed.  An .monetdb\n" +
-"file may exist in the user's home directory.  This file can contain\n" +
-"preferences to use each time JdbcClient is started.  Options given on the\n" +
-"command line override the preferences file.  The .monetdb file syntax is\n" +
-"<option>=<value> where option is one of the options host, port, file, mode\n" +
-"debug, or password.  Note that the last one is perilous and therefore not\n" +
-"available as command line option.\n" +
-"If no input file is given using the -f flag, an interactive session is\n" +
-"started on the terminal.\n" +
-"\n" +
-"OPTIONS\n" +
-copts.produceHelpMessage()
-);
+				"Usage java -jar jdbcclient.jar\n" +
+				"                  [-h host[:port]] [-p port] [-f file] [-u user]\n" +
+				"                  [-l language] [-d database] [-e] [-D [table]]\n" +
+				"                  [-X<opt>]\n" +
+				"or using long option equivalents --host --port --file --user --language\n" +
+				"--dump --echo --database.\n" +
+				"Arguments may be written directly after the option like -p50000.\n" +
+				"\n" +
+				"If no host and port are given, localhost and 50000 are assumed.  An .monetdb\n" +
+				"file may exist in the user's home directory.  This file can contain\n" +
+				"preferences to use each time JdbcClient is started.  Options given on the\n" +
+				"command line override the preferences file.  The .monetdb file syntax is\n" +
+				"<option>=<value> where option is one of the options host, port, file, mode\n" +
+				"debug, or password.  Note that the last one is perilous and therefore not\n" +
+				"available as command line option.\n" +
+				"If no input file is given using the -f flag, an interactive session is\n" +
+				"started on the terminal.\n" +
+				"\n" +
+				"OPTIONS\n" +
+				copts.produceHelpMessage()
+				);
 			System.exit(0);
 		} else if (copts.getOption("version").isPresent()) {
 			// We cannot use the DatabaseMetaData here, because we
 			// cannot get a Connection.  So instead, we just get the
 			// values we want out of the Driver directly.
-			System.out.println("Driver: v" +
-					nl.cwi.monetdb.jdbc.MonetDriver.getDriverVersion());
+			System.out.println("JDBC Driver: v" + nl.cwi.monetdb.jdbc.MonetDriver.getDriverVersion());
 			System.exit(0);
 		}
 
@@ -172,8 +173,7 @@ copts.produceHelpMessage()
 		// whether the semi-colon at the end of a String terminates the
 		// query or not (default = yes => SQL)
 		boolean scolonterm = true;
-		boolean xmlMode =
-				"xml".equals(copts.getOption("Xoutput").getArgument());
+		boolean xmlMode = "xml".equals(copts.getOption("Xoutput").getArgument());
 
 		// we need the password from the user, fetch it with a pseudo
 		// password protector
@@ -233,8 +233,7 @@ copts.produceHelpMessage()
 			);
 			SQLWarning warn = con.getWarnings();
 			while (warn != null) {
-				System.err.println("Connection warning: " +
-					warn.getMessage());
+				System.err.println("Connection warning: " + warn.getMessage());
 				warn = warn.getNextWarning();
 			}
 			con.clearWarnings();
@@ -242,6 +241,7 @@ copts.produceHelpMessage()
 			System.err.println("Database connect failed: " + e.getMessage());
 			System.exit(1);
 		}
+
 		try {
 			dbmd = con.getMetaData();
 		} catch (SQLException e) {
@@ -251,8 +251,7 @@ copts.produceHelpMessage()
 		}
 		stmt = con.createStatement();
 		
-		// see if we will have to perform a database dump (only in SQL
-		// mode)
+		// see if we will have to perform a database dump (only in SQL mode)
 		if ("sql".equals(lang) && copts.getOption("dump").isPresent()) {
 			ResultSet tbl;
 
@@ -261,17 +260,17 @@ copts.produceHelpMessage()
 			if (oc.isPresent())
 				out = new PrintWriter(new BufferedWriter(new FileWriter(oc.getArgument())));
 
-			// we only want tables and views to be dumped, unless a specific
+			// we only want user tables and views to be dumped, unless a specific
 			// table is requested
 			String[] types = {"TABLE", "VIEW"};
-			if (copts.getOption("dump").getArgumentCount() > 0) types = null;
-			// request the tables available in the database
-			tbl = dbmd.getTables(null, null, null, types);
+			if (copts.getOption("dump").getArgumentCount() > 0)
+				types = null;
+			// request the tables available in the current schema in the database
+			tbl = dbmd.getTables(null, con.getSchema(), null, types);
 
 			List<Table> tables = new LinkedList<Table>();
 			while (tbl.next()) {
 				tables.add(new Table(
-					tbl.getString("TABLE_CAT"),
 					tbl.getString("TABLE_SCHEM"),
 					tbl.getString("TABLE_NAME"),
 					tbl.getString("TABLE_TYPE")));
@@ -284,14 +283,15 @@ copts.produceHelpMessage()
 				exporter.setProperty(XMLExporter.TYPE_NIL, XMLExporter.VALUE_XSI);
 			} else {
 				exporter = new SQLExporter(out);
-				// stick with inserts for now, in the future we might do
-				// COPY INTO's here using VALUE_COPY
+				// stick with SQL INSERT INTO commands for now
+				// in the future we might do COPY INTO's here using VALUE_COPY
 				exporter.setProperty(SQLExporter.TYPE_OUTPUT, SQLExporter.VALUE_INSERT);
 			}
 			exporter.useSchemas(true);
 
 			// start SQL output
-			if (!xmlMode) out.println("START TRANSACTION;\n");
+			if (!xmlMode)
+				out.println("START TRANSACTION;\n");
 
 			// dump specific table(s) or not?
 			if (copts.getOption("dump").getArgumentCount() > 0) { // yes we do
@@ -303,7 +303,7 @@ copts.produceHelpMessage()
 							ttmp.getFqname().equalsIgnoreCase(dumpers[j].toString()))
 						{
 							// dump the table
-							doDump(out, ttmp, dbmd, stmt);
+							doDump(out, ttmp);
 						}
 					}
 				}
@@ -353,14 +353,19 @@ copts.produceHelpMessage()
 				// we now have the right order to dump tables
 				for (Table t : tables) {
 					// dump the table
-					doDump(out, t, dbmd, stmt);
+					doDump(out, t);
 				}
 			}
 
-			if (!xmlMode) out.println("COMMIT;");
+			if (!xmlMode)
+				out.println("COMMIT;");
 			out.flush();
 
+			// free resources, close the statement
+			stmt.close();
+			// close the connection with the database
 			con.close();
+			// completed database dump
 			System.exit(0);
 		}
 
@@ -369,7 +374,7 @@ copts.produceHelpMessage()
 			exporter.setProperty(XMLExporter.TYPE_NIL, XMLExporter.VALUE_XSI);
 		} else {
 			exporter = new SQLExporter(out);
-			// we want nice table views
+			// we want nice table formatted output
 			exporter.setProperty(SQLExporter.TYPE_OUTPUT, SQLExporter.VALUE_TABLE);
 		}
 		exporter.useSchemas(false);
@@ -409,13 +414,12 @@ copts.produceHelpMessage()
 					// print welcome message
 					out.println("Welcome to the MonetDB interactive JDBC terminal!");
 					if (dbmd != null) {
-						out.println("Database: " +
-								dbmd.getDatabaseProductName() + " v" +
-								dbmd.getDatabaseProductVersion() + ", '" +
-								dbmd.getConnection().getCatalog() + "'");
-						out.println("Driver: " + dbmd.getDriverName() + " v" +
-								dbmd.getDriverVersion());
+						out.println("Database Server: " + dbmd.getDatabaseProductName() +
+							" v" + dbmd.getDatabaseProductVersion());
+						out.println("JDBC Driver: " + dbmd.getDriverName() +
+							" v" + dbmd.getDriverVersion());
 					}
+					out.println("Current Schema: " + con.getSchema());
 					out.println("Type \\q to quit, \\h for a list of available commands");
 					out.flush();
 				}
@@ -526,7 +530,7 @@ copts.produceHelpMessage()
 		if (!hasFile) {
 			lastac = con.getAutoCommit();
 			out.println("auto commit mode: " + (lastac ? "on" : "off"));
-			out.print(getPrompt(user, stack, true));
+			out.print(getPrompt(stack, true));
 			out.flush();
 		}
 
@@ -539,16 +543,16 @@ copts.produceHelpMessage()
 			curLine = in.readLine();
 			if (curLine == null) {
 				out.println("");
-				if (query != "") {
+				if (!query.isEmpty()) {
 					try {
-						executeQuery(query, stmt, out);
+						executeQuery(query, stmt, out, !hasFile);
 					} catch (SQLException e) {
 						out.flush();
 						do {
 							if (hasFile) {
 								System.err.println("Error on line " + i + ": [" + e.getSQLState() + "] " + e.getMessage());
 							} else {
-								System.err.println("Error: [" + e.getSQLState() + "] " + e.getMessage());
+								System.err.println("Error [" + e.getSQLState() + "]: " + e.getMessage());
 							}
 							// print all error messages in the chain (if any)
 						} while ((e = e.getNextException()) != null);
@@ -561,7 +565,7 @@ copts.produceHelpMessage()
 							out.println("auto commit mode: " + (ac ? "on" : "off"));
 							lastac = ac;
 						}
-						out.print(getPrompt(user, stack, wasComplete));
+						out.print(getPrompt(stack, wasComplete));
 					}
 					out.flush();
 					// try to read again
@@ -579,15 +583,16 @@ copts.produceHelpMessage()
 			}
 			qp = scanQuery(curLine, stack, scolonterm);
 			if (!qp.isEmpty()) {
+				String command = qp.getQuery();
 				doProcess = true;
 				if (wasComplete) {
 					doProcess = false;
 					// check for commands only when the previous row was
 					// complete
-					if (qp.getQuery().equals("\\q")) {
+					if (command.equals("\\q")) {
 						// quit
 						break;
-					} else if (qp.getQuery().startsWith("\\h")) {
+					} else if (command.startsWith("\\h")) {
 						out.println("Available commands:");
 						out.println("\\q      quits this program");
 						out.println("\\h      this help screen");
@@ -596,64 +601,56 @@ copts.produceHelpMessage()
 						out.println("\\d<obj> describes the given table or view");
 						out.println("\\l<uri> executes the contents of the given file or URL");
 						out.println("\\i<uri> batch executes the inserts from the given file or URL");
-					} else if (dbmd != null && qp.getQuery().startsWith("\\d")) {
+					} else if (dbmd != null && command.startsWith("\\d")) {
 						try {
-							String object = qp.getQuery().substring(2).trim().toLowerCase();
+							String object = command.substring(2).trim().toLowerCase();
 							if (scolonterm && object.endsWith(";"))
 								object = object.substring(0, object.length() - 1);
-							if (!object.equals("")) {
-								int dot;
+							if (!object.isEmpty()) {
 								String schema;
-
-								if ((dot = object.indexOf(".")) != -1) {
+								int dot = object.indexOf(".");
+								if (dot != -1) {
 									// use provided schema
 									schema = object.substring(0, dot);
 									object = object.substring(dot + 1);
 								} else {
-									// get current schema
-									ResultSet rs = stmt.executeQuery("SELECT current_schema");
-									if (!rs.next())
-										throw new SQLException("current schema unknown!");
-									schema = rs.getString(1);
-									rs.close();
+									// use current schema
+									schema = con.getSchema();
 								}
-								ResultSet tbl = dbmd.getTables(
-										null, schema, null, null);
+								ResultSet tbl = dbmd.getTables(null, schema, null, null);
 
 								// we have an object, see if we can find it
 								boolean found = false;
 								while (tbl.next()) {
-									if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
-											(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object))
+									String tableName = tbl.getString("TABLE_NAME");
+									String schemaName = tbl.getString("TABLE_SCHEM");
+									if ((dot == -1 && tableName.equalsIgnoreCase(object)) ||
+										(schemaName + "." + tableName).equalsIgnoreCase(object))
 									{
 										// we found it, describe it
-										exporter.dumpSchema(
-												dbmd,
+										exporter.dumpSchema(dbmd,
 												tbl.getString("TABLE_TYPE"),
 												tbl.getString("TABLE_CAT"),
-												tbl.getString("TABLE_SCHEM"),
-												tbl.getString("TABLE_NAME")
-												);
+												schemaName,
+												tableName);
 
 										found = true;
 										break;
 									}
 								}
-								if (!found) System.err.println("Unknown table or view: " + object);
 								tbl.close();
-							} else {
-								String[] types = {"TABLE", "VIEW"};
-								// get current schema
-								ResultSet rs = stmt.executeQuery("SELECT current_schema");
-								if (!rs.next())
-									throw new SQLException("current schema unknown!");
-								ResultSet tbl = dbmd.getTables(
-										null, rs.getString(1), null, types);
-								rs.close();
 
-								// give us a list with tables
+								if (!found)
+									System.err.println("Unknown table or view: " + object);
+							} else {
+								String current_schema = con.getSchema();
+								ResultSet tbl = dbmd.getTables(null, current_schema, null, null);
+
+								// give us a list of all non-system tables and views (including temp ones)
 								while (tbl.next()) {
-									out.println(tbl.getString("TABLE_TYPE") + "\t" +
+									String tableType = tbl.getString("TABLE_TYPE");
+									if (tableType != null && !tableType.startsWith("SYSTEM "))
+										out.println(tableType + "\t" +
 											tbl.getString("TABLE_SCHEM") + "." +
 											tbl.getString("TABLE_NAME"));
 								}
@@ -662,26 +659,23 @@ copts.produceHelpMessage()
 						} catch (SQLException e) {
 							out.flush();
 							do {
-								System.err.println("Error: [" + e.getSQLState() + "] " + e.getMessage());
+								System.err.println("Error [" + e.getSQLState() + "]: " + e.getMessage());
 								// print all error messages in the chain (if any)
 							} while ((e = e.getNextException()) != null);
 						}
-					} else if (qp.getQuery().startsWith("\\l") ||
-							qp.getQuery().startsWith("\\i"))
-					{
-						String object = qp.getQuery().substring(2).trim();
+					} else if (command.startsWith("\\l") || command.startsWith("\\i")) {
+						String object = command.substring(2).trim();
 						if (scolonterm && object.endsWith(";"))
 							object = object.substring(0, object.length() - 1);
-						if (object.equals("")) {
-							System.err.println("Usage: '" + qp.getQuery().substring(0, 2) + "<uri>' where <uri> is a file or URL");
+						if (object.isEmpty()) {
+							System.err.println("Usage: '" + command.substring(0, 2) + "<uri>' where <uri> is a file or URL");
 						} else {
 							// temporarily redirect input from in
 							BufferedReader console = in;
 							try {
 								in = getReader(object);
-								if (qp.getQuery().startsWith("\\l")) {
-									processInteractive(
-										true, doEcho, scolonterm, user);
+								if (command.startsWith("\\l")) {
+									processInteractive(true, doEcho, scolonterm, user);
 								} else {
 									processBatch(0);
 								}
@@ -699,20 +693,20 @@ copts.produceHelpMessage()
 				}
 
 				if (doProcess) {
-					query += qp.getQuery() + (qp.hasOpenQuote() ? "\\n" : " ");
+					query += command + (qp.hasOpenQuote() ? "\\n" : " ");
 					if (qp.isComplete()) {
 						// strip off trailing ';'
 						query = query.substring(0, query.length() - 2);
 						// execute query
 						try {
-							executeQuery(query, stmt, out);
+							executeQuery(query, stmt, out, !hasFile);
 						} catch (SQLException e) {
 							out.flush();
 							do {
 								if (hasFile) {
 									System.err.println("Error on line " + i + ": [" + e.getSQLState() + "] " + e.getMessage());
 								} else {
-									System.err.println("Error: [" + e.getSQLState() + "] " + e.getMessage());
+									System.err.println("Error [" + e.getSQLState() + "]: " + e.getMessage());
 								}
 								// print all error messages in the chain (if any)
 							} while ((e = e.getNextException()) != null);
@@ -724,13 +718,14 @@ copts.produceHelpMessage()
 					}
 				}
 			}
+
 			if (!hasFile) {
 				boolean ac = con.getAutoCommit();
 				if (ac != lastac) {
 					out.println("auto commit mode: " + (ac ? "on" : "off"));
 					lastac = ac;
 				}
-				out.print(getPrompt(user, stack, wasComplete));
+				out.print(getPrompt(stack, wasComplete));
 			}
 			out.flush();
 		}
@@ -744,26 +739,36 @@ copts.produceHelpMessage()
 	 * @param query the query to execute
 	 * @param stmt the Statement to execute the query on
 	 * @param out the PrintWriter to write to
+	 * @param showTiming flag to specify if timing information nees to be printed
 	 * @throws SQLException if a database related error occurs
 	 */
 	private static void executeQuery(String query,
 			Statement stmt,
-			PrintWriter out)
+			PrintWriter out,
+			boolean showTiming)
 		throws SQLException
 	{
 		// warnings generated during querying
 		SQLWarning warn;
+		long startTime = (showTiming ? System.currentTimeMillis() : 0);
+		long finishTime = 0;
 
 		// execute the query, let the driver decide what type it is
 		int aff = -1;
 		boolean	nextRslt = stmt.execute(query, Statement.RETURN_GENERATED_KEYS);
-		if (!nextRslt) aff = stmt.getUpdateCount();
+		if (!nextRslt)
+			aff = stmt.getUpdateCount();
 		do {
 			if (nextRslt) {
 				// we have a ResultSet, print it
 				ResultSet rs = stmt.getResultSet();
 
 				exporter.dumpResultSet(rs);
+				if (showTiming) {
+					finishTime = System.currentTimeMillis();
+					out.println("Elapsed Time: " + (finishTime - startTime) + " ms");
+					startTime = finishTime;
+				}
 
 				// if there were warnings for this result,
 				// show them!
@@ -781,41 +786,43 @@ copts.produceHelpMessage()
 				}
 				rs.close();
 			} else if (aff != -1) {
+				String timingoutput = "";
+				if (showTiming) {
+					finishTime = System.currentTimeMillis();
+					timingoutput = ". Elapsed Time: " + (finishTime - startTime) + " ms";
+					startTime = finishTime;
+				}
+
 				if (aff == Statement.SUCCESS_NO_INFO) {
-					out.println("Operation successful");
+					out.println("Operation successful" + timingoutput);
 				} else {
 					// we have an update count
 					// see if a key was generated
 					ResultSet rs = stmt.getGeneratedKeys();
-					if (rs.next()) {
-						out.println(aff + " affected row" +
-								(aff != 1 ? "s" : "") +
-								", last generated key: " + rs.getString(1));
-					} else {
-						out.println(aff + " affected row" +
-								(aff != 1 ? "s" : ""));
-					}
+					boolean hasGeneratedKeyData = rs.next();
+					out.println(aff + " affected row" + (aff != 1 ? "s" : "") +
+						(hasGeneratedKeyData ? ", last generated key: " + rs.getString(1) : "") +
+						timingoutput);
 					rs.close();
 				}
 			}
 
 			out.flush();
 		} while ((nextRslt = stmt.getMoreResults()) ||
-				 (aff = stmt.getUpdateCount()) != -1);
+			 (aff = stmt.getUpdateCount()) != -1);
 
 		// if there were warnings for this statement,
 		// and/or connection show them!
 		warn = stmt.getWarnings();
 		while (warn != null) {
-			System.err.println("Statement warning: " +
-				warn.getMessage());
+			System.err.println("Statement warning: " + warn.getMessage());
 			warn = warn.getNextWarning();
 		}
 		stmt.clearWarnings();
+
 		warn = con.getWarnings();
 		while (warn != null) {
-			System.err.println("Connection warning: " +
-				warn.getMessage());
+			System.err.println("Connection warning: " + warn.getMessage());
 			warn = warn.getNextWarning();
 		}
 		con.clearWarnings();
@@ -858,8 +865,7 @@ copts.produceHelpMessage()
 			stmt.clearBatch();
 		} catch (SQLException e) {
 			do {
-				System.err.println("Error at line " + i + ": [" +
-						e.getSQLState() + "] " + e.getMessage());
+				System.err.println("Error at line " + i + ": [" + e.getSQLState() + "] " + e.getMessage());
 				// print all error messages in the chain (if any)
 			} while ((e = e.getNextException()) != null);
 		}
@@ -871,27 +877,18 @@ copts.produceHelpMessage()
 	 *
 	 * @param out a Writer to write the data to
 	 * @param table the table to dump
-	 * @param dbmd the DatabaseMetaData to use
-	 * @param stmt the Statement to use
 	 * @throws SQLException if a database related error occurs
 	 */
-	public static void doDump(
-		PrintWriter out,
-		Table table,
-		DatabaseMetaData dbmd,
-		Statement stmt)
-	throws SQLException	{
-		exporter.dumpSchema(
-			dbmd,
-			table.getType(),
-			table.getCat(),
-			table.getSchem(),
-			table.getName()
-		);
+	public static void doDump(PrintWriter out, Table table) throws SQLException {
+		String tableType = table.getType();
+
+		// dump CREATE definition of this table/view
+		exporter.dumpSchema(dbmd, tableType, null, table.getSchem(), table.getName());
 		out.println();
 
-		if (table.getType().indexOf("TABLE") != -1) {
-			ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqnameQ() );
+		// only dump data from real tables, not from views
+		if (tableType.contains("TABLE")) {
+			ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqnameQ());
 			exporter.dumpResultSet(rs);
 			rs.close();
 			out.println();
@@ -901,13 +898,12 @@ copts.produceHelpMessage()
 	/**
 	 * Simple helper method that generates a prompt.
 	 *
-	 * @param user the username
 	 * @param stack the current SQLStack
 	 * @param compl whether the statement is complete
-	 * @return a prompt which consist of a username plus the top of the stack
+	 * @return a prompt which consist of "sql" plus the top of the stack
 	 */
-	private static String getPrompt(String user, SQLStack stack, boolean compl) {
-		return user + (compl ? "-" : "=") +
+	private static String getPrompt(SQLStack stack, boolean compl) {
+		return (compl ? "sql" : "more") +
 			(stack.empty() ? ">" : "" + stack.peek()) + " ";
 	}
 
@@ -1106,15 +1102,13 @@ class SQLStack {
  * data.
  */
 class Table {
-	final String cat;
 	final String schem;
 	final String name;
 	final String type;
 	final String fqname;
 	List<Table> needs = new ArrayList<Table>();
 
-	Table(String cat, String schem, String name, String type) {
-		this.cat = cat;
+	Table(String schem, String name, String type) {
 		this.schem = schem;
 		this.name = name;
 		this.type = type;
@@ -1128,7 +1122,8 @@ class Table {
 		if (dependsOn.needs.contains(this))
 			throw new Exception("Cyclic dependancy graphs are not supported (foreign key relation a->b and b->a)");
 
-		if (!needs.contains(dependsOn)) needs.add(dependsOn);
+		if (!needs.contains(dependsOn))
+			needs.add(dependsOn);
 	}
 
 	List<Table> requires(List<Table> existingTables) {
@@ -1142,10 +1137,6 @@ class Table {
 		}
 
 		return req;
-	}
-
-	String getCat() {
-		return cat;
 	}
 
 	String getSchem() {
