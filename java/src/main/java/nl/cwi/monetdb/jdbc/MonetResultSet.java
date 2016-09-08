@@ -272,7 +272,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public void close() {
-		if (!header.isClosed()) {
+		if (header != null && !header.isClosed()) {
 			header.close();
 		}
 		if (statement instanceof MonetStatement)
@@ -3007,7 +3007,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public SQLWarning getWarnings() throws SQLException {
-		if (header.isClosed())
+		if (header != null && header.isClosed())
 			throw new SQLException("Cannot call on closed ResultSet", "M1M20");
 
 		// if there are no warnings, this will be null, which fits with the
@@ -3049,7 +3049,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public boolean isClosed() {
-		return header.isClosed();
+		return header != null && header.isClosed();
 	}
 
 	/**
