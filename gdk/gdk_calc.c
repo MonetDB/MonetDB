@@ -3099,10 +3099,11 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 				if (s == NULL)
 					goto bunins_failed;
 			}
-#ifdef HAVE_STPCPY
-			(void) stpcpy(stpcpy(s, l), r);
+#ifdef HAVE_STRCPY_S
+			strcpy_s(s, slen, l);
+			strcpy_s(s + llen, slen - llen, r);
 #else
-			snprintf(s, slen, "%s%s", l, r);
+			(void) strcpy(strcpy(s, l) + llen, r);
 #endif
 			tfastins_nocheck(bn, i, s, Tsize(bn));
 		}

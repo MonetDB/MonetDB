@@ -517,6 +517,9 @@
 /* Define to 1 if you have the `strcasestr' function. */
 /* #undef HAVE_STRCASESTR */
 
+/* Define to 1 if you have the `strcpy_s' function. */
+#define HAVE_STRCPY_S 1
+
 /* Define to 1 if you have the `strftime' function. */
 #if !defined(_MSC_VER) || _MSC_VER >= 1500
 #define HAVE_STRFTIME 1
