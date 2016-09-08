@@ -1298,7 +1298,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 		return BUN_NONE;				\
 	} while (0)
 
-#define ADD_3TYPE(TYPE1, TYPE2, TYPE3)					\
+#define ADD_3TYPE(TYPE1, TYPE2, TYPE3, IF)				\
 static BUN								\
 add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
@@ -1319,18 +1319,18 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			ADD_WITH_CHECK(TYPE1, lft[i],			\
-				       TYPE2, rgt[j],			\
-				       TYPE3, dst[k],			\
-				       max,				\
-				       ON_OVERFLOW(TYPE1, TYPE2, "+"));	\
+			ADD##IF##_WITH_CHECK(TYPE1, lft[i],		\
+					     TYPE2, rgt[j],		\
+					     TYPE3, dst[k],		\
+					     max,			\
+					     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
 		}							\
 	}								\
 	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
 	return nils;							\
 }
 
-#define ADD_3TYPE_enlarge(TYPE1, TYPE2, TYPE3)				\
+#define ADD_3TYPE_enlarge(TYPE1, TYPE2, TYPE3, IF)			\
 static BUN								\
 add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
@@ -1352,11 +1352,11 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				ADD_WITH_CHECK(TYPE1, lft[i],		\
-					       TYPE2, rgt[j],		\
-					       TYPE3, dst[k],		\
-					       max,			\
-					       ON_OVERFLOW(TYPE1, TYPE2, "+"));	\
+				ADD##IF##_WITH_CHECK(TYPE1, lft[i],	\
+						     TYPE2, rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
 			}						\
 		}							\
 	} else {							\
@@ -1375,242 +1375,242 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 	return nils;							\
 }
 
-ADD_3TYPE(bte, bte, bte)
-ADD_3TYPE_enlarge(bte, bte, sht)
+ADD_3TYPE(bte, bte, bte, I)
+ADD_3TYPE_enlarge(bte, bte, sht, I)
 #ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(bte, bte, int)
-ADD_3TYPE_enlarge(bte, bte, lng)
+ADD_3TYPE_enlarge(bte, bte, int, I)
+ADD_3TYPE_enlarge(bte, bte, lng, I)
 #ifdef HAVE_HGE
-ADD_3TYPE_enlarge(bte, bte, hge)
+ADD_3TYPE_enlarge(bte, bte, hge, I)
 #endif
-ADD_3TYPE_enlarge(bte, bte, flt)
-ADD_3TYPE_enlarge(bte, bte, dbl)
+ADD_3TYPE_enlarge(bte, bte, flt, F)
+ADD_3TYPE_enlarge(bte, bte, dbl, F)
 #endif
-ADD_3TYPE(bte, sht, sht)
-ADD_3TYPE_enlarge(bte, sht, int)
+ADD_3TYPE(bte, sht, sht, I)
+ADD_3TYPE_enlarge(bte, sht, int, I)
 #ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(bte, sht, lng)
+ADD_3TYPE_enlarge(bte, sht, lng, I)
 #ifdef HAVE_HGE
-ADD_3TYPE_enlarge(bte, sht, hge)
+ADD_3TYPE_enlarge(bte, sht, hge, I)
 #endif
-ADD_3TYPE_enlarge(bte, sht, flt)
-ADD_3TYPE_enlarge(bte, sht, dbl)
+ADD_3TYPE_enlarge(bte, sht, flt, F)
+ADD_3TYPE_enlarge(bte, sht, dbl, F)
 #endif
-ADD_3TYPE(bte, int, int)
-ADD_3TYPE_enlarge(bte, int, lng)
-#ifdef FULL_IMPLEMENTATION
-#ifdef HAVE_HGE
-ADD_3TYPE_enlarge(bte, int, hge)
-#endif
-ADD_3TYPE_enlarge(bte, int, flt)
-ADD_3TYPE_enlarge(bte, int, dbl)
-#endif
-ADD_3TYPE(bte, lng, lng)
-#ifdef HAVE_HGE
-ADD_3TYPE_enlarge(bte, lng, hge)
-#endif
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(bte, lng, flt)
-ADD_3TYPE_enlarge(bte, lng, dbl)
-#endif
-#ifdef HAVE_HGE
-ADD_3TYPE(bte, hge, hge)
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(bte, hge, flt)
-ADD_3TYPE_enlarge(bte, hge, dbl)
-#endif
-#endif
-ADD_3TYPE(bte, flt, flt)
-ADD_3TYPE_enlarge(bte, flt, dbl)
-ADD_3TYPE(bte, dbl, dbl)
-ADD_3TYPE(sht, bte, sht)
-ADD_3TYPE_enlarge(sht, bte, int)
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(sht, bte, lng)
-#ifdef HAVE_HGE
-ADD_3TYPE_enlarge(sht, bte, hge)
-#endif
-ADD_3TYPE_enlarge(sht, bte, flt)
-ADD_3TYPE_enlarge(sht, bte, dbl)
-#endif
-ADD_3TYPE(sht, sht, sht)
-ADD_3TYPE_enlarge(sht, sht, int)
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(sht, sht, lng)
-#ifdef HAVE_HGE
-ADD_3TYPE_enlarge(sht, sht, hge)
-#endif
-ADD_3TYPE_enlarge(sht, sht, flt)
-ADD_3TYPE_enlarge(sht, sht, dbl)
-#endif
-ADD_3TYPE(sht, int, int)
-ADD_3TYPE_enlarge(sht, int, lng)
+ADD_3TYPE(bte, int, int, I)
+ADD_3TYPE_enlarge(bte, int, lng, I)
 #ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-ADD_3TYPE_enlarge(sht, int, hge)
+ADD_3TYPE_enlarge(bte, int, hge, I)
 #endif
-ADD_3TYPE_enlarge(sht, int, flt)
-ADD_3TYPE_enlarge(sht, int, dbl)
+ADD_3TYPE_enlarge(bte, int, flt, F)
+ADD_3TYPE_enlarge(bte, int, dbl, F)
 #endif
-ADD_3TYPE(sht, lng, lng)
+ADD_3TYPE(bte, lng, lng, I)
 #ifdef HAVE_HGE
-ADD_3TYPE_enlarge(sht, lng, hge)
+ADD_3TYPE_enlarge(bte, lng, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(sht, lng, flt)
-ADD_3TYPE_enlarge(sht, lng, dbl)
-#endif
-#ifdef HAVE_HGE
-ADD_3TYPE(sht, hge, hge)
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(sht, hge, flt)
-ADD_3TYPE_enlarge(sht, hge, dbl)
-#endif
-#endif
-ADD_3TYPE(sht, flt, flt)
-ADD_3TYPE_enlarge(sht, flt, dbl)
-ADD_3TYPE(sht, dbl, dbl)
-ADD_3TYPE(int, bte, int)
-ADD_3TYPE_enlarge(int, bte, lng)
-#ifdef FULL_IMPLEMENTATION
-#ifdef HAVE_HGE
-ADD_3TYPE_enlarge(int, bte, hge)
-#endif
-ADD_3TYPE_enlarge(int, bte, flt)
-ADD_3TYPE_enlarge(int, bte, dbl)
-#endif
-ADD_3TYPE(int, sht, int)
-ADD_3TYPE_enlarge(int, sht, lng)
-#ifdef FULL_IMPLEMENTATION
-#ifdef HAVE_HGE
-ADD_3TYPE_enlarge(int, sht, hge)
-#endif
-ADD_3TYPE_enlarge(int, sht, flt)
-ADD_3TYPE_enlarge(int, sht, dbl)
-#endif
-ADD_3TYPE(int, int, int)
-ADD_3TYPE_enlarge(int, int, lng)
-#ifdef FULL_IMPLEMENTATION
-#ifdef HAVE_HGE
-ADD_3TYPE_enlarge(int, int, hge)
-#endif
-ADD_3TYPE_enlarge(int, int, flt)
-ADD_3TYPE_enlarge(int, int, dbl)
-#endif
-ADD_3TYPE(int, lng, lng)
-#ifdef HAVE_HGE
-ADD_3TYPE_enlarge(int, lng, hge)
-#endif
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(int, lng, flt)
-ADD_3TYPE_enlarge(int, lng, dbl)
+ADD_3TYPE_enlarge(bte, lng, flt, F)
+ADD_3TYPE_enlarge(bte, lng, dbl, F)
 #endif
 #ifdef HAVE_HGE
-ADD_3TYPE(int, hge, hge)
+ADD_3TYPE(bte, hge, hge, I)
 #ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(int, hge, flt)
-ADD_3TYPE_enlarge(int, hge, dbl)
+ADD_3TYPE_enlarge(bte, hge, flt, F)
+ADD_3TYPE_enlarge(bte, hge, dbl, F)
 #endif
 #endif
-ADD_3TYPE(int, flt, flt)
-ADD_3TYPE_enlarge(int, flt, dbl)
-ADD_3TYPE(int, dbl, dbl)
-ADD_3TYPE(lng, bte, lng)
+ADD_3TYPE(bte, flt, flt, F)
+ADD_3TYPE_enlarge(bte, flt, dbl, F)
+ADD_3TYPE(bte, dbl, dbl, F)
+ADD_3TYPE(sht, bte, sht, I)
+ADD_3TYPE_enlarge(sht, bte, int, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(sht, bte, lng, I)
 #ifdef HAVE_HGE
-ADD_3TYPE_enlarge(lng, bte, hge)
+ADD_3TYPE_enlarge(sht, bte, hge, I)
 #endif
+ADD_3TYPE_enlarge(sht, bte, flt, F)
+ADD_3TYPE_enlarge(sht, bte, dbl, F)
+#endif
+ADD_3TYPE(sht, sht, sht, I)
+ADD_3TYPE_enlarge(sht, sht, int, I)
 #ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(lng, bte, flt)
-ADD_3TYPE_enlarge(lng, bte, dbl)
-#endif
-ADD_3TYPE(lng, sht, lng)
+ADD_3TYPE_enlarge(sht, sht, lng, I)
 #ifdef HAVE_HGE
-ADD_3TYPE_enlarge(lng, sht, hge)
+ADD_3TYPE_enlarge(sht, sht, hge, I)
 #endif
+ADD_3TYPE_enlarge(sht, sht, flt, F)
+ADD_3TYPE_enlarge(sht, sht, dbl, F)
+#endif
+ADD_3TYPE(sht, int, int, I)
+ADD_3TYPE_enlarge(sht, int, lng, I)
 #ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(lng, sht, flt)
-ADD_3TYPE_enlarge(lng, sht, dbl)
-#endif
-ADD_3TYPE(lng, int, lng)
 #ifdef HAVE_HGE
-ADD_3TYPE_enlarge(lng, int, hge)
+ADD_3TYPE_enlarge(sht, int, hge, I)
 #endif
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(lng, int, flt)
-ADD_3TYPE_enlarge(lng, int, dbl)
+ADD_3TYPE_enlarge(sht, int, flt, F)
+ADD_3TYPE_enlarge(sht, int, dbl, F)
 #endif
-ADD_3TYPE(lng, lng, lng)
+ADD_3TYPE(sht, lng, lng, I)
 #ifdef HAVE_HGE
-ADD_3TYPE_enlarge(lng, lng, hge)
+ADD_3TYPE_enlarge(sht, lng, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(lng, lng, flt)
-ADD_3TYPE_enlarge(lng, lng, dbl)
+ADD_3TYPE_enlarge(sht, lng, flt, F)
+ADD_3TYPE_enlarge(sht, lng, dbl, F)
 #endif
 #ifdef HAVE_HGE
-ADD_3TYPE(lng, hge, hge)
+ADD_3TYPE(sht, hge, hge, I)
 #ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(lng, hge, flt)
-ADD_3TYPE_enlarge(lng, hge, dbl)
+ADD_3TYPE_enlarge(sht, hge, flt, F)
+ADD_3TYPE_enlarge(sht, hge, dbl, F)
 #endif
 #endif
-ADD_3TYPE(lng, flt, flt)
-ADD_3TYPE_enlarge(lng, flt, dbl)
-ADD_3TYPE(lng, dbl, dbl)
+ADD_3TYPE(sht, flt, flt, F)
+ADD_3TYPE_enlarge(sht, flt, dbl, F)
+ADD_3TYPE(sht, dbl, dbl, F)
+ADD_3TYPE(int, bte, int, I)
+ADD_3TYPE_enlarge(int, bte, lng, I)
+#ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-ADD_3TYPE(hge, bte, hge)
+ADD_3TYPE_enlarge(int, bte, hge, I)
+#endif
+ADD_3TYPE_enlarge(int, bte, flt, F)
+ADD_3TYPE_enlarge(int, bte, dbl, F)
+#endif
+ADD_3TYPE(int, sht, int, I)
+ADD_3TYPE_enlarge(int, sht, lng, I)
 #ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(hge, bte, flt)
-ADD_3TYPE_enlarge(hge, bte, dbl)
-#endif
-ADD_3TYPE(hge, sht, hge)
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(hge, sht, flt)
-ADD_3TYPE_enlarge(hge, sht, dbl)
-#endif
-ADD_3TYPE(hge, int, hge)
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(hge, int, flt)
-ADD_3TYPE_enlarge(hge, int, dbl)
-#endif
-ADD_3TYPE(hge, lng, hge)
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(hge, lng, flt)
-ADD_3TYPE_enlarge(hge, lng, dbl)
-#endif
-ADD_3TYPE(hge, hge, hge)
-#ifdef FULL_IMPLEMENTATION
-ADD_3TYPE_enlarge(hge, hge, flt)
-ADD_3TYPE_enlarge(hge, hge, dbl)
-#endif
-ADD_3TYPE(hge, flt, flt)
-ADD_3TYPE_enlarge(hge, flt, dbl)
-ADD_3TYPE(hge, dbl, dbl)
-#endif
-ADD_3TYPE(flt, bte, flt)
-ADD_3TYPE_enlarge(flt, bte, dbl)
-ADD_3TYPE(flt, sht, flt)
-ADD_3TYPE_enlarge(flt, sht, dbl)
-ADD_3TYPE(flt, int, flt)
-ADD_3TYPE_enlarge(flt, int, dbl)
-ADD_3TYPE(flt, lng, flt)
-ADD_3TYPE_enlarge(flt, lng, dbl)
 #ifdef HAVE_HGE
-ADD_3TYPE(flt, hge, flt)
-ADD_3TYPE_enlarge(flt, hge, dbl)
+ADD_3TYPE_enlarge(int, sht, hge, I)
 #endif
-ADD_3TYPE(flt, flt, flt)
-ADD_3TYPE_enlarge(flt, flt, dbl)
-ADD_3TYPE(flt, dbl, dbl)
-ADD_3TYPE(dbl, bte, dbl)
-ADD_3TYPE(dbl, sht, dbl)
-ADD_3TYPE(dbl, int, dbl)
-ADD_3TYPE(dbl, lng, dbl)
+ADD_3TYPE_enlarge(int, sht, flt, F)
+ADD_3TYPE_enlarge(int, sht, dbl, F)
+#endif
+ADD_3TYPE(int, int, int, I)
+ADD_3TYPE_enlarge(int, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-ADD_3TYPE(dbl, hge, dbl)
+ADD_3TYPE_enlarge(int, int, hge, I)
 #endif
-ADD_3TYPE(dbl, flt, dbl)
-ADD_3TYPE(dbl, dbl, dbl)
+ADD_3TYPE_enlarge(int, int, flt, F)
+ADD_3TYPE_enlarge(int, int, dbl, F)
+#endif
+ADD_3TYPE(int, lng, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(int, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(int, lng, flt, F)
+ADD_3TYPE_enlarge(int, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+ADD_3TYPE(int, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(int, hge, flt, F)
+ADD_3TYPE_enlarge(int, hge, dbl, F)
+#endif
+#endif
+ADD_3TYPE(int, flt, flt, F)
+ADD_3TYPE_enlarge(int, flt, dbl, F)
+ADD_3TYPE(int, dbl, dbl, F)
+ADD_3TYPE(lng, bte, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, bte, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, bte, flt, F)
+ADD_3TYPE_enlarge(lng, bte, dbl, F)
+#endif
+ADD_3TYPE(lng, sht, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, sht, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, sht, flt, F)
+ADD_3TYPE_enlarge(lng, sht, dbl, F)
+#endif
+ADD_3TYPE(lng, int, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, int, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, int, flt, F)
+ADD_3TYPE_enlarge(lng, int, dbl, F)
+#endif
+ADD_3TYPE(lng, lng, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, lng, flt, F)
+ADD_3TYPE_enlarge(lng, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+ADD_3TYPE(lng, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, hge, flt, F)
+ADD_3TYPE_enlarge(lng, hge, dbl, F)
+#endif
+#endif
+ADD_3TYPE(lng, flt, flt, F)
+ADD_3TYPE_enlarge(lng, flt, dbl, F)
+ADD_3TYPE(lng, dbl, dbl, F)
+#ifdef HAVE_HGE
+ADD_3TYPE(hge, bte, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, bte, flt, F)
+ADD_3TYPE_enlarge(hge, bte, dbl, F)
+#endif
+ADD_3TYPE(hge, sht, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, sht, flt, F)
+ADD_3TYPE_enlarge(hge, sht, dbl, F)
+#endif
+ADD_3TYPE(hge, int, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, int, flt, F)
+ADD_3TYPE_enlarge(hge, int, dbl, F)
+#endif
+ADD_3TYPE(hge, lng, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, lng, flt, F)
+ADD_3TYPE_enlarge(hge, lng, dbl, F)
+#endif
+ADD_3TYPE(hge, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, hge, flt, F)
+ADD_3TYPE_enlarge(hge, hge, dbl, F)
+#endif
+ADD_3TYPE(hge, flt, flt, F)
+ADD_3TYPE_enlarge(hge, flt, dbl, F)
+ADD_3TYPE(hge, dbl, dbl, F)
+#endif
+ADD_3TYPE(flt, bte, flt, F)
+ADD_3TYPE_enlarge(flt, bte, dbl, F)
+ADD_3TYPE(flt, sht, flt, F)
+ADD_3TYPE_enlarge(flt, sht, dbl, F)
+ADD_3TYPE(flt, int, flt, F)
+ADD_3TYPE_enlarge(flt, int, dbl, F)
+ADD_3TYPE(flt, lng, flt, F)
+ADD_3TYPE_enlarge(flt, lng, dbl, F)
+#ifdef HAVE_HGE
+ADD_3TYPE(flt, hge, flt, F)
+ADD_3TYPE_enlarge(flt, hge, dbl, F)
+#endif
+ADD_3TYPE(flt, flt, flt, F)
+ADD_3TYPE_enlarge(flt, flt, dbl, F)
+ADD_3TYPE(flt, dbl, dbl, F)
+ADD_3TYPE(dbl, bte, dbl, F)
+ADD_3TYPE(dbl, sht, dbl, F)
+ADD_3TYPE(dbl, int, dbl, F)
+ADD_3TYPE(dbl, lng, dbl, F)
+#ifdef HAVE_HGE
+ADD_3TYPE(dbl, hge, dbl, F)
+#endif
+ADD_3TYPE(dbl, flt, dbl, F)
+ADD_3TYPE(dbl, dbl, dbl, F)
 
 static BUN
 add_typeswitchloop(const void *lft, int tp1, int incr1,
@@ -3375,7 +3375,7 @@ VARcalcincr(ValPtr ret, const ValRecord *v, int abort_on_error)
 /* ---------------------------------------------------------------------- */
 /* subtraction (any numeric type) */
 
-#define SUB_3TYPE(TYPE1, TYPE2, TYPE3)					\
+#define SUB_3TYPE(TYPE1, TYPE2, TYPE3, IF)				\
 static BUN								\
 sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
@@ -3396,18 +3396,18 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			SUB_WITH_CHECK(TYPE1, lft[i],			\
-				       TYPE2, rgt[j],			\
-				       TYPE3, dst[k],			\
-				       max,				\
-				       ON_OVERFLOW(TYPE1, TYPE2, "-"));	\
+			SUB##IF##_WITH_CHECK(TYPE1, lft[i],		\
+					     TYPE2, rgt[j],		\
+					     TYPE3, dst[k],		\
+					     max,			\
+					     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
 		}							\
 	}								\
 	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
 	return nils;							\
 }
 
-#define SUB_3TYPE_enlarge(TYPE1, TYPE2, TYPE3)				\
+#define SUB_3TYPE_enlarge(TYPE1, TYPE2, TYPE3, IF)			\
 static BUN								\
 sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
@@ -3429,11 +3429,11 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				SUB_WITH_CHECK(TYPE1, lft[i],		\
-					       TYPE2, rgt[j],		\
-					       TYPE3, dst[k],		\
-					       max,			\
-					       ON_OVERFLOW(TYPE1, TYPE2, "-"));	\
+				SUB##IF##_WITH_CHECK(TYPE1, lft[i],	\
+						     TYPE2, rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
 			}						\
 		}							\
 	} else {							\
@@ -3452,242 +3452,242 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 	return nils;							\
 }
 
-SUB_3TYPE(bte, bte, bte)
-SUB_3TYPE_enlarge(bte, bte, sht)
+SUB_3TYPE(bte, bte, bte, I)
+SUB_3TYPE_enlarge(bte, bte, sht, I)
 #ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(bte, bte, int)
-SUB_3TYPE_enlarge(bte, bte, lng)
+SUB_3TYPE_enlarge(bte, bte, int, I)
+SUB_3TYPE_enlarge(bte, bte, lng, I)
 #ifdef HAVE_HGE
-SUB_3TYPE_enlarge(bte, bte, hge)
+SUB_3TYPE_enlarge(bte, bte, hge, I)
 #endif
-SUB_3TYPE_enlarge(bte, bte, flt)
-SUB_3TYPE_enlarge(bte, bte, dbl)
+SUB_3TYPE_enlarge(bte, bte, flt, F)
+SUB_3TYPE_enlarge(bte, bte, dbl, F)
 #endif
-SUB_3TYPE(bte, sht, sht)
-SUB_3TYPE_enlarge(bte, sht, int)
+SUB_3TYPE(bte, sht, sht, I)
+SUB_3TYPE_enlarge(bte, sht, int, I)
 #ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(bte, sht, lng)
+SUB_3TYPE_enlarge(bte, sht, lng, I)
 #ifdef HAVE_HGE
-SUB_3TYPE_enlarge(bte, sht, hge)
+SUB_3TYPE_enlarge(bte, sht, hge, I)
 #endif
-SUB_3TYPE_enlarge(bte, sht, flt)
-SUB_3TYPE_enlarge(bte, sht, dbl)
+SUB_3TYPE_enlarge(bte, sht, flt, F)
+SUB_3TYPE_enlarge(bte, sht, dbl, F)
 #endif
-SUB_3TYPE(bte, int, int)
-SUB_3TYPE_enlarge(bte, int, lng)
-#ifdef FULL_IMPLEMENTATION
-#ifdef HAVE_HGE
-SUB_3TYPE_enlarge(bte, int, hge)
-#endif
-SUB_3TYPE_enlarge(bte, int, flt)
-SUB_3TYPE_enlarge(bte, int, dbl)
-#endif
-SUB_3TYPE(bte, lng, lng)
-#ifdef HAVE_HGE
-SUB_3TYPE_enlarge(bte, lng, hge)
-#endif
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(bte, lng, flt)
-SUB_3TYPE_enlarge(bte, lng, dbl)
-#endif
-#ifdef HAVE_HGE
-SUB_3TYPE(bte, hge, hge)
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(bte, hge, flt)
-SUB_3TYPE_enlarge(bte, hge, dbl)
-#endif
-#endif
-SUB_3TYPE(bte, flt, flt)
-SUB_3TYPE_enlarge(bte, flt, dbl)
-SUB_3TYPE(bte, dbl, dbl)
-SUB_3TYPE(sht, bte, sht)
-SUB_3TYPE_enlarge(sht, bte, int)
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(sht, bte, lng)
-#ifdef HAVE_HGE
-SUB_3TYPE_enlarge(sht, bte, hge)
-#endif
-SUB_3TYPE_enlarge(sht, bte, flt)
-SUB_3TYPE_enlarge(sht, bte, dbl)
-#endif
-SUB_3TYPE(sht, sht, sht)
-SUB_3TYPE_enlarge(sht, sht, int)
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(sht, sht, lng)
-#ifdef HAVE_HGE
-SUB_3TYPE_enlarge(sht, sht, hge)
-#endif
-SUB_3TYPE_enlarge(sht, sht, flt)
-SUB_3TYPE_enlarge(sht, sht, dbl)
-#endif
-SUB_3TYPE(sht, int, int)
-SUB_3TYPE_enlarge(sht, int, lng)
+SUB_3TYPE(bte, int, int, I)
+SUB_3TYPE_enlarge(bte, int, lng, I)
 #ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-SUB_3TYPE_enlarge(sht, int, hge)
+SUB_3TYPE_enlarge(bte, int, hge, I)
 #endif
-SUB_3TYPE_enlarge(sht, int, flt)
-SUB_3TYPE_enlarge(sht, int, dbl)
+SUB_3TYPE_enlarge(bte, int, flt, F)
+SUB_3TYPE_enlarge(bte, int, dbl, F)
 #endif
-SUB_3TYPE(sht, lng, lng)
+SUB_3TYPE(bte, lng, lng, I)
 #ifdef HAVE_HGE
-SUB_3TYPE_enlarge(sht, lng, hge)
+SUB_3TYPE_enlarge(bte, lng, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(sht, lng, flt)
-SUB_3TYPE_enlarge(sht, lng, dbl)
-#endif
-#ifdef HAVE_HGE
-SUB_3TYPE(sht, hge, hge)
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(sht, hge, flt)
-SUB_3TYPE_enlarge(sht, hge, dbl)
-#endif
-#endif
-SUB_3TYPE(sht, flt, flt)
-SUB_3TYPE_enlarge(sht, flt, dbl)
-SUB_3TYPE(sht, dbl, dbl)
-SUB_3TYPE(int, bte, int)
-SUB_3TYPE_enlarge(int, bte, lng)
-#ifdef FULL_IMPLEMENTATION
-#ifdef HAVE_HGE
-SUB_3TYPE_enlarge(int, bte, hge)
-#endif
-SUB_3TYPE_enlarge(int, bte, flt)
-SUB_3TYPE_enlarge(int, bte, dbl)
-#endif
-SUB_3TYPE(int, sht, int)
-SUB_3TYPE_enlarge(int, sht, lng)
-#ifdef FULL_IMPLEMENTATION
-#ifdef HAVE_HGE
-SUB_3TYPE_enlarge(int, sht, hge)
-#endif
-SUB_3TYPE_enlarge(int, sht, flt)
-SUB_3TYPE_enlarge(int, sht, dbl)
-#endif
-SUB_3TYPE(int, int, int)
-SUB_3TYPE_enlarge(int, int, lng)
-#ifdef FULL_IMPLEMENTATION
-#ifdef HAVE_HGE
-SUB_3TYPE_enlarge(int, int, hge)
-#endif
-SUB_3TYPE_enlarge(int, int, flt)
-SUB_3TYPE_enlarge(int, int, dbl)
-#endif
-SUB_3TYPE(int, lng, lng)
-#ifdef HAVE_HGE
-SUB_3TYPE_enlarge(int, lng, hge)
-#endif
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(int, lng, flt)
-SUB_3TYPE_enlarge(int, lng, dbl)
+SUB_3TYPE_enlarge(bte, lng, flt, F)
+SUB_3TYPE_enlarge(bte, lng, dbl, F)
 #endif
 #ifdef HAVE_HGE
-SUB_3TYPE(int, hge, hge)
+SUB_3TYPE(bte, hge, hge, I)
 #ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(int, hge, flt)
-SUB_3TYPE_enlarge(int, hge, dbl)
+SUB_3TYPE_enlarge(bte, hge, flt, F)
+SUB_3TYPE_enlarge(bte, hge, dbl, F)
 #endif
 #endif
-SUB_3TYPE(int, flt, flt)
-SUB_3TYPE_enlarge(int, flt, dbl)
-SUB_3TYPE(int, dbl, dbl)
-SUB_3TYPE(lng, bte, lng)
+SUB_3TYPE(bte, flt, flt, F)
+SUB_3TYPE_enlarge(bte, flt, dbl, F)
+SUB_3TYPE(bte, dbl, dbl, F)
+SUB_3TYPE(sht, bte, sht, I)
+SUB_3TYPE_enlarge(sht, bte, int, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(sht, bte, lng, I)
 #ifdef HAVE_HGE
-SUB_3TYPE_enlarge(lng, bte, hge)
+SUB_3TYPE_enlarge(sht, bte, hge, I)
 #endif
+SUB_3TYPE_enlarge(sht, bte, flt, F)
+SUB_3TYPE_enlarge(sht, bte, dbl, F)
+#endif
+SUB_3TYPE(sht, sht, sht, I)
+SUB_3TYPE_enlarge(sht, sht, int, I)
 #ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(lng, bte, flt)
-SUB_3TYPE_enlarge(lng, bte, dbl)
-#endif
-SUB_3TYPE(lng, sht, lng)
+SUB_3TYPE_enlarge(sht, sht, lng, I)
 #ifdef HAVE_HGE
-SUB_3TYPE_enlarge(lng, sht, hge)
+SUB_3TYPE_enlarge(sht, sht, hge, I)
 #endif
+SUB_3TYPE_enlarge(sht, sht, flt, F)
+SUB_3TYPE_enlarge(sht, sht, dbl, F)
+#endif
+SUB_3TYPE(sht, int, int, I)
+SUB_3TYPE_enlarge(sht, int, lng, I)
 #ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(lng, sht, flt)
-SUB_3TYPE_enlarge(lng, sht, dbl)
-#endif
-SUB_3TYPE(lng, int, lng)
 #ifdef HAVE_HGE
-SUB_3TYPE_enlarge(lng, int, hge)
+SUB_3TYPE_enlarge(sht, int, hge, I)
 #endif
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(lng, int, flt)
-SUB_3TYPE_enlarge(lng, int, dbl)
+SUB_3TYPE_enlarge(sht, int, flt, F)
+SUB_3TYPE_enlarge(sht, int, dbl, F)
 #endif
-SUB_3TYPE(lng, lng, lng)
+SUB_3TYPE(sht, lng, lng, I)
 #ifdef HAVE_HGE
-SUB_3TYPE_enlarge(lng, lng, hge)
+SUB_3TYPE_enlarge(sht, lng, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(lng, lng, flt)
-SUB_3TYPE_enlarge(lng, lng, dbl)
+SUB_3TYPE_enlarge(sht, lng, flt, F)
+SUB_3TYPE_enlarge(sht, lng, dbl, F)
 #endif
 #ifdef HAVE_HGE
-SUB_3TYPE(lng, hge, hge)
+SUB_3TYPE(sht, hge, hge, I)
 #ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(lng, hge, flt)
-SUB_3TYPE_enlarge(lng, hge, dbl)
+SUB_3TYPE_enlarge(sht, hge, flt, F)
+SUB_3TYPE_enlarge(sht, hge, dbl, F)
 #endif
 #endif
-SUB_3TYPE(lng, flt, flt)
-SUB_3TYPE_enlarge(lng, flt, dbl)
-SUB_3TYPE(lng, dbl, dbl)
+SUB_3TYPE(sht, flt, flt, F)
+SUB_3TYPE_enlarge(sht, flt, dbl, F)
+SUB_3TYPE(sht, dbl, dbl, F)
+SUB_3TYPE(int, bte, int, I)
+SUB_3TYPE_enlarge(int, bte, lng, I)
+#ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-SUB_3TYPE(hge, bte, hge)
+SUB_3TYPE_enlarge(int, bte, hge, I)
+#endif
+SUB_3TYPE_enlarge(int, bte, flt, F)
+SUB_3TYPE_enlarge(int, bte, dbl, F)
+#endif
+SUB_3TYPE(int, sht, int, I)
+SUB_3TYPE_enlarge(int, sht, lng, I)
 #ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(hge, bte, flt)
-SUB_3TYPE_enlarge(hge, bte, dbl)
-#endif
-SUB_3TYPE(hge, sht, hge)
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(hge, sht, flt)
-SUB_3TYPE_enlarge(hge, sht, dbl)
-#endif
-SUB_3TYPE(hge, int, hge)
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(hge, int, flt)
-SUB_3TYPE_enlarge(hge, int, dbl)
-#endif
-SUB_3TYPE(hge, lng, hge)
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(hge, lng, flt)
-SUB_3TYPE_enlarge(hge, lng, dbl)
-#endif
-SUB_3TYPE(hge, hge, hge)
-#ifdef FULL_IMPLEMENTATION
-SUB_3TYPE_enlarge(hge, hge, flt)
-SUB_3TYPE_enlarge(hge, hge, dbl)
-#endif
-SUB_3TYPE(hge, flt, flt)
-SUB_3TYPE_enlarge(hge, flt, dbl)
-SUB_3TYPE(hge, dbl, dbl)
-#endif
-SUB_3TYPE(flt, bte, flt)
-SUB_3TYPE_enlarge(flt, bte, dbl)
-SUB_3TYPE(flt, sht, flt)
-SUB_3TYPE_enlarge(flt, sht, dbl)
-SUB_3TYPE(flt, int, flt)
-SUB_3TYPE_enlarge(flt, int, dbl)
-SUB_3TYPE(flt, lng, flt)
-SUB_3TYPE_enlarge(flt, lng, dbl)
 #ifdef HAVE_HGE
-SUB_3TYPE(flt, hge, flt)
-SUB_3TYPE_enlarge(flt, hge, dbl)
+SUB_3TYPE_enlarge(int, sht, hge, I)
 #endif
-SUB_3TYPE(flt, flt, flt)
-SUB_3TYPE_enlarge(flt, flt, dbl)
-SUB_3TYPE(flt, dbl, dbl)
-SUB_3TYPE(dbl, bte, dbl)
-SUB_3TYPE(dbl, sht, dbl)
-SUB_3TYPE(dbl, int, dbl)
-SUB_3TYPE(dbl, lng, dbl)
+SUB_3TYPE_enlarge(int, sht, flt, F)
+SUB_3TYPE_enlarge(int, sht, dbl, F)
+#endif
+SUB_3TYPE(int, int, int, I)
+SUB_3TYPE_enlarge(int, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-SUB_3TYPE(dbl, hge, dbl)
+SUB_3TYPE_enlarge(int, int, hge, I)
 #endif
-SUB_3TYPE(dbl, flt, dbl)
-SUB_3TYPE(dbl, dbl, dbl)
+SUB_3TYPE_enlarge(int, int, flt, F)
+SUB_3TYPE_enlarge(int, int, dbl, F)
+#endif
+SUB_3TYPE(int, lng, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(int, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(int, lng, flt, F)
+SUB_3TYPE_enlarge(int, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+SUB_3TYPE(int, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(int, hge, flt, F)
+SUB_3TYPE_enlarge(int, hge, dbl, F)
+#endif
+#endif
+SUB_3TYPE(int, flt, flt, F)
+SUB_3TYPE_enlarge(int, flt, dbl, F)
+SUB_3TYPE(int, dbl, dbl, F)
+SUB_3TYPE(lng, bte, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, bte, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, bte, flt, F)
+SUB_3TYPE_enlarge(lng, bte, dbl, F)
+#endif
+SUB_3TYPE(lng, sht, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, sht, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, sht, flt, F)
+SUB_3TYPE_enlarge(lng, sht, dbl, F)
+#endif
+SUB_3TYPE(lng, int, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, int, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, int, flt, F)
+SUB_3TYPE_enlarge(lng, int, dbl, F)
+#endif
+SUB_3TYPE(lng, lng, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, lng, flt, F)
+SUB_3TYPE_enlarge(lng, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+SUB_3TYPE(lng, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, hge, flt, F)
+SUB_3TYPE_enlarge(lng, hge, dbl, F)
+#endif
+#endif
+SUB_3TYPE(lng, flt, flt, F)
+SUB_3TYPE_enlarge(lng, flt, dbl, F)
+SUB_3TYPE(lng, dbl, dbl, F)
+#ifdef HAVE_HGE
+SUB_3TYPE(hge, bte, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, bte, flt, F)
+SUB_3TYPE_enlarge(hge, bte, dbl, F)
+#endif
+SUB_3TYPE(hge, sht, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, sht, flt, F)
+SUB_3TYPE_enlarge(hge, sht, dbl, F)
+#endif
+SUB_3TYPE(hge, int, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, int, flt, F)
+SUB_3TYPE_enlarge(hge, int, dbl, F)
+#endif
+SUB_3TYPE(hge, lng, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, lng, flt, F)
+SUB_3TYPE_enlarge(hge, lng, dbl, F)
+#endif
+SUB_3TYPE(hge, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, hge, flt, F)
+SUB_3TYPE_enlarge(hge, hge, dbl, F)
+#endif
+SUB_3TYPE(hge, flt, flt, F)
+SUB_3TYPE_enlarge(hge, flt, dbl, F)
+SUB_3TYPE(hge, dbl, dbl, F)
+#endif
+SUB_3TYPE(flt, bte, flt, F)
+SUB_3TYPE_enlarge(flt, bte, dbl, F)
+SUB_3TYPE(flt, sht, flt, F)
+SUB_3TYPE_enlarge(flt, sht, dbl, F)
+SUB_3TYPE(flt, int, flt, F)
+SUB_3TYPE_enlarge(flt, int, dbl, F)
+SUB_3TYPE(flt, lng, flt, F)
+SUB_3TYPE_enlarge(flt, lng, dbl, F)
+#ifdef HAVE_HGE
+SUB_3TYPE(flt, hge, flt, F)
+SUB_3TYPE_enlarge(flt, hge, dbl, F)
+#endif
+SUB_3TYPE(flt, flt, flt, F)
+SUB_3TYPE_enlarge(flt, flt, dbl, F)
+SUB_3TYPE(flt, dbl, dbl, F)
+SUB_3TYPE(dbl, bte, dbl, F)
+SUB_3TYPE(dbl, sht, dbl, F)
+SUB_3TYPE(dbl, int, dbl, F)
+SUB_3TYPE(dbl, lng, dbl, F)
+#ifdef HAVE_HGE
+SUB_3TYPE(dbl, hge, dbl, F)
+#endif
+SUB_3TYPE(dbl, flt, dbl, F)
+SUB_3TYPE(dbl, dbl, dbl, F)
 
 static BUN
 sub_typeswitchloop(const void *lft, int tp1, int incr1,
@@ -5304,7 +5304,7 @@ VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
 
 /* TYPE4 must be a type larger than both TYPE1 and TYPE2 so that
  * multiplying into it doesn't cause overflow */
-#define MUL_4TYPE(TYPE1, TYPE2, TYPE3, TYPE4)				\
+#define MUL_4TYPE(TYPE1, TYPE2, TYPE3, TYPE4, IF)			\
 static BUN								\
 mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
@@ -5325,19 +5325,19 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			MUL4_WITH_CHECK(TYPE1, lft[i],			\
-					TYPE2, rgt[j],			\
-					TYPE3, dst[k],			\
-					max,				\
-					TYPE4,				\
-					ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			MUL##IF##4_WITH_CHECK(TYPE1, lft[i],		\
+					      TYPE2, rgt[j],		\
+					      TYPE3, dst[k],		\
+					      max,			\
+					      TYPE4,			\
+					      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
 		}							\
 	}								\
 	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
 	return nils;							\
 }
 
-#define MUL_3TYPE_enlarge(TYPE1, TYPE2, TYPE3)				\
+#define MUL_3TYPE_enlarge(TYPE1, TYPE2, TYPE3, IF)			\
 static BUN								\
 mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
@@ -5359,12 +5359,12 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				MUL4_WITH_CHECK(TYPE1, lft[i],		\
-						TYPE2, rgt[j],		\
-						TYPE3, dst[k],		\
-						max,			\
-						TYPE3,			\
-						ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+				MUL##IF##4_WITH_CHECK(TYPE1, lft[i],	\
+						      TYPE2, rgt[j],	\
+						      TYPE3, dst[k],	\
+						      max,		\
+						      TYPE3,		\
+						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
 			}						\
 		}							\
 	} else {							\
@@ -5384,6 +5384,8 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 }
 
 #ifdef HAVE_HGE
+
+#define MUL_2TYPE_lng(TYPE1, TYPE2)	MUL_4TYPE(TYPE1, TYPE2, lng, hge, I)
 
 #define MUL_2TYPE_hge(TYPE1, TYPE2)					\
 static BUN								\
@@ -5419,49 +5421,6 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 
 #else
 
-#ifdef HAVE__MUL128
-#include <intrin.h>
-#pragma intrinsic(_mul128)
-
-#define MUL_2TYPE_lng(TYPE1, TYPE2)					\
-static BUN								\
-mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
-			    const TYPE2 *rgt, int incr2,		\
-			    lng *restrict dst, lng max,			\
-			    BUN cnt, BUN start,				\
-			    BUN end, const oid *cand,			\
-			    const oid *candend, oid candoff,		\
-			    int abort_on_error)				\
-{									\
-	BUN i, j, k;							\
-	BUN nils = 0;							\
-	lng clo, chi;							\
-									\
-	CANDLOOP(dst, k, lng_nil, 0, start);				\
-	for (i = start * incr1, j = start * incr2, k = start;		\
-	     k < end; i += incr1, j += incr2, k++) {			\
-		CHECKCAND(dst, k, candoff, lng_nil);			\
-		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
-			dst[k] = lng_nil;				\
-			nils++;						\
-		} else {						\
-			clo = _mul128((lng) lft[i],			\
-				      (lng) rgt[j], &chi);		\
-			if ((chi == 0 && clo >= 0 && clo <= max) ||	\
-			    (chi == -1 && clo < 0 && clo >= -max)) {	\
-				dst[k] = clo;				\
-			} else {					\
-				if (abort_on_error)			\
-					ON_OVERFLOW(TYPE1, TYPE2, "*");	\
-				dst[k] = lng_nil;			\
-				nils++;					\
-			}						\
-		}							\
-	}								\
-	CANDLOOP(dst, k, lng_nil, end, cnt);				\
-	return nils;							\
-}
-#else
 #define MUL_2TYPE_lng(TYPE1, TYPE2)					\
 static BUN								\
 mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
@@ -5493,7 +5452,6 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 	CANDLOOP(dst, k, lng_nil, end, cnt);				\
 	return nils;							\
 }
-#endif
 
 #endif
 
@@ -5518,276 +5476,241 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			/* only check for overflow, not for underflow */ \
-			if (ABSOLUTE(lft[i]) > 1 &&			\
-			    max / ABSOLUTE(lft[i]) < ABSOLUTE(rgt[j])) { \
-				if (abort_on_error)			\
-					ON_OVERFLOW(TYPE1, TYPE2, "*");	\
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				dst[k] = (TYPE3) lft[i] * rgt[j];	\
-			}						\
+			FLTDBLMUL_CHECK(TYPE1, lft[i], TYPE2, rgt[j],	\
+					TYPE3, dst[k], max,		\
+					ON_OVERFLOW(TYPE1, TYPE2, "*")); \
 		}							\
 	}								\
 	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
 	return nils;							\
 }
 
-MUL_4TYPE(bte, bte, bte, sht)
-MUL_3TYPE_enlarge(bte, bte, sht)
+MUL_4TYPE(bte, bte, bte, sht, I)
+MUL_3TYPE_enlarge(bte, bte, sht, I)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(bte, bte, int)
-MUL_3TYPE_enlarge(bte, bte, lng)
+MUL_3TYPE_enlarge(bte, bte, int, I)
+MUL_3TYPE_enlarge(bte, bte, lng, I)
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(bte, bte, hge)
+MUL_3TYPE_enlarge(bte, bte, hge, I)
 #endif
-MUL_3TYPE_enlarge(bte, bte, flt)
-MUL_3TYPE_enlarge(bte, bte, dbl)
+MUL_3TYPE_enlarge(bte, bte, flt, F)
+MUL_3TYPE_enlarge(bte, bte, dbl, F)
 #endif
-MUL_4TYPE(bte, sht, sht, int)
-MUL_3TYPE_enlarge(bte, sht, int)
+MUL_4TYPE(bte, sht, sht, int, I)
+MUL_3TYPE_enlarge(bte, sht, int, I)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(bte, sht, lng)
+MUL_3TYPE_enlarge(bte, sht, lng, I)
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(bte, sht, hge)
+MUL_3TYPE_enlarge(bte, sht, hge, I)
 #endif
-MUL_3TYPE_enlarge(bte, sht, flt)
-MUL_3TYPE_enlarge(bte, sht, dbl)
+MUL_3TYPE_enlarge(bte, sht, flt, F)
+MUL_3TYPE_enlarge(bte, sht, dbl, F)
 #endif
-MUL_4TYPE(bte, int, int, lng)
-MUL_3TYPE_enlarge(bte, int, lng)
+MUL_4TYPE(bte, int, int, lng, I)
+MUL_3TYPE_enlarge(bte, int, lng, I)
 #ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(bte, int, hge)
+MUL_3TYPE_enlarge(bte, int, hge, I)
 #endif
-MUL_3TYPE_enlarge(bte, int, flt)
-MUL_3TYPE_enlarge(bte, int, dbl)
+MUL_3TYPE_enlarge(bte, int, flt, F)
+MUL_3TYPE_enlarge(bte, int, dbl, F)
 #endif
-#ifdef HAVE_HGE
-MUL_4TYPE(bte, lng, lng, hge)
-#else
 MUL_2TYPE_lng(bte, lng)
-#endif
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(bte, lng, hge)
+MUL_3TYPE_enlarge(bte, lng, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(bte, lng, flt)
-MUL_3TYPE_enlarge(bte, lng, dbl)
+MUL_3TYPE_enlarge(bte, lng, flt, F)
+MUL_3TYPE_enlarge(bte, lng, dbl, F)
 #endif
 #ifdef HAVE_HGE
 MUL_2TYPE_hge(bte, hge)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(bte, hge, flt)
-MUL_3TYPE_enlarge(bte, hge, dbl)
+MUL_3TYPE_enlarge(bte, hge, flt, F)
+MUL_3TYPE_enlarge(bte, hge, dbl, F)
 #endif
 #endif
 MUL_2TYPE_float(bte, flt, flt)
-MUL_3TYPE_enlarge(bte, flt, dbl)
+MUL_3TYPE_enlarge(bte, flt, dbl, F)
 MUL_2TYPE_float(bte, dbl, dbl)
-MUL_4TYPE(sht, bte, sht, int)
-MUL_3TYPE_enlarge(sht, bte, int)
+MUL_4TYPE(sht, bte, sht, int, I)
+MUL_3TYPE_enlarge(sht, bte, int, I)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(sht, bte, lng)
+MUL_3TYPE_enlarge(sht, bte, lng, I)
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(sht, bte, hge)
+MUL_3TYPE_enlarge(sht, bte, hge, I)
 #endif
-MUL_3TYPE_enlarge(sht, bte, flt)
-MUL_3TYPE_enlarge(sht, bte, dbl)
+MUL_3TYPE_enlarge(sht, bte, flt, F)
+MUL_3TYPE_enlarge(sht, bte, dbl, F)
 #endif
-MUL_4TYPE(sht, sht, sht, int)
-MUL_3TYPE_enlarge(sht, sht, int)
+MUL_4TYPE(sht, sht, sht, int, I)
+MUL_3TYPE_enlarge(sht, sht, int, I)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(sht, sht, lng)
+MUL_3TYPE_enlarge(sht, sht, lng, I)
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(sht, sht, hge)
+MUL_3TYPE_enlarge(sht, sht, hge, I)
 #endif
-MUL_3TYPE_enlarge(sht, sht, flt)
-MUL_3TYPE_enlarge(sht, sht, dbl)
+MUL_3TYPE_enlarge(sht, sht, flt, F)
+MUL_3TYPE_enlarge(sht, sht, dbl, F)
 #endif
-MUL_4TYPE(sht, int, int, lng)
-MUL_3TYPE_enlarge(sht, int, lng)
+MUL_4TYPE(sht, int, int, lng, I)
+MUL_3TYPE_enlarge(sht, int, lng, I)
 #ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(sht, int, hge)
+MUL_3TYPE_enlarge(sht, int, hge, I)
 #endif
-MUL_3TYPE_enlarge(sht, int, flt)
-MUL_3TYPE_enlarge(sht, int, dbl)
+MUL_3TYPE_enlarge(sht, int, flt, F)
+MUL_3TYPE_enlarge(sht, int, dbl, F)
 #endif
-#ifdef HAVE_HGE
-MUL_4TYPE(sht, lng, lng, hge)
-#else
 MUL_2TYPE_lng(sht, lng)
-#endif
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(sht, lng, hge)
+MUL_3TYPE_enlarge(sht, lng, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(sht, lng, flt)
-MUL_3TYPE_enlarge(sht, lng, dbl)
+MUL_3TYPE_enlarge(sht, lng, flt, F)
+MUL_3TYPE_enlarge(sht, lng, dbl, F)
 #endif
 #ifdef HAVE_HGE
 MUL_2TYPE_hge(sht, hge)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(sht, hge, flt)
-MUL_3TYPE_enlarge(sht, hge, dbl)
+MUL_3TYPE_enlarge(sht, hge, flt, F)
+MUL_3TYPE_enlarge(sht, hge, dbl, F)
 #endif
 #endif
 MUL_2TYPE_float(sht, flt, flt)
-MUL_3TYPE_enlarge(sht, flt, dbl)
+MUL_3TYPE_enlarge(sht, flt, dbl, F)
 MUL_2TYPE_float(sht, dbl, dbl)
-MUL_4TYPE(int, bte, int, lng)
-MUL_3TYPE_enlarge(int, bte, lng)
+MUL_4TYPE(int, bte, int, lng, I)
+MUL_3TYPE_enlarge(int, bte, lng, I)
 #ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(int, bte, hge)
+MUL_3TYPE_enlarge(int, bte, hge, I)
 #endif
-MUL_3TYPE_enlarge(int, bte, flt)
-MUL_3TYPE_enlarge(int, bte, dbl)
+MUL_3TYPE_enlarge(int, bte, flt, F)
+MUL_3TYPE_enlarge(int, bte, dbl, F)
 #endif
-MUL_4TYPE(int, sht, int, lng)
-MUL_3TYPE_enlarge(int, sht, lng)
+MUL_4TYPE(int, sht, int, lng, I)
+MUL_3TYPE_enlarge(int, sht, lng, I)
 #ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(int, sht, hge)
+MUL_3TYPE_enlarge(int, sht, hge, I)
 #endif
-MUL_3TYPE_enlarge(int, sht, flt)
-MUL_3TYPE_enlarge(int, sht, dbl)
+MUL_3TYPE_enlarge(int, sht, flt, F)
+MUL_3TYPE_enlarge(int, sht, dbl, F)
 #endif
-MUL_4TYPE(int, int, int, lng)
-MUL_3TYPE_enlarge(int, int, lng)
+MUL_4TYPE(int, int, int, lng, I)
+MUL_3TYPE_enlarge(int, int, lng, I)
 #ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(int, int, hge)
+MUL_3TYPE_enlarge(int, int, hge, I)
 #endif
-MUL_3TYPE_enlarge(int, int, flt)
-MUL_3TYPE_enlarge(int, int, dbl)
+MUL_3TYPE_enlarge(int, int, flt, F)
+MUL_3TYPE_enlarge(int, int, dbl, F)
 #endif
-#ifdef HAVE_HGE
-MUL_4TYPE(int, lng, lng, hge)
-#else
 MUL_2TYPE_lng(int, lng)
-#endif
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(int, lng, hge)
+MUL_3TYPE_enlarge(int, lng, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(int, lng, flt)
-MUL_3TYPE_enlarge(int, lng, dbl)
+MUL_3TYPE_enlarge(int, lng, flt, F)
+MUL_3TYPE_enlarge(int, lng, dbl, F)
 #endif
 #ifdef HAVE_HGE
 MUL_2TYPE_hge(int, hge)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(int, hge, flt)
-MUL_3TYPE_enlarge(int, hge, dbl)
+MUL_3TYPE_enlarge(int, hge, flt, F)
+MUL_3TYPE_enlarge(int, hge, dbl, F)
 #endif
 #endif
 MUL_2TYPE_float(int, flt, flt)
-MUL_3TYPE_enlarge(int, flt, dbl)
+MUL_3TYPE_enlarge(int, flt, dbl, F)
 MUL_2TYPE_float(int, dbl, dbl)
-#ifdef HAVE_HGE
-MUL_4TYPE(lng, bte, lng, hge)
-#else
 MUL_2TYPE_lng(lng, bte)
-#endif
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(lng, bte, hge)
+MUL_3TYPE_enlarge(lng, bte, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(lng, bte, flt)
-MUL_3TYPE_enlarge(lng, bte, dbl)
+MUL_3TYPE_enlarge(lng, bte, flt, F)
+MUL_3TYPE_enlarge(lng, bte, dbl, F)
 #endif
-#ifdef HAVE_HGE
-MUL_4TYPE(lng, sht, lng, hge)
-#else
 MUL_2TYPE_lng(lng, sht)
-#endif
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(lng, sht, hge)
+MUL_3TYPE_enlarge(lng, sht, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(lng, sht, flt)
-MUL_3TYPE_enlarge(lng, sht, dbl)
+MUL_3TYPE_enlarge(lng, sht, flt, F)
+MUL_3TYPE_enlarge(lng, sht, dbl, F)
 #endif
-#ifdef HAVE_HGE
-MUL_4TYPE(lng, int, lng, hge)
-#else
 MUL_2TYPE_lng(lng, int)
-#endif
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(lng, int, hge)
+MUL_3TYPE_enlarge(lng, int, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(lng, int, flt)
-MUL_3TYPE_enlarge(lng, int, dbl)
+MUL_3TYPE_enlarge(lng, int, flt, F)
+MUL_3TYPE_enlarge(lng, int, dbl, F)
 #endif
-#ifdef HAVE_HGE
-MUL_4TYPE(lng, lng, lng, hge)
-#else
 MUL_2TYPE_lng(lng, lng)
-#endif
 #ifdef HAVE_HGE
-MUL_3TYPE_enlarge(lng, lng, hge)
+MUL_3TYPE_enlarge(lng, lng, hge, I)
 #endif
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(lng, lng, flt)
-MUL_3TYPE_enlarge(lng, lng, dbl)
+MUL_3TYPE_enlarge(lng, lng, flt, F)
+MUL_3TYPE_enlarge(lng, lng, dbl, F)
 #endif
 #ifdef HAVE_HGE
 MUL_2TYPE_hge(lng, hge)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(lng, hge, flt)
-MUL_3TYPE_enlarge(lng, hge, dbl)
+MUL_3TYPE_enlarge(lng, hge, flt, F)
+MUL_3TYPE_enlarge(lng, hge, dbl, F)
 #endif
 #endif
 MUL_2TYPE_float(lng, flt, flt)
-MUL_3TYPE_enlarge(lng, flt, dbl)
+MUL_3TYPE_enlarge(lng, flt, dbl, F)
 MUL_2TYPE_float(lng, dbl, dbl)
 #ifdef HAVE_HGE
 MUL_2TYPE_hge(hge, bte)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(hge, bte, flt)
-MUL_3TYPE_enlarge(hge, bte, dbl)
+MUL_3TYPE_enlarge(hge, bte, flt, F)
+MUL_3TYPE_enlarge(hge, bte, dbl, F)
 #endif
 MUL_2TYPE_hge(hge, sht)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(hge, sht, flt)
-MUL_3TYPE_enlarge(hge, sht, dbl)
+MUL_3TYPE_enlarge(hge, sht, flt, F)
+MUL_3TYPE_enlarge(hge, sht, dbl, F)
 #endif
 MUL_2TYPE_hge(hge, int)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(hge, int, flt)
-MUL_3TYPE_enlarge(hge, int, dbl)
+MUL_3TYPE_enlarge(hge, int, flt, F)
+MUL_3TYPE_enlarge(hge, int, dbl, F)
 #endif
 MUL_2TYPE_hge(hge, lng)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(hge, lng, flt)
-MUL_3TYPE_enlarge(hge, lng, dbl)
+MUL_3TYPE_enlarge(hge, lng, flt, F)
+MUL_3TYPE_enlarge(hge, lng, dbl, F)
 #endif
 MUL_2TYPE_hge(hge, hge)
 #ifdef FULL_IMPLEMENTATION
-MUL_3TYPE_enlarge(hge, hge, flt)
-MUL_3TYPE_enlarge(hge, hge, dbl)
+MUL_3TYPE_enlarge(hge, hge, flt, F)
+MUL_3TYPE_enlarge(hge, hge, dbl, F)
 #endif
 MUL_2TYPE_float(hge, flt, flt)
-MUL_3TYPE_enlarge(hge, flt, dbl)
+MUL_3TYPE_enlarge(hge, flt, dbl, F)
 MUL_2TYPE_float(hge, dbl, dbl)
 #endif
 MUL_2TYPE_float(flt, bte, flt)
-MUL_3TYPE_enlarge(flt, bte, dbl)
+MUL_3TYPE_enlarge(flt, bte, dbl, F)
 MUL_2TYPE_float(flt, sht, flt)
-MUL_3TYPE_enlarge(flt, sht, dbl)
+MUL_3TYPE_enlarge(flt, sht, dbl, F)
 MUL_2TYPE_float(flt, int, flt)
-MUL_3TYPE_enlarge(flt, int, dbl)
+MUL_3TYPE_enlarge(flt, int, dbl, F)
 MUL_2TYPE_float(flt, lng, flt)
-MUL_3TYPE_enlarge(flt, lng, dbl)
+MUL_3TYPE_enlarge(flt, lng, dbl, F)
 #ifdef HAVE_HGE
 MUL_2TYPE_float(flt, hge, flt)
-MUL_3TYPE_enlarge(flt, hge, dbl)
+MUL_3TYPE_enlarge(flt, hge, dbl, F)
 #endif
 MUL_2TYPE_float(flt, flt, flt)
-MUL_3TYPE_enlarge(flt, flt, dbl)
+MUL_3TYPE_enlarge(flt, flt, dbl, F)
 MUL_2TYPE_float(flt, dbl, dbl)
 MUL_2TYPE_float(dbl, bte, dbl)
 MUL_2TYPE_float(dbl, sht, dbl)
