@@ -66,13 +66,11 @@ import nl.cwi.monetdb.mcl.parser.TupleLineParser;
  * for FORWARD_ONLY result sets the memory usage will be likely lower for large
  * result sets.
  *
- * @author Fabian Groffen
- * @version 0.7
+ * @author Fabian Groffen, Martin van Dinther
+ * @version 0.8
  */
 public class MonetResultSet extends MonetWrapper implements ResultSet {
-	/** The last column read using some getXXX function */
-	private int lastColumnRead = -1;
-	// the following have default access modifier for the MonetVirtualResultSet
+	// the following have default access modifier for the MonetVirtualResultSet subclass
 	/** The current line of the buffer split in columns */
 	final TupleLineParser tlp;
 	/** The current position of the cursor for this ResultSet object */
@@ -97,7 +95,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	private int concurrency = CONCUR_READ_ONLY;
 	/** The warnings for this ResultSet object */
 	private SQLWarning warnings;
-
+	/** whether the last read field (via some getXyz() method) was NULL */
+	private boolean lastReadWasNull = true;
 	/** Just a dummy variable to keep store the fetchsize set. */
 	private int fetchSize;
 
@@ -228,9 +227,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		} catch (MCLParseException e) {
 			throw new SQLException(e.getMessage(), "M0M10");
 		}
-
-		// reset lastColumnRead
-		lastColumnRead = -1;
 
 		return true;
 	}
@@ -434,10 +430,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Reader getCharacterStream(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return null;
+			}
+			lastReadWasNull = false;
 			return new StringReader(val);
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException("No such column " + columnIndex, "M1M05");
@@ -511,10 +508,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Blob getBlob(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return null;
+			}
+			lastReadWasNull = false;
 			return MonetBlob.create(val);
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException("No such column " + columnIndex, "M1M05");
@@ -551,10 +549,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Clob getClob(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return null;
+			}
+			lastReadWasNull = false;
 			return new MonetClob(val);
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException("No such column " + columnIndex, "M1M05");
@@ -625,10 +624,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return null;
+			}
+			lastReadWasNull = false;
 			try {
 				return new BigDecimal(val);
 			} catch (NumberFormatException e) {
@@ -656,10 +656,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	{
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return null;
+			}
+			lastReadWasNull = false;
 			try {
 				BigDecimal bd = new BigDecimal(val);
 				bd.setScale(scale);
@@ -718,10 +719,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public boolean getBoolean(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return false;	// if the value is SQL NULL, the value returned is false
+			}
+			lastReadWasNull = false;
 
 			// match common cases first
 			if ("false".equalsIgnoreCase(val) || "0".equals(val))
@@ -799,10 +801,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public byte getByte(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return (byte) 0;
+			}
+			lastReadWasNull = false;
 			try {
 				return Byte.parseByte(val);
 			} catch (NumberFormatException e) {
@@ -843,10 +846,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public byte[] getBytes(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return null;
+			}
+			lastReadWasNull = false;
 
 			// According to Table B-6, getBytes() only operates on BINARY types
 			switch (getJavaType(types[columnIndex - 1])) {
@@ -946,10 +950,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public double getDouble(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return 0;
+			}
+			lastReadWasNull = false;
 			try {
 				return Double.parseDouble(val);
 			} catch (NumberFormatException e) {
@@ -1072,10 +1077,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public float getFloat(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return 0;
+			}
+			lastReadWasNull = false;
 			try {
 				return Float.parseFloat(val);
 			} catch (NumberFormatException e) {
@@ -1114,10 +1120,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public int getInt(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return 0;
+			}
+			lastReadWasNull = false;
 			try {
 				return Integer.parseInt(val);
 			} catch (NumberFormatException e) {
@@ -1156,10 +1163,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public long getLong(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return 0;
+			}
+			lastReadWasNull = false;
 
 			// The oid datatype values (as string) have a  @0  suffix in the string value.
 			// To allow succesful parsing and conversion to long, we need to remove it first
@@ -1756,11 +1764,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		final String val;
 		try {
 			val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return null;
-
+			}
+			lastReadWasNull = false;
 			MonetDBType = types[columnIndex - 1];
 			JdbcType = getJavaType(MonetDBType);
 		} catch (IndexOutOfBoundsException e) {
@@ -1942,11 +1950,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		final String MonetDBtype;
 		try {
 			val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return null;
-
+			}
+			lastReadWasNull = false;
 			MonetDBtype = types[columnIndex - 1];
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException("No such column " + columnIndex, "M1M05");
@@ -2369,10 +2377,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public short getShort(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return 0;
+			}
+			lastReadWasNull = false;
 			try {
 				return Short.parseShort(val);
 			} catch (NumberFormatException e) {
@@ -2424,8 +2433,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public String getString(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
+			}
+			lastReadWasNull = false;
 			return val;
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException("No such column " + columnIndex, "M1M05");
@@ -2551,11 +2563,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		int JdbcType;
 		try {
 			monetDate = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (monetDate == null)
+			if (monetDate == null) {
+				lastReadWasNull = true;
 				return -1;
-
+			}
+			lastReadWasNull = false;
 			MonetDBType = types[columnIndex - 1];
 			JdbcType = getJavaType(MonetDBType);
 			// If we got a string type, set the JdbcType to the given type
@@ -2946,10 +2958,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public URL getURL(int columnIndex) throws SQLException {
 		try {
 			String val = tlp.values[columnIndex - 1];
-			// the lastColumnRead must be updated for the wasNull() to work properly!
-			lastColumnRead = columnIndex - 1;
-			if (val == null)
+			if (val == null) {
+				lastReadWasNull = true;
 				return null;
+			}
+			lastReadWasNull = false;
 			try {
 				return new URL(val);
 			} catch (MalformedURLException e) {
@@ -3654,7 +3667,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public boolean wasNull() {
-		return lastColumnRead != -1 ? tlp.values[lastColumnRead] == null : false;
+		return lastReadWasNull;
 	}
 
 	//== end methods of interface ResultSet
