@@ -85,8 +85,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	private final String[] columns;
 	/** The MonetDB types of the columns in this ResultSet */
 	private final String[] types;
-	/** The id of this ResultSet (needed for closing) */
-	private final String tableID;
 	/** The number of rows in this ResultSet */
 	final int tupleCount;	// default for the MonetVirtualResultSet
 
@@ -129,7 +127,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		// if an error occurred for this query
 		columns = header.getNames();
 		types = header.getTypes();
-		tableID = "" + header.id;
 		tupleCount = header.tuplecount;
 
 		// create result array
@@ -163,7 +160,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		}
 
 		this.header = null;
-		this.tableID = null;
 		this.statement = null; // no parent, required for specs
 
 		this.columns = columns;
@@ -913,7 +909,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	/**
 	 * Retrieves the name of the SQL cursor used by this ResultSet object.
 	 * In SQL, a result table is retrieved through a cursor that is named.
-	 * For MonetDB this is the tableID returned in a resultset header. The
+	 * For MonetDB this is the header.id returned in a resultset header. The
 	 * current row of a result set can be updated or deleted using a positioned
 	 * update/delete statement that references the cursor name. To insure that
 	 * the cursor has the proper isolation level to support update, the
@@ -934,8 +930,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	@Override
 	public String getCursorName() throws SQLException {
 		throw new SQLException("Positioned updates not supported for this " +
-							   "cursor (" + tableID + ")", "0AM21");
-		//return "" + tableID;
+				   "cursor (" + (header != null ? header.id : "") + ")", "0AM21");
 	}
 
 	/**
