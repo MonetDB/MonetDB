@@ -31,7 +31,7 @@ public class JdbcClient {
 	private static Statement stmt;
 	private static BufferedReader in;
 	private static PrintWriter out;
-	private static Exporter e;
+	private static Exporter exporter;
 	private static DatabaseMetaData dbmd;
 
 	public final static void main(String[] args) throws Exception {
@@ -280,15 +280,15 @@ copts.produceHelpMessage()
 			tbl = null;
 
 			if (xmlMode) {
-				e = new XMLExporter(out);
-				e.setProperty(XMLExporter.TYPE_NIL, XMLExporter.VALUE_XSI);
+				exporter = new XMLExporter(out);
+				exporter.setProperty(XMLExporter.TYPE_NIL, XMLExporter.VALUE_XSI);
 			} else {
-				e = new SQLExporter(out);
+				exporter = new SQLExporter(out);
 				// stick with inserts for now, in the future we might do
 				// COPY INTO's here using VALUE_COPY
-				e.setProperty(SQLExporter.TYPE_OUTPUT, SQLExporter.VALUE_INSERT);
+				exporter.setProperty(SQLExporter.TYPE_OUTPUT, SQLExporter.VALUE_INSERT);
 			}
-			e.useSchemas(true);
+			exporter.useSchemas(true);
 
 			// start SQL output
 			if (!xmlMode) out.println("START TRANSACTION;\n");
@@ -365,14 +365,14 @@ copts.produceHelpMessage()
 		}
 
 		if (xmlMode) {
-			e = new XMLExporter(out);
-			e.setProperty(XMLExporter.TYPE_NIL, XMLExporter.VALUE_XSI);
+			exporter = new XMLExporter(out);
+			exporter.setProperty(XMLExporter.TYPE_NIL, XMLExporter.VALUE_XSI);
 		} else {
-			e = new SQLExporter(out);
+			exporter = new SQLExporter(out);
 			// we want nice table views
-			e.setProperty(SQLExporter.TYPE_OUTPUT, SQLExporter.VALUE_TABLE);
+			exporter.setProperty(SQLExporter.TYPE_OUTPUT, SQLExporter.VALUE_TABLE);
 		}
-		e.useSchemas(false);
+		exporter.useSchemas(false);
 
 		try {
 			// use the given file for reading
@@ -627,7 +627,7 @@ copts.produceHelpMessage()
 											(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object))
 									{
 										// we found it, describe it
-										e.dumpSchema(
+										exporter.dumpSchema(
 												dbmd,
 												tbl.getString("TABLE_TYPE"),
 												tbl.getString("TABLE_CAT"),
@@ -763,7 +763,7 @@ copts.produceHelpMessage()
 				// we have a ResultSet, print it
 				ResultSet rs = stmt.getResultSet();
 
-				e.dumpResultSet(rs);
+				exporter.dumpResultSet(rs);
 
 				// if there were warnings for this result,
 				// show them!
@@ -881,7 +881,7 @@ copts.produceHelpMessage()
 		DatabaseMetaData dbmd,
 		Statement stmt)
 	throws SQLException	{
-		e.dumpSchema(
+		exporter.dumpSchema(
 			dbmd,
 			table.getType(),
 			table.getCat(),
@@ -891,9 +891,9 @@ copts.produceHelpMessage()
 		out.println();
 
 		if (table.getType().indexOf("TABLE") != -1) {
-			e.dumpResultSet(
-				stmt.executeQuery("SELECT * FROM " + table.getFqnameQ())
-			);
+			ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqnameQ() );
+			exporter.dumpResultSet(rs);
+			rs.close();
 			out.println();
 		}
 	}
