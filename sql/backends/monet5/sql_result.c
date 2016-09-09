@@ -1898,6 +1898,7 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			errno = 0;
 		}
 	}
+	fprintf(stdout, "Export resultset 10.\n");
 
 	iterators = GDKzalloc(sizeof(BATiter) * t->nr_cols);
 

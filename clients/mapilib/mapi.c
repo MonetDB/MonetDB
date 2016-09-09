@@ -974,6 +974,7 @@ struct MapiStatement {
 	int needmore;		/* need more input */
 	int *pending_close;
 	int npending_close;
+	int prot10_resultset;
 	MapiHdl prev, next;
 };
 
@@ -2656,8 +2657,9 @@ mapi_reconnect(Mapi mid)
 			}
 		}
 		if (env_blocksize) {
+			size_t blocksize;
 			errno = 0;
-			size_t blocksize = (size_t) atol(env_blocksize);
+			blocksize = (size_t) atol(env_blocksize);
 			if (errno != 0) {
 				errno = 0;
 				fprintf(stderr, "Incorrect block size: %s\n", env_blocksize);
@@ -4358,6 +4360,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			lng nr_rows;
 			lng nr_cols;
 			lng i;
+
+			hdl->prot10_resultset = 1;
 			result = new_result(hdl);
 
 			if (!result) {
@@ -4468,8 +4472,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					result->fields[i].converter = (mapi_converter) mapi_convert_unknown;
 					// TODO: complain
 				}
-
-				//printf("Column %d: %s - %s (%d)\n", i, col_name, type_sql_name, typelen);
+				//printf("Column %d: %s - %s (%d, %p)\n", i, col_name, type_sql_name, typelen, result->fields[i].converter);
 			}
 			hdl->result = result;
 			hdl->active = result;
@@ -5622,6 +5625,7 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 	char *p;
 	int i = 0;
 
+
 	p = result->cache.line[cr].rows;
 	if (p == NULL)
 		return mapi_setError(result->hdl->mid, "Current row missing", "mapi_slice_row", MERROR);
@@ -5686,9 +5690,12 @@ mapi_split_line(MapiHdl hdl)
 {
 	int n;
 	struct MapiResultSet *result;
-
 	result = hdl->result;
 	assert(result != NULL);
+	if (hdl->mid->protocol == prot10 || hdl->mid->protocol == prot10compressed) {
+		assert(0);
+		return -1;
+	}
 	if ((n = result->cache.line[result->cache.reader].fldcnt) == 0) {
 		n = mapi_slice_row(result, result->cache.reader);
 		/* no need to call mapi_store_bind since
@@ -5709,7 +5716,7 @@ mapi_fetch_row(MapiHdl hdl)
 	size_t i;
 	struct MapiResultSet *result;
 
-	if (hdl->mid->protocol == prot10 || hdl->mid->protocol == prot10compressed) {
+	if (hdl->prot10_resultset) {
 		char* buf;
 
 		result = hdl->result;
@@ -5720,6 +5727,7 @@ mapi_fetch_row(MapiHdl hdl)
 			hdl->active = NULL;
 			bs2_resetbuf(hdl->mid->from);
 			mnstr_readChr(hdl->mid->from, &dummy);
+			hdl->prot10_resultset = 0;
 			return 0;
 		}
 		// if not, check if our cache is empty
@@ -5735,10 +5743,10 @@ mapi_fetch_row(MapiHdl hdl)
 				hdl->mid->errorstr = strdup("Failed to write confirm message to server.");
 				hdl->mid->error = 0;
 				fprintf(stderr, "Failure 2.\n");
+				hdl->prot10_resultset = 0;
 				return hdl->mid->error;
 			}
 #endif
-
 
 			if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF || hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF_NOPACK) {
 				char dummy;
@@ -5801,6 +5809,7 @@ mapi_fetch_row(MapiHdl hdl)
 				hdl->mid->errorstr = strdup("Failed to read row response");
 				hdl->mid->error = 0;
 				fprintf(stderr, "Failure 3.\n");
+				hdl->prot10_resultset = 0;
 				return hdl->mid->error;
 			}
 
@@ -5963,8 +5972,15 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 {
 	int cr;
 	struct MapiResultSet *result;
-	if (hdl->mid->protocol == prot10 || hdl->mid->protocol == prot10compressed) {
+	if (hdl->prot10_resultset) {
 		result = hdl->result;
+		if (result == NULL || 
+			result->fields == NULL || 
+			result->fields[fnr].converter == NULL || 
+			result->rows_read == 0) {
+			mapi_setError(hdl->mid, "Must do a successful mapi_fetch_row first", "mapi_fetch_field", MERROR);
+			return 0;
+		}
 		assert (result->rows_read <= result->tuple_count && result->rows_read <= result->row_count);
 		if (fnr > result->fieldcnt) {
 			mapi_setError(hdl->mid, "column index out of bounds", "mapi_fetch_field", MERROR);
@@ -5999,9 +6015,14 @@ mapi_fetch_field_len(MapiHdl hdl, int fnr)
 {
 	int cr;
 	struct MapiResultSet *result;
-	if (hdl->mid->protocol == prot10 || hdl->mid->protocol == prot10compressed) {
+	if (hdl->prot10_resultset) {
+		char* value = mapi_fetch_field(hdl, fnr);
+		if (!value) {
+			mapi_setError(hdl->mid, "Must do a successful mapi_fetch_row first", "mapi_fetch_field_len", MERROR);
+			return 0;
+		}
 		// this really should not be called for the new protocol
-		return strlen(mapi_fetch_field(hdl, fnr));
+		return strlen(value);
 	}
 	mapi_hdl_check0(hdl, "mapi_fetch_field_len");
 
@@ -6259,6 +6280,11 @@ MapiHdl
 mapi_get_active(Mapi mid)
 {
 	return mid->active;
+}
+
+int 
+mapi_is_protocol10(MapiHdl hdl) {
+	return hdl->prot10_resultset;
 }
 
 MapiMsg mapi_set_protocol(Mapi mid, const char* protocol) {

@@ -233,6 +233,7 @@ mapi_export char *mapi_quote(const char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
 mapi_export MapiHdl mapi_get_active(Mapi mid);
 
+mapi_export int mapi_is_protocol10(MapiHdl hdl);
 mapi_export MapiMsg mapi_set_protocol(Mapi mid, const char* prot);
 mapi_export MapiMsg mapi_set_compression(Mapi mid, const char* compression);
 mapi_export MapiMsg mapi_set_column_compression(Mapi mid, const char* colcomp);

@@ -3975,8 +3975,7 @@ block_stream(stream *s)
 	return ns;
 }
 
-
-
+#ifdef VARINT_PADDING
 int 
 varint_size(int varint) {
 	if      (varint < 0x80)    return 1;
@@ -4063,6 +4062,7 @@ read_varint(char *buf, int *value) {
             return varsize;
     }
 }
+#endif
 
 typedef struct bs2 {
 	stream *s;		/* underlying stream */

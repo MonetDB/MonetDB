@@ -1070,16 +1070,19 @@ TESTrenderer(MapiHdl hdl)
 	char *tp;
 	char *sep;
 	int i;
+	int prot10 = mapi_is_protocol10(hdl);
 
 	SQLqueryEcho(hdl);
-	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
-		if (*reply != '[') {
-			if (*reply == '=')
-				reply++;
-			mnstr_printf(toConsole, "%s\n", reply);
-			continue;
+	while (!mnstr_errnr(toConsole) && (!prot10 ? (reply = fetch_line(hdl)) != 0 : (fields = fetch_row(hdl)) != 0)) {
+		if (!prot10) {
+			if (*reply != '[') {
+				if (*reply == '=')
+					reply++;
+				mnstr_printf(toConsole, "%s\n", reply);
+				continue;
+			}
+			fields = mapi_split_line(hdl);
 		}
-		fields = mapi_split_line(hdl);
 		sep = "[ ";
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
@@ -1213,7 +1216,7 @@ static void
 CLEANrenderer(MapiHdl hdl)
 {
 	char *reply;
-
+	int prot10 = mapi_is_protocol10(hdl);
 	SQLqueryEcho(hdl);
 	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
 		if (*reply == '%')
@@ -1228,12 +1231,17 @@ static void
 RAWrenderer(MapiHdl hdl)
 {
 	char *line;
-
+	int prot10 = mapi_is_protocol10(hdl);
 	SQLqueryEcho(hdl);
-	while ((line = fetch_line(hdl)) != 0) {
-		if (*line == '=')
-			line++;
-		mnstr_printf(toConsole, "%s\n", line);
+	if (prot10) {
+		// "raw" renderer does not make much sense with prot10, because the raw protocol is binary data
+		CSVrenderer(hdl);
+	} else {
+		while ((line = fetch_line(hdl)) != 0) {
+			if (*line == '=')
+				line++;
+			mnstr_printf(toConsole, "%s\n", line);
+		}
 	}
 }
 
