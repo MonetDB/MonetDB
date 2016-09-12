@@ -4174,7 +4174,7 @@ def main(argv) :
                     all_tests = True
                 if verbose:
                     print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
-                t_, elem, diff = PerformDir(env, testdirs[0], testlist, BusyPorts, all_tests)
+                t_, elem, diff, interrupted = PerformDir(env, testdirs[0], testlist, BusyPorts, all_tests)
                 if elem is not None:
                     if diff <= F_OK:
                         body_good.append(elem)
@@ -4184,7 +4184,7 @@ def main(argv) :
                 if verbose:
                     print("\nRunning all tests in directories %s.\n" % str(testdirs))
                 for d in testdirs:
-                    t, elem, diff = PerformDir(env, d, [], BusyPorts, True)
+                    t, elem, diff, interrupted = PerformDir(env, d, [], BusyPorts, True)
                     t_ = t_ + t
                     if elem is not None:
                         if diff <= F_OK:
