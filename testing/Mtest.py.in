@@ -4191,6 +4191,8 @@ def main(argv) :
                             body_good.append(elem)
                         else:
                             body_bad.append(elem)
+                    if interrupted:
+                        break
                     if global_timeout and start_time + global_timeout < time.time():
                         break
         except KeyboardInterrupt:
