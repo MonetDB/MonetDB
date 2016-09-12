@@ -646,44 +646,55 @@ def CreateHtmlIndex (env, *body) :
                                   'target': '%s_%s_body' % (DISTVER, TSTDIR),
                                   'class': 'black'},
                                  header)
+            tr = Element('tr', {'valign': 'top'},
+                         Element('th', {'class': 'header'},
+                                 header))
+            tr.addchildren(body)
+            hbody = Element('body',
+                            {'bgcolor': white,
+                             'text': black,
+                             'link': green,
+                             'vlink': darkgreen,
+                             'alink': lime},
+                            Element('center', {},
+                                    Element('table',
+                                            {'align': 'abscenter',
+                                             'border': '1',
+                                             'cellspacing': '0',
+                                             'cellpadding': '3'},
+                                            tr)))
         else:
-            header = Element('span', {'class': 'black'},
+            header = Element('h3', {},
                              Text(DISTVER))
-        tr = Element('tr', {'valign': 'top'},
-                     Element('th', {'class': 'header'},
-                             header))
-        tr.addchildren(body)
+            hbody = Element('body',
+                            {'bgcolor': white,
+                             'text': black,
+                             'link': green,
+                             'vlink': darkgreen,
+                             'alink': lime},
+                            header)
+            hbody.addchildren(body)
         html = Element('html', {},
                        Element('head', {},
                                Element('title', {},
                                        Text(HTMLTITLE)),
                                stylesheet),
-                       Element('body',
-                               {'bgcolor': white,
-                                'text': black,
-                                'link': green,
-                                'vlink': darkgreen,
-                                'alink': lime},
-                               Element('center', {},
-                                       Element('table',
-                                               {'align': 'abscenter',
-                                                'border': '1',
-                                                'cellspacing': '0',
-                                                'cellpadding': '3'},
-                                               tr))))
+                       hbody)
         f = open("%s.head.html" % INDEX,"w")
         html.write(f, True)
         f.close()
 
         if TSTDIR:
-            ROWS="72"
+            layout = 'rows'
+            ROWS="8%"
         else:
-            ROWS="54"
+            layout = 'cols'
+            ROWS="10%"
         html = Element('html', {},
                        Element('head', {},
                                Element('title', {}, Text(HTMLTITLE))),
                        Element('frameset',
-                               {'rows': '%s,*' % ROWS,
+                               {layout: '%s,*' % ROWS,
                                 'frameborder': 'yes',
                                 'border': '1',
                                 'bordercolor': white,
@@ -1048,14 +1059,15 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, o, e) :
 ### AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) #
 
 def AddSubToHtmlIndex (env, TSTDIR, diff) :
-    td = Element('td', {'class': 'header'})
-    td.addchildren(AddHref('%s/.index.html' % url(TSTDIR), '%s__body' % DISTVER,
-                           TSTDIR, diff))
+    elem = Element('p', {})
+    elem.addchildren(AddHref('%s/.index.html' % url(TSTDIR),
+                             '%s__body' % DISTVER,
+                             TSTDIR, diff))
     if '__BODY_' not in env  or  \
        not env['__BODY_'][0]  or  \
        ( (not env['__BODY_'][1])  and  diff ):
         env['__BODY_'] = ["%s/.index.html" % TSTDIR, diff]
-    return td
+    return elem
 ### AddSubToHtmlIndex (env, TSTDIR, diff) #
 
 def SkipTest(env, TST, EXT, REASON, length) :
