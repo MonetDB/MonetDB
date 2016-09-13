@@ -46,9 +46,6 @@ comment "Create a BAT with the logical reference counts";
 command getLocation() :bat[:str] 	
 address CMDbbpLocation
 comment "Create a BAT with their disk locations";
-command getHeat() :bat[:int] 	
-address CMDbbpHeat
-comment "Create a BAT with the heat values";
 command getDirty() :bat[:str] 	
 address CMDbbpDirty
 comment "Create a BAT with the dirty/ diffs/clean status";

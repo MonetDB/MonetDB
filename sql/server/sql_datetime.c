@@ -227,7 +227,6 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 		return -1;
 	if (sk == isec) {
 		int msec = 0;
-		val *= 1000;
 		if (n && n[0] == '.') {
 			char *nn;
 			msec = strtol(n+1, &nn, 10);
@@ -240,6 +239,13 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 				n = nn;
 			}
 		}
+		if (val > GDK_lng_max / 1000 ||
+		    (val == GDK_lng_max / 1000 && msec > GDK_lng_max % 1000)) {
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Overflow\n"));
+			return -1;
+		}
+		val *= 1000;
 		val += msec;
 	}
 	val *= mul;

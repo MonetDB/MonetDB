@@ -2,64 +2,56 @@
 
 # inty types
 
-bbit:= bat.new(:oid,:bit);
+bbit:= bat.new(:bit);
 bat.append(bbit,1:bit);
 bat.append(bbit,0:bit);
 bat.append(bbit,1:bit);
 bat.append(bbit,0:bit);
 bat.append(bbit,nil:bit);
-rbit:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bbit);
+rbit:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bbit);
 io.print(rbit);
 
-bbte:= bat.new(:oid,:bte);
+bbte:= bat.new(:bte);
 bat.append(bbte,42:bte);
 bat.append(bbte,84:bte);
 bat.append(bbte,254:bte);
 bat.append(bbte,0:bte);
 bat.append(bbte,nil:bte);
-rbte:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bbte);
+rbte:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bbte);
 io.print(rbte);
 
-bsht:= bat.new(:oid,:sht);
+bsht:= bat.new(:sht);
 bat.append(bsht,42:sht);
 bat.append(bsht,82:sht);
 bat.append(bsht,0:sht);
 bat.append(bsht,3276:sht);
 bat.append(bsht,nil:sht);
-rsht:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bsht);
+rsht:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bsht);
 io.print(rsht);
 
-bint:= bat.new(:oid,:int);
+bint:= bat.new(:int);
 bat.append(bint,1804289383:int);
 bat.append(bint,846930886:int);
 bat.append(bint,1681692777:int);
 bat.append(bint,1714636915:int);
 bat.append(bint,nil:int);
-rint:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bint);
+rint:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bint);
 io.print(rint);
 
-bwrd:= bat.new(:oid,:wrd);
-bat.append(bwrd,1804289383:wrd);
-bat.append(bwrd,846930886:wrd);
-bat.append(bwrd,1681692777:wrd);
-bat.append(bwrd,1714636915:wrd);
-rwrd:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bwrd);
-io.print(rwrd);
-
-blng:= bat.new(:oid,:lng);
+blng:= bat.new(:lng);
 bat.append(blng,1804289383L);
 bat.append(blng,846930886L);
 bat.append(blng,1681692777L);
 bat.append(blng,1714636915L);
-rlng:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",blng);
+rlng:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",blng);
 io.print(rlng);
 
-bhge:= bat.new(:oid,:hge);
+bhge:= bat.new(:hge);
 bat.append(bhge,1804289383:hge);
 bat.append(bhge,846930886:hge);
 bat.append(bhge,1681692777:hge);
 bat.append(bhge,1714636915:hge);
-rhge:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bhge);
+rhge:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bhge);
 io.print(rhge);
 
 into:int := rapi.eval(nil:ptr, "42L");
@@ -67,31 +59,31 @@ io.print(into);
 
 # floating point
 
-bflt:= bat.new(:oid,:flt);
+bflt:= bat.new(:flt);
 bat.append(bflt,18042.89383:flt);
 bat.append(bflt,846.930886:flt);
 bat.append(bflt,16.81692777:flt);
 bat.append(bflt,1714636.915:flt);
-rflt:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bflt);
+rflt:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bflt);
 io.print(rflt);
 
-bdbl:= bat.new(:oid,:dbl);
+bdbl:= bat.new(:dbl);
 bat.append(bdbl,180428.9383:dbl);
 bat.append(bdbl,84.6930886:dbl);
 bat.append(bdbl,168169.2777:dbl);
 bat.append(bdbl,17146369.15:dbl);
 bat.append(bdbl,nil:dbl);
-rdbl:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bdbl);
+rdbl:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bdbl);
 io.print(rdbl);
 
 # strings
 
-bstr:= bat.new(:oid,:str);
+bstr:= bat.new(:str);
 bat.append(bstr,"asdf":str);
 bat.append(bstr,"sd asd asd asd asd a":str);
 bat.append(bstr,"":str);
 bat.append(bstr,nil:str);
-rstr:bat[:oid,:int] := rapi.eval(nil:ptr,"nchar(arg1)",bstr);
+rstr:bat[:int] := rapi.eval(nil:ptr,"nchar(arg1)",bstr);
 io.print(rstr);
 
 so:str := rapi.eval(nil:ptr,"'asdf'");
@@ -99,33 +91,33 @@ io.print(so);
 
 # output types testing
 
-binto:= bat.new(:oid,:int);
+binto:= bat.new(:int);
 bat.append(binto,1804289383:int);
 bat.append(binto,846930886:int);
 bat.append(binto,1681692777:int);
 bat.append(binto,1714636915:int);
 bat.append(binto,nil:int);
 
-rintbi:bat[:oid,:int] := rapi.eval(nil:ptr,"arg1",binto);
+rintbi:bat[:int] := rapi.eval(nil:ptr,"arg1",binto);
 io.print(rintbi);
 
-rintbi2:bat[:oid,:int] := rapi.eval(nil:ptr,"as.integer(arg1)",binto);
+rintbi2:bat[:int] := rapi.eval(nil:ptr,"as.integer(arg1)",binto);
 io.print(rintbi2);
 
-rintbl:bat[:oid,:lng] := rapi.eval(nil:ptr,"as.integer(arg1)",binto);
+rintbl:bat[:lng] := rapi.eval(nil:ptr,"as.integer(arg1)",binto);
 io.print(rintbl);
 
-rintbh:bat[:oid,:hge] := rapi.eval(nil:ptr,"as.integer(arg1)",binto);
+rintbh:bat[:hge] := rapi.eval(nil:ptr,"as.integer(arg1)",binto);
 io.print(rintbh);
 
-rintbd:bat[:oid,:dbl] := rapi.eval(nil:ptr,"as.numeric(arg1)",binto);
+rintbd:bat[:dbl] := rapi.eval(nil:ptr,"as.numeric(arg1)",binto);
 io.print(rintbd);
 
-rintbs:bat[:oid,:str] := rapi.eval(nil:ptr,"as.character(arg1)",binto);
+rintbs:bat[:str] := rapi.eval(nil:ptr,"as.character(arg1)",binto);
 io.print(rintbs);
 
 # factors should be strings
-rintbf:bat[:oid,:str] := rapi.eval(nil:ptr,"as.factor(arg1)",binto);
+rintbf:bat[:str] := rapi.eval(nil:ptr,"as.factor(arg1)",binto);
 io.print(rintbf);
 
 

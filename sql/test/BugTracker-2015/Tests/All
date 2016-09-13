@@ -9,7 +9,7 @@ sharp-alias.Bug-3467
 name_conflict.Bug-3650
 prepare_unop_crash.Bug-3653
 and_or_in.Bug-3655
-acidity2-fail.Bug-3635
+HAVE_PYMONETDB?acidity2-fail.Bug-3635
 inet-ordering.Bug-3660
 row-value-constructor-crash.Bug-3662
 incorrect-ROW_NUMBER.Bug-3663
@@ -68,7 +68,7 @@ local-remotetable-crash.Bug-3754
 savepoint.Bug-3738-1
 savepoint.Bug-3738-2
 string_split.Bug-3564
-schemadiff.Bug-3778
+HAVE_PYMONETDB?schemadiff.Bug-3778
 fractional_precision_limitation.Bug-3808
 not-like-without-wildcard.Bug-3811
 HAVE_LIBZ?copy_into.Bug-3813
@@ -79,6 +79,7 @@ crash_in_reduce_groupby.Bug-3818
 duplicate-constraint.Bug-3820
 case_type.Bug-3821
 like-escape.Bug-3822
+#HAVE_PYMONETDB?concurrent-schema.Bug-3826
 uuid-compare.Bug-3827
 select-push-crash.Bug-3829
 coalesce.Bug-3830

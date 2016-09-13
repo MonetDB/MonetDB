@@ -176,6 +176,8 @@ scanner_init_keywords(void)
 	keywords_insert("FOR", FOR);
 	keywords_insert("FOREIGN", FOREIGN);
 	keywords_insert("FROM", FROM);
+	keywords_insert("FWF", FWF);
+
 	keywords_insert("REFERENCES", REFERENCES);
 
 	keywords_insert("MATCH", MATCH);
@@ -194,12 +196,14 @@ scanner_init_keywords(void)
 	keywords_insert("GROUP", sqlGROUP);
 	keywords_insert("HAVING", HAVING);
 	keywords_insert("ILIKE", ILIKE);
+	keywords_insert("IMPRINTS", IMPRINTS);
 	keywords_insert("IN", sqlIN);
 	keywords_insert("INNER", INNER);
 	keywords_insert("INTO", INTO);
 	keywords_insert("IS", IS);
 	keywords_insert("JOIN", JOIN);
 	keywords_insert("KEY", KEY);
+	keywords_insert("LATERAL", LATERAL);
 	keywords_insert("LEFT", LEFT);
 	keywords_insert("LIKE", LIKE);
 	keywords_insert("LIMIT", LIMIT);
@@ -335,6 +339,7 @@ scanner_init_keywords(void)
 	keywords_insert("TYPE", TYPE);
 	keywords_insert("PROCEDURE", PROCEDURE);
 	keywords_insert("FUNCTION", FUNCTION);
+	keywords_insert("LOADER", sqlLOADER);
 	keywords_insert("FILTER", FILTER);
 	keywords_insert("AGGREGATE", AGGREGATE);
 	keywords_insert("RETURNS", RETURNS);
@@ -350,7 +355,6 @@ scanner_init_keywords(void)
 	keywords_insert("PLAN", SQL_PLAN);
 	keywords_insert("DEBUG", SQL_DEBUG);
 	keywords_insert("TRACE", SQL_TRACE);
-	keywords_insert("DOT", SQL_DOT);
 	keywords_insert("PREPARE", PREPARE);
 	keywords_insert("PREP", PREPARE);
 	keywords_insert("EXECUTE", EXECUTE);
@@ -959,6 +963,12 @@ int scanner_symbol(mvc * c, int cur)
 		utf8_putchar(lc, next); 
 		return scanner_token(lc, cur);
 	case '~': /* binary not */
+		lc->started = 1;
+		next = scanner_getc(lc);
+		if (next == '=') 
+			return scanner_token(lc, GEOM_MBR_EQUAL);
+		utf8_putchar(lc, next); 
+		return scanner_token(lc, cur);
 	case '^': /* binary xor */
 	case '*':
 	case '?':

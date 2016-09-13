@@ -16,12 +16,10 @@ INCLUDES = ../../../include \
 	   ../../../../monetdb5/modules/mal \
 	   ../../../../monetdb5/optimizer \
 	   ../../../../monetdb5/scheduler \
-	   ../../../../clients/mapilib \
 	   ../../../../common/options \
 	   ../../../../common/stream \
 	   ../../../../common/utils \
-	   ../../../../gdk \
-	   $(READLINE_INCS)
+	   ../../../../gdk
 
 lib__vault = {
 	MODULE

@@ -81,16 +81,16 @@ stderr of test 'geom_point` in directory 'geom/sql` itself:
 # 20:49:34 >  mclient -lsql -umonetdb -Pmonetdb --host=koolmees --port=38689 
 # 20:49:34 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO points values ('POINT(10)');
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO points values ('POINT()');
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO points values ('POINT');
 ERROR = !ParseException: Expected word but encountered end of stream
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO points values ('');
 ERROR = !ParseException: Expected word but encountered end of stream
 

@@ -44,7 +44,7 @@ Ready.
 #        v = 'secondary';
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 

@@ -79,10 +79,10 @@ stderr of test 'session_vars` in directory 'sql/test` itself:
 # 20:30:42 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39627 
 # 20:30:42 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = set test_nr = 'help';
 ERROR = !conversion of string 'help' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = set test_boolean = 'help';
 ERROR = !conversion of string 'help' to type bit failed.
 

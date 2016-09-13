@@ -7,107 +7,6 @@
  */
 
  /* (c) M. Kersten
- * Building Your Own Optimizer
- * Implementation of your own MAL-MAL optimizer can best be started
- * from refinement of one of the examples included in the code base.
- * Beware that only those used in the critical path of SQL execution
- * are thorouhly tested. The others are developed up to the point that
- * the concept and approach can be demonstrated.
- *
- * The general structure of most optimizers is to actively copy
- * a MAL block into a new program structure. At each step we
- * determine the action taken, e.g. replace the instruction or
- * inject instructions to achieve the desired goal.
- *
- * A tally on major events should be retained, because it gives
- * valuable insight in the effectiveness of your optimizer.
- * The effects of all optimizers is collected in a system catalog.
- *
- * Each optimizer ends with a strong defense line, optimizerCheck() 
- * * It performs a complete type and data flow analysis before returning.
- * Moreover, if you are in debug mode, it will  keep a copy of the
- * plan produced for inspection. Studying the differences between
- * optimizer steps provide valuable information to improve your code.
- *
- * The functionality of the optimizer should be clearly delineated.
- * The guiding policy is that it is always safe to not apply an
- * optimizer step.
- * This helps to keep the optimizers as independent as possible.
- *
- * It really helps if you start with a few tiny examples to test
- * your optimizer. They should be added to the Tests directory
- * and administered in Tests/All.
- *
- * Breaking up the optimizer into different components and
- * grouping them together in arbitrary sequences calls for
- * careful programming.
- *
- * One of the major hurdles is to test interference of the
- * optimizer. The test set is a good starting point, but does
- * not garantee that all cases have been covered.
- *
- * In principle, any subset of optimizers should work flawlessly.
- * With a few tens of optimizers this amounts to potential millions
- * of runs. Adherence to a partial order reduces the problem, but
- * still is likely to be too resource consumptive to test continously.
- *
- * The optimizers defined here are registered to the optimizer module.
- */
-/*
- * @node Framework, Lifespan Analysis, Building Blocks, The MAL Optimizer
- * @subsection Optimizer framework
- * The large number of query transformers calls for a flexible scheme for
- * the deploy them. The approach taken is to make all optimizers visible
- * at the language level as a signature
- * @code{optimizer.F()} and @code{optimizer.F(mod,fcn)}.
- * The latter designates a target function to be inspected by
- * the optimizer @code{F()}.
- * Then (semantic) optimizer merely
- * inspects a MAL block for their occurrences and activitates it.
- *
- * The optimizer routines have access to the client context, the MAL block,
- * and the program counter where the optimizer call was found. Each optimizer
- * should remove itself from the MAL block.
- *
- * The optimizer repeatedly runs through the program until
- * no optimizer call is found.
- *
- * Note, all optimizer instructions are executed only once. This means that the
- * instruction can be removed from further consideration. However, in the case
- * that a designated function is selected for optimization (e.g.,
- * commonTerms(user,qry)) the pc is assumed 0. The first instruction always
- * denotes the signature and can not be removed.
- *
- * To safeguard against incomplete optimizer implementations it
- * is advisable to perform an optimizerCheck at the end.
- * It takes as arguments the number of optimizer actions taken
- * and the total cpu time spent.
- * The body performs a full flow and type check and re-initializes
- * the lifespan administration. In debugging mode also a copy
- * of the new block is retained for inspection.
- *
- * @node Lifespan Analysis, Flow Analysis, Framework, The MAL Optimizer
- * @subsection Lifespan analysis
- * Optimizers may be interested in the characteristic of the
- * barrier blocks for making a decision.
- * The variables have a lifespan in the code blocks, denoted by properties
- * beginLifespan,endLifespan. The beginLifespan denotes the intruction where
- * it receives its first value, the endLifespan the last instruction in which
- * it was used as operand or target.
- *
- * If, however, the last use lies within a BARRIER block, we can not be sure
- * about its end of life status, because a block redo may implictly
- * revive it. For these situations we associate the endLifespan with
- * the block exit.
- *
- * In many cases, we have to determine if the lifespan interferes with
- * a optimization decision being prepared.
- * The lifespan is calculated once at the beginning of the optimizer sequence.
- * It should either be maintained to reflect the most accurate situation while
- * optimizing the code base. In particular, it means that any move/remove/addition
- * of a MAL instruction calls for either a recalculation or further propagation.
- * Unclear what will be the best strategy. For the time being we just recalc.
- * If one of the optimizers fails, we should not attempt others.
  */
 #include "monetdb_config.h"
 #include "opt_prelude.h"
@@ -127,82 +26,63 @@ struct OPTcatalog {
 	int enabled;
 	int calls;
 	int actions;
-	int debug;
 } optcatalog[]= {
-{"aliases",		0,	0,	0,	DEBUG_OPT_ALIASES},
-{"coercions",	0,	0,	0,	DEBUG_OPT_COERCION},
-{"commonTerms",	0,	0,	0,	DEBUG_OPT_COMMONTERMS},
-{"constants",	0,	0,	0,	DEBUG_OPT_CONSTANTS},
-{"costModel",	0,	0,	0,	DEBUG_OPT_COSTMODEL},
-{"crack",		0,	0,	0,	DEBUG_OPT_CRACK},
-{"datacyclotron",0,	0,	0,	DEBUG_OPT_DATACYCLOTRON},
-{"dataflow",	0,	0,	0,	DEBUG_OPT_DATAFLOW},
-{"deadcode",	0,	0,	0,	DEBUG_OPT_DEADCODE},
-{"evaluate",	0,	0,	0,	DEBUG_OPT_EVALUATE},
-{"factorize",	0,	0,	0,	DEBUG_OPT_FACTORIZE},
-{"garbage",		0,	0,	0,	DEBUG_OPT_GARBAGE},
-{"generator",	0,	0,	0,	DEBUG_OPT_GENERATOR},
-{"history",		0,	0,	0,	DEBUG_OPT_HISTORY},
-{"inline",		0,	0,	0,	DEBUG_OPT_INLINE},
-{"projectionpath",	0,	0,	0,	DEBUG_OPT_PROJECTIONPATH},
-{"json",		0,	0,	0,	DEBUG_OPT_JSON},
-{"macro",		0,	0,	0,	DEBUG_OPT_MACRO},
-{"matpack",		0,	0,	0,	DEBUG_OPT_MATPACK},
-{"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},
-{"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
-{"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
-{"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
-{"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
-{"recycler",	0,	0,	0,	DEBUG_OPT_RECYCLE},
-{"reduce",		0,	0,	0,	DEBUG_OPT_REDUCE},
-{"remap",		0,	0,	0,	DEBUG_OPT_REMAP},
-{"remote",		0,	0,	0,	DEBUG_OPT_REMOTE},
-{"reorder",		0,	0,	0,	DEBUG_OPT_REORDER},
-{"replication",	0,	0,	0,	DEBUG_OPT_REPLICATION},
-{"selcrack",	0,	0,	0,	DEBUG_OPT_SELCRACK},
-{"sidcrack",	0,	0,	0,	DEBUG_OPT_SIDCRACK},
-{"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
-{"pushselect",	0,	0,	0,	DEBUG_OPT_PUSHSELECT},
-{ 0,	0,	0,	0,	0}
+{"aliases",		0,	0,	0},
+{"coercions",	0,	0,	0},
+{"commonTerms",	0,	0,	0},
+{"constants",	0,	0,	0},
+{"costModel",	0,	0,	0},
+{"crack",		0,	0,	0},
+{"datacyclotron",0,	0,	0},
+{"dataflow",	0,	0,	0},
+{"deadcode",	0,	0,	0},
+{"emptybind",	0,	0,	0},
+{"evaluate",	0,	0,	0},
+{"factorize",	0,	0,	0},
+{"garbage",		0,	0,	0},
+{"generator",	0,	0,	0},
+{"history",		0,	0,	0},
+{"inline",		0,	0,	0},
+{"projectionpath",	0,	0,	0},
+{"jit",			0,	0,	0},
+{"json",		0,	0,	0},
+{"macro",		0,	0,	0},
+{"matpack",		0,	0,	0},
+{"mergetable",	0,	0,	0},
+{"mitosis",		0,	0,	0},
+{"multiplex",	0,	0,	0},
+{"origin",		0,	0,	0},
+{"peephole",	0,	0,	0},
+{"reduce",		0,	0,	0},
+{"remap",		0,	0,	0},
+{"remote",		0,	0,	0},
+{"reorder",		0,	0,	0},
+{"replication",	0,	0,	0},
+{"selcrack",	0,	0,	0},
+{"sidcrack",	0,	0,	0},
+{"strengthreduction",	0,	0,	0},
+{"pushselect",	0,	0,	0},
+{ 0,	0,	0,	0}
 };
 
-lng optDebug;
-
-/*
- * Front-ends can set a collection of optimizers by name or their pipe alias.
+/* some optimizers can only be applied once.
+ * The optimizer trace at the end of the MAL block
+ * can be used to check for this.
  */
-str
-OPTsetDebugStr(void *ret, str *nme)
+int
+optimizerIsApplied(MalBlkPtr mb, str optname)
 {
+	InstrPtr p;
 	int i;
-	str name= *nme, t, s, env = 0;
-
-	(void) ret;
-	optDebug = 0;
-	if ( name == 0 || *name == 0)
-		return MAL_SUCCEED;
-	name = GDKstrdup(name);
-
-	if ( strstr(name,"_pipe") ){
-		env = GDKgetenv(name);
-		if ( env ) {
-			GDKfree(name);
-			name = GDKstrdup(env);
-		}
+	for( i = mb->stop; i < mb->ssize; i++){
+		p = getInstrPtr(mb,i);
+		if( p == NULL)
+			return 0;
+		if (getModuleId(p) == optimizerRef && p->token == REMsymbol && strcmp(getFunctionId(p),optname) == 0) 
+			return 1;
 	}
-	for ( t = s = name; t && *t ; t = s){
-		s = strchr(s,',');
-		if ( s ) *s++ = 0;
-		for ( i=0; optcatalog[i].name; i++)
-		if ( strcmp(t,optcatalog[i].name) == 0){
-			optDebug |= DEBUG_OPT(optcatalog[i].debug);
-			break;
-		}
-	}
-	GDKfree(name);
-	return MAL_SUCCEED;
+	return 0;
 }
-
 /*
  * All optimizers should pass the optimizerCheck for defense against
  * incomplete and malicious MAL code.
@@ -210,23 +90,25 @@ OPTsetDebugStr(void *ret, str *nme)
 str
 optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec)
 {
+	char buf[256];
+	lng clk = GDKusec();
+
 	if (cntxt->mode == FINISHCLIENT)
 		throw(MAL, name, "prematurely stopped client");
 	if( actions > 0){
 		chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
 		chkFlow(cntxt->fdout, mb);
 		chkDeclarations(cntxt->fdout, mb);
+		usec += GDKusec() - clk;
 	}
-	if( cntxt->debugOptimizer){
-		/* keep the actions taken as a post block comments */
-		char buf[BUFSIZ];
-		sprintf(buf,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
-		newComment(mb,buf);
-		if (mb->errors)
-			throw(MAL, name, PROGRAM_GENERAL);
-	}
+	/* keep all actions taken as a post block comment */
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
+	newComment(mb,buf);
+	if (mb->errors)
+		throw(MAL, name, PROGRAM_GENERAL);
 	return MAL_SUCCEED;
 }
+
 /*
  * Limit the loop count in the optimizer to guard against indefinite
  * recursion, provided the optimizer does not itself generate
@@ -241,17 +123,21 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
 	lng clk = GDKusec();
+	char buf[256];
 
 	/* assume the type and flow have been checked already */
 	/* SQL functions intended to be inlined should not be optimized */
 	if ( mb->inlineProp)
         	return 0;
 
+	/* force at least once a complete type check by resetting the type check flag */
+
+	resetMalBlk(mb,mb->stop);
+	chkProgram(cntxt->fdout,cntxt->nspace,mb);
+	if (mb->errors)
+		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
 	do {
-		/* any errors should abort the optimizer */
-		if (mb->errors)
-			break;
 		qot = 0;
 		for (pc = 0; pc < mb->stop ; pc++) {
 			p = getInstrPtr(mb, pc);
@@ -271,6 +157,8 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 		}
 	} while (qot && cnt++ < mb->stop);
 	mb->optimize= GDKusec() - clk;
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","total",1,mb->optimize);
+	newComment(mb,buf);
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
 	return 0;
@@ -530,8 +418,12 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == optimizerRef ||
 		getModuleId(p) == lockRef ||
 		getModuleId(p) == semaRef ||
-		getModuleId(p) == recycleRef ||
 		getModuleId(p) == alarmRef)
+		return TRUE;
+		
+	if( getModuleId(p) == pyapiRef ||
+		getModuleId(p) == pyapimapRef ||
+		getModuleId(p) == rapiRef)
 		return TRUE;
 
 	if (getModuleId(p) == sqlRef){
@@ -574,8 +466,6 @@ hasSideEffects(InstrPtr p, int strict)
 		return TRUE;
 
 	if ( getModuleId(p) == remoteRef)
-		return TRUE;
-	if ( getModuleId(p) == recycleRef)
 		return TRUE;
 	return FALSE;
 }
@@ -663,7 +553,8 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == batcalcRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
-		 getModuleId(p) != batrapiRef;
+		 getModuleId(p) != batrapiRef &&
+		 getModuleId(p) != batpyapiRef;
 }
 
 int isLikeOp(InstrPtr p){
@@ -674,19 +565,24 @@ int isLikeOp(InstrPtr p){
 		 getFunctionId(p) == not_ilikeRef));
 }
 
-int isTopn(InstrPtr p){
+int 
+isTopn(InstrPtr p)
+{
 	return ((getModuleId(p) == algebraRef && getFunctionId(p) == firstnRef) ||
 			isSlice(p));
 }
 
-int isSlice(InstrPtr p){
+int 
+isSlice(InstrPtr p)
+{
 	return (getModuleId(p) == algebraRef &&
-		getFunctionId(p) == subsliceRef); 
+	   (getFunctionId(p) == subsliceRef || getFunctionId(p) == sliceRef)); 
 }
 
-int isSample(InstrPtr p){
-	return (getModuleId(p) == sampleRef &&
-		getFunctionId(p) == subuniformRef);
+int 
+isSample(InstrPtr p)
+{
+	return (getModuleId(p) == sampleRef && getFunctionId(p) == subuniformRef);
 }
 
 int isOrderby(InstrPtr p){

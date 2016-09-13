@@ -32,6 +32,7 @@ static int calltag =0; // to identify each invocation
 void
 mal_runtime_reset(void)
 {
+	GDKfree(QRYqueue);
 	QRYqueue = 0;
 	qtop = 0;
 	qsize = 0;
@@ -120,6 +121,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 	}
 
 	qtop = j;
+	QRYqueue[qtop].query = NULL; /* sentinel for SYSMONqueue() */
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -200,8 +202,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	
 	if(malProfileMode > 0){
 		pci->wbytes += getVolume(stk, pci, 1);
-		if (pci->recycle)
-			pci->rbytes += getVolume(stk, pci, 0);
+		pci->rbytes += getVolume(stk, pci, 0);
 		profilerEvent(mb, stk, pci, FALSE, cntxt->username);
 	}
 	if( malProfileMode < 0){
@@ -228,10 +229,12 @@ getBatSpace(BAT *b){
 	lng space=0;
 	if( b == NULL)
 		return 0;
-	space += BATcount(b) * b->T->width;
-	if( b->T->vheap) space += heapinfo(b->T->vheap, abs(b->batCacheid)); 
-	if(b->T) space += hashinfo(b->T->hash, abs(b->batCacheid)); 
-	space += IMPSimprintsize(b);
+	space += BATcount(b) * b->twidth;
+	if( space){
+		if( b->tvheap) space += heapinfo(b->tvheap, b->batCacheid); 
+		space += hashinfo(b->thash, b->batCacheid); 
+		space += IMPSimprintsize(b);
+	}
 	return space;
 }
 
@@ -250,7 +253,7 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
 			oid cnt = 0;
 
-			b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), TRUE);
+			b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, TRUE);
 			if (b == NULL)
 				continue;
 			cnt = BATcount(b);

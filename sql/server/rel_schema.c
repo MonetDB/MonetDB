@@ -406,7 +406,7 @@ column_option(
 			sql_exp *e = rel_logical_value_exp(sql, NULL, sym, sql_sel);
 			
 			if (e && is_atom(e->type)) {
-				atom *a = exp_value(e, sql->args, sql->argc);
+				atom *a = exp_value(sql, e, sql->args, sql->argc);
 
 				if (atom_null(a)) {
 					mvc_default(sql, cs, NULL);
@@ -940,6 +940,9 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		sq = rel_selects(sql, subquery);
 		if (!sq)
 			return NULL;
+
+		if ((tt == tt_merge_table || tt == tt_remote || tt == tt_replica_table) && with_data)
+			return sql_error(sql, 02, "42000!CREATE TABLE: cannot create %s table 'with data'", tt == tt_merge_table?"MERGE TABLE":tt == tt_remote?"REMOTE TABLE":"REPLICA TABLE");
 
 		/* create table */
 		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 

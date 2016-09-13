@@ -22,41 +22,31 @@
 
 typedef str xml;
 
-#ifdef WIN32
-#ifndef LIBATOMS
-#define xml_export extern __declspec(dllimport)
-#else
-#define xml_export extern __declspec(dllexport)
-#endif
-#else
-#define xml_export extern
-#endif
+mal_export int TYPE_xml;
 
-xml_export int TYPE_xml;
+mal_export int XMLfromString(str src, int *len, xml *x);
+mal_export int XMLtoString(str *s, int *len, xml src);
 
-xml_export int XMLfromString(str src, int *len, xml *x);
-xml_export int XMLtoString(str *s, int *len, xml src);
+mal_export str XMLxml2str(str *s, xml *x);
+mal_export str XMLstr2xml(xml *x, str *s);
+mal_export str XMLxmltext(str *s, xml *x);
+mal_export str XMLxml2xml(xml *x, xml *s);
+mal_export str XMLdocument(xml *x, str *s);
+mal_export str XMLcontent(xml *x, str *s);
+mal_export str XMLisdocument(bit *x, str *s);
+mal_export str XMLcomment(xml *x, str *s);
+mal_export str XMLpi(xml *x, str *target, str *s);
+mal_export str XMLroot(xml *x, xml *v, str *version, str *standalone);
+mal_export str XMLparse(xml *x, str *doccont, str *s, str *option);
+mal_export str XMLattribute(xml *ret, str *name, str *val);
+mal_export str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val);
+mal_export str XMLelementSmall(xml *ret, str *name, xml *val);
+mal_export str XMLconcat(xml *ret, xml *left, xml *right);
+mal_export str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-xml_export str XMLxml2str(str *s, xml *x);
-xml_export str XMLstr2xml(xml *x, str *s);
-xml_export str XMLxmltext(str *s, xml *x);
-xml_export str XMLxml2xml(xml *x, xml *s);
-xml_export str XMLdocument(xml *x, str *s);
-xml_export str XMLcontent(xml *x, str *s);
-xml_export str XMLisdocument(bit *x, str *s);
-xml_export str XMLcomment(xml *x, str *s);
-xml_export str XMLpi(xml *x, str *target, str *s);
-xml_export str XMLroot(xml *x, xml *v, str *version, str *standalone);
-xml_export str XMLparse(xml *x, str *doccont, str *s, str *option);
-xml_export str XMLattribute(xml *ret, str *name, str *val);
-xml_export str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val);
-xml_export str XMLelementSmall(xml *ret, str *name, xml *val);
-xml_export str XMLconcat(xml *ret, xml *left, xml *right);
-xml_export str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export size_t XMLquotestring(const char *s, char *buf, size_t len);
+mal_export size_t XMLunquotestring(const char **p, char q, char *buf);
 
-xml_export size_t XMLquotestring(const char *s, char *buf, size_t len);
-xml_export size_t XMLunquotestring(const char **p, char q, char *buf);
-
-xml_export str XMLprelude(void *ret);
+mal_export str XMLprelude(void *ret);
 
 #endif /* XML_H */

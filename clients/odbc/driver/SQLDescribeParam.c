@@ -20,8 +20,6 @@
  * SQLDescribeParam()
  * CLI Compliance: ODBC (Microsoft)
  *
- * Note: this function is not supported (yet), it returns an error.
- *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *

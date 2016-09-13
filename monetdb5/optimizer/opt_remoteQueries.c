@@ -11,8 +11,6 @@
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
-#define OPTDEBUGremote  if ( optDebug & ((lng) 1 <<DEBUG_OPT_REMOTE) )
-
 /*
  * The instruction sent is produced with a variation of call2str
  * from the debugger.
@@ -35,16 +33,12 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	if( p->retc > 1) strcat(msg,"(");
 	len= (int) strlen(msg);
 	for (k = 0; k < p->retc; k++) {
-		VarPtr v = getVar(mb, getArg(p, k));
 		if( isVarUDFtype(mb, getArg(p,k)) ){
 			str tpe = getTypeName(getVarType(mb, getArg(p, k)));
-			sprintf(msg+len, "%s:%s ", v->name, tpe);
+			sprintf(msg+len, "%s:%s ", getVarName(mb, getArg(p,k)), tpe);
 			GDKfree(tpe);
 		} else
-		if (isTmpVar(mb, getArg(p,k)))
-			sprintf(msg+len, "%c%d", refMarker(mb, getArg(p,k)), v->tmpindex);
-		else
-			sprintf(msg+len, "%s", v->name);
+			sprintf(msg+len, "%s", getVarName(mb,getArg(p,k)));
 		if (k < p->retc - 1)
 			strcat(msg,",");
 		len= (int) strlen(msg);
@@ -67,10 +61,8 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 					GDKfree(cv);
 				}
 
-			} else if (isTmpVar(mb, getArg(p,k)))
-				sprintf(msg+len, "%c%d", refMarker(mb,getArg(p,k)), v->tmpindex);
-			else
-				sprintf(msg+len, "%s", v->name);
+			} else
+				sprintf(msg+len, "%s", v->id);
 			if (k < p->argc - 1)
 				strcat(msg,",");
 			len= (int) strlen(msg);
@@ -156,13 +148,16 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	int dbtop,k;
 	char buf[BUFSIZ],*s, *db;
 	ValRecord cst;
+	lng usec = GDKusec();
+
 	cst.vtype= TYPE_int;
 	cst.val.ival= 0;
 	cst.len = 0;
 
 
-	OPTDEBUGremoteQueries
+#ifdef DEBUG_OPT_REMOTEQUERIES
 	mnstr_printf(cntxt->fdout, "RemoteQueries optimizer started\n");
+#endif
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
@@ -271,10 +266,10 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				putRemoteVariables()
 				remoteAction()
 			} else {
-				OPTDEBUGremote {
-					fprintf(stderr, "found remote variable %s ad %d\n",
-						getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
-				}
+#ifdef DEBUG_OPT_REMOTEQUERIES
+				fprintf(stderr, "found remote variable %s ad %d\n",
+					getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
+#endif
 				pushInstruction(mb,p);
 			}
 		} else
@@ -369,5 +364,16 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 #endif
 	GDKfree(location);
 	GDKfree(dbalias);
+
+    /* Defense line against incorrect plans */
+    if( doit){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remoteQueries",doit, GDKusec() - usec);
+    newComment(mb,buf);
+
 	return doit;
 }

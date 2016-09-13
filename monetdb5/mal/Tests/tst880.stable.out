@@ -26,7 +26,7 @@ Ready.
 # 12:36:19 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     bat.append(b:bat[:int],-5:int);     	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
     bat.append(b:bat[:int],0:int);      	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
     bat.append(b:bat[:int],5:int);      	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
@@ -34,7 +34,7 @@ function user.foo():void;               	#[0] (0)  0
     bat.append(b:bat[:int],nil:int);    	#[6] (0) BKCappend_val_wrap 11 <- 1 10 
     bat.append(b:bat[:int],7:int);      	#[7] (0) BKCappend_val_wrap 12 <- 1 13 
     bat.append(b:bat[:int],8:int);      	#[8] (0) BKCappend_val_wrap 14 <- 1 15 
-    c:bat[:int] := bat.new(:int);       	#[9] (0) CMDBATnewColumn 16 <- 2 
+    c:bat[:int] := bat.new(:int);       	#[9] (0) CMDBATnew 16 <- 2 
     bat.append(c:bat[:int],-5:int);     	#[10] (0) BKCappend_val_wrap 17 <- 16 4 
     bat.append(c:bat[:int],1:int);      	#[11] (0) BKCappend_val_wrap 18 <- 16 19 
     bat.append(c:bat[:int],5:int);      	#[12] (0) BKCappend_val_wrap 20 <- 16 8 

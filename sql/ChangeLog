@@ -1,3 +1,16 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Aug  3 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed functions sys.zorder_encode, sys.zorder_decode_x, and
+  sys.zorder_decode_y.
+
+* Mon Jul 18 2016 Martin Kersten <mk@cwi.nl>
+- The experimental recycler code is moved to the attic.
+
+* Wed Jul  6 2016 Martin Kersten <mk@cwi.nl>
+- The syntax of bat.new(:oid,:any) has been changed by dropping the
+  superflous :oid.  All BATs are now binary associations between a void
+  column and a materialized value column.  (except for the internal
+  :bat[:void,:void] representation of simple oid ranged tails.)
+

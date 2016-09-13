@@ -18,16 +18,5 @@
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define manual_export extern __declspec(dllimport)
-#else
-#define manual_export extern __declspec(dllexport)
-#endif
-#else
-#define manual_export extern
-#endif
-
-manual_export str MANUALhelp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _MANUAL_H */

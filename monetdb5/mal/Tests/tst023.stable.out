@@ -1,0 +1,68 @@
+stdout of test 'tst023` in directory 'monetdb5/mal` itself:
+
+
+# 10:17:06 >  
+# 10:17:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36074" "--set" "mapi_usock=/var/tmp/mtest-8504/.s.monetdb.36074" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_monetdb5_mal" "--set" "embedded_r=yes"
+# 10:17:06 >  
+
+# MonetDB 5 server v11.23.8 (hg id: b4168ee316f9+)
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:36074/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8504/.s.monetdb.36074
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:17:07 >  
+# 10:17:07 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-8504" "--port=36074"
+# 10:17:07 >  
+
+#--------------------------#
+# t	t	t  # name
+# void	int	flt  # type
+#--------------------------#
+[ 0@0,	1,	12.31	]
+[ 1@0,	2,	12.32	]
+[ 2@0,	3,	12.33	]
+[ 3@0,	4,	12.34	]
+[ 4@0,	2,	12.35	]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	1@0	]
+[ 1@0,	4@0	]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1	]
+[ 1@0,	3	]
+[ 2@0,	4	]
+#--------------------------#
+# h	t  # name
+# void	flt  # type
+#--------------------------#
+[ 0@0,	12.31	]
+[ 1@0,	12.33	]
+[ 2@0,	12.34	]
+#--------------------------#
+# t	t	t  # name
+# void	int	flt  # type
+#--------------------------#
+[ 0@0,	1,	12.31	]
+[ 1@0,	3,	12.33	]
+[ 2@0,	4,	12.34	]
+
+# 10:17:07 >  
+# 10:17:07 >  "Done."
+# 10:17:07 >  
+

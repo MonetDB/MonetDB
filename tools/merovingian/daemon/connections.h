@@ -12,9 +12,9 @@
 #include <stdio.h>
 #include "merovingian.h"
 
-err openConnectionTCP(int *ret, char* bindaddr, unsigned short port, FILE *log);
-err openConnectionUDP(int *ret, char* bindaddr, unsigned short port);
-err openConnectionUNIX(int *ret, char *path, int mode, FILE *log);
+err openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log);
+err openConnectionUDP(int *ret, const char *bindaddr, unsigned short port);
+err openConnectionUNIX(int *ret, const char *path, int mode, FILE *log);
 
 #endif
 

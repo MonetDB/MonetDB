@@ -13,8 +13,6 @@
 #include "mal_interpreter.h"
 #include "mal_builder.h"
 
-opt_export int OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-
-#define OPTDEBUGmergetable  if ( optDebug & ((lng) 1 <<DEBUG_OPT_MERGETABLE) )
+mal_export int OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

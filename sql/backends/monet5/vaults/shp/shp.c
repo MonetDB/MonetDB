@@ -436,22 +436,22 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		GDKfree(nameToLowerCase);
 		/*create the BAT */
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0) {
-			if(!(colsBAT[i] = BATnew(TYPE_void, TYPE_int, rowsNum, PERSISTENT))) {
+			if(!(colsBAT[i] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
-			if(!(colsBAT[i] = BATnew(TYPE_void, TYPE_dbl, rowsNum, PERSISTENT))) {
+			if(!(colsBAT[i] = COLnew(0, TYPE_dbl, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
-        	if(!(colsBAT[i] = BATnew(TYPE_void, TYPE_str, rowsNum, PERSISTENT))) {
+        	if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		} else {
-			if(!(colsBAT[i] = BATnew(TYPE_void, TYPE_str, rowsNum, PERSISTENT))) {
+			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
@@ -461,7 +461,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		msg = createException(MAL, "shp.import", "Column '%s.%s(gid)' missing", sch_name, data_table_name);
 		goto unfree4;
 	}
-	if(!(colsBAT[colsNum - 2] = BATnew(TYPE_void, TYPE_int, rowsNum, PERSISTENT))) {
+	if(!(colsBAT[colsNum - 2] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
 		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 		goto unfree4;
 	}
@@ -469,7 +469,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		msg = createException(MAL, "shp.import", "Column '%s.%s(geom)' missing", sch_name, data_table_name);
 		goto unfree4;
 	}
-	if(!(colsBAT[colsNum - 1] = BATnew(TYPE_void, ATOMindex("wkb"), rowsNum, PERSISTENT))) {
+	if(!(colsBAT[colsNum - 1] = COLnew(0, ATOMindex("wkb"), rowsNum, PERSISTENT))) {
 		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 		goto unfree4;
 	}
@@ -516,7 +516,6 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 
 	/* finalise the BATs */
 	for(i = 0; i < colsNum; i++) {
-		//BATderiveProps(colsBAT[i], TRUE);
 		store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat);
 		BBPunfix(colsBAT[i]->batCacheid);
 		//BBPdecref(colsBAT[i]->batCacheid, TRUE);
@@ -647,26 +646,26 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		GDKfree(nameToLowerCase);
 		/*create the BAT */
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0) {
-			if(!(colsBAT[i] = BATnew(TYPE_void, TYPE_int, rowsNum, PERSISTENT)))
+			if(!(colsBAT[i] = COLnew(0, TYPE_int, rowsNum, PERSISTENT)))
 				return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
-			if(!(colsBAT[i] = BATnew(TYPE_void, TYPE_dbl, rowsNum, PERSISTENT)))
+			if(!(colsBAT[i] = COLnew(0, TYPE_dbl, rowsNum, PERSISTENT)))
 				return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
-        	if(!(colsBAT[i] = BATnew(TYPE_void, TYPE_str, rowsNum, PERSISTENT)))
+        	if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT)))
 				return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 		} else {
-			if(!(colsBAT[i] = BATnew(TYPE_void, TYPE_str, rowsNum, PERSISTENT)))
+			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT)))
 				return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 		}
 	}
 	if(!(cols[colsNum - 2] = mvc_bind_column(m, data_table, "gid")))
 		return createException(MAL, "shp.import", "Column '%s.%s(gid)' missing", sch_name, data_table_name);
-	if(!(colsBAT[colsNum - 2] = BATnew(TYPE_void, TYPE_int, rowsNum, PERSISTENT)))
+	if(!(colsBAT[colsNum - 2] = COLnew(0, TYPE_int, rowsNum, PERSISTENT)))
 		return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 	if(!(cols[colsNum - 1] = mvc_bind_column(m, data_table, "geom")))
 		return createException(MAL, "shp.import", "Column '%s.%s(geom)' missing", sch_name, data_table_name);
-	if(!(colsBAT[colsNum - 1] = BATnew(TYPE_void, ATOMindex("wkb"), rowsNum, PERSISTENT)))
+	if(!(colsBAT[colsNum - 1] = COLnew(0, ATOMindex("wkb"), rowsNum, PERSISTENT)))
 		return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 
 	/* apply the spatial filter */
@@ -709,7 +708,6 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		
 	/* finalise the BATs */
 	for(i = 0; i < colsNum; i++) {
-		//BATderiveProps(colsBAT[i], TRUE);
 		store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat);
 		BBPunfix(colsBAT[i]->batCacheid);
 		BBPdecref(colsBAT[i]->batCacheid, TRUE);

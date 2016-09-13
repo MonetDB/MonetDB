@@ -139,13 +139,13 @@ Ready.
 #SELECT COUNT(*) FROM sys."functions_cpy";
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 1167	]
 #SELECT COUNT(*) FROM sys."args_cpy";
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 3416	]
 #SELECT "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
@@ -233,7 +233,7 @@ Ready.
 #FROM "sys"."functions_cpy", "sys"."schemas" WHERE "functions_cpy"."schema_id" = "schemas"."id"
 % .L1,	.L1,	.L1,	.L2,	.L3 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
-% char,	varchar,	varchar,	wrd,	varchar # type
+% char,	varchar,	varchar,	bigint,	varchar # type
 % 1,	3,	16,	1,	20 # length
 [ NULL,	"sys",	"setsession",	1,	"sys.setsession"	]
 [ NULL,	"sys",	"settimeout",	1,	"sys.settimeout"	]
@@ -247,7 +247,7 @@ Ready.
 #FROM "sys"."functions_cpy", "sys"."schemas" WHERE "functions_cpy"."schema_id" = "schemas"."id"
 % .L1,	.L1,	.L1,	.L2,	.L3 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
-% char,	varchar,	varchar,	wrd,	varchar # type
+% char,	varchar,	varchar,	bigint,	varchar # type
 % 1,	3,	16,	1,	20 # length
 [ NULL,	"sys",	"setsession",	1,	"sys.setsession"	]
 [ NULL,	"sys",	"settimeout",	1,	"sys.settimeout"	]
@@ -261,7 +261,7 @@ Ready.
 #FROM "sys"."functions_cpy", "sys"."schemas" WHERE "functions_cpy"."schema_id" = "schemas"."id"
 % .L1,	.L1,	.L1,	.L2,	.L3 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
-% char,	varchar,	varchar,	wrd,	varchar # type
+% char,	varchar,	varchar,	bigint,	varchar # type
 % 1,	3,	16,	1,	20 # length
 [ NULL,	"sys",	"setsession",	1,	"sys.setsession"	]
 [ NULL,	"sys",	"settimeout",	1,	"sys.settimeout"	]
@@ -275,7 +275,7 @@ Ready.
 #FROM "sys"."functions_cpy", "sys"."schemas" WHERE "functions_cpy"."schema_id" = "schemas"."id"
 % .L1,	.L1,	.L1,	.L2,	.L3 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
-% char,	varchar,	varchar,	wrd,	varchar # type
+% char,	varchar,	varchar,	bigint,	varchar # type
 % 1,	3,	16,	1,	20 # length
 [ NULL,	"sys",	"shrink",	1,	"sys.shrink"	]
 [ NULL,	"sys",	"shutdown",	1,	"sys.shutdown"	]

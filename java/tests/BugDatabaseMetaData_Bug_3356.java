@@ -13,7 +13,7 @@ public class BugDatabaseMetaData_Bug_3356 {
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 		Connection con = DriverManager.getConnection(args[0]);
 		DatabaseMetaData dbmd = con.getMetaData();
-		ResultSet rs = dbmd.getColumns("mTests_sql_jdbc_tests", "sys", "_tables", "id");
+		ResultSet rs = dbmd.getColumns("", "sys", "_tables", "id");
 		rs.next();
 		String tableName1 = rs.getString("TABLE_NAME");
 		String tableName2 = rs.getString(3);

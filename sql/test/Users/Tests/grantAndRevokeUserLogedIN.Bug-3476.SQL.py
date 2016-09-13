@@ -3,22 +3,22 @@
 # Assess that a user can no longer use the privilege as soon as it was revoked.
 ###
 
-import sys, time, monetdb.sql, os
+import sys, time, pymonetdb, os
 
 def connect(username, password):
-    return monetdb.sql.connect(database = os.getenv('TSTDB'),
-                               hostname = 'localhost',
-                               port = int(os.getenv('MAPIPORT')),
-                               username = username,
-                               password = password,
-                               autocommit = True)
+    return pymonetdb.connect(database = os.getenv('TSTDB'),
+                             hostname = 'localhost',
+                             port = int(os.getenv('MAPIPORT')),
+                             username = username,
+                             password = password,
+                             autocommit = True)
 
 def query(conn, sql):
     print(sql)
     cur = conn.cursor()
     try:
         cur.execute(sql)
-    except monetdb.exceptions.OperationalError, e:
+    except pymonetdb.OperationalError, e:
         print e
         return
     r = cur.fetchall()
@@ -29,7 +29,7 @@ def run(conn, sql):
     print(sql)
     try:
         r = conn.execute(sql)
-    except monetdb.exceptions.OperationalError, e:
+    except pymonetdb.OperationalError, e:
         print e
         return
     print(r)

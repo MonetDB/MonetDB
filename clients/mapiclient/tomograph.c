@@ -1877,6 +1877,9 @@ main(int argc, char **argv)
 		resetTomograph();
 		conn = mapi_get_from(dbh);
 		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
+			if (m == 0 &&
+			    (m = mnstr_read(conn, buffer + len, 1, buflen - len-1)) <= 0)
+				break;
 			buffer[len + m] = 0;
 			response = buffer;
 			while ((e = strchr(response, '\n')) != NULL) {

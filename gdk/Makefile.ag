@@ -31,9 +31,10 @@ lib_gdk = {
 		gdk_bloom.c gdk_bloom.h \
 		gdk_join.c gdk_project.c \
 		gdk_unique.c \
+		gdk_interprocess.c gdk_interprocess.h \
 		gdk_firstn.c \
 		bat.feps bat1.feps bat2.feps \
-		libbat.rc
+		libbat.rc 
 	LIBS = ../common/options/libmoptions \
 		../common/stream/libstream \
 		../common/utils/libmutils \

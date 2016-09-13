@@ -118,7 +118,11 @@ stderr of test 'mergetable` in directory 'sql/backends/monet5/vaults/bam` itself
 # 08:29:32 >  "/usr/bin/python2" "mergetable.SQL.py" "mergetable"
 # 08:29:32 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-17563/.s.monetdb.34280
+# 11:08:17 >  
+# 11:08:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27483" "--port=35395"
+# 11:08:17 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT COUNT(*) FROM alignments;
 ERROR = !MERGE or REPLICA TABLE should have at least one table associated
 

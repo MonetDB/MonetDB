@@ -26,7 +26,7 @@ Ready.
 #SELECT MODEL1.is_mutagen,MODEL1.lumo, count(distinct MODEL1.model_id ) FROM MODEL MODEL1  group by MODEL1.lumo , MODEL1.is_mutagen;
 % sys.model1,	sys.model1,	sys.L1 # table_name
 % is_mutagen,	lumo,	L1 # name
-% char,	int,	wrd # type
+% char,	int,	bigint # type
 % 3,	2,	2 # length
 [ "T",	-1,	29	]
 [ "F",	-1,	46	]

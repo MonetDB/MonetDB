@@ -18,9 +18,7 @@
 
 /**********************************************************************
  * SQLNumParams()
- * CLI Compliance: IOS 92
- *
- * Note: this function is not supported (yet), it returns an error.
+ * CLI Compliance: ISO 92
  *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002

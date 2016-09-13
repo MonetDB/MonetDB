@@ -27,10 +27,10 @@ stderr of test 'queueError.Bug-3604` in directory 'sql/test/BugTracker-2014` its
 # cmdline opt 	gdk_debug = 536870922
 
 
-MAPI  = (monetdb) /var/tmp/mtest-8635/.s.monetdb.30394
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table xyz;
 ERROR = !DROP TABLE: no such table 'xyz'
-MAPI  = (monetdb) /var/tmp/mtest-8635/.s.monetdb.30394
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table yz;
 ERROR = !DROP TABLE: no such table 'yz'
 

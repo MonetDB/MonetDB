@@ -1,0 +1,82 @@
+stderr of test 'pyloader04` in directory 'sql/backends/monet5` itself:
+
+
+# 12:30:43 >  
+# 12:30:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34261" "--set" "mapi_usock=/var/tmp/mtest-7433/.s.monetdb.34261" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 12:30:43 >  
+
+# builtin opt 	gdk_dbpath = /home/mytherin/opt/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34261
+# cmdline opt 	mapi_usock = /var/tmp/mtest-7433/.s.monetdb.34261
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 12:30:43 >  
+# 12:30:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7433" "--port=34261"
+# 12:30:43 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
+ERROR = !Python exception
+        !  1. def pyfun(_emit,_conn):
+        !  2.   _emit.emit({'a1': 3, 'a2': 4, 'a3': 5})
+        !> 3. 
+        !Unmatched element "a3" in dict
+MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
+ERROR = !Python exception
+        !  1. def pyfun(_emit,_conn):
+        !  2.   _emit.emit({'a1': 3, 'a2': 4, 3: 5})
+        !> 3. 
+        !Unmatched element "3" in dict
+MAPI  = (monetdb) /var/tmp/mtest-79373/.s.monetdb.33370
+QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
+ERROR = !Python exception
+        !
+        !  1. def pyfun(_emit,_conn):
+        !> 2.   _emit.emit({'a1': [], 'a2': numpy.array([])})
+        !  3. 
+        !Empty input values supplied
+MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
+ERROR = !Python exception
+        !
+        !  1. def pyfun(_emit,_conn):
+        !> 2.   _emit.emit({})
+        !  3. 
+        !dict must contain at least one element
+MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
+ERROR = !Python exception
+        !  2.   class MyClass:
+        !  3.     i = 1234
+        !> 4.   _emit.emit({'a1': MyClass()})
+        !  5. 
+        !Unsupported Python Object <type 'instance'>
+MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
+ERROR = !Python exception
+        !
+        !  1. def pyfun(_emit,_conn):
+        !> 2.   _emit.emit({'a1': 'hello'})
+        !  3. 
+        !Conversion Failed: Error converting string.
+
+# 12:30:44 >  
+# 12:30:44 >  "Done."
+# 12:30:44 >  
+

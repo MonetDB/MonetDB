@@ -1,0 +1,35 @@
+stderr of test 'nested-mal-with-multiplex.Bug-4035` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 15:47:42 >  
+# 15:47:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33295" "--set" "mapi_usock=/var/tmp/mtest-30631/.s.monetdb.33295" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 15:47:42 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33295
+# cmdline opt 	mapi_usock = /var/tmp/mtest-30631/.s.monetdb.33295
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_BugTracker-2016
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:47:43 >  
+# 15:47:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30631" "--port=33295"
+# 15:47:43 >  
+
+
+# 15:47:43 >  
+# 15:47:43 >  "Done."
+# 15:47:43 >  
+

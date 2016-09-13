@@ -53,7 +53,7 @@ crash_after_creation_of_unique_key.Bug-3363
 alter_resets_readonly.Bug-3362
 env_errors.Bug-3370
 swapped_likejoin.Bug-3375
-python-explain.Bug-3380
+HAVE_PYMONETDB?python-explain.Bug-3380
 case-orderby.Bug-3388
 unop_vs_aggr.Bug-3885
 singleton-median.Bug-3389

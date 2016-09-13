@@ -1,4 +1,4 @@
-import os, sys, socket, glob, monetdb.sql, threading, time, codecs, shutil, tempfile
+import os, sys, socket, glob, pymonetdb, threading, time, codecs, shutil, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -92,7 +92,7 @@ tmpdir = tempfile.mkdtemp()
 
 masterport = freeport()
 masterproc = process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE)
-masterconn = monetdb.sql.connect(database='', port=masterport, autocommit=True)
+masterconn = pymonetdb.connect(database='', port=masterport, autocommit=True)
 
 # split lineorder table into one file for each worker
 # this is as portable as an anvil
@@ -149,7 +149,7 @@ for i in range(nworkers):
         'tpf'      : '_%d' % i
     }
     workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE)
-    workerrec['conn'] = monetdb.sql.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
+    workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
     t = threading.Thread(target=worker_load, args = [workerrec])
     t.start()
     workerrec['loadthread'] = t
@@ -184,6 +184,9 @@ for workerrec in workers:
     c.execute(atable)
 
 # sanity check
+c.execute("select count(*) from lineorder_0")
+print str(c.fetchall()[0][0]) + ' rows in remote table'
+
 c.execute("select count(*) from lineorder")
 print str(c.fetchall()[0][0]) + ' rows in mergetable'
 

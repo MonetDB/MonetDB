@@ -14,12 +14,10 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/optimizer \
 		   ../../../monetdb5/scheduler \
 		   ../../../monetdb5/extras/rapi \
-		   ../../../clients/mapilib \
 		   ../../../common/options \
 		   ../../../common/stream \
 		   ../../../common/utils \
-		   ../../../gdk \
-		   $(READLINE_INCS)
+		   ../../../gdk
 
 lib__sql = {
 	MODULE
@@ -38,7 +36,6 @@ lib__sql = {
 		sql_gencode.c sql_gencode.h \
 		sql_optimizer.c sql_optimizer.h \
 		sql_result.c sql_result.h \
-		sql_readline.c sql_readline.h \
 		sql_cast.c sql_cast.h \
 		sql_cast_impl_down_from_flt.h \
 		sql_cast_impl_down_from_int.h \
@@ -56,47 +53,16 @@ lib__sql = {
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmcrypt \
-		   $(READLINE_LIBS) $(PTHREAD_LIBS) \
+		   $(PTHREAD_LIBS) \
 		   $(openssl_LIBS) $(MATH_LIBS)
 }
-
-
-# embedded is disabled, but keep building instructions for the moment we
-# like to revive this or someone whould like to build this for some reason
-#
-#lib_embeddedsql5 = {
-#	SOURCES = embeddedclient.c.in
-#	LIBS = ../../server/libsqlserver \
-#		   ../../storage/libstore \
-#		   ../../storage/bat/libbatstore \
-#		   ../../common/libsqlcommon \
-#		   ../../../monetdb5/tools/libmonetdb5 \
-#		   ../../../gdk/libbat \
-#		   ../../../clients/mapilib/libmapi \
-#		   ../../../common/stream/libstream \
-#		   $(READLINE_LIBS) $(PTHREAD_LIBS)
-#}
-#
-#bin_mbeddedsql5 = {
-#	SOURCES = prog.c
-#	LIBS = libembeddedsql5 \
-#		   ../../server/libsqlserver \
-#		   ../../storage/libstore \
-#		   ../../storage/bat/libbatstore \
-#		   ../../common/libsqlcommon \
-#		   ../../../monetdb5/tools/libmonetdb5 \
-#		   ../../../gdk/libbat \
-#		   ../../../clients/mapilib/libmapi \
-#		   ../../../common/stream/libstream \
-#		   $(READLINE_LIBS) $(PTHREAD_LIBS) $(curl_LIBS)
-#}
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = sql_aggr_bte.mal  sql_aggr_flt.mal sql_aggr_dbl.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
-		sql_aggr_sht.mal  sql_aggr_wrd.mal  sql_decimal.mal  sql_inspect.mal \
-		sql_rank.mal sql.mal 
+		sql_aggr_sht.mal  sql_decimal.mal  sql_inspect.mal \
+		sql_rank.mal sql.mal
 }
 
 headers_mal_hge = {
@@ -122,7 +88,7 @@ headers_autoload_hge = {
 EXTRA_DIST = 40_sql.mal \
 	41_sql_hge.mal sql_hge.mal sql_aggr_hge.mal sql_decimal_hge.mal \
 	sql_aggr_bte.mal  sql_aggr_flt.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
-	sql_aggr_sht.mal  sql_aggr_wrd.mal  sql_decimal.mal  sql_inspect.mal \
+	sql_aggr_sht.mal  sql_decimal.mal  sql_inspect.mal \
 	sql_rank.mal sql.mal 
 
 EXTRA_DIST_DIR = Tests

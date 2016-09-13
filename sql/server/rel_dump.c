@@ -212,9 +212,13 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		mnstr_printf(fout, " NOT NULL");
 	if (e->p) {
 		prop *p = e->p;
+		char *pv;
 
-		for (; p; p = p->p) 
-			mnstr_printf(fout, " %s %s", propkind2string(p), propvalue2string(p));
+		for (; p; p = p->p) {
+			pv = propvalue2string(p);
+			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			GDKfree(pv);
+		}
 	}
 	if (e->name && alias) {
 		mnstr_printf(fout, " as ");
@@ -356,7 +360,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		if (rel->r)
 			exp_print(sql, fout, rel->r, depth, 1, 0);
 		if (rel->l)
-			rel_print_(sql, fout, rel->l, 0, refs, decorate);
+			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
 		if (rel->exps) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
 		break;
@@ -502,9 +506,13 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	}
 	if (rel->p) {
 		prop *p = rel->p;
+		char *pv;
 
-		for (; p; p = p->p) 
-			mnstr_printf(fout, " %s %s", propkind2string(p), propvalue2string(p));
+		for (; p; p = p->p) {
+			pv = propvalue2string(p);
+			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			GDKfree(pv);
+		}
 	}
 }
 
@@ -864,11 +872,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			}
 		}
 		if (!exp && lrel) { 
+			char *cname;
 			old = *e;
 			*e = 0;
-			exp = rel_bind_column(sql, lrel, b, 0);
+			cname = sa_strdup(sql->sa, b);
+			exp = rel_bind_column(sql, lrel, cname, 0);
 			if (!exp && rrel)
-				exp = rel_bind_column(sql, rrel, b, 0);
+				exp = rel_bind_column(sql, rrel, cname, 0);
 			*e = old;
 			skipWS(r,pos);
 		}

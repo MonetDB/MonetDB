@@ -32,7 +32,7 @@ Ready.
 #SELECT count(*) FROM onek;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 1000	]
 #CREATE TEMPORARY TABLE random_tbl( random double)
@@ -65,7 +65,7 @@ Ready.
 #  GROUP BY random HAVING count(random) > 3;
 % tmp.random_tbl,	tmp.L1 # table_name
 % random,	L1 # name
-% bigint,	wrd # type
+% bigint,	bigint # type
 % 4,	1 # length
 [ 1000, 4       ]
 #SELECT AVG(random) FROM RANDOM_TBL

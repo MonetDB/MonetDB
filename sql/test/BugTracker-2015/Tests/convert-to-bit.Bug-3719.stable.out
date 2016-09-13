@@ -67,13 +67,13 @@ Ready.
 #SELECT count(*) FROM t1 AS x;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 4	]
 #SELECT count(*) FROM t1 AS x WHERE x.c;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 4	]
 #ROLLBACK;

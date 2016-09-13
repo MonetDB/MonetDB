@@ -73,7 +73,6 @@ mal_export int have_hge;
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)
-#define GRPrecycler (1<<30)
 
 mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;
@@ -119,8 +118,7 @@ mal_export void mserver_reset(void);
 #define VAR_CLEANUP	16
 #define VAR_INIT	32
 #define VAR_USED	64
-#define VAR_CLIST 	128	/* Candidate list variable */
-#define VAR_DISABLED	256		/* used for comments and scheduler */
+#define VAR_DISABLED	128		/* used for comments and scheduler */
 
 /* type check status is kept around to improve type checking efficiency */
 #define TYPE_ERROR      -1
@@ -145,14 +143,16 @@ typedef struct SYMDEF {
 } *Symbol, SymRecord;
 
 typedef struct VARRECORD {
-	str name;					/* argname or lexical value repr */
+	char id[IDLENGTH];			/* use the space for the full name */
 	malType type;				/* internal type signature */
 	int flags;					/* see below, reserve some space */
-	int tmpindex;				/* temporary variable */
 	ValRecord value;
+	int declared;				/* pc index when it was first assigned */
+	int updated;				/* pc index when it was first updated */
 	int eolife;					/* pc index when it should be garbage collected */
-	int worker;					/* tread id of last worker producing it */
-	str stc;					/* rendering schema.table.column */
+	int depth;					/* scope block depth, set to -1 if not used */
+	int worker;					/* thread id of last worker producing it */
+	char stc[2* IDLENGTH];		/* rendering schema.table.column, with little more space */
 	BUN rowcnt;					/* estimated row count*/
 } *VarPtr, VarRecord;
 
@@ -169,7 +169,6 @@ typedef struct {
 	bit gc;						/* garbage control flags */
 	bit polymorphic;			/* complex type analysis */
 	bit varargs;				/* variable number of arguments */
-	int recycle;				/* <0 or index into recycle cache */
 	int jump;					/* controlflow program counter */
 	int pc;						/* location in MAL plan for profiler*/
 	MALfcn fcn;					/* resolved function address */
@@ -183,19 +182,20 @@ typedef struct {
 	lng rbytes;					/* accumulated number of bytes read, currently ignored */
 	lng wbytes;					/* accumulated number of bytes produced */
 	/* the core admin */
-	str modname;				/* module context */
-	str fcnname;				/* function name */
+	str modname;				/* module context, reference into namespace */
+	str fcnname;				/* function name, reference into namespace */
 	int argc, retc, maxarg;		/* total and result argument count */
 	int argv[FLEXIBLE_ARRAY_MEMBER]; /* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK {
-	str binding;				/* related C-function */
+	char binding[IDLENGTH];		/* related C-function */
 	str help;					/* supportive commentary */
 	oid tag;					/* unique block tag */
 	struct MALBLK *alternative;
 	int vtop;					/* next free slot */
 	int vsize;					/* size of variable arena */
+	int vid;	 				/* generate local variable counter */
 	VarRecord **var;			/* Variable table */
 	int stop;					/* next free slot */
 	int ssize;					/* byte size of arena */
@@ -211,11 +211,8 @@ typedef struct MALBLK {
 	struct MALBLK *history;		/* of optimizer actions */
 	short keephistory;			/* do we need the history at all */
 	short dotfile;				/* send dot file to stethoscope? */
-	str marker;					/* history points are marked for backtracking */
 	int maxarg;					/* keep track on the maximal arguments used */
 	ptr replica;				/* for the replicator tests */
-	sht recycle;				/* execution subject to recycler control */
-	lng recid;					/* Recycler identifier */
 	sht trap;					/* call debugger when called */
 	lng starttime;				/* track when the query started, for resource management */
 	lng runtime;				/* average execution time of block in ticks */
@@ -250,7 +247,7 @@ typedef struct MALSTK {
 
 /*
  * It is handy to administer the timing in the stack frame
- * for use in profiling and recylcing instructions.
+ * for use in profiling instructions.
  */
 	struct timeval clock;		/* time this stack was created */
 	char cmd;		/* debugger and runtime communication */

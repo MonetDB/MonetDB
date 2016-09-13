@@ -252,7 +252,7 @@ command Envelope(w:wkb) :wkb address wkbEnvelope
 comment "The minimum bounding box for this Geometry, returned as a Geometry. The polygon is defined by the corner points of the bounding box ((MINX,MINY),(MAXX,MINY),(MAXX,MAXY),(MINX,MAXY)).";
 command EnvelopeFromCoordinates(:dbl, :dbl, :dbl, :dbl, :int) :wkb address wkbEnvelopeFromCoordinates
 comment "A polygon created by the provided coordinates";
-command Polygon(:wkb, :bat[:oid,:wkb], :int) :wkb address wkbMakePolygon
+command Polygon(:wkb, :bat[:wkb], :int) :wkb address wkbMakePolygon
 comment "Returns a Polygon created from the provided LineStrings";
 command ExteriorRing(w:wkb) :wkb address wkbExteriorRing
 comment "Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.";
@@ -288,7 +288,7 @@ command Intersection(a:wkb, b:wkb) :wkb address wkbIntersection
 comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
 command Union(a:wkb, b:wkb) :wkb address wkbUnion
 comment "Returns a geometry that represents the point set union of the Geometries a, b";
-command Union(a:bat[:oid,:wkb]) :wkb address wkbUnionAggr
+command Union(a:bat[:wkb]) :wkb address wkbUnionAggr
 comment "Gets a BAT with geometries and returns their union"; 
 command Difference(a:wkb, b:wkb) :wkb address wkbDifference
 comment "Returns a geometry that represents that part of geometry A that does not intersect with geometry B";
@@ -330,9 +330,9 @@ comment "Transforms a geometry from one srid to another";
 #postGIS has also flag=2 and then it returns a TIN
 command DelaunayTriangles(a:wkb, tolerance:dbl, flag:int) :wkb address wkbDelaunayTriangles
 comment "Returns a Delaunay triangulation, flag=0 => collection of polygons, flag=1 => multilinestring";
-command Dump(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDump
+command Dump(a:wkb) (id:bat[ :str], geom:bat[ :wkb]) address wkbDump
 comment "Gets a MultiPolygon and returns the Polygons in it";
-command DumpPoints(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPoints
+command DumpPoints(a:wkb) (id:bat[ :str], geom:bat[ :wkb]) address wkbDumpPoints
 comment "Gets a Geometry and returns the Points in it";
 
 command Segmentize(g:wkb, sz:dbl) :wkb address wkbSegmentize
@@ -368,7 +368,7 @@ function Translate(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb;
 	return x;
 end Translate;
 
-command Contains(a:wkb, px:bat[:oid,:dbl], py:bat[:oid,:dbl]) :bat[:oid,:bit]
+command Contains(a:wkb, px:bat[:dbl], py:bat[:dbl]) :bat[:bit]
 address wkbContains_point_bat
 comment "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b";
 
@@ -396,21 +396,21 @@ function MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :wkb;
 end MakeEnvelope;
 
 function MakePolygon(external:wkb) :wkb;
-	x := Polygon(external, nil:bat, 0);
+	x := Polygon(external, nil:bat[:wkb], 0);
 	return x;
 end MakePolygon;
 function MakePolygon(external:wkb, srid:int) :wkb;
-	x := Polygon(external, nil:bat, srid);
+	x := Polygon(external, nil:bat[:wkb], srid);
 	return x;
 end MakePolygon;
-#function MakePolygon(external:wkb, internal:bat[:oid,:wkb]) :wkb;
+#function MakePolygon(external:wkb, internal:bat[:wkb]) :wkb;
 #	x := Polygon(external, internal, 0);
 #	return x;
 #end MakePolygon;
 
 command MakeLine(a:wkb, b:wkb) :wkb address wkbMakeLine
 comment "Gets two point or linestring geometries and returns a linestring geometry"; 
-command MakeLine(a:bat[:oid,:wkb]) :wkb address wkbMakeLineAggr
+command MakeLine(a:bat[:wkb]) :wkb address wkbMakeLineAggr
 comment "Gets a BAT with point or linestring geometries and returns a single linestring geometry"; 
 
 command PointOnSurface(w:wkb) :wkb address wkbPointOnSurface
@@ -524,238 +524,238 @@ geom.prelude();
 
 module batgeom;
 
-command FromText(wkt:bat[:oid,:str], srid:int, type:int) :bat[:oid, :wkb]	address wkbFromText_bat;
-function GeomFromText(wkt:bat[:oid,:str], srid:int) :bat[:oid,:wkb]; 
+command FromText(wkt:bat[:str], srid:int, type:int) :bat[ :wkb]	address wkbFromText_bat;
+function GeomFromText(wkt:bat[:str], srid:int) :bat[:wkb]; 
 	x := FromText(wkt,srid,0);
 	return x;
 end GeomFromText;
-function PointFromText(wkt:bat[:oid,:str], srid:int) :bat[:oid, :wkb];
+function PointFromText(wkt:bat[:str], srid:int) :bat[ :wkb];
 	x := FromText(wkt,srid,1);
 	return x;
 end PointFromText;
-function LineFromText(wkt:bat[:oid,:str], srid:int) :bat[:oid, :wkb];
+function LineFromText(wkt:bat[:str], srid:int) :bat[ :wkb];
 	x := FromText(wkt,srid,2);
 	return x;
 end LineFromText;
-function PolygonFromText(wkt:bat[:oid,:str], srid:int) :bat[:oid, :wkb];
+function PolygonFromText(wkt:bat[:str], srid:int) :bat[ :wkb];
 	x := FromText(wkt,srid,4);
 	return x;
 end PolygonFromText;
-function MPointFromText(wkt:bat[:oid,:str], srid:int) :bat[:oid, :wkb];
+function MPointFromText(wkt:bat[:str], srid:int) :bat[ :wkb];
 	x := FromText(wkt,srid,5);
 	return x;
 end MPointFromText;
-function MLineFromText(wkt:bat[:oid,:str], srid:int) :bat[:oid, :wkb];
+function MLineFromText(wkt:bat[:str], srid:int) :bat[ :wkb];
 	x := FromText(wkt,srid,6);
 	return x;
 end MLineFromText;
-function MPolyFromText(wkt:bat[:oid,:str], srid:int) :bat[:oid, :wkb];
+function MPolyFromText(wkt:bat[:str], srid:int) :bat[ :wkb];
 	x := FromText(wkt,srid,7);
 	return x;
 end MPolyFromText;
-function GeomCollFromText(wkt:bat[:oid,:str], srid:int) :bat[:oid, :wkb];
+function GeomCollFromText(wkt:bat[:str], srid:int) :bat[ :wkb];
 	x := FromText(wkt,srid,8);
 	return x;
 end GeomCollFromText;
 
-function GeomFromText(wkt:bat[:oid,:str]) :bat[:oid,:wkb]; 
+function GeomFromText(wkt:bat[:str]) :bat[:wkb]; 
 	x := FromText(wkt,0,0);
 	return x;
 end GeomFromText;
-function PointFromText(wkt:bat[:oid,:str]) :bat[:oid, :wkb];
+function PointFromText(wkt:bat[:str]) :bat[ :wkb];
 	x := FromText(wkt,0,1);
 	return x;
 end PointFromText;
-function LineFromText(wkt:bat[:oid,:str]) :bat[:oid, :wkb];
+function LineFromText(wkt:bat[:str]) :bat[ :wkb];
 	x := FromText(wkt,0,2);
 	return x;
 end LineFromText;
-function PolygonFromText(wkt:bat[:oid,:str]) :bat[:oid, :wkb];
+function PolygonFromText(wkt:bat[:str]) :bat[ :wkb];
 	x := FromText(wkt,0,4);
 	return x;
 end PolygonFromText;
-function MPointFromText(wkt:bat[:oid,:str]) :bat[:oid, :wkb];
+function MPointFromText(wkt:bat[:str]) :bat[ :wkb];
 	x := FromText(wkt,0,5);
 	return x;
 end MPointFromText;
-function MLineFromText(wkt:bat[:oid,:str]) :bat[:oid, :wkb];
+function MLineFromText(wkt:bat[:str]) :bat[ :wkb];
 	x := FromText(wkt,0,6);
 	return x;
 end MLineFromText;
-function MPolyFromText(wkt:bat[:oid,:str]) :bat[:oid, :wkb];
+function MPolyFromText(wkt:bat[:str]) :bat[ :wkb];
 	x := FromText(wkt,0,7);
 	return x;
 end MPolyFromText;
-function GeomCollFromText(wkt:bat[:oid,:str]) :bat[:oid, :wkb];
+function GeomCollFromText(wkt:bat[:str]) :bat[ :wkb];
 	x := FromText(wkt,0,8);
 	return x;
 end GeomCollFromText;
 
-command ToText(w:bat[:oid,:wkb], withSRID:int) :bat[:oid,:str] address wkbAsText_bat;
-function AsText(w:bat[:oid,:wkb]) :bat[:oid,:str];
+command ToText(w:bat[:wkb], withSRID:int) :bat[:str] address wkbAsText_bat;
+function AsText(w:bat[:wkb]) :bat[:str];
 	x := ToText(w,0);
 	return x;
 end AsText;
-function AsEWKT(w:bat[:oid,:wkb]) :bat[:oid,:str];
+function AsEWKT(w:bat[:wkb]) :bat[:str];
 	x := ToText(w,1);
 	return x;
 end AsEWKT;
 
-command GeometryType(w:bat[:oid,:wkb], flag:int) :bat[:oid,:str] address wkbGeometryType_bat;
-function GeometryType1(w:bat[:oid,:wkb]) :bat[:oid,:str];
+command GeometryType(w:bat[:wkb], flag:int) :bat[:str] address wkbGeometryType_bat;
+function GeometryType1(w:bat[:wkb]) :bat[:str];
 	x := GeometryType(w, 0);
 	return x;
 end GeometryType1;
-function GeometryType2(w:bat[:oid,:wkb]) :bat[:oid,:str];
+function GeometryType2(w:bat[:wkb]) :bat[:str];
 	x := GeometryType(w, 1);
 	return x;
 end GeometryType2;
 
-command MakePointXYZM(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl], zmFlag:int) :bat[:oid,:wkb] address wkbMakePoint_bat
+command MakePointXYZM(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], m:bat[:dbl], zmFlag:int) :bat[:wkb] address wkbMakePoint_bat
 comment "creates a point using the coordinates";
-function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, nil:bat, nil:bat, 0);
+function MakePoint(x:bat[:dbl], y:bat[:dbl]) :bat[:wkb];
+	p := MakePointXYZM(x, y, nil:bat[:dbl], nil:bat, 0);
 	return p;
 end MakePoint;
-function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, z, nil:bat, 10);
+function MakePoint(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl]) :bat[:wkb];
+	p := MakePointXYZM(x, y, z, nil:bat[:dbl], 10);
 	return p;
 end MakePoint;
-function MakePointM(x:bat[:oid,:dbl], y:bat[:oid,:dbl], m:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, nil:bat, m, 1);
+function MakePointM(x:bat[:dbl], y:bat[:dbl], m:bat[:dbl]) :bat[:wkb];
+	p := MakePointXYZM(x, y, nil:bat[:dbl], m, 1);
 	return p;
 end MakePointM;
-function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl]) :bat[:oid,:wkb];
+function MakePoint(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], m:bat[:dbl]) :bat[:wkb];
 	p := MakePointXYZM(x, y, z, m, 11);
 	return p;
 end MakePoint;
 
-command PointsNum(w:bat[:oid,:wkb], check:int) :bat[:oid,:int] address wkbNumPoints_bat
+command PointsNum(w:bat[:wkb], check:int) :bat[:int] address wkbNumPoints_bat
 comment "The number of points in the Geometry. If check=1, the geometry should be a linestring";
-function NumPoints(w:bat[:oid,:wkb]) :bat[:oid,:int];
+function NumPoints(w:bat[:wkb]) :bat[:int];
 	x := PointsNum(w, 1);
 	return x;
 end NumPoints;
-function NPoints(w:bat[:oid,:wkb]) :bat[:oid,:int];
+function NPoints(w:bat[:wkb]) :bat[:int];
 	x := PointsNum(w, 0);
 	return x;
 end NPoints;
 
-command GetCoordinate(w:bat[:oid,:wkb], idx:int) :bat[:oid,:dbl] address wkbGetCoordinate_bat
+command GetCoordinate(w:bat[:wkb], idx:int) :bat[:dbl] address wkbGetCoordinate_bat
 comment "Returns the coordinate at position idx of a point, or NULL if not available. idx=0 -> X, idx=1 -> Y, idx=2 -> Z. Input must be point";
-function X(w:bat[:oid,:wkb]) :bat[:oid,:dbl];
+function X(w:bat[:wkb]) :bat[:dbl];
 	c := GetCoordinate(w, 0);
 	return c;
 end X;
-function Y(w:bat[:oid,:wkb]) :bat[:oid,:dbl];
+function Y(w:bat[:wkb]) :bat[:dbl];
 	c := GetCoordinate(w, 1);
 	return c;
 end Y;
-function Z(w:bat[:oid,:wkb]) :bat[:oid,:dbl];
+function Z(w:bat[:wkb]) :bat[:dbl];
 	c := GetCoordinate(w, 2);
 	return c;
 end Z;
 
 
 
-command GeometryN(w:bat[:oid,:wkb], n:int) :bat[:oid,:wkb] address wkbGeometryN_bat
+command GeometryN(w:bat[:wkb], n:int) :bat[:wkb] address wkbGeometryN_bat
 comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL";
-command NumGeometries(w:bat[:oid,:wkb]) :bat[:oid,:int] address wkbNumGeometries_bat
+command NumGeometries(w:bat[:wkb]) :bat[:int] address wkbNumGeometries_bat
 comment "Returns the number of geometries";
 
-command NumRings(w:bat[:oid,:wkb], exterior:int) :bat[:oid,:int] address wkbNumRings_bat
+command NumRings(w:bat[:wkb], exterior:int) :bat[:int] address wkbNumRings_bat
 comment "Returns the number of interior rings+exterior on the first polygon of the geometry";
-function NumInteriorRings(w:bat[:oid,:wkb]) :bat[:oid,:int];
+function NumInteriorRings(w:bat[:wkb]) :bat[:int];
 	x := NumRings(w, 0);
 	return x;
 end NumInteriorRings
-function NRings(w:bat[:oid,:wkb]) :bat[:oid,:int];
+function NRings(w:bat[:wkb]) :bat[:int];
 	x := NumRings(w, 1);
 	return x;
 end NRings;
 
 
-command Boundary(w:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbBoundary_bat;
+command Boundary(w:bat[:wkb]) :bat[:wkb] address wkbBoundary_bat;
 
-command IsClosed(w:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIsClosed_bat;
-command IsEmpty(w:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIsEmpty_bat;
-command IsSimple(w:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIsSimple_bat;
-command IsRing(w:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIsRing_bat;
-command IsValid(w:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIsValid_bat;
+command IsClosed(w:bat[:wkb]) :bat[:bit] address wkbIsClosed_bat;
+command IsEmpty(w:bat[:wkb]) :bat[:bit] address wkbIsEmpty_bat;
+command IsSimple(w:bat[:wkb]) :bat[:bit] address wkbIsSimple_bat;
+command IsRing(w:bat[:wkb]) :bat[:bit] address wkbIsRing_bat;
+command IsValid(w:bat[:wkb]) :bat[:bit] address wkbIsValid_bat;
 
-command MakeBox2D(p1:bat[:oid,:wkb],p2:bat[:oid,:wkb]) :bat[:oid,:mbr] address wkbBox2D_bat;
+command MakeBox2D(p1:bat[:wkb],p2:bat[:wkb]) :bat[:mbr] address wkbBox2D_bat;
 
-command Dimension(w:bat[:oid,:wkb]) :bat[:oid,:int] address wkbDimension_bat;
+command Dimension(w:bat[:wkb]) :bat[:int] address wkbDimension_bat;
 
 
 
 #the 1 version of the functions use geos the 2 versions have custom implementations
 
-command Distance(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbDistance_bat;
-command Distance(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbDistance_geom_bat;
-command Distance(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:dbl] address wkbDistance_bat_geom;
+command Distance(a:bat[:wkb], b:bat[:wkb]) :bat[:dbl] address wkbDistance_bat;
+command Distance(a:wkb, b:bat[:wkb]) :bat[:dbl] address wkbDistance_geom_bat;
+command Distance(a:bat[:wkb], b:wkb) :bat[:dbl] address wkbDistance_bat_geom;
 
-command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
-command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;
-command Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat_geom;
+command Contains(a:bat[:wkb], b:bat[:wkb]) :bat[:bit] address wkbContains_bat;
+command Contains(a:wkb, b:bat[:wkb]) :bat[:bit] address wkbContains_geom_bat;
+command Contains(a:bat[:wkb], b:wkb) :bat[:bit] address wkbContains_bat_geom;
 
 #only one argument should be BAT
-#command Filter(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) (aFiltered:bat[:oid,:wkb], bFiltered:bat[:oid,:wkb]) address wkbFilter_bat
+#command Filter(a:bat[:wkb], b:bat[:wkb]) (aFiltered:bat[:wkb], bFiltered:bat[:wkb]) address wkbFilter_bat
 #comment "Filters the points in the bats according to the MBR of the other bat.";
-command Filter(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbFilter_geom_bat
+command Filter(a:wkb, b:bat[:wkb]) :bat[:wkb] address wkbFilter_geom_bat
 comment "Filters the points in the bats according to the MBR of the other bat.";
-command Filter(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:wkb] address wkbFilter_bat_geom;
+command Filter(a:bat[:wkb], b:wkb) :bat[:wkb] address wkbFilter_bat_geom;
 
-#command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
+#command point(x:bat[:dbl],y:bat[:dbl]) :bat[:wkb]
 #address wkbcreatepoint_bat
 #comment "Construct a point-BAT from two geometry-BATs";
 
-command setSRID(w:bat[:oid,:wkb], srid:int) :bat[:oid,:wkb] address wkbSetSRID_bat
+command setSRID(w:bat[:wkb], srid:int) :bat[:wkb] address wkbSetSRID_bat
 comment "Sets the Reference System ID for this Geometry.";
 
-command MakeLine(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbMakeLine_bat
+command MakeLine(a:bat[:wkb], b:bat[:wkb]) :bat[:wkb] address wkbMakeLine_bat
 comment "Gets two BATS of point or linestring geometries and returns a bat with linestring geometries"; 
-command Union(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbUnion_bat
+command Union(a:bat[:wkb], b:bat[:wkb]) :bat[:wkb] address wkbUnion_bat
 comment "Gets two BATS of geometries and returns the pairwise unions"; 
 
 
-command mbr(:bat[:oid,:wkb]) :bat[:oid,:mbr] address wkbMBR_bat
+command mbr(:bat[:wkb]) :bat[:mbr] address wkbMBR_bat
 comment "Creates the mbr for the given wkb.";
 
-command coordinateFromWKB(:bat[:oid,:wkb], :int) :bat[:oid,:dbl] address wkbCoordinateFromWKB_bat
+command coordinateFromWKB(:bat[:wkb], :int) :bat[:dbl] address wkbCoordinateFromWKB_bat
 comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry";
-function XMinFromWKB(g:bat[:oid,:wkb]) :bat[:oid,:dbl];
+function XMinFromWKB(g:bat[:wkb]) :bat[:dbl];
 	x := coordinateFromWKB(g, 1);
 	return x;
 end XMinFromWKB;
-function YMinFromWKB(g:bat[:oid,:wkb]) :bat[:oid,:dbl];
+function YMinFromWKB(g:bat[:wkb]) :bat[:dbl];
 	x := coordinateFromWKB(g, 2);
 	return x;
 end YMinFromWKB;
-function XMaxFromWKB(g:bat[:oid,:wkb]) :bat[:oid,:dbl];
+function XMaxFromWKB(g:bat[:wkb]) :bat[:dbl];
 	x := coordinateFromWKB(g, 3);
 	return x;
 end XMaxFromWKB;
-function YMaxFromWKB(g:bat[:oid,:wkb]) :bat[:oid,:dbl];
+function YMaxFromWKB(g:bat[:wkb]) :bat[:dbl];
 	x := coordinateFromWKB(g, 4);
 	return x;
 end YMaxFromWKB;
 
-command coordinateFromMBR(:bat[:oid,:mbr], :int) :bat[:oid,:dbl] address wkbCoordinateFromMBR_bat
+command coordinateFromMBR(:bat[:mbr], :int) :bat[:dbl] address wkbCoordinateFromMBR_bat
 comment "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr";
-function XMinFromMBR(b:bat[:oid,:mbr]) :bat[:oid,:dbl];
+function XMinFromMBR(b:bat[:mbr]) :bat[:dbl];
 	x := coordinateFromMBR(b, 1);
 	return x;
 end XMinFromMBR;
-function YMinFromMBR(b:bat[:oid,:mbr]) :bat[:oid,:dbl];
+function YMinFromMBR(b:bat[:mbr]) :bat[:dbl];
 	x := coordinateFromMBR(b, 2);
 	return x;
 end YMinFromMBR;
-function XMaxFromMBR(b:bat[:oid,:mbr]) :bat[:oid,:dbl];
+function XMaxFromMBR(b:bat[:mbr]) :bat[:dbl];
 	x := coordinateFromMBR(b, 3);
 	return x;
 end XMaxFromMBR;
-function YMaxFromMBR(b:bat[:oid,:mbr]) :bat[:oid,:dbl];
+function YMaxFromMBR(b:bat[:mbr]) :bat[:dbl];
 	x := coordinateFromMBR(b, 4);
 	return x;
 end YMaxFromMBR;
@@ -775,10 +775,10 @@ comment "Called when inserting values to a table in order to check if the insert
 
 #module batcalc;
 
-command batcalc.wkb(geo:bat[:oid,:wkb], columnType:int, columnSRID:int) :bat[:oid,:wkb] address geom_2_geom_bat
+command batcalc.wkb(geo:bat[:wkb], columnType:int, columnSRID:int) :bat[:wkb] address geom_2_geom_bat
 comment "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition";
 #Is it needed ??? --> yes for bulk loading without extra functions
-#command wkb(v:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbFromWKB_bat;
+#command wkb(v:bat[:wkb]) :bat[:wkb] address wkbFromWKB_bat;
 #comment "It is called when adding a new geometry column to an existing table";
 
 

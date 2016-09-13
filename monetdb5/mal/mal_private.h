@@ -12,8 +12,8 @@
 #error this file should not be included outside its source directory
 #endif
 
-#ifdef FREECLIENT
-/* FREECLIENT is defined in the same file as Client */
+#ifdef _MAL_CLIENT_H_
+/* _MAL_CLIENT_H_ is defined in the same file as Client */
 __hidden void MCexitClient(Client c)
 	__attribute__((__visibility__("hidden")));
 __hidden int MCreadClient(Client c)
@@ -47,7 +47,7 @@ __hidden int moreClients(int reruns)
 __hidden void stopMALdataflow(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden void malAtomDefinition(stream *out, str name,int tpe)
+__hidden int malAtomDefinition(stream *out, str name,int tpe)
 	__attribute__((__visibility__("hidden")));
 __hidden int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
@@ -110,9 +110,6 @@ __hidden mal_export void mal_resource_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 __hidden mal_export void mal_runtime_reset(void)
-	__attribute__((__visibility__("hidden")));
-
-__hidden mal_export void mal_scenario_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 extern volatile ATOMIC_TYPE mal_running;

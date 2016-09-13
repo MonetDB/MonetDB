@@ -30,10 +30,10 @@ Ready.
 # 17:27:28 >  java BugDatabaseMetaData_Bug_3356 "jdbc:monetdb://madrid:34631/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
 # 17:27:28 >  
 
-null
-null
-null
-null
+_tables
+_tables
+YES
+YES
 
 # 17:27:28 >  
 # 17:27:28 >  "Done."

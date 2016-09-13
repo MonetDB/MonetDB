@@ -1,7 +1,3 @@
-ll <- NULL
-if (Sys.getenv("TSTTRGDIR") != "") {
-  ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
-}
 ff <- textConnection("asdf", open="w")
 # hide output from connect and attach since it would blow up the test output
 # dangerous since it might hide useful warnings
@@ -23,7 +19,7 @@ so <- function(x) {
   print(dim(collect(head(x, 42))))
 }
 
-my_db <- MonetDB.R::src_monetdb(dbname=dbname, port=dbport, wait=T)
+my_db <- MonetDBLite::src_monetdb(dbname=dbname, port=dbport, wait=T)
 if (!DBI::dbExistsTable(my_db$con , 'flights')) DBI::dbWriteTable( my_db$con , 'flights' , nycflights13::flights , csvdump=T, overwrite=T)
 flights <- tbl( my_db , 'flights')
 

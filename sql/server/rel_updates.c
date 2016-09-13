@@ -15,6 +15,7 @@
 #include "sql_privileges.h"
 #include "rel_optimizer.h"
 #include "rel_dump.h"
+#include "rel_psm.h"
 #include "sql_symbol.h"
 
 static sql_exp *
@@ -84,25 +85,25 @@ rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
-	sql_subtype *it, *wrd;
-	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
+	sql_subtype *it, *lng;
+	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
 	sql_exp *h = NULL;
 
 	if (list_length(i->columns) <= 1 || i->type == no_idx) {
 		/* dummy append */
-		append(get_inserts(inserts), exp_label(sql->sa, exp_atom_wrd(sql->sa, 0), ++sql->label));
+		append(get_inserts(inserts), exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label));
 		return inserts;
 	}
 
 	it = sql_bind_localtype("int");
-	wrd = sql_bind_localtype("wrd");
+	lng = sql_bind_localtype("lng");
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 		sql_exp *e = list_fetch(get_inserts(inserts), c->c->colnr);
 
 		if (h && i->type == hash_idx)  { 
 			list *exps = new_exp_list(sql->sa);
-			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, &c->c->type, wrd);
+			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", lng, it, &c->c->type, lng);
 
 			append(exps, h);
 			append(exps, exp_atom_int(sql->sa, bits));
@@ -110,15 +111,15 @@ rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 			h = exp_op(sql->sa, exps, xor);
 		} else if (h)  { /* order preserving hash */
 			sql_exp *h2;
-			sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", wrd, it, wrd);
-			sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", wrd, wrd, wrd);
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
+			sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", lng, it, lng);
+			sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", lng, lng, lng);
+			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
 
 			h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh); 
 			h2 = exp_unop(sql->sa, e, hf);
 			h = exp_binop(sql->sa, h, h2, lor);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
+			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
 			h = exp_unop(sql->sa, e, hf);
 			if (i->type == oph_idx) 
 				break;
@@ -562,15 +563,15 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
-	sql_subtype *it, *wrd = 0; /* is not set in first if below */
-	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
+	sql_subtype *it, *lng = 0; /* is not set in first if below */
+	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
 	sql_exp *h = NULL;
 
 	if (list_length(i->columns) <= 1 || i->type == no_idx) {
-		h = exp_label(sql->sa, exp_atom_wrd(sql->sa, 0), ++sql->label);
+		h = exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label);
 	} else {
 		it = sql_bind_localtype("int");
-		wrd = sql_bind_localtype("wrd");
+		lng = sql_bind_localtype("lng");
 		for (m = i->columns->h; m; m = m->next) {
 			sql_kc *c = m->data;
 			sql_exp *e;
@@ -579,7 +580,7 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 			
 			if (h && i->type == hash_idx)  { 
 				list *exps = new_exp_list(sql->sa);
-				sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, &c->c->type, wrd);
+				sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", lng, it, &c->c->type, lng);
 	
 				append(exps, h);
 				append(exps, exp_atom_int(sql->sa, bits));
@@ -587,15 +588,15 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 				h = exp_op(sql->sa, exps, xor);
 			} else if (h)  { /* order preserving hash */
 				sql_exp *h2;
-				sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", wrd, it, wrd);
-				sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", wrd, wrd, wrd);
-				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
+				sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", lng, it, lng);
+				sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", lng, lng, lng);
+				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
 	
 				h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh); 
 				h2 = exp_unop(sql->sa, e, hf);
 				h = exp_binop(sql->sa, h, h2, lor);
 			} else {
-				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
+				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
 				h = exp_unop(sql->sa, e, hf);
 				if (i->type == oph_idx) 
 					break;
@@ -608,7 +609,7 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, wrd, CARD_MULTI, 0, 0));
+	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, lng, CARD_MULTI, 0, 0));
 	return updates;
 }
 
@@ -837,13 +838,12 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 }
 
 static sql_rel *
-update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
+update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, symbol *opt_where)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	sql_rel *bt = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql,sname))) {
 		(void) sql_error(sql, 02, "3F000!UPDATE: no such schema '%s'", sname);
@@ -866,7 +866,9 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		list *exps;
 		dnode *n;
 		const char *rname = NULL;
+		sql_rel *res = NULL, *bt = rel_basetable(sql, t, t->base.name);
 
+		res = bt;
 #if 0
 			dlist *selection = dlist_create(sql->sa);
 			dlist *from_list = dlist_create(sql->sa);
@@ -912,6 +914,19 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		}
 #endif
 
+		if (opt_from) {
+			dlist *fl = opt_from->data.lval;
+			dnode *n = NULL;
+			sql_rel *fnd = NULL;
+
+			for (n = fl->h; n && res; n = n->next) {
+				fnd = table_ref(sql, NULL, n->data.sym, 0);
+				if (fnd)
+					res = rel_crossproduct(sql->sa, res, fnd, op_join);
+			}
+			if (!res) 
+				return NULL;
+		}
 		if (opt_where) {
 			int status = sql->session->status;
 	
@@ -920,21 +935,18 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
 				    be updated table. We add a select all */
-
-				sql_rel *l = bt = rel_basetable(sql, t, t->base.name );
-				r = rel_crossproduct(sql->sa, l, r, op_semi);
+				r = rel_crossproduct(sql->sa, res, r, op_semi);
 			} else {
 				sql->errstr[0] = 0;
 				sql->session->status = status;
-				bt = r = rel_basetable(sql, t, t->base.name );
-				r = rel_logical_exp(sql, r, opt_where, sql_where);
-				if (r && is_join(r->op))
+				r = rel_logical_exp(sql, res, opt_where, sql_where);
+				if (!opt_from && r && is_join(r->op))
 					r->op = op_semi;
 			}
 			if (!r) 
 				return NULL;
 		} else {	/* update all */
-			bt = r = rel_basetable(sql, t, t->base.name );
+			r = res;
 		}
 	
 		/* first create the project */
@@ -1135,8 +1147,21 @@ table_column_types(sql_allocator *sa, sql_table *t)
 	return types;
 }
 
+static list *
+table_column_names(sql_allocator *sa, sql_table *t)
+{
+	node *n;
+	list *types = sa_list(sa);
+
+	if (t->columns.set) for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		append(types, &c->base.name);
+	}
+	return types;
+}
+
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked, int best_effort)
+rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked, int best_effort, dlist *fwf_widths)
 {
 	sql_rel *res;
 	list *exps, *args;
@@ -1144,7 +1169,8 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 9, F_UNION, NULL); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 10, F_UNION, NULL);
+	char* fwf_string = NULL;
 	
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
@@ -1157,16 +1183,36 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 		exp_atom_str(sql->sa, ssep, &tpe)), 
 		exp_atom_str(sql->sa, ns, &tpe));
 
+	if (fwf_widths && dlist_length(fwf_widths) > 0) {
+		dnode *dn;
+		int ncol = 0;
+		char* fwf_string_cur = fwf_string = GDKmalloc(20 * dlist_length(fwf_widths) + 1); // a 64 bit int needs 19 characters in decimal representation plus the separator
+
+		if (!fwf_string) 
+			return NULL;
+		for (dn = fwf_widths->h; dn; dn = dn->next) {
+			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
+			ncol++;
+		}
+		if(list_length(f->res) != ncol) {
+			(void) sql_error(sql, 02, "3F000!COPY INTO: fixed width import for %d columns but %d widths given.", list_length(f->res), ncol);
+			return NULL;
+		}
+		*fwf_string_cur = '\0';
+	}
+
 	append( args, exp_atom_str(sql->sa, filename, &tpe)); 
 	import = exp_op(sql->sa,  
 	append(
 		append(
 			append( 
-				append( args, 
-					exp_atom_lng(sql->sa, nr)), 
-					exp_atom_lng(sql->sa, offset)), 
-					exp_atom_int(sql->sa, locked)),
-					exp_atom_int(sql->sa, best_effort)), f); 
+				append(
+					append( args,
+						exp_atom_lng(sql->sa, nr)),
+						exp_atom_lng(sql->sa, offset)),
+						exp_atom_int(sql->sa, locked)),
+						exp_atom_int(sql->sa, best_effort)),
+						exp_atom_str(sql->sa, fwf_string, &tpe)), f);
 	
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -1179,7 +1225,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint)
+copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint, dlist *fwf_widths)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
@@ -1194,7 +1240,6 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
 	list *collist;
 	int reorder = 0;
-
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
@@ -1243,8 +1288,12 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	collist = check_table_columns(sql, t, columns, "COPY", tname);
 	if (!collist)
 		return NULL;
-	/* if collist has skip and different order (or format specification) use intermediate table */
+	/* If we have a header specification use intermediate table, for
+	 * column specification other then the default list we need to reorder
+	 */
 	nt = t;
+	if (headers || collist != t->columns.set) 
+		reorder = 1;
 	if (headers) {
 		int has_formats = 0;
 		dnode *n;
@@ -1296,7 +1345,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths);
 
 			if (!rel)
 				rel = nrel;
@@ -1306,7 +1355,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				return rel;
 		}
 	} else {
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort, NULL);
 	}
 	if (headers) {
 		dnode *n;
@@ -1431,6 +1480,63 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 		res->flag |= UPD_NO_CONSTRAINT;
 	return res;
 }
+
+
+static sql_rel *
+copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
+{
+	char *sname = qname_schema(qname);
+	char *tname = qname_table(qname);
+
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+
+	node *n;
+	sql_rel res_obj ;
+	sql_rel *res = &res_obj;
+	list *exps = new_exp_list(sql->sa); //, *args = NULL;
+	sql_exp *import;
+	exp_kind ek = {type_value, card_loader, FALSE};
+
+	if (!copy_allowed(sql, 1)) {
+		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+				"binary COPY INTO requires database administrator rights");
+		return NULL;
+	}
+
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+		if (!t)
+			t = stack_find_table(sql, tname);
+	}
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) {
+		return NULL;
+	}
+
+	import = rel_value_exp(sql, &res, fcall, sql_sel, ek);
+	if (!import) {
+		return NULL;
+	}
+	((sql_subfunc*) import->f)->res = table_column_types(sql->sa, t);
+	((sql_subfunc*) import->f)->colnames = table_column_names(sql->sa, t);
+
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+	}
+
+	res = rel_table_func(sql->sa, NULL, import, exps, 1);
+	return  rel_insert_table(sql, t, t->base.name, res);
+}
+
 
 static sql_rel *
 rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file) 
@@ -1581,7 +1687,8 @@ rel_updates(mvc *sql, symbol *s)
 				l->h->next->next->next->next->next->next->data.sval, 
 				l->h->next->next->next->next->next->next->next->data.i_val, 
 				l->h->next->next->next->next->next->next->next->next->data.i_val, 
-				l->h->next->next->next->next->next->next->next->next->next->data.i_val);
+				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->next->next->next->next->next->data.lval);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1590,6 +1697,14 @@ rel_updates(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = bincopyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.i_val);
+		sql->type = Q_UPDATE;
+	}
+		break;
+	case SQL_COPYLOADER:
+	{
+		dlist *l = s->data.lval;
+
+		ret = copyfromloader(sql, l->h->data.lval, l->h->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1613,7 +1728,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = update_table(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
+		ret = update_table(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;

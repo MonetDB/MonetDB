@@ -1,0 +1,85 @@
+stdout of test 'pyapi06` in directory 'sql/backends/monet5` itself:
+
+
+# 22:40:27 >  
+# 22:40:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32251" "--set" "mapi_usock=/var/tmp/mtest-8581/.s.monetdb.32251" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 22:40:27 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:32251/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8581/.s.monetdb.32251
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:40:27 >  
+# 22:40:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8581" "--port=32251"
+# 22:40:27 >  
+
+#START TRANSACTION;
+#CREATE TABLE rval(groupcol integer,datacol integer);
+#INSERT INTO rval VALUES (1,42), (1,84), (2,42), (2,21);
+[ 4	]
+#CREATE AGGREGATE aggrmedian(val integer) RETURNS integer LANGUAGE P {
+#	if 'aggr_group' in locals():
+#		unique = numpy.unique(aggr_group)
+#		x = numpy.zeros(shape=(unique.size))
+#		for i in range(0,unique.size):
+#			x[i] = numpy.median(val[aggr_group==unique[i]])
+#		return(x)
+#	else:
+#		return(numpy.median(val))
+#};
+#SELECT aggrmedian(datacol) FROM rval;
+% sys.L1 # table_name
+% L1 # name
+% int # type
+% 2 # length
+[ 42	]
+#SELECT groupcol,aggrmedian(datacol) FROM rval GROUP BY groupcol;
+% sys.rval,	sys.L1 # table_name
+% groupcol,	L1 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	63	]
+[ 2,	31	]
+#DROP AGGREGATE aggrmedian;
+#DROP TABLE rval;
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE rval(groupcol integer, secondgroupcol integer, datacol integer);
+#INSERT INTO rval VALUES (0, 0, 1), (0, 0, 2), (0, 1, 3), (0, 1, 4), (1, 0, 5), (1, 0, 6), (1, 1, 7), (1, 1, 8);
+[ 8	]
+#CREATE AGGREGATE aggrsum(val integer) RETURNS integer LANGUAGE P {
+#	unique = numpy.unique(aggr_group)
+#	x = numpy.zeros(shape=(unique.size))
+#	for i in range(0, unique.size):
+#		x[i] = numpy.sum(val[aggr_group==unique[i]])
+#	return x
+#};
+#SELECT groupcol,secondgroupcol,aggrsum(datacol) FROM rval GROUP BY groupcol,secondgroupcol;
+% sys.rval,	sys.rval,	sys.L1 # table_name
+% groupcol,	secondgroupcol,	L1 # name
+% int,	int,	int # type
+% 1,	1,	2 # length
+[ 0,	0,	3	]
+[ 0,	1,	7	]
+[ 1,	0,	11	]
+[ 1,	1,	15	]
+#DROP AGGREGATE aggrsum;
+#DROP TABLE rval;
+#ROLLBACK;
+
+# 22:40:27 >  
+# 22:40:27 >  "Done."
+# 22:40:27 >  
+

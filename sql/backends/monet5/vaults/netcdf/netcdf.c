@@ -33,11 +33,10 @@
 #define LOAD_NCDF_VAR(tpe,ncdftpe) \
 	{ \
 	tpe *databuf; \
-	res = BATnew(TYPE_void, TYPE_##tpe, sz, TRANSIENT); \
+	res = COLnew(0, TYPE_##tpe, sz, TRANSIENT); \
 	if ( res == NULL ) \
 		return createException(MAL, "netcdf.importvar", MAL_MALLOC_FAIL); \
-	BATseqbase(res, 0); \
-	databuf = (tpe *)Tloc(res, BUNfirst(res)); \
+	databuf = (tpe *)Tloc(res, 0); \
 	if ( (retval = nc_get_var_##ncdftpe(ncid, varid, databuf)) ) \
 		return createException(MAL, "netcdf.importvar", \
 						   "Cannot read variable %d values: %s", \
@@ -155,7 +154,7 @@ NCDF2SQL(nc_type type)
 
 #define array_series(sta, ste, sto, TYPE) { 				\
 	int s,g;							\
-	TYPE i, *o = (TYPE*)Tloc(bn, BUNfirst(bn)); 			\
+	TYPE i, *o = (TYPE*)Tloc(bn, 0);				\
 	TYPE start = sta, step = ste, stop = sto; 			\
 	if ( start < stop && step > 0) {				\
 		for ( s = 0; s < series; s++)				\
@@ -185,31 +184,26 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 	if (stop <= (int) GDK_bte_max ) {
 		bte sta = (bte) start, ste = (bte) step, sto = (bte) stop;
 
-		bn = BATnew(TYPE_void, TYPE_bte, cnt, TRANSIENT);
+		bn = COLnew(0, TYPE_bte, cnt, TRANSIENT);
 		array_series(sta, ste, sto, bte);
 	} else if (stop <= (int) GDK_sht_max) {
 		sht sta = (sht) start, ste = (sht) step, sto = (sht) stop;
 
-		bn = BATnew(TYPE_void, TYPE_sht, cnt, TRANSIENT);
+		bn = COLnew(0, TYPE_sht, cnt, TRANSIENT);
 		array_series(sta, ste, sto, sht);
 	} else {
 		int sta = (int) start, ste = (int) step, sto = (int) stop;
 
-		bn = BATnew(TYPE_void, TYPE_int, cnt, TRANSIENT);
+		bn = COLnew(0, TYPE_int, cnt, TRANSIENT);
 		array_series(sta, ste, sto, int);
 	}
 	if ( bn == NULL)
 		throw(MAL, "array.series", MAL_MALLOC_FAIL);
 
 	BATsetcount(bn, cnt);
-	BATseqbase(bn,0);
-	bn->hdense = TRUE;
-	BATkey(bn, TRUE);
-	bn->hsorted = 1;
-	bn->hrevsorted = (cnt <= 1);
 	bn->tsorted = (cnt <= 1 || (series == 1 && step > 0));
 	bn->trevsorted = (cnt <= 1 || (series == 1 && step < 0));
-	bn->T->nonil = TRUE;
+	bn->tnonil = TRUE;
 	BBPkeepref(*bid= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -334,7 +328,7 @@ header: %s", nc_strerror(retval));
                         "Cannot read attribute %d of variable %d: %s",
                         aidx, vidx, nc_strerror(retval));
 
-	            if ((retval = nc_inq_att(ncid,vidx,aname,&atype,&alen)))
+		if ((retval = nc_inq_att(ncid,vidx,aname,&atype,&alen)))
                     return createException(MAL, "netcdf.attach",
 	                    "Cannot read attribute %s type and length: %s",
 	                    aname, nc_strerror(retval));
@@ -563,11 +557,11 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	}
 
 	BATsetcount(res, sz);
-	res->T->nonil = TRUE;
-	res->T->nil = FALSE;
+	res->tnonil = TRUE;
+	res->tnil = FALSE;
 	res->tsorted = FALSE;
 	res->trevsorted = FALSE;
-	BATkey(BATmirror(res), FALSE);
+	BATkey(res, FALSE);
 	BBPkeepref(vbid = res->batCacheid);
 
 	res = NULL;

@@ -26,12 +26,9 @@ stderr of test 'long_insert.Bug-3845` in directory 'sql/test/BugTracker-2015` it
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 15:24:32 >  
-# 15:24:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9185" "--port=38083"
-# 15:24:32 >  
 
 
-# 15:25:31 >  
-# 15:25:31 >  "Done."
-# 15:25:31 >  
+# 12:41:05 >  
+# 12:41:05 >  "Done."
+# 12:41:05 >  
 

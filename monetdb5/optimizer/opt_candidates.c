@@ -19,6 +19,8 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 {
 	int i;
 	InstrPtr p;
+	char  buf[256];
+	lng usec = GDKusec();
 
 	(void) pci;
 	(void) cntxt;
@@ -31,6 +33,8 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if(getFunctionId(p) == tidRef) 
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == subdeltaRef) 
+				setVarCList(mb,getArg(p,0));
+			if(getFunctionId(p) == emptybindRef && p->retc == 2) 
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == bindRef && p->retc == 2) 
 				setVarCList(mb,getArg(p,0));
@@ -60,5 +64,15 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 		}
 	}
+
+    /* Defense line against incorrect plans */
+	/* plan remains unaffected */
+	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	//chkFlow(cntxt->fdout, mb);
+	//chkDeclarations(cntxt->fdout, mb);
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","candidates",1,GDKusec() -usec);
+    newComment(mb,buf);
+
 	return 1;
 }

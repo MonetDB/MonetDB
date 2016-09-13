@@ -23,7 +23,4 @@
 
 opt_sql_append_export str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define DEBUG_OPT_SQL_APPEND 61
-#define OPTDEBUGsql_append if (optDebug & ((lng)1 << DEBUG_OPT_SQL_APPEND))
-
 #endif /* _OPT_SQL_APPEND_ */

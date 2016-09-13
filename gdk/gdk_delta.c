@@ -35,61 +35,24 @@ BATcommit(BAT *b)
 {
 	if (b == NULL)
 		return;
-	DELTADEBUG fprintf(stderr, "#BATcommit1 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+	DELTADEBUG fprintf(stderr, "#BATcommit1 %s free " SZFMT " ins " BUNFMT " base " PTRFMT "\n",
 			   BATgetId(b),
-			   b->H->heap.free,
-			   b->T->heap.free,
+			   b->theap.free,
 			   b->batInserted,
-			   b->batDeleted,
-			   b->batFirst,
-			   PTRFMTCAST b->H->heap.base,
-			   PTRFMTCAST b->T->heap.base);
+			   PTRFMTCAST b->theap.base);
 	ALIGNcommit(b);
-	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
-		BATiter bi = bat_iterator(b);
-		int (*hunfix) (const void *) = BATatoms[b->htype].atomUnfix;
-		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
-		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
-		BUN p, q;
-
-		if (hatmdel || hunfix || tatmdel || tunfix) {
-			DELloop(b, p, q) {
-				ptr h = BUNhead(bi, p);
-				ptr t = BUNtail(bi, p);
-
-				if (hunfix) {
-					(*hunfix) (h);
-				}
-				if (hatmdel) {
-					(*hatmdel) (b->H->vheap, (var_t *) BUNhloc(bi, p));
-				}
-				if (tunfix) {
-					(*tunfix) (t);
-				}
-				if (tatmdel) {
-					(*tatmdel) (b->T->vheap, (var_t *) BUNtloc(bi, p));
-				}
-			}
-		}
-	}
 	if (!BATdirty(b)) {
 		b->batDirtyflushed = 0;
 	}
 	if (DELTAdirty(b)) {
 		b->batDirtydesc = 1;
 	}
-	b->batDeleted = b->batFirst;
 	b->batInserted = BUNlast(b);
-	DELTADEBUG fprintf(stderr, "#BATcommit2 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+	DELTADEBUG fprintf(stderr, "#BATcommit2 %s free " SZFMT " ins " BUNFMT " base " PTRFMT "\n",
 			   BATgetId(b),
-			   b->H->heap.free,
-			   b->T->heap.free,
+			   b->theap.free,
 			   b->batInserted,
-			   b->batDeleted,
-			   b->batFirst,
-			   PTRFMTCAST b->H->heap.base,
-			   PTRFMTCAST b->T->heap.base);
+			   PTRFMTCAST b->theap.base);
 }
 
 /*
@@ -102,11 +65,9 @@ BATfakeCommit(BAT *b)
 	if (b) {
 		BATcommit(b);
 		b->batDirty = 0;
-		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 0;
-		if (b->H->vheap)
-			b->H->vheap->dirty = 0;
-		if (b->T->vheap)
-			b->T->vheap->dirty = 0;
+		b->batDirtydesc = b->theap.dirty = 0;
+		if (b->tvheap)
+			b->tvheap->dirty = 0;
 	}
 }
 
@@ -126,62 +87,35 @@ BATundo(BAT *b)
 		return;
 	DELTADEBUG fprintf(stderr, "#BATundo %s \n", BATgetId(b));
 	if (b->batDirtyflushed) {
-		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 1;
+		b->batDirtydesc = b->theap.dirty = 1;
 	} else {
 		b->batDirty = 0;
-		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 0;
-		if (b->H->vheap)
-			b->H->vheap->dirty = 0;
-		if (b->T->vheap)
-			b->T->vheap->dirty = 0;
+		b->batDirtydesc = b->theap.dirty = 0;
+		if (b->tvheap)
+			b->tvheap->dirty = 0;
 	}
 	bunfirst = b->batInserted;
 	bunlast = BUNlast(b) - 1;
 	if (bunlast >= b->batInserted) {
 		BUN i = bunfirst;
-		int (*hunfix) (const void *) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
-		if (hunfix || tunfix || hatmdel || tatmdel || b->H->hash || b->T->hash) {
+		if (tunfix || tatmdel || b->thash) {
 			HASHdestroy(b);
 			for (p = bunfirst; p <= bunlast; p++, i++) {
-				ptr h = BUNhead(bi, p);
 				ptr t = BUNtail(bi, p);
 
-				if (hunfix) {
-					(*hunfix) (h);
-				}
-				if (hatmdel) {
-					(*hatmdel) (b->H->vheap, (var_t *) BUNhloc(bi, p));
-				}
 				if (tunfix) {
 					(*tunfix) (t);
 				}
 				if (tatmdel) {
-					(*tatmdel) (b->T->vheap, (var_t *) BUNtloc(bi, p));
+					(*tatmdel) (b->tvheap, (var_t *) BUNtloc(bi, p));
 				}
 			}
 		}
 	}
-	b->H->heap.free = headsize(b, b->batInserted);
-	b->T->heap.free = tailsize(b, b->batInserted);
+	b->theap.free = tailsize(b, b->batInserted);
 
-	bunfirst = b->batDeleted;
-	bunlast = b->batFirst;
-	if (bunlast > b->batDeleted) {
-		/* elements are 'inserted' => zap properties */
-		b->hsorted = 0;
-		b->hrevsorted = 0;
-		b->tsorted = 0;
-		b->trevsorted = 0;
-		if (b->hkey)
-			BATkey(b, FALSE);
-		if (b->tkey)
-			BATkey(BATmirror(b), FALSE);
-		HASHremove(b);
-	}
-	b->batFirst = b->batDeleted;
 	BATsetcount(b, b->batInserted);
 }

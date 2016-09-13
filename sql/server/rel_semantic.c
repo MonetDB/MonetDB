@@ -43,6 +43,9 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
+	if (!b || !n) {
+		return NULL;
+	}
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';
@@ -81,6 +84,10 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		strcpy(m->errstr, errstr);
 	} else {
 		int label = m->label;
+		while (m->topvars > o.topvars) {
+			if (m->vars[--m->topvars].name)
+				c_delete(m->vars[m->topvars].name);
+		}
 		*m = o;
 		m->label = label;
 	}
@@ -143,6 +150,8 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DECLARE:
 	case SQL_CALL:
 	case SQL_SET:
+	
+	case SQL_CREATE_TABLE_LOADER:
 
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:
@@ -155,6 +164,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DELETE:
 	case SQL_COPYFROM:
 	case SQL_BINCOPYFROM:
+	case SQL_COPYLOADER:
 	case SQL_COPYTO:
 		return rel_updates(sql, s);
 

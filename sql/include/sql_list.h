@@ -47,6 +47,7 @@ extern list *list_prepend(list *l, void *data);
 
 extern node *list_remove_node(list *l, node *n);
 extern void list_remove_data(list *l, void *data);
+extern void list_remove_list(list *l, list *data);
 extern void list_move_data(list *l, list *d, void *data);
 
 
@@ -69,7 +70,6 @@ extern void * list_fetch(list *l, int pos);
 extern list *list_select(list *l, void *key, fcmp cmp, fdup dup);
 extern list *list_order(list *l, fcmp cmp, fdup dup);
 extern list *list_distinct(list *l, fcmp cmp, fdup dup);
-extern list *list_distinct2(list *l, void *data, fcmp2 cmp, fdup dup);
 extern void *list_reduce(list *l, freduce red, fdup dup);
 extern void *list_reduce2(list *l, freduce2 red, sql_allocator *sa);
 extern list *list_map(list *l, void *data, fmap f);

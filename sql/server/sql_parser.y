@@ -110,7 +110,6 @@ UTF8_strlen(const char *val)
 %pure-parser
 %union {
 	int		i_val,bval;
-	wrd		w_val;
 	lng		l_val,operation;
 	double		fval;
 	char *		sval;
@@ -236,7 +235,6 @@ int yydebug=1;
 	null
 	interval_expression
 	ordering_spec
-	simple_table
 	table_ref
 	opt_limit
 	opt_offset
@@ -249,6 +247,7 @@ int yydebug=1;
 	when_search
 	case_opt_else
 	table_name
+	opt_table_name
 	object_name
 	exec
 	exec_ref
@@ -332,6 +331,7 @@ int yydebug=1;
 	forest_element_name
 	XML_namespace_prefix
 	XML_PI_target
+	function_body
 
 %type <l>
 	passwd_schema
@@ -342,6 +342,8 @@ int yydebug=1;
 	assignment_commalist
 	opt_column_list
 	column_commalist_parens
+	opt_fwf_widths
+	fwf_widthlist
 	opt_header_list
 	header_list
 	header
@@ -435,6 +437,7 @@ int yydebug=1;
 	grantor
 	intval
 	join_type
+	opt_outer
 	non_second_datetime_field
 	nonzero
 	opt_bounds
@@ -473,11 +476,6 @@ int yydebug=1;
 	window_frame_units
 	window_frame_exclusion
 	subgeometry_type
-
-%type <w_val>
-	wrdval
-	poswrd
-	nonzerowrd
 
 %type <l_val>
 	lngval
@@ -526,12 +524,12 @@ int yydebug=1;
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION
 %token <sval> sqlDELETE UPDATE SELECT INSERT 
-%token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
+%token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
-%token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY
+%token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <operation> EXISTS ESCAPE HAVING sqlGROUP sqlNULL
 %token <operation> FROM FOR MATCH
 
@@ -575,7 +573,7 @@ int yydebug=1;
 %left <operation> '~'
 
 %left <operatio> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT 
-%left <operatio> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW GEOM_ABOVE GEOM_DIST
+%left <operatio> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW GEOM_ABOVE GEOM_DIST GEOM_MBR_EQUAL
 
 /* literal keyword tokens */
 /*
@@ -586,9 +584,9 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TEMP TEMPORARY STREAM MERGE REMOTE REPLICA
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
-%token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
+%token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE SQL_DOT PREPARE EXECUTE
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -604,7 +602,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
-%token COPY RECORDS DELIMITERS STDIN STDOUT
+%token COPY RECORDS DELIMITERS STDIN STDOUT FWF
 %token INDEX
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
@@ -660,21 +658,6 @@ sqlstmt:
 			  m->scanner.key = 0;
 			}
    sql SCOLON 		{
-			  if (m->sym) {
-				append_symbol(m->sym->data.lval, $3);
-				$$ = m->sym;
-			  } else {
-				m->sym = $$ = $3;
-			  }
-			  YYACCEPT;
-			}
-
- | SQL_DOT 		{
-		  	  m->emod |= mod_dot;
-			  m->scanner.as = m->scanner.yycur; 
-			  m->scanner.key = 0;
-			}
-	sql SCOLON 	{
 			  if (m->sym) {
 				append_symbol(m->sym->data.lval, $3);
 				$$ = m->sym;
@@ -1263,6 +1246,7 @@ index_def:
 opt_index_type:
      UNIQUE		{ $$ = hash_idx; }
  |   ORDERED		{ $$ = ordered_idx; }
+ |   IMPRINTS		{ $$ = imprints_idx; }
  |   /* empty */	{ $$ = hash_idx; }
  ;
 
@@ -1321,6 +1305,13 @@ table_def:
 	  append_string(l, NULL);
 	  append_list(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ |  TABLE qname FROM sqlLOADER func_ref
+    {
+      dlist *l = L();
+      append_list(l, $2);
+      append_symbol(l, $5);
+      $$ = _symbol_create_list( SQL_CREATE_TABLE_LOADER, l);
+    }
  |  STREAM TABLE qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
 	  dlist *l = L();
@@ -1763,6 +1754,13 @@ external_function_name:
 	ident '.' ident { $$ = append_string(append_string(L(), $1), $3); }
  ;
 
+
+function_body:
+	X_BODY
+|	string
+;
+
+
 func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
@@ -1793,19 +1791,28 @@ func_def:
   | create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT X_BODY { 
+    LANGUAGE IDENT function_body { 
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
+			else if (l == 'P' || l == 'p')
+            {
+                if (strcasecmp($10, "PYTHON_MAP") == 0)
+                    lang = FUNC_LANG_MAP_PY;
+                else lang = FUNC_LANG_PY;
+            }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
-			else
-				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+			else {
+				char *msg = sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l);
+				yyerror(m, msg);
+				_DELETE(msg);
+			}
 
 			append_list(f, $3);
 			append_list(f, $5);
@@ -1844,19 +1851,28 @@ func_def:
   | create AGGREGATE qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT X_BODY { 
+    LANGUAGE IDENT function_body { 
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
+			else if (l == 'P' || l == 'p')
+            {
+                if (strcasecmp($10, "PYTHON_MAP") == 0)
+                     lang = FUNC_LANG_MAP_PY;
+                else lang = FUNC_LANG_PY;
+            }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
-			else
-				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+			else {
+				char *msg = sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l);
+				yyerror(m, msg);
+				_DELETE(msg);
+			}
 
 			append_list(f, $3);
 			append_list(f, $5);
@@ -1891,7 +1907,29 @@ func_def:
 				append_int(f, F_PROC);
 				append_int(f, FUNC_LANG_SQL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
- ;
+  |	create sqlLOADER qname
+	'(' opt_paramlist ')'
+    LANGUAGE IDENT function_body { 
+			int lang = 0;
+			dlist *f = L();
+			char l = *$8;
+			/* other languages here if we ever get to it */
+			if (l == 'P' || l == 'p')
+            {
+                lang = FUNC_LANG_PY;
+            }
+			else
+				yyerror(m, sql_message("Language name P(ython) expected, received '%c'", l));
+
+			append_list(f, $3);
+			append_list(f, $5);
+			append_symbol(f, NULL);
+			append_list(f, NULL); 
+			append_list(f, append_string(L(), $9));
+			append_int(f, F_LOADER);
+			append_int(f, lang);
+			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+;
 
 routine_body:
 	procedure_statement 
@@ -2317,6 +2355,12 @@ routine_designator:
 	  append_list(l, $3 );
 	  append_int(l, F_PROC );
 	  $$ = l; }
+ |	sqlLOADER qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $2 );	
+	  append_list(l, $3 );
+	  append_int(l, F_LOADER );
+	  $$ = l; }
  ;
 
 drop_statement:
@@ -2359,6 +2403,14 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_PROC );
+	  append_int(l, 1 );
+	  append_int(l, $5 );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | drop ALL sqlLOADER qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_list(l, NULL );
+	  append_int(l, F_LOADER );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2482,7 +2534,7 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2494,8 +2546,9 @@ copyfrom_stmt:
 	  append_int(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
+	  append_list(l, $14);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint 
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2507,7 +2560,13 @@ copyfrom_stmt:
 	  append_int(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
+	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+  | COPY sqlLOADER INTO qname FROM func_ref
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_symbol(l, $6);
+	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
 	  if ($2 != NULL) {
@@ -2533,7 +2592,22 @@ copyfrom_stmt:
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
+  
 
+
+opt_fwf_widths:
+       /* empty */		{ $$ = NULL; }
+| FWF '(' fwf_widthlist ')' { $$ = $3; }
+ 
+ ;
+ 
+ fwf_widthlist:
+    poslng		{ $$ = append_lng(L(), $1); }
+ |  fwf_widthlist ',' poslng
+			{ $$ = append_lng($1, $3); }
+ ;
+
+ 
 opt_header_list:
        /* empty */		{ $$ = NULL; }
  | '(' header_list ')'		{ $$ = $2; }
@@ -2636,12 +2710,13 @@ delete_stmt:
  ;
 
 update_stmt:
-    UPDATE qname SET assignment_commalist opt_where_clause
+    UPDATE qname SET assignment_commalist opt_from_clause opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $2);
 	  append_list(l, $4);
 	  append_symbol(l, $5);
+	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
@@ -2789,7 +2864,6 @@ joined_table:
    '(' joined_table ')'
 	{ $$ = $2; }
  |  table_ref CROSS JOIN table_ref
-
 	{ dlist *l = L();
 	  append_symbol(l, $1);
 	  append_symbol(l, $4);
@@ -2802,22 +2876,6 @@ joined_table:
 	  append_symbol(l, $3);
 	  append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_UNIONJOIN, l); }
- |  table_ref JOIN table_ref join_spec
-	{ dlist *l = L();
-	  append_symbol(l, $1);
-	  append_int(l, 0);
-	  append_int(l, 0);
-	  append_symbol(l, $3);
-	  append_symbol(l, $4);
-	  $$ = _symbol_create_list( SQL_JOIN, l); }
- |  table_ref NATURAL JOIN table_ref
-	{ dlist *l = L();
-	  append_symbol(l, $1);
-	  append_int(l, 1);
-	  append_int(l, 0);
-	  append_symbol(l, $4);
-	  append_symbol(l, NULL);
-	  $$ = _symbol_create_list( SQL_JOIN, l); }
  |  table_ref join_type JOIN table_ref join_spec
 	{ dlist *l = L();
 	  append_symbol(l, $1);
@@ -2837,9 +2895,14 @@ joined_table:
   ;
 
 join_type:
-    INNER			{ $$ = 0; }
-  | outer_join_type OUTER	{ $$ = 1 + $1; }
-  | outer_join_type		{ $$ = 1 + $1; }
+    /* empty */			{ $$ = 0; }
+  | INNER			{ $$ = 0; }
+  | outer_join_type opt_outer	{ $$ = 1 + $1; }
+  ;
+
+opt_outer:
+    /* empty */ 		{ $$ = 0; }
+  | OUTER			{ $$ = 0; }
   ;
 
 outer_join_type:
@@ -3045,28 +3108,24 @@ table_ref_commalist:
 			{ $$ = append_symbol($1, $3); }
  ;
 
-simple_table:
-   qname 			{ dlist *l = L();
-		  		  append_list(l, $1);
-		  	  	  append_symbol(l, NULL);
-		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- | qname table_name 		{ dlist *l = L();
-		  		  append_list(l, $1);
-		  	  	  append_symbol(l, $2);
-		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- | func_ref table_name		{ dlist *l = L();
-		  		  append_symbol(l, $1);
-		  	  	  append_symbol(l, $2);
-		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
- | func_ref 			{ dlist *l = L();
-		  		  append_symbol(l, $1);
-		  	  	  append_symbol(l, NULL);
-		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
- ;
-
 table_ref:
-    simple_table
- |  subquery table_name
+    qname opt_table_name 	{ dlist *l = L();
+		  		  append_list(l, $1);
+		  	  	  append_symbol(l, $2);
+		  		  $$ = _symbol_create_list(SQL_NAME, l); }
+ |  func_ref opt_table_name
+	 		        { dlist *l = L();
+		  		  append_symbol(l, $1);
+		  	  	  append_symbol(l, $2);
+		  	  	  append_int(l, 0);
+		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
+ |  LATERAL func_ref opt_table_name
+	 		        { dlist *l = L();
+		  		  append_symbol(l, $2);
+		  	  	  append_symbol(l, $3);
+		  	  	  append_int(l, 1);
+		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
+ |  subquery table_name		
 				{
 				  $$ = $1;
 				  if ($$->token == SQL_SELECT) {
@@ -3076,6 +3135,18 @@ table_ref:
 				  	append_symbol($1->data.lval, $2);
 				  }
 				}
+ |  LATERAL subquery table_name		
+				{
+				  $$ = $2;
+				  if ($$->token == SQL_SELECT) {
+				  	SelectNode *sn = (SelectNode*)$2;
+				  	sn->name = $3;
+					sn->lateral = 1;
+				  } else {
+				  	append_symbol($2->data.lval, $3);
+	  				append_int($2->data.lval, 1);
+				  }
+				}
  |  subquery
 				{ $$ = NULL;
 				  yyerror(m, "subquery table reference needs alias, use AS xxx");
@@ -3083,12 +3154,6 @@ table_ref:
 				}
  |  joined_table 		{ $$ = $1;
 				  append_symbol($1->data.lval, NULL); }
-/* the following rule seems to be redundant ?  
- |  '(' joined_table ')' table_name
-				{ $$ = $2;
-				  append_symbol($2->data.lval, $4); }
-*/
-
 /* Basket expression, TODO window */
  |  '[' 
 	{ m->caching = 0; }
@@ -3123,6 +3188,11 @@ table_name:
 		  		  append_string(l, $1);
 		  	  	  append_list(l, NULL);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
+ ;
+
+opt_table_name:
+	      /* empty */ 	{ $$ = NULL; }
+ | table_name			{ $$ = $1; }
  ;
 
 opt_group_by_clause:
@@ -3170,8 +3240,8 @@ opt_order_by_clause:
 
 opt_limit:
     /* empty */ 	{ $$ = NULL; }
- |  LIMIT nonzerowrd	{ 
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  LIMIT nonzerolng	{ 
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
  |  LIMIT param		{ $$ = $2; }
@@ -3179,8 +3249,8 @@ opt_limit:
 
 opt_offset:
 	/* empty */	{ $$ = NULL; }
- |  OFFSET poswrd	{ 
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  OFFSET poslng	{ 
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
  |  OFFSET param	{ $$ = $2; }
@@ -3188,8 +3258,8 @@ opt_offset:
 
 opt_sample:
 	/* empty */	{ $$ = NULL; }
- |  SAMPLE poswrd	{
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  SAMPLE poslng	{
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2));
 			}
  |  SAMPLE INTNUM	{
@@ -3332,9 +3402,7 @@ like_exp:
  |  scalar_exp ESCAPE string
  	{ const char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
-		char *msg = sql_message("\b22025!ESCAPE must be one character");
-		yyerror(m, msg);
-		_DELETE(msg);
+		yyerror(m, "\b22025!ESCAPE must be one character");
 		$$ = NULL;
 		YYABORT;
 	  } else {
@@ -3565,12 +3633,12 @@ simple_scalar_exp:
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
- |  scalar_exp '~''=' scalar_exp
+ |  scalar_exp GEOM_MBR_EQUAL scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_equal")));
 	  		  append_symbol(l, $1);
-	  		  append_symbol(l, $4);
+	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  '~' scalar_exp
 			{ dlist *l = L();
@@ -3617,10 +3685,7 @@ simple_scalar_exp:
 				if (!atom_neg(a)) {
 					$$ = $2;
 				} else {
-					char *msg = sql_message("\b22003!value too large or not a number");
-
-					yyerror(m, msg);
-					_DELETE(msg);
+					yyerror(m, "\b22003!value too large or not a number");
 					$$ = NULL;
 					YYABORT;
 				}
@@ -4299,9 +4364,11 @@ literal:
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  int len = sizeof(hge);
+		  const hge one = 1;
 #else
 		  lng value, *p = &value;
 		  int len = sizeof(lng);
+		  const lng one = 1;
 #endif
 		  sql_subtype t;
 
@@ -4317,7 +4384,15 @@ literal:
 
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
-		    int bits = digits2bits(digits);
+		    int bits = digits2bits(digits), obits = bits;
+
+		    for (;(one<<(bits-1)) > value; bits--)
+			    ;
+		   
+ 		    if (bits != obits && 
+		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
+				bits++;
+		
 		    if (value > GDK_bte_min && value <= GDK_bte_max)
 		  	  sql_find_subtype(&t, "tinyint", bits, 0 );
 		    else if (value > GDK_sht_min && value <= GDK_sht_max)
@@ -4726,29 +4801,8 @@ nonzerolng:
 		}
 	;
 
-nonzerowrd:
-	wrdval
-		{ $$ = $1;
-		  if ($$ <= 0) {
-			$$ = -1;
-			yyerror(m, "Positive value greater than 0 expected");
-			YYABORT;
-		  }
-		}
-	;
-
 poslng:
 	lngval 	{ $$ = $1;
-		  if ($$ < 0) {
-			$$ = -1;
-			yyerror(m, "Positive value expected");
-			YYABORT;
-		  }
-		}
-	;
-
-poswrd:
-	wrdval  { $$ = $1;
 		  if ($$ < 0) {
 			$$ = -1;
 			yyerror(m, "Positive value expected");
@@ -4924,7 +4978,11 @@ data_type:
 			  }
 			}
 | GEOMETRY {
-		sql_find_subtype(&$$, "geometry", 0, 0 );
+		if (!sql_find_subtype(&$$, "geometry", 0, 0 )) {
+			yyerror(m, "\b22000!type (geometry) unknown");
+			$$.type = NULL;
+			YYABORT;
+		}
 	}
 | GEOMETRY '(' subgeometry_type ')' {
 		int geoSubType = $3; 
@@ -4957,7 +5015,11 @@ data_type:
 		}
 	}
 | GEOMETRYA {
-		sql_find_subtype(&$$, "geometrya", 0, 0 );
+		if (!sql_find_subtype(&$$, "geometrya", 0, 0 )) {
+			yyerror(m, "\b22000!type (geometrya) unknown");
+			$$.type = NULL;
+			YYABORT;
+		}
 	}
 | GEOMETRYSUBTYPE {
 	int geoSubType = find_subgeometry_type($1);
@@ -4969,7 +5031,7 @@ data_type:
 		_DELETE(msg);
 		YYABORT;
 	}  else if (!sql_find_subtype(&$$, "geometry", geoSubType, 0 )) {
-	char *msg = sql_message("\b22000!type (%s) unknown", $1);
+		char *msg = sql_message("\b22000!type (%s) unknown", $1);
 		yyerror(m, msg);
 		_DELETE(msg);
 		$$.type = NULL;
@@ -4987,7 +5049,7 @@ subgeometry_type:
 		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
 		yyerror(m, msg);
 		_DELETE(msg);
-		
+		YYABORT;
 	} 
 	$$ = subtype;	
 }
@@ -4999,7 +5061,7 @@ subgeometry_type:
 		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
 		yyerror(m, msg);
 		_DELETE(msg);
-		
+		YYABORT;
 	} 
 	$$ = subtype;	
 }
@@ -5103,11 +5165,11 @@ non_reserved_word:
 |  TIME 	{ $$ = sa_strdup(SA, "time"); }
 |  TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }
 |  INTERVAL	{ $$ = sa_strdup(SA, "interval"); }
+|  IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
-|  SQL_DOT	{ $$ = sa_strdup(SA, "dot"); }
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 |  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 |  sqlTEXT     	{ $$ = sa_strdup(SA, "text"); }
@@ -5145,30 +5207,13 @@ name_commalist:
 			{ $$ = append_string($1, $3); }
  ;
 
-wrdval:
-	lngval 	{ 
-		lng l = $1;
-#if SIZEOF_WRD == SIZEOF_INT
-
-		if (l > GDK_int_max) {
-			char *msg = sql_message("\b22000!constant (" LLFMT ") has wrong type (number expected)", l);
-
-			yyerror(m, msg);
-			_DELETE(msg);
-			$$ = 0;
-			YYABORT;
-		}
-#endif
-		$$ = (wrd) l;
-	}
-;
-
 lngval:
 	sqlINT	
  		{
 		  char *end = NULL, *s = $1;
 		  int l = _strlen(s);
-
+		  // errno might be non-zero due to other people's code
+		  errno = 0;
 		  if (l <= 19) {
 		  	$$ = strtoll(s,&end,10);
 		  } else {
@@ -5190,7 +5235,8 @@ intval:
  		{
 		  char *end = NULL, *s = $1;
 		  int l = _strlen(s);
-
+		  // errno might be non-zero due to other people's code
+		  errno = 0;
 		  if (l <= 10) {
 		  	$$ = strtol(s,&end,10);
 		  } else {

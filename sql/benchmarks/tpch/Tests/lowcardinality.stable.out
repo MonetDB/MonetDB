@@ -32,7 +32,7 @@ Ready.
 #SELECT o_totalprice, count(*) FROM sys.orders GROUP BY o_totalprice HAVING count(*) >1 limit 10;
 % sys.orders,	sys.L1 # table_name
 % o_totalprice,	L1 # name
-% decimal,	wrd # type
+% decimal,	bigint # type
 % 17,	1 # length
 [ 126476.16,	2	]
 [ 16236.69,	2	]
@@ -53,25 +53,25 @@ Ready.
 #SELECT count(*) FROM sys.orders WHERE o_totalprice BETWEEN 38451.0 AND 38452.0;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM sys.orders WHERE o_totalprice = 38451.38;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM sys.orders WHERE o_totalprice >= 555285.16;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM sys.orders WHERE o_totalprice < 858.0;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
@@ -79,7 +79,7 @@ Ready.
 #AND  p_retailprice BETWEEN 1214.0 AND 1215.0;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 8	]
 #SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
@@ -87,7 +87,7 @@ Ready.
 #AND  s_acctbal BETWEEN 1432.0 AND 1433.0;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 80	]
 #SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
@@ -95,7 +95,7 @@ Ready.
 #AND ps_supplycost BETWEEN 915.0 AND 916;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 7	]
 

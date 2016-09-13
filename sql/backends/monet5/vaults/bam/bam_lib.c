@@ -268,13 +268,12 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 		(c == 0 || *cur_out >= prev_out); \
 	output->trevsorted = output->trevsorted && \
 		(c == 0 || *cur_out <= prev_out); \
-	output->T->nil = output->T->nil || *cur_out == TPE##_nil; \
-	output->T->nonil = output->T->nonil && *cur_out != TPE##_nil; \
+	output->tnil = output->tnil || *cur_out == TPE##_nil; \
+	output->tnonil = output->tnonil && *cur_out != TPE##_nil; \
 }
 
 #define finish_props() { \
 	BATsetcount(output, BATcount(input)); \
-	BATseqbase(output, input->hseqbase); \
 	output->tkey = FALSE; /* Tail values are not unique */ \
 }
 
@@ -299,15 +298,15 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		throw(MAL, "bam_flag_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	output = BATnew(TYPE_void, TYPE_bit, BATcount(input), TRANSIENT);
+	output = COLnew(input->hseqbase, TYPE_bit, BATcount(input), TRANSIENT);
 	if (output == NULL) {
 		BBPunfix(input->batCacheid);
 		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
 	}
 	
 	init_props();
-	cur_in = (sht *) Tloc(input, BUNfirst(input));
-	cur_out = (bit *) Tloc(output, BUNfirst(output));
+	cur_in = (sht *) Tloc(input, 0);
+	cur_out = (bit *) Tloc(output, 0);
 	for(c = 0; c < BATcount(input); ++c) {
 		*cur_out = kth_bit(*cur_in, k);
 		update_props(bit);
@@ -335,12 +334,11 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		throw(MAL, "reverse_seq_bat", RUNTIME_OBJECT_MISSING); \
  \
 	/* allocate result BAT */ \
-	output = BATnew(TYPE_void, TYPE_str, BATcount(input), TRANSIENT); \
+	output = COLnew(input->hseqbase, TYPE_str, BATcount(input), TRANSIENT); \
 	if (output == NULL) { \
 		BBPunfix(input->batCacheid); \
 		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL); \
 	} \
-	BATseqbase(output, input->hseqbase); \
  \
 	li = bat_iterator(input); \
  \
@@ -394,14 +392,14 @@ seq_length_bat(bat * ret, bat * bid)
 		throw(MAL, "seq_length_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	output = BATnew(TYPE_void, TYPE_int, BATcount(input), TRANSIENT);
+	output = COLnew(input->hseqbase, TYPE_int, BATcount(input), TRANSIENT);
 	if (output == NULL) {
 		throw(MAL, "seq_length_bat", MAL_MALLOC_FAIL);
 	}
 
 	init_props();
 	li = bat_iterator(input);
-	cur_out = (int *) Tloc(output, BUNfirst(output));
+	cur_out = (int *) Tloc(output, 0);
 	BATloop(input, p, q) {
 		cur_in = (str) BUNtail(li, p);
 		if ((msg = seq_length(cur_out, &cur_in)) != MAL_SUCCEED) {
@@ -448,16 +446,15 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	}
 	
 	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_str, BATcount(cigars), TRANSIENT);
+	result = COLnew(seqs->hseqbase, TYPE_str, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
 		msg = createException(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
-	BATseqbase(result, seqs->hseqbase);
 
-	seq = BUNfirst(seqs);
-	pos = BUNfirst(poss);
-	cigar = BUNfirst(cigars);
+	seq = 0;
+	pos = 0;
+	cigar = 0;
 	seq_end = BUNlast(seqs);
 
 	seq_it = bat_iterator(seqs);
@@ -475,6 +472,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 			goto cleanup;
 		}
 		BUNappend(result, (ptr) r, FALSE);
+		GDKfree(r);
 		++seq;
 		++pos;
 		++cigar;

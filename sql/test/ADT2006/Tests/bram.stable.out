@@ -375,7 +375,7 @@ Ready.
 #(select 5 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 5)
 % .L14,	.L14 # table_name
 % mon,	murders # name
-% tinyint,	wrd # type
+% tinyint,	bigint # type
 % 2,	1 # length
 [ 1,	0	]
 [ 2,	2	]
@@ -426,7 +426,7 @@ Ready.
 #GROUP BY v.name HAVING count(w.name) >= 2;
 % sys.v,	sys.L1 # table_name
 % name,	witness_count # name
-% varchar,	wrd # type
+% varchar,	bigint # type
 % 17,	1 # length
 [ "Annie Chapman",	2	]
 [ "Elisabeth Stride",	6	]
@@ -438,7 +438,7 @@ Ready.
 #GROUP BY i.name HAVING count(v.victim) > 1 order by i.name;
 % sys.i,	sys.L1 # table_name
 % name,	cases # name
-% varchar,	wrd # type
+% varchar,	bigint # type
 % 23,	1 # length
 [ "Inspector Edmund Reid",	3	]
 [ "James Monro",	2	]
@@ -458,7 +458,7 @@ Ready.
 #(SELECT 'Major' AS grade, count(name) AS inspectors FROM inspector
 % .L5,	.L5 # table_name
 % grade,	inspectors # name
-% char,	wrd # type
+% char,	bigint # type
 % 9,	1 # length
 [ "Detective",	3	]
 [ "Constable",	3	]
@@ -475,7 +475,7 @@ Ready.
 #    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) - position('\'' in length) - 1)) AS integer)) as height from victim v
 % .L24,	.L24 # table_name
 % L4,	average_height # name
-% char,	char # type
+% char,	varchar # type
 % 6,	4 # length
 [ "blonde",	"5'7\""	]
 [ "brown",	"5'5\""	]

@@ -39,26 +39,20 @@ typedef struct {
 #endif
 } uuid;
 
-#ifdef WIN32
-#define uuid_export extern __declspec(dllexport)
-#else
-#define uuid_export extern
-#endif
+mal_export str UUIDprelude(void *ret);
+mal_export int UUIDcompare(const uuid *l, const uuid *r);
+mal_export int UUIDfromString(const char *svalue, int *len, uuid **retval);
+mal_export BUN UUIDhash(const void *u);
+mal_export uuid *UUIDnull(void);
+mal_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
+mal_export int UUIDtoString(str *retval, int *len, const uuid *value);
+mal_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
 
-uuid_export str UUIDprelude(void *ret);
-uuid_export int UUIDcompare(const uuid *l, const uuid *r);
-uuid_export int UUIDfromString(const char *svalue, int *len, uuid **retval);
-uuid_export BUN UUIDhash(const void *u);
-uuid_export uuid *UUIDnull(void);
-uuid_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
-uuid_export int UUIDtoString(str *retval, int *len, const uuid *value);
-uuid_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
-
-uuid_export str UUIDgenerateUuid(uuid **retval);
-uuid_export str UUIDstr2uuid(uuid **retval, str *s);
-uuid_export str UUIDuuid2str(str *retval, uuid **u);
-uuid_export str UUIDisaUUID(bit *retval, str *u);
-uuid_export str UUIDequal(bit *retval, uuid **l, uuid **r);
+mal_export str UUIDgenerateUuid(uuid **retval);
+mal_export str UUIDstr2uuid(uuid **retval, str *s);
+mal_export str UUIDuuid2str(str *retval, uuid **u);
+mal_export str UUIDisaUUID(bit *retval, str *u);
+mal_export str UUIDequal(bit *retval, uuid **l, uuid **r);
 
 static uuid uuid_nil;			/* automatically initialized as zeros */
 
@@ -237,10 +231,14 @@ UUIDhash(const void *v)
 	const uuid *u = (const uuid *) v;
 	unsigned int u1, u2, u3, u4;
 
-	u1 = u->u[0] << 24 | u->u[1] << 16 | u->u[2] << 8 | u->u[3];
-	u2 = u->u[4] << 24 | u->u[5] << 16 | u->u[6] << 8 | u->u[7];
-	u3 = u->u[8] << 24 | u->u[9] << 16 | u->u[10] << 8 | u->u[11];
-	u4 = u->u[12] << 24 | u->u[13] << 16 | u->u[14] << 8 | u->u[15];
+	u1 = (unsigned int) u->u[0] << 24 | (unsigned int) u->u[1] << 16 |
+		(unsigned int) u->u[2] << 8 | (unsigned int) u->u[3];
+	u2 = (unsigned int) u->u[4] << 24 | (unsigned int) u->u[5] << 16 |
+		(unsigned int) u->u[6] << 8 | (unsigned int) u->u[7];
+	u3 = (unsigned int) u->u[8] << 24 | (unsigned int) u->u[9] << 16 |
+		(unsigned int) u->u[10] << 8 | (unsigned int) u->u[11];
+	u4 = (unsigned int) u->u[12] << 24 | (unsigned int) u->u[13] << 16 |
+		(unsigned int) u->u[14] << 8 | (unsigned int) u->u[15];
 	return (BUN) mix_int(u1 ^ u2 ^ u3 ^ u4);
 }
 

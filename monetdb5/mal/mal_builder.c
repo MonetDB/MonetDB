@@ -46,8 +46,8 @@ newStmt(MalBlkPtr mb, const char *module, const char *name)
 
 	if (q == NULL)
 		return NULL;
-	setModuleId(q, putName(module, strlen(module)));
-	setFunctionId(q, putName(name, strlen(name)));
+	setModuleId(q, putName(module));
+	setFunctionId(q, putName(name));
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
 	if (getDestVar(q) < 0) {
 		freeInstruction(q);
@@ -88,15 +88,15 @@ newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 
 	if (q == NULL || mod == NULL || fcn == NULL)
 		return NULL;
-	setModuleId(q, putName(mod, strlen(mod)));
-	setFunctionId(q, putName(fcn, strlen(fcn)));
+	setModuleId(q, putName(mod));
+	setFunctionId(q, putName(fcn));
 	return q;
 }
 
 InstrPtr
 newComment(MalBlkPtr mb, const char *val)
 {
-	InstrPtr q = newInstruction(NULL,REMsymbol);
+	InstrPtr q = newInstruction(mb, REMsymbol);
 	ValRecord cst;
 
 	if (q == NULL)
@@ -110,11 +110,11 @@ newComment(MalBlkPtr mb, const char *val)
 	getArg(q,0) = defConstant(mb,TYPE_str,&cst);
 	clrVarConstant(mb,getArg(q,0));
 	setVarDisabled(mb,getArg(q,0));
-	pushInstruction(mb, q);
 	if (mb->errors) {
 		freeInstruction(q);
 		return NULL;
 	}
+	pushInstruction(mb, q);
 	return q;
 }
 
@@ -128,7 +128,7 @@ newCatchStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = CATCHsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, GDKstrdup(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -146,7 +146,7 @@ newRaiseStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = RAISEsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, GDKstrdup(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -165,7 +165,7 @@ newExitStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = EXITsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, GDKstrdup(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme,strlen(nme),TYPE_str)) < 0) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -201,36 +201,6 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 	cst.val.ival= val;
 	cst.len = 0;
 	_t = defConstant(mb, TYPE_int,&cst);
-	return pushArgument(mb, q, _t);
-}
-
-int
-getWrdConstant(MalBlkPtr mb, wrd val)
-{
-	int _t;
-	ValRecord cst;
-
-	cst.vtype= TYPE_wrd;
-	cst.val.wval= val;
-	cst.len = 0;
-	_t= fndConstant(mb, &cst, mb->vtop);
-	if( _t < 0)
-		_t = defConstant(mb, TYPE_wrd, &cst);
-	return _t;
-}
-
-InstrPtr
-pushWrd(MalBlkPtr mb, InstrPtr q, wrd val)
-{
-	int _t;
-	ValRecord cst;
-
-	if (q == NULL)
-		return NULL;
-	cst.vtype= TYPE_wrd;
-	cst.val.wval= val;
-	cst.len = 0;
-	_t = defConstant(mb, TYPE_wrd,&cst);
 	return pushArgument(mb, q, _t);
 }
 
@@ -391,6 +361,7 @@ pushHge(MalBlkPtr mb, InstrPtr q, hge val)
 
 	cst.vtype= TYPE_hge;
 	cst.val.hval= val;
+	cst.len = 0;
 	_t = defConstant(mb,TYPE_hge,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -541,8 +512,10 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 			ptr p = ATOMnil(tpe);
 			VALset(&cst, tpe, p);
 		} else {
-			ptr p = ATOMnilptr(tpe);
-			VALset(&cst, tpe, p);
+			if (VALinit(&cst, tpe, ATOMnilptr(tpe)) == NULL) {
+				freeInstruction(q);
+				return NULL;
+			}
 		}
 		_t = defConstant(mb,tpe,&cst);
 	} else {
@@ -565,7 +538,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 
 	if (q == NULL)
 		return NULL;
-	idx= getTypeIndex(tpe, -1, TYPE_any);
+	idx= getAtomIndex(tpe, -1, TYPE_any);
 	if( idx < 0 || idx >= GDKatomcnt || idx >= MAXATOMS)
 		return NULL;
 	cst.vtype=TYPE_void;
@@ -631,11 +604,11 @@ pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe)
 {
 	if (q == NULL)
 		return NULL;
-	getModuleId(q) = getName("bat",3);
-	getFunctionId(q) = getName("new",3);
+	getModuleId(q) = getName("bat");
+	getFunctionId(q) = getName("new");
 
 	q = pushArgument(mb, q, newTypeVariable(mb,TYPE_void));
-	q = pushArgument(mb, q, newTypeVariable(mb,getColumnType(tpe)));
+	q = pushArgument(mb, q, newTypeVariable(mb,getBatType(tpe)));
 	q = pushZero(mb,q,TYPE_lng);
 	return q;
 }

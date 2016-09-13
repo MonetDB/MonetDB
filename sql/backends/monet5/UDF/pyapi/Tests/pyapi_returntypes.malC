@@ -1,0 +1,107 @@
+
+r0:bat[:int] := pyapi.eval(nil:ptr,"return(33)");
+io.print(r0);
+
+# return a single float value
+r6:bat[:flt] := pyapi.eval(nil:ptr,"return(12.31)");
+io.print(r6);
+
+# return a single string value
+r7:bat[:str] := pyapi.eval(nil:ptr,"return(\"test\")");
+io.print(r7);
+
+#####################
+# --PYTHON ARRAYS-- #
+#####################
+# return an array with a single value
+r1:bat[:int] := pyapi.eval(nil:ptr,"return([33])");
+io.print(r1);
+
+# return an array containing a single array
+r2:bat[:int] := pyapi.eval(nil:ptr,"return([[33]])");
+io.print(r2);
+
+# return an array containing two arrays
+(r3:bat[:int], s3:bat[:int]) := pyapi.eval(nil:ptr,"return([[33], [42]])");
+io.print(r3, s3);
+
+# return an array containing three arrays
+(r4:bat[:int], s4:bat[:int], t4:bat[:int]) := pyapi.eval(nil:ptr,"return([[33], [42], [66]])");
+io.print(r4, s4, t4);
+
+# return an array containing two arrays containing strings
+(r5:bat[:str], s5:bat[:str]) := pyapi.eval(nil:ptr,"return([[\"Hello\", \"Hello Again\"], [\"Hello Again Again\",\"That's quite enough.\"]])");
+io.print(r5,s5);
+
+
+####################
+# --NUMPY ARRAYS-- #
+####################
+# return a single numpy array
+r8:bat[:int] := pyapi.eval(nil:ptr,"return(numpy.array([33,11,332,51,88]))");
+io.print(r8);
+
+# return an array containing two numpy arrays
+(r9:bat[:int], s9:bat[:int]) := pyapi.eval(nil:ptr,"return([numpy.array([33]), numpy.array([44])])");
+io.print(r9, s9);
+
+# return a numpy array containing two arrays of unequal size
+(r10:bat[:int], s10:bat[:int]) := pyapi.eval(nil:ptr,"return(numpy.array([[33,24,55], [44,66, 345, 77, 66]]))");
+io.print(s10);
+
+# return a numpy array containing two numpy arrays of unequal size
+(r11:bat[:int], s11:bat[:int]) := pyapi.eval(nil:ptr,"return(numpy.array([numpy.array([33]), numpy.array([44, 45, 77])]))");
+io.print(s11);
+
+# return a multi-dimensional numpy array containing integers
+(r12:bat[:int], s12:bat[:int]) := pyapi.eval(nil:ptr,"return(numpy.array([[33, 24, 55], [44, 66,345]]))");
+io.print(r12,s12);
+
+# return a multi-dimensional numpy array containing doubles 
+(r13:bat[:flt], s13:bat[:flt]) := pyapi.eval(nil:ptr,"return(numpy.array([[27.42, 18.62, 33.81], [12.55, 41.44, 20.88]]))");
+io.print(r13,s13);
+
+# return a multi-dimensional numpy array containing unicode strings
+bstr:= bat.new(:str);
+bat.append(bstr,"Hannes Mühleisen":str);
+bat.append(bstr,"héllo":str);
+bat.append(bstr,"éáú üüäãö":str);
+bat.append(bstr,"幺巾乡阜阝测试一些中国符号":str);
+bat.append(bstr,"いくつかの日本のシンボルをテストします":str);
+(z123:bat[:str], z234:bat[:str]) := pyapi.eval(nil:ptr,"return(numpy.array([arg1, arg1]))",bstr);
+io.print(z123,z234);
+
+# return a multi-dimensional numpy array containing integers, but store them in a string BAT
+(r14:bat[:str], s14:bat[:str]) := pyapi.eval(nil:ptr,"return(numpy.array([[33, 24, 55], [44, 66,345]]))");
+io.print(r14,s14);
+
+# return a multi-dimensional python array and load it into different types of BATs
+(di:bat[:int],dd:bat[:flt]) := pyapi.eval(nil:ptr,"return(numpy.array([[33.2, 24.7, 55.4], [44.1, 66.3, 2.2]]))");
+io.print(di,dd);
+
+#####################
+# --MASKED ARRAYS-- #
+#####################
+# return a single masked array
+r15:bat[:int] := pyapi.eval(nil:ptr, "return(numpy.ma.masked_array([862,43,24],[1,1,0]))");
+io.print(r15);
+
+# return a single masked array in an array
+r16:bat[:int] := pyapi.eval(nil:ptr, "return([numpy.ma.masked_array([862,43,24],[1,1,0])])");
+io.print(r16);
+
+# return a single masked array in a numpy array (this is kind of weird, it removes the entire masked array so it's a single numpy array)
+r17:bat[:int] := pyapi.eval(nil:ptr, "return(numpy.array([numpy.ma.masked_array([862,43,24],[1,1,0])]))");
+io.print(r17);
+
+# return a single masked array containing strings
+r18:bat[:str] := pyapi.eval(nil:ptr, "return(numpy.ma.masked_array([\"Test\",\"Four\",24],[0,0,1]))");
+io.print(r18);
+
+# return a multi-dimensional masked array with even dimensions
+(r19:bat[:int], s19:bat[:int]) := pyapi.eval(nil:ptr,"return(numpy.ma.masked_array([[1, 2, 3], [1,2,3]], [[0,0,0], [1,0,0]]))");
+io.print(r19,s19);
+
+# return a multi-dimensional masked array with even dimensions
+(r20:bat[:str], s20:bat[:str]) := pyapi.eval(nil:ptr,"return(numpy.ma.masked_array([['str', 'test', 'k'], ['test','test213','test44']], [[0,0,0], [1,0,0]]))");
+io.print(r20,s20);

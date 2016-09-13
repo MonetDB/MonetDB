@@ -55,7 +55,7 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	InstrPtr p = getInstrPtr(mb,i);
 	int r, a, b, varid;
 
-	r = getColumnType(getVarType(mb, getArg(p,0)));
+	r = getBatType(getVarType(mb, getArg(p,0)));
 #ifdef HAVE_HGE
 	if ( r != TYPE_hge)
 		return;
@@ -64,8 +64,8 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	if( ! (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef || getFunctionId(p) == mulRef || getFunctionId(p) == divRef || *getFunctionId(p) =='%') || p->argc !=3)
 		return;
 
-	a = getColumnType(getVarType(mb, getArg(p,1)));
-	b = getColumnType(getVarType(mb, getArg(p,2)));
+	a = getBatType(getVarType(mb, getArg(p,1)));
+	b = getBatType(getVarType(mb, getArg(p,2)));
 	varid = getArg(p,1);
 	if ( a == r && coerce[varid].src && coerce[varid].fromtype < r ) 
 	{
@@ -107,7 +107,7 @@ coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	if( ! (getFunctionId(p) == subavgRef ) || p->argc !=6)
 		return;
 
-	r = getColumnType(getVarType(mb, getArg(p,0)));
+	r = getBatType(getVarType(mb, getArg(p,0)));
 	k = getArg(p,1);
 	if( r == TYPE_dbl &&  coerce[k].src ){
 		getArg(p,1) = coerce[k].src;
@@ -123,8 +123,10 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int i, k;
 	InstrPtr p;
 	int actions = 0;
-	str calcRef= putName("calc",4);
+	str calcRef= putName("calc");
 	Coercion *coerce = GDKzalloc(sizeof(Coercion) * mb->vtop);
+	char buf[256];
+	lng usec = GDKusec();
 
 	if( coerce == NULL)
 		return 0;
@@ -155,7 +157,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_hge;
 			coerce[k].src= getArg(p,2);
-			coerce[k].fromtype= getColumnType(getArgType(mb,p,2));
+			coerce[k].fromtype= getBatType(getArgType(mb,p,2));
 		}
 #endif
 		if ( getModuleId(p) == batcalcRef
@@ -171,7 +173,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			coerce[k].pc= i;
 			coerce[k].totype= TYPE_dbl;
 			coerce[k].src= getArg(p,1 + (p->argc ==3));
-			coerce[k].fromtype= getColumnType(getArgType(mb,p,1 + (p->argc ==3)));
+			coerce[k].fromtype= getBatType(getArgType(mb,p,1 + (p->argc ==3)));
 		}
 		coercionOptimizerAggrStep(cntxt,mb, i, coerce);
 		coercionOptimizerCalcStep(cntxt,mb, i, coerce);
@@ -186,5 +188,16 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	 * structure. A cheaper optimizer is sufficient.
 	 */
 	GDKfree(coerce);
+
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

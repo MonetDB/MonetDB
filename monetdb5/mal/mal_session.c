@@ -12,7 +12,6 @@
 #include "mal_session.h"
 #include "mal_instruction.h" /* for pushEndInstruction() */
 #include "mal_interpreter.h" /* for showErrors(), runMAL(), garbageElement() */
-#include "mal_linker.h"	     /* for initLibraries() */
 #include "mal_parser.h"	     /* for parseMAL() */
 #include "mal_namespace.h"
 #include "mal_readline.h"
@@ -40,15 +39,17 @@ malBootstrap(void)
 
 	c = MCinitClient((oid) 0, 0, 0);
 	assert(c != NULL);
-	c->nspace = newModule(NULL, putName("user", 4));
-	initLibraries();
+	c->nspace = newModule(NULL, putName("user"));
 	if ( (msg = defaultScenario(c)) ) {
 		GDKfree(msg);
-		GDKerror("Failed to initialise default scenario");
+		GDKerror("malBootstrap:Failed to initialise default scenario");
 		return 0;
 	}
 	MSinitClientPrg(c, "user", "main");
-	(void) MCinitClientThread(c);
+	if( MCinitClientThread(c) < 0){
+		GDKerror("malBootstrap:Failed to create client thread");
+		return 0;
+	}
 	s = malInclude(c, bootfile, 0);
 	if (s != NULL) {
 		mnstr_printf(GDKout, "!%s\n", s);
@@ -113,7 +114,11 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		MSresetClientPrg(cntxt);
 		return;
 	}
-	cntxt->curprg = newFunction(putName("user", 4), putName(nme, strlen(nme)), FUNCTIONsymbol);
+	cntxt->curprg = newFunction(putName("user"), putName(nme), FUNCTIONsymbol);
+	if( cntxt->curprg == 0){
+		GDKerror("MSinitClientPrg" "Failed to create function");
+		return;
+	}
 	mb = cntxt->curprg->def;
 	p = getSignature(cntxt->curprg);
 	if (mod)
@@ -139,10 +144,9 @@ exit_streams( bstream *fin, stream *fout )
 {
 	if (fout && fout != GDKstdout) {
 		mnstr_flush(fout);
-		mnstr_close(fout);
-		mnstr_destroy(fout);
+		close_stream(fout);
 	}
-	if (fin) 
+	if (fin)
 		(void) bstream_destroy(fin);
 }
 
@@ -257,8 +261,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			/* this is kind of awful, but we need to get rid of this
 			 * message */
 			fprintf(stderr, "!SABAOTHgetMyStatus: %s\n", err);
-			if (err != M5OutOfMemory)
-				GDKfree(err);
+			freeException(err);
 			mnstr_printf(fout, "!internal server error, "
 						 "please try again later\n");
 			exit_streams(fin, fout);
@@ -293,8 +296,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		}
 		/* move this back !! */
 		if (c->nspace == 0) {
-			c->nspace = newModule(NULL, putName("user", 4));
-			c->nspace->outer = mal_clients[0].nspace->outer;
+			c->nspace = newModule(NULL, putName("user"));
 		}
 
 		if ((s = setScenario(c, lang)) != NULL) {
@@ -378,21 +380,16 @@ void
 MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i;
-	bit *used = GDKzalloc(mb->vtop * sizeof(bit));
-	if( used == NULL){
-		GDKerror("MSresetVariables" MAL_MALLOC_FAIL);
-		return;
-	}
 
 	for (i = 0; i < start && start < mb->vtop; i++)
-		used[i] = 1;
+		setVarUsed(mb,i);
 	if (mb->errors == 0)
 		for (i = start; i < mb->vtop; i++) {
-			if (used[i] || !isTmpVar(mb, i)) {
+			if (isVarUsed(mb,i) || !isTmpVar(mb,i)){
 				assert(!mb->var[i]->value.vtype || isVarConstant(mb, i));
-				used[i] = 1;
+				setVarUsed(mb,i);
 			}
-			if (glb && !used[i]) {
+			if (glb && !isVarUsed(mb,i)) {
 				if (isVarConstant(mb, i))
 					garbageElement(cntxt, &glb->stk[i]);
 				/* clean stack entry */
@@ -403,8 +400,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 		}
 
 	if (mb->errors == 0)
-		trimMalVariables_(mb, used, glb);
-	GDKfree(used);
+		trimMalVariables_(mb, glb);
 }
 
 /*
@@ -432,7 +428,7 @@ MSserveClient(void *dummy)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
 		showException(c->fdout, MAL, "serveClient", MAL_MALLOC_FAIL);
-		c->mode = FINISHCLIENT + 1; /* == RUNCLIENT */
+		c->mode = RUNCLIENT;
 	} else {
 		c->glb->stktop = mb->vtop;
 		c->glb->blk = mb;
@@ -442,12 +438,13 @@ MSserveClient(void *dummy)
 		msg = defaultScenario(c);
 	if (msg) {
 		showException(c->fdout, MAL, "serveClient", "could not initialize default scenario");
-		c->mode = FINISHCLIENT + 1; /* == RUNCLIENT */
+		c->mode = RUNCLIENT;
 		GDKfree(msg);
 	} else {
 		do {
 			do {
-				runScenario(c);
+				msg = runScenario(c);
+				freeException(msg);
 				if (c->mode == FINISHCLIENT)
 					break;
 				resetScenario(c);
@@ -473,6 +470,11 @@ MSserveClient(void *dummy)
 	}
 	if (!isAdministrator(c))
 		MCcloseClient(c);
+	if (strcmp(c->nspace->name, "user") == 0) {
+		GDKfree(c->nspace->space);
+		GDKfree(c->nspace);
+		c->nspace = NULL;
+	}
 }
 
 /*

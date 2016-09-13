@@ -1078,7 +1078,7 @@ TESTrenderer(MapiHdl hdl)
 				 strlen(s) < l ||
 				 /* start or end with white space? */
 				 my_isspace(*s) ||
-				 my_isspace(s[l - 1]) ||
+				 (l > 0 && my_isspace(s[l - 1])) ||
 				 /* timezone can have embedded comma */
 				 strcmp(tp, "timezone") == 0 ||
 				 /* a bunch of geom types */
@@ -1995,6 +1995,8 @@ doFileBulk(Mapi mid, stream *fp)
 	buf = malloc(bufsize + 1);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
+		if (fp)
+			close_stream(fp);
 		return 1;
 	}
 
@@ -2067,6 +2069,8 @@ doFileBulk(Mapi mid, stream *fp)
 
 	free(buf);
 	mnstr_flush(toConsole);
+	if (fp)
+		close_stream(fp);
 	return errseen;
 }
 
@@ -2195,7 +2199,11 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 #endif
 
 	(void) save_history;	/* not used if no readline */
-	if (getFile(fp) && isatty(fileno(getFile(fp)))) {
+	if (getFile(fp) && isatty(fileno(getFile(fp)))
+#ifdef WIN32			/* isatty may not give expected result */
+	    && formatter != TESTformatter
+#endif
+		) {
 		interactive = 1;
 		setPrompt();
 		prompt = promptbuf;
@@ -2207,8 +2215,10 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 		fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp));
 #endif
 	}
+#ifdef HAVE_ICONV
 	if (encoding)
 		fp = iconv_rstream(fp, encoding, mnstr_name(fp));
+#endif
 
 	if (!interactive && !echoquery)
 		return doFileBulk(mid, fp);
@@ -2631,11 +2641,12 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					 * convert filename from UTF-8
 					 * to locale */
 					if ((s = open_rastream(line)) == NULL ||
-					    mnstr_errnr(s))
+					    mnstr_errnr(s)) {
+						if (s)
+							close_stream(s);
 						fprintf(stderr, "%s: cannot open\n", line);
-					else
+					} else
 						doFile(mid, s, 0, 0, 0);
-					close_stream(s);
 					continue;
 				}
 				case '>':
@@ -2826,6 +2837,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 	if (prompt)
 		deinit_readline();
 #endif
+	close_stream(fp);
 	return errseen;
 }
 
@@ -2837,15 +2849,33 @@ set_timezone(Mapi mid)
 	MapiHdl hdl;
 
 	/* figure out our current timezone */
-#ifdef HAVE__GET_TIMEZONE
-	__time64_t ltime, lt, gt;
-	struct tm loctime;
+#if defined HAVE_GETDYNAMICTIMEZONEINFORMATION
+	DYNAMIC_TIME_ZONE_INFORMATION tzinf;
 
-	_time64(&ltime);
-	_localtime64_s(&loctime, &ltime);
-	lt = _mktime64(&loctime);
-	gt = _mkgmtime64(&loctime);
-	tzone = (int) (lt - gt);
+	/* documentation says: UTC = localtime + Bias (in minutes),
+	 * but experimentation during DST period says, UTC = localtime
+	 * + Bias + DaylightBias, and presumably during non DST
+	 * period, UTC = localtime + Bias */
+	switch (GetDynamicTimeZoneInformation(&tzinf)) {
+	case TIME_ZONE_ID_STANDARD:
+	case TIME_ZONE_ID_UNKNOWN:
+		tzone = (int) tzinf.Bias * 60;
+		break;
+	case TIME_ZONE_ID_DAYLIGHT:
+		tzone = (int) (tzinf.Bias + tzinf.DaylightBias) * 60;
+		break;
+	default:
+		/* call failed, we don't know the time zone */
+		tzone = 0;
+		break;
+	}
+#elif defined HAVE_STRUCT_TM_TM_ZONE
+	time_t t;
+	struct tm *tmp;
+
+	t = time(NULL);
+	tmp = localtime(&t);
+	tzone = (int) -tmp->tm_gmtoff;
 #else
 	time_t t, lt, gt;
 	struct tm *tmp;
@@ -3316,6 +3346,7 @@ main(int argc, char **argv)
 	if (command != NULL) {
 #ifdef HAVE_ICONV
 		iconv_t cd_in;
+		int free_command = 0;
 
 		if (encoding != NULL &&
 		    (cd_in = iconv_open("utf-8", encoding)) != (iconv_t) -1) {
@@ -3325,6 +3356,7 @@ main(int argc, char **argv)
 			int factor = 4;
 			size_t tolen = factor * fromlen + 1;
 			char *to = malloc(tolen);
+			free_command = 1;
 
 		  try_again:
 			command = to;
@@ -3361,6 +3393,10 @@ main(int argc, char **argv)
 		timerStart();
 		c = doRequest(mid, command);
 		timerEnd();
+#ifdef HAVE_ICONV
+		if (free_command)
+			free(command);
+#endif
 	}
 
 	if (optind < argc) {
@@ -3369,7 +3405,9 @@ main(int argc, char **argv)
 			stream *s;
 
 			if (fp == NULL &&
-			    (fp = fopen(argv[optind], "r")) == NULL) {
+			    (fp = (strcmp(argv[optind], "-") == 0 ?
+				   stdin :
+				   fopen(argv[optind], "r"))) == NULL) {
 				fprintf(stderr, "%s: cannot open\n", argv[optind]);
 				c |= 1;
 			} else if ((s = file_rastream(fp, argv[optind])) == NULL) {
@@ -3377,7 +3415,6 @@ main(int argc, char **argv)
 				c |= 1;
 			} else {
 				c |= doFile(mid, s, useinserts, interactive, save_history);
-				close_stream(s);
 			}
 			fp = NULL;
 			optind++;
@@ -3388,7 +3425,6 @@ main(int argc, char **argv)
 	if (!has_fileargs && command == NULL) {
 		stream *s = file_rastream(stdin, "<stdin>");
 		c = doFile(mid, s, useinserts, interactive, save_history);
-		mnstr_destroy(s);
 	}
 
 	mapi_destroy(mid);

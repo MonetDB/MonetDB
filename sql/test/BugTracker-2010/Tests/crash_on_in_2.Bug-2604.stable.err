@@ -67,10 +67,10 @@ stderr of test 'crash_on_in_2.Bug-2604` in directory 'sql/test/BugTracker-2010` 
 # 18:31:06 >  mclient -lsql -ftest -i -e --host=alf --port=34141 
 # 18:31:06 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t2;
 ERROR = !SELECT: no such table 't2'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t1 where a in (select b from t2);
 ERROR = !SELECT: no such table 't2'
 

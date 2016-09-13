@@ -42,8 +42,8 @@
  */
 
 #include "monetdb_config.h"
-#include "url.h"
 #include "mal.h"
+#include "url.h"
 #include "mal_exception.h"
 
 static char x2c(char *what);
@@ -416,6 +416,7 @@ URLgetContent(str *retval, url *Str1)
 		(void)memcpy(retbuf + rlen, buf, len);
 		rlen += len;
 	}
+	mnstr_destroy(f);
 	if (len < 0) {
 		GDKfree(retbuf);
 		throw(MAL, "url.getContent", "read error");

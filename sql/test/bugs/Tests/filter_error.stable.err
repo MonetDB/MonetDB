@@ -1,0 +1,48 @@
+stderr of test 'filter_error` in directory 'sql/test/bugs` itself:
+
+
+# 17:51:55 >  
+# 17:51:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30016" "--set" "mapi_usock=/var/tmp/mtest-25939/.s.monetdb.30016" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_bugs" "--set" "embedded_r=yes"
+# 17:51:55 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30016
+# cmdline opt 	mapi_usock = /var/tmp/mtest-25939/.s.monetdb.30016
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_bugs
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:51:55 >  
+# 17:51:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25939" "--port=30016"
+# 17:51:55 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-25939/.s.monetdb.30016
+QUERY = create table papoints AS ( --get points from intersecting patches
+        	SELECT a.id, x, y, z, geom FROM test1 a, test2 b
+        	WHERE [a.geom] IntersectsXYZ [x, y, z,28992]) WITH DATA;
+ERROR = !SELECT: no such FILTER function 'intersectsxyz'
+MAPI  = (monetdb) /var/tmp/mtest-25939/.s.monetdb.30016
+QUERY = create table papoints AS ( --get points from intersecting patches
+        	SELECT a.type, a.id, x, y, z, geom FROM test1 a
+        	--LEFT JOIN pointcloud_unclassified b ON (ST_Intersects(a.geom, geometry(b.pa)))
+               --LEFT JOIN pointcloud_unclassified b ON (ST_Intersects(a.geom, x, y, z,28992))
+               LEFT JOIN test2 b ON ([a.geom] IntersectsXYZ [x, y, z,28992])
+        ) WITH DATA;
+ERROR = !SELECT: no such FILTER function 'intersectsxyz'
+
+# 17:51:56 >  
+# 17:51:56 >  "Done."
+# 17:51:56 >  
+

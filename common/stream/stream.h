@@ -87,6 +87,12 @@ typedef __int128_t hge;
 #define ST_READ  0
 #define ST_WRITE 1
 
+/* fwf gets turned into a csv with these parameters */
+#define STREAM_FWF_FIELD_SEP '|'
+#define STREAM_FWF_ESCAPE '\\'
+#define STREAM_FWF_RECORD_SEP '\n'
+#define STREAM_FWF_FILLER ' '
+
 typedef struct stream stream;
 
 /* some os specific initialization */
@@ -246,12 +252,14 @@ typedef enum mnstr_errors {
  * private pointer is passed on to the callback functions when they
  * are invoked. */
 stream_export stream *callback_stream(
-	void *private,
-	ssize_t (*read) (void *private, void *buf, size_t elmsize, size_t cnt),
-	void (*close) (void *private),
-	void (*destroy) (void *private),
+	void *priv,
+	ssize_t (*read) (void *priv, void *buf, size_t elmsize, size_t cnt),
+	void (*close) (void *priv),
+	void (*destroy) (void *priv),
 	const char *name);
 
 stream_export stream* stream_blackhole_create(void);
+
+stream_export stream* stream_fwf_create(stream *s, size_t num_fields, size_t *widths, char filler);
 
 #endif /*_STREAM_H_*/

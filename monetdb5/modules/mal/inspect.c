@@ -28,7 +28,7 @@ pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
 	if (BBPindex(buf) <= 0)
 		BATname(b,buf);
-	BATroles(b,X1,X2);
+	BATroles(b,X2);
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
 	*ret = b->batCacheid;
@@ -50,25 +50,25 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void) mb;
 	if (b == 0)
 		throw(MAL, "inspect.getgetFunctionId", MAL_MALLOC_FAIL );
-	BATseqbase(b, 0);
+	cntxt->nspace->next = getModuleChain();
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
+			if (s->space[i]) {
+				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 					BUNappend(b, getFunctionId(sig), FALSE);
 				}
 			}
-		s = s->outer;
+		s = s->next;
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	cntxt->nspace->next = NULL;
 	pseudo(ret,b,"view","symbol","function");
 
 	return MAL_SUCCEED;
@@ -80,26 +80,26 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void) mb;
 	if (b == 0)
 		throw(MAL, "inspect.getmodule", MAL_MALLOC_FAIL);
-	BATseqbase(b, 0);
+	cntxt->nspace->next = getModuleChain();
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
+			if (s->space[i]) {
+				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 
 					BUNappend(b, getModuleId(sig), FALSE);
 				}
 			}
-		s = s->outer;
+		s = s->next;
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	cntxt->nspace->next = NULL;
 	pseudo(ret,b,"view","symbol","module");
 
 	return MAL_SUCCEED;
@@ -111,26 +111,26 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void)mb;
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
-	BATseqbase(b, 0);
+	cntxt->nspace->next = getModuleChain();
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
+			if (s->space[i]) {
+				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 					str kind = operatorName(sig->token);
 					BUNappend(b, kind, FALSE);
 				}
 			}
-		s = s->outer;
+		s = s->next;
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	cntxt->nspace->next = NULL;
 	pseudo(ret,b,"view","symbol","kind");
 
 	return MAL_SUCCEED;
@@ -143,28 +143,28 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	char sig[BLOCK],*a;
 	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void)mb;
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
-	BATseqbase(b, 0);
+	cntxt->nspace->next = getModuleChain();
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
+			if (s->space[i]) {
+				for (t = s->space[i]; t; t = t->peer) {
 					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if(a) *a = 0;
-					BUNappend(b, strchr(sig, '('), FALSE);
+					BUNappend(b, (a = strchr(sig, '(')) ? a : "", FALSE);
 				}
 			}
-		s = s->outer;
+		s = s->next;
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	cntxt->nspace->next = NULL;
 	pseudo(ret,b,"view"," symbol","address");
 
 	return MAL_SUCCEED;
@@ -175,7 +175,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module s;
 	Symbol t;
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	char sig[BLOCK],*a;
 	bat *ret = getArgReference_bat(stk,pci,0);
 
@@ -183,12 +183,12 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
-	BATseqbase(b, 0);
+	cntxt->nspace->next = getModuleChain();
 	s = cntxt->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
+			if (s->space[i]) {
+				for (t = s->space[i]; t; t = t->peer) {
 					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if( a)
@@ -197,9 +197,9 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BUNappend(b, (a? a: "nil"), FALSE);
 				}
 			}
-		s = s->outer;
+		s = s->next;
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
+	cntxt->nspace->next = NULL;
 	pseudo(ret,b,"view"," symbol","address");
 
 	return MAL_SUCCEED;
@@ -215,14 +215,13 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void)mb;
 
-	s = findSymbol(cntxt->nspace, putName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(cntxt->nspace, putName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getDefinition", RUNTIME_SIGNATURE_MISSING);
 
-	b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getDefinition", MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 
 	while (s) {
 		int i;
@@ -235,7 +234,6 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		s = s->peer;
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","fcn","stmt");
 
 	return MAL_SUCCEED;
@@ -252,13 +250,12 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getSignature", RUNTIME_SIGNATURE_MISSING);
-	b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
+	b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getSignature", MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
@@ -266,8 +263,10 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			ps = instruction2str(s->def, 0, getSignature(s), 0);
 			c = strchr(ps, '(');
-			if (c == 0)
+			if (c == 0) {
+				GDKfree(ps);
 				continue;
+			}
 			tail= strstr(c,"address");
 			if( tail)
 				*tail = 0;
@@ -279,7 +278,6 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
@@ -295,22 +293,25 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getAddress", RUNTIME_SIGNATURE_MISSING);
-	b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
+	b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getAddress", MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
 			char *c,*w;
 
 			ps = instruction2str(s->def, 0, getSignature(s), 0);
-			c = strchr(ps, '(');
-			if (c == 0)
+			if(ps == NULL)
 				continue;
+			c = strchr(ps, '(');
+			if (c == 0) {
+				GDKfree(ps);
+				continue;
+			}
 			tail= strstr(c,"address");
 			if( tail){
 				*tail = 0;
@@ -324,7 +325,6 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
@@ -338,13 +338,12 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getComment", RUNTIME_SIGNATURE_MISSING);
-	b = BATnew(TYPE_void, TYPE_str, 12, TRANSIENT);
+	b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getComment", MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
@@ -353,7 +352,6 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
@@ -369,7 +367,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t len,lim;
 	(void) mb;
 
-	s = findSymbol( cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol( cntxt->nspace, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getSource", RUNTIME_SIGNATURE_MISSING);
 
@@ -415,16 +413,14 @@ str
 INSPECTatom_names(bat *ret)
 {
 	int i;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 
 	if (b == 0)
 		throw(MAL, "inspect.getAtomNames", MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 
 	for (i = 0; i < GDKatomcnt; i++)
 		BUNappend(b, ATOMname(i), FALSE);
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","atom","name");
 
 	return MAL_SUCCEED;
@@ -442,8 +438,8 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
  	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
+	BAThseqbase(b,0);
+	BAThseqbase(bn,0);
 
 	BBPkeepref(*ret = b->batCacheid);
 	BBPkeepref(*ret2 = bn->batCacheid);
@@ -469,11 +465,10 @@ str
 INSPECTatom_sup_names(bat *ret)
 {
 	int i, k;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 
 	if (b == 0)
 		throw(MAL, "inspect.getAtomSuper", MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		for (k = ATOMstorage(i); k > TYPE_str; k = ATOMstorage(k))
@@ -481,7 +476,6 @@ INSPECTatom_sup_names(bat *ret)
 		BUNappend(b, ATOMname(k), FALSE);
 	}
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","atom","sup_name");
 
 	return MAL_SUCCEED;
@@ -492,18 +486,16 @@ INSPECTatom_sizes(bat *ret)
 {
 	int i;
 	int s;
-	BAT *b = BATnew(TYPE_void, TYPE_int, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_int, 256, TRANSIENT);
 
 	if (b == 0)
 		throw(MAL, "inspect.getAtomSizes", MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		s = ATOMsize(i);
 		BUNappend(b, &s, FALSE);
 	}
 
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","atom","size");
 
 	return MAL_SUCCEED;
@@ -545,7 +537,7 @@ INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Symbol s;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getSize", RUNTIME_SIGNATURE_MISSING);
 	*ret= INSPECTcalcSize(s->def);
@@ -569,7 +561,7 @@ INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = getArgName(mb, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(cntxt->nspace,getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace,getName(modnme), putName(fcnnme));
 
 	if (s == NULL){
 		char buf[BUFSIZ];
@@ -602,12 +594,12 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( pci->retc== 2){
 		tn = getArgReference_str(stk, pci, 1);
 		*hn = getTypeName(TYPE_oid);
-		*tn = getTypeName(getColumnType(getArgType(mb, pci, 2)));
+		*tn = getTypeName(getBatType(getArgType(mb, pci, 2)));
 	} else if (isaBatType(getArgType(mb,pci,1) ) ){
 		bat *bid= getArgReference_bat(stk,pci,1);
 		BAT *b;
 		if ((b = BATdescriptor(*bid)) ) {
-			*hn = getTypeName(newBatType(TYPE_oid,b->ttype));
+			*hn = getTypeName(newBatType(b->ttype));
 			BBPunfix(b->batCacheid);
 		} else
 			*hn = getTypeName(getArgType(mb, pci, 1));

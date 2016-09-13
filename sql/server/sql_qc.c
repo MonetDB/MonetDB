@@ -168,7 +168,11 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, int type)
 		if (!atom_null(a) && param_cmp(tp, atom_type(a)) != 0) {
 			sql_subtype *at = atom_type(a);
 
-			if (EC_VARCHAR(tp->type->eclass) && 
+			if (tp->type->eclass == EC_CHAR && 
+			    at->type->eclass == EC_CHAR &&
+			      (!tp->digits || tp->digits == at->digits)) 
+				continue;
+			if (tp->type->eclass == EC_STRING && 
 			    at->type->eclass == EC_CHAR &&
 			      (!tp->digits || tp->digits >= at->digits)) 
 				continue;
@@ -232,7 +236,7 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
+qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
 {
 	int i, namelen;
 	cq *n = MNEW(cq);
@@ -263,9 +267,21 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, atom **params, in
 	n->count = 1;
 	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
 	n->name = sa_alloc(sa, namelen);
-	(void) snprintf(n->name, namelen, "s%d_%d", n->id, cache->clientid);
+	strcpy(n->name, qname);
 	cache->q = n;
 	return n;
+}
+
+int
+qc_isaquerytemplate(str name){
+	int i,j;
+	return sscanf(name, "s%d_%d", &i,&j) == 2;
+}
+
+int
+qc_isapreparedquerytemplate(str name){
+	int i,j;
+	return sscanf(name, "p%d_%d", &i,&j) == 2;
 }
 
 int

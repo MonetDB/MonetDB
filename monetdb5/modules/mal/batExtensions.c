@@ -27,43 +27,10 @@
  * BAT enhancements
  * The code to enhance the kernel.
  */
-str
-CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{
-	int ht, tt;
-	BUN cap = 0;
-	bat *res;
-
-	(void) cntxt;
-	res = getArgReference_bat(s, p, 0);
-	ht = getArgType(m, p, 1);
-	tt = getArgType(m, p, 2);
-	if (p->argc > 3) {
-		lng lcap;
-
-		if (getArgType(m, p, 3) == TYPE_lng)
-			lcap = *getArgReference_lng(s, p, 3);
-		else if (getArgType(m, p, 3) == TYPE_int)
-			lcap = (lng) *getArgReference_int(s, p, 3);
-		else if (getArgType(m, p, 3) == TYPE_wrd)
-			lcap = (lng) *getArgReference_wrd(s, p, 3);
-		else
-			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
-		if (lcap < 0)
-			throw(MAL, "bat.new", POSITIVE_EXPECTED);
-		if (lcap > (lng) BUN_MAX)
-			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
-		cap = (BUN) lcap;
-	}
-
-	if (ht != TYPE_oid || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
-		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
-}
 
 str
-CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	int tt;
+CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	int tt, kind = TRANSIENT;
 	BUN cap = 0;
 	bat *res;
 
@@ -77,8 +44,6 @@ CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
 			lcap = *getArgReference_lng(s, p, 2);
 		else if (getArgType(m, p, 2) == TYPE_int)
 			lcap = (lng) *getArgReference_int(s, p, 2);
-		else if (getArgType(m, p, 2) == TYPE_wrd)
-			lcap = (lng) *getArgReference_wrd(s, p, 2);
 		else
 			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
 		if (lcap < 0)
@@ -86,88 +51,13 @@ CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
 		if (lcap > (lng) BUN_MAX)
 			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
 		cap = (BUN) lcap;
+		if( p->argc == 4 && getVarConstant(m,getArg(p,3)).val.ival)
+			kind = PERSISTENT;
 	}
 
 	if (tt == TYPE_any || isaBatType(tt))
 		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
-}
-
-str
-CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{
-	int ht, tt;
-	BUN cap = 0;
-	bat *res;
-
-	(void) cntxt;
-	res = getArgReference_bat(s, p, 0);
-	ht = getArgType(m, p, 1);
-	tt = getArgType(m, p, 2);
-	if (p->argc > 3) {
-		lng lcap;
-
-		if (getArgType(m, p, 3) == TYPE_lng)
-			lcap = *getArgReference_lng(s, p, 3);
-		else if (getArgType(m, p, 3) == TYPE_int)
-			lcap = (lng) *getArgReference_int(s, p, 3);
-		else if (getArgType(m, p, 3) == TYPE_wrd)
-			lcap = (lng) *getArgReference_wrd(s, p, 3);
-		else
-			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
-		if (lcap < 0)
-			throw(MAL, "bat.new", POSITIVE_EXPECTED);
-		if (lcap > (lng) BUN_MAX)
-			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
-		cap = (BUN) lcap;
-	}
-
-	if (ht != TYPE_oid || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
-		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res, &tt, &cap, PERSISTENT);
-}
-
-str
-CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
-{
-	bat bid;
-	int tt;
-	BUN cap = 0;
-	int *res;
-	BAT *b;
-	str msg;
-	oid o;
-
-	(void) mb;
-	(void) cntxt;
-	bid = *getArgReference_bat(s, p, 1);
-	if ((b = BATdescriptor(bid)) == NULL) {
-		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
-	}
-
-	if (p->argc > 2) {
-		lng lcap = *getArgReference_lng(s, p, 2);
-		if (lcap < 0)
-			throw(MAL, "bat.new", POSITIVE_EXPECTED);
-		if (lcap > (lng) BUN_MAX)
-			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
-		cap = (BUN) lcap;
-	}
-	else
-		cap = BATcount(b);
-	o = b->hseqbase;
-	BBPunfix(b->batCacheid);
-
-	res = getArgReference_int(s, p, 0);
-	msg = (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
-	if (msg == MAL_SUCCEED ){
-		b = BATdescriptor(*res);
-		if ( b == NULL )
-			throw(MAL, "bat.new", RUNTIME_OBJECT_MISSING);
-		BATseqbase(b, o);
-		BBPunfix(b->batCacheid);
-	}
-	return msg;
+	return (str) BKCnewBAT(res,  &tt, &cap, kind);
 }
 
 str
@@ -179,14 +69,13 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)cntxt;
 
-	b = BATnew(TYPE_void,getArgType(mb,pci,1),0, TRANSIENT);
+	b = COLnew(0,getArgType(mb,pci,1),0, TRANSIENT);
 	if( b == 0)
 		throw(MAL,"bat.single","Could not create it");
-	BATseqbase(b, 0);
 	if (ATOMextern(b->ttype))
             	u = (ptr) *(str *)u;
 	BUNappend(b, u, FALSE);
-	BBPincref(*ret = b->batCacheid, TRUE);
+	BBPkeepref(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -220,7 +109,7 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "bat.partition", MAL_MALLOC_FAIL);
 		}
-		BATseqbase(bn, lval);
+		BAThseqbase(bn, lval);
 		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
 		ret= getArgReference_bat(stk,pci,i);
 		BBPkeepref(*ret = bn->batCacheid);
@@ -257,7 +146,7 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		hval = lval+step;
 	bn =  BATslice(b, lval,hval);
-	BATseqbase(bn, lval + b->hseqbase) ;
+	BAThseqbase(bn, lval + b->hseqbase) ;
 	if (bn== NULL){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);

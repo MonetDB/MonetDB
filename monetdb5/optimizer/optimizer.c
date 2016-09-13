@@ -36,35 +36,15 @@ optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) p;
 	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
+	optPipeInit();
 	optimizerInit();
 	return MAL_SUCCEED;
 }
 
 
-int debugOpt = 0;
-str
-QOTdebugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	debugOptimizers(cntxt, mb, stk, pci);
-	debugOpt = 1;
-	return MAL_SUCCEED;
-}
-
-str
-QOTclrdebugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	debugOpt = 0;
-	return MAL_SUCCEED;
-}
-
 /*
  * MAL functions can be optimized explicitly using the routines below.
- * Beware, the function names should be known as literalstrings, because
+ * Beware, the function names should be known as literal strings, because
  * you may not know the runtime situation.
 */
 
@@ -83,11 +63,11 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		modnme = getArgDefault(mb, pci, 1);
 		fcnnme = getArgDefault(mb, pci, 2);
 	}
-	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), fcnnme);
+	s = findSymbol(cntxt->nspace, putName(modnme), fcnnme);
 	if (s == NULL)
 		throw(MAL, "optimizer.optimize", SEMANTIC_OPERATION_MISSING);
 	removeInstruction(mb, pci);
-	addtoMalBlkHistory(s->def,"start optimizer");
+	addtoMalBlkHistory(s->def);
 	return optimizeMALBlock(cntxt, s->def);
 }
 
@@ -111,7 +91,7 @@ QOTshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 
-	s = findSymbol(cntxt->nspace,putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace,putName(modnme), putName(fcnnme));
 
 	if (s == NULL) {
 		char buf[1024];
@@ -140,7 +120,7 @@ QOTshowPlan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	mnstr_printf(cntxt->fdout,"#showPlan()\n");
 	removeInstruction(mb, p);
 	if( modnme ) {
-		s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+		s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
 
 		if (s == NULL) {
 			char buf[1024];

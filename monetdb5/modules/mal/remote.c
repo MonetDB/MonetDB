@@ -67,17 +67,17 @@
  * Instead, we maintain a simple lock with each connection, which can be
  * used to issue a safe, but blocking get/put/exec/register request.
  */
+#ifdef HAVE_MAPI
 
 static connection conns = NULL;
-static unsigned char localtype = 0;
+static unsigned char localtype = 0177;
 
 static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
 
-#define newColumn(Var,Type,sz,Tag)							\
-	Var = BATnew(TYPE_void, Type, sz, TRANSIENT);		\
-	if ( Var == NULL) throw(MAL,Tag,MAL_MALLOC_FAIL);	\
-	BATseqbase(Var,0);
+#define newColumn(Var,Type,sz,Tag)						\
+	Var = COLnew(0, Type, sz, TRANSIENT);				\
+	if ( Var == NULL) throw(MAL,Tag,MAL_MALLOC_FAIL);
 
 /**
  * Returns a BAT with valid redirects for the given pattern.  If
@@ -411,7 +411,7 @@ str RMTprelude(void *ret) {
 #else
 	type |= RMTT_32_BITS;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_INT || defined(MONET_OID32)
+#if SIZEOF_SIZE_T == SIZEOF_INT
 	type |= RMTT_32_OIDS;
 #else
 	type |= RMTT_64_OIDS;
@@ -494,7 +494,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 	GDKfree(rt);
 
-	if (isaBatType(rtype) && (localtype == 0 || localtype != c->type ))
+	if (isaBatType(rtype) && (localtype == 0177 || localtype != c->type ))
 	{
 		int t, s;
 		ptr r;
@@ -522,12 +522,12 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			GDKfree(tmp);
 			return var;
 		}
-		t = getColumnType(rtype);
+		t = getBatType(rtype);
 		newColumn(b, t, 0, "remote.get");
 
 		if (ATOMvarsized(t)) {
 			while (mapi_fetch_row(mhdl)) {
-				var = mapi_fetch_field(mhdl, 0); 
+				var = mapi_fetch_field(mhdl, 1); 
 				if( var == NULL)
 					BUNappend(b, str_nil, FALSE);
 				else 
@@ -535,7 +535,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			}
 		} else
 			while (mapi_fetch_row(mhdl)) {
-				var = mapi_fetch_field(mhdl, 0); 
+				var = mapi_fetch_field(mhdl, 1); 
 				if (var == NULL)
 					var = "nil";
 				s = 0;
@@ -678,20 +678,20 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
 		GDKfree(tpe);
 		return msg;
-	} else if (isaBatType(type) && *(int*) value != 0) {
+	} else if (isaBatType(type) && *(bat*) value != 0) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char *tail;
 		char qbuf[BUFSIZ];
-		int bid;
+		bat bid;
 		BAT *b = NULL;
 		BUN p, q;
 		str tailv;
 		stream *sout;
 
-		tail = getTypeIdentifier(getColumnType(type));
+		tail = getTypeIdentifier(getBatType(type));
 
-		bid = *(int *)value;
+		bid = *(bat *)value;
 		if (bid != 0) {
 			if ((b = BATdescriptor(bid)) == NULL){
 				MT_lock_unset(&c->lock);
@@ -716,8 +716,8 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
 				tailv = NULL;
-				ATOMformat(getColumnType(type), BUNtail(bi, p), &tailv);
-				if (getColumnType(type) > TYPE_str)
+				ATOMformat(getBatType(type), BUNtail(bi, p), &tailv);
+				if (getBatType(type) > TYPE_str)
 					mnstr_printf(sout, "\"%s\"\n", tailv);
 				else
 					mnstr_printf(sout, "%s\n", tailv);
@@ -791,9 +791,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 
 	/* find local definition */
-	sym = findSymbol(cntxt->nspace,
-			putName(mod, strlen(mod)),
-			putName(fcn, strlen(fcn)));
+	sym = findSymbol(cntxt->nspace, putName(mod), putName(fcn));
 	if (sym == NULL)
 		throw(MAL, "remote.register", ILLEGAL_ARGUMENT ": no such function: %s.%s", mod, fcn);
 
@@ -1017,7 +1015,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
-	BAT *b = BBPquickdesc(abs(bid), FALSE);
+	BAT *b = BBPquickdesc(bid, FALSE);
 	char sendtheap = 0;
 
 	(void)mb;
@@ -1026,10 +1024,6 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b == NULL)
 		throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_UNDEFINED);
-
-	/* mirror when argument is mirrored */
-	if (bid < 0)
-		b = BATmirror(b);
 
 	BBPfix(bid);
 
@@ -1053,19 +1047,19 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b->hseqbase, b->tseqbase,
 			b->tsorted, b->trevsorted,
 			b->tkey,
-			b->T->nonil,
+			b->tnonil,
 			b->tdense,
 			b->batCount,
 			(size_t)b->batCount * Tsize(b),
-			sendtheap && b->batCount > 0 ? b->T->vheap->free : 0
+			sendtheap && b->batCount > 0 ? b->tvheap->free : 0
 			);
 
 	if (b->batCount > 0) {
 		mnstr_write(cntxt->fdout, /* tail */
-		Tloc(b, BUNfirst(b)), b->batCount * Tsize(b), 1);
+		Tloc(b, 0), b->batCount * Tsize(b), 1);
 		if (sendtheap)
 			mnstr_write(cntxt->fdout, /* theap */
-					Tbase(b), b->T->vheap->free, 1);
+					Tbase(b), b->tvheap->free, 1);
 	}
 	/* flush is done by the calling environment (MAL) */
 
@@ -1204,36 +1198,33 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */
 	if (bb.Ttype == TYPE_str && bb.size) {
-		b->T->width = (unsigned short) (bb.tailsize / bb.size);
-		b->T->shift = ATOMelmshift(Tsize(b));
+		b->twidth = (unsigned short) (bb.tailsize / bb.size);
+		b->tshift = ATOMelmshift(Tsize(b));
 	}
 
 	if (bb.tailsize > 0) {
-		if (HEAPextend(&b->T->heap, bb.tailsize, TRUE) != GDK_SUCCEED ||
-			mnstr_read(in, b->T->heap.base, bb.tailsize, 1) < 0)
+		if (HEAPextend(&b->theap, bb.tailsize, TRUE) != GDK_SUCCEED ||
+			mnstr_read(in, b->theap.base, bb.tailsize, 1) < 0)
 			goto bailout;
-		b->T->heap.dirty = TRUE;
+		b->theap.dirty = TRUE;
 	}
 	if (bb.theapsize > 0) {
-		if (HEAPextend(b->T->vheap, bb.theapsize, TRUE) != GDK_SUCCEED ||
-			mnstr_read(in, b->T->vheap->base, bb.theapsize, 1) < 0)
+		if (HEAPextend(b->tvheap, bb.theapsize, TRUE) != GDK_SUCCEED ||
+			mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
 			goto bailout;
-		b->T->vheap->free = bb.theapsize;
-		b->T->vheap->dirty = TRUE;
+		b->tvheap->free = bb.theapsize;
+		b->tvheap->dirty = TRUE;
 	}
 
 	/* set properties */
-	b->hseqbase = bb.Hseqbase;
 	b->tseqbase = bb.Tseqbase;
-	b->hsorted = bb.Hsorted;
-	b->hrevsorted = bb.Hrevsorted;
 	b->tsorted = bb.Tsorted;
 	b->trevsorted = bb.Trevsorted;
 	b->tkey = bb.Tkey;
-	b->T->nonil = bb.Tnonil;
+	b->tnonil = bb.Tnonil;
 	b->tdense = bb.Tdense;
 	if (bb.Ttype == TYPE_str && bb.size)
-		BATsetcapacity(b, (BUN) (bb.tailsize >> b->T->shift));
+		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
 	BATsetcount(b, bb.size);
 	b->batDirty = TRUE;
 
@@ -1242,7 +1233,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		mnstr_printf(GDKout, "!MALexception:remote.bincopyfrom: expected flush, got: %c\n", tmp);
 	}
 
-	BATderiveTailProps(b, 1);
+	BATsettrivprop(b);
 
 	*ret = b;
 	return(MAL_SUCCEED);
@@ -1306,7 +1297,7 @@ str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #else
 	type |= RMTT_32_BITS;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_INT || defined(MONET_OID32)
+#if SIZEOF_SIZE_T == SIZEOF_INT
 	type |= RMTT_32_OIDS;
 #else
 	type |= RMTT_64_OIDS;
@@ -1340,3 +1331,4 @@ RMTisalive(int *ret, str *conn)
 	return MAL_SUCCEED;
 }
 
+#endif // HAVE_MAPI

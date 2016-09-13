@@ -117,24 +117,18 @@ freeConfFile(confkeyval *list) {
  * Returns true if the key is a default property.
  */
 int
-defaultProperty(char *property) {
-	// TODO: find a better way to do this
-	if (property != NULL && strcmp(property, "type") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "shared") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "nthreads") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "readonly") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "nclients") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "mfunnel") == 0) {
-		return 1;
-	} else if (property != NULL && strcmp(property, "embedr") == 0) {
-		return 1;
-	}
-	return 0;
+defaultProperty(const char *property) {
+	if (property == NULL)
+		return 0;
+	return strcmp(property, "type") == 0 ||
+		strcmp(property, "shared") == 0 ||
+		strcmp(property, "nthreads") == 0 ||
+		strcmp(property, "readonly") == 0 ||
+		strcmp(property, "nclients") == 0 ||
+		strcmp(property, "mfunnel") == 0 ||
+		strcmp(property, "embedr") == 0 ||
+		strcmp(property, "embedpy") == 0 ||
+		strcmp(property, "optpipe") == 0;
 }
 
 /**
@@ -142,7 +136,7 @@ defaultProperty(char *property) {
  * given key, or NULL if no key was found.
  */
 inline confkeyval *
-findConfKey(confkeyval *list, char *key) {
+findConfKey(confkeyval *list, const char *key) {
 	while (list->key != NULL) {
 		if (strcmp(list->key, key) == 0)
 			return(list);
@@ -156,7 +150,7 @@ findConfKey(confkeyval *list, char *key) {
  * found (or set to NULL)
  */
 inline char *
-getConfVal(confkeyval *list, char *key) {
+getConfVal(confkeyval *list, const char *key) {
 	while (list->key != NULL) {
 		if (strcmp(list->key, key) == 0)
 			return(list->val);
@@ -170,7 +164,7 @@ getConfVal(confkeyval *list, char *key) {
  * 0 if not found.
  */
 inline int
-getConfNum(confkeyval *list, char *key) {
+getConfNum(confkeyval *list, const char *key) {
 	while (list->key != NULL) {
 		if (strcmp(list->key, key) == 0)
 			return(list->ival);
@@ -189,7 +183,7 @@ getConfNum(confkeyval *list, char *key) {
  * the original value for the key is left untouched.
  */
 char *
-setConfVal(confkeyval *ckv, char *val) {
+setConfVal(confkeyval *ckv, const char *val) {
 	int ival = 0;
 
 	/* handle the unset directly */
@@ -212,7 +206,7 @@ setConfVal(confkeyval *ckv, char *val) {
 			return(strdup(buf));
 		}
 		case INT: {
-			char *p = val;
+			const char *p = val;
 			while (*p >= '0' && *p <= '9')
 				p++;
 			if (*p != '\0') {
@@ -271,7 +265,7 @@ setConfVal(confkeyval *ckv, char *val) {
 }
 
 char *
-setConfValForKey(confkeyval *list, char *key, char *val) {
+setConfValForKey(confkeyval *list, const char *key, const char *val) {
 	char buf[256];
 
 	while (list->key != NULL) {
@@ -416,7 +410,7 @@ generateSalt(char *buf, unsigned int len)
  * random passphrase.
  */
 char *
-generatePassphraseFile(char *path)
+generatePassphraseFile(const char *path)
 {
 	int fd;
 	FILE *f;

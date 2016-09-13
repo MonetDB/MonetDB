@@ -11,9 +11,6 @@
 #include "mal.h"
 
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + offsetof(MalStack, stk))
-#define newStack(S,CNT) S= (MalStkPtr) GDKzalloc(stackSize(CNT));\
-		(S)->stksize=CNT;
-
 
 mal_export MalStkPtr newGlobalStack(int size);
 mal_export MalStkPtr reallocGlobalStack(MalStkPtr s, int cnt);

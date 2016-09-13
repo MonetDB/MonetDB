@@ -52,6 +52,8 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i;
 	InstrPtr q,sig;
 	int actions = 0;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) p;
 	(void)stk;
@@ -66,10 +68,10 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 */
 			if (isMultiplex(q)) {
 				if (OPTinlineMultiplex(cntxt,mb,q)) {
-					OPTDEBUGinline {
-						mnstr_printf(cntxt->fdout,"#multiplex inline function\n");
-						printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
-					}
+#ifdef DEBUG_OPT_INLINE
+					mnstr_printf(cntxt->fdout,"#multiplex inline function\n");
+					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
+#endif
 				}
 			} else
 			/*
@@ -80,13 +82,24 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				(void) inlineMALblock(mb,i,q->blk);
 				i--;
 				actions++;
-				OPTDEBUGinline {
-					mnstr_printf(cntxt->fdout,"#inline function at %d\n",i);
-					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-					printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
-				}
+#ifdef DEBUG_OPT_INLINE
+				mnstr_printf(cntxt->fdout,"#inline function at %d\n",i);
+				printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
+#endif
 			}
 		}
 	}
+
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","inline",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

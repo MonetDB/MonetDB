@@ -10,16 +10,16 @@ stderr of test 'profile_bug-SF.1314649` in directory 'sql/test/bugs` itself:
 # 10:17:27 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=43024  < profile_bug-SF.1314649.sql
 # 10:17:27 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = record select 1;
 ERROR = !syntax error, unexpected IDENT in: "record"
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select query, user from history;
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = record select count(*) from t1314649 where "human" = true;
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select query, user from history;
 ERROR = !current transaction is aborted (please ROLLBACK)
 

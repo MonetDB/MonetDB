@@ -7,6 +7,7 @@
 import string
 import os
 import re
+from filesplit import rsplit_filename, split_filename, automake_ext
 
 # the text that is put at the top of every generated Makefile.msc
 MAKEFILE_HEAD = '''
@@ -15,23 +16,6 @@ MAKEFILE_HEAD = '''
 # Nothing much configurable below
 
 '''
-
-automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'pm.i', '']
-
-def split_filename(f):
-    base = f
-    ext = ""
-    if f.find(".") >= 0:
-        return f.split(".", 1)
-    return base, ext
-
-def rsplit_filename(f):
-    base = f
-    ext = ""
-    s = f.rfind(".")
-    if s >= 0:
-        return f[:s], f[s+1:]
-    return base, ext
 
 def msc_basename(f):
     # return basename (i.e. just the file name part) of a path, no
@@ -858,97 +842,6 @@ def msc_library(fd, var, libmap, msc):
 
     msc_deps(fd, libmap['DEPS'], ".obj", msc)
 
-def msc_libs(fd, var, libsmap, msc):
-
-    lib = "lib"
-    ld = "LIBDIR"
-    if "DIR" in libsmap:
-        lib = "libs"
-        ld = libsmap["DIR"][0] # use first name given
-    ld = msc_translate_dir(ld,msc)
-
-    sep = ""
-    if 'SEP' in libsmap:
-        sep = libsmap['SEP'][0]
-
-    SCRIPTS = []
-    scripts_ext = []
-    if 'SCRIPTS' in libsmap:
-        scripts_ext = libsmap['SCRIPTS']
-
-    if 'MTSAFE' in libsmap:
-        fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
-
-    for libsrc in libsmap['SOURCES']:
-        libname, ext = split_filename(libsrc)
-        #if ext not in automake_ext:
-        msc['EXTRA_DIST'].append(libsrc)
-        v = sep + libname
-        msc['LIBS'].append('lib' + v + '.dll')
-        msc['INSTALL']['lib' + v] = 'lib' + v + '.dll', '.dll', ld, 'lib' + v + '.lib', ''
-
-        dlib = []
-        if libname + "_DLIBS" in libsmap:
-            dlib = libsmap[libname+"_DLIBS"]
-        if libname + "_LIBS" in libsmap:
-            msc_additional_libs(fd, libname, sep, "LIB", libsmap[libname + "_LIBS"], dlib, msc, 'lib', '.dll')
-        else:
-            libslist = []
-            if "LIBS" in libsmap:
-                libslist = libslist + libsmap["LIBS"]
-            if "WINLIBS" in libsmap:
-                libslist = libslist + libsmap["WINLIBS"]
-            if libslist:
-                msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc, 'lib', '.dll')
-
-        srcs = "lib%s%s_OBJS =" % (sep, libname)
-        deps = "lib%s%s_DEPS = $(lib%s%s_OBJS)" % (sep, libname, sep, libname)
-        deffile = ''
-        for target in libsmap['TARGETS']:
-            t, ext = split_filename(target)
-            if t == libname:
-                t, ext = split_filename(target)
-                if ext == "o":
-                    srcs = srcs + " " + t + ".obj"
-                elif ext == "tab.o":
-                    srcs = srcs + " " + t + ".tab.obj"
-                elif ext == "yy.o":
-                    srcs = srcs + " " + t + ".yy.obj"
-                elif ext == 'res':
-                    srcs = srcs + " " + t + ".res"
-                elif ext in scripts_ext:
-                    if target not in SCRIPTS:
-                        SCRIPTS.append(target)
-                elif ext == 'def':
-                    deffile = ' "-DEF:%s"' % target
-                    deps = deps + " " + target
-        fd.write(srcs + "\n")
-        fd.write(deps + "\n")
-        ln = "lib" + sep + libname
-        fd.write(ln + ".lib: " + ln + ".dll\n")
-        fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_DEPS)\n")
-        fd.write('\tpython "$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) /link @<<\n$(%s_LIBS)%s\n<<\n' % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile))
-        fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
-        if sep == '_':
-            fd.write('\tif not exist .libs $(MKDIR) .libs\n')
-            fd.write('\t$(INSTALL) "%s.dll" ".libs\\%s.dll"\n' % (ln, ln))
-        fd.write("\n")
-
-    if SCRIPTS:
-        fd.write("SCRIPTS =" + msc_space_sep_list(SCRIPTS))
-        msc['BUILT_SOURCES'].append("$(SCRIPTS)")
-        msc['SCRIPTS'].append("$(SCRIPTS)")
-
-    if 'HEADERS' in libsmap:
-        HDRS = []
-        hdrs_ext = libsmap['HEADERS']
-        for target in libsmap['DEPS'].keys():
-            t, ext = split_filename(target)
-            if ext in hdrs_ext:
-                msc['HDRS'].append(target)
-
-    msc_deps(fd, libsmap['DEPS'], ".obj", msc)
-
 def msc_includes(fd, var, values, msc):
     incs = "-I$(srcdir)"
     for i in values:
@@ -962,32 +855,6 @@ def msc_includes(fd, var, values, msc):
             incs = incs + ' "-I%s"' % msc_translate_dir(i, msc) \
                    + msc_add_srcdir(i, msc, " -I")
     fd.write("INCLUDES = " + incs + "\n")
-
-def msc_python_generic(fd, var, python, msc, PYTHON):
-    pyre = re.compile(r'packages *= *\[ *(.*[^ ]) *\]')
-    for f in python['FILES']:
-        msc['SCRIPTS'].append('target_python_%s' % f)
-        srcs = map(lambda x: x.strip('\'" ').replace('.', '\\'),
-                   pyre.search(open(os.path.join(msc['cwd'], f)).read()).group(1).split(', '))
-        fd.write('target_python_%s: %s README.rst %s\n' % (f, ' '.join(srcs), f))
-        fd.write('\t$(%s) %s build\n' % (PYTHON, f))
-        for src in srcs:
-            fd.write('%s: "$(srcdir)\\%s"\n' % (src, src))
-            fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (src, src))
-            fd.write('\t$(INSTALL) "$(srcdir)\\%s"\\*.py "%s"\n' % (src, src))
-        fd.write('%s: "$(srcdir)\\%s"\n' % (f, f))
-        fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (f, f))
-        fd.write('README.rst: "$(srcdir)\\README.rst"\n')
-        fd.write('\t$(INSTALL) "$(srcdir)\\README.rst" "README.rst"\n')
-        msc['INSTALL'][f] = f, '', '', '', ''
-        fd.write('install_%s:\n' % f)
-        fd.write('\t$(%s) %s install --prefix "$(prefix)" --install-lib "$(prefix)\\lib\\%s\n' % (PYTHON, f, PYTHON.lower()))
-
-def msc_python2(fd, var, python, msc):
-    msc_python_generic(fd, var, python, msc, 'PYTHON2')
-
-def msc_python3(fd, var, python3, msc):
-    msc_python_generic(fd, var, python3, msc, 'PYTHON3')
 
 callantno = 0
 def msc_ant(fd, var, ant, msc):
@@ -1045,7 +912,6 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'EXTRA_DIST': msc_extra_dist,
                 'EXTRA_HEADERS': msc_extra_headers,
                 'LIBDIR': msc_libdir,
-                'LIBS': msc_libs,
                 'LIB': msc_library,
                 'BINS': msc_bins,
                 'BIN': msc_binary,
@@ -1058,8 +924,6 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'largeTOC_SHARED_MODS': msc_mods_to_libs,
                 'HEADERS': msc_headers,
                 'ANT': msc_ant,
-                'PYTHON2': msc_python2,
-                'PYTHON3': msc_python3,
                 }
 
 def output(tree, cwd, topdir):

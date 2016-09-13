@@ -155,26 +155,20 @@ stmt_atom_int(sql_allocator *sa, int i)
 }
 
 stmt *
-stmt_atom_wrd(sql_allocator *sa, wrd i)
+stmt_atom_lng(sql_allocator *sa, lng i)
 {
 	sql_subtype t;
 
-	if (sizeof(wrd) == sizeof(int))
-		sql_find_subtype(&t, "wrd", 32, 0);
-	else
-		sql_find_subtype(&t, "wrd", 64, 0);
+	sql_find_subtype(&t, "bigint", 64, 0);
 	return stmt_atom(sa, atom_int(sa, &t, i));
 }
 
 stmt *
-stmt_atom_wrd_nil(sql_allocator *sa)
+stmt_atom_lng_nil(sql_allocator *sa)
 {
 	sql_subtype t;
 
-	if (sizeof(wrd) == sizeof(int))
-		sql_find_subtype(&t, "wrd", 32, 0);
-	else
-		sql_find_subtype(&t, "wrd", 64, 0);
+	sql_find_subtype(&t, "bigint", 64, 0);
 	return stmt_atom(sa, atom_general(sa, &t, NULL));
 }
 
@@ -1130,7 +1124,7 @@ stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op)
 }
 
 stmt *
-stmt_func(sql_allocator *sa, stmt *ops, const char *name, sql_rel *rel)
+stmt_func(sql_allocator *sa, stmt *ops, const char *name, sql_rel *rel, int f_union)
 {
 	node *n;
 	stmt *o = NULL, *s = stmt_create(sa, st_func);
@@ -1138,6 +1132,7 @@ stmt_func(sql_allocator *sa, stmt *ops, const char *name, sql_rel *rel)
 	s->op1 = ops;
 	s->op2 = stmt_atom_string(sa, name);
 	s->op4.rel = rel;
+	s->flag = f_union;
 	if (ops && list_length(ops->op4.lval)) {
 		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
 			stmt *c = n->data;
@@ -1222,7 +1217,7 @@ tail_type(stmt *st)
 		return &st->op4.cval->type;
 	case st_idxbat:
 		if (hash_index(st->op4.idxval->type)) {
-			return sql_bind_localtype("wrd");
+			return sql_bind_localtype("lng");
 		} else if (st->op4.idxval->type == join_idx) {
 			return sql_bind_localtype("oid");
 		}
@@ -1709,24 +1704,24 @@ print_stmt(sql_allocator *sa, stmt *s)
 	switch (s->type) {
 	case st_var:
 		if (s->op1)
-			printf("s%d := %s:%s\n", s->nr, s->op1->op4.aval->data.val.sval, s->op4.typeval.type->base.name);
+			printf("z%d := %s:%s\n", s->nr, s->op1->op4.aval->data.val.sval, s->op4.typeval.type->base.name);
 		else
-			printf("s%d := A%d:%s\n", s->nr, s->flag, s->op4.typeval.type->base.name);
+			printf("z%d := A%d:%s\n", s->nr, s->flag, s->op4.typeval.type->base.name);
 		break;
 	case st_atom:
-		printf("s%d := '%s':%s\n", s->nr, atom2string(sa, s->op4.aval), s->op4.aval->tpe.type->base.name);
+		printf("z%d := '%s':%s\n", s->nr, atom2string(sa, s->op4.aval), s->op4.aval->tpe.type->base.name);
 		break;
 	case st_list:{
 		node *n;
-		printf("s%d := %s(", s->nr, st_type2string(s->type));
+		printf("z%d := %s(", s->nr, st_type2string(s->type));
 		for (n = s->op4.lval->h; n; n = n->next) {
 			stmt *e = n->data;
-			printf("s%d%s", e->nr, n->next ? ", " : "");
+			printf("z%d%s", e->nr, n->next ? ", " : "");
 		}
 		printf(");\n");
 	} break;
 	default:
-		printf("s%d := %s(", s->nr, st_type2string(s->type));
+		printf("z%d := %s(", s->nr, st_type2string(s->type));
 		switch (s->type) {
 		case st_temp:
 		case st_single:
@@ -1767,11 +1762,11 @@ print_stmt(sql_allocator *sa, stmt *s)
 			break;
 		}
 		if (s->op1)
-			printf("s%d", s->op1->nr);
+			printf("z%d", s->op1->nr);
 		if (s->op2)
-			printf(", s%d", s->op2->nr);
+			printf(", z%d", s->op2->nr);
 		if (s->op3)
-			printf(", s%d", s->op3->nr);
+			printf(", z%d", s->op3->nr);
 		printf(");\n");
 		break;
 	}

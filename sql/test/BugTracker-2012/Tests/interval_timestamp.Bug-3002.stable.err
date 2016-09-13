@@ -30,10 +30,10 @@ stderr of test 'interval_timestamp.Bug-3002` in directory 'sql/test/BugTracker-2
 # 15:55:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=36462"
 # 15:55:40 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18371/.s.monetdb.31990
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select '1970-01-01 11:00' - interval '600' second;
 ERROR = !SELECT: no such binary operator 'sql_sub(char,sec_interval)'
-MAPI  = (monetdb) /var/tmp/mtest-18371/.s.monetdb.31990
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select cast('1970-01-01 11:00' as timestamp) = '1970-01-01 11:00' - interval '600' second;
 ERROR = !SELECT: no such binary operator 'sql_sub(char,sec_interval)'
 

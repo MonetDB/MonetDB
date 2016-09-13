@@ -72,8 +72,8 @@ Ready.
 #drop table ff;
 #select (4-1)*5;
 % .L # table_name
-% sql_sub_single_value # name
-% int # type
+% single_value # name
+% smallint # type
 % 2 # length
 [ 15	]
 % sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name

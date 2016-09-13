@@ -1,89 +1,38 @@
 stderr of test 'bind_with_cast.SF-1720934` in directory 'sql/test/BugTracker` itself:
 
 
-# 19:38:47 >  
-# 19:38:47 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37754 --set xrpc_port=47379 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 19:38:47 >  
+# 21:37:04 >  
+# 21:37:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31466" "--set" "mapi_usock=/var/tmp/mtest-6542/.s.monetdb.31466" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/jit//Linux/var/MonetDB/mTests_sql_test_BugTracker" "--set" "embedded_r=yes"
+# 21:37:04 >  
 
-# builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
-# builtin opt 	gdk_version = 1.27.0
-# builtin opt 	monet_pid = 3847
-# builtin opt 	prefix = /ufs/niels/scratch/monetdb/Linux-x86_64
-# builtin opt 	exec_prefix = ${prefix}
-# builtin opt 	gdk_dbname = tst
-# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
-# builtin opt 	gdk_debug = 8
-# builtin opt 	gdk_mem_bigsize = 262144
-# builtin opt 	gdk_alloc_map = yes
-# builtin opt 	gdk_mem_pagebits = 14
-# builtin opt 	gdk_vmtrim = yes
-# builtin opt 	monet_admin = adm
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/jit//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
-# builtin opt 	monet_welcome = yes
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
-# builtin opt 	monet_daemon = yes
-# builtin opt 	host = localhost
+# builtin opt 	monet_daemon = no
 # builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_noheaders = no
-# builtin opt 	mapi_debug = 0
-# builtin opt 	mapi_clients = 2
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
 # builtin opt 	sql_debug = 0
-# builtin opt 	sql_logdir = ${prefix}/var/MonetDB
-# builtin opt 	xquery_logdir = ${prefix}/var/MonetDB
-# builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
-# builtin opt 	standoff_start = start
-# builtin opt 	standoff_end = end
-# config opt 	prefix = /ufs/niels/scratch/monetdb/Linux-x86_64
-# config opt 	config = ${prefix}/etc/monetdb5.conf
-# config opt 	prefix = /ufs/niels/scratch/monetdb/Linux-x86_64
-# config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
-# config opt 	gdk_dbname = demo
-# config opt 	gdk_alloc_map = no
-# config opt 	gdk_embedded = no
-# config opt 	gdk_debug = 0
-# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB5:${exec_prefix}/lib/MonetDB5/lib:${exec_prefix}/lib/MonetDB5/bin
-# config opt 	monet_daemon = no
-# config opt 	monet_welcome = yes
-# config opt 	mero_msglog = ${prefix}/var/log/merovingian.log
-# config opt 	mero_errlog = ${prefix}/var/log/merovingian.log
-# config opt 	mero_timeinterval = 600
-# config opt 	mero_pidfile = ${prefix}/var/run/merovingian.pid
-# config opt 	mero_exittimeout = 7
-# config opt 	mero_doproxy = yes
-# config opt 	mero_discoveryttl = 600
-# config opt 	mal_init = ${exec_prefix}/lib/MonetDB5/mal_init.mal
-# config opt 	mal_listing = 2
-# config opt 	checkpoint_dir = ${prefix}/var/MonetDB5/chkpnt
-# config opt 	mapi_port = 50000
-# config opt 	mapi_open = false
-# config opt 	sql_logdir = ${prefix}/var/MonetDB5/sql_logs
-# config opt 	sql_init = ${exec_prefix}/lib/MonetDB5/sql_init.sql
-# cmdline opt 	config = /ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf
-# cmdline opt 	gdk_nr_threads = 4
-# cmdline opt 	monet_mod_path = /ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin
-# cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm
-# cmdline opt 	sql_logdir = /ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs
+# cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	xrpc_open = true
-# cmdline opt 	mapi_port = 37754
-# cmdline opt 	xrpc_port = 47379
+# cmdline opt 	mapi_port = 31466
+# cmdline opt 	mapi_usock = /var/tmp/mtest-6542/.s.monetdb.31466
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_src_test_BugTracker
-# cmdline opt 	mal_listing = 0
-# cmdline opt 	gdk_debug = 10
-#warning: please don't forget to set your vault key!
-#(see /ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf)
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/jit//Linux/var/MonetDB/mTests_sql_test_BugTracker
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
 
-# 19:38:47 >  
-# 19:38:47 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=37754 
-# 19:38:47 >  
+# 21:37:05 >  
+# 21:37:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6542" "--port=31466"
+# 21:37:05 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
-QUERY = exec  2('100');
-ERROR = !EXEC: wrong type for argument 1 of prepared statement: char, expected int
+MAPI  = (monetdb) /var/tmp/mtest-6542/.s.monetdb.31466
+QUERY = exec  5('100');
+ERROR = !wrong type for argument 1 of function call: char, expected int
 
-# 19:38:47 >  
-# 19:38:47 >  Done.
-# 19:38:47 >  
+# 21:37:05 >  
+# 21:37:05 >  "Done."
+# 21:37:05 >  
 

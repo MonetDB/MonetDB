@@ -57,7 +57,7 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(SQL,"sql.createorderindex","Column can not be accessed");
 	/* create the ordered index on the column */
-	msg = OIDXcreateImplementation(cntxt, newBatType(TYPE_void,b->ttype), b, -1);
+	msg = OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
 	BBPunfix(b->batCacheid);
 	return msg;
 }

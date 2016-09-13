@@ -17,7 +17,6 @@
 #include "mal_client.h"
 #include "mal_factory.h"
 #include "mal_profiler.h"
-#include "mal_recycle.h"
 
 /*
  * Activation of a thread requires construction of the argument list
@@ -71,12 +70,6 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 		ValRecord *v = &(s)->stk[(pci)->argv[k]];	\
 		assert(v->vtype == TYPE_int);				\
 		&v->val.ival;								\
-	})
-#define getArgReference_wrd(s, pci, k)				\
-	({												\
-		ValRecord *v = &(s)->stk[(pci)->argv[k]];	\
-		assert(v->vtype == TYPE_wrd);				\
-		&v->val.wval;								\
 	})
 #define getArgReference_bte(s, pci, k)				\
 	({												\
@@ -134,7 +127,6 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define getArgReference_sht(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.shval)
 #define getArgReference_bat(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.bval)
 #define getArgReference_int(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.ival)
-#define getArgReference_wrd(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.wval)
 #define getArgReference_bte(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.btval)
 #define getArgReference_oid(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.oval)
 #define getArgReference_ptr(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.pval)
@@ -147,5 +139,4 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define getArgReference_str(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.sval)
 #endif
 
-#define FREE_EXCEPTION(p) do { if (p && p != M5OutOfMemory) GDKfree(p); } while (0)
 #endif /*  _MAL_INTERPRET_H*/

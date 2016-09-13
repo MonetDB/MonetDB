@@ -80,10 +80,10 @@ Ready.
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 3,	3,	1,	0,	2,	2 # length
+% 6,	3,	1,	0,	2,	2 # length
 [ "int",	32,	0,	"",	"rr",	"id"	]
-[ "wrd",	64,	0,	NULL,	NULL,	NULL	]
-#exec 3 (1);
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+#exec  5 (1);
 % sys.rr # table_name
 % id # name
 % int # type

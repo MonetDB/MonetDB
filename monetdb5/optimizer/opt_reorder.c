@@ -7,7 +7,7 @@
  */
 
 /*
- * @- The dataflow reorder
+ * The dataflow reorder
  * MAL programs are largely logical descriptions of an execution plan.
  * After the mitosis and mergetable optimizers we have a large program, which when
  * executed as is, does not necessarily benefit from the locality
@@ -59,6 +59,17 @@ typedef struct{
 	int stmt[FLEXIBLE_ARRAY_MEMBER];
 } *Node, NodeRecord;
 
+static void
+OPTremoveDep(Node *list, int lim)
+{
+	int i;
+
+	for (i=0; i< lim; i++)
+		if (list[i])
+			GDKfree(list[i]);
+	GDKfree(list);
+}
+
 static Node *
 OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 {
@@ -81,9 +92,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 		block |= p->barrier != 0;
 		list[i]= (Node) GDKzalloc(offsetof(NodeRecord, stmt) + sizeof(int) * p->argc);
 		if (list[i] == NULL){
-			for (i--; i>=0; i--)
-				GDKfree(list[i]);
-			GDKfree(list);
+			OPTremoveDep(list, i);
 			GDKfree(var);
 			return 0;
 		}
@@ -97,9 +106,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 			if ( var[ getArg(p,j)] ) {
 				//list[i]->stmt[j] = var [getArg(p,j)];
 				// escape we should avoid reused variables.
-				for (i--; i>=0; i--)
-					GDKfree(list[i]);
-				GDKfree(list);
+				OPTremoveDep(list, i + 1);
 				GDKfree(var);
 				return 0;
 			}
@@ -148,27 +155,14 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 	 */
 
 	if ( block ){
-		for (i--; i>=0; i--)
-			GDKfree(list[i]);
+		OPTremoveDep(list, mb->stop);
 		GDKfree(uselist);
-		GDKfree(list);
 		GDKfree(var);
 		return NULL;
 	}
 	GDKfree(var);
 	*Ulist = uselist;
 	return list;
-}
-
-static void
-OPTremoveDep(Node *list, int lim)
-{
-	int i;
-
-	for (i=0; i< lim; i++)
-		if (list[i])
-			GDKfree(list[i]);
-	GDKfree(list);
 }
 
 static int
@@ -201,6 +195,67 @@ OPTbreadthfirst(Client cntxt, MalBlkPtr mb, int pc, int max, InstrPtr old[], Nod
 	return 0;
 }
 
+/* SQL appends are collected to create a better dataflow block */
+/* alternatively, we should postpone all mcv-chained actions */
+static int
+OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i,j,k=0, actions =0, last=-1;
+	InstrPtr *old, *appends;
+	int limit;
+	(void) cntxt;
+	(void) stk;
+	(void) p;
+
+	appends =(InstrPtr*) GDKzalloc(mb->ssize * sizeof(InstrPtr));
+	if( appends == NULL)
+		return 0;
+	limit= mb->stop;
+	old = mb->stmt;
+	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
+		GDKfree(appends);
+		return 0;
+	}
+	for( i=0; i<limit; i++){
+		if ( getModuleId(old[i]) == sqlRef && getFunctionId(old[i]) == appendRef){
+			last = i;
+		}
+	}
+	for( i=0; i<limit; i++){
+		if ( getModuleId(old[i]) == sqlRef && getFunctionId(old[i]) == appendRef){
+			// only postpone under strict conditions
+			assert( isVarConstant(mb,getArg(old[i],2)));
+			assert( isVarConstant(mb,getArg(old[i],3)));
+			assert( isVarConstant(mb,getArg(old[i],4)));
+			if( actions )
+				pushInstruction(mb, old[i]);
+			else {
+				if (k > 0 &&  getArg(old[i],1) == getArg(appends[k-1],0))
+					appends[k++]= old[i];
+				else {
+					for(j=0; j<k; j++)
+						pushInstruction(mb,appends[j]);
+					pushInstruction(mb, old[i]);
+					actions++;
+				}
+			}
+			continue;
+		}
+		if ( i == last){
+			actions++;
+			for(j=0; j<k; j++)
+				pushInstruction(mb,appends[j]);
+		}
+		pushInstruction(mb,old[i]);
+	}
+	for( ; i<limit; i++){
+		pushInstruction(mb,old[i]);
+	}
+	GDKfree(appends);
+	GDKfree(old);
+	return actions;
+}
+
 int
 OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -208,6 +263,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr *old;
 	int limit, slimit, *uselist = NULL;
 	Node *dep;
+	char buf[256];
+	lng usec= GDKusec();
 
 	(void) cntxt;
 	(void) stk;
@@ -219,7 +276,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(uselist);
-		GDKfree(dep);
+		OPTremoveDep(dep, limit);
 		return 0;
 	}
 	
@@ -252,10 +309,12 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* collect all seen sofar by backward grouping */
 			/* since p has side-effects, we should secure all seen sofar */
 			for(j=i-1; j>=start;j--) {
-				OPTDEBUGreorder if( old[j]){
+#ifdef DEBUG_OPT_REORDER
+				if( old[j]){
 					mnstr_printf(cntxt->fdout,"leftover: %d",start+1);
 					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_DEBUG);
 				}
+#endif
 				if (OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist) < 0) {
 					i = limit;	/* cause break from outer loop */
 					break;
@@ -275,5 +334,17 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	OPTremoveDep(dep, limit);
 	GDKfree(uselist);
 	GDKfree(old);
+	(void) OPTpostponeAppends(cntxt, mb, 0, 0);
+
+    /* Defense line against incorrect plans */
+    if( 1){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return 1;
 }

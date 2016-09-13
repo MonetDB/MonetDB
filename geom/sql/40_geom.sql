@@ -8,8 +8,11 @@
 -- create spatial_ref_sys metadata table
 
 CREATE FUNCTION Has_Z(info integer) RETURNS integer EXTERNAL NAME geom."hasZ";
+GRANT EXECUTE ON FUNCTION Has_Z(integer) TO PUBLIC;
 CREATE FUNCTION Has_M(info integer) RETURNS integer EXTERNAL NAME geom."hasM";
+GRANT EXECUTE ON FUNCTION Has_M(integer) TO PUBLIC;
 CREATE FUNCTION get_type(info integer, format integer) RETURNS string EXTERNAL NAME geom."getType";
+GRANT EXECUTE ON FUNCTION get_type(integer, integer) TO PUBLIC;
 
 
 
@@ -20,6 +23,7 @@ CREATE TABLE spatial_ref_sys (
 	srtext VARCHAR (2048),
 	proj4text VARCHAR (2048)
 );
+GRANT SELECT ON spatial_ref_sys TO PUBLIC;
 
 -- create geometry_columns metadata view
 create view geometry_columns as
@@ -40,6 +44,7 @@ create view geometry_columns as
 		where t.id=x.table_id
 		) y
 	where y.schema_id=s.id and e.name='gdk_dbname';
+GRANT SELECT ON geometry_columns TO PUBLIC;
 
 
 copy 3911 records into spatial_ref_sys from stdin using delimiters '|';
@@ -3960,10 +3965,15 @@ copy 3911 records into spatial_ref_sys from stdin using delimiters '|';
 -- as that returns Geometry objects, and we prefer the explicit mbr's
 -- minimum bounding rectangle (mbr)
 CREATE FUNCTION mbr(geom Geometry) RETURNS mbr external name geom."mbr";
+GRANT EXECUTE ON FUNCTION mbr(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Overlaps(box1 mbr, box2 mbr) RETURNS boolean EXTERNAL NAME geom."mbrOverlaps";
+GRANT EXECUTE ON FUNCTION ST_Overlaps(mbr, mbr) TO PUBLIC;
 CREATE FUNCTION ST_Contains(box1 mbr, box2 mbr) RETURNS boolean EXTERNAL NAME geom."mbrContains";
+GRANT EXECUTE ON FUNCTION ST_Contains(mbr, mbr) TO PUBLIC;
 CREATE FUNCTION ST_Equals(box1 mbr, box2 mbr) RETURNS boolean EXTERNAL NAME geom."mbrEqual";
+GRANT EXECUTE ON FUNCTION ST_Equals(mbr, mbr) TO PUBLIC;
 CREATE FUNCTION ST_Distance(box1 mbr, box2 mbr) RETURNS double EXTERNAL NAME geom."mbrDistance";
+GRANT EXECUTE ON FUNCTION ST_Distance(mbr, mbr) TO PUBLIC;
 
 --CREATE FUNCTION mbrOverlapOrLeft(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrLeft";
 --CREATE FUNCTION mbrOverlapOrBelow(box1 mbr, box2 mbr) RETURNS boolean external name geom."mbrOverlapOrBelow";
@@ -3980,16 +3990,16 @@ CREATE FUNCTION ST_Distance(box1 mbr, box2 mbr) RETURNS double EXTERNAL NAME geo
 -------------------------------------------------------------------------
 ------------------------- Management Functions- -------------------------
 -------------------------------------------------------------------------
---CREATE PROCEDURE AddGeometryColumn(table_name string, column_name string, srid integer, geometryType string, dimension integer) 
+--CREATE PROCEDURE AddGeometryColumn(table_name string, column_name string, srid integer, geometryType string, dimension integer)
 --CREATE FUNCTION AddGeometryColumn(table_name string, column_name string, srid integer, geometryType string, dimension integer) RETURNS string
 --BEGIN
 --	DECLARE column_type string;
 --	SET column_type = concat('geometry( ', geometryType);
 --	SET column_type = concat(column_type, ', ');
 --	SET column_type = concat(column_type, srid);
---	SET column_type = concat(column_type, ' )'); 
+--	SET column_type = concat(column_type, ' )');
 --	ALTER TABLE table_name ADD column_name column_type; --geometry('point', 28992);
---	
+--
 --	RETURN column_type;
 --END;
 
@@ -3998,7 +4008,7 @@ CREATE FUNCTION ST_Distance(box1 mbr, box2 mbr) RETURNS double EXTERNAL NAME geo
 --	ALTER TABLE table_name ADD column_name;
 --END;
 
---CREATE FUNCTION t(table_name string, column_name string, srid integer, type string, dimension integer) RETURNS string 
+--CREATE FUNCTION t(table_name string, column_name string, srid integer, type string, dimension integer) RETURNS string
 --BEGIN
 --	EXECUTE PROCEDURE AddGeometryColumn(table_name, column_name, srid, type, dimension);
 --	RETURN '';
@@ -4012,78 +4022,126 @@ CREATE FUNCTION ST_Distance(box1 mbr, box2 mbr) RETURNS double EXTERNAL NAME geo
 
 --Construct a Geometry from a WKT
 CREATE FUNCTION ST_WKTToSQL(wkt string) RETURNS Geometry external name geom."GeomFromText";
+GRANT EXECUTE ON FUNCTION ST_WKTToSQL(string) TO PUBLIC;
 
 --Construct a Geometry from a WKB
 CREATE FUNCTION ST_WKBToSQL(geom string) RETURNS Geometry EXTERNAL NAME geom."FromBinary";
+GRANT EXECUTE ON FUNCTION ST_WKBToSQL(string) TO PUBLIC;
 
 --Obtaining WKT from Geometry
 CREATE FUNCTION ST_AsText(geom Geometry) RETURNS string EXTERNAL NAME geom."AsText";
+GRANT EXECUTE ON FUNCTION ST_AsText(Geometry) TO PUBLIC;
 
 --Obtainig WKB from Geometry
 CREATE FUNCTION ST_AsBinary(geom Geometry) RETURNS string EXTERNAL NAME geom."AsBinary";
+GRANT EXECUTE ON FUNCTION ST_AsBinary(Geometry) TO PUBLIC;
 
 --Functions on Geometries
 CREATE FUNCTION ST_Dimension(geom Geometry) RETURNS integer EXTERNAL NAME geom."Dimension";
+GRANT EXECUTE ON FUNCTION ST_Dimension(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_GeometryType(geom Geometry) RETURNS string EXTERNAL NAME geom."GeometryType2";
+GRANT EXECUTE ON FUNCTION ST_GeometryType(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_SRID(geom Geometry) RETURNS integer EXTERNAL NAME geom."getSRID";
+GRANT EXECUTE ON FUNCTION ST_SRID(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_SetSRID(geom Geometry, srid integer) RETURNS Geometry EXTERNAL NAME geom."setSRID";
+GRANT EXECUTE ON FUNCTION ST_SetSRID(Geometry, integer) TO PUBLIC;
 CREATE FUNCTION ST_IsEmpty(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsEmpty";
+GRANT EXECUTE ON FUNCTION ST_IsEmpty(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_IsSimple(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsSimple";
+GRANT EXECUTE ON FUNCTION ST_IsSimple(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Boundary(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Boundary";
+GRANT EXECUTE ON FUNCTION ST_Boundary(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Envelope(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Envelope";
+GRANT EXECUTE ON FUNCTION ST_Envelope(Geometry) TO PUBLIC;
 --Functions testing spatial relations between Geometries
 CREATE FUNCTION ST_Equals(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Equals";
+GRANT EXECUTE ON FUNCTION ST_Equals(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Disjoint(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Disjoint";
+GRANT EXECUTE ON FUNCTION ST_Disjoint(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Intersects";
+GRANT EXECUTE ON FUNCTION ST_Intersects(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Touches(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Touches";
+GRANT EXECUTE ON FUNCTION ST_Touches(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Crosses(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Crosses";
+GRANT EXECUTE ON FUNCTION ST_Crosses(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Within(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Within";
+GRANT EXECUTE ON FUNCTION ST_Within(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Contains(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Contains";
+GRANT EXECUTE ON FUNCTION ST_Contains(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Overlaps(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Overlaps";
+GRANT EXECUTE ON FUNCTION ST_Overlaps(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Relate(geom1 Geometry, geom2 Geometry, intersection_matrix_pattern string) RETURNS boolean EXTERNAL NAME geom."Relate";
+GRANT EXECUTE ON FUNCTION ST_Relate(Geometry, Geometry, string) TO PUBLIC;
 --Distance between Geometries
 CREATE FUNCTION ST_Distance(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."Distance";
+GRANT EXECUTE ON FUNCTION ST_Distance(Geometry, Geometry) TO PUBLIC;
 --Functions that implement spatial operators
 CREATE FUNCTION ST_Intersection(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Intersection";
+GRANT EXECUTE ON FUNCTION ST_Intersection(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Difference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Difference";
+GRANT EXECUTE ON FUNCTION ST_Difference(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Union(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Union";
+GRANT EXECUTE ON FUNCTION ST_Union(Geometry, Geometry) TO PUBLIC;
 CREATE AGGREGATE ST_Union(geom Geometry) RETURNS Geometry external name geom."Union";
 CREATE FUNCTION ST_SymDifference(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."SymDifference";
+GRANT EXECUTE ON FUNCTION ST_SymDifference(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Buffer(geom Geometry, radius double) RETURNS Geometry EXTERNAL NAME geom."Buffer";
+GRANT EXECUTE ON FUNCTION ST_Buffer(Geometry, double) TO PUBLIC;
 CREATE FUNCTION ST_ConvexHull(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."ConvexHull";
+GRANT EXECUTE ON FUNCTION ST_ConvexHull(Geometry) TO PUBLIC;
 
 --Functions on Point
 CREATE FUNCTION ST_X(geom Geometry) RETURNS double EXTERNAL NAME geom."X";
+GRANT EXECUTE ON FUNCTION ST_X(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Y(geom Geometry) RETURNS double EXTERNAL NAME geom."Y";
+GRANT EXECUTE ON FUNCTION ST_Y(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Z(geom Geometry) RETURNS double EXTERNAL NAME geom."Z";
+GRANT EXECUTE ON FUNCTION ST_Z(Geometry) TO PUBLIC;
 
 --Functions on Curve (i.e. LineString)
 CREATE FUNCTION ST_StartPoint(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."StartPoint";
+GRANT EXECUTE ON FUNCTION ST_StartPoint(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_EndPoint(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."EndPoint";
+GRANT EXECUTE ON FUNCTION ST_EndPoint(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_IsRing(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsRing";
+GRANT EXECUTE ON FUNCTION ST_IsRing(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Length(geom Geometry) RETURNS double EXTERNAL NAME geom."Length"; --valid also for MultiCurve
+GRANT EXECUTE ON FUNCTION ST_Length(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_IsClosed(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsClosed"; --valid also for MultiCurve
+GRANT EXECUTE ON FUNCTION ST_IsClosed(Geometry) TO PUBLIC;
 
 --Functions on LineString
 CREATE FUNCTION ST_NumPoints(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumPoints";
+GRANT EXECUTE ON FUNCTION ST_NumPoints(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_PointN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom."PointN";
+GRANT EXECUTE ON FUNCTION ST_PointN(Geometry, integer) TO PUBLIC;
 
 --Functions on Surface (i.e. Polygon and Polyhedral Surface) and MultiSurface
 CREATE FUNCTION ST_Centroid(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Centroid";
+GRANT EXECUTE ON FUNCTION ST_Centroid(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_PointOnSurface(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."PointOnSurface";
+GRANT EXECUTE ON FUNCTION ST_PointOnSurface(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Area(geom Geometry) RETURNS double EXTERNAL NAME geom."Area";
+GRANT EXECUTE ON FUNCTION ST_Area(Geometry) TO PUBLIC;
 
 --Functions on Polygon
 CREATE FUNCTION ST_ExteriorRing(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."ExteriorRing";
+GRANT EXECUTE ON FUNCTION ST_ExteriorRing(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_SetExteriorRing(geom Geometry) RETURNS Geometry external name geom."MakePolygon"; --gets a linestring and creates a polygon (postGIS: ST_MakePolygon)
+GRANT EXECUTE ON FUNCTION ST_SetExteriorRing(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_NumInteriorRing(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumInteriorRings";
+GRANT EXECUTE ON FUNCTION ST_NumInteriorRing(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_InteriorRingN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom."InteriorRingN";
+GRANT EXECUTE ON FUNCTION ST_InteriorRingN(Geometry, integer) TO PUBLIC;
 CREATE FUNCTION ST_InteriorRings(geom Geometry) RETURNS GeometryA EXTERNAL NAME geom."InteriorRings";
+GRANT EXECUTE ON FUNCTION ST_InteriorRings(Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_SetInteriorRings(geom GeometryA) RETURNS Geometry EXTERNAL NAME geom."SetInteriorRings"; --what is this function supposed to do????
 
 --Functions on GeomCollection
 CREATE FUNCTION ST_NumGeometries(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumGeometries";
+GRANT EXECUTE ON FUNCTION ST_NumGeometries(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_GeometryN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom."GeometryN";
+GRANT EXECUTE ON FUNCTION ST_GeometryN(Geometry, integer) TO PUBLIC;
 
 --Functions on Polyhedral Surfaces (a simple surface, consisting of a number of Polygon pathes or facets)
 --CREATE FUNCTION ST_Geometries(geom Geometry) RETURNS TABLE(geom Geometries) EXTERNAL NAME geom."Geometries";
@@ -4094,10 +4152,12 @@ CREATE FUNCTION ST_NumPatches(geom Geometry) RETURNS integer --EXTERNAL NAME geo
 BEGIN
 	RETURN SELECT ST_NumGeometries(geom);
 END;
+GRANT EXECUTE ON FUNCTION ST_NumPatches(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_PatchN(geom Geometry, patchNum integer) RETURNS Geometry --EXTERNAL NAME geom."PatchN" --same with Surface
 BEGIN
 	RETURN SELECT ST_GeometryN(geom, patchNum);
-END; 
+END;
+GRANT EXECUTE ON FUNCTION ST_PatchN(Geometry, integer) TO PUBLIC;
 --BoundingPolygons
 --IsClosed
 
@@ -4107,15 +4167,25 @@ END;
 
 --Construct a Geometry from a WKT
 CREATE FUNCTION ST_GeomFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomFromText";
-CREATE FUNCTION ST_PointFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."PointFromText"; 
+GRANT EXECUTE ON FUNCTION ST_GeomFromText(string, integer) TO PUBLIC;
+CREATE FUNCTION ST_PointFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."PointFromText";
+GRANT EXECUTE ON FUNCTION ST_PointFromText(string, integer) TO PUBLIC;
 CREATE FUNCTION ST_LineFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."LineFromText";
+GRANT EXECUTE ON FUNCTION ST_LineFromText(string, integer) TO PUBLIC;
 CREATE FUNCTION ST_PolygonFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."PolygonFromText";
+GRANT EXECUTE ON FUNCTION ST_PolygonFromText(string, integer) TO PUBLIC;
 CREATE FUNCTION ST_MPointFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."MPointFromText";
+GRANT EXECUTE ON FUNCTION ST_MPointFromText(string, integer) TO PUBLIC;
 CREATE FUNCTION ST_MLineFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."MLineFromText";
+GRANT EXECUTE ON FUNCTION ST_MLineFromText(string, integer) TO PUBLIC;
 CREATE FUNCTION ST_MPolyFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."MPolyFromText";
+GRANT EXECUTE ON FUNCTION ST_MPolyFromText(string, integer) TO PUBLIC;
 CREATE FUNCTION ST_GeomCollFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomCollFromText";
-CREATE FUNCTION ST_BdPolyFromText(wkt string, srid integer) RETURNS Geometry external name geom."BdPolyFromText"; 
+GRANT EXECUTE ON FUNCTION ST_GeomCollFromText(string, integer) TO PUBLIC;
+CREATE FUNCTION ST_BdPolyFromText(wkt string, srid integer) RETURNS Geometry external name geom."BdPolyFromText";
+GRANT EXECUTE ON FUNCTION ST_BdPolyFromText(string, integer) TO PUBLIC;
 CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid integer) RETURNS Geometry external name geom."BdMPolyFromText";
+GRANT EXECUTE ON FUNCTION ST_BdMPolyFromText(string, integer) TO PUBLIC;
 
 --Construct a Geoemtry from a WKB
 --CREATE FUNCTION ST_GeomFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomFromWKB";
@@ -4126,7 +4196,7 @@ CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid integer) RETURNS Geometry ex
 --CREATE FUNCTION ST_MLineFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."MLineFromWKB";
 --CREATE FUNCTION ST_MPolyFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."MPolyFromWKB";
 --CREATE FUNCTION ST_GeomCollFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomCollFromWKB";
---CREATE FUNCTION ST_BdPolyFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry external name geom."BdPolyFromWKB"; 
+--CREATE FUNCTION ST_BdPolyFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry external name geom."BdPolyFromWKB";
 --CREATE FUNCTION ST_BdMPolyFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry external name geom."BdMPolyFromWKB";
 
 --CREATE FUNCTION ST_M(geom Geometry) RETURNS double EXTERNAL NAME geom."M"; --geos does not support M coordinate (at least in the c version)
@@ -4144,16 +4214,26 @@ CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid integer) RETURNS Geometry ex
 -------------------------------------------------------------------------
 -- Create Geometry from text (wkt)
 CREATE FUNCTION ST_GeometryFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomFromText";
+GRANT EXECUTE ON FUNCTION ST_GeometryFromText(string, integer) TO PUBLIC;
 
 CREATE FUNCTION ST_GeomFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."GeomFromText";
+GRANT EXECUTE ON FUNCTION ST_GeomFromText(string) TO PUBLIC;
 CREATE FUNCTION ST_GeometryFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."GeomFromText";
-CREATE FUNCTION ST_PointFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."PointFromText"; 
+GRANT EXECUTE ON FUNCTION ST_GeometryFromText(string) TO PUBLIC;
+CREATE FUNCTION ST_PointFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."PointFromText";
+GRANT EXECUTE ON FUNCTION ST_PointFromText(string) TO PUBLIC;
 CREATE FUNCTION ST_LineFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."LineFromText";
+GRANT EXECUTE ON FUNCTION ST_LineFromText(string) TO PUBLIC;
 CREATE FUNCTION ST_PolygonFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."PolygonFromText";
+GRANT EXECUTE ON FUNCTION ST_PolygonFromText(string) TO PUBLIC;
 CREATE FUNCTION ST_MPointFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."MPointFromText";
+GRANT EXECUTE ON FUNCTION ST_MPointFromText(string) TO PUBLIC;
 CREATE FUNCTION ST_MLineFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."MLineFromText";
+GRANT EXECUTE ON FUNCTION ST_MLineFromText(string) TO PUBLIC;
 CREATE FUNCTION ST_MPolyFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."MPolyFromText";
+GRANT EXECUTE ON FUNCTION ST_MPolyFromText(string) TO PUBLIC;
 CREATE FUNCTION ST_GeomCollFromText(wkt string) RETURNS Geometry EXTERNAL NAME geom."GeomCollFromText";
+GRANT EXECUTE ON FUNCTION ST_GeomCollFromText(string) TO PUBLIC;
 --CREATE FUNCTION ST_GeogFromText(wkt string) RETURNS Geography external name geom."GeographyFromText";
 --CREATE FUNCTION ST_GeographyFromText(wkt string) RETURNS Geography external name geom."GeographyFromText";
 
@@ -4168,22 +4248,33 @@ CREATE FUNCTION ST_GeomCollFromText(wkt string) RETURNS Geometry EXTERNAL NAME g
 --CREATE FUNCTION ST_GeogFromWKB(wkb_arr WHATEVER_IS_STORED_IN_DB) RETURNS Geography EXTERNAL NAME geom."GeogFromWKB";
 
 -- Create Geometry from simpler geometries
-CREATE FUNCTION ST_MakePoint(x double, y double) RETURNS Geometry EXTERNAL NAME geom."MakePoint"; 
+CREATE FUNCTION ST_MakePoint(x double, y double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
+GRANT EXECUTE ON FUNCTION ST_MakePoint(double, double) TO PUBLIC;
 CREATE FUNCTION ST_Point(x double, y double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
+GRANT EXECUTE ON FUNCTION ST_Point(double, double) TO PUBLIC;
 CREATE FUNCTION ST_MakePoint(x double, y double, z double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
+GRANT EXECUTE ON FUNCTION ST_MakePoint(double, double, double) TO PUBLIC;
 CREATE FUNCTION ST_MakePoint(x double, y double, z double, m double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
+GRANT EXECUTE ON FUNCTION ST_MakePoint(double, double, double, double) TO PUBLIC;
 CREATE FUNCTION ST_MakePointM(x double, y double, m double) RETURNS Geometry EXTERNAL NAME geom."MakePointM";
+GRANT EXECUTE ON FUNCTION ST_MakePointM(double, double, double) TO PUBLIC;
 --CREATE FUNCTION ST_MakeLine(geometry set geoms)?????
 CREATE AGGREGATE ST_MakeLine(geom Geometry) RETURNS Geometry external name geom."MakeLine";
 CREATE FUNCTION ST_MakeLine(geom1 Geometry, geom2 Geometry) RETURNS Geometry external name geom."MakeLine"; --two single geometries
+GRANT EXECUTE ON FUNCTION ST_MakeLine(Geometry, Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_MakeLine(geoms_arr Geometry[]) RETURNS Geometry external name geom."MakeLine";
 --CREATE FUNCTION ST_LineFromMultiPoint(pointGeom Geometry) RETURNS Geometry external name geom."LineFromMultiPoint"; --gets mutlipoint returns linestring
 CREATE FUNCTION ST_MakeEnvelope(xmin double, ymin double, xmax double, ymax double, srid integer) RETURNS Geometry external name geom."MakeEnvelope";
+GRANT EXECUTE ON FUNCTION ST_MakeEnvelope(double, double, double, double, integer) TO PUBLIC;
 CREATE FUNCTION ST_MakeEnvelope(xmin double, ymin double, xmax double, ymax double) RETURNS Geometry external name geom."MakeEnvelope";
+GRANT EXECUTE ON FUNCTION ST_MakeEnvelope(double, double, double, double) TO PUBLIC;
 CREATE FUNCTION ST_MakePolygon(geom Geometry) RETURNS Geometry external name geom."MakePolygon"; --gets linestring
+GRANT EXECUTE ON FUNCTION ST_MakePolygon(Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_MakePolygon(outerGeom Geometry, interiorGeoms table(g Geometry)) RETURNS Geometry external name geom."MakePolygon"; --gets linestrings
 CREATE FUNCTION ST_Polygon(geom Geometry, srid integer) RETURNS Geometry external name geom."MakePolygon"; --gets linestring
+GRANT EXECUTE ON FUNCTION ST_Polygon(Geometry, integer) TO PUBLIC;
 CREATE FUNCTION ST_MakeBox2D(lowLeftPointGeom Geometry, upRightPointGeom Geometry) RETURNS mbr external name geom."MakeBox2D"; --gets 2d points
+GRANT EXECUTE ON FUNCTION ST_MakeBox2D(Geometry, Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_3DMakeBox(lowLeftPointGeom Geometry, upRightPointGeom Geometry) RETURNS mbr external name geom."MakeBox3D"; --gets 3d points
 
 -- Other constructors
@@ -4200,27 +4291,42 @@ CREATE FUNCTION ST_MakeBox2D(lowLeftPointGeom Geometry, upRightPointGeom Geometr
 -------------------------- Geometry Accessors ---------------------------
 -------------------------------------------------------------------------
 CREATE FUNCTION GeometryType(geom Geometry) RETURNS string EXTERNAL NAME geom."GeometryType1";
+GRANT EXECUTE ON FUNCTION GeometryType(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_CoordDim(geom Geometry) RETURNS integer EXTERNAL NAME geom."CoordDim";
+GRANT EXECUTE ON FUNCTION ST_CoordDim(Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_IsCollection(geom Geometry) RETURNS boolean EXTERNAL NAME
 CREATE FUNCTION ST_IsValid(geom Geometry) RETURNS boolean EXTERNAL NAME geom."IsValid";
+GRANT EXECUTE ON FUNCTION ST_IsValid(Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_IsValid(geom Geometry, flags integer) RETURNS boolean EXTERNAL NAME
-CREATE FUNCTION ST_IsValidReason(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidReason"; 
+CREATE FUNCTION ST_IsValidReason(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidReason";
+GRANT EXECUTE ON FUNCTION ST_IsValidReason(Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_IsValidReason(geom Geometry, flags integer) RETURNS string EXTERNAL NAME
---CREATE FUNCTION ST_IsValidDetail(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidDetail"; 
+--CREATE FUNCTION ST_IsValidDetail(geom Geometry) RETURNS string EXTERNAL NAME geom."IsValidDetail";
 --CREATE FUNCTION ST_IsValidDetail(geom Geometry, flags integer) RETURNS A_CUSTOM_ROW EXTERNAL NAME
 --CREATE FUNCTION ST_NDims(geom Geometry) RETURNS integer EXTERNAL NAME
 CREATE FUNCTION ST_NPoints(geom Geometry) RETURNS integer EXTERNAL NAME geom."NPoints";
-CREATE FUNCTION ST_NRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NRings"; --is meaningfull for polygon and multipolygon
+GRANT EXECUTE ON FUNCTION ST_NPoints(Geometry) TO PUBLIC;
+CREATE FUNCTION ST_NRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NRings"; --is meaningful for polygon and multipolygon
+GRANT EXECUTE ON FUNCTION ST_NRings(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_NumInteriorRings(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumInteriorRings";
+GRANT EXECUTE ON FUNCTION ST_NumInteriorRings(Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_Summary(geom Geometry) RETURNS string EXTERNAL NAME
 CREATE FUNCTION ST_XMax(geom Geometry) RETURNS double EXTERNAL NAME geom."XMaxFromWKB";
+GRANT EXECUTE ON FUNCTION ST_XMax(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_XMax(box mbr) RETURNS double EXTERNAL NAME geom."XMaxFromMBR";
+GRANT EXECUTE ON FUNCTION ST_XMax(mbr) TO PUBLIC;
 CREATE FUNCTION ST_XMin(geom Geometry) RETURNS double EXTERNAL NAME geom."XMinFromWKB";
+GRANT EXECUTE ON FUNCTION ST_XMin(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_XMin(box mbr) RETURNS double EXTERNAL NAME geom."XMinFromMBR";
+GRANT EXECUTE ON FUNCTION ST_XMin(mbr) TO PUBLIC;
 CREATE FUNCTION ST_YMax(geom Geometry) RETURNS double EXTERNAL NAME geom."YMaxFromWKB";
+GRANT EXECUTE ON FUNCTION ST_YMax(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_YMax(box mbr) RETURNS double EXTERNAL NAME geom."YMaxFromMBR";
+GRANT EXECUTE ON FUNCTION ST_YMax(mbr) TO PUBLIC;
 CREATE FUNCTION ST_YMin(geom Geometry) RETURNS double EXTERNAL NAME geom."YMinFromWKB";
+GRANT EXECUTE ON FUNCTION ST_YMin(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_YMin(box mbr) RETURNS double EXTERNAL NAME geom."YMinFromMBR";
+GRANT EXECUTE ON FUNCTION ST_YMin(mbr) TO PUBLIC;
 --GEOS creates only 2D Envelope
 --CREATE FUNCTION ST_ZMax(geom Geometry) RETURNS double EXTERNAL NAME geom."ZMaxFromWKB";
 --CREATE FUNCTION ST_ZMax(box mbr) RETURNS double EXTERNAL NAME geom."ZMaxFromMBR";
@@ -4234,7 +4340,9 @@ CREATE FUNCTION ST_YMin(box mbr) RETURNS double EXTERNAL NAME geom."YMinFromMBR"
 --CREATE FUNCTION ST_AddPoint RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Affine RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_Force2D(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Force2D";
+GRANT EXECUTE ON FUNCTION ST_Force2D(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Force3D(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Force3D";
+GRANT EXECUTE ON FUNCTION ST_Force3D(Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_Force3DZ RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Force3DM RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Force4D RETURNS EXTERNAL NAME
@@ -4252,14 +4360,17 @@ CREATE FUNCTION ST_Force3D(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."F
 --CREATE FUNCTION ST_RotateZ RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Scale RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_Segmentize(geom Geometry, sz double) RETURNS Geometry EXTERNAL NAME geom."Segmentize";
+GRANT EXECUTE ON FUNCTION ST_Segmentize(Geometry, double) TO PUBLIC;
 --CREATE FUNCTION ST_SetPoint RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_SnapToGrid RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Snap RETURNS EXTERNAL NAME
-CREATE FUNCTION getProj4(srid_in integer) RETURNS string 
+CREATE FUNCTION getProj4(srid_in integer) RETURNS string
 BEGIN
-	RETURN SELECT proj4text FROM spatial_ref_sys WHERE srid=srid_in; 
+	RETURN SELECT proj4text FROM spatial_ref_sys WHERE srid=srid_in;
 END;
+GRANT EXECUTE ON FUNCTION getProj4(integer) TO PUBLIC;
 CREATE FUNCTION InternalTransform(geom Geometry, srid_src integer, srid_dest integer, proj4_src string, proj4_dest string) RETURNS Geometry EXTERNAL NAME geom."Transform";
+GRANT EXECUTE ON FUNCTION InternalTransform(Geometry, integer, integer, string, string) TO PUBLIC;
 CREATE FUNCTION ST_Transform(geom Geometry, srid integer) RETURNS Geometry
 BEGIN
 	DECLARE srid_src integer;
@@ -4271,19 +4382,22 @@ BEGIN
 	SELECT getProj4(srid) INTO proj4_dest;
 
 	IF proj4_src IS NULL THEN
-		RETURN SELECT InternalTransform(geom, srid_src, srid, 'null', proj4_dest); 
+		RETURN SELECT InternalTransform(geom, srid_src, srid, 'null', proj4_dest);
 	ELSE
 		IF proj4_dest IS NULL THEN
-			RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, 'null'); 
+			RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, 'null');
 		ELSE
 			RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, proj4_dest);
-		END IF;	
+		END IF;
 	END IF;
 END;
+GRANT EXECUTE ON FUNCTION ST_Transform(Geometry, integer) TO PUBLIC;
 
 --Translate moves all points of a geometry dx, dy, dz
 CREATE FUNCTION ST_Translate(geom Geometry, dx double, dy double) RETURNS Geometry EXTERNAL NAME geom."Translate";
+GRANT EXECUTE ON FUNCTION ST_Translate(Geometry, double, double) TO PUBLIC;
 CREATE FUNCTION ST_Translate(geom Geometry, dx double, dy double, dz double) RETURNS Geometry EXTERNAL NAME geom."Translate";
+GRANT EXECUTE ON FUNCTION ST_Translate(Geometry, double, double, double) TO PUBLIC;
 --CREATE FUNCTION ST_TransScale RETURNS EXTERNAL NAME
 
 -------------------------------------------------------------------------
@@ -4291,6 +4405,7 @@ CREATE FUNCTION ST_Translate(geom Geometry, dx double, dy double, dz double) RET
 -------------------------------------------------------------------------
 --CREATE FUNCTION ST_AsEWKB RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_AsEWKT(geom Geometry) RETURNS string EXTERNAL NAME geom."AsEWKT";
+GRANT EXECUTE ON FUNCTION ST_AsEWKT(Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_AsGeoJSON RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_AsGML RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_AsHEXEWKB RETURNS EXTERNAL NAME
@@ -4320,13 +4435,16 @@ CREATE FUNCTION ST_AsEWKT(geom Geometry) RETURNS string EXTERNAL NAME geom."AsEW
 --CREATE FUNCTION ST_ClosestPoint RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_ContainsProperly RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_Covers(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Covers";
+GRANT EXECUTE ON FUNCTION ST_Covers(Geometry, Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_Covers(geog1 Geography, geog2 Geography) RETURNS boolean EXTERNAL NAME geom."Covers";
 CREATE FUNCTION ST_CoveredBy(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."CoveredBy";
+GRANT EXECUTE ON FUNCTION ST_CoveredBy(Geometry, Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_CoveredBy(geog1 Geography, geog2 Geography) RETURNS boolean EXTERNAL NAME geom."CoveredBy";
 --CREATE FUNCTION ST_LineCrossingDirection RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry) RETURNS double EXTERNAL NAME geom."Distance"
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry, use_spheroid boolean) RETURNS double EXTERNAL NAME geom."Distance"
 CREATE FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, dst double) RETURNS boolean EXTERNAL NAME geom."DWithin";
+GRANT EXECUTE ON FUNCTION ST_DWithin(Geometry, Geometry, double) TO PUBLIC;
 --CREATE FUNCTION ST_HausdorffDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_MaxDistance RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Distance_Sphere RETURNS EXTERNAL NAME
@@ -4336,6 +4454,7 @@ CREATE FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, dst double) RETURNS b
 --CREATE FUNCTION ST_Intersects(geog1 Geography, geog2 Geography) RETURNS boolean EXTERNAL NAME geom."Intersects";
 --CREATE FUNCTION ST_Length(geog Geography, use_spheroid boolean) RETURNS double EXTERNAL NAME geom."Length";
 CREATE FUNCTION ST_Length2D(geom Geometry) RETURNS double EXTERNAL NAME geom."Length";
+GRANT EXECUTE ON FUNCTION ST_Length2D(Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_3DLength RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Length_Spheroid RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Length2D_Spheroid RETURNS EXTERNAL NAME
@@ -4360,11 +4479,15 @@ CREATE FUNCTION ST_Length2D(geom Geometry) RETURNS double EXTERNAL NAME geom."Le
 --CREATE FUNCTION ST_BuildArea RETURNS EXTERNAL NAME
 --collect is the same to union. POstGIS just has a more efficient implementation for it compared to union
 CREATE FUNCTION ST_Collect(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Union";
+GRANT EXECUTE ON FUNCTION ST_Collect(Geometry, Geometry) TO PUBLIC;
 CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name geom."Union";
 --CREATE FUNCTION ST_ConcaveHull RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_DelaunayTriangles(geom Geometry, tolerance double, flags integer) RETURNS Geometry EXTERNAL NAME geom."DelaunayTriangles";
+GRANT EXECUTE ON FUNCTION ST_DelaunayTriangles(Geometry, double, integer) TO PUBLIC;
 CREATE FUNCTION ST_Dump(geom Geometry) RETURNS TABLE(id string, polygonWKB Geometry) EXTERNAL NAME geom."Dump";
+GRANT EXECUTE ON FUNCTION ST_Dump(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG Geometry) EXTERNAL NAME geom."DumpPoints";
+GRANT EXECUTE ON FUNCTION ST_DumpPoints(Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_DumpRings RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_FlipCoordinates RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Intersection(geog1 Geography, geog2 Geography) RETURNS Geography EXTERNAL NAME geom."Intersection";
@@ -4420,7 +4543,7 @@ CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG G
 -------------------------------------------------------------------------
 --CREATE FUNCTION UpdateGeometrySRID(catalogn_name varchar, schema_name varchar, table_name varchar, column_name varchar, new_srid_in integer) RETURNS text -- external name geom.updateGeometrySRID;
 --BEGIN
---	
+--
 --END;
 
 --CREATE FUNCTION UpdateGeometrySRID(schema_name varchar, table_name varchar, column_name varchar, new_srid_in integer) RETURNS text
@@ -4456,3 +4579,4 @@ CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG G
 ---------------------------- Miscellaneous ------------------------------
 -------------------------------------------------------------------------
 CREATE FUNCTION Contains(a Geometry, x double, y double) RETURNS BOOLEAN external name geom."Contains";
+GRANT EXECUTE ON FUNCTION Contains(Geometry, double, double) TO PUBLIC;

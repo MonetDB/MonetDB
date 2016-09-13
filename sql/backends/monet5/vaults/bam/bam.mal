@@ -64,22 +64,22 @@ comment "Export results in the bam.export table to a BAM file"
 
 module batbam;
 
-command bam_flag(flags:bat[:oid,:sht], name:str):bat[:oid,:bit]
+command bam_flag(flags:bat[:sht], name:str):bat[:bit]
 address bam_flag_bat
 comment "Get bat of bam flags by name."
 
-command reverse_seq(seqs:bat[:oid,:str]):bat[:oid,:str]
+command reverse_seq(seqs:bat[:str]):bat[:str]
 address reverse_seq_bat
 comment "Reverse a bat of DNA sequences."
 
-command reverse_qual(seqs:bat[:oid,:str]):bat[:oid,:str]
+command reverse_qual(seqs:bat[:str]):bat[:str]
 address reverse_qual_bat
 comment "Reverse a bat of DNA Quality strings."
 
-command seq_length(cigars:bat[:oid,:str]):bat[:oid,:int]
+command seq_length(cigars:bat[:str]):bat[:int]
 address seq_length_bat
 comment "Calculate the real length of a bat of DNA sequences, given their CIGAR string."
 
-command seq_char(ref_pos:int, alg_seq:bat[:oid,:str], alg_pos:bat[:oid,:int], alg_cigar:bat[:oid,:str]):bat[:oid,:str]
+command seq_char(ref_pos:int, alg_seq:bat[:str], alg_pos:bat[:int], alg_cigar:bat[:str]):bat[:str]
 address seq_char_bat
 comment "Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string (bat based version)"

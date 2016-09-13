@@ -30,7 +30,7 @@ Ready.
 #insert into foo values (42);
 [ 1	]
 #select id-row_number() over (order by id) from (select id from foo union all select id from foo) as z;
-% .L # table_name
+% .L1 # table_name
 % sql_sub_id # name
 % bigint # type
 % 2 # length

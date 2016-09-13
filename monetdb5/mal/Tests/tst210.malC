@@ -4,5 +4,5 @@ b:= bat.new(:int);
 bat.append(b,1);
 io.print(b);
 bat.setName(b,"myhome");
-bat.setColumn(b,"first","last");
+bat.setColumn(b,"last");
 io.print(b);

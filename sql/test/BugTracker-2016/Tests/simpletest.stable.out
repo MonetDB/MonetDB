@@ -1,0 +1,61 @@
+stdout of test 'simpletest` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 16:55:42 >  
+# 16:55:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32697" "--set" "mapi_usock=/var/tmp/mtest-10598/.s.monetdb.32697" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016"
+# 16:55:42 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.584 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rocks002.scilens.private:32697/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10598/.s.monetdb.32697
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:55:42 >  
+# 16:55:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10598" "--port=32697"
+# 16:55:42 >  
+
+#create table simple1(i integer);
+#insert into simple1 values(1);
+[ 1	]
+#create procedure correct()
+#begin
+#	declare b boolean;
+#	declare i integer;
+#	set i = (select count(*));
+#	set b= (i>0);
+#	if (b)
+#	then
+#		insert into simple1 values(2);
+#	end if;
+#end;
+#create procedure correct1()
+#begin
+#	declare b boolean;
+#	set b= (select count(*)>0);
+#	if (b)
+#	then
+#		insert into simple1 values(2);
+#	end if;
+#end;
+#create procedure wrong2()
+#begin
+#	if (select count(*)>0)
+#	then
+#		insert into simple1 values(3);
+#	end if;
+#end;
+
+# 16:55:43 >  
+# 16:55:43 >  "Done."
+# 16:55:43 >  
+

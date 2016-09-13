@@ -16,21 +16,17 @@ _delta_cands(sql_trans *tr, sql_table *t)
 {
 	sql_column *c = t->columns.set->h->data;
 	/* create void,void bat with length and oid's set */
-	BAT *tids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+	BAT *tids = COLnew(0, TYPE_void, 0, TRANSIENT);
 	size_t nr = store_funcs.count_col(tr, c, 1);
 
 	if (!tids)
 		return NULL;
-	tids->H->seq = 0;
-	tids->T->seq = 0;
+	tids->tseqbase = 0;
 	BATsetcount(tids, (BUN) nr);
-	tids->H->revsorted = 0;
-	tids->T->revsorted = 0;
+	tids->trevsorted = 0;
 
-	tids->T->key = 1;
-	tids->T->dense = 1;
-	tids->H->key = 1;
-	tids->H->dense = 1;
+	tids->tkey = 1;
+	tids->tdense = 1;
 
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d, *diff = NULL;
@@ -85,7 +81,6 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 		b = i;
 	} else {
 		if (BATcount(i)) {
-			assert(b->htype == TYPE_void);
 			r = COLcopy(b, b->ttype, 1, TRANSIENT); 
 			bat_destroy(b); 
 			b = r;
@@ -99,7 +94,6 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 		uv = temp_descriptor(bat->uvbid);
 		if (ui && BATcount(ui)) {
 			if (needcopy) {
-				assert(b->htype == TYPE_void);
 				r = COLcopy(b, b->ttype, 1, TRANSIENT); 
 				bat_destroy(b); 
 				b = r;
@@ -142,7 +136,38 @@ full_destroy(sql_column *c, BAT *b)
 		bat_destroy(b);
 }
 
-static oid column_find_row(sql_trans *tr, sql_column *c, const void *value, ...);
+static oid
+column_lookup_row(sql_trans *tr, sql_column *c, const void *value) 
+{
+	BAT *b = NULL, *s = NULL;
+	oid rid = oid_nil;
+
+	b = full_column(tr, c);
+	if (!b)
+		return oid_nil;
+
+	if (store_funcs.count_del(tr, c->t)) 
+		s = store_funcs.bind_del(tr, c->t, RD_INS);
+
+	if (BAThash(b, 0) == GDK_SUCCEED) {
+		BATiter cni = bat_iterator(b);
+		BUN p;
+
+		HASHloop(cni, cni.b->thash, p, value) {
+			oid pos = p;
+
+			if (!s || BUNfnd(s, &pos) == BUN_NONE) {
+				rid = p;
+				break;
+			}
+		}
+	}
+	if (s)
+		bat_destroy(s);
+	full_destroy(c, b);
+	return rid;
+}
+
 static oid
 column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 {
@@ -151,30 +176,16 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	oid rid = oid_nil;
 	sql_column *n = NULL;
 
+	va_start(va, value);
+	if ((n = va_arg(va, sql_column *)) == NULL) 
+		return column_lookup_row(tr, c, value);
+
 	s = delta_cands(tr, c->t);
 	if (!s)
 		return oid_nil;
-	va_start(va, value);
 	b = full_column(tr, c);
 	if (!b)
 		return oid_nil;
-	if ((n = va_arg(va, sql_column *)) == NULL) {
-		if (BAThash(b, 0) == GDK_SUCCEED) {
-			BATiter cni = bat_iterator(b);
-			BUN p;
-
-			HASHloop(cni, cni.b->T->hash, p, value) {
-				oid pos = p;
-
-				if (s && BUNfnd(s, &pos) != BUN_NONE) {
-					rid = p;
-					break;
-				}
-			}
-		}
-		bat_destroy(s);
-		return rid;
-	}
 	r = BATselect(b, s, value, NULL, 1, 0, 0);
 	if (!r)
 		return oid_nil;
@@ -212,8 +223,12 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	void *res = NULL;
 
 	b = full_column(tr, c);
-	if (b)
-		q = BUNfnd(BATmirror(b), (ptr) &rid);
+	if (b) {
+		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))
+			q = BUN_NONE;
+		else
+			q = rid - b->hseqbase;
+	}
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);
 		void *r;
@@ -275,12 +290,12 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 
 /* returns table rids, for the given select ranges */
 static rids *
-rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_value_high, ...)
+rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const void *key_value_high, ...)
 {
 	va_list va;
 	BAT *b = NULL, *r = NULL, *s = NULL;
 	rids *rs = ZNEW(rids);
-	void *kvl = key_value_low, *kvh = key_value_high;
+	const void *kvl = key_value_low, *kvh = key_value_high;
 	int hi = 0;
 
 	s = delta_cands(tr, key->t);

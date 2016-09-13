@@ -1,0 +1,144 @@
+stdout of test 'pyapi31` in directory 'sql/backends/monet5` itself:
+
+
+# 17:26:46 >  
+# 17:26:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31854" "--set" "mapi_usock=/var/tmp/mtest-90579/.s.monetdb.31854" "--set" "monet_prompt=" "--forcemito" "--dbpath=/tmp/fuckit/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 17:26:46 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 4 threads
+# Compiled for x86_64-apple-darwin15.5.0/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dakar.da.cwi.nl:31854/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-90579/.s.monetdb.31854
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 17:26:47 >  
+# 17:26:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-90579" "--port=31854"
+# 17:26:47 >  
+
+#START TRANSACTION;
+#CREATE TABLE mytable4(a1 int, a2 int, a3 int, a4 int);
+#CREATE TABLE mytable3(a1 int, a2 int, a3 int);
+#CREATE TABLE mytable2(a1 int, a2 int);
+#CREATE LOADER myfunc(nvalues int, ncols int) LANGUAGE PYTHON {
+#	for i in range(nvalues):
+#		res = dict()
+#		for j in range(ncols):
+#			res['a'+str(j+1)] = (i+1)*(j+1)
+#		_emit.emit(res)
+#};
+#COPY INTO mytable3 FROM LOADER myfunc(10, 3);
+[ 10	]
+#COPY INTO mytable4 FROM LOADER myfunc(10, 3);
+[ 10	]
+#COPY INTO mytable2 FROM LOADER myfunc(20, 2);
+[ 20	]
+#SELECT * FROM mytable4;
+% sys.mytable4,	sys.mytable4,	sys.mytable4,	sys.mytable4 # table_name
+% a1,	a2,	a3,	a4 # name
+% int,	int,	int,	int # type
+% 2,	2,	2,	1 # length
+[ 1,	2,	3,	NULL	]
+[ 2,	4,	6,	NULL	]
+[ 3,	6,	9,	NULL	]
+[ 4,	8,	12,	NULL	]
+[ 5,	10,	15,	NULL	]
+[ 6,	12,	18,	NULL	]
+[ 7,	14,	21,	NULL	]
+[ 8,	16,	24,	NULL	]
+[ 9,	18,	27,	NULL	]
+[ 10,	20,	30,	NULL	]
+#SELECT * FROM mytable3;
+% sys.mytable3,	sys.mytable3,	sys.mytable3 # table_name
+% a1,	a2,	a3 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 1,	2,	3	]
+[ 2,	4,	6	]
+[ 3,	6,	9	]
+[ 4,	8,	12	]
+[ 5,	10,	15	]
+[ 6,	12,	18	]
+[ 7,	14,	21	]
+[ 8,	16,	24	]
+[ 9,	18,	27	]
+[ 10,	20,	30	]
+#SELECT * FROM mytable2;
+% sys.mytable2,	sys.mytable2 # table_name
+% a1,	a2 # name
+% int,	int # type
+% 2,	2 # length
+[ 1,	2	]
+[ 2,	4	]
+[ 3,	6	]
+[ 4,	8	]
+[ 5,	10	]
+[ 6,	12	]
+[ 7,	14	]
+[ 8,	16	]
+[ 9,	18	]
+[ 10,	20	]
+[ 11,	22	]
+[ 12,	24	]
+[ 13,	26	]
+[ 14,	28	]
+[ 15,	30	]
+[ 16,	32	]
+[ 17,	34	]
+[ 18,	36	]
+[ 19,	38	]
+[ 20,	40	]
+#DROP TABLE mytable3;
+#DROP TABLE mytable2;
+#DROP LOADER myfunc;
+#ROLLBACK;
+
+# 17:26:47 >  
+# 17:26:47 >  "Done."
+# 17:26:47 >  
+

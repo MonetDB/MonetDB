@@ -53,7 +53,7 @@ Ready.
 #order by id, nm, dt, qnt, descr;
 % sys.L1,	sys.tab,	sys.tab,	sys.tab,	sys.tab,	sys.tab # table_name
 % count_dupl_rows,	id,	nm,	dt,	qnt,	descr # name
-% wrd,	int,	varchar,	date,	decimal,	clob # type
+% bigint,	int,	varchar,	date,	decimal,	clob # type
 % 1,	1,	1,	10,	20,	44 # length
 [ 2,	1,	"A",	NULL,	NULL,	NULL	]
 [ 2,	2,	"B",	2015-01-29,	3.1415629000,	"iasdfhiasdhagdsnfgankkkjfgjklfgjklsklsklsdfg"	]

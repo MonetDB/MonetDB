@@ -1,0 +1,6 @@
+r1:bat[:int] := rapi.eval(nil:ptr,"loopback_query(\"select cast(42 as integer)\")[[1]]");
+io.print(r1);
+
+
+r2:bat[:str] := rapi.eval(nil:ptr,"loopback_query(\"select 'a' as str union all select 'b' as str\")$str");
+io.print(r2);

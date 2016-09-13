@@ -25,7 +25,7 @@
 mal_export int MALadmission(lng argclaim, lng hotclaim);
 #endif
 
-#define FAIRNESS_THRESHOLD MAX_DELAYS * DELAYUNIT
+#define FAIRNESS_THRESHOLD (MAX_DELAYS * DELAYUNIT)
 
 mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
 mal_export void MALresourceFairness(lng usec);

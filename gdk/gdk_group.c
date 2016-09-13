@@ -26,7 +26,7 @@
  * The extents and histo bats have the group id in the head (a dense
  * sequence starting at 0).  The tail of extents is the head oid from
  * b of a representative of the group.  The tail of histo is of type
- * wrd and contains the number of elements from b that are member of
+ * lng and contains the number of elements from b that are member of
  * the group.
  *
  * The extents and histo bats are optionally created.  The groups bat
@@ -71,13 +71,13 @@
 				BATsetcount(en, ngrp);			\
 				if (BATextend(en, maxgrps) != GDK_SUCCEED) \
 					goto error;			\
-				exts = (oid *) Tloc(en, BUNfirst(en));	\
+				exts = (oid *) Tloc(en, 0);		\
 			}						\
 			if (histo) {					\
 				BATsetcount(hn, ngrp);			\
 				if (BATextend(hn, maxgrps) != GDK_SUCCEED) \
 					goto error;			\
-				cnts = (wrd *) Tloc(hn, BUNfirst(hn));	\
+				cnts = (lng *) Tloc(hn, 0);		\
 			}						\
 		}							\
 		if (extents)						\
@@ -92,7 +92,7 @@
 #define GRP_compare_consecutive_values(INIT_0,INIT_1,COMP,KEEP)		\
 	do {								\
 		INIT_0;							\
-		for (r = BUNfirst(b), p = r + 1, q = r + BATcount(b);	\
+		for (r = 0, p = r + 1, q = r + BATcount(b);		\
 		     p < q;						\
 		     p++) {						\
 			INIT_1;						\
@@ -112,7 +112,7 @@
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
-			TYPE pw = w[BUNfirst(b)]	,	\
+			TYPE pw = w[0]			,	\
 	/* INIT_1 */					,	\
 	/* COMP   */	w[p] != pw			,	\
 	/* KEEP   */	pw = w[p]				\
@@ -120,7 +120,7 @@
 
 #define GRP_compare_consecutive_values_any()			\
 	GRP_compare_consecutive_values(				\
-	/* INIT_0 */	pv = BUNtail(bi, BUNfirst(b))	,	\
+	/* INIT_0 */	pv = BUNtail(bi, 0)		,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
 	/* COMP   */	cmp(v, pv) != 0			,	\
 	/* KEEP   */	pv = v					\
@@ -130,8 +130,8 @@
 #define GRP_subscan_old_groups(INIT_0,INIT_1,COMP,KEEP)			\
 	do {								\
 		INIT_0;							\
-		pgrp[grps[0]] = BUNfirst(b);				\
-		for (j = r = BUNfirst(b), p = r + 1, q = r + BATcount(b); \
+		pgrp[grps[0]] = 0;					\
+		for (j = r = 0, p = r + 1, q = r + BATcount(b);		\
 		     p < q;						\
 		     p++) {						\
 			INIT_1;						\
@@ -174,7 +174,7 @@
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
-		    	TYPE pw = w[BUNfirst(b)]	,	\
+		    	TYPE pw = w[0]			,	\
 	/* INIT_1 */					,	\
 	/* COMP   */	w[p] == pw			,	\
 	/* KEEP   */	pw = w[p]				\
@@ -182,7 +182,7 @@
 
 #define GRP_subscan_old_groups_any()				\
 	GRP_subscan_old_groups(					\
-	/* INIT_0 */	pv = BUNtail(bi, BUNfirst(b))	,	\
+	/* INIT_0 */	pv = BUNtail(bi, 0)		,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
 	/* COMP   */	cmp(v, pv) == 0			,	\
 	/* KEEP   */	pv = v					\
@@ -274,7 +274,7 @@
 #define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,COMP)		\
 	do {								\
 		INIT_0;							\
-		for (r = BUNfirst(b), p = r, q = r + BATcount(b); 	\
+		for (r = 0, p = r, q = r + BATcount(b);			\
 		     p < q;						\
 		     p++) { 						\
 			INIT_1;						\
@@ -371,7 +371,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	const oid *grps = NULL;
 	oid *restrict ngrps, ngrp, prev = 0, hseqb = 0;
 	oid *restrict exts = NULL;
-	wrd *restrict cnts = NULL;
+	lng *restrict cnts = NULL;
 	BUN p, q, r;
 	const void *v, *pv;
 	BATiter bi;
@@ -383,21 +383,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	bat parent;
 #endif
 
-	if (b == NULL || !BAThdense(b)) {
-		GDKerror("BATgroup: b must be dense-headed\n");
+	if (b == NULL) {
+		GDKerror("BATgroup: b must exist\n");
 		return GDK_FAIL;
 	}
 	/* g is NULL or [oid(dense),oid] and same size as b */
-	assert(g == NULL || BAThdense(g));
 	assert(g == NULL || BATttype(g) == TYPE_oid || BATcount(g) == 0);
 	assert(g == NULL || BATcount(b) == BATcount(g));
 	assert(g == NULL || BATcount(b) == 0 || b->hseqbase == g->hseqbase);
 	/* e is NULL or [oid(dense),oid] */
-	assert(e == NULL || BAThdense(e));
 	assert(e == NULL || BATttype(e) == TYPE_oid);
-	/* h is NULL or [oid(dense),wrd] */
-	assert(h == NULL || BAThdense(h));
-	assert(h == NULL || h->ttype == TYPE_wrd);
+	/* h is NULL or [oid(dense),lng] */
+	assert(h == NULL || h->ttype == TYPE_lng);
 	/* e and h are aligned */
 	assert(e == NULL || h == NULL || BATcount(e) == BATcount(h));
 	assert(e == NULL || h == NULL || e->hseqbase == h->hseqbase);
@@ -418,26 +415,24 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 		ngrp = BATcount(b) == 0 ? 0 : b->hseqbase;
-		gn = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
+		gn = COLnew(ngrp, TYPE_void, BATcount(b), TRANSIENT);
 		if (gn == NULL)
 			goto error;
 		BATsetcount(gn, BATcount(b));
-		BATseqbase(gn, ngrp);
-		BATseqbase(BATmirror(gn), 0);
+		BATtseqbase(gn, 0);
 		*groups = gn;
 		if (extents) {
-			en = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
+			en = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
 			if (en == NULL)
 				goto error;
 			BATsetcount(en, BATcount(b));
-			BATseqbase(en, 0);
-			BATseqbase(BATmirror(en), ngrp);
+			BATtseqbase(en, ngrp);
 			*extents = en;
 		}
 		if (histo) {
-			wrd one = 1;
+			lng one = 1;
 
-			hn = BATconstant(0, TYPE_wrd, &one, BATcount(b), TRANSIENT);
+			hn = BATconstant(0, TYPE_lng, &one, BATcount(b), TRANSIENT);
 			if (hn == NULL)
 				goto error;
 			*histo = hn;
@@ -468,13 +463,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				en = BATconstant(0, TYPE_void, &ngrp, 1, TRANSIENT);
 				if (en == NULL)
 					goto error;
-				BATseqbase(BATmirror(en), ngrp);
+				BATtseqbase(en, ngrp);
 				*extents = en;
 			}
 			if (histo) {
-				wrd cnt = (wrd) BATcount(b);
+				lng cnt = (lng) BATcount(b);
 
-				hn = BATconstant(0, TYPE_wrd, &cnt, 1, TRANSIENT);
+				hn = BATconstant(0, TYPE_lng, &cnt, 1, TRANSIENT);
 				if (hn == NULL)
 					goto error;
 				*histo = hn;
@@ -498,20 +493,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-			assert(g->htype == TYPE_void);
 			gn = COLcopy(g, g->ttype, 0, TRANSIENT);
 			if (gn == NULL)
 				goto error;
 			*groups = gn;
 			if (extents) {
-				assert(e->htype == TYPE_void);
 				en = COLcopy(e, e->ttype, 0, TRANSIENT);
 				if (en == NULL)
 					goto error;
 				*extents = en;
 			}
 			if (histo) {
-				assert(h->htype == TYPE_void);
 				hn = COLcopy(h, h->ttype, 0, TRANSIENT);
 				if (hn == NULL)
 					goto error;
@@ -523,10 +515,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
 	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
-	gn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT);
+	gn = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 	if (gn == NULL)
 		goto error;
-	ngrps = (oid *) Tloc(gn, BUNfirst(gn));
+	ngrps = (oid *) Tloc(gn, 0);
 	maxgrps = BATcount(b) / 10;
 	if (e && maxgrps < BATcount(e))
 		maxgrps += BATcount(e);
@@ -534,26 +526,25 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps += BATcount(h);
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
-	if (b->T->width <= 2 &&
-	    maxgrps > ((BUN) 1 << (8 << (b->T->width == 2))))
-		maxgrps = (BUN) 1 << (8 << (b->T->width == 2));
+	if (b->twidth <= 2 &&
+	    maxgrps > ((BUN) 1 << (8 << (b->twidth == 2))))
+		maxgrps = (BUN) 1 << (8 << (b->twidth == 2));
 	if (extents) {
-		en = BATnew(TYPE_void, TYPE_oid, maxgrps, TRANSIENT);
+		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
 			goto error;
-		exts = (oid *) Tloc(en, BUNfirst(en));
+		exts = (oid *) Tloc(en, 0);
 	}
 	if (histo) {
-		hn = BATnew(TYPE_void, TYPE_wrd, maxgrps, TRANSIENT);
+		hn = COLnew(0, TYPE_lng, maxgrps, TRANSIENT);
 		if (hn == NULL)
 			goto error;
-		cnts = (wrd *) Tloc(hn, BUNfirst(hn));
+		cnts = (lng *) Tloc(hn, 0);
 	}
 	ngrp = 0;
 	BATsetcount(gn, BATcount(b));
-	BATseqbase(gn, b->hseqbase);
 	if (g)
-		grps = (const oid *) Tloc(g, BUNfirst(g));
+		grps = (const oid *) Tloc(g, 0);
 
 	/* figure out if we can use the storage type also for
 	 * comparing values */
@@ -561,22 +552,24 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* for strings we can use the offset instead of the actual
 	 * string values if we know that the strings in the string
 	 * heap are unique */
-	if (t == TYPE_str && GDK_ELIMDOUBLES(b->T->vheap)) {
-		switch (b->T->width) {
+	if (t == TYPE_str && GDK_ELIMDOUBLES(b->tvheap)) {
+		switch (b->twidth) {
 		case 1:
 			t = TYPE_bte;
 			break;
 		case 2:
 			t = TYPE_sht;
 			break;
-#if SIZEOF_VAR_T == 8
 		case 4:
 			t = TYPE_int;
 			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			t = TYPE_lng;
+			break;
 #endif
 		default:
-			t = TYPE_var;
-			break;
+			assert(0);
 		}
 	}
 
@@ -716,11 +709,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * possibly have more than 256 groups, so the group id
 		 * fits in an unsigned char */
 		unsigned char *restrict bgrps = GDKmalloc(256);
-		const unsigned char *restrict w = (const unsigned char *) Tloc(b, BUNfirst(b));
+		const unsigned char *restrict w = (const unsigned char *) Tloc(b, 0);
 		unsigned char v;
+
+		if( bgrps == NULL)
+			goto error;
 		memset(bgrps, 0xFF, 256);
 		if (histo)
-			memset(cnts, 0, maxgrps * sizeof(wrd));
+			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
 		gn->tsorted = 1;
 		for (p = 0, q = BATcount(b); p < q; p++) {
@@ -742,11 +738,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * possibly have more than 65536 groups, so the group
 		 * id fits in an unsigned short */
 		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));
-		const unsigned short *restrict w = (const unsigned short *) Tloc(b, BUNfirst(b));
+		const unsigned short *restrict w = (const unsigned short *) Tloc(b, 0);
 		unsigned short v;
+
+		if( sgrps == NULL)
+			goto error;
 		memset(sgrps, 0xFF, 65536 * sizeof(short));
 		if (histo)
-			memset(cnts, 0, maxgrps * sizeof(wrd));
+			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
 		gn->tsorted = 1;
 		for (p = 0, q = BATcount(b); p < q; p++) {
@@ -767,7 +766,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		    BAThash(b, 0) == GDK_SUCCEED)
 #ifndef DISABLE_PARENT_HASH
 		   || ((parent = VIEWtparent(b)) != 0 &&
-		       BATcheckhash(BBPdescriptor(-parent)))
+		       BATcheckhash(BBPdescriptor(parent)))
 #endif
 		) {
 		BUN lo, hi;
@@ -786,12 +785,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 #ifndef DISABLE_PARENT_HASH
-		if (b->T->hash == NULL && (parent = VIEWtparent(b)) != 0) {
+		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, hi) in the parent
 			 * that b uses */
-			BAT *b2 = BBPdescriptor(-parent);
-			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+			BAT *b2 = BBPdescriptor(parent);
+			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 			hi = lo + BATcount(b);
 			hseqb = b->hseqbase;
 			b = b2;
@@ -799,10 +798,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		} else
 #endif
 		{
-			lo = BUNfirst(b);
+			lo = 0;
 			hi = BUNlast(b);
 		}
-		hs = b->T->hash;
+		hs = b->thash;
 		gn->tsorted = 1; /* be optimistic */
 
 		switch (t) {
@@ -853,9 +852,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		/* not sorted, and no pre-existing hash table: we'll
 		 * build an incomplete hash table on the fly--also see
-		 * BATassertTailProps and BATderiveTailProps for
-		 * similar code;
-		 * we also exploit if g is clustered */
+		 * BATassertProps for similar code; we also exploit if
+		 * g is clustered */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -935,17 +933,15 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
-		BATseqbase(en, 0);
 		en->tkey = 1;
 		en->tsorted = 1;
 		en->trevsorted = BATcount(en) <= 1;
-		en->T->nonil = 1;
-		en->T->nil = 0;
+		en->tnonil = 1;
+		en->tnil = 0;
 		*extents = en;
 	}
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
-		BATseqbase(hn, 0);
 		if (BATcount(hn) <= 1) {
 			hn->tkey = 1;
 			hn->tsorted = 1;
@@ -955,14 +951,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			hn->tsorted = 0;
 			hn->trevsorted = 0;
 		}
-		hn->T->nonil = 1;
-		hn->T->nil = 0;
+		hn->tnonil = 1;
+		hn->tnil = 0;
 		*histo = hn;
 	}
 	gn->tkey = ngrp == BATcount(gn);
 	gn->trevsorted = BATcount(gn) <= 1;
-	gn->T->nonil = 1;
-	gn->T->nil = 0;
+	gn->tnonil = 1;
+	gn->tnil = 0;
 	*groups = gn;
 	return GDK_SUCCEED;
   error:

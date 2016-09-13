@@ -13,8 +13,6 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-opt_export int OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-#define OPTDEBUGevaluate  if ( optDebug & ((lng) 1 <<DEBUG_OPT_EVALUATE) )
+mal_export int OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

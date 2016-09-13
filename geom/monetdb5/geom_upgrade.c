@@ -115,17 +115,14 @@ geom_catalog_upgrade(void *lg, int olddb)
 		cs = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale")));
 		csi = bat_iterator(cs);
 
-		cnt = BATnew(TYPE_void, TYPE_str, BATcount(ct), PERSISTENT);
-		cnd = BATnew(TYPE_void, TYPE_int, BATcount(cd), PERSISTENT);
-		cns = BATnew(TYPE_void, TYPE_int, BATcount(cs), PERSISTENT);
+		cnt = COLnew(ct->hseqbase, TYPE_str, BATcount(ct), PERSISTENT);
+		cnd = COLnew(cd->hseqbase, TYPE_int, BATcount(cd), PERSISTENT);
+		cns = COLnew(cs->hseqbase, TYPE_int, BATcount(cs), PERSISTENT);
 
 		if (!cnt || !cnd || !cns || !ct || !cd || !cs)
 			return 0;
-		BATseqbase(cnt, ct->hseqbase);
-		BATseqbase(cnd, cd->hseqbase);
-		BATseqbase(cns, cs->hseqbase);
 
-		for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
+		for(p=0, q=BUNlast(ct); p<q; p++) {
 			const char *type = BUNtail(cti, p);
 			int digits = *(int*)BUNtail(cdi, p);
 			int scale = *(int*)BUNtail(csi, p);

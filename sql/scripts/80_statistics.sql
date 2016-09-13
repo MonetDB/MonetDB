@@ -20,7 +20,8 @@ CREATE TABLE sys.statistics(
 	"nils" bigint,
 	minval string,
 	maxval string,
-	sorted boolean);
+	sorted boolean,
+	revsorted boolean);
 
 create procedure sys.analyze(minmax int, "sample" bigint)
 external name sql.analyze;

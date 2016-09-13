@@ -16,7 +16,6 @@
 #include "mal_resource.h"
 #include "mal_listing.h"
 #include "mal_debugger.h"   /* for mdbStep() */
-#include "mal_recycle.h"
 #include "mal_type.h"
 #include "mal_private.h"
 
@@ -37,7 +36,6 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	case TYPE_sht:  return (ptr) &v->val.shval;
 	case TYPE_bat:  return (ptr) &v->val.bval;
 	case TYPE_int:  return (ptr) &v->val.ival;
-	case TYPE_wrd:  return (ptr) &v->val.wval;
 	case TYPE_bte:  return (ptr) &v->val.btval;
 	case TYPE_oid:  return (ptr) &v->val.oval;
 	case TYPE_ptr:  return (ptr) &v->val.pval;
@@ -464,7 +462,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	InstrPtr pci = 0;
 	int exceptionVar;
 	str ret = 0, localGDKerrbuf= GDKerrbuf;
-	int stamp = -1;
 	ValRecord backups[16];
 	ValPtr backup;
 	int garbages[16], *garbage;
@@ -482,7 +479,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		pci = getInstrPtr(mb, startpc);
 		if (pci->argc > 16) {
 			backup = GDKzalloc(pci->argc * sizeof(ValRecord));
+			if( backup == NULL)
+				throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
 			garbage = (int*)GDKzalloc(pci->argc * sizeof(int));
+			if( garbage == NULL){
+				GDKfree(backup);
+				throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+			}
 		} else {
 			backup = backups;
 			garbage = garbages;
@@ -490,7 +493,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 	} else if ( mb->maxarg > 16 ){
 		backup = GDKzalloc(mb->maxarg * sizeof(ValRecord));
+		if( backup == NULL)
+			throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
 		garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
+		if( garbage == NULL){
+			GDKfree(backup);
+			throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+		}
 	} else {
 		backup = backups;
 		garbage = garbages;
@@ -551,111 +560,83 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			lastcheck = runtimeProfile.ticks;
 		}
 
-        if (!RECYCLEentry(cntxt, mb, stk, pci,&runtimeProfile)){
-			/* The interpreter loop
-			 * The interpreter is geared towards execution a MAL
-			 * procedure together with all its decendant
-			 * invocations. As such, it provides the MAL abtract
-			 * machine processor.
-			 *
-			 * The value-stack frame of the surrounding scope is
-			 * needed to resolve binding values.  Getting (putting) a
-			 * value from (into) a surrounding scope should be guarded
-			 * with the exclusive access lock.  This situation is
-			 * encapsulated by a bind() function call, whose
-			 * parameters contain the access mode required.
-			 *
-			 * The formal procedure arguments are assumed to always
-			 * occupy the first elements in the value stack.
-			 *
-			 * Before we execute an instruction the variables to be
-			 * garbage collected are identified. In the post-execution
-			 * phase they are removed.
-			 */
-			if (garbageControl(pci)) {
-				for (i = 0; i < pci->argc; i++) {
-					int a = getArg(pci, i);
+		/* The interpreter loop
+		 * The interpreter is geared towards execution a MAL
+		 * procedure together with all its decendant
+		 * invocations. As such, it provides the MAL abtract
+		 * machine processor.
+		 *
+		 * The value-stack frame of the surrounding scope is
+		 * needed to resolve binding values.  Getting (putting) a
+		 * value from (into) a surrounding scope should be guarded
+		 * with the exclusive access lock.  This situation is
+		 * encapsulated by a bind() function call, whose
+		 * parameters contain the access mode required.
+		 *
+		 * The formal procedure arguments are assumed to always
+		 * occupy the first elements in the value stack.
+		 *
+		 * Before we execute an instruction the variables to be
+		 * garbage collected are identified. In the post-execution
+		 * phase they are removed.
+		 */
+		if (garbageControl(pci)) {
+			for (i = 0; i < pci->argc; i++) {
+				int a = getArg(pci, i);
 
-					backup[i].vtype = 0;
-					backup[i].len = 0;
-					backup[i].val.pval = 0;
-					garbage[i] = -1;
-					if (stk->stk[a].vtype == TYPE_bat && getEndOfLife(mb, a) == stkpc && isNotUsedIn(pci, i + 1, a))
-						garbage[i] = a;
+				backup[i].vtype = 0;
+				backup[i].len = 0;
+				backup[i].val.pval = 0;
+				garbage[i] = -1;
+				if (stk->stk[a].vtype == TYPE_bat && getEndScope(mb, a) == stkpc && isNotUsedIn(pci, i + 1, a))
+					garbage[i] = a;
 
-					if (i < pci->retc && stk->stk[a].vtype == TYPE_bat) {
-						backup[i] = stk->stk[a];
-						stamp = BBPcurstamp();
-					} else if (i < pci->retc &&
-							   0 < stk->stk[a].vtype &&
-							   stk->stk[a].vtype < TYPE_any &&
-							   ATOMextern(stk->stk[a].vtype)) {
-						backup[i] = stk->stk[a];
-					}
+				if (i < pci->retc && stk->stk[a].vtype == TYPE_bat) {
+					backup[i] = stk->stk[a];
+				} else if (i < pci->retc &&
+						   0 < stk->stk[a].vtype &&
+						   stk->stk[a].vtype < TYPE_any &&
+						   ATOMextern(stk->stk[a].vtype)) {
+					backup[i] = stk->stk[a];
 				}
 			}
+		}
 
-			FREE_EXCEPTION(ret);
+		freeException(ret);
+		ret = 0;
+		switch (pci->token) {
+		case ASSIGNsymbol:
+			/* Assignment command
+			 * The assignment statement copies values around on
+			 * the stack frame, including multiple assignments.
+			 *
+			 * Pushing constants/initial values onto the stack is
+			 * a separate operation.  It takes the constant value
+			 * discovered at compile time and stored in the symbol
+			 * table and moves it to the stackframe location. This
+			 * activity is made part of the start-up procedure.
+			 *
+			 * The before after calls should be reconsidered here,
+			 * because their. They seem superflous and the way
+			 * they are used will cause errors in multi-assignment
+			 * statements.
+			 */
+			for (k = 0, i = pci->retc; k < pci->retc && i < pci->argc; i++, k++) {
+				lhs = &stk->stk[pci->argv[k]];
+				rhs = &stk->stk[pci->argv[i]];
+				VALcopy(lhs, rhs);
+				if (lhs->vtype == TYPE_bat && lhs->val.bval != bat_nil)
+					BBPincref(lhs->val.bval, TRUE);
+			}
+			freeException(ret);
 			ret = 0;
-			switch (pci->token) {
-			case ASSIGNsymbol:
-				/* Assignment command
-				 * The assignment statement copies values around on
-				 * the stack frame, including multiple assignments.
-				 *
-				 * Pushing constants/initial values onto the stack is
-				 * a separate operation.  It takes the constant value
-				 * discovered at compile time and stored in the symbol
-				 * table and moves it to the stackframe location. This
-				 * activity is made part of the start-up procedure.
-				 *
-				 * The before after calls should be reconsidered here,
-				 * because their. They seem superflous and the way
-				 * they are used will cause errors in multi-assignment
-				 * statements.
-				 */
-				for (k = 0, i = pci->retc; k < pci->retc && i < pci->argc; i++, k++) {
-					lhs = &stk->stk[pci->argv[k]];
-					rhs = &stk->stk[pci->argv[i]];
-					VALcopy(lhs, rhs);
-					if (lhs->vtype == TYPE_bat && lhs->val.bval != bat_nil)
-						BBPincref(lhs->val.bval, TRUE);
-				}
-				FREE_EXCEPTION(ret);
-				ret = 0;
-				break;
-			case PATcall:
-				if (pci->fcn == NULL) {
-					ret = createScriptException(mb, stkpc, MAL, NULL,
-						"address of pattern %s.%s missing", pci->modname, pci->fcnname);
-				} else {
-					ret = (str)(*pci->fcn)(cntxt, mb, stk, pci);
-#ifndef NDEBUG
-					/* check that the types of actual results match
-					 * expected results */
-					for (i = 0; i < pci->retc; i++) {
-						int a = getArg(pci, i);
-						int t = getArgType(mb, pci, i);
-
-						if (isaBatType(t)) {
-							bat bid = stk->stk[a].val.bval;
-							BAT *_b = BATdescriptor(bid);
-							t = getColumnType(t);
-							assert(stk->stk[a].vtype == TYPE_bat);
-							assert(bid == 0 ||
-								   bid == bat_nil ||
-								   t == TYPE_any ||
-								   ATOMtype(_b->ttype) == ATOMtype(t));
-							if(_b) BBPunfix(bid);
-						} else {
-							assert(t == stk->stk[a].vtype);
-						}
-					}
-#endif
-				}
-				break;
-			case CMDcall:
-				ret =malCommandCall(stk, pci);
+			break;
+		case PATcall:
+			if (pci->fcn == NULL) {
+				ret = createScriptException(mb, stkpc, MAL, NULL,
+					"address of pattern %s.%s missing", pci->modname, pci->fcnname);
+			} else {
+				ret = (str)(*pci->fcn)(cntxt, mb, stk, pci);
 #ifndef NDEBUG
 				/* check that the types of actual results match
 				 * expected results */
@@ -665,309 +646,328 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 					if (isaBatType(t)) {
 						bat bid = stk->stk[a].val.bval;
-						t = getColumnType(t);
+						BAT *_b = BATdescriptor(bid);
+						t = getBatType(t);
 						assert(stk->stk[a].vtype == TYPE_bat);
 						assert(bid == 0 ||
 							   bid == bat_nil ||
 							   t == TYPE_any ||
-							   ATOMtype(BBP_cache(bid)->ttype) == ATOMtype(t));
+							   ATOMtype(_b->ttype) == ATOMtype(t));
+						if(_b) BBPunfix(bid);
 					} else {
 						assert(t == stk->stk[a].vtype);
 					}
 				}
 #endif
-				break;
-			case FACcall:
-				/*
-				 * Factory calls are more involved. At this stage it
-				 * is a synchrononous call to the factory manager.
-				 * Factory calls should deal with the reference
-				 * counting.
-				 */
-				if (pci->blk == NULL)
-					ret = createScriptException(mb, stkpc, MAL, NULL,
-						"reference to MAL function missing");
-				else {
-					/* show call before entering the factory */
-					if (cntxt->itrace || mb->trap) {
-						if (stk->cmd == 0)
-							stk->cmd = cntxt->itrace;
-						mdbStep(cntxt, pci->blk, stk, 0);
-						if (stk->cmd == 'x') {
-							stk->cmd = 0;
-							stkpc = mb->stop;
-						}
-					}
-					ret = runFactory(cntxt, pci->blk, mb, stk, pci);
-				}
-				break;
-			case FCNcall:
-				/*
-				 * MAL function calls are relatively expensive,
-				 * because they have to assemble a new stack frame and
-				 * do housekeeping, such as garbagecollection of all
-				 * non-returned values.
-				 */
-				{	MalStkPtr nstk;
-					InstrPtr q;
-					int ii, arg;
-
-					stk->pcup = stkpc;
-					nstk = prepareMALstack(pci->blk, pci->blk->vsize);
-					if (nstk == 0){
-						ret= createException(MAL,"mal.interpreter",MAL_STACK_FAIL);
-						break;
-					}
-
-					/*safeguardStack*/
-					nstk->stkdepth = nstk->stksize + stk->stkdepth;
-					nstk->calldepth = stk->calldepth + 1;
-					nstk->up = stk;
-					if (nstk->calldepth > 256) {
-						ret= createException(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
-						break;
-					}
-					if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()){
-						/* we are running low on stack space */
-						ret= createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
-						break;
-					}
-
-					/* copy arguments onto destination stack */
-					q= getInstrPtr(pci->blk,0);
-					arg = q->retc;
-					for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
-						lhs = &nstk->stk[q->argv[arg]];
-						rhs = &stk->stk[pci->argv[ii]];
-						VALcopy(lhs, rhs);
-						if (lhs->vtype == TYPE_bat)
-							BBPincref(lhs->val.bval, TRUE);
-					}
-					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
-					GDKfree(nstk);
-				}
-				break;
-			case NOOPsymbol:
-			case REMsymbol:
-				break;
-			case ENDsymbol:
-				if (getInstrPtr(mb, 0)->token == FACTORYsymbol)
-					ret = shutdownFactory(cntxt, mb);
-				runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
-				runtimeProfileFinish(cntxt, mb);
-				if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
-					garbageCollector(cntxt, mb, stk, TRUE);
-				if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
-					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
-					break;
-				}
-				stkpc = mb->stop;	// force end of loop
-				continue;
-			default: {
-				str w;
-				if (pci->token < 0) {
-					/* temporary NOOP instruction */
-					break;
-				}
-				w= instruction2str(mb, 0, pci, FALSE);
-				ret = createScriptException(mb, stkpc, MAL, NULL, "unkown operation:%s",w);
-				GDKfree(w);
-				if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
-					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
-					break;
-				}
-				stkpc= mb->stop;
-				continue;
-			}	}
-
-			/* monitoring information should reflect the input arguments,
-			   which may be removed by garbage collection  */
-			/* BEWARE, the SQL engine or MAL function could zap the block, leaving garbage behind in pci */
-			/* this hack means we loose a closing event */
-			if( mb->stop <= 1)
-				continue;
-			runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-			if (ret != MAL_SUCCEED)
-				runtimeProfileFinish(cntxt, mb);
-			/* check for strong debugging after each MAL statement */
-			if ( pci->token != FACcall && ret== MAL_SUCCEED) {
-				if (GDKdebug & (CHECKMASK|PROPMASK) && exceptionVar < 0) {
-					BAT *b;
-
-					for (i = 0; i < pci->retc; i++) {
-						if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
-							stk->stk[getArg(pci, i)].val.bval != bat_nil &&
-							stk->stk[getArg(pci, i)].val.bval != 0) {
-							b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), FALSE);
-							if (b == NULL) {
-								if (ret == MAL_SUCCEED)
-									ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
-								continue;
-							}
-							if (b->batStamp <= stamp) {
-								if (GDKdebug & PROPMASK) {
-									b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
-									BATassertProps(b);
-									BBPunfix(b->batCacheid);
-								}
-							} else if (GDKdebug & CHECKMASK) {
-								b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
-								BATassertProps(b);
-								BBPunfix(b->batCacheid);
-							}
-						}
-					}
-				}
-
-				/* If needed recycle intermediate result */
-				if (pci->recycle > 0) 
-					RECYCLEexit(cntxt, mb, stk, pci, &runtimeProfile);
-
-				/* general garbage collection */
-				if (ret == MAL_SUCCEED && garbageControl(pci)) {
-					for (i = 0; i < pci->argc; i++) {
-						int a = getArg(pci, i);
-
-						if (isaBatType(getArgType(mb, pci, i))) {
-							bat bid = stk->stk[a].val.bval;
-
-							if (i < pci->retc && backup[i].val.bval != bat_nil) {
-								bat bx = backup[i].val.bval;
-								backup[i].val.bval = bat_nil;
-								BBPdecref(bx, TRUE);
-							}
-							if (garbage[i] >= 0) {
-								PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
-								bid = abs(stk->stk[garbage[i]].val.bval);
-								stk->stk[garbage[i]].val.bval = bat_nil;
-								BBPdecref(bid, TRUE);
-							}
-						} else if (i < pci->retc &&
-								   0 < stk->stk[a].vtype &&
-								   stk->stk[a].vtype < TYPE_any &&
-								   ATOMextern(stk->stk[a].vtype)) {
-							if (backup[i].val.pval &&
-								backup[i].val.pval != stk->stk[a].val.pval) {
-								if (backup[i].val.pval)
-									GDKfree(backup[i].val.pval);
-								if (i >= pci->retc) {
-									stk->stk[a].val.pval = 0;
-									stk->stk[a].len = 0;
-								}
-								backup[i].len = 0;
-								backup[i].val.pval = 0;
-							}
-						}
-					}
-				}
 			}
+			break;
+		case CMDcall:
+			ret =malCommandCall(stk, pci);
+#ifndef NDEBUG
+			/* check that the types of actual results match
+			 * expected results */
+			for (i = 0; i < pci->retc; i++) {
+				int a = getArg(pci, i);
+				int t = getArgType(mb, pci, i);
 
-			/* Exception handling */
-			if (localGDKerrbuf && localGDKerrbuf[0]) {
-				str oldret = ret;
-				ret = catchKernelException(cntxt, ret);
-				if (ret != oldret)
-					FREE_EXCEPTION(oldret);
-			}
-
-			if (ret != MAL_SUCCEED) {
-				str msg = 0;
-
-				if (stk->cmd || mb->trap) {
-					mnstr_printf(cntxt->fdout, "!ERROR: %s\n", ret);
-					stk->cmd = '\n'; /* in debugging go to step mode */
-					mdbStep(cntxt, mb, stk, stkpc);
-					if (stk->cmd == 'x' || stk->cmd == 'q' ) {
-						stkpc = mb->stop;
-						continue;
-					}
-					if (stk->cmd == 'r') {
-						stk->cmd = 'n';
-						stkpc = startpc;
-						exceptionVar = -1;
-						continue;
-					}
-				}
-				/* Detect any exception received from the implementation. */
-				/* The first identifier is an optional exception name */
-				if (strstr(ret, "!skip-to-end")) {
-					GDKfree(ret);       /* no need to check for M5OutOfMemory */
-					ret = MAL_SUCCEED;
-					stkpc = mb->stop;
-					continue;
-				}
-				/*
-				 * Exceptions are caught based on their name, which is part of the
-				 * exception message. The ANYexception variable catches all.
-				 */
-				exceptionVar = -1;
-				msg = strchr(ret, ':');
-				if (msg) {
-					*msg = 0;
-					exceptionVar = findVariableLength(mb, ret, (int)(msg - ret));
-					*msg = ':';
-				}
-				if (exceptionVar == -1)
-					exceptionVar = findVariableLength(mb, (str)"ANYexception", 12);
-
-				/* unknown exceptions lead to propagation */
-				if (exceptionVar == -1) {
-					if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
-						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
-					stkpc = mb->stop;
-					continue;
-				}
-				/* assure correct variable type */
-				if (getVarType(mb, exceptionVar) == TYPE_str) {
-					/* watch out for concurrent access */
-					MT_lock_set(&mal_contextLock);
-					v = &stk->stk[exceptionVar];
-					if (v->val.sval)
-						FREE_EXCEPTION(v->val.sval);    /* old exception*/
-					v->vtype = TYPE_str;
-					v->val.sval = ret;
-					v->len = (int)strlen(v->val.sval);
-					ret = 0;
-					MT_lock_unset(&mal_contextLock);
+				if (isaBatType(t)) {
+					bat bid = stk->stk[a].val.bval;
+					t = getBatType(t);
+					assert(stk->stk[a].vtype == TYPE_bat);
+					assert(bid == 0 ||
+						   bid == bat_nil ||
+						   t == TYPE_any ||
+						   ATOMtype(BBP_desc(bid)->ttype) == ATOMtype(t));
 				} else {
-					mnstr_printf(cntxt->fdout, "%s", ret);
-					FREE_EXCEPTION(ret);
+					assert(t == stk->stk[a].vtype);
 				}
-				/* position yourself at the catch instruction for further decisions */
-				/* skipToCatch(exceptionVar,@2,@3) */
-				if (stk->cmd == 'C' || mb->trap) {
-					stk->cmd = 'n';
-					mdbStep(cntxt, mb, stk, stkpc);
-					if (stk->cmd == 'x' ) {
-						stkpc = mb->stop;
-						continue;
-					}
-				}
-				/* skip to catch block or end */
-				for (; stkpc < mb->stop; stkpc++) {
-					InstrPtr l = getInstrPtr(mb, stkpc);
-					if (l->barrier == CATCHsymbol) {
-						int j;
-						for (j = 0; j < l->retc; j++)
-							if (getArg(l, j) == exceptionVar)
-								break;
-							else if (getArgName(mb, l, j) ||
-									 strcmp(getArgName(mb, l, j), "ANYexception") == 0)
-								break;
-						if (j < l->retc)
-							break;
-					}
-				}
-				if (stkpc == mb->stop) {
-					if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
-						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+			}
+#endif
+			break;
+		case FACcall:
+			/*
+			 * Factory calls are more involved. At this stage it
+			 * is a synchrononous call to the factory manager.
+			 * Factory calls should deal with the reference
+			 * counting.
+			 */
+			if (pci->blk == NULL)
+				ret = createScriptException(mb, stkpc, MAL, NULL,
+					"reference to MAL function missing");
+			else {
+				/* show call before entering the factory */
+				if (cntxt->itrace || mb->trap) {
+					if (stk->cmd == 0)
+						stk->cmd = cntxt->itrace;
+					mdbStep(cntxt, pci->blk, stk, 0);
+					if (stk->cmd == 'x') {
+						stk->cmd = 0;
 						stkpc = mb->stop;
 					}
+				}
+				ret = runFactory(cntxt, pci->blk, mb, stk, pci);
+			}
+			break;
+		case FCNcall:
+			/*
+			 * MAL function calls are relatively expensive,
+			 * because they have to assemble a new stack frame and
+			 * do housekeeping, such as garbagecollection of all
+			 * non-returned values.
+			 */
+			{	MalStkPtr nstk;
+				InstrPtr q;
+				int ii, arg;
+
+				stk->pcup = stkpc;
+				nstk = prepareMALstack(pci->blk, pci->blk->vsize);
+				if (nstk == 0){
+					ret= createException(MAL,"mal.interpreter",MAL_STACK_FAIL);
+					break;
+				}
+
+				/*safeguardStack*/
+				nstk->stkdepth = nstk->stksize + stk->stkdepth;
+				nstk->calldepth = stk->calldepth + 1;
+				nstk->up = stk;
+				if (nstk->calldepth > 256) {
+					ret= createException(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
+					GDKfree(nstk);
+					break;
+				}
+				if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()){
+					/* we are running low on stack space */
+					ret= createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
+					GDKfree(nstk);
+					break;
+				}
+
+				/* copy arguments onto destination stack */
+				q= getInstrPtr(pci->blk,0);
+				arg = q->retc;
+				for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
+					lhs = &nstk->stk[q->argv[arg]];
+					rhs = &stk->stk[pci->argv[ii]];
+					VALcopy(lhs, rhs);
+					if (lhs->vtype == TYPE_bat)
+						BBPincref(lhs->val.bval, TRUE);
+				}
+				ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
+				for (ii = 0; ii < nstk->stktop; ii++)
+					if (ATOMextern(nstk->stk[ii].vtype))
+						GDKfree(nstk->stk[ii].val.pval);
+				GDKfree(nstk);
+			}
+			break;
+		case NOOPsymbol:
+		case REMsymbol:
+			break;
+		case ENDsymbol:
+			if (getInstrPtr(mb, 0)->token == FACTORYsymbol)
+				ret = shutdownFactory(cntxt, mb);
+			runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
+			runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
+			runtimeProfileFinish(cntxt, mb);
+			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
+				garbageCollector(cntxt, mb, stk, TRUE);
+			if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
+				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+				break;
+			}
+			stkpc = mb->stop;	// force end of loop
+			continue;
+		default: {
+			str w;
+			if (pci->token < 0) {
+				/* temporary NOOP instruction */
+				break;
+			}
+			w= instruction2str(mb, 0, pci, FALSE);
+			ret = createScriptException(mb, stkpc, MAL, NULL, "unkown operation:%s",w);
+			GDKfree(w);
+			if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
+				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+				break;
+			}
+			stkpc= mb->stop;
+			continue;
+		}	}
+
+		/* monitoring information should reflect the input arguments,
+		   which may be removed by garbage collection  */
+		/* BEWARE, the SQL engine or MAL function could zap the block, leaving garbage behind in pci */
+		/* this hack means we loose a closing event */
+		if( mb->stop <= 1)
+			continue;
+		runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
+		if (ret != MAL_SUCCEED)
+			runtimeProfileFinish(cntxt, mb);
+		/* check for strong debugging after each MAL statement */
+		if ( pci->token != FACcall && ret== MAL_SUCCEED) {
+			if (GDKdebug & (CHECKMASK|PROPMASK) && exceptionVar < 0) {
+				BAT *b;
+
+				for (i = 0; i < pci->retc; i++) {
+					if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
+						stk->stk[getArg(pci, i)].val.bval != bat_nil &&
+						stk->stk[getArg(pci, i)].val.bval != 0) {
+						assert(stk->stk[getArg(pci, i)].val.bval > 0);
+						b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, FALSE);
+						if (b == NULL) {
+							if (ret == MAL_SUCCEED)
+								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
+							continue;
+						}
+						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
+						BATassertProps(b);
+						BBPunfix(b->batCacheid);
+					}
+				}
+			}
+
+			/* general garbage collection */
+			if (ret == MAL_SUCCEED && garbageControl(pci)) {
+				for (i = 0; i < pci->argc; i++) {
+					int a = getArg(pci, i);
+
+					if (isaBatType(getArgType(mb, pci, i))) {
+						bat bid = stk->stk[a].val.bval;
+
+						if (i < pci->retc && backup[i].val.bval != bat_nil) {
+							bat bx = backup[i].val.bval;
+							backup[i].val.bval = bat_nil;
+							BBPdecref(bx, TRUE);
+						}
+						if (garbage[i] >= 0) {
+							PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
+							bid = stk->stk[garbage[i]].val.bval;
+							stk->stk[garbage[i]].val.bval = bat_nil;
+							BBPdecref(bid, TRUE);
+						}
+					} else if (i < pci->retc &&
+							   0 < stk->stk[a].vtype &&
+							   stk->stk[a].vtype < TYPE_any &&
+							   ATOMextern(stk->stk[a].vtype)) {
+						if (backup[i].val.pval &&
+							backup[i].val.pval != stk->stk[a].val.pval) {
+							if (backup[i].val.pval)
+								GDKfree(backup[i].val.pval);
+							if (i >= pci->retc) {
+								stk->stk[a].val.pval = 0;
+								stk->stk[a].len = 0;
+							}
+							backup[i].len = 0;
+							backup[i].val.pval = 0;
+						}
+					}
+				}
+			}
+		}
+
+		/* Exception handling */
+		if (localGDKerrbuf && localGDKerrbuf[0]) {
+			str oldret = ret;
+			ret = catchKernelException(cntxt, ret);
+			if (ret != oldret)
+				freeException(oldret);
+		}
+
+		if (ret != MAL_SUCCEED) {
+			str msg = 0;
+
+			if (stk->cmd || mb->trap) {
+				mnstr_printf(cntxt->fdout, "!ERROR: %s\n", ret);
+				stk->cmd = '\n'; /* in debugging go to step mode */
+				mdbStep(cntxt, mb, stk, stkpc);
+				if (stk->cmd == 'x' || stk->cmd == 'q' ) {
+					stkpc = mb->stop;
 					continue;
 				}
-				pci = getInstrPtr(mb, stkpc);
+				if (stk->cmd == 'r') {
+					stk->cmd = 'n';
+					stkpc = startpc;
+					exceptionVar = -1;
+					continue;
+				}
 			}
+			/* Detect any exception received from the implementation. */
+			/* The first identifier is an optional exception name */
+			if (strstr(ret, "!skip-to-end")) {
+				freeException(ret);
+				ret = MAL_SUCCEED;
+				stkpc = mb->stop;
+				continue;
+			}
+			/*
+			 * Exceptions are caught based on their name, which is part of the
+			 * exception message. The ANYexception variable catches all.
+			 */
+			exceptionVar = -1;
+			msg = strchr(ret, ':');
+			if (msg) {
+				*msg = 0;
+				exceptionVar = findVariableLength(mb, ret, (int)(msg - ret));
+				*msg = ':';
+			}
+			if (exceptionVar == -1)
+				exceptionVar = findVariableLength(mb, (str)"ANYexception", 12);
+
+			/* unknown exceptions lead to propagation */
+			if (exceptionVar == -1) {
+				if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
+					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+				stkpc = mb->stop;
+				continue;
+			}
+			/* assure correct variable type */
+			if (getVarType(mb, exceptionVar) == TYPE_str) {
+				/* watch out for concurrent access */
+				MT_lock_set(&mal_contextLock);
+				v = &stk->stk[exceptionVar];
+				if (v->val.sval)
+					freeException(v->val.sval);    /* old exception*/
+				v->vtype = TYPE_str;
+				v->val.sval = ret;
+				v->len = (int)strlen(v->val.sval);
+				ret = 0;
+				MT_lock_unset(&mal_contextLock);
+			} else {
+				mnstr_printf(cntxt->fdout, "%s", ret);
+				freeException(ret);
+			}
+			/* position yourself at the catch instruction for further decisions */
+			/* skipToCatch(exceptionVar,@2,@3) */
+			if (stk->cmd == 'C' || mb->trap) {
+				stk->cmd = 'n';
+				mdbStep(cntxt, mb, stk, stkpc);
+				if (stk->cmd == 'x' ) {
+					stkpc = mb->stop;
+					continue;
+				}
+			}
+			/* skip to catch block or end */
+			for (; stkpc < mb->stop; stkpc++) {
+				InstrPtr l = getInstrPtr(mb, stkpc);
+				if (l->barrier == CATCHsymbol) {
+					int j;
+					for (j = 0; j < l->retc; j++)
+						if (getArg(l, j) == exceptionVar)
+							break;
+						else if (getArgName(mb, l, j) ||
+								 strcmp(getArgName(mb, l, j), "ANYexception") == 0)
+							break;
+					if (j < l->retc)
+						break;
+				}
+			}
+			if (stkpc == mb->stop) {
+				if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
+					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+					stkpc = mb->stop;
+				}
+				continue;
+			}
+			pci = getInstrPtr(mb, stkpc);
 		}
 
 		/*
@@ -1063,12 +1063,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				else
 					stkpc++;
 				break;
-			case TYPE_wrd:
-				if (v->val.wval != wrd_nil)
-					stkpc = pci->jump;
-				else
-					stkpc++;
-				break;
 			case TYPE_bte:
 				if (v->val.btval != bte_nil)
 					stkpc = pci->jump;
@@ -1122,7 +1116,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		case RAISEsymbol:
 			exceptionVar = getDestVar(pci);
-			FREE_EXCEPTION(ret);
+			freeException(ret);
 			ret = NULL;
 			if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 				ret = createScriptException(mb, stkpc, MAL, NULL,
@@ -1221,7 +1215,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					NULL, "Exception not caught");
 			}
 		}
-		FREE_EXCEPTION(oldret);
+		freeException(oldret);
 	}
 	if ( backup != backups) GDKfree(backup);
 	if ( garbage != garbages) GDKfree(garbage);
@@ -1338,12 +1332,15 @@ str catchKernelException(Client cntxt, str ret)
 				strcpy(z, ret);
 				if (z[strlen(z) - 1] != '\n') strcat(z, "\n");
 				strcat(z, errbuf);
-			}
+			} else // when malloc fails, leave it somewhere
+				fprintf(stderr,"!catchKernelException:%s\n",ret);
 		} else {
 			/* trap hidden (GDK) exception */
 			z = (char*)GDKmalloc(strlen("GDKerror:") + strlen(errbuf) + 2);
 			if (z)
 				sprintf(z, "GDKerror:%s", errbuf);
+			else
+				fprintf(stderr,"!catchKernelException:GDKerror:%s\n",errbuf);
 		}
 		/* did we eat the error away of not */
 		if (z)
@@ -1389,7 +1386,7 @@ void garbageElement(Client cntxt, ValPtr v)
 		 * allowed during the execution of a GDK operation.
 		 * All references should be logical.
 		 */
-		bat bid = abs(v->val.bval);
+		bat bid = v->val.bval;
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
 		v->val.bval = bat_nil;
@@ -1428,19 +1425,24 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	ValPtr v;
 
 #ifdef STACKTRACE
-	mnstr_printf(cntxt->fdout, "#--->stack before garbage collector\n");
-	printStack(cntxt->fdout, mb, stk, 0);
+	if (cntxt) {
+		mnstr_printf(cntxt->fdout, "#--->stack before garbage collector\n");
+		printStack(cntxt->fdout, mb, stk, 0);
+	}
 #endif
+	(void) flag;
 	for (k = 0; k < mb->vtop; k++) {
-		if (isVarCleanup(mb, k) && (flag || isTmpVar(mb, k))) {
+		if (isVarCleanup(mb, k) ){
 			garbageElement(cntxt, v = &stk->stk[k]);
 			v->vtype = TYPE_int;
 			v->val.ival = int_nil;
 		}
 	}
 #ifdef STACKTRACE
-	mnstr_printf(cntxt->fdout, "#-->stack after garbage collector\n");
-	printStack(cntxt->fdout, mb, stk, 0);
+	if (cntxt) {
+		mnstr_printf(cntxt->fdout, "#-->stack after garbage collector\n");
+		printStack(cntxt->fdout, mb, stk, 0);
+	}
 #else
 	(void)cntxt;
 #endif

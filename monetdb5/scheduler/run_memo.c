@@ -102,7 +102,7 @@ propagateNonTarget(MalBlkPtr mb, int pc)
 {
 	int i;
 	InstrPtr p;
-	str scheduler = putName("scheduler", 9);
+	str scheduler = putName("scheduler");
 
 	for (; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);

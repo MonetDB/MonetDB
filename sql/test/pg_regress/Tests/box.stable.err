@@ -31,17 +31,21 @@ stderr of test 'box` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-10494/.s.monetdb.39553
 QUERY = INSERT INTO BOX_TBL (f1) VALUES (MBR('(2.3, 4.5)'));
-ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-10494/.s.monetdb.39553
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Unknown type: '('
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO BOX_TBL (f1) VALUES (MBR('linestring(2.3, 4.5)'));
-ERROR = !ParseException: Expected number but encountered ','
-MAPI  = (monetdb) /var/tmp/mtest-10494/.s.monetdb.39553
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered ','
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO BOX_TBL (f1) VALUES (MBR('asdfasdf(ad'));
-ERROR = !ParseException: Unknown type: 'ASDFASDF'
-MAPI  = (monetdb) /var/tmp/mtest-10494/.s.monetdb.39553
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Unknown type: 'ASDFASDF'
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO BOX_TBL (f1) VALUES (MBR('linestring(asdfasdf(ad)'));
-ERROR = !ParseException: Expected number but encountered word: 'asdfasdf'
-MAPI  = (monetdb) /var/tmp/mtest-10494/.s.monetdb.39553
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered word: 'asdfasdf'
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = SELECT '' AS four, @@(b1.f1) AS p FROM BOX_TBL_VW b1;
 ERROR = !syntax error, unexpected AT in: "select '' as four, @@"
 MAPI  = (monetdb) /var/tmp/mtest-10494/.s.monetdb.39553

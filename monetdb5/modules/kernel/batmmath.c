@@ -25,20 +25,16 @@
 #define fetestexcept(x)		0
 #endif
 
-#define voidresultBAT(X1,X2)								\
-	do {													\
-		bn = BATnew(TYPE_void, X1, BATcount(b), TRANSIENT);	\
-		if (bn == NULL) {									\
-			BBPunfix(b->batCacheid);						\
-			throw(MAL, X2, MAL_MALLOC_FAIL);				\
-		}													\
-		BATseqbase(bn, b->hseqbase);						\
-		bn->hsorted = b->hsorted;							\
-		bn->hrevsorted = b->hrevsorted;						\
-		bn->tsorted = b->tsorted;							\
-		bn->trevsorted = b->trevsorted;						\
-		bn->H->nonil = 1;									\
-		bn->T->nonil = b->T->nonil;							\
+#define voidresultBAT(X1,X2)									\
+	do {														\
+		bn = COLnew(b->hseqbase, X1, BATcount(b), TRANSIENT);	\
+		if (bn == NULL) {										\
+			BBPunfix(b->batCacheid);							\
+			throw(MAL, X2, MAL_MALLOC_FAIL);					\
+		}														\
+		bn->tsorted = b->tsorted;								\
+		bn->trevsorted = b->trevsorted;							\
+		bn->tnonil = b->tnonil;									\
 	} while (0)
 
 
@@ -51,13 +47,13 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);					\
 	}																\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);					\
-	o = (TYPE *) Tloc(bn, BUNfirst(bn));							\
-	p = (TYPE *) Tloc(b, BUNfirst(b));								\
+	o = (TYPE *) Tloc(bn, 0);										\
+	p = (TYPE *) Tloc(b, 0);										\
 	q = (TYPE *) Tloc(b, BUNlast(b));								\
 																	\
 	errno = 0;														\
 	feclearexcept(FE_ALL_EXCEPT);									\
-	if (b->T->nonil) {												\
+	if (b->tnonil) {												\
 		for (; p < q; o++, p++)										\
 			*o = FUNC##SUFF(*p);									\
 	} else {														\
@@ -75,11 +71,9 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	BATsetcount(bn, BATcount(b));									\
 	bn->tsorted = 0;												\
 	bn->trevsorted = 0;												\
-	bn->T->nil = b->T->nil;											\
-	bn->T->nonil = b->T->nonil;										\
-	BATkey(BATmirror(bn), 0);										\
-	if (!(bn->batDirty&2))											\
-		BATsetaccess(bn, BAT_READ);									\
+	bn->tnil = b->tnil;												\
+	bn->tnonil = b->tnonil;											\
+	BATkey(bn, 0);													\
 	BBPkeepref(*ret = bn->batCacheid);								\
 	BBPunfix(b->batCacheid);										\
 	return MAL_SUCCEED;												\
@@ -96,13 +90,13 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
 	}																	\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
-	o = (TYPE *) Tloc(bn, BUNfirst(bn));								\
-	p = (TYPE *) Tloc(b, BUNfirst(b));									\
+	o = (TYPE *) Tloc(bn, 0);											\
+	p = (TYPE *) Tloc(b, 0);											\
 	q = (TYPE *) Tloc(b, BUNlast(b));									\
 																		\
 	errno = 0;															\
 	feclearexcept(FE_ALL_EXCEPT);										\
-	if (b->T->nonil) {													\
+	if (b->tnonil) {													\
 		for (; p < q; o++, p++)											\
 			*o = FUNC##SUFF(*p, *d);									\
 	} else {															\
@@ -120,11 +114,9 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	BATsetcount(bn, BATcount(b));										\
 	bn->tsorted = 0;													\
 	bn->trevsorted = 0;													\
-	bn->T->nil = b->T->nil;												\
-	bn->T->nonil = b->T->nonil;											\
-	BATkey(BATmirror(bn),0);											\
-	if (!(bn->batDirty&2))												\
-		BATsetaccess(bn, BAT_READ);										\
+	bn->tnil = b->tnil;													\
+	bn->tnonil = b->tnonil;												\
+	BATkey(bn,0);														\
 	BBPkeepref(*ret = bn->batCacheid);									\
 	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\
@@ -140,13 +132,13 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
 	}																	\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
-	o = (TYPE *) Tloc(bn, BUNfirst(bn));								\
-	p = (TYPE *) Tloc(b, BUNfirst(b));									\
+	o = (TYPE *) Tloc(bn, 0);											\
+	p = (TYPE *) Tloc(b, 0);											\
 	q = (TYPE *) Tloc(b, BUNlast(b));									\
 																		\
 	errno = 0;															\
 	feclearexcept(FE_ALL_EXCEPT);										\
-	if (b->T->nonil) {													\
+	if (b->tnonil) {													\
 		for (; p < q; o++, p++)											\
 			*o = FUNC##SUFF(*d, *p);									\
 	} else {															\
@@ -164,11 +156,9 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 	BATsetcount(bn, BATcount(b));										\
 	bn->tsorted = 0;													\
 	bn->trevsorted = 0;													\
-	bn->T->nil = b->T->nil;												\
-	bn->T->nonil = b->T->nonil;											\
-	BATkey(BATmirror(bn),0);											\
-	if (!(bn->batDirty&2))												\
-		BATsetaccess(bn, BAT_READ);										\
+	bn->tnil = b->tnil;													\
+	bn->tnonil = b->tnonil;												\
+	BATkey(bn,0);														\
 	BBPkeepref(*ret = bn->batCacheid);									\
 	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\

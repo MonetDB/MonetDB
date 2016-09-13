@@ -5,6 +5,7 @@ stdout of test 'malcheck` in directory 'clients` itself:
 # 15:15:51 >  "./malcheck.sh" "malcheck"
 # 15:15:51 >  
 
+OPTsetDebugStr: missing for MAL command mdb.traceOptimizer in monetdb5/optimizer/optimizer.mal
 
 # 15:16:26 >  
 # 15:16:26 >  "Done."

@@ -34,7 +34,7 @@ str
 int
 flt
 bit
-wrd
+lng
 bte
 bat  head bat[:str]
 

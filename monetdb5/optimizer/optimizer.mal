@@ -98,6 +98,22 @@ pattern optimizer.derivePath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
+#opt_emptybind.mal
+
+pattern optimizer.emptybind():str
+address OPTwrapper;
+pattern optimizer.emptybind(mod:str, fcn:str):str
+address OPTwrapper
+comment "Evaluate empty set expressions.";
+
+#opt_jit.mal
+
+pattern optimizer.jit():str
+address OPTwrapper;
+pattern optimizer.jit(mod:str, fcn:str):str
+address OPTwrapper
+comment "Propagate candidate lists in just-in-time optimization";
+
 #opt_evaluate.mal
 
 pattern optimizer.evaluate():str
@@ -145,11 +161,6 @@ pattern optimize(mod:str, fcn:str)
 address QOToptimize
 comment "Optimize a specific operation";
 
-pattern setDebug():void 
-address QOTdebugOptimizers;
-pattern clrDebug():void 
-address QOTclrdebugOptimizers;
-
 pattern showFlowGraph(M:str,F:str,s:str):void 
 address QOTshowFlowGraph
 comment "Dump the data flow of the function 
@@ -177,7 +188,7 @@ pattern optimizer.projectionpath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-pattern algebra.projectionpath(l:bat[:oid,:any]...):bat[:oid,:any]
+pattern algebra.projectionpath(l:bat[:any]...):bat[:any]
 address ALGprojectionpath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
@@ -264,17 +275,9 @@ address OPTwrapper;
 pattern optimizer.prejoin(mod:str, fcn:str):str
 address OPTwrapper
 comment "Dead code optimizer";
-# command algebra.prejoin(a:bat[:oid,:oid],b:bat[:oid,:any_1])(c:bat[:oid,:oid],d:bat[:oid,:any_1])
+# command algebra.prejoin(a:bat[:oid],b:bat[:any_1])(c:bat[:oid],d:bat[:any_1])
 # address ALGprejoin
 # comment "Recluster the table to reduce random access behavior.";
-
-#opt_qep.mal
-
-pattern optimizer.dumpQEP()
-address OPTwrapper;
-pattern optimizer.dumpQEP(mod:str, fcn:str):str
-address OPTwrapper
-comment "Produce an indented tree visualisation";
 
 #opt_recycler.mal
 
@@ -326,7 +329,7 @@ comment "Selection cracking";
 
 #opt_statistics.mal
 
-command inspect.getStatistics(nme:str):bat[:oid,:any_2]
+command inspect.getStatistics(nme:str):bat[:any_2]
 address QOTgetStatistics
 comment "Get optimizer property statistics 
 such as #calls, #total actions, #total time";

@@ -467,6 +467,8 @@ main(int argc, char *argv[])
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedr");
 	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "embedpy");
+	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
 	kv = findConfKey(_mero_db_props, "type");
@@ -586,6 +588,7 @@ main(int argc, char *argv[])
 				/* the parent, we want it to die, after we know the child
 				 * has a good time */
 				close(pfd[1]); /* close unused write end */
+				freeConfFile(ckv); /* make debug tools happy */
 				if (read(pfd[0], &buf, 1) != 1) {
 					Mfprintf(stderr, "unable to retrieve startup status\n");
 					return(1);
@@ -715,7 +718,12 @@ main(int argc, char *argv[])
 						"expected '%s', disabling passphrase\n",
 						h, MONETDB5_PASSWDHASH);
 			} else {
-				setConfVal(kv, p + 1);
+				/* p points into kv->val which gets freed before p
+				 * gets copied inside setConfVal, hence we need to
+				 * make a temporary copy */
+				p = strdup(p + 1);
+				setConfVal(kv, p);
+				free(p);
 			}
 		}
 	}
@@ -1065,7 +1073,6 @@ shutdown:
 	unlink(".merovingian_lock");
 	if (pidfilename != NULL) {
 		unlink(pidfilename);
-		free(pidfilename);
 	}
 
 	/* mostly for valgrind... */

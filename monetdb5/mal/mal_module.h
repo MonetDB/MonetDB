@@ -15,35 +15,28 @@
 #define MAXSCOPE 256
 
 typedef struct SCOPEDEF {
-	struct SCOPEDEF   *outer; /* outer level in the scope tree */
-	struct SCOPEDEF   *sibling; /* module with same start */
+	struct SCOPEDEF   *next; /* keep a list of all modules */
+	struct SCOPEDEF   *link; /* module with same index value */
 	str	    name;			/* index in namespace */
-	Symbol *subscope; 		/* type dispatcher table */
+	Symbol *space; 			/* type dispatcher table */
 	int isAtomModule; 		/* atom module definition ? */
 	void *dll;				/* dlopen handle */
 	str help;   			/* short description of module functionality*/
 } *Module, ModuleRecord;
 
+mal_export Module moduleIndex[256][256];  /* to speedup access to correct scope */
 
-mal_export void     setModuleJump(str nme, Module cur);
+mal_export Module   getModuleChain(void);
 mal_export Module   newModule(Module scope, str nme);
 mal_export Module   fixModule(Module scope, str nme);
-mal_export void		deriveModule(Module scope, str nme);
 mal_export void     freeModule(Module cur);
-mal_export void     freeModuleList(Module cur);
 mal_export void     insertSymbol(Module scope, Symbol prg);
 mal_export void     deleteSymbol(Module scope, Symbol prg);
 mal_export Module   findModule(Module scope, str name);
 mal_export Symbol   findSymbol(Module nspace, str mod, str fcn);
 mal_export int 		isModuleDefined(Module scope, str name);
 mal_export Symbol   findSymbolInModule(Module v, str fcn);
-mal_export int		findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci);
-mal_export void 	dumpHelpTable(stream *f, Module s, str text, int flag);
-mal_export void 	dumpSearchTable(stream *f, str text);
-mal_export char **getHelp(Module m, str pat, int flag);
-mal_export char **getHelpMatch(char *pat);
-mal_export void showHelp(Module m, str txt,stream *fs);
 
-#define getSubScope(N)  (*(N))
+#define getSymbolIndex(N)  (int)(*(N))
 
 #endif /* _MAL_SCOPE_H_ */

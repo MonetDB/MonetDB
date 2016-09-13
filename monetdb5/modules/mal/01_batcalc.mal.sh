@@ -13,7 +13,7 @@ module batcalc;
 
 EOF
 
-integer="bte sht int wrd lng"	# all integer types
+integer="bte sht int lng"	# all integer types
 numeric="$integer flt dbl"	# all numeric types
 alltypes="bit $numeric oid str"
 
@@ -155,7 +155,6 @@ for func in +:ADD -:SUB \*:MUL; do
 	    *dbl*) tp3=dbl;;
 	    *flt*) tp3=flt;;
 	    *lng*) tp3=lng;;
-	    *wrd*) tp3=wrd;;
 	    *int*) tp3=int;;
 	    *sht*) tp3=sht;;
 	    *bte*) tp3=bte;;
@@ -232,7 +231,6 @@ for tp1 in $numeric; do
 	*dbl*) tp3=dbl;;
 	*flt*) tp3=flt;;
 	lng*) tp3=lng;;
-	wrd*) tp3=wrd;;
 	int*) tp3=int;;
 	sht*) tp3=sht;;
 	bte*) tp3=bte;;
@@ -288,7 +286,6 @@ for tp1 in $numeric; do
 	*bte*) tp3=bte;;
 	*sht*) tp3=sht;;
 	*int*) tp3=int;;
-	*wrd*) tp3=wrd;;
 	*lng*) tp3=lng;;
 	esac
 	cat <<EOF

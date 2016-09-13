@@ -23,7 +23,6 @@ typedef enum symtype {
 
 typedef union symbdata {
 	int i_val;
-	wrd w_val;
 	lng l_val;
 	char *sval;
 	struct dlist *lval;
@@ -66,6 +65,7 @@ typedef struct SelectNode {
 	symbol *offset;
 	symbol *sample;
 	int distinct;
+	int lateral;
 	struct dlist *selection;
 	struct dlist *into;	/* ?? */
 	symbol *from;

@@ -22,8 +22,7 @@
 #include <sql_storage.h>
 #include <sql_keyword.h>
 #include <sql_atom.h>
-
-#include <mapi.h>
+#include <sql_query.h>
 
 #define ERRSIZE 8192
 
@@ -38,11 +37,13 @@
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
 #define card_relation 	4
+#define card_loader 	5
+
+
 /* allowed to reduce (in the where and having parts we can reduce) */
 
 /* different query execution modes (emode) */
 #define m_normal 	0
-#define m_inplace 	1 
 #define m_execute 	2
 #define m_prepare 	3
 #define m_plan 		4
@@ -52,7 +53,7 @@
 #define m_instantiate 	5
 #define m_deps 		6
 
-#define QUERY_MODE(m) (m==m_normal || m==m_inplace || m==m_instantiate || m==m_deps)
+#define QUERY_MODE(m) (m==m_normal || m==m_instantiate || m==m_deps)
 
 
 /* different query execution modifiers (emod) */
@@ -60,14 +61,12 @@
 #define mod_debug 	1
 #define mod_trace 	2
 #define mod_explain 	4 
-#define mod_dot 	8 
 /* locked needs unlocking */
 #define mod_locked 	16 
 
 typedef struct sql_var {
 	const char *name;
-	ValRecord value;
-	sql_subtype type;
+	atom a;
 	sql_table *t;
 	sql_rel *rel;	
 	char view;
@@ -239,7 +238,7 @@ extern int stack_find_frame(mvc *sql, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern ValRecord * stack_get_var(mvc *sql, const char *name);
+extern atom * stack_get_var(mvc *sql, const char *name);
 extern void stack_set_var(mvc *sql, const char *name, ValRecord *v);
 
 extern str stack_get_string(mvc *sql, const char *name);

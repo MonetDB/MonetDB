@@ -28,30 +28,6 @@ stderr of test 'emili` in directory 'sql/test/bugs` itself:
 # 19:14:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15106" "--port=32975"
 # 19:14:59 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = CREATE PROCEDURE enrich2()
-        BEGIN
-             INSERT INTO sensors(ip, location, kind,value)
-                 SELECT ip, substring(location,0,3), kind, value FROM istream;
-             IF (SELECT count(*) FROM area ) = 0
-             THEN
-                 INSERT INTO area SELECT ip, substring(location,0,3) FROM istream;
-             END IF;
-        END;
-ERROR = !IF THEN ELSE: No SELECT statements allowed within the IF condition
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
-QUERY = CREATE PROCEDURE enrich3()
-        BEGIN
-             DECLARE cnt INTEGER;
-             SET cnt = (SELECT count(*) FROM area ) ;
-             INSERT INTO sensors(ip, location, kind,value)
-                 SELECT ip, substring(location,0,3), kind, value FROM istream;
-             IF cnt = 0
-             THEN
-                 INSERT INTO area SELECT ip, substring(location,0,3) FROM istream;
-             END IF;
-        END;
-ERROR = !current transaction is aborted (please ROLLBACK)
 
 # 19:14:59 >  
 # 19:14:59 >  "Done."

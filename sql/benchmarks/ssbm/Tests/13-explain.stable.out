@@ -43,7 +43,7 @@ Ready.
 % mal # name
 % clob # type
 % 526 # length
-function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str):void;
+function user.s2_1():void;
     X_196:void := querylog.define("explain\nselect d_year, s_city, p_brand1, sum(lo_revenue-lo_supplycost) as profit1\n from dwdate, customer, supplier, part, lineorder\n where lo_custkey = c_custkey\n and lo_suppkey = s_suppkey\n and lo_partkey = p_partkey\n and lo_orderdate = d_datekey\n and c_region = \\'AMERICA\\'\n and s_nation = \\'UNITED STATES\\'\n and (d_year = 1997 or d_year = 1998)\n and p_category = \\'MFGR#14\\'\n group by d_year, s_city, p_brand1\n order by d_year, s_city, p_brand1;","sequential_pipe",127);
     X_158 := bat.new(nil:oid,nil:str);
     X_166 := bat.append(X_158,"sys.dwdate");
@@ -83,8 +83,8 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str):void;
     X_26:bat[:int] := sql.bind(X_6,"sys","dwdate","d_year",1);
     X_27 := sql.delta(X_22,C_24,r1_24,X_26);
     X_28 := algebra.projection(C_20,X_27);
-    C_29 := algebra.subselect(X_28,A2,A2,true,false,false);
-    C_32 := algebra.subselect(X_28,A3,A3,true,false,false);
+    C_29 := algebra.subselect(X_28,1997,1997,true,false,false);
+    C_32 := algebra.subselect(X_28,1998,1998,true,false,false);
     X_33 := bat.mergecand(C_29,C_32);
     X_34 := algebra.projection(X_33,C_20);
     (X_35,r1_38) := algebra.subjoin(X_19,X_34,nil:BAT,nil:BAT,false,nil:lng);
@@ -99,7 +99,7 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str):void;
     X_52:bat[:str] := sql.bind(X_6,"sys","part","p_category",1);
     X_53 := sql.delta(X_48,C_50,r1_55,X_52);
     X_54 := algebra.projection(C_46,X_53);
-    C_55 := algebra.subselect(X_54,A4,A4,true,false,false);
+    C_55 := algebra.subselect(X_54,"MFGR#14","MFGR#14",true,false,false);
     X_56 := algebra.projection(C_55,C_46);
     (X_57,r1_63) := algebra.subjoin(X_45,X_56,nil:BAT,nil:BAT,false,nil:lng);
     X_59:bat[:oid] := sql.bind_idxbat(X_6,"sys","lineorder","lineorder_lo_suppkey_fkey",0);
@@ -113,7 +113,7 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str):void;
     X_72:bat[:str] := sql.bind(X_6,"sys","supplier","s_nation",1);
     X_73 := sql.delta(X_68,C_70,r1_78,X_72);
     X_74 := algebra.projection(C_66,X_73);
-    C_75 := algebra.subselect(X_74,A1,A1,true,false,false);
+    C_75 := algebra.subselect(X_74,"UNITED STATES","UNITED STATES",true,false,false);
     X_76 := algebra.projection(C_75,C_66);
     (X_77,r1_89) := algebra.subjoin(X_65,X_76,nil:BAT,nil:BAT,false,nil:lng);
     X_79:bat[:oid] := sql.bind_idxbat(X_6,"sys","lineorder","lineorder_lo_custkey_fkey",0);
@@ -127,7 +127,7 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str):void;
     X_92:bat[:str] := sql.bind(X_6,"sys","customer","c_region",1);
     X_93 := sql.delta(X_88,C_90,r1_108,X_92);
     X_94 := algebra.projection(C_86,X_93);
-    C_95 := algebra.subselect(X_94,A0,A0,true,false,false);
+    C_95 := algebra.subselect(X_94,"AMERICA","AMERICA",true,false,false);
     X_96 := algebra.projection(C_95,C_86);
     (X_97,r1_116) := algebra.subjoin(X_85,X_96,nil:BAT,nil:BAT,false,nil:lng);
     X_99:bat[:str] := sql.bind(X_6,"sys","part","p_brand1",0);

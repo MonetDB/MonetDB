@@ -313,19 +313,6 @@ exp_atom_hge(sql_allocator *sa, hge i)
 #endif
 
 sql_exp *
-exp_atom_wrd(sql_allocator *sa, wrd w) 
-{
-	sql_subtype it; 
-
-#ifdef HAVE_HGE
-	sql_find_subtype(&it, "wrd", have_hge ? 18 : 19, 0);
-#else
-	sql_find_subtype(&it, "wrd", 19, 0);
-#endif
-	return exp_atom(sa, atom_int(sa, &it, w ));
-}
-
-sql_exp *
 exp_atom_flt(sql_allocator *sa, flt f) 
 {
 	sql_subtype it; 
@@ -377,15 +364,17 @@ exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe)
 }
 
 atom *
-exp_value(sql_exp *e, atom **args, int maxarg)
+exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 {
 	if (!e || e->type != e_atom)
 		return NULL; 
 	if (e->l) {	   /* literal */
 		return e->l;
 	} else if (e->r) { /* param (ie not set) */
+		if (e->flag <= 1) /* global variable */
+			return stack_get_var(sql, e->r); 
 		return NULL; 
-	} else if (e->flag < maxarg) {
+	} else if (sql->emode == m_normal && e->flag < maxarg) { /* do not get the value in the prepared case */
 		return args[e->flag]; 
 	}
 	return NULL; 
@@ -578,8 +567,10 @@ exp_rel(mvc *sql, sql_rel *rel)
 {
 	sql_exp *e = exp_create(sql->sa, e_psm);
 
+	/*
 	rel = rel_optimizer(sql, rel);
 	rel = rel_distribute(sql, rel);
+	*/
 	e->l = rel;
 	e->flag = PSM_REL;
 	return e;
@@ -788,8 +779,9 @@ exp_match( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
+/* c refers to the parent p */
 int 
-exp_refers( sql_exp *c, sql_exp *p)
+exp_refers( sql_exp *p, sql_exp *c)
 {
 	if (c->type == e_column) {
 		if (!p->name || !c->r || strcmp(p->name, c->r) != 0)
@@ -1277,6 +1269,19 @@ exp_is_correlation(sql_exp *e, sql_rel *r )
 }
 
 int
+exp_is_zero(mvc *sql, sql_exp *e) 
+{
+	if (e->type == e_atom) {
+		if (e->l) {
+			return atom_is_zero(e->l);
+		} else if(sql->emode == m_normal && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
+			return atom_is_zero(sql->args[e->flag]);
+		}
+	}
+	return 0;
+}
+
+int
 exp_is_atom( sql_exp *e )
 {
 	switch (e->type) {
@@ -1337,8 +1342,11 @@ exp_has_func( sql_exp *e )
 	case e_convert:
 		return exp_has_func(e->l);
 	case e_func:
-	case e_aggr:
 		return 1;
+	case e_aggr:
+		if (e->l)
+			return exps_has_func(e->l);
+		return 0;
 	case e_cmp:
 		if (e->flag == cmp_or) {
 			return (exps_has_func(e->l) || exps_has_func(e->r));
@@ -1520,11 +1528,11 @@ exps_bind_alias( list *exps, const char *rname, const char *cname )
 	return NULL;
 }
 
-int
+unsigned int
 exps_card( list *l ) 
 {
 	node *n;
-	int card = CARD_ATOM;
+	unsigned int card = CARD_ATOM;
 
 	if (l) for(n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;
@@ -1744,7 +1752,7 @@ atom *
 exp_flatten(mvc *sql, sql_exp *e) 
 {
 	if (e->type == e_atom) {
-		atom *v =  exp_value(e, sql->args, sql->argc);
+		atom *v =  exp_value(sql, e, sql->args, sql->argc);
 
 		if (v)
 			return atom_dup(sql->sa, v);

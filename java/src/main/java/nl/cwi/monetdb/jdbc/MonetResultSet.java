@@ -21,6 +21,7 @@ import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.NClob;
 import java.sql.Ref;
@@ -65,13 +66,11 @@ import nl.cwi.monetdb.mcl.parser.TupleLineParser;
  * for FORWARD_ONLY result sets the memory usage will be likely lower for large
  * result sets.
  *
- * @author Fabian Groffen
- * @version 0.7
+ * @author Fabian Groffen, Martin van Dinther
+ * @version 0.8
  */
 public class MonetResultSet extends MonetWrapper implements ResultSet {
-	/** The last column read using some getXXX function */
-	private int lastColumnRead = -1;
-	// the following have default access modifier for the MonetVirtualResultSet
+	// the following have default access modifier for the MonetVirtualResultSet subclass
 	/** The current line of the buffer split in columns */
 	final TupleLineParser tlp;
 	/** The current position of the cursor for this ResultSet object */
@@ -84,8 +83,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	private final String[] columns;
 	/** The MonetDB types of the columns in this ResultSet */
 	private final String[] types;
-	/** The id of this ResultSet (needed for closing) */
-	private final String tableID;
 	/** The number of rows in this ResultSet */
 	final int tupleCount;	// default for the MonetVirtualResultSet
 
@@ -98,6 +95,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	private int concurrency = CONCUR_READ_ONLY;
 	/** The warnings for this ResultSet object */
 	private SQLWarning warnings;
+	/** whether the last read field (via some getXyz() method) was NULL */
+	private boolean lastReadWasNull = true;
+	/** Just a dummy variable to keep store the fetchsize set. */
+	private int fetchSize;
 
 	/**
 	 * Main constructor backed by the given Header.
@@ -115,6 +116,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		this.header = header;
 		this.type = header.getRSType();
 		this.concurrency = header.getRSConcur();
+		/* if we have a header object, the fetchSize used for this result set
+		   is the header's cacheSize */
+		this.fetchSize = header.getCacheSize();
 		// well there is only one supported concurrency, so we don't have to
 		// bother about that
 
@@ -122,7 +126,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		// if an error occurred for this query
 		columns = header.getNames();
 		types = header.getTypes();
-		tableID = "" + header.id;
 		tupleCount = header.tuplecount;
 
 		// create result array
@@ -130,7 +133,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	/**
-	 * Constructor used by MonetFillableResultSet.
+	 * Constructor used by MonetVirtualResultSet.
 	 * DO NOT USE THIS CONSTRUCTOR IF YOU ARE NOT EXTENDING THIS OBJECT!
 	 *
 	 * @param columns the column names
@@ -156,7 +159,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		}
 
 		this.header = null;
-		this.tableID = null;
 		this.statement = null; // no parent, required for specs
 
 		this.columns = columns;
@@ -164,6 +166,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		this.tupleCount = results;
 
 		this.tlp = new TupleLineParser(columns.length);
+		
+		this.fetchSize = 0;
 	}
 
 	//== methods of interface ResultSet
@@ -224,9 +228,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			throw new SQLException(e.getMessage(), "M0M10");
 		}
 
-		// reset lastColumnRead
-		lastColumnRead = -1;
-
 		return true;
 	}
 
@@ -271,7 +272,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public void close() {
-		if (!header.isClosed()) {
+		if (header != null && !header.isClosed()) {
 			header.close();
 		}
 		if (statement instanceof MonetStatement)
@@ -291,14 +292,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int findColumn(String columnName) throws SQLException {
-		if (columnName != null) {
+		if (columnName != null && columns != null) {
 			for (int i = 0; i < columns.length; i++) {
-				if (columns[i].equals(columnName))
+				if (columnName.equals(columns[i]))
 					return i + 1;
 			}
 			/* if an exact match did not succeed try a case insensitive match */
 			for (int i = 0; i < columns.length; i++) {
-				if (columns[i].equalsIgnoreCase(columnName))
+				if (columnName.equalsIgnoreCase(columns[i]))
 					return i + 1;
 			}
 		}
@@ -319,30 +320,33 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	@Override
-	public Array getArray(int i) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!", "0A000");
+	public Array getArray(int columnIndex) throws SQLException {
+		throw newSQLFeatureNotSupportedException("getArray");
 	}
 	@Override
 	public Array getArray(String colName) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!", "0A000");
+		throw newSQLFeatureNotSupportedException("getArray");
 	}
 
 	/* Mapi doesn't allow something for streams at the moment, thus all not implemented for now */
 	@Override
 	public InputStream getAsciiStream(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getAsciiStream not implemented yet, sorry!", "0A000");
+		throw newSQLFeatureNotSupportedException("getAsciiStream");
 	}
 	@Override
 	public InputStream getAsciiStream(String columnName) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getAsciiStream not implemented yet, sorry!", "0A000");
+		throw newSQLFeatureNotSupportedException("getAsciiStream");
 	}
+
 	@Override
+	@Deprecated
 	public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getUnicodeStream not implemented yet, sorry!", "0A000");
+		throw newSQLFeatureNotSupportedException("getUnicodeStream");
 	}
 	@Override
+	@Deprecated
 	public InputStream getUnicodeStream(String columnName) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getUnicodeStream not implemented yet, sorry!", "0A000");
+		throw newSQLFeatureNotSupportedException("getUnicodeStream");
 	}
 
 	/**
@@ -367,22 +371,25 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public InputStream getBinaryStream(int columnIndex) throws SQLException {
-		switch (getJavaType(types[columnIndex - 1])) {
-			case Types.BLOB:
-				Blob blob = getBlob(columnIndex);
-				if (blob == null)
-					return null;
-				return blob.getBinaryStream();
-			case Types.BINARY:
-			case Types.VARBINARY:
-			case Types.LONGVARBINARY:
-				byte[] bte = getBytes(columnIndex);
-				if (bte == null)
-					return null;
-				return new ByteArrayInputStream(bte);
+		try {
+			switch (getJavaType(types[columnIndex - 1])) {
+				case Types.BLOB:
+					Blob blob = getBlob(columnIndex);
+					if (blob == null)
+						return null;
+					return blob.getBinaryStream();
+				case Types.BINARY:
+				case Types.VARBINARY:
+				case Types.LONGVARBINARY:
+					byte[] bte = getBytes(columnIndex);
+					if (bte == null)
+						return null;
+					return new ByteArrayInputStream(bte);
+			}
+			throw new SQLException("Cannot operate on " + types[columnIndex - 1] + " type", "M1M05");
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
-		throw new SQLException("Cannot operate on " +
-				types[columnIndex - 1] + " type", "M1M05");
 	}
 	
 	/**
@@ -424,10 +431,17 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Reader getCharacterStream(int columnIndex) throws SQLException {
-		String tmp = getString(columnIndex);
-		if (tmp == null)
-			return null;
-		return new StringReader(tmp);
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
+			}
+			lastReadWasNull = false;
+			return new StringReader(val);
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
+		}
 	}
 
 	/**
@@ -461,7 +475,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Reader getNCharacterStream(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getNCharacterStream() not supported", "0A000");
+		throw newSQLFeatureNotSupportedException("getNCharacterStream");
 	}
 
 	/**
@@ -480,7 +494,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Reader getNCharacterStream(String columnName) throws SQLException {
-		return getNCharacterStream(findColumn(columnName));
+		throw newSQLFeatureNotSupportedException("getNCharacterStream");
 	}
 
 	/**
@@ -494,12 +508,17 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
-	public Blob getBlob(int i) throws SQLException {
-		String tmp = getString(i);
-		if (tmp == null) {
-			return null;
-		} else {
-			return MonetBlob.create(tmp);
+	public Blob getBlob(int columnIndex) throws SQLException {
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
+			}
+			lastReadWasNull = false;
+			return MonetBlob.create(val);
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -530,12 +549,17 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
-	public Clob getClob(int i) throws SQLException {
-		String tmp = getString(i);
-		if (tmp == null) {
-			return null;
-		} else {
-			return new MonetClob(tmp);
+	public Clob getClob(int columnIndex) throws SQLException {
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
+			}
+			lastReadWasNull = false;
+			return new MonetClob(val);
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -569,7 +593,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public NClob getNClob(int i) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getNClob() not supported", "0A000");
+		throw newSQLFeatureNotSupportedException("getNClob");
 	}
 
 	/**
@@ -587,7 +611,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public NClob getNClob(String colName) throws SQLException {
-		return getNClob(findColumn(colName));
+		throw newSQLFeatureNotSupportedException("getNClob");
 	}
 
 	/**
@@ -601,15 +625,20 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-		String decimal = getString(columnIndex);
-		if (decimal == null) {
-			return null;
-		} else {
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
+			}
+			lastReadWasNull = false;
 			try {
-				return new BigDecimal(decimal);
+				return new BigDecimal(val);
 			} catch (NumberFormatException e) {
 				return BigDecimal.ZERO;
 			}
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -624,20 +653,26 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
+	@Deprecated
 	public BigDecimal getBigDecimal(int columnIndex, int scale)
 		throws SQLException
 	{
-		String decimal = getString(columnIndex);
-		if (decimal == null) {
-			return null;
-		} else {
-			BigDecimal bd;
-			try {
-				bd = new BigDecimal(decimal);
-			} catch (NumberFormatException e) {
-				bd = BigDecimal.ZERO;
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
 			}
-			return bd.setScale(scale);
+			lastReadWasNull = false;
+			try {
+				BigDecimal bd = new BigDecimal(val);
+				bd.setScale(scale);
+				return bd;
+			} catch (NumberFormatException e) {
+				return BigDecimal.ZERO;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -666,6 +701,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
+	@Deprecated
 	public BigDecimal getBigDecimal(String columnName, int scale)
 		throws SQLException
 	{
@@ -683,44 +719,61 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if there is no such column
 	 */
 	@Override
-	public boolean getBoolean(int columnIndex) throws SQLException{
-		int dataType = getJavaType(types[columnIndex - 1]);
-		if (dataType == Types.TINYINT ||
-			dataType == Types.SMALLINT ||
-			dataType == Types.INTEGER ||
-			dataType == Types.BIGINT)
-		{
-			if (getLong(columnIndex) == 0L) {
-				return false;
-			} else {
-				return true;
+	public boolean getBoolean(int columnIndex) throws SQLException {
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return false;	// if the value is SQL NULL, the value returned is false
 			}
-		} else if (dataType == Types.REAL ||
-			dataType == Types.FLOAT ||
-			dataType == Types.DOUBLE)
-		{
-			if (getDouble(columnIndex) == 0.0) {
+			lastReadWasNull = false;
+
+			// match common cases first
+			if ("false".equalsIgnoreCase(val) || "0".equals(val))
 				return false;
-			} else {
+			if ("true".equalsIgnoreCase(val) || "1".equals(val))
 				return true;
+
+			// match type specific values
+			switch (getJavaType(types[columnIndex - 1])) {
+				case Types.BOOLEAN:
+				case Types.CHAR:
+				case Types.VARCHAR:
+				case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+				case Types.CLOB:
+					// check if string value equals "true" (case insensitive) or not
+					return Boolean.parseBoolean(val);
+				case Types.BIT: // MonetDB doesn't use type BinaryDigit, it's here for completeness
+				case Types.TINYINT:
+				case Types.SMALLINT:
+				case Types.INTEGER:
+					if (getInt(columnIndex) == 0) {
+						return false;
+					}
+					return true;
+				case Types.BIGINT:
+					if (getLong(columnIndex) == 0L) {
+						return false;
+					}
+					return true;
+				case Types.DOUBLE:
+				case Types.FLOAT:
+				case Types.REAL:
+					if (getDouble(columnIndex) == 0.0) {
+						return false;
+					}
+					return true;
+				case Types.DECIMAL:
+				case Types.NUMERIC:
+					if (getBigDecimal(columnIndex).compareTo(BigDecimal.ZERO) == 0) {
+						return false;
+					}
+					return true;
+				default:
+					throw new SQLException("Conversion from " + types[columnIndex - 1] + " to boolean type not supported", "M1M05");
 			}
-		} else if (dataType == Types.DECIMAL ||
-			dataType == Types.NUMERIC)
-		{
-			if (getBigDecimal(columnIndex).compareTo(new BigDecimal(0.0)) == 0) {
-				return false;
-			} else {
-				return true;
-			}
-		} else if (dataType == Types.BIT ||
-			dataType == Types.BOOLEAN ||
-			dataType == Types.CHAR ||
-			dataType == Types.VARCHAR ||
-			dataType == Types.LONGVARCHAR)
-		{
-			return (Boolean.valueOf(getString(columnIndex))).booleanValue();
-		} else {
-			throw new SQLException("Conversion from " + types[columnIndex - 1] + " to boolean type not supported", "M1M05");
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -749,12 +802,22 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public byte getByte(int columnIndex) throws SQLException {
-		byte ret = 0;
-		String val = getString(columnIndex);
-		if (val != null) {
-			ret = Byte.parseByte(val);
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return (byte) 0;
+			}
+			lastReadWasNull = false;
+			try {
+				return Byte.parseByte(val);
+			} catch (NumberFormatException e) {
+				// ignore parse error, return the default: 0
+				return (byte) 0;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
-		return ret;
 	}
 
 	/**
@@ -784,28 +847,34 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public byte[] getBytes(int columnIndex) throws SQLException {
-		// According to Table B-6, getBytes() only operates on BINARY
-		// types
-		switch (getJavaType(types[columnIndex - 1])) {
-			case Types.BINARY:
-			case Types.VARBINARY:
-			case Types.LONGVARBINARY:
-				// pass
-				break;
-			default:
-				throw new SQLException("Cannot operate on " +
-						types[columnIndex - 1] + " type", "M1M05");
-		}
-		String tmp = getString(columnIndex);
-		if (tmp == null) {
-			return null;
-		} else {
-			// unpack the HEX (BLOB) notation to real bytes
-			int len = tmp.length() / 2;
-			byte[] buf = new byte[len];
-			for (int j = 0; j < len; j++)
-				buf[j] = (byte)Integer.parseInt(tmp.substring(2 * j, (2 * j) + 2), 16);
-			return buf;
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
+			}
+			lastReadWasNull = false;
+
+			// According to Table B-6, getBytes() only operates on BINARY types
+			switch (getJavaType(types[columnIndex - 1])) {
+				case Types.BLOB:
+				case Types.BINARY:
+				case Types.VARBINARY:
+				case Types.LONGVARBINARY:
+					// unpack the HEX (BLOB) notation to real bytes
+					int len = val.length() / 2;
+					byte[] buf = new byte[len];
+					int offset;
+					for (int j = 0; j < len; j++) {
+						offset = j * 2;
+						buf[j] = (byte)Integer.parseInt(val.substring(offset, offset + 2), 16);
+					}
+					return buf;
+				default:
+					throw new SQLException("Cannot operate on " + types[columnIndex - 1] + " type", "M1M05");
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -847,7 +916,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	/**
 	 * Retrieves the name of the SQL cursor used by this ResultSet object.
 	 * In SQL, a result table is retrieved through a cursor that is named.
-	 * For MonetDB this is the tableID returned in a resultset header. The
+	 * For MonetDB this is the header.id returned in a resultset header. The
 	 * current row of a result set can be updated or deleted using a positioned
 	 * update/delete statement that references the cursor name. To insure that
 	 * the cursor has the proper isolation level to support update, the
@@ -868,8 +937,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	@Override
 	public String getCursorName() throws SQLException {
 		throw new SQLException("Positioned updates not supported for this " +
-							   "cursor (" + tableID + ")", "0AM21");
-		//return "" + tableID;
+				   "cursor (" + (header != null ? header.id : "") + ")", "0AM21");
 	}
 
 	/**
@@ -883,18 +951,22 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public double getDouble(int columnIndex) throws SQLException {
-		double ret = 0;	// note: relaxing by compiler here
-		String dbl = getString(columnIndex);
-		if (dbl != null) {
-			try {
-				ret = Double.parseDouble(dbl);
-			} catch (NumberFormatException e) {
-				// ignore, return the default: 0
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return 0;
 			}
-			// do not catch SQLException for it is declared to be thrown
+			lastReadWasNull = false;
+			try {
+				return Double.parseDouble(val);
+			} catch (NumberFormatException e) {
+				// ignore conversion error, return the default: 0
+				return 0;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
-
-		return ret;
 	}
 
 	/**
@@ -920,7 +992,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int getHoldability() throws SQLException {
-		return getStatement().getConnection().getHoldability();
+		// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+		if (this.getStatement() != null) {
+			return getStatement().getConnection().getHoldability();
+		}
+		return ResultSet.HOLD_CURSORS_OVER_COMMIT;
 	}
 
 	/**
@@ -931,7 +1007,30 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int getFetchDirection() {
-		return FETCH_FORWARD;
+		return ResultSet.FETCH_FORWARD;
+	}
+
+	/**
+	 * Gives a hint as to the direction in which the rows in this ResultSet
+	 * object will be processed. The initial value is determined by the
+	 * Statement object that produced this ResultSet object.
+	 * The fetch direction may be changed at any time.
+	 * <b>currently not implemented</b>
+	 *
+	 * @param direction - an int specifying the suggested fetch direction;
+	 * one of ResultSet.FETCH_FORWARD, ResultSet.FETCH_REVERSE, or ResultSet.FETCH_UNKNOWN
+	 */
+	@Override
+	public void setFetchDirection(int direction) throws SQLException {
+		switch (direction) {
+		case ResultSet.FETCH_FORWARD:
+			break;
+		case ResultSet.FETCH_REVERSE:
+		case ResultSet.FETCH_UNKNOWN:
+			throw new SQLException("Not supported direction " + direction, "0A000");
+		default:
+			throw new SQLException("Illegal direction: " + direction, "M1M05");
+		}
 	}
 
 	/**
@@ -942,7 +1041,30 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int getFetchSize() throws SQLException {
-		return header.getCacheSize();
+		return fetchSize;
+	}
+
+	/**
+	 * Gives the JDBC driver a hint as to the number of rows that should be
+	 * fetched from the database when more rows are needed.  In MonetDB, this is
+	 * actually a no-op, because even before a MonetResultSet object is
+	 * created, the fetch size is already determined in the
+	 * MonetConnection.ResultSetResponse passed to its constructor.  Since all
+	 * data blocks for this whole result set are already allocated in
+	 * MonetConnection.ResultSetResponse, it is too complicated and error-prone
+	 * to still change the fetchSize here.  If one really needs to overwrite
+	 * the default fetchSize, please use MonetStatement.setFetchSize() instead.
+	 *
+	 * @param rows the number of rows to fetch
+	 * @throws SQLException if the condition 0 &lt;= rows is not satisfied
+	 */
+	@Override
+	public void setFetchSize(int rows) throws SQLException {
+		if (rows >= 0) {
+			fetchSize = rows;
+		} else {
+			throw new SQLException("Illegal fetch size value: " + rows, "M1M05");
+		}
 	}
 
 	/**
@@ -956,18 +1078,22 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public float getFloat(int columnIndex) throws SQLException {
-		float ret = 0;	// note: relaxing by compiler here
-		String flt = getString(columnIndex);
-		if (flt != null) {
-			try {
-				ret = Float.parseFloat(flt);
-			} catch (NumberFormatException e) {
-				// ignore, return the default: 0
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return 0;
 			}
-			// do not catch SQLException for it is declared to be thrown
+			lastReadWasNull = false;
+			try {
+				return Float.parseFloat(val);
+			} catch (NumberFormatException e) {
+				// ignore conversion error, return the default: 0
+				return 0;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
-
-		return ret;
 	}
 
 	/**
@@ -995,18 +1121,22 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int getInt(int columnIndex) throws SQLException {
-		int ret = 0;
-		String val = getString(columnIndex);
-		if (val != null) {
-			try {
-				ret = Integer.parseInt(val);
-			} catch (NumberFormatException e) {
-				// ignore, return the default: 0
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return 0;
 			}
-			// do not catch SQLException for it is declared to be thrown
+			lastReadWasNull = false;
+			try {
+				return Integer.parseInt(val);
+			} catch (NumberFormatException e) {
+				// ignore conversion error, return the default: 0
+				return 0;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
-
-		return ret;
 	}
 
 	/**
@@ -1034,9 +1164,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public long getLong(int columnIndex) throws SQLException {
-		long ret = 0;
-		String val = getString(columnIndex);
-		if (val != null) {
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return 0;
+			}
+			lastReadWasNull = false;
+
 			// The oid datatype values (as string) have a  @0  suffix in the string value.
 			// To allow succesful parsing and conversion to long, we need to remove it first
 			if ("oid".equals(types[columnIndex - 1])) {
@@ -1044,16 +1179,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				if (len > 2 && val.endsWith("@0"))
 					val = val.substring(0, len-2);
 			}
-
 			try {
-				ret = Long.parseLong(val);
+				return Long.parseLong(val);
 			} catch (NumberFormatException e) {
-				// ignore, return the default: 0
+				// ignore conversion error, return the default: 0
+				return 0;
 			}
-			// do not catch SQLException for it is declared to be thrown
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
-
-		return ret;
 	}
 
 	/**
@@ -1082,11 +1216,71 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public ResultSetMetaData getMetaData() {
 		// return inner class which implements the ResultSetMetaData interface
 		return new rsmdw() {
-			// for the more expensive methods, we provide a simple cache
-			// for the most expensive part; getting the ResultSet which
-			// contains the data
+			// for the more expensive methods (getPrecision(), getScale(), isNullable()), we provide a simple cache
+			// caches to store precision, scale and isNullable values from getColumns()
+			private boolean[] _is_fetched 	= new boolean[columns.length +1];
+			private int[] _precision 	= new int[columns.length +1];
+			private int[] _scale 		= new int[columns.length +1];
+			private int[] _isNullable 	= new int[columns.length +1];
+			private boolean[] _isAutoincrement = new boolean[columns.length +1];
+			private Connection conn = null;
 			private DatabaseMetaData dbmd = null;
-			private ResultSet[] colrs = new ResultSet[columns.length];
+
+			/**
+			 * A private method to fetch the precision, scale, isNullable and isAutoincrement value for a fully qualified column.
+			 * As md.getColumns() is an expensive method we call it only once per column
+			 * and cache the precision, scale, isNullable and isAutoincrement values in the above array chaches.
+			 * Also we only call md.getColumns() when we have a non empty schema name and table name and column name.
+			 */
+			private void fetchColumnInfo(int column) throws SQLException
+			{
+				if (column <= 0 || column > columns.length)
+					throw newSQLInvalidColumnIndexException(column);
+
+				_is_fetched[column] = true;
+				_precision[column] = 0;
+				_scale[column] = 0;
+				_isNullable[column] = columnNullableUnknown;
+				_isAutoincrement[column] = false;
+
+				// we can only call dbmd.getColumns() when we have a specific schema name and table name and column name
+				String schName = getSchemaName(column);
+				if (schName != null && !"".equals(schName)) {
+					String tblName = getTableName(column);
+					if (tblName != null && !"".equals(tblName)) {
+						String colName = getColumnName(column);
+						if (colName != null && !"".equals(colName)) {
+							if (conn == null) {
+								// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+								if (getStatement() != null) {
+									// first time, get a Connection object and cache it for all next columns
+									conn = getStatement().getConnection();
+								}
+							}
+							if (conn != null && dbmd == null) {
+								// first time, get a MetaData object and cache it for all next columns
+								dbmd = conn.getMetaData();
+							}
+							if (dbmd != null) {
+								// for precision, scale, isNullable and isAutoincrement we query the information from data dictionary
+								ResultSet colInfo = dbmd.getColumns(null, schName, tblName, colName);
+								if (colInfo != null) {
+									// we expect exactly one row in the resultset
+									if (colInfo.next()) {
+										_precision[column] = colInfo.getInt(7);  // col 7 is "COLUMN_SIZE"
+										_scale[column] = colInfo.getInt(9);  // col 9 is "DECIMAL_DIGITS"
+										_isNullable[column] = colInfo.getInt(11);  // col 11 is "NULLABLE"
+										String strVal = colInfo.getString(23);  // col 23 is "IS_AUTOINCREMENT"
+										if (strVal != null && "YES".equals(strVal))
+											_isAutoincrement[column] = true;
+									}
+									colInfo.close();  // close the resultset to release resources
+								}
+							}
+						}
+					}
+				}
+			}
 
 			/**
 			 * Returns the number of columns in this ResultSet object.
@@ -1099,8 +1293,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			}
 
 			/**
-			 * Indicates whether the designated column is automatically
-			 * numbered, thus read-only.
+			 * Indicates whether the designated column is automatically numbered.
 			 * 
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return true if so; false otherwise
@@ -1108,26 +1301,28 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public boolean isAutoIncrement(int column) throws SQLException {
-				// the only column I know of is a 'secret' column called rowid
-				// with datatype oid
-				// avoid nullpointer exception here
-				if ("oid".equals(getColumnTypeName(column))) {
-					return true;
-				} else {
-					return false;
+				if (_is_fetched[column] != true) {
+					fetchColumnInfo(column);
 				}
+				return _isAutoincrement[column];
 			}
 
 			/**
-			 * Indicates whether a column's case matters. This holds for all
-			 * columns in MonetDB resultsets since the mapping is done case
-			 * insensitive, therefore this method will always return false.
+			 * Indicates whether a column's case matters.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
-			 * @returns false
+			 * @returns true for all character string columns else false
 			 */
 			@Override
-			public boolean isCaseSensitive(int column) {
+			public boolean isCaseSensitive(int column) throws SQLException {
+				switch (getColumnType(column)) {
+					case Types.CHAR:
+					case Types.VARCHAR:
+					case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+					case Types.CLOB:
+						return true;
+				}
+
 				return false;
 			}
 
@@ -1166,13 +1361,19 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			/**
 			 * Indicates whether values in the designated column are signed
 			 * numbers.
-			 * Within MonetDB all numeric types are signed.
+			 * Within MonetDB all numeric types (except oid and ptr) are signed.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return true if so; false otherwise
 			 */
 			@Override
 			public boolean isSigned(int column) throws SQLException {
+				String monettype = getColumnTypeName(column);
+				if (monettype != null) {
+					if ("oid".equals(monettype)
+					 || "ptr".equals(monettype))
+						return false;
+				}
 				// we can hardcode this, based on the colum type
 				switch (getColumnType(column)) {
 					case Types.NUMERIC:
@@ -1214,14 +1415,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				try {
 					ret = header.getColumnLengths()[column - 1];
 				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 				}
 
 				return ret;
 			}
 
 			/**
-			 * Get the designated column's table's schema.
+			 * Get the designated column's schema name.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return schema name or "" if not applicable
@@ -1237,17 +1438,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				// figure the name out
 				try {
 					schema = header.getTableNames()[column - 1];
+					if (schema != null) {
+						int dot = schema.indexOf(".");
+						return (dot >= 0) ? schema.substring(0, dot) : "";
+					}
 				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 				}
 
-				if (schema == null) throw
-					new AssertionError("table_name header is empty!");
-				int dot = schema.indexOf(".");
-				if (dot == -1) throw
-					new AssertionError("table_name is not fully qualified! (" + schema + ")");
-
-				return schema.substring(0, dot);
+				return "";
 			}
 
 			/**
@@ -1266,17 +1465,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				// figure the name out
 				try {
 					table = header.getTableNames()[column - 1];
+					if (table != null) {
+						int dot = table.indexOf(".");
+						return (dot >= 0) ? table.substring(dot + 1) : table;
+					}
 				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 				}
 
-				if (table == null) throw
-					new AssertionError("table_name header is empty!");
-				int dot = table.indexOf(".");
-				if (dot == -1) throw
-					new AssertionError("table_name is not fully qualified! (" + table + ")");
-
-				return table.substring(dot + 1);
+				return "";
 			}
 
 			/**
@@ -1291,19 +1488,62 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public int getPrecision(int column) throws SQLException {
-				int precision = 0;
-				try {
-					ResultSet col = getColumnResultSet(column);
-
-					// the result has either zero or one results, as the
-					// schema, table and column should be unique...
-					if (col.next())
-						precision = col.getInt("COLUMN_SIZE");
-				} catch (NullPointerException npe) {
-					/* do nothing */
+				if (_is_fetched[column] != true) {
+					fetchColumnInfo(column);
 				}
-
-				return precision;
+				if (_precision[column] == 0) {
+					// apparently no precision could be fetched
+					// use columnDisplaySize() value for variable length data types
+					switch (getColumnType(column)) {
+						case Types.CHAR:
+						case Types.VARCHAR:
+						case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+						case Types.CLOB:
+						case Types.BLOB:
+						case Types.NUMERIC:
+						case Types.DECIMAL:
+							_precision[column] = getColumnDisplaySize(column);
+							break;
+						case Types.TINYINT:
+							_precision[column] = 3;
+							break;
+						case Types.SMALLINT:
+							_precision[column] = 5;
+							break;
+						case Types.INTEGER:
+							_precision[column] = 10;
+							break;
+						case Types.BIGINT:
+							_precision[column] = 19;
+							break;
+						case Types.REAL:
+							_precision[column] = 7;
+							break;
+						case Types.FLOAT:
+						case Types.DOUBLE:
+							_precision[column] = 15;
+							break;
+						case Types.BIT: // MonetDB doesn't use type BIT, it's here for completeness
+							_precision[column] = 1;
+							break;
+						case Types.BOOLEAN:
+							_precision[column] = 5;
+							break;
+						case Types.DATE:
+							_precision[column] = 10;
+							break;
+						case Types.TIME:
+							_precision[column] = 8;
+							break;
+						case Types.TIMESTAMP:
+							_precision[column] = 19;
+							break;
+						default:
+							_precision[column] = 30;
+							break;
+					}
+				}
+				return _precision[column];
 			}
 
 			/**
@@ -1318,19 +1558,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public int getScale(int column) throws SQLException {
-				int scale = 0;
-				try {
-					ResultSet col = getColumnResultSet(column);
-
-					// the result has either zero or one results, as the
-					// schema, table and column should be unique...
-					if (col.next())
-						scale = col.getInt("DECIMAL_DIGITS");
-				} catch (NullPointerException npe) {
-					/* do nothing */
+				if (_is_fetched[column] != true) {
+					fetchColumnInfo(column);
 				}
-
-				return scale;
+				return _scale[column];
 			}
 
 			/**
@@ -1340,30 +1571,20 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * an SQL query.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
-			 * @return scale
+			 * @return the nullability status of the given column; one of columnNoNulls, columnNullable or columnNullableUnknown
 			 * @throws SQLException if a database access error occurs
 			 */
 			@Override
 			public int isNullable(int column) throws SQLException {
-				int ret = columnNullableUnknown;
-				try {
-					ResultSet col = getColumnResultSet(column);
-
-					// the result has either zero or one results, as the
-					// schema, table and column should be unique...
-					if (col.next())
-						ret = col.getInt("NULLABLE");
-				} catch (NullPointerException npe) {
-					/* do nothing */
+				if (_is_fetched[column] != true) {
+					fetchColumnInfo(column);
 				}
-
-				return ret;
+				return _isNullable[column];
 			}
 
 			/**
 			 * Gets the designated column's table's catalog name.
-			 * Because MonetDB handles only one catalog (dbfarm) at a
-			 * time, the current one is the one we deal with here.
+			 * MonetDB does not support the catalog naming concept as in: catalog.schema.table naming scheme
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return the name of the catalog for the table in which the given
@@ -1371,11 +1592,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public String getCatalogName(int column) throws SQLException {
-				if (getTableName(column) != "") {
-					return getStatement().getConnection().getCatalog();
-				} else {
-					return "";
-				}
+				return null;	// MonetDB does NOT support catalogs
+
 			}
 
 			/**
@@ -1432,24 +1650,29 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public String getColumnClassName(int column) throws SQLException {
-				try {
-					Class type;
-					Map map = getStatement().getConnection().getTypeMap();
-					if (map.containsKey(types[column - 1])) {
-						type = (Class)map.get(types[column - 1]);
-					} else {
-						type = getClassForType(getJavaType(types[column - 1]));
+				final String MonetDBtype = getColumnTypeName(column);
+				Class<?> type = null;
+				if (conn == null) {
+					// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+					if (getStatement() != null) {
+						// first time, get a Connection object and cache it for all next columns
+						conn = getStatement().getConnection();
 					}
-					if (type != null)
-						return type.getName();
-					throw new SQLException("column type mapping null: " +
-							types[column - 1], "M0M03");
-				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
-				} catch (NullPointerException npe) {
-					/* do nothing */
 				}
-				return "";
+				if (conn != null) {
+					Map<String,Class<?>> map = conn.getTypeMap();
+					if (map != null && map.containsKey(MonetDBtype)) {
+						type = (Class)map.get(MonetDBtype);
+					}
+				}
+				if (type == null) {
+					// fallback to the standard Class mappings
+					type = getClassForType(getJavaType(MonetDBtype));
+				}
+				if (type != null) {
+					return type.getName();
+				}
+				throw new SQLException("column type mapping null: " + MonetDBtype, "M0M03");
 			}
 
 			/**
@@ -1478,7 +1701,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				try {
 					return columns[column - 1];
 				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 				}
 			}
 
@@ -1491,9 +1714,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public int getColumnType(int column) throws SQLException {
-				String type = getColumnTypeName(column);
-
-				return getJavaType(type);
+				return getJavaType(getColumnTypeName(column));
 			}
 
 			/**
@@ -1510,81 +1731,183 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				try {
 					return types[column - 1];
 				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
+					throw newSQLInvalidColumnIndexException(column);
 				}
 			}
 
-			/**
-			 * Returns the Metadata ResultSet for the given column
-			 * number of this ResultSet.  If the column was previously
-			 * requested, a cached ResultSet is returned, otherwise it
-			 * is fetched using the DatabaseMetaData class.
-			 *
-			 * @param column the column index number starting from 1
-			 * @return Metadata ResultSet
-			 * @throws SQLException if a database error occurs, NullPointerException for a MonetVirtualResultSet
-			 */
-			private ResultSet getColumnResultSet(int column)
-				throws SQLException
-			{
-				if (column > columns.length || column <= 0) throw
-					new SQLException("No such column " + column, "M1M05");
-
-				if (colrs[column - 1] == null) {
-					if (dbmd == null) {
-						// Note: the next code will throw a NullPointerException when called
-						// for a MonetVirtualResultSet as getStatement() will return null
-						// it will be caught in the methods which call this private method.
-						dbmd = getStatement().getConnection().getMetaData();
-					}
-					ResultSet col = 
-						dbmd.getColumns(
-								null, /* this doesn't matter here... */
-								getSchemaName(column),
-								getTableName(column),
-								getColumnName(column)
-							);
-					colrs[column - 1] = col;
-				}
-
-				colrs[column - 1].beforeFirst();
-				return colrs[column - 1];
-			}
-		};
-	}
+		};	// end of new rsmdw()
+	}	// end of getMetaData()
 
 	/**
 	 * Gets the value of the designated column in the current row of this
 	 * ResultSet object as an Object in the Java programming language.
-	 * 
+	 *
 	 * This method will return the value of the given column as a Java object.
 	 * The type of the Java object will be the default Java object type
 	 * corresponding to the column's SQL type, following the mapping for
 	 * built-in types specified in the JDBC specification. If the value is
 	 * an SQL NULL, the driver returns a Java null.
-	 * 
+	 *
 	 * This method may also be used to read database-specific abstract data
 	 * types. In the JDBC 2.0 API, the behavior of method getObject is extended
 	 * to materialize data of SQL user-defined types. When a column contains a
 	 * structured or distinct value, the behavior of this method is as if it
-	 * were a call to: getObject(columnIndex,
-	 * this.getStatement().getConnection().getTypeMap()).
+	 * were a call to: getObject(columnIndex, this.getStatement().getConnection().getTypeMap()).
 	 *
 	 * @param columnIndex the first column is 1, the second is 2, ...
-	 * @return a java.lang.Object holding the column value
+	 * @return a java.lang.Object holding the column value or null
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
 	public Object getObject(int columnIndex) throws SQLException {
-	  /* statement is null for virtual result sets such as the ones that hold generated keys */
-	  if (this.getStatement() == null) {
-	   return getObject(columnIndex, new HashMap<String, Class<?>>());
-	  }
-		return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
+		// Many generic JDBC programs use getObject(colnr) to retrieve value objects from a resultset
+		// For speed the implementation should be as fast as possible, so avoid method calls (by inlining code) where possible
+		final String MonetDBType;
+		final int JdbcType;
+		final String val;
+		try {
+			val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
+			}
+			lastReadWasNull = false;
+			MonetDBType = types[columnIndex - 1];
+			JdbcType = getJavaType(MonetDBType);
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
+		}
+
+		switch(JdbcType) {
+			case Types.BIT: // MonetDB doesn't use type BInary digiT, it's here for completeness
+			case Types.TINYINT:
+			case Types.SMALLINT:
+				try {
+					return Short.valueOf(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.INTEGER:
+				try {
+					return Integer.valueOf(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.BIGINT:
+				try {
+					return Long.valueOf(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.DOUBLE:
+			case Types.FLOAT:
+				try {
+					return Double.valueOf(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.REAL:
+				try {
+					return Float.valueOf(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.DECIMAL:
+			case Types.NUMERIC:
+				try {
+					return new BigDecimal(val);
+				} catch (NumberFormatException e) {
+					return val;
+				}
+			case Types.BOOLEAN:
+				return Boolean.valueOf(val);
+			case Types.VARCHAR:
+			{
+				// The MonetDB types: inet, json, url and uuid are all mapped to Types.VARCHAR in MonetDriver.typeMap
+				// For these MonetDB types (except json, see comments below) we try to create objects of the corresponding class.
+				// As in most cases when we get here the MonetDBtype will be "varchar". For efficiency we compare
+				// the MonetDBtype first letter to see if we can skip the three .equals(MonetDBType) method calls.
+				char firstletter = MonetDBType.charAt(0);
+				if (firstletter == 'i') {
+					if ("inet".equals(MonetDBType)) {
+						try {
+							nl.cwi.monetdb.jdbc.types.INET inet_obj = new nl.cwi.monetdb.jdbc.types.INET();
+							inet_obj.fromString(val);
+							return inet_obj;
+						} catch (Exception exc) {
+							// ignore exception and just return the val String object
+							return val;
+						}
+					}
+				}
+				else if (firstletter == 'u') {
+					if ("url".equals(MonetDBType)) {
+						try {
+							nl.cwi.monetdb.jdbc.types.URL url_obj = new nl.cwi.monetdb.jdbc.types.URL();
+							url_obj.fromString(val);
+							return url_obj;
+						} catch (MalformedURLException exc) {
+							// ignore exception and just return the val String object
+							return val;
+						} catch (Exception exc) {
+							// ignore exception and just return the val String object
+							return val;
+						}
+					}
+					if ("uuid".equals(MonetDBType)) {
+						try {
+							return java.util.UUID.fromString(val);
+						} catch (IllegalArgumentException exc) {
+							// ignore exception and just return the val String object
+							return val;
+						}
+					}
+				}
+//				else if (firstletter == 'j') {
+//					if ("json".equals(MonetDBType)) {
+						// There is no support for JSON in standard java class libraries.
+						// Possibly we could use org.json.simple.JSONObject or other/faster libs
+						// javax.json.Json is not released yet (see https://json-processing-spec.java.net/)
+						// see also https://github.com/fabienrenaud/java-json-benchmark
+						// Note that it would make our JDBC driver dependent of an external jar
+						// and we don't want that so simply return it as String object
+//						return val;
+//					}
+//				}
+				return val;
+			}
+			case Types.CHAR:
+			case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+				return val;
+			case Types.CLOB:
+				return new MonetClob(val);
+			case Types.BLOB:
+				return MonetBlob.create(val);
+			case Types.DATE:
+				return getDate(columnIndex);
+			case Types.TIME:
+				return getTime(columnIndex);
+			case Types.TIMESTAMP:
+				return getTimestamp(columnIndex);
+			case Types.BINARY:
+			case Types.VARBINARY:
+			case Types.LONGVARBINARY: // MonetDB doesn't use type LONGVARBINARY, it's here for completeness
+				return getBytes(columnIndex);
+			case Types.OTHER:
+			default:
+				// When we get here the column type is a non-standard JDBC SQL type, possibly a User Defined Type.
+				// Just call getObject(int, Map) for those rare cases.
+
+				/* note: statement will be null for a MonetVirtualResultSet, such as the ones that hold generated keys */
+				if (this.getStatement() == null) {	// prevent NPE
+					return val;
+				}
+				return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
+		}
 	}
 
-	private boolean classImplementsSQLData(Class cl) {
-		Class[] cls = cl.getInterfaces();
+	private boolean classImplementsSQLData(Class<?> cl) {
+		Class<?>[] cls = cl.getInterfaces();
 		for (int i = 0; i < cls.length; i++) {
 			if (cls[i] == SQLData.class)
 				return true;
@@ -1593,11 +1916,26 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	/**
-	 * Retrieves the value of the designated column in the current row of this
-	 * ResultSet object as an Object in the Java programming language. If the
-	 * value is an SQL NULL, the driver returns a Java null. This method uses
-	 * the given Map object for the custom mapping of the SQL structured or
-	 * distinct type that is being retrieved.
+	 * Gets the value of the designated column in the current row of this
+	 * ResultSet object as an Object in the Java programming language.
+	 *
+	 * This method will return the value of the given column as a Java object.
+	 * The type of the Java object will be the default Java object type corresponding
+	 * to the column's SQL type, following the mapping for built-in types specified
+	 * in the JDBC specification.
+	 * If the value is an SQL NULL, the driver returns a Java null.
+	 *
+	 * This method may also be used to read database-specific abstract data types.
+	 * In the JDBC 2.0 API, the behavior of method getObject is extended to
+	 * materialize data of SQL user-defined types.
+	 *
+	 * If Connection.getTypeMap does not throw a SQLFeatureNotSupportedException, then
+	 * when a column contains a structured or distinct value, the behavior of this
+	 * method is as if it were a call to: getObject(columnIndex,
+	 * this.getStatement().getConnection().getTypeMap()).
+	 * If Connection.getTypeMap does throw a SQLFeatureNotSupportedException, then
+	 * structured values are not supported, and distinct values are mapped to the
+	 * default Java class as determined by the underlying SQL type of the DISTINCT type.
 	 *
 	 * @param i the first column is 1, the second is 2, ...
 	 * @param map a java.util.Map object that contains the mapping from SQL
@@ -1607,48 +1945,61 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
-	public Object getObject(int i, Map<String,Class<?>> map)
+	@SuppressWarnings("unchecked")
+	public Object getObject(int columnIndex, Map<String,Class<?>> map)
 		throws SQLException
 	{
-		Class<?> type;
-
-		if (tlp.values[i - 1] == null) {
-			lastColumnRead = i - 1;
-			return null;
+		final String val;
+		final String MonetDBtype;
+		try {
+			val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
+			}
+			lastReadWasNull = false;
+			MonetDBtype = types[columnIndex - 1];
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 
-		if (map.containsKey(types[i - 1])) {
-			type = map.get(types[i - 1]);
-		} else {
-			type = getClassForType(getJavaType(types[i - 1]));
+		Class<?> type = null;
+		if (map != null && map.containsKey(MonetDBtype)) {
+			type = map.get(MonetDBtype);
+		}
+		if (type == null) {
+			// fallback to the standard Class mappings
+			type = getClassForType(getJavaType(MonetDBtype));
 		}
 
-		if (type == String.class) {
-			return getString(i);
+		if (type == null || type == String.class) {
+			return val;
 		} else if (type == BigDecimal.class) {
-			return getBigDecimal(i);
+			return getBigDecimal(columnIndex);
 		} else if (type == Boolean.class) {
-			return Boolean.valueOf(getBoolean(i));
+			return Boolean.valueOf(getBoolean(columnIndex));
+		} else if (type == Short.class) {
+			return Short.valueOf(getShort(columnIndex));
 		} else if (type == Integer.class) {
-			return Integer.valueOf(getInt(i));
+			return Integer.valueOf(getInt(columnIndex));
 		} else if (type == Long.class) {
-			return Long.valueOf(getLong(i));
+			return Long.valueOf(getLong(columnIndex));
 		} else if (type == Float.class) {
-			return Float.valueOf(getFloat(i));
+			return Float.valueOf(getFloat(columnIndex));
 		} else if (type == Double.class) {
-			return Double.valueOf(getDouble(i));
+			return Double.valueOf(getDouble(columnIndex));
 		} else if (type == byte[].class) {
-			return getBytes(i);
+			return getBytes(columnIndex);
 		} else if (type == java.sql.Date.class) {
-			return getDate(i);
+			return getDate(columnIndex);
 		} else if (type == Time.class) {
-			return getTime(i);
+			return getTime(columnIndex);
 		} else if (type == Timestamp.class) {
-			return getTimestamp(i);
+			return getTimestamp(columnIndex);
 		} else if (type == Clob.class) {
-			return getClob(i);
+			return getClob(columnIndex);
 		} else if (type == Blob.class) {
-			return getBlob(i);
+			return getBlob(columnIndex);
 		} else if (classImplementsSQLData(type)) {
 			SQLData x;
 			try {
@@ -1661,12 +2012,12 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				throw new SQLException(ie.getMessage(), "M0M27");
 			} catch (IllegalAccessException iae) {
 				throw new SQLException(iae.getMessage(), "M0M27");
-			} catch (IllegalArgumentException ige) {
-				throw new SQLException(ige.getMessage(), "M0M27");
 			} catch (InvocationTargetException ite) {
 				throw new SQLException(ite.getMessage(), "M0M27");
+			} catch (SecurityException se) {
+				throw new SQLException(se.getMessage(), "M0M27");
 			}
-			final int colnum = i;
+			final int colnum = columnIndex;
 			final boolean valwasnull = wasNull();
 			SQLInput input = new SQLInput() {
 				@Override
@@ -1804,10 +2155,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 					return getRowId(colnum);
 				}
 			};
-			x.readSQL(input, types[i - 1]);
+			x.readSQL(input, MonetDBtype);
 			return x;
 		} else {
-			return getString(i);
+			return val;
 		}
 	}
 
@@ -1817,6 +2168,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * the column to the requested Java data type, if the conversion is
 	 * supported.  If the conversion is not supported or null is
 	 * specified for the type, a SQLException is thrown.
+	 *
+	 * At a minimum, an implementation must support the conversions defined
+	 * in Appendix B, Table B-3 and conversion of appropriate user defined
+	 * SQL types to a Java type which implements SQLData, or Struct.
+	 * Additional conversions may be supported and are vendor defined.
 	 *
 	 * @param i the first column is 1, the second is 2, ...
 	 * @param type Class representing the Java data type to convert the
@@ -1872,7 +2228,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		 * This switch returns the types as objects according to table B-3 from
 		 * Oracle's JDBC specification 4.1
 		 */
-		// keep this switch aligned with getObject(int, Map) !
+		// keep this switch regarding the returned classes aligned with getObject(int, Map) !
 		switch(type) {
 			case Types.CHAR:
 			case Types.VARCHAR:
@@ -1881,9 +2237,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			case Types.NUMERIC:
 			case Types.DECIMAL:
 				return BigDecimal.class;
-			case Types.BIT: // we don't use type BIT, it's here for completeness
 			case Types.BOOLEAN:
 				return Boolean.class;
+			case Types.BIT: // MonetDB doesn't support type BIT, it's here for completeness
 			case Types.TINYINT:
 			case Types.SMALLINT:
 				return Short.class;
@@ -1930,19 +2286,13 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * This method may also be used to read database-specific abstract data
 	 * types.
 	 * 
-	 * In the JDBC 2.0 API, the behavior of the method getObject is extended to
-	 * materialize data of SQL user-defined types. When a column contains a
-	 * structured or distinct value, the behavior of this method is as if it
-	 * were a call to: getObject(columnName,
-	 * this.getStatement().getConnection().getTypeMap()).
-	 *
 	 * @param columnName the SQL name of the column
 	 * @return a java.lang.Object holding the column value
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
 	public Object getObject(String columnName) throws SQLException {
-		return getObject(columnName, this.getStatement().getConnection().getTypeMap());
+		return getObject(findColumn(columnName));
 	}
 
 	/**
@@ -1963,9 +2313,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	@Override
-	public Ref getRef(int i) throws SQLException { throw new SQLException("Method getRef not implemented yet, sorry!", "0A000"); }
+	public Ref getRef(int i) throws SQLException {
+		throw newSQLFeatureNotSupportedException("getRef");
+	}
+
 	@Override
-	public Ref getRef(String colName) throws SQLException { throw new SQLException("Method getRef not implemented yet, sorry!", "0A000"); }
+	public Ref getRef(String colName) throws SQLException {
+		throw newSQLFeatureNotSupportedException("getRef");
+	}
 
 	/**
 	 * Retrieves the current row number. The first row is number 1, the second
@@ -1992,7 +2347,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public RowId getRowId(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getRowId() not supported", "0A000");
+		throw newSQLFeatureNotSupportedException("getRowId");
 	}
 
 	/**
@@ -2009,7 +2364,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public RowId getRowId(String columnName) throws SQLException {
-		return getRowId(findColumn(columnName));
+		throw newSQLFeatureNotSupportedException("getRowId");
 	}
 
 	/**
@@ -2023,18 +2378,22 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public short getShort(int columnIndex) throws SQLException {
-		short ret = 0;	// note: relaxing by compiler here
-		String val = getString(columnIndex);
-		if (val != null) {
-			try {
-				ret = Short.parseShort(val);
-			} catch (NumberFormatException e) {
-				// ignore, return the default: 0
+		try {
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return 0;
 			}
-			// do not catch SQLException for it is declared to be thrown
+			lastReadWasNull = false;
+			try {
+				return Short.parseShort(val);
+			} catch (NumberFormatException e) {
+				// ignore conversion error, return the default: 0
+				return 0;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
-
-		return ret;
 	}
 
 	/**
@@ -2075,15 +2434,16 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public String getString(int columnIndex) throws SQLException {
-		// note: all current getters use the string getter in the end
-		// in the future this might change, and the lastColumnRead must
-		// be updated for the wasNull command to work properly!!!
 		try {
-			String ret = tlp.values[columnIndex - 1];
-			lastColumnRead = columnIndex - 1;
-			return ret;
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
+			}
+			lastReadWasNull = false;
+			return val;
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException("No such column " + columnIndex, "M1M05");
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -2150,7 +2510,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public SQLXML getSQLXML(int i) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getSQLXML() not supported", "0A000");
+		throw newSQLFeatureNotSupportedException("getSQLXML");
 	}
 
 	/**
@@ -2168,7 +2528,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public SQLXML getSQLXML(String colName) throws SQLException {
-		return getSQLXML(findColumn(colName));
+		throw newSQLFeatureNotSupportedException("getSQLXML");
 	}
 
 	// This behaviour is according table B-6 of Sun JDBC Specification 3.0
@@ -2195,34 +2555,40 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @return the fractional seconds (nanos) or -1 if the value is NULL
 	 * @throws SQLException if a database error occurs
 	 */
-	private int getJavaDate(Calendar cal, int col, int type)
+	private int getJavaDate(Calendar cal, int columnIndex, int type)
 		throws SQLException
 	{
 		if (cal == null) throw
 			new IllegalArgumentException("No Calendar object given!");
-		if (col <= 0) throw
-			new IllegalArgumentException("No valid column number given!");
 
-		String monetDate = getString(col);
-		if (monetDate == null)
-			return -1;
-
-		int nanos = 0;
-		TimeZone ptz = cal.getTimeZone();
-
-		// If we got a string type, set the datatype to the given
-		// type so we attempt to parse it as the caller thinks it is.
-		int dataType = getJavaType(types[col - 1]);
-		if (dataType == Types.CHAR ||
-			dataType == Types.VARCHAR ||
-			dataType == Types.LONGVARCHAR)
-		{
-			dataType = type;
+		final String monetDate;
+		final String MonetDBType;
+		int JdbcType;
+		try {
+			monetDate = tlp.values[columnIndex - 1];
+			if (monetDate == null) {
+				lastReadWasNull = true;
+				return -1;
+			}
+			lastReadWasNull = false;
+			MonetDBType = types[columnIndex - 1];
+			JdbcType = getJavaType(MonetDBType);
+			// If we got a string type, set the JdbcType to the given type
+			// so we attempt to parse it as the caller thinks it is.
+			if (JdbcType == Types.CHAR ||
+			    JdbcType == Types.VARCHAR ||
+			    JdbcType == Types.LONGVARCHAR)
+			{
+				JdbcType = type;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 
 		// we know whether we have a time with or without
 		// time zone if the monet type ends with "tz"
-		boolean hasTimeZone = types[col - 1].endsWith("tz");
+		boolean hasTimeZone = (MonetDBType != null) ? MonetDBType.endsWith("tz") : false;
+		TimeZone ptz = cal.getTimeZone();
 
 		// it is important to parse the time in the given timezone in
 		// order to get a correct (UTC) time value, hence we need to
@@ -2234,27 +2600,26 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 						monetDate.length() - 6,
 						monetDate.length()));
 		}
-		ts.setTimeZone(ptz);
-		t.setTimeZone(ptz);
-		d.setTimeZone(ptz);
 
 		java.util.Date pdate = null;
 		ParsePosition ppos = new ParsePosition(0);
-		switch(dataType) {
-			default:
-				addWarning("unsupported data type", "01M03");
-				cal.clear();
-				nanos = 0;
-				return nanos;
+		switch(JdbcType) {
 			case Types.DATE:
+				d.setTimeZone(ptz);
 				pdate = d.parse(monetDate, ppos);
 				break;
 			case Types.TIME:
+				t.setTimeZone(ptz);
 				pdate = t.parse(monetDate, ppos);
 				break;
 			case Types.TIMESTAMP:
+				ts.setTimeZone(ptz);
 				pdate = ts.parse(monetDate, ppos);
 				break;
+			default:
+				addWarning("unsupported data type", "01M03");
+				cal.clear();
+				return 0;
 		}
 		if (pdate == null) {
 			// parsing failed
@@ -2272,12 +2637,12 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			}
 			// default value
 			cal.clear();
-			nanos = 0;
-			return nanos;
+			return 0;
 		}
 		cal.setTime(pdate);
 
-		if (dataType == Types.TIME || dataType == Types.TIMESTAMP) {
+		int nanos = 0;
+		if (JdbcType == Types.TIME || JdbcType == Types.TIMESTAMP) {
 			// parse additional nanos (if any)
 			int pos = ppos.getIndex();
 			char[] monDate = monetDate.toCharArray();
@@ -2351,7 +2716,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public java.sql.Date getDate(int columnIndex) throws SQLException {
-		return getDate(columnIndex,	Calendar.getInstance());
+		return getDate(columnIndex, Calendar.getInstance());
 	}
 
 	/**
@@ -2388,7 +2753,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public java.sql.Date getDate(String columnName) throws SQLException {
-		return getDate(columnName, Calendar.getInstance());
+		return getDate(findColumn(columnName), Calendar.getInstance());
 	}
 
 	/**
@@ -2462,7 +2827,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Time getTime(String columnName) throws SQLException {
-		return getTime(columnName, Calendar.getInstance());
+		return getTime(findColumn(columnName), Calendar.getInstance());
 	}
 
 	/**
@@ -2522,10 +2887,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		throws SQLException
 	{
 		int nanos = getJavaDate(cal, columnIndex, Types.TIMESTAMP);
-		if (nanos == -1) return null;
+		if (nanos == -1)
+			return null;
+
 		Timestamp ts = new Timestamp(cal.getTimeInMillis());
 		ts.setNanos(nanos);
-
 		return ts;
 	}
 
@@ -2541,7 +2907,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Timestamp getTimestamp(String columnName) throws SQLException {
-		return getTimestamp(columnName, Calendar.getInstance());
+		return getTimestamp(findColumn(columnName), Calendar.getInstance());
 	}
 
 	/**
@@ -2593,12 +2959,20 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public URL getURL(int columnIndex) throws SQLException {
-		String url = getString(columnIndex);	
-		if (url == null) return null;
 		try {
-			return new URL(url);
-		} catch (MalformedURLException e) {
-			throw new SQLException(e.getMessage(), "M1M05");
+			String val = tlp.values[columnIndex - 1];
+			if (val == null) {
+				lastReadWasNull = true;
+				return null;
+			}
+			lastReadWasNull = false;
+			try {
+				return new URL(val);
+			} catch (MalformedURLException e) {
+				throw new SQLException(e.getMessage(), "M1M05");
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
 	}
 
@@ -2636,7 +3010,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public SQLWarning getWarnings() throws SQLException {
-		if (header.isClosed())
+		if (header != null && header.isClosed())
 			throw new SQLException("Cannot call on closed ResultSet", "M1M20");
 
 		// if there are no warnings, this will be null, which fits with the
@@ -2678,7 +3052,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public boolean isClosed() {
-		return header.isClosed();
+		return header != null && header.isClosed();
 	}
 
 	/**
@@ -2770,198 +3144,519 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		return absolute(curRow + rows);
 	}
 
-	/* these methods are all related to updateable result sets, which we
+	/**
+	 * Retrieves whether a row has been deleted. A deleted row may leave a visible "hole" in a result set.
+	 * This method can be used to detect holes in a result set.
+	 * The value returned depends on whether or not this ResultSet object can detect deletions.
+	 *
+	 * Note: Support for the rowDeleted method is optional with a result set concurrency of CONCUR_READ_ONLY
+	 *
+	 * Returns: true if the current row is detected to have been deleted by the owner or another; false otherwise
+	 *
+	 * Throws:
+	 *     SQLException - if a database access error occurs or this method is called on a closed result set
+	 *     SQLFeatureNotSupportedException - if the JDBC driver does not support this method
+	 * Since: 1.2
+	 * See Also: DatabaseMetaData.deletesAreDetected(int)
+	 */
+	@Override
+	public boolean rowDeleted() throws SQLException {
+		return false;
+	}
+
+	/**
+	 * Retrieves whether the current row has had an insertion.
+	 * The value returned depends on whether or not this ResultSet object can detect visible inserts.
+	 *
+	 * Note: Support for the rowInserted method is optional with a result set concurrency of CONCUR_READ_ONLY
+	 *
+	 * Returns: true if the current row is detected to have been inserted; false otherwise
+	 *
+	 * Throws:
+	 *     SQLException - if a database access error occurs or this method is called on a closed result set
+	 *     SQLFeatureNotSupportedException - if the JDBC driver does not support this method
+	 * Since: 1.2
+	 * See Also: DatabaseMetaData.insertsAreDetected(int)
+	 */
+	@Override
+	public boolean rowInserted() throws SQLException {
+		return false;
+	}
+
+	/**
+	 * Retrieves whether the current row has been updated.
+	 * The value returned depends on whether or not the result set can detect updates.
+	 *
+	 * Note: Support for the rowUpdated method is optional with a result set concurrency of CONCUR_READ_ONLY
+	 *
+	 * Returns: true if the current row is detected to have been visibly updated by the owner or another; false otherwise
+	 *
+	 * Throws:
+	 *     SQLException - if a database access error occurs or this method is called on a closed result set
+	 *     SQLFeatureNotSupportedException - if the JDBC driver does not support this method
+	 * Since: 1.2
+	 * See Also: DatabaseMetaData.updatesAreDetected(int)
+	 */
+	@Override
+	public boolean rowUpdated() throws SQLException {
+		return false;
+	}
+
+	/* the next methods are all related to updateable result sets, which we
 	   currently do not support */
 	@Override
-	public void cancelRowUpdates() throws SQLException { throw new SQLFeatureNotSupportedException("Method cancelRowUpdates not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void deleteRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method deleteRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void insertRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method insertRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void moveToCurrentRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method moveToCurrentRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void moveToInsertRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method moveToInsertRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void refreshRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method refreshRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public boolean rowDeleted() throws SQLException { throw new SQLFeatureNotSupportedException("Method rowDeleted not implemented yet, sorry!", "0A000"); }
-	@Override
-	public boolean rowInserted() throws SQLException { throw new SQLFeatureNotSupportedException("Method rowInserted not implemented yet, sorry!", "0A000"); }
-	@Override
-	public boolean rowUpdated() throws SQLException { throw new SQLFeatureNotSupportedException("Method rowUpdated not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void setFetchDirection(int direction) throws SQLException { throw new SQLFeatureNotSupportedException("Method setFetchDirection not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void setFetchSize(int rows) throws SQLException { throw new SQLFeatureNotSupportedException("Method setFetchSize not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateArray(int columnIndex, Array x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateArray not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateArray(String columnName, Array x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateArray not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(int columnIndex, InputStream xh) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(String columnName, InputStream x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(String columnName, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(String columnName, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBigDecimal not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBigDecimal(String columnName, BigDecimal x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBigDecimal not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(String columnName, InputStream x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(String columnName, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(String columnName, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(int columnIndex, Blob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(int columnIndex, InputStream s) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(int columnIndex, InputStream s, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(String columnName, Blob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(String columnName, InputStream s) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(String columnName, InputStream s, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBoolean(int columnIndex, boolean x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBoolean not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBoolean(String columnName, boolean x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBoolean not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateByte(int columnIndex, byte x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateByte not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateByte(String columnName, byte x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateByte not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBytes(int columnIndex, byte[] x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBytes not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBytes(String columnName, byte[] x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBytes not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(int columnIndex, Reader x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(String columnName, Reader reader) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(String columnName, Reader reader, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(String columnName, Reader reader, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	public void updateNCharacterStream(int columnIndex, Reader x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNCharacterStream(String columnName, Reader reader) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	public void updateNCharacterStream(String columnName, Reader reader, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNCharacterStream(String columnName, Reader reader, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(int columnIndex, Clob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(int columnIndex, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(int columnIndex, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(String columnName, Clob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(String columnName, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(String columnName, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(int columnIndex, NClob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(int columnIndex, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(int columnIndex, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(String columnName, NClob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(String columnName, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(String columnName, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateDate(int columnIndex, java.sql.Date x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDate not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateDate(String columnName, java.sql.Date x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDate not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateDouble(int columnIndex, double x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDouble not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateDouble(String columnName, double x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDouble not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateFloat(int columnIndex, float x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateFloat not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateFloat(String columnName, float x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateFloat not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateInt(int columnIndex, int x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateInt not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateInt(String columnName, int x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateInt not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateLong(int columnIndex, long x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateLong not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateLong(String columnName, long x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateLong not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNull(int columnIndex) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNull not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNull(String columnName) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNull not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateObject(int columnIndex, Object x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateObject(int columnIndex, Object x, int scale) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateObject(String columnName, Object x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateObject(String columnName, Object x, int scale) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateRef(int columnIndex, Ref x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRef not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateRef(String columnName, Ref x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRef not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateRowId(int columnIndex, RowId x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRowId not implemented yet, sorry", "0A000"); }
-	@Override
-	public void updateRowId(String columnLabel, RowId x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRowId not implemented yet, sorry", "0A000"); }
-	@Override
-	public void updateShort(int columnIndex, short x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateShort not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateShort(String columnName, short x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateShort not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateString(int columnIndex, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateString not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateString(String columnName, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateString not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNString(int columnIndex, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNString not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNString(String columnName, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNString not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateSQLXML(String columnName, SQLXML x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateSQLXML not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateSQLXML(int columnIndex, SQLXML x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateSQLXML not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateTime(int columnIndex, Time x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTime not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateTime(String columnName, Time x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTime not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTimestamp not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateTimestamp(String columnName, Timestamp x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTimestamp not implemented yet, sorry!", "0A000"); }
+	public void cancelRowUpdates() throws SQLException {
+		throw newSQLFeatureNotSupportedException("cancelRowUpdates");
+	}
+
+	@Override
+	public void deleteRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("deleteRow");
+	}
+
+	@Override
+	public void insertRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("insertRow");
+	}
+
+	@Override
+	public void moveToCurrentRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("moveToCurrentRow");
+	}
+
+	@Override
+	public void moveToInsertRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("moveToInsertRow");
+	}
+
+	@Override
+	public void refreshRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("refreshRow");
+	}
+
+
+	@Override
+	public void updateArray(int columnIndex, Array x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateArray");
+	}
+
+	@Override
+	public void updateArray(String columnName, Array x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateArray");
+	}
+
+	@Override
+	public void updateAsciiStream(int columnIndex, InputStream xh) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateAsciiStream(String columnName, InputStream x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateAsciiStream(String columnName, InputStream x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateAsciiStream(String columnName, InputStream x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBigDecimal");
+	}
+
+	@Override
+	public void updateBigDecimal(String columnName, BigDecimal x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBigDecimal");
+	}
+
+	@Override
+	public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBinaryStream(String columnName, InputStream x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBinaryStream(String columnName, InputStream x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBinaryStream(String columnName, InputStream x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBlob(int columnIndex, Blob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBlob(int columnIndex, InputStream s) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBlob(int columnIndex, InputStream s, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBlob(String columnName, Blob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBlob(String columnName, InputStream s) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBlob(String columnName, InputStream s, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBoolean(int columnIndex, boolean x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBoolean");
+	}
+
+	@Override
+	public void updateBoolean(String columnName, boolean x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBoolean");
+	}
+
+	@Override
+	public void updateByte(int columnIndex, byte x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateByte");
+	}
+
+	@Override
+	public void updateByte(String columnName, byte x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateByte");
+	}
+
+	@Override
+	public void updateBytes(int columnIndex, byte[] x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBytes");
+	}
+
+	@Override
+	public void updateBytes(String columnName, byte[] x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBytes");
+	}
+
+	@Override
+	public void updateCharacterStream(int columnIndex, Reader x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateCharacterStream(String columnName, Reader reader) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateCharacterStream(String columnName, Reader reader, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateCharacterStream(String columnName, Reader reader, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	public void updateNCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	@Override
+	public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	@Override
+	public void updateNCharacterStream(String columnName, Reader reader) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	public void updateNCharacterStream(String columnName, Reader reader, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	@Override
+	public void updateNCharacterStream(String columnName, Reader reader, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	@Override
+	public void updateClob(int columnIndex, Clob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateClob(int columnIndex, Reader r) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateClob(int columnIndex, Reader r, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateClob(String columnName, Clob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateClob(String columnName, Reader r) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateClob(String columnName, Reader r, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateNClob(int columnIndex, NClob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateNClob(int columnIndex, Reader r) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateNClob(int columnIndex, Reader r, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateNClob(String columnName, NClob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateNClob(String columnName, Reader r) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateNClob(String columnName, Reader r, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateDate(int columnIndex, java.sql.Date x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateDate");
+	}
+
+	@Override
+	public void updateDate(String columnName, java.sql.Date x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateDate");
+	}
+
+	@Override
+	public void updateDouble(int columnIndex, double x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateDouble");
+	}
+
+	@Override
+	public void updateDouble(String columnName, double x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateDouble");
+	}
+
+	@Override
+	public void updateFloat(int columnIndex, float x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateFloat");
+	}
+
+	@Override
+	public void updateFloat(String columnName, float x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateFloat");
+	}
+
+	@Override
+	public void updateInt(int columnIndex, int x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateInt");
+	}
+
+	@Override
+	public void updateInt(String columnName, int x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateInt");
+	}
+
+	@Override
+	public void updateLong(int columnIndex, long x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateLong");
+	}
+
+	@Override
+	public void updateLong(String columnName, long x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateLong");
+	}
+
+	@Override
+	public void updateNull(int columnIndex) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNull");
+	}
+
+	@Override
+	public void updateNull(String columnName) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNull");
+	}
+
+	@Override
+	public void updateObject(int columnIndex, Object x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateObject");
+	}
+
+	@Override
+	public void updateObject(int columnIndex, Object x, int scale) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateObject");
+	}
+
+	@Override
+	public void updateObject(String columnName, Object x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateObject");
+	}
+
+	@Override
+	public void updateObject(String columnName, Object x, int scale) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateObject");
+	}
+
+	@Override
+	public void updateRef(int columnIndex, Ref x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateRef");
+	}
+
+	@Override
+	public void updateRef(String columnName, Ref x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateRef");
+	}
+
+	@Override
+	public void updateRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateRow");
+	}
+
+	@Override
+	public void updateRowId(int columnIndex, RowId x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateRowId");
+	}
+
+	@Override
+	public void updateRowId(String columnLabel, RowId x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateRowId");
+	}
+
+	@Override
+	public void updateShort(int columnIndex, short x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateShort");
+	}
+
+	@Override
+	public void updateShort(String columnName, short x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateShort");
+	}
+
+	@Override
+	public void updateString(int columnIndex, String x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateString");
+	}
+
+	@Override
+	public void updateString(String columnName, String x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateString");
+	}
+
+	@Override
+	public void updateNString(int columnIndex, String x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNString");
+	}
+
+	@Override
+	public void updateNString(String columnName, String x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNString");
+	}
+
+	@Override
+	public void updateSQLXML(String columnName, SQLXML x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateSQLXML");
+	}
+
+	@Override
+	public void updateSQLXML(int columnIndex, SQLXML x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateSQLXML");
+	}
+
+	@Override
+	public void updateTime(int columnIndex, Time x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateTime");
+	}
+
+	@Override
+	public void updateTime(String columnName, Time x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateTime");
+	}
+
+	@Override
+	public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateTimestamp");
+	}
+
+	@Override
+	public void updateTimestamp(String columnName, Timestamp x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateTimestamp");
+	}
 
 	// Chapter 14.2.3.3 Sun JDBC 3.0 Specification
 	/**
@@ -2975,7 +3670,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public boolean wasNull() {
-		return lastColumnRead != -1 ? tlp.values[lastColumnRead] == null : false;
+		return lastReadWasNull;
 	}
 
 	//== end methods of interface ResultSet
@@ -3016,4 +3711,28 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		}
 		return type;
 	}
+
+	/**
+	 * Small helper method that formats the "Invalid Column Index number ..." message
+	 * and creates a new SQLException object whose SQLState is set to "M1M05".
+	 *
+	 * @param name the method name
+	 * @return a new created SQLException object with SQLState M1M05
+	 */
+	private final static SQLException newSQLInvalidColumnIndexException(int colIdx) {
+		return new SQLException("Invalid Column Index number: " + colIdx, "M1M05");
+	}
+
+	/**
+	 * Small helper method that formats the "Method ... not implemented" message
+	 * and creates a new SQLFeatureNotSupportedException object
+	 * whose SQLState is set to "0A000".
+	 *
+	 * @param name the method name
+	 * @return a new created SQLFeatureNotSupportedException object with SQLState 0A000
+	 */
+	private final static SQLFeatureNotSupportedException newSQLFeatureNotSupportedException(String name) {
+		return new SQLFeatureNotSupportedException("Method " + name + " not implemented", "0A000");
+	}
 }
+

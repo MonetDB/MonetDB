@@ -82,9 +82,13 @@ color_fromstr(char *colorStr, int *len, color **c)
 
 	if (!*c) {
 		*c = (color *) GDKmalloc(sizeof(color));
+		if( *c == NULL)
+			return 0;
 	} else if (*len < (int) sizeof(color)) {
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(color));
+		if( *c == NULL)
+			return 0;
 		*len = sizeof(color);
 	}
 
@@ -132,6 +136,8 @@ color_tostr(char **colorStr, int *len, color *c)
 		*colorStr = GDKmalloc(11);
 		*len = 11;
 	}
+	if( *colorStr == NULL)
+		return 0;
 
 	if (sc == color_nil) {
 		strcpy(*colorStr, "nil");

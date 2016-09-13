@@ -79,7 +79,7 @@ Ready.
 #select count(*) from "attribute";
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 5 # length
 [ 21805	]
 #ROLLBACK;
@@ -96,7 +96,7 @@ Ready.
 #select count(*) from "attribute";
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 5 # length
 [ 21808	]
 #ROLLBACK;

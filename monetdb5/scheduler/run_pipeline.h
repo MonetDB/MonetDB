@@ -28,17 +28,6 @@ struct {
 	int cpuload;		/* hard to get */
 } runtime;
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define pipeline_export extern __declspec(dllimport)
-#else
-#define pipeline_export extern __declspec(dllexport)
-#endif
-#else
-#define pipeline_export extern
-#endif
-
-pipeline_export str MALpipeline(Client c);
-pipeline_export str debugScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MALpipeline(Client c);
 
 #endif /* MAL_SCEDULER */

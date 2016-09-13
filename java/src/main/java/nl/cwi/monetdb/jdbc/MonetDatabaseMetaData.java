@@ -21,7 +21,6 @@ import java.util.ArrayList;
 
 /**
  * A DatabaseMetaData object suitable for the MonetDB database.
- * 
  *
  * @author Fabian Groffen, Martin van Dinther
  * @version 0.6
@@ -239,8 +238,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * What is the version string of this JDBC driver?	Again, this is
-	 * static.
+	 * Retrieves the version number of this JDBC driver as a String.
 	 *
 	 * @return the JDBC driver version string
 	 */
@@ -396,48 +394,16 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	/**
 	 * Get a comma separated list of all a database's SQL keywords that
 	 * are NOT also SQL:2003 keywords.
-	 * 
 	 *
 	 * @return a comma separated list of MonetDB keywords
 	 */
 	@Override
 	public String getSQLKeywords() {
-		StringBuilder sb = new StringBuilder(1000);
-		Statement st = null;
-		ResultSet rs = null;
-		try {
-			st = con.createStatement();
-			rs = st.executeQuery("SELECT \"keyword\" FROM \"sys\".\"keywords\" ORDER BY 1");
-			// Fetch the keywords and concatenate them into a StringBuffer separated by comma's
-			boolean isfirst = true;
-			while (rs.next()) {
-				String keyword = rs.getString(1);
-				if (keyword != null) {
-					if (isfirst) {
-						isfirst = false;
-					} else {
-						sb.append(",");
-					}
-					sb.append(keyword);
-				}
-			}
-		} catch (SQLException e) {
-			/* This may occur for old (before Jul2015 release) MonetDB servers which do not have the sys.keywords table. */
-		} finally {
-			if (rs != null) {
-				try {
-					rs.close();
-				} catch (SQLException e) { /* ignore */ }
-			}
-			if (st != null) {
-				try {
-					 st.close();
-				} catch (SQLException e) { /* ignore */ }
-			}
-		}
+		String keywords = getConcatenatedStringFromQuery("SELECT \"keyword\" FROM \"sys\".\"keywords\" ORDER BY 1");
 
-		return (sb.length() > 0) ? sb.toString() :
-			/* else fallback and return old static list (as returned in clients/odbc/driver/SQLGetInfo.c case SQL_KEYWORDS:) */
+		/* An old MonetDB server (pre Jul2015 release) will not have a table sys.keywords and return an empty String */
+		return (keywords.length() > 0) ? keywords :
+			/* for old servers return static list (as returned in clients/odbc/driver/SQLGetInfo.c case SQL_KEYWORDS:) */
 			"ADMIN,AFTER,AGGREGATE,ALWAYS,ASYMMETRIC,ATOMIC," +
 			"AUTO_INCREMENT,BEFORE,BIGINT,BIGSERIAL,BINARY,BLOB," +
 			"CALL,CHAIN,CLOB,COMMITTED,COPY,CORR,CUME_DIST," +
@@ -460,68 +426,32 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * getMonetDBSysFunctions(int kind)
-	 * args: int kind, value must be 1 or 2 or 3 or 4.
-	 * internal utility method to query the MonetDB sys.functions table
-	 * to dynamically get the function names (for a specific kind) and
-	 * concatenate the function names into a comma separated list.
+	 * Internal utility method getConcatenatedStringFromQuery(String query)
+	 * args: query: SQL SELECT query. Only the output of the first column is concatenated.
+	 * @return a String of query result values concatenated into one string, and values separated by comma's
 	 */
-	private String getMonetDBSysFunctions(int kind) {
-		// where clause part (for num/str/timedate to match only functions whose 1 arg exists and is of a certain type
-		String part1 = "WHERE \"id\" IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1 AND \"name\" = 'arg_1' AND \"type\" IN ";
-		String whereClause = "";
-		switch (kind) {
-			case 1:	/* numeric functions */
-				whereClause = part1 +
-				"('tinyint', 'smallint', 'int', 'bigint', 'decimal', 'real', 'double') )" +
-				// exclude 2 functions which take an int as arg but returns a char or str
-				" AND \"name\" NOT IN ('code', 'space')";
-				break;
-			case 2:	/* string functions */
-				whereClause = part1 +
-				"('char', 'varchar', 'clob') )" +
-				// include 2 functions which take an int as arg but returns a char or str
-				" OR \"name\" IN ('code', 'space')";
-				break;
-			case 3:	/* system functions */
-				whereClause = "WHERE \"id\" NOT IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1)" +
-				" AND \"func\" NOT LIKE '%function%(% %)%'" +
-				" AND \"func\" NOT LIKE '%procedure%(% %)%'" +
-				" AND \"func\" NOT LIKE '%CREATE FUNCTION%RETURNS TABLE(% %)%'" +
-				// the next names are also not usable so exclude them
-				" AND \"name\" NOT LIKE 'querylog_%'" +
-				" AND \"name\" NOT IN ('analyze', 'count', 'count_no_nil', 'initializedictionary', 'times')";
-				break;
-			case 4:	/* time date functions */
-				whereClause = part1 +
-				"('date', 'time', 'timestamp', 'timetz', 'timestamptz', 'sec_interval', 'month_interval') )";
-				break;
-			default: /* internal function called with an invalid kind value */
-				return "";
-		}
-
-		StringBuilder sb = new StringBuilder(400);
+	private String getConcatenatedStringFromQuery(String query) {
+		StringBuilder sb = new StringBuilder(1024);
 		Statement st = null;
 		ResultSet rs = null;
 		try {
-			String select = "SELECT DISTINCT \"name\" FROM \"sys\".\"functions\" " + whereClause + " ORDER BY 1";
 			st = con.createStatement();
-			rs = st.executeQuery(select);
-			// Fetch the function names and concatenate them into a StringBuffer separated by comma's
+			rs = st.executeQuery(query);
+			// Fetch the first column output and concatenate the values into a StringBuilder separated by comma's
 			boolean isfirst = true;
 			while (rs.next()) {
-				String name = rs.getString(1);
-				if (name != null) {
+				String value = rs.getString(1);
+				if (value != null) {
 					if (isfirst) {
 						isfirst = false;
 					} else {
-						sb.append(",");
+						sb.append(',');
 					}
-					sb.append(name);
+					sb.append(value);
 				}
 			}
 		} catch (SQLException e) {
-			// ignore
+			/* ignore */
 		} finally {
 			if (rs != null) {
 				try {
@@ -534,28 +464,54 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				} catch (SQLException e) { /* ignore */ }
 			}
 		}
-
+		// for debug: System.out.println("SQL query: " + query + "\nResult string: " + sb.toString());
 		return sb.toString();
 	}
 
+	// SQL query parts shared in below four getXxxxFunctions() methods
+	private final static String FunctionsSelect = "SELECT DISTINCT \"name\" FROM \"sys\".\"functions\" ";
+	private final static String FunctionsWhere = "WHERE \"id\" IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1 AND \"name\" = 'arg_1' AND \"type\" IN ";
+
 	@Override
 	public String getNumericFunctions() {
-		return getMonetDBSysFunctions(1);
+		String match =
+			"('tinyint', 'smallint', 'int', 'bigint', 'hugeint', 'decimal', 'double', 'real') )" +
+			// exclude functions which belong to the 'str' module
+			" AND \"mod\" <> 'str'";
+		return getConcatenatedStringFromQuery(FunctionsSelect + FunctionsWhere + match + " ORDER BY 1");
 	}
 
 	@Override
 	public String getStringFunctions() {
-		return getMonetDBSysFunctions(2);
+		String match =
+			"('char', 'varchar', 'clob', 'json') )" +
+			// include functions which belong to the 'str' module
+			" OR \"mod\" = 'str'";
+		return getConcatenatedStringFromQuery(FunctionsSelect + FunctionsWhere + match + " ORDER BY 1");
 	}
 
 	@Override
 	public String getSystemFunctions() {
-		return getMonetDBSysFunctions(3);
+		String wherePart =
+			"WHERE \"id\" NOT IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1)" +
+			" AND \"id\" IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" +
+			" AND \"type\" = 1" +	// only scalar functions
+			// add system functions which are not listed in sys.functions but implemented in the SQL parser (see sql/server/sql_parser.y)
+			" UNION SELECT 'cast'" +
+			" UNION SELECT 'convert'" +
+			" UNION SELECT 'coalesce'" +
+			" UNION SELECT 'extract'" +
+			" UNION SELECT 'ifthenelse'" +
+			" UNION SELECT 'isnull'" +
+			" UNION SELECT 'nullif'";
+		return getConcatenatedStringFromQuery(FunctionsSelect + wherePart + " ORDER BY 1");
 	}
 
 	@Override
 	public String getTimeDateFunctions() {
-		return getMonetDBSysFunctions(4);
+		String match =
+			"('date', 'time', 'timestamp', 'timetz', 'timestamptz', 'sec_interval', 'month_interval') )";
+		return getConcatenatedStringFromQuery(FunctionsSelect + FunctionsWhere + match + " ORDER BY 1");
 	}
 
 	/**
@@ -634,13 +590,158 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		return true;
 	}
 
+	/**
+	 * Retrieves whether this database supports the JDBC scalar function
+	 * CONVERT for the conversion of one JDBC type to another.
+	 * The JDBC types are the generic SQL data types defined in java.sql.Types.
+	 *
+	 * @return true if so; false otherwise
+	 */
 	@Override
 	public boolean supportsConvert() {
-		return false;
+		return true;
 	}
 
+	/**
+	 * Retrieves whether this database supports the JDBC scalar function
+	 * CONVERT for conversions between the JDBC types fromType and toType.
+	 * The JDBC types are the generic SQL data types defined in java.sql.Types.
+	 *
+	 * @return true if so; false otherwise
+	 */
 	@Override
 	public boolean supportsConvert(int fromType, int toType) {
+		switch (fromType) {
+		case Types.BOOLEAN:
+			switch (toType) {
+			case Types.BOOLEAN:
+		/*	case Types.BIT: is not supported by MonetDB and will fail */
+			case Types.TINYINT:
+			case Types.SMALLINT:
+			case Types.INTEGER:
+			case Types.BIGINT:
+		/* conversion to FLOAT, REAL, DOUBLE, NUMERIC and DECIMAL is not supported by MonetDB */
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+	/*	case Types.BIT: is not supported by MonetDB and will fail */
+	/*	case Types.BINARY: is not supported by MonetDB and will fail */
+	/*	case Types.VARBINARY: is not supported by MonetDB and will fail */
+	/*	case Types.LONGVARBINARY: is not supported by MonetDB and will fail */
+		case Types.BLOB:
+			switch (toType) {
+		/*	case Types.BINARY: is not supported by MonetDB and will fail */
+		/*	case Types.VARBINARY: is not supported by MonetDB and will fail */
+		/*	case Types.LONGVARBINARY: is not supported by MonetDB and will fail */
+			case Types.BLOB:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		case Types.TINYINT:
+		case Types.SMALLINT:
+		case Types.INTEGER:
+		case Types.BIGINT:
+		case Types.FLOAT:
+		case Types.REAL:
+		case Types.DOUBLE:
+		case Types.NUMERIC:
+		case Types.DECIMAL:
+			switch (toType) {
+			case Types.BOOLEAN:
+		/*	case Types.BIT: is not supported by MonetDB and will fail */
+			case Types.TINYINT:
+			case Types.SMALLINT:
+			case Types.INTEGER:
+			case Types.BIGINT:
+			case Types.FLOAT:
+			case Types.REAL:
+			case Types.DOUBLE:
+			case Types.NUMERIC:
+			case Types.DECIMAL:
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		case Types.CHAR:
+		case Types.VARCHAR:
+	/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+		case Types.CLOB:
+			switch (toType) {
+			case Types.BOOLEAN:
+		/*	case Types.BIT: is not supported by MonetDB and will fail */
+			case Types.TINYINT:
+			case Types.SMALLINT:
+			case Types.INTEGER:
+			case Types.BIGINT:
+			case Types.FLOAT:
+			case Types.REAL:
+			case Types.DOUBLE:
+			case Types.NUMERIC:
+			case Types.DECIMAL:
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+			case Types.BLOB:
+			case Types.DATE:
+			case Types.TIME:
+			case Types.TIMESTAMP:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		case Types.DATE:
+			switch (toType) {
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+			case Types.DATE:
+			case Types.TIMESTAMP:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		case Types.TIME:
+			switch (toType) {
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+			case Types.TIME:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		case Types.TIMESTAMP:
+			switch (toType) {
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+			case Types.DATE:
+			case Types.TIME:
+			case Types.TIMESTAMP:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		}
+
+		// conversion from all other JDBC SQL types are not supported
 		return false;
 	}
 
@@ -1080,7 +1181,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public boolean supportsStoredProcedures() {
-		return false;
+		return true;
 	}
 
 	/**
@@ -1370,11 +1471,12 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	/**
 	 * What is the maximum length of a catalog
 	 *
-	 * @return the max length
+	 * @return the maximum number of characters allowed in a catalog name;
+	 * a result of zero means that there is no limit or the limit is not known
 	 */
 	@Override
 	public int getMaxCatalogNameLength() {
-		return 1024;
+		return 0;  // MonetDB does not support catalog names
 	}
 
 	/**
@@ -1572,13 +1674,15 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *	  <li> procedureReturnsResult - Returns a result
 	 *	</ul>
 	 * </ol>
-	 * <li><b>SPECIFIC_NAME</b> String => The name which uniquely identifies this procedure within its schema. 
+	 * <li><b>SPECIFIC_NAME</b> String => The name which uniquely identifies this procedure within its schema.
 	 *
-	 * @param catalog - a catalog name; "" retrieves those without a
-	 *	catalog; null means drop catalog name from criteria
-	 * @param schemaPattern - a schema name pattern; "" retrieves those
-	 *	without a schema - we ignore this parameter
-	 * @param procedureNamePattern - a procedure name pattern
+	 * @param catalog - a catalog name; must match the catalog name as it is stored in the database;
+	 *	"" retrieves those without a catalog;
+	 *	null means that the catalog name should not be used to narrow the search
+	 * @param schemaPattern - a schema name pattern; must match the schema name as it is stored in the database;
+	 *	"" retrieves those without a schema;
+	 *	null means that the schema name should not be used to narrow the search
+	 * @param procedureNamePattern - a procedure name pattern; must match the procedure name as it is stored in the database
 	 * @return ResultSet - each row is a procedure description
 	 * @throws SQLException if a database access error occurs
 	 */
@@ -1590,23 +1694,20 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	) throws SQLException
 	{
 		StringBuilder query = new StringBuilder(980);
-		query.append("SELECT DISTINCT cast(null as varchar(1)) AS \"PROCEDURE_CAT\", " +
+		query.append("SELECT cast(null as varchar(1)) AS \"PROCEDURE_CAT\", " +
 			"\"schemas\".\"name\" AS \"PROCEDURE_SCHEM\", " +
 			"\"functions\".\"name\" AS \"PROCEDURE_NAME\", " +
 			"cast(null as char(1)) AS \"Field4\", " +
 			"cast(null as char(1)) AS \"Field5\", " +
 			"cast(null as char(1)) AS \"Field6\", " +
-			"cast(null as char(1)) AS \"REMARKS\", " +
-			"CAST(CASE (SELECT COUNT(*) FROM \"sys\".\"args\" where \"args\".\"func_id\" = \"functions\".\"id\" and \"args\".\"number\" = 0)" +
-				" WHEN 0 THEN ").append(DatabaseMetaData.procedureNoResult)
-			.append(" WHEN 1 THEN ").append(DatabaseMetaData.procedureReturnsResult)
-			.append(" ELSE ").append(DatabaseMetaData.procedureResultUnknown).append(" END AS smallint) AS \"PROCEDURE_TYPE\", " +
-			"CAST(CASE \"functions\".\"language\" WHEN 0 THEN \"functions\".\"mod\" || '.' || \"functions\".\"func\"" +
-			" ELSE \"schemas\".\"name\" || '.' || \"functions\".\"name\" END AS VARCHAR(1500)) AS \"SPECIFIC_NAME\" " +
-		"FROM \"sys\".\"functions\", \"sys\".\"schemas\" " +
-		"WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
+			"cast(\"functions\".\"func\" as varchar(9999)) AS \"REMARKS\", " +
+			// in MonetDB procedures have no return value by design.
+			"CAST(").append(DatabaseMetaData.procedureNoResult).append(" AS smallint) AS \"PROCEDURE_TYPE\", " +
+			// only the id value uniquely identifies a procedure. Include it to be able to differentiate between multiple overloaded procedures with the same name
+			"cast(\"functions\".\"id\" as varchar(10)) AS \"SPECIFIC_NAME\" " +
+		"FROM \"sys\".\"functions\" JOIN \"sys\".\"schemas\" ON (\"functions\".\"schema_id\" = \"schemas\".\"id\") " +
 		// include procedures only (type = 2). Others will be returned via getFunctions()
-		"AND \"functions\".\"type\" = 2");
+		"WHERE \"functions\".\"type\" = 2");
 
 		if (catalog != null && catalog.length() > 0) {
 			// none empty catalog selection.
@@ -1629,10 +1730,10 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Get a description of a catalog's stored procedure parameters
 	 * and result columns.
 	 *
-	 * <p>Only descriptions matching the schema, procedure and parameter
-	 * name criteria are returned. They are ordered by PROCEDURE_SCHEM
-	 * and PROCEDURE_NAME. Within this, the return value, if any, is
-	 * first. Next are the parameter descriptions in call order. The
+	 * <p>Only descriptions matching the schema, procedure and parameter name
+	 * criteria are returned. They are ordered by PROCEDURE_SCHEM, PROCEDURE_NAME
+	 * and SPECIFIC_NAME. Within this, the return value, if any, is first.
+	 * Next are the parameter descriptions in call order. The
 	 * column descriptions follow in column number order.
 	 *
 	 * <p>Each row in the ResultSet is a parameter description or column
@@ -1650,7 +1751,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * <li>procedureColumnReturn - procedure return value
 	 * <li>procedureColumnResult - result column in ResultSet
 	 * </ul>
-	 * <li><b>DATA_TYPE</b> short => SQL type from java.sql.Types
+	 * <li><b>DATA_TYPE</b> int => SQL type from java.sql.Types
 	 * <li><b>TYPE_NAME</b> String => SQL type name, for a UDT type the type name is fully qualified
 	 * <li><b>PRECISION</b> int => precision
 	 * <li><b>LENGTH</b> int => length in bytes of data
@@ -1665,23 +1766,29 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * <li><b>COLUMN_DEF</b> String => default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be null)
 	 *         The string NULL (not enclosed in quotes) - if NULL was specified as the default value
 	 *         TRUNCATE (not enclosed in quotes) - if the specified default value cannot be represented without truncation
-	 *         NULL - if a default value was not specified 
+	 *         NULL - if a default value was not specified
 	 * <li><b>SQL_DATA_TYPE</b> int => reserved for future use
 	 * <li><b>SQL_DATETIME_SUB</b> int => reserved for future use
 	 * <li><b>CHAR_OCTET_LENGTH</b> int => the maximum length of binary and character based columns. For any other datatype the returned value is a NULL
-	 * <li><b>ORDINAL_POSITION</b> int => the ordinal position, starting from 1, for the input and output parameters for a procedure. A value of 0 is returned if this row describes the procedure's return value. For result set columns, it is the ordinal position of the column in the result set starting from 1. If there are multiple result sets, the column ordinal positions are implementation defined.
+	 * <li><b>ORDINAL_POSITION</b> int => the ordinal position, starting from 1, for the input and output parameters for a procedure.
+	 *	A value of 0 is returned if this row describes the procedure's return value. For result set columns, it is the ordinal position of the
+	 *	column in the result set starting from 1. If there are multiple result sets, the column ordinal positions are implementation defined.
 	 * <li><b>IS_NULLABLE</b> String => ISO rules are used to determine the nullability for a column.
 	 * <ul><li>YES --- if the parameter can include NULLs
 	 * <li>NO --- if the parameter cannot include NULLs
-	 * <li>empty string --- if the nullability for the parameter is unknown 
+	 * <li>empty string --- if the nullability for the parameter is unknown
 	 * </ul>
-	 * <li><b>SPECIFIC_NAME</b> String => the name which uniquely identifies this procedure within its schema. 
+	 * <li><b>SPECIFIC_NAME</b> String => the name which uniquely identifies this procedure within its schema.
 	 * </ol>
-	 * @param catalog   not used
-	 * @param schemaPattern not used
-	 * @param procedureNamePattern a procedure name pattern
-	 * @param columnNamePattern a column name pattern
-	 * @return each row is a stored procedure parameter or column description
+	 * @param catalog - a catalog name; must match the catalog name as it is stored in the database;
+	 *	"" retrieves those without a catalog;
+	 *	null means that the catalog name should not be used to narrow the search
+	 * @param schemaPattern - a schema name pattern; must match the schema name as it is stored in the database;
+	 *	"" retrieves those without a schema;
+	 *	null means that the schema name should not be used to narrow the search
+	 * @param procedureNamePattern - a procedure name pattern; must match the procedure name as it is stored in the database
+	 * @param columnNamePattern - a column name pattern; must match the column name as it is stored in the database
+	 * @return ResultSet - each row describes a stored procedure parameter or column
 	 * @throws SQLException if a database-access error occurs
 	 * @see #getSearchStringEscape
 	 */
@@ -1693,7 +1800,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String columnNamePattern
 	) throws SQLException {
 		StringBuilder query = new StringBuilder(2900);
-		query.append("SELECT DISTINCT CAST(null as char(1)) AS \"PROCEDURE_CAT\", " +
+		query.append("SELECT cast(null as varchar(1)) AS \"PROCEDURE_CAT\", " +
 			"\"schemas\".\"name\" AS \"PROCEDURE_SCHEM\", " +
 			"\"functions\".\"name\" AS \"PROCEDURE_NAME\", " +
 			"\"args\".\"name\" AS \"COLUMN_NAME\", " +
@@ -1710,12 +1817,14 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"CAST(").append(DatabaseMetaData.procedureNullableUnknown).append(" AS smallint) AS \"NULLABLE\", " +
 			"CAST(null as char(1)) AS \"REMARKS\", " +
 			"CAST(null as char(1)) AS \"COLUMN_DEF\", " +
-			"CAST(null as int) AS \"SQL_DATA_TYPE\", " +
-			"CAST(null as int) AS \"SQL_DATETIME_SUB\", " +
-			"CASE WHEN \"args\".\"type\" IN ('char','varchar','binary','varbinary') THEN \"args\".\"type_digits\" ELSE NULL END AS \"CHAR_OCTET_LENGTH\", " +
-			"\"args\".\"number\" AS \"ORDINAL_POSITION\", " +
+			"CAST(0 as int) AS \"SQL_DATA_TYPE\", " +
+			"CAST(0 as int) AS \"SQL_DATETIME_SUB\", " +
+			"CAST(CASE WHEN \"args\".\"type\" IN ('char','varchar','clob') THEN \"args\".\"type_digits\" ELSE NULL END as int) AS \"CHAR_OCTET_LENGTH\", " +
+			// in MonetDB procedures have no return value by design. The arguments in sys.args are numbered from 0 so we must add 1 to comply with the API specification.
+			"CAST(\"args\".\"number\" + 1 as int) AS \"ORDINAL_POSITION\", " +
 			"CAST('' as varchar(3)) AS \"IS_NULLABLE\", " +
-			"CAST(null as char(1)) AS \"SPECIFIC_NAME\" " +
+			// the specific name contains the function id, in order to be able to match the args to the correct overloaded procedure name
+			"cast(\"functions\".\"id\" as varchar(10)) AS \"SPECIFIC_NAME\" " +
 		"FROM \"sys\".\"args\", \"sys\".\"functions\", \"sys\".\"schemas\" " +
 		"WHERE \"args\".\"func_id\" = \"functions\".\"id\" " +
 		"AND \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
@@ -1736,7 +1845,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		if (columnNamePattern != null) {
 			query.append(" AND \"args\".\"name\" ").append(composeMatchPart(columnNamePattern));
 		}
-		query.append(" ORDER BY \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"ORDINAL_POSITION\"");
+		query.append(" ORDER BY \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\", \"ORDINAL_POSITION\"");
 
 		return executeMetaDataQuery(query.toString());
 	}
@@ -1782,11 +1891,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 
 	/**
-	 * Get a description of tables available in a catalog.
-	 *
-	 * <p>Only table descriptions matching the catalog, schema, table
-	 * name and type criteria are returned. They are ordered by
-	 * TABLE_TYPE, TABLE_CAT, TABLE_SCHEM and TABLE_NAME.
+	 * Retrieves a description of the tables available in the given catalog.
+	 * Only table descriptions matching the catalog, schema, table name and type criteria are returned.
+	 * They are ordered by TABLE_TYPE, TABLE_CAT, TABLE_SCHEM and TABLE_NAME.
 	 *
 	 * <p>Each table description has the following columns:
 	 *
@@ -1801,14 +1908,20 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * <li><b>TYPE_SCHEM</b> String => the types schema (may be null)
 	 * <li><b>TYPE_NAME</b> String => type name (may be null)
 	 * <li><b>SELF_REFERENCING_COL_NAME</b> String => name of the designated "identifier" column of a typed table (may be null)
-	 * <li><b>REF_GENERATION</b> String => specifies how values in SELF_REFERENCING_COL_NAME are created. Values are "SYSTEM", "USER", "DERIVED". (may be null) 
+	 * <li><b>REF_GENERATION</b> String => specifies how values in SELF_REFERENCING_COL_NAME are created. Values are "SYSTEM", "USER", "DERIVED". (may be null)
 	 * </ol>
 	 *
-	 * @param catalog a catalog name; this parameter is currently ignored
-	 * @param schemaPattern a schema name pattern
-	 * @param tableNamePattern a table name pattern. For all tables this should be "%"
-	 * @param types a list of table types, which must be from the list of table types returned from getTableTypes(), to include; null returns all types;
-	 * @return each row is a table description
+	 * @param catalog - a catalog name; must match the catalog name as it is stored in the database;
+	 *	"" retrieves those without a catalog; null means that the
+	 *	catalog name should not be used to narrow the search
+	 * @param schemaPattern - a schema name pattern; must match the schema name as it is stored
+	 *	in the database; "" retrieves those without a schema;
+	 *	null means that the schema name should not be used to narrow the search
+	 * @param tableNamePattern - a table name pattern; must match the table name as it is stored in the database
+	 *	For all tables this should be "%"
+	 * @param types - a list of table types, which must be from the list of table types returned
+	 *	from getTableTypes(),to include; null returns all types
+	 * @return ResultSet - each row is a table description
 	 * @throws SQLException if a database-access error occurs.
 	 */
 	@Override
@@ -2006,7 +2119,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *	<LI><B>TABLE_SCHEM</B> String => table schema (may be null)
 	 *	<LI><B>TABLE_NAME</B> String => table name
 	 *	<LI><B>COLUMN_NAME</B> String => column name
-	 *	<LI><B>DATA_TYPE</B> short => SQL type from java.sql.Types
+	 *	<LI><B>DATA_TYPE</B> int => SQL type from java.sql.Types
 	 *	<LI><B>TYPE_NAME</B> String => Data source dependent type name
 	 *	<LI><B>COLUMN_SIZE</B> int => column size.	For char or date
 	 *		types this is the maximum number of characters, for numeric or
@@ -2039,25 +2152,28 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *		<UL>
 	 *		<LI> YES --- if the column is auto incremented
 	 *		<LI> NO --- if the column is not auto incremented
-    	 *		<LI> empty string --- if it cannot be determined whether the column is auto incremented 
+    	 *		<LI> empty string --- if it cannot be determined whether the column is auto incremented
 	 *		</UL>
 	 *	<LI><B>IS_GENERATEDCOLUMN</B> String => Indicates whether this is a generated column
 	 *		<UL>
 	 *		<LI> YES --- if this a generated column
 	 *		<LI> NO --- if this not a generated column
-	 *		<LI> empty string --- if it cannot be determined whether this is a generated column 
+	 *		<LI> empty string --- if it cannot be determined whether this is a generated column
 	 *		</UL>
 	 *	</OL>
 	 *
-	 * @param catalog a catalog name; "" retrieves those without a catalog;
-	 *                currently ignored
-	 * @param schemaPattern a schema name pattern; "" retrieves those
-	 *                      without a schema
-	 * @param tableNamePattern a table name pattern
-	 * @param columnNamePattern a column name pattern
-	 * @return ResultSet each row is a column description
-	 * @see #getSearchStringEscape
+	 * @param catalog - a catalog name; must match the catalog name as it is stored in the database;
+	 *	"" retrieves those without a catalog; null means that the
+	 *	catalog name should not be used to narrow the search
+	 * @param schemaPattern - a schema name pattern; must match the schema name as it is stored
+	 *	in the database; "" retrieves those without a schema;
+	 *	null means that the schema name should not be used to narrow the search
+	 * @param tableNamePattern - a table name pattern; must match the table name as it is stored in the database
+	 *	For all tables this should be "%"
+	 * @param columnNamePattern - a column name pattern; must match the column name as it is stored in the database
+	 * @return ResultSet - each row is a column description
 	 * @throws SQLException if a database error occurs
+	 * @see #getSearchStringEscape
 	 */
 	@Override
 	public ResultSet getColumns(
@@ -2072,7 +2188,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", " +
 			"\"columns\".\"name\" AS \"COLUMN_NAME\", " +
-			"cast(").append(MonetDriver.getSQLTypeMap("\"columns\".\"type\"")).append(" AS smallint) AS \"DATA_TYPE\", " +
+			"cast(").append(MonetDriver.getSQLTypeMap("\"columns\".\"type\"")).append(" AS int) AS \"DATA_TYPE\", " +
 			"\"columns\".\"type\" AS \"TYPE_NAME\", " +
 			"\"columns\".\"type_digits\" AS \"COLUMN_SIZE\", " +
 			"0 AS \"BUFFER_LENGTH\", " +
@@ -2084,10 +2200,10 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			.append(" WHEN false THEN ").append(ResultSetMetaData.columnNoNulls).append(" END AS int) AS \"NULLABLE\", " +
 			"cast(null AS varchar(1)) AS \"REMARKS\", " +
 			"\"columns\".\"default\" AS \"COLUMN_DEF\", " +
-			"0 AS \"SQL_DATA_TYPE\", " +
-			"0 AS \"SQL_DATETIME_SUB\", " +
-			"0 AS \"CHAR_OCTET_LENGTH\", " +
-			"\"columns\".\"number\" + 1 AS \"ORDINAL_POSITION\", " +
+			"cast(0 as int) AS \"SQL_DATA_TYPE\", " +
+			"cast(0 as int) AS \"SQL_DATETIME_SUB\", " +
+			"cast(CASE WHEN \"columns\".\"type\" IN ('char','varchar','clob') THEN \"columns\".\"type_digits\" ELSE NULL END as int) AS \"CHAR_OCTET_LENGTH\", " +
+			"cast(\"columns\".\"number\" + 1 as int) AS \"ORDINAL_POSITION\", " +
 			"cast(CASE \"null\" WHEN true THEN 'YES' WHEN false THEN 'NO' ELSE '' END AS varchar(3)) AS \"IS_NULLABLE\", " +
 			"cast(null AS varchar(1)) AS \"SCOPE_CATALOG\", " +
 			"cast(null AS varchar(1)) AS \"SCOPE_SCHEMA\", " +
@@ -2095,9 +2211,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"cast(").append(MonetDriver.getJavaType("other")).append(" AS smallint) AS \"SOURCE_DATA_TYPE\", " +
 			"cast(CASE WHEN \"columns\".\"default\" IS NOT NULL AND \"columns\".\"default\" LIKE 'next value for %' THEN 'YES' ELSE 'NO' END AS varchar(3)) AS \"IS_AUTOINCREMENT\", " +
 			"cast('NO' AS varchar(3)) AS \"IS_GENERATEDCOLUMN\" " +
-		"FROM \"sys\".\"columns\" AS \"columns\", " +
-			"\"sys\".\"tables\" AS \"tables\", " +
-			"\"sys\".\"schemas\" AS \"schemas\" " +
+		"FROM \"sys\".\"columns\", " +
+			"\"sys\".\"tables\", " +
+			"\"sys\".\"schemas\" " +
 		"WHERE \"columns\".\"table_id\" = \"tables\".\"id\" " +
 			"AND \"tables\".\"schema_id\" = \"schemas\".\"id\"");
 
@@ -2233,8 +2349,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *	</OL>
 	 *
 	 * @param catalog a catalog name; "" retrieves those without a catalog
-	 * @param schemaPattern a schema name pattern; "" retrieves those
-	 *                      without a schema
+	 * @param schemaPattern a schema name pattern; "" retrieves those without a schema
 	 * @param tableNamePattern a table name pattern
 	 * @return ResultSet each row is a table privilege description
 	 * @see #getSearchStringEscape
@@ -2307,7 +2422,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *		<LI> bestRowSession - valid for remainder of current session
 	 *		</UL>
 	 *	<LI><B>COLUMN_NAME</B> String => column name
-	 *	<LI><B>DATA_TYPE</B> short => SQL data type from java.sql.Types
+	 *	<LI><B>DATA_TYPE</B> int => SQL data type from java.sql.Types
 	 *	<LI><B>TYPE_NAME</B> String => Data source dependent type name
 	 *	<LI><B>COLUMN_SIZE</B> int => precision
 	 *	<LI><B>BUFFER_LENGTH</B> int => not used
@@ -2340,11 +2455,11 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	{
 		StringBuilder query = new StringBuilder(1500);
 		query.append("SELECT CAST(").append(DatabaseMetaData.bestRowSession).append(" AS smallint) AS \"SCOPE\", " +
-			"\"columns\".\"name\" AS \"COLUMN_NAME\", ")
-			.append(MonetDriver.getSQLTypeMap("\"columns\".\"type\"")).append(" AS \"DATA_TYPE\", " +
+			"\"columns\".\"name\" AS \"COLUMN_NAME\", " +
+			"cast(").append(MonetDriver.getSQLTypeMap("\"columns\".\"type\"")).append(" AS int) AS \"DATA_TYPE\", " +
 			"\"columns\".\"type\" AS \"TYPE_NAME\", " +
 			"\"columns\".\"type_digits\" AS \"COLUMN_SIZE\", " +
-			"CASE WHEN \"columns\".\"type\" IN ('varchar', 'char') THEN \"columns\".\"type_digits\" ELSE 0 END AS \"BUFFER_LENGTH\", " +
+			"CAST(0 as int) AS \"BUFFER_LENGTH\", " +
 			"CAST(\"columns\".\"type_scale\" AS smallint) AS \"DECIMAL_DIGITS\", " +
 			"CAST(").append(DatabaseMetaData.bestRowNotPseudo).append(" AS smallint) AS \"PSEUDO_COLUMN\" " +
 		"FROM \"sys\".\"keys\", " +
@@ -2370,7 +2485,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		if (table != null) {
 			query.append(" AND \"tables\".\"name\" ").append(composeMatchPart(table));
 		}
-		if (scope != DatabaseMetaData.bestRowSession) {
+		if (scope != DatabaseMetaData.bestRowSession && scope != DatabaseMetaData.bestRowTransaction && scope != DatabaseMetaData.bestRowTemporary) {
 			query.append(" AND 1 = 0");
 		}
 		if (!nullable) {
@@ -2418,14 +2533,14 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	{
 		// MonetDB currently does not have columns which update themselves, so return an empty ResultSet
 		String query =
-		"SELECT CAST(null as smallint) AS \"SCOPE\", " +
+		"SELECT CAST(0 as smallint) AS \"SCOPE\", " +
 			"CAST(null as varchar(1)) AS \"COLUMN_NAME\", " +
-			"CAST(null as int) AS \"DATA_TYPE\", " +
+			"CAST(0 as int) AS \"DATA_TYPE\", " +
 			"CAST(null as varchar(1)) AS \"TYPE_NAME\", " +
-			"CAST(null as int) AS \"COLUMN_SIZE\", " +
-			"CAST(null as int) AS \"BUFFER_LENGTH\", " +
-			"CAST(null as smallint) AS \"DECIMAL_DIGITS\", " +
-			"CAST(null as smallint) AS \"PSEUDO_COLUMN\" " +
+			"CAST(0 as int) AS \"COLUMN_SIZE\", " +
+			"CAST(0 as int) AS \"BUFFER_LENGTH\", " +
+			"CAST(0 as smallint) AS \"DECIMAL_DIGITS\", " +
+			"CAST(0 as smallint) AS \"PSEUDO_COLUMN\" " +
 		"WHERE 1 = 0";
 
 		return executeMetaDataQuery(query);
@@ -2493,7 +2608,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 
-	final static String keyQuery =
+	private final static String keyQuery =
 	"SELECT cast(null AS varchar(1)) AS \"PKTABLE_CAT\", " +
 		"\"pkschema\".\"name\" AS \"PKTABLE_SCHEM\", " +
 		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", " +
@@ -2804,7 +2919,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Get a description of all the SQL data types supported by
 	 * this database. They are ordered by DATA_TYPE and then by how
 	 * closely the data type maps to the corresponding JDBC SQL type.
-	 * 
+	 *
 	 * If the database supports SQL distinct types, then getTypeInfo() will
 	 * return a single row with a TYPE_NAME of DISTINCT and a DATA_TYPE of Types.DISTINCT.
 	 * If the database supports SQL structured types, then getTypeInfo() will
@@ -2858,31 +2973,30 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"cast(").append(MonetDriver.getSQLTypeMap("\"sqlname\"")).append(" AS int) AS \"DATA_TYPE\", " +
 			"\"digits\" AS \"PRECISION\", " +	// note that when radix is 2 the precision shows the number of bits
 			"cast(CASE WHEN \"systemname\" IN ('str', 'inet', 'json', 'url', 'uuid') THEN ''''" +
-			" ELSE NULL END AS varchar(2)) AS \"LITERAL_PREFIX\", " +
+				" ELSE NULL END AS varchar(2)) AS \"LITERAL_PREFIX\", " +
 			"cast(CASE WHEN \"systemname\" IN ('str', 'inet', 'json', 'url', 'uuid') THEN ''''" +
-			" ELSE NULL END AS varchar(2)) AS \"LITERAL_SUFFIX\", " +
+				" ELSE NULL END AS varchar(2)) AS \"LITERAL_SUFFIX\", " +
 			"CASE WHEN \"sqlname\" IN ('char', 'varchar') THEN 'max length'" +
-			" WHEN \"sqlname\" = 'decimal' THEN 'precision, scale'" +
-			" WHEN \"sqlname\" IN ('time', 'timetz', 'timestamp', 'timestamptz', 'sec_interval') THEN 'precision'" +
-			" ELSE NULL END AS \"CREATE_PARAMS\", " +
+				" WHEN \"sqlname\" = 'decimal' THEN 'precision, scale'" +
+				" WHEN \"sqlname\" IN ('time', 'timetz', 'timestamp', 'timestamptz', 'sec_interval') THEN 'precision'" +
+				" ELSE NULL END AS \"CREATE_PARAMS\", " +
 			"cast(CASE WHEN \"systemname\" = 'oid' THEN ").append(DatabaseMetaData.typeNoNulls)
-			.append(" ELSE ").append(DatabaseMetaData.typeNullable).append(" END AS smallint) AS \"NULLABLE\", " +
+				.append(" ELSE ").append(DatabaseMetaData.typeNullable).append(" END AS smallint) AS \"NULLABLE\", " +
 			"CASE WHEN \"systemname\" IN ('str', 'json', 'url') THEN true ELSE false END AS \"CASE_SENSITIVE\", " +
 			"cast(CASE \"systemname\" WHEN 'table' THEN ").append(DatabaseMetaData.typePredNone)
-			.append(" WHEN 'str' THEN ").append(DatabaseMetaData.typePredChar)
-			.append(" WHEN 'sqlblob' THEN ").append(DatabaseMetaData.typePredChar)
-			.append(" ELSE ").append(DatabaseMetaData.typePredBasic).append(" END AS smallint) AS \"SEARCHABLE\", " +
-			"false AS \"UNSIGNED_ATTRIBUTE\", " +
+				.append(" WHEN 'str' THEN ").append(DatabaseMetaData.typePredChar)
+				.append(" WHEN 'sqlblob' THEN ").append(DatabaseMetaData.typePredChar)
+				.append(" ELSE ").append(DatabaseMetaData.typePredBasic).append(" END AS smallint) AS \"SEARCHABLE\", " +
+			"CASE WHEN \"sqlname\" IN ('tinyint','smallint','int','bigint','hugeint','decimal','real','double','sec_interval','month_interval') THEN false ELSE true END AS \"UNSIGNED_ATTRIBUTE\", " +
 			"CASE \"sqlname\" WHEN 'decimal' THEN true ELSE false END AS \"FIXED_PREC_SCALE\", " +
-			"false AS \"AUTO_INCREMENT\", " +
+			"CASE WHEN \"sqlname\" IN ('tinyint','smallint','int','bigint','hugeint','decimal','oid','wrd') THEN true ELSE false END AS \"AUTO_INCREMENT\", " +
 			"\"systemname\" AS \"LOCAL_TYPE_NAME\", " +
 			"cast(0 AS smallint) AS \"MINIMUM_SCALE\", " +
-			"cast(CASE WHEN \"sqlname\" = 'decimal' AND \"systemname\" = 'lng' THEN 18" +
-			" WHEN \"sqlname\" = 'decimal' AND \"systemname\" = 'hge' THEN 38" +
-			" WHEN \"sqlname\" IN ('sec_interval', 'timestamp', 'timestamptz') THEN 9 ELSE 0 END AS smallint) AS \"MAXIMUM_SCALE\", " +
-			"cast(NULL AS int) AS \"SQL_DATA_TYPE\", " +
-			"cast(NULL AS int) AS \"SQL_DATETIME_SUB\", " +
-			"\"radix\" AS \"NUM_PREC_RADIX\" " +
+			"cast(CASE WHEN \"sqlname\" = 'decimal' THEN (CASE \"systemname\" WHEN 'lng' THEN 18 WHEN 'hge' THEN 38 WHEN 'int' THEN 9 WHEN 'sht' THEN 4 WHEN 'bte' THEN 2 ELSE 0 END)" +
+				" WHEN \"sqlname\" IN ('sec_interval', 'timestamp', 'timestamptz') THEN 9 ELSE 0 END AS smallint) AS \"MAXIMUM_SCALE\", " +
+			"cast(0 AS int) AS \"SQL_DATA_TYPE\", " +
+			"cast(0 AS int) AS \"SQL_DATETIME_SUB\", " +
+			"cast(\"radix\" as int) AS \"NUM_PREC_RADIX\" " +
 		"FROM \"sys\".\"types\" " +
 		"ORDER BY \"DATA_TYPE\", \"sqlname\", \"id\"");
 
@@ -2981,17 +3095,17 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"CAST(null AS varchar(1)) AS \"INDEX_QUALIFIER\", " +
 			"\"idxs\".\"name\" AS \"INDEX_NAME\", " +
 			"CASE \"idxs\".\"type\" WHEN 0 THEN ").append(DatabaseMetaData.tableIndexHashed).append(" ELSE ").append(DatabaseMetaData.tableIndexOther).append(" END AS \"TYPE\", " +
-			"CAST(\"objects\".\"nr\" AS smallint) AS \"ORDINAL_POSITION\", "+
+			"CAST(\"objects\".\"nr\" +1 AS smallint) AS \"ORDINAL_POSITION\", "+
 			"\"columns\".\"name\" AS \"COLUMN_NAME\", " +
 			"CAST(null AS varchar(1)) AS \"ASC_OR_DESC\", " +	// sort sequence currently not supported in keys or indexes in MonetDB
 			"CAST(").append(table_row_count).append(" AS int) AS \"CARDINALITY\", " +
 			"CAST(0 AS int) AS \"PAGES\", " +
 			"CAST(null AS varchar(1)) AS \"FILTER_CONDITION\" " +
-		"FROM \"sys\".\"idxs\" AS \"idxs\" LEFT JOIN \"sys\".\"keys\" AS \"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", " +
-			"\"sys\".\"schemas\" AS \"schemas\", " +
-			"\"sys\".\"objects\" AS \"objects\", " +
-			"\"sys\".\"columns\" AS \"columns\", " +
-			"\"sys\".\"tables\" AS \"tables\" " +
+		"FROM \"sys\".\"idxs\" LEFT JOIN \"sys\".\"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", " +
+			"\"sys\".\"schemas\", " +
+			"\"sys\".\"objects\", " +
+			"\"sys\".\"columns\", " +
+			"\"sys\".\"tables\" " +
 		"WHERE \"idxs\".\"table_id\" = \"tables\".\"id\" " +
 			"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 			"AND \"idxs\".\"id\" = \"objects\".\"id\" " +
@@ -3131,7 +3245,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * 6 REMARKS String => explanatory comment on the type
 	 * 7 BASE_TYPE short => type code of the source type of a DISTINCT type or the type that implements the
 	 *   user-generated reference type of the SELF_REFERENCING_COLUMN of a structured type as defined
-	 *   in java.sql.Types (null if DATA_TYPE is not DISTINCT or not STRUCT with REFERENCE_GENERATION = USER_DEFINED) 
+	 *   in java.sql.Types (null if DATA_TYPE is not DISTINCT or not STRUCT with REFERENCE_GENERATION = USER_DEFINED)
 	 *
 	 * @throws SQLException
 	 */
@@ -3144,23 +3258,26 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	) throws SQLException
 	{
 		StringBuilder query = new StringBuilder(990);
-		query.append("SELECT cast(null as char(1)) AS \"TYPE_CAT\", ")
-			.append("\"schemas\".\"name\" AS \"TYPE_SCHEM\", ")
-			.append("\"types\".\"sqlname\" AS \"TYPE_NAME\", ")
-			.append("CASE \"types\".\"sqlname\"")
+		if (types != null && types.length > 0) {
+			query.append("SELECT * FROM (");
+		}
+		query.append("SELECT cast(null as char(1)) AS \"TYPE_CAT\", " +
+			"\"schemas\".\"name\" AS \"TYPE_SCHEM\", " +
+			"\"types\".\"sqlname\" AS \"TYPE_NAME\", " +
+			"CASE \"types\".\"sqlname\"" +
 				// next 4 UDTs are known
-				.append(" WHEN 'inet' THEN 'nl.cwi.monetdb.jdbc.types.INET'")
-				.append(" WHEN 'json' THEN 'java.lang.String'")
-				.append(" WHEN 'url'  THEN 'nl.cwi.monetdb.jdbc.types.URL'")
-				.append(" WHEN 'uuid' THEN 'java.lang.String'")
-				.append(" ELSE 'java.lang.Object' END AS \"CLASS_NAME\", ")
-			.append("CAST(CASE WHEN \"types\".\"sqlname\" IN ('inet', 'json', 'url', 'uuid') THEN ").append(Types.JAVA_OBJECT)
-				.append(" ELSE ").append(Types.STRUCT).append(" END AS int) AS \"DATA_TYPE\", ")
-			.append("\"types\".\"systemname\" AS \"REMARKS\", ")
-			.append("cast(null as smallint) AS \"BASE_TYPE\" ")
-			.append("FROM sys.types JOIN sys.schemas ON types.schema_id = schemas.id ")
+				" WHEN 'inet' THEN 'nl.cwi.monetdb.jdbc.types.INET'" +
+				" WHEN 'json' THEN 'java.lang.String'" +
+				" WHEN 'url'  THEN 'nl.cwi.monetdb.jdbc.types.URL'" +
+				" WHEN 'uuid' THEN 'java.lang.String'" +
+				" ELSE 'java.lang.Object' END AS \"CLASS_NAME\", " +
+			"CAST(CASE WHEN \"types\".\"sqlname\" IN ('inet', 'json', 'url', 'uuid') THEN ").append(Types.JAVA_OBJECT)
+				.append(" ELSE ").append(Types.STRUCT).append(" END AS int) AS \"DATA_TYPE\", " +
+			"\"types\".\"systemname\" AS \"REMARKS\", " +
+			"cast(null as smallint) AS \"BASE_TYPE\" " +
+			"FROM \"sys\".\"types\" JOIN \"sys\".\"schemas\" ON \"types\".\"schema_id\" = \"schemas\".\"id\" " +
 			// exclude the built-in types (I assume they always have id <= 99 and eclass < 15)
-			.append("WHERE \"types\".\"id\" > 99 AND \"types\".\"eclass\" >= 15");
+			"WHERE \"types\".\"id\" > 99 AND \"types\".\"eclass\" >= 15");
 
 		if (catalog != null && catalog.length() > 0) {
 			// none empty catalog selection.
@@ -3174,7 +3291,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			query.append(" AND \"types\".\"sqlname\" ").append(composeMatchPart(typeNamePattern));
 		}
 		if (types != null && types.length > 0) {
-			query.append(" AND \"DATA_TYPE\" IN (");
+			query.append(") AS getUDTs WHERE \"DATA_TYPE\" IN (");
 			for (int i = 0; i < types.length; i++) {
 				if (i > 0) {
 					query.append(", ");
@@ -3377,7 +3494,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *	<LI><B>TYPE_SCHEM</B> String => type schema (may be <code>null</code>)
 	 *	<LI><B>TYPE_NAME</B> String => type name
 	 *	<LI><B>ATTR_NAME</B> String => attribute name
-	 *	<LI><B>DATA_TYPE</B> short => attribute type SQL type from java.sql.Types
+	 *	<LI><B>DATA_TYPE</B> int => attribute type SQL type from java.sql.Types
 	 *	<LI><B>ATTR_TYPE_NAME</B> String => Data source dependent type name.
 	 *	For a UDT, the type name is fully qualified. For a REF, the type name is
 	 *	fully qualified and represents the target type of the reference type.
@@ -3439,13 +3556,13 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	{
 		String query =
 		"SELECT cast(null as char(1)) AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
-			"'' AS \"ATTR_NAME\", '' AS \"ATTR_TYPE_NAME\", 0 AS \"ATTR_SIZE\", " +
-			"0 AS \"DECIMAL_DIGITS\", 0 AS \"NUM_PREC_RADIX\", 0 AS \"NULLABLE\", " +
-			"'' AS \"REMARKS\", '' AS \"ATTR_DEF\", 0 AS \"SQL_DATA_TYPE\", " +
-			"0 AS \"SQL_DATETIME_SUB\", 0 AS \"CHAR_OCTET_LENGTH\", " +
-			"0 AS \"ORDINAL_POSITION\", 'YES' AS \"IS_NULLABLE\", " +
+			"'' AS \"ATTR_NAME\", CAST(0 as int) AS \"DATA_TYPE\", '' AS \"ATTR_TYPE_NAME\", CAST(0 as int) AS \"ATTR_SIZE\", " +
+			"CAST(0 as int) AS \"DECIMAL_DIGITS\", CAST(0 as int) AS \"NUM_PREC_RADIX\", CAST(0 as int) AS \"NULLABLE\", " +
+			"'' AS \"REMARKS\", '' AS \"ATTR_DEF\", CAST(0 as int) AS \"SQL_DATA_TYPE\", " +
+			"CAST(0 as int) AS \"SQL_DATETIME_SUB\", CAST(0 as int) AS \"CHAR_OCTET_LENGTH\", " +
+			"CAST(0 as int) AS \"ORDINAL_POSITION\", 'YES' AS \"IS_NULLABLE\", " +
 			"'' AS \"SCOPE_CATALOG\", '' AS \"SCOPE_SCHEMA\", '' AS \"SCOPE_TABLE\", " +
-			"0 AS \"SOURCE_DATA_TYPE\" " +
+			"CAST(0 as smallint) AS \"SOURCE_DATA_TYPE\" " +
 		"WHERE 1 = 0";
 
 		return executeMetaDataQuery(query);
@@ -3657,9 +3774,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *       property
 	 *    4. DESCRIPTION String=> A description of the
 	 *       property. This will typically contain information as
-	 *       to where this property is stored in the database. 
+	 *       to where this property is stored in the database.
 	 *
-	 * The ResultSet is sorted by the NAME column 
+	 * The ResultSet is sorted by the NAME column
 	 *
 	 * @return A ResultSet object; each row is a supported client info
 	 *         property, none in case of MonetDB's current JDBC driver
@@ -3673,7 +3790,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		"SELECT 'port', 5, '50000', 'communication port number of MonetDB server process' UNION ALL " +
 		"SELECT 'user', 128, '', 'user name to login to MonetDB server' UNION ALL " +
 		"SELECT 'password', 128, '', 'password for user name to login to MonetDB server' UNION ALL " +
-		"SELECT 'langauge', 16, 'sql', 'language (sql or mal) used to parse commands in MonetDB server' UNION ALL " +
+		"SELECT 'language', 16, 'sql', 'language (sql or mal) used to parse commands in MonetDB server' UNION ALL " +
 		"SELECT 'debug', 5, 'false', 'boolean flag true or false' UNION ALL " +
 		"SELECT 'hash', 128, '', 'hash string' UNION ALL " +
 		"SELECT 'treat_blob_as_binary', 5, 'false', 'boolean flag true or false' UNION ALL " +
@@ -3702,11 +3819,11 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *        * functionResultUnknown - Cannot determine if a return
 	 *          value or table will be returned
 	 *        * functionNoTable- Does not return a table
-	 *        * functionReturnsTable - Returns a table 
+	 *        * functionReturnsTable - Returns a table
 	 *    6. SPECIFIC_NAME String => the name which uniquely identifies
 	 *       this function within its schema. This is a user specified,
 	 *       or DBMS generated, name that may be different then the
-	 *       FUNCTION_NAME for example with overload functions 
+	 *       FUNCTION_NAME for example with overload functions
 	 *
 	 * A user may not have permission to execute any of the functions
 	 * that are returned by getFunctions.
@@ -3720,7 +3837,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *        without a schema; null means that the schema name should
 	 *        not be used to narrow the search
 	 * @param functionNamePattern a function name pattern; must match
-	 *        the function name as it is stored in the database 
+	 *        the function name as it is stored in the database
 	 * @return ResultSet - each row is a function description
 	 * @throws SQLException if a database access error occurs
 	 */
@@ -3732,22 +3849,23 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		throws SQLException
 	{
 		StringBuilder query = new StringBuilder(800);
-		query.append("SELECT DISTINCT cast(null as char(1)) AS \"FUNCTION_CAT\", ")
-			.append("\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", ")
-			.append("\"functions\".\"name\" AS \"FUNCTION_NAME\", ")
-			.append("cast(null as char(1)) AS \"REMARKS\", ")
-			.append("CASE \"functions\".\"type\"")
-				.append(" WHEN 1 THEN ").append(DatabaseMetaData.functionNoTable)
-				.append(" WHEN 2 THEN ").append(DatabaseMetaData.functionNoTable)
-				.append(" WHEN 3 THEN ").append(DatabaseMetaData.functionNoTable)
-				.append(" WHEN 4 THEN ").append(DatabaseMetaData.functionNoTable)
-				.append(" WHEN 5 THEN ").append(DatabaseMetaData.functionReturnsTable)
-				.append(" ELSE ").append(DatabaseMetaData.functionResultUnknown).append(" END AS \"FUNCTION_TYPE\", ")
-			.append("CAST(CASE \"functions\".\"language\" WHEN 0 THEN \"functions\".\"mod\" || '.' || \"functions\".\"func\" ELSE \"schemas\".\"name\" || '.' || \"functions\".\"name\" END AS VARCHAR(1500)) AS \"SPECIFIC_NAME\" ")
-		.append("FROM \"sys\".\"functions\", \"sys\".\"schemas\" ")
-		.append("WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" ")
+		query.append("SELECT cast(null as varchar(1)) AS \"FUNCTION_CAT\", " +
+			"\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", " +
+			"\"functions\".\"name\" AS \"FUNCTION_NAME\", " +
+			"cast(\"functions\".\"func\" as varchar(9999)) AS \"REMARKS\", " +
+			"CASE \"functions\".\"type\"" +
+				" WHEN 1 THEN ").append(DatabaseMetaData.functionNoTable)
+			.append(" WHEN 2 THEN ").append(DatabaseMetaData.functionNoTable)
+			.append(" WHEN 3 THEN ").append(DatabaseMetaData.functionNoTable)
+			.append(" WHEN 4 THEN ").append(DatabaseMetaData.functionNoTable)
+			.append(" WHEN 5 THEN ").append(DatabaseMetaData.functionReturnsTable)
+			.append(" ELSE ").append(DatabaseMetaData.functionResultUnknown).append(" END AS \"FUNCTION_TYPE\", " +
+			// only the id value uniquely identifies a function. Include it to be able to differentiate between multiple overloaded functions with the same name
+			"cast(\"functions\".\"id\" as varchar(10)) AS \"SPECIFIC_NAME\" " +
+		"FROM \"sys\".\"functions\", \"sys\".\"schemas\" " +
+		"WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
 		// exclude procedures (type = 2). Those need to be returned via getProcedures()
-		.append("AND \"functions\".\"type\" <> 2");
+		"AND \"functions\".\"type\" <> 2");
 
 		if (catalog != null && catalog.length() > 0) {
 			// none empty catalog selection.
@@ -3770,7 +3888,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Retrieves a description of the given catalog's system or user
 	 * function parameters and return type.
 	 *
-	 *
 	 * Only descriptions matching the schema, function and parameter name criteria are returned.
 	 * They are ordered by FUNCTION_CAT, FUNCTION_SCHEM, FUNCTION_NAME and SPECIFIC_ NAME.
 	 * Within this, the return value, if any, is first. Next are the parameter descriptions in call order.
@@ -3786,7 +3903,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *         functionColumnInOut - INOUT parameter
 	 *         functionColumnOut - OUT parameter
 	 *         functionColumnReturn - function return value
-	 *         functionColumnResult - Indicates that the parameter or column is a column in the ResultSet 
+	 *         functionColumnResult - Indicates that the parameter or column is a column in the ResultSet
 	 * 6.   DATA_TYPE int => SQL type from java.sql.Types
 	 * 7.   TYPE_NAME String => SQL type name, for a UDT type the type name is fully qualified
 	 * 8.   PRECISION int => precision
@@ -3796,7 +3913,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * 12.  NULLABLE short => can it contain NULL.
 	 *         functionNoNulls - does not allow NULL values
 	 *         functionNullable - allows NULL values
-	 *         functionNullableUnknown - nullability unknown 
+	 *         functionNullableUnknown - nullability unknown
 	 * 13.  REMARKS String => comment describing column/parameter
 	 * 14.  CHAR_OCTET_LENGTH int => the maximum length of binary and character based parameters or columns. For any other datatype the returned value is a NULL
 	 * 15.  ORDINAL_POSITION int => the ordinal position, starting from 1, for the input and output parameters.
@@ -3804,9 +3921,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * 16.  IS_NULLABLE String => ISO rules are used to determine the nullability for a parameter or column.
 	 *         YES --- if the parameter or column can include NULLs
 	 *         NO --- if the parameter or column cannot include NULLs
-	 *         empty string --- if the nullability for the parameter or column is unknown 
+	 *         empty string --- if the nullability for the parameter or column is unknown
 	 * 17.  SPECIFIC_NAME String => the name which uniquely identifies this function within its schema.
-	 * 	  This is a user specified, or DBMS generated, name that may be different then the FUNCTION_NAME for example with overload functions 
+	 * 	  This is a user specified, or DBMS generated, name that may be different then the FUNCTION_NAME for example with overload functions
 	 *
 	 * @param catalog a catalog name; must match the catalog name as
 	 *        it is stored in the database; "" retrieves those without a
@@ -3833,31 +3950,37 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		throws SQLException
 	{
 		StringBuilder query = new StringBuilder(2600);
-		query.append("SELECT DISTINCT CAST(null as char(1)) AS \"FUNCTION_CAT\", ")
-			.append("\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", ")
-			.append("\"functions\".\"name\" AS \"FUNCTION_NAME\", ")
-			.append("\"args\".\"name\" AS \"COLUMN_NAME\", ")
-			.append("CAST(CASE \"args\".\"inout\"")
-				.append(" WHEN 0 THEN (CASE \"args\".\"number\" WHEN 0 THEN ").append(DatabaseMetaData.functionReturn).append(" ELSE ").append(DatabaseMetaData.functionColumnOut).append(" END)")
-				.append(" WHEN 1 THEN ").append(DatabaseMetaData.functionColumnIn)
-				.append(" ELSE ").append(DatabaseMetaData.functionColumnUnknown).append(" END AS smallint) AS \"COLUMN_TYPE\", ")
-			.append("CAST(").append(MonetDriver.getSQLTypeMap("\"args\".\"type\"")).append(" AS int) AS \"DATA_TYPE\", ")
-			.append("\"args\".\"type\" AS \"TYPE_NAME\", ")
-			.append("CASE \"args\".\"type\" WHEN 'tinyint' THEN 3 WHEN 'smallint' THEN 5 WHEN 'int' THEN 10 WHEN 'bigint' THEN 19 WHEN 'hugeint' THEN 38 WHEN 'oid' THEN 19 WHEN 'wrd' THEN 19 ELSE \"args\".\"type_digits\" END AS \"PRECISION\", ")
-			.append("CASE \"args\".\"type\" WHEN 'tinyint' THEN 1 WHEN 'smallint' THEN 2 WHEN 'int' THEN 4 WHEN 'bigint' THEN 8 WHEN 'hugeint' THEN 16 WHEN 'oid' THEN 8 WHEN 'wrd' THEN 8 ELSE \"args\".\"type_digits\" END AS \"LENGTH\", ")
-			.append("CAST(CASE WHEN \"args\".\"type\" IN ('tinyint','smallint','int','bigint','hugeint','oid','wrd','decimal','numeric','time','timetz','timestamp','timestamptz','sec_interval') THEN \"args\".\"type_scale\" ELSE NULL END AS smallint) AS \"SCALE\", ")
-			.append("CAST(CASE WHEN \"args\".\"type\" IN ('tinyint','smallint','int','bigint','hugeint','oid','wrd','decimal','numeric') THEN 10 WHEN \"args\".\"type\" IN ('real','float','double') THEN 2 ELSE NULL END AS smallint) AS \"RADIX\", ")
-			.append("CAST(").append(DatabaseMetaData.functionNullableUnknown).append(" AS smallint) AS \"NULLABLE\", ")
-			.append("CAST(null as char(1)) AS \"REMARKS\", ")
-			.append("CASE WHEN \"args\".\"type\" IN ('char','varchar','binary','varbinary') THEN \"args\".\"type_digits\" ELSE NULL END AS \"CHAR_OCTET_LENGTH\", ")
-			.append("\"args\".\"number\" AS \"ORDINAL_POSITION\", ")
-			.append("CAST('' as varchar(3)) AS \"IS_NULLABLE\", ")
-			.append("CAST(null as char(1)) AS \"SPECIFIC_NAME\" ")
-		.append("FROM \"sys\".\"args\", \"sys\".\"functions\", \"sys\".\"schemas\" ")
-		.append("WHERE \"args\".\"func_id\" = \"functions\".\"id\" ")
-		.append("AND \"functions\".\"schema_id\" = \"schemas\".\"id\" ")
+		query.append("SELECT DISTINCT CAST(null as char(1)) AS \"FUNCTION_CAT\", " +
+			"\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", " +
+			"\"functions\".\"name\" AS \"FUNCTION_NAME\", " +
+			"\"args\".\"name\" AS \"COLUMN_NAME\", " +
+			"CAST(CASE \"args\".\"inout\"" +
+				" WHEN 0 THEN (CASE \"args\".\"number\" WHEN 0 THEN ")
+				.append(DatabaseMetaData.functionReturn).append(" ELSE ").append(DatabaseMetaData.functionColumnOut).append(" END)" +
+				" WHEN 1 THEN ").append(DatabaseMetaData.functionColumnIn)
+				.append(" ELSE ").append(DatabaseMetaData.functionColumnUnknown).append(" END AS smallint) AS \"COLUMN_TYPE\", " +
+			"CAST(").append(MonetDriver.getSQLTypeMap("\"args\".\"type\"")).append(" AS int) AS \"DATA_TYPE\", " +
+			"\"args\".\"type\" AS \"TYPE_NAME\", " +
+			"CASE \"args\".\"type\" WHEN 'tinyint' THEN 3 WHEN 'smallint' THEN 5 WHEN 'int' THEN 10 WHEN 'bigint' THEN 19" +
+				" WHEN 'hugeint' THEN 38 WHEN 'oid' THEN 19 WHEN 'wrd' THEN 19 ELSE \"args\".\"type_digits\" END AS \"PRECISION\", " +
+			"CASE \"args\".\"type\" WHEN 'tinyint' THEN 1 WHEN 'smallint' THEN 2 WHEN 'int' THEN 4 WHEN 'bigint' THEN 8" +
+				" WHEN 'hugeint' THEN 16 WHEN 'oid' THEN 8 WHEN 'wrd' THEN 8 ELSE \"args\".\"type_digits\" END AS \"LENGTH\", " +
+			"CAST(CASE WHEN \"args\".\"type\" IN ('tinyint','smallint','int','bigint','hugeint','oid','wrd','decimal','numeric'," +
+				"'time','timetz','timestamp','timestamptz','sec_interval') THEN \"args\".\"type_scale\" ELSE NULL END AS smallint) AS \"SCALE\", " +
+			"CAST(CASE WHEN \"args\".\"type\" IN ('tinyint','smallint','int','bigint','hugeint','oid','wrd','decimal','numeric') THEN 10" +
+				" WHEN \"args\".\"type\" IN ('real','float','double') THEN 2 ELSE NULL END AS smallint) AS \"RADIX\", " +
+			"CAST(").append(DatabaseMetaData.functionNullableUnknown).append(" AS smallint) AS \"NULLABLE\", " +
+			"CAST(null as char(1)) AS \"REMARKS\", " +
+			"CAST(CASE WHEN \"args\".\"type\" IN ('char','varchar','clob') THEN \"args\".\"type_digits\" ELSE NULL END as int) AS \"CHAR_OCTET_LENGTH\", " +
+			"CAST(\"args\".\"number\" as int) AS \"ORDINAL_POSITION\", " +
+			"CAST('' as varchar(3)) AS \"IS_NULLABLE\", " +
+			// the specific name contains the function id, in order to be able to match the args to the correct overloaded function name
+			"cast(\"functions\".\"id\" as varchar(10)) AS \"SPECIFIC_NAME\" " +
+		"FROM \"sys\".\"args\", \"sys\".\"functions\", \"sys\".\"schemas\" " +
+		"WHERE \"args\".\"func_id\" = \"functions\".\"id\" " +
+		"AND \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
 		// exclude procedures (type = 2). Those need to be returned via getProcedureColumns()
-		.append("AND \"functions\".\"type\" <> 2");
+		"AND \"functions\".\"type\" <> 2");
 
 		if (catalog != null && catalog.length() > 0) {
 			// none empty catalog selection.
@@ -3873,7 +3996,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		if (columnNamePattern != null) {
 			query.append(" AND \"args\".\"name\" ").append(composeMatchPart(columnNamePattern));
 		}
-		query.append(" ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"ORDINAL_POSITION\"");
+		query.append(" ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"SPECIFIC_NAME\", \"ORDINAL_POSITION\"");
 
 		return executeMetaDataQuery(query.toString());
 	}
@@ -3928,17 +4051,17 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		// MonetDB currently does not support pseudo or hidden columns, so return an empty ResultSet
 		String query =
 		"SELECT CAST(null as char(1)) AS \"TABLE_CAT\", " +
-			"CAST(null as varchar(1)) AS \"TABLE_SCHEM\", " +
-			"CAST(null as varchar(1)) AS \"TABLE_NAME\", " +
-			"CAST(null as varchar(1)) AS \"COLUMN_NAME\", " +
-			"CAST(null as int) AS \"DATA_TYPE\", " +
-			"CAST(null as int) AS \"COLUMN_SIZE\", " +
-			"CAST(null as int) AS \"DECIMAL_DIGITS\", " +
-			"CAST(null as int) AS \"NUM_PREC_RADIX\", " +
-			"CAST(null as varchar(1)) AS \"COLUMN_USAGE\", " +
+			"CAST('' as varchar(1)) AS \"TABLE_SCHEM\", " +
+			"CAST('' as varchar(1)) AS \"TABLE_NAME\", " +
+			"CAST('' as varchar(1)) AS \"COLUMN_NAME\", " +
+			"CAST(0 as int) AS \"DATA_TYPE\", " +
+			"CAST(0 as int) AS \"COLUMN_SIZE\", " +
+			"CAST(0 as int) AS \"DECIMAL_DIGITS\", " +
+			"CAST(0 as int) AS \"NUM_PREC_RADIX\", " +
+			"CAST('' as varchar(1)) AS \"COLUMN_USAGE\", " +
 			"CAST(null as varchar(1)) AS \"REMARKS\", " +
-			"CAST(null as int) AS \"CHAR_OCTET_LENGTH\", " +
-			"CAST(null as varchar(3)) AS \"IS_NULLABLE\" " +
+			"CAST(0 as int) AS \"CHAR_OCTET_LENGTH\", " +
+			"CAST('' as varchar(3)) AS \"IS_NULLABLE\" " +
 		"WHERE 1 = 0";
 
 		return executeMetaDataQuery(query);
@@ -3960,89 +4083,4 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	//== end methods interface DatabaseMetaData
-}
-
-/**
- * This class is not intended for normal use. Therefore it is restricted to
- * classes from the very same package only. Because it is mainly used
- * only in the MonetDatabaseMetaData class it is placed here.
- */
-class MonetVirtualResultSet extends MonetResultSet {
-	private String results[][];
-	private boolean closed;
-
-	MonetVirtualResultSet(
-		String[] columns,
-		String[] types,
-		String[][] results
-	) throws IllegalArgumentException {
-		super(columns, types, results.length);
-
-		this.results = results;
-		closed = false;
-	}
-
-	/**
-	 * This method is overridden in order to let it use the results array
-	 * instead of the cache in the Statement object that created it.
-	 *
-	 * @param row the number of the row to which the cursor should move. A
-	 *        positive number indicates the row number counting from the
-	 *        beginning of the result set; a negative number indicates the row
-	 *        number counting from the end of the result set
-	 * @return true if the cursor is on the result set; false otherwise
-	 * @throws SQLException if a database error occurs
-	 */
- 	@Override
-	public boolean absolute(int row) throws SQLException {
-		if (closed)
-			throw new SQLException("ResultSet is closed!", "M1M20");
-
-		// first calculate what the JDBC row is
-		if (row < 0) {
-			// calculate the negatives...
-			row = tupleCount + row + 1;
-		}
-		// now place the row not farther than just before or after the result
-		if (row < 0) row = 0;	// before first
-		else if (row > tupleCount + 1) row = tupleCount + 1;	// after last
-
-		// store it
-		curRow = row;
-
-		// see if we have the row
-		if (row < 1 || row > tupleCount) return false;
-
-		for (int i = 0; i < results[row - 1].length; i++) {
-			tlp.values[i] = results[row - 1][i];
-		}
-
-		return true;
-	}
-
-	/**
-	 * Mainly here to prevent errors when the close method is called. There
-	 * is no real need for this object to close it. We simply remove our
-	 * resultset data.
-	 */
-	@Override
-	public void close() {
-		if (!closed) {
-			closed = true;
-			results = null;
-			// types and columns are MonetResultSets private parts
-		}
-	}
-
-	/**
-	 * Retrieves the fetch size for this ResultSet object, which will be
-	 * zero, since it's a virtual set.
-	 *
-	 * @return the current fetch size for this ResultSet object
-	 * @throws SQLException if a database access error occurs
-	 */
-	@Override
-	public int getFetchSize() throws SQLException {
-		return 0;
-	}
 }

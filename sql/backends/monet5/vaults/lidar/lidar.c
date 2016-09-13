@@ -16,7 +16,6 @@
 #include <glob.h>
 
 /* clash with GDK? */
-// #undef htype
 // #undef ttype
 
 #include <liblas/capi/liblas.h>
@@ -396,9 +395,9 @@ str LIDARexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bats_dbl[1] = store_funcs.bind_col(tr, cols[1], 0);
 	bats_dbl[2] = store_funcs.bind_col(tr, cols[2], 0);
 
-	cols_dbl[0] = (dbl*)Tloc(bats_dbl[0], BUNfirst(bats_dbl[0]));
-	cols_dbl[1] = (dbl*)Tloc(bats_dbl[1], BUNfirst(bats_dbl[1]));
-	cols_dbl[2] = (dbl*)Tloc(bats_dbl[2], BUNfirst(bats_dbl[2]));
+	cols_dbl[0] = (dbl*)Tloc(bats_dbl[0], 0);
+	cols_dbl[1] = (dbl*)Tloc(bats_dbl[1], 0);
+	cols_dbl[2] = (dbl*)Tloc(bats_dbl[2], 0);
 
 	nrows = store_funcs.count_col(tr, cols[0], 1);
 
@@ -961,9 +960,9 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	colx = mvc_bind_column(m, tbl, "x");
 	coly = mvc_bind_column(m, tbl, "y");
 	colz = mvc_bind_column(m, tbl, "z");
-	x = BATnew(TYPE_void, TYPE_dbl, rows, PERSISTENT);
-	y = BATnew(TYPE_void, TYPE_dbl, rows, PERSISTENT);
-	z = BATnew(TYPE_void, TYPE_dbl, rows, PERSISTENT);
+	x = COLnew(0, TYPE_dbl, rows, PERSISTENT);
+	y = COLnew(0, TYPE_dbl, rows, PERSISTENT);
+	z = COLnew(0, TYPE_dbl, rows, PERSISTENT);
 
 	if ( x == NULL || y == NULL || z == NULL) {
 		GDKfree(tpcode);
@@ -978,13 +977,9 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	}
 
-	BATseqbase(x, 0);
-	BATseqbase(y, 0);
-	BATseqbase(z, 0);
-
-	px = (dbl *) Tloc(x, BUNfirst(x));
-	py = (dbl *) Tloc(y, BUNfirst(y));
-	pz = (dbl *) Tloc(z, BUNfirst(z));
+	px = (dbl *) Tloc(x, 0);
+	py = (dbl *) Tloc(y, 0);
+	pz = (dbl *) Tloc(z, 0);
 
 	p = LASReader_GetNextPoint(reader);
 	i = 0;

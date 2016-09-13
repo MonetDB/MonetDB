@@ -49,7 +49,7 @@ Ready.
 #select count(*) from proc_insert_into_t1;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 6	]
 % sys.proc_insert_into_t1 # table_name

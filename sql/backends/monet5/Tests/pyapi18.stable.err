@@ -1,0 +1,41 @@
+stderr of test 'pyapi18` in directory 'sql/backends/monet5` itself:
+
+
+# 18:18:38 >  
+# 18:18:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39173" "--set" "mapi_usock=/var/tmp/mtest-21503/.s.monetdb.39173" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 18:18:38 >  
+
+# builtin opt 	gdk_dbpath = /home/mytherin/opt/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39173
+# cmdline opt 	mapi_usock = /var/tmp/mtest-21503/.s.monetdb.39173
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = true
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 18:18:39 >  
+# 18:18:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21503" "--port=39173"
+# 18:18:39 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-21503/.s.monetdb.39173
+QUERY = SELECT pyapi_interval(d) FROM uuid_tbl;
+ERROR = !Unsupported SQL Type: uuid
+
+# 18:18:39 >  
+# 18:18:39 >  "Done."
+# 18:18:39 >  
+

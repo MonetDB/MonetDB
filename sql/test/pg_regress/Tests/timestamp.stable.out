@@ -65,25 +65,25 @@ Ready.
 #SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(current_date as timestamp);
 % sys.L2 # table_name
 % one # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1 ]
 #SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_add(current_date, 24*60*60.0) as timestamp);
 % sys.L2 # table_name
 % one # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_sub(current_date, 24*60*60.0) as timestamp);
 % sys.L2 # table_name
 % one # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1 ]
 #SELECT count(*) AS None FROM TIMESTAMP_TBL WHERE d1 = cast(now as timestamp);
 % sys.L2 # table_name
 % none # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #DELETE FROM TIMESTAMP_TBL;
@@ -96,7 +96,7 @@ Ready.
 #SELECT count(*) AS two FROM TIMESTAMP_TBL WHERE d1 <= cast(now as timestamp);
 % sys.L2 # table_name
 % two # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #COMMIT;

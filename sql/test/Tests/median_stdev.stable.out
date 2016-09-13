@@ -44,7 +44,7 @@ Ready.
 #SELECT count(*) from sampleData;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 17	]
 #SELECT median(numValue) FROM sampleData;  -- should return 6
@@ -81,7 +81,7 @@ Ready.
 #) G
 #ON R.GroupID = G.GroupID AND R.rowNo BETWEEN N/2 AND N/2+N%2
 #GROUP BY R.groupID;
-% sys.r,	.L2 # table_name
+% sys.r,	.L3 # table_name
 % groupid,	medianvalue # name
 % int,	double # type
 % 1,	24 # length

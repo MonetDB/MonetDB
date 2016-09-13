@@ -69,7 +69,6 @@ include bbp;
 include mal_io;
 include manifold;
 include factories;
-include recycle;
 include remote;
 
 include mat;
@@ -87,7 +86,6 @@ include optimizer;
 include iterator;
 include txtsim;
 include tokenizer;
-include zorder;
 
 # include transaction; no direct access anymore to avoid SQL interference
 

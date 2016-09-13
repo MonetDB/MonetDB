@@ -12,9 +12,8 @@ create type uuid external name uuid;
 -- generate a new uuid
 create function sys.uuid()
 returns uuid external name uuid."new";
+GRANT EXECUTE ON FUNCTION sys.uuid() TO PUBLIC;
 
-create function sys.isaUUID(u uuid)
-returns uuid external name uuid."isaUUID";
-
-create function sys.isaUUID(u string)
-returns uuid external name uuid."isaUUID";
+create function sys.isaUUID(s string)
+returns boolean external name uuid."isaUUID";
+GRANT EXECUTE ON FUNCTION sys.isaUUID(string) TO PUBLIC;

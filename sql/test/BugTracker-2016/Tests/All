@@ -1,4 +1,6 @@
-HAVE_GEOM?storagemodel.Bug-3923
+HAVE_GEOM?storagemodel
+THREADS=1?convert-function-test.Bug-3460
+HAVE_HGE?convert-function-test-hge.Bug-3460
 LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908
 incorrect_column_name_in_OR_condition_of_LEFT-JOIN_crashes_mserver.Bug-3909
 copy_into_with_header.Bug-3910
@@ -30,3 +32,17 @@ leftjoin.Bug-3981
 subcorr-missing.Bug-3978
 epoch.Bug-3979
 fk-smaller-pk.Bug-3983
+isaUUID_function.Bug-3997
+string-length.Bug-3999
+RELEASE_SAVEPOINT_after_ALTER_TABLE_crash.Bug-4010
+RELEASE_SAVEPOINT_after_UPDATE_crash.Bug-4010
+analyze-quotes-incorrectly.Bug-4021
+boolean-evaluation.Bug-4025
+HAVE_GEOM?nested-mal-with-multiplex.Bug-4035
+querylog
+trigger_bulk.Bug-4045
+innerjoin-leftjoin-or.Bug-4049
+create_merge_table_withdata.Bug-4041
+timestamp_with_tz_fromstr.Bug-4019
+simpletest
+like_in_non_sys_schema.Bug-4062

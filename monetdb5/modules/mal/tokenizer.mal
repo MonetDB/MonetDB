@@ -40,10 +40,10 @@ command getIndex():bat[:oid]
 address TKNZRgetIndex
 comment "administrative function that returns the INDEX bat";
 
-command getCount():bat[:wrd]
+command getCount():bat[:lng]
 address TKNZRgetCount
 comment "debugging function that returns the size of the bats at each level";
 
-command getCardinality():bat[:wrd]
+command getCardinality():bat[:lng]
 address TKNZRgetCardinality
 comment "debugging function that returns the unique tokens at each level";

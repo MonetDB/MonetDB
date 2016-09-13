@@ -691,43 +691,6 @@ pattern add_noerror(v:int,b:bat[:hge],s:bat[:oid]) :bat[:hge]
 address CMDbatADD
 comment "Return V + B with candidates list, overflow causes NIL value";
 
-pattern +(b1:bat[:wrd],b2:bat[:hge]) :bat[:hge]
-address CMDbatADDsignal
-comment "Return B1 + B2, signal error on overflow";
-pattern +(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatADDsignal
-comment "Return B1 + B2 with candidates list, signal error on overflow";
-pattern add_noerror(b1:bat[:wrd],b2:bat[:hge]) :bat[:hge]
-address CMDbatADD
-comment "Return B1 + B2, overflow causes NIL value";
-pattern add_noerror(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatADD
-comment "Return B1 + B2 with candidates list, overflow causes NIL value";
-pattern +(b:bat[:wrd],v:hge) :bat[:hge]
-address CMDbatADDsignal
-comment "Return B + V, signal error on overflow";
-pattern +(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:hge]
-address CMDbatADDsignal
-comment "Return B + V with candidates list, signal error on overflow";
-pattern add_noerror(b:bat[:wrd],v:hge) :bat[:hge]
-address CMDbatADD
-comment "Return B + V, overflow causes NIL value";
-pattern add_noerror(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:hge]
-address CMDbatADD
-comment "Return B + V with candidates list, overflow causes NIL value";
-pattern +(v:wrd,b:bat[:hge]) :bat[:hge]
-address CMDbatADDsignal
-comment "Return V + B, signal error on overflow";
-pattern +(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatADDsignal
-comment "Return V + B with candidates list, signal error on overflow";
-pattern add_noerror(v:wrd,b:bat[:hge]) :bat[:hge]
-address CMDbatADD
-comment "Return V + B, overflow causes NIL value";
-pattern add_noerror(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatADD
-comment "Return V + B with candidates list, overflow causes NIL value";
-
 pattern +(b1:bat[:lng],b2:bat[:hge]) :bat[:hge]
 address CMDbatADDsignal
 comment "Return B1 + B2, signal error on overflow";
@@ -873,43 +836,6 @@ pattern add_noerror(v:hge,b:bat[:int]) :bat[:hge]
 address CMDbatADD
 comment "Return V + B, overflow causes NIL value";
 pattern add_noerror(v:hge,b:bat[:int],s:bat[:oid]) :bat[:hge]
-address CMDbatADD
-comment "Return V + B with candidates list, overflow causes NIL value";
-
-pattern +(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatADDsignal
-comment "Return B1 + B2, signal error on overflow";
-pattern +(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatADDsignal
-comment "Return B1 + B2 with candidates list, signal error on overflow";
-pattern add_noerror(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatADD
-comment "Return B1 + B2, overflow causes NIL value";
-pattern add_noerror(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatADD
-comment "Return B1 + B2 with candidates list, overflow causes NIL value";
-pattern +(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatADDsignal
-comment "Return B + V, signal error on overflow";
-pattern +(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatADDsignal
-comment "Return B + V with candidates list, signal error on overflow";
-pattern add_noerror(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatADD
-comment "Return B + V, overflow causes NIL value";
-pattern add_noerror(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatADD
-comment "Return B + V with candidates list, overflow causes NIL value";
-pattern +(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatADDsignal
-comment "Return V + B, signal error on overflow";
-pattern +(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatADDsignal
-comment "Return V + B with candidates list, signal error on overflow";
-pattern add_noerror(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatADD
-comment "Return V + B, overflow causes NIL value";
-pattern add_noerror(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
 address CMDbatADD
 comment "Return V + B with candidates list, overflow causes NIL value";
 
@@ -1247,43 +1173,6 @@ pattern sub_noerror(v:int,b:bat[:hge],s:bat[:oid]) :bat[:hge]
 address CMDbatSUB
 comment "Return V - B with candidates list, overflow causes NIL value";
 
-pattern -(b1:bat[:wrd],b2:bat[:hge]) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return B1 - B2, signal error on overflow";
-pattern -(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return B1 - B2 with candidates list, signal error on overflow";
-pattern sub_noerror(b1:bat[:wrd],b2:bat[:hge]) :bat[:hge]
-address CMDbatSUB
-comment "Return B1 - B2, overflow causes NIL value";
-pattern sub_noerror(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatSUB
-comment "Return B1 - B2 with candidates list, overflow causes NIL value";
-pattern -(b:bat[:wrd],v:hge) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return B - V, signal error on overflow";
-pattern -(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return B - V with candidates list, signal error on overflow";
-pattern sub_noerror(b:bat[:wrd],v:hge) :bat[:hge]
-address CMDbatSUB
-comment "Return B - V, overflow causes NIL value";
-pattern sub_noerror(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:hge]
-address CMDbatSUB
-comment "Return B - V with candidates list, overflow causes NIL value";
-pattern -(v:wrd,b:bat[:hge]) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return V - B, signal error on overflow";
-pattern -(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return V - B with candidates list, signal error on overflow";
-pattern sub_noerror(v:wrd,b:bat[:hge]) :bat[:hge]
-address CMDbatSUB
-comment "Return V - B, overflow causes NIL value";
-pattern sub_noerror(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatSUB
-comment "Return V - B with candidates list, overflow causes NIL value";
-
 pattern -(b1:bat[:lng],b2:bat[:hge]) :bat[:hge]
 address CMDbatSUBsignal
 comment "Return B1 - B2, signal error on overflow";
@@ -1429,43 +1318,6 @@ pattern sub_noerror(v:hge,b:bat[:int]) :bat[:hge]
 address CMDbatSUB
 comment "Return V - B, overflow causes NIL value";
 pattern sub_noerror(v:hge,b:bat[:int],s:bat[:oid]) :bat[:hge]
-address CMDbatSUB
-comment "Return V - B with candidates list, overflow causes NIL value";
-
-pattern -(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return B1 - B2, signal error on overflow";
-pattern -(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return B1 - B2 with candidates list, signal error on overflow";
-pattern sub_noerror(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatSUB
-comment "Return B1 - B2, overflow causes NIL value";
-pattern sub_noerror(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatSUB
-comment "Return B1 - B2 with candidates list, overflow causes NIL value";
-pattern -(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return B - V, signal error on overflow";
-pattern -(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return B - V with candidates list, signal error on overflow";
-pattern sub_noerror(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatSUB
-comment "Return B - V, overflow causes NIL value";
-pattern sub_noerror(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatSUB
-comment "Return B - V with candidates list, overflow causes NIL value";
-pattern -(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return V - B, signal error on overflow";
-pattern -(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatSUBsignal
-comment "Return V - B with candidates list, signal error on overflow";
-pattern sub_noerror(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatSUB
-comment "Return V - B, overflow causes NIL value";
-pattern sub_noerror(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
 address CMDbatSUB
 comment "Return V - B with candidates list, overflow causes NIL value";
 
@@ -1803,43 +1655,6 @@ pattern mul_noerror(v:int,b:bat[:hge],s:bat[:oid]) :bat[:hge]
 address CMDbatMUL
 comment "Return V * B with candidates list, overflow causes NIL value";
 
-pattern *(b1:bat[:wrd],b2:bat[:hge]) :bat[:hge]
-address CMDbatMULsignal
-comment "Return B1 * B2, signal error on overflow";
-pattern *(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatMULsignal
-comment "Return B1 * B2 with candidates list, signal error on overflow";
-pattern mul_noerror(b1:bat[:wrd],b2:bat[:hge]) :bat[:hge]
-address CMDbatMUL
-comment "Return B1 * B2, overflow causes NIL value";
-pattern mul_noerror(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatMUL
-comment "Return B1 * B2 with candidates list, overflow causes NIL value";
-pattern *(b:bat[:wrd],v:hge) :bat[:hge]
-address CMDbatMULsignal
-comment "Return B * V, signal error on overflow";
-pattern *(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:hge]
-address CMDbatMULsignal
-comment "Return B * V with candidates list, signal error on overflow";
-pattern mul_noerror(b:bat[:wrd],v:hge) :bat[:hge]
-address CMDbatMUL
-comment "Return B * V, overflow causes NIL value";
-pattern mul_noerror(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:hge]
-address CMDbatMUL
-comment "Return B * V with candidates list, overflow causes NIL value";
-pattern *(v:wrd,b:bat[:hge]) :bat[:hge]
-address CMDbatMULsignal
-comment "Return V * B, signal error on overflow";
-pattern *(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatMULsignal
-comment "Return V * B with candidates list, signal error on overflow";
-pattern mul_noerror(v:wrd,b:bat[:hge]) :bat[:hge]
-address CMDbatMUL
-comment "Return V * B, overflow causes NIL value";
-pattern mul_noerror(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:hge]
-address CMDbatMUL
-comment "Return V * B with candidates list, overflow causes NIL value";
-
 pattern *(b1:bat[:lng],b2:bat[:hge]) :bat[:hge]
 address CMDbatMULsignal
 comment "Return B1 * B2, signal error on overflow";
@@ -1985,43 +1800,6 @@ pattern mul_noerror(v:hge,b:bat[:int]) :bat[:hge]
 address CMDbatMUL
 comment "Return V * B, overflow causes NIL value";
 pattern mul_noerror(v:hge,b:bat[:int],s:bat[:oid]) :bat[:hge]
-address CMDbatMUL
-comment "Return V * B with candidates list, overflow causes NIL value";
-
-pattern *(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatMULsignal
-comment "Return B1 * B2, signal error on overflow";
-pattern *(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatMULsignal
-comment "Return B1 * B2 with candidates list, signal error on overflow";
-pattern mul_noerror(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatMUL
-comment "Return B1 * B2, overflow causes NIL value";
-pattern mul_noerror(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatMUL
-comment "Return B1 * B2 with candidates list, overflow causes NIL value";
-pattern *(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatMULsignal
-comment "Return B * V, signal error on overflow";
-pattern *(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatMULsignal
-comment "Return B * V with candidates list, signal error on overflow";
-pattern mul_noerror(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatMUL
-comment "Return B * V, overflow causes NIL value";
-pattern mul_noerror(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatMUL
-comment "Return B * V with candidates list, overflow causes NIL value";
-pattern *(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatMULsignal
-comment "Return V * B, signal error on overflow";
-pattern *(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatMULsignal
-comment "Return V * B with candidates list, signal error on overflow";
-pattern mul_noerror(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatMUL
-comment "Return V * B, overflow causes NIL value";
-pattern mul_noerror(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
 address CMDbatMUL
 comment "Return V * B with candidates list, overflow causes NIL value";
 
@@ -2359,43 +2137,6 @@ pattern div_noerror(v:int,b:bat[:hge],s:bat[:oid]) :bat[:int]
 address CMDbatDIV
 comment "Return V / B with candidates list, overflow causes NIL value";
 
-pattern /(b1:bat[:wrd],b2:bat[:hge]) :bat[:wrd]
-address CMDbatDIVsignal
-comment "Return B1 / B2, signal error on overflow";
-pattern /(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatDIVsignal
-comment "Return B1 / B2 with candidates list, signal error on overflow";
-pattern div_noerror(b1:bat[:wrd],b2:bat[:hge]) :bat[:wrd]
-address CMDbatDIV
-comment "Return B1 / B2, overflow causes NIL value";
-pattern div_noerror(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatDIV
-comment "Return B1 / B2 with candidates list, overflow causes NIL value";
-pattern /(b:bat[:wrd],v:hge) :bat[:wrd]
-address CMDbatDIVsignal
-comment "Return B / V, signal error on overflow";
-pattern /(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:wrd]
-address CMDbatDIVsignal
-comment "Return B / V with candidates list, signal error on overflow";
-pattern div_noerror(b:bat[:wrd],v:hge) :bat[:wrd]
-address CMDbatDIV
-comment "Return B / V, overflow causes NIL value";
-pattern div_noerror(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:wrd]
-address CMDbatDIV
-comment "Return B / V with candidates list, overflow causes NIL value";
-pattern /(v:wrd,b:bat[:hge]) :bat[:wrd]
-address CMDbatDIVsignal
-comment "Return V / B, signal error on overflow";
-pattern /(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatDIVsignal
-comment "Return V / B with candidates list, signal error on overflow";
-pattern div_noerror(v:wrd,b:bat[:hge]) :bat[:wrd]
-address CMDbatDIV
-comment "Return V / B, overflow causes NIL value";
-pattern div_noerror(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatDIV
-comment "Return V / B with candidates list, overflow causes NIL value";
-
 pattern /(b1:bat[:lng],b2:bat[:hge]) :bat[:lng]
 address CMDbatDIVsignal
 comment "Return B1 / B2, signal error on overflow";
@@ -2541,43 +2282,6 @@ pattern div_noerror(v:hge,b:bat[:int]) :bat[:hge]
 address CMDbatDIV
 comment "Return V / B, overflow causes NIL value";
 pattern div_noerror(v:hge,b:bat[:int],s:bat[:oid]) :bat[:hge]
-address CMDbatDIV
-comment "Return V / B with candidates list, overflow causes NIL value";
-
-pattern /(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatDIVsignal
-comment "Return B1 / B2, signal error on overflow";
-pattern /(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatDIVsignal
-comment "Return B1 / B2 with candidates list, signal error on overflow";
-pattern div_noerror(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatDIV
-comment "Return B1 / B2, overflow causes NIL value";
-pattern div_noerror(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatDIV
-comment "Return B1 / B2 with candidates list, overflow causes NIL value";
-pattern /(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatDIVsignal
-comment "Return B / V, signal error on overflow";
-pattern /(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatDIVsignal
-comment "Return B / V with candidates list, signal error on overflow";
-pattern div_noerror(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatDIV
-comment "Return B / V, overflow causes NIL value";
-pattern div_noerror(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatDIV
-comment "Return B / V with candidates list, overflow causes NIL value";
-pattern /(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatDIVsignal
-comment "Return V / B, signal error on overflow";
-pattern /(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatDIVsignal
-comment "Return V / B with candidates list, signal error on overflow";
-pattern div_noerror(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatDIV
-comment "Return V / B, overflow causes NIL value";
-pattern div_noerror(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
 address CMDbatDIV
 comment "Return V / B with candidates list, overflow causes NIL value";
 
@@ -2915,43 +2619,6 @@ pattern mod_noerror(v:int,b:bat[:hge],s:bat[:oid]) :bat[:int]
 address CMDbatMOD
 comment "Return V % B with candidates list, divide by zero causes NIL value";
 
-pattern %(b1:bat[:wrd],b2:bat[:hge]) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return B1 % B2, signal error on divide by zero";
-pattern %(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return B1 % B2 with candidates list, signal error on divide by zero";
-pattern mod_noerror(b1:bat[:wrd],b2:bat[:hge]) :bat[:wrd]
-address CMDbatMOD
-comment "Return B1 % B2, divide by zero causes NIL value";
-pattern mod_noerror(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatMOD
-comment "Return B1 % B2 with candidates list, divide by zero causes NIL value";
-pattern %(b:bat[:wrd],v:hge) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return B % V, signal error on divide by zero";
-pattern %(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return B % V with candidates list, signal error on divide by zero";
-pattern mod_noerror(b:bat[:wrd],v:hge) :bat[:wrd]
-address CMDbatMOD
-comment "Return B % V, divide by zero causes NIL value";
-pattern mod_noerror(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:wrd]
-address CMDbatMOD
-comment "Return B % V with candidates list, divide by zero causes NIL value";
-pattern %(v:wrd,b:bat[:hge]) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return V % B, signal error on divide by zero";
-pattern %(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return V % B with candidates list, signal error on divide by zero";
-pattern mod_noerror(v:wrd,b:bat[:hge]) :bat[:wrd]
-address CMDbatMOD
-comment "Return V % B, divide by zero causes NIL value";
-pattern mod_noerror(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatMOD
-comment "Return V % B with candidates list, divide by zero causes NIL value";
-
 pattern %(b1:bat[:lng],b2:bat[:hge]) :bat[:lng]
 address CMDbatMODsignal
 comment "Return B1 % B2, signal error on divide by zero";
@@ -3097,43 +2764,6 @@ pattern mod_noerror(v:hge,b:bat[:int]) :bat[:int]
 address CMDbatMOD
 comment "Return V % B, divide by zero causes NIL value";
 pattern mod_noerror(v:hge,b:bat[:int],s:bat[:oid]) :bat[:int]
-address CMDbatMOD
-comment "Return V % B with candidates list, divide by zero causes NIL value";
-
-pattern %(b1:bat[:hge],b2:bat[:wrd]) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return B1 % B2, signal error on divide by zero";
-pattern %(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return B1 % B2 with candidates list, signal error on divide by zero";
-pattern mod_noerror(b1:bat[:hge],b2:bat[:wrd]) :bat[:wrd]
-address CMDbatMOD
-comment "Return B1 % B2, divide by zero causes NIL value";
-pattern mod_noerror(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:wrd]
-address CMDbatMOD
-comment "Return B1 % B2 with candidates list, divide by zero causes NIL value";
-pattern %(b:bat[:hge],v:wrd) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return B % V, signal error on divide by zero";
-pattern %(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return B % V with candidates list, signal error on divide by zero";
-pattern mod_noerror(b:bat[:hge],v:wrd) :bat[:wrd]
-address CMDbatMOD
-comment "Return B % V, divide by zero causes NIL value";
-pattern mod_noerror(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:wrd]
-address CMDbatMOD
-comment "Return B % V with candidates list, divide by zero causes NIL value";
-pattern %(v:hge,b:bat[:wrd]) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return V % B, signal error on divide by zero";
-pattern %(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:wrd]
-address CMDbatMODsignal
-comment "Return V % B with candidates list, signal error on divide by zero";
-pattern mod_noerror(v:hge,b:bat[:wrd]) :bat[:wrd]
-address CMDbatMOD
-comment "Return V % B, divide by zero causes NIL value";
-pattern mod_noerror(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:wrd]
 address CMDbatMOD
 comment "Return V % B with candidates list, divide by zero causes NIL value";
 
@@ -3531,43 +3161,6 @@ pattern lsh_noerror(v:int,b:bat[:hge],s:bat[:oid]) :bat[:int]
 address CMDbatLSH
 comment "Return V << B with candidates list, out of range second operand causes NIL value";
 
-pattern <<(b1:bat[:wrd],b2:bat[:hge]) :bat[:wrd]
-address CMDbatLSHsignal
-comment "Return B1 << B2, raise error on out of range second operand";
-pattern <<(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatLSHsignal
-comment "Return B1 << B2 with candidates list, raise error on out of range second operand";
-pattern lsh_noerror(b1:bat[:wrd],b2:bat[:hge]) :bat[:wrd]
-address CMDbatLSH
-comment "Return B1 << B2, out of range second operand causes NIL value";
-pattern lsh_noerror(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatLSH
-comment "Return B1 << B2 with candidates list, out of range second operand causes NIL value";
-pattern <<(b:bat[:wrd],v:hge) :bat[:wrd]
-address CMDbatLSHsignal
-comment "Return B << V, raise error on out of range second operand";
-pattern <<(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:wrd]
-address CMDbatLSHsignal
-comment "Return B << V with candidates list, raise error on out of range second operand";
-pattern lsh_noerror(b:bat[:wrd],v:hge) :bat[:wrd]
-address CMDbatLSH
-comment "Return B << V, out of range second operand causes NIL value";
-pattern lsh_noerror(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:wrd]
-address CMDbatLSH
-comment "Return B << V with candidates list, out of range second operand causes NIL value";
-pattern <<(v:wrd,b:bat[:hge]) :bat[:wrd]
-address CMDbatLSHsignal
-comment "Return V << B, raise error on out of range second operand";
-pattern <<(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatLSHsignal
-comment "Return V << B with candidates list, raise error on out of range second operand";
-pattern lsh_noerror(v:wrd,b:bat[:hge]) :bat[:wrd]
-address CMDbatLSH
-comment "Return V << B, out of range second operand causes NIL value";
-pattern lsh_noerror(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatLSH
-comment "Return V << B with candidates list, out of range second operand causes NIL value";
-
 pattern <<(b1:bat[:lng],b2:bat[:hge]) :bat[:lng]
 address CMDbatLSHsignal
 comment "Return B1 << B2, raise error on out of range second operand";
@@ -3713,43 +3306,6 @@ pattern lsh_noerror(v:hge,b:bat[:int]) :bat[:hge]
 address CMDbatLSH
 comment "Return V << B, out of range second operand causes NIL value";
 pattern lsh_noerror(v:hge,b:bat[:int],s:bat[:oid]) :bat[:hge]
-address CMDbatLSH
-comment "Return V << B with candidates list, out of range second operand causes NIL value";
-
-pattern <<(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatLSHsignal
-comment "Return B1 << B2, raise error on out of range second operand";
-pattern <<(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatLSHsignal
-comment "Return B1 << B2 with candidates list, raise error on out of range second operand";
-pattern lsh_noerror(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatLSH
-comment "Return B1 << B2, out of range second operand causes NIL value";
-pattern lsh_noerror(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatLSH
-comment "Return B1 << B2 with candidates list, out of range second operand causes NIL value";
-pattern <<(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatLSHsignal
-comment "Return B << V, raise error on out of range second operand";
-pattern <<(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatLSHsignal
-comment "Return B << V with candidates list, raise error on out of range second operand";
-pattern lsh_noerror(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatLSH
-comment "Return B << V, out of range second operand causes NIL value";
-pattern lsh_noerror(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatLSH
-comment "Return B << V with candidates list, out of range second operand causes NIL value";
-pattern <<(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatLSHsignal
-comment "Return V << B, raise error on out of range second operand";
-pattern <<(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatLSHsignal
-comment "Return V << B with candidates list, raise error on out of range second operand";
-pattern lsh_noerror(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatLSH
-comment "Return V << B, out of range second operand causes NIL value";
-pattern lsh_noerror(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
 address CMDbatLSH
 comment "Return V << B with candidates list, out of range second operand causes NIL value";
 
@@ -3939,43 +3495,6 @@ pattern rsh_noerror(v:int,b:bat[:hge],s:bat[:oid]) :bat[:int]
 address CMDbatRSH
 comment "Return V >> B with candidates list, out of range second operand causes NIL value";
 
-pattern >>(b1:bat[:wrd],b2:bat[:hge]) :bat[:wrd]
-address CMDbatRSHsignal
-comment "Return B1 >> B2, raise error on out of range second operand";
-pattern >>(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatRSHsignal
-comment "Return B1 >> B2 with candidates list, raise error on out of range second operand";
-pattern rsh_noerror(b1:bat[:wrd],b2:bat[:hge]) :bat[:wrd]
-address CMDbatRSH
-comment "Return B1 >> B2, out of range second operand causes NIL value";
-pattern rsh_noerror(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatRSH
-comment "Return B1 >> B2 with candidates list, out of range second operand causes NIL value";
-pattern >>(b:bat[:wrd],v:hge) :bat[:wrd]
-address CMDbatRSHsignal
-comment "Return B >> V, raise error on out of range second operand";
-pattern >>(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:wrd]
-address CMDbatRSHsignal
-comment "Return B >> V with candidates list, raise error on out of range second operand";
-pattern rsh_noerror(b:bat[:wrd],v:hge) :bat[:wrd]
-address CMDbatRSH
-comment "Return B >> V, out of range second operand causes NIL value";
-pattern rsh_noerror(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:wrd]
-address CMDbatRSH
-comment "Return B >> V with candidates list, out of range second operand causes NIL value";
-pattern >>(v:wrd,b:bat[:hge]) :bat[:wrd]
-address CMDbatRSHsignal
-comment "Return V >> B, raise error on out of range second operand";
-pattern >>(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatRSHsignal
-comment "Return V >> B with candidates list, raise error on out of range second operand";
-pattern rsh_noerror(v:wrd,b:bat[:hge]) :bat[:wrd]
-address CMDbatRSH
-comment "Return V >> B, out of range second operand causes NIL value";
-pattern rsh_noerror(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDbatRSH
-comment "Return V >> B with candidates list, out of range second operand causes NIL value";
-
 pattern >>(b1:bat[:lng],b2:bat[:hge]) :bat[:lng]
 address CMDbatRSHsignal
 comment "Return B1 >> B2, raise error on out of range second operand";
@@ -4124,43 +3643,6 @@ pattern rsh_noerror(v:hge,b:bat[:int],s:bat[:oid]) :bat[:hge]
 address CMDbatRSH
 comment "Return V >> B with candidates list, out of range second operand causes NIL value";
 
-pattern >>(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatRSHsignal
-comment "Return B1 >> B2, raise error on out of range second operand";
-pattern >>(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatRSHsignal
-comment "Return B1 >> B2 with candidates list, raise error on out of range second operand";
-pattern rsh_noerror(b1:bat[:hge],b2:bat[:wrd]) :bat[:hge]
-address CMDbatRSH
-comment "Return B1 >> B2, out of range second operand causes NIL value";
-pattern rsh_noerror(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatRSH
-comment "Return B1 >> B2 with candidates list, out of range second operand causes NIL value";
-pattern >>(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatRSHsignal
-comment "Return B >> V, raise error on out of range second operand";
-pattern >>(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatRSHsignal
-comment "Return B >> V with candidates list, raise error on out of range second operand";
-pattern rsh_noerror(b:bat[:hge],v:wrd) :bat[:hge]
-address CMDbatRSH
-comment "Return B >> V, out of range second operand causes NIL value";
-pattern rsh_noerror(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:hge]
-address CMDbatRSH
-comment "Return B >> V with candidates list, out of range second operand causes NIL value";
-pattern >>(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatRSHsignal
-comment "Return V >> B, raise error on out of range second operand";
-pattern >>(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatRSHsignal
-comment "Return V >> B with candidates list, raise error on out of range second operand";
-pattern rsh_noerror(v:hge,b:bat[:wrd]) :bat[:hge]
-address CMDbatRSH
-comment "Return V >> B, out of range second operand causes NIL value";
-pattern rsh_noerror(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDbatRSH
-comment "Return V >> B with candidates list, out of range second operand causes NIL value";
-
 pattern >>(b1:bat[:hge],b2:bat[:lng]) :bat[:hge]
 address CMDbatRSHsignal
 comment "Return B1 >> B2, raise error on out of range second operand";
@@ -4293,25 +3775,6 @@ pattern <(v:int,b:bat[:hge],s:bat[:oid]) :bat[:bit]
 address CMDbatLT
 comment "Return V < B with candidates list";
 
-pattern <(b1:bat[:wrd],b2:bat[:hge]) :bat[:bit]
-address CMDbatLT
-comment "Return B1 < B2";
-pattern <(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatLT
-comment "Return B1 < B2 with candidates list";
-pattern <(b:bat[:wrd],v:hge) :bat[:bit]
-address CMDbatLT
-comment "Return B < V";
-pattern <(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:bit]
-address CMDbatLT
-comment "Return B < V with candidates list";
-pattern <(v:wrd,b:bat[:hge]) :bat[:bit]
-address CMDbatLT
-comment "Return V < B";
-pattern <(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatLT
-comment "Return V < B with candidates list";
-
 pattern <(b1:bat[:lng],b2:bat[:hge]) :bat[:bit]
 address CMDbatLT
 comment "Return B1 < B2";
@@ -4385,25 +3848,6 @@ pattern <(v:hge,b:bat[:int]) :bat[:bit]
 address CMDbatLT
 comment "Return V < B";
 pattern <(v:hge,b:bat[:int],s:bat[:oid]) :bat[:bit]
-address CMDbatLT
-comment "Return V < B with candidates list";
-
-pattern <(b1:bat[:hge],b2:bat[:wrd]) :bat[:bit]
-address CMDbatLT
-comment "Return B1 < B2";
-pattern <(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:bit]
-address CMDbatLT
-comment "Return B1 < B2 with candidates list";
-pattern <(b:bat[:hge],v:wrd) :bat[:bit]
-address CMDbatLT
-comment "Return B < V";
-pattern <(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:bit]
-address CMDbatLT
-comment "Return B < V with candidates list";
-pattern <(v:hge,b:bat[:wrd]) :bat[:bit]
-address CMDbatLT
-comment "Return V < B";
-pattern <(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:bit]
 address CMDbatLT
 comment "Return V < B with candidates list";
 
@@ -4579,25 +4023,6 @@ pattern <=(v:int,b:bat[:hge],s:bat[:oid]) :bat[:bit]
 address CMDbatLE
 comment "Return V <= B with candidates list";
 
-pattern <=(b1:bat[:wrd],b2:bat[:hge]) :bat[:bit]
-address CMDbatLE
-comment "Return B1 <= B2";
-pattern <=(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatLE
-comment "Return B1 <= B2 with candidates list";
-pattern <=(b:bat[:wrd],v:hge) :bat[:bit]
-address CMDbatLE
-comment "Return B <= V";
-pattern <=(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:bit]
-address CMDbatLE
-comment "Return B <= V with candidates list";
-pattern <=(v:wrd,b:bat[:hge]) :bat[:bit]
-address CMDbatLE
-comment "Return V <= B";
-pattern <=(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatLE
-comment "Return V <= B with candidates list";
-
 pattern <=(b1:bat[:lng],b2:bat[:hge]) :bat[:bit]
 address CMDbatLE
 comment "Return B1 <= B2";
@@ -4671,25 +4096,6 @@ pattern <=(v:hge,b:bat[:int]) :bat[:bit]
 address CMDbatLE
 comment "Return V <= B";
 pattern <=(v:hge,b:bat[:int],s:bat[:oid]) :bat[:bit]
-address CMDbatLE
-comment "Return V <= B with candidates list";
-
-pattern <=(b1:bat[:hge],b2:bat[:wrd]) :bat[:bit]
-address CMDbatLE
-comment "Return B1 <= B2";
-pattern <=(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:bit]
-address CMDbatLE
-comment "Return B1 <= B2 with candidates list";
-pattern <=(b:bat[:hge],v:wrd) :bat[:bit]
-address CMDbatLE
-comment "Return B <= V";
-pattern <=(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:bit]
-address CMDbatLE
-comment "Return B <= V with candidates list";
-pattern <=(v:hge,b:bat[:wrd]) :bat[:bit]
-address CMDbatLE
-comment "Return V <= B";
-pattern <=(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:bit]
 address CMDbatLE
 comment "Return V <= B with candidates list";
 
@@ -4865,25 +4271,6 @@ pattern >(v:int,b:bat[:hge],s:bat[:oid]) :bat[:bit]
 address CMDbatGT
 comment "Return V > B with candidates list";
 
-pattern >(b1:bat[:wrd],b2:bat[:hge]) :bat[:bit]
-address CMDbatGT
-comment "Return B1 > B2";
-pattern >(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatGT
-comment "Return B1 > B2 with candidates list";
-pattern >(b:bat[:wrd],v:hge) :bat[:bit]
-address CMDbatGT
-comment "Return B > V";
-pattern >(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:bit]
-address CMDbatGT
-comment "Return B > V with candidates list";
-pattern >(v:wrd,b:bat[:hge]) :bat[:bit]
-address CMDbatGT
-comment "Return V > B";
-pattern >(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatGT
-comment "Return V > B with candidates list";
-
 pattern >(b1:bat[:lng],b2:bat[:hge]) :bat[:bit]
 address CMDbatGT
 comment "Return B1 > B2";
@@ -4957,25 +4344,6 @@ pattern >(v:hge,b:bat[:int]) :bat[:bit]
 address CMDbatGT
 comment "Return V > B";
 pattern >(v:hge,b:bat[:int],s:bat[:oid]) :bat[:bit]
-address CMDbatGT
-comment "Return V > B with candidates list";
-
-pattern >(b1:bat[:hge],b2:bat[:wrd]) :bat[:bit]
-address CMDbatGT
-comment "Return B1 > B2";
-pattern >(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:bit]
-address CMDbatGT
-comment "Return B1 > B2 with candidates list";
-pattern >(b:bat[:hge],v:wrd) :bat[:bit]
-address CMDbatGT
-comment "Return B > V";
-pattern >(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:bit]
-address CMDbatGT
-comment "Return B > V with candidates list";
-pattern >(v:hge,b:bat[:wrd]) :bat[:bit]
-address CMDbatGT
-comment "Return V > B";
-pattern >(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:bit]
 address CMDbatGT
 comment "Return V > B with candidates list";
 
@@ -5151,25 +4519,6 @@ pattern >=(v:int,b:bat[:hge],s:bat[:oid]) :bat[:bit]
 address CMDbatGE
 comment "Return V >= B with candidates list";
 
-pattern >=(b1:bat[:wrd],b2:bat[:hge]) :bat[:bit]
-address CMDbatGE
-comment "Return B1 >= B2";
-pattern >=(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatGE
-comment "Return B1 >= B2 with candidates list";
-pattern >=(b:bat[:wrd],v:hge) :bat[:bit]
-address CMDbatGE
-comment "Return B >= V";
-pattern >=(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:bit]
-address CMDbatGE
-comment "Return B >= V with candidates list";
-pattern >=(v:wrd,b:bat[:hge]) :bat[:bit]
-address CMDbatGE
-comment "Return V >= B";
-pattern >=(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatGE
-comment "Return V >= B with candidates list";
-
 pattern >=(b1:bat[:lng],b2:bat[:hge]) :bat[:bit]
 address CMDbatGE
 comment "Return B1 >= B2";
@@ -5243,25 +4592,6 @@ pattern >=(v:hge,b:bat[:int]) :bat[:bit]
 address CMDbatGE
 comment "Return V >= B";
 pattern >=(v:hge,b:bat[:int],s:bat[:oid]) :bat[:bit]
-address CMDbatGE
-comment "Return V >= B with candidates list";
-
-pattern >=(b1:bat[:hge],b2:bat[:wrd]) :bat[:bit]
-address CMDbatGE
-comment "Return B1 >= B2";
-pattern >=(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:bit]
-address CMDbatGE
-comment "Return B1 >= B2 with candidates list";
-pattern >=(b:bat[:hge],v:wrd) :bat[:bit]
-address CMDbatGE
-comment "Return B >= V";
-pattern >=(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:bit]
-address CMDbatGE
-comment "Return B >= V with candidates list";
-pattern >=(v:hge,b:bat[:wrd]) :bat[:bit]
-address CMDbatGE
-comment "Return V >= B";
-pattern >=(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:bit]
 address CMDbatGE
 comment "Return V >= B with candidates list";
 
@@ -5437,25 +4767,6 @@ pattern ==(v:int,b:bat[:hge],s:bat[:oid]) :bat[:bit]
 address CMDbatEQ
 comment "Return V == B with candidates list";
 
-pattern ==(b1:bat[:wrd],b2:bat[:hge]) :bat[:bit]
-address CMDbatEQ
-comment "Return B1 == B2";
-pattern ==(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatEQ
-comment "Return B1 == B2 with candidates list";
-pattern ==(b:bat[:wrd],v:hge) :bat[:bit]
-address CMDbatEQ
-comment "Return B == V";
-pattern ==(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:bit]
-address CMDbatEQ
-comment "Return B == V with candidates list";
-pattern ==(v:wrd,b:bat[:hge]) :bat[:bit]
-address CMDbatEQ
-comment "Return V == B";
-pattern ==(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatEQ
-comment "Return V == B with candidates list";
-
 pattern ==(b1:bat[:lng],b2:bat[:hge]) :bat[:bit]
 address CMDbatEQ
 comment "Return B1 == B2";
@@ -5529,25 +4840,6 @@ pattern ==(v:hge,b:bat[:int]) :bat[:bit]
 address CMDbatEQ
 comment "Return V == B";
 pattern ==(v:hge,b:bat[:int],s:bat[:oid]) :bat[:bit]
-address CMDbatEQ
-comment "Return V == B with candidates list";
-
-pattern ==(b1:bat[:hge],b2:bat[:wrd]) :bat[:bit]
-address CMDbatEQ
-comment "Return B1 == B2";
-pattern ==(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:bit]
-address CMDbatEQ
-comment "Return B1 == B2 with candidates list";
-pattern ==(b:bat[:hge],v:wrd) :bat[:bit]
-address CMDbatEQ
-comment "Return B == V";
-pattern ==(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:bit]
-address CMDbatEQ
-comment "Return B == V with candidates list";
-pattern ==(v:hge,b:bat[:wrd]) :bat[:bit]
-address CMDbatEQ
-comment "Return V == B";
-pattern ==(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:bit]
 address CMDbatEQ
 comment "Return V == B with candidates list";
 
@@ -5723,25 +5015,6 @@ pattern !=(v:int,b:bat[:hge],s:bat[:oid]) :bat[:bit]
 address CMDbatNE
 comment "Return V != B with candidates list";
 
-pattern !=(b1:bat[:wrd],b2:bat[:hge]) :bat[:bit]
-address CMDbatNE
-comment "Return B1 != B2";
-pattern !=(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatNE
-comment "Return B1 != B2 with candidates list";
-pattern !=(b:bat[:wrd],v:hge) :bat[:bit]
-address CMDbatNE
-comment "Return B != V";
-pattern !=(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:bit]
-address CMDbatNE
-comment "Return B != V with candidates list";
-pattern !=(v:wrd,b:bat[:hge]) :bat[:bit]
-address CMDbatNE
-comment "Return V != B";
-pattern !=(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:bit]
-address CMDbatNE
-comment "Return V != B with candidates list";
-
 pattern !=(b1:bat[:lng],b2:bat[:hge]) :bat[:bit]
 address CMDbatNE
 comment "Return B1 != B2";
@@ -5815,25 +5088,6 @@ pattern !=(v:hge,b:bat[:int]) :bat[:bit]
 address CMDbatNE
 comment "Return V != B";
 pattern !=(v:hge,b:bat[:int],s:bat[:oid]) :bat[:bit]
-address CMDbatNE
-comment "Return V != B with candidates list";
-
-pattern !=(b1:bat[:hge],b2:bat[:wrd]) :bat[:bit]
-address CMDbatNE
-comment "Return B1 != B2";
-pattern !=(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:bit]
-address CMDbatNE
-comment "Return B1 != B2 with candidates list";
-pattern !=(b:bat[:hge],v:wrd) :bat[:bit]
-address CMDbatNE
-comment "Return B != V";
-pattern !=(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:bit]
-address CMDbatNE
-comment "Return B != V with candidates list";
-pattern !=(v:hge,b:bat[:wrd]) :bat[:bit]
-address CMDbatNE
-comment "Return V != B";
-pattern !=(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:bit]
 address CMDbatNE
 comment "Return V != B with candidates list";
 
@@ -6009,25 +5263,6 @@ pattern cmp(v:int,b:bat[:hge],s:bat[:oid]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if V </==/> B with candidates list";
 
-pattern cmp(b1:bat[:wrd],b2:bat[:hge]) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B1 </==/> B2";
-pattern cmp(b1:bat[:wrd],b2:bat[:hge],s:bat[:oid]) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B1 </==/> B2 with candidates list";
-pattern cmp(b:bat[:wrd],v:hge) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B </==/> V";
-pattern cmp(v:wrd,b:bat[:hge]) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if V </==/> B";
-pattern cmp(b:bat[:wrd],v:hge,s:bat[:oid]) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B </==/> V with candidates list";
-pattern cmp(v:wrd,b:bat[:hge],s:bat[:oid]) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if V </==/> B with candidates list";
-
 pattern cmp(b1:bat[:lng],b2:bat[:hge]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if B1 </==/> B2";
@@ -6101,25 +5336,6 @@ pattern cmp(b:bat[:hge],v:int,s:bat[:oid]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if B </==/> V with candidates list";
 pattern cmp(v:hge,b:bat[:int],s:bat[:oid]) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if V </==/> B with candidates list";
-
-pattern cmp(b1:bat[:hge],b2:bat[:wrd]) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B1 </==/> B2";
-pattern cmp(b1:bat[:hge],b2:bat[:wrd],s:bat[:oid]) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B1 </==/> B2 with candidates list";
-pattern cmp(b:bat[:hge],v:wrd) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B </==/> V";
-pattern cmp(v:hge,b:bat[:wrd]) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if V </==/> B";
-pattern cmp(b:bat[:hge],v:wrd,s:bat[:oid]) :bat[:bte]
-address CMDbatCMP
-comment "Return -1/0/1 if B </==/> V with candidates list";
-pattern cmp(v:hge,b:bat[:wrd],s:bat[:oid]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if V </==/> B with candidates list";
 
@@ -6329,19 +5545,6 @@ pattern int_noerror(b:bat[:hge],s:bat[:oid]) :bat[:int]
 address CMDconvert_int
 comment "cast from hge to int with candidates list";
 
-pattern wrd(b:bat[:hge]) :bat[:wrd]
-address CMDconvertsignal_wrd
-comment "cast from hge to wrd, signal error on overflow";
-pattern wrd(b:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDconvertsignal_wrd
-comment "cast from hge to wrd with candidates list, signal error on overflow";
-pattern wrd_noerror(b:bat[:hge]) :bat[:wrd]
-address CMDconvert_wrd
-comment "cast from hge to wrd";
-pattern wrd_noerror(b:bat[:hge],s:bat[:oid]) :bat[:wrd]
-address CMDconvert_wrd
-comment "cast from hge to wrd with candidates list";
-
 pattern lng(b:bat[:hge]) :bat[:lng]
 address CMDconvertsignal_lng
 comment "cast from hge to lng, signal error on overflow";
@@ -6406,19 +5609,6 @@ comment "cast from int to hge";
 pattern hge_noerror(b:bat[:int],s:bat[:oid]) :bat[:hge]
 address CMDconvert_hge
 comment "cast from int to hge with candidates list";
-
-pattern hge(b:bat[:wrd]) :bat[:hge]
-address CMDconvertsignal_hge
-comment "cast from wrd to hge, signal error on overflow";
-pattern hge(b:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDconvertsignal_hge
-comment "cast from wrd to hge with candidates list, signal error on overflow";
-pattern hge_noerror(b:bat[:wrd]) :bat[:hge]
-address CMDconvert_hge
-comment "cast from wrd to hge";
-pattern hge_noerror(b:bat[:wrd],s:bat[:oid]) :bat[:hge]
-address CMDconvert_hge
-comment "cast from wrd to hge with candidates list";
 
 pattern hge(b:bat[:lng]) :bat[:hge]
 address CMDconvertsignal_hge

@@ -19,33 +19,23 @@
 #include "mal_interpreter.h"
 #include "mal_dataflow.h"
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define language_export extern __declspec(dllimport)
-#else
-#define language_export extern __declspec(dllexport)
-#endif
-#else
-#define language_export extern
-#endif
-
-language_export str CMDraise(str *ret, str *msg);
-language_export str MALassertBit(void *ret, bit *val, str *msg);
-language_export str MALassertStr(void *ret, str *val, str *msg);
-language_export str MALassertOid(void *ret, oid *val, str *msg);
-language_export str MALassertSht(void *ret, sht *val, str *msg);
-language_export str MALassertInt(void *ret, int *val, str *msg);
-language_export str MALassertLng(void *ret, lng *val, str *msg);
+mal_export str CMDraise(str *ret, str *msg);
+mal_export str MALassertBit(void *ret, bit *val, str *msg);
+mal_export str MALassertStr(void *ret, str *val, str *msg);
+mal_export str MALassertOid(void *ret, oid *val, str *msg);
+mal_export str MALassertSht(void *ret, sht *val, str *msg);
+mal_export str MALassertInt(void *ret, int *val, str *msg);
+mal_export str MALassertLng(void *ret, lng *val, str *msg);
 #ifdef HAVE_HGE
-language_export str MALassertHge(void *ret, hge *val, str *msg);
+mal_export str MALassertHge(void *ret, hge *val, str *msg);
 #endif
-language_export str MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str MALpass( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str MALgarbagesink( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MALpass( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MALgarbagesink( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* _LANGUAGE_H */

@@ -76,10 +76,10 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 			return 0;
 		}
 
-		total += BATcount(b) * b->T->width;
+		total += BATcount(b) * b->twidth;
 		// string heaps can be shared, consider them as space-less views
-		total += heapinfo(b->T->vheap, abs(b->batCacheid)); 
-		total += hashinfo(b->T->hash, abs(d->batCacheid)); 
+		total += heapinfo(b->tvheap, b->batCacheid); 
+		total += hashinfo(b->thash, d->batCacheid); 
 		total += IMPSimprintsize(b);
 		//total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
 		BBPunfix(b->batCacheid);
@@ -190,8 +190,10 @@ MALresourceFairness(lng usec)
 	/* worker reporting time spent  in usec! */
 	clk =  usec / 1000;
 
+#if FAIRNESS_THRESHOLD < 1000	/* it's actually 2000 */
 	/* cap the maximum penalty */
 	clk = clk > FAIRNESS_THRESHOLD? FAIRNESS_THRESHOLD:clk;
+#endif
 
 	/* always keep one running to avoid all waiting  */
 	while (clk > DELAYUNIT && users > 1 && ATOMIC_GET(mal_running, mal_runningLock) > (ATOMIC_TYPE) GDKnr_threads && rss > MEMORY_THRESHOLD) {

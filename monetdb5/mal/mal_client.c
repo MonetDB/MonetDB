@@ -49,8 +49,6 @@
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
-#include <mapi.h> /* for PROMPT1 */
-
 
 /*
  * This should be in src/mal/mal.h, as the function is implemented in
@@ -225,7 +223,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->curprg = c->backup = 0;
 	c->glb = 0;
 
-	/* remove garbage from previous connection */
+	/* remove garbage from previous connection 
+	 * be aware, a user can introduce several modules 
+	 * that should be freed to avoid memory leaks */
 	if (c->nspace) {
 		freeModule(c->nspace);
 		c->nspace = 0;
@@ -239,7 +239,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->stimeout = 0;
 	c->stage = 0;
 	c->itrace = 0;
-	c->debugOptimizer = c->debugScheduler = 0;
 	c->flags = 0;
 	c->errbuf = 0;
 
@@ -253,7 +252,11 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
-	(void) AUTHgetUsername(&c->username, c);
+	{
+		str msg = AUTHgetUsername(&c->username, c);
+		if (msg)				/* shouldn't happen */
+			GDKfree(msg);
+	}
 #endif
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
@@ -337,8 +340,7 @@ MCforkClient(Client father)
 		son->promptlength = strlen(father->prompt);
 		/* reuse the scopes wherever possible */
 		if (son->nspace == 0)
-			son->nspace = newModule(NULL, putName("child", 5));
-		son->nspace->outer = father->nspace->outer;
+			son->nspace = newModule(NULL, putName("child"));
 	}
 	return son;
 }
@@ -576,11 +578,6 @@ MCreadClient(Client c)
 		}
 		return 0;
 	}
-	if (*CURRENT(c) == '?') {
-		showHelp(c->nspace, CURRENT(c) + 1, c->fdout);
-		in->pos = in->len;
-		return MCreadClient(c);
-	}
 #ifdef MAL_CLIENT_DEBUG
 	printf("# finished stream read %d %d\n", (int) in->pos, (int) in->len);
 	printf("#%s\n", in->buf);
@@ -610,15 +607,13 @@ MCvalid(Client tc)
 str
 PROFinitClient(Client c){
 	(void) c;
-	startProfiler();
-	return MAL_SUCCEED;
+	return startProfiler();
 }
 
 str
 PROFexitClient(Client c){
 	(void) c;
-	stopProfiler();
-	return MAL_SUCCEED;
+	return stopProfiler();
 }
 
 

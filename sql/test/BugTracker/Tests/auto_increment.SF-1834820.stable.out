@@ -52,14 +52,14 @@ Ready.
 #select count(*) from sequences;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #drop table testusers;
 #select count(*) from sequences;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 

@@ -26,14 +26,14 @@ Ready.
 # 06:40:49 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
-    c:bat[:int] := bat.new(:oid,:int);  	#[2] (0) CMDBATnew 4 <- 2 3 
+    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
+    c:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 3 <- 2 
 # identical until insert takes place 
-    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[4] (0) ALGsubselect1 6 <- 1 7 8 9 10 11 
+    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[4] (0) ALGsubselect1 5 <- 1 6 7 8 9 10 
 # mapped onto one instruction 
-    l:int := calc.+(24:int,27:int);     	#[6] (0) CMDvarADDsignal 18 <- 15 17 
+    l:int := calc.+(24:int,27:int);     	#[6] (0) CMDvarADDsignal 17 <- 14 16 
 # mapped to l 
-    l3:int := calc.+(l:int,24:int);     	#[8] (0) CMDvarADDsignal 21 <- 18 15 
+    l3:int := calc.+(l:int,24:int);     	#[8] (0) CMDvarADDsignal 20 <- 17 14 
 # replace the alias 
 end user.foo;                           	#[10] (0)  
 #commonTerms          actions= 2 time=16 usec 

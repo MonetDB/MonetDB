@@ -58,7 +58,7 @@ Ready.
 #where t1_bug3139.id > 1 and t1_bug3139.dp <> t3.cnt;
 % sys.t1_bug3139,	sys.t1_bug3139,	.t3 # table_name
 % id,	dp,	cnt # name
-% int,	int,	wrd # type
+% int,	int,	bigint # type
 % 1,	1,	1 # length
 [ 2,	2,	3	]
 [ 3,	2,	3	]
@@ -69,7 +69,7 @@ Ready.
 #select t1_bug3139.id, t1_bug3139.dp, t2_bug3139_cnt
 #from t1_bug3139
 #where t1_bug3139.id > 1 and t1_bug3139.dp <> t2_bug3139_cnt;
-% sys.t1_bug3139,	sys.t1_bug3139,	. # table_name
+% sys.t1_bug3139,	sys.t1_bug3139,	.L # table_name
 % id,	dp,	single_value # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length

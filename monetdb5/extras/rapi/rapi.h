@@ -35,7 +35,7 @@ rapi_export str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		InstrPtr pci);
 rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		InstrPtr pci);
-
+rapi_export void* RAPIloopback(void *query);
 rapi_export str RAPIprelude(void *ret);
 
 rapi_export void writeConsoleEx(const char * buf, int buflen, int foo);

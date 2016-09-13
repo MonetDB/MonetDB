@@ -80,16 +80,16 @@ stderr of test 'crash_on_fkey_update2.SF-1703497` in directory 'sql/test/BugTrac
 # 21:01:02 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38808 
 # 21:01:02 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = update t1703497b set id = 10 where id =3;
 ERROR = !UPDATE: FOREIGN KEY constraint 't1703497b.t1703497b_id_fkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table t1703497b;
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table t1703497a;
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COMMIT;
 ERROR = !COMMIT: failed
 
