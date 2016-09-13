@@ -6,267 +6,233 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
-/* this file is included multiple times by gdk_calc.c */
-
 static BUN
-op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
-		  const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
-		  TPE *restrict dst, BUN cnt, BUN start, BUN end, const oid *restrict cand,
-		  const oid *candend, oid candoff, int nonil, const char *func)
+opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
+	 BAT *b2, int tp2, const void *src2, const void *v2p,
+	 tpe *restrict dst, oid hoff, BUN start, BUN cnt,
+	 const oid *restrict cand, int projected, const char *func)
 {
 	BUN nils = 0;
-	BUN i, j, k, loff = 0, roff = 0;
-	const void *restrict nil;
-	int (*atomcmp)(const void *, const void *);
 
-	switch (tp1) {
-	case TYPE_void: {
-		oid v = oid_nil;
+	if (tp1 == TYPE_tpe) {
+		if (tp2 == TYPE_tpe) {
+			BINARY_3TYPE_FUNC(bit, bit, tpe, OP);
+			return nils;
+		}
+		goto unsupported;
+	} else if (tp2 == TYPE_bit) {
+		goto unsupported;
+	}
 
-		assert(incr1 == 1);
-		assert(tp2 == TYPE_oid || incr2 == 1); /* if void, incr2==1 */
-		if (lft)
-			v = * (const oid *) lft;
-		CANDLOOP(dst, k, TPE_nil, 0, start);
-		if (v == oid_nil || tp2 == TYPE_void) {
-			TPE res = v == oid_nil || * (const oid *) rgt == oid_nil ?
-				TPE_nil :
-				OP(v, * (const oid *) rgt);
+	switch (ATOMbasetype(tp1)) {
+	default: {
+		BATiter b1i;
+		BATiter b2i;
+		BUN i;
+		int (*cmp)(const void *, const void *);
+		const void *nil;
 
-			if (res == TPE_nil || cand == NULL) {
-				for (k = start; k < end; k++)
-					dst[k] = res;
-				if (res == TPE_nil)
-					nils = end - start;
+		if (ATOMbasetype(tp1) != ATOMbasetype(tp2) || !ATOMlinear(tp1))
+			goto unsupported;
+
+		b1i = bat_iterator(b1);
+		b2i = bat_iterator(b2);
+		cmp = ATOMcompare(tp1);
+		nil = ATOMnilptr(tp1);
+
+		for (i = 0; i < cnt; i++) {
+			if (b1)
+				v1p = BUNtail(b1i, projected == 1 ? i : cand ? cand[i] - hoff : start + i);
+			if (b2)
+				v2p = BUNtail(b2i, projected == 2 ? i : cand ? cand[i] - hoff : start + i);
+			if (cmp(v1p, nil) == 0 || cmp(v2p, nil) == 0) {
+				dst[i] = tpe_nil;
+				nils++;
 			} else {
-				for (k = start; k < end; k++) {
-					CHECKCAND(dst, k, candoff, TPE_nil);
-					dst[k] = res;
-				}
-			}
-		} else {
-			for (v += start, j = start * incr2, k = start;
-			     k < end;
-			     v++, j += incr2, k++) {
-				CHECKCAND(dst, k, candoff, TPE_nil);
-				if (((const oid *) rgt)[j] == oid_nil) {
-					nils++;
-					dst[k] = TPE_nil;
-				} else {
-					dst[k] = OP(v, ((const oid *) rgt)[j]);
-				}
+				dst[i] = OP(cmp(v1p, v2p), 0);
 			}
 		}
-		CANDLOOP(dst, k, TPE_nil, end, cnt);
 		break;
 	}
-	case TYPE_bit:
-		if (tp2 != TYPE_bit)
+	case TYPE_void: {
+		oid v1 = * (const oid *) src1;
+		oid v2 = 0;
+		BUN i;
+		switch (ATOMbasetype(tp2)) {
+		case TYPE_void:
+			v2 = * (const oid *) src2;
+			switch (projected) {
+			case 1:
+				for (i = 0; i < cnt; i++)
+					dst[i] = OP(v1 + i, v2 + cand[i] - hoff);
+				break;
+			case 2:
+				for (i = 0; i < cnt; i++)
+					dst[i] = OP(v1 + cand[i] - hoff, v2 + i);
+				break;
+			default:
+				assert(0);
+				return BUN_NONE;
+			}
+			break;
+		case TYPE_oid:
+			if (v2p)
+				v2 = * (const oid *) v2p;
+			for (i = 0; i < cnt; i++) {
+				if (src2)
+					v2 = ((const oid *) src2)[projected == 2 ? i : cand ? cand[i] - hoff : start + i];
+				if (v2 == oid_nil) {
+					dst[i] = tpe_nil;
+					nils++;
+				} else {
+					dst[i] = OP(v1 + (projected == 1 ? i : cand[i] - hoff), v2);
+				}
+			}
+			break;
+		default:
 			goto unsupported;
-		if (nonil)
-			BINARY_3TYPE_FUNC_nonil(bit, bit, TPE, OP);
-		else
-			BINARY_3TYPE_FUNC(bit, bit, TPE, OP);
+		}
+		break;
+	}
+	case TYPE_oid:
+		switch (ATOMbasetype(tp2)) {
+		case TYPE_void: {
+			oid v1 = 0;
+			oid v2 = 0;
+			BUN i;
+			v2 = * (const oid *) src2;
+			if (v1p)
+				v1 = * (const oid *) v1p;
+			for (i = 0; i < cnt; i++) {
+				if (src1)
+					v1 = ((const oid *) src1)[projected == 1 ? i : cand ? cand[i] - hoff : start + i];
+				if (v1 == oid_nil) {
+					dst[i] = tpe_nil;
+					nils++;
+				} else {
+					dst[i] = OP(v1, v2 + (projected == 2 ? i : cand[i] - hoff));
+				}
+			}
+			break;
+		}
+		case TYPE_oid:
+			BINARY_3TYPE_FUNC(oid, oid, tpe, OP);
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	case TYPE_bte:
-		switch (tp2) {
+		switch (ATOMbasetype(tp2)) {
 		case TYPE_bte:
-		btebte:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(bte, bte, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(bte, bte, TPE, OP);
+			BINARY_3TYPE_FUNC(bte, bte, tpe, OP);
 			break;
 		case TYPE_sht:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(bte, sht, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(bte, sht, TPE, OP);
+			BINARY_3TYPE_FUNC(bte, sht, tpe, OP);
 			break;
 		case TYPE_int:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(bte, int, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(bte, int, TPE, OP);
+			BINARY_3TYPE_FUNC(bte, int, tpe, OP);
 			break;
 		case TYPE_lng:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(bte, lng, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(bte, lng, TPE, OP);
+			BINARY_3TYPE_FUNC(bte, lng, tpe, OP);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(bte, hge, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(bte, hge, TPE, OP);
+			BINARY_3TYPE_FUNC(bte, hge, tpe, OP);
 			break;
 #endif
 		case TYPE_flt:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(bte, flt, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(bte, flt, TPE, OP);
+			BINARY_3TYPE_FUNC(bte, flt, tpe, OP);
 			break;
 		case TYPE_dbl:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(bte, dbl, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(bte, dbl, TPE, OP);
+			BINARY_3TYPE_FUNC(bte, dbl, tpe, OP);
 			break;
 		default:
 			goto unsupported;
 		}
 		break;
 	case TYPE_sht:
-		switch (tp2) {
+		switch (ATOMbasetype(tp2)) {
 		case TYPE_bte:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(sht, bte, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(sht, bte, TPE, OP);
+			BINARY_3TYPE_FUNC(sht, bte, tpe, OP);
 			break;
 		case TYPE_sht:
-		shtsht:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(sht, sht, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(sht, sht, TPE, OP);
+			BINARY_3TYPE_FUNC(sht, sht, tpe, OP);
 			break;
 		case TYPE_int:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(sht, int, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(sht, int, TPE, OP);
+			BINARY_3TYPE_FUNC(sht, int, tpe, OP);
 			break;
 		case TYPE_lng:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(sht, lng, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(sht, lng, TPE, OP);
+			BINARY_3TYPE_FUNC(sht, lng, tpe, OP);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(sht, hge, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(sht, hge, TPE, OP);
+			BINARY_3TYPE_FUNC(sht, hge, tpe, OP);
 			break;
 #endif
 		case TYPE_flt:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(sht, flt, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(sht, flt, TPE, OP);
+			BINARY_3TYPE_FUNC(sht, flt, tpe, OP);
 			break;
 		case TYPE_dbl:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(sht, dbl, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(sht, dbl, TPE, OP);
+			BINARY_3TYPE_FUNC(sht, dbl, tpe, OP);
 			break;
 		default:
 			goto unsupported;
 		}
 		break;
 	case TYPE_int:
-		switch (tp2) {
+		switch (ATOMbasetype(tp2)) {
 		case TYPE_bte:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(int, bte, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(int, bte, TPE, OP);
+			BINARY_3TYPE_FUNC(int, bte, tpe, OP);
 			break;
 		case TYPE_sht:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(int, sht, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(int, sht, TPE, OP);
+			BINARY_3TYPE_FUNC(int, sht, tpe, OP);
 			break;
 		case TYPE_int:
-		intint:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(int, int, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(int, int, TPE, OP);
+			BINARY_3TYPE_FUNC(int, int, tpe, OP);
 			break;
 		case TYPE_lng:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(int, lng, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(int, lng, TPE, OP);
+			BINARY_3TYPE_FUNC(int, lng, tpe, OP);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(int, hge, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(int, hge, TPE, OP);
+			BINARY_3TYPE_FUNC(int, hge, tpe, OP);
 			break;
 #endif
 		case TYPE_flt:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(int, flt, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(int, flt, TPE, OP);
+			BINARY_3TYPE_FUNC(int, flt, tpe, OP);
 			break;
 		case TYPE_dbl:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(int, dbl, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(int, dbl, TPE, OP);
+			BINARY_3TYPE_FUNC(int, dbl, tpe, OP);
 			break;
 		default:
 			goto unsupported;
 		}
 		break;
 	case TYPE_lng:
-		switch (tp2) {
+		switch (ATOMbasetype(tp2)) {
 		case TYPE_bte:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(lng, bte, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(lng, bte, TPE, OP);
+			BINARY_3TYPE_FUNC(lng, bte, tpe, OP);
 			break;
 		case TYPE_sht:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(lng, sht, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(lng, sht, TPE, OP);
+			BINARY_3TYPE_FUNC(lng, sht, tpe, OP);
 			break;
 		case TYPE_int:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(lng, int, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(lng, int, TPE, OP);
+			BINARY_3TYPE_FUNC(lng, int, tpe, OP);
 			break;
 		case TYPE_lng:
-		lnglng:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(lng, lng, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(lng, lng, TPE, OP);
+			BINARY_3TYPE_FUNC(lng, lng, tpe, OP);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(lng, hge, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(lng, hge, TPE, OP);
+			BINARY_3TYPE_FUNC(lng, hge, tpe, OP);
 			break;
 #endif
 		case TYPE_flt:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(lng, flt, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(lng, flt, TPE, OP);
+			BINARY_3TYPE_FUNC(lng, flt, tpe, OP);
 			break;
 		case TYPE_dbl:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(lng, dbl, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(lng, dbl, TPE, OP);
+			BINARY_3TYPE_FUNC(lng, dbl, tpe, OP);
 			break;
 		default:
 			goto unsupported;
@@ -274,49 +240,27 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		switch (tp2) {
+		switch (ATOMbasetype(tp2)) {
 		case TYPE_bte:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(hge, bte, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(hge, bte, TPE, OP);
+			BINARY_3TYPE_FUNC(hge, bte, tpe, OP);
 			break;
 		case TYPE_sht:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(hge, sht, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(hge, sht, TPE, OP);
+			BINARY_3TYPE_FUNC(hge, sht, tpe, OP);
 			break;
 		case TYPE_int:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(hge, int, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(hge, int, TPE, OP);
+			BINARY_3TYPE_FUNC(hge, int, tpe, OP);
 			break;
 		case TYPE_lng:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(hge, lng, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(hge, lng, TPE, OP);
+			BINARY_3TYPE_FUNC(hge, lng, tpe, OP);
 			break;
 		case TYPE_hge:
-		hgehge:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(hge, hge, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(hge, hge, TPE, OP);
+			BINARY_3TYPE_FUNC(hge, hge, tpe, OP);
 			break;
 		case TYPE_flt:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(hge, flt, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(hge, flt, TPE, OP);
+			BINARY_3TYPE_FUNC(hge, flt, tpe, OP);
 			break;
 		case TYPE_dbl:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(hge, dbl, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(hge, dbl, TPE, OP);
+			BINARY_3TYPE_FUNC(hge, dbl, tpe, OP);
 			break;
 		default:
 			goto unsupported;
@@ -324,291 +268,111 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		break;
 #endif
 	case TYPE_flt:
-		switch (tp2) {
+		switch (ATOMbasetype(tp2)) {
 		case TYPE_bte:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(flt, bte, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(flt, bte, TPE, OP);
+			BINARY_3TYPE_FUNC(flt, bte, tpe, OP);
 			break;
 		case TYPE_sht:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(flt, sht, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(flt, sht, TPE, OP);
+			BINARY_3TYPE_FUNC(flt, sht, tpe, OP);
 			break;
 		case TYPE_int:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(flt, int, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(flt, int, TPE, OP);
+			BINARY_3TYPE_FUNC(flt, int, tpe, OP);
 			break;
 		case TYPE_lng:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(flt, lng, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(flt, lng, TPE, OP);
+			BINARY_3TYPE_FUNC(flt, lng, tpe, OP);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(flt, hge, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(flt, hge, TPE, OP);
+			BINARY_3TYPE_FUNC(flt, hge, tpe, OP);
 			break;
 #endif
 		case TYPE_flt:
-		fltflt:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(flt, flt, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(flt, flt, TPE, OP);
+			BINARY_3TYPE_FUNC(flt, flt, tpe, OP);
 			break;
 		case TYPE_dbl:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(flt, dbl, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(flt, dbl, TPE, OP);
+			BINARY_3TYPE_FUNC(flt, dbl, tpe, OP);
 			break;
 		default:
 			goto unsupported;
 		}
 		break;
 	case TYPE_dbl:
-		switch (tp2) {
+		switch (ATOMbasetype(tp2)) {
 		case TYPE_bte:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(dbl, bte, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(dbl, bte, TPE, OP);
+			BINARY_3TYPE_FUNC(dbl, bte, tpe, OP);
 			break;
 		case TYPE_sht:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(dbl, sht, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(dbl, sht, TPE, OP);
+			BINARY_3TYPE_FUNC(dbl, sht, tpe, OP);
 			break;
 		case TYPE_int:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(dbl, int, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(dbl, int, TPE, OP);
+			BINARY_3TYPE_FUNC(dbl, int, tpe, OP);
 			break;
 		case TYPE_lng:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(dbl, lng, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(dbl, lng, TPE, OP);
+			BINARY_3TYPE_FUNC(dbl, lng, tpe, OP);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(dbl, hge, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(dbl, hge, TPE, OP);
+			BINARY_3TYPE_FUNC(dbl, hge, tpe, OP);
 			break;
 #endif
 		case TYPE_flt:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(dbl, flt, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(dbl, flt, TPE, OP);
+			BINARY_3TYPE_FUNC(dbl, flt, tpe, OP);
 			break;
 		case TYPE_dbl:
-		dbldbl:
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(dbl, dbl, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(dbl, dbl, TPE, OP);
+			BINARY_3TYPE_FUNC(dbl, dbl, tpe, OP);
 			break;
 		default:
 			goto unsupported;
 		}
 		break;
-	case TYPE_oid:
-		if (tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = TPE_nil;
-				nils = cnt;
-			} else {
-				CANDLOOP(dst, k, TPE_nil, 0, start);
-				for (i = start * incr1, v += start, k = start;
-				     k < end; i += incr1, v++, k++) {
-					CHECKCAND(dst, k, candoff, TPE_nil);
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = TPE_nil;
-					} else {
-						dst[k] = OP(((const oid *) lft)[i], v);
-					}
-				}
-				CANDLOOP(dst, k, TPE_nil, end, cnt);
-			}
-		} else if (tp2 == TYPE_oid) {
-			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(oid, oid, TPE, OP);
-			else
-				BINARY_3TYPE_FUNC(oid, oid, TPE, OP);
-		} else {
-			goto unsupported;
-		}
-		break;
-	case TYPE_str:
-		if (tp1 != tp2)
-			goto unsupported;
-		CANDLOOP(dst, k, TPE_nil, 0, start);
-		for (i = start * incr1, j = start * incr2, k = start;
-		     k < end; i += incr1, j += incr2, k++) {
-			const char *s1, *s2;
-			CHECKCAND(dst, k, candoff, TPE_nil);
-			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
-			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
-			if (s1 == NULL || strcmp(s1, str_nil) == 0 ||
-			    s2 == NULL || strcmp(s2, str_nil) == 0) {
-				nils++;
-				dst[k] = TPE_nil;
-			} else {
-				int x = strcmp(s1, s2);
-				dst[k] = OP(x, 0);
-			}
-		}
-		CANDLOOP(dst, k, TPE_nil, end, cnt);
-		break;
-	default:
-		if (tp1 != tp2 ||
-		    !ATOMlinear(tp1) ||
-		    (atomcmp = ATOMcompare(tp1)) == NULL)
-			goto unsupported;
-		/* a bit of a hack: for inherited types, use
-		 * type-expanded version if comparison function is
-		 * equal to the inherited-from comparison function,
-		 * and yes, we jump right into the middle of a switch,
-		 * but that is legal (although not encouraged) C */
-		if (atomcmp == ATOMcompare(TYPE_bte))
-			goto btebte;
-		if (atomcmp == ATOMcompare(TYPE_sht))
-			goto shtsht;
-		if (atomcmp == ATOMcompare(TYPE_int))
-			goto intint;
-		if (atomcmp == ATOMcompare(TYPE_lng))
-			goto lnglng;
-#ifdef HAVE_HGE
-		if (atomcmp == ATOMcompare(TYPE_hge))
-			goto hgehge;
-#endif
-		if (atomcmp == ATOMcompare(TYPE_flt))
-			goto fltflt;
-		if (atomcmp == ATOMcompare(TYPE_dbl))
-			goto dbldbl;
-		nil = ATOMnilptr(tp1);
-		CANDLOOP(dst, k, TPE_nil, 0, start);
-		for (i = start * incr1, j = start * incr2, k = start;
-		     k < end; i += incr1, j += incr2, k++,
-		     loff+= wd1, roff+= wd2) {
-			const void *p1, *p2;
-			CHECKCAND(dst, k, candoff, TPE_nil);
-			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : (const void *) ((const char *) lft + loff);
-			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, j, wd2)) : (const void *) ((const char *) rgt + roff);
-			if (p1 == NULL || p2 == NULL ||
-			    (*atomcmp)(p1, nil) == 0 ||
-			    (*atomcmp)(p2, nil) == 0) {
-				nils++;
-				dst[k] = TPE_nil;
-			} else {
-				int x = (*atomcmp)(p1, p2);
-				dst[k] = OP(x, 0);
-			}
-		}
-		CANDLOOP(dst, k, TPE_nil, end, cnt);
-		break;
 	}
-
 	return nils;
 
   unsupported:
-	GDKerror("%s: bad input types %s,%s.\n", func,
-		 ATOMname(tp1), ATOMname(tp2));
+	GDKerror("%s: type combination (%s,%s) not supported.\n",
+		 func, ATOMname(tp1), ATOMname(tp2));
 	return BUN_NONE;
 }
 
-static BAT *
-BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
-		 const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
-		 BUN cnt, BUN start, BUN end, const oid *restrict cand,
-		 const oid *candend, oid candoff, int nonil, oid seqbase,
-		 const char *func)
+BAT *
+BATcalcop(BAT *b1, BAT *b2, BAT *s, int projected)
 {
 	BAT *bn;
-	BUN nils = 0;
-	TPE *restrict dst;
+	CALC_DECL;
 
-	bn = COLnew(seqbase, TYPE_TPE, cnt, TRANSIENT);
+	CALC_PREINIT(b1, b2, bn);
+	CALC_INIT(bn);
+	CALC_POSTINIT(b1, b2);
+
+	if (b1->ttype == TYPE_void && b2->ttype == TYPE_void) {
+		if (b1->tseqbase == oid_nil || b2->tseqbase == oid_nil) {
+			tpe v = tpe_nil;
+			return BATconstant(hseq, TYPE_tpe, &v, cnt, TRANSIENT);
+		} else if (projected == 0) {
+			tpe v = OP(b1->tseqbase, b2->tseqbase);
+			return BATconstant(hseq, TYPE_tpe, &v, cnt, TRANSIENT);
+		}
+	}
+
+	bn = COLnew(hseq, TYPE_tpe, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
-	dst = (TPE *) Tloc(bn, 0);
-
-	nils = op_typeswitchloop(lft, tp1, incr1, hp1, wd1,
-				 rgt, tp2, incr2, hp2, wd2,
-				 dst, cnt, start, end, cand, candend, candoff,
-				 nonil, func);
+	nils = opswitch(b1, b1->ttype, b1->ttype == TYPE_void ? &b1->tseqbase : (oid *) Tloc(b1, 0), NULL,
+			b2, b2->ttype, b2->ttype == TYPE_void ? &b2->tseqbase : (oid *) Tloc(b2, 0), NULL,
+			(tpe *) Tloc(bn, 0), hoff, start, cnt, cand, projected, __func__);
 
 	if (nils == BUN_NONE) {
-		BBPunfix(bn->batCacheid);
+		BBPreclaim(bn);
 		return NULL;
 	}
 
 	BATsetcount(bn, cnt);
-
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->tnil = nils != 0;
-	bn->tnonil = nils == 0;
-
-	return bn;
-}
-
-BAT *
-BATcalcop(BAT *b1, BAT *b2, BAT *s)
-{
-	BAT *bn;
-	BUN start, end, cnt;
-	const oid *restrict cand = NULL, *candend = NULL;
-
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
-
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
-		return NULL;
-
-	CANDINIT(b1, s, start, end, cnt, cand, candend);
-
-	if (BATtvoid(b1) && BATtvoid(b2) && cand == NULL) {
-		TPE res;
-
-		if (b1->tseqbase == oid_nil || b2->tseqbase == oid_nil)
-			res = TPE_nil;
-		else
-			res = OP(b1->tseqbase, b2->tseqbase);
-
-		return BATconstant(b1->hseqbase, TYPE_TPE, &res, cnt, TRANSIENT);
-	}
-
-	bn = BATcalcop_intern(b1->ttype == TYPE_void ? (void *) &b1->tseqbase : (void *) Tloc(b1, 0), ATOMbasetype(b1->ttype), 1,
-			      b1->tvheap ? b1->tvheap->base : NULL,
-			      b1->twidth,
-			      b2->ttype == TYPE_void ? (void *) &b2->tseqbase : (void *) Tloc(b2, 0), ATOMbasetype(b2->ttype), 1,
-			      b2->tvheap ? b2->tvheap->base : NULL,
-			      b2->twidth,
-			      cnt, start, end, cand, candend, b1->hseqbase,
-			      cand == NULL && b1->tnonil && b2->tnonil,
-			      b1->hseqbase, __func__);
-
 	return bn;
 }
 
@@ -616,25 +380,34 @@ BAT *
 BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 {
 	BAT *bn;
-	BUN start, end, cnt;
-	const oid *restrict cand = NULL, *candend = NULL;
+	CALC_DECL;
 
-	BATcheck(b, __func__, NULL);
+	CALC_INIT(b);
 
-	if (checkbats(b, NULL, __func__) != GDK_SUCCEED)
+	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+		tpe v = tpe_nil;
+		return BATconstant(hseq, TYPE_tpe, &v, cnt, TRANSIENT);
+	}
+
+	bn = COLnew(hseq, TYPE_tpe, cnt, TRANSIENT);
+	if (bn == NULL)
 		return NULL;
 
-	CANDINIT(b, s, start, end, cnt, cand, candend);
+	nils = opswitch(b, b->ttype, b->ttype == TYPE_void ? &b->tseqbase : (oid *) Tloc(b, 0), NULL,
+			NULL, v->vtype, NULL, VALptr(v),
+			(tpe *) Tloc(bn, 0), hoff, start, cnt, cand, 0, __func__);
 
-	bn = BATcalcop_intern(Tloc(b, 0), ATOMbasetype(b->ttype), 1,
-			      b->tvheap ? b->tvheap->base : NULL,
-			      b->twidth,
-			      VALptr(v), ATOMbasetype(v->vtype), 0,
-			      NULL, 0,
-			      cnt, start, end, cand, candend, b->hseqbase,
-			      cand == NULL && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
-			      b->hseqbase, __func__);
+	if (nils == BUN_NONE) {
+		BBPreclaim(bn);
+		return NULL;
+	}
 
+	BATsetcount(bn, cnt);
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+	bn->tsorted = cnt <= 1 || nils == cnt;
+	bn->trevsorted = cnt <= 1 || nils == cnt;
+	bn->tkey = cnt <= 1;
 	return bn;
 }
 
@@ -642,36 +415,44 @@ BAT *
 BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 {
 	BAT *bn;
-	BUN start, end, cnt;
-	const oid *restrict cand = NULL, *candend = NULL;
+	CALC_DECL;
 
-	BATcheck(b, __func__, NULL);
+	CALC_INIT(b);
 
-	if (checkbats(b, NULL, __func__) != GDK_SUCCEED)
+	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+		tpe v = tpe_nil;
+		return BATconstant(hseq, TYPE_tpe, &v, cnt, TRANSIENT);
+	}
+
+	bn = COLnew(hseq, TYPE_tpe, cnt, TRANSIENT);
+	if (bn == NULL)
 		return NULL;
 
-	CANDINIT(b, s, start, end, cnt, cand, candend);
+	nils = opswitch(NULL, v->vtype, NULL, VALptr(v),
+			b, b->ttype, b->ttype == TYPE_void ? &b->tseqbase : (oid *) Tloc(b, 0), NULL,
+			(tpe *) Tloc(bn, 0), hoff, start, cnt, cand, 0, __func__);
 
-	bn = BATcalcop_intern(VALptr(v), ATOMbasetype(v->vtype), 0,
-			      NULL, 0,
-			      Tloc(b, 0), ATOMbasetype(b->ttype), 1,
-			      b->tvheap ? b->tvheap->base : NULL,
-			      b->twidth,
-			      cnt, start, end, cand, candend, b->hseqbase,
-			      cand == NULL && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
-			      b->hseqbase, __func__);
+	if (nils == BUN_NONE) {
+		BBPreclaim(bn);
+		return NULL;
+	}
 
+	BATsetcount(bn, cnt);
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+	bn->tsorted = cnt <= 1 || nils == cnt;
+	bn->trevsorted = cnt <= 1 || nils == cnt;
+	bn->tkey = cnt <= 1;
 	return bn;
 }
 
 gdk_return
 VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
-	ret->vtype = TYPE_TPE;
-	if (op_typeswitchloop(VALptr(lft), ATOMbasetype(lft->vtype), 0, NULL, 0,
-			      VALptr(rgt), ATOMbasetype(rgt->vtype), 0, NULL, 0,
-			      VALget(ret), 1, 0, 1, NULL, NULL, 0, 0,
-			      __func__) == BUN_NONE)
+	ret->vtype = TYPE_tpe;
+	if (opswitch(NULL, lft->vtype, NULL, VALptr(lft),
+		     NULL, rgt->vtype, NULL, VALptr(rgt),
+		     VALget(ret), 0, 0, 1, NULL, 0, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }

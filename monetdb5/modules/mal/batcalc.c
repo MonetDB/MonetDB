@@ -290,7 +290,7 @@ calcmodtype(int tp1, int tp2)
 
 static str
 CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int, int),
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int, int, int),
 			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, int, int),
 			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, int, int),
 			  int (*typefunc)(int, int),
@@ -333,7 +333,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (b2) {
 			if (tp3 == TYPE_any)
 				tp3 = (*typefunc)(b->ttype, b2->ttype);
-			bn = (*batfunc)(b, b2, s, tp3, abort_on_error);
+			bn = (*batfunc)(b, b2, s, tp3, abort_on_error, 0);
 			BBPunfix(b2->batCacheid);
 		} else {
 			if (tp3 == TYPE_any)
@@ -366,7 +366,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 static str
 CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int),
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int, int),
 			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, int),
 			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, int),
 			  int abort_on_error,
@@ -404,7 +404,7 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 			}
 		}
 		if (b2) {
-			bn = (*batfunc)(b, b2, s, abort_on_error);
+			bn = (*batfunc)(b, b2, s, abort_on_error, 0);
 			BBPunfix(b2->batCacheid);
 		} else {
 			bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)], s, abort_on_error);
@@ -434,7 +434,7 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 
 static str
 CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *),
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int),
 			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *),
 			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *),
 			  const char *malfunc)
@@ -471,7 +471,7 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 			}
 		}
 		if (b2) {
-			bn = (*batfunc)(b, b2, s);
+			bn = (*batfunc)(b, b2, s, 0);
 			BBPunfix(b2->batCacheid);
 		} else if (batfunc1 == NULL) {
 			BBPunfix(b->batCacheid);
@@ -862,7 +862,7 @@ CMDbatCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
+callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int symmetric)
 {
 	bat *bid;
 	BAT *bn, *b, *lo = NULL, *hi = NULL, *s = NULL;
@@ -912,15 +912,15 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 	if (lo == NULL) {
 		if (hi == NULL) {
 			bn = BATcalcbetweencstcst(b, &stk->stk[getArg(pci, 2)],
-									  &stk->stk[getArg(pci, 3)], s, sym);
+									  &stk->stk[getArg(pci, 3)], s, symmetric);
 		} else {
-			bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s, sym);
+			bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s, symmetric, 0);
 		}
 	} else {
 		if (hi == NULL) {
-			bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s, sym);
+			bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s, symmetric, 0);
 		} else {
-			bn = BATcalcbetween(b, lo, hi, s, sym);
+			bn = BATcalcbetween(b, lo, hi, s, symmetric, 0);
 		}
 	}
 	BBPunfix(b->batCacheid);
@@ -1299,15 +1299,15 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b != NULL) {
 		if (b1 != NULL) {
 			if (b2 != NULL) {
-				bn = BATcalcifthenelse(b, b1, b2);
+				bn = BATcalcifthenelse(b, b1, b2, NULL, 0);
 			} else {
-				bn = BATcalcifthenelsecst(b, b1, &stk->stk[getArg(pci, 3)]);
+				bn = BATcalcifthenelsecst(b, b1, &stk->stk[getArg(pci, 3)], NULL, 0);
 			}
 		} else {
 			if (b2 != NULL) {
-				bn = BATcalcifthencstelse(b, &stk->stk[getArg(pci, 2)], b2);
+				bn = BATcalcifthencstelse(b, &stk->stk[getArg(pci, 2)], b2, NULL, 0);
 			} else {
-				bn = BATcalcifthencstelsecst(b, &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)]);
+				bn = BATcalcifthencstelsecst(b, &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], NULL);
 			}
 		}
 	} else {
