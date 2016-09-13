@@ -1757,8 +1757,13 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
   error:
 	if (fp)
 		fclose(fp);
-	if (lg)
+	if (lg) {
+		GDKfree(lg->fn);
+		GDKfree(lg->dir);
+		GDKfree(lg->local_dir);
+		GDKfree(lg->buf);
 		GDKfree(lg);
+	}
 	return LOG_ERR;
 }
 
@@ -1815,7 +1820,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
 			GDKfree(lg->fn);
 			GDKfree(lg->dir);
-			GDKfree(lg->local_dir);
+			GDKfree(lg->buf);
 			GDKfree(lg);
 			return NULL;
 		}
@@ -1833,6 +1838,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 				GDKfree(lg->fn);
 				GDKfree(lg->dir);
 				GDKfree(lg->local_dir);
+				GDKfree(lg->buf);
 				GDKfree(lg);
 				return NULL;
 			}

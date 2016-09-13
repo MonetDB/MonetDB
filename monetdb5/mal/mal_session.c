@@ -470,6 +470,11 @@ MSserveClient(void *dummy)
 	}
 	if (!isAdministrator(c))
 		MCcloseClient(c);
+	if (strcmp(c->nspace->name, "user") == 0) {
+		GDKfree(c->nspace->space);
+		GDKfree(c->nspace);
+		c->nspace = NULL;
+	}
 }
 
 /*

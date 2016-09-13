@@ -110,7 +110,7 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 
 	adr = (MALfcn) dlsym(dl, fcnname);
 	filesLoaded[lastfile].modname = GDKstrdup("libmonetdb5");
-	filesLoaded[lastfile].fullname = "libmonetdb5";
+	filesLoaded[lastfile].fullname = GDKstrdup("libmonetdb5");
 	filesLoaded[lastfile].handle = dl;
 	lastfile ++;
 	if(adr != NULL)
@@ -259,7 +259,8 @@ mal_linker_reset(void)
 	for (i = 0; i < lastfile; i++){
 		if (filesLoaded[i].fullname) {
 			/* dlclose(filesLoaded[i].handle);*/
-			if (filesLoaded[i].modname) GDKfree(filesLoaded[i].modname);
+			GDKfree(filesLoaded[i].modname);
+			GDKfree(filesLoaded[i].fullname);
 		}
 		filesLoaded[i].modname = NULL;
 		filesLoaded[i].fullname = NULL;

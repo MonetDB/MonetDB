@@ -182,9 +182,12 @@ bl_destroy(void)
 
 	bat_logger = NULL;
 	if (l) {
-		// FIXME: either of those corrupts stuff
-		//logger_exit(l);
-		//logger_destroy(l);
+		close_stream(l->log);
+		GDKfree(l->fn);
+		GDKfree(l->dir);
+		GDKfree(l->local_dir);
+		GDKfree(l->buf);
+		GDKfree(l);
 	}
 }
 
