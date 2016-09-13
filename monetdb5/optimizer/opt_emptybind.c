@@ -38,7 +38,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 {
 	int i,j, actions =0;
 	int *marked;
-	int limit = mb->stop;
+	int limit = mb->stop, slimit = mb->ssize;
 	InstrPtr p, q, *old = mb->stmt, *updated;
 	char buf[256];
 	lng usec = GDKusec();
@@ -286,6 +286,9 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
 #endif
 
+	for(; i<slimit; i++)
+		if( old[i])
+			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(marked);
 	GDKfree(updated);
