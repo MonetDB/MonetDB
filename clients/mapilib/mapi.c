@@ -959,7 +959,7 @@ struct MapiResultSet {
 	int commentonly;	/* only comments seen so far */
 	mapi_int64 rows_read;
 	mapi_int64 cur_row;
-
+	int prot10_resultset;
 };
 
 struct MapiStatement {
@@ -974,7 +974,6 @@ struct MapiStatement {
 	int needmore;		/* need more input */
 	int *pending_close;
 	int npending_close;
-	int prot10_resultset;
 	MapiHdl prev, next;
 };
 
@@ -1541,6 +1540,7 @@ new_result(MapiHdl hdl)
 	result->cache.first = 0;
 	result->cache.tuplecount = 0;
 	result->cache.line = NULL;
+	result->prot10_resultset = 0;
 
 	result->commentonly = 1;
 
@@ -1667,8 +1667,9 @@ close_result(MapiHdl hdl)
 	result->errorstr = NULL;
 	result->hdl = NULL;
 	hdl->result = result->next;
-	if (hdl->result == NULL)
+	if (hdl->result == NULL) {
 		hdl->lastresult = NULL;
+	}
 	result->next = NULL;
 	free(result);
 	return MOK;
@@ -3707,6 +3708,7 @@ read_line(Mapi mid)
 					mid->blk.buf[1] = 0;
 					return mid->blk.buf;
 				}
+
 				return 0;
 			}
 		} while (mid->blk.buf[mid->blk.end++] != '\n');
@@ -4350,6 +4352,11 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	}
 	if ((result = hdl->active) == NULL)
 		result = hdl->result;	/* may also be NULL */
+	if (result && result->next && result->next->prot10_resultset) {
+		// if we have a prot10 resultset we don't want to read lines, because prot10 result sets do not consist of lines
+		hdl->active = result->next;
+		return MOK;
+	}
 	for (;;) {
 		line = read_line(mid);
 		if (line == NULL)
@@ -4361,8 +4368,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			lng nr_cols;
 			lng i;
 
-			hdl->prot10_resultset = 1;
 			result = new_result(hdl);
+			result->prot10_resultset = 1;
+			hdl->active = result;
 
 			if (!result) {
 				// TODO: actually set mid->error :)
@@ -4373,7 +4381,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					!mnstr_readLng(mid->from, &nr_cols)) {
 				return mid->error;
 			}
-		//	fprintf(stderr, "result_set_id=%d, nr_rows=%llu, nr_cols=%lld\n", result_set_id, nr_rows, nr_cols);
+			//fprintf(stderr, "result_set_id=%d, nr_rows=%llu, nr_cols=%lld\n", result_set_id, nr_rows, nr_cols);
 			result->fieldcnt = nr_cols;
 			result->maxfields = (int) nr_cols;
 			result->row_count = nr_rows;
@@ -4383,6 +4391,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			result->tuple_count = 0;
 			result->rows_read = 0;
 			result->cur_row = 0;
+			result->commentonly = 0;
 
 			assert(result->fields);
 
@@ -4474,17 +4483,12 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				}
 				//printf("Column %d: %s - %s (%d, %p)\n", i, col_name, type_sql_name, typelen, result->fields[i].converter);
 			}
-			/*
-			hdl->result = result;
-			hdl->active = result;
-*/
+
 			{
 				char dummy;
 				// we flush on the other side so this read will always fail
 				mnstr_readChr(mid->from, &dummy);
 			}
-
-
 			return 0;
 		}
 		case PROMPTBEG: /* \001 */
@@ -5173,7 +5177,7 @@ mapi_fetch_line(MapiHdl hdl)
 	    result->querytype == Q_TABLE &&
 	    result->row_count > 0 &&
 	    result->cache.first + result->cache.tuplecount < result->row_count && 
-	    !hdl->prot10_resultset) {
+	    !result->prot10_resultset) {
 		if (hdl->needmore)	/* escalate */
 			return NULL;
 		if (hdl->mid->active != NULL)
@@ -5694,7 +5698,7 @@ mapi_split_line(MapiHdl hdl)
 	struct MapiResultSet *result;
 	result = hdl->result;
 	assert(result != NULL);
-	if (hdl->prot10_resultset) {
+	if (result->prot10_resultset) {
 		assert(0);
 		return -1;
 	}
@@ -5716,20 +5720,25 @@ mapi_fetch_row(MapiHdl hdl)
 	char *reply;
 	int n;
 	size_t i;
-	struct MapiResultSet *result;
+	struct MapiResultSet *result = hdl->result;
 
 	mapi_hdl_check(hdl, "mapi_fetch_row");
-	if (hdl->prot10_resultset) {
+	if (result && result->prot10_resultset) {
 		char* buf;
 
-		result = hdl->result;
 		// check if we have read the entire result set
 		if (result->rows_read >= result->row_count) {
 			char dummy;
 			mnstr_readChr(hdl->mid->from, &dummy);
 			bs2_resetbuf(hdl->mid->from);
-			hdl->prot10_resultset = 0;
-			mapi_fetch_line(hdl);
+			do {
+				if ((reply = mapi_fetch_line(hdl)) == NULL)
+					return 0;
+			} while (*reply != '[' && *reply != '=' && *reply != '*');
+			if (*reply != '*' && (n = result->cache.line[result->cache.reader].fldcnt) == 0) {
+				n = mapi_slice_row(result, result->cache.reader);
+				return n;
+			}
 			return 0;
 		}
 		// if not, check if our cache is empty
@@ -5745,7 +5754,6 @@ mapi_fetch_row(MapiHdl hdl)
 				hdl->mid->errorstr = strdup("Failed to write confirm message to server.");
 				hdl->mid->error = 0;
 				fprintf(stderr, "Failure 2.\n");
-				hdl->prot10_resultset = 0;
 				return hdl->mid->error;
 			}
 #endif
@@ -5801,7 +5809,6 @@ mapi_fetch_row(MapiHdl hdl)
 				return result->fieldcnt;
 #endif
 			}
-
 			bs2_resetbuf(hdl->mid->from); // kinda a bit evil
 
 			// this actually triggers the read of the entire block
@@ -5811,7 +5818,6 @@ mapi_fetch_row(MapiHdl hdl)
 				hdl->mid->errorstr = strdup("Failed to read row response");
 				hdl->mid->error = 0;
 				fprintf(stderr, "Failure 3.\n");
-				hdl->prot10_resultset = 0;
 				return hdl->mid->error;
 			}
 
@@ -5973,8 +5979,8 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 {
 	int cr;
 	struct MapiResultSet *result;
-	if (hdl->prot10_resultset) {
-		result = hdl->result;
+	result = hdl->result;
+	if (result != NULL && result->prot10_resultset) {
 		if (result == NULL || 
 			result->fields == NULL || 
 			result->fields[fnr].converter == NULL || 
@@ -6016,7 +6022,8 @@ mapi_fetch_field_len(MapiHdl hdl, int fnr)
 {
 	int cr;
 	struct MapiResultSet *result;
-	if (hdl->prot10_resultset) {
+	result = hdl->result;
+	if (result != NULL && result->prot10_resultset) {
 		char* value = mapi_fetch_field(hdl, fnr);
 		if (!value) {
 			mapi_setError(hdl->mid, "Must do a successful mapi_fetch_row first", "mapi_fetch_field_len", MERROR);
@@ -6285,7 +6292,7 @@ mapi_get_active(Mapi mid)
 
 int 
 mapi_is_protocol10(MapiHdl hdl) {
-	return hdl->prot10_resultset;
+	return hdl->result && hdl->result->prot10_resultset;
 }
 
 MapiMsg mapi_set_protocol(Mapi mid, const char* protocol) {
