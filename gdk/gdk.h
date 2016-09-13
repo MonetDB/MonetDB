@@ -2090,7 +2090,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 #define GDKfree(p)							\
 	({								\
 		void *_ptr = (p);					\
-		ALLOCDEBUG						\
+		ALLOCDEBUG if (_ptr)					\
 			fprintf(stderr,					\
 				"#GDKfree(" PTRFMT ")"			\
 				" %s[%s:%d]\n",				\

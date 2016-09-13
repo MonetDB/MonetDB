@@ -30,14 +30,11 @@ newSymbol(str nme, int kind)
 		return NULL;
 	}
 	if( symboltop < MAXSYMBOLS){
-		cur = symbolpool + symboltop;
-		symboltop++;
-	} else
+		cur = symbolpool + symboltop++;
+	} else {
 		cur = (Symbol) GDKzalloc(sizeof(SymRecord));
-
-	if (cur == NULL) {
-		GDKerror("newSymbol:" MAL_MALLOC_FAIL);
-		return NULL;
+		if (cur == NULL)
+			return NULL;
 	}
 	cur->name = putName(nme);
 	cur->kind = kind;
