@@ -1898,7 +1898,6 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			errno = 0;
 		}
 	}
-	fprintf(stdout, "Export resultset 10.\n");
 
 	iterators = GDKzalloc(sizeof(BATiter) * t->nr_cols);
 
@@ -2018,7 +2017,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			goto cleanup;
 		}
 	}
-	mnstr_flush(s);
+	if (mnstr_flush(s) < 0) {
+		fprintf(stderr, "Failed to flush.\n");
+		fres = -1;
+		goto cleanup;
+	}
 
 	while (row < (size_t) count) {
 		char *buf = bs2_buffer(s).buf;
@@ -2347,12 +2350,13 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		bs2_setpos(s, buf - bs2_buffer(s).buf);
 		if (mnstr_flush(s) < 0) {
 			fprintf(stderr, "Failed to flush.\n");
+			bs2_setpos(s, 0); // clear the buffer
 			fres = -1;
 			goto cleanup;
 		}
 		srow = row;
 	}
-cleanup:
+cleanup:	
 	if (iterators) {
 		for(i = 0; i < (size_t) t->nr_cols; i++) {
 			if (iterators[i].b) {

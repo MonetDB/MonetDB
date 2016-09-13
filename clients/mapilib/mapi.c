@@ -4474,9 +4474,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				}
 				//printf("Column %d: %s - %s (%d, %p)\n", i, col_name, type_sql_name, typelen, result->fields[i].converter);
 			}
+			/*
 			hdl->result = result;
 			hdl->active = result;
-
+*/
 			{
 				char dummy;
 				// we flush on the other side so this read will always fail
@@ -5171,7 +5172,8 @@ mapi_fetch_line(MapiHdl hdl)
 	    hdl->mid->languageId == LANG_SQL &&
 	    result->querytype == Q_TABLE &&
 	    result->row_count > 0 &&
-	    result->cache.first + result->cache.tuplecount < result->row_count) {
+	    result->cache.first + result->cache.tuplecount < result->row_count && 
+	    !hdl->prot10_resultset) {
 		if (hdl->needmore)	/* escalate */
 			return NULL;
 		if (hdl->mid->active != NULL)
@@ -5692,7 +5694,7 @@ mapi_split_line(MapiHdl hdl)
 	struct MapiResultSet *result;
 	result = hdl->result;
 	assert(result != NULL);
-	if (hdl->mid->protocol == prot10 || hdl->mid->protocol == prot10compressed) {
+	if (hdl->prot10_resultset) {
 		assert(0);
 		return -1;
 	}
@@ -5716,6 +5718,7 @@ mapi_fetch_row(MapiHdl hdl)
 	size_t i;
 	struct MapiResultSet *result;
 
+	mapi_hdl_check(hdl, "mapi_fetch_row");
 	if (hdl->prot10_resultset) {
 		char* buf;
 
@@ -5723,11 +5726,10 @@ mapi_fetch_row(MapiHdl hdl)
 		// check if we have read the entire result set
 		if (result->rows_read >= result->row_count) {
 			char dummy;
-			hdl->mid->active = NULL;
-			hdl->active = NULL;
-			bs2_resetbuf(hdl->mid->from);
 			mnstr_readChr(hdl->mid->from, &dummy);
+			bs2_resetbuf(hdl->mid->from);
 			hdl->prot10_resultset = 0;
+			mapi_fetch_line(hdl);
 			return 0;
 		}
 		// if not, check if our cache is empty
@@ -5912,7 +5914,6 @@ mapi_fetch_row(MapiHdl hdl)
 		return result->fieldcnt;
 	}
 
-	mapi_hdl_check(hdl, "mapi_fetch_row");
 	do {
 		if ((reply = mapi_fetch_line(hdl)) == NULL)
 			return 0;

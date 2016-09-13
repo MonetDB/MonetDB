@@ -1779,7 +1779,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 #endif
 
 	setWidth();
-
 	do {
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {

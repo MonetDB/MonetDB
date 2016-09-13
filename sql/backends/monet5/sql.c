@@ -3414,6 +3414,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *eclass = getArgReference_int(stk, pci, 6);
 	ptr p = getArgReference(stk, pci, 7);
 	int mtype = getArgType(mb, pci, 7);
+	int res_id;
 	str msg;
 	backend *b = NULL;
 
@@ -3424,10 +3425,16 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMextern(mtype))
 		p = *(ptr *) p;
 
-	// scalar values are single-column result sets
-	mvc_result_table(b->mvc, 1, 1, NULL);
-	mvc_result_value(b->mvc, *tn, *cn, *type, *digits, *scale, p, mtype);
 	if (b->output_format == OFMT_NONE) {
+		return MAL_SUCCEED;
+	}
+
+	// scalar values are single-column result sets
+	res_id = mvc_result_table(b->mvc, 1, 1, NULL);
+	mvc_result_value(b->mvc, *tn, *cn, *type, *digits, *scale, p, mtype);
+	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
+		if (mvc_export_result(b, cntxt->fdout, res_id))
+			throw(SQL, "sql.exportResult", "failed");
 		return MAL_SUCCEED;
 	}
 	if (b->out == NULL || mvc_export_value(b, b->out, 1, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype, "", "NULL") != SQL_OK)
