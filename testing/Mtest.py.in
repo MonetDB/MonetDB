@@ -656,45 +656,56 @@ def CreateHtmlIndex (env, *body) :
                                   'target': '%s_%s_body' % (DISTVER, TSTDIR),
                                   'class': 'black'},
                                  header)
+            tr = Element('tr', {'valign': 'top'},
+                         Element('th', {'class': 'header'},
+                                 header))
+            tr.addchildren(body)
+            hbody = Element('body',
+                            {'bgcolor': white,
+                             'text': black,
+                             'link': green,
+                             'vlink': darkgreen,
+                             'alink': lime},
+                            Element('center', {},
+                                    Element('table',
+                                            {'align': 'abscenter',
+                                             'border': '1',
+                                             'cellspacing': '0',
+                                             'cellpadding': '3'},
+                                            tr)))
         else:
-            header = Element('span', {'class': 'black'},
+            header = Element('h3', {},
                              Text(DISTVER))
-        tr = Element('tr', {'valign': 'top'},
-                     Element('th', {'class': 'header'},
-                             header))
-        tr.addchildren(body)
+            hbody = Element('body',
+                            {'bgcolor': white,
+                             'text': black,
+                             'link': green,
+                             'vlink': darkgreen,
+                             'alink': lime},
+                            header)
+            hbody.addchildren(body)
         html = Element('html', {},
                        Element('head', {},
                                Element('meta', {'charset':'utf8'}),
                                Element('title', {}, Text(HTMLTITLE)),
                                stylesheet),
-                       Element('body',
-                               {'bgcolor': white,
-                                'text': black,
-                                'link': green,
-                                'vlink': darkgreen,
-                                'alink': lime},
-                               Element('center', {},
-                                       Element('table',
-                                               {'align': 'abscenter',
-                                                'border': '1',
-                                                'cellspacing': '0',
-                                                'cellpadding': '3'},
-                                               tr))))
+                       hbody)
         f = open("%s.head.html" % INDEX,"w")
         html.write(f, True)
         f.close()
 
         if TSTDIR:
-            ROWS="72"
+            layout = 'rows'
+            ROWS="8%"
         else:
-            ROWS="54"
+            layout = 'cols'
+            ROWS="10%"
         html = Element('html', {},
                        Element('head', {},
                                Element('meta', {'charset':'utf8'}),
                                Element('title', {}, Text(HTMLTITLE))),
                        Element('frameset',
-                               {'rows': '%s,*' % ROWS,
+                               {layout: '%s,*' % ROWS,
                                 'frameborder': 'yes',
                                 'border': '1',
                                 'bordercolor': white,
@@ -1056,14 +1067,15 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, o, e) :
 ### AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) #
 
 def AddSubToHtmlIndex (env, TSTDIR, diff) :
-    td = Element('td', {'class': 'header'})
-    td.addchildren(AddHref('%s/.index.html' % url(TSTDIR), '%s__body' % DISTVER,
-                           TSTDIR, diff))
+    elem = Element('p', {})
+    elem.addchildren(AddHref('%s/.index.html' % url(TSTDIR),
+                             '%s__body' % DISTVER,
+                             TSTDIR, diff))
     if '__BODY_' not in env  or  \
        not env['__BODY_'][0]  or  \
        ( (not env['__BODY_'][1])  and  diff ):
         env['__BODY_'] = ["%s/.index.html" % TSTDIR, diff]
-    return td
+    return elem
 ### AddSubToHtmlIndex (env, TSTDIR, diff) #
 
 def SkipTest(env, TST, EXT, REASON, length) :
@@ -1129,6 +1141,7 @@ def find_test_dirs(thisdir) :
 ### find_test_dirs(thisdir) #
 
 def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
+    interrupted = False
     td = 0
     elem = None
     FdOut = F_SKIP
@@ -1164,7 +1177,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                 testlist.append((tst,cond))
     if not testlist:
         Warn("No tests found in '%s`; skipping directory!" % TSTSRCDIR)
-        return td, elem, max(FdOut, FdErr)
+        return td, elem, max(FdOut, FdErr), interrupted
 
     # find length of longest test name
     length = 0
@@ -1209,7 +1222,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem, max(FdOut, FdErr)
+                    return td, elem, max(FdOut, FdErr), interrupted
             if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
                 try:
                     os.makedirs(LogDBdir)
@@ -1217,7 +1230,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
-                    return td, elem, max(FdOut, FdErr)
+                    return td, elem, max(FdOut, FdErr), interrupted
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
@@ -1228,27 +1241,31 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         if not verbose and not quiet:
             print('\nRunning in %s' % TSTDIR)
         alllinks = []
-        for TST,COND in testlist:
-            os.environ['TST'] = TST
-            tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests)
-            alllinks.extend(links)
-            if tt:
-                t = "%7.3f" % tt
-            else:
-                t = '-.---'
-            TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
-            td += tt
-            FdOut = max(FdOut,FtOut)
-            FdErr = max(FdErr,FtErr)
-            if bodyline is not None:
-                if FtOut <= F_OK and FtErr <= F_OK:
-                    body_good.append(bodyline)
+        try:
+            for TST,COND in testlist:
+                os.environ['TST'] = TST
+                tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests)
+                alllinks.extend(links)
+                if tt:
+                    t = "%7.3f" % tt
                 else:
-                    body_bad.append(bodyline)
-            if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
-                oktests.append(TST)
-            if global_timeout and start_time + global_timeout < time.time():
-                break
+                    t = '-.---'
+                TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
+                td += tt
+                FdOut = max(FdOut,FtOut)
+                FdErr = max(FdErr,FtErr)
+                if bodyline is not None:
+                    if FtOut <= F_OK and FtErr <= F_OK:
+                        body_good.append(bodyline)
+                    else:
+                        body_bad.append(bodyline)
+                if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
+                    oktests.append(TST)
+                if global_timeout and start_time + global_timeout < time.time():
+                    break
+        except KeyboardInterrupt:
+            print('\nInterrupted')
+            interrupted = True
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
@@ -1292,12 +1309,12 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     else: # THISFILE == "Mapprove.py"
         if not os.path.exists(TSTTRGDIR):
             Warn("Output directory '%s` missing; skipping directory!" % TSTTRGDIR)
-            return td, elem, max(FdOut, FdErr)
+            return td, elem, max(FdOut, FdErr), interrupted
 
         for TST,COND in testlist:
             td += ApproveOutput(env, TST)
 
-    return td, elem, max(FdOut, FdErr)
+    return td, elem, max(FdOut, FdErr), interrupted
 ### PerformDir(env, testdir, testlist, BusyPorts) #
 
 def ApproveOutput (env, TST) :
@@ -4148,33 +4165,39 @@ def main(argv) :
         t_ = 0
         body_good = []
         body_bad = []
-        if len(testdirs) == 1:
-            if testlist:
-                tsts = "tests "+str(testlist)
-            else:
-                tsts = "all tests"
-                all_tests = True
-            if verbose:
-                print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
-            t_, elem, diff = PerformDir(env, testdirs[0], testlist, BusyPorts, all_tests)
-            if elem is not None:
-                if diff <= F_OK:
-                    body_good.append(elem)
+        try:
+            if len(testdirs) == 1:
+                if testlist:
+                    tsts = "tests "+str(testlist)
                 else:
-                    body_bad.append(elem)
-        else:
-            if verbose:
-                print("\nRunning all tests in directories %s.\n" % str(testdirs))
-            for d in testdirs:
-                t, elem, diff = PerformDir(env, d, [], BusyPorts, True)
-                t_ = t_ + t
+                    tsts = "all tests"
+                    all_tests = True
+                if verbose:
+                    print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
+                t_, elem, diff, interrupted = PerformDir(env, testdirs[0], testlist, BusyPorts, all_tests)
                 if elem is not None:
                     if diff <= F_OK:
                         body_good.append(elem)
                     else:
                         body_bad.append(elem)
-                if global_timeout and start_time + global_timeout < time.time():
-                    break
+            else:
+                if verbose:
+                    print("\nRunning all tests in directories %s.\n" % str(testdirs))
+                for d in testdirs:
+                    t, elem, diff, interrupted = PerformDir(env, d, [], BusyPorts, True)
+                    t_ = t_ + t
+                    if elem is not None:
+                        if diff <= F_OK:
+                            body_good.append(elem)
+                        else:
+                            body_bad.append(elem)
+                    if interrupted:
+                        break
+                    if global_timeout and start_time + global_timeout < time.time():
+                        break
+        except KeyboardInterrupt:
+            # if we get interrupted between directories, we still want output
+            pass
         body = body_bad + body_good
 
         if THISFILE == "Mtest.py":

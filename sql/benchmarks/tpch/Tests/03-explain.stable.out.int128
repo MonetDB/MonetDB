@@ -52,9 +52,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 500 # length
-function user.s2_1(A0:bte,A1:str,A2:date,A3:date):void;
-    X_214:void := querylog.define("explain select\n l_orderkey,\n sum(l_extendedprice * (1 - l_discount)) as revenue,\n o_orderdate,\n o_shippriority\nfrom\n customer,\n orders,\n lineitem\nwhere\n c_mktsegment = \\'BUILDING\\'\n and c_custkey = o_custkey\n and l_orderkey = o_orderkey\n and o_orderdate < date \\'1995-03-15\\'\n and l_shipdate > date \\'1995-03-15\\'\ngroup by\n l_orderkey,\n o_orderdate,\n o_shippriority\norder by\n revenue desc,\n o_orderdate\nlimit 10;","sequential_pipe",107);
+% 499 # length
+function user.s4_1():void;
+    X_214:void := querylog.define("explain select\n l_orderkey,\n sum(l_extendedprice * (1 - l_discount)) as revenue,\n o_orderdate,\n o_shippriority\nfrom\n customer,\n orders,\n lineitem\nwhere\n c_mktsegment = \\'BUILDING\\'\n and c_custkey = o_custkey\n and l_orderkey = o_orderkey\n and o_orderdate < date \\'1995-03-15\\'\n and l_shipdate > date \\'1995-03-15\\'\ngroup by\n l_orderkey,\n o_orderdate,\n o_shippriority\norder by\n revenue desc,\n o_orderdate\nlimit 10;","sequential_pipe",78);
     X_173 := bat.new(nil:str);
     X_180 := bat.append(X_173,"sys.lineitem");
     X_190 := bat.append(X_180,"sys.L1");
@@ -83,67 +83,38 @@ function user.s2_1(A0:bte,A1:str,A2:date,A3:date):void;
     X_0 := sql.mvc();
     X_4:bat[:date] := sql.bind(X_0,"sys","orders","o_orderdate",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","orders");
-    C_237 := algebra.thetasubselect(X_4,C_1,A2,"<");
-    (C_7:bat[:oid],r1_12:bat[:date]) := sql.bind(X_0,"sys","orders","o_orderdate",2);
-    C_238 := algebra.thetasubselect(r1_12,nil:bat[:oid],A2,"<");
-    X_10:bat[:date] := sql.bind(X_0,"sys","orders","o_orderdate",1);
-    C_240 := algebra.thetasubselect(X_10,C_1,A2,"<");
-    C_15 := sql.subdelta(C_237,C_1,C_7,C_238,C_240);
+    C_15 := algebra.thetasubselect(X_4,C_1,"1995-03-15","<");
     X_17:bat[:oid] := sql.bind_idxbat(X_0,"sys","orders","orders_o_custkey_fkey",0);
     (X_19,r1_24) := sql.bind_idxbat(X_0,"sys","orders","orders_o_custkey_fkey",2);
     X_21:bat[:oid] := sql.bind_idxbat(X_0,"sys","orders","orders_o_custkey_fkey",1);
     X_24 := sql.projectdelta(C_15,X_17,X_19,r1_24,X_21);
     X_27:bat[:str] := sql.bind(X_0,"sys","customer","c_mktsegment",0);
     C_25:bat[:oid] := sql.tid(X_0,"sys","customer");
-    C_241 := algebra.subselect(X_27,C_25,A1,A1,true,false,false);
-    (C_29:bat[:oid],r1_34:bat[:str]) := sql.bind(X_0,"sys","customer","c_mktsegment",2);
-    C_242 := algebra.subselect(r1_34,nil:bat[:oid],A1,A1,true,false,false);
-    X_31:bat[:str] := sql.bind(X_0,"sys","customer","c_mktsegment",1);
-    C_244 := algebra.subselect(X_31,C_25,A1,A1,true,false,false);
-    C_35 := sql.subdelta(C_241,C_25,C_29,C_242,C_244);
+    C_35 := algebra.subselect(X_27,C_25,"BUILDING","BUILDING",true,false,false);
     (X_40,r1_45) := algebra.subjoin(X_24,C_35,nil:BAT,nil:BAT,false,nil:lng);
     X_46 := algebra.projection(X_40,C_15);
     X_49:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",0);
     C_47:bat[:oid] := sql.tid(X_0,"sys","lineitem");
-    C_245 := algebra.thetasubselect(X_49,C_47,A3,">");
-    (C_51:bat[:oid],r1_56:bat[:date]) := sql.bind(X_0,"sys","lineitem","l_shipdate",2);
-    C_246 := algebra.thetasubselect(r1_56,nil:bat[:oid],A3,">");
-    X_53:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",1);
-    C_248 := algebra.thetasubselect(X_53,C_47,A3,">");
-    C_57 := sql.subdelta(C_245,C_47,C_51,C_246,C_248);
+    C_57 := algebra.thetasubselect(X_49,C_47,"1995-03-15",">");
     X_59:bat[:oid] := sql.bind_idxbat(X_0,"sys","lineitem","lineitem_l_orderkey_fkey",0);
     (X_61,r1_66) := sql.bind_idxbat(X_0,"sys","lineitem","lineitem_l_orderkey_fkey",2);
     X_63:bat[:oid] := sql.bind_idxbat(X_0,"sys","lineitem","lineitem_l_orderkey_fkey",1);
     X_66 := sql.projectdelta(C_57,X_59,X_61,r1_66,X_63);
     (X_67,r1_72) := algebra.subjoin(X_46,X_66,nil:BAT,nil:BAT,false,nil:lng);
-    X_69 := sql.projectdelta(C_15,X_4,C_7,r1_12,X_10);
-    X_71:bat[:date] := algebra.projectionpath(X_67,X_40,X_69);
+    X_71:bat[:date] := algebra.projectionpath(X_67,X_40,C_15,X_4);
     X_72:bat[:int] := sql.bind(X_0,"sys","orders","o_shippriority",0);
-    (C_74:bat[:oid],r1_79:bat[:int]) := sql.bind(X_0,"sys","orders","o_shippriority",2);
-    X_76:bat[:int] := sql.bind(X_0,"sys","orders","o_shippriority",1);
-    X_79 := sql.projectdelta(C_15,X_72,C_74,r1_79,X_76);
-    X_81:bat[:int] := algebra.projectionpath(X_67,X_40,X_79);
+    X_81:bat[:int] := algebra.projectionpath(X_67,X_40,C_15,X_72);
     X_82:bat[:int] := sql.bind(X_0,"sys","lineitem","l_orderkey",0);
-    (C_84:bat[:oid],r1_89:bat[:int]) := sql.bind(X_0,"sys","lineitem","l_orderkey",2);
-    X_86:bat[:int] := sql.bind(X_0,"sys","lineitem","l_orderkey",1);
-    X_89 := sql.projectdelta(C_57,X_82,C_84,r1_89,X_86);
-    X_90 := algebra.projection(r1_72,X_89);
+    X_90:bat[:int] := algebra.projectionpath(r1_72,C_57,X_82);
     (X_91,r1_96,r2_96) := group.subgroup(X_90);
     (X_94,r1_99,r2_99) := group.subgroup(X_81,X_91);
     (X_97,r1_102,r2_102) := group.subgroupdone(X_71,X_94);
     X_100 := algebra.projection(r1_102,X_71);
     X_101:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",0);
-    (C_103:bat[:oid],r1_108:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_extendedprice",2);
-    X_105:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",1);
-    X_108 := sql.projectdelta(C_57,X_101,C_103,r1_108,X_105);
-    X_109 := algebra.projection(r1_72,X_108);
-    X_116 := calc.lng(A0,15,2);
+    X_109:bat[:lng] := algebra.projectionpath(r1_72,C_57,X_101);
     X_118:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",0);
-    (C_120:bat[:oid],r1_125:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_discount",2);
-    X_122:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",1);
-    X_125 := sql.projectdelta(C_57,X_118,C_120,r1_125,X_122);
-    X_126 := algebra.projection(r1_72,X_125);
-    X_127:bat[:lng] := batcalc.-(X_116,X_126);
+    X_126:bat[:lng] := algebra.projectionpath(r1_72,C_57,X_118);
+    X_127:bat[:lng] := batcalc.-(100:lng,X_126);
     X_129:bat[:hge] := batcalc.*(X_109,X_127);
     X_131:bat[:hge] := aggr.subsum(X_129,X_97,r1_102,true,true);
     (C_139,r1_144) := algebra.firstn(X_131,10,false,false);
@@ -159,7 +130,32 @@ function user.s2_1(A0:bte,A1:str,A2:date,A3:date):void;
     X_165:bat[:hge] := algebra.projectionpath(X_162,r1_156,X_147);
     X_167:bat[:date] := algebra.projectionpath(X_162,r1_156,X_146);
     sql.resultSet(X_208,X_209,X_211,X_212,X_213,X_163,X_165,X_167,X_171);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=9 usec 
+#candidates           actions= 1 time=101 usec 
+#remap                actions= 3 time=411 usec 
+#costModel            actions= 1 time=141 usec 
+#coercions            actions= 5 time=204 usec 
+#evaluate             actions= 9 time=205 usec 
+#emptybind            actions= 0 time=8 usec 
+#pushselect           actions=16 time=168 usec 
+#aliases              actions=27 time=139 usec 
+#mergetable           actions= 0 time=144 usec 
+#deadcode             actions=17 time=129 usec 
+#aliases              actions= 0 time=19 usec 
+#constants            actions=18 time=143 usec 
+#commonTerms          actions= 0 time=19 usec 
+#projectionpath       actions=14 time=127 usec 
+#reorder              actions= 1 time=170 usec 
+#deadcode             actions=14 time=113 usec 
+#reduce               actions=124 time=176 usec 
+#matpack              actions= 0 time=8 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=111 usec 
+#garbageCollector     actions= 1 time=128 usec 
+#total                actions= 1 time=2805 usec 
 
 # 22:53:25 >  
 # 22:53:25 >  "Done."

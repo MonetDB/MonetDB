@@ -236,7 +236,7 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
+qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
 {
 	int i, namelen;
 	cq *n = MNEW(cq);
@@ -267,9 +267,21 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, atom **params, in
 	n->count = 1;
 	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
 	n->name = sa_alloc(sa, namelen);
-	(void) snprintf(n->name, namelen, "s%d_%d", n->id, cache->clientid);
+	strcpy(n->name, qname);
 	cache->q = n;
 	return n;
+}
+
+int
+qc_isaquerytemplate(str name){
+	int i,j;
+	return sscanf(name, "s%d_%d", &i,&j) == 2;
+}
+
+int
+qc_isapreparedquerytemplate(str name){
+	int i,j;
+	return sscanf(name, "p%d_%d", &i,&j) == 2;
 }
 
 int

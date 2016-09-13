@@ -37,6 +37,8 @@ Ready.
 #	    CONSTRAINT "treeitems_tree_pre_unique" UNIQUE ("tree", "pre"),
 #	    CONSTRAINT "treeitems_tree_post_unique" UNIQUE ("tree", "post")
 #);
+#insert into treeitems values('sequoia',1,2,2,2,2,2.0);
+[ 1	]
 #explain
 #SELECT t1.subject as id1, t2.subject as id2
 #FROM  treeitems t1, treeitems t2
@@ -45,9 +47,9 @@ Ready.
 % mal # name
 % clob # type
 % 191 # length
-function user.s2_1():void;
+function user.s6_1():void;
     X_59:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",39);
-barrier X_82 := language.dataflow();
+barrier X_83 := language.dataflow();
     X_36 := bat.new(nil:str);
     X_43 := bat.append(X_36,"sys.L");
     X_53 := bat.append(X_43,"sys.L");
@@ -81,9 +83,32 @@ barrier X_82 := language.dataflow();
     language.pass(X_8);
     language.pass(C_1);
     language.pass(X_30);
-exit X_82;
+exit X_83;
     sql.resultSet(X_53,X_54,X_56,X_57,X_58,X_31,X_34);
-end user.s2_1;
+end user.s6_1;
+#inline               actions= 0 time=3 usec 
+#remap                actions= 1 time=125 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=2 usec 
+#evaluate             actions= 0 time=4 usec 
+#emptycolumn          actions= 1 time=6 usec 
+#aliases              actions= 0 time=7 usec 
+#mergetable           actions= 0 time=63 usec 
+#deadcode             actions= 0 time=7 usec 
+#aliases              actions= 0 time=7 usec 
+#constants            actions= 3 time=8 usec 
+#commonTerms          actions= 7 time=15 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 7 time=11 usec 
+#reorder              actions= 1 time=26 usec 
+#reduce               actions=30 time=29 usec 
+#matpack              actions= 0 time=3 usec 
+#dataflow             actions=26 time=27 usec 
+#multiplex            actions= 0 time=3 usec 
+#profiler             actions= 1 time=4 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollctor      actions= 1 time=21 usec 
+#total                actions= 1 time=501 usec 
 #ROLLBACK;
 
 # 20:18:31 >  

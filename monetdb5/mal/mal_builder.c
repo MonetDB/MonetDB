@@ -512,8 +512,10 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 			ptr p = ATOMnil(tpe);
 			VALset(&cst, tpe, p);
 		} else {
-			const void *p = ATOMnilptr(tpe);
-			VALinit(&cst, tpe, p);
+			if (VALinit(&cst, tpe, ATOMnilptr(tpe)) == NULL) {
+				freeInstruction(q);
+				return NULL;
+			}
 		}
 		_t = defConstant(mb,tpe,&cst);
 	} else {

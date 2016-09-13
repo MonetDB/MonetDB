@@ -129,13 +129,13 @@ top N (
 % mal # name
 % clob # type
 % 82 # length
-function user.s4_1():void;
+function user.s8_1():void;
     X_30:void := querylog.define("explain select * from oblo;","minimal_pipe",21);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
     X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","oblo","a",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","oblo","a",1);
+    (C_7:bat[:oid],r1_8:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_10:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
     X_12 := sql.delta(X_4,C_7,r1_8,X_10);
     X_13 := algebra.projection(C_1,X_12);
     X_15 := bat.new(nil:str);
@@ -149,19 +149,28 @@ function user.s4_1():void;
     X_27 := bat.append(X_19,32);
     X_29 := bat.append(X_21,0);
     sql.resultSet(X_22,X_24,X_25,X_27,X_29,X_13);
-end user.s4_1;
+end user.s8_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=22 usec 
+#remap                actions= 0 time=5 usec 
+#deadcode             actions= 0 time=9 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=20 usec 
+#garbageCollector     actions= 1 time=27 usec 
+#total                actions= 1 time=128 usec 
 #EXPLAIN select * from oblo OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 91 # length
-function user.s5_1():void;
+function user.s10_1():void;
     X_38:void := querylog.define("explain select * from oblo offset 2;","minimal_pipe",27);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
     X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","oblo","a",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","oblo","a",1);
+    (C_7:bat[:oid],r1_8:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_10:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
     X_12 := sql.delta(X_4,C_7,r1_8,X_10);
     X_13 := algebra.projection(C_1,X_12);
     X_14 := calc.lng(2);
@@ -181,19 +190,28 @@ function user.s5_1():void;
     X_35 := bat.append(X_27,32);
     X_37 := bat.append(X_29,0);
     sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_21);
-end user.s5_1;
+end user.s10_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=28 usec 
+#remap                actions= 0 time=5 usec 
+#deadcode             actions= 0 time=10 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=26 usec 
+#garbageCollector     actions= 1 time=34 usec 
+#total                actions= 1 time=152 usec 
 #EXPLAIN select * from oblo LIMIT 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 90 # length
-function user.s6_1():void;
+function user.s12_1():void;
     X_38:void := querylog.define("explain select * from oblo limit 2;","minimal_pipe",27);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
     X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","oblo","a",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","oblo","a",1);
+    (C_7:bat[:oid],r1_8:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_10:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
     X_12 := sql.delta(X_4,C_7,r1_8,X_10);
     X_13 := algebra.projection(C_1,X_12);
     X_14 := calc.lng(0);
@@ -213,19 +231,28 @@ function user.s6_1():void;
     X_35 := bat.append(X_27,32);
     X_37 := bat.append(X_29,0);
     sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_21);
-end user.s6_1;
+end user.s12_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=27 usec 
+#remap                actions= 0 time=5 usec 
+#deadcode             actions= 0 time=10 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=26 usec 
+#garbageCollector     actions= 1 time=35 usec 
+#total                actions= 1 time=149 usec 
 #EXPLAIN select * from oblo LIMIT 1 OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 99 # length
-function user.s7_1():void;
+function user.s14_1():void;
     X_38:void := querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe",27);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
     X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","oblo","a",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","oblo","a",1);
+    (C_7:bat[:oid],r1_8:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_10:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
     X_12 := sql.delta(X_4,C_7,r1_8,X_10);
     X_13 := algebra.projection(C_1,X_12);
     X_14 := calc.lng(2);
@@ -245,19 +272,28 @@ function user.s7_1():void;
     X_35 := bat.append(X_27,32);
     X_37 := bat.append(X_29,0);
     sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_21);
-end user.s7_1;
+end user.s14_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=27 usec 
+#remap                actions= 0 time=5 usec 
+#deadcode             actions= 0 time=9 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=26 usec 
+#garbageCollector     actions= 1 time=45 usec 
+#total                actions= 1 time=160 usec 
 #EXPLAIN select * from oblo LIMIT 2 OFFSET 1;
 % .explain # table_name
 % mal # name
 % clob # type
 % 99 # length
-function user.s8_1():void;
+function user.s16_1():void;
     X_38:void := querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe",27);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
     X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","oblo","a",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","oblo","a",1);
+    (C_7:bat[:oid],r1_8:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_10:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
     X_12 := sql.delta(X_4,C_7,r1_8,X_10);
     X_13 := algebra.projection(C_1,X_12);
     X_14 := calc.lng(1);
@@ -277,19 +313,28 @@ function user.s8_1():void;
     X_35 := bat.append(X_27,32);
     X_37 := bat.append(X_29,0);
     sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_21);
-end user.s8_1;
+end user.s16_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=27 usec 
+#remap                actions= 0 time=5 usec 
+#deadcode             actions= 0 time=9 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=25 usec 
+#garbageCollector     actions= 1 time=34 usec 
+#total                actions= 1 time=144 usec 
 #EXPLAIN select * from oblo ORDER BY a;
 % .explain # table_name
 % mal # name
 % clob # type
 % 93 # length
-function user.s9_1():void;
+function user.s18_1():void;
     X_36:void := querylog.define("explain select * from oblo order by a;","minimal_pipe",23);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
     X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","oblo","a",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","oblo","a",1);
+    (C_7:bat[:oid],r1_8:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_10:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
     X_12 := sql.delta(X_4,C_7,r1_8,X_10);
     X_13 := algebra.projection(C_1,X_12);
     (X_14,r1_15,r2_15) := algebra.subsort(X_13,false,false);
@@ -305,19 +350,28 @@ function user.s9_1():void;
     X_33 := bat.append(X_25,32);
     X_35 := bat.append(X_27,0);
     sql.resultSet(X_28,X_30,X_31,X_33,X_35,X_19);
-end user.s9_1;
+end user.s18_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=20 usec 
+#remap                actions= 0 time=4 usec 
+#deadcode             actions= 0 time=9 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=19 usec 
+#garbageCollector     actions= 1 time=29 usec 
+#total                actions= 1 time=126 usec 
 #EXPLAIN select * from oblo ORDER BY a OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 102 # length
-function user.s10_1():void;
+function user.s20_1():void;
     X_46:void := querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe",29);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
     X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","oblo","a",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","oblo","a",1);
+    (C_7:bat[:oid],r1_8:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_10:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
     X_12 := sql.delta(X_4,C_7,r1_8,X_10);
     X_13 := algebra.projection(C_1,X_12);
     (X_14,r1_15,r2_15) := algebra.subsort(X_13,false,false);
@@ -339,19 +393,28 @@ function user.s10_1():void;
     X_42 := bat.append(X_33,32);
     X_44 := bat.append(X_35,0);
     sql.resultSet(X_36,X_38,X_40,X_42,X_44,X_27);
-end user.s10_1;
+end user.s20_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=32 usec 
+#remap                actions= 0 time=5 usec 
+#deadcode             actions= 0 time=10 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=29 usec 
+#garbageCollector     actions= 1 time=39 usec 
+#total                actions= 1 time=162 usec 
 #EXPLAIN select * from oblo ORDER BY a LIMIT 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 101 # length
-function user.s11_1():void;
+function user.s22_1():void;
     X_51:void := querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe",34);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
     X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","oblo","a",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","oblo","a",1);
+    (C_7:bat[:oid],r1_8:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_10:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
     X_12 := sql.delta(X_4,C_7,r1_8,X_10);
     X_13 := algebra.projection(C_1,X_12);
     X_14 := calc.lng(0);
@@ -378,19 +441,28 @@ function user.s11_1():void;
     X_47 := bat.append(X_38,32);
     X_49 := bat.append(X_40,0);
     sql.resultSet(X_41,X_43,X_45,X_47,X_49,X_32);
-end user.s11_1;
+end user.s22_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=44 usec 
+#remap                actions= 0 time=5 usec 
+#deadcode             actions= 0 time=10 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=33 usec 
+#garbageCollector     actions= 1 time=41 usec 
+#total                actions= 1 time=184 usec 
 #EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1;
 % .explain # table_name
 % mal # name
 % clob # type
 % 110 # length
-function user.s12_1():void;
+function user.s24_1():void;
     X_54:void := querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe",36);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
     X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","oblo","a",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","oblo","a",1);
+    (C_7:bat[:oid],r1_8:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_10:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
     X_12 := sql.delta(X_4,C_7,r1_8,X_10);
     X_13 := algebra.projection(C_1,X_12);
     X_14 := calc.lng(0);
@@ -419,19 +491,28 @@ function user.s12_1():void;
     X_50 := bat.append(X_41,32);
     X_52 := bat.append(X_43,0);
     sql.resultSet(X_44,X_46,X_48,X_50,X_52,X_35);
-end user.s12_1;
+end user.s24_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=37 usec 
+#remap                actions= 0 time=5 usec 
+#deadcode             actions= 0 time=11 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=34 usec 
+#garbageCollector     actions= 1 time=43 usec 
+#total                actions= 1 time=178 usec 
 #EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 110 # length
-function user.s13_1():void;
+function user.s26_1():void;
     X_54:void := querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe",36);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
     X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","oblo","a",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","oblo","a",1);
+    (C_7:bat[:oid],r1_8:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_10:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
     X_12 := sql.delta(X_4,C_7,r1_8,X_10);
     X_13 := algebra.projection(C_1,X_12);
     X_14 := calc.lng(0);
@@ -460,7 +541,16 @@ function user.s13_1():void;
     X_50 := bat.append(X_41,32);
     X_52 := bat.append(X_43,0);
     sql.resultSet(X_44,X_46,X_48,X_50,X_52,X_35);
-end user.s13_1;
+end user.s26_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=48 usec 
+#remap                actions= 0 time=5 usec 
+#deadcode             actions= 0 time=12 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=35 usec 
+#garbageCollector     actions= 1 time=44 usec 
+#total                actions= 1 time=192 usec 
 #select * from oblo;
 % sys.oblo # table_name
 % a # name

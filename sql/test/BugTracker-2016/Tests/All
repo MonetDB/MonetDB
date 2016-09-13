@@ -44,3 +44,5 @@ trigger_bulk.Bug-4045
 innerjoin-leftjoin-or.Bug-4049
 create_merge_table_withdata.Bug-4041
 timestamp_with_tz_fromstr.Bug-4019
+simpletest
+like_in_non_sys_schema.Bug-4062

@@ -114,8 +114,8 @@ doChallenge(void *data)
 	char *buf = (char *) GDKmalloc(BLOCK + 1);
 	char challenge[13];
 	char *algos;
-	stream *fdin = block_stream(((struct challengedata *) data)->in);
-	stream *fdout = block_stream(((struct challengedata *) data)->out);
+	stream *fdin = ((struct challengedata *) data)->in;
+	stream *fdout = ((struct challengedata *) data)->out;
 	bstream *bs;
 	ssize_t len = 0;
 
@@ -357,45 +357,43 @@ SERVERlistenThread(SOCKET *Sock)
 		fflush(stdout);
 #endif
 		data = GDKmalloc(sizeof(*data));
-		if (data == NULL) {
+		if( data == NULL){
 			closesocket(msgsock);
 			showException(GDKstdout, MAL, "initClient",
-						  "cannot allocate memory");
+						  "cannot allocate space");
 			continue;
 		}
 		data->in = socket_rastream(msgsock, "Server read");
 		data->out = socket_wastream(msgsock, "Server write");
 		if (data->in == NULL || data->out == NULL) {
-			if (data->out) {
-				/* send message if we can */
-				mnstr_printf(data->out,
-							 "!internal server error (cannot allocate "
-							 "enough memory), please try again later\n");
-				mnstr_flush(data->out);
-			}
-			showException(GDKstdout, MAL, "initClient",
-						  "cannot allocate memory");
-			closesocket(msgsock);
-			if (data->in)
-				mnstr_destroy(data->in);
-			if (data->out)
-				mnstr_destroy(data->out);
-			GDKfree(data);
-			continue;
-		}
-		if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE) < 0) {
-			mnstr_printf(data->out, "!internal server error (cannot fork new "
-						 "client thread), please try again later\n");
-			mnstr_flush(data->out);
-			showException(GDKstdout, MAL, "initClient",
-						  "cannot fork new client thread");
-			closesocket(msgsock);
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
+			closesocket(msgsock);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot allocate stream");
 			continue;
 		}
-		GDKregister(tid);
+		data->in = block_stream(data->in);
+		data->out = block_stream(data->out);
+		if (data->in == NULL || data->out == NULL) {
+			mnstr_destroy(data->in);
+			mnstr_destroy(data->out);
+			GDKfree(data);
+			closesocket(msgsock);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot allocate stream");
+			continue;
+		}
+		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+			mnstr_destroy(data->in);
+			mnstr_destroy(data->out);
+			GDKfree(data);
+			closesocket(msgsock);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot fork new client thread");
+			continue;
+		}
 	} while (!ATOMIC_GET(serverexiting, atomicLock) &&
 			 !GDKexiting());
 	(void) ATOMIC_DEC(nlistener, atomicLock);
@@ -779,17 +777,22 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	(void) res;
 	/* in embedded mode we allow just one client */
 	data = GDKmalloc(sizeof(*data));
-	data->in = *In;
-	data->out = *Out;
-	if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {
-		mnstr_printf(data->out, "!internal server error (cannot fork new "
-					 "client thread), please try again later\n");
-		mnstr_flush(data->out);
-		showException(GDKstdout, MAL, "mapi.SERVERclient",
-					  "cannot fork new client thread");
-		free(data);
+	if( data == NULL)
+		throw(MAL, "mapi.SERVERclient", MAL_MALLOC_FAIL);
+	data->in = block_stream(*In);
+	data->out = block_stream(*Out);
+	if (data->in == NULL || data->out == NULL) {
+		mnstr_destroy(data->in);
+		mnstr_destroy(data->out);
+		GDKfree(data);
+		throw(MAL, "mapi.SERVERclient", MAL_MALLOC_FAIL);
 	}
-	GDKregister(tid);
+	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+		mnstr_destroy(data->in);
+		mnstr_destroy(data->out);
+		free(data);
+		throw(MAL, "mapi.SERVERclient", "cannot fork new client thread");
+	}
 	return MAL_SUCCEED;
 }
 

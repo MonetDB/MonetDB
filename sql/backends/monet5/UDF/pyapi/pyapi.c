@@ -1169,6 +1169,7 @@ returnvalues:
             goto wrapup;
         }
 
+        msg = MAL_SUCCEED;
         if (isaBatType(getArgType(mb,pci,i)))
         {
             *getArgReference_bat(stk, pci, i) = b->batCacheid;
@@ -1176,12 +1177,12 @@ returnvalues:
         }
         else
         { // single value return, only for non-grouped aggregations
-            VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0));
+            if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) == NULL)
+                msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
         }
         if (argnode) {
             argnode = argnode->next;
         }
-        msg = MAL_SUCCEED;
     }
 wrapup:
 

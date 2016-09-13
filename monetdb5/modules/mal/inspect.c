@@ -305,6 +305,8 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			char *c,*w;
 
 			ps = instruction2str(s->def, 0, getSignature(s), 0);
+			if(ps == NULL)
+				continue;
 			c = strchr(ps, '(');
 			if (c == 0) {
 				GDKfree(ps);

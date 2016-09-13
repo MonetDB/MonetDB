@@ -49,7 +49,7 @@ mal_module_reset(void)
 		freeModule(m);
 		m= n;
 	}
-	memset((char*) moduleIndex, 0, 256 * 256 * sizeof(Module));
+	memset(moduleIndex, 0, 256 * 256 * sizeof(Module));
 }
 
 static void clrModuleIndex(str nme, Module cur){
@@ -74,18 +74,18 @@ Module newModule(Module scope, str nme){
 	nme = putName(nme);
 	assert(nme != NULL);
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
-	if( cur == NULL){
-		GDKerror("newModule:"MAL_MALLOC_FAIL);
-	} else {
-		cur->name = nme;
-		cur->next = NULL;
-		cur->link = NULL;
-		cur->space = NULL;
-		cur->isAtomModule = FALSE;
-	}
 	if ( cur == NULL)
 		return scope;
+	cur->name = nme;
+	cur->next = NULL;
+	cur->link = NULL;
+	cur->space = NULL;
+	cur->isAtomModule = FALSE;
 	newModuleSpace(cur);
+	if (cur->space == NULL) {
+		GDKfree(cur);
+		return NULL;
+	}
 	// User modules are never global
 	if( strcmp(nme,"user")){
 		setModuleIndex(nme,cur);
@@ -176,8 +176,11 @@ void insertSymbol(Module scope, Symbol prg){
 			scope = c;
 	}
 	t = getSymbolIndex(getFunctionId(sig));
-	if( scope->space == NULL)
+	if( scope->space == NULL) {
 		newModuleSpace(scope);
+		if (scope->space == NULL)
+			return;
+	}
 	assert(scope->space);
 	if(scope->space[t] == prg){
 		/* already known, last inserted */

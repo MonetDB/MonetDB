@@ -1573,6 +1573,10 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		return 0;
 	old = mb->stmt;
 	oldtop= mb->stop;
+#ifdef DEBUG_OPT_MERGETABLE
+	mnstr_printf(GDKout,"#Start of multi table optimizer\n");
+	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
+#endif
 
 	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL){
@@ -1610,6 +1614,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 	GDKfree(vars);
 
+	ml.horigin = 0;
+	ml.torigin = 0;
+	ml.v = 0;
 	if (bailout)
 		goto cleanup;
 

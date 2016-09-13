@@ -51,8 +51,8 @@ Ready.
 % mal # name
 % clob # type
 % 607 # length
-function user.s2_1(A0:bte,A1:bte,A2:bte,A3:date,A4:lng):void;
-    X_223:void := querylog.define("explain select\n l_returnflag,\n l_linestatus,\n sum(l_quantity) as sum_qty,\n sum(l_extendedprice) as sum_base_price,\n sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,\n sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,\n avg(l_quantity) as avg_qty,\n avg(l_extendedprice) as avg_price,\n avg(l_discount) as avg_disc,\n count(*) as count_order\nfrom\n lineitem\nwhere\n l_shipdate <= date \\'1998-12-01\\' - interval \\'90\\' day (3)\ngroup by\n l_returnflag,\n l_linestatus\norder by\n l_returnflag,\n l_linestatus;","sequential_pipe",129);
+function user.s4_1():void;
+    X_223:void := querylog.define("explain select\n l_returnflag,\n l_linestatus,\n sum(l_quantity) as sum_qty,\n sum(l_extendedprice) as sum_base_price,\n sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,\n sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,\n avg(l_quantity) as avg_qty,\n avg(l_extendedprice) as avg_price,\n avg(l_discount) as avg_disc,\n count(*) as count_order\nfrom\n lineitem\nwhere\n l_shipdate <= date \\'1998-12-01\\' - interval \\'90\\' day (3)\ngroup by\n l_returnflag,\n l_linestatus\norder by\n l_returnflag,\n l_linestatus;","sequential_pipe",107);
     X_134 := bat.new(nil:str);
     X_141 := bat.append(X_134,"sys.lineitem");
     X_151 := bat.append(X_141,"sys.lineitem");
@@ -111,53 +111,31 @@ function user.s2_1(A0:bte,A1:bte,A2:bte,A3:date,A4:lng):void;
     X_0 := sql.mvc();
     X_4:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","lineitem");
-    X_16:date := mtime.date_sub_msec_interval(A3,A4);
-    C_239 := algebra.thetasubselect(X_4,C_1,X_16,"<=");
-    (C_7:bat[:oid],r1_13:bat[:date]) := sql.bind(X_0,"sys","lineitem","l_shipdate",2);
-    C_240 := algebra.thetasubselect(r1_13,nil:bat[:oid],X_16,"<=");
-    X_10:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",1);
-    C_242 := algebra.thetasubselect(X_10,C_1,X_16,"<=");
-    C_17 := sql.subdelta(C_239,C_1,C_7,C_240,C_242);
+    X_16:date := mtime.date_sub_msec_interval("1998-12-01",7776000000);
+    C_17 := algebra.thetasubselect(X_4,C_1,X_16,"<=");
     X_19:bat[:str] := sql.bind(X_0,"sys","lineitem","l_linestatus",0);
-    (C_21:bat[:oid],r1_27:bat[:str]) := sql.bind(X_0,"sys","lineitem","l_linestatus",2);
-    X_23:bat[:str] := sql.bind(X_0,"sys","lineitem","l_linestatus",1);
-    X_26 := sql.projectdelta(C_17,X_19,C_21,r1_27,X_23);
+    X_26 := algebra.projection(C_17,X_19);
     X_27:bat[:str] := sql.bind(X_0,"sys","lineitem","l_returnflag",0);
-    (C_29:bat[:oid],r1_35:bat[:str]) := sql.bind(X_0,"sys","lineitem","l_returnflag",2);
-    X_31:bat[:str] := sql.bind(X_0,"sys","lineitem","l_returnflag",1);
-    X_34 := sql.projectdelta(C_17,X_27,C_29,r1_35,X_31);
+    X_34 := algebra.projection(C_17,X_27);
     (X_35,r1_41,r2_41) := group.subgroup(X_34);
     (X_38,r1_44,r2_44) := group.subgroupdone(X_26,X_35);
     X_41 := algebra.projection(r1_44,X_26);
     X_42 := algebra.projection(r1_44,X_34);
     X_53:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_quantity",0);
-    (C_55:bat[:oid],r1_61:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_quantity",2);
-    X_57:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_quantity",1);
-    X_60 := sql.projectdelta(C_17,X_53,C_55,r1_61,X_57);
+    X_60 := algebra.projection(C_17,X_53);
     X_61:bat[:hge] := aggr.subsum(X_60,X_38,r1_44,true,true);
     X_65:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",0);
-    (C_67:bat[:oid],r1_73:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_extendedprice",2);
-    X_69:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",1);
-    X_72 := sql.projectdelta(C_17,X_65,C_67,r1_73,X_69);
+    X_72 := algebra.projection(C_17,X_65);
     X_73:bat[:hge] := aggr.subsum(X_72,X_38,r1_44,true,true);
-    X_81 := calc.lng(A0,15,2);
     X_83:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",0);
-    (C_85:bat[:oid],r1_91:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_discount",2);
-    X_87:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",1);
-    X_90 := sql.projectdelta(C_17,X_83,C_85,r1_91,X_87);
-    X_91:bat[:lng] := batcalc.-(X_81,X_90);
+    X_90 := algebra.projection(C_17,X_83);
+    X_91:bat[:lng] := batcalc.-(100:lng,X_90);
     X_93:bat[:hge] := batcalc.*(X_72,X_91);
     X_95:bat[:hge] := aggr.subsum(X_93,X_38,r1_44,true,true);
-    X_100 := calc.lng(A1,15,2);
-    X_101:bat[:lng] := batcalc.-(X_100,X_90);
-    X_102:bat[:hge] := batcalc.*(X_72,X_101);
-    X_104 := calc.lng(A2,15,2);
     X_105:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_tax",0);
-    (C_107:bat[:oid],r1_113:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_tax",2);
-    X_109:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_tax",1);
-    X_112 := sql.projectdelta(C_17,X_105,C_107,r1_113,X_109);
-    X_113:bat[:lng] := batcalc.+(X_104,X_112);
-    X_116:bat[:hge] := batcalc.*(X_102,X_113);
+    X_112 := algebra.projection(C_17,X_105);
+    X_113:bat[:lng] := batcalc.+(100:lng,X_112);
+    X_116:bat[:hge] := batcalc.*(X_93,X_113);
     X_117:bat[:hge] := aggr.subsum(X_116,X_38,r1_44,true,true);
     X_119:bat[:dbl] := batcalc.dbl(2,X_60);
     X_122:bat[:dbl] := aggr.subavg(X_119,X_38,r1_44,true,true);
@@ -179,7 +157,32 @@ function user.s2_1(A0:bte,A1:bte,A2:bte,A3:date,A4:lng):void;
     X_129 := algebra.projection(r1_54,X_128);
     X_132 := algebra.projection(r1_54,X_130);
     sql.resultSet(X_214,X_216,X_218,X_220,X_222,X_51,X_52,X_64,X_74,X_98,X_118,X_123,X_126,X_129,X_132);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=10 usec 
+#candidates           actions= 1 time=105 usec 
+#remap                actions=11 time=702 usec 
+#costModel            actions= 1 time=230 usec 
+#coercions            actions= 0 time=109 usec 
+#evaluate             actions= 8 time=290 usec 
+#emptybind            actions= 0 time=8 usec 
+#pushselect           actions= 8 time=251 usec 
+#aliases              actions=22 time=251 usec 
+#mergetable           actions= 0 time=254 usec 
+#deadcode             actions=16 time=229 usec 
+#aliases              actions= 0 time=19 usec 
+#constants            actions=22 time=267 usec 
+#commonTerms          actions= 2 time=190 usec 
+#projectionpath       actions= 0 time=16 usec 
+#reorder              actions= 1 time=232 usec 
+#deadcode             actions= 2 time=174 usec 
+#reduce               actions=103 time=252 usec 
+#matpack              actions= 0 time=10 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=7 usec 
+#generator            actions= 0 time=4 usec 
+#profiler             actions= 1 time=171 usec 
+#garbageCollector     actions= 1 time=181 usec 
+#total                actions= 1 time=4093 usec 
 
 # 22:53:25 >  
 # 22:53:25 >  "Done."

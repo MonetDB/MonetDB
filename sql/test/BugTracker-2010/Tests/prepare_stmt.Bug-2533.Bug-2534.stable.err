@@ -1,80 +1,40 @@
 stderr of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'sql/test/BugTracker-2010` itself:
 
 
-# 09:32:45 >  
-# 09:32:45 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33580 --set xrpc_port=46288 --set monet_prompt= --set mal_listing=2 --trace  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
-# 09:32:45 >  
+# 23:36:34 >  
+# 23:36:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35003" "--set" "mapi_usock=/var/tmp/mtest-7551/.s.monetdb.35003" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/jit//Linux/var/MonetDB/mTests_sql_test_BugTracker-2010" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 23:36:34 >  
 
-# builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
-# builtin opt 	gdk_version = 1.38.1
-# builtin opt 	prefix = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert
-# builtin opt 	exec_prefix = ${prefix}
-# builtin opt 	gdk_dbname = demo
-# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/jit//Linux/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
-# builtin opt 	gdk_alloc_map = no
-# builtin opt 	gdk_vmtrim = yes
-# builtin opt 	monet_admin = adm
+# builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
-# builtin opt 	monet_welcome = yes
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib64/MonetDB
 # builtin opt 	monet_daemon = no
-# builtin opt 	host = localhost
 # builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_clients = 2
 # builtin opt 	mapi_open = false
 # builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
 # builtin opt 	sql_debug = 0
-# builtin opt 	standoff_ns = 
-# builtin opt 	standoff_start = start
-# builtin opt 	standoff_end = end
-# config opt 	prefix = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert
-# config opt 	config = ${prefix}/etc/monetdb5.conf
-# config opt 	prefix = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert
-# config opt 	exec_prefix = ${prefix}
-# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
-# config opt 	monet_mod_path = ${exec_prefix}/lib64/MonetDB5:${exec_prefix}/lib64/MonetDB5/lib:${exec_prefix}/lib64/MonetDB5/bin
-# config opt 	mero_pidfile = ${prefix}/var/run/MonetDB/merovingian.pid
-# config opt 	mero_controlport = 50001
-# config opt 	sql_optimizer = default_pipe
-# config opt 	minimal_pipe = inline,remap,deadcode,multiplex,garbageCollector
-# config opt 	default_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-# config opt 	nov2009_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-# config opt 	replication_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
-# config opt 	accumulator_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,dataflow,history,multiplex,garbageCollector
-# config opt 	recycler_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,dataflow,history,multiplex,garbageCollector
-# config opt 	cracker_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-# config opt 	sidcrack_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-# config opt 	octopus_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-# config opt 	mapreduce_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mapreduce,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-# config opt 	datacyclotron_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
-# config opt 	derive_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,derivePath,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-# config opt 	dictionary_pipe = inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
-# config opt 	compression_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector
-# cmdline opt 	config = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf
 # cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	monet_mod_path = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin
-# cmdline opt 	gdk_dbfarm = /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm
 # cmdline opt 	mapi_open = true
-# cmdline opt 	xrpc_open = true
-# cmdline opt 	mapi_port = 33580
-# cmdline opt 	xrpc_port = 46288
+# cmdline opt 	mapi_port = 35003
+# cmdline opt 	mapi_usock = /var/tmp/mtest-7551/.s.monetdb.35003
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbname = mTests_src_test_BugTracker-2010
-# cmdline opt 	mal_listing = 0
-#warning: please don't forget to set your vault key!
-#(see /ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf)
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/jit//Linux/var/MonetDB/mTests_sql_test_BugTracker-2010
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
 
-# 09:32:45 >  
-# 09:32:45 >  mclient -lsql -ftest -i -e --host=rig --port=33580 
-# 09:32:45 >  
+# 23:36:34 >  
+# 23:36:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7551" "--port=35003"
+# 23:36:34 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = exec  1(2.3);
-ERROR = !EXEC: wrong type for argument 1 of prepared statement: decimal, expected bigint
+MAPI  = (monetdb) /var/tmp/mtest-7551/.s.monetdb.35003
+QUERY = exec  3(2.3);
+ERROR = !wrong type for argument 1 of function call: decimal, expected bigint
 
-# 09:32:45 >  
-# 09:32:45 >  Done.
-# 09:32:45 >  
+
+# 23:36:35 >  
+# 23:36:35 >  "Done."
+# 23:36:35 >  
 

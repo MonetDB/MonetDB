@@ -1107,7 +1107,7 @@ AC_PROG_LN_S
 AC_CHECK_PROGS([DIFF], [gdiff diff])
 AC_DEFINE_UNQUOTED([DIFF], ["$DIFF"], [Program to perform diffs])
 
-AC_CHECK_PROGS([RPMBUILD], [rpmbuild rpm])
+AC_CHECK_PROGS([RPMBUILD], [rpmbuild])
 
 org_have_perl=auto
 have_perl=$org_have_perl
@@ -1147,6 +1147,13 @@ AS_VAR_IF([have_perl], [no],
 			PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
 			# On Darwin this starts with a slash, remove it
 			PERL_LIBDIR="${PERL_LIBDIR@%:@/}"
+			AS_VAR_IF([PERL_LIBDIR], [], [
+				# if empty (e.g. on FreeBSD) try something else
+				PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{sitelib}; $x =~ s|$Config{prefix}/||; print $x;' 2>/dev/null`
+					AS_VAR_IF([PERL_LIBDIR], [], [
+						# if still empty, give up
+						have_perl=no
+						why_have_perl='(cannot determine location for files)'])])
 			],
 		[no], [],
 		[
@@ -2784,6 +2791,14 @@ AC_CHECK_FUNCS([\
 	uname \
 	])
 LIBS="$save_LIBS"
+
+AC_MSG_CHECKING([__builtin_add_overflow])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[]], [[int a, b, c; __builtin_add_overflow(a, b, &c);]])],
+	[AC_DEFINE([HAVE___BUILTIN_ADD_OVERFLOW], 1,
+		[Define if you have the `__builtin_{add,sub,mul}_overflow' functions.])
+	 AC_MSG_RESULT(yes)],
+	[AC_MSG_RESULT(no)])
 
 asctime_r3=yes
 AC_MSG_CHECKING([asctime_r3])

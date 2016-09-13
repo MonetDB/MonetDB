@@ -60,9 +60,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 729 # length
-function user.s2_1(A0:str,A1:str):void;
-    X_271:void := querylog.define("explain select\n s_name,\n count(*) as numwait\nfrom\n supplier,\n lineitem l1,\n orders,\n nation\nwhere\n s_suppkey = l1.l_suppkey\n and o_orderkey = l1.l_orderkey\n and o_orderstatus = \\'F\\'\n and l1.l_receiptdate > l1.l_commitdate\n and exists (\n select\n *\n from\n lineitem l2\n where\n l2.l_orderkey = l1.l_orderkey\n and l2.l_suppkey <> l1.l_suppkey\n )\n and not exists (\n select\n *\n from\n lineitem l3\n where\n l3.l_orderkey = l1.l_orderkey\n and l3.l_suppkey <> l1.l_suppkey\n and l3.l_receiptdate > l3.l_commitdate\n )\n and s_nationkey = n_nationkey\n and n_name = \\'SAUDI ARABIA\\'\ngroup by\n s_name\norder by\n numwait desc,\n s_name\nlimit 100;","sequential_pipe",121);
+% 728 # length
+function user.s4_1():void;
+    X_271:void := querylog.define("explain select\n s_name,\n count(*) as numwait\nfrom\n supplier,\n lineitem l1,\n orders,\n nation\nwhere\n s_suppkey = l1.l_suppkey\n and o_orderkey = l1.l_orderkey\n and o_orderstatus = \\'F\\'\n and l1.l_receiptdate > l1.l_commitdate\n and exists (\n select\n *\n from\n lineitem l2\n where\n l2.l_orderkey = l1.l_orderkey\n and l2.l_suppkey <> l1.l_suppkey\n )\n and not exists (\n select\n *\n from\n lineitem l3\n where\n l3.l_orderkey = l1.l_orderkey\n and l3.l_suppkey <> l1.l_suppkey\n and l3.l_receiptdate > l3.l_commitdate\n )\n and s_nationkey = n_nationkey\n and n_name = \\'SAUDI ARABIA\\'\ngroup by\n s_name\norder by\n numwait desc,\n s_name\nlimit 100;","sequential_pipe",97);
     X_245 := bat.new(nil:str);
     X_252 := bat.append(X_245,"sys.supplier");
     X_262 := bat.append(X_252,"sys.L1");
@@ -81,15 +81,9 @@ function user.s2_1(A0:str,A1:str):void;
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","lineitem");
     X_4:bat[:date] := sql.bind(X_0,"sys","lineitem","l_receiptdate",0);
-    (C_7:bat[:oid],r1_10:bat[:date]) := sql.bind(X_0,"sys","lineitem","l_receiptdate",2);
-    X_10:bat[:date] := sql.bind(X_0,"sys","lineitem","l_receiptdate",1);
-    X_12 := sql.delta(X_4,C_7,r1_10,X_10);
-    X_13 := algebra.projection(C_1,X_12);
+    X_13 := algebra.projection(C_1,X_4);
     X_14:bat[:date] := sql.bind(X_0,"sys","lineitem","l_commitdate",0);
-    (C_16:bat[:oid],r1_19:bat[:date]) := sql.bind(X_0,"sys","lineitem","l_commitdate",2);
-    X_18:bat[:date] := sql.bind(X_0,"sys","lineitem","l_commitdate",1);
-    X_19 := sql.delta(X_14,C_16,r1_19,X_18);
-    X_20 := algebra.projection(C_1,X_19);
+    X_20 := algebra.projection(C_1,X_14);
     X_21:bat[:bit] := batcalc.>(X_13,X_20);
     C_24 := algebra.subselect(X_21,true,true,true,true,false);
     X_28:bat[:oid] := sql.bind_idxbat(X_0,"sys","lineitem","lineitem_l_orderkey_fkey",0);
@@ -99,26 +93,17 @@ function user.s2_1(A0:str,A1:str):void;
     X_35:bat[:oid] := algebra.projectionpath(C_24,C_1,X_33);
     C_36:bat[:oid] := sql.tid(X_0,"sys","orders");
     X_38:bat[:str] := sql.bind(X_0,"sys","orders","o_orderstatus",0);
-    (C_40:bat[:oid],r1_43:bat[:str]) := sql.bind(X_0,"sys","orders","o_orderstatus",2);
-    X_42:bat[:str] := sql.bind(X_0,"sys","orders","o_orderstatus",1);
-    X_43 := sql.delta(X_38,C_40,r1_43,X_42);
-    X_44 := algebra.projection(C_36,X_43);
-    C_46 := algebra.subselect(X_44,A0,A0,true,false,false);
+    X_44 := algebra.projection(C_36,X_38);
+    C_46 := algebra.subselect(X_44,"F","F",true,false,false);
     X_47 := algebra.projection(C_46,C_36);
     (X_48,r1_51) := algebra.subjoin(X_35,X_47,nil:BAT,nil:BAT,false,nil:lng);
     X_53:bat[:int] := sql.bind(X_0,"sys","lineitem","l_suppkey",0);
-    (C_55:bat[:oid],r1_58:bat[:int]) := sql.bind(X_0,"sys","lineitem","l_suppkey",2);
-    X_57:bat[:int] := sql.bind(X_0,"sys","lineitem","l_suppkey",1);
-    X_58 := sql.delta(X_53,C_55,r1_58,X_57);
-    X_59 := algebra.projection(C_1,X_58);
+    X_59 := algebra.projection(C_1,X_53);
     X_60 := algebra.projection(C_24,X_59);
     X_61 := algebra.projection(X_48,X_60);
     C_62:bat[:oid] := sql.tid(X_0,"sys","supplier");
     X_64:bat[:int] := sql.bind(X_0,"sys","supplier","s_suppkey",0);
-    (C_66:bat[:oid],r1_69:bat[:int]) := sql.bind(X_0,"sys","supplier","s_suppkey",2);
-    X_68:bat[:int] := sql.bind(X_0,"sys","supplier","s_suppkey",1);
-    X_69 := sql.delta(X_64,C_66,r1_69,X_68);
-    X_70 := algebra.projection(C_62,X_69);
+    X_70 := algebra.projection(C_62,X_64);
     (X_71,r1_74) := algebra.subjoin(X_61,X_70,nil:BAT,nil:BAT,false,nil:lng);
     X_74:bat[:oid] := sql.bind_idxbat(X_0,"sys","supplier","supplier_s_nationkey_fkey",0);
     (X_76,r1_79) := sql.bind_idxbat(X_0,"sys","supplier","supplier_s_nationkey_fkey",2);
@@ -127,20 +112,14 @@ function user.s2_1(A0:str,A1:str):void;
     X_81:bat[:oid] := algebra.projectionpath(r1_74,C_62,X_79);
     C_82:bat[:oid] := sql.tid(X_0,"sys","nation");
     X_84:bat[:str] := sql.bind(X_0,"sys","nation","n_name",0);
-    (C_86:bat[:oid],r1_89:bat[:str]) := sql.bind(X_0,"sys","nation","n_name",2);
-    X_88:bat[:str] := sql.bind(X_0,"sys","nation","n_name",1);
-    X_89 := sql.delta(X_84,C_86,r1_89,X_88);
-    X_90 := algebra.projection(C_82,X_89);
-    C_92 := algebra.subselect(X_90,A1,A1,true,false,false);
+    X_90 := algebra.projection(C_82,X_84);
+    C_92 := algebra.subselect(X_90,"SAUDI ARABIA","SAUDI ARABIA",true,false,false);
     X_94 := algebra.projection(C_92,C_82);
     (X_95,r1_98) := algebra.subjoin(X_81,X_94,nil:BAT,nil:BAT,false,nil:lng);
     X_101:bat[:int] := algebra.projectionpath(X_95,r1_74,X_70);
     X_102 := bat.mirror(X_101);
     X_103:bat[:int] := sql.bind(X_0,"sys","lineitem","l_orderkey",0);
-    (C_105:bat[:oid],r1_108:bat[:int]) := sql.bind(X_0,"sys","lineitem","l_orderkey",2);
-    X_107:bat[:int] := sql.bind(X_0,"sys","lineitem","l_orderkey",1);
-    X_108 := sql.delta(X_103,C_105,r1_108,X_107);
-    X_109 := algebra.projection(C_1,X_108);
+    X_109 := algebra.projection(C_1,X_103);
     X_110 := algebra.projection(C_24,X_109);
     X_113:bat[:int] := algebra.projectionpath(X_95,X_71,X_48,X_110);
     (X_122,r1_125) := algebra.subjoin(X_113,X_109,nil:BAT,nil:BAT,false,nil:lng);
@@ -162,10 +141,7 @@ function user.s2_1(A0:str,A1:str):void;
     X_192 := algebra.projection(C_189,X_174);
     X_193 := algebra.subdiff(X_147,X_192,nil:BAT,nil:BAT,false,nil:lng);
     X_197:bat[:str] := sql.bind(X_0,"sys","supplier","s_name",0);
-    (C_199:bat[:oid],r1_202:bat[:str]) := sql.bind(X_0,"sys","supplier","s_name",2);
-    X_201:bat[:str] := sql.bind(X_0,"sys","supplier","s_name",1);
-    X_202 := sql.delta(X_197,C_199,r1_202,X_201);
-    X_207:bat[:str] := algebra.projectionpath(X_193,C_142,X_95,r1_74,C_62,X_202);
+    X_207:bat[:str] := algebra.projectionpath(X_193,C_142,X_95,r1_74,C_62,X_197);
     (X_208,r1_211,r2_211) := group.subgroupdone(X_207);
     X_211 := algebra.projection(r1_211,X_207);
     X_213:bat[:lng] := aggr.subcount(X_208,X_208,r1_211,false);
@@ -181,7 +157,32 @@ function user.s2_1(A0:str,A1:str):void;
     X_241 := algebra.projection(X_240,X_234);
     X_243:bat[:lng] := algebra.projectionpath(X_240,r1_234,X_227);
     sql.resultSet(X_262,X_264,X_266,X_268,X_270,X_241,X_243);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=9 usec 
+#candidates           actions= 1 time=128 usec 
+#remap                actions= 4 time=667 usec 
+#costModel            actions= 1 time=224 usec 
+#coercions            actions= 5 time=225 usec 
+#evaluate             actions= 6 time=295 usec 
+#emptybind            actions= 0 time=11 usec 
+#pushselect           actions= 0 time=12 usec 
+#aliases              actions=20 time=224 usec 
+#mergetable           actions= 0 time=232 usec 
+#deadcode             actions=28 time=206 usec 
+#aliases              actions= 0 time=24 usec 
+#constants            actions=34 time=227 usec 
+#commonTerms          actions=18 time=166 usec 
+#projectionpath       actions=12 time=163 usec 
+#reorder              actions= 1 time=220 usec 
+#deadcode             actions=30 time=148 usec 
+#reduce               actions=152 time=215 usec 
+#matpack              actions= 0 time=17 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=6 usec 
+#generator            actions= 0 time=4 usec 
+#profiler             actions= 1 time=135 usec 
+#garbageCollector     actions= 1 time=148 usec 
+#total                actions= 1 time=3838 usec 
 
 # 22:53:31 >  
 # 22:53:31 >  "Done."

@@ -176,6 +176,8 @@ unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
+pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]
+address mvc_bind_idxbat_wrap;
 pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
@@ -183,6 +185,8 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int)(uid:bat[:oid],uval:bat[:any_1])
+address mvc_bind_idxbat_wrap;
 pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int)(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
@@ -190,6 +194,8 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:any_1]
+address mvc_bind_idxbat_wrap;
 pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:any_1]
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
@@ -197,6 +203,8 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int)(uid:bat[:oid],uval:bat[:any_1])
+address mvc_bind_idxbat_wrap;
 pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int)(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
@@ -204,6 +212,8 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern emptybind(mvc:int, schema:str, table:str, column:str, access:int ):bat[:any_1]
+address mvc_bind_wrap;
 pattern bind(mvc:int, schema:str, table:str, column:str, access:int ):bat[:any_1]
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT with access kind:
@@ -211,6 +221,8 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern emptybind(mvc:int, schema:str, table:str, column:str, access:int )(uid:bat[:oid],uval:bat[:any_1])
+address mvc_bind_wrap;
 pattern bind(mvc:int, schema:str, table:str, column:str, access:int )(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT with access kind:
@@ -218,6 +230,8 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern emptybind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int ):bat[:any_1]
+address mvc_bind_wrap;
 pattern bind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int ):bat[:any_1]
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT partition with access kind:
@@ -225,6 +239,8 @@ comment "Bind the 'schema.table.column' BAT partition with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern emptybind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int )(uid:bat[:oid],uval:bat[:any_1])
+address mvc_bind_wrap;
 pattern bind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int )(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT with access kind:
@@ -232,7 +248,7 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-command delta ( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3] )
+command delta( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3] )
 		:bat[:any_3] 
 address DELTAbat
 comment "Return column bat with delta's applied.";
@@ -241,11 +257,11 @@ command projectdelta( subselect:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:
 address DELTAproject
 comment "Return column bat with delta's applied.";
 
-command subdelta ( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid], ins:bat[:oid] ) :bat[:oid]
+command subdelta( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid], ins:bat[:oid] ) :bat[:oid]
 address DELTAsub
 comment "Return a single bat of subselected delta.";
 
-command delta ( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
+command delta( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
 address DELTAbat2
 comment "Return column bat with delta's applied.";
 
@@ -253,7 +269,7 @@ command projectdelta( subselect:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:
 address DELTAproject2
 comment "Return column bat with delta's applied.";
 
-command subdelta ( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid]) :bat[:oid]
+command subdelta( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid]) :bat[:oid]
 address DELTAsub2
 comment "Return a single bat of subselected delta.";
 

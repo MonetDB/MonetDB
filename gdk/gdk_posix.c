@@ -582,6 +582,12 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					if (fd >= 0)
 						close(fd);
 					p = malloc(strlen(path) + 5);
+					if ( p == NULL){
+						GDKsyserror("MT_mremap: malloc() failed\n");
+						fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): fd < 0\n", __FILE__, __LINE__, path, PTRFMTCAST old_address, old_size, *new_size);
+						return NULL;
+					}
+						
 					strcat(strcpy(p, path), ".tmp");
 					fd = open(p, O_RDWR | O_CREAT,
 						  MONETDB_MODE);
@@ -1048,6 +1054,8 @@ reduce_dir_name(const char *src, char *dst, size_t cap)
 
 	if (len >= cap)
 		buf = malloc(len + 1);
+	if( buf == NULL)
+		return NULL;
 	while (--len > 0 && src[len - 1] != ':' && src[len] == DIR_SEP)
 		;
 	for (buf[++len] = 0; len > 0; buf[len] = src[len])

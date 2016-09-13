@@ -8140,7 +8140,6 @@ Ready.
 [ "optimizer",	"aliases",	"pattern optimizer.aliases(mod:str,fcn:str):str ",	"OPTwrapper;",	"Alias removal optimizer"	]
 [ "optimizer",	"candidates",	"pattern optimizer.candidates():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"candidates",	"pattern optimizer.candidates(mod:str,fcn:str):str ",	"OPTwrapper;",	"Mark candidate list variables"	]
-[ "optimizer",	"clrDebug",	"pattern optimizer.clrDebug():void ",	"QOTclrdebugOptimizers;",	""	]
 [ "optimizer",	"coercions",	"pattern optimizer.coercions():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"coercions",	"pattern optimizer.coercions(mod:str,fcn:str):str ",	"OPTwrapper;",	"Handle simple type coercions"	]
 [ "optimizer",	"commonTerms",	"pattern optimizer.commonTerms():str ",	"OPTwrapper;",	""	]
@@ -8157,6 +8156,8 @@ Ready.
 [ "optimizer",	"deadcode",	"pattern optimizer.deadcode(mod:str,fcn:str):str ",	"OPTwrapper;",	"Dead code optimizer"	]
 [ "optimizer",	"derivePath",	"pattern optimizer.derivePath():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"derivePath",	"pattern optimizer.derivePath(mod:str,fcn:str):str ",	"OPTwrapper;",	"Join path constructor"	]
+[ "optimizer",	"emptybind",	"pattern optimizer.emptybind():str ",	"OPTwrapper;",	""	]
+[ "optimizer",	"emptybind",	"pattern optimizer.emptybind(mod:str,fcn:str):str ",	"OPTwrapper;",	"Evaluate empty set expressions."	]
 [ "optimizer",	"evaluate",	"pattern optimizer.evaluate():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"evaluate",	"pattern optimizer.evaluate(mod:str,fcn:str):str ",	"OPTwrapper;",	"Evaluate constant expressions once."	]
 [ "optimizer",	"factorize",	"pattern optimizer.factorize():str ",	"OPTwrapper;",	""	]
@@ -8167,6 +8168,8 @@ Ready.
 [ "optimizer",	"generator",	"pattern optimizer.generator(mod:str,fcn:str):str ",	"OPTwrapper;",	"Sequence generator optimizer"	]
 [ "optimizer",	"inline",	"pattern optimizer.inline():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"inline",	"pattern optimizer.inline(mod:str,fcn:str):str ",	"OPTwrapper;",	"Expand inline functions"	]
+[ "optimizer",	"jit",	"pattern optimizer.jit():str ",	"OPTwrapper;",	""	]
+[ "optimizer",	"jit",	"pattern optimizer.jit(mod:str,fcn:str):str ",	"OPTwrapper;",	"Propagate candidate lists in just-in-time optimization"	]
 [ "optimizer",	"joinselect",	"pattern optimizer.joinselect():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"joinselect",	"pattern optimizer.joinselect(mod:str,fcn:str):str ",	"OPTwrapper;",	"Replace select with join select"	]
 [ "optimizer",	"json",	"pattern optimizer.json():str ",	"OPTwrapper;",	""	]
@@ -8211,7 +8214,6 @@ Ready.
 [ "optimizer",	"reorder",	"pattern optimizer.reorder(mod:str,fcn:str):str ",	"OPTwrapper;",	"Reorder by dataflow dependencies"	]
 [ "optimizer",	"selcrack",	"pattern optimizer.selcrack():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"selcrack",	"pattern optimizer.selcrack(mod:str,fcn:str):str ",	"OPTwrapper;",	"Selection cracking"	]
-[ "optimizer",	"setDebug",	"pattern optimizer.setDebug():void ",	"QOTdebugOptimizers;",	""	]
 [ "optimizer",	"showFlowGraph",	"pattern optimizer.showFlowGraph(M:str,F:str,s:str):void ",	"QOTshowFlowGraph;",	"Dump the data flow of the function \n\tM.F in a format recognizable by the \n\tcommand 'dot' on the file s"	]
 [ "optimizer",	"showPlan",	"pattern optimizer.showPlan():void ",	"QOTshowPlan;",	"Illustrate the plan derived so far"	]
 [ "optimizer",	"showPlan",	"pattern optimizer.showPlan(M:str,F:str,s:str):void ",	"QOTshowPlan;",	""	]
@@ -8383,6 +8385,14 @@ Ready.
 [ "sql",	"dump_cache",	"pattern sql.dump_cache() (query:bat[:str],count:bat[:int]) ",	"dump_cache;",	"dump the content of the query cache"	]
 [ "sql",	"dump_opt_stats",	"pattern sql.dump_opt_stats() (rewrite:bat[:str],count:bat[:int]) ",	"dump_opt_stats;",	"dump the optimizer rewrite statistics"	]
 [ "sql",	"dump_trace",	"pattern sql.dump_trace() (event:bat[:int],clk:bat[:str],pc:bat[:str],thread:bat[:int],ticks:bat[:lng],rssMB:bat[:lng],vmMB:bat[:lng],reads:bat[:lng],writes:bat[:lng],minflt:bat[:lng],majflt:bat[:lng],nvcsw:bat[:lng],stmt:bat[:str]) ",	"dump_trace;",	"dump the trace statistics"	]
+[ "sql",	"emptybind",	"pattern sql.emptybind(mvc:int,schema:str,table:str,column:str,access:int) (uid:bat[:oid],uval:bat[:any_1]) ",	"mvc_bind_wrap;",	""	]
+[ "sql",	"emptybind",	"pattern sql.emptybind(mvc:int,schema:str,table:str,column:str,access:int):bat[:any_1] ",	"mvc_bind_wrap;",	""	]
+[ "sql",	"emptybind",	"pattern sql.emptybind(mvc:int,schema:str,table:str,column:str,access:int,part_nr:int,nr_parts:int) (uid:bat[:oid],uval:bat[:any_1]) ",	"mvc_bind_wrap;",	""	]
+[ "sql",	"emptybind",	"pattern sql.emptybind(mvc:int,schema:str,table:str,column:str,access:int,part_nr:int,nr_parts:int):bat[:any_1] ",	"mvc_bind_wrap;",	""	]
+[ "sql",	"emptybindidx",	"pattern sql.emptybindidx(mvc:int,schema:str,table:str,index:str,access:int) (uid:bat[:oid],uval:bat[:any_1]) ",	"mvc_bind_idxbat_wrap;",	""	]
+[ "sql",	"emptybindidx",	"pattern sql.emptybindidx(mvc:int,schema:str,table:str,index:str,access:int):bat[:any_1] ",	"mvc_bind_idxbat_wrap;",	""	]
+[ "sql",	"emptybindidx",	"pattern sql.emptybindidx(mvc:int,schema:str,table:str,index:str,access:int,part_nr:int,nr_parts:int) (uid:bat[:oid],uval:bat[:any_1]) ",	"mvc_bind_idxbat_wrap;",	""	]
+[ "sql",	"emptybindidx",	"pattern sql.emptybindidx(mvc:int,schema:str,table:str,index:str,access:int,part_nr:int,nr_parts:int):bat[:any_1] ",	"mvc_bind_idxbat_wrap;",	""	]
 [ "sql",	"epilogue",	"command sql.epilogue():void ",	"SQLepilogue;",	""	]
 [ "sql",	"eval",	"pattern sql.eval(cmd:str):void ",	"SQLstatement;",	"Compile and execute a single sql statement"	]
 [ "sql",	"eval",	"pattern sql.eval(cmd:str,output:bit):void ",	"SQLstatement;",	"Compile and execute a single sql statement (and optionaly send output on the output stream)"	]
@@ -8632,7 +8642,7 @@ Ready.
 [ "url",	"url",	"command url.url(s:str):url ",	"URLnew;",	"Create an URL from a string literal"	]
 [ "url",	"url",	"command url.url(s:url):url ",	"URLnoop;",	"Create an URL from a string literal"	]
 [ "user",	"main",	"function user.main():void;",	"",	""	]
-[ "user",	"s1_1",	"function user.s1_1():void;",	"",	""	]
+[ "user",	"s2_1",	"function user.s2_1():void;",	"",	""	]
 [ "user",	"sql.init",	"function user.sql.init():void;",	"",	""	]
 [ "uuid",	"#cmp",	"command uuid.#cmp():void ",	"UUIDcompare;",	""	]
 [ "uuid",	"#fromstr",	"command uuid.#fromstr():void ",	"UUIDfromString;",	""	]
@@ -8694,6 +8704,28 @@ Ready.
 [ "zrule",	"define",	"command zrule.define(m:int,d:int,w:int,h:int,min:int):zrule ",	"MTIMEruleDef0;",	"Introduce a synomym timezone rule."	]
 [ "zrule",	"define",	"command zrule.define(m:int,d:str,w:int,h:int,min:int):zrule ",	"MTIMEruleDef1;",	"Introduce a synomym timezone rule."	]
 [ "zrule",	"define",	"command zrule.define(m:int,d:str,w:int,min:int):zrule ",	"MTIMEruleDef2;",	"Introduce a synomym timezone rule."	]
+pattern optimizer.emptycolumn(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Evaluate empty set expressions.
+
+pattern optimizer.emptycolumn():str 
+address OPTwrapper;
+pattern sql.emptycolumn(mvc:int,schema:str,table:str,column:str,access:int,part_nr:int,nr_parts:int) (uid:bat[:oid],uval:bat[:any_1]) 
+address mvc_bind_wrap;
+pattern sql.emptycolumn(mvc:int,schema:str,table:str,column:str,access:int,part_nr:int,nr_parts:int):bat[:any_1] 
+address mvc_bind_wrap;
+pattern sql.emptycolumn(mvc:int,schema:str,table:str,column:str,access:int) (uid:bat[:oid],uval:bat[:any_1]) 
+address mvc_bind_wrap;
+pattern sql.emptycolumn(mvc:int,schema:str,table:str,column:str,access:int):bat[:any_1] 
+address mvc_bind_wrap;
+pattern sql.emptycolumnidx(mvc:int,schema:str,table:str,index:str,access:int,part_nr:int,nr_parts:int) (uid:bat[:oid],uval:bat[:any_1]) 
+address mvc_bind_idxbat_wrap;
+pattern sql.emptycolumnidx(mvc:int,schema:str,table:str,index:str,access:int,part_nr:int,nr_parts:int):bat[:any_1] 
+address mvc_bind_idxbat_wrap;
+pattern sql.emptycolumnidx(mvc:int,schema:str,table:str,index:str,access:int) (uid:bat[:oid],uval:bat[:any_1]) 
+address mvc_bind_idxbat_wrap;
+pattern sql.emptycolumnidx(mvc:int,schema:str,table:str,index:str,access:int):bat[:any_1] 
+address mvc_bind_idxbat_wrap;
 
 # 14:39:23 >  
 # 14:39:23 >  "Done."

@@ -1,6 +1,6 @@
 create table simple1(i integer);
 
-insert into simple values(1);
+insert into simple1 values(1);
 
 create procedure correct()
 begin

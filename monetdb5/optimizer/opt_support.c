@@ -36,6 +36,7 @@ struct OPTcatalog {
 {"datacyclotron",0,	0,	0},
 {"dataflow",	0,	0,	0},
 {"deadcode",	0,	0,	0},
+{"emptybind",	0,	0,	0},
 {"evaluate",	0,	0,	0},
 {"factorize",	0,	0,	0},
 {"garbage",		0,	0,	0},
@@ -43,6 +44,7 @@ struct OPTcatalog {
 {"history",		0,	0,	0},
 {"inline",		0,	0,	0},
 {"projectionpath",	0,	0,	0},
+{"jit",			0,	0,	0},
 {"json",		0,	0,	0},
 {"macro",		0,	0,	0},
 {"matpack",		0,	0,	0},
@@ -129,15 +131,13 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
         	return 0;
 
 	/* force at least once a complete type check by resetting the type check flag */
+
 	resetMalBlk(mb,mb->stop);
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
-	chkFlow(cntxt->fdout, mb);
-	chkDeclarations(cntxt->fdout, mb);
+	chkProgram(cntxt->fdout,cntxt->nspace,mb);
+	if (mb->errors)
+		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
 	do {
-		/* any errors should abort the optimizer */
-		if (mb->errors)
-			break;
 		qot = 0;
 		for (pc = 0; pc < mb->stop ; pc++) {
 			p = getInstrPtr(mb, pc);

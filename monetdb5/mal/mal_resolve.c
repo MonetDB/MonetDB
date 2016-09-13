@@ -633,7 +633,7 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 									"'%s%s%s' undefined in: %s",
 									(getModuleId(p) ? getModuleId(p) : ""),
 									(getModuleId(p) ? "." : ""),
-									getFunctionId(p), errsig);
+									getFunctionId(p), errsig?errsig:"failed instruction2str()");
 				GDKfree(errsig);
 			} else
 				mb->errors = olderrors;

@@ -61,7 +61,7 @@ sys.stderr.write(err)
 # add queries to dump the system tables, but avoid dumping IDs since
 # they are too volatile, and if it makes sense, dump an identifier
 # from a referenced table
-out = '''
+out = r'''
 -- helper function
 create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;
 -- schemas

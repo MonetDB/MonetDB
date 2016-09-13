@@ -126,10 +126,8 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 			GDKfree(*buf);
 			*len = 2 * l + 3;
 			*buf = GDKzalloc(*len);
-			if( buf == NULL){
-				GDKerror("Tabletadt_toStr" MAL_MALLOC_FAIL);
+			if( *buf == NULL)
 				return 0;
-			}
 		}
 		dst = *buf;
 		dst[0] = '"';

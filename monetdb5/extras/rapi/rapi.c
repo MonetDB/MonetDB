@@ -437,8 +437,11 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 		} else { // single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
-			VALinit(&stk->stk[pci->argv[i]], bat_type,
-					BUNtail(li, 0)); // TODO BUNtail here
+			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
+						BUNtail(li, 0)) == NULL) { // TODO BUNtail here
+				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
 		}
 		msg = MAL_SUCCEED;
 	}

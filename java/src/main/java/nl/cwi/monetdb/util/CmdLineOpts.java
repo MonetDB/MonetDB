@@ -112,10 +112,10 @@ public class CmdLineOpts {
 					String tmp = args[i].substring(2);
 					int pos = tmp.indexOf('=');
 					if (pos == -1) {
-						option = (OptionContainer)(opts.get(tmp));
+						option = opts.get(tmp);
 						moreData = false;
 					} else {
-						option = (OptionContainer)(opts.get(tmp.substring(0, pos)));
+						option = opts.get(tmp.substring(0, pos));
 						// modify the option a bit so the code below
 						// handles the moreData correctly
 						args[i] = "-?" + tmp.substring(pos + 1);
@@ -126,10 +126,10 @@ public class CmdLineOpts {
 					String tmp = args[i].substring(1);
 					int pos = tmp.indexOf('=');
 					if (pos == -1) {
-						option = (OptionContainer)(opts.get(tmp));
+						option = opts.get(tmp);
 						moreData = false;
 					} else {
-						option = (OptionContainer)(opts.get(tmp.substring(0, pos)));
+						option = opts.get(tmp.substring(0, pos));
 						// modify the option a bit so the code below
 						// handles the moreData correctly
 						args[i] = "-?" + tmp.substring(pos + 1);
@@ -137,7 +137,7 @@ public class CmdLineOpts {
 					}
 				} else {
 					// single char argument
-					option = (OptionContainer)(opts.get("" + args[i].charAt(1)));
+					option = opts.get("" + args[i].charAt(1));
 					// is there more data left in the argument?
 					moreData = args[i].length() > 2 ? true : false;
 				}
@@ -288,7 +288,7 @@ public class CmdLineOpts {
 		boolean present;
 
 		public OptionContainer(
-				String shorta, 
+				String shorta,
 				String longa,
 				int cardinality,
 				String defaulta,

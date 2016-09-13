@@ -30,14 +30,11 @@ newSymbol(str nme, int kind)
 		return NULL;
 	}
 	if( symboltop < MAXSYMBOLS){
-		cur = symbolpool + symboltop;
-		symboltop++;
-	} else
+		cur = symbolpool + symboltop++;
+	} else {
 		cur = (Symbol) GDKzalloc(sizeof(SymRecord));
-
-	if (cur == NULL) {
-		GDKerror("newSymbol:" MAL_MALLOC_FAIL);
-		return NULL;
+		if (cur == NULL)
+			return NULL;
 	}
 	cur->name = putName(nme);
 	cur->kind = kind;
@@ -1150,8 +1147,8 @@ convertConstant(int type, ValPtr vr)
 		/* if the value we're converting from is nil, the to
 		 * convert to value will also be nil */
 		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
-			VALinit(vr, type, ATOMnilptr(type));
-			vr->vtype = type;
+			if (VALinit(vr, type, ATOMnilptr(type)) == NULL)
+				throw(MAL, "convertConstant", MAL_MALLOC_FAIL);
 			break;
 		}
 

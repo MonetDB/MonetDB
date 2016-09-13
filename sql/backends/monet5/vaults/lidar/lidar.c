@@ -1016,12 +1016,12 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				"scan flags        : %lc\n"
 				"classification    : %lc\n"
 				"time              : %f\n"
-				"scan angle rank   : %lc\n"
+				"scan angle rank   : %d\n"
 				"point source id   : %d\n",
 			i, x, rawx, y, rawy, z, rawz,
 			intensity, returnno, noofreturns, 
 			scandir, flightline, flags, class, 
-			t, anglerank, sourceid);
+			t, (signed char) anglerank, sourceid);
 		}
 #endif
 		//TODO: Add a flag that indicates whether LiDAR points should be validited up front

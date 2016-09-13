@@ -65,6 +65,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				freeInstruction(p);
 				actions++;
 				k--;
+				mb->stmt[k]= 0;
 			} else 
 				OPTaliasRemap(p,alias);
 		} else 

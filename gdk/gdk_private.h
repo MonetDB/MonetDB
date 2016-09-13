@@ -163,8 +163,6 @@ __hidden int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void
 __hidden void IMPSprint(BAT *b)
 	__attribute__((__visibility__("hidden")));
 #endif
-__hidden gdk_return unshare_string_heap(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 __hidden void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
@@ -190,6 +188,8 @@ __hidden int strCmpNoNil(const unsigned char *l, const unsigned char *r)
 __hidden int strElimDoubles(Heap *h)
 	__attribute__((__visibility__("hidden")));
 __hidden var_t strLocate(Heap *h, const char *v)
+	__attribute__((__visibility__("hidden")));
+__hidden gdk_return unshare_string_heap(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
