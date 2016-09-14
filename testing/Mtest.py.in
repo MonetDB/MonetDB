@@ -3705,9 +3705,14 @@ def main(argv) :
     else:
         CONDITIONALS['HAVE_LIBPANDAS'] = '#'
     if CheckExec('php'):
-        CONDITIONALS['HAVE_PHP'] = '#'
-#     else:
-#         CONDITIONALS['HAVE_PHP'] = ''
+        proc = process.Popen(['php', '-r', "require 'monetdb/php_monetdb.php';"],
+                             stdout = process.PIPE, stderr = process.PIPE,
+                             universal_newlines = True)
+        php_out, php_err = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_PHP'] = '#'
+        else:
+            print('PHP available, but MonetDB driver not available')
     if CheckExec('ruby'):
         # also check ruby version; we require >= 1.9 for "require_relative"
         proc = process.Popen(['ruby', '--version'],
@@ -3727,8 +3732,6 @@ def main(argv) :
                 CONDITIONALS['HAVE_RUBY'] = '#'
             else:
                 print('Ruby available, but MonetDB gem not available')
-#     else:
-#         CONDITIONALS['HAVE_RUBY'] = ''
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
