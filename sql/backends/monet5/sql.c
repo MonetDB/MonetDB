@@ -1657,7 +1657,8 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	src = &a->data;
 	dst = &stk->stk[getArg(pci, 0)];
-	VALcopy(dst, src);
+	if (VALcopy(dst, src) == NULL)
+		throw(MAL, "sql.getVariable", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

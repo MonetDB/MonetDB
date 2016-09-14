@@ -1347,7 +1347,8 @@ BATsetprop(BAT *b, int idx, int type, void *v)
 	ValRecord vr;
 	PROPrec *p = BATgetprop(b, idx);
 
-	if (!p && (p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) != NULL) {
+	if (p == NULL &&
+	    (p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) != NULL) {
 		p->id = idx;
 		p->next = b->tprops;
 		p->v.vtype = 0;
