@@ -1018,8 +1018,8 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				"number of returns : %d\n"
 				"scan direction    : %d\n"
 				"flight line edge  : %d\n"
-				"scan flags        : %lc\n"
-				"classification    : %lc\n"
+				"scan flags        : %d\n"
+				"classification    : %d\n"
 				"time              : %f\n"
 				"scan angle rank   : %d\n"
 				"point source id   : %d\n",
