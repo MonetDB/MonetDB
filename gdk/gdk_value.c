@@ -157,7 +157,7 @@ VALcopy(ValPtr d, const ValRecord *s)
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
 		d->val.pval = GDKmalloc(d->len);
-		if( d->val.pval)
+		if (d->val.pval)
 			memcpy(d->val.pval, p, d->len);
 	}
 	return d;
