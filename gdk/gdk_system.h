@@ -230,7 +230,7 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 			_p = GDKmalloc(sizeof(MT_Lock));		\
 			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
 				;					\
-			if( _p) {					\
+			if (_p) {					\
 				memcpy(_p, l, sizeof(MT_Lock));		\
 				_p->next = GDKlocklist;			\
 				GDKlocklist = _p;			\

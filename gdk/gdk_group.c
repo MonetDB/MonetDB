@@ -719,7 +719,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		const unsigned char *restrict w = (const unsigned char *) Tloc(b, BUNfirst(b));
 		unsigned char v;
 
-		if( bgrps == NULL)
+		if (bgrps == NULL)
 			goto error;
 		memset(bgrps, 0xFF, 256);
 		if (histo)
@@ -748,7 +748,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		const unsigned short *restrict w = (const unsigned short *) Tloc(b, BUNfirst(b));
 		unsigned short v;
 
-		if( sgrps == NULL)
+		if (sgrps == NULL)
 			goto error;
 		memset(sgrps, 0xFF, 65536 * sizeof(short));
 		if (histo)
