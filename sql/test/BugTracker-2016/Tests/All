@@ -42,3 +42,4 @@ innerjoin-leftjoin-or.Bug-4049
 create_merge_table_withdata.Bug-4041
 timestamp_with_tz_fromstr.Bug-4019
 CREATE_INDEX_breaks_table_queries.Bug-4053
+concat_2_integers.Bug-4058
