@@ -535,7 +535,7 @@ BAThash(BAT *b, BUN masksize)
 		ALGODEBUG HASHcollisions(b, b->thash);
 	}
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
-	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #BAThash: create hash index (ms=" LLFMT ")\n", b->batCacheid,-VIEWtparent(b),  b->T->hash->type, BATcount(b), t1 - t0);
+	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #BAThash: create hash index (ms=" LLFMT ")\n", b->batCacheid,-VIEWtparent(b),  b->thash->type, BATcount(b), t1 - t0);
 	return GDK_SUCCEED;
 }
 

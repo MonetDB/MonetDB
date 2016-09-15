@@ -27,12 +27,12 @@ BATcheckbloom(BAT *b)
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
 
 	/* if b does not have a bloom filter, but the parent has, then use it */
-	if ((b->T->bloom == NULL) && VIEWtparent(b)) {
-		BAT *pb = BATmirror(BATdescriptor(VIEWtparent(b)));
-		b->T->bloom = pb->T->bloom;
+	if ((b->tbloom == NULL) && VIEWtparent(b)) {
+		BAT *pb = BATdescriptor(VIEWtparent(b));
+		b->tbloom = pb->tbloom;
 		BBPunfix(pb->batCacheid);
 	}
-	ret = b->T->bloom != NULL;
+	ret = b->tbloom != NULL;
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 
 	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckbloom: already has a bloom %d\n", b->batCacheid);
@@ -78,30 +78,30 @@ static void bloom_stats(BAT *b, Bloomfilter *bloom) {
 			else
 				off++;
 	fprintf(stderr, "#BATbloom(b=%s#" BUNFMT ") %s: bits on = " BUNFMT ", bits off = " BUNFMT "\n",
-	        BATgetId(b), BATcount(b), b->T->heap.filename, on, off);
+	        BATgetId(b), BATcount(b), b->theap.filename, on, off);
 }
 
-#define BLOOM_BUILD(TYPE)							\
-do {										\
-	const TYPE *restrict col = (TYPE *) Tloc(b, b->batFirst);		\
-	BUN p;									\
-	BUN key,mv,hv,x,y,z;							\
-	for (p=0; p<cnt; p++) {							\
-		key = (BUN) col[p];						\
-		hash_init(key, x,y,z);						\
-		next_hash(hv, x,y,z);						\
-		mv = modulor(hv,bloom->mask);					\
-		filter[quotient8(mv)] |= (1 << remainder8(mv));			\
-		next_hash(hv, x,y,z);						\
-		mv = modulor(hv,bloom->mask);					\
-		filter[quotient8(mv)] |= (1 << remainder8(mv));			\
-		next_hash(hv, x,y,z);						\
-		mv = modulor(hv,bloom->mask);					\
-		filter[quotient8(mv)] |= (1 << remainder8(mv));			\
-		next_hash(hv, x,y,z);						\
-		mv = modulor(hv,bloom->mask);					\
-		filter[quotient8(mv)] |= (1 << remainder8(mv));			\
-	}									\
+#define BLOOM_BUILD(TYPE)						\
+do {									\
+	const TYPE *restrict col = (TYPE *) Tloc(b, 0);			\
+	BUN p;								\
+	BUN key,mv,hv,x,y,z;						\
+	for (p=0; p<cnt; p++) {						\
+		key = (BUN) col[p];					\
+		hash_init(key, x,y,z);					\
+		next_hash(hv, x,y,z);					\
+		mv = modulor(hv,bloom->mask);				\
+		filter[quotient8(mv)] |= (1 << remainder8(mv));		\
+		next_hash(hv, x,y,z);					\
+		mv = modulor(hv,bloom->mask);				\
+		filter[quotient8(mv)] |= (1 << remainder8(mv));		\
+		next_hash(hv, x,y,z);					\
+		mv = modulor(hv,bloom->mask);				\
+		filter[quotient8(mv)] |= (1 << remainder8(mv));		\
+		next_hash(hv, x,y,z);					\
+		mv = modulor(hv,bloom->mask);				\
+		filter[quotient8(mv)] |= (1 << remainder8(mv));		\
+	}								\
 } while (0)
 
 gdk_return
@@ -109,10 +109,8 @@ BATbloom(BAT *b)
 {
 	lng t0 = 0, t1 = 0;
 
-	assert(BAThdense(b));	/* assert void head */
-
 	/* we only create bloom filters for types that look like types we know */
-	switch (ATOMbasetype(b->T->type)) {
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
@@ -133,12 +131,12 @@ BATbloom(BAT *b)
 
 	if (BATcheckbloom(b))
 		return GDK_SUCCEED;
-	assert(b->T->bloom == NULL);
+	assert(b->tbloom == NULL);
 
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
 	t0 = GDKusec();
 
-	if (b->T->bloom == NULL) {
+	if (b->tbloom == NULL) {
 		BUN cnt;
 		Bloomfilter *bloom;
 		unsigned char *filter;
@@ -160,8 +158,8 @@ BATbloom(BAT *b)
 
 		cnt = BATcount(b);
 		/* TODO: check also if max-min < mbits and use identiry hash */
-		if ( (ATOMbasetype(b->T->type) == TYPE_bte && (bloom->mbits = (1 << 8))) ||
-		     (ATOMbasetype(b->T->type) == TYPE_sht && (bloom->mbits = (1 << 16))) ) {
+		if ( (ATOMbasetype(b->ttype) == TYPE_bte && (bloom->mbits = (1 << 8))) ||
+		     (ATOMbasetype(b->ttype) == TYPE_sht && (bloom->mbits = (1 << 16))) ) {
 			bloom->kfunc = 1;
 			bloom->mask = bloom->mbits-1;
 			bloom->bytes = quotient8(bloom->mbits);
@@ -184,7 +182,7 @@ BATbloom(BAT *b)
 		ALGODEBUG fprintf(stderr, "#BATbloom(b=%s#" BUNFMT ") %s: "
 				"create bloom filter: mbits = " BUNFMT ", ratio = " BUNFMT
 				", kfunc = %d, bytes = " SZFMT "\n", BATgetId(b),
-				BATcount(b), b->T->heap.filename,
+				BATcount(b), b->theap.filename,
 				bloom->mbits,  bloom->mbits/BATcount(b),
 				bloom->kfunc, bloom->bytes);
 
@@ -193,10 +191,10 @@ BATbloom(BAT *b)
 		for (i=0; i < bloom->bytes; i++)
 			filter[i] = 0;
 
-		switch (ATOMbasetype(b->T->type)) {
+		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 		{
-			const unsigned char *restrict col = (unsigned char *) Tloc(b, b->batFirst);
+			const unsigned char *restrict col = (unsigned char *) Tloc(b, 0);
 			BUN p;
 			assert(bloom->kfunc == 1);
 			for (p=0; p<cnt; p++)
@@ -205,7 +203,7 @@ BATbloom(BAT *b)
 		break;
 		case TYPE_sht:
 		{
-			const unsigned short *restrict col = (unsigned short *) Tloc(b, b->batFirst);
+			const unsigned short *restrict col = (unsigned short *) Tloc(b, 0);
 			BUN p;
 			assert(bloom->kfunc == 1);
 			for (p=0; p<cnt; p++)
@@ -227,7 +225,7 @@ BATbloom(BAT *b)
 			return GDK_FAIL;
 		}
 
-		b->T->bloom = bloom;
+		b->tbloom = bloom;
 	}
 
 	t1 = GDKusec();
@@ -235,7 +233,7 @@ BATbloom(BAT *b)
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 
 	ALGODEBUG fprintf(stderr, "#BATbloom: bloom construction " LLFMT " usec\n", t1 - t0);
-	ALGODEBUG bloom_stats(b, b->T->bloom);
+	ALGODEBUG bloom_stats(b, b->tbloom);
 
 	return GDK_SUCCEED;
 }
@@ -278,52 +276,11 @@ int BLOOMask(BUN v, Bloomfilter *bloom)
 static void
 BLOOMremove(BAT *b)
 {
-	Imprints *imprints;
-
-	assert(BAThdense(b));	/* assert void head */
-	assert(b->T->imprints != NULL);
-	assert(!VIEWtparent(b));
-
-	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)));
-	if ((imprints = b->T->imprints) != NULL) {
-		b->T->imprints = NULL;
-
-		if ((GDKdebug & ALGOMASK) &&
-		    * (size_t *) imprints->imprints->base & (1 << 16))
-			fprintf(stderr, "#IMPSremove: removing persisted imprints\n");
-		if (HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
-			       b->batCacheid > 0 ? "timprints" : "himprints"))
-			IODEBUG fprintf(stderr, "#IMPSremove(%s): imprints heap\n", BATgetId(b));
-
-		GDKfree(imprints->imprints);
-		GDKfree(imprints);
-	}
-
-	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
 }
 
 void
 BLOOMdestroy(BAT *b)
 {
-	if (b) {
-		if (b->T->imprints == (Imprints *) 1) {
-			b->T->imprints = NULL;
-			GDKunlink(BBPselectfarm(b->batRole, b->ttype, imprintsheap),
-				  BATDIR,
-				  BBP_physical(b->batCacheid),
-				  "timprints");
-		} else if (b->T->imprints != NULL && !VIEWtparent(b))
-			IMPSremove(b);
-
-		if (b->H->imprints == (Imprints *) 1) {
-			b->H->imprints = NULL;
-			GDKunlink(BBPselectfarm(b->batRole, b->htype, imprintsheap),
-				  BATDIR,
-				  BBP_physical(b->batCacheid),
-				  "himprints");
-		} else if (b->H->imprints != NULL && !VIEWhparent(b))
-			IMPSremove(BATmirror(b));
-	}
 }
 
 /* free the memory associated with the imprints, do not remove the
@@ -332,21 +289,6 @@ BLOOMdestroy(BAT *b)
 void
 BLOOMfree(BAT *b)
 {
-	Imprints *imprints;
-
-	if (b) {
-		MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)));
-		imprints = b->T->imprints;
-		if (imprints != NULL && imprints != (Imprints *) 1) {
-			b->T->imprints = (Imprints *) 1;
-			if (!VIEWtparent(b)) {
-				HEAPfree(imprints->imprints, 0);
-				GDKfree(imprints->imprints);
-				GDKfree(imprints);
-			}
-		}
-		MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
-	}
 }
 #endif
 
