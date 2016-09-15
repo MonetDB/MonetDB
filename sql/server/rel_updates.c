@@ -1431,7 +1431,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_UNION, NULL); 
 	list *collist;
-	size_t i;
+	int i;
 
 	assert(f);
 	if (!copy_allowed(sql, 1)) {
@@ -1469,7 +1469,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 		exp_atom_str(sql->sa, t->base.name, &strtpe));
 
 	// create the list of files that is passed to the function as parameter
-	for(i = 0; i < t->columns.set->cnt; i++) {
+	for(i = 0; i < list_length(t->columns.set); i++) {
 		// we have one file per column, however, because we have column selection that file might be NULL
 		// first, check if this column number is present in the passed in the parameters
 		int found = 0;
