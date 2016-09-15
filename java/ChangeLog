@@ -1,6 +1,26 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Sep 15 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved performance of following JDBC ResultSet and ResultSetMetaData
+  methods:
+  - ResultSet.getBoolean(column)
+  - ResultSet.getBinaryStream(column)
+  - ResultSet.getBytes(column)
+  - ResultSet.getObject(column)
+  - ResultSet.getObject(column, map)
+  - ResultSet.getDate(column)
+  - ResultSet.getTime(column)
+  - ResultSet.getTimestamp(column)
+  - ResultSet.getDate(column, calendar)
+  - ResultSet.getTime(column, calendar)
+  - ResultSet.getTimestamp(column, calendar)
+  - ResultSetMetaData.getColumnClassName(column)
+  - ResultSetMetaData.getColumnType(column)
+  - ResultSetMetaData.isCaseSensitive(column)
+  - ResultSetMetaData.isSigned(column)
+  - ResultSetMetaData.getPrecision(column)
+
 * Thu Sep  8 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Improved JdbcClient program by fixing some resource leaks.
 - Extended JdbcClient program by showing elapsed time information for each

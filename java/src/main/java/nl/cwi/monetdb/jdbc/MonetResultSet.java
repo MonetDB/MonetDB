@@ -83,6 +83,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	private final String[] columns;
 	/** The MonetDB types of the columns in this ResultSet */
 	private final String[] types;
+	/** The JDBC SQL types of the columns in this ResultSet. The content will be derived from the MonetDB types[] */
+	private final int[] JdbcSQLTypes;
 	/** The number of rows in this ResultSet */
 	final int tupleCount;	// default for the MonetVirtualResultSet
 
@@ -136,6 +138,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 
 		// create result array
 		tlp = new TupleLineParser(columns.length);
+
+		JdbcSQLTypes = new int[types.length];
+		populateJdbcSQLtypesArray();
 	}
 
 	/**
@@ -178,7 +183,29 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		this.tupleCount = results;
 
 		this.tlp = new TupleLineParser(columns.length);
+
+		JdbcSQLTypes = new int[types.length];
+		populateJdbcSQLtypesArray();
 	}
+
+	/**
+	 * Internal utility method to fill the JdbcSQLTypes array with derivable values.
+	 * By doing it once (in the constructor) we can avoid doing this in many getXyz() methods again and again
+	 * thereby improving getXyz() method performance.
+	 */
+	private void populateJdbcSQLtypesArray() {
+		for (int i = 0; i < types.length; i++) {
+			int javaSQLtype = MonetDriver.getJavaType(types[i]);
+			JdbcSQLTypes[i] = javaSQLtype;
+			if (javaSQLtype == Types.BLOB) {
+				try {
+					if (((MonetConnection)statement.getConnection()).getBlobAsBinary())
+						JdbcSQLTypes[i] = Types.BINARY;
+				} catch (SQLException se) { /* ignore it */ }
+			}
+		}
+	}
+
 
 	//== methods of interface ResultSet
 
@@ -382,7 +409,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	@Override
 	public InputStream getBinaryStream(int columnIndex) throws SQLException {
 		try {
-			switch (getJavaType(types[columnIndex - 1])) {
+			switch (JdbcSQLTypes[columnIndex - 1]) {
 				case Types.BLOB:
 					Blob blob = getBlob(columnIndex);
 					if (blob == null)
@@ -745,7 +772,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return true;
 
 			// match type specific values
-			switch (getJavaType(types[columnIndex - 1])) {
+			switch (JdbcSQLTypes[columnIndex - 1]) {
 				case Types.BOOLEAN:
 				case Types.CHAR:
 				case Types.VARCHAR:
@@ -865,7 +892,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			lastReadWasNull = false;
 
 			// According to Table B-6, getBytes() only operates on BINARY types
-			switch (getJavaType(types[columnIndex - 1])) {
+			switch (JdbcSQLTypes[columnIndex - 1]) {
 				case Types.BLOB:
 				case Types.BINARY:
 				case Types.VARBINARY:
@@ -1652,26 +1679,29 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public String getColumnClassName(int column) throws SQLException {
-				final String MonetDBtype = getColumnTypeName(column);
-				Class<?> type = null;
 				if (conn == null) {
 					// first time, get a Connection object and cache it for all next columns
 					conn = getStatement().getConnection();
 				}
-				if (conn != null) {
-					Map<String,Class<?>> map = conn.getTypeMap();
-					if (map != null && map.containsKey(MonetDBtype)) {
-						type = (Class)map.get(MonetDBtype);
+				try {
+					Class<?> type = null;
+					if (conn != null) {
+						Map<String,Class<?>> map = conn.getTypeMap();
+						if (map != null && map.containsKey(types[column - 1])) {
+							type = (Class)map.get(types[column - 1]);
+						}
 					}
+					if (type == null) {
+						// fallback to the standard SQL type Class mappings
+						type = getClassForType(JdbcSQLTypes[column - 1]);
+					}
+					if (type != null) {
+						return type.getName();
+					}
+					throw new SQLException("column type mapping null: " + types[column - 1], "M0M03");
+				} catch (IndexOutOfBoundsException e) {
+					throw newSQLInvalidColumnIndexException(column);
 				}
-				if (type == null) {
-					// fallback to the standard Class mappings
-					type = getClassForType(getJavaType(MonetDBtype));
-				}
-				if (type != null) {
-					return type.getName();
-				}
-				throw new SQLException("column type mapping null: " + MonetDBtype, "M0M03");
 			}
 
 			/**
@@ -1713,7 +1743,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public int getColumnType(int column) throws SQLException {
-				return getJavaType(getColumnTypeName(column));
+				try {
+					return JdbcSQLTypes[column - 1];
+				} catch (IndexOutOfBoundsException e) {
+					throw newSQLInvalidColumnIndexException(column);
+				}
 			}
 
 			/**
@@ -1772,7 +1806,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			}
 			lastReadWasNull = false;
 			MonetDBType = types[columnIndex - 1];
-			JdbcType = getJavaType(MonetDBType);
+			JdbcType = JdbcSQLTypes[columnIndex - 1];
 		} catch (IndexOutOfBoundsException e) {
 			throw newSQLInvalidColumnIndexException(columnIndex);
 		}
@@ -1963,7 +1997,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		}
 		if (type == null) {
 			// fallback to the standard Class mappings
-			type = getClassForType(getJavaType(MonetDBtype));
+			type = getClassForType(JdbcSQLTypes[columnIndex - 1]);
 		}
 
 		if (type == null || type == String.class) {
@@ -2566,12 +2600,13 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			}
 			lastReadWasNull = false;
 			MonetDBType = types[columnIndex - 1];
-			JdbcType = getJavaType(MonetDBType);
+			JdbcType = JdbcSQLTypes[columnIndex - 1];
 			// If we got a string type, set the JdbcType to the given type
 			// so we attempt to parse it as the caller thinks it is.
 			if (JdbcType == Types.CHAR ||
 			    JdbcType == Types.VARCHAR ||
-			    JdbcType == Types.LONGVARCHAR)
+			    JdbcType == Types.LONGVARCHAR ||
+			    JdbcType == Types.CLOB)
 			{
 				JdbcType = type;
 			}
@@ -3683,27 +3718,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		} else {
 			warnings.setNextWarning(new SQLWarning(reason, sqlstate));
 		}
-	}
-
-	/**
-	 * Wrapper function to map a BLOB as BINARY.  Some applications
-	 * require a BINARY type that maps into a byte array, that
-	 * MonetDB/SQL lacks.  With the treat_blob_as_binary flag from the
-	 * MonetDriver, we can "fake" the BINARY type, as replacement of the
-	 * BLOB type.  This functions calls the getJavaType functions of the
-	 * MonetDriver, but changes BLOB to BINARY if necessary afterwards.
-	 *
-	 * @param sqltype the string sqltype that the server knows
-	 * @return a java.sql.Types constant matching sqltype, with BLOB
-	 *         mapped to BINARY if requested.
-	 */
-	private int getJavaType(String sqltype) throws SQLException {
-		int type = MonetDriver.getJavaType(sqltype);
-		if (type == Types.BLOB) {
-			if (statement != null && ((MonetConnection)statement.getConnection()).getBlobAsBinary())
-				type = Types.BINARY;
-		}
-		return type;
 	}
 
 	/**
