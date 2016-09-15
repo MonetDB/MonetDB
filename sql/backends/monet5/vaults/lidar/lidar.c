@@ -122,7 +122,7 @@ void print_lidar_header(FILE *file, LASHeaderH header, const char* file_name, in
     fprintf(file, "  Number of Point Records    %d\n", 
                     LASHeader_GetPointRecordsCount(header));
 
-    fprintf(file, "  Number of Points by Return %d %d %d %d %d\n", 
+    fprintf(file, "  Number of Points by Return %u %u %u %u %u\n", 
                     LASHeader_GetPointRecordsByReturnCount(header, 0), 
                     LASHeader_GetPointRecordsByReturnCount(header, 1), 
                     LASHeader_GetPointRecordsByReturnCount(header, 2), 
