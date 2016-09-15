@@ -191,6 +191,7 @@ scanner_init_keywords(void)
 
 	keywords_insert("ACTION", ACTION);
 	keywords_insert("CASCADE", CASCADE);
+	keywords_insert("CRACK", CRACK);
 	keywords_insert("RESTRICT", RESTRICT);
 	keywords_insert("GLOBAL", GLOBAL);
 	keywords_insert("GROUP", sqlGROUP);

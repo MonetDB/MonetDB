@@ -367,6 +367,7 @@ typedef enum idx_type {
 	no_idx,			/* no idx, ie no storage */
 	imprints_idx,
 	ordered_idx,
+	crack_idx,
 	new_idx_types
 } idx_type;
 

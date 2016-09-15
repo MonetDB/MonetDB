@@ -686,6 +686,12 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				BATimprints(b);
 				BBPunfix(b->batCacheid);
 			}
+			if (i->type == crack_idx) {
+				sql_kc *ic = i->columns->h->data;
+				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
+				BATcrack(b);
+				BBPunfix(b->batCacheid);
+			}
 			mvc_copy_idx(sql, nt, i);
 		}
 	}
@@ -834,6 +840,12 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 			sql_kc *ic = i->columns->h->data;
 			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
 			IMPSdestroy(b);
+			BBPunfix(b->batCacheid);
+		}
+		if (i->type == crack_idx) {
+			sql_kc *ic = i->columns->h->data;
+			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
+			CRCKdestroy(b);
 			BBPunfix(b->batCacheid);
 		}
 		mvc_drop_idx(sql, s, i);
@@ -4905,7 +4917,7 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *revsort, *key, *oidx;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *revsort, *key, *oidx, *crck;
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
@@ -4929,6 +4941,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rrevsort = getArgReference_bat(stk, pci, 14);
 	bat *rkey = getArgReference_bat(stk, pci, 15);
 	bat *roidx = getArgReference_bat(stk, pci, 16);
+	bat *rcrck = getArgReference_bat(stk, pci, 16);
 	str sname = 0;
 	str tname = 0;
 	str cname = 0;
@@ -4956,10 +4969,11 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	revsort = COLnew(0, TYPE_bit, 0, TRANSIENT);
 	key = COLnew(0, TYPE_bit, 0, TRANSIENT);
 	oidx = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	crck = COLnew(0, TYPE_lng, 0, TRANSIENT);
 
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
 	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL ||
-	    revsort == NULL || key == NULL || oidx == NULL) {
+	    revsort == NULL || key == NULL || oidx == NULL || crck == NULL) {
 		if (sch)
 			BBPunfix(sch->batCacheid);
 		if (tab)
@@ -4994,6 +5008,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(key->batCacheid);
 		if (oidx)
 			BBPunfix(oidx->batCacheid);
+		if (crck)
+			BBPunfix(crck->batCacheid);
 		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
 	}
 	if( pci->argc - pci->retc >= 1)
@@ -5107,6 +5123,10 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 								sz = bn->torderidx ? bn->torderidx->free : 0;
 								BUNappend(oidx, &sz, FALSE);
+
+								sz = CRCKsize(bn);
+								BUNappend(crck, &sz, FALSE);
+
 								BBPunfix(bn->batCacheid);
 							}
 
@@ -5195,6 +5215,10 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BUNappend(key, &bitval, FALSE);
 									sz = bn->torderidx ? bn->torderidx->free : 0;
 									BUNappend(oidx, &sz, FALSE);
+
+									sz = CRCKsize(bn);
+									BUNappend(crck, &sz, FALSE);
+
 									BBPunfix(bn->batCacheid);
 								}
 							}
@@ -5219,6 +5243,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rrevsort = revsort->batCacheid);
 	BBPkeepref(*rkey = key->batCacheid);
 	BBPkeepref(*roidx = oidx->batCacheid);
+	BBPkeepref(*rcrck = crck->batCacheid);
 	return MAL_SUCCEED;
 }
 

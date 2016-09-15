@@ -918,8 +918,7 @@ typedef struct BATiter {
 #define thash		T.hash
 #define timprints	T.imprints
 #define tprops		T.props
-#define hbloom		H->bloom
-#define tbloom		T->bloom
+#define tbloom		T.bloom
 
 
 
@@ -1988,6 +1987,11 @@ gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
 
 /* The bloom filters */
 gdk_export gdk_return BATbloom(BAT *b);
+
+/* the crack index */
+gdk_export gdk_return BATcrack(BAT *b);
+gdk_export void CRCKdestroy(BAT *b);
+gdk_export lng CRCKsize(BAT *b);
 
 /*
  * @- Multilevel Storage Modes
