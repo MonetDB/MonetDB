@@ -3737,7 +3737,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	if (init) {
 		for (i = pci->retc + 2, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
-			// now that we know the BAT count, we can fill in the columns for which no parameters were pasesd
+			// now that we know the BAT count, we can fill in the columns for which no parameters were passed
 			sql_column *col = n->data;
 			BAT *c = NULL;
 			int tpe = col->type.type->localtype;
@@ -3746,6 +3746,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (strcmp(fname, str_nil) == 0) {
 				BUN loop = 0;
 				const void* nil = ATOMnilptr(tpe);
+				// fill the new BAT with NULL values
 				c = COLnew(0, tpe, cnt, PERSISTENT);
 				for(loop = 0; loop < cnt; loop++) {
 					BUNappend(c, nil, 0);
