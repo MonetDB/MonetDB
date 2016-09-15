@@ -112,6 +112,12 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		MonetConnection.ResultSetResponse header)
 		throws SQLException
 	{
+		if (statement == null) {
+			throw new IllegalArgumentException("Statement may not be null!");
+		}
+		if (header == null) {
+			throw new IllegalArgumentException("ResultSetResponse may not be null!");
+		}
 		this.statement = statement;
 		this.header = header;
 		this.type = header.getRSType();
@@ -136,6 +142,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * Constructor used by MonetVirtualResultSet.
 	 * DO NOT USE THIS CONSTRUCTOR IF YOU ARE NOT EXTENDING THIS OBJECT!
 	 *
+	 * @param statement the statement which created this ResultSet
 	 * @param columns the column names
 	 * @param types the column types
 	 * @param results the number of rows in the ResultSet
@@ -143,11 +150,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException is a protocol error occurs
 	 */
 	MonetResultSet(
+		Statement statement,
 		String[] columns,
 		String[] types,
 		int results
 	) throws IllegalArgumentException
 	{
+		if (statement == null) {
+			throw new IllegalArgumentException("Statement may not be null!");
+		}
 		if (columns == null || types == null) {
 			throw new IllegalArgumentException("One of the given arguments is null!");
 		}
@@ -158,16 +169,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			throw new IllegalArgumentException("Negative rowcount not allowed!");
 		}
 
+		this.statement = statement;
 		this.header = null;
-		this.statement = null; // no parent, required for specs
+		this.fetchSize = 0;
 
 		this.columns = columns;
 		this.types = types;
 		this.tupleCount = results;
 
 		this.tlp = new TupleLineParser(columns.length);
-		
-		this.fetchSize = 0;
 	}
 
 	//== methods of interface ResultSet
@@ -992,11 +1002,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int getHoldability() throws SQLException {
-		// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
-		if (this.getStatement() != null) {
-			return getStatement().getConnection().getHoldability();
-		}
-		return ResultSet.HOLD_CURSORS_OVER_COMMIT;
+		return getStatement().getConnection().getHoldability();
 	}
 
 	/**
@@ -1251,11 +1257,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 						String colName = getColumnName(column);
 						if (colName != null && !"".equals(colName)) {
 							if (conn == null) {
-								// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
-								if (getStatement() != null) {
-									// first time, get a Connection object and cache it for all next columns
-									conn = getStatement().getConnection();
-								}
+								// first time, get a Connection object and cache it for all next columns
+								conn = getStatement().getConnection();
 							}
 							if (conn != null && dbmd == null) {
 								// first time, get a MetaData object and cache it for all next columns
@@ -1653,11 +1656,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				final String MonetDBtype = getColumnTypeName(column);
 				Class<?> type = null;
 				if (conn == null) {
-					// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
-					if (getStatement() != null) {
-						// first time, get a Connection object and cache it for all next columns
-						conn = getStatement().getConnection();
-					}
+					// first time, get a Connection object and cache it for all next columns
+					conn = getStatement().getConnection();
 				}
 				if (conn != null) {
 					Map<String,Class<?>> map = conn.getTypeMap();
@@ -1897,11 +1897,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			default:
 				// When we get here the column type is a non-standard JDBC SQL type, possibly a User Defined Type.
 				// Just call getObject(int, Map) for those rare cases.
-
-				/* note: statement will be null for a MonetVirtualResultSet, such as the ones that hold generated keys */
-				if (this.getStatement() == null) {	// prevent NPE
-					return val;
-				}
 				return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
 		}
 	}

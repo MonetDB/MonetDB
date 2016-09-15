@@ -12,22 +12,18 @@ public class Test_PSgeneratedkeys {
 	public static void main(String[] args) throws Exception {
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 		Connection con = DriverManager.getConnection(args[0]);
-		Statement stmt = con.createStatement();
-		PreparedStatement pstmt;
-		//ResultSet rs = null;
-		//DatabaseMetaData dbmd = con.getMetaData();
-
 		con.setAutoCommit(false);
 		// >> false: auto commit was just switched off
 		System.out.println("0. false\t" + con.getAutoCommit());
 
 		try {
+			Statement stmt = con.createStatement();
 			stmt.executeUpdate(
-"CREATE TABLE psgenkey (" +
-"       id       serial," +
-"       val      varchar(20)" +
-")"
-);
+				"CREATE TABLE psgenkey (" +
+				"       id       serial," +
+				"       val      varchar(20)" +
+				")");
+			stmt.close();
 		} catch (SQLException e) {
 			System.out.println(e);
 			System.out.println("Creation of test table failed! :(");
@@ -36,14 +32,12 @@ public class Test_PSgeneratedkeys {
 		}
 
 		try {
-			pstmt = con.prepareStatement(
-"INSERT INTO psgenkey (val) VALUES ('this is a test')",
-Statement.RETURN_GENERATED_KEYS
-);
+			PreparedStatement pstmt = con.prepareStatement(
+				"INSERT INTO psgenkey (val) VALUES ('this is a test')",
+				Statement.RETURN_GENERATED_KEYS);
+
 			System.out.print("1. inserting a record...");
-
 			pstmt.executeUpdate();
-
 			System.out.println("success :)");
 
 			// now get the generated keys
@@ -56,6 +50,16 @@ Statement.RETURN_GENERATED_KEYS
 			}
 
 			System.out.println("generated key index: " + keys.getInt(1));
+			while (keys.next()) {
+				System.out.println("generated key index: " + keys.getInt(1));
+			}
+
+			if (keys.getStatement() == null) {
+				System.out.println("ResultSet.getStatement() should never return null!");
+			}
+
+			keys.close();
+			pstmt.close();
 		} catch (SQLException e) {
 			System.out.println("FAILED :( "+ e.getMessage());
 			System.out.println("ABORTING TEST!!!");
