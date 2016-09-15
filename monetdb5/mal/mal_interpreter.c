@@ -357,7 +357,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);
 	if (stk && stk != env)
-		GDKfree(stk);
+		freeStack(stk);
 	if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
@@ -426,7 +426,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		assert(stk);
 		for (i = pci->retc; i < pci->argc; i++) {
 			lhs = &stk->stk[pci->argv[i]];
-			VALcopy(lhs, argv[i]);
+			if (VALcopy(lhs, argv[i]) == NULL)
+				throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.bval, TRUE);
 		}

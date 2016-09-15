@@ -131,18 +131,6 @@ Description: MonetDB ODBC driver
  .
  This package contains the MonetDB ODBC driver.
 
-Package: php5-monetdb-client
-Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, php-common
-Description: MonetDB php5 client module
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL frontend.
- .
- This package contains the files needed to use MonetDB from a PHP
- program.
-
 Package: perl-monetdb-client
 Architecture: all
 Depends: ${shlibs:Depends}, ${perl:Depends}, libdbi-perl
@@ -161,7 +149,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, libmonetdb-client-odbc (= ${source:Version}),
  monetdb5-server (= ${source:Version}),
  perl-monetdb-client (= ${source:Version}),
- php5-monetdb-client (= ${source:Version}),
+ php5-monetdb-client (> 11.25.0),
  python-monetdb (>= 1.0),
  monetdb5-sql (= ${source:Version})
 Description: MonetDB client testing tools

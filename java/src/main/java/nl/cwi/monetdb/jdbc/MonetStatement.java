@@ -718,7 +718,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		}
 
 		try {
-			return new MonetVirtualResultSet(columns, types, results);
+			return new MonetVirtualResultSet(this, columns, types, results);
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
@@ -1212,7 +1212,8 @@ public class MonetStatement extends MonetWrapper implements Statement {
  * Special checks are programmed to prevent NullPointerExceptions, see above.
  *
  * As of Jun2016 this class is only used by MonetStatement.getGeneratedKeys()
- * and to resolve a javac -Xlint warning, moved to this file.
+ * Note: to resolve a javac -Xlint warning, this class definition is moved to this file.
+ *
  * TODO: try to eliminate the need for this class completely.
  */
 class MonetVirtualResultSet extends MonetResultSet {
@@ -1220,11 +1221,12 @@ class MonetVirtualResultSet extends MonetResultSet {
 	private boolean closed;
 
 	MonetVirtualResultSet(
+		Statement statement,
 		String[] columns,
 		String[] types,
 		String[][] results
 	) throws IllegalArgumentException {
-		super(columns, types, results.length);
+		super(statement, columns, types, results.length);
 
 		this.results = results;
 		closed = false;
@@ -1280,17 +1282,5 @@ class MonetVirtualResultSet extends MonetResultSet {
 			results = null;
 			// types and columns are MonetResultSets private parts
 		}
-	}
-
-	/**
-	 * Retrieves the fetch size for this ResultSet object, which will be
-	 * zero, since it's a virtual set.
-	 *
-	 * @return the current fetch size for this ResultSet object
-	 * @throws SQLException if a database access error occurs
-	 */
-	@Override
-	public int getFetchSize() throws SQLException {
-		return 0;
 	}
 }

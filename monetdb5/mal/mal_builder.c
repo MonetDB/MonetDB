@@ -621,7 +621,10 @@ pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 
 	if (q == NULL)
 		return NULL;
-	VALcopy(&cst, vr);
+	if (VALcopy(&cst, vr) == NULL) {
+		freeInstruction(q);
+		return NULL;
+	}
 	_t = defConstant(mb,cst.vtype,&cst);
 	return pushArgument(mb, q, _t);
 }
