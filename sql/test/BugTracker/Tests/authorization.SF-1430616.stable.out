@@ -25,7 +25,7 @@ Ready.
 
 
 # 10:24:37 >  
-# 10:24:37 >  Mtimeout -timeout 60 java -jar /net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/jdbcclient-1.3.jar -h localhost -p 32887 -bmTests_src_test_BugTracker -f ../../../../../../..//scratch1/niels/sql/src/test/BugTracker/Tests/authorization.SF-1430616.sql
+# 10:24:37 >  Mtimeout -timeout 60 java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 32887 -bmTests_sql_test_BugTracker -f "../../../../../dev/sql/test/BugTracker/Tests/authorization.SF-1430616.sql"
 # 10:24:37 >  
 
 CREATE USER "voc" WITH PASSWORD 'voc' NAME 'VOC Explorer' SCHEMA "sys";
@@ -61,13 +61,13 @@ SELECT users.name, users.fullname, schemas.name
 
 
 # 08:55:00 >  
-# 08:55:00 >  Mtimeout -timeout 60 java -jar /net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/build-current-monetdb-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.3.jar -h localhost -p 37211 -d mTests_src_test_BugTracker -q
+# 08:55:00 >  Mtimeout -timeout 60 java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 37211 -d mTests_sql_test_BugTracker -q
 # 08:55:00 >  
 
 auto commit mode: on
-voc-> 
+sql-> 
 # 15:18:12 >  
-# 15:18:12 >  Mtimeout -timeout 60  mjclient -h alf -p 30558 -d mTests_src_test_BugTracker -f "../../../../../../../../scratch1/niels/rc/sql/src/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
+# 15:18:12 >  Mtimeout -timeout 60 java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 30558 -d mTests_sql_test_BugTracker -f "../../../../../dev/sql/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
 # 15:18:12 >  
 
 START TRANSACTION;

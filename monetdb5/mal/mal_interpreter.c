@@ -426,7 +426,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		assert(stk);
 		for (i = pci->retc; i < pci->argc; i++) {
 			lhs = &stk->stk[pci->argv[i]];
-			VALcopy(lhs, argv[i]);
+			if (VALcopy(lhs, argv[i]) == NULL)
+				throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.bval, TRUE);
 		}

@@ -1107,7 +1107,7 @@ AC_PROG_LN_S
 AC_CHECK_PROGS([DIFF], [gdiff diff])
 AC_DEFINE_UNQUOTED([DIFF], ["$DIFF"], [Program to perform diffs])
 
-AC_CHECK_PROGS([RPMBUILD], [rpmbuild rpm])
+AC_CHECK_PROGS([RPMBUILD], [rpmbuild])
 
 org_have_perl=auto
 have_perl=$org_have_perl

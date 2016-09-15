@@ -356,26 +356,6 @@ fi
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
 
-%package client-php
-Summary: MonetDB php interface
-Group: Applications/Databases
-Requires: php
-BuildArch: noarch
-
-%description client-php
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a PHP
-program.
-
-%files client-php
-%defattr(-,root,root)
-%dir %{_datadir}/php/monetdb
-%{_datadir}/php/monetdb/*
-
 %package client-perl
 Summary: MonetDB perl interface
 Group: Applications/Databases
@@ -409,7 +389,7 @@ Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-perl = %{version}-%{release}
-Requires: %{name}-client-php = %{version}-%{release}
+Requires: %{name}-client-php > 11.24.0
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires: python-monetdb >= 1.0
 
