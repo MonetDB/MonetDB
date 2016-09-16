@@ -5729,7 +5729,12 @@ mapi_fetch_row(MapiHdl hdl)
 		// check if we have read the entire result set
 		if (result->rows_read >= result->row_count) {
 			char dummy;
-			mnstr_readChr(hdl->mid->from, &dummy);
+			if (result->row_count != 0) {
+				// this flush only occurs after a chunk has been sent
+				// if the result set has 0 rows, this flush does not occur
+				// hence we don't need to consume it
+				mnstr_readChr(hdl->mid->from, &dummy);
+			}
 			bs2_resetbuf(hdl->mid->from);
 			do {
 				if ((reply = mapi_fetch_line(hdl)) == NULL)
