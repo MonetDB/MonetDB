@@ -110,7 +110,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jun2016-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jun2016-SP2/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -1012,6 +1012,23 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Sep 19 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.9-20160919
+- Rebuilt.
+- BZ#3939: Assert failure on concurrent queries when querying sys.queue
+- BZ#4019: Casting a timestamp from a string results in NULL
+- BZ#4025: expressions in the WHERE clause that evaluates incorrectly
+- BZ#4038: After upgrade from 11.21.19, jdbc couldn't list tables for
+  non sys users
+- BZ#4044: Server crash when trying to delete a table has been added to
+  a merge table with "cascade" at the end
+- BZ#4049: Wrong results for queries with "OR" and "LEFT JOIN"
+- BZ#4052: Infinite loop in rel_select
+- BZ#4054: copy into file wrongly exports functions
+- BZ#4059: Geom functions only visible by user monetdb
+- BZ#4060: BAT leak in some aggregate queries
+- BZ#4062: Error: SELECT: no such binary operator 'like(varchar,varchar)'
+  when used in query running in other schema than sys
+
 * Wed Jul 13 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.7-20160713
 - Rebuilt.
 - BZ#4014: KILL signal
