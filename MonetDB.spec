@@ -146,7 +146,6 @@ BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
-BuildRequires: perl
 BuildRequires: python-devel
 BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
@@ -356,40 +355,14 @@ fi
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
 
-%package client-perl
-Summary: MonetDB perl interface
-Group: Applications/Databases
-Requires: perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
-Requires: perl(DBI)
-Requires: perl(Digest::SHA)
-Requires: perl(Digest::MD5)
-# when not using BuildArch: noarch, globally replace perl_vendorlib by
-# perl_vendorarch
-BuildArch: noarch
-%{?perl_default_filter}
-%global __requires_exclude perl\\(DBD::monetdb|perl\\(MonetDB::|perl\\(Mapi\\)
-
-%description client-perl
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a Perl
-program.
-
-%files client-perl
-%defattr(-,root,root)
-%{perl_vendorlib}/*
-
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
-Requires: %{name}-client-perl = %{version}-%{release}
-Requires: %{name}-client-php > 11.24.0
+Recommends: perl-DBD-monetdb >= 1.0
+Recommends: %{name}-client-php > 11.24.0
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires: python-monetdb >= 1.0
 
@@ -897,8 +870,6 @@ developer, but if you do want to test, this is the package you need.
 	--with-libxml2=yes \
 	--with-lzma=yes \
 	--with-openssl=yes \
-	--with-perl=yes \
-	--with-perl-libdir=lib/perl5 \
 	--with-proj=no \
 	--with-pthread=yes \
 	--with-python=yes \
@@ -919,10 +890,6 @@ mkdir -p %{buildroot}%{_localstatedir}/MonetDB
 mkdir -p %{buildroot}%{_localstatedir}/monetdb5/dbfarm
 mkdir -p %{buildroot}%{_localstatedir}/log/monetdb
 mkdir -p %{buildroot}%{_localstatedir}/run/monetdb
-mkdir -p %{buildroot}%{perl_vendorlib}
-if [ ! %{buildroot}%{_prefix}/lib/perl5 -ef %{buildroot}%{perl_vendorlib} ]; then
-    mv %{buildroot}%{_prefix}/lib/perl5/* %{buildroot}%{perl_vendorlib}
-fi
 
 # remove unwanted stuff
 # .la files

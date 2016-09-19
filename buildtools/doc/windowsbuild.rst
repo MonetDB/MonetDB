@@ -893,7 +893,6 @@ possible:
 - ``HAVE_PYTHON=1`` - include the Python component;
 - ``HAVE_ICONV=1`` - the iconv library is available;
 - ``HAVE_OPENSSL=1`` - the OpenSSL library is available;
-- ``HAVE_PERL=1`` - include the Perl component.
 
 In addition, you can add a parameter which points to a file with extra
 definitions for ``nmake``.  This is very convenient to define where
@@ -912,8 +911,7 @@ The contents of the file referred to with the ``MAKE_INCLUDEFILE``
 parameter may contain something like::
 
  bits=32
- LIBPERL=C:\Perl
- LIBPCRE=C:\Program Files\PCRE
+  LIBPCRE=C:\Program Files\PCRE
  LIBICONV=C:\Libraries\iconv-1.11.win32
  LIBZLIB=C:\Libraries\zlib-1.2.8.win32
  LIBXML2=C:\Libraries\libxml2-2.9.2.win32
