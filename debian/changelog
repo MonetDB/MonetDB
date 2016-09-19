@@ -1,3 +1,23 @@
+monetdb (11.23.9) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3939: Assert failure on concurrent queries when querying sys.queue
+  * BZ#4019: Casting a timestamp from a string results in NULL
+  * BZ#4025: expressions in the WHERE clause that evaluates incorrectly
+  * BZ#4038: After upgrade from 11.21.19, jdbc couldn't list tables for
+    non sys users
+  * BZ#4044: Server crash when trying to delete a table has been added to
+    a merge table with "cascade" at the end
+  * BZ#4049: Wrong results for queries with "OR" and "LEFT JOIN"
+  * BZ#4052: Infinite loop in rel_select
+  * BZ#4054: copy into file wrongly exports functions
+  * BZ#4059: Geom functions only visible by user monetdb
+  * BZ#4060: BAT leak in some aggregate queries
+  * BZ#4062: Error: SELECT: no such binary operator 'like(varchar,varchar)'
+    when used in query running in other schema than sys
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Sep 2016 09:30:29 +0200
+
 monetdb (11.23.7) unstable; urgency=low
 
   * Rebuilt.
