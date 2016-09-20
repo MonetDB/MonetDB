@@ -364,7 +364,7 @@ fi
 %package client-php
 Summary: MonetDB php interface
 Group: Applications/Databases
-Requires: php
+Requires: php-cli, php-sockets
 BuildArch: noarch
 
 %description client-php
