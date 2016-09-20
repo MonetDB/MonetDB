@@ -12,7 +12,7 @@ INCLUDES = ../lib \
            ../../common/options \
            ../../monetdb5/mal \
            $(GEOS_INCS) $(PROJ_INCS) \
-           $(SFCGAL_INCS)
+           $(SFCGAL_INCS) ${GPU_INCS}
 
 lib__geom = {
 	MODULE
@@ -63,4 +63,30 @@ headers_autoload_sfcgal = {
 	SOURCES = 31_sfcgal.mal
 }
 
-EXTRA_DIST = 30_geom.mal 31_sfcgal.mal geom.mal sfcgal.mal
+lib__gpu = {
+	#COND = HAVE_GPU
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = gpu.h gpu.c
+	LIBS = ../lib/libgeom \
+		   ../../gdk/libbat \
+	       ../../common/stream/libstream \
+	       ../../monetdb5/tools/libmonetdb5 \
+	       $(GPU_LIBS)
+}
+
+headers_mal_gpu = {
+	#COND = HAVE_GPU
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = gpu.mal
+}
+
+headers_autoload_gpu = {
+	#COND = HAVE_GPU
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 32_gpu.mal
+}
+
+EXTRA_DIST = 30_geom.mal 31_sfcgal.mal 32_gpu.mal geom.mal sfcgal.mal gpu.mal

@@ -1,0 +1,17 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+
+module geom;
+
+command GContains(a:wkb, x:dbl, y:dbl, z:dbl, srid:int) :bit
+address wkbContainsXYZ
+comment "Returns true if the Geometry a 'spatially contains' Geometry b";
+
+module batgeom;
+
+command GContains(a:wkb, px:bat[:dbl], py:bat[:dbl], pz:bat[:dbl], srid:int) :bat[:bit]
+address wkbGContains_point_bat
+comment "Returns true if the Geometry a 'spatially contains' Geometry b";

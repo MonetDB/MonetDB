@@ -17,4 +17,11 @@ headers_sql_sfcgal = {
 	SOURCES = 41_sfcgal.sql
 }
 
+headers_sql_gpu = {
+	#COND = HAVE_GPU
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 42_gpu.sql
+}
+
 EXTRA_DIST_DIR = Tests conformance functions pg_regression
