@@ -3713,6 +3713,17 @@ def main(argv) :
             CONDITIONALS['HAVE_PERL'] = '#'
         else:
             print('Perl available, but MonetDB driver not available')
+    if CONDITIONALS['HAVE_LIBR'] and CheckExec('R'):
+        proc = process.Popen(['R', '--slave', '--no-save', '--no-restore',
+                              '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
+                             stdout = process.PIPE, stderr = process.PIPE,
+                             universal_newlines = True)
+        r_out, r_err = proc.communicate()
+        res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
+        if res is not None:
+            rdir = os.path.expanduser(res.group('dir'))
+            if not os.path.exists(rdir):
+                os.makedirs(rdir)
     if CheckExec('php'):
         proc = process.Popen(['php', '-r', "require 'monetdb/php_monetdb.php';"],
                              stdout = process.PIPE, stderr = process.PIPE,
