@@ -362,7 +362,7 @@ Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
 Recommends: perl-DBD-monetdb >= 1.0
-Recommends: %{name}-client-php > 11.24.0
+Recommends: php-monetdb >= 1.0
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires: python-monetdb >= 1.0
 
