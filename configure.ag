@@ -1603,7 +1603,7 @@ AS_VAR_IF([have_pthread], [no], [], [
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
 	AS_CASE([$GCC-$have_pthread-$CC_ver],
-		[yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*|yes-auto-clang-7.*|yes-yes-clang-7.*], [
+		[yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*|yes-auto-clang-7.*|yes-yes-clang-7.*|yes-auto-clang-8.*|yes-yes-clang-8.*], [
 			# clang 5.*/6.*/7.* (Xcode 6.0) does not
 			# seem to have / require -pthread as compiler
 			# option; on Mac OS X Yosamite, "Apple LLVM
