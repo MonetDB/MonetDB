@@ -1199,6 +1199,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		assert(g->ttype == TYPE_oid);
 		grps = (oid *) Tloc(g, BUNfirst(g));
 		prev = grps[0];
+		if (BATmaterialize(bn) != GDK_SUCCEED)
+			goto error;
 		for (r = 0, p = 1, q = BATcount(g); p < q; p++) {
 			if (grps[p] != prev) {
 				/* sub sort [r,p) */
@@ -1232,11 +1234,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			b->tsorted = b->trevsorted = 1;
 		}
 		if (!(reverse ? bn->trevsorted : bn->tsorted) &&
-		    do_sort(Tloc(bn, BUNfirst(bn)),
-			    on ? Tloc(on, BUNfirst(on)) : NULL,
-			    bn->T->vheap ? bn->T->vheap->base : NULL,
-			    BATcount(bn), Tsize(bn), on ? Tsize(on) : 0,
-			    bn->ttype, reverse, stable) != GDK_SUCCEED)
+		    (BATmaterialize(bn) != GDK_SUCCEED ||
+		     do_sort(Tloc(bn, BUNfirst(bn)),
+			     on ? Tloc(on, BUNfirst(on)) : NULL,
+			     bn->T->vheap ? bn->T->vheap->base : NULL,
+			     BATcount(bn), Tsize(bn), on ? Tsize(on) : 0,
+			     bn->ttype, reverse, stable) != GDK_SUCCEED))
 			goto error;
 		bn->tsorted = !reverse;
 		bn->trevsorted = reverse;
