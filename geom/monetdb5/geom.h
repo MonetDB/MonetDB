@@ -40,7 +40,7 @@
 
 #define OPENCL_DYNAMIC 1
 #define OPENCL_THREADS 8
-//#define OPENMP  1
+#define OPENMP  1
 
 #ifdef OPENMP
 #include <omp.h>
@@ -191,6 +191,8 @@ typedef struct {
     int *holes_n;
 } vertexWKB;
 
+geom_export str getVerts(wkb *geom, vertexWKB **res);
+geom_export void freeVerts(vertexWKB *verts);
 //LocateAlong
 //LocateBetween
 

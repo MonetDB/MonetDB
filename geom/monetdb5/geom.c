@@ -7802,7 +7802,7 @@ pnpoly_(bit *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, i
 
 /*TODO: better conversion from WKB*/
 /*TODO: Check if the allocations are working*/
-static str
+str
 getVerts(wkb *geom, vertexWKB **res)
 {
 	str err = NULL;
@@ -7992,7 +7992,7 @@ getVerts(wkb *geom, vertexWKB **res)
     return MAL_SUCCEED;
 }
 
-static void
+void
 freeVerts(vertexWKB *verts)
 {
     int j = 0;
