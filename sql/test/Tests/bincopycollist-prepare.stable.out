@@ -1,0 +1,17 @@
+stdout of test 'bincopycollist-prepare` in directory 'sql/test` itself:
+
+
+# 17:03:22 >  
+# 17:03:22 >  "./bincopycollist-prepare.sh" "bincopycollist-prepare"
+# 17:03:22 >  
+
+
+# 17:03:22 >  
+# 17:03:22 >  cp /Users/myth/Programs/MonetDB/sql/test/Tests/bincopyint.bin /Users/myth/opt/mTests/sql/test
+# 17:03:22 >  
+
+
+# 17:03:22 >  
+# 17:03:22 >  "Done."
+# 17:03:22 >  
+

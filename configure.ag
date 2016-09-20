@@ -1107,66 +1107,7 @@ AC_PROG_LN_S
 AC_CHECK_PROGS([DIFF], [gdiff diff])
 AC_DEFINE_UNQUOTED([DIFF], ["$DIFF"], [Program to perform diffs])
 
-AC_CHECK_PROGS([RPMBUILD], [rpmbuild rpm])
-
-org_have_perl=auto
-have_perl=$org_have_perl
-PERL=perl
-AC_ARG_WITH([perl],
-	[AS_HELP_STRING([--with-perl=FILE], [perl is installed as FILE])],
-	[have_perl="$withval"])
-
-AS_CASE([$have_perl],
-	[yes|no|auto], [],
-	[
-		PERL="$have_perl"
-		have_perl=yes])
-
-AS_VAR_IF([have_perl], [no], [], [
-	AS_VAR_IF([cross_compiling], [yes], [], [
-		AC_PATH_PROG([PERL], [$PERL], [no], [$PATH])
-		AS_VAR_IF([PERL], [no], [
-			AS_VAR_IF([have_perl], [auto], [], [
-				AC_MSG_ERROR([No Perl executable found])])
-			have_perl=no
-			why_have_perl="(no Perl executable found)"])])])
-
-AS_VAR_IF([have_perl], [no],
-	[# no Perl implies no interpreter
-	 PERL=false],
-	[have_perl_libdir=auto
-	 AC_ARG_WITH([perl-libdir],
-		[AS_HELP_STRING([--with-perl-libdir=DIR],
-			[relative path for Perl library directory (where Perl modules should be installed)])],
-		[have_perl_libdir="$withval"])
-
-	 AS_CASE([$have_perl_libdir],
-		[yes|auto], [
-			AS_VAR_IF([cross_compiling], [yes], [
-				AC_MSG_ERROR([Must specify --with-perl-libdir when cross compiling])])
-			PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
-			# On Darwin this starts with a slash, remove it
-			PERL_LIBDIR="${PERL_LIBDIR@%:@/}"
-			AS_VAR_IF([PERL_LIBDIR], [], [
-				# if empty (e.g. on FreeBSD) try something else
-				PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{sitelib}; $x =~ s|$Config{prefix}/||; print $x;' 2>/dev/null`
-					AS_VAR_IF([PERL_LIBDIR], [], [
-						# if still empty, give up
-						have_perl=no
-						why_have_perl='(cannot determine location for files)'])])
-			],
-		[no], [],
-		[
-			PERL_LIBDIR="$have_perl_libdir"
-			have_perl_libdir=yes])])
-
-AC_SUBST([PERL])
-AM_CONDITIONAL([HAVE_PERL], [test x"$have_perl" != xno])
-AC_SUBST([PERL_LIBDIR])
-QPERL_LIBDIR="$PERL_LIBDIR"
-XPERL_LIBDIR=`$translatepath "$QPERL_LIBDIR"`
-QXPERL_LIBDIR=`echo "$XPERL_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`
-AC_SUBST([QXPERL_LIBDIR])
+AC_CHECK_PROGS([RPMBUILD], [rpmbuild])
 
 # check major version of python
 # check if python2 and python3 exist
@@ -1662,7 +1603,7 @@ AS_VAR_IF([have_pthread], [no], [], [
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
 	AS_CASE([$GCC-$have_pthread-$CC_ver],
-		[yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*|yes-auto-clang-7.*|yes-yes-clang-7.*], [
+		[yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*|yes-auto-clang-7.*|yes-yes-clang-7.*|yes-auto-clang-8.*|yes-yes-clang-8.*], [
 			# clang 5.*/6.*/7.* (Xcode 6.0) does not
 			# seem to have / require -pthread as compiler
 			# option; on Mac OS X Yosamite, "Apple LLVM

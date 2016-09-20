@@ -134,7 +134,9 @@ VALempty(ValPtr v)
 
 /* Create a copy of S into D, allocating space for external values
  * (non-fixed sized values).  See VALinit for a version where the
- * source is not in a VALRecord. */
+ * source is not in a VALRecord.
+ *
+ * Returns NULL In case of (malloc) failure. */
 ValPtr
 VALcopy(ValPtr d, const ValRecord *s)
 {
@@ -146,6 +148,8 @@ VALcopy(ValPtr d, const ValRecord *s)
 	} else if (s->vtype == TYPE_str) {
 		d->vtype = TYPE_str;
 		d->val.sval = GDKstrdup(s->val.sval);
+		if (d->val.sval == NULL)
+			return NULL;
 		d->len = strLen(d->val.sval);
 	} else if (s->vtype == TYPE_bit) {
 		d->vtype = s->vtype;
@@ -157,8 +161,9 @@ VALcopy(ValPtr d, const ValRecord *s)
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
 		d->val.pval = GDKmalloc(d->len);
-		if( d->val.pval)
-			memcpy(d->val.pval, p, d->len);
+		if (d->val.pval == NULL)
+			return NULL;
+		memcpy(d->val.pval, p, d->len);
 	}
 	return d;
 }

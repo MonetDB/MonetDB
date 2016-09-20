@@ -1,9 +1,0 @@
-Changes
-MANIFEST
-MANIFEST.SKIP
-Makefile.PL
-README
-MapiPP.pm
-t/00use.t
-t/02cxn.t
-t/75mil.t
