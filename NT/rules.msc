@@ -198,9 +198,6 @@ GENDLL =
 RC = rc
 
 MT = mt /nologo
-JAVAC = javac
-JAR = jar
-ANT = ant.bat
 
 # no need to edit beyond here..
 
@@ -324,23 +321,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_HGE_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_JAVA
-	$(ECHO) HAVE_JAVA_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!IFDEF HAVE_JAVAJDBC
-	$(ECHO) HAVE_JAVAJDBC_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_JAVAJDBC_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_JAVAMEROCONTROL
-	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!ELSE
-	$(ECHO) HAVE_JAVA_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) HAVE_JAVAJDBC_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_LIBBZ2
 	$(ECHO) HAVE_LIBBZ2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -460,7 +440,6 @@ update_winconfig_conds_py: create_winconfig_conds_new_py
 CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"$(TOPDIR)\winconfig_conds.py" \
 	"prefix=$(prefix)" \
-	"JDBCCLIENT_JAR=$(JDBCCLIENT_JAR)" \
 	"LIBICONV=$(LIBICONV)" \
 	"LIBXML2=$(LIBXML2)" \
 	"LIBZLIB=$(LIBZLIB)" \

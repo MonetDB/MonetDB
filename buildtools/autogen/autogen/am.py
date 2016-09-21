@@ -812,73 +812,6 @@ def am_library(fd, var, libmap, am):
 
     am_deps(fd, libmap['DEPS'], am)
 
-def am_ant(fd, var, ant, am):
-
-    target = var[4:]                    # the ant target to call
-
-    jd = "JAVADIR"
-    if "DIR" in ant:
-        jd = ant["DIR"][0] # use first name given
-    jd = am_translate_dir(jd, am)
-
-    #if "SOURCES" in ant:
-        #for src in ant['SOURCES']:
-            #am['EXTRA_DIST'].append(src)
-
-    fd.write("\nif HAVE_JAVA\n\n")  # there is ant if configure set HAVE_JAVA
-
-    if "COND" in ant:
-        fd.write("\nif " + ant["COND"][0] +"\n\n")
-
-    fd.write("\n%s_ant_target:\n\t\"$(ANT)\" -f \"`$(anttranslatepath) $(srcdir)/build.xml`\" -Dbuilddir=\"`$(anttranslatepath) $(PWD)`/%s\" -Djardir=\"`$(anttranslatepath) $(PWD)`\" -Dbasedir=\"`$(anttranslatepath) $(srcdir)`\" %s\n" % (target, target, target))
-
-    for file in ant['FILES']:
-        sfile = file.replace(".", "_")
-        fd.write("\n%s: %s_ant_target\n" % (file, target))
-
-        fd.write("install-exec-local-%s: %s\n" % (sfile, file))
-        fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
-        fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n" % (jd, file))
-
-        fd.write("uninstall-local-%s:\n" % sfile)
-        fd.write("\t$(RM) $(DESTDIR)%s/%s\n" % (jd, file))
-
-        fd.write("all-local-%s: %s\n" % (sfile, file))
-
-        am['ALL'].append(sfile)
-
-    if "COND" in ant:
-        fd.write("\nelse\n\n")
-
-    for file in ant['FILES']:
-        sfile = file.replace(".", "_")
-        fd.write("install-exec-local-%s:\n" % sfile)
-        fd.write("uninstall-local-%s:\n" % sfile)
-        fd.write("all-local-%s:\n" % sfile)
-
-    if "COND" in ant:
-        fd.write("\nendif !" + ant["COND"][0] + "\n\n")
-
-    fd.write("\nelse\n\n")
-
-    for file in ant['FILES']:
-        sfile = file.replace(".", "_")
-        fd.write("install-exec-local-%s:\n" % sfile)
-        fd.write("uninstall-local-%s:\n" % sfile)
-        fd.write("all-local-%s:\n" % sfile)
-
-    fd.write("\nendif !HAVE_JAVA\n\n")
-
-    if "COND" in ant:
-        cond = "#" + ant["COND"][0]
-    else:
-        cond = ""
-    for file in ant['FILES']:
-        sfile = file.replace(".", "_")
-        am['INSTALL'].append(sfile)
-        am['UNINSTALL'].append(sfile)
-        am['InstallList'].append("\t" + jd + "/" + file + cond + "\n")
-
 def am_add_srcdir(path, am, prefix =""):
     dir = path
     if dir[0] == '$':
@@ -937,7 +870,6 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'smallTOC_SHARED_MODS': am_mods_to_libs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
                 'HEADERS': am_headers,
-                'ANT': am_ant,
                 }
 
 def output(tree, cwd, topdir, automake, conditional):

@@ -307,9 +307,6 @@ CONDITIONALS = {
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_GSL'             : "@HAVE_GSL_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
-    'HAVE_JAVA'            : "@HAVE_JAVA_FALSE@",
-    'HAVE_JAVAJDBC'        : "@HAVE_JAVAJDBC_FALSE@",
-    'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
@@ -335,6 +332,9 @@ CONDITIONALS = {
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
     'HAVE_MONETDBJDBC_JAR' : "",
+    'HAVE_JAVA'            : "",
+    'HAVE_JAVAJDBC'        : "",
+    'HAVE_JAVAMEROCONTROL' : "",
     'HAVE_JDBCCLIENT_JAR'  : "",
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
