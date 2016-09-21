@@ -3116,7 +3116,7 @@ AC_DEFINE([__hidden], [/* empty */],
 
 dnl     checks for library functions
 case $host in
-	*-darwin1[[012345]]*)
+	*-darwin1[[0123456]]*)
 		# OSX 10.6 (Snow Leopard) and up somehow makes configure believe
 		# that fdatasync exists, in reality however, it does not on this
 		# platform.
