@@ -200,6 +200,9 @@ Ready.
 \dSf sys."isauuid"
 \dSf sys."left_shift"
 \dSf sys."left_shift_assign"
+\dSf sys."lidarattach"
+\dSf sys."lidarexport"
+\dSf sys."lidarload"
 \dSf sys."like"
 \dSf sys."listdir"
 \dSf sys."listdirpat"
@@ -539,6 +542,9 @@ SYSTEM FUNCTION  sys.left_shift
 SYSTEM FUNCTION  sys.left_shift_assign
 SYSTEM FUNCTION  sys.length
 SYSTEM FUNCTION  sys.levenshtein
+SYSTEM FUNCTION  sys.lidarattach
+SYSTEM FUNCTION  sys.lidarexport
+SYSTEM FUNCTION  sys.lidarload
 SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.listdir
 SYSTEM FUNCTION  sys.listdirpat
@@ -939,6 +945,9 @@ create function isaurl(theurl url) returns bool external name url."isaURL";
 create function sys.isauuid(s string) returns boolean external name uuid."isaUUID";
 create function "left_shift"(i1 inet, i2 inet) returns boolean external name inet."<<";
 create function "left_shift_assign"(i1 inet, i2 inet) returns boolean external name inet."<<=";
+create procedure lidarattach(fname string) external name lidar.attach;
+create procedure lidarexport(tname string, fname string, format string) external name lidar.export;
+create procedure lidarload(tname string) external name lidar.load;
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
 
@@ -2054,6 +2063,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"levenshtein",	"levenshtein",	"txtsim",	0,	1,	false,	false,	false	]
 [ "sys",	"levenshtein",	"levenshtein",	"txtsim",	0,	1,	false,	false,	false	]
 [ "sys",	"levenshtein",	"levenshtein",	"txtsim",	0,	1,	false,	false,	false	]
+[ "sys",	"lidarattach",	"create procedure lidarattach(fname string) external name lidar.attach;",	"lidar",	1,	2,	true,	false,	false	]
+[ "sys",	"lidarexport",	"create procedure lidarexport(tname string, fname string, format string) external name lidar.export;",	"lidar",	1,	2,	true,	false,	false	]
+[ "sys",	"lidarload",	"create procedure lidarload(tname string) external name lidar.load;",	"lidar",	1,	2,	true,	false,	false	]
 [ "sys",	"like",	"create filter function \"like\"(val string, pat string) external name algebra.\"like\";",	"algebra",	1,	4,	true,	false,	false	]
 [ "sys",	"like",	"create filter function \"like\"(val string, pat string, esc string) external name algebra.\"like\";",	"algebra",	1,	4,	true,	false,	false	]
 [ "sys",	"listdir",	"create procedure listdir(dirname string) external name fits.listdir;",	"fits",	1,	2,	true,	false,	false	]
@@ -3598,6 +3610,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"levenshtein",	"arg_1",	"clob",	0,	0,	1,	"arg_2",	"clob",	0,	0,	1,	"arg_3",	"int",	32,	0,	1,	"arg_4",	"int",	32,	0,	1,	"arg_5",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"levenshtein",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"levenshtein",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	"arg_3",	"int",	32,	0,	1,	"arg_4",	"int",	32,	0,	1,	"arg_5",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"lidarattach",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"lidarexport",	"fname",	"clob",	0,	0,	1,	"format",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"lidarload",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"like",	"pat",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"like",	"pat",	"clob",	0,	0,	1,	"esc",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"listdir",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5842,6 +5857,9 @@ drop function pcre_replace(string, string, string, string);
 [ "levenshtein"	]
 [ "levenshtein"	]
 [ "levenshtein"	]
+[ "lidarattach"	]
+[ "lidarexport"	]
+[ "lidarload"	]
 [ "like"	]
 [ "like"	]
 [ "listdir"	]
