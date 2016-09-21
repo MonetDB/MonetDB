@@ -216,27 +216,18 @@ BKCmirror(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
 
+	*ret = 0;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.mirror", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
-	if (bn != NULL) {
-		if (b->batRestricted == BAT_WRITE) {
-			BAT *bn1;
-			bn1 = COLcopy(bn, bn->ttype, FALSE, TRANSIENT);
-			BBPreclaim(bn);
-			bn = bn1;
-		}
-		if (bn != NULL) {
-			*ret = bn->batCacheid;
-			BBPkeepref(*ret);
-			BBPunfix(b->batCacheid);
-			return MAL_SUCCEED;
-		}
-	}
-	*ret = 0;
 	BBPunfix(b->batCacheid);
-	throw(MAL, "bat.mirror", GDK_EXCEPTION);
+	if (bn == NULL) {
+		throw(MAL, "bat.mirror", GDK_EXCEPTION);
+	}
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
 }
 
 char *
