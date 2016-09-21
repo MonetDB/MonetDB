@@ -87,19 +87,19 @@ Ready.
 #SELECT count(distinct "anno_mese") FROM "sys"."farmap_movimento";
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(distinct "articolo_id") FROM "sys"."farmap_movimento";
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(distinct "farmacia_id") FROM "sys"."farmap_movimento";
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 #DROP TABLE "sys"."farmap_movimento";
