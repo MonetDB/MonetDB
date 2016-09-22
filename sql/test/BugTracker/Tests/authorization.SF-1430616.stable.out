@@ -25,7 +25,7 @@ Ready.
 
 
 # 10:24:37 >  
-# 10:24:37 >  Mtimeout -timeout 60 java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 32887 -bmTests_sql_test_BugTracker -f "../../../../../dev/sql/test/BugTracker/Tests/authorization.SF-1430616.sql"
+# 10:24:37 >  Mtimeout -timeout 60 java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 32887 -d mTests_sql_test_BugTracker -f "../../../../../../MonetDB/sql/test/BugTracker/Tests/authorization.SF-1430616.sql"
 # 10:24:37 >  
 
 CREATE USER "voc" WITH PASSWORD 'voc' NAME 'VOC Explorer' SCHEMA "sys";
@@ -67,7 +67,7 @@ SELECT users.name, users.fullname, schemas.name
 auto commit mode: on
 sql-> 
 # 15:18:12 >  
-# 15:18:12 >  Mtimeout -timeout 60 java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 30558 -d mTests_sql_test_BugTracker -f "../../../../../dev/sql/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
+# 15:18:12 >  Mtimeout -timeout 60 java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 30558 -d mTests_sql_test_BugTracker -f "../../../../../../MonetDB/sql/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
 # 15:18:12 >  
 
 START TRANSACTION;
