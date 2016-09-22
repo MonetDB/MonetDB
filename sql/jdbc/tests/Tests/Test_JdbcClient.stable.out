@@ -124,13 +124,13 @@ CREATE SCHEMA "sys";
 SET SCHEMA "sys";
 
 CREATE TABLE "allnewtriples" (
-	"id"        int    	NOT NULL,
-	"subject"   int    	NOT NULL,
-	"predicate" int    	NOT NULL,
-	"object"    int    	NOT NULL,
-	"explicit"  boolean	NOT NULL,
-	CONSTRAINT "allnewtriples_id_pkey" PRIMARY KEY ("id"),
-	CONSTRAINT "unique_key" UNIQUE ("subject", "predicate", "object")
+        "id"        INTEGER       NOT NULL,
+        "subject"   INTEGER       NOT NULL,
+        "predicate" INTEGER       NOT NULL,
+        "object"    INTEGER       NOT NULL,
+        "explicit"  BOOLEAN       NOT NULL,
+        CONSTRAINT "allnewtriples_id_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "unique_key" UNIQUE ("subject", "predicate", "object")
 );
 CREATE INDEX "allnewtriples_object_idx" ON "allnewtriples" ("object");
 CREATE INDEX "allnewtriples_predicate_idx" ON "allnewtriples" ("predicate");
@@ -145,10 +145,10 @@ INSERT INTO "allnewtriples" VALUES (6, 2, 2, 1, false);
 INSERT INTO "allnewtriples" VALUES (7, 2, 2, 2, false);
 
 CREATE TABLE "foreign" (
-	"id"        int	NOT NULL,
-	"subject"   int	NOT NULL,
-	"predicate" int	NOT NULL,
-	"object"    int	NOT NULL,
+        "id"        INTEGER       NOT NULL,
+        "subject"   INTEGER       NOT NULL,
+        "predicate" INTEGER       NOT NULL,
+        "object"    INTEGER       NOT NULL,
 	CONSTRAINT "foreign_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."allnewtriples" ("id"),
 	CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "predicate", "object") REFERENCES "sys"."allnewtriples" ("subject", "predicate", "object")
 );
@@ -162,11 +162,11 @@ INSERT INTO "foreign" VALUES (6, 1, 2, 1);
 INSERT INTO "foreign" VALUES (7, 1, 1, 2);
 
 CREATE TABLE "triples" (
-	"id"        int    	NOT NULL,
-	"subject"   int    	NOT NULL,
-	"predicate" int    	NOT NULL,
-	"object"    int    	NOT NULL,
-	"explicit"  boolean	NOT NULL,
+        "id"        INTEGER       NOT NULL,
+        "subject"   INTEGER       NOT NULL,
+        "predicate" INTEGER       NOT NULL,
+        "object"    INTEGER       NOT NULL,
+        "explicit"  BOOLEAN       NOT NULL,
 	CONSTRAINT "triples_subject_predicate_object_unique" UNIQUE ("subject", "predicate", "object")
 );
 CREATE INDEX "triples_object_idx" ON "triples" ("object");
