@@ -149,6 +149,56 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	return virtualize(bn);
 }
 
+static BAT *
+sort_cand(BAT *b, BUN cnt)
+{
+	BAT *bn;
+	const oid *restrict o;
+	oid *restrict p;
+	unsigned char *bitvector;
+	BUN i,sz_b;
+
+#define remainder8(X)   ((X) &  7)
+#define quotient8(X)    ((X) >> 3)
+
+	assert(b->ttype=TYPE_oid);
+	/* input must be a potential candidate list or NULL */
+	assert(b == NULL ||
+	       (((b->ttype == TYPE_void && b->tseqbase != oid_nil) ||
+		 b->ttype == TYPE_oid) &&
+		 b->tkey));
+
+	sz_b = BATcount(b);
+	bitvector = (unsigned char *) GDKzalloc(cnt/8+1);
+	if (bitvector == NULL) {
+		GDKerror("#BATbloom: memory allocation error");
+		return GDK_FAIL;
+	}
+
+	o = (oid *) Tloc(b,0);
+	for (i=0; i < sz_b; i++) {
+		bitvector[quotient8(o[i])] |= (1<<remainder8(o[i]));
+	}
+
+	bn = COLnew(0, TYPE_oid, sz_b, TRANSIENT);
+	p = (oid *) Tloc(bn, 0);
+
+	for (i=0; i < cnt; i++) {
+		if (bitvector[quotient8(i)] & (1<<remainder8(i))) {
+			*p = (oid) i;
+			p++;
+		}
+	}
+
+	bn->tsorted = 1;
+	bn->trevsorted = bn->batCount <= 1;
+	bn->tkey = 1;
+	bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? 0 : oid_nil;
+	bn->tnil = 0;
+	bn->tnonil = 1;
+	return virtualize(bn);
+}
+
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\
 	for (hb = HASHget(h, HASHprobe((h), v));	\
 	     hb != HASHnil(h);				\
@@ -1678,16 +1728,18 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						rs++;
 					}
 					BATsetcount(bn, cnt);
+					bn->tkey = 1;
+					bn->tnil = 0;
+					bn->tnonil = 1;
 				}
 
 				/* output must be sorted */
+				/*
 				GDKqsort((oid *) Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
 				bn->tsorted = 1;
 				bn->trevsorted = bn->batCount <= 1;
-				bn->tkey = 1;
-				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? 0 : oid_nil;
-				bn->tnil = 0;
-				bn->tnonil = 1;
+				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? 0 : oid_nil;*/
+				sort_cand(bn,BATcount(b));
 			} else {
 				/* match: [low..high) */
 				if (s) {
