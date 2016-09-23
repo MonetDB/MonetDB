@@ -2175,6 +2175,8 @@ mapi_destroy(Mapi mid)
 		free(mid->password);
 	if (mid->language)
 		free(mid->language);
+	if (mid->motd)
+		free(mid->motd);
 
 	if (mid->database)
 		free(mid->database);

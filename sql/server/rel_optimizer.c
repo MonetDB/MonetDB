@@ -5331,6 +5331,8 @@ exps_used(list *l)
 static void
 rel_used(sql_rel *rel)
 {
+	if (!rel)
+		return;
 	if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op)) {
 		if (rel->l) 
 			rel_used(rel->l);
@@ -5340,7 +5342,7 @@ rel_used(sql_rel *rel)
 		rel_used(rel->l);
 		rel = rel->l;
 	}
-	if (rel->exps) {
+	if (rel && rel->exps) {
 		exps_used(rel->exps);
 		if (rel->r && (rel->op == op_project || rel->op  == op_groupby))
 			exps_used(rel->r);

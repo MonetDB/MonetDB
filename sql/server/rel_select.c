@@ -2111,6 +2111,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		list *vals = NULL, *ll = sa_list(sql->sa);
 		int correlated = 0;
 		int l_is_value = 1, r_is_rel = 0;
+		list *pexps = NULL;
 
 		/* complex case */
 		if (dl->h->type == type_list) { /* (a,b..) in (.. ) */
@@ -2140,12 +2141,18 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			/* first remove the NULLs */
 			if (sc->token == SQL_NOT_IN &&
 		    	    l->card != CARD_ATOM && has_nil(l)) {
+				sql_exp *ol;
+
+				rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+			       	pexps = rel_projections(sql, rel, NULL, 1, 1);
+				l = exp_label(sql->sa, l, ++sql->label);
+				append(rel->exps, l);
+				ol = l;
+				l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
 				e = rel_unop_(sql, l, NULL, "isnull", card_value);
 				e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 0), cmp_equal);
-				if (!is_select(rel->op) || rel_is_ref(rel))
-					left = rel = rel_select(sql->sa, rel, e);
-				else
-					rel_select_add_exp(sql->sa, rel, e);
+				left = rel = rel_select(sql->sa, rel, e);
+				l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
 			}
 
 			append(ll, l);
@@ -2191,7 +2198,10 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					list_append(nvals, r);
 				}
 				e = exp_in(sql->sa, l, nvals, sc->token==SQL_NOT_IN?cmp_notin:cmp_in);
-				return rel_select(sql->sa, rel, e);
+				rel = rel_select(sql->sa, rel, e);
+				if (pexps) 
+					rel = rel_project(sql->sa, rel, pexps);
+				return rel;
 			} else { /* complex case */
 				vals = new_exp_list(sql->sa);
 				n = dl->h->next;
@@ -2225,12 +2235,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 						z = rel;
 						correlated = 1;
 					}
-					/*
-					if (!r || !(r=rel_check_type(sql, st, r, type_equal))) {
-						rel_destroy(right);
-						return NULL;
-					}
-					*/
 					if (!r) {
 						rel_destroy(right);
 						return NULL;
@@ -2315,7 +2319,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				rel = rel_select(sql->sa, rel, e);
 			}
 			if (!correlated && l_is_value && outer)
-				rel = rel_crossproduct(sql->sa, outer, rel, op_join);
+				rel = rel_crossproduct(sql->sa, rel_dup(outer), rel, op_join);
 			rel = rel_project(sql->sa, rel, rel_projections(sql, outer, NULL, 1, 1));
 			set_processed(rel);
 			return rel;

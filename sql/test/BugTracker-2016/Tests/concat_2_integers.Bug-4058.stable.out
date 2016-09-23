@@ -128,8 +128,8 @@ Ready.
 [ 682,	1402,	"V",	true	]
 [ 796,	1507,	"V",	true	]
 [ 743,	1505,	"V",	true	]
-#sselect * from "sys"."test_bug4058" where f3='V' AND f4=true AND f1||f2 NOT IN (select f1||f2 from "sys"."test_bug4058_tmp");
-% sys.tmp,	sys.tmp,	sys.tmp,	sys.tmp # table_name
+#select * from "sys"."test_bug4058" where f3='V' AND f4=true AND f1||f2 NOT IN (select f1||f2 from "sys"."test_bug4058_tmp");
+% sys.test_bug4058,	sys.test_bug4058,	sys.test_bug4058,	sys.test_bug4058 # table_name
 % f1,	f2,	f3,	f4 # name
 % int,	int,	clob,	boolean # type
 % 3,	4,	1,	5 # length
