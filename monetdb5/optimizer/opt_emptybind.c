@@ -45,6 +45,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	str sch,tbl;
 	int etop= 0, esize= 256;
 
+	if ( optimizerIsApplied(mb,"emptybind") )
+		return 0;
 	// use an instruction reference table to keep
 	// track of where 'emptybind' results are produced
 	marked = (int *) GDKzalloc(mb->vsize * sizeof(int));
