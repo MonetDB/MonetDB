@@ -824,10 +824,13 @@
 #define INVALID_SOCKET (-1)
 #endif
 
+#include <conversion.h>
+
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
 
 typedef char* (*mapi_converter)(void*);
 
+#define COLBUFSIZ 100
 
 /* information about the columns in a result set */
 struct MapiColumn {
@@ -840,7 +843,7 @@ struct MapiColumn {
 	void *null_value;
 	char* buffer_ptr;
 	char *dynamic_write_buf;
-	char write_buf[50];
+	char write_buf[COLBUFSIZ];
 	mapi_converter converter;
 };
 
@@ -4139,196 +4142,30 @@ static char* mapi_convert_clob(struct MapiColumn *col) {
 }
 #endif
 
-// classic stackoverflow programming
-static void itoa(int i, char b[]){
-    char const digit[] = "0123456789";
-    int shifter = i;
-    char* p = b;
-    if(i<0){
-        *p++ = '-';
-        i *= -1;
-    }
-    do{ //Move to where representation ends
-        ++p;
-        shifter = shifter/10;
-    }while(shifter);
-    *p = '\0';
-    do{ //Move back, inserting digits as u go
-        *--p = digit[i%10];
-        i = i/10;
-    }while(i);
+#define mapi_string_conversion_function(type, gdktpe, sqltpe)																	\
+static char* mapi_convert_##sqltpe(struct MapiColumn *col) {																	\
+	if (conversion_##gdktpe##_to_string(col->write_buf, COLBUFSIZ, (type*) col->buffer_ptr, *((type*)col->null_value)) < 0) {   \
+		return NULL;																											\
+	}																															\
+	return (char*) col->write_buf;																								\
 }
 
-static char* mapi_convert_int(struct MapiColumn *col) {
-	if (*((int*) col->buffer_ptr) == *((int*)col->null_value)) return NULL;
-	itoa(*((int*) col->buffer_ptr), col->write_buf);
-	return (char*) col->write_buf;
-}
-
-static char* mapi_convert_lng(struct MapiColumn *col) {
-	if (*((lng*) col->buffer_ptr) == *((lng*)col->null_value)) return NULL;
-	sprintf(col->write_buf, "%lld", *((lng*) col->buffer_ptr));
-	return (char*) col->write_buf;
-}
-
-static char* mapi_convert_smallint(struct MapiColumn *col) {
-	if (*((short*) col->buffer_ptr) == *((short*)col->null_value)) return NULL;
-	sprintf(col->write_buf, "%hd", *((short*) col->buffer_ptr));
-	return (char*) col->write_buf;
-}
-
-static char* mapi_convert_tinyint(struct MapiColumn *col) {
-	if (*((signed char*) col->buffer_ptr) == *((signed char*)col->null_value)) return NULL;
-	sprintf(col->write_buf, "%hhd", *((signed char*) col->buffer_ptr));
-	return (char*) col->write_buf;
-}
-
-static lng _scales(int scale) {
-	if (scale == 0) {
-		return 1;
-	} else {
-		return 10 * _scales(scale - 1);
-	}
-}
-
-#define DEC2_STRING(tpe, scale) {												\
-	double val = *((tpe*) col->buffer_ptr);										\
-	if (*((tpe*) col->buffer_ptr) == *((tpe*)col->null_value)) return NULL;		\
-	if (scale) {																\
-		val = val / _scales(scale);												\
-	}																			\
-	sprintf(col->write_buf, "%f", val);										\
-	return (char*) col->write_buf;												\
-}
+mapi_string_conversion_function(int,int,int);
+mapi_string_conversion_function(lng,lng,bigint);
+mapi_string_conversion_function(short,sht,smallint);
+mapi_string_conversion_function(signed char,bte,tinyint);
+mapi_string_conversion_function(float,flt,real);
+mapi_string_conversion_function(double,dbl,double);
+mapi_string_conversion_function(signed char,bit,boolean);
+mapi_string_conversion_function(hge,hge,hugeint);
+mapi_string_conversion_function(int,date,date);
 
 static char* mapi_convert_decimal(struct MapiColumn *col) {
-	switch(col->columnlength) {
-		case sizeof(signed char):
-			DEC2_STRING(signed char, col->scale);
-		case sizeof(short):
-			DEC2_STRING(short, col->scale);
-		case sizeof(int):
-			DEC2_STRING(int, col->scale);
-		case sizeof(lng):
-			DEC2_STRING(lng, col->scale);
-#ifdef HAVE_HGE
-		case sizeof(hge):
-			DEC2_STRING(hge, col->scale);
-#endif
+	if (conversion_decimal_to_string(col->buffer_ptr, col->write_buf, COLBUFSIZ, col->scale, col->columnlength, col->null_value) < 0) {
+		return NULL;
 	}
-	fprintf(stderr, "Unrecognized typelen for decimal.\n");
-	return NULL;
-}
-
-static char* mapi_convert_double(struct MapiColumn *col) {
-	char *dummy;
-	if (*((double*) col->buffer_ptr) == *((double*)col->null_value)) return NULL;
-	//sprintf(col->write_buf, "%g", *((double*) col->buffer_ptr));
-	dummy = gcvt(*((double*) col->buffer_ptr), 2, col->write_buf);
-	(void) dummy;
 	return (char*) col->write_buf;
 }
-
-static char* mapi_convert_boolean(struct MapiColumn *col) {
-	if (*((signed char*) col->buffer_ptr) == *((signed char*)col->null_value)) return NULL;
-	if (*((signed char*) col->buffer_ptr) == 1) {
-		return "true";
-	}
-	else {
-		return "false";
-	}
-}
-
-
-/* apologies for now */
-typedef int date;
-int date_nil = -1;
-
-static int
-leapyears(int year)
-{
-	/* count the 4-fold years that passed since jan-1-0 */
-	int y4 = year / 4;
-
-	/* count the 100-fold years */
-	int y100 = year / 100;
-
-	/* count the 400-fold years */
-	int y400 = year / 400;
-
-	return y4 + y400 - y100 + (year >= 0);	/* may be negative */
-}
-
-#define leapyear(y)		((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
-
-#define YEARDAYS(y)		(leapyear(y) ? 366 : 365)
-
-static int CUMDAYS[13] = {
-	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
-};
-static int CUMLEAPDAYS[13] = {
-	0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
-};
-
-
-static char*
-mapi_convert_date(struct MapiColumn *col){
-	int day, month, year;
-	date n = *((date*) col->buffer_ptr);
-
-	if (n == *((date*)col->null_value)) 
-		return NULL;
-
-	year = n / 365;
-	day = (n - year * 365) - leapyears(year >= 0 ? year - 1 : year);
-	if (n < 0) {
-		year--;
-		while (day >= 0) {
-			year++;
-			day -= YEARDAYS(year);
-		}
-		day = YEARDAYS(year) + day;
-	} else {
-		while (day < 0) {
-			year--;
-			day += YEARDAYS(year);
-		}
-	}
-
-	day++;
-	if (leapyear(year)) {
-		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
-			if (day > CUMLEAPDAYS[month - 1] && day <= CUMLEAPDAYS[month]) {
-				break;
-			}
-		day -= CUMLEAPDAYS[month - 1];
-	} else {
-		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
-			if (day > CUMDAYS[month - 1] && day <= CUMDAYS[month]) {
-				break;
-			}
-		day -= CUMDAYS[month - 1];
-	}
-	// YYYY-MM-DD
-	col->write_buf[0] = (year/1000) + 48;
-	col->write_buf[1] = ((year/100) % 10) + 48;
-	col->write_buf[2] = ((year/10) % 10) + 48;
-	col->write_buf[3] = (year % 10) + 48;
-	col->write_buf[4] = '-';
-	col->write_buf[5] = (month/10) + 48;
-	col->write_buf[6] = (month % 10) + 48;
-	col->write_buf[7] = '-';
-	col->write_buf[8] = (day/10) + 48;
-	col->write_buf[9] = (day % 10) + 48;
-	col->write_buf[10] = 0;
-
-	//sprintf(col->write_buf, "%04d-%02d-%02d", year, month, day);
-
-	return col->write_buf;
-}
-
-
-/* end of apologies */
 
 static char* mapi_convert_unknown(struct MapiColumn *col) {
 	(void) col;
@@ -4475,7 +4312,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				} else if (strcasecmp(type_sql_name, "date") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_date;
 				} else if (strcasecmp(type_sql_name, "bigint") == 0) {
-					result->fields[i].converter = (mapi_converter) mapi_convert_lng;
+					result->fields[i].converter = (mapi_converter) mapi_convert_bigint;
+				} else if (strcasecmp(type_sql_name, "real") == 0) {
+					result->fields[i].converter = (mapi_converter) mapi_convert_real;
+				} else if (strcasecmp(type_sql_name, "hugeint") == 0) {
+					result->fields[i].converter = (mapi_converter) mapi_convert_hugeint;
+				} else if (typelen < 0) { /* any type besides the ones shown above should be converted to strings by the server */
+					result->fields[i].converter = (mapi_converter) mapi_convert_clob;
 				} else {
 					fprintf(stderr, "Unrecognized sql type: %s\n", type_sql_name);
 					result->fields[i].converter = (mapi_converter) mapi_convert_unknown;

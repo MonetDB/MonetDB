@@ -55,6 +55,7 @@ lib__sql = {
 		   ../../../common/stream/libstream \
 		   ../../../common/stream/libprotobuf \
 		   ../../../common/utils/libmcrypt \
+		   ../../../common/utils/libconversion \
 		   $(PTHREAD_LIBS) \
 		   $(protobuf_LIBS) \
 		   $(openssl_LIBS) $(MATH_LIBS) $(pfor_LIBS) $(binpack_LIBS)

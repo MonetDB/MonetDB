@@ -18,6 +18,7 @@
 #include <bat/res_table.h>
 #include <bat/bat_storage.h>
 #include <rel_exp.h>
+#include <conversion.h>
 
 #ifdef HAVE_BINPACK
 #include <simdcomp.h>
@@ -32,77 +33,31 @@
 #define llabs(x)	((x) < 0 ? -(x) : (x))
 #endif
 
-#define DEC_TOSTR(TYPE)							\
-	do {								\
-		char buf[64];						\
-		TYPE v = *(const TYPE *) a;				\
-		int scale = (int) (ptrdiff_t) extra;			\
-		int cur = 63, i, done = 0;				\
-		int neg = v < 0;					\
-		int l;							\
-		if (v == TYPE##_nil) {					\
-			if (*len < 5){					\
-				if (*Buf)				\
-					GDKfree(*Buf);			\
-				*len = 5;				\
-				*Buf = GDKzalloc(*len);			\
-				if (*Buf == NULL) {			\
-					GDKerror("Allocation failed\n"); \
-					return 0;			\
-				}					\
-			}						\
-			strcpy(*Buf, "NULL");				\
-			return 4;					\
-		}							\
-		if (v<0)						\
-			v = -v;						\
-		buf[cur--] = 0;						\
-		if (scale){						\
-			for (i=0; i<scale; i++) {			\
-				buf[cur--] = (char) (v%10 + '0');	\
-				v /= 10;				\
-			}						\
-			buf[cur--] = '.';				\
-		}							\
-		while (v) {						\
-			buf[cur--] = (char ) (v%10 + '0');		\
-			v /= 10;					\
-			done = 1;					\
-		}							\
-		if (!done)						\
-			buf[cur--] = '0';				\
-		if (neg)						\
-			buf[cur--] = '-';				\
-		l = (64-cur-1);						\
-		if (*len < l){						\
-			if (*Buf)					\
-				GDKfree(*Buf);				\
-			*len = l+1;					\
-			*Buf = GDKzalloc(*len);				\
-			if (*Buf == NULL) {				\
-				GDKerror("Allocation failed\n");	\
-				return 0;				\
-			}						\
-		}							\
-		strcpy(*Buf, buf+cur+1);				\
-		return l-1;						\
-	} while (0)
-
 static int
 dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
 {
+	if (*len < 64) {
+		if (*Buf)
+			GDKfree(*Buf);
+		*len = 64;
+		*Buf = GDKzalloc(*len);
+		if (*Buf == NULL) {
+			GDKerror("Allocation failed\n");
+			return 0;
+		}
+	}
 	/* support dec map to bte, sht, int and lng */
 	if (type == TYPE_bte) {
-		DEC_TOSTR(bte);
+		return conversion_decimal_to_string(a, *Buf, *len, (int) (ptrdiff_t) extra, 1, &bte_nil);
 	} else if (type == TYPE_sht) {
-		DEC_TOSTR(sht);
+		return conversion_decimal_to_string(a, *Buf, *len, (int) (ptrdiff_t) extra, 2, &sht_nil);
 	} else if (type == TYPE_int) {
-		DEC_TOSTR(int);
+		return conversion_decimal_to_string(a, *Buf, *len, (int) (ptrdiff_t) extra, 4, &int_nil);
 	} else if (type == TYPE_lng) {
-		DEC_TOSTR(lng);
+		return conversion_decimal_to_string(a, *Buf, *len, (int) (ptrdiff_t) extra, 8, &lng_nil);
 #ifdef HAVE_HGE
 	} else if (type == TYPE_hge) {
-		DEC_TOSTR(hge);
+		return conversion_decimal_to_string(a, *Buf, *len, (int) (ptrdiff_t) extra, 16, &hge_nil);
 #endif
 	} else {
 		GDKerror("Decimal cannot be mapped to %s\n", ATOMname(type));
@@ -1323,7 +1278,6 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 }
 
 
-//FIXME: rewrite this into something new
 static int
 mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, char *btag, char *sep, char *rsep, char *ssep, char *ns)
 {
@@ -1875,6 +1829,14 @@ static int write_str_term(stream* s, str val) {
 #include <mhapi.h>
 #endif
 
+static int type_supports_binary_transfer(sql_type *type) {
+	return type->eclass == EC_CHAR || type->eclass == EC_STRING || type->eclass == EC_BLOB || type->eclass == EC_DEC || type->eclass == EC_FLT || type->eclass == EC_NUM || type->eclass == EC_DATE;
+}
+
+static size_t max(size_t a, size_t b) {
+	return a > b ? a : b;
+}
+
 static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize) {
 	BAT *order;
 	lng count;
@@ -1929,12 +1891,12 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		int nil_len = -1;
 		int retval = -1;
 		iterators[i] = bat_iterator(BATdescriptor(c->b));
+		int convert_to_string = !type_supports_binary_transfer(c->type.type);
+		sql_type *type = c->type.type;
 
-		if (ATOMvarsized(mtype)) {
-			// FIXME support other types than string
-			assert(mtype == TYPE_str);
+		if (ATOMvarsized(mtype) || convert_to_string) {
 			typelen = -1;
-			if (mtype == TYPE_str && c->type.digits > 0) {
+			if (!convert_to_string && mtype == TYPE_str && c->type.digits > 0) {
 				// varchar with fixed max length
 #ifndef VARINT_PADDING
 				fixed_lengths += c->type.digits + 1;
@@ -1962,14 +1924,14 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			nil_len = typelen;
 		}
 
-		if (!mnstr_writeLng(s, (lng)(strlen(c->tn) + strlen(c->name) + strlen(c->type.type->sqlname) + sizeof(int) + 3)) ||
-				!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, c->type.type->sqlname) ||
+		if (!mnstr_writeLng(s, (lng) max(max(strlen(c->tn), strlen(c->name)), strlen(type->sqlname)) + 1) ||
+				!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, type->sqlname) ||
 				!mnstr_writeInt(s, typelen)) {
 			fres = -1;
 			goto cleanup;
 		}
 
-		if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
+		if (type->eclass == EC_DEC) {
 			// if the type is a decimal, we write the scale as a 4-byte integer as well
 			if (!mnstr_writeInt(s, c->type.scale)) {
 				fres = -1;
@@ -1984,6 +1946,13 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			goto cleanup;
 		}
 
+		if (convert_to_string) {
+			BAT *res = BATconvert(iterators[i].b, NULL, TYPE_str, 1);
+			// if converting to string, we use str_nil
+			BBPunfix(iterators[i].b);
+			iterators[i] = bat_iterator(res);
+			mtype = TYPE_str;
+		}
 		switch(ATOMstorage(mtype)) {
 			case TYPE_str:
 				retval = write_str_term(s, str_nil);
@@ -2007,6 +1976,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			case TYPE_dbl:
 				retval = mnstr_writeDbl(s, dbl_nil);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				retval = mnstr_writeHge(s, hge_nil);
+				break;
+#endif
 			default:
 				assert(0);
 				fres = -1;
@@ -2052,7 +2026,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 				for (i = 0; i < (size_t) t->nr_cols; i++) {
 					res_col *c = t->cols + i;
 					int mtype = c->type.type->localtype;
-					if (ATOMvarsized(mtype)) {
+					int convert_to_string = !type_supports_binary_transfer(c->type.type);
+					if (convert_to_string || ATOMvarsized(mtype)) {
 						size_t slen = strlen((const char*) BUNtail(iterators[i], row));
 #ifndef VARINT_PADDING
 						rowsize += slen + 1;
@@ -2224,10 +2199,10 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		for (i = 0; i < (size_t) t->nr_cols; i++) {
 			res_col *c = t->cols + i;
 			int mtype = c->type.type->localtype;
-			if (ATOMvarsized(mtype)) {
+			int convert_to_string = !type_supports_binary_transfer(c->type.type);
+			if (ATOMvarsized(mtype) || convert_to_string) {
 				// FIXME support other types than string
-				assert(mtype == TYPE_str);
-				if (c->type.digits > 0 && c->type.digits < VARCHAR_MAXIMUM_FIXED) {
+				if (!convert_to_string && c->type.digits > 0 && c->type.digits < VARCHAR_MAXIMUM_FIXED) {
 					char *bufptr = buf;
 					// for small fixed size strings we use fixed width
 					for(crow = srow; crow < row; crow++) {
@@ -2389,8 +2364,6 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	assert(t->query_type == Q_TABLE);
 	if (t->tsep)
 		return mvc_export_file(b, s, t);
-
-	assert(!json); // so sue me
 
 	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
 		return mvc_export_resultset_prot10(t, s, b->client->fdin->s, b->client->blocksize);

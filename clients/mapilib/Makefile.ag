@@ -15,6 +15,7 @@ lib_mapi = {
 	LIBS = $(SOCKET_LIBS) ../../common/stream/libstream \
 		../../common/stream/libprotobuf \
 		../../common/options/libmoptions \
+		../../common/utils/libconversion \
 		../../common/utils/libmcrypt $(openssl_LIBS) $(pfor_LIBS) $(protobuf_LIBS) $(binpack_LIBS)
 }
 
