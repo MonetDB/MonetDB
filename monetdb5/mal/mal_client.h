@@ -182,6 +182,7 @@ typedef struct CLIENT {
 
 	size_t blocksize;
 	protocol_version protocol;
+	int compute_column_widths;
 } *Client, ClientRec;
 
 mal_export void    MCinit(void);

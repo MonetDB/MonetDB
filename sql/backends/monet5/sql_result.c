@@ -1407,10 +1407,10 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	return 0;
 }
 
-static int
-export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p)
+
+static lng
+get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p)
 {
-	int ok = 1;
 	size_t count = 0, incr = 0;;
 
 	if (eclass == EC_SEC)
@@ -1420,7 +1420,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 	mtype = ATOMbasetype(mtype);
 	if (mtype == TYPE_str) {
 		if (eclass == EC_CHAR) {
-			ok = mvc_send_int(s, digits);
+			return digits;
 		} else {
 			int l = 0;
 			if (bid) {
@@ -1444,7 +1444,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 				if (l == int_nil)
 					l = 0;
 			}
-			ok = mvc_send_int(s, l);
+			return l;
 		}
 	} else if (eclass == EC_NUM || eclass == EC_POS || eclass == EC_MONTH || eclass == EC_SEC) {
 		count = 0;
@@ -1514,7 +1514,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 		}
 		if (eclass == EC_SEC && count < 5)
 			count = 5;
-		ok = mvc_send_lng(s, (lng) count);
+		return count;
 		/* the following two could be done once by taking the
 		   max value and calculating the number of digits from that
 		   value, instead of the maximum values taken now, which
@@ -1523,38 +1523,45 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 		/* floats are printed using "%.9g":
 		 * [sign]+digit+period+[max 8 digits]+E+[sign]+[max 2 digits] */
 		if (mtype == TYPE_flt) {
-			ok = mvc_send_int(s, 15);
+			return 15;
 			/* doubles are printed using "%.17g":
 			 * [sign]+digit+period+[max 16 digits]+E+[sign]+[max 3 digits] */
 		} else {	/* TYPE_dbl */
-			ok = mvc_send_int(s, 24);
+			return 24;
 		}
 	} else if (eclass == EC_DEC) {
 		count = 1 + digits;
 		if (scale > 0)
 			count += 1;
-		ok = mvc_send_lng(s, (lng) count);
+		return count;
 	} else if (eclass == EC_DATE) {
-		ok = mvc_send_int(s, 10);
+		return 10;
 	} else if (eclass == EC_TIME) {
 		count = 8;
 		if (tz)		/* time zone */
 			count += 6;	/* +03:30 */
 		if (digits > 1)	/* fractional seconds precision (including dot) */
 			count += digits;
-		ok = mvc_send_lng(s, (lng) count);
+		return count;
 	} else if (eclass == EC_TIMESTAMP) {
 		count = 10 + 1 + 8;
 		if (tz)		/* time zone */
 			count += 6;	/* +03:30 */
 		if (digits)	/* fractional seconds precision */
 			count += digits;
-		ok = mvc_send_lng(s, (lng) count);
+		return count;
 	} else if (eclass == EC_BIT) {
-		ok = mvc_send_int(s, 5);	/* max(strlen("true"), strlen("false")) */
+		return 5;	/* max(strlen("true"), strlen("false")) */
 	} else {
-		ok = mvc_send_int(s, 0);
+		return 0;
 	}
+}
+
+static int
+export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p) {
+	int ok = 1;
+	lng length = get_print_width(mtype, eclass, digits, scale, tz, bid, p);
+	ok = mvc_send_lng(s, length);
 	return ok;
 }
 
@@ -1831,6 +1838,7 @@ static int write_str_term(stream* s, str val) {
 
 static int type_supports_binary_transfer(sql_type *type) {
 	return 
+		type->eclass == EC_BIT || 
 		type->eclass == EC_CHAR || 
 		type->eclass == EC_STRING || 
 		type->eclass == EC_BLOB || 
@@ -1846,7 +1854,7 @@ static size_t max(size_t a, size_t b) {
 	return a > b ? a : b;
 }
 
-static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize) {
+static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize, int compute_lengths) {
 	BAT *order;
 	lng count;
 	size_t i, j;
@@ -2010,6 +2018,13 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		if (!retval) {
 			fres = -1;
 			goto cleanup;
+		}
+
+		if (compute_lengths) {
+			if (!mnstr_writeLng(s, get_print_width(c->type.type->localtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), iterators[i].b->batCacheid, c->p))) {
+				fres = -1;
+				goto cleanup;
+			}
 		}
 	}
 	if (mnstr_flush(s) < 0) {
@@ -2387,7 +2402,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		return mvc_export_file(b, s, t);
 
 	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
-		return mvc_export_resultset_prot10(t, s, b->client->fdin->s, b->client->blocksize);
+		return mvc_export_resultset_prot10(t, s, b->client->fdin->s, b->client->blocksize, b->client->compute_column_widths);
 	}
 
 	if (!json) {

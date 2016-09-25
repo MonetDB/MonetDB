@@ -33,13 +33,15 @@ typedef void *ptr;
 #endif
 #endif
 
+#define NULL_STRING "NULL"
+
 int
 conversion_bit_to_string(char *dst, int len, const signed char *src, signed char null_value)
 {
 	if (len < 6) return -1;
 
 	if (*src == null_value)
-		return snprintf(dst, len, "nil");
+		return snprintf(dst, len, NULL_STRING);
 	if (*src)
 		return snprintf(dst, len, "true");
 	return snprintf(dst, len, "false");
@@ -52,7 +54,7 @@ conversion_##TYPE##_to_string(char *dst, int len, const TYPE *src, TYPE nullvalu
 {							\
 	if (len < TYPE##Strlen) return -1;			\
 	if (*src == nullvalue) {			\
-		return snprintf(dst, len, "nil");	\
+		return snprintf(dst, len, NULL_STRING);	\
 	}						\
 	return snprintf(dst, len, FMT, FMTCAST *src);	\
 }
@@ -68,7 +70,7 @@ int conversion_dbl_to_string(char *dst, int len, const double *src, double null_
 
 	if (len < dblStrlen) return -1;
 	if (*src == null_value) {
-		return snprintf(dst, len, "nil");
+		return snprintf(dst, len, NULL_STRING);
 	}
 	for (i = 4; i < 18; i++) {
 		snprintf(dst, len, "%.*g", i, *src);
@@ -84,7 +86,7 @@ conversion_flt_to_string(char *dst, int len, const float *src, float null_value)
 
 	if (len < fltStrlen) return -1;
 	if (*src == null_value) {
-		return snprintf(dst, len, "nil");
+		return snprintf(dst, len, NULL_STRING);
 	}
 	for (i = 4; i < 10; i++) {
 		snprintf(dst, len, "%.*g", i, *src);
@@ -112,7 +114,7 @@ conversion_hge_to_string(char *dst, int len, const hge *src, hge null_value)
 {
 	if (len < hgeStrlen) return -1;
 	if (*src == null_value) {
-		strncpy(dst, "nil", len);
+		strncpy(dst, NULL_STRING, len);
 		return 3;
 	}
 	if ((hge) LLONG_MIN < *src && *src <= (hge) LLONG_MAX) {
@@ -136,7 +138,7 @@ conversion_hge_to_string(char *dst, int len, const hge *src, hge null_value)
 		int neg = v < 0;					\
 		int l;							\
 		if (v == *((TYPE*)null_value)) {					\
-			strcpy(buffer, "NULL");				\
+			strcpy(buffer, NULL_STRING);				\
 			return 4;					\
 		}							\
 		if (v<0)						\
@@ -218,7 +220,7 @@ conversion_date_to_string(char *dst, int len, const int *src, int null_value) {
 	int day, month, year;
 	if (len < dateStrlen) return -1;
 	if (*src == null_value) {
-		strcpy(dst, "nil");
+		strcpy(dst, NULL_STRING);
 		return 3;
 	}
 
@@ -263,7 +265,7 @@ conversion_time_to_string(char *dst, int len, const int *src, int null_value, in
 	int time = *src;
 	if (len < daytimeStrlen) return -1;
 	if (*src == null_value) {
-		strcpy(dst, "nil");
+		strcpy(dst, NULL_STRING);
 		return 3;
 	}
 	// account for the timezone of the client
@@ -289,7 +291,7 @@ conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, i
 	lng time = *src;
 
 	if (*src == null_value) {
-		strcpy(dst, "nil");
+		strcpy(dst, NULL_STRING);
 		return 3;
 	}
 	// account for the timezone of the client

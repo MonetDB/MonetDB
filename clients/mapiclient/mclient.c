@@ -832,49 +832,9 @@ CSVrenderer(MapiHdl hdl)
 			if (i != fields - 1) {
 				*buffer_ptr++ = *sep;
 			}
-
-			/*
-
-			if (s == NULL)
-				s = nullstring == default_nullstring ? "" : nullstring;
-			if (strchr(s, *sep) != NULL ||
-			    strchr(s, '\n') != NULL ||
-			    strchr(s, '"') != NULL) {
-				mnstr_printf(toConsole, "%s\"",
-					     i == 0 ? "" : sep);
-				while (*s) {
-					switch (*s) {
-					case '\n':
-						mnstr_write(toConsole, "\\n", 1, 2);
-						break;
-					case '\t':
-						mnstr_write(toConsole, "\\t", 1, 2);
-						break;
-					case '\r':
-						mnstr_write(toConsole, "\\r", 1, 2);
-						break;
-					case '\\':
-						mnstr_write(toConsole, "\\\\", 1, 2);
-						break;
-					case '"':
-						mnstr_write(toConsole, "\"\"", 1, 2);
-						break;
-					default:
-						mnstr_write(toConsole, s, 1, 1);
-						break;
-					}
-					s++;
-				}
-				mnstr_write(toConsole, "\"", 1, 1);
-			} else
-				mnstr_printf(toConsole, "%s%s",
-					     i == 0 ? "" : sep, s);*/
-		}
-		//mnstr_printf(toConsole, "\n");
-
+		}		
 		*buffer_ptr++ = 0;
 		puts(buffer);
-
 	}
 }
 
@@ -1071,6 +1031,7 @@ TESTrenderer(MapiHdl hdl)
 	char *sep;
 	int i;
 	int prot10 = mapi_is_protocol10(hdl);
+	int header_rendered = 0;
 
 	SQLqueryEcho(hdl);
 	while (!mnstr_errnr(toConsole) && (!prot10 ? (reply = fetch_line(hdl)) != 0 : (fields = fetch_row(hdl)) != 0)) {
@@ -1082,6 +1043,34 @@ TESTrenderer(MapiHdl hdl)
 				continue;
 			}
 			fields = mapi_split_line(hdl);
+		} else if (header_rendered == 0) {
+			header_rendered = 1;
+			// generate fake MAPI headers for the testweb
+			// table names
+			mnstr_printf(toConsole, "%% ");
+			for(int i = 0; i < fields; i++) {
+				mnstr_printf(toConsole, "%s%s", mapi_get_table(hdl, i), i < fields - 1 ? ",\t" : " ");
+			}
+			mnstr_printf(toConsole, "# table_name\n");
+			// column names
+			mnstr_printf(toConsole, "%% ");
+			for(int i = 0; i < fields; i++) {
+				mnstr_printf(toConsole, "%s%s", mapi_get_name(hdl, i), i < fields - 1 ? ",\t" : " ");
+			}
+			mnstr_printf(toConsole, "# name\n");
+			// column type names
+			mnstr_printf(toConsole, "%% ");
+			for(int i = 0; i < fields; i++) {
+				mnstr_printf(toConsole, "%s%s", mapi_get_type(hdl, i), i < fields - 1 ? ",\t" : " ");
+			}
+			mnstr_printf(toConsole, "# type\n");
+			// column lengths
+			mnstr_printf(toConsole, "%% ");
+			for(int i = 0; i < fields; i++) {
+				mnstr_printf(toConsole, "%lld%s", mapi_get_len(hdl, i), i < fields - 1 ? ",\t" : " ");
+			}
+			mnstr_printf(toConsole, "# length\n");
+			l = mapi_fetch_field_len(hdl, i);
 		}
 		sep = "[ ";
 		for (i = 0; i < fields; i++) {
@@ -3365,6 +3354,16 @@ main(int argc, char **argv)
 			fprintf(stderr, "%s\n", mapi_error_str(mid));
 			exit(1);
 		}
+	}
+
+	// we need to know the column render width for the TEST and TABLE formatters
+	if (output) {
+		setFormatter(output);
+	}
+	if (!output || (formatter == TESTformatter || formatter == TABLEformatter)) {
+		mapi_set_compute_column_width(mid, 1);
+	} else {
+		mapi_set_compute_column_width(mid, 0);
 	}
 
 	if (mid && mapi_error(mid) == MOK)

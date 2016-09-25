@@ -237,6 +237,7 @@ mapi_export MapiMsg mapi_set_protocol(Mapi mid, const char* prot);
 mapi_export MapiMsg mapi_set_compression(Mapi mid, const char* compression);
 mapi_export MapiMsg mapi_set_column_compression(Mapi mid, const char* colcomp);
 mapi_export void mapi_set_blocksize(Mapi mid, size_t blocksize);
+mapi_export void mapi_set_compute_column_width(Mapi mid, int compute_column_width);
 
 #ifdef _MSC_VER
 mapi_export const char *wsaerror(int);

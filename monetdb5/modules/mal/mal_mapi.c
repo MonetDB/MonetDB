@@ -122,6 +122,7 @@ doChallenge(void *data)
 	protocol_version protocol = prot9;
 	size_t buflen = BLOCK;
 	column_compression colcomp = COLUMN_COMPRESSION_NONE;
+	int compute_column_widths = 0;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -199,6 +200,9 @@ doChallenge(void *data)
 		} else if (strstr(buf, "PROTOBUF")) {
 			colcomp = COLUMN_COMPRESSION_PROTOBUF;
 		}
+		if (strstr(buf, "COMPUTECOLWIDTH")) {
+			compute_column_widths = 1;
+		}
 
 		// FIXME: this leaks a block stream header
 		if (buflen < BLOCK) {
@@ -269,7 +273,7 @@ doChallenge(void *data)
 		return;
 	}
 	bs->eof = 1;
-	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen);
+	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen, compute_column_widths);
 }
 
 static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */

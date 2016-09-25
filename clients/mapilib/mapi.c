@@ -838,6 +838,7 @@ struct MapiColumn {
 	char *columnname;
 	char *columntype;
 	int columnlength;
+	int typelen;
 	int digits;
 	int scale;
 	void *null_value;
@@ -944,6 +945,7 @@ struct MapiStruct {
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
 	int index;		/* to mark the log records */
+	int compute_column_widths;
 };
 
 struct MapiResultSet {
@@ -2873,7 +2875,7 @@ mapi_reconnect(Mapi mid)
 			if (prot_version == prot10 || prot_version == prot10compressed) {
 				// if we are using protocol 10, we have to send either PROT10/PROT10COMPRESSED to the server
 				// so the server knows which protocol to use
-				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%s%s:%zu:\n",
+				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%s%s%s:%zu:\n",
 	#ifdef WORDS_BIGENDIAN
 				     "BIG",
 	#else
@@ -2884,6 +2886,7 @@ mapi_reconnect(Mapi mid)
 				     prot_version == prot10 ? "PROT10" : "PROT10COMPR",
 				     comp == COMPRESSION_SNAPPY ? "SNAPPY" : (comp == COMPRESSION_LZ4 ? "LZ4" : ""),
 				     mid->colcomp == COLUMN_COMPRESSION_PFOR ? ",HAVEPFOR" : (mid->colcomp == COLUMN_COMPRESSION_BINPACK ? ",HAVEBINPACK" : (mid->colcomp == COLUMN_COMPRESSION_PROTOBUF ? ",PROTOBUF" : (mid->colcomp == COLUMN_COMPRESSION_PROTOBUF_NOPACK ? ",PROTOBUFNOPACK" : ""))),
+				     mid->compute_column_widths ? "COMPUTECOLWIDTH" : "",
 				    mid->blocksize);
 			} else {
 				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
@@ -4109,15 +4112,15 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 */
 
 static char* mapi_convert_varchar(struct MapiColumn *col) {
-	if (col->buffer_ptr[col->columnlength - 1] == '\0') {
+	if (col->buffer_ptr[col->typelen - 1] == '\0') {
 		// if the varchar buffer is not entirely filled, we can directly use the data as char*
 		if (strcmp(col->buffer_ptr, (char*)col->null_value) == 0) 
 			return NULL;
 		return (char*) col->buffer_ptr;
 	}
 	// if the buffer is filled, there is no null terminator so we have to copy the data
-	memcpy(col->dynamic_write_buf, col->buffer_ptr, col->columnlength);
-	col->dynamic_write_buf[col->columnlength] = '\0';
+	memcpy(col->dynamic_write_buf, col->buffer_ptr, col->typelen);
+	col->dynamic_write_buf[col->typelen] = '\0';
 	if (strcmp(col->dynamic_write_buf, (char*)col->null_value) == 0) 
 		return NULL;
 	return (char*) col->dynamic_write_buf;
@@ -4161,7 +4164,7 @@ mapi_string_conversion_function(hge,hge,hugeint);
 mapi_string_conversion_function(int,date,date);
 
 static char* mapi_convert_decimal(struct MapiColumn *col) {
-	if (conversion_decimal_to_string(col->buffer_ptr, col->write_buf, COLBUFSIZ, col->scale, col->columnlength, col->null_value) < 0) {
+	if (conversion_decimal_to_string(col->buffer_ptr, col->write_buf, COLBUFSIZ, col->scale, col->typelen, col->null_value) < 0) {
 		return NULL;
 	}
 	return (char*) col->write_buf;
@@ -4251,6 +4254,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				char *table_name, *col_name, *type_sql_name;
 				int typelen;
 				int null_len;
+				lng column_print_length;
 
 				if (!mnstr_readLng(mid->from, &col_info_length)) {
 					return mid->error;
@@ -4291,20 +4295,27 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				if (mnstr_read(mid->from, result->fields[i].null_value, null_len, 1) != 1) {
 					return mid->error;
 				}
+				column_print_length = typelen;
+				if (mid->compute_column_widths) {
+					if (!mnstr_readLng(mid->from, &column_print_length)) {
+						return mid->error;
+					}
+				}
 
 	//			fprintf(stderr, "%lld col_info_length=%lld, table_name=%s, col_name=%s, type_sql_name=%s, type_len=%d\n",
 	//					i, col_info_length, table_name, col_name, type_sql_name, typelen);
 				result->fields[i].columnname = col_name;
 				result->fields[i].tablename = table_name;
 				result->fields[i].columntype = type_sql_name;
-				result->fields[i].columnlength = typelen;
+				result->fields[i].typelen = typelen;
+				result->fields[i].columnlength = column_print_length;
 				result->fields[i].dynamic_write_buf = NULL;
 				result->fields[i].converter = NULL;
 
 				if (strcasecmp(type_sql_name, "varchar") == 0 || strcasecmp(type_sql_name, "char") == 0) {
 					if (typelen > 0) {
 						result->fields[i].converter = (mapi_converter) mapi_convert_varchar;
-						result->fields[i].dynamic_write_buf = malloc(result->fields[i].columnlength * sizeof(char));
+						result->fields[i].dynamic_write_buf = malloc(result->fields[i].typelen * sizeof(char));
 					} else {
 						result->fields[i].converter = (mapi_converter) mapi_convert_clob;
 					}
@@ -5696,7 +5707,7 @@ mapi_fetch_row(MapiHdl hdl)
 			// iterate over cols
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
 				result->fields[i].buffer_ptr = buf;
-				if (result->fields[i].columnlength < 0) {
+				if (result->fields[i].typelen < 0) {
 					// variable-length column
 					lng col_len = *((lng*) buf);
 					assert((size_t) col_len < hdl->mid->blocksize && col_len > 0);
@@ -5746,7 +5757,7 @@ mapi_fetch_row(MapiHdl hdl)
 						result->fields[i].buffer_ptr = resbuffer;
 					} else {
 #endif
-					buf += nrows * result->fields[i].columnlength;
+					buf += nrows * result->fields[i].typelen;
 #ifdef HAVE_PFOR
 					}
 #endif
@@ -5758,7 +5769,7 @@ mapi_fetch_row(MapiHdl hdl)
 			result->tuple_count += nrows;
 		} else {
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
-				if (result->fields[i].columnlength < 0) {
+				if (result->fields[i].typelen < 0) {
 					// variable-length column
 					if (hdl->mid->protobuf_res) {
 						if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF) {
@@ -5777,7 +5788,7 @@ mapi_fetch_row(MapiHdl hdl)
 #endif
 					}
 				} else {
-					result->fields[i].buffer_ptr += result->fields[i].columnlength;
+					result->fields[i].buffer_ptr += result->fields[i].typelen;
 				}
 			}
 		}
@@ -6222,4 +6233,8 @@ mapi_set_column_compression(Mapi mid, const char* colcomp) {
 	return 0;
 }
 
+void 
+mapi_set_compute_column_width(Mapi mid, int compute_column_width) {
+	mid->compute_column_widths = compute_column_width ? 1 : 0;
 
+}
