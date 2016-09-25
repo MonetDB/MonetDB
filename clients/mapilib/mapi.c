@@ -4167,6 +4167,20 @@ static char* mapi_convert_decimal(struct MapiColumn *col) {
 	return (char*) col->write_buf;
 }
 
+static char* mapi_convert_time(struct MapiColumn *col) {
+	if (conversion_time_to_string(col->write_buf, COLBUFSIZ, (int*) col->buffer_ptr, *((int*)col->null_value), 0) < 0) {
+		return NULL;
+	}
+	return (char*) col->write_buf;
+}
+
+static char* mapi_convert_timestamp(struct MapiColumn *col) {
+	if (conversion_epoch_to_string(col->write_buf, COLBUFSIZ, (lng*) col->buffer_ptr, *((lng*)col->null_value), 0) < 0) {
+		return NULL;
+	}
+	return (char*) col->write_buf;
+}
+
 static char* mapi_convert_unknown(struct MapiColumn *col) {
 	(void) col;
 	return "<unknown>";
@@ -4317,6 +4331,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					result->fields[i].converter = (mapi_converter) mapi_convert_real;
 				} else if (strcasecmp(type_sql_name, "hugeint") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_hugeint;
+				} else if (strcasecmp(type_sql_name, "time") == 0) {
+					result->fields[i].converter = (mapi_converter) mapi_convert_time;
+				} else if (strcasecmp(type_sql_name, "timestamp") == 0) {
+					result->fields[i].converter = (mapi_converter) mapi_convert_timestamp;
 				} else if (typelen < 0) { /* any type besides the ones shown above should be converted to strings by the server */
 					result->fields[i].converter = (mapi_converter) mapi_convert_clob;
 				} else {

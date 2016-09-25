@@ -61,4 +61,10 @@ numeric_conversion(hge, hge);
 // date conversion
 numeric_conversion(int, date);
 
+// *src is ms since 00:00:00
+int conversion_time_to_string(char *dst, int len, const int *src, int null_value, int timezone_diff);
+
+// *src is time since epoch in ms
+int conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, int timezone_diff);
+
 #endif

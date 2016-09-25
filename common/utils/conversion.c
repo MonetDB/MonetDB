@@ -217,6 +217,10 @@ int
 conversion_date_to_string(char *dst, int len, const int *src, int null_value) {
 	int day, month, year;
 	if (len < dateStrlen) return -1;
+	if (*src == null_value) {
+		strcpy(dst, "nil");
+		return 3;
+	}
 
 	year = *src / 365;
 	day = (*src - year * 365) - leapyears(year >= 0 ? year - 1 : year);
@@ -248,11 +252,62 @@ conversion_date_to_string(char *dst, int len, const int *src, int null_value) {
 			}
 		day -= CUMDAYS[month - 1];
 	}
+	// YYYY-MM-DD
+	sprintf(dst, "%d-%02d-%02d", year, month, day);
+	return (int) strlen(dst);
+}
+
+int 
+conversion_time_to_string(char *dst, int len, const int *src, int null_value, int timezone_diff) {
+	int ms, sec, min, hour;
+	int time = *src;
+	if (len < daytimeStrlen) return -1;
 	if (*src == null_value) {
 		strcpy(dst, "nil");
 		return 3;
 	}
-	// YYYY-MM-DD
-	sprintf(dst, "%d-%02d-%02d", year, month, day);
-	return (int) strlen(dst);
+	// account for the timezone of the client
+	time += timezone_diff * 1000 * 60 * 60;
+
+	// for some reason, mclient does not render the ms part of the time, so we don't either
+	hour = time / 3600000;
+	time -= hour * 3600000;
+	min = time / 60000;
+	time -= min * 60000;
+	sec = time / 1000;
+	//time -= sec * 1000;
+	//ms = time;
+	return sprintf(dst, "%02d:%02d:%02d", hour, min, sec);
+}
+
+static int days_between_zero_and_epoch = 719528;
+
+int
+conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, int timezone_diff) {
+	int ms, sec, min, hour, day, month, year;
+	int days = 0;
+	lng time = *src;
+
+	if (*src == null_value) {
+		strcpy(dst, "nil");
+		return 3;
+	}
+	// account for the timezone of the client
+	time += timezone_diff * 1000 * 60 * 60;
+
+	ms = time % 1000 * 1000;
+	time /= 1000;
+	sec = time % 60;
+	time /= 60;
+	min = time % 60;
+	time /= 60;
+	hour = time % 24;
+	time /= 24;
+	// we know the amount of days since epoch, just add the days between 0000-01-01 and epoch 
+	// then we can use our conversion_date_to_string function
+	days = (int)(time + days_between_zero_and_epoch);
+
+	int offset = conversion_date_to_string(dst, len, &days, -2147483647);
+	if (offset < 0) return -1;
+	return snprintf(dst + offset, len - offset, " %02d:%02d:%02d.%06d", hour, min, sec, ms);
 }

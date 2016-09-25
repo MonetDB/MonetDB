@@ -1830,7 +1830,16 @@ static int write_str_term(stream* s, str val) {
 #endif
 
 static int type_supports_binary_transfer(sql_type *type) {
-	return type->eclass == EC_CHAR || type->eclass == EC_STRING || type->eclass == EC_BLOB || type->eclass == EC_DEC || type->eclass == EC_FLT || type->eclass == EC_NUM || type->eclass == EC_DATE;
+	return 
+		type->eclass == EC_CHAR || 
+		type->eclass == EC_STRING || 
+		type->eclass == EC_BLOB || 
+		type->eclass == EC_DEC || 
+		type->eclass == EC_FLT || 
+		type->eclass == EC_NUM || 
+		type->eclass == EC_DATE || 
+		type->eclass == EC_TIME || 
+		type->eclass == EC_TIMESTAMP;
 }
 
 static size_t max(size_t a, size_t b) {
@@ -1894,6 +1903,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		int convert_to_string = !type_supports_binary_transfer(c->type.type);
 		sql_type *type = c->type.type;
 
+		if (type->eclass == EC_TIMESTAMP) {
+			// timestamps are converted to Unix Timestamps
+			mtype = TYPE_lng;
+			typelen = sizeof(lng);	
+		}
 		if (ATOMvarsized(mtype) || convert_to_string) {
 			typelen = -1;
 			if (!convert_to_string && mtype == TYPE_str && c->type.digits > 0) {
@@ -1949,10 +1963,17 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 		if (convert_to_string) {
 			BAT *res = BATconvert(iterators[i].b, NULL, TYPE_str, 1);
 			// if converting to string, we use str_nil
-			BBPunfix(iterators[i].b);
+			BBPunfix(iterators[i].b->batCacheid);
 			iterators[i] = bat_iterator(res);
 			mtype = TYPE_str;
+		} else if (type->eclass == EC_TIMESTAMP) {
+			bat ret;
+			// convert to UNIX timestamp
+			MTIMEepoch_bulk(&ret, &iterators[i].b->batCacheid);
+			BBPunfix(iterators[i].b->batCacheid);
+			iterators[i] = bat_iterator(BATdescriptor(ret));
 		}
+
 		switch(ATOMstorage(mtype)) {
 			case TYPE_str:
 				retval = write_str_term(s, str_nil);
