@@ -34,7 +34,14 @@
 #  include <time.h>
 # endif
 #endif
+#ifdef HAVE_OPENSSL
 #include <openssl/rand.h>		/* RAND_bytes */
+#else
+#ifdef HAVE_COMMONCRYPTO
+#include <CommonCrypto/CommonCrypto.h>
+#include <CommonCrypto/CommonRandom.h>
+#endif
+#endif
 
 /**
  * Parses the given file stream matching the keys from list.  If a match
@@ -379,20 +386,34 @@ generateSalt(char *buf, unsigned int len)
 	unsigned int fill;
 	unsigned int min;
 
-	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0) {
+#ifdef HAVE_OPENSSL
+	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(&size, sizeof(size)) != kCCSuccess)
+#endif
+#endif
 #ifndef STATIC_CODE_ANALYSIS
 		size = (unsigned int)rand();
 #else
 		size = 0;
 #endif
-	}
 	fill = len * 0.75;
 	min = len * 0.42;
 	size = (size % (fill - min)) + min;
+#ifdef HAVE_OPENSSL
 	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
 		for (c = 0; c < size; c++)
 			buf[c] = seedChars[((unsigned char *) buf)[c] % 62];
-	} else {
+	} else
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(buf, size) >= 0) {
+		for (c = 0; c < size; c++)
+			buf[c] = seedChars[((unsigned char *) buf)[c] % 62];
+	} else
+#endif
+#endif
 		for (c = 0; c < size; c++) {
 #ifndef STATIC_CODE_ANALYSIS
 			buf[c] = seedChars[rand() % 62];
@@ -400,7 +421,6 @@ generateSalt(char *buf, unsigned int len)
 			buf[c] = seedChars[0];
 #endif
 		}
-	}
 	for ( ; c < len; c++)
 		buf[c] = '\0';
 }
