@@ -959,7 +959,7 @@ struct MapiStatement {
 #endif
 
 #ifdef HAVE_EMBEDDED
-#define printf //
+#define printf(...)	((void)0)
 #endif
 
 /*

@@ -512,8 +512,8 @@ MALexitClient(Client c)
 str
 MALreader(Client c)
 {
-	int r = 1;
 #ifndef HAVE_EMBEDDED
+	int r = 1;
 	if (c == mal_clients) {
 		r = readConsole(c);
 		if (r < 0 && c->fdin->eof == 0)
