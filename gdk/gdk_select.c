@@ -161,7 +161,6 @@ sort_cand(BAT *b, BUN cnt)
 #define remainder8(X)   ((X) &  7)
 #define quotient8(X)    ((X) >> 3)
 
-	assert(b->ttype=TYPE_oid);
 	/* input must be a potential candidate list or NULL */
 	assert(b == NULL ||
 	       (((b->ttype == TYPE_void && b->tseqbase != oid_nil) ||
@@ -171,8 +170,8 @@ sort_cand(BAT *b, BUN cnt)
 	sz_b = BATcount(b);
 	bitvector = (unsigned char *) GDKzalloc(cnt/8+1);
 	if (bitvector == NULL) {
-		GDKerror("#BATbloom: memory allocation error");
-		return GDK_FAIL;
+		GDKerror("#sort_cand: memory allocation error");
+		return NULL;
 	}
 
 	o = (oid *) Tloc(b,0);
@@ -1727,12 +1726,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						}
 						rs++;
 					}
-					BATsetcount(bn, cnt);
-					bn->tkey = 1;
-					bn->tnil = 0;
-					bn->tnonil = 1;
 				}
-
+				BATsetcount(bn, cnt);
+				bn->tkey = 1;
+				bn->tnil = 0;
+				bn->tnonil = 1;
 				/* output must be sorted */
 				/*
 				GDKqsort((oid *) Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
