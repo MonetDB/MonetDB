@@ -45,7 +45,7 @@ Ready.
 % mal # name
 % clob # type
 % 85 # length
-function user.s5_1():void;
+function user.s10_1():void;
     X_56:void := querylog.define("explain select * from tmp3;","sequential_pipe",39);
     X_18 := bat.new(nil:str);
     X_25 := bat.append(X_18,"sys.tmp3");
@@ -83,7 +83,29 @@ function user.s5_1():void;
     X_14:bat[:timestamp] := sql.bind(X_0,"sys","tmp3","t",0);
     X_16 := mosaic.projection(C_1,X_14);
     sql.resultSet(X_48,X_49,X_51,X_53,X_55,X_7,X_10,X_13,X_16);
-end user.s5_1;
+end user.s10_1;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=6 usec 
+#aliases              actions= 0 time=5 usec 
+#mergetable           actions= 0 time=28 usec 
+#deadcode             actions= 0 time=6 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 2 time=8 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=3 usec 
+#reorder              actions= 1 time=24 usec 
+#deadcode             actions= 0 time=5 usec 
+#reduce               actions=19 time=8 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=2 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollector     actions= 1 time=15 usec 
+#total                actions= 1 time=224 usec 
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
 % i,	b,	f,	t # name
@@ -195,7 +217,7 @@ end user.s5_1;
 % mal # name
 % clob # type
 % 85 # length
-function user.s11_1():void;
+function user.s22_1():void;
     X_56:void := querylog.define("explain select * from tmp3;","sequential_pipe",39);
     X_18 := bat.new(nil:str);
     X_25 := bat.append(X_18,"sys.tmp3");
@@ -233,7 +255,7 @@ function user.s11_1():void;
     X_14:bat[:timestamp] := sql.bind(X_0,"sys","tmp3","t",0);
     X_16 := mosaic.projection(C_1,X_14);
     sql.resultSet(X_48,X_49,X_51,X_53,X_55,X_7,X_10,X_13,X_16);
-end user.s11_1;
+end user.s22_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=4 usec 
 #costmodel            actions= 1 time=2 usec 
@@ -372,7 +394,7 @@ end user.s11_1;
 % mal # name
 % clob # type
 % 85 # length
-function user.s18_1():void;
+function user.s36_1():void;
     X_56:void := querylog.define("explain select * from tmp3;","sequential_pipe",39);
     X_18 := bat.new(nil:str);
     X_25 := bat.append(X_18,"sys.tmp3");
@@ -410,7 +432,7 @@ function user.s18_1():void;
     X_14:bat[:timestamp] := sql.bind(X_0,"sys","tmp3","t",0);
     X_16 := mosaic.projection(C_1,X_14);
     sql.resultSet(X_48,X_49,X_51,X_53,X_55,X_7,X_10,X_13,X_16);
-end user.s18_1;
+end user.s36_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=4 usec 
 #costmodel            actions= 1 time=2 usec 

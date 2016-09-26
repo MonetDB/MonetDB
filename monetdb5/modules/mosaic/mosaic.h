@@ -32,6 +32,7 @@
 #include "algebra.h"
 
 //#define _DEBUG_MOSAIC_
+//#define _DEBUG_PREFIX_
 
 /* do not invest in compressing BATs smaller than this */
 #define MOSAIC_THRESHOLD 1

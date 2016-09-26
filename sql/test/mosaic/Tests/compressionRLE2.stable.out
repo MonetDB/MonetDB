@@ -136,7 +136,7 @@ Ready.
 % mal # name
 % clob # type
 % 88 # length
-function user.s8_1():void;
+function user.s16_1():void;
     X_56:void := querylog.define("explain select * from tmp3rle;","sequential_pipe",39);
     X_18 := bat.new(nil:str);
     X_25 := bat.append(X_18,"sys.tmp3rle");
@@ -174,25 +174,26 @@ function user.s8_1():void;
     X_14:bat[:timestamp] := sql.bind(X_0,"sys","tmp3rle","t",0);
     X_16 := mosaic.projection(C_1,X_14);
     sql.resultSet(X_48,X_49,X_51,X_53,X_55,X_7,X_10,X_13,X_16);
-end user.s8_1;
-#inline               actions= 0 time=2 usec 
-#remap                actions= 0 time=6 usec 
-#costmodel            actions= 1 time=2 usec 
-#coercion             actions= 0 time=2 usec 
-#evaluate             actions= 0 time=5 usec 
-#aliases              actions= 0 time=10 usec 
-#mergetable           actions= 0 time=54 usec 
-#deadcode             actions= 0 time=12 usec 
-#aliases              actions= 0 time=9 usec 
-#constants            actions= 2 time=15 usec 
-#commonTerms          actions= 0 time=12 usec 
-#projectionpath       actions= 0 time=9 usec 
-#reorder              actions= 1 time=47 usec 
-#deadcode             actions= 0 time=12 usec 
-#reduce               actions=18 time=29 usec 
-#matpack              actions= 0 time=5 usec 
-#multiplex            actions= 0 time=5 usec 
-#profiler             actions= 1 time=5 usec 
+end user.s16_1;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=7 usec 
+#aliases              actions= 0 time=6 usec 
+#mergetable           actions= 0 time=29 usec 
+#deadcode             actions= 0 time=6 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 2 time=8 usec 
+#commonTerms          actions= 0 time=5 usec 
+#projectionpath       actions= 0 time=4 usec 
+#reorder              actions= 1 time=25 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=19 time=7 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=3 usec 
+#profiler             actions= 1 time=2 usec 
 #candidates           actions= 1 time=1 usec 
 #garbagecollector     actions= 1 time=28 usec 
 #total                actions= 1 time=421 usec 

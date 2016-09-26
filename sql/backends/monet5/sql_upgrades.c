@@ -2140,6 +2140,13 @@ sql_update_jun2016_sp2(Client c, mvc *sql)
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 static str
 sql_update_mosaic(Client c, mvc *sql)
 {

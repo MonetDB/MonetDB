@@ -59,7 +59,7 @@ Ready.
 % mal # name
 % clob # type
 % 88 # length
-function user.s7_1():void;
+function user.s14_1():void;
     X_56:void := querylog.define("explain select * from tmp3rle;","sequential_pipe",39);
     X_18 := bat.new(nil:str);
     X_25 := bat.append(X_18,"sys.tmp3rle");
@@ -97,7 +97,29 @@ function user.s7_1():void;
     X_14:bat[:timestamp] := sql.bind(X_0,"sys","tmp3rle","t",0);
     X_16 := mosaic.projection(C_1,X_14);
     sql.resultSet(X_48,X_49,X_51,X_53,X_55,X_7,X_10,X_13,X_16);
-end user.s7_1;
+end user.s14_1;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=3 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=2 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 0 time=8 usec 
+#aliases              actions= 0 time=6 usec 
+#mergetable           actions= 0 time=35 usec 
+#deadcode             actions= 0 time=7 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 2 time=9 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=30 usec 
+#deadcode             actions= 0 time=7 usec 
+#reduce               actions=19 time=8 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=3 usec 
+#profiler             actions= 1 time=3 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollector     actions= 1 time=18 usec 
+#total                actions= 1 time=274 usec 
 #alter table tmp3RLE alter column i set storage 'runlength';
 #alter table tmp3RLE alter column b set storage 'runlength';
 #alter table tmp3RLE alter column f set storage 'runlength';
@@ -107,7 +129,7 @@ end user.s7_1;
 % mal # name
 % clob # type
 % 88 # length
-function user.s12_1():void;
+function user.s24_1():void;
     X_24:void := querylog.define("explain select i from tmp3rle;","sequential_pipe",18);
     X_9 := bat.new(nil:str);
     X_16 := bat.append(X_9,"sys.tmp3rle");
@@ -124,13 +146,35 @@ function user.s12_1():void;
     X_4:bat[:int] := sql.bind(X_0,"sys","tmp3rle","i",0);
     X_7 := mosaic.projection(C_1,X_4);
     sql.resultSet(X_16,X_18,X_19,X_21,X_23,X_7);
-end user.s12_1;
+end user.s24_1;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=6 usec 
+#aliases              actions= 0 time=4 usec 
+#mergetable           actions= 0 time=23 usec 
+#deadcode             actions= 0 time=5 usec 
+#aliases              actions= 0 time=3 usec 
+#constants            actions= 0 time=4 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=3 usec 
+#reorder              actions= 1 time=20 usec 
+#deadcode             actions= 0 time=5 usec 
+#reduce               actions=17 time=6 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=2 usec 
+#candidates           actions= 1 time=0 usec 
+#garbagecollector     actions= 1 time=12 usec 
+#total                actions= 1 time=203 usec 
 #explain select b from tmp3RLE;
 % .explain # table_name
 % mal # name
 % clob # type
 % 88 # length
-function user.s13_1():void;
+function user.s26_1():void;
     X_24:void := querylog.define("explain select b from tmp3rle;","sequential_pipe",18);
     X_9 := bat.new(nil:str);
     X_16 := bat.append(X_9,"sys.tmp3rle");
@@ -147,13 +191,35 @@ function user.s13_1():void;
     X_4:bat[:bit] := sql.bind(X_0,"sys","tmp3rle","b",0);
     X_7 := mosaic.projection(C_1,X_4);
     sql.resultSet(X_16,X_18,X_19,X_21,X_23,X_7);
-end user.s13_1;
+end user.s26_1;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=3 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=6 usec 
+#aliases              actions= 0 time=4 usec 
+#mergetable           actions= 0 time=23 usec 
+#deadcode             actions= 0 time=5 usec 
+#aliases              actions= 0 time=3 usec 
+#constants            actions= 0 time=3 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=4 usec 
+#reorder              actions= 1 time=19 usec 
+#deadcode             actions= 0 time=4 usec 
+#reduce               actions=17 time=6 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=2 usec 
+#candidates           actions= 1 time=0 usec 
+#garbagecollector     actions= 1 time=11 usec 
+#total                actions= 1 time=201 usec 
 #explain select f from tmp3RLE;
 % .explain # table_name
 % mal # name
 % clob # type
 % 88 # length
-function user.s14_1():void;
+function user.s28_1():void;
     X_24:void := querylog.define("explain select f from tmp3rle;","sequential_pipe",18);
     X_9 := bat.new(nil:str);
     X_16 := bat.append(X_9,"sys.tmp3rle");
@@ -170,13 +236,35 @@ function user.s14_1():void;
     X_4:bat[:flt] := sql.bind(X_0,"sys","tmp3rle","f",0);
     X_7 := mosaic.projection(C_1,X_4);
     sql.resultSet(X_16,X_18,X_19,X_21,X_23,X_7);
-end user.s14_1;
+end user.s28_1;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=2 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 0 time=5 usec 
+#aliases              actions= 0 time=4 usec 
+#mergetable           actions= 0 time=23 usec 
+#deadcode             actions= 0 time=5 usec 
+#aliases              actions= 0 time=3 usec 
+#constants            actions= 0 time=3 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=3 usec 
+#reorder              actions= 1 time=20 usec 
+#deadcode             actions= 0 time=4 usec 
+#reduce               actions=17 time=6 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#garbagecollector     actions= 1 time=12 usec 
+#total                actions= 1 time=209 usec 
 #explain select t from tmp3RLE;
 % .explain # table_name
 % mal # name
 % clob # type
 % 88 # length
-function user.s15_1():void;
+function user.s30_1():void;
     X_24:void := querylog.define("explain select t from tmp3rle;","sequential_pipe",18);
     X_9 := bat.new(nil:str);
     X_16 := bat.append(X_9,"sys.tmp3rle");
@@ -193,7 +281,29 @@ function user.s15_1():void;
     X_4:bat[:timestamp] := sql.bind(X_0,"sys","tmp3rle","t",0);
     X_7 := mosaic.projection(C_1,X_4);
     sql.resultSet(X_16,X_18,X_19,X_21,X_23,X_7);
-end user.s15_1;
+end user.s30_1;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=6 usec 
+#aliases              actions= 0 time=4 usec 
+#mergetable           actions= 0 time=23 usec 
+#deadcode             actions= 0 time=5 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 0 time=3 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=3 usec 
+#reorder              actions= 1 time=19 usec 
+#deadcode             actions= 0 time=5 usec 
+#reduce               actions=17 time=6 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=2 usec 
+#candidates           actions= 1 time=0 usec 
+#garbagecollector     actions= 1 time=13 usec 
+#total                actions= 1 time=203 usec 
 #select * from tmp3RLE;
 % sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle # table_name
 % i,	b,	f,	t # name

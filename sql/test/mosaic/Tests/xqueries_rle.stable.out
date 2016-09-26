@@ -59,16 +59,38 @@ Ready.
 % mal # name
 % clob # type
 % 104 # length
-function user.s7_1(A0:int):void;
+function user.s14_1():void;
     X_19:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",10);
     X_0 := sql.mvc();
     X_4:bat[:int] := sql.bind(X_0,"sys","xtmp3","i",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","xtmp3");
-    X_9 := mosaic.thetasubselect(X_4,C_1,A0,"<");
+    X_9 := mosaic.thetasubselect(X_4,C_1,4,"<");
     X_11 := mosaic.projection(X_9,X_4);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","bigint",64,0,7,X_12);
-end user.s7_1;
+end user.s14_1;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=2 usec 
+#evaluate             actions= 1 time=10 usec 
+#emptybind            actions= 0 time=5 usec 
+#aliases              actions= 2 time=4 usec 
+#mergetable           actions= 0 time=18 usec 
+#deadcode             actions= 0 time=4 usec 
+#aliases              actions= 0 time=3 usec 
+#constants            actions= 1 time=5 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=3 usec 
+#reorder              actions= 1 time=15 usec 
+#deadcode             actions= 0 time=3 usec 
+#reduce               actions=21 time=5 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#garbagecollector     actions= 1 time=9 usec 
+#total                actions= 1 time=194 usec 
 #select count(*) from xtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
@@ -80,16 +102,16 @@ end user.s7_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s8_1(A0:int):void;
+function user.s16_1():void;
     X_21:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",10);
     X_0 := sql.mvc();
     X_4:bat[:int] := sql.bind(X_0,"sys","xtmp3","i",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","xtmp3");
-    X_9 := mosaic.subselect(X_4,C_1,A0,A0,true,false,false);
+    X_9 := mosaic.subselect(X_4,C_1,7,7,true,false,false);
     X_13 := mosaic.projection(X_9,X_4);
     X_14 := aggr.count(X_13);
     sql.resultSet("sys.L1","L1","bigint",64,0,7,X_14);
-end user.s8_1;
+end user.s16_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -149,18 +171,18 @@ end user.s8_1;
 % mal # name
 % clob # type
 % 104 # length
-function user.s16_1(A0:int):void;
+function user.s32_1():void;
     X_19:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",10);
     X_0 := sql.mvc();
     X_4:bat[:int] := sql.bind(X_0,"sys","xtmp3","i",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","xtmp3");
-    X_9 := mosaic.thetasubselect(X_4,C_1,A0,"<");
+    X_9 := mosaic.thetasubselect(X_4,C_1,4,"<");
     X_11 := mosaic.projection(X_9,X_4);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","bigint",64,0,7,X_12);
-end user.s16_1;
-#inline               actions= 0 time=0 usec 
-#remap                actions= 0 time=2 usec 
+end user.s32_1;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
 #evaluate             actions= 0 time=2 usec 
@@ -191,16 +213,16 @@ end user.s16_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s17_1(A0:int):void;
+function user.s34_1():void;
     X_21:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",10);
     X_0 := sql.mvc();
     X_4:bat[:int] := sql.bind(X_0,"sys","xtmp3","i",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","xtmp3");
-    X_9 := mosaic.subselect(X_4,C_1,A0,A0,true,false,false);
+    X_9 := mosaic.subselect(X_4,C_1,7,7,true,false,false);
     X_13 := mosaic.projection(X_9,X_4);
     X_14 := aggr.count(X_13);
     sql.resultSet("sys.L1","L1","bigint",64,0,7,X_14);
-end user.s17_1;
+end user.s34_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -260,16 +282,16 @@ end user.s17_1;
 % mal # name
 % clob # type
 % 104 # length
-function user.s25_1(A0:int):void;
+function user.s50_1():void;
     X_19:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",10);
     X_0 := sql.mvc();
     X_4:bat[:int] := sql.bind(X_0,"sys","xtmp3","i",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","xtmp3");
-    X_9 := mosaic.thetasubselect(X_4,C_1,A0,"<");
+    X_9 := mosaic.thetasubselect(X_4,C_1,4,"<");
     X_11 := mosaic.projection(X_9,X_4);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","bigint",64,0,7,X_12);
-end user.s25_1;
+end user.s50_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=3 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -302,18 +324,18 @@ end user.s25_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s26_1(A0:int):void;
+function user.s52_1():void;
     X_21:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",10);
     X_0 := sql.mvc();
     X_4:bat[:int] := sql.bind(X_0,"sys","xtmp3","i",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","xtmp3");
-    X_9 := mosaic.subselect(X_4,C_1,A0,A0,true,false,false);
+    X_9 := mosaic.subselect(X_4,C_1,7,7,true,false,false);
     X_13 := mosaic.projection(X_9,X_4);
     X_14 := aggr.count(X_13);
     sql.resultSet("sys.L1","L1","bigint",64,0,7,X_14);
-end user.s26_1;
-#inline               actions= 0 time=1 usec 
-#remap                actions= 0 time=3 usec 
+end user.s52_1;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
 #evaluate             actions= 0 time=3 usec 

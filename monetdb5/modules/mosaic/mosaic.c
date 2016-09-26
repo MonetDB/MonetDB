@@ -538,16 +538,24 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	int i;
 	MOStask task;
+	BAT *b;
+	bat *bid =getArgReference_bat(stk,pci,1);
+	bat *ret =getArgReference_bat(stk,pci,0);
 
 #ifdef _DEBUG_MOSAIC_
 	int flg = 1;
 #else
 	int flg = 0;
 #endif
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
+
 	(void) mb;
 	task= (MOStask) GDKzalloc(sizeof(*task));
-	if( task == NULL)
+	if( task == NULL){
+		BBPunfix(b->batCacheid);
 		throw(MAL, "mosaic.compress", MAL_MALLOC_FAIL);
+	}
 
 	if( pci->argc == 3)
 		msg = *getArgReference_str(stk,pci,2);
@@ -559,6 +567,7 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			task->filter[i]= 1;
 
 	msg= MOScompressInternal(cntxt, getArgReference_bat(stk,pci,1), task,  flg);
+	BBPkeepref(*ret = b->batCacheid);
 	GDKfree(task);
 	return msg;
 }
@@ -696,10 +705,19 @@ MOSdecompressInternal(Client cntxt, bat *bid)
 	return MAL_SUCCEED;
 }
 
+// decompression does not change the BAT id
 str
 MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
+	bat *bid = getArgReference_bat(stk,pci,1);
+	bat *ret = getArgReference_bat(stk,pci,0);
+	BAT *b;
+
 	(void) mb;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
+	BBPkeepref(*ret = b->batCacheid);
 	return MOSdecompressInternal(cntxt, getArgReference_bat(stk,pci,1));
 }
 
@@ -1467,7 +1485,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		pat[i].clk1 = GDKms()- pat[i].clk1;
 		
 #ifdef _DEBUG_MOSAIC_
-		mnstr_printf(cntxt->fdout,"#run experiment %d ratio %6.4f "LLFMT" ms  %s\n",i, task->ratio, clk, technique);
+		mnstr_printf(cntxt->fdout,"#run experiment %d ratio %6.4f "LLFMT" ms  %s\n",i, task->ratio, pat[i].clk1, pat[i].technique);
 #endif
 		if( task->hdr == NULL){
 			// aborted compression experiment

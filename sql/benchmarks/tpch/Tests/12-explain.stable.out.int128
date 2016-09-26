@@ -55,7 +55,7 @@ Ready.
 % clob # type
 % 684 # length
 function user.s4_1():void;
-    X_161:void := querylog.define("explain select\n l_shipmode,\n sum(case\n when o_orderpriority = \\'1-URGENT\\'\n or o_orderpriority = \\'2-HIGH\\'\n then 1\n else 0\n end) as high_line_count,\n sum(case\n when o_orderpriority <> \\'1-URGENT\\'\n and o_orderpriority <> \\'2-HIGH\\'\n then 1\n else 0\n end) as low_line_count\nfrom\n orders,\n lineitem\nwhere\n o_orderkey = l_orderkey\n and l_shipmode in (\\'MAIL\\', \\'SHIP\\')\n and l_commitdate < l_receiptdate\n and l_shipdate < l_commitdate\n and l_receiptdate >= date \\'1994-01-01\\'\n and l_receiptdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n l_shipmode\norder by\n l_shipmode;","sequential_pipe",69);
+    X_161:void := querylog.define("explain select\n l_shipmode,\n sum(case\n when o_orderpriority = \\'1-URGENT\\'\n or o_orderpriority = \\'2-HIGH\\'\n then 1\n else 0\n end) as high_line_count,\n sum(case\n when o_orderpriority <> \\'1-URGENT\\'\n and o_orderpriority <> \\'2-HIGH\\'\n then 1\n else 0\n end) as low_line_count\nfrom\n orders,\n lineitem\nwhere\n o_orderkey = l_orderkey\n and l_shipmode in (\\'MAIL\\', \\'SHIP\\')\n and l_commitdate < l_receiptdate\n and l_shipdate < l_commitdate\n and l_receiptdate >= date \\'1994-01-01\\'\n and l_receiptdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n l_shipmode\norder by\n l_shipmode;","sequential_pipe",74);
     X_128 := bat.new(nil:str);
     X_135 := bat.append(X_128,"sys.lineitem");
     X_145 := bat.append(X_135,"sys.L1");
@@ -77,10 +77,14 @@ function user.s4_1():void;
     X_153 := bat.append(X_143,0);
     X_160 := bat.append(X_153,0);
     X_0 := sql.mvc();
-    X_4:bat[:str] := sql.bind(X_0,"sys","lineitem","l_shipmode",0);
-    X_15:bat[:date] := sql.bind(X_0,"sys","lineitem","l_receiptdate",0);
-    X_26:bat[:date] := sql.bind(X_0,"sys","lineitem","l_commitdate",0);
-    X_33:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",0);
+    X_207:bat[:str] := sql.bind(X_0,"sys","lineitem","l_shipmode",0);
+    X_4:bat[:str] := mosaic.decompress(X_207);
+    X_208:bat[:date] := sql.bind(X_0,"sys","lineitem","l_receiptdate",0);
+    X_15:bat[:date] := mosaic.decompress(X_208);
+    X_209:bat[:date] := sql.bind(X_0,"sys","lineitem","l_commitdate",0);
+    X_26:bat[:date] := mosaic.decompress(X_209);
+    X_210:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",0);
+    X_33:bat[:date] := mosaic.decompress(X_210);
     X_47:bat[:bit] := batcalc.>(X_26,X_33);
     X_40:bat[:bit] := batcalc.<(X_26,X_15);
     C_1:bat[:oid] := sql.tid(X_0,"sys","lineitem");
@@ -100,7 +104,8 @@ function user.s4_1():void;
     X_71:bat[:str] := algebra.projectionpath(X_65,X_54,X_4);
     (X_72,r1_86,r2_86) := group.subgroupdone(X_71);
     X_75 := algebra.projection(r1_86,X_71);
-    X_83:bat[:str] := sql.bind(X_0,"sys","orders","o_orderpriority",0);
+    X_211:bat[:str] := sql.bind(X_0,"sys","orders","o_orderpriority",0);
+    X_83:bat[:str] := mosaic.decompress(X_211);
     X_90:bat[:str] := algebra.projectionpath(r1_79,C_63,X_83);
     X_92:bat[:bit] := batcalc.==(X_90,"1-URGENT");
     X_96:bat[:bit] := batcalc.==(X_90,"2-HIGH");

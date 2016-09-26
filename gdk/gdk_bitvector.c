@@ -80,7 +80,7 @@ getBitVector(BitVector vector, BUN i, int bits)
 		// spread over two cells
 		m1 = BITS - shift;
 		value  = ((vector[cid] & (masks[m1]<<shift)) >> shift) | ((vector[cid+1] & masks[bits - m1]) << m1);
-		//printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d %10d cid "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
+		//printf("#getBitVector %ld i "BUNFMT" bits %d value %3d cell %10d %10d cid "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
 	  }
 	return value;
 }
@@ -109,7 +109,7 @@ setBitVector(BitVector vector, const BUN i, const int bits, const unsigned int v
 		m1 = BITS - shift;
         vector[cid]= (vector[cid]  & ~( masks[m1] << shift)) | ( (value & masks[m1]) << shift);
         vector[cid+1]= 0 | ( ((value>>m1) & masks[bits-m1]));
-		//printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d cid "BUNFMT" "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
+		//printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d %10d cid "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
 	}
 	//printf("#get it back %d\n",getBitVector(vector,i,bits));
 }

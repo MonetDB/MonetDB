@@ -1,18 +1,18 @@
 module mosaic;
 
-pattern compress(b:bat[:any_1], prop:str) 
+pattern compress(b:bat[:any_1], prop:str):bat[:any_1]
 address MOScompress
 comment "Apply dynamic compression over chunks";
 
-pattern compress(b:bat[:any_1]) 
+pattern compress(b:bat[:any_1]) :bat[:any_1]
 address MOScompress
 comment "Apply dynamic compression producing a temporary";
 
-pattern decompress(b:bat[:any_1]) 
+pattern decompress(b:bat[:any_1]) :bat[:any_1]
 address MOSdecompress
 comment "Apply dynamic decompression over chunks producing a temporary version";
 
-pattern decompressStorage(b:bat[:any_1]) 
+pattern decompressStorage(b:bat[:any_1]) :bat[:any_1]
 address MOSdecompressStorage
 comment "Apply dynamic decompression, changing the storage layout permanently";
 

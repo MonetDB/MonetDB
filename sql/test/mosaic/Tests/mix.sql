@@ -23,3 +23,5 @@ select * from mosaic_analysis('sys','mix0','i') order by factor desc;
 alter table mix0 alter column i set storage 'mosaic';
 select * from mosaic_layout('sys','mix0','i') ;
 
+drop table mix0;
+
