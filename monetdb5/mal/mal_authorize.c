@@ -789,7 +789,7 @@ AUTHverifyPassword(str *passwd)
 	char *p = *passwd;
 	size_t len = strlen(p);
 
-#ifdef HAVE_RIPEMD160
+#ifdef HAVE_RIPEMD160_UPDATE
 	if (strcmp(MONETDB5_PASSWDHASH, "RIPEMD160") == 0) {
 		if (len != 20 * 2)
 			throw(MAL, "verifyPassword",
@@ -797,7 +797,7 @@ AUTHverifyPassword(str *passwd)
 					"representation of a RIPEMD160 password hash?");
 	} else
 #endif
-#ifdef HAVE_SHA512
+#ifdef HAVE_SHA512_UPDATE
 	if (strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0) {
 		if (len != 64 * 2)
 			throw(MAL, "verifyPassword",
@@ -805,7 +805,7 @@ AUTHverifyPassword(str *passwd)
 					"representation of a SHA-2 512-bits password hash?");
 	} else
 #endif
-#ifdef HAVE_SHA384
+#ifdef HAVE_SHA384_UPDATE
 	if (strcmp(MONETDB5_PASSWDHASH, "SHA384") == 0) {
 		if (len != 48 * 2)
 			throw(MAL, "verifyPassword",
@@ -813,7 +813,7 @@ AUTHverifyPassword(str *passwd)
 					"representation of a SHA-2 384-bits password hash?");
 	} else
 #endif
-#ifdef HAVE_SHA256
+#ifdef HAVE_SHA256_UPDATE
 	if (strcmp(MONETDB5_PASSWDHASH, "SHA256") == 0) {
 		if (len != 32 * 2)
 			throw(MAL, "verifyPassword",
@@ -821,7 +821,7 @@ AUTHverifyPassword(str *passwd)
 					"representation of a SHA-2 256-bits password hash?");
 	} else
 #endif
-#ifdef HAVE_SHA224
+#ifdef HAVE_SHA224_UPDATE
 	if (strcmp(MONETDB5_PASSWDHASH, "SHA224") == 0) {
 		if (len != 28 * 2)
 			throw(MAL, "verifyPassword",
@@ -829,7 +829,7 @@ AUTHverifyPassword(str *passwd)
 					"representation of a SHA-2 224-bits password hash?");
 	} else
 #endif
-#ifdef HAVE_SHA1
+#ifdef HAVE_SHA1_UPDATE
 	if (strcmp(MONETDB5_PASSWDHASH, "SHA1") == 0) {
 		if (len != 20 * 2)
 			throw(MAL, "verifyPassword",
@@ -837,7 +837,7 @@ AUTHverifyPassword(str *passwd)
 					"representation of a SHA-1 password hash?");
 	} else
 #endif
-#ifdef HAVE_MD5
+#ifdef HAVE_MD5_UPDATE
 	if (strcmp(MONETDB5_PASSWDHASH, "MD5") == 0) {
 		if (len != 16 * 2)
 			throw(MAL, "verifyPassword",

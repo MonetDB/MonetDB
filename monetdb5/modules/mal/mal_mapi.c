@@ -36,6 +36,11 @@
 #include <mapi.h>
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>		/* RAND_bytes() */
+#else
+#ifdef HAVE_COMMONCRYPTO
+# include <CommonCrypto/CommonCrypto.h>
+# include <CommonCrypto/CommonRandom.h>
+#endif
 #endif
 #ifdef _WIN32   /* Windows specific */
 # include <winsock.h>
@@ -80,23 +85,31 @@ static void generateChallenge(str buf, int min, int max) {
 	 * during the same second */
 #ifdef HAVE_OPENSSL
 	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(&size, sizeof(size)) != kCCSuccess)
+#endif
 #endif
 		size = rand();
 	size = (size % (max - min)) + min;
 #ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
+	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0)
 		for (i = 0; i < size; i++)
 			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
-	} else {
+	else
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(buf, size) == kCCSuccess)
+		for (i = 0; i < size; i++)
+			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
+	else
+#endif
 #endif
 		for (i = 0; i < size; i++) {
 			bte = rand();
 			bte %= 62;
 			buf[i] = seedChars[bte];
 		}
-#ifdef HAVE_OPENSSL
-	}
-#endif
 	buf[i] = '\0';
 }
 

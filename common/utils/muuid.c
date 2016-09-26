@@ -19,6 +19,11 @@
 #ifndef HAVE_UUID
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>
+#else
+#ifdef HAVE_COMMONCRYPTO
+#include <CommonCrypto/CommonCrypto.h>
+#include <CommonCrypto/CommonRandom.h>
+#endif
 #endif
 #endif
 
@@ -45,7 +50,7 @@ generateUUID(void)
 	char out[37];
 #ifdef HAVE_OPENSSL
 	unsigned char randbuf[16];
-	if (RAND_bytes(randbuf, 16) >= 0) {
+	if (RAND_bytes(randbuf, 16) >= 0)
 		snprintf(out, sizeof(out),
 			 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
 			 "%02x%02x%02x%02x%02x%02x",
@@ -53,7 +58,20 @@ generateUUID(void)
 			 randbuf[4], randbuf[5], randbuf[6], randbuf[7],
 			 randbuf[8], randbuf[9], randbuf[10], randbuf[11],
 			 randbuf[12], randbuf[13], randbuf[14], randbuf[15]);
-	} else {
+	else
+#else
+#ifdef HAVE_COMMONCRYPTO
+	unsigned char randbuf[16];
+	if (CCRandomGenerateBytes(randbuf, 16) == kCCSuccess)
+		snprintf(out, sizeof(out),
+			 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
+			 "%02x%02x%02x%02x%02x%02x",
+			 randbuf[0], randbuf[1], randbuf[2], randbuf[3],
+			 randbuf[4], randbuf[5], randbuf[6], randbuf[7],
+			 randbuf[8], randbuf[9], randbuf[10], randbuf[11],
+			 randbuf[12], randbuf[13], randbuf[14], randbuf[15]);
+	else
+#endif
 #endif
 		/* generate something like this:
 		 * cefa7a9c-1dd2-11b2-8350-880020adbeef
@@ -64,9 +82,6 @@ generateUUID(void)
 			 rand() % 65536, rand() % 65536,
 			 rand() % 65536, rand() % 65536,
 			 rand() % 65536, rand() % 65536);
-#ifdef HAVE_OPENSSL
-	}
-#endif
 #endif
 	return strdup(out);
 }

@@ -20,8 +20,14 @@
 #ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
 #endif
-#if !defined(HAVE_UUID) && defined(HAVE_OPENSSL)
-#include <openssl/rand.h>		/* for RAND_bytes */
+#ifndef HAVE_UUID
+#ifdef HAVE_OPENSSL
+# include <openssl/rand.h>
+#else
+#ifdef HAVE_COMMONCRYPTO
+#include <CommonCrypto/CommonRandom.h>
+#endif
+#endif
 #endif
 
 #ifdef HAVE_UUID
@@ -169,7 +175,11 @@ UUIDgenerateUuid(uuid **retval)
 	(void) r;
 #else
 #ifdef HAVE_OPENSSL
-	if (RAND_bytes(u->u, 16) < 0) {
+	if (RAND_bytes(u->u, 16) < 0)
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(u->u, 16) != kCCSuccess)
+#endif
 #endif
 		/* if it failed, use rand */
 		for (i = 0; i < UUID_SIZE;) {
@@ -177,9 +187,6 @@ UUIDgenerateUuid(uuid **retval)
 			u->u[i++] = (unsigned char) (r >> 8);
 			u->u[i++] = (unsigned char) r;
 		}
-#ifdef HAVE_OPENSSL
-	}
-#endif
 #endif
 	return MAL_SUCCEED;
 }
