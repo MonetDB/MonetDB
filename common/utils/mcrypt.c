@@ -13,15 +13,15 @@
 #include "mcrypt.h"
 #include <string.h>
 
-#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
-
 #ifdef HAVE_OPENSSL
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include <openssl/ripemd.h>
 #else
+#ifdef HAVE_COMMONCRYPTO
 #define COMMON_DIGEST_FOR_OPENSSL
 #include <CommonCrypto/CommonDigest.h>
+#endif
 #endif
 
 /**
@@ -88,14 +88,14 @@ mcrypt_MD5Sum(const char *string, size_t len)
 	MD5_Update(&c, string, len);
 	MD5_Final(md, &c);
 
-	ret = malloc(sizeof(char) * (MD5_DIGEST_LENGTH * 2 + 1));
-	sprintf(ret, "%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3],
-			md[4], md[5], md[6], md[7],
-			md[8], md[9], md[10], md[11],
-			md[12], md[13], md[14], md[15]
-		   );
+	ret = malloc(MD5_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, MD5_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3],
+		 md[4], md[5], md[6], md[7],
+		 md[8], md[9], md[10], md[11],
+		 md[12], md[13], md[14], md[15]);
 
 	return ret;
 #else
@@ -124,14 +124,14 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 	SHA1_Update(&c, string, len);
 	SHA1_Final(md, &c);
 
-	ret = malloc(sizeof(char) * (SHA_DIGEST_LENGTH * 2 + 1));
-	sprintf(ret, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19]
-		   );
+	ret = malloc(SHA_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, SHA_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19]);
 
 	return ret;
 #else
@@ -160,18 +160,17 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 	SHA224_Update(&c, string, len);
 	SHA224_Final(md, &c);
 
-	ret = malloc(sizeof(char) * (SHA224_DIGEST_LENGTH * 2 + 1));
-	sprintf(ret,
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19],
-			md[20], md[21], md[22], md[23], md[24],
-			md[25], md[26], md[27]
-		   );
+	ret = malloc(SHA224_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, SHA224_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19],
+		 md[20], md[21], md[22], md[23], md[24],
+		 md[25], md[26], md[27]);
 
 	return ret;
 #else
@@ -200,20 +199,19 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 	SHA256_Update(&c, string, len);
 	SHA256_Final(md, &c);
 
-	ret = malloc(sizeof(char) * (SHA256_DIGEST_LENGTH * 2 + 1));
-	sprintf(ret,
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19],
-			md[20], md[21], md[22], md[23], md[24],
-			md[25], md[26], md[27], md[28], md[29],
-			md[30], md[31]
-		   );
+	ret = malloc(SHA256_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, SHA256_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19],
+		 md[20], md[21], md[22], md[23], md[24],
+		 md[25], md[26], md[27], md[28], md[29],
+		 md[30], md[31]);
 
 	return ret;
 #else
@@ -242,24 +240,23 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 	SHA384_Update(&c, string, len);
 	SHA384_Final(md, &c);
 
-	ret = malloc(sizeof(char) * (SHA384_DIGEST_LENGTH * 2 + 1));
-	sprintf(ret,
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19],
-			md[20], md[21], md[22], md[23], md[24],
-			md[25], md[26], md[27], md[28], md[29],
-			md[30], md[31], md[32], md[33], md[34],
-			md[35], md[36], md[37], md[38], md[39],
-			md[40], md[41], md[42], md[43], md[44],
-			md[45], md[46], md[47]
-		   );
+	ret = malloc(SHA384_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, SHA384_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19],
+		 md[20], md[21], md[22], md[23], md[24],
+		 md[25], md[26], md[27], md[28], md[29],
+		 md[30], md[31], md[32], md[33], md[34],
+		 md[35], md[36], md[37], md[38], md[39],
+		 md[40], md[41], md[42], md[43], md[44],
+		 md[45], md[46], md[47]);
 
 	return ret;
 #else
@@ -288,29 +285,28 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 	SHA512_Update(&c, string, len);
 	SHA512_Final(md, &c);
 
-	ret = malloc(sizeof(char) * (SHA512_DIGEST_LENGTH * 2 + 1));
-	sprintf(ret,
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19],
-			md[20], md[21], md[22], md[23], md[24],
-			md[25], md[26], md[27], md[28], md[29],
-			md[30], md[31], md[32], md[33], md[34],
-			md[35], md[36], md[37], md[38], md[39],
-			md[40], md[41], md[42], md[43], md[44],
-			md[45], md[46], md[47], md[48], md[49],
-			md[50], md[51], md[52], md[53], md[54],
-			md[55], md[56], md[57], md[58], md[59],
-			md[60], md[61], md[62], md[63]
-		   );
+	ret = malloc(SHA512_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, SHA512_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19],
+		 md[20], md[21], md[22], md[23], md[24],
+		 md[25], md[26], md[27], md[28], md[29],
+		 md[30], md[31], md[32], md[33], md[34],
+		 md[35], md[36], md[37], md[38], md[39],
+		 md[40], md[41], md[42], md[43], md[44],
+		 md[45], md[46], md[47], md[48], md[49],
+		 md[50], md[51], md[52], md[53], md[54],
+		 md[55], md[56], md[57], md[58], md[59],
+		 md[60], md[61], md[62], md[63]);
 
 	return ret;
 #else
@@ -339,14 +335,14 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 	RIPEMD160_Update(&c, string, len);
 	RIPEMD160_Final(md, &c);
 
-	ret = malloc(sizeof(char) * (RIPEMD160_DIGEST_LENGTH * 2 + 1));
-	sprintf(ret, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19]
-		   );
+	ret = malloc(RIPEMD160_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, RIPEMD160_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19]);
 
 	return ret;
 #else
@@ -362,46 +358,20 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
  * Returns a malloced string representing the hex representation of
  * the by the backend used hash of the given string.
  */
+#define concat(x,y,z)	x##y##z
+#define mcryptsum(h)	concat(mcrypt_, h, Sum)
 char *
 mcrypt_BackendSum(const char *string, size_t len)
 {
-#ifdef HAVE_RIPEMD160_UPDATE
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "RIPEMD160") == 0)
-		return mcrypt_RIPEMD160Sum(string, len);
-#endif
-#ifdef HAVE_SHA512_UPDATE
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0)
-		return mcrypt_SHA512Sum(string, len);
-#endif
-#ifdef HAVE_SHA384_UPDATE
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA384") == 0)
-		return mcrypt_SHA384Sum(string, len);
-#endif
-#ifdef HAVE_SHA256_UPDATE
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA256") == 0)
-		return mcrypt_SHA256Sum(string, len);
-#endif
-#ifdef HAVE_SHA224_UPDATE
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA224") == 0)
-		return mcrypt_SHA224Sum(string, len);
-#endif
-#ifdef HAVE_SHA1_UPDATE
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA1") == 0)
-		return mcrypt_SHA1Sum(string, len);
-#endif
-#ifdef HAVE_MD5_UPDATE
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "MD5") == 0)
-		return mcrypt_MD5Sum(string, len);
-#endif
-	assert(0); /* should never get reached, backend would be unsupported */
+#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
+	return mcryptsum(MONETDB5_PASSWDHASH_TOKEN)(string, len);
+#else
+	(void) string;
+	(void) len;
+	fprintf(stderr, "No digest function available.\n");
+	exit(1);
 	return NULL;
+#endif
 }
 
 /**
@@ -417,6 +387,7 @@ mcrypt_hashPassword(
 		const char *password,
 		const char *challenge)
 {
+#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
 	unsigned char md[64];	/* should be SHA512_DIGEST_LENGTH */
 	char ret[sizeof(md) * 2 + 1];
 	int len;
@@ -508,8 +479,17 @@ mcrypt_hashPassword(
 		len = 32;
 	} else
 #endif
+#endif
+	{
+		(void) algo;
+		(void) password;
+		(void) challenge;
+		fprintf(stderr, "MonetDB was built without OpenSSL, but what you are trying to do requires it.\n");
+		exit(1);
 		return NULL;
+	}
 
+#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
 	snprintf(ret, sizeof(ret),
 			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
@@ -537,88 +517,5 @@ mcrypt_hashPassword(
 	ret[len] = '\0';
 
 	return strdup(ret);
-}
-
-#else /* in embedded mode, we don't do MAPI or vaults, therefore we can run without OpenSSL. One build dependency down. */
-
-#define NO_OPENSSL_FATAL "MonetDB was built without OpenSSL, but what you are trying to do requires it.\n"
-
-char* mcrypt_sum_fail(const char *string, size_t len) {
-	(void)string;
-	(void)len;
-	fprintf(stderr, NO_OPENSSL_FATAL);
-	exit(1);
-	return NULL;
-}
-
-char *
-mcrypt_getHashAlgorithms(void)
-{
-	fprintf(stderr, NO_OPENSSL_FATAL);
-	exit(1);
-	return NULL;
-}
-
-char *
-mcrypt_MD5Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_SHA1Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-
-char *
-mcrypt_SHA224Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_SHA256Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_SHA384Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_SHA512Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_RIPEMD160Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_BackendSum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_hashPassword(
-		const char *algo,
-		const char *password,
-		const char *challenge)
-{
-	(void)algo;
-	(void)password;
-	(void)challenge;
-	fprintf(stderr, NO_OPENSSL_FATAL);
-	exit(1);
-	return NULL;
-}
 #endif
+}

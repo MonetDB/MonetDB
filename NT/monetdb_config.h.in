@@ -749,6 +749,7 @@
 
 /* The used password hash algorithm */
 #define MONETDB5_PASSWDHASH "SHA512"
+#define MONETDB5_PASSWDHASH_TOKEN SHA512
 
 /* Release name or "unreleased" */
 #define MONETDB_RELEASE "unreleased"

@@ -387,6 +387,8 @@ AS_CASE([$password_backend],
 	[AC_MSG_ERROR(['$password_backend' invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
 AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH], ["$MONETDB5_PASSWDHASH"],
 	[The used password hash algorithm])
+AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH_TOKEN], [$MONETDB5_PASSWDHASH],
+	[The used password hash algorithm])
 AC_SUBST([MONETDB5_PASSWDHASH])
 
 AC_DISABLE_STATIC

@@ -26,7 +26,16 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-
+#ifdef HAVE_OPENSSL
+#include <openssl/md5.h>
+#include <openssl/sha.h>
+#include <openssl/ripemd.h>
+#else
+#ifdef HAVE_COMMONCRYPTO
+#define COMMON_DIGEST_FOR_OPENSSL
+#include <CommonCrypto/CommonDigest.h>
+#endif
+#endif
 
 static str AUTHdecypherValue(str *ret, str *value);
 static str AUTHcypherValue(str *ret, str *value);
@@ -748,72 +757,28 @@ AUTHcypherValue(str *ret, str *value)
  * current backend.  This check allows to at least forbid storing
  * trivial plain text passwords by a simple check.
  */
+#define concat(x,y)	x##y
+#define digestlength(h)	concat(h, _DIGEST_LENGTH)
 static str
 AUTHverifyPassword(str *passwd) 
 {
+#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
 	char *p = *passwd;
 	size_t len = strlen(p);
 
-#ifdef HAVE_RIPEMD160_UPDATE
-	if (strcmp(MONETDB5_PASSWDHASH, "RIPEMD160") == 0) {
-		if (len != 20 * 2)
-			throw(MAL, "verifyPassword",
-					"password is not 40 chars long, is it a hex "
-					"representation of a RIPEMD160 password hash?");
-	} else
-#endif
-#ifdef HAVE_SHA512_UPDATE
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0) {
-		if (len != 64 * 2)
-			throw(MAL, "verifyPassword",
-					"password is not 128 chars long, is it a hex "
-					"representation of a SHA-2 512-bits password hash?");
-	} else
-#endif
-#ifdef HAVE_SHA384_UPDATE
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA384") == 0) {
-		if (len != 48 * 2)
-			throw(MAL, "verifyPassword",
-					"password is not 96 chars long, is it a hex "
-					"representation of a SHA-2 384-bits password hash?");
-	} else
-#endif
-#ifdef HAVE_SHA256_UPDATE
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA256") == 0) {
-		if (len != 32 * 2)
-			throw(MAL, "verifyPassword",
-					"password is not 64 chars long, is it a hex "
-					"representation of a SHA-2 256-bits password hash?");
-	} else
-#endif
-#ifdef HAVE_SHA224_UPDATE
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA224") == 0) {
-		if (len != 28 * 2)
-			throw(MAL, "verifyPassword",
-					"password is not 56 chars long, is it a hex "
-					"representation of a SHA-2 224-bits password hash?");
-	} else
-#endif
-#ifdef HAVE_SHA1_UPDATE
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA1") == 0) {
-		if (len != 20 * 2)
-			throw(MAL, "verifyPassword",
-					"password is not 40 chars long, is it a hex "
-					"representation of a SHA-1 password hash?");
-	} else
-#endif
-#ifdef HAVE_MD5_UPDATE
-	if (strcmp(MONETDB5_PASSWDHASH, "MD5") == 0) {
-		if (len != 16 * 2)
-			throw(MAL, "verifyPassword",
-					"password is not 32 chars long, is it a hex "
-					"representation of an MD5 password hash?");
+	if (len != digestlength(MONETDB5_PASSWDHASH_TOKEN) * 2) {
+		throw(MAL, "verifyPassword",
+			  "password is not %d chars long, is it a hex "
+			  "representation of a %s password hash?",
+			  digestlength(MONETDB5_PASSWDHASH_TOKEN), MONETDB5_PASSWDHASH);
 	} else
 #endif
 	{
+		(void) passwd;
 		throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
-				MONETDB5_PASSWDHASH);
+			  MONETDB5_PASSWDHASH);
 	}
+#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
 	len++; // required in case all the checks above are false
 	while (*p != '\0') {
 		if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9')))
@@ -824,4 +789,5 @@ AUTHverifyPassword(str *passwd)
 	}
 
 	return(MAL_SUCCEED);
+#endif
 }
