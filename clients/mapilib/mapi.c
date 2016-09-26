@@ -812,14 +812,6 @@
 # endif
 #endif
 
-#ifdef HAVE_BINPACK
-#include <simdcomp.h>
-#endif
-#ifdef HAVE_PFOR
-#include <vint.h>
-#include <vp4dd.h>
-#endif
-
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET (-1)
 #endif
@@ -922,7 +914,6 @@ struct MapiStruct {
 	compression_method comp;
 	column_compression colcomp;
 	size_t blocksize;
-	void* protobuf_res;
 
 	int trace;		/* Trace Mapi interaction */
 	int auto_commit;
@@ -1922,7 +1913,6 @@ mapi_new(void)
 	mid->protocol = protauto;
 	mid->colcomp = COLUMN_COMPRESSION_AUTO;
 	mid->blocksize = 128 * BLOCK; // 1 MB
-	mid->protobuf_res = NULL;
 
 	mid->cachelimit = 100;
 	mid->redircnt = 0;
@@ -2622,60 +2612,6 @@ mapi_reconnect(Mapi mid)
 	}
 	pversion = atoi(protover);
 
-#ifndef HACKY
-	// set protocol version using environment variables; should be removed in final version
-	{
-		char* env_protocol = getenv("MONETDB_PROTOCOL");
-		char* env_compression = getenv("MONETDB_COMPRESSION");
-		char* env_colcomp = getenv("MONETDB_COLCOMP");
-		char* env_blocksize = getenv("MONETDB_BLOCKSIZE");
-		if (env_protocol) {
-			if (strcasecmp(env_protocol, "prot10") == 0) {
-				mid->protocol = prot10;
-			} else if (strcasecmp(env_protocol, "prot10compressed") == 0) {
-				mid->protocol = prot10compressed;
-			} else if (strcasecmp(env_protocol, "prot9") == 0) {
-				mid->protocol = prot9;
-			}
-		}
-
-		if (env_compression) {
-			if (strcasecmp(env_compression, "none") == 0) {
-				mid->comp = COMPRESSION_NONE;
-			} else if (strcasecmp(env_compression, "snappy") == 0) {
-				mid->comp = COMPRESSION_SNAPPY;
-			} else if (strcasecmp(env_compression, "lz4") == 0) {
-				mid->comp = COMPRESSION_LZ4;
-			}
-		}
-
-		if (env_colcomp) {
-			if (strcasecmp(env_colcomp, "none") == 0) {
-				mid->colcomp = COLUMN_COMPRESSION_NONE;
-			} else if (strcasecmp(env_colcomp, "pfor") == 0) {
-				mid->colcomp = COLUMN_COMPRESSION_PFOR;
-			} else if (strcasecmp(env_colcomp, "binpack") == 0) {
-				mid->colcomp = COLUMN_COMPRESSION_BINPACK;
-			} else if (strcasecmp(env_colcomp, "protobuf") == 0) {
-				mid->colcomp = COLUMN_COMPRESSION_PROTOBUF;
-			} else if (strcasecmp(env_colcomp, "protobufnopack") == 0) {
-				mid->colcomp = COLUMN_COMPRESSION_PROTOBUF_NOPACK;
-			}
-		}
-		if (env_blocksize) {
-			size_t blocksize;
-			errno = 0;
-			blocksize = (size_t) atol(env_blocksize);
-			if (errno != 0) {
-				errno = 0;
-				fprintf(stderr, "Incorrect block size: %s\n", env_blocksize);
-			} else {
-				mid->blocksize = blocksize;
-			}
-		}
-	}
-#endif
-
 	if (pversion == 9) {
 		char *hash = NULL;
 		char *hashes = NULL;
@@ -2715,40 +2651,6 @@ mapi_reconnect(Mapi mid)
 			*hash = '\0';
 			rest = hash + 1;
 		}
-#ifdef HAVE_PFOR
-		if (strstr(hashes, "PFOR")) {
-			if (mid->colcomp == COLUMN_COMPRESSION_AUTO) {
-				mid->colcomp = COLUMN_COMPRESSION_PFOR;
-			}
-		} else if (mid->colcomp == COLUMN_COMPRESSION_PFOR) {
-			mapi_setError(mid, "Client wants PFOR but server does not support it",
-					"mapi_reconnect", MERROR);
-			close_connection(mid);
-			return mid->error;
-		}
-#else
-		if (mid->colcomp == COLUMN_COMPRESSION_PFOR) {
-			fprintf(stderr, "Client does not support PFOR compression.\n");
-			exit(1);
-		}
-#endif
-#ifdef HAVE_BINPACK
-		if (strstr(hashes, "BINPACK")) {
-			if (mid->colcomp == COLUMN_COMPRESSION_AUTO) {
-				mid->colcomp = COLUMN_COMPRESSION_BINPACK;
-			}
-		} else if (mid->colcomp == COLUMN_COMPRESSION_BINPACK) {
-			mapi_setError(mid, "Client wants BINPACK but server does not support it",
-					"mapi_reconnect", MERROR);
-			close_connection(mid);
-			return mid->error;
-		}
-#else
-		if (mid->colcomp == COLUMN_COMPRESSION_BINPACK) {
-			fprintf(stderr, "Client does not support BINPACK compression.\n");
-			exit(1);
-		}
-#endif
 #ifdef HAVE_LIBSNAPPY
 		if (strstr(hashes, "PROT10COMPR")) {
 			// both server and client support compressed protocol 10; use compressed version 
@@ -2875,7 +2777,7 @@ mapi_reconnect(Mapi mid)
 			if (prot_version == prot10 || prot_version == prot10compressed) {
 				// if we are using protocol 10, we have to send either PROT10/PROT10COMPRESSED to the server
 				// so the server knows which protocol to use
-				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%s%s%s:%zu:\n",
+				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%s%s:%zu:\n",
 	#ifdef WORDS_BIGENDIAN
 				     "BIG",
 	#else
@@ -2885,7 +2787,6 @@ mapi_reconnect(Mapi mid)
 				     mid->database == NULL ? "" : mid->database,
 				     prot_version == prot10 ? "PROT10" : "PROT10COMPR",
 				     comp == COMPRESSION_SNAPPY ? "SNAPPY" : (comp == COMPRESSION_LZ4 ? "LZ4" : ""),
-				     mid->colcomp == COLUMN_COMPRESSION_PFOR ? ",HAVEPFOR" : (mid->colcomp == COLUMN_COMPRESSION_BINPACK ? ",HAVEBINPACK" : (mid->colcomp == COLUMN_COMPRESSION_PROTOBUF ? ",PROTOBUF" : (mid->colcomp == COLUMN_COMPRESSION_PROTOBUF_NOPACK ? ",PROTOBUFNOPACK" : ""))),
 				     mid->compute_column_widths ? "COMPUTECOLWIDTH" : "",
 				    mid->blocksize);
 			} else {
@@ -4126,24 +4027,11 @@ static char* mapi_convert_varchar(struct MapiColumn *col) {
 	return (char*) col->dynamic_write_buf;
 }
 
-#ifndef VARINT_PADDING
 static char* mapi_convert_clob(struct MapiColumn *col) {
 	if (strcmp(col->buffer_ptr, (char*)col->null_value) == 0) 
 		return NULL;
 	return col->buffer_ptr;
 }
-#else
-static char* mapi_convert_clob(struct MapiColumn *col) {
-	int value;
-	int varsize = read_varint(col->buffer_ptr, &value);
-	col->dynamic_write_buf = malloc(value * sizeof(char) + 1);
-	memcpy(col->dynamic_write_buf, col->buffer_ptr + varsize, value * sizeof(char));
-	col->dynamic_write_buf[value] = '\0';
-	if (strcmp(col->dynamic_write_buf, (char*)col->null_value) == 0) 
- 		return NULL;
-	return col->dynamic_write_buf;
-}
-#endif
 
 #define mapi_string_conversion_function(type, gdktpe, sqltpe)																	\
 static char* mapi_convert_##sqltpe(struct MapiColumn *col) {																	\
@@ -5582,10 +5470,6 @@ mapi_split_line(MapiHdl hdl)
 	return n;
 }
 
-#ifdef HAVE_LIBPROTOBUF
-#include <mhapi.h>
-#endif
-
 int
 mapi_fetch_row(MapiHdl hdl)
 {
@@ -5635,57 +5519,6 @@ mapi_fetch_row(MapiHdl hdl)
 			}
 #endif
 
-			if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF || hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF_NOPACK) {
-				char dummy;
-				buffer buf;
-#ifndef HAVE_LIBPROTOBUF
-				// TODO: complain
-#else
-				Mhapi__QueryResult *res;
-				bs2_resetbuf(hdl->mid->from);
-				mnstr_readChr(hdl->mid->from, &dummy);
-				buf =  bs2_buffer(hdl->mid->from);
-				res = mhapi__query_result__unpack(NULL, buf.len + buf.pos, (const uint8_t *) buf.buf);
-				assert(res);
-				assert(res->row_count <= result->row_count);
-				if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF) {
-					assert(res->n_columns == (size_t) result->fieldcnt);
-					for (i = 0; i < (size_t) result->fieldcnt; i++) {
-						Mhapi__QueryResult__Column *c = res->columns[i];
-						if (c->n_double_values > 0) {
-							result->fields[i].buffer_ptr = (char*) c->double_values;
-						} else if (c->n_int32_values > 0) {
-							result->fields[i].buffer_ptr =  (char*) c->int32_values;
-						} else if (c->n_int64_values > 0) {
-							result->fields[i].buffer_ptr =  (char*) c->int64_values;
-						}else if (c->n_string_values > 0) {
-							result->fields[i].buffer_ptr = (char*)  c->string_values[0];
-						}
-					}
-				} else {
-					assert(res->n_columns_unpacked == (size_t) result->fieldcnt);
-					for (i = 0; i < (size_t) result->fieldcnt; i++) {
-						Mhapi__QueryResult__ColumnUnpacked *c = res->columns_unpacked[i];
-						if (c->n_double_values > 0) {
-							result->fields[i].buffer_ptr = (char*) c->double_values;
-						} else if (c->n_int32_values > 0) {
-							result->fields[i].buffer_ptr =  (char*) c->int32_values;
-						} else if (c->n_int64_values > 0) {
-							result->fields[i].buffer_ptr =  (char*) c->int64_values;
-						}else if (c->n_string_values > 0) {
-							result->fields[i].buffer_ptr = (char*)  c->string_values[0];
-						}
-					}
-				}
-				result->tuple_count += res->row_count;
-				result->rows_read++;
-				if(hdl->mid->protobuf_res) {
-					mhapi__query_result__free_unpacked(hdl->mid->protobuf_res, NULL);
-				}
-				hdl->mid->protobuf_res = (void*) res;
-				return result->fieldcnt;
-#endif
-			}
 			bs2_resetbuf(hdl->mid->from); // kinda a bit evil
 
 			// this actually triggers the read of the entire block
@@ -5714,56 +5547,7 @@ mapi_fetch_row(MapiHdl hdl)
 					result->fields[i].buffer_ptr += sizeof(lng);
 					buf += col_len + sizeof(lng);
 				} else {
-#ifdef HAVE_BINPACK
-					if (hdl->mid->colcomp == COLUMN_COMPRESSION_BINPACK && (strcasecmp(result->fields[i].columntype, "int") == 0 || strcasecmp(result->fields[i].columntype, "date") == 0)) {
-						lng b = *((lng*) buf);
-						buf += sizeof(lng);
-						lng length = *((lng*)(buf));
-						buf += sizeof(lng);
-						if (b == 0) {
-							result->fields[i].buffer_ptr = buf;
-						} else {
-							// FIXME resbuffer is not freed
-							uint8_t *resbuffer = malloc(nrows * sizeof(int));
-							if (!resbuffer) {
-								return 0;
-							}
-							simdunpack_length((const __m128i *)buf, nrows, (uint32_t*) resbuffer, b);
-							result->fields[i].buffer_ptr = resbuffer;
-						}
-						buf += length;
-					} else {
-#endif
-#ifdef HAVE_PFOR
-					if (hdl->mid->colcomp == COLUMN_COMPRESSION_PFOR && (strcasecmp(result->fields[i].columntype, "int") == 0 || strcasecmp(result->fields[i].columntype, "date") == 0)) {
-						size_t n = nrows;
-						// FIXME resbuffer is not freed
-						char *resbuffer = malloc(nrows * sizeof(int));
-						char *bufpos = resbuffer;
-						if (!resbuffer) {
-							return 0;
-						}
-						while(n > 0) {
-							size_t elements = n > 128 ? 128 : n;
-							if (elements < 128) {
-								memcpy(bufpos, buf, elements * sizeof(int));
-								buf += elements * sizeof(int);
-							} else {
-								buf = p4ddecv32(buf, elements, bufpos);
-							}
-							bufpos += elements * sizeof(int);
-							n -= elements;
-						}
-						result->fields[i].buffer_ptr = resbuffer;
-					} else {
-#endif
 					buf += nrows * result->fields[i].typelen;
-#ifdef HAVE_PFOR
-					}
-#endif
-#ifdef HAVE_BINPACK
-					}
-#endif
 				}
 			}
 			result->tuple_count += nrows;
@@ -5771,22 +5555,7 @@ mapi_fetch_row(MapiHdl hdl)
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
 				if (result->fields[i].typelen < 0) {
 					// variable-length column
-					if (hdl->mid->protobuf_res) {
-						if (hdl->mid->colcomp == COLUMN_COMPRESSION_PROTOBUF) {
-							result->fields[i].buffer_ptr = ((Mhapi__QueryResult*) hdl->mid->protobuf_res)->columns[i]->string_values[result->cur_row];
-						} else {
-							result->fields[i].buffer_ptr = ((Mhapi__QueryResult*) hdl->mid->protobuf_res)->columns_unpacked[i]->string_values[result->cur_row];
-						}
-					} else {
-#ifndef VARINT_PADDING
-						result->fields[i].buffer_ptr += strlen(result->fields[i].buffer_ptr) + 1;
-#else
-						// FIXME: case where c->digits > 128 and there is a value < 128
-						int value;
-						int varsize = read_varint(result->fields[i].buffer_ptr, &value);
-						result->fields[i].buffer_ptr += value + varsize;
-#endif
-					}
+					result->fields[i].buffer_ptr += strlen(result->fields[i].buffer_ptr) + 1;
 				} else {
 					result->fields[i].buffer_ptr += result->fields[i].typelen;
 				}
@@ -6215,17 +5984,9 @@ mapi_set_blocksize(Mapi mid, size_t blocksize) {
 
 MapiMsg 
 mapi_set_column_compression(Mapi mid, const char* colcomp) {
-	if (strcasecmp(colcomp, "pfor") == 0) {
-		mid->colcomp = COLUMN_COMPRESSION_PFOR;
-	} else if (strcasecmp(colcomp, "none") == 0) {
+	if (strcasecmp(colcomp, "none") == 0) {
 		mid->colcomp = COLUMN_COMPRESSION_NONE;
-	} else if (strcasecmp(colcomp, "protobuf") == 0) {
-		mid->colcomp = COLUMN_COMPRESSION_PROTOBUF;
-	} else if (strcasecmp(colcomp, "protobufnopack") == 0) {
-		mid->colcomp = COLUMN_COMPRESSION_PROTOBUF_NOPACK;
-	} else if (strcasecmp(colcomp, "binpack") == 0) {
-		mid->colcomp = COLUMN_COMPRESSION_BINPACK;
-	}else {
+	} else {
 		mapi_setError(mid, "invalid column compression type", "mapi_set_compression", MERROR);
 		return -1;
 	}

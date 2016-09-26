@@ -252,18 +252,7 @@ typedef enum {
 typedef enum {
 	COLUMN_COMPRESSION_AUTO = 255,
 	COLUMN_COMPRESSION_NONE = 0,
-	COLUMN_COMPRESSION_PFOR = 1,
-	COLUMN_COMPRESSION_BINPACK = 2,
-	COLUMN_COMPRESSION_PROTOBUF = 3,
-	COLUMN_COMPRESSION_PROTOBUF_NOPACK = 4
 } column_compression;
-
-#ifdef VARINT_PADDING
-stream_export int varint_size(int varint);
-stream_export int write_varint(char *buf, int varint);
-stream_export int read_varint_value(char *buf);
-stream_export int read_varint(char *buf, int *value);
-#endif
 
 stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp);
 stream_export void* bs2_getbuf(stream *ss);

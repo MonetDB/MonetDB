@@ -7,16 +7,15 @@
 MTSAFE
 
 INCLUDES = ../../common/options ../../common/stream ../../common/utils \
-		   $(MSGCONTROL_FLAGS) $(pfor_CFLAGS) $(binpack_CFLAGS)
+		   $(MSGCONTROL_FLAGS)
 
 lib_mapi = {
 	VERSION = $(MAPI_VERSION)
 	SOURCES = mapi.c mapi.rc
 	LIBS = $(SOCKET_LIBS) ../../common/stream/libstream \
-		../../common/stream/libprotobuf \
 		../../common/options/libmoptions \
 		../../common/utils/libconversion \
-		../../common/utils/libmcrypt $(openssl_LIBS) $(pfor_LIBS) $(protobuf_LIBS) $(binpack_LIBS)
+		../../common/utils/libmcrypt $(openssl_LIBS)
 }
 
 headers_mapi = {

@@ -286,7 +286,7 @@ static int days_between_zero_and_epoch = 719528;
 
 int
 conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, int timezone_diff) {
-	int ms, sec, min, hour, day, month, year;
+	int ms, sec, min, hour;
 	int days = 0;
 	lng time = *src;
 

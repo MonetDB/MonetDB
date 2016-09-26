@@ -39,14 +39,6 @@ mcrypt_getHashAlgorithms(void)
 // the server supports protocol 10 + compression
 		",PROT10COMPR"
 #endif
-#ifdef HAVE_PFOR
-// the server supports PFOR
-		",PFOR"
-#endif
-#ifdef HAVE_BINPACK
-// the server supports bin packing
-		",BINPACK"
-#endif
 		);
 }
 

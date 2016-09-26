@@ -188,18 +188,6 @@ doChallenge(void *data)
 		buflen = atol(buflenstr);
 		if (buflenstrend) buflenstrend[0] = ':';
 
-		if (strstr(buf, "PFOR")) {
-			colcomp = COLUMN_COMPRESSION_PFOR;
-		}
-
-		if (strstr(buf, "BINPACK")) {
-			colcomp = COLUMN_COMPRESSION_BINPACK;
-		}
-		if (strstr(buf, "PROTOBUFNOPACK")) {
-			colcomp = COLUMN_COMPRESSION_PROTOBUF_NOPACK;
-		} else if (strstr(buf, "PROTOBUF")) {
-			colcomp = COLUMN_COMPRESSION_PROTOBUF;
-		}
 		if (strstr(buf, "COMPUTECOLWIDTH")) {
 			compute_column_widths = 1;
 		}

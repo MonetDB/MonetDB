@@ -17,8 +17,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../common/options \
 		   ../../../common/stream \
 		   ../../../common/utils \
-		   ../../../gdk \
-		   $(pfor_CFLAGS) $(binpack_CFLAGS)
+		   ../../../gdk
 
 lib__sql = {
 	MODULE
@@ -53,12 +52,10 @@ lib__sql = {
  		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
-		   ../../../common/stream/libprotobuf \
 		   ../../../common/utils/libmcrypt \
 		   ../../../common/utils/libconversion \
 		   $(PTHREAD_LIBS) \
-		   $(protobuf_LIBS) \
-		   $(openssl_LIBS) $(MATH_LIBS) $(pfor_LIBS) $(binpack_LIBS)
+		   $(openssl_LIBS) $(MATH_LIBS)
 }
 
 headers_mal = {
