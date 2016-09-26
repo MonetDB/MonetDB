@@ -345,8 +345,8 @@
 /* Define to 1 if you have the `mallopt' function. */
 /* #undef HAVE_MALLOPT */
 
-/* Define to 1 if you have the `MD5' function. */
-#define HAVE_MD5 1
+/* Define to 1 if you have the `MD5_Update' function. */
+#define HAVE_MD5_UPDATE 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -430,8 +430,8 @@
 /* Define if the compiler supports the restrict keyword */
 /* #undef HAVE_RESTRICT */
 
-/* Define to 1 if you have the `RIPEMD160' function. */
-#define HAVE_RIPEMD160 1
+/* Define to 1 if you have the `RIPEMD160_Update' function. */
+#define HAVE_RIPEMD160_UPDATE 1
 
 /* Define to 1 if you have the `round' function. */
 #if !defined(_MSC_VER) || _MSC_VER > 1600
@@ -459,20 +459,20 @@
 /* Define to 1 if you have the `setsid' function. */
 /* #undef HAVE_SETSID */
 
-/* Define to 1 if you have the `SHA1' function. */
-#define HAVE_SHA1 1
+/* Define to 1 if you have the `SHA1_Update' function. */
+#define HAVE_SHA1_UPDATE 1
 
-/* Define to 1 if you have the `SHA224' function. */
-#define HAVE_SHA224 1
+/* Define to 1 if you have the `SHA224_Update' function. */
+#define HAVE_SHA224_UPDATE 1
 
-/* Define to 1 if you have the `SHA256' function. */
-#define HAVE_SHA256 1
+/* Define to 1 if you have the `SHA256_Update' function. */
+#define HAVE_SHA256_UPDATE 1
 
-/* Define to 1 if you have the `SHA384' function. */
-#define HAVE_SHA384 1
+/* Define to 1 if you have the `SHA384_Update' function. */
+#define HAVE_SHA384_UPDATE 1
 
-/* Define to 1 if you have the `SHA512' function. */
-#define HAVE_SHA512 1
+/* Define to 1 if you have the `SHA512_Update' function. */
+#define HAVE_SHA512_UPDATE 1
 
 /* Define to 1 if you have the `shutdown' function. */
 #define HAVE_SHUTDOWN 1

@@ -54,6 +54,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char upmax[8];
 	confkeyval *ckv, *kv, *list;
 	SABdbState state;
+	sigset_t blocksig;
 
 	er = msab_getStatus(stats, database);
 	if (er != NULL) {
@@ -257,6 +258,9 @@ forkMserver(char *database, sabdb** stats, int force)
 					database, database));
 	}
 
+	sigemptyset(&blocksig);
+	sigaddset(&blocksig, SIGCHLD);
+	pthread_sigmask(SIG_BLOCK, &blocksig, (sigset_t *) 0);
 	pid = fork();
 	if (pid == 0) {
 		char *sabdbfarm;
@@ -275,6 +279,10 @@ forkMserver(char *database, sabdb** stats, int force)
 		char property_other[1024];
 		int c = 0;
 		unsigned int mport;
+
+		sigemptyset(&blocksig);
+		sigaddset(&blocksig, SIGCHLD);
+		pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 
 		er = msab_getDBfarm(&sabdbfarm);
 		if (er != NULL) {
@@ -454,6 +462,10 @@ forkMserver(char *database, sabdb** stats, int force)
 			dp->dbname = strdup(database);
 
 			pthread_mutex_unlock(&_mero_topdp_lock);
+
+			sigemptyset(&blocksig);
+			sigaddset(&blocksig, SIGCHLD);
+			pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 
 			/* wait for the child to finish starting, at some point we
 			 * decided that we should wait indefinitely here because if the

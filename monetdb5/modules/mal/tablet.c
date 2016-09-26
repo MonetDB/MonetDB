@@ -1994,7 +1994,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #endif
 	for (i = 0; i < as->nr_attrs; i++) {
 		BAT *b = task->as->format[i].c;
-		BATsettrivprop(b);
+		if (b)
+			BATsettrivprop(b);
 		GDKfree(task->fields[i]);
 	}
 	GDKfree(task->fields);

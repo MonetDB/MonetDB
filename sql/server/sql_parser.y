@@ -2567,15 +2567,16 @@ copyfrom_stmt:
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
-   | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
+   | COPY opt_nr BINARY INTO qname opt_column_list FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
 	  if ($2 != NULL) {
 	  	yyerror(m, "COPY INTO: cannot pass number of records when using binary COPY INTO");
 		YYABORT;
 	  }
 	  append_list(l, $5);
-	  append_list(l, $7);
-	  append_int(l, $8);
+	  append_list(l, $6);
+	  append_list(l, $8);
+	  append_int(l, $9);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
   | COPY query_expression_def INTO string opt_seps opt_null_string 
 	{ dlist *l = L();

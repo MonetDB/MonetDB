@@ -300,7 +300,8 @@ SQLrun(Client c, backend *be, mvc *m){
 					throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 				}
 				val= (ValPtr) &arg->data;
-				VALcopy(&mb->var[j+retc]->value, val);
+				if (VALcopy(&mb->var[j+retc]->value, val) == NULL)
+					throw(MAL, "sql.prepare", MAL_MALLOC_FAIL);
 				setVarConstant(mb, j+retc);
 				setVarFixed(mb, j+retc);
 			}

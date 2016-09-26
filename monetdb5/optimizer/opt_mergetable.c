@@ -1569,7 +1569,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	char buf[256];
 	lng usec = GDKusec();
 
-	if( optimizerIsApplied(mb, "mergetable"))
+	if( optimizerIsApplied(mb, "mergetable") || !optimizerIsApplied(mb,"mitosis"))
 		return 0;
 	old = mb->stmt;
 	oldtop= mb->stop;

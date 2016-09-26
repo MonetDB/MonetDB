@@ -97,6 +97,8 @@ MSresetClientPrg(Client cntxt)
 	p->gc = 0;
 	p->retc = 1;
 	p->argc = 1;
+	setModuleId(p, putName("user"));
+	setFunctionId(p, putName("main"));
 	/* remove any MAL history */
 	if (mb->history) {
 		freeMalBlk(mb->history);

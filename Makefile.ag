@@ -10,7 +10,6 @@ SUBDIRS = buildtools common clients \
 	HAVE_SQL?sql \
 	HAVE_GEOM?geom \
 	tools \
-	HAVE_JAVA?java \
 	HAVE_TESTING?testing \
 
 EXTRA_DIST = bootstrap configure configure.ac configure.ag libversions \

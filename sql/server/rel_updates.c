@@ -1415,7 +1415,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 }
 
 static sql_rel *
-bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
+bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1426,11 +1426,14 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	node *n;
 	sql_rel *res;
 	list *exps, *args;
-	sql_subtype tpe;
+	sql_subtype strtpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_UNION, NULL); 
+	list *collist;
+	int i;
 
+	assert(f);
 	if (!copy_allowed(sql, 1)) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
@@ -1455,18 +1458,37 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	if (files == NULL)
 		return sql_error(sql, 02, "COPY INTO: must specify files");
 
+	collist = check_table_columns(sql, t, columns, "COPY BINARY", tname);
+	if (!collist)
+		return NULL;
+
 	f->res = table_column_types(sql->sa, t);
- 	sql_find_subtype(&tpe, "varchar", 0, 0);
-	args = append( append( new_exp_list(sql->sa), 
-		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &tpe)), 
-		exp_atom_str(sql->sa, t->base.name, &tpe));
+ 	sql_find_subtype(&strtpe, "varchar", 0, 0);
+	args = append( append( new_exp_list(sql->sa),
+		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &strtpe)), 
+		exp_atom_str(sql->sa, t->base.name, &strtpe));
 
-	for (dn = files->h; dn; dn = dn->next) {
-		append(args, exp_atom_str(sql->sa, dn->data.sval, &tpe)); 
-
-		/* extend the bincopyfrom, with extra args and types */
+	// create the list of files that is passed to the function as parameter
+	for(i = 0; i < list_length(t->columns.set); i++) {
+		// we have one file per column, however, because we have column selection that file might be NULL
+		// first, check if this column number is present in the passed in the parameters
+		int found = 0;
+		dn = files->h;
+		for (n = collist->h; n && dn; n = n->next, dn = dn->next) {
+			sql_column *c = n->data;
+			if (i == c->colnr) {
+				// this column number was present in the input arguments; pass in the file name
+				append(args, exp_atom_str(sql->sa, dn->data.sval, &strtpe)); 
+				found = 1;
+				break;
+			}
+		}
+		if (!found) {
+			// this column was not present in the input arguments; pass in NULL
+			append(args, exp_atom_str(sql->sa, NULL, &strtpe)); 
+		}
 	}
-	
+
 	import = exp_op(sql->sa,  args, f); 
 
 	exps = new_exp_list(sql->sa);
@@ -1696,7 +1718,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = bincopyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.i_val);
+		ret = bincopyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

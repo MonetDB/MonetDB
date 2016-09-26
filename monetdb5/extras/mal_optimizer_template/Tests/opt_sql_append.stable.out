@@ -64,10 +64,10 @@ Ready.
 % 126 # length
 function user.s8_1():void;
     X_38:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",12);
-barrier X_58 := language.dataflow();
+barrier X_56 := language.dataflow();
     X_0 := sql.mvc();
     (X_21:bat[:int],X_22:bat[:int],X_23:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0,nil:str);
-exit X_58;
+exit X_56;
     X_25 := sql.append(X_0,"sys","ttt","a",X_21);
     X_30 := sql.append(X_25,"sys","ttt","b",X_22);
     X_33 := sql.append(X_30,"sys","ttt","c",X_23);
@@ -125,10 +125,10 @@ end user.s8_1;
 % 126 # length
 function user.s24_1():void;
     X_38:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",12);
-barrier X_58 := language.dataflow();
+barrier X_56 := language.dataflow();
     X_0 := sql.mvc();
     (X_21:bat[:int],X_22:bat[:int],X_23:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0,nil:str);
-exit X_58;
+exit X_56;
     X_25 := sql.append(X_0,"sys","ttt","a",X_21);
     X_30 := sql.append(X_25,"sys","ttt","b",X_22);
     X_35 := aggr.count(X_23);

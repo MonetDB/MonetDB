@@ -212,8 +212,8 @@ RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			rhs = &stk->stk[getArg(p, i)];
 			if ((rhs)->vtype < TYPE_str)
 				*lhs = *rhs;
-			else
-				VALcopy(lhs, rhs);
+			else if (VALcopy(lhs, rhs) == NULL)
+				throw(MAL, "scheduler.pick", MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.bval, TRUE);
 			return MAL_SUCCEED;

@@ -307,9 +307,6 @@ CONDITIONALS = {
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_GSL'             : "@HAVE_GSL_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
-    'HAVE_JAVA'            : "@HAVE_JAVA_FALSE@",
-    'HAVE_JAVAJDBC'        : "@HAVE_JAVAJDBC_FALSE@",
-    'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
@@ -321,7 +318,6 @@ CONDITIONALS = {
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
-    'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
     'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
     'HAVE_PYTHON2'         : "@HAVE_PYTHON2_FALSE@",
@@ -336,12 +332,16 @@ CONDITIONALS = {
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
     'HAVE_MONETDBJDBC_JAR' : "",
+    'HAVE_JAVA'            : "",
+    'HAVE_JAVAJDBC'        : "",
+    'HAVE_JAVAMEROCONTROL' : "",
     'HAVE_JDBCCLIENT_JAR'  : "",
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
     'HAVE_LIBPANDAS'       : "",
     'HAVE_LIBSCIPY'        : "",
+    'HAVE_PERL'            : "",
     'HAVE_PHP'             : "",
     'HAVE_PYMONETDB'       : "",
     'HAVE_RUBY'            : "",
@@ -3704,10 +3704,35 @@ def main(argv) :
         pass
     else:
         CONDITIONALS['HAVE_LIBPANDAS'] = '#'
+    if CheckExec('perl'):
+        proc = process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP'],
+                             stdout = process.PIPE, stderr = process.PIPE,
+                             universal_newlines = True)
+        perl_out, perl_err = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_PERL'] = '#'
+        else:
+            print('Perl available, but MonetDB driver not available')
+    if CONDITIONALS['HAVE_LIBR'] and CheckExec('R'):
+        proc = process.Popen(['R', '--slave', '--no-save', '--no-restore',
+                              '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
+                             stdout = process.PIPE, stderr = process.PIPE,
+                             universal_newlines = True)
+        r_out, r_err = proc.communicate()
+        res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
+        if res is not None:
+            rdir = os.path.expanduser(res.group('dir'))
+            if not os.path.exists(rdir):
+                os.makedirs(rdir)
     if CheckExec('php'):
-        CONDITIONALS['HAVE_PHP'] = '#'
-#     else:
-#         CONDITIONALS['HAVE_PHP'] = ''
+        proc = process.Popen(['php', '-r', "require 'monetdb/php_monetdb.php';"],
+                             stdout = process.PIPE, stderr = process.PIPE,
+                             universal_newlines = True)
+        php_out, php_err = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_PHP'] = '#'
+        else:
+            print('PHP available, but MonetDB driver not available')
     if CheckExec('ruby'):
         # also check ruby version; we require >= 1.9 for "require_relative"
         proc = process.Popen(['ruby', '--version'],
@@ -3727,8 +3752,6 @@ def main(argv) :
                 CONDITIONALS['HAVE_RUBY'] = '#'
             else:
                 print('Ruby available, but MonetDB gem not available')
-#     else:
-#         CONDITIONALS['HAVE_RUBY'] = ''
     CheckClassPath()
 
     # tidy-up and fall-back to defaults where necessary
@@ -3852,13 +3875,8 @@ def main(argv) :
     #       print(v+" = "+str(env[v]))
     #STDOUT.flush()
 
-    # inject vars that tell various languages where to find their libs
-    env['PERL5LIB'] = _configure(os.path.join('@QXprefix@', '@QXPERL_LIBDIR@'))
-# set dynamically for python test lib
-#    env['PYTHONPATH'] = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
-    env['PHP_INCPATH'] = _configure(os.path.join('@QXdatadir@', 'php'))
     env['BINDIR'] = _configure('@QXbindir@')
-    vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
+    vars_.append('BINDIR')
 
     # export and display env
     STDERR.flush()
@@ -3879,7 +3897,7 @@ def main(argv) :
         if 'CLASSPATH' in os.environ:
             print("%s = %s" % ('CLASSPATH', os.environ['CLASSPATH']))
     if testweb:
-        for v in 'PERL5LIB', 'PHP_INCPATH', 'BINDIR':
+        for v in ['BINDIR']:
             if v in os.environ:
                 print("%s = %s" % (v, os.environ[v]))
     STDOUT.flush()

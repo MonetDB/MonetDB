@@ -8,7 +8,7 @@ Vcs-Hg: http://dev.monetdb.org/hg/MonetDB/
 Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
  libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
  libgsl0-dev, libpcre3-dev, libreadline-dev, liblzma-dev,
- libssl-dev, libxml2-dev, perl, pkg-config, python,
+ libssl-dev, libxml2-dev, pkg-config, python,
  unixodbc-dev, uuid-dev, zlib1g-dev, liblas-c-dev (>= 1.8.0), r-base
 Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
@@ -131,37 +131,12 @@ Description: MonetDB ODBC driver
  .
  This package contains the MonetDB ODBC driver.
 
-Package: php5-monetdb-client
-Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, php-common
-Description: MonetDB php5 client module
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL frontend.
- .
- This package contains the files needed to use MonetDB from a PHP
- program.
-
-Package: perl-monetdb-client
-Architecture: all
-Depends: ${shlibs:Depends}, ${perl:Depends}, libdbi-perl
-Provides: ${perl:Provides}
-Description: MonetDB perl client code
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL frontend.
- .
- This package contains the files needed to use MonetDB from a Perl
- program.
-
 Package: monetdb-client-testing
 Architecture: any
 Depends: ${shlibs:Depends}, libmonetdb-client-odbc (= ${source:Version}),
  monetdb5-server (= ${source:Version}),
- perl-monetdb-client (= ${source:Version}),
- php5-monetdb-client (= ${source:Version}),
+ libdbd-monetdb-perl (>= 1.0),
+ php-monetdb (>= 1.0),
  python-monetdb (>= 1.0),
  monetdb5-sql (= ${source:Version})
 Description: MonetDB client testing tools
