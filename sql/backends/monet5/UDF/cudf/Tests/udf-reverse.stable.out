@@ -49,11 +49,36 @@ Ready.
 % mal # name
 % clob # type
 % 95 # length
-function user.s2_1(A0:str):void;
+function user.s4_1():void;
     X_10:void := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe",5);
-    X_2:str := udf.reverse(A0);
+    X_2:str := udf.reverse("MonetDB");
     sql.resultSet(".L","reverse_single_value","clob",0,0,4,X_2);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=8 usec 
+#remap                actions= 0 time=3 usec 
+#costModel            actions= 1 time=7 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 1 time=18 usec 
+#emptybind            actions= 0 time=3 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 1 time=9 usec 
+#mergetable           actions= 0 time=14 usec 
+#deadcode             actions= 1 time=8 usec 
+#aliases              actions= 0 time=3 usec 
+#constants            actions= 2 time=7 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=3 usec 
+#reorder              actions= 1 time=15 usec 
+#deadcode             actions= 0 time=4 usec 
+#reduce               actions=22 time=18 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=2 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=4 usec 
+#garbageCollector     actions= 1 time=9 usec 
+#total                actions= 1 time=204 usec 
 #select reverse('MonetDB');
 % .L # table_name
 % reverse_single_value # name
@@ -83,8 +108,8 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 101 # length
-function user.s6_1():void;
-    X_33:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",22);
+function user.s12_1():void;
+    X_33:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",19);
     X_18 := bat.new(nil:str);
     X_25 := bat.append(X_18,"sys.L");
     X_20 := bat.new(nil:str);
@@ -98,13 +123,35 @@ function user.s6_1():void;
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","udf_reverse");
     X_4:bat[:str] := sql.bind(X_0,"sys","udf_reverse","x",0);
-    (C_7:bat[:oid],r1_8:bat[:str]) := sql.bind(X_0,"sys","udf_reverse","x",2);
-    X_10:bat[:str] := sql.bind(X_0,"sys","udf_reverse","x",1);
-    X_12 := sql.delta(X_4,C_7,r1_8,X_10);
-    X_13 := algebra.projection(C_1,X_12);
+    X_13 := algebra.projection(C_1,X_4);
     X_14:bat[:str] := batudf.reverse(X_13);
     sql.resultSet(X_25,X_27,X_29,X_31,X_32,X_14);
-end user.s6_1;
+end user.s12_1;
+#inline               actions= 0 time=4 usec 
+#candidates           actions= 1 time=15 usec 
+#remap                actions= 1 time=25 usec 
+#costModel            actions= 1 time=12 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 1 time=16 usec 
+#mergetable           actions= 0 time=23 usec 
+#deadcode             actions= 2 time=15 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 0 time=5 usec 
+#commonTerms          actions= 0 time=5 usec 
+#projectionpath       actions= 0 time=4 usec 
+#reorder              actions= 1 time=25 usec 
+#deadcode             actions= 0 time=5 usec 
+#reduce               actions=26 time=26 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=10 usec 
+#garbageCollector     actions= 1 time=15 usec 
+#total                actions= 1 time=291 usec 
 #select reverse(x) from udf_reverse;
 % sys.L # table_name
 % reverse_x # name

@@ -62,7 +62,7 @@ Ready.
 % mal # name
 % clob # type
 % 193 # length
-function user.s2_1(A0:str,A1:str):void;
+function user.s4_1():void;
     X_51:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n from sys.functions\n) as x;","sequential_pipe",32);
     X_27 := bat.new(nil:str);
     X_34 := bat.append(X_27,"sys.L1");
@@ -86,14 +86,39 @@ function user.s2_1(A0:str,A1:str):void;
     X_10:bat[:str] := sql.bind(X_0,"sys","functions","name",1);
     X_12 := sql.delta(X_4,C_7,r1_10,X_10);
     X_13 := algebra.projection(C_1,X_12);
-    X_16:bat[:str] := mal.manifold("str","replace",X_13,A0,A1);
+    X_16:bat[:str] := mal.manifold("str","replace",X_13,"a","A");
     X_19:bat[:int] := sql.bind(X_0,"sys","functions","id",0);
     (C_21:bat[:oid],r1_24:bat[:int]) := sql.bind(X_0,"sys","functions","id",2);
     X_23:bat[:int] := sql.bind(X_0,"sys","functions","id",1);
     X_24 := sql.delta(X_19,C_21,r1_24,X_23);
     X_25 := algebra.projection(C_1,X_24);
     sql.resultSet(X_43,X_45,X_46,X_48,X_50,X_16,X_25);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=21 usec 
+#remap                actions= 0 time=7 usec 
+#costModel            actions= 1 time=19 usec 
+#coercions            actions= 0 time=3 usec 
+#evaluate             actions= 2 time=35 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=5 usec 
+#aliases              actions= 4 time=28 usec 
+#mergetable           actions= 0 time=27 usec 
+#deadcode             actions= 4 time=19 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 3 time=22 usec 
+#commonTerms          actions= 0 time=19 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=33 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=33 time=35 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=0 usec 
+#multiplex            actions= 1 time=20 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=13 usec 
+#garbageCollector     actions= 1 time=18 usec 
+#total                actions= 1 time=415 usec 
 #explain select replace(a1,a2,a3), id
 #from (
 #  select name as a1, 'a' as a2, 'A' as a3, id + 1 as id 
@@ -103,7 +128,7 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 197 # length
-function user.s3_1(A0:str,A1:str,A2:lng):void;
+function user.s6_1():void;
     X_59:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;","sequential_pipe",36);
     X_34 := bat.new(nil:str);
     X_41 := bat.append(X_34,"sys.L1");
@@ -132,13 +157,38 @@ function user.s3_1(A0:str,A1:str,A2:lng):void;
     X_18:bat[:int] := sql.bind(X_0,"sys","functions","id",1);
     X_19 := sql.delta(X_14,C_16,r1_20,X_18);
     X_20 := algebra.projection(C_1,X_19);
-    X_22 := algebra.project(X_20,A0);
-    X_24 := algebra.project(X_20,A1);
+    X_22 := algebra.project(X_20,"a");
+    X_24 := algebra.project(X_20,"A");
     X_25:bat[:str] := mal.manifold("str","replace",X_13,X_22,X_24);
     X_28 := batcalc.lng(X_20);
-    X_30:bat[:lng] := batcalc.+(X_28,A2);
+    X_30:bat[:lng] := batcalc.+(X_28,1);
     sql.resultSet(X_50,X_52,X_54,X_56,X_58,X_25,X_30);
-end user.s3_1;
+end user.s6_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=23 usec 
+#remap                actions= 1 time=78 usec 
+#costModel            actions= 1 time=26 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 3 time=46 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 5 time=30 usec 
+#mergetable           actions= 0 time=35 usec 
+#deadcode             actions= 4 time=27 usec 
+#aliases              actions= 0 time=6 usec 
+#constants            actions= 5 time=31 usec 
+#commonTerms          actions= 0 time=12 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=42 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=38 time=44 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 1 time=28 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=21 usec 
+#garbageCollector     actions= 1 time=27 usec 
+#total                actions= 1 time=572 usec 
 #explain select replace(a1,a2,a3), id
 #from (
 #  select name as a1, 'a' as a2, 'A' as a3, abs(id) as id 
@@ -148,7 +198,7 @@ end user.s3_1;
 % mal # name
 % clob # type
 % 198 # length
-function user.s4_1(A0:str,A1:str):void;
+function user.s8_1():void;
     X_57:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n from sys.functions\n) as x;","sequential_pipe",35);
     X_32 := bat.new(nil:str);
     X_39 := bat.append(X_32,"sys.L1");
@@ -177,12 +227,37 @@ function user.s4_1(A0:str,A1:str):void;
     X_18:bat[:int] := sql.bind(X_0,"sys","functions","id",1);
     X_19 := sql.delta(X_14,C_16,r1_19,X_18);
     X_20 := algebra.projection(C_1,X_19);
-    X_22 := algebra.project(X_20,A0);
-    X_24 := algebra.project(X_20,A1);
+    X_22 := algebra.project(X_20,"a");
+    X_24 := algebra.project(X_20,"A");
     X_25:bat[:str] := mal.manifold("str","replace",X_13,X_22,X_24);
     X_28:bat[:int] := batcalc.abs(X_20);
     sql.resultSet(X_48,X_50,X_52,X_54,X_56,X_25,X_28);
-end user.s4_1;
+end user.s8_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=20 usec 
+#remap                actions= 1 time=40 usec 
+#costModel            actions= 1 time=18 usec 
+#coercions            actions= 0 time=3 usec 
+#evaluate             actions= 2 time=36 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions= 0 time=5 usec 
+#aliases              actions= 4 time=22 usec 
+#mergetable           actions= 0 time=27 usec 
+#deadcode             actions= 4 time=20 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 4 time=24 usec 
+#commonTerms          actions= 0 time=12 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=33 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=36 time=35 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 1 time=21 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=14 usec 
+#garbageCollector     actions= 1 time=21 usec 
+#total                actions= 1 time=443 usec 
 
 # 14:13:39 >  
 # 14:13:39 >  "Done."

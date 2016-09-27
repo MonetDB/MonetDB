@@ -30,14 +30,11 @@ newSymbol(str nme, int kind)
 		return NULL;
 	}
 	if( symboltop < MAXSYMBOLS){
-		cur = symbolpool + symboltop;
-		symboltop++;
-	} else
+		cur = symbolpool + symboltop++;
+	} else {
 		cur = (Symbol) GDKzalloc(sizeof(SymRecord));
-
-	if (cur == NULL) {
-		GDKerror("newSymbol:" MAL_MALLOC_FAIL);
-		return NULL;
+		if (cur == NULL)
+			return NULL;
 	}
 	cur->name = putName(nme);
 	cur->kind = kind;
@@ -860,7 +857,10 @@ copyVariable(MalBlkPtr dst, VarPtr v)
 	w->type = v->type;
 	w->flags = v->flags;
 	w->rowcnt = v->rowcnt;
-	VALcopy(&w->value, &v->value);
+	if (VALcopy(&w->value, &v->value) == NULL) {
+		GDKfree(w);
+		return -1;
+	}
 	dst->var[dst->vtop] = w;
 	return 0;
 }
@@ -1140,7 +1140,8 @@ convertConstant(int type, ValPtr vr)
 		ptr d = NULL;
 
 		if (isaBatType(type)) {
-			VALinit(vr, TYPE_bat, ATOMnilptr(TYPE_bat));
+			if (VALinit(vr, TYPE_bat, ATOMnilptr(TYPE_bat)) == NULL)
+				throw(MAL, "convertConstant", MAL_MALLOC_FAIL);
 			break;
 		}
 		/* see if an atomFromStr() function is available */
@@ -1150,8 +1151,8 @@ convertConstant(int type, ValPtr vr)
 		/* if the value we're converting from is nil, the to
 		 * convert to value will also be nil */
 		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
-			VALinit(vr, type, ATOMnilptr(type));
-			vr->vtype = type;
+			if (VALinit(vr, type, ATOMnilptr(type)) == NULL)
+				throw(MAL, "convertConstant", MAL_MALLOC_FAIL);
 			break;
 		}
 
@@ -1218,7 +1219,8 @@ cpyConstant(MalBlkPtr mb, VarPtr vr)
 	int i;
 	ValRecord cst;
 
-	VALcopy(&cst, &vr->value);
+	if (VALcopy(&cst, &vr->value) == NULL)
+		return -1;
 
 	i = defConstant(mb, vr->type, &cst);
 	return i;

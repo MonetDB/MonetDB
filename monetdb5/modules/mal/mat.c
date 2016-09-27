@@ -56,7 +56,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if( b ){
 			if (tt == TYPE_any)
 				tt = b->ttype;
-			if (tt != b->ttype)
+			if ((tt != TYPE_void && b->ttype != TYPE_void) && tt != b->ttype)
 				throw(MAL, "mat.pack", "incompatible arguments");
 			cap += BATcount(b);
 		}

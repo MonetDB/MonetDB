@@ -612,7 +612,7 @@ BATdel(BAT *b, BAT *d)
 			nd++;
 			if (c == 0 || *o - b->hseqbase >= BATcount(b))
 				n = b->hseqbase + BATcount(b) - o[-1] - 1;
-			else if ((oid) (o - s) > *o - *s)
+			else if ((oid) (o - s) < *o - *s)
 				n = o[0] - o[-1] - 1;
 			else
 				n = 0;
@@ -636,6 +636,10 @@ BATdel(BAT *b, BAT *d)
 			b->tnonil = 1;
 		}
 	}
+	/* not sure about these anymore */
+	b->tnosorted = b->tnorevsorted = 0;
+	b->tnokey[0] = b->tnokey[1] = 0;
+
 	return GDK_SUCCEED;
 }
 
@@ -1142,6 +1146,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		assert(g->ttype == TYPE_oid);
 		grps = (oid *) Tloc(g, 0);
 		prev = grps[0];
+		if (BATmaterialize(bn) != GDK_SUCCEED)
+			goto error;
 		for (r = 0, p = 1, q = BATcount(g); p < q; p++) {
 			if (grps[p] != prev) {
 				/* sub sort [r,p) */
@@ -1175,11 +1181,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			b->tsorted = b->trevsorted = 1;
 		}
 		if (!(reverse ? bn->trevsorted : bn->tsorted) &&
-		    do_sort(Tloc(bn, 0),
-			    on ? Tloc(on, 0) : NULL,
-			    bn->tvheap ? bn->tvheap->base : NULL,
-			    BATcount(bn), Tsize(bn), on ? Tsize(on) : 0,
-			    bn->ttype, reverse, stable) != GDK_SUCCEED)
+		    (BATmaterialize(bn) != GDK_SUCCEED ||
+		     do_sort(Tloc(bn, 0),
+			     on ? Tloc(on, 0) : NULL,
+			     bn->tvheap ? bn->tvheap->base : NULL,
+			     BATcount(bn), Tsize(bn), on ? Tsize(on) : 0,
+			     bn->ttype, reverse, stable) != GDK_SUCCEED))
 			goto error;
 		bn->tsorted = !reverse;
 		bn->trevsorted = reverse;
@@ -1343,7 +1350,8 @@ BATsetprop(BAT *b, int idx, int type, void *v)
 	ValRecord vr;
 	PROPrec *p = BATgetprop(b, idx);
 
-	if (!p && (p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) != NULL) {
+	if (p == NULL &&
+	    (p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) != NULL) {
 		p->id = idx;
 		p->next = b->tprops;
 		p->v.vtype = 0;

@@ -638,7 +638,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			mvc_null(sql, nc, c->null);
 			/* for non empty check for nulls */
 			if (c->null == 0) {
-				void *nilptr = ATOMnilptr(c->type.type->localtype);
+				const void *nilptr = ATOMnilptr(c->type.type->localtype);
 				rids *nils = table_funcs.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);
 				int has_nils = (table_funcs.rids_next(nils) != oid_nil);
 
@@ -1657,7 +1657,8 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	src = &a->data;
 	dst = &stk->stk[getArg(pci, 0)];
-	VALcopy(dst, src);
+	if (VALcopy(dst, src) == NULL)
+		throw(MAL, "sql.getVariable", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3642,6 +3643,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	mvc *m = NULL;
 	str msg;
 	BUN cnt = 0;
+	int init = 0;
 	int i;
 	str sname = *getArgReference_str(stk, pci, 0 + pci->retc);
 	str tname = *getArgReference_str(stk, pci, 1 + pci->retc);
@@ -3668,8 +3670,14 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for (i = pci->retc + 2, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 		const char *fname = *getArgReference_str(stk, pci, i);
-		size_t flen = strlen(fname);
+		size_t flen;
 		char *fn;
+
+		if (strcmp(fname, str_nil) == 0)  {
+			// no file name passed for this column
+			continue;
+		}
+		flen =  strlen(fname);
 
 		if (ATOMvarsized(col->type.type->localtype) && col->type.type->localtype != TYPE_str)
 			throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
@@ -3691,12 +3699,16 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		sql_column *col = n->data;
 		BAT *c = NULL;
 		int tpe = col->type.type->localtype;
+		str fname = *getArgReference_str(stk, pci, i);
 
 		/* handle the various cases */
-		if (tpe < TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
-			c = BATattach(col->type.type->localtype, *getArgReference_str(stk, pci, i), PERSISTENT);
+		if (strcmp(fname, str_nil) == 0) {
+			// no filename for this column, skip for now because we potentially don't know the count yet
+			continue;
+		} else if (tpe < TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
+			c = BATattach(col->type.type->localtype, fname, PERSISTENT);
 			if (c == NULL)
-				throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
+				throw(SQL, "sql", "Failed to attach file %s", fname);
 			BATsetaccess(c, BAT_READ);
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
@@ -3706,7 +3718,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			/* this code should be extended to deal with larger text strings. */
 			f = fopen(*getArgReference_str(stk, pci, i), "r");
 			if (f == NULL)
-				throw(SQL, "sql", "Failed to re-open file %s", *getArgReference_str(stk, pci, i));
+				throw(SQL, "sql", "Failed to re-open file %s", fname);
 
 			buf = GDKmalloc(bufsiz);
 			if (!buf) {
@@ -3722,14 +3734,36 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			fclose(f);
 			GDKfree(buf);
 		} else {
-			throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
+			throw(SQL, "sql", "Failed to attach file %s", fname);
 		}
-		if (i != (pci->retc + 2) && cnt != BATcount(c))
+		if (init && cnt != BATcount(c))
 			throw(SQL, "sql", "binary files for table '%s' have inconsistent counts", tname);
 		cnt = BATcount(c);
+		init = 1;
 		*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
 		BBPkeepref(c->batCacheid);
 	}
+	if (init) {
+		for (i = pci->retc + 2, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
+			// now that we know the BAT count, we can fill in the columns for which no parameters were passed
+			sql_column *col = n->data;
+			BAT *c = NULL;
+			int tpe = col->type.type->localtype;
+
+			str fname = *getArgReference_str(stk, pci, i);
+			if (strcmp(fname, str_nil) == 0) {
+				BUN loop = 0;
+				const void* nil = ATOMnilptr(tpe);
+				// fill the new BAT with NULL values
+				c = COLnew(0, tpe, cnt, PERSISTENT);
+				for(loop = 0; loop < cnt; loop++) {
+					BUNappend(c, nil, 0);
+				}
+				*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
+				BBPkeepref(c->batCacheid);
+			}
+		}
+	} 
 	return MAL_SUCCEED;
 }
 
@@ -3738,7 +3772,7 @@ zero_or_one(ptr ret, const bat *bid)
 {
 	BAT *b;
 	BUN c, _s;
-	ptr p;
+	const void *p;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "zero_or_one", "Cannot access descriptor");
@@ -3787,7 +3821,7 @@ SQLall(ptr ret, const bat *bid)
 {
 	BAT *b;
 	BUN c, _s;
-	ptr p;
+	const void *p;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "all", "Cannot access descriptor");
@@ -3962,6 +3996,7 @@ str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
 	else
 		pos = daytime_fromstr(*v, &len, &res);
 	if (!pos || pos < (int)strlen(*v))
+	if (!pos || pos < (int)strlen(*v) || ATOMcmp(TYPE_daytime, res, ATOMnilptr(TYPE_daytime)) == 0)
 		throw(SQL, "daytime", "22007!daytime (%s) has incorrect format", *v);
 	return daytime_2time_daytime(res, res, digits);
 }
@@ -4037,7 +4072,7 @@ str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 		pos = timestamp_tz_fromstr(*v, &len, &res);
 	else
 		pos = timestamp_fromstr(*v, &len, &res);
-	if (!pos || pos < (int)strlen(*v))
+	if (!pos || pos < (int)strlen(*v) || ATOMcmp(TYPE_timestamp, res, ATOMnilptr(TYPE_timestamp)) == 0)
 		throw(SQL, "timestamp", "22007!timestamp (%s) has incorrect format", *v);
 	return timestamp_2time_timestamp(res, res, digits);
 }

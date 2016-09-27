@@ -141,6 +141,12 @@ void mserver_reset(void)
 	mal_factory_reset();
 	mal_dataflow_reset();
 	THRdel(mal_clients->mythread);
+	GDKfree(mal_clients->errbuf);
+	mal_clients->fdin->s = NULL;
+	bstream_destroy(mal_clients->fdin);
+	GDKfree(mal_clients->prompt);
+	GDKfree(mal_clients->username);
+	freeStack(mal_clients->glb);
 	mal_client_reset();
   	mal_linker_reset();
 	mal_resource_reset();

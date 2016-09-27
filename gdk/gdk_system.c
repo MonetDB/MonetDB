@@ -233,10 +233,38 @@ join_threads(void)
 	} while (waited);
 }
 
+void
+join_detached_threads(void)
+{
+	struct winthread *w;
+	int waited;
+
+	do {
+		waited = 0;
+		EnterCriticalSection(&winthread_cs);
+		for (w = winthreads; w; w = w->next) {
+			if ((w->flags & (DETACHED | WAITING)) == DETACHED) {
+				w->flags |= WAITING;
+				LeaveCriticalSection(&winthread_cs);
+				WaitForSingleObject(w->hdl, INFINITE);
+				CloseHandle(w->hdl);
+				rm_winthread(w);
+				waited = 1;
+				EnterCriticalSection(&winthread_cs);
+				break;
+			}
+		}
+		LeaveCriticalSection(&winthread_cs);
+	} while (waited);
+}
+
 int
 MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 {
 	struct winthread *w = malloc(sizeof(*w));
+
+	if (w == NULL)
+		return -1;
 
 	if (winthread_cs_init == 0) {
 		/* we only get here before any threads are created,
@@ -497,6 +525,25 @@ join_threads(void)
 	pthread_mutex_unlock(&posthread_lock);
 }
 
+void
+join_detached_threads(void)
+{
+	struct posthread *p;
+	pthread_t tid;
+
+	pthread_mutex_lock(&posthread_lock);
+	while (posthreads) {
+		p = posthreads;
+		posthreads = p->next;
+		tid = p->tid;
+		free(p);
+		pthread_mutex_unlock(&posthread_lock);
+		pthread_join(tid, NULL);
+		pthread_mutex_lock(&posthread_lock);
+	}
+	pthread_mutex_unlock(&posthread_lock);
+}
+
 int
 MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 {
@@ -518,6 +565,12 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	if (d == MT_THR_DETACHED) {
 		p = malloc(sizeof(struct posthread));
+		if (p == NULL) {
+#ifdef HAVE_PTHREAD_SIGMASK
+			MT_thread_sigmask(&orig_mask, NULL);
+#endif
+			return -1;
+		}
 		p->func = f;
 		p->arg = arg;
 		p->exited = 0;
@@ -764,6 +817,9 @@ MT_check_nr_cores_(void)
 	while (1) {
 		lng t0, t1;
 		MT_Id *threads = malloc(sizeof(MT_Id) * curr);
+
+		if (threads == NULL)
+			break;
 
 		t0 = GDKusec();
 		for (i = 0; i < curr; i++)

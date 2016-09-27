@@ -36,6 +36,11 @@
 #include <mapi.h>
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>		/* RAND_bytes() */
+#else
+#ifdef HAVE_COMMONCRYPTO
+# include <CommonCrypto/CommonCrypto.h>
+# include <CommonCrypto/CommonRandom.h>
+#endif
 #endif
 #ifdef _WIN32   /* Windows specific */
 # include <winsock.h>
@@ -80,23 +85,31 @@ static void generateChallenge(str buf, int min, int max) {
 	 * during the same second */
 #ifdef HAVE_OPENSSL
 	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(&size, sizeof(size)) != kCCSuccess)
+#endif
 #endif
 		size = rand();
 	size = (size % (max - min)) + min;
 #ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
+	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0)
 		for (i = 0; i < size; i++)
 			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
-	} else {
+	else
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(buf, size) == kCCSuccess)
+		for (i = 0; i < size; i++)
+			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
+	else
+#endif
 #endif
 		for (i = 0; i < size; i++) {
 			bte = rand();
 			bte %= 62;
 			buf[i] = seedChars[bte];
 		}
-#ifdef HAVE_OPENSSL
-	}
-#endif
 	buf[i] = '\0';
 }
 
@@ -437,45 +450,43 @@ SERVERlistenThread(SOCKET *Sock)
 		fflush(stdout);
 #endif
 		data = GDKmalloc(sizeof(*data));
-		if (data == NULL) {
+		if( data == NULL){
 			closesocket(msgsock);
 			showException(GDKstdout, MAL, "initClient",
-						  "cannot allocate memory");
+						  "cannot allocate space");
 			continue;
 		}
 		data->in = socket_rastream(msgsock, "Server read");
 		data->out = socket_wastream(msgsock, "Server write");
 		if (data->in == NULL || data->out == NULL) {
-			if (data->out) {
-				/* send message if we can */
-				mnstr_printf(data->out,
-							 "!internal server error (cannot allocate "
-							 "enough memory), please try again later\n");
-				mnstr_flush(data->out);
-			}
-			showException(GDKstdout, MAL, "initClient",
-						  "cannot allocate memory");
-			closesocket(msgsock);
-			if (data->in)
-				mnstr_destroy(data->in);
-			if (data->out)
-				mnstr_destroy(data->out);
-			GDKfree(data);
-			continue;
-		}
-		if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE) < 0) {
-			mnstr_printf(data->out, "!internal server error (cannot fork new "
-						 "client thread), please try again later\n");
-			mnstr_flush(data->out);
-			showException(GDKstdout, MAL, "initClient",
-						  "cannot fork new client thread");
-			closesocket(msgsock);
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
+			closesocket(msgsock);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot allocate stream");
 			continue;
 		}
-		GDKregister(tid);
+		data->in = block_stream(data->in);
+		data->out = block_stream(data->out);
+		if (data->in == NULL || data->out == NULL) {
+			mnstr_destroy(data->in);
+			mnstr_destroy(data->out);
+			GDKfree(data);
+			closesocket(msgsock);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot allocate stream");
+			continue;
+		}
+		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+			mnstr_destroy(data->in);
+			mnstr_destroy(data->out);
+			GDKfree(data);
+			closesocket(msgsock);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot fork new client thread");
+			continue;
+		}
 	} while (!ATOMIC_GET(serverexiting, atomicLock) &&
 			 !GDKexiting());
 	(void) ATOMIC_DEC(nlistener, atomicLock);
@@ -859,17 +870,22 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	(void) res;
 	/* in embedded mode we allow just one client */
 	data = GDKmalloc(sizeof(*data));
-	data->in = *In;
-	data->out = *Out;
-	if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {
-		mnstr_printf(data->out, "!internal server error (cannot fork new "
-					 "client thread), please try again later\n");
-		mnstr_flush(data->out);
-		showException(GDKstdout, MAL, "mapi.SERVERclient",
-					  "cannot fork new client thread");
-		free(data);
+	if( data == NULL)
+		throw(MAL, "mapi.SERVERclient", MAL_MALLOC_FAIL);
+	data->in = block_stream(*In);
+	data->out = block_stream(*Out);
+	if (data->in == NULL || data->out == NULL) {
+		mnstr_destroy(data->in);
+		mnstr_destroy(data->out);
+		GDKfree(data);
+		throw(MAL, "mapi.SERVERclient", MAL_MALLOC_FAIL);
 	}
-	GDKregister(tid);
+	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+		mnstr_destroy(data->in);
+		mnstr_destroy(data->out);
+		free(data);
+		throw(MAL, "mapi.SERVERclient", "cannot fork new client thread");
+	}
 	return MAL_SUCCEED;
 }
 

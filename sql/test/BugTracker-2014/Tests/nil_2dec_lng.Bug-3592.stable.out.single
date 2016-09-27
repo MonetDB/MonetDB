@@ -44,8 +44,9 @@ Ready.
 % mal # name
 % clob # type
 % 206 # length
-function user.s5_1(A0:timestamp,A1:timestamp,A2:void):void;
-    X_76:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",42);
+function user.s10_1():void;
+    X_76:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",52);
+barrier X_128 := language.dataflow();
     X_52 := bat.new(nil:str);
     X_59 := bat.append(X_52,".L5");
     X_69 := bat.append(X_59,".L5");
@@ -63,29 +64,63 @@ function user.s5_1(A0:timestamp,A1:timestamp,A2:void):void;
     X_75 := bat.append(X_67,9);
     X_1:bat[:lng] := bat.new(nil:lng);
     X_0 := sql.mvc();
-    C_3:bat[:oid] := sql.tid(X_0,"sys","foo_nil_2dec");
-    X_6:bat[:timestamp] := sql.bind(X_0,"sys","foo_nil_2dec","t",0);
-    (C_9:bat[:oid],r1_13:bat[:timestamp]) := sql.bind(X_0,"sys","foo_nil_2dec","t",2);
-    X_12:bat[:timestamp] := sql.bind(X_0,"sys","foo_nil_2dec","t",1);
-    X_14 := sql.delta(X_6,C_9,r1_13,X_12);
-    X_15 := algebra.projection(C_3,X_14);
-    X_17 := calc.timestamp(A0,7);
-    X_19:bat[:lng] := mal.manifold("mtime","diff",X_15,X_17);
+    C_96:bat[:oid] := sql.tid(X_0,"sys","foo_nil_2dec",0,2);
+    X_99:bat[:timestamp] := sql.bind(X_0,"sys","foo_nil_2dec","t",0,0,2);
+    X_104 := algebra.projection(C_96,X_99);
+    X_106 := mal.manifold("mtime","diff",X_104,"1970-01-01 00:00:00.000");
+    C_98:bat[:oid] := sql.tid(X_0,"sys","foo_nil_2dec",1,2);
+    X_100:bat[:timestamp] := sql.bind(X_0,"sys","foo_nil_2dec","t",0,1,2);
+    X_105 := algebra.projection(C_98,X_100);
+    X_107 := mal.manifold("mtime","diff",X_105,"1970-01-01 00:00:00.000");
+    X_119 := mat.packIncrement(X_106,2);
+    X_19:bat[:lng] := mat.packIncrement(X_119,X_107);
     X_22 := bat.append(X_1,X_19,true);
-    X_32 := calc.timestamp(A1,7);
-    X_33:bat[:lng] := mal.manifold("mtime","diff",X_15,X_32);
+    C_24:bat[:oid] := sql.tid(X_0,"sys","foo_nil_2dec");
+    X_25:bat[:timestamp] := sql.bind(X_0,"sys","foo_nil_2dec","t",0);
+    X_30 := algebra.projection(C_24,X_25);
+    X_33:bat[:lng] := mal.manifold("mtime","diff",X_30,"1970-01-01 00:00:00.000");
     X_34 := bat.append(X_22,X_33,true);
     X_35:bat[:lng] := bat.new(nil:lng);
-    X_37:bat[:lng] := sql.bind(X_0,"sys","foo_nil_2dec","v",0);
-    (C_39:bat[:oid],r1_43:bat[:lng]) := sql.bind(X_0,"sys","foo_nil_2dec","v",2);
-    X_41:bat[:lng] := sql.bind(X_0,"sys","foo_nil_2dec","v",1);
-    X_42 := sql.delta(X_37,C_39,r1_43,X_41);
-    X_43 := algebra.projection(C_3,X_42);
+    X_101:bat[:lng] := sql.bind(X_0,"sys","foo_nil_2dec","v",0,0,2);
+    X_108 := algebra.projection(C_96,X_101);
+    X_102:bat[:lng] := sql.bind(X_0,"sys","foo_nil_2dec","v",0,1,2);
+    X_109 := algebra.projection(C_98,X_102);
+    X_122 := mat.packIncrement(X_108,2);
+    X_43 := mat.packIncrement(X_122,X_109);
     X_44 := bat.append(X_35,X_43,true);
     X_49 := algebra.project(X_33,nil:lng);
     X_50 := bat.append(X_44,X_49,true);
+    language.pass(C_96);
+    language.pass(C_98);
+    language.pass(X_33);
+exit X_128;
     sql.resultSet(X_69,X_70,X_72,X_74,X_75,X_34,X_50);
-end user.s5_1;
+end user.s10_1;
+#inline               actions= 0 time=2 usec 
+#remap                actions= 2 time=11 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 1 time=6 usec 
+#evaluate             actions= 5 time=30 usec 
+#emptycolumn          actions= 1 time=8 usec 
+#aliases              actions= 5 time=9 usec 
+#mitosis              actions= 1 time=28 usec 
+#mergetable           actions= 6 time=64 usec 
+#deadcode             actions= 5 time=15 usec 
+#aliases              actions= 0 time=9 usec 
+#constants            actions=11 time=11 usec 
+#commonTerms          actions= 1 time=16 usec 
+#projectionpath       actions= 0 time=7 usec 
+#deadcode             actions= 1 time=13 usec 
+#reorder              actions= 1 time=36 usec 
+#reduce               actions=51 time=42 usec 
+#matpack              actions= 2 time=12 usec 
+#dataflow             actions=27 time=31 usec 
+#multiplex            actions= 0 time=3 usec 
+#profiler             actions= 1 time=7 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollctor      actions= 1 time=27 usec 
+#total                actions= 1 time=497 usec 
+#drop table foo_nil_2dec;
 
 # 23:28:04 >  
 # 23:28:04 >  "Done."

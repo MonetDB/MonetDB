@@ -158,7 +158,7 @@ MKEYbathash(bat *res, const bat *bid)
 		BATiter bi = bat_iterator(b);
 		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 		int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-		void *nil = ATOMnilptr(b->ttype);
+		const void *nil = ATOMnilptr(b->ttype);
 		BUN i;
 		const void *v;
 

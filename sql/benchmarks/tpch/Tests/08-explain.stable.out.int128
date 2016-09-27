@@ -57,24 +57,24 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 836 # length
-function user.s2_1(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,A6:str):void;
-    X_275:void := querylog.define("explain select\n o_year,\n sum(case\n when nation = \\'BRAZIL\\' then volume\n else 0\n end) / sum(volume) as mkt_share\nfrom\n (\n select\n extract(year from o_orderdate) as o_year,\n l_extendedprice * (1 - l_discount) as volume,\n n2.n_name as nation\n from\n part,\n supplier,\n lineitem,\n orders,\n customer,\n nation n1,\n nation n2,\n region\n where\n p_partkey = l_partkey\n and s_suppkey = l_suppkey\n and l_orderkey = o_orderkey\n and o_custkey = c_custkey\n and c_nationkey = n1.n_nationkey\n and n1.n_regionkey = r_regionkey\n and r_name = \\'AMERICA\\'\n and s_nationkey = n2.n_nationkey\n and o_orderdate between date \\'1995-01-01\\' and date \\'1996-12-31\\'\n and p_type = \\'ECONOMY ANODIZED STEEL\\'\n ) as all_nations\ngroup by\n o_year\norder by\n o_year;","sequential_pipe",133);
+% 835 # length
+function user.s4_1():void;
+    X_273:void := querylog.define("explain select\n o_year,\n sum(case\n when nation = \\'BRAZIL\\' then volume\n else 0\n end) / sum(volume) as mkt_share\nfrom\n (\n select\n extract(year from o_orderdate) as o_year,\n l_extendedprice * (1 - l_discount) as volume,\n n2.n_name as nation\n from\n part,\n supplier,\n lineitem,\n orders,\n customer,\n nation n1,\n nation n2,\n region\n where\n p_partkey = l_partkey\n and s_suppkey = l_suppkey\n and l_orderkey = o_orderkey\n and o_custkey = c_custkey\n and c_nationkey = n1.n_nationkey\n and n1.n_regionkey = r_regionkey\n and r_name = \\'AMERICA\\'\n and s_nationkey = n2.n_nationkey\n and o_orderdate between date \\'1995-01-01\\' and date \\'1996-12-31\\'\n and p_type = \\'ECONOMY ANODIZED STEEL\\'\n ) as all_nations\ngroup by\n o_year\norder by\n o_year;","sequential_pipe",96);
+    X_247 := bat.new(nil:str);
+    X_254 := bat.append(X_247,"sys.all_nations");
+    X_264 := bat.append(X_254,"sys.L3");
     X_249 := bat.new(nil:str);
-    X_256 := bat.append(X_249,"sys.all_nations");
-    X_266 := bat.append(X_256,"sys.L3");
-    X_251 := bat.new(nil:str);
-    X_258 := bat.append(X_251,"o_year");
-    X_268 := bat.append(X_258,"mkt_share");
-    X_252 := bat.new(nil:str);
-    X_260 := bat.append(X_252,"int");
-    X_270 := bat.append(X_260,"decimal");
+    X_256 := bat.append(X_249,"o_year");
+    X_266 := bat.append(X_256,"mkt_share");
+    X_250 := bat.new(nil:str);
+    X_258 := bat.append(X_250,"int");
+    X_268 := bat.append(X_258,"decimal");
+    X_251 := bat.new(nil:int);
+    X_260 := bat.append(X_251,32);
+    X_270 := bat.append(X_260,39);
     X_253 := bat.new(nil:int);
-    X_262 := bat.append(X_253,32);
-    X_272 := bat.append(X_262,39);
-    X_255 := bat.new(nil:int);
-    X_264 := bat.append(X_255,0);
-    X_273 := bat.append(X_264,4);
+    X_262 := bat.append(X_253,0);
+    X_271 := bat.append(X_262,4);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","nation");
     X_4:bat[:oid] := sql.bind_idxbat(X_0,"sys","nation","nation_n_regionkey_fkey",0);
@@ -83,12 +83,7 @@ function user.s2_1(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,A6:str):void;
     X_13 := sql.projectdelta(C_1,X_4,X_7,r1_15,X_10);
     X_16:bat[:str] := sql.bind(X_0,"sys","region","r_name",0);
     C_14:bat[:oid] := sql.tid(X_0,"sys","region");
-    C_291 := algebra.subselect(X_16,C_14,A3,A3,true,false,false);
-    (C_18:bat[:oid],r1_26:bat[:str]) := sql.bind(X_0,"sys","region","r_name",2);
-    C_292 := algebra.subselect(r1_26,nil:bat[:oid],A3,A3,true,false,false);
-    X_20:bat[:str] := sql.bind(X_0,"sys","region","r_name",1);
-    C_294 := algebra.subselect(X_20,C_14,A3,A3,true,false,false);
-    C_24 := sql.subdelta(C_291,C_14,C_18,C_292,C_294);
+    C_24 := algebra.subselect(X_16,C_14,"AMERICA","AMERICA",true,false,false);
     (X_29,r1_37) := algebra.subjoin(X_13,C_24,nil:BAT,nil:BAT,false,nil:lng);
     X_34 := algebra.projection(X_29,C_1);
     C_35:bat[:oid] := sql.tid(X_0,"sys","customer");
@@ -100,12 +95,7 @@ function user.s2_1(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,A6:str):void;
     X_46 := algebra.projection(r1_52,C_35);
     X_49:bat[:date] := sql.bind(X_0,"sys","orders","o_orderdate",0);
     C_47:bat[:oid] := sql.tid(X_0,"sys","orders");
-    C_295 := algebra.subselect(X_49,C_47,A4,A5,true,true,false);
-    (C_51:bat[:oid],r1_59:bat[:date]) := sql.bind(X_0,"sys","orders","o_orderdate",2);
-    C_296 := algebra.subselect(r1_59,nil:bat[:oid],A4,A5,true,true,false);
-    X_53:bat[:date] := sql.bind(X_0,"sys","orders","o_orderdate",1);
-    C_298 := algebra.subselect(X_53,C_47,A4,A5,true,true,false);
-    C_58 := sql.subdelta(C_295,C_47,C_51,C_296,C_298);
+    C_58 := algebra.subselect(X_49,C_47,"1995-01-01","1996-12-31",true,true,false);
     X_62:bat[:oid] := sql.bind_idxbat(X_0,"sys","orders","orders_o_custkey_fkey",0);
     (X_64,r1_72) := sql.bind_idxbat(X_0,"sys","orders","orders_o_custkey_fkey",2);
     X_66:bat[:oid] := sql.bind_idxbat(X_0,"sys","orders","orders_o_custkey_fkey",1);
@@ -119,33 +109,18 @@ function user.s2_1(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,A6:str):void;
     X_85 := sql.projectdelta(C_77,X_79,X_81,r1_89,X_83);
     (X_86,r1_94) := algebra.subjoin(X_76,X_85,nil:BAT,nil:BAT,false,nil:lng);
     X_88:bat[:int] := sql.bind(X_0,"sys","lineitem","l_partkey",0);
-    (C_90:bat[:oid],r1_98:bat[:int]) := sql.bind(X_0,"sys","lineitem","l_partkey",2);
-    X_92:bat[:int] := sql.bind(X_0,"sys","lineitem","l_partkey",1);
-    X_94 := sql.projectdelta(C_77,X_88,C_90,r1_98,X_92);
-    X_95 := algebra.projection(r1_94,X_94);
+    X_95:bat[:int] := algebra.projectionpath(r1_94,C_77,X_88);
     X_98:bat[:str] := sql.bind(X_0,"sys","part","p_type",0);
     C_96:bat[:oid] := sql.tid(X_0,"sys","part");
-    C_299 := algebra.subselect(X_98,C_96,A6,A6,true,false,false);
-    (C_100:bat[:oid],r1_108:bat[:str]) := sql.bind(X_0,"sys","part","p_type",2);
-    C_300 := algebra.subselect(r1_108,nil:bat[:oid],A6,A6,true,false,false);
-    X_102:bat[:str] := sql.bind(X_0,"sys","part","p_type",1);
-    C_302 := algebra.subselect(X_102,C_96,A6,A6,true,false,false);
-    C_106 := sql.subdelta(C_299,C_96,C_100,C_300,C_302);
+    C_106 := algebra.subselect(X_98,C_96,"ECONOMY ANODIZED STEEL","ECONOMY ANODIZED STEEL",true,false,false);
     X_110:bat[:int] := sql.bind(X_0,"sys","part","p_partkey",0);
-    (C_112:bat[:oid],r1_120:bat[:int]) := sql.bind(X_0,"sys","part","p_partkey",2);
-    X_114:bat[:int] := sql.bind(X_0,"sys","part","p_partkey",1);
-    X_117 := sql.projectdelta(C_106,X_110,C_112,r1_120,X_114);
+    X_117 := algebra.projection(C_106,X_110);
     (X_118,r1_126) := algebra.subjoin(X_95,X_117,nil:BAT,nil:BAT,false,nil:lng);
     X_123:bat[:int] := sql.bind(X_0,"sys","lineitem","l_suppkey",0);
-    (C_125:bat[:oid],r1_133:bat[:int]) := sql.bind(X_0,"sys","lineitem","l_suppkey",2);
-    X_127:bat[:int] := sql.bind(X_0,"sys","lineitem","l_suppkey",1);
-    X_129 := sql.projectdelta(C_77,X_123,C_125,r1_133,X_127);
-    X_131:bat[:int] := algebra.projectionpath(X_118,r1_94,X_129);
+    X_131:bat[:int] := algebra.projectionpath(X_118,r1_94,C_77,X_123);
     C_132:bat[:oid] := sql.tid(X_0,"sys","supplier");
     X_134:bat[:int] := sql.bind(X_0,"sys","supplier","s_suppkey",0);
-    (C_136:bat[:oid],r1_144:bat[:int]) := sql.bind(X_0,"sys","supplier","s_suppkey",2);
-    X_138:bat[:int] := sql.bind(X_0,"sys","supplier","s_suppkey",1);
-    X_140 := sql.projectdelta(C_132,X_134,C_136,r1_144,X_138);
+    X_140 := algebra.projection(C_132,X_134);
     (X_141,r1_149) := algebra.subjoin(X_131,X_140,nil:BAT,nil:BAT,false,nil:lng);
     X_144:bat[:oid] := sql.bind_idxbat(X_0,"sys","supplier","supplier_s_nationkey_fkey",0);
     (X_146,r1_154) := sql.bind_idxbat(X_0,"sys","supplier","supplier_s_nationkey_fkey",2);
@@ -153,44 +128,57 @@ function user.s2_1(A0:str,A1:bte,A2:bte,A3:str,A4:date,A5:date,A6:str):void;
     X_150 := sql.projectdelta(C_132,X_144,X_146,r1_154,X_148);
     X_151 := algebra.projection(r1_149,X_150);
     (X_154,r1_162) := algebra.subjoin(X_151,C_1,nil:BAT,nil:BAT,false,nil:lng);
-    X_159 := sql.projectdelta(C_58,X_49,C_51,r1_59,X_53);
-    X_164:bat[:date] := algebra.projectionpath(X_154,X_141,X_118,X_86,r1_78,X_159);
+    X_164:bat[:date] := algebra.projectionpath(X_154,X_141,X_118,X_86,r1_78,C_58,X_49);
     X_165:bat[:int] := batmtime.year(X_164);
     (X_168,r1_176,r2_176) := group.subgroupdone(X_165);
     X_171 := algebra.projection(r1_176,X_165);
     X_180:bat[:str] := sql.bind(X_0,"sys","nation","n_name",0);
-    (C_182:bat[:oid],r1_190:bat[:str]) := sql.bind(X_0,"sys","nation","n_name",2);
-    X_184:bat[:str] := sql.bind(X_0,"sys","nation","n_name",1);
-    X_186 := sql.projectdelta(C_1,X_180,C_182,r1_190,X_184);
-    X_187 := algebra.projection(r1_162,X_186);
-    X_189:bat[:bit] := batcalc.==(X_187,A0);
+    X_187:bat[:str] := algebra.projectionpath(r1_162,C_1,X_180);
+    X_189:bat[:bit] := batcalc.==(X_187,"BRAZIL");
     X_192:bat[:bit] := batcalc.isnil(X_189);
-    X_197:bat[:bit] := batcalc.ifthenelse(X_192,false,X_189);
-    X_199:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",0);
-    (C_201:bat[:oid],r1_209:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_extendedprice",2);
-    X_203:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",1);
-    X_205 := sql.projectdelta(C_77,X_199,C_201,r1_209,X_203);
-    X_209:bat[:lng] := algebra.projectionpath(X_154,X_141,X_118,r1_94,X_205);
-    X_215 := calc.lng(A2,15,2);
-    X_217:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",0);
-    (C_219:bat[:oid],r1_227:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_discount",2);
-    X_221:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",1);
-    X_223 := sql.projectdelta(C_77,X_217,C_219,r1_227,X_221);
-    X_227:bat[:lng] := algebra.projectionpath(X_154,X_141,X_118,r1_94,X_223);
-    X_228:bat[:lng] := batcalc.-(X_215,X_227);
-    X_231:bat[:hge] := batcalc.*(X_209,X_228);
-    X_234 := calc.hge(A1,33,4);
-    X_236:bat[:hge] := batcalc.ifthenelse(X_197,X_231,X_234);
-    X_238:bat[:hge] := aggr.subsum(X_236,X_168,r1_176,true,true);
-    X_244:bat[:hge] := aggr.subsum(X_231,X_168,r1_176,true,true);
+    X_195:bat[:bit] := batcalc.ifthenelse(X_192,false,X_189);
+    X_197:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",0);
+    X_207:bat[:lng] := algebra.projectionpath(X_154,X_141,X_118,r1_94,C_77,X_197);
+    X_215:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",0);
+    X_225:bat[:lng] := algebra.projectionpath(X_154,X_141,X_118,r1_94,C_77,X_215);
+    X_226:bat[:lng] := batcalc.-(100:lng,X_225);
+    X_229:bat[:hge] := batcalc.*(X_207,X_226);
+    X_234:bat[:hge] := batcalc.ifthenelse(X_195,X_229,0:hge);
+    X_236:bat[:hge] := aggr.subsum(X_234,X_168,r1_176,true,true);
+    X_242:bat[:hge] := aggr.subsum(X_229,X_168,r1_176,true,true);
     X_172 := bat.setKey(X_171,true);
     (X_174,r1_182,r2_182) := algebra.subsort(X_172,false,false);
     X_179 := algebra.projection(r1_182,X_172);
-    X_241:bat[:hge] := batcalc.hge(4,X_238,39,8);
-    X_245:bat[:hge] := batcalc./(X_241,X_244);
-    X_247 := algebra.projection(r1_182,X_245);
-    sql.resultSet(X_266,X_268,X_270,X_272,X_273,X_179,X_247);
-end user.s2_1;
+    X_239:bat[:hge] := batcalc.hge(4,X_236,39,8);
+    X_243:bat[:hge] := batcalc./(X_239,X_242);
+    X_245 := algebra.projection(r1_182,X_243);
+    sql.resultSet(X_264,X_266,X_268,X_270,X_271,X_179,X_245);
+end user.s4_1;
+#inline               actions= 0 time=11 usec 
+#candidates           actions= 1 time=121 usec 
+#remap                actions=11 time=819 usec 
+#costModel            actions= 1 time=227 usec 
+#coercions            actions= 1 time=300 usec 
+#evaluate             actions=10 time=308 usec 
+#emptybind            actions= 0 time=11 usec 
+#pushselect           actions=15 time=284 usec 
+#aliases              actions=27 time=250 usec 
+#mergetable           actions= 0 time=254 usec 
+#deadcode             actions=26 time=233 usec 
+#aliases              actions= 0 time=26 usec 
+#constants            actions=37 time=281 usec 
+#commonTerms          actions= 2 time=211 usec 
+#projectionpath       actions=17 time=210 usec 
+#reorder              actions= 1 time=276 usec 
+#deadcode             actions=19 time=196 usec 
+#reduce               actions=159 time=275 usec 
+#matpack              actions= 0 time=11 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=7 usec 
+#generator            actions= 0 time=4 usec 
+#profiler             actions= 1 time=188 usec 
+#garbageCollector     actions= 1 time=205 usec 
+#total                actions= 1 time=4848 usec 
 
 # 22:53:27 >  
 # 22:53:27 >  "Done."

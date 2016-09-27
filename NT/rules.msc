@@ -85,10 +85,6 @@ PYTHON3LIB=python32.lib
 !ENDIF
 PYTHON3_LIBDIR=share\MonetDB\python3
 
-!IFDEF HAVE_PERL
-PERL_LIBDIR = share\MonetDB\perl
-!ENDIF
-
 !IFDEF HAVE_PCRE
 # This is the location of the PCRE library
 !IFNDEF LIBPCRE
@@ -202,9 +198,6 @@ GENDLL =
 RC = rc
 
 MT = mt /nologo
-JAVAC = javac
-JAR = jar
-ANT = ant.bat
 
 # no need to edit beyond here..
 
@@ -328,23 +321,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_HGE_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_JAVA
-	$(ECHO) HAVE_JAVA_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!IFDEF HAVE_JAVAJDBC
-	$(ECHO) HAVE_JAVAJDBC_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_JAVAJDBC_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_JAVAMEROCONTROL
-	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!ELSE
-	$(ECHO) HAVE_JAVA_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) HAVE_JAVAJDBC_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_LIBBZ2
 	$(ECHO) HAVE_LIBBZ2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -399,11 +375,6 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_PCRE_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_PCRE_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_PERL
-	$(ECHO) HAVE_PERL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_PERL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_PROJ
 	$(ECHO) HAVE_PROJ_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -469,12 +440,10 @@ update_winconfig_conds_py: create_winconfig_conds_new_py
 CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"$(TOPDIR)\winconfig_conds.py" \
 	"prefix=$(prefix)" \
-	"JDBCCLIENT_JAR=$(JDBCCLIENT_JAR)" \
 	"LIBICONV=$(LIBICONV)" \
 	"LIBXML2=$(LIBXML2)" \
 	"LIBZLIB=$(LIBZLIB)" \
 	"PACKAGE=$(pkg)" \
-	"PERL_LIBDIR=$(PERL_LIBDIR)" \
 	"PYTHON=$(PYTHON)" \
 	"PYTHON2=$(PYTHON2)" \
 	"PYTHON2_LIBDIR=$(PYTHON2_LIBDIR)" \

@@ -266,8 +266,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			/*_DELETE(val);*/
 		}
 	} else { 
-		p = ATOMnilptr(a->data.vtype);
-		VALset(&a->data, a->data.vtype, p);
+		VALinit(&a->data, a->data.vtype, ATOMnilptr(a->data.vtype));
 		a->isnull = 1;
 	}
 	return a;
@@ -1102,12 +1101,9 @@ atom_cast(atom *a, sql_subtype *tp)
 			return 1;
 		}	
 	} else {
-		ptr p = NULL;
-
 		a->tpe = *tp;
 		a->data.vtype = tp->type->localtype;
-		p = ATOMnilptr(a->data.vtype);
-		VALset(&a->data, a->data.vtype, p);
+		VALinit(&a->data, a->data.vtype, ATOMnilptr(a->data.vtype));
 		return 1;
 	}
 	return 0;
@@ -1165,8 +1161,9 @@ atom_cmp(atom *a1, atom *a2)
 atom * 
 atom_add(atom *a1, atom *a2)
 {
-	if (a1->tpe.type->localtype != a2->tpe.type->localtype) 
+	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype) {
 		return NULL;
+	}
 	switch(a1->tpe.type->localtype) {
 	case TYPE_bte:
 			a1->data.val.btval += a2->data.val.btval;
@@ -1206,8 +1203,9 @@ atom_add(atom *a1, atom *a2)
 atom * 
 atom_sub(atom *a1, atom *a2)
 {
-	if (a1->tpe.type->localtype != a2->tpe.type->localtype) 
+	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype) {
 		return NULL;
+	}
 	switch(a1->tpe.type->localtype) {
 	case TYPE_bte:
 			a1->data.val.btval -= a2->data.val.btval;
@@ -1242,4 +1240,128 @@ atom_sub(atom *a1, atom *a2)
 			break;
 	}
 	return a1;
+}
+
+atom * 
+atom_mul(atom *a1, atom *a2)
+{
+	if (!EC_COMPUTE(a1->tpe.type->eclass))
+		return NULL;
+	if (a1->tpe.type->localtype != a2->tpe.type->localtype) {
+		if (a1->tpe.type->localtype == TYPE_dbl) {
+			a1->data.val.dval *= a2->d;
+			a1->d = (dbl) a1->data.val.dval;
+			return a1;
+		}
+		if (a2->tpe.type->localtype == TYPE_dbl) {
+			a2->data.val.dval *= a1->d;
+			a2->d = (dbl) a2->data.val.dval;
+			return a2;
+		}
+		if (a1->tpe.type->localtype > a2->tpe.type->localtype) {
+			if (!atom_cast(a2, &a1->tpe))
+				return NULL;
+		} else if (!atom_cast(a1, &a2->tpe)) {
+			return NULL;
+		}
+	}
+	switch(a1->tpe.type->localtype) {
+	case TYPE_bte:
+			a1->data.val.btval *= a2->data.val.btval;
+			a1->d = (dbl) a1->data.val.btval;
+			break;
+	case TYPE_sht:
+			a1->data.val.shval *= a2->data.val.shval;
+			a1->d = (dbl) a1->data.val.shval;
+			break;
+	case TYPE_int:
+			a1->data.val.ival *= a2->data.val.ival;
+			a1->d = (dbl) a1->data.val.ival;
+			break;
+	case TYPE_lng:
+			a1->data.val.lval *= a2->data.val.lval;
+			a1->d = (dbl) a1->data.val.lval;
+			break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+			a1->data.val.hval *= a2->data.val.hval;
+			a1->d = (dbl) a1->data.val.hval;
+			break;
+#endif
+	case TYPE_flt:
+			a1->data.val.fval *= a2->data.val.fval;
+			a1->d = (dbl) a1->data.val.fval;
+			break;
+	case TYPE_dbl:
+			a1->data.val.dval *= a2->data.val.dval;
+			a1->d = (dbl) a1->data.val.dval;
+	default:
+			break;
+	}
+	return a1;
+}
+
+void
+atom_inc( atom *a )
+{
+	switch(a->tpe.type->localtype) {
+	case TYPE_bte:
+			a->data.val.btval++;
+			a->d = (dbl) a->data.val.btval;
+			break;
+	case TYPE_sht:
+			a->data.val.shval++;
+			a->d = (dbl) a->data.val.shval;
+			break;
+	case TYPE_int:
+			a->data.val.ival++;
+			a->d = (dbl) a->data.val.ival;
+			break;
+	case TYPE_lng:
+			a->data.val.lval++;
+			a->d = (dbl) a->data.val.lval;
+			break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+			a->data.val.hval++;
+			a->d = (dbl) a->data.val.hval;
+			break;
+#endif
+	case TYPE_flt:
+			a->data.val.fval++;
+			a->d = (dbl) a->data.val.fval;
+			break;
+	case TYPE_dbl:
+			a->data.val.dval++;
+			a->d = a->data.val.dval;
+			break;
+	default:
+			break;
+	}
+}
+
+int
+atom_is_zero( atom *a )
+{
+	switch(a->tpe.type->localtype) {
+	case TYPE_bte:
+			return a->data.val.btval == 0;
+	case TYPE_sht:
+			return a->data.val.shval == 0;
+	case TYPE_int:
+			return a->data.val.ival == 0;
+	case TYPE_lng:
+			return a->data.val.lval == 0;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+			return a->data.val.hval == 0;
+#endif
+	case TYPE_flt:
+			return a->data.val.fval == 0;
+	case TYPE_dbl:
+			return a->data.val.dval == 0;
+	default:
+			break;
+	}
+	return 0;
 }

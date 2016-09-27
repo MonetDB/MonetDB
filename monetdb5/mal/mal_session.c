@@ -42,11 +42,14 @@ malBootstrap(void)
 	c->nspace = newModule(NULL, putName("user"));
 	if ( (msg = defaultScenario(c)) ) {
 		GDKfree(msg);
-		GDKerror("Failed to initialise default scenario");
+		GDKerror("malBootstrap:Failed to initialise default scenario");
 		return 0;
 	}
 	MSinitClientPrg(c, "user", "main");
-	(void) MCinitClientThread(c);
+	if( MCinitClientThread(c) < 0){
+		GDKerror("malBootstrap:Failed to create client thread");
+		return 0;
+	}
 	s = malInclude(c, bootfile, 0);
 	if (s != NULL) {
 		mnstr_printf(GDKout, "!%s\n", s);
@@ -94,6 +97,8 @@ MSresetClientPrg(Client cntxt)
 	p->gc = 0;
 	p->retc = 1;
 	p->argc = 1;
+	setModuleId(p, putName("user"));
+	setFunctionId(p, putName("main"));
 	/* remove any MAL history */
 	if (mb->history) {
 		freeMalBlk(mb->history);
@@ -112,6 +117,10 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		return;
 	}
 	cntxt->curprg = newFunction(putName("user"), putName(nme), FUNCTIONsymbol);
+	if( cntxt->curprg == 0){
+		GDKerror("MSinitClientPrg" "Failed to create function");
+		return;
+	}
 	mb = cntxt->curprg->def;
 	p = getSignature(cntxt->curprg);
 	if (mod)
@@ -468,6 +477,11 @@ MSserveClient(void *dummy)
 	}
 	if (!isAdministrator(c))
 		MCcloseClient(c);
+	if (strcmp(c->nspace->name, "user") == 0) {
+		GDKfree(c->nspace->space);
+		GDKfree(c->nspace);
+		c->nspace = NULL;
+	}
 }
 
 /*
@@ -503,8 +517,8 @@ MALexitClient(Client c)
 str
 MALreader(Client c)
 {
-	int r = 1;
 #ifndef HAVE_EMBEDDED
+	int r = 1;
 	if (c == mal_clients) {
 		r = readConsole(c);
 		if (r < 0 && c->fdin->eof == 0)

@@ -24,6 +24,8 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	char buf[256];
 	lng usec = GDKusec();
 
+	if ( !optimizerIsApplied(mb,"multiplex") )
+		return 0;
 	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */

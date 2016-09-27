@@ -31,10 +31,14 @@
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
+#include "sql_mvc.h"
+#include "sql_qc.h"
+#include "sql_optimizer.h"
 #include "mal_namespace.h"
 #include "opt_prelude.h"
 #include "querylog.h"
 #include "mal_builder.h"
+#include "mal_debugger.h"
 
 #include <rel_select.h>
 #include <rel_optimizer.h>
@@ -444,6 +448,8 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
+	if( curPrg == NULL)
+		return -1;
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -487,7 +493,14 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	if (inline_func)
 		curBlk->inlineProp = 1;
-	addQueryToCache(c);
+	/* optimize the code */
+	SQLaddQueryToCache(c);
+	if( curBlk->inlineProp == 0)
+		SQLoptimizeQuery(c, c->curprg->def);
+	else{
+		chkProgram(c->fdout, c->nspace, c->curprg->def);
+		SQLoptimizeFunction(c,c->curprg->def);
+	}
 	if (backup)
 		c->curprg = backup;
 	return 0;
@@ -542,6 +555,8 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	name[0] = old;
 	backup = c->curprg;
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
+	if( c->curprg == NULL)
+		return -1;
 	name[0] = 'l';
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -707,7 +722,10 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	curBlk->inlineProp = 1;
-	addQueryToCache(c);
+
+	SQLaddQueryToCache(c);
+	chkProgram(c->fdout, c->nspace, c->curprg->def);
+	//SQLoptimizeFunction(c,c->curprg->def);
 	if (backup)
 		c->curprg = backup;
 	name[0] = old;		/* make sure stub is called */
@@ -726,7 +744,6 @@ monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, s
 }
 
 /*
- * @-
  * Some utility routines to generate code
  * The equality operator in MAL is '==' instead of '='.
  */
@@ -948,7 +965,6 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 }
 
 /*
- * @-
  * The big code generation switch.
  */
 static int
@@ -2766,7 +2782,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 }
 
 /*
- * @-
  * The kernel uses two calls to procedures defined in SQL.
  * They have to be initialized, which is currently hacked
  * by using the SQLstatment.
@@ -2851,6 +2866,7 @@ backend_callinline(backend *be, Client c)
 	return 0;
 }
 
+/* SQL procedures, functions and PREPARE statements are compiled into a parameterised plan */
 Symbol
 backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 {
@@ -2916,7 +2932,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		goto cleanup;
 
 	// Always keep the SQL query around for monitoring
-	// if (m->history || QLOGisset()) {
 	{
 		char *t, *tt;
 		InstrPtr q;
@@ -2941,9 +2956,14 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		GDKfree(tt);
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 	}
-	if (cq)
-		addQueryToCache(c);
+	if (cq){
+		SQLaddQueryToCache(c);
+		// optimize this code the 'old' way
+		if ( m->emode == m_prepare || !qc_isaquerytemplate(getFunctionId(getInstrPtr(c->curprg->def,0))) )
+			SQLoptimizeFunction(c,c->curprg->def);
+	}
 
+	// restore the context for the wrapper code
 	curPrg = c->curprg;
 	if (backup)
 		c->curprg = backup;
@@ -3052,6 +3072,7 @@ backend_create_r_func(backend *be, sql_func *f)
 	return 0;
 }
 
+/* Create the MAL block for a registered function and optimize it */
 static int
 backend_create_py_func(backend *be, sql_func *f)
 {
@@ -3131,6 +3152,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
+	if( curPrg == NULL)
+		return -1;
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -3206,8 +3229,15 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		curBlk->inlineProp =1;
 	if (sideeffects)
 		curBlk->unsafeProp = 1;
-	sa_destroy(sa);
-	addQueryToCache(c);
+	f->sa = sa;
+	/* optimize the code */
+	SQLaddQueryToCache(c);
+	if( curBlk->inlineProp == 0)
+		SQLoptimizeFunction(c, c->curprg->def);
+	else{
+		chkProgram(c->fdout, c->nspace, c->curprg->def);
+		SQLoptimizeFunction(c,c->curprg->def);
+	}
 	if (backup)
 		c->curprg = backup;
 	return 0;

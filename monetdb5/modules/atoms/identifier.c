@@ -71,6 +71,8 @@ IDtoString(str *retval, int *len, identifier handle)
 		if (*retval != NULL)
 			GDKfree(*retval);
 		*retval = GDKmalloc(sizeof(char) * hl);
+		if (*retval == NULL)
+			return 0;
 	}
 	*len = hl;
 	memcpy(*retval, handle, hl);

@@ -35,18 +35,20 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 211 # length
+% 213 # length
 project (
 | group by (
-| | join (
-| | | select (
-| | | | table(sys.lineorder) [ lineorder.lo_quantity, lineorder.lo_extendedprice, lineorder.lo_discount, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ] COUNT 
-| | | ) [ int "4" <= lineorder.lo_discount <= int "6", int "26" <= lineorder.lo_quantity <= int "35" ],
-| | | select (
-| | | | table(sys.dwdate) [ dwdate.d_yearmonthnum, dwdate.%TID% NOT NULL ] COUNT 
-| | | ) [ dwdate.d_yearmonthnum = int "199401" ]
-| | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
-| ) [  ] [ sys.sum no nil (sys.sql_mul(bigint[lineorder.lo_extendedprice] as lineorder.lo_extendedprice, lineorder.lo_discount)) as L1.L1 ]
+| | project (
+| | | join (
+| | | | select (
+| | | | | table(sys.lineorder) [ lineorder.lo_quantity, lineorder.lo_extendedprice, lineorder.lo_discount, lineorder.%lineorder_lo_orderdate_fkey NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ] COUNT 
+| | | | ) [ int "4" <= lineorder.lo_discount <= int "6", int "26" <= lineorder.lo_quantity <= int "35" ],
+| | | | select (
+| | | | | table(sys.dwdate) [ dwdate.d_yearmonthnum, dwdate.%TID% NOT NULL ] COUNT 
+| | | | ) [ dwdate.d_yearmonthnum = int "199401" ]
+| | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
+| | ) [ lineorder.lo_extendedprice, lineorder.lo_discount, bigint[lineorder.lo_extendedprice] as L2.L2, sys.sql_mul(L2.L2, lineorder.lo_discount) as L3.L3 ]
+| ) [  ] [ sys.sum no nil (L3.L3) as L1.L1 ]
 ) [ L1 as L1.revenue ]
 
 # 23:08:56 >  

@@ -1,0 +1,24 @@
+b1:= bat.new(:int);
+b2:= bat.new(:flt);
+
+bat.append(b1,1);
+bat.append(b1,2);
+bat.append(b1,3);
+bat.append(b1,4);
+bat.append(b1,2);
+
+bat.append(b2, 12.31);
+bat.append(b2, 12.32);
+bat.append(b2, 12.33);
+bat.append(b2, 12.34);
+bat.append(b2, 12.35);
+io.print(b1,b2);
+
+s:= algebra.subselect(b1,2,2,true,true,false);
+io.print(s);
+
+bat.delete(b1,s);
+io.print(b1);
+bat.delete(b2,s);
+io.print(b2);
+io.print(b1,b2);

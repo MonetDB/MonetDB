@@ -72,6 +72,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 	(void)sql;
 	if (!e)
 		return;
+	//mnstr_printf(fout, " %p ", e);
 	switch(e->type) {
 	case e_psm: {
 		if (e->flag & PSM_SET) {
@@ -319,6 +320,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		mnstr_printf(fout, "\n%cREF %d (%d)", decorate?'=':' ', nr, cnt);
 	}
 
+
+	//mnstr_printf(fout, " %p ", rel);
 	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
@@ -872,11 +875,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			}
 		}
 		if (!exp && lrel) { 
+			char *cname;
 			old = *e;
 			*e = 0;
-			exp = rel_bind_column(sql, lrel, b, 0);
+			cname = sa_strdup(sql->sa, b);
+			exp = rel_bind_column(sql, lrel, cname, 0);
 			if (!exp && rrel)
-				exp = rel_bind_column(sql, rrel, b, 0);
+				exp = rel_bind_column(sql, rrel, cname, 0);
 			*e = old;
 			skipWS(r,pos);
 		}

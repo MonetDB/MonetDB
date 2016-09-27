@@ -26,13 +26,13 @@ Ready.
 
 #select ((4.4054292 - 4.40572025343667)^2) + ((52.0903881 - 52.091375762174)^2);
 % .L # table_name
-% sql_sub_single_value # name
+% bit_xor_single_value # name
 % decimal # type
 % 20 # length
 [ -3.99941117029739	]
 #select cast((4.4054292 - 4.40572025343667)^2 as double) + cast((52.0903881 - 52.091375762174)^2 as double);
 % .L2 # table_name
-% sql_sub_single_value # name
+% bit_xor_single_value # name
 % double # type
 % 24 # length
 [ -3.99941117	]

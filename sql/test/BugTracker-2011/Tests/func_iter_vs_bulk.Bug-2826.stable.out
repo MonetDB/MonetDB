@@ -34,8 +34,8 @@ Ready.
 % mal # name
 % clob # type
 % 112 # length
-function user.s5_1(A0:flt):void;
-    X_38:void := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe",24);
+function user.s10_1():void;
+    X_38:void := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe",22);
     X_23 := bat.new(nil:str);
     X_30 := bat.append(X_23,"sys.tab_2826");
     X_25 := bat.new(nil:str);
@@ -47,17 +47,40 @@ function user.s5_1(A0:flt):void;
     X_29 := bat.new(nil:int);
     X_37 := bat.append(X_29,0);
     X_0 := sql.mvc();
-    X_4:bat[:dbl] := sql.bind(X_0,"sys","tab_2826","d",0);
-    (C_7:bat[:oid],r1_9:bat[:dbl]) := sql.bind(X_0,"sys","tab_2826","d",2);
-    X_10:bat[:dbl] := sql.bind(X_0,"sys","tab_2826","d",1);
-    X_12 := sql.delta(X_4,C_7,r1_9,X_10);
-    X_14 := batcalc.flt(X_12);
-    X_48:bat[:flt] := batmmath.log10(X_14);
     C_1:bat[:oid] := sql.tid(X_0,"sys","tab_2826");
-    C_19 := algebra.thetasubselect(X_48,C_1,A0,">");
-    X_21 := sql.projectdelta(C_19,X_4,C_7,r1_9,X_10);
+    X_4:bat[:dbl] := sql.bind(X_0,"sys","tab_2826","d",0);
+    X_13 := algebra.projection(C_1,X_4);
+    X_14 := batcalc.flt(X_13);
+    X_48:bat[:flt] := batmmath.log10(X_14);
+    C_19 := algebra.thetasubselect(X_48,1,">");
+    X_21 := algebra.projection(C_19,X_13);
     sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_21);
-end user.s5_1;
+end user.s10_1;
+#inline               actions= 0 time=4 usec 
+#candidates           actions= 1 time=18 usec 
+#remap                actions= 1 time=62 usec 
+#costModel            actions= 1 time=15 usec 
+#coercions            actions= 1 time=16 usec 
+#evaluate             actions= 1 time=45 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 4 time=19 usec 
+#mergetable           actions= 0 time=24 usec 
+#deadcode             actions= 3 time=18 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 2 time=16 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=28 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=60 time=30 usec 
+#matpack              actions= 0 time=6 usec 
+#querylog             actions= 0 time=0 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=10 usec 
+#garbageCollector     actions= 1 time=17 usec 
+#total                actions= 1 time=425 usec 
 #select * from tab_2826 where func_2826(d) > 1;   
 % sys.tab_2826 # table_name
 % d # name

@@ -32,6 +32,7 @@ static int calltag =0; // to identify each invocation
 void
 mal_runtime_reset(void)
 {
+	GDKfree(QRYqueue);
 	QRYqueue = 0;
 	qtop = 0;
 	qsize = 0;

@@ -28,11 +28,36 @@ Ready.
 % mal # name
 % clob # type
 % 82 # length
-function user.s2_1(A0:bte,A1:bte):void;
+function user.s4_1():void;
     X_11:void := querylog.define("explain select fuse(1,2);","sequential_pipe",5);
-    X_3:sht := udf.fuse(A0,A1);
+    X_3:sht := udf.fuse(1,2);
     sql.resultSet(".L","fuse_single_value","smallint",16,0,7,X_3);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=12 usec 
+#remap                actions= 0 time=4 usec 
+#costModel            actions= 1 time=10 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 2 time=26 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 2 time=14 usec 
+#mergetable           actions= 0 time=20 usec 
+#deadcode             actions= 1 time=14 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 2 time=15 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=11 usec 
+#reorder              actions= 1 time=23 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=23 time=26 usec 
+#matpack              actions= 0 time=6 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=6 usec 
+#garbageCollector     actions= 1 time=12 usec 
+#total                actions= 1 time=335 usec 
 #select fuse(1,2);
 % .L # table_name
 % fuse_single_value # name
@@ -44,11 +69,36 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 88 # length
-function user.s3_1(A0:sht,A1:sht):void;
+function user.s6_1():void;
     X_11:void := querylog.define("explain select fuse(1000,2000);","sequential_pipe",5);
-    X_3:int := udf.fuse(A0,A1);
+    X_3:int := udf.fuse(1000,2000);
     sql.resultSet(".L","fuse_single_value","int",32,0,7,X_3);
-end user.s3_1;
+end user.s6_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=10 usec 
+#remap                actions= 0 time=4 usec 
+#costModel            actions= 1 time=10 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 2 time=26 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 2 time=13 usec 
+#mergetable           actions= 0 time=20 usec 
+#deadcode             actions= 1 time=12 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 2 time=10 usec 
+#commonTerms          actions= 0 time=5 usec 
+#projectionpath       actions= 0 time=4 usec 
+#reorder              actions= 1 time=21 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=23 time=25 usec 
+#matpack              actions= 0 time=6 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=5 usec 
+#garbageCollector     actions= 1 time=12 usec 
+#total                actions= 1 time=289 usec 
 #select fuse(1000,2000);
 % .L # table_name
 % fuse_single_value # name
@@ -60,11 +110,36 @@ end user.s3_1;
 % mal # name
 % clob # type
 % 94 # length
-function user.s4_1(A0:int,A1:int):void;
+function user.s8_1():void;
     X_11:void := querylog.define("explain select fuse(1000000,2000000);","sequential_pipe",5);
-    X_3:lng := udf.fuse(A0,A1);
+    X_3:lng := udf.fuse(1000000,2000000);
     sql.resultSet(".L","fuse_single_value","bigint",64,0,7,X_3);
-end user.s4_1;
+end user.s8_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=10 usec 
+#remap                actions= 0 time=4 usec 
+#costModel            actions= 1 time=9 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 2 time=25 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 2 time=13 usec 
+#mergetable           actions= 0 time=19 usec 
+#deadcode             actions= 1 time=12 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 2 time=10 usec 
+#commonTerms          actions= 0 time=5 usec 
+#projectionpath       actions= 0 time=4 usec 
+#reorder              actions= 1 time=21 usec 
+#deadcode             actions= 0 time=5 usec 
+#reduce               actions=23 time=24 usec 
+#matpack              actions= 0 time=5 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=6 usec 
+#garbageCollector     actions= 1 time=13 usec 
+#total                actions= 1 time=284 usec 
 #select fuse(1000000,2000000);
 % .L # table_name
 % fuse_single_value # name
@@ -94,8 +169,8 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 97 # length
-function user.s8_1():void;
-    X_42:void := querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe",27);
+function user.s16_1():void;
+    X_42:void := querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe",21);
     X_25 := bat.new(nil:str);
     X_32 := bat.append(X_25,"sys.L");
     X_27 := bat.new(nil:str);
@@ -109,25 +184,44 @@ function user.s8_1():void;
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","udf_fuse");
     X_4:bat[:bte] := sql.bind(X_0,"sys","udf_fuse","a",0);
-    (C_7:bat[:oid],r1_8:bat[:bte]) := sql.bind(X_0,"sys","udf_fuse","a",2);
-    X_10:bat[:bte] := sql.bind(X_0,"sys","udf_fuse","a",1);
-    X_12 := sql.delta(X_4,C_7,r1_8,X_10);
-    X_13 := algebra.projection(C_1,X_12);
+    X_13 := algebra.projection(C_1,X_4);
     X_14:bat[:bte] := sql.bind(X_0,"sys","udf_fuse","b",0);
-    (C_16:bat[:oid],r1_17:bat[:bte]) := sql.bind(X_0,"sys","udf_fuse","b",2);
-    X_18:bat[:bte] := sql.bind(X_0,"sys","udf_fuse","b",1);
-    X_19 := sql.delta(X_14,C_16,r1_17,X_18);
-    X_20 := algebra.projection(C_1,X_19);
+    X_20 := algebra.projection(C_1,X_14);
     X_21:bat[:sht] := batudf.fuse(X_13,X_20);
     sql.resultSet(X_32,X_34,X_36,X_38,X_40,X_21);
-end user.s8_1;
+end user.s16_1;
+#inline               actions= 0 time=4 usec 
+#candidates           actions= 1 time=19 usec 
+#remap                actions= 1 time=35 usec 
+#costModel            actions= 1 time=16 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 0 time=4 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 2 time=20 usec 
+#mergetable           actions= 0 time=27 usec 
+#deadcode             actions= 4 time=19 usec 
+#aliases              actions= 0 time=6 usec 
+#constants            actions= 1 time=19 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=30 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=31 time=32 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=12 usec 
+#garbageCollector     actions= 1 time=24 usec 
+#total                actions= 1 time=370 usec 
 #explain select fuse(c,d) from udf_fuse;
 % .explain # table_name
 % mal # name
 % clob # type
 % 97 # length
-function user.s9_1():void;
-    X_42:void := querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe",27);
+function user.s18_1():void;
+    X_42:void := querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe",21);
     X_25 := bat.new(nil:str);
     X_32 := bat.append(X_25,"sys.L");
     X_27 := bat.new(nil:str);
@@ -141,25 +235,44 @@ function user.s9_1():void;
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","udf_fuse");
     X_4:bat[:sht] := sql.bind(X_0,"sys","udf_fuse","c",0);
-    (C_7:bat[:oid],r1_8:bat[:sht]) := sql.bind(X_0,"sys","udf_fuse","c",2);
-    X_10:bat[:sht] := sql.bind(X_0,"sys","udf_fuse","c",1);
-    X_12 := sql.delta(X_4,C_7,r1_8,X_10);
-    X_13 := algebra.projection(C_1,X_12);
+    X_13 := algebra.projection(C_1,X_4);
     X_14:bat[:sht] := sql.bind(X_0,"sys","udf_fuse","d",0);
-    (C_16:bat[:oid],r1_17:bat[:sht]) := sql.bind(X_0,"sys","udf_fuse","d",2);
-    X_18:bat[:sht] := sql.bind(X_0,"sys","udf_fuse","d",1);
-    X_19 := sql.delta(X_14,C_16,r1_17,X_18);
-    X_20 := algebra.projection(C_1,X_19);
+    X_20 := algebra.projection(C_1,X_14);
     X_21:bat[:int] := batudf.fuse(X_13,X_20);
     sql.resultSet(X_32,X_34,X_36,X_38,X_40,X_21);
-end user.s9_1;
+end user.s18_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=19 usec 
+#remap                actions= 1 time=32 usec 
+#costModel            actions= 1 time=16 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 0 time=4 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 2 time=21 usec 
+#mergetable           actions= 0 time=26 usec 
+#deadcode             actions= 4 time=18 usec 
+#aliases              actions= 0 time=6 usec 
+#constants            actions= 1 time=18 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=30 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=31 time=31 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=13 usec 
+#garbageCollector     actions= 1 time=18 usec 
+#total                actions= 1 time=352 usec 
 #explain select fuse(e,f) from udf_fuse;
 % .explain # table_name
 % mal # name
 % clob # type
 % 97 # length
-function user.s10_1():void;
-    X_42:void := querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe",27);
+function user.s20_1():void;
+    X_42:void := querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe",21);
     X_25 := bat.new(nil:str);
     X_32 := bat.append(X_25,"sys.L");
     X_27 := bat.new(nil:str);
@@ -173,18 +286,37 @@ function user.s10_1():void;
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","udf_fuse");
     X_4:bat[:int] := sql.bind(X_0,"sys","udf_fuse","e",0);
-    (C_7:bat[:oid],r1_8:bat[:int]) := sql.bind(X_0,"sys","udf_fuse","e",2);
-    X_10:bat[:int] := sql.bind(X_0,"sys","udf_fuse","e",1);
-    X_12 := sql.delta(X_4,C_7,r1_8,X_10);
-    X_13 := algebra.projection(C_1,X_12);
+    X_13 := algebra.projection(C_1,X_4);
     X_14:bat[:int] := sql.bind(X_0,"sys","udf_fuse","f",0);
-    (C_16:bat[:oid],r1_17:bat[:int]) := sql.bind(X_0,"sys","udf_fuse","f",2);
-    X_18:bat[:int] := sql.bind(X_0,"sys","udf_fuse","f",1);
-    X_19 := sql.delta(X_14,C_16,r1_17,X_18);
-    X_20 := algebra.projection(C_1,X_19);
+    X_20 := algebra.projection(C_1,X_14);
     X_21:bat[:lng] := batudf.fuse(X_13,X_20);
     sql.resultSet(X_32,X_34,X_36,X_38,X_40,X_21);
-end user.s10_1;
+end user.s20_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=18 usec 
+#remap                actions= 1 time=31 usec 
+#costModel            actions= 1 time=15 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 2 time=20 usec 
+#mergetable           actions= 0 time=25 usec 
+#deadcode             actions= 4 time=18 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 1 time=18 usec 
+#commonTerms          actions= 0 time=5 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=29 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=31 time=32 usec 
+#matpack              actions= 0 time=5 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=13 usec 
+#garbageCollector     actions= 1 time=19 usec 
+#total                actions= 1 time=348 usec 
 #select fuse(a,b) from udf_fuse;
 % sys.L # table_name
 % fuse_a # name

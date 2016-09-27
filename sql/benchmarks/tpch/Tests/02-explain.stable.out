@@ -65,8 +65,8 @@ Ready.
 % mal # name
 % clob # type
 % 759 # length
-function user.s2_1(A0:int,A1:str,A2:str,A3:str):void;
-    X_435:void := querylog.define("explain select\n s_acctbal,\n s_name,\n n_name,\n p_partkey,\n p_mfgr,\n s_address,\n s_phone,\n s_comment\nfrom\n part,\n supplier,\n partsupp,\n nation,\n region\nwhere\n p_partkey = ps_partkey\n and s_suppkey = ps_suppkey\n and p_size = 15\n and p_type like \\'%BRASS\\'\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'EUROPE\\'\n and ps_supplycost = (\n select\n min(ps_supplycost)\n from\n partsupp,\n supplier,\n nation,\n region\n where\n p_partkey = ps_partkey\n and s_suppkey = ps_suppkey\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'EUROPE\\'\n )\norder by\n s_acctbal desc,\n n_name,\n s_name,\n p_partkey\nlimit 100;","sequential_pipe",185);
+function user.s4_1():void;
+    X_435:void := querylog.define("explain select\n s_acctbal,\n s_name,\n n_name,\n p_partkey,\n p_mfgr,\n s_address,\n s_phone,\n s_comment\nfrom\n part,\n supplier,\n partsupp,\n nation,\n region\nwhere\n p_partkey = ps_partkey\n and s_suppkey = ps_suppkey\n and p_size = 15\n and p_type like \\'%BRASS\\'\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'EUROPE\\'\n and ps_supplycost = (\n select\n min(ps_supplycost)\n from\n partsupp,\n supplier,\n nation,\n region\n where\n p_partkey = ps_partkey\n and s_suppkey = ps_suppkey\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'EUROPE\\'\n )\norder by\n s_acctbal desc,\n n_name,\n s_name,\n p_partkey\nlimit 100;","sequential_pipe",137);
     X_362 := bat.new(nil:str);
     X_369 := bat.append(X_362,"sys.supplier");
     X_379 := bat.append(X_369,"sys.supplier");
@@ -120,12 +120,7 @@ function user.s2_1(A0:int,A1:str,A2:str,A3:str):void;
     X_13 := sql.projectdelta(C_1,X_4,X_7,r1_12,X_10);
     X_16:bat[:str] := sql.bind(X_0,"sys","region","r_name",0);
     C_14:bat[:oid] := sql.tid(X_0,"sys","region");
-    C_456 := algebra.subselect(X_16,C_14,A3,A3,true,false,false);
-    (C_18:bat[:oid],r1_23:bat[:str]) := sql.bind(X_0,"sys","region","r_name",2);
-    C_457 := algebra.subselect(r1_23,nil:bat[:oid],A3,A3,true,false,false);
-    X_20:bat[:str] := sql.bind(X_0,"sys","region","r_name",1);
-    C_459 := algebra.subselect(X_20,C_14,A3,A3,true,false,false);
-    C_24 := sql.subdelta(C_456,C_14,C_18,C_457,C_459);
+    C_24 := algebra.subselect(X_16,C_14,"EUROPE","EUROPE",true,false,false);
     (X_29,r1_34) := algebra.subjoin(X_13,C_24,nil:BAT,nil:BAT,false,nil:lng);
     X_34 := algebra.projection(X_29,C_1);
     C_35:bat[:oid] := sql.tid(X_0,"sys","supplier");
@@ -142,10 +137,7 @@ function user.s2_1(A0:int,A1:str,A2:str,A3:str):void;
     X_55 := sql.projectdelta(C_47,X_49,X_51,r1_56,X_53);
     (X_56,r1_61) := algebra.subjoin(X_46,X_55,nil:BAT,nil:BAT,false,nil:lng);
     X_58:bat[:int] := sql.bind(X_0,"sys","partsupp","ps_partkey",0);
-    (C_60:bat[:oid],r1_65:bat[:int]) := sql.bind(X_0,"sys","partsupp","ps_partkey",2);
-    X_62:bat[:int] := sql.bind(X_0,"sys","partsupp","ps_partkey",1);
-    X_64 := sql.projectdelta(C_47,X_58,C_60,r1_65,X_62);
-    X_65 := algebra.projection(r1_61,X_64);
+    X_65:bat[:int] := algebra.projectionpath(r1_61,C_47,X_58);
     X_67:bat[:oid] := sql.bind_idxbat(X_0,"sys","partsupp","partsupp_ps_partkey_fkey",0);
     (X_69,r1_74) := sql.bind_idxbat(X_0,"sys","partsupp","partsupp_ps_partkey_fkey",2);
     X_71:bat[:oid] := sql.bind_idxbat(X_0,"sys","partsupp","partsupp_ps_partkey_fkey",1);
@@ -153,42 +145,23 @@ function user.s2_1(A0:int,A1:str,A2:str,A3:str):void;
     X_76:bat[:str] := sql.bind(X_0,"sys","part","p_type",0);
     X_86:bat[:int] := sql.bind(X_0,"sys","part","p_size",0);
     C_74:bat[:oid] := sql.tid(X_0,"sys","part");
-    C_460 := algebra.subselect(X_86,C_74,A0,A0,true,false,false);
-    (C_88:bat[:oid],r1_93:bat[:int]) := sql.bind(X_0,"sys","part","p_size",2);
-    C_461 := algebra.subselect(r1_93,nil:bat[:oid],A0,A0,true,false,false);
-    X_90:bat[:int] := sql.bind(X_0,"sys","part","p_size",1);
-    C_463 := algebra.subselect(X_90,C_74,A0,A0,true,false,false);
-    C_94 := sql.subdelta(C_460,C_74,C_88,C_461,C_463);
-    C_464 := algebra.likesubselect(X_76,C_94,A1,"",false);
-    (C_78:bat[:oid],r1_83:bat[:str]) := sql.bind(X_0,"sys","part","p_type",2);
-    C_465 := algebra.likesubselect(r1_83,nil:bat[:oid],A1,"",false);
-    X_80:bat[:str] := sql.bind(X_0,"sys","part","p_type",1);
-    C_467 := algebra.likesubselect(X_80,C_94,A1,"",false);
-    C_98 := sql.subdelta(C_464,C_94,C_78,C_465,C_467);
+    C_94 := algebra.subselect(X_86,C_74,15,15,true,false,false);
+    C_98 := algebra.likesubselect(X_76,C_94,"%BRASS","",false);
     (X_100,r1_105) := algebra.subjoin(X_73,C_98,nil:BAT,nil:BAT,false,nil:lng);
     X_111 := algebra.projection(X_100,X_55);
     (X_114,r1_119) := algebra.subjoin(X_111,C_35,nil:BAT,nil:BAT,false,nil:lng);
     X_122 := algebra.projection(r1_119,X_43);
     (X_125,r1_130) := algebra.subjoin(X_122,C_1,nil:BAT,nil:BAT,false,nil:lng);
     X_133 := algebra.projection(r1_130,X_13);
-    C_468 := algebra.subselect(X_16,C_14,A2,A2,true,false,false);
-    C_469 := algebra.subselect(r1_23,nil:bat[:oid],A2,A2,true,false,false);
-    C_471 := algebra.subselect(X_20,C_14,A2,A2,true,false,false);
-    C_143 := sql.subdelta(C_468,C_14,C_18,C_469,C_471);
-    (X_148,r1_153) := algebra.subjoin(X_133,C_143,nil:BAT,nil:BAT,false,nil:lng);
+    (X_148,r1_153) := algebra.subjoin(X_133,C_24,nil:BAT,nil:BAT,false,nil:lng);
     X_153:bat[:int] := sql.bind(X_0,"sys","part","p_partkey",0);
-    (C_155:bat[:oid],r1_160:bat[:int]) := sql.bind(X_0,"sys","part","p_partkey",2);
-    X_157:bat[:int] := sql.bind(X_0,"sys","part","p_partkey",1);
-    X_160 := sql.projectdelta(C_98,X_153,C_155,r1_160,X_157);
-    X_164:bat[:int] := algebra.projectionpath(X_148,X_125,X_114,r1_105,X_160);
+    X_164:bat[:int] := algebra.projectionpath(X_148,X_125,X_114,r1_105,C_98,X_153);
     (X_165,r1_170) := algebra.subjoin(X_65,X_164,nil:BAT,nil:BAT,false,nil:lng);
     X_167:bat[:oid] := batcalc.identity(X_164);
     X_170 := algebra.projection(r1_170,X_167);
     (X_171,r1_176,r2_176) := group.subgroupdone(X_170);
     X_174:bat[:lng] := sql.bind(X_0,"sys","partsupp","ps_supplycost",0);
-    (C_176:bat[:oid],r1_181:bat[:lng]) := sql.bind(X_0,"sys","partsupp","ps_supplycost",2);
-    X_178:bat[:lng] := sql.bind(X_0,"sys","partsupp","ps_supplycost",1);
-    X_180 := sql.projectdelta(C_47,X_174,C_176,r1_181,X_178);
+    X_180 := algebra.projection(C_47,X_174);
     X_186:bat[:lng] := algebra.projectionpath(r1_176,r1_170,X_148,X_125,X_114,X_100,X_180);
     X_194:bat[:lng] := algebra.projectionpath(X_165,r1_61,X_180);
     X_195:bat[:lng] := aggr.submin(X_194,X_171,r1_176,true);
@@ -196,24 +169,12 @@ function user.s2_1(A0:int,A1:str,A2:str,A3:str):void;
     C_199 := algebra.subselect(X_197,true,true,true,true,false);
     X_203:bat[:int] := algebra.projectionpath(C_199,r1_176,r1_170,X_164);
     X_204:bat[:str] := sql.bind(X_0,"sys","supplier","s_name",0);
-    (C_206:bat[:oid],r1_211:bat[:str]) := sql.bind(X_0,"sys","supplier","s_name",2);
-    X_208:bat[:str] := sql.bind(X_0,"sys","supplier","s_name",1);
-    X_210 := sql.projectdelta(C_35,X_204,C_206,r1_211,X_208);
-    X_216:bat[:str] := algebra.projectionpath(C_199,r1_176,r1_170,X_148,X_125,r1_119,X_210);
+    X_216:bat[:str] := algebra.projectionpath(C_199,r1_176,r1_170,X_148,X_125,r1_119,C_35,X_204);
     X_217:bat[:str] := sql.bind(X_0,"sys","nation","n_name",0);
-    (C_219:bat[:oid],r1_224:bat[:str]) := sql.bind(X_0,"sys","nation","n_name",2);
-    X_221:bat[:str] := sql.bind(X_0,"sys","nation","n_name",1);
-    X_223 := sql.projectdelta(C_1,X_217,C_219,r1_224,X_221);
-    X_228:bat[:str] := algebra.projectionpath(C_199,r1_176,r1_170,X_148,r1_130,X_223);
+    X_228:bat[:str] := algebra.projectionpath(C_199,r1_176,r1_170,X_148,r1_130,C_1,X_217);
     X_229:bat[:lng] := sql.bind(X_0,"sys","supplier","s_acctbal",0);
-    (C_231:bat[:oid],r1_236:bat[:lng]) := sql.bind(X_0,"sys","supplier","s_acctbal",2);
-    X_233:bat[:lng] := sql.bind(X_0,"sys","supplier","s_acctbal",1);
-    X_235 := sql.projectdelta(C_35,X_229,C_231,r1_236,X_233);
-    X_241:bat[:lng] := algebra.projectionpath(C_199,r1_176,r1_170,X_148,X_125,r1_119,X_235);
+    X_241:bat[:lng] := algebra.projectionpath(C_199,r1_176,r1_170,X_148,X_125,r1_119,C_35,X_229);
     X_295:bat[:str] := sql.bind(X_0,"sys","part","p_mfgr",0);
-    (C_297:bat[:oid],r1_302:bat[:str]) := sql.bind(X_0,"sys","part","p_mfgr",2);
-    X_299:bat[:str] := sql.bind(X_0,"sys","part","p_mfgr",1);
-    X_302 := sql.projectdelta(C_98,X_295,C_297,r1_302,X_299);
     (C_247,r1_252) := algebra.firstn(X_241,100,false,false);
     (C_253,r1_258) := algebra.firstn(X_228,C_247,r1_252,100,true,false);
     (C_258,r1_263) := algebra.firstn(X_216,C_253,r1_258,100,true,false);
@@ -228,28 +189,44 @@ function user.s2_1(A0:int,A1:str,A2:str,A3:str):void;
     (X_276,r1_281,r2_281) := algebra.subsort(X_263,r1_278,r2_278,false,false);
     X_279 := algebra.projection(r1_281,X_266);
     X_287 := algebra.subslice(X_279,0,99:lng);
-    X_312:bat[:str] := algebra.projectionpath(X_287,r1_281,C_262,C_199,r1_176,r1_170,X_148,X_125,X_114,r1_105,X_302);
+    X_312:bat[:str] := algebra.projectionpath(X_287,r1_281,C_262,C_199,r1_176,r1_170,X_148,X_125,X_114,r1_105,C_98,X_295);
     X_313:bat[:str] := sql.bind(X_0,"sys","supplier","s_address",0);
-    (C_315:bat[:oid],r1_320:bat[:str]) := sql.bind(X_0,"sys","supplier","s_address",2);
-    X_317:bat[:str] := sql.bind(X_0,"sys","supplier","s_address",1);
-    X_319 := sql.projectdelta(C_35,X_313,C_315,r1_320,X_317);
-    X_328:bat[:str] := algebra.projectionpath(X_287,r1_281,C_262,C_199,r1_176,r1_170,X_148,X_125,r1_119,X_319);
+    X_328:bat[:str] := algebra.projectionpath(X_287,r1_281,C_262,C_199,r1_176,r1_170,X_148,X_125,r1_119,C_35,X_313);
     X_329:bat[:str] := sql.bind(X_0,"sys","supplier","s_phone",0);
-    (C_331:bat[:oid],r1_336:bat[:str]) := sql.bind(X_0,"sys","supplier","s_phone",2);
-    X_333:bat[:str] := sql.bind(X_0,"sys","supplier","s_phone",1);
-    X_335 := sql.projectdelta(C_35,X_329,C_331,r1_336,X_333);
-    X_344:bat[:str] := algebra.projectionpath(X_287,r1_281,C_262,C_199,r1_176,r1_170,X_148,X_125,r1_119,X_335);
+    X_344:bat[:str] := algebra.projectionpath(X_287,r1_281,C_262,C_199,r1_176,r1_170,X_148,X_125,r1_119,C_35,X_329);
     X_345:bat[:str] := sql.bind(X_0,"sys","supplier","s_comment",0);
-    (C_347:bat[:oid],r1_352:bat[:str]) := sql.bind(X_0,"sys","supplier","s_comment",2);
-    X_349:bat[:str] := sql.bind(X_0,"sys","supplier","s_comment",1);
-    X_351 := sql.projectdelta(C_35,X_345,C_347,r1_352,X_349);
-    X_360:bat[:str] := algebra.projectionpath(X_287,r1_281,C_262,C_199,r1_176,r1_170,X_148,X_125,r1_119,X_351);
+    X_360:bat[:str] := algebra.projectionpath(X_287,r1_281,C_262,C_199,r1_176,r1_170,X_148,X_125,r1_119,C_35,X_345);
     X_288 := algebra.projection(X_287,X_279);
     X_290:bat[:str] := algebra.projectionpath(X_287,r1_281,X_264);
     X_292:bat[:str] := algebra.projectionpath(X_287,r1_281,X_265);
     X_294:bat[:int] := algebra.projectionpath(X_287,r1_281,X_263);
     sql.resultSet(X_428,X_429,X_431,X_432,X_434,X_288,X_290,X_292,X_294,X_312,X_328,X_344,X_360);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=10 usec 
+#candidates           actions= 1 time=191 usec 
+#remap                actions= 2 time=359 usec 
+#costModel            actions= 1 time=180 usec 
+#coercions            actions= 8 time=205 usec 
+#evaluate             actions=10 time=265 usec 
+#emptybind            actions= 0 time=13 usec 
+#pushselect           actions=19 time=231 usec 
+#aliases              actions=34 time=190 usec 
+#mergetable           actions= 0 time=217 usec 
+#deadcode             actions=37 time=162 usec 
+#aliases              actions= 0 time=38 usec 
+#constants            actions=46 time=202 usec 
+#commonTerms          actions=20 time=166 usec 
+#projectionpath       actions=70 time=218 usec 
+#reorder              actions= 1 time=287 usec 
+#deadcode             actions=90 time=136 usec 
+#reduce               actions=263 time=230 usec 
+#matpack              actions= 0 time=14 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=8 usec 
+#generator            actions= 0 time=4 usec 
+#profiler             actions= 1 time=105 usec 
+#garbageCollector     actions= 1 time=122 usec 
+#total                actions= 1 time=3696 usec 
 
 # 22:53:25 >  
 # 22:53:25 >  "Done."

@@ -105,6 +105,10 @@ INETfromString(const char *src, int *len, inet **retval)
 		if (*retval != NULL)
 			GDKfree(*retval);
 		*retval = GDKzalloc(sizeof(inet));
+		if( *retval == NULL){
+			GDKerror("INETfromString "MAL_MALLOC_FAIL);
+			goto error;
+		}
 	} else {
 		memset(*retval, 0, sizeof(inet));
 	}
@@ -213,6 +217,8 @@ INETtoString(str *retval, int *len, const inet *handle)
 		if (*retval != NULL)
 			GDKfree(*retval);
 		*retval = GDKmalloc(sizeof(char) * (*len = 19));
+		if( *retval == NULL)
+			return 0;
 	}
 	if (in_isnil(value)) {
 		*len = snprintf(*retval, *len, "(nil)");
@@ -534,9 +540,9 @@ INEThost(str *retval, const inet *val)
 		*retval = GDKstrdup(str_nil);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 16);
-
+		if( ip == NULL)
+			throw(MAL,"INEThost",MAL_MALLOC_FAIL);
 		sprintf(ip, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
-
 		*retval = ip;
 	}
 	return (MAL_SUCCEED);
@@ -679,10 +685,11 @@ INETtext(str *retval, const inet *val)
 		*retval = GDKstrdup(str_nil);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 19);
+		if( ip == NULL)
+			throw(MAL,"INETtext",MAL_MALLOC_FAIL);
 
 		snprintf(ip, sizeof(char) * 19, "%d.%d.%d.%d/%d",
 				val->q1, val->q2, val->q3, val->q4, val->mask);
-
 		*retval = ip;
 	}
 	return (MAL_SUCCEED);

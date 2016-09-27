@@ -43,6 +43,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	char buf[256];
 	lng usec = GDKusec();
 
+	if ( optimizerIsApplied(mb,"mitosis") )
+		return 0;
 	(void) cntxt;
 	(void) stk;
 	if (!eligible(mb))

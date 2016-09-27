@@ -643,6 +643,7 @@ GDKprepareExit(void)
 		GDKfree(st);
 	}
 	MT_lock_unset(&GDKthreadLock);
+	join_detached_threads();
 }
 
 /* Register a thread that should be waited for in GDKreset.  The
@@ -687,6 +688,7 @@ GDKreset(int status)
 		GDKfree(st);
 	}
 	MT_lock_unset(&GDKthreadLock);
+	join_detached_threads();
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
@@ -740,6 +742,8 @@ GDKreset(int status)
 #endif
 		GDKnr_threads = 0;
 		GDKnrofthreads = 0;
+		close_stream((stream *) THRdata[0]);
+		close_stream((stream *) THRdata[1]);
 		memset((char*) GDKbatLock,0, sizeof(GDKbatLock));
 		memset((char*) GDKbbpLock,0,sizeof(GDKbbpLock));
 

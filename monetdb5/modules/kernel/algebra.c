@@ -311,9 +311,8 @@ ALGselectNotNil(bat *result, const bat *bid)
 
 	if( BATcount_no_nil(b) != BATcount(b) ){
 		BAT *s = NULL;
-		ptr low = ATOMnilptr(b->ttype);
 
-		s = BATselect(b, s, low, NULL, TRUE, TRUE, TRUE);
+		s = BATselect(b, s, ATOMnilptr(b->ttype), NULL, TRUE, TRUE, TRUE);
 		if (s) {
 			bn = BATproject(s, b);
 			BBPunfix(s->batCacheid);
@@ -945,14 +944,17 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 		ptr _src = BUNtail(bi,pos);
 		int _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
-		assert(_dst);
+		if( _dst == NULL)
+			throw(MAL,"doAlgFetch",MAL_MALLOC_FAIL);
 		memcpy(_dst, _src, _len);
 		*(ptr*) ret = _dst;
 	} else {
 		int _s = ATOMsize(ATOMtype(b->ttype));
 		if (ATOMvarsized(b->ttype)) {
-			memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtvar(bi, pos), _s);
-			assert(ret);
+			ret = GDKmalloc(_s);
+			if( ret == NULL)
+				throw(MAL,"doAlgFetch",MAL_MALLOC_FAIL);
+			memcpy(*(ptr*) ret, BUNtvar(bi, pos), _s);
 		} else if (b->ttype == TYPE_void) {
 			*(oid*) ret = b->tseqbase;
 			if (b->tseqbase != oid_nil)

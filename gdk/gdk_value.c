@@ -134,7 +134,9 @@ VALempty(ValPtr v)
 
 /* Create a copy of S into D, allocating space for external values
  * (non-fixed sized values).  See VALinit for a version where the
- * source is not in a VALRecord. */
+ * source is not in a VALRecord.
+ *
+ * Returns NULL In case of (malloc) failure. */
 ValPtr
 VALcopy(ValPtr d, const ValRecord *s)
 {
@@ -146,6 +148,8 @@ VALcopy(ValPtr d, const ValRecord *s)
 	} else if (s->vtype == TYPE_str) {
 		d->vtype = TYPE_str;
 		d->val.sval = GDKstrdup(s->val.sval);
+		if (d->val.sval == NULL)
+			return NULL;
 		d->len = strLen(d->val.sval);
 	} else if (s->vtype == TYPE_bit) {
 		d->vtype = s->vtype;
@@ -157,6 +161,8 @@ VALcopy(ValPtr d, const ValRecord *s)
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
 		d->val.pval = GDKmalloc(d->len);
+		if (d->val.pval == NULL)
+			return NULL;
 		memcpy(d->val.pval, p, d->len);
 	}
 	return d;
@@ -164,25 +170,58 @@ VALcopy(ValPtr d, const ValRecord *s)
 
 /* Create a copy of the type value combination in TPE/S, allocating
  * space for external values (non-fixed sized values).  See VALcopy
- * for a version where the source is in a ValRecord. */
+ * for a version where the source is in a ValRecord, and see VALset
+ * for a version where ownership of the source is transferred.
+ *
+ * Returns NULL in case of (malloc) failure. */
 ValPtr
 VALinit(ValPtr d, int tpe, const void *s)
 {
-	if (!ATOMextern(tpe)) {
-		d->vtype = tpe;
-		memcpy(&d->val.ival, s, ATOMlen(tpe, s));
-	} else if (s == 0) {
-		GDKerror("VALinit:unsupported init\n");
-		d->vtype = TYPE_int;
-	} else if (tpe >= TYPE_str && ATOMstorage(tpe) == TYPE_str) {
-		d->vtype = tpe;
+	switch (ATOMstorage(d->vtype = tpe)) {
+	case TYPE_void:
+		d->val.oval = *(const oid *) s;
+		break;
+	case TYPE_bte:
+		d->val.btval = *(const bte *) s;
+		break;
+	case TYPE_sht:
+		d->val.shval = *(const sht *) s;
+		break;
+	case TYPE_int:
+		d->val.ival = *(const int *) s;
+		break;
+	case TYPE_flt:
+		d->val.fval = *(const flt *) s;
+		break;
+	case TYPE_dbl:
+		d->val.dval = *(const dbl *) s;
+		break;
+	case TYPE_lng:
+		d->val.lval = *(const lng *) s;
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		d->val.hval = *(const hge *) s;
+		break;
+#endif
+	case TYPE_str:
 		d->val.sval = GDKstrdup(s);
+		if (d->val.sval == NULL)
+			return NULL;
 		d->len = strLen(s);
-	} else {
-		d->vtype = tpe;
+		break;
+	case TYPE_ptr:
+		d->val.pval = *(const ptr *) s;
+		d->len = ATOMlen(tpe, *(const ptr *) s);
+		break;
+	default:
+		assert(ATOMextern(ATOMstorage(tpe)));
 		d->len = ATOMlen(tpe, s);
 		d->val.pval = GDKmalloc(d->len);
+		if (d->val.pval == NULL)
+			return NULL;
 		memcpy(d->val.pval, s, d->len);
+		break;
 	}
 	return d;
 }

@@ -711,6 +711,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		unsigned char *restrict bgrps = GDKmalloc(256);
 		const unsigned char *restrict w = (const unsigned char *) Tloc(b, 0);
 		unsigned char v;
+
+		if (bgrps == NULL)
+			goto error;
 		memset(bgrps, 0xFF, 256);
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(lng));
@@ -737,6 +740,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));
 		const unsigned short *restrict w = (const unsigned short *) Tloc(b, 0);
 		unsigned short v;
+
+		if (sgrps == NULL)
+			goto error;
 		memset(sgrps, 0xFF, 65536 * sizeof(short));
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(lng));

@@ -89,75 +89,75 @@ Ready.
 % mal # name
 % clob # type
 % 129 # length
-function user.s13_1(A0:dbl,A1:dbl):void;
-    X_87:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe",69);
-barrier X_132 := language.dataflow();
+function user.s26_1():void;
+    X_87:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe",42);
+barrier X_126 := language.dataflow();
     X_0 := sql.mvc();
     X_1:bat[:dbl] := bat.new(nil:dbl);
     X_6:bat[:dbl] := sql.bind(X_0,"sys","part1","x",0);
     C_3:bat[:oid] := sql.tid(X_0,"sys","part1");
-    C_101 := algebra.subselect(X_6,C_3,A0,A1,true,true,false);
-    (C_9:bat[:oid],r1_12:bat[:dbl]) := sql.bind(X_0,"sys","part1","x",2);
-    C_102 := algebra.subselect(r1_12,nil:bat[:oid],A0,A1,true,true,false);
-    X_12:bat[:dbl] := sql.bind(X_0,"sys","part1","x",1);
-    C_104 := algebra.subselect(X_12,C_3,A0,A1,true,true,false);
-    C_18 := sql.subdelta(C_101,C_3,C_9,C_102,C_104);
-    X_22 := sql.projectdelta(C_18,X_6,C_9,r1_12,X_12);
+    C_18 := algebra.subselect(X_6,C_3,1,2,true,true,false);
+    X_22 := algebra.projection(C_18,X_6);
     X_23 := bat.append(X_1,X_22,true);
     X_26:bat[:dbl] := sql.bind(X_0,"sys","part2","x",0);
     C_24:bat[:oid] := sql.tid(X_0,"sys","part2");
-    C_105 := algebra.subselect(X_26,C_24,A0,A1,true,true,false);
-    (C_27:bat[:oid],r1_30:bat[:dbl]) := sql.bind(X_0,"sys","part2","x",2);
-    C_106 := algebra.subselect(r1_30,nil:bat[:oid],A0,A1,true,true,false);
-    X_29:bat[:dbl] := sql.bind(X_0,"sys","part2","x",1);
-    C_108 := algebra.subselect(X_29,C_24,A0,A1,true,true,false);
-    C_34 := sql.subdelta(C_105,C_24,C_27,C_106,C_108);
-    X_35 := sql.projectdelta(C_34,X_26,C_27,r1_30,X_29);
+    C_34 := algebra.subselect(X_26,C_24,1,2,true,true,false);
+    X_35 := algebra.projection(C_34,X_26);
     X_36 := bat.append(X_23,X_35,true);
-    language.pass(C_3);
     language.pass(X_6);
-    language.pass(C_9);
-    language.pass(r1_12);
-    language.pass(X_12);
-    language.pass(nil:bat[:oid]);
-    language.pass(C_24);
     language.pass(X_26);
-    language.pass(C_27);
-    language.pass(r1_30);
-    language.pass(X_29);
-exit X_132;
+exit X_126;
     X_38 := sql.append(X_0,"sys","answ","x",X_36);
-barrier X_135 := language.dataflow();
+barrier X_129 := language.dataflow();
     X_41:bat[:dbl] := bat.new(nil:dbl);
     X_43:bat[:dbl] := sql.bind(X_38,"sys","part1","y",0);
-    (C_45:bat[:oid],r1_48:bat[:dbl]) := sql.bind(X_38,"sys","part1","y",2);
-    X_47:bat[:dbl] := sql.bind(X_38,"sys","part1","y",1);
-    X_50 := sql.projectdelta(C_18,X_43,C_45,r1_48,X_47);
+    X_50 := algebra.projection(C_18,X_43);
     X_51 := bat.append(X_41,X_50,true);
     X_52:bat[:dbl] := sql.bind(X_38,"sys","part2","y",0);
-    (C_53:bat[:oid],r1_56:bat[:dbl]) := sql.bind(X_38,"sys","part2","y",2);
-    X_55:bat[:dbl] := sql.bind(X_38,"sys","part2","y",1);
-    X_58 := sql.projectdelta(C_34,X_52,C_53,r1_56,X_55);
+    X_58 := algebra.projection(C_34,X_52);
     X_59 := bat.append(X_51,X_58,true);
-exit X_135;
+exit X_129;
     X_62 := sql.append(X_38,"sys","answ","y",X_59);
-barrier X_138 := language.dataflow();
+barrier X_132 := language.dataflow();
     X_63:bat[:dbl] := bat.new(nil:dbl);
     X_64:bat[:dbl] := sql.bind(X_62,"sys","part1","z",0);
-    (C_66:bat[:oid],r1_69:bat[:dbl]) := sql.bind(X_62,"sys","part1","z",2);
-    X_68:bat[:dbl] := sql.bind(X_62,"sys","part1","z",1);
-    X_71 := sql.projectdelta(C_18,X_64,C_66,r1_69,X_68);
+    X_71 := algebra.projection(C_18,X_64);
     X_72 := bat.append(X_63,X_71,true);
     X_73:bat[:dbl] := sql.bind(X_62,"sys","part2","z",0);
-    (C_74:bat[:oid],r1_77:bat[:dbl]) := sql.bind(X_62,"sys","part2","z",2);
-    X_76:bat[:dbl] := sql.bind(X_62,"sys","part2","z",1);
-    X_79 := sql.projectdelta(C_34,X_73,C_74,r1_77,X_76);
+    X_79 := algebra.projection(C_34,X_73);
     X_80 := bat.append(X_72,X_79,true);
-exit X_138;
+exit X_132;
     X_82 := sql.append(X_62,"sys","answ","z",X_80);
     X_84 := aggr.count(X_80);
     sql.affectedRows(X_82,X_84);
-end user.s13_1;
+end user.s26_1;
+#inline               actions= 0 time=2 usec 
+#candidates           actions= 1 time=31 usec 
+#remap                actions= 0 time=4 usec 
+#costModel            actions= 1 time=28 usec 
+#coercions            actions= 0 time=3 usec 
+#evaluate             actions= 4 time=45 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 8 time=41 usec 
+#aliases              actions=16 time=30 usec 
+#mitosis              actions= 0 time=5 usec 
+#mergetable           actions= 0 time=34 usec 
+#deadcode             actions=12 time=24 usec 
+#aliases              actions= 0 time=6 usec 
+#constants            actions= 9 time=22 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=6 usec 
+#reorder              actions= 1 time=37 usec 
+#reduce               actions=74 time=39 usec 
+#matpack              actions= 0 time=5 usec 
+#dataflow             actions=31 time=36 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=1 usec 
+#profiler             actions= 1 time=20 usec 
+#garbageCollector     actions= 1 time=27 usec 
+#total                actions= 1 time=526 usec 
 #INSERT INTO answ
 #SELECT * FROM complete where x>=1.0 AND x <=2.0;
 [ 4	]
@@ -168,85 +168,77 @@ end user.s13_1;
 % mal # name
 % clob # type
 % 151 # length
-function user.s14_1(A0:dbl,A1:dbl,A2:dbl,A3:dbl):void;
-    X_93:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe",79);
-barrier X_148 := language.dataflow();
+function user.s28_1():void;
+    X_93:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe",44);
+barrier X_132 := language.dataflow();
     X_0 := sql.mvc();
     X_1:bat[:dbl] := bat.new(nil:dbl);
     X_6:bat[:dbl] := sql.bind(X_0,"sys","part1","x",0);
     X_18:bat[:dbl] := sql.bind(X_0,"sys","part1","y",0);
     C_3:bat[:oid] := sql.tid(X_0,"sys","part1");
-    C_107 := algebra.subselect(X_18,C_3,A2,A3,true,true,false);
-    (C_20:bat[:oid],r1_25:bat[:dbl]) := sql.bind(X_0,"sys","part1","y",2);
-    C_108 := algebra.subselect(r1_25,nil:bat[:oid],A2,A3,true,true,false);
-    X_22:bat[:dbl] := sql.bind(X_0,"sys","part1","y",1);
-    C_110 := algebra.subselect(X_22,C_3,A2,A3,true,true,false);
-    C_27 := sql.subdelta(C_107,C_3,C_20,C_108,C_110);
-    C_111 := algebra.subselect(X_6,C_27,A0,A1,true,true,false);
-    (C_9:bat[:oid],r1_14:bat[:dbl]) := sql.bind(X_0,"sys","part1","x",2);
-    C_112 := algebra.subselect(r1_14,nil:bat[:oid],A0,A1,true,true,false);
-    X_12:bat[:dbl] := sql.bind(X_0,"sys","part1","x",1);
-    C_114 := algebra.subselect(X_12,C_27,A0,A1,true,true,false);
-    C_31 := sql.subdelta(C_111,C_27,C_9,C_112,C_114);
-    X_32 := sql.projectdelta(C_31,X_6,C_9,r1_14,X_12);
+    C_27 := algebra.subselect(X_18,C_3,0,2,true,true,false);
+    C_31 := algebra.subselect(X_6,C_27,0,2,true,true,false);
+    X_32 := algebra.projection(C_31,X_6);
     X_33 := bat.append(X_1,X_32,true);
     X_36:bat[:dbl] := sql.bind(X_0,"sys","part2","x",0);
     X_44:bat[:dbl] := sql.bind(X_0,"sys","part2","y",0);
     C_34:bat[:oid] := sql.tid(X_0,"sys","part2");
-    C_115 := algebra.subselect(X_44,C_34,A2,A3,true,true,false);
-    (C_45:bat[:oid],r1_50:bat[:dbl]) := sql.bind(X_0,"sys","part2","y",2);
-    C_116 := algebra.subselect(r1_50,nil:bat[:oid],A2,A3,true,true,false);
-    X_47:bat[:dbl] := sql.bind(X_0,"sys","part2","y",1);
-    C_118 := algebra.subselect(X_47,C_34,A2,A3,true,true,false);
-    C_52 := sql.subdelta(C_115,C_34,C_45,C_116,C_118);
-    C_119 := algebra.subselect(X_36,C_52,A0,A1,true,true,false);
-    (C_37:bat[:oid],r1_42:bat[:dbl]) := sql.bind(X_0,"sys","part2","x",2);
-    C_120 := algebra.subselect(r1_42,nil:bat[:oid],A0,A1,true,true,false);
-    X_39:bat[:dbl] := sql.bind(X_0,"sys","part2","x",1);
-    C_122 := algebra.subselect(X_39,C_52,A0,A1,true,true,false);
-    C_53 := sql.subdelta(C_119,C_52,C_37,C_120,C_122);
-    X_54 := sql.projectdelta(C_53,X_36,C_37,r1_42,X_39);
+    C_52 := algebra.subselect(X_44,C_34,0,2,true,true,false);
+    C_53 := algebra.subselect(X_36,C_52,0,2,true,true,false);
+    X_54 := algebra.projection(C_53,X_36);
     X_55 := bat.append(X_33,X_54,true);
-    language.pass(C_3);
-    language.pass(C_27);
     language.pass(X_6);
-    language.pass(C_9);
-    language.pass(r1_14);
-    language.pass(X_12);
-    language.pass(C_34);
-    language.pass(nil:bat[:oid]);
-    language.pass(C_52);
     language.pass(X_36);
-    language.pass(C_37);
-    language.pass(r1_42);
-    language.pass(X_39);
-exit X_148;
+exit X_132;
     X_57 := sql.append(X_0,"sys","answ","x",X_55);
-barrier X_151 := language.dataflow();
+barrier X_135 := language.dataflow();
     X_60:bat[:dbl] := bat.new(nil:dbl);
-    X_62 := sql.projectdelta(C_31,X_18,C_20,r1_25,X_22);
+    X_62 := algebra.projection(C_31,X_18);
     X_63 := bat.append(X_60,X_62,true);
-    X_65 := sql.projectdelta(C_53,X_44,C_45,r1_50,X_47);
+    X_65 := algebra.projection(C_53,X_44);
     X_66 := bat.append(X_63,X_65,true);
-exit X_151;
+exit X_135;
     X_68 := sql.append(X_57,"sys","answ","y",X_66);
-barrier X_154 := language.dataflow();
+barrier X_138 := language.dataflow();
     X_70:bat[:dbl] := bat.new(nil:dbl);
     X_71:bat[:dbl] := sql.bind(X_68,"sys","part1","z",0);
-    (C_73:bat[:oid],r1_78:bat[:dbl]) := sql.bind(X_68,"sys","part1","z",2);
-    X_75:bat[:dbl] := sql.bind(X_68,"sys","part1","z",1);
-    X_78 := sql.projectdelta(C_31,X_71,C_73,r1_78,X_75);
+    X_78 := algebra.projection(C_31,X_71);
     X_79 := bat.append(X_70,X_78,true);
     X_80:bat[:dbl] := sql.bind(X_68,"sys","part2","z",0);
-    (C_81:bat[:oid],r1_86:bat[:dbl]) := sql.bind(X_68,"sys","part2","z",2);
-    X_83:bat[:dbl] := sql.bind(X_68,"sys","part2","z",1);
-    X_86 := sql.projectdelta(C_53,X_80,C_81,r1_86,X_83);
+    X_86 := algebra.projection(C_53,X_80);
     X_87 := bat.append(X_79,X_86,true);
-exit X_154;
+exit X_138;
     X_89 := sql.append(X_68,"sys","answ","z",X_87);
     X_90 := aggr.count(X_87);
     sql.affectedRows(X_89,X_90);
-end user.s14_1;
+end user.s28_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=32 usec 
+#remap                actions= 0 time=4 usec 
+#costModel            actions= 1 time=29 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 8 time=50 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 8 time=37 usec 
+#aliases              actions=20 time=36 usec 
+#mitosis              actions= 0 time=4 usec 
+#mergetable           actions= 0 time=52 usec 
+#deadcode             actions=12 time=25 usec 
+#aliases              actions= 0 time=7 usec 
+#constants            actions=12 time=23 usec 
+#commonTerms          actions= 0 time=8 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=38 usec 
+#reduce               actions=81 time=44 usec 
+#matpack              actions= 0 time=5 usec 
+#dataflow             actions=31 time=38 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=21 usec 
+#garbageCollector     actions= 1 time=29 usec 
+#total                actions= 1 time=573 usec 
 #INSERT INTO answ
 #SELECT * FROM complete
 #WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2;

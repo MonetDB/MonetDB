@@ -239,7 +239,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->stimeout = 0;
 	c->stage = 0;
 	c->itrace = 0;
-	c->debugOptimizer = c->debugScheduler = 0;
 	c->flags = 0;
 	c->errbuf = 0;
 

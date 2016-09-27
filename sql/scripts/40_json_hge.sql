@@ -9,3 +9,4 @@
 
 create function json.filter(js json, name hugeint)
 returns json external name json.filter;
+GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;

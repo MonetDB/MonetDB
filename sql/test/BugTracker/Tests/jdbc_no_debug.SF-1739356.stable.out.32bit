@@ -42,13 +42,12 @@ Ready.
 | ) [ L3 NOT NULL as L3.L3 ]                                                           |
 +--------------------------------------------------------------------+
 18 rows
-
 Operation successful
 
 +--------------------------------------------------------------------------------------------------+
-| mal                                                                 |
+| mal                                                                                              |
 +==================================================================================================+
-| function user.s2_1():void;                                                                       |
+| function user.s4_1():void;                                                                       |
 |     X_46:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",27); |
 |     X_1:bat[:lng] := bat.new(nil:lng);                                                           |
 |     X_0 := sql.mvc();                                                                            |
@@ -74,10 +73,32 @@ Operation successful
 |     X_37 := bat.append(X_31,X_36,true);                                                          |
 |     X_38:lng := aggr.sum(X_37);                                                                  |
 |     sql.resultSet(".L3","L3","bigint",64,0,7,X_38);                                              |
-| end user.s2_1;                                                                                   |
+| end user.s4_1;                                                                                   |
+| #inline               actions= 0 time=1 usec                                                     |
+| #remap                actions= 0 time=2 usec                                                     |
+| #costmodel            actions= 1 time=1 usec                                                     |
+| #coercion             actions= 1 time=3 usec                                                     |
+| #evaluate             actions= 0 time=3 usec                                                     |
+| #emptybind            actions= 0 time=4 usec                                                     |
+| #pushselect           actions= 4 time=14 usec                                                    |
+| #aliases              actions= 2 time=4 usec                                                     |
+| #mergetable           actions= 0 time=20 usec                                                    |
+| #deadcode             actions= 2 time=4 usec                                                     |
+| #aliases              actions= 0 time=2 usec                                                     |
+| #constants            actions= 2 time=4 usec                                                     |
+| #commonTerms          actions= 0 time=4 usec                                                     |
+| #projectionpath       actions= 0 time=2 usec                                                     |
+| #reorder              actions= 1 time=15 usec                                                    |
+| #deadcode             actions= 0 time=3 usec                                                     |
+| #reduce               actions=26 time=6 usec                                                     |
+| #matpack              actions= 0 time=2 usec                                                     |
+| #multiplex            actions= 0 time=2 usec                                                     |
+| #profiler             actions= 1 time=4 usec                                                     |
+| #candidates           actions= 1 time=1 usec                                                     |
+| #garbagecollector     actions= 1 time=7 usec                                                     |
+| #total                actions= 1 time=256 usec                                                   |
 +--------------------------------------------------------------------------------------------------+
-49 rows
-
+50 rows
 
 # 19:39:11 >  
 # 19:39:11 >  "Done."

@@ -336,7 +336,10 @@ DFLOWworker(void *T)
 	srand((unsigned int) GDKusec());
 #endif
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
-	GDKerrbuf[0] = 0;
+	if( GDKerrbuf == 0)
+		fprintf(stderr,"DFLOWworker:Could not allocate GDKerrbuf\n");
+	else
+		GDKerrbuf[0] = 0;
 	MT_lock_set(&dataflowLock);
 	cntxt = t->cntxt;
 	MT_lock_unset(&dataflowLock);

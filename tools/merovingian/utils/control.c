@@ -163,10 +163,18 @@ char* control_send(
 				char *shash = NULL;
 				char *phash = NULL;
 				char *algsv[] = {
+#ifdef HAVE_RIPEMD160_UPDATE
 					"RIPEMD160",
+#endif
+#ifdef HAVE_SHA256_UPDATE
 					"SHA256",
+#endif
+#ifdef HAVE_SHA1_UPDATE
 					"SHA1",
+#endif
+#ifdef HAVE_MD5_UPDATE
 					"MD5",
+#endif
 					NULL
 				};
 				char **algs = algsv;
@@ -233,21 +241,42 @@ char* control_send(
 
 				/* we first need to hash our password in the form the
 				 * server stores it too */
+#ifdef HAVE_RIPEMD160_UPDATE
 				if (strcmp(shash, "RIPEMD160") == 0) {
 					phash = mcrypt_RIPEMD160Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "SHA512") == 0) {
+				} else
+#endif
+#ifdef HAVE_SHA512_UPDATE
+				if (strcmp(shash, "SHA512") == 0) {
 					phash = mcrypt_SHA512Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "SHA384") == 0) {
+				} else
+#endif
+#ifdef HAVE_SHA384_UPDATE
+				if (strcmp(shash, "SHA384") == 0) {
 					phash = mcrypt_SHA384Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "SHA256") == 0) {
+				} else
+#endif
+#ifdef HAVE_SHA256_UPDATE
+				if (strcmp(shash, "SHA256") == 0) {
 					phash = mcrypt_SHA256Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "SHA224") == 0) {
+				} else
+#endif
+#ifdef HAVE_SHA224_UPDATE
+				if (strcmp(shash, "SHA224") == 0) {
 					phash = mcrypt_SHA224Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "SHA1") == 0) {
+				} else
+#endif
+#ifdef HAVE_SHA1_UPDATE
+				if (strcmp(shash, "SHA1") == 0) {
 					phash = mcrypt_SHA1Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "MD5") == 0) {
+				} else
+#endif
+#ifdef HAVE_MD5_UPDATE
+				if (strcmp(shash, "MD5") == 0) {
 					phash = mcrypt_MD5Sum(pass, strlen(pass));
-				} else {
+				} else
+#endif
+				{
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"monetdbd server requires unknown hash: %s", shash);
 					close_stream(fdout);

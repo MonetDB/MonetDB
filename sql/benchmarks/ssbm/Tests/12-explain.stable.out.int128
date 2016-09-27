@@ -43,8 +43,8 @@ Ready.
 % mal # name
 % clob # type
 % 554 # length
-function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):void;
-    X_242:void := querylog.define("explain\nselect d_year, s_nation, p_category, sum(lo_revenue-lo_supplycost) as profit1\n from dwdate, customer, supplier, part, lineorder\n where lo_custkey = c_custkey\n and lo_suppkey = s_suppkey\n and lo_partkey = p_partkey\n and lo_orderdate = d_datekey\n and c_region = \\'AMERICA\\'\n and s_region = \\'AMERICA\\'\n and (d_year = 1997 or d_year = 1998)\n and (p_mfgr = \\'MFGR#1\\' or p_mfgr = \\'MFGR#2\\')\n group by d_year, s_nation, p_category\n order by d_year, s_nation, p_category;","sequential_pipe",129);
+function user.s4_1():void;
+    X_242:void := querylog.define("explain\nselect d_year, s_nation, p_category, sum(lo_revenue-lo_supplycost) as profit1\n from dwdate, customer, supplier, part, lineorder\n where lo_custkey = c_custkey\n and lo_suppkey = s_suppkey\n and lo_partkey = p_partkey\n and lo_orderdate = d_datekey\n and c_region = \\'AMERICA\\'\n and s_region = \\'AMERICA\\'\n and (d_year = 1997 or d_year = 1998)\n and (p_mfgr = \\'MFGR#1\\' or p_mfgr = \\'MFGR#2\\')\n group by d_year, s_nation, p_category\n order by d_year, s_nation, p_category;","sequential_pipe",105);
     X_201 := bat.new(nil:str);
     X_208 := bat.append(X_201,"sys.dwdate");
     X_218 := bat.append(X_208,"sys.supplier");
@@ -79,12 +79,9 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):void;
     X_13 := algebra.projection(C_1,X_12);
     C_14:bat[:oid] := sql.tid(X_0,"sys","dwdate");
     X_16:bat[:int] := sql.bind(X_0,"sys","dwdate","d_year",0);
-    (C_18:bat[:oid],r1_25:bat[:int]) := sql.bind(X_0,"sys","dwdate","d_year",2);
-    X_20:bat[:int] := sql.bind(X_0,"sys","dwdate","d_year",1);
-    X_21 := sql.delta(X_16,C_18,r1_25,X_20);
-    X_22 := algebra.projection(C_14,X_21);
-    C_24 := algebra.subselect(X_22,A2,A2,true,false,false);
-    C_29 := algebra.subselect(X_22,A3,A3,true,false,false);
+    X_22 := algebra.projection(C_14,X_16);
+    C_24 := algebra.subselect(X_22,1997,1997,true,false,false);
+    C_29 := algebra.subselect(X_22,1998,1998,true,false,false);
     X_30 := bat.mergecand(C_24,C_29);
     X_31 := algebra.projection(X_30,C_14);
     (X_32,r1_39) := algebra.subjoin(X_13,X_31,nil:BAT,nil:BAT,false,nil:lng);
@@ -95,12 +92,9 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):void;
     X_44:bat[:oid] := algebra.projectionpath(X_32,C_1,X_42);
     C_45:bat[:oid] := sql.tid(X_0,"sys","part");
     X_47:bat[:str] := sql.bind(X_0,"sys","part","p_mfgr",0);
-    (C_49:bat[:oid],r1_56:bat[:str]) := sql.bind(X_0,"sys","part","p_mfgr",2);
-    X_51:bat[:str] := sql.bind(X_0,"sys","part","p_mfgr",1);
-    X_52 := sql.delta(X_47,C_49,r1_56,X_51);
-    X_53 := algebra.projection(C_45,X_52);
-    C_55 := algebra.subselect(X_53,A4,A4,true,false,false);
-    C_57 := algebra.subselect(X_53,A5,A5,true,false,false);
+    X_53 := algebra.projection(C_45,X_47);
+    C_55 := algebra.subselect(X_53,"MFGR#1","MFGR#1",true,false,false);
+    C_57 := algebra.subselect(X_53,"MFGR#2","MFGR#2",true,false,false);
     X_59 := bat.mergecand(C_55,C_57);
     X_60 := algebra.projection(X_59,C_45);
     (X_61,r1_68) := algebra.subjoin(X_44,X_60,nil:BAT,nil:BAT,false,nil:lng);
@@ -111,11 +105,8 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):void;
     X_72:bat[:oid] := algebra.projectionpath(X_61,X_32,C_1,X_69);
     C_73:bat[:oid] := sql.tid(X_0,"sys","supplier");
     X_75:bat[:str] := sql.bind(X_0,"sys","supplier","s_region",0);
-    (C_77:bat[:oid],r1_84:bat[:str]) := sql.bind(X_0,"sys","supplier","s_region",2);
-    X_79:bat[:str] := sql.bind(X_0,"sys","supplier","s_region",1);
-    X_80 := sql.delta(X_75,C_77,r1_84,X_79);
-    X_81 := algebra.projection(C_73,X_80);
-    C_83 := algebra.subselect(X_81,A1,A1,true,false,false);
+    X_81 := algebra.projection(C_73,X_75);
+    C_83 := algebra.subselect(X_81,"AMERICA","AMERICA",true,false,false);
     X_84 := algebra.projection(C_83,C_73);
     (X_85,r1_92) := algebra.subjoin(X_72,X_84,nil:BAT,nil:BAT,false,nil:lng);
     X_90:bat[:oid] := sql.bind_idxbat(X_0,"sys","lineorder","lineorder_lo_custkey_fkey",0);
@@ -125,23 +116,14 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):void;
     X_99:bat[:oid] := algebra.projectionpath(X_85,X_61,X_32,C_1,X_95);
     C_100:bat[:oid] := sql.tid(X_0,"sys","customer");
     X_102:bat[:str] := sql.bind(X_0,"sys","customer","c_region",0);
-    (C_104:bat[:oid],r1_111:bat[:str]) := sql.bind(X_0,"sys","customer","c_region",2);
-    X_106:bat[:str] := sql.bind(X_0,"sys","customer","c_region",1);
-    X_107 := sql.delta(X_102,C_104,r1_111,X_106);
-    X_108 := algebra.projection(C_100,X_107);
-    C_110 := algebra.subselect(X_108,A0,A0,true,false,false);
+    X_108 := algebra.projection(C_100,X_102);
+    C_110 := algebra.subselect(X_108,"AMERICA","AMERICA",true,false,false);
     X_114 := algebra.projection(C_110,C_100);
     (X_115,r1_122) := algebra.subjoin(X_99,X_114,nil:BAT,nil:BAT,false,nil:lng);
     X_117:bat[:str] := sql.bind(X_0,"sys","part","p_category",0);
-    (C_119:bat[:oid],r1_126:bat[:str]) := sql.bind(X_0,"sys","part","p_category",2);
-    X_121:bat[:str] := sql.bind(X_0,"sys","part","p_category",1);
-    X_122 := sql.delta(X_117,C_119,r1_126,X_121);
-    X_127:bat[:str] := algebra.projectionpath(X_115,X_85,r1_68,X_59,C_45,X_122);
+    X_127:bat[:str] := algebra.projectionpath(X_115,X_85,r1_68,X_59,C_45,X_117);
     X_128:bat[:str] := sql.bind(X_0,"sys","supplier","s_nation",0);
-    (C_130:bat[:oid],r1_137:bat[:str]) := sql.bind(X_0,"sys","supplier","s_nation",2);
-    X_132:bat[:str] := sql.bind(X_0,"sys","supplier","s_nation",1);
-    X_133 := sql.delta(X_128,C_130,r1_137,X_132);
-    X_137:bat[:str] := algebra.projectionpath(X_115,r1_92,C_83,C_73,X_133);
+    X_137:bat[:str] := algebra.projectionpath(X_115,r1_92,C_83,C_73,X_128);
     X_142:bat[:int] := algebra.projectionpath(X_115,X_85,X_61,r1_39,X_30,X_22);
     (X_143,r1_150,r2_150) := group.subgroup(X_142);
     (X_146,r1_153,r2_153) := group.subgroup(X_137,X_143);
@@ -150,16 +132,10 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):void;
     X_153 := algebra.projection(r1_156,X_137);
     X_154 := algebra.projection(r1_156,X_142);
     X_169:bat[:int] := sql.bind(X_0,"sys","lineorder","lo_revenue",0);
-    (C_171:bat[:oid],r1_178:bat[:int]) := sql.bind(X_0,"sys","lineorder","lo_revenue",2);
-    X_173:bat[:int] := sql.bind(X_0,"sys","lineorder","lo_revenue",1);
-    X_174 := sql.delta(X_169,C_171,r1_178,X_173);
-    X_179:bat[:int] := algebra.projectionpath(X_115,X_85,X_61,X_32,C_1,X_174);
+    X_179:bat[:int] := algebra.projectionpath(X_115,X_85,X_61,X_32,C_1,X_169);
     X_180 := batcalc.lng(X_179);
     X_181:bat[:int] := sql.bind(X_0,"sys","lineorder","lo_supplycost",0);
-    (C_183:bat[:oid],r1_190:bat[:int]) := sql.bind(X_0,"sys","lineorder","lo_supplycost",2);
-    X_185:bat[:int] := sql.bind(X_0,"sys","lineorder","lo_supplycost",1);
-    X_186 := sql.delta(X_181,C_183,r1_190,X_185);
-    X_191:bat[:int] := algebra.projectionpath(X_115,X_85,X_61,X_32,C_1,X_186);
+    X_191:bat[:int] := algebra.projectionpath(X_115,X_85,X_61,X_32,C_1,X_181);
     X_192 := batcalc.lng(X_191);
     X_193:bat[:lng] := batcalc.-(X_180,X_192);
     X_196:bat[:lng] := aggr.subsum(X_193,X_149,r1_156,true,true);
@@ -171,7 +147,32 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):void;
     X_168 := algebra.projection(r1_170,X_152);
     X_199 := algebra.projection(r1_170,X_196);
     sql.resultSet(X_233,X_235,X_237,X_239,X_241,X_166,X_167,X_168,X_199);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=11 usec 
+#candidates           actions= 1 time=149 usec 
+#remap                actions= 1 time=283 usec 
+#costModel            actions= 1 time=139 usec 
+#coercions            actions= 0 time=11 usec 
+#evaluate             actions= 6 time=217 usec 
+#emptybind            actions= 0 time=12 usec 
+#pushselect           actions= 0 time=6 usec 
+#aliases              actions=14 time=163 usec 
+#mergetable           actions= 0 time=178 usec 
+#deadcode             actions=16 time=147 usec 
+#aliases              actions= 0 time=34 usec 
+#constants            actions=25 time=183 usec 
+#commonTerms          actions= 0 time=40 usec 
+#projectionpath       actions=25 time=178 usec 
+#reorder              actions= 1 time=245 usec 
+#deadcode             actions=25 time=133 usec 
+#reduce               actions=108 time=226 usec 
+#matpack              actions= 0 time=13 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=9 usec 
+#generator            actions= 0 time=5 usec 
+#profiler             actions= 1 time=116 usec 
+#garbageCollector     actions= 1 time=160 usec 
+#total                actions= 1 time=2829 usec 
 
 # 23:10:48 >  
 # 23:10:48 >  "Done."

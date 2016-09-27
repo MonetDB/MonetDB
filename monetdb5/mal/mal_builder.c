@@ -512,8 +512,10 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 			ptr p = ATOMnil(tpe);
 			VALset(&cst, tpe, p);
 		} else {
-			ptr p = ATOMnilptr(tpe);
-			VALset(&cst, tpe, p);
+			if (VALinit(&cst, tpe, ATOMnilptr(tpe)) == NULL) {
+				freeInstruction(q);
+				return NULL;
+			}
 		}
 		_t = defConstant(mb,tpe,&cst);
 	} else {
@@ -619,7 +621,10 @@ pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 
 	if (q == NULL)
 		return NULL;
-	VALcopy(&cst, vr);
+	if (VALcopy(&cst, vr) == NULL) {
+		freeInstruction(q);
+		return NULL;
+	}
 	_t = defConstant(mb,cst.vtype,&cst);
 	return pushArgument(mb, q, _t);
 }

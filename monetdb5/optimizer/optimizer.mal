@@ -98,6 +98,22 @@ pattern optimizer.derivePath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
+#opt_emptybind.mal
+
+pattern optimizer.emptybind():str
+address OPTwrapper;
+pattern optimizer.emptybind(mod:str, fcn:str):str
+address OPTwrapper
+comment "Evaluate empty set expressions.";
+
+#opt_jit.mal
+
+pattern optimizer.jit():str
+address OPTwrapper;
+pattern optimizer.jit(mod:str, fcn:str):str
+address OPTwrapper
+comment "Propagate candidate lists in just-in-time optimization";
+
 #opt_evaluate.mal
 
 pattern optimizer.evaluate():str
@@ -144,11 +160,6 @@ comment "Initialize the optimizer";
 pattern optimize(mod:str, fcn:str)
 address QOToptimize
 comment "Optimize a specific operation";
-
-pattern setDebug():void 
-address QOTdebugOptimizers;
-pattern clrDebug():void 
-address QOTclrdebugOptimizers;
 
 pattern showFlowGraph(M:str,F:str,s:str):void 
 address QOTshowFlowGraph

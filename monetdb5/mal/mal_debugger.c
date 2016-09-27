@@ -272,7 +272,7 @@ printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
 	msg = instruction2str(mb, stk, getInstrPtr(mb, pc), LIST_MAL_CALL);
-	mnstr_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", msg,
+	mnstr_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", (msg?msg:"failed instruction2str()") ,
 			getModuleId(getInstrPtr(mb, 0)),
 			getFunctionId(getInstrPtr(mb, 0)), pc);
 	GDKfree(msg);
@@ -287,7 +287,7 @@ printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 
 	p = getInstrPtr(mb, pc);
 	msg = instruction2str(mb, stk, p, flags);
-	mnstr_printf(out, "#%s%s\n", (mb->errors ? "!" : ""), msg);
+	mnstr_printf(out, "#%s%s\n", (mb->errors ? "!" : ""), msg?msg:"failed instruction2str()");
 	GDKfree(msg);
 }
 
@@ -386,7 +386,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	int stepsize = 1000;
 	char oldcmd[1024] = { 0 };
 	do {
-		int r;
 		if (p != NULL) {
 			if (cntxt != mal_clients)
 				/* help mclients with fake prompt */
@@ -417,8 +416,7 @@ retryRead:
 #ifndef HAVE_EMBEDDED
 		else if (cntxt == mal_clients) {
 			/* switch to mdb streams */
-			r = readConsole(cntxt);
-			if (r <= 0)
+			if (readConsole(cntxt) <= 0)
 				break;
 		}
 #endif
@@ -1134,12 +1132,10 @@ runMALDebugger(Client cntxt, MalBlkPtr mb)
 {
 	str oldprompt= cntxt->prompt;
 	int oldtrace = cntxt->itrace;
-	int oldopt = cntxt->debugOptimizer;
 	int oldhist = cntxt->curprg->def->keephistory;
 	str msg;
 
 	cntxt->itrace = 'n';
-	cntxt->debugOptimizer = TRUE;
 	cntxt->curprg->def->keephistory = TRUE;
 
 	msg = runMAL(cntxt, mb, 0, 0);
@@ -1147,7 +1143,6 @@ runMALDebugger(Client cntxt, MalBlkPtr mb)
 	cntxt->curprg->def->keephistory = oldhist;
 	cntxt->prompt =oldprompt;
 	cntxt->itrace = oldtrace;
-	cntxt->debugOptimizer = oldopt;
 	mnstr_printf(cntxt->fdout, "mdb>#EOD\n");
 	return msg;
 }
@@ -1400,14 +1395,3 @@ mdbHelp(stream *f)
  * make it thread safe by assigning it to a client record.
  */
 int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
-
-str
-debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) stk;
-
-	cntxt->debugOptimizer = cntxt->debugOptimizer ? FALSE : TRUE;
-	if (pci)
-		removeInstruction(mb, pci);
-	return MAL_SUCCEED;
-}

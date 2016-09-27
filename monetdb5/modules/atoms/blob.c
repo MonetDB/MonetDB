@@ -146,19 +146,6 @@ blob_read(blob *a, stream *s, size_t cnt)
 	return a;
 }
 
-static gdk_return
-blob_write(blob *a, stream *s, size_t cnt)
-{
-	var_t len = blobsize(a->nitems);
-
-	(void) cnt;
-	assert(cnt == 1);
-	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
-		mnstr_write(s, (char *) a, len, 1) < 0)
-		return GDK_FAIL;
-	return GDK_SUCCEED;
-}
-
 static int
 blob_length(blob *p)
 {
@@ -191,6 +178,8 @@ blob_tostr(str *tostr, int *l, blob *p)
 		if (*tostr != NULL)
 			GDKfree(*tostr);
 		*tostr = (str) GDKmalloc(expectedlen);
+		if( *tostr == NULL)
+			return 0;
 		*l = (int) expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
@@ -233,6 +222,8 @@ sqlblob_tostr(str *tostr, int *l, const blob *p)
 		if (*tostr != NULL)
 			GDKfree(*tostr);
 		*tostr = (str) GDKmalloc(expectedlen);
+		if( *tostr == NULL)
+			return 0;
 		*l = (int) expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
@@ -299,6 +290,9 @@ blob_fromstr(char *instr, int *l, blob **val)
 		*val = (blob *) GDKmalloc(nbytes);
 		*l = (int) nbytes;
 	}
+	if( *val == NULL)
+		return 0;
+	
 	result = *val;
 	result->nitems = nitems;
 
@@ -383,6 +377,8 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 		*val = (blob *) GDKmalloc(nbytes);
 		*l = (int) nbytes;
 	}
+	if( *val == NULL)
+		return 0;
 	if (nil) {
 		**val = *blob_null();
 		return 0;
@@ -425,7 +421,7 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 }
 
 
-static int
+static str
 fromblob_idx(str *retval, blob *b, int *idx)
 {
 	str s, p = b->data + *idx;
@@ -436,30 +432,12 @@ fromblob_idx(str *retval, blob *b, int *idx)
 			break;
 	}
 	*retval = s = (str) GDKmalloc(1 + r - p);
+	if( *retval == NULL)
+		throw(MAL, "blob.tostring", MAL_MALLOC_FAIL);
 	for (; p < r; p++, s++)
 		*s = *p;
 	*s = 0;
-	return GDK_SUCCEED;
-}
-
-static int
-fromblob(str *retval, blob *b)
-{
-	int zero = 0;
-
-	return fromblob_idx(retval, b, &zero);
-}
-
-static int
-toblob(blob **retval, str s)
-{
-	int len = strLen(s);
-	blob *b = (blob *) GDKmalloc(blobsize(len));
-
-	b->nitems = len;
-	memcpy(b->data, s, len);
-	*retval = b;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /*
@@ -490,7 +468,8 @@ blob *
 BLOBnull(void)
 {
 	blob *b= (blob*) GDKmalloc(offsetof(blob, data));
-	b->nitems = ~(size_t) 0;
+	if( b )
+		b->nitems = ~(size_t) 0;
 	return b;
 }
 
@@ -503,7 +482,14 @@ BLOBread(blob *a, stream *s, size_t cnt)
 gdk_return
 BLOBwrite(blob *a, stream *s, size_t cnt)
 {
-	return blob_write(a,s,cnt);
+	var_t len = blobsize(a->nitems);
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
+		mnstr_write(s, (char *) a, len, 1) < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
 }
 
 int
@@ -547,21 +533,28 @@ BLOBfromstr(char *instr, int *l, blob **val)
 str
 BLOBfromidx(str *retval, blob **binp, int *idx)
 {
-	fromblob_idx(retval, *binp, idx);
-	return MAL_SUCCEED;
+	return fromblob_idx(retval, *binp, idx);
 }
 
 str
 BLOBfromblob(str *retval, blob **b)
 {
-	fromblob(retval, *b);
-	return MAL_SUCCEED;
+	int zero = 0;
+
+	return fromblob_idx(retval, *b, &zero);
 }
 
 str
 BLOBtoblob(blob **retval, str *s)
 {
-	toblob(retval, *s);
+	int len = strLen(*s);
+	blob *b = (blob *) GDKmalloc(blobsize(len));
+
+	if( b == NULL)
+		throw(MAL, "blob.toblob", MAL_MALLOC_FAIL);
+	b->nitems = len;
+	memcpy(b->data, *s, len);
+	*retval = b;
 	return MAL_SUCCEED;
 }
 
@@ -587,6 +580,8 @@ BLOBblob_blob(blob **d, blob **s)
 		*d= BLOBnull();
 	} else {
 		*d= b= (blob *) GDKmalloc(len);
+		if( b == NULL)
+			throw(MAL,"blob_blob",MAL_MALLOC_FAIL);
 		b->nitems = len;
 		memcpy(b->data, (*s)->data, len);
 	}
