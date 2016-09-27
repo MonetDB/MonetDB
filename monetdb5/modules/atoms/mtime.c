@@ -630,8 +630,6 @@ date_fromstr(const char *buf, int *len, date **d)
 int
 date_tostr(str *buf, int *len, const date *val)
 {
-	int day, month, year;
-
 	/* longest possible string: "-5867411-01-01" i.e. 14 chars
 	   without NUL (see definition of YEAR_MIN/YEAR_MAX above) */
 	if (*len < dateStrlen) {

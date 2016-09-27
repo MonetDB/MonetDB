@@ -130,13 +130,14 @@ conversion_hge_to_string(char *dst, int len, const hge *src, hge null_value)
 #endif
 
 
-#define DEC_TOSTR(TYPE)							\
+#define DEC_TOSTR(TYPE,TYPESTRLEN)							\
 	do {								\
 		char buf[64];						\
 		TYPE v = *(const TYPE *) value;				\
 		int cur = 63, i, done = 0;				\
 		int neg = v < 0;					\
 		int l;							\
+		if (buflen < TYPESTRLEN) return -1; \
 		if (v == *((TYPE*)null_value)) {					\
 			strcpy(buffer, NULL_STRING);				\
 			return 4;					\
@@ -169,16 +170,16 @@ int
 conversion_decimal_to_string(const void *value, char *buffer, int buflen, int scale, int typelen, const void *null_value) {
 	/* support dec map to bte, sht, int and lng */
 	if (typelen == 1) {
-		DEC_TOSTR(bte);
+		DEC_TOSTR(bte, bteStrlen + 1);
 	} else if (typelen == 2) {
-		DEC_TOSTR(sht);
+		DEC_TOSTR(sht, shtStrlen + 1);
 	} else if (typelen == 4) {
-		DEC_TOSTR(int);
+		DEC_TOSTR(int, intStrlen + 1);
 	} else if (typelen == 8) {
-		DEC_TOSTR(lng);
+		DEC_TOSTR(lng, lngStrlen + 1);
 #ifdef HAVE_HGE
 	} else if (typelen == 16) {
-		DEC_TOSTR(hge);
+		DEC_TOSTR(hge, hgeStrlen + 1);
 #endif
 	} else {
 		return -1;
@@ -261,7 +262,8 @@ conversion_date_to_string(char *dst, int len, const int *src, int null_value) {
 
 int 
 conversion_time_to_string(char *dst, int len, const int *src, int null_value, int timezone_diff) {
-	int ms, sec, min, hour;
+	int sec, min, hour;
+	//int ms;
 	int time = *src;
 	if (len < daytimeStrlen) return -1;
 	if (*src == null_value) {
@@ -289,6 +291,7 @@ conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, i
 	int ms, sec, min, hour;
 	int days = 0;
 	lng time = *src;
+	int offset;
 
 	if (*src == null_value) {
 		strcpy(dst, NULL_STRING);
@@ -309,7 +312,7 @@ conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, i
 	// then we can use our conversion_date_to_string function
 	days = (int)(time + days_between_zero_and_epoch);
 
-	int offset = conversion_date_to_string(dst, len, &days, -2147483647);
+	offset = conversion_date_to_string(dst, len, &days, -2147483647);
 	if (offset < 0) return -1;
 	return snprintf(dst + offset, len - offset, " %02d:%02d:%02d.%06d", hour, min, sec, ms);
 }
