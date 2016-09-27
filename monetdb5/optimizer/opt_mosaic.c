@@ -63,6 +63,8 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     int limit,i,j, k, target=0;
 	signed char *check;
 
+	if( optimizerIsApplied(mb,"mosaic"))
+		return 0;
 	check = GDKzalloc(mb->vsize);
 	if ( check == NULL)
 		return 0;
