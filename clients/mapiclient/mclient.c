@@ -1048,29 +1048,28 @@ TESTrenderer(MapiHdl hdl)
 			// generate fake MAPI headers for the testweb
 			// table names
 			mnstr_printf(toConsole, "%% ");
-			for(int i = 0; i < fields; i++) {
+			for(i = 0; i < fields; i++) {
 				mnstr_printf(toConsole, "%s%s", mapi_get_table(hdl, i), i < fields - 1 ? ",\t" : " ");
 			}
 			mnstr_printf(toConsole, "# table_name\n");
 			// column names
 			mnstr_printf(toConsole, "%% ");
-			for(int i = 0; i < fields; i++) {
+			for(i = 0; i < fields; i++) {
 				mnstr_printf(toConsole, "%s%s", mapi_get_name(hdl, i), i < fields - 1 ? ",\t" : " ");
 			}
 			mnstr_printf(toConsole, "# name\n");
 			// column type names
 			mnstr_printf(toConsole, "%% ");
-			for(int i = 0; i < fields; i++) {
+			for(i = 0; i < fields; i++) {
 				mnstr_printf(toConsole, "%s%s", mapi_get_type(hdl, i), i < fields - 1 ? ",\t" : " ");
 			}
 			mnstr_printf(toConsole, "# type\n");
 			// column lengths
 			mnstr_printf(toConsole, "%% ");
-			for(int i = 0; i < fields; i++) {
-				mnstr_printf(toConsole, "%lld%s", mapi_get_len(hdl, i), i < fields - 1 ? ",\t" : " ");
+			for(i = 0; i < fields; i++) {
+				mnstr_printf(toConsole, "%d%s", mapi_get_len(hdl, i), i < fields - 1 ? ",\t" : " ");
 			}
 			mnstr_printf(toConsole, "# length\n");
-			l = mapi_fetch_field_len(hdl, i);
 		}
 		sep = "[ ";
 		for (i = 0; i < fields; i++) {
@@ -1205,7 +1204,6 @@ static void
 CLEANrenderer(MapiHdl hdl)
 {
 	char *reply;
-	int prot10 = mapi_is_protocol10(hdl);
 	SQLqueryEcho(hdl);
 	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
 		if (*reply == '%')
