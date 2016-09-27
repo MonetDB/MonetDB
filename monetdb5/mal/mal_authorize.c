@@ -786,6 +786,7 @@ AUTHcypherValue(str *ret, str *value)
 static str
 AUTHverifyPassword(str *passwd) 
 {
+#ifndef HAVE_EMBEDDED
 	char *p = *passwd;
 	size_t len = strlen(p);
 
@@ -845,10 +846,13 @@ AUTHverifyPassword(str *passwd)
 					"representation of an MD5 password hash?");
 	} else
 #endif
+#endif
 	{
+		(void) passwd;
 		throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
 				MONETDB5_PASSWDHASH);
 	}
+#ifndef HAVE_EMBEDDED
 	len++; // required in case all the checks above are false
 	while (*p != '\0') {
 		if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9')))
@@ -859,4 +863,5 @@ AUTHverifyPassword(str *passwd)
 	}
 
 	return(MAL_SUCCEED);
+#endif
 }
