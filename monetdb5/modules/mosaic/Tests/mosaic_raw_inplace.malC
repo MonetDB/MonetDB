@@ -8,11 +8,11 @@ base:= algebra.copy(b);
 io.print(b);
 
 #inplace variant, local decompress
-y:= mosaic.compressStorage(b,"literal");
+y:= mosaic.compressStorage(b,"raw");
 z:= mosaic.decompress(y);
 io.print(z);
 
 #inplace variant
-y:= mosaic.compressStorage(b,"literal");
+y:= mosaic.compressStorage(b,"raw");
 z:= mosaic.decompressStorage(y);
 io.print(z);

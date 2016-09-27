@@ -153,7 +153,7 @@ Ready.
 % clob,	bigint,	bigint,	bigint,	clob # type
 % 17,	2,	3,	2,	9 # length
 [ "ratio",	0,	0,	0,	"0.0282309"	]
-[ "literal blocks",	0,	0,	0,	""	]
+[ "raw blocks",	0,	0,	0,	""	]
 [ "runlength blocks",	0,	0,	0,	""	]
 [ "dictionary blocks",	0,	0,	0,	""	]
 [ "delta blocks",	0,	0,	0,	""	]

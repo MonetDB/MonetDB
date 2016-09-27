@@ -24,23 +24,23 @@
 
 #include "monetdb_config.h"
 #include "mosaic.h"
-#include "mosaic_literal.h"
+#include "mosaic_raw.h"
 
 void
-MOSdump_literal(Client cntxt, MOStask task)
+MOSdump_raw(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	mnstr_printf(cntxt->fdout,"#none "BUNFMT"\n", MOSgetCnt(blk));
 }
 
 void
-MOSlayout_literal(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_raw(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	(void) cntxt;
-	BUNappend(btech, "literal", FALSE);
+	BUNappend(btech, "raw", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){
@@ -69,7 +69,7 @@ MOSlayout_literal(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binp
 }
 
 void
-MOSadvance_literal(Client cntxt, MOStask task)
+MOSadvance_raw(Client cntxt, MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	(void) cntxt;
@@ -98,9 +98,9 @@ MOSadvance_literal(Client cntxt, MOStask task)
 }
 
 void
-MOSskip_literal(Client cntxt, MOStask task)
+MOSskip_raw(Client cntxt, MOStask task)
 {
-	MOSadvance_literal(cntxt,task);
+	MOSadvance_raw(cntxt,task);
 	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -108,7 +108,7 @@ MOSskip_literal(Client cntxt, MOStask task)
 
 // append a series of values into the non-compressed block
 
-#define LITERALcompress(TYPE)\
+#define RAWcompress(TYPE)\
 {	*(TYPE*) task->dst = ((TYPE*) task->src)[task->start];\
 	hdr->checksum.sum##TYPE += *(TYPE*) task->dst;\
 	task->dst += sizeof(TYPE);\
@@ -117,24 +117,24 @@ MOSskip_literal(Client cntxt, MOStask task)
 
 // rather expensive simple value non-compressed store
 void
-MOScompress_literal(Client cntxt, MOStask task)
+MOScompress_raw(Client cntxt, MOStask task)
 {
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 
 	(void) cntxt;
-	MOSsetTag(blk,MOSAIC_NONE);
+	MOSsetTag(blk,MOSAIC_RAW);
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: LITERALcompress(bte); break ;
-	case TYPE_bit: LITERALcompress(bit); break ;
-	case TYPE_sht: LITERALcompress(sht); break;
-	case TYPE_oid: LITERALcompress(oid); break;
-	case TYPE_lng: LITERALcompress(lng); break;
-	case TYPE_flt: LITERALcompress(flt); break;
-	case TYPE_dbl: LITERALcompress(dbl); break;
+	case TYPE_bte: RAWcompress(bte); break ;
+	case TYPE_bit: RAWcompress(bit); break ;
+	case TYPE_sht: RAWcompress(sht); break;
+	case TYPE_oid: RAWcompress(oid); break;
+	case TYPE_lng: RAWcompress(lng); break;
+	case TYPE_flt: RAWcompress(flt); break;
+	case TYPE_dbl: RAWcompress(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: LITERALcompress(hge); break;
+	case TYPE_hge: RAWcompress(hge); break;
 #endif
 	case TYPE_int:
 	{	*(int*) task->dst = ((int*) task->src)[task->start];
@@ -145,19 +145,19 @@ MOScompress_literal(Client cntxt, MOStask task)
 	break;
 	case TYPE_str:
 		switch(task->bsrc->twidth){
-		case 1: LITERALcompress(bte); break ;
-		case 2: LITERALcompress(sht); break ;
-		case 4: LITERALcompress(int); break ;
-		case 8: LITERALcompress(lng); break ;
+		case 1: RAWcompress(bte); break ;
+		case 2: RAWcompress(sht); break ;
+		case 4: RAWcompress(int); break ;
+		case 8: RAWcompress(lng); break ;
 		}
 	}
 #ifdef _DEBUG_MOSAIC_
-	MOSdump_literal(cntxt, task);
+	MOSdump_raw(cntxt, task);
 #endif
 }
 
 // the inverse operator, extend the src
-#define LITERALdecompress(TYPE)\
+#define RAWdecompress(TYPE)\
 { BUN lim = MOSgetCnt(blk); \
 	for(i = 0; i < lim; i++) {\
 	((TYPE*)task->src)[i] = ((TYPE*)compressed)[i]; \
@@ -167,7 +167,7 @@ MOScompress_literal(Client cntxt, MOStask task)
 }
 
 void
-MOSdecompress_literal(Client cntxt, MOStask task)
+MOSdecompress_raw(Client cntxt, MOStask task)
 {
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
@@ -177,15 +177,15 @@ MOSdecompress_literal(Client cntxt, MOStask task)
 
 	compressed = ((char*)blk) + MosaicBlkSize;
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: LITERALdecompress(bte); break ;
-	case TYPE_bit: LITERALdecompress(bit); break ;
-	case TYPE_sht: LITERALdecompress(sht); break;
-	case TYPE_oid: LITERALdecompress(oid); break;
-	case TYPE_lng: LITERALdecompress(lng); break;
-	case TYPE_flt: LITERALdecompress(flt); break;
-	case TYPE_dbl: LITERALdecompress(dbl); break;
+	case TYPE_bte: RAWdecompress(bte); break ;
+	case TYPE_bit: RAWdecompress(bit); break ;
+	case TYPE_sht: RAWdecompress(sht); break;
+	case TYPE_oid: RAWdecompress(oid); break;
+	case TYPE_lng: RAWdecompress(lng); break;
+	case TYPE_flt: RAWdecompress(flt); break;
+	case TYPE_dbl: RAWdecompress(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: LITERALdecompress(hge); break;
+	case TYPE_hge: RAWdecompress(hge); break;
 #endif
 	case TYPE_int:
 	{ BUN lim = MOSgetCnt(blk);	
@@ -198,19 +198,19 @@ MOSdecompress_literal(Client cntxt, MOStask task)
 	break;
 	case TYPE_str:
 		switch(task->bsrc->twidth){
-		case 1: LITERALdecompress(bte); break ;
-		case 2: LITERALdecompress(sht); break ;
-		case 4: LITERALdecompress(int); break ;
-		case 8: LITERALdecompress(lng); break ;
+		case 1: RAWdecompress(bte); break ;
+		case 2: RAWdecompress(sht); break ;
+		case 4: RAWdecompress(int); break ;
+		case 8: RAWdecompress(lng); break ;
 		}
 	}
 }
 
 // The remainder should provide the minimal algebraic framework
-//  to apply the operator to a LITERAL compressed chunk
+//  to apply the operator to a RAW compressed chunk
 
 	
-#define subselect_literal(TPE) {\
+#define subselect_raw(TPE) {\
 		TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 		if( !*anti){\
 			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
@@ -275,7 +275,7 @@ MOSdecompress_literal(Client cntxt, MOStask task)
 	}
 
 str
-MOSsubselect_literal(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSsubselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN first,last;
@@ -287,24 +287,24 @@ MOSsubselect_literal(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_literal(cntxt,task);
+		MOSskip_raw(cntxt,task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
 
 	switch(task->type){
-	case TYPE_bit: subselect_literal(bit); break;
-	case TYPE_bte: subselect_literal(bte); break;
-	case TYPE_sht: subselect_literal(sht); break;
-	case TYPE_oid: subselect_literal(oid); break;
-	case TYPE_lng: subselect_literal(lng); break;
-	case TYPE_flt: subselect_literal(flt); break;
-	case TYPE_dbl: subselect_literal(dbl); break;
+	case TYPE_bit: subselect_raw(bit); break;
+	case TYPE_bte: subselect_raw(bte); break;
+	case TYPE_sht: subselect_raw(sht); break;
+	case TYPE_oid: subselect_raw(oid); break;
+	case TYPE_lng: subselect_raw(lng); break;
+	case TYPE_flt: subselect_raw(flt); break;
+	case TYPE_dbl: subselect_raw(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: subselect_literal(hge); break;
+	case TYPE_hge: subselect_raw(hge); break;
 #endif
 	case TYPE_int:
-	// Expanded MOSselect_literal for debugging
+	// Expanded MOSselect_raw for debugging
 		{ 	int *val= (int*) (((char*) task->blk) + MosaicBlkSize);
 
 			if( !*anti){
@@ -379,9 +379,9 @@ MOSsubselect_literal(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 		}
 		default:
 			if( task->type == TYPE_date)
-				subselect_literal(date); 
+				subselect_raw(date); 
 			if( task->type == TYPE_daytime)
-				subselect_literal(daytime); 
+				subselect_raw(daytime); 
 			
 			if( task->type == TYPE_timestamp)
 				{ 	lng *val= (lng*) (((char*) task->blk) + MosaicBlkSize);
@@ -450,12 +450,12 @@ MOSsubselect_literal(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 					}
 				}
 	}
-	MOSskip_literal(cntxt,task);
+	MOSskip_raw(cntxt,task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
 
-#define thetasubselect_literal(TPE)\
+#define thetasubselect_raw(TPE)\
 { 	TPE low,hgh, *v;\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
@@ -495,7 +495,7 @@ MOSsubselect_literal(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 } 
 
 str
-MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetasubselect_raw(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -507,7 +507,7 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_literal(cntxt,task);
+		MOSskip_raw(cntxt,task);
 		return MAL_SUCCEED;
 	}
 	if ( first + MOSgetCnt(task->blk) > last)
@@ -515,15 +515,15 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: thetasubselect_literal(bit); break;
-	case TYPE_bte: thetasubselect_literal(bte); break;
-	case TYPE_sht: thetasubselect_literal(sht); break;
-	case TYPE_oid: thetasubselect_literal(oid); break;
-	case TYPE_lng: thetasubselect_literal(lng); break;
-	case TYPE_flt: thetasubselect_literal(flt); break;
-	case TYPE_dbl: thetasubselect_literal(dbl); break;
+	case TYPE_bit: thetasubselect_raw(bit); break;
+	case TYPE_bte: thetasubselect_raw(bte); break;
+	case TYPE_sht: thetasubselect_raw(sht); break;
+	case TYPE_oid: thetasubselect_raw(oid); break;
+	case TYPE_lng: thetasubselect_raw(lng); break;
+	case TYPE_flt: thetasubselect_raw(flt); break;
+	case TYPE_dbl: thetasubselect_raw(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_literal(hge); break;
+	case TYPE_hge: thetasubselect_raw(hge); break;
 #endif
 	case TYPE_int:
 		{ 	int low,hgh, *v;
@@ -573,12 +573,12 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 		case 8: break ;
 		}
 	}
-	MOSskip_literal(cntxt,task);
+	MOSskip_raw(cntxt,task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
 
-#define projection_literal(TPE)\
+#define projection_raw(TPE)\
 {	TPE *val, *v;\
 	v= (TPE*) task->src;\
 	val = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
@@ -592,7 +592,7 @@ MOSthetasubselect_literal(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSprojection_literal(Client cntxt,  MOStask task)
+MOSprojection_raw(Client cntxt,  MOStask task)
 {
 	BUN first,last;
 	(void) cntxt;
@@ -601,15 +601,15 @@ MOSprojection_literal(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bit: projection_literal(bit); break;
-		case TYPE_bte: projection_literal(bte); break;
-		case TYPE_sht: projection_literal(sht); break;
-		case TYPE_oid: projection_literal(oid); break;
-		case TYPE_lng: projection_literal(lng); break;
-		case TYPE_flt: projection_literal(flt); break;
-		case TYPE_dbl: projection_literal(dbl); break;
+		case TYPE_bit: projection_raw(bit); break;
+		case TYPE_bte: projection_raw(bte); break;
+		case TYPE_sht: projection_raw(sht); break;
+		case TYPE_oid: projection_raw(oid); break;
+		case TYPE_lng: projection_raw(lng); break;
+		case TYPE_flt: projection_raw(flt); break;
+		case TYPE_dbl: projection_raw(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_literal(hge); break;
+		case TYPE_hge: projection_raw(hge); break;
 #endif
 		case TYPE_int:
 		{	int *val, *v;
@@ -626,17 +626,17 @@ MOSprojection_literal(Client cntxt,  MOStask task)
 	break;
 	case TYPE_str:
 		switch(task->bsrc->twidth){
-		case 1: projection_literal(bte); break ;
-		case 2: projection_literal(sht); break ;
-		case 4: projection_literal(int); break ;
-		case 8: projection_literal(lng); break ;
+		case 1: projection_raw(bte); break ;
+		case 2: projection_raw(sht); break ;
+		case 4: projection_raw(int); break ;
+		case 8: projection_raw(lng); break ;
 		}
 	}
-	MOSskip_literal(cntxt,task);
+	MOSskip_raw(cntxt,task);
 	return MAL_SUCCEED;
 }
 
-#define join_literal(TPE)\
+#define join_raw(TPE)\
 {	TPE *v, *w;\
 	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	for(oo= (oid) first; first < last; first++, v++, oo++){\
@@ -650,7 +650,7 @@ MOSprojection_literal(Client cntxt,  MOStask task)
 }
 
 str
-MOSsubjoin_literal(Client cntxt,  MOStask task)
+MOSsubjoin_raw(Client cntxt,  MOStask task)
 {
 	BUN n,first,last;
 	oid o, oo;
@@ -660,15 +660,15 @@ MOSsubjoin_literal(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bit: join_literal(bit); break;
-		case TYPE_bte: join_literal(bte); break;
-		case TYPE_sht: join_literal(sht); break;
-		case TYPE_oid: join_literal(oid); break;
-		case TYPE_lng: join_literal(lng); break;
-		case TYPE_flt: join_literal(flt); break;
-		case TYPE_dbl: join_literal(dbl); break;
+		case TYPE_bit: join_raw(bit); break;
+		case TYPE_bte: join_raw(bte); break;
+		case TYPE_sht: join_raw(sht); break;
+		case TYPE_oid: join_raw(oid); break;
+		case TYPE_lng: join_raw(lng); break;
+		case TYPE_flt: join_raw(flt); break;
+		case TYPE_dbl: join_raw(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: join_literal(hge); break;
+		case TYPE_hge: join_raw(hge); break;
 #endif
 		case TYPE_int:
 		{	int *v, *w;
@@ -686,12 +686,12 @@ MOSsubjoin_literal(Client cntxt,  MOStask task)
 	case TYPE_str:
 		// beware we should look at the value
 		switch(task->bsrc->twidth){
-		case 1: join_literal(bte); break ;
-		case 2: join_literal(sht); break ;
-		case 4: join_literal(int); break ;
-		case 8: join_literal(lng); break ;
+		case 1: join_raw(bte); break ;
+		case 2: join_raw(sht); break ;
+		case 4: join_raw(int); break ;
+		case 8: join_raw(lng); break ;
 		}
 	}
-	MOSskip_literal(cntxt,task);
+	MOSskip_raw(cntxt,task);
 	return MAL_SUCCEED;
 }

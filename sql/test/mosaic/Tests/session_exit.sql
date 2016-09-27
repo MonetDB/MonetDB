@@ -3,9 +3,9 @@ set optimizer='sequential_pipe';
 explain select * from tmp3;
 select * from tmp3;
 
-alter table tmp3 alter column i set storage 'literal';
-alter table tmp3 alter column b set storage 'literal';
-alter table tmp3 alter column f set storage 'literal';
+alter table tmp3 alter column i set storage 'raw';
+alter table tmp3 alter column b set storage 'raw';
+alter table tmp3 alter column f set storage 'raw';
 explain select * from tmp3;
 select * from tmp3;
 select sum(i) from tmp3;

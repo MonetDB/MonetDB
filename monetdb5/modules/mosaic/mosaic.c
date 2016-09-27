@@ -26,7 +26,7 @@
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_hdr.h"
-#include "mosaic_literal.h"
+#include "mosaic_raw.h"
 #include "mosaic_runlength.h"
 #include "mosaic_dictionary.h"
 #include "mosaic_delta.h"
@@ -35,7 +35,7 @@
 #include "mosaic_prefix.h"
 #include "mosaic_calendar.h"
 
-char *MOSfiltername[]={"literal","runlength","dictionary","delta","linear","frame","prefix","calendar","EOL"};
+char *MOSfiltername[]={"raw","runlength","dictionary","delta","linear","frame","prefix","calendar","EOL"};
 BUN MOSblocklimit = 100000;
 
 str MOScompressInternal(Client cntxt, bat *bid, MOStask task, int debug);
@@ -125,9 +125,9 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 
 	while(task->start< task->stop){
 		switch(MOSgetTag(task->blk)){
-		case MOSAIC_NONE:
-			MOSlayout_literal(cntxt,task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_literal(cntxt,task);
+		case MOSAIC_RAW:
+			MOSlayout_raw(cntxt,task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_raw(cntxt,task);
 			break;
 		case MOSAIC_RLE:
 			MOSlayout_runlength(cntxt,task,btech,bcount,binput,boutput,bproperties);
@@ -176,9 +176,9 @@ MOSdumpInternal(Client cntxt, BAT *b){
 	MOSinitializeScan(cntxt,task,0,task->hdr->top);
 	while(task->start< task->stop){
 		switch(MOSgetTag(task->blk)){
-		case MOSAIC_NONE:
-			MOSdump_literal(cntxt,task);
-			MOSadvance_literal(cntxt,task);
+		case MOSAIC_RAW:
+			MOSdump_raw(cntxt,task);
+			MOSadvance_raw(cntxt,task);
 			break;
 		case MOSAIC_RLE:
 			MOSdump_runlength(cntxt,task);
@@ -248,7 +248,7 @@ MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static int
 MOSoptimizerCost(Client cntxt, MOStask task, int typewidth)
 {
-	int cand = MOSAIC_NONE;
+	int cand = MOSAIC_RAW;
 	float ratio = 1.0, fac = 1.0;
 
 	// select candidate amongst those
@@ -372,7 +372,7 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, int debug)
 	if( bsrc->tmosaic == NULL && BATmosaic(bsrc,  BATcapacity(bsrc) + (MosaicHdrSize + 2 * MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL){
 		// create the mosaic heap if not available.
 		// The final size should be smaller then the original
-		// It may, however, be the case that we mix a lot of LITERAL and, say, DELTA small blocks
+		// It may, however, be the case that we mix a lot of RAW and, say, DELTA small blocks
 		// Then we total size may go beyond the original size and we should terminate the process.
 		// This should be detected before we compress a block, in the estimate functions
 		// or when we extend the non-compressed collector block
@@ -428,21 +428,21 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, int debug)
 		case MOSAIC_LINEAR:
 		case MOSAIC_PREFIX:
 			// close the non-compressed part
-			if( MOSgetTag(task->blk) == MOSAIC_NONE && MOSgetCnt(task->blk) ){
+			if( MOSgetTag(task->blk) == MOSAIC_RAW && MOSgetCnt(task->blk) ){
 				task->start -= MOSgetCnt(task->blk);
 				MOSupdateHeader(cntxt,task);
-				MOSadvance_literal(cntxt,task);
+				MOSadvance_raw(cntxt,task);
 				// always start with an EOL block
 				task->dst = MOScodevector(task);
 				MOSsetTag(task->blk,MOSAIC_EOL);
 				MOSsetCnt(task->blk,0);
 			}
 			break;
-		case MOSAIC_NONE:
+		case MOSAIC_RAW:
 			if ( MOSgetCnt(task->blk) == MOSlimit()){
 				task->start -= MOSgetCnt(task->blk);
 				MOSupdateHeader(cntxt,task);
-				MOSadvance_literal(cntxt,task);
+				MOSadvance_raw(cntxt,task);
 				// always start with an EOL block
 				task->dst = MOScodevector(task);
 				MOSsetTag(task->blk,MOSAIC_EOL);
@@ -495,13 +495,13 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, int debug)
 			break;
 		default :
 			// continue to use the last block header.
-			MOScompress_literal(cntxt,task);
+			MOScompress_raw(cntxt,task);
 			task->start++;
 		}
 	}
-	if( MOSgetTag(task->blk) == MOSAIC_NONE && MOSgetCnt(task->blk)){
+	if( MOSgetTag(task->blk) == MOSAIC_RAW && MOSgetCnt(task->blk)){
 		MOSupdateHeader(cntxt,task);
-		MOSadvance_literal(cntxt,task);
+		MOSadvance_raw(cntxt,task);
 		task->dst = MOScodevector(task);
 		MOSsetTag(task->blk,MOSAIC_EOL);
 	} else
@@ -623,9 +623,9 @@ MOSdecompressInternal(Client cntxt, bat *bid)
 
 	while(task->blk){
 		switch(MOSgetTag(task->blk)){
-		case MOSAIC_NONE:
-			MOSdecompress_literal(cntxt,task);
-			MOSskip_literal(cntxt,task);
+		case MOSAIC_RAW:
+			MOSdecompress_raw(cntxt,task);
+			MOSskip_raw(cntxt,task);
 			break;
 		case MOSAIC_RLE:
 			MOSdecompress_runlength(cntxt,task);
@@ -890,9 +890,9 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case MOSAIC_CALENDAR:
 			MOSsubselect_calendar(cntxt,task,low,hgh,li,hi,anti);
 			break;
-		case MOSAIC_NONE:
+		case MOSAIC_RAW:
 		default:
-			MOSsubselect_literal(cntxt,task,low,hgh,li,hi,anti);
+			MOSsubselect_raw(cntxt,task,low,hgh,li,hi,anti);
 		}
 	}
 	// derive the filling
@@ -1019,9 +1019,9 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case MOSAIC_CALENDAR:
 			MOSthetasubselect_calendar(cntxt,task,low,*oper);
 			break;
-		case MOSAIC_NONE:
+		case MOSAIC_RAW:
 		default:
-			MOSthetasubselect_literal(cntxt,task,low,*oper);
+			MOSthetasubselect_raw(cntxt,task,low,*oper);
 		}
 	}
 	// derive the filling
@@ -1150,8 +1150,8 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case MOSAIC_CALENDAR:
 			MOSprojection_calendar(cntxt, task);
 			break;
-		case MOSAIC_NONE:
-			MOSprojection_literal(cntxt, task);
+		case MOSAIC_RAW:
+			MOSprojection_raw(cntxt, task);
 			break;
 		default:
 			assert(0);
@@ -1285,8 +1285,8 @@ MOSsubjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case MOSAIC_CALENDAR:
 			MOSsubjoin_calendar(cntxt, task);
 			break;
-		case MOSAIC_NONE:
-			MOSsubjoin_literal(cntxt, task);
+		case MOSAIC_RAW:
+			MOSsubjoin_raw(cntxt, task);
 			break;
 		default:
 			assert(0);

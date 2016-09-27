@@ -8,7 +8,7 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-mosaic.compress(b,"literal");
+mosaic.compress(b,"raw");
 
 s:= algebra.thetasubselect(base,50,"<");
 io.print(s);

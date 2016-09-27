@@ -6,7 +6,7 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(b);
-mosaic.compress(b,"literal");
+mosaic.compress(b,"raw");
 #mosaic.dump(b);
 mosaic.decompress(b);
 io.print(b);
@@ -18,6 +18,6 @@ bat.append(s,"big");
 bat.append(s,"brown");
 bat.append(s,"fox");
 
-mosaic.compress(s,"literal");
+mosaic.compress(s,"raw");
 mosaic.decompress(s);
 io.print(s);

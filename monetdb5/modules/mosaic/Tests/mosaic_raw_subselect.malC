@@ -9,7 +9,7 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-mosaic.compress(b,"literal");
+mosaic.compress(b,"raw");
 #mosaic.dump(b);
 s:= algebra.subselect(base,0,50,false,false,false);
 io.print(s);
@@ -106,7 +106,7 @@ bat.append(bstr,"brown");
 bat.append(bstr,"fox");
 
 ystr:= algebra.copy(bstr);
-mosaic.compress(ystr,"literal");
+mosaic.compress(ystr,"raw");
 
 tstr:= algebra.subselect(bstr,"big","fox",true,true,false);
 io.print(tstr);

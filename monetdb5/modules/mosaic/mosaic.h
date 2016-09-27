@@ -39,7 +39,7 @@
 
 /* The compressor kinds currently hardwired */
 #define MOSAIC_METHODS	9
-#define MOSAIC_NONE     0		// no compression at all
+#define MOSAIC_RAW     0		// no compression at all
 #define MOSAIC_RLE      1		// use run-length encoding
 #define MOSAIC_DICT     2		// local dictionary encoding
 #define MOSAIC_DELTA	3		// use delta encoding

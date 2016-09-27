@@ -151,9 +151,9 @@ end user.s16_1;
 % bigint # type
 % 2 # length
 [ 66	]
-#alter table tmp3 alter column i set storage 'literal';
-#alter table tmp3 alter column b set storage 'literal';
-#alter table tmp3 alter column f set storage 'literal';
+#alter table tmp3 alter column i set storage 'raw';
+#alter table tmp3 alter column b set storage 'raw';
+#alter table tmp3 alter column f set storage 'raw';
 #select sum(i) from tmp3;
 % sys.L1 # table_name
 % L1 # name
