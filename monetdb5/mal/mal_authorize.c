@@ -773,14 +773,7 @@ AUTHverifyPassword(str *passwd)
 			  "password is not %d chars long, is it a hex "
 			  "representation of a %s password hash?",
 			  digestlength(MONETDB5_PASSWDHASH_TOKEN), MONETDB5_PASSWDHASH);
-	} else
-#endif
-	{
-		(void) passwd;
-		throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
-			  MONETDB5_PASSWDHASH);
 	}
-#if !defined(HAVE_EMBEDDED) && (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	len++; // required in case all the checks above are false
 	while (*p != '\0') {
 		if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9')))
@@ -791,5 +784,9 @@ AUTHverifyPassword(str *passwd)
 	}
 
 	return(MAL_SUCCEED);
+#else
+	(void) passwd;
+	throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
+		  MONETDB5_PASSWDHASH);
 #endif
 }
