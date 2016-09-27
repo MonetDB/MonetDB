@@ -41,7 +41,7 @@ mcrypt_getHashAlgorithms(void)
 	 * desire.
 	 */
 #if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA1_UPDATE) || defined(HAVE_MD5_UPDATE)
-	return strdup(
+	const char *algorithms =
 #ifdef HAVE_RIPEMD160_UPDATE
 		"RIPEMD160"
 #endif
@@ -63,7 +63,8 @@ mcrypt_getHashAlgorithms(void)
 #endif
 		"MD5"
 #endif
-		);
+		;
+	return strdup(algorithms);
 #else
 	fprintf(stderr, "There are no digest functions available.\n");
 	exit(1);
