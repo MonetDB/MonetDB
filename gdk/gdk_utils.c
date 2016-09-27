@@ -274,7 +274,11 @@ BATSIGinit(void)
 /* memory thresholds; these values some "sane" constants only, really
  * set in GDKinit() */
 #define MMAP_MINSIZE_PERSISTENT	((size_t) 1 << 18)
+#if SIZEOF_SIZE_T == 4
+#define MMAP_MINSIZE_TRANSIENT	((size_t) 1 << 20)
+#else
 #define MMAP_MINSIZE_TRANSIENT	((size_t) 1 << 32)
+#endif
 #define MMAP_PAGESIZE		((size_t) 1 << 16)
 size_t GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;
 size_t GDK_mmap_minsize_transient = MMAP_MINSIZE_TRANSIENT;
