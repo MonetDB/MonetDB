@@ -2591,8 +2591,13 @@ AC_CHECK_FUNCS([\
 LIBS="$save_LIBS"
 
 AC_MSG_CHECKING([__builtin_add_overflow])
+# Test for __builtin_mul_overflow with __int128 arguments, since at
+# the time of writing, there is a bug in Clang that "forgets" to link
+# to the runtime that contains the required function __muloti4.  Also
+# see https://llvm.org/bugs/show_bug.cgi?id=16404 which is a similar
+# issue.
 AC_LINK_IFELSE(
-	[AC_LANG_PROGRAM([[]], [[int a, b, c; __builtin_add_overflow(a, b, &c);]])],
+	[AC_LANG_PROGRAM([[]], [[__int128 a, b, c; __builtin_mul_overflow(a, b, &c);]])],
 	[AC_DEFINE([HAVE___BUILTIN_ADD_OVERFLOW], 1,
 		[Define if you have the `__builtin_{add,sub,mul}_overflow' functions.])
 	 AC_MSG_RESULT(yes)],
