@@ -26,6 +26,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifndef HAVE_EMBEDDED
 #ifdef HAVE_OPENSSL
 #include <openssl/md5.h>
 #include <openssl/sha.h>
@@ -34,6 +35,7 @@
 #ifdef HAVE_COMMONCRYPTO
 #define COMMON_DIGEST_FOR_OPENSSL
 #include <CommonCrypto/CommonDigest.h>
+#endif
 #endif
 #endif
 
@@ -762,7 +764,7 @@ AUTHcypherValue(str *ret, str *value)
 static str
 AUTHverifyPassword(str *passwd) 
 {
-#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
+#if !defined(HAVE_EMBEDDED) && (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	char *p = *passwd;
 	size_t len = strlen(p);
 
@@ -778,7 +780,7 @@ AUTHverifyPassword(str *passwd)
 		throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
 			  MONETDB5_PASSWDHASH);
 	}
-#if defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO)
+#if !defined(HAVE_EMBEDDED) && (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	len++; // required in case all the checks above are false
 	while (*p != '\0') {
 		if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9')))
