@@ -1,0 +1,41 @@
+stdout of test 'clients-hashes` in directory 'monetdb5/modules/mal` itself:
+
+
+# 14:07:01 >  
+# 14:07:01 >   mserver5 "--config=/export/scratch/stripe/fabian/monetdb/current/program-i86pc/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/lib:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/five/xquerylog"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37637 --set xrpc_port=44162 --set monet_prompt= --trace  --dbname=mTests_src_modules_mal  clients-hashes.mal
+# 14:07:01 >  
+
+# MonetDB server v5.11.0, based on kernel v1.29.0
+# Serving database 'mTests_src_modules_mal', using 1 thread
+# Compiled for x86_64-pc-solaris2.11/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:40 >  
+# 09:46:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:40 >  
+
+[ "4fe67471e97aae17f10bf200ccadc4e4" ]
+[ "4751fc28d9a64a043865922548ee7d623743bcad" ]
+[ "clients.ripemd160sum not available"	]
+[ "ba11e4ad9ac60f775cf1f133a81faf32241d9c136e4d3b193bdbbf1e" ]
+[ "38e38a32871128f6c9b84c72c4b6c473e53ab084bffb37c094310045716a8247" ]
+[ "d494cbc91a0d3315210af1c2d14e3758ba7d6716393a234cf9f29d8de077110c9009dd840f9c93a5d350b739253f6bd9" ]
+[ "a73f1d86383446438ac64f56e15ada38b41fbb18f029d2181723aeb2acac6a831f60e5fdbd64ac2c8c70e035dd44cbbe3b45565ef2d58feb2821a2078c7fad35" ]
+
+# 14:07:02 >  
+# 14:07:02 >  Done.
+# 14:07:02 >  
+
