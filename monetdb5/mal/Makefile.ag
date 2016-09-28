@@ -9,7 +9,8 @@ INCLUDES = ../../common/options \
 		   ../../common/utils \
 		   ../../clients/mapilib \
 		   ../../gdk \
-		   ../optimizer
+		   ../optimizer \
+		   $(openssl_CFLAGS)
 MTSAFE
 
 lib_mal = {
