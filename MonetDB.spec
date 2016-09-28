@@ -1012,6 +1012,13 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Sep 28 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.11-20160928
+- Rebuilt.
+
+* Mon Sep 26 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.11-20160928
+- buildtools: We now use the CommonCrypto library instead of the OpenSSL library
+  on Darwin.
+
 * Mon Sep 19 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.9-20160919
 - Rebuilt.
 - BZ#3939: Assert failure on concurrent queries when querying sys.queue
