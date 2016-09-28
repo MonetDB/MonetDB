@@ -598,8 +598,10 @@ void
 close_stream(stream *s)
 {
 	if (s) {
-		s->close(s);
-		s->destroy(s);
+		if (s->close)
+			s->close(s);
+		if (s->destroy)
+			s->destroy(s);
 	}
 }
 
