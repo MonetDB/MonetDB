@@ -4062,24 +4062,24 @@ static char* mapi_convert_clob(struct MapiColumn *col) {
 	return col->buffer_ptr;
 }
 
-#define mapi_string_conversion_function(type, gdktpe, sqltpe)																	\
+#define mapi_string_conversion_function(type, gdktpe, sqltpe,EXTRANULLCHECK)																	\
 static char* mapi_convert_##sqltpe(struct MapiColumn *col) {																	\
-	if (*((type*)col->buffer_ptr) == *((type*)col->null_value))	return NULL;													\
+	if (*((type*)col->buffer_ptr) == *((type*)col->null_value) EXTRANULLCHECK)	return NULL;													\
 	if (conversion_##gdktpe##_to_string(col->write_buf, COLBUFSIZ, (type*) col->buffer_ptr, *((type*)col->null_value)) < 0) {   \
 		return NULL;																											\
 	}																															\
 	return (char*) col->write_buf;																								\
 }
 
-mapi_string_conversion_function(int,int,int);
-mapi_string_conversion_function(lng,lng,bigint);
-mapi_string_conversion_function(short,sht,smallint);
-mapi_string_conversion_function(signed char,bte,tinyint);
-mapi_string_conversion_function(float,flt,real);
-mapi_string_conversion_function(double,dbl,double);
-mapi_string_conversion_function(signed char,bit,boolean);
-mapi_string_conversion_function(hge,hge,hugeint);
-mapi_string_conversion_function(int,date,date);
+mapi_string_conversion_function(int,int,int,);
+mapi_string_conversion_function(lng,lng,bigint,);
+mapi_string_conversion_function(short,sht,smallint,);
+mapi_string_conversion_function(signed char,bte,tinyint,);
+mapi_string_conversion_function(float,flt,real, || *((float*)col->buffer_ptr) != *((float*)col->buffer_ptr));
+mapi_string_conversion_function(double,dbl,double, || *((double*)col->buffer_ptr) != *((double*)col->buffer_ptr));
+mapi_string_conversion_function(signed char,bit,boolean,);
+mapi_string_conversion_function(hge,hge,hugeint,);
+mapi_string_conversion_function(int,date,date,);
 
 static char* mapi_convert_decimal(struct MapiColumn *col) {
 	if (conversion_decimal_to_string(col->buffer_ptr, col->write_buf, COLBUFSIZ, col->scale, col->typelen, col->null_value) < 0) {
