@@ -128,8 +128,8 @@ doChallenge(void *data)
 	char challenge[13];
 	char *algos;
 
-	stream *fdin = block_stream(((struct challengedata *) data)->in);
-	stream *fdout = block_stream(((struct challengedata *) data)->out);
+	stream *fdin = ((struct challengedata *) data)->in;
+	stream *fdout = ((struct challengedata *) data)->out;
 	bstream *bs;
 	ssize_t len = 0;
 	protocol_version protocol = prot9;
