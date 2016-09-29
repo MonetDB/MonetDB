@@ -33,7 +33,7 @@ stderr of test 'copy_decimal.SF-1582957` in directory 'sql/test/BugTracker` itse
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 1 RECORDS INTO LINEITEM FROM stdin USING DELIMITERS '|','|\n';
         1|156|4|1|17.000|17954.55|0.04|0.02|N|O|1996-03-13|1996-02-12|1996-03-22|DELIVER IN PERSON|TRUCK|blithely regular ideas caj|
-ERROR = !Failed to import table line 1 field 5 'decimal(15,2)' expected in '17.000'
+ERROR = !Failed to import table line 1 field l_quantity 'decimal(15,2)' expected in '17.000'
 
 
 # 21:06:21 >  
