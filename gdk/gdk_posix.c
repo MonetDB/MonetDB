@@ -557,7 +557,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #else
 				p = MAP_FAILED;
 				if (path == NULL ||
-				    *new_size <= GDK_mmap_minsize) {
+				    *new_size <= GDK_mmap_minsize_persistent) {
 					/* size not too big yet or
 					 * anonymous, try to make new
 					 * anonymous mmap and copy

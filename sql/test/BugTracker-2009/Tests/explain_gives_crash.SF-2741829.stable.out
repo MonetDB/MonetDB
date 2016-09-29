@@ -31,8 +31,8 @@ function user.s8_1():void;
 "    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
 "    sql.catalog(29,""sys"",nil,0);"
     X_19 := bat.new(nil:int);
-"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
-"    X_25 := algebra.projection(X_22,X_19);"
+"    C_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
+"    X_25 := algebra.projection(C_22,X_19);"
 "    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
     X_29 := aggr.count(r2_27);
     X_30:lng := aggr.sum(r2_27);
@@ -47,9 +47,8 @@ end user.s8_1;
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 7 time=8 usec 
 #evaluate             actions= 0 time=3 usec 
-#emptycolumn          actions= 1 time=16 usec 
+#emptybind            actions= 5 time=23 usec 
 #aliases              actions= 1 time=6 usec 
-#mergetable           actions= 0 time=23 usec 
 #deadcode             actions= 5 time=8 usec 
 #aliases              actions= 0 time=3 usec 
 #constants            actions= 3 time=4 usec 
@@ -58,7 +57,6 @@ end user.s8_1;
 #reorder              actions= 1 time=16 usec 
 #deadcode             actions= 0 time=4 usec 
 #reduce               actions=38 time=20 usec 
-#matpack              actions= 0 time=2 usec 
 #multiplex            actions= 0 time=2 usec 
 #profiler             actions= 1 time=0 usec 
 #candidates           actions= 1 time=0 usec 
@@ -68,8 +66,8 @@ function user.s10_1():void;
 "    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
 "    sql.catalog(29,""sys"",nil,0);"
     X_19 := bat.new(nil:int);
-"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
-"    X_25 := algebra.projection(X_22,X_19);"
+"    C_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
+"    X_25 := algebra.projection(C_22,X_19);"
 "    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
     X_29 := aggr.count(r2_27);
     X_30:lng := aggr.sum(r2_27);
@@ -84,9 +82,8 @@ end user.s10_1;
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 7 time=7 usec 
 #evaluate             actions= 0 time=3 usec 
-#emptycolumn          actions= 1 time=11 usec 
+#emptybind            actions= 5 time=14 usec 
 #aliases              actions= 1 time=6 usec 
-#mergetable           actions= 0 time=23 usec 
 #deadcode             actions= 5 time=9 usec 
 #aliases              actions= 0 time=4 usec 
 #constants            actions= 3 time=4 usec 
@@ -95,7 +92,6 @@ end user.s10_1;
 #reorder              actions= 1 time=15 usec 
 #deadcode             actions= 0 time=4 usec 
 #reduce               actions=38 time=20 usec 
-#matpack              actions= 0 time=2 usec 
 #multiplex            actions= 0 time=2 usec 
 #profiler             actions= 1 time=1 usec 
 #candidates           actions= 1 time=1 usec 
@@ -107,8 +103,8 @@ function user.s18_1():void;
 "    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
 "    sql.catalog(29,""sys"",nil,0);"
     X_19 := bat.new(nil:int);
-"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
-"    X_25 := algebra.projection(X_22,X_19);"
+"    C_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
+"    X_25 := algebra.projection(C_22,X_19);"
 "    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
     X_29 := aggr.count(r2_27);
     X_30:lng := aggr.sum(r2_27);
@@ -123,9 +119,8 @@ end user.s18_1;
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 7 time=7 usec 
 #evaluate             actions= 0 time=3 usec 
-#emptycolumn          actions= 1 time=11 usec 
+#emptybind            actions= 5 time=13 usec 
 #aliases              actions= 1 time=5 usec 
-#mergetable           actions= 0 time=23 usec 
 #deadcode             actions= 5 time=8 usec 
 #aliases              actions= 0 time=4 usec 
 #constants            actions= 3 time=4 usec 
@@ -134,7 +129,6 @@ end user.s18_1;
 #reorder              actions= 1 time=15 usec 
 #deadcode             actions= 0 time=4 usec 
 #reduce               actions=38 time=20 usec 
-#matpack              actions= 0 time=2 usec 
 #multiplex            actions= 0 time=2 usec 
 #profiler             actions= 1 time=1 usec 
 #candidates           actions= 1 time=0 usec 

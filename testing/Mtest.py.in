@@ -1200,9 +1200,9 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     os.environ['TSTTRGDIR'] = TSTTRGDIR
     os.environ['RELSRCDIR'] = env['RELSRCDIR']
     os.environ['PYTHON2']   = '@QXPYTHON2@'
-    os.environ['PYTHON2PATH'] = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+    os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
     os.environ['PYTHON3']   = '@QXPYTHON3@'
-    os.environ['PYTHON3PATH'] = _configure(os.path.join('@QXprefix@', '@QXPYTHON3_LIBDIR@'))
+    os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON3_LIBDIR@'))
     if os.name == 'nt':
         os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python2'))
         os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python3'))
@@ -3725,7 +3725,7 @@ def main(argv) :
             if not os.path.exists(rdir):
                 os.makedirs(rdir)
     if CheckExec('php'):
-        proc = process.Popen(['php', '-r', "require 'monetdb/php_monetdb.php';"],
+        proc = process.Popen(['php', '-d', 'include_path=${PHP_INCPATH}', '-r', "require 'monetdb/php_monetdb.php';"],
                              stdout = process.PIPE, stderr = process.PIPE,
                              universal_newlines = True)
         php_out, php_err = proc.communicate()

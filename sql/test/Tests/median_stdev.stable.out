@@ -80,8 +80,8 @@ Ready.
 #    GROUP BY GroupID
 #) G
 #ON R.GroupID = G.GroupID AND R.rowNo BETWEEN N/2 AND N/2+N%2
-#GROUP BY R.groupID;
-% sys.r,	.L3 # table_name
+#GROUP BY R.groupID ORDER by R.groupID;
+% sys.r,	sys.L3 # table_name
 % groupid,	medianvalue # name
 % int,	double # type
 % 1,	24 # length

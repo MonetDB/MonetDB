@@ -19,7 +19,4 @@ char *mcrypt_SHA512Sum(const char *string, size_t len);
 char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
 char *mcrypt_BackendSum(const char *string, size_t len);
 char *mcrypt_hashPassword(const char *algo, const char *password, const char *challenge);
-#ifdef HAVE_EMBEDDED
-char* mcrypt_sum_fail(const char *string, size_t len);
-#endif
 #endif

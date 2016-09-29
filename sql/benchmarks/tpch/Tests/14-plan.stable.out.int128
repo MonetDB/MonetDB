@@ -53,7 +53,7 @@ project (
 | | | ) [ lineitem.l_partkey NOT NULL = part.p_partkey NOT NULL HASHCOL  ]
 | | ) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, part.p_type NOT NULL, sys.like(part.p_type NOT NULL, char "PROMO%") as L3.L3, sys.isnull(L3.L3) as L4.L4, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L5.L5, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L6.L6, sys.ifthenelse(L4.L4, boolean "false", L3.L3) as L7.L7, sys.sql_mul(L5.L5, L6.L6) as L10.L10, sys.ifthenelse(L7.L7, L10.L10, decimal(33,4)[tinyint "0"]) as L11.L11 ]
 | ) [  ] [ sys.sum no nil (L11.L11) as L1.L1, sys.sum no nil (L10.L10) as L2.L2 ]
-) [ sys.sql_div(decimal(39,9)[sys.sql_mul(decimal(4,1) "1000", L1)], L2) as L2.promo_revenue ]
+) [ sys.sql_div(decimal(39,9)[sys.sql_mul(L1, decimal(4,1) "1000")], L2) as L2.promo_revenue ]
 
 # 22:46:32 >  
 # 22:46:32 >  "Done."

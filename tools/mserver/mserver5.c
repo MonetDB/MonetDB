@@ -502,12 +502,8 @@ main(int argc, char **av)
 		fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
 		exit(1);
 	}
-	if (dbextra) {
-		BBPaddfarm(dbpath, 1 << PERSISTENT);
-		BBPaddfarm(dbextra, 1 << TRANSIENT);
-	} else {
-		BBPaddfarm(dbpath, (1 << PERSISTENT) | (1 << TRANSIENT));
-	}
+	BBPaddfarm(dbpath, 1 << PERSISTENT);
+	BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT);
 	GDKfree(dbpath);
 	if (monet_init(set, setlen) == 0) {
 		mo_free_options(set, setlen);
