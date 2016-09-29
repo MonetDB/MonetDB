@@ -4064,6 +4064,7 @@ static char* mapi_convert_clob(struct MapiColumn *col) {
 
 #define mapi_string_conversion_function(type, gdktpe, sqltpe)																	\
 static char* mapi_convert_##sqltpe(struct MapiColumn *col) {																	\
+	if (*((type*)col->buffer_ptr) == *((type*)col->null_value))	return NULL;													\
 	if (conversion_##gdktpe##_to_string(col->write_buf, COLBUFSIZ, (type*) col->buffer_ptr, *((type*)col->null_value)) < 0) {   \
 		return NULL;																											\
 	}																															\
@@ -4088,6 +4089,7 @@ static char* mapi_convert_decimal(struct MapiColumn *col) {
 }
 
 static char* mapi_convert_time(struct MapiColumn *col) {
+	if (*((int*) col->buffer_ptr) == *((int*)col->null_value)) return NULL;
 	if (conversion_time_to_string(col->write_buf, COLBUFSIZ, (int*) col->buffer_ptr, *((int*)col->null_value), 0) < 0) {
 		return NULL;
 	}
@@ -4095,6 +4097,7 @@ static char* mapi_convert_time(struct MapiColumn *col) {
 }
 
 static char* mapi_convert_timestamp(struct MapiColumn *col) {
+	if (*((lng*) col->buffer_ptr) == *((lng*)col->null_value)) return NULL;
 	if (conversion_epoch_to_string(col->write_buf, COLBUFSIZ, (lng*) col->buffer_ptr, *((lng*)col->null_value), 0) < 0) {
 		return NULL;
 	}

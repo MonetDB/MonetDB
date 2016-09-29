@@ -33,7 +33,7 @@ typedef void *ptr;
 #endif
 #endif
 
-#define NULL_STRING "NULL"
+#define NULL_STRING "nil"
 
 int
 conversion_bit_to_string(char *dst, int len, const signed char *src, signed char null_value)
@@ -139,7 +139,7 @@ conversion_hge_to_string(char *dst, int len, const hge *src, hge null_value)
 		int l;							\
 		if (buflen < TYPESTRLEN) return -1; \
 		if (v == *((TYPE*)null_value)) {					\
-			strcpy(buffer, NULL_STRING);				\
+			strcpy(buffer, "NULL");				\
 			return 4;					\
 		}							\
 		if (v<0)						\
