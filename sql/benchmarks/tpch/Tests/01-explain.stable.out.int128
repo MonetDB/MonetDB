@@ -50,139 +50,133 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 607 # length
-function user.s4_1():void;
-    X_223:void := querylog.define("explain select\n l_returnflag,\n l_linestatus,\n sum(l_quantity) as sum_qty,\n sum(l_extendedprice) as sum_base_price,\n sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,\n sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,\n avg(l_quantity) as avg_qty,\n avg(l_extendedprice) as avg_price,\n avg(l_discount) as avg_disc,\n count(*) as count_order\nfrom\n lineitem\nwhere\n l_shipdate <= date \\'1998-12-01\\' - interval \\'90\\' day (3)\ngroup by\n l_returnflag,\n l_linestatus\norder by\n l_returnflag,\n l_linestatus;","sequential_pipe",107);
-    X_134 := bat.new(nil:str);
-    X_141 := bat.append(X_134,"sys.lineitem");
-    X_151 := bat.append(X_141,"sys.lineitem");
-    X_157 := bat.append(X_151,"sys.L1");
-    X_167 := bat.append(X_157,"sys.L2");
-    X_174 := bat.append(X_167,"sys.L3");
-    X_182 := bat.append(X_174,"sys.L4");
-    X_190 := bat.append(X_182,"sys.L5");
-    X_200 := bat.append(X_190,"sys.L6");
-    X_207 := bat.append(X_200,"sys.L7");
-    X_214 := bat.append(X_207,"sys.L10");
-    X_136 := bat.new(nil:str);
-    X_143 := bat.append(X_136,"l_returnflag");
-    X_152 := bat.append(X_143,"l_linestatus");
-    X_159 := bat.append(X_152,"sum_qty");
-    X_169 := bat.append(X_159,"sum_base_price");
-    X_176 := bat.append(X_169,"sum_disc_price");
-    X_184 := bat.append(X_176,"sum_charge");
-    X_192 := bat.append(X_184,"avg_qty");
-    X_202 := bat.append(X_192,"avg_price");
-    X_209 := bat.append(X_202,"avg_disc");
-    X_216 := bat.append(X_209,"count_order");
-    X_137 := bat.new(nil:str);
-    X_145 := bat.append(X_137,"char");
-    X_154 := bat.append(X_145,"char");
-    X_161 := bat.append(X_154,"decimal");
-    X_171 := bat.append(X_161,"decimal");
-    X_178 := bat.append(X_171,"decimal");
-    X_186 := bat.append(X_178,"decimal");
-    X_194 := bat.append(X_186,"double");
-    X_204 := bat.append(X_194,"double");
-    X_211 := bat.append(X_204,"double");
-    X_218 := bat.append(X_211,"bigint");
-    X_138 := bat.new(nil:int);
-    X_147 := bat.append(X_138,1);
-    X_155 := bat.append(X_147,1);
-    X_163 := bat.append(X_155,39);
-    X_172 := bat.append(X_163,39);
-    X_179 := bat.append(X_172,39);
-    X_187 := bat.append(X_179,39);
-    X_196 := bat.append(X_187,53);
-    X_205 := bat.append(X_196,53);
-    X_212 := bat.append(X_205,53);
-    X_220 := bat.append(X_212,64);
-    X_140 := bat.new(nil:int);
-    X_149 := bat.append(X_140,0);
-    X_156 := bat.append(X_149,0);
-    X_165 := bat.append(X_156,2);
-    X_173 := bat.append(X_165,2);
-    X_180 := bat.append(X_173,4);
-    X_188 := bat.append(X_180,6);
-    X_198 := bat.append(X_188,0);
-    X_206 := bat.append(X_198,0);
-    X_213 := bat.append(X_206,0);
-    X_222 := bat.append(X_213,0);
-    X_0 := sql.mvc();
-    X_4:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",0);
-    C_1:bat[:oid] := sql.tid(X_0,"sys","lineitem");
-    X_16:date := mtime.date_sub_msec_interval("1998-12-01",7776000000);
-    C_17 := algebra.thetasubselect(X_4,C_1,X_16,"<=");
-    X_19:bat[:str] := sql.bind(X_0,"sys","lineitem","l_linestatus",0);
-    X_26 := algebra.projection(C_17,X_19);
-    X_27:bat[:str] := sql.bind(X_0,"sys","lineitem","l_returnflag",0);
-    X_34 := algebra.projection(C_17,X_27);
-    (X_35,r1_41,r2_41) := group.subgroup(X_34);
-    (X_38,r1_44,r2_44) := group.subgroupdone(X_26,X_35);
-    X_41 := algebra.projection(r1_44,X_26);
-    X_42 := algebra.projection(r1_44,X_34);
-    X_53:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_quantity",0);
-    X_60 := algebra.projection(C_17,X_53);
-    X_61:bat[:hge] := aggr.subsum(X_60,X_38,r1_44,true,true);
-    X_65:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",0);
-    X_72 := algebra.projection(C_17,X_65);
-    X_73:bat[:hge] := aggr.subsum(X_72,X_38,r1_44,true,true);
-    X_83:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",0);
-    X_90 := algebra.projection(C_17,X_83);
-    X_91:bat[:lng] := batcalc.-(100:lng,X_90);
-    X_93:bat[:hge] := batcalc.*(X_72,X_91);
-    X_95:bat[:hge] := aggr.subsum(X_93,X_38,r1_44,true,true);
-    X_105:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_tax",0);
-    X_112 := algebra.projection(C_17,X_105);
-    X_113:bat[:lng] := batcalc.+(100:lng,X_112);
-    X_116:bat[:hge] := batcalc.*(X_93,X_113);
-    X_117:bat[:hge] := aggr.subsum(X_116,X_38,r1_44,true,true);
-    X_119:bat[:dbl] := batcalc.dbl(2,X_60);
-    X_122:bat[:dbl] := aggr.subavg(X_119,X_38,r1_44,true,true);
-    X_124:bat[:dbl] := batcalc.dbl(2,X_72);
-    X_125:bat[:dbl] := aggr.subavg(X_124,X_38,r1_44,true,true);
-    X_127:bat[:dbl] := batcalc.dbl(2,X_90);
-    X_128:bat[:dbl] := aggr.subavg(X_127,X_38,r1_44,true,true);
-    X_130:bat[:lng] := aggr.subcount(X_38,X_38,r1_44,false);
-    (X_43,r1_49,r2_49) := algebra.subsort(X_42,false,false);
-    (X_48,r1_54,r2_54) := algebra.subsort(X_41,r1_49,r2_49,false,false);
-    X_51 := algebra.projection(r1_54,X_42);
-    X_52 := algebra.projection(r1_54,X_41);
-    X_64 := algebra.projection(r1_54,X_61);
-    X_74 := algebra.projection(r1_54,X_73);
-    X_98 := algebra.projection(r1_54,X_95);
-    X_118 := algebra.projection(r1_54,X_117);
-    X_123 := algebra.projection(r1_54,X_122);
-    X_126 := algebra.projection(r1_54,X_125);
-    X_129 := algebra.projection(r1_54,X_128);
-    X_132 := algebra.projection(r1_54,X_130);
-    sql.resultSet(X_214,X_216,X_218,X_220,X_222,X_51,X_52,X_64,X_74,X_98,X_118,X_123,X_126,X_129,X_132);
-end user.s4_1;
-#inline               actions= 0 time=10 usec 
-#candidates           actions= 1 time=105 usec 
-#remap                actions=11 time=702 usec 
-#costModel            actions= 1 time=230 usec 
-#coercions            actions= 0 time=109 usec 
-#evaluate             actions= 8 time=290 usec 
-#emptybind            actions= 0 time=8 usec 
-#pushselect           actions= 8 time=251 usec 
-#aliases              actions=22 time=251 usec 
-#mergetable           actions= 0 time=254 usec 
-#deadcode             actions=16 time=229 usec 
-#aliases              actions= 0 time=19 usec 
-#constants            actions=22 time=267 usec 
-#commonTerms          actions= 2 time=190 usec 
-#projectionpath       actions= 0 time=16 usec 
-#reorder              actions= 1 time=232 usec 
-#deadcode             actions= 2 time=174 usec 
-#reduce               actions=103 time=252 usec 
-#matpack              actions= 0 time=10 usec 
-#querylog             actions= 0 time=2 usec 
-#multiplex            actions= 0 time=7 usec 
-#generator            actions= 0 time=4 usec 
-#profiler             actions= 1 time=171 usec 
-#garbageCollector     actions= 1 time=181 usec 
-#total                actions= 1 time=4093 usec 
+% 109 # length
+function user.main():void;
+    X_690 := bat.new(nil:str);
+    X_697 := bat.append(X_690,"sys.lineitem");
+    X_707 := bat.append(X_697,"sys.lineitem");
+    X_713 := bat.append(X_707,"sys.L1");
+    X_723 := bat.append(X_713,"sys.L2");
+    X_730 := bat.append(X_723,"sys.L3");
+    X_738 := bat.append(X_730,"sys.L4");
+    X_746 := bat.append(X_738,"sys.L5");
+    X_756 := bat.append(X_746,"sys.L6");
+    X_763 := bat.append(X_756,"sys.L7");
+    X_770 := bat.append(X_763,"sys.L10");
+    X_692 := bat.new(nil:str);
+    X_699 := bat.append(X_692,"l_returnflag");
+    X_708 := bat.append(X_699,"l_linestatus");
+    X_715 := bat.append(X_708,"sum_qty");
+    X_725 := bat.append(X_715,"sum_base_price");
+    X_732 := bat.append(X_725,"sum_disc_price");
+    X_740 := bat.append(X_732,"sum_charge");
+    X_748 := bat.append(X_740,"avg_qty");
+    X_758 := bat.append(X_748,"avg_price");
+    X_765 := bat.append(X_758,"avg_disc");
+    X_772 := bat.append(X_765,"count_order");
+    X_693 := bat.new(nil:str);
+    X_701 := bat.append(X_693,"char");
+    X_710 := bat.append(X_701,"char");
+    X_717 := bat.append(X_710,"decimal");
+    X_727 := bat.append(X_717,"decimal");
+    X_734 := bat.append(X_727,"decimal");
+    X_742 := bat.append(X_734,"decimal");
+    X_750 := bat.append(X_742,"double");
+    X_760 := bat.append(X_750,"double");
+    X_767 := bat.append(X_760,"double");
+    X_774 := bat.append(X_767,"bigint");
+    X_694 := bat.new(nil:int);
+    X_703 := bat.append(X_694,1);
+    X_711 := bat.append(X_703,1);
+    X_719 := bat.append(X_711,39);
+    X_728 := bat.append(X_719,39);
+    X_735 := bat.append(X_728,39);
+    X_743 := bat.append(X_735,39);
+    X_752 := bat.append(X_743,53);
+    X_761 := bat.append(X_752,53);
+    X_768 := bat.append(X_761,53);
+    X_776 := bat.append(X_768,64);
+    X_696 := bat.new(nil:int);
+    X_705 := bat.append(X_696,0);
+    X_712 := bat.append(X_705,0);
+    X_721 := bat.append(X_712,2);
+    X_729 := bat.append(X_721,2);
+    X_736 := bat.append(X_729,4);
+    X_744 := bat.append(X_736,6);
+    X_754 := bat.append(X_744,0);
+    X_762 := bat.append(X_754,0);
+    X_769 := bat.append(X_762,0);
+    X_778 := bat.append(X_769,0);
+    X_556 := sql.mvc();
+    X_560:bat[:date] := sql.bind(X_556,"sys","lineitem","l_shipdate",0);
+    C_557:bat[:oid] := sql.tid(X_556,"sys","lineitem");
+    X_572:date := mtime.date_sub_msec_interval("1998-12-01",7776000000);
+    C_573 := algebra.thetasubselect(X_560,C_557,X_572,"<=");
+    X_575:bat[:str] := sql.bind(X_556,"sys","lineitem","l_linestatus",0);
+    X_582 := algebra.projection(C_573,X_575);
+    X_583:bat[:str] := sql.bind(X_556,"sys","lineitem","l_returnflag",0);
+    X_590 := algebra.projection(C_573,X_583);
+    (X_591,r1_44,r2_44) := group.subgroup(X_590);
+    (X_594,r1_47,r2_47) := group.subgroupdone(X_582,X_591);
+    X_597 := algebra.projection(r1_47,X_582);
+    X_598 := algebra.projection(r1_47,X_590);
+    X_609:bat[:lng] := sql.bind(X_556,"sys","lineitem","l_quantity",0);
+    X_616 := algebra.projection(C_573,X_609);
+    X_617:bat[:hge] := aggr.subsum(X_616,X_594,r1_47,true,true);
+    X_621:bat[:lng] := sql.bind(X_556,"sys","lineitem","l_extendedprice",0);
+    X_628 := algebra.projection(C_573,X_621);
+    X_629:bat[:hge] := aggr.subsum(X_628,X_594,r1_47,true,true);
+    X_639:bat[:lng] := sql.bind(X_556,"sys","lineitem","l_discount",0);
+    X_646 := algebra.projection(C_573,X_639);
+    X_647:bat[:lng] := batcalc.-(100:lng,X_646);
+    X_649:bat[:hge] := batcalc.*(X_628,X_647);
+    X_651:bat[:hge] := aggr.subsum(X_649,X_594,r1_47,true,true);
+    X_659:bat[:lng] := sql.bind(X_556,"sys","lineitem","l_tax",0);
+    X_666 := algebra.projection(C_573,X_659);
+    X_670:bat[:lng] := batcalc.+(X_666,100:lng);
+    X_673:bat[:hge] := batcalc.*(X_649,X_670);
+    X_674:bat[:hge] := aggr.subsum(X_673,X_594,r1_47,true,true);
+    X_676:bat[:dbl] := batcalc.dbl(2,X_616);
+    X_678:bat[:dbl] := aggr.subavg(X_676,X_594,r1_47,true,true);
+    X_680:bat[:dbl] := batcalc.dbl(2,X_628);
+    X_681:bat[:dbl] := aggr.subavg(X_680,X_594,r1_47,true,true);
+    X_683:bat[:dbl] := batcalc.dbl(2,X_646);
+    X_684:bat[:dbl] := aggr.subavg(X_683,X_594,r1_47,true,true);
+    X_686:bat[:lng] := aggr.subcount(X_594,X_594,r1_47,false);
+    (X_599,r1_52,r2_52) := algebra.subsort(X_598,false,false);
+    (X_604,r1_57,r2_57) := algebra.subsort(X_597,r1_52,r2_52,false,false);
+    X_607 := algebra.projection(r1_57,X_598);
+    X_608 := algebra.projection(r1_57,X_597);
+    X_620 := algebra.projection(r1_57,X_617);
+    X_630 := algebra.projection(r1_57,X_629);
+    X_654 := algebra.projection(r1_57,X_651);
+    X_675 := algebra.projection(r1_57,X_674);
+    X_679 := algebra.projection(r1_57,X_678);
+    X_682 := algebra.projection(r1_57,X_681);
+    X_685 := algebra.projection(r1_57,X_684);
+    X_688 := algebra.projection(r1_57,X_686);
+    sql.resultSet(X_770,X_772,X_774,X_776,X_778,X_607,X_608,X_620,X_630,X_654,X_675,X_679,X_682,X_685,X_688);
+end user.main;
+#inline               actions= 0 time=5 usec 
+#remap                actions=10 time=172 usec 
+#costmodel            actions= 1 time=5 usec 
+#coercion             actions= 0 time=54 usec 
+#evaluate             actions=13 time=44 usec 
+#emptybind            actions=21 time=46 usec 
+#aliases              actions=27 time=22 usec 
+#deadcode             actions=22 time=16 usec 
+#aliases              actions= 0 time=12 usec 
+#constants            actions=23 time=45 usec 
+#commonTerms          actions= 2 time=27 usec 
+#projectionpath       actions= 0 time=11 usec 
+#reorder              actions= 1 time=57 usec 
+#deadcode             actions= 2 time=12 usec 
+#reduce               actions=117 time=25 usec 
+#multiplex            actions= 0 time=4 usec 
+#profiler             actions= 1 time=5 usec 
+#candidates           actions= 1 time=2 usec 
+#garbagecollector     actions= 1 time=40 usec 
+#total                actions= 1 time=805 usec 
 
 # 22:53:25 >  
 # 22:53:25 >  "Done."

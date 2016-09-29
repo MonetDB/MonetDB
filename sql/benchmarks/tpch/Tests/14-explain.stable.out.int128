@@ -42,59 +42,53 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 407 # length
-function user.s4_1():void;
-    X_116:void := querylog.define("explain select\n 100.00 * sum(case\n when p_type like \\'PROMO%\\'\n then l_extendedprice * (1 - l_discount)\n else 0\n end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue\nfrom\n lineitem,\n part\nwhere\n l_partkey = p_partkey\n and l_shipdate >= date \\'1995-09-01\\'\n and l_shipdate < date \\'1995-09-01\\' + interval \\'1\\' month;","sequential_pipe",32);
-    X_0 := sql.mvc();
-    X_5:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",0);
-    C_2:bat[:oid] := sql.tid(X_0,"sys","lineitem");
-    X_18:date := mtime.addmonths("1995-09-01",1);
-    C_19 := algebra.subselect(X_5,C_2,"1995-09-01",X_18,true,false,false);
-    X_23:bat[:int] := sql.bind(X_0,"sys","lineitem","l_partkey",0);
-    X_30 := algebra.projection(C_19,X_23);
-    C_31:bat[:oid] := sql.tid(X_0,"sys","part");
-    X_33:bat[:int] := sql.bind(X_0,"sys","part","p_partkey",0);
-    X_39 := algebra.projection(C_31,X_33);
-    (X_40,r1_49) := algebra.subjoin(X_30,X_39,nil:BAT,nil:BAT,false,nil:lng);
-    X_45:bat[:str] := sql.bind(X_0,"sys","part","p_type",0);
-    X_52:bat[:str] := algebra.projectionpath(r1_49,C_31,X_45);
-    X_54:bat[:bit] := batalgebra.like(X_52,"PROMO%");
-    X_57:bat[:bit] := batcalc.isnil(X_54);
-    X_62:bat[:bit] := batcalc.ifthenelse(X_57,false,X_54);
-    X_64:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",0);
-    X_72:bat[:lng] := algebra.projectionpath(X_40,C_19,X_64);
-    X_80:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",0);
-    X_88:bat[:lng] := algebra.projectionpath(X_40,C_19,X_80);
-    X_89:bat[:lng] := batcalc.-(100:lng,X_88);
-    X_91:bat[:hge] := batcalc.*(X_72,X_89);
-    X_97:bat[:hge] := batcalc.ifthenelse(X_62,X_91,0:hge);
-    X_99:hge := aggr.sum(X_97);
-    X_100:hge := calc.*(1000,X_99);
-    X_101 := calc.hge(5,X_100,39,9);
-    X_109:hge := aggr.sum(X_91);
-    X_110:hge := calc./(X_101,X_109);
-    sql.resultSet(".L2","promo_revenue","decimal",39,5,10,X_110);
-end user.s4_1;
-#inline               actions= 0 time=6 usec 
-#candidates           actions= 1 time=62 usec 
-#remap                actions=11 time=423 usec 
-#costModel            actions= 1 time=117 usec 
-#coercions            actions= 1 time=208 usec 
-#evaluate             actions=12 time=163 usec 
-#emptybind            actions= 0 time=6 usec 
-#pushselect           actions= 5 time=134 usec 
-#aliases              actions=22 time=128 usec 
-#mergetable           actions= 0 time=131 usec 
-#deadcode             actions=14 time=118 usec 
-#aliases              actions= 0 time=8 usec 
-#constants            actions=18 time=130 usec 
-#commonTerms          actions= 3 time=86 usec 
-#projectionpath       actions= 3 time=79 usec 
-#reorder              actions= 1 time=98 usec 
-#deadcode             actions= 6 time=76 usec 
-#reduce               actions=103 time=105 usec 
-#matpack              actions= 0 time=6 usec 
-#querylog             actions= 0 time=1 usec 
+% 80 # length
+function user.main():void;
+    X_562 := sql.mvc();
+    X_566:bat[:date] := sql.bind(X_562,"sys","lineitem","l_shipdate",0);
+    C_563:bat[:oid] := sql.tid(X_562,"sys","lineitem");
+    X_578:date := mtime.addmonths("1995-09-01",1);
+    C_579 := algebra.subselect(X_566,C_563,"1995-09-01",X_578,true,false,false);
+    X_583:bat[:int] := sql.bind(X_562,"sys","lineitem","l_partkey",0);
+    X_590 := algebra.projection(C_579,X_583);
+    C_591:bat[:oid] := sql.tid(X_562,"sys","part");
+    X_593:bat[:int] := sql.bind(X_562,"sys","part","p_partkey",0);
+    X_599 := algebra.projection(C_591,X_593);
+    (X_600,r1_53) := algebra.subjoin(X_590,X_599,nil:BAT,nil:BAT,false,nil:lng);
+    X_605:bat[:str] := sql.bind(X_562,"sys","part","p_type",0);
+    X_612:bat[:str] := algebra.projectionpath(r1_53,C_591,X_605);
+    X_614:bat[:bit] := batalgebra.like(X_612,"PROMO%");
+    X_617:bat[:bit] := batcalc.isnil(X_614);
+    X_622:bat[:bit] := batcalc.ifthenelse(X_617,false,X_614);
+    X_624:bat[:lng] := sql.bind(X_562,"sys","lineitem","l_extendedprice",0);
+    X_632:bat[:lng] := algebra.projectionpath(X_600,C_579,X_624);
+    X_640:bat[:lng] := sql.bind(X_562,"sys","lineitem","l_discount",0);
+    X_648:bat[:lng] := algebra.projectionpath(X_600,C_579,X_640);
+    X_649:bat[:lng] := batcalc.-(100:lng,X_648);
+    X_651:bat[:hge] := batcalc.*(X_632,X_649);
+    X_657:bat[:hge] := batcalc.ifthenelse(X_622,X_651,0:hge);
+    X_659:hge := aggr.sum(X_657);
+    X_661:hge := calc.*(X_659,1000);
+    X_662 := calc.hge(5,X_661,39,9);
+    X_671:hge := aggr.sum(X_651);
+    X_672:hge := calc./(X_662,X_671);
+    sql.resultSet("sys.L2","promo_revenue","decimal",39,5,10,X_672);
+end user.main;
+#inline               actions= 0 time=4 usec 
+#remap                actions= 9 time=139 usec 
+#costmodel            actions= 1 time=3 usec 
+#coercion             actions= 1 time=63 usec 
+#evaluate             actions=19 time=49 usec 
+#emptybind            actions=18 time=41 usec 
+#aliases              actions=29 time=15 usec 
+#deadcode             actions=19 time=10 usec 
+#aliases              actions= 0 time=7 usec 
+#constants            actions=19 time=23 usec 
+#commonTerms          actions= 2 time=16 usec 
+#projectionpath       actions= 3 time=13 usec 
+#reorder              actions= 1 time=54 usec 
+#deadcode             actions= 5 time=10 usec 
+#reduce               actions=118 time=33 usec 
 #multiplex            actions= 0 time=3 usec 
 #generator            actions= 0 time=2 usec 
 #profiler             actions= 1 time=73 usec 

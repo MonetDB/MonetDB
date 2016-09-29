@@ -31,8 +31,8 @@ function user.s8_1():void;
 "    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
 "    sql.catalog(29,""sys"",nil,0);"
     X_19 := bat.new(nil:int);
-"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
-"    X_25 := algebra.projection(X_22,X_19);"
+"    C_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
+"    X_25 := algebra.projection(C_22,X_19);"
 "    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
     X_29 := aggr.count(r2_27);
     X_30:lng := aggr.sum(r2_27);
@@ -68,8 +68,8 @@ function user.s10_1():void;
 "    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
 "    sql.catalog(29,""sys"",nil,0);"
     X_19 := bat.new(nil:int);
-"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
-"    X_25 := algebra.projection(X_22,X_19);"
+"    C_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
+"    X_25 := algebra.projection(C_22,X_19);"
 "    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
     X_29 := aggr.count(r2_27);
     X_30:lng := aggr.sum(r2_27);
@@ -107,8 +107,8 @@ function user.s18_1():void;
 "    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
 "    sql.catalog(29,""sys"",nil,0);"
     X_19 := bat.new(nil:int);
-"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
-"    X_25 := algebra.projection(X_22,X_19);"
+"    C_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
+"    X_25 := algebra.projection(C_22,X_19);"
 "    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
     X_29 := aggr.count(r2_27);
     X_30:lng := aggr.sum(r2_27);

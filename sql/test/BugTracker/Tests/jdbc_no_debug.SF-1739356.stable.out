@@ -75,32 +75,29 @@ Operation successful
 |     X_38:lng := aggr.sum(X_37);                                                                  |
 |     sql.resultSet(".L3","L3","bigint",64,0,7,X_38);                                              |
 | end user.s4_1;                                                                                   |
-| #inline               actions= 0 time=1 usec                                                     |
-| #remap                actions= 0 time=2 usec                                                     |
-| #costmodel            actions= 1 time=1 usec                                                     |
-| #coercion             actions= 1 time=6 usec                                                     |
-| #evaluate             actions= 0 time=3 usec                                                     |
-| #emptybind            actions= 1 time=6 usec                                                     |
-| #pushselect           actions= 4 time=28 usec                                                    |
+| #inline               actions= 0 time=2 usec                                                     |
+| #remap                actions= 0 time=3 usec                                                     |
+| #costmodel            actions= 1 time=2 usec                                                     |
+| #coercion             actions= 1 time=17 usec                                                    |
+| #evaluate             actions= 0 time=4 usec                                                     |
+| #emptybind            actions= 0 time=7 usec                                                     |
+| #pushselect           actions= 4 time=29 usec                                                    |
 | #aliases              actions= 2 time=8 usec                                                     |
-| #mergetable           actions= 0 time=30 usec                                                    |
 | #deadcode             actions= 2 time=7 usec                                                     |
-| #aliases              actions= 0 time=6 usec                                                     |
-| #constants            actions= 2 time=6 usec                                                     |
-| #commonTerms          actions= 0 time=7 usec                                                     |
-| #projectionpath       actions= 0 time=3 usec                                                     |
-| #reorder              actions= 1 time=24 usec                                                    |
-| #deadcode             actions= 0 time=6 usec                                                     |
-| #reduce               actions=26 time=8 usec                                                     |
-| #matpack              actions= 0 time=3 usec                                                     |
+| #aliases              actions= 0 time=5 usec                                                     |
+| #constants            actions= 2 time=7 usec                                                     |
+| #commonTerms          actions= 0 time=6 usec                                                     |
+| #projectionpath       actions= 0 time=9 usec                                                     |
+| #reorder              actions= 1 time=26 usec                                                    |
+| #deadcode             actions= 0 time=5 usec                                                     |
+| #reduce               actions=26 time=9 usec                                                     |
 | #multiplex            actions= 0 time=2 usec                                                     |
-| #profiler             actions= 1 time=6 usec                                                     |
+| #profiler             actions= 1 time=5 usec                                                     |
 | #candidates           actions= 1 time=1 usec                                                     |
-| #garbagecollector     actions= 1 time=16 usec                                                    |
-| #total                actions= 1 time=283 usec                                                   |
+| #garbagecollector     actions= 1 time=15 usec                                                    |
+| #total                actions= 1 time=267 usec                                                   |
 +--------------------------------------------------------------------------------------------------+
-50 rows
-
+48 rows
 
 # 19:39:11 >  
 # 19:39:11 >  "Done."
