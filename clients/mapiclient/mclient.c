@@ -1031,11 +1031,40 @@ TESTrenderer(MapiHdl hdl)
 	char *sep;
 	int i;
 	int prot10 = mapi_is_protocol10(hdl);
-	int header_rendered = 0;
 
 	SQLqueryEcho(hdl);
+	if (prot10) {
+		fields = mapi_get_field_count(hdl);
+		// for protocol 10, we don't have any headers we can render
+		// so we generate fake MAPI headers for the testweb
+		// table names
+		mnstr_printf(toConsole, "%% ");
+		for(i = 0; i < fields; i++) {
+			mnstr_printf(toConsole, "%s%s", mapi_get_table(hdl, i), i < fields - 1 ? ",\t" : " ");
+		}
+		mnstr_printf(toConsole, "# table_name\n");
+		// column names
+		mnstr_printf(toConsole, "%% ");
+		for(i = 0; i < fields; i++) {
+			mnstr_printf(toConsole, "%s%s", mapi_get_name(hdl, i), i < fields - 1 ? ",\t" : " ");
+		}
+		mnstr_printf(toConsole, "# name\n");
+		// column type names
+		mnstr_printf(toConsole, "%% ");
+		for(i = 0; i < fields; i++) {
+			mnstr_printf(toConsole, "%s%s", mapi_get_type(hdl, i), i < fields - 1 ? ",\t" : " ");
+		}
+		mnstr_printf(toConsole, "# type\n");
+		// column lengths
+		mnstr_printf(toConsole, "%% ");
+		for(i = 0; i < fields; i++) {
+			mnstr_printf(toConsole, "%d%s", mapi_get_len(hdl, i), i < fields - 1 ? ",\t" : " ");
+		}
+		mnstr_printf(toConsole, "# length\n");
+	}
 	while (!mnstr_errnr(toConsole) && (!prot10 ? (reply = fetch_line(hdl)) != 0 : (fields = fetch_row(hdl)) != 0)) {
 		if (!prot10) {
+			// for protocol 9, render any non-result set messages
 			if (*reply != '[') {
 				if (*reply == '=')
 					reply++;
@@ -1043,33 +1072,6 @@ TESTrenderer(MapiHdl hdl)
 				continue;
 			}
 			fields = mapi_split_line(hdl);
-		} else if (header_rendered == 0) {
-			header_rendered = 1;
-			// generate fake MAPI headers for the testweb
-			// table names
-			mnstr_printf(toConsole, "%% ");
-			for(i = 0; i < fields; i++) {
-				mnstr_printf(toConsole, "%s%s", mapi_get_table(hdl, i), i < fields - 1 ? ",\t" : " ");
-			}
-			mnstr_printf(toConsole, "# table_name\n");
-			// column names
-			mnstr_printf(toConsole, "%% ");
-			for(i = 0; i < fields; i++) {
-				mnstr_printf(toConsole, "%s%s", mapi_get_name(hdl, i), i < fields - 1 ? ",\t" : " ");
-			}
-			mnstr_printf(toConsole, "# name\n");
-			// column type names
-			mnstr_printf(toConsole, "%% ");
-			for(i = 0; i < fields; i++) {
-				mnstr_printf(toConsole, "%s%s", mapi_get_type(hdl, i), i < fields - 1 ? ",\t" : " ");
-			}
-			mnstr_printf(toConsole, "# type\n");
-			// column lengths
-			mnstr_printf(toConsole, "%% ");
-			for(i = 0; i < fields; i++) {
-				mnstr_printf(toConsole, "%d%s", mapi_get_len(hdl, i), i < fields - 1 ? ",\t" : " ");
-			}
-			mnstr_printf(toConsole, "# length\n");
 		}
 		sep = "[ ";
 		for (i = 0; i < fields; i++) {
@@ -1222,6 +1224,7 @@ RAWrenderer(MapiHdl hdl)
 	SQLqueryEcho(hdl);
 	if (prot10) {
 		// "raw" renderer does not make much sense with prot10, because the raw protocol is binary data
+		separator = ",";
 		CSVrenderer(hdl);
 	} else {
 		while ((line = fetch_line(hdl)) != 0) {
