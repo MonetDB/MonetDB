@@ -6,11 +6,14 @@
 
 MTSAFE
 X_CFLAGS = -fopenmp
+GPU_LIBS = $(MONETDB_SRC)/geom/gspatial/apps/gpu/pnpoly/cuda/lib/x86_64/linux/release/g_pnpoly.o -lcuda -lcudart -lm -lstdc++ 
 INCLUDES = ../lib \
            ../../gdk \
            ../../common/stream \
            ../../common/options \
            ../../monetdb5/mal \
+           ../gspatial/apps/gpu/pnpoly/cuda/include/x86_64/linux/release \
+           /usr/local/cuda-8.0/include \
            $(GEOS_INCS) $(PROJ_INCS) \
            $(SFCGAL_INCS) ${GPU_INCS}
 
