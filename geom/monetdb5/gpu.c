@@ -12,7 +12,7 @@
  */
 
 #include "gpu.h"
-
+#define GEOMBULK_DEBUG
 static str
 GpnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl **hy, int *hn, bat *point_x, bat *point_y)
 {
@@ -20,6 +20,10 @@ GpnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, db
 	dbl *px = NULL, *py = NULL;
 	BUN i = 0, cnt = 0;
 	bit *cs = NULL;
+	char **mc = NULL;
+	int npoint = 0;
+	float *mpx = NULL, *mpy = NULL, *mvx = NULL, *mvy = NULL;
+
 #ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
     unsigned long long t;
@@ -58,6 +62,7 @@ GpnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, db
 #endif
 
 	/*Call to the GPU function*/
+	pnpoly_GPU(&cs, nvert, cnt, px, py, vx, vy);
 
 	/*
 	 * Verify if GPU has enough memory to get all the data 
@@ -84,7 +89,28 @@ GpnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, db
 }
 
 str
-wkbGContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y, bat *point_z, int *srid)
+geom_gpu_gcontains(bit *res, wkb **a, double *x, double *y, double *z, int *srid)
+{
+    vertexWKB *verts = NULL;
+	wkb *geom = NULL;
+	str msg = NULL;
+	(void) z;
+
+	geom = (wkb *) *a;
+    if ((msg = getVerts(geom, &verts)) != MAL_SUCCEED) {
+        return msg;
+    }
+         
+	//msg = GpnpolyWithHoles(out, (int) verts->nvert, verts->vert_x, verts->vert_y, verts->nholes, verts->holes_x, verts->holes_y, verts->holes_n, point_x, point_y);
+
+    if (verts)
+        freeVerts(verts);
+
+	return msg;
+}
+
+str
+geom_gpu_gcontains_bat(bat *out, wkb **a, bat *point_x, bat *point_y, bat *point_z, int *srid)
 {
     vertexWKB *verts = NULL;
 	wkb *geom = NULL;
@@ -100,6 +126,26 @@ wkbGContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y, bat *point
 
     if (verts)
         freeVerts(verts);
+
+	return msg;
+}
+
+str
+geom_gpu_setup(bit *res, int *flag) {
+	str msg = MAL_SUCCEED;
+	(void) res;
+
+	setup_GPU();
+
+	return msg;
+}
+
+str
+geom_gpu_reset(bit *res, int *flag) {
+	str msg = MAL_SUCCEED;
+	(void) res;
+
+	reset_GPU();
 
 	return msg;
 }

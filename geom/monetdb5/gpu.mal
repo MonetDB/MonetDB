@@ -6,12 +6,20 @@
 
 module geom;
 
-command GContains(a:wkb, x:dbl, y:dbl, z:dbl, srid:int) :bit
-address wkbContainsXYZ
+command gsetup(a:int) :bit
+address geom_gpu_setup
+comment "Setup GPU";
+
+command greset(a:int) :bit
+address geom_gpu_reset
+comment "Reset GPU";
+
+command gcontains(a:wkb, x:dbl, y:dbl, z:dbl, srid:int) :bit
+address geom_gpu_gcontains
 comment "Returns true if the Geometry a 'spatially contains' Geometry b";
 
 module batgeom;
-
-command GContains(a:wkb, px:bat[:dbl], py:bat[:dbl], pz:bat[:dbl], srid:int) :bat[:bit]
-address wkbGContains_point_bat
+command gcontains(a:wkb, px:bat[:dbl], py:bat[:dbl], pz:bat[:dbl], srid:int) :bat[:bit]
+address geom_gpu_gcontains_bat
 comment "Returns true if the Geometry a 'spatially contains' Geometry b";
+
