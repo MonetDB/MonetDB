@@ -1200,8 +1200,10 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     os.environ['TSTTRGDIR'] = TSTTRGDIR
     os.environ['RELSRCDIR'] = env['RELSRCDIR']
     os.environ['PYTHON2']   = '@QXPYTHON2@'
+    if 'PYTHON2PATH' not in os.environ: os.environ['PYTHON2PATH'] = ''
     os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
     os.environ['PYTHON3']   = '@QXPYTHON3@'
+    if 'PYTHON3PATH' not in os.environ: os.environ['PYTHON3PATH'] = ''
     os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON3_LIBDIR@'))
     if os.name == 'nt':
         os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python2'))
