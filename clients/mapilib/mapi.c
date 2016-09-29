@@ -4200,6 +4200,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					if (!mnstr_readInt(mid->from, &result->fields[i].scale)) {
 						return mid->error;
 					}
+				} else if (strcasecmp(type_sql_name, "sec_interval") == 0) {
+					result->fields[i].scale = 3;
 				}
 
 				if (!mnstr_readInt(mid->from, &null_len)) {
@@ -4250,7 +4252,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					result->fields[i].converter = (mapi_converter) mapi_convert_tinyint;
 				} else if (strcasecmp(type_sql_name, "boolean") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_boolean;
-				} else if (strcasecmp(type_sql_name, "decimal") == 0) {
+				} else if (strcasecmp(type_sql_name, "decimal") == 0 || strcasecmp(type_sql_name, "sec_interval") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_decimal;
 				} else if (strcasecmp(type_sql_name, "double") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_double;
