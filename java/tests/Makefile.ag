@@ -6,25 +6,38 @@
 
 EXTRA_DIST = \
 		Test_Cautocommit.java \
+		Test_Cforkbomb.java \
+		Test_CisValid.java \
 		Test_Clargequery.java \
 		Test_Cmanycon.java \
 		Test_Creplysize.java \
 		Test_Csavepoints.java \
+		Test_Csendthread.java \
 		Test_Ctransaction.java \
 		Test_Dobjects.java \
+		Test_FetchSize.java \
+		Test_Int128.java \
 		Test_PSgeneratedkeys.java \
-		Test_PSlargeresponse.java \
+		Test_PSgetObject.java \
 		Test_PSlargeamount.java \
+		Test_PSlargebatchval.java \
+		Test_PSlargeresponse.java \
+		Test_PSmanycon.java \
+		Test_PSmetadata.java \
+		Test_PSsomeamount.java \
+		Test_PSsqldata.java \
 		Test_PStimedate.java \
 		Test_PStimezone.java \
 		Test_PStypes.java \
 		Test_Rbooleans.java \
 		Test_Rmetadata.java \
 		Test_Rpositioning.java \
+		Test_Rsqldata.java \
 		Test_Rtimedate.java \
 		Test_Sbatching.java \
-		Test_Int128.java \
+		Test_Smoreresults.java \
 		BugConcurrent_clients_SF_1504657.java \
+		BugConcurrent_sequences.java \
 		BugDatabaseMetaData_Bug_3356.java \
 		BugDecimalRound_Bug_3561.java \
 		build.xml build.properties
