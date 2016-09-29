@@ -1,0 +1,212 @@
+stdout of test 'outer_constant_predicate.Bug-4070` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 19:53:25 >  
+# 19:53:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30438" "--set" "mapi_usock=/var/tmp/mtest-30403/.s.monetdb.30438" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 19:53:25 >  
+
+# MonetDB 5 server v11.23.10
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:30438/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30403/.s.monetdb.30438
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 19:53:25 >  
+# 19:53:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30403" "--port=30438"
+# 19:53:25 >  
+
+#CREATE TABLE CUSTOMER ( C_CUSTKEY     INTEGER NOT NULL,
+#                             C_NAME        VARCHAR(25) NOT NULL,
+#                             C_ADDRESS     VARCHAR(40) NOT NULL,
+#                             C_NATIONKEY   INTEGER NOT NULL,
+#                             C_PHONE       CHAR(15) NOT NULL,
+#                             C_ACCTBAL     DECIMAL(15,2)   NOT NULL,
+#                             C_MKTSEGMENT  CHAR(10) NOT NULL,
+#                             C_COMMENT     VARCHAR(117) NOT NULL,
+#                             PRIMARY KEY   (C_CUSTKEY));
+#COPY 1500 RECORDS INTO customer from STDIN USING DELIMITERS '|', '|\n';
+#1|Customer#000000001|IVhzIApeRb ot,c,E|15|25-989-741-2988|711.56|BUILDING|to the even, regular platelets. regular, ironic epitaphs nag e|
+#2|Customer#000000002|XSTf4,NCwDVaWNe6tEgvwfmRchLXak|13|23-768-687-3665|121.65|AUTOMOBILE|l accounts. blithely ironic theodolites integrate boldly: caref|
+#3|Customer#000000003|MG9kdTD2WBHm|1|11-719-748-3364|7498.12|AUTOMOBILE| deposits eat slyly ironic, even instructions. express foxes detect slyly. blithely even accounts abov|
+[ 1500	]
+#CREATE TABLE orders (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_orderstatus VARCHAR(1) NOT NULL, o_totalprice FLOAT NOT NULL, o_orderdate DATE NOT NULL, o_orderpriority VARCHAR(15) NOT NULL, o_clerk VARCHAR(15) NOT NULL, o_shippriority INT NOT NULL, o_comment VARCHAR(79) NOT NULL, 
+#                           PRIMARY KEY      (O_ORDERKEY),
+#                           FOREIGN KEY (O_CUSTKEY) references CUSTOMER);
+#COPY 150 RECORDS INTO orders from STDIN USING DELIMITERS '|', '|\n';
+#1|370|O|172799.49|1996-01-02|5-LOW|Clerk#000000951|0|blithely final dolphins solve-- blithely blithe packages nag blith|
+#2|781|O|38426.09|1996-12-01|1-URGENT|Clerk#000000880|0|quickly regular depend|
+#3|1234|F|205654.30|1993-10-14|5-LOW|Clerk#000000955|0|deposits alongside of the dependencies are slowly about |
+#4|1369|O|56000.91|1995-10-11|5-LOW|Clerk#000000124|0|final requests detect slyly across the blithely bold pinto beans. eve|
+#5|445|F|105367.67|1994-07-30|5-LOW|Clerk#000000925|0|even deposits cajole furiously. quickly spe|
+[ 150	]
+#SELECT 1 FROM orders LEFT OUTER JOIN customer ON (1 = 1 AND o_custkey = c_custkey);
+% .L # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#drop table orders;
+
+# 19:53:26 >  
+# 19:53:26 >  "Done."
+# 19:53:26 >  
+

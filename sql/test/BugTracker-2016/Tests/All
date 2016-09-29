@@ -45,3 +45,4 @@ CREATE_INDEX_breaks_table_queries.Bug-4053
 concat_2_integers.Bug-4058
 column_not_found.Bug-4064
 prepare_without_querycache.Bug-4047
+outer_constant_predicate.Bug-4070
