@@ -1241,7 +1241,7 @@ recompilequery:
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
-		if (!caching(m) || !cachable(m, s)) {
+		if ((!caching(m) || !cachable(m, s)) && m->emode != m_prepare) {
 			scanner_query_processed(&(m->scanner));
 			if (backend_callinline(be, c, s, 0) == 0) {
 				opt = 1;
