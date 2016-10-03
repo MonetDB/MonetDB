@@ -255,6 +255,7 @@ conversion_date_to_string(char *dst, int len, const int *src, int null_value) {
 			}
 		day -= CUMDAYS[month - 1];
 	}
+	year = (year <= 0) ? year - 1 : year; // hide year 0
 	// YYYY-MM-DD
 	sprintf(dst, "%d-%02d-%02d", year, month, day);
 	return (int) strlen(dst);
