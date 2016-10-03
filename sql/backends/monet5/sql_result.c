@@ -1845,7 +1845,7 @@ static size_t max(size_t a, size_t b) {
 static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize, int compute_lengths) {
 	BAT *order;
 	lng count;
-	size_t i, j;
+	size_t i;
 	size_t row = 0;
 	size_t srow = 0;
 	size_t varsized = 0;
@@ -2123,7 +2123,8 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 			}
 		}
 
-		if (buf - bs2_buffer(s).buf > bsize) {
+		assert(buf >= bs2_buffer(s).buf);
+		if (buf - bs2_buffer(s).buf > (lng) bsize) {
 			fprintf(stderr, "Too many bytes in the buffer.\n");
 			fres = -1;
 			goto cleanup;

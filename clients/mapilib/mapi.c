@@ -4232,7 +4232,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				result->fields[i].tablename = table_name;
 				result->fields[i].columntype = type_sql_name;
 				result->fields[i].typelen = typelen;
-				result->fields[i].columnlength = column_print_length;
+				result->fields[i].columnlength = (int) column_print_length;
 				result->fields[i].dynamic_write_buf = NULL;
 				result->fields[i].converter = NULL;
 

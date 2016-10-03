@@ -188,6 +188,19 @@ static char *nullstring = default_nullstring;
 
 #define my_isspace(c)	((c) == '\f' || (c) == '\n' || (c) == ' ')
 
+// stpcpy implementation for systems that do not have it
+static char *
+mystpcpy (char *yydest, const char *yysrc)
+{
+  char *yyd = yydest;
+  const char *yys = yysrc;
+
+  while ((*yyd++ = *yys++) != '\0')
+    continue;
+
+  return yyd - 1;
+}
+
 static timertype
 gettime(void)
 {
@@ -824,9 +837,9 @@ CSVrenderer(MapiHdl hdl)
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
 			if (s) {
-				buffer_ptr = stpcpy(buffer_ptr, s);
+				buffer_ptr = mystpcpy(buffer_ptr, s);
 			} else {
-				buffer_ptr = stpcpy(buffer_ptr, default_nullstring);
+				buffer_ptr = mystpcpy(buffer_ptr, default_nullstring);
 			}
 
 			if (i != fields - 1) {
