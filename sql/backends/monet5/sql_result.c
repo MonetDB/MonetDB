@@ -2092,7 +2092,7 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 			int convert_to_string = !type_supports_binary_transfer(c->type.type);
 			if (ATOMvarsized(mtype) || convert_to_string) {
 				// FIXME support other types than string
-				if (!convert_to_string && c->type.digits > 0 && c->type.digits < VARCHAR_MAXIMUM_FIXED) {
+				if (!convert_to_string && c->type.digits > 0 && (int) c->type.digits < VARCHAR_MAXIMUM_FIXED) {
 					char *bufptr = buf;
 					// for small fixed size strings we use fixed width
 					for(crow = srow; crow < row; crow++) {
