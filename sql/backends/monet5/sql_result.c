@@ -1819,7 +1819,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 	return res;
 }
 
-static int write_str_term(stream* s, str val) {
+static int write_str_term(stream* s, const str val) {
 	return 	mnstr_writeStr(s, val) && mnstr_writeBte(s, 0);
 }
 
@@ -1827,8 +1827,7 @@ static int type_supports_binary_transfer(sql_type *type) {
 	return 
 		type->eclass == EC_BIT || 
 		type->eclass == EC_CHAR || 
-		type->eclass == EC_STRING || 
-		type->eclass == EC_BLOB || 
+		type->eclass == EC_STRING ||
 		type->eclass == EC_DEC || 
 		type->eclass == EC_FLT || 
 		type->eclass == EC_NUM || 
@@ -1842,7 +1841,7 @@ static size_t max(size_t a, size_t b) {
 	return a > b ? a : b;
 }
 
-static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_t bsize, int compute_lengths) {
+static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size_t bsize, int compute_lengths) {
 	BAT *order;
 	lng count;
 	size_t i;
@@ -1885,6 +1884,11 @@ static int mvc_export_resultset_prot10(res_table* t, stream* s, stream *c, size_
 	}
 
 	if (!mnstr_writeStr(s, "*\n") || !mnstr_writeInt(s, t->id) || !mnstr_writeLng(s, count) || !mnstr_writeLng(s, (lng) t->nr_cols)) {
+		fres = -1;
+		goto cleanup;
+	}
+	// write timezone to the client
+	if (!mnstr_writeInt(s, m->timezone)) {
 		fres = -1;
 		goto cleanup;
 	}
@@ -2174,7 +2178,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		return mvc_export_file(b, s, t);
 
 	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
-		return mvc_export_resultset_prot10(t, s, b->client->fdin->s, b->client->blocksize, b->client->compute_column_widths);
+		return mvc_export_resultset_prot10(m, t, s, b->client->fdin->s, b->client->blocksize, b->client->compute_column_widths);
 	}
 
 	if (!json) {

@@ -833,6 +833,7 @@ struct MapiColumn {
 	int typelen;
 	int digits;
 	int scale;
+	int timezone;
 	void *null_value;
 	char* buffer_ptr;
 	char *dynamic_write_buf;
@@ -944,6 +945,7 @@ struct MapiResultSet {
 	struct MapiStatement *hdl;
 	int tableid;		/* SQL id of current result set */
 	int querytype;		/* type of SQL query */
+	int timezone;       /* timezone of the result set */
 	mapi_int64 tuple_count;
 	mapi_int64 row_count;
 	mapi_int64 last_id;
@@ -4100,7 +4102,15 @@ static char* mapi_convert_time(struct MapiColumn *col) {
 
 static char* mapi_convert_timestamp(struct MapiColumn *col) {
 	if (*((lng*) col->buffer_ptr) == *((lng*)col->null_value)) return NULL;
-	if (conversion_epoch_to_string(col->write_buf, COLBUFSIZ, (lng*) col->buffer_ptr, *((lng*)col->null_value), 0) < 0) {
+	if (conversion_epoch_to_string(col->write_buf, COLBUFSIZ, (lng*) col->buffer_ptr, *((lng*)col->null_value)) < 0) {
+		return NULL;
+	}
+	return (char*) col->write_buf;
+}
+
+static char* mapi_convert_timestamptz(struct MapiColumn *col) {
+	if (*((lng*) col->buffer_ptr) == *((lng*)col->null_value)) return NULL;
+	if (conversion_epoch_tz_to_string(col->write_buf, COLBUFSIZ, (lng*) col->buffer_ptr, *((lng*)col->null_value), col->timezone) < 0) {
 		return NULL;
 	}
 	return (char*) col->write_buf;
@@ -4140,6 +4150,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 		switch (*line) {
 		case 42: {
 			int result_set_id;
+			int timezone;
 			lng nr_rows;
 			lng nr_cols;
 			lng i;
@@ -4154,7 +4165,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			}
 			if (!mnstr_readInt(mid->from, &result_set_id) ||
 					!mnstr_readLng(mid->from, &nr_rows) ||
-					!mnstr_readLng(mid->from, &nr_cols)) {
+					!mnstr_readLng(mid->from, &nr_cols) || 
+					!mnstr_readInt(mid->from, &timezone)) {
 				return mid->error;
 			}
 			//fprintf(stderr, "result_set_id=%d, nr_rows=%llu, nr_cols=%lld\n", result_set_id, nr_rows, nr_cols);
@@ -4270,6 +4282,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					result->fields[i].converter = (mapi_converter) mapi_convert_time;
 				} else if (strcasecmp(type_sql_name, "timestamp") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_timestamp;
+				} else if (strcasecmp(type_sql_name, "timestamptz") == 0) {
+					result->fields[i].timezone = timezone;
+					result->fields[i].converter = (mapi_converter) mapi_convert_timestamptz;
 				} else if (typelen < 0) { /* any type besides the ones shown above should be converted to strings by the server */
 					result->fields[i].converter = (mapi_converter) mapi_convert_clob;
 				} else {

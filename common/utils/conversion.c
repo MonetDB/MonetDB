@@ -287,8 +287,9 @@ conversion_time_to_string(char *dst, int len, const int *src, int null_value, in
 
 static int days_between_zero_and_epoch = 719528;
 
-int
-conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, int timezone_diff) {
+
+static int
+conversion_epoch_optional_tz_to_string(char *dst, int len, const lng *src, lng null_value, int include_timezone, int timezone_diff) {
 	int ms, sec, min, hour;
 	int days = 0;
 	lng time = *src;
@@ -299,7 +300,7 @@ conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, i
 		return 3;
 	}
 	// account for the timezone of the client
-	time += timezone_diff * 1000 * 60 * 60;
+	time += timezone_diff;
 
 	ms = time % 1000 * 1000;
 	time /= 1000;
@@ -315,5 +316,24 @@ conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, i
 
 	offset = conversion_date_to_string(dst, len, &days, -2147483647);
 	if (offset < 0) return -1;
+	if (include_timezone) {
+		int original_diff = timezone_diff;
+		int diff_hour = timezone_diff / 3600000;
+		timezone_diff -= diff_hour * 3600000;
+		int diff_min = timezone_diff / 60000;
+		return snprintf(dst + offset, len - offset, " %02d:%02d:%02d.%06d%s%02d:%02d", hour, min, sec, ms, original_diff >= 0 ? "+" : "", diff_hour, diff_min);
+	}
 	return snprintf(dst + offset, len - offset, " %02d:%02d:%02d.%06d", hour, min, sec, ms);
 }
+
+int
+conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value) {
+	return conversion_epoch_optional_tz_to_string(dst, len, src, null_value, 0, 0);
+}
+
+int 
+conversion_epoch_tz_to_string(char *dst, int len, const lng *src, lng null_value, int timezone_diff) {
+	return conversion_epoch_optional_tz_to_string(dst, len, src, null_value, 1, timezone_diff);
+}
+
+

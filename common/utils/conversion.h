@@ -65,6 +65,9 @@ numeric_conversion(int, date);
 int conversion_time_to_string(char *dst, int len, const int *src, int null_value, int timezone_diff);
 
 // *src is time since epoch in ms
-int conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, int timezone_diff);
+int conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value);
+
+// *src is time since epoch in ms
+int conversion_epoch_tz_to_string(char *dst, int len, const lng *src, lng null_value, int timezone_diff);
 
 #endif
