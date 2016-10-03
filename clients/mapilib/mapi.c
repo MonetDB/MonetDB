@@ -4276,8 +4276,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					result->fields[i].converter = (mapi_converter) mapi_convert_bigint;
 				} else if (strcasecmp(type_sql_name, "real") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_real;
+#ifdef HAVE_HGE
 				} else if (strcasecmp(type_sql_name, "hugeint") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_hugeint;
+#endif
 				} else if (strcasecmp(type_sql_name, "time") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_time;
 				} else if (strcasecmp(type_sql_name, "timestamp") == 0) {

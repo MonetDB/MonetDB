@@ -1819,7 +1819,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 	return res;
 }
 
-static int write_str_term(stream* s, const str val) {
+static int write_str_term(stream* s, const char* const val) {
 	return 	mnstr_writeStr(s, val) && mnstr_writeBte(s, 0);
 }
 
@@ -1852,7 +1852,6 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 	BATiter *iterators = NULL;
 	lng fixed_lengths = 0;
 	int fres = 0;
-	column_compression colcomp = bs2_colcomp(s);
 
 	int VARCHAR_MAXIMUM_FIXED = 0;
 	if (GDKgetenv("varchar_maximum_fixed") != NULL) {
