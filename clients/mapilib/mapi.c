@@ -4078,8 +4078,10 @@ mapi_string_conversion_function(signed char,bte,tinyint,);
 mapi_string_conversion_function(float,flt,real, || *((float*)col->buffer_ptr) != *((float*)col->buffer_ptr));
 mapi_string_conversion_function(double,dbl,double, || *((double*)col->buffer_ptr) != *((double*)col->buffer_ptr));
 mapi_string_conversion_function(signed char,bit,boolean,);
-mapi_string_conversion_function(hge,hge,hugeint,);
 mapi_string_conversion_function(int,date,date,);
+#ifdef HAVE_HGE
+mapi_string_conversion_function(hge,hge,hugeint,);
+#endif
 
 static char* mapi_convert_decimal(struct MapiColumn *col) {
 	if (conversion_decimal_to_string(col->buffer_ptr, col->write_buf, COLBUFSIZ, col->scale, col->typelen, col->null_value) < 0) {
