@@ -1894,11 +1894,12 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 
 	for (i = 0; i < (size_t) t->nr_cols; i++) {
 		res_col *c = t->cols + i;
-		int mtype = c->type.type->localtype;
+		BAT *b = BATdescriptor(c->b);
+		int mtype = b->ttype;
 		int typelen = ATOMsize(mtype);
 		int nil_len = -1;
 		int retval = -1;
-		iterators[i] = bat_iterator(BATdescriptor(c->b));
+		iterators[i] = bat_iterator(b);
 		int convert_to_string = !type_supports_binary_transfer(c->type.type);
 		sql_type *type = c->type.type;
 
@@ -2004,7 +2005,7 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 		}
 
 		if (compute_lengths) {
-			if (!mnstr_writeLng(s, get_print_width(c->type.type->localtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), iterators[i].b->batCacheid, c->p))) {
+			if (!mnstr_writeLng(s, get_print_width(mtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), iterators[i].b->batCacheid, c->p))) {
 				fres = -1;
 				goto cleanup;
 			}
@@ -2040,7 +2041,7 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 				size_t rowsize = fixed_lengths;
 				for (i = 0; i < (size_t) t->nr_cols; i++) {
 					res_col *c = t->cols + i;
-					int mtype = c->type.type->localtype;
+					int mtype = iterators[i].b->ttype;
 					int convert_to_string = !type_supports_binary_transfer(c->type.type);
 					if (convert_to_string || ATOMvarsized(mtype)) {
 						size_t slen = strlen((const char*) BUNtail(iterators[i], row));
@@ -2088,7 +2089,7 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 
 		for (i = 0; i < (size_t) t->nr_cols; i++) {
 			res_col *c = t->cols + i;
-			int mtype = c->type.type->localtype;
+			int mtype = iterators[i].b->ttype;
 			int convert_to_string = !type_supports_binary_transfer(c->type.type);
 			if (ATOMvarsized(mtype) || convert_to_string) {
 				// FIXME support other types than string
