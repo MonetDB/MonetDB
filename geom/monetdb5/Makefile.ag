@@ -67,7 +67,7 @@ headers_autoload_sfcgal = {
 }
 
 lib__gpu = {
-	#COND = HAVE_GPU
+	COND = HAVE_GPUSPATIAL
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = gpu.h gpu.c
@@ -79,14 +79,14 @@ lib__gpu = {
 }
 
 headers_mal_gpu = {
-	#COND = HAVE_GPU
+	COND = HAVE_GPUSPATIAL
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = gpu.mal
 }
 
 headers_autoload_gpu = {
-	#COND = HAVE_GPU
+	COND = HAVE_GPUSPATIAL
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 32_gpu.mal
