@@ -1994,6 +1994,8 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 				retval = mnstr_writeHge(s, hge_nil);
 				break;
 #endif
+			case TYPE_void:
+				break;
 			default:
 				assert(0);
 				fres = -1;
@@ -2033,8 +2035,12 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 #endif
 		if (varsized == 0) {
 			// no varsized elements, so we can immediately compute the amount of elements
-			row = srow + bytes_left / fixed_lengths;
-			row = row > (size_t) count ? (size_t) count : row;
+			if (fixed_lengths == 0) {
+				row = (size_t) count;
+			} else {
+				row = srow + bytes_left / fixed_lengths;
+				row = row > (size_t) count ? (size_t) count : row;
+			}
 		} else {
 			// we have varsized elements, so we have to loop to determine how many rows fit into a buffer
 			while (row < (size_t) count) {

@@ -4116,6 +4116,11 @@ static char* mapi_convert_timestamptz(struct MapiColumn *col) {
 	return (char*) col->write_buf;
 }
 
+static char* mapi_convert_null(struct MapiColumn *col) {
+	(void) col;
+	return NULL;
+}
+
 static char* mapi_convert_unknown(struct MapiColumn *col) {
 	(void) col;
 	return "<unknown>";
@@ -4221,16 +4226,16 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				if (!mnstr_readInt(mid->from, &null_len)) {
 					return mid->error;
 				}
-				assert(null_len > 0);
-
-				result->fields[i].null_value = malloc(sizeof(char) * null_len);
-				if (!result->fields[i].null_value) {
-					return mid->error;
+				if (null_len > 0) {
+					result->fields[i].null_value = malloc(sizeof(char) * null_len);
+					if (!result->fields[i].null_value) {
+						return mid->error;
+					}
+					if (mnstr_read(mid->from, result->fields[i].null_value, null_len, 1) != 1) {
+						return mid->error;
+					}
 				}
 
-				if (mnstr_read(mid->from, result->fields[i].null_value, null_len, 1) != 1) {
-					return mid->error;
-				}
 				column_print_length = typelen;
 				if (mid->compute_column_widths) {
 					if (!mnstr_readLng(mid->from, &column_print_length)) {
@@ -4248,7 +4253,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				result->fields[i].dynamic_write_buf = NULL;
 				result->fields[i].converter = NULL;
 
-				if (strcasecmp(type_sql_name, "varchar") == 0 || strcasecmp(type_sql_name, "char") == 0) {
+				if (result->fields[i].null_value == NULL) {
+					result->fields[i].converter = (mapi_converter) mapi_convert_null;
+				} else if (strcasecmp(type_sql_name, "varchar") == 0 || strcasecmp(type_sql_name, "char") == 0) {
 					if (typelen > 0) {
 						result->fields[i].converter = (mapi_converter) mapi_convert_varchar;
 						result->fields[i].dynamic_write_buf = malloc(result->fields[i].typelen * sizeof(char));
