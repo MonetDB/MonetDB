@@ -281,6 +281,13 @@ no-auto)
 	;;
 esac
 
+dft_gpuspatial=no
+AC_ARG_ENABLE([gpuspatial],
+	[AS_HELP_STRING([--enable-gpuspatial],
+		[enable support for gpuspatial (default=no)])],
+	[enable_gpuspatial=$enableval],
+	[enable_gpuspatial=$dft_gpuspatial])
+
 dft_embedded=no
 AC_ARG_ENABLE([embedded],
 	[AS_HELP_STRING([--enable-embedded],
@@ -2567,6 +2574,12 @@ AM_CONDITIONAL(HAVE_SFCGAL, test x"$have_sfcgal" != xno )
 AC_SUBST(SFCGAL_INCS)
 AC_SUBST(SFCGAL_LIBS)
 
+# gpuspatial, only used by sql
+org_have_gpuspatial=no
+have_gpuspatial=$org_have_gpuspatial
+AS_VAR_IF([enable_gpuspatial], [no], [], [have_gpuspatial="yes"; AC_DEFINE([HAVE_GPUSPATIAL], 1, [Define if the gpu_spatial module is to be enabled])])
+AM_CONDITIONAL(HAVE_GPUSPATIAL, test x"$have_gpuspatial" != xno )
+
 
 PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
 	[have_atomic_ops="no"; why_have_atomic_ops="(atomic_ops library not found)"])
@@ -3303,7 +3316,7 @@ for comp in \
 	'liblzma      ' \
 	'libxml2      ' \
 	'lidar        ' \
-	'netcdf       ' \
+	'gpuspatial   ' \
 	'openssl      ' \
 	'pcre         ' \
 	'perl         ' \
