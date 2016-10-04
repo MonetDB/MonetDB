@@ -5695,7 +5695,7 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 			return 0;
 		}
 		assert (result->rows_read <= result->tuple_count && result->rows_read <= result->row_count);
-		if (fnr > result->fieldcnt) {
+		if (fnr >= result->fieldcnt) {
 			mapi_setError(hdl->mid, "column index out of bounds", "mapi_fetch_field", MERROR);
 			return NULL;
 		}
