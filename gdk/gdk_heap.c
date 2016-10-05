@@ -487,43 +487,52 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare)
 #endif
 
 	/* convert from back to front so that we can do it in-place */
-	switch (c->width) {
-	case 1:
-		switch (width) {
-		case 2:
+	switch (width) {
+	case 2:
+#ifndef NDEBUG
+		memset(ps, 0, c->heap.base + c->heap.size - (char *) ps);
+#endif
+		switch (c->width) {
+		case 1:
 			for (i = 0; i < n; i++)
 				*--ps = *--pc;
 			break;
-		case 4:
+		}
+		break;
+	case 4:
+#ifndef NDEBUG
+		memset(ps, 0, c->heap.base + c->heap.size - (char *) pi);
+#endif
+		switch (c->width) {
+		case 1:
 			for (i = 0; i < n; i++)
 				*--pi = *--pc + GDK_VAROFFSET;
 			break;
-#if SIZEOF_VAR_T == 8
-		case 8:
-			for (i = 0; i < n; i++)
-				*--pv = *--pc + GDK_VAROFFSET;
-			break;
-#endif
-		}
-		break;
-	case 2:
-		switch (width) {
-		case 4:
+		case 2:
 			for (i = 0; i < n; i++)
 				*--pi = *--ps + GDK_VAROFFSET;
 			break;
-#if SIZEOF_VAR_T == 8
-		case 8:
-			for (i = 0; i < n; i++)
-				*--pv = *--ps + GDK_VAROFFSET;
-			break;
-#endif
 		}
 		break;
 #if SIZEOF_VAR_T == 8
-	case 4:
-		for (i = 0; i < n; i++)
-			*--pv = *--pi;
+	case 8:
+#ifndef NDEBUG
+		memset(ps, 0, c->heap.base + c->heap.size - (char *) pv);
+#endif
+		switch (c->width) {
+		case 1:
+			for (i = 0; i < n; i++)
+				*--pv = *--pc + GDK_VAROFFSET;
+			break;
+		case 2:
+			for (i = 0; i < n; i++)
+				*--pv = *--ps + GDK_VAROFFSET;
+			break;
+		case 4:
+			for (i = 0; i < n; i++)
+				*--pv = *--pi;
+			break;
+		}
 		break;
 #endif
 	}
