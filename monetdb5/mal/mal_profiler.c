@@ -702,9 +702,9 @@ initTrace(void)
 {
 	int ret = -1;
 
-	MT_lock_set(&mal_contextLock);
+	MT_lock_set(&mal_profileLock);
 	if (TRACE_init) {
-		MT_lock_unset(&mal_contextLock);
+		MT_lock_unset(&mal_profileLock);
 		return 0;       /* already initialized */
 	}
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
@@ -740,22 +740,22 @@ initTrace(void)
 	else
 		TRACE_init = 1;
 	ret = TRACE_init;
-	MT_lock_unset(&mal_contextLock);
+	MT_lock_unset(&mal_profileLock);
 	return ret;
 }
 
 void
 clearTrace(void)
 {
-	MT_lock_set(&mal_contextLock);
+	MT_lock_set(&mal_profileLock);
 	if (TRACE_init == 0) {
-		MT_lock_unset(&mal_contextLock);
+		MT_lock_unset(&mal_profileLock);
 		return;     /* not initialized */
 	}
 	/* drop all trace tables */
 	_cleanupProfiler();
 	TRACE_init = 0;
-	MT_lock_unset(&mal_contextLock);
+	MT_lock_unset(&mal_profileLock);
 	initTrace();
 }
 
