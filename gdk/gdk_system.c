@@ -477,14 +477,6 @@ rm_posthread_locked(struct posthread *p)
 }
 
 static void
-rm_posthread(struct posthread *p)
-{
-	pthread_mutex_lock(&posthread_lock);
-	rm_posthread_locked(p);
-	pthread_mutex_unlock(&posthread_lock);
-}
-
-static void
 thread_starter(void *arg)
 {
 	struct posthread *p = (struct posthread *) arg;
@@ -574,10 +566,6 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 		p->func = f;
 		p->arg = arg;
 		p->exited = 0;
-		pthread_mutex_lock(&posthread_lock);
-		p->next = posthreads;
-		posthreads = p;
-		pthread_mutex_unlock(&posthread_lock);
 		f = thread_starter;
 		arg = p;
 		newtp = &p->tid;
@@ -592,8 +580,13 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 #else
 		*t = (MT_Id) (((size_t) *newtp) + 1);	/* use pthread-id + 1 */
 #endif
+		if (p) {
+			pthread_mutex_lock(&posthread_lock);
+			p->next = posthreads;
+			posthreads = p;
+			pthread_mutex_unlock(&posthread_lock);
+		}
 	} else if (p) {
-		rm_posthread(p);
 		free(p);
 	}
 #ifdef HAVE_PTHREAD_SIGMASK
