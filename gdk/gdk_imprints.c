@@ -157,7 +157,7 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 }
 
 #ifdef NDEBUG
-#define CLRMEM()	((void *) 0)
+#define CLRMEM()	((void) 0)
 #else
 #define CLRMEM()	while (k < 64) h[k++] = 0
 #endif
