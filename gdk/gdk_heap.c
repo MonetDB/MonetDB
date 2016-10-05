@@ -489,43 +489,52 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 #endif
 
 	/* convert from back to front so that we can do it in-place */
-	switch (b->twidth) {
-	case 1:
-		switch (width) {
-		case 2:
+	switch (width) {
+	case 2:
+#ifndef NDEBUG
+		memset(ps, 0, b->theap.base + b->theap.size - (char *) ps);
+#endif
+		switch (b->twidth) {
+		case 1:
 			for (i = 0; i < n; i++)
 				*--ps = *--pc;
 			break;
-		case 4:
+		}
+		break;
+	case 4:
+#ifndef NDEBUG
+		memset(ps, 0, b->theap.base + b->theap.size - (char *) pi);
+#endif
+		switch (b->twidth) {
+		case 1:
 			for (i = 0; i < n; i++)
 				*--pi = *--pc + GDK_VAROFFSET;
 			break;
-#if SIZEOF_VAR_T == 8
-		case 8:
-			for (i = 0; i < n; i++)
-				*--pv = *--pc + GDK_VAROFFSET;
-			break;
-#endif
-		}
-		break;
-	case 2:
-		switch (width) {
-		case 4:
+		case 2:
 			for (i = 0; i < n; i++)
 				*--pi = *--ps + GDK_VAROFFSET;
 			break;
-#if SIZEOF_VAR_T == 8
-		case 8:
-			for (i = 0; i < n; i++)
-				*--pv = *--ps + GDK_VAROFFSET;
-			break;
-#endif
 		}
 		break;
 #if SIZEOF_VAR_T == 8
-	case 4:
-		for (i = 0; i < n; i++)
-			*--pv = *--pi;
+	case 8:
+#ifndef NDEBUG
+		memset(ps, 0, b->theap.base + b->theap.size - (char *) pv);
+#endif
+		switch (b->twidth) {
+		case 1:
+			for (i = 0; i < n; i++)
+				*--pv = *--pc + GDK_VAROFFSET;
+			break;
+		case 2:
+			for (i = 0; i < n; i++)
+				*--pv = *--ps + GDK_VAROFFSET;
+			break;
+		case 4:
+			for (i = 0; i < n; i++)
+				*--pv = *--pi;
+			break;
+		}
 		break;
 #endif
 	}
