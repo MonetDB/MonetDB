@@ -52,3 +52,4 @@ column_not_found.Bug-4064
 prepare_without_querycache.Bug-4047
 outer_constant_predicate.Bug-4070
 name_conflict_in_union.Bug-6065
+set-negative-querytimeout.Bug-6070
