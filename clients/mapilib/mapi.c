@@ -1618,8 +1618,8 @@ close_result(MapiHdl hdl)
 		result->tableid = -1;
 	}
 	if (mid->active == hdl &&
-	    hdl->active == result &&
-	    read_into_cache(hdl, -1) != MOK)
+	    hdl->active == result && 
+	    read_into_cache(hdl, -1) != MOK) {
 		return MERROR;
 	if( hdl->active == result)
 		return MERROR;
@@ -4165,14 +4165,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			hdl->active = result;
 
 			if (!result) {
-				// TODO: actually set mid->error :)
-				return mid->error;
+				return mapi_setError(mid, "Memory allocation failure", "read_into_cache", MERROR);
 			}
 			if (!mnstr_readInt(mid->from, &result_set_id) ||
 					!mnstr_readLng(mid->from, &nr_rows) ||
 					!mnstr_readLng(mid->from, &nr_cols) || 
 					!mnstr_readInt(mid->from, &timezone)) {
-				return mid->error;
+				return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 			}
 			//fprintf(stderr, "result_set_id=%d, nr_rows=%llu, nr_cols=%lld\n", result_set_id, nr_rows, nr_cols);
 			result->fieldcnt = nr_cols;
@@ -4196,7 +4195,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				lng column_print_length;
 
 				if (!mnstr_readLng(mid->from, &col_info_length)) {
-					return mid->error;
+					return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 				}
 				assert(col_info_length > 0);
 				// possible improvement, set col_info_length to max length of the three strings
@@ -4211,25 +4210,25 @@ read_into_cache(MapiHdl hdl, int lookahead)
 						!mnstr_readStr(mid->from, col_name) ||
 						!mnstr_readStr(mid->from, type_sql_name) ||
 						!mnstr_readInt(mid->from, &typelen)) {
-					return mid->error;
+					return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 				}
 
 				if (strcasecmp(type_sql_name, "decimal") == 0) {
 					// decimal type, read the scale as well
 					if (!mnstr_readInt(mid->from, &result->fields[i].scale)) {
-						return mid->error;
+						return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 					}
 				} else if (strcasecmp(type_sql_name, "sec_interval") == 0) {
 					result->fields[i].scale = 3;
 				}
 
 				if (!mnstr_readInt(mid->from, &null_len)) {
-					return mid->error;
+					return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 				}
 				if (null_len > 0) {
 					result->fields[i].null_value = malloc(sizeof(char) * null_len);
 					if (!result->fields[i].null_value) {
-						return mid->error;
+						return mapi_setError(mid, "Memory allocation failure", "read_into_cache", MERROR);
 					}
 					if (mnstr_read(mid->from, result->fields[i].null_value, null_len, 1) != 1) {
 						return mid->error;
@@ -4239,7 +4238,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				column_print_length = typelen;
 				if (mid->compute_column_widths) {
 					if (!mnstr_readLng(mid->from, &column_print_length)) {
-						return mid->error;
+						return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 					}
 				}
 
