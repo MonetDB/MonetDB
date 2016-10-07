@@ -1847,16 +1847,20 @@ AS_VAR_IF([enable_pyintegration], [no], [], [
 		       enable_pyintegration=yes],
 		[AC_MSG_ERROR([--enable-pyintegration value must be yes|no|auto|absolute path of python-config])])
 	AS_VAR_IF([have_pyconfig], [], [
-	   	AC_PATH_PROG([PYCMD], [python-config], [no], [$PATH])
-	   	AS_VAR_IF([PYCMD], [],
-	  		[AS_VAR_IF([enable_pyintegration], [yes],
+	   	AC_PATH_PROG([PYCMD], [python2-config], [no], [$PATH])
+	   	AS_VAR_IF([PYCMD], [no], [
+		   	AC_PATH_PROG([PYCMD2], [python-config], [no], [$PATH])
+		   	AS_VAR_IF([PYCMD2], [no], [
+		   		AS_VAR_IF([enable_pyintegration], [yes],
 				[AC_MSG_ERROR([python-config library required for Python integration support])],
 				[have_libpy="no"
 			 	why_have_libpy="(python-config command not found)"
-				enable_pyintegration=no
-				disable_pyintegration="(python-config command not found)"])])],
-			[PYCMD="$have_pyconfig"])
-
+				enable_pyintegration="no"
+				disable_pyintegration="(python-config command not found)"
+				])
+			], [PYCMD="$PYCMD2"])
+	   	], [])
+	], [PYCMD="$have_pyconfig"])
 	AS_VAR_IF([have_pyversion], [],
 		[PYTHON_CMD=$PYTHON2],
 		[PYTHON_CMD=$have_pyversion])
@@ -1872,14 +1876,14 @@ AS_VAR_IF([enable_pyintegration], [no], [], [
 			[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python integration support])],
 			[have_libpy="no"
 			 why_have_libpy="(numpy version >= 1.7.0 not found)"
-			 enable_pyintegration=no
+			 enable_pyintegration="no"
 			 disable_pyintegration="(numpy version >= 1.7.0 not found)"])],
 		[test "x$NUMPYHEADERS" = xFalse ],
 		[AS_VAR_IF([enable_pyintegration], [yes],
 			[AC_MSG_ERROR([numpy/arrayobject.h not found])],
 			[have_libpy="no"
 			 why_have_libpy="(numpy/arrayobject.h not found)"
-			 enable_pyintegration=no
+			 enable_pyintegration="no"
 			 disable_pyintegration="(numpy/arrayobject.h not found)"])],
 		[libpy_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());"`
 		 libpy_LIBS=`$PYCMD --ldflags`
@@ -1893,7 +1897,7 @@ AS_VAR_IF([enable_pyintegration], [no], [], [
 				[AC_MSG_ERROR([Python.h not found])],
 				[have_libpy="no"
 			 	 why_have_libpy="Python.h not found"
-				 enable_pyintegration=no
+				 enable_pyintegration="no"
 				 disable_pyintegration="Python.h not found"])])])])
 AM_CONDITIONAL([HAVE_LIBPY], [test x"$have_libpy" != xno])
 
