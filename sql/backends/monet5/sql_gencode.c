@@ -1117,6 +1117,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->flag == RD_UPD_ID) {
 				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
 				setVarUDFtype(mb, getArg(q, 0));
+				setVarUDFtype(mb, getArg(q, 1));
 			} else {
 				setVarType(mb, getArg(q, 0), newBatType(tt));
 				setVarUDFtype(mb, getArg(q, 0));
