@@ -1834,6 +1834,7 @@ static int type_supports_binary_transfer(sql_type *type) {
 		type->eclass == EC_DATE || 
 		type->eclass == EC_TIME || 
 		type->eclass == EC_SEC ||
+		type->eclass == EC_MONTH || 
 		type->eclass == EC_TIMESTAMP;
 }
 

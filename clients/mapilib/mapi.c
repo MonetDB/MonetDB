@@ -4145,7 +4145,7 @@ static char* mapi_convert_unknown(struct MapiColumn *col) {
 
 
 static MapiMsg
-read_into_cache(MapiHdl hdl, int lookahead)
+read_into_cache_new(MapiHdl hdl, int lookahead, int expect_result, int *error)
 {
 	char *line, *copy;
 	Mapi mid;
@@ -4163,6 +4163,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	if (result && result->next && result->next->prot10_resultset) {
 		// if we have a prot10 resultset we don't want to read lines, because prot10 result sets do not consist of lines
 		hdl->active = result->next;
+		if (expect_result) expected_prot10_result(error);
 		return MOK;
 	}
 	for (;;) {
@@ -4176,6 +4177,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			lng nr_rows;
 			lng nr_cols;
 			lng i;
+			expect_result = 0;
 
 			result = new_result(hdl);
 			result->prot10_resultset = 1;
@@ -4281,7 +4283,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				} else if (strcasecmp(type_sql_name, "clob") == 0) {
 					// var length strings
 					result->fields[i].converter = (mapi_converter) mapi_convert_clob;
-				} else if (strcasecmp(type_sql_name, "int") == 0) {
+				} else if (strcasecmp(type_sql_name, "int") == 0 || strcasecmp(type_sql_name, "month_interval") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_int;
 				} else if (strcasecmp(type_sql_name, "smallint") == 0) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_smallint;
@@ -4336,6 +4338,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			while (*line) {
 				if (*line != *copy) /* must be EOF or PROMPT1 \001\001\n */
 					return mid->error;
+				}
 				line++;
 				copy++;
 			}
@@ -4346,6 +4349,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				hdl->needmore = 1;
 				mid->active = hdl;
 			}
+			if (expect_result) expected_prot10_result(error);
 			return mid->error;
 		case '!':
 			/* start a new result set if we don't have one
@@ -4383,11 +4387,19 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			if (lookahead > 0 &&
 			    (result->querytype == -1 /* unknown (not SQL) */ ||
 			     result->querytype == Q_TABLE ||
-			     result->querytype == Q_UPDATE))
+			     result->querytype == Q_UPDATE)) {
+				if (expect_result) expected_prot10_result(error);
 				return mid->error;
+			}
 			break;
 		}
 	}
+}
+
+static MapiMsg
+read_into_cache(MapiHdl hdl, int lookahead) {
+	int error = 0;
+	return read_into_cache_new(hdl, lookahead, 0, &error);
 }
 
 MapiMsg
@@ -4622,8 +4634,14 @@ mapi_query(Mapi mid, const char *cmd)
 	ret = mid->error;
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
-	if (ret == MOK)
-		ret = read_into_cache(hdl, 1);
+	if (ret == MOK) {
+		int error = 0;
+		ret = read_into_cache_new(hdl, 1, 1, &error);
+		if (error != 0) {
+			/*printf("\nProblem with query: %s\n", cmd);
+			printf("Expected prot10 result set but did not get it.\n\n");*/
+		}
+	}
 	return hdl;
 }
 
@@ -5557,8 +5575,6 @@ mapi_fetch_row(MapiHdl hdl)
 	mapi_hdl_check(hdl, "mapi_fetch_row");
 	if (result && result->prot10_resultset) {
 		char* buf;
-
-		// check if we have read the entire result set
 		if (result->rows_read >= result->row_count) {
 			do {
 				if ((reply = mapi_fetch_line(hdl)) == NULL)
@@ -5678,8 +5694,7 @@ mapi_fetch_all_rows(MapiHdl hdl)
 		if ((result = hdl->result) != NULL &&
 		    mid->languageId == LANG_SQL &&
 		    mid->active == NULL &&
-		    result->row_count > 0 &&
-		    result->cache.first + result->cache.tuplecount < result->row_count) {
+		    result->row_count > 0 &&		    result->cache.first + result->cache.tuplecount < result->row_count) {
 			mid->active = hdl;
 			hdl->active = result;
 			if (mid->tracelog) {
