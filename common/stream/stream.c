@@ -3987,7 +3987,7 @@ typedef struct bs2 {
 	column_compression colcomp;
 	char *compbuf;
 	size_t compbufsiz;
-	char buf[1];	/* the buffered data */
+	char *buf;
 } bs2;
 
 
@@ -4083,8 +4083,13 @@ bs2_create(stream *s, size_t bufsiz, compression_method comp)
 	bs2 *ns;
 	ssize_t compress_bound = 0;
 
-	if ((ns = malloc(sizeof(*ns) + bufsiz)) == NULL)
+	if ((ns = malloc(sizeof(*ns))) == NULL)
 		return NULL;
+	if ((ns->buf = malloc(bufsiz)) == NULL) {
+		free(ns);
+		return NULL;
+	}
+
 	ns->s = s;
 	ns->nr = 0;
 	ns->itotal = 0;
@@ -4098,10 +4103,12 @@ bs2_create(stream *s, size_t bufsiz, compression_method comp)
 		ns->compbuf = malloc(ns->compbufsiz);
 		if (!ns->compbuf) {
 			free(ns);
+			free(ns->buf);
 			return NULL;
 		}
 	} else if (compress_bound < 0) {
 		free(ns);
+		free(ns->buf);
 		return NULL;
 	}
 	return ns;
@@ -4435,11 +4442,18 @@ bs2_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 
 
 void*
-bs2_getbuf(stream *ss)
+bs2_stealbuf(stream *ss)
 {
+	void *buffer;
 	bs2 *s = (bs2 *) ss->stream_data.p;
 	assert(ss->read == bs2_read);
-	return (void*) s->buf;
+	buffer = (void*) s->buf;
+	s->buf = malloc(s->bufsiz);
+	if (s->buf == NULL) {
+		s->buf = buffer;
+		return NULL;
+	}
+	return buffer;
 }
 
 void

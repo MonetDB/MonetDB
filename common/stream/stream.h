@@ -255,7 +255,7 @@ typedef enum {
 } column_compression;
 
 stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp);
-stream_export void* bs2_getbuf(stream *ss);
+stream_export void* bs2_stealbuf(stream *ss);
 stream_export void bs2_resetbuf(stream *ss);
 stream_export buffer bs2_buffer(stream *s);
 column_compression bs2_colcomp(stream *ss);

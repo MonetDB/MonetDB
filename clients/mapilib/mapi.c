@@ -951,6 +951,7 @@ struct MapiResultSet {
 	mapi_int64 last_id;
 	int fieldcnt;
 	int maxfields;
+	char *databuffer;
 	char *errorstr;		/* error from server */
 	struct MapiColumn *fields;
 	struct MapiRowBuf cache;
@@ -1529,6 +1530,7 @@ new_result(MapiHdl hdl)
 	result->fieldcnt = 0;
 	result->maxfields = 0;
 	result->fields = NULL;
+	result->databuffer = NULL;
 
 	result->cache.rowlimit = hdl->mid->cachelimit;
 	result->cache.shuffle = 100;
@@ -1640,6 +1642,10 @@ close_result(MapiHdl hdl)
 	}
 	result->fields = NULL;
 	result->maxfields = result->fieldcnt = 0;
+	if (result->databuffer) {
+		free(result->databuffer);
+	}
+	result->databuffer = NULL;
 	if (result->cache.line) {
 		for (i = 0; i < result->cache.writer; i++) {
 			if (result->cache.line[i].rows)
@@ -5596,8 +5602,11 @@ mapi_fetch_row(MapiHdl hdl)
 			assert(nrows <= result->row_count);
 
 
-			//bs2_resetbuf(hdl->mid->from);
-			buf = (char*) bs2_getbuf(hdl->mid->from) + sizeof(lng);
+			result->databuffer = bs2_stealbuf(hdl->mid->from);
+			buf = (char*) result->databuffer + sizeof(lng);
+			if (buf == NULL) {
+				return mapi_setError(hdl->mid, "MALLOC failure.", "mapi_fetch_row", MERROR);
+			}
 
 			// iterate over cols
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
