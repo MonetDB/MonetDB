@@ -1621,6 +1621,7 @@ close_result(MapiHdl hdl)
 	    hdl->active == result && 
 	    read_into_cache(hdl, -1) != MOK) {
 		return MERROR;
+	}
 	if( hdl->active == result)
 		return MERROR;
 	//assert(hdl->active != result);
