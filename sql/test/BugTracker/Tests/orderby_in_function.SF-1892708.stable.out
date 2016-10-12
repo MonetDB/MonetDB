@@ -39,8 +39,8 @@ Ready.
 #  LIMIT 1;
 #END;
 #select CHECK_VIDEO();
-% .L # table_name
-% check_video # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 7 # length
 [ "schemas"	]

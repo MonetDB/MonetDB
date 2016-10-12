@@ -68,7 +68,7 @@ Ready.
 #INSERT INTO BOX_TBL (f1) VALUES (MBR('linestring(3.0  3.0, 3.0 3.0)'));
 [ 1	]
 #SELECT '' AS four, BOX_TBL.* FROM BOX_TBL;
-% .L,	sys.box_tbl # table_name
+% .L1,	sys.box_tbl # table_name
 % four,	f1 # name
 % char,	mbr # type
 % 0,	0 # length
@@ -77,7 +77,7 @@ Ready.
 [ "",	"BOX (2.5 2.5, 2.5 3.5)"	]
 [ "",	"BOX (3 3, 3 3)"	]
 #SELECT '' AS four, b.f1, cast(f1 as varchar(44)) as txt FROM BOX_TBL b;
-% .L,	sys.b,	sys.L1 # table_name
+% .L1,	sys.b,	sys.L3 # table_name
 % four,	f1,	txt # name
 % char,	mbr,	varchar # type
 % 0,	0,	44 # length
@@ -96,7 +96,7 @@ Ready.
 [ "BOX (2.5 2.5, 2.5 3.5)",	"\"BOX (2.500000 2.500000, 2.500000 3.500000)\""	]
 [ "BOX (3 3, 3 3)",	"\"BOX (3.000000 3.000000, 3.000000 3.000000)\""	]
 #SELECT '' AS three, b.f1 FROM BOX_TBL_VW b WHERE b.f1 && mbr('linestring(2.5 2.5, 1.0 1.0)');
-% .L1,	sys.b # table_name
+% .L3,	sys.b # table_name
 % three,	f1 # name
 % char,	mbr # type
 % 0,	0 # length
@@ -104,7 +104,7 @@ Ready.
 [ "",	"BOX (1 1, 3 3)"	]
 [ "",	"BOX (2.5 2.5, 2.5 3.5)"	]
 #SELECT '' AS three, b.f1 FROM BOX_TBL_VW b WHERE ST_Overlaps(b.f1, mbr('linestring(2.5 2.5, 1.0 1.0)'));
-% .L1,	sys.b # table_name
+% .L3,	sys.b # table_name
 % three,	f1 # name
 % char,	mbr # type
 % 0,	0 # length
@@ -112,28 +112,28 @@ Ready.
 [ "",	"BOX (1 1, 3 3)"	]
 [ "",	"BOX (2.5 2.5, 2.5 3.5)"	]
 #SELECT '' AS two, b1.* FROM BOX_TBL_VW b1 WHERE b1.f1 &< mbr('linestring(2.0 2.0, 2.5 2.5)');
-% .L1,	sys.b1,	sys.b1 # table_name
+% .L3,	sys.b1,	sys.b1 # table_name
 % two,	f1,	txt # name
 % char,	mbr,	varchar # type
 % 0,	0,	44 # length
 [ "",	"BOX (0 0, 2 2)",	"\"BOX (0.000000 0.000000, 2.000000 2.000000)\""	]
 [ "",	"BOX (2.5 2.5, 2.5 3.5)",	"\"BOX (2.500000 2.500000, 2.500000 3.500000)\""	]
 #SELECT '' AS two, b1.* FROM BOX_TBL_VW b1 WHERE b1.f1 &> mbr('linestring(2.0 2.0, 2.5 2.5)');
-% .L1,	sys.b1,	sys.b1 # table_name
+% .L3,	sys.b1,	sys.b1 # table_name
 % two,	f1,	txt # name
 % char,	mbr,	varchar # type
 % 0,	0,	44 # length
 [ "",	"BOX (2.5 2.5, 2.5 3.5)",	"\"BOX (2.500000 2.500000, 2.500000 3.500000)\""	]
 [ "",	"BOX (3 3, 3 3)",	"\"BOX (3.000000 3.000000, 3.000000 3.000000)\""	]
 #SELECT '' AS two, b.f1 FROM BOX_TBL_VW b WHERE b.f1 << mbr('linestring(3.0 3.0, 5.0 5.0)');
-% .L1,	sys.b # table_name
+% .L3,	sys.b # table_name
 % two,	f1 # name
 % char,	mbr # type
 % 0,	0 # length
 [ "",	"BOX (0 0, 2 2)"	]
 [ "",	"BOX (2.5 2.5, 2.5 3.5)"	]
 #SELECT '' AS three, b.f1 FROM BOX_TBL_VW b WHERE b.f1 @ mbr('linestring(0 0, 3 3)');
-% .L1,	sys.b # table_name
+% .L3,	sys.b # table_name
 % three,	f1 # name
 % char,	mbr # type
 % 0,	0 # length
@@ -141,7 +141,7 @@ Ready.
 [ "",	"BOX (1 1, 3 3)"	]
 [ "",	"BOX (3 3, 3 3)"	]
 #SELECT '' AS three, b.f1 FROM BOX_TBL_VW b WHERE mbr('linestring(0 0, 3 3)') ~ b.f1;
-% .L1,	sys.b # table_name
+% .L3,	sys.b # table_name
 % three,	f1 # name
 % char,	mbr # type
 % 0,	0 # length
@@ -149,13 +149,13 @@ Ready.
 [ "",	"BOX (1 1, 3 3)"	]
 [ "",	"BOX (3 3, 3 3)"	]
 #SELECT '' AS one, b.f1 FROM BOX_TBL_VW b WHERE mbr('linestring(1 1, 3 3)') ~= b.f1;
-% .L1,	sys.b # table_name
+% .L3,	sys.b # table_name
 % one,	f1 # name
 % char,	mbr # type
 % 0,	0 # length
 [ "",	"BOX (1 1, 3 3)"	]
 #SELECT '' AS one, b1.*, b2.* FROM BOX_TBL_VW b1, BOX_TBL_VW b2 WHERE b1.f1 ~ b2.f1 and not b1.f1 ~= b2.f1;
-% .L2,	sys.b1,	sys.b1,	sys.b2,	sys.b2 # table_name
+% .L5,	sys.b1,	sys.b1,	sys.b2,	sys.b2 # table_name
 % one,	f1,	txt,	f1,	txt # name
 % char,	mbr,	varchar,	mbr,	varchar # type
 % 0,	0,	44,	0,	44 # length

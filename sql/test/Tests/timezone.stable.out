@@ -42,8 +42,8 @@ Ready.
 [ 1995-07-15 07:30:00.000000,	1995-07-15 13:00:00.000000+10:00	]
 #set time zone local;
 #select current_timezone;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 5 # length
 [ 0.000	]

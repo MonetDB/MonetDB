@@ -24,50 +24,50 @@ Ready.
 # 11:50:55 >  
 
 #select date '1997-07-31' + interval '1' month;
-% .L # table_name
-% sql_add_single_value # name
+% .L1 # table_name
+% L1 # name
 % date # type
 % 10 # length
 [ 1997-08-31	]
 #select date '1997-10-31' + interval '1' month;
-% .L # table_name
-% sql_add_single_value # name
+% .L1 # table_name
+% L1 # name
 % date # type
 % 10 # length
 [ 1997-12-01	]
 #select timestamp '1997-07-15 19:00:00' + interval '9' hour;
-% .L # table_name
-% sql_add_single_value # name
+% .L1 # table_name
+% L1 # name
 % timestamp # type
 % 26 # length
 [ 1997-07-16 04:00:00.000000	]
 #select time '19:00:00' + interval '9' hour;
-% .L # table_name
-% sql_add_single_value # name
+% .L1 # table_name
+% L1 # name
 % time # type
 % 15 # length
 [ 04:00:00.000000	]
 #select date '1997-07-31' + interval '1' hour;
-% .L # table_name
-% sql_add_single_value # name
+% .L1 # table_name
+% L1 # name
 % date # type
 % 10 # length
 [ 1997-07-31	]
 #select interval '0' year + interval '0' month;
-% .L # table_name
-% sql_add_single_value # name
+% .L1 # table_name
+% L1 # name
 % month_interval # type
 % 1 # length
 [ 0	]
 #select interval '00:00' hour to minute + interval '00:00' minute to second;
-% .L # table_name
-% sql_add_single_value # name
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 5 # length
 [ 0.000	]
 #select interval '2' hour + interval '74' minute;
-% .L # table_name
-% sql_add_single_value # name
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 9 # length
 [ 11640.000	]

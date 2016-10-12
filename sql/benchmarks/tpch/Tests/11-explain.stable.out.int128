@@ -119,7 +119,7 @@ function user.s2_1(A0:str,A1:sht,A2:str):void;
     X_92:hge := sql.dec_round(X_90,100);
     X_104 := bat.new(nil:oid,nil:str);
     X_112 := bat.append(X_104,"sys.partsupp");
-    X_120 := bat.append(X_112,"sys.L1");
+    X_120 := bat.append(X_112,"sys.L2");
     X_107 := bat.new(nil:oid,nil:str);
     X_114 := bat.append(X_107,"ps_partkey");
     X_122 := bat.append(X_114,"value");

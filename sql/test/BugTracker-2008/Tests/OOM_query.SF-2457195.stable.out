@@ -35,8 +35,8 @@ Ready.
 #(lower(lhs) like 'a%'),
 #(lower(lhs) like 'in%'),
 #(lower(lhs) like 'un%'),
-% sys.test,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10,	sys.L11,	sys.L12,	sys.L13,	sys.L14,	sys.L15,	sys.L15 # table_name
-% rhs,	L1,	L2,	L3,	L4,	L5,	L6,	L7,	L10,	L11,	L12,	L13,	L14,	L15,	like_lower_lhs # name
+% sys.test,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10,	sys.L11,	sys.L12,	sys.L13,	sys.L14,	sys.L15,	sys.L16 # table_name
+% rhs,	L1,	L2,	L3,	L4,	L5,	L6,	L7,	L10,	L11,	L12,	L13,	L14,	L15,	L16 # name
 % varchar,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
 [ "IN",	true,	false,	true,	false,	false,	false,	false,	false,	false,	false,	false,	false,	false,	false	]
@@ -104,8 +104,8 @@ Ready.
 #(lower(lhs) like 'a%'),
 #(lower(lhs) like 'in%'),
 #(lower(lhs) like 'un%'),
-% sys.test,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10,	sys.L11,	sys.L12,	sys.L13,	sys.L14,	sys.L15,	sys.L15 # table_name
-% rhs,	L1,	L2,	L3,	L4,	L5,	L6,	L7,	L10,	L11,	L12,	L13,	L14,	L15,	like_lower_lhs # name
+% sys.test,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10,	sys.L11,	sys.L12,	sys.L13,	sys.L14,	sys.L15,	sys.L16 # table_name
+% rhs,	L1,	L2,	L3,	L4,	L5,	L6,	L7,	L10,	L11,	L12,	L13,	L14,	L15,	L16 # name
 % varchar,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
 [ "IN",	true,	false,	true,	false,	false,	false,	false,	false,	false,	false,	false,	false,	false,	false	]

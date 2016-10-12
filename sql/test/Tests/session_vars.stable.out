@@ -34,26 +34,26 @@ Ready.
 # 11:50:12 >  
 
 #select debug;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]
 #select current_schema;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 3 # length
 [ "sys"	]
 #select current_user;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
 #select current_role;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
@@ -64,63 +64,63 @@ Ready.
 #set test_str = 'help';
 #set test_boolean = true;
 #select test_nr;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]
 #select test_str;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 4 # length
 [ "help"	]
 #select test_boolean;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select @debug;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]
 #select @current_schema;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 3 # length
 [ "sys"	]
 #select @"current_user";
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
 #select @"current_role";
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
 #set test_str = 1;
 #select @test_nr;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]
 #select @test_str;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 1 # length
 [ "1"	]
 #select @test_boolean;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

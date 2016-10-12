@@ -35,26 +35,26 @@ Ready.
 #  END IF;
 #END;
 #SELECT test(true), test(false), test(null);
-% .L1,	.L2,	.L2 # table_name
-% L1,	L2,	test_single_value # name
+% .L1,	.L2,	.L3 # table_name
+% L1,	L2,	L3 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
 [ 1,	0,	NULL	]
 #select test(true);
-% .L # table_name
-% test_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]
 #select test(false);
-% .L # table_name
-% test_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]
 #select test(null);
-% .L # table_name
-% test_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 11 # length
 [ NULL	]

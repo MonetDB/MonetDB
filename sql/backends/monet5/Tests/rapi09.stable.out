@@ -77,8 +77,8 @@ Ready.
 #CREATE FUNCTION suicide3() RETURNS TABLE (i integer) LANGUAGE R {.Internal(quit("no", 0,F))};
 #ROLLBACK;
 #SELECT 1;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]

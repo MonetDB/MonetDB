@@ -77,8 +77,8 @@ project (
 | | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
 | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ]
 | | ) [ nation.n_name NOT NULL as profit.nation, sys.year(orders.o_orderdate NOT NULL) as profit.o_year, sys.sql_sub(sys.sql_mul(decimal(33,2)[lineitem.l_extendedprice NOT NULL] as lineitem.l_extendedprice, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL)), sys.sql_mul(decimal(30,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, lineitem.l_quantity NOT NULL)) as profit.amount ]
-| ) [ profit.nation NOT NULL, profit.o_year ] [ profit.nation NOT NULL, profit.o_year, sys.sum no nil (profit.amount) as L1.L1 ]
-) [ profit.nation NOT NULL, profit.o_year, L1 as L1.sum_profit ] [ profit.nation ASC NOT NULL, profit.o_year ]
+| ) [ profit.nation NOT NULL, profit.o_year ] [ profit.nation NOT NULL, profit.o_year, sys.sum no nil (profit.amount) as L4.L4 ]
+) [ profit.nation NOT NULL, profit.o_year, L4 as L5.sum_profit ] [ profit.nation ASC NOT NULL, profit.o_year ]
 
 # 22:46:31 >  
 # 22:46:31 >  "Done."

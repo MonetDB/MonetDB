@@ -41,7 +41,7 @@ Ready.
 #	n_name
 #order by
 #	revenue desc;
-% sys.nation,	sys.L1 # table_name
+% sys.nation,	sys.L2 # table_name
 % n_name,	revenue # name
 % char,	decimal # type
 % 25,	21 # length

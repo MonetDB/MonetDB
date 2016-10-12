@@ -29,21 +29,21 @@ Ready.
 # 13:17:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28063" "--port=32737"
 # 13:17:29 >  
 
-#SELECT epoch(1460453860-300);
-% .L # table_name
-% sql_sub_single_value # name
+#SELECT epoch((1460453860-300) * 1000);
+% .L1 # table_name
+% L1 # name
 % timestamp # type
 % 26 # length
 [ 2016-04-12 09:32:40.000000	]
 #SELECT epoch(CAST(1460453860-300 AS INTEGER));
-% .L1 # table_name
-% sql_sub_single_value # name
+% .L2 # table_name
+% L2 # name
 % timestamp # type
 % 26 # length
 [ 2016-04-12 09:32:40.000000	]
 #SELECT epoch(CAST(1460453860-300 AS INTERVAL SECOND));
-% .L1 # table_name
-% sql_sub_single_value # name
+% .L2 # table_name
+% L2 # name
 % timestamp # type
 % 26 # length
 [ 2016-04-12 09:32:40.000000	]

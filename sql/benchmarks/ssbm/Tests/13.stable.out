@@ -35,7 +35,7 @@ Ready.
 #		and p_category = 'MFGR#14'
 #	group by d_year, s_city, p_brand1
 #	order by d_year, s_city, p_brand1;
-% sys.dwdate,	sys.supplier,	sys.part,	sys.L1 # table_name
+% sys.dwdate,	sys.supplier,	sys.part,	sys.L2 # table_name
 % d_year,	s_city,	p_brand1,	profit1 # name
 % int,	clob,	clob,	bigint # type
 % 4,	10,	9,	7 # length

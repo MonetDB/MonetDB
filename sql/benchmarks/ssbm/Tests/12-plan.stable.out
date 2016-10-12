@@ -66,7 +66,7 @@ project (
 | | | ) [ customer.c_region = clob "AMERICA" ]
 | | ) [ lineorder.%lineorder_lo_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey ]
 | ) [ dwdate.d_year, supplier.s_nation, part.p_category ] [ dwdate.d_year, supplier.s_nation, part.p_category, sys.sum no nil (sys.sql_sub(bigint[lineorder.lo_revenue] as lineorder.lo_revenue, bigint[lineorder.lo_supplycost] as lineorder.lo_supplycost)) as L1.L1 ]
-) [ dwdate.d_year, supplier.s_nation, part.p_category, L1 as L1.profit1 ] [ dwdate.d_year ASC, supplier.s_nation ASC, part.p_category ASC ]
+) [ dwdate.d_year, supplier.s_nation, part.p_category, L1 as L2.profit1 ] [ dwdate.d_year ASC, supplier.s_nation ASC, part.p_category ASC ]
 
 # 23:08:59 >  
 # 23:08:59 >  "Done."

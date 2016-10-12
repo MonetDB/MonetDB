@@ -29,8 +29,8 @@ Ready.
 #insert into foo values (1),(2),(3);
 [ 3	]
 #select 100*v from (select sum(1) as v from foo group by a) as t;
-% .L1 # table_name
-% sql_mul_L1 # name
+% .L3 # table_name
+% L3 # name
 % hugeint # type
 % 3 # length
 [ 100	]

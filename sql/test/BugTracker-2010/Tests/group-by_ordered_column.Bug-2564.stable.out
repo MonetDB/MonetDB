@@ -42,7 +42,7 @@ Ready.
 function user.s7_1():void;
     X_58:void := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",35);
     X_41 := bat.new(nil:oid,nil:str);
-    X_49 := bat.append(X_41,"sys.L1");
+    X_49 := bat.append(X_41,"sys.L2");
     X_44 := bat.new(nil:oid,nil:str);
     X_51 := bat.append(X_44,"L1");
     X_45 := bat.new(nil:oid,nil:str);
@@ -75,7 +75,7 @@ function user.s7_1():void;
     sql.resultSet(X_49,X_51,X_53,X_55,X_57,X_38);
 end user.s7_1;
 #select count(*) from t2564 group by c1, c2, c3;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

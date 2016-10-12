@@ -47,7 +47,7 @@ project (
 | | | ) [ dwdate.d_year = int "1993" ]
 | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
 | ) [  ] [ sys.sum no nil (sys.sql_mul(bigint[lineorder.lo_extendedprice] as lineorder.lo_extendedprice, lineorder.lo_discount)) as L1.L1 ]
-) [ L1 as L1.revenue ]
+) [ L1 as L2.revenue ]
 
 # 23:08:56 >  
 # 23:08:56 >  "Done."

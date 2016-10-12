@@ -44,8 +44,8 @@ Ready.
 [ "{\"f1\":1,\"f2\":2,\"f1\":3}"	]
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 #select json.filter(j,'f1') from nosql;
-% sys.L # table_name
-% filter_j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 11 # length
 [ "[]"	]
@@ -54,8 +54,8 @@ Ready.
 [ "[1,3]"	]
 [ "[{\"f12\":3}]"	]
 #select json.filter(j,'f2') from nosql;
-% sys.L # table_name
-% filter_j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 9 # length
 [ "[]"	]
@@ -63,9 +63,9 @@ Ready.
 [ "[2]"	]
 [ "[2]"	]
 [ "[[2,3,4]]"	]
-#select json.filter(j,'f12') from nosql;
-% sys.L # table_name
-% filter_j # name
+#select json.filter(j,'..f12') from nosql;
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 3 # length
 [ "[]"	]
@@ -89,26 +89,26 @@ Ready.
 % 11 # length
 [ "[1,\"f2\", 2]"	]
 #select json.filter(j,0) from nosql;
-% sys.L # table_name
-% filter_j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 3 # length
 [ "[1]"	]
 #select json.filter(j,1) from nosql;
-% sys.L # table_name
-% filter_j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 6 # length
 [ "[\"f2\"]"	]
 #select json.filter(j,2) from nosql;
-% sys.L # table_name
-% filter_j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 3 # length
 [ "[2]"	]
 #select json.filter(j,3) from nosql;
-% sys.L # table_name
-% filter_j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 2 # length
 [ "[]"	]

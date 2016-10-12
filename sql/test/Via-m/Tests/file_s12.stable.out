@@ -25,8 +25,15 @@ Ready.
 # 10:55:23 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=35218 
 # 10:55:23 >  
 
-% . # table_name
-% single_value # name
+# 17:12:57 >  
+# 17:12:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26340" "--port=31202"
+# 17:12:57 >  
+
+#declare return_id integer;
+#set return_id = -1;
+#select return_id;
+% .L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ -1	]

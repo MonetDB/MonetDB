@@ -41,7 +41,7 @@ Ready.
 #insert into geo values(st_makepoint(30, 40));
 [ 1	]
 #select st_x(g) as X, st_y(g) as Y, st_Z(g) as Z, g from geo;
-% sys.L,	sys.L,	sys.L,	sys.geo # table_name
+% sys.L1,	sys.L2,	sys.L3,	sys.geo # table_name
 % x,	y,	z,	g # name
 % double,	double,	double,	geometry # type
 % 24,	24,	24,	0 # length
@@ -55,7 +55,7 @@ Ready.
 #insert into geo values(st_makepoint(30, 40, 50));
 [ 1	]
 #select st_x(g) as X, st_y(g) as Y, st_Z(g) as Z, g from geo;
-% sys.L,	sys.L,	sys.L,	sys.geo # table_name
+% sys.L1,	sys.L2,	sys.L3,	sys.geo # table_name
 % x,	y,	z,	g # name
 % double,	double,	double,	geometry # type
 % 24,	24,	24,	0 # length

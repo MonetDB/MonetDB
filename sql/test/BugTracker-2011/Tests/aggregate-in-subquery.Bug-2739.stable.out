@@ -29,8 +29,8 @@ Ready.
 #insert into bug2739 values (1), (2);
 [ 2	]
 #select avg(val - (select avg(val) from bug2739)) from bug2739;
-% sys.L2 # table_name
-% L2 # name
+% sys.L4 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]

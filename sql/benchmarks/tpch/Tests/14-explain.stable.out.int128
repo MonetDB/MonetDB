@@ -96,7 +96,7 @@ function user.s2_1(A0:sht,A1:str,A2:bte,A3:bte,A4:bte,A5:date,A6:date,A7:int):vo
     X_83:bat[:hge] := batcalc.*(X_59,X_82);
     X_84:hge := aggr.sum(X_83);
     X_85:hge := calc./(X_77,X_84);
-    sql.resultSet(".L2","promo_revenue","decimal",39,5,10,X_85);
+    sql.resultSet(".L3","promo_revenue","decimal",39,5,10,X_85);
 end user.s2_1;
 
 # 22:53:29 >  

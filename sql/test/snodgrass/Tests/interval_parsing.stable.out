@@ -45,44 +45,44 @@ Ready.
 # 15:29:59 >  
 
 #SELECT INTERVAL '3' YEAR;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % month_interval # type
 % 2 # length
 [ 36	]
 #SELECT INTERVAL '7' MONTH;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % month_interval # type
 % 1 # length
 [ 7	]
 #SELECT INTERVAL '3-7' YEAR TO MONTH;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % month_interval # type
 % 2 # length
 [ 43	]
 #SELECT INTERVAL -'3-7' YEAR TO MONTH;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % month_interval # type
 % 3 # length
 [ -43	]
 #SELECT INTERVAL +'0-0' YEAR TO MONTH;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % month_interval # type
 % 1 # length
 [ 0	]
 #SELECT INTERVAL -'0-0' YEAR TO MONTH;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % month_interval # type
 % 1 # length
 [ 0	]
 #SELECT INTERVAL '1 23:45:12' DAY TO SECOND;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 10 # length
 [ 171912.000	]

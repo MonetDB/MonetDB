@@ -57,7 +57,7 @@ function user.s2_1(A0:bte,A1:str,A2:date,A3:date):void;
     X_160:void := querylog.define("explain select\n l_orderkey,\n sum(l_extendedprice * (1 - l_discount)) as revenue,\n o_orderdate,\n o_shippriority\nfrom\n customer,\n orders,\n lineitem\nwhere\n c_mktsegment = \\'BUILDING\\'\n and c_custkey = o_custkey\n and l_orderkey = o_orderkey\n and o_orderdate < date \\'1995-03-15\\'\n and l_shipdate > date \\'1995-03-15\\'\ngroup by\n l_orderkey,\n o_orderdate,\n o_shippriority\norder by\n revenue desc,\n o_orderdate\nlimit 10;","sequential_pipe",107);
     X_122 := bat.new(nil:oid,nil:str);
     X_130 := bat.append(X_122,"sys.lineitem");
-    X_138 := bat.append(X_130,"sys.L1");
+    X_138 := bat.append(X_130,"sys.L2");
     X_148 := bat.append(X_138,"sys.orders");
     X_155 := bat.append(X_148,"sys.orders");
     X_125 := bat.new(nil:oid,nil:str);

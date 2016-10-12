@@ -85,8 +85,8 @@ Ready.
 [ 1902,	222,	127,	4,	385,	128,	254	]
 [ 1985,	333,	131,	4,	391,	133,	262	]
 #SELECT a, e, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, a-b FROM t1 ORDER BY 2,4,3,1;
-% sys.t1,	sys.t1,	sys.L2,	sys.L3 # table_name
-% a,	e,	L2,	L3 # name
+% sys.t1,	sys.t1,	sys.L3,	sys.L4 # table_name
+% a,	e,	L3,	L4 # name
 % int,	int,	bigint,	bigint # type
 % 3,	3,	4,	2 # length
 [ 104,	103,	1000,	4	]

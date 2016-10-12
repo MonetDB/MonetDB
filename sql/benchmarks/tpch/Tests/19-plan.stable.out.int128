@@ -63,7 +63,7 @@ project (
 | | | ) [ part.p_partkey NOT NULL HASHCOL  = lineitem.l_partkey NOT NULL ]
 | | ) [ (part.p_brand NOT NULL = char(10) "Brand#12", part.p_container NOT NULL in (char(10) "SM CASE", char(10) "SM BOX", char(10) "SM PACK", char(10) "SM PKG"), lineitem.l_quantity NOT NULL >= decimal(15,2)[tinyint "1"], lineitem.l_quantity NOT NULL <= decimal(15,2)[sys.sql_add(smallint "1", smallint "10")], int "1" <= part.p_size NOT NULL <= int "5") or ((part.p_brand NOT NULL = char(10) "Brand#23", part.p_container NOT NULL in (char(10) "MED BAG", char(10) "MED BOX", char(10) "MED PKG", char(10) "MED PACK"), lineitem.l_quantity NOT NULL >= decimal(15,2)[tinyint "10"], lineitem.l_quantity NOT NULL <= decimal(15,2)[sys.sql_add(smallint "10", smallint "10")], int "1" <= part.p_size NOT NULL <= int "10") or (part.p_brand NOT NULL = char(10) "Brand#34", part.p_container NOT NULL in (char(10) "LG CASE", char(10) "LG BOX", char(10) "LG PACK", char(10) "LG PKG"), lineitem.l_quantity NOT NULL >= decimal(15,2)[tinyint "20"], lineitem.l_quantity NOT NULL <= decimal(15,2)[sys.sql_add(smallint "20", smallint "10")], int "1" <= part.p_size NOT NULL <= int "15")) ]
 | ) [  ] [ sys.sum no nil (sys.sql_mul(decimal(33,2)[lineitem.l_extendedprice NOT NULL] as lineitem.l_extendedprice, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL))) as L1.L1 ]
-) [ L1 as L1.revenue ]
+) [ L1 as L2.revenue ]
 
 # 22:46:33 >  
 # 22:46:33 >  "Done."

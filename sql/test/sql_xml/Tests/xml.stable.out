@@ -29,7 +29,7 @@ Ready.
 
 #select c.CustId, c.Name as CustName 
 #from customers c;
-% sys.c,	sys.L # table_name
+% sys.c,	sys.L1 # table_name
 % custid,	custname # name
 % int,	varchar # type
 % 1,	18 # length
@@ -43,8 +43,8 @@ Ready.
 #       	xmlelement(name "CustName", c.Name),
 #        xmlelement(name "City", c.City))
 #from customers c;
-% .L # table_name
-% element_Customer # name
+% .L1 # table_name
+% L1 # name
 % xml # type
 % 98 # length
 [ <Customer><CustId>1</CustId><CustName>WoodWorks</CustName><City>Baltimore</City></Customer>	]
@@ -55,8 +55,8 @@ Ready.
 #select xmlelement(name "Customer",
 #	xmlforest(c.CustId, c.Name AS CustName, c.City))
 #from customers c;
-% .L # table_name
-% element_Customer # name
+% .L1 # table_name
+% L1 # name
 % xml # type
 % 98 # length
 [ <Customer><custid>1</custid><custname>WoodWorks</custname><city>Baltimore</city></Customer>	]
@@ -111,7 +111,7 @@ Ready.
 #       where p.CustId = c.CustId) )) as "customer_projects"
 #from Customers c
 #order by c.CustId;
-% .L2 # table_name
+% .L3 # table_name
 % customer_projects # name
 % xml # type
 % 196 # length
@@ -125,8 +125,8 @@ Ready.
 #  xmlattributes(c.CustId as "id"), 
 #  xmlcomment('simple comment test'))
 #from Customers c;
-% .L # table_name
-% element_Customer # name
+% .L1 # table_name
+% L1 # name
 % xml # type
 % 57 # length
 [ <Customer id = "1"><!--simple comment test--></Customer>	]

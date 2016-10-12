@@ -54,15 +54,15 @@ Ready.
 # 15:55:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19131" "--port=36073"
 # 15:55:27 >  
 
-#SELECT gsl.chi2prob(20.0,5.0);
-% .L # table_name
-% chi2prob_single_value # name
+#SELECT sys.chi2prob(20.0, 5.0);
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0.001249730563	]
-#SELECT gsl.chi2prob(20.0, 1.0);
-% .L # table_name
-% chi2prob_single_value # name
+#SELECT sys.chi2prob(20.0, 1.0);
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 7.744216431e-06	]
@@ -74,24 +74,24 @@ Ready.
 #			(20.0, 6.0);
 [ 3	]
 #SELECT chi2prob(a, b) FROM chi2;
-% sys.L # table_name
-% chi2prob_a # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0.001249730563	]
 [ 0.0002004204095	]
 [ 0.002769395716	]
 #SELECT chi2prob(a, 6.0) FROM chi2;
-% sys.L # table_name
-% chi2prob_a # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0.002769395716	]
 [ 0.001210873307	]
 [ 0.002769395716	]
 #SELECT chi2prob(19.0, b) FROM chi2;
-% .L # table_name
-% chi2prob_single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0.001922136821	]
@@ -100,8 +100,8 @@ Ready.
 #INSERT INTO chi2 VALUES (20.0, NULL);
 [ 1	]
 #SELECT chi2prob(a, 6.0) FROM chi2;
-% sys.L # table_name
-% chi2prob_a # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0.002769395716	]
@@ -116,8 +116,8 @@ Ready.
 #                        (NULL, 5.0);
 [ 4	]
 #SELECT chi2prob(19.0, b) FROM chi2;
-% .L # table_name
-% chi2prob_single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0.001922136821	]
@@ -132,8 +132,8 @@ Ready.
 #                        (-1, 5.0);
 [ 4	]
 #SELECT chi2prob(19.0, b) FROM chi2;
-% .L # table_name
-% chi2prob_single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0.001922136821	]
@@ -148,8 +148,8 @@ Ready.
 #                        (20.0, 1.0);
 [ 4	]
 #SELECT chi2prob(a, b) FROM chi2;
-% sys.L # table_name
-% chi2prob_a # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0.001249730563	]
@@ -157,8 +157,8 @@ Ready.
 [ 0.002769395716	]
 [ 7.744216431e-06	]
 #SELECT chi2prob(a, 6.0) FROM chi2;
-% sys.L # table_name
-% chi2prob_a # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0.002769395716	]
@@ -166,8 +166,8 @@ Ready.
 [ 0.002769395716	]
 [ 0.002769395716	]
 #SELECT chi2prob(19.0, b) FROM chi2;
-% .L # table_name
-% chi2prob_single_value # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 0.001922136821	]

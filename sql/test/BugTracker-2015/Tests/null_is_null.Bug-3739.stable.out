@@ -36,8 +36,8 @@ Ready.
 % 1,	1 # length
 [ 1,	2	]
 #SELECT CASE WHEN L2 IN ( 2 , NULL ) THEN 'yes' ELSE 'no' END FROM ( VALUES ( 1 , 2 ) , ( 3 , NULL ) ) AS z ( L1 , L2 ) ;
-% .L4 # table_name
-% ifthenelse_isnull_or_=_l2 # name
+% .L5 # table_name
+% L5 # name
 % char # type
 % 3 # length
 [ "yes"	]

@@ -55,7 +55,7 @@ function user.s2_1(A0:date,A1:date,A2:int):void;
     X_104:void := querylog.define("explain select\n o_orderpriority,\n count(*) as order_count\nfrom\n orders\nwhere\n o_orderdate >= date \\'1993-07-01\\'\n and o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n and exists (\n select\n *\n from\n lineitem\n where\n l_orderkey = o_orderkey\n and l_commitdate < l_receiptdate\n )\ngroup by\n o_orderpriority\norder by\n o_orderpriority;","sequential_pipe",66);
     X_79 := bat.new(nil:oid,nil:str);
     X_87 := bat.append(X_79,"sys.orders");
-    X_95 := bat.append(X_87,"sys.L1");
+    X_95 := bat.append(X_87,"sys.L2");
     X_82 := bat.new(nil:oid,nil:str);
     X_89 := bat.append(X_82,"o_orderpriority");
     X_97 := bat.append(X_89,"order_count");

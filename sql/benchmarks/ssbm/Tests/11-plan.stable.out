@@ -63,7 +63,7 @@ project (
 | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
 | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
 | ) [ dwdate.d_year, customer.c_nation ] [ dwdate.d_year, customer.c_nation, sys.sum no nil (sys.sql_sub(bigint[lineorder.lo_revenue] as lineorder.lo_revenue, bigint[lineorder.lo_supplycost] as lineorder.lo_supplycost)) as L1.L1 ]
-) [ dwdate.d_year, customer.c_nation, L1 as L1.profit1 ] [ dwdate.d_year ASC, customer.c_nation ASC ]
+) [ dwdate.d_year, customer.c_nation, L1 as L2.profit1 ] [ dwdate.d_year ASC, customer.c_nation ASC ]
 
 # 23:08:59 >  
 # 23:08:59 >  "Done."

@@ -25,8 +25,8 @@ Ready.
 # 15:15:53 >  
 
 #SELECT ST_Contains(forests.boundary, named_places.boundary) FROM forests, named_places WHERE forests.name = 'Green Forest' AND named_places.name = 'Ashton';
-% sys.L # table_name
-% st_contains_boundary # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]

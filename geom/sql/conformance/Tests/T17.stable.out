@@ -26,8 +26,8 @@ Ready.
 # 14:23:23 >  
 
 #SELECT ST_AsText(ST_StartPoint(centerline)) FROM road_segments WHERE fid = 102;
-% sys.L # table_name
-% st_startpoint_centerline # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 14 # length
 [ "\"POINT (0 18)\""	]

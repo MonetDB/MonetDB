@@ -52,7 +52,7 @@ Ready.
 #          a0002.row AS item2_int, a0002.val AS item3_int,
 #          ROW_NUMBER () OVER
 #          (ORDER BY a0001.iter5_nat ASC, a0002.row ASC, a0002.col ASC) AS
-% .L5,	sys.L5 # table_name
+% .L17,	sys.L20 # table_name
 % iter20_nat,	item8_int # name
 % tinyint,	int # type
 % 1,	1 # length

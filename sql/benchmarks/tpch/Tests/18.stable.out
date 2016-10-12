@@ -60,7 +60,7 @@ Ready.
 #	o_totalprice desc,
 #	o_orderdate
 #limit 100;
-% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L6 # table_name
+% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L7 # table_name
 % c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L6 # name
 % varchar,	int,	int,	date,	decimal,	decimal # type
 % 18,	3,	5,	10,	17,	21 # length

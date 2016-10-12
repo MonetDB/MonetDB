@@ -65,63 +65,63 @@ Ready.
 # 16:37:27 >  
 
 #SELECT '\\a' LIKE '\\\\a';
-% .L # table_name
-% like_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT '\\a' LIKE '\\\\\\\\a';
-% .L # table_name
-% like_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'xa' LIKE '_a{1}';
-% .L # table_name
-% like_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'xa$b' LIKE '_a$b';
-% .L # table_name
-% like_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #CREATE FUNCTION sql2pcre(pat TEXT, esc TEXT) RETURNS TEXT EXTERNAL NAME pcre.sql2pcre;
 #SELECT sql2pcre('a', '\\');
-% .L # table_name
-% sql2pcre_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 0 # length
 [ NULL	]
 #SELECT sql2pcre('_', '\\');
-% .L # table_name
-% sql2pcre_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 3 # length
 [ "^.$"	]
 #SELECT sql2pcre('%', '\\');
-% .L # table_name
-% sql2pcre_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 4 # length
 [ "^.*$"	]
 #SELECT sql2pcre('_??', '?');
-% .L # table_name
-% sql2pcre_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 5 # length
 [ "^.\\?$"	]
 #SELECT sql2pcre('_{', '\\');
-% .L # table_name
-% sql2pcre_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 5 # length
 [ "^.\\{$"	]
 #SELECT sql2pcre('%^%', '\\');
-% .L # table_name
-% sql2pcre_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 8 # length
 [ "^.*\\^.*$"	]

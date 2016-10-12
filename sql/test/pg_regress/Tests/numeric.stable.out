@@ -1107,7 +1107,7 @@ Ready.
 [ 8,	167361463828.07488171224049123328,	167361463828.07491320069016125952	]
 [ 9,	107511333880051859.82525327143711277056,	107511333880052007.04141124673540337457	]
 #SELECT AVG(val) FROM num_data;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % double # type
 % 24 # length
@@ -1153,8 +1153,8 @@ Ready.
 #INSERT INTO ceil_floor_round VALUES ('-0.000001');
 [ 1	]
 #SELECT a, ceil(a), ceiling(a), floor(a) FROM ceil_floor_round;
-% sys.ceil_floor_round,	sys.L1,	sys.L2,	sys.L2 # table_name
-% a,	L1,	L2,	floor_a # name
+% sys.ceil_floor_round,	sys.L1,	sys.L2,	sys.L3 # table_name
+% a,	L1,	L2,	L3 # name
 % decimal,	double,	double,	double # type
 % 20,	24,	24,	24 # length
 [ -5.500,	-5,	-5,	-6	]
@@ -1165,8 +1165,8 @@ Ready.
 [ 0.000,	0,	0,	0	]
 [ 0.000,	0,	0,	0	]
 #SELECT a, round(a, 0) FROM ceil_floor_round;
-% sys.ceil_floor_round,	sys.L # table_name
-% a,	round_a # name
+% sys.ceil_floor_round,	sys.L1 # table_name
+% a,	L1 # name
 % decimal,	decimal # type
 % 20,	10 # length
 [ -5.500,	-6.000	]

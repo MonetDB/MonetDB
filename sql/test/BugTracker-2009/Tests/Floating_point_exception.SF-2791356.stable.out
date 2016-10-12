@@ -26,8 +26,8 @@ Ready.
 
 [ 1	]
 #select case when (bla1 - bla2) > 0 then 1/(bla1 - bla2) else 0 end from test2791356;
-% sys.L # table_name
-% isnull_>_sql_sub_bla1 # name
+% sys.L1 # table_name
+% L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
