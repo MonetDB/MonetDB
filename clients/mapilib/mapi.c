@@ -5554,14 +5554,6 @@ mapi_fetch_row(MapiHdl hdl)
 
 		// check if we have read the entire result set
 		if (result->rows_read >= result->row_count) {
-			char dummy;
-			if (result->row_count != 0) {
-				// this flush only occurs after a chunk has been sent
-				// if the result set has 0 rows, this flush does not occur
-				// hence we don't need to consume it
-				mnstr_readChr(hdl->mid->from, &dummy);
-			}
-			bs2_resetbuf(hdl->mid->from);
 			do {
 				if ((reply = mapi_fetch_line(hdl)) == NULL)
 					return 0;
@@ -5621,6 +5613,17 @@ mapi_fetch_row(MapiHdl hdl)
 				}
 			}
 			result->tuple_count += nrows;
+			// check if we have read the entire result set
+			if (result->tuple_count >= result->row_count) {
+				char dummy;
+				if (result->row_count != 0) {
+					// this flush only occurs after a chunk has been sent
+					// if the result set has 0 rows, this flush does not occur
+					// hence we don't need to consume it
+					mnstr_readChr(hdl->mid->from, &dummy);
+				}
+				bs2_resetbuf(hdl->mid->from);
+			}
 		} else {
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
 				if (result->fields[i].typelen < 0) {
