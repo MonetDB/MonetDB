@@ -5697,6 +5697,10 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 	struct MapiResultSet *result;
 	result = hdl->result;
 	if (result != NULL && result->prot10_resultset) {
+		if (fnr < 0 || fnr >= result->fieldcnt) {
+			mapi_setError(hdl->mid, "Illegal field number", "mapi_fetch_field", MERROR);
+			return 0;
+		}
 		if (result == NULL || 
 			result->fields == NULL || 
 			result->fields[fnr].converter == NULL || 
