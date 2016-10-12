@@ -2157,7 +2157,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 							    cnt + maximum, 1);
 				break;
 			}
-			case TYPE_int: {
+			case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			case TYPE_oid:
+#endif
+			{
 				int vl, vh;
 				if ((vl = *(int *) vrl) == int_nil)
 					continue;
@@ -2169,9 +2173,18 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					vl = NEXTVALUEint(vl);
 				}
 				if (!hi) {
-					if (vh == MINVALUEint)
-						continue;
-					vh = PREVVALUEint(vh);
+#if SIZEOF_OID == SIZEOF_INT
+					if (t == TYPE_oid) {
+						if (vh == MINVALUEoid)
+							continue;
+						vh = PREVVALUEoid(vh);
+					} else
+#endif
+					{
+						if (vh == MINVALUEint)
+							continue;
+						vh = PREVVALUEint(vh);
+					}
 				}
 				if (vl > vh)
 					continue;
@@ -2189,62 +2202,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 							    cnt + maximum, 1);
 				break;
 			}
-			case TYPE_oid: {
-				oid vl, vh;
-				if ((vl = *(oid *) vrl) == oid_nil)
-					continue;
-				if ((vh = *(oid *) vrh) == oid_nil)
-					continue;
-				if (!li) {
-					if (vl == MAXVALUEoid)
-						continue;
-					vl = NEXTVALUEoid(vl);
-				}
-				if (!hi) {
-					if (vh == MINVALUEoid)
-						continue;
-					vh = PREVVALUEoid(vh);
-				}
-				if (vl > vh)
-					continue;
-#if SIZEOF_OID == SIZEOF_INT
-				if (lcand)
-					ncnt = candscan_int(l, sl, r1,
-							    (const int *) &vl,
-							    (const int *) &vh,
-							    1, 1, 0, 0, 1, 1,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum, 1);
-				else
-					ncnt = fullscan_int(l, sl, r1,
-							    (const int *) &vl,
-							    (const int *) &vh,
-							    1, 1, 0, 0, 1, 1,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum, 1);
-#else
-				if (lcand)
-					ncnt = candscan_lng(l, sl, r1,
-							    (const lng *) &vl,
-							    (const lng *) &vh,
-							    1, 1, 0, 0, 1, 1,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum, 1);
-				else
-					ncnt = fullscan_lng(l, sl, r1,
-							    (const lng *) &vl,
-							    (const lng *) &vh,
-							    1, 1, 0, 0, 1, 1,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum, 1);
+			case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			case TYPE_oid:
 #endif
-				break;
-			}
-			case TYPE_lng: {
+			{
 				lng vl, vh;
 				if ((vl = *(lng *) vrl) == lng_nil)
 					continue;
@@ -2256,9 +2218,18 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					vl = NEXTVALUElng(vl);
 				}
 				if (!hi) {
-					if (vh == MINVALUElng)
-						continue;
-					vh = PREVVALUElng(vh);
+#if SIZEOF_OID == SIZEOF_LNG
+					if (t == TYPE_oid) {
+						if (vh == MINVALUEoid)
+							continue;
+						vh = PREVVALUEoid(vh);
+					} else
+#endif
+					{
+						if (vh == MINVALUElng)
+							continue;
+						vh = PREVVALUElng(vh);
+					}
 				}
 				if (vl > vh)
 					continue;
