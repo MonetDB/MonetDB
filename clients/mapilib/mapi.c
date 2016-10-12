@@ -1797,9 +1797,19 @@ finish_handle(MapiHdl hdl)
 	if (hdl == NULL)
 		return MERROR;
 	mid = hdl->mid;
-	if (mid->active == hdl && !hdl->needmore &&
-	    read_into_cache(hdl, 0) != MOK)
-		return MERROR;
+	if (mid->active == hdl && !hdl->needmore) {
+		// finish consuming rows that have been send by the server
+		if (hdl->result && hdl->result->prot10_resultset) {
+			if (hdl->result->rows_read < hdl->result->row_count) {
+				while(mapi_fetch_row(hdl) != 0);
+			}
+		} else {
+			if (read_into_cache(hdl, 0) != MOK) {
+				return MERROR;
+			}
+		}
+	}
+
 	if (mid->to) {
 		if (hdl->needmore) {
 			assert(mid->active == NULL || mid->active == hdl);
@@ -4154,7 +4164,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 		if (line == NULL)
 			return mid->error;
 		switch (*line) {
-		case 42: {
+		case 42: { // 42 = '*'
 			int result_set_id;
 			int timezone;
 			lng nr_rows;
