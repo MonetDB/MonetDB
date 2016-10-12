@@ -1943,17 +1943,9 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 
 		if (!mnstr_writeLng(s, (lng) max(max(strlen(c->tn), strlen(c->name)), strlen(type->sqlname)) + 1) ||
 				!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, type->sqlname) ||
-				!mnstr_writeInt(s, typelen)) {
+				!mnstr_writeInt(s, typelen) || !mnstr_writeInt(s, c->type.digits) || !mnstr_writeInt(s, c->type.scale)) {
 			fres = -1;
 			goto cleanup;
-		}
-
-		if (type->eclass == EC_DEC) {
-			// if the type is a decimal, we write the scale as a 4-byte integer as well
-			if (!mnstr_writeInt(s, c->type.scale)) {
-				fres = -1;
-				goto cleanup;
-			}
 		}
 
 		// write NULL values for this column to the stream

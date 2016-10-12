@@ -262,25 +262,24 @@ conversion_date_to_string(char *dst, int len, const int *src, int null_value) {
 }
 
 int 
-conversion_time_to_string(char *dst, int len, const int *src, int null_value, int timezone_diff) {
+conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits, int timezone_diff) {
 	int sec, min, hour, ms;
-	//int ms;
 	int time = *src;
 	int mtime = 24 * 60 * 60 * 1000;
+	int res = 0;
 	if (len < daytimeStrlen) return -1;
 	if (*src == null_value) {
 		strcpy(dst, NULL_STRING);
 		return 3;
 	}
+	// account for the timezone of the client
+	time += timezone_diff;
 	// time has to be between 00:00 and 24:00
 	if (time < 0)
 		time = mtime + time;
 	if (time > mtime)
 		time = time - mtime;
-	// account for the timezone of the client
-	time += timezone_diff * 1000 * 60 * 60;
 
-	// for some reason, mclient does not render the ms part of the time, so we don't either
 	hour = time / 3600000;
 	time -= hour * 3600000;
 	min = time / 60000;
@@ -288,7 +287,13 @@ conversion_time_to_string(char *dst, int len, const int *src, int null_value, in
 	sec = time / 1000;
 	time -= sec * 1000;
 	ms = time;
-	return sprintf(dst, "%02d:%02d:%02d.%03d000", hour, min, sec, ms);
+	if (res = sprintf(dst, "%02d:%02d:%02d.%03d000", hour, min, sec, ms) < 0) {
+		return res;
+	}
+
+	// adjust displayed precision based on the digits
+	dst[9 + digits] = '\0';
+	return 9 + digits;
 }
 
 static int days_between_zero_and_epoch = 719528;

@@ -4111,7 +4111,7 @@ static char* mapi_convert_decimal(struct MapiColumn *col) {
 
 static char* mapi_convert_time(struct MapiColumn *col) {
 	if (*((int*) col->buffer_ptr) == *((int*)col->null_value)) return NULL;
-	if (conversion_time_to_string(col->write_buf, COLBUFSIZ, (int*) col->buffer_ptr, *((int*)col->null_value), 0) < 0) {
+	if (conversion_time_to_string(col->write_buf, COLBUFSIZ, (int*) col->buffer_ptr, *((int*)col->null_value), col->digits, 0) < 0) {
 		return NULL;
 	}
 	return (char*) col->write_buf;
@@ -4226,16 +4226,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				if (!mnstr_readStr(mid->from, table_name) ||
 						!mnstr_readStr(mid->from, col_name) ||
 						!mnstr_readStr(mid->from, type_sql_name) ||
-						!mnstr_readInt(mid->from, &typelen)) {
+						!mnstr_readInt(mid->from, &typelen) || 
+						!mnstr_readInt(mid->from, &result->fields[i].digits) || 
+						!mnstr_readInt(mid->from, &result->fields[i].scale)) {
 					return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 				}
 
-				if (strcasecmp(type_sql_name, "decimal") == 0) {
-					// decimal type, read the scale as well
-					if (!mnstr_readInt(mid->from, &result->fields[i].scale)) {
-						return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
-					}
-				} else if (strcasecmp(type_sql_name, "sec_interval") == 0) {
+				if (strcasecmp(type_sql_name, "sec_interval") == 0) {
 					result->fields[i].scale = 3;
 				}
 
