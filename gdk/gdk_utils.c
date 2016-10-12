@@ -1953,6 +1953,11 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *ret;
 
+	if (*new_size > old_size &&
+	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize) {
+		GDKerror("allocating too much virtual address space\n");
+		return NULL;
+	}
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret == NULL) {
 		GDKmemfail("GDKmremap", *new_size);
