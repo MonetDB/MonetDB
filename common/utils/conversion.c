@@ -290,7 +290,8 @@ conversion_time_to_string(char *dst, int len, const int *src, int null_value, in
 	if (res = sprintf(dst, "%02d:%02d:%02d.%03d000", hour, min, sec, ms) < 0) {
 		return res;
 	}
-
+	digits--;
+	if (digits == 0) digits = -1;
 	// adjust displayed precision based on the digits
 	dst[9 + digits] = '\0';
 	return 9 + digits;

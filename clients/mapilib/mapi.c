@@ -5569,7 +5569,7 @@ mapi_fetch_row(MapiHdl hdl)
 		// if not, check if our cache is empty
 		if (result->rows_read >= result->tuple_count) {
 			// if our cache is empty, we read data from the socket
-			lng nrows = 0;
+			lng nrows = -1;
 			result->cur_row = 1;
 
 			// first we write a prompt to the server indicating that we want another block of the result set
@@ -5587,12 +5587,27 @@ mapi_fetch_row(MapiHdl hdl)
 
 			// this actually triggers the read of the entire block
 			// after this point we operate on the buffer
-			if (!mnstr_readLng(hdl->mid->from, &nrows)) {
-				// FIXME: set hdl->mid to something
-				hdl->mid->errorstr = strdup("Failed to read row response");
-				hdl->mid->error = 0;
-				fprintf(stderr, "Failure 3.\n");
-				return hdl->mid->error;
+			while(nrows < 0) {
+				if (!mnstr_readLng(hdl->mid->from, &nrows)) {
+					// FIXME: set hdl->mid to something
+					hdl->mid->errorstr = strdup("Failed to read row response");
+					hdl->mid->error = 0;
+					fprintf(stderr, "Failure 3.\n");
+					return hdl->mid->error;
+				}
+				if (nrows < 0) {
+					lng new_size;
+					char dummy;
+					// increase buffer size
+					if (!mnstr_readLng(hdl->mid->from, &new_size)) {
+						return hdl->mid->error;
+					}
+					// consume flush
+					mnstr_readChr(hdl->mid->from, &dummy);
+					// resize buffer
+					bs2_resizebuf(hdl->mid->from, new_size);
+					hdl->mid->blocksize = new_size;
+				}
 			}
 
 			assert(nrows <= result->row_count);

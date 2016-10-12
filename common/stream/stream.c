@@ -4456,6 +4456,36 @@ bs2_stealbuf(stream *ss)
 	return buffer;
 }
 
+void 
+bs2_resizebuf(stream *ss, size_t bufsiz) {
+	size_t compress_bound;
+	bs2 *s = (bs2 *) ss->stream_data.p;
+	assert(ss->read == bs2_read);
+
+	if (s->buf) free(s->buf);
+	if (s->compbuf) free(s->compbuf);
+	
+	s->bufsiz = 0;
+	s->buf = NULL;
+	s->compbuf = NULL;
+
+	if ((s->buf = malloc(bufsiz)) == NULL) {
+		return;
+	}
+	s->bufsiz = bufsiz;
+	compress_bound = compression_size_bound(s);
+	if (compress_bound > 0) {
+		s->compbufsiz = compress_bound;
+		s->compbuf = malloc(s->compbufsiz);
+		if (!s->compbuf) {
+			free(s->buf);
+			s->buf = NULL;
+			return;
+		}
+	}
+	bs2_resetbuf(ss);
+}
+
 void
 bs2_resetbuf(stream *ss)
 {

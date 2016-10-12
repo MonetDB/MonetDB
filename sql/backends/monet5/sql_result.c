@@ -2045,9 +2045,10 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 				row = row > (size_t) count ? (size_t) count : row;
 			}
 		} else {
+			size_t rowsize = 0;
 			// we have varsized elements, so we have to loop to determine how many rows fit into a buffer
 			while (row < (size_t) count) {
-				size_t rowsize = fixed_lengths;
+				rowsize = fixed_lengths;
 				for (i = 0; i < (size_t) t->nr_cols; i++) {
 					res_col *c = t->cols + i;
 					int mtype = iterators[i].b->ttype;
@@ -2063,7 +2064,19 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 				bytes_left -= rowsize;
 				row++;
 			}
-			assert(row > srow);
+			if (row == srow) {
+				lng new_size = rowsize + 1024;
+				if (!mnstr_writeLng(s, (lng) -1) || 
+					!mnstr_writeLng(s, new_size) || 
+					mnstr_flush(s) < 0) {
+					fres = -1;
+					goto cleanup;
+				}
+				row = srow + 1;
+				bs2_resizebuf(s, new_size);
+				buf = bs2_buffer(s).buf;
+				bsize = new_size;
+			}
 		}
 
 		if (row <= srow) {
