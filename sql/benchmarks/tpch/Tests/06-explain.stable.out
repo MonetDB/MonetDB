@@ -39,48 +39,46 @@ Ready.
 % mal # name
 % clob # type
 % 320 # length
-function user.s2_1(A0:date,A1:date,A2:int,A3:bte,A4:sht,A5:bte,A6:sht,A7:bte):void;
-    X_73:void := querylog.define("explain select\n sum(l_extendedprice * l_discount) as revenue\nfrom\n lineitem\nwhere\n l_shipdate >= date \\'1994-01-01\\'\n and l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n and l_discount between .06 - 0.01 and .06 + 0.01\n and l_quantity < 24;","sequential_pipe",42);
+function user.s4_1():void;
+    X_73:void := querylog.define("explain select\n sum(l_extendedprice * l_discount) as revenue\nfrom\n lineitem\nwhere\n l_shipdate >= date \\'1994-01-01\\'\n and l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n and l_discount between .06 - 0.01 and .06 + 0.01\n and l_quantity < 24;","sequential_pipe",18);
     X_0 := sql.mvc();
     X_4:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_quantity",0);
     X_17:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",0);
     X_35:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","lineitem");
-    X_45:date := mtime.addmonths(A1,A2);
-    C_86 := algebra.subselect(X_35,C_1,A0,X_45,true,false,false);
-    (C_37:bat[:oid],r1_46:bat[:date]) := sql.bind(X_0,"sys","lineitem","l_shipdate",2);
-    C_87 := algebra.subselect(r1_46,nil:bat[:oid],A0,X_45,true,false,false);
-    X_39:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",1);
-    C_89 := algebra.subselect(X_39,C_1,A0,X_45,true,false,false);
-    C_46 := sql.subdelta(C_86,C_1,C_37,C_87,C_89);
-    X_25 := calc.sht(2,A3,3,2);
-    X_28:sht := calc.-(X_25,A4);
-    X_29 := calc.lng(2,X_28,15,2);
-    X_31 := calc.sht(2,A5,3,2);
-    X_33:sht := calc.+(X_31,A6);
-    X_34 := calc.lng(2,X_33,15,2);
-    C_90 := algebra.subselect(X_17,C_46,X_29,X_34,true,true,false);
-    (C_19:bat[:oid],r1_28:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_discount",2);
-    C_91 := algebra.subselect(r1_28,nil:bat[:oid],X_29,X_34,true,true,false);
-    X_21:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",1);
-    C_93 := algebra.subselect(X_21,C_46,X_29,X_34,true,true,false);
-    C_50 := sql.subdelta(C_90,C_46,C_19,C_91,C_93);
-    X_15 := calc.lng(A7,15,2);
-    C_94 := algebra.thetasubselect(X_4,C_50,X_15,"<");
-    (C_7:bat[:oid],r1_16:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_quantity",2);
-    C_95 := algebra.thetasubselect(r1_16,nil:bat[:oid],X_15,"<");
-    X_10:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_quantity",1);
-    C_97 := algebra.thetasubselect(X_10,C_50,X_15,"<");
-    C_51 := sql.subdelta(C_94,C_50,C_7,C_95,C_97);
+    X_45:date := mtime.addmonths("1994-01-01",12);
+    C_46 := algebra.subselect(X_35,C_1,"1994-01-01",X_45,true,false,false);
+    C_50 := algebra.subselect(X_17,C_46,5:lng,7:lng,true,true,false);
+    C_51 := algebra.thetasubselect(X_4,C_50,2400:lng,"<");
     X_53:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",0);
-    (C_55:bat[:oid],r1_64:bat[:lng]) := sql.bind(X_0,"sys","lineitem","l_extendedprice",2);
-    X_57:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",1);
-    X_60 := sql.projectdelta(C_51,X_53,C_55,r1_64,X_57);
-    X_61 := sql.projectdelta(C_51,X_17,C_19,r1_28,X_21);
+    X_60 := algebra.projection(C_51,X_53);
+    X_61 := algebra.projection(C_51,X_17);
     X_62:bat[:lng] := batcalc.*(X_60,X_61);
     X_65:lng := aggr.sum(X_62);
     sql.resultSet("sys.L1","revenue","decimal",19,4,10,X_65);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=6 usec 
+#remap                actions= 1 time=35 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=3 usec 
+#evaluate             actions=15 time=72 usec 
+#emptybind            actions=12 time=32 usec 
+#aliases              actions=23 time=12 usec 
+#mergetable           actions= 0 time=36 usec 
+#deadcode             actions=12 time=8 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions=11 time=13 usec 
+#commonTerms          actions= 0 time=5 usec 
+#projectionpath       actions= 0 time=4 usec 
+#reorder              actions= 1 time=23 usec 
+#deadcode             actions= 0 time=4 usec 
+#reduce               actions=86 time=17 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=3 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollector     actions= 1 time=12 usec 
+#total                actions= 1 time=481 usec 
 
 # 22:53:26 >  
 # 22:53:26 >  "Done."
