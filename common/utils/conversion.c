@@ -263,14 +263,20 @@ conversion_date_to_string(char *dst, int len, const int *src, int null_value) {
 
 int 
 conversion_time_to_string(char *dst, int len, const int *src, int null_value, int timezone_diff) {
-	int sec, min, hour;
+	int sec, min, hour, ms;
 	//int ms;
 	int time = *src;
+	int mtime = 24 * 60 * 60 * 1000;
 	if (len < daytimeStrlen) return -1;
 	if (*src == null_value) {
 		strcpy(dst, NULL_STRING);
 		return 3;
 	}
+	// time has to be between 00:00 and 24:00
+	if (time < 0)
+		time = mtime + time;
+	if (time > mtime)
+		time = time - mtime;
 	// account for the timezone of the client
 	time += timezone_diff * 1000 * 60 * 60;
 
@@ -280,9 +286,9 @@ conversion_time_to_string(char *dst, int len, const int *src, int null_value, in
 	min = time / 60000;
 	time -= min * 60000;
 	sec = time / 1000;
-	//time -= sec * 1000;
-	//ms = time;
-	return sprintf(dst, "%02d:%02d:%02d", hour, min, sec);
+	time -= sec * 1000;
+	ms = time;
+	return sprintf(dst, "%02d:%02d:%02d.%03d000", hour, min, sec, ms);
 }
 
 static int days_between_zero_and_epoch = 719528;

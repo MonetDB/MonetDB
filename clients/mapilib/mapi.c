@@ -4145,7 +4145,7 @@ static char* mapi_convert_unknown(struct MapiColumn *col) {
 
 
 static MapiMsg
-read_into_cache_new(MapiHdl hdl, int lookahead, int expect_result, int *error)
+read_into_cache(MapiHdl hdl, int lookahead)
 {
 	char *line, *copy;
 	Mapi mid;
@@ -4163,7 +4163,6 @@ read_into_cache_new(MapiHdl hdl, int lookahead, int expect_result, int *error)
 	if (result && result->next && result->next->prot10_resultset) {
 		// if we have a prot10 resultset we don't want to read lines, because prot10 result sets do not consist of lines
 		hdl->active = result->next;
-		if (expect_result) expected_prot10_result(error);
 		return MOK;
 	}
 	for (;;) {
@@ -4177,7 +4176,6 @@ read_into_cache_new(MapiHdl hdl, int lookahead, int expect_result, int *error)
 			lng nr_rows;
 			lng nr_cols;
 			lng i;
-			expect_result = 0;
 
 			result = new_result(hdl);
 			result->prot10_resultset = 1;
@@ -4338,7 +4336,6 @@ read_into_cache_new(MapiHdl hdl, int lookahead, int expect_result, int *error)
 			while (*line) {
 				if (*line != *copy) /* must be EOF or PROMPT1 \001\001\n */
 					return mid->error;
-				}
 				line++;
 				copy++;
 			}
@@ -4349,7 +4346,6 @@ read_into_cache_new(MapiHdl hdl, int lookahead, int expect_result, int *error)
 				hdl->needmore = 1;
 				mid->active = hdl;
 			}
-			if (expect_result) expected_prot10_result(error);
 			return mid->error;
 		case '!':
 			/* start a new result set if we don't have one
@@ -4388,18 +4384,11 @@ read_into_cache_new(MapiHdl hdl, int lookahead, int expect_result, int *error)
 			    (result->querytype == -1 /* unknown (not SQL) */ ||
 			     result->querytype == Q_TABLE ||
 			     result->querytype == Q_UPDATE)) {
-				if (expect_result) expected_prot10_result(error);
 				return mid->error;
 			}
 			break;
 		}
 	}
-}
-
-static MapiMsg
-read_into_cache(MapiHdl hdl, int lookahead) {
-	int error = 0;
-	return read_into_cache_new(hdl, lookahead, 0, &error);
 }
 
 MapiMsg
@@ -4634,14 +4623,8 @@ mapi_query(Mapi mid, const char *cmd)
 	ret = mid->error;
 	if (ret == MOK)
 		ret = mapi_execute_internal(hdl);
-	if (ret == MOK) {
-		int error = 0;
-		ret = read_into_cache_new(hdl, 1, 1, &error);
-		if (error != 0) {
-			/*printf("\nProblem with query: %s\n", cmd);
-			printf("Expected prot10 result set but did not get it.\n\n");*/
-		}
-	}
+	if (ret == MOK)
+		ret = read_into_cache(hdl, 1);
 	return hdl;
 }
 

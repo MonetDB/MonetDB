@@ -1439,27 +1439,32 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 		}
 	} else if (eclass == EC_NUM || eclass == EC_POS || eclass == EC_MONTH || eclass == EC_SEC) {
 		count = 0;
+		BAT *b = NULL;
 		if (bid) {
-			BAT *b = BATdescriptor(bid);
-
+			b = BATdescriptor(bid);
 			if (b) {
-				if (mtype == TYPE_bte) {
-					count = bat_max_btelength(b);
-				} else if (mtype == TYPE_sht) {
-					count = bat_max_shtlength(b);
-				} else if (mtype == TYPE_int) {
-					count = bat_max_intlength(b);
-				} else if (mtype == TYPE_lng) {
-					count = bat_max_lnglength(b);
-#ifdef HAVE_HGE
-				} else if (mtype == TYPE_hge) {
-					count = bat_max_hgelength(b);
-#endif
+				if (BATcount(b) == 1) {
+					p = Tloc(b, 0);
 				} else {
-					assert(0);
+					if (mtype == TYPE_bte) {
+						count = bat_max_btelength(b);
+					} else if (mtype == TYPE_sht) {
+						count = bat_max_shtlength(b);
+					} else if (mtype == TYPE_int) {
+						count = bat_max_intlength(b);
+					} else if (mtype == TYPE_lng) {
+						count = bat_max_lnglength(b);
+#ifdef HAVE_HGE
+					} else if (mtype == TYPE_hge) {
+						count = bat_max_hgelength(b);
+#endif
+					} else {
+						assert(0);
+					}
+					count += incr;
+					BBPunfix(b->batCacheid);
+					b = NULL;
 				}
-				count += incr;
-				BBPunfix(b->batCacheid);
 			} else {
 				assert(b);
 				/* [Stefan.Manegold@cwi.nl]:
@@ -1470,7 +1475,9 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 				 return -1|0|1 ;
 				 */
 			}
-		} else {
+		} 
+
+		if (!bid || b) {
 			if (p) {
 #ifdef HAVE_HGE
 				hge val = 0;
@@ -1502,6 +1509,9 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 			} else {
 				count = 0;
 			}
+		}
+		if (b) {
+			BBPunfix(b->batCacheid);
 		}
 		if (eclass == EC_SEC && count < 5)
 			count = 5;
