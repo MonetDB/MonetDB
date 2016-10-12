@@ -380,7 +380,7 @@ do {									\
 	if (BATcapacity(bn) < maximum) {				\
 		impsloop(CAND, TEST,					\
 			 buninsfix(bn, dst, cnt, o,			\
-				   (BUN) ((dbl) cnt / (dbl) (p-r)	\
+				   (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)	\
 					  * (dbl) (q-p) * 1.1 + 1024),	\
 				   BATcapacity(bn) + q - p, BUN_NONE));	\
 	} else {							\
@@ -445,7 +445,7 @@ do {									\
 			v = src[o-off];					\
 			if (TEST) {					\
 				buninsfix(bn, dst, cnt, o,		\
-					  (BUN) ((dbl) cnt / (dbl) (p-r) \
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r) \
 						 * (dbl) (q-p) * 1.1 + 1024), \
 					  BATcapacity(bn) + q - p, BUN_NONE); \
 				cnt++;					\
@@ -611,7 +611,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			v = BUNtail(bi,(BUN)(o-off));
 			if ((*cmp)(tl, v) == 0) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -635,7 +635,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			      ((c = (*cmp)(th, v)) < 0 ||
 			       (!hi && c == 0))))) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -659,7 +659,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			      (c = cmp(th, v)) > 0 ||
 			      (hi && c == 0)))) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -699,7 +699,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			v = BUNtail(bi,(BUN)(o-off));
 			if ((*cmp)(tl, v) == 0) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -723,7 +723,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			      ((c = (*cmp)(th, v)) < 0 ||
 			       (!hi && c == 0))))) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -747,7 +747,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			      (c = cmp(th, v)) > 0 ||
 			      (hi && c == 0)))) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -787,7 +787,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -803,7 +803,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -819,7 +819,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -835,7 +835,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
