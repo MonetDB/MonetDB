@@ -3430,12 +3430,19 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 
-	// scalar values are single-column result sets
-	res_id = mvc_result_table(b->mvc, 1, 1, NULL);
-	mvc_result_value(b->mvc, *tn, *cn, *type, *digits, *scale, p, mtype);
 	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
-		if (mvc_export_result(b, cntxt->fdout, res_id))
-			throw(SQL, "sql.exportResult", "failed");
+		// scalar values are single-column result sets
+		// create the empty result table
+		mvc *m = b->mvc;
+		int res_id = mvc_result_table(m, 1, 1, NULL);
+		res_table *t;
+		// fill it with the single-column value
+		mvc_result_value(m, *tn, *cn, *type, *digits, *scale, p, mtype);
+		t = res_tables_find(m->results, res_id);
+		// export the value to the client
+		if (mvc_export_resultset_prot10(m, t, cntxt->fdout, b->client->fdin->s, b->client->blocksize, b->client->compute_column_widths, p) < 0) {
+			throw(SQL, "sql.exportValue", "failed");
+		}
 		return MAL_SUCCEED;
 	}
 	if (b->out == NULL || mvc_export_value(b, b->out, 1, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype, "", "NULL") != SQL_OK)

@@ -23,6 +23,7 @@ extern int mvc_export_value(backend *b, stream *s, int qtype, str tn, str cn, st
 extern int mvc_export_result(backend *b, stream *s, int res_id);
 extern int mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths);
 extern int mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr);
+extern int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size_t bsize, int compute_lengths, ptr p);
 
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
 

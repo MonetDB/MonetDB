@@ -1235,7 +1235,6 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 	int i, ok = 1;
 	int csv = (b->output_format == OFMT_CSV);
 	int json = (b->output_format == OFMT_JSON);
-
 	if (!s)
 		return 0;
 
@@ -1438,33 +1437,28 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 			return l;
 		}
 	} else if (eclass == EC_NUM || eclass == EC_POS || eclass == EC_MONTH || eclass == EC_SEC) {
-		BAT *b = NULL;
 		count = 0;
 		if (bid) {
-			b = BATdescriptor(bid);
+			BAT *b = BATdescriptor(bid);
+
 			if (b) {
-				if (BATcount(b) == 1) {
-					p = Tloc(b, 0);
-				} else {
-					if (mtype == TYPE_bte) {
-						count = bat_max_btelength(b);
-					} else if (mtype == TYPE_sht) {
-						count = bat_max_shtlength(b);
-					} else if (mtype == TYPE_int) {
-						count = bat_max_intlength(b);
-					} else if (mtype == TYPE_lng) {
-						count = bat_max_lnglength(b);
+				if (mtype == TYPE_bte) {
+					count = bat_max_btelength(b);
+				} else if (mtype == TYPE_sht) {
+					count = bat_max_shtlength(b);
+				} else if (mtype == TYPE_int) {
+					count = bat_max_intlength(b);
+				} else if (mtype == TYPE_lng) {
+					count = bat_max_lnglength(b);
 #ifdef HAVE_HGE
-					} else if (mtype == TYPE_hge) {
-						count = bat_max_hgelength(b);
+				} else if (mtype == TYPE_hge) {
+					count = bat_max_hgelength(b);
 #endif
-					} else {
-						assert(0);
-					}
-					count += incr;
-					BBPunfix(b->batCacheid);
-					b = NULL;
+				} else {
+					assert(0);
 				}
+				count += incr;
+				BBPunfix(b->batCacheid);
 			} else {
 				assert(b);
 				/* [Stefan.Manegold@cwi.nl]:
@@ -1475,9 +1469,7 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 				 return -1|0|1 ;
 				 */
 			}
-		} 
-
-		if (!bid || b) {
+		} else {
 			if (p) {
 #ifdef HAVE_HGE
 				hge val = 0;
@@ -1509,9 +1501,6 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 			} else {
 				count = 0;
 			}
-		}
-		if (b) {
-			BBPunfix(b->batCacheid);
 		}
 		if (eclass == EC_SEC && count < 5)
 			count = 5;
@@ -1852,7 +1841,7 @@ static size_t max(size_t a, size_t b) {
 	return a > b ? a : b;
 }
 
-static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size_t bsize, int compute_lengths) {
+int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size_t bsize, int compute_lengths, ptr p) {
 	BAT *order;
 	lng count;
 	size_t i;
@@ -2011,7 +2000,7 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 		}
 
 		if (compute_lengths) {
-			if (!mnstr_writeLng(s, get_print_width(mtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), iterators[i].b->batCacheid, c->p))) {
+			if (!mnstr_writeLng(s, get_print_width(mtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), p ? 0 : iterators[i].b->batCacheid, p ? p : c->p))) {
 				fres = -1;
 				goto cleanup;
 			}
@@ -2204,7 +2193,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		return mvc_export_file(b, s, t);
 
 	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
-		return mvc_export_resultset_prot10(m, t, s, b->client->fdin->s, b->client->blocksize, b->client->compute_column_widths);
+		return mvc_export_resultset_prot10(m, t, s, b->client->fdin->s, b->client->blocksize, b->client->compute_column_widths, NULL);
 	}
 
 	if (!json) {
