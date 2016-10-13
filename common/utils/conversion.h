@@ -70,4 +70,5 @@ int conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_valu
 // *src is time since epoch in ms
 int conversion_epoch_tz_to_string(char *dst, int len, const lng *src, lng null_value, int timezone_diff);
 
+int conversion_blob_to_string(char *dst, int len, const char *blobdata, size_t nitems);
 #endif

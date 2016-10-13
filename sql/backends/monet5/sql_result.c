@@ -1828,6 +1828,7 @@ static int type_supports_binary_transfer(sql_type *type) {
 		type->eclass == EC_CHAR || 
 		type->eclass == EC_STRING ||
 		type->eclass == EC_DEC || 
+		type->eclass == EC_BLOB ||
 		type->eclass == EC_FLT || 
 		type->eclass == EC_NUM || 
 		type->eclass == EC_DATE || 
@@ -1938,6 +1939,10 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 			goto cleanup;
 		}
 
+		if (type->eclass == EC_BLOB) {
+			nil_len = 0;
+		}
+
 		// write NULL values for this column to the stream
 		// NULL values are encoded as <size:int> <NULL value> (<size> is always <typelen> for fixed size columns)
 		if (!mnstr_writeInt(s, nil_len)) {
@@ -1959,40 +1964,42 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 			iterators[i] = bat_iterator(BATdescriptor(ret));
 		}
 
-		switch(ATOMstorage(mtype)) {
-			case TYPE_str:
-				retval = write_str_term(s, str_nil);
-				break;
-			case TYPE_bit:
-			case TYPE_bte:
-				retval = mnstr_writeBte(s, bte_nil);
-				break;
-			case TYPE_sht:
-				retval = mnstr_writeSht(s, sht_nil);
-				break;
-			case TYPE_int:
-				retval = mnstr_writeInt(s, int_nil);
-				break;
-			case TYPE_lng:
-				retval = mnstr_writeLng(s, lng_nil);
-				break;
-			case TYPE_flt:
-				retval = mnstr_writeFlt(s, flt_nil);
-				break;
-			case TYPE_dbl:
-				retval = mnstr_writeDbl(s, dbl_nil);
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				retval = mnstr_writeHge(s, hge_nil);
-				break;
-#endif
-			case TYPE_void:
-				break;
-			default:
-				assert(0);
-				fres = -1;
-				goto cleanup;
+		if (type->eclass != EC_BLOB) {
+			switch(ATOMstorage(mtype)) {
+				case TYPE_str:
+					retval = write_str_term(s, str_nil);
+					break;
+				case TYPE_bit:
+				case TYPE_bte:
+					retval = mnstr_writeBte(s, bte_nil);
+					break;
+				case TYPE_sht:
+					retval = mnstr_writeSht(s, sht_nil);
+					break;
+				case TYPE_int:
+					retval = mnstr_writeInt(s, int_nil);
+					break;
+				case TYPE_lng:
+					retval = mnstr_writeLng(s, lng_nil);
+					break;
+				case TYPE_flt:
+					retval = mnstr_writeFlt(s, flt_nil);
+					break;
+				case TYPE_dbl:
+					retval = mnstr_writeDbl(s, dbl_nil);
+					break;
+	#ifdef HAVE_HGE
+				case TYPE_hge:
+					retval = mnstr_writeHge(s, hge_nil);
+					break;
+	#endif
+				case TYPE_void:
+					break;
+				default:
+					assert(0);
+					fres = -1;
+					goto cleanup;
+			}
 		}
 		if (!retval) {
 			fres = -1;
@@ -2044,8 +2051,13 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 					int mtype = iterators[i].b->ttype;
 					int convert_to_string = !type_supports_binary_transfer(c->type.type);
 					if (convert_to_string || ATOMvarsized(mtype)) {
-						size_t slen = strlen((const char*) BUNtail(iterators[i], row));
-						rowsize += slen + 1;
+						if (c->type.type->eclass == EC_BLOB) {
+							blob *b = (blob*) BUNtail(iterators[i], row);
+							rowsize += sizeof(lng) + b->nitems;
+						} else {
+							size_t slen = strlen((const char*) BUNtail(iterators[i], row));
+							rowsize += slen + 1;
+						}
 					}
 				}
 				if (bytes_left < rowsize) {
@@ -2119,6 +2131,19 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 							*buf++ = '\0';
 						}
 					}
+				} else if (c->type.type->eclass == EC_BLOB) {
+					// transfer blobs as [lng][data] combination
+					char *startbuf = buf;
+					buf += sizeof(lng);
+					for (crow = srow; crow < row; crow++) {
+						blob *b = (blob*) BUNtail(iterators[i], crow);
+						(*(lng*)buf) = b->nitems == ~(size_t) 0 ? -1 : (lng) b->nitems;
+						buf += sizeof(lng);
+						memcpy(buf, b->data, b->nitems);
+						buf += b->nitems;
+					}
+					// after the loop we know the size of the column, so write it
+					*((lng*)startbuf) = buf - (startbuf + sizeof(lng));
 				} else {
 					// for variable length strings and large fixed strings we use varints
 					// variable columns are prefixed by a length, 

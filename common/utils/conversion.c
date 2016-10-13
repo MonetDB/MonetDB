@@ -350,4 +350,38 @@ conversion_epoch_tz_to_string(char *dst, int len, const lng *src, lng null_value
 	return conversion_epoch_optional_tz_to_string(dst, len, src, null_value, 1, timezone_diff);
 }
 
+static char hexit[] = "0123456789ABCDEF";
+
+int
+conversion_blob_to_string(char *dst, int len, const char *blobdata, size_t nitems)
+{
+	char *s;
+	size_t i;
+	size_t expectedlen;
+
+	if (nitems == ~(size_t) 0)
+		expectedlen = 4;
+	else
+		expectedlen = 24 + (nitems * 3);
+
+	if (len < expectedlen) return -1;
+
+	if (nitems == ~(size_t) 0) {
+		strcpy(dst, NULL_STRING);
+		return 3;
+	}
+
+	strcpy(dst, "\0");
+	s = dst;
+
+	for (i = 0; i < nitems; i++) {
+		int val = (blobdata[i] >> 4) & 15;
+
+		*s++ = hexit[val];
+		val = blobdata[i] & 15;
+		*s++ = hexit[val];
+	}
+	*s = '\0';
+	return (int) (s - dst); /* 64bit: check for overflow */
+}
 

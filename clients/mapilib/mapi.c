@@ -837,6 +837,7 @@ struct MapiColumn {
 	void *null_value;
 	char* buffer_ptr;
 	char *dynamic_write_buf;
+	size_t dynamic_write_bufsiz;
 	char write_buf[COLBUFSIZ];
 	mapi_converter converter;
 };
@@ -4139,6 +4140,25 @@ static char* mapi_convert_timestamptz(struct MapiColumn *col) {
 	return (char*) col->write_buf;
 }
 
+static char* mapi_convert_blob(struct MapiColumn *col) {
+	lng length = *((lng*) col->buffer_ptr);
+	if (length < 0) {
+		return NULL;
+	}
+	if (24 + 3 * length > col->dynamic_write_bufsiz) {
+		col->dynamic_write_bufsiz = (size_t) 24 + 3 * length;
+		if (col->dynamic_write_buf) free(col->dynamic_write_buf);
+		col->dynamic_write_buf = malloc(col->dynamic_write_bufsiz);
+		if (!col->dynamic_write_buf) {
+			return NULL;
+		}
+	}
+	if (conversion_blob_to_string(col->dynamic_write_buf, col->dynamic_write_bufsiz, col->buffer_ptr + sizeof(lng), length) < 0) {
+		return NULL;
+	}
+	return (char*) col->dynamic_write_buf;
+}
+
 static char* mapi_convert_null(struct MapiColumn *col) {
 	(void) col;
 	return NULL;
@@ -4271,14 +4291,18 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				result->fields[i].typelen = typelen;
 				result->fields[i].columnlength = (int) column_print_length;
 				result->fields[i].dynamic_write_buf = NULL;
+				result->fields[i].dynamic_write_bufsiz = 0;
 				result->fields[i].converter = NULL;
 
-				if (result->fields[i].null_value == NULL) {
+				if (strcasecmp(type_sql_name, "blob") == 0) {
+					result->fields[i].converter = (mapi_converter) mapi_convert_blob;
+				} else if (result->fields[i].null_value == NULL) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_null;
 				} else if (strcasecmp(type_sql_name, "varchar") == 0 || strcasecmp(type_sql_name, "char") == 0) {
 					if (typelen > 0) {
 						result->fields[i].converter = (mapi_converter) mapi_convert_varchar;
-						result->fields[i].dynamic_write_buf = malloc(result->fields[i].typelen * sizeof(char));
+						result->fields[i].dynamic_write_bufsiz = result->fields[i].typelen * sizeof(char);
+						result->fields[i].dynamic_write_buf = malloc(result->fields[i].dynamic_write_bufsiz);
 					} else {
 						result->fields[i].converter = (mapi_converter) mapi_convert_clob;
 					}
@@ -5562,7 +5586,9 @@ mapi_fetch_row(MapiHdl hdl)
 	mapi_hdl_check(hdl, "mapi_fetch_row");
 	if (result && result->prot10_resultset) {
 		char* buf;
+		// check if we are done reading this result set
 		if (result->rows_read >= result->row_count) {
+			// if we are done, check if there is another result set we have to read
 			do {
 				if ((reply = mapi_fetch_line(hdl)) == NULL)
 					return 0;
@@ -5573,15 +5599,14 @@ mapi_fetch_row(MapiHdl hdl)
 			}
 			return 0;
 		}
-		// if not, check if our cache is empty
+		// if we are not done, check if our cache is empty
 		if (result->rows_read >= result->tuple_count) {
 			// if our cache is empty, we read data from the socket
 			lng nrows = -1;
 			result->cur_row = 1;
 
-			// first we write a prompt to the server indicating that we want another block of the result set
-
 #ifdef CONTINUATION_MESSAGE
+			// first we write a prompt to the server indicating that we want another block of the result set
 			if (!mnstr_writeChr(hdl->mid->to, 42) || mnstr_flush(hdl->mid->to)) {
 				return hdl->mid->error;
 			}
@@ -5649,11 +5674,25 @@ mapi_fetch_row(MapiHdl hdl)
 				bs2_resetbuf(hdl->mid->from);
 			}
 		} else {
+			// the requested row is in the cache, simply move each column pointer to the next row
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
 				if (result->fields[i].typelen < 0) {
 					// variable-length column
-					result->fields[i].buffer_ptr += strlen(result->fields[i].buffer_ptr) + 1;
+					if (result->fields[i].converter == (mapi_converter) mapi_convert_blob) {
+						// blobs are prefixed by their length
+						// so we can read the length to know how to get to the next blob
+						lng length = *((lng*) result->fields[i].buffer_ptr);
+						result->fields[i].buffer_ptr += sizeof(lng);
+						if (length > 0) {
+							result->fields[i].buffer_ptr += length;
+						}
+					} else {
+						// strings are null-terminated
+						// so we call strlen to figure out how far to jump
+						result->fields[i].buffer_ptr += strlen(result->fields[i].buffer_ptr) + 1;
+					}
 				} else {
+					// fixed-length column, so we just jump forward typelen
 					result->fields[i].buffer_ptr += result->fields[i].typelen;
 				}
 			}
