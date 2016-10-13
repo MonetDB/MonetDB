@@ -26,6 +26,7 @@ HAVE_JDBCTESTS?Test_Sbatching
 HAVE_JDBCTESTS&HAVE_HGE?Test_Int128
 HAVE_JDBCTESTS?Test_FetchSize
 HAVE_JDBCCLIENT_JAR?Test_JdbcClient
+HAVE_JDBCTESTS?Test_Wrapper
 HAVE_JDBCTESTS?BugConcurrent_clients_SF_1504657
 HAVE_JDBCTESTS?BugConcurrent_sequences
 HAVE_JDBCTESTS?BugDatabaseMetaData_Bug_3356

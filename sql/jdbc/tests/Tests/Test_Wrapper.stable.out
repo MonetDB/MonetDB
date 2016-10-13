@@ -1,0 +1,116 @@
+stdout of test 'Test_Wrapper` in directory 'sql/jdbc/tests` itself:
+
+
+# 16:18:08 >  
+# 16:18:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32669" "--set" "mapi_usock=/var/tmp/mtest-10276/.s.monetdb.32669" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_jdbc_tests" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 16:18:08 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_jdbc_tests', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:32669/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10276/.s.monetdb.32669
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 16:18:08 >  
+# 16:18:08 >  "./Test_Wrapper.SQL.sh" "Test_Wrapper"
+# 16:18:08 >  
+
+
+# 16:18:08 >  
+# 16:18:08 >  java Test_Wrapper "jdbc:monetdb://toulouse:32669/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 16:18:08 >  
+
+Connected. Auto commit is: true
+Connection. isWrapperFor(Connection) returns: true	Called unwrap(). Returned object is not null, so oke
+Connection. isWrapperFor(MonetConnection) returns: true	Called unwrap(). Returned object is not null, so oke
+Connection. isWrapperFor(Statement) returns: false
+Connection. isWrapperFor(MonetStatement) returns: false
+DatabaseMetaData. isWrapperFor(DatabaseMetaData) returns: true	Called unwrap(). Returned object is not null, so oke
+DatabaseMetaData. isWrapperFor(MonetDatabaseMetaData) returns: true	Called unwrap(). Returned object is not null, so oke
+DatabaseMetaData. isWrapperFor(Statement) returns: false
+DatabaseMetaData. isWrapperFor(MonetStatement) returns: false
+ResultSet. isWrapperFor(ResultSet) returns: true	Called unwrap(). Returned object is not null, so oke
+ResultSet. isWrapperFor(MonetResultSet) returns: true	Called unwrap(). Returned object is not null, so oke
+ResultSet. isWrapperFor(Statement) returns: false
+ResultSet. isWrapperFor(MonetStatement) returns: false
+ResultSetMetaData. isWrapperFor(ResultSetMetaData) returns: true	Called unwrap(). Returned object is not null, so oke
+ResultSetMetaData. isWrapperFor(MonetResultSet) returns: false
+ResultSetMetaData. isWrapperFor(MonetResultSet$rsmdw) returns: true	Called unwrap(). Returned object is not null, so oke
+ResultSetMetaData. isWrapperFor(Statement) returns: false
+ResultSetMetaData. isWrapperFor(MonetStatement) returns: false
+Statement. isWrapperFor(Statement) returns: true	Called unwrap(). Returned object is not null, so oke
+Statement. isWrapperFor(MonetStatement) returns: true	Called unwrap(). Returned object is not null, so oke
+Statement. isWrapperFor(Connection) returns: false
+Statement. isWrapperFor(MonetConnection) returns: false
+PreparedStatement. isWrapperFor(PreparedStatement) returns: true	Called unwrap(). Returned object is not null, so oke
+PreparedStatement. isWrapperFor(MonetPreparedStatement) returns: true	Called unwrap(). Returned object is not null, so oke
+PreparedStatement. isWrapperFor(Statement) returns: true	Called unwrap(). Returned object is not null, so oke
+PreparedStatement. isWrapperFor(MonetStatement) returns: true	Called unwrap(). Returned object is not null, so oke
+PreparedStatement. isWrapperFor(Connection) returns: false
+PreparedStatement. isWrapperFor(MonetConnection) returns: false
+ParameterMetaData. isWrapperFor(ParameterMetaData) returns: true	Called unwrap(). Returned object is not null, so oke
+ParameterMetaData. isWrapperFor(MonetPreparedStatement) returns: false
+ParameterMetaData. isWrapperFor(MonetPreparedStatement$pmdw) returns: true	Called unwrap(). Returned object is not null, so oke
+ParameterMetaData. isWrapperFor(Connection) returns: false
+ParameterMetaData. isWrapperFor(MonetConnection) returns: false
+PrepStmt ResultSetMetaData. isWrapperFor(ResultSetMetaData) returns: true	Called unwrap(). Returned object is not null, so oke
+PrepStmt ResultSetMetaData. isWrapperFor(MonetPreparedStatement) returns: false
+PrepStmt ResultSetMetaData. isWrapperFor(MonetPreparedStatement$rsmdw) returns: true	Called unwrap(). Returned object is not null, so oke
+PrepStmt ResultSetMetaData. isWrapperFor(Connection) returns: false
+PrepStmt ResultSetMetaData. isWrapperFor(MonetConnection) returns: false
+
+# 16:18:09 >  
+# 16:18:09 >  "Done."
+# 16:18:09 >  
+
