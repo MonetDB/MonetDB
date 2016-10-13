@@ -1911,8 +1911,9 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 		int nil_len = -1;
 		int retval = -1;
 		int convert_to_string = !type_supports_binary_transfer(c->type.type);
-		iterators[i] = bat_iterator(b);
 		sql_type *type = c->type.type;
+		
+		iterators[i] = bat_iterator(b);
 
 		if (type->eclass == EC_TIMESTAMP) {
 			// timestamps are converted to Unix Timestamps

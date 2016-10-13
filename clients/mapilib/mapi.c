@@ -5595,7 +5595,7 @@ mapi_fetch_row(MapiHdl hdl)
 					if (!mnstr_readLng(hdl->mid->from, &new_size)) {
 						return hdl->mid->error;
 					}
-					if (new_size < hdl->mid->blocksize) {
+					if ((size_t) new_size < hdl->mid->blocksize) {
 						return mapi_setError(hdl->mid, "Request for buffer resize, but new size smaller than old size.", "mapi_fetch_row", MERROR);
 					}
 					// consume flush

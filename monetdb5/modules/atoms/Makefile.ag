@@ -28,6 +28,7 @@ lib_atoms = {
 		url.c url.h \
 		uuid.c \
 		xml.c xml.h
+	LIBS = ../../../common/utils/libconversion
 }
 
 headers_mal = {
