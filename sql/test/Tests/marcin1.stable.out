@@ -94,7 +94,7 @@ Ready.
 [ 4,	NULL	]
 [ 5,	NULL	]
 #select t1marcin1.id, (select t2marcin2.id from t2marcin2 where t2marcin2.id>2) from t1marcin1;
-% sys.t1marcin1,	.L2 # table_name
+% sys.t1marcin1,	.L3 # table_name
 % id,	L2 # name
 % int,	int # type
 % 1,	1 # length

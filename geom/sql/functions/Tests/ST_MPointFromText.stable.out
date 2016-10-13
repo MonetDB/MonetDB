@@ -71,8 +71,8 @@ Ready.
 [ "MULTIPOINT Z (20 20 20, 30 30 30)"	]
 #drop table points_tbl;
 #select st_mpointfromtext(geom) from geometriesTxt WHERE id=4;
-% sys.L # table_name
-% st_mpointfromtext_geom # name
+% sys.L1 # table_name
+% L1 # name
 % geometry # type
 % 0 # length
 [ "MULTIPOINT (10 20, 30 40)"	]

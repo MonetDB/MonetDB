@@ -1,0 +1,189 @@
+stdout of test '21-explain` in directory 'sql/benchmarks/tpch` itself:
+
+
+# 22:53:30 >  
+# 22:53:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34581" "--set" "mapi_usock=/var/tmp/mtest-9096/.s.monetdb.34581" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Feb2013/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_benchmarks_tpch" "--set" "mal_listing=0"
+# 22:53:30 >  
+
+# MonetDB 5 server v11.15.12
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpch', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34581/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9096/.s.monetdb.34581
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:53:31 >  
+# 22:53:31 >  "/usr/bin/python2" "21-explain.SQL.py" "21-explain"
+# 22:53:31 >  
+
+#set optimizer = 'sequential_pipe';
+#explain select
+#	s_name,
+#	count(*) as numwait
+#from
+#	supplier,
+#	lineitem l1,
+#	orders,
+#	nation
+#where
+#	s_suppkey = l1.l_suppkey
+#	and o_orderkey = l1.l_orderkey
+#	and o_orderstatus = 'F'
+#	and l1.l_receiptdate > l1.l_commitdate
+#	and exists (
+#		select
+#			*
+#		from
+#			lineitem l2
+#		where
+#			l2.l_orderkey = l1.l_orderkey
+#			and l2.l_suppkey <> l1.l_suppkey
+#	)
+#	and not exists (
+#		select
+#			*
+#		from
+#			lineitem l3
+#		where
+#			l3.l_orderkey = l1.l_orderkey
+#			and l3.l_suppkey <> l1.l_suppkey
+#			and l3.l_receiptdate > l3.l_commitdate
+% .explain # table_name
+% mal # name
+% clob # type
+% 729 # length
+function user.s2_1(A0:str,A1:str):void;
+    X_177:void := querylog.define("explain select\n s_name,\n count(*) as numwait\nfrom\n supplier,\n lineitem l1,\n orders,\n nation\nwhere\n s_suppkey = l1.l_suppkey\n and o_orderkey = l1.l_orderkey\n and o_orderstatus = \\'F\\'\n and l1.l_receiptdate > l1.l_commitdate\n and exists (\n select\n *\n from\n lineitem l2\n where\n l2.l_orderkey = l1.l_orderkey\n and l2.l_suppkey <> l1.l_suppkey\n )\n and not exists (\n select\n *\n from\n lineitem l3\n where\n l3.l_orderkey = l1.l_orderkey\n and l3.l_suppkey <> l1.l_suppkey\n and l3.l_receiptdate > l3.l_commitdate\n )\n and s_nationkey = n_nationkey\n and n_name = \\'SAUDI ARABIA\\'\ngroup by\n s_name\norder by\n numwait desc,\n s_name\nlimit 100;","sequential_pipe",121);
+    X_152 := bat.new(nil:oid,nil:str);
+    X_160 := bat.append(X_152,"sys.supplier");
+    X_168 := bat.append(X_160,"sys.L2");
+    X_155 := bat.new(nil:oid,nil:str);
+    X_162 := bat.append(X_155,"s_name");
+    X_170 := bat.append(X_162,"numwait");
+    X_156 := bat.new(nil:oid,nil:str);
+    X_163 := bat.append(X_156,"char");
+    X_172 := bat.append(X_163,"wrd");
+    X_157 := bat.new(nil:oid,nil:int);
+    X_165 := bat.append(X_157,25);
+    X_174 := bat.append(X_165,32);
+    X_159 := bat.new(nil:oid,nil:int);
+    X_167 := bat.append(X_159,0);
+    X_176 := bat.append(X_167,0);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","lineitem");
+    X_7:bat[:date] := sql.bind(X_3,"sys","lineitem","l_receiptdate",0);
+    (C_10,r1_10) := sql.bind(X_3,"sys","lineitem","l_receiptdate",2);
+    X_13:bat[:date] := sql.bind(X_3,"sys","lineitem","l_receiptdate",1);
+    X_15 := sql.delta(X_7,C_10,r1_10,X_13);
+    X_16 := algebra.projection(C_4,X_15);
+    X_17:bat[:date] := sql.bind(X_3,"sys","lineitem","l_commitdate",0);
+    (C_19,r1_19) := sql.bind(X_3,"sys","lineitem","l_commitdate",2);
+    X_21:bat[:date] := sql.bind(X_3,"sys","lineitem","l_commitdate",1);
+    X_22 := sql.delta(X_17,C_19,r1_19,X_21);
+    X_23 := algebra.projection(C_4,X_22);
+    X_24:bat[:bit] := batcalc.>(X_16,X_23);
+    C_25 := algebra.subselect(X_24,true,true,true,true,false);
+    X_28:bat[:oid] := sql.bind_idxbat(X_3,"sys","lineitem","lineitem_l_orderkey_fkey",0);
+    (X_30,r1_33) := sql.bind_idxbat(X_3,"sys","lineitem","lineitem_l_orderkey_fkey",2);
+    X_32:bat[:oid] := sql.bind_idxbat(X_3,"sys","lineitem","lineitem_l_orderkey_fkey",1);
+    X_33 := sql.delta(X_28,X_30,r1_33,X_32);
+    X_34:bat[:oid] := algebra.projectionpath(C_25,C_4,X_33);
+    C_35:bat[:oid] := sql.tid(X_3,"sys","orders");
+    X_37:bat[:str] := sql.bind(X_3,"sys","orders","o_orderstatus",0);
+    (C_39,r1_43) := sql.bind(X_3,"sys","orders","o_orderstatus",2);
+    X_41:bat[:str] := sql.bind(X_3,"sys","orders","o_orderstatus",1);
+    X_42 := sql.delta(X_37,C_39,r1_43,X_41);
+    X_43 := algebra.projection(C_35,X_42);
+    C_44 := algebra.subselect(X_43,A0,A0,true,false,false);
+    X_45 := algebra.projection(C_44,C_35);
+    (X_46,r1_51) := algebra.subjoin(X_34,X_45,nil:BAT,nil:BAT,false,nil:lng);
+    X_50:bat[:int] := sql.bind(X_3,"sys","lineitem","l_suppkey",0);
+    (C_52,r1_58) := sql.bind(X_3,"sys","lineitem","l_suppkey",2);
+    X_54:bat[:int] := sql.bind(X_3,"sys","lineitem","l_suppkey",1);
+    X_55 := sql.delta(X_50,C_52,r1_58,X_54);
+    X_56 := algebra.projection(C_4,X_55);
+    X_57 := algebra.projection(C_25,X_56);
+    X_58 := algebra.projection(X_46,X_57);
+    C_59:bat[:oid] := sql.tid(X_3,"sys","supplier");
+    X_61:bat[:int] := sql.bind(X_3,"sys","supplier","s_suppkey",0);
+    (C_63,r1_69) := sql.bind(X_3,"sys","supplier","s_suppkey",2);
+    X_65:bat[:int] := sql.bind(X_3,"sys","supplier","s_suppkey",1);
+    X_66 := sql.delta(X_61,C_63,r1_69,X_65);
+    X_67 := algebra.projection(C_59,X_66);
+    (X_68,r1_74) := algebra.subjoin(X_58,X_67,nil:BAT,nil:BAT,false,nil:lng);
+    X_70:bat[:oid] := sql.bind_idxbat(X_3,"sys","supplier","supplier_s_nationkey_fkey",0);
+    (X_72,r1_79) := sql.bind_idxbat(X_3,"sys","supplier","supplier_s_nationkey_fkey",2);
+    X_74:bat[:oid] := sql.bind_idxbat(X_3,"sys","supplier","supplier_s_nationkey_fkey",1);
+    X_75 := sql.delta(X_70,X_72,r1_79,X_74);
+    X_76:bat[:oid] := algebra.projectionpath(r1_74,C_59,X_75);
+    C_77:bat[:oid] := sql.tid(X_3,"sys","nation");
+    X_79:bat[:str] := sql.bind(X_3,"sys","nation","n_name",0);
+    (C_81,r1_89) := sql.bind(X_3,"sys","nation","n_name",2);
+    X_83:bat[:str] := sql.bind(X_3,"sys","nation","n_name",1);
+    X_84 := sql.delta(X_79,C_81,r1_89,X_83);
+    X_85 := algebra.projection(C_77,X_84);
+    C_86 := algebra.subselect(X_85,A1,A1,true,false,false);
+    X_87 := algebra.projection(C_86,C_77);
+    (X_88,r1_98) := algebra.subjoin(X_76,X_87,nil:BAT,nil:BAT,false,nil:lng);
+    X_90:bat[:int] := algebra.projectionpath(X_88,r1_74,X_67);
+    X_91 := bat.mirror(X_90);
+    X_92:bat[:int] := sql.bind(X_3,"sys","lineitem","l_orderkey",0);
+    (C_94,r1_108) := sql.bind(X_3,"sys","lineitem","l_orderkey",2);
+    X_96:bat[:int] := sql.bind(X_3,"sys","lineitem","l_orderkey",1);
+    X_97 := sql.delta(X_92,C_94,r1_108,X_96);
+    X_98 := algebra.projection(C_4,X_97);
+    X_99 := algebra.projection(C_25,X_98);
+    X_100:bat[:int] := algebra.projectionpath(X_88,X_68,X_46,X_99);
+    (X_101,r1_125) := algebra.subjoin(X_100,X_98,nil:BAT,nil:BAT,false,nil:lng);
+    X_103 := algebra.projection(r1_125,X_56);
+    X_104:bat[:int] := algebra.projectionpath(X_88,X_68,X_58);
+    X_105 := algebra.projection(X_101,X_104);
+    X_106:bat[:bit] := batcalc.!=(X_103,X_105);
+    C_107 := algebra.subselect(X_106,true,true,true,true,false);
+    X_108 := algebra.projection(C_107,X_101);
+    C_109 := algebra.subinter(X_91,X_108,nil:BAT,nil:BAT,false,nil:lng);
+    X_110 := algebra.projection(C_109,X_90);
+    X_111 := bat.mirror(X_110);
+    X_112 := algebra.projection(C_109,X_100);
+    (X_113,r1_177) := algebra.subjoin(X_112,X_99,nil:BAT,nil:BAT,false,nil:lng);
+    X_115 := algebra.projection(r1_177,X_57);
+    X_116:bat[:int] := algebra.projectionpath(X_113,C_109,X_104);
+    X_117:bat[:bit] := batcalc.!=(X_115,X_116);
+    C_118 := algebra.subselect(X_117,true,true,true,true,false);
+    X_119 := algebra.projection(C_118,X_113);
+    X_120 := algebra.subdiff(X_111,X_119,nil:BAT,nil:BAT,false,nil:lng);
+    X_121:bat[:str] := sql.bind(X_3,"sys","supplier","s_name",0);
+    (C_123,r1_202) := sql.bind(X_3,"sys","supplier","s_name",2);
+    X_125:bat[:str] := sql.bind(X_3,"sys","supplier","s_name",1);
+    X_126 := sql.delta(X_121,C_123,r1_202,X_125);
+    X_127:bat[:str] := algebra.projectionpath(X_120,C_109,X_88,r1_74,C_59,X_126);
+    (X_128,r1_211,r2_211) := group.subgroupdone(X_127);
+    X_131 := algebra.projection(r1_211,X_127);
+    X_133:bat[:wrd] := aggr.subcount(X_128,X_128,r1_211,false);
+    X_132 := bat.setKey(X_131,true);
+    (C_136,r1_223) := algebra.firstn(X_133,100,false,false);
+    C_138 := algebra.firstn(X_132,C_136,r1_223,100,true,false);
+    X_139 := algebra.projection(C_138,X_132);
+    X_140 := algebra.projection(C_138,X_133);
+    (X_141,r1_231,r2_231) := algebra.subsort(X_140,true,false);
+    (X_144,r1_234,r2_234) := algebra.subsort(X_139,r1_231,r2_231,false,false);
+    X_147 := algebra.projection(r1_234,X_139);
+    X_148 := algebra.subslice(X_147,0,99:wrd);
+    X_149 := algebra.projection(X_148,X_147);
+    X_150:bat[:wrd] := algebra.projectionpath(X_148,r1_234,X_140);
+    sql.resultSet(X_168,X_170,X_172,X_174,X_176,X_149,X_150);
+end user.s2_1;
+
+# 22:53:31 >  
+# 22:53:31 >  "Done."
+# 22:53:31 >  
+

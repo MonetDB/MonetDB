@@ -60,8 +60,8 @@ Ready.
 [ "two",	NULL	]
 [ "two",	NULL	]
 #select k,count(*),count(v) from (select k,v from a union all select k,null from b) as t(k,v) group by k order by count(*) desc;
-% .t,	.L2,	.L3 # table_name
-% k,	L2,	L3 # name
+% .t,	.L3,	.L5 # table_name
+% k,	L2,	L4 # name
 % varchar,	bigint,	bigint # type
 % 3,	1,	1 # length
 [ "two",	4,	1	]

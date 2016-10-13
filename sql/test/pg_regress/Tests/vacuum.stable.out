@@ -55,20 +55,20 @@ Ready.
 #INSERT INTO vactst VALUES (0);
 [ 1 ]
 #SELECT count(*) FROM vactst;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 4 # length
 [ 2049 ]
 #SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i;
-% sys.vactst,	sys.L1 # table_name
+% sys.vactst,	sys.L2 # table_name
 % i,	count # name
 % int,	bigint # type
 % 1,	4 # length
 [ 0,	1	]
 [ 1,	2048	]
 #SELECT count(*) FROM vactst WHERE i <> 0;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 4 # length
@@ -138,20 +138,20 @@ Ready.
 #INSERT INTO vactst VALUES (0);
 [ 1	]
 #SELECT count(*) FROM vactst;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 7 # length
 [ 1048577	]
 #SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i;
-% sys.vactst,	sys.L1 # table_name
+% sys.vactst,	sys.L2 # table_name
 % i,	count # name
 % int,	bigint # type
 % 1,	7 # length
 [ 0,	1	]
 [ 1,	1048576	]
 #SELECT count(*) FROM vactst WHERE i <> 0;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 7 # length

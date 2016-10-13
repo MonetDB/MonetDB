@@ -176,8 +176,7 @@ SELECT * FROM a;
 |       24 |    18 |
 |       15 |    16 |
 +----------+-------+
-16 rows
-
+16 tuples (1 ms)
 SELECT * FROM b;
 +----------+-------+
 | property | class |
@@ -198,8 +197,7 @@ SELECT * FROM b;
 |       23 |    17 |
 |       14 |    15 |
 +----------+-------+
-15 rows
-
+15 tuples (0 ms)
 ROLLBACK;
 Operation successful
 
@@ -217,8 +215,7 @@ SELECT class FROM a EXCEPT SELECT 16 ORDER BY class; -- all but 16
 |    17 |
 |    18 |
 +-------+
-4 rows
-
+4 tuples (0 ms)
 SELECT class FROM a UNION SELECT 16 ORDER BY class; -- all with 16 (distinct so invisible)
 +-------+
 | class  |
@@ -229,16 +226,14 @@ SELECT class FROM a UNION SELECT 16 ORDER BY class; -- all with 16 (distinct so 
 |     17 |
 |     18 |
 +-------+
-5 rows
-
+5 tuples (0 ms)
 SELECT class FROM a INTERSECT SELECT 16 ORDER BY class; -- just 16
 +-------+
 | class |
 +=======+
 |    16 |
 +-------+
-1 row
-
+1 tuple (0 ms)
 ROLLBACK;
 Operation successful
 
@@ -260,8 +255,7 @@ SELECT * FROM a EXCEPT SELECT * FROM b ORDER BY class, property; -- should be la
 |       23 |    18 |
 |       24 |    18 |
 +----------+-------+
-8 rows
-
+8 tuples (0 ms)
 SELECT * FROM a UNION SELECT * FROM b ORDER BY class, property; -- should be a + last 50% of b
 +----------+-------+
 | property | class  |
@@ -290,8 +284,7 @@ SELECT * FROM a UNION SELECT * FROM b ORDER BY class, property; -- should be a +
 |       23 |     18 |
 |       24 |     18 |
 +----------+-------+
-23 rows
-
+23 tuples (0 ms)
 SELECT * FROM a INTERSECT SELECT * FROM b ORDER BY class, property; -- should be first 50% of a
 +----------+-------+
 | property | class |
@@ -305,8 +298,7 @@ SELECT * FROM a INTERSECT SELECT * FROM b ORDER BY class, property; -- should be
 |       21 |    17 |
 |       22 |    17 |
 +----------+-------+
-8 rows
-
+8 tuples (0 ms)
 ROLLBACK;
 Operation successful
 
@@ -336,8 +328,7 @@ SELECT class FROM a EXCEPT ALL SELECT 16 ORDER BY class; -- all but one 16 (will
 |    18 |
 |    18 |
 +-------+
-15 rows
-
+15 tuples (0 ms)
 SELECT class FROM a UNION ALL SELECT 16 ORDER BY class; -- all plus 16
 +-------+
 | class  |
@@ -360,16 +351,14 @@ SELECT class FROM a UNION ALL SELECT 16 ORDER BY class; -- all plus 16
 |     18 |
 |     18 |
 +-------+
-17 rows
-
+17 tuples (0 ms)
 SELECT class FROM a INTERSECT ALL SELECT 16 ORDER BY class; -- just one 16 (!)
 +-------+
 | class |
 +=======+
 |    16 |
 +-------+
-1 row
-
+1 tuple (0 ms)
 ROLLBACK;
 Operation successful
 
@@ -393,8 +382,7 @@ SELECT * FROM a EXCEPT ALL SELECT * FROM b ORDER BY class, property; -- last 50%
 |       23 |    18 |
 |       24 |    18 |
 +----------+-------+
-8 rows
-
+8 tuples (0 ms)
 SELECT class FROM a EXCEPT ALL SELECT class FROM b ORDER BY class; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
 +-------+
 | class |
@@ -408,8 +396,7 @@ SELECT class FROM a EXCEPT ALL SELECT class FROM b ORDER BY class; -- a minus th
 |    18 |
 |    18 |
 +-------+
-8 rows
-
+8 tuples (0 ms)
 SELECT * FROM a UNION ALL SELECT * FROM b ORDER BY class, property; -- a + b
 +----------+-------+
 | property | class  |
@@ -446,8 +433,7 @@ SELECT * FROM a UNION ALL SELECT * FROM b ORDER BY class, property; -- a + b
 |       23 |     18 |
 |       24 |     18 |
 +----------+-------+
-31 rows
-
+31 tuples (1 ms)
 SELECT * FROM a INTERSECT ALL SELECT * FROM b ORDER BY class, property; -- first 50% of a
 +----------+-------+
 | property | class |
@@ -461,8 +447,7 @@ SELECT * FROM a INTERSECT ALL SELECT * FROM b ORDER BY class, property; -- first
 |       21 |    17 |
 |       22 |    17 |
 +----------+-------+
-8 rows
-
+8 tuples (0 ms)
 SELECT class FROM a INTERSECT ALL SELECT class FROM b ORDER BY class; -- only those that are both in a and b (min(count(a, x), count(b, x)) !!!
 +-------+
 | class |
@@ -476,8 +461,7 @@ SELECT class FROM a INTERSECT ALL SELECT class FROM b ORDER BY class; -- only th
 |    17 |
 |    17 |
 +-------+
-8 rows
-
+8 tuples (0 ms)
 ROLLBACK;
 Operation successful
 

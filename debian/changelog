@@ -1,3 +1,17 @@
+monetdb (11.23.13) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#4058: Server crashes with a particular conditional query
+  * BZ#4064: Assertion: column not found
+  * BZ#4067: Relevant column name not printed when a CSV parsing error
+    occurs
+  * BZ#4070: Extra condition in join predicate of explicit join produces
+    wrong MAL code
+  * BZ#4074: Cannot use prepared statements when caching disabled
+  * BZ#6065: CTE with row number and union fails within MAL
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 07 Oct 2016 11:01:07 +0200
+
 monetdb (11.23.11) unstable; urgency=low
 
   * Rebuilt.

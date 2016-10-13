@@ -43,7 +43,7 @@ Ready.
 #	null AS SCOPE_CATALOG,
 #	null AS SCOPE_SCHEMA,
 #	null AS SCOPE_TABLE
-% .L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2,	.L2 # table_name
+% .L7,	.L10,	.L11,	.L12,	.L13,	.L14,	.L15,	.L16,	.L17,	.L20,	.L21,	.L22,	.L23,	.L24,	.L25,	.L26,	.L27,	.L30,	.L31 # table_name
 % table_cat,	table_schem,	table_name,	column_name,	type_name,	column_size,	decimal_digits,	buffer_length,	num_prec_radix,	nullable,	remarks,	column_def,	sql_data_type,	sql_datetime_sub,	char_octet_length,	ordinal_position,	scope_catalog,	scope_schema,	scope_table # name
 % char,	varchar,	varchar,	varchar,	varchar,	int,	int,	tinyint,	tinyint,	char,	char,	varchar,	tinyint,	tinyint,	tinyint,	bigint,	char,	char,	char # type
 % 0,	3,	9,	11,	7,	4,	1,	1,	2,	0,	0,	0,	1,	1,	1,	2,	0,	0,	0 # length

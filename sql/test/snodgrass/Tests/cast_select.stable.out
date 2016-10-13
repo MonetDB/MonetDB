@@ -45,44 +45,44 @@ Ready.
 # 17:38:29 >  
 
 #SELECT CAST('1996-02-24' AS  DATE) = DATE  '1996-02-24';
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST('12:34:56' AS TIME) = TIME '12:34:56';
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST( TIME '12:34:56.123' AS TIME(6) ) = TIME '12:34:56.123000';
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST( TIME '12:34:56.123' AS TIME(1) ) = TIME '12:34:56.1';
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST( TIMESTAMP '1997-07-23 12:34:56.123' AS TIME(6) ) = TIME '12:34:56.123000';
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT CAST( TIMESTAMP '1997-07-23 12:34:56.123' AS DATE ) = DATE '1997-07-23';
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST( DATE '1997-01-01' AS TIMESTAMP(4)) = '1997-01-01 00:00:00.0000';
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -93,14 +93,14 @@ Ready.
 % 1 # length
 [ 2	]
 #SELECT CAST( INTERVAL '3' YEAR AS INTERVAL YEAR TO MONTH ) = INTERVAL '3-0' YEAR TO MONTH;
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST( 103 AS INTERVAL MONTH ) = INTERVAL '103' MONTH;
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -111,32 +111,32 @@ Ready.
 % 10 # length
 [ 218040.000	]
 #SELECT CAST( INTERVAL'86 00:00:00' DAY TO SECOND AS INTERVAL HOUR TO SECOND ) = INTERVAL '2064:00:00' HOUR TO SECOND;
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST( CAST( 7430400 AS INTERVAL SECOND ) AS INTERVAL DAY TO SECOND ) = INTERVAL '86 00:00:00' DAY TO SECOND;
-% .L2 # table_name
-% =_single_value # name
+% .L3 # table_name
+% L3 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST(DATE '1997-01-01' AS CHARACTER(10)) = '1997-01-01';
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST(INTERVAL '7430400' SECOND AS BIGINT) = 7430400000;
-% .L1 # table_name
-% =_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT CAST(CAST(INTERVAL '2064:00:00' HOUR TO SECOND AS INTERVAL SECOND) AS BIGINT) = 7430400000;
-% .L2 # table_name
-% =_single_value # name
+% .L3 # table_name
+% L3 # name
 % boolean # type
 % 5 # length
 [ true	]

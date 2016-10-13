@@ -34,7 +34,7 @@ Ready.
 #	return numpy.percentile(v,q[0] * 100) 
 #};
 #SELECT rquantile(val,0.05) AS q5, rquantile(val,0.95) AS q95 FROM rval;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % q5,	q95 # name
 % int,	int # type
 % 4,	5 # length

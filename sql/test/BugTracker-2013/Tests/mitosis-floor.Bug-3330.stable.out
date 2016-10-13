@@ -49,7 +49,7 @@ Ready.
 #	tiley,
 #	intensity
 #;
-% sys.image,	sys.image,	sys.image,	sys.L1 # table_name
+% sys.image,	sys.image,	sys.image,	sys.L4 # table_name
 % tilex,	tiley,	intensity,	count # name
 % double,	double,	int,	bigint # type
 % 24,	24,	1,	1 # length

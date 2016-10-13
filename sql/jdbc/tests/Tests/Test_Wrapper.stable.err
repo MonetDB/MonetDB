@@ -1,0 +1,41 @@
+stderr of test 'Test_Wrapper` in directory 'sql/jdbc/tests` itself:
+
+
+# 16:18:08 >  
+# 16:18:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32669" "--set" "mapi_usock=/var/tmp/mtest-10276/.s.monetdb.32669" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_jdbc_tests" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 16:18:08 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32669
+# cmdline opt 	mapi_usock = /var/tmp/mtest-10276/.s.monetdb.32669
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_jdbc_tests
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 16:18:08 >  
+# 16:18:08 >  "./Test_Wrapper.SQL.sh" "Test_Wrapper"
+# 16:18:08 >  
+
+
+# 16:18:08 >  
+# 16:18:08 >  java Test_Wrapper "jdbc:monetdb://toulouse:32669/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 16:18:08 >  
+
+
+# 16:18:09 >  
+# 16:18:09 >  "Done."
+# 16:18:09 >  
+

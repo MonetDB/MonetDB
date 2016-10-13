@@ -45,10 +45,10 @@ Ready.
 # 14:24:54 >  "/usr/bin/python" "day-of-month-localization.Bug-2962.SQL.py" "day-of-month-localization.Bug-2962"
 # 14:24:54 >  
 
-#set time zone interval -'14:00' hour to minute;
-#SELECT EXTRACT(DAY FROM CURRENT_TIMESTAMP) <> 27;
-% .L # table_name
-% current_timestamp # name
+#set time zone interval -'13:00' hour to minute;
+#SELECT EXTRACT(DAY FROM CURRENT_TIMESTAMP) <> 13;
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

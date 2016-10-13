@@ -1,0 +1,44 @@
+stdout of test 'name_conflict_in_union.Bug-6065` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 12:57:07 >  
+# 12:57:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35574" "--set" "mapi_usock=/var/tmp/mtest-11796/.s.monetdb.35574" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 12:57:07 >  
+
+# MonetDB 5 server v11.23.10
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:35574/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11796/.s.monetdb.35574
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:57:08 >  
+# 12:57:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11796" "--port=35574"
+# 12:57:08 >  
+
+#WITH t0(so) AS (
+#	SELECT ROW_NUMBER() OVER (ORDER BY v0 ASC) AS so
+#FROM (values (0)) as t(v0))
+#SELECT 1 AS k1, a3.so AS k2 FROM t0 AS a3
+#UNION ALL
+#SELECT 2 AS k2, a8.so AS k2 FROM t0 AS a8;
+% .L7,	.L7 # table_name
+% k1,	k2 # name
+% tinyint,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 2,	1	]
+
+# 12:57:08 >  
+# 12:57:08 >  "Done."
+# 12:57:08 >  
+

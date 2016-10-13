@@ -25,14 +25,14 @@ Ready.
 # 11:55:47 >  
 
 #select date '2005-08-19' + interval '1' day;
-% .L # table_name
-% sql_add_single_value # name
+% .L1 # table_name
+% L1 # name
 % date # type
 % 10 # length
 [ 2005-08-20	]
 #select interval '1' day + date '2005-08-19';
-% .L # table_name
-% sql_add_single_value # name
+% .L1 # table_name
+% L1 # name
 % date # type
 % 10 # length
 [ 2005-08-20	]

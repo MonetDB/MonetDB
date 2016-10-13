@@ -36,7 +36,7 @@ Ready.
 #GROUP BY h.a, h.b
 #ORDER BY a, b
 #;
-% sys.h,	sys.h,	sys.L1 # table_name
+% sys.h,	sys.h,	sys.L2 # table_name
 % a,	b,	L1 # name
 % int,	int,	bigint # type
 % 2,	2,	1 # length
@@ -49,7 +49,7 @@ Ready.
 #GROUP BY h.a, h.b
 #ORDER BY a, b
 #;
-% sys.h,	sys.h,	sys.L1 # table_name
+% sys.h,	sys.h,	sys.L2 # table_name
 % a,	b,	L1 # name
 % int,	int,	bigint # type
 % 2,	2,	1 # length

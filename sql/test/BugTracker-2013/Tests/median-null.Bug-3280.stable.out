@@ -76,19 +76,19 @@ Ready.
 #UPDATE mtcars SET mpg = NULL WHERE cyl = 6;
 [ 7	]
 #select avg(mpg) from mtcars;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 20.188	]
 #select sum(mpg), min(mpg), max(mpg) from mtcars;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L1,	L3,	L5 # name
 % double,	double,	double # type
 % 24,	24,	24 # length
 [ 504.7,	10.4,	33.9	]
 #select median(mpg) from mtcars;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % double # type
 % 24 # length

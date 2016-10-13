@@ -26,9 +26,9 @@ Ready.
 Operation successful
 
 CREATE TABLE "sys"."test" (
-	"id1" INTEGER,
-	"id2" INTEGER       NOT NULL,
-	"id3" INTEGER
+	"id1" int,
+	"id2" int	NOT NULL,
+	"id3" int
 );
 Operation successful
 

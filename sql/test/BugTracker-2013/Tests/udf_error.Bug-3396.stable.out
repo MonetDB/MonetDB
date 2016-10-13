@@ -45,14 +45,14 @@ Ready.
 #RETURN ret;
 #END;
 #SELECT 'udf alone',MY_UDF(0.1,0.2);
-% .L1,	.L1 # table_name
-% L1,	my_udf_single_value # name
+% .L1,	.L2 # table_name
+% L1,	L2 # name
 % char,	double # type
 % 9,	24 # length
 [ "udf alone",	-0.6931471806	]
 #SELECT 'udf from table',MY_UDF(t.x,t.y) FROM TEST_UDF as t;
-% .L1,	sys.L1 # table_name
-% L1,	my_udf_x # name
+% .L1,	sys.L2 # table_name
+% L1,	L2 # name
 % char,	double # type
 % 14,	24 # length
 [ "udf from table",	-0.6931471806	]

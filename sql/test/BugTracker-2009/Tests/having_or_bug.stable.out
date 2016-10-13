@@ -27,7 +27,7 @@ Ready.
 [ 1	]
 #select count(*) from htest group by links having count(links) > 0 or
 #count(links) < 3;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

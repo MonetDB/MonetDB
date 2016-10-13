@@ -31,8 +31,8 @@ Ready.
 #insert into err_stddev2 values(2.6);
 [ 1	]
 #SELECT sys.stddev_pop(col1) * sys.stddev_pop(col1) FROM err_stddev2;
-% sys.L2 # table_name
-% sql_mul_L1 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0.01	]

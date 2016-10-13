@@ -31,8 +31,8 @@ Ready.
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	1,	1,	0,	1,	0 # length
-[ "tinyint",	1,	0,	"",	"L",	""	]
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"L1",	"L1"	]
 
 # 12:52:08 >  
 # 12:52:08 >  "Done."

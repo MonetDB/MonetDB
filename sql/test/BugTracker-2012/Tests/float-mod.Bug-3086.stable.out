@@ -50,14 +50,14 @@ Ready.
 #insert into t3086 values (0.011);
 [ 1	]
 #select mod(0.011 + 180, 360);
-% .L # table_name
-% mod_single_value # name
+% .L1 # table_name
+% L1 # name
 % decimal # type
 % 11 # length
 [ 180.011	]
 #select mod(d + 180, 360) from t3086;
-% sys.L # table_name
-% mod_sql_add_d # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 180.011	]

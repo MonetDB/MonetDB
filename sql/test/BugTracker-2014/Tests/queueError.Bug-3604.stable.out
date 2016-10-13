@@ -54,19 +54,19 @@ Ready.
 # 11:43:52 >  
 
 #select user,status,query from sys.queue();
-% .L1,	.L1,	.L1 # table_name
+% .L1,	.L2,	.L3 # table_name
 % L1,	status,	query # name
 % varchar,	clob,	clob # type
 % 7,	7,	42 # length
 [ "monetdb",	"running",	"select user,status,query from sys.queue();"	]
 #select user,status,query from sys.queue();
-% .L1,	.L1,	.L1 # table_name
+% .L1,	.L2,	.L3 # table_name
 % L1,	status,	query # name
 % varchar,	clob,	clob # type
 % 7,	7,	42 # length
 [ "monetdb",	"running",	"select user,status,query from sys.queue();"	]
 #select user,status,query from sys.queue();
-% .L1,	.L1,	.L1 # table_name
+% .L1,	.L2,	.L3 # table_name
 % L1,	status,	query # name
 % varchar,	clob,	clob # type
 % 7,	7,	42 # length

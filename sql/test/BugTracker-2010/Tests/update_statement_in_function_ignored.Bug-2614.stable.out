@@ -31,8 +31,8 @@ Ready.
 % 1,	1 # length
 [ 1,	NULL	]
 #select next_b();
-% .L # table_name
-% next_b # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]

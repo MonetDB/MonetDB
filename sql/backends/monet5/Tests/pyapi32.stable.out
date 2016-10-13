@@ -72,8 +72,8 @@ Ready.
 #};
 #CREATE TABLE integers AS SELECT * FROM pyapi32_gentbl() WITH DATA;
 #SELECT pyapi32_function(i) FROM integers;
-% sys.L # table_name
-% pyapi32_function_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 3 # length
 [ 0	]
@@ -177,8 +177,8 @@ Ready.
 [ 196	]
 [ 198	]
 #SELECT pyapi32_function(i) FROM integers WHERE i > 50;
-% sys.L # table_name
-% pyapi32_function_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 3 # length
 [ 102	]
@@ -231,8 +231,8 @@ Ready.
 [ 196	]
 [ 198	]
 #SELECT pyapi32_function_mapped(i) FROM integers;
-% sys.L # table_name
-% pyapi32_function_mapped_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 3 # length
 [ 0	]
@@ -336,8 +336,8 @@ Ready.
 [ 196	]
 [ 198	]
 #SELECT pyapi32_function_mapped(i) FROM integers WHERE i > 50;
-% sys.L # table_name
-% pyapi32_function_mapped_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 3 # length
 [ 102	]

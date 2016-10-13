@@ -78,11 +78,11 @@ project (
 | | | | | | select (
 | | | | | | | table(sys.lineitem) [ lineitem.l_suppkey NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_shipdate NOT NULL ] COUNT 
 | | | | | | ) [ date "1996-01-01" <= lineitem.l_shipdate NOT NULL < sys.sql_add(date "1996-01-01", month_interval "3") ]
-| | | | | ) [ lineitem.l_suppkey NOT NULL ] [ lineitem.l_suppkey NOT NULL, sys.sum no nil (sys.sql_mul(decimal(33,2)[lineitem.l_extendedprice NOT NULL] as lineitem.l_extendedprice, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL))) as L2.L2 ]
-| | | | ) [ L2 as revenue0.total_revenue ]
-| | | ) [  ] [ sys.max no nil (revenue0.total_revenue) as L3.L3 ]
-| | ) [ L3 as L3.L3 ]
-| ) [ revenue0.total_revenue = L3.L3 ]
+| | | | | ) [ lineitem.l_suppkey NOT NULL ] [ lineitem.l_suppkey NOT NULL, sys.sum no nil (sys.sql_mul(decimal(33,2)[lineitem.l_extendedprice NOT NULL] as lineitem.l_extendedprice, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL))) as L3.L3 ]
+| | | | ) [ L3 as revenue0.total_revenue ]
+| | | ) [  ] [ sys.max no nil (revenue0.total_revenue) as L5.L5 ]
+| | ) [ L5 as L6.L5 ]
+| ) [ revenue0.total_revenue = L6.L5 ]
 ) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.s_name NOT NULL, supplier.s_address NOT NULL, supplier.s_phone NOT NULL, revenue0.total_revenue ] [ supplier.s_suppkey ASC NOT NULL HASHCOL  ]
 #drop view revenue0;
 

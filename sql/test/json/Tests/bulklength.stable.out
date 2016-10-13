@@ -75,8 +75,8 @@ Ready.
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select json.length(j) from nosql;
-% sys.L # table_name
-% length_j # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]

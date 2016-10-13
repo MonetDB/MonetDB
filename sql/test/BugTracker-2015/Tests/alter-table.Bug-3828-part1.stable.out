@@ -90,7 +90,7 @@ Ready.
 #	parentstate_ts           VARCHAR(255),
 #CREATE TABLE hmda_14 AS SELECT a.* , b.activityyear, b.fedtaxid, b.respondentname_ts, b.respondentmailingaddress, b.respondentcity_ts, b.respondentstate_ts, b.respondentzipcode, b.parentname_ts, b.parentaddress, b.parentcity_ts, b.parentstate_ts, b.parentzipcode, b.respondentname_panel, b.respondentcity_panel, b.respondentstate_panel, b.assets_panel, b.otherlendercode_panel, b.regioncode_panel, b.larcount, b.validityerror FROM hmda_lar_14 AS a INNER JOIN hmda_ins_14 AS b ON a.respondentid = b.respondentid AND a.agencycode = b.agencycode WITH DATA;
 #select actiontype, propertytype, loanpurpose, count(*) as num_records from hmda_14 group by actiontype, propertytype, loanpurpose;
-% sys.hmda_14,	sys.hmda_14,	sys.hmda_14,	sys.L1 # table_name
+% sys.hmda_14,	sys.hmda_14,	sys.hmda_14,	sys.L2 # table_name
 % actiontype,	propertytype,	loanpurpose,	num_records # name
 % double,	varchar,	double,	bigint # type
 % 24,	0,	24,	1 # length

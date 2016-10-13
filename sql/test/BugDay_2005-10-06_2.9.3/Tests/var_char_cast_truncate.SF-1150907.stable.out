@@ -24,8 +24,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select cast(str as varchar(4)), length(cast(str as varchar(4))) from t11;
-% sys.L1,	sys.L2 # table_name
-% L1,	length_truncate_str # name
+% sys.L1,	sys.L3 # table_name
+% L1,	L3 # name
 % varchar,	int # type
 % 4,	1 # length
 [ "bla",	3	]
@@ -34,8 +34,8 @@ Ready.
 [ "bla ",	4	]
 [ "blad",	4	]
 #select cast(str as char(4)), length(cast(str as char(4))) from t11;
-% sys.L1,	sys.L2 # table_name
-% L1,	length_truncate_str # name
+% sys.L1,	sys.L3 # table_name
+% L1,	L3 # name
 % char,	int # type
 % 4,	1 # length
 [ "bla",	3	]

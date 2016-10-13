@@ -46,20 +46,20 @@ Ready.
 #create local temporary table loctemp (i int);
 #create global temporary table globtemp (i int);
 #select e."value" as table_cat, s."name" as table_schem, t."name" as table_name, case when t."type" = 0 and t."system" = false and t."temporary" = 0 and s."name" <> 'tmp' then cast('TABLE' as varchar(20)) when t."type" = 20 and t."system" = false and t."temporary" = 1 and s."name" = 'tmp' then cast('GLOBAL TEMPORARY' as varchar(20)) when t."type" = 10 and t."system" = true and t."temporary" = 0 then cast('SYSTEM TABLE' as varchar(20)) when t."type" = 1 then cast('VIEW' as varchar(20)) when t."type" = 30 and t."system" = false and t."temporary" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, cast(null as varchar(1)) as remarks from sys."schemas" s, sys."tables" t, sys."env"() e where s."id" = t."schema_id" and e.name = 'gdk_dbname' and ((t."type" = 20 and t."system" = false and t."temporary" = 1 and s."name" = 'tmp') or (t."type" = 30 and t."system" = false and t."temporary" = 1)) order by table_type, table_schem, table_name;
-% .L2,	.L2,	.L2,	.L10,	.L11 # table_name
+% .L7,	.L10,	.L11,	.L20,	.L22 # table_name
 % table_cat,	table_schem,	table_name,	table_type,	remarks # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
 % 31,	3,	8,	16,	0 # length
 [ "mTests_sql_test_BugTracker-2011",	"tmp",	"globtemp",	"GLOBAL TEMPORARY",	NULL	]
 [ "mTests_sql_test_BugTracker-2011",	"tmp",	"loctemp",	"LOCAL TEMPORARY",	NULL	]
 #select e."value" as table_cat, s."name" as table_schem, t."name" as table_name, case when t."type" = 0 and t."system" = false and t."temporary" = 0 and s."name" <> 'tmp' then cast('TABLE' as varchar(20)) when t."type" = 20 and t."system" = false and t."temporary" = 1 and s."name" = 'tmp' then cast('GLOBAL TEMPORARY' as varchar(20)) when t."type" = 10 and t."system" = true and t."temporary" = 0 then cast('SYSTEM TABLE' as varchar(20)) when t."type" = 1 then cast('VIEW' as varchar(20)) when t."type" = 30 and t."system" = false and t."temporary" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, cast(null as varchar(1)) as remarks from sys."schemas" s, sys."tables" t, sys."env"() e where s."id" = t."schema_id" and e.name = 'gdk_dbname' and ((t."type" = 20 and t."system" = false and t."temporary" = 1 and s."name" = 'tmp')) order by table_type, table_schem, table_name;
-% .L2,	.L2,	.L2,	.L10,	.L11 # table_name
+% .L7,	.L10,	.L11,	.L20,	.L22 # table_name
 % table_cat,	table_schem,	table_name,	table_type,	remarks # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
 % 31,	3,	8,	16,	0 # length
 [ "mTests_sql_test_BugTracker-2011",	"tmp",	"globtemp",	"GLOBAL TEMPORARY",	NULL	]
 #select e."value" as table_cat, s."name" as table_schem, t."name" as table_name, case when t."type" = 0 and t."system" = false and t."temporary" = 0 and s."name" <> 'tmp' then cast('TABLE' as varchar(20)) when t."type" = 20 and t."system" = false and t."temporary" = 1 and s."name" = 'tmp' then cast('GLOBAL TEMPORARY' as varchar(20)) when t."type" = 10 and t."system" = true and t."temporary" = 0 then cast('SYSTEM TABLE' as varchar(20)) when t."type" = 1 then cast('VIEW' as varchar(20)) when t."type" = 30 and t."system" = false and t."temporary" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) else cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, cast(null as varchar(1)) as remarks from sys."schemas" s, sys."tables" t, sys."env"() e where s."id" = t."schema_id" and e.name = 'gdk_dbname' and ((t."type" = 30 and t."system" = false and t."temporary" = 1)) order by table_type, table_schem, table_name;
-% .L2,	.L2,	.L2,	.L10,	.L11 # table_name
+% .L7,	.L10,	.L11,	.L20,	.L22 # table_name
 % table_cat,	table_schem,	table_name,	table_type,	remarks # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
 % 31,	3,	7,	15,	0 # length

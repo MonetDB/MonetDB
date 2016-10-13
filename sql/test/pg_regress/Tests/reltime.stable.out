@@ -26,7 +26,7 @@ Ready.
 
 #CREATE TABLE RELTIME_TBL (f1 interval second);
 #SELECT '' AS six, RELTIME_TBL.* FROM RELTIME_TBL;
-% .L,	sys.reltime_tbl # table_name
+% .L1,	sys.reltime_tbl # table_name
 % six,	f1 # name
 % char,	sec_interval # type
 % 0,	5 # length
@@ -34,7 +34,7 @@ Ready.
 #   FROM RELTIME_TBL r1, RELTIME_TBL r2
 #   WHERE r1.f1 > r2.f1
 #   ORDER BY r1.f1, r2.f1;
-% .L,	sys.r1,	sys.r2 # table_name
+% .L1,	sys.r1,	sys.r2 # table_name
 % fifteen,	f1,	f1 # name
 % char,	sec_interval,	sec_interval # type
 % 0,	5,	5 # length

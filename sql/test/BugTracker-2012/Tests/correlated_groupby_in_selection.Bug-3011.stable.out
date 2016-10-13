@@ -43,7 +43,7 @@ Ready.
 #            counter.timinglinkorder < test.timinglinkorder and
 #            counter.userstopcodebegin = test.userstopcodebegin
 #            group by dataownercode, lineplanningnumber, journeypatterncode) as
-% .test,	.test,	.test,	.test,	.test,	.test,	.L2 # table_name
+% .test,	.test,	.test,	.test,	.test,	.test,	.L4 # table_name
 % dataownercode,	lineplanningnumber,	journeypatterncode,	timinglinkorder,	userstopcodebegin,	istimingstop,	passagesequencenumber # name
 % varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	bigint # type
 % 0,	0,	0,	4,	0,	5,	1 # length
@@ -56,7 +56,7 @@ Ready.
 #            counter.timinglinkorder < test.timinglinkorder and
 #            counter.userstopcodebegin = test.userstopcodebegin) as
 #passagesequencenumber 
-% .test,	.test,	.test,	.test,	.test,	.test,	.L2 # table_name
+% .test,	.test,	.test,	.test,	.test,	.test,	.L3 # table_name
 % dataownercode,	lineplanningnumber,	journeypatterncode,	timinglinkorder,	userstopcodebegin,	istimingstop,	passagesequencenumber # name
 % varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	bigint # type
 % 0,	0,	0,	4,	0,	5,	1 # length
@@ -78,7 +78,7 @@ Ready.
 #            counter.timinglinkorder < test.timinglinkorder and
 #            counter.userstopcodebegin = test.userstopcodebegin
 #            group by dataownercode, lineplanningnumber, journeypatterncode) as
-% .test,	.test,	.test,	.test,	.test,	.test,	.L2 # table_name
+% .test,	.test,	.test,	.test,	.test,	.test,	.L4 # table_name
 % dataownercode,	lineplanningnumber,	journeypatterncode,	timinglinkorder,	userstopcodebegin,	istimingstop,	passagesequencenumber # name
 % varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	bigint # type
 % 3,	4,	1,	4,	8,	5,	1 # length
@@ -101,7 +101,7 @@ Ready.
 #            counter.timinglinkorder < test.timinglinkorder and
 #            counter.userstopcodebegin = test.userstopcodebegin) as
 #passagesequencenumber 
-% .test,	.test,	.test,	.test,	.test,	.test,	.L2 # table_name
+% .test,	.test,	.test,	.test,	.test,	.test,	.L3 # table_name
 % dataownercode,	lineplanningnumber,	journeypatterncode,	timinglinkorder,	userstopcodebegin,	istimingstop,	passagesequencenumber # name
 % varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	bigint # type
 % 3,	4,	1,	4,	8,	5,	1 # length

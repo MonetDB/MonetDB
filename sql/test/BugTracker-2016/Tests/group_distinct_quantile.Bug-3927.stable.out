@@ -28,7 +28,7 @@ Ready.
 #start transaction;
 #create table my_table (my_id clob, my_double double);
 #SELECT COUNT( DISTINCT my_id ) AS unique_enrollees , QUANTILE( my_double , 0.25 ) AS some_quantile FROM my_table;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % unique_enrollees,	some_quantile # name
 % bigint,	double # type
 % 1,	24 # length

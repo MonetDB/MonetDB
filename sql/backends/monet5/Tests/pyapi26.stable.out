@@ -49,8 +49,8 @@ Ready.
 [ 1	]
 #CREATE FUNCTION integers() RETURNS TABLE(i INTEGER) LANGUAGE PYTHON { return numpy.arange(10000) + 1 };
 #SELECT average(i) FROM integers();
-% .L # table_name
-% average_i # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 4 # length
 [ 5000	]

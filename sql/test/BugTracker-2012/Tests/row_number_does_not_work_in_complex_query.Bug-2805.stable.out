@@ -253,8 +253,8 @@ Ready.
 #insert into T values (30,30,30,30,30);
 [ 1	]
 #with Raw as (select a,b,c,count(*) as value from  T where e<10 and c<50 group by a,b,c) select Raw.*, row_number() over (partition by a order by value desc) from Raw;
-% sys.raw,	sys.raw,	sys.raw,	sys.raw,	sys.L2 # table_name
-% a,	b,	c,	value,	L2 # name
+% sys.raw,	sys.raw,	sys.raw,	sys.raw,	sys.L3 # table_name
+% a,	b,	c,	value,	L3 # name
 % int,	int,	int,	bigint,	int # type
 % 1,	1,	1,	1,	1 # length
 [ 9,	9,	9,	1,	1	]

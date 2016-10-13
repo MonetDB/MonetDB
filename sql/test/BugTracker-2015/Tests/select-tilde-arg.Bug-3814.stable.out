@@ -65,8 +65,8 @@ Ready.
 # 14:19:53 >  
 
 #select ~0;
-% .L # table_name
-% bit_not_single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 2 # length
 [ -1	]

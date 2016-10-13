@@ -1,0 +1,150 @@
+stdout of test 'cast_and_floor.Bug-6071` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 17:04:11 >  
+# 17:04:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31202" "--set" "mapi_usock=/var/tmp/mtest-26340/.s.monetdb.31202" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 17:04:11 >  
+
+# MonetDB 5 server v11.23.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:31202/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26340/.s.monetdb.31202
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 17:04:12 >  
+# 17:04:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26340" "--port=31202"
+# 17:04:12 >  
+
+#create table catsrc (catsrcid INT ,cat_id INT ,zone INT ,ra DOUBLE ,decl DOUBLE ,ra_err DOUBLE ,decl_err DOUBLE ,x DOUBLE ,y DOUBLE ,z DOUBLE ,src_type VARCHAR(1));
+#copy 408 records into catsrc from stdin delimiters ';','\n','"' null as '';
+#2107588;7;28;19.21809;28.68032;27.635298374547588;2.2;0.8284206987396769;0.2887799179950959;0.47992218625774236;
+#2107589;7;28;19.19739;28.39896;26.389716179354814;2;0.8307406564238626;0.28925207310292556;0.4756082421175118;
+#2107590;7;28;19.20296;28.85111;28.903927436017305;2.2;0.8271422717737976;0.2880893287697257;0.48253518099086823;
+#2107591;7;28;18.95404;28.97012;26.246172556045007;2;0.8274363346577582;0.28416695937621494;0.484353436332407;
+[ 408	]
+#SELECT c1.catsrcid AS t_catsrcid
+#      ,c2.catsrcid AS wm_catsrcid
+#  FROM 
+#	(SELECT catsrcid ,ra ,decl ,ra_err ,decl_err ,x ,y , z 
+#		FROM catsrc
+#		WHERE cat_id = 7 AND x * COS(RADIANS(30.0)) * COS(RADIANS(20.0)) + y * COS(RADIANS(30.0)) * SIN(RADIANS(20.0)) + z * SIN(RADIANS(30.0)) > COS(RADIANS(2.0))) c1,
+#	(SELECT catsrcid ,zone ,ra ,decl ,ra_err ,decl_err ,x ,y ,z 
+#		FROM catsrc 
+#		WHERE cat_id = 5 AND (src_type = 'S' OR src_type = 'M') AND x * COS(RADIANS(30.0)) * COS(RADIANS(20.0)) + y * COS(RADIANS(30.0)) * SIN(RADIANS(20.0)) + z * SIN(RADIANS(30.0)) > COS(RADIANS(2.0))) c2 
+% sys.L3,	sys.L4 # table_name
+% t_catsrcid,	wm_catsrcid # name
+% int,	int # type
+% 7,	7 # length
+[ 2107600,	1852864	]
+[ 2107603,	1852837	]
+[ 2107607,	1852792	]
+[ 2107620,	1852675	]
+[ 2107635,	1852510	]
+[ 2107639,	1852483	]
+[ 2107906,	1852940	]
+[ 2107917,	1852764	]
+[ 2107918,	1852757	]
+[ 2107919,	1852744	]
+[ 2107923,	1852621	]
+[ 2107940,	1852403	]
+[ 2117846,	1854869	]
+[ 2117854,	1854790	]
+[ 2117880,	1854572	]
+[ 2117892,	1854357	]
+[ 2117901,	1854674	]
+[ 2117902,	1854607	]
+[ 2117904,	1854436	]
+[ 2117908,	1854393	]
+[ 2117909,	1854387	]
+[ 2117910,	1854379	]
+[ 2117913,	1854318	]
+[ 2117918,	1854247	]
+[ 2117919,	1854241	]
+[ 2117929,	1854130	]
+[ 2117932,	1854114	]
+[ 2117933,	1854120	]
+[ 2117938,	1854087	]
+[ 2117939,	1854090	]
+[ 2117941,	1854063	]
+[ 2117942,	1854053	]
+[ 2117947,	1853966	]
+[ 2117950,	1853938	]
+[ 2117951,	1853926	]
+[ 2117953,	1853905	]
+[ 2117956,	1853884	]
+[ 2117957,	1853877	]
+[ 2117967,	1853778	]
+[ 2117969,	1853761	]
+[ 2117970,	1853753	]
+[ 2117972,	1853742	]
+[ 2117974,	1853705	]
+[ 2117982,	1853626	]
+[ 2117985,	1853611	]
+[ 2117987,	1853604	]
+[ 2117988,	1853595	]
+[ 2117994,	1853541	]
+[ 2117998,	1853496	]
+[ 2117999,	1853483	]
+[ 2118000,	1853475	]
+[ 2118004,	1853458	]
+[ 2118006,	1853436	]
+[ 2118007,	1853433	]
+[ 2118009,	1853419	]
+[ 2118011,	1853405	]
+[ 2118015,	1853374	]
+[ 2118016,	1853377	]
+[ 2118018,	1853329	]
+[ 2118019,	1853310	]
+[ 2118020,	1853299	]
+[ 2118021,	1853289	]
+[ 2118022,	1853296	]
+[ 2118023,	1853288	]
+[ 2118026,	1853245	]
+[ 2118027,	1853247	]
+[ 2118030,	1853240	]
+[ 2118031,	1853232	]
+[ 2118033,	1853226	]
+[ 2118034,	1853200	]
+[ 2118037,	1853183	]
+[ 2118038,	1853170	]
+[ 2118039,	1853153	]
+[ 2118042,	1853120	]
+[ 2118043,	1853123	]
+[ 2118044,	1853105	]
+[ 2118045,	1853092	]
+[ 2118047,	1853098	]
+[ 2118051,	1853094	]
+[ 2118053,	1853096	]
+[ 2118056,	1853042	]
+[ 2118059,	1853017	]
+[ 2118061,	1853007	]
+[ 2118062,	1852997	]
+[ 2118066,	1852933	]
+[ 2118067,	1852935	]
+[ 2118068,	1852905	]
+[ 2118069,	1852893	]
+[ 2118070,	1852884	]
+[ 2118071,	1852844	]
+[ 2118073,	1852731	]
+[ 2118074,	1852730	]
+[ 2118075,	1852627	]
+[ 2118123,	1854812	]
+[ 2118127,	1854780	]
+[ 2118132,	1854734	]
+[ 2118139,	1854632	]
+[ 2118155,	1854191	]
+
+# 17:04:12 >  
+# 17:04:12 >  "Done."
+# 17:04:12 >  
+

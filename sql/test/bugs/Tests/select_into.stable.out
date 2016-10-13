@@ -31,8 +31,8 @@ Ready.
 #    return i;
 #end;
 #select test5();
-% .L # table_name
-% test5 # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 5	]

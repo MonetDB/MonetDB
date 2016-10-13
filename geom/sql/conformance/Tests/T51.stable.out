@@ -25,7 +25,7 @@ Ready.
 # 15:20:22 >  
 
 #SELECT count(*) FROM buildings, bridges WHERE ST_Contains(ST_Buffer(bridges."position", 15.0), buildings.footprint) = 1;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

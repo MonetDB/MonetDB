@@ -69,8 +69,8 @@ Ready.
 #6821	"json"	3	3	true
 #7176	"bam"	3	3	true
 [ 4	]
-#SELECT NULL AS table_catalog, (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema FROM tbls t;
-% .L,	.L1 # table_name
+#SELECT NULL AS table_catalog, (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema FROM tbls t ORDER BY table_schema;
+% .L1,	.L4 # table_name
 % table_catalog,	table_schema # name
 % char,	varchar # type
 % 0,	3 # length
@@ -128,8 +128,8 @@ Ready.
 [ NULL,	"tmp"	]
 [ NULL,	"tmp"	]
 [ NULL,	"tmp"	]
-#SELECT (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema, NULL AS table_catalog FROM tbls t;
-% .L1,	.L1 # table_name
+#SELECT (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema, NULL AS table_catalog FROM tbls t ORDER BY table_schema;
+% .L3,	.L4 # table_name
 % table_schema,	table_catalog # name
 % varchar,	char # type
 % 3,	0 # length

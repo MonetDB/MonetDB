@@ -30,8 +30,8 @@ Ready.
 # 13:34:16 >  
 
 #select epoch(now()) - epoch(now());
-% .L # table_name
-% current_timestamp # name
+% .L1 # table_name
+% L1 # name
 % bigint # type
 % 1 # length
 [ 0	]

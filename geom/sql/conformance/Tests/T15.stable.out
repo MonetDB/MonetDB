@@ -25,8 +25,8 @@ Ready.
 # 14:23:22 >  
 
 #SELECT ST_X("position") FROM bridges WHERE name = 'Cam Bridge';
-% sys.L # table_name
-% st_x_position # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 44	]

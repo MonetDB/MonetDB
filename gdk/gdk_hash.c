@@ -495,6 +495,10 @@ BAThash(BAT *b, BUN masksize)
 			}
 			break;
 		}
+#ifndef NDEBUG
+		/* clear unused part of Link array */
+		memset((char *) h->Link + q * h->width, 0, (h->lim - q) * h->width);
+#endif
 		hp->parentid = b->batCacheid;
 #ifdef PERSISTENTHASH
 		if (BBP_status(b->batCacheid) & BBPEXISTING) {

@@ -25,8 +25,8 @@ Ready.
 # 15:15:53 >  
 
 #SELECT ST_Crosses(road_segments.centerline, divided_routes.centerlines) FROM road_segments, divided_routes WHERE road_segments.fid = 102 AND divided_routes.name = 'Route 75';
-% sys.L # table_name
-% st_crosses_centerline # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

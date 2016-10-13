@@ -31,7 +31,7 @@ Ready.
 [ 1	]
 [ 1	]
 #SELECT "customer", "product", "sumprice", (Row_number() OVER(PARTITION BY "customer" ORDER BY "sumprice")) as "rank" FROM ( SELECT "customer", "product", (Sum("price")) AS "sumprice" FROM "table1" GROUP BY "customer", "product") AS "temp";
-% sys.temp,	sys.temp,	sys.temp,	sys.L2 # table_name
+% sys.temp,	sys.temp,	sys.temp,	sys.L4 # table_name
 % customer,	product,	sumprice,	rank # name
 % varchar,	varchar,	double,	int # type
 % 5,	2,	24,	1 # length

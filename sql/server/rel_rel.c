@@ -444,8 +444,11 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
 
-	if (!e->rname) 
-		exp_setrelname(sql->sa, e, sql->label);
+	if (!e->rname) {
+		exp_setrelname(sql->sa, e, ++sql->label);
+		if (!e->name)
+			e->name = e->rname;
+	}
 	if (rel->op == op_project) {
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);

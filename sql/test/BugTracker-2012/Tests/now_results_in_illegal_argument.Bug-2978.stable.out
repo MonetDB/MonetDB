@@ -47,21 +47,21 @@ Ready.
 # 12:53:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=budapest" "--port=36456"
 # 12:53:46 >  
 
-#select now() + 1;
-% .L # table_name
-% current_timestamp # name
+#select now() + 1 - now();
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 5 # length
 [ 1.000	]
 #select now() + interval '1' second - now();
-% .L # table_name
-% current_timestamp # name
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 5 # length
 [ 1.000	]
 #select now() - now();
-% .L # table_name
-% current_timestamp # name
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 5 # length
 [ 0.000	]

@@ -46,13 +46,13 @@ Ready.
 
 #create table ttt (a int, b int, c int);
 #select optimizer;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 12 # length
 [ "default_pipe"	]
 #select def from optimizers() where name = optimizer;
-% .L # table_name
+% .L1 # table_name
 % def # name
 % clob # type
 % 541 # length
@@ -107,13 +107,13 @@ end user.s8_1;
 #set opt_pipe_def  = ( select def from optimizers() where name = opt_pipe_name );
 #set optimizer = substring(opt_pipe_def,0,length(opt_pipe_def)-length('optimizer.garbageCollector();')) || 'optimizer.sql_append();optimizer.garbageCollector();';
 #select optimizer;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 6 # length
 [ "user_1"	]
 #select def from optimizers() where name = optimizer;
-% .L # table_name
+% .L1 # table_name
 % def # name
 % clob # type
 % 564 # length

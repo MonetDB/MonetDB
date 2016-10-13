@@ -44,9 +44,9 @@ project (
 | | | select (
 | | | | table(sys.lineitem) [ lineitem.l_quantity NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_shipdate NOT NULL ] COUNT 
 | | | ) [ date "1994-01-01" <= lineitem.l_shipdate NOT NULL < sys.sql_add(date "1994-01-01", month_interval "12"), decimal(15,2)[sys.sql_sub(decimal(3,2)[decimal(2,2) "6"], decimal(3,2) "1")] <= lineitem.l_discount NOT NULL <= decimal(15,2)[sys.sql_add(decimal(3,2)[decimal(2,2) "6"], decimal(3,2) "1")], lineitem.l_quantity NOT NULL < decimal(15,2)[tinyint "24"] ]
-| | ) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, decimal(30,2)[lineitem.l_extendedprice NOT NULL] as L2.L2, sys.sql_mul(L2.L2, lineitem.l_discount NOT NULL) as L3.L3 ]
-| ) [  ] [ sys.sum no nil (L3.L3) as L1.L1 ]
-) [ L1 as L1.revenue ]
+| | ) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, decimal(30,2)[lineitem.l_extendedprice NOT NULL] as L3.L3, sys.sql_mul(L3.L3, lineitem.l_discount NOT NULL) as L4.L4 ]
+| ) [  ] [ sys.sum no nil (L4.L4) as L1.L1 ]
+) [ L1 as L2.revenue ]
 
 # 22:46:30 >  
 # 22:46:30 >  "Done."

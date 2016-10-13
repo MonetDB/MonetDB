@@ -42,7 +42,7 @@ Ready.
 #	"departure_harbour" varchar(30),
 #SELECT hired, count(*)  FROM voyages WHERE   true  AND hired IS NOT NULL AND
 #hired is not null GROUP BY hired ORDER BY hired;
-% sys.voyages,	sys.L1 # table_name
+% sys.voyages,	sys.L2 # table_name
 % hired,	L1 # name
 % varchar,	bigint # type
 % 0,	1 # length

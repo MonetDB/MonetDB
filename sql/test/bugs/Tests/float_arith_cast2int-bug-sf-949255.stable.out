@@ -29,8 +29,8 @@ Ready.
 
 [ 1	]
 #select f/f from x;
-% sys.L # table_name
-% sql_div_f # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 1	]

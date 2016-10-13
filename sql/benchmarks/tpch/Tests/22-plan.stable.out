@@ -72,14 +72,14 @@ project (
 | | | | | | | | | table(sys.customer) [ customer.c_phone NOT NULL, customer.c_acctbal NOT NULL ] COUNT 
 | | | | | | | | ) [ customer.c_acctbal NOT NULL > decimal(15,2)[decimal(2,1) "0"], sys.substring(char[customer.c_phone NOT NULL] as customer.c_phone, int "1", int "2") in (char(15) "13", char(15) "31", char(15) "23", char(15) "29", char(15) "30", char(15) "18", char(15) "17") ]
 | | | | | | | ) [  ] [ sys.avg no nil (double[customer.c_acctbal NOT NULL] as customer.c_acctbal) as L1.L1 ]
-| | | | | | ) [ L1 as L1.L1 ]
-| | | | | ) [ double(53,2)[customer.c_acctbal NOT NULL] > L1.L1 ]
+| | | | | | ) [ L1 as L2.L1 ]
+| | | | | ) [ double(53,2)[customer.c_acctbal NOT NULL] > L2.L1 ]
 | | | | ) [ customer.c_custkey NOT NULL HASHCOL , customer.c_phone NOT NULL, customer.c_acctbal NOT NULL ],
-| | | | table(sys.orders) [ orders.o_custkey NOT NULL as L5.o_custkey ] COUNT 
-| | | ) [ L5.o_custkey NOT NULL = customer.c_custkey NOT NULL ]
-| | ) [ char[customer.c_phone NOT NULL] as L4.L4, sys.substring(L4.L4, int "1", int "2") as custsale.cntrycode, customer.c_acctbal NOT NULL as custsale.c_acctbal ]
-| ) [ custsale.cntrycode ] [ custsale.cntrycode, sys.count() NOT NULL as L2.L2, sys.sum no nil (custsale.c_acctbal NOT NULL) NOT NULL as L3.L3 ]
-) [ custsale.cntrycode, L2 NOT NULL as L2.numcust, L3 NOT NULL as L3.totacctbal ] [ custsale.cntrycode ASC ]
+| | | | table(sys.orders) [ orders.o_custkey NOT NULL as L11.o_custkey ] COUNT 
+| | | ) [ L11.o_custkey NOT NULL = customer.c_custkey NOT NULL ]
+| | ) [ char[customer.c_phone NOT NULL] as L10.L10, sys.substring(L10.L10, int "1", int "2") as custsale.cntrycode, customer.c_acctbal NOT NULL as custsale.c_acctbal ]
+| ) [ custsale.cntrycode ] [ custsale.cntrycode, sys.count() NOT NULL as L4.L4, sys.sum no nil (custsale.c_acctbal NOT NULL) NOT NULL as L6.L6 ]
+) [ custsale.cntrycode, L4 NOT NULL as L5.numcust, L6 NOT NULL as L7.totacctbal ] [ custsale.cntrycode ASC ]
 
 # 22:46:34 >  
 # 22:46:34 >  "Done."

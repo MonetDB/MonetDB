@@ -25,8 +25,8 @@ Ready.
 # 15:05:51 >  
 
 #SELECT ST_NumGeometries(centerlines) FROM divided_routes WHERE name = 'Route 75';
-% sys.L # table_name
-% st_numgeometries_centerlines # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 2	]

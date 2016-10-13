@@ -239,7 +239,7 @@ Ready.
 [ "Rose Mylett",	NULL,	NULL	]
 [ "Whitehall Mystery",	NULL,	NULL	]
 #SELECT i.name, count(si.scene_id) AS times FROM Jtr_inspector i LEFT OUTER JOIN Jtr_scene_inspectors si ON i.name = si.inspector GROUP BY i.name ORDER BY i.name, times desc;
-% .i,	.L1 # table_name
+% .i,	.L2 # table_name
 % name,	times # name
 % varchar,	bigint # type
 % 45,	1 # length
@@ -270,7 +270,7 @@ Ready.
 [ "Sir Robert Anderson",	1	]
 [ "Superintendent Thomas Arnold",	0	]
 #SELECT i.name AS name_inspector, d.name AS name_doctor FROM Jtr_scene s INNER JOIN Jtr_scene_inspectors si ON si.scene_id = s.scene_id  INNER JOIN Jtr_scene_doctors sd ON sd.scene_id = s.scene_id INNER JOIN Jtr_inspector i ON si.inspector = i.name INNER JOIN Jtr_doctor d ON sd.doctor = d.name ORDER BY name_inspector, name_doctor;
-% sys.L,	sys.L # table_name
+% sys.L1,	sys.L2 # table_name
 % name_inspector,	name_doctor # name
 % varchar,	varchar # type
 % 23,	26 # length
@@ -289,7 +289,7 @@ Ready.
 [ "Mary Ann Walker",	"brown",	"brown hair turning grey",	"five front teeth missing (Rumbelow); two bottom-one top\n\t\t\t\tfront (Fido), her teeth are slightly discoloured. She is\n\t\t\t\tdescribed as having small, delicate features with high\n\t\t\t\tcheekbones and grey eyes. She has a small scar on her\n\t\t\t\tforehead from a childhood injury.  She is described by\n\t\t\t\tEmily Holland as \"a very clean woman who always seemed\n\t\t\t\tto keep to herself.\" The doctor at the post mortem\n\t\t\t\tremarked on the cleanliness of her thighs.  She is also\n\t\t\t\tan alcoholic."	]
 [ "Pinchin Street Murder, possibly Lydia Hart",	"",	"",	"body, missing both head and legs"	]
 #SELECT eyes, count(name) AS times FROM Jtr_victim WHERE NOT eyes = '' GROUP BY eyes ORDER BY eyes, times desc;
-% sys.jtr_victim,	sys.L1 # table_name
+% sys.jtr_victim,	sys.L2 # table_name
 % eyes,	times # name
 % varchar,	bigint # type
 % 10,	1 # length
@@ -299,7 +299,7 @@ Ready.
 [ "light gray",	1	]
 [ "unknown",	1	]
 #SELECT s.victim, COUNT(w.witness) AS witnesses, COUNT(i.inspector) AS inspectors, COUNT(d.doctor) AS doctors, COUNT(sp.suspect) AS suspects FROM Jtr_scene s LEFT OUTER JOIN Jtr_scene_witnesses w ON w.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_inspectors i ON i.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_doctors d ON d.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_suspects sp ON sp.scene_id = s.scene_id GROUP BY s.victim ORDER BY s.victim asc, witnesses, inspectors, doctors, suspects;
-% .s,	.L1,	.L2,	.L3,	.L4 # table_name
+% .s,	.L2,	.L4,	.L6,	.L10 # table_name
 % victim,	witnesses,	inspectors,	doctors,	suspects # name
 % varchar,	bigint,	bigint,	bigint,	bigint # type
 % 42,	1,	1,	1,	1 # length

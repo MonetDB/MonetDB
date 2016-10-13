@@ -117,6 +117,10 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 	BUN *restrict cnt_bins = max_bins + 64;
 	int bin = 0;
 	dcnt = icnt = 0;
+#ifndef NDEBUG
+	memset(min_bins, 0, 64 * SIZEOF_BUN);
+	memset(max_bins, 0, 64 * SIZEOF_BUN);
+#endif
 	memset(cnt_bins, 0, 64 * SIZEOF_BUN);
 
 	switch (ATOMbasetype(b->ttype)) {
@@ -152,6 +156,12 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 	*impcnt = icnt;
 }
 
+#ifdef NDEBUG
+#define CLRMEM()	((void) 0)
+#else
+#define CLRMEM()	while (k < 64) h[k++] = 0
+#endif
+
 #define FILL_HISTOGRAM(TYPE)						\
 do {									\
 	BUN k;								\
@@ -163,6 +173,7 @@ do {									\
 			h[k] = s[k];					\
 		while (k < (BUN) imprints->bits)			\
 			h[k++] = max;					\
+		CLRMEM();						\
 	} else {							\
 		double y, ystep = (double) cnt / (64 - 1);		\
 		for (k = 0, y = 0; (BUN) y < cnt; y += ystep, k++)	\
@@ -388,13 +399,13 @@ BATimprints(BAT *b)
 		 * trust the imprints when encountered on startup (including
 		 * a version number -- CURRENT VERSION is 2). */
 		if (HEAPalloc(imprints->imprints,
-			      64 * b->twidth +
-			      64 * 2 * SIZEOF_OID +
-			      64 * SIZEOF_BUN +
-			      pages * (imprints->bits / 8) +
-			      pages * sizeof(cchdc_t) +
-			      sizeof(uint64_t) /* padding for alignment */
-			      + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T, /* extra info */
+			      IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T + /* extra info */
+			      64 * b->twidth + /* bins */
+			      64 * 2 * SIZEOF_OID + /* {min,max}_bins */
+			      64 * SIZEOF_BUN +	    /* cnt_bins */
+			      pages * (imprints->bits / 8) + /* imps */
+			      sizeof(uint64_t) + /* padding for alignment */
+			      pages * sizeof(cchdc_t), /* dict */
 			      1) != GDK_SUCCEED) {
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
@@ -450,6 +461,9 @@ BATimprints(BAT *b)
 				&imprints->dictcnt);
 		assert(imprints->impcnt <= pages);
 		assert(imprints->dictcnt <= pages);
+#ifndef NDEBUG
+		memset((char *) imprints->imps + imprints->impcnt * (imprints->bits / 8), 0, (char *) imprints->dict - ((char *) imprints->imps + imprints->impcnt * (imprints->bits / 8)));
+#endif
 		imprints->imprints->free = (size_t) ((char *) ((cchdc_t *) imprints->dict + imprints->dictcnt) - imprints->imprints->base);
 		/* add info to heap for when they become persistent */
 		((size_t *) imprints->imprints->base)[0] = (size_t) (imprints->bits);

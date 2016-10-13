@@ -25,26 +25,26 @@ Ready.
 # 11:45:10 >  
 
 #SELECT 1,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9)'), 0.0, 0));
-% .L1,	.L1 # table_name
-% L1,	st_wkttosql_single_value # name
+% .L1,	.L2 # table_name
+% L1,	L2 # name
 % tinyint,	clob # type
 % 1,	53 # length
 [ 1,	"\"GEOMETRYCOLLECTION (POLYGON ((5 5, 6 0, 7 9, 5 5)))\""	]
 #SELECT 2,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9, 8 9)'), 0.0, 0));
-% .L1,	.L1 # table_name
-% L1,	st_wkttosql_single_value # name
+% .L1,	.L2 # table_name
+% L1,	L2 # name
 % tinyint,	clob # type
 % 1,	85 # length
 [ 2,	"\"GEOMETRYCOLLECTION (POLYGON ((5 5, 6 0, 8 9, 5 5)), POLYGON ((5 5, 8 9, 7 9, 5 5)))\""	]
 #SELECT 3,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9, 8 9)'), 2.0, 0));
-% .L1,	.L1 # table_name
-% L1,	st_wkttosql_single_value # name
+% .L1,	.L2 # table_name
+% L1,	L2 # name
 % tinyint,	clob # type
 % 1,	53 # length
 [ 3,	"\"GEOMETRYCOLLECTION (POLYGON ((5 5, 6 0, 7 9, 5 5)))\""	]
 #SELECT 4,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9, 8 9)'), 2.0, 1));
-% .L1,	.L1 # table_name
-% L1,	st_wkttosql_single_value # name
+% .L1,	.L2 # table_name
+% L1,	L2 # name
 % tinyint,	clob # type
 % 1,	54 # length
 [ 4,	"\"MULTILINESTRING ((5 5, 7 9), (5 5, 6 0), (6 0, 7 9))\""	]

@@ -899,6 +899,17 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Oct 07 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.13-20161007
+- Rebuilt.
+- BZ#4058: Server crashes with a particular conditional query
+- BZ#4064: Assertion: column not found
+- BZ#4067: Relevant column name not printed when a CSV parsing error
+  occurs
+- BZ#4070: Extra condition in join predicate of explicit join produces
+  wrong MAL code
+- BZ#4074: Cannot use prepared statements when caching disabled
+- BZ#6065: CTE with row number and union fails within MAL
+
 * Wed Sep 28 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.11-20160928
 - Rebuilt.
 

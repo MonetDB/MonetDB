@@ -39,7 +39,7 @@ Ready.
 #INSERT INTO TIME_TBL VALUES ('23:59');
 [ 1 ]
 #SELECT f1 AS "Time" FROM TIME_TBL;
-% sys.L # table_name
+% sys.L1 # table_name
 % Time # name
 % time # type
 % 11 # length
@@ -49,14 +49,14 @@ Ready.
 [ 12:01:00.00	]
 [ 23:59:00.00	]
 #SELECT f1 AS "Three" FROM TIME_TBL WHERE f1 < '05:06:07';
-% sys.L # table_name
+% sys.L1 # table_name
 % Three # name
 % time # type
 % 11 # length
 [ 00:00:00.00	]
 [ 01:00:00.00	]
 #SELECT f1 AS "Six" FROM TIME_TBL WHERE f1 > '05:06:07';
-% sys.L # table_name
+% sys.L1 # table_name
 % Six # name
 % time # type
 % 11 # length
@@ -64,12 +64,12 @@ Ready.
 [ 12:01:00.00	]
 [ 23:59:00.00	]
 #SELECT f1 AS "None" FROM TIME_TBL WHERE f1 < '00:00';
-% sys.L # table_name
+% sys.L1 # table_name
 % None # name
 % time # type
 % 11 # length
 #SELECT f1 AS "Nine" FROM TIME_TBL WHERE f1 >= '00:00';
-% sys.L # table_name
+% sys.L1 # table_name
 % Nine # name
 % time # type
 % 11 # length
@@ -81,8 +81,8 @@ Ready.
 #INSERT INTO TIME_TBL VALUES (null);
 [ 1	]
 #SELECT f1, "hour"(f1) FROM TIME_TBL;
-% sys.time_tbl,	sys.L # table_name
-% f1,	hour_f1 # name
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	L1 # name
 % time,	int # type
 % 11,	2 # length
 [ 00:00:00.00,	0	]
@@ -92,8 +92,8 @@ Ready.
 [ 23:59:00.00,	23	]
 [ NULL,	NULL	]
 #SELECT f1, "minute"(f1) FROM TIME_TBL;
-% sys.time_tbl,	sys.L # table_name
-% f1,	minute_f1 # name
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	L1 # name
 % time,	int # type
 % 11,	2 # length
 [ 00:00:00.00,	0	]
@@ -103,8 +103,8 @@ Ready.
 [ 23:59:00.00,	59	]
 [ NULL,	NULL	]
 #SELECT f1, "second"(f1) FROM TIME_TBL;
-% sys.time_tbl,	sys.L # table_name
-% f1,	second_f1 # name
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	L1 # name
 % time,	decimal # type
 % 11,	11 # length
 [ 00:00:00.00,	0.000	]
@@ -114,8 +114,8 @@ Ready.
 [ 23:59:00.00,	0.000	]
 [ NULL,	NULL	]
 #SELECT f1, extract(hour from f1) FROM TIME_TBL;
-% sys.time_tbl,	sys.L # table_name
-% f1,	hour_f1 # name
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	L1 # name
 % time,	int # type
 % 11,	2 # length
 [ 00:00:00.00,	0	]
@@ -125,8 +125,8 @@ Ready.
 [ 23:59:00.00,	23	]
 [ NULL,	NULL	]
 #SELECT f1, extract(minute from f1) FROM TIME_TBL;
-% sys.time_tbl,	sys.L # table_name
-% f1,	minute_f1 # name
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	L1 # name
 % time,	int # type
 % 11,	2 # length
 [ 00:00:00.00,	0	]
@@ -136,8 +136,8 @@ Ready.
 [ 23:59:00.00,	59	]
 [ NULL,	NULL	]
 #SELECT f1, extract(second from f1) FROM TIME_TBL;
-% sys.time_tbl,	sys.L # table_name
-% f1,	second_f1 # name
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	L1 # name
 % time,	decimal # type
 % 11,	11 # length
 [ 00:00:00.00,	0.000	]
@@ -147,8 +147,8 @@ Ready.
 [ 23:59:00.00,	0.000	]
 [ NULL,	NULL	]
 #SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIME_TBL;
-% sys.time_tbl,	sys.L # table_name
-% f1,	sql_add_f1 # name
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	L1 # name
 % time,	time # type
 % 11,	15 # length
 [ 00:00:00.00,	12:01:06.000000	]
@@ -158,8 +158,8 @@ Ready.
 [ 23:59:00.00,	12:00:06.000000	]
 [ NULL,	NULL	]
 #SELECT f1, sql_add(f1, cast(2*60*60 as interval second)) FROM TIME_TBL;
-% sys.time_tbl,	sys.L1 # table_name
-% f1,	sql_add_f1 # name
+% sys.time_tbl,	sys.L2 # table_name
+% f1,	L2 # name
 % time,	time # type
 % 11,	15 # length
 [ 00:00:00.00,	02:00:00.000000	]
@@ -169,8 +169,8 @@ Ready.
 [ 23:59:00.00,	01:59:00.000000	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, 12*60*60.0 + 66) FROM TIME_TBL;
-% sys.time_tbl,	sys.L # table_name
-% f1,	sql_sub_f1 # name
+% sys.time_tbl,	sys.L1 # table_name
+% f1,	L1 # name
 % time,	time # type
 % 11,	15 # length
 [ 00:00:00.00,	11:58:54.000000	]
@@ -180,8 +180,8 @@ Ready.
 [ 23:59:00.00,	11:57:54.000000	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast(2*60*60 as interval second)) FROM TIME_TBL;
-% sys.time_tbl,	sys.L1 # table_name
-% f1,	sql_sub_f1 # name
+% sys.time_tbl,	sys.L2 # table_name
+% f1,	L2 # name
 % time,	time # type
 % 11,	15 # length
 [ 00:00:00.00,	22:00:00.000000	]
@@ -191,8 +191,8 @@ Ready.
 [ 23:59:00.00,	21:59:00.000000	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast('23:22:21' as time)) FROM TIME_TBL;
-% sys.time_tbl,	sys.L1 # table_name
-% f1,	sql_sub_f1 # name
+% sys.time_tbl,	sys.L2 # table_name
+% f1,	L2 # name
 % time,	sec_interval # type
 % 11,	10 # length
 [ 00:00:00.00,	-84141.000	]
@@ -202,8 +202,8 @@ Ready.
 [ 23:59:00.00,	2199.000	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(cast('23:22:21' as time), f1) FROM TIME_TBL;
-% sys.time_tbl,	.L1 # table_name
-% f1,	sql_sub_single_value # name
+% sys.time_tbl,	.L2 # table_name
+% f1,	L2 # name
 % time,	sec_interval # type
 % 11,	9 # length
 [ 00:00:00.00,	84141.000	]

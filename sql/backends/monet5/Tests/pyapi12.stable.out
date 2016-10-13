@@ -79,8 +79,8 @@ Ready.
 #	return(numpy.array(['Hello', 'Hello'], dtype=object))
 #};
 #SELECT pyapi12(i,2) FROM rval;
-% sys.L # table_name
-% pyapi12_i # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 5 # length
 [ "Hello"	]

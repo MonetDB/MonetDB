@@ -26,8 +26,8 @@ Ready.
 # 14:52:45 >  
 
 #SELECT ST_AsText(ST_InteriorRingN(shore, 1)) FROM lakes WHERE name = 'Blue Lake';
-% sys.L # table_name
-% st_interiorringn_shore # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 48 # length
 [ "\"LINESTRING (59 18, 67 18, 67 13, 59 13, 59 18)\""	]

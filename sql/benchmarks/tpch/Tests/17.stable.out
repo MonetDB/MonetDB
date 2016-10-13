@@ -44,7 +44,7 @@ Ready.
 #		where
 #			l_partkey = p_partkey
 #	);
-% sys.L3 # table_name
+% sys.L4 # table_name
 % avg_yearly # name
 % decimal # type
 % 21 # length

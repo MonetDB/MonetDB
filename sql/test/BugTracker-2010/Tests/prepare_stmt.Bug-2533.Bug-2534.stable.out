@@ -32,10 +32,10 @@ Ready.
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 6,	3,	1,	0,	2,	2 # length
-[ "bigint",	64,	0,	"",	"L1",	"L1"	]
+[ "bigint",	64,	0,	"",	"L2",	"L1"	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #exec  3(1);
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

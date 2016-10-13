@@ -55,14 +55,14 @@ Ready.
 # 09:47:46 >  
 
 #select '  ';
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 2 # length
 [ "  "	]
 #select '  ﻿';
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 3 # length
 [ "  ﻿"	]

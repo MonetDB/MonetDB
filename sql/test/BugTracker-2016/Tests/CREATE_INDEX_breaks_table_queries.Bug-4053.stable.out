@@ -85,19 +85,19 @@ Ready.
 % int,	bigint,	int,	int,	timestamp,	smallint,	smallint,	clob,	clob,	clob,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	double,	double,	double,	double,	double,	double,	double,	double,	double,	double,	double,	double,	double,	int,	boolean,	bigint,	int,	int,	int # type
 % 1,	1,	1,	1,	26,	1,	1,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	24,	24,	24,	24,	24,	24,	24,	24,	24,	24,	24,	24,	24,	1,	5,	1,	1,	1,	1 # length
 #SELECT count(distinct "anno_mese") FROM "sys"."farmap_movimento";
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(distinct "articolo_id") FROM "sys"."farmap_movimento";
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(distinct "farmacia_id") FROM "sys"."farmap_movimento";
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

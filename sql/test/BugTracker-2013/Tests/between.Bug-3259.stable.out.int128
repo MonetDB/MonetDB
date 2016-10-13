@@ -48,23 +48,23 @@ Ready.
 % clob # type
 % 191 # length
 function user.s6_1():void;
-    X_59:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",39);
-barrier X_83 := language.dataflow();
+    X_60:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",39);
+barrier X_84 := language.dataflow();
     X_36 := bat.new(nil:str);
-    X_43 := bat.append(X_36,"sys.L");
-    X_53 := bat.append(X_43,"sys.L");
+    X_43 := bat.append(X_36,"sys.L1");
+    X_53 := bat.append(X_43,"sys.L2");
     X_38 := bat.new(nil:str);
     X_45 := bat.append(X_38,"id1");
-    X_54 := bat.append(X_45,"id2");
+    X_55 := bat.append(X_45,"id2");
     X_39 := bat.new(nil:str);
     X_47 := bat.append(X_39,"int");
-    X_56 := bat.append(X_47,"int");
+    X_57 := bat.append(X_47,"int");
     X_40 := bat.new(nil:int);
     X_49 := bat.append(X_40,32);
-    X_57 := bat.append(X_49,32);
+    X_58 := bat.append(X_49,32);
     X_42 := bat.new(nil:int);
     X_51 := bat.append(X_42,0);
-    X_58 := bat.append(X_51,0);
+    X_59 := bat.append(X_51,0);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","treeitems");
     X_4:bat[:lng] := sql.bind(X_0,"sys","treeitems","pre",0);
@@ -83,8 +83,8 @@ barrier X_83 := language.dataflow();
     language.pass(X_8);
     language.pass(C_1);
     language.pass(X_30);
-exit X_83;
-    sql.resultSet(X_53,X_54,X_56,X_57,X_58,X_31,X_34);
+exit X_84;
+    sql.resultSet(X_53,X_55,X_57,X_58,X_59,X_31,X_34);
 end user.s6_1;
 #inline               actions= 0 time=3 usec 
 #remap                actions= 1 time=125 usec 

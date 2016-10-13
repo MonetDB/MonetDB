@@ -26,20 +26,20 @@ Ready.
 
 #SET TIME ZONE INTERVAL '+1:0' HOUR TO MINUTE;
 #SELECT CURRENT_TIMEZONE;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 8 # length
 [ 3600.000      ]
 #SELECT timestamp with time zone '2001-12-27 04:05:06.789-08';
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % timestamptz # type
 % 32 # length
 [ 2001-12-27 05:05:06.789000+01:00	]
 #SELECT timestamp with time zone '2001/12/27 04:05:06.789-08';
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % timestamptz # type
 % 32 # length
 [ 2001-12-27 05:05:06.789000+01:00	]
@@ -47,7 +47,7 @@ Ready.
 #SELECT '' AS "16", f1 AS "timestamp"
 #  FROM TEMP_TIMESTAMP
 #  ORDER BY "timestamp";
-% .L,	sys.L # table_name
+% .L1,	sys.L2 # table_name
 % 16,	timestamp # name
 % char,	timestamptz # type
 % 0,	32 # length
@@ -56,14 +56,14 @@ Ready.
 #   d.f1 - timestamp with time zone '1980-01-06 00:00 GMT' AS difference
 #  FROM TEMP_TIMESTAMP d
 #  ORDER BY difference;
-% .L,	sys.L,	.L,	sys.L # table_name
+% .L1,	sys.L2,	.L3,	sys.L4 # table_name
 % 16,	timestamp,	gpstime_zero,	difference # name
 % char,	timestamptz,	timestamptz,	sec_interval # type
 % 0,	32,	32,	5 # length
 #SELECT '' AS "226", d1.f1 AS timestamp1, d2.f1 AS timestamp2, d1.f1 - d2.f1 AS difference
 #  FROM TEMP_TIMESTAMP d1, TEMP_TIMESTAMP d2
 #  ORDER BY timestamp1, timestamp2, difference;
-% .L,	sys.L,	sys.L,	sys.L # table_name
+% .L1,	sys.L2,	sys.L3,	sys.L4 # table_name
 % 226,	timestamp1,	timestamp2,	difference # name
 % char,	timestamptz,	timestamptz,	sec_interval # type
 % 0,	32,	32,	5 # length

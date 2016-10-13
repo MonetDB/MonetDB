@@ -651,7 +651,7 @@ Ready.
 [ "aa",	"bb",	"zz"	]
 [ "qq",	NULL,	"zz"	]
 #select f3,max(f1) from foo group by f3;
-% tmp.foo,	tmp.L1 # table_name
+% tmp.foo,	tmp.L2 # table_name
 % f3,	L1 # name
 % clob,	clob # type
 % 2,	2 # length

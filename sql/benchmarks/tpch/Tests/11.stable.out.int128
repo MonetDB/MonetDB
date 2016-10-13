@@ -40,11 +40,7 @@ Ready.
 #		from
 #			partsupp,
 #			supplier,
-#			nation
-#		where
-#			ps_suppkey = s_suppkey
-#			and s_nationkey = n_nationkey
-% sys.partsupp,	sys.L1 # table_name
+% sys.partsupp,	sys.L2 # table_name
 % ps_partkey,	value # name
 % int,	decimal # type
 % 4,	41 # length

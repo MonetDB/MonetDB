@@ -71,9 +71,9 @@ project (
 | | | | | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
 | | | | | | | table(sys.partsupp) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ] COUNT 
 | | | | | | ) [ partsupp.%partsupp_ps_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ]
-| | | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, decimal(39,2)[partsupp.ps_supplycost NOT NULL] as L5.L5, sys.sql_mul(L5.L5, partsupp.ps_availqty NOT NULL) as L6.L6 ]
-| | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL  ] [ partsupp.ps_partkey NOT NULL HASHCOL , sys.sum no nil (L6.L6) as L1.L1, L1.L1 as L2.L2 ]
-| | | ) [ partsupp.ps_partkey NOT NULL HASHCOL , L1.L1, L2.L2, L2 as L7.L7 ],
+| | | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, decimal(39,2)[partsupp.ps_supplycost NOT NULL] as L6.L6, sys.sql_mul(L6.L6, partsupp.ps_availqty NOT NULL) as L7.L7 ]
+| | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL  ] [ partsupp.ps_partkey NOT NULL HASHCOL , sys.sum no nil (L7.L7) as L1.L1, L1.L1 as L3.L3 ]
+| | | ) [ partsupp.ps_partkey NOT NULL HASHCOL , L1.L1, L3.L3, L3 as L10.L10 ],
 | | | project (
 | | | | group by (
 | | | | | join (
@@ -85,11 +85,11 @@ project (
 | | | | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ],
 | | | | | | table(sys.partsupp) [ partsupp.ps_availqty NOT NULL, partsupp.ps_supplycost NOT NULL, partsupp.%partsupp_ps_suppkey_fkey NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ] COUNT 
 | | | | | ) [ partsupp.%partsupp_ps_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_suppkey_fkey ]
-| | | | ) [  ] [ sys.sum no nil (sys.sql_mul(decimal(39,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, partsupp.ps_availqty NOT NULL)) as L3.L3 ]
-| | | ) [ sys.sql_mul(L3, decimal(4,3) "1") as L4.L4, sys.scale_down(L4.L4, hugeint "100") as L10.L10 ]
-| | ) [ L7.L7 > L10.L10 ]
-| ) [ partsupp.ps_partkey NOT NULL HASHCOL , L1.L1, L2.L2 ]
-) [ partsupp.ps_partkey NOT NULL, L1 as L1.value ] [ L1.value ]
+| | | | ) [  ] [ sys.sum no nil (sys.sql_mul(decimal(39,2)[partsupp.ps_supplycost NOT NULL] as partsupp.ps_supplycost, partsupp.ps_availqty NOT NULL)) as L4.L4 ]
+| | | ) [ sys.sql_mul(L4, decimal(4,3) "1") as L5.L5, sys.scale_down(L5.L5, hugeint "100") as L11.L11 ]
+| | ) [ L10.L10 > L11.L11 ]
+| ) [ partsupp.ps_partkey NOT NULL HASHCOL , L1.L1, L3.L3 ]
+) [ partsupp.ps_partkey NOT NULL, L1 as L2.value ] [ L2.value ]
 
 # 22:46:31 >  
 # 22:46:31 >  "Done."

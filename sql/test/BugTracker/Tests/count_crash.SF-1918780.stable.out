@@ -27,7 +27,7 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(1000) from count_crash;
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

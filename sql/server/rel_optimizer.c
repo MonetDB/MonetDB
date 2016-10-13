@@ -7541,6 +7541,11 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						}
 						assert(e->type == e_column);
 						exp_setname(sql->sa, ne, e->l, e->r);
+						/* make sure we don't include additional indices */
+						if (!n->next && m->next) {
+							m->next = NULL;
+							prel->exps->cnt = rel->exps->cnt;
+						}
 					}
 					first = 0;
 					if (!skip) {

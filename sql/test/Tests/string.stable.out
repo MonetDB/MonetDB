@@ -254,8 +254,8 @@ Ready.
 [ 52,	""	]
 [ 52,	" Test "	]
 #select str,str2,soundex(str),soundex(str2), editdistance2(soundex(str),soundex(str2)), editdistance(soundex(str),soundex(str2)), difference(str,str2) from stringtest;
-% sys.stringtest,	sys.stringtest,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
-% str,	str2,	L1,	L2,	L3,	L4,	difference_str # name
+% sys.stringtest,	sys.stringtest,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
+% str,	str2,	L1,	L2,	L3,	L4,	L5 # name
 % varchar,	varchar,	varchar,	varchar,	int,	int,	int # type
 % 6,	4,	4,	4,	1,	1,	1 # length
 [ "",	"test",	"",	"T230",	4,	4,	4	]

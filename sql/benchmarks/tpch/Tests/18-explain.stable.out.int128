@@ -71,7 +71,7 @@ function user.s4_1():void;
     X_205 := bat.append(X_197,"sys.orders");
     X_212 := bat.append(X_205,"sys.orders");
     X_219 := bat.append(X_212,"sys.orders");
-    X_228 := bat.append(X_219,"sys.L6");
+    X_228 := bat.append(X_219,"sys.L7");
     X_182 := bat.new(nil:str);
     X_189 := bat.append(X_182,"c_name");
     X_198 := bat.append(X_189,"c_custkey");
