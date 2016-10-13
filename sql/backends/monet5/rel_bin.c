@@ -1801,6 +1801,10 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				assert(0);
 				return NULL;
 			}
+			if (s->nrcols == 0) {
+				stmt *l = bin_first_column(sql->sa, sub);
+				s = stmt_uselect(sql->sa, stmt_const(sql->sa, l, stmt_bool(sql->sa, 1)), s, cmp_equal, sel);
+			}
 			sel = s;
 		}
 		/* recreate join output */

@@ -323,11 +323,35 @@ comment "Return bat with minimum value of each pair of inputs";
 pattern min(b1:bat[:any_1],b2:bat[:any_1],s:bat[:oid]) :bat[:any_1]
 address CMDbatMIN
 comment "Return bat with minimum value of each pair of inputs";
+pattern min(b:bat[:any_1],v:any_1) :bat[:any_1]
+address CMDbatMIN
+comment "Return bat with minimum value of each pair of inputs";
+pattern min(b:bat[:any_1],v:any_1,s:bat[:oid]) :bat[:any_1]
+address CMDbatMIN
+comment "Return bat with minimum value of each pair of inputs";
+pattern min(v:any_1,b:bat[:any_1]) :bat[:any_1]
+address CMDbatMIN
+comment "Return bat with minimum value of each pair of inputs";
+pattern min(v:any_1,b:bat[:any_1],s:bat[:oid]) :bat[:any_1]
+address CMDbatMIN
+comment "Return bat with minimum value of each pair of inputs";
 
 pattern min_no_nil(b1:bat[:any_1],b2:bat[:any_1]) :bat[:any_1]
 address CMDbatMIN_no_nil
 comment "Return bat with minimum value of each pair of inputs, ignoring nil values";
 pattern min_no_nil(b1:bat[:any_1],b2:bat[:any_1],s:bat[:oid]) :bat[:any_1]
+address CMDbatMIN_no_nil
+comment "Return bat with minimum value of each pair of inputs, ignoring nil values";
+pattern min_no_nil(b:bat[:any_1],v:any_1) :bat[:any_1]
+address CMDbatMIN_no_nil
+comment "Return bat with minimum value of each pair of inputs, ignoring nil values";
+pattern min_no_nil(b:bat[:any_1],v:any_1,s:bat[:oid]) :bat[:any_1]
+address CMDbatMIN_no_nil
+comment "Return bat with minimum value of each pair of inputs, ignoring nil values";
+pattern min_no_nil(v:any_1,b:bat[:any_1]) :bat[:any_1]
+address CMDbatMIN_no_nil
+comment "Return bat with minimum value of each pair of inputs, ignoring nil values";
+pattern min_no_nil(v:any_1,b:bat[:any_1],s:bat[:oid]) :bat[:any_1]
 address CMDbatMIN_no_nil
 comment "Return bat with minimum value of each pair of inputs, ignoring nil values";
 
@@ -337,11 +361,35 @@ comment "Return bat with maximum value of each pair of inputs";
 pattern max(b1:bat[:any_1],b2:bat[:any_1],s:bat[:oid]) :bat[:any_1]
 address CMDbatMAX
 comment "Return bat with maximum value of each pair of inputs";
+pattern max(b:bat[:any_1],v:any_1) :bat[:any_1]
+address CMDbatMAX
+comment "Return bat with maximum value of each pair of inputs";
+pattern max(b:bat[:any_1],v:any_1,s:bat[:oid]) :bat[:any_1]
+address CMDbatMAX
+comment "Return bat with maximum value of each pair of inputs";
+pattern max(v:any_1,b:bat[:any_1]) :bat[:any_1]
+address CMDbatMAX
+comment "Return bat with maximum value of each pair of inputs";
+pattern max(v:any_1,b:bat[:any_1],s:bat[:oid]) :bat[:any_1]
+address CMDbatMAX
+comment "Return bat with maximum value of each pair of inputs";
 
 pattern max_no_nil(b1:bat[:any_1],b2:bat[:any_1]) :bat[:any_1]
 address CMDbatMAX_no_nil
 comment "Return bat with maximum value of each pair of inputs, ignoring nil values";
 pattern max_no_nil(b1:bat[:any_1],b2:bat[:any_1],s:bat[:oid]) :bat[:any_1]
+address CMDbatMAX_no_nil
+comment "Return bat with maximum value of each pair of inputs, ignoring nil values";
+pattern max_no_nil(b:bat[:any_1],v:any_1) :bat[:any_1]
+address CMDbatMAX_no_nil
+comment "Return bat with maximum value of each pair of inputs, ignoring nil values";
+pattern max_no_nil(b:bat[:any_1],v:any_1,s:bat[:oid]) :bat[:any_1]
+address CMDbatMAX_no_nil
+comment "Return bat with maximum value of each pair of inputs, ignoring nil values";
+pattern max_no_nil(v:any_1,b:bat[:any_1]) :bat[:any_1]
+address CMDbatMAX_no_nil
+comment "Return bat with maximum value of each pair of inputs, ignoring nil values";
+pattern max_no_nil(v:any_1,b:bat[:any_1],s:bat[:oid]) :bat[:any_1]
 address CMDbatMAX_no_nil
 comment "Return bat with maximum value of each pair of inputs, ignoring nil values";
 

@@ -1309,8 +1309,10 @@ BBPinit(void)
 	ATOMIC_INIT(BBPsizeLock);
 #endif
 
-	if (BBPfarms[0].dirname == NULL)
-		BBPaddfarm(".", (1 << PERSISTENT) | (1 << TRANSIENT));
+	if (BBPfarms[0].dirname == NULL) {
+		BBPaddfarm(".", 1 << PERSISTENT);
+		BBPaddfarm(".", 1 << TRANSIENT);
+	}
 
 	GDKremovedir(0, DELDIR);
 

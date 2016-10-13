@@ -386,7 +386,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	int stepsize = 1000;
 	char oldcmd[1024] = { 0 };
 	do {
-		int r;
 		if (p != NULL) {
 			if (cntxt != mal_clients)
 				/* help mclients with fake prompt */
@@ -417,8 +416,7 @@ retryRead:
 #ifndef HAVE_EMBEDDED
 		else if (cntxt == mal_clients) {
 			/* switch to mdb streams */
-			r = readConsole(cntxt);
-			if (r <= 0)
+			if (readConsole(cntxt) <= 0)
 				break;
 		}
 #endif

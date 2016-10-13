@@ -621,9 +621,6 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 
 	BATcheck(b, __func__, NULL);
 
-	if (checkbats(b, NULL, __func__) != GDK_SUCCEED)
-		return NULL;
-
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATcalcop_intern(Tloc(b, 0), ATOMbasetype(b->ttype), 1,
@@ -646,9 +643,6 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, __func__, NULL);
-
-	if (checkbats(b, NULL, __func__) != GDK_SUCCEED)
-		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
