@@ -2712,6 +2712,12 @@ mapi_reconnect(Mapi mid)
 				return mid->error;
 			}
 		}
+		if (mid->languageId != LANG_SQL) {
+			// for now we only support SQL with prot10
+			// MAL pretty much works but a few testcases fail because of random debug crap being written to the stream
+			// and I don't want to deal with that
+			prot_version = prot9;
+		}
 		mid->protocol = prot_version;
 
 		/* in rest now should be the byte order of the server */
@@ -4177,7 +4183,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			lng nr_cols;
 			lng i;
 
-			result = new_result(hdl);
+			if (result == NULL || !result->commentonly)
+				result = new_result(hdl);
 			result->prot10_resultset = 1;
 			hdl->active = result;
 
