@@ -3148,7 +3148,17 @@ def CheckClassPath() :
     }
     # check for known JARs in CLASSPATH files
     for p in cp.split(os.pathsep):
-        if os.path.isfile(p):
+        if os.path.isdir(p):
+            for f in os.listdir(p):
+                if not f.endswith('.jar'):
+                    continue
+                C = 'HAVE_%s' % f.upper().replace('.','_')
+                if C not in JARS:
+                    C = 'HAVE_MONETDBJDBC_JAR'
+                if JARS[C].match(f):
+                    CONDITIONALS[C] = '#'
+                    cp = os.path.join(p, f) + os.pathsep + cp
+        elif os.path.isfile(p):
             f = os.path.basename(p)
             C = 'HAVE_%s' % f.upper().replace('.','_')
             if C not in JARS:
