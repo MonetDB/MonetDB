@@ -51,7 +51,7 @@ project (
 | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_type NOT NULL ] COUNT 
 | | ) [ lineitem.l_partkey NOT NULL = part.p_partkey NOT NULL HASHCOL  ]
 | ) [  ] [ sys.sum no nil (sys.ifthenelse(sys.ifthenelse(sys.isnull(sys.like(part.p_type NOT NULL, char "PROMO%")), boolean "false", sys.like(part.p_type NOT NULL, char "PROMO%")), sys.sql_mul(lineitem.l_extendedprice NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL)), decimal(19,4)[tinyint "0"])) as L1.L1, sys.sum no nil (sys.sql_mul(lineitem.l_extendedprice NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL))) as L2.L2 ]
-) [ sys.sql_div(decimal(19,9)[sys.sql_mul(decimal(4,1) "1000", L1)], L2) as L2.promo_revenue ]
+) [ sys.sql_div(decimal(19,9)[sys.sql_mul(decimal(4,1) "1000", L1)], L2) as L3.promo_revenue ]
 
 # 22:46:32 >  
 # 22:46:32 >  "Done."
