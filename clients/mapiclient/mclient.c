@@ -188,19 +188,6 @@ static char *nullstring = default_nullstring;
 
 #define my_isspace(c)	((c) == '\f' || (c) == '\n' || (c) == ' ')
 
-// stpcpy implementation for systems that do not have it
-static char *
-mystpcpy (char *yydest, const char *yysrc)
-{
-  char *yyd = yydest;
-  const char *yys = yysrc;
-
-  while ((*yyd++ = *yys++) != '\0')
-    continue;
-
-  return yyd - 1;
-}
-
 static timertype
 gettime(void)
 {
@@ -819,8 +806,7 @@ CSVrenderer(MapiHdl hdl)
 	char *s;
 	char *sep = separator;
 	int i;
-	char buffer[BUFSIZ];
-	char *buffer_ptr;
+
 	if (csvheader) {
 		fields = mapi_get_field_count(hdl);
 		for (i = 0; i < fields; i++) {
@@ -832,22 +818,44 @@ CSVrenderer(MapiHdl hdl)
 		mnstr_printf(toConsole, "\n");
 	}
 	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
-		buffer_ptr = buffer;
-
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
-			if (s) {
-				buffer_ptr = mystpcpy(buffer_ptr, s);
-			} else {
-				buffer_ptr = mystpcpy(buffer_ptr, default_nullstring);
-			}
-
-			if (i != fields - 1) {
-				*buffer_ptr++ = *sep;
-			}
-		}		
-		*buffer_ptr++ = 0;
-		puts(buffer);
+			if (s == NULL)
+				s = nullstring == default_nullstring ? "" : nullstring;
+			if (strchr(s, *sep) != NULL ||
+			    strchr(s, '\n') != NULL ||
+			    strchr(s, '"') != NULL) {
+				mnstr_printf(toConsole, "%s\"",
+					     i == 0 ? "" : sep);
+				while (*s) {
+					switch (*s) {
+					case '\n':
+						mnstr_write(toConsole, "\\n", 1, 2);
+						break;
+					case '\t':
+						mnstr_write(toConsole, "\\t", 1, 2);
+						break;
+					case '\r':
+						mnstr_write(toConsole, "\\r", 1, 2);
+						break;
+					case '\\':
+						mnstr_write(toConsole, "\\\\", 1, 2);
+						break;
+					case '"':
+						mnstr_write(toConsole, "\"\"", 1, 2);
+						break;
+					default:
+						mnstr_write(toConsole, s, 1, 1);
+						break;
+					}
+					s++;
+				}
+				mnstr_write(toConsole, "\"", 1, 1);
+			} else
+				mnstr_printf(toConsole, "%s%s",
+					     i == 0 ? "" : sep, s);
+		}
+		mnstr_printf(toConsole, "\n");
 	}
 }
 
