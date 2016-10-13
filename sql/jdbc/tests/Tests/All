@@ -29,6 +29,7 @@ HAVE_JDBCCLIENT_JAR?Test_JdbcClient
 HAVE_JDBCTESTS?Test_Wrapper
 HAVE_JDBCTESTS?BugConcurrent_clients_SF_1504657
 HAVE_JDBCTESTS?BugConcurrent_sequences
+HAVE_JDBCTESTS?BugExecuteUpdate_Bug_3350
 HAVE_JDBCTESTS?BugDatabaseMetaData_Bug_3356
 HAVE_JDBCTESTS?BugSetQueryTimeout_Bug_3357
 HAVE_JDBCTESTS?BugDecimalRound_Bug_3561
