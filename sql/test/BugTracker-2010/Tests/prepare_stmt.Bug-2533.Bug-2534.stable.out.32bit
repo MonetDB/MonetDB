@@ -28,10 +28,10 @@ Ready.
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 3,	3,	1,	0,	2,	2 # length
-[ "wrd",	32,	0,	"",	"L1",	"L1"	]
+[ "wrd",	32,	0,	"",	"L2",	"L1"	]
 [ "wrd",	32,	0,	NULL,	NULL,	NULL	]
-#exec  0(1);
-% .L1 # table_name
+#exec  1(1);
+% .L2 # table_name
 % L1 # name
 % wrd # type
 % 1 # length

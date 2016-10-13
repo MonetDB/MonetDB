@@ -74,7 +74,7 @@ Ready.
 [ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0,	true	]
 [ "sys",	"_tables",	"name",	"varchar",	"writable",	8,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"query",	"varchar",	"writable",	33,	0,	false,	0,	false	]
+[ "sys",	"_tables",	"query",	"varchar",	"writable",	34,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0,	false	]
@@ -96,10 +96,10 @@ Ready.
 % schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints,	sorted # name
 % clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint,	boolean # type
 % 3,	7,	13,	8,	8,	2,	4,	5,	1,	5 # length
-[ "sys",	"_tables",	"id",	"int",	"writable",	4,	2580,	false,	0,	false	]
+[ "sys",	"_tables",	"id",	"int",	"writable",	4,	1044,	false,	0,	false	]
 [ "sys",	"_tables",	"name",	"varchar",	"writable",	8,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"query",	"varchar",	"writable",	45,	0,	false,	0,	false	]
+[ "sys",	"_tables",	"query",	"varchar",	"writable",	33,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0,	false	]
