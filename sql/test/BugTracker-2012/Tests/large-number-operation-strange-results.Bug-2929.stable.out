@@ -46,9 +46,9 @@ Ready.
 # 14:36:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=riga" "--port=32568"
 # 14:36:23 >  
 
-#select convert (10000000 * 100000 * 11.51,decimal(15)) +convert (51.097 * 100000, decimal(15));
-% . # table_name
-% sql_mul_single_value # name
+#select convert (                   10000000                *          100000 * 11.51 , decimal(15)) + convert (51.097 *          100000 , decimal(15));
+% .L3 # table_name
+% L3 # name
 % decimal # type
 % 20 # length
 [ 11510005109700	]

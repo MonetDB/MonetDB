@@ -419,4 +419,5 @@ SELECT c1.catsrcid AS t_catsrcid
 	(SELECT catsrcid ,zone ,ra ,decl ,ra_err ,decl_err ,x ,y ,z 
 		FROM catsrc 
 		WHERE cat_id = 5 AND (src_type = 'S' OR src_type = 'M') AND x * COS(RADIANS(30.0)) * COS(RADIANS(20.0)) + y * COS(RADIANS(30.0)) * SIN(RADIANS(20.0)) + z * SIN(RADIANS(30.0)) > COS(RADIANS(2.0))) c2 
-	WHERE c2.zone BETWEEN CAST(FLOOR(c1.decl - 0.00278) AS INTEGER) AND CAST(FLOOR(c1.decl + 0.00278) AS INTEGER) AND c2.decl BETWEEN c1.decl - 0.00278 AND c1.decl + 0.00278 AND c2.x * c1.x + c2.y * c1.y + c2.z * c1.z > COS(RADIANS(0.00278)) ;
+	WHERE c2.zone BETWEEN CAST(FLOOR(c1.decl - 0.00278) AS INTEGER) AND CAST(FLOOR(c1.decl + 0.00278) AS INTEGER) AND c2.decl BETWEEN c1.decl - 0.00278 AND c1.decl + 0.00278 AND c2.x * c1.x + c2.y * c1.y + c2.z * c1.z > COS(RADIANS(0.00278))
+	ORDER BY t_catsrcid, wm_catsrcid;

@@ -142,8 +142,8 @@ Ready.
 #        return ob;
 #end;
 #select fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest;
-% .L # table_name
-% fgetnearestobjidalleq_single_value # name
+% .L1 # table_name
+% L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
