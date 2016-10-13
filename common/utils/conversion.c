@@ -287,7 +287,7 @@ conversion_time_to_string(char *dst, int len, const int *src, int null_value, in
 	sec = time / 1000;
 	time -= sec * 1000;
 	ms = time;
-	if (res = sprintf(dst, "%02d:%02d:%02d.%03d000", hour, min, sec, ms) < 0) {
+	if ((res = sprintf(dst, "%02d:%02d:%02d.%03d000", hour, min, sec, ms)) < 0) {
 		return res;
 	}
 	digits--;
@@ -329,10 +329,12 @@ conversion_epoch_optional_tz_to_string(char *dst, int len, const lng *src, lng n
 	offset = conversion_date_to_string(dst, len, &days, -2147483647);
 	if (offset < 0) return -1;
 	if (include_timezone) {
+		int diff_hour, diff_min;
 		int original_diff = timezone_diff;
-		int diff_hour = timezone_diff / 3600000;
+		
+		diff_hour = timezone_diff / 3600000;
 		timezone_diff -= diff_hour * 3600000;
-		int diff_min = timezone_diff / 60000;
+		diff_min = timezone_diff / 60000;
 		return snprintf(dst + offset, len - offset, " %02d:%02d:%02d.%06d%s%02d:%02d", hour, min, sec, ms, original_diff >= 0 ? "+" : "", diff_hour, diff_min);
 	}
 	return snprintf(dst + offset, len - offset, " %02d:%02d:%02d.%06d", hour, min, sec, ms);

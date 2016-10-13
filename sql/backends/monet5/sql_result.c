@@ -1438,8 +1438,8 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 			return l;
 		}
 	} else if (eclass == EC_NUM || eclass == EC_POS || eclass == EC_MONTH || eclass == EC_SEC) {
-		count = 0;
 		BAT *b = NULL;
+		count = 0;
 		if (bid) {
 			b = BATdescriptor(bid);
 			if (b) {
@@ -1910,8 +1910,8 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 		int typelen = ATOMsize(mtype);
 		int nil_len = -1;
 		int retval = -1;
-		iterators[i] = bat_iterator(b);
 		int convert_to_string = !type_supports_binary_transfer(c->type.type);
+		iterators[i] = bat_iterator(b);
 		sql_type *type = c->type.type;
 
 		if (type->eclass == EC_TIMESTAMP) {
@@ -1924,7 +1924,7 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 			if (!convert_to_string && mtype == TYPE_str && c->type.digits > 0) {
 				// varchar with fixed max length
 				fixed_lengths += c->type.digits + 1;
-				if (c->type.digits < VARCHAR_MAXIMUM_FIXED) {
+				if ((int) c->type.digits < VARCHAR_MAXIMUM_FIXED) {
 					typelen = c->type.digits;
 					fixed_lengths -= 1;
 				} else {
@@ -2073,7 +2073,11 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 					goto cleanup;
 				}
 				row = srow + 1;
-				bs2_resizebuf(s, new_size);
+				if (bs2_resizebuf(s, new_size) < 0) {
+					// failed to resize stream buffer
+					fres = -1;
+					goto cleanup;
+				}
 				buf = bs2_buffer(s).buf;
 				bsize = new_size;
 			}
@@ -2132,7 +2136,6 @@ static int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *
 					char *startbuf = buf;
 					buf += sizeof(lng);
 					for (crow = srow; crow < row; crow++) {
-						int varsize;
 						char *str = (char*) BUNtail(iterators[i], crow);
 						buf = stpcpy(buf, str) + 1;
 					}

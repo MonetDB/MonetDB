@@ -4456,7 +4456,7 @@ bs2_stealbuf(stream *ss)
 	return buffer;
 }
 
-void 
+int 
 bs2_resizebuf(stream *ss, size_t bufsiz) {
 	size_t compress_bound;
 	bs2 *s = (bs2 *) ss->stream_data.p;
@@ -4470,7 +4470,7 @@ bs2_resizebuf(stream *ss, size_t bufsiz) {
 	s->compbuf = NULL;
 
 	if ((s->buf = malloc(bufsiz)) == NULL) {
-		return;
+		return -1;
 	}
 	s->bufsiz = bufsiz;
 	compress_bound = compression_size_bound(s);
@@ -4480,10 +4480,11 @@ bs2_resizebuf(stream *ss, size_t bufsiz) {
 		if (!s->compbuf) {
 			free(s->buf);
 			s->buf = NULL;
-			return;
+			return -1;
 		}
 	}
 	bs2_resetbuf(ss);
+	return 0;
 }
 
 void

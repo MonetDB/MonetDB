@@ -4191,7 +4191,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 			}
 			//fprintf(stderr, "result_set_id=%d, nr_rows=%llu, nr_cols=%lld\n", result_set_id, nr_rows, nr_cols);
-			result->fieldcnt = nr_cols;
+			result->fieldcnt = (int) nr_cols;
 			result->maxfields = (int) nr_cols;
 			result->row_count = nr_rows;
 			result->fields = calloc(result->fieldcnt, sizeof(struct MapiColumn));
@@ -5576,9 +5576,6 @@ mapi_fetch_row(MapiHdl hdl)
 
 #ifdef CONTINUATION_MESSAGE
 			if (!mnstr_writeChr(hdl->mid->to, 42) || mnstr_flush(hdl->mid->to)) {
-				hdl->mid->errorstr = strdup("Failed to write confirm message to server.");
-				hdl->mid->error = 0;
-				fprintf(stderr, "Failure 2.\n");
 				return hdl->mid->error;
 			}
 #endif
@@ -5589,10 +5586,6 @@ mapi_fetch_row(MapiHdl hdl)
 			// after this point we operate on the buffer
 			while(nrows < 0) {
 				if (!mnstr_readLng(hdl->mid->from, &nrows)) {
-					// FIXME: set hdl->mid to something
-					hdl->mid->errorstr = strdup("Failed to read row response");
-					hdl->mid->error = 0;
-					fprintf(stderr, "Failure 3.\n");
 					return hdl->mid->error;
 				}
 				if (nrows < 0) {
@@ -5602,22 +5595,26 @@ mapi_fetch_row(MapiHdl hdl)
 					if (!mnstr_readLng(hdl->mid->from, &new_size)) {
 						return hdl->mid->error;
 					}
+					if (new_size < hdl->mid->blocksize) {
+						return mapi_setError(hdl->mid, "Request for buffer resize, but new size smaller than old size.", "mapi_fetch_row", MERROR);
+					}
 					// consume flush
 					mnstr_readChr(hdl->mid->from, &dummy);
 					// resize buffer
-					bs2_resizebuf(hdl->mid->from, new_size);
-					hdl->mid->blocksize = new_size;
+					if (bs2_resizebuf(hdl->mid->from, (size_t) new_size) < 0) {
+						return mapi_setError(hdl->mid, "Failed to allocate space for stream buffer.", "mapi_fetch_row", MERROR);
+					}
+					hdl->mid->blocksize = (size_t) new_size;
 				}
 			}
 
 			assert(nrows <= result->row_count);
 
-
 			result->databuffer = bs2_stealbuf(hdl->mid->from);
-			buf = (char*) result->databuffer + sizeof(lng);
-			if (buf == NULL) {
-				return mapi_setError(hdl->mid, "MALLOC failure.", "mapi_fetch_row", MERROR);
+			if (result->databuffer == NULL) {
+				return mapi_setError(hdl->mid, "Failed to allocate space for stream buffer.", "mapi_fetch_row", MERROR);
 			}
+			buf = (char*) result->databuffer + sizeof(lng);
 
 			// iterate over cols
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {

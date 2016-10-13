@@ -58,8 +58,8 @@ numeric_conversion(float, flt);
 numeric_conversion(hge, hge);
 #endif
 
-// date conversion
-numeric_conversion(int, date);
+// date conversion, *src is days since 01-01-0001
+int conversion_date_to_string(char *dst, int len, const int *src, int null_value);
 
 // *src is ms since 00:00:00
 int conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits, int timezone_diff);
