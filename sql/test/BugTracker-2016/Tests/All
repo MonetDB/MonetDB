@@ -49,3 +49,7 @@ like_in_non_sys_schema.Bug-4062
 CREATE_INDEX_breaks_table_queries.Bug-4053
 concat_2_integers.Bug-4058
 column_not_found.Bug-4064
+prepare_without_querycache.Bug-4047
+outer_constant_predicate.Bug-4070
+name_conflict_in_union.Bug-6065
+set-negative-querytimeout.Bug-6070

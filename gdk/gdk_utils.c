@@ -547,6 +547,10 @@ GDKinit(opt *set, int setlen)
 		} else if (strcmp("gdk_vm_maxsize", n[i].name) == 0) {
 			GDK_vm_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
 			GDK_vm_maxsize = MAX(1 << 30, GDK_vm_maxsize);
+			if (GDK_vm_maxsize < GDK_mmap_minsize_persistent / 4)
+				GDK_mmap_minsize_persistent = GDK_vm_maxsize / 4;
+			if (GDK_vm_maxsize < GDK_mmap_minsize_transient / 4)
+				GDK_mmap_minsize_transient = GDK_vm_maxsize / 4;
 		} else if (strcmp("gdk_mmap_minsize_persistent", n[i].name) == 0) {
 			GDK_mmap_minsize_persistent = (size_t) strtoll(n[i].value, NULL, 10);
 		} else if (strcmp("gdk_mmap_minsize_transient", n[i].name) == 0) {
@@ -1949,6 +1953,11 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *ret;
 
+	if (*new_size > old_size &&
+	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize) {
+		GDKerror("allocating too much virtual address space\n");
+		return NULL;
+	}
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret == NULL) {
 		GDKmemfail("GDKmremap", *new_size);

@@ -102,6 +102,18 @@ comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, igno
 pattern $func$funcx(b1:bat[:any_1],b2:bat[:any_1],s:bat[:oid]) :bat[:any_1]
 address CMDbat${func^^}$funcx
 comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(b:bat[:any_1],v:any_1) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(b:bat[:any_1],v:any_1,s:bat[:oid]) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(v:any_1,b:bat[:any_1]) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(v:any_1,b:bat[:any_1],s:bat[:oid]) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
 
 EOF
     done

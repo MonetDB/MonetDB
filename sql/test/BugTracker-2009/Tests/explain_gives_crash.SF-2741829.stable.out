@@ -49,6 +49,7 @@ end user.s8_1;
 #evaluate             actions= 0 time=3 usec 
 #emptybind            actions= 5 time=23 usec 
 #aliases              actions= 1 time=6 usec 
+#mergetable           actions= 0 time=34 usec 
 #deadcode             actions= 5 time=8 usec 
 #aliases              actions= 0 time=3 usec 
 #constants            actions= 3 time=4 usec 
@@ -57,6 +58,7 @@ end user.s8_1;
 #reorder              actions= 1 time=16 usec 
 #deadcode             actions= 0 time=4 usec 
 #reduce               actions=38 time=20 usec 
+#matpack              actions= 0 time=3 usec 
 #multiplex            actions= 0 time=2 usec 
 #profiler             actions= 1 time=0 usec 
 #candidates           actions= 1 time=0 usec 
@@ -84,6 +86,7 @@ end user.s10_1;
 #evaluate             actions= 0 time=3 usec 
 #emptybind            actions= 5 time=14 usec 
 #aliases              actions= 1 time=6 usec 
+#mergetable           actions= 0 time=24 usec 
 #deadcode             actions= 5 time=9 usec 
 #aliases              actions= 0 time=4 usec 
 #constants            actions= 3 time=4 usec 
@@ -92,6 +95,7 @@ end user.s10_1;
 #reorder              actions= 1 time=15 usec 
 #deadcode             actions= 0 time=4 usec 
 #reduce               actions=38 time=20 usec 
+#matpack              actions= 0 time=2 usec 
 #multiplex            actions= 0 time=2 usec 
 #profiler             actions= 1 time=1 usec 
 #candidates           actions= 1 time=1 usec 
@@ -121,6 +125,7 @@ end user.s18_1;
 #evaluate             actions= 0 time=3 usec 
 #emptybind            actions= 5 time=13 usec 
 #aliases              actions= 1 time=5 usec 
+#mergetable           actions= 0 time=25 usec 
 #deadcode             actions= 5 time=8 usec 
 #aliases              actions= 0 time=4 usec 
 #constants            actions= 3 time=4 usec 
@@ -129,6 +134,7 @@ end user.s18_1;
 #reorder              actions= 1 time=15 usec 
 #deadcode             actions= 0 time=4 usec 
 #reduce               actions=38 time=20 usec 
+#matpack              actions= 0 time=2 usec 
 #multiplex            actions= 0 time=2 usec 
 #profiler             actions= 1 time=1 usec 
 #candidates           actions= 1 time=0 usec 

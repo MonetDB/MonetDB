@@ -76,9 +76,7 @@ optimizerIsApplied(MalBlkPtr mb, str optname)
 	int i;
 	for( i = mb->stop; i < mb->ssize; i++){
 		p = getInstrPtr(mb,i);
-		if( p == NULL)
-			return 0;
-		if (getModuleId(p) == optimizerRef && p->token == REMsymbol && strcmp(getFunctionId(p),optname) == 0) 
+		if (p && getModuleId(p) == optimizerRef && p->token == REMsymbol && strcmp(getFunctionId(p),optname) == 0) 
 			return 1;
 	}
 	return 0;

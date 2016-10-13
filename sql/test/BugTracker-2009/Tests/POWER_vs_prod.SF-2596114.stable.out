@@ -75,19 +75,19 @@ end user.s6_1;
 % clob # type
 % 55 # length
 function user.main():void;
-    X_571 := bat.new(nil:str);
-    X_578 := bat.append(X_571,"sys.L");
-    X_573 := bat.new(nil:str);
-    X_580 := bat.append(X_573,"power_x");
-    X_574 := bat.new(nil:str);
-    X_582 := bat.append(X_574,"double");
-    X_575 := bat.new(nil:int);
-    X_584 := bat.append(X_575,53);
-    X_577 := bat.new(nil:int);
-    X_586 := bat.append(X_577,0);
-    X_564 := bat.new(nil:dbl);
-    X_567:bat[:dbl] := batmmath.pow(X_564,2);
-    sql.resultSet(X_578,X_580,X_582,X_584,X_586,X_567);
+    X_725 := bat.new(nil:str);
+    X_732 := bat.append(X_725,"sys.L");
+    X_727 := bat.new(nil:str);
+    X_734 := bat.append(X_727,"power_x");
+    X_728 := bat.new(nil:str);
+    X_736 := bat.append(X_728,"double");
+    X_729 := bat.new(nil:int);
+    X_738 := bat.append(X_729,53);
+    X_731 := bat.new(nil:int);
+    X_740 := bat.append(X_731,0);
+    X_718 := bat.new(nil:dbl);
+    X_721:bat[:dbl] := batmmath.pow(X_718,2);
+    sql.resultSet(X_732,X_734,X_736,X_738,X_740,X_721);
 end user.main;
 #inline               actions= 0 time=2 usec 
 #remap                actions= 1 time=15 usec 

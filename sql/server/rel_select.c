@@ -4806,6 +4806,25 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	return rel;
 }
 
+static sql_rel*
+rel_unique_names(mvc *sql, sql_rel *rel)
+{
+	node *n;
+	list *l;
+
+	if (!is_project(rel->op))
+		return rel;
+       	l = sa_list(sql->sa);
+	for (n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (exp_name(e) && exps_bind_column2(l, exp_relname(e), exp_name(e))) 
+			exp_label(sql->sa, e, ++sql->label);
+		append(l,e);
+	}
+	rel->exps = l;
+	return rel;
+}
 
 static sql_rel *
 rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int apply)
@@ -4927,14 +4946,16 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 	sql_rel *rel;
 
 	if (!cols) {
+		list *ls, *rs, *nls, *nrs;
 		node *n, *m;
 		int changes = 0;
 
-		list *ls = rel_projections(sql, l, NULL, 0, 1);
-		list *rs = rel_projections(sql, r, NULL, 0, 1);
-		list *nls = new_exp_list(sql->sa);
-		list *nrs = new_exp_list(sql->sa);
-
+		l = rel_unique_names(sql, l);
+		r = rel_unique_names(sql, r);
+		ls = rel_projections(sql, l, NULL, 0, 1);
+		rs = rel_projections(sql, r, NULL, 0, 1);
+		nls = new_exp_list(sql->sa);
+		nrs = new_exp_list(sql->sa);
 		for (n = ls->h, m = rs->h; n && m; n = n->next, m = m->next) {
 			sql_exp *le = n->data, *lb = le;
 			sql_exp *re = m->data, *rb = re;

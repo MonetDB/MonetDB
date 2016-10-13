@@ -1086,7 +1086,7 @@ SQLparser(Client c)
 		}
 		assert(s);
 
-		if (!caching(m) || !cachable(m, s)) {
+		if ((!caching(m) || !cachable(m, s)) && m->emode != m_prepare) {
 			/* Query template should not be cached */
 			scanner_query_processed(&(m->scanner));
 			err = 0;

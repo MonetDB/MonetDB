@@ -128,8 +128,6 @@ typedef struct stmt {
 extern int stmt_key(stmt *s);
 
 extern stmt **stmt_array(sql_allocator *sa, stmt *s);
-extern void print_stmts(sql_allocator *sa, stmt **stmts);
-extern void print_tree(sql_allocator *sa, stmt *stmts);
 extern void clear_stmts(stmt **stmts);
 
 extern stmt *stmt_none(sql_allocator *sa);
@@ -246,9 +244,6 @@ extern int stmt_has_null(stmt *s);
 extern const char *column_name(sql_allocator *sa, stmt *st);
 extern const char *table_name(sql_allocator *sa, stmt *st);
 extern const char *schema_name(sql_allocator *sa, stmt *st);
-
-/*Dependency control*/
-extern list *stmt_list_dependencies(sql_allocator *sa, stmt *s, int depend_type);
 
 extern stmt *const_column(sql_allocator *sa, stmt *val);
 

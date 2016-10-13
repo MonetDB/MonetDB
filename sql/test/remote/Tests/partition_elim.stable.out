@@ -135,7 +135,7 @@ Ready.
 % mal # name
 % clob # type
 % 68 # length
-function user.SQLanalyze():void;
+function user.main():void;
 barrier X_1253 := language.dataflow();
     X_1181 := bat.new(nil:str);
     X_1188 := bat.append(X_1181,".test");
@@ -189,13 +189,37 @@ barrier X_1253 := language.dataflow();
     language.pass(C_1167);
 exit X_1253;
     sql.resultSet(X_1198,X_1199,X_1200,X_1201,X_1202,X_1169,X_1179);
-end user.SQLanalyze;
+end user.main;
+#inline               actions= 0 time=3 usec 
+#remap                actions= 0 time=8 usec 
+#costmodel            actions= 1 time=4 usec 
+#coercion             actions= 0 time=5 usec 
+#evaluate             actions= 6 time=48 usec 
+#emptybind            actions= 0 time=24 usec 
+#aliases              actions=10 time=24 usec 
+#mitosis              actions= 1 time=72 usec 
+#mergetable           actions= 3 time=157 usec 
+#deadcode             actions= 4 time=21 usec 
+#aliases              actions= 0 time=16 usec 
+#constants            actions= 7 time=17 usec 
+#commonTerms          actions= 0 time=18 usec 
+#projectionpath       actions= 0 time=12 usec 
+#deadcode             actions= 0 time=16 usec 
+#reorder              actions= 1 time=79 usec 
+#reduce               actions=43 time=23 usec 
+#matpack              actions= 2 time=17 usec 
+#dataflow             actions=27 time=63 usec 
+#multiplex            actions= 0 time=5 usec 
+#profiler             actions= 1 time=9 usec 
+#candidates           actions= 1 time=4 usec 
+#garbagecollector     actions= 1 time=44 usec 
+#total                actions= 1 time=984 usec 
 #explain select x,y from test where x between (7-3) and (7-1);
 % .explain # table_name
 % mal # name
 % clob # type
 % 75 # length
-function user.SQLanalyze():void;
+function user.main():void;
 barrier X_1397 := language.dataflow();
     X_1320 := bat.new(nil:str);
     X_1327 := bat.append(X_1320,".test");
@@ -249,13 +273,37 @@ barrier X_1397 := language.dataflow();
     language.pass(C_1305);
 exit X_1397;
     sql.resultSet(X_1337,X_1338,X_1339,X_1340,X_1341,X_1307,X_1318);
-end user.SQLanalyze;
+end user.main;
+#inline               actions= 0 time=3 usec 
+#remap                actions= 0 time=9 usec 
+#costmodel            actions= 1 time=3 usec 
+#coercion             actions= 0 time=4 usec 
+#evaluate             actions=20 time=82 usec 
+#emptybind            actions= 0 time=19 usec 
+#aliases              actions=24 time=19 usec 
+#mitosis              actions= 1 time=47 usec 
+#mergetable           actions= 3 time=92 usec 
+#deadcode             actions= 4 time=15 usec 
+#aliases              actions= 0 time=12 usec 
+#constants            actions= 9 time=14 usec 
+#commonTerms          actions= 0 time=13 usec 
+#projectionpath       actions= 0 time=9 usec 
+#deadcode             actions= 0 time=13 usec 
+#reorder              actions= 1 time=54 usec 
+#reduce               actions=64 time=25 usec 
+#matpack              actions= 2 time=14 usec 
+#dataflow             actions=27 time=46 usec 
+#multiplex            actions= 0 time=5 usec 
+#profiler             actions= 1 time=7 usec 
+#candidates           actions= 1 time=2 usec 
+#garbagecollector     actions= 1 time=37 usec 
+#total                actions= 1 time=766 usec 
 #explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0;
 % .explain # table_name
 % mal # name
 % clob # type
 % 68 # length
-function user.SQLanalyze():void;
+function user.main():void;
 barrier X_1511 := language.dataflow();
     X_1437 := bat.new(nil:str);
     X_1444 := bat.append(X_1437,"sys.test");
@@ -299,13 +347,37 @@ barrier X_1511 := language.dataflow();
     language.pass(X_1479);
 exit X_1511;
     sql.resultSet(X_1452,X_1453,X_1455,X_1456,X_1457,X_1434,X_1435);
-end user.SQLanalyze;
+end user.main;
+#inline               actions= 0 time=2 usec 
+#remap                actions= 0 time=8 usec 
+#costmodel            actions= 1 time=3 usec 
+#coercion             actions= 0 time=3 usec 
+#evaluate             actions= 8 time=33 usec 
+#emptybind            actions= 0 time=14 usec 
+#aliases              actions=10 time=29 usec 
+#mitosis              actions= 1 time=41 usec 
+#mergetable           actions= 4 time=85 usec 
+#deadcode             actions= 5 time=14 usec 
+#aliases              actions= 0 time=10 usec 
+#constants            actions= 9 time=12 usec 
+#commonTerms          actions= 0 time=12 usec 
+#projectionpath       actions= 0 time=8 usec 
+#deadcode             actions= 0 time=10 usec 
+#reorder              actions= 1 time=45 usec 
+#reduce               actions=44 time=20 usec 
+#matpack              actions= 2 time=13 usec 
+#dataflow             actions=27 time=41 usec 
+#multiplex            actions= 0 time=4 usec 
+#profiler             actions= 1 time=6 usec 
+#candidates           actions= 1 time=2 usec 
+#garbagecollector     actions= 1 time=32 usec 
+#total                actions= 1 time=615 usec 
 #explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0);
 % .explain # table_name
 % mal # name
 % clob # type
 % 75 # length
-function user.SQLanalyze():void;
+function user.main():void;
 barrier X_1639 := language.dataflow();
     X_1561 := bat.new(nil:str);
     X_1568 := bat.append(X_1561,"sys.test");
@@ -349,13 +421,37 @@ barrier X_1639 := language.dataflow();
     language.pass(X_1607);
 exit X_1639;
     sql.resultSet(X_1577,X_1578,X_1580,X_1581,X_1582,X_1558,X_1559);
-end user.SQLanalyze;
+end user.main;
+#inline               actions= 0 time=2 usec 
+#remap                actions= 0 time=8 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=3 usec 
+#evaluate             actions=16 time=60 usec 
+#emptybind            actions= 0 time=16 usec 
+#aliases              actions=18 time=15 usec 
+#mitosis              actions= 1 time=40 usec 
+#mergetable           actions= 4 time=81 usec 
+#deadcode             actions= 5 time=13 usec 
+#aliases              actions= 0 time=10 usec 
+#constants            actions=11 time=14 usec 
+#commonTerms          actions= 0 time=11 usec 
+#projectionpath       actions= 0 time=7 usec 
+#deadcode             actions= 0 time=10 usec 
+#reorder              actions= 1 time=45 usec 
+#reduce               actions=58 time=22 usec 
+#matpack              actions= 2 time=13 usec 
+#dataflow             actions=27 time=40 usec 
+#multiplex            actions= 0 time=4 usec 
+#profiler             actions= 1 time=5 usec 
+#candidates           actions= 1 time=2 usec 
+#garbagecollector     actions= 1 time=33 usec 
+#total                actions= 1 time=638 usec 
 #explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0);
 % .explain # table_name
 % mal # name
 % clob # type
 % 75 # length
-function user.SQLanalyze():void;
+function user.main():void;
 barrier X_1781 := language.dataflow();
     X_1698 := bat.new(nil:str);
     X_1705 := bat.append(X_1698,"sys.test");
@@ -399,7 +495,31 @@ barrier X_1781 := language.dataflow();
     language.pass(X_1749);
 exit X_1781;
     sql.resultSet(X_1714,X_1715,X_1717,X_1718,X_1719,X_1695,X_1696);
-end user.SQLanalyze;
+end user.main;
+#inline               actions= 0 time=2 usec 
+#remap                actions= 0 time=8 usec 
+#costmodel            actions= 1 time=3 usec 
+#coercion             actions= 0 time=3 usec 
+#evaluate             actions=24 time=70 usec 
+#emptybind            actions= 0 time=17 usec 
+#aliases              actions=26 time=17 usec 
+#mitosis              actions= 1 time=42 usec 
+#mergetable           actions= 4 time=82 usec 
+#deadcode             actions= 5 time=14 usec 
+#aliases              actions= 0 time=11 usec 
+#constants            actions=12 time=32 usec 
+#commonTerms          actions= 0 time=12 usec 
+#projectionpath       actions= 0 time=7 usec 
+#deadcode             actions= 0 time=11 usec 
+#reorder              actions= 1 time=46 usec 
+#reduce               actions=72 time=26 usec 
+#matpack              actions= 2 time=14 usec 
+#dataflow             actions=27 time=41 usec 
+#multiplex            actions= 0 time=5 usec 
+#profiler             actions= 1 time=5 usec 
+#candidates           actions= 1 time=2 usec 
+#garbagecollector     actions= 1 time=33 usec 
+#total                actions= 1 time=695 usec 
 #drop table test;
 #drop table test1;
 #drop table test2;
