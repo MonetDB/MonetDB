@@ -24,8 +24,16 @@ Ready.
 # 09:56:03 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=37039 
 # 09:56:03 >  
 
-% . # table_name
-% single_value # name
+# 17:12:52 >  
+# 17:12:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26340" "--port=31202"
+# 17:12:52 >  
+
+#declare next_file_quid integer;
+#set next_file_quid = -1234567890;
+#set next_file_quid = get_next_file_quid('fabchannel2007');
+#select next_file_quid;
+% .L1 # table_name
+% L1 # name
 % int # type
 % 8 # length
 [ 86046057	]

@@ -24,8 +24,30 @@ Ready.
 # 11:21:39 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=38135 
 # 11:21:39 >  
 
-% . # table_name
-% single_value # name
+# 17:12:54 >  
+# 17:12:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26340" "--port=31202"
+# 17:12:54 >  
+
+#declare id_file1 integer;
+#set id_file1 = -1234567890;
+#declare id_media1 integer;
+#set id_media1 = -1234567890;
+#set id_media1 = (select media_id
+#                 from   media
+#                 where  identifier = 'identifier2');
+#set id_file1 = add_file(id_media1,
+#                        'fabchannel2007',
+#                        'filename 2',
+#                        'codec 1',
+#                        2000,
+#                        2,
+#                        'url 1',
+#                        'empty',
+#                        250,
+#                        250);
+#select id_file1;
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 2	]

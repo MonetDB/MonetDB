@@ -82,7 +82,7 @@ function user.main():void;
     X_1232:hge := aggr.sum(X_1231);
     X_1233 := calc.hge(2,X_1232,39,5);
     X_1240:hge := calc./(X_1233,700:hge);
-    sql.resultSet("sys.L3","avg_yearly","decimal",39,3,10,X_1240);
+    sql.resultSet("sys.L4","avg_yearly","decimal",39,3,10,X_1240);
 end user.main;
 #inline               actions= 0 time=4 usec 
 #remap                actions= 5 time=26 usec 

@@ -59,11 +59,11 @@ project (
 | | | | ) [ date "1993-07-01" <= orders.o_orderdate NOT NULL < sys.sql_add(date "1993-07-01", month_interval "3") ]
 | | | ) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_orderpriority NOT NULL ],
 | | | select (
-| | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL as L2.l_orderkey, lineitem.l_commitdate NOT NULL as L2.l_commitdate, lineitem.l_receiptdate NOT NULL as L2.l_receiptdate ] COUNT 
-| | | ) [ L2.l_commitdate NOT NULL < L2.l_receiptdate NOT NULL ]
-| | ) [ L2.l_orderkey NOT NULL HASHCOL  = orders.o_orderkey NOT NULL ]
+| | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL as L3.l_orderkey, lineitem.l_commitdate NOT NULL as L3.l_commitdate, lineitem.l_receiptdate NOT NULL as L3.l_receiptdate ] COUNT 
+| | | ) [ L3.l_commitdate NOT NULL < L3.l_receiptdate NOT NULL ]
+| | ) [ L3.l_orderkey NOT NULL HASHCOL  = orders.o_orderkey NOT NULL ]
 | ) [ orders.o_orderpriority NOT NULL ] [ orders.o_orderpriority NOT NULL, sys.count() NOT NULL as L1.L1 ]
-) [ orders.o_orderpriority NOT NULL, L1 NOT NULL as L1.order_count ] [ orders.o_orderpriority ASC NOT NULL ]
+) [ orders.o_orderpriority NOT NULL, L1 NOT NULL as L2.order_count ] [ orders.o_orderpriority ASC NOT NULL ]
 
 # 22:46:29 >  
 # 22:46:29 >  "Done."

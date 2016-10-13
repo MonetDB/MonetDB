@@ -25,13 +25,13 @@ Ready.
 # 11:55:36 >  
 
 #SELECT 1, 2;
-% .L1,	.L1 # table_name
-% L1,	single_value # name
+% .L1,	.L2 # table_name
+% L1,	L2 # name
 % tinyint,	tinyint # type
 % 1,	1 # length
 [ 1,	2	]
 #SELECT * FROM (SELECT 1, 2) AS t;
-% .t,	.L2 # table_name
+% .t,	.t # table_name
 % L1,	L2 # name
 % tinyint,	tinyint # type
 % 1,	1 # length

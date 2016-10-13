@@ -26,8 +26,8 @@ Ready.
 # 10:16:15 >  
 
 #SELECT CASE WHEN 1 = 1 THEN NULL END;
-% .L # table_name
-% isnull_=_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 0 # length
 [ NULL	]

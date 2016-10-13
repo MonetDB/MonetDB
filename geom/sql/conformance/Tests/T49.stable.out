@@ -26,8 +26,8 @@ Ready.
 # 15:15:54 >  
 
 #SELECT ST_AsText(ST_Union(shore, boundary)) FROM lakes, named_places WHERE lakes.name = 'Blue Lake' AND named_places.name = 'Goose Island';
-% sys.L # table_name
-% st_astext_st_union_shore # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 45 # length
 [ "\"POLYGON ((52 18, 66 23, 73 9, 48 6, 52 18))\""	]

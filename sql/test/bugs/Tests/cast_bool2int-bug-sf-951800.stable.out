@@ -23,15 +23,15 @@ Ready.
 [ 1	]
 [ 1	]
 #select i<2 from a;
-% sys.L # table_name
-% <_i # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 [ false	]
 #select cast(i<2 as integer)+1 from a;
-% sys.L1 # table_name
-% sql_add_<_i # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 2	]

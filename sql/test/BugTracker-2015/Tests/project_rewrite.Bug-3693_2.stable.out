@@ -217,7 +217,7 @@ Ready.
 #  AND source.rownum > 0
 #  AND source.rownum <= 20
 #ORDER BY source.prob DESC, a1;
-% sys.L13,	sys.L13,	sys.L13,	sys.L13,	sys.L13,	sys.L13,	.source # table_name
+% sys.L672,	sys.L673,	sys.L674,	sys.L675,	sys.L676,	sys.L677,	.source # table_name
 % d1,	d1class,	d1json,	d2,	d2class,	d2json,	prob # name
 % clob,	clob,	clob,	clob,	clob,	clob,	double # type
 % 0,	0,	0,	0,	0,	0,	24 # length

@@ -23,7 +23,7 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) from b1296395;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

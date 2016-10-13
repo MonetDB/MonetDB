@@ -45,44 +45,44 @@ Ready.
 # 21:11:50 >  
 
 #SELECT DATE '1997-01-12';
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % date # type
 % 10 # length
 [ 1997-01-12	]
 #SELECT TIME '11:35:29';
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % time # type
 % 8 # length
 [ 11:35:29	]
 #SELECT TIME '00:00:00';
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % time # type
 % 8 # length
 [ 00:00:00	]
 #SELECT TIME '11:08:27-07:00';
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % time # type
 % 8 # length
 [ 18:08:27	]
 #SELECT TIME '11:08:27.123456-07:00';
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % time # type
 % 8 # length
 [ 18:08:27	]
 #SELECT TIMESTAMP '1997-01-15 11:35:29.123456';
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % timestamp # type
 % 26 # length
 [ 1997-01-15 11:35:29.123000	]
 #SELECT TIMESTAMP '1997-01-15 11:35:29.123456-07:00';
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % timestamp # type
 % 26 # length
 [ 1997-01-15 18:35:29.123000	]

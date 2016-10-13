@@ -37,8 +37,8 @@ Ready.
 #set id_event1 = (select max(event_id) + 1 from event);
 #set id_media_description1 = (select max(media_description_id) from media_description);
 #select id_media1;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 11 # length
 [ -1234567890	]

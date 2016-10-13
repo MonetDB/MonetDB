@@ -25,8 +25,8 @@ Ready.
 # 19:06:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25685" "--port=38042"
 # 19:06:48 >  
 
-#SELECT contains(smallc, bigc) AS smallcontainsbig, contains(bigc, smallc) AS bigcontainssmall FROM (SELECT Buffer(GeomFromText('POINT(1 2)', 0), 10) As smallc, Buffer(GeomFromText('POINT(1 2)', 0), 20) As bigc) As foo;
-% .L,	.L # table_name
+#SELECT st_contains(smallc, bigc) AS smallcontainsbig, st_contains(bigc, smallc) AS bigcontainssmall FROM (SELECT st_Buffer(st_GeomFromText('POINT(1 2)', 0), 10) As smallc, st_Buffer(st_GeomFromText('POINT(1 2)', 0), 20) As bigc) As foo;
+% .L3,	.L4 # table_name
 % smallcontainsbig,	bigcontainssmall # name
 % boolean,	boolean # type
 % 5,	5 # length

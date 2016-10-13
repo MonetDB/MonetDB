@@ -29,7 +29,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE NOT (1 < i.cnt);
-% .L4 # table_name
+% .L12 # table_name
 % res # name
 % boolean # type
 % 5 # length
@@ -39,7 +39,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE NOT (i.cnt > 1);
-% .L4 # table_name
+% .L12 # table_name
 % res # name
 % boolean # type
 % 5 # length
@@ -49,7 +49,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE NOT (1 < i.cnt);
-% .L3 # table_name
+% .L11 # table_name
 % res # name
 % boolean # type
 % 5 # length
@@ -59,7 +59,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE 1 >= i.cnt;
-% .L4 # table_name
+% .L12 # table_name
 % res # name
 % boolean # type
 % 5 # length
@@ -69,7 +69,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE i.cnt <= 1;
-% .L4 # table_name
+% .L12 # table_name
 % res # name
 % boolean # type
 % 5 # length
@@ -79,7 +79,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE 1 < i.cnt;
-% .L4 # table_name
+% .L12 # table_name
 % res # name
 % boolean # type
 % 5 # length

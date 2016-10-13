@@ -46,7 +46,7 @@ Ready.
 #where t2.time between (t1.time - interval '1' second) and (t1.time + interval '1' second)
 #group by t1.time
 #order by t1.time;
-% sys.t1,	sys.L1 # table_name
+% sys.t1,	sys.L2 # table_name
 % time,	L1 # name
 % timestamp,	bigint # type
 % 26,	1 # length

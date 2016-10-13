@@ -64,13 +64,13 @@ Ready.
 #
 #};
 #SELECT aggrmedian(datacol) FROM rval;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % int # type
 % 2 # length
 [ 42	]
 #SELECT groupcol,aggrmedian(datacol) FROM rval GROUP BY groupcol;
-% sys.rval,	sys.L1 # table_name
+% sys.rval,	sys.L2 # table_name
 % groupcol,	L1 # name
 % int,	int # type
 % 1,	2 # length

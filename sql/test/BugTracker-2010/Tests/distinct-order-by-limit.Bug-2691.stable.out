@@ -29,7 +29,7 @@ Ready.
 #insert into lim_prob values ('mydir1/', 'mytest1'), ('mydir2/', 'mytest3'), ('mydir1/', 'mytest2'), ('mydir1/', 'mytest4'), ('mydir2/', 'mytest1'), ('mydir2/', 'mytest2'), ('mydir1/', 'mytest3');
 [ 7	]
 #select concat("dir", "test") as a from lim_prob order by a limit 10;
-% sys.L # table_name
+% sys.L1 # table_name
 % a # name
 % varchar # type
 % 14 # length
@@ -41,7 +41,7 @@ Ready.
 [ "mydir2/mytest2"	]
 [ "mydir2/mytest3"	]
 #select distinct concat("dir", "test") as a from lim_prob order by a;
-% sys.L # table_name
+% sys.L1 # table_name
 % a # name
 % varchar # type
 % 14 # length
@@ -53,7 +53,7 @@ Ready.
 [ "mydir2/mytest2"	]
 [ "mydir2/mytest3"	]
 #select concat("dir", "test") as a from lim_prob order by a desc limit 10;
-% sys.L # table_name
+% sys.L1 # table_name
 % a # name
 % varchar # type
 % 14 # length
@@ -65,7 +65,7 @@ Ready.
 [ "mydir1/mytest2"	]
 [ "mydir1/mytest1"	]
 #select distinct concat("dir", "test") as a from lim_prob order by a desc;
-% sys.L # table_name
+% sys.L1 # table_name
 % a # name
 % varchar # type
 % 14 # length
@@ -77,7 +77,7 @@ Ready.
 [ "mydir1/mytest2"	]
 [ "mydir1/mytest1"	]
 #select distinct concat("dir", "test") as a from lim_prob order by a desc limit 10;
-% sys.L # table_name
+% sys.L1 # table_name
 % a # name
 % varchar # type
 % 14 # length
@@ -89,7 +89,7 @@ Ready.
 [ "mydir1/mytest2"	]
 [ "mydir1/mytest1"	]
 #select distinct concat("dir", "test") as a from lim_prob order by a limit 10;
-% sys.L # table_name
+% sys.L1 # table_name
 % a # name
 % varchar # type
 % 14 # length

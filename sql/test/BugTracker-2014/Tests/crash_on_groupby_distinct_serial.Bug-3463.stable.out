@@ -27,7 +27,7 @@ Ready.
 
 #CREATE TABLE test (a int, b int, c serial);
 #SELECT a as t, count(distinct c) FROM test GROUP BY t;
-% sys.test,	sys.L1 # table_name
+% sys.test,	sys.L2 # table_name
 % t,	L1 # name
 % int,	bigint # type
 % 1,	1 # length

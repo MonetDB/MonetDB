@@ -380,7 +380,7 @@ Ready.
 [ 25,	25,	25,	25,	24	]
 [ 30,	30,	30,	30,	10	]
 #select count(*) from (select * from T intersect select * from T ) as cnt;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 3 # length

@@ -51,7 +51,7 @@ Ready.
 % 24 # length
 [ -0	]
 #SELECT '' AS five, FLOAT8_TBL.* FROM FLOAT8_TBL;
-% .L,	sys.float8_tbl # table_name
+% .L1,	sys.float8_tbl # table_name
 % five,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -61,7 +61,7 @@ Ready.
 [ "",	1.23456789e+200	]
 [ "",	1.23456789e-200	]
 #SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE f.f1 <> '1004.3';
-% .L,	sys.f # table_name
+% .L1,	sys.f # table_name
 % four,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -70,13 +70,13 @@ Ready.
 [ "",	1.23456789e+200	]
 [ "",	1.23456789e-200	]
 #SELECT '' AS one, f.* FROM FLOAT8_TBL f WHERE f.f1 = '1004.3';
-% .L,	sys.f # table_name
+% .L1,	sys.f # table_name
 % one,	f1 # name
 % char,	double # type
 % 0,	24 # length
 [ "",	1004.3	]
 #SELECT '' AS three, f.* FROM FLOAT8_TBL f WHERE '1004.3' > f.f1;
-% .L,	sys.f # table_name
+% .L1,	sys.f # table_name
 % three,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -84,7 +84,7 @@ Ready.
 [ "",	-34.84	]
 [ "",	1.23456789e-200	]
 #SELECT '' AS three, f.* FROM FLOAT8_TBL f WHERE  f.f1 < '1004.3';
-% .L,	sys.f # table_name
+% .L1,	sys.f # table_name
 % three,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -92,7 +92,7 @@ Ready.
 [ "",	-34.84	]
 [ "",	1.23456789e-200	]
 #SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE '1004.3' >= f.f1;
-% .L,	sys.f # table_name
+% .L1,	sys.f # table_name
 % four,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -101,7 +101,7 @@ Ready.
 [ "",	-34.84	]
 [ "",	1.23456789e-200	]
 #SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE  f.f1 <= '1004.3';
-% .L,	sys.f # table_name
+% .L1,	sys.f # table_name
 % four,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -112,7 +112,7 @@ Ready.
 #SELECT '' AS three, f.f1, f.f1 * '-10' AS x 
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
+% .L1,	sys.f,	sys.L2 # table_name
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -122,7 +122,7 @@ Ready.
 #SELECT '' AS three, f.f1, f.f1 + '-10' AS x
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
+% .L1,	sys.f,	sys.L2 # table_name
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -132,7 +132,7 @@ Ready.
 #SELECT '' AS three, f.f1, f.f1 / '-10' AS x
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
+% .L1,	sys.f,	sys.L2 # table_name
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -142,7 +142,7 @@ Ready.
 #SELECT '' AS three, f.f1, f.f1 - '-10' AS x
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
+% .L1,	sys.f,	sys.L2 # table_name
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -151,7 +151,7 @@ Ready.
 [ "",	1.23456789e-200,	10	]
 #SELECT '' AS five, f.f1, abs(f1) AS abs_f1 
 #   FROM FLOAT8_TBL f;
-% .L,	sys.f,	sys.L # table_name
+% .L1,	sys.f,	sys.L2 # table_name
 % five,	f1,	abs_f1 # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -162,7 +162,7 @@ Ready.
 [ "",	1.23456789e-200,	1.23456789e-200	]
 #SELECT '' AS five, f.f1, round(f.f1, 0) AS round_f1
 #   FROM FLOAT8_TBL f;
-% .L,	sys.f,	sys.L # table_name
+% .L1,	sys.f,	sys.L2 # table_name
 % five,	f1,	round_f1 # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -172,7 +172,7 @@ Ready.
 [ "",	1.23456789e+200,	1.23456789e+200	]
 [ "",	1.23456789e-200,	0	]
 #select ceil(f1) as ceil_f1 from float8_tbl f;
-% sys.L # table_name
+% sys.L1 # table_name
 % ceil_f1 # name
 % double # type
 % 24 # length
@@ -182,7 +182,7 @@ Ready.
 [ 1.23456789e+200	]
 [ 1	]
 #select ceiling(f1) as ceiling_f1 from float8_tbl f;
-% sys.L # table_name
+% sys.L1 # table_name
 % ceiling_f1 # name
 % double # type
 % 24 # length
@@ -192,7 +192,7 @@ Ready.
 [ 1.23456789e+200	]
 [ 1	]
 #select floor(f1) as floor_f1 from float8_tbl f;
-% sys.L # table_name
+% sys.L1 # table_name
 % floor_f1 # name
 % double # type
 % 24 # length
@@ -202,7 +202,7 @@ Ready.
 [ 1.23456789e+200	]
 [ 0 ]
 #select sign(f1) as sign_f1 from float8_tbl f;
-% sys.L # table_name
+% sys.L1 # table_name
 % sign_f1 # name
 % tinyint # type
 % 2 # length
@@ -212,7 +212,7 @@ Ready.
 [ 1 ]
 [ 1 ]
 #SELECT sqrt(cast('64' as double)) AS eight;
-% .L1 # table_name
+% .L2 # table_name
 % eight # name
 % double # type
 % 24 # length
@@ -220,7 +220,7 @@ Ready.
 #SELECT '' AS three, f.f1, sqrt(f.f1) AS sqrt_f1
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
+% .L1,	sys.f,	sys.L2 # table_name
 % three,	f1,	sqrt_f1 # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -228,15 +228,15 @@ Ready.
 [ "",	1.23456789e+200,	1.111111106e+100	]
 [ "",	1.23456789e-200,	1.111111106e-100	]
 #SELECT power(cast('144' as double), cast('0.5' as double));
-% .L2 # table_name
-% power_single_value # name
+% .L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 12	]
 #SELECT '' AS three, f.f1, exp(log(f.f1)) AS exp_ln_f1
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
+% .L1,	sys.f,	sys.L2 # table_name
 % three,	f1,	exp_ln_f1 # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -244,7 +244,7 @@ Ready.
 [ "",	1.23456789e+200,	1.23456789e+200	]
 [ "",	1.23456789e-200,	1.23456789e-200	]
 #SELECT '' AS five, * FROM FLOAT8_TBL;
-% .L,	sys.float8_tbl # table_name
+% .L1,	sys.float8_tbl # table_name
 % five,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -258,8 +258,8 @@ Ready.
 #   WHERE FLOAT8_TBL.f1 > '0.0';
 [ 3	]
 #SELECT '' AS bad, log(-f.f1) from FLOAT8_TBL f where f.f1 < '0.0' ;
-% .L,	sys.L # table_name
-% bad,  log_sql_neg_f1 # name
+% .L1,	sys.L2 # table_name
+% bad,	L2 # name
 % char, double # type
 % 0,    24 # length
 [ "",   6.91204606      ]
@@ -267,15 +267,15 @@ Ready.
 [ "",   460.7277396     ]
 [ "",   -460.3062976    ]
 #SELECT '' AS bad, exp(-f.f1) from FLOAT8_TBL f where f.f1 > '-1000.0';
-% .L,	sys.L # table_name
-% bad,  exp_sql_neg_f1 # name
+% .L1,	sys.L2 # table_name
+% bad,	L2 # name
 % char, double # type
 % 0,    24 # length
 [ "",   1       ]
 [ "",   1.351511513e+15 ]
 [ "",   1       ]
 #SELECT '' AS five, * FROM FLOAT8_TBL;
-% .L,	sys.float8_tbl # table_name
+% .L1,	sys.float8_tbl # table_name
 % five,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -301,7 +301,7 @@ Ready.
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('-1.2345678901234e-200');
 [ 1 ]
 #SELECT '' AS five, * FROM FLOAT8_TBL;
-% .L,	sys.float8_tbl # table_name
+% .L1,	sys.float8_tbl # table_name
 % five,	f1 # name
 % char,	double # type
 % 0,	24 # length

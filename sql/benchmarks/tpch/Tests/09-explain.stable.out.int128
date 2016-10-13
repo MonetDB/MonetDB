@@ -61,7 +61,7 @@ function user.s4_1():void;
     X_215 := bat.new(nil:str);
     X_222 := bat.append(X_215,"sys.profit");
     X_232 := bat.append(X_222,"sys.profit");
-    X_240 := bat.append(X_232,"sys.L1");
+    X_240 := bat.append(X_232,"sys.L5");
     X_217 := bat.new(nil:str);
     X_224 := bat.append(X_217,"nation");
     X_233 := bat.append(X_224,"o_year");

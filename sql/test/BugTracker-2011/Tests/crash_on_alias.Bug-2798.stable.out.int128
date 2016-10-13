@@ -35,8 +35,8 @@ Ready.
 project (
 | group by (
 | | table(sys.dbg) [ dbg.a, dbg.b ] COUNT 
-| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L1.L1, L1.L1 as L2.L2 ]
-) [ dbg.d, L1 as L1.L1, sys.sql_mul(sys.sql_div(L2, tinyint "2" as L3.L3), tinyint "2") as L3.f ]
+| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L1.L1, L1.L1 as L3.L3 ]
+) [ dbg.d, L1 as L2.L1, sys.sql_mul(sys.sql_div(L3, tinyint "2" as L4.L4), tinyint "2") as L5.f ]
 #set optimizer = 'sequential_pipe';
 #explain SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
 % .explain # table_name
@@ -47,8 +47,8 @@ function user.s8_1():void;
     X_59:void := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",36);
     X_26 := bat.new(nil:str);
     X_33 := bat.append(X_26,"sys.dbg");
-    X_43 := bat.append(X_33,"sys.L1");
-    X_52 := bat.append(X_43,"sys.L3");
+    X_43 := bat.append(X_33,"sys.L2");
+    X_52 := bat.append(X_43,"sys.L5");
     X_28 := bat.new(nil:str);
     X_35 := bat.append(X_28,"d");
     X_45 := bat.append(X_35,"L1");
@@ -106,7 +106,7 @@ end user.s8_1;
 #total                actions= 1 time=1169 usec 
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% sys.dbg,	sys.L1,	sys.L3 # table_name
+% sys.dbg,	sys.L2,	sys.L5 # table_name
 % d,	L1,	f # name
 % int,	hugeint,	hugeint # type
 % 2,	2,	2 # length
@@ -124,8 +124,8 @@ end user.s8_1;
 project (
 | group by (
 | | table(sys.dbg) [ dbg.a, dbg.b ] COUNT 
-| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L1.L1, L1.L1 as L2.L2 ]
-) [ dbg.d, L1 as L1.e, sys.sql_mul(sys.sql_div(L2, tinyint "2" as L3.L3), tinyint "2") as L3.f ]
+| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L1.L1, L1.L1 as L3.L3 ]
+) [ dbg.d, L1 as L2.e, sys.sql_mul(sys.sql_div(L3, tinyint "2" as L4.L4), tinyint "2") as L5.f ]
 #set optimizer = 'sequential_pipe';
 #explain SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
 % .explain # table_name
@@ -136,8 +136,8 @@ function user.s20_1():void;
     X_59:void := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",36);
     X_26 := bat.new(nil:str);
     X_33 := bat.append(X_26,"sys.dbg");
-    X_43 := bat.append(X_33,"sys.L1");
-    X_52 := bat.append(X_43,"sys.L3");
+    X_43 := bat.append(X_33,"sys.L2");
+    X_52 := bat.append(X_43,"sys.L5");
     X_28 := bat.new(nil:str);
     X_35 := bat.append(X_28,"d");
     X_45 := bat.append(X_35,"e");
@@ -196,7 +196,7 @@ end user.s20_1;
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP
 #BY d;
-% sys.dbg,	sys.L1,	sys.L3 # table_name
+% sys.dbg,	sys.L2,	sys.L5 # table_name
 % d,	e,	f # name
 % int,	hugeint,	hugeint # type
 % 2,	2,	2 # length

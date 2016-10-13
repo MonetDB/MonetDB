@@ -39,9 +39,9 @@ Ready.
 #	print(x)
 #	return(x);
 #};
-#SELECT pyapi02(i,j,2) as r02 FROM rval;
-% sys.L # table_name
-% pyapi02_i # name
+#SELECT pyapi02(i,j,2) FROM rval;
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 20	]
@@ -55,8 +55,8 @@ Ready.
 #	return numpy.min(i)
 #};
 #SELECT pyapi02(i) FROM rval;
-% sys.L # table_name
-% pyapi02_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]

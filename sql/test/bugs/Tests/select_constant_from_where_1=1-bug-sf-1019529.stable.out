@@ -29,56 +29,56 @@ Ready.
 % varchar # type
 % 0 # length
 #select 1 from t1019529 where name='doesnotexist';
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 #select 1 from t1019529;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
 #select 1 from t1019529 where 0=1;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 #select 1 from t1019529 where 1=1;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
 #select 1 where 0=1;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 #select 1 where 1=1;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select 1, count(*) from t1019529;
-% .L1,	sys.L2 # table_name
+% .L1,	sys.L3 # table_name
 % L1,	L2 # name
 % tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	3	]
 #select 1, count(*) from t1019529 where 0=1;
-% .L1,	sys.L2 # table_name
+% .L1,	sys.L3 # table_name
 % L1,	L2 # name
 % tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	0	]
 #select 1, count(*) where 0=1;
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % tinyint,	bigint # type
 % 1,	1 # length

@@ -45,7 +45,7 @@ Ready.
 #INSERT INTO VARCHAR_TBL (f1) VALUES ('cd');
 #INSERT INTO VARCHAR_TBL (f1) VALUES ('c     ');
 #SELECT '' AS seven, VARCHAR_TBL.* FROM VARCHAR_TBL;
-% .L,	sys.varchar_tbl # table_name
+% .L1,	sys.varchar_tbl # table_name
 % seven,	f1 # name
 % char,	varchar # type
 % 0,	1 # length
@@ -58,7 +58,7 @@ Ready.
 #SELECT '' AS six, c.*
 #   FROM VARCHAR_TBL c
 #   WHERE c.f1 <> 'a';
-% .L,	sys.c # table_name
+% .L1,	sys.c # table_name
 % six,	f1 # name
 % char,	varchar # type
 % 0,	1 # length
@@ -70,7 +70,7 @@ Ready.
 #SELECT '' AS one, c.*
 #   FROM VARCHAR_TBL c
 #   WHERE c.f1 = 'a';
-% .L,	sys.c # table_name
+% .L1,	sys.c # table_name
 % one,	f1 # name
 % char,	varchar # type
 % 0,	1 # length
@@ -78,7 +78,7 @@ Ready.
 #SELECT '' AS five, c.*
 #   FROM VARCHAR_TBL c
 #   WHERE c.f1 < 'a';
-% .L,	sys.c # table_name
+% .L1,	sys.c # table_name
 % five,	f1 # name
 % char,	varchar # type
 % 0,	1 # length
@@ -90,7 +90,7 @@ Ready.
 #SELECT '' AS six, c.*
 #   FROM VARCHAR_TBL c
 #   WHERE c.f1 <= 'a';
-% .L,	sys.c # table_name
+% .L1,	sys.c # table_name
 % six,	f1 # name
 % char,	varchar # type
 % 0,	1 # length
@@ -103,14 +103,14 @@ Ready.
 #SELECT '' AS one, c.*
 #   FROM VARCHAR_TBL c
 #   WHERE c.f1 > 'a';
-% .L,	sys.c # table_name
+% .L1,	sys.c # table_name
 % one,	f1 # name
 % char,	varchar # type
 % 0,	0 # length
 #SELECT '' AS two, c.*
 #   FROM VARCHAR_TBL c
 #   WHERE c.f1 >= 'a';
-% .L,	sys.c # table_name
+% .L1,	sys.c # table_name
 % two,	f1 # name
 % char,	varchar # type
 % 0,	1 # length
@@ -126,7 +126,7 @@ Ready.
 #INSERT INTO VARCHAR_TBL (f1) VALUES ('abcde');
 #INSERT INTO VARCHAR_TBL (f1) VALUES ('abcd    ');
 #SELECT '' AS four, VARCHAR_TBL.* FROM VARCHAR_TBL;
-% .L,	sys.varchar_tbl # table_name
+% .L1,	sys.varchar_tbl # table_name
 % four,	f1 # name
 % char,	varchar # type
 % 0,	4 # length

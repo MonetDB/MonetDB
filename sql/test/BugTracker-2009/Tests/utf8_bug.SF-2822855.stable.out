@@ -28,7 +28,7 @@ Ready.
 [ 1	]
 [ 1	]
 #select a, length(a) AS len from utf8len;
-% sys.utf8len,	sys.L # table_name
+% sys.utf8len,	sys.L1 # table_name
 % a,	len # name
 % varchar,	int # type
 % 1,	1 # length
@@ -36,7 +36,7 @@ Ready.
 [ "€",	1	]
 [ "€",	1	]
 #select 'Liever €uro' as "Liever euro";
-% .L # table_name
+% .L1 # table_name
 % Liever euro # name
 % char # type
 % 11 # length

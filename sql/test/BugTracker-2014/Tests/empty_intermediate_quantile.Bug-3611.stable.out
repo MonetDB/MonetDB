@@ -59,8 +59,8 @@ Ready.
 #INSERT INTO tempa VALUES ( 1.0 , 1 ) , ( 2.0 , 2 ) ;
 [ 2	]
 #SELECT quantile( one , 0.25 ) , quantile( one , 0.5 ) FROM tempa WHERE two > 2 ;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L1,	L3 # name
 % double,	double # type
 % 24,	24 # length
 [ NULL,	NULL	]

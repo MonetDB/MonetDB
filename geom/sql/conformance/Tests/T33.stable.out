@@ -25,8 +25,8 @@ Ready.
 # 15:05:52 >  
 
 #SELECT ST_Length(centerlines) FROM divided_routes WHERE name = 'Route 75';
-% sys.L # table_name
-% st_length_centerlines # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 96	]

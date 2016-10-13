@@ -56,12 +56,12 @@ Ready.
 
 #CREATE TABLE test3467 (a int);
 #SELECT a AS "#" FROM test3467;
-% sys.L # table_name
+% sys.L1 # table_name
 % "#" # name
 % int # type
 % 1 # length
 #SELECT a AS "@" FROM test3467;
-% sys.L # table_name
+% sys.L1 # table_name
 % @ # name
 % int # type
 % 1 # length

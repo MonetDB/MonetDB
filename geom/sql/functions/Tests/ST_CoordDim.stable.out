@@ -25,19 +25,19 @@ Ready.
 # 15:20:12 >  
 
 #SELECT ST_CoordDim('LINESTRING(1 2 3, 1 3 4, 5 6 7, 8 9 10, 11 12 13)');
-% .L # table_name
-% st_coorddim_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 3	]
 #SELECT ST_CoordDim(ST_Point(1,2));
-% .L # table_name
-% st_point_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 2	]
 #SELECT geom AS "GEOMETRY", ST_CoordDim(geom) AS "COORDS" FROM geometries;
-% sys.L,	sys.L # table_name
+% sys.L1,	sys.L2 # table_name
 % GEOMETRY,	COORDS # name
 % geometry,	int # type
 % 0,	1 # length

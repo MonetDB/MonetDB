@@ -31,8 +31,8 @@ Ready.
 [ 1	]
 #SELECT col1, SUBSTRING(col1,1,4), SUBSTRING(col1 ,5,2), SUBSTRING(col1 ,7,2)
 #FROM   test456  ;
-% sys.test456,	sys.L1,	sys.L2,	sys.L2 # table_name
-% col1,	L1,	L2,	substring_col1 # name
+% sys.test456,	sys.L1,	sys.L2,	sys.L3 # table_name
+% col1,	L1,	L2,	L3 # name
 % int,	clob,	clob,	clob # type
 % 8,	4,	2,	2 # length
 [ 20080101,	"2008",	"01",	"01"	]
@@ -46,8 +46,8 @@ Ready.
 #,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
 #       END
 #FROM   test456 ;
-% sys.L1 # table_name
-% isnull_not_isnull_col1 # name
+% sys.L2 # table_name
+% L2 # name
 % date # type
 % 10 # length
 [ 2008-01-01	]

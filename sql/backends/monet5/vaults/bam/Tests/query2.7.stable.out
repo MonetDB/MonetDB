@@ -49,8 +49,8 @@ Ready.
 #    FROM bam.unpaired_all_alignments_4
 #)
 #ORDER BY qname;
-% .L2,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
-% L2,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% .L336,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
+% L336,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
 

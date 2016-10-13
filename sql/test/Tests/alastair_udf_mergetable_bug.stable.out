@@ -13,13 +13,13 @@ stdout of test 'alastair_udf_mergetable_bug` in directory 'sql/test` itself:
 [ 4	]
 #set optimizer='default_pipe';
 #select optimizer;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 12 # length
 [ "default_pipe"	]
 #select tab1.group_by_col,SUM(fuse(cast (tab1.f as INT),cast (tab2.f as INT))) from tab2 inner join tab1 on tab1.index_col = tab2.index_col group by tab1.group_by_col;
-% sys.tab1,	sys.L3 # table_name
+% sys.tab1,	sys.L4 # table_name
 % group_by_col,	L3 # name
 % int,	bigint # type
 % 1,	11 # length

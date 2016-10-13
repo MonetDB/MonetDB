@@ -30,8 +30,8 @@ Ready.
 #    RETURN CASE WHEN cnt <> 0 THEN total / cnt ELSE -1 END;
 #END;
 #SELECT my_avg(0, 0);
-% .L # table_name
-% my_avg_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ -1	]

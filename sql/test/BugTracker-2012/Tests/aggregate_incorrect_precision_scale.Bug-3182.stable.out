@@ -36,14 +36,14 @@ Ready.
 [ 1.3,	1.300	]
 [ 8.252,	8.252	]
 #select count(dval), count(nval) from type_test;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L1,	L3 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 3,	3	]
 #select sum(dval), sum(nval) from type_test;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L1,	L3 # name
 % double,	decimal # type
 % 24,	21 # length
 [ 14.952,	14.952	]

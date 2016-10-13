@@ -60,8 +60,8 @@ Ready.
 #INSERT INTO ceil_floor_round VALUES ('0.0');
 [ 1	]
 #SELECT a, round(a, 0) FROM ceil_floor_round;
-% sys.ceil_floor_round,	sys.L # table_name
-% a,	round_a # name
+% sys.ceil_floor_round,	sys.L1 # table_name
+% a,	L1 # name
 % decimal,	decimal # type
 % 20,	10 # length
 [ -5.500,	-6.000	]

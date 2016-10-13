@@ -36,8 +36,8 @@ Ready.
 % sys.tt7 # table_name
 % a # name
 % timestamp # type
-% 27 # length
-[ 2015-12-12 12:30:59.1111111	]
+% 26 # length
+[ 2015-12-12 12:30:59.111000	]
 #drop table TT7;
 
 # 19:04:36 >  

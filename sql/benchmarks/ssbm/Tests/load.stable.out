@@ -36,31 +36,31 @@ Ready.
 [ 60175	]
 #COMMIT;
 #select count(*) from DWDATE;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 4 # length
 [ 2556	]
 #select count(*) from SUPPLIER;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 3 # length
 [ 100	]
 #select count(*) from CUSTOMER;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 3 # length
 [ 300	]
 #select count(*) from PART;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 4 # length
 [ 2000	]
 #select count(*) from LINEORDER;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 5 # length

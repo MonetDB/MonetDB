@@ -66,9 +66,9 @@ project (
 | | | | | table(sys.customer) [ customer.c_region, customer.%TID% NOT NULL ] COUNT 
 | | | | ) [ customer.c_region = clob "AMERICA" ]
 | | | ) [ lineorder.%lineorder_lo_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey ]
-| | ) [ dwdate.d_year, supplier.s_city, part.p_brand1, lineorder.lo_revenue, lineorder.lo_supplycost, bigint[lineorder.lo_revenue] as L2.L2, bigint[lineorder.lo_supplycost] as L3.L3, sys.sql_sub(L2.L2, L3.L3) as L4.L4 ]
-| ) [ dwdate.d_year, supplier.s_city, part.p_brand1 ] [ dwdate.d_year, supplier.s_city, part.p_brand1, sys.sum no nil (L4.L4) as L1.L1 ]
-) [ dwdate.d_year, supplier.s_city, part.p_brand1, L1 as L1.profit1 ] [ dwdate.d_year ASC, supplier.s_city ASC, part.p_brand1 ASC ]
+| | ) [ dwdate.d_year, supplier.s_city, part.p_brand1, lineorder.lo_revenue, lineorder.lo_supplycost, bigint[lineorder.lo_revenue] as L3.L3, bigint[lineorder.lo_supplycost] as L4.L4, sys.sql_sub(L3.L3, L4.L4) as L5.L5 ]
+| ) [ dwdate.d_year, supplier.s_city, part.p_brand1 ] [ dwdate.d_year, supplier.s_city, part.p_brand1, sys.sum no nil (L5.L5) as L1.L1 ]
+) [ dwdate.d_year, supplier.s_city, part.p_brand1, L1 as L2.profit1 ] [ dwdate.d_year ASC, supplier.s_city ASC, part.p_brand1 ASC ]
 
 # 23:08:59 >  
 # 23:08:59 >  "Done."

@@ -38,7 +38,7 @@ Ready.
 [ 2,	0	]
 [ 3,	NULL	]
 #select case when not (a is null) and a > 0.0 then r/a else -1 end as s from t;
-% sys.L # table_name
+% sys.L1 # table_name
 % s # name
 % int # type
 % 2 # length
@@ -46,7 +46,7 @@ Ready.
 [ -1	]
 [ -1	]
 #select case when not (a is null) and a > 0.0 then 1.0*r/a else -1 end as r from t;
-% sys.L # table_name
+% sys.L1 # table_name
 % r # name
 % decimal # type
 % 21 # length

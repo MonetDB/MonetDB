@@ -61,56 +61,56 @@ Ready.
 #	RETURN 1;
 #END;
 #SELECT fibonacci(0);
-% .L # table_name
-% fibonacci_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]
 #SELECT fibonacci(1);
-% .L # table_name
-% fibonacci_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT fibonacci(2);
-% .L # table_name
-% fibonacci_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT fibonacci(3);
-% .L # table_name
-% fibonacci_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 2	]
 #SELECT fibonacci(4);
-% .L # table_name
-% fibonacci_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 3	]
 #SELECT fibonacci(5);
-% .L # table_name
-% fibonacci_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 5	]
 #SELECT fibonacci(6);
-% .L # table_name
-% fibonacci_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 8	]
 #SELECT fibonacci(7);
-% .L # table_name
-% fibonacci_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 13	]
 #SELECT fibonacci(8);
-% .L # table_name
-% fibonacci_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 21	]

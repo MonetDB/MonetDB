@@ -34,20 +34,16 @@ Ready.
 #CREATE TABLE REGION ( R_REGIONKEY INTEGER NOT NULL, R_NAME CHAR(25) NOT NULL, R_COMMENT VARCHAR(152));COPY 5 RECORDS INTO region from '/home/niels/data/MonetDB/sql/benchmarks/tpch/SF-0.01//region.tbl' USING DELIMITERS '|', '|
 #';select count(*) from region;CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys;GRANT INSERT, SELECT on region to copyuser;
 [ 5	]
-#CREATE TABLE REGION ( R_REGIONKEY INTEGER NOT NULL, R_NAME CHAR(25) NOT NULL, R_COMMENT VARCHAR(152));COPY 5 RECORDS INTO region from '/home/niels/data/MonetDB/sql/benchmarks/tpch/SF-0.01//region.tbl' USING DELIMITERS '|', '|
-#';select count(*) from region;CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys;GRANT INSERT, SELECT on region to copyuser;
-% sys.L1 # table_name
+#select count(*) from region;
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 5	]
-#CREATE TABLE REGION ( R_REGIONKEY INTEGER NOT NULL, R_NAME CHAR(25) NOT NULL, R_COMMENT VARCHAR(152));COPY 5 RECORDS INTO region from '/home/niels/data/MonetDB/sql/benchmarks/tpch/SF-0.01//region.tbl' USING DELIMITERS '|', '|
-#';select count(*) from region;CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys;GRANT INSERT, SELECT on region to copyuser;
-#CREATE TABLE REGION ( R_REGIONKEY INTEGER NOT NULL, R_NAME CHAR(25) NOT NULL, R_COMMENT VARCHAR(152));COPY 5 RECORDS INTO region from '/home/niels/data/MonetDB/sql/benchmarks/tpch/SF-0.01//region.tbl' USING DELIMITERS '|', '|
-#';select count(*) from region;CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys;GRANT INSERT, SELECT on region to copyuser;
-#COPY 5 RECORDS INTO region from '/home/niels/data/MonetDB/sql/benchmarks/tpch/SF-0.01//region.tbl' USING DELIMITERS '|', '|
-#';select count(*) from region;
-% sys.L1 # table_name
+#CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys;
+#GRANT INSERT, SELECT on region to copyuser;
+#select count(*) from region;
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -56,9 +52,8 @@ Ready.
 #COPY 5 RECORDS INTO region from '/home/niels/data/MonetDB/sql/benchmarks/tpch/SF-0.01//region.tbl' USING DELIMITERS '|', '|
 #';select count(*) from region;
 [ 5	]
-#COPY 5 RECORDS INTO region from '/home/niels/data/MonetDB/sql/benchmarks/tpch/SF-0.01//region.tbl' USING DELIMITERS '|', '|
-#';select count(*) from region;
-% sys.L1 # table_name
+#select count(*) from region;
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 2 # length

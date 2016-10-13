@@ -29,56 +29,56 @@ Ready.
 [ 1	]
 #SELECT AVG(x) AS avgx, AVG(x) AS avgx2
 #FROM x;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % avgx,	avgx2 # name
 % double,	double # type
 % 24,	24 # length
 [ 2,	2	]
 #SELECT AVG(x) AS avgx, SUM(x) AS sumx
 #FROM x;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % avgx,	sumx # name
 % double,	double # type
 % 24,	24 # length
 [ 2,	6	]
 #SELECT AVG(x) AS avgx, COUNT(x) AS countx
 #FROM x;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % avgx,	countx # name
 % double,	bigint # type
 % 24,	1 # length
 [ 2,	3	]
 #SELECT AVG(x) AS avgx, COUNT(*) AS countstar
 #FROM x;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % avgx,	countstar # name
 % double,	bigint # type
 % 24,	1 # length
 [ 2,	3	]
 #SELECT AVG(x) AS avgx, MIN(x) AS minx
 #FROM x;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % avgx,	minx # name
 % double,	double # type
 % 24,	24 # length
 [ 2,	1	]
 #SELECT AVG(x) AS avgx, MAX(x) AS maxx
 #FROM x;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % avgx,	maxx # name
 % double,	double # type
 % 24,	24 # length
 [ 2,	3	]
 #SELECT SUM(x) AS sumx, MIN(x) AS minx, MAX(x) AS maxx, COUNT(x) AS countx, COUNT(*) AS countstar
 #FROM x;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
+% sys.L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12 # table_name
 % sumx,	minx,	maxx,	countx,	countstar # name
 % double,	double,	double,	bigint,	bigint # type
 % 24,	24,	24,	1,	1 # length
 [ 6,	1,	3,	3,	3	]
 #SELECT COUNT(x) AS n1, sum(x)/count(x) as m1, sqrt( sum(x*x)/count(x) - (sum(x)/count(x))*(sum(x)/count(x)) ) as sd1
 #FROM x;
-% sys.L1,	sys.L3,	sys.L11 # table_name
+% sys.L2,	sys.L5,	sys.L14 # table_name
 % n1,	m1,	sd1 # name
 % bigint,	double,	double # type
 % 1,	24,	24 # length
@@ -91,7 +91,7 @@ Ready.
 #) pass1
 #, x
 #;
-% .L3,	.L4,	sys.L6 # table_name
+% .L6,	.L10,	sys.L13 # table_name
 % n2,	m2,	sd2 # name
 % bigint,	double,	double # type
 % 1,	24,	24 # length
@@ -104,7 +104,7 @@ Ready.
 #) agg
 #, x
 #;
-% sys.L2,	.L3,	sys.L5 # table_name
+% sys.L4,	.L6,	sys.L11 # table_name
 % n2,	m2,	sd2 # name
 % bigint,	double,	double # type
 % 1,	24,	24 # length

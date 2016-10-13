@@ -52,7 +52,7 @@ Ready.
 function user.s4_1():void;
     X_10:void := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe",5);
     X_2:str := udf.reverse("MonetDB");
-    sql.resultSet(".L","reverse_single_value","clob",0,0,4,X_2);
+    sql.resultSet(".L1","L1","clob",0,0,4,X_2);
 end user.s4_1;
 #inline               actions= 0 time=2 usec 
 #candidates           actions= 1 time=8 usec 
@@ -80,8 +80,8 @@ end user.s4_1;
 #garbageCollector     actions= 1 time=9 usec 
 #total                actions= 1 time=204 usec 
 #select reverse('MonetDB');
-% .L # table_name
-% reverse_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 7 # length
 [ "BDtenoM"	]
@@ -111,9 +111,9 @@ end user.s4_1;
 function user.s12_1():void;
     X_33:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",19);
     X_18 := bat.new(nil:str);
-    X_25 := bat.append(X_18,"sys.L");
+    X_25 := bat.append(X_18,"sys.L1");
     X_20 := bat.new(nil:str);
-    X_27 := bat.append(X_20,"reverse_x");
+    X_27 := bat.append(X_20,"L1");
     X_21 := bat.new(nil:str);
     X_29 := bat.append(X_21,"clob");
     X_22 := bat.new(nil:int);
@@ -153,8 +153,8 @@ end user.s12_1;
 #garbageCollector     actions= 1 time=15 usec 
 #total                actions= 1 time=291 usec 
 #select reverse(x) from udf_reverse;
-% sys.L # table_name
-% reverse_x # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 30 # length
 [ "BDtenoM"	]

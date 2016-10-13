@@ -57,7 +57,7 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L2,	.L4 # table_name
+% .L4,	.L10 # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -70,8 +70,8 @@ Ready.
 #       )
 #  FROM test1 a
 #;
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .L3,	.L6 # table_name
+% L3,	L6 # name
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT (SELECT COUNT(id) AS cnt1 
@@ -83,8 +83,8 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L2,	.L4 # table_name
-% L2,	c2 # name
+% .L3,	.L7 # table_name
+% L3,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT (SELECT COUNT(b.id) AS cnt2 
@@ -96,7 +96,7 @@ Ready.
 #       ) AS c1
 #  FROM test1 a
 #;
-% .L2,	.L4 # table_name
+% .L4,	.L10 # table_name
 % c2,	c1 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -109,7 +109,7 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L2,	.L4 # table_name
+% .L4,	.L10 # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -130,7 +130,7 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L2,	.L4 # table_name
+% .L4,	.L10 # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -146,8 +146,8 @@ Ready.
 #       )
 #  FROM test1 a
 #;
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .L3,	.L6 # table_name
+% L3,	L6 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 3,	1	]
@@ -162,8 +162,8 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L2,	.L4 # table_name
-% L2,	c2 # name
+% .L3,	.L7 # table_name
+% L3,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 3,	1	]
@@ -178,7 +178,7 @@ Ready.
 #       ) AS c1
 #  FROM test1 a
 #;
-% .L2,	.L4 # table_name
+% .L4,	.L10 # table_name
 % c2,	c1 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -194,7 +194,7 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L2,	.L4 # table_name
+% .L4,	.L10 # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length

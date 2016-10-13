@@ -50,45 +50,45 @@ Ready.
 # 15:08:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20707" "--port=34847"
 # 15:08:41 >  
 
-#create table aggrtest ( col1 varchar(10), col2 integer );
-#select json.tojsonarray(col1) from aggrtest;
-% sys.L1 # table_name
+#create table aggrtest00 ( col1 varchar(10), col2 integer );
+#select json.tojsonarray(col1) from aggrtest00;
+% sys.L2 # table_name
 % L1 # name
 % clob # type
 % 0 # length
 [ NULL	]
 #insert into aggrtest values ('hallo', 1);
 [ 1	]
-#select json.tojsonarray(col1) from aggrtest;
-% sys.L1 # table_name
+#select json.tojsonarray(col1) from aggrtest00;
+% sys.L2 # table_name
 % L1 # name
 % clob # type
 % 11 # length
 [ "[ \"hallo\" ]"	]
 #insert into aggrtest values ('world', 1);
 [ 1	]
-#select json.tojsonarray(col1) from aggrtest;
-% sys.L1 # table_name
+#select json.tojsonarray(col1) from aggrtest00;
+% sys.L2 # table_name
 % L1 # name
 % clob # type
 % 20 # length
 [ "[ \"hallo\", \"world\" ]"	]
-#select json.tojsonarray(col1) from aggrtest group by col2;
-% sys.L1 # table_name
+#select json.tojsonarray(col1) from aggrtest00 group by col2;
+% sys.L2 # table_name
 % L1 # name
 % clob # type
 % 20 # length
 [ "[ \"hallo\", \"world\" ]"	]
 #insert into aggrtest values ('foobar', 2);
 [ 1	]
-#select json.tojsonarray(col1) from aggrtest;
-% sys.L1 # table_name
+#select json.tojsonarray(col1) from aggrtest00;
+% sys.L2 # table_name
 % L1 # name
 % clob # type
 % 30 # length
 [ "[ \"hallo\", \"world\", \"foobar\" ]"	]
-#select json.tojsonarray(col1) from aggrtest group by col2;
-% sys.L1 # table_name
+#select json.tojsonarray(col1) from aggrtest00 group by col2;
+% sys.L2 # table_name
 % L1 # name
 % clob # type
 % 20 # length
@@ -99,7 +99,7 @@ Ready.
 #insert into aggrtest00 values (NULL, 1);
 [ 1	]
 #select json.tojsonarray(col1) from aggrtest00;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % clob # type
 % 0 # length
@@ -107,7 +107,7 @@ Ready.
 #insert into aggrtest00 values ('hello', 1);
 [ 1	]
 #select json.tojsonarray(col1) from aggrtest00;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % clob # type
 % 11 # length
@@ -115,13 +115,13 @@ Ready.
 #insert into aggrtest00 values ('world', 2);
 [ 1	]
 #select json.tojsonarray(col1) from aggrtest00;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % clob # type
 % 20 # length
 [ "[ \"hello\", \"world\" ]"	]
 #select json.tojsonarray(col1) from aggrtest00 group by col2;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % clob # type
 % 11 # length

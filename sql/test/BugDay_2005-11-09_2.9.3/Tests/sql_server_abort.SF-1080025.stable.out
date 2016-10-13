@@ -32,8 +32,8 @@ Ready.
 
 #START TRANSACTION;
 #select 5 not between 4 and 6;
-% .L # table_name
-% or_<_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]

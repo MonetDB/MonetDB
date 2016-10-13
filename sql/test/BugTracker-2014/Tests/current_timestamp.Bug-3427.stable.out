@@ -64,8 +64,8 @@ Ready.
 #insert into x(i,t) values(0,now());
 [ 1	]
 #select i, tn, td - t, tc - t from x;
-% sys.x,	sys.x,	sys.L1,	sys.L1 # table_name
-% i,	tn,	L1,	sql_sub_tc # name
+% sys.x,	sys.x,	sys.L1,	sys.L2 # table_name
+% i,	tn,	L1,	L2 # name
 % int,	timestamp,	sec_interval,	sec_interval # type
 % 1,	26,	5,	5 # length
 [ 0,	NULL,	0.000,	0.000	]
@@ -79,8 +79,8 @@ Ready.
 #insert into x(i,t) values(0,now());
 [ 1	]
 #select i, tn, td - t, tc - t from x;
-% sys.x,	sys.x,	sys.L1,	sys.L1 # table_name
-% i,	tn,	L1,	sql_sub_tc # name
+% sys.x,	sys.x,	sys.L1,	sys.L2 # table_name
+% i,	tn,	L1,	L2 # name
 % int,	time,	sec_interval,	sec_interval # type
 % 1,	8,	5,	5 # length
 [ 0,	NULL,	0.000,	0.000	]

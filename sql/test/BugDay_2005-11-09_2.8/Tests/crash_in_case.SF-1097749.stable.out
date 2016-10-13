@@ -24,8 +24,13 @@ Ready.
 # 11:50:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < crash_in_case.SF-1097749.sql
 # 11:50:48 >  
 
-% . # table_name
-% isnull_>_single_value # name
+# 16:45:44 >  
+# 16:45:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26340" "--port=31202"
+# 16:45:44 >  
+
+#select case when 1 > 2 then 'false' when 2 > 1 then 'true' end;
+% .L1 # table_name
+% L1 # name
 % char # type
 % 5 # length
 [ "true"	]

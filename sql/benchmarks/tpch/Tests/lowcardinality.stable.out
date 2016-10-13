@@ -30,7 +30,7 @@ Ready.
 # 15:58:29 >  
 
 #SELECT o_totalprice, count(*) FROM sys.orders GROUP BY o_totalprice HAVING count(*) >1 limit 10;
-% sys.orders,	sys.L1 # table_name
+% sys.orders,	sys.L2 # table_name
 % o_totalprice,	L1 # name
 % decimal,	bigint # type
 % 17,	1 # length
@@ -39,37 +39,37 @@ Ready.
 [ 14623.67,	2	]
 [ 169049.46,	2	]
 #SELECT max(o_totalprice) FROM sys.orders;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % decimal # type
 % 17 # length
 [ 466001.28	]
 #SELECT min(o_totalprice) FROM sys.orders;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % decimal # type
 % 17 # length
 [ 874.89	]
 #SELECT count(*) FROM sys.orders WHERE o_totalprice BETWEEN 38451.0 AND 38452.0;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM sys.orders WHERE o_totalprice = 38451.38;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM sys.orders WHERE o_totalprice >= 555285.16;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM sys.orders WHERE o_totalprice < 858.0;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -77,7 +77,7 @@ Ready.
 #SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
 #WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
 #AND  p_retailprice BETWEEN 1214.0 AND 1215.0;
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -85,7 +85,7 @@ Ready.
 #SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
 #WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
 #AND  s_acctbal BETWEEN 1432.0 AND 1433.0;
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 2 # length
@@ -93,7 +93,7 @@ Ready.
 #SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
 #WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
 #AND ps_supplycost BETWEEN 915.0 AND 916;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

@@ -26,8 +26,8 @@ Ready.
 # 19:07:43 >  
 
 #CREATE TABLE vessels (implicit_timestamp timestamp, mmsi int, lat real, lon real, nav_status tinyint, cog real, sog real, true_heading smallint, rotais smallint);
-#SELECT (SELECT current_timestamp), count(DISTINCT mmsi) FROM vessels;
-% .L1,	sys.L2 # table_name
+#SELECT (SELECT 1), count(DISTINCT mmsi) FROM vessels;
+% .L1,	sys.L3 # table_name
 % L1,	L2 # name
 % tinyint,	bigint # type
 % 1,	1 # length

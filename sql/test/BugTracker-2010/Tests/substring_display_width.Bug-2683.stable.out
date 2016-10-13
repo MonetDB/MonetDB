@@ -24,8 +24,8 @@ Ready.
 # 21:48:05 >  
 
 #select substring('123456789', 1, 3);
-% .L # table_name
-% substring_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 9 # length
 [ "123"	]

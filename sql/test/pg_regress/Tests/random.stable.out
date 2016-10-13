@@ -30,7 +30,7 @@ Ready.
 #--
 #-- count the number of tuples originally, should be 1000
 #SELECT count(*) FROM onek;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 4 # length
@@ -63,14 +63,14 @@ Ready.
 #-- now test that they are different counts
 #SELECT random, count(random) FROM RANDOM_TBL
 #  GROUP BY random HAVING count(random) > 3;
-% tmp.random_tbl,	tmp.L1 # table_name
+% tmp.random_tbl,	tmp.L2 # table_name
 % random,	L1 # name
 % bigint,	bigint # type
 % 4,	1 # length
 [ 1000, 4       ]
 #SELECT AVG(random) FROM RANDOM_TBL
 #  HAVING AVG(random) NOT BETWEEN 80 AND 120;
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % double # type
 % 24 # length

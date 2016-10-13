@@ -27,7 +27,7 @@ Ready.
 [ 1	]
 [ 1	]
 #select l.id, r.inst, l.inst, (r.inst - l.inst) as diff from t2_2582389 l,  t2_2582389 r where r.id = l.id order by r.inst, l.inst limit 2;
-% sys.l,	sys.r,	sys.l,	sys.L # table_name
+% sys.l,	sys.r,	sys.l,	sys.L1 # table_name
 % id,	inst,	inst,	diff # name
 % int,	double,	double,	double # type
 % 1,	24,	24,	24 # length

@@ -36,8 +36,8 @@ Ready.
 % 1 # length
 [ 1	]
 #select a,sum(b)>count(*)*.5 from foo3633 group by a;
-% sys.foo3633,	sys.L2 # table_name
-% a,	>_L1 # name
+% sys.foo3633,	sys.L3 # table_name
+% a,	L3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ 1,	true	]

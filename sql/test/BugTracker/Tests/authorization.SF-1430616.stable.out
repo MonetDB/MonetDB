@@ -82,7 +82,7 @@ SELECT users.name, users.fullname, schemas.name
 | monetdb | MonetDB Admin | sys  |
 | voc     | VOC Explorer  | sys  |
 +---------+---------------+------+
-2 rows
+2 tuples (2 ms)
 CREATE SCHEMA "voc" AUTHORIZATION "voc";
 Operation successful
 ALTER USER "voc" SET SCHEMA "voc";
@@ -96,17 +96,17 @@ SELECT users.name, users.fullname, schemas.name
 | monetdb | MonetDB Admin | sys  |
 | voc     | VOC Explorer  | voc  |
 +---------+---------------+------+
-2 rows
+2 tuples (0 ms)
 
 # 17:04:40 >  
 # 17:04:40 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 38700 -d mTests_sql_test_BugTracker -q
 # 17:04:40 >  
 
 auto commit mode: on
-sql> 
-# 17:04:40 >  
-# 17:04:40 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 38700 -d mTests_sql_test_BugTracker -f "../../../../../../../../scratch1/sjoerd/src/MonetDB/devel/sql/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
-# 17:04:40 >  
+voc-> 
+# 14:29:08 >  
+# 14:29:08 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 30352 -d mTests_sql_test_BugTracker -f "../../../../../../../data/MonetDB/sql/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
+# 14:29:08 >  
 
 START TRANSACTION;
 Operation successful

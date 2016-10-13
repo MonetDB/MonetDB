@@ -26,44 +26,44 @@ Ready.
 # 11:50:07 >  
 
 #SELECT 1 AS bla; -- gives bla
-% .L # table_name
+% .L1 # table_name
 % bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS BLA; -- gives bla
-% .L # table_name
+% .L1 # table_name
 % bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS "bla"; -- gives bla
-% .L # table_name
+% .L1 # table_name
 % bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS "Bla"; -- gives Bla
-% .L # table_name
+% .L1 # table_name
 % Bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS "BLA"; -- gives BLA
-% .L # table_name
+% .L1 # table_name
 % BLA # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #CREATE TABLE "B\"la\"" (id int); -- should fail
 #SELECT 1 AS "B\"la\""; -- should fail
-% .L # table_name
+% .L1 # table_name
 % B\"la\" # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS "\"Bla\""; -- should fail
-% .L # table_name
+% .L1 # table_name
 % \"Bla\" # name
 % tinyint # type
 % 1 # length

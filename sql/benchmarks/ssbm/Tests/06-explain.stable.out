@@ -45,7 +45,7 @@ Ready.
 function user.s2_1():void;
     X_125:void := querylog.define("explain\nselect sum(lo_revenue), d_year, p_brand1\n from lineorder, dwdate, part, supplier\n where lo_orderdate = d_datekey\n and lo_partkey = p_partkey\n and lo_suppkey = s_suppkey\n \n \n and p_brand1 = \\'MFGR#2221\\'\n and s_region = \\'EUROPE\\'\n group by d_year, p_brand1\n order by d_year, p_brand1;","sequential_pipe",82);
     X_93 := bat.new(nil:oid,nil:str);
-    X_101 := bat.append(X_93,"sys.L1");
+    X_101 := bat.append(X_93,"sys.L2");
     X_110 := bat.append(X_101,"sys.dwdate");
     X_118 := bat.append(X_110,"sys.part");
     X_96 := bat.new(nil:oid,nil:str);

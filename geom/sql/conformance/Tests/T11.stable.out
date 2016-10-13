@@ -25,8 +25,8 @@ Ready.
 # 14:23:22 >  
 
 #SELECT ST_IsEmpty(centerline) FROM road_segments WHERE name = 'Route 5' AND aliases = 'Main Street';
-% sys.L # table_name
-% st_isempty_centerline # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]

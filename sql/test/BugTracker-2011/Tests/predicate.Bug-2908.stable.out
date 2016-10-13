@@ -30,7 +30,7 @@ Ready.
 #1 then cast('VIEW' as varchar(20)) when t."type" = 0 and t."system" = false and
 #t."temporary" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) else
 #cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, cast('' as
-% .L3,	.L3,	.L3,	.L10,	.L11 # table_name
+% .L10,	.L11,	.L12,	.L20,	.L22 # table_name
 % table_cat,	table_schem,	table_name,	table_type,	remarks # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
 % 0,	0,	0,	0,	0 # length

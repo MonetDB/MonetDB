@@ -30,15 +30,15 @@ Ready.
 
 #CREATE SEQUENCE "test_seq" as bigint;
 #select next value for test_seq;
-% .L # table_name
-% next_value_for_sys # name
+% .L1 # table_name
+% L1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #alter sequence test_seq restart with 3000000000;
 #select next value for test_seq;
-% .L # table_name
-% next_value_for_sys # name
+% .L1 # table_name
+% L1 # name
 % bigint # type
 % 10 # length
 [ 3000000000	]

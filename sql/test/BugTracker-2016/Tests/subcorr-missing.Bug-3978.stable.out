@@ -39,7 +39,7 @@ Ready.
 #insert into x values (2,2,2);
 [ 1	]
 #select corr(i,j) from x group by id;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % int # type
 % 1 # length

@@ -77,9 +77,9 @@ project (
 | | | | | ) [ part.p_brand NOT NULL != char(10) "Brand#45", (clob[char[part.p_type NOT NULL]] as part.p_type) ! FILTER like (clob "MEDIUM POLISHED%", clob ""), part.p_size NOT NULL in (int "49", int "14", int "23", int "45", int "19", int "3", int "36", int "9") ]
 | | | | ) [ partsupp.%partsupp_ps_partkey_fkey NOT NULL = part.%TID% NOT NULL JOINIDX sys.partsupp.partsupp_ps_partkey_fkey ]
 | | | ) [ partsupp.ps_suppkey NOT NULL, part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL ]
-| | ) [ part.p_brand NOT NULL, partsupp.ps_suppkey NOT NULL as L5.L5, part.p_size NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, L5.L5 NOT NULL ]
-| ) [ part.p_brand NOT NULL, part.p_size NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, sys.count no nil (L5.L5 NOT NULL) NOT NULL as L4.L4 ]
-) [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, L4 NOT NULL as L4.supplier_cnt ] [ L4.supplier_cnt NOT NULL, part.p_brand ASC NOT NULL, part.p_type ASC NOT NULL, part.p_size ASC NOT NULL ]
+| | ) [ part.p_brand NOT NULL, partsupp.ps_suppkey NOT NULL as L6.L6, part.p_size NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, L6.L6 NOT NULL ]
+| ) [ part.p_brand NOT NULL, part.p_size NOT NULL, part.p_type NOT NULL ] [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, sys.count no nil (L6.L6 NOT NULL) NOT NULL as L4.L4 ]
+) [ part.p_brand NOT NULL, part.p_type NOT NULL, part.p_size NOT NULL, L4 NOT NULL as L5.supplier_cnt ] [ L5.supplier_cnt NOT NULL, part.p_brand ASC NOT NULL, part.p_type ASC NOT NULL, part.p_size ASC NOT NULL ]
 
 # 22:46:33 >  
 # 22:46:33 >  "Done."

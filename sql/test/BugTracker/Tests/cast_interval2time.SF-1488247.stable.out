@@ -15,8 +15,8 @@ Ready.
 
 
 #select interval '60' second;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 6 # length
 [ 60.000	]

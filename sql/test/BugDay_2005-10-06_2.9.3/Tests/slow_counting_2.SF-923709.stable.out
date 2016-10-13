@@ -15,7 +15,7 @@ Ready.
 
 
 #select count(*) from slow_count;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 6 # length

@@ -15,8 +15,8 @@ Ready.
 
 
 #select interval '-1-2' year to month;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % month_interval # type
 % 3 # length
 [ -14	]

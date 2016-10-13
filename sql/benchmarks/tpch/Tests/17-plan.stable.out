@@ -52,7 +52,7 @@ project (
 | | | project (
 | | | | group by (
 | | | | | join (
-| | | | | | table(sys.lineitem) [ lineitem.l_partkey NOT NULL as L4.l_partkey, lineitem.l_quantity NOT NULL as L4.l_quantity ] COUNT ,
+| | | | | | table(sys.lineitem) [ lineitem.l_partkey NOT NULL as L5.l_partkey, lineitem.l_quantity NOT NULL as L5.l_quantity ] COUNT ,
 | | | | | | project (
 | | | | | | | join (
 | | | | | | | | select (

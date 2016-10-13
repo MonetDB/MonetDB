@@ -36,7 +36,7 @@ Ready.
 #        GROUP BY qname
 #        HAVING COUNT(*) = 2
 #           AND SUM(bam.bam_flag(flag, 'firs_segm')) = 1
-% bam.L11,	bam.L12 # table_name
+% bam.L12,	bam.L14 # table_name
 % distance,	nr_alignments # name
 % hugeint,	bigint # type
 % 3,	1 # length
@@ -64,7 +64,7 @@ Ready.
 #WHERE l_rname = r_rname
 #GROUP BY distance
 #ORDER BY nr_alignments DESC;
-% bam.L,	bam.L1 # table_name
+% bam.L1,	bam.L3 # table_name
 % distance,	nr_alignments # name
 % hugeint,	bigint # type
 % 3,	1 # length

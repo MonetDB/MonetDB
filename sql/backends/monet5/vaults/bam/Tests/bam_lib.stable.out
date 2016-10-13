@@ -26,218 +26,218 @@ Ready.
 
 #SET SCHEMA bam;
 #SELECT bam_flag(1, 'mult_segm');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2, 'prop_alig');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(4, 'segm_unma');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(8, 'next_unma');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(16, 'segm_reve');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(32, 'next_reve');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(64, 'firs_segm');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(128, 'last_segm');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(256, 'seco_alig');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(512, 'qual_cont');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(1024, 'opti_dupl');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2048, 'supp_alig');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2, 'mult_segm');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(4, 'prop_alig');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(8, 'segm_unma');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(16, 'next_unma');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(4, 'segm_reve');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(2, 'next_reve');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(4, 'firs_segm');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(8, 'last_segm');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(16, 'seco_alig');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(32, 'qual_cont');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(64, 'opti_dupl');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(128, 'supp_alig');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT bam_flag(2047, 'mult_segm');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2047, 'prop_alig');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2047, 'segm_unma');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2047, 'next_unma');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2047, 'segm_reve');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2047, 'next_reve');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2047, 'firs_segm');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2047, 'last_segm');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2047, 'seco_alig');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2047, 'qual_cont');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(2047, 'opti_dupl');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT bam_flag(4095, 'supp_alig');
-% .L # table_name
-% bam_flag_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -254,7 +254,7 @@ Ready.
 #	bam_flag(flag, 'qual_cont') AS qual_cont,
 #	bam_flag(flag, 'opti_dupl') AS opti_dupl,
 #	bam_flag(flag, 'supp_alig') AS supp_alig
-% bam.alignments_1,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
+% bam.alignments_1,	bam.L1,	bam.L2,	bam.L3,	bam.L4,	bam.L5,	bam.L6,	bam.L7,	bam.L10,	bam.L11,	bam.L12,	bam.L13,	bam.L14 # table_name
 % flag,	mult_segm,	prop_alig,	segm_unma,	next_unma,	segm_reve,	next_reve,	firs_segm,	last_segm,	seco_alig,	qual_cont,	opti_dupl,	supp_alig # name
 % smallint,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 3,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
@@ -330,110 +330,110 @@ Ready.
 [ 401,	true,	false,	false,	false,	true,	false,	false,	true,	true,	false,	false,	false	]
 [ 401,	true,	false,	false,	false,	true,	false,	false,	true,	true,	false,	false,	false	]
 #SELECT reverse_seq('A');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "T"	]
 #SELECT reverse_seq('T');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "A"	]
 #SELECT reverse_seq('C');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "G"	]
 #SELECT reverse_seq('G');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "C"	]
 #SELECT reverse_seq('R');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "Y"	]
 #SELECT reverse_seq('Y');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "R"	]
 #SELECT reverse_seq('S');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "S"	]
 #SELECT reverse_seq('W');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "W"	]
 #SELECT reverse_seq('K');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "M"	]
 #SELECT reverse_seq('M');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "K"	]
 #SELECT reverse_seq('H');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "D"	]
 #SELECT reverse_seq('D');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "H"	]
 #SELECT reverse_seq('V');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "B"	]
 #SELECT reverse_seq('B');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "V"	]
 #SELECT reverse_seq('N');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 1 # length
 [ "N"	]
 #SELECT reverse_seq('ATCGRYSWKMHDVBN');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 15 # length
 [ "NVBHDKMWSRYCGAT"	]
 #SELECT reverse_seq('invalidchars');
-% .L # table_name
-% reverse_seq_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 12 # length
 [ "????????????"	]
 #SELECT seq, reverse_seq(seq) AS reverse_seq
 #FROM bam.alignments_1;
-% bam.alignments_1,	bam.L # table_name
+% bam.alignments_1,	bam.L1 # table_name
 % seq,	reverse_seq # name
 % clob,	clob # type
 % 100,	100 # length
@@ -509,14 +509,14 @@ Ready.
 [ "ATGGTTTTTGCCTGGTACTGTTGAAGTTAGGCTTAATTTTGAACCAGTAGCTTTGTTGTTTACCTTATGTGGTTTTGGGTTCATTTGTTCTATAAGTATA",	"TATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT"	]
 [ "ATGGTTTTTGCCTGGTACTGTTGAAGTTAGGCTTAATTTTGAACCAGTAGCTTTGTTGTTTACCTTATGTGGTTTTGGGTTCATTTGTTCTATAAGTATA",	"TATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT"	]
 #SELECT reverse_qual('Should be reversed');
-% .L # table_name
-% reverse_qual_single_value # name
+% .L1 # table_name
+% L1 # name
 % clob # type
 % 18 # length
 [ "desrever eb dluohS"	]
 #SELECT qual, reverse_qual(qual) AS reverse_qual
 #FROM bam.alignments_1;
-% bam.alignments_1,	bam.L # table_name
+% bam.alignments_1,	bam.L1 # table_name
 % qual,	reverse_qual # name
 % clob,	clob # type
 % 100,	100 # length
@@ -592,26 +592,26 @@ Ready.
 [ "##A#A####D5A>F#E@:G2#3ADBD:?##@CE-?D>BEG?D5DEABG3B5EC?CGDEDE=B@AE5@BDDGD>/DGBAE5@EGFEGEEEFEAD;BB?FGC",	"CGF?BB;DAEFEEEGEFGE@5EABGD/>DGDDB@5EA@B=EDEDGC?CE5B3GBAED5D?GEB>D?-EC@##?:DBDA3#2G:@E#F>A5D####A#A##"	]
 [ "##A#A####D5A>F#E@:G2#3ADBD:?##@CE-?D>BEG?D5DEABG3B5EC?CGDEDE=B@AE5@BDDGD>/DGBAE5@EGFEGEEEFEAD;BB?FGC",	"CGF?BB;DAEFEEEGEFGE@5EABGD/>DGDDB@5EA@B=EDEDGC?CE5B3GBAED5D?GEB>D?-EC@##?:DBDA3#2G:@E#F>A5D####A#A##"	]
 #SELECT seq_length('18M');
-% .L # table_name
-% seq_length_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 18	]
 #SELECT seq_length('3I5D6N');
-% .L # table_name
-% seq_length_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 11	]
 #SELECT seq_length('3=1X1=1X43=1X16=1X33=');
-% .L # table_name
-% seq_length_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 3 # length
 [ 100	]
 #SELECT cigar, seq_length(cigar) AS seq_length
 #FROM bam.alignments_1;
-% bam.alignments_1,	bam.L # table_name
+% bam.alignments_1,	bam.L1 # table_name
 % cigar,	seq_length # name
 % clob,	int # type
 % 27,	4 # length
@@ -687,69 +687,69 @@ Ready.
 [ "50=1X43=1X5=",	100	]
 [ "50=1X43=1X5=",	100	]
 #SELECT seq_char(5000, 'ACTGAG', 0, '6M');
-% .L # table_name
-% seq_char_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 1 # length
 [ NULL	]
 #SELECT seq_char(5000, 'ACTGAG', 4995, '6M');
-% .L # table_name
-% seq_char_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 1 # length
 [ "G"	]
 #SELECT seq_char(5000, 'ACTGAG', 4994, '6M');
-% .L # table_name
-% seq_char_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 1 # length
 [ NULL	]
 #SELECT seq_char(5000, 'ACTGAG', 5000, '6M');
-% .L # table_name
-% seq_char_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 1 # length
 [ "A"	]
 #SELECT seq_char(5000, 'ACTGAG', 5001, '6M');
-% .L # table_name
-% seq_char_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 1 # length
 [ NULL	]
 #SELECT seq_char(7, 'ACTAGAATGGCT', 5, '3M1I3M1D5M');
-% .L # table_name
-% seq_char_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 1 # length
 [ "T"	]
 #SELECT seq_char(8, 'ACTAGAATGGCT', 5, '3M1I3M1D5M');
-% .L # table_name
-% seq_char_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 1 # length
 [ "G"	]
 #SELECT seq_char(11, 'ACTAGAATGGCT', 5, '3M1I3M1D5M');
-% .L # table_name
-% seq_char_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 1 # length
 [ NULL	]
 #SELECT seq_char(16, 'ACTAGAATGGCT', 5, '3M1I3M1D5M');
-% .L # table_name
-% seq_char_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 1 # length
 [ "T"	]
 #SELECT seq_char(17, 'ACTAGAATGGCT', 5, '3M1I3M1D5M');
-% .L # table_name
-% seq_char_single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 1 # length
 [ NULL	]
 #SELECT 17922987 AS ref_pos, seq, pos, cigar, seq_char(17922987, seq, pos, cigar) AS seq_char
 #FROM bam.alignments_1
 #WHERE seq_char(17922987, seq, pos, cigar) IS NOT NULL;
-% .L,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	.L # table_name
+% .L1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	.L2 # table_name
 % ref_pos,	seq,	pos,	cigar,	seq_char # name
 % int,	clob,	int,	clob,	char # type
 % 8,	100,	8,	21,	1 # length
