@@ -1041,6 +1041,29 @@ classify(const char *s, size_t l)
 	}
 }
 
+
+static char* 
+mapi_escape_name(char *name) {
+	char *startbuffer = malloc(strlen(name) * 2 + 2);
+	char *buffer = startbuffer;
+	if (!startbuffer) return NULL;
+	if (strchr(name, ',') || strchr(name, ' ') || strchr(name, '\t') || strchr(name, '#')) {
+		*buffer++ = '"';
+		char *p;
+		for (p = name; *p; p++) {
+			if (*p == '"') {
+				*buffer++ = '\\';
+			}
+			*buffer++ = *p;
+		}
+		*buffer++ = '"';
+		*buffer = '\0';
+	} else {
+		strcpy(buffer, name);
+	}
+	return startbuffer;
+}
+
 static void
 TESTrenderer(MapiHdl hdl)
 {
@@ -1067,7 +1090,9 @@ TESTrenderer(MapiHdl hdl)
 		// column names
 		mnstr_printf(toConsole, "%% ");
 		for(i = 0; i < fields; i++) {
-			mnstr_printf(toConsole, "%s%s", mapi_get_name(hdl, i), i < fields - 1 ? ",\t" : " ");
+			char *name = mapi_escape_name(mapi_get_name(hdl, i));
+			mnstr_printf(toConsole, "%s%s", name, i < fields - 1 ? ",\t" : " ");
+			if (name) free(name);
 		}
 		mnstr_printf(toConsole, "# name\n");
 		// column type names
