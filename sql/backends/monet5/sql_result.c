@@ -1902,8 +1902,13 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 		int retval = -1;
 		int convert_to_string = !type_supports_binary_transfer(c->type.type);
 		sql_type *type = c->type.type;
+		lng print_width = 0;
 		
 		iterators[i] = bat_iterator(b);
+
+		if (compute_lengths) {
+			print_width = get_print_width(mtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), p ? 0 : iterators[i].b->batCacheid, p ? p : c->p);
+		}
 
 		if (type->eclass == EC_TIMESTAMP) {
 			// timestamps are converted to Unix Timestamps
@@ -2007,7 +2012,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 		}
 
 		if (compute_lengths) {
-			if (!mnstr_writeLng(s, get_print_width(mtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), p ? 0 : iterators[i].b->batCacheid, p ? p : c->p))) {
+			if (!mnstr_writeLng(s, print_width)) {
 				fres = -1;
 				goto cleanup;
 			}
