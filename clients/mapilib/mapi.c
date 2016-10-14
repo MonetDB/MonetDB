@@ -4135,7 +4135,7 @@ static char* mapi_convert_timetz(struct MapiColumn *col) {
 
 static char* mapi_convert_timestamp(struct MapiColumn *col) {
 	if (*((lng*) col->buffer_ptr) == *((lng*)col->null_value)) return NULL;
-	if (conversion_epoch_to_string(col->write_buf, COLBUFSIZ, (lng*) col->buffer_ptr, *((lng*)col->null_value)) < 0) {
+	if (conversion_epoch_to_string(col->write_buf, COLBUFSIZ, (lng*) col->buffer_ptr, *((lng*)col->null_value), col->digits) < 0) {
 		return NULL;
 	}
 	return (char*) col->write_buf;
@@ -4143,7 +4143,7 @@ static char* mapi_convert_timestamp(struct MapiColumn *col) {
 
 static char* mapi_convert_timestamptz(struct MapiColumn *col) {
 	if (*((lng*) col->buffer_ptr) == *((lng*)col->null_value)) return NULL;
-	if (conversion_epoch_tz_to_string(col->write_buf, COLBUFSIZ, (lng*) col->buffer_ptr, *((lng*)col->null_value), col->timezone) < 0) {
+	if (conversion_epoch_tz_to_string(col->write_buf, COLBUFSIZ, (lng*) col->buffer_ptr, *((lng*)col->null_value), col->digits, col->timezone) < 0) {
 		return NULL;
 	}
 	return (char*) col->write_buf;

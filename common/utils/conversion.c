@@ -323,6 +323,7 @@ conversion_time_optional_tz_to_string(char *dst, int len, const int *src, int nu
 		if ((res = snprintf(dst + (9 + digits), len - (9 + digits), "%s%02d:%02d", original_diff >= 0 ? "+" : "", diff_hour, diff_min)) < 0) {
 			return res;
 		}
+		return 15 + digits;
 	}
 	return 9 + digits;
 }
@@ -360,17 +361,28 @@ conversion_timestamp_get_data(lng time, int timezone_diff, short *year, unsigned
 	conversion_date_get_data(days, year, month, day);
 }
 static int
-conversion_epoch_optional_tz_to_string(char *dst, int len, const lng *src, lng null_value, int include_timezone, int timezone_diff) {
+conversion_epoch_optional_tz_to_string(char *dst, int len, const lng *src, lng null_value, int digits, int include_timezone, int timezone_diff) {
 	short year;
 	unsigned short month, day, hour, min, sec;
 	unsigned int nanosecond;
 	lng time = *src;
+	int res = 0;
 	if (*src == null_value) {
 		strcpy(dst, NULL_STRING);
 		return 3;
 	}
 
 	conversion_timestamp_get_data(*src, timezone_diff, &year, &month, &day, &hour, &min, &sec, &nanosecond);
+
+	if ((res = snprintf(dst, len, "%d-%02d-%02d %02d:%02d:%02d.%06d", year, month, day,  hour, min, sec, nanosecond)) < 0) {
+		return res;
+	}
+	digits--;
+	if (digits == 0) digits = -1;
+	res += digits - 6;
+	// adjust displayed precision based on the digits
+	dst[res] = '\0';
+
 	if (include_timezone) {
 		int diff_hour, diff_min;
 		int original_diff = timezone_diff;
@@ -378,19 +390,22 @@ conversion_epoch_optional_tz_to_string(char *dst, int len, const lng *src, lng n
 		diff_hour = timezone_diff / 3600000;
 		timezone_diff -= diff_hour * 3600000;
 		diff_min = timezone_diff / 60000;
-		return snprintf(dst, len, "%d-%02d-%02d %02d:%02d:%02d.%06d%s%02d:%02d", year, month, day, hour, min, sec, nanosecond, original_diff >= 0 ? "+" : "", diff_hour, diff_min);
+		if ((res = snprintf(dst + res, len - res, "%s%02d:%02d", original_diff >= 0 ? "+" : "", diff_hour, diff_min)) < 0) {
+			return res;
+		}
+		return res;
 	}
-	return snprintf(dst, len, "%d-%02d-%02d %02d:%02d:%02d.%06d", year, month, day,  hour, min, sec, nanosecond);
+	return res;
 }
 
 int
-conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value) {
-	return conversion_epoch_optional_tz_to_string(dst, len, src, null_value, 0, 0);
+conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value, int digits) {
+	return conversion_epoch_optional_tz_to_string(dst, len, src, null_value, digits, 0, 0);
 }
 
 int 
-conversion_epoch_tz_to_string(char *dst, int len, const lng *src, lng null_value, int timezone_diff) {
-	return conversion_epoch_optional_tz_to_string(dst, len, src, null_value, 1, timezone_diff);
+conversion_epoch_tz_to_string(char *dst, int len, const lng *src, lng null_value, int digits, int timezone_diff) {
+	return conversion_epoch_optional_tz_to_string(dst, len, src, null_value, digits, 1, timezone_diff);
 }
 
 static char hexit[] = "0123456789ABCDEF";
