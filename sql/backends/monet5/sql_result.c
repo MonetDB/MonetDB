@@ -2059,7 +2059,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 					if (convert_to_string || ATOMvarsized(mtype)) {
 						if (c->type.type->eclass == EC_BLOB) {
 							blob *b = (blob*) BUNtail(iterators[i], row);
-							rowsize += sizeof(lng) + b->nitems == ~(size_t) 0 ? 0 : b->nitems;
+							rowsize += sizeof(lng) + (b->nitems == ~(size_t) 0) ? 0 : b->nitems;
 						} else {
 							size_t slen = strlen((const char*) BUNtail(iterators[i], row));
 							rowsize += slen + 1;
