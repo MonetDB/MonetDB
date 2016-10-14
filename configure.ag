@@ -46,7 +46,7 @@ dnl  configure file, whereas comments starting with dnl are elided
 dnl  (including their trailing newline).
 
 AC_PREREQ([2.63])
-AC_INIT([MonetDB], [11.24.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
+AC_INIT([MonetDB], [11.26.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
