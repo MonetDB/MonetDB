@@ -4119,7 +4119,15 @@ static char* mapi_convert_decimal(struct MapiColumn *col) {
 
 static char* mapi_convert_time(struct MapiColumn *col) {
 	if (*((int*) col->buffer_ptr) == *((int*)col->null_value)) return NULL;
-	if (conversion_time_to_string(col->write_buf, COLBUFSIZ, (int*) col->buffer_ptr, *((int*)col->null_value), col->digits, 0) < 0) {
+	if (conversion_time_to_string(col->write_buf, COLBUFSIZ, (int*) col->buffer_ptr, *((int*)col->null_value), col->digits) < 0) {
+		return NULL;
+	}
+	return (char*) col->write_buf;
+}
+
+static char* mapi_convert_timetz(struct MapiColumn *col) {
+	if (*((int*) col->buffer_ptr) == *((int*)col->null_value)) return NULL;
+	if (conversion_timetz_to_string(col->write_buf, COLBUFSIZ, (int*) col->buffer_ptr, *((int*)col->null_value), col->digits, col->timezone) < 0) {
 		return NULL;
 	}
 	return (char*) col->write_buf;
@@ -4345,6 +4353,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				} else if (strcasecmp(type_sql_name, "time") == 0) {
 					result->fields[i].sql_type = SQL_BINARY_TIME;
 					result->fields[i].converter = (mapi_converter) mapi_convert_time;
+				} else if (strcasecmp(type_sql_name, "timetz") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_TIMETZ;
+					result->fields[i].timezone = timezone;
+					result->fields[i].converter = (mapi_converter) mapi_convert_timetz;
 				} else if (strcasecmp(type_sql_name, "timestamp") == 0) {
 					result->fields[i].sql_type = SQL_BINARY_TIMESTAMP;
 					result->fields[i].converter = (mapi_converter) mapi_convert_timestamp;

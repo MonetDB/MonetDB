@@ -292,8 +292,8 @@ conversion_time_get_data(int time, int timezone_diff, unsigned short *hour, unsi
 }
 
 
-int 
-conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits, int timezone_diff) {
+static int 
+conversion_time_optional_tz_to_string(char *dst, int len, const int *src, int null_value, int digits, int include_timezone, int timezone_diff) {
 	unsigned short hour, min, sec;
 	unsigned int nanosecond;
 	int res = 0;
@@ -305,14 +305,34 @@ conversion_time_to_string(char *dst, int len, const int *src, int null_value, in
 
 	conversion_time_get_data(*src, timezone_diff, &hour, &min, &sec, &nanosecond);
 
-	if ((res = sprintf(dst, "%02d:%02d:%02d.%06d", hour, min, sec, nanosecond)) < 0) {
+	if ((res = snprintf(dst, len, "%02d:%02d:%02d.%06d", hour, min, sec, nanosecond)) < 0) {
 		return res;
 	}
 	digits--;
 	if (digits == 0) digits = -1;
 	// adjust displayed precision based on the digits
 	dst[9 + digits] = '\0';
+
+	if (include_timezone) {
+		int diff_hour, diff_min;
+		int original_diff = timezone_diff;
+		
+		diff_hour = timezone_diff / 3600000;
+		timezone_diff -= diff_hour * 3600000;
+		diff_min = timezone_diff / 60000;
+		if ((res = snprintf(dst + (9 + digits), len - (9 + digits), "%s%02d:%02d", original_diff >= 0 ? "+" : "", diff_hour, diff_min)) < 0) {
+			return res;
+		}
+	}
 	return 9 + digits;
+}
+
+int conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits) {
+	return conversion_time_optional_tz_to_string(dst, len, src, null_value, digits, 0, 0);
+}
+
+int conversion_timetz_to_string(char *dst, int len, const int *src, int null_value, int digits, int timezone_diff) {
+	return conversion_time_optional_tz_to_string(dst, len, src, null_value, digits, 1, timezone_diff);
 }
 
 static int days_between_zero_and_epoch = 719528;

@@ -63,7 +63,10 @@ int conversion_date_to_string(char *dst, int len, const int *src, int null_value
 void conversion_date_get_data(int date, short *year, unsigned short *month, unsigned short *day);
 
 // time conversion, *src is ms since 00:00:00
-int conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits, int timezone_diff);
+int conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits);
+int conversion_timetz_to_string(char *dst, int len, const int *src, int null_value, int digits, int timezone_diff);
+
+
 void conversion_time_get_data(int time, int timezone_diff, unsigned short *hour, unsigned short *minute, unsigned short *second, unsigned int *nanosecond);
 
 // timestamp conversion, *src is time since epoch in ms
