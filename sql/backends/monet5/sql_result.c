@@ -2059,7 +2059,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 					if (convert_to_string || ATOMvarsized(mtype)) {
 						if (c->type.type->eclass == EC_BLOB) {
 							blob *b = (blob*) BUNtail(iterators[i], row);
-							rowsize += sizeof(lng) + b->nitems;
+							rowsize += sizeof(lng) + b->nitems == ~(size_t) 0 ? 0 : b->nitems;
 						} else {
 							size_t slen = strlen((const char*) BUNtail(iterators[i], row));
 							rowsize += slen + 1;
@@ -2143,10 +2143,15 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 					buf += sizeof(lng);
 					for (crow = srow; crow < row; crow++) {
 						blob *b = (blob*) BUNtail(iterators[i], crow);
-						(*(lng*)buf) = b->nitems == ~(size_t) 0 ? -1 : (lng) b->nitems;
-						buf += sizeof(lng);
-						memcpy(buf, b->data, b->nitems);
-						buf += b->nitems;
+						if (b->nitems == ~(size_t) 0) {
+							(*(lng*)buf) = -1;
+							buf += sizeof(lng);
+						} else {
+							(*(lng*)buf) = (lng) b->nitems;
+							buf += sizeof(lng);
+							memcpy(buf, b->data, b->nitems);
+							buf += b->nitems;
+						}
 					}
 					// after the loop we know the size of the column, so write it
 					*((lng*)startbuf) = buf - (startbuf + sizeof(lng));
