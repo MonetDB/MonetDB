@@ -44,17 +44,8 @@ Ready.
 # 10:26:28 >  
 
 [ 1	]
-
-# 10:26:28 >  
-# 10:26:28 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=ottar --port=32641  -fraw -s 'select * from utf8test'
-# 10:26:28 >  
-
-% sys.utf8test # table_name
-% s # name
-% varchar # type
-% 32 # length
-[ "value without special characters"	]
-[ "funny characters: àáâãäå"	]
+value without special characters
+funny characters: àáâãäå
 select * from utf8test
 +----------------------------------+
 | s                                |
@@ -63,12 +54,8 @@ select * from utf8test
 | funny characters: àáâãäå         |
 +----------------------------------+
 2 tuples
-% sys.utf8test # table_name
-% s # name
-% varchar # type
-% 32 # length
-[ "value without special characters"	]
-[ "funny characters: àáâãäå"	]
+value without special characters
+funny characters: àáâãäå
 select * from utf8test
 +----------------------------------+
 | s                                |
@@ -77,11 +64,7 @@ select * from utf8test
 | funny characters: àáâãäå         |
 +----------------------------------+
 2 tuples
-% sys.utf8test # table_name
-% s # name
-% varchar # type
-% 32 # length
-[ "value without special characters"	]
+value without special characters
 select * from utf8test
 +----------------------------------+
 | s                                |

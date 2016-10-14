@@ -23,13 +23,13 @@ sys.stderr.write(err)
 out, err = client(['-s', "insert into utf8test values ('funny characters: %s')" % funny])
 sys.stdout.write(out)
 sys.stderr.write(err)
-out, err = client(['-fraw', '-s', 'select * from utf8test'])
+out, err = client(['-fcsv', '-s', 'select * from utf8test'])
 sys.stdout.write(out)
 sys.stderr.write(err)
 out, err = client(['-fsql', '-s', 'select * from utf8test'])
 sys.stdout.write(out)
 sys.stderr.write(err)
-out, err = client(['-fraw', '-Eiso-8859-1', '-s', 'select * from utf8test'],
+out, err = client(['-fcsv', '-Eiso-8859-1', '-s', 'select * from utf8test'],
                   universal_newlines = False)
 out = out.decode('iso-8859-1')
 err = err.decode('iso-8859-1')
@@ -47,7 +47,7 @@ if sys.version_info[0] == 2:
     err = err.encode('utf-8')
 sys.stdout.write(out)
 sys.stderr.write(err)
-out, err = client(['-fraw', '-Eus-ascii', '-s', 'select * from utf8test'],
+out, err = client(['-fcsv', '-Eus-ascii', '-s', 'select * from utf8test'],
                   universal_newlines = False)
 out = out.decode('us-ascii')
 err = err.decode('us-ascii')
