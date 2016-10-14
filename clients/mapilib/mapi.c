@@ -5814,6 +5814,9 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			    mnstr_flush(mid->to))
 				check_stream(mid, mid->to, mnstr_error(mid->to), "mapi_fetch_line", 0);
 		}
+		if (result->prot10_resultset) {
+			return result->row_count;
+		}
 		if (mid->active)
 			read_into_cache(mid->active, 0);
 		else
