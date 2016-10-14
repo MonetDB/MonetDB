@@ -1047,7 +1047,7 @@ mapi_escape_name(char *name) {
 	char *startbuffer = malloc(strlen(name) * 2 + 2);
 	char *buffer = startbuffer;
 	if (!startbuffer) return NULL;
-	if (strchr(name, ',') || strchr(name, ' ') || strchr(name, '\t') || strchr(name, '#')) {
+	if (strchr(name, ',') || strchr(name, '\t') || strchr(name, '#')) {
 		*buffer++ = '"';
 		char *p;
 		for (p = name; *p; p++) {

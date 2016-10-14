@@ -4258,11 +4258,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 						!mnstr_readInt(mid->from, &result->fields[i].scale)) {
 					return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 				}
-
-				if (strcasecmp(type_sql_name, "sec_interval") == 0) {
-					result->fields[i].scale = 3;
-				}
-
+				
 				if (!mnstr_readInt(mid->from, &null_len)) {
 					return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 				}

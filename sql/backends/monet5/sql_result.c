@@ -2019,7 +2019,6 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 		}
 	}
 	if (mnstr_flush(s) < 0) {
-		fprintf(stderr, "Failed to flush.\n");
 		fres = -1;
 		goto cleanup;
 	}
