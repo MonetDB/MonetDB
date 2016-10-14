@@ -1454,6 +1454,8 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 				} else if (mtype == TYPE_hge) {
 					count = bat_max_hgelength(b);
 #endif
+				} else if (mtype == TYPE_void) {
+					count = 4;
 				} else {
 					assert(0);
 				}
