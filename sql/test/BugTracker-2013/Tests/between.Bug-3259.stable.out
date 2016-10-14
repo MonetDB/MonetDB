@@ -47,24 +47,24 @@ Ready.
 % mal # name
 % clob # type
 % 191 # length
-function user.s2_1():void;
-    X_55:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",37);
-barrier X_78 := language.dataflow();
+function user.s6_1():void;
+    X_56:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",37);
+barrier X_80 := language.dataflow();
     X_32 := bat.new(nil:str);
-    X_39 := bat.append(X_32,"sys.L");
-    X_49 := bat.append(X_39,"sys.L");
+    X_39 := bat.append(X_32,"sys.L1");
+    X_49 := bat.append(X_39,"sys.L2");
     X_34 := bat.new(nil:str);
     X_41 := bat.append(X_34,"id1");
-    X_50 := bat.append(X_41,"id2");
+    X_51 := bat.append(X_41,"id2");
     X_35 := bat.new(nil:str);
     X_43 := bat.append(X_35,"int");
-    X_52 := bat.append(X_43,"int");
+    X_53 := bat.append(X_43,"int");
     X_36 := bat.new(nil:int);
     X_45 := bat.append(X_36,32);
-    X_53 := bat.append(X_45,32);
+    X_54 := bat.append(X_45,32);
     X_38 := bat.new(nil:int);
     X_47 := bat.append(X_38,0);
-    X_54 := bat.append(X_47,0);
+    X_55 := bat.append(X_47,0);
     X_0 := sql.mvc();
     C_1:bat[:oid] := sql.tid(X_0,"sys","treeitems");
     X_4:bat[:lng] := sql.bind(X_0,"sys","treeitems","pre",0);
@@ -81,9 +81,32 @@ barrier X_78 := language.dataflow();
     language.pass(X_7);
     language.pass(C_1);
     language.pass(X_26);
-exit X_78;
-    sql.resultSet(X_49,X_50,X_52,X_53,X_54,X_27,X_30);
-end user.s2_1;
+exit X_80;
+    sql.resultSet(X_49,X_51,X_53,X_54,X_55,X_27,X_30);
+end user.s6_1;
+#inline               actions= 0 time=3 usec 
+#remap                actions= 1 time=31 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 0 time=7 usec 
+#aliases              actions= 0 time=5 usec 
+#mergetable           actions= 0 time=33 usec 
+#deadcode             actions= 0 time=6 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 3 time=8 usec 
+#commonTerms          actions= 5 time=12 usec 
+#projectionpath       actions= 0 time=5 usec 
+#deadcode             actions= 5 time=7 usec 
+#reorder              actions= 1 time=21 usec 
+#reduce               actions=28 time=8 usec 
+#matpack              actions= 0 time=3 usec 
+#dataflow             actions=27 time=24 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=3 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollector     actions= 1 time=18 usec 
+#total                actions= 1 time=309 usec 
 #ROLLBACK;
 
 # 20:18:31 >  

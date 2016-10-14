@@ -76,9 +76,9 @@ project (
 | | | | | table(sys.region) [ region.r_name NOT NULL, region.%TID% NOT NULL ] COUNT 
 | | | | ) [ region.r_name NOT NULL = char(25) "ASIA" ]
 | | | ) [ nation.%nation_n_regionkey_fkey NOT NULL = region.%TID% NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ]
-| | ) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, nation.n_name NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L2.L2, sys.sql_mul(lineitem.l_extendedprice NOT NULL, L2.L2) as L3.L3 ]
-| ) [ nation.n_name NOT NULL ] [ nation.n_name NOT NULL, sys.sum no nil (L3.L3) as L1.L1 ]
-) [ nation.n_name NOT NULL, L1 as L1.revenue ] [ L1.revenue ]
+| | ) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, nation.n_name NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L3.L3, sys.sql_mul(lineitem.l_extendedprice NOT NULL, L3.L3) as L4.L4 ]
+| ) [ nation.n_name NOT NULL ] [ nation.n_name NOT NULL, sys.sum no nil (L4.L4) as L1.L1 ]
+) [ nation.n_name NOT NULL, L1 as L2.revenue ] [ L2.revenue ]
 
 # 22:46:29 >  
 # 22:46:29 >  "Done."

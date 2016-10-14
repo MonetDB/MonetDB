@@ -171,7 +171,7 @@ function user.s4_1():void;
     X_313:bat[:lng] := batcalc.-(100:lng,X_312);
     X_316:bat[:lng] := batcalc.*(X_298,X_313);
     X_318:lng := aggr.sum(X_316);
-    sql.resultSet("sys.L1","revenue","decimal",19,4,10,X_318);
+    sql.resultSet("sys.L2","revenue","decimal",19,4,10,X_318);
 end user.s4_1;
 #inline               actions= 0 time=8 usec 
 #remap                actions= 2 time=75 usec 
