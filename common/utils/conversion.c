@@ -216,18 +216,12 @@ leapyears(int year)
 	return y4 + y400 - y100 + (year >= 0);	/* may be negative */
 }
 
-int
-conversion_date_to_string(char *dst, int len, const int *src, int null_value) {
-	int day, month, year;
-	if (len < dateStrlen) return -1;
-	if (*src == null_value) {
-		strcpy(dst, NULL_STRING);
-		return 3;
-	}
-
-	year = *src / 365;
-	day = (*src - year * 365) - leapyears(year >= 0 ? year - 1 : year);
-	if (*src < 0) {
+void 
+conversion_date_get_data(const int date, short *out_year, unsigned short *out_month, unsigned short *out_day) {
+	int year, month, day;
+	year = date / 365;
+	day = (date - year * 365) - leapyears(year >= 0 ? year - 1 : year);
+	if (date < 0) {
 		year--;
 		while (day >= 0) {
 			year++;
@@ -256,22 +250,30 @@ conversion_date_to_string(char *dst, int len, const int *src, int null_value) {
 		day -= CUMDAYS[month - 1];
 	}
 	year = (year <= 0) ? year - 1 : year; // hide year 0
+
+	*out_year = (short) year;
+	*out_month = (unsigned short) month;
+	*out_day = (unsigned short) day;
+}
+
+int
+conversion_date_to_string(char *dst, int len, const int *src, int null_value) {
+	short year;
+	unsigned short month, day;
+	if (len < dateStrlen) return -1;
+	if (*src == null_value) {
+		strcpy(dst, NULL_STRING);
+		return 3;
+	}
+	conversion_date_get_data(*src, &year, &month, &day);
 	// YYYY-MM-DD
 	sprintf(dst, "%d-%02d-%02d", year, month, day);
 	return (int) strlen(dst);
 }
 
-int 
-conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits, int timezone_diff) {
-	int sec, min, hour, ms;
-	int time = *src;
+void 
+conversion_time_get_data(int time, int timezone_diff, unsigned short *hour, unsigned short *min, unsigned short *sec, unsigned int *nanosecond) {
 	int mtime = 24 * 60 * 60 * 1000;
-	int res = 0;
-	if (len < daytimeStrlen) return -1;
-	if (*src == null_value) {
-		strcpy(dst, NULL_STRING);
-		return 3;
-	}
 	// account for the timezone of the client
 	time += timezone_diff;
 	// time has to be between 00:00 and 24:00
@@ -280,14 +282,30 @@ conversion_time_to_string(char *dst, int len, const int *src, int null_value, in
 	if (time > mtime)
 		time = time - mtime;
 
-	hour = time / 3600000;
-	time -= hour * 3600000;
-	min = time / 60000;
-	time -= min * 60000;
-	sec = time / 1000;
-	time -= sec * 1000;
-	ms = time;
-	if ((res = sprintf(dst, "%02d:%02d:%02d.%03d000", hour, min, sec, ms)) < 0) {
+	*hour = time / 3600000;
+	time -= *hour * 3600000;
+	*min = time / 60000;
+	time -= *min * 60000;
+	*sec = time / 1000;
+	time -= *sec * 1000;
+	*nanosecond = time * 1000;
+}
+
+
+int 
+conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits, int timezone_diff) {
+	unsigned short hour, min, sec;
+	unsigned int nanosecond;
+	int res = 0;
+	if (len < daytimeStrlen) return -1;
+	if (*src == null_value) {
+		strcpy(dst, NULL_STRING);
+		return 3;
+	}
+
+	conversion_time_get_data(*src, timezone_diff, &hour, &min, &sec, &nanosecond);
+
+	if ((res = sprintf(dst, "%02d:%02d:%02d.%06d", hour, min, sec, nanosecond)) < 0) {
 		return res;
 	}
 	digits--;
@@ -299,35 +317,40 @@ conversion_time_to_string(char *dst, int len, const int *src, int null_value, in
 
 static int days_between_zero_and_epoch = 719528;
 
+void 
+conversion_timestamp_get_data(lng time, int timezone_diff, short *year, unsigned short *month, unsigned short *day, unsigned short *hour, unsigned short *minute, unsigned short *second, unsigned int *nanosecond) {
+	int days = 0;
 
+	// account for the timezone of the client
+	time += timezone_diff;
+
+	*nanosecond = (unsigned int) (time % 1000 * 1000);
+	time /= 1000;
+	*second = (unsigned short) (time % 60);
+	time /= 60;
+	*minute = (unsigned short) (time % 60);
+	time /= 60;
+	*hour = (unsigned short) (time % 24);
+	time /= 24;
+
+	// we know the amount of days since epoch, just add the days between 0000-01-01 and epoch 
+	// then we can use our conversion_date_get_data function
+	days = (int)(time + days_between_zero_and_epoch);
+
+	conversion_date_get_data(days, year, month, day);
+}
 static int
 conversion_epoch_optional_tz_to_string(char *dst, int len, const lng *src, lng null_value, int include_timezone, int timezone_diff) {
-	int ms, sec, min, hour;
-	int days = 0;
+	short year;
+	unsigned short month, day, hour, min, sec;
+	unsigned int nanosecond;
 	lng time = *src;
-	int offset;
-
 	if (*src == null_value) {
 		strcpy(dst, NULL_STRING);
 		return 3;
 	}
-	// account for the timezone of the client
-	time += timezone_diff;
 
-	ms = time % 1000 * 1000;
-	time /= 1000;
-	sec = time % 60;
-	time /= 60;
-	min = time % 60;
-	time /= 60;
-	hour = time % 24;
-	time /= 24;
-	// we know the amount of days since epoch, just add the days between 0000-01-01 and epoch 
-	// then we can use our conversion_date_to_string function
-	days = (int)(time + days_between_zero_and_epoch);
-
-	offset = conversion_date_to_string(dst, len, &days, -2147483647);
-	if (offset < 0) return -1;
+	conversion_timestamp_get_data(*src, timezone_diff, &year, &month, &day, &hour, &min, &sec, &nanosecond);
 	if (include_timezone) {
 		int diff_hour, diff_min;
 		int original_diff = timezone_diff;
@@ -335,9 +358,9 @@ conversion_epoch_optional_tz_to_string(char *dst, int len, const lng *src, lng n
 		diff_hour = timezone_diff / 3600000;
 		timezone_diff -= diff_hour * 3600000;
 		diff_min = timezone_diff / 60000;
-		return snprintf(dst + offset, len - offset, " %02d:%02d:%02d.%06d%s%02d:%02d", hour, min, sec, ms, original_diff >= 0 ? "+" : "", diff_hour, diff_min);
+		return snprintf(dst, len, "%d-%02d-%02d %02d:%02d:%02d.%06d%s%02d:%02d", year, month, day, hour, min, sec, nanosecond, original_diff >= 0 ? "+" : "", diff_hour, diff_min);
 	}
-	return snprintf(dst + offset, len - offset, " %02d:%02d:%02d.%06d", hour, min, sec, ms);
+	return snprintf(dst, len, "%d-%02d-%02d %02d:%02d:%02d.%06d", year, month, day,  hour, min, sec, nanosecond);
 }
 
 int

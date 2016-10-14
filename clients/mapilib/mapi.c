@@ -840,6 +840,7 @@ struct MapiColumn {
 	size_t dynamic_write_bufsiz;
 	char write_buf[COLBUFSIZ];
 	mapi_converter converter;
+	binary_sql_type sql_type;
 };
 
 /* information about bound columns */
@@ -4289,12 +4290,15 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				result->fields[i].dynamic_write_buf = NULL;
 				result->fields[i].dynamic_write_bufsiz = 0;
 				result->fields[i].converter = NULL;
+				result->fields[i].sql_type = SQL_BINARY_UNKNOWN;
 
 				if (strcasecmp(type_sql_name, "blob") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_BLOB;
 					result->fields[i].converter = (mapi_converter) mapi_convert_blob;
 				} else if (result->fields[i].null_value == NULL) {
 					result->fields[i].converter = (mapi_converter) mapi_convert_null;
 				} else if (strcasecmp(type_sql_name, "varchar") == 0 || strcasecmp(type_sql_name, "char") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_VARCHAR;
 					if (typelen > 0) {
 						result->fields[i].converter = (mapi_converter) mapi_convert_varchar;
 						result->fields[i].dynamic_write_bufsiz = result->fields[i].typelen * sizeof(char);
@@ -4303,38 +4307,53 @@ read_into_cache(MapiHdl hdl, int lookahead)
 						result->fields[i].converter = (mapi_converter) mapi_convert_clob;
 					}
 				} else if (strcasecmp(type_sql_name, "clob") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_CLOB;
 					// var length strings
 					result->fields[i].converter = (mapi_converter) mapi_convert_clob;
 				} else if (strcasecmp(type_sql_name, "int") == 0 || strcasecmp(type_sql_name, "month_interval") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_INT;
 					result->fields[i].converter = (mapi_converter) mapi_convert_int;
 				} else if (strcasecmp(type_sql_name, "smallint") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_SMALLINT;
 					result->fields[i].converter = (mapi_converter) mapi_convert_smallint;
 				} else if (strcasecmp(type_sql_name, "tinyint") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_TINYINT;
 					result->fields[i].converter = (mapi_converter) mapi_convert_tinyint;
 				} else if (strcasecmp(type_sql_name, "boolean") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_BOOLEAN;
 					result->fields[i].converter = (mapi_converter) mapi_convert_boolean;
 				} else if (strcasecmp(type_sql_name, "decimal") == 0 || strcasecmp(type_sql_name, "sec_interval") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_DECIMAL;
 					result->fields[i].converter = (mapi_converter) mapi_convert_decimal;
 				} else if (strcasecmp(type_sql_name, "double") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_DOUBLE;
 					result->fields[i].converter = (mapi_converter) mapi_convert_double;
 				} else if (strcasecmp(type_sql_name, "date") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_DATE;
 					result->fields[i].converter = (mapi_converter) mapi_convert_date;
 				} else if (strcasecmp(type_sql_name, "bigint") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_BIGINT;
 					result->fields[i].converter = (mapi_converter) mapi_convert_bigint;
 				} else if (strcasecmp(type_sql_name, "real") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_REAL;
 					result->fields[i].converter = (mapi_converter) mapi_convert_real;
 #ifdef HAVE_HGE
 				} else if (strcasecmp(type_sql_name, "hugeint") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_HUGEINT;
 					result->fields[i].converter = (mapi_converter) mapi_convert_hugeint;
 #endif
 				} else if (strcasecmp(type_sql_name, "time") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_TIME;
 					result->fields[i].converter = (mapi_converter) mapi_convert_time;
 				} else if (strcasecmp(type_sql_name, "timestamp") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_TIMESTAMP;
 					result->fields[i].converter = (mapi_converter) mapi_convert_timestamp;
 				} else if (strcasecmp(type_sql_name, "timestamptz") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_TIMESTAMPTZ;
 					result->fields[i].timezone = timezone;
 					result->fields[i].converter = (mapi_converter) mapi_convert_timestamptz;
 				} else if (typelen < 0) { /* any type besides the ones shown above should be converted to strings by the server */
+					result->fields[i].sql_type = SQL_BINARY_CLOB;
 					result->fields[i].converter = (mapi_converter) mapi_convert_clob;
 				} else {
 					fprintf(stderr, "Unrecognized sql type: %s\n", type_sql_name);
@@ -5347,106 +5366,157 @@ mapi_extend_params(MapiHdl hdl, int minparams)
 static MapiMsg
 store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *dst)
 {
-	char *val;
+	if (result->prot10_resultset) {
+		/* auto convert to C-type */
+		switch (outtype) {
+		case MAPI_TINY:
+			return mapi_fetch_field_tinyint(result->hdl, fnr, dst);
+		case MAPI_UTINY:
+			return mapi_fetch_field_utinyint(result->hdl, fnr, dst);
+		case MAPI_SHORT:
+			return mapi_fetch_field_smallint(result->hdl, fnr, dst);
+		case MAPI_USHORT:
+			return mapi_fetch_field_usmallint(result->hdl, fnr, dst);
+		case MAPI_NUMERIC:
+		case MAPI_INT:
+			return mapi_fetch_field_int(result->hdl, fnr, dst);
+		case MAPI_UINT:
+			return mapi_fetch_field_uint(result->hdl, fnr, dst);
+		case MAPI_LONG:
+		case MAPI_ULONG:
+			// fixme
+		case MAPI_LONGLONG:
+			return mapi_fetch_field_bigint(result->hdl, fnr, dst);
+		case MAPI_ULONGLONG:
+			return mapi_fetch_field_ubigint(result->hdl, fnr, dst);
+		case MAPI_CHAR: {
+			char *val;
+			if ((val = mapi_fetch_field(result->hdl, fnr)) == NULL) {
+				return MERROR;
+			}
+			*(char *) dst = *val;
+			return MOK;
+		}
+		case MAPI_FLOAT:
+			return mapi_fetch_field_real(result->hdl, fnr, dst);
+		case MAPI_DOUBLE:
+			return mapi_fetch_field_double(result->hdl, fnr, dst);
+		case MAPI_DATE:
+			return mapi_fetch_field_date(result->hdl, fnr, &((MapiDate *) dst)->year, &((MapiDate *) dst)->month, &((MapiDate *) dst)->day);
+		case MAPI_TIME: {
+			unsigned int nanoseconds;
+			return mapi_fetch_field_time(result->hdl, fnr, &((MapiTime *) dst)->hour, &((MapiTime *) dst)->minute, &((MapiTime *) dst)->second, &nanoseconds);
+		}
+		case MAPI_DATETIME:
+			return mapi_fetch_field_timestamp(result->hdl, fnr, &((MapiDateTime *) dst)->year, &((MapiDateTime *) dst)->month, &((MapiDateTime *) dst)->day, &((MapiDateTime *) dst)->hour, &((MapiDateTime *) dst)->minute, &((MapiDateTime *) dst)->second, &((MapiDateTime *) dst)->fraction);
+		case MAPI_AUTO:
+		case MAPI_VARCHAR:
+		default:
+			*(char **) dst = mapi_fetch_field(result->hdl, fnr);
+		}
+		return MERROR;
+	} else {
+		char *val;
 
-	val = result->cache.line[cr].anchors[fnr];
+		val = result->cache.line[cr].anchors[fnr];
 
-	if (val == 0) {
-		return mapi_setError(result->hdl->mid, "Field value undefined or nil", "mapi_store_field", MERROR);
-	}
+		if (val == 0) {
+			return mapi_setError(result->hdl->mid, "Field value undefined or nil", "mapi_store_field", MERROR);
+		}
 
-	/* auto convert to C-type */
-	switch (outtype) {
-	case MAPI_TINY:
-		*(signed char *) dst = (signed char) strtol(val, NULL, 0);
-		break;
-	case MAPI_UTINY:
-		*(unsigned char *) dst = (unsigned char) strtoul(val, NULL, 0);
-		break;
-	case MAPI_SHORT:
-		*(short *) dst = (short) strtol(val, NULL, 0);
-		break;
-	case MAPI_USHORT:
-		*(unsigned short *) dst = (unsigned short) strtoul(val, NULL, 0);
-		break;
-	case MAPI_NUMERIC:
-	case MAPI_INT:
-		*(int *) dst = (int) strtol(val, NULL, 0);
-		break;
-	case MAPI_UINT:
-		*(unsigned int *) dst = (unsigned int) strtoul(val, NULL, 0);
-		break;
-	case MAPI_LONG:
-		*(long *) dst = strtol(val, NULL, 0);
-		break;
-	case MAPI_ULONG:
-		*(unsigned long *) dst = strtoul(val, NULL, 0);
-		break;
+		/* auto convert to C-type */
+		switch (outtype) {
+		case MAPI_TINY:
+			*(signed char *) dst = (signed char) strtol(val, NULL, 0);
+			break;
+		case MAPI_UTINY:
+			*(unsigned char *) dst = (unsigned char) strtoul(val, NULL, 0);
+			break;
+		case MAPI_SHORT:
+			*(short *) dst = (short) strtol(val, NULL, 0);
+			break;
+		case MAPI_USHORT:
+			*(unsigned short *) dst = (unsigned short) strtoul(val, NULL, 0);
+			break;
+		case MAPI_NUMERIC:
+		case MAPI_INT:
+			*(int *) dst = (int) strtol(val, NULL, 0);
+			break;
+		case MAPI_UINT:
+			*(unsigned int *) dst = (unsigned int) strtoul(val, NULL, 0);
+			break;
+		case MAPI_LONG:
+			*(long *) dst = strtol(val, NULL, 0);
+			break;
+		case MAPI_ULONG:
+			*(unsigned long *) dst = strtoul(val, NULL, 0);
+			break;
 #ifdef HAVE_STRTOLL
-	case MAPI_LONGLONG:
-		*(mapi_int64 *) dst = strtoll(val, NULL, 0);
-		break;
+		case MAPI_LONGLONG:
+			*(mapi_int64 *) dst = strtoll(val, NULL, 0);
+			break;
 #endif
 #ifdef HAVE_STRTOULL
-	case MAPI_ULONGLONG:
-		*(mapi_uint64 *) dst = strtoull(val, NULL, 0);
-		break;
+		case MAPI_ULONGLONG:
+			*(mapi_uint64 *) dst = strtoull(val, NULL, 0);
+			break;
 #endif
-	case MAPI_CHAR:
-		*(char *) dst = *val;
-		break;
+		case MAPI_CHAR:
+			*(char *) dst = *val;
+			break;
 #ifdef HAVE_STRTOF
-	case MAPI_FLOAT:
-		*(float *) dst = strtof(val, NULL);
-		break;
+		case MAPI_FLOAT:
+			*(float *) dst = strtof(val, NULL);
+			break;
 #endif
 #ifdef HAVE_STRTOD
-	case MAPI_DOUBLE:
-		*(double *) dst = strtod(val, NULL);
-		break;
+		case MAPI_DOUBLE:
+			*(double *) dst = strtod(val, NULL);
+			break;
 #endif
-	case MAPI_DATE:
-		sscanf(val, "%hd-%hu-%hu",
-		       &((MapiDate *) dst)->year,
-		       &((MapiDate *) dst)->month,
-		       &((MapiDate *) dst)->day);
-		break;
-	case MAPI_TIME:
-		sscanf(val, "%hu:%hu:%hu",
-		       &((MapiTime *) dst)->hour,
-		       &((MapiTime *) dst)->minute,
-		       &((MapiTime *) dst)->second);
-		break;
-	case MAPI_DATETIME:{
-		int n;
+		case MAPI_DATE:
+			sscanf(val, "%hd-%hu-%hu",
+			       &((MapiDate *) dst)->year,
+			       &((MapiDate *) dst)->month,
+			       &((MapiDate *) dst)->day);
+			break;
+		case MAPI_TIME:
+			sscanf(val, "%hu:%hu:%hu",
+			       &((MapiTime *) dst)->hour,
+			       &((MapiTime *) dst)->minute,
+			       &((MapiTime *) dst)->second);
+			break;
+		case MAPI_DATETIME:{
+			int n;
 
-		((MapiDateTime *) dst)->fraction = 0;
-		sscanf(val, "%hd-%hu-%hu %hu:%hu:%hu%n",
-		       &((MapiDateTime *) dst)->year,
-		       &((MapiDateTime *) dst)->month,
-		       &((MapiDateTime *) dst)->day,
-		       &((MapiDateTime *) dst)->hour,
-		       &((MapiDateTime *) dst)->minute,
-		       &((MapiDateTime *) dst)->second,
-		       &n);
-		if (val[n] == '.') {
-			unsigned int fac = 1000000000;
-			unsigned int nsec = 0;
+			((MapiDateTime *) dst)->fraction = 0;
+			sscanf(val, "%hd-%hu-%hu %hu:%hu:%hu%n",
+			       &((MapiDateTime *) dst)->year,
+			       &((MapiDateTime *) dst)->month,
+			       &((MapiDateTime *) dst)->day,
+			       &((MapiDateTime *) dst)->hour,
+			       &((MapiDateTime *) dst)->minute,
+			       &((MapiDateTime *) dst)->second,
+			       &n);
+			if (val[n] == '.') {
+				unsigned int fac = 1000000000;
+				unsigned int nsec = 0;
 
-			for (n++; isdigit((int) (unsigned char) val[n]); n++) {
-				fac /= 10;
-				nsec += (val[n] - '0') * fac;
+				for (n++; isdigit((int) (unsigned char) val[n]); n++) {
+					fac /= 10;
+					nsec += (val[n] - '0') * fac;
+				}
+				((MapiDateTime *) dst)->fraction = nsec;
 			}
-			((MapiDateTime *) dst)->fraction = nsec;
+			break;
 		}
-		break;
+		case MAPI_AUTO:
+		case MAPI_VARCHAR:
+		default:
+			*(char **) dst = val;
+		}
+		return MOK;
 	}
-	case MAPI_AUTO:
-	case MAPI_VARCHAR:
-	default:
-		*(char **) dst = val;
-	}
-	return MOK;
 }
 
 MapiMsg
@@ -5674,7 +5744,7 @@ mapi_fetch_row(MapiHdl hdl)
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
 				if (result->fields[i].typelen < 0) {
 					// variable-length column
-					if (result->fields[i].converter == (mapi_converter) mapi_convert_blob) {
+					if (result->fields[i].sql_type == SQL_BINARY_BLOB) {
 						// blobs are prefixed by their length
 						// so we can read the length to know how to get to the next blob
 						lng length = *((lng*) result->fields[i].buffer_ptr);
@@ -5695,6 +5765,7 @@ mapi_fetch_row(MapiHdl hdl)
 		}
 		result->cur_row++;
 		result->rows_read++;
+		mapi_store_bind(result, result->cur_row);
 		return result->fieldcnt;
 	}
 
@@ -5728,7 +5799,8 @@ mapi_fetch_all_rows(MapiHdl hdl)
 		if ((result = hdl->result) != NULL &&
 		    mid->languageId == LANG_SQL &&
 		    mid->active == NULL &&
-		    result->row_count > 0 &&		    result->cache.first + result->cache.tuplecount < result->row_count) {
+		    result->row_count > 0 &&		    
+		    result->cache.first + result->cache.tuplecount < result->row_count) {
 			mid->active = hdl;
 			hdl->active = result;
 			if (mid->tracelog) {
@@ -6125,12 +6197,267 @@ mapi_set_column_compression(Mapi mid, const char* colcomp) {
 		mapi_setError(mid, "invalid column compression type", "mapi_set_compression", MERROR);
 		return -1;
 	}
-
 	return 0;
 }
 
 void 
 mapi_set_compute_column_width(Mapi mid, int compute_column_width) {
 	mid->compute_column_widths = compute_column_width ? 1 : 0;
-
 }
+
+#define NUMERIC_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE)  								\
+	case SQL_BINARY_##fromname: {																					\
+		fromtpe val = *((fromtpe*)col->buffer_ptr);																	\
+		if (val < MIN_VALUE || val > MAX_VALUE) {																	\
+			return mapi_setError(hdl->mid, "Overflow when converting value.", "mapi_fetch_field_"#toname, MERROR);	\
+		}																											\
+		*retval = (totpe) *((fromtpe*)col->buffer_ptr);																\
+		return MOK;																									\
+	}
+
+#ifdef HAVE_HGE
+#define HGE_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE) \
+	NUMERIC_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE)
+#else
+#define HGE_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE)
+#endif
+
+float STRTOF(const char *restrict str, char **restrict endptr, int base) {
+	return strtof(str, endptr);
+}
+
+double STRTOD(const char *restrict str, char **restrict endptr, int base) {
+	return strtod(str, endptr);
+}
+
+#define NUMERIC_FETCH_FUNCTION(type, typename, MIN_VALUE, MAX_VALUE, stringconv)									\
+MapiMsg 																											\
+mapi_fetch_field_##typename(MapiHdl hdl, int fnr, type* retval) { 													\
+	struct MapiResultSet *result; 																					\
+	char *val;																										\
+	result = hdl->result;																							\
+	if (result == NULL) {																							\
+		return mapi_setError(hdl->mid, "No query result.", "mapi_fetch_field_"#typename, MERROR);					\
+	}																												\
+	if (result->prot10_resultset) {																					\
+		struct MapiColumn *col = &result->fields[fnr];																\
+		switch(col->sql_type) {																						\
+			case SQL_BINARY_VARCHAR:																				\
+			case SQL_BINARY_CLOB:																					\
+				break;																								\
+			case SQL_BINARY_BOOLEAN:																				\
+				*retval = *((type*)col->buffer_ptr) ? 1 : 0;														\
+				return MOK;																							\
+			NUMERIC_CONVERSION(type, signed char, TINYINT, typename, MIN_VALUE, MAX_VALUE);							\
+			NUMERIC_CONVERSION(type, short, SMALLINT, typename, MIN_VALUE, MAX_VALUE);								\
+			NUMERIC_CONVERSION(type, int, INT, typename, MIN_VALUE, MAX_VALUE);										\
+			NUMERIC_CONVERSION(type, lng, BIGINT, typename, MIN_VALUE, MAX_VALUE);									\
+			HGE_CONVERSION(type, hge, HUGEINT, typename, MIN_VALUE, MAX_VALUE)										\
+			NUMERIC_CONVERSION(type, float, REAL, typename, MIN_VALUE, MAX_VALUE);									\
+			NUMERIC_CONVERSION(type, double, DOUBLE, typename, MIN_VALUE, MAX_VALUE);								\
+			default:																								\
+				return mapi_setError(hdl->mid, "Illegal conversion.", "mapi_fetch_field_"#typename, MERROR);		\
+		}																											\
+	} 																												\
+	/* string conversion */																							\
+	mapi_fetch_field(hdl, fnr);																						\
+	if (hdl->mid->error != MOK)	{																					\
+		return hdl->mid->error;																						\
+	}																												\
+	*retval = (type) stringconv(val, NULL, 0);																		\
+	return MERROR;																									\
+}
+
+#if SIZEOF_INT==8
+#	define LL_CONSTANT(val)	(val)
+#elif SIZEOF_LONG==8
+#	define LL_CONSTANT(val)	(val##L)
+#elif defined(HAVE_LONG_LONG)
+#	define LL_CONSTANT(val)	(val##LL)
+#elif defined(HAVE___INT64)
+#	define LL_CONSTANT(val)	(val##i64)
+#endif
+
+#include <limits.h>		/* for *_MIN and *_MAX */
+#include <float.h>		/* for FLT_MAX and DBL_MAX */
+#ifndef LLONG_MAX
+#ifdef LONGLONG_MAX
+#define LLONG_MAX LONGLONG_MAX
+#define LLONG_MIN LONGLONG_MIN
+#else
+#define LLONG_MAX LL_CONSTANT(9223372036854775807)
+#define LLONG_MIN (-LL_CONSTANT(9223372036854775807) - LL_CONSTANT(1))
+#endif
+#endif
+
+
+
+NUMERIC_FETCH_FUNCTION(signed char, tinyint, SCHAR_MIN, SCHAR_MAX, strtol);
+NUMERIC_FETCH_FUNCTION(unsigned char, utinyint, 0, UCHAR_MAX, strtoul);
+NUMERIC_FETCH_FUNCTION(signed short, smallint, SHRT_MIN, SHRT_MAX, strtol);
+NUMERIC_FETCH_FUNCTION(unsigned short, usmallint, 0, USHRT_MAX, strtoul);
+NUMERIC_FETCH_FUNCTION(signed int, int, INT_MIN, INT_MAX, strtol);
+NUMERIC_FETCH_FUNCTION(unsigned int, uint, 0, UINT_MAX, strtoul);
+NUMERIC_FETCH_FUNCTION(mapi_int64, bigint, LLONG_MIN, LLONG_MAX, strtoll);
+NUMERIC_FETCH_FUNCTION(mapi_uint64, ubigint, 0, ULLONG_MAX, strtoull);
+NUMERIC_FETCH_FUNCTION(float, real, -FLT_MAX, FLT_MAX, STRTOF);
+NUMERIC_FETCH_FUNCTION(double, double, -DBL_MAX, DBL_MAX, STRTOD);
+#ifdef HAVE_HGE
+NUMERIC_FETCH_FUNCTION(hge, hge, LLONG_MIN, LLONG_MAX, strtoll);
+#endif
+
+
+MapiMsg 
+mapi_fetch_field_date(MapiHdl hdl, int fnr, short* year, unsigned short* month, unsigned short* day) {
+	struct MapiResultSet *result;
+	char *val;
+	result = hdl->result;
+	if (result == NULL) {
+		return mapi_setError(hdl->mid, "No query result.", "mapi_fetch_field_date", MERROR);
+	}
+	if (result->prot10_resultset) {
+		struct MapiColumn *col = &result->fields[fnr];
+		switch(col->sql_type) {
+			case SQL_BINARY_VARCHAR:
+			case SQL_BINARY_CLOB:
+				break;
+			case SQL_BINARY_DATE:
+				conversion_date_get_data(*((int*)col->buffer_ptr), year, month, day);
+				return MOK;
+			case SQL_BINARY_TIMESTAMP: {
+				unsigned short hour, min, sec;
+				unsigned int nanosecond;
+				conversion_timestamp_get_data(*((lng*)col->buffer_ptr), 0, year, month, day, &hour, &min, &sec, &nanosecond);
+				return MOK;
+			}
+			case SQL_BINARY_TIMESTAMPTZ: {
+				unsigned short hour, min, sec;
+				unsigned int nanosecond;
+				conversion_timestamp_get_data(*((lng*)col->buffer_ptr), col->timezone, year, month, day, &hour, &min, &sec, &nanosecond);
+				return MOK;
+			}
+			default:
+				return mapi_setError(hdl->mid, "Illegal conversion.", "mapi_fetch_field_date", MERROR);
+		}
+	}
+	/* string conversion */
+	val = mapi_fetch_field(hdl, fnr);
+	if (!val)	{
+		return hdl->mid->error;
+	}
+	if (sscanf(val, "%hd-%hu-%hu", year, month, day) != 3) {
+		return mapi_setError(hdl->mid, "Failed to read date from string.", "mapi_fetch_field_date", MERROR);
+	}
+	return MOK;
+}
+
+MapiMsg 
+mapi_fetch_field_time(MapiHdl hdl, int fnr, unsigned short* hour, unsigned short* min, unsigned short* sec, unsigned int *nanosecond) {
+	struct MapiResultSet *result;
+	char *val;
+	result = hdl->result;
+	if (result == NULL) {
+		return mapi_setError(hdl->mid, "No query result.", "mapi_fetch_field_time", MERROR);
+	}
+	if (result->prot10_resultset) {
+		struct MapiColumn *col = &result->fields[fnr];
+		switch(col->sql_type) {
+			case SQL_BINARY_VARCHAR:
+			case SQL_BINARY_CLOB:
+				break;
+			case SQL_BINARY_TIME:
+				conversion_time_get_data(*((int*)col->buffer_ptr), 0, hour, min, sec, nanosecond);
+				return MOK;
+			case SQL_BINARY_TIMETZ:
+				conversion_time_get_data(*((int*)col->buffer_ptr), col->timezone, hour, min, sec, nanosecond);
+				return MOK;
+			case SQL_BINARY_TIMESTAMP: {
+				short year;
+				unsigned short month, day;
+				conversion_timestamp_get_data(*((lng*)col->buffer_ptr), 0, &year, &month, &day, hour, min, sec, nanosecond);
+				return MOK;
+			}
+			case SQL_BINARY_TIMESTAMPTZ: {
+				short year;
+				unsigned short month, day;
+				conversion_timestamp_get_data(*((lng*)col->buffer_ptr), col->timezone, &year, &month, &day, hour, min, sec, nanosecond);
+				return MOK;
+			}
+			default:
+				return mapi_setError(hdl->mid, "Illegal conversion.", "mapi_fetch_field_time", MERROR);
+		}
+	}
+	/* string conversion */
+	val = mapi_fetch_field(hdl, fnr);
+	if (!val)	{
+		return hdl->mid->error;
+	}
+	*nanosecond = 0;
+	if (sscanf(val, "%hu:%hu:%hu", hour, min, sec) != 3) {
+		return mapi_setError(hdl->mid, "Failed to read time from string.", "mapi_fetch_field_time", MERROR);
+	}
+	return MOK;
+}
+
+
+MapiMsg 
+mapi_fetch_field_timestamp(MapiHdl hdl, int fnr, short* year, unsigned short* month, unsigned short* day, unsigned short* hour, unsigned short* min, unsigned short* sec, unsigned int *nanosecond) {
+	struct MapiResultSet *result;
+	char *val;
+	int n;
+	result = hdl->result;
+	if (result == NULL) {
+		return mapi_setError(hdl->mid, "No query result.", "mapi_fetch_field_date", MERROR);
+	}
+	if (result->prot10_resultset) {
+		struct MapiColumn *col = &result->fields[fnr];
+		switch(col->sql_type) {
+			case SQL_BINARY_VARCHAR:
+			case SQL_BINARY_CLOB:
+				break;
+			case SQL_BINARY_DATE:
+				*hour = 0; *min = 0; *sec = 0; *nanosecond = 0;
+				conversion_date_get_data(*((int*)col->buffer_ptr), year, month, day);
+				return MOK;
+			case SQL_BINARY_TIME: 
+				*year = 0; *month = 0; *day = 0;
+				conversion_time_get_data(*((int*)col->buffer_ptr), 0, hour, min, sec, nanosecond);
+				return MOK;
+			case SQL_BINARY_TIMETZ:
+				*year = 0; *month = 0; *day = 0;
+				conversion_time_get_data(*((int*)col->buffer_ptr), col->timezone, hour, min, sec, nanosecond);
+				return MOK;
+			case SQL_BINARY_TIMESTAMP: {
+				conversion_timestamp_get_data(*((lng*)col->buffer_ptr), 0, year, month, day, hour, min, sec, nanosecond);
+				return MOK;
+			}
+			case SQL_BINARY_TIMESTAMPTZ: {
+				conversion_timestamp_get_data(*((lng*)col->buffer_ptr), col->timezone, year, month, day, hour, min, sec, nanosecond);
+				return MOK;
+			}
+			default:
+				return mapi_setError(hdl->mid, "Illegal conversion.", "mapi_fetch_field_date", MERROR);
+		}
+	}
+	/* string conversion */
+	val = mapi_fetch_field(hdl, fnr);
+	if (!val)	{
+		return hdl->mid->error;
+	}
+	*nanosecond = 0;
+	if (sscanf(val, "%hd-%hu-%hu %hu:%hu:%hu%n", year, month, day, hour, min, sec, &n) != 7) {
+		return mapi_setError(hdl->mid, "Failed to read timestamp from string.", "mapi_fetch_field_timestamp", MERROR);
+	}
+	if (val[n] == '.') {
+		unsigned int fac = 1000000000;
+		unsigned int nsec = 0;
+
+		for (n++; isdigit((int) (unsigned char) val[n]); n++) {
+			fac /= 10;
+			nsec += (val[n] - '0') * fac;
+		}
+		*nanosecond = nsec;
+	}
+	return MOK;
+}
+

@@ -129,6 +129,27 @@ typedef struct {		/* used by MAPI_DATETIME */
 	unsigned int fraction;	/* in 1000 millionths of a second (10e-9) */
 } MapiDateTime;
 
+typedef enum binary_sql_type {
+	SQL_BINARY_UNKNOWN = 0,
+	SQL_BINARY_BLOB = 1,
+	SQL_BINARY_VARCHAR = 2,
+	SQL_BINARY_CLOB = 3,
+	SQL_BINARY_TINYINT = 10,
+	SQL_BINARY_BOOLEAN = 11,
+	SQL_BINARY_SMALLINT = 12,
+	SQL_BINARY_INT = 13,
+	SQL_BINARY_BIGINT = 14,
+	SQL_BINARY_HUGEINT = 15,
+	SQL_BINARY_DECIMAL = 20,
+	SQL_BINARY_REAL = 21,
+	SQL_BINARY_DOUBLE = 22,
+	SQL_BINARY_DATE = 30,
+	SQL_BINARY_TIME = 31,
+	SQL_BINARY_TIMETZ = 32,
+	SQL_BINARY_TIMESTAMP = 33,
+	SQL_BINARY_TIMESTAMPTZ = 34
+} binary_sql_type;
+
 /* connection-oriented functions */
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 mapi_export Mapi mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang);
@@ -238,6 +259,25 @@ mapi_export MapiMsg mapi_set_compression(Mapi mid, const char* compression);
 mapi_export MapiMsg mapi_set_column_compression(Mapi mid, const char* colcomp);
 mapi_export void mapi_set_blocksize(Mapi mid, size_t blocksize);
 mapi_export void mapi_set_compute_column_width(Mapi mid, int compute_column_width);
+
+// type fetch functions: return NULL on success, or an error message if conversion fails
+mapi_export MapiMsg mapi_fetch_field_tinyint(MapiHdl hdl, int fnr, signed char* result);
+mapi_export MapiMsg mapi_fetch_field_utinyint(MapiHdl hdl, int fnr, unsigned char* result);
+mapi_export MapiMsg mapi_fetch_field_smallint(MapiHdl hdl, int fnr, signed short* result);
+mapi_export MapiMsg mapi_fetch_field_usmallint(MapiHdl hdl, int fnr, unsigned short* result);
+mapi_export MapiMsg mapi_fetch_field_int(MapiHdl hdl, int fnr, signed int* result);
+mapi_export MapiMsg mapi_fetch_field_uint(MapiHdl hdl, int fnr, unsigned int* result);
+mapi_export MapiMsg mapi_fetch_field_bigint(MapiHdl hdl, int fnr, mapi_int64* result);
+mapi_export MapiMsg mapi_fetch_field_ubigint(MapiHdl hdl, int fnr, mapi_uint64* result);
+#ifdef HAVE_HGE
+mapi_export MapiMsg mapi_fetch_field_hge(MapiHdl hdl, int fnr, hge* result);
+#endif
+mapi_export MapiMsg mapi_fetch_field_real(MapiHdl hdl, int fnr, float* result);
+mapi_export MapiMsg mapi_fetch_field_double(MapiHdl hdl, int fnr, double* result);
+mapi_export MapiMsg mapi_fetch_field_date(MapiHdl hdl, int fnr, short* year, unsigned short* month, unsigned short* day);
+mapi_export MapiMsg mapi_fetch_field_time(MapiHdl hdl, int fnr, unsigned short* hour, unsigned short* min, unsigned short* sec, unsigned int *nanosecond);
+mapi_export MapiMsg mapi_fetch_field_timestamp(MapiHdl hdl, int fnr, short* year, unsigned short* month, unsigned short* day, unsigned short* hour, unsigned short* min, unsigned short* sec, unsigned int *nanosecond);
+
 
 #ifdef _MSC_VER
 mapi_export const char *wsaerror(int);

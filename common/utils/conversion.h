@@ -60,15 +60,23 @@ numeric_conversion(hge, hge);
 
 // date conversion, *src is days since 01-01-0001
 int conversion_date_to_string(char *dst, int len, const int *src, int null_value);
+void conversion_date_get_data(int date, short *year, unsigned short *month, unsigned short *day);
 
-// *src is ms since 00:00:00
+// time conversion, *src is ms since 00:00:00
 int conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits, int timezone_diff);
+void conversion_time_get_data(int time, int timezone_diff, unsigned short *hour, unsigned short *minute, unsigned short *second, unsigned int *nanosecond);
 
-// *src is time since epoch in ms
+// timestamp conversion, *src is time since epoch in ms
 int conversion_epoch_to_string(char *dst, int len, const lng *src, lng null_value);
-
-// *src is time since epoch in ms
 int conversion_epoch_tz_to_string(char *dst, int len, const lng *src, lng null_value, int timezone_diff);
 
+void conversion_timestamp_get_data(lng timestamp, int timezone_diff, short *year, unsigned short *month, unsigned short *day, unsigned short *hour, unsigned short *minute, unsigned short *second, unsigned int *nanosecond);
+
+
+// blobs are converted to strings in hexadecimal format (i.e. two characters per byte)
 int conversion_blob_to_string(char *dst, int len, const char *blobdata, size_t nitems);
+
+
+
+
 #endif
