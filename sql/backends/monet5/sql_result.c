@@ -1826,7 +1826,8 @@ static int write_str_term(stream* s, const char* const val) {
 
 static int type_supports_binary_transfer(sql_type *type) {
 	return 
-		type->eclass == EC_BIT || 
+		type->eclass == EC_BIT ||
+		type->eclass == EC_POS ||
 		type->eclass == EC_CHAR || 
 		type->eclass == EC_STRING ||
 		type->eclass == EC_DEC || 

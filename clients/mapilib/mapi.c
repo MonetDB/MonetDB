@@ -4110,6 +4110,17 @@ mapi_string_conversion_function(int,date,date,);
 mapi_string_conversion_function(hge,hge,hugeint,);
 #endif
 
+static char* mapi_convert_oid(struct MapiColumn *col) {
+	int length;
+	if (*((lng*) col->buffer_ptr) == *((lng*) col->null_value)) return NULL;
+	length = conversion_lng_to_string(col->write_buf, COLBUFSIZ, (lng*) col->buffer_ptr, *((lng*) col->null_value));
+	if (length < 0) return NULL;
+	col->write_buf[length++] = '@';
+	col->write_buf[length++] = '0';
+	col->write_buf[length++] = '\0';
+	return (char*) col->write_buf;
+}
+
 static char* mapi_convert_decimal(struct MapiColumn *col) {
 	if (conversion_decimal_to_string(col->buffer_ptr, col->write_buf, COLBUFSIZ, col->scale, col->typelen, col->null_value) < 0) {
 		return NULL;
@@ -4342,6 +4353,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				} else if (strcasecmp(type_sql_name, "bigint") == 0) {
 					result->fields[i].sql_type = SQL_BINARY_BIGINT;
 					result->fields[i].converter = (mapi_converter) mapi_convert_bigint;
+				} else if (strcasecmp(type_sql_name, "oid") == 0) {
+					result->fields[i].sql_type = SQL_BINARY_BIGINT;
+					result->fields[i].converter = (mapi_converter) mapi_convert_oid;
 				} else if (strcasecmp(type_sql_name, "real") == 0) {
 					result->fields[i].sql_type = SQL_BINARY_REAL;
 					result->fields[i].converter = (mapi_converter) mapi_convert_real;
