@@ -66,7 +66,6 @@ void conversion_date_get_data(int date, short *year, unsigned short *month, unsi
 int conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits);
 int conversion_timetz_to_string(char *dst, int len, const int *src, int null_value, int digits, int timezone_diff);
 
-
 void conversion_time_get_data(int time, int timezone_diff, unsigned short *hour, unsigned short *minute, unsigned short *second, unsigned int *nanosecond);
 
 // timestamp conversion, *src is time since epoch in ms
@@ -75,11 +74,7 @@ int conversion_epoch_tz_to_string(char *dst, int len, const lng *src, lng null_v
 
 void conversion_timestamp_get_data(lng timestamp, int timezone_diff, short *year, unsigned short *month, unsigned short *day, unsigned short *hour, unsigned short *minute, unsigned short *second, unsigned int *nanosecond);
 
-
 // blobs are converted to strings in hexadecimal format (i.e. two characters per byte)
 int conversion_blob_to_string(char *dst, int len, const char *blobdata, size_t nitems);
-
-
-
 
 #endif

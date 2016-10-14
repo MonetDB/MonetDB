@@ -320,7 +320,7 @@ conversion_time_optional_tz_to_string(char *dst, int len, const int *src, int nu
 		diff_hour = timezone_diff / 3600000;
 		timezone_diff -= diff_hour * 3600000;
 		diff_min = timezone_diff / 60000;
-		if ((res = snprintf(dst + (9 + digits), len - (9 + digits), "%s%02d:%02d", original_diff >= 0 ? "+" : "", diff_hour, diff_min)) < 0) {
+		if ((res = snprintf(dst + (9 + digits), len - (9 + digits), "%s%02d:%02d", original_diff >= 0 ? "+" : "-", abs(diff_hour), diff_min)) < 0) {
 			return res;
 		}
 		return 15 + digits;
@@ -390,7 +390,7 @@ conversion_epoch_optional_tz_to_string(char *dst, int len, const lng *src, lng n
 		diff_hour = timezone_diff / 3600000;
 		timezone_diff -= diff_hour * 3600000;
 		diff_min = timezone_diff / 60000;
-		if ((res = snprintf(dst + res, len - res, "%s%02d:%02d", original_diff >= 0 ? "+" : "", diff_hour, diff_min)) < 0) {
+		if ((res = snprintf(dst + res, len - res, "%s%02d:%02d", original_diff >= 0 ? "+" : "-", abs(diff_hour), diff_min)) < 0) {
 			return res;
 		}
 		return res;
