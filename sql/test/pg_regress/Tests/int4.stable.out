@@ -43,7 +43,7 @@ Ready.
 #INSERT INTO INT4_TBL(f1) VALUES ('-2147483647');
 [ 1 ]
 #SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> cast('0' as smallint);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % four,	f1 # name
 % char,	int # type
 % 0,	11 # length
@@ -52,7 +52,7 @@ Ready.
 [ "",	2147483647 ]
 [ "",	-2147483647 ]
 #SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> cast('0' as integer);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % four,	f1 # name
 % char,	int # type
 % 0,	11 # length
@@ -61,33 +61,33 @@ Ready.
 [ "",	2147483647 ]
 [ "",	-2147483647 ]
 #SELECT '' AS one, i.* FROM INT4_TBL i WHERE i.f1 = cast('0' as smallint);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % one,	f1 # name
 % char,	int # type
 % 0,	1 # length
 [ "",	0	]
 #SELECT '' AS one, i.* FROM INT4_TBL i WHERE i.f1 = cast('0' as integer);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % one,	f1 # name
 % char,	int # type
 % 0,	1 # length
 [ "",	0	]
 #SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < cast('0' as smallint);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % two,	f1 # name
 % char,	int # type
 % 0,	11 # length
 [ "",	-123456 ]
 [ "",	-2147483647 ]
 #SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < cast('0' as integer);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % two,	f1 # name
 % char,	int # type
 % 0,	11 # length
 [ "",	-123456 ]
 [ "",	-2147483647 ]
 #SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= cast('0' as smallint);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % three,	f1 # name
 % char,	int # type
 % 0,	11 # length
@@ -95,7 +95,7 @@ Ready.
 [ "",	-123456 ]
 [ "",	-2147483647 ]
 #SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= cast('0' as integer);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % three,	f1 # name
 % char,	int # type
 % 0,	11 # length
@@ -103,21 +103,21 @@ Ready.
 [ "",	-123456 ]
 [ "",	-2147483647 ]
 #SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > cast('0' as smallint);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % two,	f1 # name
 % char,	int # type
 % 0,	10 # length
 [ "",	123456	]
 [ "",	2147483647 ]
 #SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > cast('0' as integer);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % two,	f1 # name
 % char,	int # type
 % 0,	10 # length
 [ "",	123456	]
 [ "",	2147483647 ]
 #SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= cast('0' as smallint);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % three,	f1 # name
 % char,	int # type
 % 0,	10 # length
@@ -125,7 +125,7 @@ Ready.
 [ "",	123456	]
 [ "",	2147483647 ]
 #SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= cast('0' as integer);
-% .L1,	sys.i # table_name
+% .L2,	sys.i # table_name
 % three,	f1 # name
 % char,	int # type
 % 0,	10 # length
@@ -133,13 +133,13 @@ Ready.
 [ "",	123456	]
 [ "",	2147483647 ]
 #SELECT '' AS one, i.* FROM INT4_TBL i WHERE (i.f1 % cast('2' as smallint)) = cast('1' as smallint);
-% .L2,	sys.i # table_name
+% .L3,	sys.i # table_name
 % one,	f1 # name
 % char,	int # type
 % 0,	10 # length
 [ "",	2147483647 ]
 #SELECT '' AS three, i.* FROM INT4_TBL i WHERE (i.f1 % cast('2' as integer)) = cast('0' as smallint);
-% .L2,	sys.i # table_name
+% .L3,	sys.i # table_name
 % three,	f1 # name
 % char,	int # type
 % 0,	7 # length
@@ -147,7 +147,7 @@ Ready.
 [ "",	123456	]
 [ "",	-123456 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT4_TBL i;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -158,7 +158,7 @@ Ready.
 [ "",	-2147483647,	-4294967294	]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT4_TBL i
 #WHERE abs(f1) < 1073741824;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	7,	7 # length
@@ -166,7 +166,7 @@ Ready.
 [ "",	123456,	246912	]
 [ "",	-123456,	-246912 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT4_TBL i;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -177,7 +177,7 @@ Ready.
 [ "",	-2147483647,	-4294967294	]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT4_TBL i
 #WHERE abs(f1) < 1073741824;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	7,	7 # length
@@ -185,7 +185,7 @@ Ready.
 [ "",	123456,	246912	]
 [ "",	-123456,	-246912 ]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT4_TBL i;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -196,7 +196,7 @@ Ready.
 [ "",	-2147483647,	-2147483645	]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT4_TBL i
 #WHERE f1 < 2147483646;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -205,7 +205,7 @@ Ready.
 [ "",	-123456,	-123454 ]
 [ "",	-2147483647,	-2147483645 ]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT4_TBL i;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -216,7 +216,7 @@ Ready.
 [ "",	-2147483647,	-2147483645	]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT4_TBL i
 #WHERE f1 < 2147483646;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -225,7 +225,7 @@ Ready.
 [ "",	-123456,	-123454 ]
 [ "",	-2147483647,	-2147483645 ]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT4_TBL i;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -236,7 +236,7 @@ Ready.
 [ "",	-2147483647,	-2147483649	]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT4_TBL i
 #WHERE f1 > -2147483647;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	10,	10 # length
@@ -245,7 +245,7 @@ Ready.
 [ "",	-123456,	-123458 ]
 [ "",	2147483647,	2147483645 ]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT4_TBL i;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -256,7 +256,7 @@ Ready.
 [ "",	-2147483647,	-2147483649	]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT4_TBL i
 #WHERE f1 > -2147483647;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	10,	10 # length
@@ -265,7 +265,7 @@ Ready.
 [ "",	-123456,	-123458 ]
 [ "",	2147483647,	2147483645 ]
 #SELECT '' AS five, i.f1, i.f1 / cast('2' as smallint) AS x FROM INT4_TBL i;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	int # type
 % 0,	11,	11 # length
@@ -275,7 +275,7 @@ Ready.
 [ "",	2147483647,	1073741823 ]
 [ "",	-2147483647,	-1073741823 ]
 #SELECT '' AS five, i.f1, i.f1 / cast('2' as integer) AS x FROM INT4_TBL i;
-% .L,	sys.i,	sys.L1 # table_name
+% .L1,	sys.i,	sys.L3 # table_name
 % five,	f1,	x # name
 % char,	int,	int # type
 % 0,	11,	11 # length

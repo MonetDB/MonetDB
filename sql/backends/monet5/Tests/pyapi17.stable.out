@@ -97,8 +97,8 @@ Ready.
 #	return retval
 #};
 #SELECT pyapi17(i) FROM integers;
-% sys.L # table_name
-% pyapi17_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 33	]

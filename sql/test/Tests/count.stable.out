@@ -30,19 +30,19 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) from counttest;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(val) from counttest;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 5	]
 #select count(*) as count_x from counttest group by val order by count_x;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % count_x # name
 % bigint # type
 % 1 # length
@@ -51,7 +51,7 @@ Ready.
 [ 2	]
 [ 2	]
 #select count(val) as count_val from counttest group by val order by count_val;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % count_val # name
 % bigint # type
 % 1 # length

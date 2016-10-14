@@ -25,15 +25,15 @@ Ready.
 # 22:31:14 >  
 
 #select bit_and(3749090034127126942, -1);
-% .L # table_name
-% bit_and_single_value # name
+% .L1 # table_name
+% L1 # name
 % bigint # type
 % 19 # length
 [ 3749090034127126942	]
 
 #select bit_and(3749090034127126942, 0x7fffffffffffffff);
-% .L # table_name
-% bit_and_single_value # name
+% .L1 # table_name
+% L1 # name
 % bigint # type
 % 19 # length
 [ 3749090034127126942	]

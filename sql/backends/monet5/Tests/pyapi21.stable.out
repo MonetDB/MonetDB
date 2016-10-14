@@ -58,8 +58,8 @@ Ready.
 #};
 #CREATE TABLE python_objects AS SELECT * FROM pyapi21_create() WITH DATA;
 #SELECT pyapi21_load(s) FROM python_objects;
-% sys.L # table_name
-% pyapi21_load_s # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

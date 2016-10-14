@@ -26,23 +26,23 @@ Ready.
 # 15:36:13 >  
 
 #SELECT 1 AS one WHERE 1 IN (SELECT 1);
-% .L4 # table_name
+% .L5 # table_name
 % one # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS zero WHERE 1 NOT IN (SELECT 1);
-% .L4 # table_name
+% .L5 # table_name
 % zero # name
 % tinyint # type
 % 1 # length
 #SELECT 1 AS zero WHERE 1 IN (SELECT 2);
-% .L4 # table_name
+% .L5 # table_name
 % zero # name
 % tinyint # type
 % 1 # length
 #SELECT 1 AS one WHERE 1 = 1 AND 1 IN (SELECT 1);
-% .L4 # table_name
+% .L5 # table_name
 % one # name
 % tinyint # type
 % 1 # length

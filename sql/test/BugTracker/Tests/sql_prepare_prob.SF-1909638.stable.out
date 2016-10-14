@@ -33,20 +33,20 @@ Ready.
 #        return 0;
 #END;
 #SELECT  fEq(212.82496,1.27536,0.167);
-% .L # table_name
-% feq_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]
 #SELECT  fEq(134.44708,-0.2,0.167);
-% .L # table_name
-% feq_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]
 #SELECT  fEq(261,-90,0.167);
-% .L # table_name
-% feq_single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]

@@ -57,7 +57,7 @@ function user.s4_1():void;
     X_214:void := querylog.define("explain select\n l_orderkey,\n sum(l_extendedprice * (1 - l_discount)) as revenue,\n o_orderdate,\n o_shippriority\nfrom\n customer,\n orders,\n lineitem\nwhere\n c_mktsegment = \\'BUILDING\\'\n and c_custkey = o_custkey\n and l_orderkey = o_orderkey\n and o_orderdate < date \\'1995-03-15\\'\n and l_shipdate > date \\'1995-03-15\\'\ngroup by\n l_orderkey,\n o_orderdate,\n o_shippriority\norder by\n revenue desc,\n o_orderdate\nlimit 10;","sequential_pipe",78);
     X_173 := bat.new(nil:str);
     X_180 := bat.append(X_173,"sys.lineitem");
-    X_190 := bat.append(X_180,"sys.L1");
+    X_190 := bat.append(X_180,"sys.L2");
     X_200 := bat.append(X_190,"sys.orders");
     X_208 := bat.append(X_200,"sys.orders");
     X_175 := bat.new(nil:str);

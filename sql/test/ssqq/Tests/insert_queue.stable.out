@@ -45,8 +45,8 @@ Ready.
 % int,	int,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	1,	0,	0,	26,	26 # length
 #select id_result;
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -57,8 +57,8 @@ Ready.
 % 1,	1,	1,	5,	5,	26,	26 # length
 [ 1,	1,	0,	"monet",	"linux",	NULL,	NULL	]
 #select id_result;
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ -1	]
@@ -69,8 +69,8 @@ Ready.
 % 1,	1,	1,	5,	5,	26,	26 # length
 [ 1,	1,	0,	"monet",	"linux",	NULL,	NULL	]
 #select id_result;
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -82,8 +82,8 @@ Ready.
 [ 1,	1,	0,	"monet",	"linux",	NULL,	NULL	]
 [ 3,	2,	0,	"monet",	"linux",	NULL,	NULL	]
 #select id_result;
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 4	]

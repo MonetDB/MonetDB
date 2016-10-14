@@ -47,9 +47,9 @@ project (
 | | | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
 | | | | ) [ dwdate.d_year = int "1993" ]
 | | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
-| | ) [ lineorder.lo_extendedprice, lineorder.lo_discount, bigint[lineorder.lo_extendedprice] as L2.L2, sys.sql_mul(L2.L2, lineorder.lo_discount) as L3.L3 ]
-| ) [  ] [ sys.sum no nil (L3.L3) as L1.L1 ]
-) [ L1 as L1.revenue ]
+| | ) [ lineorder.lo_extendedprice, lineorder.lo_discount, bigint[lineorder.lo_extendedprice] as L3.L3, sys.sql_mul(L3.L3, lineorder.lo_discount) as L4.L4 ]
+| ) [  ] [ sys.sum no nil (L4.L4) as L1.L1 ]
+) [ L1 as L2.revenue ]
 
 # 23:08:56 >  
 # 23:08:56 >  "Done."

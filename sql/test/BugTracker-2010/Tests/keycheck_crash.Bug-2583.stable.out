@@ -31,7 +31,7 @@ Ready.
 #        "tbl1"."id1"   = 1  AND NOT
 #        ("tbl1"."id2" =  295)
 #;
-% .L # table_name
+% .L1 # table_name
 % a # name
 % tinyint # type
 % 1 # length

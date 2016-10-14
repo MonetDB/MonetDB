@@ -51,68 +51,68 @@ Ready.
 #INSERT INTO pyapi24table VALUES (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5);
 [ 5	]
 #SELECT pyapi24(i) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 5	]
 #SELECT pyapi24(i,j) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 15	]
 #SELECT pyapi24(i,j,k) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 30	]
 #SELECT pyapi24(i,j,k,l) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 50	]
 #SELECT pyapi24(i,j,k,l,m) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 75	]
 #SELECT pyapi24(i,i,i,i,i) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 25	]
 #SELECT pyapi24(i,i,i,i,i,i,i,i,i,i) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 50	]
 #SELECT pyapi24(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 75	]
 #SELECT pyapi24(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 3 # length
 [ 100	]
 #SELECT pyapi24(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 3 # length
 [ 125	]
 #SELECT pyapi24(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 3 # length
 [ 500	]
@@ -131,9 +131,9 @@ Ready.
 #CREATE TABLE pyapi24table(i BOOLEAN, j TINYINT, k INTEGER, l DOUBLE, m STRING);
 #INSERT INTO pyapi24table VALUES (True, 10, 1000, 100.1, 'Hello'), (True, 10, 1000, 100.1, 'Hello'), (True, 10, 1000, 100.1, 'Hello'), (True, 10, 1000, 100.1, 'Hello'), (True, 10, 1000, 100.1, 'Hello');
 [ 5	]
-#SELECT pyapi24(i,j,k,l,m) FROM pyapi24table;
-% sys.L # table_name
-% pyapi24_i # name
+#SELECT pyapi24(i,j,k,l,m) FROM pyapi24table; #55555.5
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 55555.5	]

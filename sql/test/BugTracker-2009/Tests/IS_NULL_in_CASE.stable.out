@@ -37,7 +37,7 @@ Ready.
 #END AS "NewColumnName"
 #FROM sometable
 #;
-% sys.sometable,	sys.L # table_name
+% sys.sometable,	sys.L1 # table_name
 % somecol,	NewColumnName # name
 % int,	char # type
 % 1,	10 # length
@@ -54,7 +54,7 @@ Ready.
 #END AS "NewColumnName"
 #FROM sometable
 #;
-% sys.sometable,	sys.L # table_name
+% sys.sometable,	sys.L1 # table_name
 % somecol,	NewColumnName # name
 % int,	char # type
 % 1,	10 # length

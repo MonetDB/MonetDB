@@ -30,21 +30,21 @@ Ready.
 #insert into geo values (st_mpointfromtext('MULTIPOINT(10 10, 20 20, 10 10)', 4326));
 [ 1	]
 #select st_isvalid(g) from geo;
-% sys.L # table_name
-% st_isvalid_g # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 [ true	]
 #drop table geo;
 #select ST_IsValid(ST_GeomFromText('POLYGON((0 0, 1 1, 1 2, 1 1, 0 0))'));
-% .L # table_name
-% st_geomfromtext_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
-#SELECT geom AS "GEOMETRY" FROM geometries WHERE ST_IsValid(geom);
-% sys.L # table_name
+#SELECT geom AS "GEOMETRY" FROM geometries WHERE id<14 AND ST_IsValid(geom);
+% sys.L1 # table_name
 % GEOMETRY # name
 % geometry # type
 % 0 # length

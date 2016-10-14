@@ -65,13 +65,13 @@ Ready.
 #INSERT INTO t1(d,c,e,a,b) VALUES(116,119,117,115,118);
 [ 1	]
 #SELECT count(*) FROM t1 AS x;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 4	]
 #SELECT count(*) FROM t1 AS x WHERE x.c;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

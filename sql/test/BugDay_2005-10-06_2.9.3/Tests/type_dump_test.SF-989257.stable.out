@@ -26,27 +26,27 @@ Ready.
 Operation successful
 
 CREATE TABLE "sys"."voyages" (
-	"number"            INTEGER,
-	"number_sup"        CHAR(1),
-	"trip"              INTEGER,
-	"trip_sup"          CHAR(1),
-	"boatname"          VARCHAR(50),
-	"master"            VARCHAR(50),
-	"tonnage"           INTEGER,
-	"type_of_boat"      VARCHAR(30),
-	"built"             VARCHAR(15),
-	"bought"            VARCHAR(15),
-	"hired"             VARCHAR(15),
-	"yard"              CHAR(1),
-	"chamber"           CHAR(1),
-	"departure_date"    VARCHAR(15),
-	"departure_harbour" VARCHAR(30),
-	"cape_arrival"      VARCHAR(15),
-	"cape_departure"    VARCHAR(15),
-	"arrival_date"      VARCHAR(15),
-	"arrival_harbour"   VARCHAR(30),
-	"next_voyage"       INTEGER,
-	"particulars"       VARCHAR(507)
+	"number"            int    ,
+	"number_sup"        char   (1),
+	"trip"              int    ,
+	"trip_sup"          char   (1),
+	"boatname"          varchar(50),
+	"master"            varchar(50),
+	"tonnage"           int    ,
+	"type_of_boat"      varchar(30),
+	"built"             varchar(15),
+	"bought"            varchar(15),
+	"hired"             varchar(15),
+	"yard"              char   (1),
+	"chamber"           char   (1),
+	"departure_date"    varchar(15),
+	"departure_harbour" varchar(30),
+	"cape_arrival"      varchar(15),
+	"cape_departure"    varchar(15),
+	"arrival_date"      varchar(15),
+	"arrival_harbour"   varchar(30),
+	"next_voyage"       int    ,
+	"particulars"       varchar(507)
 );
 
 # 12:41:42 >  

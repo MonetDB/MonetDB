@@ -47,8 +47,8 @@ Ready.
 #	l_dec decimal(7,2)
 #);
 #select bwdecompose(l_int,24), bwdecompose(l_dat,24), bwdecompose(l_dec,24) from bwd;
-% sys.L1,	sys.L2,	sys.L2 # table_name
-% L1,	L2,	bwdecompose_l_dec # name
+% sys.L1,	sys.L2,	sys.L3 # table_name
+% L1,	L2,	L3 # name
 % varchar,	varchar,	varchar # type
 % 0,	0,	0 # length
 #rollback;

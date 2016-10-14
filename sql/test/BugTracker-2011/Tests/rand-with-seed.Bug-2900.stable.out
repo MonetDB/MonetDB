@@ -44,8 +44,8 @@ Ready.
 # 09:17:38 >  
 
 #select rand(100) is null , rand() is null ;
-% .L1,	.L1 # table_name
-% L1,	isnull_rand # name
+% .L1,	.L2 # table_name
+% L1,	L2 # name
 % boolean,	boolean # type
 % 5,	5 # length
 [ false,	false	]

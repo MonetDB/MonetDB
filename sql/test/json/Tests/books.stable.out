@@ -53,46 +53,46 @@ Ready.
 % 1,	717 # length
 [ 1,	" { \"store\": {\n    \"books\": [ \n      { \"category\": \"reference\",\n        \"author\": \"Nigel Rees\",\n        \"title\": \"Sayings of the Century\",\n        \"price\": 8.95\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"Evelyn Waugh\",\n        \"title\": \"Sword of Honour\",\n        \"price\": 12.99\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"Herman Melville\",\n        \"title\": \"Moby Dick\",\n        \"isbn\": \"0-553-21311-3\",\n        \"price\": 8.99\n      },\n      { \"category\": \"fiction\",\n        \"author\": \"J. R. R. Tolkien\",\n        \"title\": \"The Lord of the Rings\",\n        \"isbn\": \"0-395-19395-8\",\n        \"price\": 22.99\n      }\n    ],\n    \"bicycle\": {\n      \"color\": \"red\",\n      \"price\": 19.95\n    }\n  }\n}"	]
 #SELECT json.filter(j,'store.books.[1]..author') FROM books;
-% sys.L # table_name
-% filter_j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 16 # length
 [ "[\"Evelyn Waugh\"]"	]
 #SELECT json.filter(j,'..books..author[1]') AS j FROM (
 #	SELECT json.filter(j,'store') AS j FROM books
 #) AS L1;
-% sys.L # table_name
+% sys.L2 # table_name
 % j # name
 % json # type
 % 16 # length
 [ "[\"Evelyn Waugh\"]"	]
 #SELECT json.filter(j,'..author') FROM books;
-% sys.L # table_name
-% filter_j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 66 # length
 [ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
-#SELECT json_path(j,'store.book[*].author') FROM books;
-% sys.L # table_name
-% filter_j # name
+#SELECT json.filter(j,'store.books[*]..author') FROM books;
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 66 # length
 [ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
-#SELECT json_path(j,'..bicycle.price') FROM books;
-% sys.L # table_name
-% filter_j # name
+#SELECT json.filter(j,'store.books..author') FROM books;
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 66 # length
 [ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
 #SELECT json.filter(j,'store.books..author[1]') FROM books;
-% sys.L # table_name
-% filter_j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 16 # length
 [ "[\"Evelyn Waugh\"]"	]
 #SELECT json.filter(j,'..bicycle.price') FROM books;
-% sys.L # table_name
-% filter_j # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 7 # length
 [ "[19.95]"	]

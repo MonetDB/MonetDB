@@ -24,67 +24,67 @@ Ready.
 # 19:26:22 >  
 
 #SELECT count(*);
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(1);
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(NULL);
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT avg(1);
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % double # type
 % 24 # length
 [ 1	]
 #SELECT avg(cast (NULL as int));
-% .L2 # table_name
+% .L3 # table_name
 % L2 # name
 % double # type
 % 24 # length
 [ NULL	]
 #SELECT sum(1);
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % hugeint # type
 % 1 # length
 [ 1	]
 #SELECT sum(cast (NULL as int));
-% .L2 # table_name
+% .L3 # table_name
 % L2 # name
 % hugeint # type
 % 40 # length
 [ NULL	]
 #SELECT max(1);
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT max(cast (NULL as int));
-% .L2 # table_name
+% .L3 # table_name
 % L2 # name
 % int # type
 % 11 # length
 [ NULL	]
 #SELECT min(1);
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT min(cast (NULL as int));
-% .L2 # table_name
+% .L3 # table_name
 % L2 # name
 % int # type
 % 11 # length

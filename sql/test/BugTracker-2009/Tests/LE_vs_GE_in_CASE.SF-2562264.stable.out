@@ -40,7 +40,7 @@ Ready.
 #select 13 as x
 #) sub
 #;
-% .sub,	.L # table_name
+% .sub,	.L5 # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -60,7 +60,7 @@ Ready.
 #select 13 as x
 #) sub
 #;
-% .sub,	.L # table_name
+% .sub,	.L5 # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -80,7 +80,7 @@ Ready.
 #select 13 as x
 #) sub
 #;
-% .sub,	.L # table_name
+% .sub,	.L5 # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -100,7 +100,7 @@ Ready.
 #select 13 as x
 #) sub
 #;
-% .sub,	.L # table_name
+% .sub,	.L5 # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -120,7 +120,7 @@ Ready.
 #select 13 as x
 #) sub
 #;
-% .sub,	.L # table_name
+% .sub,	.L5 # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length

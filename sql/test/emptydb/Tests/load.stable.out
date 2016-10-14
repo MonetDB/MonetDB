@@ -65,8 +65,8 @@ Ready.
 # 14:10:08 >  
 
 #select 1;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]

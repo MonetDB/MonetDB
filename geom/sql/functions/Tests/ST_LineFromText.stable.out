@@ -71,8 +71,8 @@ Ready.
 [ "LINESTRING Z (20 20 20, 30 30 30, 40 40 40)"	]
 #drop table lines_tbl;
 #select st_linefromtext(geom) from geometriesTxt WHERE id=2;
-% sys.L # table_name
-% st_linefromtext_geom # name
+% sys.L1 # table_name
+% L1 # name
 % geometry # type
 % 0 # length
 [ "LINESTRING (10 20, 30 40, 50 60)"	]

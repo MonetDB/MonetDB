@@ -25,8 +25,8 @@ Ready.
 # 15:05:54 >  
 
 #SELECT ST_Touches(centerline, shore) FROM streams, lakes WHERE streams.name = 'Cam Stream' AND lakes.name = 'Blue Lake';
-% sys.L # table_name
-% st_touches_centerline # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

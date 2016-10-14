@@ -42,8 +42,8 @@ Ready.
 % int,	int,	timestamp,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	26,	1,	0,	0,	26,	26 # length
 #select id_result;
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -54,8 +54,8 @@ Ready.
 % 1,	1,	21,	1,	5,	5,	0,	1,	0,	0 # length
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select id_result;
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -67,8 +67,8 @@ Ready.
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 2,	1,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select id_result;
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ -1	]
@@ -80,8 +80,8 @@ Ready.
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 2,	1,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select id_result;
-% . # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 3	]

@@ -27,7 +27,7 @@ Ready.
 [ 1,	2	]
 [ 3,	4	]
 #SELECT null AS test, "null" AS nullable FROM tab;
-% .L,	sys.L # table_name
+% .L1,	sys.L2 # table_name
 % test,	nullable # name
 % char,	int # type
 % 0,	1 # length

@@ -24,8 +24,8 @@ Ready.
 # 17:54:53 >  
 
 #SELECT xmlelement(name element,xmlattributes ('unnamed and wrong'));
-% .L # table_name
-% element_element # name
+% .L1 # table_name
+% L1 # name
 % xml # type
 % 44 # length
 [ <element single_value="unnamed and wrong"/>	]

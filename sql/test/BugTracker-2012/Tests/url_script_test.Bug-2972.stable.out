@@ -52,128 +52,128 @@ Ready.
 #insert into t2972 values('http://www.monetdb.org:8080/Documentation/Manuals/SQLreference/Datamanipulation');
 [ 1	]
 #select getAnchor(u) from t2972;
-% sys.L # table_name
-% getanchor_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 0 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
 #select getBasename(u) from t2972;
-% sys.L # table_name
-% getbasename_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 16 # length
 [ "vision2011"	]
 [ NULL	]
 [ "Datamanipulation"	]
 #select getContext(u) from t2972;
-% sys.L # table_name
-% getcontext_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 52 # length
 [ "/~mk/vision2011.pdf"	]
 [ NULL	]
 [ "/Documentation/Manuals/SQLreference/Datamanipulation"	]
 #select getDomain(u) from t2972;
-% sys.L # table_name
-% getdomain_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 3 # length
 [ "nl"	]
 [ "com"	]
 [ "org"	]
 #select getExtension(u) from t2972;
-% sys.L # table_name
-% getextension_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 3 # length
 [ "pdf"	]
 [ NULL	]
 [ NULL	]
 #select getFile(u) from t2972;
-% sys.L # table_name
-% getfile_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 16 # length
 [ "vision2011.pdf"	]
 [ NULL	]
 [ "Datamanipulation"	]
 #select getHost(u) from t2972;
-% sys.L # table_name
-% gethost_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 15 # length
 [ "www.cwi.nl"	]
 [ "www.monetdb.com"	]
 [ "www.monetdb.org"	]
 #select getPort(u) from t2972;
-% sys.L # table_name
-% getport_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 4 # length
 [ NULL	]
 [ NULL	]
 [ "8080"	]
 #select getQuery(u) from t2972;
-% sys.L # table_name
-% getquery_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 3 # length
 [ NULL	]
 [ "x=2"	]
 [ NULL	]
 #select getUser(u) from t2972;
-% sys.L # table_name
-% getuser_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 2 # length
 [ "mk"	]
 [ NULL	]
 [ NULL	]
 #select getRobotURL(u) from t2972;
-% sys.L # table_name
-% getroboturl_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 38 # length
 [ "http://www.cwi.nl/robots.txt"	]
 [ "http://www.monetdb.com/robots.txt"	]
 [ "http://www.monetdb.org:8080/robots.txt"	]
 #select isaURL(u) from t2972;
-% sys.L # table_name
-% isaurl_u # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 [ true	]
 [ true	]
 #select isaURL('http://www.monetdb.org');
-% .L # table_name
-% isaurl_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select isaURL('http://www.monetdb.org');
-% .L # table_name
-% isaurl_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select isaURL('htp:///www.monetdb.org');
-% .L # table_name
-% isaurl_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select newurl('https','www.monetdb.org',8080,'blah');
-% .L # table_name
-% newurl_single_value # name
+% .L1 # table_name
+% L1 # name
 % url # type
 % 33 # length
 [ https://www.monetdb.org:8080/blah	]
 #select newurl('https','localhost','boe');
-% .L # table_name
-% newurl_single_value # name
+% .L1 # table_name
+% L1 # name
 % url # type
 % 21 # length
 [ https://localhost/boe	]
@@ -182,8 +182,8 @@ Ready.
 #insert into t2972 values ('file:///export/home/fabian/monetdb/Apr2012/hgrepo/sql/test/BugTracker-2012/Tests/url_script_test.Bug-2972.txt');
 [ 1	]
 #select getContent(u) from t2972;
-% sys.L # table_name
-% getcontent_u # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 141 # length
 [ "This file is read by the url_script_test.Bug-2972 test.\nIf you change this, you likely want to change the stable output of the\ntest as well.\n"	]

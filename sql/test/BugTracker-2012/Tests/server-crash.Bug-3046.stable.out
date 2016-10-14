@@ -77,8 +77,8 @@ Ready.
 #      rank1.component_ref = component1.id AND
 #      rank1.node_ref = node1.id AND
 #      rank1.pre = rank2.parent AND
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]

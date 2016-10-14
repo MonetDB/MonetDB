@@ -63,25 +63,25 @@ Ready.
 #INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_add(current_date, 24*60*60.0) as timestamp));
 [ 1	]
 #SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(current_date as timestamp);
-% sys.L2 # table_name
+% sys.L3 # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1 ]
 #SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_add(current_date, 24*60*60.0) as timestamp);
-% sys.L2 # table_name
+% sys.L3 # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_sub(current_date, 24*60*60.0) as timestamp);
-% sys.L2 # table_name
+% sys.L3 # table_name
 % one # name
 % bigint # type
 % 1 # length
 [ 1 ]
 #SELECT count(*) AS None FROM TIMESTAMP_TBL WHERE d1 = cast(now as timestamp);
-% sys.L2 # table_name
+% sys.L3 # table_name
 % none # name
 % bigint # type
 % 1 # length
@@ -94,7 +94,7 @@ Ready.
 #INSERT INTO TIMESTAMP_TBL VALUES ('now');
 [ 1 ]
 #SELECT count(*) AS two FROM TIMESTAMP_TBL WHERE d1 <= cast(now as timestamp);
-% sys.L2 # table_name
+% sys.L3 # table_name
 % two # name
 % bigint # type
 % 1 # length
@@ -117,7 +117,7 @@ Ready.
 #INSERT INTO TIMESTAMP_TBL VALUES ('1997/02/10 17:32:01-0800');
 [ 1 ]
 #SELECT '' AS "64", d1 FROM TIMESTAMP_TBL; 
-% .L,	sys.timestamp_tbl # table_name
+% .L1,	sys.timestamp_tbl # table_name
 % 64,	d1 # name
 % char,	timestamp # type
 % 0,	22 # length
@@ -130,7 +130,7 @@ Ready.
 [ "",	1997-02-11 01:32:01.00	]
 #SELECT '' AS "48", d1 FROM TIMESTAMP_TBL
 #   WHERE d1 > cast('1997-01-02' as timestamp);
-% .L1,	sys.timestamp_tbl # table_name
+% .L2,	sys.timestamp_tbl # table_name
 % 48,	d1 # name
 % char,	timestamp # type
 % 0,	22 # length
@@ -142,20 +142,20 @@ Ready.
 [ "",	1997-02-11 01:32:01.00	]
 #SELECT '' AS "15", d1 FROM TIMESTAMP_TBL
 #   WHERE d1 < cast('1997-01-02' as timestamp);
-% .L1,	sys.timestamp_tbl # table_name
+% .L2,	sys.timestamp_tbl # table_name
 % 15,	d1 # name
 % char,	timestamp # type
 % 0,	22 # length
 #SELECT '' AS one, d1 FROM TIMESTAMP_TBL
 #   WHERE d1 = cast('1997-01-02' as timestamp);
-% .L1,	sys.timestamp_tbl # table_name
+% .L2,	sys.timestamp_tbl # table_name
 % one,	d1 # name
 % char,	timestamp # type
 % 0,	22 # length
 [ "",	1997-01-02 00:00:00.00	]
 #SELECT '' AS "63", d1 FROM TIMESTAMP_TBL
 #   WHERE d1 <> cast('1997-01-02' as timestamp);
-% .L1,	sys.timestamp_tbl # table_name
+% .L2,	sys.timestamp_tbl # table_name
 % 63,	d1 # name
 % char,	timestamp # type
 % 0,	22 # length
@@ -167,14 +167,14 @@ Ready.
 [ "",	1997-02-11 01:32:01.00	]
 #SELECT '' AS "16", d1 FROM TIMESTAMP_TBL
 #   WHERE d1 <= cast('1997-01-02' as timestamp);
-% .L1,	sys.timestamp_tbl # table_name
+% .L2,	sys.timestamp_tbl # table_name
 % 16,	d1 # name
 % char,	timestamp # type
 % 0,	22 # length
 [ "",	1997-01-02 00:00:00.00	]
 #SELECT '' AS "49", d1 FROM TIMESTAMP_TBL
 #   WHERE d1 >= cast('1997-01-02' as timestamp);
-% .L1,	sys.timestamp_tbl # table_name
+% .L2,	sys.timestamp_tbl # table_name
 % 49,	d1 # name
 % char,	timestamp # type
 % 0,	22 # length
@@ -187,7 +187,7 @@ Ready.
 [ "",	1997-02-11 01:32:01.00	]
 #SELECT '' AS "54", d1 - cast('1997-01-02' as timestamp) AS diff
 #   FROM TIMESTAMP_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01';
-% .L,	sys.L1 # table_name
+% .L1,	sys.L3 # table_name
 % 54,	diff # name
 % char,	sec_interval # type
 % 0,	13 # length
@@ -202,7 +202,7 @@ Ready.
 #  FROM TIMESTAMP_TBL
 #  WHERE d1 BETWEEN cast('1902-01-01' as timestamp)
 #   AND cast('2038-01-01' as timestamp);
-% .L2,	sys.L3 # table_name
+% .L3,	sys.L5 # table_name
 % 54,	diff # name
 % char,	sec_interval # type
 % 0,	13 # length
@@ -216,8 +216,8 @@ Ready.
 #INSERT INTO TIMESTAMP_TBL VALUES (null);
 [ 1	]
 #SELECT d1, "day"(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	day_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	2 # length
 [ 1997-01-02 00:00:00.00,	2	]
@@ -229,8 +229,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	11	]
 [ NULL,	NULL	]
 #SELECT d1, "month"(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	month_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	1 # length
 [ 1997-01-02 00:00:00.00,	1	]
@@ -242,8 +242,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	2	]
 [ NULL,	NULL	]
 #SELECT d1, "year"(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	year_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	4 # length
 [ 1997-01-02 00:00:00.00,	1997	]
@@ -255,8 +255,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1997	]
 [ NULL,	NULL	]
 #SELECT d1, extract(day from d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	day_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	2 # length
 [ 1997-01-02 00:00:00.00,	2	]
@@ -268,8 +268,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	11	]
 [ NULL,	NULL	]
 #SELECT d1, extract(month from d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	month_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	1 # length
 [ 1997-01-02 00:00:00.00,	1	]
@@ -281,8 +281,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	2	]
 [ NULL,	NULL	]
 #SELECT d1, extract(year from d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	year_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	4 # length
 [ 1997-01-02 00:00:00.00,	1997	]
@@ -294,8 +294,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1997	]
 [ NULL,	NULL	]
 #SELECT d1, week(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	week_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	2 # length
 [ 1997-01-02 00:00:00.00,	1	]
@@ -307,8 +307,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	7	]
 [ NULL,	NULL	]
 #SELECT d1, weekofyear(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	weekofyear_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	2 # length
 [ 1997-01-02 00:00:00.00,	1	]
@@ -320,8 +320,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	7	]
 [ NULL,	NULL	]
 #SELECT d1, dayofmonth(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	dayofmonth_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	2 # length
 [ 1997-01-02 00:00:00.00,	2	]
@@ -333,8 +333,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	11	]
 [ NULL,	NULL	]
 #SELECT d1, dayofweek(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	dayofweek_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	1 # length
 [ 1997-01-02 00:00:00.00,	4	]
@@ -346,8 +346,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	2	]
 [ NULL,	NULL	]
 #SELECT d1, dayofyear(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	dayofyear_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	3 # length
 [ 1997-01-02 00:00:00.00,	2	]
@@ -359,8 +359,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	42	]
 [ NULL,	NULL	]
 #SELECT d1, "hour"(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	hour_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	2 # length
 [ 1997-01-02 00:00:00.00,	0	]
@@ -372,8 +372,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1	]
 [ NULL,	NULL	]
 #SELECT d1, "minute"(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	minute_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	2 # length
 [ 1997-01-02 00:00:00.00,	0	]
@@ -385,8 +385,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	32	]
 [ NULL,	NULL	]
 #SELECT d1, "second"(d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	second_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	decimal # type
 % 22,	11 # length
 [ 1997-01-02 00:00:00.00,	0.000	]
@@ -398,8 +398,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1.000	]
 [ NULL,	NULL	]
 #SELECT d1, extract(hour from d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	hour_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	2 # length
 [ 1997-01-02 00:00:00.00,	0	]
@@ -411,8 +411,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1	]
 [ NULL,	NULL	]
 #SELECT d1, extract(minute from d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	minute_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	int # type
 % 22,	2 # length
 [ 1997-01-02 00:00:00.00,	0	]
@@ -424,8 +424,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	32	]
 [ NULL,	NULL	]
 #SELECT d1, extract(second from d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	second_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	decimal # type
 % 22,	11 # length
 [ 1997-01-02 00:00:00.00,	0.000	]
@@ -437,8 +437,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1.000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_add(d1, 365*24*60*60.0) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	sql_add_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	timestamp # type
 % 22,	26 # length
 [ 1997-01-02 00:00:00.00,	1998-01-02 00:00:00.000000	]
@@ -450,8 +450,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_add(d1, cast(365*24*60*60 as interval second)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L1 # table_name
-% d1,	sql_add_d1 # name
+% sys.timestamp_tbl,	sys.L2 # table_name
+% d1,	L2 # name
 % timestamp,	timestamp # type
 % 22,	26 # length
 [ 1997-01-02 00:00:00.00,	1998-01-02 00:00:00.000000	]
@@ -463,8 +463,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_add(d1, cast(12 as interval month)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L1 # table_name
-% d1,	sql_add_d1 # name
+% sys.timestamp_tbl,	sys.L2 # table_name
+% d1,	L2 # name
 % timestamp,	timestamp # type
 % 22,	26 # length
 [ 1997-01-02 00:00:00.00,	1998-01-02 00:00:00.000000	]
@@ -476,8 +476,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1998-02-11 01:32:01.000000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_add(d1, cast(-18 as interval month)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L1 # table_name
-% d1,	sql_add_d1 # name
+% sys.timestamp_tbl,	sys.L2 # table_name
+% d1,	L2 # name
 % timestamp,	timestamp # type
 % 22,	26 # length
 [ 1997-01-02 00:00:00.00,	1995-07-02 00:00:00.000000	]
@@ -489,8 +489,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1995-08-11 01:32:01.000000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_sub(d1, 365*24*60*60.0) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L # table_name
-% d1,	sql_sub_d1 # name
+% sys.timestamp_tbl,	sys.L1 # table_name
+% d1,	L1 # name
 % timestamp,	timestamp # type
 % 22,	26 # length
 [ 1997-01-02 00:00:00.00,	1996-01-03 00:00:00.000000	]
@@ -502,8 +502,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1996-02-12 01:32:01.000000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_sub(d1, cast(365*24*60*60 as interval second)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L1 # table_name
-% d1,	sql_sub_d1 # name
+% sys.timestamp_tbl,	sys.L2 # table_name
+% d1,	L2 # name
 % timestamp,	timestamp # type
 % 22,	26 # length
 [ 1997-01-02 00:00:00.00,	1996-01-03 00:00:00.000000	]
@@ -515,8 +515,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1996-02-12 01:32:01.000000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_sub(d1, cast(12 as interval month)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L1 # table_name
-% d1,	sql_sub_d1 # name
+% sys.timestamp_tbl,	sys.L2 # table_name
+% d1,	L2 # name
 % timestamp,	timestamp # type
 % 22,	26 # length
 [ 1997-01-02 00:00:00.00,	1996-01-02 00:00:00.000000	]
@@ -528,8 +528,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1996-02-11 01:32:01.000000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_sub(d1, cast(-18 as interval month)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L1 # table_name
-% d1,	sql_sub_d1 # name
+% sys.timestamp_tbl,	sys.L2 # table_name
+% d1,	L2 # name
 % timestamp,	timestamp # type
 % 22,	26 # length
 [ 1997-01-02 00:00:00.00,	1998-07-02 00:00:00.000000	]
@@ -541,8 +541,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	1998-08-11 01:32:01.000000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_sub(d1, cast('2001-12-12 23:22:21' as timestamp)) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	sys.L1 # table_name
-% d1,	sql_sub_d1 # name
+% sys.timestamp_tbl,	sys.L2 # table_name
+% d1,	L2 # name
 % timestamp,	sec_interval # type
 % 22,	14 # length
 [ 1997-01-02 00:00:00.00,	-156036141.000	]
@@ -554,8 +554,8 @@ Ready.
 [ 1997-02-11 01:32:01.00,	-152574620.000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_sub(cast('2001-12-12 23:22:21' as timestamp), d1) FROM TIMESTAMP_TBL;
-% sys.timestamp_tbl,	.L1 # table_name
-% d1,	sql_sub_single_value # name
+% sys.timestamp_tbl,	.L2 # table_name
+% d1,	L2 # name
 % timestamp,	sec_interval # type
 % 22,	13 # length
 [ 1997-01-02 00:00:00.00,	156036141.000	]

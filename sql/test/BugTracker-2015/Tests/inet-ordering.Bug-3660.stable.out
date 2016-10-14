@@ -82,19 +82,19 @@ Ready.
 #insert into "bug" values('11.0.0.1');
 [ 1	]
 #select count(*) from bug where address>=inet'4.0.0.0';
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 8	]
 #select count(*) from bug where address<inet'8.0.0.0';
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
 [ 7	]
 #select count(*) from bug where address>=inet'4.0.0.0' and address<inet'8.0.0.0';
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

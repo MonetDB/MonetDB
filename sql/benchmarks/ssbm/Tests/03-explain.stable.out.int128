@@ -61,7 +61,7 @@ function user.s4_1():void;
     X_76:bat[:int] := algebra.projectionpath(X_59,C_29,X_16);
     X_77:bat[:lng] := batcalc.*(X_74,X_76);
     X_80:lng := aggr.sum(X_77);
-    sql.resultSet("sys.L1","revenue","bigint",64,0,7,X_80);
+    sql.resultSet("sys.L2","revenue","bigint",64,0,7,X_80);
 end user.s4_1;
 #inline               actions= 0 time=6 usec 
 #candidates           actions= 1 time=52 usec 

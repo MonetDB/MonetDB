@@ -52,7 +52,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 722 # length
+% 730 # length
 project (
 | group by (
 | | project (
@@ -62,9 +62,9 @@ project (
 | | | | ) [ lineitem.l_shipdate NOT NULL < lineitem.l_commitdate NOT NULL < lineitem.l_receiptdate NOT NULL, date "1994-01-01" <= lineitem.l_receiptdate NOT NULL < sys.sql_add(date "1994-01-01", month_interval "12"), lineitem.l_shipmode NOT NULL in (char(10) "MAIL", char(10) "SHIP") ],
 | | | | table(sys.orders) [ orders.o_orderpriority NOT NULL, orders.%TID% NOT NULL ] COUNT 
 | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ]
-| | ) [ orders.o_orderpriority NOT NULL, lineitem.l_shipmode NOT NULL, sys.=(orders.o_orderpriority NOT NULL, char(15) "1-URGENT") as L3.L3, sys.=(orders.o_orderpriority NOT NULL, char(15) "2-HIGH") as L4.L4, sys.or(L3.L3, L4.L4) as L5.L5, sys.isnull(L5.L5) as L6.L6, sys.ifthenelse(L6.L6, boolean "false", L5.L5) as L7.L7, sys.ifthenelse(L7.L7, tinyint "1", tinyint "0") as L10.L10, sys.<>(orders.o_orderpriority NOT NULL, char(15) "1-URGENT") as L11.L11, sys.<>(orders.o_orderpriority NOT NULL, char(15) "2-HIGH") as L12.L12, sys.and(L11.L11, L12.L12) as L13.L13, sys.isnull(L13.L13) as L14.L14, sys.ifthenelse(L14.L14, boolean "false", L13.L13) as L15.L15, sys.ifthenelse(L15.L15, tinyint "1", tinyint "0") as L16.L16 ]
-| ) [ lineitem.l_shipmode NOT NULL ] [ lineitem.l_shipmode NOT NULL, sys.sum no nil (L10.L10) as L1.L1, sys.sum no nil (L16.L16) as L2.L2 ]
-) [ lineitem.l_shipmode NOT NULL, L1 as L1.high_line_count, L2 as L2.low_line_count ] [ lineitem.l_shipmode ASC NOT NULL ]
+| | ) [ orders.o_orderpriority NOT NULL, lineitem.l_shipmode NOT NULL, sys.=(orders.o_orderpriority NOT NULL, char(15) "1-URGENT") as L5.L5, sys.=(orders.o_orderpriority NOT NULL, char(15) "2-HIGH") as L6.L6, sys.or(L5.L5, L6.L6) as L7.L7, sys.isnull(L7.L7) as L10.L10, sys.ifthenelse(L10.L10, boolean "false", L7.L7) as L11.L11, sys.ifthenelse(L11.L11, tinyint "1", tinyint "0") as L12.L12, sys.<>(orders.o_orderpriority NOT NULL, char(15) "1-URGENT") as L13.L13, sys.<>(orders.o_orderpriority NOT NULL, char(15) "2-HIGH") as L14.L14, sys.and(L13.L13, L14.L14) as L15.L15, sys.isnull(L15.L15) as L16.L16, sys.ifthenelse(L16.L16, boolean "false", L15.L15) as L17.L17, sys.ifthenelse(L17.L17, tinyint "1", tinyint "0") as L20.L20 ]
+| ) [ lineitem.l_shipmode NOT NULL ] [ lineitem.l_shipmode NOT NULL, sys.sum no nil (L12.L12) as L1.L1, sys.sum no nil (L20.L20) as L3.L3 ]
+) [ lineitem.l_shipmode NOT NULL, L1 as L2.high_line_count, L3 as L4.low_line_count ] [ lineitem.l_shipmode ASC NOT NULL ]
 
 # 22:46:31 >  
 # 22:46:31 >  "Done."

@@ -61,7 +61,7 @@ project (
 | | | ) [ dwdate.d_yearmonth = clob "Dec1997" ]
 | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
 | ) [ dwdate.d_year, customer.c_city, supplier.s_city ] [ customer.c_city, supplier.s_city, dwdate.d_year, sys.sum no nil (lineorder.lo_revenue) as L1.L1 ]
-) [ customer.c_city, supplier.s_city, dwdate.d_year, L1 as L1.revenue ] [ dwdate.d_year ASC, L1.revenue ]
+) [ customer.c_city, supplier.s_city, dwdate.d_year, L1 as L2.revenue ] [ dwdate.d_year ASC, L2.revenue ]
 
 # 23:08:58 >  
 # 23:08:58 >  "Done."

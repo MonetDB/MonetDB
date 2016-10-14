@@ -58,7 +58,7 @@ function user.s4_1():void;
     X_240:void := querylog.define("explain select\n n_name,\n sum(l_extendedprice * (1 - l_discount)) as revenue\nfrom\n customer,\n orders,\n lineitem,\n supplier,\n nation,\n region\nwhere\n c_custkey = o_custkey\n and l_orderkey = o_orderkey\n and l_suppkey = s_suppkey\n and c_nationkey = s_nationkey\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'ASIA\\'\n and o_orderdate >= date \\'1994-01-01\\'\n and o_orderdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n n_name\norder by\n revenue desc;","sequential_pipe",93);
     X_213 := bat.new(nil:str);
     X_220 := bat.append(X_213,"sys.nation");
-    X_230 := bat.append(X_220,"sys.L1");
+    X_230 := bat.append(X_220,"sys.L2");
     X_215 := bat.new(nil:str);
     X_222 := bat.append(X_215,"n_name");
     X_232 := bat.append(X_222,"revenue");

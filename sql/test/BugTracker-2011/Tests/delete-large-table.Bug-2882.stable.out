@@ -48,7 +48,7 @@ Ready.
 #insert into bigtable2882 values (1);
 [ 1	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -56,7 +56,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 1	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -64,7 +64,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 2	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -72,7 +72,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 4	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -80,7 +80,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 8	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 2 # length
@@ -88,7 +88,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 16	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 2 # length
@@ -96,7 +96,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 32	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 2 # length
@@ -104,7 +104,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 64	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 3 # length
@@ -112,7 +112,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 128	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 3 # length
@@ -120,7 +120,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 256	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 3 # length
@@ -128,7 +128,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 512	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 4 # length
@@ -136,7 +136,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 1024	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 4 # length
@@ -144,7 +144,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 2048	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 4 # length
@@ -152,7 +152,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 4096	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 4 # length
@@ -160,7 +160,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 8192	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 5 # length
@@ -168,7 +168,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 16384	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 5 # length
@@ -176,7 +176,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 32768	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 5 # length
@@ -184,7 +184,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 65536	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 6 # length
@@ -192,7 +192,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 131072	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 6 # length
@@ -200,7 +200,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 262144	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 6 # length
@@ -208,7 +208,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 524288	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 7 # length
@@ -216,7 +216,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 1048576	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 7 # length
@@ -224,7 +224,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 2097152	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 7 # length
@@ -232,7 +232,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 4194304	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 7 # length
@@ -240,7 +240,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 8388608	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 8 # length
@@ -248,7 +248,7 @@ Ready.
 #insert into bigtable2882 (select * from bigtable2882);
 [ 16777216	]
 #select count(*) from bigtable2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 8 # length
@@ -257,7 +257,7 @@ Ready.
 #insert into test2882(id) SELECT ROW_NUMBER () OVER () FROM bigtable2882 limit 20000000;
 [ 20000000	]
 #select count(*) from test2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 8 # length
@@ -286,7 +286,7 @@ Ready.
 #delete from test2882 where id = 20000000;
 [ 1	]
 #select count(*) from test2882;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 8 # length

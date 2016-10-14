@@ -43,7 +43,7 @@ Ready.
 #select abs(expected - computed) as err
 #from alphatest 
 #where abs(expected - computed)>epsilon;
-% sys.L # table_name
+% sys.L1 # table_name
 % err # name
 % double # type
 % 24 # length
@@ -109,7 +109,7 @@ Ready.
 #    set z1 = sin(radians(pdec));
 #select count(S.objID) 
 #from GetNearbyObjects(193.75, 1.48, 0.1) as S;
-% .L4 # table_name
+% .L5 # table_name
 % L4 # name
 % bigint # type
 % 1 # length
@@ -142,8 +142,8 @@ Ready.
 #        return ob;
 #end;
 #select fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest;
-% .L # table_name
-% fgetnearestobjidalleq_single_value # name
+% .L1 # table_name
+% L1 # name
 % bigint # type
 % 1 # length
 [ 0	]

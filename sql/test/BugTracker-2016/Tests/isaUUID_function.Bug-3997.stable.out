@@ -57,7 +57,7 @@ Ready.
 [ "ad887b3d-08f7-c308-7285-354a1857cbc8",	ad887b3d-08f7-c308-7285-354a1857cbc8	]
 [ "c005d6fd-20c3-4d01-91a5-bbe676593530",	c005d6fd-20c3-4d01-91a5-bbe676593530	]
 #SELECT s, u, isaUUID(s) as a_isa_UUID FROM testUUID ORDER BY s;
-% sys.testuuid,	sys.testuuid,	sys.L # table_name
+% sys.testuuid,	sys.testuuid,	sys.L1 # table_name
 % s,	u,	a_isa_uuid # name
 % varchar,	uuid,	boolean # type
 % 36,	0,	5 # length
@@ -65,7 +65,7 @@ Ready.
 [ "ad887b3d-08f7-c308-7285-354a1857cbc8",	ad887b3d-08f7-c308-7285-354a1857cbc8,	true	]
 [ "c005d6fd-20c3-4d01-91a5-bbe676593530",	c005d6fd-20c3-4d01-91a5-bbe676593530,	true	]
 #SELECT s, u, isaUUID(u) as u_isa_UUID FROM testUUID ORDER BY s;
-% sys.testuuid,	sys.testuuid,	sys.L # table_name
+% sys.testuuid,	sys.testuuid,	sys.L1 # table_name
 % s,	u,	u_isa_uuid # name
 % varchar,	uuid,	boolean # type
 % 36,	0,	5 # length
@@ -89,7 +89,7 @@ Ready.
 [ "ad887b3d-08f7-c308-7285-354a1857cbc8",	ad887b3d-08f7-c308-7285-354a1857cbc8	]
 [ "c005d6fd-20c3-4d01-91a5-bbe676593530",	c005d6fd-20c3-4d01-91a5-bbe676593530	]
 #SELECT MIN(u) AS mn, MAX(u) AS mx, COUNT(u) AS cnt, COUNT(DISTINCT u) AS cnt_d FROM testUUID;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
+% sys.L2,	sys.L4,	sys.L6,	sys.L10 # table_name
 % mn,	mx,	cnt,	cnt_d # name
 % uuid,	uuid,	bigint,	bigint # type
 % 0,	0,	1,	1 # length

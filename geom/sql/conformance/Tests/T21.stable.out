@@ -25,8 +25,8 @@ Ready.
 # 14:52:43 >  
 
 #SELECT ST_Length(centerline) FROM road_segments WHERE fid = 106;
-% sys.L # table_name
-% st_length_centerline # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 26	]

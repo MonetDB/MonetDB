@@ -56,7 +56,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 531 # length
+% 549 # length
 project (
 | group by (
 | | project (
@@ -88,9 +88,9 @@ project (
 | | | | ) [ supplier.s_suppkey NOT NULL HASHCOL  = lineitem.l_suppkey NOT NULL ],
 | | | | table(sys.nation) [ nation.n_name NOT NULL as n2.n_name, nation.%TID% NOT NULL as n2.%TID% ] COUNT 
 | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = n2.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ]
-| | ) [ sys.year(orders.o_orderdate NOT NULL) as all_nations.o_year, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L4.L4, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L5.L5, sys.sql_mul(L4.L4, L5.L5) as all_nations.volume, n2.n_name NOT NULL as all_nations.nation, sys.=(all_nations.nation NOT NULL, char(25) "BRAZIL") as L6.L6, sys.isnull(L6.L6) as L7.L7, sys.ifthenelse(L7.L7, boolean "false", L6.L6) as L10.L10, sys.ifthenelse(L10.L10, all_nations.volume, decimal(33,4)[tinyint "0"]) as L1.L1 ]
-| ) [ all_nations.o_year ] [ all_nations.o_year, sys.sum no nil (L1.L1) as L2.L2, sys.sum no nil (all_nations.volume) as L3.L3 ]
-) [ all_nations.o_year, sys.sql_div(decimal(39,8)[L2] as L2, L3) as L3.mkt_share ] [ all_nations.o_year ASC ]
+| | ) [ sys.year(orders.o_orderdate NOT NULL) as all_nations.o_year, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L10.L10, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L11.L11, sys.sql_mul(L10.L10, L11.L11) as all_nations.volume, n2.n_name NOT NULL as all_nations.nation, sys.=(all_nations.nation NOT NULL, char(25) "BRAZIL") as L12.L12, sys.isnull(L12.L12) as L13.L13, sys.ifthenelse(L13.L13, boolean "false", L12.L12) as L14.L14, sys.ifthenelse(L14.L14, all_nations.volume, decimal(33,4)[tinyint "0"]) as L4.L4 ]
+| ) [ all_nations.o_year ] [ all_nations.o_year, sys.sum no nil (L4.L4) as L5.L5, sys.sum no nil (all_nations.volume) as L6.L6 ]
+) [ all_nations.o_year, sys.sql_div(decimal(39,8)[L5] as L5, L6) as L7.mkt_share ] [ all_nations.o_year ASC ]
 
 # 22:46:30 >  
 # 22:46:30 >  "Done."

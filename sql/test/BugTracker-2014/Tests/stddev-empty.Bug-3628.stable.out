@@ -67,19 +67,19 @@ Ready.
 #INSERT INTO "tm_bug" VALUES (3,1.0,2);
 [ 1	]
 #select count(uid) as cnt1,stddev_pop(weight) as f1 from tm_bug where filter = 1;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % cnt1,	f1 # name
 % bigint,	double # type
 % 1,	24 # length
 [ 2,	0	]
 #select count(uid) as cnt2,stddev_pop(weight) as f2 from tm_bug where filter = 2;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % cnt2,	f2 # name
 % bigint,	double # type
 % 1,	24 # length
 [ 1,	0	]
 #select count(uid) as cnt3,stddev_pop(weight) as f3 from tm_bug where filter = 3;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % cnt3,	f3 # name
 % bigint,	double # type
 % 1,	24 # length

@@ -29,7 +29,7 @@ Ready.
 [ 1	]
 #commit;
 #select id, sum(val) AS valsum from nutki group by id having sum(val)>1;
-% sys.nutki,	sys.L1 # table_name
+% sys.nutki,	sys.L2 # table_name
 % id,	valsum # name
 % int,	hugeint # type
 % 1,	1 # length

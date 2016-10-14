@@ -25,8 +25,8 @@ Ready.
 # 14:23:22 >  
 
 #SELECT ST_IsSimple(shore) FROM lakes WHERE name = 'Blue Lake';
-% sys.L # table_name
-% st_issimple_shore # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

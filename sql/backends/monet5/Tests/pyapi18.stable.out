@@ -33,8 +33,8 @@ Ready.
 [ 1	]
 #CREATE FUNCTION pyapi_date(d DATE) RETURNS STRING LANGUAGE PYTHON { return d; };
 #SELECT pyapi_date(d) FROM date_table;
-% sys.L # table_name
-% pyapi_date_d # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 10 # length
 [ "2000-10-10"	]
@@ -43,8 +43,8 @@ Ready.
 [ 1	]
 #CREATE FUNCTION pyapi_time(d TIME) RETURNS STRING LANGUAGE PYTHON { return d; };
 #SELECT pyapi_time(d) FROM time_table;
-% sys.L # table_name
-% pyapi_time_d # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 8 # length
 [ "12:00:00"	]
@@ -53,8 +53,8 @@ Ready.
 [ 1	]
 #CREATE FUNCTION pyapi_timestamp(d TIMESTAMP) RETURNS STRING LANGUAGE PYTHON { return d; };
 #SELECT pyapi_timestamp(d) FROM timestamp_table;
-% sys.L # table_name
-% pyapi_timestamp_d # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 26 # length
 [ "2000-01-01 12:00:00.000000"	]
@@ -63,8 +63,8 @@ Ready.
 [ 1	]
 #CREATE FUNCTION pyapi_decimal(d DECIMAL) RETURNS DOUBLE LANGUAGE PYTHON { return d; };
 #SELECT pyapi_decimal(d) FROM decimal_table;
-% sys.L # table_name
-% pyapi_decimal_d # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 123.457	]
@@ -135,8 +135,8 @@ Ready.
 #    return numpy.mean(d) # average 100k decimal values
 #};
 #SELECT pyapi_inp_decimal(d) FROM pyapi_ret_decimal();
-% .L # table_name
-% pyapi_inp_decimal_d # name
+% .L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 5e+04	]

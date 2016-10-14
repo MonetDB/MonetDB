@@ -30,152 +30,152 @@ Ready.
 # 23:37:49 >  
 
 #SELECT json.isvalid('[0,1]');
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isvalid('[0,,1]');
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid(null); 	-- false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid(''); 	-- false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('null'); 	-- TRUE, must be false 
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('"'); 	-- false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('""'); 	-- false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('"""'); 	-- TRUE, must be false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('"\""'); 	-- TRUE, must be false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('""""'); 	-- false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('"\"\""'); 	-- false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('[]'); 	-- true
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('[null]'); 	-- true
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('[""]'); 	-- FALSE, must be true
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('["""]'); 	-- TRUE, must be false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('["\""]'); 	-- true
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('[""""]'); 	-- false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('["\"\""]'); 	-- FALSE, must be true
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('{}'); 	-- true
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('{"test":null}'); 	-- true
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('{"test":""}'); 	-- FALSE, must be true
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('{"test":"""}'); 	-- TRUE, must be false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('{"test":"\""}'); 	-- true
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('{"test":""""}'); 	-- false
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('{"test":"\"\""}'); 	-- FALSE, must be true
-% .L # table_name
-% isvalid_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

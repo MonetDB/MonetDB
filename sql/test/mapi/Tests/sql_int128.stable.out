@@ -259,14 +259,14 @@ end user.s12_1;
 #SET d = c * b;
 #SET e = d + a;
 #SELECT a, b, c, d, e;
-% .L1,	.L2,	.L3,	.L4,	.L4 # table_name
-% L1,	L2,	L3,	L4,	single_value # name
+% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
+% L1,	L2,	L3,	L4,	L5 # name
 % hugeint,	hugeint,	hugeint,	hugeint,	hugeint # type
 % 19,	11,	29,	39,	39 # length
 [ 1234567890987654321,	10000000000,	12345678909876543210000000000,	123456789098765432100000000000000000000,	123456789098765432101234567890987654321	]
 #SELECT 123456789098765432101234567890987654321;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % hugeint # type
 % 39 # length
 [ 123456789098765432101234567890987654321	]

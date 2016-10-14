@@ -83,16 +83,16 @@ top N (
 | | | | | | | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
 | | | | | | | | ) [ nation.n_name NOT NULL = char(25) "SAUDI ARABIA" ]
 | | | | | | | ) [ supplier.%supplier_s_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ]
-| | | | | | ) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.s_name NOT NULL, l1.l_orderkey NOT NULL HASHCOL , l1.l_suppkey NOT NULL, sys.identity(supplier.s_suppkey NOT NULL) HASHCOL  as L3.L3 ],
+| | | | | | ) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.s_name NOT NULL, l1.l_orderkey NOT NULL HASHCOL , l1.l_suppkey NOT NULL, sys.identity(supplier.s_suppkey NOT NULL) HASHCOL  as L4.L4 ],
 | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL  as l2.l_orderkey, lineitem.l_suppkey NOT NULL as l2.l_suppkey ] COUNT 
 | | | | | ) [ l2.l_orderkey NOT NULL HASHCOL  = l1.l_orderkey NOT NULL, l2.l_suppkey NOT NULL != l1.l_suppkey NOT NULL ]
-| | | | ) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.s_name NOT NULL, l1.l_orderkey NOT NULL HASHCOL , l1.l_suppkey NOT NULL, sys.identity(supplier.s_suppkey NOT NULL) HASHCOL  as L5.L5 ],
+| | | | ) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.s_name NOT NULL, l1.l_orderkey NOT NULL HASHCOL , l1.l_suppkey NOT NULL, sys.identity(supplier.s_suppkey NOT NULL) HASHCOL  as L6.L6 ],
 | | | | select (
-| | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL as L2.l_orderkey, lineitem.l_suppkey NOT NULL as L2.l_suppkey, lineitem.l_commitdate NOT NULL as L2.l_commitdate, lineitem.l_receiptdate NOT NULL as L2.l_receiptdate ] COUNT 
-| | | | ) [ L2.l_receiptdate NOT NULL > L2.l_commitdate NOT NULL ]
-| | | ) [ L2.l_orderkey NOT NULL HASHCOL  = l1.l_orderkey NOT NULL, L2.l_suppkey NOT NULL != l1.l_suppkey NOT NULL ]
+| | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL as L3.l_orderkey, lineitem.l_suppkey NOT NULL as L3.l_suppkey, lineitem.l_commitdate NOT NULL as L3.l_commitdate, lineitem.l_receiptdate NOT NULL as L3.l_receiptdate ] COUNT 
+| | | | ) [ L3.l_receiptdate NOT NULL > L3.l_commitdate NOT NULL ]
+| | | ) [ L3.l_orderkey NOT NULL HASHCOL  = l1.l_orderkey NOT NULL, L3.l_suppkey NOT NULL != l1.l_suppkey NOT NULL ]
 | | ) [ supplier.s_name NOT NULL ] [ supplier.s_name NOT NULL, sys.count() NOT NULL as L1.L1 ]
-| ) [ supplier.s_name NOT NULL, L1 NOT NULL as L1.numwait ] [ L1.numwait NOT NULL, supplier.s_name ASC NOT NULL ]
+| ) [ supplier.s_name NOT NULL, L1 NOT NULL as L2.numwait ] [ L2.numwait NOT NULL, supplier.s_name ASC NOT NULL ]
 ) [ bigint "100" ]
 
 # 22:46:34 >  

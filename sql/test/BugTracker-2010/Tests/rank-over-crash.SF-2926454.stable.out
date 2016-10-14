@@ -33,8 +33,8 @@ Ready.
 #rank() over (order by sum(score) desc) -- cannot use alias 'totalscore' here
 #from score_table
 #group by s_name;
-% sys.score_table,	sys.L1,	sys.L3 # table_name
-% s_name,	totalscore,	L3 # name
+% sys.score_table,	sys.L2,	sys.L4 # table_name
+% s_name,	totalscore,	L4 # name
 % varchar,	bigint,	int # type
 % 3,	3,	1 # length
 [ "foo",	180,	1	]

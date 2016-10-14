@@ -25,8 +25,8 @@ Ready.
 # 15:15:54 >  
 
 #SELECT ST_Distance("position", boundary) FROM bridges, named_places WHERE bridges.name = 'Cam Bridge' AND named_places.name = 'Ashton';
-% sys.L # table_name
-% st_distance_position # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 12	]

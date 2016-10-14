@@ -25,20 +25,20 @@ Ready.
 # 11:50:34 >  
 
 #select isnull(1);
-% .L # table_name
-% isnull_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #select isnull(1)=false;
-% .L # table_name
-% isnull_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select (1=1)=true;
-% .L # table_name
-% =_=_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

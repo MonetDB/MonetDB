@@ -300,13 +300,13 @@ Ready.
 [ "timestamp",	0	]
 [ "timestamp",	0	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % char,	bigint # type
 % 9,	3 # length
 [ "transient",	160	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % char,	bigint # type
 % 10,	3 # length

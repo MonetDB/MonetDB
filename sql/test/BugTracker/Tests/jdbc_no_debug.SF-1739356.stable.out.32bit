@@ -31,15 +31,15 @@ Ready.
 | | | | | | | table(sys._tables) [ _tables.id, _tables.type ] COUNT  |
 | | | | | | ) [ _tables.type != smallint "2" ]                       |
 | | | | | ) [ _tables.id as tables.id ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as L3.L3 ],                                      |
+| | | | ) [  ] [ sys.count() NOT NULL as L7.L7 ],                    |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | table(tmp._tables) [ _tables.id ] COUNT                  |
 | | | | | ) [ _tables.id as tables.id ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as L3.L3 ]                                       |
-| | | ) [ L3.L3 ]                                                                      |
-| | ) [  ] [ sys.sum no nil (L3.L3) as L3.L3 ]                                         |
-| ) [ L3 NOT NULL as L3.L3 ]                                                           |
+| | | | ) [  ] [ sys.count() NOT NULL as L7.L7 ]                     |
+| | | ) [ L7.L7 ]                                                    |
+| | ) [  ] [ sys.sum no nil (L7.L7) as L7.L7 ]                       |
+| ) [ L7 NOT NULL as L10.L7 ]                                        |
 +--------------------------------------------------------------------+
 18 rows
 Operation successful

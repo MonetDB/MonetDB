@@ -69,8 +69,8 @@ Ready.
 #INSERT INTO foo VALUES ('2016-01-01', '2016-01-31');
 [ 1	]
 #SELECT (dat2-dat1), (dat2-dat1) < 10 FROM foo;
-% sys.L1,	sys.L1 # table_name
-% L1,	<_sql_sub_dat2 # name
+% sys.L1,	sys.L2 # table_name
+% L1,	L2 # name
 % int,	boolean # type
 % 2,	5 # length
 [ 1,	true	]

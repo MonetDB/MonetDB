@@ -55,7 +55,7 @@ function user.s4_1():void;
     X_66 := algebra.projection(C_51,X_17);
     X_67:bat[:hge] := batcalc.*(X_60,X_66);
     X_69:hge := aggr.sum(X_67);
-    sql.resultSet("sys.L1","revenue","decimal",39,4,10,X_69);
+    sql.resultSet("sys.L2","revenue","decimal",39,4,10,X_69);
 end user.s4_1;
 #inline               actions= 0 time=7 usec 
 #candidates           actions= 1 time=61 usec 

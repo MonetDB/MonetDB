@@ -1939,7 +1939,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 
 		if (!mnstr_writeLng(s, (lng) max(max(strlen(c->tn), strlen(c->name)), strlen(type->sqlname)) + 1) ||
 				!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, type->sqlname) ||
-				!mnstr_writeInt(s, typelen) || !mnstr_writeInt(s, c->type.digits) || !mnstr_writeInt(s, c->type.scale)) {
+				!mnstr_writeInt(s, typelen) || !mnstr_writeInt(s, c->type.digits) || !mnstr_writeInt(s, type->eclass == EC_SEC ? 3 : c->type.scale)) {
 			fres = -1;
 			goto cleanup;
 		}

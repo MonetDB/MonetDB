@@ -37,7 +37,7 @@ Ready.
 #	AND location LIKE 'L318'
 #GROUP BY "date"
 #ORDER BY "date";
-% sys.L1,	sys.L4 # table_name
+% sys.L2,	sys.L6 # table_name
 % date,	avgtemperature # name
 % date,	decimal # type
 % 10,	7 # length

@@ -63,9 +63,9 @@ project (
 | | | | | ) [ lineitem.l_shipinstruct NOT NULL = char(25) "DELIVER IN PERSON", lineitem.l_shipmode NOT NULL in (char(10) "AIR", char(10) "AIR REG") ]
 | | | | ) [ part.p_partkey NOT NULL HASHCOL  = lineitem.l_partkey NOT NULL ]
 | | | ) [ (part.p_brand NOT NULL = char(10) "Brand#12", part.p_container NOT NULL in (char(10) "SM CASE", char(10) "SM BOX", char(10) "SM PACK", char(10) "SM PKG"), lineitem.l_quantity NOT NULL >= decimal(15,2)[tinyint "1"], lineitem.l_quantity NOT NULL <= decimal(15,2)[sys.sql_add(tinyint "1", tinyint "10")], int "1" <= part.p_size NOT NULL <= int "5") or ((part.p_brand NOT NULL = char(10) "Brand#23", part.p_container NOT NULL in (char(10) "MED BAG", char(10) "MED BOX", char(10) "MED PKG", char(10) "MED PACK"), lineitem.l_quantity NOT NULL >= decimal(15,2)[tinyint "10"], lineitem.l_quantity NOT NULL <= decimal(15,2)[sys.sql_add(tinyint "10", tinyint "10")], int "1" <= part.p_size NOT NULL <= int "10") or (part.p_brand NOT NULL = char(10) "Brand#34", part.p_container NOT NULL in (char(10) "LG CASE", char(10) "LG BOX", char(10) "LG PACK", char(10) "LG PKG"), lineitem.l_quantity NOT NULL >= decimal(15,2)[tinyint "20"], lineitem.l_quantity NOT NULL <= decimal(15,2)[sys.sql_add(tinyint "20", tinyint "10")], int "1" <= part.p_size NOT NULL <= int "15")) ]
-| | ) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L2.L2, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L3.L3, sys.sql_mul(L2.L2, L3.L3) as L4.L4 ]
-| ) [  ] [ sys.sum no nil (L4.L4) as L1.L1 ]
-) [ L1 as L1.revenue ]
+| | ) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L3.L3, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L4.L4, sys.sql_mul(L3.L3, L4.L4) as L5.L5 ]
+| ) [  ] [ sys.sum no nil (L5.L5) as L1.L1 ]
+) [ L1 as L2.revenue ]
 
 # 22:46:33 >  
 # 22:46:33 >  "Done."

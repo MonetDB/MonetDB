@@ -24,8 +24,13 @@ Ready.
 # 11:28:15 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=37990 
 # 11:28:15 >  
 
-% . # table_name
-% i_add_video_set_single_value # name
+# 17:12:50 >  
+# 17:12:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26340" "--port=31202"
+# 17:12:50 >  
+
+#select i_add_video_set(21, 'fabchannel2007');
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 0	]
