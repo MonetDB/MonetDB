@@ -4145,7 +4145,7 @@ static char* mapi_convert_blob(struct MapiColumn *col) {
 	if (length < 0) {
 		return NULL;
 	}
-	if (24 + 3 * length > col->dynamic_write_bufsiz) {
+	if (24 + 3 * length > (lng) col->dynamic_write_bufsiz) {
 		col->dynamic_write_bufsiz = (size_t) 24 + 3 * length;
 		if (col->dynamic_write_buf) free(col->dynamic_write_buf);
 		col->dynamic_write_buf = malloc(col->dynamic_write_bufsiz);
@@ -4153,7 +4153,7 @@ static char* mapi_convert_blob(struct MapiColumn *col) {
 			return NULL;
 		}
 	}
-	if (conversion_blob_to_string(col->dynamic_write_buf, col->dynamic_write_bufsiz, col->buffer_ptr + sizeof(lng), length) < 0) {
+	if (conversion_blob_to_string(col->dynamic_write_buf, (int) col->dynamic_write_bufsiz, col->buffer_ptr + sizeof(lng), length) < 0) {
 		return NULL;
 	}
 	return (char*) col->dynamic_write_buf;
@@ -4258,7 +4258,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 						!mnstr_readInt(mid->from, &result->fields[i].scale)) {
 					return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 				}
-				
+
 				if (!mnstr_readInt(mid->from, &null_len)) {
 					return mapi_setError(mid, "read error from stream while reading result set", "read_into_cache", MERROR);
 				}

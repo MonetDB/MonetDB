@@ -357,7 +357,7 @@ conversion_blob_to_string(char *dst, int len, const char *blobdata, size_t nitem
 {
 	char *s;
 	size_t i;
-	size_t expectedlen;
+	int expectedlen;
 
 	if (nitems == ~(size_t) 0)
 		expectedlen = 4;
