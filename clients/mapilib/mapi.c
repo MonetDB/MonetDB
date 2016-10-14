@@ -6236,10 +6236,6 @@ mapi_set_compute_column_width(Mapi mid, int compute_column_width) {
 
 #define NUMERIC_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE)  								\
 	case SQL_BINARY_##fromname: {																					\
-		fromtpe val = *((fromtpe*)col->buffer_ptr);																	\
-		if (val < MIN_VALUE || val > MAX_VALUE) {																	\
-			return mapi_setError(hdl->mid, "Overflow when converting value.", "mapi_fetch_field_"#toname, MERROR);	\
-		}																											\
 		*retval = (totpe) *((fromtpe*)col->buffer_ptr);																\
 		return MOK;																									\
 	}
@@ -6251,11 +6247,15 @@ mapi_set_compute_column_width(Mapi mid, int compute_column_width) {
 #define HGE_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE)
 #endif
 
-float STRTOF(const char *restrict str, char **restrict endptr, int base) {
+static float 
+STRTOF(const char *restrict str, char **restrict endptr, int base) {
+	(void) base;
 	return strtof(str, endptr);
 }
 
-double STRTOD(const char *restrict str, char **restrict endptr, int base) {
+static double 
+STRTOD(const char *restrict str, char **restrict endptr, int base) {
+	(void) base;
 	return strtod(str, endptr);
 }
 
@@ -6289,7 +6289,7 @@ mapi_fetch_field_##typename(MapiHdl hdl, int fnr, type* retval) { 													\
 		}																											\
 	} 																												\
 	/* string conversion */																							\
-	mapi_fetch_field(hdl, fnr);																						\
+	val = mapi_fetch_field(hdl, fnr);																						\
 	if (hdl->mid->error != MOK)	{																					\
 		return hdl->mid->error;																						\
 	}																												\

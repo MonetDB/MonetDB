@@ -3400,7 +3400,6 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *eclass = getArgReference_int(stk, pci, 6);
 	ptr p = getArgReference(stk, pci, 7);
 	int mtype = getArgType(mb, pci, 7);
-	int res_id;
 	str msg;
 	backend *b = NULL;
 

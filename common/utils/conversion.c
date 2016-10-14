@@ -365,7 +365,6 @@ conversion_epoch_optional_tz_to_string(char *dst, int len, const lng *src, lng n
 	short year;
 	unsigned short month, day, hour, min, sec;
 	unsigned int nanosecond;
-	lng time = *src;
 	int res = 0;
 	if (*src == null_value) {
 		strcpy(dst, NULL_STRING);

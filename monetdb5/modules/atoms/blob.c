@@ -211,8 +211,6 @@ blob_tostr(str *tostr, int *l, blob *p)
 int
 sqlblob_tostr(str *tostr, int *l, const blob *p)
 {
-	char *s;
-	size_t i;
 	size_t expectedlen;
 
 	if (p->nitems == ~(size_t) 0)
