@@ -419,7 +419,7 @@ conversion_blob_to_string(char *dst, int len, const char *blobdata, size_t nitem
 	if (nitems == ~(size_t) 0)
 		expectedlen = 4;
 	else
-		expectedlen = 24 + (nitems * 3);
+		expectedlen = (int)(24 + (nitems * 3));
 
 	if (len < expectedlen) return -1;
 

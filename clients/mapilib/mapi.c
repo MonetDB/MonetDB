@@ -6249,14 +6249,32 @@ mapi_set_compute_column_width(Mapi mid, int compute_column_width) {
 
 static float 
 STRTOF(const char *restrict str, char **restrict endptr, int base) {
+#ifdef HAVE_STRTOF
 	(void) base;
 	return strtof(str, endptr);
+#else
+	float d;
+	(void) base;
+	if (sscanf(str, "%g", &d) != 1) {
+		return 0;
+	}
+	return d;
+#endif
 }
 
 static double 
 STRTOD(const char *restrict str, char **restrict endptr, int base) {
 	(void) base;
+#ifdef HAVE_STRTOD
 	return strtod(str, endptr);
+#else
+	double d;
+	(void) base;
+	if (sscanf(str, "%lg", &d) != 1) {
+		return 0;
+	}
+	return d;
+#endif
 }
 
 #define NUMERIC_FETCH_FUNCTION(type, typename, MIN_VALUE, MAX_VALUE, stringconv)									\

@@ -60,7 +60,7 @@ numeric_conversion(hge, hge);
 
 // date conversion, *src is days since 01-01-0001
 int conversion_date_to_string(char *dst, int len, const int *src, int null_value);
-void conversion_date_get_data(int date, short *year, unsigned short *month, unsigned short *day);
+void conversion_date_get_data(const int date, short *out_year, unsigned short *out_month, unsigned short *out_day);
 
 // time conversion, *src is ms since 00:00:00
 int conversion_time_to_string(char *dst, int len, const int *src, int null_value, int digits);
