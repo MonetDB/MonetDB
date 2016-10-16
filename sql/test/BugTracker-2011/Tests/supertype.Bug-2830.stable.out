@@ -25,8 +25,8 @@ Ready.
 # 22:35:24 >  
 
 #select 30. - 0.025;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 7 # length
 [ 29.975	]

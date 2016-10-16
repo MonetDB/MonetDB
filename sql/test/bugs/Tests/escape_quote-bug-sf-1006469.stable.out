@@ -28,8 +28,8 @@ Ready.
 # 11:55:41 >  
 
 #select char_length('\'');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]

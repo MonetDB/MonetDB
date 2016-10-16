@@ -71,15 +71,15 @@ Ready.
 #	"qual"           STRING		   NOT NULL,
 #ALTER TABLE alignments ADD TABLE alignments_1;
 #SELECT COUNT(*) FROM alignments;
-% bam.L2 # table_name
-% L1 # name
+% bam.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 71	]
 #ALTER TABLE alignments ADD TABLE alignments_2;
 #SELECT COUNT(*) FROM alignments;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 142	]

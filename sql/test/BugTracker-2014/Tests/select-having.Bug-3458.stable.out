@@ -50,8 +50,8 @@ Ready.
 #2086	"idxs"	2000	NULL	0	true	0	false	0
 [ 40	]
 #select count(*) from sys.tbls having count(*) > 0;
-% .L2 # table_name
-% L1 # name
+% .L3 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 40	]

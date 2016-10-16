@@ -92,8 +92,8 @@ Ready.
 #and extract(month from t1.opr_date) = t2.m
 #and t1.svalue = t2.svalue
 #order by t1.opr_hr;
-% .t1,	.t1,	.t1,	.L7 # table_name
-% opr_date,	opr_hr,	svalue,	L7 # name
+% .t1,	.t1,	.t1,	.L17 # table_name
+% opr_date,	opr_hr,	svalue,	L17 # name
 % date,	int,	varchar,	double # type
 % 10,	2,	3,	24 # length
 [ 2009-04-01,	1,	"OFF",	-2.5	]
@@ -115,8 +115,8 @@ Ready.
 #and extract(month from t1.opr_date) = t2.m
 #and t1.svalue = t2.svalue
 #order by t1.opr_hr;
-% sys.t1,	sys.t1,	sys.t1,	sys.L7 # table_name
-% opr_date,	opr_hr,	svalue,	L7 # name
+% sys.t1,	sys.t1,	sys.t1,	sys.L17 # table_name
+% opr_date,	opr_hr,	svalue,	L17 # name
 % date,	int,	varchar,	double # type
 % 10,	2,	3,	24 # length
 [ 2009-04-01,	1,	"OFF",	-2.5	]

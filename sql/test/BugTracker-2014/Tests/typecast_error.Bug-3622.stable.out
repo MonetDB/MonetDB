@@ -57,7 +57,7 @@ Ready.
 #GROUP BY refpos
 #ORDER BY cnt DESC
 #LIMIT 10;
-% .s,	.L4 # table_name
+% .s,	.L12 # table_name
 % refpos,	cnt # name
 % smallint,	bigint # type
 % 1,	1 # length

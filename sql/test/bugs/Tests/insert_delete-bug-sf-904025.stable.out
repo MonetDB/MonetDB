@@ -72,32 +72,32 @@ Ready.
 #insert into tmp select name, id from tbls where "type" = 0;
 [ 26	]
 #select count(*) from tmp;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 26	]
 #delete from tmp;
 [ 26	]
 #select count(*) from tmp;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #insert into tmp select name, id from tbls where "type" = 0;
 [ 26	]
 #select count(*) from tmp;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 26	]
 #delete from tmp;
 [ 26	]
 #select count(*) from tmp;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]

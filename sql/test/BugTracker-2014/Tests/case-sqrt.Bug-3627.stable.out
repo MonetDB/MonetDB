@@ -70,8 +70,8 @@ Ready.
 #          FROM t1
 #       ) t0
 #;
-% sys.t0,	sys.t0,	sys.L2 # table_name
-% id,	colint,	L2 # name
+% sys.t0,	sys.t0,	sys.L10 # table_name
+% id,	colint,	L10 # name
 % int,	int,	double # type
 % 1,	2,	24 # length
 [ 1,	-2,	1.414213562	]

@@ -45,14 +45,14 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 216 # length
+% 218 # length
 project (
 | group by (
 | | select (
 | | | project (
 | | | | group by (
 | | | | | join (
-| | | | | | table(sys.lineitem) [ lineitem.l_partkey NOT NULL as L5.l_partkey, lineitem.l_quantity NOT NULL as L5.l_quantity ] COUNT ,
+| | | | | | table(sys.lineitem) [ lineitem.l_partkey NOT NULL as L13.l_partkey, lineitem.l_quantity NOT NULL as L13.l_quantity ] COUNT ,
 | | | | | | project (
 | | | | | | | join (
 | | | | | | | | select (

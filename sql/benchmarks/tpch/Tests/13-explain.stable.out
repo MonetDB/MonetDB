@@ -54,7 +54,7 @@ function user.s4_1():void;
     X_114:void := querylog.define("explain select\n c_count,\n count(*) as custdist\nfrom\n (\n select\n c_custkey,\n count(o_orderkey)\n from\n customer left outer join orders on\n c_custkey = o_custkey\n and o_comment not like \\'%special%requests%\\'\n group by\n c_custkey\n ) as c_orders (c_custkey, c_count)\ngroup by\n c_count\norder by\n custdist desc,\n c_count desc;","sequential_pipe",57);
     X_90 := bat.new(nil:str);
     X_97 := bat.append(X_90,".c_orders");
-    X_107 := bat.append(X_97,".L4");
+    X_107 := bat.append(X_97,".L10");
     X_92 := bat.new(nil:str);
     X_99 := bat.append(X_92,"c_count");
     X_109 := bat.append(X_99,"custdist");

@@ -15,14 +15,14 @@ Ready.
 
 
 #select interval '60' second;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % sec_interval # type
 % 6 # length
 [ 60.000	]
 #select cast(interval '60' second as time);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % time # type
 % 8 # length
 [ 00:01:00	]

@@ -25,50 +25,50 @@ Ready.
 # 20:26:51 >  
 
 #select 0.01;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 5 # length
 [ 0.01	]
 #select .01;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 4 # length
 [ 0.01	]
 #select .1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 3 # length
 [ 0.1	]
 #select .10;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 4 # length
 [ 0.10	]
 #select 01.0;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 5 # length
 [ 1.0	]
 #select 10.0;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 5 # length
 [ 10.0	]
 #select 10.;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 3 # length
 [ 10	]
 #select 0.;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 3 # length
 [ 0	]

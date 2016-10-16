@@ -52,20 +52,20 @@ Ready.
 #	return v;
 #end;
 #select my_abs(-1);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 #select my_abs(1);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 #select my_abs1(1);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -77,8 +77,8 @@ Ready.
 #	return v;
 #end;
 #select my_while(105);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ -5	]
@@ -89,8 +89,8 @@ Ready.
 #	return x;
 #end;
 #select my_declare(105);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 3 # length
 [ 105	]
@@ -102,8 +102,8 @@ Ready.
 #	return x;
 #end;
 #select my_complex_declare(1);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -116,20 +116,20 @@ Ready.
 #	end case;
 #end;
 #select my_case(1);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 3 # length
 [ 100	]
 #select my_case(2);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 3 # length
 [ 200	]
 #select my_case(3);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ -1	]
@@ -142,20 +142,20 @@ Ready.
 #	end case;
 #end;
 #select my_searchcase(1);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 3 # length
 [ 100	]
 #select my_searchcase(2);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 3 # length
 [ 200	]
 #select my_searchcase(3);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ -1	]

@@ -36,15 +36,15 @@ Ready.
 [ 1	]
 #select count(distinct nr) from
 #(SELECT nr, RAND() FROM nr) as x;
-% sys.L3 # table_name
-% L2 # name
+% sys.L7 # table_name
+% L6 # name
 % bigint # type
 % 2 # length
 [ 10	]
 #select count(distinct rnd) from
 #(SELECT nr, RAND() AS rnd FROM nr) as x;
-% .L3 # table_name
-% L2 # name
+% .L7 # table_name
+% L6 # name
 % bigint # type
 % 2 # length
 [ 10	]

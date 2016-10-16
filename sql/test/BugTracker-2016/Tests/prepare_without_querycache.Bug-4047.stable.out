@@ -32,7 +32,7 @@ Ready.
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	1,	1,	0,	2,	2 # length
-[ "tinyint",	1,	0,	"",	"L1",	"L1"	]
+[ "tinyint",	1,	0,	"",	"L2",	"L2"	]
 
 # 12:52:08 >  
 # 12:52:08 >  "Done."

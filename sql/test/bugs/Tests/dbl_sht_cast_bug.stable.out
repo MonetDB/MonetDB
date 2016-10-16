@@ -27,8 +27,8 @@ Ready.
 #SELECT count(g)
 #FROM dbl_sht_cast_bug
 #WHERE ( r - i < (0.08 + 0.42 * (g - r - 0.96)) or g - r > 2.26 );
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]

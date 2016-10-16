@@ -32,8 +32,8 @@ Ready.
 #	(select rand() as r, nr from nr) a,
 #	(select rand() as r, nr from nr) b
 #	where a.r = b.r;
-% .L4 # table_name
-% L3 # name
+% .L12 # table_name
+% L11 # name
 % bigint # type
 % 1 # length
 [ 0	]

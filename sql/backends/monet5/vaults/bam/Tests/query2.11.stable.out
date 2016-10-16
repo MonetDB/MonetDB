@@ -36,7 +36,7 @@ Ready.
 #SELECT l.qname AS qname, l.flag AS l_flag, l.rname AS l_rname, l.pos AS l_pos, l.mapq AS l_mapq, l.cigar AS l_cigar, 
 #    l.rnext AS l_rnext, l.pnext AS l_pnext, l.tlen AS l_tlen, l.seq AS l_seq, l.qual AS l_qual, 
 #                         r.flag AS r_flag, r.rname AS r_rname, r.pos AS r_pos, r.mapq AS r_mapq, r.cigar AS r_cigar, 
-% bam.L1,	bam.L2,	bam.L3,	bam.L4,	bam.L5,	bam.L6,	bam.L7,	bam.L10,	bam.L11,	bam.L12,	bam.L13,	bam.L14,	bam.L15,	bam.L16,	bam.L17,	bam.L20,	bam.L21,	bam.L22,	bam.L23,	bam.L24,	bam.L25 # table_name
+% bam.L13,	bam.L15,	bam.L17,	bam.L21,	bam.L23,	bam.L25,	bam.L27,	bam.L31,	bam.L33,	bam.L35,	bam.L37,	bam.L41,	bam.L43,	bam.L45,	bam.L47,	bam.L51,	bam.L53,	bam.L55,	bam.L57,	bam.L61,	bam.L63 # table_name
 % qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	l_qual,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	r_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 11,	3,	5,	8,	1,	21,	1,	8,	1,	100,	100,	3,	5,	8,	1,	27,	1,	8,	1,	100,	100 # length

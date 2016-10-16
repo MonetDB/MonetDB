@@ -72,8 +72,8 @@ Ready.
 #2086	"idxs"	2000	NULL	0	true	0	false	0
 [ 40	]
 #select row_number() over (order by name) as row, '1' from tbls limit 10;
-% sys.L2,	.L3 # table_name
-% row,	L3 # name
+% sys.L5,	.L7 # table_name
+% row,	L7 # name
 % int,	char # type
 % 2,	1 # length
 [ 1,	"1"	]

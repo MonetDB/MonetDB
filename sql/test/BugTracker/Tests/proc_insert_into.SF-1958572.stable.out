@@ -47,8 +47,8 @@ Ready.
 [ 5,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 6,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select count(*) from proc_insert_into_t1;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 6	]

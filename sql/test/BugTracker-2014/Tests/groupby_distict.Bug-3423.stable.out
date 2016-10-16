@@ -37,8 +37,8 @@ Ready.
 #INSERT into a3423 values (5,21);
 [ 1	]
 #SELECT k as c,count(distinct b) from a3423 group by c;
-% sys.a3423,	sys.L2 # table_name
-% c,	L1 # name
+% sys.a3423,	sys.L4 # table_name
+% c,	L3 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	1	]

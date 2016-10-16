@@ -55,7 +55,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 344 # length
+% 348 # length
 project (
 | group by (
 | | project (
@@ -83,9 +83,9 @@ project (
 | | | | | ) [ n2.n_name NOT NULL in (char(25) "GERMANY", char(25) "FRANCE") ]
 | | | | ) [ customer.%customer_c_nationkey_fkey NOT NULL = n2.%TID% NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ]
 | | | ) [ (n1.n_name NOT NULL = char(25) "FRANCE", n2.n_name NOT NULL = char(25) "GERMANY") or (n1.n_name NOT NULL = char(25) "GERMANY", n2.n_name NOT NULL = char(25) "FRANCE") ]
-| | ) [ n1.n_name NOT NULL as shipping.supp_nation, n2.n_name NOT NULL as shipping.cust_nation, sys.year(lineitem.l_shipdate NOT NULL) as shipping.l_year, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L7.L7, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L10.L10, sys.sql_mul(L7.L7, L10.L10) as shipping.volume ]
-| ) [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year ] [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year, sys.sum no nil (shipping.volume) as L5.L5 ]
-) [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year, L5 as L6.revenue ] [ shipping.supp_nation ASC NOT NULL, shipping.cust_nation ASC NOT NULL, shipping.l_year ASC ]
+| | ) [ n1.n_name NOT NULL as shipping.supp_nation, n2.n_name NOT NULL as shipping.cust_nation, sys.year(lineitem.l_shipdate NOT NULL) as shipping.l_year, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L20.L20, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L21.L21, sys.sql_mul(L20.L20, L21.L21) as shipping.volume ]
+| ) [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year ] [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year, sys.sum no nil (shipping.volume) as L15.L15 ]
+) [ shipping.supp_nation NOT NULL, shipping.cust_nation NOT NULL, shipping.l_year, L15 as L16.revenue ] [ shipping.supp_nation ASC NOT NULL, shipping.cust_nation ASC NOT NULL, shipping.l_year ASC ]
 
 # 22:46:30 >  
 # 22:46:30 >  "Done."

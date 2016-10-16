@@ -40,110 +40,110 @@ Ready.
 #-- simplest examples
 #-- E061-04 like predicate
 #SELECT 'hawkeye' LIKE 'h%' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT LIKE 'h%' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'hawkeye' LIKE 'H%' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'hawkeye' NOT LIKE 'H%' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' LIKE 'indio%' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'hawkeye' NOT LIKE 'indio%' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' LIKE 'h%eye' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT LIKE 'h%eye' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' LIKE '_ndio' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'indio' NOT LIKE '_ndio' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' LIKE 'in__o' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'indio' NOT LIKE 'in__o' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' LIKE 'in_o' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' NOT LIKE 'in_o' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #-- unused escape character
 #SELECT 'hawkeye' LIKE 'h%' ESCAPE '#' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT LIKE 'h%' ESCAPE '#' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' LIKE 'ind_o' ESCAPE '$' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'indio' NOT LIKE 'ind_o' ESCAPE '$' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
@@ -151,158 +151,158 @@ Ready.
 #-- escape character
 #-- E061-05 like predicate with escape clause
 #SELECT 'h%' LIKE 'h#%' ESCAPE '#' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'h%' NOT LIKE 'h#%' ESCAPE '#' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'h%wkeye' LIKE 'h#%' ESCAPE '#' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'h%wkeye' NOT LIKE 'h#%' ESCAPE '#' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'h%wkeye' LIKE 'h#%%' ESCAPE '#' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'h%wkeye' NOT LIKE 'h#%%' ESCAPE '#' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'h%awkeye' LIKE 'h#%a%k%e' ESCAPE '#' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'h%awkeye' NOT LIKE 'h#%a%k%e' ESCAPE '#' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' LIKE '_ndio' ESCAPE '$' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'indio' NOT LIKE '_ndio' ESCAPE '$' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'i_dio' LIKE 'i$_d_o' ESCAPE '$' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'i_dio' NOT LIKE 'i$_d_o' ESCAPE '$' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'i_dio' LIKE 'i$_nd_o' ESCAPE '$' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'i_dio' NOT LIKE 'i$_nd_o' ESCAPE '$' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'i_dio' LIKE 'i$_d%o' ESCAPE '$' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'i_dio' NOT LIKE 'i$_d%o' ESCAPE '$' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #-- escape character same as pattern character
 #SELECT 'maca' LIKE 'm%aca' ESCAPE '%' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'maca' NOT LIKE 'm%aca' ESCAPE '%' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'ma%a' LIKE 'm%a%%a' ESCAPE '%' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'ma%a' NOT LIKE 'm%a%%a' ESCAPE '%' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'bear' LIKE 'b_ear' ESCAPE '_' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'bear' NOT LIKE 'b_ear' ESCAPE '_' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'be_r' LIKE 'b_e__r' ESCAPE '_' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'be_r' NOT LIKE 'b_e__r' ESCAPE '_' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'be_r' LIKE '__e__r' ESCAPE '_' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'be_r' NOT LIKE '__e__r' ESCAPE '_' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
@@ -312,49 +312,49 @@ Ready.
 #-- Be sure to form every test as an ILIKE/NOT ILIKE pair.
 #--
 #SELECT 'hawkeye' ILIKE 'h%' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT ILIKE 'h%' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'hawkeye' ILIKE 'H%' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT ILIKE 'H%' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'hawkeye' ILIKE 'H%Eye' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT ILIKE 'H%Eye' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'Hawkeye' ILIKE 'h%' AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'Hawkeye' NOT ILIKE 'h%' AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length

@@ -171,7 +171,7 @@ function user.s4_1():void;
     X_317:bat[:lng] := batcalc.-(100:lng,X_316);
     X_319:bat[:hge] := batcalc.*(X_298,X_317);
     X_321:hge := aggr.sum(X_319);
-    sql.resultSet("sys.L2","revenue","decimal",39,4,10,X_321);
+    sql.resultSet("sys.L4","revenue","decimal",39,4,10,X_321);
 end user.s4_1;
 #inline               actions= 0 time=11 usec 
 #candidates           actions= 1 time=155 usec 

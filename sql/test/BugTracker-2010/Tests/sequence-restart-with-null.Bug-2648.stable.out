@@ -27,15 +27,15 @@ Ready.
 #create sequence testseq_2648 as integer start with 1;
 #create table testtbl_2648 (id integer);
 #select next value for testseq_2648;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #alter sequence testseq_2648 restart with (select max(id) from testtbl_2648);
 #select next value for testseq_2648;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 2	]

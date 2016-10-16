@@ -30,8 +30,8 @@ Ready.
 #insert into test2 values (1, true);
 [ 1	]
 #select cast(b as smallint), (i > 0 and b) from test2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % smallint,	boolean # type
 % 1,	5 # length
 [ 1,	true	]

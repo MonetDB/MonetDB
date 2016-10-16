@@ -252,9 +252,7 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 		v->vtype = TYPE_int;
 		v->val.ival = int_nil;
 	}
-	if (glb && ret) /* error */
-		garbageCollector(c, mb, glb, glb != 0);
-	q->stk = (backend_stack) glb;
+	q->stk = (backend_stack) glb; /* save garbageCollected stack */
 	if (glb && SQLdebug & 1)
 		printStack(GDKstdout, mb, glb);
 	if (pci->argc >= MAXARG)

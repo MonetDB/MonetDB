@@ -25,26 +25,26 @@ Ready.
 # 11:55:48 >  
 
 #select extract( year from interval '1' year);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 #select extract( day from interval '1' day );
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select extract( day from interval '1 01' day to hour);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select extract( hour from interval '1 01' day to hour);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]

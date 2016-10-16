@@ -27,8 +27,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select distinct count(*) from tabool;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 3	]

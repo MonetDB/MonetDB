@@ -26,15 +26,15 @@ Ready.
 # 19:40:07 >  
 
 #select a+b from (select 1 as a,1 as b) as q order by a limit 1;
-% .L3 # table_name
-% L3 # name
+% .L6 # table_name
+% L6 # name
 % tinyint # type
 % 1 # length
 [ 2	]
 #select a+b from (select 1 as a,1 as b union select 1,1) as q order by a limit
 #1;
-% .L5 # table_name
-% L5 # name
+% .L16 # table_name
+% L16 # name
 % tinyint # type
 % 1 # length
 [ 2	]
