@@ -38,8 +38,8 @@ Ready.
 [ 1,	0.0000000000	]
 [ 2,	-34338492.2153970470	]
 #SELECT t1.id, t2.id, t1.val * t2.val FROM test_num_data t1, test_num_data t2;
-% sys.t1,	sys.t2,	sys.L1 # table_name
-% id,	id,	L1 # name
+% sys.t1,	sys.t2,	sys.L4 # table_name
+% id,	id,	L4 # name
 % int,	int,	decimal # type
 % 1,	1,	38 # length
 [ 1,	1,	0.00000000000000000000	]
@@ -47,8 +47,8 @@ Ready.
 [ 2,	1,	0.00000000000000000000	]
 [ 2,	2,	1179132047626883.59686213585632020900	]
 #SELECT t1.id, t2.id, round(t1.val * t2.val, 30) FROM test_num_data t1, test_num_data t2;
-% sys.t1,	sys.t2,	sys.L1 # table_name
-% id,	id,	L1 # name
+% sys.t1,	sys.t2,	sys.L4 # table_name
+% id,	id,	L4 # name
 % int,	int,	decimal # type
 % 1,	1,	7 # length
 [ 1,	1,	0.00000000000000000000	]

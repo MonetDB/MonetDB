@@ -25,14 +25,14 @@ Ready.
 # 15:12:22 >  
 
 #select ((4.4054292 - 4.40572025343667)^2) + ((52.0903881 - 52.091375762174)^2);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 20 # length
 [ -3.99941117029739	]
 #select cast((4.4054292 - 4.40572025343667)^2 as double) + cast((52.0903881 - 52.091375762174)^2 as double);
-% .L3 # table_name
-% L3 # name
+% .L4 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ -3.99941117	]

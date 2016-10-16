@@ -35,7 +35,7 @@ Ready.
 #	cast(c.name as clob) as column_name, 
 #	cast(null as char(1)) as asc_or_desc, 
 #	cast(null as integer) as cardinality, 
-% .L10,	.L12,	.L14,	sys.L17,	.L21,	.L23,	.L26,	sys.L30,	.L32,	.L34,	.L36,	.L40,	.L42 # table_name
+% .L51,	.L54,	.L57,	sys.L63,	.L66,	.L71,	.L75,	sys.L100,	.L103,	.L106,	.L111,	.L114,	.L117 # table_name
 % table_cat,	table_schem,	table_name,	non_unique,	index_qualifier,	index_name,	type,	ordinal_position,	column_name,	asc_or_desc,	cardinality,	pages,	filter_condition # name
 % clob,	clob,	clob,	smallint,	clob,	clob,	smallint,	smallint,	clob,	char,	int,	int,	clob # type
 % 0,	0,	0,	1,	0,	0,	1,	1,	0,	1,	1,	1,	0 # length

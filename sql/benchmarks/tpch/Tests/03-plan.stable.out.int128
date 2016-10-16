@@ -51,7 +51,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 350 # length
+% 360 # length
 top N (
 | project (
 | | group by (
@@ -69,9 +69,9 @@ top N (
 | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_shipdate NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT 
 | | | | | ) [ lineitem.l_shipdate NOT NULL > date "1995-03-15" ]
 | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ]
-| | | ) [ orders.o_orderdate NOT NULL, orders.o_shippriority NOT NULL, lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L3.L3, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L4.L4, sys.sql_mul(L3.L3, L4.L4) as L5.L5 ]
-| | ) [ lineitem.l_orderkey NOT NULL HASHCOL , orders.o_shippriority NOT NULL, orders.o_orderdate NOT NULL ] [ lineitem.l_orderkey NOT NULL HASHCOL , orders.o_orderdate NOT NULL, orders.o_shippriority NOT NULL, sys.sum no nil (L5.L5) as L1.L1 ]
-| ) [ lineitem.l_orderkey NOT NULL, L1 as L2.revenue, orders.o_orderdate NOT NULL, orders.o_shippriority NOT NULL ] [ L2.revenue, orders.o_orderdate ASC NOT NULL ]
+| | | ) [ orders.o_orderdate NOT NULL, orders.o_shippriority NOT NULL, lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L13.L13, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L14.L14, sys.sql_mul(L13.L13, L14.L14) as L15.L15 ]
+| | ) [ lineitem.l_orderkey NOT NULL HASHCOL , orders.o_shippriority NOT NULL, orders.o_orderdate NOT NULL ] [ lineitem.l_orderkey NOT NULL HASHCOL , orders.o_orderdate NOT NULL, orders.o_shippriority NOT NULL, sys.sum no nil (L15.L15) as L3.L3 ]
+| ) [ lineitem.l_orderkey NOT NULL, L3 as L4.revenue, orders.o_orderdate NOT NULL, orders.o_shippriority NOT NULL ] [ L4.revenue, orders.o_orderdate ASC NOT NULL ]
 ) [ bigint "10" ]
 
 # 22:46:29 >  

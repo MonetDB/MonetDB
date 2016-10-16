@@ -15,8 +15,8 @@ Ready.
 
 
 #select cast(true as smallint);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % smallint # type
 % 1 # length
 [ 1	]

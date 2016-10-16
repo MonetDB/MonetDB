@@ -32,102 +32,102 @@ Ready.
 [ 1	]
 #SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE;
 #SELECT f1 AS "Time TZ" FROM TIMETZ_TBL;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % "Time TZ" # name
 % timetz # type
 % 17 # length
 [ NULL	]
 #SET TIME ZONE INTERVAL '+04:30' HOUR TO MINUTE;
 #SELECT f1 AS "Time TZ" FROM TIMETZ_TBL ORDER BY 1;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % "Time TZ" # name
 % timetz # type
 % 17 # length
 [ NULL	]
 #SET TIME ZONE INTERVAL '+14:00' HOUR TO MINUTE;
 #SELECT f1 AS "Time TZ" FROM TIMETZ_TBL ORDER BY 1;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % "Time TZ" # name
 % timetz # type
 % 17 # length
 [ NULL	]
 #SET TIME ZONE INTERVAL '-07:00' HOUR TO MINUTE;
 #SELECT f1 AS "Time TZ" FROM TIMETZ_TBL ORDER BY 1;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % "Time TZ" # name
 % timetz # type
 % 17 # length
 [ NULL	]
 #SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE;
 #SELECT f1, "hour"(f1) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L1 # table_name
-% f1,	L1 # name
+% sys.timetz_tbl,	sys.L3 # table_name
+% f1,	L3 # name
 % timetz,	int # type
 % 17,	1 # length
 [ NULL,	NULL	]
 #SELECT f1, "minute"(f1) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L1 # table_name
-% f1,	L1 # name
+% sys.timetz_tbl,	sys.L3 # table_name
+% f1,	L3 # name
 % timetz,	int # type
 % 17,	1 # length
 [ NULL,	NULL	]
 #SELECT f1, "second"(f1) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L1 # table_name
-% f1,	L1 # name
+% sys.timetz_tbl,	sys.L3 # table_name
+% f1,	L3 # name
 % timetz,	decimal # type
 % 17,	11 # length
 [ NULL,	NULL	]
 #SELECT f1, extract(hour from f1) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L1 # table_name
-% f1,	L1 # name
+% sys.timetz_tbl,	sys.L3 # table_name
+% f1,	L3 # name
 % timetz,	int # type
 % 17,	1 # length
 [ NULL,	NULL	]
 #SELECT f1, extract(minute from f1) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L1 # table_name
-% f1,	L1 # name
+% sys.timetz_tbl,	sys.L3 # table_name
+% f1,	L3 # name
 % timetz,	int # type
 % 17,	1 # length
 [ NULL,	NULL	]
 #SELECT f1, extract(second from f1) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L1 # table_name
-% f1,	L1 # name
+% sys.timetz_tbl,	sys.L3 # table_name
+% f1,	L3 # name
 % timetz,	decimal # type
 % 17,	11 # length
 [ NULL,	NULL	]
 #SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L1 # table_name
-% f1,	L1 # name
+% sys.timetz_tbl,	sys.L3 # table_name
+% f1,	L3 # name
 % timetz,	time # type
 % 17,	15 # length
 [ NULL,	NULL	]
 #SELECT f1, sql_add(f1, cast(2*60*60 as interval second)) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L2 # table_name
-% f1,	L2 # name
+% sys.timetz_tbl,	sys.L4 # table_name
+% f1,	L4 # name
 % timetz,	timetz # type
 % 17,	21 # length
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, 12*60*60.0 + 66) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L1 # table_name
-% f1,	L1 # name
+% sys.timetz_tbl,	sys.L3 # table_name
+% f1,	L3 # name
 % timetz,	time # type
 % 17,	15 # length
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast(2*60*60 as interval second)) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L2 # table_name
-% f1,	L2 # name
+% sys.timetz_tbl,	sys.L4 # table_name
+% f1,	L4 # name
 % timetz,	timetz # type
 % 17,	21 # length
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast('23:22:21' as timetz)) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	sys.L2 # table_name
-% f1,	L2 # name
+% sys.timetz_tbl,	sys.L4 # table_name
+% f1,	L4 # name
 % timetz,	sec_interval # type
 % 17,	5 # length
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(cast('23:22:21' as timetz), f1) FROM TIMETZ_TBL;
-% sys.timetz_tbl,	.L2 # table_name
-% f1,	L2 # name
+% sys.timetz_tbl,	.L4 # table_name
+% f1,	L4 # name
 % timetz,	sec_interval # type
 % 17,	5 # length
 [ NULL,	NULL	]

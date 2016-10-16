@@ -24,12 +24,12 @@ Ready.
 
 [ 1	]
 #SELECT (1) as "a" FROM tbl1 WHERE id1 = 2;
-% .L1 # table_name
+% .L2 # table_name
 % a # name
 % tinyint # type
 % 1 # length
 #SELECT (1) as "a" FROM tbl1 WHERE ( id1 = 1 AND name = 'one' AND NOT id = 1);
-% .L1 # table_name
+% .L2 # table_name
 % a # name
 % tinyint # type
 % 1 # length

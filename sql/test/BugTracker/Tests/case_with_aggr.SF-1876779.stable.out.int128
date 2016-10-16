@@ -29,20 +29,20 @@ Ready.
 
 #CREATE TABLE casebug(a int);
 #SELECT SUM(a) FROM casebug;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % hugeint # type
 % 40 # length
 [ NULL	]
 #SELECT MIN(a) FROM casebug;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % int # type
 % 11 # length
 [ NULL	]
 #SELECT COALESCE(MIN(a), 0) FROM casebug;
-% sys.L2 # table_name
-% L2 # name
+% sys.L4 # table_name
+% L4 # name
 % int # type
 % 1 # length
 [ 0	]

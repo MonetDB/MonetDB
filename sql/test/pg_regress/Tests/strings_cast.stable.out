@@ -72,7 +72,7 @@ Ready.
 #INSERT INTO TEXT_TBL VALUES ('hi de ho neighbor');
 [ 1	]
 #SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
-% sys.L2 # table_name
+% sys.L3 # table_name
 % text(char) # name
 % clob # type
 % 4 # length
@@ -80,7 +80,7 @@ Ready.
 [ "ab"	]
 [ "abcd"	]
 #SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
-% sys.L2 # table_name
+% sys.L3 # table_name
 % text(varchar) # name
 % clob # type
 % 4 # length
@@ -88,27 +88,27 @@ Ready.
 [ "ab"	]
 [ "abcd"	]
 #SELECT CAST('namefield' AS text) AS "text(name)";
-% .L2 # table_name
+% .L3 # table_name
 % text(name) # name
 % clob # type
 % 9 # length
 [ "namefield"	]
 #SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
-% sys.L2 # table_name
+% sys.L3 # table_name
 % char(text) # name
 % char # type
 % 10 # length
 [ "doh!"	]
 [ "hi de ho n"	]
 #SELECT CAST(f1 AS char(20)) AS "char(text)" FROM TEXT_TBL;
-% sys.L2 # table_name
+% sys.L3 # table_name
 % char(text) # name
 % char # type
 % 20 # length
 [ "doh!"	]
 [ "hi de ho neighbor"	]
 #SELECT CAST(f1 AS char(10)) AS "char(varchar)" FROM VARCHAR_TBL;
-% sys.L2 # table_name
+% sys.L3 # table_name
 % char(varchar) # name
 % char # type
 % 10 # length
@@ -116,20 +116,20 @@ Ready.
 [ "ab"	]
 [ "abcd"	]
 #SELECT CAST('namefield' AS char(10)) AS "char(name)";
-% .L2 # table_name
+% .L3 # table_name
 % char(name) # name
 % char # type
 % 10 # length
 [ "namefield"	]
 #SELECT CAST(f1 AS varchar(3)) AS "varchar(text)" FROM TEXT_TBL;
-% sys.L2 # table_name
+% sys.L3 # table_name
 % varchar(text) # name
 % varchar # type
 % 3 # length
 [ "doh"	]
 [ "hi "	]
 #SELECT CAST(f1 AS varchar(3)) AS "varchar(char)" FROM CHAR_TBL;
-% sys.L2 # table_name
+% sys.L3 # table_name
 % varchar(char) # name
 % varchar # type
 % 3 # length
@@ -137,7 +137,7 @@ Ready.
 [ "ab"	]
 [ "abc"	]
 #SELECT CAST('namefield' AS varchar(3)) AS "varchar(name)";
-% .L2 # table_name
+% .L3 # table_name
 % varchar(name) # name
 % varchar # type
 % 3 # length

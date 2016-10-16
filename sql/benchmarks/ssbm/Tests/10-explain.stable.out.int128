@@ -49,7 +49,7 @@ function user.s4_1():void;
     X_172 := bat.append(X_165,"sys.customer");
     X_181 := bat.append(X_172,"sys.supplier");
     X_188 := bat.append(X_181,"sys.dwdate");
-    X_197 := bat.append(X_188,"sys.L2");
+    X_197 := bat.append(X_188,"sys.L6");
     X_167 := bat.new(nil:str);
     X_174 := bat.append(X_167,"c_city");
     X_183 := bat.append(X_174,"s_city");

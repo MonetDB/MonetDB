@@ -40,14 +40,14 @@ Ready.
 #	"departure_date"    date,
 #	"departure_harbour" varchar(30),
 #select median(departure_date) - min(departure_date) from voyages;
-% sys.L3 # table_name
-% L3 # name
+% sys.L5 # table_name
+% L5 # name
 % int # type
 % 11 # length
 [ NULL	]
 #select max(departure_date) - min(departure_date) from voyages;
-% sys.L3 # table_name
-% L3 # name
+% sys.L5 # table_name
+% L5 # name
 % int # type
 % 11 # length
 [ NULL	]

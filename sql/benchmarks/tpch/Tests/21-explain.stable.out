@@ -65,7 +65,7 @@ function user.s4_1():void;
     X_271:void := querylog.define("explain select\n s_name,\n count(*) as numwait\nfrom\n supplier,\n lineitem l1,\n orders,\n nation\nwhere\n s_suppkey = l1.l_suppkey\n and o_orderkey = l1.l_orderkey\n and o_orderstatus = \\'F\\'\n and l1.l_receiptdate > l1.l_commitdate\n and exists (\n select\n *\n from\n lineitem l2\n where\n l2.l_orderkey = l1.l_orderkey\n and l2.l_suppkey <> l1.l_suppkey\n )\n and not exists (\n select\n *\n from\n lineitem l3\n where\n l3.l_orderkey = l1.l_orderkey\n and l3.l_suppkey <> l1.l_suppkey\n and l3.l_receiptdate > l3.l_commitdate\n )\n and s_nationkey = n_nationkey\n and n_name = \\'SAUDI ARABIA\\'\ngroup by\n s_name\norder by\n numwait desc,\n s_name\nlimit 100;","sequential_pipe",97);
     X_245 := bat.new(nil:str);
     X_252 := bat.append(X_245,"sys.supplier");
-    X_262 := bat.append(X_252,"sys.L2");
+    X_262 := bat.append(X_252,"sys.L22");
     X_247 := bat.new(nil:str);
     X_254 := bat.append(X_247,"s_name");
     X_264 := bat.append(X_254,"numwait");

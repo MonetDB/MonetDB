@@ -63,20 +63,20 @@ Ready.
 [ NULL,	1	]
 [ 2,	1	]
 #select sum(a) from t;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % real # type
 % 15 # length
 [ 2	]
 #select sum(a * b) from t;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % real # type
 % 15 # length
 [ 2	]
 #select sum(a), sum(a * b) from t;
-% sys.L2,	sys.L4 # table_name
-% L1,	L3 # name
+% sys.L4,	sys.L7 # table_name
+% L3,	L6 # name
 % real,	real # type
 % 15,	15 # length
 [ 2,	2	]

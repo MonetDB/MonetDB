@@ -29,8 +29,8 @@ Ready.
 #INSERT INTO bug_2822 VALUES (0);
 [ 1	]
 #SELECT CASE WHEN (c = 0) THEN 0 ELSE (c / (c + 1)) END FROM bug_2822;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 0	]

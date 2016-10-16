@@ -63,9 +63,9 @@ project (
 | | | | ) [ lineorder.%lineorder_lo_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_custkey_fkey ],
 | | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
 | | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
-| | ) [ dwdate.d_year, customer.c_nation, lineorder.lo_revenue, lineorder.lo_supplycost, bigint[lineorder.lo_revenue] as L3.L3, bigint[lineorder.lo_supplycost] as L4.L4, sys.sql_sub(L3.L3, L4.L4) as L5.L5 ]
-| ) [ dwdate.d_year, customer.c_nation ] [ dwdate.d_year, customer.c_nation, sys.sum no nil (L5.L5) as L1.L1 ]
-) [ dwdate.d_year, customer.c_nation, L1 as L2.profit1 ] [ dwdate.d_year ASC, customer.c_nation ASC ]
+| | ) [ dwdate.d_year, customer.c_nation, lineorder.lo_revenue, lineorder.lo_supplycost, bigint[lineorder.lo_revenue] as L14.L14, bigint[lineorder.lo_supplycost] as L15.L15, sys.sql_sub(L14.L14, L15.L15) as L16.L16 ]
+| ) [ dwdate.d_year, customer.c_nation ] [ dwdate.d_year, customer.c_nation, sys.sum no nil (L16.L16) as L4.L4 ]
+) [ dwdate.d_year, customer.c_nation, L4 as L5.profit1 ] [ dwdate.d_year ASC, customer.c_nation ASC ]
 
 # 23:08:59 >  
 # 23:08:59 >  "Done."

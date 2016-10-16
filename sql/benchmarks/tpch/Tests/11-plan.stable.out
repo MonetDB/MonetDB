@@ -55,7 +55,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 237 # length
+% 240 # length
 project (
 | project (
 | | semijoin (

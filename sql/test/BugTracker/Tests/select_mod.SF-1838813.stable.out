@@ -24,14 +24,14 @@ Ready.
 # 00:15:33 >  
 
 #select 5 % 3;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 2	]
 #select 5.0 % 3;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 4 # length
 [ 2.0	]

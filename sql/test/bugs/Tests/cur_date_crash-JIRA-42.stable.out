@@ -37,13 +37,13 @@ Ready.
 % int # type
 % 1 # length
 #SELECT CURDATE() FROM foo;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % date # type
 % 10 # length
 #SELECT CURDATE() FROM foo WHERE bar NOT IN (SELECT bar FROM foo1);
-% .L5 # table_name
-% L5 # name
+% .L13 # table_name
+% L13 # name
 % date # type
 % 10 # length
 #drop table foo1;

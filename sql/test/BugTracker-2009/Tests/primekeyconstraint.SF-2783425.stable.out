@@ -47,22 +47,22 @@ Ready.
 [ 5,	NULL	]
 [ 5,	NULL	]
 #select count(way), way, idx from way_nds group by way, idx having count(way) > 1;
-% sys.L2,	sys.way_nds,	sys.way_nds # table_name
-% L1,	way,	idx # name
+% sys.L3,	sys.way_nds,	sys.way_nds # table_name
+% L2,	way,	idx # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 [ 2,	1,	1	]
 [ 2,	5,	NULL	]
 #select count(idx), way, idx from way_nds group by way, idx having count(idx) > 1;
-% sys.L2,	sys.way_nds,	sys.way_nds # table_name
-% L1,	way,	idx # name
+% sys.L3,	sys.way_nds,	sys.way_nds # table_name
+% L2,	way,	idx # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 [ 2,	1,	1	]
 [ 2,	NULL,	3	]
 #select count(*), way, idx from way_nds group by way, idx having count(*) > 1;
-% sys.L2,	sys.way_nds,	sys.way_nds # table_name
-% L1,	way,	idx # name
+% sys.L3,	sys.way_nds,	sys.way_nds # table_name
+% L2,	way,	idx # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 [ 2,	1,	1	]

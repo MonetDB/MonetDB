@@ -43,7 +43,7 @@ stdout of test 'set_sql_debug_64__breaking_the_DB.SF-1906287` in directory 'sql/
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 #select u.name, u.fullname, s.name as default_schema from sys.users u, sys.schemas s where u.default_schema = s.id and u.name like '%skyserver%';
-% .u,	.u,	sys.L2 # table_name
+% .u,	.u,	sys.L11 # table_name
 % name,	fullname,	default_schema # name
 % varchar,	varchar,	varchar # type
 % 9,	10,	3 # length

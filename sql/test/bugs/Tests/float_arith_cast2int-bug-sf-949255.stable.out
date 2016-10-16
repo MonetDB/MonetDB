@@ -29,20 +29,20 @@ Ready.
 
 [ 1	]
 #select f/f from x;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ 1	]
 #select cast(3.14/3.14 as integer);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 #select cast(f/f as integer) from x;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]

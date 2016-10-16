@@ -31,17 +31,17 @@ Ready.
 | | | | | | | table(sys._tables) [ _tables.id, _tables.type ] COUNT  |
 | | | | | | ) [ _tables.type != smallint "2" ]                       |
 | | | | | ) [ _tables.id as tables.id ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as L7.L7 ],                    |
+| | | | ) [  ] [ sys.count() NOT NULL as L40.L40 ],                  |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | table(tmp._tables) [ _tables.id ] COUNT                  |
 | | | | | ) [ _tables.id as tables.id ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as L7.L7 ]                     |
-| | | ) [ L7.L7 ]                                                    |
-| | ) [  ] [ sys.sum no nil (L7.L7) as L7.L7 ]                       |
-| ) [ L7 NOT NULL as L10.L7 ]                                        |
+| | | | ) [  ] [ sys.count() NOT NULL as L40.L40 ]                   |
+| | | ) [ L40.L40 ]                                                  |
+| | ) [  ] [ sys.sum no nil (L40.L40) as L40.L40 ]                   |
+| ) [ L40 NOT NULL as L41.L40 ]                                      |
 +--------------------------------------------------------------------+
-18 tuples (1 ms)
+18 rows
 Operation successful
 
 +--------------------------------------------------------------------------------------------------+
@@ -72,33 +72,33 @@ Operation successful
 |     X_36 := aggr.count(X_35);                                                                    |
 |     X_37 := bat.append(X_31,X_36,true);                                                          |
 |     X_38:lng := aggr.sum(X_37);                                                                  |
-|     sql.resultSet(".L10","L7","bigint",64,0,7,X_38);                                             |
+|     sql.resultSet(".L41","L40","bigint",64,0,7,X_38);                                            |
 | end user.s4_1;                                                                                   |
-| #inline               actions= 0 time=2 usec                                                     |
-| #remap                actions= 0 time=5 usec                                                     |
-| #costmodel            actions= 1 time=4 usec                                                     |
-| #coercion             actions= 1 time=13 usec                                                    |
-| #evaluate             actions= 0 time=6 usec                                                     |
-| #emptybind            actions= 0 time=13 usec                                                    |
-| #pushselect           actions= 4 time=56 usec                                                    |
-| #aliases              actions= 2 time=17 usec                                                    |
-| #mergetable           actions= 0 time=62 usec                                                    |
-| #deadcode             actions= 2 time=13 usec                                                    |
-| #aliases              actions= 0 time=10 usec                                                    |
-| #constants            actions= 2 time=13 usec                                                    |
-| #commonTerms          actions= 0 time=11 usec                                                    |
-| #projectionpath       actions= 0 time=6 usec                                                     |
-| #reorder              actions= 1 time=47 usec                                                    |
-| #deadcode             actions= 0 time=11 usec                                                    |
-| #reduce               actions=26 time=18 usec                                                    |
-| #matpack              actions= 0 time=5 usec                                                     |
-| #multiplex            actions= 0 time=5 usec                                                     |
-| #profiler             actions= 1 time=8 usec                                                     |
-| #candidates           actions= 1 time=2 usec                                                     |
-| #garbagecollector     actions= 1 time=31 usec                                                    |
-| #total                actions= 1 time=560 usec                                                   |
+| #inline               actions= 0 time=1 usec                                                     |
+| #remap                actions= 0 time=2 usec                                                     |
+| #costmodel            actions= 1 time=2 usec                                                     |
+| #coercion             actions= 1 time=6 usec                                                     |
+| #evaluate             actions= 0 time=3 usec                                                     |
+| #emptybind            actions= 0 time=7 usec                                                     |
+| #pushselect           actions= 4 time=27 usec                                                    |
+| #aliases              actions= 2 time=8 usec                                                     |
+| #mergetable           actions= 0 time=29 usec                                                    |
+| #deadcode             actions= 2 time=7 usec                                                     |
+| #aliases              actions= 0 time=5 usec                                                     |
+| #constants            actions= 2 time=6 usec                                                     |
+| #commonTerms          actions= 0 time=5 usec                                                     |
+| #projectionpath       actions= 0 time=4 usec                                                     |
+| #reorder              actions= 1 time=22 usec                                                    |
+| #deadcode             actions= 0 time=5 usec                                                     |
+| #reduce               actions=26 time=7 usec                                                     |
+| #matpack              actions= 0 time=3 usec                                                     |
+| #multiplex            actions= 0 time=2 usec                                                     |
+| #profiler             actions= 1 time=4 usec                                                     |
+| #candidates           actions= 1 time=1 usec                                                     |
+| #garbagecollector     actions= 1 time=15 usec                                                    |
+| #total                actions= 1 time=270 usec                                                   |
 +--------------------------------------------------------------------------------------------------+
-50 tuples (1 ms)
+50 rows
 
 # 19:39:11 >  
 # 19:39:11 >  "Done."

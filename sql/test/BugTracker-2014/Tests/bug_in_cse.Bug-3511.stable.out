@@ -26,7 +26,7 @@ Ready.
 # 19:06:48 >  
 
 #SELECT st_contains(smallc, bigc) AS smallcontainsbig, st_contains(bigc, smallc) AS bigcontainssmall FROM (SELECT st_Buffer(st_GeomFromText('POINT(1 2)', 0), 10) As smallc, st_Buffer(st_GeomFromText('POINT(1 2)', 0), 20) As bigc) As foo;
-% .L3,	.L4 # table_name
+% .L6,	.L10 # table_name
 % smallcontainsbig,	bigcontainssmall # name
 % boolean,	boolean # type
 % 5,	5 # length

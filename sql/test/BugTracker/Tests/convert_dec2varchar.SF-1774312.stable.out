@@ -15,8 +15,8 @@ Ready.
 
 
 #select tr, cast(tr as varchar(10)) from (select 11.34555 as tr) as foo;
-% .foo,	.L2 # table_name
-% tr,	L2 # name
+% .foo,	.L5 # table_name
+% tr,	L5 # name
 % decimal,	varchar # type
 % 9,	8 # length
 [ 11.34555,	"11.34555"	]
