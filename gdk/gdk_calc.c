@@ -12937,13 +12937,30 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 			l += incr2;					\
 		}							\
 	} while (0)
+#define IFTHENELSELOOP_oid()						\
+	do {								\
+		for (i = 0; i < cnt; i++) {				\
+			if (src[i] == bit_nil) {			\
+				((oid *) dst)[i] = oid_nil;		\
+				nils++;					\
+			} else if (src[i]) {				\
+				((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1; \
+			} else {					\
+				((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2; \
+			}						\
+			k += incr1;					\
+			l += incr2;					\
+			seq1 += incr1;					\
+			seq2 += incr2;					\
+		}							\
+	} while (0)
 
 static BAT *
 BATcalcifthenelse_intern(BAT *b,
 			 const void *col1, int incr1, const char *heap1,
-			 int width1, int nonil1,
+			 int width1, int nonil1, oid seq1,
 			 const void *col2, int incr2, const char *heap2,
-			 int width2, int nonil2,
+			 int width2, int nonil2, oid seq2,
 			 int tpe)
 {
 	BAT *bn;
@@ -12955,9 +12972,15 @@ BATcalcifthenelse_intern(BAT *b,
 	const bit *src;
 	BUN cnt = b->batCount;
 
-	assert(col2 != NULL);
+	/* col1 and col2 can only be NULL for void columns */
+	assert(col1 != NULL || ATOMtype(tpe) == TYPE_oid);
+	assert(col2 != NULL || ATOMtype(tpe) == TYPE_oid);
+	assert(col1 != NULL || heap1 == NULL);
+	assert(col2 != NULL || heap2 == NULL);
+	assert(col1 != NULL || incr1 == 1);
+	assert(col2 != NULL || incr2 == 1);
 
-	bn = BATnew(TYPE_void, tpe, cnt, TRANSIENT);
+	bn = BATnew(TYPE_void, ATOMtype(tpe), cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -12991,38 +13014,42 @@ BATcalcifthenelse_intern(BAT *b,
 	} else {
 		assert(heap1 == NULL);
 		assert(heap2 == NULL);
-		switch (bn->T->width) {
-		case 1:
-			IFTHENELSELOOP(bte);
-			break;
-		case 2:
-			IFTHENELSELOOP(sht);
-			break;
-		case 4:
-			IFTHENELSELOOP(int);
-			break;
-		case 8:
-			IFTHENELSELOOP(lng);
-			break;
+		if (ATOMtype(tpe) == TYPE_oid) {
+			IFTHENELSELOOP_oid();
+		} else {
+			switch (bn->T->width) {
+			case 1:
+				IFTHENELSELOOP(bte);
+				break;
+			case 2:
+				IFTHENELSELOOP(sht);
+				break;
+			case 4:
+				IFTHENELSELOOP(int);
+				break;
+			case 8:
+				IFTHENELSELOOP(lng);
+				break;
 #ifdef HAVE_HGE
-		case 16:
-			IFTHENELSELOOP(hge);
-			break;
+			case 16:
+				IFTHENELSELOOP(hge);
+				break;
 #endif
-		default:
-			for (i = 0; i < cnt; i++) {
-				if (src[i] == bit_nil) {
-					p = nil;
-					nils++;
-				} else if (src[i]) {
-					p = ((const char *) col1) + k * width1;
-				} else {
-					p = ((const char *) col2) + l * width2;
+			default:
+				for (i = 0; i < cnt; i++) {
+					if (src[i] == bit_nil) {
+						p = nil;
+						nils++;
+					} else if (src[i]) {
+						p = ((const char *) col1) + k * width1;
+					} else {
+						p = ((const char *) col2) + l * width2;
+					}
+					memcpy(dst, p, bn->T->width);
+					dst = (void *) ((char *) dst + bn->T->width);
+					k += incr1;
+					l += incr2;
 				}
-				memcpy(dst, p, bn->T->width);
-				dst = (void *) ((char *) dst + bn->T->width);
-				k += incr1;
-				l += incr2;
 			}
 		}
 	}
@@ -13058,8 +13085,8 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					Tloc(b1, b1->batFirst), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
-					Tloc(b2, b2->batFirst), 1, b2->T->vheap ? b2->T->vheap->base : NULL, b2->T->width, b2->T->nonil,
+					Tloc(b1, b1->batFirst), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil, b1->tseqbase,
+					Tloc(b2, b2->batFirst), 1, b2->T->vheap ? b2->T->vheap->base : NULL, b2->T->width, b2->T->nonil, b2->tseqbase,
 					b1->T->type);
 }
 
@@ -13077,8 +13104,8 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					Tloc(b1, b1->batFirst), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
-					VALptr(c2), 0, NULL, 0, !VALisnil(c2),
+					Tloc(b1, b1->batFirst), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil, b1->tseqbase,
+					VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
 					b1->T->type);
 }
 
@@ -13096,8 +13123,8 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					VALptr(c1), 0, NULL, 0, !VALisnil(c1),
-					Tloc(b2, b2->batFirst), 1, b2->T->vheap ? b2->T->vheap->base : NULL, b2->T->width, b2->T->nonil,
+					VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
+					Tloc(b2, b2->batFirst), 1, b2->T->vheap ? b2->T->vheap->base : NULL, b2->T->width, b2->T->nonil, b2->tseqbase,
 					c1->vtype);
 }
 
@@ -13115,8 +13142,8 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					VALptr(c1), 0, NULL, 0, !VALisnil(c1),
-					VALptr(c2), 0, NULL, 0, !VALisnil(c2),
+					VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
+					VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
 					c1->vtype);
 }
 
