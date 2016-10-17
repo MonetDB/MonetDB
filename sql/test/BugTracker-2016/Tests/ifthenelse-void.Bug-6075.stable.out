@@ -1,0 +1,80 @@
+stdout of test 'ifthenelse-void.Bug-6075` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 16:07:09 >  
+# 16:07:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32132" "--set" "mapi_usock=/var/tmp/mtest-28251/.s.monetdb.32132" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 16:07:09 >  
+
+# MonetDB 5 server v11.23.14 (hg id: 6843f6bd5843+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:32132/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28251/.s.monetdb.32132
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 16:07:10 >  
+# 16:07:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28251" "--port=32132"
+# 16:07:10 >  
+
+#select
+#  ref_17.progress as c0,
+#  cast(coalesce(ref_17.tag,
+#    ref_17.tag) as oid) as c1
+#from
+#  sys.queue as ref_17
+#where false
+#limit 156;
+% .L1,	.L3 # table_name
+% c0,	c1 # name
+% int,	oid # type
+% 1,	3 # length
+
+# 16:07:10 >  
+# 16:07:10 >  "Done."
+# 16:07:10 >  
+

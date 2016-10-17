@@ -53,3 +53,6 @@ prepare_without_querycache.Bug-4047
 outer_constant_predicate.Bug-4070
 name_conflict_in_union.Bug-6065
 set-negative-querytimeout.Bug-6070
+cast_and_floor.Bug-6071
+union.Bug-6069
+ifthenelse-void.Bug-6075
