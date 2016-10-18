@@ -550,10 +550,10 @@ acceptConnections(int sock, int usock)
 			continue;
 		/* start handleClient as a thread so that we're not blocked by
 		 * a slow client */
-		data = malloc(sizeof(*data));
+		data = malloc(sizeof(*data)); /* freed by handleClient */
 		data->sock = msgsock;
 		data->isusock = FD_ISSET(usock, &fds);
-		p = malloc(sizeof(*p));	/* freed by handleClient */
+		p = malloc(sizeof(*p));
 		p->dead = 0;
 		data->self = p;
 		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {
