@@ -204,7 +204,7 @@ logListener(void *x)
 		}
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
-		
+
 		if (select(nfds + 1, &readfds, NULL, NULL, &tv) <= 0) {
 			if (_mero_keep_logging != 0) {
 				continue;

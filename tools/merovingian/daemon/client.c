@@ -411,7 +411,7 @@ handleClient(void *data)
 			free(algos);
 			self->dead = 1;
 			return(e);
-		};
+		}
 	}
 
 	msab_freeStatus(&top);
@@ -532,18 +532,18 @@ acceptConnections(int sock, int usock)
 			}
 
 			switch (*buf) {
-				case '0':
-					/* nothing special, nothing to do */
+			case '0':
+				/* nothing special, nothing to do */
 				break;
-				case '1':
-					/* filedescriptor, no way */
-					close(msgsock);
-					Mfprintf(stderr, "client error: fd passing not supported\n");
+			case '1':
+				/* filedescriptor, no way */
+				close(msgsock);
+				Mfprintf(stderr, "client error: fd passing not supported\n");
 				continue;
-				default:
-					/* some unknown state */
-					close(msgsock);
-					Mfprintf(stderr, "client error: unknown initial byte\n");
+			default:
+				/* some unknown state */
+				close(msgsock);
+				Mfprintf(stderr, "client error: unknown initial byte\n");
 				continue;
 			}
 		} else
