@@ -99,9 +99,9 @@ dpair _mero_topdp = NULL;
 /* lock to _mero_topdp, initialised as recursive lateron */
 pthread_mutex_t _mero_topdp_lock;
 /* for the logger, when set to 0, the logger terminates */
-int _mero_keep_logging = 1;
+volatile int _mero_keep_logging = 1;
 /* for accepting connections, when set to 0, listening socket terminates */
-char _mero_keep_listening = 1;
+volatile char _mero_keep_listening = 1;
 /* stream to where to write the log */
 FILE *_mero_logfile = NULL;
 /* stream to the stdout for the neighbour discovery service */

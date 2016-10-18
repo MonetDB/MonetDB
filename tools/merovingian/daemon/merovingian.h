@@ -64,8 +64,8 @@ typedef struct _dpair {
 extern char *_mero_mserver;
 extern dpair _mero_topdp;
 extern pthread_mutex_t _mero_topdp_lock;
-extern int _mero_keep_logging;
-extern char _mero_keep_listening;
+extern volatile int _mero_keep_logging;
+extern volatile char _mero_keep_listening;
 extern FILE *_mero_logfile;
 extern unsigned short _mero_port;
 extern FILE *_mero_discout;
