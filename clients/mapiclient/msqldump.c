@@ -99,7 +99,7 @@ main(int argc, char **argv)
 		{0, 0, 0, 0}
 	};
 
-	parse_dotmonetdb(&user, &passwd, NULL, NULL, NULL, NULL);
+	parse_dotmonetdb(&user, &passwd, &dbname, NULL, NULL, NULL, NULL);
 
 	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:q?", long_options, NULL)) != -1) {
 		switch (c) {
@@ -117,7 +117,9 @@ main(int argc, char **argv)
 			port = atoi(optarg);
 			break;
 		case 'd':
-			dbname = optarg;
+			if (dbname)
+				free(dbname);
+			dbname = strdup(optarg);
 			break;
 		case 'D':
 			describe = 1;
@@ -152,7 +154,7 @@ main(int argc, char **argv)
 	}
 
 	if (optind == argc - 1)
-		dbname = argv[optind];
+		dbname = strdup(argv[optind]);
 	else if (optind != argc)
 		usage(argv[0], -1);
 
@@ -170,6 +172,8 @@ main(int argc, char **argv)
 		free(user);
 	if (passwd)
 		free(passwd);
+	if (dbname)
+		free(dbname);
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);

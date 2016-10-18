@@ -1643,7 +1643,7 @@ main(int argc, char **argv)
 	};
 
 	/* parse config file first, command line options override */
-	parse_dotmonetdb(&user, &password, NULL, NULL, NULL, NULL);
+	parse_dotmonetdb(&user, &password, &dbname, NULL, NULL, NULL, NULL);
 
 	if( argc == 1){
 		usageTomograph();
@@ -1669,7 +1669,9 @@ main(int argc, char **argv)
 			debug = 1;
 			break;
 		case 'd':
-			prefix = dbname = optarg;
+			if (dbname)
+				free(dbname);
+			prefix = dbname = strdup(optarg);
 			break;
 		case 'i':
 			inputfile = optarg;
