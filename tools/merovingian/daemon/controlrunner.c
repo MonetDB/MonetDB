@@ -946,7 +946,7 @@ control_handleclient(const char *host, int sock, stream *fdin, stream *fout)
 	ctl_handle_client(host, sock, fdin, fout);
 }
 
-void
+void *
 controlRunner(void *d)
 {
 	int usock = *(int *)d;
@@ -999,6 +999,7 @@ controlRunner(void *d)
 	shutdown(usock, SHUT_RDWR);
 	close(usock);
 	Mfprintf(_mero_ctlout, "control channel closed\n");
+	return NULL;
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

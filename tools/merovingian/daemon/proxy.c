@@ -40,7 +40,7 @@ typedef struct _merovingian_proxy {
 	pthread_t co_thr;/* the other proxyThread */
 } merovingian_proxy;
 
-static void
+static void *
 proxyThread(void *d)
 {
 	merovingian_proxy *p = (merovingian_proxy *)d;
@@ -84,6 +84,7 @@ proxyThread(void *d)
 	}
 
 	free(p);
+	return NULL;
 }
 
 err
@@ -245,7 +246,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	pstoc->co_thr = 0;
 
 	if ((thret = pthread_create(&ptid, NULL,
-				(void *(*)(void *))proxyThread, (void *)pstoc)) != 0)
+				proxyThread, (void *)pstoc)) != 0)
 	{
 		close_stream(sfout);
 		close_stream(sfdin);
@@ -263,7 +264,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	pthread_attr_init(&detachattr);
 	pthread_attr_setdetachstate(&detachattr, PTHREAD_CREATE_DETACHED);
 	if ((thret = pthread_create(&ptid, &detachattr,
-				(void *(*)(void *))proxyThread, (void *)pctos)) != 0)
+				proxyThread, (void *)pctos)) != 0)
 	{
 		close_stream(sfout);
 		close_stream(sfdin);

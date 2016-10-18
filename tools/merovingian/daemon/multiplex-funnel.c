@@ -33,7 +33,7 @@ static pthread_mutex_t mpl_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t mfmanager = 0;
 static int mfpipe[2];
 
-static void multiplexThread(void *d);
+static void *multiplexThread(void *d);
 
 
 /**
@@ -45,7 +45,7 @@ static void multiplexThread(void *d);
  * database.  To maintain a stable query performance, the connection
  * creation must happen in the background and set life once established.
  */
-static void
+static void *
 MFconnectionManager(void *d)
 {
 	int i;
@@ -217,6 +217,7 @@ MFconnectionManager(void *d)
 
 		free(msg); /* alloced by multiplexNotify* */
 	}
+	return NULL;
 }
 
 void
@@ -377,7 +378,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 
 		Mfprintf(stdout, "starting multiplex-funnel connection manager\n");
 		if ((i = pthread_create(&mfmanager, &detach,
-				(void *(*)(void *))MFconnectionManager, (void *)NULL)) != 0)
+				MFconnectionManager, NULL)) != 0)
 		{
 			Mfprintf(stderr, "failed to start MFconnectionManager: %s\n",
 					strerror(i));
@@ -408,7 +409,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 	pthread_mutex_unlock(&mpl_lock);
 
 	if ((i = pthread_create(&m->tid, NULL,
-					(void *(*)(void *))multiplexThread, (void *)m)) != 0)
+					multiplexThread, (void *)m)) != 0)
 	{
 		/* FIXME: we don't cleanup here */
 		return(newErr("starting thread for multiplex-funnel %s failed: %s",
@@ -669,7 +670,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 		mapi_close_handle(m->dbcv[i]->hdl);
 }
 
-static void
+static void *
 multiplexThread(void *d)
 {
 	multiplex *m = (multiplex *)d;
@@ -827,6 +828,7 @@ multiplexThread(void *d)
 
 	free(m->name);
 	free(m);
+	return NULL;
 }
 
 void
