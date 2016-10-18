@@ -182,9 +182,14 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 			return(newErr("could not receive initial byte: %s", strerror(errno)));
 		}
 		closesocket(ssock);
+		/* psock is the underlying socket of cfdin/cfout which we
+		 * passed on to the client; we need to close the socket, but
+		 * not call shutdown() on it, which would happen if we called
+		 * close_stream(), so we call closesocket to close the socket
+		 * and mnstr_destroy to free memory */
 		closesocket(psock);
-		close_stream(cfdin);
-		close_stream(cfout);
+		mnstr_destroy(cfdin);
+		mnstr_destroy(cfout);
 		return(NO_ERR);
 	} else {
 		hp = gethostbyname(conn);
