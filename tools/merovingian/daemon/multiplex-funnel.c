@@ -849,8 +849,8 @@ multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
 		if (strcmp(ml->m->name, mp) == 0)
 			break;
 	}
-	pthread_mutex_unlock(&mpl_lock);
 	if (ml == NULL) {
+		pthread_mutex_unlock(&mpl_lock);
 		Mfprintf(stderr, "failed to find multiplex-funnel '%s' for client %s\n",
 				mp, name);
 		mnstr_printf(fout, "!monetdbd: internal error: could not find multiplex-funnel '%s'\n", mp);
@@ -869,6 +869,7 @@ multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
 			;
 		w->next = n;
 	}
+	pthread_mutex_unlock(&mpl_lock);
 
 	Mfprintf(m->sout, "mfunnel: added new client %s\n", n->name);
 
