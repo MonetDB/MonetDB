@@ -615,14 +615,19 @@ exp_setrelname(sql_allocator *sa, sql_exp *e, int nr)
 	e->rname = sa_strdup(sa, nme);
 }
 
-sql_exp*
-exp_label(sql_allocator *sa, sql_exp *e, int nr)
+char *
+make_label(sql_allocator *sa, int nr)
 {
 	char name[16], *nme;
 
 	nme = number2name(name, 16, nr);
-	e->name = sa_strdup(sa, nme);
-	e->rname = sa_strdup(sa, nme);
+	return sa_strdup(sa, nme);
+}
+
+sql_exp*
+exp_label(sql_allocator *sa, sql_exp *e, int nr)
+{
+	e->rname = e->name = make_label(sa, nr);
 	return e;
 }
 

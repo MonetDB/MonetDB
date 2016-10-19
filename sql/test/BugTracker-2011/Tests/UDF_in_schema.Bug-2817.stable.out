@@ -42,7 +42,7 @@ Ready.
 % int,	timestamp,	int # type
 % 1,	26,	1 # length
 #select * from datacell.basket_X();
-% .,	.,	. # table_name
+% .L1,	.L1,	.L1 # table_name
 % id,	tag,	payload # name
 % int,	timestamp,	int # type
 % 1,	26,	1 # length
@@ -66,7 +66,7 @@ Ready.
 % int,	timestamp,	int # type
 % 1,	26,	1 # length
 #select * from schema_2817.function_2817();
-% .,	.,	. # table_name
+% .L1,	.L1,	.L1 # table_name
 % id,	tag,	payload # name
 % int,	timestamp,	int # type
 % 1,	26,	1 # length

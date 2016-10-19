@@ -1,0 +1,53 @@
+stdout of test 'assert-on-project.Bug-6078` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 14:17:21 >  
+# 14:17:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39688" "--set" "mapi_usock=/var/tmp/mtest-23333/.s.monetdb.39688" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 14:17:21 >  
+
+# MonetDB 5 server v11.23.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39688/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23333/.s.monetdb.39688
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 14:17:21 >  
+# 14:17:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23333" "--port=39688"
+# 14:17:21 >  
+
+#select  
+#  ref_116.id as c0, 
+#    35 as c1, 
+#      ref_164.sorting_order as c2, 
+#        ref_1.name as c3, 
+#	  ref_165.table_id as c4, 
+#	    ref_152.function_id as c5, 
+#	      77 as c6, 
+#	        ref_1.value as c7, 
+#		  ref_165.type as c8
+#		  from 
+#		    sys.environment as ref_1
+#		        inner join sys.columns as ref_116
+#			      inner join sys.systemfunctions as ref_152
+#			              inner join bam.files as ref_164
+#				                  right join sys.keys as ref_165
+#						              on (ref_164.sorting_order = ref_165.name )
+% .L3,	.L4,	.L5,	.L6,	.L7,	.L10,	.L11,	.L12,	.L13 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8 # name
+% int,	tinyint,	varchar,	clob,	int,	int,	tinyint,	clob,	int # type
+% 1,	1,	0,	0,	1,	1,	1,	0,	1 # length
+
+# 14:17:21 >  
+# 14:17:21 >  "Done."
+# 14:17:21 >  
+
