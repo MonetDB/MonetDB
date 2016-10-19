@@ -781,7 +781,6 @@ multiplexThread(void *d)
 		c = m->clients;
 		close_stream(c->fdin);
 		close_stream(c->fout);
-		close(c->sock);
 		free(c->name);
 		m->clients = m->clients->next;
 		free(c);
@@ -858,7 +857,6 @@ multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
 		mnstr_flush(fout);
 		close_stream(fdin);
 		close_stream(fout);
-		close(sock);
 		free(n);
 		return;
 	}
@@ -896,7 +894,6 @@ multiplexRemoveClient(multiplex *m, multiplex_client *c)
 			c->next = NULL;
 			close_stream(c->fdin);
 			close_stream(c->fout);
-			close(c->sock);
 			free(c->name);
 			free(c);
 			break;

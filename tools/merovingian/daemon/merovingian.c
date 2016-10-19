@@ -966,6 +966,7 @@ main(int argc, char *argv[])
 			Mfprintf(stderr, "unable to create control command thread: %s\n",
 					strerror(thret));
 			ctid = 0;
+			close(unsock);
 		}
 
 		/* start neighbour discovery and notification thread */ 
@@ -982,7 +983,6 @@ main(int argc, char *argv[])
 
 		/* wait for the control runner and discovery thread to have
 		 * finished announcing they're going down */
-		close(unsock);
 		if (ctid != 0)
 			pthread_join(ctid, NULL);
 		if (usock >= 0) {
