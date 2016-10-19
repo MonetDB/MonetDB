@@ -16,7 +16,7 @@
 void broadcast(char *msg);
 void registerMessageTap(int fd);
 void unregisterMessageTap(int fd);
-void discoveryRunner(void *d);
+void *discoveryRunner(void *d);
 
 typedef struct _remotedb {
 	char *dbname;       /* remote database name */

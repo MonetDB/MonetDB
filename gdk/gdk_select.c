@@ -287,9 +287,10 @@ do {							\
 			}				\
 		}					\
 	} else {					\
-		while (p <= q && o < e) {		\
+		while (p < q && o < e) {		\
 			p++;				\
-			CAND;				\
+			if (p < q)			\
+				CAND;			\
 		}					\
 	}						\
 } while (0)

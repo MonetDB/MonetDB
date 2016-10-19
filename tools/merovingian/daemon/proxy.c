@@ -40,16 +40,17 @@ typedef struct _merovingian_proxy {
 	pthread_t co_thr;/* the other proxyThread */
 } merovingian_proxy;
 
-static void
+static void *
 proxyThread(void *d)
 {
 	merovingian_proxy *p = (merovingian_proxy *)d;
 	int len;
 	char data[8 * 1024];
 
-	/* pass everything from in to out, until either reading from in, or
-	 * writing to out fails, then close in and its related out-stream
-	 * (not out!) to make sure the co-thread dies as well */
+	/* pass everything from in to out, until either reading from in,
+	 * or writing to out fails, then close the other proxyThread's in
+	 * and out streams so that it stops as well (it will, or already
+	 * has, closed the streams we read from/write to) */
 	while ((len = mnstr_read(p->in, data, 1, sizeof(data))) >= 0) {
 		if (len > 0 && mnstr_write(p->out, data, len, 1) != 1)
 			break;
@@ -58,9 +59,6 @@ proxyThread(void *d)
 	}
 
 	mnstr_close(p->co_out);  /* out towards target B */
-	mnstr_close(p->in);      /* related in from target B */
-
-	mnstr_close(p->out);     /* out towards target A */
 	mnstr_close(p->co_in);   /* related in from target A */
 
 	if (p->name != NULL) {
@@ -75,7 +73,8 @@ proxyThread(void *d)
 		free(p->name);
 
 		/* wait for the other thread to finish, after which we can
-		 * finally destroy the streams */
+		 * finally destroy the streams (all four, since we're the only
+		 * one doing it) */
 		pthread_join(p->co_thr, NULL);
 		mnstr_destroy(p->co_out);
 		mnstr_destroy(p->in);
@@ -84,6 +83,7 @@ proxyThread(void *d)
 	}
 
 	free(p);
+	return NULL;
 }
 
 err
@@ -181,9 +181,14 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 			return(newErr("could not receive initial byte: %s", strerror(errno)));
 		}
 		closesocket(ssock);
+		/* psock is the underlying socket of cfdin/cfout which we
+		 * passed on to the client; we need to close the socket, but
+		 * not call shutdown() on it, which would happen if we called
+		 * close_stream(), so we call closesocket to close the socket
+		 * and mnstr_destroy to free memory */
 		closesocket(psock);
-		close_stream(cfdin);
-		close_stream(cfout);
+		mnstr_destroy(cfdin);
+		mnstr_destroy(cfout);
 		return(NO_ERR);
 	} else {
 		hp = gethostbyname(conn);
@@ -245,7 +250,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	pstoc->co_thr = 0;
 
 	if ((thret = pthread_create(&ptid, NULL,
-				(void *(*)(void *))proxyThread, (void *)pstoc)) != 0)
+				proxyThread, (void *)pstoc)) != 0)
 	{
 		close_stream(sfout);
 		close_stream(sfdin);
@@ -263,7 +268,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	pthread_attr_init(&detachattr);
 	pthread_attr_setdetachstate(&detachattr, PTHREAD_CREATE_DETACHED);
 	if ((thret = pthread_create(&ptid, &detachattr,
-				(void *(*)(void *))proxyThread, (void *)pctos)) != 0)
+				proxyThread, (void *)pctos)) != 0)
 	{
 		close_stream(sfout);
 		close_stream(sfdin);
