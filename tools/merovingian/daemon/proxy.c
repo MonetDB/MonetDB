@@ -47,9 +47,10 @@ proxyThread(void *d)
 	int len;
 	char data[8 * 1024];
 
-	/* pass everything from in to out, until either reading from in, or
-	 * writing to out fails, then close in and its related out-stream
-	 * (not out!) to make sure the co-thread dies as well */
+	/* pass everything from in to out, until either reading from in,
+	 * or writing to out fails, then close the other proxyThread's in
+	 * and out streams so that it stops as well (it will, or already
+	 * has, closed the streams we read from/write to) */
 	while ((len = mnstr_read(p->in, data, 1, sizeof(data))) >= 0) {
 		if (len > 0 && mnstr_write(p->out, data, len, 1) != 1)
 			break;
@@ -58,9 +59,6 @@ proxyThread(void *d)
 	}
 
 	mnstr_close(p->co_out);  /* out towards target B */
-	mnstr_close(p->in);      /* related in from target B */
-
-	mnstr_close(p->out);     /* out towards target A */
 	mnstr_close(p->co_in);   /* related in from target A */
 
 	if (p->name != NULL) {
@@ -75,7 +73,8 @@ proxyThread(void *d)
 		free(p->name);
 
 		/* wait for the other thread to finish, after which we can
-		 * finally destroy the streams */
+		 * finally destroy the streams (all four, since we're the only
+		 * one doing it) */
 		pthread_join(p->co_thr, NULL);
 		mnstr_destroy(p->co_out);
 		mnstr_destroy(p->in);
