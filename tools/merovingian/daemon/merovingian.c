@@ -631,17 +631,14 @@ main(int argc, char *argv[])
 		exit(status);												\
 	} while (0)
 
-	/* check if dbfarm actually exists */
-	if (stat(dbfarm, &sb) == -1) {
-		Mfprintf(stderr, "dbfarm directory '%s' does not exist, "
-				"use monetdbd create first\n", dbfarm);
-		MERO_EXIT_CLEAN(1);
-	}
-
 	/* chdir to dbfarm so we are at least in a known to exist location */
 	if (chdir(dbfarm) < 0) {
-		Mfprintf(stderr, "could not move to dbfarm '%s': %s\n",
-				dbfarm, strerror(errno));
+		if (errno == ENOENT)
+			Mfprintf(stderr, "dbfarm directory '%s' does not exist, "
+					 "use monetdbd create first\n", dbfarm);
+		else
+			Mfprintf(stderr, "could not move to dbfarm '%s': %s\n",
+					 dbfarm, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
 	/* absolutise dbfarm if it isn't yet (we're in it now) */
