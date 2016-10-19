@@ -888,15 +888,6 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	sa.sa_flags = SA_SIGINFO;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_sigaction = childhandler;
-	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				argv[0], strerror(errno));
-		MERO_EXIT(1);
-	}
-
 	/* make sure we will be able to write our pid */
 	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
 		Mfprintf(stderr, "unable to open '%s%s%s' for writing: %s\n",

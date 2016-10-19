@@ -33,6 +33,7 @@
 #include "multiplex-funnel.h"
 #include "controlrunner.h"
 #include "client.h"
+#include "handlers.h"
 
 struct threads {
 	struct threads *next;
@@ -460,6 +461,7 @@ acceptConnections(int sock, int usock)
 					break;
 			}
 		}
+		childhandler();
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
