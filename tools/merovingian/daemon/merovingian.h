@@ -35,10 +35,11 @@ typedef char* err;
 
 /* when not writing to stderr, one has to flush, make it easy to do so */
 #define Mfprintf(S, ...)						\
-	if( S) 										\
 	do {										\
-		fprintf(S, __VA_ARGS__);				\
-		fflush(S);								\
+		if (S) {								\
+			fprintf(S, __VA_ARGS__);			\
+			fflush(S);							\
+		}										\
 	} while (0)
 
 char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)

@@ -867,7 +867,8 @@ multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
 	if (m->clients == NULL) {
 		m->clients = n;
 	} else {
-		for (w = m->clients; w->next != NULL; w = w->next);
+		for (w = m->clients; w->next != NULL; w = w->next)
+			;
 		w->next = n;
 	}
 

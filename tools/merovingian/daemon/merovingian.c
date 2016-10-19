@@ -529,7 +529,7 @@ main(int argc, char *argv[])
 				int len;
 				len = snprintf(dbfarm, sizeof(dbfarm), "%s",
 						argv[2 + merodontfork]);
-			
+
 				if (len > 0 && (size_t)len >= sizeof(dbfarm)) {
 					Mfprintf(stderr, "fatal: dbfarm exceeds allocated " \
 							"path length, please file a bug at " \
@@ -558,7 +558,7 @@ main(int argc, char *argv[])
 	if (!merodontfork) {
 		char buf[4];
 
-		/* Fork into the background immediately.  By doing this our child
+		/* Fork into the background immediately.  By doing this, our child
 		 * can simply do everything it needs to do itself.  Via a pipe it
 		 * will tell us if it is happy or not. */
 		if (pipe(pfd) == -1) {
@@ -598,33 +598,38 @@ main(int argc, char *argv[])
 	}
 
 /* use after the logger thread has started */
-#define MERO_EXIT(status) if (!merodontfork) { \
-		char s = status; \
-		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
-			Mfprintf(stderr, "could not write to parent\n"); \
-		} \
-		if (status != 0) { \
-			Mfprintf(stderr, "fatal startup condition encountered, " \
-					"aborting startup\n"); \
-			goto shutdown; \
-		} \
-	} else { \
-		if (status != 0) { \
-			Mfprintf(stderr, "fatal startup condition encountered, " \
-					"aborting startup\n"); \
-			goto shutdown; \
-		} \
-	}
+#define MERO_EXIT(status)												\
+	do {																\
+		if (!merodontfork) {											\
+			char s = status;											\
+			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {		\
+				Mfprintf(stderr, "could not write to parent\n");		\
+			}															\
+			if (status != 0) {											\
+				Mfprintf(stderr, "fatal startup condition encountered, " \
+						 "aborting startup\n");							\
+				goto shutdown;											\
+			}															\
+		} else {														\
+			if (status != 0) {											\
+				Mfprintf(stderr, "fatal startup condition encountered, " \
+						 "aborting startup\n");							\
+				goto shutdown;											\
+			}															\
+		}																\
+	} while (0)
+
 /* use before logger thread has started */
-#define MERO_EXIT_CLEAN(status) if (!merodontfork) { \
-		char s = status; \
-		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
-			Mfprintf(stderr, "could not write to parent\n"); \
-		} \
-		exit(s); \
-	} else { \
-		exit(status); \
-	}
+#define MERO_EXIT_CLEAN(status)										\
+	do {															\
+		if (!merodontfork) {										\
+			char s = status;										\
+			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {	\
+				Mfprintf(stderr, "could not write to parent\n");	\
+			}														\
+		}															\
+		exit(status);												\
+	} while (0)
 
 	/* check if dbfarm actually exists */
 	if (stat(dbfarm, &sb) == -1) {
