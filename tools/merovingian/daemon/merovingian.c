@@ -761,8 +761,6 @@ main(int argc, char *argv[])
 	if (_mero_topdp->out == -1) {
 		Mfprintf(stderr, "unable to open '%s': %s\n",
 				p, strerror(errno));
-		MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
-		close(lockfd);
 		MERO_EXIT_CLEAN(1);
 	}
 	_mero_topdp->err = _mero_topdp->out;
@@ -1071,7 +1069,6 @@ shutdown:
 	}
 
 	/* remove files that suggest our existence */
-	unlink(".merovingian_lock");
 	if (pidfilename != NULL) {
 		unlink(pidfilename);
 	}
