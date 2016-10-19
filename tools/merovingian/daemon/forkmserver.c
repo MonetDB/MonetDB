@@ -16,7 +16,6 @@
 #include <string.h> /* char ** */
 #include <time.h> /* localtime */
 #include <errno.h>
-#include <pthread.h>
 
 #include <msabaoth.h>
 #include <utils/utils.h>

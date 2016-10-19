@@ -9,8 +9,6 @@
 #ifndef _DISCOVERYRUNNER_H
 #define _DISCOVERYRUNNER_H 1
 
-#include <pthread.h>
-
 #include <msabaoth.h>
 
 void broadcast(char *msg);

@@ -17,7 +17,6 @@
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
 #include <errno.h>
-#include <pthread.h>
 
 #include <utils/properties.h>
 

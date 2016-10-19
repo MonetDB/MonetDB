@@ -21,7 +21,6 @@
 #include <signal.h>
 
 #include <errno.h>
-#include <pthread.h>
 
 #include <msabaoth.h>
 #include <mcrypt.h>

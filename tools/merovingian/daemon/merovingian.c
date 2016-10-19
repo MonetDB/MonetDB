@@ -69,7 +69,6 @@
 #include <string.h> /* strerror */
 #include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
-#include <pthread.h>
 #include <time.h>
 
 #include "merovingian.h"
