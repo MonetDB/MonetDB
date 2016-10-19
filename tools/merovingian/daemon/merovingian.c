@@ -803,7 +803,7 @@ main(int argc, char *argv[])
 			{
 				Mfprintf(stderr, "cannot create broadcast package, "
 						"discovery services disabled\n");
-				close(usock);
+				closesocket(usock);
 				usock = -1;
 			}
 
@@ -830,7 +830,7 @@ main(int argc, char *argv[])
 			Mfprintf(stderr, "unable to create control command thread: %s\n",
 					strerror(thret));
 			ctid = 0;
-			close(unsock);
+			closesocket(unsock);
 		}
 
 		/* start neighbour discovery and notification thread */ 
@@ -850,7 +850,7 @@ main(int argc, char *argv[])
 		if (ctid != 0)
 			pthread_join(ctid, NULL);
 		if (usock >= 0) {
-			close(usock);
+			closesocket(usock);
 			if (dtid != 0)
 				pthread_join(dtid, NULL);
 		}

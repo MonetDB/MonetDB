@@ -978,10 +978,10 @@ controlRunner(void *d)
 		snprintf(origin, sizeof(origin), "(local)");
 
 		ctl_handle_client(origin, msgsock, NULL, NULL);
-		close(msgsock);
+		closesocket(msgsock);
 	} while (_mero_keep_listening);
 	shutdown(usock, SHUT_RDWR);
-	close(usock);
+	closesocket(usock);
 	Mfprintf(_mero_ctlout, "control channel closed\n");
 	return NULL;
 }

@@ -66,7 +66,7 @@ char* control_send(
 		strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
 		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
-			close(sock);
+			closesocket(sock);
 			return(strdup(sbuf));
 		}
 	} else {
@@ -85,7 +85,7 @@ char* control_send(
 		if (hp == NULL) {
 			snprintf(sbuf, sizeof(sbuf), "cannot lookup hostname: %s",
 					hstrerror(h_errno));
-			close(sock);
+			closesocket(sock);
 			return(strdup(sbuf));
 		}
 		memset(&server, 0, sizeof(struct sockaddr_in));
@@ -94,7 +94,7 @@ char* control_send(
 		server.sin_port = htons((unsigned short) (port & 0xFFFF));
 		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_in)) == -1) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
-			close(sock);
+			closesocket(sock);
 			return(strdup(sbuf));
 		}
 
@@ -105,7 +105,7 @@ char* control_send(
 		/* perform login ritual */
 		if (len <= 2) {
 			snprintf(sbuf, sizeof(sbuf), "no response from monetdbd");
-			close(sock);
+			closesocket(sock);
 			return(strdup(sbuf));
 		}
 		rbuf[len] = 0;
@@ -136,7 +136,7 @@ char* control_send(
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"unsupported monetdbd server");
 			}
-			close(sock);
+			closesocket(sock);
 			return(strdup(sbuf));
 		}
 
@@ -152,7 +152,7 @@ char* control_send(
 				len = send(sock, sbuf, len, 0);
 				free(p);
 				if (len == -1) {
-					close(sock);
+					closesocket(sock);
 					return(strdup("cannot send challenge response to server"));
 				}
 				break;
@@ -324,7 +324,7 @@ char* control_send(
 			rbuf[len - 1] = '\0';
 		} else {
 			if ((len = recv(sock, rbuf, sizeof(rbuf), 0)) <= 0) {
-				close(sock);
+				closesocket(sock);
 				return(strdup("no response from monetdbd after login"));
 			}
 			rbuf[len - 1] = '\0';
@@ -338,7 +338,7 @@ char* control_send(
 				close_stream(fdout);
 				close_stream(fdin);
 			} else {
-				close(sock);
+				closesocket(sock);
 			}
 			return(strdup(buf));
 		}
@@ -350,7 +350,7 @@ char* control_send(
 	} else {
 		len = snprintf(sbuf, sizeof(sbuf), "%s %s\n", database, command);
 		if (send(sock, sbuf, len, 0) == -1) {
-			close(sock);
+			closesocket(sock);
 			return(strdup("failed to send control command to server"));
 		}
 	}
@@ -364,7 +364,7 @@ char* control_send(
 				close_stream(fdin);
 				close_stream(fdout);
 			} else {
-				close(sock);
+				closesocket(sock);
 			}
 			return(strdup("failed to allocate memory"));
 		}
@@ -389,7 +389,7 @@ char* control_send(
 						close_stream(fdin);
 						close_stream(fdout);
 					} else {
-						close(sock);
+						closesocket(sock);
 					}
 					return(strdup("failed to allocate more memory"));
 				}
@@ -402,7 +402,7 @@ char* control_send(
 				close_stream(fdin);
 				close_stream(fdout);
 			} else {
-				close(sock);
+				closesocket(sock);
 			}
 			free(buf);
 			return(strdup("incomplete response from monetdbd"));
@@ -427,7 +427,7 @@ char* control_send(
 			*ret = strdup(rbuf + 1);
 		} else {
 			if ((len = recv(sock, rbuf, sizeof(rbuf), 0)) <= 0) {
-				close(sock);
+				closesocket(sock);
 				return(strdup("incomplete response from monetdbd"));
 			}
 			rbuf[len - 1] = '\0';
@@ -439,7 +439,7 @@ char* control_send(
 		close_stream(fdin);
 		close_stream(fdout);
 	} else {
-		close(sock);
+		closesocket(sock);
 	}
 
 	return(NULL);
