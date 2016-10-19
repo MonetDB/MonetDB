@@ -47,7 +47,7 @@ Ready.
 % 1,	3 # length
 [ 3,	"new"	]
 #select * from querycache();
-% .,	. # table_name
+% .L1,	.L1 # table_name
 % query,	count # name
 % clob,	int # type
 % 78,	1 # length

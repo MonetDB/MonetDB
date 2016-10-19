@@ -84,6 +84,7 @@ extern void exp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const 
 extern void exp_setrelname(sql_allocator *sa, sql_exp *e, int nr );
 
 extern void noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name );
+extern char* make_label(sql_allocator *sa, int nr);
 extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);
 
 extern sql_exp * exp_copy( sql_allocator *sa, sql_exp *e);
