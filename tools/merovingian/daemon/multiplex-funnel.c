@@ -857,6 +857,7 @@ multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
 		mnstr_flush(fout);
 		close_stream(fdin);
 		close_stream(fout);
+		free(n->name);
 		free(n);
 		return;
 	}
