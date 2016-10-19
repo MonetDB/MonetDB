@@ -1670,3 +1670,4 @@ COPY 150 RECORDS INTO orders from STDIN USING DELIMITERS '|', '|\n';
 SELECT 1 FROM orders LEFT OUTER JOIN customer ON (1 = 1 AND o_custkey = c_custkey);
 
 drop table orders;
+drop table customer;

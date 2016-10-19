@@ -575,6 +575,8 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 
 	if (query->data.lval->h->next->data.sym)
 		tname = query->data.lval->h->next->data.sym->data.lval->h->data.sval;
+	else
+		tname = make_label(sql->sa, ++sql->label);
 
 	/* column or table function */
 	sf = e->f;
