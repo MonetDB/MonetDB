@@ -246,7 +246,6 @@ static void ctl_handle_client(
 			} else if (pos == -2) {
 				Mfprintf(_mero_ctlerr, "%s: time-out reading from "
 						"control channel, disconnecting client\n", origin);
-				close(msgsock);
 				break;
 			} else {
 				buf[pos] = '\0';
