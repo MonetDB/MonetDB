@@ -98,7 +98,7 @@ function user.s10_1():void;
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","udf_reverse");
     X_5:bat[:str] := sql.bind(X_1,"sys","udf_reverse","x",0);
-    (C_8,r1_8) := sql.bind(X_1,"sys","udf_reverse","x",2);
+    (C_8:bat[:oid],r1_8:bat[:str]) := sql.bind(X_1,"sys","udf_reverse","x",2);
     X_11:bat[:str] := sql.bind(X_1,"sys","udf_reverse","x",1);
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
     X_14 := algebra.projection(C_2,X_13);

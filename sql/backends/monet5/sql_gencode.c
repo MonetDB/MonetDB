@@ -1104,6 +1104,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			if (s->flag == RD_UPD_ID) {
 				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, tt)));
+				setVarUDFtype(mb, getArg(q, 0));
+				setVarUDFtype(mb, getArg(q, 1));
 			} else {
 				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
 				setVarUDFtype(mb, getArg(q, 0));
@@ -1120,6 +1122,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->flag == RD_UPD_ID) {
 				/* rename second result */
 				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
+				setVarType(mb, getArg(q, 1), newBatType(TYPE_oid, tt));
+				setVarUDFtype(mb, getArg(q, 1));
 			}
 			if (s->flag != RD_INS && s->partition) {
 				sql_trans *tr = sql->mvc->session->tr;

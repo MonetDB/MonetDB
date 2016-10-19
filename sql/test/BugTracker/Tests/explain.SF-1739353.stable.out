@@ -43,13 +43,13 @@ Operation successful
 |     X_8:bat[:sht] := sql.bind(X_1,"sys","_tables","type",0);                                         |
 |     C_5:bat[:oid] := sql.tid(X_1,"sys","_tables");                                                   |
 |     C_55 := algebra.subselect(X_8,C_5,2,2,true,true,true);                                           |
-|     (C_11,r1_11) := sql.bind(X_1,"sys","_tables","type",2);                                          |
+|     (C_11:bat[:oid],r1_11:bat[:sht]) := sql.bind(X_1,"sys","_tables","type",2);                      |
 |     C_56 := algebra.subselect(r1_11,nil:bat[:oid],2,2,true,true,true);                               |
 |     X_14:bat[:sht] := sql.bind(X_1,"sys","_tables","type",1);                                        |
 |     C_58 := algebra.subselect(X_14,C_5,2,2,true,true,true);                                          |
 |     C_17 := sql.subdelta(C_55,C_5,C_11,C_56,C_58);                                                   |
 |     X_19:bat[:str] := sql.bind(X_1,"sys","_tables","name",0);                                        |
-|     (C_21,r1_25) := sql.bind(X_1,"sys","_tables","name",2);                                          |
+|     (C_21:bat[:oid],r1_25:bat[:str]) := sql.bind(X_1,"sys","_tables","name",2);                      |
 |     X_23:bat[:str] := sql.bind(X_1,"sys","_tables","name",1);                                        |
 |     X_24 := sql.projectdelta(C_17,X_19,C_21,r1_25,X_23);                                             |
 |     X_25 := bat.append(X_2,X_24,true);                                                               |

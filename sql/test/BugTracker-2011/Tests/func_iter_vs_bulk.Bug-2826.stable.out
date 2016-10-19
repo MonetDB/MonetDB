@@ -48,7 +48,7 @@ function user.s5_1(A0:flt):void;
     X_35 := bat.append(X_27,0);
     X_2 := sql.mvc();
     X_6:bat[:dbl] := sql.bind(X_2,"sys","tab_2826","d",0);
-    (C_9,r1_9) := sql.bind(X_2,"sys","tab_2826","d",2);
+    (C_9:bat[:oid],r1_9:bat[:dbl]) := sql.bind(X_2,"sys","tab_2826","d",2);
     X_12:bat[:dbl] := sql.bind(X_2,"sys","tab_2826","d",1);
     X_14 := sql.delta(X_6,C_9,r1_9,X_12);
     X_15 := batcalc.flt(X_14);

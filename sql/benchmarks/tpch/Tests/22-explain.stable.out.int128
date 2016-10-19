@@ -82,7 +82,7 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     X_22 := sql.mvc();
     C_23:bat[:oid] := sql.tid(X_22,"sys","customer");
     X_26:bat[:str] := sql.bind(X_22,"sys","customer","c_phone",0);
-    (C_29,r1_29) := sql.bind(X_22,"sys","customer","c_phone",2);
+    (C_29:bat[:oid],r1_29:bat[:str]) := sql.bind(X_22,"sys","customer","c_phone",2);
     X_32:bat[:str] := sql.bind(X_22,"sys","customer","c_phone",1);
     X_34 := sql.delta(X_26,C_29,r1_29,X_32);
     X_35 := algebra.projection(C_23,X_34);
@@ -101,13 +101,13 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     C_50 := algebra.subselect(X_36,A10,A10,true,false,false);
     X_51 := bat.mergecand(X_49,C_50);
     X_52:bat[:int] := sql.bind(X_22,"sys","customer","c_custkey",0);
-    (C_54,r1_66) := sql.bind(X_22,"sys","customer","c_custkey",2);
+    (C_54:bat[:oid],r1_66:bat[:int]) := sql.bind(X_22,"sys","customer","c_custkey",2);
     X_56:bat[:int] := sql.bind(X_22,"sys","customer","c_custkey",1);
     X_57 := sql.delta(X_52,C_54,r1_66,X_56);
     X_58:bat[:int] := algebra.projectionpath(X_51,C_23,X_57);
     X_59 := bat.mirror(X_58);
     X_60:bat[:lng] := sql.bind(X_22,"sys","customer","c_acctbal",0);
-    (C_62,r1_75) := sql.bind(X_22,"sys","customer","c_acctbal",2);
+    (C_62:bat[:oid],r1_75:bat[:lng]) := sql.bind(X_22,"sys","customer","c_acctbal",2);
     X_64:bat[:lng] := sql.bind(X_22,"sys","customer","c_acctbal",1);
     X_65 := sql.delta(X_60,C_62,r1_75,X_64);
     X_66 := algebra.projection(C_23,X_65);
@@ -139,7 +139,7 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     X_97 := bat.mirror(X_96);
     C_98:bat[:oid] := sql.tid(X_22,"sys","orders");
     X_100:bat[:int] := sql.bind(X_22,"sys","orders","o_custkey",0);
-    (C_102,r1_155) := sql.bind(X_22,"sys","orders","o_custkey",2);
+    (C_102:bat[:oid],r1_155:bat[:int]) := sql.bind(X_22,"sys","orders","o_custkey",2);
     X_104:bat[:int] := sql.bind(X_22,"sys","orders","o_custkey",1);
     X_105 := sql.delta(X_100,C_102,r1_155,X_104);
     X_106 := algebra.projection(C_98,X_105);
