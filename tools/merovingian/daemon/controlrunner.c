@@ -246,7 +246,6 @@ static void ctl_handle_client(
 			} else if (pos == -2) {
 				Mfprintf(_mero_ctlerr, "%s: time-out reading from "
 						"control channel, disconnecting client\n", origin);
-				close(msgsock);
 				break;
 			} else {
 				buf[pos] = '\0';
@@ -946,7 +945,7 @@ control_handleclient(const char *host, int sock, stream *fdin, stream *fout)
 	ctl_handle_client(host, sock, fdin, fout);
 }
 
-void
+void *
 controlRunner(void *d)
 {
 	int usock = *(int *)d;
@@ -999,6 +998,7 @@ controlRunner(void *d)
 	shutdown(usock, SHUT_RDWR);
 	close(usock);
 	Mfprintf(_mero_ctlout, "control channel closed\n");
+	return NULL;
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

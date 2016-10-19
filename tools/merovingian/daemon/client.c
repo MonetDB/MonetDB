@@ -411,7 +411,7 @@ handleClient(void *data)
 			free(algos);
 			self->dead = 1;
 			return(e);
-		};
+		}
 	}
 
 	msab_freeStatus(&top);
@@ -532,34 +532,35 @@ acceptConnections(int sock, int usock)
 			}
 
 			switch (*buf) {
-				case '0':
-					/* nothing special, nothing to do */
+			case '0':
+				/* nothing special, nothing to do */
 				break;
-				case '1':
-					/* filedescriptor, no way */
-					close(msgsock);
-					Mfprintf(stderr, "client error: fd passing not supported\n");
+			case '1':
+				/* filedescriptor, no way */
+				close(msgsock);
+				Mfprintf(stderr, "client error: fd passing not supported\n");
 				continue;
-				default:
-					/* some unknown state */
-					close(msgsock);
-					Mfprintf(stderr, "client error: unknown initial byte\n");
+			default:
+				/* some unknown state */
+				close(msgsock);
+				Mfprintf(stderr, "client error: unknown initial byte\n");
 				continue;
 			}
 		} else
 			continue;
 		/* start handleClient as a thread so that we're not blocked by
 		 * a slow client */
-		data = malloc(sizeof(*data));
+		data = malloc(sizeof(*data)); /* freed by handleClient */
 		data->sock = msgsock;
 		data->isusock = FD_ISSET(usock, &fds);
-		p = malloc(sizeof(*p));	/* freed by handleClient */
+		p = malloc(sizeof(*p));
 		p->dead = 0;
 		data->self = p;
 		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {
 			p->next = threads;
 			threads = p;
 		} else {
+			close(msgsock);
 			free(data);
 			free(p);
 		}

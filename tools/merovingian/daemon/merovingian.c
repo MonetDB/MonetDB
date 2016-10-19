@@ -99,9 +99,9 @@ dpair _mero_topdp = NULL;
 /* lock to _mero_topdp, initialised as recursive lateron */
 pthread_mutex_t _mero_topdp_lock;
 /* for the logger, when set to 0, the logger terminates */
-int _mero_keep_logging = 1;
+volatile int _mero_keep_logging = 1;
 /* for accepting connections, when set to 0, listening socket terminates */
-char _mero_keep_listening = 1;
+volatile char _mero_keep_listening = 1;
 /* stream to where to write the log */
 FILE *_mero_logfile = NULL;
 /* stream to the stdout for the neighbour discovery service */
@@ -165,7 +165,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 	fflush(stream);
 }
 
-static void
+static void *
 logListener(void *x)
 {
 	dpair d = _mero_topdp;
@@ -204,7 +204,7 @@ logListener(void *x)
 		}
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
-		
+
 		if (select(nfds + 1, &readfds, NULL, NULL, &tv) <= 0) {
 			if (_mero_keep_logging != 0) {
 				continue;
@@ -230,6 +230,7 @@ logListener(void *x)
 
 		fflush(_mero_logfile);
 	} while (_mero_keep_logging);
+	return NULL;
 }
 
 /**
@@ -237,7 +238,7 @@ logListener(void *x)
  * shut down gracefully within a given time-out.  If that fails, it
  * sends the deadly SIGKILL signal to the mserver process and returns.
  */
-void
+void *
 terminateProcess(void *p)
 {
 	dpair d = (dpair)p;
@@ -255,14 +256,14 @@ terminateProcess(void *p)
 				(long long int)pid, er);
 		free(er);
 		free(dbname);
-		return;
+		return NULL;
 	}
 
 	if (stats == NULL) {
 		Mfprintf(stderr, "strange, process " LLFMT " serves database '%s' "
 				"which does not exist\n", (long long int)pid, dbname);
 		free(dbname);
-		return;
+		return NULL;
 	}
 
 	switch (stats->state) {
@@ -275,14 +276,14 @@ terminateProcess(void *p)
 					dbname, (long long int)pid);
 			msab_freeStatus(&stats);
 			free(dbname);
-			return;
+			return NULL;
 		case SABdbInactive:
 			Mfprintf(stdout, "database '%s' appears to have shut down already\n",
 					dbname);
 			fflush(stdout);
 			msab_freeStatus(&stats);
 			free(dbname);
-			return;
+			return NULL;
 		case SABdbStarting:
 			Mfprintf(stderr, "database '%s' appears to be starting up\n",
 					 dbname);
@@ -292,20 +293,20 @@ terminateProcess(void *p)
 			Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 			msab_freeStatus(&stats);
 			free(dbname);
-			return;
+			return NULL;
 	}
 
 	if (d->type == MEROFUN) {
 		multiplexDestroy(dbname);
 		msab_freeStatus(&stats);
 		free(dbname);
-		return;
+		return NULL;
 	} else if (d->type != MERODB) {
 		/* barf */
 		Mfprintf(stderr, "cannot stop merovingian process role: %s\n", dbname);
 		msab_freeStatus(&stats);
 		free(dbname);
-		return;
+		return NULL;
 	}
 
 	/* ok, once we get here, we'll be shutting down the server */
@@ -336,13 +337,13 @@ terminateProcess(void *p)
 							dbname);
 					msab_freeStatus(&stats);
 					free(dbname);
-					return;
+					return NULL;
 				case SABdbInactive:
 					Mfprintf(stdout, "database '%s' has shut down\n", dbname);
 					fflush(stdout);
 					msab_freeStatus(&stats);
 					free(dbname);
-					return;
+					return NULL;
 				default:
 					Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 				break;
@@ -355,7 +356,7 @@ terminateProcess(void *p)
 	kill(pid, SIGKILL);
 	msab_freeStatus(&stats);
 	free(dbname);
-	return;
+	return NULL;
 }
 
 /**
@@ -530,7 +531,7 @@ main(int argc, char *argv[])
 				int len;
 				len = snprintf(dbfarm, sizeof(dbfarm), "%s",
 						argv[2 + merodontfork]);
-			
+
 				if (len > 0 && (size_t)len >= sizeof(dbfarm)) {
 					Mfprintf(stderr, "fatal: dbfarm exceeds allocated " \
 							"path length, please file a bug at " \
@@ -559,7 +560,7 @@ main(int argc, char *argv[])
 	if (!merodontfork) {
 		char buf[4];
 
-		/* Fork into the background immediately.  By doing this our child
+		/* Fork into the background immediately.  By doing this, our child
 		 * can simply do everything it needs to do itself.  Via a pipe it
 		 * will tell us if it is happy or not. */
 		if (pipe(pfd) == -1) {
@@ -599,45 +600,47 @@ main(int argc, char *argv[])
 	}
 
 /* use after the logger thread has started */
-#define MERO_EXIT(status) if (!merodontfork) { \
-		char s = status; \
-		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
-			Mfprintf(stderr, "could not write to parent\n"); \
-		} \
-		if (status != 0) { \
-			Mfprintf(stderr, "fatal startup condition encountered, " \
-					"aborting startup\n"); \
-			goto shutdown; \
-		} \
-	} else { \
-		if (status != 0) { \
-			Mfprintf(stderr, "fatal startup condition encountered, " \
-					"aborting startup\n"); \
-			goto shutdown; \
-		} \
-	}
-/* use before logger thread has started */
-#define MERO_EXIT_CLEAN(status) if (!merodontfork) { \
-		char s = status; \
-		if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
-			Mfprintf(stderr, "could not write to parent\n"); \
-		} \
-		exit(s); \
-	} else { \
-		exit(status); \
-	}
+#define MERO_EXIT(status)												\
+	do {																\
+		if (!merodontfork) {											\
+			char s = status;											\
+			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {		\
+				Mfprintf(stderr, "could not write to parent\n");		\
+			}															\
+			if (status != 0) {											\
+				Mfprintf(stderr, "fatal startup condition encountered, " \
+						 "aborting startup\n");							\
+				goto shutdown;											\
+			}															\
+		} else {														\
+			if (status != 0) {											\
+				Mfprintf(stderr, "fatal startup condition encountered, " \
+						 "aborting startup\n");							\
+				goto shutdown;											\
+			}															\
+		}																\
+	} while (0)
 
-	/* check if dbfarm actually exists */
-	if (stat(dbfarm, &sb) == -1) {
-		Mfprintf(stderr, "dbfarm directory '%s' does not exist, "
-				"use monetdbd create first\n", dbfarm);
-		MERO_EXIT_CLEAN(1);
-	}
+/* use before logger thread has started */
+#define MERO_EXIT_CLEAN(status)										\
+	do {															\
+		if (!merodontfork) {										\
+			char s = status;										\
+			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {	\
+				Mfprintf(stderr, "could not write to parent\n");	\
+			}														\
+		}															\
+		exit(status);												\
+	} while (0)
 
 	/* chdir to dbfarm so we are at least in a known to exist location */
 	if (chdir(dbfarm) < 0) {
-		Mfprintf(stderr, "could not move to dbfarm '%s': %s\n",
-				dbfarm, strerror(errno));
+		if (errno == ENOENT)
+			Mfprintf(stderr, "dbfarm directory '%s' does not exist, "
+					 "use monetdbd create first\n", dbfarm);
+		else
+			Mfprintf(stderr, "could not move to dbfarm '%s': %s\n",
+					 dbfarm, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
 	/* absolutise dbfarm if it isn't yet (we're in it now) */
@@ -760,8 +763,6 @@ main(int argc, char *argv[])
 	if (_mero_topdp->out == -1) {
 		Mfprintf(stderr, "unable to open '%s': %s\n",
 				p, strerror(errno));
-		MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
-		close(lockfd);
 		MERO_EXIT_CLEAN(1);
 	}
 	_mero_topdp->err = _mero_topdp->out;
@@ -843,7 +844,7 @@ main(int argc, char *argv[])
 	pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&_mero_topdp_lock, &mta);
 
-	if ((thret = pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)NULL)) != 0) {
+	if ((thret = pthread_create(&tid, NULL, logListener, NULL)) != 0) {
 		Mfprintf(oerr, "%s: FATAL: unable to create logthread: %s\n",
 				argv[0], strerror(thret));
 		MERO_EXIT(1);
@@ -961,17 +962,18 @@ main(int argc, char *argv[])
 
 		/* handle control commands */
 		if ((thret = pthread_create(&ctid, NULL,
-						(void *(*)(void *))controlRunner,
-						(void *)&unsock)) != 0)
+						controlRunner,
+						(void *) &unsock)) != 0)
 		{
 			Mfprintf(stderr, "unable to create control command thread: %s\n",
 					strerror(thret));
 			ctid = 0;
+			close(unsock);
 		}
 
 		/* start neighbour discovery and notification thread */ 
 		if (usock >= 0 && (thret = pthread_create(&dtid, NULL,
-					(void *(*)(void *))discoveryRunner, (void *)&usock)) != 0)
+					discoveryRunner, (void *)&usock)) != 0)
 		{
 			Mfprintf(stderr, "unable to start neighbour discovery thread: %s\n",
 					strerror(thret));
@@ -983,7 +985,6 @@ main(int argc, char *argv[])
 
 		/* wait for the control runner and discovery thread to have
 		 * finished announcing they're going down */
-		close(unsock);
 		if (ctid != 0)
 			pthread_join(ctid, NULL);
 		if (usock >= 0) {
@@ -1028,7 +1029,7 @@ shutdown:
 
 			tlw->next = NULL;
 			if ((thret = pthread_create(&(tlw->tid), NULL,
-						(void *(*)(void *))terminateProcess, (void *)t)) != 0)
+						terminateProcess, (void *)t)) != 0)
 			{
 				Mfprintf(stderr, "%s: unable to create thread to terminate "
 						"database '%s': %s\n",
@@ -1070,7 +1071,6 @@ shutdown:
 	}
 
 	/* remove files that suggest our existence */
-	unlink(".merovingian_lock");
 	if (pidfilename != NULL) {
 		unlink(pidfilename);
 	}
