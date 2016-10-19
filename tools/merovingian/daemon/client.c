@@ -560,6 +560,7 @@ acceptConnections(int sock, int usock)
 			p->next = threads;
 			threads = p;
 		} else {
+			close(msgsock);
 			free(data);
 			free(p);
 		}
