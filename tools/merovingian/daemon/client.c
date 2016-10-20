@@ -573,7 +573,6 @@ acceptConnections(int sock, int usock)
 
 error:
 	_mero_keep_listening = 0;
-	shutdown(sock, SHUT_RDWR);
 	closesocket(sock);
 	return(newErr("accept connection: %s", msg));
 }

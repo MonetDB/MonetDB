@@ -850,6 +850,7 @@ main(int argc, char *argv[])
 		if (ctid != 0)
 			pthread_join(ctid, NULL);
 		if (usock >= 0) {
+			shutdown(usock, SHUT_RDWR);
 			closesocket(usock);
 			if (dtid != 0)
 				pthread_join(dtid, NULL);

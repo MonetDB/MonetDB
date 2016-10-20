@@ -978,6 +978,7 @@ controlRunner(void *d)
 		snprintf(origin, sizeof(origin), "(local)");
 
 		ctl_handle_client(origin, msgsock, NULL, NULL);
+		shutdown(msgsock, SHUT_RDWR);
 		closesocket(msgsock);
 	} while (_mero_keep_listening);
 	shutdown(usock, SHUT_RDWR);
