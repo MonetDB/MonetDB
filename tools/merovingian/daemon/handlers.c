@@ -17,7 +17,6 @@
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
 #include <errno.h>
-#include <pthread.h>
 
 #include <utils/properties.h>
 
@@ -143,83 +142,66 @@ huphandler(int sig)
 }
 
 /**
- * Handles SIGCHLD signals, that is, signals that a parent receives
- * about its children.  This handler deals with terminated children, by
- * deregistering them from the internal administration (_mero_topdp)
- * with the necessary cleanup.
+ * Wait for and deal with any children that may have exited.  This
+ * handler deals with terminated children, by deregistering them from
+ * the internal administration (_mero_topdp) with the necessary
+ * cleanup.
  */
 void
-childhandler(int sig, siginfo_t *si, void *unused)
+childhandler(void)
 {
 	dpair p, q;
+	pid_t pid;
+	int wstatus;
 
-	(void)sig;
-	(void)unused;
+	while ((pid = waitpid(-1, &wstatus, WNOHANG)) > 0) {
+		pthread_mutex_lock(&_mero_topdp_lock);
 
-	/* wait for the child to get properly terminated, hopefully filling
-	 * in the siginfo struct on FreeBSD */
-	if (waitpid(-1, NULL, WNOHANG) <= 0) {
-		/* if no child has exited, we may have already waited for it
-		 * in e.g. ctl_handle_client() */
-		return;
-	}
-
-	if (si->si_code != CLD_EXITED &&
-			si->si_code != CLD_KILLED &&
-			si->si_code != CLD_DUMPED)
-	{
-		/* ignore traps, stops and continues, we only want terminations
-		 * of the client process */
-		return;
-	}
-
-	pthread_mutex_lock(&_mero_topdp_lock);
-
-	/* get the pid from the former child, and locate it in our list */
-	q = _mero_topdp->next;
-	p = q->next;
-	while (p != NULL) {
-		if (p->pid == si->si_pid) {
-			/* log everything that's still in the pipes */
-			logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile);
-			/* remove from the list */
-			q->next = p->next;
-			/* close the descriptors */
-			close(p->out);
-			close(p->err);
-			if (si->si_code == CLD_EXITED) {
-				Mfprintf(stdout, "database '%s' (%lld) has exited with "
-						"exit status %d\n", p->dbname,
-						(long long int)p->pid, si->si_status);
-			} else if (si->si_code == CLD_KILLED) {
-				const char *sigstr = sigtostr(si->si_status);
-				char signum[8];
-				if (sigstr == NULL) {
-					snprintf(signum, 8, "%d", si->si_status);
-					sigstr = signum;
-				}
-				Mfprintf(stdout, "database '%s' (%lld) was killed by signal "
-						"%s\n", p->dbname,
-						(long long int)p->pid, sigstr);
-			} else if (si->si_code == CLD_DUMPED) {
-				Mfprintf(stdout, "database '%s' (%lld) has crashed "
-						"(dumped core)\n", p->dbname,
-						(long long int)p->pid);
-			}
-			if (p->dbname)
-				free(p->dbname);
-			free(p);
-			pthread_mutex_unlock(&_mero_topdp_lock);
-			return;
-		}
-		q = p;
+		/* get the pid from the former child, and locate it in our list */
+		q = _mero_topdp->next;
 		p = q->next;
+		while (p != NULL) {
+			if (p->pid == pid) {
+				/* log everything that's still in the pipes */
+				logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile);
+				/* remove from the list */
+				q->next = p->next;
+				/* close the descriptors */
+				close(p->out);
+				close(p->err);
+				if (WIFEXITED(wstatus)) {
+					Mfprintf(stdout, "database '%s' (%lld) has exited with "
+							 "exit status %d\n", p->dbname,
+							 (long long int)p->pid, WEXITSTATUS(wstatus));
+				} else if (WIFSIGNALED(wstatus)) {
+					if (WCOREDUMP(wstatus)) {
+						Mfprintf(stdout, "database '%s' (%lld) has crashed "
+								 "(dumped core)\n", p->dbname,
+								 (long long int)p->pid);
+					} else {
+						const char *sigstr = sigtostr(WTERMSIG(wstatus));
+						char signum[8];
+						if (sigstr == NULL) {
+							snprintf(signum, 8, "%d", WTERMSIG(wstatus));
+							sigstr = signum;
+						}
+						Mfprintf(stdout, "database '%s' (%lld) was killed by signal "
+								 "%s\n", p->dbname,
+								 (long long int)p->pid, sigstr);
+					}
+				}
+				if (p->dbname)
+					free(p->dbname);
+				free(p);
+				pthread_mutex_unlock(&_mero_topdp_lock);
+				break;
+			}
+			q = p;
+			p = q->next;
+		}
+
+		pthread_mutex_unlock(&_mero_topdp_lock);
 	}
-
-	pthread_mutex_unlock(&_mero_topdp_lock);
-
-	Mfprintf(stdout, "received SIGCHLD from unknown child with pid %lld\n",
-			(long long int)si->si_pid);
 }
 
 /**

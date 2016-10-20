@@ -13,7 +13,7 @@
 
 void handler(int sig);
 void huphandler(int sig);
-void childhandler(int sig, siginfo_t *si, void *unused);
+void childhandler(void);
 void segvhandler(int sig);
 
 #endif

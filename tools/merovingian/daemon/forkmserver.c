@@ -16,7 +16,6 @@
 #include <string.h> /* char ** */
 #include <time.h> /* localtime */
 #include <errno.h>
-#include <pthread.h>
 
 #include <msabaoth.h>
 #include <utils/utils.h>
@@ -30,6 +29,145 @@
 
 
 static pthread_mutex_t fork_lock = PTHREAD_MUTEX_INITIALIZER;
+
+/**
+ * The terminateProcess function tries to let the given mserver process
+ * shut down gracefully within a given time-out.  If that fails, it
+ * sends the deadly SIGKILL signal to the mserver process and returns.
+ */
+void *
+terminateProcess(void *p)
+{
+	dpair d = (dpair)p;
+	sabdb *stats;
+	char *er;
+	int i;
+	confkeyval *kv;
+	/* make local copies since d will disappear when killed */
+	pid_t pid = d->pid;
+	char *dbname = strdup(d->dbname);
+
+	pthread_mutex_lock(&fork_lock);
+
+	er = msab_getStatus(&stats, dbname);
+	if (er != NULL) {
+		pthread_mutex_unlock(&fork_lock);
+		Mfprintf(stderr, "cannot terminate process " LLFMT ": %s\n",
+				(long long int)pid, er);
+		free(er);
+		free(dbname);
+		return NULL;
+	}
+
+	if (stats == NULL) {
+		pthread_mutex_unlock(&fork_lock);
+		Mfprintf(stderr, "strange, process " LLFMT " serves database '%s' "
+				"which does not exist\n", (long long int)pid, dbname);
+		free(dbname);
+		return NULL;
+	}
+
+	switch (stats->state) {
+		case SABdbRunning:
+			/* ok, what we expect */
+		break;
+		case SABdbCrashed:
+			pthread_mutex_unlock(&fork_lock);
+			Mfprintf(stderr, "cannot shut down database '%s', mserver "
+					"(pid " LLFMT ") has crashed\n",
+					dbname, (long long int)pid);
+			msab_freeStatus(&stats);
+			free(dbname);
+			return NULL;
+		case SABdbInactive:
+			pthread_mutex_unlock(&fork_lock);
+			Mfprintf(stdout, "database '%s' appears to have shut down already\n",
+					dbname);
+			fflush(stdout);
+			msab_freeStatus(&stats);
+			free(dbname);
+			return NULL;
+		case SABdbStarting:
+			pthread_mutex_unlock(&fork_lock);
+			Mfprintf(stderr, "database '%s' appears to be starting up\n",
+					 dbname);
+			/* starting up, so we'll go to the shut down phase */
+			break;
+		default:
+			pthread_mutex_unlock(&fork_lock);
+			Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
+			msab_freeStatus(&stats);
+			free(dbname);
+			return NULL;
+	}
+
+	if (d->type == MEROFUN) {
+		pthread_mutex_unlock(&fork_lock);
+		multiplexDestroy(dbname);
+		msab_freeStatus(&stats);
+		free(dbname);
+		return NULL;
+	} else if (d->type != MERODB) {
+		/* barf */
+		pthread_mutex_unlock(&fork_lock);
+		Mfprintf(stderr, "cannot stop merovingian process role: %s\n", dbname);
+		msab_freeStatus(&stats);
+		free(dbname);
+		return NULL;
+	}
+
+	/* ok, once we get here, we'll be shutting down the server */
+	Mfprintf(stdout, "sending process " LLFMT " (database '%s') the "
+			"TERM signal\n", (long long int)pid, dbname);
+	kill(pid, SIGTERM);
+	kv = findConfKey(_mero_props, "exittimeout");
+	for (i = 0; i < atoi(kv->val) * 2; i++) {
+		if (stats != NULL)
+			msab_freeStatus(&stats);
+		sleep_ms(500);
+		er = msab_getStatus(&stats, dbname);
+		if (er != NULL) {
+			Mfprintf(stderr, "unexpected problem: %s\n", er);
+			free(er);
+			/* don't die, just continue, so we KILL in the end */
+		} else if (stats == NULL) {
+			Mfprintf(stderr, "hmmmm, database '%s' suddenly doesn't exist "
+					"any more\n", dbname);
+		} else {
+			switch (stats->state) {
+				case SABdbRunning:
+				case SABdbStarting:
+					/* ok, try again */
+				break;
+				case SABdbCrashed:
+					pthread_mutex_unlock(&fork_lock);
+					Mfprintf (stderr, "database '%s' crashed after SIGTERM\n",
+							dbname);
+					msab_freeStatus(&stats);
+					free(dbname);
+					return NULL;
+				case SABdbInactive:
+					pthread_mutex_unlock(&fork_lock);
+					Mfprintf(stdout, "database '%s' has shut down\n", dbname);
+					fflush(stdout);
+					msab_freeStatus(&stats);
+					free(dbname);
+					return NULL;
+				default:
+					Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
+				break;
+			}
+		}
+	}
+	Mfprintf(stderr, "timeout of %s seconds expired, sending process " LLFMT
+			" (database '%s') the KILL signal\n",
+			kv->val, (long long int)pid, dbname);
+	kill(pid, SIGKILL);
+	msab_freeStatus(&stats);
+	free(dbname);
+	pthread_mutex_unlock(&fork_lock);
+	return NULL;
+}
 
 /**
  * Fork an mserver and detach.  Before forking off, Sabaoth is consulted
@@ -54,7 +192,6 @@ forkMserver(char *database, sabdb** stats, int force)
 	char upmax[8];
 	confkeyval *ckv, *kv, *list;
 	SABdbState state;
-	sigset_t blocksig;
 
 	er = msab_getStatus(stats, database);
 	if (er != NULL) {
@@ -258,9 +395,6 @@ forkMserver(char *database, sabdb** stats, int force)
 					database, database));
 	}
 
-	sigemptyset(&blocksig);
-	sigaddset(&blocksig, SIGCHLD);
-	pthread_sigmask(SIG_BLOCK, &blocksig, (sigset_t *) 0);
 	pid = fork();
 	if (pid == 0) {
 		char *sabdbfarm;
@@ -279,10 +413,6 @@ forkMserver(char *database, sabdb** stats, int force)
 		char property_other[1024];
 		int c = 0;
 		unsigned int mport;
-
-		sigemptyset(&blocksig);
-		sigaddset(&blocksig, SIGCHLD);
-		pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 
 		er = msab_getDBfarm(&sabdbfarm);
 		if (er != NULL) {
@@ -462,10 +592,6 @@ forkMserver(char *database, sabdb** stats, int force)
 			dp->dbname = strdup(database);
 
 			pthread_mutex_unlock(&_mero_topdp_lock);
-
-			sigemptyset(&blocksig);
-			sigaddset(&blocksig, SIGCHLD);
-			pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 
 			/* wait for the child to finish starting, at some point we
 			 * decided that we should wait indefinitely here because if the

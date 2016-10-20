@@ -9,7 +9,6 @@
 #ifndef _MULTIPLEX_H
 #define _MULTIPLEX_H 1
 
-#include <pthread.h>
 #include <stdio.h> /* FILE */
 
 #include <mapi.h>

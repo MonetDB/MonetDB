@@ -1029,7 +1029,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 		free(e);
 		exit(2);
 	}
-	if (doall != 1) {
+	if (!doall) {
 		stats = globMatchDBS(argc, argv, &orig, type);
 		msab_freeStatus(&orig);
 		orig = stats;
@@ -1046,7 +1046,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 		 * databases.  In this mode we should omit starting already
 		 * started databases, so we need to check first. */
 
-		if (doall == 1 && (
+		if (doall && (
 				((mode == STOP || mode == KILL) && (stats->state != SABdbRunning && stats->state != SABdbStarting))
 				|| (mode == START && stats->state == SABdbRunning)))
 		{
@@ -1283,7 +1283,7 @@ command_get(int argc, char *argv[])
 
 	/* look at the arguments and evaluate them based on a glob (hence we
 	 * listed all databases before) */
-	if (doall != 1) {
+	if (!doall) {
 		stats = globMatchDBS(argc, argv, &orig, "get");
 		msab_freeStatus(&orig);
 		orig = stats;
