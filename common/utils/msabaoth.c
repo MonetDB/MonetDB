@@ -694,7 +694,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	} else {
 		/* locking succeed, check for a crash in the uplog */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
-		if ((f = fdopen(fd, "r+")) != NULL) {
+		if ((f = fopen(log, "r")) != NULL) {
 			(void)fseek(f, -1, SEEK_END);
 			if (fread(data, 1, 1, f) != 1) {
 				/* the log is empty, assume no crash */
@@ -704,13 +704,14 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			} else { /* should be \t */
 				sdb->state = SABdbCrashed;
 			}
-			/* release the lock */
-			MT_lockf(buf, F_ULOCK, 4, 1);
 			(void)fclose(f);
 		} else {
-			/* shouldn't happen */
-			close(fd);
+			/* no uplog, so presumably never started */
+			sdb->state = SABdbInactive;
 		}
+		/* release the lock */
+		MT_lockf(buf, F_ULOCK, 4, 1);
+		close(fd);
 	}
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, MAINTENANCEFILE);
 	if (stat(buf, &statbuf) == -1) {
