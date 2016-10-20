@@ -17,7 +17,6 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <string.h> /* strerror */
-#include <pthread.h>
 #ifdef HAVE_SYS_UIO_H
 # include <sys/uio.h>
 #endif
@@ -180,6 +179,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 			closesocket(ssock);
 			return(newErr("could not receive initial byte: %s", strerror(errno)));
 		}
+		shutdown(ssock, SHUT_RDWR);
 		closesocket(ssock);
 		/* psock is the underlying socket of cfdin/cfout which we
 		 * passed on to the client; we need to close the socket, but

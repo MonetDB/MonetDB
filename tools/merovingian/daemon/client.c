@@ -33,6 +33,7 @@
 #include "multiplex-funnel.h"
 #include "controlrunner.h"
 #include "client.h"
+#include "handlers.h"
 
 struct threads {
 	struct threads *next;
@@ -460,6 +461,7 @@ acceptConnections(int sock, int usock)
 					break;
 			}
 		}
+		childhandler();
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -527,7 +529,7 @@ acceptConnections(int sock, int usock)
 
 			rv = recvmsg(msgsock, &msgh, 0);
 			if (rv == -1) {
-				close(msgsock);
+				closesocket(msgsock);
 				continue;
 			}
 
@@ -537,12 +539,12 @@ acceptConnections(int sock, int usock)
 				break;
 			case '1':
 				/* filedescriptor, no way */
-				close(msgsock);
+				closesocket(msgsock);
 				Mfprintf(stderr, "client error: fd passing not supported\n");
 				continue;
 			default:
 				/* some unknown state */
-				close(msgsock);
+				closesocket(msgsock);
 				Mfprintf(stderr, "client error: unknown initial byte\n");
 				continue;
 			}
@@ -560,19 +562,18 @@ acceptConnections(int sock, int usock)
 			p->next = threads;
 			threads = p;
 		} else {
-			close(msgsock);
+			closesocket(msgsock);
 			free(data);
 			free(p);
 		}
 	} while (_mero_keep_listening);
 	shutdown(sock, SHUT_RDWR);
-	close(sock);
+	closesocket(sock);
 	return(NO_ERR);
 
 error:
 	_mero_keep_listening = 0;
-	shutdown(sock, SHUT_RDWR);
-	close(sock);
+	closesocket(sock);
 	return(newErr("accept connection: %s", msg));
 }
 
