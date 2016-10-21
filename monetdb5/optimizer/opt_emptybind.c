@@ -165,9 +165,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
                 int tpe;
 				if( p->retc == 2){
 					tpe = getBatType(getVarType(mb,getArg(p,1)));
-					q= newInstruction(0, ASSIGNsymbol);
-					setModuleId(q,batRef);
-					setFunctionId(q,newRef);
+					q= newInstruction(0, batRef, newRef);
 					q = pushType(mb,q,tpe);
 					getArg(q,0)= getArg(p,1);
 					setVarFixed(mb, getArg(p,0));
@@ -225,9 +223,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				int tpe;
 				if( p->retc == 2){
 					tpe = getBatType(getVarType(mb,getArg(p,1)));
-					q= newInstruction(0, ASSIGNsymbol);
-					setModuleId(q,batRef);
-					setFunctionId(q,newRef);
+					q= newInstruction(0, batRef, newRef);
 					q = pushType(mb,q,tpe);
 					getArg(q,0)= getArg(p,1);
 					setVarFixed(mb,getArg(q,0));

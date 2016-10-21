@@ -30,26 +30,20 @@ pushInstruction(mb,P);
 #define casting(TPE)\
 			k= getArg(p,1);\
 			p->argc = p->retc;\
-			q= newInstruction(0,ASSIGNsymbol);\
-			setModuleId(q,calcRef);\
-			setFunctionId(q,TPE##Ref);\
+			q= newInstruction(0,calcRef, TPE##Ref);\
 			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 			pushArgument(mb,q,getArg(series[k],1));\
 			typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
 			p = pushArgument(mb,p, getArg(q,0));\
 			pushInstruction(mb,q);\
-			q= newInstruction(0,ASSIGNsymbol);\
-			setModuleId(q,calcRef);\
-			setFunctionId(q,TPE##Ref);\
+			q= newInstruction(0,calcRef,TPE##Ref);\
 			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 			pushArgument(mb,q,getArg(series[k],2));\
 			pushInstruction(mb,q);\
 			typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
 			p = pushArgument(mb,p, getArg(q,0));\
 			if( p->argc == 4){\
-				q= newInstruction(0,ASSIGNsymbol);\
-				setModuleId(q,calcRef);\
-				setFunctionId(q,TPE##Ref);\
+				q= newInstruction(0,calcRef,TPE##Ref);\
 				setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 				pushArgument(mb,q,getArg(series[k],3));\
 				typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\

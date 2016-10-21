@@ -149,7 +149,7 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	/* added control block */
 	v = newVariable(mb, "always", 6, TYPE_bit);
-	p = newInstruction(NULL,ASSIGNsymbol);
+	p = newInstruction(NULL, NULL,NULL);
 	p->barrier = BARRIERsymbol;
 	getArg(p,0) = v;
 	p= pushBit(mb,p,TRUE);
@@ -160,22 +160,25 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	/* finalize the factory */
 	if (returnseen == 0) {
-		p= newInstruction(NULL,ASSIGNsymbol);
+		p= newInstruction(NULL, NULL,NULL);
 		p->barrier = YIELDsymbol;
 		getArg(p,0)= getArg(sig,0);
 		mb->stmt[k++] = p;
 	}
-	p = newInstruction(NULL,REDOsymbol);
+	p = newInstruction(NULL, NULL,NULL);
+	p->barrier = REDOsymbol;
 	p= pushReturn(mb, p, v);
 	mb->stmt[k++] = p;
 
-	p = newInstruction(NULL,EXITsymbol);
+	p = newInstruction(NULL, NULL,NULL);
+	p->barrier = EXITsymbol;
 	p= pushReturn(mb, p, v);
 	mb->stmt[k++] = p;
 
 	/* return a nil value */
 	if ( getVarType(mb,retvar) != TYPE_void){
-		p = newInstruction(NULL,RETURNsymbol);
+		p = newInstruction(NULL,NULL,NULL);
+		p->barrier= RETURNsymbol;
 		getArg(p,0) = getArg(sig,0);
 		pushArgument(mb,p, retvar);
 		mb->stmt[k++] = p;
