@@ -1741,6 +1741,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* subselect on insert, should use last tid only */
+		/* TODO needs beter check if arg 0 is bind with access 'insert'*/
 		if (match == 1 && fm == 2 && isSubSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0) {
 			r = copyInstruction(p);
