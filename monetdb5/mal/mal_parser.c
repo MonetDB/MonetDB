@@ -1515,8 +1515,10 @@ parseAssign(Client cntxt, int cntrl)
 	curBlk = curPrg->def;
 	curInstr = newInstruction(curBlk, NULL, NULL);
 	
-	if( cntrl)
+	if( cntrl){
+		curInstr->token = ASSIGNsymbol;
 		curInstr->barrier = cntrl;
+	}
 
 	/* start the parsing by recognition of the lhs of an assignment */
 	if (currChar(cntxt) == '(') {
