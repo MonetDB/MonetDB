@@ -730,19 +730,15 @@ static stmt *check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe);
 static stmt *
 stmt_col( backend *be, sql_column *c, stmt *del) 
 { 
-	stmt *sc = stmt_bat(be, c, RDONLY);
+	stmt *sc = stmt_bat(be, c, RDONLY, del?del->partition:0);
 
-	if (del)
-		sc->partition = del->partition;
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
-		stmt *i = stmt_bat(be, c, RD_INS);
-		stmt *u = stmt_bat(be, c, RD_UPD_ID);
+		stmt *i = stmt_bat(be, c, RD_INS, 0);
+		stmt *u = stmt_bat(be, c, RD_UPD_ID, del?del->partition:0);
 		sc = stmt_project_delta(be, sc, u, i);
 		sc = stmt_project(be, del, sc);
-		if (del)
-			u->partition = del->partition;
 	} else if (del) { /* always handle the deletes */
 		sc = stmt_project(be, del, sc);
 	}
@@ -752,19 +748,15 @@ stmt_col( backend *be, sql_column *c, stmt *del)
 static stmt *
 stmt_idx( backend *be, sql_idx *i, stmt *del) 
 { 
-	stmt *sc = stmt_idxbat(be, i, RDONLY);
+	stmt *sc = stmt_idxbat(be, i, RDONLY, del?del->partition:0);
 
-	if (del)
-		sc->partition = del->partition;
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (i->base.flag != TR_NEW || i->t->base.flag != TR_NEW /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
-		stmt *ic = stmt_idxbat(be, i, RD_INS);
-		stmt *u = stmt_idxbat(be, i, RD_UPD_ID);
+		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
+		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, del?del->partition:0);
 		sc = stmt_project_delta(be, sc, u, ic);
 		sc = stmt_project(be, del, sc);
-		if (del)
-			u->partition = del->partition;
 	} else if (del) { /* always handle the deletes */
 		sc = stmt_project(be, del, sc);
 	}
@@ -789,7 +781,7 @@ check_table_types(backend *be, list *types, stmt *s, check_type tpe)
 	temp = s->flag;
 	if (tab->type == st_var) {
 		sql_table *tbl = NULL;//tail_type(tab)->comp_type;
-		stmt *dels = stmt_tid(be, tbl);
+		stmt *dels = stmt_tid(be, tbl, 0);
 		node *n, *m;
 		list *l = sa_list(sql->sa);
 		
@@ -1114,7 +1106,7 @@ rel2bin_sql_table(backend *be, sql_table *t)
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
 	node *n;
-	stmt *dels = stmt_tid(be, t);
+	stmt *dels = stmt_tid(be, t, 0);
 			
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -1127,7 +1119,7 @@ rel2bin_sql_table(backend *be, sql_table *t)
 		/* tid function  sql.tid(t) */
 		const char *rnme = t->base.name;
 
-		stmt *sc = dels?dels:stmt_tid(be, t);
+		stmt *sc = dels?dels:stmt_tid(be, t, 0);
 		sc = stmt_alias(be, sc, rnme, TID);
 		list_append(l, sc);
 	}
@@ -1157,9 +1149,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 
 	if (!t && c)
 		t = c->t;
-       	dels = stmt_tid(be, t);
-	if (rel->flag == REL_PARTITION)
-		dels->partition = 1;
+       	dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
 
 	/* add aliases */
 	assert(rel->exps);
@@ -1189,7 +1179,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			/* tid function  sql.tid(t) */
 			const char *rnme = t->base.name;
 
-			s = dels?dels:stmt_tid(be, t);
+			s = dels?dels:stmt_tid(be, t, 0);
 			s = stmt_alias(be, s, rnme, TID);
 		} else if (oname[0] == '%') { 
 			sql_idx *i = find_sql_idx(t, oname+1);
@@ -2885,7 +2875,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
-	stmt *dels = stmt_tid(be, k->t);
+	stmt *dels = stmt_tid(be, k->t, 0);
 	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
 
 	if (list_length(k->columns) > 1) {
@@ -3303,7 +3293,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 	(void)tids;
 	ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
 	if (list_length(k->columns) > 1) {
-		stmt *dels = stmt_tid(be, k->t);
+		stmt *dels = stmt_tid(be, k->t, 0);
 		node *m;
 		stmt *s = NULL;
 
@@ -3427,7 +3417,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 		}
 		res = stmt_exception(be, s, msg, 00001);
 	} else {		/* single column key */
-		stmt *dels = stmt_tid(be, k->t);
+		stmt *dels = stmt_tid(be, k->t, 0);
 		sql_kc *c = k->columns->h->data;
 		stmt *s = NULL, *h = NULL, *o;
 
@@ -3538,7 +3528,7 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 		cur = updates[updcol];
 	} else {
 		sql_kc *c = k->columns->h->data;
-		stmt *dels = stmt_tid(be, k->t);
+		stmt *dels = stmt_tid(be, k->t, 0);
 		assert(0);
 		cur = stmt_col(be, c->c, dels);
 	}
@@ -3590,7 +3580,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 	int nulls = 0;
 	node *m, *o;
 	sql_key *rk = &((sql_fkey*)k)->rkey->k;
-	stmt *s = NULL, *dels = stmt_tid(be, rk->t), *fdels, *cnteqjoin;
+	stmt *s = NULL, *dels = stmt_tid(be, rk->t, 0), *fdels, *cnteqjoin;
 	stmt *null = NULL, *rows;
 	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -3599,7 +3589,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
 
-	fdels = stmt_tid(be, k->idx->t);
+	fdels = stmt_tid(be, k->idx->t, 0);
 	rows = stmt_idx(be, k->idx, fdels);
 
 	rows = stmt_join(be, rows, tids, 0, cmp_equal); /* join over the join index */
@@ -3706,7 +3696,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 	sql_table *t = mvc_bind_table(sql, k->t->s, k->t->base.name);
 	stmt *ftids, *upd_ids;
 
-	ftids = stmt_tid(be, k->idx->t);
+	ftids = stmt_tid(be, k->idx->t, 0);
 	rows = stmt_idx(be, k->idx, ftids);
 
 	rows = stmt_join(be, rows, utids, 0, cmp_equal); /* join over the join index */
@@ -3816,7 +3806,7 @@ hash_update(backend *be, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 	if (list_length(i->columns) <= 1)
 		return NULL;
 
-	tids = stmt_tid(be, i->t);
+	tids = stmt_tid(be, i->t, 0);
 	it = sql_bind_localtype("int");
 	lng = sql_bind_localtype("lng");
 	for (m = i->columns->h; m; m = m->next ) {
@@ -3867,7 +3857,7 @@ join_idx_update(backend *be, sql_idx * i, stmt *ftids, stmt **updates, int updco
 	mvc *sql = be->mvc;
 	node *m, *o;
 	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
-	stmt *s = NULL, *ptids = stmt_tid(be, rk->t), *l, *r;
+	stmt *s = NULL, *ptids = stmt_tid(be, rk->t, 0), *l, *r;
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
 
@@ -4241,7 +4231,7 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 			sql_key *fk = n->data;
 			stmt *s, *tids;
 
-			tids = stmt_tid(be, fk->idx->t);
+			tids = stmt_tid(be, fk->idx->t, 0);
 			s = stmt_idx(be, fk->idx, tids);
 			s = stmt_join(be, s, utids, 0, cmp_equal); /* join over the join index */
 			s = stmt_result(be, s, 0);
@@ -4311,7 +4301,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (rows) {
 		v = rows;
 	} else { /* delete all */
-		v = stmt_tid(be, t);
+		v = stmt_tid(be, t, 0);
 	}
 	if (!sql_delete_keys(be, t, v, l)) 
 		return sql_error(sql, 02, "DELETE: failed to delete indexes for table '%s'", t->base.name);

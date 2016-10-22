@@ -471,7 +471,7 @@ stmt_temp(backend *be, sql_subtype *t)
 }
 
 stmt *
-stmt_tid(backend *be, sql_table *t)
+stmt_tid(backend *be, sql_table *t, int partition)
 {
 	int tt = TYPE_oid;
 	MalBlkPtr mb = be->mb;
@@ -486,7 +486,7 @@ stmt_tid(backend *be, sql_table *t)
 	q = pushStr(mb, q, t->base.name);
 	if (q == NULL)
 		return NULL;
-	if (t && (!isRemote(t) && !isMergeTable(t)) && 0 /*s->partition*/) {
+	if (t && (!isRemote(t) && !isMergeTable(t)) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		BUN rows = (BUN) store_funcs.count_col(tr, t->columns.set->h->data, 1);
 		setRowCnt(mb,getArg(q,0),rows);
@@ -496,6 +496,7 @@ stmt_tid(backend *be, sql_table *t)
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_tid);
 
+		s->partition = partition;
 		s->op4.tval = t;
 		s->nrcols = 1;
 		s->nr = getDestVar(q);
@@ -506,7 +507,7 @@ stmt_tid(backend *be, sql_table *t)
 }
 
 stmt *
-stmt_bat(backend *be, sql_column *c, int access)
+stmt_bat(backend *be, sql_column *c, int access, int partition)
 {
 	int tt = c->type.type->localtype;
 	MalBlkPtr mb = be->mb;
@@ -534,7 +535,7 @@ stmt_bat(backend *be, sql_column *c, int access)
 		setVarType(mb, getArg(q, 1), newBatType(tt));
 		setVarUDFtype(mb, getArg(q, 1));
 	}
-	if (access != RD_INS && 0 /*&& s->partition, later extra argument */) {
+	if (access != RD_INS && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 
 		if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
@@ -547,6 +548,7 @@ stmt_bat(backend *be, sql_column *c, int access)
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_bat);
 
+		s->partition = partition;
 		s->op4.cval = c;
 		s->nrcols = 1;
 		s->flag = access;
@@ -558,7 +560,7 @@ stmt_bat(backend *be, sql_column *c, int access)
 }
 
 stmt *
-stmt_idxbat(backend *be, sql_idx *i, int access)
+stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 {
 	int tt = hash_index(i->type)?TYPE_lng:TYPE_oid;
 	MalBlkPtr mb = be->mb;
@@ -586,7 +588,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access)
 		setVarType(mb, getArg(q, 1), newBatType(tt));
 		setVarUDFtype(mb, getArg(q, 1));
 	}
-	if (access != RD_INS && 0 /*s->partition*/) {
+	if (access != RD_INS && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 
 		if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
@@ -599,6 +601,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access)
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_idxbat);
 
+		s->partition = partition;
 		s->op4.idxval = i;
 		s->nrcols = 1;
 		s->flag = access;
