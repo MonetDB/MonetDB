@@ -3746,8 +3746,8 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 }
 
 
-static void 
-cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, list *cascade) 
+static int
+cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids) 
 {
 	sql_ukey *uk = (sql_ukey*)k;
 
@@ -3755,7 +3755,6 @@ cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, list *cascade)
 		node *n;
 		for(n = uk->keys->h; n; n = n->next) {
 			sql_key *fk = n->data;
-			stmt *s = NULL;
 
 			/* All rows of the foreign key table which are
 			   affected by the primary key update should all
@@ -3767,26 +3766,25 @@ cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, list *cascade)
 				case ACT_SET_NULL: 
 				case ACT_SET_DEFAULT: 
 				case ACT_CASCADE: 
-					s = sql_update_cascade_Fkeys(be, fk, tids, updates, ((sql_fkey*)fk)->on_update);
-					list_append(cascade, s);
+					if (!sql_update_cascade_Fkeys(be, fk, tids, updates, ((sql_fkey*)fk)->on_update))
+						return -1;
 					break;
 				default:	/*RESTRICT*/
-					s = join_updated_pkey(be, fk, tids, updates);
-					list_append(cascade, s);
+					if (!join_updated_pkey(be, fk, tids, updates))
+						return -1;
 			}
 		}
 	}
+	return 0;
 }
 
 static void
-sql_update_check_key(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx_updates, int updcol, list *l, list *cascade, stmt *pup)
+sql_update_check_key(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx_updates, int updcol, list *l, stmt *pup)
 {
 	stmt *ckeys;
 
 	if (k->type == pkey || k->type == ukey) {
 		ckeys = update_check_ukey(be, updates, k, tids, idx_updates, updcol);
-		if (cascade)
-			cascade_ukey(be, updates, k, tids, cascade);
 	} else { /* foreign keys */
 		ckeys = update_check_fkey(be, updates, k, tids, idx_updates, updcol, pup);
 	}
@@ -3887,8 +3885,44 @@ join_idx_update(backend *be, sql_idx * i, stmt *ftids, stmt **updates, int updco
 	return stmt_left_project(be, ftids, l, r);
 }
 
+static int
+cascade_updates(backend *be, sql_table *t, stmt *rows, stmt **updates)
+{
+	mvc *sql = be->mvc;
+	node *n;
+
+	if (!t->idxs.set)
+		return 0;
+
+	for (n = t->idxs.set->h; n; n = n->next) {
+		sql_idx *i = n->data;
+
+		/* check if update is needed, 
+		 * ie atleast on of the idx columns is updated 
+		 */
+		if (is_idx_updated(i, updates) == 0)
+			continue;
+
+		if (i->key) {
+			if (!(sql->cascade_action && list_find_id(sql->cascade_action, i->key->base.id))) {
+				sql_key *k = i->key;
+				int *local_id = SA_NEW(sql->sa, int);
+				if (!sql->cascade_action) 
+					sql->cascade_action = sa_list(sql->sa);
+				*local_id = i->key->base.id;
+				list_append(sql->cascade_action, local_id);
+				if (k->type == pkey || k->type == ukey) {
+					if (cascade_ukey(be, updates, k, rows))
+						return -1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 static list *
-update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates, list *l, list **cascades, stmt *pup)
+update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates, list *l, stmt *pup)
 {
 	mvc *sql = be->mvc;
 	node *n;
@@ -3898,7 +3932,6 @@ update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates
 	if (!t->idxs.set)
 		return idx_updates;
 
-	*cascades = sa_list(sql->sa);
 	updcol = first_updated_col(updates, list_length(t->columns.set));
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
@@ -3917,17 +3950,8 @@ update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates
 				return NULL;
 			is = join_idx_update(be, i, rows, updates, updcol);
 		}
-		if (i->key) {
-			if (!(sql->cascade_action && list_find_id(sql->cascade_action, i->key->base.id))) {
-				int *local_id = SA_NEW(sql->sa, int);
-				if (!sql->cascade_action) 
-					sql->cascade_action = sa_list(sql->sa);
-				
-				*local_id = i->key->base.id;
-				list_append(sql->cascade_action, local_id);
-				sql_update_check_key(be, updates, i->key, rows, is, updcol, l, *cascades, pup);
-			}
-		}
+		if (i->key) 
+			sql_update_check_key(be, updates, i->key, rows, is, updcol, l, pup);
 		if (is) 
 			list_append(idx_updates, stmt_update_idx(be, i, rows, is));
 	}
@@ -4013,7 +4037,7 @@ static list *
 sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 {
 	mvc *sql = be->mvc;
-	list *idx_updates = NULL, *cascades = NULL;
+	list *idx_updates = NULL;
 	int i, nr_cols = list_length(t->columns.set);
 	list *l = sa_list(sql->sa);
 	node *n;
@@ -4021,8 +4045,9 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
-	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, &cascades, NULL);
+	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, NULL);
 	if (!idx_updates) {
+		assert(0);
 		return sql_error(sql, 02, "UPDATE: failed to update indexes for table '%s'", t->base.name);
 	}
 
@@ -4037,6 +4062,8 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		if (updates[i])
 	       		append(l, stmt_update_col(be, c, rows, updates[i]));
 	}
+	if (cascade_updates(be, t, rows, updates))
+		return sql_error(sql, 02, "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
 	if (!sql_update_triggers(be, t, l, 1)) 
@@ -4052,7 +4079,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	stmt *update = NULL, **updates = NULL, *tids, *s, *ddl = NULL, *pup = NULL, *cnt;
-	list *l = sa_list(sql->sa), *cascades = NULL;
+	list *l = sa_list(sql->sa);
 	int nr_cols, updcol, idx_ups = 0;
 	node *m;
 	sql_rel *tr = rel->l, *prel = rel->r;
@@ -4100,7 +4127,6 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	sql_update_check_null(be, t, updates);
 
 	/* check keys + get idx */
-	cascades = sa_list(sql->sa);
 	updcol = first_updated_col(updates, list_length(t->columns.set));
 	for (m = rel->exps->h; m; m = m->next) {
 		sql_exp *ce = m->data;
@@ -4115,17 +4141,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 				is = NULL;
 				update_idx = NULL;
 			}
-			if (i->key) {
-				if (!(sql->cascade_action && list_find_id(sql->cascade_action, i->key->base.id))) {
-					int *local_id = SA_NEW(sql->sa, int);
-					if (!sql->cascade_action) 
-						sql->cascade_action = sa_list(sql->sa);
-				
-					*local_id = i->key->base.id;
-					list_append(sql->cascade_action, local_id);
-					sql_update_check_key(be, (updcol>=0)?updates:NULL, i->key, tids, update_idx, updcol, l, cascades, pup);
-				}
-			}
+			if (i->key) 
+				sql_update_check_key(be, (updcol>=0)?updates:NULL, i->key, tids, update_idx, updcol, l, pup);
 			if (is) 
 				list_append(l, stmt_update_idx(be,  i, tids, is));
 		}
@@ -4141,15 +4158,16 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		sql_column *c = find_sql_column(t, ce->name);
 
 		if (c) 
-			updates[c->colnr] = stmt_update_col(be,  c, tids, updates[c->colnr]);
+			append(l, stmt_update_col(be,  c, tids, updates[c->colnr]));
 	}
+
+	if (cascade_updates(be, t, tids, updates))
+		return sql_error(sql, 02, "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
 	if (!sql_update_triggers(be, t, l, 1)) 
 		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
 
-/* cascade */
-	list_merge(l, cascades, NULL);
 	if (ddl) {
 		list_prepend(l, ddl);
 		cnt = stmt_list(be, l);
