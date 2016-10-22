@@ -114,7 +114,7 @@
 #define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 
-mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
+mal_export InstrPtr newInstruction(MalBlkPtr mb, str modnme, str fcnnme);
 mal_export InstrPtr copyInstruction(InstrPtr p);
 mal_export void oldmoveInstruction(InstrPtr dst, InstrPtr src);
 mal_export void clrInstruction(InstrPtr p);

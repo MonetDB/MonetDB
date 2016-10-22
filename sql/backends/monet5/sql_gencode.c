@@ -196,7 +196,6 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			c->curprg = backup;
 		return -1;
 	}
-
 	be->mvc->argc = old_argc;
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	if (inline_func)
@@ -321,9 +320,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	p = pushStr(curBlk, p, name);
 #else
 	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
-	p = newInstruction(curBlk, ASSIGNsymbol);
-	setModuleId(p, remoteRef);
-	setFunctionId(p, execRef);
+	p = newInstruction(curBlk, remoteRef, execRef);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, sqlRef);
 	p = pushStr(curBlk, p, registerRef);
@@ -377,9 +374,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 #endif
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
-	p = newInstruction(curBlk, ASSIGNsymbol);
-	setModuleId(p, remoteRef);
-	setFunctionId(p, execRef);
+	p = newInstruction(curBlk, remoteRef, execRef);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, mod);
 	p = pushStr(curBlk, p, name);
@@ -417,7 +412,8 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	p = newStmt(curBlk, remoteRef, disconnectRef);
 	p = pushArgument(curBlk, p, q);
 
-	p = newInstruction(curBlk, RETURNsymbol);
+	p = newInstruction(curBlk, NULL, NULL);
+	p->barrier= RETURNsymbol;
 	p->retc = p->argc = 0;
 	for (i = 0; i < curInstr->retc; i++)
 		p = pushArgument(curBlk, p, lret[i]);

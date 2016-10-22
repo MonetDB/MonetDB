@@ -112,9 +112,7 @@ static int
 dflowGarbagesink(MalBlkPtr mb, int var, InstrPtr *sink, int top){
 	InstrPtr r;
 	
-	r = newInstruction(NULL,ASSIGNsymbol);
-	getModuleId(r) = languageRef;
-	getFunctionId(r) = passRef;
+	r = newInstruction(NULL,languageRef, passRef);
 	getArg(r,0) = newTmpVariable(mb,TYPE_void);
 	r= pushArgument(mb,r, var);
 	sink[top++] = r;
