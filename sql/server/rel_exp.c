@@ -1368,6 +1368,43 @@ exp_has_func( sql_exp *e )
 	return 0;
 }
 
+static int
+exps_has_sideeffect( list *exps)
+{
+	node *n;
+	int has_sideeffect = 0;
+
+	for(n=exps->h; n && !has_sideeffect; n=n->next) 
+		has_sideeffect |= exp_has_sideeffect(n->data);
+	return has_sideeffect;
+}
+
+int
+exp_has_sideeffect( sql_exp *e )
+{
+	switch (e->type) {
+	case e_convert:
+		return exp_has_sideeffect(e->l);
+	case e_func:
+		{
+			sql_subfunc *f = e->f;
+
+			if (f->func->side_effect) 
+				return 1;
+			if (e->l)
+				return exps_has_sideeffect(e->l);
+			return 0;
+		}
+	case e_atom:
+	case e_aggr: 
+	case e_cmp:
+	case e_column:
+	case e_psm:
+		return 0;
+	}
+	return 0;
+}
+
 int
 exp_unsafe( sql_exp *e) 
 {
@@ -1589,21 +1626,21 @@ exps_intern(list *exps)
 }
 
 char *
-compare_func( comp_type t )
+compare_func( comp_type t, int anti )
 {
 	switch(t) {
 	case cmp_equal:
-		return "=";
+		return anti?"<>":"=";
 	case cmp_lt:
-		return "<";
+		return anti?">":"<";
 	case cmp_lte:
-		return "<=";
+		return anti?">=":"<=";
 	case cmp_gte:
-		return ">=";
+		return anti?"<=":">=";
 	case cmp_gt:
-		return ">";
+		return anti?"<":">";
 	case cmp_notequal:
-		return "<>";
+		return anti?"=":"<>";
 	default:
 		return NULL;
 	}
