@@ -29,24 +29,24 @@ Ready.
 % quser_id,	user_name,	uid,	emailaddress,	password,	enabled # name
 % int,	varchar,	int,	varchar,	varchar,	boolean # type
 % 1,	5,	1,	18,	9,	5 # length
-[ 1,	"user1",	1,	"email1@example.com",	"secret",	true	]
-[ 2,	"user2",	2,	"email2@example.com",	"notsecret",	true	]
+[ 2,	"user1",	1,	"email1@example.com",	"secret",	true	]
+[ 3,	"user2",	2,	"email2@example.com",	"notsecret",	true	]
 #select * from query;
 % sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query # table_name
 % query_id,	quser_id,	query_text,	is_example,	is_refused,	aborted,	returned_error,	num_results,	header,	result_set # name
 % int,	int,	varchar,	int,	boolean,	boolean,	varchar,	int,	blob,	blob # type
 % 1,	1,	21,	1,	5,	5,	0,	1,	0,	0 # length
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ 2,	1,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ 3,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ 2,	2,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ 4,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue;
 % sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
 % int,	int,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	1,	0,	0,	26,	26 # length
 #select id_result;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -57,8 +57,8 @@ Ready.
 % 1,	1,	1,	5,	5,	26,	26 # length
 [ 1,	1,	0,	"monet",	"linux",	NULL,	NULL	]
 #select id_result;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ -1	]
@@ -69,8 +69,8 @@ Ready.
 % 1,	1,	1,	5,	5,	26,	26 # length
 [ 1,	1,	0,	"monet",	"linux",	NULL,	NULL	]
 #select id_result;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -82,8 +82,8 @@ Ready.
 [ 1,	1,	0,	"monet",	"linux",	NULL,	NULL	]
 [ 3,	2,	0,	"monet",	"linux",	NULL,	NULL	]
 #select id_result;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -92,16 +92,16 @@ Ready.
 % quser_id,	user_name,	uid,	emailaddress,	password,	enabled # name
 % int,	varchar,	int,	varchar,	varchar,	boolean # type
 % 1,	5,	1,	18,	9,	5 # length
-[ 1,	"user1",	1,	"email1@example.com",	"secret",	true	]
-[ 2,	"user2",	2,	"email2@example.com",	"notsecret",	true	]
+[ 2,	"user1",	1,	"email1@example.com",	"secret",	true	]
+[ 3,	"user2",	2,	"email2@example.com",	"notsecret",	true	]
 #select * from query;
 % sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query # table_name
 % query_id,	quser_id,	query_text,	is_example,	is_refused,	aborted,	returned_error,	num_results,	header,	result_set # name
 % int,	int,	varchar,	int,	boolean,	boolean,	varchar,	int,	blob,	blob # type
 % 1,	1,	21,	1,	5,	5,	0,	1,	0,	0 # length
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ 2,	1,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ 3,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ 2,	2,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ 4,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue;
 % sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue,	sys.ssqq_queue # table_name
 % queue_id,	query_id,	queue_number,	os_version,	monetdb_version,	start_query,	query_ready # name
@@ -109,7 +109,7 @@ Ready.
 % 1,	1,	1,	5,	5,	26,	26 # length
 [ 1,	1,	0,	"monet",	"linux",	NULL,	NULL	]
 [ 3,	2,	0,	"monet",	"linux",	NULL,	NULL	]
-[ 4,	3,	0,	"monet",	"linux",	NULL,	NULL	]
+[ 4,	4,	0,	"monet",	"linux",	NULL,	NULL	]
 
 # 13:39:03 >  
 # 13:39:03 >  Done.
