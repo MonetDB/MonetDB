@@ -139,7 +139,7 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 
 
 static int
-_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, int inline_func)
+_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
 {
 	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
@@ -163,14 +163,10 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	setVarUDFtype(curBlk, 0);
 
 	/* ops */
-	if (call && (call->type == st_list || call->op1->type == st_list)) {
+	if (call && call->type == st_list) {
 		node *n;
-		list *ops = NULL;
+		list *ops = call->op4.lval;
 
-		if (call->type == st_list)
-			ops = call->op4.lval;
-		else
-			ops = call->op1->op4.lval;
 		for (n = ops->h; n; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
@@ -180,6 +176,23 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			char buf[64];
 
 			snprintf(buf,64,"A%s",nme);
+			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
+			curInstr = pushArgument(curBlk, curInstr, varid);
+			setVarType(curBlk, varid, type);
+			setVarUDFtype(curBlk, varid);
+		}
+	} else if (rel_ops) {
+		node *n;
+
+		for (n = rel_ops->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			sql_subtype *t = &e->tpe;
+			int type = t->type->localtype;
+			int varid = 0;
+			const char *nme = e->name;
+			char buf[64];
+
+			snprintf(buf,64,"%s",nme);
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -254,9 +267,11 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	rret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
 	/* dirty hack, rename (change first char of name) L->l, local
 	 * functions name start with 'l'         */
+	/*
 	name[0] = 'l';
-	if (_create_relational_function(m, mod, name, rel, call, 0) < 0)
+	if (_create_relational_function(m, mod, name, rel, call, NULL, 0) < 0)
 		return -1;
+		*/
 
 	/* create stub */
 	name[0] = old;
@@ -272,10 +287,10 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	setVarUDFtype(curBlk, 0);
 
 	/* ops */
-	if (call->op1->type == st_list) {
+	if (call && call->type == st_list) {
 		node *n;
 
-		for (n = call->op1->op4.lval->h; n; n = n->next) {
+		for (n = call->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
@@ -351,11 +366,11 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	free(s); 
 
 	s = "";
-	if (call->op1->type == st_list) {
+	if (call && call->type == st_list) {
 		node *n;
 
 		buf[0] = 0;
-		for (n = call->op1->op4.lval->h; n; n = n->next) {
+		for (n = call->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
@@ -437,14 +452,14 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 }
 
 int
-monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, int inline_func)
+monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
 {
 	prop *p = NULL;
 
 	if (rel && (p = find_prop(rel->p, PROP_REMOTE)) != NULL)
 		return _create_relational_remote(m, mod, name, rel, call, p);
 	else
-		return _create_relational_function(m, mod, name, rel, call, inline_func);
+		return _create_relational_function(m, mod, name, rel, call, rel_ops, inline_func);
 }
 
 /*

@@ -2674,7 +2674,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	/* dump args */
 	if (ops && ops->nr < 0)
 		return NULL;
-	if (monet5_create_relational_function(be->mvc, mod, fimp, rel, ops, 1) < 0)
+	if (monet5_create_relational_function(be->mvc, mod, fimp, rel, ops, NULL, 1) < 0)
 		 return NULL;
 
 	if (f_union) 
