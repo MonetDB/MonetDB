@@ -253,13 +253,14 @@ copyMalBlk(MalBlkPtr old)
 	mb->vtop = 0;
 	mb->vid = old->vid;
 	for (i = 0; i < old->vtop; i++) {
-		if( copyVariable(mb, getVar(old, i)) == -1){
+		if(getVar(old,i) && copyVariable(mb, getVar(old, i)) == -1){
 			GDKfree(mb->var);
 			GDKfree(mb);
 			GDKerror("copyVariable" MAL_MALLOC_FAIL);
 			return NULL;
 		}
-		mb->vtop++;
+		if (getVar(old,i))
+			mb->vtop++;
 	}
 
 	mb->stmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * old->ssize);
