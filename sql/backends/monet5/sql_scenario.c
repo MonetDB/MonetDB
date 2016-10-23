@@ -1073,7 +1073,6 @@ SQLparser(Client c)
 		scanner_query_processed(&(m->scanner));
 	} else {
 		sql_rel *r;
-		stmt *s;
 
 		r = sql_symbol2relation(m, m->sym);
 
@@ -1083,7 +1082,6 @@ SQLparser(Client c)
 			sqlcleanup(m, err);
 			goto finalize;
 		}
-		assert(s);
 
 		if ((!caching(m) || !cachable(m, r)) && m->emode != m_prepare) {
 			/* Query template should not be cached */
