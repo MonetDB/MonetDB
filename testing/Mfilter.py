@@ -94,6 +94,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(\[.*POLYGON.*\(59\.0{16} 18\.0{16}, )(59\.0{16} 13\.0{16})(, 67\.0{16} 13\.0{16}, )(67\.0{16} 18\.0{16})(, 59\.0{16} 18\.0{16}\).*)',   # 10: 5
     # test geom/BugTracker/Tests/X_crash.SF-1971632.* might produce different error messages, depending on evaluation order
     r'^(ERROR = !MALException:geom.wkbGetCoordinate:Geometry ")(.*)(" not a Point)\n',                                                          # 11: 3
+    r"^(QUERY = COPY BINARY INTO)( .*);\n",                     # 12: 3
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
@@ -108,6 +109,7 @@ norm_out = (
     None, '1.1', None,                                                                                  # 9: 3
     None, '67.0000000000000000 18.0000000000000000', None, '59.0000000000000000 13.0000000000000000', None, # 10: 5
     None, '...', None,                                                                                  # 11: 3
+    None, '...', None,                                                                                  # 12: 3
 )
 
 # match "table_name" SQL table header line to normalize "(sys)?.L[0-9]*" to "(sys)?."
