@@ -196,8 +196,10 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 {
 	sql_exp *e = exp_create(sa, e_func);
 	e->card = exps_card(l);
-	if (!l || list_length(l) == 0)
+	if (!l || list_length(l) == 0) 
 		e->card = CARD_ATOM; /* unop returns a single atom */
+	if (f->func->side_effect)
+		e->card = CARD_MULTI;
 	e->l = l;
 	e->f = f; 
 	return e;
