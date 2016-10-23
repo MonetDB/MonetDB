@@ -82,6 +82,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
 ### r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',                         # 1: 5
     r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(?:unexpected .* on line |unexpected .* in: )?(?:.*)\n',                     # 2: 5
     r"^(QUERY|ERROR)( =.* connect)( to|)( ')(localhost)(' port )(\d+)( .*)\n",                                                                  # 3: 8
+    r"^(QUERY = COPY BINARY INTO)( .*);\n",
     r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                           # 4: 3
     r'^(ERROR = !.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                # 5: 4
     r"^(DBD::monetdb::db table_info warning: Catalog parameter c has to be an empty string, as MonetDB does not support multiple catalogs at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pl line \d+\.)\n",            # 6: 3
