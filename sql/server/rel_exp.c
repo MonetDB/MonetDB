@@ -954,8 +954,11 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			if (!subfunc_cmp(e1->f, e2->f) && /* equal functions */
 			    exps_equal(e1->l, e2->l) &&
 			    /* optional order by expressions */
-			    exps_equal(e1->r, e2->r))
-				return 1;
+			    exps_equal(e1->r, e2->r)) {
+				sql_subfunc *f = e1->f;
+				if (!f->func->side_effect)
+					return 1;
+			}
 			break;
 		case e_atom:
 			if (e1->l && e2->l && !atom_cmp(e1->l, e2->l))
