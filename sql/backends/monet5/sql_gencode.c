@@ -189,10 +189,9 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			sql_subtype *t = &e->tpe;
 			int type = t->type->localtype;
 			int varid = 0;
-			const char *nme = e->name;
 			char buf[64];
 
-			snprintf(buf,64,"%s",nme);
+			snprintf(buf,64,"A%d",e->flag);
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -265,13 +264,6 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 		r = rel_project(m->sa, r, rel_projections(m, r, NULL, 1, 1));
 	lret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
 	rret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
-	/* dirty hack, rename (change first char of name) L->l, local
-	 * functions name start with 'l'         */
-	/*
-	name[0] = 'l';
-	if (_create_relational_function(m, mod, name, rel, call, NULL, 0) < 0)
-		return -1;
-		*/
 
 	/* create stub */
 	name[0] = old;
@@ -326,14 +318,6 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	p = pushStr(curBlk, p, "msql");
 	q = getArg(p, 0);
 
-#define REL
-#ifndef REL
-	/* remote.register(q, "mod", "fcn"); */
-	p = newStmt(curBlk, remoteRef, registerRef);
-	p = pushArgument(curBlk, p, q);
-	p = pushStr(curBlk, p, mod);
-	p = pushStr(curBlk, p, name);
-#else
 	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
 	p = newInstruction(curBlk, remoteRef, execRef);
 	p = pushArgument(curBlk, p, q);
@@ -386,7 +370,6 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	GDKfree(buf);
 	}
 	pushInstruction(curBlk, p);
-#endif
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
 	p = newInstruction(curBlk, remoteRef, execRef);

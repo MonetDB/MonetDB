@@ -749,6 +749,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!m->sa)
 		m->sa = sa_create();
 
+	//fprintf(stderr, "#(%s){{%s}}\n", *sig, *expr);
+	//fflush(stderr);
        	ops = sa_list(m->sa);
 	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
 	while (c && *c && !isspace(*c)) {
@@ -759,7 +761,6 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		atom *a;
 
 		*p++ = 0;
-		vnme = sa_strdup(m->sa, vnme);
 		nr = strtol(vnme+1, NULL, 10);
 		tnme = p;
 		p = strchr(p, (int)'(');
@@ -776,10 +777,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		 * don't use sql_add_arg, but special numbered version
 		 * sql_set_arg(m, a, nr);
 		 * */
+		append(ops, exp_atom_ref(m->sa, nr, &t));
 		sql_set_arg(m, nr, a);
-		//append(ops, stmt_alias(be, stmt_varnr(be, nr, &t), NULL, vnme));
-		append(ops, exp_var(m->sa, sa_strdup(m->sa, vnme), &t, m->frame));
-
 		c = strchr(p, (int)',');
 		if (c)
 			c++;
