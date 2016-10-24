@@ -10547,8 +10547,6 @@ Ready.
 [ "optimizer",	"emptybind",	"pattern optimizer.emptybind(mod:str,fcn:str):str ",	"OPTwrapper;",	"Evaluate empty set expressions."	]
 [ "optimizer",	"evaluate",	"pattern optimizer.evaluate():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"evaluate",	"pattern optimizer.evaluate(mod:str,fcn:str):str ",	"OPTwrapper;",	"Evaluate constant expressions once."	]
-[ "optimizer",	"factorize",	"pattern optimizer.factorize():str ",	"OPTwrapper;",	""	]
-[ "optimizer",	"factorize",	"pattern optimizer.factorize(mod:str,fcn:str):str ",	"OPTwrapper;",	"Turn function into a factory"	]
 [ "optimizer",	"garbageCollector",	"pattern optimizer.garbageCollector():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"garbageCollector",	"pattern optimizer.garbageCollector(mod:str,fcn:str):str ",	"OPTwrapper;",	"Garbage collector optimizer"	]
 [ "optimizer",	"generator",	"pattern optimizer.generator():str ",	"OPTwrapper;",	""	]
