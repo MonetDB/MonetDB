@@ -338,13 +338,17 @@ static void ctl_handle_client(
 				dp = _mero_topdp->next; /* don't need the console/log */
 				while (dp != NULL) {
 					if (dp->type == MERODB && strcmp(dp->dbname, q) == 0) {
-						pthread_mutex_unlock(&_mero_topdp_lock);
 						if (strcmp(p, "stop") == 0) {
-							terminateProcess(dp->pid, strdup(dp->dbname), dp->type, 1);
+							pid_t pid = dp->pid;
+							char *dbname = strdup(dp->dbname);
+							mtype type = dp->type;
+							pthread_mutex_unlock(&_mero_topdp_lock);
+							terminateProcess(pid, dbname, type, 1);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
 						} else {
 							kill(dp->pid, SIGKILL);
+							pthread_mutex_unlock(&_mero_topdp_lock);
 							Mfprintf(_mero_ctlout, "%s: killed "
 									"database '%s'\n", origin, q);
 						}
@@ -353,8 +357,10 @@ static void ctl_handle_client(
 						break;
 					} else if (dp->type == MEROFUN && strcmp(dp->dbname, q) == 0) {
 						/* multiplexDestroy needs topdp lock to remove itself */
+						char *dbname = strdup(dp->dbname);
 						pthread_mutex_unlock(&_mero_topdp_lock);
-						multiplexDestroy(dp->dbname);
+						multiplexDestroy(dbname);
+						free(dbname);
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send_client("=");
 						break;
