@@ -59,3 +59,4 @@ ifthenelse-void.Bug-6075
 assert-on-table-producing-function.Bug-6076
 assert-on-push-project-up.Bug-6077
 assert-on-project.Bug-6078
+merge-table-edit.Bug-6084
