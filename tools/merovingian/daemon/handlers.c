@@ -75,6 +75,10 @@ handler(int sig)
 	_mero_keep_listening = 0;
 }
 
+/* we're not using a lock for setting, reading and clearing this flag
+ * (deadlock!), but we should use atomic instructions */
+static volatile int hupflag = 0;
+
 /**
  * Handler for SIGHUP, causes a re-read of the .merovingian_properties
  * file and the logfile to be reopened.
@@ -82,14 +86,27 @@ handler(int sig)
 void
 huphandler(int sig)
 {
+	(void) sig;
+
+	hupflag = 1;
+}
+
+void reinitialize(void)
+{
 	int t;
-	time_t now = time(NULL);
-	struct tm *tmp = localtime(&now);
+	time_t now;
+	struct tm *tmp;
 	char mytime[20];
 	char *f;
 	confkeyval *kv;
 
-	(void)sig;
+	if (!hupflag)
+		return;
+
+	hupflag = 0;
+
+	now = time(NULL);
+	tmp = localtime(&now);
 
 	/* re-read properties, we're in our dbfarm */
 	readProps(_mero_props, ".");

@@ -464,6 +464,7 @@ acceptConnections(int sock, int usock)
 			}
 		}
 		childhandler();
+		reinitialize();
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;

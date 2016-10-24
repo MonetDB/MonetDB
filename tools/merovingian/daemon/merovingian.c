@@ -96,7 +96,7 @@ char *_mero_mserver = NULL;
 /* list of databases that we have started */
 dpair _mero_topdp = NULL;
 /* lock to _mero_topdp, initialised as recursive lateron */
-pthread_mutex_t _mero_topdp_lock;
+pthread_mutex_t _mero_topdp_lock = PTHREAD_MUTEX_INITIALIZER;
 /* for the logger, when set to 0, the logger terminates */
 volatile int _mero_keep_logging = 1;
 /* for accepting connections, when set to 0, listening socket terminates */
@@ -212,6 +212,7 @@ logListener(void *x)
 				break;
 			}
 		}
+		reinitialize();
 
 		pthread_mutex_lock(&_mero_topdp_lock);
 
@@ -291,7 +292,6 @@ main(int argc, char *argv[])
 	char discovery = 0;
 	struct stat sb;
 	FILE *oerr = NULL;
-	pthread_mutexattr_t mta;
 	int thret;
 	char merodontfork = 0;
 	confkeyval ckv[] = {
@@ -725,11 +725,6 @@ main(int argc, char *argv[])
 	d->dbname = "control";
 	d->next = NULL;
 	d->flag = 0;
-
-	/* allow a thread to relock this mutex */
-	pthread_mutexattr_init(&mta);
-	pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&_mero_topdp_lock, &mta);
 
 	if ((thret = pthread_create(&tid, NULL, logListener, NULL)) != 0) {
 		Mfprintf(oerr, "%s: FATAL: unable to create logthread: %s\n",
