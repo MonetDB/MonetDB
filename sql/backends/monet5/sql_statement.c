@@ -52,7 +52,7 @@ convertOperator(str op)
 static InstrPtr
 multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, int o2, int rtype)
 {
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	q = newStmt(mb, malRef, multiplexRef);
 	if (q == NULL)
@@ -69,7 +69,7 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, i
 static InstrPtr
 dump_1(MalBlkPtr mb, char *mod, char *name, stmt *o1)
 {
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (o1->nr < 0)
 		return NULL;
@@ -81,7 +81,7 @@ dump_1(MalBlkPtr mb, char *mod, char *name, stmt *o1)
 static InstrPtr
 dump_2(MalBlkPtr mb, char *mod, char *name, stmt *o1, stmt *o2)
 {
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (o1->nr < 0 || o2->nr < 0)
 		return NULL;
@@ -616,7 +616,7 @@ stmt *
 stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (b->nr < 0)
 		return NULL;
@@ -650,7 +650,7 @@ stmt *
 stmt_append_idx(backend *be, sql_idx *i, stmt *b)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (b->nr < 0)
 		return NULL;
@@ -683,7 +683,7 @@ stmt *
 stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (tids->nr < 0 || upd->nr < 0)
 		return NULL;
@@ -719,7 +719,7 @@ stmt *
 stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (tids->nr < 0 || upd->nr < 0)
 		return NULL;
@@ -754,7 +754,7 @@ stmt *
 stmt_delete(backend *be, sql_table *t, stmt *tids)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (tids->nr < 0)
 		return NULL;
@@ -784,7 +784,7 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 stmt *
 stmt_const(backend *be, stmt *s, stmt *val)
 {
-	InstrPtr q;
+	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
 
 	if (val)
@@ -887,7 +887,7 @@ stmt *
 stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int last, int order)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	int l, p, g, c;
 
 	if (col->nr < 0 || offset->nr < 0 || limit->nr < 0)
@@ -1003,7 +1003,7 @@ stmt *
 stmt_sample(backend *be, stmt *s, stmt *sample)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	
 	if (s->nr < 0 || sample->nr < 0)
 		return NULL;
@@ -1032,7 +1032,7 @@ stmt_order(backend *be, stmt *s, int direction)
 {
 	int reverse = (direction <= 0);
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (s->nr < 0)
 		return NULL;
@@ -1066,7 +1066,7 @@ stmt_reorder(backend *be, stmt *s, int direction, stmt *orderby_ids, stmt *order
 {
 	int reverse = (direction <= 0);
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (s->nr < 0 || orderby_ids->nr < 0 || orderby_grp->nr < 0)
 		return NULL;
@@ -1132,7 +1132,7 @@ stmt *
 stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	char *mod, *op;
 	node *n;
 	int k;
@@ -1223,7 +1223,7 @@ stmt *
 stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	int l, r;
 
 	if (op1->nr < 0 || op2->nr < 0 || (sub && sub->nr < 0))
@@ -1596,7 +1596,7 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 stmt *
 stmt_tunion(backend *be, stmt *op1, stmt *op2)
 {
-	InstrPtr q;
+	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
 
 	q = dump_2(mb, batRef, mergecandRef, op1, op2);
@@ -1618,7 +1618,7 @@ stmt_tunion(backend *be, stmt *op1, stmt *op2)
 stmt *
 stmt_tdiff(backend *be, stmt *op1, stmt *op2)
 {
-	InstrPtr q;
+	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
 
 	if (op1->nr < 0 || op2->nr < 0)
@@ -1649,7 +1649,7 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2)
 stmt *
 stmt_tinter(backend *be, stmt *op1, stmt *op2)
 {
-	InstrPtr q;
+	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
 
 	if (op1->nr < 0 || op2->nr < 0)
@@ -1681,7 +1681,7 @@ stmt *
 stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	int left = (cmptype == cmp_left);
 	char *sjt = "subjoin";
 
@@ -1786,7 +1786,7 @@ static InstrPtr
 stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins) 
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
@@ -1863,7 +1863,7 @@ stmt *
 stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	if (op1->nr < 0 || op2->nr < 0 || op3->nr < 0)
 		return NULL;
 
@@ -1911,7 +1911,7 @@ stmt *
 stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	char *mod, *fimp;
 	node *n;
 
@@ -1972,7 +1972,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 stmt *
 stmt_rs_column(backend *be, stmt *rs, int i, sql_subtype *tpe)
 {
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (rs->nr < 0)
 		return NULL;
@@ -2018,7 +2018,7 @@ static int
 dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * format, const char * sep,const char * rsep,const char * ssep,const char * ns)
 {
 	node *n;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	int ret = -1;
 	// gather the meta information
 	int tblId, nmeId, tpeId, lenId, scaleId, k;
@@ -2089,7 +2089,7 @@ stmt *
 stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, stmt *file)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	int fnr;
 	list *l;
 
@@ -2130,7 +2130,7 @@ stmt *
 stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (chain->nr < 0)
 		return NULL;
@@ -2158,7 +2158,7 @@ stmt *
 stmt_catalog(backend *be, int type, stmt *args)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	node *n;
 
 	if (args->nr < 0)
@@ -2218,7 +2218,7 @@ static InstrPtr
 dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 {
 	node *n;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	// gather the meta information
 	int tblId, nmeId, tpeId, lenId, scaleId, k;
 	InstrPtr p = NULL, list;
@@ -2280,7 +2280,7 @@ stmt *
 stmt_output(backend *be, stmt *lst)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	list *l = lst->op4.lval;
 
 	int cnt = list_length(l);
@@ -2340,7 +2340,7 @@ stmt *
 stmt_affected_rows(backend *be, stmt *l)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (l->nr < 0)
 		return NULL;
@@ -2368,7 +2368,7 @@ stmt *
 stmt_append(backend *be, stmt *c, stmt *a)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (c->nr < 0 || a->nr < 0)
 		return NULL;
@@ -2414,7 +2414,7 @@ stmt *
 stmt_exception(backend *be, stmt *cond, char *errstr, int errcode)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (cond->nr < 0) 
 		return NULL;
@@ -2441,7 +2441,7 @@ stmt *
 stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	char *convert = t->type->base.name;
 	/* convert types and make sure they are rounded up correctly */
 
@@ -2562,7 +2562,7 @@ stmt *
 stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	char *mod, *fimp;
 	sql_subtype *tpe = NULL;
 	int special = 0;
@@ -2666,7 +2666,7 @@ stmt *
 stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	char *mod = "user";
 	char *fimp = (char*)name;
 	node *n;
@@ -2731,7 +2731,7 @@ stmt *
 stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	char *mod, *aggrfunc;
 	char aggrF[64];
 	sql_subtype *res = op->res->h->data;
@@ -3182,7 +3182,7 @@ stmt *
 stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, int anti )
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (cond->nr < 0)
 		return NULL;
@@ -3238,7 +3238,7 @@ stmt *
 stmt_control_end(backend *be, stmt *cond)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (cond->nr < 0)
 		return NULL;
@@ -3306,7 +3306,7 @@ stmt *
 stmt_return(backend *be, stmt *val, int nr_declared_tables)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (val->nr < 0)
 		return NULL;
@@ -3345,7 +3345,7 @@ stmt *
 stmt_assign(backend *be, const char *varname, stmt *val, int level)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 
 	if (val && val->nr < 0)
 		return NULL;
@@ -3403,7 +3403,7 @@ const_column(backend *be, stmt *val)
 {
 	sql_subtype *ct = tail_type(val);
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
 	int tt = ct->type->localtype;
 
 	if (val->nr < 0) 

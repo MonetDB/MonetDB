@@ -376,6 +376,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, mod);
 	p = pushStr(curBlk, p, name);
+	getArg(p, 0) = -1;
 
 	for (i = 0, n = r->exps->h; n; n = n->next, i++) {
 		/* x1 := remote.put(q, :type) */
