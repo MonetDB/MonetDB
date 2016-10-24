@@ -72,7 +72,7 @@ function user.main():void;
     X_1217 := calc.lng(5,X_1216,19,9);
     X_1224:lng := aggr.sum(X_1205);
     X_1225:lng := calc./(X_1217,X_1224);
-    sql.resultSet("sys.L3","promo_revenue","decimal",19,5,10,X_1225);
+    sql.resultSet("sys.L5","promo_revenue","decimal",19,5,10,X_1225);
 end user.main;
 #inline               actions= 0 time=9 usec 
 #remap                actions= 8 time=141 usec 

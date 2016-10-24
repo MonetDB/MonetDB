@@ -329,6 +329,7 @@ discoveryRunner(void *d)
 						"discovery services disabled\n", e);
 				free(e);
 				free(ckv);
+				closesocket(sock);
 				return NULL;
 			}
 
@@ -501,7 +502,10 @@ discoveryRunner(void *d)
 	}
   breakout:
 
-	/* now notify of our soon to be absence ;) */
+	shutdown(sock, SHUT_WR);
+	closesocket(sock);
+
+	/* now notify of imminent absence ;) */
 
 	/* list all known databases */
 	if ((e = msab_getStatus(&stats, NULL)) != NULL) {

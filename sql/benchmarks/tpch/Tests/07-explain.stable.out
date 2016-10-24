@@ -63,7 +63,7 @@ function user.s4_1():void;
     X_232 := bat.append(X_225,"sys.shipping");
     X_242 := bat.append(X_232,"sys.shipping");
     X_248 := bat.append(X_242,"sys.shipping");
-    X_256 := bat.append(X_248,"sys.L6");
+    X_256 := bat.append(X_248,"sys.L16");
     X_227 := bat.new(nil:str);
     X_234 := bat.append(X_227,"supp_nation");
     X_243 := bat.append(X_234,"cust_nation");
