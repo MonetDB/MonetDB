@@ -57,6 +57,7 @@ typedef struct _dpair {
 	int out;          /* where to read stdout messages from */
 	int err;          /* where to read stderr messages from */
 	mtype type;       /* type of process */
+	short flag;		  /* flag internal to logListener */
 	pid_t pid;        /* this process' id */
 	char *dbname;     /* the database that this server serves */
 	struct _dpair* next;

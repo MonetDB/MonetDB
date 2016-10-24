@@ -350,6 +350,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		dp->type = MEROFUN;
 		dp->pid = getpid();
 		dp->dbname = strdup(database);
+		dp->flag = 0;
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
@@ -581,6 +582,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			dp->type = MERODB;
 			dp->pid = pid;
 			dp->dbname = strdup(database);
+			dp->flag = 0;
 
 			pthread_mutex_unlock(&_mero_topdp_lock);
 

@@ -199,6 +199,7 @@ logListener(void *x)
 			FD_SET(w->err, &readfds);
 			if (nfds < w->err)
 				nfds = w->err;
+			w->flag |= 1;
 			w = w->next;
 		}
 
@@ -216,12 +217,16 @@ logListener(void *x)
 
 		w = d;
 		while (w != NULL) {
-			if (FD_ISSET(w->out, &readfds) != 0)
-				logFD(w->out, "MSG", w->dbname,
-						(long long int)w->pid, _mero_logfile);
-			if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
-				logFD(w->err, "ERR", w->dbname,
-						(long long int)w->pid, _mero_logfile);
+			/* only look at records we've added in the previous loop */
+			if (w->flag & 1) {
+				if (FD_ISSET(w->out, &readfds) != 0)
+					logFD(w->out, "MSG", w->dbname,
+						  (long long int)w->pid, _mero_logfile);
+				if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
+					logFD(w->err, "ERR", w->dbname,
+						  (long long int)w->pid, _mero_logfile);
+				w->flag &= ~1;
+			}
 			w = w->next;
 		}
 
@@ -625,6 +630,7 @@ main(int argc, char *argv[])
 	_mero_topdp->pid = 0;
 	_mero_topdp->type = MERO;
 	_mero_topdp->dbname = NULL;
+	_mero_topdp->flag = 0;
 
 	/* where should our msg output go to? */
 	p = getConfVal(_mero_props, "logfile");
@@ -667,6 +673,7 @@ main(int argc, char *argv[])
 	d->pid = getpid();
 	d->type = MERO;
 	d->dbname = "merovingian";
+	d->flag = 0;
 
 	/* separate entry for the neighbour discovery service */
 	d = d->next = &dpdisc;
@@ -688,6 +695,7 @@ main(int argc, char *argv[])
 	d->type = MERO;
 	d->dbname = "discovery";
 	d->next = NULL;
+	d->flag = 0;
 
 	/* separate entry for the control runner */
 	d = d->next = &dpcont;
@@ -709,6 +717,7 @@ main(int argc, char *argv[])
 	d->type = MERO;
 	d->dbname = "control";
 	d->next = NULL;
+	d->flag = 0;
 
 	/* allow a thread to relock this mutex */
 	pthread_mutexattr_init(&mta);
