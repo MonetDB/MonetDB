@@ -60,7 +60,7 @@ typedef struct _dpair {
 
 char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
-void terminateProcess(dpair d, int lock);
+void terminateProcess(pid_t pid, char *dbname, mtype type, int lock);
 void logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream);
 
 extern char *_mero_mserver;

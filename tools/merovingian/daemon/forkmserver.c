@@ -36,15 +36,12 @@ static pthread_mutex_t fork_lock = PTHREAD_MUTEX_INITIALIZER;
  * sends the deadly SIGKILL signal to the mserver process and returns.
  */
 void
-terminateProcess(dpair d, int lock)
+terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 {
 	sabdb *stats;
 	char *er;
 	int i;
 	confkeyval *kv;
-	/* make local copies since d will disappear when killed */
-	pid_t pid = d->pid;
-	char *dbname = strdup(d->dbname);
 
 	if (lock)
 		pthread_mutex_lock(&fork_lock);
@@ -107,14 +104,14 @@ terminateProcess(dpair d, int lock)
 			return;
 	}
 
-	if (d->type == MEROFUN) {
+	if (type == MEROFUN) {
 		if (lock)
 			pthread_mutex_unlock(&fork_lock);
 		multiplexDestroy(dbname);
 		msab_freeStatus(&stats);
 		free(dbname);
 		return;
-	} else if (d->type != MERODB) {
+	} else if (type != MERODB) {
 		/* barf */
 		if (lock)
 			pthread_mutex_unlock(&fork_lock);
@@ -648,14 +645,14 @@ forkMserver(char *database, sabdb** stats, int force)
 				if (scen == NULL) {
 					/* we don't know what it's doing, but we don't like it
 					 * any case, so kill it */
-					terminateProcess(dp, 0);
+					terminateProcess(pid, strdup(database), MERODB, 0);
 					msab_freeStatus(stats);
 					pthread_mutex_unlock(&fork_lock);
 					return(newErr("database '%s' did not initialise the sql "
 								  "scenario", database));
 				}
 			} else if (dp != NULL) {
-				terminateProcess(dp, 0);
+				terminateProcess(pid, strdup(database), MERODB, 0);
 				msab_freeStatus(stats);
 				pthread_mutex_unlock(&fork_lock);
 				return(newErr(

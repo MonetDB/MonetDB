@@ -340,7 +340,7 @@ static void ctl_handle_client(
 					if (dp->type == MERODB && strcmp(dp->dbname, q) == 0) {
 						pthread_mutex_unlock(&_mero_topdp_lock);
 						if (strcmp(p, "stop") == 0) {
-							terminateProcess(dp, 1);
+							terminateProcess(dp->pid, strdup(dp->dbname), dp->type, 1);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
 						} else {

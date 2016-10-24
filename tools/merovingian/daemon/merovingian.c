@@ -265,7 +265,8 @@ newErr(const char *fmt, ...)
 static void *
 doTerminateProcess(void *p)
 {
-	terminateProcess((dpair) p, 1);
+	dpair dp = p;
+	terminateProcess(dp->pid, strdup(dp->dbname), dp->type, 1);
 	return NULL;
 }
 
