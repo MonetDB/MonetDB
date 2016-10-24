@@ -594,50 +594,6 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	sdb->path = strdup(buf);
 	sdb->dbname = sdb->path + strlen(sdb->path) - strlen(dbname);
 
-	/* add scenarios that are supported */
-	sdb->scens = NULL;
-	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SCENARIOFILE);
-	if ((f = fopen(buf, "r")) != NULL) {
-		sablist* np = NULL;
-		while (fgets(data, 8095, f) != NULL) {
-			if (*data != '\0' && data[strlen(data) - 1] == '\n')
-				data[strlen(data) - 1] = '\0';
-			if (sdb->scens == NULL) {
-				sdb->scens = malloc(sizeof(sablist));
-				sdb->scens->val = strdup(data);
-				sdb->scens->next = NULL;
-				np = sdb->scens;
-			} else {
-				np = np->next = malloc(sizeof(sablist));
-				np->val = strdup(data);
-				np->next = NULL;
-			}
-		}
-		(void)fclose(f);
-	}
-
-	/* add how this server can be reached */
-	sdb->conns = NULL;
-	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, CONNECTIONFILE);
-	if ((f = fopen(buf, "r")) != NULL) {
-		sablist* np = NULL;
-		while (fgets(data, 8095, f) != NULL) {
-			if (*data != '\0' && data[strlen(data) - 1] == '\n')
-				data[strlen(data) - 1] = '\0';
-			if (sdb->conns == NULL) {
-				sdb->conns = malloc(sizeof(sablist));
-				sdb->conns->val = strdup(data);
-				sdb->conns->next = NULL;
-				np = sdb->conns;
-			} else {
-				np = np->next = malloc(sizeof(sablist));
-				np->val = strdup(data);
-				np->next = NULL;
-			}
-		}
-		(void)fclose(f);
-	}
-
 
 	/* check the state of the server by looking at its gdk lock:
 	 * - if we can lock it, the server has crashed or isn't running
@@ -682,7 +638,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		 */
 		sdb->state = SABdbInactive;
 	} else if (fd == -1) {
-		/* lock denied, so mserver is running, see if the database
+		/* file is locked, so mserver is running, see if the database
 		 * has finished starting */
 		snprintf(buf, sizeof(buf), "%s/%s/%s",
 				 pathbuf, dbname, STARTEDFILE);
@@ -692,7 +648,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			sdb->state = SABdbRunning;
 		}
 	} else {
-		/* locking succeed, check for a crash in the uplog */
+		/* file is not locked, check for a crash in the uplog */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
 		if ((f = fopen(log, "r")) != NULL) {
 			(void)fseek(f, -1, SEEK_END);
@@ -716,6 +672,51 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	} else {
 		sdb->locked = 1;
 	}
+
+	/* add scenarios that are supported */
+	sdb->scens = NULL;
+	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SCENARIOFILE);
+	if ((f = fopen(buf, "r")) != NULL) {
+		sablist* np = NULL;
+		while (fgets(data, 8095, f) != NULL) {
+			if (*data != '\0' && data[strlen(data) - 1] == '\n')
+				data[strlen(data) - 1] = '\0';
+			if (sdb->scens == NULL) {
+				sdb->scens = malloc(sizeof(sablist));
+				sdb->scens->val = strdup(data);
+				sdb->scens->next = NULL;
+				np = sdb->scens;
+			} else {
+				np = np->next = malloc(sizeof(sablist));
+				np->val = strdup(data);
+				np->next = NULL;
+			}
+		}
+		(void)fclose(f);
+	}
+
+	/* add how this server can be reached */
+	sdb->conns = NULL;
+	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, CONNECTIONFILE);
+	if ((f = fopen(buf, "r")) != NULL) {
+		sablist* np = NULL;
+		while (fgets(data, 8095, f) != NULL) {
+			if (*data != '\0' && data[strlen(data) - 1] == '\n')
+				data[strlen(data) - 1] = '\0';
+			if (sdb->conns == NULL) {
+				sdb->conns = malloc(sizeof(sablist));
+				sdb->conns->val = strdup(data);
+				sdb->conns->next = NULL;
+				np = sdb->conns;
+			} else {
+				np = np->next = malloc(sizeof(sablist));
+				np->val = strdup(data);
+				np->next = NULL;
+			}
+		}
+		(void)fclose(f);
+	}
+
 	return sdb;
 }
 
