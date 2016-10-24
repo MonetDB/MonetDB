@@ -25,62 +25,62 @@ Ready.
 # 11:57:21 >  
 
 #select extract(second from timestamp '2011-3-10 9:30:42.246');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 11 # length
 [ 42.246	]
 #select extract(minute from timestamp '2011-3-10 9:30:42.246');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ 30	]
 #select extract(hour from timestamp '2011-3-10 9:30:42.246');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 9	]
 #select extract(month from timestamp '2011-3-10 9:30:42.246');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 3	]
 #select extract(year from timestamp '2011-3-10 9:30:42.246');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 4 # length
 [ 2011	]
 #select extract(second from timestamp '2011-3-10 9:30:42.246+01:00');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 11 # length
 [ 42.246	]
 #select extract(minute from timestamp '2011-3-10 9:30:42.246+01:00');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ 30	]
 #select extract(hour from timestamp '2011-3-10 9:30:42.246+01:00');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 8	]
 #select extract(month from timestamp '2011-3-10 9:30:42.246+01:00');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 3	]
 #select extract(year from timestamp '2011-3-10 9:30:42.246+01:00');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 4 # length
 [ 2011	]

@@ -46,7 +46,7 @@ dnl  configure file, whereas comments starting with dnl are elided
 dnl  (including their trailing newline).
 
 AC_PREREQ([2.63])
-AC_INIT([MonetDB], [11.24.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
+AC_INIT([MonetDB], [11.26.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -2600,8 +2600,11 @@ AC_MSG_CHECKING([__builtin_add_overflow])
 # to the runtime that contains the required function __muloti4.  Also
 # see https://llvm.org/bugs/show_bug.cgi?id=16404 which is a similar
 # issue.
+# Note that the program being compiled is complicated so that we work
+# around a too smart clang optimizer.
 AC_LINK_IFELSE(
-	[AC_LANG_PROGRAM([[]], [[__int128 a, b, c; __builtin_mul_overflow(a, b, &c);]])],
+	[AC_LANG_PROGRAM([[@%:@include <stdlib.h>
+@%:@include <stdio.h>]], [[__int128 a=(__int128)atoll(getenv("a"))<<64, b=(__int128)atoll(getenv("b"))<<64, c; if (!__builtin_mul_overflow(a, b, &c)) printf("%lld %lld\n",(long long)(c>>64), (long long)c);]])],
 	[AC_DEFINE([HAVE___BUILTIN_ADD_OVERFLOW], 1,
 		[Define if you have the `__builtin_{add,sub,mul}_overflow' functions.])
 	 AC_MSG_RESULT(yes)],

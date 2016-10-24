@@ -32,7 +32,7 @@ Ready.
 # where t1.p = 1
 #   and t2.p between (t1.p + 1) and (t1.p + t1.s)
 #   and t3.p between (t2.p + 1) and (t2.p + t2.s);
-% .L3,	.L4,	.L5 # table_name
+% .L12,	.L14,	.L16 # table_name
 % p1,	p2,	p3 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length
@@ -46,7 +46,7 @@ Ready.
 # where t1.p = 1
 #   and t2.p >= (t1.p + 1) and t2.p <= (t1.p + t1.s)
 #   and t3.p >= (t2.p + 1) and t3.p <= (t2.p + t2.s);
-% .L3,	.L4,	.L5 # table_name
+% .L12,	.L14,	.L16 # table_name
 % p1,	p2,	p3 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length

@@ -61,7 +61,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 311 # length
+% 313 # length
 top N (
 | project (
 | | group by (

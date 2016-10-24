@@ -53,56 +53,56 @@ Ready.
 # 22:56:50 >  
 
 #SELECT '#' || trim('zzzytrimxxxx', 'zyx') || '#';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || trim('zzëzytrimxxëxx', 'zëyx') || '#';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || trim('zzë颖zytrimxx颖ëxx', 'zëy颖x') || '#';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || ltrim('zzzytrim', 'zyx') || '#';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || ltrim('zzëzytrim', 'zëyx') || '#';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || ltrim('zzë颖zytrim', 'zëy颖x') || '#';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || rtrim('trimxxxx', 'zyx') || '#';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || rtrim('trimxxëxx', 'zëyx') || '#';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || rtrim('trimxx颖ëxx', 'zëy颖x') || '#';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
@@ -110,16 +110,16 @@ Ready.
 #INSERT INTO t VALUES ('zzzytrimxxxx', 'zyx'), ('zzëzytrimxxëxx', 'zëyx'), ('zzë颖zytrimxx颖ëxx', 'zëy颖x');
 [ 3	]
 #SELECT trim(s, 'zëy颖x') FROM t;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % varchar # type
 % 4 # length
 [ "trim"	]
 [ "trim"	]
 [ "trim"	]
 #SELECT trim(s, s2) FROM t;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % varchar # type
 % 4 # length
 [ "trim"	]
@@ -129,16 +129,16 @@ Ready.
 #INSERT INTO lt VALUES ('zzzytrim', 'zyx'), ('zzëzytrim', 'zëyx'), ('zzë颖zytrim', 'zëy颖x');
 [ 3	]
 #SELECT ltrim(s, 'zëy颖x') FROM lt;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % varchar # type
 % 4 # length
 [ "trim"	]
 [ "trim"	]
 [ "trim"	]
 #SELECT ltrim(s, s2) FROM lt;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % varchar # type
 % 4 # length
 [ "trim"	]
@@ -148,16 +148,16 @@ Ready.
 #INSERT INTO rt VALUES ('trimxxxx', 'zyx'), ('trimxxëxx', 'zëyx'), ('trimxx颖ëxx', 'zëy颖x');
 [ 3	]
 #SELECT rtrim(s, 'zëy颖x') FROM rt;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % varchar # type
 % 4 # length
 [ "trim"	]
 [ "trim"	]
 [ "trim"	]
 #SELECT rtrim(s, s2) FROM rt;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % varchar # type
 % 4 # length
 [ "trim"	]

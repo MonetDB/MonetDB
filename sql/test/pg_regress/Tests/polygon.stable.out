@@ -30,8 +30,8 @@ Ready.
 #INSERT INTO POLYGON_TBL(f1) VALUES ('(3.0,1.0),(3.0,3.0),(1.0,0.0)');
 [ 1 ]
 #SELECT cast('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' as geometry);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % geometry # type
 % 0 # length
 [ "POLYGON ((3 1, 3 3, 1 0, 3 1))"	]
@@ -40,7 +40,7 @@ Ready.
 #INSERT INTO POLYGON_TBL(f1) VALUES ('(0.0,1.0),(0.0,1.0)');
 [ 1 ]
 #SELECT '' AS four, POLYGON_TBL.* FROM POLYGON_TBL;
-% .L1,	sys.polygon_tbl # table_name
+% .L2,	sys.polygon_tbl # table_name
 % four,	f1 # name
 % char,	geometry # type
 % 0,	0 # length
@@ -62,7 +62,7 @@ Ready.
 #   FROM POLYGON_TBL_VW p
 #--   WHERE p.f1 && '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 #   WHERE p.f1 && 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % three,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	32 # length
@@ -71,7 +71,7 @@ Ready.
 #SELECT '' AS one, p.* 
 #   FROM POLYGON_TBL_VW p
 #   WHERE st_overlaps(p.f1, 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))');
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	32 # length
@@ -80,7 +80,7 @@ Ready.
 #   FROM POLYGON_TBL_VW p
 #--   WHERE p.f1 &< '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 #   WHERE p.f1 &< 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % four,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	37 # length
@@ -92,7 +92,7 @@ Ready.
 #   FROM POLYGON_TBL_VW p
 #--   WHERE p.f1 &> '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 #   WHERE p.f1 &> 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % two,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	32 # length
@@ -101,7 +101,7 @@ Ready.
 #   FROM POLYGON_TBL_VW p
 #--   WHERE p.f1 << '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 #   WHERE p.f1 << 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	37 # length
@@ -111,7 +111,7 @@ Ready.
 #   FROM POLYGON_TBL_VW p
 #--   WHERE p.f1 >> '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 #   WHERE p.f1 >> 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % zero,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	0 # length
@@ -119,7 +119,7 @@ Ready.
 #   FROM POLYGON_TBL_VW p
 #--   WHERE p.f1 @ polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 #   WHERE p.f1 @ 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	32 # length
@@ -128,7 +128,7 @@ Ready.
 #   FROM POLYGON_TBL_VW p
 #--   WHERE p.f1 ~= polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 #   WHERE p.f1 ~= 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	32 # length
@@ -136,7 +136,7 @@ Ready.
 #SELECT '' AS one, p.* 
 #   FROM POLYGON_TBL_VW p
 #   WHERE st_equals(p.f1, 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))');
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	32 # length
@@ -145,7 +145,7 @@ Ready.
 #   FROM POLYGON_TBL_VW p
 #--   WHERE p.f1 ~ polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
 #   WHERE p.f1 ~ 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	32 # length
@@ -153,109 +153,109 @@ Ready.
 #SELECT '' AS one, p.* 
 #   FROM POLYGON_TBL_VW p
 #   WHERE st_contains(p.f1, 'POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))');
-% .L3,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	32 # length
 [ "",	"POLYGON ((3 1, 3 3, 1 0, 3 1))",	"\"POLYGON ((3 1, 3 3, 1 0, 3 1))\""	]
 #SELECT ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))') <<  ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))') &<  ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))') &>  ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))') >>  ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))') @  ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))') ~  ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_Contains(ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))'),  ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))')) AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))') ~=  ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_Equals(ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))'),  ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))')) AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))') &&  ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_Overlaps(ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))'), ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))')) AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_Crosses(ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))'), ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))')) AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_Disjoint(ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))'), ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))')) AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_Distance(ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))'), ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))')) AS "0";
-% .L1 # table_name
+% .L2 # table_name
 % 0 # name
 % double # type
 % 24 # length
 [ 0	]
 #SELECT ST_Intersects(ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))'), ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))')) AS "true";
-% .L1 # table_name
+% .L2 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_Touches(ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))'), ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))')) AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_Within(ST_WKTToSQL('POLYGON((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))'), ST_WKTToSQL('POLYGON((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))')) AS "false";
-% .L1 # table_name
+% .L2 # table_name
 % false # name
 % boolean # type
 % 5 # length

@@ -28,8 +28,8 @@ Ready.
 #create table s ( snr int, sname varchar(30) );
 #create table sp ( snr int, pnr varchar(30) );
 #select 1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -38,8 +38,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 2; 
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 2	]
@@ -48,8 +48,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 10;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 10	]
@@ -58,8 +58,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 11;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 11	]
@@ -68,8 +68,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 12;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 12	]
@@ -78,8 +78,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 21;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 21	]
@@ -88,8 +88,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 22;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 22	]
@@ -98,8 +98,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 23;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 23	]
@@ -108,8 +108,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 24;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 24	]
@@ -118,8 +118,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 25;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 25	]
@@ -128,8 +128,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 26;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 26	]
@@ -138,8 +138,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 27;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 27	]
@@ -148,8 +148,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 28;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 28	]
@@ -158,8 +158,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 29;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 29	]
@@ -168,8 +168,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 30;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 30	]
@@ -178,8 +178,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 31;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 31	]
@@ -188,8 +188,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 32;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 32	]
@@ -198,8 +198,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 33;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 33	]
@@ -208,8 +208,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 34;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 34	]
@@ -218,8 +218,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 35;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 35	]
@@ -228,8 +228,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 36;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 36	]
@@ -238,8 +238,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 37;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 37	]
@@ -248,8 +248,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 38;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 38	]
@@ -258,8 +258,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 39;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 39	]
@@ -268,8 +268,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 41;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 41	]
@@ -278,8 +278,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 42;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 42	]
@@ -288,8 +288,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 44;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 44	]
@@ -298,8 +298,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 45;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 45	]
@@ -308,8 +308,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 47;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 47	]
@@ -318,8 +318,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 48;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 48	]
@@ -328,8 +328,8 @@ Ready.
 % varchar # type
 % 0 # length
 #select 50;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 50	]
@@ -338,14 +338,14 @@ Ready.
 % varchar # type
 % 0 # length
 #select 51;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 51	]
 #select 52;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 52	]

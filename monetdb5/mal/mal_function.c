@@ -33,13 +33,13 @@ Symbol newFunction(str mod, str nme,int kind){
 		return NULL;
 	}
 
-	p = newInstruction(NULL,kind);
+	p = newInstruction(NULL,mod,nme);
+	p->token = kind;
+	p->barrier = 0;
 	if (p == NULL) {
 		freeSymbol(s);
 		return NULL;
 	}
-	setModuleId(p, mod);
-	setFunctionId(p, nme);
 	setDestVar(p, varid);
 	pushInstruction(s->def,p);
 	return s;

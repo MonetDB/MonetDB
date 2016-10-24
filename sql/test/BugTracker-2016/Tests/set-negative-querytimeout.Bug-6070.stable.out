@@ -67,49 +67,49 @@ Ready.
 # 17:30:20 >  
 
 #SELECT "querytimeout", "sessiontimeout" FROM "sys"."sessions"() WHERE "active";
-% .L,	.L # table_name
+% .L1,	.L1 # table_name
 % querytimeout,	sessiontimeout # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 0,	0	]
 #SELECT "querytimeout", "sessiontimeout" FROM "sys"."sessions"() WHERE "active";
-% .L,	.L # table_name
+% .L1,	.L1 # table_name
 % querytimeout,	sessiontimeout # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 9,	0	]
 #SELECT "querytimeout", "sessiontimeout" FROM "sys"."sessions"() WHERE "active";
-% .L,	.L # table_name
+% .L1,	.L1 # table_name
 % querytimeout,	sessiontimeout # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 0,	0	]
 #SELECT "querytimeout", "sessiontimeout" FROM "sys"."sessions"() WHERE "active";
-% .L,	.L # table_name
+% .L1,	.L1 # table_name
 % querytimeout,	sessiontimeout # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 0,	0	]
 #SELECT "querytimeout", "sessiontimeout" FROM "sys"."sessions"() WHERE "active";
-% .L,	.L # table_name
+% .L1,	.L1 # table_name
 % querytimeout,	sessiontimeout # name
 % bigint,	bigint # type
 % 1,	1 # length
-[ 0,	0	]
+[ 7,	0	]
 #SELECT "querytimeout", "sessiontimeout" FROM "sys"."sessions"() WHERE "active";
-% .L,	.L # table_name
+% .L1,	.L1 # table_name
 % querytimeout,	sessiontimeout # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 7,	9	]
 #SELECT "querytimeout", "sessiontimeout" FROM "sys"."sessions"() WHERE "active";
-% .L,	.L # table_name
+% .L1,	.L1 # table_name
 % querytimeout,	sessiontimeout # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 7,	8	]
 #SELECT "querytimeout", "sessiontimeout" FROM "sys"."sessions"() WHERE "active";
-% .L,	.L # table_name
+% .L1,	.L1 # table_name
 % querytimeout,	sessiontimeout # name
 % bigint,	bigint # type
 % 1,	1 # length

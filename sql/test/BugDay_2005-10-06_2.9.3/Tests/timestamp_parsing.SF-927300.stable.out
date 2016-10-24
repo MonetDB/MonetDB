@@ -15,8 +15,8 @@ Ready.
 
 
 #select timestamp '2004-04-01 08:57';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % timestamp # type
 % 26 # length
 [ 2004-04-01 08:57:00.000000	]

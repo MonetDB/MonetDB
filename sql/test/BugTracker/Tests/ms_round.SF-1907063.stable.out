@@ -29,8 +29,8 @@ Ready.
 
 #create table t23(id float);
 #select round(id,8) from t23; 
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 #drop table t23;

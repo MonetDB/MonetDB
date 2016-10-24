@@ -1926,11 +1926,11 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 		join = stmt_join(sql->sa, l, r, cmp_all); 
 	}
 	jl = stmt_result(sql->sa, join, 0);
-	jr = stmt_result(sql->sa, join, 1);
 	if (en) {
 		stmt *sub, *sel = NULL;
 		list *nl;
 
+		jr = stmt_result(sql->sa, join, 1);
 		/* construct relation */
 		nl = sa_list(sql->sa);
 

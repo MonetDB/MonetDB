@@ -20,8 +20,8 @@ Ready.
 
 [ 5	]
 #SELECT SUBSTRING('hallo' FROM i FOR 3) FROM N WHERE i <= CHAR_LENGTH('hallo') + 2;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 5 # length
 [ "hal"	]

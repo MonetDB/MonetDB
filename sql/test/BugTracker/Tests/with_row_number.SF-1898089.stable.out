@@ -25,7 +25,7 @@ Ready.
 
 [ 32605	]
 #SELECT COUNT(*) AS cnt from tradeDate;
-% sys.L2 # table_name
+% sys.L4 # table_name
 % cnt # name
 % bigint # type
 % 5 # length

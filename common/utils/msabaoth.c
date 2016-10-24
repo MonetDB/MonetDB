@@ -675,7 +675,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			(void)fclose(f);
 		}
 	} else if ((snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, ".gdk_lock") > 0) & /* no typo */
-			   ((fd = MT_lockf(buf, F_TLOCK, 4, 1)) == -2)) {
+			   ((fd = MT_lockf(buf, F_TEST, 4, 1)) == -2)) {
 		/* Locking failed; this can be because the lockfile couldn't
 		 * be created.  Probably there is no Mserver running for
 		 * that case also.
@@ -694,7 +694,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	} else {
 		/* locking succeed, check for a crash in the uplog */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
-		if ((f = fdopen(fd, "r+")) != NULL) {
+		if ((f = fopen(log, "r")) != NULL) {
 			(void)fseek(f, -1, SEEK_END);
 			if (fread(data, 1, 1, f) != 1) {
 				/* the log is empty, assume no crash */
@@ -704,12 +704,10 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			} else { /* should be \t */
 				sdb->state = SABdbCrashed;
 			}
-			/* release the lock */
-			MT_lockf(buf, F_ULOCK, 4, 1);
 			(void)fclose(f);
 		} else {
-			/* shouldn't happen */
-			close(fd);
+			/* no uplog, so presumably never started */
+			sdb->state = SABdbInactive;
 		}
 	}
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, MAINTENANCEFILE);

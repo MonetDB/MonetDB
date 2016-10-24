@@ -1210,7 +1210,10 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 	    bbpversion != GDKLIBRARY_OLDWKB &&
 	    bbpversion != GDKLIBRARY_INSERTED &&
 	    bbpversion != GDKLIBRARY_HEADED) {
-		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
+		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
+			 "This database was probably created by %s version of MonetDB.",
+			 GDKLIBRARY, bbpversion,
+			 bbpversion > GDKLIBRARY ? "a newer" : "a too old");
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		GDKfatal("BBPinit: short BBP");

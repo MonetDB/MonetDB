@@ -156,10 +156,8 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 	int tblId, nmeId, tpeId, lenId, scaleId, k;
 	InstrPtr p = NULL, list;
 
-	list = newInstruction(mb,ASSIGNsymbol);
+	list = newInstruction(mb,sqlRef, resultSetRef);
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
-	setModuleId(list, sqlRef);
-	setFunctionId(list, resultSetRef);
 	k = list->argc;
 	meta(tblId,TYPE_str);
 	meta(nmeId,TYPE_str);
@@ -222,10 +220,8 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, str format, str se
 	int tblId, nmeId, tpeId, lenId, scaleId, k;
 	InstrPtr p= NULL, list;
 
-	list = newInstruction(mb,ASSIGNsymbol);
+	list = newInstruction(mb, sqlRef, export_tableRef);
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
-	setModuleId(list, sqlRef);
-	setFunctionId(list,export_tableRef);
 	if( file >= 0){
 		list  = pushArgument(mb, list, file);
 		list  = pushStr(mb, list, format);
@@ -613,9 +609,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	p = pushStr(curBlk, p, name);
 #else
 	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
-	p = newInstruction(curBlk, ASSIGNsymbol);
-	setModuleId(p, remoteRef);
-	setFunctionId(p, execRef);
+	p = newInstruction(curBlk, remoteRef, execRef);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, sqlRef);
 	p = pushStr(curBlk, p, registerRef);
@@ -669,9 +663,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 #endif
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
-	p = newInstruction(curBlk, ASSIGNsymbol);
-	setModuleId(p, remoteRef);
-	setFunctionId(p, execRef);
+	p = newInstruction(curBlk, remoteRef, execRef);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, mod);
 	p = pushStr(curBlk, p, name);
@@ -709,7 +701,8 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	p = newStmt(curBlk, remoteRef, disconnectRef);
 	p = pushArgument(curBlk, p, q);
 
-	p = newInstruction(curBlk, RETURNsymbol);
+	p = newInstruction(curBlk, NULL, NULL);
+	p->barrier= RETURNsymbol;
 	p->retc = p->argc = 0;
 	for (i = 0; i < curInstr->retc; i++)
 		p = pushArgument(curBlk, p, lret[i]);
@@ -931,7 +924,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	s->nr = getDestVar(q);
 
 	if (swapped) {
-		InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+		InstrPtr r = newInstruction(mb, NULL, NULL);
 		getArg(r, 0) = newTmpVariable(mb, TYPE_any);
 		getArg(r, 1) = getArg(q, 1);
 		r->retc = 1;
@@ -939,7 +932,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 		pushInstruction(mb, r);
 		s->nr = getArg(r, 0);
 
-		r = newInstruction(mb, ASSIGNsymbol);
+		r = newInstruction(mb, NULL, NULL);
 		getArg(r, 0) = newTmpVariable(mb, TYPE_any);
 		getArg(r, 1) = getArg(q, 0);
 		r->retc = 1;
@@ -1024,7 +1017,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					if (buf == NULL)
 						return -1;
 					(void) snprintf(buf, MAXIDENTLEN, "A%s", s->op1->op4.aval->data.val.sval);
-					q = newInstruction(mb, ASSIGNsymbol);
+					q = newInstruction(mb, NULL, NULL);
 					if (q == NULL) {
 						GDKfree(buf);
 						return -1;
@@ -1740,7 +1733,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 
 			if (swapped) {
-				InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+				InstrPtr r = newInstruction(mb,  NULL, NULL);
 				if (r == NULL)
 					return -1;
 				getArg(r, 0) = newTmpVariable(mb, TYPE_any);
@@ -1750,7 +1743,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				pushInstruction(mb, r);
 				s->nr = getArg(r, 0);
 
-				r = newInstruction(mb, ASSIGNsymbol);
+				r = newInstruction(mb, NULL, NULL);
 				if (r == NULL)
 					return -1;
 				getArg(r, 0) = newTmpVariable(mb, TYPE_any);
@@ -2705,7 +2698,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				InstrPtr k = newStmt(mb, sqlRef, "dropDeclaredTables");
 				(void) pushInt(mb, k, s->flag);
 			}
-			q = newInstruction(mb, RETURNsymbol);
+			q = newInstruction(mb, NULL, NULL);
+			q->barrier= RETURNsymbol;
 			if (q == NULL)
 				return -1;
 			if (s->op1->type == st_table) {
@@ -2742,7 +2736,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (buf == NULL)
 					return -1;
 				(void) snprintf(buf, MAXIDENTLEN, "A%s", vn);
-				q = newInstruction(mb, ASSIGNsymbol);
+				q = newInstruction(mb, NULL, NULL);
 				if (q == NULL) {
 					GDKfree(buf);
 					return -1;

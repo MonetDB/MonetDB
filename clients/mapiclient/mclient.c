@@ -3034,7 +3034,7 @@ main(int argc, char **argv)
 #endif
 
 	/* parse config file first, command line options override */
-	parse_dotmonetdb(&user, &passwd, &language, &save_history, &output, &pagewidth);
+	parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
 	pagewidthset = pagewidth != 0;
 	if (language) {
 		if (strcmp(language, "sql") == 0) {
@@ -3157,7 +3157,9 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			assert(optarg);
-			dbname = optarg;
+			if (dbname)
+				free(dbname);
+			dbname = strdup(optarg);
 			break;
 		case 's':
 			assert(optarg);
@@ -3255,7 +3257,7 @@ main(int argc, char **argv)
 
 	if (dbname == NULL && has_fileargs &&
 	    (fp = fopen(argv[optind], "r")) == NULL) {
-		dbname = argv[optind];
+		dbname = strdup(argv[optind]);
 		optind++;
 		has_fileargs = optind != argc;
 	}
@@ -3271,6 +3273,9 @@ main(int argc, char **argv)
 	if (passwd)
 		free(passwd);
 	passwd = NULL;
+	if (dbname)
+		free(dbname);
+	dbname = NULL;
 	if (mid && mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
 

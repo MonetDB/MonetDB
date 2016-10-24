@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "opt_generator.h"
+#include "mal_builder.h"
 
 /*
  * (c) Martin Kersten, Sjoerd Mullender
@@ -29,22 +30,25 @@ pushInstruction(mb,P);
 #define casting(TPE)\
 			k= getArg(p,1);\
 			p->argc = p->retc;\
-			q= newStmt(mb,calcRef,TPE##Ref);\
-			setArgType(mb,q,0,TYPE_##TPE);\
+			q= newInstruction(0,calcRef, TPE##Ref);\
+			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 			pushArgument(mb,q,getArg(series[k],1));\
 			typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
 			p = pushArgument(mb,p, getArg(q,0));\
-			q= newStmt(mb,calcRef,TPE##Ref);\
-			setArgType(mb,q,0,TYPE_##TPE);\
+			pushInstruction(mb,q);\
+			q= newInstruction(0,calcRef,TPE##Ref);\
+			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 			pushArgument(mb,q,getArg(series[k],2));\
+			pushInstruction(mb,q);\
 			typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
 			p = pushArgument(mb,p, getArg(q,0));\
 			if( p->argc == 4){\
-				q= newStmt(mb,calcRef,TPE##Ref);\
-				setArgType(mb,q,0,TYPE_##TPE);\
+				q= newInstruction(0,calcRef,TPE##Ref);\
+				setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 				pushArgument(mb,q,getArg(series[k],3));\
 				typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
 				p = pushArgument(mb,p, getArg(q,0));\
+				pushInstruction(mb,q);\
 			}\
 			setModuleId(p,generatorRef);\
 			setFunctionId(p,parametersRef);\

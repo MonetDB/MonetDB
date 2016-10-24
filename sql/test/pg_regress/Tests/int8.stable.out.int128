@@ -59,7 +59,7 @@ Ready.
 [ 4567890123456789,	-4567890123456789 ]
 
 #SELECT '' AS five, q1 AS plus, -q1 AS minus FROM INT8_TBL;
-% .L1,	sys.L2,	sys.L3 # table_name
+% .L2,	sys.L4,	sys.L6 # table_name
 % five,	plus,	minus # name
 % char,	bigint,	bigint # type
 % 0,	16,	17 # length
@@ -70,7 +70,7 @@ Ready.
 [ "",	4567890123456789,	-4567890123456789 ]
 
 #SELECT '' AS five, q1, q2, q1 + q2 AS plus FROM INT8_TBL;
-% .L1,	sys.int8_tbl,	sys.int8_tbl,	sys.L2 # table_name
+% .L2,	sys.int8_tbl,	sys.int8_tbl,	sys.L6 # table_name
 % five,	q1,	q2,	plus # name
 % char,	bigint,	bigint,	hugeint # type
 % 0,	16,	17,	16 # length
@@ -81,7 +81,7 @@ Ready.
 [ "",	4567890123456789,	-4567890123456789,	0 ]
 
 #SELECT '' AS five, q1, q2, q1 - q2 AS minus FROM INT8_TBL;
-% .L1,	sys.int8_tbl,	sys.int8_tbl,	sys.L2 # table_name
+% .L2,	sys.int8_tbl,	sys.int8_tbl,	sys.L6 # table_name
 % five,	q1,	q2,	minus # name
 % char,	bigint,	bigint,	hugeint # type
 % 0,	16,	17,	17 # length
@@ -91,7 +91,7 @@ Ready.
 [ "",	4567890123456789,	4567890123456789,	0 ]
 [ "",	4567890123456789,	-4567890123456789,	9135780246913578 ]
 #SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL WHERE q2 <> 4567890123456789 ORDER BY q1, q2;
-% .L1,	sys.int8_tbl,	sys.int8_tbl,	sys.L2 # table_name
+% .L2,	sys.int8_tbl,	sys.int8_tbl,	sys.L6 # table_name
 % three,	q1,	q2,	multiply # name
 % char,	bigint,	bigint,	hugeint # type
 % 0,	16,	17,	33 # length
@@ -100,7 +100,7 @@ Ready.
 [ "",	4567890123456789,	123,	561850485185185047	]
 #SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL
 # WHERE q1 < 1000 or (q2 > 0 and q2 < 1000);
-% .L1,	sys.int8_tbl,	sys.int8_tbl,	sys.L2 # table_name
+% .L2,	sys.int8_tbl,	sys.int8_tbl,	sys.L6 # table_name
 % three,	q1,	q2,	multiply # name
 % char,	bigint,	bigint,	hugeint # type
 % 0,	16,	16,	18 # length
@@ -109,7 +109,7 @@ Ready.
 [ "",	4567890123456789,	123,	561850485185185047 ]
 
 #SELECT '' AS five, q1, q2, q1 / q2 AS divide FROM INT8_TBL;
-% .L1,	sys.int8_tbl,	sys.int8_tbl,	sys.L2 # table_name
+% .L2,	sys.int8_tbl,	sys.int8_tbl,	sys.L6 # table_name
 % five,	q1,	q2,	divide # name
 % char,	bigint,	bigint,	bigint # type
 % 0,	16,	17,	14 # length
@@ -119,8 +119,8 @@ Ready.
 [ "",	4567890123456789,	4567890123456789,	1 ]
 [ "",	4567890123456789,	-4567890123456789,	-1 ]
 #SELECT '' AS five, q1, cast(q1 as double) FROM INT8_TBL;
-% .L1,	sys.int8_tbl,	sys.L2 # table_name
-% five,	q1,	L2 # name
+% .L2,	sys.int8_tbl,	sys.L5 # table_name
+% five,	q1,	L5 # name
 % char,	bigint,	double # type
 % 0,	16,	24 # length
 [ "",	123,	123	]
@@ -129,8 +129,8 @@ Ready.
 [ "",	4567890123456789,	4.567890123e+15	]
 [ "",	4567890123456789,	4.567890123e+15	]
 #SELECT '' AS five, q2, cast(q2 as double) FROM INT8_TBL;
-% .L1,	sys.int8_tbl,	sys.L2 # table_name
-% five,	q2,	L2 # name
+% .L2,	sys.int8_tbl,	sys.L5 # table_name
+% five,	q2,	L5 # name
 % char,	bigint,	double # type
 % 0,	17,	24 # length
 [ "",	456,	456	]
@@ -139,7 +139,7 @@ Ready.
 [ "",	4567890123456789,	4.567890123e+15	]
 [ "",	-4567890123456789,	-4.567890123e+15	]
 #SELECT '' AS five, 2 * q1 AS "twice integer" FROM INT8_TBL;
-% .L1,	sys.L2 # table_name
+% .L2,	sys.L4 # table_name
 % five,	"twice integer" # name
 % char,	hugeint # type
 % 0,	16 # length
@@ -150,7 +150,7 @@ Ready.
 [ "",	9135780246913578 ]
 
 #SELECT '' AS five, q1 * 2 AS "twice integer" FROM INT8_TBL;
-% .L1,	sys.L2 # table_name
+% .L2,	sys.L4 # table_name
 % five,	"twice integer" # name
 % char,	hugeint # type
 % 0,	16 # length

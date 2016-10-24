@@ -34,7 +34,7 @@ Ready.
 #insert into table2848 values ('c');
 [ 1	]
 #SELECT CASE WHEN id = 'a' THEN 'x' ELSE 'y' END AS id FROM table2848;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % id # name
 % char # type
 % 1 # length

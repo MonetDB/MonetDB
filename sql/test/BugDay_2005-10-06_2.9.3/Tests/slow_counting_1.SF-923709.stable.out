@@ -28,14 +28,14 @@ Ready.
 #	return 0;
 #end;
 #select gen_insert(17);	-- previous call was 25
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 0	]
 #select count(*) from slow_count;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 6 # length
 [ 131072	]

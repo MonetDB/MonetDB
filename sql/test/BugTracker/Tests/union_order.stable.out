@@ -33,7 +33,7 @@ Ready.
 #union
 #select data from tmp_two
 #;
-% .L # table_name
+% .L6 # table_name
 % data # name
 % decimal # type
 % 6 # length
@@ -42,7 +42,7 @@ Ready.
 #select data from tmp_two
 #order by data
 #;
-% .L # table_name
+% .L6 # table_name
 % data # name
 % decimal # type
 % 6 # length

@@ -21,7 +21,6 @@
 #include <signal.h>
 
 #include <errno.h>
-#include <pthread.h>
 
 #include <msabaoth.h>
 #include <mcrypt.h>
@@ -246,7 +245,6 @@ static void ctl_handle_client(
 			} else if (pos == -2) {
 				Mfprintf(_mero_ctlerr, "%s: time-out reading from "
 						"control channel, disconnecting client\n", origin);
-				close(msgsock);
 				break;
 			} else {
 				buf[pos] = '\0';
@@ -391,13 +389,6 @@ static void ctl_handle_client(
 				} else {
 					if (*p != '\0') {
 						pid_t child;
-						sigset_t blocksig;
-						/* temporarily block SIGCHLD signals until
-						 * we've waited for the child we're about to
-						 * create. See bug http://bugs.monetdb.org/3603. */
-						sigemptyset(&blocksig);
-						sigaddset(&blocksig, SIGCHLD);
-						pthread_sigmask(SIG_BLOCK, &blocksig, (sigset_t *) 0);
 						if ((child = fork()) == 0) {
 							FILE *secretf;
 							size_t len;
@@ -406,10 +397,6 @@ static void ctl_handle_client(
 							opt *set = malloc(sizeof(opt) * 2);
 							int setlen = 0;
 							char *sadbfarm;
-
-							sigemptyset(&blocksig);
-							sigaddset(&blocksig, SIGCHLD);
-							pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 
 							if ((err = msab_getDBfarm(&sadbfarm)) != NULL) {
 								Mfprintf(_mero_ctlerr, "%s: internal error: %s\n",
@@ -466,9 +453,6 @@ static void ctl_handle_client(
 							Mfprintf(_mero_ctlout, "%s: forking failed\n",
 									 origin);
 						}
-						sigemptyset(&blocksig);
-						sigaddset(&blocksig, SIGCHLD);
-						pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 					}
 
 					Mfprintf(_mero_ctlout, "%s: created database '%s'\n",
@@ -946,7 +930,7 @@ control_handleclient(const char *host, int sock, stream *fdin, stream *fout)
 	ctl_handle_client(host, sock, fdin, fout);
 }
 
-void
+void *
 controlRunner(void *d)
 {
 	int usock = *(int *)d;
@@ -994,11 +978,13 @@ controlRunner(void *d)
 		snprintf(origin, sizeof(origin), "(local)");
 
 		ctl_handle_client(origin, msgsock, NULL, NULL);
-		close(msgsock);
+		shutdown(msgsock, SHUT_RDWR);
+		closesocket(msgsock);
 	} while (_mero_keep_listening);
 	shutdown(usock, SHUT_RDWR);
-	close(usock);
+	closesocket(usock);
 	Mfprintf(_mero_ctlout, "control channel closed\n");
+	return NULL;
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

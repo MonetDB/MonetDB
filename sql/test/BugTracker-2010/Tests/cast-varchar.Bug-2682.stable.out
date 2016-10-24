@@ -50,7 +50,7 @@ Ready.
 #  AND emit_time BETWEEN '2010-07-10' AND '2010-07-20'
 #GROUP BY location,
 #         "time" HAVING MAX(CAST(value AS NUMERIC(5,2))) - MIN(CAST(value AS NUMERIC(5,2))) > 0.05;
-% sys.sensor_readings,	sys.L2,	sys.L5,	sys.L10 # table_name
+% sys.sensor_readings,	sys.L4,	sys.L10,	sys.L14 # table_name
 % location,	time,	maxtemp,	mintemp # name
 % varchar,	varchar,	decimal,	decimal # type
 % 4,	16,	7,	7 # length

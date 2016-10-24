@@ -36,7 +36,7 @@ Ready.
 #        FROM capediff AS a
 #        WHERE a.cape_date <= b.cape_date) AS numppl
 #    FROM capediff AS b;
-% .b,	.L3 # table_name
+% .b,	.L11 # table_name
 % cape_date,	numppl # name
 % date,	bigint # type
 % 10,	1 # length

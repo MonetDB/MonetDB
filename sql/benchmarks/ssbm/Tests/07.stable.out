@@ -33,7 +33,7 @@ Ready.
 #		and d_year >= 1992 and d_year <= 1997
 #	group by c_nation, s_nation, d_year
 #	order by d_year asc, revenue desc;
-% sys.customer,	sys.supplier,	sys.dwdate,	sys.L2 # table_name
+% sys.customer,	sys.supplier,	sys.dwdate,	sys.L6 # table_name
 % c_nation,	s_nation,	d_year,	revenue # name
 % clob,	clob,	int,	bigint # type
 % 9,	9,	4,	9 # length

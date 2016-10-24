@@ -50,7 +50,7 @@ Ready.
 #WHERE pid = 117097
 #GROUP BY lid
 #;
-% .o,	.L2,	.L6 # table_name
+% .o,	.L4,	.L14 # table_name
 % lid,	avg_prijs,	current_prijs # name
 % int,	double,	double # type
 % 1,	24,	24 # length

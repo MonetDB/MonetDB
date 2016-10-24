@@ -57,8 +57,8 @@ project (
 | | | ) [ lineorder.%lineorder_lo_suppkey_fkey NOT NULL = supplier.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_suppkey_fkey ],
 | | | table(sys.dwdate) [ dwdate.d_year, dwdate.%TID% NOT NULL ] COUNT 
 | | ) [ lineorder.%lineorder_lo_orderdate_fkey NOT NULL = dwdate.%TID% NOT NULL JOINIDX sys.lineorder.lineorder_lo_orderdate_fkey ]
-| ) [ dwdate.d_year, part.p_brand1 ] [ dwdate.d_year, part.p_brand1, sys.sum no nil (lineorder.lo_revenue) as L1.L1 ]
-) [ L1 as L2.L1, dwdate.d_year, part.p_brand1 ] [ dwdate.d_year ASC, part.p_brand1 ASC ]
+| ) [ dwdate.d_year, part.p_brand1 ] [ dwdate.d_year, part.p_brand1, sys.sum no nil (lineorder.lo_revenue) as L2.L2 ]
+) [ L2 as L3.L2, dwdate.d_year, part.p_brand1 ] [ dwdate.d_year ASC, part.p_brand1 ASC ]
 
 # 23:08:57 >  
 # 23:08:57 >  "Done."

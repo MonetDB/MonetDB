@@ -21,7 +21,7 @@
 
 #define DEBUG_MAL_INSTR
 /* #define DEBUG_REDUCE */
-#define MAXARG 4				/* BEWARE the code depends on this knowledge */
+#define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 256
 #define MAL_VAR_WINDOW  32
 #define MAXVARS STMT_INCREMENT	/* >= STMT_INCREMENT */
@@ -114,7 +114,7 @@
 #define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 
-mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
+mal_export InstrPtr newInstruction(MalBlkPtr mb, str modnme, str fcnnme);
 mal_export InstrPtr copyInstruction(InstrPtr p);
 mal_export void oldmoveInstruction(InstrPtr dst, InstrPtr src);
 mal_export void clrInstruction(InstrPtr p);

@@ -69,8 +69,8 @@ Ready.
 #INNER JOIN triples h2 ON (h2.pred = 5 AND h2.subj = t0.subj) 
 #INNER JOIN triples h3 ON (h3.pred = 20 AND h3.subj = t0.subj)     
 #INNER JOIN triples i4 ON (i4.pred = 28 AND i4.subj = h2.obj)     
-% .h3,	.L1 # table_name
-% obj,	L1 # name
+% .h3,	.L3 # table_name
+% obj,	L3 # name
 % int,	clob # type
 % 1,	0 # length
 #rollback;

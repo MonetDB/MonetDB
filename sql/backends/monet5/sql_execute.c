@@ -86,9 +86,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= newStmt(mb, profilerRef, stoptraceRef);
 	q= pushStr(mb,q,"sql_traces");
 	/* cook a new resultSet instruction */
-	resultset = newInstruction(mb,ASSIGNsymbol);
-	setModuleId(resultset, sqlRef);
-	setFunctionId(resultset, resultSetRef);
+	resultset = newInstruction(mb,sqlRef, resultSetRef);
 	getArg(resultset,0)= newTmpVariable(mb,TYPE_int);
 
 	/* build table defs */
@@ -252,9 +250,7 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 		v->vtype = TYPE_int;
 		v->val.ival = int_nil;
 	}
-	if (glb && ret) /* error */
-		garbageCollector(c, mb, glb, glb != 0);
-	q->stk = (backend_stack) glb;
+	q->stk = (backend_stack) glb; /* save garbageCollected stack */
 	if (glb && SQLdebug & 1)
 		printStack(GDKstdout, mb, glb);
 	if (pci->argc >= MAXARG)

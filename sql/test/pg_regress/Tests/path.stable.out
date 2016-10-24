@@ -41,8 +41,8 @@ Ready.
 [ "LINESTRING (1 2, 3 4)",	"\"LINESTRING (1 2, 3 4)\""	]
 [ "LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)",	"\"LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)\""	]
 #SELECT Length(f1), * FROM PATH_TBL_VW;
-% sys.L3,	sys.path_tbl_vw,	sys.path_tbl_vw # table_name
-% L3,	f1,	txt # name
+% sys.L10,	sys.path_tbl_vw,	sys.path_tbl_vw # table_name
+% L10,	f1,	txt # name
 % int,	geometry,	clob # type
 % 2,	0,	37 # length
 [ 23,	"LINESTRING (1 2, 3 4)",	"\"LINESTRING (1 2, 3 4)\""	]

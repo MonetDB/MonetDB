@@ -39,8 +39,8 @@ Ready.
 project (
 | group by (
 | | table(sys.x) [ x.y ] COUNT 
-| ) [  ] [ sys.quantile no nil (decimal(18,3)[x.y] as x.y, double "0.000000") as L1.L1 ]
-) [ L1 as L2.L1 ]
+| ) [  ] [ sys.quantile no nil (decimal(18,3)[x.y] as x.y, double "0.000000") as L3.L3 ]
+) [ L3 as L4.L3 ]
 #plan select quantile(y, 0) from x;
 % .plan # table_name
 % rel # name
@@ -49,8 +49,8 @@ project (
 project (
 | group by (
 | | table(sys.x) [ x.y ] COUNT 
-| ) [  ] [ sys.quantile no nil (decimal(18,3)[x.y] as x.y, double "0.000000") as L1.L1 ]
-) [ L1 as L2.L1 ]
+| ) [  ] [ sys.quantile no nil (decimal(18,3)[x.y] as x.y, double "0.000000") as L3.L3 ]
+) [ L3 as L4.L3 ]
 #rollback;
 
 # 10:18:57 >  

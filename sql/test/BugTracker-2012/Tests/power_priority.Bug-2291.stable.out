@@ -47,8 +47,8 @@ Ready.
 # 15:05:38 >  
 
 #select (4.4054292 - 4.40572025343667)^2 + (52.0903881 - 52.091375762174)^2;
-% .L # table_name
-% bit_xor_single_value # name
+% .L1 # table_name
+% L1 # name
 % decimal # type
 % 21 # length
 [ -0.00076334574955	]

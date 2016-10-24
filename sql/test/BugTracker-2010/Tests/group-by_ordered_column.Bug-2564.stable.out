@@ -42,9 +42,9 @@ Ready.
 function user.s10_1():void;
     X_57:void := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",26);
     X_40 := bat.new(nil:str);
-    X_47 := bat.append(X_40,"sys.L2");
+    X_47 := bat.append(X_40,"sys.L3");
     X_42 := bat.new(nil:str);
-    X_49 := bat.append(X_42,"L1");
+    X_49 := bat.append(X_42,"L2");
     X_43 := bat.new(nil:str);
     X_51 := bat.append(X_43,"bigint");
     X_44 := bat.new(nil:int);
@@ -91,8 +91,8 @@ end user.s10_1;
 #garbageCollector     actions= 1 time=23 usec 
 #total                actions= 1 time=370 usec 
 #select count(*) from t2564 group by c1, c2, c3;
-% sys.L2 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 1	]

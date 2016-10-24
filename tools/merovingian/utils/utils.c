@@ -460,11 +460,9 @@ generatePassphraseFile(const char *path)
 		snprintf(err, sizeof(err), "cannot write secret: %s",
 				strerror(errno));
 		fclose(f);
-		close(fd);
 		return(strdup(err));
 	}
 	fclose(f);
-	close(fd);
 	return(NULL);
 }
 

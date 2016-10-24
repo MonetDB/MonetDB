@@ -122,14 +122,6 @@ pattern optimizer.evaluate(mod:str, fcn:str):str
 address OPTwrapper
 comment "Evaluate constant expressions once.";
 
-#opt_factorize.mal
-
-pattern optimizer.factorize():str
-address OPTwrapper;
-pattern optimizer.factorize(mod:str, fcn:str):str
-address OPTwrapper
-comment "Turn function into a factory";
-
 #opt_garbagecollector.mal
 
 pattern optimizer.garbageCollector():str

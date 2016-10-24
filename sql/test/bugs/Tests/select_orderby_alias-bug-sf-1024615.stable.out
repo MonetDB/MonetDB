@@ -57,7 +57,7 @@ Ready.
 #AND "tables"."schema_id" = "schemas"."id" AND
 #"keys"."type" = 0 AND "schemas"."name" LIKE 'sys' AND
 #"tables"."name" LIKE 'x' ORDER BY "COLUMN_NAME";
-% .L10,	.L11,	.L12,	.L13,	.L14,	.L15 # table_name
+% .L40,	.L42,	.L44,	.L46,	.L50,	.L52 # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
 % varchar,	varchar,	varchar,	varchar,	int,	varchar # type
 % 0,	0,	0,	0,	1,	0 # length

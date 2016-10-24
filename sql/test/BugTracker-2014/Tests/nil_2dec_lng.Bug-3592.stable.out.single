@@ -31,8 +31,8 @@ Ready.
 #insert into foo_nil_2dec values (now(),43);
 [ 1	]
 #select (t-(select timestamp '1970-1-1')),v from foo_nil_2dec union all select (t-(select timestamp '1970-1-1')),null from foo_nil_2dec;
-% .L5,	.L5 # table_name
-% L2,	v # name
+% .L17,	.L17 # table_name
+% L4,	v # name
 % sec_interval,	decimal # type
 % 14,	20 # length
 [ 1412467200.000,	42.000000000	]
@@ -48,10 +48,10 @@ function user.s10_1():void;
     X_76:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",52);
 barrier X_128 := language.dataflow();
     X_52 := bat.new(nil:str);
-    X_59 := bat.append(X_52,".L5");
-    X_69 := bat.append(X_59,".L5");
+    X_59 := bat.append(X_52,".L17");
+    X_69 := bat.append(X_59,".L17");
     X_54 := bat.new(nil:str);
-    X_61 := bat.append(X_54,"L2");
+    X_61 := bat.append(X_54,"L4");
     X_70 := bat.append(X_61,"v");
     X_55 := bat.new(nil:str);
     X_63 := bat.append(X_55,"sec_interval");
