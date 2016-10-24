@@ -180,7 +180,7 @@ childhandler(void)
 		while (p != NULL) {
 			if (p->pid == pid) {
 				/* log everything that's still in the pipes */
-				logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile);
+				logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
 				/* remove from the list */
 				q->next = p->next;
 				/* close the descriptors */

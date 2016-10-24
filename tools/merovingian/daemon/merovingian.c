@@ -126,7 +126,7 @@ confkeyval *_mero_props = NULL;
 /* funcs */
 
 inline void
-logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
+logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int rest)
 {
 	time_t now;
 	char buf[8096];
@@ -137,7 +137,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 	char writeident = 1;
 
 	do {
-		if ((len = read(fd, buf, 8095)) <= 0)
+		if ((len = read(fd, buf, sizeof(buf) - 1)) <= 0)
 			break;
 		buf[len] = '\0';
 		q = buf;
@@ -158,9 +158,9 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 				fprintf(stream, "%s %s %s[" LLFMT "]: ",
 						mytime, type, dbname, pid);
 			writeident = 0;
-			fprintf(stream, "%s", q);
+			fprintf(stream, "%s\n", q);
 		}
-	} while (len == 8095);
+	} while (rest);
 	fflush(stream);
 }
 
@@ -222,10 +222,10 @@ logListener(void *x)
 			if (w->flag & 1) {
 				if (FD_ISSET(w->out, &readfds) != 0)
 					logFD(w->out, "MSG", w->dbname,
-						  (long long int)w->pid, _mero_logfile);
+						  (long long int)w->pid, _mero_logfile, 0);
 				if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
 					logFD(w->err, "ERR", w->dbname,
-						  (long long int)w->pid, _mero_logfile);
+						  (long long int)w->pid, _mero_logfile, 0);
 				w->flag &= ~1;
 			}
 			w = w->next;
