@@ -633,6 +633,8 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 		if (q == NULL)
 			return NULL;
 		be->mvc_var = getDestVar(q);
+	} else {
+		return b;
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_append_col);
