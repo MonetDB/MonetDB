@@ -161,6 +161,9 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 		return(newErr("creation of UNIX stream socket failed: %s",
 					strerror(errno)));
 
+	if (strlen(path) >= sizeof(server.sun_path))
+		return newErr("pathname for UNIX stream socket too long");
+
 	memset(&server, 0, sizeof(struct sockaddr_un));
 	server.sun_family = AF_UNIX;
 	strncpy(server.sun_path, path, sizeof(server.sun_path) - 1);
