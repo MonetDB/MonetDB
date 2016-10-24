@@ -262,6 +262,13 @@ newErr(const char *fmt, ...)
 }
 
 
+static void *
+doTerminateProcess(void *p)
+{
+	terminateProcess((dpair) p, 1);
+	return NULL;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -898,7 +905,7 @@ shutdown:
 
 			tlw->next = NULL;
 			if ((thret = pthread_create(&(tlw->tid), NULL,
-						terminateProcess, (void *)t)) != 0)
+						doTerminateProcess, t)) != 0)
 			{
 				Mfprintf(stderr, "%s: unable to create thread to terminate "
 						"database '%s': %s\n",
