@@ -76,7 +76,8 @@ handler(int sig)
 		strcpy(buf + 7, "some signal");
 	}
 	strcpy(buf + strlen(buf), ", starting shutdown sequence\n");
-	write(1, buf, strlen(buf));
+	if (write(1, buf, strlen(buf)) < 0)
+		perror("write failed");
 	_mero_keep_listening = 0;
 }
 
