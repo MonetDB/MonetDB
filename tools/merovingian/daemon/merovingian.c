@@ -96,7 +96,7 @@ char *_mero_mserver = NULL;
 /* list of databases that we have started */
 dpair _mero_topdp = NULL;
 /* lock to _mero_topdp, initialised as recursive lateron */
-pthread_mutex_t _mero_topdp_lock;
+pthread_mutex_t _mero_topdp_lock = PTHREAD_MUTEX_INITIALIZER;
 /* for the logger, when set to 0, the logger terminates */
 volatile int _mero_keep_logging = 1;
 /* for accepting connections, when set to 0, listening socket terminates */
@@ -126,7 +126,7 @@ confkeyval *_mero_props = NULL;
 /* funcs */
 
 inline void
-logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
+logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int rest)
 {
 	time_t now;
 	char buf[8096];
@@ -137,7 +137,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 	char writeident = 1;
 
 	do {
-		if ((len = read(fd, buf, 8095)) <= 0)
+		if ((len = read(fd, buf, sizeof(buf) - 1)) <= 0)
 			break;
 		buf[len] = '\0';
 		q = buf;
@@ -158,9 +158,9 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 				fprintf(stream, "%s %s %s[" LLFMT "]: ",
 						mytime, type, dbname, pid);
 			writeident = 0;
-			fprintf(stream, "%s", q);
+			fprintf(stream, "%s\n", q);
 		}
-	} while (len == 8095);
+	} while (rest);
 	fflush(stream);
 }
 
@@ -199,6 +199,7 @@ logListener(void *x)
 			FD_SET(w->err, &readfds);
 			if (nfds < w->err)
 				nfds = w->err;
+			w->flag |= 1;
 			w = w->next;
 		}
 
@@ -211,17 +212,22 @@ logListener(void *x)
 				break;
 			}
 		}
+		reinitialize();
 
 		pthread_mutex_lock(&_mero_topdp_lock);
 
 		w = d;
 		while (w != NULL) {
-			if (FD_ISSET(w->out, &readfds) != 0)
-				logFD(w->out, "MSG", w->dbname,
-						(long long int)w->pid, _mero_logfile);
-			if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
-				logFD(w->err, "ERR", w->dbname,
-						(long long int)w->pid, _mero_logfile);
+			/* only look at records we've added in the previous loop */
+			if (w->flag & 1) {
+				if (FD_ISSET(w->out, &readfds) != 0)
+					logFD(w->out, "MSG", w->dbname,
+						  (long long int)w->pid, _mero_logfile, 0);
+				if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
+					logFD(w->err, "ERR", w->dbname,
+						  (long long int)w->pid, _mero_logfile, 0);
+				w->flag &= ~1;
+			}
 			w = w->next;
 		}
 
@@ -256,6 +262,14 @@ newErr(const char *fmt, ...)
 }
 
 
+static void *
+doTerminateProcess(void *p)
+{
+	dpair dp = p;
+	terminateProcess(dp->pid, strdup(dp->dbname), dp->type, 1);
+	return NULL;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -278,7 +292,7 @@ main(int argc, char *argv[])
 	int ret;
 	int lockfd = -1;
 	int sock = -1;
-	int usock = -1;
+	int discsock = -1;
 	int unsock = -1;
 	int socku = -1;
 	char* host = NULL;
@@ -286,7 +300,6 @@ main(int argc, char *argv[])
 	char discovery = 0;
 	struct stat sb;
 	FILE *oerr = NULL;
-	pthread_mutexattr_t mta;
 	int thret;
 	char merodontfork = 0;
 	confkeyval ckv[] = {
@@ -460,7 +473,7 @@ main(int argc, char *argv[])
 			break;
 			default:
 				/* the parent, we want it to die, after we know the child
-				 * has a good time */
+				 * is having a good time */
 				close(pfd[1]); /* close unused write end */
 				freeConfFile(ckv); /* make debug tools happy */
 				if (read(pfd[0], &buf, 1) != 1) {
@@ -604,13 +617,6 @@ main(int argc, char *argv[])
 		}
 	}
 
-	/* set up UNIX socket paths for control and mapi */
-	p = getConfVal(_mero_props, "sockdir");
-	snprintf(control_usock, sizeof(control_usock), "%s/" CONTROL_SOCK "%d",
-			p, port);
-	snprintf(mapi_usock, sizeof(control_usock), "%s/" MERO_SOCK "%d",
-			p, port);
-
 	/* lock such that we are alone on this world */
 	if ((lockfd = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
@@ -623,10 +629,25 @@ main(int argc, char *argv[])
 		MERO_EXIT_CLEAN(1);
 	}
 
+	/* set up UNIX socket paths for control and mapi */
+	p = getConfVal(_mero_props, "sockdir");
+	snprintf(control_usock, sizeof(control_usock), "%s/" CONTROL_SOCK "%d",
+			p, port);
+	snprintf(mapi_usock, sizeof(mapi_usock), "%s/" MERO_SOCK "%d",
+			p, port);
+
+	if ((unlink(control_usock) == -1 && errno != ENOENT) ||
+		(unlink(mapi_usock) == -1 && errno != ENOENT)) {
+		/* cannot unlink socket files */
+		Mfprintf(stderr, "cannot unlink socket files\n");
+		MERO_EXIT_CLEAN(1);
+	}
+
 	_mero_topdp = &dpcons;
 	_mero_topdp->pid = 0;
 	_mero_topdp->type = MERO;
 	_mero_topdp->dbname = NULL;
+	_mero_topdp->flag = 0;
 
 	/* where should our msg output go to? */
 	p = getConfVal(_mero_props, "logfile");
@@ -669,6 +690,7 @@ main(int argc, char *argv[])
 	d->pid = getpid();
 	d->type = MERO;
 	d->dbname = "merovingian";
+	d->flag = 0;
 
 	/* separate entry for the neighbour discovery service */
 	d = d->next = &dpdisc;
@@ -690,6 +712,7 @@ main(int argc, char *argv[])
 	d->type = MERO;
 	d->dbname = "discovery";
 	d->next = NULL;
+	d->flag = 0;
 
 	/* separate entry for the control runner */
 	d = d->next = &dpcont;
@@ -711,11 +734,7 @@ main(int argc, char *argv[])
 	d->type = MERO;
 	d->dbname = "control";
 	d->next = NULL;
-
-	/* allow a thread to relock this mutex */
-	pthread_mutexattr_init(&mta);
-	pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&_mero_topdp_lock, &mta);
+	d->flag = 0;
 
 	if ((thret = pthread_create(&tid, NULL, logListener, NULL)) != 0) {
 		Mfprintf(oerr, "%s: FATAL: unable to create logthread: %s\n",
@@ -784,15 +803,10 @@ main(int argc, char *argv[])
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	/* open up connections */
-	if (
-			(e = openConnectionTCP(&sock, host, port, stdout)) == NO_ERR &&
-			/* coverity[operator_confusion] */
-			(unlink(control_usock) | unlink(mapi_usock) | 1) &&
-			(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-			(discovery == 0 || (e = openConnectionUDP(&usock, host, port)) == NO_ERR) &&
-			(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR
-	   )
-	{
+	if ((e = openConnectionTCP(&sock, host, port, stdout)) == NO_ERR &&
+		(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
+		(discovery == 0 || (e = openConnectionUDP(&discsock, host, port)) == NO_ERR) &&
+		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
 
@@ -805,8 +819,8 @@ main(int argc, char *argv[])
 			{
 				Mfprintf(stderr, "cannot create broadcast package, "
 						"discovery services disabled\n");
-				closesocket(usock);
-				usock = -1;
+				closesocket(discsock);
+				discsock = -1;
 			}
 
 			_mero_broadcastaddr.sin_family = AF_INET;
@@ -815,10 +829,6 @@ main(int argc, char *argv[])
 			 * else can we do it? can't broadcast to all ports or something */
 			_mero_broadcastaddr.sin_port = htons(port);
 		}
-
-		/* From this point merovingian considers itself to be in position to
-		 * start running, so flag the parent we will have fun. */
-		MERO_EXIT(0);
 
 		/* Paranoia umask, but good, because why would people have to sniff
 		 * our private parts? */
@@ -833,16 +843,24 @@ main(int argc, char *argv[])
 					strerror(thret));
 			ctid = 0;
 			closesocket(unsock);
+			if (discsock >= 0)
+				closesocket(discsock);
+			MERO_EXIT(1);
 		}
 
 		/* start neighbour discovery and notification thread */ 
-		if (usock >= 0 && (thret = pthread_create(&dtid, NULL,
-					discoveryRunner, (void *)&usock)) != 0)
+		if (discsock >= 0 && (thret = pthread_create(&dtid, NULL,
+					discoveryRunner, (void *)&discsock)) != 0)
 		{
 			Mfprintf(stderr, "unable to start neighbour discovery thread: %s\n",
 					strerror(thret));
 			dtid = 0;
+			closesocket(discsock);
 		}
+
+		/* From this point merovingian considers itself to be in position to
+		 * start running, so flag the parent we will have fun. */
+		MERO_EXIT(0);
 
 		/* handle external connections main loop */
 		e = acceptConnections(sock, socku);
@@ -851,12 +869,8 @@ main(int argc, char *argv[])
 		 * finished announcing they're going down */
 		if (ctid != 0)
 			pthread_join(ctid, NULL);
-		if (usock >= 0) {
-			shutdown(usock, SHUT_RDWR);
-			closesocket(usock);
-			if (dtid != 0)
-				pthread_join(dtid, NULL);
-		}
+		if (dtid != 0)
+			pthread_join(dtid, NULL);
 	}
 
 	/* control channel is already closed at this point */
@@ -894,7 +908,7 @@ shutdown:
 
 			tlw->next = NULL;
 			if ((thret = pthread_create(&(tlw->tid), NULL,
-						terminateProcess, (void *)t)) != 0)
+						doTerminateProcess, t)) != 0)
 			{
 				Mfprintf(stderr, "%s: unable to create thread to terminate "
 						"database '%s': %s\n",

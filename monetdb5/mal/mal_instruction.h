@@ -21,7 +21,7 @@
 
 #define DEBUG_MAL_INSTR
 /* #define DEBUG_REDUCE */
-#define MAXARG 4				/* BEWARE the code depends on this knowledge */
+#define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 256
 #define MAL_VAR_WINDOW  32
 #define MAXVARS STMT_INCREMENT	/* >= STMT_INCREMENT */

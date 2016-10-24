@@ -82,7 +82,7 @@ function user.main():void;
     X_1232:lng := aggr.sum(X_1231);
     X_1233 := calc.lng(2,X_1232,19,5);
     X_1240:lng := calc./(X_1233,700:lng);
-    sql.resultSet("sys.L4","avg_yearly","decimal",19,3,10,X_1240);
+    sql.resultSet("sys.L12","avg_yearly","decimal",19,3,10,X_1240);
 end user.main;
 #inline               actions= 0 time=8 usec 
 #remap                actions= 5 time=40 usec 
