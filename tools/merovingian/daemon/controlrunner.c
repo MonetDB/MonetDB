@@ -930,6 +930,17 @@ control_handleclient(const char *host, int sock, stream *fdin, stream *fout)
 	ctl_handle_client(host, sock, fdin, fout);
 }
 
+static void *
+handle_client(void *p)
+{
+	int msgsock = * (int *) p;
+
+	ctl_handle_client("(local)", msgsock, NULL, NULL);
+	shutdown(msgsock, SHUT_RDWR);
+	closesocket(msgsock);
+	return NULL;
+}
+
 void *
 controlRunner(void *d)
 {
@@ -939,7 +950,7 @@ controlRunner(void *d)
 	fd_set fds;
 	struct timeval tv;
 	int msgsock;
-	char origin[128];
+	pthread_t tid;
 
 	do {
 		FD_ZERO(&fds);
@@ -975,11 +986,10 @@ controlRunner(void *d)
 			continue;
 		}
 
-		snprintf(origin, sizeof(origin), "(local)");
-
-		ctl_handle_client(origin, msgsock, NULL, NULL);
-		shutdown(msgsock, SHUT_RDWR);
-		closesocket(msgsock);
+		if (pthread_create(&tid, NULL, handle_client, &msgsock) != 0)
+			closesocket(msgsock);
+		else
+			pthread_detach(tid);
 	} while (_mero_keep_listening);
 	shutdown(usock, SHUT_RDWR);
 	closesocket(usock);
