@@ -463,7 +463,7 @@ main(int argc, char *argv[])
 			break;
 			default:
 				/* the parent, we want it to die, after we know the child
-				 * has a good time */
+				 * is having a good time */
 				close(pfd[1]); /* close unused write end */
 				freeConfFile(ckv); /* make debug tools happy */
 				if (read(pfd[0], &buf, 1) != 1) {
