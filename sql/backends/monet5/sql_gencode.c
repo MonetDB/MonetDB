@@ -424,11 +424,12 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	pushEndInstruction(curBlk);
 
 	/* SQL function definitions meant for inlineing should not be optimized before */
-	curBlk->inlineProp = 1;
+	//for now no inline of the remote function, this gives garbage collection problems
+	//curBlk->inlineProp = 1;
 
 	SQLaddQueryToCache(c);
-	chkProgram(c->fdout, c->nspace, c->curprg->def);
-	//SQLoptimizeFunction(c,c->curprg->def);
+	//chkProgram(c->fdout, c->nspace, c->curprg->def);
+	SQLoptimizeFunction(c, c->curprg->def);
 	if (backup)
 		c->curprg = backup;
 	name[0] = old;		/* make sure stub is called */
