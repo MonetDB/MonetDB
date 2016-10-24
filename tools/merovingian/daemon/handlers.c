@@ -66,12 +66,17 @@ sigtostr(int sig)
 void
 handler(int sig)
 {
+	char buf[64];
 	const char *signame = sigtostr(sig);
-	if (signame == NULL) {
-		Mfprintf(stdout, "caught signal %d, starting shutdown sequence\n", sig);
+
+	strcpy(buf, "caught ");
+	if (signame) {
+		strcpy(buf + 7, signame);
 	} else {
-		Mfprintf(stdout, "caught %s, starting shutdown sequence\n", signame);
+		strcpy(buf + 7, "some signal");
 	}
+	strcpy(buf + strlen(buf), ", starting shutdown sequence\n");
+	write(1, buf, strlen(buf));
 	_mero_keep_listening = 0;
 }
 
