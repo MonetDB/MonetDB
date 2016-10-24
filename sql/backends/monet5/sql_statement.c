@@ -1763,6 +1763,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 			return NULL;
 		break;
 	case cmp_joined:
+		q = op1->q;
 		break;
 	default:
 		showException(GDKout, SQL, "sql", "SQL2MAL: error impossible\n");
