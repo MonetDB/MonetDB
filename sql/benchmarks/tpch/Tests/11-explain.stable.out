@@ -99,7 +99,7 @@ function user.s4_1():void;
     X_141:lng := sql.dec_round(X_138,100);
     X_160 := bat.new(nil:str);
     X_167 := bat.append(X_160,"sys.partsupp");
-    X_177 := bat.append(X_167,"sys.L2");
+    X_177 := bat.append(X_167,"sys.L4");
     X_162 := bat.new(nil:str);
     X_169 := bat.append(X_162,"ps_partkey");
     X_179 := bat.append(X_169,"value");

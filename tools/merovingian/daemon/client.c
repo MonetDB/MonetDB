@@ -432,6 +432,7 @@ acceptConnections(int sock, int usock)
 	struct timeval tv;
 	struct clientdata *data;
 	struct threads *threads = NULL, **threadp, *p;
+	int errnr;					/* saved errno */
 
 	do {
 		/* handle socket connections */
@@ -444,6 +445,7 @@ acceptConnections(int sock, int usock)
 		tv.tv_usec = 0;
 		retval = select((sock > usock ? sock : usock) + 1,
 				&fds, NULL, NULL, &tv);
+		errnr = errno;
 		/* join any handleClient threads that we started and that may
 		 * have finished by now */
 		for (threadp = &threads; *threadp; threadp = &(*threadp)->next) {
@@ -462,6 +464,7 @@ acceptConnections(int sock, int usock)
 			}
 		}
 		childhandler();
+		reinitialize();
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -469,8 +472,8 @@ acceptConnections(int sock, int usock)
 		if (retval == -1) {
 			if (_mero_keep_listening == 0)
 				break;
-			if (errno != EINTR) {
-				msg = strerror(errno);
+			if (errnr != EINTR) {
+				msg = strerror(errnr);
 				goto error;
 			}
 			continue;
