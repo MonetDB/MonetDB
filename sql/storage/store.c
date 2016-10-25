@@ -1307,6 +1307,8 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 			*/
 	nt->tables.dset = NULL;
 	nt->tables.nelm = NULL;
+	/* record if table is a partition */
+	nt->p = t->p;
 	return nt;
 }
 
