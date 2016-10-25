@@ -1385,8 +1385,6 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 	/* this is intentional - even if catalog_bid is 0, but the logger is shared,
 	 * force it to find the persistent catalog */
 	if (catalog_bid == 0 &&	!lg->shared) {
-		log_bid bid = 0;
-
 		/* catalog does not exist, so the log file also
 		 * shouldn't exist */
 		if (fp != NULL) {
@@ -1409,22 +1407,19 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 
 		/* give the catalog bats names so we can find them
 		 * next time */
-		bid = lg->catalog_bid->batCacheid;
-		BBPincref(bid, TRUE);
+		BBPincref(lg->catalog_bid->batCacheid, TRUE);
 		snprintf(bak, sizeof(bak), "%s_catalog_bid", fn);
 		if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
 				     bak, 0, 0);
 
-		bid = lg->catalog_nme->batCacheid;
-		BBPincref(bid, TRUE);
+		BBPincref(lg->catalog_nme->batCacheid, TRUE);
 		snprintf(bak, sizeof(bak), "%s_catalog_nme", fn);
 		if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
 				     bak, 0, 0);
 
-		bid = lg->dcatalog->batCacheid;
-		BBPincref(bid, TRUE);
+		BBPincref(lg->dcatalog->batCacheid, TRUE);
 		snprintf(bak, sizeof(bak), "%s_dcatalog", fn);
 		if (BBPrename(lg->dcatalog->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
