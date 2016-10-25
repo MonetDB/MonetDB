@@ -336,7 +336,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     }
 
 #ifdef HAVE_FORK
-    if (!mapped) {
+    if (!mapped && !parallel_aggregation) {
         MT_lock_set(&pyapiLock);
         if (python_call_active) {
             mapped = true;
