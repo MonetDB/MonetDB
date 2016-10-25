@@ -1487,7 +1487,6 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			if (d == NULL)
 				logger_fatal("Logger_new: cannot create "
 					     "dcatalog bat", 0, 0, 0);
-			BBPincref(d->batCacheid, TRUE);
 			if (BBPrename(d->batCacheid, bak) < 0)
 				logger_fatal("logger_load: BBPrename to %s failed", bak, 0, 0);
 			if (!BAThdense(b) || !BAThdense(n)) {
@@ -1546,6 +1545,9 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		lg->catalog_bid = b;
 		lg->catalog_nme = n;
 		lg->dcatalog = d;
+		BBPincref(lg->catalog_bid->batCacheid, TRUE);
+		BBPincref(lg->catalog_nme->batCacheid, TRUE);
+		BBPincref(lg->dcatalog->batCacheid, TRUE);
 		BATloop(b, p, q) {
 			bat bid = *(log_bid *) Tloc(b, p);
 			oid pos = p;
