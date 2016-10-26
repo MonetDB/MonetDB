@@ -1073,15 +1073,20 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 {
 	sql_trigger *tri = NULL;
 	sql_schema *s = NULL;
+	sql_schema *ts = NULL;
 	sql_table *t;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!CREATE TRIGGER: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
+	if (!ts)
+		ts = cur_schema(sql);
 	if (!mvc_schema_privs(sql, s))
 		return sql_message("3F000!CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
-	if (mvc_bind_trigger(sql, s, triggername) != NULL)
+	if (!mvc_schema_privs(sql, ts))
+		return sql_message("3F000!CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+	if (mvc_bind_trigger(sql, ts, triggername) != NULL)
 		return sql_message("3F000!CREATE TRIGGER: name '%s' already in use", triggername);
 
 	if (!(t = mvc_bind_table(sql, s, tname)))
@@ -1509,6 +1514,9 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *condition = *getArgReference_str(stk, pci, 10);
 		char *query = *getArgReference_str(stk, pci, 11);
 
+		old_name=(!old_name || strcmp(old_name, str_nil) == 0)?NULL:old_name; 
+		new_name=(!new_name || strcmp(new_name, str_nil) == 0)?NULL:new_name; 
+		condition=(!condition || strcmp(condition, str_nil) == 0)?NULL:condition; 
 		msg = create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, query);
 		break;
 	}

@@ -509,7 +509,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                             if (GDKinitmmap(query_ptr->mmapid + 0, size, (void**) &result_ptr, NULL, &msg) != GDK_SUCCEED) {
                                 _connection_cleanup_result(output);
                                 GDKchangesemval(query_sem, 1, 1, &msg);
-                                msg = createException(MAL, "pyapi.eval", "");
+                                msg = createException(MAL, "pyapi.eval", "eval failed");
                                 GDKfree(result_columns);
                                 goto wrapup;
                             }

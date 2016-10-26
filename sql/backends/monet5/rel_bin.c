@@ -1333,6 +1333,15 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 	return args;
 }
 
+typedef struct trigger_input {
+	sql_table *t;
+	stmt *tids;
+	stmt **updates;
+	int type; /* insert 1, update 2, delete 3 */
+	const char *on;
+	const char *nn;
+} trigger_input;
+
 static stmt *
 rel2bin_table(backend *be, sql_rel *rel, list *refs)
 {
@@ -1342,7 +1351,28 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	node *en, *n;
 	sql_exp *op = rel->r;
 
-	if (op) {
+	if (rel->flag == 2) {
+		trigger_input *ti = rel->l;
+		l = sa_list(sql->sa);
+
+		for(n = ti->t->columns.set->h; n; n = n->next) {
+			sql_column *c = n->data;
+
+			if (ti->type == 2) { /* updates */
+				stmt *s = stmt_col(be, c, ti->tids);
+				append(l, stmt_alias(be, s, ti->on, c->base.name));
+			}
+			if (ti->updates[c->colnr]) {
+				append(l, stmt_alias(be, ti->updates[c->colnr], ti->nn, c->base.name));
+			} else {
+				stmt *s = stmt_col(be, c, ti->tids);
+				append(l, stmt_alias(be, s, ti->nn, c->base.name));
+				assert(ti->type != 1);
+			}
+		}
+		sub = stmt_list(be, l);
+		return sub;
+	} else if (op) {
 		int i;
 		sql_subfunc *f = op->f;
 		stmt *psub = NULL;
@@ -3065,15 +3095,33 @@ sql_insert_key(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stmt *
 }
 
 static void
-sql_stack_add_inserted( mvc *sql, const char *name, sql_table *t) 
+sql_stack_add_inserted( mvc *sql, const char *name, sql_table *t, stmt **updates) 
 {
-	sql_rel *r = rel_basetable(sql, t, name );
-		
+	/* Put single relation of updates and old values on to the stack */
+	sql_rel *r = NULL;
+	node *n;
+	list *exps = sa_list(sql->sa);
+	trigger_input *ti = SA_NEW(sql->sa, trigger_input);
+
+	ti->t = t;
+	ti->tids = NULL;
+	ti->updates = updates;
+	ti->type = 1;
+	ti->nn = name;
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+
+		append(exps, ne);
+	}
+	r = rel_table_func(sql->sa, NULL, NULL, exps, 2);
+	r->l = ti;
+
 	stack_push_rel_view(sql, name, r);
 }
 
 static int
-sql_insert_triggers(backend *be, sql_table *t, list *l, int time)
+sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 {
 	mvc *sql = be->mvc;
 	node *n;
@@ -3093,12 +3141,12 @@ sql_insert_triggers(backend *be, sql_table *t, list *l, int time)
 			/* add name for the 'inserted' to the stack */
 			if (!n) n = "new"; 
 	
-			sql_stack_add_inserted(sql, n, t);
+			sql_stack_add_inserted(sql, n, t, updates);
 			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
+			assert(!trigger->condition);
 			
 			if (!s) 
 				return 0;
-			list_append(l, s);
 		}
 		stack_pop_frame(sql);
 	}
@@ -3135,13 +3183,32 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 	}
 }
 
+static stmt ** 
+table_update_stmts(mvc *sql, sql_table *t, int *Len)
+{
+	stmt **updates;
+	int i, len = list_length(t->columns.set);
+	node *m;
+
+	*Len = len;
+	updates = SA_NEW_ARRAY(sql->sa, stmt *, len);
+	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
+		sql_column *c = m->data;
+
+		/* update the column number, for correct array access */
+		c->colnr = i;
+		updates[i] = NULL;
+	}
+	return updates;
+}
+
 static stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	list *l;
-	stmt *inserts = NULL, *insert = NULL, *s, *ddl = NULL, *pin = NULL;
-	int idx_ins = 0, constraint = 1;
+	stmt *inserts = NULL, *insert = NULL, *s, *ddl = NULL, *pin = NULL, **updates;
+	int idx_ins = 0, constraint = 1, len = 0;
 	node *n, *m;
 	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
@@ -3177,13 +3244,17 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	l = sa_list(sql->sa);
 
+	updates = table_update_stmts(sql, t, &len); 
+	for (n = t->columns.set->h, m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
+		sql_column *c = n->data;
+
+		updates[c->colnr] = m->data;
+	}
+
 /* before */
-	if (!sql_insert_triggers(be, t, inserts->op4.lval, 0)) 
+	if (!sql_insert_triggers(be, t, updates, 0)) 
 		return sql_error(sql, 02, "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
-	/* skip over column inserts */
-	for (n = t->columns.set->h, m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) 
-		;
 	if (t->idxs.set)
 	for (n = t->idxs.set->h; n && m; n = n->next, m = m->next) {
 		stmt *is = m->data;
@@ -3215,7 +3286,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!insert)
 		return NULL;
 
-	if (!sql_insert_triggers(be, t, l, 1)) 
+	if (!sql_insert_triggers(be, t, updates, 1)) 
 		return sql_error(sql, 02, "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (ddl) {
 		list_prepend(l, ddl);
@@ -3257,25 +3328,6 @@ first_updated_col(stmt **updates, int cnt)
 			return i;
 	}
 	return -1;
-}
-
-static stmt ** 
-table_update_stmts(mvc *sql, sql_table *t, int *Len)
-{
-	stmt **updates;
-	int i, len = list_length(t->columns.set);
-	node *m;
-
-	*Len = len;
-	updates = SA_NEW_ARRAY(sql->sa, stmt *, len);
-	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
-		sql_column *c = m->data;
-
-		/* update the column number, for correct array access */
-		c->colnr = i;
-		updates[i] = NULL;
-	}
-	return updates;
 }
 
 static stmt *
@@ -3959,17 +4011,47 @@ update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates
 }
 
 static void
-sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t)
+sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, stmt *tids, stmt **updates)
 {
-	sql_rel *or = rel_basetable(sql, t, on );
-	sql_rel *nr = rel_basetable(sql, t, nn );
+	/* Put single relation of updates and old values on to the stack */
+	sql_rel *r = NULL;
+	node *n;
+	list *exps = sa_list(sql->sa);
+	trigger_input *ti = SA_NEW(sql->sa, trigger_input);
+
+	ti->t = t;
+	ti->tids = tids;
+	ti->updates = updates;
+	ti->type = 2;
+	ti->on = on;
+	ti->nn = nn;
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+
+		if (updates[c->colnr]) {
+			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+
+			append(exps, oe);
+			append(exps, ne);
+		} else { /* later select correct updated rows only ? */
+			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+
+			append(exps, oe);
+			append(exps, ne);
+		}
+	}
+	r = rel_table_func(sql->sa, NULL, NULL, exps, 2);
+	r->l = ti;
 		
-	stack_push_rel_view(sql, on, or);
-	stack_push_rel_view(sql, nn, nr);
+	/* put single table into the stack with 2 names, needed for the psm code */
+	stack_push_rel_view(sql, on, r);
+	stack_push_rel_view(sql, nn, r);
 }
 
 static int
-sql_update_triggers(backend *be, sql_table *t, list *l, int time )
+sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int time )
 {
 	mvc *sql = be->mvc;
 	node *n;
@@ -3992,11 +4074,10 @@ sql_update_triggers(backend *be, sql_table *t, list *l, int time )
 			if (!n) n = "new"; 
 			if (!o) o = "old"; 
 	
-			sql_stack_add_updated(sql, o, n, t);
+			sql_stack_add_updated(sql, o, n, t, tids, updates);
 			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
 			if (!s) 
 				return 0;
-			list_append(l, s);
 		}
 		stack_pop_frame(sql);
 	}
@@ -4052,7 +4133,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	}
 
 /* before */
-	if (!sql_update_triggers(be, t, l, 0)) 
+	if (!sql_update_triggers(be, t, rows, updates, 0)) 
 		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* apply updates */
@@ -4066,7 +4147,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		return sql_error(sql, 02, "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
-	if (!sql_update_triggers(be, t, l, 1)) 
+	if (!sql_update_triggers(be, t, rows, updates, 1)) 
 		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* cascade ?? */
@@ -4149,7 +4230,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	}
 
 /* before */
-	if (!sql_update_triggers(be, t, l, 0)) 
+	if (!sql_update_triggers(be, t, tids, updates, 0)) 
 		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* apply the update */
@@ -4165,7 +4246,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		return sql_error(sql, 02, "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
-	if (!sql_update_triggers(be, t, l, 1)) 
+	if (!sql_update_triggers(be, t, tids, updates, 1)) 
 		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
 
 	if (ddl) {
@@ -4182,15 +4263,33 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 }
  
 static void
-sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t)
+sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids)
 {
-	sql_rel *r = rel_basetable(sql, t, name );
-		
+	/* Put single relation of updates and old values on to the stack */
+	sql_rel *r = NULL;
+	node *n;
+	list *exps = sa_list(sql->sa);
+	trigger_input *ti = SA_NEW(sql->sa, trigger_input);
+
+	ti->t = t;
+	ti->tids = tids;
+	ti->updates = NULL;
+	ti->type = 3;
+	ti->nn = name;
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+
+		append(exps, ne);
+	}
+	r = rel_table_func(sql->sa, NULL, NULL, exps, 2);
+	r->l = ti;
+
 	stack_push_rel_view(sql, name, r);
 }
 
 static int
-sql_delete_triggers(backend *be, sql_table *t, list *l, int time)
+sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time)
 {
 	mvc *sql = be->mvc;
 	node *n;
@@ -4211,12 +4310,11 @@ sql_delete_triggers(backend *be, sql_table *t, list *l, int time)
 		
 			if (!o) o = "old"; 
 		
-			sql_stack_add_deleted(sql, o, t);
+			sql_stack_add_deleted(sql, o, t, tids);
 			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
 
 			if (!s) 
 				return 0;
-			list_append(l, s);
 		}
 		stack_pop_frame(sql);
 	}
@@ -4312,15 +4410,16 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	stmt *v, *s = NULL;
 	list *l = sa_list(sql->sa);
 
-/* before */
-	if (!sql_delete_triggers(be, t, l, 0)) 
-		return sql_error(sql, 02, "DELETE: triggers failed for table '%s'", t->base.name);
-
 	if (rows) {
 		v = rows;
 	} else { /* delete all */
 		v = stmt_tid(be, t, 0);
 	}
+
+/* before */
+	if (!sql_delete_triggers(be, t, v, 0)) 
+		return sql_error(sql, 02, "DELETE: triggers failed for table '%s'", t->base.name);
+
 	if (!sql_delete_keys(be, t, v, l)) 
 		return sql_error(sql, 02, "DELETE: failed to delete indexes for table '%s'", t->base.name);
 
@@ -4336,7 +4435,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	}
 
 /* after */
-	if (!sql_delete_triggers(be, t, l, 1)) 
+	if (!sql_delete_triggers(be, t, v, 1)) 
 		return sql_error(sql, 02, "DELETE: triggers failed for table '%s'", t->base.name);
 	if (rows) 
 		s = stmt_aggr(be, rows, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0);
@@ -4711,7 +4810,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 
 	if (!is_ddl(rel->op) && s && s->type != st_none && sql->type == Q_TABLE)
 		s = stmt_output(be, s);
-	if (sqltype == Q_UPDATE && s->type != st_list) 
+	if (sqltype == Q_UPDATE && s && s->type != st_list) 
 		s = stmt_affected_rows(be, s);
 	return s;
 }
