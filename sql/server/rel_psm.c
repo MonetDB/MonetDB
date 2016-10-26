@@ -1080,6 +1080,10 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 	
 	if (!sname)
 		sname = ss->base.name;
+
+	if (sname && !(ss = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!CREATE TRIGGER: no such schema '%s'", sname);
+
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
 		for ( ; dl; dl = dl->next) {
@@ -1173,8 +1177,15 @@ rel_drop_trigger(mvc *sql, const char *sname, const char *tname)
 static sql_rel *
 drop_trigger(mvc *sql, dlist *qname)
 {
+	const char *sname = qname_schema(qname);
 	const char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
+
+	if (!sname)
+		sname = ss->base.name;
+
+	if (sname && !(ss = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!DROP TRIGGER: no such schema '%s'", sname);
 
 	if (!mvc_schema_privs(sql, ss)) 
 		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
