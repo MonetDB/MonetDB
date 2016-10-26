@@ -19,6 +19,7 @@
 #include <bat/bat_storage.h>
 #include <rel_exp.h>
 #include <conversion.h>
+#include <json.h>
 
 #ifndef HAVE_LLABS
 #define llabs(x)	((x) < 0 ? -(x) : (x))
@@ -1903,7 +1904,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 		int typelen = ATOMsize(mtype);
 		int nil_len = -1;
 		int retval = -1;
-		int convert_to_string = !type_supports_binary_transfer(c->type.type);
+		int convert_to_string = !type_supports_binary_transfer(c->type.type) && b->ttype != TYPE_json;
 		sql_type *type = c->type.type;
 		lng print_width = 0;
 		
