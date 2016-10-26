@@ -325,9 +325,9 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         if (python_call_active) {
             mapped = true;
             holds_gil = false;
-        }
-        else {
+        } else {
             python_call_active = true;
+            holds_gil = true;
         }
         MT_lock_unset(&pyapiLock);
     }
