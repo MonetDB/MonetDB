@@ -1959,7 +1959,30 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 		}
 
 		if (convert_to_string) {
-			BAT *res = BATconvert(iterators[i].b, NULL, TYPE_str, 1);
+			BAT *b = iterators[i].b;
+	        BUN p = 0, q = 0;
+	        const void *atomNull = BATatoms[b->ttype].atomNull;
+	        int (*atomCmp) (const void *v1, const void *v2) = BATatoms[b->ttype].atomCmp;
+	        int (*strConversion) (str*, int*, const void*) = BATatoms[b->ttype].atomToStr;
+	        BAT *res = COLnew(0, TYPE_str, 0, TRANSIENT);
+	        if (!res) {
+	        	fres = -1;
+		        goto cleanup;
+	        }
+	        BATloop(b, p, q) {
+	            char *result = NULL;
+	            int length = 0;
+	            void *element = (void*) BUNtail(iterators[i], p);
+	            if (atomCmp(element, atomNull) == 0) {
+	            	BUNappend(res, str_nil, FALSE);
+	            } else {
+		            if (strConversion(&result, &length, element) == 0) {
+		            	fres = -1;
+		                goto cleanup;
+		            }
+		            BUNappend(res, result, FALSE);
+	            }
+	         }
 			// if converting to string, we use str_nil
 			BBPunfix(iterators[i].b->batCacheid);
 			iterators[i] = bat_iterator(res);
