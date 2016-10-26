@@ -55,7 +55,7 @@ Ready.
 # 16:20:25 >  
 
 #select s.name as "schema", f.name as "function", a.number as "argno", a.type as "argtype", case a.number when 0 then f.func else '' end as "definition" from sys.functions f, sys.schemas s, sys.args a where s.id = f.schema_id and f.id = a.func_id and f.id in (select * from sys.systemfunctions) order by s.name, f.name, f.id, a.number;
-% sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
+% sys.L14,	sys.L16,	sys.L20,	sys.L22,	sys.L24 # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	35,	2,	14,	611 # length
@@ -3413,9 +3413,9 @@ Ready.
 [ "sys",	"setmasklen",	0,	"inet",	"create function \"setmasklen\" (p inet, mask int) returns inet\n external name inet.\"setmasklen\";"	]
 [ "sys",	"setmasklen",	1,	"inet",	""	]
 [ "sys",	"setmasklen",	2,	"int",	""	]
-[ "sys",	"setsession",	0,	"bigint",	"create procedure sys.setsession(\"timeout\" bigint)\n external name sql.setsession;"	]
-[ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint)\n external name sql.settimeout;"	]
-[ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint)\n external name sql.settimeout;"	]
+[ "sys",	"setsession",	0,	"bigint",	"create procedure sys.setsession(\"timeout\" bigint)\n external name clients.setsession;"	]
+[ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint)\n external name clients.settimeout;"	]
+[ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint)\n external name clients.settimeout;"	]
 [ "sys",	"settimeout",	1,	"bigint",	""	]
 [ "sys",	"shpattach",	0,	"clob",	"create procedure shpattach(fname string) external name shp.attach;"	]
 [ "sys",	"shpload",	0,	"int",	"create procedure shpload(fid integer) external name shp.load;"	]

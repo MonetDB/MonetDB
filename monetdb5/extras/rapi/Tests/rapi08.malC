@@ -1,28 +1,26 @@
 gv:= bat.new(:int);
-bat.append(gv,1);
-bat.append(gv,1);
-bat.append(gv,2);
-bat.append(gv,2);
+gv:= bat.append(gv,1);
+gv:= bat.append(gv,1);
+gv:= bat.append(gv,2);
+gv:= bat.append(gv,2);
 
 dv:= bat.new(:int);
-bat.append(dv,42);
-bat.append(dv,84);
-bat.append(dv,42);
-bat.append(dv,20);
+dv:= bat.append(dv,42);
+dv:= bat.append(dv,84);
+dv:= bat.append(dv,42);
+dv:= bat.append(dv,20);
 
 # tuple identifiers
 ti:= bat.new(:oid);
-bat.append(ti,0:oid);
-bat.append(ti,1:oid);
-bat.append(ti,2:oid);
-bat.append(ti,3:oid);
+ti:= bat.append(ti,0:oid);
+ti:= bat.append(ti,1:oid);
+ti:= bat.append(ti,2:oid);
+ti:= bat.append(ti,3:oid);
 
-X_8 := algebra.projection(ti,gv);
-(X_9,r1_9,r2_9) := group.subgroupdone(X_8);
-X_12 := algebra.projection(r1_9,X_8);
-X_15 := algebra.projection(ti,dv); 
+ti_gv:bat[:int] := algebra.projection(ti,gv);
+(grp:bat[:oid],r1_9:bat[:oid],r2_9:bat[:lng]) := group.subgroupdone(ti_gv);
+ti_dv:bat[:int] := algebra.projection(ti,dv); 
 
-io.print(X_9);
-X_16:bat[:dbl] := rapi.subeval_aggr(nil:ptr,"res <- aggregate(arg2, by=list(aggr_group), FUN=median); return(res$x)",X_8,X_15);
-io.print(X_16);
-
+io.print(grp);
+res:bat[:dbl] := rapi.subeval_aggr(nil:ptr,"res <- aggregate(arg2, by=list(aggr_group), FUN=median); return(res$x)",ti_gv,ti_dv);
+io.print(res);

@@ -76,14 +76,14 @@ Ready.
 [ "str",	1	]
 [ "str",	256	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% .L2,	.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 9,	3 # length
 [ "transient",	552	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% .L2,	.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 10,	2 # length
 [ "persistent",	13	]

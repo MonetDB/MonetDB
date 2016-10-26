@@ -42,37 +42,37 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 84 # length
+% 76 # length
 function user.main():void;
-    X_1119 := sql.mvc();
-    X_1123:bat[:date] := sql.bind(X_1119,"sys","lineitem","l_shipdate",0);
-    C_1120:bat[:oid] := sql.tid(X_1119,"sys","lineitem");
-    X_1135:date := mtime.addmonths("1995-09-01",1);
-    C_1136 := algebra.subselect(X_1123,C_1120,"1995-09-01",X_1135,true,false,false);
-    X_1140:bat[:int] := sql.bind(X_1119,"sys","lineitem","l_partkey",0);
-    X_1147 := algebra.projection(C_1136,X_1140);
-    C_1148:bat[:oid] := sql.tid(X_1119,"sys","part");
-    X_1150:bat[:int] := sql.bind(X_1119,"sys","part","p_partkey",0);
-    X_1156 := algebra.projection(C_1148,X_1150);
-    (X_1157,r1_53) := algebra.subjoin(X_1147,X_1156,nil:BAT,nil:BAT,false,nil:lng);
-    X_1162:bat[:str] := sql.bind(X_1119,"sys","part","p_type",0);
-    X_1169:bat[:str] := algebra.projectionpath(r1_53,C_1148,X_1162);
-    X_1171:bat[:bit] := batalgebra.like(X_1169,"PROMO%");
-    X_1174:bat[:bit] := batcalc.isnil(X_1171);
-    X_1179:bat[:bit] := batcalc.ifthenelse(X_1174,false,X_1171);
-    X_1181:bat[:lng] := sql.bind(X_1119,"sys","lineitem","l_extendedprice",0);
-    X_1189:bat[:lng] := algebra.projectionpath(X_1157,C_1136,X_1181);
-    X_1197:bat[:lng] := sql.bind(X_1119,"sys","lineitem","l_discount",0);
-    X_1205:bat[:lng] := algebra.projectionpath(X_1157,C_1136,X_1197);
-    X_1206:bat[:lng] := batcalc.-(100:lng,X_1205);
-    X_1208:bat[:hge] := batcalc.*(X_1189,X_1206);
-    X_1214:bat[:hge] := batcalc.ifthenelse(X_1179,X_1208,0:hge);
-    X_1216:hge := aggr.sum(X_1214);
-    X_1218:hge := calc.*(X_1216,1000);
-    X_1219 := calc.hge(5,X_1218,39,9);
-    X_1228:hge := aggr.sum(X_1208);
-    X_1229:hge := calc./(X_1219,X_1228);
-    sql.resultSet("sys.L5","promo_revenue","decimal",39,5,10,X_1229);
+    X_17 := sql.mvc();
+    X_44:bat[:date] := sql.bind(X_17,"sys","lineitem","l_shipdate",0);
+    C_18:bat[:oid] := sql.tid(X_17,"sys","lineitem");
+    X_54:date := mtime.addmonths("1995-09-01",1);
+    C_55 := algebra.subselect(X_44,C_18,"1995-09-01",X_54,true,false,false);
+    X_21:bat[:int] := sql.bind(X_17,"sys","lineitem","l_partkey",0);
+    X_59 := algebra.projection(C_55,X_21);
+    C_63:bat[:oid] := sql.tid(X_17,"sys","part");
+    X_65:bat[:int] := sql.bind(X_17,"sys","part","p_partkey",0);
+    X_71 := algebra.projection(C_63,X_65);
+    (X_79,X_80) := algebra.subjoin(X_59,X_71,nil:BAT,nil:BAT,false,nil:lng);
+    X_72:bat[:str] := sql.bind(X_17,"sys","part","p_type",0);
+    X_89:bat[:str] := algebra.projectionpath(X_80,C_63,X_72);
+    X_91:bat[:bit] := batalgebra.like(X_89,"PROMO%");
+    X_94:bat[:bit] := batcalc.isnil(X_91);
+    X_108:bat[:bit] := batcalc.ifthenelse(X_94,false,X_91);
+    X_30:bat[:lng] := sql.bind(X_17,"sys","lineitem","l_extendedprice",0);
+    X_85:bat[:lng] := algebra.projectionpath(X_79,C_55,X_30);
+    X_37:bat[:lng] := sql.bind(X_17,"sys","lineitem","l_discount",0);
+    X_86:bat[:lng] := algebra.projectionpath(X_79,C_55,X_37);
+    X_104:bat[:lng] := batcalc.-(100:lng,X_86);
+    X_110:bat[:hge] := batcalc.*(X_85,X_104);
+    X_115:bat[:hge] := batcalc.ifthenelse(X_108,X_110,0:hge);
+    X_120:hge := aggr.sum(X_115);
+    X_123:hge := calc.*(X_120,1000);
+    X_124 := calc.hge(5,X_123,39,9);
+    X_121:hge := aggr.sum(X_110);
+    X_128:hge := calc./(X_124,X_121);
+    sql.resultSet("sys.L5","promo_revenue","decimal",39,5,10,X_128);
 end user.main;
 #inline               actions= 0 time=4 usec 
 #remap                actions= 9 time=139 usec 

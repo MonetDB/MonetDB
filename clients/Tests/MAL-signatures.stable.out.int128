@@ -61,7 +61,7 @@ Ready.
 # 12:57:39 >  
 
 #select * from sys.malfunctions() order by module, "function", address, signature, comment;
-% .,	.,	.,	.,	. # table_name
+% .L1,	.L1,	.L1,	.L1,	.L1 # table_name
 % module,	function,	signature,	address,	comment # name
 % clob,	clob,	clob,	clob,	clob # type
 % 11,	28,	346,	44,	874 # length
@@ -9794,9 +9794,9 @@ Ready.
 [ "clients",	"setListing",	"pattern clients.setListing(flag:int):int ",	"CLTsetListing;",	"Turn on/off echo of MAL instructions:\n\t1 - echo input,\n\t2 - show mal instruction,\n\t4 - show details of type resolutoin, \n\t8 - show binding information."	]
 [ "clients",	"setPassword",	"pattern clients.setPassword(user:str,pass:str):void ",	"CLTsetPassword;",	"Set the password for the given user"	]
 [ "clients",	"setScenario",	"pattern clients.setScenario(msg:str):str ",	"CLTsetScenario;",	"Switch to other scenario handler, return previous one."	]
-[ "clients",	"setTimeout",	"pattern clients.setTimeout(q:lng,s:lng):void ",	"CLTsetTimeout;",	"Abort a query after q seconds (q=0 means run undisturbed).\nThe session timeout aborts the connection after spending too\nmany seconds on query processing."	]
 [ "clients",	"setsession",	"pattern clients.setsession(n:lng):void ",	"CLTsetSessionTimeout;",	"Abort a session after  n seconds."	]
 [ "clients",	"settimeout",	"pattern clients.settimeout(n:lng):void ",	"CLTsetTimeout;",	"Abort a query after  n seconds."	]
+[ "clients",	"settimeout",	"pattern clients.settimeout(q:lng,s:lng):void ",	"CLTsetTimeout;",	"Abort a query after q seconds (q=0 means run undisturbed).\nThe session timeout aborts the connection after spending too\nmany seconds on query processing."	]
 [ "clients",	"sha1sum",	"command clients.sha1sum(pw:str):str ",	"CLTsha1sum;",	"Return hex string representation of the SHA-1 hash of the given string"	]
 [ "clients",	"sha2sum",	"command clients.sha2sum(pw:str,bits:int):str ",	"CLTsha2sum;",	"Return hex string representation of the SHA-2 hash with bits of the given string"	]
 [ "clients",	"shutdown",	"pattern clients.shutdown(delay:int):str ",	"CLTshutdown;",	""	]
@@ -10547,8 +10547,6 @@ Ready.
 [ "optimizer",	"emptybind",	"pattern optimizer.emptybind(mod:str,fcn:str):str ",	"OPTwrapper;",	"Evaluate empty set expressions."	]
 [ "optimizer",	"evaluate",	"pattern optimizer.evaluate():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"evaluate",	"pattern optimizer.evaluate(mod:str,fcn:str):str ",	"OPTwrapper;",	"Evaluate constant expressions once."	]
-[ "optimizer",	"factorize",	"pattern optimizer.factorize():str ",	"OPTwrapper;",	""	]
-[ "optimizer",	"factorize",	"pattern optimizer.factorize(mod:str,fcn:str):str ",	"OPTwrapper;",	"Turn function into a factory"	]
 [ "optimizer",	"garbageCollector",	"pattern optimizer.garbageCollector():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"garbageCollector",	"pattern optimizer.garbageCollector(mod:str,fcn:str):str ",	"OPTwrapper;",	"Garbage collector optimizer"	]
 [ "optimizer",	"generator",	"pattern optimizer.generator():str ",	"OPTwrapper;",	""	]
@@ -10835,8 +10833,6 @@ Ready.
 [ "sql",	"row_number",	"pattern sql.row_number(b:any_1,p:bit,o:bit):int ",	"SQLrow_number;",	"return the row_numer-ed groups"	]
 [ "sql",	"sessions",	"pattern sql.sessions() (user:bat[:str],start:bat[:timestamp],stimeout:bat[:lng],lastcmd:bat[:timestamp],qtimeout:bat[:lng],idle:bat[:bit]) ",	"sql_sessions_wrap;",	"SQL export table of active sessions, their timeouts and idle status"	]
 [ "sql",	"setVariable",	"pattern sql.setVariable(mvc:int,varname:str,value:any_1):int ",	"setVariable;",	"Set the value of a session variable"	]
-[ "sql",	"settimeout",	"pattern sql.settimeout(s:lng):void ",	"CLTsetTimeout;",	"Abort query after s seconds"	]
-[ "sql",	"settimeout",	"pattern sql.settimeout(s:lng,t:lng):void ",	"CLTsetTimeout;",	"Abort query after s and session after t seconds"	]
 [ "sql",	"shrink",	"pattern sql.shrink(sch:str,tbl:str):void ",	"SQLshrink;",	"Consolidate the deletion table over all columns using shrinking"	]
 [ "sql",	"shutdown",	"pattern sql.shutdown(delay:bte):str ",	"SQLshutdown_wrap;",	""	]
 [ "sql",	"shutdown",	"pattern sql.shutdown(delay:bte,force:bit):str ",	"SQLshutdown_wrap;",	""	]

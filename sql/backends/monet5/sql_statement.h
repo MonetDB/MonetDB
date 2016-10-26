@@ -14,6 +14,7 @@
 #include "sql_atom.h"
 #include "sql_string.h"
 #include "sql_mvc.h"
+#include "mal_backend.h"
 
 typedef union stmtdata {
 	struct atom *aval;
@@ -120,89 +121,84 @@ typedef struct stmt {
 
 	const char *tname;
 	const char *cname;
-
-	int optimized;		/* used in dependency handling */
-	struct stmt *rewritten; /* used in multi-column result handling (gencode) */
+	InstrPtr q;
 } stmt;
 
 extern int stmt_key(stmt *s);
 
-extern stmt **stmt_array(sql_allocator *sa, stmt *s);
-extern void clear_stmts(stmt **stmts);
+extern stmt *stmt_none(backend *be);
 
-extern stmt *stmt_none(sql_allocator *sa);
-
-#define VAR_DECLARE 1
+//#define VAR_DECLARE 1
 #define VAR_GLOBAL(f) ((f>>1)==1)
-extern stmt *stmt_var(sql_allocator *sa, const char *varname, sql_subtype *t, int declare, int level);
-extern stmt *stmt_vars(sql_allocator *sa, const char *varname, sql_table *t, int declare, int level);
-extern stmt *stmt_varnr(sql_allocator *sa, int nr, sql_subtype *t);
+extern stmt *stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int level);
+extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
+extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t);
 
-extern stmt *stmt_table(sql_allocator *sa, stmt *cols, int temp);
-extern stmt *stmt_rs_column(sql_allocator *sa, stmt *result_set, int i, sql_subtype *tpe);
+extern stmt *stmt_table(backend *be, stmt *cols, int temp);
+extern stmt *stmt_rs_column(backend *be, stmt *result_set, int i, sql_subtype *tpe);
 
-extern stmt *stmt_bat(sql_allocator *sa, sql_column *c, int access);
-extern stmt *stmt_idxbat(sql_allocator *sa, sql_idx *i, int access);
-extern stmt *stmt_tid(sql_allocator *sa, sql_table *t);
+extern stmt *stmt_bat(backend *be, sql_column *c, int access, int partition);
+extern stmt *stmt_idxbat(backend *be, sql_idx *i, int access, int partition);
+extern stmt *stmt_tid(backend *be, sql_table *t, int partition);
 
-extern stmt *stmt_append_col(sql_allocator *sa, sql_column *c, stmt *b);
-extern stmt *stmt_append_idx(sql_allocator *sa, sql_idx *i, stmt *b);
-extern stmt *stmt_update_col(sql_allocator *sa, sql_column *c, stmt *tids, stmt *upd);
-extern stmt *stmt_update_idx(sql_allocator *sa, sql_idx *i, stmt *tids, stmt *upd);
-extern stmt *stmt_delete(sql_allocator *sa, sql_table *t, stmt *b);
+extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *b, int locked);
+extern stmt *stmt_append_idx(backend *be, sql_idx *i, stmt *b);
+extern stmt *stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd);
+extern stmt *stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd);
+extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);
 
-extern stmt *stmt_append(sql_allocator *sa, stmt *c, stmt *values);
-extern stmt *stmt_table_clear(sql_allocator *sa, sql_table *t);
-extern stmt *stmt_export(sql_allocator *sa, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, stmt *file);
-extern stmt *stmt_trans(sql_allocator *sa, int type, stmt *chain, stmt *name);
-extern stmt *stmt_catalog(sql_allocator *sa, int type, stmt *args);
+extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
+extern stmt *stmt_table_clear(backend *be, sql_table *t);
 
-extern stmt *stmt_temp(sql_allocator *sa, sql_subtype *t);
-extern stmt *stmt_atom(sql_allocator *sa, atom *op1);
-extern stmt *stmt_atom_string(sql_allocator *sa, const char *s);
-extern stmt *stmt_atom_string_nil(sql_allocator *sa);
-extern stmt *stmt_atom_int(sql_allocator *sa, int i);
-extern stmt *stmt_atom_lng(sql_allocator *sa, lng i);
-extern stmt *stmt_atom_lng_nil(sql_allocator *sa);
-extern stmt *stmt_bool(sql_allocator *sa, int b);
+extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, stmt *file);
+extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);
+extern stmt *stmt_catalog(backend *be, int type, stmt *args);
 
-extern stmt *stmt_uselect(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub);
+extern stmt *stmt_temp(backend *be, sql_subtype *t);
+extern stmt *stmt_atom(backend *be, atom *a);
+extern stmt *stmt_atom_string(backend *be, const char *s);
+extern stmt *stmt_atom_string_nil(backend *be);
+extern stmt *stmt_atom_int(backend *be, int i);
+extern stmt *stmt_atom_lng(backend *be, lng i);
+extern stmt *stmt_atom_lng_nil(backend *be);
+extern stmt *stmt_bool(backend *be, int b);
+
+extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti);
 /* cmp
        0 ==   l <  x <  h
        1 ==   l <  x <= h
        2 ==   l <= x <  h
        3 ==   l <= x <= h
        */
-extern stmt *stmt_uselect2(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub);
-extern stmt *stmt_genselect(sql_allocator *sa, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub);
+extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti);
+extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
 
-extern stmt *stmt_tunion(sql_allocator *sa, stmt *op1, stmt *op2);
-extern stmt *stmt_tdiff(sql_allocator *sa, stmt *op1, stmt *op2);
-extern stmt *stmt_tinter(sql_allocator *sa, stmt *op1, stmt *op2);
+extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2);
 
-extern stmt *stmt_join(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype);
-extern stmt *stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp, int swapped);
+extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype);
+extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
-extern stmt *stmt_genjoin(sql_allocator *sa, stmt *l, stmt *r, sql_subfunc *op, int swapped);
+extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
 
-extern stmt *stmt_project(sql_allocator *sa, stmt *op1, stmt *op2);
-extern stmt *stmt_project_delta(sql_allocator *sa, stmt *col, stmt *upd, stmt *ins);
-extern stmt *stmt_left_project(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3);
+extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
+extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
 
-extern stmt *stmt_list(sql_allocator *sa, list *l);
+extern stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);
 
-extern stmt *stmt_group(sql_allocator *sa, stmt *op1, stmt *grp, stmt *ext, stmt *cnt);
-extern void stmt_group_done(stmt *grp);
+extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
-extern stmt *stmt_exception(sql_allocator *sa, stmt *cond, char *errstr, int errcode);
+extern stmt *stmt_exception(backend *be, stmt *cond, char *errstr, int errcode);
 
-extern stmt *stmt_const(sql_allocator *sa, stmt *s, stmt *val);
+extern stmt *stmt_const(backend *be, stmt *s, stmt *val);
 
-extern stmt *stmt_gen_group(sql_allocator *sa, stmt *gids, stmt *cnts);	/* given a gid,cnt blowup to full groups */
-extern stmt *stmt_mirror(sql_allocator *sa, stmt *s);
-extern stmt *stmt_result(sql_allocator *sa, stmt *s, int nr);
+extern stmt *stmt_gen_group(backend *be, stmt *gids, stmt *cnts);	/* given a gid,cnt blowup to full groups */
+extern stmt *stmt_mirror(backend *be, stmt *s);
+extern stmt *stmt_result(backend *be, stmt *s, int nr);
 
 /* 
  * distinct: compute topn on unique groups
@@ -210,33 +206,28 @@ extern stmt *stmt_result(sql_allocator *sa, stmt *s, int nr);
  * last:     intermediate step or last step 
  * order:    is order important or not (firstn vs slice)
  */ 
-#define LIMIT_FLAG(distinct,dir,last,order) \
-		((distinct<<3)+(dir<<2)+(last<<1)+(order))
-extern stmt *stmt_limit(sql_allocator *sa, stmt *s, stmt *offset, stmt *limit, int direction);
-extern stmt *stmt_limit2(sql_allocator *sa, stmt *s, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int direction);
-extern stmt *stmt_sample(sql_allocator *sa, stmt *s, stmt *sample);
-extern stmt *stmt_order(sql_allocator *sa, stmt *s, int direction);
-extern stmt *stmt_reorder(sql_allocator *sa, stmt *s, int direction, stmt *orderby_ids, stmt *orderby_grp);
+extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int last, int order);
+extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample);
+extern stmt *stmt_order(backend *be, stmt *s, int direction);
+extern stmt *stmt_reorder(backend *be, stmt *s, int direction, stmt *orderby_ids, stmt *orderby_grp);
 
-extern stmt *stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_subtype *to);
-extern stmt *stmt_unop(sql_allocator *sa, stmt *op1, sql_subfunc *op);
-extern stmt *stmt_binop(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *op);
-extern stmt *stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op);
-extern stmt *stmt_func(sql_allocator *sa, stmt *ops, const char *name, sql_rel *imp, int f_union);
-extern stmt *stmt_aggr(sql_allocator *sa, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil);
+extern stmt *stmt_convert(backend *sa, stmt *v, sql_subtype *from, sql_subtype *to);
+extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
+extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
+extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);
+extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
+extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil);
 
-extern stmt *stmt_alias(sql_allocator *sa, stmt *op1, const char *tname, const char *name);
+extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 
-extern stmt *stmt_output(sql_allocator *sa, stmt *l);
-extern stmt *stmt_affected_rows(sql_allocator *sa, stmt *l);
+extern stmt *stmt_output(backend *be, stmt *l);
+extern stmt *stmt_affected_rows(backend *be, stmt *l);
 
 /* flow control statements */
-extern stmt *stmt_cond(sql_allocator *sa, stmt *cond, stmt *outer, int loop);
-extern stmt *stmt_control_end(sql_allocator *sa, stmt *cond);
-extern stmt *stmt_while(sql_allocator *sa, stmt *cond, stmt *whilestmts);
-extern stmt *stmt_if(sql_allocator *sa, stmt *cond, stmt *ifstmts, stmt *elsestmts);
-extern stmt *stmt_return(sql_allocator *sa, stmt *val, int nr_of_declared_tables);
-extern stmt *stmt_assign(sql_allocator *sa, const char *varname, stmt *val, int level);
+extern stmt *stmt_cond(backend *be, stmt *cond, stmt *outer, int loop, int anti);
+extern stmt *stmt_control_end(backend *be, stmt *cond);
+extern stmt *stmt_return(backend *be, stmt *val, int nr_of_declared_tables);
+extern stmt *stmt_assign(backend *be, const char *varname, stmt *val, int level);
 
 extern sql_subtype *tail_type(stmt *st);
 extern int stmt_has_null(stmt *s);
@@ -245,8 +236,6 @@ extern const char *column_name(sql_allocator *sa, stmt *st);
 extern const char *table_name(sql_allocator *sa, stmt *st);
 extern const char *schema_name(sql_allocator *sa, stmt *st);
 
-extern stmt *const_column(sql_allocator *sa, stmt *val);
-
-extern int has_side_effect(stmt *val);
+extern stmt *const_column(backend *ba, stmt *val);
 
 #endif /* _SQL_STATEMENT_H_ */

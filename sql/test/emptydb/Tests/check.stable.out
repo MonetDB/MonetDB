@@ -977,9 +977,9 @@ create function "right_shift"(i1 inet, i2 inet) returns boolean external name in
 create function "right_shift_assign"(i1 inet, i2 inet) returns boolean external name inet.">>=";
 create function sys.sessions() returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool) external name sql.sessions;
 create function "setmasklen" (p inet, mask int) returns inet external name inet."setmasklen";
-create procedure sys.setsession("timeout" bigint) external name sql.setsession;
-create procedure sys.settimeout("query" bigint) external name sql.settimeout;
-create procedure sys.settimeout("query" bigint, "session" bigint) external name sql.settimeout;
+create procedure sys.setsession("timeout" bigint) external name clients.setsession;
+create procedure sys.settimeout("query" bigint) external name clients.settimeout;
+create procedure sys.settimeout("query" bigint, "session" bigint) external name clients.settimeout;
 create procedure shpattach(fname string) external name shp.attach;
 create procedure shpload(fid integer) external name shp.load;
 create procedure shpload(fid integer, filter geometry) external name shp.import;
@@ -1253,7 +1253,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	2,	3,	true	]
 [ "tmp",	2,	3,	true	]
 #select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
-% .s,	.t,	.L1,	.t,	.t,	.t,	.t # table_name
+% .s,	.t,	.L4,	.t,	.t,	.t,	.t # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 3,	17,	597,	1,	5,	1,	1 # length
@@ -1702,7 +1702,7 @@ drop function pcre_replace(string, string, string, string);
 [ "users",	"fullname",	"varchar",	2024,	0,	NULL,	true,	1,	NULL	]
 [ "users",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL	]
 #select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, query;
-% .s,	.f,	.L1,	.f,	.f,	.f,	.f,	.f,	.f # table_name
+% .s,	.f,	.L4,	.f,	.f,	.f,	.f,	.f,	.f # table_name
 % name,	name,	query,	mod,	language,	type,	side_effect,	varres,	vararg # name
 % varchar,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean # type
 % 8,	35,	831,	9,	1,	1,	5,	5,	5 # length
@@ -1976,8 +1976,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"hour",	"hours",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"identity",	"identity",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"ifthenelse",	"ifthenelse",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"ilike",	"create filter function \"ilike\"(val string, pat string) external name algebra.\"ilike\";",	"algebra",	1,	4,	true,	false,	false	]
-[ "sys",	"ilike",	"create filter function \"ilike\"(val string, pat string, esc string) external name algebra.\"ilike\";",	"algebra",	1,	4,	true,	false,	false	]
+[ "sys",	"ilike",	"create filter function \"ilike\"(val string, pat string) external name algebra.\"ilike\";",	"algebra",	1,	4,	false,	false,	false	]
+[ "sys",	"ilike",	"create filter function \"ilike\"(val string, pat string, esc string) external name algebra.\"ilike\";",	"algebra",	1,	4,	false,	false,	false	]
 [ "sys",	"imprintsize",	"create function sys.imprintsize(i bigint, nme string) returns bigint begin if nme = 'boolean' or nme = 'tinyint' or nme = 'smallint' or nme = 'int' or nme = 'bigint' or nme = 'hugeint' or nme = 'decimal' or nme = 'date' or nme = 'timestamp' or nme = 'real' or nme = 'double' then return cast(i * 0.12 as bigint); end if ; return 0; end;",	"user",	2,	1,	false,	false,	false	]
 [ "sys",	"in",	"in",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"index",	"index",	"calc",	0,	1,	false,	false,	false	]
@@ -2027,8 +2027,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"lidarattach",	"create procedure lidarattach(fname string) external name lidar.attach;",	"lidar",	1,	2,	true,	false,	false	]
 [ "sys",	"lidarexport",	"create procedure lidarexport(tname string, fname string, format string) external name lidar.export;",	"lidar",	1,	2,	true,	false,	false	]
 [ "sys",	"lidarload",	"create procedure lidarload(tname string) external name lidar.load;",	"lidar",	1,	2,	true,	false,	false	]
-[ "sys",	"like",	"create filter function \"like\"(val string, pat string) external name algebra.\"like\";",	"algebra",	1,	4,	true,	false,	false	]
-[ "sys",	"like",	"create filter function \"like\"(val string, pat string, esc string) external name algebra.\"like\";",	"algebra",	1,	4,	true,	false,	false	]
+[ "sys",	"like",	"create filter function \"like\"(val string, pat string) external name algebra.\"like\";",	"algebra",	1,	4,	false,	false,	false	]
+[ "sys",	"like",	"create filter function \"like\"(val string, pat string, esc string) external name algebra.\"like\";",	"algebra",	1,	4,	false,	false,	false	]
 [ "sys",	"listdir",	"create procedure listdir(dirname string) external name fits.listdir;",	"fits",	1,	2,	true,	false,	false	]
 [ "sys",	"listdirpat",	"create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;",	"fits",	1,	2,	true,	false,	false	]
 [ "sys",	"local_timezone",	"local_timezone",	"mtime",	0,	1,	false,	false,	false	]
@@ -2768,9 +2768,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"second",	"sql_seconds",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"sessions",	"create function sys.sessions() returns table(\"user\" string, \"login\" timestamp, \"sessiontimeout\" bigint, \"lastcommand\" timestamp, \"querytimeout\" bigint, \"active\" bool) external name sql.sessions;",	"sql",	1,	5,	false,	false,	false	]
 [ "sys",	"setmasklen",	"create function \"setmasklen\" (p inet, mask int) returns inet external name inet.\"setmasklen\";",	"inet",	1,	1,	false,	false,	false	]
-[ "sys",	"setsession",	"create procedure sys.setsession(\"timeout\" bigint) external name sql.setsession;",	"sql",	1,	2,	true,	false,	false	]
-[ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint) external name sql.settimeout;",	"sql",	1,	2,	true,	false,	false	]
-[ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name sql.settimeout;",	"sql",	1,	2,	true,	false,	false	]
+[ "sys",	"setsession",	"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;",	"clients",	1,	2,	true,	false,	false	]
+[ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint) external name clients.settimeout;",	"clients",	1,	2,	true,	false,	false	]
+[ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name clients.settimeout;",	"clients",	1,	2,	true,	false,	false	]
 [ "sys",	"shpattach",	"create procedure shpattach(fname string) external name shp.attach;",	"shp",	1,	2,	true,	false,	false	]
 [ "sys",	"shpload",	"create procedure shpload(fid integer) external name shp.load;",	"shp",	1,	2,	true,	false,	false	]
 [ "sys",	"shpload",	"create procedure shpload(fid integer, filter geometry) external name shp.import;",	"shp",	1,	2,	true,	false,	false	]
@@ -5610,14 +5610,14 @@ drop function pcre_replace(string, string, string, string);
 % varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 0,	0,	1,	1,	1,	1,	1,	5 # length
 #select count(*) from sys.statistics;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select count(*) from sys.storagemodelinput;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]

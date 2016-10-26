@@ -26,13 +26,27 @@ Ready.
 
 [ 1	]
 [ 1	]
-[ 1	]
+#create trigger test_5_1
+#	after update on t_5_1
+#	delete from t_5_1 where name = 'monetdb' and id = 10;
+#create trigger test_5_2
+#	before update on t_5_1
+#	insert into t_5_1 values(11,'amsterdam');
+#create trigger test_5_3
+#	after update on t_5_1
+#	insert into t_5_1 values(10, 'update_from_test_5_3');
+#create trigger test_5_4
+#	after update on t_5_1
+#	insert into t_5_1 values(30, 'update_from_test_5_4');
+#update t_5_1 set name = 'mo' where id = 11;
+[ 0	]
+#select * from t_5_1;
 % sys.t_5_1,	sys.t_5_1 # table_name
 % id,	name # name
 % int,	varchar # type
 % 2,	20 # length
 [ 20,	"monet"	]
-[ 11,	"mo"	]
+[ 11,	"amsterdam"	]
 [ 10,	"update_from_test_5_3"	]
 [ 30,	"update_from_test_5_4"	]
 [ 4	]

@@ -6505,7 +6505,7 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		return e;
 	case e_aggr:
 	case e_func: 
-		if (!is_analytic(e)) {
+		if (!is_analytic(e) && !exp_has_sideeffect(e)) {
 			split_exps(sql, e->l, rel);
 			add_exps_too_project(sql, e->l, rel);
 		}

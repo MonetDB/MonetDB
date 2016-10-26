@@ -40,22 +40,22 @@ Ready.
 % clob # type
 % 320 # length
 function user.s4_1():void;
-    X_77:void := querylog.define("explain select\n sum(l_extendedprice * l_discount) as revenue\nfrom\n lineitem\nwhere\n l_shipdate >= date \\'1994-01-01\\'\n and l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n and l_discount between .06 - 0.01 and .06 + 0.01\n and l_quantity < 24;","sequential_pipe",18);
+    X_79:void := querylog.define("explain select\n sum(l_extendedprice * l_discount) as revenue\nfrom\n lineitem\nwhere\n l_shipdate >= date \\'1994-01-01\\'\n and l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n and l_discount between .06 - 0.01 and .06 + 0.01\n and l_quantity < 24;","sequential_pipe",18);
     X_0 := sql.mvc();
     X_4:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_quantity",0);
-    X_17:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",0);
-    X_35:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",0);
+    X_21:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_discount",0);
+    X_28:bat[:date] := sql.bind(X_0,"sys","lineitem","l_shipdate",0);
     C_1:bat[:oid] := sql.tid(X_0,"sys","lineitem");
-    X_45:date := mtime.addmonths("1994-01-01",12);
-    C_46 := algebra.subselect(X_35,C_1,"1994-01-01",X_45,true,false,false);
-    C_50 := algebra.subselect(X_17,C_46,5:lng,7:lng,true,true,false);
-    C_51 := algebra.thetasubselect(X_4,C_50,2400:lng,"<");
-    X_53:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",0);
-    X_60 := algebra.projection(C_51,X_53);
-    X_66 := algebra.projection(C_51,X_17);
-    X_67:bat[:hge] := batcalc.*(X_60,X_66);
-    X_69:hge := aggr.sum(X_67);
-    sql.resultSet("sys.L4","revenue","decimal",39,4,10,X_69);
+    X_38:date := mtime.addmonths("1994-01-01",12);
+    C_39 := algebra.subselect(X_28,C_1,"1994-01-01",X_38,true,false,false);
+    C_56 := algebra.subselect(X_21,C_39,5:lng,7:lng,true,true,false);
+    C_59 := algebra.thetasubselect(X_4,C_56,2400:lng,"<");
+    X_14:bat[:lng] := sql.bind(X_0,"sys","lineitem","l_extendedprice",0);
+    X_62 := algebra.projection(C_59,X_14);
+    X_63 := algebra.projection(C_59,X_21);
+    X_69:bat[:hge] := batcalc.*(X_62,X_63);
+    X_71:hge := aggr.sum(X_69);
+    sql.resultSet("sys.L4","revenue","decimal",39,4,10,X_71);
 end user.s4_1;
 #inline               actions= 0 time=7 usec 
 #candidates           actions= 1 time=61 usec 

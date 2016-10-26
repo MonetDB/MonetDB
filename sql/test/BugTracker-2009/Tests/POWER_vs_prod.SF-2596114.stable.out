@@ -73,21 +73,21 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 55 # length
+% 49 # length
 function user.main():void;
-    X_725 := bat.new(nil:str);
-    X_732 := bat.append(X_725,"sys.L2");
-    X_727 := bat.new(nil:str);
-    X_734 := bat.append(X_727,"L2");
-    X_728 := bat.new(nil:str);
-    X_736 := bat.append(X_728,"double");
-    X_729 := bat.new(nil:int);
-    X_738 := bat.append(X_729,53);
-    X_731 := bat.new(nil:int);
-    X_740 := bat.append(X_731,0);
-    X_718 := bat.new(nil:dbl);
-    X_721:bat[:dbl] := batmmath.pow(X_718,2);
-    sql.resultSet(X_732,X_734,X_736,X_738,X_740,X_721);
+    X_26 := bat.new(nil:str);
+    X_33 := bat.append(X_26,"sys.L2");
+    X_28 := bat.new(nil:str);
+    X_35 := bat.append(X_28,"L2");
+    X_29 := bat.new(nil:str);
+    X_37 := bat.append(X_29,"double");
+    X_30 := bat.new(nil:int);
+    X_39 := bat.append(X_30,53);
+    X_32 := bat.new(nil:int);
+    X_41 := bat.append(X_32,0);
+    X_19 := bat.new(nil:dbl);
+    X_22:bat[:dbl] := batmmath.pow(X_19,2);
+    sql.resultSet(X_33,X_35,X_37,X_39,X_41,X_22);
 end user.main;
 #inline               actions= 0 time=2 usec 
 #remap                actions= 1 time=15 usec 
