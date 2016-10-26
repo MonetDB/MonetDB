@@ -94,7 +94,7 @@ case "$1" in
   stop)
         if running ;  then
             echo -n "Stopping $DESC: "
-            start-stop-daemon --stop --pidfile $PIDFILE --exec $DAEMON -c monetdb:monetdb -- stop ${DBFARM}
+            start-stop-daemon --stop --pidfile $PIDFILE --exec $DAEMON --retry 60 --signal TERM
             echo "$NAME."
 		else
 			echo "$NAME not running."
@@ -102,7 +102,6 @@ case "$1" in
         ;;
   restart)
         $0 stop
-        sleep 5
         $0 start
         ;;
   status)
