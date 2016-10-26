@@ -228,7 +228,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 				cw = cv;\
 			}\
 			dictsize++;\
-			dict.val##TPE[j]= *val;\
+			dict.val##TPE[j]= (TPE) *val;\
 			cnt[j] = 1;\
 		} else cnt[j]++;\
 } }
