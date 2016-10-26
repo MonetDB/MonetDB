@@ -501,8 +501,8 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 		return(1);
 	}
 
-	/* wait up to 5 seconds for monetdbd to actually stop */
-	for (i = 0; i < 10; i++) {
+	/* wait up to 30 seconds for monetdbd to actually stop */
+	for (i = 0; i < 60; i++) {
 		tv.tv_sec = 0;
 		tv.tv_usec = 500000;
 		select(0, NULL, NULL, NULL, &tv);
