@@ -33,8 +33,8 @@ Ready.
 [ 1	]
 #CREATE FUNCTION pyapi_date(d DATE) RETURNS STRING LANGUAGE PYTHON { return d; };
 #SELECT pyapi_date(d) FROM date_table;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 10 # length
 [ "2000-10-10"	]
@@ -43,28 +43,28 @@ Ready.
 [ 1	]
 #CREATE FUNCTION pyapi_time(d TIME) RETURNS STRING LANGUAGE PYTHON { return d; };
 #SELECT pyapi_time(d) FROM time_table;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
-% 8 # length
-[ "12:00:00"	]
+% 12 # length
+[ "12:00:00.000"	]
 #CREATE TABLE timestamp_table(d TIMESTAMP); # TIMESTAMP is converted to str
 #INSERT INTO timestamp_table VALUES (cast('2000-1-1 12:00:00' AS TIMESTAMP));
 [ 1	]
 #CREATE FUNCTION pyapi_timestamp(d TIMESTAMP) RETURNS STRING LANGUAGE PYTHON { return d; };
 #SELECT pyapi_timestamp(d) FROM timestamp_table;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
-% 26 # length
-[ "2000-01-01 12:00:00.000000"	]
+% 23 # length
+[ "2000-01-01 12:00:00.000"	]
 #CREATE TABLE decimal_table(d DECIMAL(10, 3)); # DECIMAL is converted to dbl
 #INSERT INTO decimal_table VALUES (123.4567);
 [ 1	]
 #CREATE FUNCTION pyapi_decimal(d DECIMAL) RETURNS DOUBLE LANGUAGE PYTHON { return d; };
 #SELECT pyapi_decimal(d) FROM decimal_table;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ 123.457	]
@@ -76,7 +76,7 @@ Ready.
 #    return result
 #};
 #SELECT * FROM pyapi_ret_date();
-% . # table_name
+% .L1 # table_name
 % d # name
 % date # type
 % 10 # length
@@ -89,7 +89,7 @@ Ready.
 #    return result
 #};
 #SELECT * FROM pyapi_ret_time();
-% . # table_name
+% .L1 # table_name
 % d # name
 % time # type
 % 8 # length
@@ -102,7 +102,7 @@ Ready.
 #    return result
 #};
 #SELECT * FROM pyapi_ret_timestamp();
-% . # table_name
+% .L1 # table_name
 % d # name
 % timestamp # type
 % 26 # length
@@ -115,7 +115,7 @@ Ready.
 #    return result
 #};
 #SELECT * FROM pyapi_ret_decimal();
-% . # table_name
+% .L1 # table_name
 % d # name
 % decimal # type
 % 20 # length
@@ -135,13 +135,21 @@ Ready.
 #    return numpy.mean(d) # average 100k decimal values
 #};
 #SELECT pyapi_inp_decimal(d) FROM pyapi_ret_decimal();
-% .L1 # table_name
-% L1 # name
+% .L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 5e+04	]
-#create table uuid_tbl as select uuid() AS d with data;
-#CREATE FUNCTION pyapi_interval(d UUID) RETURNS DOUBLE LANGUAGE PYTHON { return d; };
+#CREATE TABLE uuid_tbl(d UUID);
+#INSERT INTO uuid_tbl VALUES ('54771a16-b4ad-4f1a-a9b7-4d8e8ca6fb7c');
+[ 1	]
+#CREATE FUNCTION pyapi_interval(d UUID) RETURNS STRING LANGUAGE PYTHON { return d; };
+#SELECT pyapi_interval(d) FROM uuid_tbl;
+% sys.L2 # table_name
+% L2 # name
+% clob # type
+% 36 # length
+[ "54771a16-b4ad-4f1a-a9b7-4d8e8ca6fb7c"	]
 #ROLLBACK;
 
 # 18:18:39 >  
