@@ -190,7 +190,6 @@
 
 #include "monetdb_config.h"
 #include "mtime.h"
-#include <conversion.h>
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
@@ -631,16 +630,24 @@ date_fromstr(const char *buf, int *len, date **d)
 int
 date_tostr(str *buf, int *len, const date *val)
 {
+	int day, month, year;
+
+	fromdate(*val, &day, &month, &year);
 	/* longest possible string: "-5867411-01-01" i.e. 14 chars
 	   without NUL (see definition of YEAR_MIN/YEAR_MAX above) */
-	if (*len < dateStrlen) {
+	if (*len < 15) {
 		if (*buf)
 			GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = 15);
 		if( *buf == NULL)
 			return 0;
 	}
-	return conversion_date_to_string(*buf, *len, val, date_nil);
+	if (*val == date_nil || !DATE(day, month, year)) {
+		strcpy(*buf, "nil");
+		return 3;
+	}
+	sprintf(*buf, "%d-%02d-%02d", year, month, day);
+	return (int) strlen(*buf);
 }
 
 /*

@@ -37,10 +37,6 @@
 # endif
 #endif
 
-/*
- * @- date
- * Dates are stored as the amount of days since the 0000-01-01
- */
 typedef int date;
 #define date_nil		((date) int_nil)
 #define date_isnil(X)	((X) == date_nil)

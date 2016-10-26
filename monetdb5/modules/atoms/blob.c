@@ -31,7 +31,6 @@
  */
 #include "monetdb_config.h"
 #include "blob.h"
-#include <conversion.h>
 
 int TYPE_blob;
 int TYPE_sqlblob;
@@ -211,6 +210,8 @@ blob_tostr(str *tostr, int *l, blob *p)
 int
 sqlblob_tostr(str *tostr, int *l, const blob *p)
 {
+	char *s;
+	size_t i;
 	size_t expectedlen;
 
 	if (p->nitems == ~(size_t) 0)
@@ -225,8 +226,23 @@ sqlblob_tostr(str *tostr, int *l, const blob *p)
 			return 0;
 		*l = (int) expectedlen;
 	}
+	if (p->nitems == ~(size_t) 0) {
+		strcpy(*tostr, "nil");
+		return 3;
+	}
 
-	return conversion_blob_to_string(*tostr, expectedlen, p->data, p->nitems);
+	strcpy(*tostr, "\0");
+	s = *tostr;
+
+	for (i = 0; i < p->nitems; i++) {
+		int val = (p->data[i] >> 4) & 15;
+
+		*s++ = hexit[val];
+		val = p->data[i] & 15;
+		*s++ = hexit[val];
+	}
+	*s = '\0';
+	return (int) (s - *tostr); /* 64bit: check for overflow */
 }
 
 static int
