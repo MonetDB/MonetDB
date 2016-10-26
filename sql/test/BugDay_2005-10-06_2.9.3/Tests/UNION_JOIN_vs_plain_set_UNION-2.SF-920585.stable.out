@@ -101,8 +101,8 @@ Ready.
 [ "users",	"SELECT u.\"t\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM \"sys\".\"db_users\" AS u, \"sys\".\"db_user_info\" AS ui WHERE u.\"h\" = ui.\"id\" AND u.\"h\" NOT IN (SELECT s.\"h\" FROM \"sys\".\"db_scens\" AS s WHERE s.\"t\" NOT LIKE 'sql');",	false,	true,	0,	0	]
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % table_cat,	table_schem,	table_name,	table_type,	remarks,	type_cat,	type_schem,	type_name,	self_referencing_col_name,	ref_generation # name
-% char,	varchar,	varchar,	char,	varchar,	char,	char,	char,	char,	char # type
-% 4,	3,	8,	12,	222,	4,	4,	4,	2,	6 # length
+% char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
+% 4,	3,	8,	12,	0,	4,	4,	4,	2,	6 # length
 [ "null",	"sys",	"columns",	"SYSTEM TABLE",	"",	"null",	"null",	"null",	"id",	"SYSTEM"	]
 [ "null",	"sys",	"db_scens",	"SYSTEM TABLE",	"",	"null",	"null",	"null",	"id",	"SYSTEM"	]
 [ "null",	"sys",	"db_users",	"SYSTEM TABLE",	"",	"null",	"null",	"null",	"id",	"SYSTEM"	]

@@ -59,6 +59,15 @@ is_a_mat(int idx, matlist_t *ml){
 }
 
 static int
+was_a_mat(int idx, matlist_t *ml){
+	int i;
+	for(i =0; i<ml->top; i++)
+		if (ml->v[i].mv == idx) 
+			return i;
+	return -1;
+}
+
+static int
 nr_of_mats(InstrPtr p, matlist_t *ml)
 {
 	int j,cnt=0;
@@ -1742,7 +1751,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* subselect on insert, should use last tid only */
 		if (match == 1 && fm == 2 && isSubSelect(p) && p->retc == 1 &&
-		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0) {
+		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && 
+		   !ml.v[m].packed && /* not packed yet */ 
+		   !was_a_mat(getArg(p,fm-1), &ml)){ /* not previously packed */
 			r = copyInstruction(p);
 			getArg(r, fm) = getArg(ml.v[m].mi, ml.v[m].mi->argc-1);
 			pushInstruction(mb, r);

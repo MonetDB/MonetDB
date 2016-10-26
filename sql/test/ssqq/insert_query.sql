@@ -16,7 +16,7 @@ select * from query;
 
 set id_result = -1;
 
-set id_result = insert_query(1, 'select * from example', 0, NULL);
+set id_result = insert_query(2, 'select * from example', 0, NULL);
 
 select id_result;
 
@@ -24,7 +24,7 @@ select * from query;
 
 set id_result = -1;
 
-set id_result = insert_query(1, NULL, 0, NULL);
+set id_result = insert_query(2, NULL, 0, NULL);
 
 select id_result;
 

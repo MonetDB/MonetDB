@@ -636,6 +636,10 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
 			char *iname = sa_strconcat( sa, "%", i->base.name);
 
+			/* do not include empty indices in the plan */
+			if (hash_index(i->type) && list_length(i->columns) <= 1)
+				continue;
+
 			if (i->type == join_idx)
 				t = sql_bind_localtype("oid"); 
 

@@ -10,6 +10,7 @@
 #define MAL_BACKEND_H
 
 #include <streams.h>
+#include <mal.h>
 #include <mal_client.h>
 #include <sql_mvc.h>
 #include <sql_qc.h>
@@ -37,6 +38,7 @@ typedef struct backend {
 	stream 	*out;
 	ofmt	output_format;	/* csv, json */
 	Client 	client;
+	MalBlkPtr mb;		/* needed during mal generation */
 	int 	mvc_var;	
 	int	vtop;		/* top of the variable stack before the current function */
 	cq 	*q;		/* pointer to the cached query */

@@ -64,7 +64,7 @@ Ready.
 #SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
 % sys.L3 # table_name
 % text(char) # name
-% clob # type
+% char # type
 % 1 # length
 [ "a"	]
 [ "A"	]
@@ -88,7 +88,7 @@ Ready.
 #SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
 % sys.L3 # table_name
 % text(varchar) # name
-% clob # type
+% varchar # type
 % 1 # length
 [ "a"	]
 [ "A"	]

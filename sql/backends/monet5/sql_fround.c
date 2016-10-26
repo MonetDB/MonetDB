@@ -19,7 +19,6 @@
 #include <rel_select.h>
 #include <rel_exp.h>
 #include <rel_dump.h>
-#include <rel_bin.h>
 #include "clients.h"
 #include "mal_instruction.h"
 

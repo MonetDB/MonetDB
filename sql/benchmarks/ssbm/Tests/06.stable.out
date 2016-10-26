@@ -34,8 +34,8 @@ Ready.
 #		and s_region = 'EUROPE'
 #	group by d_year, p_brand1
 #	order by d_year, p_brand1;
-% sys.L2,	sys.dwdate,	sys.part # table_name
-% L1,	d_year,	p_brand1 # name
+% sys.L3,	sys.dwdate,	sys.part # table_name
+% L2,	d_year,	p_brand1 # name
 % bigint,	int,	clob # type
 % 8,	4,	9 # length
 [ 2535744,	1992,	"MFGR#2221"	]

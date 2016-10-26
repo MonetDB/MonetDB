@@ -44,7 +44,7 @@ project (
 % clob # type
 % 142 # length
 function user.s8_1():void;
-    X_59:void := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",36);
+    X_59:void := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",35);
     X_26 := bat.new(nil:str);
     X_33 := bat.append(X_26,"sys.dbg");
     X_43 := bat.append(X_33,"sys.L4");
@@ -130,7 +130,7 @@ project (
 % clob # type
 % 147 # length
 function user.s20_1():void;
-    X_59:void := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",36);
+    X_59:void := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",35);
     X_26 := bat.new(nil:str);
     X_33 := bat.append(X_26,"sys.dbg");
     X_43 := bat.append(X_33,"sys.L4");

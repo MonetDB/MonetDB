@@ -56,7 +56,6 @@
 
 extern int sqlcleanup(mvc *c, int err);
 extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);
-extern stmt *sql_relation2stmt(mvc *c, sql_rel *r);
 
 extern BAT *mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname, int access);
 
