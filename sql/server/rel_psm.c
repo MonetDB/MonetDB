@@ -1146,7 +1146,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 		if (new_name)
 			stack_update_rel_view(sql, new_name, rel);
 		if (old_name)
-			stack_update_rel_view(sql, old_name, rel);
+			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
 	sq = sequential_block(sql, NULL, NULL, stmts, NULL, 1);
 	r = rel_psm_block(sql->sa, sq);

@@ -3143,7 +3143,6 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	
 			sql_stack_add_inserted(sql, n, t, updates);
 			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
-			assert(!trigger->condition);
 			
 			if (!s) 
 				return 0;
@@ -4047,7 +4046,7 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 		
 	/* put single table into the stack with 2 names, needed for the psm code */
 	stack_push_rel_view(sql, on, r);
-	stack_push_rel_view(sql, nn, r);
+	stack_push_rel_view(sql, nn, rel_dup(r));
 }
 
 static int
