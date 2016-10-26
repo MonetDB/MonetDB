@@ -13589,36 +13589,64 @@ convert2bit_impl(flt)
 convert2bit_impl(dbl)
 
 static BUN
-convert_any_str(int tp, const void *src, BAT *bn, BUN cnt,
-		BUN start, BUN end, const oid *restrict cand,
-		const oid *candend, oid candoff)
+convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
+		const oid *restrict cand, const oid *candend)
 {
+	int tp = b->ttype;
+	oid candoff = b->hseqbase;
 	str dst = 0;
 	int len = 0;
 	BUN nils = 0;
 	BUN i;
 	const void *nil = ATOMnilptr(tp);
+	const void *restrict src;
 	int (*atomtostr)(str *, int *, const void *) = BATatoms[tp].atomToStr;
-	int size = ATOMsize(tp);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 
 	for (i = 0; i < start; i++)
 		tfastins_nocheck(bn, i, str_nil, bn->twidth);
-	for (i = start; i < end; i++) {
-		if (cand) {
-			if (i < *cand - candoff) {
-				nils++;
-				tfastins_nocheck(bn, i, str_nil, bn->twidth);
-				continue;
+	if (b->tvarsized) {
+		BATiter bi = bat_iterator(b);
+
+		assert(b->ttype != TYPE_void);
+		for (i = start; i < end; i++) {
+			if (cand) {
+				if (i < *cand - candoff) {
+					nils++;
+					tfastins_nocheck(bn, i, str_nil, bn->twidth);
+					continue;
+				}
+				assert(i == *cand - candoff);
+				if (++cand == candend)
+					end = i + 1;
 			}
-			assert(i == *cand - candoff);
-			if (++cand == candend)
-				end = i + 1;
+			src = BUNtvar(bi, i);
+			(*atomtostr)(&dst, &len, src);
+			if ((*atomcmp)(src, nil) == 0)
+				nils++;
+			tfastins_nocheck(bn, i, dst, bn->twidth);
 		}
-		(*atomtostr)(&dst, &len, src);
-		if (ATOMcmp(tp, src, nil) == 0)
-			nils++;
-		tfastins_nocheck(bn, i, dst, bn->twidth);
-		src = (const void *) ((const char *) src + size);
+	} else {
+		int size = ATOMsize(tp);
+
+		src = Tloc(b, 0);
+		for (i = start; i < end; i++) {
+			if (cand) {
+				if (i < *cand - candoff) {
+					nils++;
+					tfastins_nocheck(bn, i, str_nil, bn->twidth);
+					continue;
+				}
+				assert(i == *cand - candoff);
+				if (++cand == candend)
+					end = i + 1;
+			}
+			(*atomtostr)(&dst, &len, src);
+			if ((*atomcmp)(src, nil) == 0)
+				nils++;
+			tfastins_nocheck(bn, i, dst, bn->twidth);
+			src = (const void *) ((const char *) src + size);
+		}
 	}
 	for (i = end; i < cnt; i++)
 		tfastins_nocheck(bn, i, str_nil, bn->twidth);
@@ -14279,7 +14307,8 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	if (s == NULL && tp != TYPE_bit && ATOMbasetype(b->ttype) == ATOMbasetype(tp)){
+	if (s == NULL && tp != TYPE_bit && tp != TYPE_str &&
+	    ATOMbasetype(b->ttype) == ATOMbasetype(tp)) {
 		return COLcopy(b, tp, 0, TRANSIENT);
 	}
 
@@ -14292,9 +14321,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 					start, end, cand, candend, b->hseqbase,
 					abort_on_error);
 	else if (tp == TYPE_str)
-		nils = convert_any_str(b->ttype, Tloc(b, 0), bn,
-				       cnt, start, end, cand, candend,
-				       b->hseqbase);
+		nils = convert_any_str(b, bn, cnt, start, end, cand, candend);
 	else if (b->ttype == TYPE_str)
 		nils = convert_str_any(b, tp, Tloc(bn, 0),
 				       start, end, cand, candend, b->hseqbase,
@@ -14347,7 +14374,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 	if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
 		    (*ATOMcompare(v->vtype))(VALptr(v),
-						  ATOMnilptr(v->vtype)) == 0) {
+					     ATOMnilptr(v->vtype)) == 0) {
 			ret->val.sval = GDKstrdup(str_nil);
 		} else if (v->vtype == TYPE_str) {
 			ret->val.sval = GDKstrdup(v->val.sval);

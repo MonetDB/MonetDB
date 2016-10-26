@@ -598,8 +598,25 @@ EOF
 done
 
 for tp1 in $alltypes; do
-    for tp2 in $alltypes; do
+    if [[ $tp1 == str ]]; then
 	cat <<EOF
+pattern $tp1(b:bat[:any]) :bat[:$tp1]
+address CMDconvertsignal_$tp1
+comment "cast from any to $tp1, signal error on overflow";
+pattern $tp1(b:bat[:any],s:bat[:oid]) :bat[:$tp1]
+address CMDconvertsignal_$tp1
+comment "cast from any to $tp1 with candidates list, signal error on overflow";
+pattern ${tp1}_noerror(b:bat[:any]) :bat[:$tp1]
+address CMDconvert_$tp1
+comment "cast from any to $tp1";
+pattern ${tp1}_noerror(b:bat[:any],s:bat[:oid]) :bat[:$tp1]
+address CMDconvert_$tp1
+comment "cast from any to $tp1 with candidates list";
+
+EOF
+    else
+	for tp2 in $alltypes; do
+	    cat <<EOF
 pattern $tp1(b:bat[:$tp2]) :bat[:$tp1]
 address CMDconvertsignal_$tp1
 comment "cast from $tp2 to $tp1, signal error on overflow";
@@ -614,7 +631,8 @@ address CMDconvert_$tp1
 comment "cast from $tp2 to $tp1 with candidates list";
 
 EOF
-    done
+	done
+    fi
 done
 
 cat <<EOF

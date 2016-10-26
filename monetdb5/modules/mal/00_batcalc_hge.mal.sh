@@ -493,6 +493,9 @@ EOF
 done
 
 for tp1 in $alltypes; do
+    if [[ $tp1 == str ]]; then
+	continue
+    fi
     for tp2 in $alltypes; do
 	case $tp1$tp2 in
 	*hge*) ;;
