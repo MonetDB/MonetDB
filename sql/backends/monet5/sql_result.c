@@ -61,6 +61,10 @@ mystpcpy (char *yydest, const char *yysrc) {
 		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
 #endif
 
+static lng 
+mnstr_swap_lng(stream *s, lng lngval) {
+	return mnstr_byteorder(s) != 1234 ? long_long_SWAP(lngval) : lngval;
+}
 
 static int
 dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
@@ -2188,7 +2192,6 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 			int mtype = iterators[i].b->ttype;
 			int convert_to_string = !type_supports_binary_transfer(c->type.type);
 			if (ATOMvarsized(mtype) || convert_to_string) {
-				// FIXME support other types than string
 				if (!convert_to_string && c->type.digits > 0 && (int) c->type.digits < VARCHAR_MAXIMUM_FIXED) {
 					char *bufptr = buf;
 					// for small fixed size strings we use fixed width
@@ -2206,17 +2209,17 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 					for (crow = srow; crow < row; crow++) {
 						blob *b = (blob*) BUNtail(iterators[i], crow);
 						if (b->nitems == ~(size_t) 0) {
-							(*(lng*)buf) = -1;
+							(*(lng*)buf) = mnstr_swap_lng(s, -1);
 							buf += sizeof(lng);
 						} else {
-							(*(lng*)buf) = (lng) b->nitems;
+							(*(lng*)buf) = mnstr_swap_lng(s, (lng) b->nitems);
 							buf += sizeof(lng);
 							memcpy(buf, b->data, b->nitems);
 							buf += b->nitems;
 						}
 					}
 					// after the loop we know the size of the column, so write it
-					*((lng*)startbuf) = buf - (startbuf + sizeof(lng));
+					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
 				} else {
 					// for variable length strings and large fixed strings we use varints
 					// variable columns are prefixed by a length, 
@@ -2228,7 +2231,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 						buf = mystpcpy(buf, str) + 1;
 					}
 					// after the loop we know the size of the column, so write it
-					*((lng*)startbuf) = buf - (startbuf + sizeof(lng));
+					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
 				}
 			} else {
 				int atom_size = ATOMsize(mtype);
