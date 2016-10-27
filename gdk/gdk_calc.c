@@ -13605,7 +13605,28 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 
 	for (i = 0; i < start; i++)
 		tfastins_nocheck(bn, i, str_nil, bn->twidth);
-	if (b->tvarsized) {
+	if (atomtostr == BATatoms[TYPE_str].atomToStr) {
+		/* compatible with str, we just copy the value */
+		BATiter bi = bat_iterator(b);
+
+		assert(b->ttype != TYPE_void);
+		for (i = start; i < end; i++) {
+			if (cand) {
+				if (i < *cand - candoff) {
+					nils++;
+					tfastins_nocheck(bn, i, str_nil, bn->twidth);
+					continue;
+				}
+				assert(i == *cand - candoff);
+				if (++cand == candend)
+					end = i + 1;
+			}
+			src = BUNtvar(bi, i);
+			if ((*atomcmp)(src, str_nil) == 0)
+				nils++;
+			tfastins_nocheck(bn, i, src, bn->twidth);
+		}
+	} else if (b->tvarsized) {
 		BATiter bi = bat_iterator(b);
 
 		assert(b->ttype != TYPE_void);
@@ -13651,12 +13672,10 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 	for (i = end; i < cnt; i++)
 		tfastins_nocheck(bn, i, str_nil, bn->twidth);
 	BATsetcount(bn, cnt);
-	if (dst)
-		GDKfree(dst);
+	GDKfree(dst);
 	return nils;
   bunins_failed:
-	if (dst)
-		GDKfree(dst);
+	GDKfree(dst);
 	return BUN_NONE + 2;
 }
 
@@ -14307,8 +14326,10 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	if (s == NULL && tp != TYPE_bit && tp != TYPE_str &&
-	    ATOMbasetype(b->ttype) == ATOMbasetype(tp)) {
+	if (s == NULL && tp != TYPE_bit &&
+	    ATOMbasetype(b->ttype) == ATOMbasetype(tp) &&
+	    (tp != TYPE_str ||
+	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
 		return COLcopy(b, tp, 0, TRANSIENT);
 	}
 
@@ -14376,14 +14397,18 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 		    (*ATOMcompare(v->vtype))(VALptr(v),
 					     ATOMnilptr(v->vtype)) == 0) {
 			ret->val.sval = GDKstrdup(str_nil);
-		} else if (v->vtype == TYPE_str) {
+		} else if (BATatoms[v->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) {
 			ret->val.sval = GDKstrdup(v->val.sval);
 		} else {
 			ret->val.sval = NULL;
-			(*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
-							&ret->len,
-							VALptr(v));
+			ret->len = 0;
+			if ((*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
+							    &ret->len,
+							    VALptr(v)) < 0)
+				nils = BUN_NONE;
 		}
+		if (ret->val.sval == NULL)
+			nils = BUN_NONE;
 	} else if (ret->vtype == TYPE_void) {
 		if (abort_on_error &&
 		    ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0) {
@@ -14398,14 +14423,21 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 					      abort_on_error);
 	} else if (v->vtype == TYPE_str) {
 		if (v->val.sval == NULL || strcmp(v->val.sval, str_nil) == 0) {
-			nils = convert_typeswitchloop(&bte_nil, TYPE_bte,
-						      VALget(ret), ret->vtype,
-						      1, 0, 1, NULL, NULL, 0,
-						      abort_on_error);
+			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
+				nils = BUN_NONE;
 		} else {
 			int len;
-			p = VALget(ret);
-			ret->len = ATOMsize(ret->vtype);
+
+			if (ATOMextern(ret->vtype)) {
+				/* let atomFromStr allocate memory
+				 * which we later give away to ret */
+				p = NULL;
+				ret->len = 0;
+			} else {
+				/* use the space provided by ret */
+				p = VALget(ret);
+				ret->len = ATOMsize(ret->vtype);
+			}
 			if ((len = (*BATatoms[ret->vtype].atomFromStr)(
 				     v->val.sval, &ret->len, &p)) <= 0 ||
 			    len < (int) strlen(v->val.sval)) {
@@ -14413,8 +14445,13 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 					 "'%s' to type %s failed.\n",
 					 v->val.sval, ATOMname(ret->vtype));
 				nils = BUN_NONE;
+			} else {
+				/* now give value obtained to ret */
+				assert(ATOMextern(ret->vtype) ||
+				       p == VALget(ret));
+				if (ATOMextern(ret->vtype))
+					VALset(ret, ret->vtype, p);
 			}
-			assert(p == VALget(ret));
 		}
 	} else {
 		nils = convert_typeswitchloop(VALptr(v), v->vtype,
