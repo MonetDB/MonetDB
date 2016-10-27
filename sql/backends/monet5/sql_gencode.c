@@ -973,6 +973,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 	InstrPtr q = NULL;
 	node *n;
 
+	if (THRhighwater())
+		return -1;
 	if (s) {
 		if (s->nr > 0)
 			return s->nr;	/* stmt already handled */
