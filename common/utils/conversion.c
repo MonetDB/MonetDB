@@ -373,7 +373,7 @@ conversion_epoch_optional_tz_to_string(char *dst, int len, const lng *src, lng n
 
 	conversion_timestamp_get_data(*src, timezone_diff, &year, &month, &day, &hour, &min, &sec, &nanosecond);
 
-	if ((res = snprintf(dst, len, "%d-%02d-%02d %02d:%02d:%02d.%06d", year, month, day,  hour, min, sec, nanosecond)) < 0) {
+	if ((res = snprintf(dst, len, "%d-%02d-%02d %02d:%02d:%02d.%06d", year, (int) month, (int) day, (int) hour, (int) min, (int) sec, (int) nanosecond)) < 0) {
 		return res;
 	}
 	digits--;

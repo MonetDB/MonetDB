@@ -25,6 +25,20 @@
 #define llabs(x)	((x) < 0 ? -(x) : (x))
 #endif
 
+// stpcpy definition, for systems that do not have stpcpy
+/* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
+   YYDEST.  */
+static char *
+mystpcpy (char *yydest, const char *yysrc) {
+	char *yyd = yydest;
+	const char *yys = yysrc;
+
+	while ((*yyd++ = *yys++) != '\0')
+	continue;
+
+	return yyd - 1;
+}
+
 static int
 dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
 {
@@ -1842,7 +1856,7 @@ static int type_supports_binary_transfer(sql_type *type) {
 		type->eclass == EC_TIMESTAMP;
 }
 
-static size_t max(size_t a, size_t b) {
+static size_t mymax(size_t a, size_t b) {
 	return a > b ? a : b;
 }
 
@@ -1941,7 +1955,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 			nil_len = typelen;
 		}
 
-		if (!mnstr_writeLng(s, (lng) max(max(strlen(c->tn), strlen(c->name)), strlen(type->sqlname)) + 1) ||
+		if (!mnstr_writeLng(s, (lng) mymax(mymax(strlen(c->tn), strlen(c->name)), strlen(type->sqlname)) + 1) ||
 				!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, type->sqlname) ||
 				!mnstr_writeInt(s, typelen) || !mnstr_writeInt(s, c->type.digits) || !mnstr_writeInt(s, type->eclass == EC_SEC ? 3 : c->type.scale)) {
 			fres = -1;
@@ -2156,7 +2170,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 					char *bufptr = buf;
 					// for small fixed size strings we use fixed width
 					for(crow = srow; crow < row; crow++) {
-						buf = stpcpy(buf, (char*) BUNtail(iterators[i], crow));
+						buf = mystpcpy(buf, (char*) BUNtail(iterators[i], crow));
 						bufptr += c->type.digits;
 						while(buf < bufptr) {
 							*buf++ = '\0';
@@ -2188,7 +2202,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 					buf += sizeof(lng);
 					for (crow = srow; crow < row; crow++) {
 						char *str = (char*) BUNtail(iterators[i], crow);
-						buf = stpcpy(buf, str) + 1;
+						buf = mystpcpy(buf, str) + 1;
 					}
 					// after the loop we know the size of the column, so write it
 					*((lng*)startbuf) = buf - (startbuf + sizeof(lng));

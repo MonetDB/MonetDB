@@ -4166,14 +4166,14 @@ static char* mapi_convert_blob(struct MapiColumn *col) {
 		return NULL;
 	}
 	if (24 + 3 * length > (lng) col->dynamic_write_bufsiz) {
-		col->dynamic_write_bufsiz = (size_t) 24 + 3 * length;
+		col->dynamic_write_bufsiz = (size_t) (24 + 3 * length);
 		if (col->dynamic_write_buf) free(col->dynamic_write_buf);
 		col->dynamic_write_buf = malloc(col->dynamic_write_bufsiz);
 		if (!col->dynamic_write_buf) {
 			return NULL;
 		}
 	}
-	if (conversion_blob_to_string(col->dynamic_write_buf, (int) col->dynamic_write_bufsiz, col->buffer_ptr + sizeof(lng), length) < 0) {
+	if (conversion_blob_to_string(col->dynamic_write_buf, (int) col->dynamic_write_bufsiz, col->buffer_ptr + sizeof(lng), (size_t) length) < 0) {
 		return NULL;
 	}
 	return (char*) col->dynamic_write_buf;
@@ -6236,7 +6236,7 @@ mapi_set_compute_column_width(Mapi mid, int compute_column_width) {
 
 #define NUMERIC_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE)  								\
 	case SQL_BINARY_##fromname: {																					\
-		*retval = (totpe) *((fromtpe*)col->buffer_ptr);																\
+		*retval = (totpe) (*((fromtpe*)col->buffer_ptr));															\
 		return MOK;																									\
 	}
 
