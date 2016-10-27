@@ -224,39 +224,39 @@ STRwidth(const char *s)
 				 * Asian Fullwidth and East Asian Wide
 				 * characters as defined in Unicode 8.0 */
 				if ((0x1100 <= c && c <= 0x115F) ||
-				    c == 0x2329 ||
-				    c == 0x232A ||
-				    (0x2E80 <= c && c <= 0x2E99) ||
-				    (0x2E9B <= c && c <= 0x2EF3) ||
-				    (0x2F00 <= c && c <= 0x2FD5) ||
-				    (0x2FF0 <= c && c <= 0x2FFB) ||
-				    (0x3000 <= c && c <= 0x303E) ||
-				    (0x3041 <= c && c <= 0x3096) ||
-				    (0x3099 <= c && c <= 0x30FF) ||
-				    (0x3105 <= c && c <= 0x312D) ||
-				    (0x3131 <= c && c <= 0x318E) ||
-				    (0x3190 <= c && c <= 0x31BA) ||
-				    (0x31C0 <= c && c <= 0x31E3) ||
-				    (0x31F0 <= c && c <= 0x321E) ||
-				    (0x3220 <= c && c <= 0x3247) ||
-				    (0x3250 <= c && c <= 0x4DBF) ||
-				    (0x4E00 <= c && c <= 0xA48C) ||
-				    (0xA490 <= c && c <= 0xA4C6) ||
-				    (0xA960 <= c && c <= 0xA97C) ||
-				    (0xAC00 <= c && c <= 0xD7A3) ||
-				    (0xF900 <= c && c <= 0xFAFF) ||
-				    (0xFE10 <= c && c <= 0xFE19) ||
-				    (0xFE30 <= c && c <= 0xFE52) ||
-				    (0xFE54 <= c && c <= 0xFE66) ||
-				    (0xFE68 <= c && c <= 0xFE6B) ||
-				    (0xFF01 <= c && c <= 0xFFE6) ||
-				    (0x1B000 <= c && c <= 0x1B001) ||
-				    (0x1F200 <= c && c <= 0x1F202) ||
-				    (0x1F210 <= c && c <= 0x1F23A) ||
-				    (0x1F240 <= c && c <= 0x1F248) ||
-				    (0x1F250 <= c && c <= 0x1F251) ||
-				    (0x20000 <= c && c <= 0x2FFFD) ||
-				    (0x30000 <= c && c <= 0x3FFFD))
+					c == 0x2329 ||
+					c == 0x232A ||
+					(0x2E80 <= c && c <= 0x2E99) ||
+					(0x2E9B <= c && c <= 0x2EF3) ||
+					(0x2F00 <= c && c <= 0x2FD5) ||
+					(0x2FF0 <= c && c <= 0x2FFB) ||
+					(0x3000 <= c && c <= 0x303E) ||
+					(0x3041 <= c && c <= 0x3096) ||
+					(0x3099 <= c && c <= 0x30FF) ||
+					(0x3105 <= c && c <= 0x312D) ||
+					(0x3131 <= c && c <= 0x318E) ||
+					(0x3190 <= c && c <= 0x31BA) ||
+					(0x31C0 <= c && c <= 0x31E3) ||
+					(0x31F0 <= c && c <= 0x321E) ||
+					(0x3220 <= c && c <= 0x3247) ||
+					(0x3250 <= c && c <= 0x4DBF) ||
+					(0x4E00 <= c && c <= 0xA48C) ||
+					(0xA490 <= c && c <= 0xA4C6) ||
+					(0xA960 <= c && c <= 0xA97C) ||
+					(0xAC00 <= c && c <= 0xD7A3) ||
+					(0xF900 <= c && c <= 0xFAFF) ||
+					(0xFE10 <= c && c <= 0xFE19) ||
+					(0xFE30 <= c && c <= 0xFE52) ||
+					(0xFE54 <= c && c <= 0xFE66) ||
+					(0xFE68 <= c && c <= 0xFE6B) ||
+					(0xFF01 <= c && c <= 0xFFE6) ||
+					(0x1B000 <= c && c <= 0x1B001) ||
+					(0x1F200 <= c && c <= 0x1F202) ||
+					(0x1F210 <= c && c <= 0x1F23A) ||
+					(0x1F240 <= c && c <= 0x1F248) ||
+					(0x1F250 <= c && c <= 0x1F251) ||
+					(0x20000 <= c && c <= 0x2FFFD) ||
+					(0x30000 <= c && c <= 0x3FFFD))
 					len++;
 			}
 		} else if ((*s & 0xE0) == 0xC0) {
@@ -508,7 +508,7 @@ bat_max_hgelength(BAT *b)
 			return NULL;					\
 		r = c->data;						\
 		if (r == NULL &&					\
-		    (r = GDKzalloc(sizeof(X))) == NULL)			\
+			(r = GDKzalloc(sizeof(X))) == NULL)			\
 			return NULL;					\
 		c->data = r;						\
 		if (neg)						\
@@ -783,7 +783,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			return NULL;
 		}
 		if (!isa_block_stream(bs->s))
-			 out = NULL;
+			out = NULL;
 
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 			sql_column *col = n->data;
@@ -1590,17 +1590,17 @@ mvc_export_value(backend *b, stream *s, int qtype, str tn, str cn, str type, int
 
 	if (csv && 
 	   (mnstr_write(s, "&1 0 1 1 1\n", 11, 1) != 1 ||
-	   	/* fallback to default tuplecount (1) and id (0) */
-	    	/* TODO first header name then values */
-	    mnstr_write(s, "% ", 2, 1) != 1 || 
-	    mnstr_write(s, tn, strlen(tn), 1) != 1 || 
-	    mnstr_write(s, " # table_name\n% ", 16, 1) != 1 || 
-	    mnstr_write(s, cn, strlen(cn), 1) != 1 ||
-	    mnstr_write(s, " # name\n% ", 10, 1) != 1 ||
-	    mnstr_write(s, type, strlen(type), 1) != 1 ||
-	    mnstr_write(s, " # type\n% ", 10, 1) != 1 ||
-	    !export_length(s, mtype, eclass, d, sc, has_tz(eclass, type), 0, p) ||
-	    mnstr_write(s, " # length\n[ ", 12, 1) != 1))
+		/* fallback to default tuplecount (1) and id (0) */
+			/* TODO first header name then values */
+		mnstr_write(s, "% ", 2, 1) != 1 || 
+		mnstr_write(s, tn, strlen(tn), 1) != 1 || 
+		mnstr_write(s, " # table_name\n% ", 16, 1) != 1 || 
+		mnstr_write(s, cn, strlen(cn), 1) != 1 ||
+		mnstr_write(s, " # name\n% ", 10, 1) != 1 ||
+		mnstr_write(s, type, strlen(type), 1) != 1 ||
+		mnstr_write(s, " # type\n% ", 10, 1) != 1 ||
+		!export_length(s, mtype, eclass, d, sc, has_tz(eclass, type), 0, p) ||
+		mnstr_write(s, " # length\n[ ", 12, 1) != 1))
 		ok = 0; 
 	if (ok) {
 		if (json) {
@@ -1694,7 +1694,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 	/* id */
 	if (!mvc_send_int(s, t->id) || mnstr_write(s, " ", 1, 1) != 1)
-		 return -1;
+		return -1;
 
 	/* tuple count */
 	if (only_header) {
@@ -1975,29 +1975,29 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 
 		if (convert_to_string) {
 			BAT *b = iterators[i].b;
-	        BUN p = 0, q = 0;
-	        const void *atomNull = BATatoms[b->ttype].atomNull;
-	        int (*atomCmp) (const void *v1, const void *v2) = BATatoms[b->ttype].atomCmp;
-	        int (*strConversion) (str*, int*, const void*) = BATatoms[b->ttype].atomToStr;
-	        BAT *res = COLnew(0, TYPE_str, 0, TRANSIENT);
-	        if (!res) {
-	        	fres = -1;
-		        goto cleanup;
-	        }
-	        BATloop(b, p, q) {
-	            char *result = NULL;
-	            int length = 0;
-	            void *element = (void*) BUNtail(iterators[i], p);
-	            if (atomCmp(element, atomNull) == 0) {
-	            	BUNappend(res, str_nil, FALSE);
-	            } else {
-		            if (strConversion(&result, &length, element) == 0) {
-		            	fres = -1;
-		                goto cleanup;
-		            }
-		            BUNappend(res, result, FALSE);
-	            }
-	         }
+			BUN p = 0, q = 0;
+			const void *atomNull = BATatoms[b->ttype].atomNull;
+			int (*atomCmp) (const void *v1, const void *v2) = BATatoms[b->ttype].atomCmp;
+			int (*strConversion) (str*, int*, const void*) = BATatoms[b->ttype].atomToStr;
+			BAT *res = COLnew(0, TYPE_str, 0, TRANSIENT);
+			if (!res) {
+				fres = -1;
+				goto cleanup;
+			}
+			BATloop(b, p, q) {
+				char *result = NULL;
+				int length = 0;
+				void *element = (void*) BUNtail(iterators[i], p);
+				if (atomCmp(element, atomNull) == 0) {
+					BUNappend(res, str_nil, FALSE);
+				} else {
+					if (strConversion(&result, &length, element) == 0) {
+						fres = -1;
+						goto cleanup;
+					}
+					BUNappend(res, result, FALSE);
+				}
+			 }
 			// if converting to string, we use str_nil
 			BBPunfix(iterators[i].b->batCacheid);
 			iterators[i] = bat_iterator(res);
@@ -2288,7 +2288,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		clean = 1;
 	}
 	if (json) {
-	 	switch(count) {
+		switch(count) {
 		case 0:
 			res = mvc_export_table(b, s, t, order, 0, count, "{\t", "", "}\n", "\"", "null");
 			break;
@@ -2298,7 +2298,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		case 2:
 			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
 			res = mvc_export_table(b, s, t, order, 1, count - 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
-			 break;
+			break;
 		default:
 			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
 			res = mvc_export_table(b, s, t, order, 1, count - 2, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
