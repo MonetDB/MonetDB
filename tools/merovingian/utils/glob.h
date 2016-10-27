@@ -9,7 +9,7 @@
 #ifndef _SEEN_GLOB_H
 #define _SEEN_GLOB_H 1
 
-char glob(const char *expr, const char *haystack);
+char db_glob(const char *expr, const char *haystack);
 
 #endif
 
