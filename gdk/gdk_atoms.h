@@ -92,7 +92,6 @@ gdk_export int dblFromStr(const char *src, int *len, dbl **dst);
 gdk_export int dblToStr(str *dst, int *len, const dbl *src);
 gdk_export ssize_t GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len);
 gdk_export int strFromStr(const char *src, int *len, str *dst);
-gdk_export int strToStr(str *dst, int *len, const char *src);
 gdk_export BUN strHash(const char *s);
 gdk_export int strLen(const char *s);
 gdk_export int strNil(const char *s);

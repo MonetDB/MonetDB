@@ -484,7 +484,6 @@ int strFromStr(const char *src, int *len, str *dst);
 BUN strHash(const char *s);
 int strLen(const char *s);
 int strNil(const char *s);
-int strToStr(str *dst, int *len, const char *src);
 const char str_nil[2];
 gdk_return void_inplace(BAT *b, oid id, const void *val, bit force);
 BUN void_replace_bat(BAT *b, BAT *p, BAT *u, bit force);

@@ -1706,7 +1706,7 @@ escapedStr(char *dst, const char *src, int dstlen, const char *sep1, const char 
 	return l;
 }
 
-int
+static int
 strToStr(char **dst, int *len, const char *src)
 {
 	int l = 0;
