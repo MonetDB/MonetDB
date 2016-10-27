@@ -3568,43 +3568,7 @@ address CMDvarCONVERT
 comment "Cast VALUE to oid";
 
 
-pattern str(v:void) :str
-address CMDvarCONVERT
-comment "Cast VALUE to str";
-
-pattern str(v:bit) :str
-address CMDvarCONVERT
-comment "Cast VALUE to str";
-
-pattern str(v:bte) :str
-address CMDvarCONVERT
-comment "Cast VALUE to str";
-
-pattern str(v:sht) :str
-address CMDvarCONVERT
-comment "Cast VALUE to str";
-
-pattern str(v:int) :str
-address CMDvarCONVERT
-comment "Cast VALUE to str";
-
-pattern str(v:lng) :str
-address CMDvarCONVERT
-comment "Cast VALUE to str";
-
-pattern str(v:flt) :str
-address CMDvarCONVERT
-comment "Cast VALUE to str";
-
-pattern str(v:dbl) :str
-address CMDvarCONVERT
-comment "Cast VALUE to str";
-
-pattern str(v:oid) :str
-address CMDvarCONVERT
-comment "Cast VALUE to str";
-
-pattern str(v:str) :str
+pattern str(v:any) :str
 address CMDvarCONVERT
 comment "Cast VALUE to str";
 

@@ -325,9 +325,9 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         if (python_call_active) {
             mapped = true;
             holds_gil = false;
-        }
-        else {
+        } else {
             python_call_active = true;
+            holds_gil = true;
         }
         MT_lock_unset(&pyapiLock);
     }
@@ -2507,7 +2507,9 @@ bit IsStandardBATType(int type) {
         case TYPE_lng:
         case TYPE_flt:
         case TYPE_dbl:
+#ifdef HAVE_HGE
         case TYPE_hge:
+#endif
         case TYPE_str:
             return 1;
         default:

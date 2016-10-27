@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Wed Oct 26 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented conversion to str from any type (not just the internal
+  types).
+
 * Wed Sep 14 2016 Sjoerd Mullender <sjoerd@acm.org>
 - VALcopy and VALinit both return their first argument on success or
   (and that's new) NULL on (allocation) failure.

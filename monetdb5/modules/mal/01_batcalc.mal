@@ -15840,122 +15840,18 @@ pattern oid_noerror(b:bat[:str],s:bat[:oid]) :bat[:oid]
 address CMDconvert_oid
 comment "cast from str to oid with candidates list";
 
-pattern str(b:bat[:bit]) :bat[:str]
+pattern str(b:bat[:any]) :bat[:str]
 address CMDconvertsignal_str
-comment "cast from bit to str, signal error on overflow";
-pattern str(b:bat[:bit],s:bat[:oid]) :bat[:str]
+comment "cast from any to str, signal error on overflow";
+pattern str(b:bat[:any],s:bat[:oid]) :bat[:str]
 address CMDconvertsignal_str
-comment "cast from bit to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:bit]) :bat[:str]
+comment "cast from any to str with candidates list, signal error on overflow";
+pattern str_noerror(b:bat[:any]) :bat[:str]
 address CMDconvert_str
-comment "cast from bit to str";
-pattern str_noerror(b:bat[:bit],s:bat[:oid]) :bat[:str]
+comment "cast from any to str";
+pattern str_noerror(b:bat[:any],s:bat[:oid]) :bat[:str]
 address CMDconvert_str
-comment "cast from bit to str with candidates list";
-
-pattern str(b:bat[:bte]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from bte to str, signal error on overflow";
-pattern str(b:bat[:bte],s:bat[:oid]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from bte to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:bte]) :bat[:str]
-address CMDconvert_str
-comment "cast from bte to str";
-pattern str_noerror(b:bat[:bte],s:bat[:oid]) :bat[:str]
-address CMDconvert_str
-comment "cast from bte to str with candidates list";
-
-pattern str(b:bat[:sht]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from sht to str, signal error on overflow";
-pattern str(b:bat[:sht],s:bat[:oid]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from sht to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:sht]) :bat[:str]
-address CMDconvert_str
-comment "cast from sht to str";
-pattern str_noerror(b:bat[:sht],s:bat[:oid]) :bat[:str]
-address CMDconvert_str
-comment "cast from sht to str with candidates list";
-
-pattern str(b:bat[:int]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from int to str, signal error on overflow";
-pattern str(b:bat[:int],s:bat[:oid]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from int to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:int]) :bat[:str]
-address CMDconvert_str
-comment "cast from int to str";
-pattern str_noerror(b:bat[:int],s:bat[:oid]) :bat[:str]
-address CMDconvert_str
-comment "cast from int to str with candidates list";
-
-pattern str(b:bat[:lng]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from lng to str, signal error on overflow";
-pattern str(b:bat[:lng],s:bat[:oid]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from lng to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:lng]) :bat[:str]
-address CMDconvert_str
-comment "cast from lng to str";
-pattern str_noerror(b:bat[:lng],s:bat[:oid]) :bat[:str]
-address CMDconvert_str
-comment "cast from lng to str with candidates list";
-
-pattern str(b:bat[:flt]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from flt to str, signal error on overflow";
-pattern str(b:bat[:flt],s:bat[:oid]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from flt to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:flt]) :bat[:str]
-address CMDconvert_str
-comment "cast from flt to str";
-pattern str_noerror(b:bat[:flt],s:bat[:oid]) :bat[:str]
-address CMDconvert_str
-comment "cast from flt to str with candidates list";
-
-pattern str(b:bat[:dbl]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from dbl to str, signal error on overflow";
-pattern str(b:bat[:dbl],s:bat[:oid]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from dbl to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:dbl]) :bat[:str]
-address CMDconvert_str
-comment "cast from dbl to str";
-pattern str_noerror(b:bat[:dbl],s:bat[:oid]) :bat[:str]
-address CMDconvert_str
-comment "cast from dbl to str with candidates list";
-
-pattern str(b:bat[:oid]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from oid to str, signal error on overflow";
-pattern str(b:bat[:oid],s:bat[:oid]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from oid to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:oid]) :bat[:str]
-address CMDconvert_str
-comment "cast from oid to str";
-pattern str_noerror(b:bat[:oid],s:bat[:oid]) :bat[:str]
-address CMDconvert_str
-comment "cast from oid to str with candidates list";
-
-pattern str(b:bat[:str]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from str to str, signal error on overflow";
-pattern str(b:bat[:str],s:bat[:oid]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from str to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:str]) :bat[:str]
-address CMDconvert_str
-comment "cast from str to str";
-pattern str_noerror(b:bat[:str],s:bat[:oid]) :bat[:str]
-address CMDconvert_str
-comment "cast from str to str with candidates list";
+comment "cast from any to str with candidates list";
 
 pattern ifthenelse(v:bit, b1:bat[:any_1], b2:bat[:any_1]) :bat[:any_1]
 address CMDifthen

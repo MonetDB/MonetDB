@@ -5727,16 +5727,3 @@ pattern oid_noerror(b:bat[:hge],s:bat[:oid]) :bat[:oid]
 address CMDconvert_oid
 comment "cast from hge to oid with candidates list";
 
-pattern str(b:bat[:hge]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from hge to str, signal error on overflow";
-pattern str(b:bat[:hge],s:bat[:oid]) :bat[:str]
-address CMDconvertsignal_str
-comment "cast from hge to str with candidates list, signal error on overflow";
-pattern str_noerror(b:bat[:hge]) :bat[:str]
-address CMDconvert_str
-comment "cast from hge to str";
-pattern str_noerror(b:bat[:hge],s:bat[:oid]) :bat[:str]
-address CMDconvert_str
-comment "cast from hge to str with candidates list";
-
