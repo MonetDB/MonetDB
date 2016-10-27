@@ -160,7 +160,7 @@ doChallenge(void *data)
 	/* generate the challenge string */
 	generateChallenge(challenge, 8, 12);
 	algos = mcrypt_getHashAlgorithms();
-	// FIXME: add the newproto flag to algos and rename to 'capabilities' to hide the crime
+	// FIXME: rename to 'capabilities' to hide the crime
 
 	// send the challenge over the block stream
 	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",

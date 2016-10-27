@@ -39,6 +39,29 @@ mystpcpy (char *yydest, const char *yysrc) {
 	return yyd - 1;
 }
 
+#ifdef _MSC_VER
+/* use intrinsic functions on Windows */
+#define short_int_SWAP(s)	((short) _byteswap_ushort((unsigned short) (s)))
+/* on Windows, long is the same size as int */
+#define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
+#define long_long_SWAP(l)	((lng) _byteswap_uint64((unsigned __int64) (s)))
+#else
+#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
+
+#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
+			    ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
+#define long_long_SWAP(l) \
+		((((lng)normal_int_SWAP(l))<<32) |\
+		 (0xffffffff&normal_int_SWAP(l>>32)))
+#endif
+
+#ifdef HAVE_HGE
+#define huge_int_SWAP(h) \
+		((((hge)long_long_SWAP(h))<<64) |\
+		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
+#endif
+
+
 static int
 dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
 {
@@ -2209,10 +2232,50 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 				}
 			} else {
 				int atom_size = ATOMsize(mtype);
-				if (strcasecmp(c->type.type->sqlname, "decimal") == 0) {
+				if (c->type.type->eclass == EC_DEC) {
 					atom_size = ATOMsize(ATOMstorage(mtype));
 				}
-				memcpy(buf, Tloc(iterators[i].b, srow), (row - srow) * atom_size);
+				if (mnstr_byteorder(s) != 1234) {
+					size_t j = 0;
+					switch(ATOMstorage(mtype)) {
+						case TYPE_sht: {
+							short *bufptr = (short*) buf;
+							short *exported_values = (short*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = short_int_SWAP(exported_values[j]);
+							}
+							break;
+						}
+						case TYPE_int: {
+							int *bufptr = (int*) buf;
+							int *exported_values = (int*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = normal_int_SWAP(exported_values[j]);
+							}
+							break;
+						}
+						case TYPE_lng: {
+							lng *bufptr = (lng*) buf;
+							lng *exported_values = (lng*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = long_long_SWAP(exported_values[j]);
+							}
+							break;
+						}
+#ifdef HAVE_HGE
+						case TYPE_hge: {
+							hge *bufptr = (hge*) buf;
+							hge *exported_values = (hge*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = huge_int_SWAP(exported_values[j]);
+							}
+							break;
+						}
+#endif
+					}
+				} else {
+					memcpy(buf, Tloc(iterators[i].b, srow), (row - srow) * atom_size);
+				}
 				buf += (row - srow) * atom_size;
 			}
 		}
