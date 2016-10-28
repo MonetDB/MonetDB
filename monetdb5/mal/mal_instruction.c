@@ -752,7 +752,7 @@ makeVarSpace(MalBlkPtr mb)
 
 /* create and initialize a variable record*/
 int
-newVariable(MalBlkPtr mb, str name, size_t len, malType type)
+newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
 	int n;
 

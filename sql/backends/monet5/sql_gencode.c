@@ -475,7 +475,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			char buf[64];
 
 			snprintf(buf,64,"A%s",nme);
-			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
+			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -577,7 +577,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 			char buf[64];
 
 			snprintf(buf,64,"A%s",nme);
-			varid = newVariable(curBlk, (char*) buf,strlen(buf), type);
+			varid = newVariable(curBlk, buf,strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -3180,9 +3180,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			stmt *s = n->data;
 			int type = tail_type(s)->type->localtype;
 			int varid = 0;
-			char *buf = GDKmalloc(MAXIDENTLEN);
+			char buf[IDLENGTH];
 
-			(void) snprintf(buf, MAXIDENTLEN, "A%d", argc);
+			(void) snprintf(buf, IDLENGTH, "A%d", argc);
 			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -3196,14 +3196,14 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			sql_arg *a = n->data;
 			int type = a->type.type->localtype;
 			int varid = 0;
-			char *buf = GDKmalloc(MAXIDENTLEN);
+			char buf[IDLENGTH];
 
 			if (buf == NULL) 
 				goto cleanup;
 			if (a->name)
-				(void) snprintf(buf, MAXIDENTLEN, "A%s", a->name);
+				(void) snprintf(buf, IDLENGTH, "A%s", a->name);
 			else
-				(void) snprintf(buf, MAXIDENTLEN, "A%d", argc);
+				(void) snprintf(buf, IDLENGTH, "A%d", argc);
 			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
