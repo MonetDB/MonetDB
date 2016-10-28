@@ -3002,7 +3002,7 @@ backend_call(backend *be, Client c, cq *cq)
 			atom *a = m->args[i];
 			sql_subtype *pt = cq->params + i;
 
-			if (!atom_cast(a, pt)) {
+			if (!atom_cast(m->sa, a, pt)) {
 				sql_error(m, 003, "wrong type for argument %d of " "function call: %s, expected %s\n", i + 1, atom_type(a)->type->sqlname, pt->type->sqlname);
 				break;
 			}

@@ -1364,7 +1364,7 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 	v->frame = frame;
 	if (type) {
 		int tpe = type->type->localtype;
-		VALinit(&sql->vars[var].a.data, tpe, ATOMnilptr(tpe));
+		VALset(&sql->vars[var].a.data, tpe, (ptr) ATOMnilptr(tpe));
 		v->a.tpe = *type;
 	}
 	if (name)

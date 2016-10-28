@@ -36,8 +36,10 @@ atom_create( sql_allocator *sa )
 }
 
 static ValPtr
-SA_VALcopy(sql_allocator *sa, ValPtr d, ValPtr s)
+SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
 {
+	if (sa == NULL)
+		return VALcopy(d, s);
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == 0) {
@@ -266,7 +268,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			/*_DELETE(val);*/
 		}
 	} else { 
-		VALinit(&a->data, a->data.vtype, ATOMnilptr(a->data.vtype));
+		VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
 		a->isnull = 1;
 	}
 	return a;
@@ -617,7 +619,7 @@ lng scales[19] = {
 #endif
 /* cast atom a to type tp (success == 1, fail == 0) */
 int 
-atom_cast(atom *a, sql_subtype *tp) 
+atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp) 
 {
 	sql_subtype *at = &a->tpe;
 
@@ -1096,15 +1098,14 @@ atom_cast(atom *a, sql_subtype *tp)
 			a->tpe = *tp;
 			a->data.vtype = type;
 			VALset(&a->data, a->data.vtype, p);
-			if (p && ATOMextern(a->data.vtype) == 0)
-				GDKfree(p);
+			SA_VALcopy(sa, &a->data, &a->data);
+			GDKfree(p);
 			return 1;
 		}	
 	} else {
 		a->tpe = *tp;
 		a->data.vtype = tp->type->localtype;
-		VALinit(&a->data, a->data.vtype, ATOMnilptr(a->data.vtype));
-		return 1;
+		return VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype)) != NULL;
 	}
 	return 0;
 }
@@ -1243,7 +1244,7 @@ atom_sub(atom *a1, atom *a2)
 }
 
 atom * 
-atom_mul(atom *a1, atom *a2)
+atom_mul(sql_allocator *sa, atom *a1, atom *a2)
 {
 	if (!EC_COMPUTE(a1->tpe.type->eclass))
 		return NULL;
@@ -1259,9 +1260,9 @@ atom_mul(atom *a1, atom *a2)
 			return a2;
 		}
 		if (a1->tpe.type->localtype > a2->tpe.type->localtype) {
-			if (!atom_cast(a2, &a1->tpe))
+			if (!atom_cast(sa, a2, &a1->tpe))
 				return NULL;
-		} else if (!atom_cast(a1, &a2->tpe)) {
+		} else if (!atom_cast(sa, a1, &a2->tpe)) {
 			return NULL;
 		}
 	}
