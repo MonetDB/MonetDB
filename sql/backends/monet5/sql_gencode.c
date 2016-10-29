@@ -3198,8 +3198,6 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			int varid = 0;
 			char buf[IDLENGTH];
 
-			if (buf == NULL) 
-				goto cleanup;
 			if (a->name)
 				(void) snprintf(buf, IDLENGTH, "A%s", a->name);
 			else
