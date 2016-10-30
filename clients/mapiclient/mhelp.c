@@ -70,13 +70,13 @@ SQLhelp sqlhelp[]={
 	  "",
 	  "COPY [integer OFFSET] [integer RECORDS] BINARY INTO qname column_list FROM string_list [NO CONSTRAINT]",
 	  "",
-	  0
+	  "see https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/BinaryBulkLoad"
 	},
 	{ "COPY INTO",
 	  "",
 	  "COPY query_expression INTO [STDOUT | string] [seps] [null_string]",
 	  "seps",
-	  0
+	"see https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/LoadingBulkData"
 	},
 	{ "COPY LOADER",
 	  "",
@@ -456,7 +456,7 @@ SQLhelp sqlhelp[]={
 	{ "end_time", 0 ,"SECOND  timestamp_precision\n,timestamp_precision",0,0},
 	{ "function_return",0,"ident data_type",0,0},
 	{ "generated_column",0," AUTO_INCREMENT | GENERATED ALWAYS AS IDENTITY [ '(' [ AS datatype] [ START [WITH start]] [INCREMENT BY increment]\n"
-      "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NOMAXVALUE] | [ [ NO] CYCLE] ')' ] ",0,0},
+      "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NOMAXVALUE] | [ [ NO] CYCLE] ')' ] ",0,"see https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{ "global_privileges",0," { COPY FROM | COPY INTO } [ ',' ... ]",0,0},
 	{ "grantee",0," { PUBLIC | authid } ","authid",0},
     { "ident", "An identifier", NULL, NULL, NULL },
@@ -542,7 +542,7 @@ static void sql_grammar(int idx)
 		}
 		mnstr_printf(toConsole,"\n");
 		t1 = sqlhelp[idx].rules;
-		if( t1)
+		if( t1 && *t1)
 		do
 			t1 = sql_grammar_rule(t1);
 		while( t1 );
