@@ -1,3 +1,6 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Sun Oct 30 2016 Martin Kersten <mk@cwi.nl>
+- Added an more elaborate \help command for SQL expressions.
+

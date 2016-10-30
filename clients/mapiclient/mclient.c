@@ -44,6 +44,7 @@
 #include "msqldump.h"
 #include "mprompt.h"
 #include "dotmonetdb.h"
+
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -187,6 +188,9 @@ static char *nullstring = default_nullstring;
 #endif
 
 #define my_isspace(c)	((c) == '\f' || (c) == '\n' || (c) == ' ')
+
+#include <ctype.h>
+#include "mhelp.c"
 
 static timertype
 gettime(void)
@@ -2713,11 +2717,14 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					int h;
 					char *nl;
 
-					for (h = 0; h < history_length; h++) {
-						nl = history_get(h) ? history_get(h)->line : 0;
-						if (nl)
-							mnstr_printf(toConsole, "%d %s\n", h, nl);
-					}
+					if( strcmp(line,"\\history") ==0){
+						for (h = 0; h < history_length; h++) {
+							nl = history_get(h) ? history_get(h)->line : 0;
+							if (nl)
+								mnstr_printf(toConsole, "%d %s\n", h, nl);
+						}
+					} else
+						sql_help(line);
 					continue;
 				}
 /* for later
