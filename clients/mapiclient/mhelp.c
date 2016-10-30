@@ -98,7 +98,7 @@ SQLhelp sqlhelp[]={
 	  "",
 	  "CREATE FILTER  FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	  "    RETURNS { data_type | TABLE '(' function_return [ ',' ... ] ')' }\n"
-	  "    EXTERNAL NAME ident ',' ident\n",
+	  "    EXTERNAL NAME ident ',' ident",
 	  "param,data_type,function_return",
 	  0
 	},
@@ -128,14 +128,14 @@ SQLhelp sqlhelp[]={
 	  "CREATE PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	  "    BEGIN [ ATOMIC ] procedure_statement [ ';' ...] END\n"
 	  "CREATE PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	  "    LANGUAGE ident external_code\n",
+	  "    LANGUAGE ident external_code",
 	  "param,data_type,external_code",
 	  0
 	},
 	{ "CREATE LOADER",
 	  "",
 	  "CREATE LOADER qname '(' [ param [',' ...]] ')'\n"
-	  "    LANGUAGE ident external_code\n",
+	  "    LANGUAGE ident external_code",
 	  "param,data_type,function_return,external_code",
 	  0
 	},
@@ -167,7 +167,7 @@ SQLhelp sqlhelp[]={
 	  "CREATE TABLE qname FROM LOADER function_ref\n"
 	  "CREATE REMOTE TABLE qname ON string"
 	  "CREATE [ STREAM | MERGE | REPLICA ] TABLE qname table_source;"
-	  "CREATE [ LOCAL | GLOBAL ] TEMP[ORARY] TABLE qname table_source [on_commit]\n",
+	  "CREATE [ LOCAL | GLOBAL ] TEMP[ORARY] TABLE qname table_source [on_commit]",
 	  "table_source,on_commit,function_ref",0
 	},
 	{ "CREATE TRIGGER",
@@ -575,7 +575,7 @@ static int match(char *pattern, char *word){
 
 static void sql_help( char *pattern)
 {
-	char *wrd1, *wrd2, *s;
+	char *wrd1, *wrd2,*wrd3, *s;
 	size_t maxlen= 0, len, all= 0;
 	int i, step, total=0, found = 0;
 	
@@ -606,6 +606,11 @@ static void sql_help( char *pattern)
 	while( *wrd2 && *s && isalnum((int) *s) ) { s++;}
 	*s = 0;
 
+	wrd3 = s+1;
+	while( *wrd3 && isspace((int) *wrd3) ) { wrd3++;}
+	s= wrd3;
+	while( *wrd3 && *s && isalnum((int) *s) ) { s++;}
+	*s = 0;
 	// collect the major topics
 	for( i=0; sqlhelp[i].command; i++){
 		if ( islower((int) sqlhelp[i].command[0])  &&  !all)
@@ -634,7 +639,7 @@ static void sql_help( char *pattern)
 	}
 
 	for( i=0; sqlhelp[i].command; i++)
-	if( match(sqlhelp[i].command, wrd1) && (*wrd2 == 0 || match(sqlhelp[i].command,wrd2)) ) {
+	if( match(sqlhelp[i].command, wrd1) && (*wrd2 == 0 || match(sqlhelp[i].command,wrd2))  && (*wrd3 == 0 || match(sqlhelp[i].command,wrd3))) {
 		sql_grammar(i);
 		found++;
 	}
