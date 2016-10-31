@@ -2296,7 +2296,7 @@ InstrPtr newStmt(MalBlkPtr mb, const char *module, const char *name);
 Symbol newSymbol(str nme, int kind);
 int newTmpVariable(MalBlkPtr mb, malType type);
 int newTypeVariable(MalBlkPtr mb, malType type);
-int newVariable(MalBlkPtr mb, str name, size_t len, malType type);
+int newVariable(MalBlkPtr mb, const char *name, size_t len, malType type);
 str nextRef;
 str notRef;
 str not_ilikeRef;
