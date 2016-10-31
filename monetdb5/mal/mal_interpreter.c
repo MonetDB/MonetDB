@@ -860,10 +860,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							backup[i].val.pval != stk->stk[a].val.pval) {
 							if (backup[i].val.pval)
 								GDKfree(backup[i].val.pval);
-							if (i >= pci->retc) {
-								stk->stk[a].val.pval = 0;
-								stk->stk[a].len = 0;
-							}
 							backup[i].len = 0;
 							backup[i].val.pval = 0;
 						}

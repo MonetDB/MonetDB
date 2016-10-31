@@ -176,7 +176,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			char buf[64];
 
 			snprintf(buf,64,"A%s",nme);
-			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
+			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -291,7 +291,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 			char buf[64];
 
 			snprintf(buf,64,"A%s",nme);
-			varid = newVariable(curBlk, (char*) buf,strlen(buf), type);
+			varid = newVariable(curBlk, buf,strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -678,7 +678,7 @@ backend_call(backend *be, Client c, cq *cq)
 			atom *a = m->args[i];
 			sql_subtype *pt = cq->params + i;
 
-			if (!atom_cast(a, pt)) {
+			if (!atom_cast(m->sa, a, pt)) {
 				sql_error(m, 003, "wrong type for argument %d of " "function call: %s, expected %s\n", i + 1, atom_type(a)->type->sqlname, pt->type->sqlname);
 				break;
 			}
@@ -826,7 +826,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
 	if( curPrg == NULL)
-		return -1;
+		goto cleanup;
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -850,9 +850,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			stmt *s = n->data;
 			int type = tail_type(s)->type->localtype;
 			int varid = 0;
-			char *buf = GDKmalloc(MAXIDENTLEN);
+			char buf[IDLENGTH];
 
-			(void) snprintf(buf, MAXIDENTLEN, "A%d", argc);
+			(void) snprintf(buf, IDLENGTH, "A%d", argc);
 			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -866,14 +866,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			sql_arg *a = n->data;
 			int type = a->type.type->localtype;
 			int varid = 0;
-			char *buf = GDKmalloc(MAXIDENTLEN);
+			char buf[IDLENGTH];
 
-			if (buf == NULL) 
-				goto cleanup;
 			if (a->name)
-				(void) snprintf(buf, MAXIDENTLEN, "A%s", a->name);
+				(void) snprintf(buf, IDLENGTH, "A%s", a->name);
 			else
-				(void) snprintf(buf, MAXIDENTLEN, "A%d", argc);
+				(void) snprintf(buf, IDLENGTH, "A%d", argc);
 			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);

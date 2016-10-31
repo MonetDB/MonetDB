@@ -844,7 +844,7 @@ sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
 	if (atom_null(a)) {
 		if (a->data.vtype != rt->type->localtype) {
 			a->data.vtype = rt->type->localtype;
-			VALinit(&a->data, a->data.vtype, ATOMnilptr(a->data.vtype));
+			VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
 		}
 	}
 	a->tpe = *rt;
@@ -867,7 +867,7 @@ inplace_convert(backend *be, sql_subtype *ct, stmt *s)
 		return s;
 
 	a = sql_bind_arg(be->mvc, s->flag);
-	if (atom_cast(a, ct)) {
+	if (atom_cast(be->mvc->sa, a, ct)) {
 		stmt *r = stmt_varnr(be, s->flag, ct);
 		sql_convert_arg(be->mvc, s->flag, ct);
 		return r;

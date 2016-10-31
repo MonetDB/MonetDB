@@ -116,7 +116,7 @@ void
 VALclear(ValPtr v)
 {
 	if (v->vtype == TYPE_str || ATOMextern(v->vtype)) {
-		if (v->val.pval && v->val.pval != str_nil)
+		if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype))
 			GDKfree(v->val.pval);
 	}
 	VALempty(v);
@@ -151,10 +151,6 @@ VALcopy(ValPtr d, const ValRecord *s)
 		if (d->val.sval == NULL)
 			return NULL;
 		d->len = strLen(d->val.sval);
-	} else if (s->vtype == TYPE_bit) {
-		d->vtype = s->vtype;
-		d->len = 1;
-		d->val.btval = s->val.btval;
 	} else {
 		ptr p = s->val.pval;
 
