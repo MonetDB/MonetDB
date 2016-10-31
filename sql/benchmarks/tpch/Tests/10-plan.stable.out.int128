@@ -60,7 +60,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 452 # length
+% 462 # length
 top N (
 | project (
 | | group by (
@@ -79,9 +79,9 @@ top N (
 | | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],
 | | | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
 | | | | ) [ customer.%customer_c_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ]
-| | | ) [ customer.c_custkey NOT NULL HASHCOL , customer.c_name NOT NULL, customer.c_address NOT NULL, customer.c_phone NOT NULL, customer.c_acctbal NOT NULL, customer.c_comment NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, nation.n_name NOT NULL, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L3.L3, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L4.L4, sys.sql_mul(L3.L3, L4.L4) as L5.L5 ]
-| | ) [ customer.c_custkey NOT NULL HASHCOL , nation.n_name NOT NULL ] [ customer.c_custkey NOT NULL HASHCOL , customer.c_name NOT NULL, customer.c_acctbal NOT NULL, customer.c_phone NOT NULL, nation.n_name NOT NULL, customer.c_address NOT NULL, customer.c_comment NOT NULL, sys.sum no nil (L5.L5) as L1.L1 ]
-| ) [ customer.c_custkey NOT NULL, customer.c_name NOT NULL, L1 as L2.revenue, customer.c_acctbal NOT NULL, nation.n_name NOT NULL, customer.c_address NOT NULL, customer.c_phone NOT NULL, customer.c_comment NOT NULL ] [ L2.revenue ]
+| | | ) [ customer.c_custkey NOT NULL HASHCOL , customer.c_name NOT NULL, customer.c_address NOT NULL, customer.c_phone NOT NULL, customer.c_acctbal NOT NULL, customer.c_comment NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, nation.n_name NOT NULL, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L20.L20, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L21.L21, sys.sql_mul(L20.L20, L21.L21) as L22.L22 ]
+| | ) [ customer.c_custkey NOT NULL HASHCOL , nation.n_name NOT NULL ] [ customer.c_custkey NOT NULL HASHCOL , customer.c_name NOT NULL, customer.c_acctbal NOT NULL, customer.c_phone NOT NULL, nation.n_name NOT NULL, customer.c_address NOT NULL, customer.c_comment NOT NULL, sys.sum no nil (L22.L22) as L4.L4 ]
+| ) [ customer.c_custkey NOT NULL, customer.c_name NOT NULL, L4 as L5.revenue, customer.c_acctbal NOT NULL, nation.n_name NOT NULL, customer.c_address NOT NULL, customer.c_phone NOT NULL, customer.c_comment NOT NULL ] [ L5.revenue ]
 ) [ bigint "20" ]
 
 # 22:46:31 >  

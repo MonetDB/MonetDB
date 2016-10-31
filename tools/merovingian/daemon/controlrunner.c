@@ -21,7 +21,6 @@
 #include <signal.h>
 
 #include <errno.h>
-#include <pthread.h>
 
 #include <msabaoth.h>
 #include <mcrypt.h>
@@ -246,7 +245,6 @@ static void ctl_handle_client(
 			} else if (pos == -2) {
 				Mfprintf(_mero_ctlerr, "%s: time-out reading from "
 						"control channel, disconnecting client\n", origin);
-				close(msgsock);
 				break;
 			} else {
 				buf[pos] = '\0';
@@ -340,13 +338,17 @@ static void ctl_handle_client(
 				dp = _mero_topdp->next; /* don't need the console/log */
 				while (dp != NULL) {
 					if (dp->type == MERODB && strcmp(dp->dbname, q) == 0) {
-						pthread_mutex_unlock(&_mero_topdp_lock);
 						if (strcmp(p, "stop") == 0) {
-							terminateProcess(dp);
+							pid_t pid = dp->pid;
+							char *dbname = strdup(dp->dbname);
+							mtype type = dp->type;
+							pthread_mutex_unlock(&_mero_topdp_lock);
+							terminateProcess(pid, dbname, type, 1);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
 						} else {
 							kill(dp->pid, SIGKILL);
+							pthread_mutex_unlock(&_mero_topdp_lock);
 							Mfprintf(_mero_ctlout, "%s: killed "
 									"database '%s'\n", origin, q);
 						}
@@ -355,8 +357,10 @@ static void ctl_handle_client(
 						break;
 					} else if (dp->type == MEROFUN && strcmp(dp->dbname, q) == 0) {
 						/* multiplexDestroy needs topdp lock to remove itself */
+						char *dbname = strdup(dp->dbname);
 						pthread_mutex_unlock(&_mero_topdp_lock);
-						multiplexDestroy(dp->dbname);
+						multiplexDestroy(dbname);
+						free(dbname);
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send_client("=");
 						break;
@@ -391,13 +395,6 @@ static void ctl_handle_client(
 				} else {
 					if (*p != '\0') {
 						pid_t child;
-						sigset_t blocksig;
-						/* temporarily block SIGCHLD signals until
-						 * we've waited for the child we're about to
-						 * create. See bug http://bugs.monetdb.org/3603. */
-						sigemptyset(&blocksig);
-						sigaddset(&blocksig, SIGCHLD);
-						pthread_sigmask(SIG_BLOCK, &blocksig, (sigset_t *) 0);
 						if ((child = fork()) == 0) {
 							FILE *secretf;
 							size_t len;
@@ -406,10 +403,6 @@ static void ctl_handle_client(
 							opt *set = malloc(sizeof(opt) * 2);
 							int setlen = 0;
 							char *sadbfarm;
-
-							sigemptyset(&blocksig);
-							sigaddset(&blocksig, SIGCHLD);
-							pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 
 							if ((err = msab_getDBfarm(&sadbfarm)) != NULL) {
 								Mfprintf(_mero_ctlerr, "%s: internal error: %s\n",
@@ -466,9 +459,6 @@ static void ctl_handle_client(
 							Mfprintf(_mero_ctlout, "%s: forking failed\n",
 									 origin);
 						}
-						sigemptyset(&blocksig);
-						sigaddset(&blocksig, SIGCHLD);
-						pthread_sigmask(SIG_UNBLOCK, &blocksig, (sigset_t *) 0);
 					}
 
 					Mfprintf(_mero_ctlout, "%s: created database '%s'\n",
@@ -946,7 +936,18 @@ control_handleclient(const char *host, int sock, stream *fdin, stream *fout)
 	ctl_handle_client(host, sock, fdin, fout);
 }
 
-void
+static void *
+handle_client(void *p)
+{
+	int msgsock = * (int *) p;
+
+	ctl_handle_client("(local)", msgsock, NULL, NULL);
+	shutdown(msgsock, SHUT_RDWR);
+	closesocket(msgsock);
+	return NULL;
+}
+
+void *
 controlRunner(void *d)
 {
 	int usock = *(int *)d;
@@ -955,7 +956,7 @@ controlRunner(void *d)
 	fd_set fds;
 	struct timeval tv;
 	int msgsock;
-	char origin[128];
+	pthread_t tid;
 
 	do {
 		FD_ZERO(&fds);
@@ -991,14 +992,15 @@ controlRunner(void *d)
 			continue;
 		}
 
-		snprintf(origin, sizeof(origin), "(local)");
-
-		ctl_handle_client(origin, msgsock, NULL, NULL);
-		close(msgsock);
+		if (pthread_create(&tid, NULL, handle_client, &msgsock) != 0)
+			closesocket(msgsock);
+		else
+			pthread_detach(tid);
 	} while (_mero_keep_listening);
 	shutdown(usock, SHUT_RDWR);
-	close(usock);
+	closesocket(usock);
 	Mfprintf(_mero_ctlout, "control channel closed\n");
+	return NULL;
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

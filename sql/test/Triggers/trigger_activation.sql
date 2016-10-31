@@ -12,6 +12,8 @@ create trigger test_5_1
 	after update on t_5_1
 	delete from t_5_1 where name = 'monetdb' and id = 10;
 
+-- first we need to know what to update (no id=11 jet)
+-- ie this trigger will no fire.
 create trigger test_5_2
 	before update on t_5_1
 	insert into t_5_1 values(11,'amsterdam');

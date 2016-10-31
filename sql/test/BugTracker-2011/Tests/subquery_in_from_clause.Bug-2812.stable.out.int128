@@ -46,7 +46,7 @@ Ready.
 #FROM  (SELECT MAX(price) as MAXPRICE FROM SALESMART) T, SALESMART S
 #WHERE T.MAXPRICE = S.PRICE
 #GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY;
-% sys.L4,	sys.s,	sys.s,	sys.s,	sys.s,	sys.s # table_name
+% sys.L7,	sys.s,	sys.s,	sys.s,	sys.s,	sys.s # table_name
 % price,	item,	category,	city,	region,	country # name
 % decimal,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 41,	21,	4,	16,	25,	19 # length
@@ -70,7 +70,7 @@ Ready.
 #FROM  SALESMART S
 #WHERE S.PRICE IN (SELECT MAX(price) as MAXPRICE FROM SALESMART)
 #GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY;
-% sys.L11,	sys.s,	sys.s,	sys.s,	sys.s,	sys.s # table_name
+% sys.L17,	sys.s,	sys.s,	sys.s,	sys.s,	sys.s # table_name
 % price,	item,	category,	city,	region,	country # name
 % decimal,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 41,	21,	4,	16,	25,	19 # length

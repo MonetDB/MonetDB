@@ -41,7 +41,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 487 # length
+% 505 # length
 project (
 | group by (
 | | project (
@@ -51,9 +51,9 @@ project (
 | | | | ) [ date "1995-09-01" <= lineitem.l_shipdate NOT NULL < sys.sql_add(date "1995-09-01", month_interval "1") ],
 | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_type NOT NULL ] COUNT 
 | | | ) [ lineitem.l_partkey NOT NULL = part.p_partkey NOT NULL HASHCOL  ]
-| | ) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, part.p_type NOT NULL, sys.like(part.p_type NOT NULL, char "PROMO%") as L4.L4, sys.isnull(L4.L4) as L5.L5, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L6.L6, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L7.L7, sys.ifthenelse(L5.L5, boolean "false", L4.L4) as L10.L10, sys.sql_mul(L6.L6, L7.L7) as L11.L11, sys.ifthenelse(L10.L10, L11.L11, decimal(33,4)[tinyint "0"]) as L12.L12 ]
-| ) [  ] [ sys.sum no nil (L12.L12) as L1.L1, sys.sum no nil (L11.L11) as L2.L2 ]
-) [ sys.sql_div(decimal(39,9)[sys.sql_mul(L1, decimal(4,1) "1000")], L2) as L3.promo_revenue ]
+| | ) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, part.p_type NOT NULL, sys.like(part.p_type NOT NULL, char "PROMO%") as L10.L10, sys.isnull(L10.L10) as L11.L11, decimal(33,2)[lineitem.l_extendedprice NOT NULL] as L12.L12, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL) as L13.L13, sys.ifthenelse(L11.L11, boolean "false", L10.L10) as L14.L14, sys.sql_mul(L12.L12, L13.L13) as L15.L15, sys.ifthenelse(L14.L14, L15.L15, decimal(33,4)[tinyint "0"]) as L16.L16 ]
+| ) [  ] [ sys.sum no nil (L16.L16) as L3.L3, sys.sum no nil (L15.L15) as L4.L4 ]
+) [ sys.sql_div(decimal(39,9)[sys.sql_mul(L3, decimal(4,1) "1000")], L4) as L5.promo_revenue ]
 
 # 22:46:32 >  
 # 22:46:32 >  "Done."

@@ -112,8 +112,8 @@ Ready.
 [ "int",	291	]
 [ "int",	291	]
 [ "int",	291	]
-[ "int",	375	]
-[ "int",	375	]
+[ "int",	374	]
+[ "int",	374	]
 [ "int",	383	]
 [ "int",	383	]
 [ "int",	383	]
@@ -209,7 +209,7 @@ Ready.
 [ "sht",	56	]
 [ "sht",	56	]
 [ "sht",	56	]
-[ "sht",	375	]
+[ "sht",	374	]
 [ "str",	0	]
 [ "str",	0	]
 [ "str",	0	]
@@ -300,14 +300,14 @@ Ready.
 [ "timestamp",	0	]
 [ "timestamp",	0	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% .L2,	.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 9,	3 # length
 [ "transient",	161	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% .L2,	.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 10,	3 # length
 [ "persistent",	266	]

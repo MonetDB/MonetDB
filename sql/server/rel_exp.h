@@ -84,6 +84,7 @@ extern void exp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const 
 extern void exp_setrelname(sql_allocator *sa, sql_exp *e, int nr );
 
 extern void noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name );
+extern char* make_label(sql_allocator *sa, int nr);
 extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);
 
 extern sql_exp * exp_copy( sql_allocator *sa, sql_exp *e);
@@ -120,6 +121,7 @@ extern int exp_is_zero(mvc *sql, sql_exp *e);
 extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
 extern int exp_unsafe(sql_exp *e);
+extern int exp_has_sideeffect(sql_exp *e);
 
 /* returns 0 when the relation contain the passed expression else < 0 */
 extern int rel_has_exp(sql_rel *rel, sql_exp *e);
@@ -138,7 +140,7 @@ extern void exps_fix_card( list *exps, int card);
 extern void exps_setcard( list *exps, int card);
 extern int exps_intern(list *exps);
 
-extern char *compare_func( comp_type t );
+extern char *compare_func( comp_type t, int anti );
 extern int is_identity( sql_exp *e, sql_rel *r);
 
 extern atom *exp_flatten(mvc *sql, sql_exp *e);

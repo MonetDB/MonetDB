@@ -47,8 +47,8 @@ Ready.
 #    FROM
 #      t2852
 #  ;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 0	]

@@ -75,20 +75,20 @@ Ready.
 #2086	"idxs"	2000	NULL	0	true	0	false	0
 [ 40	]
 #select count(name) from tbls;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 40	]
 #select count(distinct name) from tbls;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 34	]
 #select count(name) , count(distinct name) from tbls;
-% sys.L2,	sys.L4 # table_name
-% L1,	L3 # name
+% sys.L4,	sys.L7 # table_name
+% L3,	L6 # name
 % bigint,	bigint # type
 % 2,	2 # length
 [ 40,	34	]

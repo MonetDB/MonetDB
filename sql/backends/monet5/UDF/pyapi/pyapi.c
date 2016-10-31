@@ -104,7 +104,6 @@ CREATE_SQL_FUNCTION_PTR(str,batstr_2time_timestamp);
 CREATE_SQL_FUNCTION_PTR(str,batstr_2time_daytime);
 CREATE_SQL_FUNCTION_PTR(str,batstr_2_date);
 CREATE_SQL_FUNCTION_PTR(str,batdbl_num2dec_lng);
-CREATE_SQL_FUNCTION_PTR(str,SQLbatstr_cast);
 
 static MT_Lock pyapiLock;
 static MT_Lock queryLock;
@@ -156,8 +155,9 @@ PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 int GetSQLType(sql_subtype *sql_subtype);
+bit IsStandardBATType(int type);
 bit ConvertableSQLType(sql_subtype *sql_subtype);
-str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
+str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
 str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
 
 //! The main PyAPI function, this function does everything PyAPI related
@@ -315,35 +315,19 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         }
         if (argnode) {
             inp->sql_subtype = &((sql_arg*)argnode->data)->type;
-
-            if (ConvertableSQLType(inp->sql_subtype)) { // if the sql type is set, we have to do some conversion
-                if (inp->scalar) {
-                    // todo: scalar SQL types
-                    msg = PyError_CreateException("Scalar SQL types haven't been implemented yet... sorry", NULL);
-                    goto wrapup;
-                } else {
-                    BAT *ret_bat = NULL;
-                    msg = ConvertFromSQLType(cntxt, inp->bat, inp->sql_subtype, &ret_bat, &inp->bat_type);
-                    if (msg != MAL_SUCCEED) {
-                        goto wrapup;
-                    }
-                    inp->bat = ret_bat;
-                }
-            }
-            b = inp->bat;
             argnode = argnode->next;
         }
     }
 
 #ifdef HAVE_FORK
-    if (!mapped) {
+    if (!mapped && !parallel_aggregation) {
         MT_lock_set(&pyapiLock);
         if (python_call_active) {
             mapped = true;
             holds_gil = false;
-        }
-        else {
+        } else {
             python_call_active = true;
+            holds_gil = true;
         }
         MT_lock_unset(&pyapiLock);
     }
@@ -475,6 +459,11 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                             size_t size = 0;
                             size_t position = 0;
                             char *result_ptr;
+                            BAT **result_columns = GDKzalloc(sizeof(BAT*) * output->nr_cols);
+                            if (!result_columns) {
+                                msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" result column set.");
+                                goto wrapup;
+                            }
 
                             for (i = 0; i < output->nr_cols; i++) {
                                 res_col col = output->cols[i];
@@ -482,26 +471,31 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                                 sql_subtype *subtype = &col.type;
 
                                 // if the sql type is set, we have to do some conversion
-                                // we do this before sending the BATs to the other process, otherwise there are complaints about not being able to find a BATdescriptor
-                                if (ConvertableSQLType(subtype)) {
+                                // we do this before sending the BATs to the other process
+                                if (!IsStandardBATType(b->ttype) || ConvertableSQLType(subtype)) {
                                     BAT *ret_bat = NULL;
                                     int ret_type;
-                                    msg = ConvertFromSQLType(cntxt, b, subtype, &ret_bat, &ret_type);
+                                    msg = ConvertFromSQLType(b, subtype, &ret_bat, &ret_type);
                                     if (msg != MAL_SUCCEED) {
+                                        BBPunfix(b->batCacheid);
+                                        _connection_cleanup_result(output);
+                                        GDKfree(result_columns);
+                                        msg = createException(MAL, "pyapi.eval", "Failed to convert BAT.");
                                         goto wrapup;
                                     }
-                                    output->cols[i].b = ret_bat->batCacheid;
+                                    BBPunfix(b->batCacheid);
+                                    result_columns[i] = ret_bat;
+                                } else {
+                                    result_columns[i] = b;
                                 }
-                                BBPunfix(col.b);
                             }
 
                             // first obtain the total size of the shared memory region
                             // the region is structured as [COLNAME][BAT][DATA]([VHEAP][VHEAPDATA])
                             for (i = 0; i < output->nr_cols; i++) {
                                 res_col col = output->cols[i];
-                                BAT* b = BATdescriptor(col.b);
+                                BAT* b = result_columns[i];
                                 size += GDKbatcopysize(b, col.name);
-                                BBPunfix(b->batCacheid);
                             }
 
                             query_ptr->memsize = size;
@@ -515,16 +509,19 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                             if (GDKinitmmap(query_ptr->mmapid + 0, size, (void**) &result_ptr, NULL, &msg) != GDK_SUCCEED) {
                                 _connection_cleanup_result(output);
                                 GDKchangesemval(query_sem, 1, 1, &msg);
+                                msg = createException(MAL, "pyapi.eval", "eval failed");
+                                GDKfree(result_columns);
                                 goto wrapup;
                             }
 
                             // copy the data into the shared memory region
                             for (i = 0; i < output->nr_cols; i++) {
                                 res_col col = output->cols[i];
-                                BAT* b = BATdescriptor(col.b);
+                                BAT* b = result_columns[i];
                                 result_ptr += GDKbatcopy(result_ptr + position, b, col.name);
                                 BBPunfix(b->batCacheid);
                             }
+                            GDKfree(result_columns);
                             //detach the main process from this piece of shared memory so the child process can delete it
                             _connection_cleanup_result(output);
                         }
@@ -1338,7 +1335,6 @@ str
 			LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime);
 			LOAD_SQL_FUNCTION_PTR(batstr_2_date);
 			LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng);
-			LOAD_SQL_FUNCTION_PTR(SQLbatstr_cast);
             if (msg != MAL_SUCCEED) {
                 MT_lock_unset(&pyapiLock);
                 return msg;
@@ -1583,13 +1579,30 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
 
     assert(!inp->scalar); //input has to be a BAT
 
-    if (b == NULL)
-    {
+    if (!b) {
         // No BAT was found, we can't do anything in this case
         msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" bat.");
         goto wrapup;
     }
 
+    if (!IsStandardBATType(inp->bat_type) || ConvertableSQLType(inp->sql_subtype)) { // if the sql type is set, we have to do some conversion
+        if (inp->scalar) {
+            // todo: scalar SQL types
+            msg = PyError_CreateException("Scalar SQL types haven't been implemented yet... sorry", NULL);
+            goto wrapup;
+        } else {
+            BAT *ret_bat = NULL;
+            msg = ConvertFromSQLType(inp->bat, inp->sql_subtype, &ret_bat, &inp->bat_type);
+            if (msg != MAL_SUCCEED) {
+                msg = createException(MAL, "pyapi.eval", "Failed to convert BAT.");
+                goto wrapup;
+            }
+            BBPunfix(inp->bat->batCacheid);
+            inp->bat = ret_bat;
+        }
+    }
+
+    b = inp->bat;
     VERBOSE_MESSAGE("- Loading a BAT of type %s (%d) [Size: %zu]\n", BatType_Format(inp->bat_type), inp->bat_type, inp->count);
 
     switch (inp->bat_type) {
@@ -2208,7 +2221,7 @@ int GetSQLType(sql_subtype *sql_subtype) {
     return sql_subtype->type->eclass;
 }
 
-str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,  int *ret_type)
+str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,  int *ret_type)
 {
     str res = MAL_SUCCEED;
     int conv_type;
@@ -2227,79 +2240,33 @@ str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret
             conv_type = TYPE_dbl;
             break;
         default:
-            return createException(MAL, "pyapi.eval", "Convert From SQL Type: Unrecognized SQL type %s (%d).", sql_subtype->type->sqlname, sql_subtype->type->eclass);
+            conv_type = TYPE_str;
     }
 
-    if (conv_type == TYPE_str)
-    {
-        // maybe there's a more elegant way for obj->str conversion than calling this MAL function? probably not
-        int eclass = sql_subtype->type->eclass;
-        int d1 = 0;
-        int s1 = 0;
-        int has_tz = 0;
-        bat bid = b->batCacheid;
-        int digits = 0;
-
-        int i;
-        int nvar = 7; // variables we need to fill in
-        MalBlkRecord mb;
-        MalStack*     stk = NULL;
-        InstrRecord*  pci = NULL;
-
-        switch(eclass)
-        {
-            case EC_DATE:
-                d1 = 0;
-                break;
-            case EC_TIME:
-                d1 = 1;
-                break;
-            case EC_TIMESTAMP:
-                d1 = 7;
-                break;
-            default:
-                break;
+    if (conv_type == TYPE_str) {
+        BATiter li = bat_iterator(b);
+        BUN p = 0, q = 0;
+        int (*strConversion) (str*, int*, const void*) = BATatoms[b->ttype].atomToStr;
+        *ret_bat = COLnew(0, TYPE_str, 0, TRANSIENT);
+        *ret_type = conv_type;
+        if (!(*ret_bat)) {
+            return createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" string conversion BAT.");
         }
-
-        // very black MAL magic below
-        stk = GDKmalloc(sizeof(MalStack) + nvar * sizeof(ValRecord));
-        pci = GDKmalloc(sizeof(InstrRecord) + nvar * sizeof(int));
-        assert(stk != NULL && pci != NULL); // cough, cough
-        for (i = 0; i < nvar; i++) {
-            pci->argv[i] = i;
+        BATloop(b, p, q) {
+            char *result = NULL;
+            int length = 0;
+            void *element = (void*) BUNtail(li, p);
+            if (strConversion(&result, &length, element) == 0) {
+                return createException(MAL, "pyapi.eval", "Failed to convert element to string.");
+            }
+            BUNappend(*ret_bat, result, FALSE);
         }
-
-        stk->stk[0].vtype = TYPE_bat;
-        stk->stk[1].val.ival = eclass;
-        stk->stk[1].vtype = TYPE_int;
-        stk->stk[2].val.ival = d1;
-        stk->stk[2].vtype = TYPE_int;
-        stk->stk[3].val.ival = s1;
-        stk->stk[3].vtype = TYPE_int;
-        stk->stk[4].val.ival = has_tz;
-        stk->stk[4].vtype = TYPE_int;
-        stk->stk[5].val.bval = bid;
-        stk->stk[5].vtype = TYPE_bat;
-        stk->stk[6].val.ival = digits;
-        stk->stk[6].vtype = TYPE_int;
-
-        res = (*SQLbatstr_cast_ptr)(cntxt, &mb, stk, pci);
-
-        if (res == MAL_SUCCEED) {
-            *ret_bat = BATdescriptor(stk->stk[0].val.bval);
-            *ret_type = TYPE_str;
-        } else {
-            *ret_bat = NULL;
-        }
-
-        GDKfree(stk);
-        GDKfree(pci);
         return res;
     }
     else if (conv_type == TYPE_dbl)
     {
         int bat_type = ATOMstorage(b->ttype);
-        int hpos = sql_subtype->scale; //this value isn't right, it's always 3. todo: find the right scale value (i.e. where the decimal point is)
+        int hpos = sql_subtype->scale;
         bat result = 0;
         //decimal values can be stored in various numeric fields, so check the numeric field and convert the one it's actually stored in
         switch(bat_type)
@@ -2336,8 +2303,7 @@ str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret
 }
 
 str
-ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type)
-{
+ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type) {
     str res = MAL_SUCCEED;
     bat result_bat = 0;
     int digits = sql_subtype->digits;
@@ -2372,9 +2338,8 @@ ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, 
     return res;
 }
 
-static
-void ComputeParallelAggregation(AggrParams *p)
-{
+static void 
+ComputeParallelAggregation(AggrParams *p) {
     int i;
     size_t group_it, ai;
     bool gstate = 0;
@@ -2530,4 +2495,24 @@ ssize_t PyType_Size(PyObject *obj) {
         return Py_SIZE(obj);
     }
     return -1;
+}
+
+bit IsStandardBATType(int type) {
+    switch(type) {
+        case TYPE_bit:
+        case TYPE_bte:
+        case TYPE_sht:
+        case TYPE_int:
+        case TYPE_oid:
+        case TYPE_lng:
+        case TYPE_flt:
+        case TYPE_dbl:
+#ifdef HAVE_HGE
+        case TYPE_hge:
+#endif
+        case TYPE_str:
+            return 1;
+        default:
+            return 0;
+    }
 }

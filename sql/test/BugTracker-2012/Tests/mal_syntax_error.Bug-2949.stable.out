@@ -38,7 +38,7 @@ Ready.
 #               );
 #END;
 #select * from refine();
-% .,	.,	. # table_name
+% .L1,	.L1,	.L1 # table_name
 % u,	v,	r # name
 % varchar,	varchar,	varchar # type
 % 0,	0,	0 # length

@@ -94,9 +94,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 				break;\
 		\
 		if( k== dbtop){\
-			r= newInstruction(mb,ASSIGNsymbol);\
-			getModuleId(r)= mapiRef;\
-			getFunctionId(r)= lookupRef;\
+			r= newInstruction(mb,mapiRef,lookupRef);\
 			j= getArg(r,0)= newTmpVariable(mb, TYPE_int);\
 			r= pushArgument(mb,r, getArg(p,X));\
 			pushInstruction(mb,r);\
@@ -108,20 +106,19 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	} else j= location[getArg(p,0)];
 
 #define prepareRemote(X)\
-	r= newInstruction(mb,ASSIGNsymbol);\
-	getModuleId(r)= mapiRef;\
-	getFunctionId(r)= rpcRef;\
+	r= newInstruction(mb,mapiRef,rpcRef);\
 	getArg(r,0)= newTmpVariable(mb, X);\
 	r= pushArgument(mb,r,j);
 
 #define putRemoteVariables()\
 	for(j=p->retc; j<p->argc; j++)\
 	if( location[getArg(p,j)] == 0 && !isVarConstant(mb,getArg(p,j)) ){\
-		q= newStmt(mb,mapiRef,putRef);\
+		q= newInstruction(0, mapiRef, putRef);\
 		getArg(q,0)= newTmpVariable(mb, TYPE_void);\
 		q= pushArgument(mb,q,location[getArg(p,j)]);\
 		q= pushStr(mb,q, getVarName(mb,getArg(p,j)));\
 		(void) pushArgument(mb,q,getArg(p,j));\
+		pushInstruction(mb,q);\
 	}
 
 #define remoteAction()\
@@ -312,12 +309,13 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				/* perform locally */
 				for(j=p->retc; j<p->argc; j++)
 				if( location[getArg(p,j)]){
-					q= newStmt(mb,mapiRef,rpcRef);
+					q= newInstruction(0,mapiRef,rpcRef);
 					getArg(q,0)= getArg(p,j);
 					q= pushArgument(mb,q,location[getArg(p,j)]);
 					snprintf(buf,BUFSIZ,"io.print(%s);",
 						getVarName(mb,getArg(p,j)) );
 					(void) pushStr(mb,q,buf);
+					pushInstruction(mb,q);
 				}
 				pushInstruction(mb,p);
 				/* as of now all the targets are also local */
@@ -326,19 +324,18 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				doit++;
 			} else if (remoteSite){
 				/* single remote site involved */
-				r= newInstruction(mb,ASSIGNsymbol);
-				getModuleId(r)= mapiRef;
-				getFunctionId(r)= rpcRef;
+				r= newInstruction(mb,mapiRef,rpcRef);
 				getArg(r,0)= newTmpVariable(mb, TYPE_void);
 				r= pushArgument(mb, r, remoteSite);
 
 				for(j=p->retc; j<p->argc; j++)
 				if( location[getArg(p,j)] == 0 && !isVarConstant(mb,getArg(p,j)) ){
-					q= newStmt(mb,mapiRef,putRef);
+					q= newInstruction(0,mapiRef,putRef);
 					getArg(q,0)= newTmpVariable(mb, TYPE_void);
 					q= pushArgument(mb, q, remoteSite);
 					q= pushStr(mb,q, getVarName(mb,getArg(p,j)));
 					(void) pushArgument(mb, q, getArg(p,j));
+					pushInstruction(mb,q);
 				}
 				s= RQcall2str(mb, p);
 				pushInstruction(mb,r);

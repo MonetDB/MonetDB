@@ -26,20 +26,20 @@ Ready.
 
 [ 5	]
 #select count(*), gender , sum (sage), avg(sage) from car group by gender;
-% sys.L1,	sys.car,	sys.L2,	sys.L3 # table_name
-% L1,	gender,	L2,	L3 # name
+% sys.L2,	sys.car,	sys.L4,	sys.L6 # table_name
+% L1,	gender,	L3,	L5 # name
 % bigint,	char,	bigint,	double # type
 % 1,	1,	2,	24 # length
 [ 5,	"m",	23,	4.6	]
 #select count(*), gender , sum (age), avg(age) from car group by gender;
-% sys.L1,	sys.car,	sys.L2,	sys.L3 # table_name
-% L1,	gender,	L2,	L3 # name
+% sys.L2,	sys.car,	sys.L4,	sys.L6 # table_name
+% L1,	gender,	L3,	L5 # name
 % bigint,	char,	bigint,	double # type
 % 1,	1,	2,	24 # length
 [ 5,	"m",	23,	4.6	]
 #select gender, count(*),sum(iprice), avg(price), avg(iprice) from car group by gender;
-% sys.car,	sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% gender,	L1,	L2,	L3,	L4 # name
+% sys.car,	sys.L2,	sys.L4,	sys.L6,	sys.L10 # table_name
+% gender,	L1,	L3,	L5,	L7 # name
 % char,	bigint,	bigint,	double,	double # type
 % 1,	1,	2,	24,	24 # length
 [ "m",	5,	13,	123,	2.6	]

@@ -35,14 +35,14 @@ Ready.
 % 6,	3,	1,	1,	1,	1,	1,	5 # length
 [ "mytest",	"sys",	1,	0,	0,	1,	1,	false	]
 #SELECT NEXT VALUE FOR "mytest";
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT NEXT VALUE FOR "mytest";
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -57,14 +57,14 @@ Ready.
 % 6,	3,	2,	1,	1,	1,	1,	5 # length
 [ "mytest",	"sys",	10,	0,	0,	1,	1,	false	]
 #SELECT NEXT VALUE FOR "mytest";
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 10	]
 #SELECT NEXT VALUE FOR "mytest";
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 11	]

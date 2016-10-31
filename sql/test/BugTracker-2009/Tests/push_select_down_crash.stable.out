@@ -44,7 +44,7 @@ Ready.
 #	WHEN 'decimal' THEN 3 
 #	WHEN 'timestamptz' THEN 93 
 #	WHEN 'blob' THEN 2004 
-% .L7,	.L10,	.L11,	.L12,	.L14,	.L15,	.L16,	.L17,	.L20,	.L21,	.L23,	.L25,	.L26,	.L27,	.L30,	.L31,	.L32,	.L34,	.L36,	.L40,	.L42,	.L45 # table_name
+% .L50,	.L52,	.L54,	.L56,	.L61,	.L63,	.L65,	.L67,	.L71,	.L73,	.L76,	.L101,	.L103,	.L105,	.L107,	.L111,	.L113,	.L116,	.L121,	.L124,	.L127,	.L133 # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	DATA_TYPE,	TYPE_NAME,	COLUMN_SIZE,	DECIMAL_DIGITS,	BUFFER_LENGTH,	NUM_PREC_RADIX,	NULLABLE,	REMARKS,	COLUMN_DEF,	SQL_DATA_TYPE,	SQL_DATETIME_SUB,	CHAR_OCTET_LENGTH,	ORDINAL_POSITION,	SCOPE_CATALOG,	SCOPE_SCHEMA,	SCOPE_TABLE,	SOURCE_DATA_TYPE,	IS_NULLABLE # name
 % char,	varchar,	varchar,	varchar,	smallint,	varchar,	int,	int,	tinyint,	tinyint,	int,	varchar,	varchar,	tinyint,	tinyint,	tinyint,	bigint,	varchar,	varchar,	varchar,	smallint,	varchar # type
 % 4,	0,	0,	0,	1,	0,	1,	1,	1,	1,	1,	0,	0,	1,	1,	1,	1,	0,	0,	0,	1,	0 # length

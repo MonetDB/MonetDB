@@ -38,16 +38,19 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( getModuleId(p) == sqlRef  && getFunctionId(p) == affectedRowsRef) {
-			q = newStmt(mb, jsonRef, resultSetRef);
+			q = newInstruction(0, jsonRef, resultSetRef);
 			q = pushArgument(mb, q, bu);
 			q = pushArgument(mb, q, br);
 			q = pushArgument(mb, q, bj);
 			j = getArg(q,0);
 			p= getInstrPtr(mb,0);
-			setVarType(mb,getArg(p,0),TYPE_str);
-			q = newReturnStmt(mb);
+			setDestVar(q, newTmpVariable(mb, TYPE_str));
+			pushInstruction(mb,p);
+			q = newInstruction(0, NULL, NULL);
+			q->barrier = RETURNsymbol;
 			getArg(q,0)= getArg(p,0);
 			pushArgument(mb,q,j);
+			pushInstruction(mb,q);
 			continue;
 		}
 		if( getModuleId(p) == sqlRef  && getFunctionId(p) == rsColumnRef) {

@@ -35,8 +35,8 @@ Ready.
 [ 6,	4	]
 [ 7,	5	]
 #select ( select count( * )+1 from countt1 as tt3 where tt3.b < tt2.b ) from countt1 as tt2; 
-% .L2 # table_name
-% L2 # name
+% .L6 # table_name
+% L6 # name
 % hugeint # type
 % 1 # length
 [ 2	]

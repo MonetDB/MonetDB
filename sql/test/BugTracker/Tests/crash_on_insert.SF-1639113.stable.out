@@ -21,8 +21,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select 'the following query causes mserver5 to segfault';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 47 # length
 [ "the following query causes mserver5 to segfault"	]

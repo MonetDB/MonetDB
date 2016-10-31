@@ -35,7 +35,7 @@ Ready.
 #-- fixed-length by value
 #-- internally passed by value if <= 4 bytes in storage
 #SELECT cast('c' as char) = cast('c' as char) AS "true";
-% .L3 # table_name
+% .L4 # table_name
 % true # name
 % boolean # type
 % 5 # length
@@ -56,7 +56,7 @@ Ready.
 #INSERT INTO CHAR_TBL (f1) VALUES ('cd');
 #INSERT INTO CHAR_TBL (f1) VALUES ('c     ');
 #SELECT '' AS seven, CHAR_TBL.* FROM CHAR_TBL;
-% .L1,	sys.char_tbl # table_name
+% .L2,	sys.char_tbl # table_name
 % seven,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -69,7 +69,7 @@ Ready.
 #SELECT '' AS six, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 <> 'a';
-% .L1,	sys.c # table_name
+% .L2,	sys.c # table_name
 % six,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -81,7 +81,7 @@ Ready.
 #SELECT '' AS one, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 = 'a';
-% .L1,	sys.c # table_name
+% .L2,	sys.c # table_name
 % one,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -89,7 +89,7 @@ Ready.
 #SELECT '' AS five, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 < 'a';
-% .L1,	sys.c # table_name
+% .L2,	sys.c # table_name
 % five,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -101,7 +101,7 @@ Ready.
 #SELECT '' AS six, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 <= 'a';
-% .L1,	sys.c # table_name
+% .L2,	sys.c # table_name
 % six,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -114,14 +114,14 @@ Ready.
 #SELECT '' AS one, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 > 'a';
-% .L1,	sys.c # table_name
+% .L2,	sys.c # table_name
 % one,	f1 # name
 % char,	char # type
 % 0,	1 # length
 #SELECT '' AS two, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 >= 'a';
-% .L1,	sys.c # table_name
+% .L2,	sys.c # table_name
 % two,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -137,7 +137,7 @@ Ready.
 #INSERT INTO CHAR_TBL (f1) VALUES ('abcde');
 #INSERT INTO CHAR_TBL (f1) VALUES ('abcd    ');
 #SELECT '' AS four, CHAR_TBL.* FROM CHAR_TBL;
-% .L1,	sys.char_tbl # table_name
+% .L2,	sys.char_tbl # table_name
 % four,	f1 # name
 % char,	char # type
 % 0,	4 # length

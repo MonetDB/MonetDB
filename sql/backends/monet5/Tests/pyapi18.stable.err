@@ -31,9 +31,6 @@ stderr of test 'pyapi18` in directory 'sql/backends/monet5` itself:
 # 18:18:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21503" "--port=39173"
 # 18:18:39 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-21503/.s.monetdb.39173
-QUERY = SELECT pyapi_interval(d) FROM uuid_tbl;
-ERROR = !Unsupported SQL Type: uuid
 
 # 18:18:39 >  
 # 18:18:39 >  "Done."

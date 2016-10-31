@@ -478,6 +478,7 @@ typedef enum table_types {
 #define isRemote(x)  	  (x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
 #define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
+#define isPartition(x)    (isTable(x) && x->p)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1

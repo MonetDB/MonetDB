@@ -1,0 +1,40 @@
+stdout of test 'schema-trigger.Bug-3710` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 08:54:00 >  
+# 08:54:00 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37228" "--set" "mapi_usock=/var/tmp/mtest-2873/.s.monetdb.37228" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 08:54:00 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:37228/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2873/.s.monetdb.37228
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.63'
+# Finished reading the write-ahead log 'sql_logs/sql/log.63'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 08:54:00 >  
+# 08:54:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2873" "--port=37228"
+# 08:54:00 >  
+
+#create schema marketdata;
+#create table marketdata.quotes (i integer);
+#drop table marketdata.quotes;
+#drop schema marketdata;
+
+# 08:54:00 >  
+# 08:54:00 >  "Done."
+# 08:54:00 >  
+

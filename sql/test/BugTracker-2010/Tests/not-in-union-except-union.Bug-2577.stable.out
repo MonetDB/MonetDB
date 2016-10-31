@@ -46,7 +46,7 @@ Ready.
 #	union
 #	select kvk from kvk_extra_nieuw
 #);
-% sys.L # table_name
+% sys.L20 # table_name
 % kvk # name
 % bigint # type
 % 1 # length

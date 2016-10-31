@@ -37,6 +37,7 @@ Use 'dbIsValid' instead.
 See help("Deprecated") 
 Identifier(s) "Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", "Species" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
 Identifier(s) "Need to quote this table name" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
+Identifier(s) "Need to quote this table name" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
 Identifier(s) "Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", "Species" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
 Treating character vector parameter as file name(s) for monetdb.read.csv()
 Identifier(s) "Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", "Species" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.

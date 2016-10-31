@@ -1,0 +1,12 @@
+# ChangeLog file for buildtools
+# This file is updated with Maddlog
+
+* Tue Jul 19 2016 Stefan Manegold <Stefan.Manegold@cwi.nl>
+- With OID size equal to ABI/word size, mserver5 does not need to print
+  the OID size, anymore.
+- Removed obsolete code associated with long gone static linking option.
+
+* Mon Jul 18 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed configure option --enable-oid32 to compile with 32 bit OIDs
+  on a 64 bit architecture.
+

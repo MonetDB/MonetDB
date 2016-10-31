@@ -27,24 +27,24 @@ create trigger test_4_4
 create trigger test_4_5
 	after update on t_4_1
 	for each statement 
-	when id >0 insert into t_4_1 values(4, 'update_when_statement_true');
+	when (id>0) insert into t_4_1 values(4, 'update_when_statement_true');
 
 --test WHEN clause
 
 create trigger test_4_6
 	after update on t_4_1 referencing new row as new_row
 	for each row 
-	when new_row.id >0 insert into t_4_1 values(5, 'update_when_row_true');
+	when (new_row.id>0) insert into t_4_1 values(5, 'update_when_row_true');
 
 create trigger test_4_7
 	after update on t_4_1
 	for each statement 
-	when id >1000 insert into t_4_1 values(6, 'update_when_statement_false');
+	when (id >1000) insert into t_4_1 values(6, 'update_when_statement_false');
 
 create trigger test_4_8
 	after update on t_4_1 referencing new row as new_row
 	for each row 
-	when new_row.id >1000 insert into t_4_1 values(7, 'update_when_row_false');
+	when (new_row.id>1000) insert into t_4_1 values(7, 'update_when_row_false');
 
 update t_4_1 set name = 'mo' where id = 10;
 

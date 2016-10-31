@@ -641,6 +641,8 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query, int lateral)
 
 	if (query->data.lval->h->next->data.sym)
 		tname = query->data.lval->h->next->data.sym->data.lval->h->data.sval;
+	else
+		tname = make_label(sql->sa, ++sql->label);
 
 	/* column or table function */
 	sf = e->f;
@@ -1016,7 +1018,11 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
 				else
 					*rel = v;
+				/*
 				exp = rel_bind_column(sql, *rel, cname, f);
+				if (!exp)
+				*/
+					exp = rel_bind_column2(sql, *rel, tname, cname, f);
 			}
 		}
 		if (!exp) {

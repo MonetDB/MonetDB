@@ -1278,11 +1278,6 @@ address CMDvarCONVERT
 comment "Cast VALUE to oid";
 
 
-pattern str(v:hge) :str
-address CMDvarCONVERT
-comment "Cast VALUE to str";
-
-
 module aggr;
 
 pattern sum(b:bat[:bte]) :hge

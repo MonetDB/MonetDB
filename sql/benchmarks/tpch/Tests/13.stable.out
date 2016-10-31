@@ -47,7 +47,7 @@ Ready.
 #order by
 #	custdist desc,
 #	c_count desc;
-% .c_orders,	.L4 # table_name
+% .c_orders,	.L10 # table_name
 % c_count,	custdist # name
 % bigint,	bigint # type
 % 2,	3 # length

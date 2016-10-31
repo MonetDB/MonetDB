@@ -24,13 +24,35 @@ Ready.
 # 00:56:20 >  mclient -lsql -umonetdb -Pmonetdb --host=alviss --port=35664 
 # 00:56:20 >  
 
-% . # table_name
+# 14:45:08 >  
+# 14:45:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2914" "--port=33884"
+# 14:45:08 >  
+
+#start transaction;
+#create function test_002() returns table(i int)
+#begin
+#declare table tbl(i int);
+#insert into tbl values(110);
+#insert into tbl values(210);
+#return tbl;
+#end;
+#select * from test_002();
+% .L1 # table_name
 % i # name
 % int # type
 % 3 # length
 [ 110	]
 [ 210	]
-% . # table_name
+#drop function test_002;
+#create function test_002() returns table( j char(20) )
+#begin
+#declare table tbl( j char(20) );
+#insert into tbl values( 'aaa' );
+#insert into tbl values( 'bbb' );
+#return tbl;
+#end;
+#select * from test_002();
+% .L1 # table_name
 % j # name
 % char # type
 % 20 # length

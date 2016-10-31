@@ -26,8 +26,8 @@ Ready.
 
 [ 17	]
 #select getBand(300000000.0);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ 11	]

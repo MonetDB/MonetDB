@@ -40,7 +40,7 @@ Ready.
 #		from
 #			partsupp,
 #			supplier,
-% sys.partsupp,	sys.L2 # table_name
+% sys.partsupp,	sys.L4 # table_name
 % ps_partkey,	value # name
 % int,	decimal # type
 % 4,	21 # length

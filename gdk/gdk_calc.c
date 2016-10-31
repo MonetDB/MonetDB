@@ -13092,13 +13092,30 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 			l += incr2;					\
 		}							\
 	} while (0)
+#define IFTHENELSELOOP_oid()						\
+	do {								\
+		for (i = 0; i < cnt; i++) {				\
+			if (src[i] == bit_nil) {			\
+				((oid *) dst)[i] = oid_nil;		\
+				nils++;					\
+			} else if (src[i]) {				\
+				((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1; \
+			} else {					\
+				((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2; \
+			}						\
+			k += incr1;					\
+			l += incr2;					\
+			seq1 += incr1;					\
+			seq2 += incr2;					\
+		}							\
+	} while (0)
 
 static BAT *
 BATcalcifthenelse_intern(BAT *b,
 			 const void *col1, int incr1, const char *heap1,
-			 int width1, int nonil1,
+			 int width1, int nonil1, oid seq1,
 			 const void *col2, int incr2, const char *heap2,
-			 int width2, int nonil2,
+			 int width2, int nonil2, oid seq2,
 			 int tpe)
 {
 	BAT *bn;
@@ -13110,9 +13127,15 @@ BATcalcifthenelse_intern(BAT *b,
 	const bit *src;
 	BUN cnt = b->batCount;
 
-	assert(col2 != NULL);
+	/* col1 and col2 can only be NULL for void columns */
+	assert(col1 != NULL || ATOMtype(tpe) == TYPE_oid);
+	assert(col2 != NULL || ATOMtype(tpe) == TYPE_oid);
+	assert(col1 != NULL || heap1 == NULL);
+	assert(col2 != NULL || heap2 == NULL);
+	assert(col1 != NULL || incr1 == 1);
+	assert(col2 != NULL || incr2 == 1);
 
-	bn = COLnew(b->hseqbase, tpe, cnt, TRANSIENT);
+	bn = COLnew(b->hseqbase, ATOMtype(tpe), cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -13146,38 +13169,42 @@ BATcalcifthenelse_intern(BAT *b,
 	} else {
 		assert(heap1 == NULL);
 		assert(heap2 == NULL);
-		switch (bn->twidth) {
-		case 1:
-			IFTHENELSELOOP(bte);
-			break;
-		case 2:
-			IFTHENELSELOOP(sht);
-			break;
-		case 4:
-			IFTHENELSELOOP(int);
-			break;
-		case 8:
-			IFTHENELSELOOP(lng);
-			break;
+		if (ATOMtype(tpe) == TYPE_oid) {
+			IFTHENELSELOOP_oid();
+		} else {
+			switch (bn->twidth) {
+			case 1:
+				IFTHENELSELOOP(bte);
+				break;
+			case 2:
+				IFTHENELSELOOP(sht);
+				break;
+			case 4:
+				IFTHENELSELOOP(int);
+				break;
+			case 8:
+				IFTHENELSELOOP(lng);
+				break;
 #ifdef HAVE_HGE
-		case 16:
-			IFTHENELSELOOP(hge);
-			break;
+			case 16:
+				IFTHENELSELOOP(hge);
+				break;
 #endif
-		default:
-			for (i = 0; i < cnt; i++) {
-				if (src[i] == bit_nil) {
-					p = nil;
-					nils++;
-				} else if (src[i]) {
-					p = ((const char *) col1) + k * width1;
-				} else {
-					p = ((const char *) col2) + l * width2;
+			default:
+				for (i = 0; i < cnt; i++) {
+					if (src[i] == bit_nil) {
+						p = nil;
+						nils++;
+					} else if (src[i]) {
+						p = ((const char *) col1) + k * width1;
+					} else {
+						p = ((const char *) col2) + l * width2;
+					}
+					memcpy(dst, p, bn->twidth);
+					dst = (void *) ((char *) dst + bn->twidth);
+					k += incr1;
+					l += incr2;
 				}
-				memcpy(dst, p, bn->twidth);
-				dst = (void *) ((char *) dst + bn->twidth);
-				k += incr1;
-				l += incr2;
 			}
 		}
 	}
@@ -13212,8 +13239,8 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil,
-					Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil,
+					Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
+					Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
 					b1->ttype);
 }
 
@@ -13231,8 +13258,8 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil,
-					VALptr(c2), 0, NULL, 0, !VALisnil(c2),
+					Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
+					VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
 					b1->ttype);
 }
 
@@ -13250,8 +13277,8 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					VALptr(c1), 0, NULL, 0, !VALisnil(c1),
-					Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil,
+					VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
+					Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
 					c1->vtype);
 }
 
@@ -13267,8 +13294,8 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					VALptr(c1), 0, NULL, 0, !VALisnil(c1),
-					VALptr(c2), 0, NULL, 0, !VALisnil(c2),
+					VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
+					VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
 					c1->vtype);
 }
 
@@ -13562,46 +13589,93 @@ convert2bit_impl(flt)
 convert2bit_impl(dbl)
 
 static BUN
-convert_any_str(int tp, const void *src, BAT *bn, BUN cnt,
-		BUN start, BUN end, const oid *restrict cand,
-		const oid *candend, oid candoff)
+convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
+		const oid *restrict cand, const oid *candend)
 {
+	int tp = b->ttype;
+	oid candoff = b->hseqbase;
 	str dst = 0;
 	int len = 0;
 	BUN nils = 0;
 	BUN i;
 	const void *nil = ATOMnilptr(tp);
+	const void *restrict src;
 	int (*atomtostr)(str *, int *, const void *) = BATatoms[tp].atomToStr;
-	int size = ATOMsize(tp);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 
 	for (i = 0; i < start; i++)
 		tfastins_nocheck(bn, i, str_nil, bn->twidth);
-	for (i = start; i < end; i++) {
-		if (cand) {
-			if (i < *cand - candoff) {
-				nils++;
-				tfastins_nocheck(bn, i, str_nil, bn->twidth);
-				continue;
+	if (atomtostr == BATatoms[TYPE_str].atomToStr) {
+		/* compatible with str, we just copy the value */
+		BATiter bi = bat_iterator(b);
+
+		assert(b->ttype != TYPE_void);
+		for (i = start; i < end; i++) {
+			if (cand) {
+				if (i < *cand - candoff) {
+					nils++;
+					tfastins_nocheck(bn, i, str_nil, bn->twidth);
+					continue;
+				}
+				assert(i == *cand - candoff);
+				if (++cand == candend)
+					end = i + 1;
 			}
-			assert(i == *cand - candoff);
-			if (++cand == candend)
-				end = i + 1;
+			src = BUNtvar(bi, i);
+			if ((*atomcmp)(src, str_nil) == 0)
+				nils++;
+			tfastins_nocheck(bn, i, src, bn->twidth);
 		}
-		(*atomtostr)(&dst, &len, src);
-		if (ATOMcmp(tp, src, nil) == 0)
-			nils++;
-		tfastins_nocheck(bn, i, dst, bn->twidth);
-		src = (const void *) ((const char *) src + size);
+	} else if (b->tvarsized) {
+		BATiter bi = bat_iterator(b);
+
+		assert(b->ttype != TYPE_void);
+		for (i = start; i < end; i++) {
+			if (cand) {
+				if (i < *cand - candoff) {
+					nils++;
+					tfastins_nocheck(bn, i, str_nil, bn->twidth);
+					continue;
+				}
+				assert(i == *cand - candoff);
+				if (++cand == candend)
+					end = i + 1;
+			}
+			src = BUNtvar(bi, i);
+			(*atomtostr)(&dst, &len, src);
+			if ((*atomcmp)(src, nil) == 0)
+				nils++;
+			tfastins_nocheck(bn, i, dst, bn->twidth);
+		}
+	} else {
+		int size = ATOMsize(tp);
+
+		src = Tloc(b, 0);
+		for (i = start; i < end; i++) {
+			if (cand) {
+				if (i < *cand - candoff) {
+					nils++;
+					tfastins_nocheck(bn, i, str_nil, bn->twidth);
+					continue;
+				}
+				assert(i == *cand - candoff);
+				if (++cand == candend)
+					end = i + 1;
+			}
+			(*atomtostr)(&dst, &len, src);
+			if ((*atomcmp)(src, nil) == 0)
+				nils++;
+			tfastins_nocheck(bn, i, dst, bn->twidth);
+			src = (const void *) ((const char *) src + size);
+		}
 	}
 	for (i = end; i < cnt; i++)
 		tfastins_nocheck(bn, i, str_nil, bn->twidth);
 	BATsetcount(bn, cnt);
-	if (dst)
-		GDKfree(dst);
+	GDKfree(dst);
 	return nils;
   bunins_failed:
-	if (dst)
-		GDKfree(dst);
+	GDKfree(dst);
 	return BUN_NONE + 2;
 }
 
@@ -14252,7 +14326,10 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	if (s == NULL && tp != TYPE_bit && ATOMbasetype(b->ttype) == ATOMbasetype(tp)){
+	if (s == NULL && tp != TYPE_bit &&
+	    ATOMbasetype(b->ttype) == ATOMbasetype(tp) &&
+	    (tp != TYPE_str ||
+	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
 		return COLcopy(b, tp, 0, TRANSIENT);
 	}
 
@@ -14265,9 +14342,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 					start, end, cand, candend, b->hseqbase,
 					abort_on_error);
 	else if (tp == TYPE_str)
-		nils = convert_any_str(b->ttype, Tloc(b, 0), bn,
-				       cnt, start, end, cand, candend,
-				       b->hseqbase);
+		nils = convert_any_str(b, bn, cnt, start, end, cand, candend);
 	else if (b->ttype == TYPE_str)
 		nils = convert_str_any(b, tp, Tloc(bn, 0),
 				       start, end, cand, candend, b->hseqbase,
@@ -14320,16 +14395,20 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 	if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
 		    (*ATOMcompare(v->vtype))(VALptr(v),
-						  ATOMnilptr(v->vtype)) == 0) {
+					     ATOMnilptr(v->vtype)) == 0) {
 			ret->val.sval = GDKstrdup(str_nil);
-		} else if (v->vtype == TYPE_str) {
+		} else if (BATatoms[v->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) {
 			ret->val.sval = GDKstrdup(v->val.sval);
 		} else {
 			ret->val.sval = NULL;
-			(*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
-							&ret->len,
-							VALptr(v));
+			ret->len = 0;
+			if ((*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
+							    &ret->len,
+							    VALptr(v)) < 0)
+				nils = BUN_NONE;
 		}
+		if (ret->val.sval == NULL)
+			nils = BUN_NONE;
 	} else if (ret->vtype == TYPE_void) {
 		if (abort_on_error &&
 		    ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0) {
@@ -14344,14 +14423,21 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 					      abort_on_error);
 	} else if (v->vtype == TYPE_str) {
 		if (v->val.sval == NULL || strcmp(v->val.sval, str_nil) == 0) {
-			nils = convert_typeswitchloop(&bte_nil, TYPE_bte,
-						      VALget(ret), ret->vtype,
-						      1, 0, 1, NULL, NULL, 0,
-						      abort_on_error);
+			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
+				nils = BUN_NONE;
 		} else {
 			int len;
-			p = VALget(ret);
-			ret->len = ATOMsize(ret->vtype);
+
+			if (ATOMextern(ret->vtype)) {
+				/* let atomFromStr allocate memory
+				 * which we later give away to ret */
+				p = NULL;
+				ret->len = 0;
+			} else {
+				/* use the space provided by ret */
+				p = VALget(ret);
+				ret->len = ATOMsize(ret->vtype);
+			}
 			if ((len = (*BATatoms[ret->vtype].atomFromStr)(
 				     v->val.sval, &ret->len, &p)) <= 0 ||
 			    len < (int) strlen(v->val.sval)) {
@@ -14359,8 +14445,13 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 					 "'%s' to type %s failed.\n",
 					 v->val.sval, ATOMname(ret->vtype));
 				nils = BUN_NONE;
+			} else {
+				/* now give value obtained to ret */
+				assert(ATOMextern(ret->vtype) ||
+				       p == VALget(ret));
+				if (ATOMextern(ret->vtype))
+					VALset(ret, ret->vtype, p);
 			}
-			assert(p == VALget(ret));
 		}
 	} else {
 		nils = convert_typeswitchloop(VALptr(v), v->vtype,

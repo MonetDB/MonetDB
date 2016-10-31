@@ -47,7 +47,7 @@ Ready.
 #INSERT INTO OID_TBL(f1) VALUES (null);
 [ 1 ]
 #SELECT '' AS ten, OID_TBL.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL;
-% .L1,	sys.oid_tbl,	sys.L3 # table_name
+% .L2,	sys.oid_tbl,	sys.L6 # table_name
 % ten,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
@@ -61,7 +61,7 @@ Ready.
 [ "",	15@0,	"15@0"	]
 [ "",	NULL,	NULL	]
 #SELECT '' AS ten, OID_TBL.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL ORDER BY	f1;
-% .L1,	sys.oid_tbl,	sys.L3 # table_name
+% .L2,	sys.oid_tbl,	sys.L6 # table_name
 % ten,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
@@ -77,25 +77,25 @@ Ready.
 #DELETE FROM OID_TBL WHERE f1 < '0';
 [ 0	]
 #SELECT '' AS one, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 = cast(1234 as oid);
-% .L2,	sys.o,	sys.L4 # table_name
+% .L3,	sys.o,	sys.L7 # table_name
 % one,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
 [ "",	1234@0,	"1234@0"	]
 #SELECT '' AS one, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 = 1234@0;
-% .L1,	sys.o,	sys.L3 # table_name
+% .L2,	sys.o,	sys.L6 # table_name
 % one,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
 [ "",	1234@0,	"1234@0"	]
 #SELECT '' AS one, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 = '1234';
-% .L1,	sys.o,	sys.L3 # table_name
+% .L2,	sys.o,	sys.L6 # table_name
 % one,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
 [ "",	1234@0,	"1234@0"	]
 #SELECT '' AS seven, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <> cast(1234 as oid);
-% .L2,	sys.o,	sys.L4 # table_name
+% .L3,	sys.o,	sys.L7 # table_name
 % seven,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
@@ -106,7 +106,7 @@ Ready.
 [ "",	10@0,	"10@0"	]
 [ "",	15@0,	"15@0"	]
 #SELECT '' AS seven, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <> 1234@0;
-% .L1,	sys.o,	sys.L3 # table_name
+% .L2,	sys.o,	sys.L6 # table_name
 % seven,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
@@ -117,7 +117,7 @@ Ready.
 [ "",	10@0,	"10@0"	]
 [ "",	15@0,	"15@0"	]
 #SELECT '' AS seven, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <> '1234';
-% .L1,	sys.o,	sys.L3 # table_name
+% .L2,	sys.o,	sys.L6 # table_name
 % seven,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
@@ -128,7 +128,7 @@ Ready.
 [ "",	10@0,	"10@0"	]
 [ "",	15@0,	"15@0"	]
 #SELECT '' AS six, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <= cast(1234 as oid);
-% .L2,	sys.o,	sys.L4 # table_name
+% .L3,	sys.o,	sys.L7 # table_name
 % six,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
@@ -139,7 +139,7 @@ Ready.
 [ "",	10@0,	"10@0"	]
 [ "",	15@0,	"15@0"	]
 #SELECT '' AS six, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <= 1234@0;
-% .L1,	sys.o,	sys.L3 # table_name
+% .L2,	sys.o,	sys.L6 # table_name
 % six,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
@@ -150,7 +150,7 @@ Ready.
 [ "",	10@0,	"10@0"	]
 [ "",	15@0,	"15@0"	]
 #SELECT '' AS six, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 <= '1234';
-% .L1,	sys.o,	sys.L3 # table_name
+% .L2,	sys.o,	sys.L6 # table_name
 % six,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
@@ -161,7 +161,7 @@ Ready.
 [ "",	10@0,	"10@0"	]
 [ "",	15@0,	"15@0"	]
 #SELECT '' AS five, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 < cast(1234 as oid);
-% .L2,	sys.o,	sys.L4 # table_name
+% .L3,	sys.o,	sys.L7 # table_name
 % five,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	5,	5 # length
@@ -171,7 +171,7 @@ Ready.
 [ "",	10@0,	"10@0"	]
 [ "",	15@0,	"15@0"	]
 #SELECT '' AS five, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 < 1234@0;
-% .L1,	sys.o,	sys.L3 # table_name
+% .L2,	sys.o,	sys.L6 # table_name
 % five,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	5,	5 # length
@@ -181,7 +181,7 @@ Ready.
 [ "",	10@0,	"10@0"	]
 [ "",	15@0,	"15@0"	]
 #SELECT '' AS five, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 < '1234';
-% .L1,	sys.o,	sys.L3 # table_name
+% .L2,	sys.o,	sys.L6 # table_name
 % five,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	5,	5 # length
@@ -191,21 +191,21 @@ Ready.
 [ "",	10@0,	"10@0"	]
 [ "",	15@0,	"15@0"	]
 #SELECT '' AS three, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 >= cast(1234 as oid);
-% .L2,	sys.o,	sys.L4 # table_name
+% .L3,	sys.o,	sys.L7 # table_name
 % three,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
 [ "",	1234@0,	"1234@0"	]
 [ "",	1235@0,	"1235@0"	]
 #SELECT '' AS three, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 >= 1234@0;
-% .L1,	sys.o,	sys.L3 # table_name
+% .L2,	sys.o,	sys.L6 # table_name
 % three,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length
 [ "",	1234@0,	"1234@0"	]
 [ "",	1235@0,	"1235@0"	]
 #SELECT '' AS three, o.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL o WHERE o.f1 >= '1234';
-% .L1,	sys.o,	sys.L3 # table_name
+% .L2,	sys.o,	sys.L6 # table_name
 % three,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	6,	6 # length

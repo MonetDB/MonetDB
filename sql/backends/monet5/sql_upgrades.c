@@ -1770,6 +1770,7 @@ sql_update_nowrd(Client c, mvc *sql)
 
 /* older databases may have sys.median and sys.quantile aggregates on
  * decimal(1) which doesn't match plain decimal: fix those */
+#if 0
 static str
 sql_update_median(Client c, mvc *sql)
 {
@@ -1847,6 +1848,7 @@ sql_update_median(Client c, mvc *sql)
 
 	return err;		/* usually MAL_SUCCEED */
 }
+#endif
 
 static str
 sql_update_geom_jun2016_sp2(Client c, mvc *sql)
@@ -2253,10 +2255,12 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
+	/*
 	if ((err = sql_update_median(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
 		GDKfree(err);
 	}
+	*/
 
 	if (sql_find_subtype(&tp, "geometry", 0, 0) &&
 	    (f = sql_bind_func(m->sa, s, "mbr", &tp, NULL, F_FUNC)) != NULL &&

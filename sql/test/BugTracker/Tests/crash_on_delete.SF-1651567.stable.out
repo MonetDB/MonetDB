@@ -20,8 +20,8 @@ Ready.
 
 [ 1	]
 #select 'the next query causes a "sql_mem.mx:50: sql_ref_dec: Assertion `r->refcnt > 0'' failed."';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 87 # length
 [ "the next query causes a \"sql_mem.mx:50: sql_ref_dec: Assertion `r->refcnt > 0' failed.\""	]

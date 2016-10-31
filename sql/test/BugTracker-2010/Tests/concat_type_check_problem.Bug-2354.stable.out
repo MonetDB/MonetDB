@@ -27,14 +27,14 @@ Ready.
 #insert into test2 values ('testaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 1, 'test');
 [ 1	]
 #select a||' '||b||' '||c from test2;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % varchar # type
 % 91 # length
 [ "testaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 1 test"	]
 #select cast(a||' '||b as varchar(256))||' '||c from test2;
-% sys.L2 # table_name
-% L2 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 91 # length
 [ "testaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 1 test"	]
@@ -43,8 +43,8 @@ Ready.
 #insert into testmore2 values ('1', 23, '456');
 [ 1	]
 #select length(test1||' '||test2||' '||test3) from testmore2 ;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 8	]

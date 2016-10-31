@@ -43,7 +43,7 @@ Ready.
 #select abs(expected - computed) as err
 #from alphatest 
 #where abs(expected - computed)>epsilon;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % err # name
 % double # type
 % 24 # length
@@ -109,8 +109,8 @@ Ready.
 #    set z1 = sin(radians(pdec));
 #select count(S.objID) 
 #from GetNearbyObjects(193.75, 1.48, 0.1) as S;
-% .L5 # table_name
-% L4 # name
+% .L7 # table_name
+% L6 # name
 % bigint # type
 % 1 # length
 [ 3	]

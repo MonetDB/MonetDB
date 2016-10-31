@@ -30,8 +30,8 @@ Ready.
 
 #SELECT (count(columns.number) > 1)
 #FROM columns;
-% .L2 # table_name
-% L2 # name
+% .L15 # table_name
+% L15 # name
 % boolean # type
 % 5 # length
 [ true	]

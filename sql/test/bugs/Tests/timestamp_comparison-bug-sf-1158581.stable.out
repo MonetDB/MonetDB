@@ -40,8 +40,8 @@ Ready.
 % 26,	26 # length
 [ 2004-12-27 16:29:57.409000,	9999-12-31 00:00:00.000000	]
 #select max(low), max( CAST (low as timestamp(0))) from datetest;
-% sys.L2,	sys.L5 # table_name
-% L1,	L4 # name
+% sys.L4,	sys.L10 # table_name
+% L3,	L7 # name
 % timestamp,	timestamp # type
 % 26,	20 # length
 [ 2004-12-27 16:29:57.409000,	2004-12-27 16:29:57	]

@@ -33,7 +33,7 @@ Ready.
 #  WHERE b IN ('y')
 #) sub2
 #;
-% .L4 # table_name
+% .L12 # table_name
 % suma # name
 % bigint # type
 % 20 # length
@@ -48,7 +48,7 @@ Ready.
 #) sub2
 #HAVING SUM(a) IS NULL
 #;
-% .L4 # table_name
+% .L11 # table_name
 % suma # name
 % bigint # type
 % 1 # length
@@ -63,7 +63,7 @@ Ready.
 #) sub2
 #HAVING SUM(a) IS NOT NULL
 #;
-% .L4 # table_name
+% .L11 # table_name
 % suma # name
 % bigint # type
 % 1 # length
@@ -77,7 +77,7 @@ Ready.
 #) sub2
 #HAVING SUM(a) > 0
 #;
-% .L4 # table_name
+% .L11 # table_name
 % suma # name
 % bigint # type
 % 1 # length
@@ -151,7 +151,7 @@ Ready.
 #, a AND b AS "a_AND_b"
 #FROM dummy
 #;
-% sys.dummy,	sys.dummy,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10,	sys.L11 # table_name
+% sys.dummy,	sys.dummy,	sys.L4,	sys.L6,	sys.L10,	sys.L12,	sys.L14,	sys.L16,	sys.L20,	sys.L22,	sys.L24 # table_name
 % a,	b,	NOT_a,	a_EQ_b,	a_NE_b,	a_LT_b,	a_LE_b,	a_GT_b,	a_GE_b,	a_OR_b,	a_AND_b # name
 % boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length

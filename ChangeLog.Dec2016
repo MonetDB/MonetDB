@@ -1,0 +1,13 @@
+# ChangeLog file for devel
+# This file is updated with Maddlog
+
+* Thu Sep 22 2016 Sjoerd Mullender <sjoerd@acm.org>
+- The Perl, PHP, and Python clients, and the JDBC driver each now have
+  their own repositories and release cycles.  The Python client is
+  maintained by Gijs Molenaar on Github
+  (https://github.com/gijzelaerr/pymonetdb), the other clients are
+  maintained by CWI/MonetDB on our own server
+  (https://dev.monetdb.org/hg/monetdb-java,
+  https://dev.monetdb.org/hg/monetdb-perl,
+  https://dev.monetdb.org/hg/monetdb-php).
+

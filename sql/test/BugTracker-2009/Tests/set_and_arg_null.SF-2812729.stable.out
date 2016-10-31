@@ -31,8 +31,8 @@ Ready.
 #declare a int;
 #set a = null;
 #select a;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 11 # length
 [ NULL	]
@@ -43,8 +43,8 @@ Ready.
 #	return b;
 #end;
 #select call_function(NULL);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 11 # length
 [ NULL	]

@@ -30,7 +30,7 @@
 #include <rel_rel.h>
 #include <rel_exp.h>
 #include <rel_dump.h>
-#include <rel_bin.h>
+#include "rel_bin.h"
 #include <bbp.h>
 #include <opt_pipes.h>
 #include <orderidx.h>
@@ -125,23 +125,6 @@ sql_symbol2relation(mvc *c, symbol *sym)
 			c->no_mitosis = 1;
 	}
 	return r;
-}
-
-stmt *
-sql_relation2stmt(mvc *c, sql_rel *r)
-{
-	stmt *s = NULL;
-
-	if (!r) {
-		return NULL;
-	} else {
-		if (c->emode == m_plan) {
-			rel_print(c, r, 0);
-		} else {
-			s = output_rel_bin(c, r);
-		}
-	}
-	return s;
 }
 
 /*
@@ -1032,14 +1015,15 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1), osname;
 	str func = *getArgReference_str(stk, pci, 2);
 	stmt *s;
+	backend *be;
 
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+	if ((msg = getSQLContext(cntxt, mb, &sql, &be)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	osname = cur_schema(sql)->base.name;
 	mvc_set_schema(sql, sname);
-	s = sql_parse(sql, sa_create(), func, 0);
+	s = sql_parse(be, sa_create(), func, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
@@ -1061,14 +1045,15 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1), osname;
 	str view = *getArgReference_str(stk, pci, 2);
 	stmt *s;
+	backend *be;
 
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+	if ((msg = getSQLContext(cntxt, mb, &sql, &be)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	osname = cur_schema(sql)->base.name;
 	mvc_set_schema(sql, sname);
-	s = sql_parse(sql, sa_create(), view, 0);
+	s = sql_parse(be, sa_create(), view, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;
@@ -1088,15 +1073,20 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 {
 	sql_trigger *tri = NULL;
 	sql_schema *s = NULL;
+	sql_schema *ts = NULL;
 	sql_table *t;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!CREATE TRIGGER: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
+	if (!ts)
+		ts = cur_schema(sql);
 	if (!mvc_schema_privs(sql, s))
 		return sql_message("3F000!CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
-	if (mvc_bind_trigger(sql, s, triggername) != NULL)
+	if (!mvc_schema_privs(sql, ts))
+		return sql_message("3F000!CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+	if (mvc_bind_trigger(sql, ts, triggername) != NULL)
 		return sql_message("3F000!CREATE TRIGGER: name '%s' already in use", triggername);
 
 	if (!(t = mvc_bind_table(sql, s, tname)))
@@ -1524,6 +1514,9 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *condition = *getArgReference_str(stk, pci, 10);
 		char *query = *getArgReference_str(stk, pci, 11);
 
+		old_name=(!old_name || strcmp(old_name, str_nil) == 0)?NULL:old_name; 
+		new_name=(!new_name || strcmp(new_name, str_nil) == 0)?NULL:new_name; 
+		condition=(!condition || strcmp(condition, str_nil) == 0)?NULL:condition; 
 		msg = create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, query);
 		break;
 	}

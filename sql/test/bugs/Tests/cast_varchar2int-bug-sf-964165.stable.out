@@ -21,15 +21,15 @@ Ready.
 [ 1	]
 [ 1	]
 #select cast(x as integer) from t2;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 [ 2	]
 #select cast('1' as integer);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]

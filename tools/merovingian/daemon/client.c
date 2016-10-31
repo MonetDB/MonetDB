@@ -33,6 +33,7 @@
 #include "multiplex-funnel.h"
 #include "controlrunner.h"
 #include "client.h"
+#include "handlers.h"
 
 struct threads {
 	struct threads *next;
@@ -411,7 +412,7 @@ handleClient(void *data)
 			free(algos);
 			self->dead = 1;
 			return(e);
-		};
+		}
 	}
 
 	msab_freeStatus(&top);
@@ -431,6 +432,7 @@ acceptConnections(int sock, int usock)
 	struct timeval tv;
 	struct clientdata *data;
 	struct threads *threads = NULL, **threadp, *p;
+	int errnr;					/* saved errno */
 
 	do {
 		/* handle socket connections */
@@ -443,6 +445,7 @@ acceptConnections(int sock, int usock)
 		tv.tv_usec = 0;
 		retval = select((sock > usock ? sock : usock) + 1,
 				&fds, NULL, NULL, &tv);
+		errnr = errno;
 		/* join any handleClient threads that we started and that may
 		 * have finished by now */
 		for (threadp = &threads; *threadp; threadp = &(*threadp)->next) {
@@ -460,6 +463,8 @@ acceptConnections(int sock, int usock)
 					break;
 			}
 		}
+		childhandler();
+		reinitialize();
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -467,8 +472,8 @@ acceptConnections(int sock, int usock)
 		if (retval == -1) {
 			if (_mero_keep_listening == 0)
 				break;
-			if (errno != EINTR) {
-				msg = strerror(errno);
+			if (errnr != EINTR) {
+				msg = strerror(errnr);
 				goto error;
 			}
 			continue;
@@ -527,51 +532,51 @@ acceptConnections(int sock, int usock)
 
 			rv = recvmsg(msgsock, &msgh, 0);
 			if (rv == -1) {
-				close(msgsock);
+				closesocket(msgsock);
 				continue;
 			}
 
 			switch (*buf) {
-				case '0':
-					/* nothing special, nothing to do */
+			case '0':
+				/* nothing special, nothing to do */
 				break;
-				case '1':
-					/* filedescriptor, no way */
-					close(msgsock);
-					Mfprintf(stderr, "client error: fd passing not supported\n");
+			case '1':
+				/* filedescriptor, no way */
+				closesocket(msgsock);
+				Mfprintf(stderr, "client error: fd passing not supported\n");
 				continue;
-				default:
-					/* some unknown state */
-					close(msgsock);
-					Mfprintf(stderr, "client error: unknown initial byte\n");
+			default:
+				/* some unknown state */
+				closesocket(msgsock);
+				Mfprintf(stderr, "client error: unknown initial byte\n");
 				continue;
 			}
 		} else
 			continue;
 		/* start handleClient as a thread so that we're not blocked by
 		 * a slow client */
-		data = malloc(sizeof(*data));
+		data = malloc(sizeof(*data)); /* freed by handleClient */
 		data->sock = msgsock;
 		data->isusock = FD_ISSET(usock, &fds);
-		p = malloc(sizeof(*p));	/* freed by handleClient */
+		p = malloc(sizeof(*p));
 		p->dead = 0;
 		data->self = p;
 		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {
 			p->next = threads;
 			threads = p;
 		} else {
+			closesocket(msgsock);
 			free(data);
 			free(p);
 		}
 	} while (_mero_keep_listening);
 	shutdown(sock, SHUT_RDWR);
-	close(sock);
+	closesocket(sock);
 	return(NO_ERR);
 
 error:
 	_mero_keep_listening = 0;
-	shutdown(sock, SHUT_RDWR);
-	close(sock);
+	closesocket(sock);
 	return(newErr("accept connection: %s", msg));
 }
 

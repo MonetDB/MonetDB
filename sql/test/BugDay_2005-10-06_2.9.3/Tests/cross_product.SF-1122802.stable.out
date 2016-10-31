@@ -26,20 +26,20 @@ Ready.
 [ 20	]
 [ 20	]
 #select count(*) from t1;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 20	]
 #select count(*) from t2;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 20	]
 #select count(*) from t1, t2;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 400	]

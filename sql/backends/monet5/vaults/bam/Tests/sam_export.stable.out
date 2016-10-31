@@ -34,8 +34,8 @@ Ready.
 #FROM bam.alignments_1
 #EXCEPT
 #SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
-#FROM bam.alignments_13;
-% bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
+#FROM bam.alignments_73;
+% bam.L32,	bam.L32,	bam.L32,	bam.L32,	bam.L32,	bam.L32,	bam.L32,	bam.L32,	bam.L32,	bam.L32,	bam.L32 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
@@ -54,7 +54,7 @@ Ready.
 #EXCEPT
 #SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
 #FROM bam.alignments_74;
-% .L54,	.L54,	.L54,	.L54,	.L54,	.L54,	.L54,	.L54,	.L54,	.L54,	.L54 # table_name
+% .L217,	.L217,	.L217,	.L217,	.L217,	.L217,	.L217,	.L217,	.L217,	.L217,	.L217 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
