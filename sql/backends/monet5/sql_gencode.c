@@ -3156,7 +3156,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
 	if( curPrg == NULL)
-		return -1;
+		goto cleanup;
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
