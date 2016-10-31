@@ -500,6 +500,20 @@ SQLhelp sqlhelp[]={
     { NULL, NULL, NULL, NULL, NULL }    /* End of list marker */
 };
 
+static char *strmatch(char *heap, char *needle)
+{
+	char heapbuf[2048], *s = heapbuf;
+	char needlebuf[2048], *t = needlebuf;
+
+	for( ; *heap ; heap++)
+		*s++ = (char) tolower((int) *heap);
+	*s = 0;
+	for( ; *needle ; needle++)
+		*t++ = (char) tolower((int) *needle);
+	*t = 0;
+	return strstr(heapbuf, needlebuf);
+}
+
 static char * sql_grammar_rule(char *word)
 {
 	char buf[65], *s= buf;
@@ -508,7 +522,7 @@ static char * sql_grammar_rule(char *word)
 	*s = 0;
 
 	for(i=0; sqlhelp[i].command; i++){
-		if( strcasestr(sqlhelp[i].command, buf) && sqlhelp[i].synopsis == 0){
+		if( strmatch(sqlhelp[i].command, buf) && sqlhelp[i].synopsis == 0){
 			mnstr_printf(toConsole,"%s : %s\n",buf, sqlhelp[i].syntax);
 			if( (s = strchr(sqlhelp[i].syntax,',')) )
 				sql_grammar_rule(s+1);
@@ -563,7 +577,7 @@ static void sql_word(char *word, size_t maxlen)
 static int match(char *pattern, char *word){
 	char *m;
 
-	m =strcasestr(pattern, word);
+	m =strmatch(pattern, word);
 	if ( m == 0)
 		return 0;
 	if( ! isspace((int) *(m + strlen(word))) )
@@ -588,7 +602,7 @@ static void sql_help( char *pattern)
 
 	if( *pattern != '*')
 	for( i=0; *pattern && sqlhelp[i].command; i++)
-	if( strcasestr(sqlhelp[i].command, pattern) == sqlhelp[i].command ){
+	if( strmatch(sqlhelp[i].command, pattern) == sqlhelp[i].command ){
 		sql_grammar(i);
 		return;
 	}
@@ -646,9 +660,8 @@ static void sql_help( char *pattern)
 	
 	if( found == 0)
 	for( i=0; sqlhelp[i].command; i++)
-	if( strcasestr(sqlhelp[i].command, wrd1) && (*wrd2 == 0 || strcasestr(sqlhelp[i].command,wrd2)) ) {
+	if( strmatch(sqlhelp[i].command, wrd1) && (*wrd2 == 0 || strmatch(sqlhelp[i].command,wrd2)) ) {
 		sql_grammar(i);
 		found++;
 	}
 }
-	
