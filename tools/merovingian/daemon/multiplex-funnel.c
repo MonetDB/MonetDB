@@ -105,7 +105,7 @@ MFconnectionManager(void *d)
 						if (len >= 4 &&
 								buf[len - 3] == '*' && buf[len - 4] == '/')
 							buf[len - 2] = '\0';
-						if (glob(buf, msg + 1) == 1) {
+						if (db_glob(buf, msg + 1) == 1) {
 							sabdb *stats;
 							Mapi tm = NULL;
 							/* match! eat away trailing / (for matching) */
@@ -154,7 +154,7 @@ MFconnectionManager(void *d)
 						if (len >= 4 &&
 								buf[len - 3] == '*' && buf[len - 4] == '/')
 							buf[len - 2] = '\0';
-						if (glob(buf, msg + 1) == 1) {
+						if (db_glob(buf, msg + 1) == 1) {
 							/* reevaluate, to see if connection is still
 							 * available */
 							sabdb *walk;

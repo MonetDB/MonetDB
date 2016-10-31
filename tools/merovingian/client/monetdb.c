@@ -479,7 +479,7 @@ globMatchDBS(int argc, char *argv[], sabdb **orig, char *cmd)
 		if (argv[i] != NULL) {
 			prev = NULL;
 			for (stats = *orig; stats != NULL; stats = stats->next) {
-				if (glob(argv[i], stats->dbname)) {
+				if (db_glob(argv[i], stats->dbname)) {
 					matched = 1;
 					/* move out of orig into w, such that we can't
 					 * get double matches in the same output list
@@ -918,7 +918,7 @@ command_discover(int argc, char *argv[])
 
 			snprintf(path, sizeof(path), "%s%s", q, p);
 
-			if (match == NULL || glob(match, path)) {
+			if (match == NULL || db_glob(match, path)) {
 				if (twidth > 0) {
 					/* cut too long location name */
 					abbreviateString(location, path, twidth);
