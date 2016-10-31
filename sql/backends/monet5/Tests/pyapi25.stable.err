@@ -34,7 +34,13 @@ stderr of test 'pyapi25` in directory 'sql/backends/monet5` itself:
 MAPI  = (monetdb) /var/tmp/mtest-14818/.s.monetdb.37353
 QUERY = SELECT * FROM pyapi25errortable();
 ERROR = !SELECT: no such table 'hopefullynonexistanttable'
-        !SELECT: no such table 'hopefullynonexistanttable'
+        !Python exception
+        !
+        !  1. def pyfun(_columns,_column_types,_conn):
+        !> 2.   _conn.execute('SELECT * FROM HOPEFULLYNONEXISTANTTABLE;')
+        !  3.   return 1
+        !  4. 
+        !SQL Query Failed: ParseException:SQLparser:42S02!SELECT: no such table 'hopefullynonexistanttable'
 
 # 12:40:01 >  
 # 12:40:01 >  "Done."

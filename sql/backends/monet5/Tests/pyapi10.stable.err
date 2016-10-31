@@ -33,7 +33,7 @@ stderr of test 'pyapi10` in directory 'sql/backends/monet5` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-30156/.s.monetdb.35525
 QUERY = SELECT AVG(pyapi10_error(i,j)) FROM pyapi10_random_table_nulls(5000);
-ERROR = !MALException:pyapi.eval:Could not parse Python code
+ERROR = !Could not parse Python code
         !  
         !  1. def pyfun(i,j,_columns,_column_types,_conn):
         !> 2.     return(i*j 
@@ -41,7 +41,7 @@ ERROR = !MALException:pyapi.eval:Could not parse Python code
         !invalid syntax (<string>, line 2)
 MAPI  = (monetdb) /var/tmp/mtest-30156/.s.monetdb.35525
 QUERY = SELECT AVG(pyapi10_indentation_error(i,j)) FROM pyapi10_random_table_nulls(5000);
-ERROR = !MALException:pyapi.eval:Could not parse Python code
+ERROR = !Could not parse Python code
         !  7.     f = 6
         !  8.     g = 7
         !> 9.         h = 8
@@ -50,7 +50,7 @@ ERROR = !MALException:pyapi.eval:Could not parse Python code
         !unexpected indent (<string>, line 9)
 MAPI  = (monetdb) /var/tmp/mtest-30156/.s.monetdb.35525
 QUERY = SELECT AVG(pyapi10_runtime_exception(i,j)) FROM pyapi10_random_table_nulls(5000);
-ERROR = !MALException:pyapi.eval:Python exception
+ERROR = !Python exception
         !  4.   mydivision = 0
         !  5.   # comments
         !> 6.   hello = myint / mydivision
