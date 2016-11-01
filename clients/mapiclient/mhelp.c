@@ -18,6 +18,7 @@
  * { A | B }   exactly one of the options should be chosen
  * A [ ',' ...]  a comma separate lists of A elements
  * { A | B } ... a series of A and Bs
+ * ( A B ) [','...] a series of AB,AB,AB,AB
  *
  * Ideally each major command line should point into the website for
  * more details and variations not covered here.
@@ -102,15 +103,19 @@ SQLhelp sqlhelp[]={
 	  "nrofrecords",
 	  "see https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/BinaryBulkLoad"
 	},
-	{ "COPY",
+	{ "COPY FROM",
 	  "",
-	  "COPY [nrofrecords] INTO qname [column_list] FROM sources [NO CONSTRAINT]",
-	  "nrofrecords,sources",
+	  "COPY [nrofrecords] INTO qname [column_list] FROM string [','...] [headerlist] [ separators]\n"
+	  " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT] [FWF '(' integer [','...]')'\n"
+	  "COPY [nrofrecords] INTO qname [column_list] FROM STDIN [headerlist] [ separators]\n"
+	  " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT] ",
+	  "nrofrecords,headerlist,separators",
 	  0
 	},
+	
 	{ "COPY INTO",
 	  "",
-	  "COPY query_expression INTO [STDOUT | string] [seps] [null_string]",
+	  "COPY query_expression INTO [STDOUT | string] [seps] [NULL [AS] string]",
 	  "seps",
 	"see https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/LoadingBulkData"
 	},
@@ -500,6 +505,7 @@ SQLhelp sqlhelp[]={
       "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NOMAXVALUE] | [ [ NO] CYCLE] ')' ] ",0,"see https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{ "global_privileges",0," { COPY FROM | COPY INTO } [ ',' ... ]",0,0},
 	{ "grantee",0," { PUBLIC | authid } ","authid",0},
+	{ "headerlist",0,"'(' ( ident [string] ) [',' ...]",0,0},
     { "ident", "An identifier", NULL, NULL, NULL },
     { "ident_list", 0 , "ident [ ',' ... ]", NULL, NULL },
 	{ "interval", 0 ,"INTERVAL [ '+' | '-' ] string  start_field TO end_field","start_field,end_time",0 },
@@ -520,7 +526,7 @@ SQLhelp sqlhelp[]={
 	{ "row_values",0, " '(' atom [ ',' atom]... ')' [ ',' row_values] ...", "atom", 0},
 	{ "schema_name",0," ident | [ident] AUTHORIZATION authorization_ident",0,0},
 	{ "schema_element",0,"grant | revoke | create_statement | drop_statement | alter_statement",0,0},
-	{ "sources", "", "string [','...] | STDIN", 0,0 },
+	{ "separators","","[USING] DELIMITERS field_sep_string [',' record_sep_string [',' quote_string]]",0,0},
 	{ "table_source", 0,"'(' table_element [ ',' ... ] ')' | column_list AS query_expression [ WITH [NO] DATA ] ","table_element",0},
 	{ "table_constraint",0," CONSTRAINT [ ident ] { UNIQUE | PRIMARY KEY } column_list | FOREIGN KEY } column_list REFERENCES qname [ column_list ][ MATCH [ FULL | PARTIAL | SIMPLE]]",0,0},
 	{ "table_element",0, "column_def | table_constraint | column_option_list | LIKE qname","column_def,table_constraint,column_option_list",0},
