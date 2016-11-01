@@ -1180,7 +1180,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.shrink", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATnew(TYPE_void, b->ttype, BATcount(b) - BATcount(d) , TRANSIENT);
+	bn= BATnew(TYPE_void, b->ttype, BATcount(b) - BATcount(d), b->batRole);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
@@ -1349,7 +1349,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.reuse", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATnew(TYPE_void, b->ttype, BATcount(b) - BATcount(d), TRANSIENT);
+	bn= BATnew(TYPE_void, b->ttype, BATcount(b) - BATcount(d), b->batRole);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
