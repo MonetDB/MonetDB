@@ -190,7 +190,7 @@ static char *nullstring = default_nullstring;
 #define my_isspace(c)	((c) == '\f' || (c) == '\n' || (c) == ' ')
 
 #include <ctype.h>
-#include "mhelp.c"
+#include "mhelp.h"
 
 static timertype
 gettime(void)
@@ -2726,7 +2726,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						}
 					} else
 #endif
-						sql_help(line);
+						sql_help(line, toConsole);
 					continue;
 				}
 /* for later

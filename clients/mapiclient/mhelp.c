@@ -23,6 +23,12 @@
  * more details and variations not covered here.
  * */
 
+#include "monetdb_config.h"
+#include <ctype.h>
+#include <string.h>
+#include "stream.h"
+#include "mhelp.h"
+
 typedef struct{
 	char *command;
 	char *synopsis;
@@ -544,7 +550,7 @@ static char *strmatch(char *heap, char *needle)
 	return strstr(heapbuf, needlebuf);
 }
 
-static char * sql_grammar_rule(char *word)
+static char * sql_grammar_rule(char *word, stream *toConsole)
 {
 	char buf[65], *s= buf;
 	int i;
@@ -555,7 +561,7 @@ static char * sql_grammar_rule(char *word)
 		if( strmatch(sqlhelp[i].command, buf) && sqlhelp[i].synopsis == 0){
 			mnstr_printf(toConsole,"%s : %s\n",buf, sqlhelp[i].syntax);
 			if( (s = strchr(sqlhelp[i].syntax,',')) )
-				sql_grammar_rule(s+1);
+				sql_grammar_rule(s+1, toConsole);
 		}
 	}
 	while ( *word && (isalnum((int) *word || *word == '_')) ) word++;
@@ -563,7 +569,7 @@ static char * sql_grammar_rule(char *word)
 	return *word==',' ? word +1 :0;
 }
 
-static void sql_grammar(int idx)
+static void sql_grammar(int idx, stream *toConsole)
 {
 	char *t1;
 	if( sqlhelp[idx].synopsis == 0){
@@ -588,14 +594,14 @@ static void sql_grammar(int idx)
 		t1 = sqlhelp[idx].rules;
 		if( t1 && *t1)
 		do
-			t1 = sql_grammar_rule(t1);
+			t1 = sql_grammar_rule(t1, toConsole);
 		while( t1 );
 	}
 	if( sqlhelp[idx].comments)
 		mnstr_printf(toConsole,"%s\n", sqlhelp[idx].comments);
 }
 
-static void sql_word(char *word, size_t maxlen)
+static void sql_word(char *word, size_t maxlen, stream *toConsole)
 {
 	size_t i;
 
@@ -617,7 +623,7 @@ static int match(char *pattern, char *word){
 	return 1;
 }
 
-static void sql_help( char *pattern)
+void sql_help( char *pattern, stream *toConsole)
 {
 	char *wrd1, *wrd2,*wrd3, *s;
 	size_t maxlen= 0, len, all= 0;
@@ -633,7 +639,7 @@ static void sql_help( char *pattern)
 	if( *pattern != '*')
 	for( i=0; *pattern && sqlhelp[i].command; i++)
 	if( strmatch(sqlhelp[i].command, pattern) == sqlhelp[i].command ){
-		sql_grammar(i);
+		sql_grammar(i, toConsole);
 		return;
 	}
 		
@@ -668,15 +674,15 @@ static void sql_help( char *pattern)
 	step = total / 4;
 	if( *wrd1 == 0){
 		for( i=0;  i < step; i++){
-			sql_word(sqlhelp[i].command, maxlen);
+			sql_word(sqlhelp[i].command, maxlen, toConsole);
 			if( i + step < total)
-				sql_word(sqlhelp[i + step].command, maxlen);
+				sql_word(sqlhelp[i + step].command, maxlen, toConsole);
 			if( i + 2 * step < total)
-				sql_word(sqlhelp[i + 2 * step].command, maxlen);
+				sql_word(sqlhelp[i + 2 * step].command, maxlen, toConsole);
 			if( i + 3 * step < total)
-				sql_word(sqlhelp[i + 3 * step].command, maxlen);
+				sql_word(sqlhelp[i + 3 * step].command, maxlen, toConsole);
 			if( i + 4 * step < total)
-				sql_word(sqlhelp[i + 4 * step].command, maxlen);
+				sql_word(sqlhelp[i + 4 * step].command, maxlen, toConsole);
 			mnstr_printf(toConsole,"\n");
 		}
 		mnstr_printf(toConsole,"see also https://www.monetdb.org/Documentation/SQLreference\n");
@@ -685,14 +691,14 @@ static void sql_help( char *pattern)
 
 	for( i=0; sqlhelp[i].command; i++)
 	if( match(sqlhelp[i].command, wrd1) && (*wrd2 == 0 || match(sqlhelp[i].command,wrd2))  && (*wrd3 == 0 || match(sqlhelp[i].command,wrd3))) {
-		sql_grammar(i);
+		sql_grammar(i, toConsole);
 		found++;
 	}
 	
 	if( found == 0)
 	for( i=0; sqlhelp[i].command; i++)
 	if( strmatch(sqlhelp[i].command, wrd1) && (*wrd2 == 0 || strmatch(sqlhelp[i].command,wrd2)) ) {
-		sql_grammar(i);
+		sql_grammar(i, toConsole);
 		found++;
 	}
 }
