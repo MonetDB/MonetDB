@@ -2007,13 +2007,13 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 			int (*atomCmp) (const void *v1, const void *v2) = BATatoms[b->ttype].atomCmp;
 			int (*strConversion) (str*, int*, const void*) = BATatoms[b->ttype].atomToStr;
 			BAT *res = COLnew(0, TYPE_str, 0, TRANSIENT);
+			char *result = NULL;
+			int length = 0;
 			if (!res) {
 				fres = -1;
 				goto cleanup;
 			}
 			BATloop(b, p, q) {
-				char *result = NULL;
-				int length = 0;
 				void *element = (void*) BUNtail(iterators[i], p);
 				if (atomCmp(element, atomNull) == 0) {
 					BUNappend(res, str_nil, FALSE);
@@ -2022,7 +2022,17 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 						fres = -1;
 						goto cleanup;
 					}
-					BUNappend(res, result, FALSE);
+					// string conversion functions add quotes for the old protocol
+					// because obviously adding quotes in the string conversion function
+					// makes total sense, rather than adding the quotes in the protocol
+					// thus because of this totally, 100% sensical implementation
+					// we remove the quotes again here
+					if (result[0] == '"') {
+						result[strlen(result) - 1] = '\0';
+						BUNappend(res, result + 1, FALSE);
+					} else {
+						BUNappend(res, result, FALSE);
+					}
 				}
 			 }
 			// if converting to string, we use str_nil
