@@ -98,12 +98,15 @@ SQLhelp sqlhelp[]={
 	},
 	{ "COPY BINARY",
 	  "",
-	  "COPY [OFFSET integer ] BINARY INTO qname column_list FROM string_list [NO CONSTRAINT]\n"
-	  "COPY [integer RECORDS ] BINARY INTO qname column_list FROM string_list [NO CONSTRAINT]\n"
-	  "COPY [integer OFFSET integer RECORDS] BINARY INTO qname column_list FROM string_list [NO CONSTRAINT]\n"
-	  "COPY [integer RECORDS OFFSET integer] BINARY INTO qname column_list FROM string_list [NO CONSTRAINT]",
-	  "",
+	  "COPY [nrofrecords] BINARY INTO qname [column_list] FROM string [','...] [NO CONSTRAINT]",
+	  "nrofrecords",
 	  "see https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/BinaryBulkLoad"
+	},
+	{ "COPY",
+	  "",
+	  "COPY [nrofrecords] INTO qname [column_list] FROM sources [NO CONSTRAINT]",
+	  "nrofrecords,sources",
+	  0
 	},
 	{ "COPY INTO",
 	  "",
@@ -502,6 +505,7 @@ SQLhelp sqlhelp[]={
 	{ "interval", 0 ,"INTERVAL [ '+' | '-' ] string  start_field TO end_field","start_field,end_time",0 },
     { "intval", "Integer value", NULL, NULL, NULL },
 	{ "isolevel", 0 ,"READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE ",0,0},
+	{ "nrofrecords", "", "OFFSET integer | integer RECORDS | integer OFFSET integer RECORDS | integer RECORDS OFFSET integer", 0,0 },
 	{ "on_commit",0,"ON COMMIT { DELETE ROWS | PRESERVE ROWS | DROP }",0,0},
 	{ "param",0,"ident data_type",0,0},
 	{ "privileges",0," { ALL [PRIVILEGES ] | { INSERT | DELETE | EXECUTE | [ REFERENCES | SELECT | UPDATE } column_list ON "
@@ -516,6 +520,7 @@ SQLhelp sqlhelp[]={
 	{ "row_values",0, " '(' atom [ ',' atom]... ')' [ ',' row_values] ...", "atom", 0},
 	{ "schema_name",0," ident | [ident] AUTHORIZATION authorization_ident",0,0},
 	{ "schema_element",0,"grant | revoke | create_statement | drop_statement | alter_statement",0,0},
+	{ "sources", "", "string [','...] | STDIN", 0,0 },
 	{ "table_source", 0,"'(' table_element [ ',' ... ] ')' | column_list AS query_expression [ WITH [NO] DATA ] ","table_element",0},
 	{ "table_constraint",0," CONSTRAINT [ ident ] { UNIQUE | PRIMARY KEY } column_list | FOREIGN KEY } column_list REFERENCES qname [ column_list ][ MATCH [ FULL | PARTIAL | SIMPLE]]",0,0},
 	{ "table_element",0, "column_def | table_constraint | column_option_list | LIKE qname","column_def,table_constraint,column_option_list",0},
@@ -536,6 +541,7 @@ SQLhelp sqlhelp[]={
     { NULL, NULL, NULL, NULL, NULL }    /* End of list marker */
 };
 
+// matching is against a substring of the command string
 static char *strmatch(char *heap, char *needle)
 {
 	char heapbuf[2048], *s = heapbuf;
@@ -610,60 +616,29 @@ static void sql_word(char *word, size_t maxlen, stream *toConsole)
 		mnstr_printf(toConsole," ");
 }
 
-static int match(char *pattern, char *word){
-	char *m;
-
-	m =strmatch(pattern, word);
-	if ( m == 0)
-		return 0;
-	if( ! isspace((int) *(m + strlen(word))) )
-		return 0;
-	if( m != pattern && !isspace((int) *(m-1)) )
-		return 0;
-	return 1;
-}
-
 void sql_help( char *pattern, stream *toConsole)
 {
-	char *wrd1, *wrd2,*wrd3, *s;
-	size_t maxlen= 0, len, all= 0;
-	int i, step, total=0, found = 0;
+	size_t maxlen= 0, len;
+	int i, step, total=0;
 	
 	if( *pattern == '\\')
 		pattern ++;
 	while( *pattern &&  !isspace((int) *pattern) ) { pattern++;}
+	while( *pattern && isspace((int) *pattern) ) { pattern++;}
+
 	if( *pattern &&  pattern[strlen(pattern)-1] == '\n')
 		pattern[strlen(pattern)-1] =0;
-	while(*pattern && isspace((int) *pattern) ) { pattern++;}
 
-	if( *pattern != '*')
-	for( i=0; *pattern && sqlhelp[i].command; i++)
-	if( strmatch(sqlhelp[i].command, pattern) == sqlhelp[i].command ){
-		sql_grammar(i, toConsole);
-		return;
-	}
+	if( *pattern && *pattern != '*')
+		for( i=0; *pattern && sqlhelp[i].command; i++)
+		if( strmatch(sqlhelp[i].command, pattern) ){
+			sql_grammar(i,toConsole);
+			return;
+		}
 		
-	wrd1 = pattern;
-	all = *wrd1 == '*';
-	while( *wrd1 &&  isspace((int) *wrd1) ) { wrd1++;}
-	s= wrd1;
-	while( *wrd1 &&  *s && isalnum((int) *s) ) { s++;}
-	*s = 0;
-
-	wrd2 = s+1;
-	while( *wrd2 && isspace((int) *wrd2) ) { wrd2++;}
-	s= wrd2;
-	while( *wrd2 && *s && isalnum((int) *s) ) { s++;}
-	*s = 0;
-
-	wrd3 = s+1;
-	while( *wrd3 && isspace((int) *wrd3) ) { wrd3++;}
-	s= wrd3;
-	while( *wrd3 && *s && isalnum((int) *s) ) { s++;}
-	*s = 0;
 	// collect the major topics
 	for( i=0; sqlhelp[i].command; i++){
-		if ( islower((int) sqlhelp[i].command[0])  &&  !all)
+		if ( islower((int) sqlhelp[i].command[0])  &&  *pattern != '*')
 			break;
 		total++;
 		if ( (len = strlen(sqlhelp[i].command)) > maxlen)
@@ -672,33 +647,17 @@ void sql_help( char *pattern, stream *toConsole)
 
 	// provide summary of all major topics first
 	step = total / 4;
-	if( *wrd1 == 0){
-		for( i=0;  i < step; i++){
-			sql_word(sqlhelp[i].command, maxlen, toConsole);
-			if( i + step < total)
-				sql_word(sqlhelp[i + step].command, maxlen, toConsole);
-			if( i + 2 * step < total)
-				sql_word(sqlhelp[i + 2 * step].command, maxlen, toConsole);
-			if( i + 3 * step < total)
-				sql_word(sqlhelp[i + 3 * step].command, maxlen, toConsole);
-			if( i + 4 * step < total)
-				sql_word(sqlhelp[i + 4 * step].command, maxlen, toConsole);
-			mnstr_printf(toConsole,"\n");
-		}
-		mnstr_printf(toConsole,"see also https://www.monetdb.org/Documentation/SQLreference\n");
-		return;
+	for( i=0;  i < step; i++){
+		sql_word(sqlhelp[i].command, maxlen, toConsole);
+		if( i + step < total)
+			sql_word(sqlhelp[i + step].command, maxlen, toConsole);
+		if( i + 2 * step < total)
+			sql_word(sqlhelp[i + 2 * step].command, maxlen, toConsole);
+		if( i + 3 * step < total)
+			sql_word(sqlhelp[i + 3 * step].command, maxlen, toConsole);
+		if( i + 4 * step < total)
+			sql_word(sqlhelp[i + 4 * step].command, maxlen, toConsole);
+		mnstr_printf(toConsole,"\n");
 	}
-
-	for( i=0; sqlhelp[i].command; i++)
-	if( match(sqlhelp[i].command, wrd1) && (*wrd2 == 0 || match(sqlhelp[i].command,wrd2))  && (*wrd3 == 0 || match(sqlhelp[i].command,wrd3))) {
-		sql_grammar(i, toConsole);
-		found++;
-	}
-	
-	if( found == 0)
-	for( i=0; sqlhelp[i].command; i++)
-	if( strmatch(sqlhelp[i].command, wrd1) && (*wrd2 == 0 || strmatch(sqlhelp[i].command,wrd2)) ) {
-		sql_grammar(i, toConsole);
-		found++;
-	}
+	mnstr_printf(toConsole,"See also https://www.monetdb.org/Documentation/SQLreference\n");
 }
