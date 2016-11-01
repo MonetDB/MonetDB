@@ -548,7 +548,7 @@ SQLhelp sqlhelp[]={
 };
 
 // matching is against a substring of the command string
-static char *strmatch(char *heap, char *needle)
+static int strmatch(char *heap, char *needle)
 {
 	char heapbuf[2048], *s = heapbuf;
 	char needlebuf[2048], *t = needlebuf;
@@ -559,7 +559,7 @@ static char *strmatch(char *heap, char *needle)
 	for( ; *needle ; needle++)
 		*t++ = (char) tolower((int) *needle);
 	*t = 0;
-	return strstr(heapbuf, needlebuf);
+	return strncmp(heapbuf,needlebuf, strlen(needlebuf))== 0;
 }
 
 static char * sql_grammar_rule(char *word, stream *toConsole)
@@ -572,8 +572,6 @@ static char * sql_grammar_rule(char *word, stream *toConsole)
 	for(i=0; sqlhelp[i].command; i++){
 		if( strmatch(sqlhelp[i].command, buf) && sqlhelp[i].synopsis == 0){
 			mnstr_printf(toConsole,"%s : %s\n",buf, sqlhelp[i].syntax);
-			if( (s = strchr(sqlhelp[i].syntax,',')) )
-				sql_grammar_rule(s+1, toConsole);
 		}
 	}
 	while ( *word && (isalnum((int) *word || *word == '_')) ) word++;
