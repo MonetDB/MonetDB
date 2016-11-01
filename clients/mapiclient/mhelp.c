@@ -88,9 +88,9 @@ SQLhelp sqlhelp[]={
 	  0,0
 	},
 	{ "CASE",
-	  "",
+	  "Case statement for procedures/functions",
 	  "CASE  scalar_expression [ when_statement ...]  [ELSE procedure_statement ... ] END CASE",
-	  0,0
+	  0,"See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"
 	},
     { "COMMIT",
 	  "Commit the current transaction",
@@ -98,29 +98,23 @@ SQLhelp sqlhelp[]={
 	  0,0
 	},
 	{ "COPY BINARY",
-	  "",
+	  "Append binary representations into a table",
 	  "COPY [nrofrecords] BINARY INTO qname [column_list] FROM string [','...] [NO CONSTRAINT]",
 	  "nrofrecords",
 	  "see https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/BinaryBulkLoad"
 	},
-	{ "COPY FROM",
-	  "",
+	{ "COPY INTO",
+	  "Parse a csv-file into a table",
 	  "COPY [nrofrecords] INTO qname [column_list] FROM string [','...] [headerlist] [ separators]\n"
 	  " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT] [FWF '(' integer [','...]')'\n"
 	  "COPY [nrofrecords] INTO qname [column_list] FROM STDIN [headerlist] [ separators]\n"
-	  " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT] ",
-	  "nrofrecords,headerlist,separators",
-	  0
-	},
-	
-	{ "COPY INTO",
-	  "",
+	  " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT]\n"
 	  "COPY query_expression INTO [STDOUT | string] [seps] [NULL [AS] string]",
-	  "seps",
-	"see https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/LoadingBulkData"
+	  "nrofrecords,headerlist,separators",
+	  "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/LoadingBulkData"
 	},
 	{ "COPY LOADER",
-	  "",
+	  "Copy into using a user supplied parsing function",
 	  "COPY LOADER INTO qname FROM qname '(' [ scalar_expression ... ] ')'",
 	 0,0
 	},
@@ -193,7 +187,7 @@ SQLhelp sqlhelp[]={
 	{ "CREATE REPLICA TABLE",
 	  "",
 	  "CREATE REPLICA TABLE qname table_source;",
-	  0, "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning"
+	  0, "https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/TransactionReplication"
      },
     { "CREATE SCHEMA",
 	  "",
@@ -208,9 +202,9 @@ SQLhelp sqlhelp[]={
 	  0, "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"
 	},
 	{ "CREATE STREAM TABLE",
-	  "",
-	  "CREATE REMOTE TABLE qname ON string",
-	 0,"Temporary table, locked during updates/ continues query processing"
+	 "Temporary table, locked during updates/ continues query processing",
+	  "CREATE STREAM TABLE qname table_source \n",
+	 0,0
 	},
 	{ "CREATE TABLE",
 	  "",
@@ -227,7 +221,7 @@ SQLhelp sqlhelp[]={
 	  0
 	},
 	{ "CREATE TYPE",
-	  "",
+	  "Add user defined type to the type system ",
 	  "CREATE TYPE qname EXTERNAL NAME ident",
 	  0,0
 	},
@@ -237,32 +231,32 @@ SQLhelp sqlhelp[]={
 	  "column_list,query_expression", 0
 	},
 	{ "CURRENT_DATE",
-	  "",
+	  "Built-in function",
 	  "CURRENT_DATE [ '(' ')']",
 	 0,0
 	},
 	{ "CURRENT_TIME",
-	  "",
+	  "Built-in function",
 	  "CURRENT_TIME [ '(' ')']",
 	 0,0
 	},
 	{ "CURRENT_TIMESTAMP",
-	  "",
+	  "Built-in function",
 	  "CURRENT_TIMESTAMP [ '(' ')']",
 	 0,0
 	},
 	{ "EXPLAIN",
 	  "Give execution plan details",
 	  "EXPLAIN statement",
-	  0,0
+	  0,"See alsp https://www.monetdb.org/Documentation/Manuals/SQLreference/Explain"
 	},
 	{ "LOCAL_TIMESTAMP",
-	  "",
+	  "Built-in function",
 	  "LOCAL_TIMESTAMP [ '(' ')']",
 	 0,0
 	},
 	{ "EXTRACT",
-	   "",
+	   "Built-in function",
 	  "EXTRACT '(' { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND } FROM scalar_expression ')'",
 	  0,0
 	},
@@ -349,13 +343,14 @@ SQLhelp sqlhelp[]={
 	  "IF  search_condition THEN procedure_statement ...\n"
 	  "[ELSE IF search_condition THEN procedure_statement ... ]...\n"
 	  "[ ELSE procedure_statement ... ] END IF",
-	  "search_condition,procedure_statement",0
+	  "search_condition,procedure_statement",
+	  "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"
 	},
 	{ "INSERT",
 	  "",
 	  "[WITH with_list ] INSERT INTO qname [ column_list ] [ DEFAULT VALUES | VALUES row_values | query_expression]",
 	  "with_list,column_list,row_values,query_expression",
-	  0
+	  "See also https://www.monetdb.org/Documentation/SQLreference/Updates"
 	},
 	{ "GRANT",
 	  "Define access privileges",
@@ -404,9 +399,10 @@ SQLhelp sqlhelp[]={
       "[ ORDER BY expression [ ASC | DESC ] [',' ...] ]\n"
       "[ LIMIT { count | param } ]\n"
 	  "[ OFFSET { count | param} ]\n"
-	  "[ SAMPLE size ]",
+	  "[ SAMPLE size ]\n"
+	  " select_expression {UNION | INTERSECT | EXCEPT} [ALL | DISTINCT] [CORRESPONDING] select_expression",
 	  "",
-	  0
+	  "See also https://www.monetdb.org/Documentation/SQLreference/TableExpressions"
 	},
 	{ "SET",
 	  "Assign a value to a variable or column",
@@ -463,6 +459,16 @@ SQLhelp sqlhelp[]={
 	  "SET USER '=' ident",
 	  0,0
 	},
+	{ "TABLE JOINS",
+	  "",
+	  "'(' joined_table ') |\n"
+	  "table_ref CROSS JOIN table_ref ')' |\n"
+	  "table_ref NATURAL [ INNER | LEFT | RIGHT | FULL] JOIN table_ref |\n"
+	  "table_ref UNION JOIN table_ref { ON search_condition | USING column_list } |\n"
+	  "table_ref [ INNER | LEFT | RIGHT | FULL] JOIN table_ref { ON search_condition | USING column_list } |\n",
+	   0,"See also https://www.monetdb.org/Documentation/SQLreference/TableExpressions"
+	},
+
 	{ "TRACE",
 	  "Give execution trace",
 	  "TRACE statement",
@@ -477,7 +483,19 @@ SQLhelp sqlhelp[]={
 	{ "WHILE",
 	  "",
 	  "[ident ':'] WHILE search_condition DO procedure_statement ... END WHILE [ident]",
-	  0,0
+	  0,"See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"
+	},
+	{ "WINDOW",
+	  "",
+	  "{RANK | DENSE_RANK | PERCENT_RANK | CUME_DIST} OVER window_name |\n"
+	  "{RANK | DENSE_RANK | PERCENT_RANK | CUME_DIST} OVER '(' \n"
+	  "[window_name] [PARTITION BY column_ref ... ]\n"
+	  "[ORDER BY sort_spec] \n"
+	  "{ROWS | RANGE} {UNBOUNDED PRECEDING | value PRECEDING | CURRENT ROW} \n"
+	  "[BETWEEN {UNBOUNDED FOLLOWING | value FOLLOWING | UNBOUNDED PRECEDING | value PRECEDING | CURRENT ROW} \n"
+	  "AND {UNBOUNDED FOLLOWING | value FOLLOWING | UNBOUNDED PRECEDING | value PRECEDING | CURRENT ROW} ]\n"
+	  "[EXCLUDING {CURRENT ROW | GROUP | TIES | NO OTHERS}",
+	  0,"See also https://www.monetdb.org/Documentation/Manuals/SQLreference/WindowFunctions"
 	},
 
 // The subgrammar rules
@@ -526,10 +544,13 @@ SQLhelp sqlhelp[]={
 	{ "row_values",0, " '(' atom [ ',' atom]... ')' [ ',' row_values] ...", "atom", 0},
 	{ "schema_name",0," ident | [ident] AUTHORIZATION authorization_ident",0,0},
 	{ "schema_element",0,"grant | revoke | create_statement | drop_statement | alter_statement",0,0},
-	{ "separators","","[USING] DELIMITERS field_sep_string [',' record_sep_string [',' quote_string]]",0,0},
-	{ "table_source", 0,"'(' table_element [ ',' ... ] ')' | column_list AS query_expression [ WITH [NO] DATA ] ","table_element",0},
+	{ "separators",0,"[USING] DELIMITERS field_sep_string [',' record_sep_string [',' quote_string]]",0,0},
+	{ "split_part",0,"SPLIT_PART '(' string ',' delimiter_string ',' field_index ')'",0,0,},
 	{ "table_constraint",0," CONSTRAINT [ ident ] { UNIQUE | PRIMARY KEY } column_list | FOREIGN KEY } column_list REFERENCES qname [ column_list ][ MATCH [ FULL | PARTIAL | SIMPLE]]",0,0},
 	{ "table_element",0, "column_def | table_constraint | column_option_list | LIKE qname","column_def,table_constraint,column_option_list",0},
+	{ "table_name",0," [AS] ident ['(' name [','...] ')' ]",0,0},
+	{ "table_ref",0," [LATERAL] func_ref [table_name] | [LATERAL] subquery | joined_table",0,0},
+	{ "table_source", 0,"'(' table_element [ ',' ... ] ')' | column_list AS query_expression [ WITH [NO] DATA ] ","table_element",0},
 	{ "transaction_statement",0,"commit | savepoint | release | rollback | start transaction | set local transaction" ,
 	 "commit,savepoint,release,rollback,start transaction,set local transaction" ,
 	0},
@@ -649,7 +670,7 @@ void sql_help( char *pattern, stream *toConsole)
 			maxlen = len;
 	}
 
-	// provide summary of all major topics first
+	// provide summary of all major topics  (=search terms)
 	step = total / 4;
 	for( i=0;  i < step; i++){
 		sql_word(sqlhelp[i].command, maxlen, toConsole);
@@ -663,5 +684,12 @@ void sql_help( char *pattern, stream *toConsole)
 			sql_word(sqlhelp[i + 4 * step].command, maxlen, toConsole);
 		mnstr_printf(toConsole,"\n");
 	}
+	mnstr_printf(toConsole,"Using the conventional grammar constructs:\n");
+	mnstr_printf(toConsole,"[ A | B ]   optionally token A or B or none\n");
+	mnstr_printf(toConsole,"{ A | B }   exactly one of the options should be chosen\n");
+	mnstr_printf(toConsole,"A [ ',' ...]  a comma separate lists of A elements\n");
+	mnstr_printf(toConsole,"{ A | B } ... a series of A and Bs\n");
+	mnstr_printf(toConsole,"( A B ) [','...] a series of AB,AB,AB,AB\n");
+	mnstr_printf(toConsole,"For more search terms type: \\help *\n");
 	mnstr_printf(toConsole,"See also https://www.monetdb.org/Documentation/SQLreference\n");
 }
