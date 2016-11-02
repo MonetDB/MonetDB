@@ -236,22 +236,21 @@ stream_export int isa_fixed_block_stream(stream *s);
 stream_export stream* bs_stream(stream *s);
 
 typedef enum {
-	protauto = 0,
-	prot9 = 1,
-	prot10 = 2,
-	prot10compressed = 3
+	PROTOCOL_AUTO = 0,
+	PROTOCOL_9 = 1,
+	PROTOCOL_10 = 2
 } protocol_version;
 
 typedef enum {
 	COMPRESSION_NONE = 0,
 	COMPRESSION_SNAPPY = 1,
 	COMPRESSION_LZ4 = 2,
-	COMPRESSION_UNKNOWN = 255
+	COMPRESSION_AUTO = 255
 } compression_method;
 
 typedef enum {
-	COLUMN_COMPRESSION_AUTO = 255,
-	COLUMN_COMPRESSION_NONE = 0
+	COLUMN_COMPRESSION_NONE = 0,
+	COLUMN_COMPRESSION_AUTO = 255
 } column_compression;
 
 stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp);

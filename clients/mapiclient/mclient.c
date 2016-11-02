@@ -2997,8 +2997,8 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -E charset  | --encoding=charset specify encoding (character set) of the terminal\n");
 #endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
-	fprintf(stderr, " -C version  | --compression=type specify compression method {snappy,lz4}\n");
-	fprintf(stderr, " -P version  | --protocol=version specify protocol version {prot9,prot10,prot10compressed}\n");
+	fprintf(stderr, " -C version  | --compression=type specify compression method {auto,none,snappy,lz4}\n");
+	fprintf(stderr, " -P version  | --protocol=version specify protocol version {auto,prot9,prot10}\n");
 	fprintf(stderr, " -B size     | --blocksize=size   specify protocol block size (>= %d)\n", BLOCK);
 	fprintf(stderr, " -c colcomp  | --colcomp=type     specify column compression type {none}");
 

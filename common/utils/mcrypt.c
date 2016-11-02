@@ -57,8 +57,11 @@ mcrypt_getHashAlgorithms(void)
 #ifdef HAVE_MD5_UPDATE
 		",MD5"
 #endif
-#if defined(HAVE_LIBSNAPPY) || defined(HAVE_LIBLZ4)
-		",PROT10COMPR"
+#ifdef HAVE_LIBSNAPPY
+		",COMPRESSION_SNAPPY"
+#endif
+#ifdef HAVE_LIBLZ4
+		",COMPRESSION_LZ4"
 #endif
 		;
 	return strdup(algorithms);

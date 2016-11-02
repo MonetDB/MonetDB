@@ -2343,7 +2343,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	if (t->tsep)
 		return mvc_export_file(b, s, t);
 
-	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
+	if (b->client->protocol == PROTOCOL_10) {
 		return mvc_export_resultset_prot10(m, t, s, b->client->fdin->s, b->client->blocksize, b->client->compute_column_widths, NULL);
 	}
 

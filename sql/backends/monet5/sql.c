@@ -3407,7 +3407,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 
-	if (b->client->protocol == prot10 || b->client->protocol == prot10compressed) {
+	if (b->client->protocol == PROTOCOL_10) {
 		// scalar values are single-column result sets
 		// create the empty result table
 		mvc *m = b->mvc;

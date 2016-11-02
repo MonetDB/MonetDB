@@ -132,7 +132,7 @@ doChallenge(void *data)
 	stream *fdout = ((struct challengedata *) data)->out;
 	bstream *bs;
 	ssize_t len = 0;
-	protocol_version protocol = prot9;
+	protocol_version protocol = PROTOCOL_9;
 	size_t buflen = BLOCK;
 	column_compression colcomp = COLUMN_COMPRESSION_NONE;
 	int compute_column_widths = 0;
@@ -186,7 +186,10 @@ doChallenge(void *data)
 	buf[len] = 0;
 
 	if (strstr(buf, "PROT10")) {
+		char *errmsg = NULL;
 		char *buflenstrend, *buflenstr = strstr(buf, "PROT10");
+		compression_method comp;
+		protocol = PROTOCOL_10;
 		buflenstr = strchr(buflenstr, ':') + 1;
 		buflenstr = strchr(buflenstr, ':') + 1;
 		if (!buflenstr) {
@@ -205,7 +208,6 @@ doChallenge(void *data)
 			compute_column_widths = 1;
 		}
 
-		// FIXME: this leaks a block stream header
 		if (buflen < BLOCK) {
 			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
 			close_stream(fdin);
@@ -213,43 +215,36 @@ doChallenge(void *data)
 			return;
 		}
 
-		if (!strstr(buf, "PROT10COMPR")) {
-			protocol = prot10;
-			// uncompressed protocol 10
-			fdin = block_stream2(bs_stream(fdin), buflen, COMPRESSION_NONE, colcomp);
-			fdout = block_stream2(bs_stream(fdout), buflen, COMPRESSION_NONE, colcomp);
-		} else {
-			compression_method comp = COMPRESSION_NONE;
-			if (strstr(buf, "SNAPPY")) {
+		comp = COMPRESSION_NONE;
+		if (strstr(buf, "COMPRESSION_SNAPPY")) {
 #ifdef HAVE_LIBSNAPPY
-				comp = COMPRESSION_SNAPPY;
+			comp = COMPRESSION_SNAPPY;
 #else
-				comp = COMPRESSION_UNKNOWN;
+			errmsg = "!server does not support Snappy compression.\n";
 #endif
-
-			} else if (strstr(buf, "LZ4")) {
+		} else if (strstr(buf, "COMPRESSION_LZ4")) {
 #ifdef HAVE_LIBLZ4
-				comp = COMPRESSION_LZ4;
+			comp = COMPRESSION_LZ4;
 #else
-				comp = COMPRESSION_UNKNOWN;
+			errmsg = "!server does not support LZ4 compression.\n";
 #endif
-			} else {
-				fprintf(stderr, "Unrecognized compression type!\n");
-				comp = COMPRESSION_UNKNOWN;
-			}
-			if (comp == COMPRESSION_UNKNOWN) {
-				// client requested compressed protocol, but server does not support it
-				mnstr_printf(fdout, "!server does not support compressed protocol\n");
-				close_stream(fdin);
-				close_stream(fdout);
-				return;
-			}
-			// client requests switch to protocol 10
-			protocol = prot10compressed;
-			// compressed protocol 10
-			fdin = block_stream2(bs_stream(fdin), buflen, comp, colcomp);
-			fdout = block_stream2(bs_stream(fdout), buflen, comp, colcomp);
+		} else if (strstr(buf, "COMPRESSION_NONE")) {
+			comp = COMPRESSION_NONE;
+		} else {
+			errmsg = "!no compression type specified.\n";
 		}
+
+		if (errmsg) {
+			// incorrect compression type specified
+			mnstr_printf(fdout, "%s", errmsg);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
+
+		// FIXME: this leaks a block stream header
+		fdin = block_stream2(bs_stream(fdin), buflen, comp, colcomp);
+		fdout = block_stream2(bs_stream(fdout), buflen, comp, colcomp);
 
 		if (fdin == NULL || fdout == NULL) {
 			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);

@@ -1930,8 +1930,8 @@ mapi_new(void)
 	mid->username = NULL;
 	mid->password = NULL;
 
-	mid->comp = COMPRESSION_SNAPPY;
-	mid->protocol = protauto;
+	mid->comp = COMPRESSION_AUTO;
+	mid->protocol = PROTOCOL_AUTO;
 	mid->colcomp = COLUMN_COMPRESSION_AUTO;
 	mid->blocksize = 128 * BLOCK; // 1 MB
 
@@ -2261,7 +2261,7 @@ mapi_reconnect(Mapi mid)
 	char *server;
 	char *protover;
 	char *rest;
-	protocol_version prot_version = prot9;
+	protocol_version prot_version = PROTOCOL_9;
 	compression_method comp = COMPRESSION_NONE;
 
 	if (mid->connected)
@@ -2655,7 +2655,7 @@ mapi_reconnect(Mapi mid)
 		char **algs = algsv;
 		char *p;
 
-		/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5,PROT10,PROT10COMPRESSED:LIT:SHA1: */
+		/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5,PROT10,SNAPPY,LZ4:LIT:SHA1: */
 
 		if (mid->username == NULL || mid->password == NULL) {
 			mapi_setError(mid, "username and password must be set",
@@ -2680,47 +2680,77 @@ mapi_reconnect(Mapi mid)
 			*hash = '\0';
 			rest = hash + 1;
 		}
-#ifdef HAVE_LIBSNAPPY
-		if (strstr(hashes, "PROT10COMPR")) {
-			// both server and client support compressed protocol 10; use compressed version 
-			comp = mid->comp;
-			if (mid->protocol == protauto) {
-				prot_version = prot10compressed;
+
+		if (strstr(hashes, "PROT10")) {
+			// both server and client support protocol 10; use protocol 10
+			if (mid->protocol == PROTOCOL_AUTO) {
+				prot_version = PROTOCOL_10;
 			} else {
 				prot_version = mid->protocol;
 			}
-		} else
+			if (prot_version == PROTOCOL_10) {
+				comp = mid->comp;
+				// if we are using protocol 10, choose a compression method
+				if (mid->comp == COMPRESSION_AUTO) {
+					// select no compression
+					comp = COMPRESSION_NONE;
+#ifdef HAVE_LIBLZ4
+					// select LZ4 if available
+					if (strstr(hashes, "COMPRESSION_LZ4")) {
+						comp = COMPRESSION_LZ4;
+					}
 #endif
-		if (strstr(hashes, "PROT10")) {
-			// both server and client support protocol 10; use protocol 10
-			if (mid->protocol == protauto) {
-				prot_version = prot10;
-			} else {
-				if (mid->protocol == prot10compressed) {
-					mapi_setError(mid, "Either client or server do not support protocol compression", "mapi_reconnect", MERROR);
+#ifdef HAVE_LIBSNAPPY
+					// select SNAPPY if available
+					if (strstr(hashes, "COMPRESSION_SNAPPY")) {
+						comp = COMPRESSION_SNAPPY;
+					}
+#endif
+				} else if (mid->comp == COMPRESSION_SNAPPY) {
+#ifdef HAVE_LIBSNAPPY
+					if (!strstr(hashes, "COMPRESSION_SNAPPY")) {
+						mapi_setError(mid, "Server does not support snappy compression.", "mapi_reconnect", MERROR);
+						close_connection(mid);
+						return mid->error;
+					}
+#else
+					mapi_setError(mid, "Client does not support snappy compression.", "mapi_reconnect", MERROR);
 					close_connection(mid);
 					return mid->error;
-				} else {
-					prot_version = mid->protocol;
+#endif
+				} else if (mid->comp == COMPRESSION_LZ4) {
+#ifdef HAVE_LIBLZ4
+					if (!strstr(hashes, "COMPRESSION_LZ4")) {
+						mapi_setError(mid, "Server does not support lz4 compression.", "mapi_reconnect", MERROR);
+						close_connection(mid);
+						return mid->error;
+					}
+#else
+					mapi_setError(mid, "Client does not support lz4 compression.", "mapi_reconnect", MERROR);
+					close_connection(mid);
+					return mid->error;
+#endif
 				}
 			}
 		} else {
 			// connecting to old server; use protocol 9
-			if (mid->protocol == prot9 || mid->protocol == protauto) {
-				prot_version = prot9;
+			if (mid->protocol == PROTOCOL_9 || mid->protocol == PROTOCOL_AUTO) {
+				prot_version = PROTOCOL_9;
 			} else {
-				mapi_setError(mid, "Either client or server do not support protocol compression", "mapi_reconnect", MERROR);
+				mapi_setError(mid, "Server does not support protocol 10.", "mapi_reconnect", MERROR);
 				close_connection(mid);
 				return mid->error;
 			}
 		}
+
 		if (mid->languageId != LANG_SQL) {
 			// for now we only support SQL with prot10
 			// MAL pretty much works but a few testcases fail because of random debug crap being written to the stream
 			// and I don't want to deal with that
-			prot_version = prot9;
+			prot_version = PROTOCOL_9;
 		}
 		mid->protocol = prot_version;
+		mid->comp = comp;
 
 		/* in rest now should be the byte order of the server */
 		byteo = rest;
@@ -2830,8 +2860,8 @@ mapi_reconnect(Mapi mid)
 		 * means we want the default.  However, it *should* be there. */
 		{
 			int retval;
-			if (prot_version == prot10 || prot_version == prot10compressed) {
-				// if we are using protocol 10, we have to send either PROT10/PROT10COMPRESSED to the server
+			if (prot_version == PROTOCOL_10) {
+				// if we are using protocol 10, we have to send PROT10 to the server along with compression method
 				// so the server knows which protocol to use
 				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%s%s:%zu:\n",
 	#ifdef WORDS_BIGENDIAN
@@ -2841,8 +2871,8 @@ mapi_reconnect(Mapi mid)
 	#endif
 					mid->username, hash, mid->language,
 					mid->database == NULL ? "" : mid->database,
-					prot_version == prot10 ? "PROT10" : "PROT10COMPR",
-					comp == COMPRESSION_SNAPPY ? "SNAPPY" : (comp == COMPRESSION_LZ4 ? "LZ4" : ""),
+					"PROT10",
+					comp == COMPRESSION_SNAPPY ? "COMPRESSION_SNAPPY" : (comp == COMPRESSION_LZ4 ? "COMPRESSION_LZ4" : "COMPRESSION_NONE"),
 					mid->compute_column_widths ? "COMPUTECOLWIDTH" : "",
 					mid->blocksize);
 			} else {
@@ -2884,24 +2914,14 @@ mapi_reconnect(Mapi mid)
 	mnstr_flush(mid->to);
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_reconnect", mid->error);
 
-	if (prot_version == prot10 || prot_version == prot10compressed) {
+	if (prot_version == PROTOCOL_10) {
 		//printf("Using protocol version %s.\n", prot_version == prot10  ? "PROT10" : "PROT10COMPR");
 		assert(isa_block_stream(mid->to));
 		assert(isa_block_stream(mid->from));
 
-		if (prot_version == prot10compressed) {
-#ifdef HAVE_LIBSNAPPY
-			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, comp, mid->colcomp);
-			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, comp, mid->colcomp);
-#else
-			assert(0);
-#endif
-		} else {
-			mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, COMPRESSION_NONE, mid->colcomp);
-			mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, COMPRESSION_NONE, mid->colcomp);
-		}
-
 		// FIXME: this leaks a block stream header
+		mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, comp, mid->colcomp);
+		mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, comp, mid->colcomp);
 	}
 
 	/* consume the welcome message from the server */
@@ -4981,7 +5001,7 @@ MapiMsg
 mapi_seek_row(MapiHdl hdl, mapi_int64 rownr, int whence)
 {
 	struct MapiResultSet *result;
-	if (hdl->mid->protocol != prot9) {
+	if (hdl->mid->protocol != PROTOCOL_9) {
 		return 0;
 	}
 	mapi_hdl_check(hdl, "mapi_seek_row");
@@ -6179,35 +6199,33 @@ mapi_is_protocol10(MapiHdl hdl) {
 
 MapiMsg mapi_set_protocol(Mapi mid, const char* protocol) {
 	if (strcasecmp(protocol, "prot9") == 0) {
-		mid->protocol = prot9;
-	}
-	else if (strcasecmp(protocol, "prot10") == 0) {
-		mid->protocol = prot10;
-	}
-	else if (strcasecmp(protocol, "prot10compressed") == 0) {
-		mid->protocol = prot10compressed;
-	}
-	else {
+		mid->protocol = PROTOCOL_9;
+	} else if (strcasecmp(protocol, "prot10") == 0) {
+		mid->protocol = PROTOCOL_10;
+	} else if (strcasecmp(protocol, "auto") == 0) {
+		mid->protocol = PROTOCOL_AUTO;
+	} else {
 		mapi_setError(mid, "invalid protocol name", "mapi_set_protocol", MERROR);
 		return -1;
 	}
-
 	return 0;
 }
 
 
 MapiMsg 
 mapi_set_compression(Mapi mid, const char* compression) {
-	if (strcasecmp(compression, "snappy") == 0) {
+	if (strcasecmp(compression, "none") == 0) {
+		mid->comp = COMPRESSION_NONE;
+	} else if (strcasecmp(compression, "auto") == 0) {
+		mid->comp = COMPRESSION_AUTO;
+	} else if (strcasecmp(compression, "snappy") == 0) {
 		mid->comp = COMPRESSION_SNAPPY;
-	}
-	else if (strcasecmp(compression, "lz4") == 0) {
+	} else if (strcasecmp(compression, "lz4") == 0) {
 		mid->comp = COMPRESSION_LZ4;
 	} else {
 		mapi_setError(mid, "invalid compression name", "mapi_set_compression", MERROR);
 		return -1;
 	}
-
 	return 0;
 }
 
