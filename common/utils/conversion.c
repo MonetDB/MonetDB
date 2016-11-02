@@ -305,7 +305,7 @@ conversion_time_optional_tz_to_string(char *dst, int len, const int *src, int nu
 
 	conversion_time_get_data(*src, timezone_diff, &hour, &min, &sec, &nanosecond);
 
-	if ((res = snprintf(dst, len, "%02d:%02d:%02d.%06d", hour, min, sec, nanosecond)) < 0) {
+	if ((res = snprintf(dst, len, "%02d:%02d:%02d.%06d", (int) hour, (int) min, (int) sec, (int) nanosecond)) < 0) {
 		return res;
 	}
 	digits--;
