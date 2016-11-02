@@ -2694,18 +2694,24 @@ mapi_reconnect(Mapi mid)
 				if (mid->comp == COMPRESSION_AUTO) {
 					// select no compression
 					comp = COMPRESSION_NONE;
+					if (strcmp(mid->hostname, "localhost") == 0 || strcmp(mid->hostname, "127.0.0.1") == 0) {
+						// connecting to localhost, don't use compression
+						comp = COMPRESSION_NONE;
+					} else {
+						// (probably) connecting to a different server, use compression
 #ifdef HAVE_LIBLZ4
-					// select LZ4 if available
-					if (strstr(hashes, "COMPRESSION_LZ4")) {
-						comp = COMPRESSION_LZ4;
-					}
+						// select LZ4 if available
+						if (strstr(hashes, "COMPRESSION_LZ4")) {
+							comp = COMPRESSION_LZ4;
+						}
 #endif
 #ifdef HAVE_LIBSNAPPY
-					// select SNAPPY if available
-					if (strstr(hashes, "COMPRESSION_SNAPPY")) {
-						comp = COMPRESSION_SNAPPY;
+						// select SNAPPY if available
+						if (strstr(hashes, "COMPRESSION_SNAPPY")) {
+							comp = COMPRESSION_SNAPPY;
+						}
+#endif	
 					}
-#endif
 				} else if (mid->comp == COMPRESSION_SNAPPY) {
 #ifdef HAVE_LIBSNAPPY
 					if (!strstr(hashes, "COMPRESSION_SNAPPY")) {
