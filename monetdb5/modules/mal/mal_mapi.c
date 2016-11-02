@@ -242,9 +242,15 @@ doChallenge(void *data)
 			return;
 		}
 
-		// FIXME: this leaks a block stream header
-		fdin = block_stream2(bs_stream(fdin), buflen, comp, colcomp);
-		fdout = block_stream2(bs_stream(fdout), buflen, comp, colcomp);
+		{
+			stream *from, *to;
+			from = bs_stream(fdin);
+			to = bs_stream(fdout);
+			free(fdin);
+			free(fdout);
+			fdin = block_stream2(from, buflen, comp, colcomp);
+			fdout = block_stream2(to, buflen, comp, colcomp);
+		}
 
 		if (fdin == NULL || fdout == NULL) {
 			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);

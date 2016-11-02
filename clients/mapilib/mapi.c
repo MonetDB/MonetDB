@@ -2921,13 +2921,16 @@ mapi_reconnect(Mapi mid)
 	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_reconnect", mid->error);
 
 	if (prot_version == PROTOCOL_10) {
+		stream *from, *to;
 		//printf("Using protocol version %s.\n", prot_version == prot10  ? "PROT10" : "PROT10COMPR");
 		assert(isa_block_stream(mid->to));
 		assert(isa_block_stream(mid->from));
-
-		// FIXME: this leaks a block stream header
-		mid->to = block_stream2(bs_stream(mid->to), mid->blocksize, comp, mid->colcomp);
-		mid->from = block_stream2(bs_stream(mid->from), mid->blocksize, comp, mid->colcomp);
+		from = bs_stream(mid->from);
+		to = bs_stream(mid->to);
+		free(mid->from);
+		free(mid->to);
+		mid->to = block_stream2(to, mid->blocksize, comp, mid->colcomp);
+		mid->from = block_stream2(from, mid->blocksize, comp, mid->colcomp);
 	}
 
 	/* consume the welcome message from the server */
