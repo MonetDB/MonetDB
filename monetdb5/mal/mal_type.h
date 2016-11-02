@@ -62,7 +62,7 @@
 
 mal_export str getTypeName(malType tpe);
 mal_export str getTypeIdentifier(malType tpe);
-mal_export int getAtomIndex(str nme, int len, int deftpe);
+mal_export int getAtomIndex(const char *nme, int len, int deftpe);
 #define idcmp(n, m)	strcmp(n, m)
 mal_export int isIdentifier(str s);
 mal_export int findGDKtype(int type);	/* used in src/mal/mal_interpreter.c */

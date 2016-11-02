@@ -1007,6 +1007,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					(void) snprintf(buf, MAXIDENTLEN, "A%s", s->op1->op4.aval->data.val.sval);
 					q = newAssignment(mb);
 					q = pushArgumentId(mb, q, buf);
+					GDKfree(buf);
 					if (q == NULL)
 						return -1;
 				} else {
@@ -1033,6 +1034,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					}
 					q->argc = q->retc = 0;
 					q = pushArgumentId(mb, q, buf);
+					GDKfree(buf);
 					q = pushNil(mb, q, tt);
 					pushInstruction(mb, q);
 					if (q == NULL)
@@ -1049,6 +1051,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 					(void) snprintf(buf, IDLENGTH, "A%d", s->flag);
 					q = pushArgumentId(mb, q, buf);
+					GDKfree(buf);
 				}
 				if (q == NULL)
 					return -1;
@@ -2751,6 +2754,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 				q->argc = q->retc = 0;
 				q = pushArgumentId(mb, q, buf);
+				GDKfree(buf);
 				if (q == NULL)
 					return -1;
 				pushInstruction(mb, q);
