@@ -3409,10 +3409,15 @@ main(int argc, char **argv)
 	if (output) {
 		setFormatter(output);
 	}
+
 	if (!output || (formatter == TESTformatter || formatter == TABLEformatter)) {
 		mapi_set_compute_column_width(mid, 1);
 	} else {
 		mapi_set_compute_column_width(mid, 0);
+	}
+
+	if (formatter == RAWformatter) {
+		mapi_set_protocol(mid, "prot9");
 	}
 
 	if (mid && mapi_error(mid) == MOK)
@@ -3457,6 +3462,7 @@ main(int argc, char **argv)
 			setFormatter("raw");
 		}
 	}
+
 	if (formatter == TIMERformatter) {
 		mapi_cache_limit(mid, 1);
 	}
