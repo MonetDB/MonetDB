@@ -115,8 +115,8 @@ stream_export int mnstr_readLng(stream *s, lng *val);
 stream_export int mnstr_writeLng(stream *s, lng val);
 
 
-int mnstr_writeFlt(stream *s, float val);
-int mnstr_writeDbl(stream *s, double val);
+stream_export int mnstr_writeFlt(stream *s, float val);
+stream_export int mnstr_writeDbl(stream *s, double val);
 
 #ifdef HAVE_HGE
 stream_export int mnstr_readHge(stream *s, hge *val);
