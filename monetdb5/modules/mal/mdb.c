@@ -614,19 +614,6 @@ MDBdummy(int *ret)
 	throw(MAL, "mdb.dummy", OPERATION_FAILED);
 }
 
-str
-MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str modnme = *getArgReference_str(stk, pci, 1);
-	str fcnnme = *getArgReference_str(stk, pci, 2);
-	bit b=  *getArgReference_bit(stk,pci,3);
-	(void) cntxt;
-	(void) mb;
-	if ( mdbSetTrap(cntxt,modnme,fcnnme,b) )
-		throw(MAL,"mdb.trap", RUNTIME_SIGNATURE_MISSING);
-	return MAL_SUCCEED;
-}
-	
 /*
  * CMDmodules
  * Obtains a list of modules by looking at what files are present in the
