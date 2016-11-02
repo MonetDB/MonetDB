@@ -5791,7 +5791,7 @@ mapi_fetch_row(MapiHdl hdl)
 		}
 		result->cur_row++;
 		result->rows_read++;
-		mapi_store_bind(result, result->cur_row);
+		mapi_store_bind(result, (int) result->cur_row);
 		return result->fieldcnt;
 	}
 
@@ -6234,17 +6234,17 @@ mapi_set_compute_column_width(Mapi mid, int compute_column_width) {
 	mid->compute_column_widths = compute_column_width ? 1 : 0;
 }
 
-#define NUMERIC_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE)  								\
+#define NUMERIC_CONVERSION(totpe, fromtpe, fromname, toname, MIN_VALUE, MAX_VALUE)  								\
 	case SQL_BINARY_##fromname: {																					\
 		*retval = (totpe) (*((fromtpe*)col->buffer_ptr));															\
 		return MOK;																									\
 	}
 
 #ifdef HAVE_HGE
-#define HGE_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE) \
-	NUMERIC_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE)
+#define HGE_CONVERSION(totpe, fromtpe, fromname, toname, MIN_VALUE, MAX_VALUE) \
+	NUMERIC_CONVERSION(totpe, fromtpe, fromname, toname, MIN_VALUE, MAX_VALUE)
 #else
-#define HGE_CONVERSION(fromtpe, totpe, fromname, toname, MIN_VALUE, MAX_VALUE)
+#define HGE_CONVERSION(totpe, fromtpe, fromname, toname, MIN_VALUE, MAX_VALUE)
 #endif
 
 static float 
