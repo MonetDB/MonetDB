@@ -46,7 +46,7 @@ extern unsigned int atom_num_digits( atom *a );
 extern atom *atom_dup( sql_allocator *sa, atom *a);
 
 /* cast atom a to type tp (success == 1, fail == 0) */
-extern int atom_cast(atom *a, sql_subtype *tp);
+extern int atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp);
 
 extern char *atom2string(sql_allocator *sa, atom *a);
 extern char *atom2sql(atom *a);
@@ -62,7 +62,7 @@ extern int atom_cmp(atom *a1, atom *a2);
 
 extern atom *atom_add(atom *a1, atom *a2);
 extern atom *atom_sub(atom *a1, atom *a2);
-extern atom *atom_mul(atom *a1, atom *a2);
+extern atom *atom_mul(sql_allocator *sa, atom *a1, atom *a2);
 extern void atom_inc(atom *a);
 extern int atom_is_zero(atom *a);
 

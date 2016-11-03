@@ -1152,7 +1152,7 @@ convert_atom(atom *a, sql_subtype *rt)
 
 			a->data.vtype = rt->type->localtype;
 			p = ATOMnilptr(a->data.vtype);
-			VALinit(&a->data, a->data.vtype, p);
+			VALset(&a->data, a->data.vtype, (ptr) p);
 		}
 	}
 	a->tpe = *rt;
@@ -1175,7 +1175,7 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 	if (t->scale && t->type->eclass != EC_FLT)
 		return NULL;
 
-	if (a && atom_cast(a, t)) {
+	if (a && atom_cast(sql->sa, a, t)) {
 		convert_atom(a, t);
 		exp->tpe = *t;
 		return exp;

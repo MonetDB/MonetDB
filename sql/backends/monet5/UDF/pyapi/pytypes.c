@@ -106,6 +106,9 @@ int PyType_ToBat(int type)
         case NPY_SHORT: return TYPE_sht;
         case NPY_INT: return TYPE_int;
         case NPY_LONG:
+#if SIZEOF_LONG == 4
+		return TYPE_int;
+#endif
         case NPY_LONGLONG: return TYPE_lng;
         case NPY_UBYTE:
         case NPY_USHORT:

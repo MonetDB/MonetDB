@@ -6,11 +6,4 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
-#ifndef _SEEN_GLOB_H
-#define _SEEN_GLOB_H 1
-
-char db_glob(const char *expr, const char *haystack);
-
-#endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */
+extern void sql_help( char *pattern, stream *toConsole);

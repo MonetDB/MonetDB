@@ -22,7 +22,7 @@
  * Returns if haystack matches expr, using tag globbing.
  */
 char
-glob(const char *expr, const char *haystack)
+db_glob(const char *expr, const char *haystack)
 {
 	const char *haymem = NULL;
 	const char *exprmem = NULL;
@@ -73,7 +73,7 @@ glob(const char *expr, const char *haystack)
 			default:
 				if (*expr != *haystack) {
 					if (haymem != NULL) {
-						return(glob(exprmem, haymem));
+						return(db_glob(exprmem, haymem));
 					} else {
 						return(0);
 					}

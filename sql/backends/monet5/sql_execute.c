@@ -230,7 +230,7 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 			atom *arg = m->args[i];
 			sql_subtype *pt = q->params + i;
 
-			if (!atom_cast(arg, pt)) {
+			if (!atom_cast(m->sa, arg, pt)) {
 				/*sql_error(c, 003, buf); */
 				if (pci->argc >= MAXARG)
 					GDKfree(argv);
@@ -291,7 +291,7 @@ SQLrun(Client c, backend *be, mvc *m){
 				sql_subtype *pt = be->q->params + j;
 				atom *arg = m->args[j];
 				
-				if (!atom_cast(arg, pt)) {
+				if (!atom_cast(m->sa, arg, pt)) {
 					throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 				}
 				val= (ValPtr) &arg->data;

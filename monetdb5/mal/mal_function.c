@@ -927,14 +927,11 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"%s\"]\n", pc, getFunctionId(p));
 }
 
-/* the stethoscope needs dot files for its graphical interface.
- * They are produced whenever a main() is called.
- * In all cases a single dot file is produced.
+/* Produce a file with the flow graph in dot format.
  */
 #define MAXFLOWGRAPHS 128
 
-int getFlowGraphs(MalBlkPtr mb, MalStkPtr stk, MalBlkPtr *mblist, MalStkPtr *stklist,int top);
-int getFlowGraphs(MalBlkPtr mb, MalStkPtr stk, MalBlkPtr *mblist, MalStkPtr *stklist,int top){
+static int getFlowGraphs(MalBlkPtr mb, MalStkPtr stk, MalBlkPtr *mblist, MalStkPtr *stklist,int top){
 	int i;
 	InstrPtr p;
 
@@ -959,7 +956,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 {
 	stream *f;
 	InstrPtr p;
-	int i, j,k, stethoscope=0;
+	int i, j,k;
 	char mapimode = 0;
 	buffer *bufstr = NULL;
 	MalBlkPtr mblist[MAXFLOWGRAPHS];
@@ -984,12 +981,10 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		return;
 
 	top = getFlowGraphs(mb,stk,mblist,stklist,0);
-	if ( stethoscope == 0)
-		top =1;
 	for( j=0; j< top; j++){
 		mb = mblist[j];
 		stk = stklist[j];
-		if (mb == 0 || (mb->dotfile && stethoscope))
+		if (mb == 0 )
 			continue; /* already sent */
 		p = getInstrPtr(mb, 0);
 		mnstr_printf(f, "digraph %s {\n", getFunctionId(p));
@@ -1055,11 +1050,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		}
 		free(buf);
 	}
-	if (f != GDKout) {
-		if (!stethoscope ) {
-			MT_sleep_ms(4000); /* delay for stethoscope */
+	if (f != GDKout) 
 			close_stream(f);
-		}
-	}
 }
 

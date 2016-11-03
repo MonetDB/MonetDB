@@ -177,7 +177,7 @@ getRemoteDB(char *database)
 	pdb = &dummy;
 	while (rdb != NULL) {
 		snprintf(mfullname, sizeof(mfullname), "%s/", rdb->fullname);
-		if (glob(mdatabase, mfullname) == 1) {
+		if (db_glob(mdatabase, mfullname) == 1) {
 			/* create a fake sabdb struct, chain where necessary */
 			if (walk != NULL) {
 				walk = walk->next = malloc(sizeof(sabdb));
