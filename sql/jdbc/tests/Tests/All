@@ -10,6 +10,9 @@ HAVE_JDBCTESTS&HAVE_SAMTOOLS&HAVE_NETCDF&HAVE_GEOM?Test_Dobjects
 HAVE_JDBCTESTS?Test_PSgeneratedkeys
 HAVE_JDBCTESTS?Test_PSsomeamount
 HAVE_JDBCTESTS?Test_PSlargebatchval
+HAVE_JDBCTESTS?Test_PSlargeresponse
+#HAVE_JDBCTESTS?Test_PSlargeamount # scalabity test which is disabled by default (it takes a long time to run and does not need to be run everytime, only before a new release)
+HAVE_JDBCTESTS?Test_Smoreresults
 HAVE_JDBCTESTS?Test_PStimedate
 HAVE_JDBCTESTS?Test_PStimezone
 HAVE_JDBCTESTS?Test_PStypes
