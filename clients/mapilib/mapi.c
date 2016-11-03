@@ -6320,7 +6320,7 @@ mapi_fetch_field_##typename(MapiHdl hdl, int fnr, type* retval) { 													\
 			case SQL_BINARY_CLOB:																					\
 				break;																								\
 			case SQL_BINARY_BOOLEAN:																				\
-				*retval = *((type*)col->buffer_ptr) ? 1 : 0;														\
+				*retval = (type) (*((signed char*)col->buffer_ptr) ? 1 : 0);										\
 				return MOK;																							\
 			NUMERIC_CONVERSION(type, signed char, TINYINT, typename, MIN_VALUE, MAX_VALUE);							\
 			NUMERIC_CONVERSION(type, short, SMALLINT, typename, MIN_VALUE, MAX_VALUE);								\
@@ -6334,7 +6334,7 @@ mapi_fetch_field_##typename(MapiHdl hdl, int fnr, type* retval) { 													\
 		}																											\
 	} 																												\
 	/* string conversion */																							\
-	val = mapi_fetch_field(hdl, fnr);																						\
+	val = mapi_fetch_field(hdl, fnr);																				\
 	if (hdl->mid->error != MOK)	{																					\
 		return hdl->mid->error;																						\
 	}																												\
