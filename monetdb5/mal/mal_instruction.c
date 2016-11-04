@@ -1359,22 +1359,19 @@ pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
  * TODO */
 /* swallows name argument */
 InstrPtr
-pushArgumentId(MalBlkPtr mb, InstrPtr p, str name)
+pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 {
 	int v;
 
-	if (p == NULL) {
-		GDKfree(name);
+	if (p == NULL)
 		return NULL;
-	}
 	v = findVariable(mb, name);
 	if (v < 0) {
 		if ((v = newVariable(mb, name, strlen(name), getAtomIndex(name, -1, TYPE_any))) < 0) {
 			freeInstruction(p);
 			return NULL;
 		}
-	} else
-		GDKfree(name);
+	}
 	return pushArgument(mb, p, v);
 }
 

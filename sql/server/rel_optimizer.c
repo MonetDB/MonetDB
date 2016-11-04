@@ -2123,7 +2123,7 @@ exps_unique( list *exps )
 
 		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
 			sql_ukey *k = p->value;
-			if (list_length(k->k.columns) <= 1)
+			if (k && list_length(k->k.columns) <= 1)
 				return 1;
 		}
 	}
