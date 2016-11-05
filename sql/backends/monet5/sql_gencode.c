@@ -504,8 +504,35 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end)
 		getArg(q, 0) = getArg(getInstrPtr(mb, 0), 0);
 		q->barrier = RETURNsymbol;
 	}
-	if (add_end)
+	if (add_end){
 		pushEndInstruction(mb);
+	}
+	// Always keep the SQL query around for monitoring
+	{
+		char *t, *tt;
+		InstrPtr q;
+
+		if (be->q && be->q->codestring) {
+			tt = t = GDKstrdup(be->q->codestring);
+			while (t && isspace((int) *t))
+				t++;
+		} else {
+			tt = t = GDKstrdup("-- no query");
+		}
+
+		q = newStmt(mb, querylogRef, defineRef);
+		if (q == NULL) {
+			GDKfree(tt);
+			goto cleanup;
+		}
+		q->token = REMsymbol;	// will be patched
+		setVarType(mb, getArg(q, 0), TYPE_void);
+		setVarUDFtype(mb, getArg(q, 0));
+		q = pushStr(mb, q, t);
+		GDKfree(tt);
+		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
+	}
+cleanup:
 	return 0;
 }
 
@@ -610,31 +637,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (backend_dumpstmt(be, mb, r, 1, 1) < 0) 
 		goto cleanup;
 
-	// Always keep the SQL query around for monitoring
-	{
-		char *t, *tt;
-		InstrPtr q;
-
-		if (be->q && be->q->codestring) {
-			tt = t = GDKstrdup(be->q->codestring);
-			while (t && isspace((int) *t))
-				t++;
-		} else {
-			tt = t = GDKstrdup("-- no query");
-		}
-
-		q = newStmt(mb, querylogRef, defineRef);
-		if (q == NULL) {
-			GDKfree(tt);
-			goto cleanup;
-		}
-		q->token = REMsymbol;	// will be patched
-		setVarType(mb, getArg(q, 0), TYPE_void);
-		setVarUDFtype(mb, getArg(q, 0));
-		q = pushStr(mb, q, t);
-		GDKfree(tt);
-		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
-	}
 	if (cq){
 		SQLaddQueryToCache(c);
 		// optimize this code the 'old' way
