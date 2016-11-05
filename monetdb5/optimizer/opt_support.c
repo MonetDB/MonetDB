@@ -154,9 +154,11 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			}
 		}
 	} while (qot && cnt++ < mb->stop);
-	mb->optimize= GDKusec() - clk;
-	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","total",1,mb->optimize);
-	newComment(mb,buf);
+	if( qot){
+		mb->optimize= GDKusec() - clk;
+		snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","total",1,mb->optimize);
+		newComment(mb,buf);
+	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
 	return 0;
