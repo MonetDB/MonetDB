@@ -4178,7 +4178,9 @@ bs2_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 			/* the last bit tells whether a flush is in there, it's not
 			 * at this moment, so shift it to the left */
 			blksize <<= 1;
-
+#ifdef WORDS_BIGENDIAN
+			blksize = long_long_SWAP(blksize);
+#endif
 			if (!mnstr_writeLng(s->s, blksize) || s->s->write(s->s, writebuf, 1, writelen) != (ssize_t) writelen) {
 				ss->errnr = MNSTR_WRITE_ERROR;
 				return -1;
@@ -4243,6 +4245,9 @@ bs2_flush(stream *ss)
 		 * setting the low-order bit */
 		blksize <<= 1;
 		blksize |= 1;
+#ifdef WORDS_BIGENDIAN
+		blksize = long_long_SWAP(blksize);
+#endif
 		/* always flush (even empty blocks) needed for the protocol) */
 
 		if ((!mnstr_writeLng(s->s, blksize) ||
