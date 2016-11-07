@@ -1087,13 +1087,16 @@ SQLparser(Client c)
 		assert(s);
 
 		if ((!caching(m) || !cachable(m, s)) && m->emode != m_prepare) {
+			char *q = query_cleaned(QUERY(m->scanner));
+
 			/* Query template should not be cached */
 			scanner_query_processed(&(m->scanner));
 			err = 0;
 			if( backend_callinline(be, c) < 0 ||
-				backend_dumpstmt(be, c->curprg->def, s, 1, 0) < 0)
+				backend_dumpstmt(be, c->curprg->def, s, 1, 0, q) < 0)
 				err = 1;
 			else opt = 1;
+			GDKfree(q);
 		} else {
 			/* Add the query tree to the SQL query cache
 			 * and bake a MAL program for it.
