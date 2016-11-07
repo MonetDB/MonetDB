@@ -5,7 +5,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 '''
-The output of the Stethoscope can be save in JSON format using the -j flag.
+The output of the Stethoscope can be saved in JSON format using the -j flag.
 This program converts such a Stethoscope output file into a .dot file
 Finalize the dot picture using:
 dot  <basename.dot> -Tpdf -o <basename.pdf>
@@ -15,6 +15,10 @@ import argparse
 import json
 
 parser = argparse.ArgumentParser(description="Generate a .dot file from a Stethoscope MAL trace")
+parser.add_argument('--statement', action='store_true', default= False, help="show the complete MAL instruction")
+parser.add_argument('--usec', action='store_true', default= False, help="show the execution time in microseconds")
+parser.add_argument('--time', action='store_true', default= False, help="show the execution start time")
+parser.add_argument('--pc', action='store_true', default= True, help="show the program counter")
 parser.add_argument('inputfiles', type = str, nargs= '*')
 
 args = parser.parse_args()
@@ -22,8 +26,21 @@ print(args)
 
 def showFlowNode(event):
     dotfile.write('n'+ str(event['pc']) )
-    stmt = event['short'].replace('\\\\','').replace('\\"','"').replace('\"','"').replace('"','\\"')
-    dotfile.write('[fontsize=8, shape=box, label="' + stmt + '"]\n')
+    dotfile.write('[fontsize=8,')
+    if args.statement :
+        stmt = event['short'].replace('\\\\','').replace('\\"','"').replace('\"','"').replace('"','\\"')
+        shape ='shape=box,'
+        lab =stmt
+    if args.pc:
+        shape = 'shape=circle,'
+        lab= str(event['pc'])
+    if args.usec:
+        shape = 'shape=circle,'
+        lab= str(event['usec'])
+    if args.time:
+        shape = 'shape=box,'
+        lab= str(event['ctime'])
+    dotfile.write(shape + 'label="'+ lab + '"]\n');
 
 def showFlowInput(event):
     for pc in event['prereq']:
@@ -59,5 +76,5 @@ for name in args.inputfiles:
             showFlowInput(e)
     dotfile.write('}\n')
 
-    print("Finalize the dot picture: dot" + basename + ".dot -Tpdf -o "+basename+ ".pdf"
+    print("Finalize the dot picture using:\ndot " + basename + ".dot -Tpdf -o "+basename+ ".pdf")
 
