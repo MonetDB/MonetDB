@@ -73,8 +73,9 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 49 # length
+% 72 # length
 function user.main():void;
+    X_42:void := querylog.define("-- no query","sequential_pipe",15,14);
     X_26 := bat.new(nil:str);
     X_33 := bat.append(X_26,"sys.L2");
     X_28 := bat.new(nil:str);
