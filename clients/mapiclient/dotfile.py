@@ -22,7 +22,6 @@ parser.add_argument('--pc', action='store_true', default= True, help="show the p
 parser.add_argument('inputfiles', type = str, nargs= '*')
 
 args = parser.parse_args()
-print(args)
 
 def showFlowNode(event):
     dotfile.write('n'+ str(event['pc']) )
