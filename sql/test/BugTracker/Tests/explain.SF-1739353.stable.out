@@ -21,8 +21,12 @@ Ready.
 #end main;
 
 
-Operation successful
 
+# 22:09:58 >  
+# 22:09:58 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h localhost -p 39265 -d mTests_sql_test_BugTracker -f "../../../../../../../data/rc/MonetDB/sql/test/BugTracker/Tests/explain.SF-1739353-data.sql"
+# 22:09:58 >  
+
+Operation successful
 +------------------------------------------------------------------------------------------------------+
 | mal    |
 +======================================================================================================+

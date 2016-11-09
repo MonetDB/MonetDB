@@ -54,3 +54,7 @@ assert-on-table-producing-function.Bug-6076
 assert-on-push-project-up.Bug-6077
 assert-on-project.Bug-6078
 crash.Bug-6081
+dce.Bug-6114
+dce2.Bug-6115
+semijoin.Bug-6116
+split_project.Bug-6117

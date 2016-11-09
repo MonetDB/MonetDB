@@ -65,10 +65,10 @@ SELECT users.name, users.fullname, schemas.name
 # 08:55:00 >  
 
 auto commit mode: on
-voc-> 
-# 15:18:12 >  
-# 15:18:12 >  Mtimeout -timeout 60  mjclient -h alf -p 30558 -d mTests_src_test_BugTracker -f "../../../../../../../../scratch1/niels/rc/sql/src/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
-# 15:18:12 >  
+sql> 
+# 22:09:08 >  
+# 22:09:08 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -e -h localhost -p 39265 -d mTests_sql_test_BugTracker -f "../../../../../../../data/rc/MonetDB/sql/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
+# 22:09:08 >  
 
 START TRANSACTION;
 Operation successful

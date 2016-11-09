@@ -3829,11 +3829,35 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
  * semijoin( join(A, B) [ A.x == B.y ], C ) [ A.z == C.c ]
  * ->
  * join( semijoin(A, C) [ A.z == C.c ], B ) [ A.x == B.y ]
+ *
+ * also push simple expressions of a semijoin down if they only
+ * involve the left sided of the semijoin.
  */
 static sql_rel *
 rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)*changes;
+
+	/* first push down the expressions involving only A */
+	if (is_semi(rel->op) && rel->exps && rel->l) {
+		list *exps = rel->exps, *nexps = sa_list(sql->sa);
+		node *n;
+
+		for(n = exps->h; n; n = n->next) {
+			sql_exp *sje = n->data;
+
+			if (n != exps->h &&
+			    !is_complex_exp(sje->flag) &&
+			     rel_has_exp(rel->l, sje->l) >= 0 &&
+			     rel_has_exp(rel->l, sje->r) >= 0) {
+				rel->l = rel_select(sql->sa, rel->l, NULL);
+				rel_select_add_exp(sql->sa, rel->l, sje);
+			} else {
+				append(nexps, sje);
+			}
+		} 
+		rel->exps = nexps;
+	}
 	if (is_semi(rel->op) && rel->exps && rel->l) {
 		operator_type op = rel->op, lop;
 		node *n;
@@ -7892,7 +7916,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) 
 		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
-	if (gp.cnt[op_select]) {
+	if (gp.cnt[op_select] || gp.cnt[op_semi]) {
 		/* only once */
 		if (level <= 0)
 			rel = rewrite(sql, rel, &rel_merge_rse, &changes); 
