@@ -85,8 +85,8 @@ Ready.
 [ 32767	]
 [ 2147483647	]
 #SELECT v, convert(v, boolean) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	boolean # type
 % 11,	5 # length
 [ 1,	true	]
@@ -100,8 +100,8 @@ Ready.
 [ 2147483647,	true	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, tinyint) from T_hugeint where v between -127 and 127;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	tinyint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -110,8 +110,8 @@ Ready.
 [ -127,	-127	]
 [ 127,	127	]
 #SELECT v, convert(v, smallint) from T_hugeint where v between -32767 and 32767;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	smallint # type
 % 6,	6 # length
 [ 1,	1	]
@@ -122,8 +122,8 @@ Ready.
 [ -32767,	-32767	]
 [ 32767,	32767	]
 #SELECT v, convert(v, integer) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	int # type
 % 11,	11 # length
 [ 1,	1	]
@@ -137,8 +137,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, bigint) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	bigint # type
 % 11,	11 # length
 [ 1,	1	]
@@ -152,8 +152,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, hugeint) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	hugeint # type
 % 11,	11 # length
 [ 1,	1	]
@@ -167,8 +167,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -182,8 +182,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -197,8 +197,8 @@ Ready.
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, real) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -212,8 +212,8 @@ Ready.
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -227,8 +227,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -242,8 +242,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -257,8 +257,8 @@ Ready.
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -272,8 +272,8 @@ Ready.
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(10)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	11 # length
 [ 1,	1	]
@@ -287,8 +287,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(11)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	12 # length
 [ 1,	1	]
@@ -302,8 +302,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(12,0)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	13 # length
 [ 1,	1	]
@@ -317,8 +317,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(15,3)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	17 # length
 [ 1,	1.000	]
@@ -332,15 +332,15 @@ Ready.
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, char) from T_hugeint where v between 0 and 1;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	char # type
 % 1,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, convert(v, varchar(16)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	varchar # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -354,8 +354,8 @@ Ready.
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -369,8 +369,8 @@ Ready.
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -384,8 +384,8 @@ Ready.
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as boolean) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	boolean # type
 % 11,	5 # length
 [ 1,	true	]
@@ -399,8 +399,8 @@ Ready.
 [ 2147483647,	true	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_hugeint where v between -127 and 127;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	tinyint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -409,8 +409,8 @@ Ready.
 [ -127,	-127	]
 [ 127,	127	]
 #SELECT v, cast(v as smallint) from T_hugeint where v between -32767 and 32767;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	smallint # type
 % 6,	6 # length
 [ 1,	1	]
@@ -421,8 +421,8 @@ Ready.
 [ -32767,	-32767	]
 [ 32767,	32767	]
 #SELECT v, cast(v as integer) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	int # type
 % 11,	11 # length
 [ 1,	1	]
@@ -436,8 +436,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as bigint) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	bigint # type
 % 11,	11 # length
 [ 1,	1	]
@@ -451,8 +451,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as hugeint) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	hugeint # type
 % 11,	11 # length
 [ 1,	1	]
@@ -466,8 +466,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -481,8 +481,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -496,8 +496,8 @@ Ready.
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as real) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -511,8 +511,8 @@ Ready.
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -526,8 +526,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -541,8 +541,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -556,8 +556,8 @@ Ready.
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -571,8 +571,8 @@ Ready.
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(10)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	11 # length
 [ 1,	1	]
@@ -586,8 +586,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(11)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	12 # length
 [ 1,	1	]
@@ -601,8 +601,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(12,0)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	13 # length
 [ 1,	1	]
@@ -616,8 +616,8 @@ Ready.
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(15,3)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	decimal # type
 % 11,	17 # length
 [ 1,	1.000	]
@@ -631,15 +631,15 @@ Ready.
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as char) from T_hugeint where v between 0 and 1;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	char # type
 % 1,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, cast(v as varchar(16)) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	varchar # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -653,8 +653,8 @@ Ready.
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -668,8 +668,8 @@ Ready.
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_hugeint;
-% sys.t_hugeint,	sys.L1 # table_name
-% v,	L1 # name
+% sys.t_hugeint,	sys.L3 # table_name
+% v,	L3 # name
 % hugeint,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]

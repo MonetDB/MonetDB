@@ -1084,14 +1084,17 @@ SQLparser(Client c)
 		}
 
 		if ((!caching(m) || !cachable(m, r)) && m->emode != m_prepare) {
+			char *q = query_cleaned(QUERY(m->scanner));
+
 			/* Query template should not be cached */
 			scanner_query_processed(&(m->scanner));
 
 			err = 0;
 			if (backend_callinline(be, c) < 0 ||
-			    backend_dumpstmt(be, c->curprg->def, r, 1, 0) < 0)
+			    backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
 				err = 1;
 			else opt = 1;
+			GDKfree(q);
 		} else {
 			/* Add the query tree to the SQL query cache
 			 * and bake a MAL program for it.
@@ -1156,7 +1159,7 @@ SQLparser(Client c)
 			showErrors(c);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, c->glb, oldvtop);
+			freeVariables(c, c->curprg->def, NULL, oldvtop);
 			c->curprg->def->errors = 0;
 			msg = createException(PARSE, "SQLparser", "M0M27!Semantic errors");
 		}

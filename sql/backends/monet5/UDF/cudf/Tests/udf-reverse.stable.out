@@ -50,9 +50,10 @@ Ready.
 % clob # type
 % 95 # length
 function user.s4_1():void;
-    X_10:void := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe",5);
-    X_2:str := udf.reverse("MonetDB");
-    sql.resultSet(".L2","L2","clob",0,0,4,X_2);
+    X_13:void := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe",6);
+    X_5:str := udf.reverse("MonetDB");
+# querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe")
+    sql.resultSet(".L2","L2","clob",0,0,4,X_5);
 end user.s4_1;
 #inline               actions= 0 time=2 usec 
 #candidates           actions= 1 time=8 usec 
@@ -109,23 +110,23 @@ end user.s4_1;
 % clob # type
 % 101 # length
 function user.s12_1():void;
-    X_33:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",19);
-    X_18 := bat.new(nil:str);
-    X_25 := bat.append(X_18,"sys.L2");
-    X_20 := bat.new(nil:str);
-    X_27 := bat.append(X_20,"L2");
+    X_36:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",20);
     X_21 := bat.new(nil:str);
-    X_29 := bat.append(X_21,"clob");
-    X_22 := bat.new(nil:int);
-    X_31 := bat.append(X_22,0);
-    X_24 := bat.new(nil:int);
-    X_32 := bat.append(X_24,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","udf_reverse");
-    X_4:bat[:str] := sql.bind(X_0,"sys","udf_reverse","x",0);
-    X_13 := algebra.projection(C_1,X_4);
-    X_14:bat[:str] := batudf.reverse(X_13);
-    sql.resultSet(X_25,X_27,X_29,X_31,X_32,X_14);
+    X_28 := bat.append(X_21,"sys.L2");
+    X_23 := bat.new(nil:str);
+    X_30 := bat.append(X_23,"L2");
+    X_24 := bat.new(nil:str);
+    X_32 := bat.append(X_24,"clob");
+    X_25 := bat.new(nil:int);
+    X_34 := bat.append(X_25,0);
+    X_27 := bat.new(nil:int);
+    X_35 := bat.append(X_27,0);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","udf_reverse");
+    X_7:bat[:str] := sql.bind(X_3,"sys","udf_reverse","x",0);
+    X_16 := algebra.projection(C_4,X_7);
+    X_17:bat[:str] := batudf.reverse(X_16);
+    sql.resultSet(X_28,X_30,X_32,X_34,X_35,X_17);
 end user.s12_1;
 #inline               actions= 0 time=4 usec 
 #candidates           actions= 1 time=15 usec 

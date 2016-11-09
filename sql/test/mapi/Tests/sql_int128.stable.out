@@ -58,7 +58,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 89 # length
+% 72 # length
 function user.s4_1():void;
     X_6:void := querylog.define("explain set a = 1234567890987654321;","default_pipe",6);
     X_0 := sql.mvc();
@@ -96,7 +96,7 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 81 # length
+% 64 # length
 function user.s6_1():void;
     X_6:void := querylog.define("explain set b = 10000000000;","default_pipe",6);
     X_0 := sql.mvc();
@@ -134,7 +134,7 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 76 # length
+% 58 # length
 function user.s8_1():void;
     X_10:void := querylog.define("explain set c = a * b;","default_pipe",9);
     X_0 := sql.mvc();
@@ -175,7 +175,7 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 76 # length
+% 58 # length
 function user.s10_1():void;
     X_10:void := querylog.define("explain set d = c * b;","default_pipe",9);
     X_0 := sql.mvc();
@@ -216,7 +216,7 @@ end user.s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 76 # length
+% 58 # length
 function user.s12_1():void;
     X_10:void := querylog.define("explain set e = d + a;","default_pipe",9);
     X_0 := sql.mvc();
@@ -275,12 +275,12 @@ end user.s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 134 # length
+% 116 # length
 function user.s30_1():void;
-    X_11:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);","default_pipe",6);
-    X_0 := sql.mvc();
-    X_3 := sql.append(X_0,"sys","sql_int128","i",123456789098765432101234567890987654321);
-    sql.affectedRows(X_3,1);
+    X_3 := sql.mvc();
+# querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);","default_pipe")
+    X_6 := sql.append(X_3,"sys","sql_int128","i",123456789098765432101234567890987654321);
+    sql.affectedRows(X_6,1);
 end user.s30_1;
 # optimizer.mitosis()
 # optimizer.dataflow()

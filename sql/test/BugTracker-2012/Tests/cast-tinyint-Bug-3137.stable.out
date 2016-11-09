@@ -47,7 +47,7 @@ Ready.
 # 16:45:44 >  
 
 #select cast('10' as tinyint) as not_ok_tinyint, cast('10' as int) as ok_int, cast('10' as smallint) as ok_smallint;
-% .L2,	.L4,	.L6 # table_name
+% .L3,	.L6,	.L11 # table_name
 % not_ok_tinyint,	ok_int,	ok_smallint # name
 % tinyint,	int,	smallint # type
 % 2,	2,	2 # length

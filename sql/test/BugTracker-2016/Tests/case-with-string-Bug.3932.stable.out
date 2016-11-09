@@ -69,14 +69,14 @@ Ready.
 #INSERT INTO bug3932 VALUES ('12345','1234567890');
 [ 1	]
 #SELECT CASE WHEN 1=2 THEN a ELSE b END FROM bug3932;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 10 # length
 [ "1234567890"	]
 #SELECT CASE WHEN 1=2 THEN a ELSE 'lala' END FROM bug3932;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 4 # length
 [ "lala"	]

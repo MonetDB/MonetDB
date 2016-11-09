@@ -43,60 +43,59 @@ Ready.
 +--------------------------------------------------------------------+
 18 rows
 Operation successful
-
 +--------------------------------------------------------------------------------------------------+
 | mal                                                                 |
 +==================================================================================================+
 | function user.s4_1():void;                                                                       |
-|     X_47:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",27); |
-|     X_35:bat[:lng] := bat.new(nil:lng);                                                          |
-|     X_0 := sql.mvc();                                                                            |
-|     X_14:bat[:sht] := sql.bind(X_0,"sys","_tables","type",0);                                    |
-|     C_1:bat[:oid] := sql.tid(X_0,"sys","_tables");                                               |
-|     C_58 := algebra.subselect(X_14,C_1,2,2,true,true,true);                                      |
-|     (C_17:bat[:oid],X_18:bat[:sht]) := sql.bind(X_0,"sys","_tables","type",2);                   |
-|     C_59 := algebra.subselect(X_18,nil:bat[:oid],2,2,true,true,true);                            |
-|     X_16:bat[:sht] := sql.bind(X_0,"sys","_tables","type",1);                                    |
-|     C_61 := algebra.subselect(X_16,C_1,2,2,true,true,true);                                      |
-|     C_23 := sql.subdelta(C_58,C_1,C_17,C_59,C_61);                                               |
-|     X_4:bat[:int] := sql.bind(X_0,"sys","_tables","id",0);                                       |
-|     (C_9:bat[:oid],X_10:bat[:int]) := sql.bind(X_0,"sys","_tables","id",2);                      |
-|     X_7:bat[:int] := sql.bind(X_0,"sys","_tables","id",1);                                       |
-|     X_26 := sql.projectdelta(C_23,X_4,C_9,X_10,X_7);                                             |
-|     X_28 := aggr.count(X_26);                                                                    |
-|     X_34 := sql.single(X_28);                                                                    |
-|     X_37 := bat.append(X_35,X_34,true);                                                          |
-|     C_29:bat[:oid] := sql.tid(X_0,"tmp","_tables");                                              |
-|     X_31:bat[:int] := sql.bind(X_0,"tmp","_tables","id",0);                                      |
-|     X_32 := algebra.projection(C_29,X_31);                                                       |
-|     X_33 := aggr.count(X_32);                                                                    |
-|     X_38 := bat.append(X_37,X_33,true);                                                          |
-|     X_39:lng := aggr.sum(X_38);                                                                  |
-|     sql.resultSet(".L41","L40","bigint",64,0,7,X_39);                                            |
+|     X_50:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",28); |
+|     X_38:bat[:lng] := bat.new(nil:lng);                                                          |
+|     X_3 := sql.mvc();                                                                            |
+|     X_17:bat[:sht] := sql.bind(X_3,"sys","_tables","type",0);                                    |
+|     C_4:bat[:oid] := sql.tid(X_3,"sys","_tables");                                               |
+|     C_61 := algebra.subselect(X_17,C_4,2,2,true,true,true);                                      |
+|     (C_20:bat[:oid],X_21:bat[:sht]) := sql.bind(X_3,"sys","_tables","type",2);                   |
+|     C_62 := algebra.subselect(X_21,nil:bat[:oid],2,2,true,true,true);                            |
+|     X_19:bat[:sht] := sql.bind(X_3,"sys","_tables","type",1);                                    |
+|     C_64 := algebra.subselect(X_19,C_4,2,2,true,true,true);                                      |
+|     C_26 := sql.subdelta(C_61,C_4,C_20,C_62,C_64);                                               |
+|     X_7:bat[:int] := sql.bind(X_3,"sys","_tables","id",0);                                       |
+|     (C_12:bat[:oid],X_13:bat[:int]) := sql.bind(X_3,"sys","_tables","id",2);                     |
+|     X_10:bat[:int] := sql.bind(X_3,"sys","_tables","id",1);                                      |
+|     X_29 := sql.projectdelta(C_26,X_7,C_12,X_13,X_10);                                           |
+|     X_31 := aggr.count(X_29);                                                                    |
+|     X_37 := sql.single(X_31);                                                                    |
+|     X_40 := bat.append(X_38,X_37,true);                                                          |
+|     C_32:bat[:oid] := sql.tid(X_3,"tmp","_tables");                                              |
+|     X_34:bat[:int] := sql.bind(X_3,"tmp","_tables","id",0);                                      |
+|     X_35 := algebra.projection(C_32,X_34);                                                       |
+|     X_36 := aggr.count(X_35);                                                                    |
+|     X_41 := bat.append(X_40,X_36,true);                                                          |
+|     X_42:lng := aggr.sum(X_41);                                                                  |
+| # querylog.define("explain select count(*) from tables\n;","sequential_pipe")                    |
+|     sql.resultSet(".L41","L40","bigint",64,0,7,X_42);                                            |
 | end user.s4_1;                                                                                   |
-| #inline               actions= 0 time=2 usec                                                     |
-| #remap                actions= 0 time=3 usec                                                     |
-| #costmodel            actions= 1 time=3 usec                                                     |
-| #coercion             actions= 1 time=10 usec                                                    |
-| #evaluate             actions= 0 time=4 usec                                                     |
-| #emptybind            actions= 0 time=11 usec                                                    |
-| #pushselect           actions= 5 time=46 usec                                                    |
-| #aliases              actions= 2 time=12 usec                                                    |
-| #mergetable           actions= 0 time=48 usec                                                    |
-| #deadcode             actions= 3 time=11 usec                                                    |
-| #aliases              actions= 0 time=9 usec                                                     |
-| #constants            actions= 2 time=11 usec                                                    |
-| #commonTerms          actions= 0 time=9 usec                                                     |
-| #projectionpath       actions= 0 time=5 usec                                                     |
-| #reorder              actions= 1 time=38 usec                                                    |
-| #deadcode             actions= 0 time=8 usec                                                     |
-| #reduce               actions=27 time=14 usec                                                    |
-| #matpack              actions= 0 time=5 usec                                                     |
-| #multiplex            actions= 0 time=3 usec                                                     |
-| #profiler             actions= 1 time=6 usec                                                     |
-| #candidates           actions= 1 time=2 usec                                                     |
-| #garbagecollector     actions= 1 time=26 usec                                                    |
-| #total                actions= 1 time=435 usec                                                   |
+| #inline               actions= 0 time=1 usec                                                     |
+| #remap                actions= 0 time=2 usec                                                     |
+| #costmodel            actions= 1 time=0 usec                                                     |
+| #coercion             actions= 1 time=3 usec                                                     |
+| #evaluate             actions= 0 time=1 usec                                                     |
+| #emptybind            actions= 0 time=3 usec                                                     |
+| #pushselect           actions= 5 time=17 usec                                                    |
+| #aliases              actions= 2 time=3 usec                                                     |
+| #mergetable           actions= 0 time=14 usec                                                    |
+| #deadcode             actions= 3 time=4 usec                                                     |
+| #aliases              actions= 0 time=1 usec                                                     |
+| #constants            actions= 4 time=3 usec                                                     |
+| #commonTerms          actions= 0 time=3 usec                                                     |
+| #projectionpath       actions= 0 time=2 usec                                                     |
+| #reorder              actions= 1 time=11 usec                                                    |
+| #deadcode             actions= 0 time=2 usec                                                     |
+| #reduce               actions=29 time=5 usec                                                     |
+| #matpack              actions= 0 time=1 usec                                                     |
+| #multiplex            actions= 0 time=1 usec                                                     |
+| #profiler             actions= 1 time=3 usec                                                     |
+| #candidates           actions= 1 time=1 usec                                                     |
+| #garbagecollector     actions= 1 time=6 usec                                                     |
 +--------------------------------------------------------------------------------------------------+
 50 rows
 
