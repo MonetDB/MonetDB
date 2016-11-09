@@ -1161,7 +1161,7 @@ SQLparser(Client c)
 			showErrors(c);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, c->glb, oldvtop);
+			freeVariables(c, c->curprg->def, NULL, oldvtop);
 			c->curprg->def->errors = 0;
 			msg = createException(PARSE, "SQLparser", "M0M27!Semantic errors");
 		}
