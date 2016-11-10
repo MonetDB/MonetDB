@@ -1,12 +1,12 @@
--- disable parallelism (mitosis & dataflow) to avoid ambiguous results 
+-- disable parallelism (mitosis & dataflow) to avoid ambiguous results
 set optimizer='sequential_pipe';
-\f csv
 create table blabla(id integer);
-select '#~BeginVariableOutput~#';
+-- use "ProfilingOutput" since we're only interested in crashes
+select '~BeginProfilingOutput~';
 explain alter table blabla add constraint dada unique (id);
 explain alter table blabla add constraint dada unique (id);
-select '#~EndVariableOutput~#';
+select '~EndProfilingOutput~';
 alter table blabla drop constraint dada;
-select '#~BeginVariableOutput~#';
+select '~BeginProfilingOutput~';
 explain alter table blabla add constraint dada unique (id);
-select '#~EndVariableOutput~#';
+select '~EndProfilingOutput~';
