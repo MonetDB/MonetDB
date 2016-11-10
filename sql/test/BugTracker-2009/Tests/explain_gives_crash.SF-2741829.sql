@@ -1,12 +1,12 @@
 -- disable parallelism (mitosis & dataflow) to avoid ambiguous results
 set optimizer='sequential_pipe';
 create table blabla(id integer);
--- use "ProfilingOutput" since we're only interested in crashes
-select '~BeginProfilingOutput~';
+-- use "VariableOutput" since we're only interested in crashes
+select '~BeginVariableOutput~';
 explain alter table blabla add constraint dada unique (id);
 explain alter table blabla add constraint dada unique (id);
-select '~EndProfilingOutput~';
+select '~EndVariableOutput~';
 alter table blabla drop constraint dada;
-select '~BeginProfilingOutput~';
+select '~BeginVariableOutput~';
 explain alter table blabla add constraint dada unique (id);
-select '~EndProfilingOutput~';
+select '~EndVariableOutput~';
