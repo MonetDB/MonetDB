@@ -21,21 +21,21 @@ stdout of test 'BugDatabaseMetaData_Bug_3356` in directory 'sql/jdbc/tests` itse
 
 Ready.
 
-# 17:27:28 >  
-# 17:27:28 >  "./BugDatabaseMetaData_Bug_3356.SQL.sh" "BugDatabaseMetaData_Bug_3356"
-# 17:27:28 >  
+# 22:06:18 >  
+# 22:06:18 >  "./BugDatabaseMetaData_Bug_3356.SQL.sh" "BugDatabaseMetaData_Bug_3356"
+# 22:06:18 >  
 
 
-# 17:27:28 >  
-# 17:27:28 >  java BugDatabaseMetaData_Bug_3356 "jdbc:monetdb://madrid:34631/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
-# 17:27:28 >  
+# 22:06:18 >  
+# 22:06:18 >  java BugDatabaseMetaData_Bug_3356 "jdbc:monetdb://localhost:39265/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 22:06:18 >  
 
 _tables
 _tables
 YES
 YES
 
-# 17:27:28 >  
-# 17:27:28 >  "Done."
-# 17:27:28 >  
+# 22:06:18 >  
+# 22:06:18 >  "Done."
+# 22:06:18 >  
 

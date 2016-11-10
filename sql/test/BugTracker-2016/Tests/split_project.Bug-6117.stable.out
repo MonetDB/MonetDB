@@ -1,0 +1,249 @@
+stdout of test 'split_project.Bug-6117` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 23:03:41 >  
+# 23:03:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35104" "--set" "mapi_usock=/var/tmp/mtest-6765/.s.monetdb.35104" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 23:03:41 >  
+
+# MonetDB 5 server v11.23.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:35104/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6765/.s.monetdb.35104
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 23:03:42 >  
+# 23:03:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6765" "--port=35104"
+# 23:03:42 >  
+
+#CREATE TABLE comments(
+#    id BIGINT NOT NULL PRIMARY KEY,
+#    creationDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
+#    locationIP VARCHAR(40) NOT NULL,
+#    browserUsed VARCHAR(40) NOT NULL,
+#    content VARCHAR(2000) NOT NULL,
+#    length INT NOT NULL,
+#    creator BIGINT NOT NULL,
+#    place_id BIGINT NOT NULL,
+#    replyOfPost BIGINT,
+#    replyOfComment BIGINT
+#);
+#CREATE TABLE comment_tags(
+#    comment_id BIGINT NOT NULL,
+#    tag_id BIGINT NOT NULL,
+#    PRIMARY KEY(comment_id, tag_id)
+#);
+#CREATE TABLE forums(
+#    id BIGINT NOT NULL PRIMARY KEY,
+#    title VARCHAR(80) NOT NULL,
+#    creationDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
+#    moderator BIGINT /*though it seems that all generated tuples have always a moderator */
+#);
+#CREATE TABLE forum_persons(
+#    forum_id BIGINT NOT NULL,
+#    person_id BIGINT NOT NULL,
+#    joinDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
+#    PRIMARY KEY(forum_id, person_id)
+#);
+#CREATE TABLE forum_tags(
+#    forum_id BIGINT NOT NULL,
+#    tag_id BIGINT NOT NULL,
+#    PRIMARY KEY(forum_id, tag_id)
+#);
+#CREATE TABLE friends(
+#    src BIGINT NOT NULL,
+#    dst BIGINT NOT NULL,
+#    creationDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
+#    PRIMARY KEY(src, dst)
+#);
+#CREATE TABLE organisations(
+#    id BIGINT NOT NULL PRIMARY KEY,
+#    "type" VARCHAR(40) NOT NULL, /* university or company */
+#    name VARCHAR(160) NOT NULL,
+#    url VARCHAR(2000) NOT NULL,
+#    place_id BIGINT NOT NULL
+#);
+#CREATE TABLE persons(
+#    id BIGINT NOT NULL PRIMARY KEY,
+#    firstName VARCHAR(40) NOT NULL ,
+#    lastName VARCHAR(40) NOT NULL,
+#    gender VARCHAR(40) NOT NULL,
+#    birthDay DATE NOT NULL,
+#    creationDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
+#    locationIP VARCHAR(40) NOT NULL,
+#    browserUsed VARCHAR(40) NOT NULL,
+#    place_id BIGINT NOT NULL
+#);
+#CREATE TABLE person_comments(
+#    person_id BIGINT NOT NULL,
+#    comment_id BIGINT NOT NULL,
+#    creationDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
+#    PRIMARY KEY(person_id, comment_id)
+#);
+#CREATE TABLE person_emails(
+#    id BIGINT NOT NULL,
+#    email VARCHAR(120) NOT NULL,
+#    PRIMARY KEY(id, email)
+#);
+#CREATE TABLE person_languages(
+#    id BIGINT NOT NULL,
+#    "language" VARCHAR(40) NOT NULL,
+#    PRIMARY KEY(id, "language")
+#);
+#CREATE TABLE person_tags(
+#    person_id BIGINT NOT NULL,
+#    tag_id BIGINT NOT NULL,
+#    PRIMARY KEY(person_id, tag_id)
+#);
+#CREATE TABLE person_posts(
+#    person_id BIGINT NOT NULL,
+#    post_id BIGINT NOT NULL,
+#    creationDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
+#    PRIMARY KEY(person_id, post_id)
+#);
+#CREATE TABLE person_studyAt_organisations(
+#    person_id BIGINT NOT NULL,
+#    organisation_id BIGINT NOT NULL,
+#    classYear INT NOT NULL,
+#    PRIMARY KEY(person_id, organisation_id)
+#);
+#CREATE TABLE person_workAt_organisations(
+#    person_id BIGINT NOT NULL,
+#    organisation_id BIGINT NOT NULL,
+#    workFrom INT NOT NULL,
+#    PRIMARY KEY(person_id, organisation_id)
+#);
+#CREATE TABLE places(
+#    id BIGINT NOT NULL PRIMARY KEY,
+#    name VARCHAR(200) NOT NULL,
+#    url VARCHAR(2000) NOT NULL, /* suspecting this is a left-over for RDF systems where this field replaces the ID */
+#    "type" VARCHAR(40) NOT NULL, 
+#    isPartOf BIGINT
+#);
+#CREATE TABLE posts(
+#    id BIGINT NOT NULL PRIMARY KEY,
+#    imageFile VARCHAR(40),
+#    creationDate TIMESTAMP(3) WITH TIME ZONE NOT NULL,
+#    locationIP VARCHAR(40) NOT NULL,
+#    browserUsed VARCHAR(40) NOT NULL,
+#    "language" VARCHAR(40),
+#    content VARCHAR(2000),
+#    length INT NOT NULL,
+#    creator BIGINT NOT NULL,
+#    forum_id BIGINT NOT NULL,
+#    place_id BIGINT NOT NULL
+#);
+#CREATE TABLE post_tags(
+#    post_id BIGINT NOT NULL,
+#    tag_id BIGINT NOT NULL,
+#    PRIMARY KEY(post_id, tag_id)
+#);
+#CREATE TABLE tags(
+#    id BIGINT NOT NULL PRIMARY KEY,
+#    name VARCHAR(160) NOT NULL, 
+#    url VARCHAR(2000) NOT NULL /* is this field mandatory ? */
+#);
+#CREATE TABLE tag_tagclasses(
+#    tag_id BIGINT NOT NULL,
+#    tagclass_id BIGINT NOT NULL,
+#    PRIMARY KEY(tag_id, tagclass_id)
+#);
+#CREATE TABLE tagclasses(
+#    id BIGINT NOT NULL PRIMARY KEY,
+#    name VARCHAR(40) NOT NULL,
+#    url VARCHAR(2000) NOT NULL /* is this field mandatory ? */
+#);
+#CREATE TABLE tagclass_inheritance(
+#    subclass_id BIGINT NOT NULL,
+#    superclass_id BIGINT NOT NULL,
+#    PRIMARY KEY(subclass_id, superclass_id)
+#);
+#ALTER TABLE comments ADD FOREIGN KEY(creator) REFERENCES persons(id);
+#ALTER TABLE comments ADD FOREIGN KEY(place_id) REFERENCES places(id);
+#ALTER TABLE comments ADD FOREIGN KEY(replyOfPost) REFERENCES posts(id);
+#ALTER TABLE comments ADD FOREIGN KEY(replyOfComment) REFERENCES comments(id);
+#ALTER TABLE comment_tags ADD FOREIGN KEY(comment_id) REFERENCES comments(id);
+#ALTER TABLE comment_tags ADD FOREIGN KEY(tag_id) REFERENCES tags(id);
+#ALTER TABLE forums ADD FOREIGN KEY(moderator) REFERENCES persons(id);
+#ALTER TABLE forum_persons ADD FOREIGN KEY(forum_id) REFERENCES forums(id);
+#ALTER TABLE forum_persons ADD FOREIGN KEY(person_id) REFERENCES persons(id);
+#ALTER TABLE forum_tags ADD FOREIGN KEY(forum_id) REFERENCES forums(id);
+#ALTER TABLE forum_tags ADD FOREIGN KEY(tag_id) REFERENCES tags(id);
+#ALTER TABLE friends ADD FOREIGN KEY(src) REFERENCES persons(id);
+#ALTER TABLE friends ADD FOREIGN KEY(dst) REFERENCES persons(id);
+#ALTER TABLE organisations ADD FOREIGN KEY(place_id) REFERENCES places(id);
+#ALTER TABLE persons ADD FOREIGN KEY(place_id) REFERENCES places(id);
+#ALTER TABLE person_comments ADD FOREIGN KEY(person_id) REFERENCES persons(id);
+#ALTER TABLE person_comments ADD FOREIGN KEY(comment_id) REFERENCES comments(id);
+#ALTER TABLE person_emails ADD FOREIGN KEY(id) REFERENCES persons(id);
+#ALTER TABLE person_languages ADD FOREIGN KEY(id) REFERENCES persons(id);
+#ALTER TABLE person_posts ADD FOREIGN KEY(person_id) REFERENCES persons(id);
+#ALTER TABLE person_posts ADD FOREIGN KEY(post_id) REFERENCES posts(id);
+#ALTER TABLE person_studyAt_organisations ADD FOREIGN KEY(person_id) REFERENCES persons(id);
+#ALTER TABLE person_studyAt_organisations ADD FOREIGN KEY(organisation_id) REFERENCES organisations(id);
+#ALTER TABLE person_tags ADD FOREIGN KEY(person_id) REFERENCES persons(id);
+#ALTER TABLE person_tags ADD FOREIGN KEY(tag_id) REFERENCES tags(id);
+#ALTER TABLE person_workAt_organisations ADD FOREIGN KEY(person_id) REFERENCES persons(id);
+#ALTER TABLE person_workAt_organisations ADD FOREIGN KEY(organisation_id) REFERENCES organisations(id);
+#ALTER TABLE places ADD FOREIGN KEY(isPartOf) REFERENCES places(id);
+#ALTER TABLE posts ADD FOREIGN KEY(creator) REFERENCES persons(id);
+#ALTER TABLE posts ADD FOREIGN KEY(forum_id) REFERENCES forums(id);
+#ALTER TABLE posts ADD FOREIGN KEY(place_id) REFERENCES places(id);
+#ALTER TABLE post_tags ADD FOREIGN KEY(post_id) REFERENCES posts(id);
+#ALTER TABLE post_tags ADD FOREIGN KEY(tag_id) REFERENCES tags(id);
+#ALTER TABLE tag_tagclasses ADD FOREIGN KEY(tag_id) REFERENCES tags(id);
+#ALTER TABLE tag_tagclasses ADD FOREIGN KEY(tagclass_id) REFERENCES tagclasses(id);
+#ALTER TABLE tagclass_inheritance ADD FOREIGN KEY(subclass_id) REFERENCES tagclasses(id);
+#ALTER TABLE tagclass_inheritance ADD FOREIGN KEY(superclass_id) REFERENCES tagclasses(id);
+#WITH
+#    params AS (
+#        SELECT
+#            2199023256684 AS id,
+#            CAST ('2011-05-08' AS TIMESTAMP(3)) AS dte
+#    ),
+#    messages AS (
+#            SELECT persons.id, persons.firstName, persons.lastName, posts.id AS message_id, COALESCE(posts.content, posts.imageFile) AS content, posts.creationDate
+#            FROM posts, persons
+#            WHERE posts.creator = 2199023256684 AND persons.id = posts.creator AND posts.creationDate <= CAST('2011-05-08' AS TIMESTAMP(3))
+#        UNION ALL
+#            SELECT persons.id, persons.firstName, persons.lastName, comments.id AS message_id, comments.content, comments.creationDate
+% .messages,	.messages,	.messages,	.messages,	.messages,	.messages # table_name
+% id,	firstname,	lastname,	message_id,	content,	creationdate # name
+% bigint,	varchar,	varchar,	bigint,	varchar,	timestamptz # type
+% 1,	0,	0,	1,	0,	29 # length
+#DROP TABLE comment_tags;
+#DROP TABLE forum_persons;
+#DROP TABLE forum_tags;
+#DROP TABLE friends;
+#DROP TABLE person_emails;
+#DROP TABLE person_tags;
+#DROP TABLE person_languages;
+#DROP TABLE person_comments;
+#DROP TABLE person_posts;
+#DROP TABLE person_studyAt_organisations;
+#DROP TABLE person_workAt_organisations;
+#DROP TABLE post_tags;
+#DROP TABLE tag_tagclasses;
+#DROP TABLE tagclass_inheritance;
+#DROP TABLE organisations;
+#DROP TABLE comments;
+#DROP TABLE posts;
+#DROP TABLE forums;
+#DROP TABLE persons;
+#DROP TABLE places;
+#DROP TABLE tags;
+#DROP TABLE tagclasses;
+
+# 23:03:43 >  
+# 23:03:43 >  "Done."
+# 23:03:43 >  
+

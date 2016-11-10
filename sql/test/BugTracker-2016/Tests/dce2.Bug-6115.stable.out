@@ -1,0 +1,57 @@
+stdout of test 'dce2.Bug-6115` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 23:03:38 >  
+# 23:03:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35104" "--set" "mapi_usock=/var/tmp/mtest-6765/.s.monetdb.35104" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 23:03:38 >  
+
+# MonetDB 5 server v11.23.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:35104/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6765/.s.monetdb.35104
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 23:03:39 >  
+# 23:03:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6765" "--port=35104"
+# 23:03:39 >  
+
+#CREATE TABLE repro_friends(src BIGINT NOT NULL, dst BIGINT NOT NULL, PRIMARY KEY(src, dst));
+#CREATE TABLE repro_persons(id BIGINT NOT NULL, firstName VARCHAR(40) NOT NULL);
+#WITH
+#    params AS ( /* input parameters */
+#        SELECT 
+#           2199023260527 AS id,
+#           CAST('Lin' AS VARCHAR(40)) AS name
+#    ),
+#    friends_1 AS (
+#        SELECT 1 as "distance", p1."id", p1.firstName
+#        FROM repro_persons p1, repro_friends f, params p
+#        WHERE p.id = f."src" AND f."dst" = p1."id"
+#    ),
+#    friends_2 AS (
+#        SELECT * FROM friends_1
+#      UNION
+#        SELECT 2 as "distance", p2."id", p2.firstName
+#        FROM repro_persons p2, repro_friends f
+#        WHERE f."src" IN ( SELECT "id" FROM friends_1 ) AND f."dst" = p2."id" AND p2.id NOT IN ( SELECT "id" FROM friends_1 )
+% .filter,	.filter,	.filter # table_name
+% distance,	id,	firstname # name
+% tinyint,	bigint,	varchar # type
+% 1,	1,	0 # length
+#DROP TABLE repro_friends;
+#DROP TABLE repro_persons;
+
+# 23:03:39 >  
+# 23:03:39 >  "Done."
+# 23:03:39 >  
+

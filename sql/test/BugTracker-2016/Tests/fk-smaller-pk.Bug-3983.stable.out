@@ -32,14 +32,14 @@ Ready.
 #CREATE TABLE parent2(a int, b int, PRIMARY KEY(a,b));
 #CREATE TABLE child1(x int, y int, FOREIGN KEY(x,y) REFERENCES parent2);
 #SELECT * FROM dependencies_columns_on_keys() WHERE usr LIKE 'parent%';
-% .,	.,	. # table_name
+% .L1,	.L1,	.L1 # table_name
 % sch,	usr,	dep_type # name
 % varchar,	varchar,	varchar # type
 % 1,	16,	7 # length
 [ "a",	"parent2_a_b_pkey",	"DEP_KEY"	]
 [ "b",	"parent2_a_b_pkey",	"DEP_KEY"	]
 #SELECT * FROM dependencies_keys_on_foreignkeys() WHERE usr LIKE 'child%';
-% .,	.,	. # table_name
+% .L1,	.L1,	.L1 # table_name
 % sch,	usr,	dep_type # name
 % varchar,	varchar,	varchar # type
 % 16,	15,	8 # length
