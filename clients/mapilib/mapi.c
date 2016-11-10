@@ -4118,12 +4118,10 @@ static char* mapi_convert_clob(struct MapiColumn *col) {
 	return col->buffer_ptr;
 }
 
-#define mapi_string_conversion_function(type, gdktpe, sqltpe,EXTRANULLCHECK)																	\
+#define mapi_string_conversion_function(type, gdktpe, sqltpe,EXTRANULLCHECK)													\
 static char* mapi_convert_##sqltpe(struct MapiColumn *col) {																	\
-	type buffer_value; \
-	memcpy(&buffer_value, col->buffer_ptr, sizeof(type)); \
-	if (buffer_value == *((type*)col->null_value) EXTRANULLCHECK)	return NULL;													\
-	if (conversion_##gdktpe##_to_string(col->write_buf, COLBUFSIZ, &buffer_value, *((type*)col->null_value)) < 0) {   \
+	if (*((type*)col->buffer_ptr) == *((type*)col->null_value) EXTRANULLCHECK)	return NULL;									\
+	if (conversion_##gdktpe##_to_string(col->write_buf, COLBUFSIZ, (type*) col->buffer_ptr, *((type*)col->null_value)) < 0) {   \
 		return NULL;																											\
 	}																															\
 	return (char*) col->write_buf;																								\
@@ -4219,7 +4217,6 @@ static char* mapi_convert_unknown(struct MapiColumn *col) {
 	(void) col;
 	return "<unknown>";
 }
-
 
 static MapiMsg
 read_into_cache(MapiHdl hdl, int lookahead)
@@ -5698,6 +5695,10 @@ mapi_split_line(MapiHdl hdl)
 	return n;
 }
 
+char* eight_byte_align(char* ptr) {
+	return (char*) (((size_t) ptr + 7) & ~7);
+}
+
 int
 mapi_fetch_row(MapiHdl hdl)
 {
@@ -5773,11 +5774,11 @@ mapi_fetch_row(MapiHdl hdl)
 
 			// iterate over cols
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
+				buf = eight_byte_align(buf);
 				result->fields[i].buffer_ptr = buf;
 				if (result->fields[i].typelen < 0) {
-					lng col_len;
 					// variable length column
-					memcpy(&col_len, buf, sizeof(lng));
+					lng col_len = *((lng*) buf);
 					assert((size_t) col_len < hdl->mid->blocksize && col_len > 0);
 					result->fields[i].buffer_ptr += sizeof(lng);
 					buf += col_len + sizeof(lng);

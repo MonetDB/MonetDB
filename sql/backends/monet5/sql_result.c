@@ -1887,6 +1887,12 @@ static size_t mymax(size_t a, size_t b) {
 	return a > b ? a : b;
 }
 
+// align to 8 bytes
+char* eight_byte_align(char* ptr) {
+	return (char*) (((size_t) ptr + 7) & ~7);
+}
+
+
 int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size_t bsize, int compute_lengths, ptr p) {
 	BAT *order;
 	lng count;
@@ -2105,6 +2111,8 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 		char *buf = bs2_buffer(s).buf;
 		size_t crow = 0;
 		size_t bytes_left = bsize - sizeof(lng) - 1;
+		// potential padding that has to be added for each column
+		bytes_left -= t->nr_cols * 7;
 
 		// every varsized member has an 8-byte header indicating the length of the header in the block
 		// subtract this from the amount of bytes left
@@ -2201,6 +2209,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 			res_col *c = t->cols + i;
 			int mtype = iterators[i].b->ttype;
 			int convert_to_string = !type_supports_binary_transfer(c->type.type);
+			buf = eight_byte_align(buf);
 			if (ATOMvarsized(mtype) || convert_to_string) {
 				if (!convert_to_string && c->type.digits > 0 && (int) c->type.digits < VARCHAR_MAXIMUM_FIXED) {
 					char *bufptr = buf;
@@ -2235,15 +2244,13 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 					// variable columns are prefixed by a length, 
 					// but since we don't know the length yet, just skip over it for now
 					char *startbuf = buf;
-					lng lenval;
 					buf += sizeof(lng);
 					for (crow = srow; crow < row; crow++) {
 						char *str = (char*) BUNtail(iterators[i], crow);
 						buf = mystpcpy(buf, str) + 1;
 						assert(buf - bs2_buffer(s).buf <= (lng) bsize);
 					}
-					lenval = mnstr_swap_lng(s, (lng) (buf - (startbuf + sizeof(lng))));
-					memcpy(startbuf, &lenval, sizeof(lng));
+					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
 				}
 			} else {
 				int atom_size = ATOMsize(mtype);
