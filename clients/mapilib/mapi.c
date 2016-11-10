@@ -4120,8 +4120,10 @@ static char* mapi_convert_clob(struct MapiColumn *col) {
 
 #define mapi_string_conversion_function(type, gdktpe, sqltpe,EXTRANULLCHECK)																	\
 static char* mapi_convert_##sqltpe(struct MapiColumn *col) {																	\
-	if (*((type*)col->buffer_ptr) == *((type*)col->null_value) EXTRANULLCHECK)	return NULL;													\
-	if (conversion_##gdktpe##_to_string(col->write_buf, COLBUFSIZ, (type*) col->buffer_ptr, *((type*)col->null_value)) < 0) {   \
+	type buffer_value; \
+	memcpy(&buffer_value, col->buffer_ptr, sizeof(type)); \
+	if (buffer_value == *((type*)col->null_value) EXTRANULLCHECK)	return NULL;													\
+	if (conversion_##gdktpe##_to_string(col->write_buf, COLBUFSIZ, &buffer_value, *((type*)col->null_value)) < 0) {   \
 		return NULL;																											\
 	}																															\
 	return (char*) col->write_buf;																								\
@@ -5773,8 +5775,9 @@ mapi_fetch_row(MapiHdl hdl)
 			for (i = 0; i < (size_t) result->fieldcnt; i++) {
 				result->fields[i].buffer_ptr = buf;
 				if (result->fields[i].typelen < 0) {
-					// variable-length column
-					lng col_len = *((lng*) buf);
+					lng col_len;
+					// variable length column
+					memcpy(&col_len, buf, sizeof(lng));
 					assert((size_t) col_len < hdl->mid->blocksize && col_len > 0);
 					result->fields[i].buffer_ptr += sizeof(lng);
 					buf += col_len + sizeof(lng);

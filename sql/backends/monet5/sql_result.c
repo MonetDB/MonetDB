@@ -2235,13 +2235,15 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 					// variable columns are prefixed by a length, 
 					// but since we don't know the length yet, just skip over it for now
 					char *startbuf = buf;
+					lng lenval;
 					buf += sizeof(lng);
 					for (crow = srow; crow < row; crow++) {
 						char *str = (char*) BUNtail(iterators[i], crow);
 						buf = mystpcpy(buf, str) + 1;
+						assert(buf - bs2_buffer(s).buf <= (lng) bsize);
 					}
-					// after the loop we know the size of the column, so write it
-					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
+					lenval = mnstr_swap_lng(s, (lng) (buf - (startbuf + sizeof(lng))));
+					memcpy(startbuf, &lenval, sizeof(lng));
 				}
 			} else {
 				int atom_size = ATOMsize(mtype);
