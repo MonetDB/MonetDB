@@ -1732,12 +1732,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				bn->tnil = 0;
 				bn->tnonil = 1;
 				/* output must be sorted */
-				/*
 				GDKqsort((oid *) Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
 				bn->tsorted = 1;
 				bn->trevsorted = bn->batCount <= 1;
-				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? 0 : oid_nil;*/
-				sort_cand(bn,BATcount(b));
+				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? 0 : oid_nil;
+				//sort_cand(bn,BATcount(b));
 			} else {
 				/* match: [low..high) */
 				if (s) {
