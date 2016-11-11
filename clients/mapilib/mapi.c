@@ -2869,7 +2869,7 @@ mapi_reconnect(Mapi mid)
 			if (prot_version == PROTOCOL_10) {
 				// if we are using protocol 10, we have to send PROT10 to the server along with compression method
 				// so the server knows which protocol to use
-				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%s%s:%zu:\n",
+				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:%s:%s%s:"LLFMT":\n",
 	#ifdef WORDS_BIGENDIAN
 					"BIG",
 	#else
@@ -2880,7 +2880,7 @@ mapi_reconnect(Mapi mid)
 					"PROT10",
 					comp == COMPRESSION_SNAPPY ? "COMPRESSION_SNAPPY" : (comp == COMPRESSION_LZ4 ? "COMPRESSION_LZ4" : "COMPRESSION_NONE"),
 					mid->compute_column_widths ? "COMPUTECOLWIDTH" : "",
-					mid->blocksize);
+					(lng) mid->blocksize);
 			} else {
 				retval = snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
 	#ifdef WORDS_BIGENDIAN

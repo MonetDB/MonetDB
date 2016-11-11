@@ -1982,7 +1982,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 				varsized++;
 				length_prefixed++;
 			}
-			nil_len = strlen(str_nil) + 1;
+			nil_len = (int) strlen(str_nil) + 1;
 		} else {
 			fixed_lengths += typelen;
 			nil_len = typelen;
