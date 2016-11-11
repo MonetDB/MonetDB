@@ -2172,7 +2172,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 					goto cleanup;
 				}
 				buf = bs2_buffer(s).buf;
-				bsize = new_size;
+				bsize = (size_t) new_size;
 			}
 		}
 
