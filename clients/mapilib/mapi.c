@@ -5695,7 +5695,8 @@ mapi_split_line(MapiHdl hdl)
 	return n;
 }
 
-char* eight_byte_align(char* ptr) {
+static char* 
+eight_byte_align(char* ptr) {
 	return (char*) (((size_t) ptr + 7) & ~7);
 }
 

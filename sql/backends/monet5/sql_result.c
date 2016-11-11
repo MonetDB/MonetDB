@@ -1888,7 +1888,8 @@ static size_t mymax(size_t a, size_t b) {
 }
 
 // align to 8 bytes
-char* eight_byte_align(char* ptr) {
+static char* 
+eight_byte_align(char* ptr) {
 	return (char*) (((size_t) ptr + 7) & ~7);
 }
 
