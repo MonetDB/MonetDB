@@ -150,45 +150,69 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 }
 
 static BAT *
-sort_cand(BAT *b, BUN cnt)
+sort_cand(BAT *bn, BAT *s, BUN cnt)
 {
-	BAT *bn;
-	const oid *restrict o;
-	oid *restrict p;
+	oid *restrict o;
 	unsigned char *bitvector;
-	BUN i,sz_b;
+	BUN i, cnt_b, new_cnt;
 
 #define remainder8(X)   ((X) &  7)
 #define quotient8(X)    ((X) >> 3)
 
 	/* input must be a potential candidate list or NULL */
-	assert(b == NULL ||
-	       (((b->ttype == TYPE_void && b->tseqbase != oid_nil) ||
-		 b->ttype == TYPE_oid) &&
-		 b->tkey));
+	assert(bn == NULL ||
+	       (((bn->ttype == TYPE_void && bn->tseqbase != oid_nil) ||
+		 bn->ttype == TYPE_oid) &&
+		 bn->tkey));
 
-	sz_b = BATcount(b);
+	/* s is a candidate list to be merged with bn */
+	assert(s == NULL || s->ttype == TYPE_oid || s->ttype == TYPE_void);
+	if (s && !BATtordered(s)) {
+		GDKerror("sort_cand: invalid argument: "
+			 "s must be sorted.\n");
+		return NULL;
+	}
+
+	cnt_b = BATcount(bn);
 	bitvector = (unsigned char *) GDKzalloc(cnt/8+1);
 	if (bitvector == NULL) {
 		GDKerror("#sort_cand: memory allocation error");
 		return NULL;
 	}
 
-	o = (oid *) Tloc(b,0);
-	for (i=0; i < sz_b; i++) {
+	o = (oid *) Tloc(bn,0);
+	for (i=0; i < cnt_b; i++) {
 		bitvector[quotient8(o[i])] |= (1<<remainder8(o[i]));
 	}
 
-	bn = COLnew(0, TYPE_oid, sz_b, TRANSIENT);
-	p = (oid *) Tloc(bn, 0);
+	if (s) {
+		unsigned char *sbitvector = (unsigned char *) GDKzalloc(cnt/8+1);
+		const oid *restrict so = (oid *) Tloc(s,0);
 
-	for (i=0; i < cnt; i++) {
-		if (bitvector[quotient8(i)] & (1<<remainder8(i))) {
-			*p = (oid) i;
-			p++;
+		if (sbitvector == NULL) {
+			GDKerror("#sort_cand: memory allocation error");
+			return NULL;
 		}
+		for (i=0; i < BATcount(s); i++) {
+			sbitvector[quotient8(so[i])] |= (1<<remainder8(so[i]));
+		}
+		for (i=0; i < cnt/8+1; i++) {
+			bitvector[i] &= sbitvector[i];
+		}
+		GDKfree(sbitvector);
 	}
 
+	for (new_cnt=0, i=0; i < cnt; i++) {
+		if (bitvector[quotient8(i)] & (1<<remainder8(i))) {
+			*o = (oid) i;
+			o++;
+			new_cnt++;
+		}
+	}
+	GDKfree(bitvector);
+
+	assert((!s && (new_cnt == cnt_b)) || (s && new_cnt <= cnt_b));
+	BATsetcount(bn, new_cnt);
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
@@ -1482,11 +1506,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* If there is an order index or it is a view and the parent has an ordered
 	 * index, and the bat is not tsorted or trevstorted then use the order
 	 * index.
-	 * And there is no cand list or if there is one, it is dense.
+	 * //And there is no cand list or if there is one, it is dense.
+	 * trying to make it work for all cand list cases now.
 	 * TODO: we do not support anti-select with order index */
 	if (!anti &&
 	    !(b->tsorted || b->trevsorted) &&
-	    (!s || (s && BATtdense(s)))    &&
+	    //(!s || (s && BATtdense(s)))    &&
 	    (BATcheckorderidx(b) ||
 	     (VIEWtparent(b) && BATcheckorderidx(BBPquickdesc(VIEWtparent(b), 0)))))
 	{
@@ -1497,9 +1522,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		/* Is query selective enough to use the ordered index ? */
 		/* TODO: Test if this heuristic works in practice */
+		/* if there is a orderidx, use it! */
 		/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))*/
-		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3)
-		{
+		//if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3)
+		//{
 			use_orderidx = 1;
 			if (view) {
 				vwl = view->hseqbase;
@@ -1508,11 +1534,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				vwl = b->hseqbase;
 				vwh = vwl + b->batCount;
 			}
-		} else {
+		/*} else {
 			if (view) {
 				b = view;
 			}
-		}
+		}*/
 	}
 
 	if (BATordered(b) || BATordered_rev(b) || use_orderidx) {
@@ -1605,7 +1631,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else {
 			assert(use_orderidx);
-			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+			ALGODEBUG fprintf(stderr, "#BATselect(b=%s#" BUNFMT
 					  ",s=%s%s,anti=%d): orderidx\n",
 					  BATgetId(b), BATcount(b),
 					  s ? BATgetId(s) : "NULL",
@@ -1696,7 +1722,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 				rbn = (oid *) Tloc((bn), 0);
 
-				if (s && !BATtdense(s)) {
+				/*if (s && !BATtdense(s)) {
 					const oid *rcand = (const oid *) Tloc((s), 0);
 					assert("should not use orderidx with non dense cand list, too expensive");
 
@@ -1711,13 +1737,22 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					}
 					BATsetcount(bn, cnt);
 
-				} else {
+				} else {*/
 					if (s) {
-						assert(BATtdense(s));
-						if (vwl < s->tseqbase)
-							vwl = s->tseqbase;
-						if (s->tseqbase + BATcount(s) < vwh)
-							vwh = s->tseqbase + BATcount(s);
+						if (BATtdense(s)) {
+							if (vwl < s->tseqbase)
+								vwl = s->tseqbase;
+							if (s->tseqbase + BATcount(s) < vwh)
+								vwh = s->tseqbase + BATcount(s);
+							/* we don't need s anymore */
+							s = NULL;
+						} else {
+							assert(s && !BATtdense(s));
+							if (vwl < *((const oid *)Tloc(s,0)))
+								vwl = *((const oid *)Tloc(s,0));
+							if (*((const oid *)Tloc(s,BATcount(s))) < vwh)
+								vwh = *((const oid *)Tloc(s,BATcount(s)));
+						}
 					}
 					for (i = low; i < high; i++) {
 						if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
@@ -1726,17 +1761,18 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						}
 						rs++;
 					}
-				}
+				//}
 				BATsetcount(bn, cnt);
 				bn->tkey = 1;
 				bn->tnil = 0;
 				bn->tnonil = 1;
 				/* output must be sorted */
+				/*
 				GDKqsort((oid *) Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
 				bn->tsorted = 1;
 				bn->trevsorted = bn->batCount <= 1;
-				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? 0 : oid_nil;
-				//sort_cand(bn,BATcount(b));
+				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? 0 : oid_nil;*/
+				return sort_cand(bn, s, BATcount(b));
 			} else {
 				/* match: [low..high) */
 				if (s) {
