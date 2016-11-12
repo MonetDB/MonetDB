@@ -153,18 +153,6 @@ pattern optimize(mod:str, fcn:str)
 address QOToptimize
 comment "Optimize a specific operation";
 
-pattern showFlowGraph(M:str,F:str,s:str):void 
-address QOTshowFlowGraph
-comment "Dump the data flow of the function 
-	M.F in a format recognizable by the 
-	command 'dot' on the file s";
-
-pattern showPlan(M:str,F:str,s:str):void 
-address QOTshowPlan;
-pattern showPlan()
-address QOTshowPlan
-comment "Illustrate the plan derived so far";
-
 #opt_inline.mal
 
 pattern optimizer.inline():str

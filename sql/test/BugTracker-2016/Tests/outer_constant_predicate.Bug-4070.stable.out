@@ -50,8 +50,8 @@ Ready.
 #5|445|F|105367.67|1994-07-30|5-LOW|Clerk#000000925|0|even deposits cajole furiously. quickly spe|
 [ 150	]
 #SELECT 1 FROM orders LEFT OUTER JOIN customer ON (1 = 1 AND o_custkey = c_custkey);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 1	]

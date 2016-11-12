@@ -913,8 +913,7 @@ partial:
 			continue;
 		}
 		case 'h':
-			if (strncmp("help", b, 2) == 0)
-				mdbHelp(out);
+			mdbHelp(out);
 			continue;
 		case 'o':
 		case 'O':   /* optimizer and scheduler steps */
@@ -1114,7 +1113,7 @@ mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) mb;
 	if (id < 0 || id >= MAL_MAXCLIENTS || mal_clients[id].mode == 0)
-		throw(INVCRED, "mdb.grab", INVCRED_WRONG_ID);
+		throw(INVCRED, "mdb.trap", INVCRED_WRONG_ID);
 	c = mal_clients + id;
 
 	c->itrace = 'S';

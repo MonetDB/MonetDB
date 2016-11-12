@@ -139,7 +139,7 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*head = 0;
 
  	bi = bat_iterator(b);
-	if (VALinit(tail, b->ttype, BUNtail(bi, *(BUN*) head)) == NULL) {
+	if (VALinit(tail, b->ttype, BUNtail(bi, *head)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "iterator.nextChunk", MAL_MALLOC_FAIL);
 	}
@@ -166,14 +166,14 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
 	}
 
-	*head = (BUN)*head + 1;
+	*head = *head + 1;
 	if (*head >= BUNlast(b)) {
 		*head = oid_nil;
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
  	bi = bat_iterator(b);
-	if (VALinit(tail, b->ttype, BUNtail(bi, *(BUN*) head)) == NULL) {
+	if (VALinit(tail, b->ttype, BUNtail(bi, *head)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "iterator.nextChunk", MAL_MALLOC_FAIL);
 	}

@@ -890,6 +890,19 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(stmt);
 }
 
+static int highwatermark = 5;	// conservative initialization
+
+int getprofilerlimit(void)
+{
+	return highwatermark;
+}
+
+void setprofilerlimit(int limit)
+{
+	// dont lock, it is advisary anyway
+	highwatermark = limit;
+}
+
 lng
 getDiskWrites(void)
 {

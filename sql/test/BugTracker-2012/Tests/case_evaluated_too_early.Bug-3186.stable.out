@@ -25,14 +25,14 @@ Ready.
 # 17:10:20 >  
 
 #SELECT CASE WHEN TRUE THEN -10 ELSE 0/0 END;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 3 # length
 [ -10	]
 #SELECT coalesce (CASE WHEN TRUE THEN -10. end, case when false then 0/0 END);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 4 # length
 [ -10	]

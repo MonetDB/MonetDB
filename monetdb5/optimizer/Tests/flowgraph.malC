@@ -1,0 +1,23 @@
+function f():void;
+
+    b0 := bat.new(nil:oid);
+    b0f := bat.append(b0, 0:oid);
+
+    b1 := bat.new(nil:oid);
+    bat.append(b1, 0:oid);
+    b1f := bat.append(b1, 1:oid);
+
+    b2 := bat.new(nil:int);
+    bat.append(b2, 42:int);
+    bat.append(b2, 23:int);
+    b2f := bat.append(b2, 0:int);
+
+    r1 := algebra.projection(b1f, b2f);
+    r2 := algebra.projection(b0f, r1);
+    io.print(r2);
+end f;
+
+optimizer.projectionpath("user", "f");
+# hangs
+mdb.dot("user", "f", "test-file");
+

@@ -1806,7 +1806,7 @@ exp_flatten(mvc *sql, sql_exp *e)
 	} else if (e->type == e_convert) {
 		atom *v = exp_flatten(sql, e->l); 
 
-		if (v && atom_cast(v, &e->tpe))
+		if (v && atom_cast(sql->sa, v, &e->tpe))
 			return v;
 		return NULL;
 	} else if (e->type == e_func) {

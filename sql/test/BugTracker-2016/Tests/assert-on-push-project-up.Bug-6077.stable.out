@@ -95,7 +95,7 @@ Ready.
 #  	right join tmp.objects as ref_186
 #		on (ref_182.ln = ref_186.id )
 #		on (ref_140.var_id = ref_185.default_schema )
-% .L6,	.L7,	.L10 # table_name
+% .L47,	.L51,	.L53 # table_name
 % c0,	c1,	c2 # name
 % clob,	char,	clob # type
 % 0,	10,	0 # length

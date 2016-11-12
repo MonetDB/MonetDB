@@ -43,14 +43,14 @@ Ready.
 [ 86	]
 #alter table tmp3RLE set read only;
 #select sum(i) from tmp3RLE;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3RLE;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % real # type
 % 15 # length
 [ 27.104	]
@@ -60,43 +60,44 @@ Ready.
 % clob # type
 % 88 # length
 function user.s14_1():void;
-    X_56:void := querylog.define("explain select * from tmp3rle;","sequential_pipe",39);
-    X_18 := bat.new(nil:str);
-    X_25 := bat.append(X_18,"sys.tmp3rle");
-    X_33 := bat.append(X_25,"sys.tmp3rle");
-    X_41 := bat.append(X_33,"sys.tmp3rle");
-    X_48 := bat.append(X_41,"sys.tmp3rle");
-    X_20 := bat.new(nil:str);
-    X_27 := bat.append(X_20,"i");
-    X_34 := bat.append(X_27,"b");
-    X_42 := bat.append(X_34,"f");
-    X_49 := bat.append(X_42,"t");
+    X_59:void := querylog.define("explain select * from tmp3rle;","sequential_pipe",40);
     X_21 := bat.new(nil:str);
-    X_28 := bat.append(X_21,"int");
-    X_35 := bat.append(X_28,"boolean");
-    X_43 := bat.append(X_35,"real");
-    X_51 := bat.append(X_43,"timestamp");
-    X_22 := bat.new(nil:int);
-    X_30 := bat.append(X_22,32);
-    X_37 := bat.append(X_30,1);
-    X_45 := bat.append(X_37,24);
-    X_53 := bat.append(X_45,7);
-    X_24 := bat.new(nil:int);
-    X_32 := bat.append(X_24,0);
-    X_39 := bat.append(X_32,0);
-    X_47 := bat.append(X_39,0);
-    X_55 := bat.append(X_47,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3rle");
-    X_4:bat[:int] := sql.bind(X_0,"sys","tmp3rle","i",0);
-    X_7 := mosaic.projection(C_1,X_4);
-    X_8:bat[:bit] := sql.bind(X_0,"sys","tmp3rle","b",0);
-    X_10 := mosaic.projection(C_1,X_8);
-    X_11:bat[:flt] := sql.bind(X_0,"sys","tmp3rle","f",0);
-    X_13 := mosaic.projection(C_1,X_11);
-    X_14:bat[:timestamp] := sql.bind(X_0,"sys","tmp3rle","t",0);
-    X_16 := mosaic.projection(C_1,X_14);
-    sql.resultSet(X_48,X_49,X_51,X_53,X_55,X_7,X_10,X_13,X_16);
+    X_28 := bat.append(X_21,"sys.tmp3rle");
+    X_36 := bat.append(X_28,"sys.tmp3rle");
+    X_44 := bat.append(X_36,"sys.tmp3rle");
+    X_51 := bat.append(X_44,"sys.tmp3rle");
+    X_23 := bat.new(nil:str);
+    X_30 := bat.append(X_23,"i");
+    X_37 := bat.append(X_30,"b");
+    X_45 := bat.append(X_37,"f");
+    X_52 := bat.append(X_45,"t");
+    X_24 := bat.new(nil:str);
+    X_31 := bat.append(X_24,"int");
+    X_38 := bat.append(X_31,"boolean");
+    X_46 := bat.append(X_38,"real");
+    X_54 := bat.append(X_46,"timestamp");
+    X_25 := bat.new(nil:int);
+    X_33 := bat.append(X_25,32);
+    X_40 := bat.append(X_33,1);
+    X_48 := bat.append(X_40,24);
+    X_56 := bat.append(X_48,7);
+    X_27 := bat.new(nil:int);
+    X_35 := bat.append(X_27,0);
+    X_42 := bat.append(X_35,0);
+    X_50 := bat.append(X_42,0);
+    X_58 := bat.append(X_50,0);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3rle");
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3rle","i",0);
+    X_10 := mosaic.projection(C_4,X_7);
+    X_11:bat[:bit] := sql.bind(X_3,"sys","tmp3rle","b",0);
+    X_13 := mosaic.projection(C_4,X_11);
+    X_14:bat[:flt] := sql.bind(X_3,"sys","tmp3rle","f",0);
+    X_16 := mosaic.projection(C_4,X_14);
+    X_17:bat[:timestamp] := sql.bind(X_3,"sys","tmp3rle","t",0);
+    X_19 := mosaic.projection(C_4,X_17);
+# querylog.define("explain select * from tmp3rle;","sequential_pipe")
+    sql.resultSet(X_51,X_52,X_54,X_56,X_58,X_10,X_13,X_16,X_19);
 end user.s14_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
@@ -130,22 +131,23 @@ end user.s14_1;
 % clob # type
 % 88 # length
 function user.s24_1():void;
-    X_24:void := querylog.define("explain select i from tmp3rle;","sequential_pipe",18);
-    X_9 := bat.new(nil:str);
-    X_16 := bat.append(X_9,"sys.tmp3rle");
-    X_11 := bat.new(nil:str);
-    X_18 := bat.append(X_11,"i");
+    X_27:void := querylog.define("explain select i from tmp3rle;","sequential_pipe",19);
     X_12 := bat.new(nil:str);
-    X_19 := bat.append(X_12,"int");
-    X_13 := bat.new(nil:int);
-    X_21 := bat.append(X_13,32);
-    X_15 := bat.new(nil:int);
-    X_23 := bat.append(X_15,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3rle");
-    X_4:bat[:int] := sql.bind(X_0,"sys","tmp3rle","i",0);
-    X_7 := mosaic.projection(C_1,X_4);
-    sql.resultSet(X_16,X_18,X_19,X_21,X_23,X_7);
+    X_19 := bat.append(X_12,"sys.tmp3rle");
+    X_14 := bat.new(nil:str);
+    X_21 := bat.append(X_14,"i");
+    X_15 := bat.new(nil:str);
+    X_22 := bat.append(X_15,"int");
+    X_16 := bat.new(nil:int);
+    X_24 := bat.append(X_16,32);
+    X_18 := bat.new(nil:int);
+    X_26 := bat.append(X_18,0);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3rle");
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3rle","i",0);
+    X_10 := mosaic.projection(C_4,X_7);
+# querylog.define("explain select i from tmp3rle;","sequential_pipe")
+    sql.resultSet(X_19,X_21,X_22,X_24,X_26,X_10);
 end user.s24_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -175,22 +177,23 @@ end user.s24_1;
 % clob # type
 % 88 # length
 function user.s26_1():void;
-    X_24:void := querylog.define("explain select b from tmp3rle;","sequential_pipe",18);
-    X_9 := bat.new(nil:str);
-    X_16 := bat.append(X_9,"sys.tmp3rle");
-    X_11 := bat.new(nil:str);
-    X_18 := bat.append(X_11,"b");
+    X_27:void := querylog.define("explain select b from tmp3rle;","sequential_pipe",19);
     X_12 := bat.new(nil:str);
-    X_19 := bat.append(X_12,"boolean");
-    X_13 := bat.new(nil:int);
-    X_21 := bat.append(X_13,1);
-    X_15 := bat.new(nil:int);
-    X_23 := bat.append(X_15,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3rle");
-    X_4:bat[:bit] := sql.bind(X_0,"sys","tmp3rle","b",0);
-    X_7 := mosaic.projection(C_1,X_4);
-    sql.resultSet(X_16,X_18,X_19,X_21,X_23,X_7);
+    X_19 := bat.append(X_12,"sys.tmp3rle");
+    X_14 := bat.new(nil:str);
+    X_21 := bat.append(X_14,"b");
+    X_15 := bat.new(nil:str);
+    X_22 := bat.append(X_15,"boolean");
+    X_16 := bat.new(nil:int);
+    X_24 := bat.append(X_16,1);
+    X_18 := bat.new(nil:int);
+    X_26 := bat.append(X_18,0);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3rle");
+    X_7:bat[:bit] := sql.bind(X_3,"sys","tmp3rle","b",0);
+    X_10 := mosaic.projection(C_4,X_7);
+# querylog.define("explain select b from tmp3rle;","sequential_pipe")
+    sql.resultSet(X_19,X_21,X_22,X_24,X_26,X_10);
 end user.s26_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
@@ -220,22 +223,23 @@ end user.s26_1;
 % clob # type
 % 88 # length
 function user.s28_1():void;
-    X_24:void := querylog.define("explain select f from tmp3rle;","sequential_pipe",18);
-    X_9 := bat.new(nil:str);
-    X_16 := bat.append(X_9,"sys.tmp3rle");
-    X_11 := bat.new(nil:str);
-    X_18 := bat.append(X_11,"f");
+    X_27:void := querylog.define("explain select f from tmp3rle;","sequential_pipe",19);
     X_12 := bat.new(nil:str);
-    X_19 := bat.append(X_12,"real");
-    X_13 := bat.new(nil:int);
-    X_21 := bat.append(X_13,24);
-    X_15 := bat.new(nil:int);
-    X_23 := bat.append(X_15,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3rle");
-    X_4:bat[:flt] := sql.bind(X_0,"sys","tmp3rle","f",0);
-    X_7 := mosaic.projection(C_1,X_4);
-    sql.resultSet(X_16,X_18,X_19,X_21,X_23,X_7);
+    X_19 := bat.append(X_12,"sys.tmp3rle");
+    X_14 := bat.new(nil:str);
+    X_21 := bat.append(X_14,"f");
+    X_15 := bat.new(nil:str);
+    X_22 := bat.append(X_15,"real");
+    X_16 := bat.new(nil:int);
+    X_24 := bat.append(X_16,24);
+    X_18 := bat.new(nil:int);
+    X_26 := bat.append(X_18,0);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3rle");
+    X_7:bat[:flt] := sql.bind(X_3,"sys","tmp3rle","f",0);
+    X_10 := mosaic.projection(C_4,X_7);
+# querylog.define("explain select f from tmp3rle;","sequential_pipe")
+    sql.resultSet(X_19,X_21,X_22,X_24,X_26,X_10);
 end user.s28_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -265,22 +269,23 @@ end user.s28_1;
 % clob # type
 % 88 # length
 function user.s30_1():void;
-    X_24:void := querylog.define("explain select t from tmp3rle;","sequential_pipe",18);
-    X_9 := bat.new(nil:str);
-    X_16 := bat.append(X_9,"sys.tmp3rle");
-    X_11 := bat.new(nil:str);
-    X_18 := bat.append(X_11,"t");
+    X_27:void := querylog.define("explain select t from tmp3rle;","sequential_pipe",19);
     X_12 := bat.new(nil:str);
-    X_19 := bat.append(X_12,"timestamp");
-    X_13 := bat.new(nil:int);
-    X_21 := bat.append(X_13,7);
-    X_15 := bat.new(nil:int);
-    X_23 := bat.append(X_15,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3rle");
-    X_4:bat[:timestamp] := sql.bind(X_0,"sys","tmp3rle","t",0);
-    X_7 := mosaic.projection(C_1,X_4);
-    sql.resultSet(X_16,X_18,X_19,X_21,X_23,X_7);
+    X_19 := bat.append(X_12,"sys.tmp3rle");
+    X_14 := bat.new(nil:str);
+    X_21 := bat.append(X_14,"t");
+    X_15 := bat.new(nil:str);
+    X_22 := bat.append(X_15,"timestamp");
+    X_16 := bat.new(nil:int);
+    X_24 := bat.append(X_16,7);
+    X_18 := bat.new(nil:int);
+    X_26 := bat.append(X_18,0);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3rle");
+    X_7:bat[:timestamp] := sql.bind(X_3,"sys","tmp3rle","t",0);
+    X_10 := mosaic.projection(C_4,X_7);
+# querylog.define("explain select t from tmp3rle;","sequential_pipe")
+    sql.resultSet(X_19,X_21,X_22,X_24,X_26,X_10);
 end user.s30_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -396,14 +401,14 @@ end user.s30_1;
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select sum(i) from tmp3RLE;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3RLE;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % real # type
 % 15 # length
 [ 27.104	]

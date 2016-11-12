@@ -24,8 +24,8 @@ Ready.
 # 13:46:34 >  
 
 #select round(750,1); 
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ 750	]

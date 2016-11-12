@@ -24,8 +24,8 @@ Ready.
 # 21:38:00 >  
 
 #select 1, (select 1) as x;
-% .L1,	.L3 # table_name
-% L1,	x # name
+% .L2,	.L6 # table_name
+% L2,	x # name
 % tinyint,	tinyint # type
 % 1,	1 # length
 [ 1,	1	]

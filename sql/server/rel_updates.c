@@ -1275,6 +1275,8 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	}
 	/* lock the store, for single user/transaction */
 	if (locked) { 
+		if (headers)
+			return sql_error(sql, 02, "COPY INTO .. LOCKED: not allowed with column lists");
 		store_lock();
 		while (store_nr_active > 1) {
 			store_unlock();

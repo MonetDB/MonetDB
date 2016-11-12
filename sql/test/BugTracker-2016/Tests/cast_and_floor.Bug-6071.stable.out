@@ -41,7 +41,7 @@ Ready.
 #	(SELECT catsrcid ,zone ,ra ,decl ,ra_err ,decl_err ,x ,y ,z 
 #		FROM catsrc 
 #		WHERE cat_id = 5 AND (src_type = 'S' OR src_type = 'M') AND x * COS(RADIANS(30.0)) * COS(RADIANS(20.0)) + y * COS(RADIANS(30.0)) * SIN(RADIANS(20.0)) + z * SIN(RADIANS(30.0)) > COS(RADIANS(2.0))) c2 
-% sys.L3,	sys.L4 # table_name
+% sys.L25,	sys.L27 # table_name
 % t_catsrcid,	wm_catsrcid # name
 % int,	int # type
 % 7,	7 # length

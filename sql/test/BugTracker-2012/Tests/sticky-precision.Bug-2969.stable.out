@@ -49,20 +49,20 @@ Ready.
 #return power(10,7);
 #end;
 #select bug2969(12,12);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 16 # length
 [ 10000000	]
 #select bug2969(12.1111,12.1111);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 16 # length
 [ 10000000	]
 #select bug2969(12,12);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 16 # length
 [ 10000000	]

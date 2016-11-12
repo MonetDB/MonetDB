@@ -409,7 +409,7 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 		val = &stk->stk[varid];
 		VALformat(&cv, val);
 		nme = getSTC(mb, varid);
-		if( nme == NULL) 
+		if( nme[0]== 0) 
 			nme = getVarName(mb, varid);
 		if ( isaBatType(getArgType(mb,p,idx))){
 			b = BBPquickdesc(stk->stk[varid].val.bval,TRUE);

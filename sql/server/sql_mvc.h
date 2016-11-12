@@ -221,6 +221,7 @@ extern void stack_push_var(mvc *sql, const char *name, sql_subtype *type);
 extern void stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
 extern void stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
 extern void stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
+extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
 
 extern void stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);

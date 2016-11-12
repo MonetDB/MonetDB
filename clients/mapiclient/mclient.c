@@ -44,6 +44,7 @@
 #include "msqldump.h"
 #include "mprompt.h"
 #include "dotmonetdb.h"
+
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -187,6 +188,9 @@ static char *nullstring = default_nullstring;
 #endif
 
 #define my_isspace(c)	((c) == '\f' || (c) == '\n' || (c) == ' ')
+
+#include <ctype.h>
+#include "mhelp.h"
 
 static timertype
 gettime(void)
@@ -2081,17 +2085,18 @@ static void
 showCommands(void)
 {
 	/* shared control options */
-	mnstr_printf(toConsole, "\\?      - show this message\n");
+	mnstr_printf(toConsole, "\\?       - show this message\n");
 	if (mode == MAL)
-		mnstr_printf(toConsole, "?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
-	mnstr_printf(toConsole, "\\<file  - read input from file\n");
-	mnstr_printf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
+		mnstr_printf(toConsole, "?pat  - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
+	mnstr_printf(toConsole, "\\<file   - read input from file\n");
+	mnstr_printf(toConsole, "\\>file   - save response in file, or stdout if no file is given\n");
 #ifdef HAVE_POPEN
-	mnstr_printf(toConsole, "\\|cmd   - pipe result to process, or stop when no command is given\n");
+	mnstr_printf(toConsole, "\\|cmd    - pipe result to process, or stop when no command is given\n");
 #endif
 #ifdef HAVE_LIBREADLINE
-	mnstr_printf(toConsole, "\\h      - show the readline history\n");
+	mnstr_printf(toConsole, "\\history - show the readline history\n");
 #endif
+	mnstr_printf(toConsole, "\\help    - synopsis of the SQL syntax\n");
 #if 0
 	mnstr_printf(toConsole, "\\t      - toggle timer\n");
 #endif
@@ -2707,20 +2712,25 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					pager = strdup(line);
 					continue;
 #endif
-#ifdef HAVE_LIBREADLINE
 				case 'h':
 				{
+#ifdef HAVE_LIBREADLINE
 					int h;
 					char *nl;
 
-					for (h = 0; h < history_length; h++) {
-						nl = history_get(h) ? history_get(h)->line : 0;
-						if (nl)
-							mnstr_printf(toConsole, "%d %s\n", h, nl);
-					}
+					if( strcmp(line,"\\history") ==0){
+						for (h = 0; h < history_length; h++) {
+							nl = history_get(h) ? history_get(h)->line : 0;
+							if (nl)
+								mnstr_printf(toConsole, "%d %s\n", h, nl);
+						}
+					} else
+#endif
+						sql_help(line, toConsole);
 					continue;
 				}
 /* for later
+#ifdef HAVE_LIBREADLINE
 				case '!':
 				{
 					char *nl;
@@ -2734,8 +2744,8 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					mnstr_printf(toConsole, "Expansion needs work\n");
 					continue;
 				}
-*/
 #endif
+*/
 				case 'e':
 					echoquery = 1;
 					continue;

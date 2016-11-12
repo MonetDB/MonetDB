@@ -77,8 +77,8 @@ Ready.
 [ 1	]
 [ 2	]
 #select count(*), count(x) from "noNULLtinyint";
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L4,	sys.L7 # table_name
+% L3,	L6 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 3,	3	]
@@ -107,8 +107,8 @@ Ready.
 [ 2	]
 [ NULL	]
 #select count(*), count(x) from "noNULLtinyint";
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L4,	sys.L7 # table_name
+% L3,	L6 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 4,	3	]
@@ -138,8 +138,8 @@ Ready.
 [ NULL	]
 [ 2	]
 #select count(*), count(x) from "NULLtinyint";
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L4,	sys.L7 # table_name
+% L3,	L6 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 3,	2	]

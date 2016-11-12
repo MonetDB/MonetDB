@@ -2212,7 +2212,7 @@ Define triggered SQL-statements.
          ON <table name> [ REFERENCING <old or new values alias list> ]
          <triggered action>
 
-  <trigger action time>    ::=   BEFORE | AFTER
+  <trigger action time>    ::=   BEFORE | AFTER | INSTEAD OF
 
   <trigger event>    ::=   INSERT | DELETE | UPDATE [ OF <trigger column list> ]
 
@@ -2246,12 +2246,12 @@ Define triggered SQL-statements.
 
 trigger_def:
     create TRIGGER qname trigger_action_time trigger_event
-    ON ident opt_referencing_list triggered_action
+    ON qname opt_referencing_list triggered_action
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_int(l, $4);
 	  append_symbol(l, $5);
-	  append_string(l, $7);
+	  append_list(l, $7);
 	  append_list(l, $8);
 	  append_list(l, $9);
 	  $$ = _symbol_create_list(SQL_CREATE_TRIGGER, l); 
@@ -2261,6 +2261,7 @@ trigger_def:
 trigger_action_time:
     BEFORE	{ $$ = 0; }
  |  AFTER	{ $$ = 1; }
+/* | INSTEAD OF { $$ = 2; } */
  ;
 
 trigger_event:
@@ -2319,7 +2320,7 @@ row_or_statement:
 
 opt_when:
     /* empty */ 			{ $$ = NULL; }
- |  WHEN  search_condition  	{ $$ = $2; }
+ |  WHEN  '(' search_condition ')'  	{ $$ = $3; }
  ;
 
 triggered_statement:

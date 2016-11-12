@@ -43,14 +43,14 @@ Ready.
 [ 86	]
 #alter table tmp3 set read only;
 #select sum(i) from tmp3;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % real # type
 % 15 # length
 [ 27.104	]
@@ -60,14 +60,15 @@ Ready.
 % clob # type
 % 103 # length
 function user.s14_1():void;
-    X_19:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",10);
-    X_0 := sql.mvc();
-    X_4:bat[:int] := sql.bind(X_0,"sys","tmp3","i",0);
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3");
-    X_9 := mosaic.thetasubselect(X_4,C_1,4,"<");
-    X_11 := mosaic.projection(X_9,X_4);
-    X_12 := aggr.count(X_11);
-    sql.resultSet("sys.L1","L1","bigint",64,0,7,X_12);
+    X_22:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",11);
+    X_3 := sql.mvc();
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0);
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3");
+    X_12 := mosaic.thetasubselect(X_7,C_4,4,"<");
+    X_14 := mosaic.projection(X_12,X_7);
+    X_15 := aggr.count(X_14);
+# querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe")
+    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_15);
 end user.s14_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -92,8 +93,8 @@ end user.s14_1;
 #garbagecollector     actions= 1 time=8 usec 
 #total                actions= 1 time=163 usec 
 #select count(*) from tmp3 where i <4;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 44	]
@@ -103,14 +104,15 @@ end user.s14_1;
 % clob # type
 % 104 # length
 function user.s16_1():void;
-    X_21:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",10);
-    X_0 := sql.mvc();
-    X_4:bat[:int] := sql.bind(X_0,"sys","tmp3","i",0);
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3");
-    X_9 := mosaic.subselect(X_4,C_1,7,7,true,false,false);
-    X_13 := mosaic.projection(X_9,X_4);
-    X_14 := aggr.count(X_13);
-    sql.resultSet("sys.L1","L1","bigint",64,0,7,X_14);
+    X_24:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",11);
+    X_3 := sql.mvc();
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0);
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3");
+    X_12 := mosaic.subselect(X_7,C_4,7,7,true,false,false);
+    X_16 := mosaic.projection(X_12,X_7);
+    X_17 := aggr.count(X_16);
+# querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe")
+    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_17);
 end user.s16_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
@@ -134,20 +136,20 @@ end user.s16_1;
 #garbagecollector     actions= 1 time=13 usec 
 #total                actions= 1 time=237 usec 
 #select count(*) from tmp3 where i = 7;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from tmp3 where f <0.316;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from tmp3 where b = true;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 66	]
@@ -155,14 +157,14 @@ end user.s16_1;
 #alter table tmp3 alter column b set storage 'raw';
 #alter table tmp3 alter column f set storage 'raw';
 #select sum(i) from tmp3;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % real # type
 % 15 # length
 [ 27.104	]
@@ -172,14 +174,15 @@ end user.s16_1;
 % clob # type
 % 103 # length
 function user.s32_1():void;
-    X_19:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",10);
-    X_0 := sql.mvc();
-    X_4:bat[:int] := sql.bind(X_0,"sys","tmp3","i",0);
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3");
-    X_9 := mosaic.thetasubselect(X_4,C_1,4,"<");
-    X_11 := mosaic.projection(X_9,X_4);
-    X_12 := aggr.count(X_11);
-    sql.resultSet("sys.L1","L1","bigint",64,0,7,X_12);
+    X_22:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",11);
+    X_3 := sql.mvc();
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0);
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3");
+    X_12 := mosaic.thetasubselect(X_7,C_4,4,"<");
+    X_14 := mosaic.projection(X_12,X_7);
+    X_15 := aggr.count(X_14);
+# querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe")
+    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_15);
 end user.s32_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -203,8 +206,8 @@ end user.s32_1;
 #garbagecollector     actions= 1 time=12 usec 
 #total                actions= 1 time=214 usec 
 #select count(*) from tmp3 where i <4;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 44	]
@@ -214,14 +217,15 @@ end user.s32_1;
 % clob # type
 % 104 # length
 function user.s34_1():void;
-    X_21:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",10);
-    X_0 := sql.mvc();
-    X_4:bat[:int] := sql.bind(X_0,"sys","tmp3","i",0);
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3");
-    X_9 := mosaic.subselect(X_4,C_1,7,7,true,false,false);
-    X_13 := mosaic.projection(X_9,X_4);
-    X_14 := aggr.count(X_13);
-    sql.resultSet("sys.L1","L1","bigint",64,0,7,X_14);
+    X_24:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",11);
+    X_3 := sql.mvc();
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0);
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3");
+    X_12 := mosaic.subselect(X_7,C_4,7,7,true,false,false);
+    X_16 := mosaic.projection(X_12,X_7);
+    X_17 := aggr.count(X_16);
+# querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe")
+    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_17);
 end user.s34_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=3 usec 
@@ -245,20 +249,20 @@ end user.s34_1;
 #garbagecollector     actions= 1 time=13 usec 
 #total                actions= 1 time=217 usec 
 #select count(*) from tmp3 where i = 7;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from tmp3 where f <0.316;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from tmp3 where b = true;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 66	]
@@ -271,14 +275,15 @@ end user.s34_1;
 % clob # type
 % 103 # length
 function user.s46_1():void;
-    X_19:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",10);
-    X_0 := sql.mvc();
-    X_4:bat[:int] := sql.bind(X_0,"sys","tmp3","i",0);
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3");
-    X_9 := mosaic.thetasubselect(X_4,C_1,4,"<");
-    X_11 := mosaic.projection(X_9,X_4);
-    X_12 := aggr.count(X_11);
-    sql.resultSet("sys.L1","L1","bigint",64,0,7,X_12);
+    X_22:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",11);
+    X_3 := sql.mvc();
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0);
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3");
+    X_12 := mosaic.thetasubselect(X_7,C_4,4,"<");
+    X_14 := mosaic.projection(X_12,X_7);
+    X_15 := aggr.count(X_14);
+# querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe")
+    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_15);
 end user.s46_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -302,8 +307,8 @@ end user.s46_1;
 #garbagecollector     actions= 1 time=12 usec 
 #total                actions= 1 time=215 usec 
 #select count(*) from tmp3 where i <4;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 44	]
@@ -313,14 +318,15 @@ end user.s46_1;
 % clob # type
 % 104 # length
 function user.s48_1():void;
-    X_21:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",10);
-    X_0 := sql.mvc();
-    X_4:bat[:int] := sql.bind(X_0,"sys","tmp3","i",0);
-    C_1:bat[:oid] := sql.tid(X_0,"sys","tmp3");
-    X_9 := mosaic.subselect(X_4,C_1,7,7,true,false,false);
-    X_13 := mosaic.projection(X_9,X_4);
-    X_14 := aggr.count(X_13);
-    sql.resultSet("sys.L1","L1","bigint",64,0,7,X_14);
+    X_24:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",11);
+    X_3 := sql.mvc();
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0);
+    C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3");
+    X_12 := mosaic.subselect(X_7,C_4,7,7,true,false,false);
+    X_16 := mosaic.projection(X_12,X_7);
+    X_17 := aggr.count(X_16);
+# querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe")
+    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_17);
 end user.s48_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -344,20 +350,20 @@ end user.s48_1;
 #garbagecollector     actions= 1 time=13 usec 
 #total                actions= 1 time=212 usec 
 #select count(*) from tmp3 where i = 7;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from tmp3 where f <0.316;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from tmp3 where b = true;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 66	]
