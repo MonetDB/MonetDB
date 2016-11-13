@@ -501,18 +501,19 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 		return(1);
 	}
 
-	/* wait up to 5 seconds for monetdbd to actually stop */
-	for (i = 0; i < 10; i++) {
+	/* wait up to 30 seconds for monetdbd to actually stop */
+	for (i = 0; i < 60; i++) {
 		tv.tv_sec = 0;
-		tv.tv_usec = 500;
+		tv.tv_usec = 500000;
 		select(0, NULL, NULL, NULL, &tv);
-		if (kill(daemon, 0) == -1)
-			break;
-		if (i == 9) {
-			/* done waiting, use harsher measures */
-			kill(daemon, SIGKILL);
+		if (kill(daemon, 0) == -1) {
+			/* daemon has died */
+			return(0);
 		}
 	}
+
+	/* done waiting, use harsher measures */
+	kill(daemon, SIGKILL);
 
 	return(0);
 }

@@ -386,7 +386,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	int stepsize = 1000;
 	char oldcmd[1024] = { 0 };
 	do {
-		int r;
 		if (p != NULL) {
 			if (cntxt != mal_clients)
 				/* help mclients with fake prompt */
@@ -417,8 +416,7 @@ retryRead:
 #ifndef HAVE_EMBEDDED
 		else if (cntxt == mal_clients) {
 			/* switch to mdb streams */
-			r = readConsole(cntxt);
-			if (r <= 0)
+			if (readConsole(cntxt) <= 0)
 				break;
 		}
 #endif
@@ -915,8 +913,7 @@ partial:
 			continue;
 		}
 		case 'h':
-			if (strncmp("help", b, 2) == 0)
-				mdbHelp(out);
+			mdbHelp(out);
 			continue;
 		case 'o':
 		case 'O':   /* optimizer and scheduler steps */
@@ -1116,7 +1113,7 @@ mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) mb;
 	if (id < 0 || id >= MAL_MAXCLIENTS || mal_clients[id].mode == 0)
-		throw(INVCRED, "mdb.grab", INVCRED_WRONG_ID);
+		throw(INVCRED, "mdb.trap", INVCRED_WRONG_ID);
 	c = mal_clients + id;
 
 	c->itrace = 'S';

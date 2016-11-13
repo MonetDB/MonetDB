@@ -30,8 +30,8 @@ Ready.
 # 10:18:34 >  
 
 #select case when 1 then 2 else 3 end;
-% .L # table_name
-% isnull_single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 2	]

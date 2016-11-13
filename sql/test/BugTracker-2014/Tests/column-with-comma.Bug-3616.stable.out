@@ -55,7 +55,7 @@ Ready.
 # 17:14:21 >  
 
 #select 1 as "a,b", 2 as c;
-% .L,	.L # table_name
+% .L2,	.L4 # table_name
 % "a,b",	c # name
 % tinyint,	tinyint # type
 % 1,	1 # length

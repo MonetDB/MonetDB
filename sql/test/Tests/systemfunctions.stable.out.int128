@@ -55,7 +55,7 @@ Ready.
 # 16:20:25 >  
 
 #select s.name as "schema", f.name as "function", a.number as "argno", a.type as "argtype", case a.number when 0 then f.func else '' end as "definition" from sys.functions f, sys.schemas s, sys.args a where s.id = f.schema_id and f.id = a.func_id and f.id in (select * from sys.systemfunctions) order by s.name, f.name, f.id, a.number;
-% sys.L3,	sys.L3,	sys.L3,	sys.L3,	sys.L3 # table_name
+% sys.L14,	sys.L16,	sys.L20,	sys.L22,	sys.L24 # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	35,	2,	14,	611 # length
@@ -135,7 +135,9 @@ Ready.
 [ "json",	"tojsonarray",	1,	"double",	""	]
 [ "json",	"valuearray",	0,	"json",	"create function json.valuearray(js json)\nreturns  json external name json.valuearray;"	]
 [ "json",	"valuearray",	1,	"json",	""	]
+[ "profiler",	"getlimit",	0,	"int",	"create function profiler.getlimit() returns integer external name profiler.getlimit;"	]
 [ "profiler",	"setheartbeat",	0,	"int",	"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;"	]
+[ "profiler",	"setlimit",	0,	"int",	"create procedure profiler.setlimit(lim integer) external name profiler.setlimit;"	]
 [ "profiler",	"setpoolsize",	0,	"int",	"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;"	]
 [ "profiler",	"setstream",	0,	"clob",	"create procedure profiler.setstream(host string, port int) external name profiler.setstream;"	]
 [ "profiler",	"setstream",	1,	"int",	""	]
@@ -935,6 +937,11 @@ Ready.
 [ "sys",	"levenshtein",	3,	"int",	""	]
 [ "sys",	"levenshtein",	4,	"int",	""	]
 [ "sys",	"levenshtein",	5,	"int",	""	]
+[ "sys",	"lidarattach",	0,	"clob",	"create procedure lidarattach(fname string) external name lidar.attach;"	]
+[ "sys",	"lidarexport",	0,	"clob",	"create procedure lidarexport(tname string, fname string, format string) external name lidar.export;"	]
+[ "sys",	"lidarexport",	1,	"clob",	""	]
+[ "sys",	"lidarexport",	2,	"clob",	""	]
+[ "sys",	"lidarload",	0,	"clob",	"create procedure lidarload(tname string) external name lidar.load;"	]
 [ "sys",	"like",	0,	"clob",	"create filter function \"like\"(val string, pat string, esc string) external name algebra.\"like\";"	]
 [ "sys",	"like",	1,	"clob",	""	]
 [ "sys",	"like",	2,	"clob",	""	]
@@ -3408,9 +3415,9 @@ Ready.
 [ "sys",	"setmasklen",	0,	"inet",	"create function \"setmasklen\" (p inet, mask int) returns inet\n external name inet.\"setmasklen\";"	]
 [ "sys",	"setmasklen",	1,	"inet",	""	]
 [ "sys",	"setmasklen",	2,	"int",	""	]
-[ "sys",	"setsession",	0,	"bigint",	"create procedure sys.setsession(\"timeout\" bigint)\n external name sql.setsession;"	]
-[ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint)\n external name sql.settimeout;"	]
-[ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint)\n external name sql.settimeout;"	]
+[ "sys",	"setsession",	0,	"bigint",	"create procedure sys.setsession(\"timeout\" bigint)\n external name clients.setsession;"	]
+[ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint)\n external name clients.settimeout;"	]
+[ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint)\n external name clients.settimeout;"	]
 [ "sys",	"settimeout",	1,	"bigint",	""	]
 [ "sys",	"shpattach",	0,	"clob",	"create procedure shpattach(fname string) external name shp.attach;"	]
 [ "sys",	"shpload",	0,	"int",	"create procedure shpload(fid integer) external name shp.load;"	]

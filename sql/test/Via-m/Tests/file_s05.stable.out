@@ -24,8 +24,16 @@ Ready.
 # 10:59:45 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=31323 
 # 10:59:45 >  
 
-% . # table_name
-% single_value # name
+# 17:12:52 >  
+# 17:12:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26340" "--port=31202"
+# 17:12:52 >  
+
+#declare video_sets_id1 integer;
+#set video_sets_id1 = -1234567890;
+#set video_sets_id1 = get_video_sets_id('fabchannel2007');
+#select video_sets_id1;
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 1	]

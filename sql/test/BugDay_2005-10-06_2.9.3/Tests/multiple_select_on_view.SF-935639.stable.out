@@ -26,14 +26,14 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) from c;
-% sys.L1 # table_name
-% L1 # name
+% sys.L10 # table_name
+% L7 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from c;
-% sys.L1 # table_name
-% L1 # name
+% sys.L10 # table_name
+% L7 # name
 % bigint # type
 % 1 # length
 [ 2	]

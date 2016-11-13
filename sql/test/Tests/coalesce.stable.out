@@ -46,14 +46,14 @@ Ready.
 [ 1	]
 [ 1	]
 #select avg(coalesce(age,38)) from coalescetest;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 30.5	]
 #select id, coalesce(name,'user unknown') from coalescetest;
-% sys.coalescetest,	sys.L # table_name
-% id,	isnull_not_isnull_name # name
+% sys.coalescetest,	sys.L3 # table_name
+% id,	L3 # name
 % int,	varchar # type
 % 1,	12 # length
 [ 1,	"a"	]
@@ -61,8 +61,8 @@ Ready.
 [ 3,	"c"	]
 [ 4,	"user unknown"	]
 #select id, coalesce(age,'age unknown') from coalescetest;
-% sys.coalescetest,	sys.L # table_name
-% id,	isnull_not_isnull_age # name
+% sys.coalescetest,	sys.L3 # table_name
+% id,	L3 # name
 % int,	char # type
 % 1,	11 # length
 [ 1,	"20"	]
@@ -70,8 +70,8 @@ Ready.
 [ 3,	"age unknown"	]
 [ 4,	"age unknown"	]
 #select id, coalesce(age,-1) from coalescetest;
-% sys.coalescetest,	sys.L # table_name
-% id,	isnull_not_isnull_age # name
+% sys.coalescetest,	sys.L3 # table_name
+% id,	L3 # name
 % int,	int # type
 % 1,	2 # length
 [ 1,	20	]
@@ -79,8 +79,8 @@ Ready.
 [ 3,	-1	]
 [ 4,	-1	]
 #select id, coalesce(name, age, 'unknown') from coalescetest;
-% sys.coalescetest,	sys.L # table_name
-% id,	isnull_not_isnull_name # name
+% sys.coalescetest,	sys.L3 # table_name
+% id,	L3 # name
 % int,	char # type
 % 1,	32 # length
 [ 1,	"a"	]
@@ -88,8 +88,8 @@ Ready.
 [ 3,	"c"	]
 [ 4,	"unknown"	]
 #SELECT COALESCE(NULL,'x');
-% .L # table_name
-% isnull_single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 0 # length
 [ "x"	]

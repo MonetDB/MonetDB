@@ -41,14 +41,14 @@ Ready.
 #select "time_by_day"."the_year" as "c0", "the_year" || '-12-31' as "c1" from "time_by_day" as "time_by_day" 
 #group by c0, c1  
 #order by CASE WHEN "time_by_day"."the_year" IS NULL THEN 1 ELSE 0 END, "time_by_day"."the_year" ASC;
-% sys.time_by_day,	sys.L # table_name
+% sys.time_by_day,	sys.L3 # table_name
 % c0,	c1 # name
 % smallint,	clob # type
 % 1,	0 # length
 #select "time_by_day"."the_year" as "c0", "the_year" || '-12-31' as "c1" from "time_by_day" as "time_by_day" 
 #group by c0, c1  
 #order by CASE WHEN c0 IS NULL THEN 1 ELSE 0 END, c0 ASC;
-% sys.time_by_day,	sys.L # table_name
+% sys.time_by_day,	sys.L3 # table_name
 % c0,	c1 # name
 % smallint,	clob # type
 % 1,	0 # length

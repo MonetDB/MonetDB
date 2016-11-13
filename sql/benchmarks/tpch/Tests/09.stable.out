@@ -43,7 +43,7 @@ Ready.
 #			and s_nationkey = n_nationkey
 #			and p_name like '%green%'
 #	) as profit
-% sys.profit,	sys.profit,	sys.L1 # table_name
+% sys.profit,	sys.profit,	sys.L13 # table_name
 % nation,	o_year,	sum_profit # name
 % char,	int,	decimal # type
 % 25,	4,	21 # length

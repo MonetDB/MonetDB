@@ -26,8 +26,8 @@ Ready.
 # 14:52:43 >  
 
 #SELECT ST_NumPoints(centerline) FROM road_segments WHERE fid = 102;
-% sys.L # table_name
-% st_numpoints_centerline # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 5	]

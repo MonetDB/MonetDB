@@ -55,61 +55,61 @@ Ready.
 # 16:52:46 >  
 
 #select locate('@','joeuser@mydatabase@test', 1) as string_position;
-% .L # table_name
+% .L2 # table_name
 % string_position # name
 % int # type
 % 1 # length
 [ 8	]
 #select locate('@','joeuser@mydatabase@test', 2) as string_position;
-% .L # table_name
+% .L2 # table_name
 % string_position # name
 % int # type
 % 1 # length
 [ 8	]
 #select locate('@','joeuser@mydatabase@test', 3) as string_position;
-% .L # table_name
+% .L2 # table_name
 % string_position # name
 % int # type
 % 1 # length
 [ 8	]
 #select locate('@','joeuser@mydatabase@test', 4) as string_position;
-% .L # table_name
+% .L2 # table_name
 % string_position # name
 % int # type
 % 1 # length
 [ 8	]
 #select locate('@','joeuser@mydatabase@test', 8) as string_position;
-% .L # table_name
+% .L2 # table_name
 % string_position # name
 % int # type
 % 1 # length
 [ 8	]
 #select locate('@','joeuser@mydatabase@test', 9) as string_position;
-% .L # table_name
+% .L2 # table_name
 % string_position # name
 % int # type
 % 2 # length
 [ 19	]
 #select locate('@','joeuser@mydatabase@test', -1) as string_position;
-% .L # table_name
+% .L2 # table_name
 % string_position # name
 % int # type
 % 1 # length
 [ 8	]
 #select locate('@','joeuser@mydatabase@test', -2) as string_position;
-% .L # table_name
+% .L2 # table_name
 % string_position # name
 % int # type
 % 1 # length
 [ 8	]
 #select locate('@','joeuser@mydatabase@test', -3) as string_position;
-% .L # table_name
+% .L2 # table_name
 % string_position # name
 % int # type
 % 1 # length
 [ 8	]
 #select locate('@','joeuser@mydatabase@test', -4) as string_position;
-% .L # table_name
+% .L2 # table_name
 % string_position # name
 % int # type
 % 1 # length

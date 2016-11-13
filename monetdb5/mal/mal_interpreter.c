@@ -422,7 +422,12 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 			stk = prepareMALstack(mb, mb->vsize);
 			stk->up = 0;
 			*env = stk;
-		} else stk = *env;
+		} else {
+			ValPtr lhs, rhs;
+
+			stk = *env;
+			initStack(0);
+		}
 		assert(stk);
 		for (i = pci->retc; i < pci->argc; i++) {
 			lhs = &stk->stk[pci->argv[i]];
@@ -445,6 +450,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	}
 	if ( ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+	if (stk) 
+		garbageCollector(cntxt, mb, stk, TRUE);
 	return ret;
 }
 
@@ -853,10 +860,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							backup[i].val.pval != stk->stk[a].val.pval) {
 							if (backup[i].val.pval)
 								GDKfree(backup[i].val.pval);
-							if (i >= pci->retc) {
-								stk->stk[a].val.pval = 0;
-								stk->stk[a].len = 0;
-							}
 							backup[i].len = 0;
 							backup[i].val.pval = 0;
 						}
@@ -1433,11 +1436,11 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 #endif
 	(void) flag;
 	for (k = 0; k < mb->vtop; k++) {
-		if (isVarCleanup(mb, k) ){
+	//	if (isVarCleanup(mb, k) ){
 			garbageElement(cntxt, v = &stk->stk[k]);
 			v->vtype = TYPE_int;
 			v->val.ival = int_nil;
-		}
+	//	}
 	}
 #ifdef STACKTRACE
 	if (cntxt) {

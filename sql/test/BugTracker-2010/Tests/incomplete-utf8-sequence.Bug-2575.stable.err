@@ -71,7 +71,7 @@ MAPI  = (monetdb) /var/tmp/mtest-20213/.s.monetdb.30730
 QUERY = copy 2 records into tbl_bug2575 from stdin using delimiters '\t','\n','';
         10001160000	29	.v.
         10001690001	0	co√
-ERROR = !Failed to import table line 2 field 3 'char(3)' expected in 'co<C3>'
+ERROR = !Failed to import table line 2 field trigram 'char(3)' expected in 'co<C3>'
 
 # 14:47:29 >  
 # 14:47:29 >  Done.

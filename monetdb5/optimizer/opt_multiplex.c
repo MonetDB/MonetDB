@@ -41,6 +41,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tt;
 	int bat = (getModuleId(pci) == batmalRef) ;
 
+	//if ( optimizerIsApplied(mb,"multiplex"))
+		//return 0;
 	(void) cntxt;
 	(void) stk;
 	for (i = 0; i < pci->retc; i++) {

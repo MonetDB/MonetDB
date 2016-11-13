@@ -2,7 +2,7 @@
 bincopycollist-prepare
 bincopycollist
 
-HAVE_FITS&HAVE_GEOM&HAVE_GSL&!HAVE_LIDAR&HAVE_SHP&HAVE_NETCDF&HAVE_SAMTOOLS?systemfunctions
+HAVE_FITS&HAVE_GEOM&HAVE_GSL&HAVE_LIDAR&HAVE_SHP&HAVE_NETCDF&HAVE_SAMTOOLS?systemfunctions
 example
 example-queries
 example-drop

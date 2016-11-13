@@ -26,8 +26,8 @@ Ready.
 # 14:02:52 >  
 
 #SELECT GeometryType(centerlines) FROM divided_routes WHERE name = 'Route 75';
-% sys.L # table_name
-% geometrytype_centerlines # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 15 # length
 [ "MULTILINESTRING"	]

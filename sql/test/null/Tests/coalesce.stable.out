@@ -45,7 +45,7 @@ Ready.
 #      SELECT * FROM my_table1
 #     ) x
 #;
-% .L2 # table_name
+% .L3 # table_name
 % col1 # name
 % int # type
 % 1 # length

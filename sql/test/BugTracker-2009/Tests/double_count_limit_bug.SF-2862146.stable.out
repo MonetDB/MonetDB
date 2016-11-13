@@ -25,19 +25,19 @@ Ready.
 # 22:42:43 >  
 
 #SELECT COUNT (*) AS c1, COUNT (*) AS c2 FROM t2 limit 100;
-% .L1,	.L2 # table_name
+% .L4,	.L7 # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 0,	0	]
 #SELECT COUNT (*) AS c1 FROM t2 limit 100;
-% .L1 # table_name
+% .L4 # table_name
 % c1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT (*) AS c1, COUNT (*) AS c2 FROM t2;
-% sys.L1,	sys.L2 # table_name
+% sys.L4,	sys.L7 # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length

@@ -31,27 +31,27 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 97 # length
+% 100 # length
 project (
 | group by (
 | | table(sys.dbg) [ dbg.a, dbg.b ] COUNT 
-| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L1.L1, L1.L1 as L2.L2 ]
-) [ dbg.d, L1 as L1.L1, sys.sql_mul(sys.sql_div(L2, tinyint "2" as L3.L3), tinyint "2") as L3.f ]
+| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L3.L3, L3.L3 as L6.L6 ]
+) [ dbg.d, L3 as L4.L3, sys.sql_mul(sys.sql_div(L6, tinyint "2" as L10.L10), tinyint "2") as L11.f ]
 #set optimizer = 'sequential_pipe';
 #explain SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
 % .explain # table_name
 % mal # name
 % clob # type
 % 142 # length
-function user.s4_1(A0:bte,A1:bte):void;
-    X_59:void := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",36);
+function user.s8_1():void;
+    X_59:void := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",35);
     X_26 := bat.new(nil:str);
     X_33 := bat.append(X_26,"sys.dbg");
-    X_43 := bat.append(X_33,"sys.L1");
-    X_52 := bat.append(X_43,"sys.L3");
+    X_43 := bat.append(X_33,"sys.L4");
+    X_52 := bat.append(X_43,"sys.L11");
     X_28 := bat.new(nil:str);
     X_35 := bat.append(X_28,"d");
-    X_45 := bat.append(X_35,"L1");
+    X_45 := bat.append(X_35,"L3");
     X_54 := bat.append(X_45,"f");
     X_29 := bat.new(nil:str);
     X_37 := bat.append(X_29,"int");
@@ -75,13 +75,35 @@ function user.s4_1(A0:bte,A1:bte):void;
     X_16 := algebra.projection(C_1,X_14);
     X_17:bat[:lng] := aggr.subsum(X_16,X_8,r1_11,true,true);
     X_12 := bat.setKey(X_11,true);
-    X_19:bat[:lng] := batcalc./(X_17,A1);
-    X_23:bat[:lng] := batcalc.*(X_19,A0);
+    X_19:bat[:lng] := batcalc./(X_17,2);
+    X_23:bat[:lng] := batcalc.*(X_19,2);
     sql.resultSet(X_52,X_54,X_56,X_57,X_58,X_12,X_17,X_23);
-end user.s4_1;
+end user.s8_1;
+#inline               actions= 0 time=4 usec 
+#remap                actions= 2 time=57 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions= 2 time=16 usec 
+#emptybind            actions= 0 time=7 usec 
+#aliases              actions= 2 time=6 usec 
+#mergetable           actions= 0 time=39 usec 
+#deadcode             actions= 0 time=6 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 4 time=10 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=3 usec 
+#reorder              actions= 1 time=24 usec 
+#deadcode             actions= 0 time=5 usec 
+#reduce               actions=26 time=8 usec 
+#matpack              actions= 0 time=3 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#garbagecollector     actions= 1 time=15 usec 
+#total                actions= 1 time=311 usec 
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% sys.dbg,	sys.L1,	sys.L3 # table_name
+% sys.dbg,	sys.L2,	sys.L5 # table_name
 % d,	L1,	f # name
 % int,	bigint,	bigint # type
 % 2,	2,	2 # length
@@ -95,24 +117,24 @@ end user.s4_1;
 % .plan # table_name
 % rel # name
 % clob # type
-% 96 # length
+% 99 # length
 project (
 | group by (
 | | table(sys.dbg) [ dbg.a, dbg.b ] COUNT 
-| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L1.L1, L1.L1 as L2.L2 ]
-) [ dbg.d, L1 as L1.e, sys.sql_mul(sys.sql_div(L2, tinyint "2" as L3.L3), tinyint "2") as L3.f ]
+| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L3.L3, L3.L3 as L6.L6 ]
+) [ dbg.d, L3 as L4.e, sys.sql_mul(sys.sql_div(L6, tinyint "2" as L10.L10), tinyint "2") as L11.f ]
 #set optimizer = 'sequential_pipe';
 #explain SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
 % .explain # table_name
 % mal # name
 % clob # type
 % 147 # length
-function user.s10_1(A0:bte,A1:bte):void;
-    X_59:void := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",36);
+function user.s20_1():void;
+    X_59:void := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",35);
     X_26 := bat.new(nil:str);
     X_33 := bat.append(X_26,"sys.dbg");
-    X_43 := bat.append(X_33,"sys.L1");
-    X_52 := bat.append(X_43,"sys.L3");
+    X_43 := bat.append(X_33,"sys.L4");
+    X_52 := bat.append(X_43,"sys.L11");
     X_28 := bat.new(nil:str);
     X_35 := bat.append(X_28,"d");
     X_45 := bat.append(X_35,"e");
@@ -139,14 +161,36 @@ function user.s10_1(A0:bte,A1:bte):void;
     X_16 := algebra.projection(C_1,X_14);
     X_17:bat[:lng] := aggr.subsum(X_16,X_8,r1_11,true,true);
     X_12 := bat.setKey(X_11,true);
-    X_19:bat[:lng] := batcalc./(X_17,A1);
-    X_23:bat[:lng] := batcalc.*(X_19,A0);
+    X_19:bat[:lng] := batcalc./(X_17,2);
+    X_23:bat[:lng] := batcalc.*(X_19,2);
     sql.resultSet(X_52,X_54,X_56,X_57,X_58,X_12,X_17,X_23);
-end user.s10_1;
+end user.s20_1;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 2 time=40 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=2 usec 
+#evaluate             actions= 2 time=13 usec 
+#emptybind            actions= 0 time=7 usec 
+#aliases              actions= 2 time=6 usec 
+#mergetable           actions= 0 time=39 usec 
+#deadcode             actions= 0 time=6 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 4 time=10 usec 
+#commonTerms          actions= 0 time=5 usec 
+#projectionpath       actions= 0 time=3 usec 
+#reorder              actions= 1 time=22 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=26 time=8 usec 
+#matpack              actions= 0 time=3 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=2 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollector     actions= 1 time=15 usec 
+#total                actions= 1 time=283 usec 
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP
 #BY d;
-% sys.dbg,	sys.L1,	sys.L3 # table_name
+% sys.dbg,	sys.L4,	sys.L11 # table_name
 % d,	e,	f # name
 % int,	bigint,	bigint # type
 % 2,	2,	2 # length

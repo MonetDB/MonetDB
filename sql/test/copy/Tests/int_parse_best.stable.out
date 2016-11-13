@@ -111,7 +111,7 @@ Ready.
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	38,	4 # length
-[ 2,	1,	"line 2 field 1 'int' expected in '5.1'",	"5.1\n"	]
+[ 2,	1,	"line 2 field i 'int' expected in '5.1'",	"5.1\n"	]
 #delete from t_int;
 [ 2	]
 #copy 5 records into t_int from stdin delimiters ',','\n' NULL as '' best effort;
@@ -133,9 +133,9 @@ Ready.
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	39,	5 # length
-[ 2,	1,	"line 2 field 1 'int' expected in 'nil'",	"nil\n"	]
-[ 4,	1,	"line 4 field 1 'int' expected in 'null'",	"null\n"	]
-[ 5,	1,	"line 5 field 1 'int' expected in 'abc'",	"abc\n"	]
+[ 2,	1,	"line 2 field i 'int' expected in 'nil'",	"nil\n"	]
+[ 4,	1,	"line 4 field i 'int' expected in 'null'",	"null\n"	]
+[ 5,	1,	"line 5 field i 'int' expected in 'abc'",	"abc\n"	]
 #delete from t_int;
 [ 2	]
 #drop table t_int;

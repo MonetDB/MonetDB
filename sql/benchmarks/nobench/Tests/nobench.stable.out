@@ -58,14 +58,14 @@ Ready.
 #{"nested_obj": {"num": 4, "str": "GBRDCMBQ"}, "dyn2": true, "dyn1": 9, "nested_arr": ["especially"], "str2": "GBRDCMBQ", "str1": "GBRDCMBQGE======", "sparse_093": "GBRDCMBQGE======", "thousandth": 9, "sparse_090": "GBRDCMBQGE======", "sparse_091": "GBRDCMBQGE======", "sparse_092": "GBRDCMBQGE======", "num": 9, "bool": true, "sparse_095": "GBRDCMBQGE======", "sparse_096": "GBRDCMBQGE======", "sparse_097": "GBRDCMBQGE======", "sparse_098": "GBRDCMBQGE======", "sparse_094": "GBRDCMBQGE======", "sparse_099": "GBRDCMBQGE======"},
 [ 10	]
 #select count(*) from bench10;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 2 # length
 [ 10	]
 #select json.filter(js, '$..str1,$..num') from bench10;
-% sys.L # table_name
-% filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 24 # length
 [ "[\"GBRDCMBQGE======\",4,9]"	]
@@ -79,8 +79,8 @@ Ready.
 [ "[\"GBRDA===\",5,0]"	]
 [ "[\"GBRDCMJQ\",1,6]"	]
 #select json.filter(js,'.nested_obj.str,.nested_obj.num') from bench10;
-% sys.L # table_name
-% filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 22 # length
 [ "[\"GBRDCMBQ\",4]"	]
@@ -94,8 +94,8 @@ Ready.
 [ "[\"GBRDCMBR\",5]"	]
 [ "[\"GBRDC===\",1]"	]
 #select json.filter(js,'..sparse_000,..sparse_001') from bench10;
-% sys.L # table_name
-% filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 23 # length
 [ "[]"	]
@@ -109,8 +109,8 @@ Ready.
 [ "[\"GBRDA===\",\"GBRDA===\"]"	]
 [ "[]"	]
 #select json.filter(js,'..sparse_000,..sparse_110') from bench10;
-% sys.L # table_name
-% filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 12 # length
 [ "[]"	]
@@ -124,8 +124,8 @@ Ready.
 [ "[\"GBRDA===\"]"	]
 [ "[]"	]
 #select json.filter(js,'str1') from bench10;
-% sys.L # table_name
-% filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 20 # length
 [ "[\"GBRDCMBQGE======\"]"	]
@@ -139,8 +139,8 @@ Ready.
 [ "[\"GBRDA===\"]"	]
 [ "[\"GBRDCMJQ\"]"	]
 #select json.text(json.filter(js,'str1')) from bench10;
-% sys.L # table_name
-% text_filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 16 # length
 [ "GBRDCMBQGE======"	]
@@ -160,8 +160,8 @@ Ready.
 % 462 # length
 [ "{\"nested_obj\": {\"num\": 0, \"str\": \"GBRDA===\"}, \"dyn2\": 5, \"dyn1\": 5, \"nested_arr\": [\"the\", \"state\", \"aware\", \"''\", \"the\"], \"str2\": \"GBRDA===\", \"str1\": \"GBRDCMBR\", \"sparse_058\": \"GBRDCMBR\", \"thousandth\": 5, \"num\": 5, \"bool\": true, \"sparse_059\": \"GBRDCMBR\", \"sparse_054\": \"GBRDCMBR\", \"sparse_055\": \"GBRDCMBR\", \"sparse_056\": \"GBRDCMBR\", \"sparse_057\": \"GBRDCMBR\", \"sparse_050\": \"GBRDCMBR\", \"sparse_051\": \"GBRDCMBR\", \"sparse_052\": \"GBRDCMBR\", \"sparse_053\": \"GBRDCMBR\"}"	]
 #select json.number(json.filter(js,'num')) from bench10;
-% sys.L # table_name
-% number_filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 9	]
@@ -175,8 +175,8 @@ Ready.
 [ 0	]
 [ 6	]
 #select json."integer"(json.filter(js,'num')) from bench10;
-% sys.L # table_name
-% integer_filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % bigint # type
 % 1 # length
 [ 9	]
@@ -214,8 +214,8 @@ Ready.
 [ "{\"nested_obj\": {\"num\": 7, \"str\": \"GBRDCMJR\"}, \"dyn2\": 2, \"dyn1\": 2, \"nested_arr\": [\"she\", \"beyond\"], \"str2\": \"GBRDCMJR\", \"str1\": \"GBRDCMA=\", \"thousandth\": 2, \"sparse_025\": \"GBRDCMA=\", \"sparse_024\": \"GBRDCMA=\", \"sparse_027\": \"GBRDCMA=\", \"num\": 2, \"bool\": false, \"sparse_020\": \"GBRDCMA=\", \"sparse_023\": \"GBRDCMA=\", \"sparse_022\": \"GBRDCMA=\", \"sparse_021\": \"GBRDCMA=\", \"sparse_029\": \"GBRDCMA=\", \"sparse_028\": \"GBRDCMA=\", \"sparse_026\": \"GBRDCMA=\"}"	]
 [ "{\"nested_obj\": {\"num\": 5, \"str\": \"GBRDCMBR\"}, \"sparse_008\": \"GBRDA===\", \"sparse_009\": \"GBRDA===\", \"dyn2\": false, \"dyn1\": \"GBRDA===\", \"nested_arr\": [], \"sparse_007\": \"GBRDA===\", \"str2\": \"GBRDCMBR\", \"str1\": \"GBRDA===\", \"sparse_004\": \"GBRDA===\", \"sparse_003\": \"GBRDA===\", \"sparse_002\": \"GBRDA===\", \"sparse_001\": \"GBRDA===\", \"sparse_000\": \"GBRDA===\", \"num\": 0, \"bool\": false, \"sparse_006\": \"GBRDA===\", \"thousandth\": 0, \"sparse_005\": \"GBRDA===\"}"	]
 #select json.number(json.filter(js,'dyn1')) from bench10;
-% sys.L # table_name
-% number_filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % double # type
 % 24 # length
 [ 9	]
@@ -229,8 +229,8 @@ Ready.
 [ NULL	]
 [ 6	]
 #select json."integer"(json.filter(js,'dyn1')) from bench10;
-% sys.L # table_name
-% integer_filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % bigint # type
 % 1 # length
 [ 9	]
@@ -252,8 +252,8 @@ Ready.
 [ "{\"sparse_018\": \"GBRDC===\", \"nested_obj\": {\"num\": 6, \"str\": \"GBRDCMJQ\"}, \"dyn2\": \"GBRDC===\", \"dyn1\": 1, \"nested_arr\": [\"button-down\"], \"sparse_010\": \"GBRDC===\", \"str2\": \"GBRDCMJQ\", \"str1\": \"GBRDC===\", \"sparse_013\": \"GBRDC===\", \"sparse_014\": \"GBRDC===\", \"sparse_015\": \"GBRDC===\", \"sparse_016\": \"GBRDC===\", \"sparse_017\": \"GBRDC===\", \"num\": 1, \"bool\": true, \"sparse_011\": \"GBRDC===\", \"thousandth\": 1, \"sparse_019\": \"GBRDC===\", \"sparse_012\": \"GBRDC===\"}"	]
 [ "{\"nested_obj\": {\"num\": 7, \"str\": \"GBRDCMJR\"}, \"dyn2\": 2, \"dyn1\": 2, \"nested_arr\": [\"she\", \"beyond\"], \"str2\": \"GBRDCMJR\", \"str1\": \"GBRDCMA=\", \"thousandth\": 2, \"sparse_025\": \"GBRDCMA=\", \"sparse_024\": \"GBRDCMA=\", \"sparse_027\": \"GBRDCMA=\", \"num\": 2, \"bool\": false, \"sparse_020\": \"GBRDCMA=\", \"sparse_023\": \"GBRDCMA=\", \"sparse_022\": \"GBRDCMA=\", \"sparse_021\": \"GBRDCMA=\", \"sparse_029\": \"GBRDCMA=\", \"sparse_028\": \"GBRDCMA=\", \"sparse_026\": \"GBRDCMA=\"}"	]
 #select json.filter(js,'nested_arr') from bench10;
-% sys.L # table_name
-% filter_js # name
+% sys.L1 # table_name
+% L1 # name
 % json # type
 % 59 # length
 [ "[[\"especially\"]]"	]
@@ -281,8 +281,8 @@ Ready.
 #select f.h, count(*) from (
 #	select json.filter(js,'..thousanth') as g, json.number(json.filter(js,'num')) as h from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3.0 ) as f
 #group by f.h;
-% sys.f,	sys.L1 # table_name
-% h,	L1 # name
+% sys.f,	sys.L4 # table_name
+% h,	L3 # name
 % double,	bigint # type
 % 24,	1 # length
 [ 3,	1	]

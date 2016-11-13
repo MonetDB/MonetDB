@@ -48,7 +48,7 @@ Ready.
 #	o_orderpriority
 #order by
 #	o_orderpriority;
-% sys.orders,	sys.L1 # table_name
+% sys.orders,	sys.L10 # table_name
 % o_orderpriority,	order_count # name
 % char,	bigint # type
 % 15,	3 # length

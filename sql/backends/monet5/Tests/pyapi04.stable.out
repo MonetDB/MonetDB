@@ -76,8 +76,8 @@ Ready.
 #    return [True] * 4
 #};
 #SELECT pyapi04() FROM dval;
-% .L # table_name
-% pyapi04 # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

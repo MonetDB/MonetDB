@@ -36,14 +36,14 @@ stdout of test 'mdb_starts_with_sql_debug_64.SF-1999354` in directory 'sql/test/
 #-- minutes
 #SET d = 60.0 * (d-nd);
 #SELECT f2(1,2,3);
-% .L # table_name
-% f2_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "00:04:00.004"	]
 #SELECT f2(p.ra,8,p."dec") FROM t1999354a as p;
-% sys.L # table_name
-% f2_ra # name
+% sys.L2 # table_name
+% L2 # name
 % varchar # type
 % 0 # length
 

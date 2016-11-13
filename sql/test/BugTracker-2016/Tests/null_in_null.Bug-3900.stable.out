@@ -30,20 +30,20 @@ Ready.
 # 21:33:36 >  
 
 #select null in (null);
-% .L1 # table_name
-% =_single_value # name
+% .L3 # table_name
+% L3 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #select null in (1);
-% .L1 # table_name
-% =_single_value # name
+% .L3 # table_name
+% L3 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #select null between null and null;
-% .L # table_name
-% and_>=_single_value # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ NULL	]

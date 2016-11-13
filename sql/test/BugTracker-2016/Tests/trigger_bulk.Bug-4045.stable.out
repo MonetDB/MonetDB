@@ -77,8 +77,6 @@ Ready.
 #BEFORE INSERT ON t111
 #FOR EACH ROW
 #  INSERT INTO t111 VALUES(4, 'update_when_statement_true');
-#INSERT INTO t111 SELECT * FROM t111;
-[ 2	]
 #SELECT * FROM t111; 
 % sys.t111,	sys.t111 # table_name
 % id,	name # name
@@ -86,12 +84,6 @@ Ready.
 % 2,	7 # length
 [ 10,	"monetdb"	]
 [ 20,	"monet"	]
-[ 4, "update_when_statement_true"];
-[ 4, "update_when_statement_true"];
-[ 10,	"monetdb"	]
-[ 20,	"monet"	]
-#INSERT INTO t111 VALUES(30,'single');
-[ 1	]
 #SELECT * FROM t111;
 % sys.t111,	sys.t111 # table_name
 % id,	name # name
@@ -99,13 +91,6 @@ Ready.
 % 2,	7 # length
 [ 10,	"monetdb"	]
 [ 20,	"monet"	]
-[ 4, "update_when_statement_true"];
-[ 4, "update_when_statement_true"];
-[ 10,	"monetdb"	]
-[ 20,	"monet"	]
-[ 4, "update_when_statement_true"];
-[ 30,	"single"	]
-#DROP TABLE t111;
 
 # 09:09:27 >  
 # 09:09:27 >  "Done."

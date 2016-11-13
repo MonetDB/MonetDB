@@ -71,35 +71,35 @@ Ready.
 [ 5508,	2013-02-01,	"C1",	3e+06,	3e+06,	4,	NULL	]
 [ 5508,	2013-02-01,	"C2",	2e+06,	2e+06,	2,	NULL	]
 #select toplevelorderid, count(*), sum(numberoffills) from t2 group by toplevelorderid;
-% sys.t2,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
+% sys.t2,	sys.L4,	sys.L7 # table_name
+% toplevelorderid,	L3,	L6 # name
 % bigint,	bigint,	hugeint # type
 % 4,	1,	1 # length
 [ 5508,	2,	6	]
 #select toplevelorderid, count(*), sum(numberoffills) from t2 where
 #toplevelorderid = 5508 group by toplevelorderid;
-% sys.t2,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
+% sys.t2,	sys.L4,	sys.L7 # table_name
+% toplevelorderid,	L3,	L6 # name
 % bigint,	bigint,	hugeint # type
 % 4,	1,	1 # length
 [ 5508,	2,	6	]
 #select toplevelorderid, count(*), sum(numberoffills) from t2 group by toplevelorderid;
-% sys.t2,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
+% sys.t2,	sys.L4,	sys.L7 # table_name
+% toplevelorderid,	L3,	L6 # name
 % bigint,	bigint,	hugeint # type
 % 4,	1,	1 # length
 [ 5508,	2,	6	]
 #select toplevelorderid, count(*), sum(numberoffills) from t2 where
 #toplevelorderid = 5508 group by toplevelorderid;
-% sys.t2,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
+% sys.t2,	sys.L4,	sys.L7 # table_name
+% toplevelorderid,	L3,	L6 # name
 % bigint,	bigint,	hugeint # type
 % 4,	1,	1 # length
 [ 5508,	2,	6	]
 #select toplevelorderid, count(*), sum(numberoffills) from
 #orderconnectormetrics where toplevelorderid = 5508 group by toplevelorderid;
-% sys.orderconnectormetrics,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
+% sys.orderconnectormetrics,	sys.L4,	sys.L7 # table_name
+% toplevelorderid,	L3,	L6 # name
 % bigint,	bigint,	hugeint # type
 % 4,	1,	1 # length
 [ 5508,	2,	6	]
@@ -113,8 +113,8 @@ Ready.
 [ 1	]
 #select toplevelorderid, count(*), sum(numberoffills) from t2 where
 #toplevelorderid = 5508 group by toplevelorderid;
-% sys.t2,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
+% sys.t2,	sys.L4,	sys.L7 # table_name
+% toplevelorderid,	L3,	L6 # name
 % bigint,	bigint,	hugeint # type
 % 4,	1,	2 # length
 [ 5508,	4,	12	]

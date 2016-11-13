@@ -44,8 +44,8 @@ Ready.
 # 15:20:08 >  
 
 [ 100000000	]
-% .L1,	sys.L2 # table_name
-% L1,	L2 # name
+% .L2,	sys.L6 # table_name
+% L2,	L5 # name
 % char,	double # type
 % 20,	24 # length
 [ "avg(sqrt(n8)) == 1.1",	1.1	]

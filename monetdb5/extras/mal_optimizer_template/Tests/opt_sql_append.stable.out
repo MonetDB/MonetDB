@@ -46,13 +46,13 @@ Ready.
 
 #create table ttt (a int, b int, c int);
 #select optimizer;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "default_pipe"	]
 #select def from optimizers() where name = optimizer;
-% .L # table_name
+% .L1 # table_name
 % def # name
 % clob # type
 % 579 # length
@@ -63,16 +63,14 @@ Ready.
 % clob # type
 % 126 # length
 function user.s8_1():void;
-    X_38:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",12);
-barrier X_58 := language.dataflow();
-    X_0 := sql.mvc();
-    (X_21:bat[:int],X_22:bat[:int],X_23:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0,nil:str);
-exit X_58;
-    X_25 := sql.append(X_0,"sys","ttt","a",X_21);
-    X_30 := sql.append(X_25,"sys","ttt","b",X_22);
-    X_33 := sql.append(X_30,"sys","ttt","c",X_23);
-    X_35 := aggr.count(X_23);
-    sql.affectedRows(X_33,X_35);
+    X_41:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",11);
+    X_3 := sql.mvc();
+    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0,nil:str);
+    X_28 := sql.append(X_3,"sys","ttt","a",X_24);
+    X_33 := sql.append(X_28,"sys","ttt","b",X_25);
+    X_36 := sql.append(X_33,"sys","ttt","c",X_26);
+    X_38 := aggr.count(X_26);
+    sql.affectedRows(X_36,X_38);
 end user.s8_1;
 #inline               actions= 0 time=1 usec 
 #candidates           actions= 1 time=14 usec 
@@ -107,13 +105,13 @@ end user.s8_1;
 #set opt_pipe_def  = ( select def from optimizers() where name = opt_pipe_name );
 #set optimizer = substring(opt_pipe_def,0,length(opt_pipe_def)-length('optimizer.garbageCollector();')) || 'optimizer.sql_append();optimizer.garbageCollector();';
 #select optimizer;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "user_1"	]
 #select def from optimizers() where name = optimizer;
-% .L # table_name
+% .L1 # table_name
 % def # name
 % clob # type
 % 602 # length
@@ -124,16 +122,14 @@ end user.s8_1;
 % clob # type
 % 126 # length
 function user.s24_1():void;
-    X_38:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",12);
-barrier X_58 := language.dataflow();
-    X_0 := sql.mvc();
-    (X_21:bat[:int],X_22:bat[:int],X_23:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0,nil:str);
-exit X_58;
-    X_25 := sql.append(X_0,"sys","ttt","a",X_21);
-    X_30 := sql.append(X_25,"sys","ttt","b",X_22);
-    X_35 := aggr.count(X_23);
-    X_33 := sql.append(X_30,"sys","ttt","c",X_23);
-    sql.affectedRows(X_33,X_35);
+    X_41:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",11);
+    X_3 := sql.mvc();
+    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0,nil:str);
+    X_28 := sql.append(X_3,"sys","ttt","a",X_24);
+    X_33 := sql.append(X_28,"sys","ttt","b",X_25);
+    X_38 := aggr.count(X_26);
+    X_36 := sql.append(X_33,"sys","ttt","c",X_26);
+    sql.affectedRows(X_36,X_38);
 end user.s24_1;
 #inline               actions= 0 time=1 usec 
 #candidates           actions= 1 time=14 usec 

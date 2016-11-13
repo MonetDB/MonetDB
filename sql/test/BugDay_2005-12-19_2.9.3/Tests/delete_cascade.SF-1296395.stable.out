@@ -13,18 +13,19 @@ stdout of test 'delete_cascade.SF-1296395` in directory 'sql/test/BugDay_2005-12
 
 Ready.
 
+# 15:27:25 >  
+# 15:27:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1391" "--port=36976"
+# 15:27:25 >  
 
-# 23:32:59 >  
-# 23:32:59 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42937  < delete_cascade.SF-1296395.sql
-# 23:32:59 >  
-
-[ 1	]
+#create table a1296395 (id int primary key);
+#create table b1296395 (id int, foreign key (id) references a1296395(id) on delete cascade);
+#insert into a1296395 values (1);
 [ 1	]
 [ 1	]
 [ 1	]
 #select count(*) from b1296395;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]

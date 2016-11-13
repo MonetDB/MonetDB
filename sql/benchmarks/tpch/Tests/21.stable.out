@@ -58,7 +58,7 @@ Ready.
 #			l3.l_orderkey = l1.l_orderkey
 #			and l3.l_suppkey <> l1.l_suppkey
 #			and l3.l_receiptdate > l3.l_commitdate
-% sys.supplier,	sys.L1 # table_name
+% sys.supplier,	sys.L22 # table_name
 % s_name,	numwait # name
 % char,	bigint # type
 % 25,	1 # length

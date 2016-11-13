@@ -44,8 +44,8 @@ Ready.
 #    FROM qnames_insct
 #)
 #ORDER BY qname;
-% .L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10 # table_name
-% L4,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% .L70,	.L70,	.L70,	.L70,	.L70,	.L70,	.L70,	.L70,	.L70,	.L70,	.L70,	.L70 # table_name
+% L22,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	11,	3,	5,	9,	3,	27,	1,	8,	1,	100,	100 # length
 [ "f1",	"sim_22_1_1",	419,	"chr22",	39994332,	0,	"5=1X11=1885D83=",	"=",	39995061,	0,	"AGTAGATGGGATTACAGGCACCCGCCACCGCGCCCAGCTAATTTTTATATATTTTTTAAGTAGAGATGGGGTTTCACCATGTTGGCCAGGCTGGTCTTGA",	"EEEEEFAG=GCDAGBF8F:EFGGDEGCFFBAAGCE?DD?5?DGF#DC##BD;D=BD@G?A0F9G6AFC?5#CCCAE6AD-F#CA0#.ADCD;#-#6#A##"	]
@@ -209,8 +209,8 @@ Ready.
 #WHERE qname IN (
 #    SELECT *
 #    FROM qnames_insct
-% .L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10,	.L10 # table_name
-% L4,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% .L1014,	.L1014,	.L1014,	.L1014,	.L1014,	.L1014,	.L1014,	.L1014,	.L1014,	.L1014,	.L1014,	.L1014 # table_name
+% L561,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	11,	3,	5,	9,	3,	27,	1,	8,	1,	100,	100 # length
 [ "f2",	"sim_22_1_1",	339,	"chr22",	39995061,	0,	"11=1368D51=1X37=",	"=",	39994332,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]

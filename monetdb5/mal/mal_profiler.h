@@ -23,6 +23,8 @@ typedef struct rusage Rusage;
 typedef struct tms Tms;
 typedef struct Mallinfo Mallinfo;
 
+mal_export int malProfileMode;
+
 mal_export void initProfiler(void);
 mal_export str openProfilerStream(stream *fd, int mode);
 mal_export str closeProfilerStream(void);
@@ -37,10 +39,11 @@ mal_export void setHeartbeat(int delay);
 mal_export str setprofilerpoolsize(int size);
 mal_export void initHeartbeat(void);
 mal_export void profilerHeartbeatEvent(char *alter);
+mal_export int getprofilerlimit(void);
+mal_export void setprofilerlimit(int limit);
 
 mal_export void MPresetProfiler(stream *fdout);
 
-mal_export int malProfileMode;
 mal_export void clearTrace(void);
 mal_export int TRACEtable(BAT **r);
 mal_export int initTrace(void);

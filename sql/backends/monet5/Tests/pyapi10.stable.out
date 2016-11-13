@@ -65,14 +65,14 @@ Ready.
 #    return(i*j 
 #};
 #SELECT AVG(pyapi10_mult(i,j)) FROM pyapi10_random_table(5000);
-% .L2 # table_name
-% L2 # name
+% .L6 # table_name
+% L5 # name
 % double # type
 % 24 # length
 [ 2487.9556	]
 #SELECT AVG(pyapi10_mult(i,j)) FROM pyapi10_random_table_nulls(5000);
-% .L2 # table_name
-% L2 # name
+% .L6 # table_name
+% L5 # name
 % double # type
 % 24 # length
 [ 5603.14638	]

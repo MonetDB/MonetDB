@@ -95,7 +95,7 @@ Ready.
 #    Nodes AS R_1
 #  ON ( T_1.X_1 = R_1.hash )
 #  LEFT OUTER JOIN
-% .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
+% .L4,	.L6,	.L10,	.L12,	.L14,	.L16,	.L20,	.L22 # table_name
 % v_1_lex,	v_1_datatype,	v_1_lang,	v_1_type,	v_2_lex,	v_2_datatype,	v_2_lang,	v_2_type # name
 % clob,	varchar,	varchar,	int,	clob,	varchar,	varchar,	int # type
 % 16,	0,	0,	1,	0,	0,	0,	1 # length

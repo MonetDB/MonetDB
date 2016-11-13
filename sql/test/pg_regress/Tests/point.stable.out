@@ -72,7 +72,7 @@ Ready.
 #INSERT INTO POINT_TBL(f1) VALUES (null);
 [ 1	]
 #SELECT '' AS six, POINT_TBL.* FROM POINT_TBL;
-% .L,	sys.point_tbl # table_name
+% .L2,	sys.point_tbl # table_name
 % six,	f1 # name
 % char,	geometry # type
 % 0,	0 # length
@@ -83,7 +83,7 @@ Ready.
 [ "",	"POINT (-5 -12)"	]
 [ "",	NULL	]
 #SELECT '' AS six, f1, cast(f1 as varchar(55)) as txt FROM POINT_TBL;
-% .L,	sys.point_tbl,	sys.L1 # table_name
+% .L2,	sys.point_tbl,	sys.L6 # table_name
 % six,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	18 # length
@@ -106,7 +106,7 @@ Ready.
 [ "POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
 [ NULL,	NULL	]
 #SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE p.f1 << ST_MakePoint(0.0, 0.0);
-% .L1,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % three,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	16 # length
@@ -114,7 +114,7 @@ Ready.
 [ "",	"POINT (-3 4)",	"\"POINT (-3 4)\""	]
 [ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
 #SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE ST_MakePoint(0.0,0.0) >> p.f1;
-% .L1,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % three,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	16 # length
@@ -122,32 +122,32 @@ Ready.
 [ "",	"POINT (-3 4)",	"\"POINT (-3 4)\""	]
 [ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
 #SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE ST_MakePoint(0.0,0.0) |>> p.f1;
-% .L1,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	16 # length
 [ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
 #SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE p.f1 <<| ST_MakePoint(0.0, 0.0);
-% .L1,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	16 # length
 [ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
 #SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE p.f1 ~= ST_MakePoint(5.1, 34.5);
-% .L1,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	18 # length
 [ "",	"POINT (5.1 34.5)",	"\"POINT (5.1 34.5)\""	]
 #SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE p.f1 @ ST_WKTToSQL('linestring(0 0, 100 100)');
-% .L1,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % three,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	18 # length
 [ "",	"POINT (0 0)",	"\"POINT (0 0)\""	]
 [ "",	"POINT (5.1 34.5)",	"\"POINT (5.1 34.5)\""	]
 #SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE not p.f1 @ ST_WKTToSQL('linestring(0 0, 100 100)');
-% .L1,	sys.p,	sys.p # table_name
+% .L10,	sys.p,	sys.p # table_name
 % three,	f1,	txt # name
 % char,	geometry,	varchar # type
 % 0,	0,	16 # length
@@ -155,7 +155,7 @@ Ready.
 [ "",	"POINT (-3 4)",	"\"POINT (-3 4)\""	]
 [ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
 #SELECT '' AS six, p.f1, p.f1 <-> ST_MakePoint(0,0) AS dist FROM POINT_TBL p ORDER BY dist;
-% .L,	sys.p,	sys.L # table_name
+% .L2,	sys.p,	sys.L5 # table_name
 % six,	f1,	dist # name
 % char,	geometry,	double # type
 % 0,	0,	24 # length
@@ -168,7 +168,7 @@ Ready.
 #SELECT '' AS thirtysix, p1.f1 AS point1, p2.f1 AS point2, p1.f1 <-> p2.f1 AS dist
 #   FROM POINT_TBL p1, POINT_TBL p2
 #   ORDER BY dist, point1, point2; -- using <<, point2 using <<;
-% .L,	sys.L,	sys.L,	sys.L # table_name
+% .L2,	sys.L4,	sys.L6,	sys.L10 # table_name
 % thirtysix,	point1,	point2,	dist # name
 % char,	geometry,	geometry,	double # type
 % 0,	0,	0,	24 # length
@@ -209,7 +209,7 @@ Ready.
 [ "",	"POINT (-5 -12)",	"POINT (5.1 34.5)",	47.58424107	]
 [ "",	"POINT (5.1 34.5)",	"POINT (-5 -12)",	47.58424107	]
 #SELECT '' AS twenty, p1.f1 AS point1, p2.f1 AS point2 FROM POINT_TBL p1, POINT_TBL p2 WHERE (p1.f1 <-> p2.f1) > 3;
-% .L,	sys.L,	sys.L # table_name
+% .L2,	sys.L4,	sys.L6 # table_name
 % twenty,	point1,	point2 # name
 % char,	geometry,	geometry # type
 % 0,	0,	0 # length
@@ -237,7 +237,7 @@ Ready.
 #   FROM POINT_TBL p1, POINT_TBL p2
 #   WHERE (p1.f1 <-> p2.f1) > 3 and p1.f1 << p2.f1
 #   ORDER BY distance, point1, point2; -- using <<, point2 using <<;
-% .L,	sys.L,	sys.L,	sys.L # table_name
+% .L2,	sys.L4,	sys.L6,	sys.L10 # table_name
 % ten,	point1,	point2,	distance # name
 % char,	geometry,	geometry,	double # type
 % 0,	0,	0,	24 # length
@@ -255,7 +255,7 @@ Ready.
 #   FROM POINT_TBL p1, POINT_TBL p2 
 #   WHERE (p1.f1 <-> p2.f1) > 3 and p1.f1 << p2.f1   -- and p1.f1 >^ p2.f1
 #   ORDER BY distance;
-% .L,	sys.L,	sys.L,	sys.L # table_name
+% .L2,	sys.L4,	sys.L6,	sys.L10 # table_name
 % ten,	point1,	point2,	distance # name
 % char,	geometry,	geometry,	double # type
 % 0,	0,	0,	24 # length

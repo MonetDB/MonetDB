@@ -444,8 +444,11 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
 
-	if (!e->rname) 
-		exp_setrelname(sql->sa, e, sql->label);
+	if (!e->rname) {
+		exp_setrelname(sql->sa, e, ++sql->label);
+		if (!e->name)
+			e->name = e->rname;
+	}
 	if (rel->op == op_project) {
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);
@@ -633,6 +636,10 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
 			char *iname = sa_strconcat( sa, "%", i->base.name);
 
+			/* do not include empty indices in the plan */
+			if (hash_index(i->type) && list_length(i->columns) <= 1)
+				continue;
+
 			if (i->type == join_idx)
 				t = sql_bind_localtype("oid"); 
 
@@ -745,8 +752,7 @@ exps_has_nil(list *exps)
 list *
 rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern )
 {
-	int label = sql->label;
-	list *rexps, *exps ;
+	list *rexps, *exps;
 
 	if (!rel || (is_subquery(rel) && is_project(rel->op)))
 		return new_exp_list(sql->sa);
@@ -777,6 +783,7 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	case op_inter:
 		if (rel->exps) {
 			node *en;
+			int label = ++sql->label;
 
 			exps = new_exp_list(sql->sa);
 			for (en = rel->exps->h; en; en = en->next) {
@@ -793,6 +800,7 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 		exps = rel_projections(sql, rel->l, tname, settname, intern );
 		if (exps) {
 			node *en;
+			int label = ++sql->label;
 			for (en = exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 				e->card = rel->card;

@@ -29,20 +29,20 @@ Ready.
 % clob # type
 % 100 # length
 function user.s6_1():void;
-    X_35:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",16);
-    X_19 := bat.new(nil:str);
-    X_26 := bat.append(X_19,"sys.L");
-    X_21 := bat.new(nil:str);
-    X_28 := bat.append(X_21,"power_x");
+    X_38:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",17);
     X_22 := bat.new(nil:str);
-    X_30 := bat.append(X_22,"double");
-    X_23 := bat.new(nil:int);
-    X_32 := bat.append(X_23,53);
-    X_25 := bat.new(nil:int);
-    X_34 := bat.append(X_25,0);
-    X_13 := bat.new(nil:dbl);
-    X_15:bat[:dbl] := batmmath.pow(X_13,2);
-    sql.resultSet(X_26,X_28,X_30,X_32,X_34,X_15);
+    X_29 := bat.append(X_22,"sys.L2");
+    X_24 := bat.new(nil:str);
+    X_31 := bat.append(X_24,"L2");
+    X_25 := bat.new(nil:str);
+    X_33 := bat.append(X_25,"double");
+    X_26 := bat.new(nil:int);
+    X_35 := bat.append(X_26,53);
+    X_28 := bat.new(nil:int);
+    X_37 := bat.append(X_28,0);
+    X_16 := bat.new(nil:dbl);
+    X_18:bat[:dbl] := batmmath.pow(X_16,2);
+    sql.resultSet(X_29,X_31,X_33,X_35,X_37,X_18);
 end user.s6_1;
 #inline               actions= 0 time=4 usec 
 #candidates           actions= 1 time=17 usec 
@@ -73,37 +73,58 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 93 # length
-function user.s8_1():void;
-    X_34:void := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",16);
-    X_18 := bat.new(nil:str);
-    X_25 := bat.append(X_18,"sys.L");
-    X_20 := bat.new(nil:str);
-    X_27 := bat.append(X_20,"sql_mul_x");
-    X_21 := bat.new(nil:str);
-    X_29 := bat.append(X_21,"double");
-    X_22 := bat.new(nil:int);
-    X_31 := bat.append(X_22,53);
-    X_24 := bat.new(nil:int);
-    X_33 := bat.append(X_24,0);
-    X_13 := bat.new(nil:dbl);
-    X_14:bat[:dbl] := batcalc.*(X_13,X_13);
-    sql.resultSet(X_25,X_27,X_29,X_31,X_33,X_14);
-end user.s8_1;
-#inline               actions= 0 time=3 usec 
-#candidates           actions= 1 time=16 usec 
-#remap                actions= 1 time=27 usec 
-#costModel            actions= 1 time=13 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 0 time=3 usec 
-#emptybind            actions= 0 time=4 usec 
-#pushselect           actions= 0 time=3 usec 
-#aliases              actions= 1 time=16 usec 
-#mergetable           actions= 0 time=21 usec 
-#deadcode             actions= 2 time=15 usec 
-#aliases              actions= 0 time=4 usec 
-#constants            actions= 0 time=6 usec 
-#commonTerms          actions= 0 time=4 usec 
+% 74 # length
+function user.main():void;
+    X_45:void := querylog.define("-- no query","sequential_pipe",16,15);
+    X_29 := bat.new(nil:str);
+    X_36 := bat.append(X_29,"sys.L2");
+    X_31 := bat.new(nil:str);
+    X_38 := bat.append(X_31,"L2");
+    X_32 := bat.new(nil:str);
+    X_40 := bat.append(X_32,"double");
+    X_33 := bat.new(nil:int);
+    X_42 := bat.append(X_33,53);
+    X_35 := bat.new(nil:int);
+    X_44 := bat.append(X_35,0);
+    X_22 := bat.new(nil:dbl);
+    X_25:bat[:dbl] := batmmath.pow(X_22,2);
+# querylog.define("explain select x*x from sf_2596114;","sequential_pipe")
+    sql.resultSet(X_36,X_38,X_40,X_42,X_44,X_25);
+end user.main;
+#inline               actions= 0 time=2 usec 
+#remap                actions= 1 time=15 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 1 time=8 usec 
+#evaluate             actions= 0 time=5 usec 
+#emptybind            actions= 5 time=21 usec 
+#aliases              actions= 1 time=8 usec 
+#mergetable           actions= 0 time=41 usec 
+#deadcode             actions= 6 time=11 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 0 time=8 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=29 usec 
+#deadcode             actions= 0 time=7 usec 
+#reduce               actions=34 time=14 usec 
+#matpack              actions= 0 time=4 usec 
+#multiplex            actions= 0 time=3 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollector     actions= 1 time=13 usec 
+#total                actions= 1 time=336 usec 
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=4 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=2 usec 
+#evaluate             actions= 0 time=4 usec 
+#emptybind            actions= 0 time=8 usec 
+#aliases              actions= 0 time=5 usec 
+#mergetable           actions= 0 time=40 usec 
+#deadcode             actions= 0 time=8 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 0 time=3 usec 
+#commonTerms          actions= 0 time=5 usec 
 #projectionpath       actions= 0 time=4 usec 
 #reorder              actions= 1 time=24 usec 
 #deadcode             actions= 0 time=5 usec 

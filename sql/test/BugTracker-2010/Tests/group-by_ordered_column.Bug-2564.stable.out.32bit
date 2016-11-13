@@ -1,0 +1,89 @@
+stdout of test 'group-by_ordered_column.Bug-2564` in directory 'sql/test/BugTracker-2010` itself:
+
+
+# 19:36:51 >  
+# 19:36:51 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30272 --set xrpc_port=42483 --set monet_prompt= --set mal_listing=2 --trace  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
+# 19:36:51 >  
+
+# MonetDB server v5.20.3, based on kernel v1.38.2
+# Serving database 'mTests_src_test_BugTracker-2010', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:30272/
+# MonetDB/SQL module v2.38.3 loaded
+# MonetDB/GIS module v0.18.1 loaded
+
+Ready.
+
+
+# 19:36:51 >  
+# 19:36:51 >  mclient -lsql -ftest -i -e --host=rig --port=30272 
+# 19:36:51 >  
+
+[ 1	]
+[ 1	]
+[ 1	]
+#select * from t2564;
+% sys.t2564,	sys.t2564,	sys.t2564 # table_name
+% c1,	c2,	c3 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ 3,	1,	2	]
+[ 1,	2,	1	]
+[ 2,	3,	3	]
+#explain select count(*) from t2564 group by c1, c2, c3;
+% .explain # table_name
+% mal # name
+% clob # type
+% 113 # length
+function user.s7_1():void;
+    X_58:void := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",35);
+    X_41 := bat.new(nil:oid,nil:str);
+    X_49 := bat.append(X_41,"sys.L2");
+    X_44 := bat.new(nil:oid,nil:str);
+    X_51 := bat.append(X_44,"L1");
+    X_45 := bat.new(nil:oid,nil:str);
+    X_53 := bat.append(X_45,"wrd");
+    X_46 := bat.new(nil:oid,nil:int);
+    X_55 := bat.append(X_46,32);
+    X_48 := bat.new(nil:oid,nil:int);
+    X_57 := bat.append(X_48,0);
+    X_1 := sql.mvc();
+    C_2:bat[:oid] := sql.tid(X_1,"sys","t2564");
+    X_5:bat[:int] := sql.bind(X_1,"sys","t2564","c3",0);
+    (C_8:bat[:oid],r1_8:bat[:int]) := sql.bind(X_1,"sys","t2564","c3",2);
+    X_11:bat[:int] := sql.bind(X_1,"sys","t2564","c3",1);
+    X_13 := sql.delta(X_5,C_8,r1_8,X_11);
+    X_14 := algebra.projection(C_2,X_13);
+    X_15:bat[:int] := sql.bind(X_1,"sys","t2564","c1",0);
+    (C_17:bat[:oid],r1_17:bat[:int]) := sql.bind(X_1,"sys","t2564","c1",2);
+    X_19:bat[:int] := sql.bind(X_1,"sys","t2564","c1",1);
+    X_20 := sql.delta(X_15,C_17,r1_17,X_19);
+    X_21 := algebra.projection(C_2,X_20);
+    X_22:bat[:int] := sql.bind(X_1,"sys","t2564","c2",0);
+    (C_24:bat[:oid],r1_24:bat[:int]) := sql.bind(X_1,"sys","t2564","c2",2);
+    X_26:bat[:int] := sql.bind(X_1,"sys","t2564","c2",1);
+    X_27 := sql.delta(X_22,C_24,r1_24,X_26);
+    X_28 := algebra.projection(C_2,X_27);
+    (X_29,r1_29,r2_29) := group.subgroup(X_28);
+    (X_32,r1_32,r2_32) := group.subgroup(X_21,X_29);
+    (X_35,r1_35,r2_35) := group.subgroupdone(X_14,X_32);
+    X_38:bat[:wrd] := aggr.subcount(X_35,X_35,r1_35,false);
+    sql.resultSet(X_49,X_51,X_53,X_55,X_57,X_38);
+end user.s7_1;
+#select count(*) from t2564 group by c1, c2, c3;
+% sys.L2 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+
+# 19:36:51 >  
+# 19:36:51 >  Done.
+# 19:36:51 >  
+

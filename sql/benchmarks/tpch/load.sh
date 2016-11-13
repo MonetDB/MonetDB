@@ -25,7 +25,7 @@ SF='sf-0.01'
 
 dir=`echo $SF | tr '[a-z]' '[A-Z]'`
 #$SQL < c.sql
-$SQL < c.sql-primary-foreign
-#cat load-$SF-LOCKED.sql$T | sed -e s+PWD+$PWD/$dir+ | $SQL 
-cat load-$SF.sql$T | sed -e s+PWD+$PWD/$dir+ | $SQL
+#$SQL < c.sql-primary-foreign
+cat load-$SF-LOCKED.sql$T | sed -e s+PWD+$PWD/$dir+ | $SQL 
+#cat load-$SF.sql$T | sed -e s+PWD+$PWD/$dir+ | $SQL
 #$SQL < alter.sql

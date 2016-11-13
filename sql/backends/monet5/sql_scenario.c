@@ -879,7 +879,7 @@ caching(mvc *m)
 }
 
 static int
-cachable(mvc *m, stmt *s)
+cachable(mvc *m, sql_rel *r)
 {
 	if (m->emode == m_prepare)	/* prepared plans are always cached */
 		return 1;
@@ -887,8 +887,8 @@ cachable(mvc *m, stmt *s)
 		return 0;
 	if (m->type == Q_TRANS )	/* m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 		return 0;
-	/* we don't store empty sequences, nor queries with a large footprint */
-	if( (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
+	/* we don't store queries with a large footprint */
+	if(r && sa_size(m->sa) > MAX_QUERY) 
 		return 0;
 	return 1;
 }
@@ -1073,27 +1073,28 @@ SQLparser(Client c)
 		scanner_query_processed(&(m->scanner));
 	} else {
 		sql_rel *r;
-		stmt *s;
 
 		r = sql_symbol2relation(m, m->sym);
-		s = sql_relation2stmt(m, r);
 
-		if (s == 0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
+		if (!r || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
 			goto finalize;
 		}
-		assert(s);
 
-		if (!caching(m) || !cachable(m, s)) {
+		if ((!caching(m) || !cachable(m, r)) && m->emode != m_prepare) {
+			char *q = query_cleaned(QUERY(m->scanner));
+
 			/* Query template should not be cached */
 			scanner_query_processed(&(m->scanner));
+
 			err = 0;
-			if( backend_callinline(be, c) < 0 ||
-				backend_dumpstmt(be, c->curprg->def, s, 1, 0) < 0)
+			if (backend_callinline(be, c) < 0 ||
+			    backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
 				err = 1;
 			else opt = 1;
+			GDKfree(q);
 		} else {
 			/* Add the query tree to the SQL query cache
 			 * and bake a MAL program for it.
@@ -1112,7 +1113,7 @@ SQLparser(Client c)
 					  sql_escape_str(q));
 			GDKfree(q);
 			scanner_query_processed(&(m->scanner));
-			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
+			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, r);
 			if (!be->q->code)
 				err = 1;
 			be->q->stk = 0;
@@ -1158,7 +1159,7 @@ SQLparser(Client c)
 			showErrors(c);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, c->glb, oldvtop);
+			freeVariables(c, c->curprg->def, NULL, oldvtop);
 			c->curprg->def->errors = 0;
 			msg = createException(PARSE, "SQLparser", "M0M27!Semantic errors");
 		}

@@ -1364,7 +1364,7 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 	v->frame = frame;
 	if (type) {
 		int tpe = type->type->localtype;
-		VALinit(&sql->vars[var].a.data, tpe, ATOMnilptr(tpe));
+		VALset(&sql->vars[var].a.data, tpe, (ptr) ATOMnilptr(tpe));
 		v->a.tpe = *type;
 	}
 	if (name)
@@ -1503,6 +1503,20 @@ stack_find_rel_view(mvc *sql, const char *name)
 			return rel_dup(sql->vars[i].rel);
 	}
 	return NULL;
+}
+
+void 
+stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		if (!sql->vars[i].frame && sql->vars[i].view &&
+		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0) {
+			rel_destroy(sql->vars[i].rel);
+			sql->vars[i].rel = view;
+		}
+	}
 }
 
 int 

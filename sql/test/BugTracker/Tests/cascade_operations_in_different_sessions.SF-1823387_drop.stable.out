@@ -34,7 +34,7 @@ Ready.
 % 1 # length
 [ 1	]
 [ 1	]
-[ 1	]
+#select * from parent;
 % sys.parent # table_name
 % key # name
 % int # type

@@ -253,13 +253,14 @@ copyMalBlk(MalBlkPtr old)
 	mb->vtop = 0;
 	mb->vid = old->vid;
 	for (i = 0; i < old->vtop; i++) {
-		if( copyVariable(mb, getVar(old, i)) == -1){
+		if(getVar(old,i) && copyVariable(mb, getVar(old, i)) == -1){
 			GDKfree(mb->var);
 			GDKfree(mb);
 			GDKerror("copyVariable" MAL_MALLOC_FAIL);
 			return NULL;
 		}
-		mb->vtop++;
+		if (getVar(old,i))
+			mb->vtop++;
 	}
 
 	mb->stmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * old->ssize);
@@ -401,7 +402,7 @@ prepareMalBlk(MalBlkPtr mb, str s)
 }
 
 InstrPtr
-newInstruction(MalBlkPtr mb, int kind)
+newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 {
 	InstrPtr p = NULL;
 
@@ -423,8 +424,8 @@ newInstruction(MalBlkPtr mb, int kind)
 		p->maxarg = MAXARG;
 	}
 	p->typechk = TYPE_UNKNOWN;
-	setModuleId(p, NULL);
-	setFunctionId(p, NULL);
+	setModuleId(p, modnme);
+	setFunctionId(p, fcnnme);
 	p->fcn = NULL;
 	p->blk = NULL;
 	p->polymorphic = 0;
@@ -435,22 +436,8 @@ newInstruction(MalBlkPtr mb, int kind)
 	p->argv[0] = -1;			/* watch out for direct use in variable table */
 	/* Flow of control instructions are always marked as an assignment
 	 * with modifier */
-	switch (kind) {
-	case BARRIERsymbol:
-	case REDOsymbol:
-	case LEAVEsymbol:
-	case EXITsymbol:
-	case RETURNsymbol:
-	case YIELDsymbol:
-	case CATCHsymbol:
-	case RAISEsymbol:
-		p->token = ASSIGNsymbol;
-		p->barrier = kind;
-		break;
-	default:
-		p->token = kind;
-		p->barrier = 0;
-	}
+	p->token = ASSIGNsymbol;
+	p->barrier = 0;
 	p->gc = 0;
 	p->jump = 0;
 	return p;
@@ -735,15 +722,14 @@ makeVarSpace(MalBlkPtr mb)
 		VarPtr *new;
 		int s = mb->vsize * 2;
 
-		new = (VarPtr *) GDKzalloc(s * sizeof(VarPtr));
+		new = GDKrealloc(mb->var, s * sizeof(VarPtr));
 		if (new == NULL) {
 			mb->errors++;
 			showScriptException(GDKout, mb, 0, MAL, "newMalBlk:no storage left\n");
 			assert(0);
 			return -1;
 		}
-		memcpy((char *) new, (char *) mb->var, sizeof(VarPtr) * mb->vtop);
-		GDKfree(mb->var);
+		memset(new + mb->vsize, 0, (s - mb->vsize) * sizeof(VarPtr));
 		mb->vsize = s;
 		mb->var = new;
 	}
@@ -752,7 +738,7 @@ makeVarSpace(MalBlkPtr mb)
 
 /* create and initialize a variable record*/
 int
-newVariable(MalBlkPtr mb, str name, size_t len, malType type)
+newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
 	int n;
 
@@ -1205,7 +1191,7 @@ fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth)
 	if (k < 0)
 		k = 0;
 	for (i=k; i < mb->vtop - 1; i++) 
-	if( isVarConstant(mb,i)){
+	if (getVar(mb,i) && isVarConstant(mb,i)){
 		VarPtr v = getVar(mb, i);
 		if (v && v->type == cst->vtype && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
 			return i;
@@ -1372,22 +1358,19 @@ pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
  * TODO */
 /* swallows name argument */
 InstrPtr
-pushArgumentId(MalBlkPtr mb, InstrPtr p, str name)
+pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 {
 	int v;
 
-	if (p == NULL) {
-		GDKfree(name);
+	if (p == NULL)
 		return NULL;
-	}
 	v = findVariable(mb, name);
 	if (v < 0) {
 		if ((v = newVariable(mb, name, strlen(name), getAtomIndex(name, -1, TYPE_any))) < 0) {
 			freeInstruction(p);
 			return NULL;
 		}
-	} else
-		GDKfree(name);
+	}
 	return pushArgument(mb, p, v);
 }
 
@@ -1549,7 +1532,9 @@ pushEndInstruction(MalBlkPtr mb)
 {
 	InstrPtr p;
 
-	p = newInstruction(mb, ENDsymbol);
+	p = newInstruction(mb, NULL, NULL);
+	p->token = ENDsymbol;
+	p->barrier = 0;
 	if (!p) {
 		mb->errors++;
 		showException(GDKout, MAL, "pushEndInstruction", "failed to create instruction (out of memory?)");

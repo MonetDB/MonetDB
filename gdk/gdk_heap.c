@@ -99,7 +99,10 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		GDKerror("HEAPalloc: allocating more than heap can accomodate\n");
 		return GDK_FAIL;
 	}
-	if (h->filename == NULL || h->size < GDK_mmap_minsize) {
+	if (h->filename == NULL ||
+	    h->size < 4 * GDK_mmap_pagesize ||
+	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
+	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->size, 0);
 		HEAPDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " PTRFMT "\n", h->size, PTRFMTCAST h->base);
@@ -204,9 +207,8 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
 		Heap bak = *h;
-		size_t cur = GDKmem_cursize(), tot = GDK_mem_maxsize;
-		int exceeds_swap = size > (tot + tot - MIN(tot + tot, cur));
-		int must_mmap = h->filename != NULL && (exceeds_swap || h->newstorage != STORE_MEM || size >= GDK_mmap_minsize);
+		int exceeds_swap = size >= 4 * GDK_mmap_pagesize && size + GDKmem_cursize() >= GDK_mem_maxsize;
+		int must_mmap = h->filename != NULL && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
 
 		h->size = size;
 
@@ -487,43 +489,52 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 #endif
 
 	/* convert from back to front so that we can do it in-place */
-	switch (b->twidth) {
-	case 1:
-		switch (width) {
-		case 2:
+	switch (width) {
+	case 2:
+#ifndef NDEBUG
+		memset(ps, 0, b->theap.base + b->theap.size - (char *) ps);
+#endif
+		switch (b->twidth) {
+		case 1:
 			for (i = 0; i < n; i++)
 				*--ps = *--pc;
 			break;
-		case 4:
+		}
+		break;
+	case 4:
+#ifndef NDEBUG
+		memset(ps, 0, b->theap.base + b->theap.size - (char *) pi);
+#endif
+		switch (b->twidth) {
+		case 1:
 			for (i = 0; i < n; i++)
 				*--pi = *--pc + GDK_VAROFFSET;
 			break;
-#if SIZEOF_VAR_T == 8
-		case 8:
-			for (i = 0; i < n; i++)
-				*--pv = *--pc + GDK_VAROFFSET;
-			break;
-#endif
-		}
-		break;
-	case 2:
-		switch (width) {
-		case 4:
+		case 2:
 			for (i = 0; i < n; i++)
 				*--pi = *--ps + GDK_VAROFFSET;
 			break;
-#if SIZEOF_VAR_T == 8
-		case 8:
-			for (i = 0; i < n; i++)
-				*--pv = *--ps + GDK_VAROFFSET;
-			break;
-#endif
 		}
 		break;
 #if SIZEOF_VAR_T == 8
-	case 4:
-		for (i = 0; i < n; i++)
-			*--pv = *--pi;
+	case 8:
+#ifndef NDEBUG
+		memset(ps, 0, b->theap.base + b->theap.size - (char *) pv);
+#endif
+		switch (b->twidth) {
+		case 1:
+			for (i = 0; i < n; i++)
+				*--pv = *--pc + GDK_VAROFFSET;
+			break;
+		case 2:
+			for (i = 0; i < n; i++)
+				*--pv = *--ps + GDK_VAROFFSET;
+			break;
+		case 4:
+			for (i = 0; i < n; i++)
+				*--pv = *--pi;
+			break;
+		}
 		break;
 #endif
 	}
@@ -621,7 +632,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	char *srcpath, *dstpath;
 	int t0;
 
-	h->storage = h->newstorage = h->size < GDK_mmap_minsize ? STORE_MEM : STORE_MMAP;
+	h->storage = h->newstorage = h->size < 4 * GDK_mmap_pagesize ? STORE_MEM : STORE_MMAP;
 	if (h->filename == NULL)
 		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 	if (h->filename == NULL)

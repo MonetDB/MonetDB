@@ -48,14 +48,14 @@ Ready.
 #2086	"idxs"	2000	NULL	0	true	0	false	0
 [ 40	]
 #SELECT 1, (SELECT count(*) FROM tbls);
-% .L1,	sys.L2 # table_name
-% L1,	L2 # name
+% .L2,	sys.L7 # table_name
+% L2,	L6 # name
 % tinyint,	bigint # type
 % 1,	2 # length
 [ 1,	40	]
 #SELECT (SELECT count(*) FROM tbls), 1;
-% sys.L1,	.L1 # table_name
-% L1,	single_value # name
+% sys.L5,	.L7 # table_name
+% L4,	L7 # name
 % bigint,	tinyint # type
 % 2,	1 # length
 [ 40,	1	]

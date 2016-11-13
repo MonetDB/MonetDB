@@ -64,8 +64,8 @@ Ready.
 #    FROM victim 
 #    WHERE murderdate LIKE '1___%' 
 #        AND dateofbirth LIKE '1___%';
-% sys.L2 # table_name
-% substring_murderdate # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 #SELECT AVG(num) 
@@ -78,8 +78,8 @@ Ready.
 #            WHERE name NOT IN 
 #                (SELECT victim FROM sceneinspectors)
 #         ) AS numbers;
-% .L5 # table_name
-% L5 # name
+% .L11 # table_name
+% L10 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -90,8 +90,8 @@ Ready.
 #SELECT MIN(murderdate),MAX(murderdate) 
 #    FROM victim 
 #    WHERE murderdate LIKE '1%';
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L1,	L3 # name
 % varchar,	varchar # type
 % 0,	0 # length
 [ NULL,	NULL	]

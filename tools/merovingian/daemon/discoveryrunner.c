@@ -177,7 +177,7 @@ getRemoteDB(char *database)
 	pdb = &dummy;
 	while (rdb != NULL) {
 		snprintf(mfullname, sizeof(mfullname), "%s/", rdb->fullname);
-		if (glob(mdatabase, mfullname) == 1) {
+		if (db_glob(mdatabase, mfullname) == 1) {
 			/* create a fake sabdb struct, chain where necessary */
 			if (walk != NULL) {
 				walk = walk->next = malloc(sizeof(sabdb));
@@ -276,7 +276,7 @@ unregisterMessageTap(int fd)
 	pthread_mutex_unlock(&_mero_remotedb_lock);
 }
 
-void
+void *
 discoveryRunner(void *d)
 {
 	int sock = *(int *)d;
@@ -329,7 +329,8 @@ discoveryRunner(void *d)
 						"discovery services disabled\n", e);
 				free(e);
 				free(ckv);
-				return;
+				closesocket(sock);
+				return NULL;
 			}
 
 			for (orig = stats; stats != NULL; stats = stats->next) {
@@ -501,7 +502,10 @@ discoveryRunner(void *d)
 	}
   breakout:
 
-	/* now notify of our soon to be absence ;) */
+	shutdown(sock, SHUT_WR);
+	closesocket(sock);
+
+	/* now notify of imminent absence ;) */
 
 	/* list all known databases */
 	if ((e = msab_getStatus(&stats, NULL)) != NULL) {
@@ -509,7 +513,7 @@ discoveryRunner(void *d)
 				"discovery services disabled\n", e);
 		free(e);
 		free(ckv);
-		return;
+		return NULL;
 	}
 
 	/* craft LEAV messages for each db */
@@ -538,6 +542,7 @@ discoveryRunner(void *d)
 	}
 
 	free(ckv);
+	return NULL;
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

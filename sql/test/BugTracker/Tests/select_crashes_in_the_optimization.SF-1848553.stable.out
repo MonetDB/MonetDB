@@ -36,8 +36,8 @@ Ready.
 #create table s ( snr int, sname varchar(30) );
 #create table sp ( snr int, pnr varchar(30) );
 #select 24;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 24	]

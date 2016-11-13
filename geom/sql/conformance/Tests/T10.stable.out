@@ -25,8 +25,8 @@ Ready.
 # 14:02:52 >  
 
 #SELECT ST_SRID(boundary) FROM named_places WHERE name = 'Goose Island';
-% sys.L # table_name
-% st_srid_boundary # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 3 # length
 [ 101	]

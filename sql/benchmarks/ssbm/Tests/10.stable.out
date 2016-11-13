@@ -35,7 +35,7 @@ Ready.
 #		and d_yearmonth = 'Dec1997'
 #	group by c_city, s_city, d_year
 #	order by d_year asc, revenue desc;
-% sys.customer,	sys.supplier,	sys.dwdate,	sys.L1 # table_name
+% sys.customer,	sys.supplier,	sys.dwdate,	sys.L6 # table_name
 % c_city,	s_city,	d_year,	revenue # name
 % clob,	clob,	int,	bigint # type
 % 0,	0,	1,	1 # length

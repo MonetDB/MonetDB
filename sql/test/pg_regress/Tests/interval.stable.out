@@ -26,7 +26,7 @@ Ready.
 # 12:56:39 >  
 
 #SELECT cast('-05' as interval second) AS "Five hours";
-% .L1 # table_name
+% .L3 # table_name
 % Five hours # name
 % sec_interval # type
 % 6 # length
@@ -37,7 +37,7 @@ Ready.
 #INSERT INTO INTERVAL_TBL (f1) VALUES (60 * 60 * 24 * 365 * 2014);
 [ 1	]
 #SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL;
-% .L,	sys.interval_tbl # table_name
+% .L2,	sys.interval_tbl # table_name
 % ten,	f1 # name
 % char,	sec_interval # type
 % 0,	15 # length

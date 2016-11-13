@@ -166,6 +166,8 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	(void) stk;
 	if ( mb->inlineProp)
 		return 0;
+	//if ( optimizerIsApplied(mb,"projectionpath") )
+		//return 0;
 
 #ifdef DEBUG_OPT_PROJECTIONPATH
 	mnstr_printf(cntxt->fdout,"#projectionpath optimizer start \n");

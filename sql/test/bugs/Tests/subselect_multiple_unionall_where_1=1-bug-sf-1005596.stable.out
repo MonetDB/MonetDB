@@ -25,7 +25,7 @@ Ready.
 # 11:55:40 >  
 
 #SELECT 1 AS number;
-% .L # table_name
+% .L2 # table_name
 % number # name
 % tinyint # type
 % 1 # length
@@ -53,7 +53,7 @@ Ready.
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
 % 4,	0,	0,	12,	0,	0,	0,	0,	5,	6 # length
 #SELECT 2 AS number;
-% .L # table_name
+% .L2 # table_name
 % number # name
 % tinyint # type
 % 1 # length
@@ -63,7 +63,7 @@ Ready.
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
 % 4,	0,	0,	20,	0,	0,	0,	0,	5,	6 # length
 #SELECT 3 AS number;
-% .L # table_name
+% .L2 # table_name
 % number # name
 % tinyint # type
 % 1 # length

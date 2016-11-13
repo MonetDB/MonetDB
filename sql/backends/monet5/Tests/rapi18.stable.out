@@ -75,13 +75,13 @@ Ready.
 #CREATE TABLE rapi18good as select * from rapi18datagen() limit 199999 with data;
 #CREATE TABLE rapi18bad as select * from rapi18datagen() limit 200000 with data;
 #select count(distinct g) from rapi18bad; 
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 3 # length
 [ 500	]
 #select g, rapi18(n) from rapi18bad group by g;
-% sys.rapi18bad,	sys.L1 # table_name
+% sys.rapi18bad,	sys.L2 # table_name
 % g,	L1 # name
 % int,	double # type
 % 3,	24 # length

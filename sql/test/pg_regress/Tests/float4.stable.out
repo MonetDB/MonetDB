@@ -42,8 +42,8 @@ Ready.
 [ 1	]
 #INSERT INTO FLOAT4_TBL(f1) VALUES ('-10e-40');
 [ 1	]
-#SELECT '' AS five, * FROM FLOAT4_TBL;
-% .L,	sys.float4_tbl # table_name
+#SELECT '' AS five, FLOAT4_TBL.* FROM FLOAT4_TBL;
+% .L2,	sys.float4_tbl # table_name
 % five,	f1 # name
 % char,	real # type
 % 0,	15 # length
@@ -55,7 +55,7 @@ Ready.
 [ "",	1e-39	]
 [ "",	-1e-39	]
 #SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE f.f1 <> '1004.3';
-% .L,	sys.f # table_name
+% .L2,	sys.f # table_name
 % four,	f1 # name
 % char,	real # type
 % 0,	15 # length
@@ -66,13 +66,13 @@ Ready.
 [ "",	1e-39	]
 [ "",	-1e-39	]
 #SELECT '' AS one, f.* FROM FLOAT4_TBL f WHERE f.f1 = '1004.3';
-% .L,	sys.f # table_name
+% .L2,	sys.f # table_name
 % one,	f1 # name
 % char,	real # type
 % 0,	15 # length
 [ "",	1004.3	]
 #SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE '1004.3' > f.f1;
-% .L,	sys.f # table_name
+% .L2,	sys.f # table_name
 % three,	f1 # name
 % char,	real # type
 % 0,	15 # length
@@ -82,7 +82,7 @@ Ready.
 [ "",	1e-39	]
 [ "",	-1e-39	]
 #SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE  f.f1 < '1004.3';
-% .L,	sys.f # table_name
+% .L2,	sys.f # table_name
 % three,	f1 # name
 % char,	real # type
 % 0,	15 # length
@@ -92,7 +92,7 @@ Ready.
 [ "",	1e-39	]
 [ "",	-1e-39	]
 #SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE '1004.3' >= f.f1;
-% .L,	sys.f # table_name
+% .L2,	sys.f # table_name
 % four,	f1 # name
 % char,	real # type
 % 0,	15 # length
@@ -103,7 +103,7 @@ Ready.
 [ "",	1e-39	]
 [ "",	-1e-39	]
 #SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE  f.f1 <= '1004.3';
-% .L,	sys.f # table_name
+% .L2,	sys.f # table_name
 % four,	f1 # name
 % char,	real # type
 % 0,	15 # length
@@ -115,7 +115,7 @@ Ready.
 [ "",	-1e-39	]
 #SELECT '' AS three, f.f1, f.f1 * '-10' AS x FROM FLOAT4_TBL f
 #   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
+% .L2,	sys.f,	sys.L5 # table_name
 % three,	f1,	x # name
 % char,	real,	real # type
 % 0,	15,	15 # length
@@ -125,7 +125,7 @@ Ready.
 [ "",	1e-39,	-1e-38	]
 #SELECT '' AS three, f.f1, f.f1 + '-10' AS x FROM FLOAT4_TBL f
 #   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
+% .L2,	sys.f,	sys.L5 # table_name
 % three,	f1,	x # name
 % char,	real,	real # type
 % 0,	15,	15 # length
@@ -135,7 +135,7 @@ Ready.
 [ "",	1e-39,	-10	]
 #SELECT '' AS three, f.f1, f.f1 / '-10' AS x FROM FLOAT4_TBL f
 #   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
+% .L2,	sys.f,	sys.L5 # table_name
 % three,	f1,	x # name
 % char,	real,	real # type
 % 0,	15,	15 # length
@@ -145,7 +145,7 @@ Ready.
 [ "",	1e-39,	-1e-40	]
 #SELECT '' AS three, f.f1, f.f1 - '-10' AS x FROM FLOAT4_TBL f
 #   WHERE f.f1 > '0.0';
-% .L,	sys.f,	sys.L # table_name
+% .L2,	sys.f,	sys.L5 # table_name
 % three,	f1,	x # name
 % char,	real,	real # type
 % 0,	15,	15 # length
@@ -154,7 +154,7 @@ Ready.
 [ "",	1.2346e-20,	10	]
 [ "",	1e-39,	10	]
 #SELECT '' AS five, * FROM FLOAT4_TBL;
-% .L,	sys.float4_tbl # table_name
+% .L2,	sys.float4_tbl # table_name
 % five,	f1 # name
 % char,	real # type
 % 0,	15 # length
@@ -170,7 +170,7 @@ Ready.
 #   WHERE FLOAT4_TBL.f1 > '0.0';
 [ 4	]
 #SELECT '' AS five, * FROM FLOAT4_TBL;
-% .L,	sys.float4_tbl # table_name
+% .L2,	sys.float4_tbl # table_name
 % five,	f1 # name
 % char,	real # type
 % 0,	15 # length

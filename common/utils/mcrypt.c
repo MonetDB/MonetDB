@@ -13,10 +13,19 @@
 #include "mcrypt.h"
 #include <string.h>
 
+#ifndef HAVE_EMBEDDED
+/* only provide digest functions if not embedded */
 #ifdef HAVE_OPENSSL
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include <openssl/ripemd.h>
+#else
+#ifdef HAVE_COMMONCRYPTO
+#define COMMON_DIGEST_FOR_OPENSSL
+#include <CommonCrypto/CommonDigest.h>
+#endif
+#endif
+#endif
 
 /**
  * Returns a comma separated list of supported hash algorithms suitable
@@ -34,7 +43,36 @@ mcrypt_getHashAlgorithms(void)
 	 * Better/stronger/faster algorithms can be added in the future upon
 	 * desire.
 	 */
-	return strdup("RIPEMD160,SHA256,SHA1,MD5");
+#if !defined(HAVE_EMBEDDED) && (defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA1_UPDATE) || defined(HAVE_MD5_UPDATE))
+	const char *algorithms =
+#ifdef HAVE_RIPEMD160_UPDATE
+		"RIPEMD160"
+#endif
+#ifdef HAVE_SHA256_UPDATE
+#if defined(HAVE_RIPEMD160_UPDATE)
+		","
+#endif
+		"SHA256"
+#endif
+#ifdef HAVE_SHA1_UPDATE
+#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA256_UPDATE)
+		","
+#endif
+		"SHA1"
+#endif
+#ifdef HAVE_MD5_UPDATE
+#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA1_UPDATE)
+		","
+#endif
+		"MD5"
+#endif
+		;
+	return strdup(algorithms);
+#else
+	fprintf(stderr, "There are no digest functions available.\n");
+	exit(1);
+	return NULL;
+#endif
 }
 
 /**
@@ -44,20 +82,33 @@ mcrypt_getHashAlgorithms(void)
 char *
 mcrypt_MD5Sum(const char *string, size_t len)
 {
-	unsigned char md[16]; /* should be MD5_DIGEST_LENGTH */
+#if !defined(HAVE_EMBEDDED) && defined(HAVE_MD5_UPDATE)
+	MD5_CTX c;
+	unsigned char md[MD5_DIGEST_LENGTH];
 	char *ret;
 
-	MD5((unsigned const char*)string, len, md);
-	ret = malloc(sizeof(char) * (16 * 2 + 1));
-	sprintf(ret, "%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3],
-			md[4], md[5], md[6], md[7],
-			md[8], md[9], md[10], md[11],
-			md[12], md[13], md[14], md[15]
-		   );
+	assert(MD5_DIGEST_LENGTH == 16);
+	MD5_Init(&c);
+	MD5_Update(&c, string, len);
+	MD5_Final(md, &c);
+
+	ret = malloc(MD5_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, MD5_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3],
+		 md[4], md[5], md[6], md[7],
+		 md[8], md[9], md[10], md[11],
+		 md[12], md[13], md[14], md[15]);
 
 	return ret;
+#else
+	(void) string;
+	(void) len;
+	fprintf(stderr, "No MD5 digest function available.\n");
+	exit(1);
+	return NULL;
+#endif
 }
 
 /**
@@ -67,20 +118,33 @@ mcrypt_MD5Sum(const char *string, size_t len)
 char *
 mcrypt_SHA1Sum(const char *string, size_t len)
 {
-	unsigned char md[20]; /* should be SHA_DIGEST_LENGTH */
+#if !defined(HAVE_EMBEDDED) && defined(HAVE_SHA1_UPDATE)
+	SHA_CTX c;
+	unsigned char md[SHA_DIGEST_LENGTH];
 	char *ret;
 
-	SHA1((unsigned const char*)string, len, md);
-	ret = malloc(sizeof(char) * (20 * 2 + 1));
-	sprintf(ret, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19]
-		   );
+	assert(SHA_DIGEST_LENGTH == 20);
+	SHA1_Init(&c);
+	SHA1_Update(&c, string, len);
+	SHA1_Final(md, &c);
+
+	ret = malloc(SHA_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, SHA_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19]);
 
 	return ret;
+#else
+	(void) string;
+	(void) len;
+	fprintf(stderr, "No SHA1 digest function available.\n");
+	exit(1);
+	return NULL;
+#endif
 }
 
 /**
@@ -90,24 +154,36 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 char *
 mcrypt_SHA224Sum(const char *string, size_t len)
 {
-	unsigned char md[28];
+#if !defined(HAVE_EMBEDDED) && defined(HAVE_SHA224_UPDATE)
+	SHA256_CTX c;
+	unsigned char md[SHA224_DIGEST_LENGTH];
 	char *ret;
 
-	SHA224((unsigned const char*)string, len, md);
-	ret = malloc(sizeof(char) * (sizeof(md) * 2 + 1));
-	sprintf(ret,
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19],
-			md[20], md[21], md[22], md[23], md[24],
-			md[25], md[26], md[27]
-		   );
+	assert(SHA224_DIGEST_LENGTH == 28);
+	SHA224_Init(&c);
+	SHA224_Update(&c, string, len);
+	SHA224_Final(md, &c);
+
+	ret = malloc(SHA224_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, SHA224_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19],
+		 md[20], md[21], md[22], md[23], md[24],
+		 md[25], md[26], md[27]);
 
 	return ret;
+#else
+	(void) string;
+	(void) len;
+	fprintf(stderr, "No SHA224 digest function available.\n");
+	exit(1);
+	return NULL;
+#endif
 }
 
 /**
@@ -117,26 +193,38 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 char *
 mcrypt_SHA256Sum(const char *string, size_t len)
 {
-	unsigned char md[32];
+#if !defined(HAVE_EMBEDDED) && defined(HAVE_SHA256_UPDATE)
+	SHA256_CTX c;
+	unsigned char md[SHA256_DIGEST_LENGTH];
 	char *ret;
 
-	SHA256((unsigned const char*)string, len, md);
-	ret = malloc(sizeof(char) * (sizeof(md) * 2 + 1));
-	sprintf(ret,
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19],
-			md[20], md[21], md[22], md[23], md[24],
-			md[25], md[26], md[27], md[28], md[29],
-			md[30], md[31]
-		   );
+	assert(SHA256_DIGEST_LENGTH == 32);
+	SHA256_Init(&c);
+	SHA256_Update(&c, string, len);
+	SHA256_Final(md, &c);
+
+	ret = malloc(SHA256_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, SHA256_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19],
+		 md[20], md[21], md[22], md[23], md[24],
+		 md[25], md[26], md[27], md[28], md[29],
+		 md[30], md[31]);
 
 	return ret;
+#else
+	(void) string;
+	(void) len;
+	fprintf(stderr, "No SHA256 digest function available.\n");
+	exit(1);
+	return NULL;
+#endif
 }
 
 /**
@@ -146,30 +234,42 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 char *
 mcrypt_SHA384Sum(const char *string, size_t len)
 {
-	unsigned char md[48];
+#if !defined(HAVE_EMBEDDED) && defined(HAVE_SHA384_UPDATE)
+	SHA512_CTX c;
+	unsigned char md[SHA384_DIGEST_LENGTH];
 	char *ret;
 
-	SHA384((unsigned const char*)string, len, md);
-	ret = malloc(sizeof(char) * (sizeof(md) * 2 + 1));
-	sprintf(ret,
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19],
-			md[20], md[21], md[22], md[23], md[24],
-			md[25], md[26], md[27], md[28], md[29],
-			md[30], md[31], md[32], md[33], md[34],
-			md[35], md[36], md[37], md[38], md[39],
-			md[40], md[41], md[42], md[43], md[44],
-			md[45], md[46], md[47]
-		   );
+	assert(SHA384_DIGEST_LENGTH == 48);
+	SHA384_Init(&c);
+	SHA384_Update(&c, string, len);
+	SHA384_Final(md, &c);
+
+	ret = malloc(SHA384_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, SHA384_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19],
+		 md[20], md[21], md[22], md[23], md[24],
+		 md[25], md[26], md[27], md[28], md[29],
+		 md[30], md[31], md[32], md[33], md[34],
+		 md[35], md[36], md[37], md[38], md[39],
+		 md[40], md[41], md[42], md[43], md[44],
+		 md[45], md[46], md[47]);
 
 	return ret;
+#else
+	(void) string;
+	(void) len;
+	fprintf(stderr, "No SHA384 digest function available.\n");
+	exit(1);
+	return NULL;
+#endif
 }
 
 /**
@@ -179,35 +279,47 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 char *
 mcrypt_SHA512Sum(const char *string, size_t len)
 {
-	unsigned char md[64];
+#if !defined(HAVE_EMBEDDED) && defined(HAVE_SHA512_UPDATE)
+	SHA512_CTX c;
+	unsigned char md[SHA512_DIGEST_LENGTH];
 	char *ret;
 
-	SHA512((unsigned const char*)string, len, md);
-	ret = malloc(sizeof(char) * (sizeof(md) * 2 + 1));
-	sprintf(ret,
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19],
-			md[20], md[21], md[22], md[23], md[24],
-			md[25], md[26], md[27], md[28], md[29],
-			md[30], md[31], md[32], md[33], md[34],
-			md[35], md[36], md[37], md[38], md[39],
-			md[40], md[41], md[42], md[43], md[44],
-			md[45], md[46], md[47], md[48], md[49],
-			md[50], md[51], md[52], md[53], md[54],
-			md[55], md[56], md[57], md[58], md[59],
-			md[60], md[61], md[62], md[63]
-		   );
+	assert(SHA512_DIGEST_LENGTH == 64);
+	SHA512_Init(&c);
+	SHA512_Update(&c, string, len);
+	SHA512_Final(md, &c);
+
+	ret = malloc(SHA512_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, SHA512_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19],
+		 md[20], md[21], md[22], md[23], md[24],
+		 md[25], md[26], md[27], md[28], md[29],
+		 md[30], md[31], md[32], md[33], md[34],
+		 md[35], md[36], md[37], md[38], md[39],
+		 md[40], md[41], md[42], md[43], md[44],
+		 md[45], md[46], md[47], md[48], md[49],
+		 md[50], md[51], md[52], md[53], md[54],
+		 md[55], md[56], md[57], md[58], md[59],
+		 md[60], md[61], md[62], md[63]);
 
 	return ret;
+#else
+	(void) string;
+	(void) len;
+	fprintf(stderr, "No SHA512 digest function available.\n");
+	exit(1);
+	return NULL;
+#endif
 }
 
 /**
@@ -217,52 +329,53 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 char *
 mcrypt_RIPEMD160Sum(const char *string, size_t len)
 {
-	unsigned char md[20]; /* should be RIPEMD160_DIGEST_LENGTH */
+#if !defined(HAVE_EMBEDDED) && defined(HAVE_RIPEMD160_UPDATE)
+	RIPEMD160_CTX c;
+	unsigned char md[RIPEMD160_DIGEST_LENGTH];
 	char *ret;
 
-	RIPEMD160((unsigned const char *)string, len, md);
-	ret = malloc(sizeof(char) * (20 * 2 + 1));
-	sprintf(ret, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3], md[4],
-			md[5], md[6], md[7], md[8], md[9],
-			md[10], md[11], md[12], md[13], md[14],
-			md[15], md[16], md[17], md[18], md[19]
-		   );
+	assert(RIPEMD160_DIGEST_LENGTH == 20);
+	RIPEMD160_Init(&c);
+	RIPEMD160_Update(&c, string, len);
+	RIPEMD160_Final(md, &c);
+
+	ret = malloc(RIPEMD160_DIGEST_LENGTH * 2 + 1);
+	snprintf(ret, RIPEMD160_DIGEST_LENGTH * 2 + 1,
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3], md[4],
+		 md[5], md[6], md[7], md[8], md[9],
+		 md[10], md[11], md[12], md[13], md[14],
+		 md[15], md[16], md[17], md[18], md[19]);
 
 	return ret;
+#else
+	(void) string;
+	(void) len;
+	fprintf(stderr, "No RIPEMD160 digest function available.\n");
+	exit(1);
+	return NULL;
+#endif
 }
 
 /**
  * Returns a malloced string representing the hex representation of
  * the by the backend used hash of the given string.
  */
+#define concat(x,y,z)	x##y##z
+#define mcryptsum(h)	concat(mcrypt_, h, Sum)
 char *
 mcrypt_BackendSum(const char *string, size_t len)
 {
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "RIPEMD160") == 0)
-		return mcrypt_RIPEMD160Sum(string, len);
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0)
-		return mcrypt_SHA512Sum(string, len);
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA384") == 0)
-		return mcrypt_SHA384Sum(string, len);
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA256") == 0)
-		return mcrypt_SHA256Sum(string, len);
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA224") == 0)
-		return mcrypt_SHA224Sum(string, len);
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "SHA1") == 0)
-		return mcrypt_SHA1Sum(string, len);
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB5_PASSWDHASH, "MD5") == 0)
-		return mcrypt_MD5Sum(string, len);
-	assert(0); /* should never get reached, backend would be unsupported */
+#if !defined(HAVE_EMBEDDED) && (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
+	return mcryptsum(MONETDB5_PASSWDHASH_TOKEN)(string, len);
+#else
+	(void) string;
+	(void) len;
+	fprintf(stderr, "No digest function available.\n");
+	exit(1);
 	return NULL;
+#endif
 }
 
 /**
@@ -278,13 +391,15 @@ mcrypt_hashPassword(
 		const char *password,
 		const char *challenge)
 {
+#if !defined(HAVE_EMBEDDED) && (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	unsigned char md[64];	/* should be SHA512_DIGEST_LENGTH */
-	char ret[64 * 2 + 1];
+	char ret[sizeof(md) * 2 + 1];
 	int len;
 
 	/* make valgrind happy, prevent us from printing garbage afterwards */
-	memset(md, 0, 64);
+	memset(md, 0, sizeof(md));
 
+#ifdef HAVE_RIPEMD160_UPDATE
 	if (strcmp(algo, "RIPEMD160") == 0) {
 		RIPEMD160_CTX c;
 
@@ -294,7 +409,10 @@ mcrypt_hashPassword(
 		RIPEMD160_Final(md, &c);
 
 		len = 40;
-	} else if (strcmp(algo, "SHA512") == 0) {
+	} else
+#endif
+#ifdef HAVE_SHA512_UPDATE
+	if (strcmp(algo, "SHA512") == 0) {
 		SHA512_CTX c;
 
 		SHA512_Init(&c);
@@ -303,7 +421,10 @@ mcrypt_hashPassword(
 		SHA512_Final(md, &c);
 
 		len = 128;
-	} else if (strcmp(algo, "SHA384") == 0) {
+	} else
+#endif
+#ifdef HAVE_SHA384_UPDATE
+	if (strcmp(algo, "SHA384") == 0) {
 		SHA512_CTX c;
 
 		SHA384_Init(&c);
@@ -312,7 +433,10 @@ mcrypt_hashPassword(
 		SHA384_Final(md, &c);
 
 		len = 96;
-	} else if (strcmp(algo, "SHA256") == 0) {
+	} else
+#endif
+#ifdef HAVE_SHA256_UPDATE
+	if (strcmp(algo, "SHA256") == 0) {
 		SHA256_CTX c;
 
 		SHA256_Init(&c);
@@ -321,7 +445,10 @@ mcrypt_hashPassword(
 		SHA256_Final(md, &c);
 
 		len = 64;
-	} else if (strcmp(algo, "SHA224") == 0) {
+	} else
+#endif
+#ifdef HAVE_SHA224_UPDATE
+	if (strcmp(algo, "SHA224") == 0) {
 		SHA256_CTX c;
 
 		SHA224_Init(&c);
@@ -330,7 +457,10 @@ mcrypt_hashPassword(
 		SHA224_Final(md, &c);
 
 		len = 56;
-	} else if (strcmp(algo, "SHA1") == 0) {
+	} else
+#endif
+#ifdef HAVE_SHA1_UPDATE
+	if (strcmp(algo, "SHA1") == 0) {
 		SHA_CTX c;
 
 		SHA1_Init(&c);
@@ -339,7 +469,10 @@ mcrypt_hashPassword(
 		SHA1_Final(md, &c);
 
 		len = 40;
-	} else if (strcmp(algo, "MD5") == 0) {
+	} else
+#endif
+#ifdef HAVE_MD5_UPDATE
+	if (strcmp(algo, "MD5") == 0) {
 		MD5_CTX c;
 
 		MD5_Init(&c);
@@ -349,8 +482,18 @@ mcrypt_hashPassword(
 
 		len = 32;
 	} else
+#endif
+#endif
+	{
+		(void) algo;
+		(void) password;
+		(void) challenge;
+		fprintf(stderr, "MonetDB was built without OpenSSL, but what you are trying to do requires it.\n");
+		exit(1);
 		return NULL;
+	}
 
+#if !defined(HAVE_EMBEDDED) && (defined(HAVE_OPENSSL) || defined(HAVE_COMMONCRYPTO))
 	snprintf(ret, sizeof(ret),
 			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
@@ -378,88 +521,5 @@ mcrypt_hashPassword(
 	ret[len] = '\0';
 
 	return strdup(ret);
-}
-
-#else /* in embedded mode, we don't do MAPI or vaults, therefore we can run without OpenSSL. One build dependency down. */
-
-#define NO_OPENSSL_FATAL "MonetDB was built without OpenSSL, but what you are trying to do requires it.\n"
-
-char* mcrypt_sum_fail(const char *string, size_t len) {
-	(void)string;
-	(void)len;
-	fprintf(stderr, NO_OPENSSL_FATAL);
-	exit(1);
-	return NULL;
-}
-
-char *
-mcrypt_getHashAlgorithms(void)
-{
-	fprintf(stderr, NO_OPENSSL_FATAL);
-	exit(1);
-	return NULL;
-}
-
-char *
-mcrypt_MD5Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_SHA1Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-
-char *
-mcrypt_SHA224Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_SHA256Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_SHA384Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_SHA512Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_RIPEMD160Sum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_BackendSum(const char *string, size_t len)
-{
-	return mcrypt_sum_fail(string, len);
-}
-
-char *
-mcrypt_hashPassword(
-		const char *algo,
-		const char *password,
-		const char *challenge)
-{
-	(void)algo;
-	(void)password;
-	(void)challenge;
-	fprintf(stderr, NO_OPENSSL_FATAL);
-	exit(1);
-	return NULL;
-}
 #endif
+}

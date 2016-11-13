@@ -287,9 +287,10 @@ do {							\
 			}				\
 		}					\
 	} else {					\
-		while (p <= q && o < e) {		\
+		while (p < q && o < e) {		\
 			p++;				\
-			CAND;				\
+			if (p < q)			\
+				CAND;			\
 		}					\
 	}						\
 } while (0)
@@ -374,7 +375,7 @@ do {									\
 	if (BATcapacity(bn) < maximum) {				\
 		impsloop(CAND, TEST,					\
 			 buninsfix(bn, dst, cnt, o,			\
-				   (BUN) ((dbl) cnt / (dbl) (p-r)	\
+				   (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)	\
 					  * (dbl) (q-p) * 1.1 + 1024),	\
 				   BATcapacity(bn) + q - p, BUN_NONE));	\
 	} else {							\
@@ -439,7 +440,7 @@ do {									\
 			v = src[o-off];					\
 			if (TEST) {					\
 				buninsfix(bn, dst, cnt, o,		\
-					  (BUN) ((dbl) cnt / (dbl) (p-r) \
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r) \
 						 * (dbl) (q-p) * 1.1 + 1024), \
 					  BATcapacity(bn) + q - p, BUN_NONE); \
 				cnt++;					\
@@ -606,7 +607,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			v = BUNtail(bi,(BUN)(o-off));
 			if ((*cmp)(tl, v) == 0) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -630,7 +631,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			      ((c = (*cmp)(th, v)) < 0 ||
 			       (!hi && c == 0))))) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -654,7 +655,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			      (c = cmp(th, v)) > 0 ||
 			      (hi && c == 0)))) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -694,7 +695,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			v = BUNtail(bi,(BUN)(o-off));
 			if ((*cmp)(tl, v) == 0) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -718,7 +719,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			      ((c = (*cmp)(th, v)) < 0 ||
 			       (!hi && c == 0))))) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -742,7 +743,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			      (c = cmp(th, v)) > 0 ||
 			      (hi && c == 0)))) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -783,7 +784,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -799,7 +800,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -815,7 +816,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -831,7 +832,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		while (p < q) {
 			if (ptr[p] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p-r)
+					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
 						 * (dbl) (q-p) * 1.1 + 1024),
 					  BATcapacity(bn) + q - p, BUN_NONE);
 				cnt++;
@@ -2292,7 +2293,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 							    cnt + maximum, 1);
 				break;
 			}
-			case TYPE_int: {
+			case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			case TYPE_oid:
+#endif
+			{
 				int vl, vh;
 				if ((vl = *(int *) vrl) == int_nil)
 					continue;
@@ -2304,9 +2309,18 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					vl = NEXTVALUEint(vl);
 				}
 				if (!hi) {
-					if (vh == MINVALUEint)
-						continue;
-					vh = PREVVALUEint(vh);
+#if SIZEOF_OID == SIZEOF_INT
+					if (t == TYPE_oid) {
+						if (vh == MINVALUEoid)
+							continue;
+						vh = PREVVALUEoid(vh);
+					} else
+#endif
+					{
+						if (vh == MINVALUEint)
+							continue;
+						vh = PREVVALUEint(vh);
+					}
 				}
 				if (vl > vh)
 					continue;
@@ -2324,62 +2338,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 							    cnt + maximum, 1);
 				break;
 			}
-			case TYPE_oid: {
-				oid vl, vh;
-				if ((vl = *(oid *) vrl) == oid_nil)
-					continue;
-				if ((vh = *(oid *) vrh) == oid_nil)
-					continue;
-				if (!li) {
-					if (vl == MAXVALUEoid)
-						continue;
-					vl = NEXTVALUEoid(vl);
-				}
-				if (!hi) {
-					if (vh == MINVALUEoid)
-						continue;
-					vh = PREVVALUEoid(vh);
-				}
-				if (vl > vh)
-					continue;
-#if SIZEOF_OID == SIZEOF_INT
-				if (lcand)
-					ncnt = candscan_int(l, sl, r1,
-							    (const int *) &vl,
-							    (const int *) &vh,
-							    1, 1, 0, 0, 1, 1,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum, 1);
-				else
-					ncnt = fullscan_int(l, sl, r1,
-							    (const int *) &vl,
-							    (const int *) &vh,
-							    1, 1, 0, 0, 1, 1,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum, 1);
-#else
-				if (lcand)
-					ncnt = candscan_lng(l, sl, r1,
-							    (const lng *) &vl,
-							    (const lng *) &vh,
-							    1, 1, 0, 0, 1, 1,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum, 1);
-				else
-					ncnt = fullscan_lng(l, sl, r1,
-							    (const lng *) &vl,
-							    (const lng *) &vh,
-							    1, 1, 0, 0, 1, 1,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum, 1);
+			case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			case TYPE_oid:
 #endif
-				break;
-			}
-			case TYPE_lng: {
+			{
 				lng vl, vh;
 				if ((vl = *(lng *) vrl) == lng_nil)
 					continue;
@@ -2391,9 +2354,18 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					vl = NEXTVALUElng(vl);
 				}
 				if (!hi) {
-					if (vh == MINVALUElng)
-						continue;
-					vh = PREVVALUElng(vh);
+#if SIZEOF_OID == SIZEOF_LNG
+					if (t == TYPE_oid) {
+						if (vh == MINVALUEoid)
+							continue;
+						vh = PREVVALUEoid(vh);
+					} else
+#endif
+					{
+						if (vh == MINVALUElng)
+							continue;
+						vh = PREVVALUElng(vh);
+					}
 				}
 				if (vl > vh)
 					continue;

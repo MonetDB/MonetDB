@@ -34,7 +34,7 @@ Ready.
 #		and (p_mfgr = 'MFGR#1' or p_mfgr = 'MFGR#2')
 #	group by d_year, c_nation
 #	order by d_year, c_nation;
-% sys.dwdate,	sys.customer,	sys.L1 # table_name
+% sys.dwdate,	sys.customer,	sys.L5 # table_name
 % d_year,	c_nation,	profit1 # name
 % int,	clob,	bigint # type
 % 4,	9,	9 # length

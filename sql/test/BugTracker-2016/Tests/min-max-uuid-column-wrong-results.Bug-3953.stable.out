@@ -68,19 +68,19 @@ Ready.
 #COPY 200000 RECORDS INTO test FROM '/export/scratch2/zhang/monet-source/Jul2015/sql/test/BugTracker-2016/Tests/data-uuid.csv.bz2' DELIMITERS ',';
 [ 200000	]
 #SELECT MIN(c) AS mn, MAX(c) AS mx FROM test;
-% sys.L1,	sys.L2 # table_name
+% sys.L4,	sys.L7 # table_name
 % mn,	mx # name
 % uuid,	uuid # type
 % 0,	0 # length
 [ 1e1a9c62-d656-11e5-9fd7-9b884ad020cd,	1e1a9c62-d656-11e5-9fd7-9b884ad020cd	]
 #SELECT MIN(c) AS mn, MAX(c) AS mx FROM test;
-% sys.L1,	sys.L2 # table_name
+% sys.L4,	sys.L7 # table_name
 % mn,	mx # name
 % uuid,	uuid # type
 % 0,	0 # length
 [ 1e1a9c62-d656-11e5-9fd7-9b884ad020cd,	1e1a9c62-d656-11e5-9fd7-9b884ad020cd	]
 #SELECT MIN(c) AS mn, MAX(c) AS mx FROM test;
-% sys.L1,	sys.L2 # table_name
+% sys.L4,	sys.L7 # table_name
 % mn,	mx # name
 % uuid,	uuid # type
 % 0,	0 # length

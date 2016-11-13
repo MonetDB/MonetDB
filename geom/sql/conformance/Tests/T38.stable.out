@@ -25,8 +25,8 @@ Ready.
 # 15:05:53 >  
 
 #SELECT ST_Disjoint(centerlines, boundary) FROM divided_routes, named_places WHERE divided_routes.name = 'Route 75' AND named_places.name = 'Ashton';
-% sys.L # table_name
-% st_disjoint_centerlines # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

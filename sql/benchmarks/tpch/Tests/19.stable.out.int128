@@ -49,7 +49,7 @@ Ready.
 #		and p_brand = 'Brand#23'
 #		and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
 #		and l_quantity >= 10 and l_quantity <= 10 + 10
-% sys.L1 # table_name
+% sys.L4 # table_name
 % revenue # name
 % decimal # type
 % 41 # length

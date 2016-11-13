@@ -47,8 +47,8 @@ Ready.
 # 12:47:55 >  
 
 #select 1;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -56,8 +56,8 @@ Ready.
 [ 1	]
 #drop table foo;
 #select 1;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -71,8 +71,8 @@ Ready.
 [ 2,	"Jochem"	]
 #drop table ff;
 #select (4-1)*5;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % smallint # type
 % 2 # length
 [ 15	]
@@ -129,8 +129,8 @@ Ready.
 #drop table r;
 #select name, 1, 2, 3  from _tables
 #	where name in ('s4', 'r', 'foo', 'ff');
-% sys._tables,	.L1,	.L2,	.L2 # table_name
-% name,	L1,	L2,	single_value # name
+% sys._tables,	.L3,	.L5,	.L7 # table_name
+% name,	L3,	L5,	L7 # name
 % varchar,	tinyint,	tinyint,	tinyint # type
 % 0,	1,	1,	1 # length
 

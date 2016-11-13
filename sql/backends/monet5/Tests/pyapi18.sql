@@ -82,7 +82,8 @@ LANGUAGE PYTHON
 SELECT pyapi_inp_decimal(d) FROM pyapi_ret_decimal();
 
 # test unsupported type
-create table uuid_tbl as select uuid() AS d with data;
-CREATE FUNCTION pyapi_interval(d UUID) RETURNS DOUBLE LANGUAGE PYTHON { return d; };
+CREATE TABLE uuid_tbl(d UUID);
+INSERT INTO uuid_tbl VALUES ('54771a16-b4ad-4f1a-a9b7-4d8e8ca6fb7c');
+CREATE FUNCTION pyapi_interval(d UUID) RETURNS STRING LANGUAGE PYTHON { return d; };
 SELECT pyapi_interval(d) FROM uuid_tbl;
 ROLLBACK;

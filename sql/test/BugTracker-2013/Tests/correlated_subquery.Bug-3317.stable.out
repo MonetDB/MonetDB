@@ -44,7 +44,7 @@ Ready.
 #		    and q.currency = v.cur)
 #	) as Preis 
 #  from vouchers v;
-% .v,	.v,	.v,	.v,	.L3 # table_name
+% .v,	.v,	.v,	.v,	.L5 # table_name
 % vid,	date,	cur,	val,	preis # name
 % int,	char,	char,	decimal,	decimal # type
 % 1,	8,	3,	17,	17 # length

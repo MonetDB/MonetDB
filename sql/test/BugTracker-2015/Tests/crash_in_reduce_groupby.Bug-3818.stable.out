@@ -38,7 +38,7 @@ Ready.
 #  SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, SUM(tib0)
 #  FROM t2a
 #  GROUP BY cods, elrik, ether, jaelen, sora;
-% .L2,	.L2,	.L2,	.L2,	.L2,	.L2 # table_name
+% .L11,	.L11,	.L11,	.L11,	.L11,	.L11 # table_name
 % cods,	elrik,	ether,	jaelen,	sora,	L1 # name
 % int,	int,	int,	int,	int,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length

@@ -26,7 +26,7 @@ Ready.
 # 12:56:39 >  
 
 #SELECT cast('-05' as interval second) AS "Five hours";
-% .L1 # table_name
+% .L3 # table_name
 % Five hours # name
 % sec_interval # type
 % 6 # length
@@ -37,7 +37,7 @@ Ready.
 #INSERT INTO INTERVAL_TBL (f1) VALUES (60 * 60 * 24 * 365 * 2014);
 [ 1	]
 #SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL;
-% .L,	sys.interval_tbl # table_name
+% .L2,	sys.interval_tbl # table_name
 % ten,	f1 # name
 % char,	sec_interval # type
 % 0,	15 # length
@@ -47,57 +47,57 @@ Ready.
 #   FROM INTERVAL_TBL r1, INTERVAL_TBL r2
 #   WHERE r1.f1 > r2.f1
 #   ORDER BY r1.f1, r2.f1;
-% .L,	sys.r1,	sys.r2 # table_name
+% .L2,	sys.r1,	sys.r2 # table_name
 % fortyfive,	f1,	f1 # name
 % char,	sec_interval,	sec_interval # type
 % 0,	15,	5 # length
 [ "",	63513504000.000,	1.234	]
 #SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL order by f1 desc;
-% .L,	sys.interval_tbl # table_name
+% .L2,	sys.interval_tbl # table_name
 % ten,	f1 # name
 % char,	sec_interval # type
 % 0,	15 # length
 [ "",	63513504000.000	]
 [ "",	1.234	]
 #select avg(cast(f1 as decimal)) from interval_tbl;
-% sys.L2 # table_name
-% L2 # name
+% sys.L5 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 3.1756752e+13	]
 #select avg(cast(f1 as decimal(22,3))) from interval_tbl;
-% sys.L2 # table_name
-% L2 # name
+% sys.L5 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 3.1756752e+13	]
 #select min(f1) from interval_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % sec_interval # type
 % 5 # length
 [ 1.234	]
 #select max(f1) from interval_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % sec_interval # type
 % 15 # length
 [ 63513504000.000	]
 #select sum(cast(f1 as decimal(22,3))) from interval_tbl;
-% sys.L2 # table_name
-% L2 # name
+% sys.L5 # table_name
+% L4 # name
 % decimal # type
 % 41 # length
 [ 63513504001234.000	]
 #select count(f1) from interval_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(distinct f1) from interval_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 2	]

@@ -136,9 +136,9 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 		if (lcnt == 0 || rcnt == 0)
 			maxsize = nil_on_miss ? lcnt : 0;
 		else if (BUN_MAX / lcnt >= rcnt)
-			maxsize = BUN_MAX;
-		else
 			maxsize = lcnt * rcnt;
+		else
+			maxsize = BUN_MAX;
 	}
 	size = estimate == BUN_NONE ? lcnt : estimate;
 	if (size > maxsize)

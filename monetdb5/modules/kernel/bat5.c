@@ -216,27 +216,18 @@ BKCmirror(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
 
+	*ret = 0;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.mirror", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
-	if (bn != NULL) {
-		if (b->batRestricted == BAT_WRITE) {
-			BAT *bn1;
-			bn1 = COLcopy(bn, bn->ttype, FALSE, TRANSIENT);
-			BBPreclaim(bn);
-			bn = bn1;
-		}
-		if (bn != NULL) {
-			*ret = bn->batCacheid;
-			BBPkeepref(*ret);
-			BBPunfix(b->batCacheid);
-			return MAL_SUCCEED;
-		}
-	}
-	*ret = 0;
 	BBPunfix(b->batCacheid);
-	throw(MAL, "bat.mirror", GDK_EXCEPTION);
+	if (bn == NULL) {
+		throw(MAL, "bat.mirror", GDK_EXCEPTION);
+	}
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
 }
 
 char *
@@ -1065,7 +1056,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.shrink", RUNTIME_OBJECT_MISSING);
 	}
-	bn= COLnew(0, b->ttype, BATcount(b) - BATcount(d) , TRANSIENT);
+	bn= COLnew(0, b->ttype, BATcount(b) - BATcount(d), b->batRole);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
@@ -1230,7 +1221,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.reuse", RUNTIME_OBJECT_MISSING);
 	}
-	bn= COLnew(b->hseqbase, b->ttype, BATcount(b) - BATcount(d), TRANSIENT);
+	bn= COLnew(b->hseqbase, b->ttype, BATcount(b) - BATcount(d), b->batRole);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);

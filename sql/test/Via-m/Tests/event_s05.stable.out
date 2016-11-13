@@ -24,8 +24,16 @@ Ready.
 # 14:11:47 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=33874 
 # 14:11:47 >  
 
-% . # table_name
-% single_value # name
+# 17:12:30 >  
+# 17:12:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26340" "--port=31202"
+# 17:12:30 >  
+
+#declare id_event integer;
+#set id_event = -1;
+#set id_event = add_event('event 2', '2009-06-23', 'artist2', 'location2', 'description2');
+#select id_event; 
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 2	]

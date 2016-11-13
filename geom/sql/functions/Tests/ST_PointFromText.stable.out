@@ -71,8 +71,8 @@ Ready.
 [ "POINT Z (0 10 20)"	]
 #drop table points_tbl;
 #select st_pointfromtext(geom) from geometriesTxt WHERE id=1;
-% sys.L # table_name
-% st_pointfromtext_geom # name
+% sys.L1 # table_name
+% L1 # name
 % geometry # type
 % 0 # length
 [ "POINT (10 20)"	]

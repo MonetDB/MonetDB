@@ -30,25 +30,25 @@ Ready.
 # 23:50:27 >  
 
 #SELECT (NULL);   -- but SELECT NULL; is ok!
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 0 # length
 [ NULL	]
 #SELECT 1 WHERE NULL = 42;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 #SELECT (1 = NULL);
-% .L # table_name
-% =_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT (TRUE OR NULL);
-% .L # table_name
-% or_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -32,8 +32,8 @@ Ready.
 #START TRANSACTION;
 #create function dt(d date) returns string language R { class(d) };
 #select dt( cast('2015-09-21' as date) );
-% .L1 # table_name
-% dt_single_value # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 7 # length
 [ "integer"	]

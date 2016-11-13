@@ -63,8 +63,8 @@ Ready.
 #    return res['i'] * i
 #};
 #SELECT pyapi09(i) FROM pyapi09table; #multiply by 3
-% sys.L # table_name
-% pyapi09_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -74,8 +74,8 @@ Ready.
 #UPDATE pyapi09multiplication SET i=10;
 [ 1	]
 #SELECT pyapi09(i) FROM pyapi09table; #multiply by 10
-% sys.L # table_name
-% pyapi09_i # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 2 # length
 [ 10	]

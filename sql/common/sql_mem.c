@@ -44,15 +44,20 @@ sql_ref_dec(sql_ref *r)
 sql_allocator *sa_create(void)
 {
 	sql_allocator *sa = MNEW(sql_allocator);
-	if (!sa) {
+	if (sa == NULL) {
 		return NULL;
 	}
 	sa->size = 64;
 	sa->nr = 1;
 	sa->blks = NEW_ARRAY(char*,sa->size);
+	if (sa->blks == NULL) {
+		_DELETE(sa);
+		return NULL;
+	}
 	sa->blks[0] = NEW_ARRAY(char,SA_BLOCK);
 	sa->usedmem = SA_BLOCK;
-	if (!sa->blks[0]) {
+	if (sa->blks[0] == NULL) {
+		_DELETE(sa->blks);
 		_DELETE(sa);
 		return NULL;
 	}

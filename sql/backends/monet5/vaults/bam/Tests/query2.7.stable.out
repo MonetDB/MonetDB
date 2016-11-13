@@ -35,8 +35,8 @@ Ready.
 #    FROM bam.alignments_2
 #)
 #ORDER BY qname;
-% .L2,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
-% L2,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% .L20,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
+% L20,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
 #SELECT 'f1', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
@@ -49,8 +49,8 @@ Ready.
 #    FROM bam.unpaired_all_alignments_4
 #)
 #ORDER BY qname;
-% .L2,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
-% L2,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% .L1131,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
+% L1131,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
 

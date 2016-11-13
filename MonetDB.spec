@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.24.0
+%define version 11.26.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -361,8 +361,10 @@ Group: Applications/Databases
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
+%if (0%{?fedora} >= 22)
 Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
+%endif
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires: python-monetdb >= 1.0
 
@@ -845,10 +847,8 @@ developer, but if you do want to test, this is the package you need.
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
-	--enable-jdbc=no \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--enable-mapi=yes \
-	--enable-merocontrol=no \
 	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
@@ -860,12 +860,10 @@ developer, but if you do want to test, this is the package you need.
 	--enable-sql=yes \
 	--enable-strict=no \
 	--enable-testing=yes \
-	--with-ant=no \
 	--with-bz2=yes \
 	--with-curl=yes \
 	--with-gdal=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
-	--with-java=no \
 	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-libxml2=yes \
 	--with-lzma=yes \
@@ -903,6 +901,24 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Oct 07 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.13-20161007
+- Rebuilt.
+- BZ#4058: Server crashes with a particular conditional query
+- BZ#4064: Assertion: column not found
+- BZ#4067: Relevant column name not printed when a CSV parsing error
+  occurs
+- BZ#4070: Extra condition in join predicate of explicit join produces
+  wrong MAL code
+- BZ#4074: Cannot use prepared statements when caching disabled
+- BZ#6065: CTE with row number and union fails within MAL
+
+* Wed Sep 28 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.11-20160928
+- Rebuilt.
+
+* Mon Sep 26 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.11-20160928
+- buildtools: We now use the CommonCrypto library instead of the OpenSSL library
+  on Darwin.
+
 * Mon Sep 19 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.9-20160919
 - Rebuilt.
 - BZ#3939: Assert failure on concurrent queries when querying sys.queue

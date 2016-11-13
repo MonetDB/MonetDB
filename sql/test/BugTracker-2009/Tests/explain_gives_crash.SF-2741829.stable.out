@@ -28,18 +28,19 @@ Ready.
 #create table blabla(id integer);
 #~BeginVariableOutput~#
 function user.s8_1():void;
-"    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
+"    X_58:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",16);"
+"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"")"
 "    sql.catalog(29,""sys"",nil,0);"
-    X_19 := bat.new(nil:int);
-"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
-"    X_25 := algebra.projection(X_22,X_19);"
-"    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
-    X_29 := aggr.count(r2_27);
-    X_30:lng := aggr.sum(r2_27);
-    X_31:bit := calc.isnil(X_30);
-"    X_34:lng := calc.ifthenelse(X_31,0,X_30);"
-"    X_35:bit := calc.!=(X_29,X_34);"
-"    sql.assert(X_35,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+    X_39 := bat.new(nil:int);
+"    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);"
+"    X_45 := algebra.projection(C_42,X_39);"
+"    (X_46,X_47,X_48) := group.subgroupdone(X_45);"
+    X_49:lng := aggr.sum(X_48);
+    X_53 := aggr.count(X_48);
+    X_51:bit := calc.isnil(X_49);
+"    X_52:lng := calc.ifthenelse(X_51,0,X_49);"
+"    X_54:bit := calc.!=(X_53,X_52);"
+"    sql.assert(X_54,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s8_1;
 #inline               actions= 0 time=1 usec 
@@ -47,9 +48,9 @@ end user.s8_1;
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 7 time=8 usec 
 #evaluate             actions= 0 time=3 usec 
-#emptycolumn          actions= 1 time=16 usec 
+#emptybind            actions= 5 time=23 usec 
 #aliases              actions= 1 time=6 usec 
-#mergetable           actions= 0 time=23 usec 
+#mergetable           actions= 0 time=34 usec 
 #deadcode             actions= 5 time=8 usec 
 #aliases              actions= 0 time=3 usec 
 #constants            actions= 3 time=4 usec 
@@ -58,25 +59,26 @@ end user.s8_1;
 #reorder              actions= 1 time=16 usec 
 #deadcode             actions= 0 time=4 usec 
 #reduce               actions=38 time=20 usec 
-#matpack              actions= 0 time=2 usec 
+#matpack              actions= 0 time=3 usec 
 #multiplex            actions= 0 time=2 usec 
 #profiler             actions= 1 time=0 usec 
 #candidates           actions= 1 time=0 usec 
 #garbagecollctor      actions= 1 time=10 usec 
 #total                actions= 1 time=224 usec 
 function user.s10_1():void;
-"    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
+"    X_58:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",16);"
+"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"")"
 "    sql.catalog(29,""sys"",nil,0);"
-    X_19 := bat.new(nil:int);
-"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
-"    X_25 := algebra.projection(X_22,X_19);"
-"    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
-    X_29 := aggr.count(r2_27);
-    X_30:lng := aggr.sum(r2_27);
-    X_31:bit := calc.isnil(X_30);
-"    X_34:lng := calc.ifthenelse(X_31,0,X_30);"
-"    X_35:bit := calc.!=(X_29,X_34);"
-"    sql.assert(X_35,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+    X_39 := bat.new(nil:int);
+"    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);"
+"    X_45 := algebra.projection(C_42,X_39);"
+"    (X_46,X_47,X_48) := group.subgroupdone(X_45);"
+    X_49:lng := aggr.sum(X_48);
+    X_53 := aggr.count(X_48);
+    X_51:bit := calc.isnil(X_49);
+"    X_52:lng := calc.ifthenelse(X_51,0,X_49);"
+"    X_54:bit := calc.!=(X_53,X_52);"
+"    sql.assert(X_54,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s10_1;
 #inline               actions= 0 time=1 usec 
@@ -84,9 +86,9 @@ end user.s10_1;
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 7 time=7 usec 
 #evaluate             actions= 0 time=3 usec 
-#emptycolumn          actions= 1 time=11 usec 
+#emptybind            actions= 5 time=14 usec 
 #aliases              actions= 1 time=6 usec 
-#mergetable           actions= 0 time=23 usec 
+#mergetable           actions= 0 time=24 usec 
 #deadcode             actions= 5 time=9 usec 
 #aliases              actions= 0 time=4 usec 
 #constants            actions= 3 time=4 usec 
@@ -104,18 +106,19 @@ end user.s10_1;
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 function user.s18_1():void;
-"    X_41:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
+"    X_58:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",16);"
+"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"")"
 "    sql.catalog(29,""sys"",nil,0);"
-    X_19 := bat.new(nil:int);
-"    X_22 := algebra.subselect(X_19,nil:int,nil:int,true,true,true);"
-"    X_25 := algebra.projection(X_22,X_19);"
-"    (X_26,r1_27,r2_27) := group.subgroupdone(X_25);"
-    X_29 := aggr.count(r2_27);
-    X_30:lng := aggr.sum(r2_27);
-    X_31:bit := calc.isnil(X_30);
-"    X_34:lng := calc.ifthenelse(X_31,0,X_30);"
-"    X_35:bit := calc.!=(X_29,X_34);"
-"    sql.assert(X_35,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+    X_39 := bat.new(nil:int);
+"    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);"
+"    X_45 := algebra.projection(C_42,X_39);"
+"    (X_46,X_47,X_48) := group.subgroupdone(X_45);"
+    X_49:lng := aggr.sum(X_48);
+    X_53 := aggr.count(X_48);
+    X_51:bit := calc.isnil(X_49);
+"    X_52:lng := calc.ifthenelse(X_51,0,X_49);"
+"    X_54:bit := calc.!=(X_53,X_52);"
+"    sql.assert(X_54,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s18_1;
 #inline               actions= 0 time=1 usec 
@@ -123,9 +126,9 @@ end user.s18_1;
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 7 time=7 usec 
 #evaluate             actions= 0 time=3 usec 
-#emptycolumn          actions= 1 time=11 usec 
+#emptybind            actions= 5 time=13 usec 
 #aliases              actions= 1 time=5 usec 
-#mergetable           actions= 0 time=23 usec 
+#mergetable           actions= 0 time=25 usec 
 #deadcode             actions= 5 time=8 usec 
 #aliases              actions= 0 time=4 usec 
 #constants            actions= 3 time=4 usec 

@@ -17,16 +17,23 @@
 #include <sql_mvc.h>
 #include <mal_function.h>
 
-sql5_export Symbol backend_dumpproc(backend *be, Client c, cq *q, stmt *s);
+sql5_export Symbol backend_dumpproc(backend *be, Client c, cq *q, sql_rel *r);
 sql5_export int backend_callinline(backend *be, Client c);
-sql5_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int addend);
+sql5_export int backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int addend, char *query);
 sql5_export void backend_call(backend *be, Client c, cq *q);
 sql5_export void initSQLreferences(void);
 sql5_export int monet5_resolve_function(ptr M, sql_func *f);
 sql5_export int backend_create_func(backend *be, sql_func *f, list *restypes, list *ops);
-sql5_export int monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, int inline_func);
+extern int backend_create_subfunc(backend *be, sql_subfunc *f, list *ops);
+extern int backend_create_subaggr(backend *be, sql_subaggr *f);
+
+sql5_export int monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func);
 
 extern void rel_print(mvc *sql, sql_rel *rel, int depth);
 extern void _rel_print(mvc *sql, sql_rel *rel);
+
+extern int constantAtom(backend *be, MalBlkPtr mb, atom *a);
+extern InstrPtr table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes);
+extern InstrPtr relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f);
 
 #endif /* _SQL2MAL_H */

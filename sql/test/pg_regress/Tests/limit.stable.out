@@ -31,7 +31,7 @@ Ready.
 #SELECT ''::text AS two, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 > 50 
 #		ORDER BY unique1 LIMIT 2;
-% .L,	sys.onek,	sys.onek,	sys.onek # table_name
+% .L2,	sys.onek,	sys.onek,	sys.onek # table_name
 % two,	unique1,	unique2,	stringu1 # name
 % char,	int,	int,	char # type
 % 0,	2,	3,	16 # length
@@ -40,7 +40,7 @@ Ready.
 #SELECT '' AS five, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 > 60 
 #		ORDER BY unique1 LIMIT 5;
-% .L,	sys.onek,	sys.onek,	sys.onek # table_name
+% .L2,	sys.onek,	sys.onek,	sys.onek # table_name
 % five,	unique1,	unique2,	stringu1 # name
 % char,	int,	int,	char # type
 % 0,	2,	3,	16 # length
@@ -52,7 +52,7 @@ Ready.
 #SELECT '' AS two, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 > 60 AND unique1 < 63
 #		ORDER BY unique1 LIMIT 5;
-% .L,	sys.onek,	sys.onek,	sys.onek # table_name
+% .L2,	sys.onek,	sys.onek,	sys.onek # table_name
 % two,	unique1,	unique2,	stringu1 # name
 % char,	int,	int,	char # type
 % 0,	2,	3,	16 # length
@@ -61,7 +61,7 @@ Ready.
 #SELECT '' AS three, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 > 100 
 #		ORDER BY unique1 LIMIT 3 OFFSET 20;
-% .L,	sys.onek,	sys.onek,	sys.onek # table_name
+% .L2,	sys.onek,	sys.onek,	sys.onek # table_name
 % three,	unique1,	unique2,	stringu1 # name
 % char,	int,	int,	char # type
 % 0,	3,	3,	16 # length
@@ -71,14 +71,14 @@ Ready.
 #SELECT '' AS zero, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 < 50 
 #		ORDER BY unique1 DESC LIMIT 8 OFFSET 99;
-% .L,	sys.onek,	sys.onek,	sys.onek # table_name
+% .L2,	sys.onek,	sys.onek,	sys.onek # table_name
 % zero,	unique1,	unique2,	stringu1 # name
 % char,	int,	int,	char # type
 % 0,	1,	1,	16 # length
 #SELECT '' AS eleven, unique1, unique2, stringu1 
 #		FROM onek WHERE unique1 < 50 
 #		ORDER BY unique1 DESC LIMIT 20 OFFSET 39;
-% .L,	sys.onek,	sys.onek,	sys.onek # table_name
+% .L2,	sys.onek,	sys.onek,	sys.onek # table_name
 % eleven,	unique1,	unique2,	stringu1 # name
 % char,	int,	int,	char # type
 % 0,	2,	3,	16 # length
@@ -96,7 +96,7 @@ Ready.
 #SELECT '' AS ten, unique1, unique2, stringu1 
 #		FROM onek
 #		ORDER BY unique1 OFFSET 990;
-% .L,	sys.onek,	sys.onek,	sys.onek # table_name
+% .L2,	sys.onek,	sys.onek,	sys.onek # table_name
 % ten,	unique1,	unique2,	stringu1 # name
 % char,	int,	int,	char # type
 % 0,	3,	3,	16 # length
@@ -113,7 +113,7 @@ Ready.
 #SELECT '' AS five, unique1, unique2, stringu1 
 #		FROM onek
 #		ORDER BY unique1 LIMIT 5 OFFSET 900;
-% .L,	sys.onek,	sys.onek,	sys.onek # table_name
+% .L2,	sys.onek,	sys.onek,	sys.onek # table_name
 % five,	unique1,	unique2,	stringu1 # name
 % char,	int,	int,	char # type
 % 0,	3,	3,	16 # length

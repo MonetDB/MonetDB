@@ -30,8 +30,8 @@ Ready.
 
 #create function foo(_2foo int) returns int begin return _2foo; end;
 #select foo(2);
-% .L # table_name
-% foo_single_value # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 2	]

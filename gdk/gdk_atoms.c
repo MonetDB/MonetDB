@@ -499,7 +499,8 @@ bitToStr(char **dst, int *len, const bit *src)
 static bit *
 bitRead(bit *a, stream *s, size_t cnt)
 {
-	mnstr_read(s, (char *) a, 1, cnt);
+	if (mnstr_read(s, (char *) a, 1, cnt) < 0)
+		return NULL;
 	return mnstr_errnr(s) ? NULL : a;
 }
 
@@ -1705,7 +1706,7 @@ escapedStr(char *dst, const char *src, int dstlen, const char *sep1, const char 
 	return l;
 }
 
-int
+static int
 strToStr(char **dst, int *len, const char *src)
 {
 	int l = 0;

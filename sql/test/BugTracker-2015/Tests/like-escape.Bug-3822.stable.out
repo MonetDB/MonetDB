@@ -65,14 +65,14 @@ Ready.
 # 16:42:22 >  
 
 #select '_' like '\\_';
-% .L # table_name
-% like_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #select '_' like '\\_' escape '\\';
-% .L # table_name
-% like_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

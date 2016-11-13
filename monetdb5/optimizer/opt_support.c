@@ -76,9 +76,7 @@ optimizerIsApplied(MalBlkPtr mb, str optname)
 	int i;
 	for( i = mb->stop; i < mb->ssize; i++){
 		p = getInstrPtr(mb,i);
-		if( p == NULL)
-			return 0;
-		if (getModuleId(p) == optimizerRef && p->token == REMsymbol && strcmp(getFunctionId(p),optname) == 0) 
+		if (p && getModuleId(p) == optimizerRef && p->token == REMsymbol && strcmp(getFunctionId(p),optname) == 0) 
 			return 1;
 	}
 	return 0;
@@ -156,9 +154,11 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			}
 		}
 	} while (qot && cnt++ < mb->stop);
-	mb->optimize= GDKusec() - clk;
-	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","total",1,mb->optimize);
-	newComment(mb,buf);
+	if( qot){
+		mb->optimize= GDKusec() - clk;
+		snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","total",1,mb->optimize);
+		newComment(mb,buf);
+	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
 	return 0;

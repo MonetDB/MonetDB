@@ -48,7 +48,7 @@ Ready.
 #from test01
 #group by col1
 #order by c0;
-% sys.L # table_name
+% sys.L2 # table_name
 % c0 # name
 % varchar # type
 % 3 # length
@@ -60,7 +60,7 @@ Ready.
 #from test01
 #group by col1
 #order by col1;
-% sys.L # table_name
+% sys.L2 # table_name
 % c0 # name
 % varchar # type
 % 3 # length

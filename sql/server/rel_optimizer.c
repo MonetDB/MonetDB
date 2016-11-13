@@ -2123,7 +2123,7 @@ exps_unique( list *exps )
 
 		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
 			sql_ukey *k = p->value;
-			if (list_length(k->k.columns) <= 1)
+			if (k && list_length(k->k.columns) <= 1)
 				return 1;
 		}
 	}
@@ -2677,26 +2677,49 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 		list *l = e->l;
 		sql_subfunc *f = e->f;
 		node *n;
+		sql_exp *le;
 
+		if (list_length(l) < 1)
+			return e;
+
+		le = l->h->data;
+		if (!exp_subtype(le) || (!EC_COMPUTE(exp_subtype(le)->type->eclass) && exp_subtype(le)->type->eclass != EC_DEC))
+			return e;
 		if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
+			/* 0*a = 0 */
 			if (exp_is_atom(le) && exp_is_zero(sql, le)) {
 				(*changes)++;
 				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
 				return le;
 			}
+			/* a*0 = 0 */
 			if (exp_is_atom(re) && exp_is_zero(sql, re)) {
 				(*changes)++;
 				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
 				return re;
 			}
+			/* 1*a = a
+			if (exp_is_atom(le) && exp_is_one(sql, le)) {
+				(*changes)++;
+				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
+				return re;
+			}
+			*/
+			/* a*1 = a
+			if (exp_is_atom(re) && exp_is_one(sql, re)) {
+				(*changes)++;
+				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+				return le;
+			}
+			*/
 			if (exp_is_atom(le) && exp_is_atom(re)) {
 				atom *la = exp_flatten(sql, le);
 				atom *ra = exp_flatten(sql, re);
 
 				if (la && ra) {
-					atom *a = atom_mul(la, ra);
+					atom *a = atom_mul(sql->sa, la, ra);
 
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
@@ -2705,6 +2728,14 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						return ne;
 					}
 				}
+			}
+			/* move constants to the right, ie c*A = A*c */
+			/* TODO beware of overflow,  */
+			else if (exp_is_atom(le)) {
+				l->h->data = re;
+				l->h->next->data = le;
+				(*changes)++;
+				return e;
 			}
 			/* change a*a into pow(a,2), later change pow(a,2) back into a*a */
 			if (exp_equal(le, re)==0 && exp_subtype(le)->type->eclass == EC_FLT) {
@@ -2784,26 +2815,51 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					}
 				}
 			}
-			if (is_func(le->type)) {
-				list *l = le->l;
+			/* move constants to the right, ie c+A = A+c */
+			else if (exp_is_atom(le)) {
+				l->h->data = re;
+				l->h->next->data = le;
+				(*changes)++;
+				return e;
+			} else if (is_func(le->type)) {
+				list *ll = le->l;
 				sql_subfunc *f = le->f;
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(l) == 2) {
-					sql_exp *lle = l->h->data;
-					sql_exp *lre = l->h->next->data;
-					if (!exp_is_atom(lle) && exp_is_atom(lre) && exp_is_atom(re)) {
-						/* (x+c1)+c2 -> x + (c1+c2) */
-						list *l = sa_list(sql->sa);
-						append(l, lre);
-						append(l, re);
-						le->l = l;
-						l = e->l;
-						l->h->data = lle;
+				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
+					sql_exp *lle = ll->h->data;
+					sql_exp *lre = ll->h->next->data;
+					if (!exp_is_atom(re) && exp_is_atom(lre)) {
+						/* (x+c1)+y -> (x+y) + c1 */
+						ll->h->next->data = re; 
+						l->h->next->data = lre;
+						l->h->data = exp_simplify_math(sql, le, changes);
+						(*changes)++;
+						return e;
+					}
+					if (exp_is_atom(re) && exp_is_atom(lre)) {
+						/* (x+c1)+c2 -> (c2+c1) + x */
+						ll->h->data = re; 
+						l->h->next->data = lle;
+						l->h->data = exp_simplify_math(sql, le, changes);
+						(*changes)++;
+						return e;
+					}
+				}
+			}
+			/*
+			if (is_func(re->type)) {
+				list *ll = re->l;
+				sql_subfunc *f = re->f;
+				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
+					if (exp_is_atom(le)) {
+						* c1+(x+y) -> (x+y) + c1 *
+						l->h->data = re;
 						l->h->next->data = le;
 						(*changes)++;
 						return e;
 					}
 				}
 			}
+			*/
 		}
 		if (!f->func->s && !strcmp(f->func->base.name, "sql_sub") && list_length(l) == 2) {
 			sql_exp *le = l->h->data;
@@ -2821,6 +2877,57 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						(*changes)++;
 						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 						return ne;
+					}
+				}
+			}
+			if (exp_equal(le,re) == 0) { /* a - a = 0 */
+				atom *a;
+				sql_exp *ne;
+
+				if (exp_subtype(le)->type->eclass == EC_NUM) {
+					a = atom_int(sql->sa, exp_subtype(le), 0);
+				} else if (exp_subtype(le)->type->eclass == EC_FLT) {
+					a = atom_float(sql->sa, exp_subtype(le), 0);
+				} else {
+					return 0;
+				}
+				ne = exp_atom(sql->sa, a);
+				(*changes)++;
+				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+				return ne;
+			}
+			if (is_func(le->type)) {
+				list *ll = le->l;
+				sql_subfunc *f = le->f;
+				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
+					sql_exp *lle = ll->h->data;
+					sql_exp *lre = ll->h->next->data;
+					if (exp_equal(re, lre) == 0) {
+						/* (x+a)-a = x*/
+						exp_setname(sql->sa, lle, exp_relname(e), exp_name(e));
+						(*changes)++;
+						return lle;
+					}
+					if (!exp_is_atom(re) && exp_is_atom(lre)) {
+						/* (x+c1)-y -> (x-y) + c1 */
+						ll->h->next->data = re; 
+						l->h->next->data = lre;
+						le->f = e->f;
+						e->f = f;
+						l->h->data = exp_simplify_math(sql, le, changes);
+						(*changes)++;
+						return e;
+					}
+					if (exp_is_atom(re) && exp_is_atom(lre)) {
+						/* (x+c1)-c2 -> (c1-c2) + x */
+						ll->h->data = lre; 
+						ll->h->next->data = re; 
+						l->h->next->data = lle;
+						le->f = e->f;
+						e->f = f;
+						l->h->data = exp_simplify_math(sql, le, changes);
+						(*changes)++;
+						return e;
 					}
 				}
 			}
@@ -4061,11 +4168,35 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
  * semijoin( join(A, B) [ A.x == B.y ], C ) [ A.z == C.c ]
  * ->
  * join( semijoin(A, C) [ A.z == C.c ], B ) [ A.x == B.y ]
+ *
+ * also push simple expressions of a semijoin down if they only
+ * involve the left sided of the semijoin.
  */
 static sql_rel *
 rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)*changes;
+
+	/* first push down the expressions involving only A */
+	if (is_semi(rel->op) && rel->exps && rel->l) {
+		list *exps = rel->exps, *nexps = sa_list(sql->sa);
+		node *n;
+
+		for(n = exps->h; n; n = n->next) {
+			sql_exp *sje = n->data;
+
+			if (n != exps->h &&
+			    !is_complex_exp(sje->flag) &&
+			     rel_has_exp(rel->l, sje->l) >= 0 &&
+			     rel_has_exp(rel->l, sje->r) >= 0) {
+				rel->l = rel_select(sql->sa, rel->l, NULL);
+				rel_select_add_exp(sql->sa, rel->l, sje);
+			} else {
+				append(nexps, sje);
+			}
+		} 
+		rel->exps = nexps;
+	}
 	if (is_semi(rel->op) && rel->exps && rel->l) {
 		operator_type op = rel->op, lop;
 		node *n;
@@ -5545,6 +5676,8 @@ exps_used(list *l)
 static void
 rel_used(sql_rel *rel)
 {
+	if (!rel)
+		return;
 	if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op)) {
 		if (rel->l) 
 			rel_used(rel->l);
@@ -5556,7 +5689,7 @@ rel_used(sql_rel *rel)
 	} else if (rel->op == op_table && rel->r) {
 		exp_used(rel->r);
 	}
-	if (rel->exps) {
+	if (rel && rel->exps) {
 		exps_used(rel->exps);
 		if (rel->r && (rel->op == op_project || rel->op  == op_groupby))
 			exps_used(rel->r);
@@ -5775,6 +5908,65 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static void
+rel_dce_refs(mvc *sql, sql_rel *rel, list *refs) 
+{
+	if (!rel)
+		return ;
+
+	if (rel_is_ref(rel)) {
+		if (!list_find(refs, rel, NULL))
+			list_append(refs, rel);
+	}
+
+	switch(rel->op) {
+	case op_basetable:
+	case op_table:
+
+		if (rel->l && rel->op == op_table)
+			rel_dce_refs(sql, rel->l, refs);
+	case op_insert:
+	case op_ddl:
+		break;
+
+	case op_update:
+	case op_delete:
+
+		if (rel->r)
+			rel_dce_refs(sql, rel->r, refs);
+		break;
+
+	case op_topn: 
+	case op_sample: 
+	case op_project:
+	case op_groupby: 
+	case op_select: 
+
+		if (rel->l)
+			rel_dce_refs(sql, rel->l, refs);
+		break;
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+	case op_semi: 
+	case op_anti: 
+
+		if (rel->l)
+			rel_dce_refs(sql, rel->l, refs);
+		if (rel->r)
+			rel_dce_refs(sql, rel->r, refs);
+		break;
+
+	case op_apply: 
+		assert(0);
+	}
+}
+
 static sql_rel *
 rel_dce_down(mvc *sql, sql_rel *rel, list *refs, int skip_proj) 
 {
@@ -5953,9 +6145,11 @@ rel_dce(mvc *sql, sql_rel *rel)
 	list *refs = sa_list(sql->sa);
 	node *n;
 
+	rel_dce_refs(sql, rel, refs);
 	rel = rel_add_projects(sql, rel);
 	rel_used(rel);
 	rel_dce_sub(sql, rel, refs);
+
 	for (n = refs->h; n; n = n->next)
 		rel_dce_sub(sql, n->data, refs);
 	return rel;
@@ -6396,7 +6590,7 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		return e;
 	case e_aggr:
 	case e_func: 
-		if (!is_analytic(e)) {
+		if (!is_analytic(e) && !exp_has_sideeffect(e)) {
 			split_exps(sql, e->l, rel);
 			add_exps_too_project(sql, e->l, rel);
 		}
@@ -6475,9 +6669,13 @@ rel_split_project(int *changes, mvc *sql, sql_rel *rel, int top)
 				append(rel->exps, split_exp(sql, n->data, rel));
 		}
 	}
-	/* TODO handle right (ie join/union) */
-	if (!is_basetable(rel->op) && rel->l)
+	if (is_set(rel->op) || is_basetable(rel->op))
+		return rel;
+	if (rel->l)
 		rel->l = rel_split_project(changes, sql, rel->l, 
+			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
+	if (is_join(rel->op) && rel->r)
+		rel->r = rel_split_project(changes, sql, rel->r, 
 			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
 	return rel;
 }
@@ -7432,6 +7630,11 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						}
 						assert(e->type == e_column);
 						exp_setname(sql->sa, ne, e->l, e->r);
+						/* make sure we don't include additional indices */
+						if (!n->next && m->next) {
+							m->next = NULL;
+							prel->exps->cnt = rel->exps->cnt;
+						}
 					}
 					first = 0;
 					if (!skip) {
@@ -8314,7 +8517,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) 
 		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
-	if (gp.cnt[op_select]) {
+	if (gp.cnt[op_select] || gp.cnt[op_semi]) {
 		/* only once */
 		if (level <= 0)
 			rel = rewrite(sql, rel, &rel_merge_rse, &changes); 

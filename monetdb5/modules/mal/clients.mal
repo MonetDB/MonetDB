@@ -80,7 +80,7 @@ pattern settimeout(n:lng):void
 address CLTsetTimeout
 comment "Abort a query after  n seconds.";
 
-pattern setTimeout(q:lng,s:lng):void
+pattern settimeout(q:lng,s:lng):void
 address CLTsetTimeout
 comment "Abort a query after q seconds (q=0 means run undisturbed).
 The session timeout aborts the connection after spending too

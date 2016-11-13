@@ -135,8 +135,8 @@ Package: monetdb-client-testing
 Architecture: any
 Depends: ${shlibs:Depends}, libmonetdb-client-odbc (= ${source:Version}),
  monetdb5-server (= ${source:Version}),
- perl-monetdb-client (> 11.24.0),
- php-monetdb-client (> 11.24.0),
+ libdbd-monetdb-perl (>= 1.0),
+ php-monetdb (>= 1.0),
  python-monetdb (>= 1.0),
  monetdb5-sql (= ${source:Version})
 Description: MonetDB client testing tools

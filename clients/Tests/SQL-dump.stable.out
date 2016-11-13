@@ -200,6 +200,9 @@ Ready.
 \dSf sys."isauuid"
 \dSf sys."left_shift"
 \dSf sys."left_shift_assign"
+\dSf sys."lidarattach"
+\dSf sys."lidarexport"
+\dSf sys."lidarload"
 \dSf sys."like"
 \dSf sys."listdir"
 \dSf sys."listdirpat"
@@ -539,6 +542,9 @@ SYSTEM FUNCTION  sys.left_shift
 SYSTEM FUNCTION  sys.left_shift_assign
 SYSTEM FUNCTION  sys.length
 SYSTEM FUNCTION  sys.levenshtein
+SYSTEM FUNCTION  sys.lidarattach
+SYSTEM FUNCTION  sys.lidarexport
+SYSTEM FUNCTION  sys.lidarload
 SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.listdir
 SYSTEM FUNCTION  sys.listdirpat
@@ -939,6 +945,9 @@ create function isaurl(theurl url) returns bool external name url."isaURL";
 create function sys.isauuid(s string) returns boolean external name uuid."isaUUID";
 create function "left_shift"(i1 inet, i2 inet) returns boolean external name inet."<<";
 create function "left_shift_assign"(i1 inet, i2 inet) returns boolean external name inet."<<=";
+create procedure lidarattach(fname string) external name lidar.attach;
+create procedure lidarexport(tname string, fname string, format string) external name lidar.export;
+create procedure lidarload(tname string) external name lidar.load;
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
 
@@ -1003,9 +1012,9 @@ create function "right_shift"(i1 inet, i2 inet) returns boolean external name in
 create function "right_shift_assign"(i1 inet, i2 inet) returns boolean external name inet.">>=";
 create function sys.sessions() returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool) external name sql.sessions;
 create function "setmasklen" (p inet, mask int) returns inet external name inet."setmasklen";
-create procedure sys.setsession("timeout" bigint) external name sql.setsession;
-create procedure sys.settimeout("query" bigint) external name sql.settimeout;
-create procedure sys.settimeout("query" bigint, "session" bigint) external name sql.settimeout;
+create procedure sys.setsession("timeout" bigint) external name clients.setsession;
+create procedure sys.settimeout("query" bigint) external name clients.settimeout;
+create procedure sys.settimeout("query" bigint, "session" bigint) external name clients.settimeout;
 create procedure shpattach(fname string) external name shp.attach;
 create procedure shpload(fid integer) external name shp.load;
 create procedure shpload(fid integer, filter geometry) external name shp.import;
@@ -1278,10 +1287,8 @@ drop function pcre_replace(string, string, string, string);
 [ "profiler",	3,	3,	true	]
 [ "sys",	2,	3,	true	]
 [ "tmp",	2,	3,	true	]
-#select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*
-#', '', ''), '[ 	
-#]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
-% .s,	.t,	.L,	.t,	.t,	.t,	.t # table_name
+#select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
+% .s,	.t,	.L4,	.t,	.t,	.t,	.t # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 3,	17,	597,	1,	5,	1,	1 # length
@@ -1729,10 +1736,8 @@ drop function pcre_replace(string, string, string, string);
 [ "users",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "users",	"fullname",	"varchar",	2024,	0,	NULL,	true,	1,	NULL	]
 [ "users",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL	]
-#select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*
-#', '', ''), '[ 	
-#]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, query;
-% .s,	.f,	.L,	.f,	.f,	.f,	.f,	.f,	.f # table_name
+#select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, query;
+% .s,	.f,	.L4,	.f,	.f,	.f,	.f,	.f,	.f # table_name
 % name,	name,	query,	mod,	language,	type,	side_effect,	varres,	vararg # name
 % varchar,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean # type
 % 8,	35,	831,	9,	1,	1,	5,	5,	5 # length
@@ -1769,7 +1774,9 @@ drop function pcre_replace(string, string, string, string);
 [ "json",	"tojsonarray",	"create aggregate json.tojsonarray(x double) returns string external name aggr.jsonaggr;",	"aggr",	1,	3,	false,	false,	false	]
 [ "json",	"tojsonarray",	"create aggregate json.tojsonarray(x string) returns string external name aggr.jsonaggr;",	"aggr",	1,	3,	false,	false,	false	]
 [ "json",	"valuearray",	"create function json.valuearray(js json) returns json external name json.valuearray;",	"json",	1,	1,	false,	false,	false	]
+[ "profiler",	"getlimit",	"create function profiler.getlimit() returns integer external name profiler.getlimit;",	"profiler",	1,	1,	false,	false,	false	]
 [ "profiler",	"setheartbeat",	"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;",	"profiler",	1,	2,	true,	false,	false	]
+[ "profiler",	"setlimit",	"create procedure profiler.setlimit(lim integer) external name profiler.setlimit;",	"profiler",	1,	2,	true,	false,	false	]
 [ "profiler",	"setpoolsize",	"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;",	"profiler",	1,	2,	true,	false,	false	]
 [ "profiler",	"setstream",	"create procedure profiler.setstream(host string, port int) external name profiler.setstream;",	"profiler",	1,	2,	true,	false,	false	]
 [ "profiler",	"start",	"create procedure profiler.start() external name profiler.\"start\";",	"profiler",	1,	2,	true,	false,	false	]
@@ -2006,8 +2013,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"hour",	"hours",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"identity",	"identity",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"ifthenelse",	"ifthenelse",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"ilike",	"create filter function \"ilike\"(val string, pat string) external name algebra.\"ilike\";",	"algebra",	1,	4,	true,	false,	false	]
-[ "sys",	"ilike",	"create filter function \"ilike\"(val string, pat string, esc string) external name algebra.\"ilike\";",	"algebra",	1,	4,	true,	false,	false	]
+[ "sys",	"ilike",	"create filter function \"ilike\"(val string, pat string) external name algebra.\"ilike\";",	"algebra",	1,	4,	false,	false,	false	]
+[ "sys",	"ilike",	"create filter function \"ilike\"(val string, pat string, esc string) external name algebra.\"ilike\";",	"algebra",	1,	4,	false,	false,	false	]
 [ "sys",	"imprintsize",	"create function sys.imprintsize(i bigint, nme string) returns bigint begin if nme = 'boolean' or nme = 'tinyint' or nme = 'smallint' or nme = 'int' or nme = 'bigint' or nme = 'hugeint' or nme = 'decimal' or nme = 'date' or nme = 'timestamp' or nme = 'real' or nme = 'double' then return cast(i * 0.12 as bigint); end if ; return 0; end;",	"user",	2,	1,	false,	false,	false	]
 [ "sys",	"in",	"in",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"index",	"index",	"calc",	0,	1,	false,	false,	false	]
@@ -2054,8 +2061,11 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"levenshtein",	"levenshtein",	"txtsim",	0,	1,	false,	false,	false	]
 [ "sys",	"levenshtein",	"levenshtein",	"txtsim",	0,	1,	false,	false,	false	]
 [ "sys",	"levenshtein",	"levenshtein",	"txtsim",	0,	1,	false,	false,	false	]
-[ "sys",	"like",	"create filter function \"like\"(val string, pat string) external name algebra.\"like\";",	"algebra",	1,	4,	true,	false,	false	]
-[ "sys",	"like",	"create filter function \"like\"(val string, pat string, esc string) external name algebra.\"like\";",	"algebra",	1,	4,	true,	false,	false	]
+[ "sys",	"lidarattach",	"create procedure lidarattach(fname string) external name lidar.attach;",	"lidar",	1,	2,	true,	false,	false	]
+[ "sys",	"lidarexport",	"create procedure lidarexport(tname string, fname string, format string) external name lidar.export;",	"lidar",	1,	2,	true,	false,	false	]
+[ "sys",	"lidarload",	"create procedure lidarload(tname string) external name lidar.load;",	"lidar",	1,	2,	true,	false,	false	]
+[ "sys",	"like",	"create filter function \"like\"(val string, pat string) external name algebra.\"like\";",	"algebra",	1,	4,	false,	false,	false	]
+[ "sys",	"like",	"create filter function \"like\"(val string, pat string, esc string) external name algebra.\"like\";",	"algebra",	1,	4,	false,	false,	false	]
 [ "sys",	"listdir",	"create procedure listdir(dirname string) external name fits.listdir;",	"fits",	1,	2,	true,	false,	false	]
 [ "sys",	"listdirpat",	"create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;",	"fits",	1,	2,	true,	false,	false	]
 [ "sys",	"local_timezone",	"local_timezone",	"mtime",	0,	1,	false,	false,	false	]
@@ -2795,9 +2805,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"second",	"sql_seconds",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"sessions",	"create function sys.sessions() returns table(\"user\" string, \"login\" timestamp, \"sessiontimeout\" bigint, \"lastcommand\" timestamp, \"querytimeout\" bigint, \"active\" bool) external name sql.sessions;",	"sql",	1,	5,	false,	false,	false	]
 [ "sys",	"setmasklen",	"create function \"setmasklen\" (p inet, mask int) returns inet external name inet.\"setmasklen\";",	"inet",	1,	1,	false,	false,	false	]
-[ "sys",	"setsession",	"create procedure sys.setsession(\"timeout\" bigint) external name sql.setsession;",	"sql",	1,	2,	true,	false,	false	]
-[ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint) external name sql.settimeout;",	"sql",	1,	2,	true,	false,	false	]
-[ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name sql.settimeout;",	"sql",	1,	2,	true,	false,	false	]
+[ "sys",	"setsession",	"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;",	"clients",	1,	2,	true,	false,	false	]
+[ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint) external name clients.settimeout;",	"clients",	1,	2,	true,	false,	false	]
+[ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name clients.settimeout;",	"clients",	1,	2,	true,	false,	false	]
 [ "sys",	"shpattach",	"create procedure shpattach(fname string) external name shp.attach;",	"shp",	1,	2,	true,	false,	false	]
 [ "sys",	"shpload",	"create procedure shpload(fid integer) external name shp.load;",	"shp",	1,	2,	true,	false,	false	]
 [ "sys",	"shpload",	"create procedure shpload(fid integer, filter geometry) external name shp.import;",	"shp",	1,	2,	true,	false,	false	]
@@ -3313,7 +3323,9 @@ drop function pcre_replace(string, string, string, string);
 [ "json",	"tojsonarray",	"x",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "json",	"tojsonarray",	"x",	"double",	53,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "json",	"valuearray",	"js",	"json",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "profiler",	"getlimit",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"setheartbeat",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "profiler",	"setlimit",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"setpoolsize",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"setstream",	"port",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"start",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3598,6 +3610,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"levenshtein",	"arg_1",	"clob",	0,	0,	1,	"arg_2",	"clob",	0,	0,	1,	"arg_3",	"int",	32,	0,	1,	"arg_4",	"int",	32,	0,	1,	"arg_5",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"levenshtein",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"levenshtein",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	"arg_3",	"int",	32,	0,	1,	"arg_4",	"int",	32,	0,	1,	"arg_5",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"lidarattach",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"lidarexport",	"fname",	"clob",	0,	0,	1,	"format",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"lidarload",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"like",	"pat",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"like",	"pat",	"clob",	0,	0,	1,	"esc",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"listdir",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4826,8 +4841,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sysadmin",	0	]
 [ "monetdb",	0	]
 #select server, port, db, db_alias, user, password, language from sys.connections order by server, port;
-% sys.connections,	sys.connections,	sys.connections,	sys.connections,	.L1,	sys.connections,	sys.connections # table_name
-% server,	port,	db,	db_alias,	L1,	password,	language # name
+% sys.connections,	sys.connections,	sys.connections,	sys.connections,	.L6,	sys.connections,	sys.connections # table_name
+% server,	port,	db,	db_alias,	L6,	password,	language # name
 % char,	int,	char,	char,	varchar,	char,	char # type
 % 1024,	1,	64,	1024,	0,	1024,	1024 # length
 #select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
@@ -4841,7 +4856,6 @@ drop function pcre_replace(string, string, string, string);
 % name,	name,	name,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	char # type
 % 3,	17,	3,	13,	20 # length
-[ "sys",	"ms_trunc",	"sys",	"ms_round",	"FUNC_DEPENDENCY"	]
 [ "sys",	"st_numgeometries",	"sys",	"st_numpatches",	"FUNC_DEPENDENCY"	]
 [ "sys",	"st_geometryn",	"sys",	"st_patchn",	"FUNC_DEPENDENCY"	]
 [ "sys",	"getproj4",	"sys",	"st_transform",	"FUNC_DEPENDENCY"	]
@@ -4903,92 +4917,198 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"triggers",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"spatial_ref_sys",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"objects",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"schemas",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"tables",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 #select s1.name, t.name, c.name, s2.name, f.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), sys.dependencies d, sys._columns c, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.depend_type = dt.id and d.id = c.id and d.depend_id = f.id and c.table_id = t.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name, c.name;
 % sys.s1,	sys.t,	sys.c,	sys.s2,	sys.f,	.dt # table_name
 % name,	name,	name,	name,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	char # type
-% 3,	17,	11,	3,	35,	20 # length
+% 3,	17,	13,	3,	35,	20 # length
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"func",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"functions",	"id",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"language",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"mod",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"functions",	"name",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"schema_id",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"side_effect",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"type",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"vararg",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"varres",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"idxs",	"id",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
 [ "sys",	"idxs",	"name",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
 [ "sys",	"idxs",	"table_id",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"idxs",	"type",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"action",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"id",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"name",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"rkey",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"table_id",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"type",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
 [ "sys",	"objects",	"id",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
 [ "sys",	"objects",	"name",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"objects",	"nr",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"action",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"id",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"name",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"rkey",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"table_id",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"type",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"objects",	"id",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"objects",	"name",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
+[ "sys",	"objects",	"nr",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"condition",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"event",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"id",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"name",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"new_name",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"old_name",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"orientation",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"statement",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"table_id",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"time",	"sys",	"dependencies_columns_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_columns_on_views",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_columns_on_views",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_columns_on_views",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"func",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"functions",	"id",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"language",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"mod",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"functions",	"name",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"schema_id",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"side_effect",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"type",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"vararg",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"varres",	"sys",	"dependencies_functions_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"func",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"functions",	"id",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"language",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"mod",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"functions",	"name",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"schema_id",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"side_effect",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"type",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"vararg",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"varres",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"condition",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"event",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"id",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"name",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"new_name",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"old_name",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"orientation",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"statement",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"table_id",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"time",	"sys",	"dependencies_functions_os_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"action",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"id",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"name",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"rkey",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"table_id",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"type",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNC_DEPENDENCY"	]
+[ "sys",	"auths",	"grantor",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
 [ "sys",	"auths",	"id",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
 [ "sys",	"auths",	"name",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
+[ "sys",	"schemas",	"authorization",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
 [ "sys",	"schemas",	"id",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
 [ "sys",	"schemas",	"name",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
 [ "sys",	"schemas",	"owner",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
+[ "sys",	"schemas",	"system",	"sys",	"dependencies_owners_on_schemas",	"FUNC_DEPENDENCY"	]
+[ "sys",	"schemas",	"authorization",	"sys",	"dependencies_schemas_on_users",	"FUNC_DEPENDENCY"	]
 [ "sys",	"schemas",	"id",	"sys",	"dependencies_schemas_on_users",	"FUNC_DEPENDENCY"	]
 [ "sys",	"schemas",	"name",	"sys",	"dependencies_schemas_on_users",	"FUNC_DEPENDENCY"	]
+[ "sys",	"schemas",	"owner",	"sys",	"dependencies_schemas_on_users",	"FUNC_DEPENDENCY"	]
+[ "sys",	"schemas",	"system",	"sys",	"dependencies_schemas_on_users",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"action",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"id",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"name",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"rkey",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"table_id",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"type",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"func",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"functions",	"id",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"language",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"mod",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"functions",	"name",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"schema_id",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"side_effect",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"type",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"vararg",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"varres",	"sys",	"dependencies_tables_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"idxs",	"id",	"sys",	"dependencies_tables_on_indexes",	"FUNC_DEPENDENCY"	]
 [ "sys",	"idxs",	"name",	"sys",	"dependencies_tables_on_indexes",	"FUNC_DEPENDENCY"	]
 [ "sys",	"idxs",	"table_id",	"sys",	"dependencies_tables_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"idxs",	"type",	"sys",	"dependencies_tables_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"action",	"sys",	"dependencies_tables_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"id",	"sys",	"dependencies_tables_on_indexes",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"name",	"sys",	"dependencies_tables_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"rkey",	"sys",	"dependencies_tables_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"table_id",	"sys",	"dependencies_tables_on_indexes",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"type",	"sys",	"dependencies_tables_on_indexes",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"condition",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"event",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"id",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"name",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"new_name",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"old_name",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"orientation",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"statement",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"table_id",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"time",	"sys",	"dependencies_tables_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_tables_on_views",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_tables_on_views",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_tables_on_views",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"func",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"functions",	"id",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"language",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"mod",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"functions",	"name",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"schema_id",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"side_effect",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"type",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"vararg",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
+[ "sys",	"functions",	"varres",	"sys",	"dependencies_views_on_functions",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"condition",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"event",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"id",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"name",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"new_name",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"old_name",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"orientation",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"statement",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"table_id",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"triggers",	"time",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
+[ "sys",	"spatial_ref_sys",	"auth_name",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
+[ "sys",	"spatial_ref_sys",	"auth_srid",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
 [ "sys",	"spatial_ref_sys",	"proj4text",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
 [ "sys",	"spatial_ref_sys",	"srid",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
+[ "sys",	"spatial_ref_sys",	"srtext",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"atomwidth",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"column",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"count",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
@@ -5000,7 +5120,22 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"storagemodelinput",	"sorted",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"table",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"type",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
+[ "sys",	"storagemodelinput",	"typewidth",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"unique",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
+[ "sys",	"keys",	"action",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"keys",	"id",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"keys",	"name",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"keys",	"rkey",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"keys",	"table_id",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"keys",	"type",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"objects",	"id",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"objects",	"name",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"objects",	"nr",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"schemas",	"authorization",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"schemas",	"id",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"schemas",	"name",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"schemas",	"owner",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
+[ "sys",	"schemas",	"system",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"atomwidth",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"column",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"count",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
@@ -5018,23 +5153,10 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.f1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	char # type
-% 3,	16,	3,	17,	20 # length
-[ "sys",	"environment",	"sys",	"environment",	"VIEW_DEPENDENCY"	]
+% 3,	8,	3,	16,	20 # length
 [ "sys",	"get_type",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"has_m",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"has_z",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
-[ "sys",	"optimizers",	"sys",	"optimizers",	"VIEW_DEPENDENCY"	]
-[ "sys",	"querylog_calls",	"sys",	"querylog_calls",	"VIEW_DEPENDENCY"	]
-[ "sys",	"querylog_catalog",	"sys",	"querylog_catalog",	"VIEW_DEPENDENCY"	]
-[ "sys",	"querylog_calls",	"sys",	"querylog_history",	"VIEW_DEPENDENCY"	]
-[ "sys",	"querylog_catalog",	"sys",	"querylog_history",	"VIEW_DEPENDENCY"	]
-[ "sys",	"queue",	"sys",	"queue",	"VIEW_DEPENDENCY"	]
-[ "sys",	"rejects",	"sys",	"rejects",	"VIEW_DEPENDENCY"	]
-[ "sys",	"sessions",	"sys",	"sessions",	"VIEW_DEPENDENCY"	]
-[ "sys",	"storage",	"sys",	"storage",	"VIEW_DEPENDENCY"	]
-[ "sys",	"storagemodel",	"sys",	"storagemodel",	"VIEW_DEPENDENCY"	]
-[ "sys",	"storagemodel",	"sys",	"tablestoragemodel",	"VIEW_DEPENDENCY"	]
-[ "sys",	"tracelog",	"sys",	"tracelog",	"VIEW_DEPENDENCY"	]
 #select s1.name, t1.name, s2.name, t2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), schemas s1, _tables t1, schemas s2, _tables t2, dependencies d where d.depend_type = dt.id and d.id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
 % sys.s1,	sys.t1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	name # name
@@ -5052,8 +5174,8 @@ drop function pcre_replace(string, string, string, string);
 % 3,	7,	10,	3,	16,	20 # length
 [ "sys",	"schemas",	"id",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"schemas",	"name",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
-[ "sys",	"types",	"sqlname",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"types",	"systemname",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
+[ "sys",	"types",	"sqlname",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 #select s1.name, t1.name, c1.name, s2.name, t2.name, k2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, keys k2 where d.depend_type = dt.id and d.id = c1.id and d.depend_id = k2.id and c1.table_id = t1.id and t1.schema_id = s1.id and k2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, k2.name, s1.name, t1.name, c1.name;
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	sys.k2,	.dt # table_name
 % name,	name,	name,	name,	name,	name,	name # name
@@ -5527,14 +5649,14 @@ drop function pcre_replace(string, string, string, string);
 % varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 0,	0,	1,	1,	1,	1,	1,	5 # length
 #select count(*) from sys.statistics;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select count(*) from sys.storagemodelinput;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -5765,6 +5887,7 @@ drop function pcre_replace(string, string, string, string);
 [ "getextension"	]
 [ "getfile"	]
 [ "gethost"	]
+[ "getlimit"	]
 [ "getport"	]
 [ "getproj4"	]
 [ "getprotocol"	]
@@ -5842,6 +5965,9 @@ drop function pcre_replace(string, string, string, string);
 [ "levenshtein"	]
 [ "levenshtein"	]
 [ "levenshtein"	]
+[ "lidarattach"	]
+[ "lidarexport"	]
+[ "lidarload"	]
 [ "like"	]
 [ "like"	]
 [ "listdir"	]
@@ -6589,6 +6715,7 @@ drop function pcre_replace(string, string, string, string);
 [ "seq_length"	]
 [ "sessions"	]
 [ "setheartbeat"	]
+[ "setlimit"	]
 [ "setmasklen"	]
 [ "setpoolsize"	]
 [ "setsession"	]

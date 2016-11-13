@@ -1,0 +1,107 @@
+stdout of test 'assert-on-push-project-up.Bug-6077` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 14:17:20 >  
+# 14:17:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39688" "--set" "mapi_usock=/var/tmp/mtest-23333/.s.monetdb.39688" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 14:17:20 >  
+
+# MonetDB 5 server v11.23.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39688/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23333/.s.monetdb.39688
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 14:17:20 >  
+# 14:17:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23333" "--port=39688"
+# 14:17:20 >  
+
+#START TRANSACTION;
+#CREATE TABLE REGION  ( R_REGIONKEY  INTEGER NOT NULL,
+#                            R_NAME       CHAR(25) NOT NULL,
+#                            R_COMMENT    VARCHAR(152));
+#CREATE TABLE NATION  ( N_NATIONKEY  INTEGER NOT NULL,
+#                            N_NAME       CHAR(25) NOT NULL,
+#                            N_REGIONKEY  INTEGER NOT NULL,
+#                            N_COMMENT    VARCHAR(152));
+#CREATE TABLE PART  ( P_PARTKEY     INTEGER NOT NULL,
+#                          P_NAME        VARCHAR(55) NOT NULL,
+#                          P_MFGR        CHAR(25) NOT NULL,
+#                          P_BRAND       CHAR(10) NOT NULL,
+#                          P_TYPE        VARCHAR(25) NOT NULL,
+#                          P_SIZE        INTEGER NOT NULL,
+#                          P_CONTAINER   CHAR(10) NOT NULL,
+#                          P_RETAILPRICE DECIMAL(15,2) NOT NULL,
+#                          P_COMMENT     VARCHAR(23) NOT NULL );
+#CREATE TABLE SUPPLIER ( S_SUPPKEY     INTEGER NOT NULL,
+#                             S_NAME        CHAR(25) NOT NULL,
+#                             S_ADDRESS     VARCHAR(40) NOT NULL,
+#                             S_NATIONKEY   INTEGER NOT NULL,
+#                             S_PHONE       CHAR(15) NOT NULL,
+#                             S_ACCTBAL     DECIMAL(15,2) NOT NULL,
+#                             S_COMMENT     VARCHAR(101) NOT NULL);
+#CREATE TABLE PARTSUPP ( PS_PARTKEY     INTEGER NOT NULL,
+#                             PS_SUPPKEY     INTEGER NOT NULL,
+#                             PS_AVAILQTY    INTEGER NOT NULL,
+#                             PS_SUPPLYCOST  DECIMAL(15,2)  NOT NULL,
+#                             PS_COMMENT     VARCHAR(199) NOT NULL );
+#CREATE TABLE CUSTOMER ( C_CUSTKEY     INTEGER NOT NULL,
+#                             C_NAME        VARCHAR(25) NOT NULL,
+#                             C_ADDRESS     VARCHAR(40) NOT NULL,
+#                             C_NATIONKEY   INTEGER NOT NULL,
+#                             C_PHONE       CHAR(15) NOT NULL,
+#                             C_ACCTBAL     DECIMAL(15,2)   NOT NULL,
+#                             C_MKTSEGMENT  CHAR(10) NOT NULL,
+#                             C_COMMENT     VARCHAR(117) NOT NULL);
+#CREATE TABLE ORDERS  ( O_ORDERKEY       INTEGER NOT NULL,
+#                           O_CUSTKEY        INTEGER NOT NULL,
+#                           O_ORDERSTATUS    CHAR(1) NOT NULL,
+#                           O_TOTALPRICE     DECIMAL(15,2) NOT NULL,
+#                           O_ORDERDATE      DATE NOT NULL,
+#                           O_ORDERPRIORITY  CHAR(15) NOT NULL,  
+#                           O_CLERK          CHAR(15) NOT NULL, 
+#                           O_SHIPPRIORITY   INTEGER NOT NULL,
+#                           O_COMMENT        VARCHAR(79) NOT NULL);
+#CREATE TABLE LINEITEM ( L_ORDERKEY    INTEGER NOT NULL,
+#                             L_PARTKEY     INTEGER NOT NULL,
+#                             L_SUPPKEY     INTEGER NOT NULL,
+#                             L_LINENUMBER  INTEGER NOT NULL,
+#                             L_QUANTITY    DECIMAL(15,2) NOT NULL,
+#                             L_EXTENDEDPRICE  DECIMAL(15,2) NOT NULL,
+#                             L_DISCOUNT    DECIMAL(15,2) NOT NULL,
+#                             L_TAX         DECIMAL(15,2) NOT NULL,
+#                             L_RETURNFLAG  CHAR(1) NOT NULL,
+#select  
+#  ref_188.type as c0, 
+#  ref_222.p_container as c1, 
+#  ref_188.schema as c2
+#from 
+#  	sys.netcdf_vardim as ref_140
+#  	left join bam.sq as ref_182
+#  	left join tmp.triggers as ref_183
+#  	left join sys.querylog_history as ref_184
+#  	inner join sys.users as ref_185 on (ref_184.mal = ref_185.default_schema )
+#		on (ref_183.table_id = ref_185.default_schema )
+#		on (ref_182.file_id = ref_184.optimize )
+#  	right join tmp.objects as ref_186
+#		on (ref_182.ln = ref_186.id )
+#		on (ref_140.var_id = ref_185.default_schema )
+% .L47,	.L51,	.L53 # table_name
+% c0,	c1,	c2 # name
+% clob,	char,	clob # type
+% 0,	10,	0 # length
+#ROLLBACK;
+
+# 14:17:21 >  
+# 14:17:21 >  "Done."
+# 14:17:21 >  
+

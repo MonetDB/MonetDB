@@ -69,8 +69,8 @@ Ready.
 % oid,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #select 1;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 1	]

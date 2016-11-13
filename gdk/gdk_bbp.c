@@ -1210,7 +1210,10 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 	    bbpversion != GDKLIBRARY_OLDWKB &&
 	    bbpversion != GDKLIBRARY_INSERTED &&
 	    bbpversion != GDKLIBRARY_HEADED) {
-		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
+		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
+			 "This database was probably created by %s version of MonetDB.",
+			 GDKLIBRARY, bbpversion,
+			 bbpversion > GDKLIBRARY ? "a newer" : "a too old");
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		GDKfatal("BBPinit: short BBP");
@@ -1309,8 +1312,10 @@ BBPinit(void)
 	ATOMIC_INIT(BBPsizeLock);
 #endif
 
-	if (BBPfarms[0].dirname == NULL)
-		BBPaddfarm(".", (1 << PERSISTENT) | (1 << TRANSIENT));
+	if (BBPfarms[0].dirname == NULL) {
+		BBPaddfarm(".", 1 << PERSISTENT);
+		BBPaddfarm(".", 1 << TRANSIENT);
+	}
 
 	GDKremovedir(0, DELDIR);
 

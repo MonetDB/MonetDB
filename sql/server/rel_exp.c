@@ -196,8 +196,10 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 {
 	sql_exp *e = exp_create(sa, e_func);
 	e->card = exps_card(l);
-	if (!l || list_length(l) == 0)
+	if (!l || list_length(l) == 0) 
 		e->card = CARD_ATOM; /* unop returns a single atom */
+	if (f->func->side_effect)
+		e->card = CARD_MULTI;
 	e->l = l;
 	e->f = f; 
 	return e;
@@ -615,14 +617,19 @@ exp_setrelname(sql_allocator *sa, sql_exp *e, int nr)
 	e->rname = sa_strdup(sa, nme);
 }
 
-sql_exp*
-exp_label(sql_allocator *sa, sql_exp *e, int nr)
+char *
+make_label(sql_allocator *sa, int nr)
 {
 	char name[16], *nme;
 
 	nme = number2name(name, 16, nr);
-	e->name = sa_strdup(sa, nme);
-	e->rname = sa_strdup(sa, nme);
+	return sa_strdup(sa, nme);
+}
+
+sql_exp*
+exp_label(sql_allocator *sa, sql_exp *e, int nr)
+{
+	e->rname = e->name = make_label(sa, nr);
 	return e;
 }
 
@@ -949,8 +956,11 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			if (!subfunc_cmp(e1->f, e2->f) && /* equal functions */
 			    exps_equal(e1->l, e2->l) &&
 			    /* optional order by expressions */
-			    exps_equal(e1->r, e2->r))
-				return 1;
+			    exps_equal(e1->r, e2->r)) {
+				sql_subfunc *f = e1->f;
+				if (!f->func->side_effect)
+					return 1;
+			}
 			break;
 		case e_atom:
 			if (e1->l && e2->l && !atom_cmp(e1->l, e2->l))
@@ -1363,6 +1373,43 @@ exp_has_func( sql_exp *e )
 	return 0;
 }
 
+static int
+exps_has_sideeffect( list *exps)
+{
+	node *n;
+	int has_sideeffect = 0;
+
+	for(n=exps->h; n && !has_sideeffect; n=n->next) 
+		has_sideeffect |= exp_has_sideeffect(n->data);
+	return has_sideeffect;
+}
+
+int
+exp_has_sideeffect( sql_exp *e )
+{
+	switch (e->type) {
+	case e_convert:
+		return exp_has_sideeffect(e->l);
+	case e_func:
+		{
+			sql_subfunc *f = e->f;
+
+			if (f->func->side_effect) 
+				return 1;
+			if (e->l)
+				return exps_has_sideeffect(e->l);
+			return 0;
+		}
+	case e_atom:
+	case e_aggr: 
+	case e_cmp:
+	case e_column:
+	case e_psm:
+		return 0;
+	}
+	return 0;
+}
+
 int
 exp_unsafe( sql_exp *e) 
 {
@@ -1584,21 +1631,21 @@ exps_intern(list *exps)
 }
 
 char *
-compare_func( comp_type t )
+compare_func( comp_type t, int anti )
 {
 	switch(t) {
 	case cmp_equal:
-		return "=";
+		return anti?"<>":"=";
 	case cmp_lt:
-		return "<";
+		return anti?">":"<";
 	case cmp_lte:
-		return "<=";
+		return anti?">=":"<=";
 	case cmp_gte:
-		return ">=";
+		return anti?"<=":">=";
 	case cmp_gt:
-		return ">";
+		return anti?"<":">";
 	case cmp_notequal:
-		return "<>";
+		return anti?"=":"<>";
 	default:
 		return NULL;
 	}
@@ -1759,7 +1806,7 @@ exp_flatten(mvc *sql, sql_exp *e)
 	} else if (e->type == e_convert) {
 		atom *v = exp_flatten(sql, e->l); 
 
-		if (v && atom_cast(v, &e->tpe))
+		if (v && atom_cast(sql->sa, v, &e->tpe))
 			return v;
 		return NULL;
 	} else if (e->type == e_func) {

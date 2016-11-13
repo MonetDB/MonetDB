@@ -13,7 +13,9 @@
 #include <stdio.h>
 #include "monet_version.h"
 #include <pcre.h>
+#ifdef HAVE_OPENSSL
 #include <openssl/opensslv.h>
+#endif
 #ifdef HAVE_LIBXML
 #include <libxml/xmlversion.h>
 #endif
@@ -59,6 +61,7 @@ monet_version(void)
 			printf(" (%s)", pcreversion);
 		printf("\n");
 	}
+#ifdef HAVE_OPENSSL
 	{
 		char opensslversion[] = "@opensslversion@";
 		printf("  openssl: %s", OPENSSL_VERSION_TEXT);
@@ -66,6 +69,7 @@ monet_version(void)
 			printf(" (%s)", opensslversion);
 		printf("\n");
 	}
+#endif
 #ifdef HAVE_LIBXML
 	{
 		char libxml2version[] = "@libxml2version@";

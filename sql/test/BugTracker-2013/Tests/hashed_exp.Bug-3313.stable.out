@@ -228,7 +228,7 @@ Ready.
 #create view s13f62fa36e4_genericindex_data_result as select a2 as a1, prob as prob from s13f62fa36e4_genericindex_data_dict where prob > 0.0;
 #create view s13f62fa36e4_filter_class_equal_retrieve_result as select a1 as a1, 1.0 - prod(1.0 - prob) as prob from (select tmp__37434389.a1 as a1, tmp__37434389.a2 as a2, tmp__2070553699.a1 as a3, tmp__2070553699.a2 as a4, tmp__37434389.prob * tmp__2070553699.prob as prob from (select a2 as a1, a3 as a2, prob as prob from (select s13f62fa36e4_genericindex_data_dict.a1 as a1, s13f62fa36e4_genericindex_data_dict.a2 as a2, s13f62fa36e4_genericindex_data_dict.a3 as a3, s13f62fa36e4_genericindex_data_result.a1 as a4, s13f62fa36e4_genericindex_data_dict.prob * s13f62fa36e4_genericindex_data_result.prob as prob from s13f62fa36e4_genericindex_data_dict,s13f62fa36e4_genericindex_data_result where s13f62fa36e4_genericindex_data_dict.a2 = s13f62fa36e4_genericindex_data_result.a1) as tmp_884674928 where prob > 0.0) as tmp__37434389,(select a1 as a1, a2 as a2, prob as prob from s13f62fa36e4_params_str where a1 = 's13f62fa36e4_filter_class_equal_VALUE') as tmp__2070553699 where tmp__37434389.a2 = tmp__2070553699.a2) as tmp_1462207098 where prob > 0.0 group by a1;
 #SELECT d.id as id, d.idstr as pid, d.type as class, '<attributes/>' as xml, '{ "pid":"'||d.idstr||'" }' as json, s.prob as prob FROM s13f62fa36e4_filter_class_equal_RETRIEVE_result as s, dict as d WHERE s.a1=d.id ORDER BY s.prob DESC;
-% sys.L1,	sys.L1,	sys.L1,	.L1,	.L1,	.L1 # table_name
+% sys.L41,	sys.L42,	sys.L43,	.L44,	.L45,	.L46 # table_name
 % id,	pid,	class,	xml,	json,	prob # name
 % int,	clob,	clob,	char,	varchar,	double # type
 % 1,	0,	0,	13,	0,	24 # length

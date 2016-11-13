@@ -45,6 +45,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	str sch,tbl;
 	int etop= 0, esize= 256;
 
+	//if ( optimizerIsApplied(mb,"emptybind") )
+		//return 0;
 	// use an instruction reference table to keep
 	// track of where 'emptybind' results are produced
 	marked = (int *) GDKzalloc(mb->vsize * sizeof(int));
@@ -163,10 +165,11 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
                 int tpe;
 				if( p->retc == 2){
 					tpe = getBatType(getVarType(mb,getArg(p,1)));
-					q= newStmt(mb,batRef,newRef);
+					q= newInstruction(0, batRef, newRef);
 					q = pushType(mb,q,tpe);
 					getArg(q,0)= getArg(p,1);
 					setVarFixed(mb, getArg(p,0));
+					pushInstruction(mb,q);
 				}
 
                 tpe = getBatType(getVarType(mb,getArg(p,0)));
@@ -220,10 +223,11 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				int tpe;
 				if( p->retc == 2){
 					tpe = getBatType(getVarType(mb,getArg(p,1)));
-					q= newStmt(mb,batRef,newRef);
+					q= newInstruction(0, batRef, newRef);
 					q = pushType(mb,q,tpe);
 					getArg(q,0)= getArg(p,1);
 					setVarFixed(mb,getArg(q,0));
+					pushInstruction(mb,q);
 				}
 				
 				tpe = getBatType(getVarType(mb,getArg(p,0)));

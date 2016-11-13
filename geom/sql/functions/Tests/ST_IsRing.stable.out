@@ -25,25 +25,25 @@ Ready.
 # 14:55:48 >  
 
 #SELECT ST_IsRing(st_linefromtext('LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)'));
-% .L # table_name
-% st_linefromtext_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_IsRing(st_linefromtext('LINESTRING(0 0, 0 1, 1 0, 1 1, 0 0)'));
-% .L # table_name
-% st_linefromtext_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #select ST_IsRing(ST_GeomFromText('POLYGON((0 0, 1 1, 1 2, 1 1, 0 0))'));
-% .L # table_name
-% st_geomfromtext_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
-#SELECT geom AS "GEOMETRY" FROM geometries WHERE ST_IsRing(geom);
-% sys.L # table_name
+#SELECT geom AS "GEOMETRY" FROM geometries WHERE id<14 AND ST_IsRing(geom);
+% sys.L1 # table_name
 % GEOMETRY # name
 % geometry # type
 % 0 # length

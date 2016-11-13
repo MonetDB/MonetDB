@@ -25,43 +25,43 @@ Ready.
 
 [ 89	]
 [ 49	]
-#select count(*) from statistics;
-% sys.L1 # table_name
-% L1 # name
+#select count(*) from test_statistics;
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 49	]
-#select count(*) from statistics where lav is null;
-% sys.L1 # table_name
-% L1 # name
-% bigint # type
-% 2 # length
-[ 49	]
-[ 49	]
-[ 49	]
-#select count(*) from statistics where lav is null;
-% sys.L1 # table_name
-% L1 # name
+#select count(*) from test_statistics where lav is null;
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 49	]
 [ 49	]
-#select count(*) from statistics where lav is null;
-% sys.L1 # table_name
-% L1 # name
+[ 49	]
+#select count(*) from test_statistics where lav is null;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 2 # length
+[ 49	]
+[ 49	]
+#select count(*) from test_statistics where lav is null;
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 [ 49	]
-#select count(*) from statistics;
-% sys.L1 # table_name
-% L1 # name
+#select count(*) from test_statistics;
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 49	]
-#select count(*) from statistics where lav is null;
-% sys.L1 # table_name
-% L1 # name
+#select count(*) from test_statistics where lav is null;
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 49	]

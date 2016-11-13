@@ -1513,7 +1513,12 @@ parseAssign(Client cntxt, int cntrl)
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
-	curInstr = newInstruction(curBlk, cntrl ? cntrl : ASSIGNsymbol);
+	curInstr = newInstruction(curBlk, NULL, NULL);
+	
+	if( cntrl){
+		curInstr->token = ASSIGNsymbol;
+		curInstr->barrier = cntrl;
+	}
 
 	/* start the parsing by recognition of the lhs of an assignment */
 	if (currChar(cntxt) == '(') {
@@ -1757,7 +1762,9 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 				*e = 0;
 			if (! skipcomments && e > start && curBlk->stop > 0 ) {
 				ValRecord cst;
-				curInstr = newInstruction(curBlk, REMsymbol);
+				curInstr = newInstruction(curBlk, NULL, NULL);
+				curInstr->token= REMsymbol;
+				curInstr->barrier= 0;
 				cst.vtype = TYPE_str;
 				cst.len = (int) strlen(start);
 				cst.val.sval = GDKstrdup(start);

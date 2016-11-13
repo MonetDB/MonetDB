@@ -307,9 +307,6 @@ CONDITIONALS = {
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_GSL'             : "@HAVE_GSL_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
-    'HAVE_JAVA'            : "@HAVE_JAVA_FALSE@",
-    'HAVE_JAVAJDBC'        : "@HAVE_JAVAJDBC_FALSE@",
-    'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
@@ -335,6 +332,9 @@ CONDITIONALS = {
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
     'HAVE_MONETDBJDBC_JAR' : "",
+    'HAVE_JAVA'            : "",
+    'HAVE_JAVAJDBC'        : "",
+    'HAVE_JAVAMEROCONTROL' : "",
     'HAVE_JDBCCLIENT_JAR'  : "",
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
@@ -1200,9 +1200,11 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     os.environ['TSTTRGDIR'] = TSTTRGDIR
     os.environ['RELSRCDIR'] = env['RELSRCDIR']
     os.environ['PYTHON2']   = '@QXPYTHON2@'
-    os.environ['PYTHON2PATH'] = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+    if 'PYTHON2PATH' not in os.environ: os.environ['PYTHON2PATH'] = ''
+    os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
     os.environ['PYTHON3']   = '@QXPYTHON3@'
-    os.environ['PYTHON3PATH'] = _configure(os.path.join('@QXprefix@', '@QXPYTHON3_LIBDIR@'))
+    if 'PYTHON3PATH' not in os.environ: os.environ['PYTHON3PATH'] = ''
+    os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON3_LIBDIR@'))
     if os.name == 'nt':
         os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python2'))
         os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python3'))
@@ -3146,7 +3148,17 @@ def CheckClassPath() :
     }
     # check for known JARs in CLASSPATH files
     for p in cp.split(os.pathsep):
-        if os.path.isfile(p):
+        if os.path.isdir(p):
+            for f in os.listdir(p):
+                if not f.endswith('.jar'):
+                    continue
+                C = 'HAVE_%s' % f.upper().replace('.','_')
+                if C not in JARS:
+                    C = 'HAVE_MONETDBJDBC_JAR'
+                if JARS[C].match(f):
+                    CONDITIONALS[C] = '#'
+                    cp = os.path.join(p, f) + os.pathsep + cp
+        elif os.path.isfile(p):
             f = os.path.basename(p)
             C = 'HAVE_%s' % f.upper().replace('.','_')
             if C not in JARS:
@@ -3725,7 +3737,7 @@ def main(argv) :
             if not os.path.exists(rdir):
                 os.makedirs(rdir)
     if CheckExec('php'):
-        proc = process.Popen(['php', '-r', "require 'monetdb/php_monetdb.php';"],
+        proc = process.Popen(['php', '-d', 'include_path=${PHP_INCPATH}', '-r', "require 'monetdb/php_monetdb.php';"],
                              stdout = process.PIPE, stderr = process.PIPE,
                              universal_newlines = True)
         php_out, php_err = proc.communicate()

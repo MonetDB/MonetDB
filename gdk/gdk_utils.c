@@ -273,8 +273,16 @@ BATSIGinit(void)
 
 /* memory thresholds; these values some "sane" constants only, really
  * set in GDKinit() */
-size_t GDK_mmap_minsize = (size_t) 1 << 18;
-size_t GDK_mmap_pagesize = (size_t) 1 << 16; /* mmap granularity */
+#define MMAP_MINSIZE_PERSISTENT	((size_t) 1 << 18)
+#if SIZEOF_SIZE_T == 4
+#define MMAP_MINSIZE_TRANSIENT	((size_t) 1 << 20)
+#else
+#define MMAP_MINSIZE_TRANSIENT	((size_t) 1 << 32)
+#endif
+#define MMAP_PAGESIZE		((size_t) 1 << 16)
+size_t GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;
+size_t GDK_mmap_minsize_transient = MMAP_MINSIZE_TRANSIENT;
+size_t GDK_mmap_pagesize = MMAP_PAGESIZE; /* mmap granularity */
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
@@ -539,8 +547,14 @@ GDKinit(opt *set, int setlen)
 		} else if (strcmp("gdk_vm_maxsize", n[i].name) == 0) {
 			GDK_vm_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
 			GDK_vm_maxsize = MAX(1 << 30, GDK_vm_maxsize);
-		} else if (strcmp("gdk_mmap_minsize", n[i].name) == 0) {
-			GDK_mmap_minsize = (size_t) strtoll(n[i].value, NULL, 10);
+			if (GDK_vm_maxsize < GDK_mmap_minsize_persistent / 4)
+				GDK_mmap_minsize_persistent = GDK_vm_maxsize / 4;
+			if (GDK_vm_maxsize < GDK_mmap_minsize_transient / 4)
+				GDK_mmap_minsize_transient = GDK_vm_maxsize / 4;
+		} else if (strcmp("gdk_mmap_minsize_persistent", n[i].name) == 0) {
+			GDK_mmap_minsize_persistent = (size_t) strtoll(n[i].value, NULL, 10);
+		} else if (strcmp("gdk_mmap_minsize_transient", n[i].name) == 0) {
+			GDK_mmap_minsize_transient = (size_t) strtoll(n[i].value, NULL, 10);
 		} else if (strcmp("gdk_mmap_pagesize", n[i].name) == 0) {
 			GDK_mmap_pagesize = (size_t) strtoll(n[i].value, NULL, 10);
 			if (GDK_mmap_pagesize < 1 << 12 ||
@@ -588,9 +602,13 @@ GDKinit(opt *set, int setlen)
 		snprintf(buf, sizeof(buf), SZFMT, GDK_mem_maxsize);
 		GDKsetenv("gdk_mem_maxsize", buf);
 	}
-	if (GDKgetenv("gdk_mmap_minsize") == NULL) {
-		snprintf(buf, sizeof(buf), SZFMT, GDK_mmap_minsize);
-		GDKsetenv("gdk_mmap_minsize", buf);
+	if (GDKgetenv("gdk_mmap_minsize_persistent") == NULL) {
+		snprintf(buf, sizeof(buf), SZFMT, GDK_mmap_minsize_persistent);
+		GDKsetenv("gdk_mmap_minsize_persistent", buf);
+	}
+	if (GDKgetenv("gdk_mmap_minsize_transient") == NULL) {
+		snprintf(buf, sizeof(buf), SZFMT, GDK_mmap_minsize_transient);
+		GDKsetenv("gdk_mmap_minsize_transient", buf);
 	}
 	if (GDKgetenv("gdk_mmap_pagesize") == NULL) {
 		snprintf(buf, sizeof(buf), SZFMT, GDK_mmap_pagesize);
@@ -723,8 +741,9 @@ GDKreset(int status)
 #endif
 		GDKdebug = 0;
 		strcpy(GDKdbpathStr,"dbpath");
-		GDK_mmap_minsize = (size_t) 1 << 18;
-		GDK_mmap_pagesize = (size_t) 1 << 16; 
+		GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;
+		GDK_mmap_minsize_transient = MMAP_MINSIZE_TRANSIENT;
+		GDK_mmap_pagesize = MMAP_PAGESIZE;
 		GDK_mem_maxsize = GDK_VM_MAXSIZE;
 		GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
@@ -1934,6 +1953,11 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *ret;
 
+	if (*new_size > old_size &&
+	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize) {
+		GDKerror("allocating too much virtual address space\n");
+		return NULL;
+	}
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret == NULL) {
 		GDKmemfail("GDKmremap", *new_size);

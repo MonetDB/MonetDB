@@ -483,8 +483,8 @@ set schema "testschema";
 # 13:26:28 >  
 
 #select count(*) from testschema.smallstring;
-% testschema.L1 # table_name
-% L1 # name
+% testschema.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 66	]

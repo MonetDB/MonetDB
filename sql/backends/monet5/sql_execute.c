@@ -33,7 +33,6 @@
 #include <rel_rel.h>
 #include <rel_exp.h>
 #include <rel_dump.h>
-#include <rel_bin.h>
 #include "mal_debugger.h"
 #include <mtime.h>
 #include "optimizer.h"
@@ -86,9 +85,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= newStmt(mb, profilerRef, stoptraceRef);
 	q= pushStr(mb,q,"sql_traces");
 	/* cook a new resultSet instruction */
-	resultset = newInstruction(mb,ASSIGNsymbol);
-	setModuleId(resultset, sqlRef);
-	setFunctionId(resultset, resultSetRef);
+	resultset = newInstruction(mb,sqlRef, resultSetRef);
 	getArg(resultset,0)= newTmpVariable(mb,TYPE_int);
 
 	/* build table defs */
@@ -233,7 +230,7 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 			atom *arg = m->args[i];
 			sql_subtype *pt = q->params + i;
 
-			if (!atom_cast(arg, pt)) {
+			if (!atom_cast(m->sa, arg, pt)) {
 				/*sql_error(c, 003, buf); */
 				if (pci->argc >= MAXARG)
 					GDKfree(argv);
@@ -252,9 +249,7 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 		v->vtype = TYPE_int;
 		v->val.ival = int_nil;
 	}
-	if (glb && ret) /* error */
-		garbageCollector(c, mb, glb, glb != 0);
-	q->stk = (backend_stack) glb;
+	q->stk = (backend_stack) glb; /* save garbageCollected stack */
 	if (glb && SQLdebug & 1)
 		printStack(GDKstdout, mb, glb);
 	if (pci->argc >= MAXARG)
@@ -296,7 +291,7 @@ SQLrun(Client c, backend *be, mvc *m){
 				sql_subtype *pt = be->q->params + j;
 				atom *arg = m->args[j];
 				
-				if (!atom_cast(arg, pt)) {
+				if (!atom_cast(m->sa, arg, pt)) {
 					throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 				}
 				val= (ValPtr) &arg->data;
@@ -424,7 +419,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	c->sqlcontext = sql;
 	while (msg == MAL_SUCCEED && m->scanner.rs->pos < m->scanner.rs->len) {
 		sql_rel *r;
-		stmt *s;
 		MalStkPtr oldglb = c->glb;
 
 		if (!m->sa)
@@ -458,12 +452,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
 		r = sql_symbol2relation(m, m->sym);
-		s = sql_relation2stmt(m, r);
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#SQLstatement:\n");
 #endif
 		scanner_query_processed(&(m->scanner));
-		if (s == 0 || (err = mvc_status(m))) {
+		if ((err = mvc_status(m))) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			handle_error(m, c->fdout, status);
 			sqlcleanup(m, err);
@@ -480,8 +473,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		mnstr_printf(c->fdout, "#SQLstatement:pre-compile\n");
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 #endif
-		if( backend_callinline(be, c) < 0 ||
-			backend_dumpstmt(be, c->curprg->def, s, 1, 1) < 0)
+		if (backend_callinline(be, c) < 0 ||
+		    backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0)
 			err = 1;
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
@@ -706,25 +699,23 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (rel) {
 		int oldvtop = c->curprg->def->vtop;
 		int oldstop = c->curprg->def->stop;
-		stmt *s;
 		MalStkPtr oldglb = c->glb;
 
 		if (*opt)
 			rel = rel_optimizer(m, rel);
-		s = output_rel_bin(m, rel);
-		rel_destroy(rel);
 
 		MSinitClientPrg(c, "user", "test");
 
 		/* generate MAL code, ignoring any code generation error */
-		if(  backend_callinline(b, c) < 0 ||
-			 backend_dumpstmt(b, c->curprg->def, s, 1, 1) < 0)
+		if (backend_callinline(b, c) < 0 ||
+		    backend_dumpstmt(b, c->curprg->def, rel, 1, 1, NULL) < 0) {
 			msg = createException(SQL,"RAstatement","Program contains errors");
-		else {
+		} else {
 			SQLaddQueryToCache(c);
 			msg = SQLoptimizeFunction(c,c->curprg->def);
 		}
-			SQLrun(c,b,m);
+		rel_destroy(rel);
+		SQLrun(c,b,m);
 		if (!msg) {
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
@@ -744,20 +735,22 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *nme = getArgReference_str(stk, pci, 2);
 	str *expr = getArgReference_str(stk, pci, 3);
 	str *sig = getArgReference_str(stk, pci, 4), c = *sig;
-	backend *b = NULL;
+	backend *be = NULL;
 	mvc *m = NULL;
 	str msg;
 	sql_rel *rel;
 	list *refs, *ops;
 	char buf[BUFSIZ];
 
-	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
+	if ((msg = getSQLContext(cntxt, mb, &m, &be)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if (!m->sa)
 		m->sa = sa_create();
 
+	//fprintf(stderr, "#(%s){{%s}}\n", *sig, *expr);
+	//fflush(stderr);
        	ops = sa_list(m->sa);
 	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
 	while (c && *c && !isspace(*c)) {
@@ -768,7 +761,6 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		atom *a;
 
 		*p++ = 0;
-		vnme = sa_strdup(m->sa, vnme);
 		nr = strtol(vnme+1, NULL, 10);
 		tnme = p;
 		p = strchr(p, (int)'(');
@@ -782,11 +774,11 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_find_subtype(&t, tnme, d, s);
 		a = atom_general(m->sa, &t, NULL);
 		/* the argument list may have holes and maybe out of order, ie
-		 * done use sql_add_arg, but special numbered version
+		 * don't use sql_add_arg, but special numbered version
 		 * sql_set_arg(m, a, nr);
 		 * */
+		append(ops, exp_atom_ref(m->sa, nr, &t));
 		sql_set_arg(m, nr, a);
-		append(ops, stmt_alias(m->sa, stmt_varnr(m->sa, nr, &t), NULL, vnme));
 		c = strchr(p, (int)',');
 		if (c)
 			c++;
@@ -796,7 +788,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!rel)
 		throw(SQL, "sql.register", "Cannot register %s", buf);
 	if (rel) {
-		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops), 0);
+		monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0);
 		rel_destroy(rel);
 	}
 	sqlcleanup(m, 0);

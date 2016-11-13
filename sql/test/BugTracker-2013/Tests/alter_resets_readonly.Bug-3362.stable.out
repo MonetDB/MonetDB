@@ -30,15 +30,15 @@ Ready.
 [ 3	]
 #alter table x set read only;
 #select (access = 1) from sys.tables where name='x';
-% .L3 # table_name
-% L3 # name
+% .L7 # table_name
+% L7 # name
 % boolean # type
 % 5 # length
 [ true	]
 #alter table x add primary key (a);
 #select (access = 1) from sys.tables where name='x';
-% .L3 # table_name
-% L3 # name
+% .L7 # table_name
+% L7 # name
 % boolean # type
 % 5 # length
 [ true	]

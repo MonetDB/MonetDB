@@ -25,14 +25,14 @@ Ready.
 # 11:55:35 >  
 
 #select current_date = date '2004-05-25';
-% .L # table_name
-% =_current_date # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]
 #select current_date = '2004-05-25';
-% .L # table_name
-% =_current_date # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]

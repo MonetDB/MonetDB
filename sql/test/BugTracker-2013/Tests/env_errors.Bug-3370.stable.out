@@ -26,14 +26,14 @@ Ready.
 # 09:53:02 >  
 
 #select current_role;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
 #select current_schema;
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % varchar # type
 % 3 # length
 [ "sys"	]

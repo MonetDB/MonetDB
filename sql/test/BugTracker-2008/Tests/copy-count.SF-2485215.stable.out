@@ -32,7 +32,7 @@ Ready.
 1123
 [ 1	]
 #copy select count(*) from t into stdout using delimiters ',', '\n';
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length

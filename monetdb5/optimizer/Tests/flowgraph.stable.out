@@ -1,0 +1,31 @@
+stdout of test 'flowgraph` in directory 'monetdb5/optimizer` itself:
+
+
+# 23:08:39 >  
+# 23:08:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35414" "--set" "mapi_usock=/var/tmp/mtest-7802/.s.monetdb.35414" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_optimizer"
+# 23:08:39 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35414/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7802/.s.monetdb.35414
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 23:08:39 >  
+# 23:08:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-7802" "--port=35414"
+# 23:08:39 >  
+
+
+# 23:08:39 >  
+# 23:08:39 >  "Done."
+# 23:08:39 >  
+

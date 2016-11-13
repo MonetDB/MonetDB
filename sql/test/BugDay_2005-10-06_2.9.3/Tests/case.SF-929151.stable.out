@@ -37,8 +37,8 @@ Ready.
 #when 4 then 'temporary table'
 #end
 #from t;
-% sys.L # table_name
-% ifthenelse_isnull_=_i # name
+% sys.L2 # table_name
+% L2 # name
 % char # type
 % 23 # length
 [ "base table"	]

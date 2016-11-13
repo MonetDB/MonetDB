@@ -31,8 +31,8 @@ Ready.
 [ 1	]
 #SELECT CASE WHEN CASE t.c WHEN 3 THEN TRUE ELSE FALSE END THEN 5 ELSE 7 END
 #FROM t;
-% sys.L # table_name
-% ifthenelse_isnull_=_c # name
+% sys.L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 7	]

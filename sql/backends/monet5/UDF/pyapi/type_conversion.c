@@ -235,7 +235,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)           
                 case '\0': continue; \
                 default: \
                 { \
-                    return "Error converting string."; \
+                    return GDKstrdup("Error converting string."); \
                 } \
             } \
             factor *= 10; \
@@ -326,7 +326,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)           
                 case '\0': continue; \
                 default: \
                 { \
-                    return "Error converting string."; \
+                    return GDKstrdup("Error converting string."); \
                 } \
             } \
             factor *= 10; \

@@ -21,8 +21,8 @@ external name sql.shutdown;
 
 -- control the query and session time out
 create procedure sys.settimeout("query" bigint)
-	external name sql.settimeout;
+	external name clients.settimeout;
 create procedure sys.settimeout("query" bigint, "session" bigint)
-	external name sql.settimeout;
+	external name clients.settimeout;
 create procedure sys.setsession("timeout" bigint)
-	external name sql.setsession;
+	external name clients.setsession;

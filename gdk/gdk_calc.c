@@ -1070,6 +1070,125 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s, int projected)
 	return NULL;
 }
 
+#define MINCF(p)	((*cmp)(p, nil) == 0 ?		\
+			 nil :				\
+			 (*cmp)(p, val) < 0 ? p : val)
+
+BAT *
+BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
+{
+	BAT *bn;
+	CALC_DECL;
+	int (*cmp)(const void *, const void *);
+	const void *nil;
+	const void *val;
+
+	if (ATOMtype(b->ttype) != ATOMtype(v->vtype)) {
+		GDKerror("%s: inputs have incompatible types\n", __func__);
+		return NULL;
+	}
+	CALC_INIT(b);
+
+	cmp = ATOMcompare(b->ttype);
+	nil = ATOMnilptr(b->ttype);
+	val = VALptr(v);
+
+	if ((b->ttype == TYPE_void && b->tseqbase == oid_nil) ||
+	    v->vtype == TYPE_void || (*cmp)(val, nil) == 0)
+		return BATconstant(hseq, ATOMtype(b->ttype), nil,
+				   cnt, TRANSIENT);
+
+	bn = COLnew(hseq, ATOMtype(b->ttype), cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+
+	UNARY_GENERIC_FUNC(MINCF, cmp, nil);
+
+	BATsetcount(bn, cnt);
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+	bn->tsorted = cnt <= 1 || nils == cnt;
+	bn->trevsorted = cnt <= 1 || nils == cnt;
+	bn->tkey = cnt <= 1;
+
+	return bn;
+
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
+{
+	return BATcalcmincst(b, v, s);
+}
+
+#define MINC_NO_NIL(p)		((*cmp)(p, nil) == 0 ?		\
+				 val :				\
+				 (*cmp)(p, val) < 0 ? p : val)
+
+BAT *
+BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
+{
+	BAT *bn;
+	CALC_DECL;
+	int (*cmp)(const void *, const void *);
+	const void *nil;
+	const void *val;
+
+	if (ATOMtype(b->ttype) != ATOMtype(v->vtype)) {
+		GDKerror("%s: inputs have incompatible types\n", __func__);
+		return NULL;
+	}
+	CALC_INIT(b);
+
+	cmp = ATOMcompare(b->ttype);
+	nil = ATOMnilptr(b->ttype);
+	val = VALptr(v);
+
+	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+		if (v->vtype == TYPE_void || (*cmp)(val, nil) == 0)
+			return BATconstant(hseq, TYPE_void, &oid_nil,
+					   cnt, TRANSIENT);
+		else
+			return BATconstant(hseq, ATOMtype(b->ttype), val,
+					   cnt, TRANSIENT);
+	}
+
+	if (v->vtype == TYPE_void || (*cmp)(val, nil) == 0) {
+		if (s)
+			return BATproject(s, b);
+		else
+			return COLcopy(b, b->ttype, 0, TRANSIENT);
+	}
+
+	bn = COLnew(hseq, ATOMtype(b->ttype), cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+
+	UNARY_GENERIC_FUNC(MINC_NO_NIL, cmp, nil);
+
+	BATsetcount(bn, cnt);
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+	bn->tsorted = cnt <= 1 || nils == cnt;
+	bn->trevsorted = cnt <= 1 || nils == cnt;
+	bn->tkey = cnt <= 1;
+
+	return bn;
+
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalccstmin_no_nil(const ValRecord *v, BAT *b, BAT *s)
+{
+	return BATcalcmincst_no_nil(b, v, s);
+}
+
 /* ---------------------------------------------------------------------- */
 /* the larger of the values */
 
@@ -1163,6 +1282,125 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s, int projected)
   bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
+}
+
+#define MAXCF(p)	((*cmp)(p, nil) == 0 ?		\
+			 nil :				\
+			 (*cmp)(p, val) > 0 ? p : val)
+
+BAT *
+BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
+{
+	BAT *bn;
+	CALC_DECL;
+	int (*cmp)(const void *, const void *);
+	const void *nil;
+	const void *val;
+
+	if (ATOMtype(b->ttype) != ATOMtype(v->vtype)) {
+		GDKerror("%s: inputs have incompatible types\n", __func__);
+		return NULL;
+	}
+	CALC_INIT(b);
+
+	cmp = ATOMcompare(b->ttype);
+	nil = ATOMnilptr(b->ttype);
+	val = VALptr(v);
+
+	if ((b->ttype == TYPE_void && b->tseqbase == oid_nil) ||
+	    v->vtype == TYPE_void || (*cmp)(val, nil) == 0)
+		return BATconstant(hseq, ATOMtype(b->ttype), nil,
+				   cnt, TRANSIENT);
+
+	bn = COLnew(hseq, ATOMtype(b->ttype), cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+
+	UNARY_GENERIC_FUNC(MAXCF, cmp, nil);
+
+	BATsetcount(bn, cnt);
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+	bn->tsorted = cnt <= 1 || nils == cnt;
+	bn->trevsorted = cnt <= 1 || nils == cnt;
+	bn->tkey = cnt <= 1;
+
+	return bn;
+
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalccstmax(const ValRecord *v, BAT *b, BAT *s)
+{
+	return BATcalcmaxcst(b, v, s);
+}
+
+#define MAXC_NO_NIL(p)		((*cmp)(p, nil) == 0 ?		\
+				 val :				\
+				 (*cmp)(p, val) > 0 ? p : val)
+
+BAT *
+BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
+{
+	BAT *bn;
+	CALC_DECL;
+	int (*cmp)(const void *, const void *);
+	const void *nil;
+	const void *val;
+
+	if (ATOMtype(b->ttype) != ATOMtype(v->vtype)) {
+		GDKerror("%s: inputs have incompatible types\n", __func__);
+		return NULL;
+	}
+	CALC_INIT(b);
+
+	cmp = ATOMcompare(b->ttype);
+	nil = ATOMnilptr(b->ttype);
+	val = VALptr(v);
+
+	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+		if (v->vtype == TYPE_void || (*cmp)(val, nil) == 0)
+			return BATconstant(hseq, TYPE_void, &oid_nil,
+					   cnt, TRANSIENT);
+		else
+			return BATconstant(hseq, ATOMtype(b->ttype), val,
+					   cnt, TRANSIENT);
+	}
+
+	if (v->vtype == TYPE_void || (*cmp)(val, nil) == 0) {
+		if (s)
+			return BATproject(s, b);
+		else
+			return COLcopy(b, b->ttype, 0, TRANSIENT);
+	}
+
+	bn = COLnew(hseq, ATOMtype(b->ttype), cnt, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+
+	UNARY_GENERIC_FUNC(MAXC_NO_NIL, cmp, nil);
+
+	BATsetcount(bn, cnt);
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+	bn->tsorted = cnt <= 1 || nils == cnt;
+	bn->trevsorted = cnt <= 1 || nils == cnt;
+	bn->tkey = cnt <= 1;
+
+	return bn;
+
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalccstmax_no_nil(const ValRecord *v, BAT *b, BAT *s)
+{
+	return BATcalcmaxcst_no_nil(b, v, s);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -2145,7 +2383,7 @@ addswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict d
 	return BUN_NONE;
 }
 
-/* calculated the "addition" (concatenation) of the strings s1 and s2,
+/* calculate the "addition" (concatenation) of the strings s1 and s2,
  * and store in the buffer buf which is the result value, reallocating
  * if necessary.  If alloc fails, result value is NULL. */
 #define ADDSTR(s1, s2)	(strcmp(s1, str_nil) == 0 || strcmp(s2, str_nil) == 0 ? str_nil : (((l1 = strlen(s1)) + (l2 = strlen(s2)) >= slen ? (slen = l1 + l2 + 1024, GDKfree(buf), buf = GDKmalloc(slen)) : buf) ? strcpy(strcpy(buf, s1) + l1, s2) - l1 : NULL))

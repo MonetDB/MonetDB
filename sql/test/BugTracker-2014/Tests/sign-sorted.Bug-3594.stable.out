@@ -59,7 +59,7 @@ Ready.
 #insert into float8_tbl(f1) values ('   -34.84');
 [ 1	]
 #select sign(f1) as sign_f1 from float8_tbl f;
-% sys.L # table_name
+% sys.L2 # table_name
 % sign_f1 # name
 % tinyint # type
 % 2 # length
@@ -67,7 +67,7 @@ Ready.
 #insert into float8_tbl(f1) values ('1.2345678901234e+200');
 [ 1	]
 #select sign(f1) as sign_f1 from float8_tbl f;
-% sys.L # table_name
+% sys.L2 # table_name
 % sign_f1 # name
 % tinyint # type
 % 2 # length

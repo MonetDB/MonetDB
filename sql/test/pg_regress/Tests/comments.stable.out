@@ -28,32 +28,32 @@ Ready.
 #-- COMMENTS
 #--
 #SELECT 'trailing' AS first; -- trailing single line
-% .L # table_name
+% .L2 # table_name
 % first # name
 % char # type
 % 8 # length
 [ "trailing" ]
 #SELECT /* embedded single line */ 'embedded' AS "second";
-% .L # table_name
+% .L2 # table_name
 % second # name
 % char # type
 % 8 # length
 [ "embedded"	]
 #SELECT /* both embedded and trailing single line */ 'both' AS third; -- trailing single line
-% .L # table_name
+% .L2 # table_name
 % third # name
 % char # type
 % 4 # length
 [ "both" ]
 
 #SELECT 'before multi-line' AS fourth;
-% .L # table_name
+% .L2 # table_name
 % fourth # name
 % char # type
 % 17 # length
 [ "before multi-line" ]
 #SELECT 'after multi-line' AS fifth;
-% .L # table_name
+% .L2 # table_name
 % fifth # name
 % char # type
 % 16 # length

@@ -25,8 +25,8 @@ Ready.
 
 #START TRANSACTION;
 #SELECT 'creating tables';
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 15 # length
 [ "creating tables"	]
@@ -37,8 +37,8 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'filling kwTemp';
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 14 # length
 [ "filling kwTemp"	]
@@ -65,8 +65,8 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'filling kwmTemp';
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 15 # length
 [ "filling kwmTemp"	]
@@ -93,21 +93,21 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT count(*) FROM kwTemp;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 20	]
 #SELECT 'filling s4_keywords from kwTemp';
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 31 # length
 [ "filling s4_keywords from kwTemp"	]
 [ 20	]
 #SELECT 'dropping kwTemp';
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 15 # length
 [ "dropping kwTemp"	]
@@ -115,21 +115,21 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT count(*) FROM kwmtemp;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 20	]
 #SELECT 'filling s4_kwm from kwmTemp';
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 27 # length
 [ "filling s4_kwm from kwmTemp"	]
 [ 20	]
 #SELECT 'dropping kwmTemp';
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 16 # length
 [ "dropping kwmTemp"	]
@@ -137,22 +137,22 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'expect 20', COUNT(*) FROM s4_keywords;
-% .L1,	sys.L2 # table_name
-% L1,	L2 # name
+% .L2,	sys.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 9,	2 # length
 [ "expect 20",	20	]
 #SELECT 'expect 20', COUNT(*) FROM s4_kwm;
-% .L1,	sys.L2 # table_name
-% L1,	L2 # name
+% .L2,	sys.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 9,	2 # length
 [ "expect 20",	20	]
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'dropping s4_kwm and s4_keywords';
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 31 # length
 [ "dropping s4_kwm and s4_keywords"	]
