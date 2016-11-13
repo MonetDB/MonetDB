@@ -29,17 +29,17 @@ Ready.
 #mdb.list("user","tst");
 function user.tst():void;
     b := bat.new(:int);
-    bat.append(b,1);
-    bat.append(b,2);
-    bat.append(b,3);
+    bat.append(b,1:int);
+    bat.append(b,2:int);
+    bat.append(b,3:int);
     io.print(b);
 end user.tst;
 #mdb.list("user","tst");
 function user.tst():void;
     b := bat.new(:int);
-    bat.append(b,1);
-    bat.append(b,2);
-    bat.append(b,3);
+    bat.append(b,1:int);
+    bat.append(b,2:int);
+    bat.append(b,3:int);
     io.print(b);
 end user.tst;
 
