@@ -208,7 +208,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 #define makeDict(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start,v,w;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
-	int cw,cv;\
+	lng cw,cv;\
 	for(i = 0; i< limit; i++, val++){\
 		MOSfind(j,dict.val##TPE,*val,0,dictsize);\
 		if(j == dictsize && dictsize == 0 ){\

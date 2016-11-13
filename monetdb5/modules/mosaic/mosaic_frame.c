@@ -59,7 +59,7 @@ MOSdump_frameInternal(char *buf, size_t len, MOStask task, int i)
 {
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte:
-		snprintf(buf,len,"%hd", task->hdr->frame.valbte[i]); break;
+		snprintf(buf,len,"%hhd", task->hdr->frame.valbte[i]); break;
 	case TYPE_sht:
 		snprintf(buf,len,"%hd", task->hdr->frame.valsht[i]); break;
 	case TYPE_int:
