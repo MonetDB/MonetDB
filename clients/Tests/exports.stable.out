@@ -2612,6 +2612,8 @@ ssize_t mnstr_write(stream *s, const void *buf, size_t elmsize, size_t cnt);
 int mnstr_writeBte(stream *s, signed char val);
 int mnstr_writeBteArray(stream *s, const signed char *val, size_t cnt);
 int mnstr_writeChr(stream *s, char val);
+int mnstr_writeDbl(stream *s, double val);
+int mnstr_writeFlt(stream *s, float val);
 int mnstr_writeHge(stream *s, hge val);
 int mnstr_writeHgeArray(stream *s, const hge *val, size_t cnt);
 int mnstr_writeInt(stream *s, int val);

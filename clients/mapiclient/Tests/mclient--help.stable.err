@@ -20,8 +20,8 @@ Options are:
  -e          | --echo            echo the query
  -E charset  | --encoding=charset specify encoding (character set) of the terminal
  -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}
- -C version  | --compression=type specify compression method {snappy,lz4}
- -P version  | --protocol=version specify protocol version {prot9,prot10,prot10compressed}
+ -C version  | --compression=type specify compression method {auto,none,snappy,lz4}
+ -P version  | --protocol=version specify protocol version {auto,prot9,prot10}
  -B size     | --blocksize=size   specify protocol block size (>= 8190)
  -c colcomp  | --colcomp=type     specify column compression type {none} -H          | --history          load/save cmdline history (default off)
  -i          | --interactive[=tm] interpret `\' commands on stdin, use time formatting {ms,s,m}
