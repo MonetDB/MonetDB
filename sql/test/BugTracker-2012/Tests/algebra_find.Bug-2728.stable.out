@@ -77,8 +77,8 @@ Ready.
 #insert into kvk values (1, 'test', 1, 0, 'Oude Trambaan 8', '2265CA', 'Leidschendam', 'iets', 'geen');
 [ 1	]
 #select count(*) from vve, kvk where toevoeging is null and vve.huisnummer is not null and vve.postcode = kvk.postcode and kvk.adres like ' %'||vve.huisnummer;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]

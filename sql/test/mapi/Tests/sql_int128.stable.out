@@ -58,11 +58,12 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 89 # length
+% 93 # length
 function user.s4_1():void;
-    X_6:void := querylog.define("explain set a = 1234567890987654321;","default_pipe",6);
-    X_0 := sql.mvc();
-    sql.setVariable(X_0,"a",1234567890987654321);
+    X_9:void := querylog.define("explain set a = 1234567890987654321;","default_pipe",7:int);
+    X_3 := sql.mvc();
+# querylog.define("explain set a = 1234567890987654321;","default_pipe")
+    sql.setVariable(X_3,"a",1234567890987654321:hge);
     sql.exportOperation();
 end user.s4_1;
 #inline               actions= 0 time=3 usec 
@@ -96,11 +97,12 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 81 # length
+% 85 # length
 function user.s6_1():void;
-    X_6:void := querylog.define("explain set b = 10000000000;","default_pipe",6);
-    X_0 := sql.mvc();
-    sql.setVariable(X_0,"b",10000000000);
+    X_9:void := querylog.define("explain set b = 10000000000;","default_pipe",7:int);
+    X_3 := sql.mvc();
+# querylog.define("explain set b = 10000000000;","default_pipe")
+    sql.setVariable(X_3,"b",10000000000:hge);
     sql.exportOperation();
 end user.s6_1;
 #inline               actions= 0 time=3 usec 
@@ -134,14 +136,15 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 76 # length
+% 81 # length
 function user.s8_1():void;
-    X_10:void := querylog.define("explain set c = a * b;","default_pipe",9);
-    X_0 := sql.mvc();
-    X_1:hge := sql.getVariable(X_0,"a");
-    X_3:hge := sql.getVariable(X_0,"b");
-    X_5:hge := calc.*(X_1,X_3);
-    sql.setVariable(X_0,"c",X_5);
+    X_13:void := querylog.define("explain set c = a * b;","default_pipe",10:int);
+    X_3 := sql.mvc();
+# querylog.define("explain set c = a * b;","default_pipe")
+    X_4:hge := sql.getVariable(X_3,"a");
+    X_6:hge := sql.getVariable(X_3,"b");
+    X_8:hge := calc.*(X_4,X_6);
+    sql.setVariable(X_3,"c",X_8);
     sql.exportOperation();
 end user.s8_1;
 #inline               actions= 0 time=3 usec 
@@ -175,14 +178,15 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 76 # length
+% 81 # length
 function user.s10_1():void;
-    X_10:void := querylog.define("explain set d = c * b;","default_pipe",9);
-    X_0 := sql.mvc();
-    X_1:hge := sql.getVariable(X_0,"c");
-    X_3:hge := sql.getVariable(X_0,"b");
-    X_5:hge := calc.*(X_1,X_3);
-    sql.setVariable(X_0,"d",X_5);
+    X_13:void := querylog.define("explain set d = c * b;","default_pipe",10:int);
+    X_3 := sql.mvc();
+# querylog.define("explain set d = c * b;","default_pipe")
+    X_4:hge := sql.getVariable(X_3,"c");
+    X_6:hge := sql.getVariable(X_3,"b");
+    X_8:hge := calc.*(X_4,X_6);
+    sql.setVariable(X_3,"d",X_8);
     sql.exportOperation();
 end user.s10_1;
 #inline               actions= 0 time=3 usec 
@@ -216,14 +220,15 @@ end user.s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 76 # length
+% 81 # length
 function user.s12_1():void;
-    X_10:void := querylog.define("explain set e = d + a;","default_pipe",9);
-    X_0 := sql.mvc();
-    X_1:hge := sql.getVariable(X_0,"d");
-    X_3:hge := sql.getVariable(X_0,"a");
-    X_5:hge := calc.+(X_1,X_3);
-    sql.setVariable(X_0,"e",X_5);
+    X_13:void := querylog.define("explain set e = d + a;","default_pipe",10:int);
+    X_3 := sql.mvc();
+# querylog.define("explain set e = d + a;","default_pipe")
+    X_4:hge := sql.getVariable(X_3,"d");
+    X_6:hge := sql.getVariable(X_3,"a");
+    X_8:hge := calc.+(X_4,X_6);
+    sql.setVariable(X_3,"e",X_8);
     sql.exportOperation();
 end user.s12_1;
 #inline               actions= 0 time=3 usec 
@@ -275,12 +280,13 @@ end user.s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 134 # length
+% 138 # length
 function user.s30_1():void;
-    X_11:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);","default_pipe",6);
-    X_0 := sql.mvc();
-    X_3 := sql.append(X_0,"sys","sql_int128","i",123456789098765432101234567890987654321);
-    sql.affectedRows(X_3,1);
+    X_14:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);","default_pipe",7:int);
+    X_3 := sql.mvc();
+# querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);","default_pipe")
+    X_6 := sql.append(X_3,"sys","sql_int128","i",123456789098765432101234567890987654321:hge);
+    sql.affectedRows(X_6,1:lng);
 end user.s30_1;
 # optimizer.mitosis()
 # optimizer.dataflow()

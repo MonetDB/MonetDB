@@ -27,7 +27,7 @@ Ready.
 #select i as boom1, ts as boom2 from skyboom
 #union
 #select NULL as boom1, NULL as boom2;
-% .L4,	.L4 # table_name
+% .L14,	.L14 # table_name
 % boom1,	boom2 # name
 % int,	timestamp # type
 % 1,	26 # length

@@ -47,9 +47,9 @@ Ready.
 # 09:58:27 >  "/usr/bin/python2" "currenttime.Bug-2781.SQL.py" "currenttime.Bug-2781"
 # 09:58:27 >  
 
-#select localtime() between (time '16:57:59' - interval '20' second) and (time '16:57:59' + interval '20' second);
-% .L1 # table_name
-% L1 # name
+#select localtime() between (time '10:27:26' - interval '20' second) and (time '10:27:26' + interval '20' second);
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -202,7 +202,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	/* add return statement */
 	r = rel_psm_stmt(m->sa, exp_return(m->sa,  exp_rel(m, r), 0));
 	be->mvc->argc = 0;
-	if (backend_dumpstmt(be, curBlk, r, 0, 1) < 0) {
+	if (backend_dumpstmt(be, curBlk, r, 0, 1, NULL) < 0) {
 		freeSymbol(curPrg);
 		if (backup)
 			c->curprg = backup;
@@ -471,7 +471,7 @@ sql_relation2stmt(backend *be, sql_rel *r)
 }
 
 int
-backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end)
+backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, char *query)
 {
 	mvc *c = be->mvc;
 	InstrPtr q;
@@ -479,6 +479,28 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end)
 	MalBlkPtr old_mb = be->mb;
 	stmt *s;
        
+	// Always keep the SQL query around for monitoring
+	if (query) {
+		char *t, *tt;
+		InstrPtr q;
+
+		tt = t = GDKstrdup(query);
+		while (t && isspace((int) *t))
+			t++;
+
+		q = newStmt(mb, querylogRef, defineRef);
+		if (q == NULL) {
+			GDKfree(tt);
+			return -1;
+		}
+		q->token = REMsymbol;	// will be patched
+		setVarType(mb, getArg(q, 0), TYPE_void);
+		setVarUDFtype(mb, getArg(q, 0));
+		q = pushStr(mb, q, t);
+		GDKfree(tt);
+		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
+	}
+
 	/* announce the transaction mode */
 	q = newStmt(mb, sqlRef, "mvc");
 	if (q == NULL)
@@ -504,8 +526,35 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end)
 		getArg(q, 0) = getArg(getInstrPtr(mb, 0), 0);
 		q->barrier = RETURNsymbol;
 	}
-	if (add_end)
+	if (add_end){
 		pushEndInstruction(mb);
+	}
+	// Always keep the SQL query around for monitoring
+	{
+		char *t, *tt;
+		InstrPtr q;
+
+		if (be->q && be->q->codestring) {
+			tt = t = GDKstrdup(be->q->codestring);
+			while (t && isspace((int) *t))
+				t++;
+		} else {
+			tt = t = GDKstrdup("-- no query");
+		}
+
+		q = newStmt(mb, querylogRef, defineRef);
+		if (q == NULL) {
+			GDKfree(tt);
+			goto cleanup;
+		}
+		q->token = REMsymbol;	// will be patched
+		setVarType(mb, getArg(q, 0), TYPE_void);
+		setVarUDFtype(mb, getArg(q, 0));
+		q = pushStr(mb, q, t);
+		GDKfree(tt);
+		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
+	}
+cleanup:
 	return 0;
 }
 
@@ -607,34 +656,9 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 		}
 	}
 
-	if (backend_dumpstmt(be, mb, r, 1, 1) < 0) 
+	if (backend_dumpstmt(be, mb, r, 1, 1, be->q?be->q->codestring:NULL) < 0) 
 		goto cleanup;
 
-	// Always keep the SQL query around for monitoring
-	{
-		char *t, *tt;
-		InstrPtr q;
-
-		if (be->q && be->q->codestring) {
-			tt = t = GDKstrdup(be->q->codestring);
-			while (t && isspace((int) *t))
-				t++;
-		} else {
-			tt = t = GDKstrdup("-- no query");
-		}
-
-		q = newStmt(mb, querylogRef, defineRef);
-		if (q == NULL) {
-			GDKfree(tt);
-			goto cleanup;
-		}
-		q->token = REMsymbol;	// will be patched
-		setVarType(mb, getArg(q, 0), TYPE_void);
-		setVarUDFtype(mb, getArg(q, 0));
-		q = pushStr(mb, q, t);
-		GDKfree(tt);
-		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
-	}
 	if (cq){
 		SQLaddQueryToCache(c);
 		// optimize this code the 'old' way
@@ -879,7 +903,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		}
 	}
 	/* announce the transaction mode */
-	if (backend_dumpstmt(be, curBlk, r, 0, 1) < 0) 
+	if (backend_dumpstmt(be, curBlk, r, 0, 1, NULL) < 0) 
 		goto cleanup;
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */

@@ -101,11 +101,16 @@ getTypeIdentifier(malType tpe){
 #define qt(x) (nme[1]==x[1] && nme[2]==x[2] )
 
 int
-getAtomIndex(str nme, int len, int deftype)
+getAtomIndex(const char *nme, int len, int deftype)
 {
-	int i,k=0;
-	char old=0;
+	int i;
 
+	if (len < 0)
+		len = (int) strlen(nme);
+	if (len >= IDLENGTH) {
+		/* name too long: cannot match any atom name */
+		return deftype;
+	}
 	if (len == 3)
 		switch (*nme) {
 		case 'a':
@@ -157,20 +162,14 @@ getAtomIndex(str nme, int len, int deftype)
 				return TYPE_sht;
 			break;
 		}
-	if( nme[0]=='v' && qt("voi") && nme[3] == 'd')
-				return TYPE_void;
-	if( len > 0 ){
-		old=  nme[k = MIN(IDLENGTH, len)];
-		nme[k] = 0;
-	}
-	for(i= TYPE_str; i< GDKatomcnt; i++)
-		if( BATatoms[i].name[0]==nme[0] &&
-			strcmp(nme,BATatoms[i].name)==0) break;
-	if( len > 0)
-		nme[k]=old;
-	if (i == GDKatomcnt)
-		i = deftype;
-	return i;
+	else if (len == 4 && nme[0]=='v' && qt("voi") && nme[3] == 'd')
+		return TYPE_void;
+	for (i = TYPE_str; i < GDKatomcnt; i++)
+		if (BATatoms[i].name[0] == nme[0] &&
+			strncmp(nme, BATatoms[i].name, len) == 0 &&
+			BATatoms[i].name[len] == 0)
+			return i;
+	return deftype;
 }
 
 inline int

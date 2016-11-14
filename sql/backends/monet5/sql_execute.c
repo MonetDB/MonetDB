@@ -474,7 +474,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 #endif
 		if (backend_callinline(be, c) < 0 ||
-		   backend_dumpstmt(be, c->curprg->def, r, 1, 1) < 0)
+		    backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0)
 			err = 1;
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
@@ -708,7 +708,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		/* generate MAL code, ignoring any code generation error */
 		if (backend_callinline(b, c) < 0 ||
-		    backend_dumpstmt(b, c->curprg->def, rel, 1, 1) < 0) {
+		    backend_dumpstmt(b, c->curprg->def, rel, 1, 1, NULL) < 0) {
 			msg = createException(SQL,"RAstatement","Program contains errors");
 		} else {
 			SQLaddQueryToCache(c);

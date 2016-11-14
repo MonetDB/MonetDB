@@ -722,15 +722,14 @@ makeVarSpace(MalBlkPtr mb)
 		VarPtr *new;
 		int s = mb->vsize * 2;
 
-		new = (VarPtr *) GDKzalloc(s * sizeof(VarPtr));
+		new = GDKrealloc(mb->var, s * sizeof(VarPtr));
 		if (new == NULL) {
 			mb->errors++;
 			showScriptException(GDKout, mb, 0, MAL, "newMalBlk:no storage left\n");
 			assert(0);
 			return -1;
 		}
-		memcpy((char *) new, (char *) mb->var, sizeof(VarPtr) * mb->vtop);
-		GDKfree(mb->var);
+		memset(new + mb->vsize, 0, (s - mb->vsize) * sizeof(VarPtr));
 		mb->vsize = s;
 		mb->var = new;
 	}
@@ -1359,22 +1358,19 @@ pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
  * TODO */
 /* swallows name argument */
 InstrPtr
-pushArgumentId(MalBlkPtr mb, InstrPtr p, str name)
+pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 {
 	int v;
 
-	if (p == NULL) {
-		GDKfree(name);
+	if (p == NULL)
 		return NULL;
-	}
 	v = findVariable(mb, name);
 	if (v < 0) {
 		if ((v = newVariable(mb, name, strlen(name), getAtomIndex(name, -1, TYPE_any))) < 0) {
 			freeInstruction(p);
 			return NULL;
 		}
-	} else
-		GDKfree(name);
+	}
 	return pushArgument(mb, p, v);
 }
 

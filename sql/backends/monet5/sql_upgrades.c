@@ -1519,6 +1519,11 @@ sql_update_default(Client c, mvc *sql)
 			"drop function sys.zorder_decode_x;\n"
 			"drop function sys.zorder_encode;\n");
 
+	/* 46_profiler */
+	pos += snprintf(buf+pos, bufsize - pos,
+			"create function profiler.getprofilerlimit() returns integer external name profiler.getprofilerlimit;\n"
+			"create procedure  profiler.setprofilerlimit(lim integer) external name profiler.setprofilerlimit;\n");
+
 	/* 75_storagemodel.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop view sys.tablestoragemodel;\n"

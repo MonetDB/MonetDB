@@ -46,45 +46,46 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 191 # length
+% 195 # length
 function user.s6_1():void;
-    X_66:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",39);
-barrier X_90 := language.dataflow();
-    X_42 := bat.new(nil:str);
-    X_49 := bat.append(X_42,"sys.L2");
-    X_59 := bat.append(X_49,"sys.L4");
-    X_44 := bat.new(nil:str);
-    X_51 := bat.append(X_44,"id1");
-    X_61 := bat.append(X_51,"id2");
+    X_69:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",40:int);
+barrier X_93 := language.dataflow();
     X_45 := bat.new(nil:str);
-    X_53 := bat.append(X_45,"int");
-    X_63 := bat.append(X_53,"int");
-    X_46 := bat.new(nil:int);
-    X_55 := bat.append(X_46,32);
-    X_64 := bat.append(X_55,32);
-    X_48 := bat.new(nil:int);
-    X_57 := bat.append(X_48,0);
-    X_65 := bat.append(X_57,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","treeitems");
-    X_8:bat[:lng] := sql.bind(X_0,"sys","treeitems","pre",0);
-    X_10 := algebra.projection(C_1,X_8);
-    X_11 := batcalc.hge(X_10);
-    X_17:bat[:lng] := sql.bind(X_0,"sys","treeitems","size",0);
-    X_19 := algebra.projection(C_1,X_17);
-    X_22 := batcalc.hge(X_19);
-    X_23:bat[:hge] := batcalc.+(X_11,X_22);
-    (X_26,X_27) := algebra.subrangejoin(X_11,X_11,X_23,nil:BAT,nil:BAT,true,true,nil:lng);
-    X_4:bat[:int] := sql.bind(X_0,"sys","treeitems","subject",0);
-    X_7 := algebra.projection(C_1,X_4);
-    X_36 := algebra.projection(X_27,X_7);
-    X_33 := algebra.projection(X_26,X_7);
-    language.pass(X_11);
-    language.pass(X_11);
-    language.pass(C_1);
-    language.pass(X_7);
-exit X_90;
-    sql.resultSet(X_59,X_61,X_63,X_64,X_65,X_36,X_33);
+    X_52 := bat.append(X_45,"sys.L2");
+    X_62 := bat.append(X_52,"sys.L4");
+    X_47 := bat.new(nil:str);
+    X_54 := bat.append(X_47,"id1");
+    X_64 := bat.append(X_54,"id2");
+    X_48 := bat.new(nil:str);
+    X_56 := bat.append(X_48,"int");
+    X_66 := bat.append(X_56,"int");
+    X_49 := bat.new(nil:int);
+    X_58 := bat.append(X_49,32:int);
+    X_67 := bat.append(X_58,32:int);
+    X_51 := bat.new(nil:int);
+    X_60 := bat.append(X_51,0:int);
+    X_68 := bat.append(X_60,0:int);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","treeitems");
+    X_11:bat[:lng] := sql.bind(X_3,"sys","treeitems","pre",0:int);
+    X_13 := algebra.projection(C_4,X_11);
+    X_14 := batcalc.hge(X_13);
+    X_20:bat[:lng] := sql.bind(X_3,"sys","treeitems","size",0:int);
+    X_22 := algebra.projection(C_4,X_20);
+    X_25 := batcalc.hge(X_22);
+    X_26:bat[:hge] := batcalc.+(X_14,X_25);
+    (X_29,X_30) := algebra.subrangejoin(X_14,X_14,X_26,nil:BAT,nil:BAT,true,true,nil:lng);
+    X_7:bat[:int] := sql.bind(X_3,"sys","treeitems","subject",0:int);
+    X_10 := algebra.projection(C_4,X_7);
+    X_39 := algebra.projection(X_30,X_10);
+    X_36 := algebra.projection(X_29,X_10);
+    language.pass(X_14);
+    language.pass(X_14);
+    language.pass(C_4);
+    language.pass(X_10);
+exit X_93;
+# querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe")
+    sql.resultSet(X_62,X_64,X_66,X_67,X_68,X_39,X_36);
 end user.s6_1;
 #inline               actions= 0 time=3 usec 
 #remap                actions= 1 time=125 usec 

@@ -128,27 +128,28 @@ top N (
 % .explain # table_name
 % mal # name
 % clob # type
-% 82 # length
+% 86 # length
 function user.s8_1():void;
-    X_30:void := querylog.define("explain select * from oblo;","minimal_pipe",21);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
-    X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    X_7:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
-    (C_9:bat[:oid],X_10:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
-    X_12 := sql.delta(X_4,C_9,X_10,X_7);
-    X_13 := algebra.projection(C_1,X_12);
-    X_15 := bat.new(nil:str);
-    X_17 := bat.new(nil:str);
+    X_33:void := querylog.define("explain select * from oblo;","minimal_pipe",22:int);
+# querylog.define("explain select * from oblo;","minimal_pipe")
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","oblo");
+    X_7:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
+    X_10:bat[:int] := sql.emptybind(X_3,"sys","oblo","a",1:int);
+    (C_12:bat[:oid],X_13:bat[:int]) := sql.emptybind(X_3,"sys","oblo","a",2:int);
+    X_15 := sql.delta(X_7,C_12,X_13,X_10);
+    X_16 := algebra.projection(C_4,X_15);
     X_18 := bat.new(nil:str);
-    X_19 := bat.new(nil:int);
-    X_21 := bat.new(nil:int);
-    X_22 := bat.append(X_15,"sys.oblo");
-    X_24 := bat.append(X_17,"a");
-    X_25 := bat.append(X_18,"int");
-    X_27 := bat.append(X_19,32);
-    X_29 := bat.append(X_21,0);
-    sql.resultSet(X_22,X_24,X_25,X_27,X_29,X_13);
+    X_20 := bat.new(nil:str);
+    X_21 := bat.new(nil:str);
+    X_22 := bat.new(nil:int);
+    X_24 := bat.new(nil:int);
+    X_25 := bat.append(X_18,"sys.oblo");
+    X_27 := bat.append(X_20,"a");
+    X_28 := bat.append(X_21,"int");
+    X_30 := bat.append(X_22,32:int);
+    X_32 := bat.append(X_24,0:int);
+    sql.resultSet(X_25,X_27,X_28,X_30,X_32,X_16);
 end user.s8_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=22 usec 
@@ -163,33 +164,34 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 91 # length
+% 95 # length
 function user.s10_1():void;
-    X_38:void := querylog.define("explain select * from oblo offset 2;","minimal_pipe",27);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
-    X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    X_7:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
-    (C_9:bat[:oid],X_10:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
-    X_12 := sql.delta(X_4,C_9,X_10,X_7);
-    X_13 := algebra.projection(C_1,X_12);
-    X_14 := calc.lng(2);
-    X_16 := calc.lng(nil:lng);
-    X_18 := calc.+(X_14,X_16);
-    X_19 := calc.-(X_18,1);
-    X_20 := algebra.subslice(X_13,X_14,X_19);
-    X_21 := algebra.projection(X_20,X_13);
-    X_23 := bat.new(nil:str);
-    X_25 := bat.new(nil:str);
+    X_41:void := querylog.define("explain select * from oblo offset 2;","minimal_pipe",28:int);
+# querylog.define("explain select * from oblo offset 2;","minimal_pipe")
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","oblo");
+    X_7:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
+    X_10:bat[:int] := sql.emptybind(X_3,"sys","oblo","a",1:int);
+    (C_12:bat[:oid],X_13:bat[:int]) := sql.emptybind(X_3,"sys","oblo","a",2:int);
+    X_15 := sql.delta(X_7,C_12,X_13,X_10);
+    X_16 := algebra.projection(C_4,X_15);
+    X_17 := calc.lng(2:lng);
+    X_19 := calc.lng(nil:lng);
+    X_21 := calc.+(X_17,X_19);
+    X_22 := calc.-(X_21,1:int);
+    X_23 := algebra.subslice(X_16,X_17,X_22);
+    X_24 := algebra.projection(X_23,X_16);
     X_26 := bat.new(nil:str);
-    X_27 := bat.new(nil:int);
-    X_29 := bat.new(nil:int);
-    X_30 := bat.append(X_23,"sys.oblo");
-    X_32 := bat.append(X_25,"a");
-    X_33 := bat.append(X_26,"int");
-    X_35 := bat.append(X_27,32);
-    X_37 := bat.append(X_29,0);
-    sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_21);
+    X_28 := bat.new(nil:str);
+    X_29 := bat.new(nil:str);
+    X_30 := bat.new(nil:int);
+    X_32 := bat.new(nil:int);
+    X_33 := bat.append(X_26,"sys.oblo");
+    X_35 := bat.append(X_28,"a");
+    X_36 := bat.append(X_29,"int");
+    X_38 := bat.append(X_30,32:int);
+    X_40 := bat.append(X_32,0:int);
+    sql.resultSet(X_33,X_35,X_36,X_38,X_40,X_24);
 end user.s10_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=28 usec 
@@ -204,33 +206,34 @@ end user.s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 90 # length
+% 94 # length
 function user.s12_1():void;
-    X_39:void := querylog.define("explain select * from oblo limit 2;","minimal_pipe",27);
-    X_0 := sql.mvc();
-    C_3:bat[:oid] := sql.tid(X_0,"sys","oblo");
-    X_6:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    X_9:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
-    (C_11:bat[:oid],X_12:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
-    X_14 := sql.delta(X_6,C_11,X_12,X_9);
-    X_15 := algebra.projection(C_3,X_14);
-    X_16 := calc.lng(2);
-    X_17 := calc.lng(0);
-    X_19 := calc.+(X_17,X_16);
-    X_20 := calc.-(X_19,1);
-    X_21 := algebra.subslice(X_15,X_17,X_20);
-    X_22 := algebra.projection(X_21,X_15);
-    X_24 := bat.new(nil:str);
-    X_26 := bat.new(nil:str);
+    X_42:void := querylog.define("explain select * from oblo limit 2;","minimal_pipe",28:int);
+# querylog.define("explain select * from oblo limit 2;","minimal_pipe")
+    X_3 := sql.mvc();
+    C_6:bat[:oid] := sql.tid(X_3,"sys","oblo");
+    X_9:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
+    X_12:bat[:int] := sql.emptybind(X_3,"sys","oblo","a",1:int);
+    (C_14:bat[:oid],X_15:bat[:int]) := sql.emptybind(X_3,"sys","oblo","a",2:int);
+    X_17 := sql.delta(X_9,C_14,X_15,X_12);
+    X_18 := algebra.projection(C_6,X_17);
+    X_19 := calc.lng(2:lng);
+    X_20 := calc.lng(0:lng);
+    X_22 := calc.+(X_20,X_19);
+    X_23 := calc.-(X_22,1:int);
+    X_24 := algebra.subslice(X_18,X_20,X_23);
+    X_25 := algebra.projection(X_24,X_18);
     X_27 := bat.new(nil:str);
-    X_28 := bat.new(nil:int);
-    X_30 := bat.new(nil:int);
-    X_31 := bat.append(X_24,"sys.oblo");
-    X_33 := bat.append(X_26,"a");
-    X_34 := bat.append(X_27,"int");
-    X_36 := bat.append(X_28,32);
-    X_38 := bat.append(X_30,0);
-    sql.resultSet(X_31,X_33,X_34,X_36,X_38,X_22);
+    X_29 := bat.new(nil:str);
+    X_30 := bat.new(nil:str);
+    X_31 := bat.new(nil:int);
+    X_33 := bat.new(nil:int);
+    X_34 := bat.append(X_27,"sys.oblo");
+    X_36 := bat.append(X_29,"a");
+    X_37 := bat.append(X_30,"int");
+    X_39 := bat.append(X_31,32:int);
+    X_41 := bat.append(X_33,0:int);
+    sql.resultSet(X_34,X_36,X_37,X_39,X_41,X_25);
 end user.s12_1;
 #inline               actions= 0 time=2 usec 
 #candidates           actions= 1 time=27 usec 
@@ -245,33 +248,34 @@ end user.s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 99 # length
+% 103 # length
 function user.s14_1():void;
-    X_41:void := querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe",27);
-    X_0 := sql.mvc();
-    C_6:bat[:oid] := sql.tid(X_0,"sys","oblo");
-    X_9:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    X_12:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
-    (C_14:bat[:oid],X_15:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
-    X_17 := sql.delta(X_9,C_14,X_15,X_12);
-    X_18 := algebra.projection(C_6,X_17);
-    X_19 := calc.lng(1);
-    X_20 := calc.lng(2);
-    X_21 := calc.+(X_20,X_19);
-    X_22 := calc.-(X_21,1);
-    X_23 := algebra.subslice(X_18,X_20,X_22);
-    X_24 := algebra.projection(X_23,X_18);
-    X_26 := bat.new(nil:str);
-    X_28 := bat.new(nil:str);
+    X_44:void := querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe",28:int);
+# querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe")
+    X_3 := sql.mvc();
+    C_9:bat[:oid] := sql.tid(X_3,"sys","oblo");
+    X_12:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
+    X_15:bat[:int] := sql.emptybind(X_3,"sys","oblo","a",1:int);
+    (C_17:bat[:oid],X_18:bat[:int]) := sql.emptybind(X_3,"sys","oblo","a",2:int);
+    X_20 := sql.delta(X_12,C_17,X_18,X_15);
+    X_21 := algebra.projection(C_9,X_20);
+    X_22 := calc.lng(1:lng);
+    X_23 := calc.lng(2:lng);
+    X_24 := calc.+(X_23,X_22);
+    X_25 := calc.-(X_24,1:int);
+    X_26 := algebra.subslice(X_21,X_23,X_25);
+    X_27 := algebra.projection(X_26,X_21);
     X_29 := bat.new(nil:str);
-    X_30 := bat.new(nil:int);
-    X_32 := bat.new(nil:int);
-    X_33 := bat.append(X_26,"sys.oblo");
-    X_35 := bat.append(X_28,"a");
-    X_36 := bat.append(X_29,"int");
-    X_38 := bat.append(X_30,32);
-    X_40 := bat.append(X_32,0);
-    sql.resultSet(X_33,X_35,X_36,X_38,X_40,X_24);
+    X_31 := bat.new(nil:str);
+    X_32 := bat.new(nil:str);
+    X_33 := bat.new(nil:int);
+    X_35 := bat.new(nil:int);
+    X_36 := bat.append(X_29,"sys.oblo");
+    X_38 := bat.append(X_31,"a");
+    X_39 := bat.append(X_32,"int");
+    X_41 := bat.append(X_33,32:int);
+    X_43 := bat.append(X_35,0:int);
+    sql.resultSet(X_36,X_38,X_39,X_41,X_43,X_27);
 end user.s14_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=27 usec 
@@ -286,33 +290,34 @@ end user.s14_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 99 # length
+% 103 # length
 function user.s16_1():void;
-    X_41:void := querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe",27);
-    X_0 := sql.mvc();
-    C_6:bat[:oid] := sql.tid(X_0,"sys","oblo");
-    X_9:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    X_12:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
-    (C_14:bat[:oid],X_15:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
-    X_17 := sql.delta(X_9,C_14,X_15,X_12);
-    X_18 := algebra.projection(C_6,X_17);
-    X_19 := calc.lng(2);
-    X_20 := calc.lng(1);
-    X_21 := calc.+(X_20,X_19);
-    X_22 := calc.-(X_21,1);
-    X_23 := algebra.subslice(X_18,X_20,X_22);
-    X_24 := algebra.projection(X_23,X_18);
-    X_26 := bat.new(nil:str);
-    X_28 := bat.new(nil:str);
+    X_44:void := querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe",28:int);
+# querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe")
+    X_3 := sql.mvc();
+    C_9:bat[:oid] := sql.tid(X_3,"sys","oblo");
+    X_12:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
+    X_15:bat[:int] := sql.emptybind(X_3,"sys","oblo","a",1:int);
+    (C_17:bat[:oid],X_18:bat[:int]) := sql.emptybind(X_3,"sys","oblo","a",2:int);
+    X_20 := sql.delta(X_12,C_17,X_18,X_15);
+    X_21 := algebra.projection(C_9,X_20);
+    X_22 := calc.lng(2:lng);
+    X_23 := calc.lng(1:lng);
+    X_24 := calc.+(X_23,X_22);
+    X_25 := calc.-(X_24,1:int);
+    X_26 := algebra.subslice(X_21,X_23,X_25);
+    X_27 := algebra.projection(X_26,X_21);
     X_29 := bat.new(nil:str);
-    X_30 := bat.new(nil:int);
-    X_32 := bat.new(nil:int);
-    X_33 := bat.append(X_26,"sys.oblo");
-    X_35 := bat.append(X_28,"a");
-    X_36 := bat.append(X_29,"int");
-    X_38 := bat.append(X_30,32);
-    X_40 := bat.append(X_32,0);
-    sql.resultSet(X_33,X_35,X_36,X_38,X_40,X_24);
+    X_31 := bat.new(nil:str);
+    X_32 := bat.new(nil:str);
+    X_33 := bat.new(nil:int);
+    X_35 := bat.new(nil:int);
+    X_36 := bat.append(X_29,"sys.oblo");
+    X_38 := bat.append(X_31,"a");
+    X_39 := bat.append(X_32,"int");
+    X_41 := bat.append(X_33,32:int);
+    X_43 := bat.append(X_35,0:int);
+    sql.resultSet(X_36,X_38,X_39,X_41,X_43,X_27);
 end user.s16_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=27 usec 
@@ -327,29 +332,30 @@ end user.s16_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 93 # length
+% 97 # length
 function user.s18_1():void;
-    X_36:void := querylog.define("explain select * from oblo order by a;","minimal_pipe",23);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
-    X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    X_7:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
-    (C_9:bat[:oid],X_10:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
-    X_12 := sql.delta(X_4,C_9,X_10,X_7);
-    X_13 := algebra.projection(C_1,X_12);
-    (X_14,X_15,X_16) := algebra.subsort(X_13,false,false);
-    X_19 := algebra.projection(X_15,X_13);
-    X_21 := bat.new(nil:str);
-    X_23 := bat.new(nil:str);
+    X_39:void := querylog.define("explain select * from oblo order by a;","minimal_pipe",24:int);
+# querylog.define("explain select * from oblo order by a;","minimal_pipe")
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","oblo");
+    X_7:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
+    X_10:bat[:int] := sql.emptybind(X_3,"sys","oblo","a",1:int);
+    (C_12:bat[:oid],X_13:bat[:int]) := sql.emptybind(X_3,"sys","oblo","a",2:int);
+    X_15 := sql.delta(X_7,C_12,X_13,X_10);
+    X_16 := algebra.projection(C_4,X_15);
+    (X_17,X_18,X_19) := algebra.subsort(X_16,false,false);
+    X_22 := algebra.projection(X_18,X_16);
     X_24 := bat.new(nil:str);
-    X_25 := bat.new(nil:int);
-    X_27 := bat.new(nil:int);
-    X_28 := bat.append(X_21,"sys.oblo");
-    X_30 := bat.append(X_23,"a");
-    X_31 := bat.append(X_24,"int");
-    X_33 := bat.append(X_25,32);
-    X_35 := bat.append(X_27,0);
-    sql.resultSet(X_28,X_30,X_31,X_33,X_35,X_19);
+    X_26 := bat.new(nil:str);
+    X_27 := bat.new(nil:str);
+    X_28 := bat.new(nil:int);
+    X_30 := bat.new(nil:int);
+    X_31 := bat.append(X_24,"sys.oblo");
+    X_33 := bat.append(X_26,"a");
+    X_34 := bat.append(X_27,"int");
+    X_36 := bat.append(X_28,32:int);
+    X_38 := bat.append(X_30,0:int);
+    sql.resultSet(X_31,X_33,X_34,X_36,X_38,X_22);
 end user.s18_1;
 #inline               actions= 0 time=2 usec 
 #candidates           actions= 1 time=20 usec 
@@ -364,35 +370,36 @@ end user.s18_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 102 # length
+% 106 # length
 function user.s20_1():void;
-    X_46:void := querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe",29);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","oblo");
-    X_4:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    X_7:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
-    (C_9:bat[:oid],X_10:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
-    X_12 := sql.delta(X_4,C_9,X_10,X_7);
-    X_13 := algebra.projection(C_1,X_12);
-    (X_14,X_15,X_16) := algebra.subsort(X_13,false,false);
-    X_19 := algebra.projection(X_15,X_13);
-    X_20 := calc.lng(2);
-    X_22 := calc.lng(nil:lng);
-    X_24 := calc.+(X_20,X_22);
-    X_25 := calc.-(X_24,1);
-    X_26 := algebra.subslice(X_19,X_20,X_25);
-    X_27 := algebra.projection(X_26,X_19);
-    X_29 := bat.new(nil:str);
-    X_31 := bat.new(nil:str);
+    X_49:void := querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe",30:int);
+# querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe")
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","oblo");
+    X_7:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
+    X_10:bat[:int] := sql.emptybind(X_3,"sys","oblo","a",1:int);
+    (C_12:bat[:oid],X_13:bat[:int]) := sql.emptybind(X_3,"sys","oblo","a",2:int);
+    X_15 := sql.delta(X_7,C_12,X_13,X_10);
+    X_16 := algebra.projection(C_4,X_15);
+    (X_17,X_18,X_19) := algebra.subsort(X_16,false,false);
+    X_22 := algebra.projection(X_18,X_16);
+    X_23 := calc.lng(2:lng);
+    X_25 := calc.lng(nil:lng);
+    X_27 := calc.+(X_23,X_25);
+    X_28 := calc.-(X_27,1:int);
+    X_29 := algebra.subslice(X_22,X_23,X_28);
+    X_30 := algebra.projection(X_29,X_22);
     X_32 := bat.new(nil:str);
-    X_33 := bat.new(nil:int);
-    X_35 := bat.new(nil:int);
-    X_36 := bat.append(X_29,"sys.oblo");
-    X_38 := bat.append(X_31,"a");
-    X_40 := bat.append(X_32,"int");
-    X_42 := bat.append(X_33,32);
-    X_44 := bat.append(X_35,0);
-    sql.resultSet(X_36,X_38,X_40,X_42,X_44,X_27);
+    X_34 := bat.new(nil:str);
+    X_35 := bat.new(nil:str);
+    X_36 := bat.new(nil:int);
+    X_38 := bat.new(nil:int);
+    X_39 := bat.append(X_32,"sys.oblo");
+    X_41 := bat.append(X_34,"a");
+    X_43 := bat.append(X_35,"int");
+    X_45 := bat.append(X_36,32:int);
+    X_47 := bat.append(X_38,0:int);
+    sql.resultSet(X_39,X_41,X_43,X_45,X_47,X_30);
 end user.s20_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=32 usec 
@@ -407,77 +414,28 @@ end user.s20_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 101 # length
+% 105 # length
 function user.s22_1():void;
-    X_52:void := querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe",34);
-    X_0 := sql.mvc();
-    X_1 := calc.lng(2);
-    C_3:bat[:oid] := sql.tid(X_0,"sys","oblo");
-    X_6:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    X_9:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
-    (C_11:bat[:oid],X_12:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
-    X_14 := sql.delta(X_6,C_11,X_12,X_9);
-    X_15 := algebra.projection(C_3,X_14);
-    X_16 := calc.lng(0);
-    X_18 := calc.+(X_16,X_1);
-    C_19 := algebra.firstn(X_15,X_18,true,false);
-    X_22 := algebra.projection(C_19,X_15);
-    (X_24,X_25,X_26) := algebra.subsort(X_22,false,false);
-    X_27 := algebra.projection(X_25,X_22);
-    X_28 := calc.lng(2);
-    X_29 := calc.lng(0);
-    X_30 := calc.+(X_29,X_28);
-    X_31 := calc.-(X_30,1);
-    X_32 := algebra.subslice(X_27,X_29,X_31);
-    X_33 := algebra.projection(X_32,X_27);
-    X_35 := bat.new(nil:str);
-    X_37 := bat.new(nil:str);
-    X_38 := bat.new(nil:str);
-    X_39 := bat.new(nil:int);
-    X_41 := bat.new(nil:int);
-    X_42 := bat.append(X_35,"sys.oblo");
-    X_44 := bat.append(X_37,"a");
-    X_46 := bat.append(X_38,"int");
-    X_48 := bat.append(X_39,32);
-    X_50 := bat.append(X_41,0);
-    sql.resultSet(X_42,X_44,X_46,X_48,X_50,X_33);
-end user.s22_1;
-#inline               actions= 0 time=3 usec 
-#candidates           actions= 1 time=44 usec 
-#remap                actions= 0 time=5 usec 
-#deadcode             actions= 0 time=10 usec 
-#multiplex            actions= 0 time=4 usec 
-#generator            actions= 0 time=3 usec 
-#profiler             actions= 1 time=33 usec 
-#garbageCollector     actions= 1 time=41 usec 
-#total                actions= 1 time=184 usec 
-#EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1;
-% .explain # table_name
-% mal # name
-% clob # type
-% 110 # length
-function user.s24_1():void;
-    X_55:void := querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe",36);
-    X_0 := sql.mvc();
-    X_1 := calc.lng(2);
-    X_3 := calc.lng(1);
-    X_5:lng := calc.+(X_1,X_3);
-    C_6:bat[:oid] := sql.tid(X_0,"sys","oblo");
-    X_9:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    X_12:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
-    (C_14:bat[:oid],X_15:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
+    X_55:void := querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe",35:int);
+# querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe")
+    X_3 := sql.mvc();
+    X_4 := calc.lng(2:lng);
+    C_6:bat[:oid] := sql.tid(X_3,"sys","oblo");
+    X_9:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
+    X_12:bat[:int] := sql.emptybind(X_3,"sys","oblo","a",1:int);
+    (C_14:bat[:oid],X_15:bat[:int]) := sql.emptybind(X_3,"sys","oblo","a",2:int);
     X_17 := sql.delta(X_9,C_14,X_15,X_12);
     X_18 := algebra.projection(C_6,X_17);
-    X_19 := calc.lng(0);
-    X_21 := calc.+(X_19,X_5);
+    X_19 := calc.lng(0:lng);
+    X_21 := calc.+(X_19,X_4);
     C_22 := algebra.firstn(X_18,X_21,true,false);
     X_25 := algebra.projection(C_22,X_18);
     (X_27,X_28,X_29) := algebra.subsort(X_25,false,false);
     X_30 := algebra.projection(X_28,X_25);
-    X_31 := calc.lng(2);
-    X_32 := calc.lng(1);
+    X_31 := calc.lng(2:lng);
+    X_32 := calc.lng(0:lng);
     X_33 := calc.+(X_32,X_31);
-    X_34 := calc.-(X_33,1);
+    X_34 := calc.-(X_33,1:int);
     X_35 := algebra.subslice(X_30,X_32,X_34);
     X_36 := algebra.projection(X_35,X_30);
     X_38 := bat.new(nil:str);
@@ -488,9 +446,58 @@ function user.s24_1():void;
     X_45 := bat.append(X_38,"sys.oblo");
     X_47 := bat.append(X_40,"a");
     X_49 := bat.append(X_41,"int");
-    X_51 := bat.append(X_42,32);
-    X_53 := bat.append(X_44,0);
+    X_51 := bat.append(X_42,32:int);
+    X_53 := bat.append(X_44,0:int);
     sql.resultSet(X_45,X_47,X_49,X_51,X_53,X_36);
+end user.s22_1;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=3 usec 
+#deadcode             actions= 1 time=5 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#garbagecollector     actions= 1 time=8 usec 
+#EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1;
+% .explain # table_name
+% mal # name
+% clob # type
+% 114 # length
+function user.s24_1():void;
+    X_58:void := querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe",37:int);
+# querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe")
+    X_3 := sql.mvc();
+    X_4 := calc.lng(2:lng);
+    X_6 := calc.lng(1:lng);
+    X_8:lng := calc.+(X_4,X_6);
+    C_9:bat[:oid] := sql.tid(X_3,"sys","oblo");
+    X_12:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
+    X_15:bat[:int] := sql.emptybind(X_3,"sys","oblo","a",1:int);
+    (C_17:bat[:oid],X_18:bat[:int]) := sql.emptybind(X_3,"sys","oblo","a",2:int);
+    X_20 := sql.delta(X_12,C_17,X_18,X_15);
+    X_21 := algebra.projection(C_9,X_20);
+    X_22 := calc.lng(0:lng);
+    X_24 := calc.+(X_22,X_8);
+    C_25 := algebra.firstn(X_21,X_24,true,false);
+    X_28 := algebra.projection(C_25,X_21);
+    (X_30,X_31,X_32) := algebra.subsort(X_28,false,false);
+    X_33 := algebra.projection(X_31,X_28);
+    X_34 := calc.lng(2:lng);
+    X_35 := calc.lng(1:lng);
+    X_36 := calc.+(X_35,X_34);
+    X_37 := calc.-(X_36,1:int);
+    X_38 := algebra.subslice(X_33,X_35,X_37);
+    X_39 := algebra.projection(X_38,X_33);
+    X_41 := bat.new(nil:str);
+    X_43 := bat.new(nil:str);
+    X_44 := bat.new(nil:str);
+    X_45 := bat.new(nil:int);
+    X_47 := bat.new(nil:int);
+    X_48 := bat.append(X_41,"sys.oblo");
+    X_50 := bat.append(X_43,"a");
+    X_52 := bat.append(X_44,"int");
+    X_54 := bat.append(X_45,32:int);
+    X_56 := bat.append(X_47,0:int);
+    sql.resultSet(X_48,X_50,X_52,X_54,X_56,X_39);
 end user.s24_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=37 usec 
@@ -505,42 +512,43 @@ end user.s24_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 110 # length
+% 114 # length
 function user.s26_1():void;
-    X_55:void := querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe",36);
-    X_0 := sql.mvc();
-    X_1 := calc.lng(1);
-    X_3 := calc.lng(2);
-    X_5:lng := calc.+(X_1,X_3);
-    C_6:bat[:oid] := sql.tid(X_0,"sys","oblo");
-    X_9:bat[:int] := sql.bind(X_0,"sys","oblo","a",0);
-    X_12:bat[:int] := sql.emptybind(X_0,"sys","oblo","a",1);
-    (C_14:bat[:oid],X_15:bat[:int]) := sql.emptybind(X_0,"sys","oblo","a",2);
-    X_17 := sql.delta(X_9,C_14,X_15,X_12);
-    X_18 := algebra.projection(C_6,X_17);
-    X_19 := calc.lng(0);
-    X_21 := calc.+(X_19,X_5);
-    C_22 := algebra.firstn(X_18,X_21,true,false);
-    X_25 := algebra.projection(C_22,X_18);
-    (X_27,X_28,X_29) := algebra.subsort(X_25,false,false);
-    X_30 := algebra.projection(X_28,X_25);
-    X_31 := calc.lng(1);
-    X_32 := calc.lng(2);
-    X_33 := calc.+(X_32,X_31);
-    X_34 := calc.-(X_33,1);
-    X_35 := algebra.subslice(X_30,X_32,X_34);
-    X_36 := algebra.projection(X_35,X_30);
-    X_38 := bat.new(nil:str);
-    X_40 := bat.new(nil:str);
+    X_58:void := querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe",37:int);
+# querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe")
+    X_3 := sql.mvc();
+    X_4 := calc.lng(1:lng);
+    X_6 := calc.lng(2:lng);
+    X_8:lng := calc.+(X_4,X_6);
+    C_9:bat[:oid] := sql.tid(X_3,"sys","oblo");
+    X_12:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
+    X_15:bat[:int] := sql.emptybind(X_3,"sys","oblo","a",1:int);
+    (C_17:bat[:oid],X_18:bat[:int]) := sql.emptybind(X_3,"sys","oblo","a",2:int);
+    X_20 := sql.delta(X_12,C_17,X_18,X_15);
+    X_21 := algebra.projection(C_9,X_20);
+    X_22 := calc.lng(0:lng);
+    X_24 := calc.+(X_22,X_8);
+    C_25 := algebra.firstn(X_21,X_24,true,false);
+    X_28 := algebra.projection(C_25,X_21);
+    (X_30,X_31,X_32) := algebra.subsort(X_28,false,false);
+    X_33 := algebra.projection(X_31,X_28);
+    X_34 := calc.lng(1:lng);
+    X_35 := calc.lng(2:lng);
+    X_36 := calc.+(X_35,X_34);
+    X_37 := calc.-(X_36,1:int);
+    X_38 := algebra.subslice(X_33,X_35,X_37);
+    X_39 := algebra.projection(X_38,X_33);
     X_41 := bat.new(nil:str);
-    X_42 := bat.new(nil:int);
-    X_44 := bat.new(nil:int);
-    X_45 := bat.append(X_38,"sys.oblo");
-    X_47 := bat.append(X_40,"a");
-    X_49 := bat.append(X_41,"int");
-    X_51 := bat.append(X_42,32);
-    X_53 := bat.append(X_44,0);
-    sql.resultSet(X_45,X_47,X_49,X_51,X_53,X_36);
+    X_43 := bat.new(nil:str);
+    X_44 := bat.new(nil:str);
+    X_45 := bat.new(nil:int);
+    X_47 := bat.new(nil:int);
+    X_48 := bat.append(X_41,"sys.oblo");
+    X_50 := bat.append(X_43,"a");
+    X_52 := bat.append(X_44,"int");
+    X_54 := bat.append(X_45,32:int);
+    X_56 := bat.append(X_47,0:int);
+    sql.resultSet(X_48,X_50,X_52,X_54,X_56,X_39);
 end user.s26_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=48 usec 

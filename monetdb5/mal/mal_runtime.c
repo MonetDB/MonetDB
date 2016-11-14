@@ -60,6 +60,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	int i;
 	str q;
+	InstrPtr p;
 
 	MT_lock_set(&mal_delayLock);
 	if ( QRYqueue == 0)
@@ -91,6 +92,16 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	}
 
 	qtop += i == qtop;
+
+	if( getprofilerlimit()){
+		// reset the counters before continuing
+		for ( i = 0; i< mb->stop; i++){
+			p= getInstrPtr(mb,i);
+			p->calls = 0;
+			p->ticks = 0;
+			p->totticks = 0;
+		}
+	}
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -166,15 +177,17 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	}
 
 	/* always collect the MAL instruction execution time */
-	gettimeofday(&pci->clock,NULL);
-	prof->ticks = GDKusec();
+	if( pci->calls < getprofilerlimit() ){
+		gettimeofday(&pci->clock,NULL);
+		prof->ticks = GDKusec();
+	}
 
 	/* keep track of actual running instructions over BATs */
 	if( isaBatType(getArgType(mb, pci, 0)) )
 		(void) ATOMIC_INC(mal_running, mal_runningLock);
 
 	/* emit the instruction upon start as well */
-	if(malProfileMode > 0)
+	if(malProfileMode > 0 && pci->calls < getprofilerlimit())
 		profilerEvent(mb, stk, pci, TRUE, cntxt->username);
 }
 
@@ -195,12 +208,14 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		(void) ATOMIC_DEC(mal_running, mal_runningLock);
 
 	assert(prof);
-	/* always collect the MAL instruction execution time */
-	pci->ticks = GDKusec() - prof->ticks;
-	pci->totticks += pci->ticks;
-	pci->calls++;
+	/* always collect the MAL instruction execution time unless you hit the profiler high water mark */
+	if( pci->calls < getprofilerlimit()){
+		pci->ticks = GDKusec() - prof->ticks;
+		pci->totticks += pci->ticks;
+		pci->calls++;
+	}
 	
-	if(malProfileMode > 0){
+	if(malProfileMode > 0 && pci->calls < getprofilerlimit()){
 		pci->wbytes += getVolume(stk, pci, 1);
 		pci->rbytes += getVolume(stk, pci, 0);
 		profilerEvent(mb, stk, pci, FALSE, cntxt->username);

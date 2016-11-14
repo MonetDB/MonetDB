@@ -35,14 +35,15 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 106 # length
+% 110 # length
 function user.s4_1():void;
-    X_21:void := querylog.define("explain select count(*) from tmp where i = 20160222;","default_pipe",8);
-    X_7 := bat.new(nil:int);
-    C_9 := algebra.subselect(X_7,20160222,20160222,true,false,false);
-    X_13 := algebra.projection(C_9,X_7);
-    X_14 := aggr.count(X_13);
-    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_14);
+    X_24:void := querylog.define("explain select count(*) from tmp where i = 20160222;","default_pipe",9:int);
+    X_10 := bat.new(nil:int);
+    C_12 := algebra.subselect(X_10,20160222:int,20160222:int,true,false,false);
+    X_16 := algebra.projection(C_12,X_10);
+    X_17 := aggr.count(X_16);
+# querylog.define("explain select count(*) from tmp where i = 20160222;","default_pipe")
+    sql.resultSet("sys.L4","L3","bigint",64:int,0:int,7:int,X_17);
 end user.s4_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -50,14 +51,15 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 112 # length
+% 116 # length
 function user.s6_1():void;
-    X_23:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';","default_pipe",8);
-    X_7 := bat.new(nil:int);
-    C_11 := algebra.subselect(X_7,20160222:int,20160222:int,true,false,false);
-    X_15 := algebra.projection(C_11,X_7);
-    X_16 := aggr.count(X_15);
-    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_16);
+    X_26:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';","default_pipe",9:int);
+    X_10 := bat.new(nil:int);
+    C_14 := algebra.subselect(X_10,20160222:int,20160222:int,true,false,false);
+    X_18 := algebra.projection(C_14,X_10);
+    X_19 := aggr.count(X_18);
+# querylog.define("explain select count(*) from tmp where i = \\'20160222\\';","default_pipe")
+    sql.resultSet("sys.L4","L3","bigint",64:int,0:int,7:int,X_19);
 end user.s6_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -65,15 +67,16 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 107 # length
+% 112 # length
 function user.s8_1():void;
-    X_25:void := querylog.define("explain select count(*) from tmp where i = 201602221;","default_pipe",9);
-    X_7 := bat.new(nil:int);
-    X_8:bat[:int] := batcalc.int(0,X_7,9,0);
-    C_13 := algebra.subselect(X_8,201602221,201602221,true,false,false);
-    X_17 := algebra.projection(C_13,X_7);
-    X_18 := aggr.count(X_17);
-    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_18);
+    X_28:void := querylog.define("explain select count(*) from tmp where i = 201602221;","default_pipe",10:int);
+    X_10 := bat.new(nil:int);
+    X_11:bat[:int] := batcalc.int(0:int,X_10,9:int,0:int);
+    C_16 := algebra.subselect(X_11,201602221:int,201602221:int,true,false,false);
+    X_20 := algebra.projection(C_16,X_10);
+    X_21 := aggr.count(X_20);
+# querylog.define("explain select count(*) from tmp where i = 201602221;","default_pipe")
+    sql.resultSet("sys.L4","L3","bigint",64:int,0:int,7:int,X_21);
 end user.s8_1;
 # optimizer.mitosis()
 # optimizer.dataflow()

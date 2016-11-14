@@ -1,3 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Nov  8 2016 Martin Kersten <mk@cwi.nl>
+- Protect against runaway profiler events If you hit a barrier block
+  during profiling, the JSON event log may quickly become unwieldy. Event
+  production is protected using a high water mark, which ensures that
+  never within the single execution of MAL block the instruction causes
+  excessive event records.
+

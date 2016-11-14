@@ -61,38 +61,39 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 193 # length
+% 197 # length
 function user.s4_1():void;
-    X_52:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n from sys.functions\n) as x;","sequential_pipe",32);
-    X_27 := bat.new(nil:str);
-    X_34 := bat.append(X_27,"sys.L12");
-    X_43 := bat.append(X_34,"sys.x");
-    X_29 := bat.new(nil:str);
-    X_36 := bat.append(X_29,"L12");
-    X_45 := bat.append(X_36,"id");
+    X_55:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n from sys.functions\n) as x;","sequential_pipe",33:int);
     X_30 := bat.new(nil:str);
-    X_38 := bat.append(X_30,"varchar");
-    X_47 := bat.append(X_38,"int");
-    X_31 := bat.new(nil:int);
-    X_40 := bat.append(X_31,0);
-    X_49 := bat.append(X_40,32);
-    X_33 := bat.new(nil:int);
-    X_42 := bat.append(X_33,0);
-    X_51 := bat.append(X_42,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","functions");
-    X_14:bat[:str] := sql.bind(X_0,"sys","functions","name",0);
-    (C_17:bat[:oid],X_18:bat[:str]) := sql.bind(X_0,"sys","functions","name",2);
-    X_16:bat[:str] := sql.bind(X_0,"sys","functions","name",1);
-    X_19 := sql.delta(X_14,C_17,X_18,X_16);
-    X_20 := algebra.projection(C_1,X_19);
-    X_23:bat[:str] := mal.manifold("str","replace",X_20,"a","A");
-    X_4:bat[:int] := sql.bind(X_0,"sys","functions","id",0);
-    (C_9:bat[:oid],X_10:bat[:int]) := sql.bind(X_0,"sys","functions","id",2);
-    X_7:bat[:int] := sql.bind(X_0,"sys","functions","id",1);
-    X_12 := sql.delta(X_4,C_9,X_10,X_7);
-    X_13 := algebra.projection(C_1,X_12);
-    sql.resultSet(X_43,X_45,X_47,X_49,X_51,X_23,X_13);
+    X_37 := bat.append(X_30,"sys.L12");
+    X_46 := bat.append(X_37,"sys.x");
+    X_32 := bat.new(nil:str);
+    X_39 := bat.append(X_32,"L12");
+    X_48 := bat.append(X_39,"id");
+    X_33 := bat.new(nil:str);
+    X_41 := bat.append(X_33,"varchar");
+    X_50 := bat.append(X_41,"int");
+    X_34 := bat.new(nil:int);
+    X_43 := bat.append(X_34,0:int);
+    X_52 := bat.append(X_43,32:int);
+    X_36 := bat.new(nil:int);
+    X_45 := bat.append(X_36,0:int);
+    X_54 := bat.append(X_45,0:int);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","functions");
+    X_17:bat[:str] := sql.bind(X_3,"sys","functions","name",0:int);
+    (C_20:bat[:oid],X_21:bat[:str]) := sql.bind(X_3,"sys","functions","name",2:int);
+    X_19:bat[:str] := sql.bind(X_3,"sys","functions","name",1:int);
+    X_22 := sql.delta(X_17,C_20,X_21,X_19);
+    X_23 := algebra.projection(C_4,X_22);
+    X_26:bat[:str] := mal.manifold("str","replace",X_23,"a","A");
+    X_7:bat[:int] := sql.bind(X_3,"sys","functions","id",0:int);
+    (C_12:bat[:oid],X_13:bat[:int]) := sql.bind(X_3,"sys","functions","id",2:int);
+    X_10:bat[:int] := sql.bind(X_3,"sys","functions","id",1:int);
+    X_15 := sql.delta(X_7,C_12,X_13,X_10);
+    X_16 := algebra.projection(C_4,X_15);
+# querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n from sys.functions\n) as x;","sequential_pipe")
+    sql.resultSet(X_46,X_48,X_50,X_52,X_54,X_26,X_16);
 end user.s4_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=21 usec 
@@ -127,42 +128,43 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 197 # length
+% 201 # length
 function user.s6_1():void;
-    X_59:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;","sequential_pipe",36);
-    X_34 := bat.new(nil:str);
-    X_41 := bat.append(X_34,"sys.L12");
-    X_50 := bat.append(X_41,"sys.x");
-    X_36 := bat.new(nil:str);
-    X_43 := bat.append(X_36,"L12");
-    X_52 := bat.append(X_43,"id");
+    X_62:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;","sequential_pipe",37:int);
     X_37 := bat.new(nil:str);
-    X_45 := bat.append(X_37,"varchar");
-    X_54 := bat.append(X_45,"bigint");
-    X_38 := bat.new(nil:int);
-    X_47 := bat.append(X_38,0);
-    X_56 := bat.append(X_47,64);
-    X_40 := bat.new(nil:int);
-    X_49 := bat.append(X_40,0);
-    X_58 := bat.append(X_49,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","functions");
-    X_14:bat[:str] := sql.bind(X_0,"sys","functions","name",0);
-    (C_17:bat[:oid],X_18:bat[:str]) := sql.bind(X_0,"sys","functions","name",2);
-    X_16:bat[:str] := sql.bind(X_0,"sys","functions","name",1);
-    X_19 := sql.delta(X_14,C_17,X_18,X_16);
-    X_20 := algebra.projection(C_1,X_19);
-    X_4:bat[:int] := sql.bind(X_0,"sys","functions","id",0);
-    (C_9:bat[:oid],X_10:bat[:int]) := sql.bind(X_0,"sys","functions","id",2);
-    X_7:bat[:int] := sql.bind(X_0,"sys","functions","id",1);
-    X_12 := sql.delta(X_4,C_9,X_10,X_7);
-    X_13 := algebra.projection(C_1,X_12);
-    X_22 := algebra.project(X_13,"a");
-    X_24 := algebra.project(X_13,"A");
-    X_30:bat[:str] := mal.manifold("str","replace",X_20,X_22,X_24);
-    X_25 := batcalc.lng(X_13);
-    X_27:bat[:lng] := batcalc.+(X_25,1);
-    sql.resultSet(X_50,X_52,X_54,X_56,X_58,X_30,X_27);
+    X_44 := bat.append(X_37,"sys.L12");
+    X_53 := bat.append(X_44,"sys.x");
+    X_39 := bat.new(nil:str);
+    X_46 := bat.append(X_39,"L12");
+    X_55 := bat.append(X_46,"id");
+    X_40 := bat.new(nil:str);
+    X_48 := bat.append(X_40,"varchar");
+    X_57 := bat.append(X_48,"bigint");
+    X_41 := bat.new(nil:int);
+    X_50 := bat.append(X_41,0:int);
+    X_59 := bat.append(X_50,64:int);
+    X_43 := bat.new(nil:int);
+    X_52 := bat.append(X_43,0:int);
+    X_61 := bat.append(X_52,0:int);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","functions");
+    X_17:bat[:str] := sql.bind(X_3,"sys","functions","name",0:int);
+    (C_20:bat[:oid],X_21:bat[:str]) := sql.bind(X_3,"sys","functions","name",2:int);
+    X_19:bat[:str] := sql.bind(X_3,"sys","functions","name",1:int);
+    X_22 := sql.delta(X_17,C_20,X_21,X_19);
+    X_23 := algebra.projection(C_4,X_22);
+    X_7:bat[:int] := sql.bind(X_3,"sys","functions","id",0:int);
+    (C_12:bat[:oid],X_13:bat[:int]) := sql.bind(X_3,"sys","functions","id",2:int);
+    X_10:bat[:int] := sql.bind(X_3,"sys","functions","id",1:int);
+    X_15 := sql.delta(X_7,C_12,X_13,X_10);
+    X_16 := algebra.projection(C_4,X_15);
+    X_25 := algebra.project(X_16,"a");
+    X_27 := algebra.project(X_16,"A");
+    X_33:bat[:str] := mal.manifold("str","replace",X_23,X_25,X_27);
+    X_28 := batcalc.lng(X_16);
+    X_30:bat[:lng] := batcalc.+(X_28,1:lng);
+# querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;","sequential_pipe")
+    sql.resultSet(X_53,X_55,X_57,X_59,X_61,X_33,X_30);
 end user.s6_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=23 usec 
@@ -197,41 +199,42 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 198 # length
+% 202 # length
 function user.s8_1():void;
-    X_57:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n from sys.functions\n) as x;","sequential_pipe",35);
-    X_32 := bat.new(nil:str);
-    X_39 := bat.append(X_32,"sys.L12");
-    X_48 := bat.append(X_39,"sys.x");
-    X_34 := bat.new(nil:str);
-    X_41 := bat.append(X_34,"L12");
-    X_50 := bat.append(X_41,"id");
+    X_60:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n from sys.functions\n) as x;","sequential_pipe",36:int);
     X_35 := bat.new(nil:str);
-    X_43 := bat.append(X_35,"varchar");
-    X_52 := bat.append(X_43,"int");
-    X_36 := bat.new(nil:int);
-    X_45 := bat.append(X_36,0);
-    X_54 := bat.append(X_45,32);
-    X_38 := bat.new(nil:int);
-    X_47 := bat.append(X_38,0);
-    X_56 := bat.append(X_47,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","functions");
-    X_14:bat[:str] := sql.bind(X_0,"sys","functions","name",0);
-    (C_17:bat[:oid],X_18:bat[:str]) := sql.bind(X_0,"sys","functions","name",2);
-    X_16:bat[:str] := sql.bind(X_0,"sys","functions","name",1);
-    X_19 := sql.delta(X_14,C_17,X_18,X_16);
-    X_20 := algebra.projection(C_1,X_19);
-    X_4:bat[:int] := sql.bind(X_0,"sys","functions","id",0);
-    (C_9:bat[:oid],X_10:bat[:int]) := sql.bind(X_0,"sys","functions","id",2);
-    X_7:bat[:int] := sql.bind(X_0,"sys","functions","id",1);
-    X_12 := sql.delta(X_4,C_9,X_10,X_7);
-    X_13 := algebra.projection(C_1,X_12);
-    X_22 := algebra.project(X_13,"a");
-    X_24 := algebra.project(X_13,"A");
-    X_28:bat[:str] := mal.manifold("str","replace",X_20,X_22,X_24);
-    X_25:bat[:int] := batcalc.abs(X_13);
-    sql.resultSet(X_48,X_50,X_52,X_54,X_56,X_28,X_25);
+    X_42 := bat.append(X_35,"sys.L12");
+    X_51 := bat.append(X_42,"sys.x");
+    X_37 := bat.new(nil:str);
+    X_44 := bat.append(X_37,"L12");
+    X_53 := bat.append(X_44,"id");
+    X_38 := bat.new(nil:str);
+    X_46 := bat.append(X_38,"varchar");
+    X_55 := bat.append(X_46,"int");
+    X_39 := bat.new(nil:int);
+    X_48 := bat.append(X_39,0:int);
+    X_57 := bat.append(X_48,32:int);
+    X_41 := bat.new(nil:int);
+    X_50 := bat.append(X_41,0:int);
+    X_59 := bat.append(X_50,0:int);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","functions");
+    X_17:bat[:str] := sql.bind(X_3,"sys","functions","name",0:int);
+    (C_20:bat[:oid],X_21:bat[:str]) := sql.bind(X_3,"sys","functions","name",2:int);
+    X_19:bat[:str] := sql.bind(X_3,"sys","functions","name",1:int);
+    X_22 := sql.delta(X_17,C_20,X_21,X_19);
+    X_23 := algebra.projection(C_4,X_22);
+    X_7:bat[:int] := sql.bind(X_3,"sys","functions","id",0:int);
+    (C_12:bat[:oid],X_13:bat[:int]) := sql.bind(X_3,"sys","functions","id",2:int);
+    X_10:bat[:int] := sql.bind(X_3,"sys","functions","id",1:int);
+    X_15 := sql.delta(X_7,C_12,X_13,X_10);
+    X_16 := algebra.projection(C_4,X_15);
+    X_25 := algebra.project(X_16,"a");
+    X_27 := algebra.project(X_16,"A");
+    X_31:bat[:str] := mal.manifold("str","replace",X_23,X_25,X_27);
+    X_28:bat[:int] := batcalc.abs(X_16);
+# querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n from sys.functions\n) as x;","sequential_pipe")
+    sql.resultSet(X_51,X_53,X_55,X_57,X_59,X_31,X_28);
 end user.s8_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=20 usec 

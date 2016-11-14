@@ -42,41 +42,42 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 142 # length
+% 146 # length
 function user.s8_1():void;
-    X_59:void := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",35);
-    X_26 := bat.new(nil:str);
-    X_33 := bat.append(X_26,"sys.dbg");
-    X_43 := bat.append(X_33,"sys.L4");
-    X_52 := bat.append(X_43,"sys.L11");
-    X_28 := bat.new(nil:str);
-    X_35 := bat.append(X_28,"d");
-    X_45 := bat.append(X_35,"L3");
-    X_54 := bat.append(X_45,"f");
+    X_62:void := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",36:int);
     X_29 := bat.new(nil:str);
-    X_37 := bat.append(X_29,"int");
-    X_47 := bat.append(X_37,"hugeint");
-    X_56 := bat.append(X_47,"hugeint");
-    X_30 := bat.new(nil:int);
-    X_39 := bat.append(X_30,32);
-    X_49 := bat.append(X_39,128);
-    X_57 := bat.append(X_49,128);
-    X_32 := bat.new(nil:int);
-    X_41 := bat.append(X_32,0);
-    X_51 := bat.append(X_41,0);
-    X_58 := bat.append(X_51,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","dbg");
-    X_4:bat[:int] := sql.bind(X_0,"sys","dbg","a",0);
-    X_7 := algebra.projection(C_1,X_4);
-    (X_11,X_12,X_13) := group.subgroupdone(X_7);
-    X_14 := algebra.projection(X_12,X_7);
-    X_8:bat[:int] := sql.bind(X_0,"sys","dbg","b",0);
-    X_10 := algebra.projection(C_1,X_8);
-    X_15:bat[:hge] := aggr.subsum(X_10,X_11,X_12,true,true);
-    X_19:bat[:hge] := batcalc./(X_15,2);
-    X_23:bat[:hge] := batcalc.*(X_19,2);
-    sql.resultSet(X_52,X_54,X_56,X_57,X_58,X_14,X_15,X_23);
+    X_36 := bat.append(X_29,"sys.dbg");
+    X_46 := bat.append(X_36,"sys.L4");
+    X_55 := bat.append(X_46,"sys.L11");
+    X_31 := bat.new(nil:str);
+    X_38 := bat.append(X_31,"d");
+    X_48 := bat.append(X_38,"L3");
+    X_57 := bat.append(X_48,"f");
+    X_32 := bat.new(nil:str);
+    X_40 := bat.append(X_32,"int");
+    X_50 := bat.append(X_40,"hugeint");
+    X_59 := bat.append(X_50,"hugeint");
+    X_33 := bat.new(nil:int);
+    X_42 := bat.append(X_33,32:int);
+    X_52 := bat.append(X_42,128:int);
+    X_60 := bat.append(X_52,128:int);
+    X_35 := bat.new(nil:int);
+    X_44 := bat.append(X_35,0:int);
+    X_54 := bat.append(X_44,0:int);
+    X_61 := bat.append(X_54,0:int);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","dbg");
+    X_7:bat[:int] := sql.bind(X_3,"sys","dbg","a",0:int);
+    X_10 := algebra.projection(C_4,X_7);
+    (X_14,X_15,X_16) := group.subgroupdone(X_10);
+    X_17 := algebra.projection(X_15,X_10);
+    X_11:bat[:int] := sql.bind(X_3,"sys","dbg","b",0:int);
+    X_13 := algebra.projection(C_4,X_11);
+    X_18:bat[:hge] := aggr.subsum(X_13,X_14,X_15,true,true);
+    X_22:bat[:hge] := batcalc./(X_18,2:bte);
+    X_26:bat[:hge] := batcalc.*(X_22,2:bte);
+# querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe")
+    sql.resultSet(X_55,X_57,X_59,X_60,X_61,X_17,X_18,X_26);
 end user.s8_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=22 usec 
@@ -130,41 +131,42 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 147 # length
+% 151 # length
 function user.s20_1():void;
-    X_59:void := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",35);
-    X_26 := bat.new(nil:str);
-    X_33 := bat.append(X_26,"sys.dbg");
-    X_43 := bat.append(X_33,"sys.L4");
-    X_52 := bat.append(X_43,"sys.L11");
-    X_28 := bat.new(nil:str);
-    X_35 := bat.append(X_28,"d");
-    X_45 := bat.append(X_35,"e");
-    X_54 := bat.append(X_45,"f");
+    X_62:void := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",36:int);
     X_29 := bat.new(nil:str);
-    X_37 := bat.append(X_29,"int");
-    X_47 := bat.append(X_37,"hugeint");
-    X_56 := bat.append(X_47,"hugeint");
-    X_30 := bat.new(nil:int);
-    X_39 := bat.append(X_30,32);
-    X_49 := bat.append(X_39,128);
-    X_57 := bat.append(X_49,128);
-    X_32 := bat.new(nil:int);
-    X_41 := bat.append(X_32,0);
-    X_51 := bat.append(X_41,0);
-    X_58 := bat.append(X_51,0);
-    X_0 := sql.mvc();
-    C_1:bat[:oid] := sql.tid(X_0,"sys","dbg");
-    X_4:bat[:int] := sql.bind(X_0,"sys","dbg","a",0);
-    X_7 := algebra.projection(C_1,X_4);
-    (X_11,X_12,X_13) := group.subgroupdone(X_7);
-    X_14 := algebra.projection(X_12,X_7);
-    X_8:bat[:int] := sql.bind(X_0,"sys","dbg","b",0);
-    X_10 := algebra.projection(C_1,X_8);
-    X_15:bat[:hge] := aggr.subsum(X_10,X_11,X_12,true,true);
-    X_19:bat[:hge] := batcalc./(X_15,2);
-    X_23:bat[:hge] := batcalc.*(X_19,2);
-    sql.resultSet(X_52,X_54,X_56,X_57,X_58,X_14,X_15,X_23);
+    X_36 := bat.append(X_29,"sys.dbg");
+    X_46 := bat.append(X_36,"sys.L4");
+    X_55 := bat.append(X_46,"sys.L11");
+    X_31 := bat.new(nil:str);
+    X_38 := bat.append(X_31,"d");
+    X_48 := bat.append(X_38,"e");
+    X_57 := bat.append(X_48,"f");
+    X_32 := bat.new(nil:str);
+    X_40 := bat.append(X_32,"int");
+    X_50 := bat.append(X_40,"hugeint");
+    X_59 := bat.append(X_50,"hugeint");
+    X_33 := bat.new(nil:int);
+    X_42 := bat.append(X_33,32:int);
+    X_52 := bat.append(X_42,128:int);
+    X_60 := bat.append(X_52,128:int);
+    X_35 := bat.new(nil:int);
+    X_44 := bat.append(X_35,0:int);
+    X_54 := bat.append(X_44,0:int);
+    X_61 := bat.append(X_54,0:int);
+    X_3 := sql.mvc();
+    C_4:bat[:oid] := sql.tid(X_3,"sys","dbg");
+    X_7:bat[:int] := sql.bind(X_3,"sys","dbg","a",0:int);
+    X_10 := algebra.projection(C_4,X_7);
+    (X_14,X_15,X_16) := group.subgroupdone(X_10);
+    X_17 := algebra.projection(X_15,X_10);
+    X_11:bat[:int] := sql.bind(X_3,"sys","dbg","b",0:int);
+    X_13 := algebra.projection(C_4,X_11);
+    X_18:bat[:hge] := aggr.subsum(X_13,X_14,X_15,true,true);
+    X_22:bat[:hge] := batcalc./(X_18,2:bte);
+    X_26:bat[:hge] := batcalc.*(X_22,2:bte);
+# querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe")
+    sql.resultSet(X_55,X_57,X_59,X_60,X_61,X_17,X_18,X_26);
 end user.s20_1;
 #inline               actions= 0 time=2 usec 
 #candidates           actions= 1 time=20 usec 

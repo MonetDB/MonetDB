@@ -2123,7 +2123,7 @@ exps_unique( list *exps )
 
 		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
 			sql_ukey *k = p->value;
-			if (list_length(k->k.columns) <= 1)
+			if (k && list_length(k->k.columns) <= 1)
 				return 1;
 		}
 	}
@@ -4168,11 +4168,35 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
  * semijoin( join(A, B) [ A.x == B.y ], C ) [ A.z == C.c ]
  * ->
  * join( semijoin(A, C) [ A.z == C.c ], B ) [ A.x == B.y ]
+ *
+ * also push simple expressions of a semijoin down if they only
+ * involve the left sided of the semijoin.
  */
 static sql_rel *
 rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)*changes;
+
+	/* first push down the expressions involving only A */
+	if (is_semi(rel->op) && rel->exps && rel->l) {
+		list *exps = rel->exps, *nexps = sa_list(sql->sa);
+		node *n;
+
+		for(n = exps->h; n; n = n->next) {
+			sql_exp *sje = n->data;
+
+			if (n != exps->h &&
+			    !is_complex_exp(sje->flag) &&
+			     rel_has_exp(rel->l, sje->l) >= 0 &&
+			     rel_has_exp(rel->l, sje->r) >= 0) {
+				rel->l = rel_select(sql->sa, rel->l, NULL);
+				rel_select_add_exp(sql->sa, rel->l, sje);
+			} else {
+				append(nexps, sje);
+			}
+		} 
+		rel->exps = nexps;
+	}
 	if (is_semi(rel->op) && rel->exps && rel->l) {
 		operator_type op = rel->op, lop;
 		node *n;
@@ -5884,6 +5908,65 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static void
+rel_dce_refs(mvc *sql, sql_rel *rel, list *refs) 
+{
+	if (!rel)
+		return ;
+
+	if (rel_is_ref(rel)) {
+		if (!list_find(refs, rel, NULL))
+			list_append(refs, rel);
+	}
+
+	switch(rel->op) {
+	case op_basetable:
+	case op_table:
+
+		if (rel->l && rel->op == op_table)
+			rel_dce_refs(sql, rel->l, refs);
+	case op_insert:
+	case op_ddl:
+		break;
+
+	case op_update:
+	case op_delete:
+
+		if (rel->r)
+			rel_dce_refs(sql, rel->r, refs);
+		break;
+
+	case op_topn: 
+	case op_sample: 
+	case op_project:
+	case op_groupby: 
+	case op_select: 
+
+		if (rel->l)
+			rel_dce_refs(sql, rel->l, refs);
+		break;
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+	case op_semi: 
+	case op_anti: 
+
+		if (rel->l)
+			rel_dce_refs(sql, rel->l, refs);
+		if (rel->r)
+			rel_dce_refs(sql, rel->r, refs);
+		break;
+
+	case op_apply: 
+		assert(0);
+	}
+}
+
 static sql_rel *
 rel_dce_down(mvc *sql, sql_rel *rel, list *refs, int skip_proj) 
 {
@@ -6062,9 +6145,11 @@ rel_dce(mvc *sql, sql_rel *rel)
 	list *refs = sa_list(sql->sa);
 	node *n;
 
+	rel_dce_refs(sql, rel, refs);
 	rel = rel_add_projects(sql, rel);
 	rel_used(rel);
 	rel_dce_sub(sql, rel, refs);
+
 	for (n = refs->h; n; n = n->next)
 		rel_dce_sub(sql, n->data, refs);
 	return rel;
@@ -6584,9 +6669,13 @@ rel_split_project(int *changes, mvc *sql, sql_rel *rel, int top)
 				append(rel->exps, split_exp(sql, n->data, rel));
 		}
 	}
-	/* TODO handle right (ie join/union) */
-	if (!is_basetable(rel->op) && rel->l)
+	if (is_set(rel->op) || is_basetable(rel->op))
+		return rel;
+	if (rel->l)
 		rel->l = rel_split_project(changes, sql, rel->l, 
+			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
+	if (is_join(rel->op) && rel->r)
+		rel->r = rel_split_project(changes, sql, rel->r, 
 			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
 	return rel;
 }
@@ -8428,7 +8517,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) 
 		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
-	if (gp.cnt[op_select]) {
+	if (gp.cnt[op_select] || gp.cnt[op_semi]) {
 		/* only once */
 		if (level <= 0)
 			rel = rewrite(sql, rel, &rel_merge_rse, &changes); 

@@ -131,12 +131,12 @@ Ready.
 [ 21	]
 #drop table sys.t3948;
 #select * from dependencies_tables_on_views();
-% .,	.,	. # table_name
+% .L1,	.L1,	.L1 # table_name
 % sch,	usr,	dep_type # name
 % varchar,	varchar,	varchar # type
 % 0,	0,	0 # length
 #select * from sys.dependencies_tables_on_views();
-% .,	.,	. # table_name
+% .L1,	.L1,	.L1 # table_name
 % sch,	usr,	dep_type # name
 % varchar,	varchar,	varchar # type
 % 0,	0,	0 # length
