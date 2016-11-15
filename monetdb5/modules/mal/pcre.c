@@ -31,17 +31,17 @@
 #define pcre_free_study my_pcre_free
 #endif
 
+mal_export str pcre_init(void *ret);
+
 mal_export str PCREquote(str *r, const str *v);
 mal_export str PCREmatch(bit *ret, const str *val, const str *pat);
 mal_export str PCREimatch(bit *ret, const str *val, const str *pat);
 mal_export str PCREindex(int *ret, const pcre *pat, const str *val);
 mal_export str PCREpatindex(int *ret, const str *pat, const str *val);
-
 mal_export str PCREreplace_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags);
 mal_export str PCREreplace_bat_wrap(bat *res, const bat *or, const str *pat, const str *repl, const str *flags);
-
-mal_export var_t pcre_put(Heap *h, var_t *bun, pcre *val);
 mal_export str PCREsql2pcre(str *ret, const str *pat, const str *esc);
+
 mal_export str PCRElike3(bit *ret, const str *s, const str *pat, const str *esc);
 mal_export str PCRElike2(bit *ret, const str *s, const str *pat);
 mal_export str PCREnotlike3(bit *ret, const str *s, const str *pat, const str *esc);
@@ -58,14 +58,17 @@ mal_export str BATPCREilike(bat *ret, const bat *b, const str *pat, const str *e
 mal_export str BATPCREilike2(bat *ret, const bat *b, const str *pat);
 mal_export str BATPCREnotilike(bat *ret, const bat *b, const str *pat, const str *esc);
 mal_export str BATPCREnotilike2(bat *ret, const bat *b, const str *pat);
-mal_export str PCRElike_join_pcre(bat *l, bat *r, const bat *b, const bat *pat, const str *esc);
-mal_export str PCREilike_join_pcre(bat *l, bat *r, const bat *b, const bat *pat, const str *esc);
-mal_export str pcre_init(void *ret);
+
 mal_export str PCRElikesubselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *caseignore, const bit *anti);
 mal_export str PCRElikesubselect1(bat *ret, const bat *bid, const bat *cid, const str *pat, const str *esc, const bit *anti);
 mal_export str PCRElikesubselect3(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *anti);
 mal_export str PCRElikesubselect4(bat *ret, const bat *bid, const bat *cid, const str *pat, const bit *anti);
 mal_export str PCRElikesubselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const bit *anti);
+
+mal_export str LIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
+mal_export str LIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
+mal_export str ILIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
+mal_export str ILIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 
 /* current implementation assumes simple %keyword% [keyw%]* */
 typedef struct RE {
@@ -105,19 +108,18 @@ static int
 re_simple(const char *pat)
 {
 	int nr = 0;
-	const char *s = pat;
 
-	if (s == 0)
+	if (pat == 0)
 		return 0;
-	if (*s == '%')
-		s++;
-	while(*s) {
-		if (*s == '_')
+	if (*pat == '%')
+		pat++;
+	while (*pat) {
+		if (*pat == '_')
 			return 0;
-		if (*s++ == '%')
+		if (*pat++ == '%')
 			nr++;
 	}
-	if (*(s-1) != '%')
+	if (*(pat-1) != '%')
 		return 0;
 	return nr;
 }
@@ -153,7 +155,7 @@ re_match_no_ignore(const char *s, RE *pattern)
 }
 
 static RE *
-re_create( const char *pat, int nr)
+re_create(const char *pat, int nr)
 {
 	char *x = GDKstrdup(pat);
 	RE *r = (RE*)GDKmalloc(sizeof(RE)), *n = r;
@@ -1669,7 +1671,6 @@ PCREsubjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 	throw(MAL, "pcre.join", RUNTIME_OBJECT_MISSING);
 }
 
-mal_export str LIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 str
 LIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
@@ -1678,7 +1679,6 @@ LIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, co
 	return PCREsubjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 0);
 }
 
-mal_export str LIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 str
 LIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
@@ -1686,7 +1686,6 @@ LIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 	return LIKEsubjoin(r1, r2, lid, rid, &esc, slid, srid, nil_matches, estimate);
 }
 
-mal_export str ILIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 str
 ILIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
@@ -1695,7 +1694,6 @@ ILIKEsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, c
 	return PCREsubjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 1);
 }
 
-mal_export str ILIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 str
 ILIKEsubjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
