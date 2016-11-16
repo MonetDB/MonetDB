@@ -243,11 +243,12 @@ doChallenge(void *data)
 		}
 
 		{
+			// convert the block_stream into a block_stream2
 			stream *from, *to;
-			from = bs_stream(fdin);
-			to = bs_stream(fdout);
-			free(fdin);
-			free(fdout);
+			from = bs_stealstream(fdin);
+			to = bs_stealstream(fdout);
+			close_stream(fdin);
+			close_stream(fdout);
 			fdin = block_stream2(from, buflen, comp, colcomp);
 			fdout = block_stream2(to, buflen, comp, colcomp);
 		}

@@ -234,6 +234,8 @@ stream_export stream *block_stream(stream *s);
 stream_export int isa_block_stream(stream *s);
 stream_export int isa_fixed_block_stream(stream *s);
 stream_export stream* bs_stream(stream *s);
+stream_export stream* bs_stealstream(stream *s);
+
 
 typedef enum {
 	PROTOCOL_AUTO = 0,

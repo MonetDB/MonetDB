@@ -2925,10 +2925,10 @@ mapi_reconnect(Mapi mid)
 		//printf("Using protocol version %s.\n", prot_version == prot10  ? "PROT10" : "PROT10COMPR");
 		assert(isa_block_stream(mid->to));
 		assert(isa_block_stream(mid->from));
-		from = bs_stream(mid->from);
-		to = bs_stream(mid->to);
-		free(mid->from);
-		free(mid->to);
+		from = bs_stealstream(mid->from);
+		to = bs_stealstream(mid->to);
+		close_stream(mid->from);
+		close_stream(mid->to);
 		mid->to = block_stream2(to, mid->blocksize, comp, mid->colcomp);
 		mid->from = block_stream2(from, mid->blocksize, comp, mid->colcomp);
 	}

@@ -2551,6 +2551,7 @@ void bs2_resetbuf(stream *ss);
 int bs2_resizebuf(stream *ss, size_t bufsiz);
 void bs2_setpos(stream *ss, size_t pos);
 void *bs2_stealbuf(stream *ss);
+stream *bs_stealstream(stream *s);
 stream *bs_stream(stream *s);
 bstream *bstream_create(stream *rs, size_t chunk_size);
 void bstream_destroy(bstream *s);

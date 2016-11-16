@@ -3904,7 +3904,6 @@ bs_close(stream *ss)
 	assert(s);
 	if (s == NULL)
 		return;
-	assert(s->s);
 	if (s->s)
 		s->s->close(s->s);
 }
@@ -3917,7 +3916,6 @@ bs_destroy(stream *ss)
 	s = (bs *) ss->stream_data.p;
 	assert(s);
 	if (s) {
-		assert(s->s);
 		if (s->s)
 			s->s->destroy(s->s);
 		free(s);
@@ -3935,6 +3933,14 @@ bs_clrerr(stream *s)
 stream* bs_stream(stream *s) {
 	assert(isa_block_stream(s));
 	return ((bs*)s->stream_data.p)->s;
+}
+
+stream* bs_stealstream(stream *s) {
+	stream *res;
+	assert(isa_block_stream(s));
+	res = ((bs*)s->stream_data.p)->s;
+	((bs*)s->stream_data.p)->s = NULL;
+	return res;
 }
 
 stream *
@@ -4534,6 +4540,66 @@ isa_fixed_block_stream(stream *s) {
 	return s && ((s->read == bs_read || s->write == bs_write));
 }
 
+static void
+bs2_close(stream *ss)
+{
+	bs2 *s;
+
+	s = (bs2 *) ss->stream_data.p;
+	assert(s);
+	if (s == NULL)
+		return;
+	assert(s->s);
+	if (s->s)
+		s->s->close(s->s);
+}
+
+static void
+bs2_destroy(stream *ss)
+{
+	bs2 *s;
+
+	s = (bs2 *) ss->stream_data.p;
+	assert(s);
+	if (s) {
+		assert(s->s);
+		if (s->s)
+			s->s->destroy(s->s);
+		if (s->buf) 
+			free(s->buf);
+		if (s->compbuf) 
+			free(s->compbuf);
+		free(s);
+	}
+	destroy(ss);
+}
+
+static void
+bs2_update_timeout(stream *ss)
+{
+	bs2 *s;
+
+	if ((s = ss->stream_data.p) != NULL && s->s) {
+		s->s->timeout = ss->timeout;
+		s->s->timeout_func = ss->timeout_func;
+		if (s->s->update_timeout)
+			(*s->s->update_timeout)(s->s);
+	}
+}
+
+static int
+bs2_isalive(stream *ss)
+{
+	struct bs2 *s;
+
+	if ((s = ss->stream_data.p) != NULL && s->s) {
+		if (s->s->isalive)
+			return (*s->s->isalive)(s->s);
+		return 1;
+	}
+	return 0;
+}
+
 stream *
 block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp)
 {
@@ -4558,14 +4624,14 @@ block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compress
 #endif
 	ns->type = s->type;
 	ns->access = s->access;
-	ns->close = bs_close;
+	ns->close = bs2_close;
 	ns->clrerr = bs_clrerr;
-	ns->destroy = bs_destroy;
+	ns->destroy = bs2_destroy;
 	ns->flush = bs2_flush;
 	ns->read = bs2_read;
 	ns->write = bs2_write;
-	ns->update_timeout = bs_update_timeout;
-	ns->isalive = bs_isalive;
+	ns->update_timeout = bs2_update_timeout;
+	ns->isalive = bs2_isalive;
 	ns->stream_data.p = (void *) b;
 
 	return ns;
