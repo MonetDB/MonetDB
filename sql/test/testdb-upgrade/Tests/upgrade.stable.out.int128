@@ -69,6 +69,8 @@ external name sql.droporderindex;
 drop function sys.zorder_decode_y;
 drop function sys.zorder_decode_x;
 drop function sys.zorder_encode;
+create function profiler.getprofilerlimit() returns integer external name profiler.getprofilerlimit;
+create procedure  profiler.setprofilerlimit(lim integer) external name profiler.setprofilerlimit;
 drop view sys.tablestoragemodel;
 drop view sys.storagemodel;
 drop function sys.storagemodel();

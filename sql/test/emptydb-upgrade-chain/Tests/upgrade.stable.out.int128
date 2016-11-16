@@ -77,6 +77,8 @@ external name sql.droporderindex;
 drop function sys.zorder_decode_y;
 drop function sys.zorder_decode_x;
 drop function sys.zorder_encode;
+create function profiler.getprofilerlimit() returns integer external name profiler.getprofilerlimit;
+create procedure  profiler.setprofilerlimit(lim integer) external name profiler.setprofilerlimit;
 drop view sys.tablestoragemodel;
 drop view sys.storagemodel;
 drop function sys.storagemodel();
@@ -276,8 +278,8 @@ set schema "sys";
 # 16:53:35 >  
 
 #select 1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
