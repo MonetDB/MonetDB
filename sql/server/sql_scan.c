@@ -821,15 +821,20 @@ skip_c_comment(struct scanner * lc)
 	int cur;
 	int prev = 0;
 	int started = lc->started;
+	int depth = 1;
 
 	lc->started = 1;
-	while ((cur = scanner_getc(lc)) != EOF && 
-	       !(cur == '/' && prev == '*')) 
+	while ((cur = scanner_getc(lc)) != EOF && depth > 0) {
+		if (prev == '*' && cur == '/')
+			depth--;
+		else if (prev == '/' && cur == '*') {
+			cur = 0; /* prevent slash-star-slash from matching */
+			depth++;
+		}
 		prev = cur;
+	}
 	lc->yysval = lc->yycur;
 	lc->started = started;
-	if (cur == '/')
-		cur = scanner_getc(lc);
 	return cur;
 }
 
