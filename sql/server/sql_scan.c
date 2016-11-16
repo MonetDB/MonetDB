@@ -824,10 +824,11 @@ skip_c_comment(struct scanner * lc)
 	int depth = 1;
 
 	lc->started = 1;
-	while ((cur = scanner_getc(lc)) != EOF && depth > 0) {
+	while (depth > 0 && (cur = scanner_getc(lc)) != EOF) {
 		if (prev == '*' && cur == '/')
 			depth--;
 		else if (prev == '/' && cur == '*') {
+			/* block comments can nest */
 			cur = 0; /* prevent slash-star-slash from matching */
 			depth++;
 		}
@@ -835,7 +836,8 @@ skip_c_comment(struct scanner * lc)
 	}
 	lc->yysval = lc->yycur;
 	lc->started = started;
-	return cur;
+	/* a comment is equivalent to a newline */
+	return cur == EOF ? cur : '\n';
 }
 
 static int 
@@ -849,8 +851,7 @@ skip_sql_comment(struct scanner * lc)
 		;
 	lc->yysval = lc->yycur;
 	lc->started = started;
-	if (cur == '\n')
-		cur = scanner_getc(lc);
+	/* a comment is equivalent to a newline */
 	return cur;
 }
 
