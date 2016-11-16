@@ -3404,6 +3404,8 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 
 	if (b->output_format == OFMT_NONE) {
+		mvc_result_table(b->mvc, 1, 1, NULL);
+		mvc_result_value(b->mvc, *tn, *cn, *type, *digits, *scale, p, mtype);
 		return MAL_SUCCEED;
 	}
 
