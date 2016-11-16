@@ -30,7 +30,6 @@ stderr of test 'comments` in directory 'sql/test/pg_regress` itself:
 # 17:48:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5017" "--port=30983"
 # 17:48:13 >  
 
-        
 # 15:42:49 >  
 # 15:42:49 >  "Done."
 # 15:42:49 >  
