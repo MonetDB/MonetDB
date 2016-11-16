@@ -1,6 +1,12 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Nov 16 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed the "array" and "quick" functions from the mapi library.
+  To be precise, the removed functions are: mapi_execute_array,
+  mapi_fetch_field_array, mapi_prepare_array, mapi_query_array,
+  mapi_quick_query, mapi_quick_query_array, and mapi_quick_response.
+
 * Sun Oct 30 2016 Martin Kersten <mk@cwi.nl>
 - Added a more elaborate \help command for SQL expressions.
 
