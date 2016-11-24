@@ -39,6 +39,8 @@
 const char* verbose_enableflag = "enable_pyverbose";
 const char* warning_enableflag = "enable_pywarnings";
 const char* debug_enableflag = "enable_pydebug";
+const char* fork_disableflag = "disable_fork";
+static bool option_disable_fork = false;
 #ifdef _PYAPI_VERBOSE_
 static bool option_verbose;
 #endif
@@ -320,16 +322,21 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     }
 
 #ifdef HAVE_FORK
-    if (!mapped && !parallel_aggregation) {
-        MT_lock_set(&pyapiLock);
-        if (python_call_active) {
-            mapped = true;
-            holds_gil = false;
-        } else {
-            python_call_active = true;
-            holds_gil = true;
+    if (!option_disable_fork) {
+        if (!mapped && !parallel_aggregation) {
+            MT_lock_set(&pyapiLock);
+            if (python_call_active) {
+                mapped = true;
+                holds_gil = false;
+            } else {
+                python_call_active = true;
+                holds_gil = true;
+            }
+            MT_lock_unset(&pyapiLock);
         }
-        MT_lock_unset(&pyapiLock);
+    } else {
+        mapped = false;
+        holds_gil = true;
     }
 #endif
 
@@ -1369,6 +1376,7 @@ str
 #ifdef _PYAPI_WARNINGS_
     option_warning = GDKgetenv_isyes(warning_enableflag) || GDKgetenv_istrue(warning_enableflag);
 #endif
+    option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
     return MAL_SUCCEED;
 }
 
