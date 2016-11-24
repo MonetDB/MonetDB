@@ -2041,7 +2041,10 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 						BUNappend(res, result, FALSE);
 					}
 				}
-			 }
+			}
+			if (result) {
+				GDKfree(result);
+			}
 			// if converting to string, we use str_nil
 			BBPunfix(iterators[i].b->batCacheid);
 			iterators[i] = bat_iterator(res);
