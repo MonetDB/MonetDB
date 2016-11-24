@@ -58,4 +58,5 @@ dce.Bug-6114
 dce2.Bug-6115
 semijoin.Bug-6116
 split_project.Bug-6117
+select-in-from.Bug-6121
 case-column-when-null-Bug-6124
