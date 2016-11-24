@@ -12,7 +12,7 @@ MAPI_LIBS = $(SOCKET_LIBS)
 BINS = {
 	CONDINST = HAVE_TESTING
 	DIR = bindir
-	SOURCES = sample0.c sample1.c sample2.c sample3.c sample4.c \
+	SOURCES = sample0.c sample1.c sample4.c \
 		smack00.c smack01.c
 	LIBS = $(MAPI_LIBS) ../../mapilib/libmapi \
 		$(curl_LIBS)

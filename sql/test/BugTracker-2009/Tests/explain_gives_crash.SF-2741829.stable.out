@@ -26,21 +26,31 @@ Ready.
 
 #set optimizer='sequential_pipe';
 #create table blabla(id integer);
-#~BeginVariableOutput~#
+#select '~BeginProfilingOutput~';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 22 # length
+[ "~BeginProfilingOutput~"	]
+#explain alter table blabla add constraint dada unique (id);
+% .explain # table_name
+% mal # name
+% clob # type
+% 121 # length
 function user.s8_1():void;
-"    X_58:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",16);"
-"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"")"
-"    sql.catalog(29,""sys"",nil,0);"
+    X_58:void := querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe",16:int);
+# querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe")
+    sql.catalog(29:int,"sys",nil:ptr,0:int);
     X_39 := bat.new(nil:int);
-"    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);"
-"    X_45 := algebra.projection(C_42,X_39);"
-"    (X_46,X_47,X_48) := group.subgroupdone(X_45);"
+    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);
+    X_45 := algebra.projection(C_42,X_39);
+    (X_46,X_47,X_48) := group.subgroupdone(X_45);
     X_49:lng := aggr.sum(X_48);
     X_53 := aggr.count(X_48);
     X_51:bit := calc.isnil(X_49);
-"    X_52:lng := calc.ifthenelse(X_51,0,X_49);"
-"    X_54:bit := calc.!=(X_53,X_52);"
-"    sql.assert(X_54,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+    X_52:lng := calc.ifthenelse(X_51,0:lng,X_49);
+    X_54:bit := calc.!=(X_53,X_52);
+    sql.assert(X_54,"UPDATE: UNIQUE constraint 'blabla.dada' violated");
     sql.exportOperation();
 end user.s8_1;
 #inline               actions= 0 time=1 usec 
@@ -63,22 +73,26 @@ end user.s8_1;
 #multiplex            actions= 0 time=2 usec 
 #profiler             actions= 1 time=0 usec 
 #candidates           actions= 1 time=0 usec 
-#garbagecollctor      actions= 1 time=10 usec 
-#total                actions= 1 time=224 usec 
+#garbagecollector     actions= 1 time=9 usec 
+#explain alter table blabla add constraint dada unique (id);
+% .explain # table_name
+% mal # name
+% clob # type
+% 121 # length
 function user.s10_1():void;
-"    X_58:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",16);"
-"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"")"
-"    sql.catalog(29,""sys"",nil,0);"
+    X_58:void := querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe",16:int);
+# querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe")
+    sql.catalog(29:int,"sys",nil:ptr,0:int);
     X_39 := bat.new(nil:int);
-"    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);"
-"    X_45 := algebra.projection(C_42,X_39);"
-"    (X_46,X_47,X_48) := group.subgroupdone(X_45);"
+    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);
+    X_45 := algebra.projection(C_42,X_39);
+    (X_46,X_47,X_48) := group.subgroupdone(X_45);
     X_49:lng := aggr.sum(X_48);
     X_53 := aggr.count(X_48);
     X_51:bit := calc.isnil(X_49);
-"    X_52:lng := calc.ifthenelse(X_51,0,X_49);"
-"    X_54:bit := calc.!=(X_53,X_52);"
-"    sql.assert(X_54,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+    X_52:lng := calc.ifthenelse(X_51,0:lng,X_49);
+    X_54:bit := calc.!=(X_53,X_52);
+    sql.assert(X_54,"UPDATE: UNIQUE constraint 'blabla.dada' violated");
     sql.exportOperation();
 end user.s10_1;
 #inline               actions= 0 time=1 usec 
@@ -101,24 +115,38 @@ end user.s10_1;
 #multiplex            actions= 0 time=2 usec 
 #profiler             actions= 1 time=1 usec 
 #candidates           actions= 1 time=1 usec 
-#garbagecollctor      actions= 1 time=10 usec 
-#total                actions= 1 time=215 usec 
-#~EndVariableOutput~#
-#~BeginVariableOutput~#
+#garbagecollector     actions= 1 time=9 usec 
+#select '~EndProfilingOutput~';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 20 # length
+[ "~EndProfilingOutput~"	]
+#select '~BeginProfilingOutput~';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 22 # length
+[ "~BeginProfilingOutput~"	]
+#explain alter table blabla add constraint dada unique (id);
+% .explain # table_name
+% mal # name
+% clob # type
+% 121 # length
 function user.s18_1():void;
-"    X_58:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",16);"
-"# querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"")"
-"    sql.catalog(29,""sys"",nil,0);"
+    X_58:void := querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe",16:int);
+# querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe")
+    sql.catalog(29:int,"sys",nil:ptr,0:int);
     X_39 := bat.new(nil:int);
-"    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);"
-"    X_45 := algebra.projection(C_42,X_39);"
-"    (X_46,X_47,X_48) := group.subgroupdone(X_45);"
+    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);
+    X_45 := algebra.projection(C_42,X_39);
+    (X_46,X_47,X_48) := group.subgroupdone(X_45);
     X_49:lng := aggr.sum(X_48);
     X_53 := aggr.count(X_48);
     X_51:bit := calc.isnil(X_49);
-"    X_52:lng := calc.ifthenelse(X_51,0,X_49);"
-"    X_54:bit := calc.!=(X_53,X_52);"
-"    sql.assert(X_54,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+    X_52:lng := calc.ifthenelse(X_51,0:lng,X_49);
+    X_54:bit := calc.!=(X_53,X_52);
+    sql.assert(X_54,"UPDATE: UNIQUE constraint 'blabla.dada' violated");
     sql.exportOperation();
 end user.s18_1;
 #inline               actions= 0 time=1 usec 
@@ -140,10 +168,14 @@ end user.s18_1;
 #matpack              actions= 0 time=2 usec 
 #multiplex            actions= 0 time=2 usec 
 #profiler             actions= 1 time=1 usec 
-#candidates           actions= 1 time=0 usec 
-#garbagecollctor      actions= 1 time=10 usec 
-#total                actions= 1 time=221 usec 
-#~EndVariableOutput~#
+#candidates           actions= 1 time=1 usec 
+#garbagecollector     actions= 1 time=8 usec 
+#select '~EndProfilingOutput~';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 20 # length
+[ "~EndProfilingOutput~"	]
 
 # 13:17:23 >  
 # 13:17:23 >  "Done."

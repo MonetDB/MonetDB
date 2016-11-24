@@ -272,6 +272,8 @@ external name sql.droporderindex;
 drop function sys.zorder_decode_y;
 drop function sys.zorder_decode_x;
 drop function sys.zorder_encode;
+create function profiler.getprofilerlimit() returns integer external name profiler.getprofilerlimit;
+create procedure  profiler.setprofilerlimit(lim integer) external name profiler.setprofilerlimit;
 drop view sys.tablestoragemodel;
 drop view sys.storagemodel;
 drop function sys.storagemodel();
@@ -427,6 +429,8 @@ update sys._tables set system = true where name in ('storage', 'storagemodel', '
 alter table sys.statistics add column "revsorted" boolean;
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('getprofilerlimit') and f.type = 1 and f.schema_id = s.id and s.name = 'profiler');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('setprofilerlimit') and f.type = 2 and f.schema_id = s.id and s.name = 'profiler');
 delete from systemfunctions where function_id not in (select id from functions);
 set schema "testschema";
 
