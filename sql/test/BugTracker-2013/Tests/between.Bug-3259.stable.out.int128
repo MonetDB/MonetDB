@@ -39,77 +39,14 @@ Ready.
 #);
 #insert into treeitems values('sequoia',1,2,2,2,2,2.0);
 [ 1	]
-#explain
 #SELECT t1.subject as id1, t2.subject as id2
 #FROM  treeitems t1, treeitems t2
 #WHERE t2.pre between t1.pre and t1.pre + t1.size;
-% .explain # table_name
-% mal # name
-% clob # type
-% 195 # length
-function user.s6_1():void;
-    X_69:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",40:int);
-barrier X_93 := language.dataflow();
-    X_45 := bat.new(nil:str);
-    X_52 := bat.append(X_45,"sys.L2");
-    X_62 := bat.append(X_52,"sys.L4");
-    X_47 := bat.new(nil:str);
-    X_54 := bat.append(X_47,"id1");
-    X_64 := bat.append(X_54,"id2");
-    X_48 := bat.new(nil:str);
-    X_56 := bat.append(X_48,"int");
-    X_66 := bat.append(X_56,"int");
-    X_49 := bat.new(nil:int);
-    X_58 := bat.append(X_49,32:int);
-    X_67 := bat.append(X_58,32:int);
-    X_51 := bat.new(nil:int);
-    X_60 := bat.append(X_51,0:int);
-    X_68 := bat.append(X_60,0:int);
-    X_3 := sql.mvc();
-    C_4:bat[:oid] := sql.tid(X_3,"sys","treeitems");
-    X_11:bat[:lng] := sql.bind(X_3,"sys","treeitems","pre",0:int);
-    X_13 := algebra.projection(C_4,X_11);
-    X_14 := batcalc.hge(X_13);
-    X_20:bat[:lng] := sql.bind(X_3,"sys","treeitems","size",0:int);
-    X_22 := algebra.projection(C_4,X_20);
-    X_25 := batcalc.hge(X_22);
-    X_26:bat[:hge] := batcalc.+(X_14,X_25);
-    (X_29,X_30) := algebra.subrangejoin(X_14,X_14,X_26,nil:BAT,nil:BAT,true,true,nil:lng);
-    X_7:bat[:int] := sql.bind(X_3,"sys","treeitems","subject",0:int);
-    X_10 := algebra.projection(C_4,X_7);
-    X_39 := algebra.projection(X_30,X_10);
-    X_36 := algebra.projection(X_29,X_10);
-    language.pass(X_14);
-    language.pass(X_14);
-    language.pass(C_4);
-    language.pass(X_10);
-exit X_93;
-# querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe")
-    sql.resultSet(X_62,X_64,X_66,X_67,X_68,X_39,X_36);
-end user.s6_1;
-#inline               actions= 0 time=3 usec 
-#remap                actions= 1 time=125 usec 
-#costmodel            actions= 1 time=2 usec 
-#coercion             actions= 0 time=2 usec 
-#evaluate             actions= 0 time=4 usec 
-#emptycolumn          actions= 1 time=6 usec 
-#aliases              actions= 0 time=7 usec 
-#mergetable           actions= 0 time=63 usec 
-#deadcode             actions= 0 time=7 usec 
-#aliases              actions= 0 time=7 usec 
-#constants            actions= 3 time=8 usec 
-#commonTerms          actions= 7 time=15 usec 
-#projectionpath       actions= 0 time=6 usec 
-#deadcode             actions= 7 time=11 usec 
-#reorder              actions= 1 time=26 usec 
-#reduce               actions=30 time=29 usec 
-#matpack              actions= 0 time=3 usec 
-#dataflow             actions=26 time=27 usec 
-#multiplex            actions= 0 time=3 usec 
-#profiler             actions= 1 time=4 usec 
-#candidates           actions= 1 time=1 usec 
-#garbagecollctor      actions= 1 time=21 usec 
-#total                actions= 1 time=501 usec 
+% sys.L2,	sys.L4 # table_name
+% id1,	id2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
 #ROLLBACK;
 
 # 20:18:31 >  
