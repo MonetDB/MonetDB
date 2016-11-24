@@ -61,3 +61,4 @@ split_project.Bug-6117
 case-column-when-null-Bug-6124
 select-in-from.Bug-6119
 select-in-from.Bug-6121
+nested-subquery-in-select.Bug-6125
