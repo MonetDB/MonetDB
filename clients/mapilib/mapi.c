@@ -1639,6 +1639,8 @@ close_result(MapiHdl hdl)
 				free(result->fields[i].columntype);
 			if (result->fields[i].dynamic_write_buf)
 				free(result->fields[i].dynamic_write_buf);
+			if (result->fields[i].null_value)
+				free(result->fields[i].null_value);
 		}
 		free(result->fields);
 	}
@@ -5654,6 +5656,9 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 			result->fields[j].columntype = NULL;
 			if (result->fields[j].tablename)
 				free(result->fields[j].tablename);
+			if (result->fields[j].null_value)
+				free(result->fields[j].null_value);
+			result->fields[j].null_value = NULL;
 			result->fields[j].tablename = NULL;
 			result->fields[j].columnlength = 0;
 		}
