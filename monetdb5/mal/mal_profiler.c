@@ -291,7 +291,7 @@ This information can be used to determine memory footprint and variable life tim
 							logadd("\"seqbase\":\""BUNFMT"\",%s", d->hseqbase, pret);
 							logadd("\"hghbase\":\""BUNFMT"\",%s", d->hseqbase + cnt, pret);
 							v= BBPquickdesc(VIEWtparent(d),0);
-							logadd("\"kind\":\"%s\",%s", ( v->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
+							logadd("\"kind\":\"%s\",%s", (v &&  v->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
 						} else
 							logadd("\"kind\":\"%s\",%s", ( d->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
 						total += cnt * d->twidth;
