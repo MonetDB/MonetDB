@@ -27,9 +27,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 104 # length
+% 103 # length
 function user.s6_1():void;
-    X_23:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",17:int);
+    X_0:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",23:int);
     X_7 := bat.new(nil:str);
     X_14 := bat.append(X_7,"sys.L2");
     X_9 := bat.new(nil:str);
@@ -74,9 +74,9 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 80 # length
+% 96 # length
 function user.main():void;
-    X_24:void := querylog.define("-- no query","sequential_pipe",16:int,15:int);
+    X_0:void := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",22:int);
     X_8 := bat.new(nil:str);
     X_15 := bat.append(X_8,"sys.L2");
     X_10 := bat.new(nil:str);

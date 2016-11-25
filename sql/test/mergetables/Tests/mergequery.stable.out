@@ -88,9 +88,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 133 # length
+% 132 # length
 function user.s26_1():void;
-    X_45:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe",41:int);
+    X_0:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe",64:int);
 barrier X_76 := language.dataflow();
     X_3 := sql.mvc();
     X_29:bat[:dbl] := bat.new(nil:dbl);
@@ -166,9 +166,9 @@ end user.s26_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 155 # length
+% 154 # length
 function user.s28_1():void;
-    X_47:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe",45:int);
+    X_0:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe",70:int);
 barrier X_80 := language.dataflow();
     X_3 := sql.mvc();
     X_31:bat[:dbl] := bat.new(nil:dbl);

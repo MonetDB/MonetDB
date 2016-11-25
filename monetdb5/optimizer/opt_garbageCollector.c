@@ -40,10 +40,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	// move SQL query to front
 	p = NULL;
-	for(i = limit; i> 2; i--){
+	for(i = 0; i < limit; i++){
 		if(mb->stmt[i] && getModuleId(mb->stmt[i]) == querylogRef && getFunctionId(mb->stmt[i]) == defineRef ){
-			p = mb->stmt[i];
-			p = pushInt(mb,p,i+1);
+			p = getInstrPtr(mb,i);
 			break;
 		}
 	}
@@ -51,7 +50,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		for(  ; i > 1; i--)
 			mb->stmt[i] = mb->stmt[i-1];
 		mb->stmt[1] = p;
-		mb->stmt[1]->token = ASSIGNsymbol;
 	}
 	setVariableScope(mb);
 

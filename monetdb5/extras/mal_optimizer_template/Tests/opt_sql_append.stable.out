@@ -63,7 +63,7 @@ Ready.
 % clob # type
 % 146 # length
 function user.s8_1():void;
-    X_26:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",11:int);
+    X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",21:int);
     X_3 := sql.mvc();
     (X_13:bat[:int],X_14:bat[:int],X_15:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
 # querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe")
@@ -123,7 +123,7 @@ end user.s8_1;
 % clob # type
 % 146 # length
 function user.s24_1():void;
-    X_26:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",11:int);
+    X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",21:int);
     X_3 := sql.mvc();
     (X_13:bat[:int],X_14:bat[:int],X_15:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
 # querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1")

@@ -61,9 +61,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 197 # length
+% 196 # length
 function user.s4_1():void;
-    X_51:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n from sys.functions\n) as x;","sequential_pipe",33:int);
+    X_0:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n from sys.functions\n) as x;","sequential_pipe",34:int);
     X_28 := bat.new(nil:str);
     X_35 := bat.append(X_28,"sys.L12");
     X_43 := bat.append(X_35,"sys.x");
@@ -128,9 +128,9 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 201 # length
+% 200 # length
 function user.s6_1():void;
-    X_55:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;","sequential_pipe",37:int);
+    X_0:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;","sequential_pipe",39:int);
     X_32 := bat.new(nil:str);
     X_39 := bat.append(X_32,"sys.L12");
     X_47 := bat.append(X_39,"sys.x");
@@ -199,9 +199,9 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 202 # length
+% 201 # length
 function user.s8_1():void;
-    X_54:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n from sys.functions\n) as x;","sequential_pipe",36:int);
+    X_0:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n from sys.functions\n) as x;","sequential_pipe",37:int);
     X_31 := bat.new(nil:str);
     X_38 := bat.append(X_31,"sys.L12");
     X_46 := bat.append(X_38,"sys.x");

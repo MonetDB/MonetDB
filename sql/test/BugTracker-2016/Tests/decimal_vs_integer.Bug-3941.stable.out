@@ -37,7 +37,7 @@ Ready.
 % clob # type
 % 110 # length
 function user.s4_1():void;
-    X_16:void := querylog.define("explain select count(*) from tmp where i = 20160222;","default_pipe",9:int);
+    X_0:void := querylog.define("explain select count(*) from tmp where i = 20160222;","default_pipe",12:int);
     X_4 := bat.new(nil:int);
     C_5 := algebra.subselect(X_4,20160222:int,20160222:int,true,false,false);
     X_8 := algebra.projection(C_5,X_4);
@@ -53,7 +53,7 @@ end user.s4_1;
 % clob # type
 % 116 # length
 function user.s6_1():void;
-    X_16:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';","default_pipe",9:int);
+    X_0:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';","default_pipe",13:int);
     X_4 := bat.new(nil:int);
     C_5 := algebra.subselect(X_4,20160222:int,20160222:int,true,false,false);
     X_8 := algebra.projection(C_5,X_4);
@@ -67,9 +67,9 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 112 # length
+% 111 # length
 function user.s8_1():void;
-    X_18:void := querylog.define("explain select count(*) from tmp where i = 201602221;","default_pipe",10:int);
+    X_0:void := querylog.define("explain select count(*) from tmp where i = 201602221;","default_pipe",13:int);
     X_4 := bat.new(nil:int);
     X_5:bat[:int] := batcalc.int(0:int,X_4,9:int,0:int);
     C_7 := algebra.subselect(X_5,201602221:int,201602221:int,true,false,false);
