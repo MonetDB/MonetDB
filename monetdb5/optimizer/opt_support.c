@@ -120,6 +120,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	int qot = 0;
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
+	int actions = 0;
 	lng clk = GDKusec();
 	char buf[256];
 
@@ -135,6 +136,8 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	if (mb->errors)
 		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
+	/* Optimizers may massage the plan in such a way that a new pass is needed.
+     * When no optimzer call is found, be terminate. */
 	do {
 		qot = 0;
 		for (pc = 0; pc < mb->stop ; pc++) {
@@ -143,25 +146,31 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				/* all optimizers should behave like patterns */
 				/* However, we don't have a stack now */
 				qot++;
+				actions++;
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
 					msg= createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
 					GDKfree(place);
-					return msg;
+					goto wrapup;
 				}
+				if (cntxt->mode == FINISHCLIENT)
+					throw(MAL, "optimizeMALBlock", "prematurely stopped client");
 				pc= -1;
 			}
 		}
 	} while (qot && cnt++ < mb->stop);
-	if( qot){
+
+wrapup:
+	/* Keep the total time spent on optimizing the plan for inspection */
+	if( actions){
 		mb->optimize= GDKusec() - clk;
-		snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","total",1,mb->optimize);
-		newComment(mb,buf);
+		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total",actions, mb->optimize);
+		newComment(mb, buf);
 	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
-	return 0;
+	return msg;
 }
 
 /*
