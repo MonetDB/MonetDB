@@ -55,8 +55,8 @@ Ready.
 % .L1 # table_name
 % def # name
 % clob # type
-% 579 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.jit();optimizer.garbageCollector();"	]
+% 544 # length
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -65,13 +65,12 @@ Ready.
 function user.s8_1():void;
     X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",21:int);
     X_3 := sql.mvc();
-    (X_13:bat[:int],X_14:bat[:int],X_15:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
-# querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe")
-    X_16 := sql.append(X_3,"sys","ttt","a",X_13);
-    X_20 := sql.append(X_16,"sys","ttt","b",X_14);
-    X_22 := sql.append(X_20,"sys","ttt","c",X_15);
-    X_24 := aggr.count(X_15);
-    sql.affectedRows(X_22,X_24);
+    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
+    X_28 := sql.append(X_3,"sys","ttt","a",X_24);
+    X_33 := sql.append(X_28,"sys","ttt","b",X_25);
+    X_36 := sql.append(X_33,"sys","ttt","c",X_26);
+    X_38 := aggr.count(X_26);
+    sql.affectedRows(X_36,X_38);
 end user.s8_1;
 #inline               actions= 0 time=1 usec 
 #candidates           actions= 1 time=14 usec 
@@ -115,8 +114,8 @@ end user.s8_1;
 % .L1 # table_name
 % def # name
 % clob # type
-% 602 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.jit();optimizer.sql_append();optimizer.garbageCollector();"	]
+% 567 # length
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.sql_append();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -125,13 +124,12 @@ end user.s8_1;
 function user.s24_1():void;
     X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",21:int);
     X_3 := sql.mvc();
-    (X_13:bat[:int],X_14:bat[:int],X_15:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
-# querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1")
-    X_16 := sql.append(X_3,"sys","ttt","a",X_13);
-    X_20 := sql.append(X_16,"sys","ttt","b",X_14);
-    X_24 := aggr.count(X_15);
-    X_22 := sql.append(X_20,"sys","ttt","c",X_15);
-    sql.affectedRows(X_22,X_24);
+    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
+    X_28 := sql.append(X_3,"sys","ttt","a",X_24);
+    X_33 := sql.append(X_28,"sys","ttt","b",X_25);
+    X_38 := aggr.count(X_26);
+    X_36 := sql.append(X_33,"sys","ttt","c",X_26);
+    sql.affectedRows(X_36,X_38);
 end user.s24_1;
 #inline               actions= 0 time=1 usec 
 #candidates           actions= 1 time=14 usec 
