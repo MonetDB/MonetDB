@@ -148,7 +148,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
 	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
 	if( mal_session_uuid)
-		logadd("\"session\":%s,%s",mal_session_uuid,prettify);
+		logadd("\"session\":\"%s\",%s",mal_session_uuid,prettify);
 
 	if( start){
 		logadd("\"state\":\"start\",%s", prettify);
