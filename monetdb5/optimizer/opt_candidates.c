@@ -50,14 +50,16 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == firstnRef )
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == mergecandRef )
-				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == intersectcandRef )
-				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == crossRef ){
 				setVarCList(mb,getArg(p,0));
 				setVarCList(mb,getArg(p,1));
 			}
+		}
+		if( getModuleId(p) == batRef){
+			if(getFunctionId(p) == mergecandRef )
+				setVarCList(mb,getArg(p,0));
+			if(getFunctionId(p) == intersectcandRef )
+				setVarCList(mb,getArg(p,0));
 		}
 		if( getModuleId(p) == generatorRef){
 			if(getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef)
