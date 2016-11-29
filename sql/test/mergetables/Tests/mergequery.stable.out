@@ -88,42 +88,41 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 129 # length
+% 132 # length
 function user.s26_1():void;
-    X_92:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe",41);
-barrier X_131 := language.dataflow();
+    X_0:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe",64:int);
+barrier X_129 := language.dataflow();
     X_3 := sql.mvc();
     X_68:bat[:dbl] := bat.new(nil:dbl);
-    X_7:bat[:dbl] := sql.bind(X_3,"sys","part1","x",0);
+    X_7:bat[:dbl] := sql.bind(X_3,"sys","part1","x",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","part1");
-    C_33 := algebra.subselect(X_7,C_4,1,2,true,true,false);
+    C_33 := algebra.subselect(X_7,C_4,1:dbl,2:dbl,true,true,false);
     X_37 := algebra.projection(C_33,X_7);
     X_70 := bat.append(X_68,X_37,true);
-    X_43:bat[:dbl] := sql.bind(X_3,"sys","part2","x",0);
+    X_43:bat[:dbl] := sql.bind(X_3,"sys","part2","x",0:int);
     C_41:bat[:oid] := sql.tid(X_3,"sys","part2");
-    C_63 := algebra.subselect(X_43,C_41,1,2,true,true,false);
+    C_63 := algebra.subselect(X_43,C_41,1:dbl,2:dbl,true,true,false);
     X_64 := algebra.projection(C_63,X_43);
     X_72 := bat.append(X_70,X_64,true);
     X_76:bat[:dbl] := bat.new(nil:dbl);
-    X_24:bat[:dbl] := sql.bind(X_3,"sys","part1","z",0);
+    X_24:bat[:dbl] := sql.bind(X_3,"sys","part1","z",0:int);
     X_39 := algebra.projection(C_33,X_24);
     X_77 := bat.append(X_76,X_39,true);
-    X_55:bat[:dbl] := sql.bind(X_3,"sys","part2","z",0);
+    X_55:bat[:dbl] := sql.bind(X_3,"sys","part2","z",0:int);
     X_66 := algebra.projection(C_63,X_55);
     X_78 := bat.append(X_77,X_66,true);
     X_73:bat[:dbl] := bat.new(nil:dbl);
-    X_17:bat[:dbl] := sql.bind(X_3,"sys","part1","y",0);
+    X_17:bat[:dbl] := sql.bind(X_3,"sys","part1","y",0:int);
     X_38 := algebra.projection(C_33,X_17);
     X_74 := bat.append(X_73,X_38,true);
-    X_49:bat[:dbl] := sql.bind(X_3,"sys","part2","y",0);
+    X_49:bat[:dbl] := sql.bind(X_3,"sys","part2","y",0:int);
     X_65 := algebra.projection(C_63,X_49);
     X_75 := bat.append(X_74,X_65,true);
     language.pass(X_7);
     language.pass(X_43);
     language.pass(C_33);
     language.pass(C_63);
-exit X_131;
-# querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe")
+exit X_129;
     X_80 := sql.append(X_3,"sys","answ","x",X_72);
     X_84 := sql.append(X_80,"sys","answ","y",X_75);
     X_87 := sql.append(X_84,"sys","answ","z",X_78);
@@ -166,31 +165,31 @@ end user.s26_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 152 # length
+% 154 # length
 function user.s28_1():void;
-    X_100:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe",45);
-barrier X_141 := language.dataflow();
+    X_0:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe",70:int);
+barrier X_139 := language.dataflow();
     X_3 := sql.mvc();
     X_77:bat[:dbl] := bat.new(nil:dbl);
-    X_7:bat[:dbl] := sql.bind(X_3,"sys","part1","x",0);
-    X_17:bat[:dbl] := sql.bind(X_3,"sys","part1","y",0);
+    X_7:bat[:dbl] := sql.bind(X_3,"sys","part1","x",0:int);
+    X_17:bat[:dbl] := sql.bind(X_3,"sys","part1","y",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","part1");
-    C_33 := algebra.subselect(X_17,C_4,0,2,true,true,false);
-    C_39 := algebra.subselect(X_7,C_33,0,2,true,true,false);
+    C_33 := algebra.subselect(X_17,C_4,0:dbl,2:dbl,true,true,false);
+    C_39 := algebra.subselect(X_7,C_33,0:dbl,2:dbl,true,true,false);
     X_40 := algebra.projection(C_39,X_7);
     X_79 := bat.append(X_77,X_40,true);
-    X_46:bat[:dbl] := sql.bind(X_3,"sys","part2","x",0);
-    X_52:bat[:dbl] := sql.bind(X_3,"sys","part2","y",0);
+    X_46:bat[:dbl] := sql.bind(X_3,"sys","part2","x",0:int);
+    X_52:bat[:dbl] := sql.bind(X_3,"sys","part2","y",0:int);
     C_44:bat[:oid] := sql.tid(X_3,"sys","part2");
-    C_66 := algebra.subselect(X_52,C_44,0,2,true,true,false);
-    C_69 := algebra.subselect(X_46,C_66,0,2,true,true,false);
+    C_66 := algebra.subselect(X_52,C_44,0:dbl,2:dbl,true,true,false);
+    C_69 := algebra.subselect(X_46,C_66,0:dbl,2:dbl,true,true,false);
     X_73 := algebra.projection(C_69,X_46);
     X_80 := bat.append(X_79,X_73,true);
     X_84:bat[:dbl] := bat.new(nil:dbl);
-    X_24:bat[:dbl] := sql.bind(X_3,"sys","part1","z",0);
+    X_24:bat[:dbl] := sql.bind(X_3,"sys","part1","z",0:int);
     X_42 := algebra.projection(C_39,X_24);
     X_85 := bat.append(X_84,X_42,true);
-    X_58:bat[:dbl] := sql.bind(X_3,"sys","part2","z",0);
+    X_58:bat[:dbl] := sql.bind(X_3,"sys","part2","z",0:int);
     X_75 := algebra.projection(C_69,X_58);
     X_86 := bat.append(X_85,X_75,true);
     X_81:bat[:dbl] := bat.new(nil:dbl);
@@ -204,8 +203,7 @@ barrier X_141 := language.dataflow();
     language.pass(X_17);
     language.pass(C_69);
     language.pass(X_52);
-exit X_141;
-# querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe")
+exit X_139;
     X_88 := sql.append(X_3,"sys","answ","x",X_80);
     X_92 := sql.append(X_88,"sys","answ","y",X_83);
     X_95 := sql.append(X_92,"sys","answ","z",X_86);

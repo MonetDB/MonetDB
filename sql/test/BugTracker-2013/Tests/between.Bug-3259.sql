@@ -14,7 +14,11 @@ CREATE TABLE treeitems (
 
 insert into treeitems values('sequoia',1,2,2,2,2,2.0);
 
-explain
+--explain
+--SELECT t1.subject as id1, t2.subject as id2
+--FROM  treeitems t1, treeitems t2
+--WHERE t2.pre between t1.pre and t1.pre + t1.size;
+
 SELECT t1.subject as id1, t2.subject as id2
 FROM  treeitems t1, treeitems t2
 WHERE t2.pre between t1.pre and t1.pre + t1.size;

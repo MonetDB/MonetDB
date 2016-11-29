@@ -10,10 +10,12 @@
 #include <monetdb_config.h>
 #include <mal.h>
 
-char monet_cwd[PATHLENGTH] = { 0 };
-size_t monet_memory = 0;
+char 	monet_cwd[PATHLENGTH] = { 0 };
+size_t 	monet_memory = 0;
 char 	monet_characteristics[PATHLENGTH];
-int mal_trace;		/* enable profile events on console */
+int		mal_trace;		/* enable profile events on console */
+str     mal_session_uuid;   /* unique marker for the session */
+
 #ifdef HAVE_HGE
 int have_hge;
 #endif

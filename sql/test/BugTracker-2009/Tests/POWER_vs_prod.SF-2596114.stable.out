@@ -27,9 +27,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 100 # length
+% 103 # length
 function user.s6_1():void;
-    X_38:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",17);
+    X_0:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",23:int);
     X_22 := bat.new(nil:str);
     X_29 := bat.append(X_22,"sys.L2");
     X_24 := bat.new(nil:str);
@@ -37,11 +37,11 @@ function user.s6_1():void;
     X_25 := bat.new(nil:str);
     X_33 := bat.append(X_25,"double");
     X_26 := bat.new(nil:int);
-    X_35 := bat.append(X_26,53);
+    X_35 := bat.append(X_26,53:int);
     X_28 := bat.new(nil:int);
-    X_37 := bat.append(X_28,0);
+    X_37 := bat.append(X_28,0:int);
     X_16 := bat.new(nil:dbl);
-    X_18:bat[:dbl] := batmmath.pow(X_16,2);
+    X_18:bat[:dbl] := batmmath.pow(X_16,2:dbl);
     sql.resultSet(X_29,X_31,X_33,X_35,X_37,X_18);
 end user.s6_1;
 #inline               actions= 0 time=4 usec 
@@ -73,9 +73,9 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 74 # length
+% 96 # length
 function user.main():void;
-    X_45:void := querylog.define("-- no query","sequential_pipe",16,15);
+    X_6:void := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",22:int);
     X_29 := bat.new(nil:str);
     X_36 := bat.append(X_29,"sys.L2");
     X_31 := bat.new(nil:str);
@@ -83,12 +83,11 @@ function user.main():void;
     X_32 := bat.new(nil:str);
     X_40 := bat.append(X_32,"double");
     X_33 := bat.new(nil:int);
-    X_42 := bat.append(X_33,53);
+    X_42 := bat.append(X_33,53:int);
     X_35 := bat.new(nil:int);
-    X_44 := bat.append(X_35,0);
+    X_44 := bat.append(X_35,0:int);
     X_22 := bat.new(nil:dbl);
-    X_25:bat[:dbl] := batmmath.pow(X_22,2);
-# querylog.define("explain select x*x from sf_2596114;","sequential_pipe")
+    X_25:bat[:dbl] := batmmath.pow(X_22,2:dbl);
     sql.resultSet(X_36,X_38,X_40,X_42,X_44,X_25);
 end user.main;
 #inline               actions= 0 time=2 usec 

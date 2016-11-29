@@ -7,13 +7,9 @@
 # 
 module algebra;
 
-# TO BE REMOVED OR CHANGED FOR HEADLESS
-
 command groupby(gids:bat[:oid], cnts:bat[:lng]) :bat[:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
-
-#END OF HEADLESS PLANS
 
 command find(b:bat[:any_1], t:any_1):oid
 address ALGfind

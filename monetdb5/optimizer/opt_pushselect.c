@@ -169,7 +169,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			(getFunctionId(p) == subinterRef || 
 			 getFunctionId(p) == subdiffRef)) {
 			GDKfree(vars);
-			return 0;
+			goto wrapup;
 		}
 
 		if (isSlice(p))
@@ -233,7 +233,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			if (tid && subselect_add(&subselects, tid, getArg(p, 0)) < 0) {
 				GDKfree(vars);
-				return 0;
+				goto wrapup;
 			}
 		}
 		/* left hand side */
@@ -263,7 +263,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			if (tid && subselect_add(&subselects, tid, getArg(p, 0)) < 0) {
 				GDKfree(vars);
-				return 0;
+				goto wrapup;
 			}
 		}
 		/* right hand side */
@@ -293,14 +293,14 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			if (tid && subselect_add(&subselects, tid, getArg(p, 1)) < 0) {
 				GDKfree(vars);
-				return 0;
+				goto wrapup;
 			}
 		}
 	}
 
 	if ((!subselects.nr && !nr_topn && !nr_likes) || newMalBlkStmt(mb, mb->ssize) <0 ) {
 		GDKfree(vars);
-		return 0;
+		goto wrapup;
 	}
 	pushInstruction(mb,old[0]);
 
@@ -448,7 +448,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	GDKfree(old);
 	if (!push_down_delta) {
 		GDKfree(vars);
-		return actions;
+		goto wrapup;
 	}
 
 	/* now push selects through delta's */
@@ -463,7 +463,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		GDKfree(vars);
 		GDKfree(slices);
 		GDKfree(rslices);
-		return actions;
+		goto wrapup;
 
 	}
 	pushInstruction(mb,old[0]);
@@ -607,6 +607,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
+wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions,GDKusec() - usec);
     newComment(mb,buf);
 

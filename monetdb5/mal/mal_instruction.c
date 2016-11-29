@@ -882,16 +882,16 @@ freeVariable(MalBlkPtr mb, int varid)
 
 /* A special action is to reduce the variable space by removing all
  * that do not contribute.
+ * All temporary variables are renamed in the process to trim the varid.
  */
 void
 trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 {
-	int *vars, cnt = 0, i, j;
-	int maxid = 0,m;
+	int *alias, cnt = 0, i, j;
 	InstrPtr q;
 
-	vars = (int *) GDKzalloc(mb->vtop * sizeof(int));
-	if (vars == NULL)
+	alias = (int *) GDKzalloc(mb->vtop * sizeof(int));
+	if (alias == NULL)
 		return;					/* forget it if we run out of memory */
 
 	/* build the alias table */
@@ -902,11 +902,6 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 			freeVariable(mb, i);
 			continue;
 		}
-		if( isTmpVar(mb,i) ){
-			m = atoi(getVarName(mb,i)+2);
-			if( m > maxid)
-				maxid = m;
-		}
         if (i > cnt) {
             /* remap temporary variables */
             VarRecord *t = mb->var[cnt];
@@ -916,7 +911,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 
 		/* valgrind finds a leak when we move these variable record
 		 * pointers around. */
-		vars[i] = cnt;
+		alias[i] = cnt;
 		if (glb && i != cnt) {
 			glb->stk[cnt] = glb->stk[i];
 			VALempty(&glb->stk[i]);
@@ -926,7 +921,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 #ifdef DEBUG_REDUCE
 	mnstr_printf(GDKout, "Variable reduction %d -> %d\n", mb->vtop, cnt);
 	for (i = 0; i < mb->vtop; i++)
-		mnstr_printf(GDKout, "map %d->%d\n", i, vars[i]);
+		mnstr_printf(GDKout, "map %d->%d\n", i, alias[i]);
 #endif
 
 	/* remap all variable references to their new position. */
@@ -934,16 +929,20 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		for (i = 0; i < mb->stop; i++) {
 			q = getInstrPtr(mb, i);
 			for (j = 0; j < q->argc; j++)
-				getArg(q, j) = vars[getArg(q, j)];
+				getArg(q, j) = alias[getArg(q, j)];
 		}
 	}
-	/* reset the variable counter */
-	mb->vid= maxid + 1;
+	/* rename the temporary variable */
+	mb->vid = 0;
+	for( i =0; i< cnt; i++)
+	if( isTmpVar(mb,i))
+        (void) snprintf(mb->var[i]->id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
+	
 #ifdef DEBUG_REDUCE
 	mnstr_printf(GDKout, "After reduction \n");
 	printFunction(GDKout, mb, 0, 0);
 #endif
-	GDKfree(vars);
+	GDKfree(alias);
 	mb->vtop = cnt;
 }
 

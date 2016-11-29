@@ -267,13 +267,11 @@
  * @item mapi_disconnect()	@tab Disconnect from server
  * @item mapi_error()	@tab	Test for error occurrence
  * @item mapi_execute()	@tab	Execute a query
- * @item mapi_execute_array()	@tab Execute a query using string arguments
  * @item mapi_explain()	@tab	Display error message and context on stream
  * @item mapi_explain_query()	@tab	Display error message and context on stream
  * @item mapi_fetch_all_rows()	@tab	Fetch all answers from server into cache
  * @item mapi_fetch_field()	@tab Fetch a field from the current row
  * @item mapi_fetch_field_len()	@tab Fetch the length of a field from the current row
- * @item mapi_fetch_field_array()	@tab Fetch all fields from the current row
  * @item mapi_fetch_line()	@tab	Retrieve the next line
  * @item mapi_fetch_reset()	@tab	Set the cache reader to the beginning
  * @item mapi_fetch_row()	@tab	Fetch row of values
@@ -297,13 +295,8 @@
  * @item mapi_needmore()	@tab	Return whether more data is needed
  * @item mapi_ping()	@tab	Test server for accessibility
  * @item mapi_prepare()	@tab	Prepare a query for execution
- * @item mapi_prepare_array()	@tab	Prepare a query for execution using arguments
  * @item mapi_query()	@tab	Send a query for execution
- * @item mapi_query_array()	@tab Send a query for execution with arguments
  * @item mapi_query_handle()	@tab	Send a query for execution
- * @item mapi_quick_query_array()	@tab Send a query for execution with arguments
- * @item mapi_quick_query()	@tab	Send a query for execution
- * @item mapi_quick_response()	@tab	Quick pass response to stream
  * @item mapi_quote()	@tab Escape characters
  * @item mapi_reconnect()	@tab Reconnect with a clean session context
  * @item mapi_rows_affected()	@tab Obtain number of rows changed
@@ -448,29 +441,6 @@
  * last query string kept around.  The command response is buffered for
  * consumption, e.g. @code{mapi_fetch_row()}.
  *
- * @item MapiHdl mapi_query_array(Mapi mid, const char *Command, char **argv)
- *
- * Send the Command to the database server replacing the placeholders (?)
- * by the string arguments presented.
- *
- * @item MapiHdl mapi_quick_query(Mapi mid, const char *Command, FILE *fd)
- *
- * Similar to @code{mapi_query()}, except that the response of the server is copied
- * immediately to the file indicated.
- *
- * @item MapiHdl mapi_quick_query_array(Mapi mid, const char *Command, char **argv, FILE *fd)
- *
- * Similar to @code{mapi_query_array()}, except that the response of the server
- * is not analyzed, but shipped immediately to the file indicated.
- *
- * @item MapiHdl mapi_stream_query(Mapi mid, const char *Command, int windowsize)
- *
- * Send the request for processing and fetch a limited number of tuples
- * (determined by the window size) to assess any erroneous situation.
- * Thereafter, prepare for continual reading of tuples from the stream,
- * until an error occurs. Each time a tuple arrives, the cache is shifted
- * one.
- *
  * @item MapiHdl mapi_prepare(Mapi mid, const char *Command)
  *
  * Move the query to a newly allocated query handle (which is returned).
@@ -482,11 +452,6 @@
  * Ship a previously prepared command to the backend for execution. A
  * single answer is pre-fetched to detect any runtime error. MOK is
  * returned upon success.
- *
- * @item MapiMsg mapi_execute_array(MapiHdl hdl, char **argv)
- *
- * Similar to @code{mapi\_execute} but replacing the placeholders for the string
- * values provided.
  *
  * @item MapiMsg mapi_finish(MapiHdl hdl)
  *
@@ -550,11 +515,6 @@
  * @code{mapi_fetch_row()} will take the row from the cache. The number or
  * rows cached is returned.
  *
- * @item int mapi_quick_response(MapiHdl hdl, FILE *fd)
- *
- * Read the answer to a query and pass the results verbatim to a
- * stream. The result is not analyzed or cached.
- *
  * @item MapiMsg mapi_seek_row(MapiHdl hdl, mapi_int64 rownr, int whence)
  *
  * Reset the row pointer to the requested row number.  If whence is
@@ -568,12 +528,6 @@
  * Reset the row pointer to the first line in the cache.  This need not
  * be a tuple.  This is mostly used in combination with fetching all
  * tuples at once.
- *
- * @item char **mapi_fetch_field_array(MapiHdl hdl)
- *
- * Return an array of string pointers to the individual fields.  A zero
- * is returned upon encountering end of sequence or error. This can be
- * analyzed in using @code{mapi\_error()}.
  *
  * @item char *mapi_fetch_field(MapiHdl hdl, int fnr)
  *
@@ -3230,38 +3184,6 @@ mapi_prepare(Mapi mid, const char *cmd)
 	return hdl;
 }
 
-static MapiMsg
-mapi_prepare_array_internal(MapiHdl hdl, char **val)
-{
-	int i;
-
-	for (i = 0; val[i]; i++) {
-		if (i >= hdl->maxparams)
-			mapi_extend_params(hdl, i + 1);
-		hdl->params[i].inparam = val[i];
-		hdl->params[i].intype = MAPI_AUTO;
-		hdl->params[i].outtype = MAPI_AUTO;
-		hdl->params[i].sizeptr = NULL;
-		hdl->params[i].scale = 0;
-		hdl->params[i].precision = 0;
-	}
-	return MOK;
-}
-
-MapiHdl
-mapi_prepare_array(Mapi mid, const char *cmd, char **val)
-{
-	MapiHdl hdl;
-
-	mapi_check0(mid, "mapi_prepare_array");
-	hdl = mapi_new_handle(mid);
-	if (hdl == NULL)
-		return NULL;
-	mapi_prepare_handle(hdl, cmd);
-	mapi_prepare_array_internal(hdl, val);
-	return hdl;
-}
-
 /*
  * Building the query string using replacement of values requires
  * some care to not overflow the space allocated.
@@ -4181,22 +4103,6 @@ mapi_execute(MapiHdl hdl)
 	return ret;
 }
 
-MapiMsg
-mapi_execute_array(MapiHdl hdl, char **val)
-{
-	int ret;
-
-	mapi_hdl_check(hdl, "mapi_execute_array");
-	ret = mapi_prepare_array_internal(hdl, val);
-	if (ret == MOK)
-		ret = mapi_execute_internal(hdl);
-	if (ret == MOK)
-		ret = read_into_cache(hdl, 1);
-	if (ret == MOK)
-		ret = read_into_cache(hdl, 1);
-	return ret;
-}
-
 /*
  * The routine mapi_query is one of the most heavily used ones.
  * It sends a complete statement for execution
@@ -4256,26 +4162,6 @@ mapi_query_handle(MapiHdl hdl, const char *cmd)
 	if (ret == MOK)
 		ret = read_into_cache(hdl, 1);
 	return ret;
-}
-
-MapiHdl
-mapi_query_array(Mapi mid, const char *cmd, char **val)
-{
-	int ret;
-	MapiHdl hdl;
-
-	mapi_check0(mid, "mapi_query_array");
-	hdl = mapi_prepare(mid, cmd);
-	if (hdl == NULL)
-		return NULL;
-	ret = hdl->mid->error;
-	if (ret == MOK)
-		ret = mapi_prepare_array_internal(hdl, val);
-	if (ret == MOK)
-		ret = mapi_execute_internal(hdl);
-	if (ret == MOK)
-		ret = read_into_cache(hdl, 1);
-	return hdl;
 }
 
 MapiHdl
@@ -4355,61 +4241,6 @@ mapi_query_done(MapiHdl hdl)
 	if (ret == MOK)
 		ret = read_into_cache(hdl, 1);
 	return ret == MOK && hdl->needmore ? MMORE : ret;
-}
-
-/*
- * To speed up interaction with a terminal front-end,
- * the user can issue the quick_*() variants.
- * They will not analyze the result for errors or
- * header information, but simply throw the output
- * received from the server to the stream indicated.
- */
-MapiHdl
-mapi_quick_query(Mapi mid, const char *cmd, FILE *fd)
-{
-	int ret;
-	MapiHdl hdl;
-
-	mapi_check0(mid, "mapi_quick_query");
-	hdl = prepareQuery(mapi_new_handle(mid), cmd);
-	if (hdl == NULL)
-		return NULL;
-	ret = hdl->mid->error;
-	if (ret == MOK)
-		ret = mapi_execute_internal(hdl);
-	if (ret == MOK)
-		ret = read_into_cache(hdl, 1);
-	if (ret == MOK)
-		ret = mapi_quick_response(hdl, fd);
-	if (mid->trace == MAPI_TRACE)
-		printf("mapi_quick_query return:%d\n", ret);
-	return hdl;
-}
-
-MapiHdl
-mapi_quick_query_array(Mapi mid, const char *cmd, char **val, FILE *fd)
-{
-	int ret;
-	MapiHdl hdl;
-
-	mapi_check0(mid, "mapi_quick_query_array");
-	hdl = prepareQuery(mapi_new_handle(mid), cmd);
-	if (hdl == NULL)
-		return NULL;
-	ret = hdl->mid->error;
-	if (ret == MOK)
-		ret = mapi_prepare_array_internal(hdl, val);
-	if (ret == MOK)
-		ret = mapi_execute_internal(hdl);
-	if (ret == MOK)
-		ret = read_into_cache(hdl, 1);
-	if (ret == MOK) {
-		/* look ahead to detect errors */
-		ret = mapi_quick_response(hdl, fd);
-	}
-	if (mid->trace == MAPI_TRACE)
-		printf("mapi_quick_query return:%d\n", ret);
-	return hdl;
 }
 
 /*
@@ -4636,30 +4467,6 @@ mapi_finish(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_finish");
 	return finish_handle(hdl);
-}
-
-/*
- * If the answer to a query should be simply passed on towards a client,
- * i.e. a stream, it pays to use the mapi_quick_response() routine.
- * The stream is only checked for occurrence of an error indicator
- * and the prompt.
- * The best way to use this shortcut execution is calling
- * mapi_quick_query(), otherwise we are forced to first
- * empty the row cache.
- */
-MapiMsg
-mapi_quick_response(MapiHdl hdl, FILE *fd)
-{
-	char *line;
-
-	mapi_hdl_check(hdl, "mapi_quick_response");
-	do {
-		if (mapi_result_error(hdl) != NULL)
-			mapi_explain_result(hdl, fd);
-		while ((line = mapi_fetch_line(hdl)) != NULL)
-			fprintf(fd, "%s\n", line);
-	} while (mapi_next_result(hdl) == 1);
-	return hdl->mid->error ? hdl->mid->error : (hdl->needmore ? MMORE : MOK);
 }
 
 /* msg is a string consisting comma-separated values.  The list of
@@ -5245,26 +5052,6 @@ mapi_fetch_field_len(MapiHdl hdl, int fnr)
 	}
 	mapi_setError(hdl->mid, "Illegal field number", "mapi_fetch_field_len", MERROR);
 	return 0;
-}
-
-char **
-mapi_fetch_field_array(MapiHdl hdl)
-{
-	int cr;
-	struct MapiResultSet *result;
-
-	mapi_hdl_check0(hdl, "mapi_fetch_field_array");
-
-	if ((result = hdl->result) == NULL ||
-	    (cr = result->cache.reader) < 0) {
-		mapi_setError(hdl->mid, "Must do a successful mapi_fetch_row first", "mapi_fetch_field_array", MERROR);
-		return 0;
-	}
-	assert(result->cache.line != NULL);
-	/* slice if needed */
-	if (result->cache.line[cr].fldcnt == 0)
-		mapi_slice_row(result, cr);
-	return result->cache.line[cr].anchors;
 }
 
 int

@@ -37,178 +37,37 @@ Ready.
 % value # name
 % int # type
 % 1 # length
-#explain select * from test where value = 1; # value < INT_MAX
-% .explain # table_name
-% mal # name
-% clob # type
-% 98 # length
-function user.s6_1():void;
-    X_39:void := querylog.define("explain select * from test where value = 1;","default_pipe",20);
-    X_24 := bat.new(nil:str);
-    X_31 := bat.append(X_24,"sys.test");
-    X_26 := bat.new(nil:str);
-    X_33 := bat.append(X_26,"value");
-    X_27 := bat.new(nil:str);
-    X_34 := bat.append(X_27,"int");
-    X_28 := bat.new(nil:int);
-    X_36 := bat.append(X_28,32);
-    X_30 := bat.new(nil:int);
-    X_38 := bat.append(X_30,0);
-    X_3 := sql.mvc();
-    X_7:bat[:int] := sql.bind(X_3,"sys","test","value",0);
-    C_4:bat[:oid] := sql.tid(X_3,"sys","test");
-    C_18 := algebra.subselect(X_7,C_4,1,1,true,false,false);
-    X_22 := algebra.projection(C_18,X_7);
-    sql.resultSet(X_31,X_33,X_34,X_36,X_38,X_22);
-end user.s6_1;
-# optimizer.mitosis()
-# optimizer.dataflow()
+#select * from test where value = 1; # value < INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+[ 1	]
 #select * from test where value > 12345678900; # value > INT_MAX
 % sys.test # table_name
 % value # name
 % int # type
 % 1 # length
-#explain select * from test where value > 1; # value < INT_MAX
-% .explain # table_name
-% mal # name
-% clob # type
-% 98 # length
-function user.s8_1():void;
-    X_37:void := querylog.define("explain select * from test where value > 1;","default_pipe",36);
-barrier X_84 := language.dataflow();
-    X_22 := bat.new(nil:str);
-    X_29 := bat.append(X_22,"sys.test");
-    X_24 := bat.new(nil:str);
-    X_31 := bat.append(X_24,"value");
-    X_25 := bat.new(nil:str);
-    X_32 := bat.append(X_25,"int");
-    X_26 := bat.new(nil:int);
-    X_34 := bat.append(X_26,32);
-    X_28 := bat.new(nil:int);
-    X_36 := bat.append(X_28,0);
-    X_3 := sql.mvc();
-    X_58:bat[:int] := sql.bind(X_3,"sys","test","value",0,0,3);
-    C_54:bat[:oid] := sql.tid(X_3,"sys","test",0,3);
-    C_62 := algebra.thetasubselect(X_58,C_54,1,">");
-    X_65 := algebra.projection(C_62,X_58);
-    X_59:bat[:int] := sql.bind(X_3,"sys","test","value",0,1,3);
-    C_55:bat[:oid] := sql.tid(X_3,"sys","test",1,3);
-    C_63 := algebra.thetasubselect(X_59,C_55,1,">");
-    X_66 := algebra.projection(C_63,X_59);
-    X_60:bat[:int] := sql.bind(X_3,"sys","test","value",0,2,3);
-    C_57:bat[:oid] := sql.tid(X_3,"sys","test",2,3);
-    C_64 := algebra.thetasubselect(X_60,C_57,1,">");
-    X_67 := algebra.projection(C_64,X_60);
-    X_77 := mat.packIncrement(X_65,3);
-    X_78 := mat.packIncrement(X_77,X_66);
-    X_20 := mat.packIncrement(X_78,X_67);
-    language.pass(X_58);
-    language.pass(X_59);
-    language.pass(X_60);
-exit X_84;
-# querylog.define("explain select * from test where value > 1;","default_pipe")
-    sql.resultSet(X_29,X_31,X_32,X_34,X_36,X_20);
-end user.s8_1;
-#inline               actions= 0 time=2 usec 
-#candidates           actions= 1 time=20 usec 
-#remap                actions= 0 time=5 usec 
-#costModel            actions= 1 time=18 usec 
-#coercions            actions= 0 time=3 usec 
-#evaluate             actions= 1 time=34 usec 
-#emptybind            actions= 0 time=5 usec 
-#pushselect           actions= 2 time=24 usec 
-#aliases              actions= 3 time=21 usec 
-#mitosis              actions= 1 time=40 usec 
-#mergetable           actions= 2 time=81 usec 
-#deadcode             actions= 7 time=27 usec 
-#aliases              actions= 0 time=8 usec 
-#constants            actions= 4 time=32 usec 
-#commonTerms          actions= 0 time=8 usec 
-#projectionpath       actions= 0 time=6 usec 
-#deadcode             actions= 0 time=16 usec 
-#reorder              actions= 1 time=42 usec 
-#reduce               actions=39 time=46 usec 
-#matpack              actions= 1 time=23 usec 
-#dataflow             actions=28 time=39 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=4 usec 
-#generator            actions= 0 time=2 usec 
-#profiler             actions= 1 time=22 usec 
-#garbageCollector     actions= 1 time=29 usec 
-#total                actions= 1 time=646 usec 
+#select * from test where value > 1; # value < INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+[ 2	]
+[ 3	]
 #select * from test where value >= 12345678900; # value > INT_MAX
 % sys.test # table_name
 % value # name
 % int # type
 % 1 # length
-#explain select * from test where value >= 1; # value < INT_MAX
-% .explain # table_name
-% mal # name
-% clob # type
-% 99 # length
-function user.s10_1():void;
-    X_37:void := querylog.define("explain select * from test where value >= 1;","default_pipe",36);
-barrier X_84 := language.dataflow();
-    X_22 := bat.new(nil:str);
-    X_29 := bat.append(X_22,"sys.test");
-    X_24 := bat.new(nil:str);
-    X_31 := bat.append(X_24,"value");
-    X_25 := bat.new(nil:str);
-    X_32 := bat.append(X_25,"int");
-    X_26 := bat.new(nil:int);
-    X_34 := bat.append(X_26,32);
-    X_28 := bat.new(nil:int);
-    X_36 := bat.append(X_28,0);
-    X_3 := sql.mvc();
-    X_58:bat[:int] := sql.bind(X_3,"sys","test","value",0,0,3);
-    C_54:bat[:oid] := sql.tid(X_3,"sys","test",0,3);
-    C_62 := algebra.thetasubselect(X_58,C_54,1,">=");
-    X_65 := algebra.projection(C_62,X_58);
-    X_59:bat[:int] := sql.bind(X_3,"sys","test","value",0,1,3);
-    C_55:bat[:oid] := sql.tid(X_3,"sys","test",1,3);
-    C_63 := algebra.thetasubselect(X_59,C_55,1,">=");
-    X_66 := algebra.projection(C_63,X_59);
-    X_60:bat[:int] := sql.bind(X_3,"sys","test","value",0,2,3);
-    C_57:bat[:oid] := sql.tid(X_3,"sys","test",2,3);
-    C_64 := algebra.thetasubselect(X_60,C_57,1,">=");
-    X_67 := algebra.projection(C_64,X_60);
-    X_77 := mat.packIncrement(X_65,3);
-    X_78 := mat.packIncrement(X_77,X_66);
-    X_20 := mat.packIncrement(X_78,X_67);
-    language.pass(X_58);
-    language.pass(X_59);
-    language.pass(X_60);
-exit X_84;
-# querylog.define("explain select * from test where value >= 1;","default_pipe")
-    sql.resultSet(X_29,X_31,X_32,X_34,X_36,X_20);
-end user.s10_1;
-#inline               actions= 0 time=2 usec 
-#candidates           actions= 1 time=20 usec 
-#remap                actions= 0 time=4 usec 
-#costModel            actions= 1 time=18 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 1 time=31 usec 
-#emptybind            actions= 0 time=5 usec 
-#pushselect           actions= 2 time=23 usec 
-#aliases              actions= 3 time=21 usec 
-#mitosis              actions= 1 time=41 usec 
-#mergetable           actions= 2 time=63 usec 
-#deadcode             actions= 7 time=26 usec 
-#aliases              actions= 0 time=8 usec 
-#constants            actions= 4 time=23 usec 
-#commonTerms          actions= 0 time=8 usec 
-#projectionpath       actions= 0 time=6 usec 
-#deadcode             actions= 0 time=8 usec 
-#reorder              actions= 1 time=63 usec 
-#reduce               actions=39 time=45 usec 
-#matpack              actions= 1 time=23 usec 
-#dataflow             actions=28 time=41 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=5 usec 
-#generator            actions= 0 time=2 usec 
-#profiler             actions= 1 time=21 usec 
-#garbageCollector     actions= 1 time=28 usec 
-#total                actions= 1 time=620 usec 
+#select * from test where value >= 1; # value < INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
 #select * from test where value < 12345678900; # value > INT_MAX
 % sys.test # table_name
 % value # name
@@ -217,74 +76,11 @@ end user.s10_1;
 [ 1	]
 [ 2	]
 [ 3	]
-#explain select * from test where value < 1; # value < INT_MAX
-% .explain # table_name
-% mal # name
-% clob # type
-% 98 # length
-function user.s12_1():void;
-    X_37:void := querylog.define("explain select * from test where value < 1;","default_pipe",36);
-barrier X_84 := language.dataflow();
-    X_22 := bat.new(nil:str);
-    X_29 := bat.append(X_22,"sys.test");
-    X_24 := bat.new(nil:str);
-    X_31 := bat.append(X_24,"value");
-    X_25 := bat.new(nil:str);
-    X_32 := bat.append(X_25,"int");
-    X_26 := bat.new(nil:int);
-    X_34 := bat.append(X_26,32);
-    X_28 := bat.new(nil:int);
-    X_36 := bat.append(X_28,0);
-    X_3 := sql.mvc();
-    X_58:bat[:int] := sql.bind(X_3,"sys","test","value",0,0,3);
-    C_54:bat[:oid] := sql.tid(X_3,"sys","test",0,3);
-    C_62 := algebra.thetasubselect(X_58,C_54,1,"<");
-    X_65 := algebra.projection(C_62,X_58);
-    X_59:bat[:int] := sql.bind(X_3,"sys","test","value",0,1,3);
-    C_55:bat[:oid] := sql.tid(X_3,"sys","test",1,3);
-    C_63 := algebra.thetasubselect(X_59,C_55,1,"<");
-    X_66 := algebra.projection(C_63,X_59);
-    X_60:bat[:int] := sql.bind(X_3,"sys","test","value",0,2,3);
-    C_57:bat[:oid] := sql.tid(X_3,"sys","test",2,3);
-    C_64 := algebra.thetasubselect(X_60,C_57,1,"<");
-    X_67 := algebra.projection(C_64,X_60);
-    X_77 := mat.packIncrement(X_65,3);
-    X_78 := mat.packIncrement(X_77,X_66);
-    X_20 := mat.packIncrement(X_78,X_67);
-    language.pass(X_58);
-    language.pass(X_59);
-    language.pass(X_60);
-exit X_84;
-# querylog.define("explain select * from test where value < 1;","default_pipe")
-    sql.resultSet(X_29,X_31,X_32,X_34,X_36,X_20);
-end user.s12_1;
-#inline               actions= 0 time=3 usec 
-#candidates           actions= 1 time=20 usec 
-#remap                actions= 0 time=4 usec 
-#costModel            actions= 1 time=19 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 1 time=33 usec 
-#emptybind            actions= 0 time=4 usec 
-#pushselect           actions= 2 time=24 usec 
-#aliases              actions= 3 time=20 usec 
-#mitosis              actions= 1 time=41 usec 
-#mergetable           actions= 2 time=64 usec 
-#deadcode             actions= 7 time=27 usec 
-#aliases              actions= 0 time=8 usec 
-#constants            actions= 4 time=24 usec 
-#commonTerms          actions= 0 time=8 usec 
-#projectionpath       actions= 0 time=6 usec 
-#deadcode             actions= 0 time=8 usec 
-#reorder              actions= 1 time=42 usec 
-#reduce               actions=39 time=46 usec 
-#matpack              actions= 1 time=23 usec 
-#dataflow             actions=28 time=39 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=4 usec 
-#generator            actions= 0 time=2 usec 
-#profiler             actions= 1 time=21 usec 
-#garbageCollector     actions= 1 time=29 usec 
-#total                actions= 1 time=600 usec 
+#select * from test where value < 1; # value < INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
 #select * from test where value <= 12345678900; # value > INT_MAX
 % sys.test # table_name
 % value # name
@@ -293,74 +89,12 @@ end user.s12_1;
 [ 1	]
 [ 2	]
 [ 3	]
-#explain select * from test where value <= 1; # value < INT_MAX
-% .explain # table_name
-% mal # name
-% clob # type
-% 99 # length
-function user.s14_1():void;
-    X_37:void := querylog.define("explain select * from test where value <= 1;","default_pipe",36);
-barrier X_84 := language.dataflow();
-    X_22 := bat.new(nil:str);
-    X_29 := bat.append(X_22,"sys.test");
-    X_24 := bat.new(nil:str);
-    X_31 := bat.append(X_24,"value");
-    X_25 := bat.new(nil:str);
-    X_32 := bat.append(X_25,"int");
-    X_26 := bat.new(nil:int);
-    X_34 := bat.append(X_26,32);
-    X_28 := bat.new(nil:int);
-    X_36 := bat.append(X_28,0);
-    X_3 := sql.mvc();
-    X_58:bat[:int] := sql.bind(X_3,"sys","test","value",0,0,3);
-    C_54:bat[:oid] := sql.tid(X_3,"sys","test",0,3);
-    C_62 := algebra.thetasubselect(X_58,C_54,1,"<=");
-    X_65 := algebra.projection(C_62,X_58);
-    X_59:bat[:int] := sql.bind(X_3,"sys","test","value",0,1,3);
-    C_55:bat[:oid] := sql.tid(X_3,"sys","test",1,3);
-    C_63 := algebra.thetasubselect(X_59,C_55,1,"<=");
-    X_66 := algebra.projection(C_63,X_59);
-    X_60:bat[:int] := sql.bind(X_3,"sys","test","value",0,2,3);
-    C_57:bat[:oid] := sql.tid(X_3,"sys","test",2,3);
-    C_64 := algebra.thetasubselect(X_60,C_57,1,"<=");
-    X_67 := algebra.projection(C_64,X_60);
-    X_77 := mat.packIncrement(X_65,3);
-    X_78 := mat.packIncrement(X_77,X_66);
-    X_20 := mat.packIncrement(X_78,X_67);
-    language.pass(X_58);
-    language.pass(X_59);
-    language.pass(X_60);
-exit X_84;
-# querylog.define("explain select * from test where value <= 1;","default_pipe")
-    sql.resultSet(X_29,X_31,X_32,X_34,X_36,X_20);
-end user.s14_1;
-#inline               actions= 0 time=3 usec 
-#candidates           actions= 1 time=18 usec 
-#remap                actions= 0 time=4 usec 
-#costModel            actions= 1 time=17 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 1 time=31 usec 
-#emptybind            actions= 0 time=4 usec 
-#pushselect           actions= 2 time=39 usec 
-#aliases              actions= 3 time=20 usec 
-#mitosis              actions= 1 time=38 usec 
-#mergetable           actions= 2 time=71 usec 
-#deadcode             actions= 7 time=25 usec 
-#aliases              actions= 0 time=8 usec 
-#constants            actions= 4 time=22 usec 
-#commonTerms          actions= 0 time=8 usec 
-#projectionpath       actions= 0 time=6 usec 
-#deadcode             actions= 0 time=7 usec 
-#reorder              actions= 1 time=40 usec 
-#reduce               actions=39 time=44 usec 
-#matpack              actions= 1 time=22 usec 
-#dataflow             actions=28 time=38 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=4 usec 
-#generator            actions= 0 time=2 usec 
-#profiler             actions= 1 time=20 usec 
-#garbageCollector     actions= 1 time=28 usec 
-#total                actions= 1 time=600 usec 
+#select * from test where value <= 1; # value < INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+[ 1	]
 #select * from test where value <> 12345678900; # value > INT_MAX
 % sys.test # table_name
 % value # name
@@ -369,74 +103,13 @@ end user.s14_1;
 [ 1	]
 [ 2	]
 [ 3	]
-#explain select * from test where value <> 1; # value < INT_MAX
-% .explain # table_name
-% mal # name
-% clob # type
-% 99 # length
-function user.s16_1():void;
-    X_38:void := querylog.define("explain select * from test where value <> 1;","default_pipe",36);
-barrier X_85 := language.dataflow();
-    X_23 := bat.new(nil:str);
-    X_30 := bat.append(X_23,"sys.test");
-    X_25 := bat.new(nil:str);
-    X_32 := bat.append(X_25,"value");
-    X_26 := bat.new(nil:str);
-    X_33 := bat.append(X_26,"int");
-    X_27 := bat.new(nil:int);
-    X_35 := bat.append(X_27,32);
-    X_29 := bat.new(nil:int);
-    X_37 := bat.append(X_29,0);
-    X_3 := sql.mvc();
-    X_59:bat[:int] := sql.bind(X_3,"sys","test","value",0,0,3);
-    C_55:bat[:oid] := sql.tid(X_3,"sys","test",0,3);
-    C_63 := algebra.subselect(X_59,C_55,1,1,true,true,true);
-    X_66 := algebra.projection(C_63,X_59);
-    X_60:bat[:int] := sql.bind(X_3,"sys","test","value",0,1,3);
-    C_56:bat[:oid] := sql.tid(X_3,"sys","test",1,3);
-    C_64 := algebra.subselect(X_60,C_56,1,1,true,true,true);
-    X_67 := algebra.projection(C_64,X_60);
-    X_61:bat[:int] := sql.bind(X_3,"sys","test","value",0,2,3);
-    C_58:bat[:oid] := sql.tid(X_3,"sys","test",2,3);
-    C_65 := algebra.subselect(X_61,C_58,1,1,true,true,true);
-    X_68 := algebra.projection(C_65,X_61);
-    X_78 := mat.packIncrement(X_66,3);
-    X_79 := mat.packIncrement(X_78,X_67);
-    X_21 := mat.packIncrement(X_79,X_68);
-    language.pass(X_59);
-    language.pass(X_60);
-    language.pass(X_61);
-exit X_85;
-# querylog.define("explain select * from test where value <> 1;","default_pipe")
-    sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_21);
-end user.s16_1;
-#inline               actions= 0 time=2 usec 
-#candidates           actions= 1 time=20 usec 
-#remap                actions= 0 time=4 usec 
-#costModel            actions= 1 time=18 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 1 time=31 usec 
-#emptybind            actions= 0 time=5 usec 
-#pushselect           actions= 2 time=25 usec 
-#aliases              actions= 3 time=20 usec 
-#mitosis              actions= 1 time=39 usec 
-#mergetable           actions= 2 time=63 usec 
-#deadcode             actions= 7 time=26 usec 
-#aliases              actions= 0 time=7 usec 
-#constants            actions= 5 time=23 usec 
-#commonTerms          actions= 0 time=8 usec 
-#projectionpath       actions= 0 time=6 usec 
-#deadcode             actions= 0 time=8 usec 
-#reorder              actions= 1 time=41 usec 
-#reduce               actions=40 time=46 usec 
-#matpack              actions= 1 time=23 usec 
-#dataflow             actions=28 time=40 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=4 usec 
-#generator            actions= 0 time=2 usec 
-#profiler             actions= 1 time=21 usec 
-#garbageCollector     actions= 1 time=29 usec 
-#total                actions= 1 time=585 usec 
+#select * from test where value <> 1; # value < INT_MAX
+% sys.test # table_name
+% value # name
+% int # type
+% 1 # length
+[ 2	]
+[ 3	]
 #drop table test;
 
 # 21:57:14 >  

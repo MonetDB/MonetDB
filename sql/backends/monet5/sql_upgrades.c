@@ -1690,6 +1690,12 @@ sql_update_default(Client c, mvc *sql)
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_PROC);
 	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('getprofilerlimit') and f.type = %d and f.schema_id = s.id and s.name = 'profiler');\n",
+			F_FUNC);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('setprofilerlimit') and f.type = %d and f.schema_id = s.id and s.name = 'profiler');\n",
+			F_PROC);
+	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from systemfunctions where function_id not in (select id from functions);\n");
 
 	if (schema) 
