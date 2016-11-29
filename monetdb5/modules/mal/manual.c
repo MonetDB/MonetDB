@@ -48,12 +48,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(com) BBPunfix(com->batCacheid);
 	}
 
-	if (s == NULL) {
-		return MAL_SUCCEED;
-	}
-
 	list[top++] = cntxt->nspace;
-
 	getModuleList(&moduleList, &length);
 	while (top < 256 && top <= length) {
 		list[top] = moduleList[top - 1];

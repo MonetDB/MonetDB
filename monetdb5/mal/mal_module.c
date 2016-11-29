@@ -109,7 +109,7 @@ void getModuleList(Module** out, int* length) {
 	for(i = 0; i < MODULE_HASH_SIZE; i++) {
 		Module m = moduleIndex[i];
 		while(m) {
-			*out[currentIndex++] = m;
+			(*out)[currentIndex++] = m;
 			m = m->link;
 		}
 	}
@@ -152,11 +152,13 @@ Module newModule(Module scope, str nme){
  * The scope can be fixed. This is used by the parser.
  * Reading a module often calls for creation first.
  */
-Module fixModule(Module scope, str nme){
+Module fixModule(Module scope, str nme) {
+	Module m;
+
 	if(strcmp(nme, "user") == 0)
 		return scope;
 
-	Module m = getModule(nme);
+	m = getModule(nme);
 	if (m) return m;
 
 	return newModule(scope, nme);
@@ -292,9 +294,10 @@ void deleteSymbol(Module scope, Symbol prg){
  */
 Module findModule(Module scope, str name){
 	Module def = scope;
+	Module m;
 	if (name == NULL) return scope;
 
-	Module m = getModule(name);
+	m = getModule(name);
 	if (m) return m;
 
 	/* default is always matched with current */
