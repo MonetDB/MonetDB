@@ -682,7 +682,7 @@ GDKregister(MT_Id pid)
 
 /* coverity[+kill] */
 void
-GDKreset(int status)
+GDKreset(int status, int exit)
 {
 	MT_Id pid = MT_getpid();
 	Thread t, s;
@@ -774,7 +774,9 @@ GDKreset(int status)
 		//gdk_system_reset(); CHECK OUT
 	}
 #ifndef HAVE_EMBEDDED
-	MT_global_exit(status);
+	if (exit) {
+		MT_global_exit(status);
+	}
 #endif
 }
 
@@ -789,7 +791,7 @@ GDKexit(int status)
 		exit(status);
 	}
 	GDKprepareExit();
-	GDKreset(status);
+	GDKreset(status, 1);
 #ifndef HAVE_EMBEDDED
 	MT_exit_thread(-1);
 #endif
