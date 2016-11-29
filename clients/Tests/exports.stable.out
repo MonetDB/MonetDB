@@ -2198,6 +2198,7 @@ MT_Lock mal_delayLock;
 void mal_exit(void);
 void mal_factory_reset(void) __attribute__((__visibility__("hidden")));
 int mal_init(void);
+void mal_instruction_reset(void);
 void mal_linker_reset(void) __attribute__((__visibility__("hidden")));
 void mal_module_reset(void) __attribute__((__visibility__("hidden")));
 void mal_namespace_reset(void) __attribute__((__visibility__("hidden")));

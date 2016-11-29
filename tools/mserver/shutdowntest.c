@@ -18,6 +18,8 @@
 #include "sql_execute.h"
 #include "sql_scenario.h"
 
+static char* dbdir = NULL;
+
 #define CREATE_SQL_FUNCTION_PTR(retval, fcnname)     \
    typedef retval (*fcnname##_ptr_tpe)();            \
    fcnname##_ptr_tpe fcnname##_ptr = NULL;
@@ -86,16 +88,10 @@ static void monetdb_disconnect(void* conn) {
 	MCcloseClient((Client) conn);
 }
 
-
-static char* dbdir;
-
 static str monetdb_initialize() {
 	opt *set = NULL;
 	volatile int setlen = 0;
 	str retval = MAL_SUCCEED;
-	char* sqres = NULL;
-	void* res = NULL;
-	void* c;
 	char prmodpath[1024];
 	char *modpath = NULL;
 	char *binpath = NULL;
@@ -281,6 +277,7 @@ static void monetdb_shutdown() {
 int main(int argc, char **argv) {
 	str retval;
 	Client c;
+	int i = 0;
 	if (argc <= 1) {
 		printf("Usage: shutdowntest [testdir]\n");
 		return -1;
@@ -297,15 +294,20 @@ int main(int argc, char **argv) {
 	monetdb_query(c, "INSERT INTO temporary_table VALUES (3), (4);");
 	monetdb_disconnect(c);
 	printf("Successfully initialized MonetDB.\n");
-	monetdb_shutdown();
-	printf("Successfully shutdown MonetDB.\n");
-	retval = monetdb_initialize();
-	if (retval != MAL_SUCCEED) {
-		printf("Failed MonetDB restart: %s\n", retval);
-		return -1;
+	for(i = 0; i < 10; i++) {
+		monetdb_shutdown();
+		printf("Successfully shutdown MonetDB.\n");
+		retval = monetdb_initialize();
+		if (retval != MAL_SUCCEED) {
+			printf("Failed MonetDB restart: %s\n", retval);
+			return -1;
+		}
+		printf("Successfully restarted MonetDB.\n");
+		c = (Client) monetdb_connect();
+		monetdb_query(c, "SELECT * FROM temporary_table;");
+		monetdb_query(c, "DROP TABLE temporary_table;");
+		monetdb_query(c, "CREATE TABLE temporary_table(i INTEGER);");
+		monetdb_query(c, "INSERT INTO temporary_table VALUES (3), (4);");
+		monetdb_disconnect(c);
 	}
-	printf("Successfully restarted MonetDB.\n");
-	c = (Client) monetdb_connect();
-	monetdb_query(c, "SELECT * FROM temporary_table;");
-	monetdb_disconnect(c);
 }

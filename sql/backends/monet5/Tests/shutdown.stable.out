@@ -48,6 +48,51 @@ Successfully shutdown MonetDB.
 .tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
 Successfully restarted MonetDB.
 sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
 
 # 15:06:58 >  
 # 15:06:58 >  "Done."
