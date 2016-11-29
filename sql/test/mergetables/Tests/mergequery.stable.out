@@ -88,10 +88,10 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 133 # length
+% 132 # length
 function user.s26_1():void;
-    X_92:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe",41:int);
-barrier X_131 := language.dataflow();
+    X_0:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe",64:int);
+barrier X_129 := language.dataflow();
     X_3 := sql.mvc();
     X_68:bat[:dbl] := bat.new(nil:dbl);
     X_7:bat[:dbl] := sql.bind(X_3,"sys","part1","x",0:int);
@@ -122,8 +122,7 @@ barrier X_131 := language.dataflow();
     language.pass(X_43);
     language.pass(C_33);
     language.pass(C_63);
-exit X_131;
-# querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;","default_pipe")
+exit X_129;
     X_80 := sql.append(X_3,"sys","answ","x",X_72);
     X_84 := sql.append(X_80,"sys","answ","y",X_75);
     X_87 := sql.append(X_84,"sys","answ","z",X_78);
@@ -166,10 +165,10 @@ end user.s26_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 156 # length
+% 154 # length
 function user.s28_1():void;
-    X_100:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe",45:int);
-barrier X_141 := language.dataflow();
+    X_0:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe",70:int);
+barrier X_139 := language.dataflow();
     X_3 := sql.mvc();
     X_77:bat[:dbl] := bat.new(nil:dbl);
     X_7:bat[:dbl] := sql.bind(X_3,"sys","part1","x",0:int);
@@ -204,8 +203,7 @@ barrier X_141 := language.dataflow();
     language.pass(X_17);
     language.pass(C_69);
     language.pass(X_52);
-exit X_141;
-# querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;","default_pipe")
+exit X_139;
     X_88 := sql.append(X_3,"sys","answ","x",X_80);
     X_92 := sql.append(X_88,"sys","answ","y",X_83);
     X_95 := sql.append(X_92,"sys","answ","z",X_86);

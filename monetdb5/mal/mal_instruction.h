@@ -146,7 +146,6 @@ mal_export int findVariable(MalBlkPtr mb, const char *name);
 mal_export int findVariableLength(MalBlkPtr mb, str name, int len);
 mal_export malType getType(MalBlkPtr mb, str nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
-mal_export void setVarName(MalBlkPtr mb, int i, str nme);
 mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void renameVariable(MalBlkPtr mb, int i, str pattern, int newid);

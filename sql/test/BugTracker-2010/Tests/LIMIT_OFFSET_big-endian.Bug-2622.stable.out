@@ -128,10 +128,9 @@ top N (
 % .explain # table_name
 % mal # name
 % clob # type
-% 86 # length
+% 85 # length
 function user.s8_1():void;
-    X_33:void := querylog.define("explain select * from oblo;","minimal_pipe",22:int);
-# querylog.define("explain select * from oblo;","minimal_pipe")
+    X_0:void := querylog.define("explain select * from oblo;","minimal_pipe",21:int);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","oblo");
     X_7:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
@@ -164,10 +163,9 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 95 # length
+% 94 # length
 function user.s10_1():void;
-    X_41:void := querylog.define("explain select * from oblo offset 2;","minimal_pipe",28:int);
-# querylog.define("explain select * from oblo offset 2;","minimal_pipe")
+    X_0:void := querylog.define("explain select * from oblo offset 2;","minimal_pipe",27:int);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","oblo");
     X_7:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
@@ -206,10 +204,9 @@ end user.s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 94 # length
+% 93 # length
 function user.s12_1():void;
-    X_42:void := querylog.define("explain select * from oblo limit 2;","minimal_pipe",28:int);
-# querylog.define("explain select * from oblo limit 2;","minimal_pipe")
+    X_0:void := querylog.define("explain select * from oblo limit 2;","minimal_pipe",28:int);
     X_3 := sql.mvc();
     C_6:bat[:oid] := sql.tid(X_3,"sys","oblo");
     X_9:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
@@ -248,10 +245,9 @@ end user.s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 103 # length
+% 102 # length
 function user.s14_1():void;
-    X_44:void := querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe",28:int);
-# querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe")
+    X_0:void := querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe",30:int);
     X_3 := sql.mvc();
     C_9:bat[:oid] := sql.tid(X_3,"sys","oblo");
     X_12:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
@@ -290,10 +286,9 @@ end user.s14_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 103 # length
+% 102 # length
 function user.s16_1():void;
-    X_44:void := querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe",28:int);
-# querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe")
+    X_0:void := querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe",30:int);
     X_3 := sql.mvc();
     C_9:bat[:oid] := sql.tid(X_3,"sys","oblo");
     X_12:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
@@ -332,10 +327,9 @@ end user.s16_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 97 # length
+% 96 # length
 function user.s18_1():void;
-    X_39:void := querylog.define("explain select * from oblo order by a;","minimal_pipe",24:int);
-# querylog.define("explain select * from oblo order by a;","minimal_pipe")
+    X_0:void := querylog.define("explain select * from oblo order by a;","minimal_pipe",23:int);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","oblo");
     X_7:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
@@ -370,10 +364,9 @@ end user.s18_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 106 # length
+% 105 # length
 function user.s20_1():void;
-    X_49:void := querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe",30:int);
-# querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe")
+    X_0:void := querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe",29:int);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","oblo");
     X_7:bat[:int] := sql.bind(X_3,"sys","oblo","a",0:int);
@@ -414,10 +407,9 @@ end user.s20_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 105 # length
+% 104 # length
 function user.s22_1():void;
-    X_55:void := querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe",35:int);
-# querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe")
+    X_0:void := querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe",35:int);
     X_3 := sql.mvc();
     X_4 := calc.lng(2:lng);
     C_6:bat[:oid] := sql.tid(X_3,"sys","oblo");
@@ -461,10 +453,9 @@ end user.s22_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 114 # length
+% 113 # length
 function user.s24_1():void;
-    X_58:void := querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe",37:int);
-# querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe")
+    X_0:void := querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe",37:int);
     X_3 := sql.mvc();
     X_4 := calc.lng(2:lng);
     X_6 := calc.lng(1:lng);
@@ -512,10 +503,9 @@ end user.s24_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 114 # length
+% 113 # length
 function user.s26_1():void;
-    X_58:void := querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe",37:int);
-# querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe")
+    X_0:void := querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe",37:int);
     X_3 := sql.mvc();
     X_4 := calc.lng(1:lng);
     X_6 := calc.lng(2:lng);

@@ -48,6 +48,12 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	//if ( optimizerIsApplied(mb,"emptybind") )
 		//return 0;
 	// use an instruction reference table to keep
+	
+	for( i=0; i< mb->stop; i++)
+		actions += getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef;
+	if( actions == 0)
+		goto wrapup;
+
 	// track of where 'emptybind' results are produced
 	marked = (int *) GDKzalloc(mb->vsize * sizeof(int));
 	if ( marked == NULL)
@@ -106,7 +112,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				updated = (InstrPtr*) GDKrealloc( updated, (esize += 256) * sizeof(InstrPtr));
 				if( updated == NULL){
 					GDKfree(marked);
-					return 0;
+					goto wrapup;
 				}
 			}
 			updated[etop++]= p;
@@ -301,6 +307,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	chkFlow(cntxt->fdout, mb);
 	chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
+wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",actions,GDKusec() - usec);
     newComment(mb,buf);
 	return 1;
