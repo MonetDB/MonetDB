@@ -52,6 +52,32 @@ static void* monetdb_connect(void) {
 	return conn;
 }
 
+static str monetdb_query(Client c, str query) {
+	str retval;
+	mvc* m = ((backend *) c->sqlcontext)->mvc;
+	res_table* res = NULL;
+	int i;
+	retval = (SQLstatementIntern_ptr)(c, 
+		&query, 
+		"name", 
+		1, 0, &res);
+	(SQLautocommit_ptr)(c, m);
+	if (retval != MAL_SUCCEED) {
+		printf("Failed to execute SQL query: %s\n", query);
+		exit(1);
+		return MAL_SUCCEED;
+	}
+	if (res) {
+		// print result columns
+		printf("%s (", res->cols->tn);
+		for(i = 0; i < res->nr_cols; i++) {
+			printf("%s", res->cols[i].name);
+			printf(i + 1 == res->nr_cols ? ")\n" : ",");
+		}
+	}
+	return MAL_SUCCEED;
+}
+
 static void monetdb_disconnect(void* conn) {
 	if (!MCvalid((Client) conn)) {
 		return;
@@ -60,6 +86,9 @@ static void monetdb_disconnect(void* conn) {
 	MCcloseClient((Client) conn);
 }
 
+
+static char* dbdir = "/tmp/dbfarm"; // FIXME
+
 static str monetdb_initialize() {
 	opt *set = NULL;
 	volatile int setlen = 0;
@@ -67,7 +96,6 @@ static str monetdb_initialize() {
 	char* sqres = NULL;
 	void* res = NULL;
 	void* c;
-	char* dbdir = "/tmp/dbfarm"; // FIXME
 	char prmodpath[1024];
 	char *modpath = NULL;
 	char *binpath = NULL;
@@ -234,19 +262,7 @@ static str monetdb_initialize() {
 	{
 		Client c = (Client) monetdb_connect();
 		char* query = "SELECT * FROM tables;";
-		mvc* m = ((backend *) c->sqlcontext)->mvc;
-		res_table* res;
-		retval = (SQLstatementIntern_ptr)(c, 
-			&query, 
-			"name", 
-			1, 0, &res);
-		(SQLautocommit_ptr)(c, m);
-		if (retval != MAL_SUCCEED) {
-			retval = GDKstrdup("Failed to execute SQL query.\n");
-			goto cleanup;
-		}
-
-
+		retval = monetdb_query(c, query);
 		monetdb_disconnect(c);
 	}
 	return MAL_SUCCEED;
@@ -264,11 +280,16 @@ static void monetdb_shutdown() {
 
 int main() {
 	str retval;
+	Client c;
 	retval = monetdb_initialize();
 	if (retval != MAL_SUCCEED) {
 		printf("Failed first initialization: %s\n", retval);
 		return -1;
-	}
+	} 
+	c = (Client) monetdb_connect();
+	monetdb_query(c, "CREATE TABLE temporary_table(i INTEGER);");
+	monetdb_query(c, "INSERT INTO temporary_table VALUES (3), (4);");
+	monetdb_disconnect(c);
 	printf("Successfully initialized MonetDB.\n");
 	monetdb_shutdown();
 	printf("Successfully shutdown MonetDB.\n");
@@ -278,4 +299,7 @@ int main() {
 		return -1;
 	}
 	printf("Successfully restarted MonetDB.\n");
+	c = (Client) monetdb_connect();
+	monetdb_query(c, "SELECT * FROM temporary_table;");
+	monetdb_disconnect(c);
 }
