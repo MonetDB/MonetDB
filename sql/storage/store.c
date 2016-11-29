@@ -1384,9 +1384,7 @@ store_load(void) {
 
 #define FUNC_OIDS 2000
 	// TODO: Niels: Are we fine running this twice?
-#ifndef HAVE_EMBEDDED
-	assert( store_oid <= FUNC_OIDS );
-#endif
+	
 	/* we store some spare oids */
 	store_oid = FUNC_OIDS;
 

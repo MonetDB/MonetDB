@@ -746,6 +746,7 @@ GDKreset(int status, int exit)
 		GDK_mmap_pagesize = MMAP_PAGESIZE;
 		GDK_mem_maxsize = GDK_VM_MAXSIZE;
 		GDK_vm_maxsize = GDK_VM_MAXSIZE;
+		GDKatomcnt = TYPE_str + 1;
 
 		GDK_vm_trim = 1;
 
