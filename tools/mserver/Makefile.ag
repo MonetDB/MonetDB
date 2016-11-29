@@ -53,6 +53,7 @@ bin_mserver5 = {
 }
 
 bin_shutdowntest = {
+	CONDINST = HAVE_TESTING
 	SOURCES = shutdowntest.c
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
 		../../gdk/libbat ../../common/stream/libstream \

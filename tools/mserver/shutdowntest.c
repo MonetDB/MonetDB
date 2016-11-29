@@ -87,7 +87,7 @@ static void monetdb_disconnect(void* conn) {
 }
 
 
-static char* dbdir = "/tmp/dbfarm"; // FIXME
+static char* dbdir;
 
 static str monetdb_initialize() {
 	opt *set = NULL;
@@ -278,9 +278,15 @@ static void monetdb_shutdown() {
 	}
 }
 
-int main() {
+int main(int argc, char **argv) {
 	str retval;
 	Client c;
+	if (argc <= 1) {
+		printf("Usage: shutdowntest [testdir]\n");
+		return -1;
+	}
+	dbdir = argv[1];
+
 	retval = monetdb_initialize();
 	if (retval != MAL_SUCCEED) {
 		printf("Failed first initialization: %s\n", retval);
