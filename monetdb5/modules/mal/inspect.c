@@ -49,26 +49,30 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
 	Symbol t;
-	int i;
+	int i, j;
+	Module* moduleList;
+	int length;
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void) mb;
 	if (b == 0)
-		throw(MAL, "inspect.getgetFunctionId", MAL_MALLOC_FAIL );
-	cntxt->nspace->next = getModuleChain();
-	s = cntxt->nspace;
-	while (s) {
-		for (i = 0; s && i < MAXSCOPE; i++)
+		throw(MAL, "inspect.getgetFunctionId", MAL_MALLOC_FAIL);
+
+
+	getModuleList(&moduleList, &length);
+	for(j = -1; j < length; j++) {
+		s = j < 0 ? cntxt->nspace : moduleList[j];
+		for (i = 0; s && i < MAXSCOPE; i++) {
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 					BUNappend(b, getFunctionId(sig), FALSE);
 				}
 			}
-		s = s->next;
+		}
 	}
-	cntxt->nspace->next = NULL;
+	freeModuleList(moduleList);
 	pseudo(ret,b,"view","symbol","function");
 
 	return MAL_SUCCEED;
@@ -79,17 +83,20 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
 	Symbol t;
-	int i;
+	int i, j;
+	Module* moduleList;
+	int length;
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void) mb;
 	if (b == 0)
 		throw(MAL, "inspect.getmodule", MAL_MALLOC_FAIL);
-	cntxt->nspace->next = getModuleChain();
-	s = cntxt->nspace;
-	while (s) {
-		for (i = 0; s && i < MAXSCOPE; i++)
+
+	getModuleList(&moduleList, &length);
+	for(j = -1; j < length; j++) {
+		s = j < 0 ? cntxt->nspace : moduleList[j];
+		for (i = 0; s && i < MAXSCOPE; i++) {
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
@@ -97,9 +104,9 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BUNappend(b, getModuleId(sig), FALSE);
 				}
 			}
-		s = s->next;
+		}
 	}
-	cntxt->nspace->next = NULL;
+	freeModuleList(moduleList);
 	pseudo(ret,b,"view","symbol","module");
 
 	return MAL_SUCCEED;
@@ -110,17 +117,20 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
 	Symbol t;
-	int i;
+	int i, j;
+	Module* moduleList;
+	int length;
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	bat *ret = getArgReference_bat(stk,pci,0);
 
 	(void)mb;
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
-	cntxt->nspace->next = getModuleChain();
-	s = cntxt->nspace;
-	while (s) {
-		for (i = 0; s && i < MAXSCOPE; i++)
+
+	getModuleList(&moduleList, &length);
+	for(j = -1; j < length; j++) {
+		s = j < 0 ? cntxt->nspace : moduleList[j];
+		for (i = 0; s && i < MAXSCOPE; i++) {
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
@@ -128,9 +138,9 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BUNappend(b, kind, FALSE);
 				}
 			}
-		s = s->next;
+		}
 	}
-	cntxt->nspace->next = NULL;
+	freeModuleList(moduleList);
 	pseudo(ret,b,"view","symbol","kind");
 
 	return MAL_SUCCEED;
@@ -142,7 +152,9 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
 	Symbol t;
-	int i;
+	int i, j;
+	Module* moduleList;
+	int length;
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	char sig[BLOCK],*a;
 	bat *ret = getArgReference_bat(stk,pci,0);
@@ -150,9 +162,10 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
-	cntxt->nspace->next = getModuleChain();
-	s = cntxt->nspace;
-	while (s) {
+
+	getModuleList(&moduleList, &length);
+	for(j = -1; j < length; j++) {
+		s = j < 0 ? cntxt->nspace : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -162,9 +175,8 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BUNappend(b, (a = strchr(sig, '(')) ? a : "", FALSE);
 				}
 			}
-		s = s->next;
 	}
-	cntxt->nspace->next = NULL;
+	freeModuleList(moduleList);
 	pseudo(ret,b,"view"," symbol","address");
 
 	return MAL_SUCCEED;
@@ -174,7 +186,9 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
 	Symbol t;
-	int i;
+	int i, j;
+	Module* moduleList;
+	int length;
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	char sig[BLOCK],*a;
 	bat *ret = getArgReference_bat(stk,pci,0);
@@ -183,9 +197,11 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b == 0)
 		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
-	cntxt->nspace->next = getModuleChain();
-	s = cntxt->nspace;
-	while (s) {
+
+
+	getModuleList(&moduleList, &length);
+	for(j = -1; j < length; j++) {
+		s = j < 0 ? cntxt->nspace : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -197,9 +213,8 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BUNappend(b, (a? a: "nil"), FALSE);
 				}
 			}
-		s = s->next;
 	}
-	cntxt->nspace->next = NULL;
+	freeModuleList(moduleList);
 	pseudo(ret,b,"view"," symbol","address");
 
 	return MAL_SUCCEED;

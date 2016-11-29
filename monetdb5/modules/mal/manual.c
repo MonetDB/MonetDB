@@ -23,8 +23,10 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *sx = getArgReference_bat(stk,pci,2);
 	bat *ax = getArgReference_bat(stk,pci,3);
 	bat *cx = getArgReference_bat(stk,pci,4);
-	Module s= getModuleChain();
-	int j, k, ftop, top=0;
+	Module s;
+	Module* moduleList;
+	int length;
+	int j, k, ftop, top = 0;
 	Symbol t;
 	Module list[256]; 
 	MalBlkPtr blks[25000];
@@ -46,17 +48,21 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(com) BBPunfix(com->batCacheid);
 	}
 
-	if(s==NULL){
+	if (s == NULL) {
 		return MAL_SUCCEED;
 	}
-	cntxt->nspace->next = s;
-	s = cntxt->nspace;
-	list[top++]=s;
-	while(s->next && top < 256 ){ list[top++]= s->next;s=s->next;}
-	cntxt->nspace->next = NULL;
 
-	for(k=0;k<top;k++){
-		s= list[k];
+	list[top++] = cntxt->nspace;
+
+	getModuleList(&moduleList, &length);
+	while (top < 256 && top <= length) {
+		list[top] = moduleList[top - 1];
+		top++;
+	}
+	freeModuleList(moduleList);
+
+	for(k = 0; k < top; k++){
+		s = list[k];
 		ftop = 0;
 		if( s->space)
 		for(j=0;j<MAXSCOPE;j++)
@@ -68,11 +74,11 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				blks[ftop]= t->def;
 				ftop++;
 				if( ftop == 25000)
-					throw(MAL,"manual.functions","Ouf of space");
+					throw(MAL,"manual.functions","Out of space");
 			}
 		}
 
-		for(j=0; j<ftop; j++){
+		for(j=0; j < ftop; j++){
 			BUNappend(mod,mtab[j],TRUE);
 			BUNappend(fcn,ftab[j],TRUE);
 			buf[0]=0;
