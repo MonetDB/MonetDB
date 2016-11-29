@@ -58,11 +58,15 @@ malBootstrap(void)
 	}
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->fdout, c->nspace, c->curprg->def);
-	if (c->curprg->def->errors)
+	if (c->curprg->def->errors) {
 		showErrors(c);
+		return 0;
+	}
 	s = MALengine(c);
-	if (s)
+	if (s != MAL_SUCCEED) {
 		GDKfree(s);
+		return 0;
+	}
 	return 1;
 }
 
