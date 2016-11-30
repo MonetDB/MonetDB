@@ -686,15 +686,15 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
 	}
 
 	if (IsBlobType(bat_type)) {
+		bool *mask = NULL;
+		char *data = NULL;
+		blob *ele_blob;
+		size_t blob_fixed_size = -1;
 		if (ret->result_type == NPY_OBJECT) {
 			// FIXME: check for byte array/or pickle object to string
 			msg = createException(MAL, "pyapi.eval", "Python object to BLOB not supported yet.");
 			goto wrapup;
 		}
-		bool *mask = NULL;
-		char *data = NULL;
-		blob *ele_blob;
-		size_t blob_fixed_size = -1;
 		if (ret->mask_data != NULL) {
 			mask = (bool*)ret->mask_data;
 		}
@@ -709,7 +709,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
 		b->tnil = 0; b->tnonil = 1;
 		b->tkey = 0; b->tsorted = 0; b->trevsorted = 0;
 		for (iu = 0; iu < ret->count; iu++) {
-			size_t blob_len;
+			size_t blob_len = 0;
 			if (mask && mask[iu]) {
 				ele_blob = (blob*) GDKmalloc(offsetof(blob, data));
 				ele_blob->nitems = ~(size_t) 0;
