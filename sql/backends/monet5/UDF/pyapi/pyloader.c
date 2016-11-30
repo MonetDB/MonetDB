@@ -9,7 +9,7 @@
 #include "formatinput.h"
 
 static void _loader_import_array(void) {
-    import_array();
+    _import_array();
 }
 
 str _loader_init(void)

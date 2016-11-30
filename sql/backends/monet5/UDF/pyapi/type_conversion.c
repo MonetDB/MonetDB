@@ -13,6 +13,8 @@
 
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
+#define PyInt_Check PyLong_Check
+#define PyString_CheckExact PyUnicode_CheckExact
 #endif
 
 bool string_copy(char * source, char* dest, size_t max_size, bool allow_unicode)
@@ -351,5 +353,5 @@ CONVERSION_FUNCTION_FACTORY(hge, hge)
 #endif
 
 void _typeconversion_init(void) {
-    import_array();
+    _import_array();
 }

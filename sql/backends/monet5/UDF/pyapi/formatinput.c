@@ -373,5 +373,5 @@ finally:
 }
 
 void _formatinput_init(void) {
-    import_array();
+    _import_array();
 }

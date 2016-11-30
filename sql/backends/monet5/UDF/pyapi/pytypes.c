@@ -170,5 +170,5 @@ bool PyType_IsLazyArray(PyObject *object)
 }
 
 void _pytypes_init(void) {
-    import_array();
+    _import_array();
 }

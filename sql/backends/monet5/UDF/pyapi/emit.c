@@ -312,9 +312,21 @@ static PyMethodDef _emitObject_methods[] = {
 };
 
 PyTypeObject PyEmitType = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "monetdb._emit",
+    _PyObject_EXTRA_INIT
+// in python3 they use structs within structs to represent this information, and many compilers throw warnings if you don't use separate braces
+// to initialize these separate structs. However, in Python2, they use #defines to put this information in, so we have these nice #ifdefs
+#ifdef IS_PY3K
+    { { 
+#endif
+        1, NULL 
+#ifdef IS_PY3K
+    }
+#endif 
+    , 0
+#ifdef IS_PY3K
+    }
+#endif
+    , "monetdb._emit",
     sizeof(PyEmitObject),
     0,
     0,                                          /* tp_dealloc */
