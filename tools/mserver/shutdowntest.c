@@ -88,7 +88,7 @@ static void monetdb_disconnect(void* conn) {
 	MCcloseClient((Client) conn);
 }
 
-static str monetdb_initialize() {
+static str monetdb_initialize(void) {
 	opt *set = NULL;
 	volatile int setlen = 0;
 	str retval = MAL_SUCCEED;
@@ -267,7 +267,7 @@ cleanup:
 	return retval;
 }
 
-static void monetdb_shutdown() {
+static void monetdb_shutdown(void) {
 	if (monetdb_initialized) {
 		mserver_reset(0);
 		monetdb_initialized = 0;
@@ -310,4 +310,5 @@ int main(int argc, char **argv) {
 		monetdb_query(c, "INSERT INTO temporary_table VALUES (3), (4);");
 		monetdb_disconnect(c);
 	}
+	return 0;
 }
