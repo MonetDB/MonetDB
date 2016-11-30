@@ -387,6 +387,7 @@ developer.
 %{_bindir}/sample4
 %{_bindir}/smack00
 %{_bindir}/smack01
+%{_bindir}/shutdowntest
 %{_bindir}/testgetinfo
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
