@@ -82,16 +82,20 @@ insert_string_bat(BAT *b, BAT *n, int force)
 
 	assert(b->htype == TYPE_void);
 	assert(b->ttype == TYPE_str);
+	/* only transient bats can use some other bat's string heap */
+	assert(b->batRole == TRANSIENT ||
+	       b->T->vheap->parentid == abs(b->batCacheid));
 	if (n->batCount == 0)
 		return GDK_SUCCEED;
 	ni = bat_iterator(n);
 	tp = NULL;
-	if ((!GDK_ELIMDOUBLES(b->T->vheap) || b->batCount == 0) &&
-	    !GDK_ELIMDOUBLES(n->T->vheap) &&
-	    b->T->vheap->hashash == n->T->vheap->hashash &&
+	if ((b->T->vheap == n->T->vheap ||
+	     ((!GDK_ELIMDOUBLES(b->T->vheap) || b->batCount == 0) &&
+	      !GDK_ELIMDOUBLES(n->T->vheap) &&
+	      b->T->vheap->hashash == n->T->vheap->hashash)) &&
 	    /* if needs to be kept unique, take slow path */
 	    (b->tkey & BOUND2BTRUE) == 0) {
-		if (b->S->role == TRANSIENT) {
+		if (b->S->role == TRANSIENT || b->T->vheap == n->T->vheap) {
 			/* If b is in the transient farm (i.e. b will
 			 * never become persistent), we try some
 			 * clever tricks to avoid copying:
@@ -99,14 +103,16 @@ insert_string_bat(BAT *b, BAT *n, int force)
                          *   string heap with n;
 			 * - otherwise, if b's string heap and n's
                          *   string heap are the same (i.e. shared),
-                         *   we leave it that way;
+                         *   we leave it that way (this includes the
+                         *   case that b is persistent and n shares
+                         *   its string heap with b);
 			 * - otherwise, if b shares its string heap
                          *   with some other bat, we materialize it
                          *   and we will have to copy strings.
 			 */
 			bat bid = abs(b->batCacheid);
 
-			if (b->batCount == 0) {
+			if (b->batCount == 0 && b->T->vheap != n->T->vheap) {
 				if (b->T->vheap->parentid != bid) {
 					BBPunshare(b->T->vheap->parentid);
 				} else {
@@ -275,6 +281,26 @@ insert_string_bat(BAT *b, BAT *n, int force)
 				break;
 			}
 			bunfastapp(b, tp);
+		}
+	} else if (b->tkey & BOUND2BTRUE) {
+		BUN i = BUNlast(b);
+		/* if no duplicate values allowed, insert one-by-one */
+		BATloop(n, p, q) {
+			tp = BUNtvar(ni, p);
+			if (BUNfnd(b, tp) == BUN_NONE) {
+				bunfastapp(b, tp);
+				if (b->T->hash) {
+					HASHins(b, i, tp);
+				}
+				i++;
+			}
+		}
+	} else if (b->T->vheap->free < n->T->vheap->free / 2) {
+		/* if b's string heap is much smaller than n's string
+		 * heap, don't bother checking whether n's string
+		 * values occur in b's string heap */
+		BATloop(n, p, q) {
+			bunfastapp(b, BUNtvar(ni, p));
 		}
 	} else {
 		/* Insert values from n individually into b; however,
@@ -461,10 +487,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				b->T->nodense = r;
 			}
 		}
-		if (b->ttype == TYPE_str &&
-		    (b->batCount == 0 || !GDK_ELIMDOUBLES(b->T->vheap)) &&
-		    !GDK_ELIMDOUBLES(n->T->vheap) &&
-		    b->T->vheap->hashash == n->T->vheap->hashash) {
+		if (b->ttype == TYPE_str) {
 			if (insert_string_bat(b, n, force) != GDK_SUCCEED)
 				return GDK_FAIL;
 		} else {
