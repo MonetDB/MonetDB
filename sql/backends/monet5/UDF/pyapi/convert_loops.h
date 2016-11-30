@@ -12,8 +12,6 @@
  * these are in a separate header because they are used in multiple places
  */
 
-#define utf8string_minlength 256
-
 #define BAT_TO_NP(bat, mtpe, nptpe)                                                                                                 \
         if (copy) {                                                                                                                 \
             vararray = PyArray_EMPTY(1, elements, nptpe, 0);                        \

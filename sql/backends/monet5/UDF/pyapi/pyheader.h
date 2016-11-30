@@ -100,5 +100,7 @@
 
 #define LOAD_SQL_FUNCTION_PTR(fcnname) (void) fcnname
 #endif
+   
+#define utf8string_minlength 256
 
 #endif /* _PYHEADER_H_ */
