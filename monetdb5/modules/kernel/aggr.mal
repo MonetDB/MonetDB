@@ -886,7 +886,7 @@ address AGGRquantile3
 comment "Grouped quantile aggregate";
 
 function quantile(b:bat[:any_1],q:bat[:dbl]) :any_1;
-	bn := subquantile(b, q, false);
+	bn := subquantile(b, q, true);
 	return algebra.fetch(bn, 0@0);
 end aggr.quantile;
 
