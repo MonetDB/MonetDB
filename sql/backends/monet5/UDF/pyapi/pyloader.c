@@ -1,4 +1,5 @@
 #include "pyapi.h"
+#include "conversion.h"
 #include "connection.h"
 #include "emit.h"
 

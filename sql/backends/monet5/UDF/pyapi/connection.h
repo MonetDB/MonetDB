@@ -8,7 +8,8 @@
 
 /*
  * M. Raasveldt
- *
+ * The connection object is a Python object that can be used 
+ * to query the database from within UDFs (i.e. loopback queries)
  */
 
 #ifndef _LOOPBACK_QUERY_
@@ -17,10 +18,21 @@
 #include "pytypes.h"
 #include "emit.h"
 
+// The QueryStruct is used to send queries between a forked process and the main server
+typedef struct {
+    bool pending_query;
+    char query[8192];
+    int nr_cols;
+    int mmapid;
+    size_t memsize;
+} QueryStruct;
+
 typedef struct {
     PyObject_HEAD
     Client cntxt;
-    bit mapped;
+    bit mapped; /* indicates whether or not the connection is in a forked process 
+                 * (i.e. have to use interprocess communication to transfer query results) 
+                 */
     QueryStruct *query_ptr;
     int query_sem;
 } Py_ConnectionObject;

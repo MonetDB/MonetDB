@@ -1,4 +1,6 @@
 
+#include "pyapi.h"
+#include "conversion.h"
 #include "connection.h"
 #include "type_conversion.h"
 #include "gdk_interprocess.h"

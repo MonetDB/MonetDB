@@ -1,9 +1,10 @@
 
 #include "emit.h"
+#include "conversion.h"
+#include "convert_loops.h"
 #include "type_conversion.h"
 #include "gdk_interprocess.h"
 
-#include "convert_loops.h"
 #include "unicode.h"
 
 #if PY_MAJOR_VERSION >= 3
