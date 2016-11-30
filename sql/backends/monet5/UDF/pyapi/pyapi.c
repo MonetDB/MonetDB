@@ -22,20 +22,8 @@
 #include <sys/wait.h>
 #endif
 
-const char* verbose_enableflag = "enable_pyverbose";
-const char* warning_enableflag = "enable_pywarnings";
-const char* debug_enableflag = "enable_pydebug";
 const char* fork_disableflag = "disable_fork";
 static bool option_disable_fork = false;
-#ifdef _PYAPI_VERBOSE_
-static bool option_verbose;
-#endif
-#ifdef _PYAPI_DEBUG_
-static bool option_debug;
-#endif
-#ifdef _PYAPI_WARNINGS_
-bool option_warning;
-#endif
 
 static PyObject *marshal_module = NULL;
 PyObject *marshal_loads = NULL;
@@ -217,8 +205,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     varres = sqlfun ? sqlfun->varres : 0;
     retcols = !varres ? pci->retc : -1;
 
-    VERBOSE_MESSAGE("PyAPI Start\n");
-
     args = (str*) GDKzalloc(pci->argc * sizeof(str));
     pyreturn_values = GDKzalloc(pci->retc * sizeof(PyReturn));
     if (args == NULL || pyreturn_values == NULL) {
@@ -345,11 +331,8 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             goto wrapup;
         }
 
-        VERBOSE_MESSAGE("Creating multiple processes.\n");
-
         memory_size = pci->retc * sizeof(ReturnBatDescr); //the memory size for the header files, each process has one per return value
 
-        VERBOSE_MESSAGE("Initializing shared memory.\n");
 
         assert(memory_size > 0);
         //create the shared memory for the header
@@ -382,11 +365,9 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         query_ptr->mmapid = -1;
         query_ptr->memsize = 0;
 
-        VERBOSE_MESSAGE("Waiting to fork.\n");
         //fork
         MT_lock_set(&pyapiLock);
         gstate = Python_ObtainGIL(); // we need the GIL before forking, otherwise it can get stuck in the forked child
-        VERBOSE_MESSAGE("Start forking.\n");
         if ((pid = fork()) < 0)
         {
             msg = createException(MAL, "pyapi.eval", "Failed to fork process");
@@ -552,7 +533,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 }
                 goto wrapup;
             }
-            VERBOSE_MESSAGE("Finished waiting for child process.\n");
 
             //collect return values
             for(i = 0; i < pci->retc; i++)
@@ -574,8 +554,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 has_mask = has_mask || descr->has_mask;
 
                 //get the shared memory address for this return value
-                VERBOSE_MESSAGE("Parent requesting memory at id %d of size %zu\n", mmap_id + (i + 3), total_size);
-
                 assert(total_size > 0);
                 MT_lock_set(&pyapiLock);
                 GDKinitmmap(mmap_id + i + 3, total_size, &mmap_ptrs[i + 3], &mmap_sizes[i + 3], &msg);
@@ -657,7 +635,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     }
 
     /*[PARSE_CODE]*/
-    VERBOSE_MESSAGE("Formatting python code.\n");
     pycall = FormatCode(exprStr, args, argcount, 4, &code_object, &msg, eval_additional_args, additional_columns);
     if (pycall == NULL && code_object == NULL) {
         if (msg == NULL) { msg = createException(MAL, "pyapi.eval", "Error while parsing Python code."); }
@@ -665,8 +642,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     }
 
     /*[CONVERT_BAT]*/
-    VERBOSE_MESSAGE("Loading data from the database into Python.\n");
-
     // Now we will do the input handling (aka converting the input BATs to numpy arrays)
     // We will put the python arrays in a PyTuple object, we will use this PyTuple object as the set of arguments to call the Python function
     pArgs = PyTuple_New(argcount - (pci->retc + 2) + (code_object == NULL ? additional_columns : 0));
@@ -714,8 +689,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     }
 
     /*[EXECUTE_CODE]*/
-    VERBOSE_MESSAGE("Executing python code.\n");
-
     // Now it is time to actually execute the python code
     {
         PyObject *pFunc, *pModule, *v, *d;
@@ -1019,7 +992,6 @@ aggrwrapup:
             goto wrapup;
         }
     }
-    VERBOSE_MESSAGE("Collecting return values.\n");
 
     if (varres) {
         GDKfree(pyreturn_values);
@@ -1048,12 +1020,10 @@ aggrwrapup:
 
         // First we will fill in the header information, we will need to get a pointer to the header data first
         // The main process has already created the header data for the child process
-        VERBOSE_MESSAGE("Getting shared memory.\n");
         if (GDKinitmmap(mmap_id + 0, memory_size, &mmap_ptrs[0], &mmap_sizes[0], &msg) != GDK_SUCCEED) {
             goto wrapup;
         }
 
-        VERBOSE_MESSAGE("Writing headers.\n");
 
         // Now we will write data about our result (memory size, type, number of elements) to the header
         ptr = (ReturnBatDescr*)mmap_ptrs[0];
@@ -1131,8 +1101,6 @@ aggrwrapup:
 returnvalues:
 #endif
     /*[RETURN_VALUES]*/
-    VERBOSE_MESSAGE("Returning values.\n");
-
     argnode = sqlfun && sqlfun->res ? sqlfun->res->h : NULL;
     for (i = 0; i < retcols; i++)
     {
@@ -1180,15 +1148,12 @@ wrapup:
         ReturnBatDescr *ptr;
 
         // Now we exit the program with an error code
-        VERBOSE_MESSAGE("Failure in child process: %s\n", msg);
         if (GDKchangesemval(query_sem, 0, 1, &tmp_msg) != GDK_SUCCEED) {
-            VERBOSE_MESSAGE("Failed to increase value of semaphore in child process: %s\n", tmp_msg);
             exit(1);
         }
 
         assert(memory_size > 0);
         if (GDKinitmmap(mmap_id + 0, memory_size, &mmap_ptrs[0], &mmap_sizes[0], &tmp_msg) != GDK_SUCCEED) {
-            VERBOSE_MESSAGE("Failed to get shared memory in child process: %s\n", tmp_msg);
             exit(1);
         }
 
@@ -1206,15 +1171,12 @@ wrapup:
         // We can simply use the slot mmap_id + 3, even though this is normally used for query return values
         // This is because, if the process fails, no values will be returned
         if (GDKinitmmap(mmap_id + 3, (strlen(msg) + 1) * sizeof(char), (void**) &error_mem, NULL, &tmp_msg) != GDK_SUCCEED) {
-            VERBOSE_MESSAGE("Failed to create shared memory in child process: %s\n", tmp_msg);
             exit(1);
         }
         strcpy(error_mem, msg);
         exit(1);
     }
 #endif
-
-    VERBOSE_MESSAGE("Cleaning up.\n");
 
 #ifdef HAVE_FORK
     if (holds_gil){
@@ -1284,7 +1246,6 @@ wrapup:
     GDKfree(args);
     GDKfree(pycall);
 
-    VERBOSE_MESSAGE("Finished cleaning up.\n");
     return msg;
 }
 
@@ -1331,16 +1292,6 @@ str
         MT_lock_unset(&pyapiLock);
         fprintf(stdout, "# MonetDB/Python module loaded\n");
     }
-#ifdef _PYAPI_VERBOSE_
-    option_verbose = GDKgetenv_isyes(verbose_enableflag) || GDKgetenv_istrue(verbose_enableflag);
-#endif
-#ifdef _PYAPI_DEBUG_
-    option_debug = GDKgetenv_isyes(debug_enableflag) || GDKgetenv_istrue(debug_enableflag);
-    (void) option_debug;
-#endif
-#ifdef _PYAPI_WARNINGS_
-    option_warning = GDKgetenv_isyes(warning_enableflag) || GDKgetenv_istrue(warning_enableflag);
-#endif
     option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
     return MAL_SUCCEED;
 }

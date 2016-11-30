@@ -17,36 +17,6 @@
 
 #include "pyheader.h"
 
-#ifndef NDEBUG
-// Enable verbose output, note that this #define must be set and mserver must be started with --set <verbose_enableflag>=true
-#define _PYAPI_VERBOSE_
-// Enable performance warnings, note that this #define must be set and mserver must be started with --set <warning_enableflag>=true
-#define _PYAPI_WARNINGS_
-// Enable debug mode, does literally nothing right now, but hey we have this nice #define here anyway
-#define _PYAPI_DEBUG_
-#endif
-
-#ifdef _PYAPI_VERBOSE_
-#define VERBOSE_MESSAGE(...) {              \
-    if (option_verbose) {                   \
-    printf(__VA_ARGS__);                    \
-    fflush(stdout); }                       \
-}
-#else
-#define VERBOSE_MESSAGE(...) ((void) 0)
-#endif
-
-#ifdef _PYAPI_WARNINGS_
-extern bool option_warning;
-#define WARNING_MESSAGE(...) {           \
-    if (option_warning) {                \
-    fprintf(stderr, __VA_ARGS__);        \
-    fflush(stdout);     }                \
-}
-#else
-#define WARNING_MESSAGE(...) ((void) 0)
-#endif
-
 pyapi_export str PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 pyapi_export str PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 pyapi_export str PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
