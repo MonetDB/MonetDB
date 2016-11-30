@@ -258,7 +258,7 @@
 	                b->tnil = 1;                                                                                                                                        \
 	                BUNappend(b, str_nil, FALSE);                                                                                                                         \
 	            }  else {                                                                                                                                                 \
-	                if (!string_copy(&data[(index_offset * ret->count + iu) * ret->memory_size], utf8_string, ret->memory_size, true)) {                                  \
+	                if (!string_copy(&data[(index_offset * ret->count + iu) * ret->memory_size], utf8_string, ret->memory_size, false)) {                                  \
 	                    msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");     \
 	                    goto wrapup;                                                                                                                                      \
 	                }                                                                                                                                                     \

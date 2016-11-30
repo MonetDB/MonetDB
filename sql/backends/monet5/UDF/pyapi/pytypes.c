@@ -1,11 +1,6 @@
 
 #include "pytypes.h"
 
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#define PyString_AsString PyUnicode_AsUTF8
-#endif
-
 bool PyType_IsInteger(int type)
 {
     switch (type)
@@ -200,5 +195,5 @@ bool PyType_IsPyScalar(PyObject *object)
 
 
 void _pytypes_init(void) {
-    import_array();
+    _import_array();
 }

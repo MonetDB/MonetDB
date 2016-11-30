@@ -72,9 +72,11 @@
 #define PyString_CheckExact PyUnicode_CheckExact
 #define PyString_AsString PyUnicode_AsUTF8
 #define PyString_AS_STRING PyUnicode_AsUTF8
+#define PyString_FromStringAndSize PyUnicode_FromStringAndSize
 #define PyInt_FromLong PyLong_FromLong
 #define PyInt_Check PyLong_Check
 #define PythonUnicodeType char
+
 #else
 #define PythonUnicodeType Py_UNICODE
 #endif

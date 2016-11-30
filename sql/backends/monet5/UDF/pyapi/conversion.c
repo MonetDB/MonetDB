@@ -915,7 +915,7 @@ bit IsStandardBATType(int type) {
 }
 
 static void conversion_import_array(void) {
-    import_array();
+    _import_array();
 }
 
 str _conversion_init(void) {

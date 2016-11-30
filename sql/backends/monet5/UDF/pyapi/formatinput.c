@@ -2,15 +2,6 @@
 #include "formatinput.h"
 #include "type_conversion.h"
 
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#define PyString_FromStringAndSize PyUnicode_FromStringAndSize
-#endif
-
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#endif
-
 //! Parse a PyCodeObject from a string, the string is expected to be in the format {@<encoded_function>};, where <encoded_function> is the Marshalled code object
 PyObject *PyCodeObject_ParseString(char *string, char **msg);
 PyObject *PyCodeObject_ParseString(char *string, char **msg)
@@ -373,5 +364,5 @@ finally:
 }
 
 void _formatinput_init(void) {
-    import_array();
+    _import_array();
 }
