@@ -26,7 +26,7 @@
 
 // This #define creates a new BAT with the internal data and mask from a Numpy array, without copying the data
 // 'bat' is a BAT* pointer, which will contain the new BAT. TYPE_'mtpe' is the BAT type, and 'batstore' is the heap storage type of the BAT (this should be STORE_CMEM or STORE_SHARED)
-#ifdef HAVE_FORK
+#if defined (HAVE_FORK) && !defined(HAVE_EMBEDDED)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
         bat->tnil = 0; bat->tnonil = 1;                                                   \

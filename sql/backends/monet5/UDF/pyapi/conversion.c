@@ -4,7 +4,9 @@
 #include "pytypes.h"
 #include "type_conversion.h"
 #include "unicode.h"
+#ifndef HAVE_EMBEDDED
 #include "gdk_interprocess.h"
+#endif
 
 CREATE_SQL_FUNCTION_PTR(str,batbte_dec2_dbl);
 CREATE_SQL_FUNCTION_PTR(str,batsht_dec2_dbl);
