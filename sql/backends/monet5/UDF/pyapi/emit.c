@@ -313,7 +313,7 @@ PyTypeObject PyEmitType = {
 #ifdef IS_PY3K
     }
 #endif
-    ,"monetdb._emit",
+    , "monetdb._emit",
     sizeof(PyEmitObject),
     0,
     0,                                          /* tp_dealloc */

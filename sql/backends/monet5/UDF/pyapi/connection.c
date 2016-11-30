@@ -166,7 +166,7 @@ PyTypeObject Py_ConnectionType = {
 #ifdef IS_PY3K
     }
 #endif
-    ,"monetdb._connection",
+    , "monetdb._connection",
     sizeof(Py_ConnectionObject),
     0,
     0,                                          /* tp_dealloc */

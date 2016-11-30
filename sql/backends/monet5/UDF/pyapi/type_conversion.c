@@ -11,6 +11,12 @@
 
 #include <longintrepr.h>
 
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#define PyInt_Check PyLong_Check
+#define PyString_CheckExact PyUnicode_CheckExact
+#endif
+
 bool string_copy(char * source, char* dest, size_t max_size, bool allow_unicode)
 {
     size_t i;
