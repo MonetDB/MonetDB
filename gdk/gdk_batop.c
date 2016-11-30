@@ -58,10 +58,8 @@ static gdk_return
 insert_string_bat(BAT *b, BAT *n, int force)
 {
 	BATiter ni;		/* iterator */
-	int tt;			/* tail type */
 	size_t toff = ~(size_t) 0;	/* tail offset */
 	BUN p, q;		/* loop variables */
-	oid o = 0;		/* in case we're appending */
 	const void *tp;		/* tail value pointer */
 	unsigned char tbv;	/* tail value-as-bte */
 	unsigned short tsv;	/* tail value-as-sht */
@@ -71,18 +69,20 @@ insert_string_bat(BAT *b, BAT *n, int force)
 	var_t v;		/* value */
 	size_t off;		/* offset within n's string heap */
 
+	assert(b->ttype == TYPE_str);
+	/* only transient bats can use some other bat's string heap */
+	assert(b->batRole == TRANSIENT ||
+	       b->tvheap->parentid == abs(b->batCacheid));
 	if (n->batCount == 0)
 		return GDK_SUCCEED;
 	ni = bat_iterator(n);
 	tp = NULL;
-	tt = b->ttype;
-	if (tt == TYPE_str &&
-	    (!GDK_ELIMDOUBLES(b->tvheap) || b->batCount == 0) &&
+	if ((!GDK_ELIMDOUBLES(b->tvheap) || b->batCount == 0) &&
 	    !GDK_ELIMDOUBLES(n->tvheap) &&
 	    b->tvheap->hashash == n->tvheap->hashash &&
 	    /* if needs to be kept unique, take slow path */
 	    (b->tkey & BOUND2BTRUE) == 0) {
-		if (b->batRole == TRANSIENT) {
+		if (b->batRole == TRANSIENT || b->tvheap == n->tvheap) {
 			/* If b is in the transient farm (i.e. b will
 			 * never become persistent), we try some
 			 * clever tricks to avoid copying:
@@ -90,14 +90,16 @@ insert_string_bat(BAT *b, BAT *n, int force)
                          *   string heap with n;
 			 * - otherwise, if b's string heap and n's
                          *   string heap are the same (i.e. shared),
-                         *   we leave it that way;
+                         *   we leave it that way (this includes the
+                         *   case that b is persistent and n shares
+                         *   its string heap with b);
 			 * - otherwise, if b shares its string heap
                          *   with some other bat, we materialize it
                          *   and we will have to copy strings.
 			 */
 			bat bid = b->batCacheid;
 
-			if (b->batCount == 0) {
+			if (b->batCount == 0 && b->tvheap != n->tvheap) {
 				if (b->tvheap->parentid != bid) {
 					BBPunshare(b->tvheap->parentid);
 				} else {
@@ -151,8 +153,8 @@ insert_string_bat(BAT *b, BAT *n, int force)
 				/* make sure we get alignment right */
 				toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 				assert(((toff >> GDK_VARSHIFT) << GDK_VARSHIFT) == toff);
-				/* if in "force" mode, the heap may be shared when
-				 * memory mapped */
+				/* if in "force" mode, the heap may be
+				 * shared when memory mapped */
 				if (HEAPextend(b->tvheap, toff + n->tvheap->size, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
 					goto bunins_failed;
@@ -182,25 +184,25 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			}
 			switch (b->twidth) {
 			case 1:
-				tt = TYPE_bte;
+				b->ttype = TYPE_bte;
 				tp = &tbv;
 				break;
 			case 2:
-				tt = TYPE_sht;
+				b->ttype = TYPE_sht;
 				tp = &tsv;
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
-				tt = TYPE_int;
+				b->ttype = TYPE_int;
 				tp = &tiv;
 				break;
 			case 8:
-				tt = TYPE_lng;
+				b->ttype = TYPE_lng;
 				tp = &v;
 				break;
 #else
 			case 4:
-				tt = TYPE_int;
+				b->ttype = TYPE_int;
 				tp = &v;
 				break;
 #endif
@@ -208,13 +210,11 @@ insert_string_bat(BAT *b, BAT *n, int force)
 				assert(0);
 			}
 			b->tvarsized = 0;
-			b->ttype = tt;
 		}
 	}
 	if (toff == 0 && n->twidth == b->twidth) {
 		/* we don't need to do any translation of offset
-		 * values, nor do we need to do any calculations for
-		 * the head column, so we can use fast memcpy */
+		 * values, so we can use fast memcpy */
 		memcpy(Tloc(b, BUNlast(b)), Tloc(n, 0),
 		       BATcount(n) * n->twidth);
 		BATsetcount(b, BATcount(b) + BATcount(n));
@@ -275,7 +275,26 @@ insert_string_bat(BAT *b, BAT *n, int force)
 				break;
 			}
 			bunfastapp(b, tp);
-			o++;
+		}
+	} else if (b->tkey & BOUND2BTRUE) {
+		BUN i = BUNlast(b);
+		/* if no duplicate values allowed, insert one-by-one */
+		BATloop(n, p, q) {
+			tp = BUNtvar(ni, p);
+			if (BUNfnd(b, tp) == BUN_NONE) {
+				bunfastapp(b, tp);
+				if (b->thash) {
+					HASHins(b, i, tp);
+				}
+				i++;
+			}
+		}
+	} else if (b->tvheap->free < n->tvheap->free / 2) {
+		/* if b's string heap is much smaller than n's string
+		 * heap, don't bother checking whether n's string
+		 * values occur in b's string heap */
+		BATloop(n, p, q) {
+			bunfastapp(b, BUNtvar(ni, p));
 		}
 	} else {
 		/* Insert values from n individually into b; however,
@@ -332,19 +351,14 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			} else {
 				bunfastapp(b, tp);
 			}
-			o++;
 		}
 	}
-	if (toff != ~(size_t) 0) {
-		b->tvarsized = 1;
-		b->ttype = TYPE_str;
-	}
+	b->tvarsized = 1;
+	b->ttype = TYPE_str;
 	return GDK_SUCCEED;
       bunins_failed:
-	if (toff != ~(size_t) 0) {
-		b->tvarsized = 1;
-		b->ttype = TYPE_str;
-	}
+	b->tvarsized = 1;
+	b->ttype = TYPE_str;
 	return GDK_FAIL;
 }
 
@@ -464,10 +478,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				b->tnodense = r;
 			}
 		}
-		if (b->ttype == TYPE_str &&
-		    (b->batCount == 0 || !GDK_ELIMDOUBLES(b->tvheap)) &&
-		    !GDK_ELIMDOUBLES(n->tvheap) &&
-		    b->tvheap->hashash == n->tvheap->hashash) {
+		if (b->ttype == TYPE_str) {
 			if (insert_string_bat(b, n, force) != GDK_SUCCEED)
 				return GDK_FAIL;
 		} else {
