@@ -66,14 +66,12 @@ unshare_string_heap(BAT *b)
  * of inserting individual strings.  See the comments in the code for
  * more information. */
 static gdk_return
-insert_string_bat(BAT *b, BAT *n, int append, int force)
+insert_string_bat(BAT *b, BAT *n, int force)
 {
 	BATiter ni;		/* iterator */
-	int tt;			/* tail type */
 	size_t toff = ~(size_t) 0;	/* tail offset */
 	BUN p, q;		/* loop variables */
-	oid o = 0;		/* in case we're appending */
-	const void *hp, *tp;	/* head and tail value pointers */
+	const void *tp;		/* tail value pointer */
 	unsigned char tbv;	/* tail value-as-bte */
 	unsigned short tsv;	/* tail value-as-sht */
 #if SIZEOF_VAR_T == 8
@@ -82,19 +80,13 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 	var_t v;		/* value */
 	size_t off;		/* offset within n's string heap */
 
-	assert(b->htype == TYPE_void || b->htype == TYPE_oid);
+	assert(b->htype == TYPE_void);
+	assert(b->ttype == TYPE_str);
 	if (n->batCount == 0)
 		return GDK_SUCCEED;
 	ni = bat_iterator(n);
-	hp = NULL;
 	tp = NULL;
-	if (append && b->htype != TYPE_void) {
-		hp = &o;
-		o = MAXoid(b);
-	}
-	tt = b->ttype;
-	if (tt == TYPE_str &&
-	    (!GDK_ELIMDOUBLES(b->T->vheap) || b->batCount == 0) &&
+	if ((!GDK_ELIMDOUBLES(b->T->vheap) || b->batCount == 0) &&
 	    !GDK_ELIMDOUBLES(n->T->vheap) &&
 	    b->T->vheap->hashash == n->T->vheap->hashash &&
 	    /* if needs to be kept unique, take slow path */
@@ -168,8 +160,8 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 				/* make sure we get alignment right */
 				toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 				assert(((toff >> GDK_VARSHIFT) << GDK_VARSHIFT) == toff);
-				/* if in "force" mode, the heap may be shared when
-				 * memory mapped */
+				/* if in "force" mode, the heap may be
+				 * shared when memory mapped */
 				if (HEAPextend(b->T->vheap, toff + n->T->vheap->size, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
 					goto bunins_failed;
@@ -199,50 +191,32 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			}
 			switch (b->T->width) {
 			case 1:
-				tt = TYPE_bte;
+				b->ttype = TYPE_bte;
 				tp = &tbv;
 				break;
 			case 2:
-				tt = TYPE_sht;
+				b->ttype = TYPE_sht;
 				tp = &tsv;
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
-				tt = TYPE_int;
+				b->ttype = TYPE_int;
 				tp = &tiv;
 				break;
 #endif
 			default:
-				tt = TYPE_var;
+				b->ttype = TYPE_var;
 				tp = &v;
 				break;
 			}
 			b->tvarsized = 0;
-			b->ttype = tt;
 		}
 	}
-	if (!append) {
-		if (b->htype == TYPE_void)
-			hp = NULL;
-		else if (n->htype == TYPE_void) {
-			assert(b->htype == TYPE_oid);
-			o = n->hseqbase;
-			hp = &o;
-			append = 1;
-		}
-	}
-	if (toff == 0 && n->T->width == b->T->width && (b->htype == TYPE_void || !append)) {
+	if (toff == 0 && n->T->width == b->T->width) {
 		/* we don't need to do any translation of offset
-		 * values, nor do we need to do any calculations for
-		 * the head column, so we can use fast memcpy */
+		 * values, so we can use fast memcpy */
 		memcpy(Tloc(b, BUNlast(b)), Tloc(n, BUNfirst(n)),
 		       BATcount(n) * n->T->width);
-		if (b->htype != TYPE_void) {
-			assert(n->htype == b->htype);
-			assert(!append);
-			memcpy(Hloc(b, BUNlast(b)), Hloc(n, BUNfirst(n)),
-			       BATcount(n) * Hsize(n));
-		}
 		BATsetcount(b, BATcount(b) + BATcount(n));
 	} else if (toff != ~(size_t) 0) {
 		/* we don't need to insert any actual strings since we
@@ -263,9 +237,6 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 		const var_t *restrict tvp = (const var_t *) Tloc(n, BUNfirst(n));
 
 		BATloop(n, p, q) {
-			if (!append && b->htype)
-				hp = BUNhloc(ni, p);
-
 			switch (n->T->width) {
 			case 1:
 				v = (var_t) *tbp++ + GDK_VAROFFSET;
@@ -303,8 +274,7 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 			default:
 				break;
 			}
-			bunfastins(b, hp, tp);
-			o++;
+			bunfastapp(b, tp);
 		}
 	} else {
 		/* Insert values from n individually into b; however,
@@ -314,9 +284,6 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 		 * n's).  If this is the case, we just copy the
 		 * offset, otherwise we insert normally.  */
 		BATloop(n, p, q) {
-			if (!append && b->htype)
-				hp = BUNhloc(ni, p);
-
 			off = BUNtvaroff(ni, p); /* the offset */
 			tp = n->T->vheap->base + off; /* the string */
 			if (off < b->T->vheap->free &&
@@ -328,8 +295,6 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 				 * in n's string heap, so we don't
 				 * have to insert a new string into b:
 				 * we can just copy the offset */
-				if (b->H->type)
-					*(oid *) Hloc(b, BUNlast(b)) = *(oid *) hp;
 				v = (var_t) (off >> GDK_VARSHIFT);
 				if (b->T->width < SIZEOF_VAR_T &&
 				    ((size_t) 1 << 8 * b->T->width) <= (b->T->width <= 2 ? v - GDK_VAROFFSET : v)) {
@@ -364,21 +329,16 @@ insert_string_bat(BAT *b, BAT *n, int append, int force)
 				}
 				b->batCount++;
 			} else {
-				bunfastins(b, hp, tp);
+				bunfastapp(b, tp);
 			}
-			o++;
 		}
 	}
-	if (toff != ~(size_t) 0) {
-		b->tvarsized = 1;
-		b->ttype = TYPE_str;
-	}
+	b->tvarsized = 1;
+	b->ttype = TYPE_str;
 	return GDK_SUCCEED;
       bunins_failed:
-	if (toff != ~(size_t) 0) {
-		b->tvarsized = 1;
-		b->ttype = TYPE_str;
-	}
+	b->tvarsized = 1;
+	b->ttype = TYPE_str;
 	return GDK_FAIL;
 }
 
@@ -505,7 +465,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		    (b->batCount == 0 || !GDK_ELIMDOUBLES(b->T->vheap)) &&
 		    !GDK_ELIMDOUBLES(n->T->vheap) &&
 		    b->T->vheap->hashash == n->T->vheap->hashash) {
-			if (insert_string_bat(b, n, 1, force) != GDK_SUCCEED)
+			if (insert_string_bat(b, n, force) != GDK_SUCCEED)
 				return GDK_FAIL;
 		} else {
 			if (!ATOMvarsized(b->ttype) &&
