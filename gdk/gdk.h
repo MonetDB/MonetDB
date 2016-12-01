@@ -513,7 +513,6 @@
 #define TRUE		true
 #define FALSE		false
 #endif
-#define BOUND2BTRUE	2	/* TRUE, and bound to be so */
 
 #define IDLENGTH	64	/* maximum BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
@@ -764,7 +763,8 @@ gdk_export int VALisnil(const ValRecord *v);
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
- *           bit    tkey;             // tail values should be unique?
+ *           bit    tkey;             // tail values are unique
+ *           bit    tunique;          // tail values must be kept unique
  *           bit    tnonil;           // tail has no nils
  *           bit    tsorted;          // are tail values currently ordered?
  *           bit    tvarsized;        // for speed: tail type is varsized?
@@ -824,7 +824,8 @@ typedef struct {
 	bte shift;		/* log2 of bunwidth */
 	unsigned int
 	 varsized:1,		/* varsized (1) or fixedsized (0) */
-	 key:2,			/* duplicates allowed? */
+	 key:1,			/* no duplicate values present */
+	 unique:1,		/* no duplicate values allowed */
 	 dense:1,		/* OID only: only consecutive values */
 	 nonil:1,		/* there are no nils in the column */
 	 nil:1,			/* there is a nil in the column */
@@ -890,6 +891,7 @@ typedef struct BATiter {
 #define creator_tid	S.tid
 #define ttype		T.type
 #define tkey		T.key
+#define tunique		T.unique
 #define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted

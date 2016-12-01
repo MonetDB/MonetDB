@@ -269,7 +269,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 
 	switch (which) {
 	case FIND_FIRST:
-		if (cmp == 0 && b->tkey == 0) {
+		if (cmp == 0 && !b->tkey) {
 			/* shift over multiple equals */
 			if (use_orderidx) {
 				while (--cur >= end && !(o[cur]&BUN_MSK)) {
@@ -286,7 +286,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		}
 		break;
 	case FIND_LAST:
-		if (cmp == 0 && b->tkey == 0) {
+		if (cmp == 0 && !b->tkey) {
 			/* shift over multiple equals */
 			if (use_orderidx) {
 				while (cur < end && !(o[cur]&BUN_MSK)) {

@@ -503,11 +503,36 @@ str
 BKCsetkey(bat *res, const bat *bid, const bit *param)
 {
 	BAT *b;
+	int unique;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setKey", RUNTIME_OBJECT_MISSING);
 	}
-	BATkey(b, *param ? BOUND2BTRUE :FALSE);
+	unique = b->tunique;
+	if (*param) {
+		if (!b->tkey) {
+			BUN uc;
+			if (b->tnokey[0] == 0 && b->tnokey[1] == 0) {
+				/* unknown whether key */
+				BAT *u = BATunique(b, NULL);
+				if (u == NULL)
+					throw(MAL, "bat.setKey", MAL_MALLOC_FAIL);
+				uc = BATcount(u);
+				BBPunfix(u->batCacheid);
+			} else {
+				/* known not to be unique */
+				uc = 0;
+			}
+			if (uc != BATcount(b))
+				throw(MAL, "bat.setKey", "values of bat not unique, cannot set key property");
+			BATkey(b, 1);
+		}
+		b->tunique = 1;
+	} else {
+		b->tunique = 0;
+	}
+	if (b->tunique != unique)
+		b->batDirtydesc = 1;
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -568,7 +593,7 @@ BKCgetKey(bit *ret, const bat *bid)
 				BBPunfix(bn->batCacheid);
 			}
 		}
-		*ret = b->tkey ? TRUE : FALSE;
+		*ret = b->tkey;
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

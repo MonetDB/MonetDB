@@ -367,12 +367,12 @@ BATappend(BAT *b, BAT *n, bit force)
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
 	BATcompatible(b, n, GDK_FAIL, "BATappend");
 
-	if (b->tkey & BOUND2BTRUE) {
-		/* if b has the BOUND2BTRUE bit set, only insert
-		 * values from n that don't already occur in b, and
-		 * make sure we don't insert any duplicates either; we
-		 * do this by calculating a subset of n that complies
-		 * with this */
+	if (b->tunique) {
+		/* if b has the unique bit set, only insert values
+		 * from n that don't already occur in b, and make sure
+		 * we don't insert any duplicates either; we do this
+		 * by calculating a subset of n that complies with
+		 * this */
 		BAT *d, *u;
 
 		d = BATdiff(n, b, NULL, NULL, 1, BUN_NONE);
@@ -395,7 +395,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 
 	if (BUNlast(b) + BATcount(n) > BUN_MAX) {
-		if (b->tkey & BOUND2BTRUE)
+		if (b->tunique)
 			BBPunfix(n->batCacheid);
 		GDKerror("BATappend: combined BATs too large\n");
 		return GDK_FAIL;
@@ -430,13 +430,13 @@ BATappend(BAT *b, BAT *n, bit force)
 		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
 			sz += BATcount(b);
 			BATsetcount(b, sz);
-			if (b->tkey & BOUND2BTRUE)
+			if (b->tunique)
 				BBPunfix(n->batCacheid);
 			return GDK_SUCCEED;
 		}
 		/* we need to materialize the tail */
 		if (BATmaterialize(b) != GDK_SUCCEED) {
-			if (b->tkey & BOUND2BTRUE)
+			if (b->tunique)
 				BBPunfix(n->batCacheid);
 			return GDK_FAIL;
 		}
@@ -463,9 +463,9 @@ BATappend(BAT *b, BAT *n, bit force)
 			}
 			b->tdense = n->tdense;
 			b->tnodense = n->tnodense;
-			b->tkey |= (n->tkey & TRUE);
-			/* if BOUND2BTRUE, uniqueness is guaranteed above */
-			if ((b->tkey & BOUND2BTRUE) == 0) {
+			/* if tunique, uniqueness is guaranteed above */
+			b->tkey = n->tkey | b->tunique;
+			if (!b->tunique) {
 				b->tnokey[0] = n->tnokey[0];
 				b->tnokey[1] = n->tnokey[1];
 			}
@@ -488,9 +488,10 @@ BATappend(BAT *b, BAT *n, bit force)
 				b->trevsorted = FALSE;
 				b->tnorevsorted = 0;
 			}
-			if (b->tkey == 1 &&
+			if (!b->tunique && /* uniqueness is guaranteed above */
+			    b->tkey &&
 			    (!(BATtordered(b) || BATtrevordered(b)) ||
-			     n->tkey == 0 || xx == 0)) {
+			     !n->tkey || xx == 0)) {
 				BATkey(b, FALSE);
 			}
 			if (b->ttype != TYPE_void && b->tsorted && b->tdense &&
@@ -502,7 +503,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		}
 		if (b->ttype == TYPE_str) {
 			if (insert_string_bat(b, n, force) != GDK_SUCCEED) {
-				if (b->tkey & BOUND2BTRUE)
+				if (b->tunique)
 					BBPunfix(n->batCacheid);
 				return GDK_FAIL;
 			}
@@ -530,7 +531,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		BATiter ni = bat_iterator(n);
 
 		if (b->hseqbase + BATcount(b) + BATcount(n) >= GDK_oid_max) {
-			if (b->tkey & BOUND2BTRUE)
+			if (b->tunique)
 				BBPunfix(n->batCacheid);
 			GDKerror("BATappend: overflow of head value\n");
 			return GDK_FAIL;
@@ -545,16 +546,16 @@ BATappend(BAT *b, BAT *n, bit force)
 			}
 			i++;
 		}
-		if ((b->tkey & BOUND2BTRUE) == 0)
+		if (!b->tunique)
 			BATkey(b, FALSE);
 		b->tdense = b->tsorted = b->trevsorted = 0;
 	}
 	b->tnonil &= n->tnonil;
-	if (b->tkey & BOUND2BTRUE)
+	if (b->tunique)
 		BBPunfix(n->batCacheid);
 	return GDK_SUCCEED;
       bunins_failed:
-	if (b->tkey & BOUND2BTRUE)
+	if (b->tunique)
 		BBPunfix(n->batCacheid);
 	return GDK_FAIL;
 }
@@ -568,7 +569,7 @@ BATdel(BAT *b, BAT *d)
 
 	assert(ATOMtype(d->ttype) == TYPE_oid);
 	assert(d->tsorted);
-	assert(d->tkey & 1);
+	assert(d->tkey);
 	if (BATcount(d) == 0)
 		return GDK_SUCCEED;
 	if (BATtdense(d)) {
@@ -657,7 +658,7 @@ BATdel(BAT *b, BAT *d)
 	}
 	if (b->batCount <= 1) {
 		/* some trivial properties */
-		b->tkey |= 1;
+		b->tkey = 1;
 		b->tsorted = b->trevsorted = 1;
 		if (b->batCount == 0) {
 			b->tnil = 0;
@@ -763,7 +764,7 @@ BATslice(BAT *b, BUN l, BUN h)
 		}
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
-		bn->tkey = b->tkey & 1;
+		bn->tkey = b->tkey;
 		bn->tnonil = b->tnonil;
 		if (b->tnosorted > l && b->tnosorted < h)
 			bn->tnosorted = b->tnosorted - l;
@@ -1204,7 +1205,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (b->ttype == TYPE_void) {
 			b->tsorted = 1;
 			b->trevsorted = b->tseqbase == oid_nil || b->batCount <= 1;
-			b->tkey |= b->tseqbase != oid_nil;
+			b->tkey = b->tseqbase != oid_nil;
 		} else if (b->batCount <= 1) {
 			b->tsorted = b->trevsorted = 1;
 		}
