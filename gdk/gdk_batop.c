@@ -79,9 +79,7 @@ insert_string_bat(BAT *b, BAT *n, int force)
 	tp = NULL;
 	if ((!GDK_ELIMDOUBLES(b->tvheap) || b->batCount == 0) &&
 	    !GDK_ELIMDOUBLES(n->tvheap) &&
-	    b->tvheap->hashash == n->tvheap->hashash &&
-	    /* if needs to be kept unique, take slow path */
-	    (b->tkey & BOUND2BTRUE) == 0) {
+	    b->tvheap->hashash == n->tvheap->hashash) {
 		if (b->batRole == TRANSIENT || b->tvheap == n->tvheap) {
 			/* If b is in the transient farm (i.e. b will
 			 * never become persistent), we try some
@@ -276,19 +274,6 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			}
 			bunfastapp(b, tp);
 		}
-	} else if (b->tkey & BOUND2BTRUE) {
-		BUN i = BUNlast(b);
-		/* if no duplicate values allowed, insert one-by-one */
-		BATloop(n, p, q) {
-			tp = BUNtvar(ni, p);
-			if (BUNfnd(b, tp) == BUN_NONE) {
-				bunfastapp(b, tp);
-				if (b->thash) {
-					HASHins(b, i, tp);
-				}
-				i++;
-			}
-		}
 	} else if (b->tvheap->free < n->tvheap->free / 2) {
 		/* if b's string heap is much smaller than n's string
 		 * heap, don't bother checking whether n's string
@@ -382,7 +367,36 @@ BATappend(BAT *b, BAT *n, bit force)
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
 	BATcompatible(b, n, GDK_FAIL, "BATappend");
 
+	if (b->tkey & BOUND2BTRUE) {
+		/* if b has the BOUND2BTRUE bit set, only insert
+		 * values from n that don't already occur in b, and
+		 * make sure we don't insert any duplicates either; we
+		 * do this by calculating a subset of n that complies
+		 * with this */
+		BAT *d, *u;
+
+		d = BATdiff(n, b, NULL, NULL, 1, BUN_NONE);
+		if (d == NULL)
+			return GDK_FAIL;
+		u = BATunique(n, d);
+		BBPunfix(d->batCacheid);
+		if (u == NULL)
+			return GDK_FAIL;
+		n = BATproject(u, n);
+		BBPunfix(u->batCacheid);
+		if (n == NULL)
+			return GDK_FAIL;
+		sz = BATcount(n);
+		if (sz == 0) {
+			/* no new values in subset of n */
+			BBPunfix(n->batCacheid);
+			return GDK_SUCCEED;
+		}
+	}
+
 	if (BUNlast(b) + BATcount(n) > BUN_MAX) {
+		if (b->tkey & BOUND2BTRUE)
+			BBPunfix(n->batCacheid);
 		GDKerror("BATappend: combined BATs too large\n");
 		return GDK_FAIL;
 	}
@@ -416,18 +430,23 @@ BATappend(BAT *b, BAT *n, bit force)
 		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
 			sz += BATcount(b);
 			BATsetcount(b, sz);
+			if (b->tkey & BOUND2BTRUE)
+				BBPunfix(n->batCacheid);
 			return GDK_SUCCEED;
 		}
 		/* we need to materialize the tail */
-		if (BATmaterialize(b) != GDK_SUCCEED)
+		if (BATmaterialize(b) != GDK_SUCCEED) {
+			if (b->tkey & BOUND2BTRUE)
+				BBPunfix(n->batCacheid);
 			return GDK_FAIL;
+		}
 	}
 
 	/* if growing too much, remove the hash, else we maintain it */
 	if (BATcheckhash(b) && (2 * b->thash->mask) < (BATcount(b) + sz)) {
 		HASHdestroy(b);
 	}
-	if (b->thash != NULL || (b->tkey & BOUND2BTRUE) != 0)
+	if (b->thash != NULL)
 		fastpath = 0;
 
 	if (fastpath) {
@@ -479,8 +498,11 @@ BATappend(BAT *b, BAT *n, bit force)
 			}
 		}
 		if (b->ttype == TYPE_str) {
-			if (insert_string_bat(b, n, force) != GDK_SUCCEED)
+			if (insert_string_bat(b, n, force) != GDK_SUCCEED) {
+				if (b->tkey & BOUND2BTRUE)
+					BBPunfix(n->batCacheid);
 				return GDK_FAIL;
+			}
 		} else {
 			if (!ATOMvarsized(b->ttype) &&
 			    BATatoms[b->ttype].atomFix == NULL &&
@@ -504,41 +526,32 @@ BATappend(BAT *b, BAT *n, bit force)
 		BUN i = BUNlast(b);
 		BATiter ni = bat_iterator(n);
 
-		if (b->tkey & BOUND2BTRUE) {
-			b->tdense = b->tsorted = b->trevsorted = 0;
-			BATloop(n, p, q) {
-				const void *t = BUNtail(ni, p);
-
-				if (BUNfnd(b, t) == BUN_NONE) {
-					bunfastapp(b, t);
-					if (b->thash) {
-						HASHins(b, i, t);
-					}
-					i++;
-				}
-			}
-		} else {
-			if (b->hseqbase + BATcount(b) + BATcount(n) >= GDK_oid_max) {
-				GDKerror("BATappend: overflow of head value\n");
-				return GDK_FAIL;
-			}
-
-			BATloop(n, p, q) {
-				const void *t = BUNtail(ni, p);
-
-				bunfastapp(b, t);
-				if (b->thash) {
-					HASHins(b, i, t);
-				}
-				i++;
-			}
-			BATkey(b, FALSE);
-			b->tdense = b->tsorted = b->trevsorted = 0;
+		if (b->hseqbase + BATcount(b) + BATcount(n) >= GDK_oid_max) {
+			if (b->tkey & BOUND2BTRUE)
+				BBPunfix(n->batCacheid);
+			GDKerror("BATappend: overflow of head value\n");
+			return GDK_FAIL;
 		}
+
+		BATloop(n, p, q) {
+			const void *t = BUNtail(ni, p);
+
+			bunfastapp(b, t);
+			if (b->thash) {
+				HASHins(b, i, t);
+			}
+			i++;
+		}
+		BATkey(b, FALSE);
+		b->tdense = b->tsorted = b->trevsorted = 0;
 	}
 	b->tnonil &= n->tnonil;
+	if (b->tkey & BOUND2BTRUE)
+		BBPunfix(n->batCacheid);
 	return GDK_SUCCEED;
       bunins_failed:
+	if (b->tkey & BOUND2BTRUE)
+		BBPunfix(n->batCacheid);
 	return GDK_FAIL;
 }
 
