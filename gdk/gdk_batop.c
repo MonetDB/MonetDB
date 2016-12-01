@@ -825,6 +825,162 @@ BATslice(BAT *b, BUN l, BUN h)
 	return NULL;
 }
 
+/* Return whether the BAT has all unique values or not.  It we don't
+ * know, invest in a proper check and record the results in the bat
+ * descriptor.  */
+int
+BATkeyed(BAT *b)
+{
+	lng t0 = GDKusec();
+	BATiter bi = bat_iterator(b);
+	int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
+	BUN p, q, hb;
+	Hash *hs = NULL;
+
+	if (b->ttype == TYPE_void)
+		return b->tseqbase != oid_nil || BATcount(b) <= 1;
+	if (BATcount(b) <= 1)
+		return 1;
+	if (b->twidth < SIZEOF_BUN &&
+	    BATcount(b) > (BUN) 1 << (8 * b->twidth)) {
+		/* more rows than possible bit combinations in the atom */
+		assert(!b->tkey);
+		return 0;
+	}
+
+	/* In order that multiple threads don't scan the same BAT at
+	 * the same time (happens a lot with mitosis/mergetable), we
+	 * use a lock.  We reuse the hash lock for this, not because
+	 * this scanning interferes with hashes, but because it's
+	 * there, and not so likely to be used at the same time. */
+	MT_lock_set(&GDKhashLock(b->batCacheid));
+	b->batDirtydesc = 1;
+	if (!b->tkey && b->tnokey[0] == 0 && b->tnokey[1] == 0) {
+		if (b->tsorted || b->trevsorted) {
+			const void *prev = BUNtail(bi, 0);
+			const void *cur;
+			for (q = BUNlast(b), p = 1; p < q; p++) {
+				cur = BUNtail(bi, p);
+				if ((*cmpf)(prev, cur) == 0) {
+					b->tnokey[0] = p - 1;
+					b->tnokey[1] = p;
+					ALGODEBUG fprintf(stderr, "#BATkeyed: fixed nokey(" BUNFMT "," BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p - 1, p, BATgetId(b), BATcount(b), GDKusec() - t0);
+					goto doreturn;
+				}
+				prev = cur;
+			}
+			/* we completed the scan: no duplicates */
+			b->tkey = 1;
+		} else if (BATcheckhash(b) ||
+			   (b->batPersistence == PERSISTENT &&
+			    BAThash(b, 0) == GDK_SUCCEED)
+#ifndef DISABLE_PARENT_HASH
+			   || ((parent = VIEWtparent(b)) != 0 &&
+			       BATcheckhash(BBPdescriptor(parent)))
+#endif
+			) {
+			/* we already have a hash table on b, or b is
+			 * persistent and we could create a hash
+			 * table, or b is a view on a bat that already
+			 * has a hash table */
+			BUN lo = 0;
+
+			hs = b->thash;
+#ifndef DISABLE_PARENT_HASH
+			if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
+				BAT *b2 = BBPdescriptor(parent);
+				lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+				hs = b2->thash;
+			}
+#endif
+			for (q = BUNlast(b), p = 0; p < q; p++) {
+				const void *v = BUNtail(bi, p);
+				for (hb = HASHgetlink(hs, p + lo);
+				     hb != HASHnil(hs) && hb >= lo;
+				     hb = HASHgetlink(hs, hb)) {
+					assert(hb < p + lo);
+					if ((*cmpf)(v, BUNtail(bi, hb - lo)) == 0) {
+						b->tnokey[0] = hb - lo;
+						b->tnokey[1] = p;
+					ALGODEBUG fprintf(stderr, "#BATkeyed: fixed nokey(" BUNFMT "," BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", hb - lo, p, BATgetId(b), BATcount(b), GDKusec() - t0);
+						goto doreturn;
+					}
+				}
+			}
+			/* we completed the scan: no duplicates */
+			b->tkey = 1;
+		} else {
+			const char *nme;
+			size_t nmelen;
+			BUN prb;
+			BUN mask;
+			char *ext = NULL;
+			Heap *hp = NULL;
+
+			GDKclrerr(); /* not interested in BAThash errors */
+			nme = BBP_physical(b->batCacheid);
+			nmelen = strlen(nme);
+			if (ATOMbasetype(b->ttype) == TYPE_bte) {
+				mask = (BUN) 1 << 8;
+				cmpf = NULL; /* no compare needed, "hash" is perfect */
+			} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
+				mask = (BUN) 1 << 16;
+				cmpf = NULL; /* no compare needed, "hash" is perfect */
+			} else {
+				mask = HASHmask(b->batCount);
+				if (mask < ((BUN) 1 << 16))
+					mask = (BUN) 1 << 16;
+			}
+			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
+			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
+			    snprintf(hp->filename, nmelen + 30,
+				     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
+			    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
+			    (hs = HASHnew(hp, b->ttype, BUNlast(b), mask, BUN_NONE)) == NULL) {
+				if (hp) {
+					if (hp->filename)
+						GDKfree(hp->filename);
+					GDKfree(hp);
+				}
+				GDKfree(ext);
+				/* err on the side of caution: not keyed */
+				goto doreturn;
+			}
+			for (q = BUNlast(b), p = 0; p < q; p++) {
+				const void *v = BUNtail(bi, p);
+				prb = HASHprobe(hs, v);
+				for (hb = HASHget(hs, prb);
+				     hb != HASHnil(hs);
+				     hb = HASHgetlink(hs, hb)) {
+					if (cmpf == NULL ||
+					    (*cmpf)(v, BUNtail(bi, hb)) == 0) {
+						b->tnokey[0] = hb;
+						b->tnokey[1] = p;
+						ALGODEBUG fprintf(stderr, "#BATkeyed: fixed nokey(" BUNFMT "," BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", hb, p, BATgetId(b), BATcount(b), GDKusec() - t0);
+						goto doreturn_free;
+					}
+				}
+				/* enter into hash table */
+				HASHputlink(hs, p, HASHget(hs, prb));
+				HASHput(hs, prb, p);
+			}
+		  doreturn_free:
+			HEAPfree(hp, 1);
+			GDKfree(hp);
+			GDKfree(hs);
+			GDKfree(ext);
+			if (p == q) {
+				/* we completed the complete scan: no
+				 * duplicates */
+				b->tkey = 1;
+			}
+		}
+	}
+  doreturn:
+	MT_lock_unset(&GDKhashLock(b->batCacheid));
+	return b->tkey;
+}
+
 /* Return whether the BAT is ordered or not.  If we don't know, invest
  * in a scan and record the results in the bat descriptor.  If during
  * the scan we happen to find evidence that the BAT is not reverse

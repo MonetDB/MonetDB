@@ -1541,6 +1541,7 @@ gdk_export gdk_return BATprintf(stream *f, BAT *b);
  * ordered. The result is returned and stored in the tsorted field of
  * the BAT.
  */
+gdk_export int BATkeyed(BAT *b);
 gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
 gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable);

@@ -1,3 +1,7 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Dec  1 2016 Sjoerd Mullender <sjoerd@acm.org>
+- New function BATkeyed(BAT *b) that determines (possibly using a hash
+  table) whether all values in b are distinct.
+

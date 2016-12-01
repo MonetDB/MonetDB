@@ -510,23 +510,11 @@ BKCsetkey(bat *res, const bat *bid, const bit *param)
 	}
 	unique = b->tunique;
 	if (*param) {
-		if (!b->tkey) {
-			BUN uc;
-			if (b->tnokey[0] == 0 && b->tnokey[1] == 0) {
-				/* unknown whether key */
-				BAT *u = BATunique(b, NULL);
-				if (u == NULL)
-					throw(MAL, "bat.setKey", MAL_MALLOC_FAIL);
-				uc = BATcount(u);
-				BBPunfix(u->batCacheid);
-			} else {
-				/* known not to be unique */
-				uc = 0;
-			}
-			if (uc != BATcount(b))
-				throw(MAL, "bat.setKey", "values of bat not unique, cannot set key property");
-			BATkey(b, 1);
+		if (!BATkeyed(b)) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "bat.setKey", "values of bat not unique, cannot set key property");
 		}
+		BATkey(b, 1);
 		b->tunique = 1;
 	} else {
 		b->tunique = 0;
@@ -577,24 +565,7 @@ BKCgetKey(bit *ret, const bat *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
-	if (BATcount(b) <= 1) {
-		*ret = TRUE;
-	} else if (b->twidth < SIZEOF_BUN &&
-			   BATcount(b) > ((BUN)1 << (8 * b->twidth))) {
-		/* more rows than possible bit combinations in the atom */
-		*ret = FALSE;
-	} else {
-		if (!b->tkey && b->tnokey[0] == 0 && b->tnokey[1] == 0) {
-			BAT *bn = BATunique(b, NULL);
-			if (bn) {
-				if (BATcount(bn) == BATcount(b)) {
-					BATkey(b, 1);
-				}
-				BBPunfix(bn->batCacheid);
-			}
-		}
-		*ret = b->tkey;
-	}
+	*ret = BATkeyed(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
