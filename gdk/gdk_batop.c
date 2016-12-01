@@ -209,7 +209,8 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			}
 			b->tvarsized = 0;
 		}
-	}
+	} else if (unshare_string_heap(b) != GDK_SUCCEED)
+		return GDK_FAIL;
 	if (toff == 0 && n->twidth == b->twidth) {
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
