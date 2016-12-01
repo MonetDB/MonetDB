@@ -513,7 +513,6 @@
 #define TRUE		true
 #define FALSE		false
 #endif
-#define BOUND2BTRUE	2	/* TRUE, and bound to be so */
 
 #define IDLENGTH	64	/* maximum BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
@@ -764,7 +763,8 @@ gdk_export int VALisnil(const ValRecord *v);
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
- *           bit    tkey;             // tail values should be unique?
+ *           bit    tkey;             // tail values are unique
+ *           bit    tunique;          // tail values must be kept unique
  *           bit    tnonil;           // tail has no nils
  *           bit    tsorted;          // are tail values currently ordered?
  *           bit    tvarsized;        // for speed: tail type is varsized?
@@ -824,14 +824,15 @@ typedef struct {
 	bte shift;		/* log2 of bunwidth */
 	unsigned int
 	 varsized:1,		/* varsized (1) or fixedsized (0) */
-	 key:2,			/* duplicates allowed? */
+	 key:1,			/* no duplicate values present */
+	 unique:1,		/* no duplicate values allowed */
 	 dense:1,		/* OID only: only consecutive values */
 	 nonil:1,		/* there are no nils in the column */
 	 nil:1,			/* there is a nil in the column */
 	 sorted:1,		/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
 	oid align;		/* OID for sync alignment */
-	BUN nokey[2];		/* positions that prove key ==FALSE */
+	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN nodense;		/* position that proves dense==FALSE */
@@ -855,7 +856,8 @@ typedef struct {
 #define GDKLIBRARY_OLDWKB	061031	/* old geom WKB format */
 #define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
 #define GDKLIBRARY_HEADED	061033	/* head properties are stored */
-#define GDKLIBRARY		061034
+#define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
+#define GDKLIBRARY		061035
 
 typedef struct BAT {
 	/* static bat properties */
@@ -889,6 +891,7 @@ typedef struct BATiter {
 #define creator_tid	S.tid
 #define ttype		T.type
 #define tkey		T.key
+#define tunique		T.unique
 #define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted

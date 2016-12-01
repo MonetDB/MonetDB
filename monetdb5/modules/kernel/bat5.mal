@@ -87,10 +87,9 @@ comment "Returns the rolename of the head column of a BAT.";
 
 command setKey( b:bat[:any_1], mode:bit) :bat[:any_1] 
 address BKCsetkey
-comment "Sets the 'key' property of the tail column to 'mode'. In 'key' mode, 
-        the kernel will silently block insertions that cause a duplicate 
-        entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 
-		function does not automatically eliminate duplicates. ";
+comment "Sets the 'key' property of the tail column to 'mode'. In 'key' mode,
+        the kernel will silently block insertions that cause a duplicate
+        entry in the head column.";
 
 command isaKey( b:bat[:any_1]) :bit 
 address BKCgetKey

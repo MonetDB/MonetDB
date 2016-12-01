@@ -79,9 +79,7 @@ insert_string_bat(BAT *b, BAT *n, int force)
 	tp = NULL;
 	if ((!GDK_ELIMDOUBLES(b->tvheap) || b->batCount == 0) &&
 	    !GDK_ELIMDOUBLES(n->tvheap) &&
-	    b->tvheap->hashash == n->tvheap->hashash &&
-	    /* if needs to be kept unique, take slow path */
-	    (b->tkey & BOUND2BTRUE) == 0) {
+	    b->tvheap->hashash == n->tvheap->hashash) {
 		if (b->batRole == TRANSIENT || b->tvheap == n->tvheap) {
 			/* If b is in the transient farm (i.e. b will
 			 * never become persistent), we try some
@@ -276,19 +274,6 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			}
 			bunfastapp(b, tp);
 		}
-	} else if (b->tkey & BOUND2BTRUE) {
-		BUN i = BUNlast(b);
-		/* if no duplicate values allowed, insert one-by-one */
-		BATloop(n, p, q) {
-			tp = BUNtvar(ni, p);
-			if (BUNfnd(b, tp) == BUN_NONE) {
-				bunfastapp(b, tp);
-				if (b->thash) {
-					HASHins(b, i, tp);
-				}
-				i++;
-			}
-		}
 	} else if (b->tvheap->free < n->tvheap->free / 2) {
 		/* if b's string heap is much smaller than n's string
 		 * heap, don't bother checking whether n's string
@@ -382,7 +367,36 @@ BATappend(BAT *b, BAT *n, bit force)
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
 	BATcompatible(b, n, GDK_FAIL, "BATappend");
 
+	if (b->tunique) {
+		/* if b has the unique bit set, only insert values
+		 * from n that don't already occur in b, and make sure
+		 * we don't insert any duplicates either; we do this
+		 * by calculating a subset of n that complies with
+		 * this */
+		BAT *d, *u;
+
+		d = BATdiff(n, b, NULL, NULL, 1, BUN_NONE);
+		if (d == NULL)
+			return GDK_FAIL;
+		u = BATunique(n, d);
+		BBPunfix(d->batCacheid);
+		if (u == NULL)
+			return GDK_FAIL;
+		n = BATproject(u, n);
+		BBPunfix(u->batCacheid);
+		if (n == NULL)
+			return GDK_FAIL;
+		sz = BATcount(n);
+		if (sz == 0) {
+			/* no new values in subset of n */
+			BBPunfix(n->batCacheid);
+			return GDK_SUCCEED;
+		}
+	}
+
 	if (BUNlast(b) + BATcount(n) > BUN_MAX) {
+		if (b->tunique)
+			BBPunfix(n->batCacheid);
 		GDKerror("BATappend: combined BATs too large\n");
 		return GDK_FAIL;
 	}
@@ -416,18 +430,23 @@ BATappend(BAT *b, BAT *n, bit force)
 		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
 			sz += BATcount(b);
 			BATsetcount(b, sz);
+			if (b->tunique)
+				BBPunfix(n->batCacheid);
 			return GDK_SUCCEED;
 		}
 		/* we need to materialize the tail */
-		if (BATmaterialize(b) != GDK_SUCCEED)
+		if (BATmaterialize(b) != GDK_SUCCEED) {
+			if (b->tunique)
+				BBPunfix(n->batCacheid);
 			return GDK_FAIL;
+		}
 	}
 
 	/* if growing too much, remove the hash, else we maintain it */
 	if (BATcheckhash(b) && (2 * b->thash->mask) < (BATcount(b) + sz)) {
 		HASHdestroy(b);
 	}
-	if (b->thash != NULL || (b->tkey & BOUND2BTRUE) != 0)
+	if (b->thash != NULL)
 		fastpath = 0;
 
 	if (fastpath) {
@@ -444,9 +463,12 @@ BATappend(BAT *b, BAT *n, bit force)
 			}
 			b->tdense = n->tdense;
 			b->tnodense = n->tnodense;
-			b->tkey |= (n->tkey & TRUE);
-			b->tnokey[0] = n->tnokey[0];
-			b->tnokey[1] = n->tnokey[1];
+			/* if tunique, uniqueness is guaranteed above */
+			b->tkey = n->tkey | b->tunique;
+			if (!b->tunique) {
+				b->tnokey[0] = n->tnokey[0];
+				b->tnokey[1] = n->tnokey[1];
+			}
 			b->tnonil = n->tnonil;
 		} else {
 			BUN last = BUNlast(b) - 1;
@@ -466,9 +488,10 @@ BATappend(BAT *b, BAT *n, bit force)
 				b->trevsorted = FALSE;
 				b->tnorevsorted = 0;
 			}
-			if (b->tkey &&
+			if (!b->tunique && /* uniqueness is guaranteed above */
+			    b->tkey &&
 			    (!(BATtordered(b) || BATtrevordered(b)) ||
-			     n->tkey == 0 || xx == 0)) {
+			     !n->tkey || xx == 0)) {
 				BATkey(b, FALSE);
 			}
 			if (b->ttype != TYPE_void && b->tsorted && b->tdense &&
@@ -479,8 +502,11 @@ BATappend(BAT *b, BAT *n, bit force)
 			}
 		}
 		if (b->ttype == TYPE_str) {
-			if (insert_string_bat(b, n, force) != GDK_SUCCEED)
+			if (insert_string_bat(b, n, force) != GDK_SUCCEED) {
+				if (b->tunique)
+					BBPunfix(n->batCacheid);
 				return GDK_FAIL;
+			}
 		} else {
 			if (!ATOMvarsized(b->ttype) &&
 			    BATatoms[b->ttype].atomFix == NULL &&
@@ -504,41 +530,36 @@ BATappend(BAT *b, BAT *n, bit force)
 		BUN i = BUNlast(b);
 		BATiter ni = bat_iterator(n);
 
-		if (b->tkey & BOUND2BTRUE) {
-			b->tdense = b->tsorted = b->trevsorted = 0;
-			BATloop(n, p, q) {
-				const void *t = BUNtail(ni, p);
-
-				if (BUNfnd(b, t) == BUN_NONE) {
-					bunfastapp(b, t);
-					if (b->thash) {
-						HASHins(b, i, t);
-					}
-					i++;
-				}
-			}
-		} else {
-			if (b->hseqbase + BATcount(b) + BATcount(n) >= GDK_oid_max) {
-				GDKerror("BATappend: overflow of head value\n");
-				return GDK_FAIL;
-			}
-
-			BATloop(n, p, q) {
-				const void *t = BUNtail(ni, p);
-
-				bunfastapp(b, t);
-				if (b->thash) {
-					HASHins(b, i, t);
-				}
-				i++;
-			}
-			BATkey(b, FALSE);
-			b->tdense = b->tsorted = b->trevsorted = 0;
+		if (b->hseqbase + BATcount(b) + BATcount(n) >= GDK_oid_max) {
+			if (b->tunique)
+				BBPunfix(n->batCacheid);
+			GDKerror("BATappend: overflow of head value\n");
+			return GDK_FAIL;
 		}
+
+		if (b->thash == (Hash *) 1) {
+			/* don't bother first loading the hash to then
+			 * change it */
+			HASHdestroy(b);
+		}
+		BATloop(n, p, q) {
+			const void *t = BUNtail(ni, p);
+
+			bunfastapp(b, t);
+			HASHins(b, i, t);
+			i++;
+		}
+		if (!b->tunique)
+			BATkey(b, FALSE);
+		b->tdense = b->tsorted = b->trevsorted = 0;
 	}
 	b->tnonil &= n->tnonil;
+	if (b->tunique)
+		BBPunfix(n->batCacheid);
 	return GDK_SUCCEED;
       bunins_failed:
+	if (b->tunique)
+		BBPunfix(n->batCacheid);
 	return GDK_FAIL;
 }
 
@@ -551,7 +572,7 @@ BATdel(BAT *b, BAT *d)
 
 	assert(ATOMtype(d->ttype) == TYPE_oid);
 	assert(d->tsorted);
-	assert(d->tkey & 1);
+	assert(d->tkey);
 	if (BATcount(d) == 0)
 		return GDK_SUCCEED;
 	if (BATtdense(d)) {
@@ -640,7 +661,7 @@ BATdel(BAT *b, BAT *d)
 	}
 	if (b->batCount <= 1) {
 		/* some trivial properties */
-		b->tkey |= 1;
+		b->tkey = 1;
 		b->tsorted = b->trevsorted = 1;
 		if (b->batCount == 0) {
 			b->tnil = 0;
@@ -746,7 +767,7 @@ BATslice(BAT *b, BUN l, BUN h)
 		}
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
-		bn->tkey = b->tkey & 1;
+		bn->tkey = b->tkey;
 		bn->tnonil = b->tnonil;
 		if (b->tnosorted > l && b->tnosorted < h)
 			bn->tnosorted = b->tnosorted - l;
@@ -1187,7 +1208,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (b->ttype == TYPE_void) {
 			b->tsorted = 1;
 			b->trevsorted = b->tseqbase == oid_nil || b->batCount <= 1;
-			b->tkey |= b->tseqbase != oid_nil;
+			b->tkey = b->tseqbase != oid_nil;
 		} else if (b->batCount <= 1) {
 			b->tsorted = b->trevsorted = 1;
 		}

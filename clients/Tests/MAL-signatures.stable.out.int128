@@ -705,7 +705,7 @@ Ready.
 [ "bat",	"setColumn",	"command bat.setColumn(b:bat[:any_1],t:str):void ",	"BKCsetColumn;",	"Give a logical name to the tail column of a BAT."	]
 [ "bat",	"setHash",	"command bat.setHash(b:bat[:any_1]):bit ",	"BKCsetHash;",	"Create a hash structure on the column"	]
 [ "bat",	"setImprints",	"command bat.setImprints(b:bat[:any_1]):bit ",	"BKCsetImprints;",	"Create an imprints structure on the column"	]
-[ "bat",	"setKey",	"command bat.setKey(b:bat[:any_1],mode:bit):bat[:any_1] ",	"BKCsetkey;",	"Sets the 'key' property of the tail column to 'mode'. In 'key' mode, \n        the kernel will silently block insertions that cause a duplicate \n        entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this \n\t\tfunction does not automatically eliminate duplicates. "	]
+[ "bat",	"setKey",	"command bat.setKey(b:bat[:any_1],mode:bit):bat[:any_1] ",	"BKCsetkey;",	"Sets the 'key' property of the tail column to 'mode'. In 'key' mode,\n        the kernel will silently block insertions that cause a duplicate\n        entry in the head column."	]
 [ "bat",	"setName",	"command bat.setName(b:bat[:any_1],s:str):void ",	"BKCsetName;",	"Give a logical name to a BAT. "	]
 [ "bat",	"setPersistent",	"command bat.setPersistent(b:bat[:any_1]):void ",	"BKCsetPersistent;",	"Make the BAT persistent."	]
 [ "bat",	"setTransient",	"command bat.setTransient(b:bat[:any_1]):void ",	"BKCsetTransient;",	"Make the BAT transient.  Returns \n\tboolean which indicates if the\nBAT administration has indeed changed."	]
