@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Dec  1 2016 Sjoerd Mullender <sjoerd@acm.org>
+- The tnokey values must now be 0 if it is not known whether all values
+  in a column are distinct.
+
 * Wed Oct 26 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented conversion to str from any type (not just the internal
   types).

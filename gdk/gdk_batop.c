@@ -464,8 +464,11 @@ BATappend(BAT *b, BAT *n, bit force)
 			b->tdense = n->tdense;
 			b->tnodense = n->tnodense;
 			b->tkey |= (n->tkey & TRUE);
-			b->tnokey[0] = n->tnokey[0];
-			b->tnokey[1] = n->tnokey[1];
+			/* if BOUND2BTRUE, uniqueness is guaranteed above */
+			if ((b->tkey & BOUND2BTRUE) == 0) {
+				b->tnokey[0] = n->tnokey[0];
+				b->tnokey[1] = n->tnokey[1];
+			}
 			b->tnonil = n->tnonil;
 		} else {
 			BUN last = BUNlast(b) - 1;
@@ -485,7 +488,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				b->trevsorted = FALSE;
 				b->tnorevsorted = 0;
 			}
-			if (b->tkey &&
+			if (b->tkey == 1 &&
 			    (!(BATtordered(b) || BATtrevordered(b)) ||
 			     n->tkey == 0 || xx == 0)) {
 				BATkey(b, FALSE);
@@ -542,7 +545,8 @@ BATappend(BAT *b, BAT *n, bit force)
 			}
 			i++;
 		}
-		BATkey(b, FALSE);
+		if ((b->tkey & BOUND2BTRUE) == 0)
+			BATkey(b, FALSE);
 		b->tdense = b->tsorted = b->trevsorted = 0;
 	}
 	b->tnonil &= n->tnonil;

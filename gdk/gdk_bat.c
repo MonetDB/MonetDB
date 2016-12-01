@@ -1454,6 +1454,8 @@ BATkey(BAT *b, int flag)
 	b->tkey = flag;
 	if (!flag)
 		b->tdense = 0;
+	else
+		b->tnokey[0] = b->tnokey[1] = 0;
 	if (flag && VIEWtparent(b)) {
 		/* if a view is key, then so is the parent if the two
 		 * are aligned */
@@ -2132,6 +2134,18 @@ BATassertProps(BAT *b)
 		    b->tnorevsorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnorevsorted - 1),
 				    BUNtail(bi, b->tnorevsorted)) < 0);
+	}
+	/* if tkey property set, both tnokey values must be 0 */
+	assert(!b->tkey || (b->tnokey[0] == 0 && b->tnokey[1] == 0));
+	if (!b->tkey && (b->tnokey[0] != 0 || b->tnokey[1] != 0)) {
+		/* if tkey not set and tnokey indicates a proof of
+		 * non-key-ness, make sure the tnokey values are in
+		 * range and indeed provide a proof */
+		assert(b->tnokey[0] != b->tnokey[1]);
+		assert(b->tnokey[0] < b->batCount);
+		assert(b->tnokey[1] < b->batCount);
+		assert(cmpf(BUNtail(bi, b->tnokey[0]),
+			    BUNtail(bi, b->tnokey[1])) == 0);
 	}
 	/* var heaps must have sane sizes */
 	assert(b->tvheap == NULL || b->tvheap->free <= b->tvheap->size);

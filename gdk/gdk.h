@@ -831,7 +831,7 @@ typedef struct {
 	 sorted:1,		/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
 	oid align;		/* OID for sync alignment */
-	BUN nokey[2];		/* positions that prove key ==FALSE */
+	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN nodense;		/* position that proves dense==FALSE */
@@ -855,7 +855,8 @@ typedef struct {
 #define GDKLIBRARY_OLDWKB	061031	/* old geom WKB format */
 #define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
 #define GDKLIBRARY_HEADED	061033	/* head properties are stored */
-#define GDKLIBRARY		061034
+#define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
+#define GDKLIBRARY		061035
 
 typedef struct BAT {
 	/* static bat properties */
