@@ -537,13 +537,16 @@ BATappend(BAT *b, BAT *n, bit force)
 			return GDK_FAIL;
 		}
 
+		if (b->thash == (Hash *) 1) {
+			/* don't bother first loading the hash to then
+			 * change it */
+			HASHdestroy(b);
+		}
 		BATloop(n, p, q) {
 			const void *t = BUNtail(ni, p);
 
 			bunfastapp(b, t);
-			if (b->thash) {
-				HASHins(b, i, t);
-			}
+			HASHins(b, i, t);
 			i++;
 		}
 		if (!b->tunique)

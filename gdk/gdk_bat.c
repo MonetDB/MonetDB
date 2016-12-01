@@ -1044,10 +1044,10 @@ BUNappend(BAT *b, const void *t, bit force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-
-	/* first adapt the hashes; then the user-defined accelerators.
-	 * REASON: some accelerator updates (qsignature) use the hashes!
-	 */
+	if (b->thash == (Hash *) 1) {
+		/* don't bother first loading the hash to then change it */
+		HASHdestroy(b);
+	}
 	if (b->thash) {
 		HASHins(b, p, t);
 		if (tsize && tsize != b->tvheap->size)
