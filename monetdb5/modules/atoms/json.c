@@ -2175,7 +2175,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		freeg = 1;
 		if (t2->ttype == TYPE_void) {
 			map = NULL;
-			mapoff = b->tseqbase;
+			mapoff = t2->tseqbase;
 		} else {
 			map = (const oid *) Tloc(t2, 0);
 		}
