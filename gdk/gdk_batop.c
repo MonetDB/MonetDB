@@ -431,8 +431,11 @@ BATappend(BAT *b, BAT *n, bit force)
 			return GDK_FAIL;
 	}
 
-	/* if growing too much, remove the hash, else we maintain it */
-	if (BATcheckhash(b) && (2 * b->T->hash->mask) < (BATcount(b) + sz)) {
+	/* if growing too much (and we don't need the hash for
+	 * uniqueness), remove the hash, else we maintain it */
+	if (BATcheckhash(b) &&
+	    (2 * b->T->hash->mask) < (BATcount(b) + sz) &&
+	    (b->tkey & BOUND2BTRUE) == 0) {
 		HASHremove(b);
 	}
 	if (b->T->hash != NULL ||
