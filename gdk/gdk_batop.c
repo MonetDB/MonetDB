@@ -443,6 +443,11 @@ BATappend(BAT *b, BAT *n, bit force)
 		}
 	}
 
+	if (b->thash == (Hash *) 1) {
+		/* don't bother first loading the hash to then
+		 * change it */
+		HASHdestroy(b);
+	}
 	/* if growing too much, remove the hash, else we maintain it */
 	if (BATcheckhash(b) && (2 * b->thash->mask) < (BATcount(b) + sz)) {
 		HASHdestroy(b);
@@ -538,11 +543,6 @@ BATappend(BAT *b, BAT *n, bit force)
 			return GDK_FAIL;
 		}
 
-		if (b->thash == (Hash *) 1) {
-			/* don't bother first loading the hash to then
-			 * change it */
-			HASHdestroy(b);
-		}
 		BATloop(n, p, q) {
 			const void *t = BUNtail(ni, p);
 
