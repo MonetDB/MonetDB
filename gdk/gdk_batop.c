@@ -413,7 +413,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 
 	/* append two void,void bats */
-	if (b->ttype == TYPE_void && BATtdense(b)) {
+	if (b->ttype == TYPE_void && BATtdense(n)) {
 		oid f = n->tseqbase;
 
 		if (n->ttype != TYPE_void)
@@ -421,7 +421,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 		if (BATcount(b) == 0 && f != oid_nil)
 			BATseqbase(BATmirror(b), f);
-		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
+		if (BATcount(b) + b->tseqbase == f) {
 			sz += BATcount(b);
 			BATsetcount(b, sz);
 			return GDK_SUCCEED;
