@@ -82,15 +82,36 @@ Ready.
 #INSERT INTO table_two VALUES (2);
 [ 1	]
 #SELECT ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) AS new_column FROM table_one;
--- insert output here
+% .L5 # table_name
+% new_column # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #SELECT ( CASE WHEN ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) THEN 1 ELSE 0 END ) AS new_column FROM table_one;
--- insert output here
+% .L5 # table_name
+% new_column # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 0	]
+[ 0	]
+[ 0	]
 #SELECT COUNT(*) , ( CASE WHEN ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) THEN 1 ELSE 0 END ) AS new_column FROM table_one GROUP BY new_column;
--- insert output here
+% .L6,	.L10 # table_name
+% L5,	new_column # name
+% bigint,	tinyint # type
+% 1,	1 # length
+[ 2,	1	]
+[ 3,	0	]
 #SELECT this_column, (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) AS new_column FROM table_one;
-% .table_one,	.L3 # table_name
+% .table_one,	.L11 # table_name
 % this_column,	new_column # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 [ 1,	1	]
 [ 2,	1	]
@@ -98,7 +119,7 @@ Ready.
 [ 4,	0	]
 [ 5,	0	]
 #SELECT this_column, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) = 0 THEN 0 ELSE 1 END) AS new_column FROM table_one;
-% .table_one,	.L3 # table_name
+% .table_one,	.L11 # table_name
 % this_column,	new_column # name
 % int,	tinyint # type
 % 1,	1 # length
@@ -108,32 +129,32 @@ Ready.
 [ 4,	0	]
 [ 5,	0	]
 #SELECT COUNT(*) AS count, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) = 0 THEN 0 ELSE 1 END) AS new_column  FROM table_one GROUP BY new_column;
-% .L2,	.L3 # table_name
+% .L10,	.L12 # table_name
 % count,	new_column # name
-% wrd,	tinyint # type
+% bigint,	tinyint # type
 % 1,	1 # length
 [ 2,	1	]
 [ 3,	0	]
 #WITH table_one_cte AS (SELECT this_column, (CASE (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) WHEN 0 THEN 0 ELSE 1 END) AS new_column FROM table_one) SELECT COUNT(*) AS count, MIN(this_column) AS min_this_column, MAX(this_column) AS max_this_column, AVG(this_column) AS avg_this_column, CAST(SUM(this_column) AS bigint) AS sum_this_column, new_column FROM table_one_cte GROUP BY new_column;
-% .L5,	.L7,	.L11,	.L13,	.L15,	.table_one_cte # table_name
+% .L17,	.L22,	.L25,	.L30,	.L34,	.table_one_cte # table_name
 % count,	min_this_column,	max_this_column,	avg_this_column,	sum_this_column,	new_column # name
-% wrd,	int,	int,	double,	bigint,	tinyint # type
+% bigint,	int,	int,	double,	bigint,	tinyint # type
 % 1,	1,	1,	24,	2,	1 # length
 [ 2,	1,	2,	1.5,	3,	1	]
 [ 3,	3,	5,	4,	12,	0	]
 #CREATE VIEW table_one_vw AS
 #SELECT this_column, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) = 0 THEN 0 ELSE 1 END) AS new_column FROM table_one;
 #SELECT COUNT(*), new_column FROM table_one_vw GROUP BY new_column;
-% .L5,	.table_one_vw # table_name
-% L4,	new_column # name
-% wrd,	tinyint # type
+% .L17,	.table_one_vw # table_name
+% L16,	new_column # name
+% bigint,	tinyint # type
 % 1,	1 # length
 [ 2,	1	]
 [ 3,	0	]
 #SELECT COUNT(*) AS count, MIN(this_column) AS min_this_column, MAX(this_column) AS max_this_column, AVG(this_column) AS avg_this_column, CAST(SUM(this_column) AS bigint) AS sum_this_column, new_column FROM table_one_vw GROUP BY new_column;
-% .L5,	.L7,	.L11,	.L13,	.L15,	.table_one_vw # table_name
+% .L17,	.L22,	.L25,	.L30,	.L34,	.table_one_vw # table_name
 % count,	min_this_column,	max_this_column,	avg_this_column,	sum_this_column,	new_column # name
-% wrd,	int,	int,	double,	bigint,	tinyint # type
+% bigint,	int,	int,	double,	bigint,	tinyint # type
 % 1,	1,	1,	24,	2,	1 # length
 [ 2,	1,	2,	1.5,	3,	1	]
 [ 3,	3,	5,	4,	12,	0	]
@@ -142,18 +163,18 @@ Ready.
 #UNION ALL
 #SELECT COUNT(*) AS count, 0 AS new_column FROM table_one
 # WHERE this_column NOT IN (SELECT this_column FROM table_two);
-% .L15,	.L15 # table_name
+% .L37,	.L37 # table_name
 % count,	new_column # name
-% wrd,	tinyint # type
+% bigint,	tinyint # type
 % 1,	1 # length
 [ 2,	1	]
 [ 3,	0	]
 #SELECT COUNT(*) AS count, (CASE WHEN t2.this_column IS NULL THEN 0 ELSE 1 END) AS new_column
 #  FROM table_one t1 LEFT OUTER JOIN table_two t2 ON t1.this_column = t2.this_column
 # GROUP BY new_column;
-% .L2,	.L3 # table_name
+% .L3,	.L5 # table_name
 % count,	new_column # name
-% wrd,	tinyint # type
+% bigint,	tinyint # type
 % 1,	1 # length
 [ 2,	1	]
 [ 3,	0	]
@@ -168,9 +189,9 @@ Ready.
 #    except
 #    (select this_column from table_two)
 #) as "missing";
-% .L6,	.L6 # table_name
-% L1,	L3 # name
-% wrd,	tinyint # type
+% .L34,	.L34 # table_name
+% L11,	L14 # name
+% bigint,	tinyint # type
 % 1,	1 # length
 [ 2,	1	]
 [ 3,	0	]

@@ -633,6 +633,13 @@ exp_label(sql_allocator *sa, sql_exp *e, int nr)
 	return e;
 }
 
+sql_exp*
+exp_label_table(sql_allocator *sa, sql_exp *e, int nr)
+{
+	e->rname = make_label(sa, nr);
+	return e;
+}
+
 void
 exp_swap( sql_exp *e ) 
 {

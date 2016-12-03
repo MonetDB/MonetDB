@@ -75,9 +75,9 @@ Ready.
 #    SELECT COUNT(*) FROM t1
 #  ) AS score
 #FROM t0;
-% sys.t0,	.L3 # table_name
+% sys.t0,	.L7 # table_name
 % a1,	score # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT
 #  a1,
@@ -85,9 +85,9 @@ Ready.
 #    SELECT COUNT(*) FROM t1 WHERE a1 = b1 AND EXISTS ( SELECT 1 FROM t2 WHERE c1 = a2 AND c2 IN (SELECT a1 FROM t0) )
 #  ) AS score
 #FROM t0;
-% sys.t0,	.L3 # table_name
+% .t0,	.L24 # table_name
 % a1,	score # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT
 #  a1,
@@ -95,9 +95,9 @@ Ready.
 #    SELECT COUNT(*) FROM t1 WHERE a1 = b1 AND EXISTS ( SELECT 1 FROM t2 WHERE c1 = B2 AND c2 IN (SELECT a1 FROM t0) )
 #  ) AS score
 #FROM t0;
-% sys.t0,	.L3 # table_name
+% .t0,	.L24 # table_name
 % a1,	score # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT
 #  a1,
@@ -106,9 +106,9 @@ Ready.
 #  ) AS score
 #FROM t0
 #WHERE a2 OR a3;
-% sys.t0,	.L3 # table_name
+% .t0,	.L24 # table_name
 % a1,	score # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 
 # 18:55:53 >  

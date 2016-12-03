@@ -2011,6 +2011,9 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			left = rel_project_exp(sql->sa, l);
 		}
 
+		if (left && is_project(left->op) && list_empty(left->exps))
+			left = left->l;
+
 		if (n->type == type_list) {
 			sql_subtype *st = exp_subtype(l);
 
@@ -3662,7 +3665,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 
 /* some users like to use aliases already in the groupby */
 static sql_exp *
-rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
+rel_selection_ref(mvc *sql, sql_rel **rel, symbol *grp, dlist *selection )
 {
 	dnode *n;
 	dlist *gl = grp->data.lval;
@@ -3682,7 +3685,7 @@ rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 			/* AS name */
 			if (l->h->next->data.sval &&
 					strcmp(l->h->next->data.sval, name) == 0){
-				sql_exp *ve = rel_value_exp(sql, &rel, l->h->data.sym, sql_sel, ek);
+				sql_exp *ve = rel_value_exp(sql, rel, l->h->data.sym, sql_sel, ek);
 				if (ve) {
 					dlist *l = dlist_create(sql->sa);
 					symbol *sym;
@@ -3709,18 +3712,20 @@ rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 }
 
 static list *
-rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
+rel_group_by(mvc *sql, sql_rel **rel, symbol *groupby, dlist *selection, int f )
 {
-	sql_rel *or = rel;
+	//sql_rel *or = rel;
 	dnode *o = groupby->data.lval->h;
 	list *exps = new_exp_list(sql->sa);
 
 	for (; o; o = o->next) {
 		symbol *grp = o->data.sym;
-		sql_exp *e = rel_column_ref(sql, &rel, grp, f);
+		sql_exp *e = rel_column_ref(sql, rel, grp, f);
 
+		/*
 		if (or != rel)
 			return NULL;
+			*/
 		if (!e) {
 			char buf[ERRSIZE];
 			/* reset error */
@@ -4139,7 +4144,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	/* Partition By */
 	if (window_specification->h->data.sym) {
-		gbe = rel_group_by(sql, p, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
+		gbe = rel_group_by(sql, &p, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
 		if (!gbe)
 			return NULL;
 		p->r = gbe;
@@ -4653,7 +4658,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 	if (rel) {
 		if (rel && sn->groupby) {
-			list *gbe = rel_group_by(sql, rel, sn->groupby, sn->selection, sql_sel );
+			list *gbe = rel_group_by(sql, &rel, sn->groupby, sn->selection, sql_sel );
 
 			if (!gbe)
 				return NULL;

@@ -81,7 +81,7 @@ Ready.
 [ 2	]
 [ NULL	]
 #SELECT this_column, (CASE WHEN this_column IS NULL THEN 0 ELSE 1 END) AS new_column FROM table_two;
-% sys.table_two,	sys.L1 # table_name
+% sys.table_two,	sys.L3 # table_name
 % this_column,	new_column # name
 % int,	tinyint # type
 % 1,	1 # length
@@ -89,13 +89,13 @@ Ready.
 [ 2,	1	]
 [ NULL,	0	]
 #SELECT this_column, (CASE this_column WHEN NULL THEN 0 ELSE 1 END) AS new_column FROM table_two;
-% sys.table_two,	sys.L1 # table_name
+% sys.table_two,	sys.L3 # table_name
 % this_column,	new_column # name
 % int,	tinyint # type
 % 1,	1 # length
 [ 1,	1	]
 [ 2,	1	]
-[ NULL,	0	]
+[ NULL,	1	]
 #DROP TABLE table_two;
 
 # 15:30:37 >  
