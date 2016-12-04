@@ -450,7 +450,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	GDKfree(old);
 	if (!push_down_delta) {
 		GDKfree(vars);
-		return actions;
+		goto wrapup;
 	}
 
 	/* now push selects through delta's */
@@ -465,7 +465,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		GDKfree(vars);
 		GDKfree(slices);
 		GDKfree(rslices);
-		return actions;
+		goto wrapup;
 
 	}
 	pushInstruction(mb,old[0]);
@@ -608,6 +608,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
         chkFlow(cntxt->fdout, mb);
         chkDeclarations(cntxt->fdout, mb);
     }
+wrapup:
     /* keep all actions taken as a post block comment */
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions,GDKusec() - usec);
     newComment(mb,buf);
