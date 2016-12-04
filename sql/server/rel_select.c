@@ -1989,16 +1989,21 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		dlist *dl = sc->data.lval;
 		symbol *lo = dl->h->data.sym;
 		dnode *n = dl->h->next;
-		sql_exp *l = rel_value_exp(sql, rel, lo, f, ek), *r = NULL;
-		sql_rel *left = NULL, *right = NULL;
+		sql_rel *left = NULL, *right = NULL, *outer = *rel;
+		sql_exp *l = NULL, *r = NULL;
 		int needproj = 0, vals_only = 1;
-		list *vals = NULL;
+		list *vals = NULL, *pexps = NULL;
 
+		if (outer && f == sql_sel && is_project(outer->op) && !is_processed(outer) && outer->l && !list_empty(outer->exps)) {
+			needproj = 1;
+			pexps = outer->exps;
+			*rel = outer->l;
+		}
+
+		l = rel_value_exp(sql, rel, lo, f, ek);
 		if (!l)
 			return NULL;
-
 		ek.card = card_set;
-
 		if (!left)
 			left = *rel;
 
@@ -2006,7 +2011,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			needproj = (left != NULL);
 			left = rel_project_exp(sql->sa, l);
 		}
-
 		if (left && is_project(left->op) && list_empty(left->exps))
 			left = left->l;
 
@@ -2072,6 +2076,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 						e = rel_binop_(sql, e, ne, NULL, "or", card_value);
 					}
 				}
+				*rel = outer;
 				return e;
 			}
 			r = rel_lastexp(sql, right);
@@ -2083,7 +2088,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			e = exp_compare(sql->sa, l, r, cmp_equal );
 			rel_join_add_exp(sql->sa, left, e);
 			if (*rel && needproj)
-				left = *rel = rel_project(sql->sa, left, NULL);
+				left = *rel = rel_project(sql->sa, left, pexps);
 			else
 				*rel = left;
 			if (sc->token == SQL_NOT_IN)
@@ -2510,9 +2515,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			if (!correlated) {
 				if (right->processed)
 					right = rel_label(sql, right, 0);
-				/*
-				right = rel_distinct(right);
-				*/
 			}
 		} else {
 			return sql_error(sql, 02, "IN: missing inner query");
@@ -2535,13 +2537,10 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				sql_exp *l = n->data;
 				sql_exp *r = m->data;
 
-				//r = rel_lastexp(sql, right);
-				//r = exp_column(sql->sa, exp_relname(r), exp_name(r), exp_subtype(r), exp_card(r), has_nil(r), is_intern(r));
 				r = exp_alias_or_copy(sql, exp_relname(r), exp_name(r), right, r);
 				if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
 					return NULL;
 				e = exp_compare(sql->sa, l, r, cmp_equal );
-				//rel_join_add_exp(sql->sa, rel, e);
 				append(jexps, e);
 			}
 			if (correlated && l_is_value) {
