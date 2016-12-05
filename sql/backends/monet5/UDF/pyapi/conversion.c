@@ -851,6 +851,8 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,  int *re
 	if (conv_type == TYPE_str) {
 		BATiter li = bat_iterator(b);
 		BUN p = 0, q = 0;
+		char *result = NULL;
+		int length = 0;
 		int (*strConversion) (str*, int*, const void*) = BATatoms[b->ttype].atomToStr;
 		*ret_bat = COLnew(0, TYPE_str, 0, TRANSIENT);
 		*ret_type = conv_type;
@@ -858,13 +860,14 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,  int *re
 			return createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" string conversion BAT.");
 		}
 		BATloop(b, p, q) {
-			char *result = NULL;
-			int length = 0;
 			void *element = (void*) BUNtail(li, p);
 			if (strConversion(&result, &length, element) == 0) {
 				return createException(MAL, "pyapi.eval", "Failed to convert element to string.");
 			}
 			BUNappend(*ret_bat, result, FALSE);
+		}
+		if (result) {
+			GDKfree(result);
 		}
 		return res;
 	}
