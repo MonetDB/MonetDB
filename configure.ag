@@ -1462,10 +1462,12 @@ AS_VAR_IF([have_pthread], [no], [], [
 			# https://www.monetdb.org/pipermail/developers-list/2014-March/004264.html
 			# a better alternative might be required but is
 			# still pending ...
+			AS_CASE([$host],
+				[*-darwin*], [], [
 			PTHREAD_INCS="-pthread"
 			PTHREAD_LIBS="-pthread"
 			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
-			LIBS="$LIBS $PTHREAD_LIBS"],
+			LIBS="$LIBS $PTHREAD_LIBS"])],
 		[yes-auto-*|yes-yes-*], [
 			# use GCC's knowledge about the target platform, sets flags
 			# for both the preprocessor as well as the linker
