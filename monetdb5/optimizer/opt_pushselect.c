@@ -608,7 +608,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
     }
 wrapup:
     /* keep all actions taken as a post block comment */
-wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions,GDKusec() - usec);
     newComment(mb,buf);
 
