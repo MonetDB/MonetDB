@@ -641,6 +641,8 @@ Ready.
 [ "bam",	"sam_export",	"pattern bam.sam_export(output_path:str):void ",	"sam_exportf;",	"Export results in the bam.export table to a SAM file"	]
 [ "bam",	"seq_char",	"command bam.seq_char(ref_pos:int,alg_seq:str,alg_pos:int,alg_cigar:str):str ",	"seq_char;",	"Calculate the character in the alignment string (alg_str) that is aligned to position 'ref_pos', conforming to the given cigar string"	]
 [ "bam",	"seq_length",	"command bam.seq_length(cigar:str):int ",	"seq_length;",	"Calculate the real length of a DNA sequence, given its CIGAR string."	]
+[ "bat",	"append",	"command bat.append(i:bat[:any_1],u:bat[:any_1],s:bat[:oid],force:bit):bat[:any_1] ",	"BKCappend_cand_force_wrap;",	"append the content of u with candidate list s to i"	]
+[ "bat",	"append",	"command bat.append(i:bat[:any_1],u:bat[:any_1],s:bat[:oid]):bat[:any_1] ",	"BKCappend_cand_wrap;",	"append the content of u with candidate list s to i"	]
 [ "bat",	"append",	"command bat.append(i:bat[:any_1],u:bat[:any_1],force:bit):bat[:any_1] ",	"BKCappend_force_wrap;",	"append the content of u to i"	]
 [ "bat",	"append",	"command bat.append(i:bat[:any_1],u:any_1,force:bit):bat[:any_1] ",	"BKCappend_val_force_wrap;",	"append the value u to i"	]
 [ "bat",	"append",	"command bat.append(i:bat[:any_1],u:any_1):bat[:any_1] ",	"BKCappend_val_wrap;",	"append the value u to i"	]

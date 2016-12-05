@@ -95,8 +95,8 @@ Ready.
 % .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
 % schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints,	sorted # name
 % clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint,	boolean # type
-% 3,	7,	13,	8,	8,	2,	4,	5,	1,	5 # length
-[ "sys",	"_tables",	"id",	"int",	"writable",	4,	2600,	false,	0,	NULL	]
+% 3,	7,	13,	8,	8,	2,	1,	5,	1,	5 # length
+[ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0,	true	]
 [ "sys",	"_tables",	"name",	"varchar",	"writable",	8,	0,	false,	0,	false	]
 [ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0,	NULL	]
 [ "sys",	"_tables",	"query",	"varchar",	"writable",	45,	0,	false,	0,	NULL	]

@@ -1030,7 +1030,7 @@ gdk_export bte ATOMelmshift(int sz);
  * @- BUN manipulation
  * @multitable @columnfractions 0.08 0.7
  * @item BAT*
- * @tab BATappend (BAT *b, BAT *c, bit force)
+ * @tab BATappend (BAT *b, BAT *n, BAT *s, bit force)
  * @item BAT*
  * @tab BUNappend (BAT *b, ptr right, bit force)
  * @item BAT*
@@ -1262,7 +1262,7 @@ gdk_export bte ATOMelmshift(int sz);
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare);
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
-gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
+gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bit force);
 
 gdk_export gdk_return BUNdelete(BAT *b, oid o);
 gdk_export gdk_return BATdel(BAT *b, BAT *d);

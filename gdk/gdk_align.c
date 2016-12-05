@@ -451,7 +451,7 @@ VIEWreset(BAT *b)
 		b->batCapacity = cnt;
 
 		/* insert all of v in b, and quit */
-		BATappend(b, v, FALSE);
+		BATappend(b, v, NULL, FALSE);
 		BBPreclaim(v);
 	}
 	return GDK_SUCCEED;

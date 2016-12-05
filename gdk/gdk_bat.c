@@ -2002,6 +2002,12 @@ BATmode(BAT *b, int mode)
  *		then all values are equal.
  * revsorted	The column is reversely sorted (descending).  If
  *		also sorted, then all values are equal.
+ * nosorted	BUN position which proofs not sorted (given position
+ *		and one before are not ordered correctly).
+ * norevsorted	BUN position which proofs not revsorted (given position
+ *		and one before are not ordered correctly).
+ * nokey	Pair of BUN positions that proof not all values are
+ *		distinct (i.e. values at given locations are equal).
  *
  * In addition there is a property "unique" that, when set, indicates
  * that values must be kept unique (and hence that the "key" property
