@@ -856,6 +856,9 @@ copyVariable(MalBlkPtr dst, VarPtr v)
 	w->type = v->type;
 	w->flags = v->flags;
 	w->rowcnt = v->rowcnt;
+	w->declared = v->declared;
+	w->updated = v->updated;
+	w->eolife = v->eolife;
 	if (VALcopy(&w->value, &v->value) == NULL) {
 		GDKfree(w);
 		return -1;
