@@ -539,7 +539,6 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
-Obsoletes: MonetDB5-server-rdf
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 %if %{bits} == 64
@@ -694,8 +693,6 @@ Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 # RHEL >= 7, and all current Fedora
 Requires: %{_bindir}/systemd-tmpfiles
 %endif
-Obsoletes: MonetDB-SQL-devel
-Obsoletes: %{name}-SQL
 %if (0%{?fedora} >= 22)
 %if %{bits} == 64
 Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
@@ -786,7 +783,6 @@ frontend of MonetDB.
 %package testing
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
-Obsoletes: MonetDB-python
 
 %description testing
 MonetDB is a database management system that is developed from a
