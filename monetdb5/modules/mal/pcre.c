@@ -26,10 +26,13 @@
 
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>
-#else
+
 #if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 13)
 #define pcre_free_study my_pcre_free
 #endif
+
+#else
+
 #include <regex.h>
 
 typedef regex_t pcre;
