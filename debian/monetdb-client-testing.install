@@ -2,8 +2,6 @@ debian/tmp/usr/bin/arraytest usr/bin
 debian/tmp/usr/bin/odbcsample1 usr/bin
 debian/tmp/usr/bin/sample0 usr/bin
 debian/tmp/usr/bin/sample1 usr/bin
-debian/tmp/usr/bin/sample2 usr/bin
-debian/tmp/usr/bin/sample3 usr/bin
 debian/tmp/usr/bin/sample4 usr/bin
 debian/tmp/usr/bin/smack00 usr/bin
 debian/tmp/usr/bin/smack01 usr/bin

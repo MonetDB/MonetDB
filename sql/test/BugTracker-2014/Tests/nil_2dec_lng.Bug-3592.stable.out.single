@@ -43,9 +43,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 206 # length
+% 210 # length
 function user.s10_1():void;
-    X_82:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",53);
+    X_82:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",53:int);
 barrier X_134 := language.dataflow();
     X_56 := bat.new(nil:str);
     X_63 := bat.append(X_56,".L17");
@@ -57,35 +57,35 @@ barrier X_134 := language.dataflow();
     X_67 := bat.append(X_59,"sec_interval");
     X_76 := bat.append(X_67,"decimal");
     X_60 := bat.new(nil:int);
-    X_69 := bat.append(X_60,13);
-    X_78 := bat.append(X_69,18);
+    X_69 := bat.append(X_60,13:int);
+    X_78 := bat.append(X_69,18:int);
     X_62 := bat.new(nil:int);
-    X_71 := bat.append(X_62,0);
-    X_80 := bat.append(X_71,9);
+    X_71 := bat.append(X_62,0:int);
+    X_80 := bat.append(X_71,9:int);
     X_48:bat[:lng] := bat.new(nil:lng);
     X_3 := sql.mvc();
-    C_102:bat[:oid] := sql.tid(X_3,"sys","foo_nil_2dec",0,2);
-    X_105:bat[:timestamp] := sql.bind(X_3,"sys","foo_nil_2dec","t",0,0,2);
-    X_110 := algebra.projection(C_102,X_105);
-    X_114 := mal.manifold("mtime","diff",X_110,"1970-01-01 00:00:00.000");
-    C_104:bat[:oid] := sql.tid(X_3,"sys","foo_nil_2dec",1,2);
-    X_106:bat[:timestamp] := sql.bind(X_3,"sys","foo_nil_2dec","t",0,1,2);
-    X_111 := algebra.projection(C_104,X_106);
-    X_115 := mal.manifold("mtime","diff",X_111,"1970-01-01 00:00:00.000");
-    X_125 := mat.packIncrement(X_114,2);
+    C_102:bat[:oid] := sql.tid(X_3,"sys","foo_nil_2dec",0:int,2:int);
+    X_105:bat[:timestamp] := sql.bind(X_3,"sys","foo_nil_2dec","t",0:int,0:int,2:int);
+    X_110 := mosaic.projection(C_102,X_105);
+    X_114 := mal.manifold("mtime","diff",X_110,"1970-01-01 00:00:00.000":timestamp);
+    C_104:bat[:oid] := sql.tid(X_3,"sys","foo_nil_2dec",1:int,2:int);
+    X_106:bat[:timestamp] := sql.bind(X_3,"sys","foo_nil_2dec","t",0:int,1:int,2:int);
+    X_111 := mosaic.projection(C_104,X_106);
+    X_115 := mal.manifold("mtime","diff",X_111,"1970-01-01 00:00:00.000":timestamp);
+    X_125 := mat.packIncrement(X_114,2:int);
     X_27:bat[:lng] := mat.packIncrement(X_125,X_115);
     X_49 := bat.append(X_48,X_27,true);
     C_30:bat[:oid] := sql.tid(X_3,"sys","foo_nil_2dec");
-    X_31:bat[:timestamp] := sql.bind(X_3,"sys","foo_nil_2dec","t",0);
-    X_36 := algebra.projection(C_30,X_31);
-    X_39:bat[:lng] := mal.manifold("mtime","diff",X_36,"1970-01-01 00:00:00.000");
+    X_31:bat[:timestamp] := sql.bind(X_3,"sys","foo_nil_2dec","t",0:int);
+    X_36 := mosaic.projection(C_30,X_31);
+    X_39:bat[:lng] := mal.manifold("mtime","diff",X_36,"1970-01-01 00:00:00.000":timestamp);
     X_51 := bat.append(X_49,X_39,true);
     X_52:bat[:lng] := bat.new(nil:lng);
-    X_107:bat[:lng] := sql.bind(X_3,"sys","foo_nil_2dec","v",0,0,2);
-    X_112 := algebra.projection(C_102,X_107);
-    X_108:bat[:lng] := sql.bind(X_3,"sys","foo_nil_2dec","v",0,1,2);
-    X_113 := algebra.projection(C_104,X_108);
-    X_128 := mat.packIncrement(X_112,2);
+    X_107:bat[:lng] := sql.bind(X_3,"sys","foo_nil_2dec","v",0:int,0:int,2:int);
+    X_112 := mosaic.projection(C_102,X_107);
+    X_108:bat[:lng] := sql.bind(X_3,"sys","foo_nil_2dec","v",0:int,1:int,2:int);
+    X_113 := mosaic.projection(C_104,X_108);
+    X_128 := mat.packIncrement(X_112,2:int);
     X_23 := mat.packIncrement(X_128,X_113);
     X_53 := bat.append(X_52,X_23,true);
     X_47 := algebra.project(X_39,nil:lng);

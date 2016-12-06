@@ -15,7 +15,7 @@ stderr of test 'bug_in_selection.SF-1892413` in directory 'sql/test/BugTracker` 
 MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
 QUERY = SELECT date, (SELECT date from test_subquery where date > t1892413a.date limit 1) as dtNext from test_subquery t1892413a;
 
-MAPI  = (monetdb) /var/tmp/mtest-11376/.s.monetdb.30478
+MAPI  = (monetdb) /var/tmp/mtest-16542/.s.monetdb.31249
 QUERY = SELECT date, (SELECT date from test_subquery where date > t1892413a.date) as dtNext from test_subquery t1892413a;
 ERROR = !zero_or_one: cardinality violation (2>1)
 

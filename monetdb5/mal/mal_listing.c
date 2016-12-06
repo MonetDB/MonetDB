@@ -37,7 +37,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 {
 	char *buf =0;
 	char *nme =0;
-	int nameused= 0;
+	int nameused = 0;
 	size_t len = 0, maxlen = BUFSIZ;
 	ValRecord *val = 0;
 	char *cv =0;
@@ -64,9 +64,10 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		}
 
 		// locate value record
-		if (isVarConstant(mb,varid))
+		if (isVarConstant(mb,varid)){
 			val = &getVarConstant(mb, varid);
-		else if( stk)
+			showtype= getVarType(mb,varid) != TYPE_str && getVarType(mb,varid) != TYPE_bit;
+		} else if( stk)
 			val = &stk->stk[varid];
 
 		VALformat(&cv, val);
@@ -77,11 +78,12 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			GDKerror("renderTerm:Failed to allocate");
 			return NULL;
 		}
+
 		if( strcmp(cv,"nil") == 0){
 			strcat(buf+len,cv);
 			len += strlen(buf+len);
 			GDKfree(cv);
-			showtype =getBatType(getVarType(mb,varid)) > TYPE_str || 
+			showtype = showtype || getBatType(getVarType(mb,varid)) > TYPE_str || 
 				((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid)); 
 		} else{
 			if ( !isaBatType(getVarType(mb,varid)) && getBatType(getVarType(mb,varid)) > TYPE_str ){
@@ -97,7 +99,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				strcat(buf+len,"\"");
 				len++;
 			}
-			showtype =closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid) || (flg & LIST_MAL_REMOTE)) && isVarConstant(mb,varid)) ||
+			showtype = showtype || closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid) || (flg & LIST_MAL_REMOTE)) && isVarConstant(mb,varid)) ||
 				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
 			if (stk && isaBatType(getVarType(mb,varid)) && stk->stk[varid].val.bval ){

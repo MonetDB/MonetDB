@@ -297,8 +297,8 @@ Dependencies between database objects
 [ "type",	"storagemodel",	"DEP_FUNC"	]
 [ "unique",	"storagemodel",	"DEP_FUNC"	]
 #SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
-% .c,	.tri,	.L1 # table_name
-% name,	name,	L1 # name
+% .c,	.tri,	.L15 # table_name
+% name,	name,	L15 # name
 % varchar,	varchar,	char # type
 % 6,	14,	11 # length
 [ "id",	"trigger_test",	"DEP_TRIGGER"	]
@@ -410,8 +410,8 @@ Dependencies between functions with same name
 #	END IF;
 #END;
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name;
-% sys.f1,	sys.f2,	.L1 # table_name
-% name,	name,	L1 # name
+% sys.f1,	sys.f2,	.L4 # table_name
+% name,	name,	L4 # name
 % varchar,	varchar,	char # type
 % 17,	13,	8 # length
 [ "f1",	"f2",	"DEP_FUNC"	]
@@ -431,8 +431,8 @@ Dependencies between functions with same name
 #DROP FUNCTION f3;
 #DROP ALL FUNCTION f1;
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name;
-% sys.f1,	sys.f2,	.L1 # table_name
-% name,	name,	L1 # name
+% sys.f1,	sys.f2,	.L4 # table_name
+% name,	name,	L4 # name
 % varchar,	varchar,	char # type
 % 17,	13,	8 # length
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
@@ -551,8 +551,8 @@ Cleanup
 [ "id",	"geometry_columns",	"DEP_VIEW"	]
 [ "name",	"geometry_columns",	"DEP_VIEW"	]
 #SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
-% .c,	.k,	.L1 # table_name
-% name,	name,	L1 # name
+% .c,	.k,	.L15 # table_name
+% name,	name,	L15 # name
 % varchar,	varchar,	char # type
 % 20,	44,	7 # length
 [ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]

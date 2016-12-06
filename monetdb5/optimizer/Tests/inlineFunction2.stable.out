@@ -30,7 +30,7 @@ function user.tst():void;
     b := bat.new(:int);
     X_4 := bat.new(nil:int);
 barrier (X_7,X_8) := iterator.new(b);
-    X_19 := calc.+(X_8,1);
+    X_19 := calc.+(X_8,1:int);
     X_10 := X_19;
     bat.append(X_4,X_10);
     redo (X_7,X_8) := iterator.next(b);

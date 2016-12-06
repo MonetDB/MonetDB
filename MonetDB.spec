@@ -384,8 +384,6 @@ developer.
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
-%{_bindir}/sample2
-%{_bindir}/sample3
 %{_bindir}/sample4
 %{_bindir}/smack00
 %{_bindir}/smack01

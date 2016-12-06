@@ -34,9 +34,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 85 # length
+% 89 # length
 function user.s4_1():void;
-    X_59:void := querylog.define("explain select * from tmp3;","sequential_pipe",40);
+    X_59:void := querylog.define("explain select * from tmp3;","sequential_pipe",40:int);
     X_21 := bat.new(nil:str);
     X_28 := bat.append(X_21,"sys.tmp3");
     X_36 := bat.append(X_28,"sys.tmp3");
@@ -53,24 +53,24 @@ function user.s4_1():void;
     X_46 := bat.append(X_38,"real");
     X_54 := bat.append(X_46,"timestamp");
     X_25 := bat.new(nil:int);
-    X_33 := bat.append(X_25,32);
-    X_40 := bat.append(X_33,1);
-    X_48 := bat.append(X_40,24);
-    X_56 := bat.append(X_48,7);
+    X_33 := bat.append(X_25,32:int);
+    X_40 := bat.append(X_33,1:int);
+    X_48 := bat.append(X_40,24:int);
+    X_56 := bat.append(X_48,7:int);
     X_27 := bat.new(nil:int);
-    X_35 := bat.append(X_27,0);
-    X_42 := bat.append(X_35,0);
-    X_50 := bat.append(X_42,0);
-    X_58 := bat.append(X_50,0);
+    X_35 := bat.append(X_27,0:int);
+    X_42 := bat.append(X_35,0:int);
+    X_50 := bat.append(X_42,0:int);
+    X_58 := bat.append(X_50,0:int);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3");
-    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0);
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0:int);
     X_10 := mosaic.projection(C_4,X_7);
-    X_11:bat[:bit] := sql.bind(X_3,"sys","tmp3","b",0);
+    X_11:bat[:bit] := sql.bind(X_3,"sys","tmp3","b",0:int);
     X_13 := mosaic.projection(C_4,X_11);
-    X_14:bat[:flt] := sql.bind(X_3,"sys","tmp3","f",0);
+    X_14:bat[:flt] := sql.bind(X_3,"sys","tmp3","f",0:int);
     X_16 := mosaic.projection(C_4,X_14);
-    X_17:bat[:timestamp] := sql.bind(X_3,"sys","tmp3","t",0);
+    X_17:bat[:timestamp] := sql.bind(X_3,"sys","tmp3","t",0:int);
     X_19 := mosaic.projection(C_4,X_17);
 # querylog.define("explain select * from tmp3;","sequential_pipe")
     sql.resultSet(X_51,X_52,X_54,X_56,X_58,X_10,X_13,X_16,X_19);
@@ -195,9 +195,9 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 85 # length
+% 89 # length
 function user.s12_1():void;
-    X_59:void := querylog.define("explain select * from tmp3;","sequential_pipe",40);
+    X_59:void := querylog.define("explain select * from tmp3;","sequential_pipe",40:int);
     X_21 := bat.new(nil:str);
     X_28 := bat.append(X_21,"sys.tmp3");
     X_36 := bat.append(X_28,"sys.tmp3");
@@ -214,24 +214,24 @@ function user.s12_1():void;
     X_46 := bat.append(X_38,"real");
     X_54 := bat.append(X_46,"timestamp");
     X_25 := bat.new(nil:int);
-    X_33 := bat.append(X_25,32);
-    X_40 := bat.append(X_33,1);
-    X_48 := bat.append(X_40,24);
-    X_56 := bat.append(X_48,7);
+    X_33 := bat.append(X_25,32:int);
+    X_40 := bat.append(X_33,1:int);
+    X_48 := bat.append(X_40,24:int);
+    X_56 := bat.append(X_48,7:int);
     X_27 := bat.new(nil:int);
-    X_35 := bat.append(X_27,0);
-    X_42 := bat.append(X_35,0);
-    X_50 := bat.append(X_42,0);
-    X_58 := bat.append(X_50,0);
+    X_35 := bat.append(X_27,0:int);
+    X_42 := bat.append(X_35,0:int);
+    X_50 := bat.append(X_42,0:int);
+    X_58 := bat.append(X_50,0:int);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3");
-    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0);
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0:int);
     X_10 := mosaic.projection(C_4,X_7);
-    X_11:bat[:bit] := sql.bind(X_3,"sys","tmp3","b",0);
+    X_11:bat[:bit] := sql.bind(X_3,"sys","tmp3","b",0:int);
     X_13 := mosaic.projection(C_4,X_11);
-    X_14:bat[:flt] := sql.bind(X_3,"sys","tmp3","f",0);
+    X_14:bat[:flt] := sql.bind(X_3,"sys","tmp3","f",0:int);
     X_16 := mosaic.projection(C_4,X_14);
-    X_17:bat[:timestamp] := sql.bind(X_3,"sys","tmp3","t",0);
+    X_17:bat[:timestamp] := sql.bind(X_3,"sys","tmp3","t",0:int);
     X_19 := mosaic.projection(C_4,X_17);
 # querylog.define("explain select * from tmp3;","sequential_pipe")
     sql.resultSet(X_51,X_52,X_54,X_56,X_58,X_10,X_13,X_16,X_19);
@@ -373,9 +373,9 @@ end user.s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 85 # length
+% 89 # length
 function user.s26_1():void;
-    X_59:void := querylog.define("explain select * from tmp3;","sequential_pipe",40);
+    X_59:void := querylog.define("explain select * from tmp3;","sequential_pipe",40:int);
     X_21 := bat.new(nil:str);
     X_28 := bat.append(X_21,"sys.tmp3");
     X_36 := bat.append(X_28,"sys.tmp3");
@@ -392,24 +392,24 @@ function user.s26_1():void;
     X_46 := bat.append(X_38,"real");
     X_54 := bat.append(X_46,"timestamp");
     X_25 := bat.new(nil:int);
-    X_33 := bat.append(X_25,32);
-    X_40 := bat.append(X_33,1);
-    X_48 := bat.append(X_40,24);
-    X_56 := bat.append(X_48,7);
+    X_33 := bat.append(X_25,32:int);
+    X_40 := bat.append(X_33,1:int);
+    X_48 := bat.append(X_40,24:int);
+    X_56 := bat.append(X_48,7:int);
     X_27 := bat.new(nil:int);
-    X_35 := bat.append(X_27,0);
-    X_42 := bat.append(X_35,0);
-    X_50 := bat.append(X_42,0);
-    X_58 := bat.append(X_50,0);
+    X_35 := bat.append(X_27,0:int);
+    X_42 := bat.append(X_35,0:int);
+    X_50 := bat.append(X_42,0:int);
+    X_58 := bat.append(X_50,0:int);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","tmp3");
-    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0);
+    X_7:bat[:int] := sql.bind(X_3,"sys","tmp3","i",0:int);
     X_10 := mosaic.projection(C_4,X_7);
-    X_11:bat[:bit] := sql.bind(X_3,"sys","tmp3","b",0);
+    X_11:bat[:bit] := sql.bind(X_3,"sys","tmp3","b",0:int);
     X_13 := mosaic.projection(C_4,X_11);
-    X_14:bat[:flt] := sql.bind(X_3,"sys","tmp3","f",0);
+    X_14:bat[:flt] := sql.bind(X_3,"sys","tmp3","f",0:int);
     X_16 := mosaic.projection(C_4,X_14);
-    X_17:bat[:timestamp] := sql.bind(X_3,"sys","tmp3","t",0);
+    X_17:bat[:timestamp] := sql.bind(X_3,"sys","tmp3","t",0:int);
     X_19 := mosaic.projection(C_4,X_17);
 # querylog.define("explain select * from tmp3;","sequential_pipe")
     sql.resultSet(X_51,X_52,X_54,X_56,X_58,X_10,X_13,X_16,X_19);

@@ -135,7 +135,7 @@ Ready.
 #alter table mix0 set read only;
 #select * from mosaic_analysis('sys','mix0','i') order by factor desc;
 #incompatible compression for type 5 ratio 0.028151
-% .,	.,	.,	.,	. # table_name
+% .L4,	.L4,	.L4,	.L4,	.L4 # table_name
 % technique,	outputsize,	factor,	compress,	decompress # name
 % clob,	bigint,	double,	bigint,	bigint # type
 % 11,	5,	24,	1,	1 # length
@@ -145,10 +145,10 @@ Ready.
 [ "runlength ",	12856,	0.02800248936,	0,	0	]
 [ "delta ",	12872,	0.02796768211,	0,	0	]
 [ "dictionary ",	12924,	0.02785515413,	0,	0	]
-[ "calendar ",	13032,	0.02762430906,	0,	0	]
+[ "calendar ",	13032,	0.02762430906,	1,	0	]
 #alter table mix0 alter column i set storage 'mosaic';
 #select * from mosaic_layout('sys','mix0','i') ;
-% .,	.,	.,	.,	. # table_name
+% .L4,	.L4,	.L4,	.L4,	.L4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties # name
 % clob,	bigint,	bigint,	bigint,	clob # type
 % 17,	2,	3,	2,	9 # length

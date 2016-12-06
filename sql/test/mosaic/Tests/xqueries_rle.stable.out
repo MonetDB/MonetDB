@@ -58,17 +58,17 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 104 # length
+% 108 # length
 function user.s14_1():void;
-    X_22:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",11);
+    X_22:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",11:int);
     X_3 := sql.mvc();
-    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0);
+    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","xtmp3");
-    X_12 := mosaic.thetasubselect(X_7,C_4,4,"<");
+    X_12 := mosaic.thetasubselect(X_7,C_4,4:int,"<");
     X_14 := mosaic.projection(X_12,X_7);
     X_15 := aggr.count(X_14);
 # querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe")
-    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_15);
+    sql.resultSet("sys.L4","L3","bigint",64:int,0:int,7:int,X_15);
 end user.s14_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -102,17 +102,17 @@ end user.s14_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 105 # length
+% 109 # length
 function user.s16_1():void;
-    X_24:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",11);
+    X_24:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",11:int);
     X_3 := sql.mvc();
-    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0);
+    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","xtmp3");
-    X_12 := mosaic.subselect(X_7,C_4,7,7,true,false,false);
+    X_12 := mosaic.subselect(X_7,C_4,7:int,7:int,true,false,false);
     X_16 := mosaic.projection(X_12,X_7);
     X_17 := aggr.count(X_16);
 # querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe")
-    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_17);
+    sql.resultSet("sys.L4","L3","bigint",64:int,0:int,7:int,X_17);
 end user.s16_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
@@ -172,17 +172,17 @@ end user.s16_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 104 # length
+% 108 # length
 function user.s32_1():void;
-    X_22:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",11);
+    X_22:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",11:int);
     X_3 := sql.mvc();
-    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0);
+    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","xtmp3");
-    X_12 := mosaic.thetasubselect(X_7,C_4,4,"<");
+    X_12 := mosaic.thetasubselect(X_7,C_4,4:int,"<");
     X_14 := mosaic.projection(X_12,X_7);
     X_15 := aggr.count(X_14);
 # querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe")
-    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_15);
+    sql.resultSet("sys.L4","L3","bigint",64:int,0:int,7:int,X_15);
 end user.s32_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
@@ -215,17 +215,17 @@ end user.s32_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 105 # length
+% 109 # length
 function user.s34_1():void;
-    X_24:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",11);
+    X_24:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",11:int);
     X_3 := sql.mvc();
-    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0);
+    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","xtmp3");
-    X_12 := mosaic.subselect(X_7,C_4,7,7,true,false,false);
+    X_12 := mosaic.subselect(X_7,C_4,7:int,7:int,true,false,false);
     X_16 := mosaic.projection(X_12,X_7);
     X_17 := aggr.count(X_16);
 # querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe")
-    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_17);
+    sql.resultSet("sys.L4","L3","bigint",64:int,0:int,7:int,X_17);
 end user.s34_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -285,17 +285,17 @@ end user.s34_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 104 # length
+% 108 # length
 function user.s50_1():void;
-    X_22:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",11);
+    X_22:void := querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe",11:int);
     X_3 := sql.mvc();
-    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0);
+    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","xtmp3");
-    X_12 := mosaic.thetasubselect(X_7,C_4,4,"<");
+    X_12 := mosaic.thetasubselect(X_7,C_4,4:int,"<");
     X_14 := mosaic.projection(X_12,X_7);
     X_15 := aggr.count(X_14);
 # querylog.define("explain select count(*) from xtmp3 where i <4;","sequential_pipe")
-    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_15);
+    sql.resultSet("sys.L4","L3","bigint",64:int,0:int,7:int,X_15);
 end user.s50_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=3 usec 
@@ -328,17 +328,17 @@ end user.s50_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 105 # length
+% 109 # length
 function user.s52_1():void;
-    X_24:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",11);
+    X_24:void := querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe",11:int);
     X_3 := sql.mvc();
-    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0);
+    X_7:bat[:int] := sql.bind(X_3,"sys","xtmp3","i",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","xtmp3");
-    X_12 := mosaic.subselect(X_7,C_4,7,7,true,false,false);
+    X_12 := mosaic.subselect(X_7,C_4,7:int,7:int,true,false,false);
     X_16 := mosaic.projection(X_12,X_7);
     X_17 := aggr.count(X_16);
 # querylog.define("explain select count(*) from xtmp3 where i = 7;","sequential_pipe")
-    sql.resultSet("sys.L4","L3","bigint",64,0,7,X_17);
+    sql.resultSet("sys.L4","L3","bigint",64:int,0:int,7:int,X_17);
 end user.s52_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
