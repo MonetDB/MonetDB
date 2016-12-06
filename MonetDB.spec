@@ -88,7 +88,7 @@
 %endif
 
 %if %{fedpkgs}
-# If the _without_pyintegration macro is not set, the MonetDB-python
+# If the _without_pyintegration macro is not set, the MonetDB-python2
 # RPM will be created.  The macro can be set when using mock by
 # passing it the flag --without=pyintegration.
 %if %{?_without_pyintegration:0}%{!?_without_pyintegration:1}
@@ -524,25 +524,25 @@ install it.
 %endif
 
 %if %{?with_pyintegration:1}%{!?with_pyintegration:0}
-%package python
+%package python2
 Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
 Group: Applications/Databases
 Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 
-%description python
+%description python2
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains the interface to use the Python language from
-within SQL queries.
+within SQL queries.  This package is for Python 2.
 
 NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
 know how this package affects the security of your system, do not
 install it.
 
-%files python
+%files python2
 %defattr(-,root,root)
 %{_libdir}/monetdb5/pyapi.*
 %{_libdir}/monetdb5/autoload/*_pyapi.mal
