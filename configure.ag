@@ -1846,7 +1846,7 @@ AS_VAR_IF([enable_rintegration], [no], [], [
 			 why_have_libr="(libR library not found)"
 			 enable_rintegration=no
 			 disable_rintegration="(libR library not found)"])],
-		[AS_IF([RHOME=`$RCMD RHOME` && libr_CFLAGS=`$RCMD CMD config --cppflags` && libr_LIBS=`$RCMD CMD config --ldflags | sed -e 's|-fopenmp |-fopenmp=libgomp'`],
+		[AS_IF([RHOME=`$RCMD RHOME` && libr_CFLAGS=`$RCMD CMD config --cppflags` && libr_LIBS=`$RCMD CMD config --ldflags | sed -e 's|-fopenmp |-fopenmp=libgomp |'`],
 			[have_libr=yes
 			 AC_DEFINE([HAVE_LIBR], 1, [Define if you have libR installed])
 			 AC_SUBST([libr_CFLAGS], [$libr_CFLAGS])
@@ -3077,7 +3077,6 @@ for comp in \
 	'netcdf       ' \
 	'openssl      ' \
 	'pcre         ' \
-	'perl         ' \
 	'proj         ' \
 	'pthread      ' \
 	'python2      ' \
