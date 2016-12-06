@@ -753,7 +753,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	/* Since the compiled pattern is ging to be used several times, it is worth spending
 	 * more time analyzing it in order to speed up the time taken for matching.
 	 */
-	extra = (pcre_code, 0, &err_p2);
+	extra = pcre_study(pcre_code, 0, &err_p2);
 	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKzalloc(sizeof(int) * ovecsize)) == NULL) {
@@ -1595,7 +1595,7 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if (caseignore)
 #ifdef HAVE_LIBPCRE
-				options |= PCRE_CASELESS;
+				pcreopt |= PCRE_CASELESS;
 #else
 				options |= REG_ICASE;
 #endif
