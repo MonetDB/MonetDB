@@ -26,7 +26,6 @@ override_dh_auto_configure:
 	--enable-instrument=no \
 	--enable-lidar=yes \
 	--enable-mapi=yes \
-	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
@@ -46,11 +45,10 @@ override_dh_auto_configure:
 	--with-libxml2=yes \
 	--with-lzma=yes \
 	--with-openssl=yes \
-	--with-perl=yes \
-	--with-perl-libdir=lib/perl5 \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python=yes \
+	--with-python2=yes \
+	--with-python3=yes \
 	--with-readline=yes \
 	--with-samtools=yes \
 	--with-sphinxclient=no \

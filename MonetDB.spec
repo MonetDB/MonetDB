@@ -849,7 +849,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--enable-mapi=yes \
-	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
@@ -870,7 +869,8 @@ developer, but if you do want to test, this is the package you need.
 	--with-openssl=yes \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python=yes \
+	--with-python2=yes \
+	--with-python3=yes \
 	--with-readline=yes \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
