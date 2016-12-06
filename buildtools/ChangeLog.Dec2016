@@ -1,6 +1,10 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Tue Dec  6 2016 Sjoerd Mullender <sjoerd@acm.org>
+- New packages MonetDB-python2 (Fedora) and monetdb-python2 (Debian/Ubuntu)
+  have been created for Python 2 integration into MonetDB.
+
 * Tue Jul 19 2016 Stefan Manegold <Stefan.Manegold@cwi.nl>
 - With OID size equal to ABI/word size, mserver5 does not need to print
   the OID size, anymore.

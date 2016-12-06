@@ -88,6 +88,15 @@
 %endif
 
 %if %{fedpkgs}
+# If the _without_pyintegration macro is not set, the MonetDB-python2
+# RPM will be created.  The macro can be set when using mock by
+# passing it the flag --without=pyintegration.
+%if %{?_without_pyintegration:0}%{!?_without_pyintegration:1}
+%define with_pyintegration 1
+%endif
+%endif
+
+%if %{fedpkgs}
 # If the _with_fits macro is set, the MonetDB-cfitsio RPM will be
 # created.  The macro can be set when using mock by passing it the
 # flag --with=fits.
@@ -146,13 +155,16 @@ BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
-BuildRequires: python-devel
 BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
 BuildRequires: zlib-devel
 %if %{?with_samtools:1}%{!?with_samtools:0}
 BuildRequires: samtools-devel
+%endif
+%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+BuildRequires: python-devel
+BuildRequires: python2-numpy
 %endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 BuildRequires: R-core-devel
@@ -510,6 +522,32 @@ install it.
 %{_libdir}/monetdb5/lib_rapi.so
 %endif
 
+%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%package python2
+Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
+Group: Applications/Databases
+Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
+
+%description python2
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the interface to use the Python language from
+within SQL queries.  This package is for Python 2.
+
+NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
+know how this package affects the security of your system, do not
+install it.
+
+%files python2
+%defattr(-,root,root)
+%{_libdir}/monetdb5/pyapi.*
+%{_libdir}/monetdb5/autoload/*_pyapi.mal
+%{_libdir}/monetdb5/lib_pyapi.so
+%endif
+
 %if %{?with_fits:1}%{!?with_fits:0}
 %package cfitsio
 Summary: MonetDB: Add on module that provides support for FITS files
@@ -538,7 +576,6 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
-Obsoletes: MonetDB5-server-rdf
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 %if %{bits} == 64
@@ -598,6 +635,9 @@ fi
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/lidar.mal
 %endif
+%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%exclude %{_libdir}/monetdb5/pyapi.mal
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
@@ -614,6 +654,9 @@ fi
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
+%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%exclude %{_libdir}/monetdb5/autoload/*_pyapi.mal
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
 %endif
@@ -625,6 +668,9 @@ fi
 %exclude %{_libdir}/monetdb5/lib_gsl.so
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/lib_lidar.so
+%endif
+%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%exclude %{_libdir}/monetdb5/lib_pyapi.so
 %endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/lib_rapi.so
@@ -693,8 +739,6 @@ Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 # RHEL >= 7, and all current Fedora
 Requires: %{_bindir}/systemd-tmpfiles
 %endif
-Obsoletes: MonetDB-SQL-devel
-Obsoletes: %{name}-SQL
 %if (0%{?fedora} >= 22)
 %if %{bits} == 64
 Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
@@ -785,7 +829,6 @@ frontend of MonetDB.
 %package testing
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
-Obsoletes: MonetDB-python
 
 %description testing
 MonetDB is a database management system that is developed from a
@@ -848,12 +891,12 @@ developer, but if you do want to test, this is the package you need.
 	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--enable-mapi=yes \
-	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-optimize=yes \
 	--enable-profile=no \
+	--enable-pyintegration=%{?with_pyintegration:yes}%{!?with_pyintegration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
 	--enable-shp=no \
 	--enable-sql=yes \
@@ -869,7 +912,8 @@ developer, but if you do want to test, this is the package you need.
 	--with-openssl=yes \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python=yes \
+	--with-python2=yes \
+	--with-python3=no \
 	--with-readline=yes \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
