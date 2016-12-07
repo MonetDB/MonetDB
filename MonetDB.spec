@@ -173,7 +173,7 @@ BuildRequires: numpy
 BuildRequires: python2-numpy
 %else
 # Fedora <= 23 doesn't have python2-numpy
-BuildRequires: python-numpy
+BuildRequires: numpy
 %endif
 %endif
 %endif
