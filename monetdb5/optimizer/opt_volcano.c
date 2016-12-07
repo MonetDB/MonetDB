@@ -54,7 +54,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			if( getFunctionId(p) == selectRef ||
 				getFunctionId(p) == thetaselectRef ||
 				getFunctionId(p) == likeselectRef ||
-				getFunctionId(p) == subjoinRef
+				getFunctionId(p) == joinRef
 			){
 				q= newInstruction(0,languageRef,blockRef);
 				setDestVar(q, newTmpVariable(mb,TYPE_any));

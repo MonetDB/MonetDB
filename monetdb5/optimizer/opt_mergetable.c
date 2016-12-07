@@ -628,7 +628,7 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 }
 
 static int
-subjoin_split(Client cntxt, InstrPtr p, int args)
+join_split(Client cntxt, InstrPtr p, int args)
 {
 	char *name = NULL;
 	size_t len;
@@ -645,7 +645,7 @@ subjoin_split(Client cntxt, InstrPtr p, int args)
 	if (!name)
 		return -1;
 	strncpy(name, getFunctionId(p), len-7);
-	strcpy(name+len-7, "subjoin");
+	strcpy(name+len-7, "join");
 
 	sym = findSymbol(cntxt->nspace, getModuleId(p), name);
 	assert(sym);
@@ -694,7 +694,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 	if (args == nr_mats) {
 		int mv1 = mats[0], i;
 		int mv2 = mats[args-1];
-		int split = subjoin_split(cntxt, p, args);
+		int split = join_split(cntxt, p, args);
 		int nr_mv1 = split;
 
 		if (split < 0) {
@@ -1702,8 +1702,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		/* Handle setops */
 		if (match > 0 && getModuleId(p) == algebraRef &&
-		    (getFunctionId(p) == subdiffRef || 
-		     getFunctionId(p) == subinterRef) && 
+		    (getFunctionId(p) == differenceRef || 
+		     getFunctionId(p) == intersectRef) && 
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) { 
 		   	n=is_a_mat(getArg(p,2), &ml);
 			mat_setop(mb, p, &ml, m, n);

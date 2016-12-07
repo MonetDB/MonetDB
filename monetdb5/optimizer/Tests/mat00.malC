@@ -17,7 +17,7 @@
     bat.append(c1,5@0);
     c := mat.new(c0,c1);
     bat.append(c,6@0);
-    (j,jj) := algebra.subjoin(b,c,nil:bat,nil:bat,false,nil:lng);
+    (j,jj) := algebra.join(b,c,nil:bat,nil:bat,false,nil:lng);
     io.print(j,jj);
 io.print(b);
 io.print(c);

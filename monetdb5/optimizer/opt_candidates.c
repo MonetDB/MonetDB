@@ -44,9 +44,9 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == likeselectRef || getFunctionId(p) == likethetaselectRef)
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == subinterRef )
+			if(getFunctionId(p) == intersectRef )
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == subuniqueRef )
+			if(getFunctionId(p) == uniqueRef )
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == firstnRef )
 				setVarCList(mb,getArg(p,0));

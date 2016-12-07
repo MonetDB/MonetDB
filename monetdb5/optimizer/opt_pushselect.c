@@ -166,8 +166,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		if (getModuleId(p) == algebraRef && 
-			(getFunctionId(p) == subinterRef || 
-			 getFunctionId(p) == subdiffRef)) {
+			(getFunctionId(p) == intersectRef || 
+			 getFunctionId(p) == differenceRef)) {
 			GDKfree(vars);
 			goto wrapup;
 		}

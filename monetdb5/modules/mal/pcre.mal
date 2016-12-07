@@ -97,22 +97,22 @@ address PCRElikeselect5;
 command algebra.ilikeselect(b:bat[:str], cand:bat[:oid], pat:str, anti:bit) :bat[:oid]
 address PCRElikeselect4;
 
-command algebra.likesubjoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
-address LIKEsubjoin
+command algebra.likejoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
+address LIKEjoin
 comment "Join the string bat L with the pattern bat R
 with optional candidate lists SL and SR using pattern escape string ESC
 and doing a case sensitive match.
 The result is two aligned bats with oids of matching rows.";
 
-command algebra.ilikesubjoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
-address ILIKEsubjoin
+command algebra.ilikejoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
+address ILIKEjoin
 comment "Join the string bat L with the pattern bat R
 with optional candidate lists SL and SR using pattern escape string ESC
 and doing a case insensitive match.
 The result is two aligned bats with oids of matching rows.";
 
-command algebra.likesubjoin(l:bat[:str],r:bat[:str],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
-address LIKEsubjoin1;
+command algebra.likejoin(l:bat[:str],r:bat[:str],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
+address LIKEjoin1;
 
-command algebra.ilikesubjoin(l:bat[:str],r:bat[:str],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
-address ILIKEsubjoin1;
+command algebra.ilikejoin(l:bat[:str],r:bat[:str],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
+address ILIKEjoin1;

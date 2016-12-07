@@ -547,7 +547,7 @@ isOrderDepenent(InstrPtr p)
 {
     if( getModuleId(p) != batsqlRef)
         return 0;
-    if ( getFunctionId(p) == diffRef ||
+    if ( getFunctionId(p) == differenceRef ||
         getFunctionId(p) == row_numberRef ||
         getFunctionId(p) == rankRef ||
         getFunctionId(p) == dense_rankRef)
@@ -605,11 +605,11 @@ isMatJoinOp(InstrPtr p)
 {
 	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == crossRef ||
-                 getFunctionId(p) == subjoinRef ||
-                 getFunctionId(p) == subantijoinRef || /* is not mat save */
-                 getFunctionId(p) == subthetajoinRef ||
-                 getFunctionId(p) == subbandjoinRef ||
-                 getFunctionId(p) == subrangejoinRef)
+                 getFunctionId(p) == joinRef ||
+                 getFunctionId(p) == antijoinRef || /* is not mat save */
+                 getFunctionId(p) == thetajoinRef ||
+                 getFunctionId(p) == bandjoinRef ||
+                 getFunctionId(p) == rangejoinRef)
 		));
 }
 
@@ -617,7 +617,7 @@ int
 isMatLeftJoinOp(InstrPtr p)
 {
 	return (getModuleId(p) == algebraRef && 
-		getFunctionId(p) == subleftjoinRef);
+		getFunctionId(p) == leftjoinRef);
 }
 
 int isDelta(InstrPtr p){
@@ -655,7 +655,7 @@ int isSubJoin(InstrPtr p)
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 	
-	return (l >= 7 && strcmp(func+l-7,"subjoin") == 0);
+	return (l >= 7 && strcmp(func+l-7,"join") == 0);
 }
 
 int isMultiplex(InstrPtr p)
