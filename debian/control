@@ -8,7 +8,7 @@ Vcs-Hg: http://dev.monetdb.org/hg/MonetDB/
 Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
  libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
  libgsl0-dev, libpcre3-dev, libreadline-dev, liblzma-dev,
- libssl-dev, libxml2-dev, pkg-config, python, python-numpy,
+ libssl-dev, libxml2-dev, pkg-config, python, python-dev, python-numpy,
  unixodbc-dev, uuid-dev, zlib1g-dev, liblas-c-dev (>= 1.8.0), r-base
 Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
