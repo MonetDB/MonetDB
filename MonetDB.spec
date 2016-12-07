@@ -87,10 +87,11 @@
 %endif
 %endif
 
-%if %{fedpkgs}
 # If the _without_pyintegration macro is not set, the MonetDB-python2
 # RPM will be created.  The macro can be set when using mock by
 # passing it the flag --without=pyintegration.
+# On RHEL 6, numpy is too old.
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %if %{?_without_pyintegration:0}%{!?_without_pyintegration:1}
 %define with_pyintegration 1
 %endif
@@ -164,7 +165,17 @@ BuildRequires: samtools-devel
 %endif
 %if %{?with_pyintegration:1}%{!?with_pyintegration:0}
 BuildRequires: python-devel
+%if %{?rhel:1}%{!?rhel:0}
+# RedHat Enterprise Linux calls it simply numpy
+BuildRequires: numpy
+%else
+%if (0%{?fedora} >= 24)
 BuildRequires: python2-numpy
+%else
+# Fedora <= 23 doesn't have python2-numpy
+BuildRequires: python-numpy
+%endif
+%endif
 %endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 BuildRequires: R-core-devel
