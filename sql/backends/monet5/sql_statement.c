@@ -1164,7 +1164,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		}
 		k = getDestVar(q);
 
-		q = newStmt(mb, algebraRef, subselectRef);
+		q = newStmt(mb, algebraRef, selectRef);
 		q = pushArgument(mb, q, k);
 		if (sub)
 			q = pushArgument(mb, q, sub->nr);
@@ -1176,7 +1176,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 	} else {
 		node *n;
 
-		op = sa_strconcat(be->mvc->sa, op, subselectRef);
+		op = sa_strconcat(be->mvc->sa, op, selectRef);
 		q = newStmt(mb, mod, convertOperator(op));
 		// push pointer to the SQL structure into the MAL call
 		// allows getting argument names for example
@@ -1266,7 +1266,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			return NULL;
 		k = getDestVar(q);
 
-		q = newStmt(mb, algebraRef, subselectRef);
+		q = newStmt(mb, algebraRef, selectRef);
 		q = pushArgument(mb, q, k);
 		if (sub)
 			q = pushArgument(mb, q, sub->nr);
@@ -1279,10 +1279,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			return NULL;
 		k = getDestVar(q);
 	} else {
-		char *cmd = subselectRef;
+		char *cmd = selectRef;
 
 		if (cmptype != cmp_equal && cmptype != cmp_notequal)
-			cmd = thetasubselectRef;
+			cmd = thetaselectRef;
 
 		assert (cmptype != cmp_filter);
 		switch (cmptype) {
@@ -1355,7 +1355,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				return NULL;
 			break;
 		default:
-			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible subselect compare\n");
+			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
 		}
 	}
 	if (q) {
@@ -1428,7 +1428,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	MalBlkPtr mb = be->mb;
 	InstrPtr r, p, q;
 	int l;
-	char *cmd = (type == st_uselect2) ? subselectRef : subrangejoinRef;
+	char *cmd = (type == st_uselect2) ? selectRef : subrangejoinRef;
 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
@@ -1469,7 +1469,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 			k = getDestVar(p);
 		}
 
-		q = newStmt(mb, algebraRef, subselectRef);
+		q = newStmt(mb, algebraRef, selectRef);
 		q = pushArgument(mb, q, k);
 		if (sub)
 			q = pushArgument(mb, q, sub->nr);

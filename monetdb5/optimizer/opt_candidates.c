@@ -40,9 +40,9 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 		}
 		if( getModuleId(p) == algebraRef ){
-			if(getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef)
+			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == likesubselectRef || getFunctionId(p) == likethetasubselectRef)
+			if(getFunctionId(p) == likeselectRef || getFunctionId(p) == likethetaselectRef)
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == subinterRef )
 				setVarCList(mb,getArg(p,0));
@@ -62,7 +62,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 		}
 		if( getModuleId(p) == generatorRef){
-			if(getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef)
+			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)
 				setVarCList(mb,getArg(p,0));
 		}
 	}

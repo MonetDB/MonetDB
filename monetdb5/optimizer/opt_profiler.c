@@ -22,10 +22,10 @@ static struct{
     char *alias;
 }mapping[]={
     {"algebra", "projectionpath", "projection"},
-    {"algebra", "thetasubselect", "select"},
+    {"algebra", "thetaselect", "select"},
     {"algebra", "projection", "projection"},
     {"dataflow", "language", "parallel"},
-    {"algebra", "subselect", "select"},
+    {"algebra", "select", "select"},
     {"sql", "projectdelta", "project"},
     {"algebra", "subjoin", "join"},
     {"language", "pass(nil)", "release"},

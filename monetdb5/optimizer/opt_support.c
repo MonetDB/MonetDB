@@ -642,12 +642,12 @@ int isFragmentGroup2(InstrPtr p){
 		);
 }
 
-int isSubSelect(InstrPtr p)
+int isSelect(InstrPtr p)
 {
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 	
-	return (l >= 9 && strcmp(func+l-9,"subselect") == 0);
+	return (l >= 6 && strcmp(func+l-6,"select") == 0);
 }
 
 int isSubJoin(InstrPtr p)
@@ -670,7 +670,7 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== selectNotNilRef
 			))  ||
-			isSubSelect(p) ||
+			isSelect(p) ||
 			(getModuleId(p)== batRef && (
 				getFunctionId(p)== mirrorRef 
 			));

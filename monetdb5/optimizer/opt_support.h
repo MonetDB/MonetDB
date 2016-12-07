@@ -51,7 +51,7 @@ mal_export int isTopn(InstrPtr q);
 mal_export int isSlice(InstrPtr q);
 mal_export int isSample(InstrPtr q);
 mal_export int isOrderby(InstrPtr q);
-mal_export int isSubSelect(InstrPtr q);
+mal_export int isSelect(InstrPtr q);
 mal_export int isSubJoin(InstrPtr q);
 mal_export int isMultiplex(InstrPtr q);
 mal_export int isOptimizerEnabled(MalBlkPtr mb, str opt);

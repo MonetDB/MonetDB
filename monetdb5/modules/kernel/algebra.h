@@ -22,10 +22,10 @@ mal_export str ALGminany(ptr result, const bat *bid);
 mal_export str ALGmaxany(ptr result, const bat *bid);
 mal_export str ALGgroupby(bat *res, const bat *gids, const bat *cnts);
 mal_export str ALGcard(lng *result, const bat *bid);
-mal_export str ALGsubselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
-mal_export str ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
-mal_export str ALGthetasubselect1(bat *result, const bat *bid, const void *val, const char **op);
-mal_export str ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op);
+mal_export str ALGselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
+mal_export str ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
+mal_export str ALGthetaselect1(bat *result, const bat *bid, const void *val, const char **op);
+mal_export str ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op);
 
 mal_export str ALGsubjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 mal_export str ALGsubleftjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);

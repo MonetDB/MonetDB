@@ -110,9 +110,9 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			setFunctionId(p, parametersRef);
 			typeChecker(cntxt->fdout, cntxt->nspace, mb, p, TRUE);
 			pushInstruction(mb,p); 
-		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == subselectRef && series[getArg(p,1)]){
+		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == selectRef && series[getArg(p,1)]){
 			errorCheck(p,algebraRef,getArg(p,1));
-		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == thetasubselectRef && series[getArg(p,1)]){
+		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == thetaselectRef && series[getArg(p,1)]){
 			errorCheck(p,algebraRef,getArg(p,1));
 		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && series[getArg(p,2)]){
 			errorCheck(p,algebraRef,getArg(p,2));

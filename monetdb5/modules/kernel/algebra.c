@@ -228,7 +228,7 @@ ALGcard(lng *result, const bat *bid)
 }
 
 str
-ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
+ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
 {
 	BAT *b, *s = NULL, *bn;
 	const void *nilptr;
@@ -236,14 +236,14 @@ ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, cons
 	if ((*li != 0 && *li != 1) ||
 		(*hi != 0 && *hi != 1) ||
 		(*anti != 0 && *anti != 1)) {
-		throw(MAL, "algebra.subselect", ILLEGAL_ARGUMENT);
+		throw(MAL, "algebra.select", ILLEGAL_ARGUMENT);
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.subselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.subselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, low);
 	derefStr(b, high);
@@ -259,29 +259,29 @@ ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, cons
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
-		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+		throw(MAL, "algebra.select", GDK_EXCEPTION);
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-ALGsubselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
+ALGselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
 {
-	return ALGsubselect2(result, bid, NULL, low, high, li, hi, anti);
+	return ALGselect2(result, bid, NULL, low, high, li, hi, anti);
 }
 
 str
-ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op)
+ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op)
 {
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.thetaselect", RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.thetaselect", RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, val);
 	bn = BATthetaselect(b, s, val, *op);
@@ -289,16 +289,16 @@ ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val,
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (bn == NULL)
-		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+		throw(MAL, "algebra.select", GDK_EXCEPTION);
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-ALGthetasubselect1(bat *result, const bat *bid, const void *val, const char **op)
+ALGthetaselect1(bat *result, const bat *bid, const void *val, const char **op)
 {
-	return ALGthetasubselect2(result, bid, NULL, val, op);
+	return ALGthetaselect2(result, bid, NULL, val, op);
 }
 
 str

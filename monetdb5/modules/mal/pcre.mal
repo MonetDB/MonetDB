@@ -75,8 +75,8 @@ command batalgebra.ilike(s:bat[:str], pat:str):bat[:bit] address BATPCREilike2;
 command batalgebra.not_ilike(s:bat[:str], pat:str, esc:str):bat[:bit] address BATPCREnotilike;
 command batalgebra.not_ilike(s:bat[:str], pat:str):bat[:bit] address BATPCREnotilike2;
 
-command algebra.likesubselect(b:bat[:str], s:bat[:oid], pat:str, esc:str, caseignore:bit, anti:bit) :bat[:oid]
-address PCRElikesubselect2
+command algebra.likeselect(b:bat[:str], s:bat[:oid], pat:str, esc:str, caseignore:bit, anti:bit) :bat[:oid]
+address PCRElikeselect2
 comment "Select all head values of the first input BAT for which the
 	tail value is \"like\" the given (SQL-style) pattern and for
 	which the head value occurs in the tail of the second input
@@ -85,17 +85,17 @@ comment "Select all head values of the first input BAT for which the
 	the tail the head value of the input BAT for which the
 	relationship holds.  The output BAT is sorted on the tail value.";
 
-command algebra.likesubselect(b:bat[:str], cand:bat[:oid], pat:str, esc:str, anti:bit) :bat[:oid]
-address PCRElikesubselect3;
+command algebra.likeselect(b:bat[:str], cand:bat[:oid], pat:str, esc:str, anti:bit) :bat[:oid]
+address PCRElikeselect3;
 
-command algebra.ilikesubselect(b:bat[:str], cand:bat[:oid], pat:str, esc:str, anti:bit) :bat[:oid]
-address PCRElikesubselect1;
+command algebra.ilikeselect(b:bat[:str], cand:bat[:oid], pat:str, esc:str, anti:bit) :bat[:oid]
+address PCRElikeselect1;
 
-command algebra.likesubselect(b:bat[:str], cand:bat[:oid], pat:str, anti:bit) :bat[:oid]
-address PCRElikesubselect5;
+command algebra.likeselect(b:bat[:str], cand:bat[:oid], pat:str, anti:bit) :bat[:oid]
+address PCRElikeselect5;
 
-command algebra.ilikesubselect(b:bat[:str], cand:bat[:oid], pat:str, anti:bit) :bat[:oid]
-address PCRElikesubselect4;
+command algebra.ilikeselect(b:bat[:str], cand:bat[:oid], pat:str, anti:bit) :bat[:oid]
+address PCRElikeselect4;
 
 command algebra.likesubjoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address LIKEsubjoin

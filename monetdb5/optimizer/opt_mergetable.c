@@ -331,7 +331,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 static InstrPtr
 mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 {
-	int tpe, k, is_select = isSubSelect(p), is_mirror = (getFunctionId(p) == mirrorRef);
+	int tpe, k, is_select = isSelect(p), is_mirror = (getFunctionId(p) == mirrorRef);
 	int is_identity = (getFunctionId(p) == identityRef && getModuleId(p) == batcalcRef);
 	int ident_var = 0, is_assign = (getFunctionId(p) == NULL), n = 0;
 	InstrPtr r = NULL, q;
@@ -394,7 +394,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 static void
 mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int mvar, int nvar)
 {
-	int k, is_select = isSubSelect(p);
+	int k, is_select = isSelect(p);
 	InstrPtr *r = NULL;
 
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
@@ -645,7 +645,7 @@ subjoin_split(Client cntxt, InstrPtr p, int args)
 	if (!name)
 		return -1;
 	strncpy(name, getFunctionId(p), len-7);
-	strcpy(name+len-7, "subselect");
+	strcpy(name+len-7, "subjoin");
 
 	sym = findSymbol(cntxt->nspace, getModuleId(p), name);
 	assert(sym);
@@ -1749,8 +1749,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
-		/* subselect on insert, should use last tid only */
-		if (match == 1 && fm == 2 && isSubSelect(p) && p->retc == 1 &&
+		/* select on insert, should use last tid only */
+		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && 
 		   !ml.v[m].packed && /* not packed yet */ 
 		   !was_a_mat(getArg(p,fm-1), &ml)){ /* not previously packed */
@@ -1761,8 +1761,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
-		/* subselect on update, with nil bat */
-		if (match == 1 && fm == 1 && isSubSelect(p) && p->retc == 1 && 
+		/* select on update, with nil bat */
+		if (match == 1 && fm == 1 && isSelect(p) && p->retc == 1 && 
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && bats == 2 &&
 		   isaBatType(getArgType(mb,p,2)) && isVarConstant(mb,getArg(p,2)) && getVarConstant(mb,getArg(p,2)).val.bval == bat_nil) {
 			if ((r = mat_apply1(mb, p, &ml, m, fm)) != NULL)

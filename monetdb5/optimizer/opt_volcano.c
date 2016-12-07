@@ -51,9 +51,9 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 
 		if( count < MAXdelays && getModuleId(p) == algebraRef ){
-			if( getFunctionId(p) == subselectRef ||
-				getFunctionId(p) == thetasubselectRef ||
-				getFunctionId(p) == likesubselectRef ||
+			if( getFunctionId(p) == selectRef ||
+				getFunctionId(p) == thetaselectRef ||
+				getFunctionId(p) == likeselectRef ||
 				getFunctionId(p) == subjoinRef
 			){
 				q= newInstruction(0,languageRef,blockRef);
