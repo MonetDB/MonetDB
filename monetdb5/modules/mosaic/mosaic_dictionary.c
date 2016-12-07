@@ -279,7 +279,7 @@ MOScreatedictionary(Client cntxt, MOStask task)
 		case 1: //makeDict(bte); break;
 {	bte *val = ((bte*)task->src) + task->start,v,w;
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
-	int cw,cv;
+	lng cw,cv;
 	for(i = 0; i< limit; i++, val++){
 		MOSfind(j,dict.valbte,*val,0,dictsize);
 		if(j == dictsize && dictsize == 0 ){
