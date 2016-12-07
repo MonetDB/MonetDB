@@ -14,7 +14,7 @@ bat.append(b2, 12.34);
 bat.append(b2, 12.35);
 io.print(b1,b2);
 
-s:= algebra.subselect(b1,2,2,true,true,false);
+s:= algebra.select(b1,2,2,true,true,false);
 io.print(s);
 
 bat.delete(b1,s);
