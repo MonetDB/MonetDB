@@ -53,3 +53,10 @@ wheezy | jessie | precise | trusty | wily)
     sed -i 's/php-cli/php5-cli/;s/, *php-sockets//' debian/control
     ;;
 esac
+
+case $SUITE in
+wheezy | precise)
+    # numpy is too old
+    sed -i '/pyintegration=yes/s/yes/no/' debian/rules
+    ;;
+esac
