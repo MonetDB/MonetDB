@@ -1189,17 +1189,13 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
 		return GDK_SUCCEED;
 	if (reverse) {
 		if (stable) {
-			if (GDKssort_rev(h, t, base, n, hs, ts, tpe) < 0) {
-				return GDK_FAIL;
-			}
+			return GDKssort_rev(h, t, base, n, hs, ts, tpe);
 		} else {
 			GDKqsort_rev(h, t, base, n, hs, ts, tpe);
 		}
 	} else {
 		if (stable) {
-			if (GDKssort(h, t, base, n, hs, ts, tpe) < 0) {
-				return GDK_FAIL;
-			}
+			return GDKssort(h, t, base, n, hs, ts, tpe);
 		} else {
 			GDKqsort(h, t, base, n, hs, ts, tpe);
 		}
