@@ -8,56 +8,56 @@ module pyapi;
 
 # The generic Python interface
 pattern eval(fptr:ptr,expr:str):any
-address PyAPIevalStd
+address PYAPI2PyAPIevalStd
 comment "Execute a simple Python script returning a single value";
 
 
 pattern eval(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalStd
+address PYAPI2PyAPIevalStd
 comment "Execute a simple Python script value";
 
 #grouped things
 pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalAggr
+address PYAPI2PyAPIevalAggr
 comment "grouped aggregates through Python";
 
 pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalAggr
+address PYAPI2PyAPIevalAggr
 comment "grouped aggregates through Python";
 
 pattern eval_loader(fptr:ptr,expr:str):any...
-address PyAPIevalLoader
+address PYAPI2PyAPIevalLoader
 comment "loader functions through Python";
 
 pattern eval_loader(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalLoader
+address PYAPI2PyAPIevalLoader
 comment "loader functions through Python";
 
 # initializer code
-command prelude() :void address PyAPIprelude;
+command prelude() :void address PYAPI2PyAPIprelude;
 pyapi.prelude();
 
 # The SQL compiler needs these functions for bat-wise operations
 module batpyapi;
 
 pattern eval(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalStd
+address PYAPI2PyAPIevalStd
 comment "Execute a simple Python script value";
 
 pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalAggr
+address PYAPI2PyAPIevalAggr
 comment "grouped aggregates through Python";
 
 pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalAggr
+address PYAPI2PyAPIevalAggr
 comment "grouped aggregates through Python";
 
 pattern eval_loader(fptr:ptr,expr:str):any...
-address PyAPIevalLoader
+address PYAPI2PyAPIevalLoader
 comment "loader functions through Python";
 
 pattern eval_loader(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalLoader
+address PYAPI2PyAPIevalLoader
 comment "loader functions through Python";
 
 
@@ -65,33 +65,33 @@ module pyapimap;
 
 # The generic Python interface
 pattern eval(fptr:ptr,expr:str):any
-address PyAPIevalStdMap
+address PYAPI2PyAPIevalStdMap
 comment "Execute a simple Python script returning a single value";
 
 pattern eval(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalStdMap
+address PYAPI2PyAPIevalStdMap
 comment "Execute a simple Python script value";
 
 #grouped things
 pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalAggrMap
+address PYAPI2PyAPIevalAggrMap
 comment "grouped aggregates through Python";
 
 pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalAggrMap
+address PYAPI2PyAPIevalAggrMap
 comment "grouped aggregates through Python";
 
 # The SQL compiler needs these functions for bat-wise operations
 module batpyapimap;
 
 pattern eval(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalStdMap
+address PYAPI2PyAPIevalStdMap
 comment "Execute a simple Python script value";
 
 pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalAggrMap
+address PYAPI2PyAPIevalAggrMap
 comment "grouped aggregates through Python";
 
 pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
-address PyAPIevalAggrMap
+address PYAPI2PyAPIevalAggrMap
 comment "grouped aggregates through Python";

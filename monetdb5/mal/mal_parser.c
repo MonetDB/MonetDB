@@ -949,6 +949,17 @@ static str parseModule(Client cntxt)
 	return "";
 }
 
+#define pyapi_enableflag "embedded_py"
+// returns the currently enabled python version, if any
+// defaults to python 2 if none is enabled
+static int
+enabled_python_version() {
+    char* env = GDKgetenv(pyapi_enableflag);
+    if (env && strncmp(env, "3", 1) == 0)
+    	return 3;
+   	return 2;
+}
+
 /*
  * Include statement
  * An include statement is immediately taken into effect. This
@@ -994,6 +1005,20 @@ parseInclude(Client cntxt)
 		return 0;
 	}
 	skipToEnd(cntxt);
+
+	// loading both the python 2 and python 3 DLLs messes up the server
+	// thus we only load whichever one is enabled (if any)
+	if (strncmp(modnme, "pyapi", 5) == 0) {
+		if (strcmp(modnme, "pyapi3") == 0) {
+			if (enabled_python_version() != 3) {
+				return "";
+			}
+		} else {
+			if (enabled_python_version() != 2) {
+				return "";
+			}
+		}
+	}
 
 	s = loadLibrary(modnme, FALSE);
 	if (s) {

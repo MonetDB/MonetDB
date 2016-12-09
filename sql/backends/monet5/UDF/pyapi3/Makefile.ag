@@ -26,7 +26,7 @@ MTSAFE
 lib__pyapi3 = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = pyapi3.c unicode3.c pytypes3.c type_conversion3.c formatinput3.c connection3.c
+	SOURCES = pyapi3.c unicode3.c pytypes3.c type_conversion3.c formatinput3.c connection3.c pyloader3.c emit3.c conversion3.c
 	XDEPS = $(libpy3_LIBDEP)
 	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
 	       ../../../../../gdk/libbat \

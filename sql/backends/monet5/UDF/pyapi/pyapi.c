@@ -28,9 +28,15 @@ static bool option_disable_fork = false;
 static PyObject *marshal_module = NULL;
 PyObject *marshal_loads = NULL;
 
-int PyAPIEnabled(void) {
+int PYFUNCNAME(PyAPIEnabled)(void) {
+    char* env = GDKgetenv(pyapi_enableflag);
+#ifndef IS_PY3K
     return (GDKgetenv_istrue(pyapi_enableflag)
-            || GDKgetenv_isyes(pyapi_enableflag));
+            || GDKgetenv_isyes(pyapi_enableflag) ||
+            (env && strncmp(env, "2", 1) == 0));
+#else
+    return (env && strncmp(env, "3", 1) == 0);
+#endif
 }
 
 typedef struct _AggrParams{
@@ -73,7 +79,7 @@ static MT_Lock pyapiLock;
 static MT_Lock queryLock;
 static int pyapiInitialized = FALSE;
 
-int PyAPIInitialized(void) {
+int PYFUNCNAME(PyAPIInitialized)(void) {
     return pyapiInitialized;
 }
 
@@ -89,26 +95,26 @@ static bool enable_zerocopy_input = true;
 static bool enable_zerocopy_output = true;
 #endif
 
-str
+static str
 PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped);
 
 str
-PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+PYFUNCNAME(PyAPIevalStd)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     return PyAPIeval(cntxt, mb, stk, pci, 0, 0);
 }
 
 str
-PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+PYFUNCNAME(PyAPIevalStdMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     return PyAPIeval(cntxt, mb, stk, pci, 0, 1);
 }
 
 str
-PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+PYFUNCNAME(PyAPIevalAggr)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     return PyAPIeval(cntxt, mb, stk, pci, 1, 0);
 }
 
 str
-PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     return PyAPIeval(cntxt, mb, stk, pci, 1, 1);
 }
 
@@ -140,7 +146,7 @@ PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 //! [EXECUTE_CODE] Step 3: It executes the Python code using the Numpy arrays as arguments
 //! [RETURN_VALUES] Step 4: It collects the return values and converts them back into BATs
 //! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
-str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
+static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
     sql_func * sqlfun = NULL;
     str exprStr;
 
@@ -183,7 +189,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     (void) mapped;
 #endif
 
-    if (!PyAPIEnabled()) {
+    if (!PYFUNCNAME(PyAPIEnabled)()) {
         throw(MAL, "pyapi.eval",
               "Embedded Python has not been enabled. Start server with --set %s=true",
               pyapi_enableflag);
@@ -1250,18 +1256,16 @@ wrapup:
 }
 
 str
- PyAPIprelude(void *ret) {
+PYFUNCNAME(PyAPIprelude)(void *ret) {
     (void) ret;
     MT_lock_init(&pyapiLock, "pyapi_lock");
     MT_lock_init(&queryLock, "query_lock");
-    if (PyAPIEnabled()) {
+    if (PYFUNCNAME(PyAPIEnabled)()) {
         MT_lock_set(&pyapiLock);
         if (!pyapiInitialized) {
             str msg = MAL_SUCCEED;
             Py_Initialize();
-            if (PyRun_SimpleString("import numpy") != 0 || _import_array() < 0) {
-                return PyError_CreateException("Failed to initialize embedded python", NULL);
-            }
+            _import_array();
             msg = _connection_init();
             if (msg != MAL_SUCCEED) {
                 MT_lock_unset(&pyapiLock);
@@ -1282,6 +1286,9 @@ str
             if (marshal_loads == NULL) {
                 return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
             }
+            if (PyRun_SimpleString("import numpy") != 0) {
+                return PyError_CreateException("Failed to initialize embedded python", NULL);
+            }
             PyEval_SaveThread();
             if (msg != MAL_SUCCEED) {
                 MT_lock_unset(&pyapiLock);
@@ -1290,7 +1297,14 @@ str
             pyapiInitialized++;
         }
         MT_lock_unset(&pyapiLock);
-        fprintf(stdout, "# MonetDB/Python module loaded\n");
+        fprintf(stdout, "# MonetDB/Python%d module loaded\n",
+#ifdef IS_PY3K
+            3
+#else
+            2
+#endif
+
+            );
     }
     option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
     return MAL_SUCCEED;

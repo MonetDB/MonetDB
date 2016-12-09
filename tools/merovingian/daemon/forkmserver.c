@@ -469,6 +469,17 @@ forkMserver(char *database, sabdb** stats, int force)
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 			embeddedpy = "embedded_py=true";
 
+		kv = findConfKey(ckv, "embedpy3");
+		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+			if (embeddedpy) {
+				// only one python version can be active at a time
+				Mfprintf(stderr, "attempting to start mserver with both embedded python2 and embedded python3; only one python version can be active at a time\n");
+				exit(1);
+			}
+			embeddedpy = "embedded_py=3";
+		}
+
+
 
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */

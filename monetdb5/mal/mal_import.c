@@ -156,7 +156,6 @@ malLoadScript(Client c, str name, bstream **fdin)
 	c->blkmode = oldblkmode; \
 	c->srcFile = oldsrcFile;
 
-
 #ifdef HAVE_EMBEDDED
 extern char* mal_init_inline;
 #endif
@@ -167,7 +166,7 @@ extern char* mal_init_inline;
 str
 malInclude(Client c, str name, int listing)
 {
-	str s= MAL_SUCCEED;
+	str s = MAL_SUCCEED;
 	str filename;
 	str p;
 
