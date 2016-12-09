@@ -35,8 +35,8 @@ Ready.
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 6,	2,	1,	0,	2,	2 # length
-[ "bigint",	64,	0,	"",	"L3",	"L3"	]
+% 6,	2,	1,	0,	3,	3 # length
+[ "bigint",	64,	0,	"",	"L16",	"L15"	]
 #drop table foo;
 
 # 12:27:17 >  

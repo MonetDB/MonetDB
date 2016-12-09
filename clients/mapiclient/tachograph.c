@@ -405,7 +405,7 @@ main(int argc, char **argv)
 	};
 
 	/* parse config file first, command line options override */
-	parse_dotmonetdb(&user, &password, NULL, NULL, NULL, NULL);
+	parse_dotmonetdb(&user, &password, &dbname, NULL, NULL, NULL, NULL);
 
 	while (1) {
 		int option_index = 0;
@@ -418,7 +418,9 @@ main(int argc, char **argv)
 			debug = 1;
 			break;
 		case 'd':
-			dbname = optarg;
+			if (dbname)
+				free(dbname);
+			dbname = strdup(optarg);
 			break;
 		case 'u':
 			if (user)
@@ -521,6 +523,9 @@ main(int argc, char **argv)
 	}
 	conn = mapi_get_from(dbh);
 	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
+		if (n == 0 &&
+		    (n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) <= 0)
+			break;
 		buffer[len + n] = 0;
 		response = buffer;
 		while ((e = strchr(response, '\n')) != NULL) {

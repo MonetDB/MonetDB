@@ -68,8 +68,8 @@ Ready.
 #  return id_table_a1;
 #end;
 #select insert_table_error();
-% .L # table_name
-% insert_table_error # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 0	]
@@ -79,8 +79,8 @@ Ready.
 % 1,	1 # length
 [ 1,	1	]
 #select insert_table_correct();
-% .L # table_name
-% insert_table_correct # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 2	]

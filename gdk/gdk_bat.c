@@ -88,6 +88,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 
 	bn->ttype = tt;
 	bn->tkey = FALSE;
+	bn->tunique = FALSE;
 	bn->tnonil = TRUE;
 	bn->tnil = FALSE;
 	bn->tsorted = bn->trevsorted = ATOMlinear(tt) != 0;
@@ -196,18 +197,20 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 
 	/* alloc the main heaps */
 	if (tt && HEAPalloc(&bn->theap, cap, bn->twidth) != GDK_SUCCEED) {
-		return NULL;
+		goto bailout;
 	}
 
 	if (ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
-		if (tt)
-			HEAPfree(&bn->theap, 1);
 		GDKfree(bn->tvheap);
-		return NULL;
+		goto bailout;
 	}
 	DELTAinit(bn);
 	BBPcacheit(bn, 1);
 	return bn;
+  bailout:
+	HEAPfree(&bn->theap, 1);
+	GDKfree(bn);
+	return NULL;
 }
 
 BAT *
@@ -247,63 +250,143 @@ BAT *
 BATattach(int tt, const char *heapfile, int role)
 {
 	BAT *bn;
-	struct stat st;
-	int atomsize;
-	BUN cap;
-	char *path;
+	char *p;
+	size_t m;
+	FILE *f;
 
 	ERRORcheck(tt <= 0 , "BATattach: bad tail type (<=0)\n", NULL);
-	ERRORcheck(ATOMvarsized(tt), "BATattach: bad tail type (varsized)\n", NULL);
-	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n", NULL);
+	ERRORcheck(ATOMvarsized(tt) && ATOMstorage(tt) != TYPE_str, "BATattach: bad tail type (varsized and not str)\n", NULL);
+	ERRORcheck(heapfile == NULL, "BATattach: bad heapfile name\n", NULL);
 	ERRORcheck(role < 0 || role >= 32, "BATattach: role error\n", NULL);
-	if (lstat(heapfile, &st) < 0) {
-		GDKsyserror("BATattach: cannot stat heapfile\n");
+
+	if ((f = fopen(heapfile, "rb")) == NULL) {
+		GDKsyserror("BATattach: cannot open %s\n", heapfile);
 		return NULL;
 	}
-	ERRORcheck(!S_ISREG(st.st_mode), "BATattach: heapfile must be a regular file\n", NULL);
-	ERRORcheck(st.st_nlink != 1, "BATattach: heapfile must have only one link\n", NULL);
-	atomsize = ATOMsize(tt);
-	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n", NULL);
-	ERRORcheck((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX, "BATattach: heapfile too large\n", NULL);
-	cap = (BUN) (st.st_size / atomsize);
-	bn = BATcreatedesc(0, tt, 1, role);
-	if (bn == NULL)
-		return NULL;
-	BATsetdims(bn);
-	path = GDKfilepath(bn->theap.farmid, BATDIR, bn->theap.filename, "new");
-	GDKcreatedir(path);
-	if (rename(heapfile, path) < 0) {
-		GDKsyserror("BATattach: cannot rename heapfile\n");
-		GDKfree(path);
-		HEAPfree(&bn->theap, 1);
-		GDKfree(bn);
-		return NULL;
-	}
-	GDKfree(path);
-	BATsetcapacity(bn, cap);
-	BATsetcount(bn, cap);
-	/*
-	 * Unless/until we invest in a scan to check that there indeed
-	 * are no NIL values, we cannot safely assume there are none.
-	 */
-	bn->tnonil = 0;
-	bn->tnil = 0;
-	if (cap > 1) {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
+	if (ATOMstorage(tt) == TYPE_str) {
+		size_t n;
+		char *s;
+		int c, u;
+
+		if ((bn = COLnew(0, tt, 0, role)) == NULL) {
+			fclose(f);
+			return NULL;
+		}
+		m = 4096;
+		n = 0;
+		u = 0;
+		s = p = GDKmalloc(m);
+		if (p == NULL) {
+			fclose(f);
+			BBPreclaim(bn);
+			return NULL;
+		}
+		while ((c = getc(f)) != EOF) {
+			if (n == m) {
+				m += 4096;
+				p = GDKrealloc(p, m);
+				s = p + n;
+			}
+			if (c == '\n' && n > 0 && s[-1] == '\r') {
+				/* deal with CR-LF sequence */
+				s[-1] = c;
+			} else {
+				*s++ = c;
+				n++;
+			}
+			if (u) {
+				if ((c & 0xC0) == 0x80)
+					u--;
+				else
+					goto notutf8;
+			} else if ((c & 0xF8) == 0xF0)
+				u = 3;
+			else if ((c & 0xF0) == 0xE0)
+				u = 2;
+			else if ((c & 0xE0) == 0xC0)
+				u = 1;
+			else if ((c & 0x80) == 0x80)
+				goto notutf8;
+			else if (c == 0) {
+				if (BUNappend(bn, p, 0) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					fclose(f);
+					GDKfree(p);
+					return NULL;
+				}
+				s = p;
+				n = 0;
+			}
+		}
+		fclose(f);
+		GDKfree(p);
+		if (n > 0) {
+			BBPreclaim(bn);
+			GDKerror("BATattach: last string is not null-terminated\n");
+			return NULL;
+		}
+	} else {
+		struct stat st;
+		int atomsize;
+		BUN cap;
+		lng n;
+
+		if (fstat(fileno(f), &st) < 0) {
+			GDKsyserror("BATattach: cannot stat %s\n", heapfile);
+			fclose(f);
+			return NULL;
+		}
+		atomsize = ATOMsize(tt);
+		if (st.st_size % atomsize != 0) {
+			fclose(f);
+			GDKerror("BATattach: heapfile size not integral number of atoms\n");
+			return NULL;
+		}
+		if ((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX) {
+			fclose(f);
+			GDKerror("BATattach: heapfile too large\n");
+			return NULL;
+		}
+		cap = (BUN) (st.st_size / atomsize);
+		bn = COLnew(0, tt, cap, role);
+		if (bn == NULL) {
+			fclose(f);
+			return NULL;
+		}
+		p = Tloc(bn, 0);
+		n = (lng) st.st_size;
+		while (n > 0 && (m = fread(p, 1, (size_t) MIN(1024*1024, n), f)) > 0) {
+			p += m;
+			n -= m;
+		}
+		fclose(f);
+		if (n > 0) {
+			GDKerror("BATattach: couldn't read the complete file\n");
+			BBPreclaim(bn);
+			return NULL;
+		}
+		BATsetcount(bn, cap);
+		bn->tnonil = cap == 0;
+		bn->tnil = 0;
 		bn->tdense = 0;
-		bn->tkey = 0;
+		if (cap > 1) {
+			bn->tsorted = 0;
+			bn->trevsorted = 0;
+			bn->tkey = 0;
+		} else {
+			bn->tsorted = 1;
+			bn->trevsorted = 1;
+			bn->tkey = 1;
+		}
 	}
-	bn->batRestricted = BAT_READ;
-	bn->theap.size = (size_t) st.st_size;
-	bn->theap.newstorage = bn->theap.storage = (bn->theap.size < GDK_mmap_minsize) ? STORE_MEM : STORE_MMAP;
-	if (HEAPload(&bn->theap, BBP_physical(bn->batCacheid), "tail", TRUE) != GDK_SUCCEED) {
-		HEAPfree(&bn->theap, 1);
-		GDKfree(bn);
-		return NULL;
-	}
-	BBPcacheit(bn, 1);
 	return bn;
+
+  notutf8:
+	fclose(f);
+	BBPreclaim(bn);
+	GDKfree(p);
+	GDKerror("BATattach: input is not UTF-8\n");
+	return NULL;
 }
 
 /*
@@ -827,7 +910,7 @@ setcolprops(BAT *b, const void *x)
 		/* first value */
 		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
 		b->tnosorted = b->tnorevsorted = 0;
-		b->tkey |= 1;
+		b->tkey = 1;
 		b->tnokey[0] = b->tnokey[1] = 0;
 		b->tnodense = 0;
 		if (b->ttype == TYPE_void) {
@@ -872,7 +955,8 @@ setcolprops(BAT *b, const void *x)
 		prv = BUNtail(bi, pos - 1);
 		cmp = atom_CMP(prv, x, b->ttype);
 
-		if (b->tkey == 1 && /* assume outside check if BOUND2BTRUE */
+		if (!b->tunique && /* assume outside check if tunique */
+		    b->tkey &&
 		    (cmp == 0 || /* definitely not KEY */
 		     (b->batCount > 1 && /* can't guarantee KEY if unordered */
 		      ((b->tsorted && cmp > 0) ||
@@ -920,7 +1004,7 @@ BUNappend(BAT *b, const void *t, bit force)
 	BATcheck(b, "BUNappend", GDK_FAIL);
 
 	assert(!isVIEW(b));
-	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, t) != BUN_NONE) {
+	if (b->tunique && BUNfnd(b, t) != BUN_NONE) {
 		return GDK_SUCCEED;
 	}
 
@@ -960,10 +1044,10 @@ BUNappend(BAT *b, const void *t, bit force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-
-	/* first adapt the hashes; then the user-defined accelerators.
-	 * REASON: some accelerator updates (qsignature) use the hashes!
-	 */
+	if (b->thash == (Hash *) 1) {
+		/* don't bother first loading the hash to then change it */
+		HASHdestroy(b);
+	}
 	if (b->thash) {
 		HASHins(b, p, t);
 		if (tsize && tsize != b->tvheap->size)
@@ -1012,7 +1096,7 @@ BUNdelete(BAT *b, oid o)
 	b->batCount--;
 	if (b->batCount <= 1) {
 		/* some trivial properties */
-		b->tkey |= 1;
+		b->tkey = 1;
 		b->tsorted = b->trevsorted = 1;
 		b->tnosorted = b->tnorevsorted = 0;
 		if (b->batCount == 0) {
@@ -1103,7 +1187,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 		}
 	} else if (b->tnorevsorted >= p)
 		b->tnorevsorted = 0;
-	if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
+	if (((b->ttype != TYPE_void) & b->tkey & !b->tunique) && b->batCount > 1) {
 		BATkey(b, FALSE);
 	}
 	if (b->tnonil)
@@ -1129,7 +1213,7 @@ BUNreplace(BAT *b, oid id, const void *t, bit force)
 	if (id < b->hseqbase || id >= b->hseqbase + BATcount(b))
 		return GDK_SUCCEED;
 
-	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, t) != BUN_NONE) {
+	if (b->tunique && BUNfnd(b, t) != BUN_NONE) {
 		return GDK_SUCCEED;
 	}
 	if (b->ttype == TYPE_void) {
@@ -1154,7 +1238,7 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 		GDKerror("void_inplace: id out of range\n");
 		return GDK_FAIL;
 	}
-	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, val) != BUN_NONE)
+	if (b->tunique && BUNfnd(b, val) != BUN_NONE)
 		return GDK_SUCCEED;
 	if (b->ttype == TYPE_void)
 		return GDK_SUCCEED;
@@ -1351,11 +1435,9 @@ BATkey(BAT *b, int flag)
 {
 	BATcheck(b, "BATkey", GDK_FAIL);
 	assert(b->batCacheid > 0);
+	assert(flag == 0 || flag == 1);
+	assert(!b->tunique || flag);
 	if (b->ttype == TYPE_void) {
-		if (b->tseqbase == oid_nil && flag == BOUND2BTRUE) {
-			GDKerror("BATkey: nil-column cannot be kept unique.\n");
-			return GDK_FAIL;
-		}
 		if (b->tseqbase != oid_nil && flag == FALSE) {
 			GDKerror("BATkey: dense column must be unique.\n");
 			return GDK_FAIL;
@@ -1365,13 +1447,13 @@ BATkey(BAT *b, int flag)
 			return GDK_FAIL;
 		}
 	}
-	if (flag)
-		flag |= (1 | b->tkey);
-	if (b->tkey != flag)
+	if (b->tkey != (flag != 0))
 		b->batDirtydesc = TRUE;
-	b->tkey = flag;
+	b->tkey = flag != 0;
 	if (!flag)
 		b->tdense = 0;
+	else
+		b->tnokey[0] = b->tnokey[1] = 0;
 	if (flag && VIEWtparent(b)) {
 		/* if a view is key, then so is the parent if the two
 		 * are aligned */
@@ -1920,11 +2002,17 @@ BATmode(BAT *b, int mode)
  *		then all values are equal.
  * revsorted	The column is reversely sorted (descending).  If
  *		also sorted, then all values are equal.
+ * nosorted	BUN position which proofs not sorted (given position
+ *		and one before are not ordered correctly).
+ * norevsorted	BUN position which proofs not revsorted (given position
+ *		and one before are not ordered correctly).
+ * nokey	Pair of BUN positions that proof not all values are
+ *		distinct (i.e. values at given locations are equal).
  *
- * The "key" property consists of two bits.  The lower bit, when set,
- * indicates that all values in the column are distinct.  The upper
- * bit, when set, indicates that all values must be distinct
- * (BOUND2BTRUE).
+ * In addition there is a property "unique" that, when set, indicates
+ * that values must be kept unique (and hence that the "key" property
+ * must be set).  This property is only used when changing (adding,
+ * replacing) values.
  *
  * Note that the functions BATtseqbase and BATkey also set more
  * properties than you might suspect.  When setting properties on a
@@ -1963,8 +2051,7 @@ BATassertProps(BAT *b)
 	assert(b->ttype >= TYPE_void);
 	assert(b->ttype < GDKatomcnt);
 	assert(b->ttype != TYPE_bat);
-	/* if BOUND2BTRUE is set, then so must the low order bit */
-	assert(!(b->tkey & BOUND2BTRUE) || (b->tkey & 1)); /* tkey != 2 */
+	assert(!b->tunique || b->tkey); /* if unique, then key */
 	assert(isVIEW(b) ||
 	       b->ttype == TYPE_void ||
 	       BBPfarms[b->theap.farmid].roles & (1 << b->batRole));
@@ -2050,6 +2137,18 @@ BATassertProps(BAT *b)
 		    b->tnorevsorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnorevsorted - 1),
 				    BUNtail(bi, b->tnorevsorted)) < 0);
+	}
+	/* if tkey property set, both tnokey values must be 0 */
+	assert(!b->tkey || (b->tnokey[0] == 0 && b->tnokey[1] == 0));
+	if (!b->tkey && (b->tnokey[0] != 0 || b->tnokey[1] != 0)) {
+		/* if tkey not set and tnokey indicates a proof of
+		 * non-key-ness, make sure the tnokey values are in
+		 * range and indeed provide a proof */
+		assert(b->tnokey[0] != b->tnokey[1]);
+		assert(b->tnokey[0] < b->batCount);
+		assert(b->tnokey[1] < b->batCount);
+		assert(cmpf(BUNtail(bi, b->tnokey[0]),
+			    BUNtail(bi, b->tnokey[1])) == 0);
 	}
 	/* var heaps must have sane sizes */
 	assert(b->tvheap == NULL || b->tvheap->free <= b->tvheap->size);

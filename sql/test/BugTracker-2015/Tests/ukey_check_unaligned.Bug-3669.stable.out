@@ -51,7 +51,7 @@ Ready.
 #select count(*) as count_dupl_rows, id, nm, dt, qnt, descr from tab
 #group by id, nm, dt, qnt, descr having count(*) > 1
 #order by id, nm, dt, qnt, descr;
-% sys.L1,	sys.tab,	sys.tab,	sys.tab,	sys.tab,	sys.tab # table_name
+% sys.L2,	sys.tab,	sys.tab,	sys.tab,	sys.tab,	sys.tab # table_name
 % count_dupl_rows,	id,	nm,	dt,	qnt,	descr # name
 % bigint,	int,	varchar,	date,	decimal,	clob # type
 % 1,	1,	1,	10,	20,	44 # length

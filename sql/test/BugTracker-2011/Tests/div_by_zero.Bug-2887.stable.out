@@ -28,8 +28,8 @@ Ready.
 #Insert into t2887 values (0);
 [ 1	]
 #select min (case when "c" = 0 then 4 else 3/c end) from t2887;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]

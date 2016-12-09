@@ -136,9 +136,9 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 		if (lcnt == 0 || rcnt == 0)
 			maxsize = nil_on_miss ? lcnt : 0;
 		else if (BUN_MAX / lcnt >= rcnt)
-			maxsize = BUN_MAX;
-		else
 			maxsize = lcnt * rcnt;
+		else
+			maxsize = BUN_MAX;
 	}
 	size = estimate == BUN_NONE ? lcnt : estimate;
 	if (size > maxsize)
@@ -474,6 +474,8 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 	} else {
 		cnt = lend - lstart;
 		HEAPfree(&r1->theap, 1);
+		r1->theap.storage = r1->theap.newstorage = STORE_MEM;
+		r1->theap.size = 0;
 		r1->ttype = TYPE_void;
 		r1->tvarsized = 1;
 		r1->twidth = 0;
@@ -486,6 +488,8 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 	r1->tnorevsorted = !(r1->trevsorted = BATcount(r1) <= 1);
 	if (r2) {
 		HEAPfree(&r2->theap, 1);
+		r2->theap.storage = r2->theap.newstorage = STORE_MEM;
+		r2->theap.size = 0;
 		r2->ttype = TYPE_void;
 		r2->tvarsized = 1;
 		r2->twidth = 0;
@@ -502,11 +506,11 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 			  BATgetId(r1), BATcount(r1),
 			  r1->tsorted ? "-sorted" : "",
 			  r1->trevsorted ? "-revsorted" : "",
-			  r1->tkey & 1 ? "-key" : "",
+			  r1->tkey ? "-key" : "",
 			  r2 ? BATgetId(r2) : "--", r2 ? BATcount(r2) : 0,
 			  r2 && r2->tsorted ? "-sorted" : "",
 			  r2 && r2->trevsorted ? "-revsorted" : "",
-			  r2 && r2->tkey & 1 ? "-key" : "",
+			  r2 && r2->tkey ? "-key" : "",
 			  GDKusec() - t0);
 	return GDK_SUCCEED;
 
@@ -617,6 +621,9 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					 * the result is the other
 					 * range and thus dense */
 					HEAPfree(&r1->theap, 1);
+					r1->theap.storage = STORE_MEM;
+					r1->theap.newstorage = STORE_MEM;
+					r1->theap.size = 0;
 					r1->ttype = TYPE_void;
 					r1->tvarsized = 1;
 					r1->twidth = 0;
@@ -646,6 +653,9 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			r1->tdense = 1;
 			HEAPfree(&r1->theap, 1);
+			r1->theap.storage = STORE_MEM;
+			r1->theap.newstorage = STORE_MEM;
+			r1->theap.size = 0;
 			r1->ttype = TYPE_void;
 			r1->tvarsized = 1;
 			r1->twidth = 0;
@@ -690,6 +700,9 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (r2) {
 				r2->tdense = 1;
 				HEAPfree(&r2->theap, 1);
+				r2->theap.storage = STORE_MEM;
+				r2->theap.newstorage = STORE_MEM;
+				r2->theap.size = 0;
 				r2->ttype = TYPE_void;
 				r2->tvarsized = 1;
 				r2->twidth = 0;
@@ -836,7 +849,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				BATsetcount(r2, BATcount(r2));
 				r2->tsorted = l->tsorted || BATcount(r2) <= 1;
 				r2->trevsorted = l->trevsorted || BATcount(r2) <= 1;
-				r2->tkey = (l->tkey & 1) || BATcount(r2) <= 1;
+				r2->tkey = l->tkey || BATcount(r2) <= 1;
 				r2->tdense = 0;
 			}
 			goto doreturn;
@@ -929,7 +942,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				r2->tsorted = 0;
 				r2->trevsorted = 0;
 			} else {
-				r2->tkey = l->tkey & 1;
+				r2->tkey = l->tkey;
 				r2->tsorted = l->tsorted;
 				r2->trevsorted = l->trevsorted;
 			}
@@ -948,12 +961,12 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  r1->tsorted ? "-sorted" : "",
 			  r1->trevsorted ? "-revsorted" : "",
 			  r1->tdense ? "-dense" : "",
-			  r1->tkey & 1 ? "-key" : "",
+			  r1->tkey ? "-key" : "",
 			  r2 ? BATgetId(r2) : "--", r2 ? BATcount(r2) : 0,
 			  r2 && r2->tsorted ? "-sorted" : "",
 			  r2 && r2->trevsorted ? "-revsorted" : "",
 			  r2 && r2->tdense ? "-dense" : "",
-			  r2 && r2->tkey & 1 ? "-key" : "",
+			  r2 && r2->tkey ? "-key" : "",
 			  GDKusec() - t0);
 	return GDK_SUCCEED;
   bailout:
@@ -995,11 +1008,11 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
-			  l->tkey & 1 ? "-key" : "",
+			  l->tkey ? "-key" : "",
 			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
 			  r->tsorted ? "-sorted" : "",
 			  r->trevsorted ? "-revsorted" : "",
-			  r->tkey & 1 ? "-key" : "",
+			  r->tkey ? "-key" : "",
 			  swapped ? " swapped" : "");
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
@@ -1259,12 +1272,12 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			  r1->tsorted ? "-sorted" : "",
 			  r1->trevsorted ? "-revsorted" : "",
 			  r1->tdense ? "-dense" : "",
-			  r1->tkey & 1 ? "-key" : "",
+			  r1->tkey ? "-key" : "",
 			  BATgetId(r2), BATcount(r2),
 			  r2->tsorted ? "-sorted" : "",
 			  r2->trevsorted ? "-revsorted" : "",
 			  r2->tdense ? "-dense" : "",
-			  r2->tkey & 1 ? "-key" : "",
+			  r2->tkey ? "-key" : "",
 			  GDKusec() - t0);
 	return GDK_SUCCEED;
 
@@ -1292,11 +1305,11 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
-			  l->tkey & 1 ? "-key" : "",
+			  l->tkey ? "-key" : "",
 			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
 			  r->tsorted ? "-sorted" : "",
 			  r->trevsorted ? "-revsorted" : "",
-			  r->tkey & 1 ? "-key" : "",
+			  r->tkey ? "-key" : "",
 			  swapped ? " swapped" : "");
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
@@ -1556,12 +1569,12 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			  r1->tsorted ? "-sorted" : "",
 			  r1->trevsorted ? "-revsorted" : "",
 			  r1->tdense ? "-dense" : "",
-			  r1->tkey & 1 ? "-key" : "",
+			  r1->tkey ? "-key" : "",
 			  BATgetId(r2), BATcount(r2),
 			  r2->tsorted ? "-sorted" : "",
 			  r2->trevsorted ? "-revsorted" : "",
 			  r2->tdense ? "-dense" : "",
-			  r2->tkey & 1 ? "-key" : "",
+			  r2->tkey ? "-key" : "",
 			  GDKusec() - t0);
 	return GDK_SUCCEED;
 
@@ -1625,19 +1638,19 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
-			  l->tkey & 1 ? "-key" : "",
+			  l->tkey ? "-key" : "",
 			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
 			  r->tsorted ? "-sorted" : "",
 			  r->trevsorted ? "-revsorted" : "",
-			  r->tkey & 1 ? "-key" : "",
+			  r->tkey ? "-key" : "",
 			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
 			  sl && sl->tsorted ? "-sorted" : "",
 			  sl && sl->trevsorted ? "-revsorted" : "",
-			  sl && sl->tkey & 1 ? "-key" : "",
+			  sl && sl->tkey ? "-key" : "",
 			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
 			  sr && sr->tsorted ? "-sorted" : "",
 			  sr && sr->trevsorted ? "-revsorted" : "",
-			  sr && sr->tkey & 1 ? "-key" : "",
+			  sr && sr->tkey ? "-key" : "",
 			  nil_matches, nil_on_miss, semi,
 			  swapped ? " swapped" : "");
 
@@ -2494,12 +2507,12 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  r1->tsorted ? "-sorted" : "",
 			  r1->trevsorted ? "-revsorted" : "",
 			  r1->tdense ? "-dense" : "",
-			  r1->tkey & 1 ? "-key" : "",
+			  r1->tkey ? "-key" : "",
 			  r2 ? BATgetId(r2) : "--", r2 ? BATcount(r2) : 0,
 			  r2 && r2->tsorted ? "-sorted" : "",
 			  r2 && r2->trevsorted ? "-revsorted" : "",
 			  r2 && r2->tdense ? "-dense" : "",
-			  r2 && r2->tkey & 1 ? "-key" : "",
+			  r2 && r2->tkey ? "-key" : "",
 			  GDKusec() - t0);
 	return GDK_SUCCEED;
 
@@ -2635,19 +2648,19 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
-			  l->tkey & 1 ? "-key" : "",
+			  l->tkey ? "-key" : "",
 			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
 			  r->tsorted ? "-sorted" : "",
 			  r->trevsorted ? "-revsorted" : "",
-			  r->tkey & 1 ? "-key" : "",
+			  r->tkey ? "-key" : "",
 			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
 			  sl && sl->tsorted ? "-sorted" : "",
 			  sl && sl->trevsorted ? "-revsorted" : "",
-			  sl && sl->tkey & 1 ? "-key" : "",
+			  sl && sl->tkey ? "-key" : "",
 			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
 			  sr && sr->tsorted ? "-sorted" : "",
 			  sr && sr->trevsorted ? "-revsorted" : "",
-			  sr && sr->tkey & 1 ? "-key" : "",
+			  sr && sr->tkey ? "-key" : "",
 			  nil_matches, nil_on_miss, semi,
 			  swapped ? " swapped" : "",
 			  *reason ? " " : "", reason);
@@ -3029,12 +3042,12 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			  r1->tsorted ? "-sorted" : "",
 			  r1->trevsorted ? "-revsorted" : "",
 			  r1->tdense ? "-dense" : "",
-			  r1->tkey & 1 ? "-key" : "",
+			  r1->tkey ? "-key" : "",
 			  r2 ? BATgetId(r2) : "--", r2 ? BATcount(r2) : 0,
 			  r2 && r2->tsorted ? "-sorted" : "",
 			  r2 && r2->trevsorted ? "-revsorted" : "",
 			  r2 && r2->tdense ? "-dense" : "",
-			  r2 && r2->tkey & 1 ? "-key" : "",
+			  r2 && r2->tkey ? "-key" : "",
 			  GDKusec() - t0);
 	return GDK_SUCCEED;
 
@@ -3080,19 +3093,19 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
-			  l->tkey & 1 ? "-key" : "",
+			  l->tkey ? "-key" : "",
 			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
 			  r->tsorted ? "-sorted" : "",
 			  r->trevsorted ? "-revsorted" : "",
-			  r->tkey & 1 ? "-key" : "",
+			  r->tkey ? "-key" : "",
 			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
 			  sl && sl->tsorted ? "-sorted" : "",
 			  sl && sl->trevsorted ? "-revsorted" : "",
-			  sl && sl->tkey & 1 ? "-key" : "",
+			  sl && sl->tkey ? "-key" : "",
 			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
 			  sr && sr->tsorted ? "-sorted" : "",
 			  sr && sr->trevsorted ? "-revsorted" : "",
-			  sr && sr->tkey & 1 ? "-key" : "",
+			  sr && sr->tkey ? "-key" : "",
 			  opcode & MASK_LT ? "<" : "",
 			  opcode & MASK_GT ? ">" : "",
 			  opcode & MASK_EQ ? "=" : "");
@@ -3267,11 +3280,11 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 			  BATgetId(r1), BATcount(r1),
 			  r1->tsorted ? "-sorted" : "",
 			  r1->trevsorted ? "-revsorted" : "",
-			  r1->tkey & 1 ? "-key" : "",
+			  r1->tkey ? "-key" : "",
 			  BATgetId(r2), BATcount(r2),
 			  r2->tsorted ? "-sorted" : "",
 			  r2->trevsorted ? "-revsorted" : "",
-			  r2->tkey & 1 ? "-key" : "",
+			  r2->tkey ? "-key" : "",
 			  GDKusec() - t0);
 	return GDK_SUCCEED;
 
@@ -3309,19 +3322,19 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
-			  l->tkey & 1 ? "-key" : "",
+			  l->tkey ? "-key" : "",
 			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
 			  r->tsorted ? "-sorted" : "",
 			  r->trevsorted ? "-revsorted" : "",
-			  r->tkey & 1 ? "-key" : "",
+			  r->tkey ? "-key" : "",
 			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
 			  sl && sl->tsorted ? "-sorted" : "",
 			  sl && sl->trevsorted ? "-revsorted" : "",
-			  sl && sl->tkey & 1 ? "-key" : "",
+			  sl && sl->tkey ? "-key" : "",
 			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
 			  sr && sr->tsorted ? "-sorted" : "",
 			  sr && sr->trevsorted ? "-revsorted" : "",
-			  sr && sr->tkey & 1 ? "-key" : "");
+			  sr && sr->tkey ? "-key" : "");
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
@@ -3682,11 +3695,11 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  BATgetId(r1), BATcount(r1),
 			  r1->tsorted ? "-sorted" : "",
 			  r1->trevsorted ? "-revsorted" : "",
-			  r1->tkey & 1 ? "-key" : "",
+			  r1->tkey ? "-key" : "",
 			  BATgetId(r2), BATcount(r2),
 			  r2->tsorted ? "-sorted" : "",
 			  r2->trevsorted ? "-revsorted" : "",
-			  r2->tkey & 1 ? "-key" : "",
+			  r2->tkey ? "-key" : "",
 			  GDKusec() - t0);
 	return GDK_SUCCEED;
 
@@ -3708,11 +3721,11 @@ fetchjoin(BAT *r1, BAT *r2, BAT *l, BAT *r)
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
-			  l->tkey & 1 ? "-key" : "",
+			  l->tkey ? "-key" : "",
 			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
 			  r->tsorted ? "-sorted" : "",
 			  r->trevsorted ? "-revsorted" : "",
-			  r->tkey & 1 ? "-key" : "");
+			  r->tkey ? "-key" : "");
 
 	if (r2) {
 		if (BATextend(r2, e - b) != GDK_SUCCEED)
@@ -3736,7 +3749,7 @@ fetchjoin(BAT *r1, BAT *r2, BAT *l, BAT *r)
 		APPEND(r1, v);
 	}
 	BATsetcount(r1, e - b);
-	r1->tkey = r->tkey & 1;
+	r1->tkey = r->tkey;
 	r1->tsorted = r->tsorted || e - b <= 1;
 	r1->trevsorted = r->trevsorted || e - b <= 1;
 	r1->tdense = e - b <= 1;

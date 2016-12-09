@@ -1,3 +1,94 @@
+monetdb (11.23.13) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#4058: Server crashes with a particular conditional query
+  * BZ#4064: Assertion: column not found
+  * BZ#4067: Relevant column name not printed when a CSV parsing error
+    occurs
+  * BZ#4070: Extra condition in join predicate of explicit join produces
+    wrong MAL code
+  * BZ#4074: Cannot use prepared statements when caching disabled
+  * BZ#6065: CTE with row number and union fails within MAL
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 07 Oct 2016 11:01:07 +0200
+
+monetdb (11.23.11) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 28 Sep 2016 13:47:01 +0200
+
+monetdb (11.23.11) unstable; urgency=low
+
+  * buildtools: We now use the CommonCrypto library instead of the OpenSSL library
+    on Darwin.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 26 Sep 2016 13:47:01 +0200
+
+monetdb (11.23.9) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3939: Assert failure on concurrent queries when querying sys.queue
+  * BZ#4019: Casting a timestamp from a string results in NULL
+  * BZ#4025: expressions in the WHERE clause that evaluates incorrectly
+  * BZ#4038: After upgrade from 11.21.19, jdbc couldn't list tables for
+    non sys users
+  * BZ#4044: Server crash when trying to delete a table has been added to
+    a merge table with "cascade" at the end
+  * BZ#4049: Wrong results for queries with "OR" and "LEFT JOIN"
+  * BZ#4052: Infinite loop in rel_select
+  * BZ#4054: copy into file wrongly exports functions
+  * BZ#4059: Geom functions only visible by user monetdb
+  * BZ#4060: BAT leak in some aggregate queries
+  * BZ#4062: Error: SELECT: no such binary operator 'like(varchar,varchar)'
+    when used in query running in other schema than sys
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Sep 2016 09:30:29 +0200
+
+monetdb (11.23.7) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#4014: KILL signal
+  * BZ#4021: Analyze query does not escape input [security]
+  * BZ#4026: JDBC driver incorrectly converts TINYINT fields to String
+    instead of an integer type.
+  * BZ#4028: inputs not the same size
+  * BZ#4032: no decimal places after update. ODBC driver
+  * BZ#4035: SQL Function call bug
+  * BZ#4036: Possible sql_catalog corruption due to unclean backuped tail
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 13 Jul 2016 14:33:03 +0200
+
+monetdb (11.23.7) unstable; urgency=low
+
+  * java: Corrected PROCEDURE_TYPE output value of method DatabaseMetaData.getProcedures().
+    It used to return procedureReturnsResult. Now it returns procedureNoResult.
+    Corrected ORDINAL_POSITION output value of method DatabaseMetaData.getProcedureColumns().
+    It used to start with 0, but as procedures do not return a result value it now
+    starts with 1 for all the procedure arguments, as defined by the JDBC API.
+  * java: Improved output of method DatabaseMetaData.getProcedures(). The REMARKS
+    column now contains the procedure definition as stored in sys.functions.func.
+    The SPECIFIC_NAME column now contains the procedure unique identifier as
+    stored in sys.functions.id. This allows the caller to retrieve the specific
+    overloaded procedure which has the same name, but different arguments.
+    Also improved output of method DatabaseMetaData.getProcedureColumns().
+    The SPECIFIC_NAME column now contains the procedure unique identifier as
+    stored in sys.functions.id. This allows the caller to retrieve the proper
+    arguments of the specific overloaded procedure by matching the SPECIFIC_NAME
+    value.
+  * java: Improved output of method DatabaseMetaData.getFunctions(). The REMARKS
+    column now contains the function definition as stored in sys.functions.func.
+    The SPECIFIC_NAME column now contains the function unique identifier as
+    stored in sys.functions.id. This allows the caller to retrieve the specific
+    overloaded function which has the same name, but different arguments.
+    Also improved output of method DatabaseMetaData.getFunctionColumns().
+    The SPECIFIC_NAME column now contains the function unique identifier as
+    stored in sys.functions.id. This allows the caller to retrieve the proper
+    arguments of the specific overloaded function by matching the SPECIFIC_NAME
+    value.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 7 Jul 2016 14:33:03 +0200
+
 monetdb (11.23.5) unstable; urgency=low
 
   * Rebuilt.

@@ -31,8 +31,8 @@ Ready.
 % 1 # length
 #create table a(f1 varchar(20), f2 int);
 #select coalesce(f1,'EMPTY') as bug_alias, sum(f2) from a group by bug_alias;
-% sys.L,	sys.L1 # table_name
-% bug_alias,	L1 # name
+% sys.L2,	sys.L5 # table_name
+% bug_alias,	L4 # name
 % varchar,	hugeint # type
 % 0,	1 # length
 

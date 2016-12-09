@@ -22,7 +22,6 @@ INCLUDES = .. \
 	   ../../../../../gdk \
 	   ../../../../../geom/lib \
 	   ../../../../../geom/monetdb5 \
-	   $(READLINE_INCS) \
 	   $(GDAL_CFLAGS)
 
 lib__shp = {

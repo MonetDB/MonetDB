@@ -56,20 +56,20 @@ Ready.
 % 26,	26,	10 # length
 [ 1970-01-01 00:00:00.000000,	1980-12-31 00:00:00.000000,	2012-01-01	]
 #select btime <> atime from time_table;
-% sys.L # table_name
-% <>_btime # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select btime - timestamp '1975-JAN-01' from time_table;
-% sys.L # table_name
-% sql_sub_btime # name
+% sys.L2 # table_name
+% L2 # name
 % sec_interval # type
 % 13 # length
 [ 189302400.000	]
 #select btime - atime from time_table;
-% sys.L # table_name
-% sql_sub_btime # name
+% sys.L2 # table_name
+% L2 # name
 % sec_interval # type
 % 13 # length
 [ 347068800.000	]

@@ -41,8 +41,8 @@ Ready.
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
-% 1,	1,	38,	4 # length
-[ 2,	1,	"line 2 field 1 'int' expected in 'bla'",	"bla\n"	]
+% 1,	1,	46,	4 # length
+[ 2,	1,	"line 2 field isanumber 'int' expected in 'bla'",	"bla\n"	]
 
 # 08:32:32 >  
 # 08:32:32 >  "Done."

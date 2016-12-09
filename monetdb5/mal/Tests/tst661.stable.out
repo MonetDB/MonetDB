@@ -26,11 +26,11 @@ Ready.
 
 #mdb.list("user","tst");
 function user.tst():void;
-    a := user.fi(1);
-    (a,b) := user.fi(1);
-    (a,b,c) := user.fi(1);
-    z := user.fs(1);
-    (y,z) := user.fs(1);
+    a := user.fi(1:int);
+    (a,b) := user.fi(1:int);
+    (a,b,c) := user.fi(1:int);
+    z := user.fs(1:int);
+    (y,z) := user.fs(1:int);
 end user.tst;
 function user.tst():void;               	#[0] (0)  0 
     a:int := user.fi(1:int);            	#[1] (0) MDBdummy 1 <- 2 

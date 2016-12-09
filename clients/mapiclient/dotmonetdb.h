@@ -6,5 +6,5 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
-extern void parse_dotmonetdb(char **user, char **passwd, char **language,
+extern void parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language,
 			     int *save_history, char **output, int *pagewidth);

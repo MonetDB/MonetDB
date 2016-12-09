@@ -24,26 +24,26 @@ Ready.
 # 14:12:34 >  
 
 #select str_to_date('12-01-01','%y-%m-%d');
-% .L # table_name
-% str_to_date_single_value # name
+% .L2 # table_name
+% L2 # name
 % date # type
 % 10 # length
 [ 2012-01-01	]
 #select str_to_date('2012-01-01','%Y-%m-%d');
-% .L # table_name
-% str_to_date_single_value # name
+% .L2 # table_name
+% L2 # name
 % date # type
 % 10 # length
 [ 2012-01-01	]
 #select date_to_str('2012-02-11','%y/%m/%d');
-% .L # table_name
-% date_to_str_single_value # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 8 # length
 [ "12/02/11"	]
 #select date_to_str('2012-02-11','%Y/%m/%d');
-% .L # table_name
-% date_to_str_single_value # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 10 # length
 [ "2012/02/11"	]

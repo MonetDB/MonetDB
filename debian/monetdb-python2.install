@@ -1,0 +1,3 @@
+debian/tmp/usr/lib/monetdb5/pyapi.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/autoload/??_pyapi.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/monetdb5/lib_pyapi.so usr/lib/monetdb5

@@ -6,7 +6,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
-VERSION=11.24.0
+VERSION=11.26.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -84,10 +84,6 @@ PYTHON3BASE=C:\Python32
 PYTHON3LIB=python32.lib
 !ENDIF
 PYTHON3_LIBDIR=share\MonetDB\python3
-
-!IFDEF HAVE_PERL
-PERL_LIBDIR = share\MonetDB\perl
-!ENDIF
 
 !IFDEF HAVE_PCRE
 # This is the location of the PCRE library
@@ -202,9 +198,6 @@ GENDLL =
 RC = rc
 
 MT = mt /nologo
-JAVAC = javac
-JAR = jar
-ANT = ant.bat
 
 # no need to edit beyond here..
 
@@ -280,19 +273,12 @@ create_winconfig_conds_new_py:
 !IFDEF BITS32
 	$(ECHO) BITS32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) BITS32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !IFDEF BITS64
 	$(ECHO) BITS64_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!IFDEF MONET_OID32
-	$(ECHO) BITS64OID32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !ELSE
 	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !ENDIF
 !IFDEF CROSS_COMPILING
@@ -335,37 +321,14 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_HGE_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_JAVA
-	$(ECHO) HAVE_JAVA_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!IFDEF HAVE_JAVAJDBC
-	$(ECHO) HAVE_JAVAJDBC_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_JAVAJDBC_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_JAVAMEROCONTROL
-	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!ELSE
-	$(ECHO) HAVE_JAVA_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) HAVE_JAVAJDBC_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-	$(ECHO) HAVE_JAVAMEROCONTROL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_LIBBZ2
 	$(ECHO) HAVE_LIBBZ2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_LIBBZ2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBPY
-!IFDEF HAVE_LIBPANDAS
-	$(ECHO) HAVE_LIBPANDAS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_LIBPANDAS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 	$(ECHO) HAVE_LIBPY_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) HAVE_LIBPANDAS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 	$(ECHO) HAVE_LIBPY_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBR
@@ -412,11 +375,6 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_PCRE_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_PCRE_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_PERL
-	$(ECHO) HAVE_PERL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_PERL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_PROJ
 	$(ECHO) HAVE_PROJ_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -482,12 +440,10 @@ update_winconfig_conds_py: create_winconfig_conds_new_py
 CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"$(TOPDIR)\winconfig_conds.py" \
 	"prefix=$(prefix)" \
-	"JDBCCLIENT_JAR=$(JDBCCLIENT_JAR)" \
 	"LIBICONV=$(LIBICONV)" \
 	"LIBXML2=$(LIBXML2)" \
 	"LIBZLIB=$(LIBZLIB)" \
 	"PACKAGE=$(pkg)" \
-	"PERL_LIBDIR=$(PERL_LIBDIR)" \
 	"PYTHON=$(PYTHON)" \
 	"PYTHON2=$(PYTHON2)" \
 	"PYTHON2_LIBDIR=$(PYTHON2_LIBDIR)" \
@@ -520,16 +476,6 @@ MAKEDEBUG=DEBUG=1
 !ENDIF
 
 PSAPILIB = psapi.lib
-
-# When compiled with plain `nmake`,
-# 64-bit OIDs are used by default on 64-bit Windows
-# (see monetdb_config.h.in for details);
-# compile with `nmake MONET_OID32=1` to use 32-bit OIDs on 64-bit Windows.
-!IF $(bits) == 64
-!IFDEF MONET_OID32
-CFLAGS = $(CFLAGS) -DMONET_OID32
-!ENDIF
-!ENDIF
 
 CONFIG_H = monetdb_config.h
 

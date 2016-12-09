@@ -131,11 +131,6 @@ usage(char *prog, int xit)
 static void
 monet_hello(void)
 {
-#ifdef MONETDB_STATIC
-	char *linkinfo = "statically";
-#else
-	char *linkinfo = "dynamically";
-#endif
 	dbl sz_mem_h;
 	char  *qc = " kMGTPE";
 	int qi = 0;
@@ -157,14 +152,14 @@ monet_hello(void)
 	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
-	printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s%s linked\n",
-			HOST, sizeof(ptr) * 8, sizeof(oid) * 8,
+	printf("# Compiled for %s/" SZFMT "bit%s\n",
+			HOST, sizeof(ptr) * 8,
 #ifdef HAVE_HGE
-			"and 128bit integers ",
+			" with 128bit integers"
 #else
-			"",
+			""
 #endif
-			linkinfo);
+			);
 	printf("# Found %.3f %ciB available main-memory.\n",
 			sz_mem_h, qc[qi]);
 #ifdef MONET_GLOBAL_DEBUG
@@ -286,6 +281,9 @@ main(int argc, char **av)
 	_CrtSetReportMode(_CRT_ERROR, 0);
 	_CrtSetReportMode(_CRT_ASSERT, 0);
 	_set_invalid_parameter_handler(mserver_invalid_parameter_handler);
+#ifdef _TWO_DIGIT_EXPONENT
+	_set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
 #endif
 	if (setlocale(LC_CTYPE, "") == NULL) {
 		GDKfatal("cannot set locale\n");
@@ -297,10 +295,12 @@ main(int argc, char **av)
 /* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
 		if (mallopt(M_MXFAST, 192)) {
 			fprintf(stderr, "!monet: mallopt(M_MXFAST,192) fails.\n");
+			exit(-1);
 		}
 #ifdef M_BLKSZ
 		if (mallopt(M_BLKSZ, 8 * 1024)) {
 			fprintf(stderr, "!monet: mallopt(M_BLKSZ,8*1024) fails.\n");
+			exit(-1);
 		}
 #endif
 	}
@@ -311,7 +311,8 @@ main(int argc, char **av)
 
 	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
 		perror("pwd");
-		GDKfatal("monet_init: could not determine current directory\n");
+		fprintf(stderr,"monet_init: could not determine current directory\n");
+		exit(-1);
 	}
 
 	/* retrieve binpath early (before monet_init) because some
@@ -387,10 +388,6 @@ main(int argc, char **av)
 			}
 			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
 				grpdebug |= GRPforcemito;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "recycler") == 0) {
-				grpdebug |= GRPrecycler;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "performance") == 0) {
@@ -505,12 +502,8 @@ main(int argc, char **av)
 		fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
 		exit(1);
 	}
-	if (dbextra) {
-		BBPaddfarm(dbpath, 1 << PERSISTENT);
-		BBPaddfarm(dbextra, 1 << TRANSIENT);
-	} else {
-		BBPaddfarm(dbpath, (1 << PERSISTENT) | (1 << TRANSIENT));
-	}
+	BBPaddfarm(dbpath, 1 << PERSISTENT);
+	BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT);
 	GDKfree(dbpath);
 	if (monet_init(set, setlen) == 0) {
 		mo_free_options(set, setlen);

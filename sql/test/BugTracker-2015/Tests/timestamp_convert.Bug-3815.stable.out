@@ -34,19 +34,19 @@ Ready.
 % L2 # name
 % bigint # type
 % 4 # length
-[ 1	]
+[ 1000	]
 #SELECT CONVERT( (str_to_timestamp('2015-10-01', '%Y-%m-%d') - str_to_timestamp('2015-09-30', '%Y-%m-%d'))/86400, BIGINT);
 % .L1 # table_name
 % L1 # name
 % bigint # type
 % 4 # length
-[ 1	]
+[ 1000	]
 #SELECT (str_to_timestamp('2015-10-01', '%Y-%m-%d') - str_to_timestamp('2015-09-30', '%Y-%m-%d'))/86400.0;
-% .L # table_name
-% str_to_timestamp_single_value # name
+% .L1 # table_name
+% L1 # name
 % sec_interval # type
 % 5 # length
-[ 1.000	]
+[ 0.100	]
 
 # 19:04:38 >  
 # 19:04:38 >  "Done."

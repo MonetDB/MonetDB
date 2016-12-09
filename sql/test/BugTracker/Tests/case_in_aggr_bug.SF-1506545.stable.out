@@ -59,8 +59,8 @@ Ready.
 #);
 #select avg(target_id / case (system_id - 1) WHEN 0 THEN cast(null as int)
 #ELSE system_id - 1 END) from configuration;
-% sys.L2 # table_name
-% L2 # name
+% sys.L5 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ NULL	]

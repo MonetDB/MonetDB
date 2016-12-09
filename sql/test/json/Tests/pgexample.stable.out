@@ -32,33 +32,33 @@ Ready.
 [ 1	]
 #INSERT INTO jsonTbl VALUES (3, '{"f1":[1,"Robert \\"M\\"",true],"f2":[2,"Kevin \\"K\\"",false]}');
 [ 1	]
-#SELECT  json_path(b,'f1') AS f1, json_path(b,'f3') FROM jsonTbl WHERE a =1;
-% sys.L,	sys.L # table_name
-% f1,	filter_b # name
+#SELECT  json.filter(b,'f1') AS f1, json.filter(b,'f3') FROM jsonTbl WHERE a =1;
+% sys.L1,	sys.L2 # table_name
+% f1,	L2 # name
 % json,	json # type
 % 3,	20 # length
 [ "[1]",	"[\"Hi I'm \\\"Daisy\\\"\"]"	]
-#SELECT json_path(b,'f1.f12') AS f12 FROM jsonTbl WHERE a = 2;
-% sys.L # table_name
+#SELECT json.filter(b,'f1.f12') AS f12 FROM jsonTbl WHERE a = 2;
+% sys.L1 # table_name
 % f12 # name
 % json # type
 % 4 # length
 [ "[12]"	]
-#SELECT json_path(b,'f1[0]') as f1_0 FROM jsonTbl WHERE a = 3;
-% sys.L # table_name
+#SELECT json.filter(b,'f1[0]') as f1_0 FROM jsonTbl WHERE a = 3;
+% sys.L1 # table_name
 % f1_0 # name
 % json # type
 % 25 # length
 [ "[[1,\"Robert \\\"M\\\"\",true]]"	]
-#SELECT  json_path(b,'f3') AS f1, json_text(b,'f3') FROM jsonTbl WHERE a =1;
-% sys.L,	sys.L # table_name
-% f1,	text_filter_b # name
+#SELECT  json.filter(b,'f3') AS f1, json.text(json.filter(b,'f3')) FROM jsonTbl WHERE a =1;
+% sys.L1,	sys.L2 # table_name
+% f1,	L2 # name
 % json,	clob # type
 % 20,	14 # length
 [ "[\"Hi I'm \\\"Daisy\\\"\"]",	"Hi I'm \"Daisy\""	]
-#SELECT json_path(b,'f1[0]') as f1_0 , json_text(b,'f1[0]')FROM jsonTbl WHERE a = 3;
-% sys.L,	sys.L # table_name
-% f1_0,	text_filter_b # name
+#SELECT json.filter(b,'f1[0]') as f1_0 , json.text(json.filter(b,'f1[0]'))FROM jsonTbl WHERE a = 3;
+% sys.L1,	sys.L2 # table_name
+% f1_0,	L2 # name
 % json,	clob # type
 % 25,	17 # length
 [ "[[1,\"Robert \\\"M\\\"\",true]]",	"1 Robert \"M\" true"	]

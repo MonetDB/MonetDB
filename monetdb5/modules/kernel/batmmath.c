@@ -74,8 +74,6 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	bn->tnil = b->tnil;												\
 	bn->tnonil = b->tnonil;											\
 	BATkey(bn, 0);													\
-	if (!(bn->batDirty&2))											\
-		BATsetaccess(bn, BAT_READ);									\
 	BBPkeepref(*ret = bn->batCacheid);								\
 	BBPunfix(b->batCacheid);										\
 	return MAL_SUCCEED;												\
@@ -119,8 +117,6 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	bn->tnil = b->tnil;													\
 	bn->tnonil = b->tnonil;												\
 	BATkey(bn,0);														\
-	if (!(bn->batDirty&2))												\
-		BATsetaccess(bn, BAT_READ);										\
 	BBPkeepref(*ret = bn->batCacheid);									\
 	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\
@@ -163,8 +159,6 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 	bn->tnil = b->tnil;													\
 	bn->tnonil = b->tnonil;												\
 	BATkey(bn,0);														\
-	if (!(bn->batDirty&2))												\
-		BATsetaccess(bn, BAT_READ);										\
 	BBPkeepref(*ret = bn->batCacheid);									\
 	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\

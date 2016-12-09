@@ -81,8 +81,8 @@ Great success!
 #    return res['i'] * i
 #};
 #SELECT pyapi25(i) FROM pyapi25table; #multiply by 3
-% sys.L # table_name
-% pyapi25_i # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -92,8 +92,8 @@ Great success!
 #UPDATE pyapi25multiplication SET i=10;
 [ 1	]
 #SELECT pyapi25(i) FROM pyapi25table; #multiply by 10
-% sys.L # table_name
-% pyapi25_i # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ 10	]
@@ -114,8 +114,8 @@ Great success!
 #    return i
 #};
 #SELECT pyapi25(i) FROM pyapi25table;
-% sys.L # table_name
-% pyapi25_i # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -138,8 +138,8 @@ Great success!
 [ 3	]
 [ 4	]
 #SELECT pyapi25map(i) FROM pyapi25table;
-% sys.L # table_name
-% pyapi25map_i # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -170,8 +170,8 @@ Great success!
 #};
 #CREATE TABLE randomtable AS SELECT * FROM pyapi25randomtable() WITH DATA;
 #SELECT pyapi25mediancompute(d) FROM randomtable;
-% sys.L # table_name
-% pyapi25mediancompute_d # name
+% sys.L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -183,8 +183,8 @@ Great success!
 [ 1	]
 [ 1	]
 #SELECT pyapi25checker(mean) FROM pyapi25medians;
-% sys.L # table_name
-% pyapi25checker_mean # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]

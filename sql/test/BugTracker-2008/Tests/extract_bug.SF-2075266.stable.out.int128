@@ -29,14 +29,14 @@ Ready.
 [ 1	]
 #SELECT EXTRACT (SECOND FROM FIPS2)
 #* 1000000 - 999990 FROM A;
-% sys.L # table_name
-% sql_mul_second_fips2 # name
+% sys.L1 # table_name
+% L1 # name
 % decimal # type
 % 41 # length
 [ -990.000000	]
 #select EXTRACT (SECOND FROM FIPS2) FROM A;
-% sys.L # table_name
-% second_fips2 # name
+% sys.L1 # table_name
+% L1 # name
 % decimal # type
 % 11 # length
 [ 0.999	]

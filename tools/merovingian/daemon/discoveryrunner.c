@@ -177,7 +177,7 @@ getRemoteDB(char *database)
 	pdb = &dummy;
 	while (rdb != NULL) {
 		snprintf(mfullname, sizeof(mfullname), "%s/", rdb->fullname);
-		if (glob(mdatabase, mfullname) == 1) {
+		if (db_glob(mdatabase, mfullname) == 1) {
 			/* create a fake sabdb struct, chain where necessary */
 			if (walk != NULL) {
 				walk = walk->next = malloc(sizeof(sabdb));
@@ -276,7 +276,7 @@ unregisterMessageTap(int fd)
 	pthread_mutex_unlock(&_mero_remotedb_lock);
 }
 
-void
+void *
 discoveryRunner(void *d)
 {
 	int sock = *(int *)d;
@@ -329,7 +329,8 @@ discoveryRunner(void *d)
 						"discovery services disabled\n", e);
 				free(e);
 				free(ckv);
-				return;
+				closesocket(sock);
+				return NULL;
 			}
 
 			for (orig = stats; stats != NULL; stats = stats->next) {
@@ -392,12 +393,18 @@ discoveryRunner(void *d)
 		pthread_mutex_unlock(&_mero_remotedb_lock);
 
 		peer_addr_len = sizeof(struct sockaddr_storage);
-		FD_ZERO(&fds);
-		FD_SET(sock, &fds);
 		/* Wait up to 5 seconds. */
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
-		nread = select(sock + 1, &fds, NULL, NULL, &tv);
+		for (s = 0; s < 5; s++) {
+			FD_ZERO(&fds);
+			FD_SET(sock, &fds);
+			tv.tv_sec = 1;
+			tv.tv_usec = 0;
+			nread = select(sock + 1, &fds, NULL, NULL, &tv);
+			if (nread != 0)
+				break;
+			if (!_mero_keep_listening)
+				goto breakout;
+		}
 		if (nread <= 0) {  /* assume only failure is EINTR */
 			/* nothing interesting has happened */
 			buf[0] = '\0';
@@ -493,8 +500,12 @@ discoveryRunner(void *d)
 					"%s:%s: '%s'\n", host, service, buf);
 		}
 	}
+  breakout:
 
-	/* now notify of our soon to be absence ;) */
+	shutdown(sock, SHUT_WR);
+	closesocket(sock);
+
+	/* now notify of imminent absence ;) */
 
 	/* list all known databases */
 	if ((e = msab_getStatus(&stats, NULL)) != NULL) {
@@ -502,7 +513,7 @@ discoveryRunner(void *d)
 				"discovery services disabled\n", e);
 		free(e);
 		free(ckv);
-		return;
+		return NULL;
 	}
 
 	/* craft LEAV messages for each db */
@@ -531,6 +542,7 @@ discoveryRunner(void *d)
 	}
 
 	free(ckv);
+	return NULL;
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */

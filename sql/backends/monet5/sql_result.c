@@ -641,7 +641,8 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		sql_column *col = (sql_column *) c->extra;
 		int len, slen;
 
-		for (e = s; *e; e++) ;
+		for (e = s; *e; e++)
+			;
 		len = (int) (e - s + 1);	/* 64bit: should check for overflow */
 
 		/* or shouldn't len rather be ssize_t, here? */
@@ -907,8 +908,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		}
 		if (as.error) {
 			if( !best) sql_error(m, 500, "%s", as.error);
-			if (as.error != M5OutOfMemory)
-				GDKfree(as.error);
+			freeException(as.error);
 			as.error = NULL;
 		}
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {

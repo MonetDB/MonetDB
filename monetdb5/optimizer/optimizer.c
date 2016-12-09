@@ -42,27 +42,6 @@ optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 
-int debugOpt = 0;
-str
-QOTdebugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	debugOptimizers(cntxt, mb, stk, pci);
-	debugOpt = 1;
-	return MAL_SUCCEED;
-}
-
-str
-QOTclrdebugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	debugOpt = 0;
-	return MAL_SUCCEED;
-}
-
 /*
  * MAL functions can be optimized explicitly using the routines below.
  * Beware, the function names should be known as literal strings, because
@@ -92,64 +71,3 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return optimizeMALBlock(cntxt, s->def);
 }
 
-str
-QOTshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	str fname;
-	str modnme;
-	str fcnnme;
-	Symbol s = NULL;
-
-	(void) cntxt;
-	if (stk != 0) {
-		modnme = *getArgReference_str(stk, p, 1);
-		fcnnme = *getArgReference_str(stk, p, 2);
-		fname = *getArgReference_str(stk, p, 3);
-	} else {
-		modnme = getArgDefault(mb, p, 1);
-		fcnnme = getArgDefault(mb, p, 2);
-		fname = getArgDefault(mb, p, 3);
-	}
-
-
-	s = findSymbol(cntxt->nspace,putName(modnme), putName(fcnnme));
-
-	if (s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "%s.%s", modnme, fcnnme);
-		throw(MAL, "optimizer.showFlowGraph", RUNTIME_OBJECT_UNDEFINED ":%s", buf);
-	}
-	showFlowGraph(s->def, stk, fname);
-	return MAL_SUCCEED;
-}
-
-str
-QOTshowPlan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	str modnme;
-	str fcnnme;
-	Symbol s = NULL;
-
-	if (stk != 0) {
-		modnme = *getArgReference_str(stk, p, 1);
-		fcnnme = *getArgReference_str(stk, p, 2);
-	} else {
-		modnme = getArgDefault(mb, p, 1);
-		fcnnme = getArgDefault(mb, p, 2);
-	}
-
-	mnstr_printf(cntxt->fdout,"#showPlan()\n");
-	removeInstruction(mb, p);
-	if( modnme ) {
-		s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
-
-		if (s == NULL) {
-			char buf[1024];
-			snprintf(buf,1024, "%s.%s", modnme, fcnnme);
-			throw(MAL, "optimizer.showPlan", RUNTIME_OBJECT_UNDEFINED ":%s", buf);
-		}
-		mb= s->def;
-	}
-	printFunction(cntxt->fdout, mb, 0, LIST_INPUT);
-	return MAL_SUCCEED;
-}

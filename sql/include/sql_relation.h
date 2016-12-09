@@ -37,11 +37,11 @@ typedef struct expression {
 	void *f; 	/* func's and aggr's */
 			/* e_cmp may have have 2 arguments */
 	int  flag;	/* EXP_DISTINCT, NO_NIL, ASCENDING, cmp types */
-	char card;	/* card 
-				(0 truth value!)
-				(1 atoms) 
-				(2 aggr)
-				(3 multi value)
+	unsigned char card;	/* card 
+				   (0 truth value!)
+				   (1 atoms) 
+				   (2 aggr)
+				   (3 multi value)
 			*/
 	sql_subtype 	tpe;
 	int used;	/* used for quick dead code removal */
@@ -172,8 +172,8 @@ typedef enum operator_type {
 	(et == e_func || et == e_convert)
 #define is_column(et) \
 	(et != e_cmp)
-#define is_rank_op(e) \
-	(e->type == e_func && e->r)
+#define is_analytic(e) \
+	(e->type == e_func && ((sql_subfunc*)e->f)->func->type == F_ANALYTIC)
 #define is_base(op) \
 	(op == op_basetable || op == op_table)
 #define is_basetable(op) \
@@ -282,10 +282,11 @@ typedef struct relation {
 	void *r;
 	list *exps; 
 	int nrcols;	/* nr of cols */	
-	char flag;	/* EXP_DISTINCT */ 
-	char card;	/* 0, 1 (row), 2 aggr, 3 */
-	char processed; /* fully processed or still in the process of building */
-	char subquery;	/* is this part a subquery, this is needed for proper name binding */
+	unsigned int
+	 flag:8,	/* EXP_DISTINCT */ 
+	 card:4,	/* 0, 1 (row), 2 aggr, 3 */
+	 processed:1, /* fully processed or still in the process of building */
+	 subquery:1;	/* is this part a subquery, this is needed for proper name binding */
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

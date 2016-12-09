@@ -25,14 +25,14 @@ Ready.
 # 23:35:37 >  
 
 #select 11.456;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 7 # length
 [ 11.456	]
 #select 11.456 || 'hi';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 8 # length
 [ "11.456hi"	]

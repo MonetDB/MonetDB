@@ -20,8 +20,6 @@
  * SQLFetchScroll()
  * CLI Compliance: ISO 92
  *
- * Note: this function is not supported (yet), it returns an error.
- *
  * Author: Martin van Dinther, Sjoerd Mullender
  * Date  : 30 aug 2002
  *

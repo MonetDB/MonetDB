@@ -102,6 +102,18 @@ comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, igno
 pattern $func$funcx(b1:bat[:any_1],b2:bat[:any_1],s:bat[:oid]) :bat[:any_1]
 address CMDbat${func^^}$funcx
 comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(b:bat[:any_1],v:any_1) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(b:bat[:any_1],v:any_1,s:bat[:oid]) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(v:any_1,b:bat[:any_1]) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(v:any_1,b:bat[:any_1],s:bat[:oid]) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
 
 EOF
     done
@@ -586,8 +598,25 @@ EOF
 done
 
 for tp1 in $alltypes; do
-    for tp2 in $alltypes; do
+    if [[ $tp1 == str ]]; then
 	cat <<EOF
+pattern $tp1(b:bat[:any]) :bat[:$tp1]
+address CMDconvertsignal_$tp1
+comment "cast from any to $tp1, signal error on overflow";
+pattern $tp1(b:bat[:any],s:bat[:oid]) :bat[:$tp1]
+address CMDconvertsignal_$tp1
+comment "cast from any to $tp1 with candidates list, signal error on overflow";
+pattern ${tp1}_noerror(b:bat[:any]) :bat[:$tp1]
+address CMDconvert_$tp1
+comment "cast from any to $tp1";
+pattern ${tp1}_noerror(b:bat[:any],s:bat[:oid]) :bat[:$tp1]
+address CMDconvert_$tp1
+comment "cast from any to $tp1 with candidates list";
+
+EOF
+    else
+	for tp2 in $alltypes; do
+	    cat <<EOF
 pattern $tp1(b:bat[:$tp2]) :bat[:$tp1]
 address CMDconvertsignal_$tp1
 comment "cast from $tp2 to $tp1, signal error on overflow";
@@ -602,7 +631,8 @@ address CMDconvert_$tp1
 comment "cast from $tp2 to $tp1 with candidates list";
 
 EOF
-    done
+	done
+    fi
 done
 
 cat <<EOF

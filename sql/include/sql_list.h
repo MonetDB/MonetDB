@@ -47,6 +47,7 @@ extern list *list_prepend(list *l, void *data);
 
 extern node *list_remove_node(list *l, node *n);
 extern void list_remove_data(list *l, void *data);
+extern void list_remove_list(list *l, list *data);
 extern void list_move_data(list *l, list *d, void *data);
 
 

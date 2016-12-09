@@ -24,6 +24,9 @@ list *
 list_create(fdestroy destroy)
 {
 	list *l = MNEW(list);
+	if (!l) {
+		return NULL;
+	}
 
 	l->sa = NULL;
 	l->destroy = destroy;
@@ -253,6 +256,15 @@ list_remove_data(list *s, void *data)
 }
 
 void
+list_remove_list(list *l, list *data)
+{
+	node *n;
+
+	for (n=data->h; n; n = n->next)
+		list_remove_data(l, n->data);
+}
+
+void
 list_move_data(list *s, list *d, void *data)
 {
 	node *n;
@@ -331,7 +343,7 @@ int
 list_match(list *l1, list *l2, fcmp cmp)
 {
 	node *n, *m;
-	int chk = 0;
+	ulng chk = 0;
 
 	if (l1 == l2)
 		return 0;
@@ -342,8 +354,9 @@ list_match(list *l1, list *l2, fcmp cmp)
 	for (n = l1->h; n; n = n->next) {
 		int pos = 0, fnd = 0;
 		for (m = l2->h; m; m = m->next, pos++) {
-			if (!(chk&(1<<pos)) && cmp(n->data, m->data) == 0) {
-				chk &= 1<<pos;
+			if (!(chk & ((ulng) 1 << pos)) &&
+			    cmp(n->data, m->data) == 0) {
+				chk |= (ulng) 1 << pos;
 				fnd = 1;
 			}
 		}

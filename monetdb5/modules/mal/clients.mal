@@ -14,10 +14,6 @@ comment "Turn on/off echo of MAL instructions:
 	4 - show details of type resolutoin, 
 	8 - show binding information.";
 
-pattern setHistory(s:str)
-address CLTsetHistory
-comment "Designate console history file for readline.";
-
 pattern getId():int
 address CLTgetClientId
 comment "Return a number that uniquely represents the current client.";
@@ -84,7 +80,7 @@ pattern settimeout(n:lng):void
 address CLTsetTimeout
 comment "Abort a query after  n seconds.";
 
-pattern setTimeout(q:lng,s:lng):void
+pattern settimeout(q:lng,s:lng):void
 address CLTsetTimeout
 comment "Abort a query after q seconds (q=0 means run undisturbed).
 The session timeout aborts the connection after spending too

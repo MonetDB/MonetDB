@@ -4,6 +4,6 @@ T3:= bat.new(:oid);
 barrier b;
 	a:= algebra.select(T1,1@0,3@0);
 	c:= algebra.select(T3,0@0,5@0);
-	(e,f):= algebra.subjoin(a,c,nil:bat,nil:bat,false,nil:lng);
+	(e,f):= algebra.join(a,c,nil:bat,nil:bat,false,nil:lng);
 exit b;
 optimizer.dumpQEP();

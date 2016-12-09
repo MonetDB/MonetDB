@@ -2,18 +2,6 @@
 #include "formatinput.h"
 #include "type_conversion.h"
 
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#define PyString_FromStringAndSize PyUnicode_FromStringAndSize
-#endif
-
-const size_t additional_argcount = 3;
-const char * additional_args[] = {"_columns", "_column_types", "_conn"};
-
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#endif
-
 //! Parse a PyCodeObject from a string, the string is expected to be in the format {@<encoded_function>};, where <encoded_function> is the Marshalled code object
 PyObject *PyCodeObject_ParseString(char *string, char **msg);
 PyObject *PyCodeObject_ParseString(char *string, char **msg)
@@ -61,7 +49,7 @@ PyObject *PyCodeObject_ParseString(char *string, char **msg)
     return code_object;
 }
 
-char* FormatCode(char* code, char **args, size_t argcount, size_t tabwidth, PyObject **code_object, char **msg)
+char* FormatCode(char* code, char **args, size_t argcount, size_t tabwidth, PyObject **code_object, char **msg, char** additional_args, size_t additional_argcount)
 {
     // Format the python code by fixing the indentation levels
     // We do two passes, first we get the length of the resulting formatted code and then we actually create the resulting code
@@ -375,7 +363,6 @@ finally:
     return newcode;
 }
 
-NUMPY_IMPORT_ARRAY_RETTYPE _formatinput_init(void) {
-    import_array();
-    return NUMPY_IMPORT_ARRAY_RETVAL;
+void _formatinput_init(void) {
+    _import_array();
 }

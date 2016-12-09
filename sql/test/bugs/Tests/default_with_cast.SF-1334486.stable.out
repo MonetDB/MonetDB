@@ -20,8 +20,8 @@ Ready.
 
 [ 1	]
 #select cast(now() as date) - d from t;
-% .L1 # table_name
-% current_timestamp # name
+% .L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 0	]

@@ -59,11 +59,7 @@ clients
 Also known as the MonetDB Client component contains a library which
 forms the basis for communicating with the MonetDB server components,
 and some interface programs that use this library to communicate with
-the server.  Additionally, this component contains modules for some
-other languages (Python, Perl, PHP, Ruby) to enable communication with
-the server from programs written in those languages.  The Python and
-Ruby modules can be built separately; the PHP module does not need to
-be built.  This component is required.
+the server.  This component is required.
 
 monetdb5
 --------
@@ -90,12 +86,6 @@ geom
 
 The geom component provides a module for the MonetDB SQL frontend.
 This component is optional.
-
-java
-----
-
-Also known as MonetDB Java, this component provides the MonetDB JDBC
-driver.  This component is optional.
 
 testing
 -------
@@ -692,62 +682,6 @@ refers to the location where you installed the header files and call
 
 __ https://github.com/ivmai/libatomic_ops
 
-Perl
-----
-
-There is a Perl__ interface that can be used from a Perl program to
-communicate with a MonetDB server.  This interface is written
-completely in Perl, so there is no compilation involved.  This means
-that no installation of Perl is required for building, but only for
-testing.
-
-We have used ActiveState__'s ActivePerl__ distribution (release
-5.12.1.1201).  Just install the 32 or 64 bit version.
-
-__ http://www.perl.org/
-__ http://www.activestate.com/
-__ http://www.activestate.com/Products/activeperl/
-
-PHP
----
-
-There is a PHP__ interface that can be used from a PHP program to
-communicate with a MonetDB server.  This interface is written
-completely in PHP, so there is no compilation involved.  This means
-that no installation of PHP is required for building, but only for
-testing.
-
-Download the Windows installer and source package of PHP 5 from
-http://www.php.net/.  Install the binary package and extract the
-sources somewhere (e.g. as a subfolder of the binary installation).
-
-__ http://www.php.net/
-
-Java
-----
-
-If you want to build the java component of the MonetDB suite, you need
-JDK__.  Get the Java Development Kit from
-http://www.oracle.com/technetwork/java/.
-We currently compile for target Java 7, so we do not yet support
-JDBC methods/features introduced in Java 8 (or higher).
-
-In addition to the Java Development Kit, you will also need `Apache Ant`_
-which is responsible for the actual building of the driver.
-
-__ http://www.oracle.com/technetwork/java/
-
-Apache Ant
-----------
-
-`Apache Ant`__ is a program to build other programs.  This program is
-only used by the java component of the MonetDB suite.
-
-Get the Binary Distribution from http://ant.apache.org/, and extract
-the file somewhere.
-
-__ http://ant.apache.org/
-
 Build Environment
 =================
 
@@ -840,11 +774,6 @@ is an example: version numbers may differ)::
  set Path=C:\Python27;%Path%
  rem Bison (and Diff)
  set Path=%ProgramFiles%\GnuWin32\bin;%Path%
- rem Java is optional, set JAVA_HOME for convenience
- set JAVA_HOME=%ProgramFiles%\Java\jdk1.8.0_92
- set Path=%JAVA_HOME%\bin;%ProgramFiles%\Java\jre1.8.0_92\bin;%Path%
- rem Apache Ant is optional, but required for Java compilation
- set Path=%ProgramFiles%\apache-ant-1.7.1\bin;%Path%
 
 For testing purposes it may be handy to add some more folders to the
 ``Path``.  This includes the ``bin`` and ``lib`` folders of the
@@ -887,13 +816,10 @@ possible:
 - ``HAVE_MONETDB5=1`` - include the MonetDB5 component;
 - ``HAVE_SQL=1`` - include the sql component;
 - ``HAVE_GEOM=1`` - include the geom component;
-- ``HAVE_JAVA=1`` - include the java component (only use if Java and
-  Apache Ant are both available);
 - ``HAVE_TESTING=1`` - include the testing component;
 - ``HAVE_PYTHON=1`` - include the Python component;
 - ``HAVE_ICONV=1`` - the iconv library is available;
 - ``HAVE_OPENSSL=1`` - the OpenSSL library is available;
-- ``HAVE_PERL=1`` - include the Perl component.
 
 In addition, you can add a parameter which points to a file with extra
 definitions for ``nmake``.  This is very convenient to define where
@@ -912,8 +838,7 @@ The contents of the file referred to with the ``MAKE_INCLUDEFILE``
 parameter may contain something like::
 
  bits=32
- LIBPERL=C:\Perl
- LIBPCRE=C:\Program Files\PCRE
+  LIBPCRE=C:\Program Files\PCRE
  LIBICONV=C:\Libraries\iconv-1.11.win32
  LIBZLIB=C:\Libraries\zlib-1.2.8.win32
  LIBXML2=C:\Libraries\libxml2-2.9.2.win32

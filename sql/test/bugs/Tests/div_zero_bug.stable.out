@@ -28,8 +28,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select grp, avg(value) from div_zero_bug group by grp;
-% sys.div_zero_bug,	sys.L1 # table_name
-% grp,	L1 # name
+% sys.div_zero_bug,	sys.L4 # table_name
+% grp,	L3 # name
 % int,	double # type
 % 1,	24 # length
 [ NULL,	1	]

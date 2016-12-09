@@ -12,8 +12,12 @@
 #include "mal.h"
 #include <stdio.h>
 #include "monet_version.h"
+#ifdef HAVE_LIBPCRE
 #include <pcre.h>
+#endif
+#ifdef HAVE_OPENSSL
 #include <openssl/opensslv.h>
+#endif
 #ifdef HAVE_LIBXML
 #include <libxml/xmlversion.h>
 #endif
@@ -32,9 +36,8 @@ monet_version(void)
 	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
 		printf("\"%s\" ", MONETDB_RELEASE);
-	printf("(" SZFMT "-bit, " SZFMT "-bit oids%s)\n",
+	printf("(" SZFMT "-bit%s)\n",
 			(size_t) (sizeof(ptr) * 8),
-			(size_t) (sizeof(oid) * 8),
 #ifdef HAVE_HGE
 			", 128-bit integers"
 #else
@@ -53,6 +56,7 @@ monet_version(void)
 			"using %d thread%s\n",
 			GDKnr_threads, GDKnr_threads != 1 ? "s" : ""); */
 	printf("Libraries:\n");
+#ifdef HAVE_LIBPCRE
 	{
 		char pcreversion[] = "@pcreversion@";
 		printf("  libpcre: %s", pcre_version());
@@ -60,6 +64,8 @@ monet_version(void)
 			printf(" (%s)", pcreversion);
 		printf("\n");
 	}
+#endif
+#ifdef HAVE_OPENSSL
 	{
 		char opensslversion[] = "@opensslversion@";
 		printf("  openssl: %s", OPENSSL_VERSION_TEXT);
@@ -67,6 +73,7 @@ monet_version(void)
 			printf(" (%s)", opensslversion);
 		printf("\n");
 	}
+#endif
 #ifdef HAVE_LIBXML
 	{
 		char libxml2version[] = "@libxml2version@";
@@ -78,9 +85,5 @@ monet_version(void)
 #endif
 	printf("Compiled by: %s (" HOST ")\n", "@builtby@");
 	printf("Compilation: %s\n", "@compilercall@");
-#ifdef MONETDB_STATIC
-	printf("Linking    : %s (static)\n", "@linkercall@");
-#else
 	printf("Linking    : %s\n", "@linkercall@");
-#endif
 }

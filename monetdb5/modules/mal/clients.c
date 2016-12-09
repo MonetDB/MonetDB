@@ -27,11 +27,6 @@
 #include "mal_private.h"
 #include "mtime.h"
 
-#ifdef HAVE_LIBREADLINE
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif
-
 static void
 pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
@@ -162,7 +157,6 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	CLTtimeConvert((time_t) cntxt->login,s);
 	BUNappend(b, "login", FALSE);
 	BUNappend(bn, s, FALSE);
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","info");
 	BBPkeepref(*ret2= bn->batCacheid);
 	return MAL_SUCCEED;
@@ -190,8 +184,6 @@ CLTLogin(bat *nme, bat *ret)
 			BUNappend(u, &c->user, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
-	if (!(u->batDirty&2)) BATsetaccess(u, BAT_READ);
 	pseudo(ret,b,"client","login");
 	pseudo(nme,u,"client","name");
 	return MAL_SUCCEED;
@@ -213,7 +205,6 @@ CLTLastCommand(bat *ret)
 			BUNappend(b, s, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","lastcommand");
 	return MAL_SUCCEED;
 }
@@ -232,7 +223,6 @@ CLTActions(bat *ret)
 			BUNappend(b, &c->actions, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","actions");
 	return MAL_SUCCEED;
 }
@@ -250,7 +240,6 @@ CLTTime(bat *ret)
 			BUNappend(b, &c->totaltime, FALSE);
 		}
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","usec");
 	return MAL_SUCCEED;
 }
@@ -271,31 +260,7 @@ CLTusers(bat *ret)
 		if (c->mode >= RUNCLIENT && c->user != oid_nil)
 			BUNappend(b, &i, FALSE);
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","users");
-	return MAL_SUCCEED;
-}
-
-str
-CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str* fname = getArgReference_str(stk,pci,1);
-	(void) mb;
-
-	if( cntxt->history){
-#ifdef HAVE_LIBREADLINE
-		write_history(cntxt->history);
-#endif
-		GDKfree(cntxt->history);
-	}
-	if( *fname == str_nil)
-		cntxt->history = NULL;
-	else {
-		cntxt->history = GDKstrdup(*fname);
-#ifdef HAVE_LIBREADLINE
-		read_history(cntxt->history);
-#endif
-	}
 	return MAL_SUCCEED;
 }
 
@@ -350,22 +315,30 @@ CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng sto;
 	(void) mb;
 	sto=  *getArgReference_lng(stk,pci,1);
+	if( sto < 0)
+		throw(MAL,"timeout","Query time out should be > 0");
 	cntxt->stimeout = sto * 1000 * 1000;
     return MAL_SUCCEED;
 }
+
 str
 CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng qto,sto;
 	(void) mb;
 	qto=  *getArgReference_lng(stk,pci,1);
+	if( qto < 0)
+		throw(MAL,"timeout","Query time out should be > 0");
 	cntxt->qtimeout = qto * 1000 * 1000;
 	if ( pci->argc == 3){
 		sto=  *getArgReference_lng(stk,pci,2);
+		if( sto < 0)
+			throw(MAL,"timeout","Session time out should be > 0");
 		cntxt->stimeout = sto * 1000 * 1000;
 	}
     return MAL_SUCCEED;
 }
+
 str
 CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -385,41 +358,67 @@ CLTwakeup(void *ret, int *id)
 }
 
 str CLTmd5sum(str *ret, str *pw) {
+#ifdef HAVE_MD5_UPDATE
 	char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
 	return MAL_SUCCEED;
+#else
+	(void) ret;
+	(void) pw;
+	throw(MAL, "clients.md5sum", PROGRAM_NYI);
+#endif
 }
 
 str CLTsha1sum(str *ret, str *pw) {
+#ifdef HAVE_SHA1_UPDATE
 	char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
 	return MAL_SUCCEED;
+#else
+	(void) ret;
+	(void) pw;
+	throw(MAL, "clients.sha1sum", PROGRAM_NYI);
+#endif
 }
 
 str CLTripemd160sum(str *ret, str *pw) {
+#ifdef HAVE_RIPEMD160_UPDATE
 	char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
 	return MAL_SUCCEED;
+#else
+	(void) ret;
+	(void) pw;
+	throw(MAL, "clients.ripemd160sum", PROGRAM_NYI);
+#endif
 }
 
 str CLTsha2sum(str *ret, str *pw, int *bits) {
 	char *mret;
 	switch (*bits) {
+#ifdef HAVE_SHA512_UPDATE
 		case 512:
 			mret = mcrypt_SHA512Sum(*pw, strlen(*pw));
 			break;
+#endif
+#ifdef HAVE_SHA384_UPDATE
 		case 384:
 			mret = mcrypt_SHA384Sum(*pw, strlen(*pw));
 			break;
+#endif
+#ifdef HAVE_SHA256_UPDATE
 		case 256:
 			mret = mcrypt_SHA256Sum(*pw, strlen(*pw));
 			break;
+#endif
+#ifdef HAVE_SHA224_UPDATE
 		case 224:
 			mret = mcrypt_SHA224Sum(*pw, strlen(*pw));
 			break;
+#endif
 		default:
 			throw(ILLARG, "clients.sha2sum", "wrong number of bits "
 					"for SHA2 sum: %d", *bits);
@@ -499,6 +498,7 @@ str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 }
 
 str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+#ifdef HAVE_SHA1_UPDATE
 	str *usr = getArgReference_str(stk, pci, 1);
 	str *pw = getArgReference_str(stk, pci, 2);
 	str ch = "";
@@ -512,6 +512,13 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	msg = AUTHcheckCredentials(&id, cntxt, usr, &pwd, &ch, &algo);
 	free(pwd);
 	return msg;
+#else
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw(MAL, "mal.checkPermission", "Required digest algorithm SHA-1 missing");
+#endif
 }
 
 str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {

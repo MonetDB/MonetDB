@@ -417,8 +417,8 @@ VIEWreset(BAT *b)
 		b->theap.parentid = 0;
 		b->batRestricted = BAT_WRITE;
 
-		/* reset BOUND2BTRUE */
 		b->tkey = BATtkey(v);
+		b->tunique = 0;
 
 		/* copy the heaps */
 		b->theap = tail;
@@ -442,8 +442,8 @@ VIEWreset(BAT *b)
 		b->batCopiedtodisk = 0;
 		b->batDirty = 1;
 
-		/* reset BOUND2KEY */
 		b->tkey = BATtkey(v);
+		b->tunique = 0;
 
 		/* make the BAT empty and insert all again */
 		DELTAinit(b);
@@ -451,7 +451,7 @@ VIEWreset(BAT *b)
 		b->batCapacity = cnt;
 
 		/* insert all of v in b, and quit */
-		BATappend(b, v, FALSE);
+		BATappend(b, v, NULL, FALSE);
 		BBPreclaim(v);
 	}
 	return GDK_SUCCEED;

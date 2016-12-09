@@ -25,14 +25,14 @@ Ready.
 # 23:30:53 >  
 
 #select power(2,2);
-% .L # table_name
-% power_single_value # name
+% .L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ 4	]
 #select power(2.8,2);
-% .L # table_name
-% power_single_value # name
+% .L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ 7.84	]

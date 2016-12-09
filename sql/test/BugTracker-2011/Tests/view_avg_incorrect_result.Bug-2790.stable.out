@@ -28,7 +28,7 @@ Ready.
 #insert into t2790 values (2),(3);
 [ 2	]
 #select avg(d) as avg_d, avg(d*d) as avg_d2, avg(d)*avg(d) as avg2_d_mult from t2790;
-% sys.L1,	sys.L2,	sys.L4 # table_name
+% sys.L4,	sys.L7,	sys.L13 # table_name
 % avg_d,	avg_d2,	avg2_d_mult # name
 % double,	double,	double # type
 % 24,	24,	24 # length

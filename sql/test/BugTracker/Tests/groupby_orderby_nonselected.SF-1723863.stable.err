@@ -18,7 +18,7 @@ QUERY = select count(*)
         group by col2
         order by row_count desc, col1
         ) sq;
-ERROR = !syntax error, unexpected ORDER, expecting INTERSECT or EXCEPT or UNION or ')' in: "select count(*)
+ERROR = !syntax error, unexpected ORDER, expecting UNION or EXCEPT or INTERSECT or ')' in: "select count(*)
         !from (
         !select col2, count(*) as row_count
         !from data_1to10

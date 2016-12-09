@@ -8,7 +8,7 @@
 
 /*
  * (author) M. Kersten
- * For documentation see website
+ * An include file name is also used as library name
  */
 #include "monetdb_config.h"
 #include "mal_module.h"
@@ -32,11 +32,10 @@
 #define close _close
 #endif
 
-static int noDlopen;
-#define MAXMODULES 512
+#define MAXMODULES 128
 
 typedef struct{
-	str filename;
+	str modname;
 	str fullname;
 	void **handle;
 } FileRecord;
@@ -45,25 +44,33 @@ static FileRecord filesLoaded[MAXMODULES];
 static int maxfiles = MAXMODULES;
 static int lastfile = 0;
 
+/*
+ * returns 1 if the file exists
+ */
+#ifndef F_OK
+#define F_OK 0
+#endif
+#ifdef _MSC_VER
+#define access(f, m)	_access(f, m)
+#endif
+static inline int
+fileexists(const char *path)
+{
+	return access(path, F_OK) == 0;
+}
+
 /* Search for occurrence of the function in the library identified by the filename.  */
 MALfcn
-getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
+getAddress(stream *out, str modname, str fcnname, int silent)
 {
 	void *dl;
 	MALfcn adr;
 	static int idx=0;
+
 	static int prev= -1;
 
-	(void) modnme;
+	/* First try the last module loaded */
 	if( prev >= 0){
-		adr = (MALfcn) dlsym(filesLoaded[prev].handle, fcnname);
-		if( adr != NULL)
-			return adr; /* found it */
-	}
-	if( prev >= 0 && filename &&
-			filesLoaded[prev].filename &&
-			strcmp(filename, filesLoaded[prev].filename) == 0) {
-
 		adr = (MALfcn) dlsym(filesLoaded[prev].handle, fcnname);
 		if( adr != NULL)
 			return adr; /* found it */
@@ -97,13 +104,13 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 		if (!silent)
 			showException(out, MAL, "MAL.getAddress",
 						  "address of '%s.%s' not found",
-						  (modnme?modnme:"<unknown>"), fcnname);
+						  (modname?modname:"<unknown>"), fcnname);
 		return NULL;
 	}
 
 	adr = (MALfcn) dlsym(dl, fcnname);
-	filesLoaded[lastfile].filename = GDKstrdup("libmonetdb5");
-	filesLoaded[lastfile].fullname = "libmonetdb5";
+	filesLoaded[lastfile].modname = GDKstrdup("libmonetdb5");
+	filesLoaded[lastfile].fullname = GDKstrdup("libmonetdb5");
 	filesLoaded[lastfile].handle = dl;
 	lastfile ++;
 	if(adr != NULL)
@@ -111,7 +118,7 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 
 	if (!silent)
 		showException(out, MAL,"MAL.getAddress", "address of '%s.%s' not found",
-			(modnme?modnme:"<unknown>"), fcnname);
+			(modname?modname:"<unknown>"), fcnname);
 	return NULL;
 }
 /*
@@ -131,19 +138,6 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
  * already loaded.
  */
 
-int
-isLoaded(str modulename)
-{
-	int idx;
-
-	for (idx = 0; idx < lastfile; idx++)
-		if (filesLoaded[idx].filename &&
-		    strcmp(filesLoaded[idx].filename, modulename) == 0) {
-			return 1;
-		}
-	return 0;
-}
-
 str
 loadLibrary(str filename, int flag)
 {
@@ -161,8 +155,8 @@ loadLibrary(str filename, int flag)
 #endif
 
 	for (idx = 0; idx < lastfile; idx++)
-		if (filesLoaded[idx].filename &&
-		    strcmp(filesLoaded[idx].filename, filename) == 0)
+		if (filesLoaded[idx].modname &&
+		    strcmp(filesLoaded[idx].modname, filename) == 0)
 			/* already loaded */
 			return MAL_SUCCEED;
 
@@ -199,12 +193,18 @@ loadLibrary(str filename, int flag)
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
 		handle = dlopen(nme, mode);
+		if (handle == NULL && fileexists(nme)) {
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
+		}
 		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
 			/* try .so */
 			snprintf(nme, PATHLENGTH, "%.*s%c%s_%s.so",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
+			if (handle == NULL && fileexists(nme)) {
+				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
+			}
 		}
 #ifdef __APPLE__
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
@@ -213,6 +213,9 @@ loadLibrary(str filename, int flag)
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
+			if (handle == NULL && fileexists(nme)) {
+				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
+			}
 		}
 #endif
 
@@ -232,7 +235,7 @@ loadLibrary(str filename, int flag)
 			dlclose(handle);
 		showException(GDKout, MAL,"loadModule", "internal error, too many modules loaded");
 	} else {
-		filesLoaded[lastfile].filename = GDKstrdup(filename);
+		filesLoaded[lastfile].modname = GDKstrdup(filename);
 		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
 		filesLoaded[lastfile].handle = handle ? handle : filesLoaded[0].handle;
 		lastfile ++;
@@ -256,57 +259,14 @@ mal_linker_reset(void)
 	for (i = 0; i < lastfile; i++){
 		if (filesLoaded[i].fullname) {
 			/* dlclose(filesLoaded[i].handle);*/
-			if (filesLoaded[i].filename) GDKfree(filesLoaded[i].filename);
+			GDKfree(filesLoaded[i].modname);
+			GDKfree(filesLoaded[i].fullname);
 		}
-		filesLoaded[i].filename = NULL;
+		filesLoaded[i].modname = NULL;
 		filesLoaded[i].fullname = NULL;
 	}
 	lastfile = 0;
 	MT_lock_unset(&mal_contextLock);
-}
-/*
- * To speedup restart and to simplify debugging, the MonetDB server can
- * be statically linked with some (or all) of the modules libraries.
- * A complicating factor is then to avoid users to initiate another load
- * of the module file, because it would lead to a @code{dlopen()} error.
- *
- * The partial way out of this dilema is to administer somewhere
- * the statically bound modules, or to enforce that each module
- * comes with a known routine for which we can search.
- * In the current version we use the former approach.
- *
- * The routine below turns off dynamic loading while parsing the
- * command signature files.
- */
-static str preloaded[] = {
-	"kernel/bat",
-	0
-};
-
-int
-isPreloaded(str nme)
-{
-	int i;
-
-	for (i = 0; preloaded[i]; i++)
-		if (strcmp(preloaded[i], nme) == 0)
-			return 1;
-	return 0;
-}
-
-void
-initLibraries(void)
-{
-	int i;
-	str msg;
-
-	noDlopen = TRUE;
-	if(noDlopen == FALSE)
-	for(i=0;preloaded[i];i++) {
-	    msg = loadLibrary(preloaded[i],FALSE);
-		if ( msg )
-			mnstr_printf(GDKerr,"#%s\n",msg);
-	}
 }
 
 /*

@@ -29,20 +29,20 @@ Ready.
 #	return 1;
 #end;
 #select truncode(12,12); 
-% .L # table_name
-% truncode_single_value # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 #select truncode(12.0,12);
-% .L # table_name
-% truncode_single_value # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 #select truncode(12.00,12);
-% .L # table_name
-% truncode_single_value # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]

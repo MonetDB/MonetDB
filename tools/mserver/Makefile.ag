@@ -15,6 +15,13 @@ INCLUDES = ../../monetdb5/mal \
 		   ../../common/stream \
 		   ../../common/utils \
 		   ../../common/options \
+		   ../../monetdb5/modules/atoms \
+		   ../../monetdb5/modules/mal \
+		   ../../sql/backends/monet5 \
+		   ../../sql/common \
+		   ../../sql/include \
+		   ../../sql/server \
+		   ../../sql/storage \
 		   $(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
 headers_docx = {
@@ -39,6 +46,15 @@ headers_png = {
 bin_mserver5 = {
 	# hack: include mserver5.1.in here to get it expanded
 	SOURCES = mserver5.c monet_version.h monet_version.c.in
+	LIBS = ../../monetdb5/tools/libmonetdb5 \
+		../../gdk/libbat ../../common/stream/libstream \
+		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB) \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(DL_LIBS) $(PTHREAD_LIBS)
+}
+
+bin_shutdowntest = {
+	CONDINST = HAVE_TESTING
+	SOURCES = shutdowntest.c
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
 		../../gdk/libbat ../../common/stream/libstream \
 		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB) \

@@ -13,7 +13,7 @@
 #include "pytypes.h"
 #include "type_conversion.h"
 #include "formatinput.h"
-
+#include "conversion.h"
 #include "gdk_interprocess.h"
 
 #ifdef HAVE_FORK
@@ -22,50 +22,18 @@
 #include <sys/wait.h>
 #endif
 
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#define PyString_FromString PyUnicode_FromString
-#define PyString_Check PyUnicode_Check
-#define PyString_CheckExact PyUnicode_CheckExact
-#define PyString_AsString PyUnicode_AsUTF8
-#define PyString_AS_STRING PyUnicode_AsUTF8
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_Check PyLong_Check
-#define PythonUnicodeType char
-#else
-#define PythonUnicodeType Py_UNICODE
-#endif
-
-#if PY_MAJOR_VERSION >= 3
-static char* pyapi_enableflag = "embedded_py3";
-#else
-static char* pyapi_enableflag = "embedded_py";
-#endif
-const char* verbose_enableflag = "enable_pyverbose";
-const char* warning_enableflag = "enable_pywarnings";
-const char* debug_enableflag = "enable_pydebug";
-#ifdef _PYAPI_VERBOSE_
-static bool option_verbose;
-#endif
-#ifdef _PYAPI_DEBUG_
-static bool option_debug;
-#endif
-#ifdef _PYAPI_WARNINGS_
-bool option_warning;
-#endif
+const char* fork_disableflag = "disable_fork";
+static bool option_disable_fork = false;
 
 static PyObject *marshal_module = NULL;
 PyObject *marshal_loads = NULL;
 
-const int utf8string_minlength = 256;
-
-static int PyAPIEnabled(void);
-static int PyAPIEnabled(void) {
+int PyAPIEnabled(void) {
     return (GDKgetenv_istrue(pyapi_enableflag)
-            || GDKgetenv_isyes(pyapi_enableflag))   ;
+            || GDKgetenv_isyes(pyapi_enableflag));
 }
 
-struct _AggrParams{
+typedef struct _AggrParams{
     PyInput **pyinput_values;
     void ****split_bats;
     size_t **group_counts;
@@ -84,9 +52,10 @@ struct _AggrParams{
     size_t group_start;
     size_t group_end;
     MT_Id thread;
-};
-#define AggrParams struct _AggrParams
+} AggrParams;
+
 static void ComputeParallelAggregation(AggrParams *p);
+static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase);
 
 static char* FunctionBasePath(void);
 static char* FunctionBasePath(void) {
@@ -100,22 +69,13 @@ static char* FunctionBasePath(void) {
     return basepath;
 }
 
-CREATE_SQL_FUNCTION_PTR(str,batbte_dec2_dbl);
-CREATE_SQL_FUNCTION_PTR(str,batsht_dec2_dbl);
-CREATE_SQL_FUNCTION_PTR(str,batint_dec2_dbl);
-CREATE_SQL_FUNCTION_PTR(str,batlng_dec2_dbl);
-#ifdef HAVE_HGE
-CREATE_SQL_FUNCTION_PTR(str,bathge_dec2_dbl);
-#endif
-CREATE_SQL_FUNCTION_PTR(str,batstr_2time_timestamp);
-CREATE_SQL_FUNCTION_PTR(str,batstr_2time_daytime);
-CREATE_SQL_FUNCTION_PTR(str,batstr_2_date);
-CREATE_SQL_FUNCTION_PTR(str,batdbl_num2dec_lng);
-CREATE_SQL_FUNCTION_PTR(str,SQLbatstr_cast);
-
 static MT_Lock pyapiLock;
 static MT_Lock queryLock;
 static int pyapiInitialized = FALSE;
+
+int PyAPIInitialized(void) {
+    return pyapiInitialized;
+}
 
 #ifdef HAVE_FORK
 static bool python_call_active = false;
@@ -129,265 +89,28 @@ static bool enable_zerocopy_input = true;
 static bool enable_zerocopy_output = true;
 #endif
 
-#define BAT_TO_NP(bat, mtpe, nptpe)                                                                                                 \
-        if (copy) {                                                                                                                 \
-            vararray = PyArray_EMPTY(1, elements, nptpe, 0);                        \
-            memcpy(PyArray_DATA((PyArrayObject*)vararray), Tloc(bat, 0), sizeof(mtpe) * (t_end - t_start));             \
-        } else {                                                                                                                    \
-            vararray = PyArray_New(&PyArray_Type, 1, elements,                                               \
-            nptpe, NULL, &((mtpe*) Tloc(bat, 0))[t_start], 0,                                                           \
-            NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);                                                                        \
-        }
+str
+PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped);
 
-// This #define creates a new BAT with the internal data and mask from a Numpy array, without copying the data
-// 'bat' is a BAT* pointer, which will contain the new BAT. TYPE_'mtpe' is the BAT type, and 'batstore' is the heap storage type of the BAT (this should be STORE_CMEM or STORE_SHARED)
-#ifdef HAVE_FORK
-#define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
-        bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
-        bat->tnil = 0; bat->tnonil = 1;                                                   \
-        bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
-        /*Change nil values to the proper values, if they exist*/                                                       \
-        if (mask != NULL)                                                                                               \
-        {                                                                                                               \
-            for (iu = 0; iu < ret->count; iu++)                                                                         \
-            {                                                                                                           \
-                if (mask[index_offset * ret->count + iu] == TRUE)                                                       \
-                {                                                                                                       \
-                    (*(mtpe*)(&data[(index_offset * ret->count + iu) * ret->memory_size])) = mtpe##_nil;                \
-                    bat->tnil = 1;                                                                                    \
-                }                                                                                                       \
-            }                                                                                                           \
-            bat->tnonil = 1 - bat->tnil;                                                                            \
-        } else {                                                                                                        \
-            bat->tnil = 0; bat->tnonil = 0;                                                                         \
-        }                                                                                                               \
-        /*When we create a BAT a small part of memory is allocated, free it*/                                           \
-        GDKfree(bat->theap.base);                                                                                     \
-        bat->theap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
-        bat->theap.size = ret->count * ret->memory_size;                                                              \
-        bat->theap.free = bat->theap.size;  /*There are no free places in the array*/                               \
-        /*If index_offset > 0, we are mapping part of a multidimensional array.*/                                       \
-        /*The entire array will be cleared when the part with index_offset=0 is freed*/                                 \
-        /*So we set this part of the mapping to 'NOWN'*/                                                                \
-        if (index_offset > 0) bat->theap.storage = STORE_NOWN;                                                        \
-        else {                                                                                                          \
-            bat->theap.storage = batstore;                                                                            \
-            if (batstore == STORE_MMAPABS) {                                                                            \
-                /* If we are taking data from a MMAP file, set the filename to the absolute path */                     \
-                char address[100];                                                                                      \
-                GDKmmapfile(address, 100, ret->mmap_id);                                                         \
-                bat->theap.filename = GDKfilepath(NOFARM, BATDIR, address, "tmp");                                    \
-                ret->mmap_id = -1;                                                                                      \
-            }                                                                                                           \
-        }                                                                                                               \
-        bat->theap.newstorage = STORE_MEM;                                                                            \
-        bat->batCount = ret->count;                                                                                     \
-        bat->batCapacity = ret->count;                                                                                  \
-        bat->batCopiedtodisk = false;                                                                                   \
-        /*Take over the data from the numpy array*/                                                                     \
-        if (ret->numpy_array != NULL) PyArray_CLEARFLAGS((PyArrayObject*)ret->numpy_array, NPY_ARRAY_OWNDATA);          \
-    }
-#else
-#define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
-        bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
-        bat->tnil = 0; bat->tnonil = 1;                                                   \
-        bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
-        /*Change nil values to the proper values, if they exist*/                                                       \
-        if (mask != NULL)                                                                                               \
-        {                                                                                                               \
-            for (iu = 0; iu < ret->count; iu++)                                                                         \
-            {                                                                                                           \
-                if (mask[index_offset * ret->count + iu] == TRUE)                                                       \
-                {                                                                                                       \
-                    (*(mtpe*)(&data[(index_offset * ret->count + iu) * ret->memory_size])) = mtpe##_nil;                \
-                    bat->tnil = 1;                                                                                    \
-                }                                                                                                       \
-            }                                                                                                           \
-            bat->tnonil = 1 - bat->tnil;                                                                            \
-        } else {                                                                                                        \
-            bat->tnil = 0; bat->tnonil = 0;                                                                         \
-        }                                                                                                               \
-        /*When we create a BAT a small part of memory is allocated, free it*/                                           \
-        GDKfree(bat->theap.base);                                                                                     \
-        bat->theap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
-        bat->theap.size = ret->count * ret->memory_size;                                                              \
-        bat->theap.free = bat->theap.size;  /*There are no free places in the array*/                               \
-        /*If index_offset > 0, we are mapping part of a multidimensional array.*/                                       \
-        /*The entire array will be cleared when the part with index_offset=0 is freed*/                                 \
-        /*So we set this part of the mapping to 'NOWN'*/                                                                \
-        if (index_offset > 0) bat->theap.storage = STORE_NOWN;                                                        \
-        else {                                                                                                          \
-            bat->theap.storage = batstore;                                                                            \
-        }                                                                                                               \
-        bat->theap.newstorage = STORE_MEM;                                                                            \
-        bat->batCount = (BUN) ret->count;                                                                                     \
-        bat->batCapacity = (BUN) ret->count;                                                                                  \
-        bat->batCopiedtodisk = false;                                                                                   \
-        /*Take over the data from the numpy array*/                                                                     \
-        if (ret->numpy_array != NULL) PyArray_CLEARFLAGS((PyArrayObject*)ret->numpy_array, NPY_ARRAY_OWNDATA);          \
-    }
-#endif
+str
+PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    return PyAPIeval(cntxt, mb, stk, pci, 0, 0);
+}
 
-// This #define converts a Numpy Array to a BAT by copying the internal data to the BAT. It assumes the BAT 'bat' is already created with the proper size.
-// This should only be used with integer data that can be cast. It assumes the Numpy Array has an internal array of type 'mtpe_from', and the BAT has an internal array of type 'mtpe_to'.
-// it then does the cast by simply doing BAT[i] = (mtpe_to) ((mtpe_from*)NUMPY_ARRAY[i]), which only works if both mtpe_to and mtpe_from are integers
-#define NP_COL_BAT_LOOP(bat, mtpe_to, mtpe_from) {                                                                                               \
-    if (mask == NULL)                                                                                                                            \
-    {                                                                                                                                            \
-        for (iu = 0; iu < ret->count; iu++)                                                                                                      \
-        {                                                                                                                                        \
-            ((mtpe_to*) Tloc(bat, 0))[iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));    \
-        }                                                                                                                                        \
-    }                                                                                                                                            \
-    else                                                                                                                                         \
-    {                                                                                                                                            \
-        for (iu = 0; iu < ret->count; iu++)                                                                                                      \
-        {                                                                                                                                        \
-            if (mask[index_offset * ret->count + iu] == TRUE)                                                                                    \
-            {                                                                                                                                    \
-                bat->tnil = 1;                                                                                                                 \
-                ((mtpe_to*) Tloc(bat, 0))[iu] = mtpe_to##_nil;                                                                       \
-            }                                                                                                                                    \
-            else                                                                                                                                 \
-            {                                                                                                                                    \
-                ((mtpe_to*) Tloc(bat, 0))[iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));\
-            }                                                                                                                                    \
-        }                                                                                                                                        \
-    } }
+str
+PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    return PyAPIeval(cntxt, mb, stk, pci, 0, 1);
+}
 
-// This #define converts a Numpy Array to a BAT by copying the internal data to the BAT. It converts the data from the Numpy Array to the BAT using a function
-// This function has to have the prototype 'bool function(void *data, size_t memory_size, mtpe_to *resulting_value)', and either return False (if conversion fails)
-//  or write the value into the 'resulting_value' pointer. This is used convertring strings/unicodes/python objects to numeric values.
-#define NP_COL_BAT_LOOP_FUNC(bat, mtpe_to, func, ptrtpe) {                                                                                                    \
-    mtpe_to value;                                                                                                                                    \
-    if (mask == NULL)                                                                                                                                 \
-    {                                                                                                                                                 \
-        for (iu = 0; iu < ret->count; iu++)                                                                                                           \
-        {                                                                                                                                             \
-            msg = func((ptrtpe*)&data[(index_offset * ret->count + iu) * ret->memory_size], ret->memory_size, &value);                                \
-            if (msg != MAL_SUCCEED) {                                                                                                                 \
-                goto wrapup;                                                                                                                          \
-            }                                                                                                                                         \
-            ((mtpe_to*) Tloc(bat, 0))[iu] = value;                                                                                        \
-        }                                                                                                                                             \
-    }                                                                                                                                                 \
-    else                                                                                                                                              \
-    {                                                                                                                                                 \
-        for (iu = 0; iu < ret->count; iu++)                                                                                                           \
-        {                                                                                                                                             \
-            if (mask[index_offset * ret->count + iu] == TRUE)                                                                                         \
-            {                                                                                                                                         \
-                bat->tnil = 1;                                                                                                                      \
-                ((mtpe_to*) Tloc(bat, 0))[iu] = mtpe_to##_nil;                                                                            \
-            }                                                                                                                                         \
-            else                                                                                                                                      \
-            {                                                                                                                                         \
-                msg = func((ptrtpe*)&data[(index_offset * ret->count + iu) * ret->memory_size], ret->memory_size, &value);                            \
-                if (msg != MAL_SUCCEED) {                                                                                                             \
-                    goto wrapup;                                                                                                                      \
-                }                                                                                                                                     \
-                ((mtpe_to*) Tloc(bat, 0))[iu] = value;                                                                                    \
-            }                                                                                                                                         \
-        }                                                                                                                                             \
-    } }
+str
+PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    return PyAPIeval(cntxt, mb, stk, pci, 1, 0);
+}
 
-
-// This #define is for converting a numeric numpy array into a string BAT. 'conv' is a function that turns a numeric value of type 'mtpe' to a char* array.
-#define NP_COL_BAT_STR_LOOP(bat, mtpe, fmt)                                                                                                           \
-    if (mask == NULL)                                                                                                                                 \
-    {                                                                                                                                                 \
-        for (iu = 0; iu < ret->count; iu++)                                                                                                           \
-        {                                                                                                                                             \
-            snprintf(utf8_string, utf8string_minlength, fmt, *((mtpe*)&data[(index_offset * ret->count + iu) * ret->memory_size]));                   \
-            BUNappend(bat, utf8_string, FALSE);                                                                                                       \
-        }                                                                                                                                             \
-    }                                                                                                                                                 \
-    else                                                                                                                                              \
-    {                                                                                                                                                 \
-        for (iu = 0; iu < ret->count; iu++)                                                                                                           \
-        {                                                                                                                                             \
-            if (mask[index_offset * ret->count + iu] == TRUE)                                                                                         \
-            {                                                                                                                                         \
-                bat->tnil = 1;                                                                                                                      \
-                BUNappend(b, str_nil, FALSE);                                                                                                         \
-            }                                                                                                                                         \
-            else                                                                                                                                      \
-            {                                                                                                                                         \
-                snprintf(utf8_string, utf8string_minlength, fmt, *((mtpe*)&data[(index_offset * ret->count + iu) * ret->memory_size]));               \
-                BUNappend(bat, utf8_string, FALSE);                                                                                                   \
-            }                                                                                                                                         \
-        }                                                                                                                                             \
-    }
-
-// This is here so we can remove the option_zerocopyoutput from the zero copy conditionals if testing is disabled
-
-#ifdef HAVE_HGE
-#define NOT_HGE(mtpe) TYPE_##mtpe != TYPE_hge
-#else
-#define NOT_HGE(mtpe) true
-#endif
-
-// This very big #define combines all the previous #defines for one big #define that is responsible for converting a Numpy array (described in the PyReturn object 'ret')
-// to a BAT of type 'mtpe'. This should only be used for numeric BATs (but can be used for any Numpy Array). The resulting BAT will be stored in 'bat'.
-#define NP_CREATE_BAT(bat, mtpe) {                                                                                                                             \
-        bool *mask = NULL;                                                                                                                                     \
-        char *data = NULL;                                                                                                                                     \
-        if (ret->mask_data != NULL) {                                                                                                                          \
-            mask = (bool*) ret->mask_data;                                                                                                                     \
-        }                                                                                                                                                      \
-        if (ret->array_data == NULL) {                                                                                                                         \
-            msg = createException(MAL, "pyapi.eval", "No return value stored in the structure.\n");                                                            \
-            goto wrapup;                                                                                                                                       \
-        }                                                                                                                                                      \
-        data = (char*) ret->array_data;                                                                                                                        \
-        if (!copy && ret->count > 0 && TYPE_##mtpe == PyType_ToBat(ret->result_type) && (ret->count * ret->memory_size < BUN_MAX) &&           \
-             (ret->numpy_array == NULL || PyArray_FLAGS((PyArrayObject*)ret->numpy_array) & NPY_ARRAY_OWNDATA)) {                      \
-            /*We can only create a direct map if the numpy array type and target BAT type*/                                                                    \
-            /*are identical, otherwise we have to do a conversion.*/                                                                                           \
-            if (ret->numpy_array == NULL) {                                                                                                                    \
-                VERBOSE_MESSAGE("- Zero copy (Map)!\n");                                                                                                       \
-                CREATE_BAT_ZEROCOPY(bat, mtpe, STORE_MMAPABS);                                                                                                 \
-                ret->array_data = NULL;                                                                                                                        \
-            } else {                                                                                                                                           \
-                VERBOSE_MESSAGE("- Zero copy!\n");                                                                                                             \
-                CREATE_BAT_ZEROCOPY(bat, mtpe, STORE_CMEM);                                                                                                    \
-            }                                                                                                                                                  \
-        } else {                                                                                                                                               \
-            bat = COLnew(seqbase, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                       \
-            bat->tnil = 0; bat->tnonil = 1;                                                                                      \
-            if (NOT_HGE(mtpe) && TYPE_##mtpe != PyType_ToBat(ret->result_type)) WARNING_MESSAGE("!PERFORMANCE WARNING: You are returning a Numpy Array of type %s, which has to be converted to a BAT of type %s. If you return a Numpy\
-Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type), BatType_Format(TYPE_##mtpe), PyType_Format(BatType_ToPyType(TYPE_##mtpe)));   \
-            bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                                                              \
-            switch(ret->result_type)                                                                                                                           \
-            {                                                                                                                                                  \
-                case NPY_BOOL:       NP_COL_BAT_LOOP(bat, mtpe, char); break;                                                                                   \
-                case NPY_BYTE:       NP_COL_BAT_LOOP(bat, mtpe, char); break;                                                                                   \
-                case NPY_SHORT:      NP_COL_BAT_LOOP(bat, mtpe, short); break;                                                                                   \
-                case NPY_INT:        NP_COL_BAT_LOOP(bat, mtpe, int); break;                                                                                   \
-                case NPY_LONG:       NP_COL_BAT_LOOP(bat, mtpe, long); break;                                                                                   \
-                case NPY_LONGLONG:   NP_COL_BAT_LOOP(bat, mtpe, long long); break;                                                                                   \
-                case NPY_UBYTE:      NP_COL_BAT_LOOP(bat, mtpe, unsigned char); break;                                                                         \
-                case NPY_USHORT:     NP_COL_BAT_LOOP(bat, mtpe, unsigned short); break;                                                                        \
-                case NPY_UINT:       NP_COL_BAT_LOOP(bat, mtpe, unsigned int); break;                                                                          \
-                case NPY_ULONG:      NP_COL_BAT_LOOP(bat, mtpe, unsigned long); break;                                                                         \
-                case NPY_ULONGLONG:  NP_COL_BAT_LOOP(bat, mtpe, unsigned long long); break;                                                                         \
-                case NPY_FLOAT16:                                                                                                                              \
-                case NPY_FLOAT:      NP_COL_BAT_LOOP(bat, mtpe, float); break;                                                                                   \
-                case NPY_DOUBLE:     NP_COL_BAT_LOOP(bat, mtpe, double); break;                                                                                   \
-                case NPY_LONGDOUBLE: NP_COL_BAT_LOOP(bat, mtpe, long double); break;                                                                                   \
-                case NPY_STRING:     NP_COL_BAT_LOOP_FUNC(bat, mtpe, str_to_##mtpe, char); break;                                                                    \
-                case NPY_UNICODE:    NP_COL_BAT_LOOP_FUNC(bat, mtpe, unicode_to_##mtpe, PythonUnicodeType); break;                                                                \
-                case NPY_OBJECT:     NP_COL_BAT_LOOP_FUNC(bat, mtpe, pyobject_to_##mtpe, PyObject*); break;                                                               \
-                default:                                                                                                                                       \
-                    msg = createException(MAL, "pyapi.eval", "Unrecognized type. Could not convert to %s.\n", BatType_Format(TYPE_##mtpe));                    \
-                    goto wrapup;                                                                                                                               \
-            }                                                                                                                                                  \
-            bat->tnonil = 1 - bat->tnil;                                                                                                                   \
-            if (!mask) { bat->tnil = 0; bat->tnonil = 0; }                                                                                                 \
-            BATsetcount(bat, (BUN) ret->count);                                                                                                                \
-            BATsettrivprop(bat);                                                                                                                               \
-        }                                                                                                                                                      \
-    }
+str
+PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    return PyAPIeval(cntxt, mb, stk, pci, 1, 1);
+}
 
 #define NP_SPLIT_BAT(tpe) {                                                       \
     tpe ***ptr = (tpe***)split_bats;                                              \
@@ -406,41 +129,8 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
         ptr[group][i][temp_indices[group]++] = batcontent[element_it];            \
     }                                                                             \
     GDKfree(temp_indices);                                                        \
-} 
-
-static str
-PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped);
-
-str
-PYFUNCNAME(PyAPIevalStd)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    return PyAPIeval(cntxt, mb, stk, pci, 0, 0);
 }
 
-str
-PYFUNCNAME(PyAPIevalStdMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    return PyAPIeval(cntxt, mb, stk, pci, 0, 1);
-}
-
-str
-PYFUNCNAME(PyAPIevalAggr)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    return PyAPIeval(cntxt, mb, stk, pci, 1, 0);
-}
-
-str
-PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    return PyAPIeval(cntxt, mb, stk, pci, 1, 1);
-}
-
-static char *PyError_CreateException(char *error_text, char *pycall);
-
-int GetSQLType(sql_subtype *sql_subtype);
-bit ConvertableSQLType(sql_subtype *sql_subtype);
-str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
-str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
 
 //! The main PyAPI function, this function does everything PyAPI related
 //! It takes as argument a bunch of input BATs, a python function, and outputs a number of BATs
@@ -451,7 +141,7 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_b
 //! [RETURN_VALUES] Step 4: It collects the return values and converts them back into BATs
 //! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
 str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
-    sql_func * sqlfun;
+    sql_func * sqlfun = NULL;
     str exprStr;
 
     const int additional_columns = 3;
@@ -460,7 +150,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     str *args;
     char *msg = MAL_SUCCEED;
     BAT *b = NULL;
-    node * argnode;
+    node * argnode = NULL;
     int seengrp = FALSE;
     PyObject *pArgs = NULL, *pColumns = NULL, *pColumnTypes = NULL, *pConnection, *pResult = NULL; // this is going to be the parameter tuple
     PyObject *code_object = NULL;
@@ -485,6 +175,8 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     bit parallel_aggregation = grouped && mapped;
     int argcount = pci->argc;
 
+    char * eval_additional_args[] = {"_columns", "_column_types", "_conn"};
+
     mapped = 0;
 
 #ifndef HAVE_FORK
@@ -501,13 +193,17 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         throw(MAL, "pyapi.eval",
               "Embedded Python is enabled but an error was thrown during initialization.");
     }
-
-    sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
+    if (!grouped) {
+        sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc));
+        if (sqlmorefun) {
+            sqlfun = sqlmorefun->func;
+        }
+    } else {
+        sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
+    }
     exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
     varres = sqlfun ? sqlfun->varres : 0;
     retcols = !varres ? pci->retc : -1;
-
-    VERBOSE_MESSAGE("PyAPI Start\n");
 
     args = (str*) GDKzalloc(pci->argc * sizeof(str));
     pyreturn_values = GDKzalloc(pci->retc * sizeof(PyReturn));
@@ -578,42 +274,37 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             }
             seqbase = b->hseqbase;
             inp->count = BATcount(b);
-            inp->bat_type = ATOMstorage(getColumnType(getArgType(mb,pci,i)));
+            inp->bat_type = ATOMstorage(getBatType(getArgType(mb,pci,i)));
             inp->bat = b;
+            if (inp->count == 0) {
+                // one of the input BATs is empty, don't execute the function at all
+                // just return empty BATs
+                CreateEmptyReturn(mb, stk, pci, retcols, seqbase);
+                goto wrapup;
+            }
         }
         if (argnode) {
             inp->sql_subtype = &((sql_arg*)argnode->data)->type;
-
-            if (ConvertableSQLType(inp->sql_subtype)) { // if the sql type is set, we have to do some conversion
-                if (inp->scalar) {
-                    // todo: scalar SQL types
-                    msg = PyError_CreateException("Scalar SQL types haven't been implemented yet... sorry", NULL);
-                    goto wrapup;
-                } else {
-                    BAT *ret_bat = NULL;
-                    msg = ConvertFromSQLType(cntxt, inp->bat, inp->sql_subtype, &ret_bat, &inp->bat_type);
-                    if (msg != MAL_SUCCEED) {
-                        goto wrapup;
-                    }
-                    inp->bat = ret_bat;
-                }
-            }
-            b = inp->bat;
             argnode = argnode->next;
         }
     }
 
 #ifdef HAVE_FORK
-    if (!mapped) {
-        MT_lock_set(&pyapiLock);
-        if (python_call_active) {
-            mapped = true;
-            holds_gil = false;
+    if (!option_disable_fork) {
+        if (!mapped && !parallel_aggregation) {
+            MT_lock_set(&pyapiLock);
+            if (python_call_active) {
+                mapped = true;
+                holds_gil = false;
+            } else {
+                python_call_active = true;
+                holds_gil = true;
+            }
+            MT_lock_unset(&pyapiLock);
         }
-        else {
-            python_call_active = true;
-        }
-        MT_lock_unset(&pyapiLock);
+    } else {
+        mapped = false;
+        holds_gil = true;
     }
 #endif
 
@@ -630,7 +321,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
 
         //create initial shared memory
         MT_lock_set(&pyapiLock);
-        mmap_id = GDKuniqueid(mmap_count); 
+        mmap_id = GDKuniqueid(mmap_count);
         MT_lock_unset(&pyapiLock);
 
         mmap_ptrs = GDKzalloc(mmap_count * sizeof(void*));
@@ -640,11 +331,8 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             goto wrapup;
         }
 
-        VERBOSE_MESSAGE("Creating multiple processes.\n");
-
         memory_size = pci->retc * sizeof(ReturnBatDescr); //the memory size for the header files, each process has one per return value
 
-        VERBOSE_MESSAGE("Initializing shared memory.\n");
 
         assert(memory_size > 0);
         //create the shared memory for the header
@@ -677,11 +365,9 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         query_ptr->mmapid = -1;
         query_ptr->memsize = 0;
 
-        VERBOSE_MESSAGE("Waiting to fork.\n");
         //fork
         MT_lock_set(&pyapiLock);
         gstate = Python_ObtainGIL(); // we need the GIL before forking, otherwise it can get stuck in the forked child
-        VERBOSE_MESSAGE("Start forking.\n");
         if ((pid = fork()) < 0)
         {
             msg = createException(MAL, "pyapi.eval", "Failed to fork process");
@@ -716,7 +402,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 if (GDKchangesemval_timeout(query_sem, 0, -1, 100, &sem_success, &msg) != GDK_SUCCEED) {
                     goto wrapup;
                 }
-                if (sem_success) 
+                if (sem_success)
                 {
                     if (query_ptr->pending_query) {
                         // we have to handle a query for the forked process
@@ -737,12 +423,17 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                         query_ptr->nr_cols = 0;
                         query_ptr->mmapid = -1;
 
-                        if (output != NULL && output->nr_cols > 0) 
+                        if (output != NULL && output->nr_cols > 0)
                         {
                             // copy the return values into shared memory if there are any
                             size_t size = 0;
                             size_t position = 0;
                             char *result_ptr;
+                            BAT **result_columns = GDKzalloc(sizeof(BAT*) * output->nr_cols);
+                            if (!result_columns) {
+                                msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" result column set.");
+                                goto wrapup;
+                            }
 
                             for (i = 0; i < output->nr_cols; i++) {
                                 res_col col = output->cols[i];
@@ -750,26 +441,31 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                                 sql_subtype *subtype = &col.type;
 
                                 // if the sql type is set, we have to do some conversion
-                                // we do this before sending the BATs to the other process, otherwise there are complaints about not being able to find a BATdescriptor
-                                if (ConvertableSQLType(subtype)) {
+                                // we do this before sending the BATs to the other process
+                                if (!IsStandardBATType(b->ttype) || ConvertableSQLType(subtype)) {
                                     BAT *ret_bat = NULL;
                                     int ret_type;
-                                    msg = ConvertFromSQLType(cntxt, b, subtype, &ret_bat, &ret_type);
+                                    msg = ConvertFromSQLType(b, subtype, &ret_bat, &ret_type);
                                     if (msg != MAL_SUCCEED) {
+                                        BBPunfix(b->batCacheid);
+                                        _connection_cleanup_result(output);
+                                        GDKfree(result_columns);
+                                        msg = createException(MAL, "pyapi.eval", "Failed to convert BAT.");
                                         goto wrapup;
                                     }
-                                    output->cols[i].b = ret_bat->batCacheid;
+                                    BBPunfix(b->batCacheid);
+                                    result_columns[i] = ret_bat;
+                                } else {
+                                    result_columns[i] = b;
                                 }
-                                BBPunfix(col.b);
                             }
 
                             // first obtain the total size of the shared memory region
                             // the region is structured as [COLNAME][BAT][DATA]([VHEAP][VHEAPDATA])
                             for (i = 0; i < output->nr_cols; i++) {
                                 res_col col = output->cols[i];
-                                BAT* b = BATdescriptor(col.b);
+                                BAT* b = result_columns[i];
                                 size += GDKbatcopysize(b, col.name);
-                                BBPunfix(b->batCacheid);
                             }
 
                             query_ptr->memsize = size;
@@ -783,16 +479,19 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                             if (GDKinitmmap(query_ptr->mmapid + 0, size, (void**) &result_ptr, NULL, &msg) != GDK_SUCCEED) {
                                 _connection_cleanup_result(output);
                                 GDKchangesemval(query_sem, 1, 1, &msg);
+                                msg = createException(MAL, "pyapi.eval", "eval failed");
+                                GDKfree(result_columns);
                                 goto wrapup;
                             }
 
                             // copy the data into the shared memory region
                             for (i = 0; i < output->nr_cols; i++) {
                                 res_col col = output->cols[i];
-                                BAT* b = BATdescriptor(col.b);
+                                BAT* b = result_columns[i];
                                 result_ptr += GDKbatcopy(result_ptr + position, b, col.name);
                                 BBPunfix(b->batCacheid);
                             }
+                            GDKfree(result_columns);
                             //detach the main process from this piece of shared memory so the child process can delete it
                             _connection_cleanup_result(output);
                         }
@@ -834,7 +533,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 }
                 goto wrapup;
             }
-            VERBOSE_MESSAGE("Finished waiting for child process.\n");
 
             //collect return values
             for(i = 0; i < pci->retc; i++)
@@ -856,8 +554,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 has_mask = has_mask || descr->has_mask;
 
                 //get the shared memory address for this return value
-                VERBOSE_MESSAGE("Parent requesting memory at id %d of size %zu\n", mmap_id + (i + 3), total_size);
-
                 assert(total_size > 0);
                 MT_lock_set(&pyapiLock);
                 GDKinitmmap(mmap_id + i + 3, total_size, &mmap_ptrs[i + 3], &mmap_sizes[i + 3], &msg);
@@ -892,7 +588,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
 #endif
 
     //After this point we will execute Python Code, so we need to acquire the GIL
-    if (!mapped) { 
+    if (!mapped) {
         gstate = Python_ObtainGIL();
     }
 
@@ -906,14 +602,14 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             char address[1000];
             struct stat buffer;
             size_t length;
-            if (exprStr[0] == '/') { 
+            if (exprStr[0] == '/') {
                 // absolute path
                 snprintf(address, 1000, "%s", exprStr);
             } else {
                 // relative path
                 snprintf(address, 1000, "%s/%s", FunctionBasePath(), exprStr);
             }
-            if (stat(address, &buffer) < 0) { 
+            if (stat(address, &buffer) < 0) {
                 msg = createException(MAL, "pyapi.eval", "Could not find Python source file \"%s\".", address);
                 goto wrapup;
             }
@@ -939,16 +635,13 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     }
 
     /*[PARSE_CODE]*/
-    VERBOSE_MESSAGE("Formatting python code.\n");
-    pycall = FormatCode(exprStr, args, argcount, 4, &code_object, &msg);
+    pycall = FormatCode(exprStr, args, argcount, 4, &code_object, &msg, eval_additional_args, additional_columns);
     if (pycall == NULL && code_object == NULL) {
         if (msg == NULL) { msg = createException(MAL, "pyapi.eval", "Error while parsing Python code."); }
         goto wrapup;
     }
 
     /*[CONVERT_BAT]*/
-    VERBOSE_MESSAGE("Loading data from the database into Python.\n");
-
     // Now we will do the input handling (aka converting the input BATs to numpy arrays)
     // We will put the python arrays in a PyTuple object, we will use this PyTuple object as the set of arguments to call the Python function
     pArgs = PyTuple_New(argcount - (pci->retc + 2) + (code_object == NULL ? additional_columns : 0));
@@ -996,8 +689,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     }
 
     /*[EXECUTE_CODE]*/
-    VERBOSE_MESSAGE("Executing python code.\n");
-
     // Now it is time to actually execute the python code
     {
         PyObject *pFunc, *pModule, *v, *d;
@@ -1068,7 +759,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             }
 
             //now perform the actual splitting of the data, first construct room for splits for every group
-            // elements are structured as follows: 
+            // elements are structured as follows:
             // split_bats [groupnr] [columnnr] [elementnr]
             split_bats = GDKzalloc(group_count * sizeof(void*));
             for(group_it = 0; group_it < group_count; group_it++) {
@@ -1125,7 +816,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                             temp_indices = GDKzalloc(sizeof(PyObject*) * group_count);
                             for(element_it = 0; element_it < elements; element_it++) {
                                 //group of current element
-                                oid group = aggr_group_arr[element_it]; 
+                                oid group = aggr_group_arr[element_it];
                                 //append current element to proper group
                                 ptr[group][i][temp_indices[group]++] = batcontent[element_it];
                             }
@@ -1151,7 +842,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 double increment;
 
                 // if there are less groups than threads, limit threads to amount of groups
-                threads = group_count < threads ? group_count : threads; 
+                threads = group_count < threads ? group_count : threads;
 
                 increment = (double) group_count / (double) threads;
                 // start running the threads
@@ -1301,7 +992,6 @@ aggrwrapup:
             goto wrapup;
         }
     }
-    VERBOSE_MESSAGE("Collecting return values.\n");
 
     if (varres) {
         GDKfree(pyreturn_values);
@@ -1330,12 +1020,10 @@ aggrwrapup:
 
         // First we will fill in the header information, we will need to get a pointer to the header data first
         // The main process has already created the header data for the child process
-        VERBOSE_MESSAGE("Getting shared memory.\n");
         if (GDKinitmmap(mmap_id + 0, memory_size, &mmap_ptrs[0], &mmap_sizes[0], &msg) != GDK_SUCCEED) {
             goto wrapup;
         }
 
-        VERBOSE_MESSAGE("Writing headers.\n");
 
         // Now we will write data about our result (memory size, type, number of elements) to the header
         ptr = (ReturnBatDescr*)mmap_ptrs[0];
@@ -1350,7 +1038,7 @@ aggrwrapup:
                 // WARNING: Because we could be converting to a NPY_STRING or NPY_UNICODE array (if the desired type is TYPE_str or TYPE_hge), this means that memory usage can explode
                 //   because NPY_STRING/NPY_UNICODE arrays are 2D string arrays with fixed string length (so if there's one very large string the size explodes quickly)
                 //   if someone has some problem with memory size exploding when using PYTHON_MAP but it being fine in regular PYTHON this is probably the issue
-                int bat_type = getColumnType(getArgType(mb,pci,i));
+                int bat_type = getBatType(getArgType(mb,pci,i));
                 PyObject *new_array = PyArray_FromAny(ret->numpy_array, PyArray_DescrFromType(BatType_ToPyType(bat_type)), 1, 1, NPY_ARRAY_CARRAY | NPY_ARRAY_FORCECAST, NULL);
                 if (new_array == NULL) {
                     msg = createException(MAL, "pyapi.eval", "Could not convert the returned NPY_OBJECT array to the desired array of type %s.\n", BatType_Format(bat_type));
@@ -1413,8 +1101,6 @@ aggrwrapup:
 returnvalues:
 #endif
     /*[RETURN_VALUES]*/
-    VERBOSE_MESSAGE("Returning values.\n");
-
     argnode = sqlfun && sqlfun->res ? sqlfun->res->h : NULL;
     for (i = 0; i < retcols; i++)
     {
@@ -1422,7 +1108,7 @@ returnvalues:
         int bat_type = TYPE_any;
         sql_subtype *sql_subtype = argnode ? &((sql_arg*)argnode->data)->type : NULL;
         if (!varres) {
-            bat_type = getColumnType(getArgType(mb,pci,i));
+            bat_type = getBatType(getArgType(mb,pci,i));
 
             if (bat_type == TYPE_any || bat_type == TYPE_void) {
                 bat_type = PyType_ToBat(ret->result_type);
@@ -1437,6 +1123,7 @@ returnvalues:
             goto wrapup;
         }
 
+        msg = MAL_SUCCEED;
         if (isaBatType(getArgType(mb,pci,i)))
         {
             *getArgReference_bat(stk, pci, i) = b->batCacheid;
@@ -1444,12 +1131,12 @@ returnvalues:
         }
         else
         { // single value return, only for non-grouped aggregations
-            VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0));
+            if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) == NULL)
+                msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
         }
         if (argnode) {
             argnode = argnode->next;
         }
-        msg = MAL_SUCCEED;
     }
 wrapup:
 
@@ -1461,15 +1148,12 @@ wrapup:
         ReturnBatDescr *ptr;
 
         // Now we exit the program with an error code
-        VERBOSE_MESSAGE("Failure in child process: %s\n", msg);
         if (GDKchangesemval(query_sem, 0, 1, &tmp_msg) != GDK_SUCCEED) {
-            VERBOSE_MESSAGE("Failed to increase value of semaphore in child process: %s\n", tmp_msg);
             exit(1);
         }
 
         assert(memory_size > 0);
         if (GDKinitmmap(mmap_id + 0, memory_size, &mmap_ptrs[0], &mmap_sizes[0], &tmp_msg) != GDK_SUCCEED) {
-            VERBOSE_MESSAGE("Failed to get shared memory in child process: %s\n", tmp_msg);
             exit(1);
         }
 
@@ -1487,15 +1171,12 @@ wrapup:
         // We can simply use the slot mmap_id + 3, even though this is normally used for query return values
         // This is because, if the process fails, no values will be returned
         if (GDKinitmmap(mmap_id + 3, (strlen(msg) + 1) * sizeof(char), (void**) &error_mem, NULL, &tmp_msg) != GDK_SUCCEED) {
-            VERBOSE_MESSAGE("Failed to create shared memory in child process: %s\n", tmp_msg);
             exit(1);
         }
         strcpy(error_mem, msg);
         exit(1);
     }
 #endif
-
-    VERBOSE_MESSAGE("Cleaning up.\n");
 
 #ifdef HAVE_FORK
     if (holds_gil){
@@ -1517,6 +1198,8 @@ wrapup:
                 GDKreleasemmap(mmap_ptrs[i], mmap_sizes[i], mmap_id + i, &msg);
             }
         }
+        if (mmap_ptrs) GDKfree(mmap_ptrs);
+        if (mmap_sizes) GDKfree(mmap_sizes);
         if (query_sem > 0) {
             GDKreleasesem(query_sem, &msg);
         }
@@ -1558,19 +1241,17 @@ wrapup:
     GDKfree(pyreturn_values);
     GDKfree(pyinput_values);
     for (i = 0; i < pci->argc; i++)
-        if (args[i] != NULL)
+        if (args[i])
             GDKfree(args[i]);
     GDKfree(args);
     GDKfree(pycall);
 
-    VERBOSE_MESSAGE("Finished cleaning up.\n");
     return msg;
 }
 
 str
-PYFUNCNAME(PyAPIprelude)(void *ret) {
+ PyAPIprelude(void *ret) {
     (void) ret;
-#ifndef _EMBEDDED_MONETDB_MONETDB_LIB_
     MT_lock_init(&pyapiLock, "pyapi_lock");
     MT_lock_init(&queryLock, "query_lock");
     if (PyAPIEnabled()) {
@@ -1582,6 +1263,17 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
                 return PyError_CreateException("Failed to initialize embedded python", NULL);
             }
             msg = _connection_init();
+            if (msg != MAL_SUCCEED) {
+                MT_lock_unset(&pyapiLock);
+                return msg;
+            }
+            msg = _conversion_init();
+            if (msg != MAL_SUCCEED) {
+                MT_lock_unset(&pyapiLock);
+                return msg;
+            }
+            _pytypes_init();
+            _loader_init();
             marshal_module = PyImport_Import(PyString_FromString("marshal"));
             if (marshal_module == NULL) {
                 return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
@@ -1591,18 +1283,6 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
                 return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
             }
             PyEval_SaveThread();
-			LOAD_SQL_FUNCTION_PTR(batbte_dec2_dbl);
-			LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl);
-			LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl);
-			LOAD_SQL_FUNCTION_PTR(batlng_dec2_dbl);
-#ifdef HAVE_HGE
-			LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl);
-#endif
-			LOAD_SQL_FUNCTION_PTR(batstr_2time_timestamp);
-			LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime);
-			LOAD_SQL_FUNCTION_PTR(batstr_2_date);
-			LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng);
-			LOAD_SQL_FUNCTION_PTR(SQLbatstr_cast);
             if (msg != MAL_SUCCEED) {
                 MT_lock_unset(&pyapiLock);
                 return msg;
@@ -1610,53 +1290,13 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
             pyapiInitialized++;
         }
         MT_lock_unset(&pyapiLock);
-#ifdef IS_PY3K
-        fprintf(stdout, "# MonetDB/Python3 module loaded\n");
-#else
         fprintf(stdout, "# MonetDB/Python module loaded\n");
-#endif
     }
-#else
-    if (!pyapiInitialized) {
-        char* iar = NULL;
-        import_array1(iar);
-        pyapiInitialized++;
-        marshal_module = PyImport_Import(PyString_FromString("marshal"));
-        if (marshal_module == NULL) {
-            return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
-        }
-        marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
-        if (marshal_loads == NULL) {
-            return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
-        }
-    }
-#endif
-#ifdef _PYAPI_VERBOSE_
-    option_verbose = GDKgetenv_isyes(verbose_enableflag) || GDKgetenv_istrue(verbose_enableflag);
-#endif
-#ifdef _PYAPI_DEBUG_
-    option_debug = GDKgetenv_isyes(debug_enableflag) || GDKgetenv_istrue(debug_enableflag);
-    (void) option_debug;
-#endif
-#ifdef _PYAPI_WARNINGS_
-    option_warning = GDKgetenv_isyes(warning_enableflag) || GDKgetenv_istrue(warning_enableflag);
-#endif
+    option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
     return MAL_SUCCEED;
 }
 
-//Returns true if the type of [object] is a scalar (i.e. numeric scalar or string, basically "not an array but a single value")
-bool PyType_IsPyScalar(PyObject *object)
-{
-    if (object == NULL) return false;
-    return (PyArray_CheckScalar(object) || PyInt_Check(object) || PyFloat_Check(object) || PyLong_Check(object) || PyString_Check(object) || PyBool_Check(object) || PyUnicode_Check(object) || PyByteArray_Check(object)
-#ifdef IS_PY3K   
-        || PyBytes_Check(object)
-#endif
-        );
-}
-
-
-static char *PyError_CreateException(char *error_text, char *pycall)
+char *PyError_CreateException(char *error_text, char *pycall)
 {
     PyObject *py_error_type = NULL, *py_error_value = NULL, *py_error_traceback = NULL;
     char *py_error_string = NULL;
@@ -1729,1029 +1369,8 @@ finally:
     return createException(MAL, "pyapi.eval", "%s\n%s\n%s", error_text, pycall, py_error_string);
 }
 
-PyObject *PyArrayObject_FromScalar(PyInput* inp, char **return_message)
-{
-    PyObject *vararray = NULL;
-    char *msg = NULL;
-    assert(inp->scalar); //input has to be a scalar
-    VERBOSE_MESSAGE("- Loading a scalar of type %s (%i)", BatType_Format(inp->bat_type), inp->bat_type);
-
-    switch(inp->bat_type)
-    {
-        case TYPE_bit:
-            vararray = PyInt_FromLong((long)(*(bit*)inp->dataptr));
-            VERBOSE_MESSAGE(" [Value: %ld]\n", (long)(*(bit*)inp->dataptr));
-            break;
-        case TYPE_bte:
-            vararray = PyInt_FromLong((long)(*(bte*)inp->dataptr));
-            VERBOSE_MESSAGE(" [Value: %ld]\n", (long)(*(bte*)inp->dataptr));
-            break;
-        case TYPE_sht:
-            vararray = PyInt_FromLong((long)(*(sht*)inp->dataptr));
-            VERBOSE_MESSAGE(" [Value: %ld]\n", (long)(*(sht*)inp->dataptr));
-            break;
-        case TYPE_int:
-            vararray = PyInt_FromLong((long)(*(int*)inp->dataptr));
-            VERBOSE_MESSAGE(" [Value: %ld]\n", (long)(*(int*)inp->dataptr));
-            break;
-        case TYPE_lng:
-            vararray = PyLong_FromLong((long)(*(lng*)inp->dataptr));
-            VERBOSE_MESSAGE(" [Value: %ld]\n", (long)(*(lng*)inp->dataptr));
-            break;
-        case TYPE_flt:
-            vararray = PyFloat_FromDouble((double)(*(flt*)inp->dataptr));
-            VERBOSE_MESSAGE(" [Value: %lf]\n", (double)(*(flt*)inp->dataptr));
-            break;
-        case TYPE_dbl:
-            vararray = PyFloat_FromDouble((double)(*(dbl*)inp->dataptr));
-            VERBOSE_MESSAGE(" [Value: %lf]\n", (double)(*(dbl*)inp->dataptr));
-            break;
-#ifdef HAVE_HGE
-        case TYPE_hge:
-            vararray = PyLong_FromHge(*((hge *) inp->dataptr));
-            VERBOSE_MESSAGE(" [Value: Huge]\n");
-            break;
-#endif
-        case TYPE_str:
-            vararray = PyUnicode_FromString(*((char**) inp->dataptr));
-            VERBOSE_MESSAGE(" [Value: %s]\n", *((char**) inp->dataptr));
-            break;
-        default:
-            VERBOSE_MESSAGE(" [Value: Unknown]\n");
-            msg = createException(MAL, "pyapi.eval", "Unsupported scalar type %i.", inp->bat_type);
-            goto wrapup;
-    }
-    if (vararray == NULL)
-    {
-        msg = createException(MAL, "pyapi.eval", "Something went wrong converting the MonetDB scalar to a Python scalar.");
-        goto wrapup;
-    }
-wrapup:
-    *return_message = msg;
-    return vararray;
-}
-
-PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy)
-{
-    BAT *b = inp->bat;
-    char *msg;
-    PyObject *vararray;
-
-    vararray = PyArrayObject_FromBAT(inp, t_start, t_end, return_message, copy);
-    if (vararray == NULL) {
-        return NULL;
-    }
-    // To deal with null values, we use the numpy masked array structure
-    // The masked array structure is an object with two arrays of equal size, a data array and a mask array
-    // The mask array is a boolean array that has the value 'True' when the element is NULL, and 'False' otherwise
-    // If the BAT has Null values, we construct this masked array
-    if (!(b->tnil == 0 && b->tnonil == 1))
-    {
-        PyObject *mask;
-        PyObject *mafunc = PyObject_GetAttrString(PyImport_Import(PyString_FromString("numpy.ma")), "masked_array");
-        PyObject *maargs;
-        PyObject *nullmask = PyNullMask_FromBAT(b, t_start, t_end);
-
-        if (nullmask == Py_None) {
-            maargs = PyTuple_New(1);
-            PyTuple_SetItem(maargs, 0, vararray);
-        } else {
-            maargs = PyTuple_New(2);
-            PyTuple_SetItem(maargs, 0, vararray);
-            PyTuple_SetItem(maargs, 1, (PyObject*) nullmask);
-        }
-
-        // Now we will actually construct the mask by calling the masked array constructor
-        mask = PyObject_CallObject(mafunc, maargs);
-        if (!mask) {
-            msg = PyError_CreateException("Failed to create mask", NULL);
-            goto wrapup;
-        }
-        Py_DECREF(maargs);
-        Py_DECREF(mafunc);
-
-        vararray = mask;
-    }
-    return vararray;
-wrapup:
-    *return_message = msg;
-    return NULL;
-}
-
-PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy)
-{
-    // This variable will hold the converted Python object
-    PyObject *vararray = NULL;
-    char *msg;
-    size_t j = 0;
-    BUN p = 0, q = 0;
-    BATiter li;
-    BAT *b = inp->bat;
-    npy_intp elements[1] = { t_end-t_start };
-
-    assert(!inp->scalar); //input has to be a BAT
-
-    if (b == NULL)
-    {
-        // No BAT was found, we can't do anything in this case
-        msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" bat.");
-        goto wrapup;
-    }
-
-    VERBOSE_MESSAGE("- Loading a BAT of type %s (%d) [Size: %zu]\n", BatType_Format(inp->bat_type), inp->bat_type, inp->count);
-
-    switch (inp->bat_type) {
-    case TYPE_bte:
-        BAT_TO_NP(b, bte, NPY_INT8);
-        break;
-    case TYPE_sht:
-        BAT_TO_NP(b, sht, NPY_INT16);
-        break;
-    case TYPE_int:
-        BAT_TO_NP(b, int, NPY_INT32);
-        break;
-    case TYPE_lng:
-        BAT_TO_NP(b, lng, NPY_INT64);
-        break;
-    case TYPE_flt:
-        BAT_TO_NP(b, flt, NPY_FLOAT32);
-        break;
-    case TYPE_dbl:
-        BAT_TO_NP(b, dbl, NPY_FLOAT64);
-        break;
-    case TYPE_str:
-        {
-            bool unicode = false;
-            li = bat_iterator(b);
-            //create a NPY_OBJECT array object
-            vararray = PyArray_New(
-                &PyArray_Type,
-                1,
-                elements,
-                NPY_OBJECT,
-                NULL,
-                NULL,
-                0,
-                0,
-                NULL);
-
-            BATloop(b, p, q) {
-                char *t = (char *) BUNtail(li, p);
-                for(; *t != 0; t++) {
-                    if (*t < 0) {
-                        unicode = true;
-                        break;
-                    }
-                }
-                if (unicode) {
-                    break;
-                }
-            }
-
-            {
-                PyObject **data = ((PyObject**)PyArray_DATA((PyArrayObject*)vararray));
-                PyObject *obj;
-                j = 0;
-                if (unicode) {                    
-                    if (GDK_ELIMDOUBLES(b->tvheap)) {
-                        PyObject** pyptrs = GDKzalloc(b->tvheap->free * sizeof(PyObject*));
-                        if (!pyptrs) {
-                            msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" PyObject strings.");
-                            goto wrapup;
-                        }
-                        BATloop(b, p, q) {
-                            const char *t = (const char *) BUNtail(li, p);
-                            ptrdiff_t offset = t - b->tvheap->base;
-                            if (!pyptrs[offset]) {
-                                if (strcmp(t, str_nil) == 0) {
-                                     //str_nil isn't a valid UTF-8 character (it's 0x80), so we can't decode it as UTF-8 (it will throw an error)
-                                    pyptrs[offset] = PyUnicode_FromString("-");
-                                } else {
-                                    //otherwise we can just decode the string as UTF-8
-                                    pyptrs[offset] = PyUnicode_FromString(t);
-                                }
-                                if (!pyptrs[offset]) {
-                                    msg = createException(MAL, "pyapi.eval", "Failed to create string.");
-                                    goto wrapup;
-                                }
-                            } else {
-                                Py_INCREF(pyptrs[offset]);
-                            }
-                            data[j++] = pyptrs[offset];
-                        }
-                        GDKfree(pyptrs);
-                    }
-                    else {
-                    BATloop(b, p, q) {
-                            char *t = (char *) BUNtail(li, p);
-                            if (strcmp(t, str_nil) == 0) {
-                                 //str_nil isn't a valid UTF-8 character (it's 0x80), so we can't decode it as UTF-8 (it will throw an error)
-                                obj = PyUnicode_FromString("-");
-                            } else {
-                                //otherwise we can just decode the string as UTF-8
-                                obj = PyUnicode_FromString(t);
-                            }
-
-                            if (obj == NULL) {
-                                msg = createException(MAL, "pyapi.eval", "Failed to create string.");
-                                goto wrapup;
-                            }
-                            data[j++] = obj;
-                        }
-                    }
-                } else {
-                    /* special case where we exploit the duplicate-eliminated string heap */
-                    if (GDK_ELIMDOUBLES(b->tvheap)) {
-                        PyObject** pyptrs = GDKzalloc(b->tvheap->free * sizeof(PyObject*));
-                        if (!pyptrs) {
-                            msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" PyObject strings.");
-                            goto wrapup;
-                        }
-                        BATloop(b, p, q) {
-                            const char *t = (const char *) BUNtail(li, p);
-                            ptrdiff_t offset = t - b->tvheap->base;
-                            if (!pyptrs[offset]) {
-                                pyptrs[offset] = PyString_FromString(t);
-                            } else {
-                                Py_INCREF(pyptrs[offset]);
-                            }
-                            data[j++] = pyptrs[offset];
-                        }
-                        GDKfree(pyptrs);
-                    }
-                    else {
-                        BATloop(b, p, q) {
-                            char *t = (char *) BUNtail(li, p);
-                            obj = PyString_FromString(t);
-                            if (obj == NULL) {
-                                msg = createException(MAL, "pyapi.eval", "Failed to create string.");
-                                goto wrapup;
-                            }
-                            data[j++] = obj;
-                        }
-                    }
-                }
-            }
-        }
-        break;
-#ifdef HAVE_HGE
-    case TYPE_hge:
-    {
-        WARNING_MESSAGE("!ACCURACY WARNING: Type \"hge\" (128 bit) is unsupported by Numpy. The numbers are instead converted to float64, which results in loss of accuracy.\n");
-        li = bat_iterator(b);
-        //create a NPY_FLOAT64 array to hold the huge type
-        vararray = PyArray_New(
-            &PyArray_Type,
-            1,
-            (npy_intp[1]) { t_end - t_start },
-            NPY_FLOAT64,
-            NULL,
-            NULL,
-            0,
-            0,
-            NULL);
-
-        j = 0;
-        {
-            dbl *data = (dbl*)PyArray_DATA((PyArrayObject*)vararray);
-            BATloop(b, p, q) {
-                const hge *t = (const hge *) BUNtail(li, p);
-                data[j++] = (dbl) *t;
-            }
-        }
-        break;
-    }
-#endif
-    default:
-        if (!inp->sql_subtype || !inp->sql_subtype->type) {
-            msg = createException(MAL, "pyapi.eval", "unknown argument type");
-        } else {
-            msg = createException(MAL, "pyapi.eval", "Unsupported SQL Type: %s", inp->sql_subtype->type->sqlname);
-        }
-        goto wrapup;
-    }
-    if (vararray == NULL) {
-        msg = PyError_CreateException("Failed to convert BAT to Numpy array.", NULL);
-        goto wrapup;
-    }
-    return vararray;
-wrapup:
-    *return_message = msg;
-    return NULL;
-}
-
-#define CreateNullMask(tpe) {                                       \
-    tpe *bat_ptr = (tpe*)b->theap.base;                             \
-    for(j = 0; j < count; j++) {                                    \
-        mask_data[j] = bat_ptr[j] == tpe##_nil;                     \
-        found_nil = found_nil || mask_data[j];                      \
-    } }
-
-PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
-{
-    // We will now construct the Masked array, we start by setting everything to False
-    size_t count = t_end - t_start;
-    npy_intp elements[1] = { count };
-    PyArrayObject* nullmask = (PyArrayObject*) PyArray_EMPTY(1, elements, NPY_BOOL, 0);
-    const void *nil = ATOMnilptr(b->ttype);
-    size_t j;
-    bool found_nil = false;
-    BATiter bi = bat_iterator(b);
-    bool *mask_data = (bool*)PyArray_DATA(nullmask);
-
-    switch(ATOMstorage(getColumnType(b->ttype)))
-    {
-        case TYPE_bit: CreateNullMask(bit); break;
-        case TYPE_bte: CreateNullMask(bte); break;
-        case TYPE_sht: CreateNullMask(sht); break;
-        case TYPE_int: CreateNullMask(int); break;
-        case TYPE_lng: CreateNullMask(lng); break;
-        case TYPE_flt: CreateNullMask(flt); break;
-        case TYPE_dbl: CreateNullMask(dbl); break;
-#ifdef HAVE_HGE
-        case TYPE_hge: CreateNullMask(hge); break;
-#endif
-        case TYPE_str:
-        {
-            int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
-            for (j = 0; j < count; j++) {
-                mask_data[j] = (*atomcmp)(BUNtail(bi, (BUN)(j)), nil) == 0;
-                found_nil = found_nil || mask_data[j];
-            }
-            break;
-        }
-        default:
-            //todo: do something with the error?
-            return NULL;
-    }
-
-    if (!found_nil) {
-        Py_DECREF(nullmask);
-        Py_RETURN_NONE;
-    }
-
-    return (PyObject*)nullmask;
-}
-
-
-PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns, char **retcol_names, char **return_message)
-{
-    char *msg = MAL_SUCCEED;
-    PyObject *result = PyList_New(expected_columns), *keys = PyDict_Keys(pResult);
-    int i;
-
-    if (PyList_Size(keys) != expected_columns) {
-#ifdef _PYAPI_WARNINGS_
-        if (PyList_Size(keys) > expected_columns) {
-            WARNING_MESSAGE("WARNING: Expected %d return values, but a dictionary with "SSZFMT" values was returned instead.\n", expected_columns, PyList_Size(keys));
-        }
-#endif
-    }
-
-    for(i = 0; i < expected_columns; i++) {
-        PyObject *object = PyDict_GetItemString(pResult, retcol_names[i]);
-        if (object == NULL) {
-            msg = createException(MAL, "pyapi.eval", "Expected a return value with name \"%s\", but this key was not present in the dictionary.", retcol_names[i]);
-            goto wrapup;
-        }
-        Py_INCREF(object);
-        object = PyObject_CheckForConversion(object, 1, NULL, return_message);
-        if (object == NULL) {
-            msg = createException(MAL, "pyapi.eval", "Error converting dict return value \"%s\": %s.", retcol_names[i], *return_message);
-            GDKfree(*return_message);
-            goto wrapup;
-        }
-        if (PyList_CheckExact(object)) {
-            PyObject *item = PyList_GetItem(object, 0);
-            PyList_SetItem(result, i, item);
-            Py_INCREF(item);
-            Py_DECREF(object);
-        } else {
-            msg = createException(MAL, "pyapi.eval", "Why is this not a list?");
-            goto wrapup;
-        }
-    }
-    Py_DECREF(keys);
-    Py_DECREF(pResult);
-    //Py_INCREF(result);
-    return result;
-wrapup:
-    *return_message = msg;
-    Py_DECREF(result);
-    Py_DECREF(keys);
-    Py_DECREF(pResult);
-    return NULL;
-}
-
-PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns, int *actual_columns, char **return_message)
-{
-    char *msg;
-    int columns = 0;
-    if (pResult) {
-        PyObject * pColO = NULL;
-        if (PyType_IsPandasDataFrame(pResult)) {
-            //the result object is a Pandas data frame
-            //we can convert the pandas data frame to a numpy array by simply accessing the "values" field (as pandas dataframes are numpy arrays internally)
-            pResult = PyObject_GetAttrString(pResult, "values");
-            if (pResult == NULL) {
-                msg = createException(MAL, "pyapi.eval", "Invalid Pandas data frame.");
-                goto wrapup;
-            }
-            //we transpose the values field so it's aligned correctly for our purposes
-            pResult = PyObject_GetAttrString(pResult, "T");
-            if (pResult == NULL) {
-                msg = createException(MAL, "pyapi.eval", "Invalid Pandas data frame.");
-                goto wrapup;
-            }
-        }
-
-        if (PyType_IsPyScalar(pResult)) { //check if the return object is a scalar
-            if (expected_columns == 1 || expected_columns <= 0)  {
-                //if we only expect a single return value, we can accept scalars by converting it into an array holding an array holding the element (i.e. [[pResult]])
-                PyObject *list = PyList_New(1);
-                PyList_SetItem(list, 0, pResult);
-                pResult = list;
-
-                list = PyList_New(1);
-                PyList_SetItem(list, 0, pResult);
-                pResult = list;
-
-                columns = 1;
-            }
-            else {
-                //the result object is a scalar, yet we expect more than one return value. We can only convert the result into a list with a single element, so the output is necessarily wrong.
-                msg = createException(MAL, "pyapi.eval", "A single scalar was returned, yet we expect a list of %d columns. We can only convert a single scalar into a single column, thus the result is invalid.", expected_columns);
-                goto wrapup;
-            }
-        }
-        else {
-            //if it is not a scalar, we check if it is a single array
-            bool IsSingleArray = TRUE;
-            PyObject *data = pResult;
-            if (PyType_IsNumpyMaskedArray(data)) {
-                data = PyObject_GetAttrString(pResult, "data");
-                if (data == NULL) {
-                    msg = createException(MAL, "pyapi.eval", "Invalid masked array.");
-                    goto wrapup;
-                }
-            }
-            if (PyType_IsNumpyArray(data)) {
-                if (PyArray_NDIM((PyArrayObject*)data) != 1) {
-                    IsSingleArray = FALSE;
-                }
-                else {
-                    pColO = PyArray_GETITEM((PyArrayObject*)data, PyArray_GETPTR1((PyArrayObject*)data, 0));
-                    IsSingleArray = PyType_IsPyScalar(pColO);
-                }
-            }
-            else if (PyList_Check(data)) {
-                pColO = PyList_GetItem(data, 0);
-                IsSingleArray = PyType_IsPyScalar(pColO);
-            } else if (!PyType_IsNumpyMaskedArray(data)) {
-                //it is neither a python array, numpy array or numpy masked array, thus the result is unsupported! Throw an exception!
-                msg = createException(MAL, "pyapi.eval", "Unsupported result object. Expected either a list, dictionary, a numpy array, a numpy masked array or a pandas data frame, but received an object of type \"%s\"", PyString_AsString(PyObject_Str(PyObject_Type(data))));
-                goto wrapup;
-            }
-
-            if (IsSingleArray) {
-                if (expected_columns == 1 || expected_columns <= 0) {
-                    //if we only expect a single return value, we can accept a single array by converting it into an array holding an array holding the element (i.e. [pResult])
-                    PyObject *list = PyList_New(1);
-                    PyList_SetItem(list, 0, pResult);
-                    pResult = list;
-
-                    columns = 1;
-                }
-                else {
-                    //the result object is a single array, yet we expect more than one return value. We can only convert the result into a list with a single array, so the output is necessarily wrong.
-                    msg = createException(MAL, "pyapi.eval", "A single array was returned, yet we expect a list of %d columns. The result is invalid.", expected_columns);
-                    goto wrapup;
-                }
-            }
-            else {
-                //the return value is an array of arrays, all we need to do is check if it is the correct size
-                int results = 0;
-                if (PyList_Check(data)) results = (int)PyList_Size(data);
-                else results = (int)PyArray_DIMS((PyArrayObject*)data)[0];
-                columns = results;
-                if (results != expected_columns && expected_columns > 0) {
-                    //wrong return size, we expect pci->retc arrays
-                    msg = createException(MAL, "pyapi.eval", "An array of size %d was returned, yet we expect a list of %d columns. The result is invalid.", results, expected_columns);
-                    goto wrapup;
-                }
-            }
-        }
-    } else {
-        msg = createException(MAL, "pyapi.eval", "Invalid result object. No result object could be generated.");
-        goto wrapup;
-    }
-
-    if (actual_columns != NULL) *actual_columns = columns;
-    return pResult;
-wrapup:
-    if (actual_columns != NULL) *actual_columns = columns;
-    *return_message = msg;
-    return NULL;
-}
-
-
-bool PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values, int column_count, char **return_message)
-{
-    int i;
-    char *msg;
-    for (i = 0; i < column_count; i++) {
-        // Refers to the current Numpy mask (if it exists)
-        PyObject *pMask = NULL;
-        // Refers to the current Numpy array
-        PyObject * pColO = NULL;
-        // This is the PyReturn header information for the current return value, we will fill this now
-        PyReturn *ret = &pyreturn_values[i];
-
-        ret->multidimensional = FALSE;
-        // There are three possibilities (we have ensured this right after executing the Python call by calling PyObject_CheckForConversion)
-        // 1: The top level result object is a PyList or Numpy Array containing pci->retc Numpy Arrays
-        // 2: The top level result object is a (pci->retc x N) dimensional Numpy Array [Multidimensional]
-        // 3: The top level result object is a (pci->retc x N) dimensional Numpy Masked Array [Multidimensional]
-        if (PyList_Check(pResult)) {
-            // If it is a PyList, we simply get the i'th Numpy array from the PyList
-            pColO = PyList_GetItem(pResult, i);
-        }
-        else {
-            // If it isn't, the result object is either a Nump Masked Array or a Numpy Array
-            PyObject *data = pResult;
-            if (PyType_IsNumpyMaskedArray(data)) {
-                data = PyObject_GetAttrString(pResult, "data"); // If it is a Masked array, the data is stored in the masked_array.data attribute
-                pMask = PyObject_GetAttrString(pResult, "mask");
-            }
-
-            // We can either have a multidimensional numpy array, or a single dimensional numpy array
-            if (PyArray_NDIM((PyArrayObject*)data) != 1) {
-                // If it is a multidimensional numpy array, we have to convert the i'th dimension to a NUMPY array object
-                ret->multidimensional = TRUE;
-                ret->result_type = PyArray_DESCR((PyArrayObject*)data)->type_num;
-            }
-            else {
-                // If it is a single dimensional Numpy array, we get the i'th Numpy array from the Numpy Array
-                pColO = PyArray_GETITEM((PyArrayObject*)data, PyArray_GETPTR1((PyArrayObject*)data, i));
-            }
-        }
-
-        // Now we have to do some preprocessing on the data
-        if (ret->multidimensional) {
-            // If it is a multidimensional Numpy array, we don't need to do any conversion, we can just do some pointers
-            ret->count = PyArray_DIMS((PyArrayObject*)pResult)[1];
-            ret->numpy_array = pResult;
-            ret->numpy_mask = pMask;
-            ret->array_data = PyArray_DATA((PyArrayObject*)ret->numpy_array);
-            if (ret->numpy_mask != NULL) ret->mask_data = PyArray_DATA((PyArrayObject*)ret->numpy_mask);
-            ret->memory_size = PyArray_DESCR((PyArrayObject*)ret->numpy_array)->elsize;
-        }
-        else {
-            // If it isn't we need to convert pColO to the expected Numpy Array type
-            ret->numpy_array = PyArray_FromAny(pColO, NULL, 1, 1, NPY_ARRAY_CARRAY | NPY_ARRAY_FORCECAST, NULL);
-            if (ret->numpy_array == NULL) {
-                msg = createException(MAL, "pyapi.eval", "Could not create a Numpy array from the return type.\n");
-                goto wrapup;
-            }
-
-            ret->result_type = PyArray_DESCR((PyArrayObject*)ret->numpy_array)->type_num; // We read the result type from the resulting array
-            ret->memory_size = PyArray_DESCR((PyArrayObject*)ret->numpy_array)->elsize;
-            ret->count = PyArray_DIMS((PyArrayObject*)ret->numpy_array)[0];
-            ret->array_data = PyArray_DATA((PyArrayObject*)ret->numpy_array);
-            // If pColO is a Masked array, we convert the mask to a NPY_BOOL numpy array
-            if (PyObject_HasAttrString(pColO, "mask")) {
-                pMask = PyObject_GetAttrString(pColO, "mask");
-                if (pMask != NULL) {
-                    ret->numpy_mask = PyArray_FromAny(pMask, PyArray_DescrFromType(NPY_BOOL), 1, 1,  NPY_ARRAY_CARRAY, NULL);
-                    if (ret->numpy_mask == NULL || PyArray_DIMS((PyArrayObject*)ret->numpy_mask)[0] != (int)ret->count)
-                    {
-                        PyErr_Clear();
-                        pMask = NULL;
-                        ret->numpy_mask = NULL;
-                    }
-                }
-            }
-            if (ret->numpy_mask != NULL) ret->mask_data = PyArray_DATA((PyArrayObject*)ret->numpy_mask);
-        }
-    }
-    return TRUE;
-wrapup:
-    *return_message = msg;
-    return FALSE;
-}
-
-BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i, oid seqbase, char **return_message, bool copy)
-{
-    BAT *b = NULL;
-    size_t index_offset = 0;
-    char *msg;
-    size_t iu;
-
-    if (ret->multidimensional) index_offset = i;
-
-    switch(GetSQLType(type))
-    {
-        case EC_TIMESTAMP:
-        case EC_TIME:
-        case EC_DATE:
-            bat_type = TYPE_str;
-            break;
-        case EC_DEC:
-            bat_type = TYPE_dbl;
-            break;
-        default: 
-            break;
-    }
-
-    VERBOSE_MESSAGE("- Returning a Numpy Array of type %s of size %zu and storing it in a BAT of type %s\n", PyType_Format(ret->result_type), ret->count,  BatType_Format(bat_type));
-    switch (bat_type)
-    {
-    case TYPE_bit:
-        NP_CREATE_BAT(b, bit);
-        break;
-    case TYPE_bte:
-        NP_CREATE_BAT(b, bte);
-        break;
-    case TYPE_sht:
-        NP_CREATE_BAT(b, sht);
-        break;
-    case TYPE_int:
-        NP_CREATE_BAT(b, int);
-        break;
-    case TYPE_oid:
-        NP_CREATE_BAT(b, oid);
-        break;
-    case TYPE_lng:
-        NP_CREATE_BAT(b, lng);
-        break;
-    case TYPE_flt:
-        NP_CREATE_BAT(b, flt);
-        break;
-    case TYPE_dbl:
-        NP_CREATE_BAT(b, dbl);
-        break;
-#ifdef HAVE_HGE
-    case TYPE_hge:
-        NP_CREATE_BAT(b, hge);
-        break;
-#endif
-    case TYPE_str:
-        {
-            bool *mask = NULL;
-            char *data = NULL;
-            char *utf8_string = NULL;
-            if (ret->mask_data != NULL)
-            {
-                mask = (bool*)ret->mask_data;
-            }
-            if (ret->array_data == NULL)
-            {
-                msg = createException(MAL, "pyapi.eval", "No return value stored in the structure.  n");
-                goto wrapup;
-            }
-            data = (char*) ret->array_data;
-
-            if (ret->result_type != NPY_OBJECT) {
-                utf8_string = GDKzalloc(utf8string_minlength + ret->memory_size + 1);
-                utf8_string[utf8string_minlength + ret->memory_size] = '\0';
-            }
-
-            b = COLnew(seqbase, TYPE_str, (BUN) ret->count, TRANSIENT);
-            b->tnil = 0; b->tnonil = 1;
-            b->tkey = 0; b->tsorted = 0; b->trevsorted = 0;
-            VERBOSE_MESSAGE("- Collecting return values of type %s.\n", PyType_Format(ret->result_type));
-            switch(ret->result_type)
-            {
-                case NPY_BOOL:      NP_COL_BAT_STR_LOOP(b, bit, "%hhd"); break;
-                case NPY_BYTE:      NP_COL_BAT_STR_LOOP(b, bte, "%hhd"); break;
-                case NPY_SHORT:     NP_COL_BAT_STR_LOOP(b, sht, "%hd"); break;
-                case NPY_INT:       NP_COL_BAT_STR_LOOP(b, int, "%d"); break;
-                case NPY_LONG:      NP_COL_BAT_STR_LOOP(b, long, "%ld"); break;
-                case NPY_LONGLONG:  NP_COL_BAT_STR_LOOP(b, lng, LLFMT); break;
-                case NPY_UBYTE:     NP_COL_BAT_STR_LOOP(b, unsigned char, "%hhu"); break;
-                case NPY_USHORT:    NP_COL_BAT_STR_LOOP(b, unsigned short, "%hu"); break;
-                case NPY_UINT:      NP_COL_BAT_STR_LOOP(b, unsigned int, "%u"); break;
-                case NPY_ULONG:     NP_COL_BAT_STR_LOOP(b, unsigned long, "%lu"); break;
-                case NPY_ULONGLONG: NP_COL_BAT_STR_LOOP(b, unsigned long long, ULLFMT); break;
-                case NPY_FLOAT16:
-                case NPY_FLOAT:     NP_COL_BAT_STR_LOOP(b, flt, "%f"); break;
-                case NPY_DOUBLE:
-                case NPY_LONGDOUBLE: NP_COL_BAT_STR_LOOP(b, dbl, "%lf"); break;
-                case NPY_STRING:
-                    for (iu = 0; iu < ret->count; iu++) {
-                        if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {
-                            b->tnil = 1;
-                            BUNappend(b, str_nil, FALSE);
-                        }  else {
-                            if (!string_copy(&data[(index_offset * ret->count + iu) * ret->memory_size], utf8_string, ret->memory_size, FALSE)) {
-                                msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");
-                                goto wrapup;
-                            }
-                            BUNappend(b, utf8_string, FALSE);
-                        }
-                    }
-                    break;
-                case NPY_UNICODE:
-                    for (iu = 0; iu < ret->count; iu++) {
-                        if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {
-                            b->tnil = 1;
-                            BUNappend(b, str_nil, FALSE);
-                        }  else {
-                            utf32_to_utf8(0, ret->memory_size / 4, utf8_string, (const Py_UNICODE*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));
-                            BUNappend(b, utf8_string, FALSE);
-                        }
-                    }
-                    break;
-                case NPY_OBJECT:
-                {
-                    //The resulting array is an array of pointers to various python objects
-                    //Because the python objects can be of any size, we need to allocate a different size utf8_string for every object
-                    //we will first loop over all the objects to get the maximum size needed, so we only need to do one allocation
-                    size_t utf8_size = utf8string_minlength;
-                    for (iu = 0; iu < ret->count; iu++) {
-                        size_t size = utf8string_minlength;
-                        PyObject *obj;
-                        if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) continue;
-                        obj = *((PyObject**) &data[(index_offset * ret->count + iu) * ret->memory_size]);
-                        if (PyString_CheckExact(obj) || PyByteArray_CheckExact(obj)) {
-                            size = Py_SIZE(obj);     //Normal strings are 1 string per character
-                        } else if (PyUnicode_CheckExact(obj)) {
-                            size = Py_SIZE(obj) * 4; //UTF32 is 4 bytes per character
-                        }
-                        if (size > utf8_size) utf8_size = size;
-                    }
-                    utf8_string = GDKzalloc(utf8_size);
-                    for (iu = 0; iu < ret->count; iu++) {
-                        if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {
-                            b->tnil = 1;
-                            BUNappend(b, str_nil, FALSE);
-                        } else {
-                            //we try to handle as many types as possible
-                            PyObject *obj = *((PyObject**) &data[(index_offset * ret->count + iu) * ret->memory_size]);
-#ifndef IS_PY3K             
-                            if (PyString_CheckExact(obj)) {
-                                char *str = ((PyStringObject*)obj)->ob_sval;
-                                if (!string_copy(str, utf8_string, strlen(str) + 1, false)) {
-                                    msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");
-                                    goto wrapup;
-                                }
-                            } else 
-#endif
-                            if (PyByteArray_CheckExact(obj)) {
-                                char *str = ((PyByteArrayObject*)obj)->ob_bytes;
-                                if (!string_copy(str, utf8_string, strlen(str) + 1, false)) {
-                                    msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");
-                                    goto wrapup;
-                                }
-                            } else if (PyUnicode_CheckExact(obj)) {
-#ifndef IS_PY3K
-                                Py_UNICODE *str = (Py_UNICODE*)((PyUnicodeObject*)obj)->str;
-#if Py_UNICODE_SIZE >= 4
-                                utf32_to_utf8(0, ((PyUnicodeObject*)obj)->length, utf8_string, str);
-#else
-                                ucs2_to_utf8(0, ((PyUnicodeObject*)obj)->length, utf8_string, str);
-#endif
-#else
-                                char *str = PyUnicode_AsUTF8(obj);
-                                if (!string_copy(str, utf8_string, strlen(str) + 1, true)) {
-                                    msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");
-                                    goto wrapup;
-                                }
-#endif
-                            } else if (PyBool_Check(obj) || PyLong_Check(obj) || PyInt_Check(obj) || PyFloat_Check(obj)) {
-#ifdef HAVE_HGE
-                                hge h;
-                                pyobject_to_hge(&obj, 0, &h);
-                                hge_to_string(utf8_string, h);
-#else
-                                lng h;
-                                pyobject_to_lng(&obj, 0, &h);
-                                snprintf(utf8_string, utf8string_minlength, LLFMT, h);
-#endif
-                            } else {
-                                msg = createException(MAL, "pyapi.eval", "Unrecognized Python object. Could not convert to NPY_UNICODE.\n");
-                                goto wrapup;
-                            }
-                            BUNappend(b, utf8_string, FALSE);
-                        }
-                    }
-                    break;
-                }
-                default:
-                    msg = createException(MAL, "pyapi.eval", "Unrecognized type. Could not convert to NPY_UNICODE.\n");
-                    goto wrapup;
-            }
-            GDKfree(utf8_string);
-
-            b->tnonil = 1 - b->tnil;
-            BATsetcount(b, (BUN) ret->count);
-            BATsettrivprop(b);
-            break;
-        }
-    default:
-        msg = createException(MAL, "pyapi.eval", "Unrecognized BAT type %s.\n", BatType_Format(bat_type));
-        goto wrapup;
-    }
-
-    if (ConvertableSQLType(type)) {
-        BAT *result;
-        msg = ConvertToSQLType(NULL, b, type, &result, &bat_type);
-        if (msg != MAL_SUCCEED) { 
-            goto wrapup;
-        }
-        b = result;
-    }
-
-    return b;
-wrapup:
-    *return_message = msg;
-    return NULL;
-}
-
-bit ConvertableSQLType(sql_subtype *sql_subtype) {
-    switch(GetSQLType(sql_subtype)) {
-        case EC_DATE:
-        case EC_TIME:
-        case EC_TIMESTAMP:
-        case EC_DEC:
-            return 1;
-    }
-    return 0;
-}
-
-int GetSQLType(sql_subtype *sql_subtype) {
-    if (!sql_subtype) return -1;
-    if (!sql_subtype->type) return -1;
-    return sql_subtype->type->eclass;
-}
-
-str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,  int *ret_type)
-{
-    str res = MAL_SUCCEED;
-    int conv_type; 
-
-    assert(sql_subtype);
-    assert(sql_subtype->type);
-
-    switch(sql_subtype->type->eclass)
-    {
-        case EC_DATE:
-        case EC_TIME:
-        case EC_TIMESTAMP:
-            conv_type = TYPE_str;
-            break;
-        case EC_DEC:
-            conv_type = TYPE_dbl;
-            break;
-        default: 
-            return createException(MAL, "pyapi.eval", "Convert From SQL Type: Unrecognized SQL type %s (%d).", sql_subtype->type->sqlname, sql_subtype->type->eclass);
-    }
-
-    if (conv_type == TYPE_str)
-    {
-        // maybe there's a more elegant way for obj->str conversion than calling this MAL function? probably not
-        int eclass = sql_subtype->type->eclass;
-        int d1 = 0;
-        int s1 = 0;
-        int has_tz = 0;
-        bat bid = b->batCacheid;
-        int digits = 0;
-
-        int i;
-        int nvar = 7; // variables we need to fill in
-        MalBlkRecord mb;
-        MalStack*     stk = NULL;
-        InstrRecord*  pci = NULL;
-
-        switch(eclass)
-        {
-            case EC_DATE:
-                d1 = 0;
-                break;
-            case EC_TIME:
-                d1 = 1;
-                break;
-            case EC_TIMESTAMP:
-                d1 = 7;
-                break;
-            default: 
-                break;
-        }
-
-        // very black MAL magic below
-        stk = GDKmalloc(sizeof(MalStack) + nvar * sizeof(ValRecord));
-        pci = GDKmalloc(sizeof(InstrRecord) + nvar * sizeof(int));
-        assert(stk != NULL && pci != NULL); // cough, cough
-        for (i = 0; i < nvar; i++) {
-            pci->argv[i] = i;
-        }
-
-        stk->stk[0].vtype = TYPE_bat;
-        stk->stk[1].val.ival = eclass;
-        stk->stk[1].vtype = TYPE_int;
-        stk->stk[2].val.ival = d1;
-        stk->stk[2].vtype = TYPE_int;
-        stk->stk[3].val.ival = s1;
-        stk->stk[3].vtype = TYPE_int;
-        stk->stk[4].val.ival = has_tz;
-        stk->stk[4].vtype = TYPE_int;
-        stk->stk[5].val.bval = bid;
-        stk->stk[5].vtype = TYPE_bat;
-        stk->stk[6].val.ival = digits;
-        stk->stk[6].vtype = TYPE_int;
-
-        res = (*SQLbatstr_cast_ptr)(cntxt, &mb, stk, pci);
-
-        if (res == MAL_SUCCEED) {
-            *ret_bat = BATdescriptor(stk->stk[0].val.bval);
-            *ret_type = TYPE_str;
-        } else {
-            *ret_bat = NULL;
-        }
-        
-        GDKfree(stk);
-        GDKfree(pci);
-        return res;
-    } 
-    else if (conv_type == TYPE_dbl)
-    {
-        int bat_type = ATOMstorage(b->ttype);
-        int hpos = sql_subtype->scale; //this value isn't right, it's always 3. todo: find the right scale value (i.e. where the decimal point is)
-        bat result = 0;
-        //decimal values can be stored in various numeric fields, so check the numeric field and convert the one it's actually stored in
-        switch(bat_type) 
-        {
-            case TYPE_bte:
-                res = (*batbte_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
-                break;
-            case TYPE_sht:
-                res = (*batsht_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
-                break;
-            case TYPE_int:
-                res = (*batint_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
-                break;
-            case TYPE_lng:
-                res = (*batlng_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
-                break;
-#ifdef HAVE_HGE
-            case TYPE_hge:
-                res = (*bathge_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
-                break;
-#endif
-            default: 
-                return createException(MAL, "pyapi.eval", "Unsupported decimal storage type.");
-        }
-        if (res == MAL_SUCCEED) {
-            *ret_bat = BATdescriptor(result);
-            *ret_type = TYPE_dbl;
-        } else {
-            *ret_bat = NULL;
-        }
-        return res;
-    }
-    return createException(MAL, "pyapi.eval", "Unrecognized conv type.");
-}
-
-str 
-ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type)
-{
-    str res = MAL_SUCCEED;
-    bat result_bat = 0;
-    int digits = sql_subtype->digits;
-    int scale = sql_subtype->scale;
-    (void) cntxt;
-
-    assert(sql_subtype);
-    assert(sql_subtype->type);
-
-    switch(sql_subtype->type->eclass)
-    {
-        case EC_TIMESTAMP:
-            res = (*batstr_2time_timestamp_ptr)(&result_bat, &b->batCacheid, &digits);
-            break;
-        case EC_TIME:
-            res = (*batstr_2time_daytime_ptr)(&result_bat, &b->batCacheid, &digits);
-            break;
-        case EC_DATE:
-            res = (*batstr_2_date_ptr)(&result_bat, &b->batCacheid);
-            break;
-        case EC_DEC:
-            res = (*batdbl_num2dec_lng_ptr)(&result_bat, &b->batCacheid, &digits, &scale);
-            break;
-        default: 
-            return createException(MAL, "pyapi.eval", "Convert To SQL Type: Unrecognized SQL type %s (%d).", sql_subtype->type->sqlname, sql_subtype->type->eclass);
-    }
-    if (res == MAL_SUCCEED) {
-        *ret_bat = BATdescriptor(result_bat);
-        *ret_type = (*ret_bat)->ttype;
-    }
-
-    return res;
-}
-
-static 
-void ComputeParallelAggregation(AggrParams *p)
-{
+static void 
+ComputeParallelAggregation(AggrParams *p) {
     int i;
     size_t group_it, ai;
     bool gstate = 0;
@@ -2761,7 +1380,7 @@ void ComputeParallelAggregation(AggrParams *p)
     //we need the GIL to execute the functions
     gstate = Python_ObtainGIL();
     for(group_it = p->group_start; group_it < p->group_end; group_it++) {
-        // we first have to construct new 
+        // we first have to construct new
         PyObject *pArgsPartial = PyTuple_New(p->named_columns + p->additional_columns);
         PyObject *pColumnsPartial = PyDict_New();
         PyObject *result;
@@ -2778,55 +1397,55 @@ void ComputeParallelAggregation(AggrParams *p)
                 npy_intp elements[1] = { group_elements };
                 switch(input.bat_type) {
                     case TYPE_bte:
-                        vararray = PyArray_New(&PyArray_Type, 1, 
-                            elements, 
-                            NPY_INT8, 
-                            NULL, ((bte***)(*p->split_bats))[group_it][i], 0, 
+                        vararray = PyArray_New(&PyArray_Type, 1,
+                            elements,
+                            NPY_INT8,
+                            NULL, ((bte***)(*p->split_bats))[group_it][i], 0,
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                     case TYPE_sht:
-                        vararray = PyArray_New(&PyArray_Type, 1, 
-                            elements, 
-                            NPY_INT16, 
-                            NULL, ((sht***)(*p->split_bats))[group_it][i], 0, 
+                        vararray = PyArray_New(&PyArray_Type, 1,
+                            elements,
+                            NPY_INT16,
+                            NULL, ((sht***)(*p->split_bats))[group_it][i], 0,
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                     case TYPE_int:
-                        vararray = PyArray_New(&PyArray_Type, 1, 
-                            elements, 
-                            NPY_INT32, 
-                            NULL, ((int***)(*p->split_bats))[group_it][i], 0, 
+                        vararray = PyArray_New(&PyArray_Type, 1,
+                            elements,
+                            NPY_INT32,
+                            NULL, ((int***)(*p->split_bats))[group_it][i], 0,
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                     case TYPE_lng:
-                        vararray = PyArray_New(&PyArray_Type, 1, 
-                            elements, 
-                            NPY_INT64, 
-                            NULL, ((lng***)(*p->split_bats))[group_it][i], 0, 
+                        vararray = PyArray_New(&PyArray_Type, 1,
+                            elements,
+                            NPY_INT64,
+                            NULL, ((lng***)(*p->split_bats))[group_it][i], 0,
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                     case TYPE_flt:
-                        vararray = PyArray_New(&PyArray_Type, 1, 
-                            elements, 
-                            NPY_FLOAT32, 
-                            NULL, ((flt***)(*p->split_bats))[group_it][i], 0, 
+                        vararray = PyArray_New(&PyArray_Type, 1,
+                            elements,
+                            NPY_FLOAT32,
+                            NULL, ((flt***)(*p->split_bats))[group_it][i], 0,
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                 #ifdef HAVE_HGE
                     case TYPE_hge:
                 #endif
                     case TYPE_dbl:
-                        vararray = PyArray_New(&PyArray_Type, 1, 
-                            elements, 
-                            NPY_FLOAT64, 
-                            NULL, ((dbl***)(*p->split_bats))[group_it][i], 0, 
+                        vararray = PyArray_New(&PyArray_Type, 1,
+                            elements,
+                            NPY_FLOAT64,
+                            NULL, ((dbl***)(*p->split_bats))[group_it][i], 0,
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                     case TYPE_str:
-                        vararray = PyArray_New(&PyArray_Type, 1, 
-                            elements, 
-                            NPY_OBJECT, 
-                            NULL, ((PyObject****)(*p->split_bats))[group_it][i], 0, 
+                        vararray = PyArray_New(&PyArray_Type, 1,
+                            elements,
+                            NPY_OBJECT,
+                            NULL, ((PyObject****)(*p->split_bats))[group_it][i], 0,
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                 }
@@ -2858,27 +1477,21 @@ void ComputeParallelAggregation(AggrParams *p)
         // gather results
         p->result_objects[group_it] = result;
     }
-    //release the GIL again   
-wrapup: 
+    //release the GIL again
+wrapup:
     gstate = Python_ReleaseGIL(gstate);
 }
 
-bool PyType_IsNumpyArray(PyObject *object)
-{
-    return PyArray_CheckExact(object);
+static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase) {
+    size_t i;
+    for (i = 0; i < retcols; i++) {
+        int bat_type = getBatType(getArgType(mb,pci,i));
+        BAT *b = COLnew(seqbase, bat_type, 0, TRANSIENT);
+        if (isaBatType(getArgType(mb,pci,i))) {
+            *getArgReference_bat(stk, pci, i) = b->batCacheid;
+            BBPkeepref(b->batCacheid);
+        } else { // single value return, only for non-grouped aggregations
+            VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0));
+        }
+    }
 }
-
-bool Python_ObtainGIL(void)
-{
-    PyGILState_STATE gstate = PyGILState_Ensure();
-    return gstate == PyGILState_LOCKED ? 0 : 1;
-}
-
-bool Python_ReleaseGIL(bool state)
-{
-    PyGILState_STATE gstate = state == 0 ? PyGILState_LOCKED : PyGILState_UNLOCKED;
-    PyGILState_Release(gstate);
-    return 0;
-}
-
-

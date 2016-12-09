@@ -26,14 +26,14 @@ Ready.
 # 11:55:44 >  
 
 #select 'http://shopping.b92.net/index.php?IDS=11&ID_Group=39&ID_prod=754&PROD_NAME=Belgrade+Coffee+Shop+4&GROUP_NAME=Muzi�a+produkcija';
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 126 # length
 [ "http://shopping.b92.net/index.php?IDS=11&ID_Group=39&ID_prod=754&PROD_NAME=Belgrade+Coffee+Shop+4&GROUP_NAME=Muzi�a+produkcija"	]
 #select 'SAVE 25¢ ON ICE CREAM';
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 21 # length
 [ "SAVE 25¢ ON ICE CREAM"	]

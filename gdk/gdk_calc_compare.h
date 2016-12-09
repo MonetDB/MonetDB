@@ -599,10 +599,10 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 		return BATconstant(b1->hseqbase, TYPE_TPE, &res, cnt, TRANSIENT);
 	}
 
-	bn = BATcalcop_intern(b1->ttype == TYPE_void ? (void *) &b1->tseqbase : (void *) Tloc(b1, 0), ATOMbasetype(b1->ttype), 1,
+	bn = BATcalcop_intern(b1->ttype == TYPE_void ? (void *) &b1->tseqbase : (void *) Tloc(b1, 0), ATOMtype(b1->ttype) == TYPE_oid ? b1->ttype : ATOMbasetype(b1->ttype), 1,
 			      b1->tvheap ? b1->tvheap->base : NULL,
 			      b1->twidth,
-			      b2->ttype == TYPE_void ? (void *) &b2->tseqbase : (void *) Tloc(b2, 0), ATOMbasetype(b2->ttype), 1,
+			      b2->ttype == TYPE_void ? (void *) &b2->tseqbase : (void *) Tloc(b2, 0), ATOMtype(b2->ttype) == TYPE_oid ? b2->ttype : ATOMbasetype(b2->ttype), 1,
 			      b2->tvheap ? b2->tvheap->base : NULL,
 			      b2->twidth,
 			      cnt, start, end, cand, candend, b1->hseqbase,
@@ -620,9 +620,6 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, __func__, NULL);
-
-	if (checkbats(b, NULL, __func__) != GDK_SUCCEED)
-		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
@@ -646,9 +643,6 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 	const oid *restrict cand = NULL, *candend = NULL;
 
 	BATcheck(b, __func__, NULL);
-
-	if (checkbats(b, NULL, __func__) != GDK_SUCCEED)
-		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 

@@ -280,7 +280,7 @@ base_colors[NUM_COLORS] = {
 /* 10355 */	{ 0, 0, "language", "pass", 0 },
 /*  5941 */	{ 0, 0, "sql", "bind", 0 },
 /*  5664 */	{ 0, 0, "mat", "packIncrement", 0 },
-/*  4796 */	{ 0, 0, "algebra", "subselect", 0 },
+/*  4796 */	{ 0, 0, "algebra", "select", 0 },
 /*  4789 */	{ 0, 0, "algebra", "subjoin", 0 },
 /*  2664 */	{ 0, 0, "sql", "projectdelta", 0 },
 /*  2112 */	{ 0, 0, "batcalc", "!=", 0 },
@@ -304,7 +304,7 @@ base_colors[NUM_COLORS] = {
 /*   209 */	{ 0, 0, "batcalc", "hge", 0 },
 /*   209 */	{ 0, 0, "calc", "str", 0 },
 /*   207 */	{ 0, 0, "aggr", "sum", 0 },
-/*   200 */	{ 0, 0, "algebra", "thetasubselect", 0 },
+/*   200 */	{ 0, 0, "algebra", "thetaselect", 0 },
 /*   200 */	{ 0, 0, "algebra", "selectNotNil", 0 },
 /*   197 */	{ 0, 0, "aggr", "subcount", 0 },
 /*   166 */	{ 0, 0, "batcalc", "dbl", 0 },
@@ -325,7 +325,7 @@ base_colors[NUM_COLORS] = {
 /*    66 */	{ 0, 0, "pqueue", "utopn_max", 0 },
 /*    66 */	{ 0, 0, "algebra", "tdiff", 0 },
 /*    53 */	{ 0, 0, "calc", "int", 0 },
-/*    47 */	{ 0, 0, "algebra", "likesubselect", 0 },
+/*    47 */	{ 0, 0, "algebra", "likeselect", 0 },
 /*    44 */	{ 0, 0, "sql", "exportOperation", 0 },
 /*    42 */	{ 0, 0, "algebra", "subslice", 0 },
 /*    36 */	{ 0, 0, "pqueue", "utopn_min", 0 },
@@ -1643,7 +1643,7 @@ main(int argc, char **argv)
 	};
 
 	/* parse config file first, command line options override */
-	parse_dotmonetdb(&user, &password, NULL, NULL, NULL, NULL);
+	parse_dotmonetdb(&user, &password, &dbname, NULL, NULL, NULL, NULL);
 
 	if( argc == 1){
 		usageTomograph();
@@ -1669,7 +1669,9 @@ main(int argc, char **argv)
 			debug = 1;
 			break;
 		case 'd':
-			prefix = dbname = optarg;
+			if (dbname)
+				free(dbname);
+			prefix = dbname = strdup(optarg);
 			break;
 		case 'i':
 			inputfile = optarg;
@@ -1877,6 +1879,9 @@ main(int argc, char **argv)
 		resetTomograph();
 		conn = mapi_get_from(dbh);
 		while ((m = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
+			if (m == 0 &&
+			    (m = mnstr_read(conn, buffer + len, 1, buflen - len-1)) <= 0)
+				break;
 			buffer[len + m] = 0;
 			response = buffer;
 			while ((e = strchr(response, '\n')) != NULL) {

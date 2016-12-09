@@ -12,16 +12,6 @@
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define join_export extern __declspec(dllimport)
-#else
-#define join_export extern __declspec(dllexport)
-#endif
-#else
-#define join_export extern
-#endif
-
-join_export str ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

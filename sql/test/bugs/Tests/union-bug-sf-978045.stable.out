@@ -25,7 +25,7 @@ Ready.
 
 [ 3	]
 #select name from t978045 union select name from t978045;
-% .L # table_name
+% .L6 # table_name
 % name # name
 % varchar # type
 % 6 # length
@@ -33,7 +33,7 @@ Ready.
 [ "fabian"	]
 [ "martin"	]
 #select name from t978045 union all select name from t978045;
-% .L # table_name
+% .L6 # table_name
 % name # name
 % varchar # type
 % 6 # length

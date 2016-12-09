@@ -17,7 +17,7 @@
 #endif
 
 void
-parse_dotmonetdb(char **user, char **passwd, char **language, int *save_history, char **output, int *pagewidth)
+parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int *save_history, char **output, int *pagewidth)
 {
 	char *cfile;
 	FILE *config = NULL;
@@ -52,6 +52,8 @@ parse_dotmonetdb(char **user, char **passwd, char **language, int *save_history,
 		*user = NULL;
 	if (passwd)
 		*passwd = NULL;
+	if (dbname)
+		*dbname = NULL;
 	if (language)
 		*language = NULL;
 	if (output)
@@ -87,6 +89,10 @@ parse_dotmonetdb(char **user, char **passwd, char **language, int *save_history,
 			} else if (strcmp(buf, "password") == 0) {
 				if (passwd)
 					*passwd = strdup(q);
+				q = NULL;
+			} else if (strcmp(buf, "database") == 0) {
+				if (dbname)
+					*dbname = strdup(q);
 				q = NULL;
 			} else if (strcmp(buf, "language") == 0) {
 				/* make sure we don't set garbage */

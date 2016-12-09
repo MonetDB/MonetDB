@@ -108,7 +108,6 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( stk->cmd == 0)
 		stk->cmd = 'n';
 	cntxt->itrace = stk->cmd;
-	cntxt->debugOptimizer= TRUE;
 	(void) mb;
 	(void) p;
 	return MAL_SUCCEED;
@@ -129,7 +128,6 @@ MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	stk->cmd = 0;
 	cntxt->itrace = 0;
-	cntxt->debugOptimizer= FALSE;
 	mnstr_printf(cntxt->fdout,"mdb>#EOD\n");
 	(void) mb;
 	(void) p;
@@ -209,8 +207,6 @@ MDBsetDebugStr(int *ret, str *flg)
 		GDKdebug |= GRPalgorithms;
 	if( strcmp("optimizers",*flg)==0)
 		GDKdebug |= GRPoptimizers;
-	if( strcmp("recycler",*flg)==0)
-		GDKdebug |= GRPrecycler;
 	if( strcmp("performance",*flg)==0)
 		GDKdebug |= GRPperformance;
 	if( strcmp("forcemito",*flg)==0)
@@ -400,8 +396,6 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		GDKfree(msg);
 	}
 	GDKfree(buf);
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	pseudo(ret,b,"view","stk","trace");
 	pseudo(ret2,bn,"view","stk","traceB");
 	return MAL_SUCCEED;
@@ -512,7 +506,6 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		BUNappend(b, ps, FALSE);
 		GDKfree(ps);
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"view","fcn","stmt");
 
 	return MAL_SUCCEED;
@@ -621,19 +614,6 @@ MDBdummy(int *ret)
 	throw(MAL, "mdb.dummy", OPERATION_FAILED);
 }
 
-str
-MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str modnme = *getArgReference_str(stk, pci, 1);
-	str fcnnme = *getArgReference_str(stk, pci, 2);
-	bit b=  *getArgReference_bit(stk,pci,3);
-	(void) cntxt;
-	(void) mb;
-	if ( mdbSetTrap(cntxt,modnme,fcnnme,b) )
-		throw(MAL,"mdb.trap", RUNTIME_SIGNATURE_MISSING);
-	return MAL_SUCCEED;
-}
-	
 /*
  * CMDmodules
  * Obtains a list of modules by looking at what files are present in the

@@ -67,8 +67,7 @@ Ready.
 [ 13,	6	]
 [ 5,	7	]
 [ 1	]
-[ 1	]
-[ 1	]
+#select * from t1;
 % sys.t1,	sys.t1 # table_name
 % id,	name # name
 % int,	varchar # type

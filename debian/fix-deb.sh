@@ -48,8 +48,18 @@ esac
 
 case $SUITE in
 wheezy | jessie | precise | trusty | wily)
-    # Xenial Xerus (and presumably newer releases) uses php-common,
-    # all others still have php5-common
-    sed -i 's/php-common/php5-common/' debian/control
+    # Xenial Xerus (and presumably newer releases) uses php-cli,
+    # all others still have php5-cli and don't have php*-sockets
+    sed -i 's/php-cli/php5-cli/;s/, *php-sockets//' debian/control
+    ;;
+esac
+
+case $SUITE in
+wheezy | precise)
+    # numpy is too old
+    sed -i -e 's/, python-dev[^,]*//;s/, python-numpy[^,]*//' \
+	-e '/^Package:.*monetdb-python2/,/^$/d' debian/control
+    sed -i '/pyintegration=yes/s/yes/no/' debian/rules
+    rm debian/monetdb-python2.install
     ;;
 esac

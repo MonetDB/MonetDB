@@ -34,13 +34,13 @@ Ready.
 #5|midnight linen almond tomato plum|Manufacturer#3|Brand#32|STANDARD POLISHED TIN|15|SM PKG|905.00| wake carefully |
 [ 5	]
 #select sys.median(cast (p_retailprice as double)) from part;
-% sys.L2 # table_name
+% sys.L3 # table_name
 % L2 # name
 % double # type
 % 24 # length
 [ 903	]
 #select sys.median(p_retailprice) from part;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % L1 # name
 % decimal # type
 % 20 # length

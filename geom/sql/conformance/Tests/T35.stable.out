@@ -25,8 +25,8 @@ Ready.
 # 15:05:53 >  
 
 #SELECT ST_Contains(shores, ST_PointOnSurface(shores)) FROM ponds WHERE fid = 120;
-% sys.L # table_name
-% st_contains_shores # name
+% sys.L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -31,6 +31,8 @@ static str myname = 0;	// avoid tracing the profiler module
 static int eventcounter = 0;
 static str prettify = "\n"; /* or ' ' for single line json output */
 
+static int highwatermark = 5;	// conservative initialization
+
 static int TRACE_init = 0;
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 
@@ -54,10 +56,10 @@ static struct{
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
 
-#define logadd(...) {														\
+#define logadd(...) {													\
 	do {																\
-		loglen += snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__); \
-		assert(loglen < LOGLEN); \
+		if (loglen < LOGLEN)											\
+			loglen += snprintf(logbase+loglen, LOGLEN - loglen, __VA_ARGS__); \
 	} while (0);}
 
 
@@ -111,6 +113,9 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	lng usec= GDKusec();
 
 
+	// ignore generation of events for instructions that are called too often
+	if(highwatermark && highwatermark + (start == 0) < pci->calls)
+		return;
 	if( start) // show when instruction was started
 		clock = pci->clock;
 	else 
@@ -142,6 +147,8 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
 	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
+	if( mal_session_uuid)
+		logadd("\"session\":\"%s\",%s",mal_session_uuid,prettify);
 
 	if( start){
 		logadd("\"state\":\"start\",%s", prettify);
@@ -190,18 +197,20 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 
 		/* generate actual call statement */
 		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
-		c = stmt;
+		if (stmt) {
+			c = stmt;
 
-		while (c && *c && isspace((int)*c))
-			c++;
-		if( *c){
-			stmtq = mal_quote(c, strlen(c));
-			if (stmtq != NULL) {
-				logadd("\"stmt\":\"%s\",%s", stmtq,prettify);
-				GDKfree(stmtq);
+			while (*c && isspace((int)*c))
+				c++;
+			if( *c){
+				stmtq = mal_quote(c, strlen(c));
+				if (stmtq != NULL) {
+					logadd("\"stmt\":\"%s\",%s", stmtq,prettify);
+					GDKfree(stmtq);
+				}
 			}
-		} 
-		GDKfree(stmt);
+			GDKfree(stmt);
+		}
 
 		// ship the beautified version as well
 
@@ -271,12 +280,20 @@ This information can be used to determine memory footprint and variable life tim
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
 				if( isaBatType(tpe) ){
 					BAT *d= BATdescriptor( bid = stk->stk[getArg(pci,j)].val.bval);
-					tname = getTypeName(getColumnType(tpe));
+					tname = getTypeName(getBatType(tpe));
 					logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
 					if( d) {
-						//if( isVIEW(d))
-							//bid = VIEWtparent(d);
+						BAT *v;
 						cnt = BATcount(d);
+						if( isVIEW(d)){
+							logadd("\"view\":\"true\",%s", pret);
+							logadd("\"parent\":\"%d\",%s", VIEWtparent(d), pret);
+							logadd("\"seqbase\":\""BUNFMT"\",%s", d->hseqbase, pret);
+							logadd("\"hghbase\":\""BUNFMT"\",%s", d->hseqbase + cnt, pret);
+							v= BBPquickdesc(VIEWtparent(d),0);
+							logadd("\"kind\":\"%s\",%s", (v &&  v->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
+						} else
+							logadd("\"kind\":\"%s\",%s", ( d->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
 						total += cnt * d->twidth;
 						total += heapinfo(d->tvheap, d->batCacheid); 
 						total += hashinfo(d->thash, d->batCacheid); 
@@ -693,24 +710,16 @@ TRACEcreate(const char *hnme, const char *tnme, int tt)
 	char buf[BUFSIZ];
 
 	snprintf(buf, BUFSIZ, "trace_%s_%s", hnme, tnme);
-	b = BATdescriptor(BBPindex(buf));
-	if (b) {
-		BBPincref(b->batCacheid, TRUE);
-		return b;
-	}
 
-	b = COLnew(0, tt, 1 << 16, PERSISTENT);
+	b = COLnew(0, tt, 1 << 16, TRANSIENT);
 	if (b == NULL)
 		return NULL;
-
-	BATmode(b, PERSISTENT);
 	BBPrename(b->batCacheid, buf);
-	BATcommit(b);
 	return b;
 }
 
 
-#define CLEANUPprofile(X)  if (X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence = TRANSIENT; } (X) = NULL;
+#define CLEANUPprofile(X)  if (X) { BBPunfix((X)->batCacheid); } (X) = NULL;
 
 static void
 _cleanupProfiler(void)
@@ -735,9 +744,9 @@ initTrace(void)
 {
 	int ret = -1;
 
-	MT_lock_set(&mal_contextLock);
+	MT_lock_set(&mal_profileLock);
 	if (TRACE_init) {
-		MT_lock_unset(&mal_contextLock);
+		MT_lock_unset(&mal_profileLock);
 		return 0;       /* already initialized */
 	}
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
@@ -773,34 +782,23 @@ initTrace(void)
 	else
 		TRACE_init = 1;
 	ret = TRACE_init;
-	MT_lock_unset(&mal_contextLock);
+	MT_lock_unset(&mal_profileLock);
 	return ret;
 }
 
 void
 clearTrace(void)
 {
-	MT_lock_set(&mal_contextLock);
+	MT_lock_set(&mal_profileLock);
 	if (TRACE_init == 0) {
-		MT_lock_unset(&mal_contextLock);
+		MT_lock_unset(&mal_profileLock);
+		initTrace();
 		return;     /* not initialized */
 	}
 	/* drop all trace tables */
-	BBPunfix(TRACE_id_event->batCacheid);
-	BBPunfix(TRACE_id_time->batCacheid);
-	BBPunfix(TRACE_id_pc->batCacheid);
-	BBPunfix(TRACE_id_thread->batCacheid);
-	BBPunfix(TRACE_id_ticks->batCacheid);
-	BBPunfix(TRACE_id_rssMB->batCacheid);
-	BBPunfix(TRACE_id_tmpspace->batCacheid);
-	BBPunfix(TRACE_id_inblock->batCacheid);
-	BBPunfix(TRACE_id_oublock->batCacheid);
-	BBPunfix(TRACE_id_minflt->batCacheid);
-	BBPunfix(TRACE_id_majflt->batCacheid);
-	BBPunfix(TRACE_id_nvcsw->batCacheid);
-	BBPunfix(TRACE_id_stmt->batCacheid);
+	_cleanupProfiler();
 	TRACE_init = 0;
-	MT_lock_unset(&mal_contextLock);
+	MT_lock_unset(&mal_profileLock);
 	initTrace();
 }
 
@@ -905,6 +903,17 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	eventcounter++;
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
+}
+
+int getprofilerlimit(void)
+{
+	return highwatermark;
+}
+
+void setprofilerlimit(int limit)
+{
+	// dont lock, it is advisary anyway
+	highwatermark = limit;
 }
 
 lng

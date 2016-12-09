@@ -15,14 +15,14 @@ Ready.
 
 
 #select debug;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 0	]
 #select @debug;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 0	]

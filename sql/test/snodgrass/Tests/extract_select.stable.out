@@ -45,14 +45,14 @@ Ready.
 # 15:25:32 >  
 
 #SELECT EXTRACT( YEAR FROM DATE '1970-01-01') = 1970;
-% . # table_name
-% year_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT EXTRACT( MINUTE FROM INTERVAL '12:34:56' HOUR TO SECOND ) = 34;
-% . # table_name
-% minute_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]

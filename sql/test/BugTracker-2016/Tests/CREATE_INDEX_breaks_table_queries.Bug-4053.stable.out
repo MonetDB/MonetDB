@@ -1,0 +1,110 @@
+stdout of test 'CREATE_INDEX_breaks_table_queries.Bug-4053` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 12:33:20 >  
+# 12:33:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37698" "--set" "mapi_usock=/var/tmp/mtest-15961/.s.monetdb.37698" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 12:33:20 >  
+
+# MonetDB 5 server v11.23.8
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:37698/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15961/.s.monetdb.37698
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 12:33:20 >  
+# 12:33:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15961" "--port=37698"
+# 12:33:20 >  
+
+#CREATE TABLE "sys"."farmap_movimento" (
+#	"id"                    SERIAL,
+#	"articolo_id"           BIGINT        NOT NULL,
+#	"farmacia_id"           INTEGER       NOT NULL,
+#	"causale_id"            INTEGER       NOT NULL,
+#	"ts"                    TIMESTAMP     NOT NULL,
+#	"anno"                  SMALLINT      NOT NULL,
+#	"mese"                  SMALLINT      NOT NULL,
+#	"data"                  CHARACTER LARGE OBJECT NOT NULL,
+#	"ora"                   CHARACTER LARGE OBJECT NOT NULL,
+#	"tipo_doc"              CHARACTER LARGE OBJECT NOT NULL,
+#CREATE INDEX "annomese_idx" ON "sys"."farmap_movimento" ("anno_mese");
+#CREATE INDEX "articolo_idx" ON "sys"."farmap_movimento" ("articolo_id");
+#CREATE INDEX "farmacia_idx" ON "sys"."farmap_movimento" ("farmacia_id");
+#SELECT * FROM "sys"."farmap_movimento" ORDER BY "id";
+% sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento,	sys.farmap_movimento # table_name
+% id,	articolo_id,	farmacia_id,	causale_id,	ts,	anno,	mese,	data,	ora,	tipo_doc,	num_doc,	num_riga,	flag_flusso,	tessera,	cassa,	operatore,	tipo_sconto,	tipo_vend,	ricetta_numero,	barcode_reg_asl,	barcode_ricettario,	anomalia_dominio,	anomalia_integrita,	anomalia_quadratura,	anomalia_congruenza,	offerta,	flag_ricetta,	flag_costo,	pagamento,	pagamento_modalita,	regola_prezzo,	regola_costo,	flag_sconto,	uscito_qta,	uscito_val,	uscito_val_n_iva,	uscito_listino,	uscito_listino_n_iva,	uscito_costo,	uscito_sconto_riga,	uscito_sconto_doc,	uscito_sconto_asl,	uscito_sconto_listino,	uscito_ricetta,	uscito_ticket,	uscito_ricetta_quota,	periodo,	flag_promo,	scontrino,	class_interna,	anno_mese,	anno_periodo # name
+% int,	bigint,	int,	int,	timestamp,	smallint,	smallint,	clob,	clob,	clob,	clob,	int,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	clob,	double,	double,	double,	double,	double,	double,	double,	double,	double,	double,	double,	double,	double,	int,	boolean,	bigint,	int,	int,	int # type
+% 1,	1,	1,	1,	26,	1,	1,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	24,	24,	24,	24,	24,	24,	24,	24,	24,	24,	24,	24,	24,	1,	5,	1,	1,	1,	1 # length
+#SELECT count(distinct "anno_mese") FROM "sys"."farmap_movimento";
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(distinct "articolo_id") FROM "sys"."farmap_movimento";
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(distinct "farmacia_id") FROM "sys"."farmap_movimento";
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#DROP TABLE "sys"."farmap_movimento";
+
+# 12:33:21 >  
+# 12:33:21 >  "Done."
+# 12:33:21 >  
+

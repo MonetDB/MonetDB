@@ -27,8 +27,8 @@ Ready.
 % 5 # length
 [ false	]
 #select not n.alive from nntest n;
-% sys.L # table_name
-% not_alive # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -39,8 +39,8 @@ Ready.
 % 5 # length
 [ false	]
 #select not not not n.alive from nntest n;
-% sys.L # table_name
-% not_alive # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]

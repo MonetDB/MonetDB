@@ -294,6 +294,9 @@ find_all_sql_func(sql_schema * s, const char *name, int type)
 			if (f->type == type && name[0] == b->name[0] && strcmp(name, b->name) == 0) {
 				if (!res)
 					res = list_create((fdestroy)NULL);
+				if (!res) {
+					return NULL;
+				}
 				list_append(res, f);
 			}
 		}

@@ -30,7 +30,7 @@ Ready.
 #FROM (
 #    SELECT *
 #    FROM bam.alignments_1
-% bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L,	bam.L # table_name
+% bam.L6,	bam.L10,	bam.L12,	bam.L14,	bam.L16,	bam.L20,	bam.L22,	bam.L24,	bam.L26,	bam.L30,	bam.L32,	bam.L34,	bam.L36,	bam.L40,	bam.L42,	bam.L44,	bam.L46,	bam.L50,	bam.L52,	bam.L54,	bam.L56 # table_name
 % qname,	f1_flag,	f1_rname,	f1_pos,	f1_mapq,	f1_cigar,	f1_rnext,	f1_pnext,	f1_tlen,	f1_seq,	f1_qual,	f2_flag,	f2_rname,	f2_pos,	f2_mapq,	f2_cigar,	f2_rnext,	f2_pnext,	f2_tlen,	f2_seq,	f2_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
@@ -41,7 +41,7 @@ Ready.
 #FROM (
 #   SELECT *
 #   FROM bam.unpaired_primary_alignments_3
-% .L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L,	.L # table_name
+% .L154,	.L156,	.L160,	.L162,	.L164,	.L166,	.L170,	.L172,	.L174,	.L176,	.L200,	.L202,	.L204,	.L206,	.L210,	.L212,	.L214,	.L216,	.L220,	.L222,	.L224 # table_name
 % qname,	f1_flag,	f1_rname,	f1_pos,	f1_mapq,	f1_cigar,	f1_rnext,	f1_pnext,	f1_tlen,	f1_seq,	f1_qual,	f2_flag,	f2_rname,	f2_pos,	f2_mapq,	f2_cigar,	f2_rnext,	f2_pnext,	f2_tlen,	f2_seq,	f2_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length

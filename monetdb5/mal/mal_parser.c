@@ -171,8 +171,6 @@ idCopy(Client cntxt, int length)
 	memcpy(s, CURRENT(cntxt), (size_t) length);
 	s[length] = 0;
 	/* avoid a clash with old temporaries */
-	if (s[0] == TMPMARKER)
-		s[0] = REFMARKER;
 	advance(cntxt, length);
 	return s;
 }
@@ -182,7 +180,6 @@ MALlookahead(Client cntxt, str kw, int length)
 {
 	int i;
 
-	skipSpace(cntxt);
 	/* avoid double test or use lowercase only. */
 	if (currChar(cntxt) == *kw &&
 		strncmp(CURRENT(cntxt), kw, length) == 0 &&
@@ -663,7 +660,7 @@ simpleTypeId(Client cntxt)
 		cntxt->yycur--; /* keep it */
 		return -1;
 	}
-	tpe = getTypeIndex(CURRENT(cntxt), l, -1);
+	tpe = getAtomIndex(CURRENT(cntxt), l, -1);
 	if (tpe < 0) {
 		parseError(cntxt, "Type identifier expected\n");
 		cntxt->yycur -= l; /* keep it */
@@ -690,34 +687,9 @@ parseTypeId(Client cntxt, int defaultType)
 			return TYPE_bat;
 		}
 
-/*
-		if (currChar(cntxt) == ']') {
-			i = newBatType(TYPE_void, tt);
-			if (kt > 0)
-				setAnyColumnIndex(i, kt);
-			nextChar(cntxt); // skip ] 
-			skipSpace(cntxt);
-			return i;
-		}
-		 Backward compatibility parsing of :bat[:oid,:type] 
-		if( tt != TYPE_oid){
-			parseError(cntxt, "':oid' expected\n");
-			return i;
-		}
-		if (currChar(cntxt) != ',')
-				parseError(cntxt, "',' expected\n");
-		nextChar(cntxt); // skip , 
-		skipSpace(cntxt);
-		if (currChar(cntxt) == ':') {
-			tt = simpleTypeId(cntxt);
-			kt = typeAlias(cntxt, tt);
-		} else
-			tt = TYPE_any;
-	*/
-
-		i = newBatType(TYPE_void, tt);
+		i = newBatType(tt);
 		if (kt > 0)
-			setAnyColumnIndex(i, kt);
+			setTypeIndex(i, kt);
 
 		if (currChar(cntxt) != ']')
 			parseError(cntxt, "']' expected\n");
@@ -725,20 +697,11 @@ parseTypeId(Client cntxt, int defaultType)
 		skipSpace(cntxt);
 		return i;
 	}
-	/* A pure BAT as generic type should be avoided .*/
-	if (s[0] == ':' && 
-	   ((s[1] == 'b' && s[2] == 'a' && s[3] == 't')  || 
-	    (s[1] == 'B' && s[2] == 'A' && s[3] == 'T')) && 
-	   !idCharacter[(int) s[4]]) {
-		advance(cntxt, 4);
-		//parseError(cntxt, "':bat[:oid,:any]' expected\n");
-		return TYPE_bat;
-	}
 	if (currChar(cntxt) == ':') {
 		tt = simpleTypeId(cntxt);
 		kt = typeAlias(cntxt, tt);
 		if (kt > 0)
-			setAnyColumnIndex(tt, kt);
+			setTypeIndex(tt, kt);
 		return tt;
 	}
 	parseError(cntxt, "<type identifier> expected\n");
@@ -819,7 +782,8 @@ binding(Client cntxt, MalBlkPtr curBlk, InstrPtr curInstr, int flag)
 	if (l > 0) {
 		varid = findVariableLength(curBlk, CURRENT(cntxt), l);
 		if (varid < 0) {
-			varid = newVariable(curBlk, idCopy(cntxt, l), TYPE_any);
+			varid = newVariable(curBlk, CURRENT(cntxt), l, TYPE_any);
+			advance(cntxt, l);
 			if ( varid < 0)
 				return curInstr;
 			type = typeElm(cntxt, TYPE_any);
@@ -866,7 +830,6 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 {
 	int i, idx, flag, free = 1;
 	ValRecord cst;
-	str v = NULL;
 	int cstidx = -1;
 	malType tpe = TYPE_any;
 
@@ -916,8 +879,8 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 		}
 	} else if ((i = idLength(cntxt))) {
 		if ((idx = findVariableLength(curBlk, CURRENT(cntxt), i)) == -1) {
-			v = idCopy(cntxt, i);
-			idx = newVariable(curBlk, v, TYPE_any);
+			idx = newVariable(curBlk, CURRENT(cntxt), i, TYPE_any);
+			advance(cntxt, i);
 			if( idx <0)
 				return 0;
 		} else {
@@ -953,7 +916,10 @@ parseAtom(Client cntxt)
 		tpe = TYPE_void;  /* no type qualifier */
 	else
 		tpe = parseTypeId(cntxt, TYPE_int);
-	malAtomDefinition(cntxt->fdout, modnme, tpe);
+	if( malAtomDefinition(cntxt->fdout, modnme, tpe) < 0){
+		skipToEnd(cntxt);
+		return 0;
+	}
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	cntxt->nspace->isAtomModule = TRUE;
 	skipSpace(cntxt);
@@ -961,36 +927,8 @@ parseAtom(Client cntxt)
 	return "";
 }
 
-static str
-parseLibrary(Client cntxt)
-{
-	str libnme = 0, s;
-	int l;
-	char *nxt;
-	ValRecord cst;
-
-	nxt = CURRENT(cntxt);
-	if ((l = idLength(cntxt)) <= 0) {
-		if ((l = cstToken(cntxt, &cst)) && cst.vtype == TYPE_str) {
-			advance(cntxt, l);
-			libnme = putNameLen(nxt + 1, l - 2);
-		} else
-			return parseError(cntxt, "<library name> or <library path> expected\n");
-	} else
-		libnme = putNameLen(nxt, l);
-	s = loadLibrary(libnme, TRUE);
-	(void) putNameLen(nxt, l);
-	if (s){
-		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
-		GDKfree(s);
-	}
-	advance(cntxt, l);
-	return "";
-}
-
 /*
- * It might be handy to clone a module.
- * It gets a copy of all functions known at the point of creation.
+ * All modules, except 'user', should be global
  */
 static str parseModule(Client cntxt)
 {
@@ -1003,22 +941,12 @@ static str parseModule(Client cntxt)
 		return parseError(cntxt, "<module path> expected\n");
 	modnme = putNameLen(nxt, l);
 	advance(cntxt, l);
+	if( ! isModuleDefined(cntxt->nspace,modnme))
+		newModule(NULL,modnme);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	skipSpace(cntxt);
 	helpInfo(cntxt, &cntxt->nspace->help);
 	return "";
-}
-
-static bit malConditionalInclude(str name) {
-	if (strcmp(name, "pyapi") == 0) {
-		return (GDKgetenv_istrue("embedded_py") || GDKgetenv_isyes("embedded_py"));
-	} else if (strcmp(name, "pyapi3") == 0) {
-		if (GDKgetenv_istrue("embedded_py3") || GDKgetenv_isyes("embedded_py3")) {
-			 //we cannot include both python2 and python3 because of linking issues, if both are enabled we only enable python2
-			return (!(GDKgetenv_istrue("embedded_py") || GDKgetenv_isyes("embedded_py")));
-		}
-	}
-	return true;
 }
 
 /*
@@ -1066,8 +994,6 @@ parseInclude(Client cntxt)
 		return 0;
 	}
 	skipToEnd(cntxt);
-
-	if (!malConditionalInclude(modnme)) return "";
 
 	s = loadLibrary(modnme, FALSE);
 	if (s) {
@@ -1138,6 +1064,11 @@ fcnHeader(Client cntxt, int kind)
 	if (currChar(cntxt) == '.') {
 		nextChar(cntxt); /* skip '.' */
 		modnme = fnme;
+		if (isModuleDefined(cntxt->nspace, modnme) == FALSE) {
+			parseError(cntxt, "<module> name not defined\n");
+			skipToEnd(cntxt);
+			return curBlk;
+		}
 		l = operatorLength(cntxt);
 		if (l == 0)
 			l = idLength(cntxt);
@@ -1148,7 +1079,8 @@ fcnHeader(Client cntxt, int kind)
 		}
 		fnme = putNameLen(((char *) CURRENT(cntxt)), l);
 		advance(cntxt, l);
-	}
+	} else 
+		modnme= cntxt->nspace->name;
 
 	/* temporary suspend capturing statements in main block */
 	if (cntxt->backup){
@@ -1156,38 +1088,20 @@ fcnHeader(Client cntxt, int kind)
 		skipToEnd(cntxt);
 		return 0;
 	}
-	cntxt->backup = cntxt->curprg;
-	cntxt->curprg = newFunction(putName("user"), fnme, kind);
-	curPrg = cntxt->curprg;
-	curBlk = curPrg->def;
-	curBlk->flowfixed = 0;
-	curBlk->typefixed = 0;
-	curInstr = getInstrPtr(curBlk, 0);
-
 	if (currChar(cntxt) != '('){
-		if (cntxt->backup) {
-			freeSymbol(cntxt->curprg);
-			cntxt->curprg = cntxt->backup;
-			cntxt->backup = 0;
-		}
 		parseError(cntxt, "function header '(' expected\n");
 		skipToEnd(cntxt);
 		return curBlk;
 	}
 	advance(cntxt, 1);
 
-	setModuleId(curInstr, modnme ? putName(modnme) :
-			putName(cntxt->nspace->name));
-
-	if (isModuleDefined(cntxt->nspace, getModuleId(curInstr)) == FALSE) {
-		if (cntxt->backup) {
-			freeSymbol(cntxt->curprg);
-			cntxt->curprg = cntxt->backup;
-			cntxt->backup = 0;
-		}
-		parseError(cntxt, "<module> name not defined\n");
-		return curBlk;
-	}
+	cntxt->backup = cntxt->curprg;
+	cntxt->curprg = newFunction( modnme, fnme, kind);
+	curPrg = cntxt->curprg;
+	curBlk = curPrg->def;
+	curBlk->flowfixed = 0;
+	curBlk->typefixed = 0;
+	curInstr = getInstrPtr(curBlk, 0);
 
 	/* get calling parameters */
 	ch = currChar(cntxt);
@@ -1379,7 +1293,6 @@ parseCommandPattern(Client cntxt, int kind)
 		insertSymbol(findModule(cntxt->nspace, modnme), curPrg);
 	else
 		return (MalBlkPtr) parseError(cntxt, "<module> not found\n");
-	trimMalBlk(curBlk);
 	chkProgram(cntxt->fdout, cntxt->nspace, curBlk);
 	if (cntxt->backup) {
 		cntxt->curprg = cntxt->backup;
@@ -1399,7 +1312,6 @@ parseCommandPattern(Client cntxt, int kind)
  * [note, command and patterns do not have a MAL block]
  */
 	if (MALkeyword(cntxt, "address", 7)) {
-		str nme;
 		int i;
 		i = idLength(cntxt);
 		if (i == 0) {
@@ -1407,13 +1319,17 @@ parseCommandPattern(Client cntxt, int kind)
 			return 0;
 		}
 		cntxt->blkmode = 0;
-		nme = idCopy(cntxt, i);
 		if (getModuleId(curInstr))
 			setModuleId(curInstr, NULL);
 		setModuleScope(curInstr,
 				findModule(cntxt->nspace, modnme));
-		curInstr->fcn = getAddress(cntxt->fdout, cntxt->srcFile, modnme, nme, 0);
-		curBlk->binding = nme;
+
+		memcpy(curBlk->binding, CURRENT(cntxt), (size_t)(i < IDLENGTH? i:IDLENGTH-1));
+		curBlk->binding[(i< IDLENGTH? i:IDLENGTH-1)] = 0;
+		/* avoid a clash with old temporaries */
+		advance(cntxt, i);
+		curInstr->fcn = getAddress(cntxt->fdout, cntxt->srcFile, curBlk->binding, 0);
+
 		if (cntxt->nspace->isAtomModule) {
 			if (curInstr->fcn == NULL) {
 				parseError(cntxt, "<address> not found\n");
@@ -1455,7 +1371,7 @@ parseFunction(Client cntxt, int kind)
 			return 0;
 		}
 		nme = idCopy(cntxt, i);
-		curInstr->fcn = getAddress(cntxt->fdout, cntxt->srcFile, cntxt->nspace->name, nme, 0);
+		curInstr->fcn = getAddress(cntxt->fdout, cntxt->srcFile, nme, 0);
 		GDKfree(nme);
 		if (curInstr->fcn == NULL) {
 			parseError(cntxt, "<address> not found\n");
@@ -1504,7 +1420,6 @@ parseEnd(Client cntxt)
 		}
 		pushEndInstruction(curBlk);
 		insertSymbol(cntxt->nspace, cntxt->curprg);
-		trimMalBlk(cntxt->curprg->def);
 		cntxt->blkmode = 0;
 		curBlk->typefixed = 0;
 		chkProgram(cntxt->fdout, cntxt->nspace, cntxt->curprg->def);
@@ -1551,9 +1466,9 @@ parseEnd(Client cntxt)
 
 #define GETvariable	\
 	if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1) { \
-		arg = idCopy(cntxt, l);	 \
-		varid = newVariable(curBlk, arg, TYPE_any);	\
-		assert(varid >=  0);\
+		varid = newVariable(curBlk, CURRENT(cntxt),l, TYPE_any);	\
+		advance(cntxt, l);\
+		if(varid <  0) return;\
 	} else \
 		advance(cntxt, l);
 
@@ -1598,7 +1513,12 @@ parseAssign(Client cntxt, int cntrl)
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
-	curInstr = newInstruction(curBlk, cntrl ? cntrl : ASSIGNsymbol);
+	curInstr = newInstruction(curBlk, NULL, NULL);
+	
+	if( cntrl){
+		curInstr->token = ASSIGNsymbol;
+		curInstr->barrier = cntrl;
+	}
 
 	/* start the parsing by recognition of the lhs of an assignment */
 	if (currChar(cntxt) == '(') {
@@ -1842,7 +1762,9 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 				*e = 0;
 			if (! skipcomments && e > start && curBlk->stop > 0 ) {
 				ValRecord cst;
-				curInstr = newInstruction(curBlk, REMsymbol);
+				curInstr = newInstruction(curBlk, NULL, NULL);
+				curInstr->token= REMsymbol;
+				curInstr->barrier= 0;
 				cst.vtype = TYPE_str;
 				cst.len = (int) strlen(start);
 				cst.val.sval = GDKstrdup(start);
@@ -1922,10 +1844,6 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 				continue;
 			goto allLeft;
 		case 'L': case 'l':
-			if (MALkeyword(cntxt, "library", 7)) {
-				parseLibrary(cntxt);
-				continue;
-			}
 			if (MALkeyword(cntxt, "leave", 5))
 				cntrl = LEAVEsymbol;
 			goto allLeft;

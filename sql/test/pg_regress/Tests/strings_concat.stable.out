@@ -39,7 +39,7 @@ Ready.
 #' - next line'
 #	' - third line'
 #	AS "Three lines to one";
-% .L # table_name
+% .L2 # table_name
 % Three lines to one # name
 % char # type
 % 35 # length

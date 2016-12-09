@@ -84,7 +84,9 @@ extern void exp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const 
 extern void exp_setrelname(sql_allocator *sa, sql_exp *e, int nr );
 
 extern void noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name );
+extern char* make_label(sql_allocator *sa, int nr);
 extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);
+extern sql_exp* exp_label_table(sql_allocator *sa, sql_exp *e, int nr);
 
 extern sql_exp * exp_copy( sql_allocator *sa, sql_exp *e);
 extern list * exps_copy( sql_allocator *sa, list *exps);
@@ -105,7 +107,7 @@ extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_equal( sql_exp *e1, sql_exp *e2);
-extern int exp_refers( sql_exp *c, sql_exp *p);
+extern int exp_refers( sql_exp *p, sql_exp *c);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
 /* match just the column (cmp equality) expressions */
@@ -116,9 +118,11 @@ extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
 extern int exp_is_join_exp(sql_exp *e);
 extern int exp_is_atom(sql_exp *e);
+extern int exp_is_zero(mvc *sql, sql_exp *e);
 extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
 extern int exp_unsafe(sql_exp *e);
+extern int exp_has_sideeffect(sql_exp *e);
 
 /* returns 0 when the relation contain the passed expression else < 0 */
 extern int rel_has_exp(sql_rel *rel, sql_exp *e);
@@ -132,12 +136,12 @@ extern sql_exp *exps_bind_column( list *exps, const char *cname, int *ambiguous)
 extern sql_exp *exps_bind_column2( list *exps, const char *rname, const char *cname);
 extern sql_exp *exps_bind_alias( list *exps, const char *rname, const char *cname);
 
-extern int exps_card( list *l );
+extern unsigned int exps_card( list *l );
 extern void exps_fix_card( list *exps, int card);
 extern void exps_setcard( list *exps, int card);
 extern int exps_intern(list *exps);
 
-extern char *compare_func( comp_type t );
+extern char *compare_func( comp_type t, int anti );
 extern int is_identity( sql_exp *e, sql_rel *r);
 
 extern atom *exp_flatten(mvc *sql, sql_exp *e);

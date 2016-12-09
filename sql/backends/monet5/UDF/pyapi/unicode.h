@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "pyapi.h"
+#include "pyheader.h"
 
 //! Returns the amount of characters in the utf8 formatted string, returns -1 if the string is not a valid utf8 string
 /* Arguments:
@@ -72,6 +72,6 @@ int utf8_char_to_utf32_char(size_t position, Py_UNICODE *utf32_storage, int offs
 */
 int utf32_char_to_utf8_char(size_t position, char *utf8_storage, unsigned int utf32_char);
 
-NUMPY_IMPORT_ARRAY_RETTYPE _unicode_init(void);
+void _unicode_init(void);
 
 #endif /* _UNICODE_LIB_ */

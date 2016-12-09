@@ -62,7 +62,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *query, *dquery;
 	char *maxval = NULL, *minval = NULL;
 	str sch = 0, tbl = 0, col = 0;
-	int sorted;
+	int sorted, revsorted;
 	lng nils = 0;
 	lng uniq = 0;
 	lng samplesize = *getArgReference_lng(stk, pci, 2);
@@ -153,7 +153,13 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 						if( bsample)
 							BBPunfix(bsample->batCacheid);
-						sorted = BATtordered(bn);
+						/* use BATordered(_rev)
+						 * and not
+						 * BATt(rev)ordered
+						 * because we want to
+						 * know for sure */
+						sorted = BATordered(bn);
+						revsorted = BATordered_rev(bn);
 
 						// Gather the min/max value for builtin types
 						width = bn->twidth;
@@ -171,7 +177,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							snprintf(maxval, 4, "nil");
 							snprintf(minval, 4, "nil");
 						}
-						snprintf(query, 8192, "insert into sys.statistics values(%d,'%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s);", c->base.id, c->type.type->sqlname, width, (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false");
+						snprintf(query, 8192, "insert into sys.statistics (column_id,type,width,stamp,\"sample\",count,\"unique\",nils,minval,maxval,sorted,revsorted) values(%d,'%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s,%s);", c->base.id, c->type.type->sqlname, width, (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false", revsorted ? "true" : "false");
 #ifdef DEBUG_SQL_STATISTICS
 						mnstr_printf(cntxt->fdout, "%s\n", dquery);
 						mnstr_printf(cntxt->fdout, "%s\n", query);

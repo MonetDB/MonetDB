@@ -37,19 +37,17 @@ function user.qry():void;               	#[0] (0)  0
 barrier (x:oid,z:int) := iterator.new(b:bat[:int]);	#[5] (0) ITRbunIterator 7 8 <- 1 
     io.print(x:oid);                    	#[6] (0) IOprint_val 9 <- 7 
 exit (x:oid,z:int);                     	#[7] (0)  7 8 
-    b:bat[:int] := nil:bat[:int];       	#[8] (0)  1 <- 16 
-barrier (x:oid,z:int) := iterator.new(c:bat[:int]);	#[9] (0) ITRbunIterator 7 8 <- 3 
-    io.print(x:oid);                    	#[10] (0) IOprint_val 10 <- 7 
-    redo (x:oid,z:int) := iterator.next(c:bat[:int]);	#[11] (0) ITRbunNext 7 8 <- 3 
-exit (x:oid,z:int);                     	#[12] (0)  7 8 
-    c:bat[:int] := nil:bat[:int];       	#[13] (0)  3 <- 18 
+barrier (x:oid,z:int) := iterator.new(c:bat[:int]);	#[8] (0) ITRbunIterator 7 8 <- 3 
+    io.print(x:oid);                    	#[9] (0) IOprint_val 10 <- 7 
+    redo (x:oid,z:int) := iterator.next(c:bat[:int]);	#[10] (0) ITRbunNext 7 8 <- 3 
+exit (x:oid,z:int);                     	#[11] (0)  7 8 
 # do not close d, it may be reused 
-barrier go:bit := true:bit;             	#[15] (0)  12 <- 13 
-    io.print(d:bat[:int]);              	#[16] (0) IOprint_val 14 <- 4 
-    redo go:bit := true:bit;            	#[17] (0)  12 <- 13 
-exit go:bit;                            	#[18] (0)  12 
-    d:bat[:int] := nil:bat[:int];       	#[19] (0)  4 <- 20 
-end user.qry;                           	#[20] (0)  
+barrier go:bit := true:bit;             	#[13] (0)  12 <- 13 
+    io.print(d:bat[:int]);              	#[14] (0) IOprint_val 14 <- 4 
+    redo go:bit := true:bit;            	#[15] (0)  12 <- 13 
+exit go:bit;                            	#[16] (0)  12 
+end user.qry;                           	#[17] (0)  
+#garbagecollector     actions= 1 time=22 usec 
 function user.qry():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     c:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 3 <- 2 
@@ -58,19 +56,17 @@ function user.qry():void;               	#[0] (0)  0
 barrier (x:oid,z:int) := iterator.new(b:bat[:int]);	#[5] (0) ITRbunIterator 7 8 <- 1 
     io.print(x:oid);                    	#[6] (0) IOprint_val 9 <- 7 
 exit (x:oid,z:int);                     	#[7] (0)  7 8 
-    b:bat[:int] := nil:bat[:int];       	#[8] (0)  1 <- 16 
-barrier (x:oid,z:int) := iterator.new(c:bat[:int]);	#[9] (0) ITRbunIterator 7 8 <- 3 
-    io.print(x:oid);                    	#[10] (0) IOprint_val 10 <- 7 
-    redo (x:oid,z:int) := iterator.next(c:bat[:int]);	#[11] (0) ITRbunNext 7 8 <- 3 
-exit (x:oid,z:int);                     	#[12] (0)  7 8 
-    c:bat[:int] := nil:bat[:int];       	#[13] (0)  3 <- 18 
+barrier (x:oid,z:int) := iterator.new(c:bat[:int]);	#[8] (0) ITRbunIterator 7 8 <- 3 
+    io.print(x:oid);                    	#[9] (0) IOprint_val 10 <- 7 
+    redo (x:oid,z:int) := iterator.next(c:bat[:int]);	#[10] (0) ITRbunNext 7 8 <- 3 
+exit (x:oid,z:int);                     	#[11] (0)  7 8 
 # do not close d, it may be reused      
-barrier go:bit := true:bit;             	#[15] (0)  12 <- 13 
-    io.print(d:bat[:int]);              	#[16] (0) IOprint_val 14 <- 4 
-    redo go:bit := true:bit;            	#[17] (0)  12 <- 13 
-exit go:bit;                            	#[18] (0)  12 
-    d:bat[:int] := nil:bat[:int];       	#[19] (0)  4 <- 20 
-end user.qry;                           	#[20] (0)  
+barrier go:bit := true:bit;             	#[13] (0)  12 <- 13 
+    io.print(d:bat[:int]);              	#[14] (0) IOprint_val 14 <- 4 
+    redo go:bit := true:bit;            	#[15] (0)  12 <- 13 
+exit go:bit;                            	#[16] (0)  12 
+end user.qry;                           	#[17] (0)  
+#garbagecollector     actions= 1 time=22 usec 
 
 # 23:17:49 >  
 # 23:17:49 >  Done.

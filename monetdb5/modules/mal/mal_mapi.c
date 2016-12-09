@@ -36,6 +36,11 @@
 #include <mapi.h>
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>		/* RAND_bytes() */
+#else
+#ifdef HAVE_COMMONCRYPTO
+# include <CommonCrypto/CommonCrypto.h>
+# include <CommonCrypto/CommonRandom.h>
+#endif
 #endif
 #ifdef _WIN32   /* Windows specific */
 # include <winsock.h>
@@ -80,23 +85,31 @@ static void generateChallenge(str buf, int min, int max) {
 	 * during the same second */
 #ifdef HAVE_OPENSSL
 	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(&size, sizeof(size)) != kCCSuccess)
+#endif
 #endif
 		size = rand();
 	size = (size % (max - min)) + min;
 #ifdef HAVE_OPENSSL
-	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
+	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0)
 		for (i = 0; i < size; i++)
 			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
-	} else {
+	else
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(buf, size) == kCCSuccess)
+		for (i = 0; i < size; i++)
+			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
+	else
+#endif
 #endif
 		for (i = 0; i < size; i++) {
 			bte = rand();
 			bte %= 62;
 			buf[i] = seedChars[bte];
 		}
-#ifdef HAVE_OPENSSL
-	}
-#endif
 	buf[i] = '\0';
 }
 
@@ -114,29 +127,30 @@ doChallenge(void *data)
 	char *buf = (char *) GDKmalloc(BLOCK + 1);
 	char challenge[13];
 	char *algos;
-	stream *fdin = block_stream(((struct challengedata *) data)->in);
-	stream *fdout = block_stream(((struct challengedata *) data)->out);
+	stream *fdin = ((struct challengedata *) data)->in;
+	stream *fdout = ((struct challengedata *) data)->out;
 	bstream *bs;
-	int len = 0;
+	ssize_t len = 0;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif
-	GDKfree(data);
 	if (buf == NULL || fdin == NULL || fdout == NULL){
-		if (fdin) {
-			mnstr_close(fdin);
-			mnstr_destroy(fdin);
-		}
-		if (fdout) {
-			mnstr_close(fdout);
-			mnstr_destroy(fdout);
-		}
+		if (fdin)
+			close_stream(fdin);
+		else
+			close_stream(((struct challengedata *) data)->in);
+		if (fdout)
+			close_stream(fdout);
+		else
+			close_stream(((struct challengedata *) data)->out);
+		GDKfree(data);
 		if (buf)
 			GDKfree(buf);
 		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 		return;
 	}
+	GDKfree(data);
 
 	/* generate the challenge string */
 	generateChallenge(challenge, 8, 12);
@@ -155,12 +169,10 @@ doChallenge(void *data)
 	free(algos);
 	mnstr_flush(fdout);
 	/* get response */
-	if ((len = (int) mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
-		/* the client must have gone away, so no reason to write something */
-		mnstr_close(fdin);
-		mnstr_destroy(fdin);
-		mnstr_close(fdout);
-		mnstr_destroy(fdout);
+	if ((len = mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
+		/* the client must have gone away, so no reason to write anything */
+		close_stream(fdin);
+		close_stream(fdout);
 		GDKfree(buf);
 		return;
 	}
@@ -175,16 +187,9 @@ doChallenge(void *data)
 	bs = bstream_create(fdin, 128 * BLOCK);
 
 	if (bs == NULL){
-		if (fdin) {
-			mnstr_close(fdin);
-			mnstr_destroy(fdin);
-		}
-		if (fdout) {
-			mnstr_close(fdout);
-			mnstr_destroy(fdout);
-		}
-		if (buf)
-			GDKfree(buf);
+		close_stream(fdin);
+		close_stream(fdout);
+		GDKfree(buf);
 		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 		return;
 	}
@@ -334,6 +339,7 @@ SERVERlistenThread(SOCKET *Sock)
 				{	int *c_d;
 					/* filedescriptor, put it in place of msgsock */
 					cmsg = CMSG_FIRSTHDR(&msgh);
+					shutdown(msgsock, SHUT_WR);
 					closesocket(msgsock);
 					if (!cmsg || cmsg->cmsg_type != SCM_RIGHTS) {
 						fprintf(stderr, "!mal_mapi.listen: "
@@ -365,17 +371,43 @@ SERVERlistenThread(SOCKET *Sock)
 		fflush(stdout);
 #endif
 		data = GDKmalloc(sizeof(*data));
+		if( data == NULL){
+			closesocket(msgsock);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot allocate space");
+			continue;
+		}
 		data->in = socket_rastream(msgsock, "Server read");
 		data->out = socket_wastream(msgsock, "Server write");
-		if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {
-			mnstr_printf(data->out, "!internal server error (cannot fork new "
-						 "client thread), please try again later\n");
-			mnstr_flush(data->out);
+		if (data->in == NULL || data->out == NULL) {
+			mnstr_destroy(data->in);
+			mnstr_destroy(data->out);
+			GDKfree(data);
+			closesocket(msgsock);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot allocate stream");
+			continue;
+		}
+		data->in = block_stream(data->in);
+		data->out = block_stream(data->out);
+		if (data->in == NULL || data->out == NULL) {
+			mnstr_destroy(data->in);
+			mnstr_destroy(data->out);
+			GDKfree(data);
+			closesocket(msgsock);
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot allocate stream");
+			continue;
+		}
+		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+			mnstr_destroy(data->in);
+			mnstr_destroy(data->out);
+			GDKfree(data);
+			closesocket(msgsock);
 			showException(GDKstdout, MAL, "initClient",
 						  "cannot fork new client thread");
-			GDKfree(data);
+			continue;
 		}
-		GDKregister(tid);
 	} while (!ATOMIC_GET(serverexiting, atomicLock) &&
 			 !GDKexiting());
 	(void) ATOMIC_DEC(nlistener, atomicLock);
@@ -759,17 +791,22 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	(void) res;
 	/* in embedded mode we allow just one client */
 	data = GDKmalloc(sizeof(*data));
-	data->in = *In;
-	data->out = *Out;
-	if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {
-		mnstr_printf(data->out, "!internal server error (cannot fork new "
-					 "client thread), please try again later\n");
-		mnstr_flush(data->out);
-		showException(GDKstdout, MAL, "mapi.SERVERclient",
-					  "cannot fork new client thread");
-		free(data);
+	if( data == NULL)
+		throw(MAL, "mapi.SERVERclient", MAL_MALLOC_FAIL);
+	data->in = block_stream(*In);
+	data->out = block_stream(*Out);
+	if (data->in == NULL || data->out == NULL) {
+		mnstr_destroy(data->in);
+		mnstr_destroy(data->out);
+		GDKfree(data);
+		throw(MAL, "mapi.SERVERclient", MAL_MALLOC_FAIL);
 	}
-	GDKregister(tid);
+	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+		mnstr_destroy(data->in);
+		mnstr_destroy(data->out);
+		free(data);
+		throw(MAL, "mapi.SERVERclient", "cannot fork new client thread");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -1391,7 +1428,6 @@ SERVERfetch_field_bat(bat *bid, int *key){
 		}
 		BUNappend(b,fld, FALSE);
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	*bid = b->batCacheid;
 	BBPkeepref(*bid);
 	return MAL_SUCCEED;
@@ -1601,7 +1637,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	key= getArgReference_int(stk,pci,pci->retc);
 	qry= getArgReference_str(stk,pci,pci->retc+1);
 	accessTest(*key, "rpc");
-	tt= getColumnType(getVarType(mb,getArg(pci,0)));
+	tt= getBatType(getVarType(mb,getArg(pci,0)));
 
 	hdl= mapi_query(mid, *qry);
 	catchErrors("mapi.rpc");
@@ -1614,7 +1650,6 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		SERVERfieldAnalysis(fld2, tt, &tval);
 		BUNappend(b,VALptr(&tval), FALSE);
 	}
-	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 
@@ -1650,7 +1685,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 		/* reconstruct the object */
 		ht = getTypeName(TYPE_oid);
-		tt = getTypeName(getColumnType(tpe));
+		tt = getTypeName(getBatType(tpe));
 		snprintf(buf,BUFSIZ,"%s:= bat.new(:%s,%s);", *nme, ht,tt );
 		len = (int) strlen(buf);
 		snprintf(buf+len,BUFSIZ-len,"%s:= io.import(%s,tuples);", *nme, *nme);
@@ -1729,7 +1764,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		tab= getArgReference_str(stk,pci,pci->retc+2);
 		col= getArgReference_str(stk,pci,pci->retc+3);
 		i= *getArgReference_int(stk,pci,pci->retc+4);
-		tn = getTypeName(getColumnType(getVarType(mb,getDestVar(pci))));
+		tn = getTypeName(getBatType(getVarType(mb,getDestVar(pci))));
 		snprintf(buf,BUFSIZ,"%s:bat[:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 			getVarName(mb,getDestVar(pci)),
 			tn,
@@ -1744,7 +1779,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		str hn,tn;
 		int target= getArgType(mb,pci,0);
 		hn= getTypeName(TYPE_oid);
-		tn= getTypeName(getColumnType(target));
+		tn= getTypeName(getBatType(target));
 		snprintf(buf,BUFSIZ,"%s:bat[:%s]:=bbp.bind(\"%s\");",
 			getVarName(mb,getDestVar(pci)), tn, *nme);
 		GDKfree(hn);

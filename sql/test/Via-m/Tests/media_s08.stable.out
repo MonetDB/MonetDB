@@ -24,8 +24,16 @@ Ready.
 # 15:59:06 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=39269 
 # 15:59:06 >  
 
-% . # table_name
-% single_value # name
+# 17:12:40 >  
+# 17:12:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26340" "--port=31202"
+# 17:12:40 >  
+
+#declare id_media_description integer;
+#set id_media_description = -1234567890;
+#set id_media_description =  add_media_description('description 1');
+#select id_media_description;
+% .L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 [ 2	]

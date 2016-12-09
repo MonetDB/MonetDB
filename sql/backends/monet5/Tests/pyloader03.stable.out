@@ -1,0 +1,402 @@
+stdout of test 'pyloader03` in directory 'sql/backends/monet5` itself:
+
+
+# 13:26:39 >  
+# 13:26:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37683" "--set" "mapi_usock=/var/tmp/mtest-30229/.s.monetdb.37683" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_py=true"
+# 13:26:39 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.682 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin:37683/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30229/.s.monetdb.37683
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+
+Ready.
+
+# 13:26:40 >  
+# 13:26:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30229" "--port=37683"
+# 13:26:40 >  
+
+#START TRANSACTION;
+#CREATE TABLE restable(a1 INTEGER, a2 INTEGER, a3 INTEGER, a4 INTEGER);
+#CREATE LOADER myloader(nvalues INTEGER) LANGUAGE PYTHON {
+#    a1 = numpy.arange(nvalues)
+#    a2 = (a1 * 2).astype(numpy.float64)
+#    a3 = (a1 * 4 + 20).astype(numpy.float32)
+#    a4 = ((a3 - a2) * 3).astype(numpy.int64)
+#    _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
+#};
+#COPY INTO restable FROM LOADER myloader(10);
+[ 10	]
+#SELECT * FROM restable;
+% sys.restable,	sys.restable,	sys.restable,	sys.restable # table_name
+% a1,	a2,	a3,	a4 # name
+% int,	int,	int,	int # type
+% 1,	2,	2,	3 # length
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 2,	4,	28,	72	]
+[ 3,	6,	32,	78	]
+[ 4,	8,	36,	84	]
+[ 5,	10,	40,	90	]
+[ 6,	12,	44,	96	]
+[ 7,	14,	48,	102	]
+[ 8,	16,	52,	108	]
+[ 9,	18,	56,	114	]
+#DROP TABLE restable;
+#DROP LOADER myloader;
+#CREATE TABLE restable(a1 INTEGER, a2 BIGINT, a3 SMALLINT, a4 REAL);
+#CREATE LOADER myloader() LANGUAGE PYTHON {
+#    a1 = [1,2,3,4,5]
+#    a2 = (numpy.array(a1) * 2).astype(numpy.object)
+#    a3 = [42, 43, 44, 45, 46]
+#    a4 = ["33", "44", "55", "66", "77"]
+#    _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
+#};
+#COPY INTO restable FROM LOADER myloader();
+[ 5	]
+#SELECT * FROM restable;
+% sys.restable,	sys.restable,	sys.restable,	sys.restable # table_name
+% a1,	a2,	a3,	a4 # name
+% int,	bigint,	smallint,	real # type
+% 1,	2,	2,	15 # length
+[ 1,	2,	42,	33	]
+[ 2,	4,	43,	44	]
+[ 3,	6,	44,	55	]
+[ 4,	8,	45,	66	]
+[ 5,	10,	46,	77	]
+#DROP TABLE restable;
+#DROP LOADER myloader;
+#CREATE TABLE restable(a1 INTEGER, a2 BIGINT, a3 SMALLINT, a4 REAL);
+#CREATE LOADER myloader() LANGUAGE PYTHON {
+#    a1 = numpy.arange(100)
+#    a2 = numpy.arange(200)
+#    a3 = numpy.arange(300)
+#    a4 = numpy.arange(400)
+#    _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
+#};
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE restable(a1 INTEGER, a2 BIGINT, a3 SMALLINT, a4 REAL);
+#CREATE LOADER myloader(nvalues INTEGER) LANGUAGE PYTHON {
+#    arr_vals = numpy.arange(nvalues)
+#    a1 = numpy.ma.masked_array(arr_vals, mask=numpy.mod(arr_vals, 2) == 0)
+#    a2 = a1 * 2
+#    a3 = numpy.ma.masked_array(arr_vals, mask=arr_vals < nvalues / 2)
+#    a4 = [None] * nvalues
+#    _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
+#};
+#COPY INTO restable FROM LOADER myloader(50);
+[ 50	]
+#SELECT * FROM restable;
+% sys.restable,	sys.restable,	sys.restable,	sys.restable # table_name
+% a1,	a2,	a3,	a4 # name
+% int,	bigint,	smallint,	real # type
+% 2,	2,	2,	15 # length
+[ NULL,	NULL,	NULL,	NULL	]
+[ 1,	2,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 3,	6,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 5,	10,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 7,	14,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 9,	18,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 11,	22,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 13,	26,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 15,	30,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 17,	34,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 19,	38,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 21,	42,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 23,	46,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ 25,	50,	25,	NULL	]
+[ NULL,	NULL,	26,	NULL	]
+[ 27,	54,	27,	NULL	]
+[ NULL,	NULL,	28,	NULL	]
+[ 29,	58,	29,	NULL	]
+[ NULL,	NULL,	30,	NULL	]
+[ 31,	62,	31,	NULL	]
+[ NULL,	NULL,	32,	NULL	]
+[ 33,	66,	33,	NULL	]
+[ NULL,	NULL,	34,	NULL	]
+[ 35,	70,	35,	NULL	]
+[ NULL,	NULL,	36,	NULL	]
+[ 37,	74,	37,	NULL	]
+[ NULL,	NULL,	38,	NULL	]
+[ 39,	78,	39,	NULL	]
+[ NULL,	NULL,	40,	NULL	]
+[ 41,	82,	41,	NULL	]
+[ NULL,	NULL,	42,	NULL	]
+[ 43,	86,	43,	NULL	]
+[ NULL,	NULL,	44,	NULL	]
+[ 45,	90,	45,	NULL	]
+[ NULL,	NULL,	46,	NULL	]
+[ 47,	94,	47,	NULL	]
+[ NULL,	NULL,	48,	NULL	]
+[ 49,	98,	49,	NULL	]
+#DROP TABLE restable;
+#DROP LOADER myloader;
+#CREATE TABLE restable(a1 INTEGER, a2 BIGINT, a3 SMALLINT, a4 REAL);
+#CREATE LOADER myloader() LANGUAGE PYTHON {
+#    a1 = 1
+#    a2 = 2
+#    a3 = 3
+#    a4 = 4
+#    _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
+#    a1 = [1,2,3,4,5]
+#    a2 = (numpy.array(a1) * 2).astype(numpy.object)
+#    a3 = [42, 43, 44, 45, 46]
+#    a4 = ["33", "44", "55", "66", "77"]
+#    _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
+#    for i in range(100):
+#        a1 = numpy.arange(2)
+#        a2 = (a1 * 2).astype(numpy.float64)
+#        a3 = (a1 * 4 + 20).astype(numpy.float32)
+#        a4 = ((a3 - a2) * 3).astype(numpy.int64)
+#COPY INTO restable FROM LOADER myloader();
+[ 216	]
+#SELECT * FROM restable;
+% sys.restable,	sys.restable,	sys.restable,	sys.restable # table_name
+% a1,	a2,	a3,	a4 # name
+% int,	bigint,	smallint,	real # type
+% 2,	2,	2,	15 # length
+[ 1,	2,	3,	4	]
+[ 1,	2,	42,	33	]
+[ 2,	4,	43,	44	]
+[ 3,	6,	44,	55	]
+[ 4,	8,	45,	66	]
+[ 5,	10,	46,	77	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 0,	0,	20,	60	]
+[ 1,	2,	24,	66	]
+[ 42,	42,	42,	42	]
+[ 42,	42,	42,	42	]
+[ 42,	42,	42,	42	]
+[ 42,	42,	42,	42	]
+[ 42,	42,	42,	42	]
+[ 42,	42,	42,	42	]
+[ 42,	42,	42,	42	]
+[ 42,	42,	42,	42	]
+[ 42,	42,	42,	42	]
+[ 42,	42,	42,	42	]
+#DROP TABLE restable;
+#DROP LOADER myloader;
+#ROLLBACK;
+
+# 13:26:40 >  
+# 13:26:40 >  "Done."
+# 13:26:40 >  
+

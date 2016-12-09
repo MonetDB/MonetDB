@@ -26,8 +26,8 @@ Ready.
 
 [ 2	]
 #select f(i) from t;
-% sys.L # table_name
-% f_i # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -13,6 +13,10 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:34708/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11915/.s.monetdb.34708
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 
 Ready.
 Running database upgrade commands:
@@ -21,6 +25,11 @@ create procedure sys.createorderindex(sys string, tab string, col string)
 external name sql.createorderindex;
 create procedure sys.droporderindex(sys string, tab string, col string)
 external name sql.droporderindex;
+drop function sys.zorder_decode_y;
+drop function sys.zorder_decode_x;
+drop function sys.zorder_encode;
+create function profiler.getprofilerlimit() returns integer external name profiler.getprofilerlimit;
+create procedure  profiler.setprofilerlimit(lim integer) external name profiler.setprofilerlimit;
 drop view sys.tablestoragemodel;
 drop view sys.storagemodel;
 drop function sys.storagemodel();
@@ -30,6 +39,8 @@ drop function sys."storage"(string, string);
 drop function sys."storage"(string);
 drop view sys."storage";
 drop function sys."storage"();
+alter table sys.storagemodelinput add column "revsorted" boolean;
+alter table sys.storagemodelinput add column "unique" boolean;
 alter table sys.storagemodelinput add column "orderidx" bigint;
 create function sys."storage"()
 returns table (
@@ -47,6 +58,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -67,6 +80,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -86,6 +101,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -105,6 +122,8 @@ returns table (
  phash boolean,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint
 )
 external name sql."storage";
@@ -112,7 +131,7 @@ create procedure sys.storagemodelinit()
 begin
  delete from sys.storagemodelinput;
  insert into sys.storagemodelinput
- select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.orderidx from sys."storage"() X;
+ select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X."unique", X.orderidx from sys."storage"() X;
  update sys.storagemodelinput
  set reference = true
  where concat(concat("schema","table"), "column") in (
@@ -141,6 +160,8 @@ returns table (
  hashes bigint,
  "imprints" bigint,
  sorted boolean,
+ revsorted boolean,
+ "unique" boolean,
  orderidx bigint)
 begin
  return select I."schema", I."table", I."column", I."type", I."count",
@@ -148,7 +169,7 @@ begin
  heapsize(I."type", I."distinct", I."atomwidth"),
  hashsize(I."reference", I."count"),
  imprintsize(I."count",I."type"),
- I.sorted, I.orderidx
+ I.sorted, I.revsorted, I."unique", I.orderidx
  from sys.storagemodelinput I;
 end;
 create view sys.storagemodel as select * from sys.storagemodel();
@@ -161,8 +182,11 @@ as select "schema","table",max(count) as "count",
  sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";
 update sys._tables set system = true where name in ('storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+alter table sys.statistics add column "revsorted" boolean;
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
 insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('getprofilerlimit') and f.type = 1 and f.schema_id = s.id and s.name = 'profiler');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('setprofilerlimit') and f.type = 2 and f.schema_id = s.id and s.name = 'profiler');
 delete from systemfunctions where function_id not in (select id from functions);
 set schema "testschema";
 
@@ -202,13 +226,13 @@ delete from systemfunctions where function_id not in (select id from functions);
 set schema "testschema";
 
 
-# 14:42:26 >  
-# 14:42:26 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 14:42:26 >  
+# 11:47:58 >  
+# 11:47:58 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 11:47:58 >  
 
 #select count(*) from testschema.smallstring;
-% testschema.L1 # table_name
-% L1 # name
+% testschema.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 66	]

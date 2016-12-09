@@ -13,9 +13,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-opt_export int OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str OPTmultiplexSimple(Client cntxt, MalBlkPtr mb);
-
-#define OPTDEBUGmultiplex  if ( optDebug & ((lng)1 <<DEBUG_OPT_MULTIPLEX) )
+mal_export int OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str OPTmultiplexSimple(Client cntxt, MalBlkPtr mb);
 
 #endif

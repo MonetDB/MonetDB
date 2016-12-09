@@ -35,16 +35,12 @@ typedef char* err;
 
 /* when not writing to stderr, one has to flush, make it easy to do so */
 #define Mfprintf(S, ...)						\
-	if( S) 										\
 	do {										\
-		fprintf(S, __VA_ARGS__);				\
-		fflush(S);								\
+		if (S) {								\
+			fprintf(S, __VA_ARGS__);			\
+			fflush(S);							\
+		}										\
 	} while (0)
-
-char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-void terminateProcess(void *p);
-void logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream);
 
 typedef enum _mtype {
 	MERO = 1,
@@ -56,16 +52,22 @@ typedef struct _dpair {
 	int out;          /* where to read stdout messages from */
 	int err;          /* where to read stderr messages from */
 	mtype type;       /* type of process */
+	short flag;		  /* flag internal to logListener */
 	pid_t pid;        /* this process' id */
 	char *dbname;     /* the database that this server serves */
 	struct _dpair* next;
 }* dpair;
 
+char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+void terminateProcess(pid_t pid, char *dbname, mtype type, int lock);
+void logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int rest);
+
 extern char *_mero_mserver;
 extern dpair _mero_topdp;
 extern pthread_mutex_t _mero_topdp_lock;
-extern int _mero_keep_logging;
-extern char _mero_keep_listening;
+extern volatile int _mero_keep_logging;
+extern volatile char _mero_keep_listening;
 extern FILE *_mero_logfile;
 extern unsigned short _mero_port;
 extern FILE *_mero_discout;

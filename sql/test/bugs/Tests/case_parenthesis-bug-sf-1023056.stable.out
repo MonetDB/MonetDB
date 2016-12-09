@@ -32,8 +32,8 @@ Ready.
 #	else 0 
 #end )) 
 #from t1023056;
-% sys.L # table_name
-% ifthenelse_isnull_or_=_name # name
+% sys.L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 1	]

@@ -1,0 +1,50 @@
+stdout of test 'nested-mal-with-multiplex.Bug-4035` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 15:47:42 >  
+# 15:47:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33295" "--set" "mapi_usock=/var/tmp/mtest-30631/.s.monetdb.33295" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 15:47:42 >  
+
+# MonetDB 5 server v11.23.6 (hg id: 4e7a78efe818+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:33295/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30631/.s.monetdb.33295
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:47:43 >  
+# 15:47:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30631" "--port=33295"
+# 15:47:43 >  
+
+#CREATE FUNCTION geographic_to_cartesian(lat FLOAT, lon FLOAT) RETURNS POINT /* convert geographic coordinates to Cartesian while creating a point */
+#BEGIN
+#    DECLARE deg_to_rad FLOAT, lat_rad FLOAT, lon_rad FLOAT, aux1 FLOAT, aux2 FLOAT;
+#    SET deg_to_rad = pi() / 180;
+#    SET lat_rad = lat * deg_to_rad;
+#    SET lon_rad = lon * deg_to_rad;
+#    SET aux1 = sys.cos(lat_rad);
+#    SET aux2 = 6371 * aux1;
+#    RETURN sys.st_makepoint(aux2 * sys.cos(lon_rad), aux2 * sys.sin(lon_rad), 6371 * sys.sin(lat_rad));
+#END;
+#CREATE TABLE test_table (lat FLOAT, lon FLOAT);
+#SELECT geographic_to_cartesian(lat, lon) AS calc_point FROM test_table;
+% sys.L2 # table_name
+% calc_point # name
+% geometry # type
+% 0 # length
+#DROP TABLE test_table;
+#DROP FUNCTION geographic_to_cartesian;
+
+# 15:47:43 >  
+# 15:47:43 >  "Done."
+# 15:47:43 >  
+

@@ -213,6 +213,8 @@ mnstr_read_stringwrap(str *res, Stream *S)
 	size_t size = CHUNK + 1;
 	char *buf = GDKmalloc(size), *start = buf;
 
+	if( buf == NULL)
+		throw(MAL,"mnstr_read_stringwrap",MAL_MALLOC_FAIL);
 	while ((len = mnstr_read(s, start, 1, CHUNK)) > 0) {
 		size += len;
 		buf = GDKrealloc(buf, size);

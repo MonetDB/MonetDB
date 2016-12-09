@@ -56,7 +56,6 @@
 
 extern int sqlcleanup(mvc *c, int err);
 extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);
-extern stmt *sql_relation2stmt(mvc *c, sql_rel *r);
 
 extern BAT *mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname, int access);
 
@@ -69,6 +68,8 @@ sql5_export str SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 sql5_export str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins);
+
 sql5_export str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -77,10 +78,10 @@ sql5_export str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 sql5_export str SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat *ins);
 sql5_export str DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval, const bat *ins);
-sql5_export str DELTAproject(bat *result, const bat *subselect, const bat *col, const bat *uid, const bat *uval, const bat *ins);
+sql5_export str DELTAproject(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval, const bat *ins);
 sql5_export str DELTAbat2(bat *result, const bat *col, const bat *uid, const bat *uval);
 sql5_export str DELTAsub2(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval);
-sql5_export str DELTAproject2(bat *result, const bat *subselect, const bat *col, const bat *uid, const bat *uval);
+sql5_export str DELTAproject2(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval);
 
 sql5_export str BATleftproject(bat *result, const bat *col, const bat *l, const bat *r);
 
@@ -146,6 +147,8 @@ sql5_export str sql_dense_rank(bat *rid, const bat *bid);
 sql5_export str SQLidentity(oid *rid, const void *i);
 sql5_export str BATSQLidentity(bat *rid, const bat *bid);
 sql5_export str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp);
+sql5_export str create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 
 sql5_export str bte_dec_round_wrap(bte *res, const bte *v, const bte *r);
 sql5_export str bte_bat_dec_round_wrap(bat *res, const bat *v, const bte *r);

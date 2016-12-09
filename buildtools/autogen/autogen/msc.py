@@ -7,6 +7,7 @@
 import string
 import os
 import re
+from filesplit import rsplit_filename, split_filename, automake_ext
 
 # the text that is put at the top of every generated Makefile.msc
 MAKEFILE_HEAD = '''
@@ -15,23 +16,6 @@ MAKEFILE_HEAD = '''
 # Nothing much configurable below
 
 '''
-
-automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'pm.i', '']
-
-def split_filename(f):
-    base = f
-    ext = ""
-    if f.find(".") >= 0:
-        return f.split(".", 1)
-    return base, ext
-
-def rsplit_filename(f):
-    base = f
-    ext = ""
-    s = f.rfind(".")
-    if s >= 0:
-        return f[:s], f[s+1:]
-    return base, ext
 
 def msc_basename(f):
     # return basename (i.e. just the file name part) of a path, no
@@ -594,10 +578,6 @@ def msc_binary(fd, var, binmap, msc):
     fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (binname, binname2, binname2))
     fd.write("\t$(EDITBIN) $@ /HEAP:1048576,1048576 /LARGEADDRESSAWARE\n");
     fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n");
-    if condname:
-        fd.write('!ELSE\n')
-        fd.write('C_%s_exe =\n' % binname2)
-        fd.write('!ENDIF\n')
     fd.write('\n')
 
     if SCRIPTS:
@@ -872,58 +852,6 @@ def msc_includes(fd, var, values, msc):
                    + msc_add_srcdir(i, msc, " -I")
     fd.write("INCLUDES = " + incs + "\n")
 
-callantno = 0
-def msc_ant(fd, var, ant, msc):
-    global callantno
-
-    target = var[4:]                    # the ant target to call
-
-    jd = "JAVADIR"
-    if "DIR" in ant:
-        jd = ant["DIR"][0] # use first name given
-    jd = msc_translate_dir(jd, msc)
-
-    if "SOURCES" in ant:
-        for src in ant['SOURCES']:
-            msc['EXTRA_DIST'].append(src)
-
-    if 'COND' in ant:
-        condname = 'defined(' + ') && defined('.join(ant['COND']) + ')'
-        condname = 'defined(HAVE_JAVA) && ' + condname
-    else:
-        condname = 'defined(HAVE_JAVA)'
-    fd.write("\n!IF %s\n\n" % condname) # there is ant if configure set HAVE_JAVA
-
-    # we create a bat file that contains the call to ant so that we
-    # can get hold of the full path name of the current working
-    # directory
-    fd.write("callant%d.bat:\n" % callantno)
-    fd.write("\techo @set thisdir=%%~dp0>callant%d.bat\n" % callantno)
-    fd.write("\techo @set thisdir=%%thisdir:~0,-1%%>>callant%d.bat\n" % callantno)
-    fd.write("\techo @$(ANT) -f $(srcdir)\\build.xml \"-Dbuilddir=%%thisdir%%\\%s\" \"-Djardir=%%thisdir%%\" %s>>callant%d.bat\n" % (target, target, callantno))
-    fd.write("%s_ant_target: callant%d.bat\n" % (target, callantno))
-    fd.write("\tcallant%d.bat\n" % callantno)
-    callantno = callantno + 1
-
-
-    # install is done at the end, here we simply collect to be installed files
-    # INSTALL expects a list of dst,src,ext,install_directory,'lib?'.
-    for file in ant['FILES']:
-        sfile = file.replace(".", "_")
-        fd.write('%s: %s_ant_target\n' % (file, target))
-        msc['INSTALL'][file] = file, '', jd, '', condname
-
-    fd.write("\n!ELSE\n\n")
-
-    fd.write('%s:\n' % file)
-    fd.write('install_%s:\n' % file)
-    fd.write("%s_ant_target:\n" % target)
-
-    fd.write("\n!ENDIF #%s\n\n" % condname)
-
-    # make sure the jars and classes get made
-    msc['SCRIPTS'].append(target + '_ant_target')
-
 output_funcs = {'SUBDIRS': msc_subdirs,
                 'EXTRA_DIST': msc_extra_dist,
                 'EXTRA_HEADERS': msc_extra_headers,
@@ -939,7 +867,6 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'smallTOC_SHARED_MODS': msc_mods_to_libs,
                 'largeTOC_SHARED_MODS': msc_mods_to_libs,
                 'HEADERS': msc_headers,
-                'ANT': msc_ant,
                 }
 
 def output(tree, cwd, topdir):

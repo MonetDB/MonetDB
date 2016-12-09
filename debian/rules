@@ -9,7 +9,7 @@
 DH_VERBOSE=1
 
 %:
-	dh $@ --parallel --with python2,python3
+	dh $@ --parallel
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
@@ -24,38 +24,31 @@ override_dh_auto_configure:
 	--enable-geom=yes \
 	--enable-gsl=yes \
 	--enable-instrument=no \
-	--enable-jdbc=no \
 	--enable-lidar=yes \
 	--enable-mapi=yes \
-	--enable-merocontrol=no \
-	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-oid32=no \
 	--enable-optimize=yes \
 	--enable-profile=no \
+	--enable-pyintegration=yes \
 	--enable-rintegration=yes \
 	--enable-shp=no \
 	--enable-sql=yes \
 	--enable-strict=no \
 	--enable-testing=yes \
-	--with-ant=no \
 	--with-bz2=yes \
 	--with-curl=yes \
 	--with-gdal=yes \
 	--with-geos=yes \
-	--with-java=no \
 	--with-liblas=yes \
 	--with-libxml2=yes \
 	--with-lzma=yes \
 	--with-openssl=yes \
-	--with-perl=yes \
-	--with-perl-libdir=lib/perl5 \
 	--with-proj=no \
 	--with-pthread=yes \
 	--with-python2=yes \
-	--with-python3=yes \
+	--with-python3=no \
 	--with-readline=yes \
 	--with-samtools=yes \
 	--with-sphinxclient=no \
@@ -66,17 +59,6 @@ override_dh_auto_configure:
 
 # currently the test suite fails
 override_dh_auto_test:
-
-override_dh_clean:
-	dh_clean
-	cd clients/python2 && python setup.py clean
-	cd clients/python3 && python3 setup.py clean
-
-override_dh_python2:
-	dh_python2 clients/python2
-
-override_dh_python3:
-	dh_python3 clients/python3
 
 override_dh_strip:
 	dh_strip --dbg-package=monetdb-dbg

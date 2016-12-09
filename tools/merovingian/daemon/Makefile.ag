@@ -37,7 +37,6 @@ bin_monetdbd = {
 			  forkmserver.c forkmserver.h \
 			  handlers.c handlers.h \
 			  multiplex-funnel.c multiplex-funnel.h \
-			  peering.c peering.h \
 			  proxy.c proxy.h
 	LIBS = ../utils/libmeroutil \
 		   ../../../common/stream/libstream \

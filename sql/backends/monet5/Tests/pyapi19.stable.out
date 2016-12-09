@@ -76,7 +76,7 @@ Ready.
 #};
 #CREATE TABLE pyapi19_integers AS SELECT * FROM pyapi19_create_table() WITH DATA;
 #SELECT COUNT(i) FROM pyapi19_load_table();
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 6 # length

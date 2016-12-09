@@ -448,6 +448,8 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 	FILE *pfile = NULL;
 	char buf[8];
 	pid_t daemon;
+	struct timeval tv;
+	int i;
 
 	if (argc != 2) {
 		command_help(2, &argv[-1]);
@@ -498,6 +500,20 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 				(int)daemon, strerror(errno));
 		return(1);
 	}
+
+	/* wait up to 30 seconds for monetdbd to actually stop */
+	for (i = 0; i < 60; i++) {
+		tv.tv_sec = 0;
+		tv.tv_usec = 500000;
+		select(0, NULL, NULL, NULL, &tv);
+		if (kill(daemon, 0) == -1) {
+			/* daemon has died */
+			return(0);
+		}
+	}
+
+	/* done waiting, use harsher measures */
+	kill(daemon, SIGKILL);
 
 	return(0);
 }

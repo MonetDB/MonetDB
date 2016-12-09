@@ -37,7 +37,7 @@ Ready.
 #INSERT INTO INET_TBL (c, i) VALUES (cast('192.168.1.2/30' as inet), '192.168.1.226');
 [ 1	]
 #SELECT '' AS ten, c AS cidr, i AS inet FROM INET_TBL;
-% .L,	sys.L,	sys.L # table_name
+% .L2,	sys.L4,	sys.L6 # table_name
 % ten,	cidr,	inet # name
 % char,	inet,	inet # type
 % 0,	0,	0 # length
@@ -48,8 +48,8 @@ Ready.
 [ "",	192.168.1.2/30,	192.168.1.226	]
 #SELECT '' AS ten, c AS cidr, broadcast(c),
 #  i AS inet, broadcast(i) FROM INET_TBL;
-% .L,	sys.L,	sys.L1,	sys.L1,	sys.L1 # table_name
-% ten,	cidr,	L1,	inet,	broadcast_i # name
+% .L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12 # table_name
+% ten,	cidr,	L6,	inet,	L12 # name
 % char,	inet,	inet,	inet,	inet # type
 % 0,	0,	0,	0,	0 # length
 [ "",	192.168.1.0/26,	192.168.1.63/26,	192.168.1.226,	192.168.1.226	]
@@ -59,7 +59,7 @@ Ready.
 [ "",	192.168.1.2/30,	192.168.1.3/30,	192.168.1.226,	192.168.1.226	]
 #SELECT '' AS ten, c AS cidr, network(c) AS "network(cidr)",
 #  i AS inet, network(i) AS "network(inet)" FROM INET_TBL;
-% .L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
+% .L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12 # table_name
 % ten,	cidr,	network(cidr),	inet,	network(inet) # name
 % char,	inet,	inet,	inet,	inet # type
 % 0,	0,	0,	0,	0 # length
@@ -70,7 +70,7 @@ Ready.
 [ "",	192.168.1.2/30,	192.168.1.0/30,	192.168.1.226,	192.168.1.226	]
 #SELECT '' AS ten, c AS cidr, masklen(c) AS "masklen(cidr)",
 #  i AS inet, masklen(i) AS "masklen(inet)" FROM INET_TBL;
-% .L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
+% .L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12 # table_name
 % ten,	cidr,	masklen(cidr),	inet,	masklen(inet) # name
 % char,	inet,	int,	inet,	int # type
 % 0,	0,	2,	0,	2 # length
@@ -82,13 +82,13 @@ Ready.
 #SELECT '' AS four, c AS cidr, masklen(c) AS "masklen(cidr)",
 #  i AS inet, masklen(i) AS "masklen(inet)" FROM INET_TBL
 #  WHERE masklen(c) <= 8;
-% .L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
+% .L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12 # table_name
 % four,	cidr,	masklen(cidr),	inet,	masklen(inet) # name
 % char,	inet,	int,	inet,	int # type
 % 0,	0,	1,	0,	1 # length
 #SELECT '' AS six, c AS cidr, i AS inet FROM INET_TBL
 #  WHERE c = i;
-% .L,	sys.L,	sys.L # table_name
+% .L2,	sys.L4,	sys.L6 # table_name
 % six,	cidr,	inet # name
 % char,	inet,	inet # type
 % 0,	0,	0 # length
@@ -99,7 +99,7 @@ Ready.
 #--  i << c AS sb, i <<= c AS sbe,
 #--  i >> c AS sup, i >>= c AS spe
 #  FROM INET_TBL;
-% .L,	sys.inet_tbl,	sys.inet_tbl,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
+% .L2,	sys.inet_tbl,	sys.inet_tbl,	sys.L6,	sys.L10,	sys.L12,	sys.L14,	sys.L16,	sys.L20,	sys.L22,	sys.L24,	sys.L26,	sys.L30 # table_name
 % ten,	i,	c,	lt,	le,	eq,	ge,	gt,	ne,	sb,	sbe,	sup,	spe # name
 % char,	inet,	inet,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 0,	0,	0,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length

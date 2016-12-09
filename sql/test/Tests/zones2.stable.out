@@ -25,14 +25,14 @@ Ready.
 # 20:47:05 >  
 
 #select degrees(-0.1);
-% .L # table_name
-% degrees_single_value # name
+% .L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ -5.729577951	]
 #select degrees(-0.1);
-% .L # table_name
-% degrees_single_value # name
+% .L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ -5.729577951	]

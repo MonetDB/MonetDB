@@ -10,8 +10,7 @@
 #define _OPT_REORDER_
 #include "opt_prelude.h"
 #include "opt_support.h"
-opt_export int OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGreorder  if ( optDebug & ((lng)1 <<DEBUG_OPT_REORDER) )
+mal_export int OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

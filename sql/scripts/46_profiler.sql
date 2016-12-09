@@ -12,5 +12,7 @@ create procedure profiler.stop() external name profiler.stop;
 
 create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;
 create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;
+create function profiler.getlimit() returns integer external name profiler.getlimit;
+create procedure  profiler.setlimit(lim integer) external name profiler.setlimit;
 
 create procedure profiler.setstream(host string, port int) external name profiler.setstream;

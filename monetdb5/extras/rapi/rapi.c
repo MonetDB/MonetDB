@@ -229,7 +229,7 @@ rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 }
 
 str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
-	sql_func * sqlfun = *(sql_func**) getArgReference_ptr(stk, pci, pci->retc);
+	sql_func * sqlfun = NULL;
 	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
 	SEXP x, env, retval;
@@ -256,6 +256,13 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		throw(MAL, "rapi.eval",
 			  "Embedded R has not been enabled. Start server with --set %s=true",
 			  rapi_enableflag);
+	}
+
+	if (!grouped) {
+		sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc));
+		if (sqlmorefun) sqlfun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc))->func;
+	} else {
+		sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
 	}
 
 	rcalllen = strlen(exprStr) + sizeof(argnames) + 100;
@@ -410,7 +417,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	// collect the return values
 	for (i = 0; i < pci->retc; i++) {
 		SEXP ret_col = VECTOR_ELT(retval, i);
-		int bat_type = getColumnType(getArgType(mb,pci,i));
+		int bat_type = getBatType(getArgType(mb,pci,i));
 		if (bat_type == TYPE_any || bat_type == TYPE_void) {
 			getArgType(mb,pci,i) = bat_type;
 			msg = createException(MAL, "rapi.eval",
@@ -430,8 +437,11 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 		} else { // single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
-			VALinit(&stk->stk[pci->argv[i]], bat_type,
-					BUNtail(li, 0)); // TODO BUNtail here
+			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
+						BUNtail(li, 0)) == NULL) { // TODO BUNtail here
+				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
 		}
 		msg = MAL_SUCCEED;
 	}

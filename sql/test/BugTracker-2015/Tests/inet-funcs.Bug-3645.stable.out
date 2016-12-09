@@ -26,50 +26,50 @@ Ready.
 # 18:30:57 >  
 
 #SELECT inet'192.168.0.1' << inet'192.168.0.0/24';
-% .L # table_name
-% left_shift_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT inet'192.168.0.1' <<= inet'192.168.0.0/24';
-% .L # table_name
-% left_shift_assign_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT inet'192.168.0.1' >> inet'192.168.0.0/24';
-% .L # table_name
-% right_shift_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT inet'192.168.0.1' >>= inet'192.168.0.0/24';
-% .L # table_name
-% right_shift_assign_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT inet'192.168.0.1' << inet'192.168.0.1/24';
-% .L # table_name
-% left_shift_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT inet'192.168.0.1' <<= inet'192.168.0.1/24';
-% .L # table_name
-% left_shift_assign_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT inet'192.168.0.1' >> inet'192.168.0.1/24';
-% .L # table_name
-% right_shift_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT inet'192.168.0.1' >>= inet'192.168.0.1/24';
-% .L # table_name
-% right_shift_assign_single_value # name
+% .L1 # table_name
+% L1 # name
 % boolean # type
 % 5 # length
 [ false	]

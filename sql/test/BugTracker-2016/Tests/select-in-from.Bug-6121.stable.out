@@ -1,0 +1,205 @@
+stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 17:27:35 >  
+# 17:27:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35505" "--set" "mapi_usock=/var/tmp/mtest-16366/.s.monetdb.35505" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 17:27:35 >  
+
+# MonetDB 5 server v11.23.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:35505/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16366/.s.monetdb.35505
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 17:27:36 >  
+# 17:27:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16366" "--port=35505"
+# 17:27:36 >  
+
+#CREATE TABLE table_one (this_column INTEGER);
+#INSERT INTO table_one VALUES (1);
+[ 1	]
+#INSERT INTO table_one VALUES (2);
+[ 1	]
+#INSERT INTO table_one VALUES (3);
+[ 1	]
+#INSERT INTO table_one VALUES (4);
+[ 1	]
+#INSERT INTO table_one VALUES (5);
+[ 1	]
+#CREATE TABLE table_two (this_column INTEGER);
+#INSERT INTO table_two VALUES (1);
+[ 1	]
+#INSERT INTO table_two VALUES (2);
+[ 1	]
+#SELECT ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) AS new_column FROM table_one;
+% .L5 # table_name
+% new_column # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#SELECT ( CASE WHEN ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) THEN 1 ELSE 0 END ) AS new_column FROM table_one;
+% .L5 # table_name
+% new_column # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 0	]
+[ 0	]
+[ 0	]
+#SELECT COUNT(*) , ( CASE WHEN ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) THEN 1 ELSE 0 END ) AS new_column FROM table_one GROUP BY new_column;
+% .L6,	.L10 # table_name
+% L5,	new_column # name
+% bigint,	tinyint # type
+% 1,	1 # length
+[ 2,	1	]
+[ 3,	0	]
+#SELECT this_column, (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) AS new_column FROM table_one;
+% .table_one,	.L11 # table_name
+% this_column,	new_column # name
+% int,	bigint # type
+% 1,	1 # length
+[ 1,	1	]
+[ 2,	1	]
+[ 3,	0	]
+[ 4,	0	]
+[ 5,	0	]
+#SELECT this_column, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) = 0 THEN 0 ELSE 1 END) AS new_column FROM table_one;
+% .table_one,	.L11 # table_name
+% this_column,	new_column # name
+% int,	tinyint # type
+% 1,	1 # length
+[ 1,	1	]
+[ 2,	1	]
+[ 3,	0	]
+[ 4,	0	]
+[ 5,	0	]
+#SELECT COUNT(*) AS count, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) = 0 THEN 0 ELSE 1 END) AS new_column  FROM table_one GROUP BY new_column;
+% .L10,	.L12 # table_name
+% count,	new_column # name
+% bigint,	tinyint # type
+% 1,	1 # length
+[ 2,	1	]
+[ 3,	0	]
+#WITH table_one_cte AS (SELECT this_column, (CASE (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) WHEN 0 THEN 0 ELSE 1 END) AS new_column FROM table_one) SELECT COUNT(*) AS count, MIN(this_column) AS min_this_column, MAX(this_column) AS max_this_column, AVG(this_column) AS avg_this_column, CAST(SUM(this_column) AS bigint) AS sum_this_column, new_column FROM table_one_cte GROUP BY new_column;
+% .L17,	.L22,	.L25,	.L30,	.L34,	.table_one_cte # table_name
+% count,	min_this_column,	max_this_column,	avg_this_column,	sum_this_column,	new_column # name
+% bigint,	int,	int,	double,	bigint,	tinyint # type
+% 1,	1,	1,	24,	2,	1 # length
+[ 2,	1,	2,	1.5,	3,	1	]
+[ 3,	3,	5,	4,	12,	0	]
+#CREATE VIEW table_one_vw AS
+#SELECT this_column, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) = 0 THEN 0 ELSE 1 END) AS new_column FROM table_one;
+#SELECT COUNT(*), new_column FROM table_one_vw GROUP BY new_column;
+% .L17,	.table_one_vw # table_name
+% L16,	new_column # name
+% bigint,	tinyint # type
+% 1,	1 # length
+[ 2,	1	]
+[ 3,	0	]
+#SELECT COUNT(*) AS count, MIN(this_column) AS min_this_column, MAX(this_column) AS max_this_column, AVG(this_column) AS avg_this_column, CAST(SUM(this_column) AS bigint) AS sum_this_column, new_column FROM table_one_vw GROUP BY new_column;
+% .L17,	.L22,	.L25,	.L30,	.L34,	.table_one_vw # table_name
+% count,	min_this_column,	max_this_column,	avg_this_column,	sum_this_column,	new_column # name
+% bigint,	int,	int,	double,	bigint,	tinyint # type
+% 1,	1,	1,	24,	2,	1 # length
+[ 2,	1,	2,	1.5,	3,	1	]
+[ 3,	3,	5,	4,	12,	0	]
+#SELECT COUNT(*) AS count, 1 AS new_column FROM table_one
+# WHERE this_column IN (SELECT this_column FROM table_two)
+#UNION ALL
+#SELECT COUNT(*) AS count, 0 AS new_column FROM table_one
+# WHERE this_column NOT IN (SELECT this_column FROM table_two);
+% .L37,	.L37 # table_name
+% count,	new_column # name
+% bigint,	tinyint # type
+% 1,	1 # length
+[ 2,	1	]
+[ 3,	0	]
+#SELECT COUNT(*) AS count, (CASE WHEN t2.this_column IS NULL THEN 0 ELSE 1 END) AS new_column
+#  FROM table_one t1 LEFT OUTER JOIN table_two t2 ON t1.this_column = t2.this_column
+# GROUP BY new_column;
+% .L3,	.L5 # table_name
+% count,	new_column # name
+% bigint,	tinyint # type
+% 1,	1 # length
+[ 2,	1	]
+[ 3,	0	]
+#select count(*), 1 from (
+#    (select this_column from table_one)
+#    intersect
+#    (select this_column from table_two)
+#) as "existing"
+#union all
+#select count(*), 0 from (
+#    (select this_column from table_one)
+#    except
+#    (select this_column from table_two)
+#) as "missing";
+% .L34,	.L34 # table_name
+% L11,	L14 # name
+% bigint,	tinyint # type
+% 1,	1 # length
+[ 2,	1	]
+[ 3,	0	]
+#DROP VIEW table_one_vw;
+#DROP TABLE table_two;
+#DROP TABLE table_one;
+
+# 17:27:37 >  
+# 17:27:37 >  "Done."
+# 17:27:37 >  
+

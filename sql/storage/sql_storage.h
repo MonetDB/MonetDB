@@ -61,7 +61,7 @@ typedef struct subrids {
 } subrids;
 
 /* returns table rids, for the given select ranges */
-typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, void *key_value_low, void *key_value_high, ...);
+typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, const void *key_value_low, const void *key_value_high, ...);
 
 /* order rids by orderby_column values */
 typedef rids *(*rids_orderby_fptr)( sql_trans *tr, rids *r, sql_column *orderby_col);

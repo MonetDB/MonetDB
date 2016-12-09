@@ -16,12 +16,12 @@
 
 #include <stddef.h>
 
-#include "pyapi.h"
+#include "pyheader.h"
  
 extern PyObject *marshal_loads;
 
-char* FormatCode(char* code, char **args, size_t argcount, size_t tabwidth, PyObject **code_object, char **return_message);
+char* FormatCode(char* code, char **args, size_t argcount, size_t tabwidth, PyObject **code_object, char **msg, char** additional_args, size_t additional_argcount);
 
-NUMPY_IMPORT_ARRAY_RETTYPE _formatinput_init(void);
+void _formatinput_init(void);
 
 #endif /* _PY_FORMAT_INPUT_LIB_ */

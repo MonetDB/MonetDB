@@ -45,8 +45,8 @@ Ready.
 # 14:12:27 >  
 
 #select bit_and(1, power(2, 1));
-% .L # table_name
-% bit_and_single_value # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 40 # length
 [ 0	]

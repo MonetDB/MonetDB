@@ -17,7 +17,6 @@
 #include "mal_client.h"
 #include "mal_factory.h"
 #include "mal_profiler.h"
-#include "mal_recycle.h"
 
 /*
  * Activation of a thread requires construction of the argument list
@@ -140,5 +139,4 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define getArgReference_str(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.sval)
 #endif
 
-#define FREE_EXCEPTION(p) do { if (p && p != M5OutOfMemory) GDKfree(p); } while (0)
 #endif /*  _MAL_INTERPRET_H*/

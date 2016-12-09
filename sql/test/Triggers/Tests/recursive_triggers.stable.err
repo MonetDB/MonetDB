@@ -10,12 +10,6 @@ stderr of test 'recursive_triggers` in directory 'sql/test/Triggers` itself:
 # 15:06:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38417  < recursive_triggers.sql
 # 15:06:05 >  
 
-MAPI  = monetdb@niels:33936
-QUERY = drop trigger test_0;
-ERROR = !DROP TRIGGER: unknown trigger test_0
-MAPI  = monetdb@niels:33936
-QUERY = drop trigger test_1;
-ERROR = !DROP TRIGGER: unknown trigger test_1
 
 # 15:06:05 >  
 # 15:06:05 >  Done.

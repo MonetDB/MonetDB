@@ -1,0 +1,29 @@
+START TRANSACTION;
+
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER);
+
+# pass in all columns
+COPY BINARY INTO intvals (x, y, z) FROM ('$QTSTTRGDIR/bincopyint.bin', '$QTSTTRGDIR/bincopyint.bin', '$QTSTTRGDIR/bincopyint.bin');
+# pass in partial set of columns
+COPY BINARY INTO intvals (z) FROM ('$QTSTTRGDIR/bincopyint.bin');
+# multiple columns
+COPY BINARY INTO intvals (z, y) FROM ('$QTSTTRGDIR/bincopyint.bin', '$QTSTTRGDIR/bincopyint.bin');
+SELECT * FROM intvals;
+
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER);
+
+# duplicate columns
+COPY BINARY INTO intvals (x, x) FROM ('$QTSTTRGDIR/bincopyint.bin', '$QTSTTRGDIR/bincopyint.bin');
+SELECT * FROM intvals;
+ROLLBACK;
+
+
+START TRANSACTION;
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER);
+
+# unknown columns
+COPY BINARY INTO intvals (a) FROM ('$QTSTTRGDIR/bincopyint.bin');
+ROLLBACK;

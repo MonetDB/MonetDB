@@ -499,7 +499,8 @@ bitToStr(char **dst, int *len, const bit *src)
 static bit *
 bitRead(bit *a, stream *s, size_t cnt)
 {
-	mnstr_read(s, (char *) a, 1, cnt);
+	if (mnstr_read(s, (char *) a, 1, cnt) < 0)
+		return NULL;
 	return mnstr_errnr(s) ? NULL : a;
 }
 
@@ -578,6 +579,7 @@ batWrite(const bat *a, stream *s, size_t cnt)
 	return mnstr_writeIntArray(s, (const int *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 
+
 /*
  * numFromStr parses the head of the string for a number, accepting an
  * optional sign. The code has been prepared to continue parsing by
@@ -592,9 +594,11 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	int sz = ATOMsize(tp);
 #ifdef HAVE_HGE
 	hge base = 0;
+	hge expbase = -1;
 	const hge maxdiv10 = GDK_hge_max / 10;
 #else
 	lng base = 0;
+	lng expbase = -1;
 	const lng maxdiv10 = LL_CONSTANT(922337203685477580); /*7*/
 #endif
 	const int maxmod10 = 7;	/* max value % 10 */
@@ -636,8 +640,37 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 		}
 		base = 10 * base + base10(*p);
 		p++;
+		/* Special case: xEy = x*10^y handling part 1 */
+		if (*p == 'E' || *p == 'e') {
+			// if there is a second E in the string we give up
+			if (expbase > -1) {
+				memcpy(*dst, ATOMnilptr(tp), sz);
+				return 0;
+			}
+			expbase = base;
+			base = 0;
+			p++;
+		}
 	} while (num10(*p));
+	/* Special case: xEy = x*10^y handling part 2 */
+	if (expbase > -1) {
+#ifdef HAVE_HGE
+		hge res = expbase;
+#else
+		lng res = expbase;
+#endif
+		while (base > 0) {
+			if (res > maxdiv10) {
+				memcpy(*dst, ATOMnilptr(tp), sz);
+				return 0;
+			}
+			res *= 10L;
+			base--;
+		}
+		base = res;
+	}
 	base *= sign;
+
 	switch (sz) {
 	case 1: {
 		bte **dstbte = (bte **) dst;
@@ -1673,7 +1706,7 @@ escapedStr(char *dst, const char *src, int dstlen, const char *sep1, const char 
 	return l;
 }
 
-int
+static int
 strToStr(char **dst, int *len, const char *src)
 {
 	int l = 0;

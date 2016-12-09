@@ -513,7 +513,6 @@
 #define TRUE		true
 #define FALSE		false
 #endif
-#define BOUND2BTRUE	2	/* TRUE, and bound to be so */
 
 #define IDLENGTH	64	/* maximum BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
@@ -543,22 +542,9 @@ typedef signed char bit;
 typedef signed char bte;
 typedef short sht;
 
-#ifdef MONET_OID32
-#define SIZEOF_OID	SIZEOF_INT
-typedef unsigned int oid;
-#else
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
-#endif
-#if SIZEOF_OID == SIZEOF_SIZE_T
 #define OIDFMT		SZFMT
-#else
-#if SIZEOF_OID == SIZEOF_INT
-#define OIDFMT		"%u"
-#else
-#define OIDFMT		ULLFMT
-#endif
-#endif
 
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */
@@ -777,7 +763,8 @@ gdk_export int VALisnil(const ValRecord *v);
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
- *           bit    tkey;             // tail values should be unique?
+ *           bit    tkey;             // tail values are unique
+ *           bit    tunique;          // tail values must be kept unique
  *           bit    tnonil;           // tail has no nils
  *           bit    tsorted;          // are tail values currently ordered?
  *           bit    tvarsized;        // for speed: tail type is varsized?
@@ -808,7 +795,6 @@ gdk_export int VALisnil(const ValRecord *v);
 typedef struct {
 	/* dynamic bat properties */
 	MT_Id tid;		/* which thread created it */
-	int stamp;		/* BAT recent creation stamp */
 	unsigned int
 	 copiedtodisk:1,	/* once written */
 	 dirty:2,		/* dirty wrt disk? */
@@ -838,14 +824,15 @@ typedef struct {
 	bte shift;		/* log2 of bunwidth */
 	unsigned int
 	 varsized:1,		/* varsized (1) or fixedsized (0) */
-	 key:2,			/* duplicates allowed? */
+	 key:1,			/* no duplicate values present */
+	 unique:1,		/* no duplicate values allowed */
 	 dense:1,		/* OID only: only consecutive values */
 	 nonil:1,		/* there are no nils in the column */
 	 nil:1,			/* there is a nil in the column */
 	 sorted:1,		/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
 	oid align;		/* OID for sync alignment */
-	BUN nokey[2];		/* positions that prove key ==FALSE */
+	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN nodense;		/* position that proves dense==FALSE */
@@ -869,7 +856,8 @@ typedef struct {
 #define GDKLIBRARY_OLDWKB	061031	/* old geom WKB format */
 #define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
 #define GDKLIBRARY_HEADED	061033	/* head properties are stored */
-#define GDKLIBRARY		061034
+#define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
+#define GDKLIBRARY		061035
 
 typedef struct BAT {
 	/* static bat properties */
@@ -897,13 +885,13 @@ typedef struct BATiter {
 #define batInserted	S.inserted
 #define batCount	S.count
 #define batCapacity	S.capacity
-#define batStamp	S.stamp
 #define batSharecnt	S.sharecnt
 #define batRestricted	S.restricted
 #define batRole		S.role
 #define creator_tid	S.tid
 #define ttype		T.type
 #define tkey		T.key
+#define tunique		T.unique
 #define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted
@@ -1042,7 +1030,7 @@ gdk_export bte ATOMelmshift(int sz);
  * @- BUN manipulation
  * @multitable @columnfractions 0.08 0.7
  * @item BAT*
- * @tab BATappend (BAT *b, BAT *c, bit force)
+ * @tab BATappend (BAT *b, BAT *n, BAT *s, bit force)
  * @item BAT*
  * @tab BUNappend (BAT *b, ptr right, bit force)
  * @item BAT*
@@ -1260,7 +1248,7 @@ gdk_export bte ATOMelmshift(int sz);
 
 #define bunfastapp(b, t)						\
 	do {								\
-		register BUN _p = BUNlast(b);				\
+		BUN _p = BUNlast(b);					\
 		if (_p >= BATcapacity(b)) {				\
 			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
 				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
@@ -1274,7 +1262,7 @@ gdk_export bte ATOMelmshift(int sz);
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare);
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
-gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
+gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bit force);
 
 gdk_export gdk_return BUNdelete(BAT *b, oid o);
 gdk_export gdk_return BATdel(BAT *b, BAT *d);
@@ -1553,6 +1541,7 @@ gdk_export gdk_return BATprintf(stream *f, BAT *b);
  * ordered. The result is returned and stored in the tsorted field of
  * the BAT.
  */
+gdk_export int BATkeyed(BAT *b);
 gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
 gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable);
@@ -1633,10 +1622,6 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  * @tab BBPincref (bat bi, int logical)
  * @item int
  * @tab BBPdecref (bat bi, int logical)
- * @item void
- * @tab BBPhot (bat bi)
- * @item void
- * @tab BBPcold (bat bi)
  * @item str
  * @tab BBPname (bat bi)
  * @item bat
@@ -1686,7 +1671,6 @@ typedef struct {
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
-	int lastused;		/* BBP LRU stamp */
 	volatile int status;	/* status mask used for spin locking */
 	/* MT_Id pid;           non-zero thread-id if this BAT is private */
 } BBPrec;
@@ -1712,14 +1696,12 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_desc(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].desc
 #define BBP_refs(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].refs
 #define BBP_lrefs(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].lrefs
-#define BBP_lastused(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].lastused
 #define BBP_status(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].status
 #define BBP_pid(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].pid
 
 /* macros that nicely check parameters */
 #define BBPcacheid(b)	((b)->batCacheid)
 #define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):-1)
-gdk_export int BBPcurstamp(void);
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
 #define BBPname(i)						\
@@ -1737,8 +1719,6 @@ gdk_export int BBPcurstamp(void);
 
 gdk_export void BBPlock(void);
 
-gdk_export void BBPhot(bat b);
-gdk_export void BBPcold(bat b);
 gdk_export void BBPunlock(void);
 
 gdk_export str BBPlogical(bat b, str buf);
@@ -1896,13 +1876,13 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
 typedef struct {
 	/* simple attributes */
 	char name[IDLENGTH];
-	int storage;		/* stored as another type? */
+	short storage;		/* stored as another type? */
 	short linear;		/* atom can be ordered linearly */
 	short size;		/* fixed size of atom */
 	short align;		/* alignment condition for values */
 
 	/* automatically generated fields */
-	ptr atomNull;		/* global nil value */
+	const void *atomNull;	/* global nil value */
 
 	/* generic (fixed + varsized atom) ADT functions */
 	int (*atomFromStr) (const char *src, int *len, ptr *dst);
@@ -2114,7 +2094,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 #define GDKfree(p)							\
 	({								\
 		void *_ptr = (p);					\
-		ALLOCDEBUG						\
+		ALLOCDEBUG if (_ptr)					\
 			fprintf(stderr,					\
 				"#GDKfree(" PTRFMT ")"			\
 				" %s[%s:%d]\n",				\
@@ -2488,7 +2468,7 @@ gdk_export void *THRdata[THREADDATA];
 #ifndef GDK_NOLINK
 
 static inline bat
-BBPcheck(register bat x, register const char *y)
+BBPcheck(bat x, const char *y)
 {
 	if (x && x != bat_nil) {
 		assert(x > 0);
@@ -2503,9 +2483,9 @@ BBPcheck(register bat x, register const char *y)
 }
 
 static inline BAT *
-BATdescriptor(register bat i)
+BATdescriptor(bat i)
 {
-	register BAT *b = NULL;
+	BAT *b = NULL;
 
 	if (BBPcheck(i, "BATdescriptor")) {
 		BBPfix(i);

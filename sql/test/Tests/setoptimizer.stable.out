@@ -42,34 +42,34 @@ Ready.
 # 02:57:35 >  
 
 #select optimizer;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "minimal_pipe"	]
 #set optimizer=' optimizer.inline(); optimizer.remap(); optimizer.evaluate(); optimizer.costModel(); optimizer.coercions(); optimizer.emptySet(); optimizer.aliases(); optimizer.mergetable(); optimizer.deadcode(); optimizer.commonTerms(); optimizer.joinPath(); optimizer.reorder(); optimizer.deadcode(); optimizer.reduce(); optimizer.history(); optimizer.multiplex(); optimizer.accumulators(); optimizer.garbageCollector();';
 #select optimizer;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "minimal_pipe"	]
 #select optimizer;
-% .L # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "minimal_pipe"	]
 #select * from optimizers();
-% .,	.,	. # table_name
+% .L1,	.L1,	.L1 # table_name
 % name,	def,	status # name
 % clob,	clob,	clob # type
-% 15,	561,	6 # length
+% 15,	564,	6 # length
 [ "minimal_pipe",	"optimizer.inline();optimizer.remap();optimizer.deadcode();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();",	"stable"	]
-[ "default_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();",	"stable"	]
-[ "volcano_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.volcano();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();",	"stable"	]
-[ "no_mitosis_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.profiler();optimizer.generator();optimizer.candidates();optimizer.garbageCollector();",	"stable"	]
-[ "sequential_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();",	"stable"	]
+[ "default_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();",	"stable"	]
+[ "volcano_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.volcano();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();",	"stable"	]
+[ "no_mitosis_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.profiler();optimizer.generator();optimizer.candidates();optimizer.garbageCollector();",	"stable"	]
+[ "sequential_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();",	"stable"	]
 
 # 02:57:35 >  
 # 02:57:35 >  "Done."

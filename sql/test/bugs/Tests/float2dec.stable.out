@@ -20,8 +20,8 @@ Ready.
 
 [ 1	]
 #select CAST(AVG(col) as decimal(4,2)) from float2dec;
-% sys.L2 # table_name
-% L2 # name
+% sys.L4 # table_name
+% L4 # name
 % decimal # type
 % 6 # length
 [ 74.95	]

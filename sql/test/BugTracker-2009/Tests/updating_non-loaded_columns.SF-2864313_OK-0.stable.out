@@ -26,15 +26,15 @@ Ready.
 
 [ 1024	]
 #select count(*) from t0;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ 1024	]
 [ 1024	]
 #select count(*) from t1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ 1024	]

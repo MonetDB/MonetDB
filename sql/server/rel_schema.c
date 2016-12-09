@@ -661,7 +661,11 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	int res = SQL_OK;
 
-	if (alter && (isView(t) || ((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->tables)>0)) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
+	if (alter && 
+		(isView(t) || 
+		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->tables)>0)) || 
+	  	(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
+ 		(isPartition(t) && (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT)))){
 		char *msg = "";
 
 		switch (s->token) {
@@ -698,6 +702,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 		sql_error(sql, 02, "42000!ALTER TABLE: cannot %s %s '%s'\n",
 				msg, 
+				isPartition(t)?"a PARTITION of a MERGE or REPLICA TABLE":
 				isMergeTable(t)?"MERGE TABLE":
 				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
 				t->base.name);
@@ -940,6 +945,9 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		sq = rel_selects(sql, subquery);
 		if (!sq)
 			return NULL;
+
+		if ((tt == tt_merge_table || tt == tt_remote || tt == tt_replica_table) && with_data)
+			return sql_error(sql, 02, "42000!CREATE TABLE: cannot create %s table 'with data'", tt == tt_merge_table?"MERGE TABLE":tt == tt_remote?"REMOTE TABLE":"REPLICA TABLE");
 
 		/* create table */
 		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 

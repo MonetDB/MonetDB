@@ -58,74 +58,6 @@ simpleFlow(InstrPtr *old, int start, int last)
 	return simple;
 }
 
-/* optimizers may remove the dataflow and language.pass hints first */
-void removeDataflow(MalBlkPtr mb)
-{
-	int i, k, flowblock=0, limit;
-	InstrPtr p, *old;
-	int *init= GDKzalloc(mb->vtop * sizeof(int)), skip = 0;
-	char *delete= (char*) GDKzalloc(mb->stop);
-	char *used= (char*) GDKzalloc(mb->vtop);
-
-	if ( delete == 0 || init == 0 || used == 0){
-		if( delete) GDKfree(delete);
-		if( used) GDKfree(used);
-		if( init) GDKfree(init);
-		return;
-	}
-	old = mb->stmt;
-	limit = mb->stop;
-	if ( newMalBlkStmt(mb, mb->ssize) <0 ){
-		GDKfree(delete);
-		GDKfree(used);
-		GDKfree(init);
-		return;
-	}
-	/* remove the inlined dataflow barriers */
-	for (i = 1; i<limit; i++) {
-		p = old[i];
-
-		if (blockStart(p) ){
-			if ( getModuleId(p) == languageRef &&
-				getFunctionId(p) == dataflowRef){
-				flowblock = getArg(p,0);
-				delete[i] = 1;
-			} else skip++;
-		} else 
-		if (blockExit(p) ){
-			if ( skip )
-				skip--;
-			else
-			if ( getArg(p,0) == flowblock) {
-				flowblock = 0;
-				delete[i] = 1;
-			}
-		} else 
-		if ( getModuleId(p) == languageRef &&
-			 getFunctionId(p) == passRef){
-			delete[i] =1;
-		} else {
-			/* remember first initialization */
-			for ( k = p->retc; k < p->argc; k++)
-				used[getArg(p,k)] = 1;
-			if ( init[getArg(p,0)]  && ! used[getArg(p,0)]) 
-				/* remove the old initialization */
-				delete[ init[getArg(p,0)]] = 1;
-			init[getArg(p,0)] = i;
-		}
-	}
-	/* remove the superflous variable initializations */
-	/* when there are no auxiliary barrier blocks */
-	for (i = 0; i<limit; i++) 
-		if ( delete[i] == 0 )
-			pushInstruction(mb,old[i]);
-		else freeInstruction(old[i]);
-	GDKfree(init);
-	GDKfree(old);
-	GDKfree(used);
-	GDKfree(delete);
-}
-
 // take care of side-effects in updates
 static void setAssigned(InstrPtr p, int k, int *assigned){
 	if ( isUpdateInstruction(p) || hasSideEffects(p,TRUE))
@@ -180,9 +112,7 @@ static int
 dflowGarbagesink(MalBlkPtr mb, int var, InstrPtr *sink, int top){
 	InstrPtr r;
 	
-	r = newInstruction(NULL,ASSIGNsymbol);
-	getModuleId(r) = languageRef;
-	getFunctionId(r) = passRef;
+	r = newInstruction(NULL,languageRef, passRef);
 	getArg(r,0) = newTmpVariable(mb,TYPE_void);
 	r= pushArgument(mb,r, var);
 	sink[top++] = r;
@@ -208,14 +138,16 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (GDKnr_threads <= 1)
 		return 0;
 
+	if ( optimizerIsApplied(mb,"dataflow"))
+		return 0;
 	(void) stk;
 	/* inlined functions will get their dataflow control later */
 	if ( mb->inlineProp)
 		return 0;
-	OPTDEBUGdataflow{
+#ifdef DEBUG_OPT_DATAFLOW
 		mnstr_printf(cntxt->fdout,"#dataflow input\n");
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-	}
+#endif
 
 	vlimit = mb->vsize;
 	eolife= (int*) GDKzalloc(vlimit * sizeof(int));
@@ -236,10 +168,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for (j = 0; j < p->argc; j++)
 			eolife[getArg(p,j)]= i;
 	}
-	//OPTDEBUGdataflow{
-		//for(i= 0;  i < mb->vtop; i++)
-			//mnstr_printf(cntxt->fdout,"#eolife %d -> %d\n",i, eolife[i]);
-	//}
 
 	// make sure we have space for the language.pass operation
 	// for all variables within the barrier
@@ -255,10 +183,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		conflict = 0;
 
 		if ( dataflowConflict(cntxt,mb,p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
-			OPTDEBUGdataflow{
-				mnstr_printf(cntxt->fdout,"#conflict %d dataflow %d dflowAssignConflict %d\n",i, dataflowConflict(cntxt,mb,p),dflowAssignConflict(p,i,assigned,eolife));
-				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-			}
+#ifdef DEBUG_OPT_DATAFLOW
+			mnstr_printf(cntxt->fdout,"#conflict %d dataflow %d dflowAssignConflict %d\n",i, dataflowConflict(cntxt,mb,p),dflowAssignConflict(p,i,assigned,eolife));
+			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
 			/* close previous flow block */
 			if ( !(simple = simpleFlow(old,start,i))){
 				for( j=start ; j<i; j++){
@@ -353,14 +281,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (; i<slimit; i++) 
 		if (old[i])
 			freeInstruction(old[i]);
-wrapup:
-	if( eolife) GDKfree(eolife);
-	if( init) GDKfree(init);
-	if( used) GDKfree(used);
-	if( sink) GDKfree(sink);
-	if( assigned) GDKfree(assigned);
-	if( old) GDKfree(old);
-
     /* Defense line against incorrect plans */
     if( actions > 0){
         chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
@@ -370,6 +290,14 @@ wrapup:
     /* keep all actions taken as a post block comment */
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,GDKusec() - usec);
     newComment(mb,buf);
+
+wrapup:
+	if( eolife) GDKfree(eolife);
+	if( init) GDKfree(init);
+	if( used) GDKfree(used);
+	if( sink) GDKfree(sink);
+	if( assigned) GDKfree(assigned);
+	if( old) GDKfree(old);
 
 	return actions;
 }

@@ -26,56 +26,50 @@
 #include "mal_exception.h"
 #include "str.h"
 
-#ifdef WIN32
-#define batstr_export extern __declspec(dllexport)
-#else
-#define batstr_export extern
-#endif
+mal_export str STRbatPrefix(bat *ret, const bat *l, const bat *r);
+mal_export str STRbatPrefixcst(bat *ret, const bat *l, const str *cst);
+mal_export str STRbatSuffix(bat *ret, const bat *l, const bat *r);
+mal_export str STRbatSuffixcst(bat *ret, const bat *l, const str *cst);
+mal_export str STRbatstrSearch(bat *ret, const bat *l, const bat *r);
+mal_export str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst);
+mal_export str STRbatRstrSearch(bat *ret, const bat *l, const bat *r);
+mal_export str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst);
+mal_export str STRbatTail(bat *ret, const bat *l, const bat *r);
+mal_export str STRbatTailcst(bat *ret, const bat *l, const int *cst);
+mal_export str STRbatWChrAt(bat *ret, const bat *l, const bat *r);
+mal_export str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst);
+mal_export str STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, const bit *rep);
 
-batstr_export str STRbatPrefix(bat *ret, const bat *l, const bat *r);
-batstr_export str STRbatPrefixcst(bat *ret, const bat *l, const str *cst);
-batstr_export str STRbatSuffix(bat *ret, const bat *l, const bat *r);
-batstr_export str STRbatSuffixcst(bat *ret, const bat *l, const str *cst);
-batstr_export str STRbatstrSearch(bat *ret, const bat *l, const bat *r);
-batstr_export str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst);
-batstr_export str STRbatRstrSearch(bat *ret, const bat *l, const bat *r);
-batstr_export str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst);
-batstr_export str STRbatTail(bat *ret, const bat *l, const bat *r);
-batstr_export str STRbatTailcst(bat *ret, const bat *l, const int *cst);
-batstr_export str STRbatWChrAt(bat *ret, const bat *l, const bat *r);
-batstr_export str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst);
-batstr_export str STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, const bit *rep);
+mal_export str STRbatLower(bat *ret, const bat *l);
+mal_export str STRbatUpper(bat *ret, const bat *l);
+mal_export str STRbatStrip(bat *ret, const bat *l);
+mal_export str STRbatLtrim(bat *ret, const bat *l);
+mal_export str STRbatRtrim(bat *ret, const bat *l);
+mal_export str STRbatStrip2_const(bat *ret, const bat *l, const str *s2);
+mal_export str STRbatLtrim2_const(bat *ret, const bat *l, const str *s2);
+mal_export str STRbatRtrim2_const(bat *ret, const bat *l, const str *s2);
+mal_export str STRbatStrip2_bat(bat *ret, const bat *l, const bat *l2);
+mal_export str STRbatLtrim2_bat(bat *ret, const bat *l, const bat *l2);
+mal_export str STRbatRtrim2_bat(bat *ret, const bat *l, const bat *l2);
 
-batstr_export str STRbatLower(bat *ret, const bat *l);
-batstr_export str STRbatUpper(bat *ret, const bat *l);
-batstr_export str STRbatStrip(bat *ret, const bat *l);
-batstr_export str STRbatLtrim(bat *ret, const bat *l);
-batstr_export str STRbatRtrim(bat *ret, const bat *l);
-batstr_export str STRbatStrip2_const(bat *ret, const bat *l, const str *s2);
-batstr_export str STRbatLtrim2_const(bat *ret, const bat *l, const str *s2);
-batstr_export str STRbatRtrim2_const(bat *ret, const bat *l, const str *s2);
-batstr_export str STRbatStrip2_bat(bat *ret, const bat *l, const bat *l2);
-batstr_export str STRbatLtrim2_bat(bat *ret, const bat *l, const bat *l2);
-batstr_export str STRbatRtrim2_bat(bat *ret, const bat *l, const bat *l2);
+mal_export str STRbatLpad_const(bat *ret, const bat *l, const int *n);
+mal_export str STRbatRpad_const(bat *ret, const bat *l, const int *n);
+mal_export str STRbatLpad_bat(bat *ret, const bat *l, const bat *n);
+mal_export str STRbatRpad_bat(bat *ret, const bat *l, const bat *n);
+mal_export str STRbatLpad2_const_const(bat *ret, const bat *l, const int *n, const str *s2);
+mal_export str STRbatRpad2_const_const(bat *ret, const bat *l, const int *n, const str *s2);
+mal_export str STRbatLpad2_bat_const(bat *ret, const bat *l, const bat *n, const str *s2);
+mal_export str STRbatRpad2_bat_const(bat *ret, const bat *l, const bat *n, const str *s2);
+mal_export str STRbatLpad2_const_bat(bat *ret, const bat *l, const int *n, const bat *l2);
+mal_export str STRbatRpad2_const_bat(bat *ret, const bat *l, const int *n, const bat *l2);
+mal_export str STRbatLpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2);
+mal_export str STRbatRpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2);
 
-batstr_export str STRbatLpad_const(bat *ret, const bat *l, const int *n);
-batstr_export str STRbatRpad_const(bat *ret, const bat *l, const int *n);
-batstr_export str STRbatLpad_bat(bat *ret, const bat *l, const bat *n);
-batstr_export str STRbatRpad_bat(bat *ret, const bat *l, const bat *n);
-batstr_export str STRbatLpad2_const_const(bat *ret, const bat *l, const int *n, const str *s2);
-batstr_export str STRbatRpad2_const_const(bat *ret, const bat *l, const int *n, const str *s2);
-batstr_export str STRbatLpad2_bat_const(bat *ret, const bat *l, const bat *n, const str *s2);
-batstr_export str STRbatRpad2_bat_const(bat *ret, const bat *l, const bat *n, const str *s2);
-batstr_export str STRbatLpad2_const_bat(bat *ret, const bat *l, const int *n, const bat *l2);
-batstr_export str STRbatRpad2_const_bat(bat *ret, const bat *l, const int *n, const bat *l2);
-batstr_export str STRbatLpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2);
-batstr_export str STRbatRpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2);
+mal_export str STRbatLength(bat *ret, const bat *l);
+mal_export str STRbatBytes(bat *ret, const bat *l);
 
-batstr_export str STRbatLength(bat *ret, const bat *l);
-batstr_export str STRbatBytes(bat *ret, const bat *l);
-
-batstr_export str STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length);
-batstr_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t);
+mal_export str STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length);
+mal_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t);
 
 
 #define prepareOperand(X,Y,Z)					\
@@ -118,7 +112,6 @@ batstr_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const ba
 	X->tsorted=0;										\
 	X->trevsorted=0;
 #define finalizeResult(X,Y,Z)								\
-	if (!((Y)->batDirty&2)) BATsetaccess((Y), BAT_READ);	\
 	*X = (Y)->batCacheid;									\
 	BBPkeepref(*(X));										\
 	BBPunfix(Z->batCacheid);
@@ -1198,7 +1191,6 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 
 	bn->tnonil = 0;
   bunins_failed:
-	if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);

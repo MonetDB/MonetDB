@@ -34,31 +34,35 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == subdeltaRef) 
 				setVarCList(mb,getArg(p,0));
+			if(getFunctionId(p) == emptybindRef && p->retc == 2) 
+				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == bindRef && p->retc == 2) 
 				setVarCList(mb,getArg(p,0));
 		}
 		if( getModuleId(p) == algebraRef ){
-			if(getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef)
+			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == likesubselectRef || getFunctionId(p) == likethetasubselectRef)
+			if(getFunctionId(p) == likeselectRef || getFunctionId(p) == likethetaselectRef)
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == subinterRef )
+			if(getFunctionId(p) == intersectRef )
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == subuniqueRef )
+			if(getFunctionId(p) == uniqueRef )
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == firstnRef )
-				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == mergecandRef )
-				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == intersectcandRef )
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == crossRef ){
 				setVarCList(mb,getArg(p,0));
 				setVarCList(mb,getArg(p,1));
 			}
 		}
+		if( getModuleId(p) == batRef){
+			if(getFunctionId(p) == mergecandRef )
+				setVarCList(mb,getArg(p,0));
+			if(getFunctionId(p) == intersectcandRef )
+				setVarCList(mb,getArg(p,0));
+		}
 		if( getModuleId(p) == generatorRef){
-			if(getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef)
+			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)
 				setVarCList(mb,getArg(p,0));
 		}
 	}

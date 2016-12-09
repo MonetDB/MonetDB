@@ -24,8 +24,8 @@ Ready.
 # 19:45:34 >  
 
 #select 'yes' where 3 in (1,2);
-% .L1 # table_name
-% single_value # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 3 # length
 

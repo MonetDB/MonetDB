@@ -19,8 +19,10 @@ decimal_from_str(char *dec, char **end)
 {
 #ifdef HAVE_HGE
 	hge res = 0;
+	const hge max0 = GDK_hge_max / 10, max1 = GDK_hge_max % 10;
 #else
 	lng res = 0;
+	const lng max0 = GDK_lng_max / 10, max1 = GDK_lng_max % 10;
 #endif
 	int neg = 0;
 
@@ -29,13 +31,13 @@ decimal_from_str(char *dec, char **end)
 	if (*dec == '-') {
 		neg = 1;
 		dec++;
-	}
-	if (*dec == '+') {
-		neg = 0;
+	} else if (*dec == '+') {
 		dec++;
 	}
 	for (; *dec && ((*dec >= '0' && *dec <= '9') || *dec == '.'); dec++) {
 		if (*dec != '.') {
+			if (res > max0 || (res == max0 && *dec - '0' > max1))
+				break;
 			res *= 10;
 			res += *dec - '0';
 		}

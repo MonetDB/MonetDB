@@ -35,9 +35,9 @@ Ready.
 #	cast(c.name as clob) as column_name, 
 #	cast(null as char(1)) as asc_or_desc, 
 #	cast(null as integer) as cardinality, 
-% .L3,	.L4,	.L5,	sys.L7,	.L10,	.L11,	.L13,	sys.L14,	.L15,	.L16,	.L17,	.L20,	.L21 # table_name
+% .L51,	.L54,	.L57,	sys.L63,	.L66,	.L71,	.L75,	sys.L100,	.L103,	.L106,	.L111,	.L114,	.L117 # table_name
 % table_cat,	table_schem,	table_name,	non_unique,	index_qualifier,	index_name,	type,	ordinal_position,	column_name,	asc_or_desc,	cardinality,	pages,	filter_condition # name
-% clob,	clob,	clob,	smallint,	clob,	clob,	smallint,	smallint,	clob,	char,	int,	int,	clob # type
+% clob,	varchar,	varchar,	smallint,	clob,	varchar,	smallint,	smallint,	varchar,	char,	int,	int,	clob # type
 % 0,	0,	0,	1,	0,	0,	1,	1,	0,	1,	1,	1,	0 # length
 
 # 11:55:41 >  

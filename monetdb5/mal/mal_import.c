@@ -112,7 +112,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 	bstream *oldfdin = c->fdin; \
 	int oldyycur = c->yycur; \
 	int oldlisting = c->listing; \
-	int oldmode = c->mode; \
+	enum clientmode oldmode = c->mode; \
 	int oldblkmode = c->blkmode; \
 	str oldsrcFile = c->srcFile; \
 	ClientInput *oldbak = c->bak; \
@@ -121,7 +121,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 	Symbol oldprg = c->curprg; \
 	MalStkPtr oldglb = c->glb	/* ; added by caller */
 #define restoreState3 \
-	int oldmode = c->mode; \
+	enum clientmode oldmode = c->mode; \
 	int oldblkmode = c->blkmode; \
 	str oldsrcFile = c->srcFile; \
 	Module oldnspace = c->nspace; \
@@ -160,7 +160,6 @@ malLoadScript(Client c, str name, bstream **fdin)
 #ifdef HAVE_EMBEDDED
 extern char* mal_init_inline;
 #endif
-
 /*
  * The include operation parses the file indentified and
  * leaves the MAL code behind in the 'main' function.
@@ -175,7 +174,7 @@ malInclude(Client c, str name, int listing)
 	bstream *oldfdin = c->fdin;
 	int oldyycur = c->yycur;
 	int oldlisting = c->listing;
-	int oldmode = c->mode;
+	enum clientmode oldmode = c->mode;
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
 	str oldprompt = c->prompt;
@@ -291,8 +290,10 @@ evalFile(Client c, str fname, int listing)
 			c->yycur = 0;
 			c->bak = NULL;
 			MSinitClientPrg(c, "user", "main");     /* re-initialize context */
-			MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "");
-			msg = runScenario(c);
+			if( MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "") < 0){
+				msg = createException(MAL,"mal.eval", "WARNING: could not switch client input stream\n");
+			} else
+				msg = runScenario(c);
 			if (msg != MAL_SUCCEED) {
 				dumpExceptionsToStream(c->fdout, msg);
 				GDKfree(msg);
@@ -310,8 +311,10 @@ evalFile(Client c, str fname, int listing)
 		c->yycur = 0;
 		c->bak = NULL;
 		MSinitClientPrg(c, "user", "main");     /* re-initialize context */
-		MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "");
-		msg = runScenario(c);
+		if( MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "") < 0){
+				msg = createException(MAL,"mal.eval", "WARNING: could not switch client input stream\n");
+		} else
+			msg = runScenario(c);
 	}
 	GDKfree(fname);
 

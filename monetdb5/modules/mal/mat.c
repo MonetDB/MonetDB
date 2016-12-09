@@ -56,7 +56,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if( b ){
 			if (tt == TYPE_any)
 				tt = b->ttype;
-			if (tt != b->ttype)
+			if ((tt != TYPE_void && b->ttype != TYPE_void) && tt != b->ttype)
 				throw(MAL, "mat.pack", "incompatible arguments");
 			cap += BATcount(b);
 		}
@@ -77,7 +77,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				BAThseqbase(bn, b->hseqbase);
 				BATtseqbase(bn, b->tseqbase);
 			}
-			BATappend(bn,b,FALSE);
+			BATappend(bn, b, NULL, FALSE);
 			BBPunfix(b->batCacheid);
 		}
 	}
@@ -117,7 +117,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		}
 		BATtseqbase(bn, b->tseqbase);
-		BATappend(bn,b,FALSE);
+		BATappend(bn, b, NULL, FALSE);
 		assert(!bn->tnil || !bn->tnonil);
 		bn->talign = (pieces-1); /* misuse talign field */
 		BBPkeepref(*ret = bn->batCacheid);
@@ -130,7 +130,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				BAThseqbase(b, bb->hseqbase);
 				BATtseqbase(b, bb->tseqbase);
 			}
-			BATappend(b,bb,FALSE);
+			BATappend(b, bb, NULL, FALSE);
 		}
 		b->talign--;
 		if(b->talign == 0)

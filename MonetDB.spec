@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.24.0
+%define version 11.26.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -12,12 +12,7 @@
 %define with_int128 1
 %endif
 
-# only add .oidXX suffix if oid size differs from bit size
-%if %{bits} == 64 && %{?oid32:1}%{!?oid32:0}
-%define oidsuf .oid32
-%endif
-
-%define release %{buildno}%{?dist}%{?oidsuf}
+%define release %{buildno}%{?dist}
 
 # On RedHat Enterprise Linux and derivatives, if the Extra Packages
 # for Enterprise Linux (EPEL) repository is available, you can define
@@ -92,6 +87,16 @@
 %endif
 %endif
 
+# If the _without_pyintegration macro is not set, the MonetDB-python2
+# RPM will be created.  The macro can be set when using mock by
+# passing it the flag --without=pyintegration.
+# On RHEL 6, numpy is too old.
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%if %{?_without_pyintegration:0}%{!?_without_pyintegration:1}
+%define with_pyintegration 1
+%endif
+%endif
+
 %if %{fedpkgs}
 # If the _with_fits macro is set, the MonetDB-cfitsio RPM will be
 # created.  The macro can be set when using mock by passing it the
@@ -119,7 +124,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jun2016-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jun2016-SP2/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -151,14 +156,26 @@ BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
-BuildRequires: perl
-BuildRequires: python-devel
 BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
 BuildRequires: zlib-devel
 %if %{?with_samtools:1}%{!?with_samtools:0}
 BuildRequires: samtools-devel
+%endif
+%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+BuildRequires: python-devel
+%if %{?rhel:1}%{!?rhel:0}
+# RedHat Enterprise Linux calls it simply numpy
+BuildRequires: numpy
+%else
+%if (0%{?fedora} >= 24)
+BuildRequires: python2-numpy
+%else
+# Fedora <= 23 doesn't have python2-numpy
+BuildRequires: numpy
+%endif
+%endif
 %endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 BuildRequires: R-core-devel
@@ -361,60 +378,16 @@ fi
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
 
-%package client-php
-Summary: MonetDB php interface
-Group: Applications/Databases
-Requires: php
-BuildArch: noarch
-
-%description client-php
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a PHP
-program.
-
-%files client-php
-%defattr(-,root,root)
-%dir %{_datadir}/php/monetdb
-%{_datadir}/php/monetdb/*
-
-%package client-perl
-Summary: MonetDB perl interface
-Group: Applications/Databases
-Requires: perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
-Requires: perl(DBI)
-Requires: perl(Digest::SHA)
-Requires: perl(Digest::MD5)
-# when not using BuildArch: noarch, globally replace perl_vendorlib by
-# perl_vendorarch
-BuildArch: noarch
-%{?perl_default_filter}
-%global __requires_exclude perl\\(DBD::monetdb|perl\\(MonetDB::|perl\\(Mapi\\)
-
-%description client-perl
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a Perl
-program.
-
-%files client-perl
-%defattr(-,root,root)
-%{perl_vendorlib}/*
-
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
-Requires: %{name}-client-perl = %{version}-%{release}
-Requires: %{name}-client-php = %{version}-%{release}
+%if (0%{?fedora} >= 22)
+Recommends: perl-DBD-monetdb >= 1.0
+Recommends: php-monetdb >= 1.0
+%endif
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires: python-monetdb >= 1.0
 
@@ -434,11 +407,10 @@ developer.
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
-%{_bindir}/sample2
-%{_bindir}/sample3
 %{_bindir}/sample4
 %{_bindir}/smack00
 %{_bindir}/smack01
+%{_bindir}/shutdowntest
 %{_bindir}/testgetinfo
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
@@ -561,6 +533,32 @@ install it.
 %{_libdir}/monetdb5/lib_rapi.so
 %endif
 
+%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%package python2
+Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
+Group: Applications/Databases
+Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
+
+%description python2
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the interface to use the Python language from
+within SQL queries.  This package is for Python 2.
+
+NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
+know how this package affects the security of your system, do not
+install it.
+
+%files python2
+%defattr(-,root,root)
+%{_libdir}/monetdb5/pyapi.*
+%{_libdir}/monetdb5/autoload/*_pyapi.mal
+%{_libdir}/monetdb5/lib_pyapi.so
+%endif
+
 %if %{?with_fits:1}%{!?with_fits:0}
 %package cfitsio
 Summary: MonetDB: Add on module that provides support for FITS files
@@ -589,7 +587,6 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
-Obsoletes: MonetDB5-server-rdf
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 %if %{bits} == 64
@@ -649,6 +646,9 @@ fi
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/lidar.mal
 %endif
+%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%exclude %{_libdir}/monetdb5/pyapi.mal
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
@@ -665,6 +665,9 @@ fi
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
+%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%exclude %{_libdir}/monetdb5/autoload/*_pyapi.mal
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
 %endif
@@ -676,6 +679,9 @@ fi
 %exclude %{_libdir}/monetdb5/lib_gsl.so
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/lib_lidar.so
+%endif
+%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%exclude %{_libdir}/monetdb5/lib_pyapi.so
 %endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/lib_rapi.so
@@ -744,8 +750,6 @@ Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 # RHEL >= 7, and all current Fedora
 Requires: %{_bindir}/systemd-tmpfiles
 %endif
-Obsoletes: MonetDB-SQL-devel
-Obsoletes: %{name}-SQL
 %if (0%{?fedora} >= 22)
 %if %{bits} == 64
 Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
@@ -836,7 +840,6 @@ frontend of MonetDB.
 %package testing
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
-Obsoletes: MonetDB-python
 
 %description testing
 MonetDB is a database management system that is developed from a
@@ -897,37 +900,31 @@ developer, but if you do want to test, this is the package you need.
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
-	--enable-jdbc=no \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--enable-mapi=yes \
-	--enable-merocontrol=no \
-	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
 	--enable-optimize=yes \
 	--enable-profile=no \
+	--enable-pyintegration=%{?with_pyintegration:yes}%{!?with_pyintegration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
 	--enable-shp=no \
 	--enable-sql=yes \
 	--enable-strict=no \
 	--enable-testing=yes \
-	--with-ant=no \
 	--with-bz2=yes \
 	--with-curl=yes \
 	--with-gdal=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
-	--with-java=no \
 	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-libxml2=yes \
 	--with-lzma=yes \
 	--with-openssl=yes \
-	--with-perl=yes \
-	--with-perl-libdir=lib/perl5 \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python=yes \
+	--with-python2=yes \
+	--with-python3=no \
 	--with-readline=yes \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
@@ -945,10 +942,6 @@ mkdir -p %{buildroot}%{_localstatedir}/MonetDB
 mkdir -p %{buildroot}%{_localstatedir}/monetdb5/dbfarm
 mkdir -p %{buildroot}%{_localstatedir}/log/monetdb
 mkdir -p %{buildroot}%{_localstatedir}/run/monetdb
-mkdir -p %{buildroot}%{perl_vendorlib}
-if [ ! %{buildroot}%{_prefix}/lib/perl5 -ef %{buildroot}%{perl_vendorlib} ]; then
-    mv %{buildroot}%{_prefix}/lib/perl5/* %{buildroot}%{perl_vendorlib}
-fi
 
 # remove unwanted stuff
 # .la files
@@ -962,6 +955,79 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Oct 07 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.13-20161007
+- Rebuilt.
+- BZ#4058: Server crashes with a particular conditional query
+- BZ#4064: Assertion: column not found
+- BZ#4067: Relevant column name not printed when a CSV parsing error
+  occurs
+- BZ#4070: Extra condition in join predicate of explicit join produces
+  wrong MAL code
+- BZ#4074: Cannot use prepared statements when caching disabled
+- BZ#6065: CTE with row number and union fails within MAL
+
+* Wed Sep 28 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.11-20160928
+- Rebuilt.
+
+* Mon Sep 26 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.11-20160928
+- buildtools: We now use the CommonCrypto library instead of the OpenSSL library
+  on Darwin.
+
+* Mon Sep 19 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.9-20160919
+- Rebuilt.
+- BZ#3939: Assert failure on concurrent queries when querying sys.queue
+- BZ#4019: Casting a timestamp from a string results in NULL
+- BZ#4025: expressions in the WHERE clause that evaluates incorrectly
+- BZ#4038: After upgrade from 11.21.19, jdbc couldn't list tables for
+  non sys users
+- BZ#4044: Server crash when trying to delete a table has been added to
+  a merge table with "cascade" at the end
+- BZ#4049: Wrong results for queries with "OR" and "LEFT JOIN"
+- BZ#4052: Infinite loop in rel_select
+- BZ#4054: copy into file wrongly exports functions
+- BZ#4059: Geom functions only visible by user monetdb
+- BZ#4060: BAT leak in some aggregate queries
+- BZ#4062: Error: SELECT: no such binary operator 'like(varchar,varchar)'
+  when used in query running in other schema than sys
+
+* Wed Jul 13 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.7-20160713
+- Rebuilt.
+- BZ#4014: KILL signal
+- BZ#4021: Analyze query does not escape input [security]
+- BZ#4026: JDBC driver incorrectly converts TINYINT fields to String
+  instead of an integer type.
+- BZ#4028: inputs not the same size
+- BZ#4032: no decimal places after update. ODBC driver
+- BZ#4035: SQL Function call bug
+- BZ#4036: Possible sql_catalog corruption due to unclean backuped tail
+
+* Thu Jul  7 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.7-20160713
+- java: Corrected PROCEDURE_TYPE output value of method DatabaseMetaData.getProcedures().
+  It used to return procedureReturnsResult. Now it returns procedureNoResult.
+  Corrected ORDINAL_POSITION output value of method DatabaseMetaData.getProcedureColumns().
+  It used to start with 0, but as procedures do not return a result value it now
+  starts with 1 for all the procedure arguments, as defined by the JDBC API.
+- java: Improved output of method DatabaseMetaData.getProcedures(). The REMARKS
+  column now contains the procedure definition as stored in sys.functions.func.
+  The SPECIFIC_NAME column now contains the procedure unique identifier as
+  stored in sys.functions.id. This allows the caller to retrieve the specific
+  overloaded procedure which has the same name, but different arguments.
+  Also improved output of method DatabaseMetaData.getProcedureColumns().
+  The SPECIFIC_NAME column now contains the procedure unique identifier as
+  stored in sys.functions.id. This allows the caller to retrieve the proper
+  arguments of the specific overloaded procedure by matching the SPECIFIC_NAME
+  value.
+- java: Improved output of method DatabaseMetaData.getFunctions(). The REMARKS
+  column now contains the function definition as stored in sys.functions.func.
+  The SPECIFIC_NAME column now contains the function unique identifier as
+  stored in sys.functions.id. This allows the caller to retrieve the specific
+  overloaded function which has the same name, but different arguments.
+  Also improved output of method DatabaseMetaData.getFunctionColumns().
+  The SPECIFIC_NAME column now contains the function unique identifier as
+  stored in sys.functions.id. This allows the caller to retrieve the proper
+  arguments of the specific overloaded function by matching the SPECIFIC_NAME
+  value.
+
 * Mon Jul 04 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.5-20160704
 - Rebuilt.
 - BZ#4031: mclient doesn't accept - argument to refer to stdin

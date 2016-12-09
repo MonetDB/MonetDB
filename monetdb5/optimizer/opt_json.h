@@ -14,11 +14,10 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-opt_export int OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /* #define _DEBUG_OPT_JSON_ */
 #undef DEBUG_OPT_JSON
 #define DEBUG_OPT_JSON 1
-#define OPTDEBUGjson  if ( optDebug & ((lng) 1 <<DEBUG_OPT_JSON) )
 
 #endif

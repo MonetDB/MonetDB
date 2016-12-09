@@ -30,11 +30,11 @@ Ready.
 function user.qry():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
-    X_16:int := calc.+(1:int,2:int);    	#[3] (0) CMDvarADDsignal 16 <- 4 6 
-    zz:int := X_16:int;                 	#[4] (0)  5 <- 16 
+    X_12:int := calc.+(1:int,2:int);    	#[3] (0) CMDvarADDsignal 16 <- 4 6 
+    zz:int := X_12:int;                 	#[4] (0)  5 <- 16 
 # base line test for inlining           
-    X_21:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[6] (0) CMDbatADDsignal 21 <- 1 1 
-    z:bat[:int] := X_21:bat[:int];      	#[7] (0)  8 <- 21 
+    X_17:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[6] (0) CMDbatADDsignal 21 <- 1 1 
+    z:bat[:int] := X_17:bat[:int];      	#[7] (0)  8 <- 21 
     z:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] (0) CMDbatADDsignal 8 <- 1 6 
 end user.qry;                           	#[9] (0)  
 

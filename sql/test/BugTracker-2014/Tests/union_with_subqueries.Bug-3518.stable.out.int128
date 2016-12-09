@@ -26,8 +26,8 @@ Ready.
 # 18:48:46 >  
 
 #SELECT sum(a), sum(a) FROM (( SELECT 1 AS A ) UNION ALL (SELECT 3 AS A)) AS query;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L14,	.L17 # table_name
+% L13,	L16 # name
 % hugeint,	hugeint # type
 % 1,	1 # length
 [ 4,	4	]

@@ -92,7 +92,6 @@ gdk_export int dblFromStr(const char *src, int *len, dbl **dst);
 gdk_export int dblToStr(str *dst, int *len, const dbl *src);
 gdk_export ssize_t GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len);
 gdk_export int strFromStr(const char *src, int *len, str *dst);
-gdk_export int strToStr(str *dst, int *len, const char *src);
 gdk_export BUN strHash(const char *s);
 gdk_export int strLen(const char *s);
 gdk_export int strNil(const char *s);
@@ -121,7 +120,7 @@ gdk_export int escapedStr(char *dst, const char *src, int dstlen, const char *se
 #ifdef HAVE_HGE
 #define GDK_hge_max ((((hge) 1) << 126) - 1 + \
                      (((hge) 1) << 126))
-#define GDK_hge_min (((hge) 1) << 127)
+#define GDK_hge_min (-GDK_hge_max-1)
 #endif
 #define GDK_dbl_max ((dbl) DBL_MAX)
 #define GDK_dbl_min (-GDK_dbl_max)

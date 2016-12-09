@@ -247,22 +247,34 @@ sql_trans_deref( sql_trans *tr )
 		for ( m = s->tables.set->h; m; m = m->next) {
 			sql_table *t = m->data;
 
-			if (t->po) 
+			if (t->po) { 
+				sql_table *p = t->po;
+
 				t->po = t->po->po;
+				table_destroy(p);
+			}
 
 			if (t->columns.set)
 			for ( o = t->columns.set->h; o; o = o->next) {
 				sql_column *c = o->data;
 
-				if (c->po) 
+				if (c->po) {
+					sql_column *p = c->po;
+
 					c->po = c->po->po;
+					column_destroy(p);
+				}
 			}
 			if (t->idxs.set)
 			for ( o = t->idxs.set->h; o; o = o->next) {
 				sql_idx *i = o->data;
 
-				if (i->po) 
+				if (i->po) {
+					sql_idx *p = i->po;
+
 					i->po = i->po->po;
+					idx_destroy(p);
+				}
 			}
 		}
 	}
@@ -310,13 +322,14 @@ build up the hash (not copied in the trans dup)) */
 	tr = tr->parent;
 	if (tr->parent) {
 		store_lock();
-		while (tr->parent != NULL && ok == SQL_OK) {
+		while (ctr->parent->parent != NULL && ok == SQL_OK) {
 			/* first free references to tr objects, ie
 			 * c->po = c->po->po etc
 			 */
 			ctr = sql_trans_deref(ctr);
-			tr = sql_trans_destroy(tr);
 		}
+		while (tr->parent != NULL && ok == SQL_OK) 
+			tr = sql_trans_destroy(tr);
 		store_unlock();
 	}
 	cur -> parent = tr;
@@ -1351,7 +1364,7 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 	v->frame = frame;
 	if (type) {
 		int tpe = type->type->localtype;
-		VALinit(&sql->vars[var].a.data, tpe, ATOMnilptr(tpe));
+		VALset(&sql->vars[var].a.data, tpe, (ptr) ATOMnilptr(tpe));
 		v->a.tpe = *type;
 	}
 	if (name)
@@ -1490,6 +1503,20 @@ stack_find_rel_view(mvc *sql, const char *name)
 			return rel_dup(sql->vars[i].rel);
 	}
 	return NULL;
+}
+
+void 
+stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		if (!sql->vars[i].frame && sql->vars[i].view &&
+		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0) {
+			rel_destroy(sql->vars[i].rel);
+			sql->vars[i].rel = view;
+		}
+	}
 }
 
 int 

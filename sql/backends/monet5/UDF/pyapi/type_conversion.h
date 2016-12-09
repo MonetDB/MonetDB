@@ -17,9 +17,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "pyapi.h"
-
-
+#include "pyheader.h"
 
 //! Copies the string of size up to max_size from the source to the destination, returns FALSE if "source" is not a legal ASCII string (i.e. a character is >= 128)
 bool string_copy(char * source, char* dest, size_t max_size, bool allow_unicode);
@@ -28,31 +26,33 @@ bool string_copy(char * source, char* dest, size_t max_size, bool allow_unicode)
 int hge_to_string(char *str, hge );
 //! Converts a base-10 string to a hge value
 str str_to_hge(char *ptr, size_t maxsize, hge *value);
-#if PY_MAJOR_VERSION >= 3
+#ifdef IS_PY3K
 //! Converts a base-10 utf32-encoded string to a hge value
-str unicode_to_hge(char *utf32, size_t maxsize, hge *value);   
+str unicode_to_hge(char *utf32, size_t maxsize, hge *value);
 #else
-str unicode_to_hge(Py_UNICODE *utf32, size_t maxsize, hge *value);   
-#endif 
+str unicode_to_hge(Py_UNICODE *utf32, size_t maxsize, hge *value);
+#endif
 //! Converts a PyObject to a hge value
 str pyobject_to_hge(PyObject **ptr, size_t maxsize, hge *value);
 //! Create a PyLongObject from a hge integer
 PyObject *PyLong_FromHge(hge h);
 #endif
+//! Returns the minimum size needed when this python object is converted to a string
+size_t pyobject_get_size(PyObject *obj);
+//! Converts a PyObject to a str; the output string will be a newly allocated string (if *value == NULL) or stored in *value (if *value != NULL)
+str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value);
 
-
-
-#if PY_MAJOR_VERSION >= 3
+#ifdef IS_PY3K
 //using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
     str str_to_##tpe(char *ptr, size_t maxsize, tpe *value);          \
     str unicode_to_##tpe(char *ptr, size_t maxsize, tpe *value);                  \
-    str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);     
+    str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);
 #else
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
     str str_to_##tpe(char *ptr, size_t maxsize, tpe *value);          \
     str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value);                  \
-    str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);  
+    str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);
 #endif
 
 CONVERSION_FUNCTION_HEADER_FACTORY(bte)
@@ -64,6 +64,6 @@ CONVERSION_FUNCTION_HEADER_FACTORY(lng)
 CONVERSION_FUNCTION_HEADER_FACTORY(flt)
 CONVERSION_FUNCTION_HEADER_FACTORY(dbl)
 
-NUMPY_IMPORT_ARRAY_RETTYPE _typeconversion_init(void);
+void _typeconversion_init(void);
 
 #endif /* _TYPE_CONVERSION_ */

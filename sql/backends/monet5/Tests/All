@@ -27,7 +27,7 @@ HAVE_LIBPY?pyapi01
 HAVE_LIBPY?pyapi02
 HAVE_LIBPY?pyapi03
 HAVE_LIBPY?pyapi04
-HAVE_LIBSCIPY?pyapi05
+HAVE_LIBPY&HAVE_LIBSCIPY?pyapi05
 HAVE_LIBPY?pyapi06
 HAVE_LIBPY?pyapi07
 HAVE_LIBPY?pyapi08
@@ -50,6 +50,16 @@ HAVE_LIBPY?pyapi26
 HAVE_LIBPY?pyapi27
 HAVE_LIBPY?pyapi28
 HAVE_LIBPY?pyapi29
+HAVE_LIBPY?pyapi30
+HAVE_LIBPY?pyapi32
+
+HAVE_LIBPY?pyloader01
+HAVE_LIBPY?pyloader02
+HAVE_LIBPY?pyloader03
+HAVE_LIBPY?pyloader04
+HAVE_LIBPY?pyloader05
+HAVE_LIBPY?pyloader06
+HAVE_LIBPY?pyloader07
 
 # should this work?
 #inlineUDF
@@ -59,3 +69,6 @@ HAVE_LIBPY?pyapi29
 
 simpleSQL
 limithack
+shutdown
+
+HAVE_HGE?int_notation_1e5

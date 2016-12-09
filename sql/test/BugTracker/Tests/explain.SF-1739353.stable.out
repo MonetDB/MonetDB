@@ -5,87 +5,148 @@ stdout of test 'explain.SF-1739353` in directory 'sql/test/BugTracker` itself:
 # 15:15:36 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33159 --set xrpc_port=45591 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
 # 15:15:36 >  
 
-# MonetDB server v5.16.0, based on kernel v1.34.0
-# Serving database 'mTests_src_test_BugTracker', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Detected 7.753 GiB (8324386816 bytes) main-memory.
+# 12:04:36 >  
+# 12:04:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39801" "--set" "mapi_usock=/var/tmp/mtest-31630/.s.monetdb.39801" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 12:04:36 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:33159/
-# MonetDB/SQL module v2.34.0 loaded
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:39801/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31630/.s.monetdb.39801
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
 
+# 12:04:37 >  
+# 12:04:37 >  "./explain.SF-1739353.SQL.sh" "explain.SF-1739353"
+# 12:04:37 >  
+
+
+# 12:04:37 >  
+# 12:04:37 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h toulouse -p 39801 -d mTests_sql_test_BugTracker -f "../../../../../dev/sql/test/BugTracker/Tests/explain.SF-1739353-data.sql"
+# 12:04:37 >  
+
+# 11:07:50 >  
+# 11:07:50 >  "./explain.SF-1739353.SQL.sh" "explain.SF-1739353"
+# 11:07:50 >  
+
+
+# 11:07:50 >  
+# 11:07:50 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h localhost -p 33313 -d mTests_sql_test_BugTracker -f "../../../../../../../data/MonetDB/sql/test/BugTracker/Tests/explain.SF-1739353-data.sql"
+# 11:07:50 >  
 
 Operation successful
-
-+------------------------------------------------------------------------------------------------------+
++---------------------------------------------------------------------------------------------------------+
 | mal    |
-+======================================================================================================+
-| function user.s2_1():void;                                                                           |
-|     X_45:void := querylog.define("explain select \"name\" from \"tables\"\n;","sequential_pipe",33); |
-|     X_31 := bat.new(nil:str);                                                                        |
-|     X_37 := bat.append(X_31,".tables");                                                              |
-|     X_32 := bat.new(nil:str);                                                                        |
-|     X_39 := bat.append(X_32,"name");                                                                 |
-|     X_33 := bat.new(nil:str);                                                                        |
-|     X_40 := bat.append(X_33,"varchar");                                                              |
-|     X_34 := bat.new(nil:int);                                                                        |
-|     X_42 := bat.append(X_34,1024);                                                                   |
-|     X_36 := bat.new(nil:int);                                                                        |
-|     X_44 := bat.append(X_36,0);                                                                      |
-|     X_2:bat[:str] := bat.new(nil:str);                                                               |
-|     X_1 := sql.mvc();                                                                                |
-|     X_7:bat[:sht] := sql.bind(X_1,"sys","_tables","type",0);                                         |
-|     C_4:bat[:oid] := sql.tid(X_1,"sys","_tables");                                                   |
-|     C_61 := algebra.subselect(X_7,C_4,2,2,true,true,true);                                           |
-|     (C_10,r1_10) := sql.bind(X_1,"sys","_tables","type",2);                                          |
-|     C_62 := algebra.subselect(r1_10,nil:bat[:oid],2,2,true,true,true);                               |
-|     X_13:bat[:sht] := sql.bind(X_1,"sys","_tables","type",1);                                        |
-|     C_64 := algebra.subselect(X_13,C_4,2,2,true,true,true);                                          |
-|     C_16 := sql.subdelta(C_61,C_4,C_10,C_62,C_64);                                                   |
-|     X_18:bat[:str] := sql.bind(X_1,"sys","_tables","name",0);                                        |
-|     (C_20,r1_24) := sql.bind(X_1,"sys","_tables","name",2);                                          |
-|     X_22:bat[:str] := sql.bind(X_1,"sys","_tables","name",1);                                        |
-|     X_23 := sql.projectdelta(C_16,X_18,C_20,r1_24,X_22);                                             |
-|     X_24 := bat.append(X_2,X_23,true);                                                               |
-|     C_25:bat[:oid] := sql.tid(X_1,"tmp","_tables");                                                  |
-|     X_27:bat[:str] := sql.bind(X_1,"tmp","_tables","name",0);                                        |
-|     X_28 := algebra.projection(C_25,X_27);                                                           |
-|     X_29 := bat.append(X_24,X_28,true);                                                              |
-|     sql.resultSet(X_37,X_39,X_40,X_42,X_44,X_29);                                                    |
-| end user.s2_1;                                                                                     |
-| #inline               actions= 0 time=1 usec                                                         |
-| #remap                actions= 0 time=3 usec                                                         |
-| #costmodel            actions= 1 time=2 usec                                                         |
-| #coercion             actions= 1 time=7 usec                                                         |
-| #evaluate             actions= 0 time=4 usec                                                         |
-| #aliases              actions= 0 time=6 usec                                                         |
-| #pushselect           actions= 4 time=27 usec                                                        |
-| #mergetable           actions= 0 time=31 usec                                                        |
-| #deadcode             actions= 4 time=7 usec                                                         |
-| #aliases              actions= 0 time=5 usec                                                         |
-| #constants            actions= 3 time=6 usec                                                         |
-| #commonTerms          actions= 0 time=6 usec                                                         |
-| #projectionpath       actions= 0 time=4 usec                                                         |
-| #reorder              actions= 1 time=24 usec                                                        |
-| #deadcode             actions= 0 time=6 usec                                                         |
-| #reduce               actions=26 time=22 usec                                                        |
-| #matpack              actions= 0 time=2 usec                                                         |
++=========================================================================================================+
+| function user.s4_1():void;                                                                           |
+|     X_0:void := querylog.define("explain select \"name\" from \"tables\"\n;","sequential_pipe",36:int); |
+|     X_40 := bat.new(nil:str);                                                                        |
+|     X_46 := bat.append(X_40,".tables");                                                              |
+|     X_41 := bat.new(nil:str);                                                                        |
+|     X_48 := bat.append(X_41,"name");                                                                 |
+|     X_42 := bat.new(nil:str);                                                                        |
+|     X_50 := bat.append(X_42,"varchar");                                                              |
+|     X_43 := bat.new(nil:int);                                                                        |
+|     X_52 := bat.append(X_43,1024:int);                                                                   |
+|     X_45 := bat.new(nil:int);                                                                        |
+|     X_54 := bat.append(X_45,0:int);                                                                      |
+|     X_35:bat[:str] := bat.new(nil:str);                                                              |
+|     X_3 := sql.mvc();                                                                                |
+|     X_17:bat[:sht] := sql.bind(X_3,"sys","_tables","type",0:int);                                        |
+|     C_4:bat[:oid] := sql.tid(X_3,"sys","_tables");                                                   |
+|     C_65 := algebra.subselect(X_17,C_4,2:sht,2:sht,true,true,true);                                     |
+|     (C_20:bat[:oid],X_21:bat[:sht]) := sql.bind(X_3,"sys","_tables","type",2:int);                       |
+|     C_66 := algebra.subselect(X_21,nil:bat[:oid],2:sht,2:sht,true,true,true);                           |
+|     X_19:bat[:sht] := sql.bind(X_3,"sys","_tables","type",1:int);                                        |
+|     C_68 := algebra.subselect(X_19,C_4,2:sht,2:sht,true,true,true);                                     |
+|     C_26 := sql.subdelta(C_65,C_4,C_20,C_66,C_68);                                                      |
+|     X_7:bat[:str] := sql.bind(X_3,"sys","_tables","name",0:int);                                         |
+|     (C_12:bat[:oid],X_13:bat[:str]) := sql.bind(X_3,"sys","_tables","name",2:int);                       |
+|     X_10:bat[:str] := sql.bind(X_3,"sys","_tables","name",1:int);                                        |
+|     X_29 := sql.projectdelta(C_26,X_7,C_12,X_13,X_10);                                               |
+|     X_37 := bat.append(X_35,X_29,true);                                                              |
+|     C_31:bat[:oid] := sql.tid(X_3,"tmp","_tables");                                                  |
+|     X_33:bat[:str] := sql.bind(X_3,"tmp","_tables","name",0:int);                                        |
+|     X_34 := algebra.projection(C_31,X_33);                                                           |
+|     X_38 := bat.append(X_37,X_34,true);                                                              |
+|     sql.resultSet(X_46,X_48,X_50,X_52,X_54,X_38);                                                    |
+| end user.s4_1;                                                                                       |
+| #inline               actions= 0 time=1 usec                                                             |
+| #remap                actions= 0 time=4 usec                                                            |
+| #costmodel            actions= 1 time=3 usec                                                            |
+| #coercion             actions= 1 time=11 usec                                                           |
+| #evaluate             actions= 0 time=5 usec                                                            |
+| #emptybind            actions= 0 time=1 usec                                                            |
+| #pushselect           actions= 5 time=47 usec                                                           |
+| #aliases              actions= 2 time=14 usec                                                           |
+| #mergetable           actions= 0 time=54 usec                                                           |
+| #deadcode             actions= 3 time=13 usec                                                           |
+| #aliases              actions= 0 time=1 usec                                                            |
+| #constants            actions= 3 time=12 usec                                                           |
+| #commonTerms          actions= 0 time=10 usec                                                           |
+| #projectionpath       actions= 0 time=6 usec                                                            |
+| #reorder              actions= 1 time=43 usec                                                           |
+| #deadcode             actions= 0 time=9 usec                                                            |
+| #matpack              actions= 0 time=1 usec                                                            |
 | #multiplex            actions= 0 time=3 usec                                                         |
-| #profiler             actions= 1 time=5 usec                                                         |
-| #candidates           actions= 1 time=1 usec                                                         |
-| #garbagecollector     actions= 1 time=16 usec                                                        |
-| #total                actions= 1 time=265 usec                                                       |
-+------------------------------------------------------------------------------------------------------+
+| #profiler             actions= 1 time=6 usec                                                            |
+| #candidates           actions= 1 time=2 usec                                                             |
+| #garbagecollector     actions= 1 time=26 usec                                                           |
+| #total                actions=23 time=423 usec                                                          |
++---------------------------------------------------------------------------------------------------------+
 55 rows
 
-
-# 15:15:37 >  
-# 15:15:37 >  Done.
-# 15:15:37 >  
+# 09:07:58 >  
+# 09:07:58 >  "Done."
+# 09:07:58 >  
 

@@ -27,29 +27,29 @@ Ready.
 
 #set optimizer='minimal_pipe';
 #select 1; 
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select count(*) from bbp() as bbp where refcnt > 0; 
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 3 # length
-[ 425	]
+[ 428	]
 #select 1; 
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select count(*) from bbp() as bbp where refcnt > 0; 
-% .L1 # table_name
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 3 # length
-[ 429	]
+[ 432	]
 
 # 16:21:20 >  
 # 16:21:20 >  "Done."

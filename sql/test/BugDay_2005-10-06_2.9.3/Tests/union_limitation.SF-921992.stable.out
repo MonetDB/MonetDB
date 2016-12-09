@@ -22,7 +22,7 @@ Ready.
 #SELECT 'abc' AS c1, '123' AS c2
 #UNION ALL
 #SELECT val1 AS c1, val2 AS c2 FROM union_test;
-% .L,	.L # table_name
+% .L14,	.L14 # table_name
 % c1,	c2 # name
 % varchar,	varchar # type
 % 6,	6 # length

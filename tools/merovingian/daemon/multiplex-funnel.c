@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <pthread.h>
 #include <sys/types.h>
 
 #include <mapi.h>
@@ -33,7 +32,7 @@ static pthread_mutex_t mpl_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t mfmanager = 0;
 static int mfpipe[2];
 
-static void multiplexThread(void *d);
+static void *multiplexThread(void *d);
 
 
 /**
@@ -45,7 +44,7 @@ static void multiplexThread(void *d);
  * database.  To maintain a stable query performance, the connection
  * creation must happen in the background and set life once established.
  */
-static void
+static void *
 MFconnectionManager(void *d)
 {
 	int i;
@@ -106,7 +105,7 @@ MFconnectionManager(void *d)
 						if (len >= 4 &&
 								buf[len - 3] == '*' && buf[len - 4] == '/')
 							buf[len - 2] = '\0';
-						if (glob(buf, msg + 1) == 1) {
+						if (db_glob(buf, msg + 1) == 1) {
 							sabdb *stats;
 							Mapi tm = NULL;
 							/* match! eat away trailing / (for matching) */
@@ -155,7 +154,7 @@ MFconnectionManager(void *d)
 						if (len >= 4 &&
 								buf[len - 3] == '*' && buf[len - 4] == '/')
 							buf[len - 2] = '\0';
-						if (glob(buf, msg + 1) == 1) {
+						if (db_glob(buf, msg + 1) == 1) {
 							/* reevaluate, to see if connection is still
 							 * available */
 							sabdb *walk;
@@ -217,6 +216,7 @@ MFconnectionManager(void *d)
 
 		free(msg); /* alloced by multiplexNotify* */
 	}
+	return NULL;
 }
 
 void
@@ -377,7 +377,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 
 		Mfprintf(stdout, "starting multiplex-funnel connection manager\n");
 		if ((i = pthread_create(&mfmanager, &detach,
-				(void *(*)(void *))MFconnectionManager, (void *)NULL)) != 0)
+				MFconnectionManager, NULL)) != 0)
 		{
 			Mfprintf(stderr, "failed to start MFconnectionManager: %s\n",
 					strerror(i));
@@ -408,7 +408,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 	pthread_mutex_unlock(&mpl_lock);
 
 	if ((i = pthread_create(&m->tid, NULL,
-					(void *(*)(void *))multiplexThread, (void *)m)) != 0)
+					multiplexThread, (void *)m)) != 0)
 	{
 		/* FIXME: we don't cleanup here */
 		return(newErr("starting thread for multiplex-funnel %s failed: %s",
@@ -669,7 +669,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 		mapi_close_handle(m->dbcv[i]->hdl);
 }
 
-static void
+static void *
 multiplexThread(void *d)
 {
 	multiplex *m = (multiplex *)d;
@@ -780,7 +780,6 @@ multiplexThread(void *d)
 		c = m->clients;
 		close_stream(c->fdin);
 		close_stream(c->fout);
-		close(c->sock);
 		free(c->name);
 		m->clients = m->clients->next;
 		free(c);
@@ -808,7 +807,7 @@ multiplexThread(void *d)
 	while (p != NULL) {
 		if (p->type == MEROFUN && strcmp(p->dbname, m->name) == 0) {
 			/* log everything that's still in the pipes */
-			logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile);
+			logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
 			/* remove from the list */
 			q->next = p->next;
 			/* close the descriptors */
@@ -827,6 +826,7 @@ multiplexThread(void *d)
 
 	free(m->name);
 	free(m);
+	return NULL;
 }
 
 void
@@ -848,15 +848,15 @@ multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
 		if (strcmp(ml->m->name, mp) == 0)
 			break;
 	}
-	pthread_mutex_unlock(&mpl_lock);
 	if (ml == NULL) {
+		pthread_mutex_unlock(&mpl_lock);
 		Mfprintf(stderr, "failed to find multiplex-funnel '%s' for client %s\n",
 				mp, name);
 		mnstr_printf(fout, "!monetdbd: internal error: could not find multiplex-funnel '%s'\n", mp);
 		mnstr_flush(fout);
 		close_stream(fdin);
 		close_stream(fout);
-		close(sock);
+		free(n->name);
 		free(n);
 		return;
 	}
@@ -865,9 +865,11 @@ multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
 	if (m->clients == NULL) {
 		m->clients = n;
 	} else {
-		for (w = m->clients; w->next != NULL; w = w->next);
+		for (w = m->clients; w->next != NULL; w = w->next)
+			;
 		w->next = n;
 	}
+	pthread_mutex_unlock(&mpl_lock);
 
 	Mfprintf(m->sout, "mfunnel: added new client %s\n", n->name);
 
@@ -893,7 +895,6 @@ multiplexRemoveClient(multiplex *m, multiplex_client *c)
 			c->next = NULL;
 			close_stream(c->fdin);
 			close_stream(c->fout);
-			close(c->sock);
 			free(c->name);
 			free(c);
 			break;

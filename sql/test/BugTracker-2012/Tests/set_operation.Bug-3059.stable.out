@@ -97,7 +97,7 @@ Ready.
 [ 3,	1,	16	]
 [ 3,	2,	2	]
 #SELECT count(*) as c FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter;
-% sys.L1 # table_name
+% sys.L14 # table_name
 % c # name
 % bigint # type
 % 1 # length
@@ -112,7 +112,7 @@ Ready.
 [ 2,	1,	28	]
 [ 3,	0,	1	]
 #SELECT count(*) as c FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff;
-% sys.L1 # table_name
+% sys.L14 # table_name
 % c # name
 % bigint # type
 % 1 # length

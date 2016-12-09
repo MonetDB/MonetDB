@@ -38,22 +38,20 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	slimit = mb->ssize;
 	vlimit = mb->vtop;
 
-	// move SQL query to front
+	// move SQL query definition to the front for event profiling tools
 	p = NULL;
-	for(i = limit; i> 2; i--){
+	for(i = 0; i < limit; i++)
 		if(mb->stmt[i] && getModuleId(mb->stmt[i]) == querylogRef && getFunctionId(mb->stmt[i]) == defineRef ){
-			p = mb->stmt[i];
-			p = pushInt(mb,p,i+1);
+			p = getInstrPtr(mb,i);
 			break;
 		}
-	}
+	
 	if( p != NULL){
 		for(  ; i > 1; i--)
 			mb->stmt[i] = mb->stmt[i-1];
 		mb->stmt[1] = p;
-		mb->stmt[1]->token = ASSIGNsymbol;
+		setVariableScope(mb);
 	}
-	setVariableScope(mb);
 
 	if ( newMalBlkStmt(mb,mb->ssize) < 0) 
 		return 0;
@@ -110,8 +108,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			freeInstruction(old[i]);
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 	GDKfree(old);
-	OPTDEBUGgarbageCollector{ 
-		int k;
+#ifdef DEBUG_OPT_GARBAGE
+	{ 	int k;
 		mnstr_printf(cntxt->fdout, "#Garbage collected BAT variables \n");
 		for ( k =0; k < vlimit; k++)
 		mnstr_printf(cntxt->fdout,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
@@ -121,6 +119,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 		mnstr_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
+#endif
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);

@@ -108,7 +108,7 @@ Ready.
 % sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	smallint # type
-% 12,	4,	169,	1,	5,	1,	5,	1 # length
+% 12,	4,	379,	1,	5,	1,	5,	1 # length
 [ "schemas",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ "types",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ "functions",	2000,	NULL,	0,	true,	0,	false,	0	]

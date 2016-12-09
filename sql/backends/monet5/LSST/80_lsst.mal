@@ -5,5 +5,4 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 # This loads the MonetDB/SQL module
-library lsst;
 include lsst;

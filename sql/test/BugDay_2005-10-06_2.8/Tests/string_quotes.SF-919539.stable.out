@@ -15,14 +15,14 @@ Ready.
 
 
 #select 'a' 'a';
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 2 # length
 [ "aa"	]
 #select 'a''a';
-% .L # table_name
-% single_value # name
+% .L1 # table_name
+% L1 # name
 % char # type
 % 3 # length
 [ "a'a"	]

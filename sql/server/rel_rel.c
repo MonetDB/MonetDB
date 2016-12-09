@@ -53,6 +53,7 @@ rel_destroy_(sql_rel *rel)
 	    is_select(rel->op) ||
 	    is_set(rel->op) ||
 	    rel->op == op_topn ||
+	    rel->op == op_apply ||
 		rel->op == op_sample) {
 		if (rel->l)
 			rel_destroy(rel->l);
@@ -415,6 +416,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	if (is_project(r->op) && r->exps) {
 		node *ne = r->exps->h;
 
+		r->exps->ht = NULL;
 		for (; ne; ne = ne->next) {
 			if (all) {
 				nr = ++sql->label;
@@ -428,6 +430,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		list *exps = r->r;
 		node *ne = exps->h;
 
+		exps->ht = NULL;
 		for (; ne; ne = ne->next) {
 			if (all) {
 				nr = ++sql->label;
@@ -444,8 +447,11 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
 
-	if (!e->rname) 
-		exp_setrelname(sql->sa, e, sql->label);
+	if (!e->rname) {
+		exp_setrelname(sql->sa, e, ++sql->label);
+		if (!e->name)
+			e->name = e->rname;
+	}
 	if (rel->op == op_project) {
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);
@@ -633,6 +639,10 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
 			char *iname = sa_strconcat( sa, "%", i->base.name);
 
+			/* do not include empty indices in the plan */
+			if (hash_index(i->type) && list_length(i->columns) <= 1)
+				continue;
+
 			if (i->type == join_idx)
 				t = sql_bind_localtype("oid"); 
 
@@ -715,6 +725,21 @@ rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps)
 	return rel;
 }
 
+sql_rel *
+rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
+{
+	sql_rel *rel = rel_create(sa);
+
+	rel->flag = kind;
+	rel->l = l; /* relation before call */
+	rel->r = f; /* expression (table func call) */
+	rel->op = op_table;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = list_length(exps);
+	return rel;
+}
+
 static void
 exps_has_nil(list *exps)
 {
@@ -730,10 +755,10 @@ exps_has_nil(list *exps)
 list *
 rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern )
 {
-	int label = sql->label;
-	list *rexps, *exps ;
+	list *rexps, *exps;
+	int intern_only = (intern==2)?1:0;
 
-	if (!rel || (is_subquery(rel) && is_project(rel->op)))
+	if (!rel || (is_subquery(rel) /*&& is_project(rel->op)*/ && rel->op == op_project))
 		return new_exp_list(sql->sa);
 
 	switch(rel->op) {
@@ -762,11 +787,14 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	case op_inter:
 		if (rel->exps) {
 			node *en;
+			int label = ++sql->label;
 
 			exps = new_exp_list(sql->sa);
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 				if (intern || !is_intern(e)) {
+					if (!is_intern(e) && intern_only && (exp_name(e)[0] != '%' && exp_name(e)[0] != 'L' && exp_relname(e)[0] != 'L')) 
+						continue;
 					append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
 					if (!settname) /* noname use alias */
 						exp_setrelname(sql->sa, e, label);
@@ -778,6 +806,7 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 		exps = rel_projections(sql, rel->l, tname, settname, intern );
 		if (exps) {
 			node *en;
+			int label = ++sql->label;
 			for (en = exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 				e->card = rel->card;
@@ -1039,28 +1068,41 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 {
 	sql_rel *rel, *ll = l->l, *rl = r->l;
 
-	if (l == r && is_outerjoin(l->op)) { /* merge both lists */
+	assert(!lexps || l == r);
+	if (l == r && lexps) { /* merge both lists */
 		sql_exp *e = exp_or(sql->sa, lexps, rexps);
 		list *nl = oexps?oexps:new_exp_list(sql->sa); 
 		
 		rel_destroy(r);
 		append(nl, e);
+		if (is_outerjoin(l->op) && is_processed(l)) 
+			l = rel_select(sql->sa, l, NULL);
 		l->exps = nl;
 		return l;
 	}
 
-	if (l->op == r->op && 
-		((ll == rl && l->r == r->r && l->r == NULL /* or check if columns are equal*/) ||
-
-		(exps_card(l->exps) == exps_card(r->exps) && exps_card(l->exps) <= CARD_ATOM))) {
+	/* favor or expressions over union */
+	if (l->op == r->op && l->op == op_select &&
+	    ll == rl && !rel_is_ref(l) && !rel_is_ref(r)) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
 		list *nl = new_exp_list(sql->sa); 
 		
 		rel_destroy(r);
 		append(nl, e);
 		l->exps = nl;
+
+		/* merge and expressions */
+		ll = l->l;
+		while (ll && ll->op == op_select && !rel_is_ref(ll)) {
+			list_merge(l->exps, ll->exps, (fdup)NULL);
+			l->l = ll->l;
+			ll->l = NULL;
+			rel_destroy(ll);
+			ll = l->l;
+		}
 		return l;
 	}
+
 	l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
 	r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	set_processed(l);
@@ -1130,3 +1172,35 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 		return rel;
 	return _rel_add_identity(sql, rel, exp);
 }
+
+sql_exp *
+rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname )
+{
+	if (!rel)
+		return NULL;
+
+	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
+		int ambiguous = 0;
+		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
+		if (!e && cname[0] == '%')
+			e = exps_bind_column(rel->exps, cname, &ambiguous);
+		if (e && !ambiguous)
+			return exp_alias(sa, e->rname, exp_name(e), e->rname, cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+	}
+	if (is_project(rel->op) && rel->l) {
+		return rel_find_column(sa, rel->l, tname, cname);
+	} else if (is_join(rel->op)) {
+		sql_exp *e = rel_find_column(sa, rel->l, tname, cname);
+		if (!e)
+			e = rel_find_column(sa, rel->r, tname, cname);
+		return e;
+	} else if (is_set(rel->op) ||
+		   is_sort(rel) ||
+		   is_semi(rel->op) ||
+		   is_select(rel->op)) {
+		if (rel->l)
+			return rel_find_column(sa, rel->l, tname, cname);
+	}
+	return NULL;
+}
+

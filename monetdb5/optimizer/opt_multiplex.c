@@ -41,10 +41,12 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tt;
 	int bat = (getModuleId(pci) == batmalRef) ;
 
+	//if ( optimizerIsApplied(mb,"multiplex"))
+		//return 0;
 	(void) cntxt;
 	(void) stk;
 	for (i = 0; i < pci->retc; i++) {
-		tt = getColumnType(getArgType(mb, pci, i));
+		tt = getBatType(getArgType(mb, pci, i));
 		if (tt== TYPE_any)
 			throw(MAL, "optimizer.multiplex", "Target tail type is missing");
 		if (isAnyExpression(getArgType(mb, pci, i)))
@@ -69,8 +71,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( i == pci->argc)
 		throw(MAL, "optimizer.multiplex", "Iterator BAT type is missing");
 
-	OPTDEBUGmultiplex {
-		char *tpenme;
+#ifdef DEBUG_OPT_MULTIPLEX
+	{	char *tpenme;
 		mnstr_printf(cntxt->fdout,"#calling the optimize multiplex script routine\n");
 		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL );
 		tpenme = getTypeName(getVarType(mb,iter));
@@ -78,6 +80,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(tpenme);
 		printInstruction(cntxt->fdout,mb, 0, pci,LIST_MAL_ALL);
 	}
+#endif
 	/*
 	 * Beware, the operator constant (arg=1) is passed along as well,
 	 * because in the end we issue a recursive function call that should
@@ -97,9 +100,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		q = newFcnCall(mb, batRef, newRef);
 		resB[i] = getArg(q, 0);
 
-		tt = getColumnType(getArgType(mb, pci, i));
+		tt = getBatType(getArgType(mb, pci, i));
 
-		setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+		setVarType(mb, getArg(q, 0), newBatType(tt));
 		q = pushType(mb, q, tt);
 	}
 
@@ -116,7 +119,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = pci->retc+2; i < pci->argc; i++) {
 		if (getArg(pci, i) != iter && isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, algebraRef, "fetch");
-			alias[i] = newTmpVariable(mb, getColumnType(getArgType(mb, pci, i)));
+			alias[i] = newTmpVariable(mb, getBatType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
 			q= pushArgument(mb, q, getArg(pci, i));
 			(void) pushArgument(mb, q, hvar);
@@ -128,8 +131,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < pci->retc; i++) {
 		int nvar = 0;
 		if (bat) {
-			tt = getColumnType(getArgType(mb, pci, i));
-			nvar = newTmpVariable(mb, newBatType(TYPE_oid, tt));
+			tt = getBatType(getArgType(mb, pci, i));
+			nvar = newTmpVariable(mb, newBatType(tt));
 		} else {
 			nvar = newTmpVariable(mb, TYPE_any);
 		}
@@ -209,7 +212,7 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 int
 OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr *old, p;
+	InstrPtr *old = 0, p;
 	int i, limit, slimit, actions= 0;
 	str msg= MAL_SUCCEED;
 	char buf[256];

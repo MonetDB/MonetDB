@@ -21,7 +21,6 @@
 #include <rel_select.h>
 #include <rel_exp.h>
 #include <rel_dump.h>
-#include <rel_bin.h>
 #include <opt_pipes.h>
 #include "clients.h"
 #include "mal_instruction.h"
@@ -383,7 +382,7 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 	if ((len > 0 && sz > len) || sz < 0) {
 		if (r)
 			GDKfree(r);
-		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), p) != 0) {
+		if (ATOMcmp(tpe, ATOMnilptr(tpe), p) != 0) {
 			throw(SQL, "str_cast", "22001!value too long for type (var)char(%d)", len);
 		} else {
 			r = GDKstrdup(str_nil);

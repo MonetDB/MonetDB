@@ -1,0 +1,37 @@
+stderr of test 'bincopycollist` in directory 'sql/test` itself:
+
+
+# 17:04:52 >  
+# 17:04:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34187" "--set" "mapi_usock=/var/tmp/mtest-69867/.s.monetdb.34187" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/myth/opt/var/MonetDB/mTests_sql_test"
+# 17:04:52 >  
+
+# builtin opt 	gdk_dbpath = /Users/myth/opt/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34187
+# cmdline opt 	mapi_usock = /var/tmp/mtest-69867/.s.monetdb.34187
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/myth/opt/var/MonetDB/mTests_sql_test
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:04:52 >  
+# 17:04:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-69867" "--port=34187"
+# 17:04:52 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-69867/.s.monetdb.34187
+QUERY = COPY BINARY INTO intvals (a) FROM ('/Users/myth/opt/mTests/sql/test/bincopyint.bin');
+ERROR = !COPY BINARY INTO: no such column 'intvals.a'
+
+# 17:04:53 >  
+# 17:04:53 >  "Done."
+# 17:04:53 >  
+

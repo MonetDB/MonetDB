@@ -45,7 +45,7 @@ Ready.
 #         AND    span2.pre < ancestor.post)
 #AND    span1.pre <> span2.pre
 #ORDER BY pre1, pre2;
-% sys.L,	sys.L # table_name
+% sys.L14,	sys.L16 # table_name
 % pre1,	pre2 # name
 % int,	int # type
 % 1,	1 # length
@@ -65,7 +65,7 @@ Ready.
 #         AND    span2.pre2 < ancestor.post)
 #AND    span1.pre1 <> span2.pre2
 #ORDER BY pre1, pre2;
-% sys.L,	sys.L # table_name
+% sys.L16,	sys.L20 # table_name
 % pre1,	pre2 # name
 % int,	int # type
 % 1,	1 # length
@@ -82,7 +82,7 @@ Ready.
 #         AND    span2.pre < ancestor.post)
 #AND    span1.pre <> span2.pre
 #ORDER BY pre1, pre2;
-% sys.L,	sys.L # table_name
+% sys.L5,	sys.L7 # table_name
 % pre1,	pre2 # name
 % int,	int # type
 % 1,	1 # length
@@ -99,7 +99,7 @@ Ready.
 #AND    span2.pre < ancestor.post
 #AND    span1.pre <> span2.pre
 #ORDER BY pre1, pre2;
-% sys.L,	sys.L # table_name
+% sys.L10,	sys.L12 # table_name
 % pre1,	pre2 # name
 % int,	int # type
 % 1,	1 # length

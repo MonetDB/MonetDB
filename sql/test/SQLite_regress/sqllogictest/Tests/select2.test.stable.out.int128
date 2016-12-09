@@ -93,8 +93,8 @@ Ready.
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END
 #  FROM t1
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -185,8 +185,8 @@ Ready.
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L2,	.t1 # table_name
-% a,	L1,	L2,	d # name
+% .t1,	.L2,	.L3,	.t1 # table_name
+% a,	L1,	L3,	d # name
 % int,	bigint,	hugeint,	int # type
 % 1,	2,	1,	3 # length
 [ NULL,	1,	NULL,	114	]
@@ -197,8 +197,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR (a>b-2 AND a<b+2)
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	bigint # type
 % 1,	2 # length
 [ 0,	NULL	]
@@ -223,8 +223,8 @@ Ready.
 # WHERE d NOT BETWEEN 110 AND 150
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	b,	L4,	L5 # name
+% .L1,	.L2,	.L4,	.t1,	.L5,	.L6 # table_name
+% L1,	L2,	L3,	b,	L5,	L6 # name
 % hugeint,	smallint,	bigint,	int,	smallint,	hugeint # type
 % 4,	3,	2,	3,	3,	4 # length
 [ NULL,	444,	0,	NULL,	222,	NULL	]
@@ -322,8 +322,8 @@ Ready.
 #   AND coalesce(a,b,c,d,e)<>0
 #   AND c>d
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% c,	L1,	L2,	L3,	L4,	L5,	L6 # name
+% .t1,	.L1,	.L2,	.L3,	.L5,	.L6,	.L7 # table_name
+% c,	L1,	L2,	L3,	L4,	L6,	L7 # name
 % int,	smallint,	bigint,	bigint,	bigint,	hugeint,	int # type
 % 3,	3,	2,	1,	2,	4,	3 # length
 [ 119,	444,	-1,	3,	0,	NULL,	115	]
@@ -343,8 +343,8 @@ Ready.
 # WHERE b>c
 #   AND (e>c OR e<d)
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% d,	L1,	L2,	L3,	L4,	L5,	L6 # name
+% .t1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
+% d,	L1,	L3,	L4,	L5,	L6,	L7 # name
 % int,	bigint,	bigint,	bigint,	smallint,	bigint,	bigint # type
 % 3,	2,	1,	2,	3,	3,	1 # length
 [ NULL,	9,	3,	NULL,	555,	475,	3	]
@@ -367,8 +367,8 @@ Ready.
 # WHERE b IS NOT NULL
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.t1,	.t1,	.L1,	.L2,	.L3,	.L4 # table_name
-% e,	b,	a,	L1,	L2,	L3,	L4 # name
+% .t1,	.t1,	.t1,	.L1,	.L3,	.L4,	.L5 # table_name
+% e,	b,	a,	L1,	L2,	L4,	L5 # name
 % int,	int,	int,	hugeint,	bigint,	bigint,	hugeint # type
 % 3,	3,	3,	4,	2,	2,	3 # length
 [ NULL,	124,	121,	NULL,	2,	-3,	NULL	]
@@ -407,8 +407,8 @@ Ready.
 #   AND c>d
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L2,	.L3,	.L4,	.L5 # table_name
+% L1,	L3,	L4,	L5 # name
 % bigint,	hugeint,	bigint,	bigint # type
 % 1,	4,	2,	2 # length
 [ 0,	NULL,	NULL,	NULL	]
@@ -434,8 +434,8 @@ Ready.
 [ 1902,	127,	128,	222	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -522,8 +522,8 @@ Ready.
 #       a-b
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
-% L2,	b,	L3,	L4,	L5,	L6,	L7 # name
+% sys.L3,	sys.t1,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
+% L3,	b,	L4,	L5,	L6,	L7,	L10 # name
 % bigint,	int,	hugeint,	smallint,	bigint,	smallint,	bigint # type
 % 4,	3,	4,	3,	2,	3,	2 # length
 [ NULL,	NULL,	NULL,	444,	NULL,	555,	NULL	]
@@ -607,8 +607,8 @@ Ready.
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND b IS NOT NULL
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .L3,	.L4,	.L5 # table_name
+% L2,	L4,	L5 # name
 % bigint,	bigint,	hugeint # type
 % 1,	2,	4 # length
 [ 0,	NULL,	NULL	]
@@ -633,8 +633,8 @@ Ready.
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L5 # table_name
-% L1,	L2,	e,	L3,	L5 # name
+% sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L6 # table_name
+% L1,	L2,	e,	L3,	L6 # name
 % hugeint,	hugeint,	int,	bigint,	bigint # type
 % 4,	4,	3,	2,	4 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -657,8 +657,8 @@ Ready.
 #       a+b*2+c*3+d*4
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.L2,	sys.L3,	sys.t1,	sys.L4 # table_name
-% e,	L2,	L3,	d,	L4 # name
+% sys.t1,	sys.L3,	sys.L4,	sys.t1,	sys.L5 # table_name
+% e,	L3,	L4,	d,	L5 # name
 % int,	bigint,	bigint,	int,	hugeint # type
 % 3,	4,	2,	3,	4 # length
 [ NULL,	NULL,	NULL,	101,	NULL	]
@@ -698,8 +698,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% .t1,	.t1,	.L1 # table_name
-% e,	a,	L1 # name
+% .t1,	.t1,	.L3 # table_name
+% e,	a,	L2 # name
 % int,	int,	bigint # type
 % 3,	3,	1 # length
 [ NULL,	NULL,	0	]
@@ -727,7 +727,7 @@ Ready.
 #    OR (e>a AND e<b)
 #    OR a IS NULL
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
+% .L1,	.L2,	.t1,	.L3,	.L4,	.L6 # table_name
 % L1,	L2,	c,	L3,	L4,	L5 # name
 % bigint,	bigint,	int,	bigint,	hugeint,	bigint # type
 % 3,	1,	3,	2,	4,	2 # length
@@ -762,8 +762,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR c>d
 #ORDER BY 1,2,3;
-% .L2,	.L3,	.L4 # table_name
-% L2,	L3,	L4 # name
+% .L3,	.L4,	.L6 # table_name
+% L3,	L4,	L5 # name
 % bigint,	smallint,	bigint # type
 % 4,	3,	1 # length
 [ NULL,	444,	0	]
@@ -789,8 +789,8 @@ Ready.
 # WHERE a IS NULL
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.t1,	.L4 # table_name
-% L1,	L2,	d,	L4 # name
+% .L1,	.L3,	.t1,	.L6 # table_name
+% L1,	L2,	d,	L6 # name
 % bigint,	bigint,	int,	bigint # type
 % 1,	2,	3,	4 # length
 [ NULL,	0,	101,	NULL	]
@@ -821,8 +821,8 @@ Ready.
 #    OR b IS NOT NULL
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.L4 # table_name
-% a,	L1,	L2,	L3,	L4 # name
+% .t1,	.L2,	.L3,	.L4,	.L6 # table_name
+% a,	L2,	L3,	L4,	L5 # name
 % int,	bigint,	hugeint,	hugeint,	bigint # type
 % 3,	2,	4,	4,	1 # length
 [ NULL,	-1,	NULL,	NULL,	0	]
@@ -877,8 +877,8 @@ Ready.
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L1,	.L2,	.L4,	.L5,	.L6,	.L7 # table_name
+% L1,	L2,	L3,	L5,	L6,	L7 # name
 % bigint,	hugeint,	bigint,	bigint,	hugeint,	smallint # type
 % 1,	4,	2,	2,	4,	3 # length
 [ NULL,	NULL,	0,	NULL,	NULL,	444	]
@@ -935,8 +935,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% sys.L1,	sys.L3 # table_name
-% L1,	L3 # name
+% sys.L2,	sys.L5 # table_name
+% L2,	L5 # name
 % hugeint,	bigint # type
 % 4,	4 # length
 [ 1272,	1290	]
@@ -990,9 +990,9 @@ Ready.
 #  FROM t1
 # WHERE a IS NULL
 #   AND d>e
-#;
-% sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1,	sys.L6,	sys.t1 # table_name
-% L2,	L3,	L4,	L5,	a,	L6,	d # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.t1,	sys.L7,	sys.t1 # table_name
+% L3,	L4,	L5,	L6,	a,	L7,	d # name
 % bigint,	int,	smallint,	bigint,	int,	bigint,	int # type
 % 4,	1,	3,	1,	1,	1,	3 # length
 [ 1120,	NULL,	555,	NULL,	NULL,	4,	114	]
@@ -1145,8 +1145,8 @@ Ready.
 # WHERE b>c
 #   AND (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L3,	.t1,	.L4 # table_name
-% c,	L1,	L2,	L3,	a,	L4 # name
+% .t1,	.L1,	.L3,	.L4,	.t1,	.L5 # table_name
+% c,	L1,	L2,	L4,	a,	L5 # name
 % int,	bigint,	bigint,	hugeint,	int,	hugeint # type
 % 3,	1,	1,	4,	3,	3 # length
 [ 193,	1,	0,	2878,	191,	192	]
@@ -1159,8 +1159,8 @@ Ready.
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L1,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
+% L1,	L2,	L4,	L5,	L6,	L7 # name
 % hugeint,	bigint,	bigint,	int,	bigint,	bigint # type
 % 3,	2,	2,	3,	2,	2 # length
 [ NULL,	0,	-1,	201,	-1,	NULL	]
@@ -1200,9 +1200,9 @@ Ready.
 #       a+b*2,
 #       c
 #  FROM t1
-#;
-% sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.t1 # table_name
-% L2,	L3,	L4,	L5,	L6,	c # name
+#ORDER BY 1,2,3,4,5,6;
+% sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.t1 # table_name
+% L3,	L4,	L5,	L6,	L7,	c # name
 % bigint,	int,	hugeint,	bigint,	bigint,	int # type
 % 4,	3,	4,	2,	3,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	208	]
@@ -1361,8 +1361,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5,6,7;
-% .L2,	.L3,	.L4,	.L5,	.L6,	.L7,	.L10 # table_name
-% L2,	L3,	L4,	L5,	L6,	L7,	L10 # name
+% .L3,	.L4,	.L5,	.L7,	.L10,	.L11,	.L12 # table_name
+% L3,	L4,	L5,	L6,	L10,	L11,	L12 # name
 % bigint,	hugeint,	bigint,	bigint,	bigint,	bigint,	smallint # type
 % 4,	4,	1,	2,	2,	3,	3 # length
 [ NULL,	NULL,	NULL,	0,	1,	NULL,	444	]
@@ -1402,7 +1402,7 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3;
-% .L1,	.t1,	.L2 # table_name
+% .L1,	.t1,	.L3 # table_name
 % L1,	e,	L2 # name
 % hugeint,	int,	bigint # type
 % 3,	3,	1 # length
@@ -1426,8 +1426,8 @@ Ready.
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L4,	sys.L5,	sys.L6 # table_name
-% L1,	L2,	L4,	L5,	L6 # name
+% sys.L1,	sys.L2,	sys.L5,	sys.L6,	sys.L7 # table_name
+% L1,	L2,	L5,	L6,	L7 # name
 % bigint,	hugeint,	bigint,	bigint,	smallint # type
 % 2,	1,	4,	1,	3 # length
 [ -2,	NULL,	NULL,	NULL,	555	]
@@ -1516,8 +1516,8 @@ Ready.
 #    OR c>d
 #    OR (e>c OR e<d)
 #ORDER BY 1,2;
-% sys.L1,	sys.L3 # table_name
-% L1,	L3 # name
+% sys.L1,	sys.L4 # table_name
+% L1,	L4 # name
 % bigint,	bigint # type
 % 2,	4 # length
 [ NULL,	NULL	]
@@ -1585,7 +1585,7 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR a>b
 #ORDER BY 1,2,3;
-% .L1,	.t1,	.L2 # table_name
+% .L1,	.t1,	.L3 # table_name
 % L1,	b,	L2 # name
 % hugeint,	int,	bigint # type
 % 4,	3,	2 # length
@@ -1643,8 +1643,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #   AND (e>a AND e<b)
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT b-c,
@@ -1668,8 +1668,8 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4 # table_name
-% L1,	L2,	L3,	a,	L4 # name
+% sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L5 # table_name
+% L2,	L3,	L4,	a,	L5 # name
 % bigint,	hugeint,	bigint,	int,	bigint # type
 % 2,	4,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	NULL,	-2	]
@@ -1719,8 +1719,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -1760,8 +1760,8 @@ Ready.
 #    OR a>b
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L5,	L6 # name
+% .L2,	.L4,	.L5,	.L10,	.L11 # table_name
+% L2,	L3,	L5,	L10,	L11 # name
 % smallint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	1,	3,	4,	2 # length
 [ 111,	0,	137,	1390,	1	]
@@ -1851,8 +1851,8 @@ Ready.
 [ 666	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -1913,8 +1913,8 @@ Ready.
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR d>e
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .L2,	.L3,	.L4 # table_name
+% L2,	L3,	L4 # name
 % bigint,	bigint,	int # type
 % 2,	1,	3 # length
 [ NULL,	1,	NULL	]
@@ -1979,8 +1979,8 @@ Ready.
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .L2,	.L3,	.L4 # table_name
+% L1,	L3,	L4 # name
 % bigint,	hugeint,	bigint # type
 % 1,	3,	2 # length
 [ 0,	NULL,	NULL	]
@@ -2023,8 +2023,8 @@ Ready.
 #   AND b>c
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L1,	.L2,	.L4,	.L5 # table_name
+% L1,	L2,	L3,	L5 # name
 % smallint,	hugeint,	bigint,	bigint # type
 % 3,	4,	2,	1 # length
 [ 333,	1391,	23,	2	]
@@ -2037,8 +2037,8 @@ Ready.
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L1,	.L2,	.L4,	.L5,	.L6,	.L7 # table_name
+% L1,	L2,	L3,	L5,	L6,	L7 # name
 % hugeint,	bigint,	bigint,	bigint,	hugeint,	hugeint # type
 % 4,	1,	1,	2,	4,	4 # length
 [ NULL,	NULL,	0,	NULL,	NULL,	NULL	]
@@ -2081,8 +2081,8 @@ Ready.
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L1,	.L3,	.L4,	.L5 # table_name
+% L1,	L2,	L4,	L5 # name
 % bigint,	bigint,	hugeint,	bigint # type
 % 2,	1,	4,	2 # length
 [ NULL,	0,	NULL,	-1	]
@@ -2111,8 +2111,8 @@ Ready.
 # WHERE a>b
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ 358	]
@@ -2299,9 +2299,9 @@ Ready.
 #       CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
 #       b
 #  FROM t1
-#;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L7,	.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	L7,	b # name
+#ORDER BY 1,2,3,4,5,6,7;
+% .L2,	.L3,	.L4,	.L5,	.L6,	.L11,	.t1 # table_name
+% L1,	L3,	L4,	L5,	L6,	L11,	b # name
 % bigint,	bigint,	smallint,	hugeint,	bigint,	bigint,	int # type
 % 2,	2,	3,	4,	2,	4,	3 # length
 [ 0,	-2,	333,	1612,	2,	1050,	105	]
@@ -2377,8 +2377,8 @@ Ready.
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2,3;
-% sys.L1,	sys.t1,	sys.L3 # table_name
-% L1,	a,	L3 # name
+% sys.L1,	sys.t1,	sys.L4 # table_name
+% L1,	a,	L4 # name
 % smallint,	int,	bigint # type
 % 3,	3,	4 # length
 [ 111,	138,	1390	]
@@ -2474,8 +2474,8 @@ Ready.
 # WHERE d NOT BETWEEN 110 AND 150
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L3,	sys.L4 # table_name
-% L1,	L3,	L4 # name
+% sys.L1,	sys.L4,	sys.L5 # table_name
+% L1,	L4,	L5 # name
 % hugeint,	bigint,	bigint # type
 % 4,	4,	1 # length
 [ NULL,	NULL,	NULL	]
@@ -2506,8 +2506,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR a>b
 #ORDER BY 1,2;
-% sys.t1,	sys.L2 # table_name
-% c,	L2 # name
+% sys.t1,	sys.L3 # table_name
+% c,	L3 # name
 % int,	bigint # type
 % 3,	4 # length
 [ NULL,	2360	]
@@ -2578,8 +2578,8 @@ Ready.
 #   AND b IS NOT NULL
 #   AND c>d
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% L1,	e,	L2,	L3,	L4 # name
+% sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
+% L2,	e,	L3,	L4,	L5 # name
 % smallint,	int,	bigint,	hugeint,	bigint # type
 % 3,	3,	2,	3,	2 # length
 [ 111,	135,	1,	137,	-1	]
@@ -2603,9 +2603,9 @@ Ready.
 #       a
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
-#;
-% sys.L1,	sys.L2,	sys.L4,	sys.t1,	sys.t1,	sys.L5,	sys.t1 # table_name
-% L1,	L2,	L4,	e,	d,	L5,	a # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L2,	sys.L3,	sys.L6,	sys.t1,	sys.t1,	sys.L7,	sys.t1 # table_name
+% L2,	L3,	L6,	e,	d,	L7,	a # name
 % smallint,	hugeint,	bigint,	int,	int,	bigint,	int # type
 % 3,	4,	4,	3,	3,	2,	3 # length
 [ 111,	827,	1390,	135,	136,	1,	138	]
@@ -2645,8 +2645,8 @@ Ready.
 # WHERE (c<=d-2 OR c>=d+2)
 #    OR d>e
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
-% L1,	L2,	L3,	L4,	L6,	L7 # name
+% .L1,	.L3,	.L4,	.L5,	.L10,	.L11 # table_name
+% L1,	L2,	L4,	L5,	L10,	L11 # name
 % hugeint,	bigint,	bigint,	bigint,	bigint,	smallint # type
 % 3,	1,	3,	2,	4,	3 # length
 [ NULL,	0,	NULL,	-1,	1120,	555	]
@@ -2671,8 +2671,8 @@ Ready.
 #   AND coalesce(a,b,c,d,e)<>0
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -2699,8 +2699,8 @@ Ready.
 #       abs(b-c)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
-% L1,	d,	L2,	L3,	L4,	b,	L5 # name
+% .L2,	.t1,	.L3,	.L4,	.L5,	.t1,	.L6 # table_name
+% L1,	d,	L3,	L4,	L5,	b,	L6 # name
 % bigint,	int,	bigint,	bigint,	smallint,	int,	bigint # type
 % 2,	3,	2,	2,	3,	3,	1 # length
 [ 0,	101,	NULL,	1,	555,	NULL,	NULL	]
@@ -2743,8 +2743,8 @@ Ready.
 #   AND (e>a AND e<b)
 #   AND a>b
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L3,	.t1,	.L4,	.L5 # table_name
-% L1,	L3,	a,	L4,	L5 # name
+% .L1,	.L4,	.t1,	.L6,	.L7 # table_name
+% L1,	L4,	a,	L5,	L7 # name
 % hugeint,	bigint,	int,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1 # length
 #SELECT c-d,
@@ -2755,8 +2755,8 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #   AND d>e
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.t1 # table_name
-% L1,	L2,	L3,	b # name
+% .L1,	.L3,	.L4,	.t1 # table_name
+% L1,	L2,	L4,	b # name
 % bigint,	bigint,	hugeint,	int # type
 % 1,	2,	4,	3 # length
 [ 1,	4,	793,	130	]
@@ -2835,8 +2835,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L3,	.L4 # table_name
+% L2,	L4 # name
 % bigint,	int # type
 % 2,	3 # length
 [ 0,	107	]
@@ -2886,7 +2886,7 @@ Ready.
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
+% .L1,	.L2,	.L3,	.L4,	.L5,	.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
 % bigint,	smallint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	3,	2,	2,	3,	1 # length
@@ -2958,9 +2958,9 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #    OR a>b
 #    OR (a>b-2 AND a<b+2)
-#;
-% sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.t1 # table_name
-% L1,	L3,	L4,	d,	c # name
+#ORDER BY 1,2,3,4,5;
+% sys.L1,	sys.L4,	sys.L5,	sys.t1,	sys.t1 # table_name
+% L1,	L4,	L5,	d,	c # name
 % hugeint,	bigint,	bigint,	int,	int # type
 % 4,	4,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	207,	208	]
@@ -2996,8 +2996,8 @@ Ready.
 #       abs(a)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	d,	L3,	L4,	L5,	L6 # name
+% .L2,	.L3,	.t1,	.L4,	.L5,	.L6,	.L7 # table_name
+% L1,	L3,	d,	L4,	L5,	L6,	L7 # name
 % bigint,	bigint,	int,	bigint,	hugeint,	bigint,	int # type
 % 1,	1,	3,	2,	4,	3,	3 # length
 [ 0,	NULL,	101,	NULL,	NULL,	NULL,	104	]
@@ -3038,8 +3038,8 @@ Ready.
 #       a+b*2+c*3+d*4+e*5
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	d,	L2,	L3,	L4,	L5 # name
+% .L1,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
+% L1,	d,	L2,	L4,	L5,	L6 # name
 % bigint,	int,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	3,	2,	2,	2,	4 # length
 [ NULL,	101,	0,	NULL,	NULL,	NULL	]
@@ -3158,8 +3158,8 @@ Ready.
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	bigint # type
 % 1,	3 # length
 [ 0,	369	]
@@ -3212,8 +3212,8 @@ Ready.
 #   AND c>d
 #   AND a>b
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L3,	sys.L4 # table_name
-% L1,	L3,	L4 # name
+% sys.L2,	sys.L5,	sys.L6 # table_name
+% L2,	L5,	L6 # name
 % bigint,	bigint,	bigint # type
 % 2,	4,	2 # length
 [ -4,	1300,	1	]
@@ -3231,8 +3231,8 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	e,	L3,	L4,	L5 # name
+% .L1,	.L3,	.t1,	.L4,	.L5,	.L6 # table_name
+% L1,	L2,	e,	L4,	L5,	L6 # name
 % bigint,	bigint,	int,	bigint,	smallint,	hugeint # type
 % 2,	1,	3,	2,	3,	4 # length
 [ NULL,	0,	NULL,	NULL,	555,	NULL	]
@@ -3302,9 +3302,9 @@ Ready.
 #       a
 #  FROM t1
 # WHERE b IS NOT NULL
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.t1 # table_name
-% L1,	L2,	L3,	L5,	a # name
+#ORDER BY 1,2,3,4,5;
+% sys.L1,	sys.L2,	sys.L3,	sys.L6,	sys.t1 # table_name
+% L1,	L2,	L3,	L6,	a # name
 % hugeint,	bigint,	smallint,	bigint,	int # type
 % 4,	1,	3,	4,	3 # length
 [ NULL,	NULL,	555,	2360,	239	]
@@ -3354,7 +3354,7 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
+% .L1,	.L2,	.L4 # table_name
 % L1,	L2,	L3 # name
 % int,	bigint,	bigint # type
 % 3,	1,	2 # length
@@ -3385,8 +3385,8 @@ Ready.
 #    OR a>b
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4,5;
-% .L2,	.L3,	.L4,	.L5,	.t1 # table_name
-% L2,	L3,	L4,	L5,	c # name
+% .L3,	.L4,	.L6,	.L7,	.t1 # table_name
+% L3,	L4,	L5,	L7,	c # name
 % bigint,	bigint,	bigint,	hugeint,	int # type
 % 4,	2,	1,	3,	3 # length
 [ NULL,	NULL,	0,	NULL,	208	]
@@ -3591,8 +3591,8 @@ Ready.
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR a>b
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	d # name
+% .L1,	.L2,	.L4,	.L5,	.L6,	.t1 # table_name
+% L1,	L2,	L3,	L5,	L6,	d # name
 % hugeint,	bigint,	bigint,	bigint,	bigint,	int # type
 % 4,	2,	2,	2,	1,	3 # length
 [ NULL,	NULL,	7,	4,	2,	NULL	]
@@ -3628,9 +3628,9 @@ Ready.
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
-#;
-% sys.L1,	sys.t1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.t1 # table_name
-% L1,	d,	e,	L2,	L3,	L4,	a # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L2,	sys.t1,	sys.t1,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
+% L2,	d,	e,	L3,	L4,	L5,	a # name
 % int,	int,	int,	hugeint,	smallint,	bigint,	int # type
 % 3,	3,	3,	4,	3,	2,	3 # length
 [ NULL,	114,	110,	NULL,	555,	-1,	NULL	]
@@ -3698,8 +3698,8 @@ Ready.
 #    OR (e>c OR e<d)
 #    OR c>d
 #ORDER BY 1,2,3,4;
-% .L1,	.t1,	.L2,	.L3 # table_name
-% L1,	b,	L2,	L3 # name
+% .L1,	.t1,	.L3,	.L4 # table_name
+% L1,	b,	L2,	L4 # name
 % hugeint,	int,	bigint,	bigint # type
 % 4,	3,	1,	2 # length
 [ NULL,	NULL,	0,	NULL	]
@@ -3753,8 +3753,8 @@ Ready.
 #   AND a IS NULL
 #   AND d>e
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.L5 # table_name
-% L1,	L2,	d,	L4,	L5 # name
+% sys.L1,	sys.L2,	sys.t1,	sys.L5,	sys.L6 # table_name
+% L1,	L2,	d,	L5,	L6 # name
 % hugeint,	hugeint,	int,	bigint,	bigint # type
 % 1,	1,	3,	4,	1 # length
 [ NULL,	NULL,	114,	1120,	1	]
@@ -3769,8 +3769,8 @@ Ready.
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.t1,	.t1 # table_name
-% d,	L1,	L2,	L3,	L4,	c,	a # name
+% .t1,	.L1,	.L2,	.L4,	.L5,	.t1,	.t1 # table_name
+% d,	L1,	L2,	L3,	L5,	c,	a # name
 % int,	bigint,	smallint,	bigint,	hugeint,	int,	int # type
 % 3,	2,	3,	2,	4,	3,	3 # length
 [ 108,	-1,	333,	0,	1067,	106,	107	]
@@ -3790,9 +3790,9 @@ Ready.
 #       b-c,
 #       e
 #  FROM t1
-#;
-% .L1,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
-% L1,	L3,	L4,	L5,	L6,	e # name
+#ORDER BY 1,2,3,4,5,6;
+% .L2,	.L5,	.L6,	.L7,	.L10,	.t1 # table_name
+% L1,	L5,	L6,	L7,	L10,	e # name
 % bigint,	bigint,	hugeint,	hugeint,	bigint,	int # type
 % 2,	4,	4,	4,	2,	3 # length
 [ 0,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3836,8 +3836,8 @@ Ready.
 #    OR d>e
 #    OR coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L5,	L6 # name
+% .L1,	.L2,	.L4,	.L7,	.L11 # table_name
+% L1,	L2,	L3,	L7,	L10 # name
 % hugeint,	smallint,	bigint,	bigint,	bigint # type
 % 4,	3,	1,	4,	2 # length
 [ NULL,	222,	0,	402,	0	]
@@ -3891,7 +3891,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
+% .L1,	.L2,	.L3,	.L4,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
 % hugeint,	bigint,	smallint,	hugeint,	bigint # type
 % 4,	2,	3,	4,	1 # length
@@ -3933,8 +3933,8 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.t1,	.L2,	.L3,	.t1,	.L4 # table_name
-% c,	b,	L2,	L3,	e,	L4 # name
+% .t1,	.t1,	.L3,	.L4,	.t1,	.L6 # table_name
+% c,	b,	L3,	L4,	e,	L5 # name
 % int,	int,	bigint,	hugeint,	int,	bigint # type
 % 3,	3,	4,	4,	3,	2 # length
 [ NULL,	236,	2360,	NULL,	237,	24	]
@@ -4030,8 +4030,8 @@ Ready.
 #       a+b*2+c*3+d*4
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
+% L1,	L2,	L3,	L4,	L5,	L7 # name
 % smallint,	hugeint,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	4,	2,	2,	2,	4 # length
 [ 111,	2046,	1,	2,	5,	1371	]
@@ -4075,8 +4075,8 @@ Ready.
 #   AND d>e
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.t1 # table_name
-% L1,	L2,	L3,	L4,	d # name
+% .L1,	.L2,	.L4,	.L5,	.t1 # table_name
+% L1,	L2,	L3,	L5,	d # name
 % bigint,	hugeint,	bigint,	smallint,	int # type
 % 2,	4,	2,	3,	3 # length
 [ NULL,	NULL,	1,	555,	114	]
@@ -4094,7 +4094,7 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #   AND d>e
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % hugeint,	bigint # type
 % 4,	2 # length
@@ -4300,8 +4300,8 @@ Ready.
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3;
-% .t1,	.L1,	.L2 # table_name
-% a,	L1,	L2 # name
+% .t1,	.L2,	.L3 # table_name
+% a,	L1,	L3 # name
 % int,	bigint,	bigint # type
 % 3,	1,	2 # length
 [ 107,	0,	-1	]
@@ -4395,8 +4395,8 @@ Ready.
 #       a+b*2+c*3+d*4+e*5
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.t1,	sys.L2,	sys.L3 # table_name
-% d,	c,	L2,	L3 # name
+% sys.t1,	sys.t1,	sys.L3,	sys.L4 # table_name
+% d,	c,	L3,	L4 # name
 % int,	int,	bigint,	hugeint # type
 % 3,	3,	4,	4 # length
 [ NULL,	147,	1450,	NULL	]
@@ -4440,8 +4440,8 @@ Ready.
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% b,	L1,	L2,	L3,	L4,	L5 # name
+% .t1,	.L1,	.L2,	.L3,	.L5,	.L6 # table_name
+% b,	L1,	L2,	L3,	L4,	L6 # name
 % int,	smallint,	smallint,	hugeint,	bigint,	bigint # type
 % 3,	3,	3,	4,	1,	3 # length
 [ 105,	333,	333,	1612,	0,	317	]
@@ -4494,8 +4494,8 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2;
-% sys.L1,	sys.L3 # table_name
-% L1,	L3 # name
+% sys.L1,	sys.L4 # table_name
+% L1,	L4 # name
 % int,	bigint # type
 % 3,	4 # length
 [ NULL,	NULL	]
@@ -4597,9 +4597,9 @@ Ready.
 #       c
 #  FROM t1
 # WHERE (e>c OR e<d)
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.t1,	sys.t1 # table_name
-% L1,	L2,	L3,	L5,	a,	c # name
+#ORDER BY 1,2,3,4,5,6;
+% sys.L1,	sys.L2,	sys.L3,	sys.L6,	sys.t1,	sys.t1 # table_name
+% L1,	L2,	L3,	L6,	a,	c # name
 % hugeint,	bigint,	smallint,	bigint,	int,	int # type
 % 3,	2,	3,	4,	3,	3 # length
 [ NULL,	NULL,	333,	1580,	159,	155	]
@@ -4628,8 +4628,8 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #   AND d>e
 #   AND b>c
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -4861,8 +4861,8 @@ Ready.
 #       abs(a)
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L2,	.L3,	.L5,	.L6 # table_name
+% L1,	L2,	L3,	L4,	L6 # name
 % bigint,	bigint,	bigint,	bigint,	int # type
 % 1,	2,	3,	1,	3 # length
 [ NULL,	NULL,	NULL,	0,	104	]
@@ -4907,8 +4907,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.t1,	.t1,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	c,	d,	L4,	L5 # name
+% .L2,	.L3,	.L4,	.t1,	.t1,	.L6,	.L7 # table_name
+% L1,	L3,	L4,	c,	d,	L5,	L7 # name
 % bigint,	smallint,	bigint,	int,	int,	bigint,	bigint # type
 % 1,	3,	3,	3,	3,	1,	2 # length
 [ 0,	333,	317,	106,	108,	0,	2	]
@@ -4918,7 +4918,7 @@ Ready.
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % bigint,	bigint # type
 % 2,	1 # length
@@ -4981,8 +4981,8 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.t1,	.L4 # table_name
-% L1,	L2,	L3,	b,	L4 # name
+% .L1,	.L2,	.L4,	.t1,	.L5 # table_name
+% L1,	L2,	L3,	b,	L5 # name
 % smallint,	hugeint,	bigint,	int,	bigint # type
 % 3,	3,	2,	3,	2 # length
 [ 111,	247,	26,	249,	-1	]
@@ -5024,8 +5024,8 @@ Ready.
 #    OR coalesce(a,b,c,d,e)<>0
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L2,	.L3,	.L5,	.L6 # table_name
+% L2,	L3,	L4,	L6 # name
 % hugeint,	hugeint,	bigint,	bigint # type
 % 3,	4,	1,	1 # length
 [ NULL,	NULL,	0,	NULL	]
@@ -5112,8 +5112,8 @@ Ready.
 # WHERE (e>c OR e<d)
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L10 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6,	L10 # name
+% .L1,	.L2,	.L3,	.L5,	.L6,	.L10,	.L13 # table_name
+% L1,	L2,	L3,	L4,	L6,	L7,	L13 # name
 % hugeint,	bigint,	smallint,	bigint,	hugeint,	bigint,	bigint # type
 % 4,	1,	3,	1,	4,	2,	4 # length
 [ NULL,	NULL,	222,	0,	NULL,	0,	402	]
@@ -5233,8 +5233,8 @@ Ready.
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.L3,	.t1,	.L4 # table_name
-% L1,	d,	L2,	L3,	c,	L4 # name
+% .L1,	.t1,	.L3,	.L4,	.t1,	.L5 # table_name
+% L1,	d,	L2,	L4,	c,	L5 # name
 % hugeint,	int,	bigint,	hugeint,	int,	smallint # type
 % 1,	3,	1,	1,	3,	3 # length
 [ NULL,	114,	0,	NULL,	113,	444	]
@@ -5242,8 +5242,8 @@ Ready.
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END
 #  FROM t1
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -5324,9 +5324,9 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR a IS NULL
 #    OR c BETWEEN b-2 AND d+2
-#;
-% sys.L1,	sys.L3,	sys.L4,	sys.L5,	sys.t1,	sys.t1 # table_name
-% L1,	L3,	L4,	L5,	e,	b # name
+#ORDER BY 1,2,3,4,5,6;
+% sys.L1,	sys.L4,	sys.L5,	sys.L6,	sys.t1,	sys.t1 # table_name
+% L1,	L4,	L5,	L6,	e,	b # name
 % bigint,	bigint,	smallint,	bigint,	int,	int # type
 % 2,	4,	3,	2,	3,	3 # length
 [ -4,	1300,	333,	1,	132,	130	]
@@ -5350,9 +5350,9 @@ Ready.
 #       a+b*2,
 #       a
 #  FROM t1
-#;
-% .L1,	.L2,	.L3,	.t1 # table_name
-% L1,	L2,	L3,	a # name
+#ORDER BY 1,2,3,4;
+% .L2,	.L3,	.L4,	.t1 # table_name
+% L1,	L3,	L4,	a # name
 % bigint,	int,	bigint,	int # type
 % 1,	3,	3,	3 # length
 [ 0,	NULL,	NULL,	NULL	]
@@ -5395,8 +5395,8 @@ Ready.
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND b>c
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3 # table_name
-% d,	L1,	L2,	L3 # name
+% sys.t1,	sys.L2,	sys.L3,	sys.L4 # table_name
+% d,	L2,	L3,	L4 # name
 % int,	smallint,	bigint,	hugeint # type
 % 3,	3,	1,	4 # length
 [ NULL,	333,	3,	NULL	]
@@ -5412,8 +5412,8 @@ Ready.
 #       a+b*2+c*3+d*4+e*5
 #  FROM t1
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	hugeint # type
 % 1,	4 # length
 [ 0,	NULL	]
@@ -5478,8 +5478,8 @@ Ready.
 #    OR c BETWEEN b-2 AND d+2
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L6,	sys.L7 # table_name
-% L1,	L2,	L3,	L4,	L6,	L7 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L7,	sys.L10 # table_name
+% L1,	L2,	L3,	L4,	L7,	L10 # name
 % bigint,	smallint,	hugeint,	bigint,	bigint,	bigint # type
 % 2,	3,	4,	2,	4,	1 # length
 [ NULL,	222,	738,	-3,	1240,	1	]
@@ -5523,8 +5523,8 @@ Ready.
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.t1,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	b,	L5,	L6 # name
+% .L1,	.L3,	.L4,	.L5,	.t1,	.L6,	.L7 # table_name
+% L1,	L2,	L4,	L5,	b,	L6,	L7 # name
 % int,	bigint,	bigint,	hugeint,	int,	hugeint,	smallint # type
 % 3,	1,	2,	3,	3,	3,	3 # length
 [ 107,	0,	-1,	107,	105,	635,	333	]
@@ -5540,8 +5540,8 @@ Ready.
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.L3,	.t1,	.L5,	.L6 # table_name
-% e,	L1,	L2,	L3,	d,	L5,	L6 # name
+% .t1,	.L2,	.L3,	.L4,	.t1,	.L7,	.L10 # table_name
+% e,	L1,	L3,	L4,	d,	L7,	L10 # name
 % int,	bigint,	bigint,	smallint,	int,	bigint,	smallint # type
 % 3,	1,	2,	3,	3,	4,	3 # length
 [ NULL,	0,	NULL,	333,	NULL,	1510,	555	]
@@ -5626,8 +5626,8 @@ Ready.
 #    OR b IS NOT NULL
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
-% b,	L1,	L2,	a,	L3,	L4,	L5 # name
+% .t1,	.L2,	.L3,	.t1,	.L4,	.L5,	.L6 # table_name
+% b,	L2,	L3,	a,	L4,	L5,	L6 # name
 % int,	hugeint,	bigint,	int,	bigint,	bigint,	bigint # type
 % 3,	4,	2,	3,	2,	3,	2 # length
 [ 105,	1067,	-2,	107,	-1,	317,	-1	]
@@ -5664,8 +5664,8 @@ Ready.
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L2,	.L3 # table_name
-% a,	L1,	L2,	L3 # name
+% .t1,	.L2,	.L3,	.L4 # table_name
+% a,	L1,	L3,	L4 # name
 % int,	bigint,	int,	smallint # type
 % 3,	1,	3,	3 # length
 [ NULL,	0,	NULL,	444	]
@@ -5827,7 +5827,7 @@ Ready.
 # WHERE a>b
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.t1,	.t1,	.L3 # table_name
+% .L1,	.t1,	.L2,	.t1,	.t1,	.L4 # table_name
 % L1,	b,	L2,	e,	c,	L3 # name
 % hugeint,	int,	bigint,	int,	int,	bigint # type
 % 4,	3,	2,	3,	3,	1 # length
@@ -5870,8 +5870,8 @@ Ready.
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR a>b
 #ORDER BY 1,2,3,4,5,6;
-% sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.t1,	sys.L5 # table_name
-% L2,	d,	L3,	L4,	e,	L5 # name
+% sys.L3,	sys.t1,	sys.L4,	sys.L5,	sys.t1,	sys.L6 # table_name
+% L3,	d,	L4,	L5,	e,	L6 # name
 % bigint,	int,	smallint,	bigint,	int,	hugeint # type
 % 4,	3,	3,	3,	3,	4 # length
 [ NULL,	101,	555,	NULL,	NULL,	NULL	]
@@ -5906,8 +5906,8 @@ Ready.
 # WHERE b>c
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% .t1,	.L1 # table_name
-% d,	L1 # name
+% .t1,	.L2 # table_name
+% d,	L2 # name
 % int,	smallint # type
 % 3,	3 # length
 [ NULL,	222	]
@@ -5948,8 +5948,8 @@ Ready.
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.t1,	.L2,	.L3,	.L4 # table_name
-% L1,	e,	b,	L2,	L3,	L4 # name
+% .L1,	.t1,	.t1,	.L3,	.L4,	.L5 # table_name
+% L1,	e,	b,	L2,	L4,	L5 # name
 % bigint,	int,	int,	bigint,	smallint,	hugeint # type
 % 1,	3,	3,	2,	3,	4 # length
 [ NULL,	NULL,	NULL,	0,	444,	NULL	]
@@ -6020,8 +6020,8 @@ Ready.
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4;
-% .L1,	.t1,	.L2,	.L4 # table_name
-% L1,	d,	L2,	L4 # name
+% .L2,	.t1,	.L3,	.L6 # table_name
+% L2,	d,	L3,	L6 # name
 % bigint,	int,	bigint,	bigint # type
 % 2,	3,	2,	4 # length
 [ NULL,	NULL,	1,	1580	]
@@ -6185,8 +6185,8 @@ Ready.
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.t1,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	a,	L4,	L5,	L6 # name
+% .L1,	.L2,	.L4,	.t1,	.L5,	.L6,	.L7 # table_name
+% L1,	L2,	L3,	a,	L5,	L6,	L7 # name
 % hugeint,	smallint,	bigint,	int,	bigint,	int,	bigint # type
 % 4,	3,	2,	3,	1,	3,	2 # length
 [ NULL,	222,	2,	121,	1,	121,	1	]
@@ -6209,8 +6209,8 @@ Ready.
 #       c-d
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L2,	sys.L3,	sys.L4 # table_name
-% L2,	L3,	L4 # name
+% sys.L3,	sys.L4,	sys.L5 # table_name
+% L3,	L4,	L5 # name
 % bigint,	bigint,	bigint # type
 % 4,	2,	2 # length
 [ NULL,	NULL,	1	]
@@ -6252,8 +6252,8 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
-% L1,	L2,	L3,	L4,	d,	L5 # name
+% .L2,	.L3,	.L4,	.L6,	.t1,	.L7 # table_name
+% L1,	L3,	L4,	L5,	d,	L7 # name
 % bigint,	bigint,	hugeint,	bigint,	int,	bigint # type
 % 1,	2,	3,	2,	3,	2 # length
 [ 0,	NULL,	NULL,	0,	101,	1	]
@@ -6295,8 +6295,8 @@ Ready.
 #    OR c>d
 #    OR a>b
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L2,	.L3 # table_name
-% c,	L1,	L2,	L3 # name
+% .t1,	.L1,	.L3,	.L4 # table_name
+% c,	L1,	L2,	L4 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	3,	2,	2 # length
 [ NULL,	711,	24,	NULL	]
@@ -6339,8 +6339,8 @@ Ready.
 # WHERE a IS NULL
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.t1,	.t1,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	c,	e,	L4,	L5 # name
+% .L2,	.L3,	.L5,	.t1,	.t1,	.L6,	.L7 # table_name
+% L1,	L3,	L4,	c,	e,	L6,	L7 # name
 % bigint,	bigint,	bigint,	int,	int,	int,	smallint # type
 % 2,	2,	1,	3,	3,	3,	3 # length
 [ 1,	-1,	0,	113,	110,	NULL,	444	]
@@ -6442,8 +6442,8 @@ Ready.
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L3,	.L4,	.t1,	.L5,	.L6,	.L7 # table_name
-% L1,	L3,	L4,	e,	L5,	L6,	L7 # name
+% .L2,	.L5,	.L6,	.t1,	.L7,	.L10,	.L11 # table_name
+% L1,	L5,	L6,	e,	L7,	L10,	L11 # name
 % bigint,	bigint,	smallint,	int,	bigint,	bigint,	int # type
 % 2,	4,	3,	3,	2,	2,	3 # length
 [ 0,	NULL,	444,	117,	NULL,	-1,	115	]
@@ -6463,7 +6463,7 @@ Ready.
 # WHERE a IS NULL
 #   AND a>b
 #ORDER BY 1,2,3;
-% .t1,	.L1,	.L2 # table_name
+% .t1,	.L1,	.L3 # table_name
 % d,	L1,	L2 # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length
@@ -6476,8 +6476,8 @@ Ready.
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.t1,	.L3,	.L5,	.L6 # table_name
-% L1,	L2,	d,	L3,	L5,	L6 # name
+% .L1,	.L2,	.t1,	.L4,	.L7,	.L10 # table_name
+% L1,	L2,	d,	L3,	L7,	L10 # name
 % bigint,	bigint,	int,	bigint,	bigint,	hugeint # type
 % 2,	2,	3,	1,	4,	4 # length
 [ NULL,	3,	116,	0,	NULL,	NULL	]
@@ -6499,7 +6499,7 @@ Ready.
 # WHERE b IS NOT NULL
 #    OR d>e
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.t1 # table_name
+% .t1,	.L1,	.L2,	.L4,	.t1 # table_name
 % a,	L1,	L2,	L3,	b # name
 % int,	hugeint,	hugeint,	bigint,	int # type
 % 3,	4,	4,	1,	3 # length
@@ -6541,8 +6541,8 @@ Ready.
 #   AND c>d
 #   AND a IS NULL
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L4,	sys.t1,	sys.L5 # table_name
-% L1,	L2,	L4,	b,	L5 # name
+% sys.L1,	sys.L2,	sys.L5,	sys.t1,	sys.L6 # table_name
+% L1,	L2,	L5,	b,	L6 # name
 % hugeint,	smallint,	bigint,	int,	bigint # type
 % 1,	1,	1,	1,	1 # length
 #SELECT a+b*2+c*3+d*4,
@@ -6550,7 +6550,7 @@ Ready.
 #       e
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.t1 # table_name
+% .L1,	.L3,	.t1 # table_name
 % L1,	L2,	e # name
 % hugeint,	bigint,	int # type
 % 4,	2,	3 # length
@@ -6592,8 +6592,8 @@ Ready.
 #       a+b*2+c*3
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.t1,	.t1,	.t1,	.L2 # table_name
-% d,	L1,	a,	c,	e,	L2 # name
+% .t1,	.L2,	.t1,	.t1,	.t1,	.L3 # table_name
+% d,	L1,	a,	c,	e,	L3 # name
 % int,	bigint,	int,	int,	int,	hugeint # type
 % 3,	2,	3,	3,	3,	4 # length
 [ NULL,	7,	149,	147,	146,	880	]
@@ -6632,8 +6632,8 @@ Ready.
 #       a+b*2+c*3+d*4+e*5
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L1,	.L2,	.L4,	.L5 # table_name
+% L1,	L2,	L3,	L5 # name
 % hugeint,	int,	bigint,	hugeint # type
 % 3,	3,	1,	4 # length
 [ NULL,	NULL,	0,	NULL	]
@@ -6676,7 +6676,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L3,	.t1,	.L4,	.L5 # table_name
+% .L1,	.L2,	.t1,	.L3,	.t1,	.L4,	.L6 # table_name
 % L1,	L2,	b,	L3,	a,	L4,	L5 # name
 % bigint,	bigint,	int,	int,	int,	smallint,	bigint # type
 % 2,	1,	3,	3,	3,	3,	2 # length
@@ -6773,8 +6773,8 @@ Ready.
 #    OR (c<=d-2 OR c>=d+2)
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L6 # name
+% .L1,	.L2,	.L3,	.L5,	.L10 # table_name
+% L1,	L2,	L3,	L4,	L10 # name
 % bigint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	2,	4,	2,	4 # length
 [ NULL,	-1,	NULL,	1,	1120	]
@@ -6800,7 +6800,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2;
-% .t1,	.L1 # table_name
+% .t1,	.L2 # table_name
 % e,	L1 # name
 % int,	bigint # type
 % 3,	1 # length
@@ -6842,8 +6842,8 @@ Ready.
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.t1,	.L3,	.L5 # table_name
-% L1,	L2,	a,	L3,	L5 # name
+% .L1,	.L3,	.t1,	.L5,	.L10 # table_name
+% L1,	L2,	a,	L4,	L10 # name
 % bigint,	bigint,	int,	bigint,	bigint # type
 % 2,	2,	1,	1,	4 # length
 [ -1,	1,	NULL,	0,	1120	]
@@ -6913,8 +6913,8 @@ Ready.
 #       CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L3,	.L4,	.t1,	.L6 # table_name
-% L1,	L2,	e,	L3,	L4,	a,	L6 # name
+% .L2,	.L3,	.t1,	.L4,	.L5,	.t1,	.L10 # table_name
+% L1,	L3,	e,	L4,	L5,	a,	L10 # name
 % bigint,	hugeint,	int,	bigint,	bigint,	int,	bigint # type
 % 2,	3,	3,	3,	2,	3,	4 # length
 [ 0,	NULL,	NULL,	NULL,	1,	104,	NULL	]
@@ -6969,7 +6969,7 @@ Ready.
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3;
-% .L1,	.t1,	.L2 # table_name
+% .L1,	.t1,	.L3 # table_name
 % L1,	d,	L2 # name
 % bigint,	int,	bigint # type
 % 1,	3,	1 # length
@@ -6992,7 +6992,7 @@ Ready.
 #    OR a IS NULL
 #    OR (e>c OR e<d)
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.t1 # table_name
+% .L1,	.L2,	.L4,	.t1 # table_name
 % L1,	L2,	L3,	e # name
 % bigint,	hugeint,	bigint,	int # type
 % 2,	4,	1,	3 # length
@@ -7043,8 +7043,8 @@ Ready.
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.L3,	.L4 # table_name
-% L1,	d,	L2,	L3,	L4 # name
+% .L1,	.t1,	.L2,	.L4,	.L5 # table_name
+% L1,	d,	L2,	L3,	L5 # name
 % hugeint,	int,	hugeint,	bigint,	hugeint # type
 % 3,	3,	4,	1,	4 # length
 [ NULL,	NULL,	NULL,	0,	880	]
@@ -7142,8 +7142,8 @@ Ready.
 #       c-d
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L2,	.L3,	.L4,	.L5,	.L6 # table_name
+% L1,	L3,	L4,	L5,	L6 # name
 % bigint,	smallint,	hugeint,	bigint,	bigint # type
 % 1,	3,	4,	2,	2 # length
 [ 0,	111,	2476,	-4,	-1	]
@@ -7248,8 +7248,8 @@ Ready.
 #    OR a IS NULL
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.t1 # table_name
-% L1,	L2,	c,	L3,	L4,	L5,	e # name
+% .L1,	.L2,	.t1,	.L4,	.L6,	.L7,	.t1 # table_name
+% L1,	L2,	c,	L3,	L5,	L7,	e # name
 % bigint,	hugeint,	int,	bigint,	bigint,	bigint,	int # type
 % 3,	3,	3,	1,	2,	1,	3 # length
 [ NULL,	NULL,	113,	0,	1,	1,	110	]
@@ -7329,8 +7329,8 @@ Ready.
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
-% L1,	L2,	L3,	L4,	L6,	L7 # name
+% .L2,	.L3,	.L4,	.L5,	.L10,	.L11 # table_name
+% L1,	L3,	L4,	L5,	L10,	L11 # name
 % bigint,	hugeint,	bigint,	bigint,	bigint,	smallint # type
 % 2,	4,	1,	3,	4,	3 # length
 [ 2,	NULL,	1,	369,	1240,	222	]
@@ -7349,8 +7349,8 @@ Ready.
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -7386,8 +7386,8 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% sys.t1,	sys.L1,	sys.L3 # table_name
-% b,	L1,	L3 # name
+% sys.t1,	sys.L1,	sys.L4 # table_name
+% b,	L1,	L4 # name
 % int,	bigint,	bigint # type
 % 3,	2,	4 # length
 [ NULL,	-1,	402	]
@@ -7416,8 +7416,8 @@ Ready.
 #   AND (e>a AND e<b)
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3;
-% sys.L1,	sys.t1,	sys.L2 # table_name
-% L1,	d,	L2 # name
+% sys.L2,	sys.t1,	sys.L3 # table_name
+% L2,	d,	L3 # name
 % bigint,	int,	smallint # type
 % 1,	1,	1 # length
 #SELECT d-e,
@@ -7431,8 +7431,8 @@ Ready.
 #   AND d NOT BETWEEN 110 AND 150
 #   AND d>e
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L4,	sys.L5,	sys.L6 # table_name
-% L1,	L2,	L4,	L5,	L6 # name
+% sys.L1,	sys.L2,	sys.L5,	sys.L6,	sys.L7 # table_name
+% L1,	L2,	L5,	L6,	L7 # name
 % bigint,	bigint,	bigint,	smallint,	int # type
 % 1,	1,	4,	3,	3 # length
 [ 1,	1,	440,	444,	220	]
@@ -7449,8 +7449,8 @@ Ready.
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND (e>a AND e<b)
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.L1,	sys.L3,	sys.L4,	sys.L5 # table_name
-% b,	L1,	L3,	L4,	L5 # name
+% sys.t1,	sys.L1,	sys.L4,	sys.L5,	sys.L6 # table_name
+% b,	L1,	L4,	L5,	L6 # name
 % int,	smallint,	bigint,	hugeint,	hugeint # type
 % 3,	3,	3,	3,	4 # length
 [ 194,	444,	382,	192,	1158	]
@@ -7496,8 +7496,8 @@ Ready.
 #       a+b*2+c*3+d*4+e*5
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L3,	sys.L4 # table_name
-% L1,	L3,	L4 # name
+% sys.L1,	sys.L4,	sys.L5 # table_name
+% L1,	L4,	L5 # name
 % hugeint,	bigint,	hugeint # type
 % 4,	4,	4 # length
 [ NULL,	NULL,	NULL	]
@@ -7734,7 +7734,7 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2;
-% .t1,	.L1 # table_name
+% .t1,	.L2 # table_name
 % d,	L1 # name
 % int,	bigint # type
 % 3,	2 # length
@@ -7817,8 +7817,8 @@ Ready.
 #    OR b>c
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	e # name
+% .L1,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
+% L1,	L2,	L4,	L5,	L6,	e # name
 % smallint,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	2,	2,	1,	3,	3 # length
 [ 111,	26,	-1,	2,	444,	246	]
@@ -7900,8 +7900,8 @@ Ready.
 # WHERE d>e
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5;
-% .L2,	.t1,	.L3,	.L4,	.L5 # table_name
-% L2,	c,	L3,	L4,	L5 # name
+% .L3,	.t1,	.L5,	.L6,	.L7 # table_name
+% L3,	c,	L4,	L6,	L7 # name
 % bigint,	int,	bigint,	bigint,	hugeint # type
 % 4,	3,	2,	1,	3 # length
 [ NULL,	119,	0,	NULL,	NULL	]
@@ -7945,7 +7945,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.t1,	.L2 # table_name
+% .L1,	.t1,	.L3 # table_name
 % L1,	e,	L2 # name
 % hugeint,	int,	bigint # type
 % 4,	3,	2 # length
@@ -7988,8 +7988,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR b>c
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.L3,	.L5 # table_name
-% L1,	c,	L2,	L3,	L5 # name
+% .L3,	.t1,	.L4,	.L5,	.L10 # table_name
+% L2,	c,	L4,	L5,	L10 # name
 % bigint,	int,	int,	bigint,	bigint # type
 % 1,	3,	3,	1,	4 # length
 [ 0,	NULL,	239,	NULL,	2360	]
@@ -8023,7 +8023,7 @@ Ready.
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -8046,8 +8046,8 @@ Ready.
 [ 4,	0	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 2 # length
@@ -8136,8 +8136,8 @@ Ready.
 # WHERE b IS NOT NULL
 #    OR a>b
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 0,	NULL	]
@@ -8243,8 +8243,8 @@ Ready.
 #   AND (a>b-2 AND a<b+2)
 #   AND (e>c OR e<d)
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L3,	sys.L4 # table_name
+% L2,	L3,	L4 # name
 % int,	bigint,	hugeint # type
 % 3,	2,	4 # length
 [ 131,	1,	793	]
@@ -8266,8 +8266,8 @@ Ready.
 #    OR (c<=d-2 OR c>=d+2)
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% b,	L1,	L2,	L3,	L4,	L5 # name
+% .t1,	.L1,	.L2,	.L4,	.L5,	.L6 # table_name
+% b,	L1,	L2,	L3,	L5,	L6 # name
 % int,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	3,	2,	1,	3,	3 # length
 [ NULL,	NULL,	-1,	0,	444,	201	]
@@ -8332,8 +8332,8 @@ Ready.
 # WHERE (e>a AND e<b)
 #    OR (e>c OR e<d)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
+% L1,	L3,	L4,	L5,	L6,	L7 # name
 % bigint,	bigint,	int,	smallint,	hugeint,	smallint # type
 % 2,	2,	3,	3,	4,	3 # length
 [ 0,	-1,	107,	333,	1067,	333	]
@@ -8403,8 +8403,8 @@ Ready.
 #   AND (a>b-2 AND a<b+2)
 #   AND b>c
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L2,	.L3,	.L5,	.L6 # table_name
+% L1,	L2,	L3,	L4,	L6 # name
 % int,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	1,	1,	1,	4 # length
 [ 138,	2,	1,	0,	2046	]
@@ -8440,8 +8440,8 @@ Ready.
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.t1,	.L3,	.L4 # table_name
-% L1,	L2,	e,	L3,	L4 # name
+% .L2,	.L3,	.t1,	.L5,	.L6 # table_name
+% L1,	L3,	e,	L4,	L6 # name
 % bigint,	bigint,	int,	bigint,	bigint # type
 % 1,	1,	3,	2,	2 # length
 [ 0,	NULL,	NULL,	0,	NULL	]
@@ -8491,8 +8491,8 @@ Ready.
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	smallint # type
 % 2,	3 # length
 [ 0,	444	]
@@ -8517,8 +8517,8 @@ Ready.
 #       (a+b+c+d+e)/5
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.L2,	sys.t1,	sys.t1,	sys.t1,	sys.L4,	sys.L5 # table_name
-% L1,	L2,	b,	a,	c,	L4,	L5 # name
+% sys.L1,	sys.L2,	sys.t1,	sys.t1,	sys.t1,	sys.L5,	sys.L6 # table_name
+% L1,	L2,	b,	a,	c,	L5,	L6 # name
 % hugeint,	bigint,	int,	int,	int,	bigint,	hugeint # type
 % 4,	2,	3,	3,	3,	4,	3 # length
 [ NULL,	NULL,	NULL,	104,	102,	NULL,	NULL	]
@@ -8559,8 +8559,8 @@ Ready.
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.L3,	.L4 # table_name
-% L1,	d,	L2,	L3,	L4 # name
+% .L1,	.t1,	.L2,	.L4,	.L5 # table_name
+% L1,	d,	L2,	L3,	L5 # name
 % bigint,	int,	bigint,	bigint,	bigint # type
 % 1,	3,	2,	1,	2 # length
 [ 1,	108,	-2,	0,	-1	]
@@ -8569,8 +8569,8 @@ Ready.
 #  FROM t1
 # WHERE c>d
 #    OR c BETWEEN b-2 AND d+2
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -8643,8 +8643,8 @@ Ready.
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.t1,	.L1,	.L2,	.L3,	.L4 # table_name
-% b,	e,	L1,	L2,	L3,	L4 # name
+% .t1,	.t1,	.L1,	.L2,	.L4,	.L5 # table_name
+% b,	e,	L1,	L2,	L3,	L5 # name
 % int,	int,	hugeint,	bigint,	bigint,	smallint # type
 % 3,	3,	4,	2,	1,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	0,	444	]
@@ -8739,8 +8739,8 @@ Ready.
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.t1,	.t1,	.L4 # table_name
-% L1,	L2,	L3,	a,	c,	L4 # name
+% .L2,	.L3,	.L4,	.t1,	.t1,	.L5 # table_name
+% L1,	L3,	L4,	a,	c,	L5 # name
 % bigint,	bigint,	bigint,	int,	int,	smallint # type
 % 1,	2,	2,	3,	3,	3 # length
 [ 0,	NULL,	NULL,	104,	102,	555	]
@@ -8782,8 +8782,8 @@ Ready.
 #    OR b IS NOT NULL
 #    OR a>b
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L1,	.L2,	.L4,	.L5 # table_name
+% L1,	L2,	L3,	L5 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 2,	1,	2,	2 # length
 [ NULL,	1,	2,	-3	]
@@ -8820,9 +8820,9 @@ Ready.
 # WHERE d>e
 #    OR (e>c OR e<d)
 #    OR coalesce(a,b,c,d,e)<>0
-#;
-% .L1,	.L2,	.t1 # table_name
-% L1,	L2,	d # name
+#ORDER BY 1,2,3;
+% .L2,	.L4,	.t1 # table_name
+% L1,	L3,	d # name
 % bigint,	bigint,	int # type
 % 2,	1,	3 # length
 [ 0,	0,	101	]
@@ -8873,9 +8873,9 @@ Ready.
 #       e
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
-#;
-% sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.t1 # table_name
-% L1,	L2,	a,	L3,	e # name
+#ORDER BY 1,2,3,4,5;
+% sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.t1 # table_name
+% L2,	L3,	a,	L4,	e # name
 % bigint,	hugeint,	int,	bigint,	int # type
 % 2,	3,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -8954,8 +8954,8 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.t1 # table_name
-% L1,	L2,	L3,	L4,	d # name
+% .L1,	.L3,	.L4,	.L5,	.t1 # table_name
+% L1,	L2,	L4,	L5,	d # name
 % hugeint,	bigint,	hugeint,	smallint,	int # type
 % 3,	1,	4,	3,	3 # length
 [ NULL,	0,	NULL,	222,	203	]
@@ -9041,8 +9041,8 @@ Ready.
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND (e>c OR e<d)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.t1 # table_name
-% L1,	a,	L2,	L3,	L4,	d # name
+% .L1,	.t1,	.L2,	.L4,	.L5,	.t1 # table_name
+% L1,	a,	L2,	L3,	L5,	d # name
 % hugeint,	int,	hugeint,	bigint,	bigint,	int # type
 % 3,	3,	4,	1,	1,	3 # length
 [ NULL,	NULL,	NULL,	0,	1,	114	]
@@ -9085,9 +9085,9 @@ Ready.
 # WHERE (e>a AND e<b)
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR a>b
-#;
-% .L1,	.L3,	.L4,	.t1 # table_name
-% L1,	L3,	L4,	d # name
+#ORDER BY 1,2,3,4;
+% .L2,	.L5,	.L6,	.t1 # table_name
+% L2,	L5,	L6,	d # name
 % hugeint,	bigint,	hugeint,	int # type
 % 3,	4,	4,	3 # length
 [ NULL,	NULL,	NULL,	207	]
@@ -9129,8 +9129,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L3,	.L4,	.L5,	.t1,	.L6,	.L7 # table_name
-% L1,	L3,	L4,	L5,	e,	L6,	L7 # name
+% .L3,	.L6,	.L7,	.L10,	.t1,	.L11,	.L12 # table_name
+% L2,	L6,	L7,	L10,	e,	L11,	L12 # name
 % bigint,	bigint,	hugeint,	smallint,	int,	bigint,	bigint # type
 % 1,	4,	4,	3,	3,	2,	2 # length
 [ 0,	NULL,	NULL,	555,	NULL,	-2,	1	]
@@ -9217,8 +9217,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L5,	.L6,	.L7 # table_name
-% L1,	L2,	L3,	L5,	L6,	L7 # name
+% .L2,	.L3,	.L4,	.L7,	.L10,	.L12 # table_name
+% L2,	L3,	L4,	L7,	L10,	L11 # name
 % bigint,	bigint,	bigint,	bigint,	hugeint,	bigint # type
 % 2,	2,	2,	4,	4,	1 # length
 [ NULL,	NULL,	-2,	NULL,	NULL,	0	]
@@ -9310,8 +9310,8 @@ Ready.
 #   AND c BETWEEN b-2 AND d+2
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4;
-% .L1,	.t1,	.L2,	.L3 # table_name
-% L1,	c,	L2,	L3 # name
+% .L2,	.t1,	.L4,	.L6 # table_name
+% L2,	c,	L3,	L5 # name
 % hugeint,	int,	bigint,	bigint # type
 % 4,	3,	2,	1 # length
 [ 966,	161,	10,	0	]
@@ -9326,8 +9326,8 @@ Ready.
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% a,	L2,	L3,	L4 # name
+% sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
+% a,	L3,	L4,	L5 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	4,	1,	2 # length
 [ 107,	1050,	1,	-2	]
@@ -9358,7 +9358,7 @@ Ready.
 #    OR (e>a AND e<b)
 #    OR (e>c OR e<d)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
+% .L1,	.L2,	.L3,	.L4,	.L5,	.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
 % bigint,	hugeint,	bigint,	hugeint,	bigint,	bigint # type
 % 2,	4,	2,	4,	2,	1 # length
@@ -9441,8 +9441,8 @@ Ready.
 #    OR c BETWEEN b-2 AND d+2
 #    OR a>b
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L5 # table_name
-% L1,	L2,	L3,	e,	L5 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L6 # table_name
+% L1,	L2,	L3,	e,	L6 # name
 % smallint,	hugeint,	hugeint,	int,	bigint # type
 % 3,	4,	4,	3,	4 # length
 [ 111,	1371,	827,	135,	1390	]
@@ -9493,8 +9493,8 @@ Ready.
 #  FROM t1
 # WHERE (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.t1 # table_name
-% L1,	a,	L2,	L3,	L4,	c # name
+% .L1,	.t1,	.L3,	.L4,	.L5,	.t1 # table_name
+% L1,	a,	L2,	L4,	L5,	c # name
 % bigint,	int,	bigint,	bigint,	hugeint,	int # type
 % 2,	3,	1,	2,	4,	3 # length
 [ NULL,	159,	0,	3,	940,	155	]
@@ -9556,8 +9556,8 @@ Ready.
 # WHERE (c<=d-2 OR c>=d+2)
 #    OR a>b
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .L2,	.L3,	.L4 # table_name
+% L1,	L3,	L4 # name
 % bigint,	hugeint,	smallint # type
 % 1,	4,	3 # length
 [ 0,	NULL,	222	]
@@ -9590,8 +9590,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4;
-% .t1,	.t1,	.L1,	.L2 # table_name
-% a,	e,	L1,	L2 # name
+% .t1,	.t1,	.L3,	.L4 # table_name
+% a,	e,	L2,	L4 # name
 % int,	int,	bigint,	bigint # type
 % 3,	3,	2,	1 # length
 [ NULL,	NULL,	18,	2	]
@@ -9629,8 +9629,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.L3,	.L4 # table_name
-% L1,	c,	L2,	L3,	L4 # name
+% .L2,	.t1,	.L3,	.L4,	.L6 # table_name
+% L2,	c,	L3,	L4,	L5 # name
 % bigint,	int,	hugeint,	hugeint,	bigint # type
 % 2,	3,	3,	4,	1 # length
 [ -4,	187,	187,	2806,	0	]
@@ -9730,8 +9730,8 @@ Ready.
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR d>e
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.L4 # table_name
-% e,	L1,	L2,	L3,	L4 # name
+% .t1,	.L2,	.L3,	.L4,	.L5 # table_name
+% e,	L1,	L3,	L4,	L5 # name
 % int,	bigint,	int,	hugeint,	smallint # type
 % 3,	1,	3,	4,	3 # length
 [ NULL,	0,	NULL,	NULL,	555	]
@@ -9812,8 +9812,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % hugeint # type
 % 4 # length
 [ NULL	]
@@ -9993,8 +9993,8 @@ Ready.
 # WHERE b>c
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L2,	.L4 # table_name
-% d,	L1,	L2,	L4 # name
+% .t1,	.L1,	.L3,	.L6 # table_name
+% d,	L1,	L2,	L6 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	2,	1,	4 # length
 [ NULL,	NULL,	0,	1510	]
@@ -10029,8 +10029,8 @@ Ready.
 #       abs(b-c)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.t1,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	c,	L4,	L5,	L6 # name
+% .L1,	.L3,	.L4,	.t1,	.L5,	.L6,	.L7 # table_name
+% L1,	L2,	L4,	c,	L5,	L6,	L7 # name
 % bigint,	bigint,	bigint,	int,	hugeint,	hugeint,	bigint # type
 % 3,	1,	2,	3,	3,	4,	1 # length
 [ NULL,	0,	NULL,	102,	NULL,	NULL,	NULL	]
@@ -10117,8 +10117,8 @@ Ready.
 # WHERE (e>c OR e<d)
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.t1,	.L3,	.t1,	.L4 # table_name
-% L1,	L2,	e,	L3,	b,	L4 # name
+% .L1,	.L3,	.t1,	.L4,	.t1,	.L5 # table_name
+% L1,	L2,	e,	L4,	b,	L5 # name
 % int,	bigint,	int,	bigint,	int,	smallint # type
 % 3,	1,	3,	1,	3,	3 # length
 [ NULL,	0,	NULL,	2,	206,	555	]
@@ -10152,8 +10152,8 @@ Ready.
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .L1,	.L3,	.L4 # table_name
+% L1,	L2,	L4 # name
 % smallint,	bigint,	smallint # type
 % 3,	2,	3 # length
 [ 111,	26,	444	]
@@ -10183,8 +10183,8 @@ Ready.
 #   AND coalesce(a,b,c,d,e)<>0
 #   AND e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.t1,	.L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% c,	b,	L1,	L2,	L3,	L4,	L5 # name
+% .t1,	.t1,	.L1,	.L2,	.L3,	.L5,	.L6 # table_name
+% c,	b,	L1,	L2,	L3,	L4,	L6 # name
 % int,	int,	hugeint,	hugeint,	smallint,	bigint,	smallint # type
 % 3,	3,	3,	4,	3,	1,	3 # length
 [ 106,	105,	635,	1612,	333,	0,	333	]
@@ -10221,8 +10221,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR d>e
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L6 # table_name
-% L1,	b,	L2,	L3,	L4,	L6 # name
+% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L7 # table_name
+% L1,	b,	L2,	L3,	L4,	L7 # name
 % bigint,	int,	bigint,	hugeint,	bigint,	bigint # type
 % 2,	3,	3,	4,	2,	4 # length
 [ NULL,	112,	NULL,	NULL,	4,	1120	]
@@ -10271,8 +10271,8 @@ Ready.
 #    OR d>e
 #    OR a>b
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L4,	.L5,	.t1,	.L6 # table_name
-% L1,	L2,	L4,	L5,	b,	L6 # name
+% .L1,	.L2,	.L5,	.L6,	.t1,	.L10 # table_name
+% L1,	L2,	L5,	L6,	b,	L7 # name
 % hugeint,	hugeint,	bigint,	int,	int,	bigint # type
 % 4,	4,	4,	3,	3,	1 # length
 [ NULL,	NULL,	1120,	NULL,	112,	0	]
@@ -10308,8 +10308,8 @@ Ready.
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L3,	.t1,	.L4,	.L5 # table_name
-% L1,	L2,	d,	L3,	c,	L4,	L5 # name
+% .L2,	.L3,	.t1,	.L4,	.t1,	.L5,	.L7 # table_name
+% L1,	L3,	d,	L4,	c,	L5,	L6 # name
 % bigint,	bigint,	int,	hugeint,	int,	hugeint,	bigint # type
 % 1,	2,	3,	4,	3,	3,	2 # length
 [ 0,	-4,	248,	1484,	247,	247,	26	]
@@ -10322,9 +10322,9 @@ Ready.
 #       abs(a),
 #       a
 #  FROM t1
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.L6,	sys.t1 # table_name
-% L1,	L2,	L3,	L5,	L6,	a # name
+#ORDER BY 1,2,3,4,5,6;
+% sys.L1,	sys.L2,	sys.L3,	sys.L6,	sys.L7,	sys.t1 # table_name
+% L1,	L2,	L3,	L6,	L7,	a # name
 % hugeint,	bigint,	bigint,	bigint,	int,	int # type
 % 4,	3,	2,	4,	3,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -10474,8 +10474,8 @@ Ready.
 #   AND b IS NOT NULL
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
-% b,	L1,	L2,	d,	L3,	L4,	L5 # name
+% .t1,	.L2,	.L4,	.t1,	.L5,	.L6,	.L7 # table_name
+% b,	L1,	L3,	d,	L5,	L6,	L7 # name
 % int,	bigint,	bigint,	int,	bigint,	bigint,	hugeint # type
 % 3,	1,	2,	3,	2,	1,	4 # length
 [ 181,	0,	14,	183,	-3,	3,	1828	]
@@ -10491,8 +10491,8 @@ Ready.
 # WHERE (e>a AND e<b)
 #    OR a IS NULL
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L6 # table_name
-% L1,	L2,	L3,	L4,	L6 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L7 # table_name
+% L1,	L2,	L3,	L4,	L7 # name
 % bigint,	bigint,	smallint,	bigint,	bigint # type
 % 3,	1,	3,	2,	4 # length
 [ NULL,	1,	444,	NULL,	1120	]
@@ -10510,8 +10510,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR d>e
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.t1 # table_name
-% a,	L1,	L2,	L3,	L4,	d # name
+% .t1,	.L1,	.L3,	.L5,	.L6,	.t1 # table_name
+% a,	L1,	L2,	L4,	L6,	d # name
 % int,	bigint,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	1,	2,	2,	3 # length
 [ NULL,	-1,	0,	1,	4,	114	]
@@ -10593,8 +10593,8 @@ Ready.
 # WHERE b>c
 #    OR a>b
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% e,	L1,	L2,	L3,	L4,	L5 # name
+% .t1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
+% e,	L1,	L3,	L4,	L5,	L6 # name
 % int,	bigint,	bigint,	bigint,	int,	hugeint # type
 % 3,	1,	3,	2,	3,	4 # length
 [ NULL,	0,	369,	NULL,	121,	738	]
@@ -10692,8 +10692,8 @@ Ready.
 #    OR c BETWEEN b-2 AND d+2
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L6 # table_name
-% e,	L1,	L2,	L3,	L4,	L6 # name
+% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L7 # table_name
+% e,	L1,	L2,	L3,	L4,	L7 # name
 % int,	bigint,	smallint,	bigint,	bigint,	bigint # type
 % 3,	2,	3,	2,	2,	4 # length
 [ NULL,	NULL,	222,	-3,	1,	1240	]
@@ -10872,8 +10872,8 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5;
-% sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L5 # table_name
-% L2,	L3,	L4,	c,	L5 # name
+% sys.L4,	sys.L5,	sys.L6,	sys.t1,	sys.L7 # table_name
+% L4,	L5,	L6,	c,	L7 # name
 % bigint,	bigint,	bigint,	int,	bigint # type
 % 4,	2,	2,	3,	3 # length
 [ 364,	1,	3,	184,	544	]
@@ -10981,8 +10981,8 @@ Ready.
 #       CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L6 # table_name
-% L1,	L2,	L3,	L4,	L6 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L7 # table_name
+% L1,	L2,	L3,	L4,	L7 # name
 % bigint,	int,	hugeint,	smallint,	bigint # type
 % 2,	3,	4,	3,	4 # length
 [ NULL,	149,	880,	444,	1450	]
@@ -11024,8 +11024,8 @@ Ready.
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L1,	.L2,	.L4,	.L5,	.L6,	.L7 # table_name
+% L1,	L2,	L3,	L5,	L6,	L7 # name
 % bigint,	bigint,	bigint,	smallint,	int,	bigint # type
 % 1,	2,	2,	3,	3,	2 # length
 [ NULL,	NULL,	0,	444,	104,	NULL	]
@@ -11102,8 +11102,8 @@ Ready.
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 382	]
@@ -11220,7 +11220,7 @@ Ready.
 #  FROM t1
 # WHERE (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
+% .L1,	.L2,	.L4 # table_name
 % L1,	L2,	L3 # name
 % bigint,	bigint,	bigint # type
 % 2,	1,	2 # length
@@ -11279,8 +11279,8 @@ Ready.
 #    OR d>e
 #    OR (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.t1 # table_name
-% L1,	L2,	L3,	a # name
+% .L1,	.L3,	.L4,	.t1 # table_name
+% L1,	L2,	L4,	a # name
 % smallint,	bigint,	hugeint,	int # type
 % 3,	1,	3,	3 # length
 [ 111,	0,	247,	245	]
@@ -11373,8 +11373,8 @@ Ready.
 #   AND (a>b-2 AND a<b+2)
 #   AND d>e
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L6 # table_name
-% L1,	L2,	L3,	c,	L4,	L6 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L7 # table_name
+% L1,	L2,	L3,	c,	L4,	L7 # name
 % bigint,	bigint,	smallint,	int,	hugeint,	bigint # type
 % 1,	2,	3,	3,	4,	4 # length
 [ 1,	-4,	333,	134,	1985,	1300	]
@@ -11410,7 +11410,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.t1,	.t1,	.L3 # table_name
+% .L1,	.t1,	.L2,	.t1,	.t1,	.L4 # table_name
 % L1,	e,	L2,	c,	a,	L3 # name
 % bigint,	int,	hugeint,	int,	int,	bigint # type
 % 2,	3,	4,	3,	3,	2 # length
@@ -11544,8 +11544,8 @@ Ready.
 #    OR (e>a AND e<b)
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L3,	sys.t1,	sys.t1,	sys.L4 # table_name
-% L1,	L3,	e,	d,	L4 # name
+% sys.L1,	sys.L4,	sys.t1,	sys.t1,	sys.L5 # table_name
+% L1,	L4,	e,	d,	L5 # name
 % hugeint,	bigint,	int,	int,	hugeint # type
 % 4,	4,	3,	3,	4 # length
 [ NULL,	NULL,	NULL,	207,	NULL	]
@@ -11624,7 +11624,7 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.t1,	.t1 # table_name
+% .L1,	.L3,	.t1,	.t1 # table_name
 % L1,	L2,	c,	d # name
 % bigint,	bigint,	int,	int # type
 % 2,	1,	3,	3 # length
@@ -11655,8 +11655,8 @@ Ready.
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.t1,	sys.L1,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
-% e,	L1,	L3,	L4,	L5,	L6,	L7 # name
+% sys.t1,	sys.L1,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
+% e,	L1,	L4,	L5,	L6,	L7,	L10 # name
 % int,	bigint,	bigint,	hugeint,	bigint,	int,	smallint # type
 % 3,	3,	4,	3,	2,	3,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	555	]
@@ -11696,8 +11696,8 @@ Ready.
 #    OR a IS NULL
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L2,	L3 # name
 % bigint,	hugeint # type
 % 2,	4 # length
 [ NULL,	NULL	]
@@ -11737,8 +11737,8 @@ Ready.
 #   AND d>e
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.t1,	.L1,	.L2,	.L3,	.L4 # table_name
-% e,	d,	L1,	L2,	L3,	L4 # name
+% .t1,	.t1,	.L3,	.L5,	.L6,	.L7 # table_name
+% e,	d,	L2,	L4,	L6,	L7 # name
 % int,	int,	bigint,	bigint,	hugeint,	hugeint # type
 % 3,	3,	1,	2,	3,	4 # length
 [ 126,	128,	0,	3,	127,	1902	]
@@ -11755,8 +11755,8 @@ Ready.
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND c>d
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.t1,	.L1,	.L2,	.L4,	.L5 # table_name
-% d,	e,	L1,	L2,	L4,	L5 # name
+% .t1,	.t1,	.L2,	.L3,	.L6,	.L7 # table_name
+% d,	e,	L1,	L3,	L6,	L7 # name
 % int,	int,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	3,	2,	4,	4,	1 # length
 [ 101,	NULL,	0,	NULL,	NULL,	NULL	]
@@ -11884,8 +11884,8 @@ Ready.
 #   AND c BETWEEN b-2 AND d+2
 #   AND d>e
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.t1,	.t1,	.L3 # table_name
-% L1,	L2,	c,	b,	L3 # name
+% .L2,	.L3,	.t1,	.t1,	.L4 # table_name
+% L1,	L3,	c,	b,	L4 # name
 % bigint,	bigint,	int,	int,	bigint # type
 % 2,	1,	3,	3,	2 # length
 [ 10,	1,	161,	160,	3	]
@@ -11940,8 +11940,8 @@ Ready.
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	smallint # type
 % 1,	3 # length
 [ 0,	111	]
@@ -12004,8 +12004,8 @@ Ready.
 #    OR (e>c OR e<d)
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5;
-% sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
-% L2,	L3,	L4,	L5,	L6 # name
+% sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
+% L3,	L4,	L5,	L6,	L7 # name
 % bigint,	hugeint,	bigint,	bigint,	bigint # type
 % 4,	4,	2,	2,	3 # length
 [ NULL,	NULL,	1,	NULL,	NULL	]
@@ -12044,8 +12044,8 @@ Ready.
 #    OR (c<=d-2 OR c>=d+2)
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
-% b,	L1,	L2,	L3,	L4,	L5,	d # name
+% .t1,	.L2,	.L3,	.L4,	.L5,	.L7,	.t1 # table_name
+% b,	L2,	L3,	L4,	L5,	L6,	d # name
 % int,	hugeint,	bigint,	bigint,	int,	bigint,	int # type
 % 3,	4,	3,	2,	3,	1,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	104,	0,	101	]
@@ -12088,8 +12088,8 @@ Ready.
 # WHERE (e>c OR e<d)
 #   AND d>e
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.t1 # table_name
-% b,	L1,	L2,	L3,	L4,	a # name
+% .t1,	.L1,	.L2,	.L4,	.L5,	.t1 # table_name
+% b,	L1,	L2,	L3,	L5,	a # name
 % int,	smallint,	hugeint,	bigint,	hugeint,	int # type
 % 3,	3,	4,	2,	4,	3 # length
 [ 112,	555,	NULL,	1,	NULL,	NULL	]
@@ -12107,8 +12107,8 @@ Ready.
 #       a+b*2+c*3+d*4
 #  FROM t1
 #ORDER BY 1,2;
-% sys.L2,	sys.L3 # table_name
-% L2,	L3 # name
+% sys.L3,	sys.L4 # table_name
+% L3,	L4 # name
 % bigint,	hugeint # type
 % 4,	4 # length
 [ NULL,	NULL	]
@@ -12253,8 +12253,8 @@ Ready.
 #   AND d NOT BETWEEN 110 AND 150
 #   AND d>e
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.t1,	.L4,	.t1 # table_name
-% L1,	L2,	c,	L4,	a # name
+% .L1,	.L3,	.t1,	.L6,	.t1 # table_name
+% L1,	L2,	c,	L6,	a # name
 % hugeint,	bigint,	int,	bigint,	int # type
 % 4,	2,	3,	3,	3 # length
 [ 2728,	14,	184,	364,	182	]
@@ -12263,8 +12263,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% sys.t1,	sys.L1 # table_name
-% a,	L1 # name
+% sys.t1,	sys.L2 # table_name
+% a,	L2 # name
 % int,	bigint # type
 % 3,	2 # length
 [ NULL,	NULL	]
@@ -12303,8 +12303,8 @@ Ready.
 #       abs(a)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L4,	.L5,	.L6,	.L7 # table_name
-% L1,	L2,	a,	L4,	L5,	L6,	L7 # name
+% .L1,	.L2,	.t1,	.L5,	.L7,	.L10,	.L11 # table_name
+% L1,	L2,	a,	L5,	L6,	L10,	L11 # name
 % smallint,	bigint,	int,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	3,	4,	1,	2,	3 # length
 [ 111,	2,	245,	490,	0,	-4,	245	]
@@ -12346,9 +12346,9 @@ Ready.
 #       e
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
-#;
-% sys.L1,	sys.L2,	sys.L4,	sys.L5,	sys.L6,	sys.t1 # table_name
-% L1,	L2,	L4,	L5,	L6,	e # name
+#ORDER BY 1,2,3,4,5,6;
+% sys.L1,	sys.L2,	sys.L5,	sys.L6,	sys.L7,	sys.t1 # table_name
+% L1,	L2,	L5,	L6,	L7,	e # name
 % bigint,	bigint,	bigint,	smallint,	int,	int # type
 % 2,	2,	4,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	444,	104,	NULL	]
@@ -12529,9 +12529,9 @@ Ready.
 #       a
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
-#;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	a # name
+#ORDER BY 1,2,3,4,5,6;
+% .L2,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
+% L1,	L3,	L4,	L5,	L6,	a # name
 % bigint,	bigint,	bigint,	hugeint,	smallint,	int # type
 % 2,	2,	2,	4,	3,	3 # length
 [ 0,	-1,	-2,	1612,	333,	107	]
@@ -12582,8 +12582,8 @@ Ready.
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L1,	.L2,	.L4,	.L5 # table_name
+% L1,	L2,	L3,	L5 # name
 % hugeint,	hugeint,	bigint,	int # type
 % 3,	4,	1,	3 # length
 [ NULL,	NULL,	0,	149	]
@@ -12612,8 +12612,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4 # table_name
-% L1,	L2,	L3,	a,	L4 # name
+% sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L5 # table_name
+% L2,	L3,	L4,	a,	L5 # name
 % smallint,	hugeint,	bigint,	int,	hugeint # type
 % 3,	3,	2,	3,	4 # length
 [ 111,	247,	2,	245,	1484	]
@@ -12709,7 +12709,7 @@ Ready.
 # WHERE a IS NULL
 #   AND (e>c OR e<d)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
+% .L1,	.L2,	.L3,	.L4,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
 % hugeint,	hugeint,	int,	bigint,	bigint # type
 % 1,	1,	1,	2,	1 # length
@@ -12749,8 +12749,8 @@ Ready.
 #       abs(b-c)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
-% L1,	L2,	L3,	L4,	a,	L5 # name
+% .L1,	.L2,	.L4,	.L5,	.t1,	.L6 # table_name
+% L1,	L2,	L3,	L5,	a,	L6 # name
 % bigint,	hugeint,	bigint,	bigint,	int,	bigint # type
 % 2,	4,	1,	2,	3,	1 # length
 [ NULL,	NULL,	0,	NULL,	104,	NULL	]
@@ -12941,7 +12941,7 @@ Ready.
 #    OR c>d
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.t1 # table_name
+% .L1,	.L2,	.L3,	.L5,	.t1 # table_name
 % L1,	L2,	L3,	L4,	d # name
 % bigint,	bigint,	bigint,	bigint,	int # type
 % 2,	1,	2,	2,	3 # length
@@ -12994,8 +12994,8 @@ Ready.
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3;
-% .L2,	.L3,	.L4 # table_name
-% L2,	L3,	L4 # name
+% .L4,	.L6,	.L10 # table_name
+% L4,	L5,	L7 # name
 % bigint,	bigint,	bigint # type
 % 4,	1,	2 # length
 [ 364,	0,	14	]
@@ -13013,7 +13013,7 @@ Ready.
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.t1,	.L3,	.L4 # table_name
+% .L1,	.L2,	.t1,	.L3,	.L5 # table_name
 % L1,	L2,	d,	L3,	L4 # name
 % bigint,	bigint,	int,	int,	bigint # type
 % 3,	2,	3,	3,	1 # length
@@ -13027,8 +13027,8 @@ Ready.
 #       abs(a)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	c,	L2,	L3,	L4,	L5 # name
+% .L1,	.t1,	.L2,	.L4,	.L5,	.L6 # table_name
+% L1,	c,	L2,	L3,	L5,	L6 # name
 % bigint,	int,	bigint,	bigint,	bigint,	int # type
 % 2,	3,	2,	1,	2,	3 # length
 [ NULL,	NULL,	3,	0,	NULL,	239	]
@@ -13124,8 +13124,8 @@ Ready.
 #       c-d
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
-% L2,	L3,	L4,	L5,	L6,	L7,	L10 # name
+% sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10,	sys.L11 # table_name
+% L3,	L4,	L5,	L6,	L7,	L10,	L11 # name
 % bigint,	bigint,	smallint,	hugeint,	int,	bigint,	bigint # type
 % 4,	3,	3,	3,	3,	1,	2 # length
 [ NULL,	NULL,	333,	NULL,	115,	NULL,	3	]
@@ -13162,7 +13162,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % hugeint,	bigint # type
 % 4,	2 # length
@@ -13213,8 +13213,8 @@ Ready.
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.L3,	sys.L4 # table_name
-% L1,	d,	L3,	L4 # name
+% sys.L1,	sys.t1,	sys.L4,	sys.L5 # table_name
+% L1,	d,	L4,	L5 # name
 % smallint,	int,	bigint,	bigint # type
 % 3,	3,	4,	2 # length
 [ 111,	136,	1390,	2	]
@@ -13253,8 +13253,8 @@ Ready.
 # WHERE d>e
 #    OR a IS NULL
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	bigint # type
 % 1,	2 # length
 [ 0,	NULL	]
@@ -13312,8 +13312,8 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3;
-% .t1,	.L2,	.L3 # table_name
-% a,	L2,	L3 # name
+% .t1,	.L3,	.L5 # table_name
+% a,	L3,	L4 # name
 % int,	bigint,	bigint # type
 % 3,	4,	2 # length
 [ NULL,	NULL,	18	]
@@ -13392,8 +13392,8 @@ Ready.
 #       a
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.t1 # table_name
-% L1,	L2,	L3,	L4,	a # name
+% .L1,	.L2,	.L4,	.L5,	.t1 # table_name
+% L1,	L2,	L3,	L5,	a # name
 % hugeint,	bigint,	bigint,	smallint,	int # type
 % 3,	3,	2,	3,	3 # length
 [ NULL,	NULL,	0,	444,	104	]
@@ -13488,8 +13488,8 @@ Ready.
 #   AND (e>c OR e<d)
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.L4 # table_name
-% b,	L1,	L2,	L3,	L4 # name
+% .t1,	.L1,	.L3,	.L4,	.L5 # table_name
+% b,	L1,	L2,	L4,	L5 # name
 % int,	bigint,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1 # length
 #SELECT abs(b-c),
@@ -13540,8 +13540,8 @@ Ready.
 #   AND b IS NOT NULL
 #   AND (e>a AND e<b)
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L4 # table_name
-% L1,	L2,	L4 # name
+% sys.L1,	sys.L2,	sys.L5 # table_name
+% L1,	L2,	L5 # name
 % hugeint,	smallint,	bigint # type
 % 1,	1,	1 # length
 #SELECT b-c,
@@ -13692,8 +13692,8 @@ Ready.
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.L3,	sys.L4 # table_name
-% L1,	b,	L3,	L4 # name
+% sys.L1,	sys.t1,	sys.L4,	sys.L5 # table_name
+% L1,	b,	L4,	L5 # name
 % bigint,	int,	bigint,	smallint # type
 % 2,	3,	4,	3 # length
 [ NULL,	NULL,	NULL,	444	]
@@ -13724,8 +13724,8 @@ Ready.
 # WHERE c>d
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.t1 # table_name
-% L1,	L2,	L3,	L4,	b # name
+% .L3,	.L4,	.L6,	.L7,	.t1 # table_name
+% L2,	L4,	L5,	L7,	b # name
 % bigint,	bigint,	bigint,	bigint,	int # type
 % 2,	1,	1,	1,	3 # length
 [ 2,	1,	0,	1,	124	]
@@ -13752,8 +13752,8 @@ Ready.
 #   AND coalesce(a,b,c,d,e)<>0
 #   AND e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.t1,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	d,	L6 # name
+% .L1,	.L2,	.L4,	.L5,	.L6,	.t1,	.L10 # table_name
+% L1,	L2,	L3,	L5,	L6,	d,	L7 # name
 % bigint,	smallint,	bigint,	hugeint,	bigint,	int,	bigint # type
 % 1,	3,	1,	4,	2,	3,	1 # length
 [ 1,	333,	0,	1067,	-1,	108,	0	]
@@ -13823,8 +13823,8 @@ Ready.
 #       CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END
 #  FROM t1
 #ORDER BY 1,2;
-% sys.L1,	sys.L3 # table_name
-% L1,	L3 # name
+% sys.L1,	sys.L4 # table_name
+% L1,	L4 # name
 % hugeint,	bigint # type
 % 3,	4 # length
 [ NULL,	NULL	]
@@ -13896,8 +13896,8 @@ Ready.
 #   AND d NOT BETWEEN 110 AND 150
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.L1,	sys.L2,	sys.L4 # table_name
-% e,	L1,	L2,	L4 # name
+% sys.t1,	sys.L1,	sys.L2,	sys.L5 # table_name
+% e,	L1,	L2,	L5 # name
 % int,	hugeint,	bigint,	bigint # type
 % 3,	4,	2,	3 # length
 [ 192,	2878,	-2,	382	]
@@ -13984,8 +13984,8 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.t1,	sys.L3,	sys.t1,	sys.L4 # table_name
-% L1,	c,	L3,	e,	L4 # name
+% sys.L1,	sys.t1,	sys.L4,	sys.t1,	sys.L5 # table_name
+% L1,	c,	L4,	e,	L5 # name
 % bigint,	int,	bigint,	int,	bigint # type
 % 1,	3,	4,	3,	2 # length
 [ 1,	166,	1670,	165,	1	]
@@ -14105,7 +14105,7 @@ Ready.
 # WHERE (c<=d-2 OR c>=d+2)
 #   AND c>d
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.t1,	.L3 # table_name
+% .L1,	.L2,	.t1,	.L4 # table_name
 % L1,	L2,	c,	L3 # name
 % bigint,	hugeint,	int,	bigint # type
 % 2,	4,	3,	1 # length
@@ -14128,8 +14128,8 @@ Ready.
 #    OR d NOT BETWEEN 110 AND 150
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6,	L7 # name
+% .L1,	.L2,	.L3,	.L4,	.L5,	.L7,	.L10 # table_name
+% L1,	L2,	L3,	L4,	L5,	L6,	L10 # name
 % bigint,	hugeint,	smallint,	bigint,	hugeint,	bigint,	smallint # type
 % 2,	3,	3,	1,	4,	2,	3 # length
 [ NULL,	NULL,	555,	NULL,	NULL,	0,	444	]
@@ -14209,8 +14209,8 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
-% L1,	L2,	L3,	L4,	L6,	L7 # name
+% .L1,	.L3,	.L4,	.L5,	.L10,	.L12 # table_name
+% L1,	L2,	L4,	L5,	L10,	L11 # name
 % smallint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	3,	4,	1 # length
 [ 111,	26,	2,	743,	490,	0	]
@@ -14303,8 +14303,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L4,	.L5 # table_name
-% L1,	L2,	L4,	L5 # name
+% .L2,	.L4,	.L7,	.L10 # table_name
+% L2,	L3,	L7,	L10 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 2,	1,	4,	2 # length
 [ -4,	0,	1300,	1	]
@@ -14365,7 +14365,7 @@ Ready.
 #    OR coalesce(a,b,c,d,e)<>0
 #    OR a IS NULL
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -14453,8 +14453,8 @@ Ready.
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.t1 # table_name
-% a,	L1,	b,	L2,	L3,	L4,	d # name
+% .t1,	.L1,	.t1,	.L2,	.L4,	.L5,	.t1 # table_name
+% a,	L1,	b,	L2,	L3,	L5,	d # name
 % int,	smallint,	int,	hugeint,	bigint,	bigint,	int # type
 % 3,	3,	3,	3,	2,	2,	3 # length
 [ 121,	333,	124,	NULL,	2,	-3,	122	]
@@ -14519,8 +14519,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	c,	L2,	L3,	L4,	L5 # name
+% .L1,	.t1,	.L2,	.L3,	.L5,	.L6 # table_name
+% L1,	c,	L2,	L3,	L4,	L6 # name
 % bigint,	int,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	3,	2,	4,	2,	2 # length
 [ NULL,	119,	-1,	NULL,	0,	NULL	]
@@ -14540,8 +14540,8 @@ Ready.
 #    OR a IS NULL
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2;
-% .L1,	.L3 # table_name
-% L1,	L3 # name
+% .L2,	.L5 # table_name
+% L1,	L5 # name
 % bigint,	bigint # type
 % 2,	4 # length
 [ 0,	NULL	]
@@ -14580,7 +14580,7 @@ Ready.
 #       e
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.t1 # table_name
+% .L1,	.L3,	.t1 # table_name
 % L1,	L2,	e # name
 % bigint,	bigint,	int # type
 % 3,	2,	3 # length
@@ -14622,8 +14622,8 @@ Ready.
 # WHERE d>e
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.t1,	sys.L2,	sys.L3 # table_name
-% e,	d,	L2,	L3 # name
+% sys.t1,	sys.t1,	sys.L3,	sys.L4 # table_name
+% e,	d,	L3,	L4 # name
 % int,	int,	bigint,	hugeint # type
 % 3,	3,	4,	4 # length
 [ NULL,	122,	1240,	1226	]
@@ -14681,8 +14681,8 @@ Ready.
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR d>e
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.t1,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	a,	L6 # name
+% .L2,	.L3,	.L4,	.L6,	.L7,	.t1,	.L10 # table_name
+% L1,	L3,	L4,	L5,	L7,	a,	L10 # name
 % bigint,	bigint,	smallint,	bigint,	bigint,	int,	int # type
 % 1,	3,	3,	2,	2,	3,	3 # length
 [ 0,	NULL,	555,	1,	-1,	NULL,	NULL	]
@@ -14711,8 +14711,8 @@ Ready.
 #       (a+b+c+d+e)/5
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L3,	.L4,	.L5,	.L6,	.L7,	.L10 # table_name
-% L1,	L3,	L4,	L5,	L6,	L7,	L10 # name
+% .L1,	.L4,	.L5,	.L6,	.L10,	.L11,	.L12 # table_name
+% L1,	L4,	L5,	L6,	L7,	L11,	L12 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	4,	2,	2,	1,	2,	3 # length
 [ NULL,	NULL,	NULL,	1,	0,	NULL,	NULL	]
@@ -14750,8 +14750,8 @@ Ready.
 #  FROM t1
 # WHERE b>c
 #    OR c BETWEEN b-2 AND d+2
-#;
-% .L1,	.t1 # table_name
+#ORDER BY 1,2;
+% .L2,	.t1 # table_name
 % L1,	a # name
 % bigint,	int # type
 % 1,	3 # length
@@ -14785,9 +14785,9 @@ Ready.
 #  FROM t1
 # WHERE (a>b-2 AND a<b+2)
 #    OR d NOT BETWEEN 110 AND 150
-#;
-% .L1,	.t1,	.L2,	.t1 # table_name
-% L1,	e,	L2,	d # name
+#ORDER BY 1,2,3,4;
+% .L2,	.t1,	.L3,	.t1 # table_name
+% L1,	e,	L3,	d # name
 % bigint,	int,	bigint,	int # type
 % 2,	3,	2,	3 # length
 [ 0,	NULL,	NULL,	101	]
@@ -14818,8 +14818,8 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2;
-% sys.t1,	sys.L2 # table_name
-% c,	L2 # name
+% sys.t1,	sys.L3 # table_name
+% c,	L3 # name
 % int,	bigint # type
 % 3,	4 # length
 [ NULL,	2360	]
@@ -14909,9 +14909,9 @@ Ready.
 # WHERE a>b
 #    OR (a>b-2 AND a<b+2)
 #    OR d>e
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.L6,	sys.L7,	sys.t1 # table_name
-% L1,	L2,	L3,	L5,	L6,	L7,	b # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L1,	sys.L2,	sys.L3,	sys.L6,	sys.L7,	sys.L10,	sys.t1 # table_name
+% L1,	L2,	L3,	L6,	L7,	L10,	b # name
 % smallint,	bigint,	int,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	3,	4,	2,	2,	3 # length
 [ 111,	1,	138,	1390,	2,	-1,	139	]
@@ -14939,8 +14939,8 @@ Ready.
 [ 555,	1,	174,	1700,	-2,	4,	170	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 2 # length
@@ -14992,9 +14992,9 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND d NOT BETWEEN 110 AND 150
-#;
-% .L1,	.L3,	.t1 # table_name
-% L1,	L3,	b # name
+#ORDER BY 1,2,3;
+% .L2,	.L5,	.t1 # table_name
+% L1,	L5,	b # name
 % bigint,	bigint,	int # type
 % 1,	4,	3 # length
 [ 0,	NULL,	NULL	]
@@ -15041,7 +15041,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L1,	.t1,	.L2,	.L3 # table_name
+% .L1,	.t1,	.L2,	.L4 # table_name
 % L1,	e,	L2,	L3 # name
 % hugeint,	int,	bigint,	bigint # type
 % 4,	3,	3,	1 # length
@@ -15083,8 +15083,8 @@ Ready.
 # WHERE b>c
 #   AND (e>c OR e<d)
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.L2,	sys.L4 # table_name
-% L1,	c,	L2,	L4 # name
+% sys.L1,	sys.t1,	sys.L2,	sys.L5 # table_name
+% L1,	c,	L2,	L5 # name
 % hugeint,	int,	hugeint,	bigint # type
 % 4,	3,	4,	4 # length
 [ NULL,	155,	NULL,	1580	]
@@ -15101,8 +15101,8 @@ Ready.
 # WHERE b>c
 #   AND (e>c OR e<d)
 #   AND coalesce(a,b,c,d,e)<>0
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -15127,8 +15127,8 @@ Ready.
 #   AND d NOT BETWEEN 110 AND 150
 #   AND b>c
 #ORDER BY 1,2,3,4,5,6;
-% sys.L2,	sys.t1,	sys.L3,	sys.t1,	sys.L4,	sys.L5 # table_name
-% L2,	e,	L3,	b,	L4,	L5 # name
+% sys.L4,	sys.t1,	sys.L5,	sys.t1,	sys.L6,	sys.L7 # table_name
+% L4,	e,	L5,	b,	L6,	L7 # name
 % bigint,	int,	bigint,	int,	smallint,	bigint # type
 % 3,	3,	2,	3,	3,	2 # length
 [ 382,	192,	3,	194,	222,	-3	]
@@ -15146,9 +15146,9 @@ Ready.
 #       b
 #  FROM t1
 # WHERE b>c
-#;
-% sys.t1,	sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L5,	sys.t1 # table_name
-% e,	L1,	L2,	a,	L3,	L5,	b # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.t1,	sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L6,	sys.t1 # table_name
+% e,	L1,	L2,	a,	L3,	L6,	b # name
 % int,	hugeint,	bigint,	int,	bigint,	bigint,	int # type
 % 3,	4,	3,	3,	1,	4,	3 # length
 [ NULL,	738,	369,	121,	1,	1240,	124	]
@@ -15189,7 +15189,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % bigint,	bigint # type
 % 1,	2 # length
@@ -15234,8 +15234,8 @@ Ready.
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.L3,	.L4 # table_name
-% L1,	a,	L2,	L3,	L4 # name
+% .L3,	.t1,	.L4,	.L5,	.L6 # table_name
+% L2,	a,	L4,	L5,	L6 # name
 % bigint,	int,	bigint,	hugeint,	smallint # type
 % 2,	3,	2,	4,	3 # length
 [ 0,	104,	NULL,	NULL,	444	]
@@ -15275,8 +15275,8 @@ Ready.
 #       a
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L2,	.L3,	.L4,	.t1 # table_name
-% L2,	L3,	L4,	a # name
+% .L3,	.L5,	.L6,	.t1 # table_name
+% L3,	L4,	L6,	a # name
 % bigint,	bigint,	smallint,	int # type
 % 4,	1,	3,	3 # length
 [ NULL,	0,	444,	NULL	]
@@ -15316,8 +15316,8 @@ Ready.
 #       a
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.t1 # table_name
-% c,	L1,	L2,	L3,	a # name
+% .t1,	.L2,	.L3,	.L4,	.t1 # table_name
+% c,	L1,	L3,	L4,	a # name
 % int,	bigint,	bigint,	hugeint,	int # type
 % 3,	2,	1,	4,	3 # length
 [ NULL,	24,	NULL,	NULL,	239	]
@@ -15359,8 +15359,8 @@ Ready.
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.t1,	sys.L5 # table_name
-% L1,	L2,	e,	L4,	b,	L5 # name
+% sys.L1,	sys.L2,	sys.t1,	sys.L5,	sys.t1,	sys.L6 # table_name
+% L1,	L2,	e,	L5,	b,	L6 # name
 % bigint,	bigint,	int,	bigint,	int,	hugeint # type
 % 3,	2,	3,	4,	3,	3 # length
 [ NULL,	-1,	110,	1120,	112,	NULL	]
@@ -15396,8 +15396,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
-% b,	L1,	L2,	c,	L3,	L4,	L5 # name
+% .t1,	.L1,	.L3,	.t1,	.L4,	.L5,	.L6 # table_name
+% b,	L1,	L2,	c,	L4,	L5,	L6 # name
 % int,	hugeint,	bigint,	int,	smallint,	bigint,	bigint # type
 % 3,	3,	1,	3,	3,	2,	2 # length
 [ NULL,	NULL,	0,	119,	333,	-1,	NULL	]
@@ -15415,7 +15415,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3;
-% .t1,	.L1,	.L2 # table_name
+% .t1,	.L1,	.L3 # table_name
 % c,	L1,	L2 # name
 % int,	hugeint,	bigint # type
 % 3,	4,	1 # length
@@ -15457,8 +15457,8 @@ Ready.
 # WHERE (e>c OR e<d)
 #   AND b>c
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L2,	sys.L4,	sys.L5 # table_name
-% L1,	L2,	L4,	L5 # name
+% sys.L1,	sys.L2,	sys.L5,	sys.L6 # table_name
+% L1,	L2,	L5,	L6 # name
 % hugeint,	hugeint,	bigint,	bigint # type
 % 4,	3,	4,	2 # length
 [ NULL,	NULL,	1580,	NULL	]
@@ -15478,8 +15478,8 @@ Ready.
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR (e>c OR e<d)
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .L1,	.L3,	.L4 # table_name
+% L1,	L2,	L4 # name
 % bigint,	bigint,	bigint # type
 % 2,	1,	2 # length
 [ NULL,	0,	1	]
@@ -15513,8 +15513,8 @@ Ready.
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L3,	sys.L4 # table_name
-% L1,	L3,	L4 # name
+% sys.L1,	sys.L4,	sys.L5 # table_name
+% L1,	L4,	L5 # name
 % bigint,	bigint,	smallint # type
 % 3,	4,	3 # length
 [ NULL,	NULL,	333	]
@@ -15619,8 +15619,8 @@ Ready.
 #       a+b*2+c*3+d*4
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
-% L1,	L2,	L3,	L5,	L6,	L7,	L10 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.L6,	sys.L7,	sys.L10,	sys.L11 # table_name
+% L1,	L2,	L3,	L6,	L7,	L10,	L11 # name
 % hugeint,	smallint,	bigint,	bigint,	hugeint,	bigint,	hugeint # type
 % 3,	3,	2,	4,	4,	3,	4 # length
 [ NULL,	222,	1,	1240,	NULL,	369,	1226	]
@@ -15761,8 +15761,8 @@ Ready.
 #   AND c>d
 #   AND b>c
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.t1,	sys.t1,	sys.L4 # table_name
-% L1,	L2,	c,	b,	L4 # name
+% sys.L1,	sys.L2,	sys.t1,	sys.t1,	sys.L5 # table_name
+% L1,	L2,	c,	b,	L5 # name
 % bigint,	bigint,	int,	int,	bigint # type
 % 1,	1,	1,	1,	1 # length
 #SELECT c-d,
@@ -15957,9 +15957,9 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR (c<=d-2 OR c>=d+2)
-#;
-% .L1,	.t1,	.L2,	.L3,	.L5,	.t1 # table_name
-% L1,	c,	L2,	L3,	L5,	b # name
+#ORDER BY 1,2,3,4,5,6;
+% .L2,	.t1,	.L3,	.L4,	.L7,	.t1 # table_name
+% L2,	c,	L3,	L4,	L7,	b # name
 % bigint,	int,	hugeint,	bigint,	bigint,	int # type
 % 2,	3,	3,	2,	4,	3 # length
 [ NULL,	113,	NULL,	-1,	1120,	112	]
@@ -16002,8 +16002,8 @@ Ready.
 # WHERE a>b
 #    OR d>e
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.t1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	c,	d,	L2,	L3,	L4,	L5 # name
+% .L2,	.t1,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
+% L1,	c,	d,	L3,	L4,	L5,	L6 # name
 % bigint,	int,	int,	smallint,	bigint,	bigint,	hugeint # type
 % 2,	3,	3,	3,	3,	2,	4 # length
 [ 0,	106,	108,	333,	317,	-2,	1612	]
@@ -16038,8 +16038,8 @@ Ready.
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
-% a,	L2,	L3,	L4,	L5 # name
+% sys.t1,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
+% a,	L3,	L4,	L5,	L6 # name
 % int,	bigint,	smallint,	bigint,	smallint # type
 % 1,	4,	3,	1,	3 # length
 [ NULL,	NULL,	444,	NULL,	555	]
@@ -16052,8 +16052,8 @@ Ready.
 #       (a+b+c+d+e)/5
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
-% L2,	L3,	L4,	L5,	L6,	L7 # name
+% .L3,	.L5,	.L6,	.L7,	.L10,	.L11 # table_name
+% L3,	L4,	L6,	L7,	L10,	L11 # name
 % bigint,	bigint,	bigint,	hugeint,	bigint,	hugeint # type
 % 4,	2,	2,	4,	2,	3 # length
 [ NULL,	0,	NULL,	NULL,	1,	NULL	]
@@ -16095,8 +16095,8 @@ Ready.
 #    OR c>d
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4;
-% .L1,	.t1,	.L2,	.L3 # table_name
-% L1,	c,	L2,	L3 # name
+% .L2,	.t1,	.L3,	.L4 # table_name
+% L2,	c,	L3,	L4 # name
 % int,	int,	bigint,	bigint # type
 % 3,	3,	1,	2 # length
 [ NULL,	113,	1,	-1	]
@@ -16186,7 +16186,7 @@ Ready.
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
+% .L1,	.L2,	.L3,	.t1,	.L4,	.L6 # table_name
 % L1,	L2,	L3,	b,	L4,	L5 # name
 % hugeint,	bigint,	bigint,	int,	hugeint,	bigint # type
 % 4,	2,	2,	3,	3,	2 # length
@@ -16210,8 +16210,8 @@ Ready.
 #       d-e
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.t1,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	c,	L4,	L5,	L6 # name
+% .L2,	.L4,	.L5,	.t1,	.L6,	.L7,	.L10 # table_name
+% L1,	L3,	L5,	c,	L6,	L7,	L10 # name
 % bigint,	bigint,	smallint,	int,	hugeint,	bigint,	bigint # type
 % 1,	2,	3,	3,	4,	1,	2 # length
 [ 0,	0,	333,	106,	1067,	1,	-1	]
@@ -16250,8 +16250,8 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L3,	sys.L4 # table_name
-% L1,	L3,	L4 # name
+% sys.L1,	sys.L4,	sys.L5 # table_name
+% L1,	L4,	L5 # name
 % int,	bigint,	bigint # type
 % 3,	4,	2 # length
 [ NULL,	NULL,	1	]
@@ -16302,8 +16302,8 @@ Ready.
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	smallint # type
 % 2,	3 # length
 [ 0,	222	]
@@ -16400,8 +16400,8 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.t1,	.t1,	.L1,	.L2,	.L3 # table_name
-% b,	c,	e,	L1,	L2,	L3 # name
+% .t1,	.t1,	.t1,	.L1,	.L3,	.L4 # table_name
+% b,	c,	e,	L1,	L2,	L4 # name
 % int,	int,	int,	int,	bigint,	bigint # type
 % 3,	3,	3,	3,	1,	2 # length
 [ NULL,	102,	NULL,	104,	0,	NULL	]
@@ -16428,8 +16428,8 @@ Ready.
 #       a+b*2+c*3
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.t1,	sys.t1,	sys.L3,	sys.L4 # table_name
-% L1,	c,	b,	L3,	L4 # name
+% sys.L1,	sys.t1,	sys.t1,	sys.L4,	sys.L5 # table_name
+% L1,	c,	b,	L4,	L5 # name
 % bigint,	int,	int,	bigint,	hugeint # type
 % 2,	3,	3,	4,	4 # length
 [ NULL,	102,	NULL,	NULL,	NULL	]
@@ -16511,8 +16511,8 @@ Ready.
 #   AND b IS NOT NULL
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L3,	sys.L4 # table_name
+% L2,	L3,	L4 # name
 % bigint,	hugeint,	int # type
 % 2,	3,	3 # length
 [ -1,	137,	138	]
@@ -16528,8 +16528,8 @@ Ready.
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	hugeint # type
 % 1,	3 # length
 [ 0,	107	]
@@ -16543,8 +16543,8 @@ Ready.
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L2,	.L4,	.L5,	.L6 # table_name
+% L1,	L2,	L3,	L5,	L6 # name
 % hugeint,	hugeint,	bigint,	bigint,	smallint # type
 % 4,	4,	1,	1,	3 # length
 [ NULL,	NULL,	0,	NULL,	444	]
@@ -16596,8 +16596,8 @@ Ready.
 # WHERE (e>a AND e<b)
 #    OR coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L4,	.L5 # table_name
-% L1,	L2,	L4,	L5 # name
+% .L2,	.L3,	.L6,	.L7 # table_name
+% L1,	L3,	L6,	L7 # name
 % bigint,	smallint,	bigint,	bigint # type
 % 2,	3,	4,	2 # length
 [ 0,	333,	1050,	-2	]
@@ -16641,8 +16641,8 @@ Ready.
 #   AND b IS NOT NULL
 #   AND a>b
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L3,	.L4,	.L5,	.L6 # table_name
-% d,	L1,	L3,	L4,	L5,	L6 # name
+% .t1,	.L1,	.L4,	.L5,	.L6,	.L10 # table_name
+% d,	L1,	L4,	L5,	L6,	L7 # name
 % int,	bigint,	bigint,	hugeint,	hugeint,	bigint # type
 % 3,	1,	4,	4,	3,	2 # length
 [ 133,	1,	1300,	1325,	132,	4	]
@@ -16659,8 +16659,8 @@ Ready.
 #       d-e
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L4,	.t1,	.L5,	.L6 # table_name
-% L1,	L2,	c,	L4,	e,	L5,	L6 # name
+% .L1,	.L3,	.t1,	.L6,	.t1,	.L7,	.L10 # table_name
+% L1,	L2,	c,	L6,	e,	L7,	L10 # name
 % bigint,	bigint,	int,	bigint,	int,	hugeint,	bigint # type
 % 2,	1,	3,	4,	3,	3,	2 # length
 [ NULL,	0,	102,	NULL,	NULL,	NULL,	NULL	]
@@ -16815,8 +16815,8 @@ Ready.
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.t1,	.L3 # table_name
-% c,	L1,	L2,	a,	L3 # name
+% .t1,	.L2,	.L3,	.t1,	.L4 # table_name
+% c,	L1,	L3,	a,	L4 # name
 % int,	bigint,	smallint,	int,	bigint # type
 % 3,	2,	3,	1,	1 # length
 [ 113,	1,	555,	NULL,	NULL	]
@@ -16892,8 +16892,8 @@ Ready.
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .L1,	.L3,	.L4 # table_name
+% L1,	L2,	L4 # name
 % hugeint,	bigint,	smallint # type
 % 3,	1,	3 # length
 [ NULL,	0,	222	]
@@ -16933,7 +16933,7 @@ Ready.
 #  FROM t1
 # WHERE d>e
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
+% .L1,	.L2,	.L4 # table_name
 % L1,	L2,	L3 # name
 % smallint,	bigint,	bigint # type
 % 3,	1,	1 # length
@@ -17022,8 +17022,8 @@ Ready.
 #    OR d NOT BETWEEN 110 AND 150
 #    OR (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L3,	.L4,	.L5,	.L6 # table_name
+% L1,	L2,	L4,	L5,	L6 # name
 % smallint,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	2,	2,	2,	4 # length
 [ 111,	5,	1,	1,	827	]
@@ -17132,8 +17132,8 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #    OR c>d
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.t1,	sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.t1,	sys.L5 # table_name
-% a,	L1,	e,	L2,	L3,	c,	L5 # name
+% sys.t1,	sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.t1,	sys.L6 # table_name
+% a,	L1,	e,	L2,	L3,	c,	L6 # name
 % int,	bigint,	int,	hugeint,	bigint,	int,	bigint # type
 % 3,	2,	3,	4,	1,	3,	4 # length
 [ NULL,	NULL,	NULL,	NULL,	2,	208,	NULL	]
@@ -17189,8 +17189,8 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6,	L7 # name
+% .L1,	.L3,	.L4,	.L5,	.L6,	.L7,	.L10 # table_name
+% L1,	L2,	L4,	L5,	L6,	L7,	L10 # name
 % bigint,	bigint,	smallint,	hugeint,	smallint,	bigint,	bigint # type
 % 2,	2,	3,	4,	3,	2,	2 # length
 [ NULL,	24,	555,	NULL,	444,	3,	1	]
@@ -17226,8 +17226,8 @@ Ready.
 #       c-d
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L1,	.L2,	.L4,	.L5 # table_name
+% L1,	L2,	L3,	L5 # name
 % hugeint,	bigint,	bigint,	bigint # type
 % 3,	2,	1,	2 # length
 [ NULL,	NULL,	0,	NULL	]
@@ -17265,8 +17265,8 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	hugeint # type
 % 1,	4 # length
 [ 0,	NULL	]
@@ -17309,8 +17309,8 @@ Ready.
 # WHERE a IS NULL
 #   AND d>e
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.L4 # table_name
-% b,	L1,	L2,	L3,	L4 # name
+% .t1,	.L1,	.L2,	.L4,	.L5 # table_name
+% b,	L1,	L2,	L3,	L5 # name
 % int,	bigint,	hugeint,	bigint,	smallint # type
 % 3,	1,	1,	1,	3 # length
 [ 112,	4,	NULL,	1,	444	]
@@ -17367,9 +17367,9 @@ Ready.
 # WHERE d>e
 #   AND a>b
 #   AND d NOT BETWEEN 110 AND 150
-#;
-% sys.L1,	sys.L3,	sys.t1,	sys.t1,	sys.L4,	sys.L5,	sys.t1 # table_name
-% L1,	L3,	b,	e,	L4,	L5,	d # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L1,	sys.L4,	sys.t1,	sys.t1,	sys.L5,	sys.L6,	sys.t1 # table_name
+% L1,	L4,	b,	e,	L5,	L6,	d # name
 % smallint,	bigint,	int,	int,	bigint,	bigint,	int # type
 % 3,	4,	3,	3,	2,	2,	3 # length
 [ 333,	364,	181,	180,	1,	-3,	183	]
@@ -17386,8 +17386,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.t1,	sys.L3,	sys.t1,	sys.L4 # table_name
-% L1,	b,	L3,	c,	L4 # name
+% sys.L2,	sys.t1,	sys.L5,	sys.t1,	sys.L6 # table_name
+% L2,	b,	L5,	c,	L6 # name
 % smallint,	int,	bigint,	int,	hugeint # type
 % 3,	3,	4,	3,	3 # length
 [ 111,	249,	490,	247,	247	]
@@ -17480,9 +17480,9 @@ Ready.
 #       b
 #  FROM t1
 # WHERE a IS NULL
-#;
-% sys.L2,	sys.t1 # table_name
-% L2,	b # name
+#ORDER BY 1,2;
+% sys.L3,	sys.t1 # table_name
+% L3,	b # name
 % bigint,	int # type
 % 4,	3 # length
 [ NULL,	206	]
@@ -17496,8 +17496,8 @@ Ready.
 #   AND (c<=d-2 OR c>=d+2)
 #   AND (e>a AND e<b)
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.t1 # table_name
-% L1,	L2,	L3,	a # name
+% .L1,	.L3,	.L4,	.t1 # table_name
+% L1,	L2,	L4,	a # name
 % hugeint,	bigint,	hugeint,	int # type
 % 1,	1,	1,	1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -17513,8 +17513,8 @@ Ready.
 # WHERE (e>a AND e<b)
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6,	L7 # name
+% .L2,	.L3,	.L4,	.L5,	.L6,	.L7,	.L10 # table_name
+% L1,	L3,	L4,	L5,	L6,	L7,	L10 # name
 % bigint,	smallint,	bigint,	hugeint,	bigint,	hugeint,	smallint # type
 % 1,	3,	3,	4,	2,	3,	3 # length
 [ 0,	111,	416,	827,	1,	137,	222	]
@@ -17556,8 +17556,8 @@ Ready.
 #    OR a>b
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.t1,	.L2,	.L3,	.L4 # table_name
-% d,	L1,	a,	L2,	L3,	L4 # name
+% .t1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
+% d,	L2,	a,	L3,	L4,	L5 # name
 % int,	smallint,	int,	bigint,	bigint,	hugeint # type
 % 3,	3,	3,	2,	2,	3 # length
 [ NULL,	333,	153,	NULL,	2,	NULL	]
@@ -17594,8 +17594,8 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L1,	.L2,	.L4,	.L5 # table_name
+% L1,	L2,	L3,	L5 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 2,	2,	2,	2 # length
 [ NULL,	-1,	0,	-1	]
@@ -17683,8 +17683,8 @@ Ready.
 #  FROM t1
 # WHERE d>e
 #ORDER BY 1,2;
-% sys.L1,	sys.L3 # table_name
-% L1,	L3 # name
+% sys.L1,	sys.L4 # table_name
+% L1,	L4 # name
 % bigint,	bigint # type
 % 2,	4 # length
 [ NULL,	1120	]
@@ -17850,8 +17850,8 @@ Ready.
 #       d
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.t1,	.t1 # table_name
-% L1,	L2,	L3,	e,	d # name
+% .L1,	.L3,	.L4,	.t1,	.t1 # table_name
+% L1,	L2,	L4,	e,	d # name
 % hugeint,	bigint,	hugeint,	int,	int # type
 % 4,	1,	4,	3,	3 # length
 [ NULL,	0,	NULL,	NULL,	NULL	]
@@ -17893,9 +17893,9 @@ Ready.
 #       a
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L7,	sys.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	L7,	a # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L10,	sys.t1 # table_name
+% L1,	L2,	L3,	L4,	L5,	L10,	a # name
 % bigint,	int,	bigint,	hugeint,	bigint,	bigint,	int # type
 % 2,	3,	3,	4,	2,	4,	3 # length
 [ -3,	127,	385,	1272,	2,	1290,	127	]
@@ -17954,8 +17954,8 @@ Ready.
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND d>e
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L2,	.L4,	.L5,	.L6 # table_name
+% L1,	L2,	L3,	L5,	L6 # name
 % hugeint,	hugeint,	bigint,	bigint,	bigint # type
 % 4,	3,	1,	2,	1 # length
 [ NULL,	NULL,	0,	NULL,	1	]
@@ -17981,8 +17981,8 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.L4,	.t1,	.L5,	.L6 # table_name
-% e,	L1,	L2,	L4,	a,	L5,	L6 # name
+% .t1,	.L1,	.L3,	.L6,	.t1,	.L10,	.L11 # table_name
+% e,	L1,	L2,	L6,	a,	L7,	L11 # name
 % int,	int,	bigint,	bigint,	int,	bigint,	smallint # type
 % 3,	3,	2,	4,	3,	1,	3 # length
 [ NULL,	NULL,	18,	NULL,	NULL,	0,	444	]
@@ -18013,8 +18013,8 @@ Ready.
 #       a
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L3,	.L4,	.L5,	.L6,	.t1,	.t1 # table_name
-% L1,	L3,	L4,	L5,	L6,	c,	a # name
+% .L1,	.L4,	.L5,	.L7,	.L10,	.t1,	.t1 # table_name
+% L1,	L4,	L5,	L6,	L10,	c,	a # name
 % bigint,	bigint,	int,	bigint,	bigint,	int,	int # type
 % 1,	4,	3,	1,	2,	3,	3 # length
 [ NULL,	NULL,	104,	0,	NULL,	102,	104	]
@@ -18083,8 +18083,8 @@ Ready.
 #       (a+b+c+d+e)/5
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L5,	.L6,	.L7,	.L10 # table_name
-% L1,	L2,	L3,	L5,	L6,	L7,	L10 # name
+% .L2,	.L3,	.L5,	.L10,	.L11,	.L12,	.L13 # table_name
+% L1,	L3,	L4,	L10,	L11,	L12,	L13 # name
 % bigint,	hugeint,	bigint,	bigint,	bigint,	bigint,	hugeint # type
 % 2,	4,	1,	4,	2,	1,	3 # length
 [ 0,	NULL,	0,	NULL,	NULL,	NULL,	NULL	]
@@ -18126,8 +18126,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L6 # table_name
-% L1,	L2,	L3,	L4,	L6 # name
+% sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L10 # table_name
+% L2,	L3,	L4,	L5,	L10 # name
 % hugeint,	bigint,	bigint,	int,	bigint # type
 % 4,	2,	2,	3,	4 # length
 [ 1272,	2,	-3,	127,	1290	]
@@ -18149,8 +18149,8 @@ Ready.
 # WHERE c>d
 #    OR b>c
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.t1,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	a,	L4,	L5,	L6 # name
+% .L2,	.L3,	.t1,	.L6,	.L7,	.L10 # table_name
+% L1,	L3,	a,	L6,	L7,	L10 # name
 % bigint,	hugeint,	int,	bigint,	hugeint,	smallint # type
 % 1,	4,	3,	4,	3,	3 # length
 [ 0,	NULL,	NULL,	NULL,	NULL,	444	]
@@ -18280,8 +18280,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L3,	.L4 # table_name
+% L2,	L4 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 0,	NULL	]
@@ -18386,8 +18386,8 @@ Ready.
 # WHERE a>b
 #    OR c>d
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -18427,8 +18427,8 @@ Ready.
 # WHERE (e>c OR e<d)
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
-% L1,	L2,	e,	L3,	L4,	L5,	L6 # name
+% sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
+% L2,	L3,	e,	L4,	L5,	L6,	L7 # name
 % hugeint,	int,	int,	hugeint,	bigint,	bigint,	smallint # type
 % 4,	3,	3,	4,	1,	2,	3 # length
 [ NULL,	NULL,	110,	NULL,	1,	NULL,	444	]
@@ -18461,8 +18461,8 @@ Ready.
 #    OR (c<=d-2 OR c>=d+2)
 #    OR a IS NULL
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L3,	sys.t1,	sys.t1,	sys.L4,	sys.L5 # table_name
-% L1,	L3,	b,	d,	L4,	L5 # name
+% sys.L1,	sys.L4,	sys.t1,	sys.t1,	sys.L5,	sys.L6 # table_name
+% L1,	L4,	b,	d,	L5,	L6 # name
 % hugeint,	bigint,	int,	int,	bigint,	bigint # type
 % 4,	4,	3,	3,	2,	3 # length
 [ NULL,	NULL,	NULL,	116,	3,	NULL	]
@@ -18494,8 +18494,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L3 # table_name
+% L2,	L3 # name
 % bigint,	bigint # type
 % 2,	3 # length
 [ NULL,	711	]
@@ -18566,8 +18566,8 @@ Ready.
 # WHERE (e>a AND e<b)
 #    OR a>b
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.t1,	.L3 # table_name
-% L1,	L2,	e,	L3 # name
+% .L1,	.L3,	.t1,	.L4 # table_name
+% L1,	L2,	e,	L4 # name
 % hugeint,	bigint,	int,	hugeint # type
 % 4,	2,	3,	3 # length
 [ NULL,	24,	237,	NULL	]
@@ -18600,7 +18600,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
+% .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L6 # table_name
 % b,	L1,	d,	L2,	L3,	L4,	L5 # name
 % int,	smallint,	int,	bigint,	bigint,	hugeint,	bigint # type
 % 3,	3,	3,	2,	3,	4,	2 # length
@@ -18645,8 +18645,8 @@ Ready.
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L2,	.L4,	.L5,	.L6,	.L7,	.L10 # table_name
+% L1,	L3,	L5,	L6,	L7,	L10 # name
 % bigint,	bigint,	hugeint,	smallint,	bigint,	smallint # type
 % 2,	1,	4,	3,	1,	3 # length
 [ 16,	0,	1158,	222,	1,	444	]
@@ -18731,7 +18731,7 @@ Ready.
 #   AND d>e
 #   AND b IS NOT NULL
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.t1,	.L4 # table_name
+% .L1,	.L2,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	e,	L4 # name
 % bigint,	bigint,	bigint,	int,	bigint # type
 % 1,	1,	1,	3,	2 # length
@@ -18748,8 +18748,8 @@ Ready.
 #   AND d NOT BETWEEN 110 AND 150
 #   AND b IS NOT NULL
 #ORDER BY 1,2,3,4;
-% sys.L2,	sys.t1,	sys.L3,	sys.L4 # table_name
-% L2,	a,	L3,	L4 # name
+% sys.L3,	sys.t1,	sys.L4,	sys.L5 # table_name
+% L3,	a,	L4,	L5 # name
 % bigint,	int,	int,	smallint # type
 % 4,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	444	]
@@ -18776,8 +18776,8 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L1,	.L2,	.L3,	.L5,	.L6,	.L7 # table_name
+% L1,	L2,	L3,	L4,	L6,	L7 # name
 % hugeint,	hugeint,	hugeint,	bigint,	bigint,	hugeint # type
 % 4,	4,	4,	2,	2,	3 # length
 [ NULL,	NULL,	NULL,	0,	-1,	NULL	]
@@ -18855,8 +18855,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L3 # table_name
+% L2,	L3 # name
 % hugeint,	smallint # type
 % 4,	3 # length
 [ NULL,	333	]
@@ -18936,8 +18936,8 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	b,	L3,	L4,	L5,	L6 # name
+% .L1,	.L2,	.t1,	.L3,	.L4,	.L6,	.L7 # table_name
+% L1,	L2,	b,	L3,	L4,	L5,	L7 # name
 % hugeint,	bigint,	int,	bigint,	smallint,	bigint,	bigint # type
 % 4,	3,	3,	2,	3,	2,	2 # length
 [ NULL,	NULL,	NULL,	NULL,	444,	0,	NULL	]
@@ -18987,8 +18987,8 @@ Ready.
 #   AND d>e
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3;
-% sys.t1,	sys.L2,	sys.L3 # table_name
-% d,	L2,	L3 # name
+% sys.t1,	sys.L3,	sys.L4 # table_name
+% d,	L3,	L4 # name
 % int,	bigint,	bigint # type
 % 3,	4,	1 # length
 [ 128,	1290,	4	]
@@ -19008,8 +19008,8 @@ Ready.
 #    OR a IS NULL
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6,	b # name
+% .L1,	.L3,	.L4,	.L5,	.L6,	.L7,	.t1 # table_name
+% L1,	L2,	L4,	L5,	L6,	L7,	b # name
 % bigint,	bigint,	hugeint,	hugeint,	bigint,	smallint,	int # type
 % 2,	2,	4,	4,	1,	3,	3 # length
 [ NULL,	0,	NULL,	NULL,	NULL,	444,	NULL	]
@@ -19041,8 +19041,8 @@ Ready.
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
-% L2,	L3,	L4,	L5,	L6 # name
+% sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
+% L3,	L4,	L5,	L6,	L7 # name
 % bigint,	bigint,	bigint,	smallint,	smallint # type
 % 4,	2,	2,	3,	3 # length
 [ NULL,	1,	NULL,	555,	444	]
@@ -19084,8 +19084,8 @@ Ready.
 # WHERE (e>a AND e<b)
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L1,	.L2,	.L4,	.L5 # table_name
+% L1,	L2,	L3,	L5 # name
 % hugeint,	smallint,	bigint,	hugeint # type
 % 4,	3,	1,	4 # length
 [ 1918,	444,	0,	2878	]
@@ -19099,8 +19099,8 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4;
-% .L1,	.t1,	.L2,	.L3 # table_name
-% L1,	e,	L2,	L3 # name
+% .L2,	.t1,	.L3,	.L5 # table_name
+% L2,	e,	L3,	L4 # name
 % bigint,	int,	bigint,	bigint # type
 % 2,	3,	2,	1 # length
 [ NULL,	NULL,	-4,	0	]
@@ -19133,8 +19133,8 @@ Ready.
 #  FROM t1
 # WHERE (e>c OR e<d)
 #    OR a IS NULL
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -19232,8 +19232,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.t1,	.L2,	.L3,	.L4 # table_name
-% L1,	c,	b,	L2,	L3,	L4 # name
+% .L3,	.t1,	.t1,	.L5,	.L6,	.L7 # table_name
+% L2,	c,	b,	L4,	L6,	L7 # name
 % bigint,	int,	int,	bigint,	hugeint,	hugeint # type
 % 2,	3,	3,	1,	4,	3 # length
 [ 1,	113,	112,	0,	NULL,	NULL	]
@@ -19273,8 +19273,8 @@ Ready.
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	b,	L4,	L5 # name
+% .L1,	.L3,	.L4,	.t1,	.L5,	.L6 # table_name
+% L1,	L2,	L4,	b,	L5,	L6 # name
 % bigint,	bigint,	bigint,	int,	smallint,	smallint # type
 % 2,	2,	1,	3,	3,	3 # length
 [ NULL,	0,	1,	NULL,	555,	444	]
@@ -19297,8 +19297,8 @@ Ready.
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2,3,4;
-% sys.L2,	sys.t1,	sys.L3,	sys.L4 # table_name
-% L2,	c,	L3,	L4 # name
+% sys.L3,	sys.t1,	sys.L4,	sys.L5 # table_name
+% L3,	c,	L4,	L5 # name
 % bigint,	int,	bigint,	hugeint # type
 % 4,	3,	3,	4 # length
 [ 358,	176,	529,	1057	]
@@ -19329,8 +19329,8 @@ Ready.
 #    OR (c<=d-2 OR c>=d+2)
 #    OR (e>a AND e<b)
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L2,	.L3 # table_name
+% L1,	L3 # name
 % bigint,	hugeint # type
 % 1,	4 # length
 [ 0,	NULL	]
@@ -19431,8 +19431,8 @@ Ready.
 #   AND c>d
 #   AND (e>a AND e<b)
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
-% L1,	c,	L3,	L4,	L5 # name
+% sys.L1,	sys.t1,	sys.L4,	sys.L5,	sys.L6 # table_name
+% L1,	c,	L4,	L5,	L6 # name
 % hugeint,	int,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1 # length
 #SELECT c-d
@@ -19496,8 +19496,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND b>c
 #ORDER BY 1,2,3;
-% sys.L1,	sys.t1,	sys.L2 # table_name
-% L1,	a,	L2 # name
+% sys.L2,	sys.t1,	sys.L3 # table_name
+% L2,	a,	L3 # name
 % smallint,	int,	bigint # type
 % 3,	3,	2 # length
 [ 111,	138,	1	]
@@ -19520,8 +19520,8 @@ Ready.
 #  FROM t1
 # WHERE d>e
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.t1,	.L2 # table_name
-% e,	L1,	a,	L2 # name
+% .t1,	.L2,	.t1,	.L3 # table_name
+% e,	L1,	a,	L3 # name
 % int,	bigint,	int,	hugeint # type
 % 3,	1,	3,	3 # length
 [ 110,	0,	NULL,	NULL	]
@@ -19546,8 +19546,8 @@ Ready.
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6,	b # name
+% .L1,	.L2,	.L3,	.L4,	.L6,	.L7,	.t1 # table_name
+% L1,	L2,	L3,	L4,	L5,	L7,	b # name
 % bigint,	hugeint,	smallint,	bigint,	bigint,	bigint,	int # type
 % 2,	3,	3,	1,	1,	3,	3 # length
 [ NULL,	NULL,	555,	1,	0,	NULL,	112	]
@@ -19574,8 +19574,8 @@ Ready.
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.t1,	.L4 # table_name
-% L1,	L2,	L3,	b,	L4 # name
+% .L1,	.L3,	.L4,	.t1,	.L5 # table_name
+% L1,	L2,	L4,	b,	L5 # name
 % smallint,	bigint,	bigint,	int,	bigint # type
 % 3,	1,	3,	3,	2 # length
 [ 111,	0,	416,	139,	1	]
@@ -19727,8 +19727,8 @@ Ready.
 # WHERE b>c
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.t1 # table_name
-% d,	L1,	L2,	L3,	a # name
+% .t1,	.L2,	.L3,	.L4,	.t1 # table_name
+% d,	L1,	L3,	L4,	a # name
 % int,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	1,	2,	3 # length
 [ NULL,	8,	1,	2,	153	]
@@ -19775,8 +19775,8 @@ Ready.
 #    OR c BETWEEN b-2 AND d+2
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -19810,8 +19810,8 @@ Ready.
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 2 # length
@@ -19837,9 +19837,9 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR c BETWEEN b-2 AND d+2
-#;
-% .L1,	.L2,	.L3,	.t1 # table_name
-% L1,	L2,	L3,	e # name
+#ORDER BY 1,2,3,4;
+% .L2,	.L3,	.L4,	.t1 # table_name
+% L2,	L3,	L4,	e # name
 % hugeint,	bigint,	hugeint,	int # type
 % 4,	2,	4,	3 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -19992,8 +19992,8 @@ Ready.
 #    OR a IS NULL
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % hugeint # type
 % 4 # length
 [ NULL	]
@@ -20086,8 +20086,8 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L3,	L4,	L5,	L6 # name
+% .L1,	.L4,	.L5,	.L6,	.L10 # table_name
+% L1,	L4,	L5,	L6,	L7 # name
 % bigint,	bigint,	bigint,	hugeint,	bigint # type
 % 2,	4,	2,	4,	1 # length
 [ NULL,	NULL,	1,	NULL,	0	]
@@ -20168,8 +20168,8 @@ Ready.
 #    OR (a>b-2 AND a<b+2)
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .L2,	.L3,	.t1,	.L4,	.L5,	.t1 # table_name
-% L2,	L3,	a,	L4,	L5,	d # name
+% .L3,	.L4,	.t1,	.L6,	.L7,	.t1 # table_name
+% L3,	L4,	a,	L5,	L7,	d # name
 % bigint,	int,	int,	bigint,	bigint,	int # type
 % 4,	3,	3,	1,	2,	3 # length
 [ NULL,	NULL,	NULL,	0,	NULL,	207	]
@@ -20201,8 +20201,8 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	b,	L3,	L4,	L5,	L6 # name
+% .L1,	.L2,	.t1,	.L4,	.L5,	.L6,	.L10 # table_name
+% L1,	L2,	b,	L3,	L5,	L6,	L7 # name
 % bigint,	hugeint,	int,	bigint,	int,	hugeint,	bigint # type
 % 2,	3,	3,	2,	3,	4,	1 # length
 [ NULL,	NULL,	NULL,	0,	104,	NULL,	0	]
@@ -20278,8 +20278,8 @@ Ready.
 #       a+b*2+c*3
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .L2,	.L3,	.L4 # table_name
+% L1,	L3,	L4 # name
 % bigint,	bigint,	hugeint # type
 % 2,	2,	4 # length
 [ 0,	NULL,	NULL	]
@@ -20381,8 +20381,8 @@ Ready.
 #    OR coalesce(a,b,c,d,e)<>0
 #    OR (e>c OR e<d)
 #ORDER BY 1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % hugeint # type
 % 4 # length
 [ NULL	]
@@ -20463,7 +20463,7 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % int,	bigint # type
 % 3,	1 # length
@@ -20552,8 +20552,8 @@ Ready.
 #    OR c BETWEEN b-2 AND d+2
 #    OR (e>c OR e<d)
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -20623,8 +20623,8 @@ Ready.
 #       c
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6,	c # name
+% .L1,	.L2,	.L3,	.L4,	.L6,	.L10,	.t1 # table_name
+% L1,	L2,	L3,	L4,	L5,	L7,	c # name
 % bigint,	hugeint,	bigint,	hugeint,	bigint,	bigint,	int # type
 % 2,	4,	2,	4,	1,	2,	3 # length
 [ NULL,	NULL,	-1,	NULL,	0,	0,	202	]
@@ -20679,8 +20679,8 @@ Ready.
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.t1 # table_name
-% e,	L1,	L2,	L3,	L4,	b # name
+% .t1,	.L2,	.L4,	.L5,	.L6,	.t1 # table_name
+% e,	L2,	L3,	L5,	L6,	b # name
 % int,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	2,	1,	2,	3,	3 # length
 [ NULL,	-4,	0,	NULL,	222,	240	]
@@ -20716,9 +20716,9 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND c BETWEEN b-2 AND d+2
-#;
-% sys.L2,	sys.t1,	sys.t1 # table_name
-% L2,	b,	d # name
+#ORDER BY 1,2,3;
+% sys.L4,	sys.t1,	sys.t1 # table_name
+% L4,	b,	d # name
 % bigint,	int,	int # type
 % 4,	3,	3 # length
 [ NULL,	206,	207	]
@@ -20760,8 +20760,8 @@ Ready.
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -20786,8 +20786,8 @@ Ready.
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L4 # table_name
-% L1,	L2,	L4 # name
+% sys.L1,	sys.L2,	sys.L5 # table_name
+% L1,	L2,	L5 # name
 % bigint,	smallint,	bigint # type
 % 2,	3,	4 # length
 [ NULL,	555,	1510	]
@@ -20830,8 +20830,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR d>e
 #ORDER BY 1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % hugeint # type
 % 4 # length
 [ NULL	]
@@ -20871,8 +20871,8 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #    OR coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L6 # table_name
-% L1,	L2,	L3,	L4,	c,	L6 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L7 # table_name
+% L1,	L2,	L3,	L4,	c,	L7 # name
 % bigint,	smallint,	hugeint,	bigint,	int,	bigint # type
 % 2,	3,	4,	3,	3,	4 # length
 [ NULL,	222,	NULL,	723,	244,	486	]
@@ -20944,8 +20944,8 @@ Ready.
 #    OR (c<=d-2 OR c>=d+2)
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2;
-% sys.L1,	sys.L3 # table_name
-% L1,	L3 # name
+% sys.L1,	sys.L4 # table_name
+% L1,	L4 # name
 % bigint,	bigint # type
 % 2,	4 # length
 [ NULL,	NULL	]
@@ -21018,8 +21018,8 @@ Ready.
 #   AND b IS NOT NULL
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
-% L2,	L3,	L4,	L5,	L6,	L7 # name
+% .L3,	.L4,	.L5,	.L6,	.L10,	.L11 # table_name
+% L3,	L4,	L5,	L6,	L7,	L11 # name
 % bigint,	hugeint,	smallint,	bigint,	bigint,	hugeint # type
 % 4,	1,	3,	1,	1,	1 # length
 [ NULL,	NULL,	444,	NULL,	0,	NULL	]
@@ -21032,8 +21032,8 @@ Ready.
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.L3,	.L4 # table_name
-% L1,	c,	L2,	L3,	L4 # name
+% .L2,	.t1,	.L3,	.L4,	.L5 # table_name
+% L1,	c,	L3,	L4,	L5 # name
 % bigint,	int,	bigint,	hugeint,	bigint # type
 % 2,	3,	2,	4,	1 # length
 [ 16,	193,	3,	1158,	1	]
@@ -21048,7 +21048,7 @@ Ready.
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.t1,	.L3,	.L4 # table_name
+% .L1,	.L2,	.t1,	.L3,	.L5 # table_name
 % L1,	L2,	b,	L3,	L4 # name
 % bigint,	bigint,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	2 # length
@@ -21160,8 +21160,8 @@ Ready.
 #    OR b>c
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L5,	.t1,	.L6 # table_name
-% L1,	L2,	L3,	L5,	b,	L6 # name
+% .L1,	.L3,	.L4,	.L7,	.t1,	.L10 # table_name
+% L1,	L2,	L4,	L7,	b,	L10 # name
 % bigint,	bigint,	bigint,	bigint,	int,	hugeint # type
 % 2,	2,	2,	4,	3,	4 # length
 [ NULL,	2,	-3,	1240,	124,	NULL	]
@@ -21237,8 +21237,8 @@ Ready.
 #   AND b>c
 #   AND a IS NULL
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L2,	.L4,	.L5,	.L6 # table_name
+% L2,	L3,	L5,	L6 # name
 % bigint,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1 # length
 #SELECT abs(b-c),
@@ -21476,8 +21476,8 @@ Ready.
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L3,	.t1,	.L4 # table_name
-% d,	L1,	L2,	L3,	a,	L4 # name
+% .t1,	.L1,	.L2,	.L4,	.t1,	.L5 # table_name
+% d,	L1,	L2,	L3,	a,	L5 # name
 % int,	bigint,	bigint,	bigint,	int,	bigint # type
 % 3,	2,	2,	2,	3,	3 # length
 [ 108,	-1,	2,	0,	107,	317	]
@@ -21568,7 +21568,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
+% .t1,	.L1,	.L2,	.t1,	.L3,	.L4,	.L6 # table_name
 % a,	L1,	L2,	b,	L3,	L4,	L5 # name
 % int,	bigint,	hugeint,	int,	bigint,	bigint,	bigint # type
 % 3,	3,	4,	3,	1,	2,	2 # length
@@ -21634,8 +21634,8 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L2,	.L3,	.L4,	.L5 # table_name
-% L2,	L3,	L4,	L5 # name
+% .L3,	.L4,	.L5,	.L7 # table_name
+% L3,	L4,	L5,	L6 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 4,	2,	2,	1 # length
 [ NULL,	1,	NULL,	0	]
@@ -21675,7 +21675,7 @@ Ready.
 #    OR (a>b-2 AND a<b+2)
 #    OR a>b
 #ORDER BY 1,2;
-% .t1,	.L1 # table_name
+% .t1,	.L2 # table_name
 % a,	L1 # name
 % int,	bigint # type
 % 3,	1 # length
@@ -21707,8 +21707,8 @@ Ready.
 #       a+b*2+c*3+d*4
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L2,	.L3,	.L5,	.L6 # table_name
+% L1,	L2,	L3,	L4,	L6 # name
 % int,	bigint,	smallint,	bigint,	hugeint # type
 % 3,	3,	3,	2,	4 # length
 [ NULL,	NULL,	555,	1,	NULL	]
@@ -21788,8 +21788,8 @@ Ready.
 # WHERE b IS NOT NULL
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L5 # table_name
-% b,	L1,	L2,	L3,	L5 # name
+% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L6 # table_name
+% b,	L1,	L2,	L3,	L6 # name
 % int,	bigint,	hugeint,	int,	bigint # type
 % 3,	2,	4,	3,	4 # length
 [ 105,	-1,	1612,	107,	1050	]
@@ -21866,8 +21866,8 @@ Ready.
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.t1,	.L2,	.L3,	.t1,	.L4,	.L6 # table_name
-% L1,	a,	L2,	L3,	e,	L4,	L6 # name
+% .L2,	.t1,	.L3,	.L4,	.t1,	.L5,	.L10 # table_name
+% L1,	a,	L3,	L4,	e,	L5,	L10 # name
 % bigint,	int,	hugeint,	bigint,	int,	hugeint,	bigint # type
 % 2,	3,	4,	2,	3,	4,	4 # length
 [ 0,	107,	635,	-2,	109,	1612,	1050	]
@@ -21935,8 +21935,8 @@ Ready.
 # WHERE a>b
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.L3,	.L4 # table_name
-% L1,	a,	L2,	L3,	L4 # name
+% .L2,	.t1,	.L3,	.L4,	.L5 # table_name
+% L1,	a,	L3,	L4,	L5 # name
 % bigint,	int,	hugeint,	hugeint,	bigint # type
 % 2,	3,	3,	4,	2 # length
 [ 0,	104,	NULL,	NULL,	NULL	]
@@ -21970,7 +21970,7 @@ Ready.
 # WHERE (e>a AND e<b)
 #    OR (e>c OR e<d)
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.t1 # table_name
+% .L1,	.L3,	.t1 # table_name
 % L1,	L2,	a # name
 % int,	bigint,	int # type
 % 3,	2,	3 # length
@@ -22007,8 +22007,8 @@ Ready.
 # WHERE b>c
 #    OR d>e
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.t1,	.L1,	.L2,	.L3,	.L4 # table_name
-% d,	b,	L1,	L2,	L3,	L4 # name
+% .t1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
+% d,	b,	L1,	L3,	L4,	L5 # name
 % int,	int,	bigint,	smallint,	bigint,	hugeint # type
 % 3,	3,	2,	3,	2,	3 # length
 [ NULL,	151,	8,	333,	2,	NULL	]
@@ -22103,8 +22103,8 @@ Ready.
 #    OR a IS NULL
 #    OR c>d
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
-% L1,	L2,	L4,	L5,	L6,	L7 # name
+% sys.L1,	sys.L2,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
+% L1,	L2,	L5,	L6,	L7,	L10 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 2,	2,	4,	3,	1,	2 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	1	]
@@ -22230,9 +22230,9 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND a>b
 #   AND e+d BETWEEN a+b-10 AND c+130
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
-% L1,	L2,	L3,	b # name
+#ORDER BY 1,2,3,4;
+% sys.L2,	sys.L3,	sys.L4,	sys.t1 # table_name
+% L2,	L3,	L4,	b # name
 % hugeint,	hugeint,	smallint,	int # type
 % 1,	1,	1,	1 # length
 #SELECT c
@@ -22286,8 +22286,8 @@ Ready.
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND d>e
 #ORDER BY 1,2,3,4,5,6;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4 # table_name
-% e,	L1,	L2,	L3,	a,	L4 # name
+% sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L5 # table_name
+% e,	L2,	L3,	L4,	a,	L5 # name
 % int,	hugeint,	hugeint,	smallint,	int,	bigint # type
 % 3,	4,	3,	3,	3,	2 # length
 [ 132,	1985,	132,	444,	131,	-4	]
@@ -22305,8 +22305,8 @@ Ready.
 #   AND (c<=d-2 OR c>=d+2)
 #   AND (e>a AND e<b)
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L2,	.L3 # table_name
-% e,	L1,	L2,	L3 # name
+% .t1,	.L2,	.L3,	.L4 # table_name
+% e,	L1,	L3,	L4 # name
 % int,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1 # length
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
@@ -22316,8 +22316,8 @@ Ready.
 # WHERE a>b
 #    OR c>d
 #ORDER BY 1,2,3;
-% sys.L2,	sys.L3,	sys.L4 # table_name
-% L2,	L3,	L4 # name
+% sys.L3,	sys.L4,	sys.L5 # table_name
+% L3,	L4,	L5 # name
 % bigint,	bigint,	int # type
 % 4,	1,	3 # length
 [ NULL,	NULL,	104	]
@@ -22353,7 +22353,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.t1,	.L1,	.t1,	.L2,	.L3 # table_name
+% .t1,	.t1,	.L1,	.t1,	.L2,	.L4 # table_name
 % c,	b,	L1,	e,	L2,	L3 # name
 % int,	int,	bigint,	int,	bigint,	bigint # type
 % 3,	3,	1,	3,	2,	1 # length
@@ -22394,8 +22394,8 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% sys.L1,	sys.t1,	sys.L3 # table_name
-% L1,	d,	L3 # name
+% sys.L1,	sys.t1,	sys.L4 # table_name
+% L1,	d,	L4 # name
 % bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ -1,	196,	398	]
@@ -22409,7 +22409,7 @@ Ready.
 #    OR d NOT BETWEEN 110 AND 150
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
+% .L1,	.L2,	.L4 # table_name
 % L1,	L2,	L3 # name
 % bigint,	bigint,	bigint # type
 % 2,	3,	2 # length
@@ -22487,8 +22487,8 @@ Ready.
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L3,	L4,	L5,	L6 # name
+% .L2,	.L5,	.L6,	.L7,	.L10 # table_name
+% L2,	L5,	L6,	L7,	L10 # name
 % hugeint,	bigint,	bigint,	bigint,	smallint # type
 % 4,	4,	2,	1,	3 # length
 [ NULL,	NULL,	NULL,	2,	555	]
@@ -22523,7 +22523,7 @@ Ready.
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % bigint,	bigint # type
 % 3,	1 # length
@@ -22565,8 +22565,8 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.t1,	.L1,	.L2,	.L4,	.L5,	.L6 # table_name
-% a,	e,	L1,	L2,	L4,	L5,	L6 # name
+% .t1,	.t1,	.L2,	.L3,	.L6,	.L10,	.L11 # table_name
+% a,	e,	L1,	L3,	L6,	L7,	L11 # name
 % int,	int,	bigint,	int,	bigint,	bigint,	hugeint # type
 % 3,	3,	2,	3,	4,	1,	3 # length
 [ NULL,	NULL,	18,	NULL,	NULL,	0,	NULL	]
@@ -22595,8 +22595,8 @@ Ready.
 #    OR (e>c OR e<d)
 #    OR b>c
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
-% L1,	L3,	L4,	L5,	L6 # name
+% sys.L1,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
+% L1,	L4,	L5,	L6,	L7 # name
 % bigint,	bigint,	bigint,	bigint,	hugeint # type
 % 2,	4,	3,	1,	4 # length
 [ NULL,	358,	529,	1,	NULL	]
@@ -22637,8 +22637,8 @@ Ready.
 #    OR b IS NOT NULL
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.t1,	.L3,	.L5,	.L6 # table_name
-% L1,	L2,	c,	d,	L3,	L5,	L6 # name
+% .L2,	.L3,	.t1,	.t1,	.L4,	.L7,	.L10 # table_name
+% L1,	L3,	c,	d,	L4,	L7,	L10 # name
 % bigint,	smallint,	int,	int,	bigint,	bigint,	hugeint # type
 % 1,	3,	3,	3,	2,	4,	4 # length
 [ 0,	111,	137,	136,	2,	1390,	1371	]
@@ -22677,7 +22677,7 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
+% .L1,	.L2,	.L4 # table_name
 % L1,	L2,	L3 # name
 % hugeint,	bigint,	bigint # type
 % 4,	2,	1 # length
@@ -22691,8 +22691,8 @@ Ready.
 # WHERE coalesce(a,b,c,d,e)<>0
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.t1 # table_name
-% L1,	L2,	L3,	b # name
+% .L1,	.L3,	.L4,	.t1 # table_name
+% L1,	L2,	L4,	b # name
 % hugeint,	bigint,	bigint,	int # type
 % 3,	2,	3,	3 # length
 [ NULL,	0,	NULL,	NULL	]
@@ -22774,8 +22774,8 @@ Ready.
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.L3,	.t1,	.L4 # table_name
-% L1,	b,	L2,	L3,	c,	L4 # name
+% .L1,	.t1,	.L2,	.L4,	.t1,	.L5 # table_name
+% L1,	b,	L2,	L3,	c,	L5 # name
 % bigint,	int,	bigint,	bigint,	int,	bigint # type
 % 2,	3,	3,	2,	3,	2 # length
 [ NULL,	NULL,	NULL,	0,	119,	-1	]
@@ -22797,8 +22797,8 @@ Ready.
 # WHERE a IS NULL
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.L4 # table_name
-% a,	L1,	L2,	L3,	L4 # name
+% .t1,	.L2,	.L3,	.L4,	.L5 # table_name
+% a,	L1,	L3,	L4,	L5 # name
 % int,	bigint,	hugeint,	hugeint,	bigint # type
 % 1,	1,	1,	1,	1 # length
 [ NULL,	0,	NULL,	NULL,	1	]
@@ -22813,9 +22813,9 @@ Ready.
 #  FROM t1
 # WHERE a IS NULL
 #    OR (c<=d-2 OR c>=d+2)
-#;
-% sys.t1,	sys.L1,	sys.t1,	sys.L2,	sys.L4,	sys.t1 # table_name
-% b,	L1,	e,	L2,	L4,	a # name
+#ORDER BY 1,2,3,4,5,6;
+% sys.t1,	sys.L1,	sys.t1,	sys.L2,	sys.L5,	sys.t1 # table_name
+% b,	L1,	e,	L2,	L5,	a # name
 % int,	bigint,	int,	smallint,	bigint,	int # type
 % 3,	2,	3,	3,	4,	3 # length
 [ NULL,	NULL,	117,	444,	NULL,	115	]
@@ -22935,8 +22935,8 @@ Ready.
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.t1,	.L4,	.L5,	.L7 # table_name
-% L1,	L2,	L3,	d,	L4,	L5,	L7 # name
+% .L1,	.L2,	.L3,	.t1,	.L4,	.L6,	.L11 # table_name
+% L1,	L2,	L3,	d,	L4,	L5,	L11 # name
 % bigint,	hugeint,	bigint,	int,	hugeint,	bigint,	bigint # type
 % 2,	4,	1,	3,	3,	2,	4 # length
 [ NULL,	NULL,	1,	114,	NULL,	1,	1120	]
@@ -22992,8 +22992,8 @@ Ready.
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
+% L1,	L3,	L4,	L5,	L6,	L7 # name
 % bigint,	hugeint,	smallint,	hugeint,	bigint,	bigint # type
 % 1,	4,	3,	3,	1,	3 # length
 [ 0,	NULL,	222,	NULL,	4,	723	]
@@ -23019,8 +23019,8 @@ Ready.
 #   AND coalesce(a,b,c,d,e)<>0
 #   AND a IS NULL
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -23035,9 +23035,9 @@ Ready.
 #       b
 #  FROM t1
 # WHERE c>d
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L5,	sys.L6,	sys.t1 # table_name
-% L1,	L2,	L3,	e,	L5,	L6,	b # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L6,	sys.L7,	sys.t1 # table_name
+% L1,	L2,	L3,	e,	L6,	L7,	b # name
 % hugeint,	bigint,	smallint,	int,	bigint,	hugeint,	int # type
 % 4,	1,	3,	3,	4,	3,	3 # length
 [ NULL,	1,	555,	NULL,	NULL,	NULL,	NULL	]
@@ -23061,7 +23061,7 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
+% .L1,	.L2,	.L3,	.L5 # table_name
 % L1,	L2,	L3,	L4 # name
 % bigint,	bigint,	hugeint,	bigint # type
 % 3,	2,	4,	2 # length
@@ -23110,9 +23110,9 @@ Ready.
 #       c-d,
 #       b
 #  FROM t1
-#;
-% sys.L1,	sys.L3,	sys.L4,	sys.t1 # table_name
-% L1,	L3,	L4,	b # name
+#ORDER BY 1,2,3,4;
+% sys.L1,	sys.L4,	sys.L5,	sys.t1 # table_name
+% L1,	L4,	L5,	b # name
 % bigint,	bigint,	bigint,	int # type
 % 2,	4,	2,	3 # length
 [ NULL,	NULL,	1,	NULL	]
@@ -23194,8 +23194,8 @@ Ready.
 # WHERE b>c
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.t1,	.t1,	.L3,	.L4 # table_name
-% L1,	L2,	a,	b,	L3,	L4 # name
+% .L2,	.L3,	.t1,	.t1,	.L5,	.L6 # table_name
+% L1,	L3,	a,	b,	L4,	L6 # name
 % bigint,	bigint,	int,	int,	bigint,	bigint # type
 % 2,	3,	3,	3,	1,	2 # length
 [ 2,	369,	121,	124,	0,	NULL	]
@@ -23262,9 +23262,9 @@ Ready.
 # WHERE (c<=d-2 OR c>=d+2)
 #   AND a>b
 #   AND (e>c OR e<d)
-#;
-% sys.t1,	sys.L1,	sys.t1,	sys.L3,	sys.t1 # table_name
-% d,	L1,	c,	L3,	e # name
+#ORDER BY 1,2,3,4,5;
+% sys.t1,	sys.L1,	sys.t1,	sys.L4,	sys.t1 # table_name
+% d,	L1,	c,	L4,	e # name
 % int,	int,	int,	bigint,	int # type
 % 3,	3,	3,	4,	3 # length
 [ 108,	107,	106,	1050,	109	]
@@ -23305,8 +23305,8 @@ Ready.
 # WHERE b IS NOT NULL
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % hugeint # type
 % 4 # length
 [ NULL	]
@@ -23439,9 +23439,9 @@ Ready.
 #       e,
 #       a
 #  FROM t1
-#;
-% sys.L1,	sys.L3,	sys.t1,	sys.t1 # table_name
-% L1,	L3,	e,	a # name
+#ORDER BY 1,2,3,4;
+% sys.L1,	sys.L4,	sys.t1,	sys.t1 # table_name
+% L1,	L4,	e,	a # name
 % smallint,	bigint,	int,	int # type
 % 3,	4,	3,	3 # length
 [ 111,	490,	246,	245	]
@@ -23481,8 +23481,8 @@ Ready.
 # WHERE (c<=d-2 OR c>=d+2)
 #    OR c>d
 #ORDER BY 1,2,3;
-% sys.L1,	sys.t1,	sys.L3 # table_name
-% L1,	e,	L3 # name
+% sys.L1,	sys.t1,	sys.L4 # table_name
+% L1,	e,	L4 # name
 % bigint,	int,	bigint # type
 % 2,	3,	4 # length
 [ NULL,	NULL,	NULL	]
@@ -23512,9 +23512,9 @@ Ready.
 #       e
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
-#;
-% .L1,	.L2,	.L3,	.t1,	.L4,	.t1,	.t1 # table_name
-% L1,	L2,	L3,	a,	L4,	b,	e # name
+#ORDER BY 1,2,3,4,5,6,7;
+% .L2,	.L3,	.L4,	.t1,	.L5,	.t1,	.t1 # table_name
+% L1,	L3,	L4,	a,	L5,	b,	e # name
 % bigint,	hugeint,	bigint,	int,	bigint,	int,	int # type
 % 1,	3,	3,	3,	2,	3,	3 # length
 [ 0,	635,	317,	107,	2,	105,	109	]
@@ -23533,8 +23533,8 @@ Ready.
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND b IS NOT NULL
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L6,	sys.L7,	sys.L10 # table_name
-% L1,	L2,	L3,	L4,	L6,	L7,	L10 # name
+% sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L10,	sys.L11,	sys.L12 # table_name
+% L2,	L3,	L4,	L5,	L10,	L11,	L12 # name
 % hugeint,	hugeint,	bigint,	bigint,	bigint,	smallint,	smallint # type
 % 4,	4,	3,	2,	4,	3,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	555,	444	]
@@ -23562,8 +23562,8 @@ Ready.
 # WHERE b>c
 #    OR c>d
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.t1,	.L3,	.t1 # table_name
-% d,	L1,	L2,	c,	L3,	b # name
+% .t1,	.L2,	.L3,	.t1,	.L4,	.t1 # table_name
+% d,	L1,	L3,	c,	L4,	b # name
 % int,	bigint,	smallint,	int,	hugeint,	int # type
 % 3,	2,	3,	3,	4,	3 # length
 [ NULL,	8,	555,	150,	905,	151	]
@@ -23601,8 +23601,8 @@ Ready.
 #   AND b>c
 #   AND d>e
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.t1 # table_name
-% e,	L1,	L2,	L3,	L4,	d # name
+% .t1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
+% e,	L1,	L3,	L4,	L5,	d # name
 % int,	bigint,	smallint,	smallint,	bigint,	int # type
 % 3,	1,	3,	3,	1,	3 # length
 [ 230,	0,	333,	555,	1,	233	]
@@ -23648,7 +23648,7 @@ Ready.
 #    OR coalesce(a,b,c,d,e)<>0
 #    OR (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.L3,	.L4 # table_name
+% .L1,	.t1,	.L2,	.L3,	.L5 # table_name
 % L1,	e,	L2,	L3,	L4 # name
 % smallint,	int,	hugeint,	bigint,	bigint # type
 % 3,	3,	4,	3,	1 # length
@@ -23686,7 +23686,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2;
-% .L1,	.L2 # table_name
+% .L1,	.L3 # table_name
 % L1,	L2 # name
 % bigint,	bigint # type
 % 2,	1 # length
@@ -23726,8 +23726,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND b>c
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L3 # table_name
+% L2,	L3 # name
 % bigint,	bigint # type
 % 2,	1 # length
 [ NULL,	1	]
@@ -23828,9 +23828,9 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR a IS NULL
-#;
-% .L1,	.t1 # table_name
-% L1,	b # name
+#ORDER BY 1,2;
+% .L2,	.t1 # table_name
+% L2,	b # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	145	]
@@ -23940,8 +23940,8 @@ Ready.
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND b IS NOT NULL
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
-% c,	L1,	L2,	L3,	L4,	a,	L5 # name
+% .t1,	.L1,	.L2,	.L4,	.L5,	.t1,	.L6 # table_name
+% c,	L1,	L2,	L3,	L5,	a,	L6 # name
 % int,	bigint,	hugeint,	bigint,	hugeint,	int,	bigint # type
 % 3,	2,	4,	1,	4,	3,	2 # length
 [ NULL,	NULL,	NULL,	0,	NULL,	239,	NULL	]
@@ -24016,8 +24016,8 @@ Ready.
 #       a+b*2+c*3+d*4
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.L5 # table_name
-% L1,	L3,	L4,	c,	L5 # name
+% sys.L1,	sys.L4,	sys.L5,	sys.t1,	sys.L6 # table_name
+% L1,	L4,	L5,	c,	L6 # name
 % bigint,	bigint,	bigint,	int,	hugeint # type
 % 2,	4,	2,	3,	4 # length
 [ NULL,	358,	4,	176,	NULL	]
@@ -24059,8 +24059,8 @@ Ready.
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.L4 # table_name
-% d,	L1,	L2,	L3,	L4 # name
+% .t1,	.L2,	.L3,	.L4,	.L5 # table_name
+% d,	L1,	L3,	L4,	L5 # name
 % int,	bigint,	hugeint,	bigint,	smallint # type
 % 3,	2,	4,	2,	3 # length
 [ 108,	0,	1612,	-2,	333	]
@@ -24178,7 +24178,7 @@ Ready.
 # WHERE d NOT BETWEEN 110 AND 150
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.L3,	.t1,	.L4,	.t1 # table_name
+% .t1,	.L1,	.L2,	.L3,	.t1,	.L5,	.t1 # table_name
 % e,	L1,	L2,	L3,	b,	L4,	c # name
 % int,	bigint,	hugeint,	bigint,	int,	bigint,	int # type
 % 3,	2,	3,	3,	3,	1,	3 # length
@@ -24193,8 +24193,8 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #    OR a>b
 #ORDER BY 1,2,3;
-% sys.L2,	sys.L3,	sys.L4 # table_name
-% L2,	L3,	L4 # name
+% sys.L3,	sys.L4,	sys.L5 # table_name
+% L3,	L4,	L5 # name
 % bigint,	bigint,	smallint # type
 % 4,	2,	3 # length
 [ NULL,	NULL,	444	]
@@ -24308,8 +24308,8 @@ Ready.
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5;
-% .t1,	.t1,	.L1,	.L3,	.L4 # table_name
-% a,	c,	L1,	L3,	L4 # name
+% .t1,	.t1,	.L1,	.L4,	.L6 # table_name
+% a,	c,	L1,	L4,	L5 # name
 % int,	int,	hugeint,	bigint,	bigint # type
 % 3,	3,	4,	4,	2 # length
 [ 107,	106,	635,	1050,	0	]
@@ -24330,8 +24330,8 @@ Ready.
 # WHERE b IS NOT NULL
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L2,	.L3,	.L4,	.L5 # table_name
+% L1,	L3,	L4,	L5 # name
 % bigint,	bigint,	hugeint,	int # type
 % 2,	2,	3,	3 # length
 [ 4,	1,	132,	131	]
@@ -24352,8 +24352,8 @@ Ready.
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L3,	.L4,	.L5,	.L7 # table_name
+% L1,	L2,	L4,	L5,	L6 # name
 % bigint,	bigint,	bigint,	smallint,	bigint # type
 % 3,	1,	2,	3,	1 # length
 [ 317,	0,	2,	333,	0	]
@@ -24410,9 +24410,9 @@ Ready.
 #  FROM t1
 # WHERE b IS NOT NULL
 #   AND c BETWEEN b-2 AND d+2
-#;
-% sys.L2,	sys.L3,	sys.t1,	sys.t1,	sys.t1 # table_name
-% L2,	L3,	c,	d,	b # name
+#ORDER BY 1,2,3,4,5;
+% sys.L3,	sys.L4,	sys.t1,	sys.t1,	sys.t1 # table_name
+% L3,	L4,	c,	d,	b # name
 % bigint,	hugeint,	int,	int,	int # type
 % 4,	4,	3,	3,	3 # length
 [ NULL,	NULL,	208,	207,	206	]
@@ -24440,8 +24440,8 @@ Ready.
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	d,	L3,	L4,	L5 # name
+% .L1,	.L2,	.t1,	.L3,	.L5,	.L6 # table_name
+% L1,	L2,	d,	L3,	L4,	L6 # name
 % smallint,	hugeint,	int,	int,	bigint,	bigint # type
 % 3,	1,	3,	1,	1,	2 # length
 [ 555,	NULL,	114,	NULL,	0,	-1	]
@@ -24456,8 +24456,8 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L5,	.L6,	.t1,	.L7 # table_name
-% L1,	L2,	L3,	L5,	L6,	a,	L7 # name
+% .L1,	.L2,	.L3,	.L6,	.L7,	.t1,	.L11 # table_name
+% L1,	L2,	L3,	L6,	L7,	a,	L10 # name
 % hugeint,	bigint,	hugeint,	bigint,	bigint,	int,	bigint # type
 % 4,	2,	3,	4,	2,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	104,	0	]
@@ -24508,9 +24508,9 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
-#;
-% .L1,	.L3,	.t1,	.t1 # table_name
-% L1,	L3,	c,	e # name
+#ORDER BY 1,2,3,4;
+% .L2,	.L5,	.t1,	.t1 # table_name
+% L2,	L5,	c,	e # name
 % int,	bigint,	int,	int # type
 % 3,	4,	3,	3 # length
 [ NULL,	NULL,	208,	NULL	]
@@ -24551,8 +24551,8 @@ Ready.
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L2,	.L3,	.L5,	.L6 # table_name
+% L1,	L2,	L3,	L4,	L6 # name
 % hugeint,	hugeint,	hugeint,	bigint,	bigint # type
 % 3,	4,	4,	1,	2 # length
 [ NULL,	NULL,	NULL,	0,	NULL	]
@@ -24575,8 +24575,8 @@ Ready.
 #   AND c BETWEEN b-2 AND d+2
 #   AND b>c
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.t1,	.L3,	.L4 # table_name
-% L1,	L2,	a,	L3,	L4 # name
+% .L1,	.L2,	.t1,	.L4,	.L5 # table_name
+% L1,	L2,	a,	L3,	L5 # name
 % int,	hugeint,	int,	bigint,	bigint # type
 % 3,	3,	3,	1,	2 # length
 [ 138,	137,	138,	0,	-1	]
@@ -24590,8 +24590,8 @@ Ready.
 #   AND b>c
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L2,	sys.t1,	sys.L3 # table_name
-% L1,	L2,	d,	L3 # name
+% sys.L2,	sys.L3,	sys.t1,	sys.L4 # table_name
+% L2,	L3,	d,	L4 # name
 % bigint,	bigint,	int,	bigint # type
 % 1,	3,	3,	1 # length
 [ 1,	579,	190,	1	]
@@ -24606,8 +24606,8 @@ Ready.
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L3,	.L4,	.L5,	.L6 # table_name
+% L1,	L2,	L4,	L5,	L6 # name
 % bigint,	bigint,	int,	hugeint,	bigint # type
 % 2,	1,	3,	4,	1 # length
 [ NULL,	0,	121,	NULL,	1	]
@@ -24629,8 +24629,8 @@ Ready.
 #    OR d>e
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -24669,8 +24669,8 @@ Ready.
 # WHERE d NOT BETWEEN 110 AND 150
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% c,	L2,	L3,	L4 # name
+% sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
+% c,	L3,	L4,	L5 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	4,	3,	2 # length
 [ NULL,	2360,	711,	3	]
@@ -24722,8 +24722,8 @@ Ready.
 # WHERE a IS NULL
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4;
-% .L1,	.t1,	.L2,	.L3 # table_name
-% L1,	a,	L2,	L3 # name
+% .L2,	.t1,	.L3,	.L5 # table_name
+% L2,	a,	L3,	L4 # name
 % smallint,	int,	bigint,	bigint # type
 % 3,	3,	2,	1 # length
 [ 111,	245,	-4,	0	]
@@ -24854,8 +24854,8 @@ Ready.
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
-% L2,	L3,	L4,	L5,	L6 # name
+% sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
+% L3,	L4,	L5,	L6,	L7 # name
 % bigint,	bigint,	bigint,	bigint,	smallint # type
 % 4,	3,	2,	2,	3 # length
 [ NULL,	NULL,	1,	NULL,	444	]
@@ -24897,8 +24897,8 @@ Ready.
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
+% L1,	L3,	L4,	L5,	L6,	L7 # name
 % bigint,	bigint,	hugeint,	hugeint,	bigint,	bigint # type
 % 2,	3,	4,	3,	2,	1 # length
 [ 0,	317,	1612,	107,	-1,	1	]
@@ -24981,9 +24981,9 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #    OR c>d
-#;
-% .L1,	.L3,	.t1 # table_name
-% L1,	L3,	b # name
+#ORDER BY 1,2,3;
+% .L2,	.L5,	.t1 # table_name
+% L1,	L5,	b # name
 % bigint,	bigint,	int # type
 % 2,	4,	3 # length
 [ 0,	NULL,	NULL	]
@@ -25025,8 +25025,8 @@ Ready.
 # WHERE (e>c OR e<d)
 #   AND a IS NULL
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.t1,	.L2,	.L4 # table_name
-% L1,	c,	a,	L2,	L4 # name
+% .L2,	.t1,	.t1,	.L3,	.L6 # table_name
+% L1,	c,	a,	L3,	L6 # name
 % bigint,	int,	int,	hugeint,	bigint # type
 % 1,	3,	1,	1,	4 # length
 [ 1,	113,	NULL,	NULL,	1120	]
@@ -25040,8 +25040,8 @@ Ready.
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	b # name
+% .L1,	.L2,	.L4,	.L5,	.L6,	.t1 # table_name
+% L1,	L2,	L3,	L5,	L6,	b # name
 % smallint,	hugeint,	bigint,	hugeint,	hugeint,	int # type
 % 3,	4,	1,	3,	4,	3 # length
 [ 111,	827,	0,	137,	2046,	139	]
@@ -25105,8 +25105,8 @@ Ready.
 # WHERE c>d
 #    OR b>c
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L5,	.L6,	.L7,	.t1 # table_name
-% L1,	L2,	L3,	L5,	L6,	L7,	a # name
+% .L1,	.L2,	.L3,	.L6,	.L10,	.L11,	.t1 # table_name
+% L1,	L2,	L3,	L6,	L7,	L11,	a # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	hugeint,	int # type
 % 1,	2,	2,	4,	2,	4,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	0,	NULL,	104	]
@@ -25155,7 +25155,7 @@ Ready.
 #    OR a IS NULL
 #    OR d>e
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L2,	.L3 # table_name
+% .t1,	.L1,	.L2,	.L4 # table_name
 % a,	L1,	L2,	L3 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	3,	2,	2 # length
@@ -25185,8 +25185,8 @@ Ready.
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	b,	L4,	L5 # name
+% .L1,	.L3,	.L4,	.t1,	.L5,	.L6 # table_name
+% L1,	L2,	L4,	b,	L5,	L6 # name
 % hugeint,	bigint,	hugeint,	int,	bigint,	bigint # type
 % 4,	1,	4,	3,	2,	2 # length
 [ NULL,	0,	NULL,	NULL,	NULL,	NULL	]
@@ -25272,8 +25272,8 @@ Ready.
 #       a+b*2+c*3+d*4+e*5
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L2,	sys.L3,	sys.L4 # table_name
-% L2,	L3,	L4 # name
+% sys.L3,	sys.L4,	sys.L5 # table_name
+% L3,	L4,	L5 # name
 % bigint,	hugeint,	hugeint # type
 % 4,	3,	4 # length
 [ NULL,	NULL,	NULL	]
@@ -25313,8 +25313,8 @@ Ready.
 #       c-d
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.t1,	.L3 # table_name
-% L1,	e,	L2,	b,	L3 # name
+% .L1,	.t1,	.L3,	.t1,	.L4 # table_name
+% L1,	e,	L2,	b,	L4 # name
 % bigint,	int,	bigint,	int,	bigint # type
 % 3,	3,	2,	3,	2 # length
 [ NULL,	NULL,	0,	NULL,	1	]
@@ -25351,9 +25351,9 @@ Ready.
 #       (a+b+c+d+e)/5,
 #       b
 #  FROM t1
-#;
-% .L1,	.L2,	.t1 # table_name
-% L1,	L2,	b # name
+#ORDER BY 1,2,3;
+% .L2,	.L3,	.t1 # table_name
+% L1,	L3,	b # name
 % bigint,	hugeint,	int # type
 % 2,	3,	3 # length
 [ 0,	NULL,	NULL	]
@@ -25392,7 +25392,7 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #    OR coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2;
-% .t1,	.L1 # table_name
+% .t1,	.L2 # table_name
 % d,	L1 # name
 % int,	bigint # type
 % 3,	1 # length
@@ -25435,8 +25435,8 @@ Ready.
 #       a+b*2+c*3+d*4
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L1,	.L2,	.L3,	.L5,	.L6,	.L7 # table_name
+% L1,	L2,	L3,	L4,	L6,	L7 # name
 % hugeint,	smallint,	bigint,	bigint,	hugeint,	hugeint # type
 % 4,	3,	1,	2,	3,	4 # length
 [ NULL,	222,	NULL,	0,	NULL,	NULL	]
@@ -25476,9 +25476,9 @@ Ready.
 #       d,
 #       b
 #  FROM t1
-#;
-% .L1,	.L2,	.L3,	.t1,	.t1 # table_name
-% L1,	L2,	L3,	d,	b # name
+#ORDER BY 1,2,3,4,5;
+% .L2,	.L3,	.L4,	.t1,	.t1 # table_name
+% L1,	L3,	L4,	d,	b # name
 % bigint,	bigint,	smallint,	int,	int # type
 % 2,	2,	3,	3,	3 # length
 [ 0,	-2,	333,	108,	105	]
@@ -25557,7 +25557,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
+% .L1,	.L2,	.t1,	.L3,	.L4,	.L6 # table_name
 % L1,	L2,	a,	L3,	L4,	L5 # name
 % smallint,	bigint,	int,	bigint,	hugeint,	bigint # type
 % 3,	2,	3,	2,	4,	1 # length
@@ -25624,8 +25624,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND d>e
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .L3,	.L4,	.L5 # table_name
+% L2,	L4,	L5 # name
 % bigint,	smallint,	hugeint # type
 % 2,	3,	4 # length
 [ 1,	555,	NULL	]
@@ -25711,8 +25711,8 @@ Ready.
 #   AND d>e
 #   AND a>b
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% .L2,	.L3,	.L4,	.L5,	.L6,	.L10 # table_name
+% L2,	L3,	L4,	L5,	L6,	L7 # name
 % smallint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 3,	1,	2,	2,	1,	1 # length
 [ 222,	2,	-3,	2,	3,	0	]
@@ -25763,9 +25763,9 @@ Ready.
 #       a-b,
 #       c
 #  FROM t1
-#;
-% .L1,	.L2,	.L3,	.t1 # table_name
-% L1,	L2,	L3,	c # name
+#ORDER BY 1,2,3,4;
+% .L2,	.L3,	.L4,	.t1 # table_name
+% L1,	L3,	L4,	c # name
 % bigint,	smallint,	bigint,	int # type
 % 2,	3,	2,	3 # length
 [ 0,	333,	2,	106	]
@@ -25827,8 +25827,8 @@ Ready.
 # WHERE d>e
 #    OR (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L2,	.L3,	.t1,	.L4,	.L5,	.L6,	.L7 # table_name
-% L2,	L3,	b,	L4,	L5,	L6,	L7 # name
+% .L3,	.L4,	.t1,	.L5,	.L7,	.L10,	.L11 # table_name
+% L3,	L4,	b,	L5,	L6,	L10,	L11 # name
 % bigint,	bigint,	int,	hugeint,	bigint,	bigint,	bigint # type
 % 4,	2,	3,	4,	2,	1,	2 # length
 [ 364,	1,	181,	2728,	14,	3,	1	]
@@ -25881,8 +25881,8 @@ Ready.
 # WHERE a IS NULL
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3;
-% .t1,	.t1,	.L1 # table_name
-% b,	d,	L1 # name
+% .t1,	.t1,	.L2 # table_name
+% b,	d,	L2 # name
 % int,	int,	bigint # type
 % 3,	3,	2 # length
 [ 112,	114,	-1	]
@@ -25923,8 +25923,8 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6,	L7 # name
+% .L1,	.L2,	.L3,	.L4,	.L6,	.L7,	.L11 # table_name
+% L1,	L2,	L3,	L4,	L5,	L7,	L10 # name
 % smallint,	hugeint,	hugeint,	bigint,	bigint,	bigint,	bigint # type
 % 3,	4,	4,	2,	2,	1,	1 # length
 [ 222,	1277,	2125,	2,	19,	3,	0	]
@@ -25942,8 +25942,8 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #   AND (e>c OR e<d)
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ 364	]
@@ -25965,8 +25965,8 @@ Ready.
 #    OR b>c
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L5,	.t1,	.t1,	.L6 # table_name
-% L1,	L2,	L3,	L5,	c,	a,	L6 # name
+% .L1,	.L3,	.L4,	.L7,	.t1,	.t1,	.L10 # table_name
+% L1,	L2,	L4,	L7,	c,	a,	L10 # name
 % bigint,	bigint,	hugeint,	bigint,	int,	int,	hugeint # type
 % 2,	2,	3,	4,	3,	3,	4 # length
 [ NULL,	8,	NULL,	1510,	150,	153,	NULL	]
@@ -26006,9 +26006,9 @@ Ready.
 #       e,
 #       d
 #  FROM t1
-#;
-% sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.t1,	sys.t1 # table_name
-% L2,	L3,	L4,	a,	L5,	e,	d # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L3,	sys.L4,	sys.L5,	sys.t1,	sys.L6,	sys.t1,	sys.t1 # table_name
+% L3,	L4,	L5,	a,	L6,	e,	d # name
 % bigint,	hugeint,	hugeint,	int,	hugeint,	int,	int # type
 % 4,	4,	4,	3,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	207	]
@@ -26084,8 +26084,8 @@ Ready.
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR (a>b-2 AND a<b+2)
 #ORDER BY 1;
-% .L2 # table_name
-% L2 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -26125,7 +26125,7 @@ Ready.
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.t1,	.t1 # table_name
+% .L1,	.L3,	.t1,	.t1 # table_name
 % L1,	L2,	c,	b # name
 % smallint,	bigint,	int,	int # type
 % 3,	2,	3,	3 # length
@@ -26204,8 +26204,8 @@ Ready.
 #       a-b
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	c,	L2,	L3,	L4,	L5,	L6 # name
+% .L1,	.t1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
+% L1,	c,	L2,	L3,	L4,	L5,	L7 # name
 % smallint,	int,	int,	hugeint,	smallint,	bigint,	bigint # type
 % 3,	3,	3,	4,	3,	2,	2 # length
 [ 111,	247,	245,	2476,	444,	26,	-4	]
@@ -26247,9 +26247,9 @@ Ready.
 #       d
 #  FROM t1
 # WHERE b>c
-#;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
-% L1,	e,	L2,	L3,	L4,	L5,	d # name
+#ORDER BY 1,2,3,4,5,6,7;
+% .L2,	.t1,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
+% L1,	e,	L3,	L4,	L5,	L6,	d # name
 % bigint,	int,	hugeint,	hugeint,	bigint,	bigint,	int # type
 % 2,	3,	4,	4,	2,	1,	3 # length
 [ 2,	NULL,	NULL,	738,	-3,	1,	122	]
@@ -26313,8 +26313,8 @@ Ready.
 # WHERE (e>c OR e<d)
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2;
-% sys.t1,	sys.L2 # table_name
-% a,	L2 # name
+% sys.t1,	sys.L3 # table_name
+% a,	L3 # name
 % int,	bigint # type
 % 3,	4 # length
 [ 131,	1300	]
@@ -26337,8 +26337,8 @@ Ready.
 #   AND e+d BETWEEN a+b-10 AND c+130
 #   AND d>e
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
-% e,	L1,	L2,	L3,	L4,	L5,	L6 # name
+% .t1,	.L1,	.L2,	.L4,	.L5,	.L6,	.L7 # table_name
+% e,	L1,	L2,	L3,	L5,	L6,	L7 # name
 % int,	bigint,	bigint,	bigint,	bigint,	smallint,	hugeint # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 #SELECT d,
@@ -26347,8 +26347,8 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND d>e
 #ORDER BY 1,2;
-% sys.t1,	sys.L1 # table_name
-% d,	L1 # name
+% sys.t1,	sys.L2 # table_name
+% d,	L2 # name
 % int,	bigint # type
 % 3,	2 # length
 [ 114,	-1	]
@@ -26373,8 +26373,8 @@ Ready.
 # WHERE a IS NULL
 #   AND c>d
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	c,	L3,	L4,	L5,	L6 # name
+% .L1,	.L3,	.t1,	.L4,	.L5,	.L6,	.L7 # table_name
+% L1,	L2,	c,	L4,	L5,	L6,	L7 # name
 % bigint,	bigint,	int,	bigint,	bigint,	hugeint,	bigint # type
 % 2,	2,	3,	1,	1,	1,	1 # length
 [ -2,	18,	208,	NULL,	NULL,	NULL,	1	]
@@ -26383,8 +26383,8 @@ Ready.
 #       a+b*2
 #  FROM t1
 #ORDER BY 1,2,3;
-% .t1,	.L1,	.L2 # table_name
-% b,	L1,	L2 # name
+% .t1,	.L2,	.L3 # table_name
+% b,	L1,	L3 # name
 % int,	bigint,	bigint # type
 % 3,	1,	3 # length
 [ NULL,	0,	NULL	]
@@ -26426,9 +26426,9 @@ Ready.
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR (e>a AND e<b)
-#;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.t1 # table_name
-% e,	L1,	L2,	L3,	L5,	d # name
+#ORDER BY 1,2,3,4,5,6;
+% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L6,	sys.t1 # table_name
+% e,	L1,	L2,	L3,	L6,	d # name
 % int,	bigint,	bigint,	int,	bigint,	int # type
 % 3,	2,	1,	3,	4,	3 # length
 [ 109,	-1,	1,	107,	1050,	108	]
@@ -26472,8 +26472,8 @@ Ready.
 #   AND (e>c OR e<d)
 #   AND c>d
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L5,	sys.L6 # table_name
-% L1,	a,	L2,	L3,	L5,	L6 # name
+% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L6,	sys.L7 # table_name
+% L1,	a,	L2,	L3,	L6,	L7 # name
 % bigint,	int,	hugeint,	int,	bigint,	bigint # type
 % 2,	3,	4,	3,	4,	2 # length
 [ -3,	220,	1338,	220,	440,	-1	]
@@ -26494,7 +26494,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
+% .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.L7 # table_name
 % L1,	e,	L2,	L3,	L4,	L5,	L6 # name
 % bigint,	int,	bigint,	smallint,	int,	bigint,	bigint # type
 % 1,	3,	3,	3,	3,	2,	2 # length
@@ -26538,7 +26538,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.t1,	.t1,	.L2,	.t1,	.L3,	.L4 # table_name
+% .L1,	.t1,	.t1,	.L2,	.t1,	.L3,	.L5 # table_name
 % L1,	d,	e,	L2,	a,	L3,	L4 # name
 % smallint,	int,	int,	bigint,	int,	int,	bigint # type
 % 3,	3,	3,	2,	3,	3,	2 # length
@@ -26580,8 +26580,8 @@ Ready.
 #       (a+b+c+d+e)/5
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.L5,	sys.L6 # table_name
-% L1,	L2,	b,	L4,	L5,	L6 # name
+% sys.L1,	sys.L2,	sys.t1,	sys.L5,	sys.L6,	sys.L7 # table_name
+% L1,	L2,	b,	L5,	L6,	L7 # name
 % hugeint,	hugeint,	int,	bigint,	bigint,	hugeint # type
 % 4,	4,	3,	4,	1,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -26681,8 +26681,8 @@ Ready.
 #  FROM t1
 # WHERE d>e
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L6,	sys.L7 # table_name
-% L1,	d,	L2,	L3,	L4,	L6,	L7 # name
+% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L7,	sys.L10 # table_name
+% L1,	d,	L2,	L3,	L4,	L7,	L10 # name
 % bigint,	int,	hugeint,	bigint,	bigint,	bigint,	hugeint # type
 % 1,	3,	4,	2,	2,	4,	3 # length
 [ NULL,	238,	NULL,	3,	NULL,	2360,	NULL	]
@@ -26863,7 +26863,7 @@ Ready.
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L2,	.L3 # table_name
+% .t1,	.L1,	.L2,	.L4 # table_name
 % b,	L1,	L2,	L3 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	1 # length
@@ -26939,7 +26939,7 @@ Ready.
 #    OR d NOT BETWEEN 110 AND 150
 #    OR (e>c OR e<d)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
+% .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.L7 # table_name
 % L1,	a,	L2,	L3,	L4,	L5,	L6 # name
 % bigint,	int,	hugeint,	bigint,	hugeint,	smallint,	bigint # type
 % 2,	3,	3,	2,	4,	3,	1 # length
@@ -27016,8 +27016,8 @@ Ready.
 #       a+b*2+c*3+d*4
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L2,	sys.L3,	sys.L4 # table_name
-% L2,	L3,	L4 # name
+% sys.L3,	sys.L4,	sys.L5 # table_name
+% L3,	L4,	L5 # name
 % bigint,	hugeint,	hugeint # type
 % 4,	4,	4 # length
 [ NULL,	NULL,	NULL	]
@@ -27135,8 +27135,8 @@ Ready.
 #   AND c>d
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -27151,8 +27151,8 @@ Ready.
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.L2,	sys.L4 # table_name
-% L1,	d,	L2,	L4 # name
+% sys.L1,	sys.t1,	sys.L2,	sys.L5 # table_name
+% L1,	d,	L2,	L5 # name
 % smallint,	int,	hugeint,	bigint # type
 % 3,	3,	3,	4 # length
 [ 111,	136,	137,	1390	]
@@ -27179,8 +27179,8 @@ Ready.
 #    OR d>e
 #    OR b>c
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L2,	.L3,	.L5,	.L6 # table_name
+% L1,	L2,	L3,	L4,	L6 # name
 % hugeint,	bigint,	hugeint,	bigint,	smallint # type
 % 3,	2,	4,	1,	3 # length
 [ NULL,	NULL,	NULL,	0,	333	]
@@ -27233,8 +27233,8 @@ Ready.
 #    OR b>c
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ 358	]
@@ -27313,9 +27313,9 @@ Ready.
 #       e
 #  FROM t1
 # WHERE b IS NOT NULL
-#;
-% sys.L1,	sys.L3,	sys.t1 # table_name
-% L1,	L3,	e # name
+#ORDER BY 1,2,3;
+% sys.L1,	sys.L4,	sys.t1 # table_name
+% L1,	L4,	e # name
 % int,	bigint,	int # type
 % 3,	4,	3 # length
 [ NULL,	NULL,	NULL	]
@@ -27396,7 +27396,7 @@ Ready.
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
+% .L1,	.L2,	.L3,	.L4,	.t1,	.L6 # table_name
 % L1,	L2,	L3,	L4,	a,	L5 # name
 % bigint,	hugeint,	hugeint,	int,	int,	bigint # type
 % 1,	3,	4,	3,	3,	1 # length
@@ -27408,7 +27408,7 @@ Ready.
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.t1,	.L2 # table_name
+% .L1,	.t1,	.L3 # table_name
 % L1,	b,	L2 # name
 % smallint,	int,	bigint # type
 % 3,	3,	1 # length
@@ -27450,8 +27450,8 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L5 # table_name
-% L1,	L2,	L3,	L5 # name
+% .L2,	.L4,	.L5,	.L10 # table_name
+% L2,	L3,	L5,	L10 # name
 % bigint,	bigint,	hugeint,	bigint # type
 % 3,	2,	3,	4 # length
 [ NULL,	1,	NULL,	1120	]
@@ -27491,8 +27491,8 @@ Ready.
 # WHERE c BETWEEN b-2 AND d+2
 #   AND c>d
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.L6 # table_name
-% L1,	L2,	L3,	L5,	L6 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.L6,	sys.L7 # table_name
+% L1,	L2,	L3,	L6,	L7 # name
 % smallint,	int,	hugeint,	bigint,	bigint # type
 % 3,	3,	4,	4,	2 # length
 [ 222,	121,	1226,	1240,	1	]
@@ -27530,8 +27530,8 @@ Ready.
 # WHERE d NOT BETWEEN 110 AND 150
 #   AND c>d
 #ORDER BY 1,2,3;
-% .L2,	.L3,	.L4 # table_name
-% L2,	L3,	L4 # name
+% .L3,	.L4,	.L6 # table_name
+% L3,	L4,	L5 # name
 % bigint,	hugeint,	bigint # type
 % 4,	4,	1 # length
 [ NULL,	NULL,	0	]
@@ -27626,8 +27626,8 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #    OR (c<=d-2 OR c>=d+2)
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 1 # length
@@ -27714,14 +27714,14 @@ Ready.
 #   AND a IS NULL
 #   AND e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L2,	sys.L4,	sys.L5 # table_name
-% L1,	L2,	L4,	L5 # name
+% sys.L1,	sys.L2,	sys.L5,	sys.L6 # table_name
+% L1,	L2,	L5,	L6 # name
 % int,	smallint,	bigint,	hugeint # type
 % 1,	1,	1,	1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
-#;
-% .L1 # table_name
+#ORDER BY 1;
+% .L2 # table_name
 % L1 # name
 % bigint # type
 % 2 # length
@@ -27806,7 +27806,7 @@ Ready.
 # WHERE (e>c OR e<d)
 #    OR c>d
 #ORDER BY 1,2,3;
-% .L1,	.t1,	.L2 # table_name
+% .L1,	.t1,	.L3 # table_name
 % L1,	c,	L2 # name
 % int,	int,	bigint # type
 % 3,	3,	2 # length
@@ -27844,8 +27844,8 @@ Ready.
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L5 # table_name
-% d,	L1,	L2,	L3,	L5 # name
+% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L6 # table_name
+% d,	L1,	L2,	L3,	L6 # name
 % int,	bigint,	bigint,	hugeint,	bigint # type
 % 3,	2,	2,	4,	4 # length
 [ NULL,	-1,	NULL,	NULL,	358	]
@@ -27945,8 +27945,8 @@ Ready.
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.t1,	.L2,	.L3,	.L4 # table_name
-% a,	L1,	e,	L2,	L3,	L4 # name
+% .t1,	.L1,	.t1,	.L2,	.L4,	.L5 # table_name
+% a,	L1,	e,	L2,	L3,	L5 # name
 % int,	hugeint,	int,	bigint,	bigint,	bigint # type
 % 3,	4,	3,	3,	2,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	18,	2	]
@@ -27991,8 +27991,8 @@ Ready.
 # WHERE b>c
 #    OR c>d
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L7 # table_name
-% L1,	d,	L2,	L3,	L4,	L5,	L7 # name
+% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L10 # table_name
+% L1,	d,	L2,	L3,	L4,	L5,	L10 # name
 % bigint,	int,	int,	bigint,	smallint,	bigint,	bigint # type
 % 1,	3,	3,	2,	3,	2,	4 # length
 [ NULL,	101,	104,	NULL,	555,	1,	NULL	]
@@ -28027,8 +28027,8 @@ Ready.
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
-% L1,	L2,	L3,	L4,	e,	L5 # name
+% .L1,	.L2,	.L3,	.L5,	.t1,	.L6 # table_name
+% L1,	L2,	L3,	L4,	e,	L6 # name
 % hugeint,	smallint,	bigint,	bigint,	int,	smallint # type
 % 4,	3,	2,	2,	3,	3 # length
 [ NULL,	222,	NULL,	0,	204,	444	]
@@ -28070,7 +28070,7 @@ Ready.
 #   AND c>d
 #   AND b IS NOT NULL
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.t1,	.L2 # table_name
+% .t1,	.L1,	.t1,	.L3 # table_name
 % a,	L1,	c,	L2 # name
 % int,	hugeint,	int,	bigint # type
 % 3,	4,	3,	2 # length
@@ -28097,8 +28097,8 @@ Ready.
 #   AND d>e
 #   AND c>d
 #ORDER BY 1,2;
-% sys.L1,	sys.L3 # table_name
-% L1,	L3 # name
+% sys.L2,	sys.L5 # table_name
+% L2,	L5 # name
 % hugeint,	bigint # type
 % 3,	4 # length
 [ 132,	1300	]
@@ -28130,7 +28130,7 @@ Ready.
 # WHERE a IS NULL
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.L4 # table_name
+% .t1,	.L1,	.L2,	.L3,	.L5 # table_name
 % e,	L1,	L2,	L3,	L4 # name
 % int,	bigint,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	2,	2 # length
@@ -28149,8 +28149,8 @@ Ready.
 # WHERE (c<=d-2 OR c>=d+2)
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L2,	.L4,	.L5,	.L6 # table_name
+% L1,	L2,	L3,	L5,	L6 # name
 % bigint,	smallint,	bigint,	bigint,	hugeint # type
 % 3,	3,	2,	2,	4 # length
 [ NULL,	333,	0,	3,	NULL	]
@@ -28289,7 +28289,7 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #    OR c>d
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
+% .L1,	.L2,	.L4 # table_name
 % L1,	L2,	L3 # name
 % hugeint,	smallint,	bigint # type
 % 4,	3,	1 # length
@@ -28322,8 +28322,8 @@ Ready.
 # WHERE (c<=d-2 OR c>=d+2)
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
-% c,	L1,	L2,	L3,	L4,	L5,	d # name
+% .t1,	.L1,	.L2,	.L3,	.L5,	.L6,	.t1 # table_name
+% c,	L1,	L2,	L3,	L4,	L6,	d # name
 % int,	hugeint,	smallint,	bigint,	bigint,	bigint,	int # type
 % 3,	4,	3,	2,	1,	2,	3 # length
 [ NULL,	NULL,	444,	NULL,	0,	3,	238	]
@@ -28353,8 +28353,8 @@ Ready.
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.L5 # table_name
-% L1,	L3,	L4,	e,	L5 # name
+% sys.L1,	sys.L4,	sys.L5,	sys.t1,	sys.L6 # table_name
+% L1,	L4,	L5,	e,	L6 # name
 % hugeint,	bigint,	bigint,	int,	hugeint # type
 % 4,	4,	1,	3,	4 # length
 [ NULL,	358,	1,	177,	NULL	]
@@ -28386,7 +28386,7 @@ Ready.
 #    OR c BETWEEN b-2 AND d+2
 #    OR a>b
 #ORDER BY 1,2,3;
-% .L1,	.t1,	.L2 # table_name
+% .L1,	.t1,	.L3 # table_name
 % L1,	d,	L2 # name
 % hugeint,	int,	bigint # type
 % 3,	3,	2 # length
@@ -28426,8 +28426,8 @@ Ready.
 # WHERE (a>b-2 AND a<b+2)
 #   AND b>c
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.t1 # table_name
-% L1,	L2,	L3,	e # name
+% .L1,	.L3,	.L4,	.t1 # table_name
+% L1,	L2,	L4,	e # name
 % hugeint,	bigint,	hugeint,	int # type
 % 4,	2,	3,	3 # length
 [ NULL,	9,	NULL,	157	]
@@ -28469,8 +28469,8 @@ Ready.
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.t1,	.L2,	.t1,	.L3 # table_name
-% d,	L1,	c,	L2,	e,	L3 # name
+% .t1,	.L1,	.t1,	.L3,	.t1,	.L4 # table_name
+% d,	L1,	c,	L2,	e,	L4 # name
 % int,	smallint,	int,	bigint,	int,	hugeint # type
 % 3,	3,	3,	1,	3,	4 # length
 [ 108,	333,	106,	0,	109,	1612	]
@@ -28548,8 +28548,8 @@ Ready.
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% .L1,	.L3,	.L4,	.L5 # table_name
+% L1,	L2,	L4,	L5 # name
 % bigint,	bigint,	bigint,	smallint # type
 % 3,	2,	1,	3 # length
 [ NULL,	0,	NULL,	222	]
@@ -28594,8 +28594,8 @@ Ready.
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.t1,	.t1,	.L4,	.L6 # table_name
-% L1,	L2,	L3,	c,	a,	L4,	L6 # name
+% .L2,	.L3,	.L4,	.t1,	.t1,	.L5,	.L10 # table_name
+% L1,	L3,	L4,	c,	a,	L5,	L10 # name
 % bigint,	smallint,	hugeint,	int,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	3,	3,	4 # length
 [ 0,	333,	NULL,	119,	115,	444,	NULL	]
@@ -28622,8 +28622,8 @@ Ready.
 # WHERE d>e
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	b # name
+% .L2,	.L3,	.L4,	.L5,	.L7,	.t1 # table_name
+% L2,	L3,	L4,	L5,	L6,	b # name
 % hugeint,	smallint,	bigint,	hugeint,	bigint,	int # type
 % 4,	3,	2,	4,	2,	3 # length
 [ NULL,	444,	NULL,	NULL,	1,	112	]
@@ -28646,8 +28646,8 @@ Ready.
 #       d
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.t1,	.L3,	.L4,	.L5,	.t1,	.t1 # table_name
-% L1,	b,	L3,	L4,	L5,	a,	d # name
+% .L1,	.t1,	.L4,	.L6,	.L7,	.t1,	.t1 # table_name
+% L1,	b,	L4,	L5,	L7,	a,	d # name
 % hugeint,	int,	bigint,	bigint,	hugeint,	int,	int # type
 % 4,	3,	4,	2,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	0,	NULL,	104,	101	]
@@ -28693,8 +28693,8 @@ Ready.
 #    OR c BETWEEN b-2 AND d+2
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L7 # table_name
-% L1,	L2,	L3,	L4,	L5,	L7 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L10 # table_name
+% L1,	L2,	L3,	L4,	L5,	L10 # name
 % smallint,	bigint,	hugeint,	smallint,	bigint,	bigint # type
 % 3,	3,	3,	3,	2,	4 # length
 [ 111,	743,	247,	444,	-4,	490	]
@@ -28726,9 +28726,9 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND d>e
-#;
-% .L1 # table_name
-% L1 # name
+#ORDER BY 1;
+% .L3 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -28804,9 +28804,9 @@ Ready.
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR b>c
 #    OR c>d
-#;
-% .L1,	.L2,	.t1,	.L3,	.t1 # table_name
-% L1,	L2,	a,	L3,	b # name
+#ORDER BY 1,2,3,4,5;
+% .L2,	.L3,	.t1,	.L4,	.t1 # table_name
+% L2,	L3,	a,	L4,	b # name
 % bigint,	int,	int,	smallint,	int # type
 % 2,	3,	3,	3,	3 # length
 [ NULL,	149,	149,	555,	145	]
@@ -28846,8 +28846,8 @@ Ready.
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR b>c
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L3,	.t1 # table_name
-% L1,	L2,	L3,	d # name
+% .L2,	.L4,	.L5,	.t1 # table_name
+% L2,	L3,	L5,	d # name
 % bigint,	bigint,	hugeint,	int # type
 % 2,	2,	4,	3 # length
 [ NULL,	7,	NULL,	NULL	]
@@ -28889,8 +28889,8 @@ Ready.
 #    OR a IS NULL
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L6,	sys.L7 # table_name
-% L1,	L2,	L3,	e,	L4,	L6,	L7 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L7,	sys.L10 # table_name
+% L1,	L2,	L3,	e,	L4,	L7,	L10 # name
 % smallint,	bigint,	bigint,	int,	hugeint,	bigint,	hugeint # type
 % 3,	2,	1,	3,	4,	4,	3 # length
 [ 111,	2,	2,	246,	1484,	490,	247	]
@@ -28924,8 +28924,8 @@ Ready.
 #    OR (e>a AND e<b)
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .L2,	.L3,	.L4 # table_name
+% L2,	L3,	L4 # name
 % hugeint,	hugeint,	bigint # type
 % 4,	3,	1 # length
 [ NULL,	NULL,	NULL	]
@@ -29040,9 +29040,9 @@ Ready.
 #       e
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
-#;
-% .L1,	.L2,	.L3,	.t1 # table_name
-% L1,	L2,	L3,	e # name
+#ORDER BY 1,2,3,4;
+% .L2,	.L3,	.L4,	.t1 # table_name
+% L1,	L3,	L4,	e # name
 % bigint,	smallint,	bigint,	int # type
 % 2,	3,	2,	3 # length
 [ 0,	333,	-2,	109	]
@@ -29122,8 +29122,8 @@ Ready.
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L3,	.t1,	.L4 # table_name
-% a,	L1,	L2,	L3,	b,	L4 # name
+% .t1,	.L1,	.L2,	.L4,	.t1,	.L5 # table_name
+% a,	L1,	L2,	L3,	b,	L5 # name
 % int,	bigint,	bigint,	bigint,	int,	smallint # type
 % 3,	3,	2,	1,	3,	3 # length
 [ 191,	579,	1,	0,	194,	444	]
@@ -29139,8 +29139,8 @@ Ready.
 #    OR a IS NULL
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L6 # name
+% .L2,	.L3,	.L4,	.L5,	.L10 # table_name
+% L1,	L3,	L4,	L5,	L10 # name
 % bigint,	bigint,	bigint,	hugeint,	bigint # type
 % 1,	2,	2,	4,	4 # length
 [ 0,	NULL,	NULL,	NULL,	2360	]
@@ -29174,7 +29174,7 @@ Ready.
 #   AND c>d
 #   AND a>b
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.L3,	.t1 # table_name
+% .L1,	.t1,	.L2,	.L4,	.t1 # table_name
 % L1,	d,	L2,	L3,	c # name
 % int,	int,	hugeint,	bigint,	int # type
 % 1,	1,	1,	1,	1 # length
@@ -29190,8 +29190,8 @@ Ready.
 # WHERE a IS NULL
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L5,	sys.L6,	sys.L7 # table_name
-% L1,	L2,	L3,	c,	L5,	L6,	L7 # name
+% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L6,	sys.L7,	sys.L10 # table_name
+% L1,	L2,	L3,	c,	L6,	L7,	L10 # name
 % bigint,	hugeint,	bigint,	int,	bigint,	bigint,	smallint # type
 % 1,	1,	1,	3,	4,	2,	3 # length
 [ 1,	NULL,	NULL,	113,	1120,	-1,	444	]
@@ -29284,8 +29284,8 @@ Ready.
 # WHERE (c<=d-2 OR c>=d+2)
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4;
-% .L1,	.t1,	.L2,	.L4 # table_name
-% L1,	a,	L2,	L4 # name
+% .L2,	.t1,	.L3,	.L6 # table_name
+% L2,	a,	L3,	L6 # name
 % hugeint,	int,	hugeint,	bigint # type
 % 4,	3,	4,	4 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -29322,8 +29322,8 @@ Ready.
 #   AND a IS NULL
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % hugeint # type
 % 1 # length
 [ NULL	]
@@ -29381,8 +29381,8 @@ Ready.
 #       d-e
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L7,	.L10 # table_name
-% L1,	L2,	L3,	L4,	L5,	L7,	L10 # name
+% .L1,	.L3,	.L4,	.L5,	.L6,	.L11,	.L12 # table_name
+% L1,	L2,	L4,	L5,	L6,	L11,	L12 # name
 % smallint,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 3,	1,	3,	3,	2,	4,	2 # length
 [ 111,	0,	245,	743,	-4,	490,	2	]
@@ -29424,8 +29424,8 @@ Ready.
 # WHERE d NOT BETWEEN 110 AND 150
 #   AND c>d
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% .L1,	.L2,	.L4,	.L5,	.L6 # table_name
+% L1,	L2,	L3,	L5,	L6 # name
 % hugeint,	hugeint,	bigint,	bigint,	bigint # type
 % 3,	4,	1,	2,	1 # length
 [ NULL,	NULL,	0,	NULL,	NULL	]
@@ -29639,8 +29639,8 @@ Ready.
 #   AND (e>c OR e<d)
 #   AND a>b
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.t1,	.L3,	.L4 # table_name
-% L1,	L2,	b,	L3,	L4 # name
+% .L2,	.L3,	.t1,	.L4,	.L5 # table_name
+% L1,	L3,	b,	L4,	L5 # name
 % bigint,	int,	int,	bigint,	hugeint # type
 % 1,	3,	3,	1,	4 # length
 [ 0,	131,	130,	1,	1325	]
@@ -29657,8 +29657,8 @@ Ready.
 # WHERE a>b
 #    OR (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L4,	.L5,	.L6 # table_name
-% L1,	L2,	L4,	L5,	L6 # name
+% .L1,	.L2,	.L5,	.L7,	.L10 # table_name
+% L1,	L2,	L5,	L6,	L10 # name
 % hugeint,	hugeint,	bigint,	bigint,	hugeint # type
 % 4,	4,	4,	1,	3 # length
 [ NULL,	NULL,	358,	0,	NULL	]
@@ -29790,8 +29790,8 @@ Ready.
 # WHERE d NOT BETWEEN 110 AND 150
 #    OR b>c
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.t1,	sys.L1,	sys.L2,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
-% e,	L1,	L2,	L4,	L5,	L6,	L7 # name
+% sys.t1,	sys.L1,	sys.L2,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
+% e,	L1,	L2,	L5,	L6,	L7,	L10 # name
 % int,	bigint,	smallint,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	3,	4,	2,	1,	3 # length
 [ NULL,	NULL,	555,	NULL,	NULL,	NULL,	104	]
@@ -29920,8 +29920,8 @@ Ready.
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR a IS NULL
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.L3,	.t1,	.L4,	.t1,	.L5 # table_name
-% L1,	L2,	L3,	c,	L4,	e,	L5 # name
+% .L2,	.L3,	.L4,	.t1,	.L5,	.t1,	.L7 # table_name
+% L2,	L3,	L4,	c,	L5,	e,	L6 # name
 % bigint,	hugeint,	bigint,	int,	int,	int,	bigint # type
 % 2,	3,	1,	3,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	102,	104,	NULL,	0	]
@@ -30004,7 +30004,7 @@ Ready.
 # WHERE a>b
 #   AND (e>a AND e<b)
 #ORDER BY 1,2,3,4;
-% .L1,	.t1,	.L2,	.L3 # table_name
+% .L1,	.t1,	.L2,	.L4 # table_name
 % L1,	d,	L2,	L3 # name
 % smallint,	int,	hugeint,	bigint # type
 % 1,	1,	1,	1 # length
@@ -30014,8 +30014,8 @@ Ready.
 #    OR d NOT BETWEEN 110 AND 150
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % hugeint # type
 % 4 # length
 [ NULL	]
@@ -30090,8 +30090,8 @@ Ready.
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -30125,7 +30125,7 @@ Ready.
 #       a
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.t1 # table_name
+% .L1,	.L3,	.t1 # table_name
 % L1,	L2,	a # name
 % bigint,	bigint,	int # type
 % 2,	2,	3 # length

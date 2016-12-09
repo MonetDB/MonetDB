@@ -32,7 +32,7 @@ rel_psm_block(sql_allocator *sa, list *l)
 	return NULL;
 }
 
-static sql_rel *
+sql_rel *
 rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 {
 	if (e) {
@@ -218,10 +218,15 @@ psm_if_then_else( mvc *sql, sql_subtype *res, list *restypelist, dnode *elseif, 
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, res, restypelist, n, is_func);
 
-		if (sql->session->status || !cond || !ifstmts || rel) {
-			if (rel)
-				return sql_error(sql, 02, "IF THEN: No SELECT statements allowed within the IF condition");
+		if (sql->session->status || !cond || !ifstmts) 
 			return NULL;
+		if (rel) {
+			sql_exp *er = exp_rel(sql, rel);
+			list *b = sa_list(sql->sa);
+
+			append(b, er);
+			append(b, exp_if(sql->sa, cond, ifstmts, elsestmts));
+			return b;
 		}
 		return append(sa_list(sql->sa), exp_if( sql->sa, cond, ifstmts, elsestmts));
 	} else { /* else */
@@ -249,10 +254,15 @@ rel_psm_if_then_else( mvc *sql, sql_subtype *res, list *restypelist, dnode *else
 		ifstmts = sequential_block(sql, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, res, restypelist, n, is_func);
-		if (sql->session->status || !cond || !ifstmts || rel) {
-			if (rel)
-				return sql_error(sql, 02, "IF THEN ELSE: No SELECT statements allowed within the IF condition");
+		if (sql->session->status || !cond || !ifstmts) 
 			return NULL;
+		if (rel) {
+			sql_exp *er = exp_rel(sql, rel);
+			list *b = sa_list(sql->sa);
+
+			append(b, er);
+			append(b, exp_if(sql->sa, cond, ifstmts, elsestmts));
+			return exp_rel(sql, rel_psm_block(sql->sa, b));
 		}
 		return exp_if( sql->sa, cond, ifstmts, elsestmts);
 	}
@@ -699,10 +709,12 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	char is_table = (res && res->token == SQL_TABLE);
 	char is_aggr = (type == F_AGGR);
 	char is_func = (type != F_PROC);
-	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
+	char is_loader = (type == F_LOADER);
+
+	char *F = is_loader?"LOADER":(is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE"));
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
 
-	assert(res || type == F_PROC || type == F_FILT);
+	assert(res || type == F_PROC || type == F_FILT || type == F_LOADER);
 
 	if (is_table)
 		type = F_UNION;
@@ -781,23 +793,21 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 						(lang == FUNC_LANG_C)?"capi":
 						(lang == FUNC_LANG_J)?"japi":
 						(lang == FUNC_LANG_PY)?"pyapi":
-     					(lang == FUNC_LANG_MAP_PY)?"pyapimap":
-     					(lang == FUNC_LANG_PY3)?"pyapi3":
-     					(lang == FUNC_LANG_MAP_PY3)?"pyapi3map":"unknown";
+     					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
 				sql->params = NULL;
 				if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, vararg);
+					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg);
 				} else if (!sf) {
 					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
-				} else {
+				} /*else {
 					sql_func *f = sf->func;
 					f->mod = _STRDUP("rapi");
 					f->imp = _STRDUP("eval");
 					if (res && restype)
 						f->res = restype;
-					f->sql = 0; /* native */
+					f->sql = 0;
 					f->lang = FUNC_LANG_INT;
-				}
+				}*/
 			} else if (body) {
 				sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
 				list *b = NULL;
@@ -845,8 +855,10 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
 				} else {
 					sql_func *f = sf->func;
-					f->mod = _STRDUP(fmod);
-					f->imp = _STRDUP(fnme);
+					if (!f->mod || strcmp(f->mod, fmod))
+						f->mod = _STRDUP(fmod);
+					if (!f->imp || strcmp(f->imp, fnme)) 
+						f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
 					f->sql = 0; /* native */
 					f->lang = FUNC_LANG_INT;
 				}
@@ -883,7 +895,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
 	char is_aggr = (type == F_AGGR);
-	char is_func = (type != F_PROC);
+	char is_func = (type != F_PROC && type != F_LOADER);
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
 	char *f = is_aggr?"aggregate":(is_func?"function":"procedure");
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
@@ -1014,7 +1026,7 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
 }
 
 static sql_rel *
-rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *triggername, int time, int orientation, int event, const char *old_name, const char *new_name, const char *condition, const char *query)
+rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *triggername, int time, int orientation, int event, const char *old_name, const char *new_name, symbol *condition, const char *query)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -1027,7 +1039,8 @@ rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *t
 	append(exps, exp_atom_int(sql->sa, event));
 	append(exps, exp_atom_str(sql->sa, old_name, sql_bind_localtype("str") ));
 	append(exps, exp_atom_str(sql->sa, new_name, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, condition, sql_bind_localtype("str") ));
+	(void)condition;
+	append(exps, exp_atom_str(sql->sa, NULL, sql_bind_localtype("str") ));
 	append(exps, exp_atom_str(sql->sa, query, sql_bind_localtype("str") ));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -1048,9 +1061,11 @@ _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 }
 
 static sql_rel *
-create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *table_name, dlist *opt_ref, dlist *triggered_action)
+create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *tqname, dlist *opt_ref, dlist *triggered_action)
 {
-	const char *tname = qname_table(qname);
+	const char *triggername = qname_table(qname);
+	const char *sname = qname_schema(tqname);
+	const char *tname = qname_table(tqname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
 	int instantiate = (sql->emode == m_instantiate);
@@ -1061,7 +1076,14 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *ta
 	dlist *columns = trigger_event->data.lval;
 	const char *old_name = NULL, *new_name = NULL; 
 	dlist *stmts = triggered_action->h->next->next->data.lval;
+	symbol *condition = triggered_action->h->next->data.sym;
 	
+	if (!sname)
+		sname = ss->base.name;
+
+	if (sname && !(ss = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!CREATE TRIGGER: no such schema '%s'", sname);
+
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
 		for ( ; dl; dl = dl->next) {
@@ -1077,34 +1099,55 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *ta
 	}
 	if (create && !mvc_schema_privs(sql, ss)) 
 		return sql_error(sql, 02, "CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
-	if (create && mvc_bind_trigger(sql, ss, tname) != NULL) 
-		return sql_error(sql, 02, "CREATE TRIGGER: name '%s' already in use", tname);
+	if (create && mvc_bind_trigger(sql, ss, triggername) != NULL) 
+		return sql_error(sql, 02, "CREATE TRIGGER: name '%s' already in use", triggername);
 	
-	if (create && !(t = mvc_bind_table(sql, ss, table_name)))
-		return sql_error(sql, 02, "CREATE TRIGGER: unknown table '%s'", table_name);
+	if (create && !(t = mvc_bind_table(sql, ss, tname)))
+		return sql_error(sql, 02, "CREATE TRIGGER: unknown table '%s'", tname);
 	if (create && isView(t)) 
-		return sql_error(sql, 02, "CREATE TRIGGER: cannot create trigger on view '%s'", table_name);
+		return sql_error(sql, 02, "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
 	
 	if (create) {
 		int event = (trigger_event->token == SQL_INSERT)?0:
 			    (trigger_event->token == SQL_DELETE)?1:2;
 		int orientation = triggered_action->h->data.i_val;
-		char *condition = triggered_action->h->next->data.sval;
 		char *q = query_cleaned(QUERY(sql->scanner));
 
 		assert(triggered_action->h->type == type_int);
-		r = rel_create_trigger(sql, t->s->base.name, t->base.name, tname, time, orientation, event, old_name, new_name, condition, q);
+		r = rel_create_trigger(sql, t->s->base.name, t->base.name, triggername, time, orientation, event, old_name, new_name, condition, q);
 		GDKfree(q);
 		return r;
 	}
 
-	t = mvc_bind_table(sql, ss, table_name);
-	stack_push_frame(sql, "OLD-NEW");
-	/* we need to add the old and new tables */
-	if (new_name)
-		_stack_push_table(sql, new_name, t);
-	if (old_name)
-		_stack_push_table(sql, old_name, t);
+	if (!instantiate) {
+		t = mvc_bind_table(sql, ss, tname);
+		stack_push_frame(sql, "OLD-NEW");
+		/* we need to add the old and new tables */
+		if (!instantiate && new_name)
+			_stack_push_table(sql, new_name, t);
+		if (!instantiate && old_name)
+			_stack_push_table(sql, old_name, t);
+	}
+	if (condition) {
+		sql_rel *rel = NULL;
+
+		if (new_name) /* in case of updates same relations is available via both names */ 
+			rel = stack_find_rel_view(sql, new_name);
+		if (!rel && old_name)
+			rel = stack_find_rel_view(sql, old_name);
+		if (rel)
+			rel = rel_logical_exp(sql, rel, condition, sql_where);
+		if (!rel)
+			return NULL;
+		/* transition tables */
+		/* insert: rel_select(table [new], searchcondition) */
+		/* delete: rel_select(table [old], searchcondition) */
+		/* update: rel_select(table [old,new]), searchcondition) */
+		if (new_name)
+			stack_update_rel_view(sql, new_name, rel);
+		if (old_name)
+			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
+	}
 	sq = sequential_block(sql, NULL, NULL, stmts, NULL, 1);
 	r = rel_psm_block(sql->sa, sq);
 
@@ -1134,8 +1177,15 @@ rel_drop_trigger(mvc *sql, const char *sname, const char *tname)
 static sql_rel *
 drop_trigger(mvc *sql, dlist *qname)
 {
+	const char *sname = qname_schema(qname);
 	const char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
+
+	if (!sname)
+		sname = ss->base.name;
+
+	if (sname && !(ss = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!DROP TRIGGER: no such schema '%s'", sname);
 
 	if (!mvc_schema_privs(sql, ss)) 
 		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
@@ -1218,6 +1268,38 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 	return rel_psm_block(sql->sa, analyze_calls);
 }
 
+static sql_rel*
+create_table_from_loader(mvc *sql, dlist *qname, symbol *fcall)
+{
+	sql_schema *s = NULL;
+	char *sname = qname_schema(qname);
+	char *tname = qname_table(qname);
+	sql_exp *import = NULL;
+	exp_kind ek = {type_value, card_loader, FALSE};
+	sql_rel *res = NULL;
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
+
+	if (mvc_bind_table(sql, s, tname)) {
+		return sql_error(sql, 02, "42S01!CREATE TABLE: name '%s' already in use", tname);
+	} else if (!mvc_schema_privs(sql, s)){
+		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	}
+
+	import = rel_value_exp(sql, &res, fcall, sql_sel, ek);
+	if (!import) {
+		return NULL;
+	}
+	((sql_subfunc*) import->f)->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
+	((sql_subfunc*) import->f)->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
+
+	if (sname) strcpy(((sql_subfunc*) import->f)->sname, sname);
+	if (tname) strcpy(((sql_subfunc*) import->f)->tname, tname);
+
+	return rel_psm_stmt(sql->sa, import);
+}
+
 sql_rel *
 rel_psm(mvc *sql, symbol *s)
 {
@@ -1264,12 +1346,21 @@ rel_psm(mvc *sql, symbol *s)
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
 		sql->type = Q_UPDATE;
 		break;
+	case SQL_CREATE_TABLE_LOADER:
+	{
+	    dlist *l = s->data.lval;
+	    dlist *qname = l->h->data.lval;
+	    symbol *sym = l->h->next->data.sym;
+
+	    ret = create_table_from_loader(sql, qname, sym);
+	    sql->type = Q_UPDATE;
+	}	break;
 	case SQL_CREATE_TRIGGER:
 	{
 		dlist *l = s->data.lval;
 
 		assert(l->h->next->type == type_int);
-		ret = create_trigger(sql, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
+		ret = create_trigger(sql, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	}
 		break;

@@ -32,8 +32,8 @@ Ready.
 #language R {
 #	return(arg1*sum(arg2)*arg3);
 #};
-#select rapi02(i,j,2) from rval;
-% sys.L # table_name
+#SELECT rapi02(i,j,2) as r02 FROM rval;
+% sys.L1 # table_name
 % r02 # name
 % int # type
 % 2 # length

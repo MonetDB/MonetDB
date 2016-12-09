@@ -273,7 +273,7 @@ Ready.
 #insert into T values (30,30,30,30,10);
 [ 1	]
 #select * from T intersect select * from T;
-% sys.L,	sys.L,	sys.L,	sys.L,	sys.L # table_name
+% sys.L10,	sys.L10,	sys.L10,	sys.L10,	sys.L10 # table_name
 % a,	b,	c,	d,	e # name
 % int,	int,	int,	int,	int # type
 % 3,	3,	3,	3,	3 # length
@@ -380,8 +380,8 @@ Ready.
 [ 25,	25,	25,	25,	24	]
 [ 30,	30,	30,	30,	10	]
 #select count(*) from (select * from T intersect select * from T ) as cnt;
-% sys.L1 # table_name
-% L1 # name
+% sys.L14 # table_name
+% L13 # name
 % bigint # type
 % 3 # length
 [ 102	]

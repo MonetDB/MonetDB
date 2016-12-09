@@ -49,8 +49,8 @@ Ready.
 #insert into t3071 values ('42.42');
 [ 1	]
 #select avg ( cast (s as double)) from t3071;
-% sys.L2 # table_name
-% L2 # name
+% sys.L5 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 42.42	]

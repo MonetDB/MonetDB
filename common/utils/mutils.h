@@ -56,9 +56,10 @@ mutils_export char *dirname(char *path);
 
 #define MONETDB_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
-#define F_TLOCK 2		/* test and lock a region for exclusive use */
-#define F_ULOCK 0		/* unlock a previously locked region */
-#define F_LOCK 1		/* lock a region for exclusive use */
+#define F_TEST	3		/* test a region for other processes locks.  */
+#define F_TLOCK	2		/* test and lock a region for exclusive use */
+#define F_ULOCK	0		/* unlock a previously locked region */
+#define F_LOCK	1		/* lock a region for exclusive use */
 
 mutils_export int MT_lockf(char *filename, int mode, off_t off, off_t len);
 

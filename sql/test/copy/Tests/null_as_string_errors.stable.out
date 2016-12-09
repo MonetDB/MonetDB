@@ -34,13 +34,13 @@ Ready.
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	39,	15 # length
-[ 1,	1,	"line 1 field 1 'int' expected in 'NULL'",	"NULL,NULL,NULL\n"	]
+[ 1,	1,	"line 1 field i 'int' expected in 'NULL'",	"NULL,NULL,NULL\n"	]
 #select * from sys.rejects;
 % .rejects,	.rejects,	.rejects,	.rejects # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	39,	12 # length
-[ 1,	1,	"line 1 field 1 'int' expected in 'NULL'",	"NULL,zero,0\n"	]
+[ 1,	1,	"line 1 field i 'int' expected in 'NULL'",	"NULL,zero,0\n"	]
 #copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 #1,NULL,1
 [ 1	]
@@ -62,7 +62,7 @@ Ready.
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	48,	11 # length
-[ 1,	3,	"line 1 field 3 'decimal(5,2)' expected in 'NULL'",	"2,two,NULL\n"	]
+[ 1,	3,	"line 1 field d 'decimal(5,2)' expected in 'NULL'",	"2,two,NULL\n"	]
 #copy 1 records into null_as_string from stdin delimiters ',','\n' best effort;
 #,,
 [ 0	]
@@ -71,7 +71,7 @@ Ready.
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	35,	3 # length
-[ 1,	1,	"line 1 field 1 'int' expected in ''",	",,\n"	]
+[ 1,	1,	"line 1 field i 'int' expected in ''",	",,\n"	]
 #copy 1 records into null_as_string from stdin delimiters ',','\n' best effort;
 #,zero,0
 [ 0	]
@@ -80,7 +80,7 @@ Ready.
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	35,	8 # length
-[ 1,	1,	"line 1 field 1 'int' expected in ''",	",zero,0\n"	]
+[ 1,	1,	"line 1 field i 'int' expected in ''",	",zero,0\n"	]
 #copy 1 records into null_as_string from stdin delimiters ',','\n' best effort;
 #1,,1
 [ 1	]

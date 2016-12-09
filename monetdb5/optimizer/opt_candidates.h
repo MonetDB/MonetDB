@@ -12,8 +12,6 @@
 #include "opt_support.h"
 #include "mal_exception.h"
 
-opt_export int OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-
-#define OPTDEBUGcandidates  if ( optDebug & ((lng) 1 <<DEBUG_OPT_CANDIDATES) )
+mal_export int OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

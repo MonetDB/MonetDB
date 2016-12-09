@@ -30,7 +30,7 @@ lsst_export str qserv_ptInSphCircle(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, db
 lsst_export str qserv_ptInSphPoly(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 lsst_export str LSSTxmatch(bit *res, lng *l, lng *r, int *delta);
-lsst_export str LSSTxmatchsubselect(bat *res, bat *bid, bat *sid, lng *r, int *depth, bit *anti);
-lsst_export str LSSTxmatchsubjoin(bat *l, bat *r, bat *lid, bat *rid, int *delta, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
+lsst_export str LSSTxmatchselect(bat *res, bat *bid, bat *sid, lng *r, int *depth, bit *anti);
+lsst_export str LSSTxmatchjoin(bat *l, bat *r, bat *lid, bat *rid, int *delta, bat *sl, bat *sr, bit *nil_matches, lng *estimate);
 
 #endif /* _SQL_LSST_H_ */

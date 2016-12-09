@@ -45,68 +45,68 @@ Ready.
 # 11:13:50 >  
 
 #select 1.0/2.0;
-% .L # table_name
-% sql_div_single_value # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 7 # length
 [ 0.500	]
 #select cast (1 as double)/2;
-% .L1 # table_name
-% sql_div_single_value # name
+% .L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0.5	]
 #select 1.0/2.0;
-% .L # table_name
-% sql_div_single_value # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 7 # length
 [ 0.500	]
 #select 1.0/2.1;
-% .L # table_name
-% sql_div_single_value # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 7 # length
 [ 0.476	]
 #select 1.1/2.1;
-% .L # table_name
-% sql_div_single_value # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 7 # length
 [ 0.523	]
 #select 1.1/2.0;
-% .L # table_name
-% sql_div_single_value # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 7 # length
 [ 0.550	]
 #select 1.0/2.0;
-% .L # table_name
-% sql_div_single_value # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 7 # length
 [ 0.500	]
 #SELECT '3.1'/'5.1';
-% .L # table_name
-% sql_div_single_value # name
+% .L2 # table_name
+% L2 # name
 % sec_interval # type
 % 5 # length
 [ 0.000	]
 #SELECT '3.1'/5.1;
-% .L # table_name
-% sql_div_single_value # name
+% .L2 # table_name
+% L2 # name
 % sec_interval # type
 % 5 # length
 [ 0.000	]
 #SELECT 3.1/5.1;
-% .L # table_name
-% sql_div_single_value # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 7 # length
 [ 0.607	]
 #SELECT 3.1/'5.1';
-% .L # table_name
-% sql_div_single_value # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 9 # length
 [ 0.607	]

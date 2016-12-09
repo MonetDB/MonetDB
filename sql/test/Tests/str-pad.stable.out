@@ -53,74 +53,74 @@ Ready.
 # 22:57:30 >  
 
 #SELECT '#' || lpad('hi', 7) || '#';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 9 # length
 [ "#     hi#"	]
 #SELECT '#' || lpad('hixyäbcdef', 7) || '#';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 9 # length
 [ "#hixyäbc#"	]
 #SELECT '#' || lpad('hi', 7, 'xya') || '#';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 9 # length
 [ "#xyaxyhi#"	]
 #SELECT '#' || lpad('hi', 7, 'xyä') || '#';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 9 # length
 [ "#xyäxyhi#"	]
-#SELECT '#' || lpad('hi', 7, 'xyäbcdef') || '#';
-% .L # table_name
-% concat_single_value # name
+#SELECT '#' || lpad('hi', 7, 'xy颖äbcdef') || '#';
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 10 # length
 [ "#xy颖äbhi#"	]
 #SELECT '#' || lpad('hi颖xyäbcdef', 7, 'lmn') || '#';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 10 # length
 [ "#hi颖xyäb#"	]
 #SELECT '#' || rpad('hi', 7) || '#';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 9 # length
 [ "#hi     #"	]
 #SELECT '#' || rpad('hixyäbcdef', 7) || '#';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 9 # length
 [ "#hixyäbc#"	]
 #SELECT '#' || rpad('hi', 7, 'xya') || '#';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 9 # length
 [ "#hixyaxy#"	]
 #SELECT '#' || rpad('hi', 7, 'xyä') || '#';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 9 # length
 [ "#hixyäxy#"	]
-#SELECT '#' || rpad('hi', 7, 'xyäbcdef') || '#';
-% .L # table_name
-% concat_single_value # name
+#SELECT '#' || rpad('hi', 7, 'xy颖äbcdef') || '#';
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 10 # length
 [ "#hixy颖äb#"	]
 #SELECT '#' || rpad('hi颖xyäbcdef', 7, 'lmn') || '#';
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 10 # length
 [ "#hi颖xyäb#"	]
@@ -128,29 +128,29 @@ Ready.
 #INSERT INTO p VALUES ('hi', 10), ('hixyäbcdef', 7);
 [ 2	]
 #SELECT '#' || lpad(s, 5) || '#' FROM p;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 7 # length
 [ "#   hi#"	]
 [ "#hixyä#"	]
 #SELECT '#' || lpad(s, n) || '#' FROM p;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "#        hi#"	]
 [ "#hixyäbc#"	]
 #SELECT '#' || rpad(s, 5) || '#' FROM p;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 7 # length
 [ "#hi   #"	]
 [ "#hixyä#"	]
 #SELECT '#' || rpad(s, n) || '#' FROM p;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "#hi        #"	]
@@ -159,8 +159,8 @@ Ready.
 #INSERT INTO p2 VALUES ('hi', 6, 'xya'), ('hi', 7, 'xyä'), ('hi', 8, 'xy颖äbcdef'), ('hi颖xyäbcdef', 9, 'lmn');
 [ 4	]
 #SELECT '#' || lpad(s, 10, 'x') || '#' FROM p2;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 13 # length
 [ "#xxxxxxxxhi#"	]
@@ -168,8 +168,8 @@ Ready.
 [ "#xxxxxxxxhi#"	]
 [ "#hi颖xyäbcde#"	]
 #SELECT '#' || lpad(s, n, 'x') || '#' FROM p2;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "#xxxxhi#"	]
@@ -177,8 +177,8 @@ Ready.
 [ "#xxxxxxhi#"	]
 [ "#hi颖xyäbcd#"	]
 #SELECT '#' || lpad(s, 10, s2) || '#' FROM p2;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 13 # length
 [ "#xyaxyaxyhi#"	]
@@ -186,8 +186,8 @@ Ready.
 [ "#xy颖äbcdehi#"	]
 [ "#hi颖xyäbcde#"	]
 #SELECT '#' || lpad(s, n, s2) || '#' FROM p2;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "#xyaxhi#"	]
@@ -195,8 +195,8 @@ Ready.
 [ "#xy颖äbchi#"	]
 [ "#hi颖xyäbcd#"	]
 #SELECT '#' || rpad(s, 10, 'x') || '#' FROM p2;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 13 # length
 [ "#hixxxxxxxx#"	]
@@ -204,8 +204,8 @@ Ready.
 [ "#hixxxxxxxx#"	]
 [ "#hi颖xyäbcde#"	]
 #SELECT '#' || rpad(s, n, 'x') || '#' FROM p2;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "#hixxxx#"	]
@@ -213,8 +213,8 @@ Ready.
 [ "#hixxxxxx#"	]
 [ "#hi颖xyäbcd#"	]
 #SELECT '#' || rpad(s, 10, s2) || '#' FROM p2;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 13 # length
 [ "#hixyaxyaxy#"	]
@@ -222,8 +222,8 @@ Ready.
 [ "#hixy颖äbcde#"	]
 [ "#hi颖xyäbcde#"	]
 #SELECT '#' || rpad(s, n, s2) || '#' FROM p2;
-% .L # table_name
-% concat_single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "#hixyax#"	]

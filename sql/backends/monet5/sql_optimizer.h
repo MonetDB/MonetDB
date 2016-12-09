@@ -12,11 +12,11 @@
 
 //#define _SQL_OPTIMIZER_DEBUG
 
-sql5_export str optimizeQuery(Client c);
-sql5_export void addQueryToCache(Client c);
+sql5_export str SQLoptimizeQuery(Client c, MalBlkPtr mb);
+sql5_export str SQLoptimizeFunction(Client c, MalBlkPtr mb);
+sql5_export void SQLaddQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
 sql5_export void SQLsetAccessMode(Client c);
 sql5_export str getSQLoptimizer(mvc *m);
-sql5_export void addOptimizers(Client c, MalBlkPtr mb, char *pipe);
 
 #endif /* _SQL_OPTIMIZER_H_ */

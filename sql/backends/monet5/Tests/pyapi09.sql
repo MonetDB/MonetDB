@@ -40,7 +40,7 @@ DROP TABLE pyapi09multiplication;
 
 #Third test: Store python object in table and load it in later function
 
-CREATE FUNCTION pyapi09create() returns TABLE(s STRING)
+CREATE FUNCTION pyapi09create() returns TABLE(s BLOB)
 language P
 {
     import pickle
@@ -58,7 +58,7 @@ language P
     import pickle
     res = _conn.execute('SELECT s FROM pyapi09objects;')
     array = pickle.loads(res['s'][0])
-    print array
+    print(array)
     return array[:10]
 };
 

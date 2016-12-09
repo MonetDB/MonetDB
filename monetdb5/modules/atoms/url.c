@@ -42,8 +42,8 @@
  */
 
 #include "monetdb_config.h"
-#include "url.h"
 #include "mal.h"
+#include "url.h"
 #include "mal_exception.h"
 
 static char x2c(char *what);

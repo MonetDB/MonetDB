@@ -44,6 +44,7 @@
 #include "msqldump.h"
 #include "mprompt.h"
 #include "dotmonetdb.h"
+
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -187,6 +188,9 @@ static char *nullstring = default_nullstring;
 #endif
 
 #define my_isspace(c)	((c) == '\f' || (c) == '\n' || (c) == ' ')
+
+#include <ctype.h>
+#include "mhelp.h"
 
 static timertype
 gettime(void)
@@ -1078,7 +1082,7 @@ TESTrenderer(MapiHdl hdl)
 				 strlen(s) < l ||
 				 /* start or end with white space? */
 				 my_isspace(*s) ||
-				 my_isspace(s[l - 1]) ||
+				 (l > 0 && my_isspace(s[l - 1])) ||
 				 /* timezone can have embedded comma */
 				 strcmp(tp, "timezone") == 0 ||
 				 /* a bunch of geom types */
@@ -2081,17 +2085,18 @@ static void
 showCommands(void)
 {
 	/* shared control options */
-	mnstr_printf(toConsole, "\\?      - show this message\n");
+	mnstr_printf(toConsole, "\\?       - show this message\n");
 	if (mode == MAL)
-		mnstr_printf(toConsole, "?pat    - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
-	mnstr_printf(toConsole, "\\<file  - read input from file\n");
-	mnstr_printf(toConsole, "\\>file  - save response in file, or stdout if no file is given\n");
+		mnstr_printf(toConsole, "?pat  - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
+	mnstr_printf(toConsole, "\\<file   - read input from file\n");
+	mnstr_printf(toConsole, "\\>file   - save response in file, or stdout if no file is given\n");
 #ifdef HAVE_POPEN
-	mnstr_printf(toConsole, "\\|cmd   - pipe result to process, or stop when no command is given\n");
+	mnstr_printf(toConsole, "\\|cmd    - pipe result to process, or stop when no command is given\n");
 #endif
 #ifdef HAVE_LIBREADLINE
-	mnstr_printf(toConsole, "\\h      - show the readline history\n");
+	mnstr_printf(toConsole, "\\history - show the readline history\n");
 #endif
+	mnstr_printf(toConsole, "\\help    - synopsis of the SQL syntax\n");
 #if 0
 	mnstr_printf(toConsole, "\\t      - toggle timer\n");
 #endif
@@ -2707,20 +2712,25 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					pager = strdup(line);
 					continue;
 #endif
-#ifdef HAVE_LIBREADLINE
 				case 'h':
 				{
+#ifdef HAVE_LIBREADLINE
 					int h;
 					char *nl;
 
-					for (h = 0; h < history_length; h++) {
-						nl = history_get(h) ? history_get(h)->line : 0;
-						if (nl)
-							mnstr_printf(toConsole, "%d %s\n", h, nl);
-					}
+					if( strcmp(line,"\\history") ==0){
+						for (h = 0; h < history_length; h++) {
+							nl = history_get(h) ? history_get(h)->line : 0;
+							if (nl)
+								mnstr_printf(toConsole, "%d %s\n", h, nl);
+						}
+					} else
+#endif
+						sql_help(line, toConsole);
 					continue;
 				}
 /* for later
+#ifdef HAVE_LIBREADLINE
 				case '!':
 				{
 					char *nl;
@@ -2734,8 +2744,8 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					mnstr_printf(toConsole, "Expansion needs work\n");
 					continue;
 				}
-*/
 #endif
+*/
 				case 'e':
 					echoquery = 1;
 					continue;
@@ -2849,15 +2859,33 @@ set_timezone(Mapi mid)
 	MapiHdl hdl;
 
 	/* figure out our current timezone */
-#ifdef HAVE__GET_TIMEZONE
-	__time64_t ltime, lt, gt;
-	struct tm loctime;
+#if defined HAVE_GETDYNAMICTIMEZONEINFORMATION
+	DYNAMIC_TIME_ZONE_INFORMATION tzinf;
 
-	_time64(&ltime);
-	_localtime64_s(&loctime, &ltime);
-	lt = _mktime64(&loctime);
-	gt = _mkgmtime64(&loctime);
-	tzone = (int) (lt - gt);
+	/* documentation says: UTC = localtime + Bias (in minutes),
+	 * but experimentation during DST period says, UTC = localtime
+	 * + Bias + DaylightBias, and presumably during non DST
+	 * period, UTC = localtime + Bias */
+	switch (GetDynamicTimeZoneInformation(&tzinf)) {
+	case TIME_ZONE_ID_STANDARD:
+	case TIME_ZONE_ID_UNKNOWN:
+		tzone = (int) tzinf.Bias * 60;
+		break;
+	case TIME_ZONE_ID_DAYLIGHT:
+		tzone = (int) (tzinf.Bias + tzinf.DaylightBias) * 60;
+		break;
+	default:
+		/* call failed, we don't know the time zone */
+		tzone = 0;
+		break;
+	}
+#elif defined HAVE_STRUCT_TM_TM_ZONE
+	time_t t;
+	struct tm *tmp;
+
+	t = time(NULL);
+	tmp = localtime(&t);
+	tzone = (int) -tmp->tm_gmtoff;
 #else
 	time_t t, lt, gt;
 	struct tm *tmp;
@@ -3016,7 +3044,7 @@ main(int argc, char **argv)
 #endif
 
 	/* parse config file first, command line options override */
-	parse_dotmonetdb(&user, &passwd, &language, &save_history, &output, &pagewidth);
+	parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
 	pagewidthset = pagewidth != 0;
 	if (language) {
 		if (strcmp(language, "sql") == 0) {
@@ -3139,7 +3167,9 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			assert(optarg);
-			dbname = optarg;
+			if (dbname)
+				free(dbname);
+			dbname = strdup(optarg);
 			break;
 		case 's':
 			assert(optarg);
@@ -3237,7 +3267,7 @@ main(int argc, char **argv)
 
 	if (dbname == NULL && has_fileargs &&
 	    (fp = fopen(argv[optind], "r")) == NULL) {
-		dbname = argv[optind];
+		dbname = strdup(argv[optind]);
 		optind++;
 		has_fileargs = optind != argc;
 	}
@@ -3253,6 +3283,9 @@ main(int argc, char **argv)
 	if (passwd)
 		free(passwd);
 	passwd = NULL;
+	if (dbname)
+		free(dbname);
+	dbname = NULL;
 	if (mid && mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
 

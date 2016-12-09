@@ -19,8 +19,16 @@ gdk_export BAT *BATcalcisnotnil(BAT *b, BAT *s);
 gdk_export BAT *BATcalcnot(BAT *b, BAT *s);
 gdk_export BAT *BATcalcmin(BAT *b1, BAT *b2, BAT *s);
 gdk_export BAT *BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s);
+gdk_export BAT *BATcalcmincst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstmin(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalccstmin_no_nil(const ValRecord *v, BAT *b, BAT *s);
 gdk_export BAT *BATcalcmax(BAT *b1, BAT *b2, BAT *s);
 gdk_export BAT *BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s);
+gdk_export BAT *BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstmax(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalccstmax_no_nil(const ValRecord *v, BAT *b, BAT *s);
 gdk_export BAT *BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error);
 gdk_export BAT *BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error);
 gdk_export BAT *BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error);
@@ -126,7 +134,7 @@ gdk_export BAT *BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double 
 gdk_export const char *BATgroupaggrinit(
 	BAT *b, BAT *g, BAT *e, BAT *s,
 	/* outputs: */
-	oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp, BUN *cntp,
+	oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp,
 	const oid **candp, const oid **candendp);
 
 gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);

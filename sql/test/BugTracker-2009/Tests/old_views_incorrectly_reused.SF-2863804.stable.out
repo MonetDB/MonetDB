@@ -133,8 +133,8 @@ Ready.
 #	SELECT ALL a3 AS a1, prob FROM find_TERM_from_DOC_attribute_1_RESULT_result_2;
 #CREATE VIEW find_TERM_from_DOC_attribute_1_RESULT_result AS 
 #	SELECT ALL a1, 1-prod(1-prob) AS prob FROM find_TERM_from_DOC_attribute_1_RESULT_result_1 GROUP BY a1;
-#SELECT a.a1 as value, 'term' as type, a.prob FROM find_TERM_from_DOC_attribute_1_RESULT_result as a ORDER BY "prob" DESC LIMIT 50 OFFSET 0;
-% sys.L2,	.L2,	.a # table_name
+#SELECT a.a1 as value, 'term' as type, a.prob FROM find_TERM_from_DOC_attribute_1_RESULT_result as a ORDER BY "prob" DESC, value LIMIT 50 OFFSET 0;
+% sys.L70,	.L72,	.a # table_name
 % value,	type,	prob # name
 % varchar,	char,	double # type
 % 2,	4,	24 # length
@@ -164,8 +164,8 @@ Ready.
 #	SELECT ALL a3 AS a1, prob FROM find_TERM_from_DOC_attribute_1_RESULT_result_2;
 #CREATE VIEW find_TERM_from_DOC_attribute_1_RESULT_result AS 
 #	SELECT ALL a1, 1-prod(1-prob) AS prob FROM find_TERM_from_DOC_attribute_1_RESULT_result_1 GROUP BY a1;
-#SELECT a.a1 as value, 'term' as type, a.prob FROM find_TERM_from_DOC_attribute_1_RESULT_result as a ORDER BY "prob" DESC LIMIT 50 OFFSET 0;
-% sys.L2,	.L2,	.a # table_name
+#SELECT a.a1 as value, 'term' as type, a.prob FROM find_TERM_from_DOC_attribute_1_RESULT_result as a ORDER BY "prob" DESC, value LIMIT 50 OFFSET 0;
+% sys.L70,	.L72,	.a # table_name
 % value,	type,	prob # name
 % varchar,	char,	double # type
 % 4,	4,	24 # length

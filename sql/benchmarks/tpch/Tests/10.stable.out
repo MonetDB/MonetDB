@@ -60,7 +60,7 @@ Ready.
 #order by
 #	revenue desc
 #limit 20;
-% sys.customer,	sys.customer,	sys.L1,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
+% sys.customer,	sys.customer,	sys.L5,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
 % c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
 % int,	varchar,	decimal,	decimal,	char,	varchar,	char,	varchar # type
 % 4,	18,	21,	17,	25,	40,	15,	116 # length
