@@ -92,61 +92,61 @@ command selectNotNil(b:bat[:any_2]):bat[:any_2]
 address ALGselectNotNil
 comment "Select all not-nil values";
 
-command subsort(b:bat[:any_1], reverse:bit, stable:bit) :bat[:any_1]
-address ALGsubsort11
+command sort(b:bat[:any_1], reverse:bit, stable:bit) :bat[:any_1]
+address ALGsort11
 comment "Returns a copy of the BAT sorted on tail values.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:any_1], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
-address ALGsubsort12
+command sort(b:bat[:any_1], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
+address ALGsort12
 comment "Returns a copy of the BAT sorted on tail values and a BAT that
          specifies how the input was reordered.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:any_1], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
-address ALGsubsort13
+command sort(b:bat[:any_1], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
+address ALGsort13
 comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
          how the input was reordered, and a BAT with group information.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) :bat[:any_1]
-address ALGsubsort21
+command sort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) :bat[:any_1]
+address ALGsort21
 comment "Returns a copy of the BAT sorted on tail values.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
-address ALGsubsort22
+command sort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
+address ALGsort22
 comment "Returns a copy of the BAT sorted on tail values and a BAT that
          specifies how the input was reordered.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
-address ALGsubsort23
+command sort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
+address ALGsort23
 comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
          how the input was reordered, and a BAT with group information.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) :bat[:any_1]
-address ALGsubsort31
+command sort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) :bat[:any_1]
+address ALGsort31
 comment "Returns a copy of the BAT sorted on tail values.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
-address ALGsubsort32
+command sort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
+address ALGsort32
 comment "Returns a copy of the BAT sorted on tail values and a BAT that
          specifies how the input was reordered.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
-address ALGsubsort33
+command sort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
+address ALGsort33
 comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
          how the input was reordered, and a BAT with group information.
          The input and output are (must be) dense headed.

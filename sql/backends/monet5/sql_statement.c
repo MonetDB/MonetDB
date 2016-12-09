@@ -1038,7 +1038,7 @@ stmt_order(backend *be, stmt *s, int direction)
 
 	if (s->nr < 0)
 		return NULL;
-	q = newStmt(mb, algebraRef, subsortRef);
+	q = newStmt(mb, algebraRef, sortRef);
 	/* both ordered result and oid's order en subgroups */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -1072,7 +1072,7 @@ stmt_reorder(backend *be, stmt *s, int direction, stmt *orderby_ids, stmt *order
 
 	if (s->nr < 0 || orderby_ids->nr < 0 || orderby_grp->nr < 0)
 		return NULL;
-	q = newStmt(mb, algebraRef, subsortRef);
+	q = newStmt(mb, algebraRef, sortRef);
 	/* both ordered result and oid's order en subgroups */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
