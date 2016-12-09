@@ -953,10 +953,11 @@ static str parseModule(Client cntxt)
 // returns the currently enabled python version, if any
 // defaults to python 2 if none is enabled
 static int
-enabled_python_version() {
+enabled_python_version(void) {
     char* env = GDKgetenv(pyapi_enableflag);
-    if (env && strncmp(env, "3", 1) == 0)
-    	return 3;
+    if (env && strncmp(env, "3", 1) == 0) {
+        return 3;
+    }
    	return 2;
 }
 
