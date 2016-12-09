@@ -57,6 +57,9 @@ esac
 case $SUITE in
 wheezy | precise)
     # numpy is too old
+    sed -i -e 's/, python-dev[^,]*//;s/, python-numpy[^,]*//' \
+	-e '/^Package:.*monetdb-python2/,/^$/d' debian/control
     sed -i '/pyintegration=yes/s/yes/no/' debian/rules
+    rm debian/monetdb-python2.install
     ;;
 esac
