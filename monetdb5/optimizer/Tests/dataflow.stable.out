@@ -32,14 +32,14 @@ function user.tst():void;               	#[0] (0)  0
 #mdb.setThread(true);                   
 barrier X_14:bit := language.dataflow();	#[6] (0) MALstartDataflow 28 
     z:bat[:oid] := nil:bat[:oid];       	#[7] (0)  9 <- 10 
-    t1:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[8] (0) ALGsubselect1 11 <- 1 5 6 12 13 14 
-    t2:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[9] (0) ALGsubselect1 15 <- 1 5 6 12 12 14 
-    t3:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[10] (0) ALGsubselect1 16 <- 1 5 6 12 12 14 
-    t4:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[11] (0) ALGsubselect1 17 <- 1 5 6 12 12 14 
-    t5:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[12] (0) ALGsubselect1 18 <- 1 5 6 12 12 14 
-    t6:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[13] (0) ALGsubselect1 19 <- 1 5 6 12 12 14 
-    t7:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[14] (0) ALGsubselect1 20 <- 1 5 6 12 12 14 
-    t8:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[15] (0) ALGsubselect1 21 <- 1 5 6 12 12 14 
+    t1:bat[:oid] := algebra.select(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[8] (0) ALGselect1 11 <- 1 5 6 12 13 14 
+    t2:bat[:oid] := algebra.select(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[9] (0) ALGselect1 15 <- 1 5 6 12 12 14 
+    t3:bat[:oid] := algebra.select(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[10] (0) ALGselect1 16 <- 1 5 6 12 12 14 
+    t4:bat[:oid] := algebra.select(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[11] (0) ALGselect1 17 <- 1 5 6 12 12 14 
+    t5:bat[:oid] := algebra.select(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[12] (0) ALGselect1 18 <- 1 5 6 12 12 14 
+    t6:bat[:oid] := algebra.select(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[13] (0) ALGselect1 19 <- 1 5 6 12 12 14 
+    t7:bat[:oid] := algebra.select(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[14] (0) ALGselect1 20 <- 1 5 6 12 12 14 
+    t8:bat[:oid] := algebra.select(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[15] (0) ALGselect1 21 <- 1 5 6 12 12 14 
     language.pass(s:bat[:int]);         	#[16] (0) MALpass 27 <- 1 
 exit X_14:bit;                          	#[17] (0)  28 
     z:bat[:oid] := mat.pack(t1:bat[:oid],t2:bat[:oid],t3:bat[:oid],t4:bat[:oid],t5:bat[:oid],t6:bat[:oid],t7:bat[:oid],t8:bat[:oid]);	#[18] (0) MATpack 9 <- 11 15 16 17 18 19 20 21 

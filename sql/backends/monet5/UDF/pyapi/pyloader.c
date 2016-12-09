@@ -1,4 +1,5 @@
 #include "pyapi.h"
+#include "conversion.h"
 #include "connection.h"
 #include "emit.h"
 
@@ -9,7 +10,7 @@
 #include "formatinput.h"
 
 static void _loader_import_array(void) {
-    import_array();
+    _import_array();
 }
 
 str _loader_init(void)

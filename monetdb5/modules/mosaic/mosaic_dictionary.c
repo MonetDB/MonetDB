@@ -20,10 +20,11 @@
 /*
  * 2014-2016 author Martin Kersten
  * Global dictionary encoding
- * Index value zero is not used to easy detection of filler
+ * Index value zero is not used to easy detection of filler values
  * The dictionary index size is derived from the number of entries covered.
  * It leads to a compact n-bit representation.
  * Floating points are not expected to be replicated 
+ * A limit of 256 elements is currently assumed.
  */
 
 #include "monetdb_config.h"

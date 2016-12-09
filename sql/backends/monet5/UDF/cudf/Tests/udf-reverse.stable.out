@@ -48,11 +48,10 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 99 # length
+% 98 # length
 function user.s4_1():void;
-    X_13:void := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe",6:int);
+    X_0:void := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe",7:int);
     X_5:str := udf.reverse("MonetDB");
-# querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe")
     sql.resultSet(".L2","L2","clob",0:int,0:int,4:int,X_5);
 end user.s4_1;
 #inline               actions= 0 time=2 usec 
@@ -108,9 +107,9 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 105 # length
+% 104 # length
 function user.s12_1():void;
-    X_36:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",20:int);
+    X_0:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",22:int);
     X_21 := bat.new(nil:str);
     X_28 := bat.append(X_21,"sys.L2");
     X_23 := bat.new(nil:str);

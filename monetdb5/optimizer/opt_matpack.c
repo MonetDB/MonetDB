@@ -29,6 +29,12 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
+	for( i = 1; i < mb->stop; i++)
+		if( getModuleId(getInstrPtr(mb,i)) == matRef  && getFunctionId(getInstrPtr(mb,i)) == packRef && isaBatType(getArgType(mb,getInstrPtr(mb,i),1))) 
+			break;
+	if( i == mb->stop) 
+		goto wrapup;
+
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit = mb->ssize;
@@ -73,6 +79,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         //chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
+wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","matpack",actions,GDKusec() - usec);
     newComment(mb,buf);
 

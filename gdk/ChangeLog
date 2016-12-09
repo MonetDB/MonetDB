@@ -1,3 +1,11 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Mon Dec  5 2016 Sjoerd Mullender <sjoerd@acm.org>
+- BATappend now takes an optional (NULL if not used) candidate list for
+  the to-be-appended BAT.
+
+* Thu Dec  1 2016 Sjoerd Mullender <sjoerd@acm.org>
+- New function BATkeyed(BAT *b) that determines (possibly using a hash
+  table) whether all values in b are distinct.
+

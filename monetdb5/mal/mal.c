@@ -10,10 +10,12 @@
 #include <monetdb_config.h>
 #include <mal.h>
 
-char monet_cwd[PATHLENGTH] = { 0 };
-size_t monet_memory = 0;
+char 	monet_cwd[PATHLENGTH] = { 0 };
+size_t 	monet_memory = 0;
 char 	monet_characteristics[PATHLENGTH];
-int mal_trace;		/* enable profile events on console */
+int		mal_trace;		/* enable profile events on console */
+str     mal_session_uuid;   /* unique marker for the session */
+
 #ifdef HAVE_HGE
 int have_hge;
 #endif
@@ -117,7 +119,7 @@ int mal_init(void){
  * activity first.
  * This function should be called after you have issued sql_reset();
  */
-void mserver_reset(void)
+void mserver_reset(int exit)
 {
 	str err = 0;
 
@@ -154,6 +156,7 @@ void mserver_reset(void)
 	mal_resource_reset();
 	mal_runtime_reset();
 	mal_module_reset();
+	mal_instruction_reset();
 
 	memset((char*)monet_cwd,0, sizeof(monet_cwd));
 	monet_memory = 0;
@@ -161,7 +164,7 @@ void mserver_reset(void)
 	mal_trace = 0;
 	/* No need to clean up the namespace, it will simply be extended
 	 * upon restart mal_namespace_reset(); */
-	GDKreset(0);	// terminate all other threads
+	GDKreset(0, exit);	// terminate all other threads
 }
 
 
@@ -176,6 +179,6 @@ void mserver_reset(void)
  */
 
 void mal_exit(void){
-	mserver_reset();
+	mserver_reset(1);
 	GDKexit(0); 	/* properly end GDK */
 }

@@ -2397,7 +2397,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 
 	if (i && BATcount(i)) {
 		i = BATdescriptor(*ins);
-		BATappend(res, i, TRUE);
+		BATappend(res, i, NULL, TRUE);
 		BBPunfix(i->batCacheid);
 	}
 
@@ -2445,6 +2445,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		res = BATproject(cminu, c);
 		BBPunfix(c->batCacheid);
 		BBPunfix(cminu->batCacheid);
+		cminu = NULL;
 		if (!res) {
 			BBPunfix(u_id->batCacheid);
 			throw(MAL, "sql.delta", MAL_MALLOC_FAIL " intermediate" );
@@ -2478,13 +2479,12 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			}
-			c_ids = BATproject(cminu, u);
-			BBPunfix(cminu->batCacheid);
-			BBPunfix(u->batCacheid);
-			u = c_ids;
 		}
-		BATappend(res, u, TRUE);
+		BATappend(res, u, cminu, TRUE);
 		BBPunfix(u->batCacheid);
+		if (cminu)
+			BBPunfix(cminu->batCacheid);
+		cminu = NULL;
 
 		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
@@ -2505,12 +2505,6 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(u_id->batCacheid);
 			if (!cminu)
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-			u_id = BATproject(cminu, i);
-			BBPunfix(cminu->batCacheid);
-			BBPunfix(i->batCacheid);
-			if (!u_id)
-				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-			i = u_id;
 		}
 		if (isVIEW(res)) {
 			BAT *n = COLcopy(res, res->ttype, TRUE, TRANSIENT);
@@ -2518,11 +2512,15 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			res = n;
 			if (res == NULL) {
 				BBPunfix(i->batCacheid);
+				if (cminu)
+					BBPunfix(cminu->batCacheid);
 				throw(MAL, "sql.delta", OPERATION_FAILED);
 			}
 		}
-		BATappend(res, i, TRUE);
+		BATappend(res, i, cminu, TRUE);
 		BBPunfix(i->batCacheid);
+		if (cminu)
+			BBPunfix(cminu->batCacheid);
 
 		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
@@ -2574,7 +2572,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		} else {
 			if ((res = COLcopy(c, c->ttype, TRUE, TRANSIENT)) == NULL)
 				throw(MAL, "sql.projectdelta", OPERATION_FAILED);
-			BATappend(res, i, FALSE);
+			BATappend(res, i, NULL, FALSE);
 			BBPunfix(c->batCacheid);
 		}
 	}

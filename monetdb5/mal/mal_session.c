@@ -58,11 +58,19 @@ malBootstrap(void)
 	}
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->fdout, c->nspace, c->curprg->def);
-	if (c->curprg->def->errors)
+	if (c->curprg->def->errors) {
 		showErrors(c);
+#ifdef HAVE_EMBEDDED
+		return 0;
+#endif
+	}
 	s = MALengine(c);
-	if (s)
+	if (s != MAL_SUCCEED) {
 		GDKfree(s);
+#ifdef HAVE_EMBEDDED
+		return 0;
+#endif
+	}
 	return 1;
 }
 

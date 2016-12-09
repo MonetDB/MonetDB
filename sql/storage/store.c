@@ -1384,9 +1384,7 @@ store_load(void) {
 
 #define FUNC_OIDS 2000
 	// TODO: Niels: Are we fine running this twice?
-#ifndef HAVE_EMBEDDED
-	assert( store_oid <= FUNC_OIDS );
-#endif
+	
 	/* we store some spare oids */
 	store_oid = FUNC_OIDS;
 
@@ -1585,7 +1583,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	/* get the set shared_drift_threshold
 	 * we will need it later in store_manager */
 	shared_drift_threshold = log_settings->shared_drift_threshold;
-	/* get the set shared_drift_threshold
+	/* get the set keep_persisted_log_files
 	 * we will need it later when calling logger_cleanup */
 	keep_persisted_log_files = log_settings->keep_persisted_log_files;
 

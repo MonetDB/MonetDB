@@ -75,7 +75,7 @@ project (
 | | | select (
 | | | | group by (
 | | | | | join (
-| | | | | | table(sys.bidder) [ bidder.id NOT NULL as L32.id, bidder.open_auction_id NOT NULL as L32.open_auction_id ] COUNT ,
+| | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b2a.id, bidder.open_auction_id NOT NULL as b2a.open_auction_id, bidder.%TID% NOT NULL as L32.%TID% ] COUNT ,
 | | | | | | project (
 | | | | | | | crossproduct (
 | | | | | | | | project (
@@ -100,13 +100,13 @@ project (
 | | | | | | | | | | ) [ b3.id NOT NULL HASHCOL  = L10 NOT NULL ]
 | | | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.increase NOT NULL as L13.L13 ]
 | | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L13.L13 NOT NULL, sys.identity(o.id NOT NULL) HASHCOL  as L100.L100 ],
-| | | | | | | | table(sys.bidder) [ bidder.id NOT NULL as L31.id, bidder.increase NOT NULL as L31.increase ] COUNT 
+| | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b2.id, bidder.increase NOT NULL as b2.increase, bidder.%TID% NOT NULL as L32.%TID% ] COUNT 
 | | | | | | | ) [  ]
-| | | | | | ) [ L100.L100 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L13.L13 NOT NULL, L31.id NOT NULL, L31.increase NOT NULL, sys.identity(o.id NOT NULL) HASHCOL  as L70.L70 ]
-| | | | | ) [ L32.open_auction_id NOT NULL = o.open_auction_id NOT NULL ]
-| | | | ) [ L70.L70, L100.L100 ] [ L100.L100 HASHCOL , b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L13.L13 NOT NULL, L31.id NOT NULL, L31.increase NOT NULL, L70.L70 HASHCOL , sys.max no nil (L32.id NOT NULL HASHCOL  as b2a.id) NOT NULL as L24.L24 ]
-| | | ) [ L31.id NOT NULL = L24.L24 NOT NULL ]
-| | ) [ L100.L100 HASHCOL , b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L13.L13 NOT NULL, L31.id NOT NULL, L31.increase NOT NULL, L70.L70 HASHCOL , L24.L24 NOT NULL, sys.sql_mul(L13.L13 NOT NULL, double "2.000000") as L107.L107, L31.increase NOT NULL as L110.L110 ]
+| | | | | | ) [ L100.L100 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L13.L13 NOT NULL, b2.id NOT NULL HASHCOL , b2.increase NOT NULL, sys.identity(o.id NOT NULL) HASHCOL  as L70.L70 ]
+| | | | | ) [ b2a.open_auction_id NOT NULL = o.open_auction_id NOT NULL ]
+| | | | ) [ L70.L70, L100.L100 ] [ L100.L100 HASHCOL , b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L13.L13 NOT NULL, b2.id NOT NULL HASHCOL , b2.increase NOT NULL, L70.L70 HASHCOL , sys.max no nil (b2a.id NOT NULL HASHCOL ) NOT NULL as L24.L24 ]
+| | | ) [ b2.id NOT NULL HASHCOL  = L24.L24 NOT NULL ]
+| | ) [ L100.L100 HASHCOL , b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L13.L13 NOT NULL, b2.id NOT NULL HASHCOL , b2.increase NOT NULL, L70.L70 HASHCOL , L24.L24 NOT NULL, sys.sql_mul(L13.L13 NOT NULL, double "2.000000") as L107.L107, b2.increase NOT NULL as L110.L110 ]
 | ) [ L107.L107 <= L110.L110 NOT NULL ]
 ) [ b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL ]
 #Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id;

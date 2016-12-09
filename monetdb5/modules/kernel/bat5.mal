@@ -48,6 +48,14 @@ command append( i:bat[:any_1], u:bat[:any_1], force:bit ) :bat[:any_1]
 address BKCappend_force_wrap
 comment "append the content of u to i";
 
+command append( i:bat[:any_1], u:bat[:any_1], s:bat[:oid] ) :bat[:any_1]
+address BKCappend_cand_wrap
+comment "append the content of u with candidate list s to i";
+
+command append( i:bat[:any_1], u:bat[:any_1], s:bat[:oid], force:bit ) :bat[:any_1]
+address BKCappend_cand_force_wrap
+comment "append the content of u with candidate list s to i";
+
 command append(i:bat[:any_1], u:any_1, force:bit):bat[:any_1]
 address BKCappend_val_force_wrap
 comment "append the value u to i";
@@ -87,10 +95,9 @@ comment "Returns the rolename of the head column of a BAT.";
 
 command setKey( b:bat[:any_1], mode:bit) :bat[:any_1] 
 address BKCsetkey
-comment "Sets the 'key' property of the tail column to 'mode'. In 'key' mode, 
-        the kernel will silently block insertions that cause a duplicate 
-        entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 
-		function does not automatically eliminate duplicates. ";
+comment "Sets the 'key' property of the tail column to 'mode'. In 'key' mode,
+        the kernel will silently block insertions that cause a duplicate
+        entry in the head column.";
 
 command isaKey( b:bat[:any_1]) :bit 
 address BKCgetKey

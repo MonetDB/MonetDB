@@ -198,11 +198,11 @@ BATproject(BAT *l, BAT *r)
 			  BATgetId(l), BATcount(l),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
-			  l->tkey & 1 ? "-key" : "",
+			  l->tkey ? "-key" : "",
 			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
 			  r->tsorted ? "-sorted" : "",
 			  r->trevsorted ? "-revsorted" : "",
-			  r->tkey & 1 ? "-key" : "");
+			  r->tkey ? "-key" : "");
 
 	assert(ATOMtype(l->ttype) == TYPE_oid);
 
@@ -221,7 +221,7 @@ BATproject(BAT *l, BAT *r)
 				  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
 				  bn->tsorted ? "-sorted" : "",
 				  bn->trevsorted ? "-revsorted" : "",
-				  bn->tkey & 1 ? "-key" : "");
+				  bn->tkey ? "-key" : "");
 		return bn;
 	}
 	if (l->ttype == TYPE_void || BATcount(l) == 0 ||
@@ -243,7 +243,7 @@ BATproject(BAT *l, BAT *r)
 				  BATgetId(bn), BATcount(bn),
 				  bn->tsorted ? "-sorted" : "",
 				  bn->trevsorted ? "-revsorted" : "",
-				  bn->tkey & 1 ? "-key" : "");
+				  bn->tkey ? "-key" : "");
 		return bn;
 	}
 	assert(l->ttype == TYPE_oid);
@@ -390,7 +390,7 @@ BATproject(BAT *l, BAT *r)
 			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
 			  bn->tsorted ? "-sorted" : "",
 			  bn->trevsorted ? "-revsorted" : "",
-			  bn->tkey & 1 ? "-key" : "",
+			  bn->tkey ? "-key" : "",
 			  bn->ttype == TYPE_str && bn->tvheap == r->tvheap ? " shared string heap" : "",
 			  GDKusec() - t0);
 	return bn;

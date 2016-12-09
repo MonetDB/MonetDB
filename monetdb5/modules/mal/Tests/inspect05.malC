@@ -1,6 +1,6 @@
 #Illustrate the modules loaded after start
 m:= inspect.getModule();
-m0:= algebra.subselect(m,nil:bat[:oid],"bat", "bat", true,true,false);	# limit the list
+m0:= algebra.select(m,nil:bat[:oid],"bat", "bat", true,true,false);	# limit the list
 m1:= algebra.projection(m0,m);
 k:= inspect.getKind();
 k0:= algebra.projection(m0,k);

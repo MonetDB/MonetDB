@@ -15,7 +15,6 @@
 #define MAXSCOPE 256
 
 typedef struct SCOPEDEF {
-	struct SCOPEDEF   *next; /* keep a list of all modules */
 	struct SCOPEDEF   *link; /* module with same index value */
 	str	    name;			/* index in namespace */
 	Symbol *space; 			/* type dispatcher table */
@@ -24,9 +23,6 @@ typedef struct SCOPEDEF {
 	str help;   			/* short description of module functionality*/
 } *Module, ModuleRecord;
 
-mal_export Module moduleIndex[256][256];  /* to speedup access to correct scope */
-
-mal_export Module   getModuleChain(void);
 mal_export Module   newModule(Module scope, str nme);
 mal_export Module   fixModule(Module scope, str nme);
 mal_export void     freeModule(Module cur);
@@ -36,6 +32,8 @@ mal_export Module   findModule(Module scope, str name);
 mal_export Symbol   findSymbol(Module nspace, str mod, str fcn);
 mal_export int 		isModuleDefined(Module scope, str name);
 mal_export Symbol   findSymbolInModule(Module v, str fcn);
+mal_export void     getModuleList(Module** out, int* length);
+mal_export void     freeModuleList(Module* list);
 
 #define getSymbolIndex(N)  (int)(*(N))
 

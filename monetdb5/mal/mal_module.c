@@ -19,7 +19,6 @@
 #include "mal_listing.h"
 #include "mal_private.h"
 
-// SHOULD BE PROTECTED WITH LOCKS
 /*
  * Definition of a new module may interfere with concurrent actions.
  * A jump table is mainted to provide a quick start in the module
@@ -27,39 +26,99 @@
  *
  * All modules are persistent during a server session
  */
-Module moduleIndex[256][256]; 	/* to speedup access to correct scope */
-Module moduleChain;				/* keep the modules in a chain as well */
+#define MODULE_HASH_SIZE 1024
+Module moduleIndex[MODULE_HASH_SIZE] = { NULL };
 
 static void newModuleSpace(Module scope){
 	scope->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
 }
 
-Module
-getModuleChain(void){
-	return moduleChain;
-}
-
 void
 mal_module_reset(void)
 {
-	Module m,n;
-
-	for( m = moduleChain, moduleChain = 0; m; ){
-		n = m->next;
-		freeModule(m);
-		m= n;
+	int i;
+	for(i = 0; i < MODULE_HASH_SIZE; i++) {
+		Module m = moduleIndex[i];
+		while(m) {
+			Module next = m->link;
+			freeModule(m);
+			m = next;
+		}
+		moduleIndex[i] = NULL;
 	}
-	memset(moduleIndex, 0, 256 * 256 * sizeof(Module));
 }
 
-static void clrModuleIndex(str nme, Module cur){
-		if( moduleIndex[(int)(*nme)][(int)(*(nme+1))]== cur)
-			moduleIndex[(int)(*nme)][(int)(*(nme+1))]= cur->link;
+static int getModuleIndex(str name) {
+	return (int) (strHash(name) % MODULE_HASH_SIZE);
 }
 
-static void setModuleIndex(str nme, Module cur){
-		cur->link= moduleIndex[(int)(*nme)][(int)(*(nme+1))];
-		moduleIndex[(int)(*nme)][(int)(*(nme+1))]= cur;
+static void clrModuleIndex(Module cur){
+	int index = getModuleIndex(cur->name);
+	Module prev = NULL;
+	Module m = moduleIndex[index];
+	while(m) {
+		if (m == cur) {
+			if (!prev) {
+				moduleIndex[index] = m->link;
+			} else {
+				prev->link = m->link;
+			}
+			return;
+		}
+		prev = m;
+		m = m->link;
+	}
+	assert(0);
+}
+
+static void setModuleIndex(Module cur){
+	int index = getModuleIndex(cur->name);
+	cur->link = moduleIndex[index];
+	moduleIndex[index] = cur;
+}
+
+
+static Module getModule(str name) {
+	int index = getModuleIndex(name);
+	Module m = moduleIndex[index];
+	while(m) {
+		//if (strcmp(name, m->name) == 0) {
+		if (name == m->name) {
+			return m;
+		}
+		m = m->link;
+	}
+	return NULL;
+}
+
+void getModuleList(Module** out, int* length) {
+	int i;
+	int moduleCount = 0;
+	int currentIndex = 0;
+	for(i = 0; i < MODULE_HASH_SIZE; i++) {
+		Module m = moduleIndex[i];
+		while(m) {
+			moduleCount++;
+			m = m->link;
+		}
+	}
+	*out = GDKzalloc(moduleCount * sizeof(Module*));
+	if (!out) {
+		return;
+	}
+	*length = moduleCount;
+
+	for(i = 0; i < MODULE_HASH_SIZE; i++) {
+		Module m = moduleIndex[i];
+		while(m) {
+			(*out)[currentIndex++] = m;
+			m = m->link;
+		}
+	}
+}
+
+void freeModuleList(Module* list) {
+	GDKfree(list);
 }
 
 /*
@@ -74,10 +133,9 @@ Module newModule(Module scope, str nme){
 	nme = putName(nme);
 	assert(nme != NULL);
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
-	if ( cur == NULL)
+	if (cur == NULL)
 		return scope;
 	cur->name = nme;
-	cur->next = NULL;
 	cur->link = NULL;
 	cur->space = NULL;
 	cur->isAtomModule = FALSE;
@@ -87,11 +145,8 @@ Module newModule(Module scope, str nme){
 		return NULL;
 	}
 	// User modules are never global
-	if( strcmp(nme,"user")){
-		setModuleIndex(nme,cur);
-		if ( moduleChain)
-			cur->next = moduleChain;
-		moduleChain = cur;
+	if (strcmp(nme, "user")) {
+		setModuleIndex(cur);
 	}
 	return cur;
 }
@@ -99,18 +154,15 @@ Module newModule(Module scope, str nme){
  * The scope can be fixed. This is used by the parser.
  * Reading a module often calls for creation first.
  */
-Module fixModule(Module scope, str nme){
-	Module s= 0;
-	
-	if( strcmp(nme,"user")==0)
+Module fixModule(Module scope, str nme) {
+	Module m;
+
+	if(strcmp(nme, "user") == 0)
 		return scope;
-	if( moduleIndex[(int)(*nme)][(int)(*(nme+1))])
-		s= moduleIndex[(int)(*nme)][(int)(*(nme+1))];
-	while(s != NULL){
-		if( nme == s->name )
-			return s;
-		s= s->link;
-	}
+
+	m = getModule(nme);
+	if (m) return m;
+
 	return newModule(scope, nme);
 }
 /*
@@ -123,10 +175,10 @@ static void freeSubScope(Module scope)
 
 	if (scope->space == NULL) 
 		return;
-	for(i=0;i<MAXSCOPE;i++) {
+	for(i = 0; i < MAXSCOPE; i++) {
 		if( scope->space[i]){
 			freeSymbolList(scope->space[i]);
-			scope->space[i]= NULL;
+			scope->space[i] = NULL;
 		}
 	}
 	GDKfree(scope->space);
@@ -137,9 +189,9 @@ void freeModule(Module m)
 {
 	Symbol s;
 
-	if (m==NULL) 
+	if (m == NULL) 
 		return;
-	if ((s=findSymbolInModule(m, "epilogue")) != NULL) {
+	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
 		InstrPtr pci = getInstrPtr(s->def,0);
 		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
 			int ret = 0;
@@ -149,8 +201,10 @@ void freeModule(Module m)
 			(void)ret;
 		}
 	}
-	freeSubScope(m);
-	clrModuleIndex(m->name, m);
+	freeSubScope(m);	
+	if (strcmp(m->name, "user")) {
+		clrModuleIndex(m);
+	}
 	if (m->help)
 		GDKfree(m->help);
 	GDKfree(m);
@@ -207,10 +261,10 @@ void deleteSymbol(Module scope, Symbol prg){
 	int t;
 
 	sig = getSignature(prg);
-	if( getModuleId(sig) && getModuleId(sig)!= scope->name ){
+	if (getModuleId(sig) && getModuleId(sig)!= scope->name ){
 		/* move the definition to the proper place */
 		/* default scope is the last resort */
-		Module c= findModule(scope,getModuleId(sig));
+		Module c= findModule(scope, getModuleId(sig));
 		if(c )
 			scope = c;
 	}
@@ -241,29 +295,24 @@ void deleteSymbol(Module scope, Symbol prg){
  * to the current user.
  */
 Module findModule(Module scope, str name){
-	Module def=scope;
-	if( name==NULL) return scope;
-	scope= moduleIndex[(int)(*name)][(int)(*(name+1))];
-	while(scope != NULL){
-			if( name == scope->name )
-					return scope;
-			scope= scope->link;
-	}
+	Module def = scope;
+	Module m;
+	if (name == NULL) return scope;
+
+	m = getModule(name);
+	if (m) return m;
+
 	/* default is always matched with current */
-	if( def->name==NULL) return NULL;
+	if (def->name == NULL) return NULL;
 	return def;
 }
+
 int isModuleDefined(Module scope, str name){
-	if( name==NULL || scope==NULL) return FALSE;
-	if( name == scope->name) return TRUE;
-	scope= moduleIndex[(int)(*name)][(int)(*(name+1))];
-	while(scope != NULL){
-			if( name == scope->name )
-					return TRUE;
-			scope= scope->link;
-	}
-	return FALSE;
+	if (name == NULL || scope == NULL) return FALSE;
+	if (name == scope->name) return TRUE;
+	return getModule(name) != NULL;
 }
+
 /*
  * The routine findSymbolInModule starts at a MAL scope level and searches
  * an element amongst the peers. 
@@ -275,19 +324,19 @@ int isModuleDefined(Module scope, str name){
  * The variation on this routine is to dump the definition of
  * all matching definitions.
  */
-Symbol findSymbolInModule(Module v, str fcn){
+Symbol findSymbolInModule(Module v, str fcn) {
 	Symbol s;
-	if( v == NULL || fcn == NULL) return NULL;
-	s= v->space[(int)(*fcn)];
-	while(s!=NULL){
-		if( idcmp(s->name,fcn)==0 ) return s;
-		s= s->skip;
+	if (v == NULL || fcn == NULL) return NULL;
+	s = v->space[(int)(*fcn)];
+	while (s != NULL) {
+		if (idcmp(s->name,fcn)==0) return s;
+		s = s->skip;
 	}
 	return NULL;
 }
 
-Symbol findSymbol(Module nspace, str mod, str fcn){
-	Module m= findModule(nspace,mod);
-	return findSymbolInModule(m,fcn);
+Symbol findSymbol(Module nspace, str mod, str fcn) {
+	Module m = findModule(nspace, mod);
+	return findSymbolInModule(m, fcn);
 }
 

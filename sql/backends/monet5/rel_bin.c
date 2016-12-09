@@ -1893,8 +1893,10 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				break;
 
 			s = exp_bin(be, en->data, left, right, NULL, NULL, NULL, NULL);
-			if (!s) 
+			if (!s) {
+				assert(0);
 				return NULL;
+			}
 			if (join_idx != sql->opt_stats[0])
 				idx = 1;
 			/* stop on first non equality join */

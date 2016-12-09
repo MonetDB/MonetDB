@@ -1,6 +1,13 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Dec  1 2016 Sjoerd Mullender <sjoerd@acm.org>
+- The tnokey values must now be 0 if it is not known whether all values
+  in a column are distinct.
+- The 2-bit tkey field in the bat descriptor has been split into two
+  single bit fields: tkey and tunique.  The old tkey&BOUND2BTRUE value
+  is now stored in tunique.
+
 * Wed Oct 26 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented conversion to str from any type (not just the internal
   types).

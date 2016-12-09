@@ -51,8 +51,8 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (getModuleId(p)==algebraRef) {
-			 if (getFunctionId(p) == subselectRef ||
-				getFunctionId(p) == thetasubselectRef) {
+			 if (getFunctionId(p) == selectRef ||
+				getFunctionId(p) == thetaselectRef) {
 				newRows(1,2, (c1 > 2 ? c2 / 2 +1: c1/2+1),0);
 			} else if (
 				getFunctionId(p) == selectNotNilRef  ||
@@ -60,9 +60,9 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				getFunctionId(p) == subsortRef  ||
 				getFunctionId(p) == projectRef  ){
 				newRows(1,1,c1,0);
-			} else if (getFunctionId(p) == subjoinRef ||
+			} else if (getFunctionId(p) == joinRef ||
 				getFunctionId(p) == projectionRef ||
-				getFunctionId(p) == subbandjoinRef ||
+				getFunctionId(p) == bandjoinRef ||
 				getFunctionId(p) == projectionpathRef ) {
 				/* assume 1-1 joins */
 				newRows(1,2,(c1 < c2 ? c1 : c2),0);

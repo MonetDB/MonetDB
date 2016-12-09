@@ -420,7 +420,6 @@ pthread_sema_down(pthread_sema_t *s)
 
 #else  /* !defined(HAVE_PTHREAD_H) && defined(_MSC_VER) */
 
-#ifdef HAVE_PTHREAD_SIGMASK
 static struct posthread {
 	struct posthread *next;
 	pthread_t tid;
@@ -455,6 +454,7 @@ find_posthread(pthread_t tid)
 }
 #endif
 
+#ifdef HAVE_PTHREAD_SIGMASK
 static void
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {

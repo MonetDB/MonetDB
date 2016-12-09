@@ -16,7 +16,7 @@
 
 #include <stddef.h>
 
-#include "pyapi.h"
+#include "pyheader.h"
  
 extern PyObject *marshal_loads;
 

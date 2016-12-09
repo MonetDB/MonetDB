@@ -216,13 +216,14 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
  * doing or want to keep the hash. */
 #define HASHins(b,i,v)							\
 	do {								\
-		if ((b)->thash == (Hash *) 1 ||				\
-		    (((i) & 1023) == 1023 && HASHgonebad((b), (v)))) {	\
-			HASHdestroy(b);					\
-		} else {						\
-			BUN _c = HASHprobe((b)->thash, (v));		\
-			HASHputall((b)->thash, (i), _c);		\
-			(b)->thash->heap->dirty = TRUE;			\
+		if ((b)->thash) {					\
+			if (((i) & 1023) == 1023 && HASHgonebad((b), (v))) { \
+				HASHdestroy(b);				\
+			} else {					\
+				BUN _c = HASHprobe((b)->thash, (v));	\
+				HASHputall((b)->thash, (i), _c);	\
+				(b)->thash->heap->dirty = TRUE;		\
+			}						\
 		}							\
 	} while (0)
 

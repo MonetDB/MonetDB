@@ -1,13 +1,9 @@
 
+#include "pyapi.h"
+#include "conversion.h"
 #include "connection.h"
 #include "type_conversion.h"
 #include "gdk_interprocess.h"
-
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#define PyString_CheckExact PyUnicode_CheckExact
-#define PyString_FromString PyUnicode_FromString
-#endif
 
 CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult);
 CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern);
@@ -156,9 +152,21 @@ static PyMethodDef _connectionObject_methods[] = {
 };
 
 PyTypeObject Py_ConnectionType = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "monetdb._connection",
+    _PyObject_EXTRA_INIT
+// in python3 they use structs within structs to represent this information, and many compilers throw warnings if you don't use separate braces
+// to initialize these separate structs. However, in Python2, they use #defines to put this information in, so we have these nice #ifdefs
+#ifdef IS_PY3K
+    { { 
+#endif
+        1, NULL 
+#ifdef IS_PY3K
+    }
+#endif 
+    , 0
+#ifdef IS_PY3K
+    }
+#endif
+    , "monetdb._connection",
     sizeof(Py_ConnectionObject),
     0,
     0,                                          /* tp_dealloc */
@@ -243,7 +251,7 @@ PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
 }
 
 static void _connection_import_array(void) {
-    import_array();
+    _import_array();
 }
 
 str _connection_init(void)

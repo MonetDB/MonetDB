@@ -75,7 +75,7 @@ void_bat_create(int adt, BUN nr)
 	b->tnodense = 0;
 	b->tkey = FALSE;
 	b->tnokey[0] = 0;
-	b->tnokey[1] = 1;
+	b->tnokey[1] = 0;
 	return b;
 }
 

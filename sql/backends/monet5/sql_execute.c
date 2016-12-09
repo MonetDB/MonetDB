@@ -271,6 +271,8 @@ SQLrun(Client c, backend *be, mvc *m){
 		return createException(PARSE, "SQLparser", "%s", m->errstr);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
+	mb->history = c->curprg->def->history;
+	c->curprg->def->history =0;
 
 	/* only consider a re-optimization when we are dealing with query templates */
 	for ( i= 1; i < mb->stop;i++){

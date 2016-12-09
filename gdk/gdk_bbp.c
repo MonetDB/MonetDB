@@ -1155,6 +1155,13 @@ BBPreadEntries(FILE *fp, int oidsize, int bbpversion)
 				needcommit = 1;
 			}
 		}
+		if (bbpversion <= GDKLIBRARY &&
+		    (bn->tnokey[0] != 0 || bn->tnokey[1] != 0)) {
+			/* we don't trust the nokey values */
+			bn->tnokey[0] = bn->tnokey[1] = 0;
+			bn->batDirtydesc = 1;
+			needcommit = 1;
+		}
 
 		if (buf[nread] != '\n' && buf[nread] != ' ')
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
@@ -1206,6 +1213,7 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_NOKEY &&
 	    bbpversion != GDKLIBRARY_SORTEDPOS &&
 	    bbpversion != GDKLIBRARY_OLDWKB &&
 	    bbpversion != GDKLIBRARY_INSERTED &&

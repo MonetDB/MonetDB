@@ -16,19 +16,19 @@ bat.setAccess(bv,"r");
 
 vv:= algebra.slice(bv,0,10);
 
-s0:= algebra.subselect(vv,nil:bat[:oid],nil:int,nil:int,false,false,false);
+s0:= algebra.select(vv,nil:bat[:oid],nil:int,nil:int,false,false,false);
 s0v := algebra.projection(s0,vv);
 io.print(s0,s0v);
 
-s1:= algebra.subselect(vv,nil:bat[:oid],nil:int,959217167,true,true,false);
+s1:= algebra.select(vv,nil:bat[:oid],nil:int,959217167,true,true,false);
 s1v := algebra.projection(s1,vv);
 io.print(s1,s1v);
 
-s2:= algebra.subselect(vv,nil:bat[:oid],959217167,959217167,true,true,false);
+s2:= algebra.select(vv,nil:bat[:oid],959217167,959217167,true,true,false);
 s2v := algebra.projection(s2,vv);
 io.print(s2,s2v);
 
-s3:= algebra.subselect(vv,nil:bat[:oid],1863672321,nil:int,true,true,false);
+s3:= algebra.select(vv,nil:bat[:oid],1863672321,nil:int,true,true,false);
 s3v := algebra.projection(s3,vv);
 io.print(s3,s3v);
 
@@ -36,18 +36,18 @@ io.print(s3,s3v);
 bat.orderidx(vv,3);
 ord := bat.getorderidx(vv);
 io.print(ord,vv);
-x0:= algebra.subselect(vv,nil:bat[:oid],nil:int,nil:int,false,false,false);
+x0:= algebra.select(vv,nil:bat[:oid],nil:int,nil:int,false,false,false);
 x0v := algebra.projection(x0,vv);
 io.print(x0,x0v);
 
-x1:= algebra.subselect(vv,nil:bat[:oid],nil:int,959217167,true,true,false);
+x1:= algebra.select(vv,nil:bat[:oid],nil:int,959217167,true,true,false);
 x1v := algebra.projection(x1,vv);
 io.print(x1,x1v);
 
-x2:= algebra.subselect(vv,nil:bat[:oid],959217167,959217167,true,true,false);
+x2:= algebra.select(vv,nil:bat[:oid],959217167,959217167,true,true,false);
 x2v := algebra.projection(x2,vv);
 io.print(x2,x2v);
 
-x3:= algebra.subselect(vv,nil:bat[:oid],1863672321,nil:int,true,true,false);
+x3:= algebra.select(vv,nil:bat[:oid],1863672321,nil:int,true,true,false);
 x3v := algebra.projection(x3,vv);
 io.print(x3,x3v);

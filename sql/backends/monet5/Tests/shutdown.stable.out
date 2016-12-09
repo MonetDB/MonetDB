@@ -1,0 +1,100 @@
+stdout of test 'shutdown` in directory 'sql/backends/monet5` itself:
+
+
+# 15:06:57 >  
+# 15:06:57 >  "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Resources/Python.app/Contents/MacOS/Python" "shutdown.py" "shutdown"
+# 15:06:57 >  
+
+# MonetDB/SQL module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully initialized MonetDB.
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+Successfully shutdown MonetDB.
+# MonetDB/SQL module loaded
+.tables (id,name,schema_id,query,type,system,commit_action,access,temporary)
+Successfully restarted MonetDB.
+sys.temporary_table (i)
+
+# 15:06:58 >  
+# 15:06:58 >  "Done."
+# 15:06:58 >  
+

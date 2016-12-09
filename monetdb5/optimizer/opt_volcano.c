@@ -51,10 +51,10 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 
 		if( count < MAXdelays && getModuleId(p) == algebraRef ){
-			if( getFunctionId(p) == subselectRef ||
-				getFunctionId(p) == thetasubselectRef ||
-				getFunctionId(p) == likesubselectRef ||
-				getFunctionId(p) == subjoinRef
+			if( getFunctionId(p) == selectRef ||
+				getFunctionId(p) == thetaselectRef ||
+				getFunctionId(p) == likeselectRef ||
+				getFunctionId(p) == joinRef
 			){
 				q= newInstruction(0,languageRef,blockRef);
 				setDestVar(q, newTmpVariable(mb,TYPE_any));

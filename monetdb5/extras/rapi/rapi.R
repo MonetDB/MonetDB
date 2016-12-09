@@ -4,7 +4,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
-# R environment adaptions for MonetDB-embedded operations
+# R environment adaptations for MonetDB-embedded operations
 
 # auto-install packages by intercepting library()
 .library.original <- library
