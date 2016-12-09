@@ -81,6 +81,11 @@ module batmmath;
 	command sqrt(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_sqrt;
 	
+	command cbrt(x:bat[:dbl])  :bat[:dbl] 
+	address CMDscience_bat_dbl_cbrt;
+	command cbrt(x:bat[:flt])  :bat[:flt] 
+	address CMDscience_bat_flt_cbrt;
+	
 	command ceil(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_ceil;
 	command ceil(x:bat[:flt])  :bat[:flt] 
