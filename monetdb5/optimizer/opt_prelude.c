@@ -70,7 +70,6 @@ str count_no_nilRef;
 str crossRef;
 str createRef;
 str dataflowRef;
-str datacyclotronRef;
 str dblRef;
 str defineRef;
 str deleteRef;
@@ -299,7 +298,6 @@ void optimizerInit(void)
 	createRef = putName("create");
 	dateRef = putName("date");
 	dataflowRef = putName("dataflow");
-	datacyclotronRef = putName("datacyclotron");
 	dblRef = putName("dbl");
 	defineRef = putName("define");
 	deleteRef = putName("delete");

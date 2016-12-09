@@ -68,7 +68,6 @@ mal_export  str count_no_nilRef;
 mal_export  str crossRef;
 mal_export  str createRef;
 mal_export  str dataflowRef;
-mal_export  str datacyclotronRef;
 mal_export  str dblRef;
 mal_export  str defineRef;
 mal_export  str deleteRef;
