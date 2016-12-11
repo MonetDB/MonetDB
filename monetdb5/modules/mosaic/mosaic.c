@@ -773,7 +773,7 @@ MOSgetPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int varid, int *part,
  * The oid-range can be reduced due to partitioning.
  */
 str
-MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *li, *hi, *anti;
 	void *low, *hgh;
@@ -805,19 +805,19 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// use default implementation if possible
 	if( !isCompressed(*bid)){
 		if(cid)
-			return ALGsubselect2(ret,bid,cid,low,hgh,li,hi,anti);
+			return ALGselect2(ret,bid,cid,low,hgh,li,hi,anti);
 		else
-			return ALGsubselect1(ret,bid,low,hgh,li,hi,anti);
+			return ALGselect1(ret,bid,low,hgh,li,hi,anti);
 	}
 
 	b= BATdescriptor(*bid);
 	if( b == NULL)
-			throw(MAL, "mosaic.subselect",RUNTIME_OBJECT_MISSING);
+			throw(MAL, "mosaic.select",RUNTIME_OBJECT_MISSING);
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mosaic.select", RUNTIME_OBJECT_MISSING);
 	}
 
 	// accumulator for the oids
@@ -825,7 +825,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( bn == NULL){
 		GDKfree(task);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mosaic.select", RUNTIME_OBJECT_MISSING);
 	}
 	task->lb = (oid*) Tloc(bn,0);
 
@@ -837,7 +837,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			GDKfree(task);
-			throw(MAL, "mosaic.subselect", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "mosaic.select", RUNTIME_OBJECT_MISSING);
 		}
 		task->cl = (oid*) Tloc(cand, 0);
 		task->n = BATcount(cand);
@@ -870,29 +870,29 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			MOSsubselect_runlength(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_runlength(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_DICT:
-			MOSsubselect_dictionary(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_dictionary(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_FRAME:
-			MOSsubselect_frame(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_frame(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_DELTA:
-			MOSsubselect_delta(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_delta(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_PREFIX:
-			MOSsubselect_prefix(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_prefix(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_LINEAR:
-			MOSsubselect_linear(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_linear(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_CALENDAR:
-			MOSsubselect_calendar(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_calendar(cntxt,task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_RAW:
 		default:
-			MOSsubselect_raw(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_raw(cntxt,task,low,hgh,li,hi,anti);
 		}
 	}
 	// derive the filling
@@ -909,7 +909,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx;
 	bat *cid =0,  *ret, *bid;
@@ -935,27 +935,27 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( !isCompressed(*bid)){
 		if( cid)
-			return ALGthetasubselect2(ret,bid,cid,low, (const char **)oper);
+			return ALGthetaselect2(ret,bid,cid,low, (const char **)oper);
 		else
-			return ALGthetasubselect1(ret,bid,low, (const char **)oper);
+			return ALGthetaselect1(ret,bid,low, (const char **)oper);
 	}
 	
 	b = BATdescriptor(*bid);
 	if( b == NULL)
-		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mosaic.thetaselect", RUNTIME_OBJECT_MISSING);
 	// determine the elements in the compressed structure
 
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mosaic.thetaselect", RUNTIME_OBJECT_MISSING);
 	}
 
 	// accumulator for the oids
 	bn = COLnew((oid)0, TYPE_oid, BATcount(b), TRANSIENT);
 	if( bn == NULL){
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mosaic.thetaselect", RUNTIME_OBJECT_MISSING);
 	}
 	task->lb = (oid*) Tloc(bn,0);
 
@@ -967,7 +967,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			GDKfree(task);
-			throw(MAL, "mosaic.thetasubselect", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "mosaic.thetaselect", RUNTIME_OBJECT_MISSING);
 		}
 		task->cl = (oid*) Tloc(cand, 0);
 		task->n = BATcount(cand);
@@ -999,29 +999,29 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			MOSthetasubselect_runlength(cntxt,task,low,*oper);
+			MOSthetaselect_runlength(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_DELTA:
-			MOSthetasubselect_delta(cntxt,task,low,*oper);
+			MOSthetaselect_delta(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_PREFIX:
-			MOSthetasubselect_prefix(cntxt,task,low,*oper);
+			MOSthetaselect_prefix(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_LINEAR:
-			MOSthetasubselect_linear(cntxt,task,low,*oper);
+			MOSthetaselect_linear(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_DICT:
-			MOSthetasubselect_dictionary(cntxt,task,low,*oper);
+			MOSthetaselect_dictionary(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_FRAME:
-			MOSthetasubselect_frame(cntxt,task,low,*oper);
+			MOSthetaselect_frame(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_CALENDAR:
-			MOSthetasubselect_calendar(cntxt,task,low,*oper);
+			MOSthetaselect_calendar(cntxt,task,low,*oper);
 			break;
 		case MOSAIC_RAW:
 		default:
-			MOSthetasubselect_raw(cntxt,task,low,*oper);
+			MOSthetaselect_raw(cntxt,task,low,*oper);
 		}
 	}
 	// derive the filling
@@ -1172,7 +1172,7 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-MOSsubjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *ret2,*lid,*rid, *sl, *sr;
 	int part, nrofparts;
@@ -1197,7 +1197,7 @@ MOSsubjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sl = (bat*) getArgReference(stk,pci,4) ;
 	sr = (bat*) getArgReference(stk,pci,5);
 	if( (!isCompressed(*lid) && !isCompressed(*rid)) || (*sl != bat_nil || *sr != bat_nil)) 
-		return ALGsubjoin(ret,ret2,lid,rid,sl,sr,nil_matches,estimate);
+		return ALGjoin(ret,ret2,lid,rid,sl,sr,nil_matches,estimate);
 
 	bl = BATdescriptor(*lid);
 	if( bl == NULL)
@@ -1265,28 +1265,28 @@ MOSsubjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->blk )
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			MOSsubjoin_runlength(cntxt, task);
+			MOSjoin_runlength(cntxt, task);
 			break;
 		case MOSAIC_DICT:
-			MOSsubjoin_dictionary(cntxt, task);
+			MOSjoin_dictionary(cntxt, task);
 			break;
 		case MOSAIC_FRAME:
-			MOSsubjoin_frame(cntxt, task);
+			MOSjoin_frame(cntxt, task);
 			break;
 		case MOSAIC_DELTA:
-			MOSsubjoin_delta(cntxt, task);
+			MOSjoin_delta(cntxt, task);
 			break;
 		case MOSAIC_PREFIX:
-			MOSsubjoin_prefix(cntxt, task);
+			MOSjoin_prefix(cntxt, task);
 			break;
 		case MOSAIC_LINEAR:
-			MOSsubjoin_linear(cntxt, task);
+			MOSjoin_linear(cntxt, task);
 			break;
 		case MOSAIC_CALENDAR:
-			MOSsubjoin_calendar(cntxt, task);
+			MOSjoin_calendar(cntxt, task);
 			break;
 		case MOSAIC_RAW:
-			MOSsubjoin_raw(cntxt, task);
+			MOSjoin_raw(cntxt, task);
 			break;
 		default:
 			assert(0);

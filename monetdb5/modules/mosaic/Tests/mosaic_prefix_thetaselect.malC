@@ -1,0 +1,41 @@
+b:= bat.new(:int);
+bat.append(b,50);
+bat.append(b,51);
+bat.append(b,51);
+bat.append(b,51);
+bat.append(b,51);
+bat.append(b,51);
+bat.append(b,51);
+bat.append(b,60);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,255);
+bat.append(b,256);
+bat.append(b,256);
+bat.append(b,256);
+bat.append(b,256);
+bat.append(b,256);
+bat.append(b,255);
+bat.append(b,255);
+bat.append(b,255);
+bat.append(b,255);
+bat.append(b,255);
+
+base:= algebra.copy(b);
+mosaic.compress(b,"prefix");
+
+s:= algebra.thetaselect(base,52,"<");
+io.print(s);
+xs:= mosaic.thetaselect(b,52,"<");
+io.print(xs);
+
+s:= algebra.thetaselect(base,60,"<=");
+io.print(s);
+xs:= mosaic.thetaselect(b,60,"<=");
+io.print(xs);
+

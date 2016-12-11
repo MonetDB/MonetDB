@@ -40,8 +40,8 @@ mal_export void MOSskip_calendar(Client cntxt, MOStask task);
 mal_export flt  MOSestimate_calendar(Client cntxt, MOStask task);
 mal_export void MOScompress_calendar(Client cntxt, MOStask task);
 mal_export void MOSdecompress_calendar(Client cntxt, MOStask task);
-mal_export str MOSsubselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mal_export str MOSthetasubselect_calendar(Client cntxt,  MOStask task, void *val, str oper);
+mal_export str MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper);
 mal_export str MOSprojection_calendar(Client cntxt,  MOStask task);
-mal_export str MOSsubjoin_calendar(Client cntxt,  MOStask task);
+mal_export str MOSjoin_calendar(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_TEMPORAL_ */

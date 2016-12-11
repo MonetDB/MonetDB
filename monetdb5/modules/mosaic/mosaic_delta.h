@@ -36,8 +36,8 @@ mal_export void MOSskip_delta(Client cntxt, MOStask task);
 mal_export flt  MOSestimate_delta(Client cntxt, MOStask task);
 mal_export void MOScompress_delta(Client cntxt, MOStask task);
 mal_export void MOSdecompress_delta(Client cntxt, MOStask task);
-mal_export str MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mal_export str MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper);
+mal_export str MOSselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetaselect_delta(Client cntxt,  MOStask task, void *val, str oper);
 mal_export str MOSprojection_delta(Client cntxt,  MOStask task);
-mal_export str MOSsubjoin_delta(Client cntxt,  MOStask task);
+mal_export str MOSjoin_delta(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_DELTA_ */

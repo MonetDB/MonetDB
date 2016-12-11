@@ -1,0 +1,77 @@
+# Compression of noncompressable column
+
+b:= bat.new(:int);
+bat.append(b,50);
+bat.append(b,19531015);
+bat.append(b,9);
+b:= bat.append(b,b);
+base:= algebra.copy(b);
+
+io.print(base);
+mosaic.compress(b,"raw");
+
+s:= algebra.thetaselect(base,50,"<");
+io.print(s);
+xs:= mosaic.thetaselect(b,50,"<");
+io.print(xs);
+
+s:= algebra.thetaselect(base,50,"<=");
+io.print(s);
+xs:= mosaic.thetaselect(b,50,"<=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,50,">");
+io.print(s);
+xs:= mosaic.thetaselect(b,50,">");
+io.print(xs);
+
+s:= algebra.thetaselect(base,50,">=");
+io.print(s);
+xs:= mosaic.thetaselect(b,50,">=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,50,"==");
+io.print(s);
+xs:= mosaic.thetaselect(b,50,"==");
+io.print(xs);
+
+s:= algebra.thetaselect(base,50,"!=");
+io.print(s);
+xs:= mosaic.thetaselect(b,50,"!=");
+io.print(xs);
+
+c:= bat.new(:oid);
+bat.append(c,0@0);
+bat.append(c,2@0);
+io.print(c);
+
+s:= algebra.thetaselect(base,c,50,"<");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,50,"<");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,50,"<=");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,50,"<=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,50,">");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,50,">");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,50,">=");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,50,">=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,50,"==");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,50,"==");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,50,"!=");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,50,"!=");
+io.print(xs);
+

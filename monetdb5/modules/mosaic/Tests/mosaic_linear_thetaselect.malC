@@ -1,0 +1,58 @@
+# Linear range compressions
+
+b:= bat.new(:int);
+bat.append(b,0);
+bat.append(b,2);
+bat.append(b,4);
+bat.append(b,6);
+bat.append(b,8);
+bat.append(b,10);
+bat.append(b,1);
+bat.append(b,4);
+bat.append(b,7);
+bat.append(b,10);
+bat.append(b,13);
+bat.append(b,16);
+base:= algebra.copy(b);
+
+io.print(base);
+mosaic.compress(b,"linear");
+#mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
+
+c:= bat.new(:oid);
+bat.append(c,0@0);
+bat.append(c,3@0);
+io.print(c);
+
+s:= algebra.thetaselect(base,c,4,"<");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,4,"<");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,4,"<=");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,4,"<=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,4,">");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,4,">");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,4,">=");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,4,">=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,4,"==");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,4,"==");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,4,"!=");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,4,"!=");
+io.print(xs);
+

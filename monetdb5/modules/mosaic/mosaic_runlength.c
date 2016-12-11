@@ -318,7 +318,7 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 // perform relational algebra operators over non-compressed chunks
 // They are bound by an oid range and possibly a candidate list
 
-#define  subselect_runlength(TPE) \
+#define  select_runlength(TPE) \
 { 	TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 \
 	if( !*anti){\
@@ -384,7 +384,7 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 }
 
 str
-MOSsubselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
+MOSselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
 	int cmp;
 	BUN first,last;
@@ -401,15 +401,15 @@ MOSsubselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *l
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: subselect_runlength(bit); break;
-	case TYPE_bte: subselect_runlength(bte); break;
-	case TYPE_sht: subselect_runlength(sht); break;
-	case TYPE_lng: subselect_runlength(lng); break;
-	case TYPE_oid: subselect_runlength(oid); break;
-	case TYPE_flt: subselect_runlength(flt); break;
-	case TYPE_dbl: subselect_runlength(dbl); break;
+	case TYPE_bit: select_runlength(bit); break;
+	case TYPE_bte: select_runlength(bte); break;
+	case TYPE_sht: select_runlength(sht); break;
+	case TYPE_lng: select_runlength(lng); break;
+	case TYPE_oid: select_runlength(oid); break;
+	case TYPE_flt: select_runlength(flt); break;
+	case TYPE_dbl: select_runlength(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: subselect_runlength(hge); break;
+	case TYPE_hge: select_runlength(hge); break;
 #endif
 	case TYPE_int:
 	// Expanded MOSselect_runlength for debugging
@@ -488,18 +488,18 @@ MOSsubselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *l
 		break;
 	default:
 		if( task->type == TYPE_date)
-			subselect_runlength(date); 
+			select_runlength(date); 
 		if( task->type == TYPE_daytime)
-			subselect_runlength(daytime); 
+			select_runlength(daytime); 
 		if( task->type == TYPE_timestamp)
-			subselect_runlength(lng); 
+			select_runlength(lng); 
 	}
 	MOSadvance_runlength(cntxt,task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
 
-#define thetasubselect_runlength(TPE)\
+#define thetaselect_runlength(TPE)\
 { 	TPE low,hgh,*v;\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
@@ -540,7 +540,7 @@ MOSsubselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *l
 }
 
 str
-MOSthetasubselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -558,15 +558,15 @@ MOSthetasubselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: thetasubselect_runlength(bit); break;
-	case TYPE_bte: thetasubselect_runlength(bte); break;
-	case TYPE_sht: thetasubselect_runlength(sht); break;
-	case TYPE_lng: thetasubselect_runlength(lng); break;
-	case TYPE_oid: thetasubselect_runlength(oid); break;
-	case TYPE_flt: thetasubselect_runlength(flt); break;
-	case TYPE_dbl: thetasubselect_runlength(dbl); break;
+	case TYPE_bit: thetaselect_runlength(bit); break;
+	case TYPE_bte: thetaselect_runlength(bte); break;
+	case TYPE_sht: thetaselect_runlength(sht); break;
+	case TYPE_lng: thetaselect_runlength(lng); break;
+	case TYPE_oid: thetaselect_runlength(oid); break;
+	case TYPE_flt: thetaselect_runlength(flt); break;
+	case TYPE_dbl: thetaselect_runlength(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_runlength(hge); break;
+	case TYPE_hge: thetaselect_runlength(hge); break;
 #endif
 	case TYPE_int:
 		{ 	int low,hgh,*v;
@@ -697,7 +697,7 @@ MOSprojection_runlength(Client cntxt,  MOStask task)
 }
 
 str
-MOSsubjoin_runlength(Client cntxt,  MOStask task)
+MOSjoin_runlength(Client cntxt,  MOStask task)
 {
 	BUN n,first,last;
 	oid o, oo;

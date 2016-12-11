@@ -7,7 +7,7 @@ b0 := bat.new(:daytime);
 bat.append(b0, x0);
 bat.append(b0, x1);
 bat.append(b0, x2);
-b2 := algebra.subsort(b0,false,false);
+b2 := algebra.sort(b0,false,false);
 
 b1 := bat.new(:daytime);
 bat.append(b1, x0);

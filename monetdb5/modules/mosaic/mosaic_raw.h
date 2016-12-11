@@ -1,6 +1,6 @@
 
 /*
- * The contents of this file are subject to the MonetDB Public License
+ * The contents of this file are ject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
@@ -35,8 +35,8 @@ mal_export void MOSadvance_raw(Client cntxt, MOStask task);
 mal_export void MOSskip_raw(Client cntxt, MOStask task);
 mal_export void MOScompress_raw(Client cntxt, MOStask task);
 mal_export void MOSdecompress_raw(Client cntxt, MOStask task);
-mal_export str MOSsubselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mal_export str MOSthetasubselect_raw(Client cntxt,  MOStask task, void *val, str oper);
+mal_export str MOSselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetaselect_raw(Client cntxt,  MOStask task, void *val, str oper);
 mal_export str MOSprojection_raw(Client cntxt,  MOStask task);
-mal_export str MOSsubjoin_raw(Client cntxt,  MOStask task);
+mal_export str MOSjoin_raw(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_RAW_ */

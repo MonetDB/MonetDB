@@ -11,7 +11,7 @@ s0:= algebra.projection(m0,s);
 a:= inspect.getAddresses();
 a0:= algebra.projection(m0,a);
 
-(fv,forder):= algebra.subsort(f0,false,true);
+(fv,forder):= algebra.sort(f0,false,true);
 
 io.print(fv,k0,m1,s0,a0);
 

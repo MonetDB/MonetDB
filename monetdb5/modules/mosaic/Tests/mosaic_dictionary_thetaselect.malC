@@ -1,0 +1,81 @@
+# Compression of noncompressable column
+b:= bat.new(:timestamp);
+bat.append(b,"2014-08-14 12:00:00":timestamp);
+bat.append(b,"2014-08-14 12:00:00":timestamp);
+bat.append(b,"2014-08-14 12:01:00":timestamp);
+bat.append(b,"2014-08-14 12:02:00":timestamp);
+bat.append(b,"2014-08-14 12:00:00":timestamp);
+b:= bat.append(b,b);
+base:= algebra.copy(b);
+
+io.print(base);
+mosaic.compress(b,"dictionary test 10");
+#mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
+
+s:= algebra.thetaselect(base,"2014-08-14 12:01:00":timestamp,"<");
+io.print(s);
+xs:= mosaic.thetaselect(b,"2014-08-14 12:01:00":timestamp,"<");
+io.print(xs);
+
+s:= algebra.thetaselect(base,"2014-08-14 12:01:00":timestamp,"<=");
+io.print(s);
+xs:= mosaic.thetaselect(b,"2014-08-14 12:01:00":timestamp,"<=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,"2014-08-14 12:01:00":timestamp,">");
+io.print(s);
+xs:= mosaic.thetaselect(b,"2014-08-14 12:01:00":timestamp,">");
+io.print(xs);
+
+s:= algebra.thetaselect(base,"2014-08-14 12:01:00":timestamp,">=");
+io.print(s);
+xs:= mosaic.thetaselect(b,"2014-08-14 12:01:00":timestamp,">=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,"2014-08-14 12:01:00":timestamp,"==");
+io.print(s);
+xs:= mosaic.thetaselect(b,"2014-08-14 12:01:00":timestamp,"==");
+io.print(xs);
+
+s:= algebra.thetaselect(base,"2014-08-14 12:01:00":timestamp,"!=");
+io.print(s);
+xs:= mosaic.thetaselect(b,"2014-08-14 12:01:00":timestamp,"!=");
+io.print(xs);
+
+c:= bat.new(:oid);
+bat.append(c,0@0);
+bat.append(c,3@0);
+io.print(c);
+
+s:= algebra.thetaselect(base,c,"2014-08-14 12:01:00":timestamp,"<");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,"2014-08-14 12:01:00":timestamp,"<");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,"2014-08-14 12:01:00":timestamp,"<=");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,"2014-08-14 12:01:00":timestamp,"<=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,"2014-08-14 12:01:00":timestamp,">");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,"2014-08-14 12:01:00":timestamp,">");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,"2014-08-14 12:01:00":timestamp,">=");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,"2014-08-14 12:01:00":timestamp,">=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,"2014-08-14 12:01:00":timestamp,"==");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,"2014-08-14 12:01:00":timestamp,"==");
+io.print(xs);
+
+s:= algebra.thetaselect(base,c,"2014-08-14 12:01:00":timestamp,"!=");
+io.print(s);
+xs:= mosaic.thetaselect(b,c,"2014-08-14 12:01:00":timestamp,"!=");
+io.print(xs);
+

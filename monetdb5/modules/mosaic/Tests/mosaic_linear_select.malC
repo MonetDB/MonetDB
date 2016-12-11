@@ -1,0 +1,62 @@
+# Linear range compressions
+
+b:= bat.new(:int);
+bat.append(b,0);
+bat.append(b,2);
+bat.append(b,4);
+bat.append(b,6);
+bat.append(b,8);
+bat.append(b,10);
+bat.append(b,1);
+bat.append(b,4);
+bat.append(b,7);
+bat.append(b,10);
+bat.append(b,13);
+bat.append(b,16);
+base:= algebra.copy(b);
+
+io.print(base);
+mosaic.compress(b,"linear");
+#mosaic.dump(b);
+mosaic.decompress(b);
+io.print(b);
+
+s:= algebra.select(base,0,4,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,0,4,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,0,4,false,true,false);
+io.print(s);
+xs:= mosaic.select(b,0,4,false,true,false);
+io.print(xs);
+
+s:= algebra.select(base,0,4,true,false,false);
+io.print(s);
+xs:= mosaic.select(b,0,4,true,false,false);
+io.print(xs);
+
+s:= algebra.select(base,0,4,true,true,false);
+io.print(s);
+xs:= mosaic.select(b,0,4,true,true,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,4,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,nil:int,4,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,4,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,4,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,nil:int,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,nil:int,false,false,true);
+io.print(s);
+xs:= mosaic.select(b,nil:int,nil:int,false,false,true);
+io.print(xs);

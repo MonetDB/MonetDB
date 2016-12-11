@@ -665,7 +665,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 // perform relational algebra operators over non-compressed chunks
 // They are bound by an oid range and possibly a candidate list
 
-#define  subselect_prefix(TPE, TPE2) \
+#define  select_prefix(TPE, TPE2) \
 {	TPE2 *dst =  (TPE2*)  MOScodevector(task);\
 	TPE2 mask = *dst++, val = *dst++,v;\
 	TPE value;\
@@ -747,7 +747,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 }
 
 str
-MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
+MOSselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
 	int bits,cmp;
 	BUN i = 0,first,last;
@@ -764,30 +764,30 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	o = task->lb;
 
 	switch(ATOMstorage(task->type)){
-	case TYPE_bte: subselect_prefix(bte,unsigned char); break;
-	case TYPE_sht: subselect_prefix(sht,unsigned short); break;
-	case TYPE_int: subselect_prefix(int,unsigned int); break;
-	case TYPE_lng: subselect_prefix(lng,ulng); break;
-	case TYPE_oid: subselect_prefix(oid,ulng); break;
-	case TYPE_flt: subselect_prefix(flt,unsigned int); break;
-	case TYPE_dbl: subselect_prefix(dbl,ulng); break;
+	case TYPE_bte: select_prefix(bte,unsigned char); break;
+	case TYPE_sht: select_prefix(sht,unsigned short); break;
+	case TYPE_int: select_prefix(int,unsigned int); break;
+	case TYPE_lng: select_prefix(lng,ulng); break;
+	case TYPE_oid: select_prefix(oid,ulng); break;
+	case TYPE_flt: select_prefix(flt,unsigned int); break;
+	case TYPE_dbl: select_prefix(dbl,ulng); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: subselect_prefix(hge,unsigned long long); break;
+	case TYPE_hge: select_prefix(hge,unsigned long long); break;
 #endif
 	default:
 		if( task->type == TYPE_date)
-			subselect_prefix(date,unsigned int); 
+			select_prefix(date,unsigned int); 
 		if( task->type == TYPE_daytime)
-			subselect_prefix(daytime,unsigned int); 
+			select_prefix(daytime,unsigned int); 
 		if( task->type == TYPE_timestamp)
-			subselect_prefix(lng,ulng); 
+			select_prefix(lng,ulng); 
 	}
 	MOSadvance_prefix(cntxt,task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
 
-#define thetasubselect_prefix(TPE, TPE2)\
+#define thetaselect_prefix(TPE, TPE2)\
 { 	TPE low,hgh;\
     TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
     TPE2 mask = *dst++, val = *dst++,v;\
@@ -836,7 +836,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 }
 
 str
-MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
+MOSthetaselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 {
 	oid *o;
 	int bits, anti=0;
@@ -856,15 +856,15 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 	o = task->lb;
 
 	switch(ATOMstorage(task->type)){
-	case TYPE_bte: thetasubselect_prefix(bte, unsigned char); break;
-	case TYPE_sht: thetasubselect_prefix(sht, unsigned short); break;
-	case TYPE_int: thetasubselect_prefix(int, unsigned int); break;
-	case TYPE_lng: thetasubselect_prefix(lng, ulng); break;
-	case TYPE_oid: thetasubselect_prefix(oid, ulng); break;
-	case TYPE_flt: thetasubselect_prefix(flt, unsigned int); break;
-	case TYPE_dbl: thetasubselect_prefix(dbl, ulng); break;
+	case TYPE_bte: thetaselect_prefix(bte, unsigned char); break;
+	case TYPE_sht: thetaselect_prefix(sht, unsigned short); break;
+	case TYPE_int: thetaselect_prefix(int, unsigned int); break;
+	case TYPE_lng: thetaselect_prefix(lng, ulng); break;
+	case TYPE_oid: thetaselect_prefix(oid, ulng); break;
+	case TYPE_flt: thetaselect_prefix(flt, unsigned int); break;
+	case TYPE_dbl: thetaselect_prefix(dbl, ulng); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_prefix(hge, unsigned long long); break;
+	case TYPE_hge: thetaselect_prefix(hge, unsigned long long); break;
 #endif
 	}
 	MOSskip_prefix(cntxt,task);
@@ -970,7 +970,7 @@ break;
 }
 
 str
-MOSsubjoin_prefix(Client cntxt,  MOStask task)
+MOSjoin_prefix(Client cntxt,  MOStask task)
 {
 	int bits;
 	BUN i= 0,n,first,last;

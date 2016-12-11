@@ -272,7 +272,7 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 //  to apply the operator to a DELTA compressed chunk
 
 	
-#define subselect_delta(TPE) {\
+#define select_delta(TPE) {\
 		TPE val= * (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 		task->dst = MOScodevector(task)  + sizeof(TYPE);\
 		if( !*anti){\
@@ -338,7 +338,7 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	}
 
 str
-MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN first,last;
@@ -356,11 +356,11 @@ MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	o = task->lb;
 
 	switch(task->type){
-	case TYPE_sht: subselect_delta(sht); break;
-	case TYPE_lng: subselect_delta(lng); break;
-	case TYPE_oid: subselect_delta(oid); break;
+	case TYPE_sht: select_delta(sht); break;
+	case TYPE_lng: select_delta(lng); break;
+	case TYPE_oid: select_delta(oid); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: subselect_delta(hge); break;
+	case TYPE_hge: select_delta(hge); break;
 #endif
 	case TYPE_int:
 	// Expanded MOSselect_delta for debugging
@@ -439,9 +439,9 @@ MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 		break;
 	default:
 		if( task->type == TYPE_daytime)
-			subselect_delta(daytime);
+			select_delta(daytime);
 		if( task->type == TYPE_date)
-			subselect_delta(date);
+			select_delta(date);
 		if( task->type == TYPE_timestamp)
 			{ 	lng val= *(lng*) (((char*) task->blk) + MosaicBlkSize);
 				int lownil = timestamp_isnil(*(timestamp*)low);
@@ -514,7 +514,7 @@ MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	return MAL_SUCCEED;
 }
 
-#define thetasubselect_delta(TPE)\
+#define thetaselect_delta(TPE)\
 { 	TPE low,hgh, v;\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
@@ -555,7 +555,7 @@ MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 } 
 
 str
-MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -573,12 +573,12 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(task->type){
-	case TYPE_sht: thetasubselect_delta(sht); break;
-	case TYPE_int: thetasubselect_delta(int); break;
-	case TYPE_lng: thetasubselect_delta(lng); break;
-	case TYPE_oid: thetasubselect_delta(oid); break;
+	case TYPE_sht: thetaselect_delta(sht); break;
+	case TYPE_int: thetaselect_delta(int); break;
+	case TYPE_lng: thetaselect_delta(lng); break;
+	case TYPE_oid: thetaselect_delta(oid); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_delta(hge); break;
+	case TYPE_hge: thetaselect_delta(hge); break;
 #endif
 /*
 	case TYPE_int:
@@ -624,11 +624,11 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 */
 	default:
 			if( task->type == TYPE_daytime)
-				thetasubselect_delta(daytime); 
+				thetaselect_delta(daytime); 
 			if( task->type == TYPE_date)
-				thetasubselect_delta(date); 
+				thetaselect_delta(date); 
 			if( task->type == TYPE_timestamp)
-				thetasubselect_delta(lng); 
+				thetaselect_delta(lng); 
 		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
@@ -729,7 +729,7 @@ MOSprojection_delta(Client cntxt,  MOStask task)
 }
 
 str
-MOSsubjoin_delta(Client cntxt,  MOStask task)
+MOSjoin_delta(Client cntxt,  MOStask task)
 {
 	BUN n, first, last;
 	oid o, oo;

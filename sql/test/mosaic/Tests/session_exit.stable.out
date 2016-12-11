@@ -34,9 +34,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 89 # length
+% 88 # length
 function user.s4_1():void;
-    X_59:void := querylog.define("explain select * from tmp3;","sequential_pipe",40:int);
+    X_0:void := querylog.define("explain select * from tmp3;","sequential_pipe",39:int);
     X_21 := bat.new(nil:str);
     X_28 := bat.append(X_21,"sys.tmp3");
     X_36 := bat.append(X_28,"sys.tmp3");
@@ -195,9 +195,9 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 89 # length
+% 88 # length
 function user.s12_1():void;
-    X_59:void := querylog.define("explain select * from tmp3;","sequential_pipe",40:int);
+    X_0:void := querylog.define("explain select * from tmp3;","sequential_pipe",39:int);
     X_21 := bat.new(nil:str);
     X_28 := bat.append(X_21,"sys.tmp3");
     X_36 := bat.append(X_28,"sys.tmp3");
@@ -373,9 +373,9 @@ end user.s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 89 # length
+% 88 # length
 function user.s26_1():void;
-    X_59:void := querylog.define("explain select * from tmp3;","sequential_pipe",40:int);
+    X_0:void := querylog.define("explain select * from tmp3;","sequential_pipe",39:int);
     X_21 := bat.new(nil:str);
     X_28 := bat.append(X_21,"sys.tmp3");
     X_36 := bat.append(X_28,"sys.tmp3");

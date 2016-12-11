@@ -378,7 +378,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 // perform relational algebra operators over non-compressed chunks
 // They are bound by an oid range and possibly a candidate list
 
-#define subselect_frame(TPE) {\
+#define select_frame(TPE) {\
     TPE frame = *(TPE*)MOScodevector(task);\
 	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	if( !*anti){\
@@ -450,7 +450,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 }
 
 str
-MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN i, first,last;
@@ -471,15 +471,15 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: subselect_frame(bte); break;
-	case TYPE_sht: subselect_frame(sht); break;
-	case TYPE_int: subselect_frame(int); break;
-	case TYPE_lng: subselect_frame(lng); break;
-	case TYPE_oid: subselect_frame(oid); break;
-	case TYPE_flt: subselect_frame(flt); break;
-	case TYPE_dbl: subselect_frame(dbl); break;
+	case TYPE_bte: select_frame(bte); break;
+	case TYPE_sht: select_frame(sht); break;
+	case TYPE_int: select_frame(int); break;
+	case TYPE_lng: select_frame(lng); break;
+	case TYPE_oid: select_frame(oid); break;
+	case TYPE_flt: select_frame(flt); break;
+	case TYPE_dbl: select_frame(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: subselect_frame(hge); break;
+	case TYPE_hge: select_frame(hge); break;
 #endif
 	}
 	MOSskip_frame(cntxt,task);
@@ -487,7 +487,7 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	return MAL_SUCCEED;
 }
 
-#define thetasubselect_frame(TPE)\
+#define thetaselect_frame(TPE)\
 { 	TPE low,hgh;\
 	TPE frame = *(TPE*) MOScodevector(task);\
 	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
@@ -528,7 +528,7 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 } 
 
 str
-MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -549,15 +549,15 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: thetasubselect_frame(bte); break;
-	case TYPE_sht: thetasubselect_frame(sht); break;
-	case TYPE_lng: thetasubselect_frame(lng); break;
-	case TYPE_int: thetasubselect_frame(int); break;
-	case TYPE_oid: thetasubselect_frame(oid); break;
-	case TYPE_flt: thetasubselect_frame(flt); break;
-	case TYPE_dbl: thetasubselect_frame(dbl); break;
+	case TYPE_bte: thetaselect_frame(bte); break;
+	case TYPE_sht: thetaselect_frame(sht); break;
+	case TYPE_lng: thetaselect_frame(lng); break;
+	case TYPE_int: thetaselect_frame(int); break;
+	case TYPE_oid: thetaselect_frame(oid); break;
+	case TYPE_flt: thetaselect_frame(flt); break;
+	case TYPE_dbl: thetaselect_frame(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_frame(hge); break;
+	case TYPE_hge: thetaselect_frame(hge); break;
 #endif
 	}
 	MOSskip_frame(cntxt,task);
@@ -625,7 +625,7 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 }
 
 str
-MOSsubjoin_frame(Client cntxt,  MOStask task)
+MOSjoin_frame(Client cntxt,  MOStask task)
 {
 	BUN i,n,limit;
 	oid o, oo;

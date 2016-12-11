@@ -210,7 +210,7 @@ MOSdecompress_raw(Client cntxt, MOStask task)
 //  to apply the operator to a RAW compressed chunk
 
 	
-#define subselect_raw(TPE) {\
+#define select_raw(TPE) {\
 		TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 		if( !*anti){\
 			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
@@ -275,7 +275,7 @@ MOSdecompress_raw(Client cntxt, MOStask task)
 	}
 
 str
-MOSsubselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN first,last;
@@ -293,15 +293,15 @@ MOSsubselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit
 	o = task->lb;
 
 	switch(task->type){
-	case TYPE_bit: subselect_raw(bit); break;
-	case TYPE_bte: subselect_raw(bte); break;
-	case TYPE_sht: subselect_raw(sht); break;
-	case TYPE_oid: subselect_raw(oid); break;
-	case TYPE_lng: subselect_raw(lng); break;
-	case TYPE_flt: subselect_raw(flt); break;
-	case TYPE_dbl: subselect_raw(dbl); break;
+	case TYPE_bit: select_raw(bit); break;
+	case TYPE_bte: select_raw(bte); break;
+	case TYPE_sht: select_raw(sht); break;
+	case TYPE_oid: select_raw(oid); break;
+	case TYPE_lng: select_raw(lng); break;
+	case TYPE_flt: select_raw(flt); break;
+	case TYPE_dbl: select_raw(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: subselect_raw(hge); break;
+	case TYPE_hge: select_raw(hge); break;
 #endif
 	case TYPE_int:
 	// Expanded MOSselect_raw for debugging
@@ -379,9 +379,9 @@ MOSsubselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit
 		}
 		default:
 			if( task->type == TYPE_date)
-				subselect_raw(date); 
+				select_raw(date); 
 			if( task->type == TYPE_daytime)
-				subselect_raw(daytime); 
+				select_raw(daytime); 
 			
 			if( task->type == TYPE_timestamp)
 				{ 	lng *val= (lng*) (((char*) task->blk) + MosaicBlkSize);
@@ -455,7 +455,7 @@ MOSsubselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit
 	return MAL_SUCCEED;
 }
 
-#define thetasubselect_raw(TPE)\
+#define thetaselect_raw(TPE)\
 { 	TPE low,hgh, *v;\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
@@ -495,7 +495,7 @@ MOSsubselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit
 } 
 
 str
-MOSthetasubselect_raw(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_raw(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -515,15 +515,15 @@ MOSthetasubselect_raw(Client cntxt,  MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: thetasubselect_raw(bit); break;
-	case TYPE_bte: thetasubselect_raw(bte); break;
-	case TYPE_sht: thetasubselect_raw(sht); break;
-	case TYPE_oid: thetasubselect_raw(oid); break;
-	case TYPE_lng: thetasubselect_raw(lng); break;
-	case TYPE_flt: thetasubselect_raw(flt); break;
-	case TYPE_dbl: thetasubselect_raw(dbl); break;
+	case TYPE_bit: thetaselect_raw(bit); break;
+	case TYPE_bte: thetaselect_raw(bte); break;
+	case TYPE_sht: thetaselect_raw(sht); break;
+	case TYPE_oid: thetaselect_raw(oid); break;
+	case TYPE_lng: thetaselect_raw(lng); break;
+	case TYPE_flt: thetaselect_raw(flt); break;
+	case TYPE_dbl: thetaselect_raw(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_raw(hge); break;
+	case TYPE_hge: thetaselect_raw(hge); break;
 #endif
 	case TYPE_int:
 		{ 	int low,hgh, *v;
@@ -650,7 +650,7 @@ MOSprojection_raw(Client cntxt,  MOStask task)
 }
 
 str
-MOSsubjoin_raw(Client cntxt,  MOStask task)
+MOSjoin_raw(Client cntxt,  MOStask task)
 {
 	BUN n,first,last;
 	oid o, oo;

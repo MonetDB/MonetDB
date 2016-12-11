@@ -1,0 +1,145 @@
+stdout of test 'mosaic_linear_thetaselect` in directory 'monetdb5/modules/mosaic` itself:
+
+
+# 15:12:51 >  
+# 15:12:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32601" "--set" "mapi_usock=/var/tmp/mtest-15971/.s.monetdb.32601" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_linear_thetasubselect.mal"
+# 15:12:51 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:32601/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15971/.s.monetdb.32601
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:35 >  
+# 15:01:35 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:35 >  
+
+#io.print(base);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	2  ]
+[ 2@0,	4  ]
+[ 3@0,	6  ]
+[ 4@0,	8  ]
+[ 5@0,	10  ]
+[ 6@0,	1  ]
+[ 7@0,	4  ]
+[ 8@0,	7  ]
+[ 9@0,	10  ]
+[ 10@0,	13  ]
+[ 11@0,	16  ]
+#estimate linear 6 elm 33 perc
+#header block f5a0b0 version 20140808
+#index top 1
+#[0] 6 96
+#estimate linear 6 elm 33 perc
+#header block f5a0b0 version 20140808
+#index top 2
+#[0] 6 96
+#[1] 12 144
+#blk  type zone todo 0
+#wins 0 0 0 0 2 0 
+#elms 0 0 0 0 12 0 
+#time 0 0 0 0 498156 0 
+#perc 0 0 0 0 100 0 
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0  ]
+[ 1@0,	2  ]
+[ 2@0,	4  ]
+[ 3@0,	6  ]
+[ 4@0,	8  ]
+[ 5@0,	10  ]
+[ 6@0,	1  ]
+[ 7@0,	4  ]
+[ 8@0,	7  ]
+[ 9@0,	10  ]
+[ 10@0,	13  ]
+[ 11@0,	16  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	3@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0  ]
+[ 1@0,	3@0  ]
+
+# 15:12:51 >  
+# 15:12:51 >  "Done."
+# 15:12:51 >  
+

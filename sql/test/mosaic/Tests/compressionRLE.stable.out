@@ -58,9 +58,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 92 # length
+% 91 # length
 function user.s14_1():void;
-    X_59:void := querylog.define("explain select * from tmp3rle;","sequential_pipe",40:int);
+    X_0:void := querylog.define("explain select * from tmp3rle;","sequential_pipe",39:int);
     X_21 := bat.new(nil:str);
     X_28 := bat.append(X_21,"sys.tmp3rle");
     X_36 := bat.append(X_28,"sys.tmp3rle");
@@ -129,9 +129,9 @@ end user.s14_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 92 # length
+% 91 # length
 function user.s24_1():void;
-    X_27:void := querylog.define("explain select i from tmp3rle;","sequential_pipe",19:int);
+    X_0:void := querylog.define("explain select i from tmp3rle;","sequential_pipe",18:int);
     X_12 := bat.new(nil:str);
     X_19 := bat.append(X_12,"sys.tmp3rle");
     X_14 := bat.new(nil:str);
@@ -175,9 +175,9 @@ end user.s24_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 92 # length
+% 91 # length
 function user.s26_1():void;
-    X_27:void := querylog.define("explain select b from tmp3rle;","sequential_pipe",19:int);
+    X_0:void := querylog.define("explain select b from tmp3rle;","sequential_pipe",18:int);
     X_12 := bat.new(nil:str);
     X_19 := bat.append(X_12,"sys.tmp3rle");
     X_14 := bat.new(nil:str);
@@ -221,9 +221,9 @@ end user.s26_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 92 # length
+% 91 # length
 function user.s28_1():void;
-    X_27:void := querylog.define("explain select f from tmp3rle;","sequential_pipe",19:int);
+    X_0:void := querylog.define("explain select f from tmp3rle;","sequential_pipe",18:int);
     X_12 := bat.new(nil:str);
     X_19 := bat.append(X_12,"sys.tmp3rle");
     X_14 := bat.new(nil:str);
@@ -267,9 +267,9 @@ end user.s28_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 92 # length
+% 91 # length
 function user.s30_1():void;
-    X_27:void := querylog.define("explain select t from tmp3rle;","sequential_pipe",19:int);
+    X_0:void := querylog.define("explain select t from tmp3rle;","sequential_pipe",18:int);
     X_12 := bat.new(nil:str);
     X_19 := bat.append(X_12,"sys.tmp3rle");
     X_14 := bat.new(nil:str);

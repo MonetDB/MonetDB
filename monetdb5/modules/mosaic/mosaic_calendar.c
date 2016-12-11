@@ -355,7 +355,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 // perform relational algebra operators over non-compressed chunks
 // They are bound by an oid range and possibly a candidate list
 
-#define subselect_calendar(TPE,BITS,MASK) {\
+#define select_calendar(TPE,BITS,MASK) {\
 	base = (BitVector) MOScodevector(task);\
 	if( !*anti){\
 		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
@@ -426,7 +426,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 }
 
 str
-MOSsubselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN i, first,last;
@@ -447,7 +447,7 @@ MOSsubselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li
 	o = task->lb;
 
 	if( task->type == TYPE_date){
-		subselect_calendar(int,5,DAYMASK); 
+		select_calendar(int,5,DAYMASK); 
 	}
 	if( task->type == TYPE_daytime){
 	}
@@ -458,7 +458,7 @@ MOSsubselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li
 	return MAL_SUCCEED;
 }
 
-#define thetasubselect_calendar(TPE,BITS,MASK)\
+#define thetaselect_calendar(TPE,BITS,MASK)\
 { 	TPE low,hgh;\
 	base = (BitVector) MOScodevector(task);\
 	low= hgh = TPE##_nil;\
@@ -498,7 +498,7 @@ MOSsubselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li
 } 
 
 str
-MOSthetasubselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -519,7 +519,7 @@ MOSthetasubselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
 	o = task->lb;
 
 	if( task->type == TYPE_date){
-		thetasubselect_calendar(int,5,DAYMASK); 
+		thetaselect_calendar(int,5,DAYMASK); 
 	}
 	if( task->type == TYPE_daytime){
 	}
@@ -587,7 +587,7 @@ MOSprojection_calendar(Client cntxt,  MOStask task)
 }
 
 str
-MOSsubjoin_calendar(Client cntxt,  MOStask task)
+MOSjoin_calendar(Client cntxt,  MOStask task)
 {
 	BUN i,n,limit;
 	oid o, oo;

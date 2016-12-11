@@ -1,0 +1,114 @@
+# Compression of noncompressable column
+
+
+b:= bat.new(:int);
+bat.append(b,50);
+bat.append(b,19531015);
+bat.append(b,9);
+b:= bat.append(b,b);
+base:= algebra.copy(b);
+
+io.print(base);
+mosaic.compress(b,"raw");
+#mosaic.dump(b);
+s:= algebra.select(base,0,50,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,0,50,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,0,50,false,true,false);
+io.print(s);
+xs:= mosaic.select(b,0,50,false,true,false);
+io.print(xs);
+
+s:= algebra.select(base,0,50,true,false,false);
+io.print(s);
+xs:= mosaic.select(b,0,50,true,false,false);
+io.print(xs);
+
+s:= algebra.select(base,0,50,true,true,false);
+io.print(s);
+xs:= mosaic.select(b,0,50,true,true,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,50,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,nil:int,50,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,50,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,50,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,nil:int,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,nil:int,false,false,true);
+io.print(s);
+xs:= mosaic.select(b,nil:int,nil:int,false,false,true);
+io.print(xs);
+
+# using candidatelists
+io.print("candidate stuff");
+c:= bat.new(:oid);
+bat.append(c,2@0);
+bat.append(c,5@0);
+
+s:= algebra.select(base,c,0,50,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,c,0,50,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,c,0,50,false,true,false);
+io.print(s);
+xs:= mosaic.select(b,c,0,50,false,true,false);
+io.print(xs);
+
+s:= algebra.select(base,c,0,50,true,false,false);
+io.print(s);
+xs:= mosaic.select(b,c,0,50,true,false,false);
+io.print(xs);
+
+s:= algebra.select(base,c,0,50,true,true,false);
+io.print(s);
+xs:= mosaic.select(b,c,0,50,true,true,false);
+io.print(xs);
+
+s:= algebra.select(base,c,nil:int,50,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,c,nil:int,50,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,c,50,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,c,50,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,c,nil:int,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,c,nil:int,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,c,nil:int,nil:int,false,false,true);
+io.print(s);
+xs:= mosaic.select(b,c,nil:int,nil:int,false,false,true);
+io.print(xs);
+
+
+io.print("string stuff");
+bstr:= bat.new(:str);
+bat.append(bstr,"the");
+bat.append(bstr,"big");
+bat.append(bstr,"brown");
+bat.append(bstr,"fox");
+
+ystr:= algebra.copy(bstr);
+mosaic.compress(ystr,"raw");
+
+tstr:= algebra.select(bstr,"big","fox",true,true,false);
+io.print(tstr);
+tstr:= mosaic.select(ystr,"big","fox",true,true,false);
+io.print(tstr);

@@ -1,0 +1,49 @@
+b:= bat.new(:int);
+bat.append(b,50);
+bat.append(b,51);
+bat.append(b,51);
+bat.append(b,51);
+bat.append(b,51);
+bat.append(b,51);
+bat.append(b,51);
+bat.append(b,60);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,67);
+bat.append(b,255);
+bat.append(b,256);
+bat.append(b,256);
+bat.append(b,256);
+bat.append(b,256);
+bat.append(b,256);
+bat.append(b,255);
+bat.append(b,255);
+bat.append(b,255);
+bat.append(b,255);
+bat.append(b,255);
+
+mosaic.compress(b,"prefix");
+
+s:= algebra.select(b,60,68,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,60,68,false,false,false);
+io.print(xs);
+
+s:= algebra.select(b,51,62,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,51,62,false,false,false);
+io.print(xs);
+
+s:= algebra.select(b,60,68,true,true,false);
+io.print(s);
+xs:= mosaic.select(b,60,68,true,true,false);
+io.print(xs);
+
+s:= algebra.select(b,51,62,true,true,false);
+io.print(s);
+xs:= mosaic.select(b,51,62,true,true,false);
+io.print(xs);

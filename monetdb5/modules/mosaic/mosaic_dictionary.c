@@ -528,9 +528,9 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 // perform relational algebra operators over non-compressed chunks
 // They are bound by an oid range and possibly a candidate list
 
-#define subselect_dictionary_str(TPE) \
+#define select_dictionary_str(TPE) \
 	throw(MAL,"mosaic.dictionary","TBD");
-#define subselect_dictionary(TPE) {\
+#define select_dictionary(TPE) {\
 	base = (BitVector) MOScodevector(task);\
 	if( !*anti){\
 		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
@@ -601,7 +601,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 }
 
 str
-MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN i, first,last;
@@ -622,22 +622,22 @@ MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *
 	o = task->lb;
 
 	switch(ATOMstorage(task->type)){
-	case TYPE_bte: subselect_dictionary(bte); break;
-	case TYPE_sht: subselect_dictionary(sht); break;
-	case TYPE_int: subselect_dictionary(int); break;
-	case TYPE_lng: subselect_dictionary(lng); break;
-	case TYPE_oid: subselect_dictionary(oid); break;
-	case TYPE_flt: subselect_dictionary(flt); break;
-	case TYPE_dbl: subselect_dictionary(dbl); break;
+	case TYPE_bte: select_dictionary(bte); break;
+	case TYPE_sht: select_dictionary(sht); break;
+	case TYPE_int: select_dictionary(int); break;
+	case TYPE_lng: select_dictionary(lng); break;
+	case TYPE_oid: select_dictionary(oid); break;
+	case TYPE_flt: select_dictionary(flt); break;
+	case TYPE_dbl: select_dictionary(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: subselect_dictionary(hge); break;
+	case TYPE_hge: select_dictionary(hge); break;
 #endif
 	case TYPE_str:
 		switch(task->bsrc->twidth){
-		case 1: subselect_dictionary_str(bte); break;
-		case 2: subselect_dictionary_str(sht); break;
-		case 4: subselect_dictionary_str(int); break;
-		case 8: subselect_dictionary_str(lng); break;
+		case 1: select_dictionary_str(bte); break;
+		case 2: select_dictionary_str(sht); break;
+		case 4: select_dictionary_str(int); break;
+		case 8: select_dictionary_str(lng); break;
 		}
 		break;
 	}
@@ -646,10 +646,10 @@ MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *
 	return MAL_SUCCEED;
 }
 
-#define thetasubselect_dictionary_str(TPE)\
+#define thetaselect_dictionary_str(TPE)\
 	throw(MAL,"mosaic.dictionary","TBD");
 
-#define thetasubselect_dictionary(TPE)\
+#define thetaselect_dictionary(TPE)\
 { 	TPE low,hgh;\
 	base = (BitVector) MOScodevector(task);\
 	low= hgh = TPE##_nil;\
@@ -689,7 +689,7 @@ MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *
 } 
 
 str
-MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -710,22 +710,22 @@ MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMstorage(task->type)){
-	case TYPE_bte: thetasubselect_dictionary(bte); break;
-	case TYPE_sht: thetasubselect_dictionary(sht); break;
-	case TYPE_int: thetasubselect_dictionary(int); break;
-	case TYPE_lng: thetasubselect_dictionary(lng); break;
-	case TYPE_oid: thetasubselect_dictionary(oid); break;
-	case TYPE_flt: thetasubselect_dictionary(flt); break;
-	case TYPE_dbl: thetasubselect_dictionary(dbl); break;
+	case TYPE_bte: thetaselect_dictionary(bte); break;
+	case TYPE_sht: thetaselect_dictionary(sht); break;
+	case TYPE_int: thetaselect_dictionary(int); break;
+	case TYPE_lng: thetaselect_dictionary(lng); break;
+	case TYPE_oid: thetaselect_dictionary(oid); break;
+	case TYPE_flt: thetaselect_dictionary(flt); break;
+	case TYPE_dbl: thetaselect_dictionary(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_dictionary(hge); break;
+	case TYPE_hge: thetaselect_dictionary(hge); break;
 #endif
 	case TYPE_str:
 		switch(task->bsrc->twidth){
-		case 1: thetasubselect_dictionary_str(bte); break;
-		case 2: thetasubselect_dictionary_str(sht); break;
-		case 4: thetasubselect_dictionary_str(int); break;
-		case 8: thetasubselect_dictionary_str(lng); break;
+		case 1: thetaselect_dictionary_str(bte); break;
+		case 2: thetaselect_dictionary_str(sht); break;
+		case 4: thetaselect_dictionary_str(int); break;
+		case 8: thetaselect_dictionary_str(lng); break;
 		}
 		break;
 	}
@@ -819,7 +819,7 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 }
 
 str
-MOSsubjoin_dictionary(Client cntxt,  MOStask task)
+MOSjoin_dictionary(Client cntxt,  MOStask task)
 {
 	BUN i,n,limit;
 	oid o, oo;

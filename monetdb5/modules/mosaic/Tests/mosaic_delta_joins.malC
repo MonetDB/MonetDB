@@ -32,16 +32,16 @@ bat.append(d,4);
 bat.append(d,-1);
 bat.append(d,nil:int);
 
-(jl,jr):= algebra.subjoin(base,d, nil:bat, nil:bat,false,0:lng);
+(jl,jr):= algebra.join(base,d, nil:bat, nil:bat,false,0:lng);
 io.print(jl,jr);
-(ml,mr):= mosaic.subjoin(b,d, nil:bat, nil:bat,false,0:lng);
+(ml,mr):= mosaic.join(b,d, nil:bat, nil:bat,false,0:lng);
 io.print(ml,mr);
 
-(kl,kr):= algebra.subjoin(d,base, nil:bat, nil:bat,false,0:lng);
+(kl,kr):= algebra.join(d,base, nil:bat, nil:bat,false,0:lng);
 io.print(kl);
 io.print(kr);
 io.print(kl,kr);
-(nl,nr):= mosaic.subjoin(d,b, nil:bat, nil:bat,false,0:lng);
+(nl,nr):= mosaic.join(d,b, nil:bat, nil:bat,false,0:lng);
 io.print(nl);
 io.print(nr);
 io.print(nl,nr);

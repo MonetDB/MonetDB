@@ -134,314 +134,415 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 68 # length
-function user.SQLanalyze():void;
-barrier X_1253 := language.dataflow();
-    X_1181 := bat.new(nil:str);
-    X_1188 := bat.append(X_1181,".test");
-    X_1198 := bat.append(X_1188,".test");
-    X_1183 := bat.new(nil:str);
-    X_1190 := bat.append(X_1183,"x");
-    X_1199 := bat.append(X_1190,"y");
-    X_1184 := bat.new(nil:str);
-    X_1192 := bat.append(X_1184,"double");
-    X_1200 := bat.append(X_1192,"double");
-    X_1185 := bat.new(nil:int);
-    X_1194 := bat.append(X_1185,53);
-    X_1201 := bat.append(X_1194,53);
-    X_1187 := bat.new(nil:int);
-    X_1196 := bat.append(X_1187,0);
-    X_1202 := bat.append(X_1196,0);
-    X_1144:bat[:dbl] := bat.new(nil:dbl);
-    X_1143 := sql.mvc();
-    X_1283:bat[:dbl] := sql.bind(X_1143,"sys","test2","x",0,0,2);
-    X_1258:bat[:dbl] := mosaic.decompress(X_1283);
-    X_1222:bat[:dbl] := mosaic.decompress(X_1258);
-    C_1219:bat[:oid] := sql.tid(X_1143,"sys","test2",0,2);
-    C_1227 := algebra.subselect(X_1222,C_1219,4,6,true,true,false);
-    X_1229 := algebra.projection(C_1227,X_1222);
-    X_1284:bat[:dbl] := sql.bind(X_1143,"sys","test2","x",0,1,2);
-    X_1259:bat[:dbl] := mosaic.decompress(X_1284);
-    X_1223:bat[:dbl] := mosaic.decompress(X_1259);
-    C_1221:bat[:oid] := sql.tid(X_1143,"sys","test2",1,2);
-    C_1228 := algebra.subselect(X_1223,C_1221,4,6,true,true,false);
-    X_1230 := algebra.projection(C_1228,X_1223);
-    X_1242 := mat.packIncrement(X_1229,2);
-    X_1159 := mat.packIncrement(X_1242,X_1230);
-    X_1160 := bat.append(X_1144,X_1159,true);
-    X_1285:bat[:dbl] := sql.bind(X_1143,"sys","test3","x",0);
-    X_1260:bat[:dbl] := mosaic.decompress(X_1285);
-    X_1163:bat[:dbl] := mosaic.decompress(X_1260);
-    C_1161:bat[:oid] := sql.tid(X_1143,"sys","test3");
-    C_1167 := algebra.subselect(X_1163,C_1161,4,6,true,true,false);
-    X_1168 := algebra.projection(C_1167,X_1163);
-    X_1169 := bat.append(X_1160,X_1168,true);
-    X_1170:bat[:dbl] := bat.new(nil:dbl);
-    X_1286:bat[:dbl] := sql.bind(X_1143,"sys","test2","y",0,0,2);
-    X_1224:bat[:dbl] := mosaic.decompress(X_1286);
-    X_1231 := mosaic.projection(C_1227,X_1224);
-    X_1287:bat[:dbl] := sql.bind(X_1143,"sys","test2","y",0,1,2);
-    X_1225:bat[:dbl] := mosaic.decompress(X_1287);
-    X_1232 := mosaic.projection(C_1228,X_1225);
-    X_1244 := mat.packIncrement(X_1231,2);
-    X_1174 := mat.packIncrement(X_1244,X_1232);
-    X_1175 := bat.append(X_1170,X_1174,true);
-    X_1288:bat[:dbl] := sql.bind(X_1143,"sys","test3","y",0);
-    X_1176:bat[:dbl] := mosaic.decompress(X_1288);
-    X_1178 := mosaic.projection(C_1167,X_1176);
-    X_1179 := bat.append(X_1175,X_1178,true);
-    language.pass(X_1222);
-    language.pass(X_1223);
-    language.pass(X_1163);
-    language.pass(C_1227);
-    language.pass(C_1228);
-    language.pass(C_1167);
-exit X_1253;
-    sql.resultSet(X_1198,X_1199,X_1200,X_1201,X_1202,X_1169,X_1179);
-end user.SQLanalyze;
+% 118 # length
+function user.main():void;
+    X_1207:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0;","default_pipe",49:int);
+barrier X_1326 := language.dataflow();
+    X_1250 := bat.new(nil:str);
+    X_1257 := bat.append(X_1250,".test");
+    X_1267 := bat.append(X_1257,".test");
+    X_1252 := bat.new(nil:str);
+    X_1259 := bat.append(X_1252,"x");
+    X_1268 := bat.append(X_1259,"y");
+    X_1253 := bat.new(nil:str);
+    X_1261 := bat.append(X_1253,"double");
+    X_1270 := bat.append(X_1261,"double");
+    X_1254 := bat.new(nil:int);
+    X_1263 := bat.append(X_1254,53:int);
+    X_1271 := bat.append(X_1263,53:int);
+    X_1256 := bat.new(nil:int);
+    X_1265 := bat.append(X_1256,0:int);
+    X_1272 := bat.append(X_1265,0:int);
+    X_1242:bat[:dbl] := bat.new(nil:dbl);
+    X_1210 := sql.mvc();
+    X_1331:bat[:dbl] := sql.bind(X_1210,"sys","test2","x",0:int,0:int,2:int);
+    X_1296:bat[:dbl] := mosaic.decompress(X_1331);
+    C_1293:bat[:oid] := sql.tid(X_1210,"sys","test2",0:int,2:int);
+    C_1301 := algebra.select(X_1296,C_1293,4:dbl,6:dbl,true,true,false);
+    X_1303 := algebra.projection(C_1301,X_1296);
+    X_1332:bat[:dbl] := sql.bind(X_1210,"sys","test2","x",0:int,1:int,2:int);
+    X_1297:bat[:dbl] := mosaic.decompress(X_1332);
+    C_1295:bat[:oid] := sql.tid(X_1210,"sys","test2",1:int,2:int);
+    C_1302 := algebra.select(X_1297,C_1295,4:dbl,6:dbl,true,true,false);
+    X_1304 := algebra.projection(C_1302,X_1297);
+    X_1315 := mat.packIncrement(X_1303,2:int);
+    X_1227 := mat.packIncrement(X_1315,X_1304);
+    X_1244 := bat.append(X_1242,X_1227,true);
+    X_1333:bat[:dbl] := sql.bind(X_1210,"sys","test3","x",0:int);
+    X_1232:bat[:dbl] := mosaic.decompress(X_1333);
+    C_1230:bat[:oid] := sql.tid(X_1210,"sys","test3");
+    C_1238 := algebra.select(X_1232,C_1230,4:dbl,6:dbl,true,true,false);
+    X_1239 := algebra.projection(C_1238,X_1232);
+    X_1245 := bat.append(X_1244,X_1239,true);
+    X_1246:bat[:dbl] := bat.new(nil:dbl);
+    X_1298:bat[:dbl] := sql.bind(X_1210,"sys","test2","y",0:int,0:int,2:int);
+    X_1305 := mosaic.projection(C_1301,X_1298);
+    X_1299:bat[:dbl] := sql.bind(X_1210,"sys","test2","y",0:int,1:int,2:int);
+    X_1306 := mosaic.projection(C_1302,X_1299);
+    X_1317 := mat.packIncrement(X_1305,2:int);
+    X_1228 := mat.packIncrement(X_1317,X_1306);
+    X_1247 := bat.append(X_1246,X_1228,true);
+    X_1234:bat[:dbl] := sql.bind(X_1210,"sys","test3","y",0:int);
+    X_1240 := mosaic.projection(C_1238,X_1234);
+    X_1248 := bat.append(X_1247,X_1240,true);
+    language.pass(X_1296);
+    language.pass(X_1297);
+    language.pass(X_1232);
+    language.pass(C_1301);
+    language.pass(C_1302);
+    language.pass(C_1238);
+exit X_1326;
+    sql.resultSet(X_1267,X_1268,X_1270,X_1271,X_1272,X_1245,X_1248);
+end user.main;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=3 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=2 usec 
+#evaluate             actions= 6 time=21 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 8 time=15 usec 
+#aliases              actions=12 time=12 usec 
+#mitosis              actions= 1 time=29 usec 
+#mergetable           actions= 3 time=61 usec 
+#deadcode             actions= 4 time=10 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 8 time=10 usec 
+#commonTerms          actions= 0 time=8 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=8 usec 
+#reorder              actions= 1 time=35 usec 
+#matpack              actions= 2 time=9 usec 
+#dataflow             actions=27 time=44 usec 
+#multiplex            actions= 0 time=3 usec 
+#profiler             actions= 1 time=4 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollector     actions= 1 time=32 usec 
+#total                actions=26 time=442 usec 
 #explain select x,y from test where x between (7-3) and (7-1);
 % .explain # table_name
 % mal # name
 % clob # type
-% 75 # length
-function user.SQLanalyze():void;
-barrier X_1400 := language.dataflow();
-    X_1323 := bat.new(nil:str);
-    X_1330 := bat.append(X_1323,".test");
-    X_1340 := bat.append(X_1330,".test");
-    X_1325 := bat.new(nil:str);
-    X_1332 := bat.append(X_1325,"x");
-    X_1341 := bat.append(X_1332,"y");
-    X_1326 := bat.new(nil:str);
-    X_1334 := bat.append(X_1326,"double");
-    X_1342 := bat.append(X_1334,"double");
-    X_1327 := bat.new(nil:int);
-    X_1336 := bat.append(X_1327,53);
-    X_1343 := bat.append(X_1336,53);
-    X_1329 := bat.new(nil:int);
-    X_1338 := bat.append(X_1329,0);
-    X_1344 := bat.append(X_1338,0);
-    X_1273:bat[:dbl] := bat.new(nil:dbl);
-    X_1272 := sql.mvc();
-    X_1430:bat[:dbl] := sql.bind(X_1272,"sys","test2","x",0,0,2);
-    X_1405:bat[:dbl] := mosaic.decompress(X_1430);
-    X_1369:bat[:dbl] := mosaic.decompress(X_1405);
-    C_1366:bat[:oid] := sql.tid(X_1272,"sys","test2",0,2);
-    C_1374 := algebra.subselect(X_1369,C_1366,4:dbl,6:dbl,true,true,false);
-    X_1376 := algebra.projection(C_1374,X_1369);
-    X_1431:bat[:dbl] := sql.bind(X_1272,"sys","test2","x",0,1,2);
-    X_1406:bat[:dbl] := mosaic.decompress(X_1431);
-    X_1370:bat[:dbl] := mosaic.decompress(X_1406);
-    C_1368:bat[:oid] := sql.tid(X_1272,"sys","test2",1,2);
-    C_1375 := algebra.subselect(X_1370,C_1368,4:dbl,6:dbl,true,true,false);
-    X_1377 := algebra.projection(C_1375,X_1370);
-    X_1389 := mat.packIncrement(X_1376,2);
-    X_1294 := mat.packIncrement(X_1389,X_1377);
-    X_1295 := bat.append(X_1273,X_1294,true);
-    X_1432:bat[:dbl] := sql.bind(X_1272,"sys","test3","x",0);
-    X_1407:bat[:dbl] := mosaic.decompress(X_1432);
-    X_1298:bat[:dbl] := mosaic.decompress(X_1407);
-    C_1296:bat[:oid] := sql.tid(X_1272,"sys","test3");
-    C_1308 := algebra.subselect(X_1298,C_1296,4:dbl,6:dbl,true,true,false);
-    X_1309 := algebra.projection(C_1308,X_1298);
-    X_1310 := bat.append(X_1295,X_1309,true);
-    X_1311:bat[:dbl] := bat.new(nil:dbl);
-    X_1433:bat[:dbl] := sql.bind(X_1272,"sys","test2","y",0,0,2);
-    X_1371:bat[:dbl] := mosaic.decompress(X_1433);
-    X_1378 := mosaic.projection(C_1374,X_1371);
-    X_1434:bat[:dbl] := sql.bind(X_1272,"sys","test2","y",0,1,2);
-    X_1372:bat[:dbl] := mosaic.decompress(X_1434);
-    X_1379 := mosaic.projection(C_1375,X_1372);
-    X_1391 := mat.packIncrement(X_1378,2);
-    X_1316 := mat.packIncrement(X_1391,X_1379);
-    X_1317 := bat.append(X_1311,X_1316,true);
-    X_1435:bat[:dbl] := sql.bind(X_1272,"sys","test3","y",0);
-    X_1318:bat[:dbl] := mosaic.decompress(X_1435);
-    X_1320 := mosaic.projection(C_1308,X_1318);
-    X_1321 := bat.append(X_1317,X_1320,true);
-    language.pass(X_1369);
-    language.pass(X_1370);
-    language.pass(X_1298);
-    language.pass(C_1374);
-    language.pass(C_1375);
-    language.pass(C_1308);
-exit X_1400;
-    sql.resultSet(X_1340,X_1341,X_1342,X_1343,X_1344,X_1310,X_1321);
-end user.SQLanalyze;
+% 122 # length
+function user.main():void;
+    X_1345:void := querylog.define("explain select x,y from test where x between (7-3) and (7-1);","default_pipe",63:int);
+barrier X_1481 := language.dataflow();
+    X_1400 := bat.new(nil:str);
+    X_1407 := bat.append(X_1400,".test");
+    X_1417 := bat.append(X_1407,".test");
+    X_1402 := bat.new(nil:str);
+    X_1409 := bat.append(X_1402,"x");
+    X_1418 := bat.append(X_1409,"y");
+    X_1403 := bat.new(nil:str);
+    X_1411 := bat.append(X_1403,"double");
+    X_1420 := bat.append(X_1411,"double");
+    X_1404 := bat.new(nil:int);
+    X_1413 := bat.append(X_1404,53:int);
+    X_1421 := bat.append(X_1413,53:int);
+    X_1406 := bat.new(nil:int);
+    X_1415 := bat.append(X_1406,0:int);
+    X_1422 := bat.append(X_1415,0:int);
+    X_1392:bat[:dbl] := bat.new(nil:dbl);
+    X_1348 := sql.mvc();
+    X_1486:bat[:dbl] := sql.bind(X_1348,"sys","test2","x",0:int,0:int,2:int);
+    X_1451:bat[:dbl] := mosaic.decompress(X_1486);
+    C_1448:bat[:oid] := sql.tid(X_1348,"sys","test2",0:int,2:int);
+    C_1456 := algebra.select(X_1451,C_1448,4:dbl,6:dbl,true,true,false);
+    X_1458 := algebra.projection(C_1456,X_1451);
+    X_1487:bat[:dbl] := sql.bind(X_1348,"sys","test2","x",0:int,1:int,2:int);
+    X_1452:bat[:dbl] := mosaic.decompress(X_1487);
+    C_1450:bat[:oid] := sql.tid(X_1348,"sys","test2",1:int,2:int);
+    C_1457 := algebra.select(X_1452,C_1450,4:dbl,6:dbl,true,true,false);
+    X_1459 := algebra.projection(C_1457,X_1452);
+    X_1470 := mat.packIncrement(X_1458,2:int);
+    X_1371 := mat.packIncrement(X_1470,X_1459);
+    X_1394 := bat.append(X_1392,X_1371,true);
+    X_1488:bat[:dbl] := sql.bind(X_1348,"sys","test3","x",0:int);
+    X_1376:bat[:dbl] := mosaic.decompress(X_1488);
+    C_1374:bat[:oid] := sql.tid(X_1348,"sys","test3");
+    C_1388 := algebra.select(X_1376,C_1374,4:dbl,6:dbl,true,true,false);
+    X_1389 := algebra.projection(C_1388,X_1376);
+    X_1395 := bat.append(X_1394,X_1389,true);
+    X_1396:bat[:dbl] := bat.new(nil:dbl);
+    X_1453:bat[:dbl] := sql.bind(X_1348,"sys","test2","y",0:int,0:int,2:int);
+    X_1460 := mosaic.projection(C_1456,X_1453);
+    X_1454:bat[:dbl] := sql.bind(X_1348,"sys","test2","y",0:int,1:int,2:int);
+    X_1461 := mosaic.projection(C_1457,X_1454);
+    X_1472 := mat.packIncrement(X_1460,2:int);
+    X_1372 := mat.packIncrement(X_1472,X_1461);
+    X_1397 := bat.append(X_1396,X_1372,true);
+    X_1378:bat[:dbl] := sql.bind(X_1348,"sys","test3","y",0:int);
+    X_1390 := mosaic.projection(C_1388,X_1378);
+    X_1398 := bat.append(X_1397,X_1390,true);
+    language.pass(X_1451);
+    language.pass(X_1452);
+    language.pass(X_1376);
+    language.pass(C_1456);
+    language.pass(C_1457);
+    language.pass(C_1388);
+exit X_1481;
+    sql.resultSet(X_1417,X_1418,X_1420,X_1421,X_1422,X_1395,X_1398);
+end user.main;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=5 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=2 usec 
+#evaluate             actions=20 time=59 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 8 time=17 usec 
+#aliases              actions=26 time=24 usec 
+#mitosis              actions= 1 time=29 usec 
+#mergetable           actions= 3 time=62 usec 
+#deadcode             actions= 4 time=11 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 9 time=11 usec 
+#commonTerms          actions= 0 time=8 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=36 usec 
+#matpack              actions= 2 time=9 usec 
+#dataflow             actions=27 time=34 usec 
+#multiplex            actions= 0 time=3 usec 
+#profiler             actions= 1 time=4 usec 
+#candidates           actions= 1 time=2 usec 
+#garbagecollector     actions= 1 time=32 usec 
+#total                actions=26 time=505 usec 
 #explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0;
 % .explain # table_name
 % mal # name
 % clob # type
-% 68 # length
-function user.SQLanalyze():void;
-barrier X_1517 := language.dataflow();
-    X_1443 := bat.new(nil:str);
-    X_1450 := bat.append(X_1443,"sys.test");
-    X_1458 := bat.append(X_1450,"sys.test");
-    X_1445 := bat.new(nil:str);
-    X_1452 := bat.append(X_1445,"x");
-    X_1459 := bat.append(X_1452,"y");
-    X_1446 := bat.new(nil:str);
-    X_1453 := bat.append(X_1446,"double");
-    X_1461 := bat.append(X_1453,"double");
-    X_1447 := bat.new(nil:int);
-    X_1455 := bat.append(X_1447,53);
-    X_1462 := bat.append(X_1455,53);
-    X_1449 := bat.new(nil:int);
-    X_1457 := bat.append(X_1449,0);
-    X_1463 := bat.append(X_1457,0);
-    X_1420 := sql.mvc();
-    X_1548:bat[:dbl] := sql.bind(X_1420,"sys","test3","y",0,0,2);
-    X_1522:bat[:dbl] := mosaic.decompress(X_1548);
-    X_1484:bat[:dbl] := mosaic.decompress(X_1522);
-    X_1549:bat[:dbl] := sql.bind(X_1420,"sys","test3","x",0,0,2);
-    X_1523:bat[:dbl] := mosaic.decompress(X_1549);
-    X_1486:bat[:dbl] := mosaic.decompress(X_1523);
-    C_1481:bat[:oid] := sql.tid(X_1420,"sys","test3",0,2);
-    C_1489 := algebra.subselect(X_1486,C_1481,4,6,true,true,false);
-    C_1491 := algebra.subselect(X_1484,C_1489,0,2,true,true,false);
-    X_1493 := algebra.projection(C_1491,X_1486);
-    X_1550:bat[:dbl] := sql.bind(X_1420,"sys","test3","y",0,1,2);
-    X_1524:bat[:dbl] := mosaic.decompress(X_1550);
-    X_1485:bat[:dbl] := mosaic.decompress(X_1524);
-    X_1551:bat[:dbl] := sql.bind(X_1420,"sys","test3","x",0,1,2);
-    X_1525:bat[:dbl] := mosaic.decompress(X_1551);
-    X_1487:bat[:dbl] := mosaic.decompress(X_1525);
-    C_1483:bat[:oid] := sql.tid(X_1420,"sys","test3",1,2);
-    C_1490 := algebra.subselect(X_1487,C_1483,4,6,true,true,false);
-    C_1492 := algebra.subselect(X_1485,C_1490,0,2,true,true,false);
-    X_1494 := algebra.projection(C_1492,X_1487);
-    X_1506 := mat.packIncrement(X_1493,2);
-    X_1440 := mat.packIncrement(X_1506,X_1494);
-    X_1495 := algebra.projection(C_1491,X_1484);
-    X_1496 := algebra.projection(C_1492,X_1485);
-    X_1508 := mat.packIncrement(X_1495,2);
-    X_1441 := mat.packIncrement(X_1508,X_1496);
-    language.pass(X_1486);
-    language.pass(X_1487);
-    language.pass(C_1491);
-    language.pass(X_1484);
-    language.pass(C_1492);
-    language.pass(X_1485);
-exit X_1517;
-    sql.resultSet(X_1458,X_1459,X_1461,X_1462,X_1463,X_1440,X_1441);
-end user.SQLanalyze;
+% 144 # length
+function user.main():void;
+    X_1501:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0;","default_pipe",37:int);
+barrier X_1604 := language.dataflow();
+    X_1528 := bat.new(nil:str);
+    X_1535 := bat.append(X_1528,"sys.test");
+    X_1544 := bat.append(X_1535,"sys.test");
+    X_1530 := bat.new(nil:str);
+    X_1537 := bat.append(X_1530,"x");
+    X_1545 := bat.append(X_1537,"y");
+    X_1531 := bat.new(nil:str);
+    X_1538 := bat.append(X_1531,"double");
+    X_1547 := bat.append(X_1538,"double");
+    X_1532 := bat.new(nil:int);
+    X_1540 := bat.append(X_1532,53:int);
+    X_1548 := bat.append(X_1540,53:int);
+    X_1534 := bat.new(nil:int);
+    X_1542 := bat.append(X_1534,0:int);
+    X_1549 := bat.append(X_1542,0:int);
+    X_1504 := sql.mvc();
+    X_1609:bat[:dbl] := sql.bind(X_1504,"sys","test3","y",0:int,0:int,2:int);
+    X_1574:bat[:dbl] := mosaic.decompress(X_1609);
+    X_1610:bat[:dbl] := sql.bind(X_1504,"sys","test3","x",0:int,0:int,2:int);
+    X_1572:bat[:dbl] := mosaic.decompress(X_1610);
+    C_1569:bat[:oid] := sql.tid(X_1504,"sys","test3",0:int,2:int);
+    C_1577 := algebra.select(X_1572,C_1569,4:dbl,6:dbl,true,true,false);
+    C_1579 := algebra.select(X_1574,C_1577,0:dbl,2:dbl,true,true,false);
+    X_1581 := algebra.projection(C_1579,X_1572);
+    X_1611:bat[:dbl] := sql.bind(X_1504,"sys","test3","y",0:int,1:int,2:int);
+    X_1575:bat[:dbl] := mosaic.decompress(X_1611);
+    X_1612:bat[:dbl] := sql.bind(X_1504,"sys","test3","x",0:int,1:int,2:int);
+    X_1573:bat[:dbl] := mosaic.decompress(X_1612);
+    C_1571:bat[:oid] := sql.tid(X_1504,"sys","test3",1:int,2:int);
+    C_1578 := algebra.select(X_1573,C_1571,4:dbl,6:dbl,true,true,false);
+    C_1580 := algebra.select(X_1575,C_1578,0:dbl,2:dbl,true,true,false);
+    X_1582 := algebra.projection(C_1580,X_1573);
+    X_1593 := mat.packIncrement(X_1581,2:int);
+    X_1524 := mat.packIncrement(X_1593,X_1582);
+    X_1583 := algebra.projection(C_1579,X_1574);
+    X_1584 := algebra.projection(C_1580,X_1575);
+    X_1595 := mat.packIncrement(X_1583,2:int);
+    X_1525 := mat.packIncrement(X_1595,X_1584);
+    language.pass(X_1572);
+    language.pass(X_1573);
+    language.pass(C_1579);
+    language.pass(X_1574);
+    language.pass(C_1580);
+    language.pass(X_1575);
+exit X_1604;
+    sql.resultSet(X_1544,X_1545,X_1547,X_1548,X_1549,X_1524,X_1525);
+end user.main;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=6 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions= 8 time=23 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 4 time=13 usec 
+#aliases              actions=11 time=10 usec 
+#mitosis              actions= 1 time=35 usec 
+#mergetable           actions= 4 time=57 usec 
+#deadcode             actions= 5 time=10 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 9 time=9 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=5 usec 
+#deadcode             actions= 0 time=6 usec 
+#reorder              actions= 1 time=29 usec 
+#matpack              actions= 2 time=7 usec 
+#dataflow             actions=27 time=29 usec 
+#multiplex            actions= 0 time=3 usec 
+#profiler             actions= 1 time=3 usec 
+#candidates           actions= 1 time=2 usec 
+#garbagecollector     actions= 1 time=29 usec 
+#total                actions=26 time=400 usec 
 #explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0);
 % .explain # table_name
 % mal # name
 % clob # type
-% 75 # length
-function user.SQLanalyze():void;
-barrier X_1649 := language.dataflow();
-    X_1571 := bat.new(nil:str);
-    X_1578 := bat.append(X_1571,"sys.test");
-    X_1587 := bat.append(X_1578,"sys.test");
-    X_1573 := bat.new(nil:str);
-    X_1580 := bat.append(X_1573,"x");
-    X_1588 := bat.append(X_1580,"y");
-    X_1574 := bat.new(nil:str);
-    X_1581 := bat.append(X_1574,"double");
-    X_1590 := bat.append(X_1581,"double");
-    X_1575 := bat.new(nil:int);
-    X_1583 := bat.append(X_1575,53);
-    X_1591 := bat.append(X_1583,53);
-    X_1577 := bat.new(nil:int);
-    X_1585 := bat.append(X_1577,0);
-    X_1592 := bat.append(X_1585,0);
-    X_1541 := sql.mvc();
-    X_1680:bat[:dbl] := sql.bind(X_1541,"sys","test3","y",0,0,2);
-    X_1654:bat[:dbl] := mosaic.decompress(X_1680);
-    X_1616:bat[:dbl] := mosaic.decompress(X_1654);
-    X_1681:bat[:dbl] := sql.bind(X_1541,"sys","test3","x",0,0,2);
-    X_1655:bat[:dbl] := mosaic.decompress(X_1681);
-    X_1618:bat[:dbl] := mosaic.decompress(X_1655);
-    C_1613:bat[:oid] := sql.tid(X_1541,"sys","test3",0,2);
-    C_1621 := algebra.subselect(X_1618,C_1613,4,6,true,true,false);
-    C_1623 := algebra.subselect(X_1616,C_1621,0:dbl,2:dbl,true,true,false);
-    X_1625 := algebra.projection(C_1623,X_1618);
-    X_1682:bat[:dbl] := sql.bind(X_1541,"sys","test3","y",0,1,2);
-    X_1656:bat[:dbl] := mosaic.decompress(X_1682);
-    X_1617:bat[:dbl] := mosaic.decompress(X_1656);
-    X_1683:bat[:dbl] := sql.bind(X_1541,"sys","test3","x",0,1,2);
-    X_1657:bat[:dbl] := mosaic.decompress(X_1683);
-    X_1619:bat[:dbl] := mosaic.decompress(X_1657);
-    C_1615:bat[:oid] := sql.tid(X_1541,"sys","test3",1,2);
-    C_1622 := algebra.subselect(X_1619,C_1615,4,6,true,true,false);
-    C_1624 := algebra.subselect(X_1617,C_1622,0:dbl,2:dbl,true,true,false);
-    X_1626 := algebra.projection(C_1624,X_1619);
-    X_1638 := mat.packIncrement(X_1625,2);
-    X_1568 := mat.packIncrement(X_1638,X_1626);
-    X_1627 := algebra.projection(C_1623,X_1616);
-    X_1628 := algebra.projection(C_1624,X_1617);
-    X_1640 := mat.packIncrement(X_1627,2);
-    X_1569 := mat.packIncrement(X_1640,X_1628);
-    language.pass(X_1618);
-    language.pass(X_1619);
-    language.pass(C_1623);
-    language.pass(X_1616);
-    language.pass(C_1624);
-    language.pass(X_1617);
-exit X_1649;
-    sql.resultSet(X_1587,X_1588,X_1590,X_1591,X_1592,X_1568,X_1569);
-end user.SQLanalyze;
+% 156 # length
+function user.main():void;
+    X_1628:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0);","default_pipe",45:int);
+barrier X_1743 := language.dataflow();
+    X_1662 := bat.new(nil:str);
+    X_1669 := bat.append(X_1662,"sys.test");
+    X_1679 := bat.append(X_1669,"sys.test");
+    X_1664 := bat.new(nil:str);
+    X_1671 := bat.append(X_1664,"x");
+    X_1680 := bat.append(X_1671,"y");
+    X_1665 := bat.new(nil:str);
+    X_1673 := bat.append(X_1665,"double");
+    X_1682 := bat.append(X_1673,"double");
+    X_1666 := bat.new(nil:int);
+    X_1675 := bat.append(X_1666,53:int);
+    X_1683 := bat.append(X_1675,53:int);
+    X_1668 := bat.new(nil:int);
+    X_1677 := bat.append(X_1668,0:int);
+    X_1684 := bat.append(X_1677,0:int);
+    X_1631 := sql.mvc();
+    X_1748:bat[:dbl] := sql.bind(X_1631,"sys","test3","y",0:int,0:int,2:int);
+    X_1713:bat[:dbl] := mosaic.decompress(X_1748);
+    X_1749:bat[:dbl] := sql.bind(X_1631,"sys","test3","x",0:int,0:int,2:int);
+    X_1711:bat[:dbl] := mosaic.decompress(X_1749);
+    C_1708:bat[:oid] := sql.tid(X_1631,"sys","test3",0:int,2:int);
+    C_1716 := algebra.select(X_1711,C_1708,4:dbl,6:dbl,true,true,false);
+    C_1718 := algebra.select(X_1713,C_1716,0:dbl,2:dbl,true,true,false);
+    X_1720 := algebra.projection(C_1718,X_1711);
+    X_1750:bat[:dbl] := sql.bind(X_1631,"sys","test3","y",0:int,1:int,2:int);
+    X_1714:bat[:dbl] := mosaic.decompress(X_1750);
+    X_1751:bat[:dbl] := sql.bind(X_1631,"sys","test3","x",0:int,1:int,2:int);
+    X_1712:bat[:dbl] := mosaic.decompress(X_1751);
+    C_1710:bat[:oid] := sql.tid(X_1631,"sys","test3",1:int,2:int);
+    C_1717 := algebra.select(X_1712,C_1710,4:dbl,6:dbl,true,true,false);
+    C_1719 := algebra.select(X_1714,C_1717,0:dbl,2:dbl,true,true,false);
+    X_1721 := algebra.projection(C_1719,X_1712);
+    X_1732 := mat.packIncrement(X_1720,2:int);
+    X_1658 := mat.packIncrement(X_1732,X_1721);
+    X_1722 := algebra.projection(C_1718,X_1713);
+    X_1723 := algebra.projection(C_1719,X_1714);
+    X_1734 := mat.packIncrement(X_1722,2:int);
+    X_1659 := mat.packIncrement(X_1734,X_1723);
+    language.pass(X_1711);
+    language.pass(X_1712);
+    language.pass(C_1718);
+    language.pass(X_1713);
+    language.pass(C_1719);
+    language.pass(X_1714);
+exit X_1743;
+    sql.resultSet(X_1679,X_1680,X_1682,X_1683,X_1684,X_1658,X_1659);
+end user.main;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=6 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions=16 time=41 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 4 time=12 usec 
+#aliases              actions=19 time=11 usec 
+#mitosis              actions= 1 time=26 usec 
+#mergetable           actions= 4 time=54 usec 
+#deadcode             actions= 5 time=9 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions=12 time=11 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=5 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=29 usec 
+#matpack              actions= 2 time=8 usec 
+#dataflow             actions=27 time=28 usec 
+#multiplex            actions= 0 time=3 usec 
+#profiler             actions= 1 time=3 usec 
+#candidates           actions= 1 time=2 usec 
+#garbagecollector     actions= 1 time=28 usec 
+#total                actions=26 time=420 usec 
 #explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0);
 % .explain # table_name
 % mal # name
 % clob # type
-% 75 # length
-function user.SQLanalyze():void;
-barrier X_1795 := language.dataflow();
-    X_1712 := bat.new(nil:str);
-    X_1719 := bat.append(X_1712,"sys.test");
-    X_1728 := bat.append(X_1719,"sys.test");
-    X_1714 := bat.new(nil:str);
-    X_1721 := bat.append(X_1714,"x");
-    X_1729 := bat.append(X_1721,"y");
-    X_1715 := bat.new(nil:str);
-    X_1722 := bat.append(X_1715,"double");
-    X_1731 := bat.append(X_1722,"double");
-    X_1716 := bat.new(nil:int);
-    X_1724 := bat.append(X_1716,53);
-    X_1732 := bat.append(X_1724,53);
-    X_1718 := bat.new(nil:int);
-    X_1726 := bat.append(X_1718,0);
-    X_1733 := bat.append(X_1726,0);
-    X_1676 := sql.mvc();
-    X_1826:bat[:dbl] := sql.bind(X_1676,"sys","test3","y",0,0,2);
-    X_1800:bat[:dbl] := mosaic.decompress(X_1826);
-    X_1762:bat[:dbl] := mosaic.decompress(X_1800);
-    X_1827:bat[:dbl] := sql.bind(X_1676,"sys","test3","x",0,0,2);
-    X_1801:bat[:dbl] := mosaic.decompress(X_1827);
-    X_1764:bat[:dbl] := mosaic.decompress(X_1801);
-    C_1759:bat[:oid] := sql.tid(X_1676,"sys","test3",0,2);
-    C_1767 := algebra.subselect(X_1764,C_1759,4:dbl,6:dbl,true,true,false);
-    C_1769 := algebra.subselect(X_1762,C_1767,0:dbl,2:dbl,true,true,false);
-    X_1771 := algebra.projection(C_1769,X_1764);
-    X_1828:bat[:dbl] := sql.bind(X_1676,"sys","test3","y",0,1,2);
-    X_1802:bat[:dbl] := mosaic.decompress(X_1828);
-    X_1763:bat[:dbl] := mosaic.decompress(X_1802);
-    X_1829:bat[:dbl] := sql.bind(X_1676,"sys","test3","x",0,1,2);
-    X_1803:bat[:dbl] := mosaic.decompress(X_1829);
-    X_1765:bat[:dbl] := mosaic.decompress(X_1803);
-    C_1761:bat[:oid] := sql.tid(X_1676,"sys","test3",1,2);
-    C_1768 := algebra.subselect(X_1765,C_1761,4:dbl,6:dbl,true,true,false);
-    C_1770 := algebra.subselect(X_1763,C_1768,0:dbl,2:dbl,true,true,false);
-    X_1772 := algebra.projection(C_1770,X_1765);
-    X_1784 := mat.packIncrement(X_1771,2);
-    X_1709 := mat.packIncrement(X_1784,X_1772);
-    X_1773 := algebra.projection(C_1769,X_1762);
-    X_1774 := algebra.projection(C_1770,X_1763);
-    X_1786 := mat.packIncrement(X_1773,2);
-    X_1710 := mat.packIncrement(X_1786,X_1774);
-    language.pass(X_1764);
-    language.pass(X_1765);
-    language.pass(C_1769);
-    language.pass(X_1762);
-    language.pass(C_1770);
-    language.pass(X_1763);
-exit X_1795;
-    sql.resultSet(X_1728,X_1729,X_1731,X_1732,X_1733,X_1709,X_1710);
-end user.SQLanalyze;
+% 160 # length
+function user.main():void;
+    X_1770:void := querylog.define("explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0);","default_pipe",53:int);
+barrier X_1895 := language.dataflow();
+    X_1810 := bat.new(nil:str);
+    X_1817 := bat.append(X_1810,"sys.test");
+    X_1827 := bat.append(X_1817,"sys.test");
+    X_1812 := bat.new(nil:str);
+    X_1819 := bat.append(X_1812,"x");
+    X_1828 := bat.append(X_1819,"y");
+    X_1813 := bat.new(nil:str);
+    X_1821 := bat.append(X_1813,"double");
+    X_1830 := bat.append(X_1821,"double");
+    X_1814 := bat.new(nil:int);
+    X_1823 := bat.append(X_1814,53:int);
+    X_1831 := bat.append(X_1823,53:int);
+    X_1816 := bat.new(nil:int);
+    X_1825 := bat.append(X_1816,0:int);
+    X_1832 := bat.append(X_1825,0:int);
+    X_1773 := sql.mvc();
+    X_1900:bat[:dbl] := sql.bind(X_1773,"sys","test3","y",0:int,0:int,2:int);
+    X_1865:bat[:dbl] := mosaic.decompress(X_1900);
+    X_1901:bat[:dbl] := sql.bind(X_1773,"sys","test3","x",0:int,0:int,2:int);
+    X_1863:bat[:dbl] := mosaic.decompress(X_1901);
+    C_1860:bat[:oid] := sql.tid(X_1773,"sys","test3",0:int,2:int);
+    C_1868 := algebra.select(X_1863,C_1860,4:dbl,6:dbl,true,true,false);
+    C_1870 := algebra.select(X_1865,C_1868,0:dbl,2:dbl,true,true,false);
+    X_1872 := algebra.projection(C_1870,X_1863);
+    X_1902:bat[:dbl] := sql.bind(X_1773,"sys","test3","y",0:int,1:int,2:int);
+    X_1866:bat[:dbl] := mosaic.decompress(X_1902);
+    X_1903:bat[:dbl] := sql.bind(X_1773,"sys","test3","x",0:int,1:int,2:int);
+    X_1864:bat[:dbl] := mosaic.decompress(X_1903);
+    C_1862:bat[:oid] := sql.tid(X_1773,"sys","test3",1:int,2:int);
+    C_1869 := algebra.select(X_1864,C_1862,4:dbl,6:dbl,true,true,false);
+    C_1871 := algebra.select(X_1866,C_1869,0:dbl,2:dbl,true,true,false);
+    X_1873 := algebra.projection(C_1871,X_1864);
+    X_1884 := mat.packIncrement(X_1872,2:int);
+    X_1806 := mat.packIncrement(X_1884,X_1873);
+    X_1874 := algebra.projection(C_1870,X_1865);
+    X_1875 := algebra.projection(C_1871,X_1866);
+    X_1886 := mat.packIncrement(X_1874,2:int);
+    X_1807 := mat.packIncrement(X_1886,X_1875);
+    language.pass(X_1863);
+    language.pass(X_1864);
+    language.pass(C_1870);
+    language.pass(X_1865);
+    language.pass(C_1871);
+    language.pass(X_1866);
+exit X_1895;
+    sql.resultSet(X_1827,X_1828,X_1830,X_1831,X_1832,X_1806,X_1807);
+end user.main;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=6 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=2 usec 
+#evaluate             actions=24 time=48 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 4 time=14 usec 
+#aliases              actions=27 time=13 usec 
+#mitosis              actions= 1 time=25 usec 
+#mergetable           actions= 4 time=54 usec 
+#deadcode             actions= 5 time=9 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions=13 time=11 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=4 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=29 usec 
+#matpack              actions= 2 time=8 usec 
+#dataflow             actions=27 time=28 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=3 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollector     actions= 1 time=28 usec 
+#total                actions=26 time=426 usec 
 #drop table test;
 #drop table test1;
 #drop table test2;

@@ -682,22 +682,22 @@ ALGprojection(bat *result, const bat *lid, const bat *rid)
 }
 
 str
-ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
+ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL;
 	BAT *b = NULL, *o = NULL, *g = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.sort", RUNTIME_OBJECT_MISSING);
 	if (order && *order != bat_nil && (o = BATdescriptor(*order)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.sort", RUNTIME_OBJECT_MISSING);
 	}
 	if (group && *group != bat_nil && (g = BATdescriptor(*group)) == NULL) {
 		if (o)
 			BBPunfix(o->batCacheid);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.sort", RUNTIME_OBJECT_MISSING);
 	}
 	if (BATsort(result ? &bn : NULL,
 				   norder ? &on : NULL,
@@ -708,7 +708,7 @@ ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *o
 		if (g)
 			BBPunfix(g->batCacheid);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.subsort", OPERATION_FAILED);
+		throw(MAL, "algebra.sort", OPERATION_FAILED);
 	}
 	BBPunfix(b->batCacheid);
 	if (o)
@@ -725,51 +725,51 @@ ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *o
 }
 
 str
-ALGsubsort32(bat *result, bat *norder, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
+ALGsort32(bat *result, bat *norder, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
 {
-	return ALGsubsort33(result, norder, NULL, bid, order, group, reverse, stable);
+	return ALGsort33(result, norder, NULL, bid, order, group, reverse, stable);
 }
 
 str
-ALGsubsort31(bat *result, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
+ALGsort31(bat *result, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
 {
-	return ALGsubsort33(result, NULL, NULL, bid, order, group, reverse, stable);
+	return ALGsort33(result, NULL, NULL, bid, order, group, reverse, stable);
 }
 
 str
-ALGsubsort23(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bit *reverse, const bit *stable)
+ALGsort23(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bit *reverse, const bit *stable)
 {
-	return ALGsubsort33(result, norder, ngroup, bid, order, NULL, reverse, stable);
+	return ALGsort33(result, norder, ngroup, bid, order, NULL, reverse, stable);
 }
 
 str
-ALGsubsort22(bat *result, bat *norder, const bat *bid, const bat *order, const bit *reverse, const bit *stable)
+ALGsort22(bat *result, bat *norder, const bat *bid, const bat *order, const bit *reverse, const bit *stable)
 {
-	return ALGsubsort33(result, norder, NULL, bid, order, NULL, reverse, stable);
+	return ALGsort33(result, norder, NULL, bid, order, NULL, reverse, stable);
 }
 
 str
-ALGsubsort21(bat *result, const bat *bid, const bat *order, const bit *reverse, const bit *stable)
+ALGsort21(bat *result, const bat *bid, const bat *order, const bit *reverse, const bit *stable)
 {
-	return ALGsubsort33(result, NULL, NULL, bid, order, NULL, reverse, stable);
+	return ALGsort33(result, NULL, NULL, bid, order, NULL, reverse, stable);
 }
 
 str
-ALGsubsort13(bat *result, bat *norder, bat *ngroup, const bat *bid, const bit *reverse, const bit *stable)
+ALGsort13(bat *result, bat *norder, bat *ngroup, const bat *bid, const bit *reverse, const bit *stable)
 {
-	return ALGsubsort33(result, norder, ngroup, bid, NULL, NULL, reverse, stable);
+	return ALGsort33(result, norder, ngroup, bid, NULL, NULL, reverse, stable);
 }
 
 str
-ALGsubsort12(bat *result, bat *norder, const bat *bid, const bit *reverse, const bit *stable)
+ALGsort12(bat *result, bat *norder, const bat *bid, const bit *reverse, const bit *stable)
 {
-	return ALGsubsort33(result, norder, NULL, bid, NULL, NULL, reverse, stable);
+	return ALGsort33(result, norder, NULL, bid, NULL, NULL, reverse, stable);
 }
 
 str
-ALGsubsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable)
+ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable)
 {
-	return ALGsubsort33(result, NULL, NULL, bid, NULL, NULL, reverse, stable);
+	return ALGsort33(result, NULL, NULL, bid, NULL, NULL, reverse, stable);
 }
 
 str

@@ -1,0 +1,102 @@
+# Delta compression
+b:= bat.new(:int);
+bat.append(b,0);
+bat.append(b,1);
+bat.append(b,4);
+bat.append(b,-1);
+bat.append(b,-3);
+bat.append(b,1000);
+bat.append(b,1001);
+bat.append(b,1004);
+bat.append(b,999);
+bat.append(b,977);
+base:= algebra.copy(b);
+
+io.print(base);
+mosaic.compress(b,"delta");
+#mosaic.dump(x);
+s:= algebra.select(base,-1,4,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,-1,4,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,-1,4,false,true,false);
+io.print(s);
+xs:= mosaic.select(b,-1,4,false,true,false);
+io.print(xs);
+
+s:= algebra.select(base,-1,4,true,false,false);
+io.print(s);
+xs:= mosaic.select(b,-1,4,true,false,false);
+io.print(xs);
+
+s:= algebra.select(base,-1,4,true,true,false);
+io.print(s);
+xs:= mosaic.select(b,-1,4,true,true,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,1001,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,nil:int,10010,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,999,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,999,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,nil:int,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,nil:int,false,false,true);
+io.print(s);
+xs:= mosaic.select(b,nil:int,nil:int,false,false,true);
+io.print(xs);
+
+# using candidatelists
+c:= bat.new(:oid);
+bat.append(c,1@0);
+bat.append(c,5@0);
+
+s:= algebra.select(base,c,-1,4,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,c,-1,4,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,c,-1,4,false,true,false);
+io.print(s);
+xs:= mosaic.select(b,c,-1,4,false,true,false);
+io.print(xs);
+
+s:= algebra.select(base,c,-1,4,true,false,false);
+io.print(s);
+xs:= mosaic.select(b,c,-1,4,true,false,false);
+io.print(xs);
+
+s:= algebra.select(base,c,-1,4,true,true,false);
+io.print(s);
+xs:= mosaic.select(b,c,-1,4,true,true,false);
+io.print(xs);
+
+s:= algebra.select(base,c,nil:int,1000,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,c,nil:int,1000,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,c,1000,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,c,1000,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,c,nil:int,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,c,nil:int,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,c,nil:int,nil:int,false,false,true);
+io.print(s);
+xs:= mosaic.select(b,c,nil:int,nil:int,false,false,true);
+io.print(xs);
+

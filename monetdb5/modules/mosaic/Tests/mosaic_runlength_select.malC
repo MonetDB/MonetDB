@@ -1,0 +1,52 @@
+# Compression of noncompressable column
+b:= bat.new(:int);
+bat.append(b,50);
+bat.append(b,50);
+bat.append(b,9);
+bat.append(b,9);
+bat.append(b,9);
+b:= bat.append(b,b);
+base:= algebra.copy(b);
+
+io.print(base);
+mosaic.compress(b,"runlength");
+
+s:= algebra.select(base,0,50,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,0,50,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,0,50,false,true,false);
+io.print(s);
+xs:= mosaic.select(b,0,50,false,true,false);
+io.print(xs);
+
+s:= algebra.select(base,0,50,true,false,false);
+io.print(s);
+xs:= mosaic.select(b,0,50,true,false,false);
+io.print(xs);
+
+s:= algebra.select(base,0,50,true,true,false);
+io.print(s);
+xs:= mosaic.select(b,0,50,true,true,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,50,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,nil:int,50,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,50,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,50,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,nil:int,false,false,false);
+io.print(s);
+xs:= mosaic.select(b,nil:int,nil:int,false,false,false);
+io.print(xs);
+
+s:= algebra.select(base,nil:int,nil:int,false,false,true);
+io.print(s);
+xs:= mosaic.select(b,nil:int,nil:int,false,false,true);
+io.print(xs);

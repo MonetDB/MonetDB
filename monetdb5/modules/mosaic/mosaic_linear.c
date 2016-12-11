@@ -330,7 +330,7 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 // perform relational algebra operators over non-compressed chunks
 // They are bound by an oid linear and possibly a candidate list
 
-#define  subselect_linear(TYPE) \
+#define  select_linear(TYPE) \
 {	TYPE val = *(TYPE*) linear_base(blk) ;\
 	TYPE step = *(TYPE*) linear_step(task,blk);\
 	if( !*anti){\
@@ -396,7 +396,7 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 }
 
 str
-MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
+MOSselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
 	BUN first,last;
 	int cmp;
@@ -414,15 +414,15 @@ MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: subselect_linear(bit); break;
-	case TYPE_bte: subselect_linear(bte); break;
-	case TYPE_sht: subselect_linear(sht); break;
-	case TYPE_oid: subselect_linear(oid); break;
-	case TYPE_lng: subselect_linear(lng); break;
-	case TYPE_flt: subselect_linear(flt); break;
-	case TYPE_dbl: subselect_linear(dbl); break;
+	case TYPE_bit: select_linear(bit); break;
+	case TYPE_bte: select_linear(bte); break;
+	case TYPE_sht: select_linear(sht); break;
+	case TYPE_oid: select_linear(oid); break;
+	case TYPE_lng: select_linear(lng); break;
+	case TYPE_flt: select_linear(flt); break;
+	case TYPE_dbl: select_linear(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: subselect_linear(hge); break;
+	case TYPE_hge: select_linear(hge); break;
 #endif
 	case TYPE_int:
 	// Expanded MOSselect_linear for debugging
@@ -494,26 +494,26 @@ MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->bsrc->twidth){
-		case 1: subselect_linear(bte); break;
-		case 2: subselect_linear(sht); break;
-		case 4: subselect_linear(int); break;
-		case 8: subselect_linear(lng); break;
+		case 1: select_linear(bte); break;
+		case 2: select_linear(sht); break;
+		case 4: select_linear(int); break;
+		case 8: select_linear(lng); break;
 		}
 	break;
 	default:
 		if( task->type == TYPE_daytime)
-			subselect_linear(daytime); 
+			select_linear(daytime); 
 		if( task->type == TYPE_date)
-			subselect_linear(date); 
+			select_linear(date); 
 		if( task->type == TYPE_timestamp)
-			subselect_linear(lng); 
+			select_linear(lng); 
 	}
 	MOSskip_linear(cntxt,task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
 
-#define thetasubselect_linear(TYPE)\
+#define thetaselect_linear(TYPE)\
 { 	TYPE low,hgh;\
 	TYPE v = *(TYPE*) linear_base(blk) ;\
 	TYPE step = *(TYPE*) linear_step(task,blk);\
@@ -555,7 +555,7 @@ MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 }
 
 str
-MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
+MOSthetaselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -574,15 +574,15 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 	o = task->lb;
 
 	switch(task->type){
-	case TYPE_bit: thetasubselect_linear(bit); break;
-	case TYPE_bte: thetasubselect_linear(bte); break;
-	case TYPE_sht: thetasubselect_linear(sht); break;
-	case TYPE_oid: thetasubselect_linear(oid); break;
-	case TYPE_lng: thetasubselect_linear(lng); break;
-	case TYPE_flt: thetasubselect_linear(flt); break;
-	case TYPE_dbl: thetasubselect_linear(dbl); break;
+	case TYPE_bit: thetaselect_linear(bit); break;
+	case TYPE_bte: thetaselect_linear(bte); break;
+	case TYPE_sht: thetaselect_linear(sht); break;
+	case TYPE_oid: thetaselect_linear(oid); break;
+	case TYPE_lng: thetaselect_linear(lng); break;
+	case TYPE_flt: thetaselect_linear(flt); break;
+	case TYPE_dbl: thetaselect_linear(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetasubselect_linear(hge); break;
+	case TYPE_hge: thetaselect_linear(hge); break;
 #endif
 	case TYPE_int:
 		{ 	int low,hgh;
@@ -628,19 +628,19 @@ MOSthetasubselect_linear(Client cntxt,  MOStask task,void *val, str oper)
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->bsrc->twidth){
-		case 1: thetasubselect_linear(bte); break;
-		case 2: thetasubselect_linear(sht); break;
-		case 4: thetasubselect_linear(int); break;
-		case 8: thetasubselect_linear(lng); break;
+		case 1: thetaselect_linear(bte); break;
+		case 2: thetaselect_linear(sht); break;
+		case 4: thetaselect_linear(int); break;
+		case 8: thetaselect_linear(lng); break;
 		}
 	break;
 	default:
 		if( task->type == TYPE_date)
-			thetasubselect_linear(date); 
+			thetaselect_linear(date); 
 		if( task->type == TYPE_daytime)
-			thetasubselect_linear(daytime); 
+			thetaselect_linear(daytime); 
 		if( task->type == TYPE_timestamp)
-			thetasubselect_linear(lng); 
+			thetaselect_linear(lng); 
 	}
 	MOSskip_linear(cntxt,task);
 	task->lb =o;
@@ -740,7 +740,7 @@ MOSprojection_linear(Client cntxt,  MOStask task)
 }
 
 str
-MOSsubjoin_linear(Client cntxt,  MOStask task)
+MOSjoin_linear(Client cntxt,  MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	BUN n,first,last;

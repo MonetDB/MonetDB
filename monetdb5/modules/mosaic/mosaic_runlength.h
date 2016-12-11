@@ -1,6 +1,6 @@
 
 /*
- * The contents of this file are subject to the MonetDB Public License
+ * The contents of this file are ject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
@@ -36,8 +36,8 @@ mal_export void MOSskip_runlength(Client cntxt, MOStask task);
 mal_export flt  MOSestimate_runlength(Client cntxt, MOStask task);
 mal_export void MOScompress_runlength(Client cntxt, MOStask task);
 mal_export void MOSdecompress_runlength(Client cntxt, MOStask task);
-mal_export str MOSsubselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mal_export str MOSthetasubselect_runlength(Client cntxt,  MOStask task, void *val, str oper);
+mal_export str MOSselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetaselect_runlength(Client cntxt,  MOStask task, void *val, str oper);
 mal_export str MOSprojection_runlength(Client cntxt,  MOStask task);
-mal_export str MOSsubjoin_runlength(Client cntxt,  MOStask task);
+mal_export str MOSjoin_runlength(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_RLE_ */

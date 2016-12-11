@@ -490,6 +490,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	MOSdestroy(b);
+	if (b->thash == (Hash *) 1 || BATcount(b) == 0) {
 		/* don't bother first loading the hash to then change
 		 * it, or updating the hash if we replace the heap */
 		HASHdestroy(b);
@@ -1189,17 +1190,13 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
 		return GDK_SUCCEED;
 	if (reverse) {
 		if (stable) {
-			if (GDKssort_rev(h, t, base, n, hs, ts, tpe) < 0) {
-				return GDK_FAIL;
-			}
+			return GDKssort_rev(h, t, base, n, hs, ts, tpe);
 		} else {
 			GDKqsort_rev(h, t, base, n, hs, ts, tpe);
 		}
 	} else {
 		if (stable) {
-			if (GDKssort(h, t, base, n, hs, ts, tpe) < 0) {
-				return GDK_FAIL;
-			}
+			return GDKssort(h, t, base, n, hs, ts, tpe);
 		} else {
 			GDKqsort(h, t, base, n, hs, ts, tpe);
 		}

@@ -29,16 +29,16 @@ bat.append(d,"2014-08-14 12:01:00":timestamp);
 bat.append(d,"2014-08-14 12:02:00":timestamp);
 bat.append(d,nil:timestamp);
 
-(jl,jr):= algebra.subjoin(base,d, nil:bat, nil:bat,false,0:lng);
+(jl,jr):= algebra.join(base,d, nil:bat, nil:bat,false,0:lng);
 io.print(jl,jr);
-(ml,mr):= mosaic.subjoin(b,d, nil:bat, nil:bat,false,0:lng);
+(ml,mr):= mosaic.join(b,d, nil:bat, nil:bat,false,0:lng);
 io.print(ml,mr);
 
-(jl,jr):= algebra.subjoin(d,base, nil:bat, nil:bat,false,0:lng);
+(jl,jr):= algebra.join(d,base, nil:bat, nil:bat,false,0:lng);
 io.print(jl);
 io.print(jr);
 io.print(jl,jr);
-(ml,mr):= mosaic.subjoin(d,b, nil:bat, nil:bat,false,0:lng);
+(ml,mr):= mosaic.join(d,b, nil:bat, nil:bat,false,0:lng);
 io.print(ml);
 io.print(mr);
 io.print(ml,mr);
