@@ -2960,7 +2960,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 			stmt *orderby_ids = NULL, *orderby_grp = NULL;
 
-			/* implementation uses subsort key check */
+			/* implementation uses sort key check */
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *orderby;

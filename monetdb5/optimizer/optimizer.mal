@@ -66,14 +66,6 @@ pattern optimizer.costModel(mod:str, fcn:str):str
 address OPTwrapper
 comment "Estimate the cost of a relational expression";
 
-#opt_crackers.mal
-
-pattern optimizer.crackers():str
-address OPTwrapper;
-pattern optimizer.crackers(mod:str, fcn:str):str
-address OPTwrapper
-comment "Replace algebra select with crackers select";
-
 #opt_dataflow.mal
 
 pattern optimizer.dataflow():str
@@ -306,14 +298,6 @@ address OPTwrapper;
 pattern optimizer.reorder(mod:str, fcn:str):str
 address OPTwrapper
 comment "Reorder by dataflow dependencies";
-
-#opt_selcrack.mal
-
-pattern optimizer.selcrack():str
-address OPTwrapper;
-pattern optimizer.selcrack(mod:str, fcn:str):str
-address OPTwrapper
-comment "Selection cracking";
 
 #opt_statistics.mal
 

@@ -50,6 +50,8 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == firstnRef )
 				setVarCList(mb,getArg(p,0));
+			if(getFunctionId(p) == semijoinRef )
+				setVarCList(mb,getArg(p,0));
 			if(getFunctionId(p) == crossRef ){
 				setVarCList(mb,getArg(p,0));
 				setVarCList(mb,getArg(p,1));

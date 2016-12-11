@@ -60,8 +60,10 @@ int
 OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p,q, *old;
-    int limit,i,j, k, target=0;
+    int limit,i,j, k, target=0, actions =0;
 	signed char *check;
+	char buf[256];
+    lng usec = GDKusec();
 
 	if( optimizerIsApplied(mb,"mosaic"))
 		return 0;
@@ -131,21 +133,32 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = pushArgument(mb,q,getArg(q,0));
 			getArg(q,0) = j;
 			p= 0;
+			actions++;
 		} 
 		else
-        if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef) && check[getArg(p,1)] != 0)
-                setModuleId(p, mosaicRef);
-		else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && check[getArg(p,2)] != 0)
-                setModuleId(p, mosaicRef);
-		 else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)] != 0) && p->argc ==8)
-                setModuleId(p, mosaicRef);
+        if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef) && check[getArg(p,1)] != 0){
+			setModuleId(p, mosaicRef);
+			actions++;
+		} else
+        if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && check[getArg(p,2)] != 0){
+			setModuleId(p, mosaicRef);
+			actions++;
+		} else
+        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)] != 0) && p->argc ==8){
+			setModuleId(p, mosaicRef);
+			actions++;
+		}
 		if( p )
 			pushInstruction(mb,p);
     }
 	GDKfree(old);
 	GDKfree(check);
+	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	chkFlow(cntxt->fdout, mb);
+	chkDeclarations(cntxt->fdout, mb);
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mosaic",actions, GDKusec() - usec);
+    newComment(mb,buf);
 #ifdef _DEBUG_MOSAIC_
     printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif

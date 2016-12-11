@@ -388,20 +388,15 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 		q = SORTfndfirst(s, &o);
 		p = SORTfndfirst(s, &b->hseqbase);
 		candlist = (const oid *) Tloc(s, p);
+#ifdef HAVE_LIBPCRE
+#define BODY     (pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) >= 0)
+#else
+#define BODY     (regexec(&re, v, (size_t) 0, NULL, 0) != REG_NOMATCH)
+#endif
 		if (anti)
-			candscanloop(v && *v != '\200' &&
-#ifdef HAVE_LIBPCRE
-				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) == -1);
-#else
-				regexec(&re, v, (size_t) 0, NULL, 0) == REG_NOMATCH);
-#endif
+			candscanloop(v && *v != '\200' && !BODY);
 		else
-			candscanloop(v && *v != '\200' &&
-#ifdef HAVE_LIBPCRE
-				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) >= 0);
-#else
-				regexec(&re, v, (size_t) 0, NULL, 0) != REG_NOMATCH);
-#endif
+			candscanloop(v && *v != '\200' && BODY);
 	} else {
 		if (s) {
 			assert(BATtdense(s));
@@ -416,19 +411,9 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 			q = BUNlast(b) + off;
 		}
 		if (anti)
-			scanloop(v && *v != '\200' &&
-#ifdef HAVE_LIBPCRE
-				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) == -1);
-#else
-				regexec(&re, v, (size_t) 0, NULL, 0) == REG_NOMATCH);
-#endif
+			scanloop(v && *v != '\200' && !BODY);
 		else
-			scanloop(v && *v != '\200' &&
-#ifdef HAVE_LIBPCRE
-				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) >= 0);
-#else
-				regexec(&re, v, (size_t) 0, NULL, 0) != REG_NOMATCH);
-#endif
+			scanloop(v && *v != '\200' && BODY);
 	}
 #ifdef HAVE_LIBPCRE
 	my_pcre_free(re);
