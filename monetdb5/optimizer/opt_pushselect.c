@@ -166,10 +166,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		if (getModuleId(p) == algebraRef && 
-			(getFunctionId(p) == subinterRef || 
-			 getFunctionId(p) == subdiffRef)) {
+			(getFunctionId(p) == intersectRef || 
+			 getFunctionId(p) == differenceRef)) {
 			GDKfree(vars);
-			return 0;
+			goto wrapup;
 		}
 
 		if (isSlice(p))
@@ -201,7 +201,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 		lastbat = lastbat_arg(mb, p);
-		if (isSubSelect(p) && p->retc == 1 &&
+		if (isSelect(p) && p->retc == 1 &&
 		   /* no cand list */ getArgType(mb, p, lastbat) != newBatType(TYPE_oid)) {
 			int i1 = getArg(p, 1), tid = 0;
 			InstrPtr q = old[vars[i1]];
@@ -233,7 +233,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			if (tid && subselect_add(&subselects, tid, getArg(p, 0)) < 0) {
 				GDKfree(vars);
-				return 0;
+				goto wrapup;
 			}
 		}
 		/* left hand side */
@@ -263,7 +263,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			if (tid && subselect_add(&subselects, tid, getArg(p, 0)) < 0) {
 				GDKfree(vars);
-				return 0;
+				goto wrapup;
 			}
 		}
 		/* right hand side */
@@ -293,27 +293,27 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			if (tid && subselect_add(&subselects, tid, getArg(p, 1)) < 0) {
 				GDKfree(vars);
-				return 0;
+				goto wrapup;
 			}
 		}
 	}
 
 	if ((!subselects.nr && !nr_topn && !nr_likes) || newMalBlkStmt(mb, mb->ssize) <0 ) {
 		GDKfree(vars);
-		return 0;
+		goto wrapup;
 	}
 	pushInstruction(mb,old[0]);
 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 
-		/* rewrite batalgebra.like + subselect -> likesubselect */
-		if (getModuleId(p) == algebraRef && p->retc == 1 && getFunctionId(p) == subselectRef) { 
+		/* rewrite batalgebra.like + select -> likeselect */
+		if (getModuleId(p) == algebraRef && p->retc == 1 && getFunctionId(p) == selectRef) { 
 			int var = getArg(p, 1);
 			InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
 
 			if (isLikeOp(q)) { /* TODO check if getArg(p, 3) value == TRUE */
-				InstrPtr r = newInstruction(mb, algebraRef, likesubselectRef);
+				InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
 				int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)); 
 				int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
 
@@ -338,7 +338,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		/* inject table ids into subselect 
 		 * s = subselect(c, C1..) => subselect(c, t, C1..)
 		 */
-		if (isSubSelect(p) && p->retc == 1) { 
+		if (isSelect(p) && p->retc == 1) { 
 			int tid = 0;
 
 			if ((tid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) {
@@ -448,7 +448,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	GDKfree(old);
 	if (!push_down_delta) {
 		GDKfree(vars);
-		return actions;
+		goto wrapup;
 	}
 
 	/* now push selects through delta's */
@@ -463,7 +463,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		GDKfree(vars);
 		GDKfree(slices);
 		GDKfree(rslices);
-		return actions;
+		goto wrapup;
 
 	}
 	pushInstruction(mb,old[0]);
@@ -531,17 +531,17 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* c = delta(b, uid, uvl, ins)
-		 * s = subselect(c, C1..)
+		 * s = select(c, C1..)
 		 *
-		 * nc = subselect(b, C1..)
-		 * ni = subselect(ins, C1..)
-		 * nu = subselect(uvl, C1..)
+		 * nc = select(b, C1..)
+		 * ni = select(ins, C1..)
+		 * nu = select(uvl, C1..)
 		 * s = subdelta(nc, uid, nu, ni);
 		 *
-		 * doesn't handle Xsubselect(x, .. z, C1.. cases) ie multicolumn selects
+		 * doesn't handle Xselect(x, .. z, C1.. cases) ie multicolumn selects
 		 */
 		lastbat = lastbat_arg(mb, p);
-		if (isSubSelect(p) && p->retc == 1 && lastbat == 2) {
+		if (isSelect(p) && p->retc == 1 && lastbat == 2) {
 			int var = getArg(p, 1);
 			InstrPtr q = old[vars[var]];
 
@@ -606,6 +606,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
         chkFlow(cntxt->fdout, mb);
         chkDeclarations(cntxt->fdout, mb);
     }
+wrapup:
     /* keep all actions taken as a post block comment */
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions,GDKusec() - usec);
     newComment(mb,buf);

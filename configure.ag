@@ -1540,7 +1540,7 @@ AS_VAR_IF([have_pthread], [no], [], [
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
 	AS_CASE([$GCC-$have_pthread-$CC_ver],
-		[yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*|yes-auto-clang-7.*|yes-yes-clang-7.*|yes-auto-clang-8.*|yes-yes-clang-8.*], [
+		[yes-auto-clang-*|yes-yes-clang-*], [
 			# clang 5.*/6.*/7.* (Xcode 6.0) does not
 			# seem to have / require -pthread as compiler
 			# option; on Mac OS X Yosamite, "Apple LLVM
@@ -1552,7 +1552,12 @@ AS_VAR_IF([have_pthread], [no], [], [
 			# https://www.monetdb.org/pipermail/developers-list/2014-March/004264.html
 			# a better alternative might be required but is
 			# still pending ...
-			],
+			AS_CASE([$host],
+				[*-darwin*], [], [
+			PTHREAD_INCS="-pthread"
+			PTHREAD_LIBS="-pthread"
+			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
+			LIBS="$LIBS $PTHREAD_LIBS"])],
 		[yes-auto-*|yes-yes-*], [
 			# use GCC's knowledge about the target platform, sets flags
 			# for both the preprocessor as well as the linker
@@ -1772,7 +1777,7 @@ AS_CASE([$host],
 
 
 # PCRE library
-# required for MonetDB5 (and SQL), optional otherwise
+# required on Windows, optional on POSIX systems with GNU regex
 req_pcre_ver='4.5'
 PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver],
 	[have_pcre=yes], [have_pcre=no; why_have_pcre="(libpcre >= $req_pcre_ver not found)"])
@@ -1790,16 +1795,28 @@ AS_VAR_IF([have_pcre], [yes], [
 		[AC_MSG_RESULT([assuming yes])])
 	LIBS="$save_LIBS"
 	CFLAGS="$save_CFLAGS"])
+
 AS_VAR_IF([have_pcre], [yes], [
 	AC_DEFINE([HAVE_LIBPCRE], 1, [Define if you have the pcre library])])
 AM_CONDITIONAL([HAVE_PCRE], [test x"$have_pcre" != xno])
-AS_CASE([$enable_monetdb5-$have_pcre],
-[yes-no], [
-	AC_MSG_ERROR([PCRE library not found but required for MonetDB5])],
-[auto-no], [
+
+have_gnuregex=yes
+AS_VAR_IF([have_pcre], [yes], [], [
+	AC_RUN_IFELSE([AC_LANG_PROGRAM(
+		[[@%:@include <regex.h>]],
+		[[regex_t re; regcomp(&re, "hello", REG_EXTENDED|REG_NOSUB);]])],
+		[AC_MSG_RESULT([yes])],
+		[have_gnuregex=no],
+		[have_gnuregex=no])
+])
+
+AS_CASE([$enable_monetdb5-$have_pcre-$have_gnuregex],
+[yes-no-no], [
+	AC_MSG_ERROR([PCRE library or GNU regex library not found but required for MonetDB5])],
+[auto-no-no], [
 	enable_monetdb5=no
 	AS_VAR_IF([disable_monetdb5], [], [
-		disable_monetdb5="(PCRE library not found but required for MonetDB5)"])])
+		disable_monetdb5="(PCRE library or GNU regex library not found but required for MonetDB5)"])])
 
 org_have_libxml2=yes
 have_libxml2=$org_have_libxml2
@@ -1919,7 +1936,7 @@ AS_VAR_IF([enable_rintegration], [no], [], [
 			 why_have_libr="(libR library not found)"
 			 enable_rintegration=no
 			 disable_rintegration="(libR library not found)"])],
-		[AS_IF([RHOME=`$RCMD RHOME` && libr_CFLAGS=`$RCMD CMD config --cppflags` && libr_LIBS=`$RCMD CMD config --ldflags`],
+		[AS_IF([RHOME=`$RCMD RHOME` && libr_CFLAGS=`$RCMD CMD config --cppflags` && libr_LIBS=`$RCMD CMD config --ldflags | sed -e 's|-fopenmp |-fopenmp=libgomp |'`],
 			[have_libr=yes
 			 AC_DEFINE([HAVE_LIBR], 1, [Define if you have libR installed])
 			 AC_SUBST([libr_CFLAGS], [$libr_CFLAGS])
@@ -2568,7 +2585,7 @@ AS_CASE([$enable_int128],
 	why_have_hge='(128-bit integer support disabled)'])
 AM_CONDITIONAL([HAVE_HGE], [test "x$have_hge" = xyes])
 
-AC_CHECK_TYPES([ptrdiff_t])
+AC_CHECK_TYPES([ptrdiff_t],,,[@%:@include <stddef.h>])
 AC_CHECK_TYPES([intptr_t])
 AC_CHECK_TYPES([uintptr_t])
 
@@ -2579,8 +2596,8 @@ AC_CHECK_SIZEOF([long])
 AC_CHECK_SIZEOF([void *])
 AC_CHECK_SIZEOF([size_t])
 AC_CHECK_SIZEOF([ssize_t])
-AC_CHECK_SIZEOF([ptrdiff_t])
-AC_CHECK_SIZEOF([wchar_t])
+AC_CHECK_SIZEOF([ptrdiff_t],,[@%:@include <stddef.h>])
+AC_CHECK_SIZEOF([wchar_t],,[@%:@include <stddef.h>])
 AC_CHECK_SIZEOF([long long])
 AC_CHECK_SIZEOF([__int64])
 AC_CHECK_SIZEOF([__int128])
@@ -3151,7 +3168,6 @@ for comp in \
 	'netcdf       ' \
 	'openssl      ' \
 	'pcre         ' \
-	'perl         ' \
 	'proj         ' \
 	'pthread      ' \
 	'python2      ' \

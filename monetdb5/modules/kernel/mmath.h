@@ -98,6 +98,7 @@ unopM5_export(_LOG10)
 
 binopM5_export(_POW)
 unopM5_export(_SQRT)
+unopM5_export(_CBRT)
 
 unopM5_export(_CEIL)
 unopbaseM5_export(_FABS,dbl)

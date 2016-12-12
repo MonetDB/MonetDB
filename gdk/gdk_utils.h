@@ -95,7 +95,7 @@ gdk_export int GDKexiting(void);
 
 gdk_export void GDKregister(MT_Id pid);
 gdk_export void GDKprepareExit(void);
-gdk_export void GDKreset(int status);
+gdk_export void GDKreset(int status, int exit);
 gdk_export const char *GDKversion(void);
 
 gdk_export gdk_return GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir);

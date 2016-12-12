@@ -69,5 +69,6 @@ HAVE_LIBPY?pyloader07
 
 simpleSQL
 limithack
+shutdown
 
 HAVE_HGE?int_notation_1e5

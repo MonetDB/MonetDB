@@ -1993,16 +1993,21 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		dlist *dl = sc->data.lval;
 		symbol *lo = dl->h->data.sym;
 		dnode *n = dl->h->next;
-		sql_exp *l = rel_value_exp(sql, rel, lo, f, ek), *r = NULL;
-		sql_rel *left = NULL, *right = NULL;
+		sql_rel *left = NULL, *right = NULL, *outer = *rel;
+		sql_exp *l = NULL, *r = NULL;
 		int needproj = 0, vals_only = 1;
-		list *vals = NULL;
+		list *vals = NULL, *pexps = NULL;
 
+		if (outer && f == sql_sel && is_project(outer->op) && !is_processed(outer) && outer->l && !list_empty(outer->exps)) {
+			needproj = 1;
+			pexps = outer->exps;
+			*rel = outer->l;
+		}
+
+		l = rel_value_exp(sql, rel, lo, f, ek);
 		if (!l)
 			return NULL;
-
 		ek.card = card_set;
-
 		if (!left)
 			left = *rel;
 
@@ -2010,6 +2015,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			needproj = (left != NULL);
 			left = rel_project_exp(sql->sa, l);
 		}
+		if (left && is_project(left->op) && list_empty(left->exps))
+			left = left->l;
 
 		if (n->type == type_list) {
 			sql_subtype *st = exp_subtype(l);
@@ -2073,6 +2080,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 						e = rel_binop_(sql, e, ne, NULL, "or", card_value);
 					}
 				}
+				*rel = outer;
 				return e;
 			}
 			r = rel_lastexp(sql, right);
@@ -2084,7 +2092,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			e = exp_compare(sql->sa, l, r, cmp_equal );
 			rel_join_add_exp(sql->sa, left, e);
 			if (*rel && needproj)
-				left = *rel = rel_project(sql->sa, left, NULL);
+				left = *rel = rel_project(sql->sa, left, pexps);
 			else
 				*rel = left;
 			if (sc->token == SQL_NOT_IN)
@@ -2511,9 +2519,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			if (!correlated) {
 				if (right->processed)
 					right = rel_label(sql, right, 0);
-				/*
-				right = rel_distinct(right);
-				*/
 			}
 		} else {
 			return sql_error(sql, 02, "IN: missing inner query");
@@ -2536,13 +2541,10 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				sql_exp *l = n->data;
 				sql_exp *r = m->data;
 
-				//r = rel_lastexp(sql, right);
-				//r = exp_column(sql->sa, exp_relname(r), exp_name(r), exp_subtype(r), exp_card(r), has_nil(r), is_intern(r));
 				r = exp_alias_or_copy(sql, exp_relname(r), exp_name(r), right, r);
 				if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
 					return NULL;
 				e = exp_compare(sql->sa, l, r, cmp_equal );
-				//rel_join_add_exp(sql->sa, rel, e);
 				append(jexps, e);
 			}
 			if (correlated && l_is_value) {
@@ -3662,7 +3664,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 
 /* some users like to use aliases already in the groupby */
 static sql_exp *
-rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
+rel_selection_ref(mvc *sql, sql_rel **rel, symbol *grp, dlist *selection )
 {
 	dnode *n;
 	dlist *gl = grp->data.lval;
@@ -3682,7 +3684,7 @@ rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 			/* AS name */
 			if (l->h->next->data.sval &&
 					strcmp(l->h->next->data.sval, name) == 0){
-				sql_exp *ve = rel_value_exp(sql, &rel, l->h->data.sym, sql_sel, ek);
+				sql_exp *ve = rel_value_exp(sql, rel, l->h->data.sym, sql_sel, ek);
 				if (ve) {
 					dlist *l = dlist_create(sql->sa);
 					symbol *sym;
@@ -3709,18 +3711,20 @@ rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 }
 
 static list *
-rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
+rel_group_by(mvc *sql, sql_rel **rel, symbol *groupby, dlist *selection, int f )
 {
-	sql_rel *or = rel;
+	//sql_rel *or = rel;
 	dnode *o = groupby->data.lval->h;
 	list *exps = new_exp_list(sql->sa);
 
 	for (; o; o = o->next) {
 		symbol *grp = o->data.sym;
-		sql_exp *e = rel_column_ref(sql, &rel, grp, f);
+		sql_exp *e = rel_column_ref(sql, rel, grp, f);
 
+		/*
 		if (or != rel)
 			return NULL;
+			*/
 		if (!e) {
 			char buf[ERRSIZE];
 			/* reset error */
@@ -4139,7 +4143,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	/* Partition By */
 	if (window_specification->h->data.sym) {
-		gbe = rel_group_by(sql, p, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
+		gbe = rel_group_by(sql, &p, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
 		if (!gbe)
 			return NULL;
 		p->r = gbe;
@@ -4653,7 +4657,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 	if (rel) {
 		if (rel && sn->groupby) {
-			list *gbe = rel_group_by(sql, rel, sn->groupby, sn->selection, sql_sel );
+			list *gbe = rel_group_by(sql, &rel, sn->groupby, sn->selection, sql_sel );
 
 			if (!gbe)
 				return NULL;

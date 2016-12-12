@@ -522,11 +522,16 @@ retryRead:
 					}
 				}
 				continue;
-			} else{
-				Module m;
+			} else {
+				Module* list;
+				int length;
+				int i;
 				mnstr_printf(out,"#%s ",cntxt->nspace->name);
-				for( m = getModuleChain(); m; m = m->next)
-					mnstr_printf(out,"%s ",m->name);
+				getModuleList(&list, &length);
+				for(i = 0; i < length; i++) {
+					mnstr_printf(out, "%s ", list[i]->name);	
+				}
+				freeModuleList(list);
 				mnstr_printf(out,"\n");
 			}
 		}

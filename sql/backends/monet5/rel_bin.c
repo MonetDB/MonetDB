@@ -1893,8 +1893,10 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				break;
 
 			s = exp_bin(be, en->data, left, right, NULL, NULL, NULL, NULL);
-			if (!s) 
+			if (!s) {
+				assert(0);
 				return NULL;
+			}
 			if (join_idx != sql->opt_stats[0])
 				idx = 1;
 			/* stop on first non equality join */
@@ -2958,7 +2960,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 			stmt *orderby_ids = NULL, *orderby_grp = NULL;
 
-			/* implementation uses subsort key check */
+			/* implementation uses sort key check */
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *orderby;

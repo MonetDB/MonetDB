@@ -61,3 +61,12 @@ assert-on-push-project-up.Bug-6077
 assert-on-project.Bug-6078
 crash.Bug-6081
 merge-table-edit.Bug-6084
+dce.Bug-6114
+dce2.Bug-6115
+semijoin.Bug-6116
+split_project.Bug-6117
+case-column-when-null-Bug-6124
+select-in-from.Bug-6119
+select-in-from.Bug-6121
+nested-subquery-in-select.Bug-6125
+column_name_lost_in_in_operator.Bug-6123

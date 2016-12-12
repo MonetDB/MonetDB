@@ -474,32 +474,31 @@ int
 backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, char *query)
 {
 	mvc *c = be->mvc;
-	InstrPtr q;
+	InstrPtr q, querylog;
 	int old_mv = be->mvc_var;
 	MalBlkPtr old_mb = be->mb;
 	stmt *s;
+	char *t, *tt;
        
 	// Always keep the SQL query around for monitoring
-	if (query) {
-		char *t, *tt;
-		InstrPtr q;
 
+	if( query == 0)
+		tt = t = GDKstrdup("-- no query");
+	else
 		tt = t = GDKstrdup(query);
-		while (t && isspace((int) *t))
-			t++;
+	while (t && isspace((int) *t))
+		t++;
 
-		q = newStmt(mb, querylogRef, defineRef);
-		if (q == NULL) {
-			GDKfree(tt);
-			return -1;
-		}
-		q->token = REMsymbol;	// will be patched
-		setVarType(mb, getArg(q, 0), TYPE_void);
-		setVarUDFtype(mb, getArg(q, 0));
-		q = pushStr(mb, q, t);
+	querylog = q = newStmt(mb, querylogRef, defineRef);
+	if (q == NULL) {
 		GDKfree(tt);
-		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
+		return -1;
 	}
+	setVarType(mb, getArg(q, 0), TYPE_void);
+	setVarUDFtype(mb, getArg(q, 0));
+	q = pushStr(mb, q, t);
+	GDKfree(tt);
+	q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 
 	/* announce the transaction mode */
 	q = newStmt(mb, sqlRef, "mvc");
@@ -508,8 +507,10 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 	be->mvc_var = getDestVar(q);
 	be->mb = mb;
        	s = sql_relation2stmt(be, r);
-	if (!s) 
+	if (!s) {
+		(void) pushInt(mb, querylog, mb->stop);
 		return 0;
+	}
 
 	be->mvc_var = old_mv;
 	be->mb = old_mb;
@@ -526,35 +527,9 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 		getArg(q, 0) = getArg(getInstrPtr(mb, 0), 0);
 		q->barrier = RETURNsymbol;
 	}
-	if (add_end){
+	if (add_end)
 		pushEndInstruction(mb);
-	}
-	// Always keep the SQL query around for monitoring
-	{
-		char *t, *tt;
-		InstrPtr q;
-
-		if (be->q && be->q->codestring) {
-			tt = t = GDKstrdup(be->q->codestring);
-			while (t && isspace((int) *t))
-				t++;
-		} else {
-			tt = t = GDKstrdup("-- no query");
-		}
-
-		q = newStmt(mb, querylogRef, defineRef);
-		if (q == NULL) {
-			GDKfree(tt);
-			goto cleanup;
-		}
-		q->token = REMsymbol;	// will be patched
-		setVarType(mb, getArg(q, 0), TYPE_void);
-		setVarUDFtype(mb, getArg(q, 0));
-		q = pushStr(mb, q, t);
-		GDKfree(tt);
-		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
-	}
-cleanup:
+	(void) pushInt(mb, querylog, mb->stop);
 	return 0;
 }
 

@@ -7,25 +7,31 @@
 module sysmon;
 
 pattern pause(id:sht)
-address SYSMONpause;
+address SYSMONpause
+comment "Suspend a running query";
 pattern pause(id:int)
-address SYSMONpause;
+address SYSMONpause
+comment "Suspend a running query";
 pattern pause(id:lng)
 address SYSMONpause
-comment "Temporary suspend a single query";
+comment "Suspend a running query";
 
 pattern resume(id:sht)
-address SYSMONresume;
+address SYSMONresume
+comment "Resume processing of a query ";
 pattern resume(id:int)
-address SYSMONresume;
+address SYSMONresume
+comment "Resume processing of a query ";
 pattern resume(id:lng)
 address SYSMONresume
-comment "Resume processing ";
+comment "Resume processing of a query ";
 
 pattern stop(id:sht)
-address SYSMONstop;
+address SYSMONstop
+comment "Stop a single query a.s.a.p.";
 pattern stop(id:int)
-address SYSMONstop;
+address SYSMONstop
+comment "Stop a single query a.s.a.p.";
 pattern stop(id:lng)
 address SYSMONstop
 comment "Stop a single query a.s.a.p.";

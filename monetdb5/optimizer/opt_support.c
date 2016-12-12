@@ -32,13 +32,10 @@ struct OPTcatalog {
 {"commonTerms",	0,	0,	0},
 {"constants",	0,	0,	0},
 {"costModel",	0,	0,	0},
-{"crack",		0,	0,	0},
-{"datacyclotron",0,	0,	0},
 {"dataflow",	0,	0,	0},
 {"deadcode",	0,	0,	0},
 {"emptybind",	0,	0,	0},
 {"evaluate",	0,	0,	0},
-{"factorize",	0,	0,	0},
 {"garbage",		0,	0,	0},
 {"generator",	0,	0,	0},
 {"history",		0,	0,	0},
@@ -51,16 +48,11 @@ struct OPTcatalog {
 {"mergetable",	0,	0,	0},
 {"mitosis",		0,	0,	0},
 {"multiplex",	0,	0,	0},
-{"origin",		0,	0,	0},
-{"peephole",	0,	0,	0},
 {"reduce",		0,	0,	0},
 {"remap",		0,	0,	0},
 {"remote",		0,	0,	0},
 {"reorder",		0,	0,	0},
 {"replication",	0,	0,	0},
-{"selcrack",	0,	0,	0},
-{"sidcrack",	0,	0,	0},
-{"strengthreduction",	0,	0,	0},
 {"pushselect",	0,	0,	0},
 { 0,	0,	0,	0}
 };
@@ -120,6 +112,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	int qot = 0;
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
+	int actions = 0;
 	lng clk = GDKusec();
 	char buf[256];
 
@@ -135,6 +128,8 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	if (mb->errors)
 		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
+	/* Optimizers may massage the plan in such a way that a new pass is needed.
+     * When no optimzer call is found, be terminate. */
 	do {
 		qot = 0;
 		for (pc = 0; pc < mb->stop ; pc++) {
@@ -143,25 +138,31 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				/* all optimizers should behave like patterns */
 				/* However, we don't have a stack now */
 				qot++;
+				actions++;
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
 					msg= createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
 					GDKfree(place);
-					return msg;
+					goto wrapup;
 				}
+				if (cntxt->mode == FINISHCLIENT)
+					throw(MAL, "optimizeMALBlock", "prematurely stopped client");
 				pc= -1;
 			}
 		}
 	} while (qot && cnt++ < mb->stop);
-	if( qot){
+
+wrapup:
+	/* Keep the total time spent on optimizing the plan for inspection */
+	if( actions){
 		mb->optimize= GDKusec() - clk;
-		snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","total",1,mb->optimize);
-		newComment(mb,buf);
+		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total",actions, mb->optimize);
+		newComment(mb, buf);
 	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
-	return 0;
+	return msg;
 }
 
 /*
@@ -538,7 +539,7 @@ isOrderDepenent(InstrPtr p)
 {
     if( getModuleId(p) != batsqlRef)
         return 0;
-    if ( getFunctionId(p) == diffRef ||
+    if ( getFunctionId(p) == differenceRef ||
         getFunctionId(p) == row_numberRef ||
         getFunctionId(p) == rankRef ||
         getFunctionId(p) == dense_rankRef)
@@ -596,11 +597,11 @@ isMatJoinOp(InstrPtr p)
 {
 	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == crossRef ||
-                 getFunctionId(p) == subjoinRef ||
-                 getFunctionId(p) == subantijoinRef || /* is not mat save */
-                 getFunctionId(p) == subthetajoinRef ||
-                 getFunctionId(p) == subbandjoinRef ||
-                 getFunctionId(p) == subrangejoinRef)
+                 getFunctionId(p) == joinRef ||
+                 getFunctionId(p) == antijoinRef || /* is not mat save */
+                 getFunctionId(p) == thetajoinRef ||
+                 getFunctionId(p) == bandjoinRef ||
+                 getFunctionId(p) == rangejoinRef)
 		));
 }
 
@@ -608,7 +609,7 @@ int
 isMatLeftJoinOp(InstrPtr p)
 {
 	return (getModuleId(p) == algebraRef && 
-		getFunctionId(p) == subleftjoinRef);
+		getFunctionId(p) == leftjoinRef);
 }
 
 int isDelta(InstrPtr p){
@@ -633,12 +634,12 @@ int isFragmentGroup2(InstrPtr p){
 		);
 }
 
-int isSubSelect(InstrPtr p)
+int isSelect(InstrPtr p)
 {
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 	
-	return (l >= 9 && strcmp(func+l-9,"subselect") == 0);
+	return (l >= 6 && strcmp(func+l-6,"select") == 0);
 }
 
 int isSubJoin(InstrPtr p)
@@ -646,7 +647,7 @@ int isSubJoin(InstrPtr p)
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 	
-	return (l >= 7 && strcmp(func+l-7,"subjoin") == 0);
+	return (l >= 7 && strcmp(func+l-7,"join") == 0);
 }
 
 int isMultiplex(InstrPtr p)
@@ -661,7 +662,7 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== selectNotNilRef
 			))  ||
-			isSubSelect(p) ||
+			isSelect(p) ||
 			(getModuleId(p)== batRef && (
 				getFunctionId(p)== mirrorRef 
 			));

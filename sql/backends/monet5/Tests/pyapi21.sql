@@ -2,7 +2,7 @@
 START TRANSACTION;
 
 
-CREATE FUNCTION pyapi21_create() returns TABLE(s STRING)
+CREATE FUNCTION pyapi21_create() returns TABLE(s BLOB)
 language P
 {
 	import pickle
@@ -18,12 +18,12 @@ language P
     return result
 };
 
-CREATE FUNCTION pyapi21_load(objects STRING) returns BOOLEAN
+CREATE FUNCTION pyapi21_load(objects BLOB) returns BOOLEAN
 LANGUAGE P
 {
 	import pickle
 	for x in [pickle.loads(y) for y in objects]:
-		print str(type(x)) + ": " + str(x)
+		print(str(type(x)) + ": " + str(x))
 	return True
 };
 

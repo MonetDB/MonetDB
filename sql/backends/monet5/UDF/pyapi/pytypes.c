@@ -1,11 +1,6 @@
 
 #include "pytypes.h"
 
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#define PyString_AsString PyUnicode_AsUTF8
-#endif
-
 bool PyType_IsInteger(int type)
 {
     switch (type)
@@ -169,6 +164,36 @@ bool PyType_IsLazyArray(PyObject *object)
     return ret;
 }
 
+bool PyType_IsNumpyArray(PyObject *object)
+{
+    return PyArray_CheckExact(object);
+}
+
+bool Python_ObtainGIL(void)
+{
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    return gstate == PyGILState_LOCKED ? 0 : 1;
+}
+
+bool Python_ReleaseGIL(bool state)
+{
+    PyGILState_STATE gstate = state == 0 ? PyGILState_LOCKED : PyGILState_UNLOCKED;
+    PyGILState_Release(gstate);
+    return 0;
+}
+
+//Returns true if the type of [object] is a scalar (i.e. numeric scalar or string, basically "not an array but a single value")
+bool PyType_IsPyScalar(PyObject *object)
+{
+    if (object == NULL) return false;
+    return (PyArray_CheckScalar(object) || PyInt_Check(object) || PyFloat_Check(object) || PyLong_Check(object) || PyString_Check(object) || PyBool_Check(object) || PyUnicode_Check(object) || PyByteArray_Check(object)
+#ifdef IS_PY3K
+        || PyBytes_Check(object)
+#endif
+        );
+}
+
+
 void _pytypes_init(void) {
-    import_array();
+    _import_array();
 }

@@ -12,28 +12,30 @@ lib_gdk = {
 	VERSION = $(GDK_VERSION)
 	NAME = bat
 	SOURCES = \
-		gdk.h gdk_cand.h gdk_atomic.h gdk_batop.c \
 		gdk_select.c \
+		gdk_calc.c gdk_calc.h gdk_calc_compare.h gdk_calc_private.h \
+		gdk_ssort.c gdk_ssort_impl.h \
+		gdk_aggr.c \
+		gdk.h gdk_cand.h gdk_atomic.h gdk_batop.c \
 		gdk_search.c gdk_hash.c gdk_hash.h gdk_tm.c \
 		gdk_orderidx.c \
 		gdk_align.c gdk_bbp.c gdk_bbp.h \
 		gdk_heap.c gdk_utils.c gdk_utils.h \
 		gdk_atoms.c gdk_atoms.h \
-		gdk_qsort.c gdk_qsort_impl.h gdk_ssort.c gdk_ssort_impl.h \
+		gdk_qsort.c gdk_qsort_impl.h \
 		gdk_storage.c gdk_bat.c \
 		gdk_delta.c gdk_cross.c gdk_system.c gdk_value.c \
 		gdk_posix.c gdk_logger.c gdk_sample.c \
 		gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h \
 		gdk_system.h gdk_system_private.h gdk_tm.h gdk_storage.h \
-		gdk_calc.c gdk_calc.h gdk_calc_compare.h gdk_calc_private.h \
-		gdk_aggr.c gdk_group.c \
+		gdk_group.c \
 		gdk_imprints.c gdk_imprints.h \
 		gdk_join.c gdk_project.c \
 		gdk_unique.c \
 		gdk_interprocess.c gdk_interprocess.h \
 		gdk_firstn.c \
 		bat.feps bat1.feps bat2.feps \
-		libbat.rc 
+		libbat.rc
 	LIBS = ../common/options/libmoptions \
 		../common/stream/libstream \
 		../common/utils/libmutils \

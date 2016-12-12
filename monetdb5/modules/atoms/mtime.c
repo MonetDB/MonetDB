@@ -1393,6 +1393,7 @@ str
 MTIMEepilogue(void *ret)
 {
 	(void) ret;
+	MTIMEreset();
 	return MAL_SUCCEED;
 }
 

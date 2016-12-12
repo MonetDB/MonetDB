@@ -1567,7 +1567,7 @@ def GetBitsAndModsAndThreads(env) :
         t.start()
         input = '''\
                 c := mdb.modules();
-                modsid := algebra.subunique(c);
+                modsid := algebra.unique(c);
                 mods := algebra.projection(modsid,c);
                 s := "\\nModules: ";
                 sep := "";

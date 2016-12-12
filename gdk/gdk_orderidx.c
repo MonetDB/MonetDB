@@ -164,7 +164,7 @@ BATorderidx(BAT *b, int stable)
 			if (GDKssort(Tloc(bn, 0), mv,
 				     bn->tvheap ? bn->tvheap->base : NULL,
 				     BATcount(bn), Tsize(bn), SIZEOF_OID,
-				     bn->ttype) < 0) {
+				     bn->ttype) != GDK_SUCCEED) {
 				HEAPfree(m, 1);
 				GDKfree(m);
 				MT_lock_unset(&GDKhashLock(b->batCacheid));

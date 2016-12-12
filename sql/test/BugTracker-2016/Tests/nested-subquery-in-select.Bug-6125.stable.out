@@ -1,0 +1,117 @@
+stdout of test 'nested-subquery-in-select.Bug-6125` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 18:55:52 >  
+# 18:55:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38335" "--set" "mapi_usock=/var/tmp/mtest-32002/.s.monetdb.38335" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 18:55:52 >  
+
+# MonetDB 5 server v11.23.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:38335/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32002/.s.monetdb.38335
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 18:55:53 >  
+# 18:55:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32002" "--port=38335"
+# 18:55:53 >  
+
+#START TRANSACTION;
+#CREATE TABLE t0 (a1 INT, a2 INT, a3 INT);
+#CREATE TABLE t1 (b1 INT, b2 INT);
+#CREATE TABLE t2 (c1 INT, c2 INT);
+#SELECT
+#  a1,
+#  (
+#    SELECT COUNT(*) FROM t1
+#  ) AS score
+#FROM t0;
+% sys.t0,	.L7 # table_name
+% a1,	score # name
+% int,	bigint # type
+% 1,	1 # length
+#SELECT
+#  a1,
+#  (
+#    SELECT COUNT(*) FROM t1 WHERE a1 = b1 AND EXISTS ( SELECT 1 FROM t2 WHERE c1 = a2 AND c2 IN (SELECT a1 FROM t0) )
+#  ) AS score
+#FROM t0;
+% .t0,	.L24 # table_name
+% a1,	score # name
+% int,	bigint # type
+% 1,	1 # length
+#SELECT
+#  a1,
+#  (
+#    SELECT COUNT(*) FROM t1 WHERE a1 = b1 AND EXISTS ( SELECT 1 FROM t2 WHERE c1 = B2 AND c2 IN (SELECT a1 FROM t0) )
+#  ) AS score
+#FROM t0;
+% .t0,	.L24 # table_name
+% a1,	score # name
+% int,	bigint # type
+% 1,	1 # length
+#SELECT
+#  a1,
+#  (
+#    SELECT COUNT(*) FROM t1 WHERE a1 = b1 AND EXISTS ( SELECT 1 FROM t2 WHERE c1 = B2 AND c2 IN (SELECT a1 FROM t0) )
+#  ) AS score
+#FROM t0
+#WHERE a2 OR a3;
+% .t0,	.L24 # table_name
+% a1,	score # name
+% int,	bigint # type
+% 1,	1 # length
+
+# 18:55:53 >  
+# 18:55:53 >  "Done."
+# 18:55:53 >  
+

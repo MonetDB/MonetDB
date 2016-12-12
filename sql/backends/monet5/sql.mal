@@ -253,25 +253,25 @@ command delta( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3]
 address DELTAbat
 comment "Return column bat with delta's applied.";
 
-command projectdelta( subselect:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3] ) :bat[:any_3] 
+command projectdelta( select:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3] ) :bat[:any_3] 
 address DELTAproject
 comment "Return column bat with delta's applied.";
 
 command subdelta( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid], ins:bat[:oid] ) :bat[:oid]
 address DELTAsub
-comment "Return a single bat of subselected delta.";
+comment "Return a single bat of selected delta.";
 
 command delta( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
 address DELTAbat2
 comment "Return column bat with delta's applied.";
 
-command projectdelta( subselect:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
+command projectdelta( select:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
 address DELTAproject2
 comment "Return column bat with delta's applied.";
 
 command subdelta( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid]) :bat[:oid]
 address DELTAsub2
-comment "Return a single bat of subselected delta.";
+comment "Return a single bat of selected delta.";
 
 command project( col:bat[:oid], l:bat[:oid], r:bat[:oid]) :bat[:oid]
 address BATleftproject

@@ -34,63 +34,6 @@ Ready.
 [ 3,	1,	2	]
 [ 1,	2,	1	]
 [ 2,	3,	3	]
-#explain select count(*) from t2564 group by c1, c2, c3;
-% .explain # table_name
-% mal # name
-% clob # type
-% 117 # length
-function user.s10_1():void;
-    X_63:void := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",27:int);
-    X_46 := bat.new(nil:str);
-    X_53 := bat.append(X_46,"sys.L3");
-    X_48 := bat.new(nil:str);
-    X_55 := bat.append(X_48,"L2");
-    X_49 := bat.new(nil:str);
-    X_57 := bat.append(X_49,"bigint");
-    X_50 := bat.new(nil:int);
-    X_59 := bat.append(X_50,64:int);
-    X_52 := bat.new(nil:int);
-    X_61 := bat.append(X_52,0:int);
-    X_3 := sql.mvc();
-    C_4:bat[:oid] := sql.tid(X_3,"sys","t2564");
-    X_24:bat[:int] := sql.bind(X_3,"sys","t2564","c3",0:int);
-    X_30 := algebra.projection(C_4,X_24);
-    X_7:bat[:int] := sql.bind(X_3,"sys","t2564","c1",0:int);
-    X_16 := algebra.projection(C_4,X_7);
-    X_17:bat[:int] := sql.bind(X_3,"sys","t2564","c2",0:int);
-    X_23 := algebra.projection(C_4,X_17);
-    (X_31,X_32,X_33) := group.subgroup(X_23);
-    (X_34,X_35,X_36) := group.subgroup(X_16,X_31);
-    (X_37,X_38,X_39) := group.subgroupdone(X_30,X_34);
-    X_43:bat[:lng] := aggr.subcount(X_37,X_37,X_38,false);
-# querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe")
-    sql.resultSet(X_53,X_55,X_57,X_59,X_61,X_43);
-end user.s10_1;
-#inline               actions= 0 time=2 usec 
-#candidates           actions= 1 time=19 usec 
-#remap                actions= 0 time=3 usec 
-#costModel            actions= 1 time=18 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 0 time=4 usec 
-#emptybind            actions= 0 time=6 usec 
-#pushselect           actions= 0 time=4 usec 
-#aliases              actions= 3 time=24 usec 
-#mergetable           actions= 0 time=43 usec 
-#deadcode             actions= 6 time=44 usec 
-#aliases              actions= 0 time=6 usec 
-#constants            actions= 1 time=17 usec 
-#commonTerms          actions= 0 time=6 usec 
-#projectionpath       actions= 0 time=5 usec 
-#reorder              actions= 1 time=30 usec 
-#deadcode             actions= 0 time=6 usec 
-#reduce               actions=33 time=31 usec 
-#matpack              actions= 0 time=4 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=2 usec 
-#generator            actions= 0 time=2 usec 
-#profiler             actions= 1 time=13 usec 
-#garbageCollector     actions= 1 time=23 usec 
-#total                actions= 1 time=370 usec 
 #select count(*) from t2564 group by c1, c2, c3;
 % sys.L3 # table_name
 % L2 # name

@@ -43,7 +43,7 @@ end createone;
 	io.printf("assignment refcount =%d[1]\n",i);
 
 	#re-use a bat variable
-	b4:= algebra.subselect(b,"bat C","bat C",true,true,false);
+	b4:= algebra.select(b,"bat C","bat C",true,true,false);
 	b5:=algebra.projection(b4,b);
 	io.print(b5);
 	i:= bbp.getLRefCount(b);

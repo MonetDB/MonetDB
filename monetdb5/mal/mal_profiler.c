@@ -148,7 +148,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
 	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
 	if( mal_session_uuid)
-		logadd("\"session\":%s,%s",mal_session_uuid,prettify);
+		logadd("\"session\":\"%s\",%s",mal_session_uuid,prettify);
 
 	if( start){
 		logadd("\"state\":\"start\",%s", prettify);
@@ -291,7 +291,7 @@ This information can be used to determine memory footprint and variable life tim
 							logadd("\"seqbase\":\""BUNFMT"\",%s", d->hseqbase, pret);
 							logadd("\"hghbase\":\""BUNFMT"\",%s", d->hseqbase + cnt, pret);
 							v= BBPquickdesc(VIEWtparent(d),0);
-							logadd("\"kind\":\"%s\",%s", ( v->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
+							logadd("\"kind\":\"%s\",%s", (v &&  v->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
 						} else
 							logadd("\"kind\":\"%s\",%s", ( d->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
 						total += cnt * d->twidth;

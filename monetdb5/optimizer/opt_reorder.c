@@ -282,11 +282,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	
 	pushInstruction(mb,old[0]);
 	old[0]=0;
-	for( i=1; i<limit; i++)
-		if ( getModuleId(old[i]) == datacyclotronRef && getFunctionId(old[i]) == bindRef){
-			pushInstruction(mb,old[i]);
-			old[i] = 0;
-		}
 
 	start=1;
 	for (i=1; i<limit; i++){

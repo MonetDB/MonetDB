@@ -123,9 +123,9 @@ __hidden gdk_return GDKremovedir(int farmid, const char *nme)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
 	__attribute__((__visibility__("hidden")));
-__hidden int GDKssort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+__hidden gdk_return GDKssort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__visibility__("hidden")));
-__hidden int GDKssort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+__hidden gdk_return GDKssort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));

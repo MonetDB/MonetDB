@@ -27,11 +27,10 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 86 # length
+% 85 # length
 function user.s4_1():void;
-    X_14:void := querylog.define("explain select fuse(1,2);","sequential_pipe",6:int);
+    X_0:void := querylog.define("explain select fuse(1,2);","sequential_pipe",8:int);
     X_6:sht := udf.fuse(1:bte,2:bte);
-# querylog.define("explain select fuse(1,2);","sequential_pipe")
     sql.resultSet(".L2","L2","smallint",16:int,0:int,7:int,X_6);
 end user.s4_1;
 #inline               actions= 0 time=2 usec 
@@ -69,11 +68,10 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 92 # length
+% 91 # length
 function user.s6_1():void;
-    X_14:void := querylog.define("explain select fuse(1000,2000);","sequential_pipe",6:int);
+    X_0:void := querylog.define("explain select fuse(1000,2000);","sequential_pipe",8:int);
     X_6:int := udf.fuse(1000:sht,2000:sht);
-# querylog.define("explain select fuse(1000,2000);","sequential_pipe")
     sql.resultSet(".L2","L2","int",32:int,0:int,7:int,X_6);
 end user.s6_1;
 #inline               actions= 0 time=2 usec 
@@ -111,11 +109,10 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 98 # length
+% 97 # length
 function user.s8_1():void;
-    X_14:void := querylog.define("explain select fuse(1000000,2000000);","sequential_pipe",6:int);
+    X_0:void := querylog.define("explain select fuse(1000000,2000000);","sequential_pipe",8:int);
     X_6:lng := udf.fuse(1000000:int,2000000:int);
-# querylog.define("explain select fuse(1000000,2000000);","sequential_pipe")
     sql.resultSet(".L2","L2","bigint",64:int,0:int,7:int,X_6);
 end user.s8_1;
 #inline               actions= 0 time=3 usec 
@@ -171,9 +168,9 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 101 # length
+% 100 # length
 function user.s16_1():void;
-    X_45:void := querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe",22:int);
+    X_0:void := querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe",27:int);
     X_28 := bat.new(nil:str);
     X_35 := bat.append(X_28,"sys.L2");
     X_30 := bat.new(nil:str);
@@ -222,9 +219,9 @@ end user.s16_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 101 # length
+% 100 # length
 function user.s18_1():void;
-    X_45:void := querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe",22:int);
+    X_0:void := querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe",27:int);
     X_28 := bat.new(nil:str);
     X_35 := bat.append(X_28,"sys.L2");
     X_30 := bat.new(nil:str);
@@ -273,9 +270,9 @@ end user.s18_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 101 # length
+% 100 # length
 function user.s20_1():void;
-    X_45:void := querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe",22:int);
+    X_0:void := querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe",27:int);
     X_28 := bat.new(nil:str);
     X_35 := bat.append(X_28,"sys.L2");
     X_30 := bat.new(nil:str);

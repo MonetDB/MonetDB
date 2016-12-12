@@ -221,10 +221,11 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		bat->cached = NULL;
 	}
 	if (!is_new && bat->uibid && bat->uvbid) {
-		BAT *ib = temp_descriptor(bat->ibid), *otids = tids;
+		BAT *ib = temp_descriptor(bat->ibid);
+		BAT *o = NULL;
 
 		if (BATcount(ib)) { 
-			BAT *nui = tids, *nuv = updates, *o;
+			BAT *nui = tids, *nuv = updates;
 
 			o = BATthetaselect(tids, NULL, &ib->hseqbase, ">=");
 			nui = BATproject(o, tids);
@@ -236,13 +237,6 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 			bat_destroy(nuv);
 
 			o = BATthetaselect(tids, NULL, &ib->hseqbase, "<");
-			nui = BATproject(o, tids);
-			nuv = BATproject(o, updates);
-			assert(BATcount(nui) == BATcount(nuv));
-			bat_destroy(o);
-
-			tids = nui;
-			updates = nuv;
 		}
 		bat_destroy(ib);
 
@@ -265,16 +259,12 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 			bat_destroy(uv);
 			uv = temp_descriptor(bat->uvbid);
 		}
-		BATappend(ui, tids, TRUE);
-		BATappend(uv, updates, TRUE);
+		BATappend(ui, tids, o, TRUE);
+		BATappend(uv, updates, o, TRUE);
 		assert(BATcount(tids) == BATcount(updates));
+		bat_destroy(o);
 		bat_destroy(ui);
 		bat_destroy(uv);
-		if (tids != otids) {
-			bat_destroy(tids);
-			bat_destroy(updates);
-			tids = otids;
-		}
 	} else if (is_new && bat->bid) { 
 		BAT *ib = temp_descriptor(bat->ibid);
 		b = temp_descriptor(bat->bid);
@@ -526,10 +516,10 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		}
 		if (isVIEW(i) && b->batCacheid == VIEWtparent(i)) {
 			BAT *ic = COLcopy(i, i->ttype, TRUE, TRANSIENT);
-			BATappend(b, ic, TRUE);
+			BATappend(b, ic, NULL, TRUE);
 			bat_destroy(ic);
 		} else 
-			BATappend(b, i, TRUE);
+			BATappend(b, i, NULL, TRUE);
 		assert(BUNlast(b) > b->batInserted);
 		bat_destroy(b);
 	}
@@ -716,7 +706,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 		b = temp_descriptor(bat->dbid);
 	}
 	assert(b->theap.storage != STORE_PRIV);
-	BATappend(b, i, TRUE);
+	BATappend(b, i, NULL, TRUE);
 	BATkey(b, TRUE);
 	bat_destroy(b);
 
@@ -1664,7 +1654,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 	if (BUNlast(ins) > 0) {
 		(*changes)++;
 		assert(cur->theap.storage != STORE_PRIV);
-		BATappend(cur,ins,TRUE);
+		BATappend(cur, ins, NULL, TRUE);
 		cbat->cnt = cbat->ibase = BATcount(cur);
 		BATcleanProps(cur);
 		temp_destroy(cbat->ibid);
@@ -1916,7 +1906,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			assert((BATcount(cur) + BATcount(ins)) == cbat->cnt);
 			//assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
 			assert(!BATcount(ins) || !isEbat(ins));
-			BATappend(cur,ins,TRUE);
+			BATappend(cur, ins, NULL, TRUE);
 			BATcleanProps(cur);
 			temp_destroy(cbat->bid);
 			temp_destroy(cbat->ibid);
@@ -1996,7 +1986,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 			ins = cur;
 			cur = newcur;
 		} else {
-			BATappend(cur,ins,TRUE);
+			BATappend(cur, ins, NULL, TRUE);
 			BATcleanProps(cur);
 			if (cur->batPersistence == PERSISTENT)
 				BATmsync(cur);

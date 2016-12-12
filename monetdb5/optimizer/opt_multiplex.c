@@ -260,7 +260,8 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(msg);
 
     /* Defense line against incorrect plans */
-    if( mb->errors == 0 && actions > 0){ chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+    if( mb->errors == 0 && actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
         chkFlow(cntxt->fdout, mb);
         chkDeclarations(cntxt->fdout, mb);
     }

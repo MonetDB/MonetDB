@@ -156,7 +156,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		((sizeof( MalBlkRecord) +mb->ssize * offsetof(InstrRecord, argv)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024),
 		usec);
 	QOTupdateStatistics(curmodnme,actions,usec);
-	addtoMalBlkHistory(mb);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 	if ( mb->errors)
 		throw(MAL, optimizer, PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
 	return MAL_SUCCEED;
