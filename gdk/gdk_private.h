@@ -57,7 +57,7 @@ __hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted)
+__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, int subsorted)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));

@@ -1461,7 +1461,7 @@ gdk_export int BATgetaccess(BAT *b);
 gdk_export gdk_return BATclear(BAT *b, int force);
 gdk_export BAT *COLcopy(BAT *b, int tt, int writeable, int role);
 
-gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
+gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h);
 
 /*
  * @- BAT Input/Output

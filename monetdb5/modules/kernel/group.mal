@@ -11,11 +11,11 @@ address GRPsubgroup1;
 command subgroup(b:bat[:any_1],g:bat[:oid]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
 address GRPsubgroup2;
 command subgroup(b:bat[:any_1],g:bat[:oid],e:bat[:oid],h:bat[:lng]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
-address GRPsubgroup4;
+address GRPsubgroup3;
 
 command subgroupdone(b:bat[:any_1]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
 address GRPsubgroup1;
 command subgroupdone(b:bat[:any_1],g:bat[:oid]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
 address GRPsubgroup2;
 command subgroupdone(b:bat[:any_1],g:bat[:oid],e:bat[:oid],h:bat[:lng]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
-address GRPsubgroup4;
+address GRPsubgroup3;

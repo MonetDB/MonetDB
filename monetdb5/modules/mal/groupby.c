@@ -200,7 +200,7 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*grp = 0;
 			*ext = 0;
 			*hist = 0;
-			msg = GRPsubgroup4(grp, ext, hist, &aggr->bid[i], &oldgrp, &oldext, &oldhist);
+			msg = GRPsubgroup4(grp, ext, hist, &aggr->bid[i], NULL, &oldgrp, &oldext, &oldhist);
 			BBPdecref(oldgrp, TRUE);
 			BBPdecref(oldext, TRUE);
 			BBPdecref(oldhist, TRUE);

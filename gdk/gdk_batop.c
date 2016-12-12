@@ -1455,7 +1455,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	bn->tnosorted = 0;
 	bn->tnorevsorted = 0;
 	if (groups) {
-		if (BATgroup_internal(groups, NULL, NULL, bn, g, NULL, NULL, 1) != GDK_SUCCEED)
+		if (BATgroup_internal(groups, NULL, NULL, bn, NULL, g, NULL, NULL, 1) != GDK_SUCCEED)
 			goto error;
 		if ((*groups)->tkey &&
 		    (g == NULL || (g->tsorted && g->trevsorted))) {

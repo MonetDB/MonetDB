@@ -11,11 +11,14 @@
 #include "gdk.h"
 
 mal_export str GRPsubgroup1(bat *ngid, bat *next, bat *nhis,
-							  const bat *bid);
+							const bat *bid);
 mal_export str GRPsubgroup2(bat *ngid, bat *next, bat *nhis,
-							  const bat *bid, const bat *gid);
+							const bat *bid, const bat *gid);
+mal_export str GRPsubgroup3(bat *ngid, bat *next, bat *nhis,
+							const bat *bid, const bat *gid,
+							const bat *eid, const bat *hid);
 mal_export str GRPsubgroup4(bat *ngid, bat *next, bat *nhis,
-							  const bat *bid, const bat *gid,
-							  const bat *eid, const bat *hid);
+							const bat *bid, const bat *sid, const bat *gid,
+							const bat *eid, const bat *hid);
 
 #endif /* _GROUP_H_ */
