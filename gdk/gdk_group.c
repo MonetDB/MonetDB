@@ -441,7 +441,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (BATordered(b) && BATordered_rev(b)) {
 		/* all values are equal */
-		if (g == NULL) {
+		if (g == NULL || (BATordered(g) && BATordered_rev(g))) {
 			/* there's only a single group: 0 */
 			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
@@ -573,9 +573,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 	}
 
-	if (((BATordered(b) || BATordered_rev(b)) &&
-	     (g == NULL || BATordered(g) || BATordered_rev(g))) ||
-	    subsorted) {
+	if (subsorted ||
+	    ((BATordered(b) || BATordered_rev(b)) &&
+	     (g == NULL || BATordered(g) || BATordered_rev(g)))) {
 		/* we only need to compare each entry with the previous */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
@@ -935,15 +935,15 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		BATsetcount(en, (BUN) ngrp);
 		en->tkey = 1;
 		en->tsorted = 1;
-		en->trevsorted = BATcount(en) <= 1;
+		en->trevsorted = ngrp == 1;
 		en->tnonil = 1;
 		en->tnil = 0;
-		*extents = en;
+		*extents = virtualize(en);
 	}
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
-		if (BATcount(hn) <= 1) {
-			hn->tkey = 1;
+		if (ngrp == 1 || ngrp == BATcount(b)) {
+			hn->tkey = ngrp == 1;
 			hn->tsorted = 1;
 			hn->trevsorted = 1;
 		} else {
@@ -956,7 +956,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		*histo = hn;
 	}
 	gn->tkey = ngrp == BATcount(gn);
-	gn->trevsorted = BATcount(gn) <= 1;
+	gn->trevsorted = ngrp == 1 || BATcount(gn) <= 1;
 	gn->tnonil = 1;
 	gn->tnil = 0;
 	*groups = gn;
