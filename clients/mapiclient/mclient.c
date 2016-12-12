@@ -2195,7 +2195,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 	MapiHdl hdl;
 	MapiMsg rc = MOK;
 	int lineno = 1;
-	enum hmyesno hassysfuncs = UNKNOWN;
 	enum hmyesno hasschemsys = UNKNOWN;
 	char *prompt = NULL;
 	int prepno = 0;
@@ -2458,8 +2457,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						char nameq[128];
 						char funcq[512];
 
-						if (hassysfuncs == UNKNOWN)
-							hassysfuncs = has_systemfunctions(mid) ? YES : NO;
 						if (hasschemsys == UNKNOWN)
 							hasschemsys = has_schemas_system(mid) ? YES : NO;
 
@@ -2477,46 +2474,26 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 									"o.name LIKE '%s'",
 									line);
 						}
-						if (hassysfuncs == YES) {
-							snprintf(funcq, sizeof(funcq),
-								 "SELECT o.name, "
-									"(CASE WHEN sf.function_id IS NOT NULL "
-									      "THEN 'SYSTEM ' "
-									      "ELSE '' "
-									  "END || 'FUNCTION') AS type, "
-									 "CASE WHEN sf.function_id IS NULL "
-									      "THEN false "
-									      "ELSE true "
-									 "END AS system, "
-									 "s.name AS sname, "
-									 "%d AS ntype "
-								 "FROM sys.functions o "
-								       "LEFT JOIN sys.systemfunctions sf "
-									     "ON o.id = sf.function_id, "
-								       "sys.schemas s "
-								 "WHERE o.schema_id = s.id AND "
-								       "%s ",
-								 MD_FUNC,
-								 nameq);
-						} else {
-							snprintf(funcq, sizeof(funcq),
-								 "SELECT o.name, "
-									"(CASE WHEN o.id <= 2000 "
-									      "THEN 'SYSTEM ' "
-									      "ELSE '' "
-									 "END || 'FUNCTION') AS type, "
-									"CASE WHEN o.id > 2000 "
-									     "THEN false "
-									     "ELSE true END AS system, "
-									"s.name AS sname, "
-									"%d AS ntype "
-								 "FROM sys.functions o, "
-								      "sys.schemas s "
-								 "WHERE o.schema_id = s.id AND "
-								       "%s ",
-								 MD_FUNC,
-								 nameq);
-						}
+						snprintf(funcq, sizeof(funcq),
+							 "SELECT o.name, "
+								"(CASE WHEN sf.function_id IS NOT NULL "
+								      "THEN 'SYSTEM ' "
+								      "ELSE '' "
+								  "END || 'FUNCTION') AS type, "
+								 "CASE WHEN sf.function_id IS NULL "
+								      "THEN false "
+								      "ELSE true "
+								 "END AS system, "
+								 "s.name AS sname, "
+								 "%d AS ntype "
+							 "FROM sys.functions o "
+							       "LEFT JOIN sys.systemfunctions sf "
+								     "ON o.id = sf.function_id, "
+							       "sys.schemas s "
+							 "WHERE o.schema_id = s.id AND "
+							       "%s ",
+							 MD_FUNC,
+							 nameq);
 						snprintf(q, sizeof(q),
 							 "SELECT name, "
 								"CAST(type AS VARCHAR(30)) AS type, "
