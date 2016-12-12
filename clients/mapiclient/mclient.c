@@ -2121,8 +2121,6 @@ showCommands(void)
 #define MD_FUNC     8
 #define MD_SCHEMA  16
 
-enum hmyesno { UNKNOWN, YES, NO };
-
 #define READBLOCK 8192
 
 #ifdef HAVE_LIBREADLINE
@@ -2195,7 +2193,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 	MapiHdl hdl;
 	MapiMsg rc = MOK;
 	int lineno = 1;
-	enum hmyesno hasschemsys = UNKNOWN;
 	char *prompt = NULL;
 	int prepno = 0;
 #ifdef HAVE_LIBREADLINE
@@ -2457,9 +2454,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						char nameq[128];
 						char funcq[512];
 
-						if (hasschemsys == UNKNOWN)
-							hasschemsys = has_schemas_system(mid) ? YES : NO;
-
 						if (!*line) {
 							line = "%";
 							hasSchema = 0;
@@ -2544,8 +2538,8 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 							       "%s "
 							       "UNION "
 							       "SELECT NULL AS name, "
-								      "(CASE WHEN %s THEN 'SYSTEM ' ELSE '' END || 'SCHEMA') AS type, "
-								      "%s AS system, "
+								      "(CASE WHEN o.system THEN 'SYSTEM ' ELSE '' END || 'SCHEMA') AS type, "
+								      "o.system AS system, "
 								      "o.name AS sname, "
 								      "%d AS ntype "
 							       "FROM sys.schemas o "
@@ -2558,8 +2552,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 							 nameq,
 							 MD_SEQ,
 							 nameq, funcq,
-							 hasschemsys ? "o.system" : "o.name LIKE 'sys'",
-							 hasschemsys ? "o.system" : "o.name LIKE 'sys'",
 							 MD_SCHEMA,
 							 line, x,
 							 (wantsSystem ?

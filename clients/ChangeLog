@@ -2,6 +2,9 @@
 # This file is updated with Maddlog
 
 * Mon Dec 12 2016 Sjoerd Mullender <sjoerd@acm.org>
+- The mclient and msqldump programs lost compatibility with old
+  mserver5 versions (pre 2014) which didn't have a "system" column in
+  the sys.schemas table.
 - The mclient and msqldump programs lost compatibility with ancient
   mserver5 versions (pre 2011) which didn't have the sys.systemfunctions
   table.
