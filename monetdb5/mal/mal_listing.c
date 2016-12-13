@@ -408,9 +408,7 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 	} else {
 		val = &stk->stk[varid];
 		VALformat(&cv, val);
-		nme = getSTC(mb, varid);
-		if( nme[0]== 0) 
-			nme = getVarName(mb, varid);
+		nme = getVarName(mb, varid);
 		if ( isaBatType(getArgType(mb,p,idx))){
 			b = BBPquickdesc(stk->stk[varid].val.bval,TRUE);
 			snprintf(s,BUFSIZ,"%s["BUNFMT"]" ,nme, b?BATcount(b):0);

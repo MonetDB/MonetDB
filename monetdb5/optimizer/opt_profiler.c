@@ -67,7 +67,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			continue;
 		if ( getModuleId(p) == NULL || getFunctionId(p) == NULL)
 			continue;
-		if( getModuleId(p)== sqlRef && getFunctionId(p)== bindRef){
+		if( getModuleId(p)== sqlRef && (getFunctionId(p)== bindRef || getFunctionId(p) == bindidxRef)){
 			// we know the arguments are constant
 			snprintf(getSTC(mb,getArg(p,0)),  2 * IDLENGTH, "%s.%s.%s", 
 				getVarConstant(mb, getArg(p,p->retc +1)).val.sval,
@@ -79,6 +79,12 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			snprintf(getSTC(mb,getArg(p,0)), 2 * IDLENGTH, "%s.%s", 
 				getVarConstant(mb, getArg(p,2)).val.sval,
 				getVarConstant(mb, getArg(p,3)).val.sval);
+		} else
+		if( getModuleId(p)== batRef && (getFunctionId(p)== deltaRef || getFunctionId(p) == subdeltaRef)){
+			// inherit property of first argument
+			v = getSTC(mb,getArg(p,1));
+			if(v != NULL)
+				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
 		} else
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== projectdeltaRef){
 			// inherit property of first argument
@@ -92,11 +98,32 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if( v != NULL)
 				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
 		} else
-		if( getModuleId(p)== algebraRef && getFunctionId(p)== subjoinRef){
-			// inherit property of last argument
-			v = getSTC(mb,getArg(p,p->argc-1) );
+		if( getModuleId(p)== algebraRef && (getFunctionId(p)== subselectRef || getFunctionId(p) == thetasubselectRef)){
+			// inherit property of first argument
+			v = getSTC(mb,getArg(p,p->retc));
 			if( v != NULL)
 				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
+		} else
+		if( getModuleId(p)== algebraRef && (getFunctionId(p)== likesubselectRef || getFunctionId(p) == ilikesubselectRef)){
+			// inherit property of first argument
+			v = getSTC(mb,getArg(p,p->retc));
+			if( v != NULL)
+				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
+		} else
+		if( getModuleId(p)== algebraRef && 
+			( getFunctionId(p)== subjoinRef ||
+			  getFunctionId(p) == subleftjoinRef ||
+			  getFunctionId(p) == subthetajoinRef ||
+			  getFunctionId(p) == subantijoinRef ||
+			  getFunctionId(p) == subbandjoinRef ||
+			  getFunctionId(p) == subrangejoinRef )){
+			// inherit property of last argument
+			v = getSTC(mb,getArg(p,p->retc) );
+			if( v != NULL)
+				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
+			v = getSTC(mb,getArg(p,p->retc + 1 ) );
+			if( v != NULL)
+				strncpy(getSTC(mb,getArg(p,1)),v, 2 * IDLENGTH);
 		} 
 	}
     /* Defense line against incorrect plans */

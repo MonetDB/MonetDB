@@ -271,6 +271,9 @@ This information can be used to determine memory footprint and variable life tim
 				logadd("{");
 				logadd("\"index\":\"%d\",%s", j,pret);
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
+				if( mb->var[getArg(pci,j)]->stc[0]){
+					logadd("\"alias\":\"%s\",%s", mb->var[getArg(pci,j)]->stc, pret);
+				}
 				if( isaBatType(tpe) ){
 					BAT *d= BATdescriptor( bid = stk->stk[getArg(pci,j)].val.bval);
 					tname = getTypeName(getBatType(tpe));
