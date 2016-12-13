@@ -26,8 +26,6 @@ enum heaptype {
 	orderidxheap
 };
 
-__hidden void ALIGNcommit(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__visibility__("hidden")));
 __hidden int ATOMisdescendant(int id, int parentid)

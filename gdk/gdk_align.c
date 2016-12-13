@@ -44,42 +44,10 @@
  * Alignment statuses must be kept consistent under database commits
  * and aborts.
  * @end itemize
- *
- * As for performance, the most important observation to make is that
- * operations that do not need alignment, will suffer most from
- * overheads introduced in the BUN update mechanism. For this reason,
- * the alignment-delete operation has to be very cheap. It is captured
- * by the @emph{ALIGNdel} macro, and just zaps one character field in
- * the @emph{BAT} record.
- *
- * @+ Alignment Implementation
- * The @emph{BAT} record is equipped with an @emph{batAlign} field
- * that keeps both information about the head and tail column. The
- * leftmost 4 bits are for the head, the rightmost 4 for the
- * tail. This has been done to make the zap ultra-cheap.
- *
- * Columns contain an OID in the @emph{talign} field to mark their
- * alignment group. All BATs with the same OID in this field (and the
- * ALIGN_SYNCED bit on) are guaranteed by the system to have equal
- * head columns. As an exception, they might also have TYPE_void head
- * columns (a virtual column).  In such a case, the tail values
- * correspond to the head values that would have been there in a
- * non-virtual column, continuing the same head-sequence as the other
- * BATs in the sync group.
  */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-
-void
-ALIGNcommit(BAT *b)
-{
-	if (b == NULL)
-		return;
-	if (!b->talign) {
-		b->talign = OIDnew(1);
-	}
-}
 
 void
 ALIGNsetH(BAT *b1, BAT *b2)
@@ -98,10 +66,6 @@ ALIGNsetT(BAT *b1, BAT *b2)
 	if (b1 == NULL || b2 == NULL)
 		return;
 
-	if (b2->talign == 0) {
-		b2->talign = OIDnew(1);
-		b2->batDirtydesc = TRUE;
-	}
 	if (BATtvoid(b2)) {
 		/* b2 is either dense or has a void(nil) tail */
 		if (b1->ttype != TYPE_void)
@@ -119,7 +83,6 @@ ALIGNsetT(BAT *b1, BAT *b2)
 	BATkey(b1, BATtkey(b2));
 	b1->tsorted = BATtordered(b2);
 	b1->trevsorted = BATtrevordered(b2);
-	b1->talign = b2->talign;
 	b1->batDirtydesc = TRUE;
 	b1->tnorevsorted = b2->tnorevsorted;
 	if (b2->tnokey[0] != b2->tnokey[1]) {

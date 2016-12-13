@@ -768,7 +768,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           bit    tnonil;           // tail has no nils
  *           bit    tsorted;          // are tail values currently ordered?
  *           bit    tvarsized;        // for speed: tail type is varsized?
- *           oid    talign;           // alignment OID for head.
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
@@ -831,7 +830,6 @@ typedef struct {
 	 nil:1,			/* there is a nil in the column */
 	 sorted:1,		/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
-	oid align;		/* OID for sync alignment */
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
@@ -898,7 +896,6 @@ typedef struct BATiter {
 #define trevsorted	T.revsorted
 #define tdense		T.dense
 #define tident		T.id
-#define talign		T.align
 #define torderidx	T.orderidx
 #define twidth		T.width
 #define tshift		T.shift
@@ -2679,10 +2676,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 
-#define ALIGNins(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
-#define ALIGNdel(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
-#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
-#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
+#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e); } while (0)
+#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e); } while (0)
 
 #define BAThrestricted(b) ((b)->batRestricted)
 #define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)

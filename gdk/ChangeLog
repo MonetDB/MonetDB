@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Dec 13 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed talign field from BAT descriptor.
+
 * Mon Dec  5 2016 Sjoerd Mullender <sjoerd@acm.org>
 - BATappend now takes an optional (NULL if not used) candidate list for
   the to-be-appended BAT.

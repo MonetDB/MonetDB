@@ -987,7 +987,6 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int oidsize, int
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
 	b->tseqbase = base < 0 ? oid_nil : (oid) base;
-	b->talign = (oid) align;
 	b->theap.free = (size_t) free;
 	b->theap.size = (size_t) size;
 	b->theap.base = NULL;
@@ -1512,7 +1511,7 @@ heap_entry(FILE *fp, BAT *b)
 		       b->tnosorted,
 		       b->tnorevsorted,
 		       b->tseqbase,
-		       b->talign,
+		       (oid) 0,	/* formerly b->talign */
 		       b->theap.free,
 		       b->theap.size,
 		       (int) b->theap.newstorage);
@@ -2085,6 +2084,8 @@ BBPinsert(BAT *bn)
 
 		BATDEBUG fprintf(stderr, "#%d = new %s(%s)\n", (int) i, BBPname(i), ATOMname(bn->ttype));
 	}
+
+	BBPdirty(1);
 
 	return i;
 }
