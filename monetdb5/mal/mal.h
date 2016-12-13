@@ -152,7 +152,7 @@ typedef struct VARRECORD {
 	int eolife;					/* pc index when it should be garbage collected */
 	int depth;					/* scope block depth, set to -1 if not used */
 	int worker;					/* thread id of last worker producing it */
-	char stc[2* IDLENGTH];		/* rendering schema.table.column, with little more space */
+	int stc;					/* pc for rendering schema.table.column */
 	BUN rowcnt;					/* estimated row count*/
 } *VarPtr, VarRecord;
 

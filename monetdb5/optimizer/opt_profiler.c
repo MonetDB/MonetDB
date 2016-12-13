@@ -54,7 +54,6 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int i;
 	InstrPtr p;
 	char buf[BUFSIZ];
-	str v;
 	lng usec = GDKusec();
 
 	(void) pci;

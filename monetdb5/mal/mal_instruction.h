@@ -100,7 +100,7 @@
 #define setMitosisPartition(P,C)	(P)->mitosis = C
 #define getMitosisPartition(P)		((P)->mitosis)
 
-#define getSTC(M,I)		((M)->var[I]->stc)
+#define getSTC(M,I)			((M)->var[I]->stc)
 
 #define getDestVar(P)		(P)->argv[0]
 #define setDestVar(P,X)		(P)->argv[0]  =X
