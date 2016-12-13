@@ -396,7 +396,7 @@ address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
 
 inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
-	(g,e,h) := group.subgroup(gp);
+	(g,e,h) := group.group(gp);
 	m := aggr.max(h);
 	c0 := calc.isnil(m);
 	c01 := calc.not(c0);
@@ -415,7 +415,7 @@ comment "if col contains exactly one value return this. Incase of more raise an 
 
 # todo implement = all aggregator (ie keep last value and compare status)
 inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
-	(g,e,h) := group.subgroup(gp);
+	(g,e,h) := group.group(gp);
 	m := aggr.max(h);
 	c0 := calc.isnil(m);
 	c01 := calc.not(c0);

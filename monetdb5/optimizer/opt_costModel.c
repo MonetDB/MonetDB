@@ -120,7 +120,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				}
 			} 
 		} else if (getModuleId(p)==groupRef) {
-			if (getFunctionId(p) ==subgroupRef ) {
+			if (getFunctionId(p) ==subgroupRef || getFunctionId(p) ==groupRef ) {
 				newRows(1,1,( c1 / 10+1),0);
 			} else {
 				newRows(1,1, c1,0);

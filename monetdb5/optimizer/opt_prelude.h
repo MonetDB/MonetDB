@@ -91,6 +91,7 @@ mal_export  str getTraceRef;
 mal_export  str generatorRef;
 mal_export  str grabRef;
 mal_export  str groupRef;
+mal_export  str groupdoneRef;
 mal_export  str subgroupRef;
 mal_export  str subgroupdoneRef;
 mal_export  str groupbyRef;

@@ -214,7 +214,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	if (grp && (grp->nr < 0 || ext->nr < 0 || cnt->nr < 0)) 
 		return NULL;
 
-	q = newStmt(mb, groupRef, done ? subgroupdoneRef : subgroupRef);
+	q = newStmt(mb, groupRef, done ? grp ? subgroupdoneRef : groupdoneRef : grp ? subgroupRef : groupRef);
 
 	/* output variables extend and hist */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));

@@ -93,6 +93,7 @@ str getTraceRef;
 str generatorRef;
 str grabRef;
 str groupRef;
+str groupdoneRef;
 str subgroupRef;
 str subgroupdoneRef;
 str groupbyRef;
@@ -321,6 +322,7 @@ void optimizerInit(void)
 	generatorRef = putName("generator");
 	grabRef = putName("grab");
 	groupRef = putName("group");
+	groupdoneRef = putName("groupdone");
 	subgroupRef = putName("subgroup");
 	subgroupdoneRef= putName("subgroupdone");
 	groupbyRef = putName("groupby");

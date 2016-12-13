@@ -63,6 +63,10 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if(getFunctionId(p) == intersectcandRef )
 				setVarCList(mb,getArg(p,0));
 		}
+		if( getModuleId(p) == groupRef){
+			if(getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef)
+				setVarCList(mb,getArg(p,1));
+		}
 		if( getModuleId(p) == generatorRef){
 			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)
 				setVarCList(mb,getArg(p,0));
