@@ -61,7 +61,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	if (r == NULL)
 		return GDK_FAIL;
 	if (gids->ttype == TYPE_void) {
-		oid id = gids->hseqbase;
+		oid id = gids->tseqbase;
 		lng *cnt = (lng*)Tloc(cnts, 0);
 		for(j = 0; j < gcnt; j++) {
 			lng i, sz = cnt[j];
