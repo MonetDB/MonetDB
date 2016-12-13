@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Tue Dec 13 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed functions OIDbase() and OIDnew().
 - Removed talign field from BAT descriptor.
 
 * Mon Dec  5 2016 Sjoerd Mullender <sjoerd@acm.org>

@@ -1915,29 +1915,6 @@ gdk_export int ATOMformat(int id, const void *val, char **buf);
 gdk_export ptr ATOMdup(int id, const void *val);
 
 /*
- * @- Unique OIDs
- * @multitable @columnfractions 0.08 0.7
- * @item oid
- * @tab
- * OIDseed (oid seed);
- * @item oid
- * @tab
- * OIDnew (oid inc);
- * @end multitable
- *
- * OIDs are special kinds of unsigned integers because the system
- * guarantees uniqueness. For system simplicity and performance, OIDs
- * are now represented as (signed) integers; however this is hidden in
- * the system internals and shouldn't affect semantics.
- *
- * The OIDnew(N) claims a range of N contiguous unique, unused OIDs,
- * and returns the starting value of this range.  The highest OIDBITS
- * designate site. [ DEPRECATED]
- */
-gdk_export oid OIDbase(oid base);
-gdk_export oid OIDnew(oid inc);
-
-/*
  * @- Built-in Accelerator Functions
  *
  * @multitable @columnfractions 0.08 0.7

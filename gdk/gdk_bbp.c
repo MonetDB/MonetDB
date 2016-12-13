@@ -1196,7 +1196,7 @@ BBPreadEntries(FILE *fp, int oidsize, int bbpversion)
 #endif
 
 static int
-BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
+BBPheader(FILE *fp, int *OIDsize)
 {
 	char buf[BUFSIZ];
 	int sz, bbpversion, ptrsize, oidsize, intsize;
@@ -1246,7 +1246,6 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		GDKfatal("BBPinit: short BBP");
 	}
-	*BBPoid = OIDread(buf);
 	if ((s = strstr(buf, "BBPsize")) != NULL) {
 		sscanf(s, "BBPsize=%d", &sz);
 		sz = (int) (sz * BATMARGIN);
@@ -1309,7 +1308,6 @@ BBPinit(void)
 	struct stat st;
 	int bbpversion;
 	int oidsize;
-	oid BBPoid;
 	str bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir");
 	str backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir");
 	int needcommit;
@@ -1358,8 +1356,9 @@ BBPinit(void)
 	BBPlimit = 0;
 	memset(BBP, 0, sizeof(BBP));
 	ATOMIC_SET(BBPsize, 1, BBPsizeLock);
+	BBPdirty(1);
 
-	bbpversion = BBPheader(fp, &BBPoid, &oidsize);
+	bbpversion = BBPheader(fp, &oidsize);
 
 	BBPextend(0, FALSE);		/* allocate BBP records */
 	ATOMIC_SET(BBPsize, 1, BBPsizeLock);
@@ -1368,8 +1367,6 @@ BBPinit(void)
 	fclose(fp);
 
 	BBPinithash(0);
-
-	OIDbase(BBPoid);
 
 	/* will call BBPrecover if needed */
 	if (BBPprepare(FALSE) != GDK_SUCCEED)
@@ -1568,14 +1565,12 @@ new_bbpentry(FILE *fp, bat i)
 static gdk_return
 BBPdir_header(FILE *f, int n)
 {
-	if (fprintf(f, "BBP.dir, GDKversion %d\n%d %d %d\n",
+	if (fprintf(f, "BBP.dir, GDKversion %d\n%d %d %d\n0@0 BBPsize=%d\n",
 		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID,
 #ifdef HAVE_HGE
 		    havehge ? SIZEOF_HGE :
 #endif
-		    SIZEOF_LNG) < 0 ||
-	    OIDwrite(f) < 0 ||
-	    fprintf(f, " BBPsize=%d\n", n) < 0 ||
+		    SIZEOF_LNG, n) < 0 ||
 	    ferror(f)) {
 		GDKsyserror("BBPdir_header: Writing BBP.dir header failed\n");
 		return GDK_FAIL;
@@ -1622,11 +1617,6 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 
 	if (GDKdebug & (IOMASK | THRDMASK))
 		fprintf(stderr, "#BBPdir: writing BBP.dir (%d bats).\n", n);
-	IODEBUG {
-		fprintf(stderr, "#BBPdir start oid=");
-		OIDwrite(stderr);
-		fprintf(stderr, "\n");
-	}
 
 	if (BBPdir_header(nbbpf, n) != GDK_SUCCEED) {
 		goto bailout;
@@ -1717,11 +1707,6 @@ BBPdir(int cnt, bat *subcommit)
 
 	if (GDKdebug & (IOMASK | THRDMASK))
 		fprintf(stderr, "#BBPdir: writing BBP.dir (%d bats).\n", (int) (bat) ATOMIC_GET(BBPsize, BBPsizeLock));
-	IODEBUG {
-		fprintf(stderr, "#BBPdir start oid=");
-		OIDwrite(stderr);
-		fprintf(stderr, "\n");
-	}
 	if ((fp = GDKfilelocate(0, "BBP", "w", "dir")) == NULL) {
 		goto bailout;
 	}
@@ -3159,9 +3144,6 @@ BBPsync(int cnt, bat *subcommit)
 
 	/* PHASE 1: safeguard everything in a backup-dir */
 	bbpdirty = BBP_dirty;
-	if (OIDdirty()) {
-		bbpdirty = BBP_dirty = 1;
-	}
 	if (ret == GDK_SUCCEED) {
 		int idx = 0;
 

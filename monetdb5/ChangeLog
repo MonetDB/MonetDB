@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Tue Dec 13 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed calc.setoid().
 - group.subgroup is now called group.group if it is not refining a group.
   Both group.group and group.subgroup now also have variants with a
   candidate list.
