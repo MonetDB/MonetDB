@@ -257,7 +257,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		}
 	}
 	advance(t,base,len);
-	if (p->token == REMsymbol) {
+	if (p->token == REMsymbol && strcmp(getModuleId(p),"querylog") ) {
 		/* do nothing */
 	} else if (p->barrier) {
 		if (p->barrier == LEAVEsymbol || 
