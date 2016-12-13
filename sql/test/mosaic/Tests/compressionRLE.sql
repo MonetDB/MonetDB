@@ -97,9 +97,15 @@ explain select * from tmp3RLE;
 --select * from tmp3RLE;
 
 alter table tmp3RLE alter column i set storage 'runlength';
+select * from mosaic_layout('sys','tmp3RLE','i') limit 25;
 alter table tmp3RLE alter column b set storage 'runlength';
+select * from mosaic_layout('sys','tmp3RLE','b') limit 25;
 alter table tmp3RLE alter column f set storage 'runlength';
+select * from mosaic_layout('sys','tmp3RLE','f') limit 25;
 alter table tmp3RLE alter column t set storage 'runlength';
+select * from mosaic_layout('sys','tmp3RLE','t') limit 25;
+
+
 explain select i from tmp3RLE;
 explain select b from tmp3RLE;
 explain select f from tmp3RLE;

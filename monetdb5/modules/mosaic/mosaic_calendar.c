@@ -108,7 +108,7 @@ MOSlayout_calendar(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bin
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	(void) cntxt;
-	BUNappend(btech, "calendar", FALSE);
+	BUNappend(btech, "calendar blk", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	output =  MosaicBlkSize + (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);

@@ -151,7 +151,7 @@ MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *b
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	(void) cntxt;
-	BUNappend(btech, "dictionary", FALSE);
+	BUNappend(btech, "dictionary blk", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	output =  MosaicBlkSize + (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);

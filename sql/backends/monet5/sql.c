@@ -639,8 +639,10 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			size_t cnt;
 			sql_delta *d;
 			char *msg;
+/* no restriction
 			if (c->t->access == TABLE_WRITABLE)
 				return sql_message("40002!ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
+*/
 			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
 
 			b = store_funcs.bind_col(sql->session->tr, nc, 0);
@@ -649,10 +651,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (cnt < MOSAIC_THRESHOLD){
 				BBPunfix(b->batCacheid);
 				continue;
-			}
-			if (c->t->access == TABLE_WRITABLE)  {
-				BBPunfix(b->batCacheid);
-				return sql_message("40002!ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
 			}
 			if( c->storage_type && !strstr(c->storage_type,"mosaic"))
 				for( i = 0; i< MOSAIC_METHODS; i++)

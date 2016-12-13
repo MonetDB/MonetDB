@@ -83,7 +83,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	(void) cntxt;
 	if( ATOMstorage(task->type == TYPE_str))
 			size =task->bsrc->twidth;
-	BUNappend(btech, "prefix", FALSE);
+	BUNappend(btech, "prefix blk", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	switch(size){

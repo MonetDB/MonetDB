@@ -73,7 +73,7 @@ MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 	(void) cntxt;
 
-	BUNappend(btech, "runlength", FALSE);
+	BUNappend(btech, "runlength blk", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){

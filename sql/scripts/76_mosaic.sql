@@ -5,16 +5,16 @@
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- support routines for the compressed store
-set schema sys;
+create schema mosaic;
 
-create function mosaic_layout(sch string, tbl string, col string) 
+create function mosaic.layout(sch string, tbl string, col string) 
 returns table(technique string, "count" bigint, inputsize bigint, outputsize bigint,properties string)
 external name sql.mosaiclayout;
 
-create function mosaic_analysis(sch string, tbl string, col string) 
+create function mosaic.analysis(sch string, tbl string, col string) 
 returns table(technique string, outputsize bigint, factor float, "compress" bigint, "decompress" bigint)
 external name sql.mosaicanalysis;
 
-create function mosaic_analysis(sch string, tbl string, col string, compression string) 
+create function mosaic.analysis(sch string, tbl string, col string, compression string) 
 returns table(technique string, outputsize bigint, factor float, "compress" bigint, "decompress" bigint)
 external name sql.mosaicanalysis;

@@ -119,7 +119,7 @@ MOSlayout_frame(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	(void) cntxt;
-	BUNappend(btech, "frame", FALSE);
+	BUNappend(btech, "frame blk", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	output = chunk_size(task,cnt);

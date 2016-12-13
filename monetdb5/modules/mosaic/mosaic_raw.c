@@ -40,7 +40,7 @@ MOSlayout_raw(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, 
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	(void) cntxt;
-	BUNappend(btech, "raw", FALSE);
+	BUNappend(btech, "raw blk", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){

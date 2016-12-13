@@ -91,7 +91,7 @@ MOSlayout_linear(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	(void) cntxt;
-	BUNappend(btech, "linear", FALSE);
+	BUNappend(btech, "linear blk", FALSE);
 	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){
