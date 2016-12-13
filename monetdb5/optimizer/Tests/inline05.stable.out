@@ -31,9 +31,9 @@ Ready.
 
 function user.qry():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
-    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
-    z:bat[:dbl] := mal.multiplex("user":str,"foo":str,b:bat[:int],b:bat[:int]);	#[3] (0) MANIFOLDremapMultiplex 5 <- 6 7 1 1 
-    z:bat[:dbl] := mal.multiplex("user":str,"foo":str,b:bat[:int],2:int);	#[4] (0) MANIFOLDremapMultiplex 5 <- 6 8 1 9 
+    bat.append(b:bat[:int], 1:int);     	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    z:bat[:dbl] := mal.multiplex("user":str, "foo":str, b:bat[:int], b:bat[:int]);	#[3] (0) MANIFOLDremapMultiplex 5 <- 6 7 1 1 
+    z:bat[:dbl] := mal.multiplex("user":str, "foo":str, b:bat[:int], 2:int);	#[4] (0) MANIFOLDremapMultiplex 5 <- 6 8 1 9 
 end user.qry;                           	#[5] (0)  
 
 # 18:00:44 >  

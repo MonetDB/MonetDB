@@ -67,36 +67,37 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			continue;
 		if ( getModuleId(p) == NULL || getFunctionId(p) == NULL)
 			continue;
-		if( getModuleId(p)== sqlRef && getFunctionId(p)== bindRef){
-			// we know the arguments are constant
-			snprintf(getSTC(mb,getArg(p,0)),  2 * IDLENGTH, "%s.%s.%s", 
-				getVarConstant(mb, getArg(p,p->retc +1)).val.sval,
-				getVarConstant(mb, getArg(p,p->retc +2)).val.sval,
-				getVarConstant(mb, getArg(p,p->retc +3)).val.sval);
+		if( getModuleId(p)== sqlRef && (getFunctionId(p)== bindRef || getFunctionId(p) == bindidxRef)){
+			getSTC(mb,getArg(p,0)) = i;
 		} else
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== tidRef){
-			// we know the arguments are constant
-			snprintf(getSTC(mb,getArg(p,0)), 2 * IDLENGTH, "%s.%s", 
-				getVarConstant(mb, getArg(p,2)).val.sval,
-				getVarConstant(mb, getArg(p,3)).val.sval);
+			getSTC(mb,getArg(p,0)) = i;
+		} else
+		if( getModuleId(p)== batRef && (getFunctionId(p)== deltaRef || getFunctionId(p) == subdeltaRef)){
+			// inherit property of first argument
+			getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,1));
 		} else
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== projectdeltaRef){
-			// inherit property of first argument
-			v = getSTC(mb,getArg(p,1));
-			if(v != NULL)
-				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
+			getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,1));
 		} else
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== projectionRef){
-			// inherit property of last argument
-			v = getSTC(mb,getArg(p,p->argc-1));
-			if( v != NULL)
-				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
+			getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,p->argc-1));
 		} else
-		if( getModuleId(p)== algebraRef && getFunctionId(p)== joinRef){
-			// inherit property of last argument
-			v = getSTC(mb,getArg(p,p->argc-1) );
-			if( v != NULL)
-				strncpy(getSTC(mb,getArg(p,0)),v, 2 * IDLENGTH);
+		if( getModuleId(p)== algebraRef && (getFunctionId(p)== selectRef || getFunctionId(p) == thetaselectRef)){
+			getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,p->retc));
+		} else
+		if( getModuleId(p)== algebraRef && (getFunctionId(p)== likeselectRef || getFunctionId(p) == ilikeselectRef)){
+			getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,p->retc));
+		} else
+		if( getModuleId(p)== algebraRef && 
+			( getFunctionId(p)== joinRef ||
+			  getFunctionId(p) == leftjoinRef ||
+			  getFunctionId(p) == thetajoinRef ||
+			  getFunctionId(p) == antijoinRef ||
+			  getFunctionId(p) == bandjoinRef ||
+			  getFunctionId(p) == rangejoinRef )){
+				getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,p->retc));
+				getSTC(mb,getArg(p,1)) = getSTC(mb,getArg(p,p->retc +1));
 		} 
 	}
     /* Defense line against incorrect plans */

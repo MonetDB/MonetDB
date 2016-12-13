@@ -61,16 +61,16 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 146 # length
+% 158 # length
 function user.s8_1():void;
-    X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",21:int);
+    X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';", "default_pipe", 21:int);
     X_3 := sql.mvc();
-    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
-    X_28 := sql.append(X_3,"sys","ttt","a",X_24);
-    X_33 := sql.append(X_28,"sys","ttt","b",X_25);
-    X_36 := sql.append(X_33,"sys","ttt","c",X_26);
+    (X_24:bat[:int], X_25:bat[:int], X_26:bat[:int]) := sql.copy_from(nil:ptr, "|", "\\n", nil:str, "null", "/tmp/xyz", -1:lng, 0:lng, 0:int, 0:int, nil:str);
+    X_28 := sql.append(X_3, "sys", "ttt", "a", X_24);
+    X_33 := sql.append(X_28, "sys", "ttt", "b", X_25);
+    X_36 := sql.append(X_33, "sys", "ttt", "c", X_26);
     X_38 := aggr.count(X_26);
-    sql.affectedRows(X_36,X_38);
+    sql.affectedRows(X_36, X_38);
 end user.s8_1;
 #inline               actions= 0 time=1 usec 
 #candidates           actions= 1 time=14 usec 
@@ -120,16 +120,16 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 146 # length
+% 158 # length
 function user.s24_1():void;
-    X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",21:int);
+    X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';", "user_1", 21:int);
     X_3 := sql.mvc();
-    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
-    X_28 := sql.append(X_3,"sys","ttt","a",X_24);
-    X_33 := sql.append(X_28,"sys","ttt","b",X_25);
+    (X_24:bat[:int], X_25:bat[:int], X_26:bat[:int]) := sql.copy_from(nil:ptr, "|", "\\n", nil:str, "null", "/tmp/xyz", -1:lng, 0:lng, 0:int, 0:int, nil:str);
+    X_28 := sql.append(X_3, "sys", "ttt", "a", X_24);
+    X_33 := sql.append(X_28, "sys", "ttt", "b", X_25);
     X_38 := aggr.count(X_26);
-    X_36 := sql.append(X_33,"sys","ttt","c",X_26);
-    sql.affectedRows(X_36,X_38);
+    X_36 := sql.append(X_33, "sys", "ttt", "c", X_26);
+    sql.affectedRows(X_36, X_38);
 end user.s24_1;
 #inline               actions= 0 time=1 usec 
 #candidates           actions= 1 time=14 usec 

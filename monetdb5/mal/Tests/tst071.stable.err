@@ -42,7 +42,8 @@ QUERY = # parsing operations with multi-assignments
         io.print(y);
         a:= user.swap(3,4);
         io.print(a);
-ERROR = !TypeException:user.main[5]:'user.swap' undefined in:     a:any := user.swap(3:int,4:int);
+ERROR = !TypeException:user.main[5]:'user.swap' undefined in:     a:any := user.swap(3:int, 4:int);
+
 
 # 13:48:42 >  
 # 13:48:42 >  "Done."

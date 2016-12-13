@@ -48,11 +48,11 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 98 # length
+% 100 # length
 function user.s4_1():void;
-    X_0:void := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe",7:int);
+    X_0:void := querylog.define("explain select reverse(\\'MonetDB\\');", "sequential_pipe", 7:int);
     X_5:str := udf.reverse("MonetDB");
-    sql.resultSet(".L2","L2","clob",0:int,0:int,4:int,X_5);
+    sql.resultSet(".L2", "L2", "clob", 0:int, 0:int, 4:int, X_5);
 end user.s4_1;
 #inline               actions= 0 time=2 usec 
 #candidates           actions= 1 time=8 usec 
@@ -107,25 +107,25 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 104 # length
+% 106 # length
 function user.s12_1():void;
-    X_0:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",22:int);
+    X_0:void := querylog.define("explain select reverse(x) from udf_reverse;", "sequential_pipe", 22:int);
     X_21 := bat.new(nil:str);
-    X_28 := bat.append(X_21,"sys.L2");
+    X_28 := bat.append(X_21, "sys.L2");
     X_23 := bat.new(nil:str);
-    X_30 := bat.append(X_23,"L2");
+    X_30 := bat.append(X_23, "L2");
     X_24 := bat.new(nil:str);
-    X_32 := bat.append(X_24,"clob");
+    X_32 := bat.append(X_24, "clob");
     X_25 := bat.new(nil:int);
-    X_34 := bat.append(X_25,0:int);
+    X_34 := bat.append(X_25, 0:int);
     X_27 := bat.new(nil:int);
-    X_35 := bat.append(X_27,0:int);
+    X_35 := bat.append(X_27, 0:int);
     X_3 := sql.mvc();
-    C_4:bat[:oid] := sql.tid(X_3,"sys","udf_reverse");
-    X_7:bat[:str] := sql.bind(X_3,"sys","udf_reverse","x",0:int);
-    X_16 := algebra.projection(C_4,X_7);
+    C_4:bat[:oid] := sql.tid(X_3, "sys", "udf_reverse");
+    X_7:bat[:str] := sql.bind(X_3, "sys", "udf_reverse", "x", 0:int);
+    X_16 := algebra.projection(C_4, X_7);
     X_17:bat[:str] := batudf.reverse(X_16);
-    sql.resultSet(X_28,X_30,X_32,X_34,X_35,X_17);
+    sql.resultSet(X_28, X_30, X_32, X_34, X_35, X_17);
 end user.s12_1;
 #inline               actions= 0 time=4 usec 
 #candidates           actions= 1 time=15 usec 
