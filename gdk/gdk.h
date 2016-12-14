@@ -855,7 +855,8 @@ typedef struct {
 #define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
 #define GDKLIBRARY_HEADED	061033	/* head properties are stored */
 #define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
-#define GDKLIBRARY		061035
+#define GDKLIBRARY_TALIGN	061035	/* talign field in BBP.dir */
+#define GDKLIBRARY		061036
 
 typedef struct BAT {
 	/* static bat properties */
