@@ -931,13 +931,21 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int oidsize, int
 	(void) bbpversion;	/* could be used to implement compatibility */
 
 	norevsorted = 0; /* default for first case */
-	if (sscanf(buf,
+	if (bbpversion <= GDKLIBRARY_TALIGN ?
+	    sscanf(buf,
 		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
 		   "%n",
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &align, &free, &size, &storage,
-		   &n) < 13)
+		   &n) < 13 :
+		sscanf(buf,
+		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %hu"
+		   "%n",
+		   type, &width, &var, &properties, &nokey0,
+		   &nokey1, &nosorted, &norevsorted, &base,
+		   &free, &size, &storage,
+		   &n) < 12)
 		GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 
 	if (properties & ~0x0F81)
@@ -1216,7 +1224,8 @@ BBPheader(FILE *fp, int *OIDsize)
 	    bbpversion != GDKLIBRARY_SORTEDPOS &&
 	    bbpversion != GDKLIBRARY_OLDWKB &&
 	    bbpversion != GDKLIBRARY_INSERTED &&
-	    bbpversion != GDKLIBRARY_HEADED) {
+	    bbpversion != GDKLIBRARY_HEADED &&
+	    bbpversion != GDKLIBRARY_TALIGN) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
 			 "This database was probably created by %s version of MonetDB.",
 			 GDKLIBRARY, bbpversion,
@@ -1246,6 +1255,8 @@ BBPheader(FILE *fp, int *OIDsize)
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		GDKfatal("BBPinit: short BBP");
 	}
+	/* when removing GDKLIBRARY_TALIGN, also remove the strstr
+	 * call and just sscanf from buf */
 	if ((s = strstr(buf, "BBPsize")) != NULL) {
 		sscanf(s, "BBPsize=%d", &sz);
 		sz = (int) (sz * BATMARGIN);
@@ -1493,7 +1504,7 @@ static inline int
 heap_entry(FILE *fp, BAT *b)
 {
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
-		       BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
+		       BUNFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
 		       b->ttype >= 0 ? BATatoms[b->ttype].name : ATOMunknown_name(b->ttype),
 		       b->twidth,
 		       b->tvarsized | (b->tvheap ? b->tvheap->hashash << 1 : 0),
@@ -1508,7 +1519,6 @@ heap_entry(FILE *fp, BAT *b)
 		       b->tnosorted,
 		       b->tnorevsorted,
 		       b->tseqbase,
-		       (oid) 0,	/* formerly b->talign */
 		       b->theap.free,
 		       b->theap.size,
 		       (int) b->theap.newstorage);
@@ -1565,7 +1575,7 @@ new_bbpentry(FILE *fp, bat i)
 static gdk_return
 BBPdir_header(FILE *f, int n)
 {
-	if (fprintf(f, "BBP.dir, GDKversion %d\n%d %d %d\n0@0 BBPsize=%d\n",
+	if (fprintf(f, "BBP.dir, GDKversion %d\n%d %d %d\nBBPsize=%d\n",
 		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID,
 #ifdef HAVE_HGE
 		    havehge ? SIZEOF_HGE :
@@ -1584,7 +1594,6 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	FILE *obbpf, *nbbpf;
 	bat j = 1;
 	char buf[3000];
-	char *p;
 	int n;
 
 #ifndef NDEBUG
@@ -1610,8 +1619,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	    fgets(buf, sizeof(buf), obbpf) == NULL) /* BBPsize=%d */
 		GDKfatal("BBPdir: subcommit attempted with invalid backup BBP.dir.");
 	/* third line contains BBPsize */
-	if ((p = strstr(buf, "BBPsize")) != NULL)
-		sscanf(p, "BBPsize=%d", &n);
+	sscanf(buf, "BBPsize=%d", &n);
 	if (n < (bat) ATOMIC_GET(BBPsize, BBPsizeLock))
 		n = (bat) ATOMIC_GET(BBPsize, BBPsizeLock);
 
