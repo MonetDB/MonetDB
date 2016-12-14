@@ -796,14 +796,14 @@ do_ssort(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t minru
  * is non-NULL, the key is actually an offset relative to "heap" and
  * the actual key is found at that offset (MonetDB var-sized
  * atoms). */
-int
+gdk_return
 GDKssortimpl(void *h, void *t, const void *heap, size_t nitems,
 	     int hs, int ts, int tpe)
 {
 	char temp;
 	MergeState ms;
 	ssize_t nremaining;
-	int result = -1;
+	gdk_return result = GDK_FAIL;
 	size_t lo, hi;
 	ssize_t minrun;
 
@@ -882,7 +882,7 @@ GDKssortimpl(void *h, void *t, const void *heap, size_t nitems,
 	assert(ms.pending[0].len == (ssize_t) nitems);
 
   succeed:
-	result = 0;
+	result = GDK_SUCCEED;
   fail:
 	merge_freemem(&ms);
 	return result;

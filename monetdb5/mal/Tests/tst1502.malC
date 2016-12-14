@@ -36,9 +36,9 @@
 	bat.append(z,"c");
 	bat.append(z,"a");
 	io.print("sort x"); 
-	xs:=algebra.subsort(x,false:bit,false:bit); 
+	xs:=algebra.sort(x,false:bit,false:bit); 
 	io.print(xs);
 	io.print("hsort xrev"); 
-	xrev:=algebra.subsort(x,true:bit,false:bit);
+	xrev:=algebra.sort(x,true:bit,false:bit);
 	io.print(xrev);
 

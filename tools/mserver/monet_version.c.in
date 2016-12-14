@@ -12,7 +12,9 @@
 #include "mal.h"
 #include <stdio.h>
 #include "monet_version.h"
+#ifdef HAVE_LIBPCRE
 #include <pcre.h>
+#endif
 #ifdef HAVE_OPENSSL
 #include <openssl/opensslv.h>
 #endif
@@ -54,6 +56,7 @@ monet_version(void)
 			"using %d thread%s\n",
 			GDKnr_threads, GDKnr_threads != 1 ? "s" : ""); */
 	printf("Libraries:\n");
+#ifdef HAVE_LIBPCRE
 	{
 		char pcreversion[] = "@pcreversion@";
 		printf("  libpcre: %s", pcre_version());
@@ -61,6 +64,7 @@ monet_version(void)
 			printf(" (%s)", pcreversion);
 		printf("\n");
 	}
+#endif
 #ifdef HAVE_OPENSSL
 	{
 		char opensslversion[] = "@opensslversion@";

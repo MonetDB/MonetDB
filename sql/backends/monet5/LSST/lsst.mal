@@ -31,10 +31,10 @@ command lsst.xmatch(l:lng, r:lng, depth:int) :bit
 address LSSTxmatch
 comment "Return true when the HtmID pairs that lie within the same triangle at level depth";
 
-command lsst.xmatchsubselect(l:bat[:lng], cand:bat[:oid], r:lng, depth:int, anti:bit):bat[:oid]
-address LSSTxmatchsubselect
+command lsst.xmatchselect(l:bat[:lng], cand:bat[:oid], r:lng, depth:int, anti:bit):bat[:oid]
+address LSSTxmatchselect
 comment "Return the HtmID's that lie within the same triangle as r at level depth";
 
-command lsst.xmatchsubjoin(l:bat[:lng], r:bat[:lng], depth:int, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng)(lr:bat[:oid],rr:bat[:oid])
-address LSSTxmatchsubjoin
+command lsst.xmatchjoin(l:bat[:lng], r:bat[:lng], depth:int, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng)(lr:bat[:oid],rr:bat[:oid])
+address LSSTxmatchjoin
 comment "Return the HtmID pairs that lie within the same triangle at level depth";

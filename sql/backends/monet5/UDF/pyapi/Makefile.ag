@@ -24,7 +24,7 @@ MTSAFE
 lib__pyapi = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = pyapi.c pyapi.h unicode.c unicode.h pytypes.c pytypes.h type_conversion.c type_conversion.h  formatinput.c formatinput.h connection.c connection.h unspecified_evil.h pyloader.c emit.h emit.c convert_loops.h
+	SOURCES = pyapi.c pyapi.h unicode.c unicode.h pytypes.c pytypes.h type_conversion.c type_conversion.h  formatinput.c formatinput.h connection.c connection.h undef.h pyloader.c emit.h emit.c conversion.c conversion.h convert_loops.h pyheader.h
 	XDEPS = $(libpy_LIBDEP)
 	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
 	       ../../../../../gdk/libbat \

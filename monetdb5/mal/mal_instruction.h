@@ -21,7 +21,7 @@
 
 #define DEBUG_MAL_INSTR
 /* #define DEBUG_REDUCE */
-#define MAXARG 4				/* BEWARE the code depends on this knowledge */
+#define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 256
 #define MAL_VAR_WINDOW  32
 #define MAXVARS STMT_INCREMENT	/* >= STMT_INCREMENT */
@@ -100,7 +100,7 @@
 #define setMitosisPartition(P,C)	(P)->mitosis = C
 #define getMitosisPartition(P)		((P)->mitosis)
 
-#define getSTC(M,I)		((M)->var[I]->stc)
+#define getSTC(M,I)			((M)->var[I]->stc)
 
 #define getDestVar(P)		(P)->argv[0]
 #define setDestVar(P,X)		(P)->argv[0]  =X
@@ -114,7 +114,8 @@
 #define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 
-mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
+mal_export void mal_instruction_reset(void);
+mal_export InstrPtr newInstruction(MalBlkPtr mb, str modnme, str fcnnme);
 mal_export InstrPtr copyInstruction(InstrPtr p);
 mal_export void oldmoveInstruction(InstrPtr dst, InstrPtr src);
 mal_export void clrInstruction(InstrPtr p);
@@ -146,7 +147,6 @@ mal_export int findVariable(MalBlkPtr mb, const char *name);
 mal_export int findVariableLength(MalBlkPtr mb, str name, int len);
 mal_export malType getType(MalBlkPtr mb, str nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
-mal_export void setVarName(MalBlkPtr mb, int i, str nme);
 mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void renameVariable(MalBlkPtr mb, int i, str pattern, int newid);

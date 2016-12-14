@@ -66,14 +66,6 @@ pattern optimizer.costModel(mod:str, fcn:str):str
 address OPTwrapper
 comment "Estimate the cost of a relational expression";
 
-#opt_crackers.mal
-
-pattern optimizer.crackers():str
-address OPTwrapper;
-pattern optimizer.crackers(mod:str, fcn:str):str
-address OPTwrapper
-comment "Replace algebra select with crackers select";
-
 #opt_dataflow.mal
 
 pattern optimizer.dataflow():str
@@ -122,14 +114,6 @@ pattern optimizer.evaluate(mod:str, fcn:str):str
 address OPTwrapper
 comment "Evaluate constant expressions once.";
 
-#opt_factorize.mal
-
-pattern optimizer.factorize():str
-address OPTwrapper;
-pattern optimizer.factorize(mod:str, fcn:str):str
-address OPTwrapper
-comment "Turn function into a factory";
-
 #opt_garbagecollector.mal
 
 pattern optimizer.garbageCollector():str
@@ -160,18 +144,6 @@ comment "Initialize the optimizer";
 pattern optimize(mod:str, fcn:str)
 address QOToptimize
 comment "Optimize a specific operation";
-
-pattern showFlowGraph(M:str,F:str,s:str):void 
-address QOTshowFlowGraph
-comment "Dump the data flow of the function 
-	M.F in a format recognizable by the 
-	command 'dot' on the file s";
-
-pattern showPlan(M:str,F:str,s:str):void 
-address QOTshowPlan;
-pattern showPlan()
-address QOTshowPlan
-comment "Illustrate the plan derived so far";
 
 #opt_inline.mal
 
@@ -318,14 +290,6 @@ address OPTwrapper;
 pattern optimizer.reorder(mod:str, fcn:str):str
 address OPTwrapper
 comment "Reorder by dataflow dependencies";
-
-#opt_selcrack.mal
-
-pattern optimizer.selcrack():str
-address OPTwrapper;
-pattern optimizer.selcrack(mod:str, fcn:str):str
-address OPTwrapper
-comment "Selection cracking";
 
 #opt_statistics.mal
 

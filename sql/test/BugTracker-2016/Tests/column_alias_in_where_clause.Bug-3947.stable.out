@@ -73,7 +73,7 @@ Ready.
 [ 1,	10,	"tien"	]
 [ 11,	2,	"elf"	]
 #SELECT a AS "A", b AS "B", c AS "C" FROM t_alias ORDER BY 1;
-% sys.L1,	sys.L2,	sys.L3 # table_name
+% sys.L2,	sys.L4,	sys.L6 # table_name
 % A,	B,	C # name
 % int,	int,	varchar # type
 % 2,	2,	4 # length
@@ -86,7 +86,7 @@ Ready.
 % 1,	2,	4 # length
 [ 1,	10,	"tien"	]
 #SELECT a AS "A", b * b AS "B", c AS "C" FROM t_alias WHERE "b" * b >99;
-% sys.L1,	sys.L2,	sys.L3 # table_name
+% sys.L2,	sys.L4,	sys.L6 # table_name
 % A,	B,	C # name
 % int,	bigint,	varchar # type
 % 1,	3,	4 # length
@@ -98,7 +98,7 @@ Ready.
 % 1,	3,	4 # length
 [ 1,	100,	"tien"	]
 #SELECT a AS "A", b AS "B", c AS "C" FROM t_alias WHERE "c" LIKE '%en';
-% sys.L1,	sys.L2,	sys.L3 # table_name
+% sys.L2,	sys.L4,	sys.L6 # table_name
 % A,	B,	C # name
 % int,	int,	varchar # type
 % 1,	2,	4 # length
@@ -110,7 +110,7 @@ Ready.
 % 1,	2,	4 # length
 [ 1,	10,	"tien"	]
 #SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "c" = 'null';
-% .L2,	sys.L3,	sys.L4 # table_name
+% .L3,	sys.L5,	sys.L7 # table_name
 % CAT,	A,	C # name
 % char,	int,	varchar # type
 % 1,	1,	0 # length
@@ -132,21 +132,21 @@ Ready.
 [ NULL,	1,	"tien"	]
 [ NULL,	11,	"elf"	]
 #SELECT a AS "A", b AS "B", c AS "C" FROM t_alias ORDER BY "C", "A", "B";
-% sys.L1,	sys.L2,	sys.L3 # table_name
+% sys.L2,	sys.L4,	sys.L6 # table_name
 % A,	B,	C # name
 % int,	int,	varchar # type
 % 2,	2,	4 # length
 [ 11,	2,	"elf"	]
 [ 1,	10,	"tien"	]
 #SELECT a*b AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B";
-% sys.L1,	sys.t_alias # table_name
+% sys.L2,	sys.t_alias # table_name
 % A*B,	C # name
 % bigint,	varchar # type
 % 2,	4 # length
 [ 10,	"tien"	]
 [ 22,	"elf"	]
 #SELECT a*b*b AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B" HAVING "A*B" IS NOT NULL ORDER BY -"A*B";
-% sys.L1,	sys.t_alias # table_name
+% sys.L2,	sys.t_alias # table_name
 % A*B,	C # name
 % bigint,	varchar # type
 % 3,	4 # length

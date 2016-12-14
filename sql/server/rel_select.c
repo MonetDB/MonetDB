@@ -1018,7 +1018,11 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
 				else
 					*rel = v;
+				/*
 				exp = rel_bind_column(sql, *rel, cname, f);
+				if (!exp)
+				*/
+					exp = rel_bind_column2(sql, *rel, tname, cname, f);
 			}
 		}
 		if (!exp) {

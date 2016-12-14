@@ -20,8 +20,7 @@
 bool string_copy(char * source, char* dest, size_t max_size, bool allow_unicode)
 {
     size_t i;
-    for(i = 0; i < max_size; i++)
-    {
+    for(i = 0; i < max_size; i++) {
         dest[i] = source[i];
         if (dest[i] == 0) return TRUE;
         if (!allow_unicode && (*(unsigned char*)&source[i]) >= 128) return FALSE;
@@ -345,10 +344,12 @@ CONVERSION_FUNCTION_FACTORY(sht, sht)
 CONVERSION_FUNCTION_FACTORY(int, int)
 CONVERSION_FUNCTION_FACTORY(lng, lng)
 CONVERSION_FUNCTION_FACTORY(flt, lng)
-CONVERSION_FUNCTION_FACTORY(dbl, lng)
 
 #ifdef HAVE_HGE
 CONVERSION_FUNCTION_FACTORY(hge, hge)
+CONVERSION_FUNCTION_FACTORY(dbl, hge)
+#else
+CONVERSION_FUNCTION_FACTORY(dbl, lng)
 #endif
 #endif
 

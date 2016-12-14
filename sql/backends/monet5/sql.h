@@ -56,7 +56,6 @@
 
 extern int sqlcleanup(mvc *c, int err);
 extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);
-extern stmt *sql_relation2stmt(mvc *c, sql_rel *r);
 
 extern BAT *mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname, int access);
 
@@ -79,10 +78,10 @@ sql5_export str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 sql5_export str SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat *ins);
 sql5_export str DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval, const bat *ins);
-sql5_export str DELTAproject(bat *result, const bat *subselect, const bat *col, const bat *uid, const bat *uval, const bat *ins);
+sql5_export str DELTAproject(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval, const bat *ins);
 sql5_export str DELTAbat2(bat *result, const bat *col, const bat *uid, const bat *uval);
 sql5_export str DELTAsub2(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval);
-sql5_export str DELTAproject2(bat *result, const bat *subselect, const bat *col, const bat *uid, const bat *uval);
+sql5_export str DELTAproject2(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval);
 
 sql5_export str BATleftproject(bat *result, const bat *col, const bat *l, const bat *r);
 

@@ -13,6 +13,8 @@ HAVE_JDBCCLIENT_JAR?Test_JdbcClient
 HAVE_JDBCTESTS?Test_PSgeneratedkeys
 HAVE_JDBCTESTS?Test_PSgetObject
 HAVE_JDBCTESTS?Test_PSlargebatchval
+HAVE_JDBCTESTS?Test_PSlargeresponse
+#HAVE_JDBCTESTS?Test_PSlargeamount # scalabity test which is disabled by default (it takes a long time to run and does not need to be run everytime, only before a new release)
 HAVE_JDBCTESTS?Test_PSmanycon
 HAVE_JDBCTESTS?Test_PSmetadata
 HAVE_JDBCTESTS?Test_PSsomeamount
@@ -26,6 +28,7 @@ HAVE_JDBCTESTS?Test_Rpositioning
 HAVE_JDBCTESTS?Test_Rsqldata
 HAVE_JDBCTESTS?Test_Rtimedate
 HAVE_JDBCTESTS?Test_Sbatching
+HAVE_JDBCTESTS?Test_Smoreresults
 HAVE_JDBCTESTS?Test_Wrapper
 HAVE_JDBCTESTS?BugConcurrent_clients_SF_1504657
 HAVE_JDBCTESTS?BugConcurrent_sequences

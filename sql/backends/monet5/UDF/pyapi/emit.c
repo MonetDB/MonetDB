@@ -1,24 +1,11 @@
 
 #include "emit.h"
+#include "conversion.h"
+#include "convert_loops.h"
 #include "type_conversion.h"
 #include "gdk_interprocess.h"
 
-#include "convert_loops.h"
 #include "unicode.h"
-
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#define PyString_FromString PyUnicode_FromString
-#define PyString_Check PyUnicode_Check
-#define PyString_CheckExact PyUnicode_CheckExact
-#define PyString_AsString PyUnicode_AsUTF8
-#define PyString_AS_STRING PyUnicode_AsUTF8
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_Check PyLong_Check
-#define PythonUnicodeType char
-#else
-#define PythonUnicodeType Py_UNICODE
-#endif
 
 #define scalar_convert(tpe) {\
     tpe val = (tpe) tpe##_nil; msg = pyobject_to_##tpe(&dictEntry, 42, &val); \

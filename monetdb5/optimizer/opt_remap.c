@@ -35,9 +35,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 #endif
 
 	snprintf(buf,1024,"bat%s",mod);
-	p= newInstruction(mb,ASSIGNsymbol);
-	setModuleId(p,putName(buf));
-	setFunctionId(p,putName(fcn));
+	p= newInstruction(mb, putName(buf), putName(fcn));
 
 	for(i=0; i<pci->retc; i++)
 		if (i<1)
@@ -410,26 +408,20 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, sum);
 			pushInstruction(mb, cnt);
 
-			t = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(t, batcalcRef);
-			setFunctionId(t, putName("=="));
+			t = newInstruction(mb, batcalcRef, putName("=="));
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_bit));
 			t = pushArgument(mb, t, getDestVar(cnt));
 			t = pushLng(mb, t, 0);
 			pushInstruction(mb, t);
 			iszero = t;
 
-			t = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(t, batcalcRef);
-			setFunctionId(t, dblRef);
+			t = newInstruction(mb, batcalcRef, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = pushArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;
 
-			t = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(t, batcalcRef);
-			setFunctionId(t, putName("ifthenelse"));
+			t = newInstruction(mb, batcalcRef, putName("ifthenelse"));
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = pushArgument(mb, t, getDestVar(iszero));
 			t = pushNil(mb, t, TYPE_dbl);
@@ -437,17 +429,13 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, t);
 			sum = t;
 
-			t = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(t, batcalcRef);
-			setFunctionId(t, dblRef);
+			t = newInstruction(mb, batcalcRef, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = pushArgument(mb, t, getDestVar(cnt));
 			pushInstruction(mb, t);
 			cnt = t;
 
-			avg = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(avg, batcalcRef);
-			setFunctionId(avg, divRef);
+			avg = newInstruction(mb, batcalcRef, divRef);
 			getArg(avg, 0) = getArg(p, 0);
 			avg = pushArgument(mb, avg, getDestVar(sum));
 			avg = pushArgument(mb, avg, getDestVar(cnt));

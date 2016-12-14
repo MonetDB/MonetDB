@@ -98,7 +98,11 @@ void
 clearStack(MalStkPtr s)
 {
 	ValPtr v;
-	int i = s->stktop;
+	int i;
+
+	if (!s) return;
+	
+	i = s->stktop;
 
 	for (v = s->stk; i >= 0; i--, v++)
 		if (ATOMextern(v->vtype) && v->val.pval) {

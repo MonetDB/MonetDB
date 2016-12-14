@@ -13,7 +13,7 @@ lib_mcutil = {
 }
 
 bin_mclient = {
-	SOURCES = mclient.c ReadlineTools.c ReadlineTools.h
+	SOURCES = mclient.c ReadlineTools.c ReadlineTools.h mhelp.c mhelp.h
 	LIBS = libmcutil ../mapilib/libmapi \
 		../../common/stream/libstream \
 		../../common/utils/libmutils \

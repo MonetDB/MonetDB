@@ -29,30 +29,30 @@ Ready.
 
 function user.foo():void;               	#[0] (0)  0 
     pw:str := clients.backendsum("Pmonetdb":str);	#[1] (0) CLTbackendsum 1 <- 2 
-    id:oid := clients.addUser("monetdb":str,pw:str);	#[2] (0) CLTaddUser 3 <- 4 1 
+    id:oid := clients.addUser("monetdb":str, pw:str);	#[2] (0) CLTaddUser 3 <- 4 1 
 catch MALException:str;                 	#[3] (0)  5 
-    io.printf("0: %s\n":str,MALException:str);	#[4] (0) IOprintf 6 <- 7 5 
+    io.printf("0: %s\n":str, MALException:str);	#[4] (0) IOprintf 6 <- 7 5 
 exit MALException:str;                  	#[5] (0)  5 
 # should print 1@0 or something 
-    id:oid := clients.addUser("test":str,pw:str);	#[7] (0) CLTaddUser 3 <- 9 1 
+    id:oid := clients.addUser("test":str, pw:str);	#[7] (0) CLTaddUser 3 <- 9 1 
     io.print(id:oid);                   	#[8] (0) IOprint_val 10 <- 3 
 # this should work also 
-    id:oid := clients.addUser("checkpoint":str,pw:str);	#[10] (0) CLTaddUser 3 <- 12 1 
+    id:oid := clients.addUser("checkpoint":str, pw:str);	#[10] (0) CLTaddUser 3 <- 12 1 
     io.print(id:oid);                   	#[11] (0) IOprint_val 13 <- 3 
 # do a simple listing of users known 
-    (u:bat[:oid],n:bat[:str]) := clients.getUsers();	#[13] (0) CLTgetUsers 15 16 
-    io.print(u:bat[:oid],n:bat[:str]);  	#[14] (0) IOtable 17 <- 15 16 
+    (u:bat[:oid], n:bat[:str]) := clients.getUsers();	#[13] (0) CLTgetUsers 15 16 
+    io.print(u:bat[:oid], n:bat[:str]); 	#[14] (0) IOtable 17 <- 15 16 
 # should work, we're the admin here 
     clients.removeUser("checkpoint":str);	#[16] (0) CLTremoveUser 19 <- 12 
 # do a simple listing of users known 
-    (u:bat[:oid],n:bat[:str]) := clients.getUsers();	#[18] (0) CLTgetUsers 15 16 
-    io.print(u:bat[:oid],n:bat[:str]);  	#[19] (0) IOtable 21 <- 15 16 
+    (u:bat[:oid], n:bat[:str]) := clients.getUsers();	#[18] (0) CLTgetUsers 15 16 
+    io.print(u:bat[:oid], n:bat[:str]); 	#[19] (0) IOtable 21 <- 15 16 
 # forcefully set the password of the user test 
-    clients.setPassword("test":str,pw:str);	#[21] (0) CLTsetPassword 23 <- 9 1 
+    clients.setPassword("test":str, pw:str);	#[21] (0) CLTsetPassword 23 <- 9 1 
 # now try to set the password for ourself, should fail 
-    clients.setPassword("monetdb":str,pw:str);	#[23] (0) CLTsetPassword 25 <- 4 1 
+    clients.setPassword("monetdb":str, pw:str);	#[23] (0) CLTsetPassword 25 <- 4 1 
 catch InvalidCredentialsException:str;  	#[24] (0)  26 
-    io.printf("1: %s\n":str,InvalidCredentialsException:str);	#[25] (0) IOprintf 27 <- 28 26 
+    io.printf("1: %s\n":str, InvalidCredentialsException:str);	#[25] (0) IOprintf 27 <- 28 26 
 exit InvalidCredentialsException:str;   	#[26] (0)  26 
 #	# change our own password,            
 #	mypw := clients.backendsum("monetdb"); 
@@ -64,19 +64,19 @@ exit InvalidCredentialsException:str;   	#[26] (0)  26
 #	InvalidCredentialsException:= nil:str; 
 #exit InvalidCredentialsException;      
 # all should fail 
-    clients.checkPermission("monetdb":str,"Pmonetdb":str);	#[37] (0) CLTcheckPermission 39 <- 40 41 
+    clients.checkPermission("monetdb":str, "Pmonetdb":str);	#[37] (0) CLTcheckPermission 39 <- 40 41 
 catch InvalidCredentialsException:str;  	#[38] (0)  26 
-    io.printf("3: %s\n":str,InvalidCredentialsException:str);	#[39] (0) IOprintf 42 <- 43 26 
+    io.printf("3: %s\n":str, InvalidCredentialsException:str);	#[39] (0) IOprintf 42 <- 43 26 
     InvalidCredentialsException:str := nil:str;	#[40] (0)  26 <- 44 
 exit InvalidCredentialsException:str;   	#[41] (0)  26 
-    clients.checkPermission("monetdb":str,"x":str);	#[42] (0) CLTcheckPermission 45 <- 40 46 
+    clients.checkPermission("monetdb":str, "x":str);	#[42] (0) CLTcheckPermission 45 <- 40 46 
 catch InvalidCredentialsException:str;  	#[43] (0)  26 
-    io.printf("4: %s\n":str,InvalidCredentialsException:str);	#[44] (0) IOprintf 47 <- 48 26 
+    io.printf("4: %s\n":str, InvalidCredentialsException:str);	#[44] (0) IOprintf 47 <- 48 26 
     InvalidCredentialsException:str := nil:str;	#[45] (0)  26 <- 44 
 exit InvalidCredentialsException:str;   	#[46] (0)  26 
-    clients.checkPermission("x":str,"Pmonetdb":str);	#[47] (0) CLTcheckPermission 49 <- 46 41 
+    clients.checkPermission("x":str, "Pmonetdb":str);	#[47] (0) CLTcheckPermission 49 <- 46 41 
 catch InvalidCredentialsException:str;  	#[48] (0)  26 
-    io.printf("5: %s\n":str,InvalidCredentialsException:str);	#[49] (0) IOprintf 50 <- 51 26 
+    io.printf("5: %s\n":str, InvalidCredentialsException:str);	#[49] (0) IOprintf 50 <- 51 26 
     InvalidCredentialsException:str := nil:str;	#[50] (0)  26 <- 44 
 exit InvalidCredentialsException:str;   	#[51] (0)  26 
 end user.foo;                           	#[52] (0)  

@@ -463,7 +463,7 @@ la_bat_updates(logger *lg, logaction *la)
 	assert(b);
 	if (b) {
 		if (la->type == LOG_INSERT) {
-			BATappend(b, la->b, TRUE);
+			BATappend(b, la->b, NULL, TRUE);
 		} else if (la->type == LOG_UPDATE) {
 			BATiter vi = bat_iterator(la->b);
 			BATiter ii = bat_iterator(la->uid);
@@ -1254,16 +1254,12 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	n[i++] = catalog_nme->batCacheid;
 	n[i++] = dcatalog->batCacheid;
 	if (BATcount(dcatalog) > (BATcount(catalog_nme)/2) && catalog_bid == list_bid && catalog_nme == list_nme && lg->catalog_bid == catalog_bid) {
-		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog), *b;
+		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog);
 
 		bids = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
 		nmes = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
-		b = BATproject(tids, catalog_bid);
-		BATappend(bids, b, TRUE);
-		logbat_destroy(b);
-		b = BATproject(tids, catalog_nme);
-		BATappend(nmes, b, TRUE);
-		logbat_destroy(b);
+		BATappend(bids, catalog_bid, tids, TRUE);
+		BATappend(nmes, catalog_nme, tids, TRUE);
 		logbat_destroy(tids);
 		BATclear(dcatalog, TRUE);
 

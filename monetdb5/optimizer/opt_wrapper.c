@@ -36,7 +36,6 @@
 #include "opt_deadcode.h"
 #include "opt_emptybind.h"
 #include "opt_evaluate.h"
-#include "opt_factorize.h"
 #include "opt_garbageCollector.h"
 #include "opt_generator.h"
 #include "opt_inline.h"
@@ -71,7 +70,6 @@ struct{
 	{"deadcode", &OPTdeadcodeImplementation},
 	{"emptybind", &OPTemptybindImplementation},
 	{"evaluate", &OPTevaluateImplementation},
-	{"factorize", &OPTfactorizeImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
 	{"generator", &OPTgeneratorImplementation},
 	{"inline", &OPTinlineImplementation},

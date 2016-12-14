@@ -69,8 +69,8 @@ Ready.
 #select t1_bug3139.id, t1_bug3139.dp, t2_bug3139_cnt
 #from t1_bug3139
 #where t1_bug3139.id > 1 and t1_bug3139.dp <> t2_bug3139_cnt;
-% sys.t1_bug3139,	sys.t1_bug3139,	.L1 # table_name
-% id,	dp,	L1 # name
+% sys.t1_bug3139,	sys.t1_bug3139,	.L4 # table_name
+% id,	dp,	L4 # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length
 [ 2,	2,	3	]

@@ -6,7 +6,7 @@ insert into t1_2073 (toggle) values (false);
 
 create trigger updateMe
         after update on t1_2073 referencing new row new_row
-        for each row when new_row.toggle = true
+        for each row when ( new_row.toggle = true )
                 insert into t2_2073 (ref) values (new_row.id);
 
 update t1_2073 set toggle = true where id = 1;

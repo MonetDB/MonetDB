@@ -13,5 +13,3 @@ extern int dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, in
 extern int dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname);
 extern int dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts);
 extern void dump_version(Mapi mid, stream *toConsole, const char *prefix);
-extern int has_systemfunctions(Mapi mid);
-extern int has_schemas_system(Mapi mid);

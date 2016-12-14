@@ -30,7 +30,7 @@ Ready.
 #result of inline
 function user.tst():void;
     false:bit;
-    X_5:int := 0;
+    X_5:int := 0:int;
     false:bit;
     -1:int;
     X_5:int := -1:int;

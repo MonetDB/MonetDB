@@ -23,7 +23,7 @@ tt:= remote.put(conn,true:bit);
 tf:= remote.put(conn,false:bit);
 
 # perform a selection remote, and get the result back
-bok := remote.exec(conn, "algebra", "subselect", k, l, m, tt,tt,tf);
+bok := remote.exec(conn, "algebra", "select", k, l, m, tt,tt,tf);
 j:bat[:oid] := remote.get(conn, bok);
 io.print(j);
 

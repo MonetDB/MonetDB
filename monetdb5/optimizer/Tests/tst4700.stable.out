@@ -111,7 +111,7 @@ exit i;
     cnt := aggr.count(z9);
     io.printf(" count %d\n",cnt);
     t0 := alarm.usec();
-    s := algebra.subsort(b,false,false);
+    s := algebra.sort(b,false,false);
     t1 := alarm.usec();
     d0 := calc.-(t1,t0);
     io.printf("#tail sort %d",d0);

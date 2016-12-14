@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.25.0
+%define version 11.26.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -407,11 +407,10 @@ developer.
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
-%{_bindir}/sample2
-%{_bindir}/sample3
 %{_bindir}/sample4
 %{_bindir}/smack00
 %{_bindir}/smack01
+%{_bindir}/shutdowntest
 %{_bindir}/testgetinfo
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php

@@ -25,6 +25,6 @@ seq := algebra.projection(ord,bv);
 
 io.print(seq);
 
-(k,l):= algebra.subsort(bv,0:bit,1:bit);
+(k,l):= algebra.sort(bv,0:bit,1:bit);
 
 io.print(k,l);

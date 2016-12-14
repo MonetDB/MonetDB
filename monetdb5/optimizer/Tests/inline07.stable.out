@@ -31,9 +31,9 @@ Ready.
 
 function user.qry():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
-    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    bat.append(b:bat[:int], 1:int);     	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
     X_9:dbl := aggr.sum(b:bat[:int]);   	#[3] (0) CMDBATsum 12 <- 1 
-    X_10:bat[:dbl] := batcalc.+(b:bat[:int],X_9:dbl);	#[4] (0) CMDbatADDsignal 13 <- 1 12 
+    X_10:bat[:dbl] := batcalc.+(b:bat[:int], X_9:dbl);	#[4] (0) CMDbatADDsignal 13 <- 1 12 
     z:bat[:dbl] := X_10:bat[:dbl];      	#[5] (0)  5 <- 13 
 end user.qry;                           	#[6] (0)  
 

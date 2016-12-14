@@ -91,6 +91,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	}
 
 	qtop += i == qtop;
+
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -174,7 +175,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 		(void) ATOMIC_INC(mal_running, mal_runningLock);
 
 	/* emit the instruction upon start as well */
-	if(malProfileMode > 0)
+	if(malProfileMode > 0 )
 		profilerEvent(mb, stk, pci, TRUE, cntxt->username);
 }
 
@@ -200,7 +201,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->totticks += pci->ticks;
 	pci->calls++;
 	
-	if(malProfileMode > 0){
+	if(malProfileMode > 0 ){
 		pci->wbytes += getVolume(stk, pci, 1);
 		pci->rbytes += getVolume(stk, pci, 0);
 		profilerEvent(mb, stk, pci, FALSE, cntxt->username);

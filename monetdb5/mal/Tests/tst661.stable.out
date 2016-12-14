@@ -26,18 +26,18 @@ Ready.
 
 #mdb.list("user","tst");
 function user.tst():void;
-    a := user.fi(1);
-    (a,b) := user.fi(1);
-    (a,b,c) := user.fi(1);
-    z := user.fs(1);
-    (y,z) := user.fs(1);
+    a := user.fi(1:int);
+    (a, b) := user.fi(1:int);
+    (a, b, c) := user.fi(1:int);
+    z := user.fs(1:int);
+    (y, z) := user.fs(1:int);
 end user.tst;
 function user.tst():void;               	#[0] (0)  0 
     a:int := user.fi(1:int);            	#[1] (0) MDBdummy 1 <- 2 
-    (a:int,b:int) := user.fi(1:int);    	#[2] (0) MDBdummy 1 3 <- 2 
-    (a:int,b:int,c:int) := user.fi(1:int);	#[3] (0) MDBdummy 1 3 4 <- 2 
+    (a:int, b:int) := user.fi(1:int);   	#[2] (0) MDBdummy 1 3 <- 2 
+    (a:int, b:int, c:int) := user.fi(1:int);	#[3] (0) MDBdummy 1 3 4 <- 2 
     z:str := user.fs(1:int);            	#[4] (0) MDBdummy 5 <- 2 
-    (y:str,z:str) := user.fs(1:int);    	#[5] (0) MDBdummy 6 5 <- 2 
+    (y:str, z:str) := user.fs(1:int);   	#[5] (0) MDBdummy 6 5 <- 2 
 end user.tst;                           	#[6] (0)  
 
 # 16:47:50 >  

@@ -521,7 +521,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 }
 
 str
-LSSTxmatchsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, int *delta, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
+LSSTxmatchjoin(bat *lres, bat *rres, bat *lid, bat *rid, int *delta, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
 {
 	(void)sl;
 	(void)sr;
@@ -544,7 +544,7 @@ LSSTxmatch(bit *res, lng *l, lng *r, int *delta)
 }
 
 str
-LSSTxmatchsubselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
+LSSTxmatchselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 {
 	int shift;
 	BAT *b, *s = NULL, *bn;

@@ -1,13 +1,9 @@
 
+#include "pyapi.h"
+#include "conversion.h"
 #include "connection.h"
 #include "type_conversion.h"
 #include "gdk_interprocess.h"
-
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#define PyString_CheckExact PyUnicode_CheckExact
-#define PyString_FromString PyUnicode_FromString
-#endif
 
 CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult);
 CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern);

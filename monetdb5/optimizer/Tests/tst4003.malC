@@ -3,8 +3,8 @@
 function foo();
 b:= bat.new(:str);
 c:= bat.new(:str);       # identical until insert takes place
-d:= algebra.subselect(b,"hello","world",true,true,false);
-e:= algebra.subselect(b,"hello","world",true,true,false);    # mapped onto one instruction
+d:= algebra.select(b,"hello","world",true,true,false);
+e:= algebra.select(b,"hello","world",true,true,false);    # mapped onto one instruction
 end foo;
 optimizer.commonTerms("user,","foo");
 optimizer.aliases("user,","foo");

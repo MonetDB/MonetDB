@@ -12,7 +12,10 @@ stderr of test 'subquery_orderby.SF-1688915` in directory 'sql/test/BugTracker` 
 
 MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
 QUERY = select name from (select name, id from tables order by id) as x;
-ERROR = !syntax error, unexpected ORDER, expecting INTERSECT or EXCEPT or UNION or ')' in: "select name from (select name, id from tables order"
+ERROR = !syntax error, unexpected ORDER, expecting UNION or EXCEPT or INTERSECT or ')' in: "select name from (select name, id from tables order"
+
+
+
 
 # 10:11:41 >  
 # 10:11:41 >  Done.

@@ -47,8 +47,8 @@ Ready.
 # 15:05:38 >  
 
 #select (4.4054292 - 4.40572025343667)^2 + (52.0903881 - 52.091375762174)^2;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % decimal # type
 % 20 # length
 [ -0.00076334574955	]

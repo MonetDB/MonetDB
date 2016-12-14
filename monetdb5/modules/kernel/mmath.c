@@ -127,6 +127,7 @@ unopM5(_LOG10,log10)
 
 binopM5(_POW,pow)
 unopM5(_SQRT,sqrt)
+unopM5(_CBRT,cbrt)
 
 unopM5(_CEIL,ceil)
 unopM5(_FLOOR,floor)

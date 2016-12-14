@@ -92,85 +92,6 @@ get_schema(Mapi mid)
 	return NULL;
 }
 
-/* return TRUE if the sys.systemfunctions table exists */
-int
-has_systemfunctions(Mapi mid)
-{
-	MapiHdl hdl;
-	int ret;
-
-	if ((hdl = mapi_query(mid,
-			      "SELECT t.id "
-			      "FROM sys._tables t, "
-			           "sys.schemas s "
-			      "WHERE t.name = 'systemfunctions' AND "
-			            "t.schema_id = s.id AND "
-			            "s.name = 'sys'")) == NULL ||
-	    mapi_error(mid))
-		goto bailout;
-	ret = mapi_get_row_count(hdl) == 1;
-	while ((mapi_fetch_row(hdl)) != 0) {
-		if (mapi_error(mid))
-			goto bailout;
-	}
-	if (mapi_error(mid))
-		goto bailout;
-	mapi_close_handle(hdl);
-	return ret;
-
-  bailout:
-	if (hdl) {
-		if (mapi_result_error(hdl))
-			mapi_explain_result(hdl, stderr);
-		else
-			mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-	} else
-		mapi_explain(mid, stderr);
-	return 0;
-}
-
-/* return TRUE if the sys.schemas table has a column named system */
-int
-has_schemas_system(Mapi mid)
-{
-	MapiHdl hdl;
-	int ret;
-
-	if ((hdl = mapi_query(mid,
-			      "SELECT c.id "
-			      "FROM sys._columns c, "
-			           "sys._tables t, "
-			           "sys.schemas s "
-			      "WHERE c.name = 'system' AND "
-				    "c.table_id = t.id AND "
-				    "t.name = 'schemas' AND "
-				    "t.schema_id = s.id AND "
-				    "s.name = 'sys'")) == NULL ||
-	    mapi_error(mid))
-		goto bailout;
-	ret = mapi_get_row_count(hdl) == 1;
-	while ((mapi_fetch_row(hdl)) != 0) {
-		if (mapi_error(mid))
-			goto bailout;
-	}
-	if (mapi_error(mid))
-		goto bailout;
-	mapi_close_handle(hdl);
-	return ret;
-
-  bailout:
-	if (hdl) {
-		if (mapi_result_error(hdl))
-			mapi_explain_result(hdl, stderr);
-		else
-			mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-	} else
-		mapi_explain(mid, stderr);
-	return 0;
-}
-
 /* return TRUE if the HUGEINT type exists */
 static int
 has_hugeint(Mapi mid)
@@ -1337,7 +1258,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	q = malloc(l);
 	snprintf(q, l, functions,
 		 dumpSystem ? "" : "AND f.id ",
-		 dumpSystem ? "" : has_systemfunctions(mid) ? "NOT IN (SELECT function_id FROM sys.systemfunctions) " : "> 2000 ",
+		 dumpSystem ? "" : "NOT IN (SELECT function_id FROM sys.systemfunctions) ",
 		 sname ? "AND s.name = '" : "",
 		 sname ? sname : "",
 		 sname ? "' " : "",
@@ -1466,14 +1387,14 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		      "f.id = p.obj_id AND "
 		      "p.auth_id = a.id AND "
 		      "p.grantor = g.id "
-		      "%s"	/* and f.id not in systemfunctions */
+		      "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
 		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
 	const char *schemas =
 		"SELECT s.name, a.name "
 		"FROM sys.schemas s, "
 		     "sys.auths a "
 		"WHERE s.\"authorization\" = a.id AND "
-		      "%s "
+		      "s.system = FALSE "
 		"ORDER BY s.name";
 	/* alternative, but then need to handle NULL in second column:
 	   SELECT "s"."name", "a"."name"
@@ -1545,7 +1466,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			     "sys.functions f "
 			"WHERE f.language < 3 AND "
 			      "s.id = f.schema_id "
-			"%s"		/* and f.id not in systemfunctions */
+			"AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
 			"UNION "
 			"SELECT s.name AS sname, "
 			       "tr.id AS id, "
@@ -1562,7 +1483,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	MapiHdl hdl;
 	int create_hash_func = 0;
 	int rc = 0;
-	char query[1024];
 
 	/* start a transaction for the dump */
 	if (!describe)
@@ -1633,11 +1553,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		mapi_close_handle(hdl);
 
 		/* dump schemas */
-		snprintf(query, sizeof(query), schemas,
-			 has_schemas_system(mid) ?
-				"s.system = FALSE" :
-				"s.name NOT IN ('sys', 'tmp')");
-		if ((hdl = mapi_query(mid, query)) == NULL ||
+		if ((hdl = mapi_query(mid, schemas)) == NULL ||
 		    mapi_error(mid))
 			goto bailout;
 
@@ -1803,9 +1719,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	hdl = NULL;
 
 	/* dump views, functions, and triggers */
-	snprintf(query, sizeof(query), views_functions_triggers,
-		 has_systemfunctions(mid) ? "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) " : "");
-	if ((hdl = mapi_query(mid, query)) == NULL ||
+	if ((hdl = mapi_query(mid, views_functions_triggers)) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 
@@ -1980,9 +1894,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		goto bailout;
 	mapi_close_handle(hdl);
 
-	snprintf(query, sizeof(query), function_grants,
-		 has_systemfunctions(mid) ? "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) " : "");
-	if ((hdl = mapi_query(mid, query)) == NULL ||
+	if ((hdl = mapi_query(mid, function_grants)) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 

@@ -578,10 +578,6 @@ def msc_binary(fd, var, binmap, msc):
     fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n" % (binname, binname2, binname2))
     fd.write("\t$(EDITBIN) $@ /HEAP:1048576,1048576 /LARGEADDRESSAWARE\n");
     fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;1\n");
-    if condname:
-        fd.write('!ELSE\n')
-        fd.write('C_%s_exe =\n' % binname2)
-        fd.write('!ENDIF\n')
     fd.write('\n')
 
     if SCRIPTS:

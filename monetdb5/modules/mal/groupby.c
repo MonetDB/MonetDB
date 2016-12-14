@@ -172,15 +172,15 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	aggr = GROUPcollect(cntxt, mb, stk, pci);
 	if( aggr == NULL)
-		throw(MAL,"group.subgroup",MAL_MALLOC_FAIL);
+		throw(MAL,"group.multicolumn",MAL_MALLOC_FAIL);
 	GROUPcollectSort(aggr, 0, aggr->last);
 
-	/* (grp,ext,hist) := group.subgroup(..) */
+	/* (grp,ext,hist) := group.group(..) */
 	/* use the old pattern to perform the incremental grouping */
 	*grp = 0;
 	*ext = 0;
 	*hist = 0;
-	msg = GRPsubgroup1(grp, ext, hist, &aggr->bid[0]);
+	msg = GRPgroup1(grp, ext, hist, &aggr->bid[0]);
 	i = 1;
 	if (msg == MAL_SUCCEED && aggr->last > 1)
 		do {
@@ -200,7 +200,7 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*grp = 0;
 			*ext = 0;
 			*hist = 0;
-			msg = GRPsubgroup4(grp, ext, hist, &aggr->bid[i], &oldgrp, &oldext, &oldhist);
+			msg = GRPsubgroup5(grp, ext, hist, &aggr->bid[i], NULL, &oldgrp, &oldext, &oldhist);
 			BBPdecref(oldgrp, TRUE);
 			BBPdecref(oldext, TRUE);
 			BBPdecref(oldhist, TRUE);

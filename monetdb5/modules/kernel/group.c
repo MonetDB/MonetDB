@@ -13,12 +13,13 @@
 #include "algebra.h"
 
 str
-GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
+GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid)
 {
-	BAT *b, *g, *e, *h, *gn, *en, *hn;
+	BAT *b, *s, *g, *e, *h, *gn, *en, *hn;
 	gdk_return r;
 
 	b = BATdescriptor(*bid);
+	s = sid ? BATdescriptor(*sid) : NULL;
 	g = gid ? BATdescriptor(*gid) : NULL;
 	e = eid ? BATdescriptor(*eid) : NULL;
 	h = hid ? BATdescriptor(*hid) : NULL;
@@ -26,15 +27,17 @@ GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, co
 		(gid != NULL && g == NULL) ||
 		(eid != NULL && e == NULL) ||
 		(hid != NULL && h == NULL)) {
+		if (s)
+			BBPunfix(s->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
 		if (e)
 			BBPunfix(e->batCacheid);
 		if (h)
 			BBPunfix(h->batCacheid);
-		throw(MAL, "group.subgroup", RUNTIME_OBJECT_MISSING);
+		throw(MAL, gid ? "group.subgroup" : "group.group", RUNTIME_OBJECT_MISSING);
 	}
-	if ((r = BATgroup(&gn, &en, &hn, b, g, e, h)) == GDK_SUCCEED) {
+	if ((r = BATgroup(&gn, &en, &hn, b, s, g, e, h)) == GDK_SUCCEED) {
 		*ngid = gn->batCacheid;
 		*next = en->batCacheid;
 		*nhis = hn->batCacheid;
@@ -43,23 +46,43 @@ GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, co
 		BBPkeepref(*nhis);
 	}
 	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
 	if (e)
 		BBPunfix(e->batCacheid);
 	if (h)
 		BBPunfix(h->batCacheid);
-	return r == GDK_SUCCEED ? MAL_SUCCEED : createException(MAL, "group.subgroup", GDK_EXCEPTION);
+	return r == GDK_SUCCEED ? MAL_SUCCEED : createException(MAL, gid ? "group.subgroup" : "group.group", GDK_EXCEPTION);
+}
+
+str
+GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
+{
+	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, eid, hid);
+}
+
+str
+GRPsubgroup3(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, const bat *gid)
+{
+	return GRPsubgroup5(ngid, next, nhis, bid, sid, gid, NULL, NULL);
 }
 
 str
 GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
 {
-	return GRPsubgroup4(ngid, next, nhis, bid, gid, NULL, NULL);
+	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, NULL, NULL);
 }
 
 str
-GRPsubgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid)
+GRPgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid)
 {
-	return GRPsubgroup4(ngid, next, nhis, bid, NULL, NULL, NULL);
+	return GRPsubgroup5(ngid, next, nhis, bid, sid, NULL, NULL, NULL);
+}
+
+str
+GRPgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid)
+{
+	return GRPsubgroup5(ngid, next, nhis, bid, NULL, NULL, NULL, NULL);
 }

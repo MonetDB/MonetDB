@@ -18,7 +18,14 @@
 
 #define MAXSYMBOLS 12000 /* enough for the startup and some queries */
 static SymRecord symbolpool[MAXSYMBOLS];
-static int symboltop;
+static int symboltop = 0;
+
+
+void
+mal_instruction_reset(void)
+{
+	symboltop = 0;
+}
 
 Symbol
 newSymbol(str nme, int kind)
@@ -253,13 +260,14 @@ copyMalBlk(MalBlkPtr old)
 	mb->vtop = 0;
 	mb->vid = old->vid;
 	for (i = 0; i < old->vtop; i++) {
-		if( copyVariable(mb, getVar(old, i)) == -1){
+		if(getVar(old,i) && copyVariable(mb, getVar(old, i)) == -1){
 			GDKfree(mb->var);
 			GDKfree(mb);
 			GDKerror("copyVariable" MAL_MALLOC_FAIL);
 			return NULL;
 		}
-		mb->vtop++;
+		if (getVar(old,i))
+			mb->vtop++;
 	}
 
 	mb->stmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * old->ssize);
@@ -401,7 +409,7 @@ prepareMalBlk(MalBlkPtr mb, str s)
 }
 
 InstrPtr
-newInstruction(MalBlkPtr mb, int kind)
+newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 {
 	InstrPtr p = NULL;
 
@@ -423,8 +431,8 @@ newInstruction(MalBlkPtr mb, int kind)
 		p->maxarg = MAXARG;
 	}
 	p->typechk = TYPE_UNKNOWN;
-	setModuleId(p, NULL);
-	setFunctionId(p, NULL);
+	setModuleId(p, modnme);
+	setFunctionId(p, fcnnme);
 	p->fcn = NULL;
 	p->blk = NULL;
 	p->polymorphic = 0;
@@ -435,22 +443,8 @@ newInstruction(MalBlkPtr mb, int kind)
 	p->argv[0] = -1;			/* watch out for direct use in variable table */
 	/* Flow of control instructions are always marked as an assignment
 	 * with modifier */
-	switch (kind) {
-	case BARRIERsymbol:
-	case REDOsymbol:
-	case LEAVEsymbol:
-	case EXITsymbol:
-	case RETURNsymbol:
-	case YIELDsymbol:
-	case CATCHsymbol:
-	case RAISEsymbol:
-		p->token = ASSIGNsymbol;
-		p->barrier = kind;
-		break;
-	default:
-		p->token = kind;
-		p->barrier = 0;
-	}
+	p->token = ASSIGNsymbol;
+	p->barrier = 0;
 	p->gc = 0;
 	p->jump = 0;
 	return p;
@@ -811,7 +805,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 		setVarUDFtype(tm, res);
 	if (isVarCleanup(mb, x))
 		setVarCleanup(tm, res);
-	strncpy(getSTC(tm,x),getSTC(mb,x), 2 *IDLENGTH);
+	tm->var[x]->stc = mb->var[x]->stc;
 	return res;
 }
 
@@ -859,6 +853,7 @@ copyVariable(MalBlkPtr dst, VarPtr v)
 	w->declared = v->declared;
 	w->updated = v->updated;
 	w->eolife = v->eolife;
+	w->stc = v->stc;
 	if (VALcopy(&w->value, &v->value) == NULL) {
 		GDKfree(w);
 		return -1;
@@ -882,7 +877,7 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->flags = 0;
 	v->rowcnt = 0;
 	v->eolife = 0;
-	v->stc[0] = 0;
+	v->stc = 0;
 }
 
 void
@@ -898,16 +893,16 @@ freeVariable(MalBlkPtr mb, int varid)
 
 /* A special action is to reduce the variable space by removing all
  * that do not contribute.
+ * All temporary variables are renamed in the process to trim the varid.
  */
 void
 trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 {
-	int *vars, cnt = 0, i, j;
-	int maxid = 0,m;
+	int *alias, cnt = 0, i, j;
 	InstrPtr q;
 
-	vars = (int *) GDKzalloc(mb->vtop * sizeof(int));
-	if (vars == NULL)
+	alias = (int *) GDKzalloc(mb->vtop * sizeof(int));
+	if (alias == NULL)
 		return;					/* forget it if we run out of memory */
 
 	/* build the alias table */
@@ -918,11 +913,6 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 			freeVariable(mb, i);
 			continue;
 		}
-		if( isTmpVar(mb,i) ){
-			m = atoi(getVarName(mb,i)+2);
-			if( m > maxid)
-				maxid = m;
-		}
         if (i > cnt) {
             /* remap temporary variables */
             VarRecord *t = mb->var[cnt];
@@ -932,7 +922,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 
 		/* valgrind finds a leak when we move these variable record
 		 * pointers around. */
-		vars[i] = cnt;
+		alias[i] = cnt;
 		if (glb && i != cnt) {
 			glb->stk[cnt] = glb->stk[i];
 			VALempty(&glb->stk[i]);
@@ -942,7 +932,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 #ifdef DEBUG_REDUCE
 	mnstr_printf(GDKout, "Variable reduction %d -> %d\n", mb->vtop, cnt);
 	for (i = 0; i < mb->vtop; i++)
-		mnstr_printf(GDKout, "map %d->%d\n", i, vars[i]);
+		mnstr_printf(GDKout, "map %d->%d\n", i, alias[i]);
 #endif
 
 	/* remap all variable references to their new position. */
@@ -950,16 +940,20 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		for (i = 0; i < mb->stop; i++) {
 			q = getInstrPtr(mb, i);
 			for (j = 0; j < q->argc; j++)
-				getArg(q, j) = vars[getArg(q, j)];
+				getArg(q, j) = alias[getArg(q, j)];
 		}
 	}
-	/* reset the variable counter */
-	mb->vid= maxid + 1;
+	/* rename the temporary variable */
+	mb->vid = 0;
+	for( i =0; i< cnt; i++)
+	if( isTmpVar(mb,i))
+        (void) snprintf(mb->var[i]->id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
+	
 #ifdef DEBUG_REDUCE
 	mnstr_printf(GDKout, "After reduction \n");
 	printFunction(GDKout, mb, 0, 0);
 #endif
-	GDKfree(vars);
+	GDKfree(alias);
 	mb->vtop = cnt;
 }
 
@@ -1207,7 +1201,7 @@ fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth)
 	if (k < 0)
 		k = 0;
 	for (i=k; i < mb->vtop - 1; i++) 
-	if( isVarConstant(mb,i)){
+	if (getVar(mb,i) && isVarConstant(mb,i)){
 		VarPtr v = getVar(mb, i);
 		if (v && v->type == cst->vtype && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
 			return i;
@@ -1548,7 +1542,9 @@ pushEndInstruction(MalBlkPtr mb)
 {
 	InstrPtr p;
 
-	p = newInstruction(mb, ENDsymbol);
+	p = newInstruction(mb, NULL, NULL);
+	p->token = ENDsymbol;
+	p->barrier = 0;
 	if (!p) {
 		mb->errors++;
 		showException(GDKout, MAL, "pushEndInstruction", "failed to create instruction (out of memory?)");

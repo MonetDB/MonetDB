@@ -1,3 +1,16 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 2008-2015 MonetDB B.V.
+ */
+
+/*
+ * M. Raasveldt
+ * Conversion loops used to convert from BAT <> NumPy Array
+ * these are in a separate header because they are used in multiple places
+ */
 
 #define BAT_TO_NP(bat, mtpe, nptpe)                                                                                                 \
         if (copy) {                                                                                                                 \
@@ -11,7 +24,7 @@
 
 // This #define creates a new BAT with the internal data and mask from a Numpy array, without copying the data
 // 'bat' is a BAT* pointer, which will contain the new BAT. TYPE_'mtpe' is the BAT type, and 'batstore' is the heap storage type of the BAT (this should be STORE_CMEM or STORE_SHARED)
-#ifdef HAVE_FORK
+#if defined (HAVE_FORK) && !defined(HAVE_EMBEDDED)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
         bat->tnil = 0; bat->tnonil = 1;                                                   \
@@ -191,7 +204,6 @@
         }                                                                                                                                             \
     }
 
-// This is here so we can remove the option_zerocopyoutput from the zero copy conditionals if testing is disabled
 
 #define NP_INSERT_BAT(bat, mtpe, index)  {                                                                                                              \
     switch(ret->result_type)                                                                                                                            \
@@ -244,7 +256,7 @@
 	                b->tnil = 1;                                                                                                                                        \
 	                BUNappend(b, str_nil, FALSE);                                                                                                                         \
 	            }  else {                                                                                                                                                 \
-	                if (!string_copy(&data[(index_offset * ret->count + iu) * ret->memory_size], utf8_string, ret->memory_size, true)) {                                  \
+	                if (!string_copy(&data[(index_offset * ret->count + iu) * ret->memory_size], utf8_string, ret->memory_size, false)) {                                  \
 	                    msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");     \
 	                    goto wrapup;                                                                                                                                      \
 	                }                                                                                                                                                     \
@@ -322,17 +334,13 @@
             /*We can only create a direct map if the numpy array type and target BAT type*/                                                                    \
             /*are identical, otherwise we have to do a conversion.*/                                                                                           \
             if (ret->numpy_array == NULL) {                                                                                                                    \
-                VERBOSE_MESSAGE("- Zero copy (Map)!\n");                                                                                                       \
                 CREATE_BAT_ZEROCOPY(bat, mtpe, STORE_MMAPABS);                                                                                                 \
                 ret->array_data = NULL;                                                                                                                        \
             } else {                                                                                                                                           \
-                VERBOSE_MESSAGE("- Zero copy!\n");                                                                                                             \
                 CREATE_BAT_ZEROCOPY(bat, mtpe, STORE_CMEM);                                                                                                    \
             }                                                                                                                                                  \
         } else {                                                                                                                                               \
             bat = COLnew(seqbase, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                   \
-            if (NOT_HGE(mtpe) && TYPE_##mtpe != PyType_ToBat(ret->result_type)) WARNING_MESSAGE("!PERFORMANCE WARNING: You are returning a Numpy Array of type %s, which has to be converted to a BAT of type %s. If you return a Numpy\
-Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type), BatType_Format(TYPE_##mtpe), PyType_Format(BatType_ToPyType(TYPE_##mtpe)));   \
             bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                                                              \
             NP_INSERT_BAT(bat, mtpe, 0);                                                                                                                       \
             if (!mask) { bat->tnil = 0; bat->tnonil = 0; }                                                                                                 \
@@ -340,22 +348,3 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
             BATsettrivprop(bat);                                                                                                                               \
         }                                                                                                                                                      \
     }
-
-#define NP_SPLIT_BAT(tpe) {                                                       \
-    tpe ***ptr = (tpe***)split_bats;                                              \
-    size_t *temp_indices;                                                         \
-    tpe *batcontent = (tpe*)basevals;                                             \
-    /* allocate space for split BAT */                                            \
-    for(group_it = 0; group_it < group_count; group_it++) {                       \
-        ptr[group_it][i] = GDKzalloc(group_counts[group_it] * sizeof(tpe));       \
-    }                                                                             \
-    /*iterate over the elements of the current BAT*/                              \
-    temp_indices = GDKzalloc(sizeof(lng) * group_count);                          \
-    for(element_it = 0; element_it < elements; element_it++) {                    \
-        /*group of current element*/                                              \
-        oid group = aggr_group_arr[element_it];                                   \
-        /*append current element to proper group*/                                \
-        ptr[group][i][temp_indices[group]++] = batcontent[element_it];            \
-    }                                                                             \
-    GDKfree(temp_indices);                                                        \
-}

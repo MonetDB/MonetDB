@@ -164,7 +164,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 		}
 		advance(t,  base, len);
 		if( i<p->argc-1) {
-			sprintf(t,",");
+			sprintf(t,", ");
 			advance(t,base,len);
 		}
 	}
@@ -194,7 +194,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 			}
 			advance(t,base,len);
 			if( i<p->retc-1 && t < base + len) {
-				sprintf(t,",");
+				sprintf(t,", ");
 				advance(t,base,len);
 			}
 		}
@@ -309,8 +309,10 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				GDKfree(arg);
 			}
 			advance(t,base,len);
-			if ( t < base+len && i < p->retc - 1)
+			if ( t < base+len && i < p->retc - 1){
 				*t++ = ',';
+				*t++ = ' ';
+			}
 		}
 		if (p->retc > 1)
 			if( t< base+len) *t++ = ')';
@@ -367,7 +369,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		advance(t,base,len);
 
 		if (i < p->argc -1 && t < base + len){
-			snprintf(t, (len-(t-base)), ",");
+			snprintf(t, (len-(t-base)), ", ");
 			advance(t,base,len);
 		}
 	} 
@@ -472,7 +474,7 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 
 		for (i = 0; i < p->retc; i++) {
 			nme = shortRenderingTerm(mb, stk, p,i);
-			snprintf(t,(len-(t-base)), "%s%s", (i?",":""), nme);
+			snprintf(t,(len-(t-base)), "%s%s", (i?", ":""), nme);
 			GDKfree(nme);
 			advance(t,base,len);
 		}
@@ -496,11 +498,13 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 	if( t< base + len) *t++ = '(';
 	for (i = p->retc; i < p->argc; i++) {
 		nme = shortRenderingTerm(mb, stk, p,i);
-		snprintf(t,(len-(t-base)), "%c%s", (i!= p->retc? ',':' '), nme);
+		snprintf(t,(len-(t-base)), "%s%s", (i!= p->retc? ", ":" "), nme);
 		GDKfree(nme);
 		advance(t,base,len);
-		if (i < p->retc - 1 && t < base+len)
+		if (i < p->retc - 1 && t < base+len){
 			*t++ = ',';
+			*t++ = ' ';
+		}
 	}
 	if( t < base + len) *t++ = ' ';
 	if( t < base + len) *t++ = ')';

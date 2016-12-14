@@ -522,11 +522,16 @@ retryRead:
 					}
 				}
 				continue;
-			} else{
-				Module m;
+			} else {
+				Module* list;
+				int length;
+				int i;
 				mnstr_printf(out,"#%s ",cntxt->nspace->name);
-				for( m = getModuleChain(); m; m = m->next)
-					mnstr_printf(out,"%s ",m->name);
+				getModuleList(&list, &length);
+				for(i = 0; i < length; i++) {
+					mnstr_printf(out, "%s ", list[i]->name);	
+				}
+				freeModuleList(list);
 				mnstr_printf(out,"\n");
 			}
 		}
@@ -913,8 +918,7 @@ partial:
 			continue;
 		}
 		case 'h':
-			if (strncmp("help", b, 2) == 0)
-				mdbHelp(out);
+			mdbHelp(out);
 			continue;
 		case 'o':
 		case 'O':   /* optimizer and scheduler steps */
@@ -1114,7 +1118,7 @@ mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) mb;
 	if (id < 0 || id >= MAL_MAXCLIENTS || mal_clients[id].mode == 0)
-		throw(INVCRED, "mdb.grab", INVCRED_WRONG_ID);
+		throw(INVCRED, "mdb.trap", INVCRED_WRONG_ID);
 	c = mal_clients + id;
 
 	c->itrace = 'S';

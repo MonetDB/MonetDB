@@ -28,7 +28,7 @@ sql_rel *
 rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 {
 	mvc o = *m;
-	sql_rel *rel;
+	sql_rel *rel = NULL;
 	buffer *b;
 	char *n;
 	int len = _strlen(query);
@@ -64,9 +64,10 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	/* via views we give access to protected objects */
-	m->user_id = USER_MONETDB;
+	if (emode != m_instantiate)
+		m->user_id = USER_MONETDB;
 
-	(void) sqlparse(m);	/* blindly ignore errors */
+	(void) sqlparse(m);     /* blindly ignore errors */
 	rel = rel_semantic(m, m->sym);
 
 	GDKfree(query);

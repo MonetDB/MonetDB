@@ -30,7 +30,7 @@ stderr of test 'merge-table-edit.Bug-6084` in directory 'sql/test/BugTracker-201
 MAPI  = (monetdb) /var/tmp/mtest-71697/.s.monetdb.32414
 QUERY = ALTER TABLE test_table ADD COLUMN u int;
 ERROR = !ALTER TABLE: cannot add column to a PARTITION of a MERGE or REPLICA TABLE 'test_table'
-MAPI  = (monetdb) /var/tmp/mtest-27276/.s.monetdb.34956
+MAPI  = (monetdb) /var/tmp/mtest-26091/.s.monetdb.34975
 QUERY = UPDATE test_table SET u = 2;
 ERROR = !current transaction is aborted (please ROLLBACK)
 MAPI  = (monetdb) /var/tmp/mtest-71697/.s.monetdb.32414

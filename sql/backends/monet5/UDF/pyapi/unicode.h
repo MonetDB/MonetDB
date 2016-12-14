@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "pyapi.h"
+#include "pyheader.h"
 
 //! Returns the amount of characters in the utf8 formatted string, returns -1 if the string is not a valid utf8 string
 /* Arguments:

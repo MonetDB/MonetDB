@@ -62,7 +62,6 @@ Ready.
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	1	]
-[ 2,	2	]
 #drop table t1_2073 CASCADE;
 #drop table t2_2073 CASCADE;
 #create table t1_2073 (id serial, toggle boolean);
@@ -82,7 +81,6 @@ Ready.
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	1	]
-[ 2,	2	]
 #drop table t1_2073 CASCADE;
 #drop table t2_2073 CASCADE;
 

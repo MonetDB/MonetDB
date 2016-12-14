@@ -37,7 +37,7 @@ Ready.
 #END;
 #CREATE TABLE test_table (lat FLOAT, lon FLOAT);
 #SELECT geographic_to_cartesian(lat, lon) AS calc_point FROM test_table;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % calc_point # name
 % geometry # type
 % 0 # length

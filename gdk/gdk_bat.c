@@ -93,7 +93,6 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	bn->tnil = FALSE;
 	bn->tsorted = bn->trevsorted = ATOMlinear(tt) != 0;
 	bn->tident = BATstring_t;
-	bn->talign = OIDnew(1);
 	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 	bn->tprops = NULL;
 
@@ -1462,8 +1461,7 @@ BATkey(BAT *b, int flag)
 		    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
 		    !BATtkey(bp) &&
 		    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
-		     BATcount(b) == 0 ||
-		     (b->talign && b->talign == bp->talign)))
+		     BATcount(b) == 0))
 			return BATkey(bp, TRUE);
 	}
 	return GDK_SUCCEED;
@@ -1494,10 +1492,6 @@ BATtseqbase(BAT *b, oid o)
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		if (b->tseqbase != o) {
 			b->batDirtydesc = TRUE;
-			/* zap alignment if column is changed by new
-			 * seqbase */
-			if (b->ttype == TYPE_void)
-				b->talign = 0;
 		}
 		b->tseqbase = o;
 		if (b->ttype == TYPE_oid && o == oid_nil) {
@@ -2002,6 +1996,12 @@ BATmode(BAT *b, int mode)
  *		then all values are equal.
  * revsorted	The column is reversely sorted (descending).  If
  *		also sorted, then all values are equal.
+ * nosorted	BUN position which proofs not sorted (given position
+ *		and one before are not ordered correctly).
+ * norevsorted	BUN position which proofs not revsorted (given position
+ *		and one before are not ordered correctly).
+ * nokey	Pair of BUN positions that proof not all values are
+ *		distinct (i.e. values at given locations are equal).
  *
  * In addition there is a property "unique" that, when set, indicates
  * that values must be kept unique (and hence that the "key" property

@@ -31,6 +31,8 @@ static str myname = 0;	// avoid tracing the profiler module
 static int eventcounter = 0;
 static str prettify = "\n"; /* or ' ' for single line json output */
 
+static int highwatermark = 5;	// conservative initialization
+
 static int TRACE_init = 0;
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 
@@ -111,6 +113,9 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	lng usec= GDKusec();
 
 
+	// ignore generation of events for instructions that are called too often
+	if(highwatermark && highwatermark + (start == 0) < pci->calls)
+		return;
 	if( start) // show when instruction was started
 		clock = pci->clock;
 	else 
@@ -142,6 +147,8 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
 	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
+	if( mal_session_uuid)
+		logadd("\"session\":\"%s\",%s",mal_session_uuid,prettify);
 
 	if( start){
 		logadd("\"state\":\"start\",%s", prettify);
@@ -271,17 +278,30 @@ This information can be used to determine memory footprint and variable life tim
 				logadd("{");
 				logadd("\"index\":\"%d\",%s", j,pret);
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
-				if( mb->var[getArg(pci,j)]->stc[0]){
-					logadd("\"alias\":\"%s\",%s", mb->var[getArg(pci,j)]->stc, pret);
+				if( mb->var[getArg(pci,j)]->stc){
+					InstrPtr stc = getInstrPtr(mb, mb->var[getArg(pci,j)]->stc);
+					if(stc && strcmp(getModuleId(stc),"sql") ==0  && strncmp(getFunctionId(stc),"bind",4)==0)
+						logadd("\"alias\":\"%s.%s.%s\",%s", 
+							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
+							getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
+							getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval, pret);
 				}
 				if( isaBatType(tpe) ){
 					BAT *d= BATdescriptor( bid = stk->stk[getArg(pci,j)].val.bval);
 					tname = getTypeName(getBatType(tpe));
 					logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
 					if( d) {
-						//if( isVIEW(d))
-							//bid = VIEWtparent(d);
+						BAT *v;
 						cnt = BATcount(d);
+						if( isVIEW(d)){
+							logadd("\"view\":\"true\",%s", pret);
+							logadd("\"parent\":\"%d\",%s", VIEWtparent(d), pret);
+							logadd("\"seqbase\":\""BUNFMT"\",%s", d->hseqbase, pret);
+							logadd("\"hghbase\":\""BUNFMT"\",%s", d->hseqbase + cnt, pret);
+							v= BBPquickdesc(VIEWtparent(d),0);
+							logadd("\"kind\":\"%s\",%s", (v &&  v->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
+						} else
+							logadd("\"kind\":\"%s\",%s", ( d->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
 						total += cnt * d->twidth;
 						total += heapinfo(d->tvheap, d->batCacheid); 
 						total += hashinfo(d->thash, d->batCacheid); 
@@ -891,6 +911,17 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	eventcounter++;
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
+}
+
+int getprofilerlimit(void)
+{
+	return highwatermark;
+}
+
+void setprofilerlimit(int limit)
+{
+	// dont lock, it is advisary anyway
+	highwatermark = limit;
 }
 
 lng
