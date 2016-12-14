@@ -229,9 +229,9 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 				cw = cv;\
 			}\
 			dictsize++;\
-			dict.val##TPE[j]= (TPE) *val;\
+			dict.val##TPE[j]= w;\
 			cnt[j] = 1;\
-		} else cnt[j]++;\
+		} else if (dictsize < TMPDICT) cnt[j]++;\
 } }
 
 
@@ -277,34 +277,7 @@ MOScreatedictionary(Client cntxt, MOStask task)
 #endif
 	case TYPE_str:
 		switch(task->bsrc->twidth){
-		case 1: //makeDict(bte); break;
-{	bte *val = ((bte*)task->src) + task->start,v,w;
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
-	lng cw,cv;
-	for(i = 0; i< limit; i++, val++){
-		MOSfind(j,dict.valbte,*val,0,dictsize);
-		if(j == dictsize && dictsize == 0 ){
-			dict.valbte[j]= *val;
-			cnt[j] = 1;
-			dictsize++;
-		} else  
-		if(dictsize < TMPDICT &&  dict.valbte[j] != *val){
-			w= *val; cw= 1;
-			for( ; j< dictsize; j++)
-			if (dict.valbte[j] > w){
-				v =dict.valbte[j];
-				dict.valbte[j]= w;
-				w = v;
-				cv = cnt[j];
-				cnt[j]= cw;
-				cw = cv;
-			}
-			dictsize++;
-			dict.valbte[j]= w;
-			cnt[j] = cw;
-		} else cnt[j]++;
-} }
-	break;
+		case 1: makeDict(bte); break;
 		case 2: makeDict(sht); break;
 		case 4: makeDict(int); break;
 		case 8: makeDict(lng); break;
