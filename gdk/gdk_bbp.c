@@ -1154,7 +1154,7 @@ BBPreadEntries(FILE *fp, int oidsize, int bbpversion)
 				needcommit = 1;
 			}
 		}
-		if (bbpversion <= GDKLIBRARY &&
+		if (bbpversion <= GDKLIBRARY_NOKEY &&
 		    (bn->tnokey[0] != 0 || bn->tnokey[1] != 0)) {
 			/* we don't trust the nokey values */
 			bn->tnokey[0] = bn->tnokey[1] = 0;
