@@ -1042,13 +1042,12 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid)
 	return n;
 }
 
-static int
+static void
 BBPreadEntries(FILE *fp, int oidsize, int bbpversion)
 {
 	bat bid = 0;
 	char buf[4096];
 	BAT *bn;
-	int needcommit = 0;
 
 	/* read the BBP.dir and insert the BATs into the BBP */
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -1153,21 +1152,11 @@ BBPreadEntries(FILE *fp, int oidsize, int bbpversion)
 		nread += heapinit(bn, buf + nread, &Thashash, "T", oidsize, bbpversion, bid);
 		nread += vheapinit(bn, buf + nread, Thashash, bid);
 
-		if (bn->batCount > 1) {
-			/* fix result of bug in BATappend not clearing
-			 * revsorted property */
-			if (bn->ttype == TYPE_void && bn->tseqbase != oid_nil && bn->trevsorted != (bn->batCount <= 1)) {
-				bn->trevsorted = bn->batCount <= 1;
-				bn->batDirtydesc = 1;
-				needcommit = 1;
-			}
-		}
 		if (bbpversion <= GDKLIBRARY_NOKEY &&
 		    (bn->tnokey[0] != 0 || bn->tnokey[1] != 0)) {
 			/* we don't trust the nokey values */
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 			bn->batDirtydesc = 1;
-			needcommit = 1;
 		}
 
 		if (buf[nread] != '\n' && buf[nread] != ' ')
@@ -1194,7 +1183,6 @@ BBPreadEntries(FILE *fp, int oidsize, int bbpversion)
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 	}
-	return needcommit;
 }
 
 #ifdef HAVE_HGE
@@ -1321,7 +1309,6 @@ BBPinit(void)
 	int oidsize;
 	str bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir");
 	str backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir");
-	int needcommit;
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
@@ -1374,7 +1361,7 @@ BBPinit(void)
 	BBPextend(0, FALSE);		/* allocate BBP records */
 	ATOMIC_SET(BBPsize, 1, BBPsizeLock);
 
-	needcommit = BBPreadEntries(fp, oidsize, bbpversion);
+	BBPreadEntries(fp, oidsize, bbpversion);
 	fclose(fp);
 
 	BBPinithash(0);
@@ -1404,7 +1391,7 @@ BBPinit(void)
 	if (bbpversion <= GDKLIBRARY_OLDWKB)
 		fixwkbheap();
 #endif
-	if (bbpversion < GDKLIBRARY || needcommit)
+	if (bbpversion < GDKLIBRARY)
 		TMcommit();
 	GDKfree(bbpdirstr);
 	GDKfree(backupbbpdirstr);
