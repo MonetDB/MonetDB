@@ -100,6 +100,11 @@
    MSVC and with C++ compilers. */
 #define FLEXIBLE_ARRAY_MEMBER
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
+/* Define to 1 if you have the `cbrt' function. */
+#define HAVE_CBRT 1
+#endif
+
 /* If the console should be used */
 #define HAVE_CONSOLE 1
 
