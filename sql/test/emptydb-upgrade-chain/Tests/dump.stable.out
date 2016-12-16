@@ -24,22 +24,6 @@ stdout of test 'dump` in directory 'sql/test/emptydb-upgrade-chain` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_178:bat[:oid,:str]{horigin=1} := mal.multiplex("sql":str,"password":str,X_170:bat[:oid,:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_179:bat[:oid,:str]{horigin=2} := mal.multiplex("sql":str,"password":str,X_171:bat[:oid,:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_180:bat[:oid,:str]{horigin=3} := mal.multiplex("sql":str,"password":str,X_172:bat[:oid,:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_181:bat[:oid,:str]{horigin=4} := mal.multiplex("sql":str,"password":str,X_173:bat[:oid,:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_240:bat[:oid,:lng]{horigin=1} := mal.multiplex("sql":str,"get_value":str,X_236:bat[:oid,:str],X_228:bat[:oid,:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_241:bat[:oid,:lng]{horigin=2} := mal.multiplex("sql":str,"get_value":str,X_237:bat[:oid,:str],X_229:bat[:oid,:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_242:bat[:oid,:lng]{horigin=3} := mal.multiplex("sql":str,"get_value":str,X_238:bat[:oid,:str],X_230:bat[:oid,:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_243:bat[:oid,:lng]{horigin=4} := mal.multiplex("sql":str,"get_value":str,X_239:bat[:oid,:str],X_231:bat[:oid,:str]);
 
 # 16:42:35 >  
 # 16:42:35 >  "/usr/bin/python2" "dump.SQL.py" "dump"
