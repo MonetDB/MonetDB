@@ -131,7 +131,7 @@ BATcheckmosaic(BAT *b)
 
 	assert(b->batCacheid > 0);
 	t = GDKusec();
-	MT_lock_set(&GDKmosaicLock(abs(b->batCacheid)));
+	MT_lock_set(&GDKmosaicLock(b->batCacheid));
 	t = GDKusec() - t;
 	if (b->tmosaic == (Heap *) 1) {
 		Heap *hp;
@@ -159,7 +159,7 @@ BATcheckmosaic(BAT *b)
 					close(fd);
 					b->tmosaic = hp;
 					ALGODEBUG fprintf(stderr, "#BATcheckmosaic: reusing persisted mosaic %d\n", b->batCacheid);
-					MT_lock_unset(&GDKmosaicLock(abs(b->batCacheid)));
+					MT_lock_unset(&GDKmosaicLock(b->batCacheid));
 					return 1;
 				}
 				close(fd);
@@ -172,7 +172,7 @@ BATcheckmosaic(BAT *b)
 		GDKclrerr();	/* we're not currently interested in errors */
 	}
 	ret = b->tmosaic != NULL;
-	MT_lock_unset(&GDKmosaicLock(abs(b->batCacheid)));
+	MT_lock_unset(&GDKmosaicLock(b->batCacheid));
 	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckmosaic: already has mosaic %d, waited " LLFMT " usec\n", b->batCacheid, t);
 	return ret;
 }
