@@ -61,11 +61,11 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 126 # length
+% 146 # length
 function user.s8_1():void;
-    X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",4);
+    X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",4:int);
     X_3 := sql.mvc();
-    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0,nil:str);
+    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
     X_28 := sql.append(X_3,"sys","ttt","a",X_24);
     X_33 := sql.append(X_28,"sys","ttt","b",X_25);
     X_36 := sql.append(X_33,"sys","ttt","c",X_26);
@@ -120,11 +120,11 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 126 # length
+% 146 # length
 function user.s24_1():void;
-    X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",4);
+    X_0:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",4:int);
     X_3 := sql.mvc();
-    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0,nil:str);
+    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
     X_28 := sql.append(X_3,"sys","ttt","a",X_24);
     X_33 := sql.append(X_28,"sys","ttt","b",X_25);
     X_38 := aggr.count(X_26);

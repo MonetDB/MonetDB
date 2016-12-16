@@ -24,38 +24,38 @@ Ready.
 # 14:35:38 >  
 
 #select 16 and 16;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select cast(16 as smallint) and cast(16 as smallint);
-% .L3 # table_name
-% L3 # name
-% boolean # type
-% 5 # length
-[ true	]
-#select bit_and(cast(16 as smallint), cast(16 as smallint)) = cast(16 as smallint);
 % .L4 # table_name
 % L4 # name
 % boolean # type
 % 5 # length
 [ true	]
+#select bit_and(cast(16 as smallint), cast(16 as smallint)) = cast(16 as smallint);
+% .L5 # table_name
+% L5 # name
+% boolean # type
+% 5 # length
+[ true	]
 #select bit_and(16,16) ;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 2 # length
 [ 16	]
 #select 16 and cast(16 as int);
-% .L2 # table_name
-% L2 # name
+% .L3 # table_name
+% L3 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select bit_and(16,cast(16 as int)) ;
-% .L2 # table_name
-% L2 # name
+% .L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ 16	]

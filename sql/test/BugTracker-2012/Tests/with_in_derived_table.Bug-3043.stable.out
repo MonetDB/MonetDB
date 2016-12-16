@@ -28,7 +28,7 @@ Ready.
 #        SELECT * FROM x
 #) y;
 % .x # table_name
-% L1 # name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
