@@ -164,7 +164,7 @@ MOScreatecalendar(Client cntxt, MOStask task)
 	if( task->type == TYPE_date)
 	{	int *val = ((int*)task->src) + task->start,v,w;
 		BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
-		int cw,cv;
+		lng cw,cv;
 		for(i = 0; i< limit; i++, val++){
 			v= *val & ~DAYMASK;
 			MOSfind(j,dict.valint,v,0,dictsize);
