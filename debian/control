@@ -42,7 +42,7 @@ Description: MonetDB development files
  This package contains files needed to develop extensions to the core
  functionality of MonetDB.
 
-Package: libmonetdb-stream9
+Package: libmonetdb-stream8
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: MonetDB stream library
@@ -57,7 +57,7 @@ Description: MonetDB stream library
 Package: libmonetdb-stream-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream9 (= ${source:Version})
+ libmonetdb-stream8 (= ${source:Version})
 Description: MonetDB stream library development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -65,7 +65,7 @@ Description: MonetDB stream library development files
  accelerators.  It also has an SQL frontend.
  .
  This package contains the files to develop with the
- libmonetdb-stream9 library.
+ libmonetdb-stream8 library.
 
 Package: libmonetdb-client8
 Architecture: any
