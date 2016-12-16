@@ -46,11 +46,6 @@ typedef struct logger {
 	int version;
 	lng id;
 	int tid;
-#if SIZEOF_OID == 8
-	/* on 64-bit architecture, read OIDs as 32 bits (for upgrading
-	 * oid size) */
-	int read32bitoid;
-#endif
 	char *fn;
 	char *dir;
 	char *local_dir; /* the directory in which the non-shared log is written */
