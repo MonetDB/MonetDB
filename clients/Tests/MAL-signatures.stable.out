@@ -7938,7 +7938,6 @@ Ready.
 [ "mdb",	"start",	"pattern mdb.start(clientid:int):void ",	"MDBstart;",	"Start interactive debugger on a client"	]
 [ "mdb",	"start",	"pattern mdb.start(mod:str,fcn:str):void ",	"MDBstartFactory;",	"Start interactive debugger on a running factory"	]
 [ "mdb",	"stop",	"pattern mdb.stop():void ",	"MDBstop;",	"Stop the interactive debugger"	]
-[ "mdb",	"traceOptimizer",	"command mdb.traceOptimizer(flg:str):void ",	"OPTsetDebugStr;",	"Otherwise it is considered a request to trace the optimizers,\nwhich requires a comma separated list or pipeline name."	]
 [ "mdb",	"trap",	"pattern mdb.trap():void ",	"mdbTrap;",	"A suspended process for debugging."	]
 [ "mdb",	"var",	"pattern mdb.var(M:str,F:str):void ",	"MDBvar3;",	"Dump the symboltable of routine M.F on standard out."	]
 [ "mdb",	"var",	"pattern mdb.var():void ",	"MDBvar;",	"Dump the symboltable of current routine on standard out."	]
