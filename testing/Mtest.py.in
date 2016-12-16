@@ -1374,6 +1374,13 @@ def ApproveOutput (env, TST) :
             proc.wait()
             f.close()
             if os.path.getsize(patch + ".0"):
+                # if a file TST.stable.{out,err}-noapprove exists, we
+                # refuse to approve the output by (silently) skipping
+                if os.path.isfile(TSTSRCDIRTST + '.stable.' + WHAT + '-noapprove'):
+                    remove(patch + ".0")
+                    if verbose:
+                        print("NOT approving %s  ->  stable.%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM))
+                    continue
                 if not verbose:
                     oc = ''
                 print("Approving  %s  ->  stable.%s%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc))
