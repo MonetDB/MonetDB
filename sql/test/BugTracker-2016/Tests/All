@@ -70,3 +70,4 @@ select-in-from.Bug-6119
 select-in-from.Bug-6121
 nested-subquery-in-select.Bug-6125
 column_name_lost_in_in_operator.Bug-6123
+inner_join_cross_join.Bug-6140
