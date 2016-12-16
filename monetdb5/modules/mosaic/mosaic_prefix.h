@@ -25,6 +25,8 @@
 #ifndef _MOSAIC_PREFIX_
 #define _MOSAIC_PREFIX_
 
+/* #define _DEBUG_PREFIX_*/
+
 #include <mal.h>
 #include "mal_interpreter.h"
 #include "mal_client.h"

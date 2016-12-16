@@ -589,10 +589,16 @@ MOSdecompressInternal(Client cntxt, bat *bid)
 		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
 
 	if (BATcheckmosaic(bsrc) == 0 ){
+#ifdef _DEBUG_MOSAIC_
+		mnstr_printf(cntxt->fdout,"#decompress checkmosaic\n");
+#endif
 		BBPunfix(bsrc->batCacheid);
 		return MAL_SUCCEED;
 	}
 	if (!bsrc->tmosaic) {
+#ifdef _DEBUG_MOSAIC_
+		mnstr_printf(cntxt->fdout,"#decompress tmosaic == 0\n");
+#endif
 		BBPunfix(bsrc->batCacheid);
 		return MAL_SUCCEED;
 	}

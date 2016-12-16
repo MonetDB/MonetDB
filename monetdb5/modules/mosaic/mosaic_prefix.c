@@ -231,6 +231,10 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			if( prefixbits == 0)
 				break;
 
+#ifdef _DEBUG_PREFIX_
+            mnstr_printf(cntxt->fdout,"#prefix  estimate 1 %o %o val %d bits %d mask %o\n",
+                *v,*w, val, prefixbits, mask);
+#endif
 			if( task->range[MOSAIC_PREFIX] > task->start +1 /* need at least two*/){
 				bits = (task->range[MOSAIC_PREFIX] - task->start) * (8-prefixbits);
 				store = wordaligned(2 * sizeof(unsigned char),int);
@@ -272,6 +276,10 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			Prefix(prefixbits, mask, val, val2, 16);
 			if( prefixbits == 0)
 				break;
+#ifdef _DEBUG_PREFIX_
+            mnstr_printf(cntxt->fdout,"#prefix  estimate 2 %o %o elm "BUNFMT" val %d bits %d mask %o\n",
+                *v,*w, i,val, prefixbits, mask);
+#endif
 
 			if( task->range[MOSAIC_PREFIX] > task->start + 1){
 				bits = (task->range[MOSAIC_PREFIX] - task->start) * (16-prefixbits);
@@ -314,6 +322,10 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			if( prefixbits == 0)
 				break;
 
+#ifdef _DEBUG_PREFIX_
+            mnstr_printf(cntxt->fdout,"#prefix estimate 4 %o %o elm "BUNFMT" val %d bits %d mask %o\n",
+                *v,*w, i, val, prefixbits, mask);
+#endif
 			if( task->range[MOSAIC_PREFIX] > task->start + 1){
 				bits = (task->range[MOSAIC_PREFIX] - task->start) * (32-prefixbits);
 				store = wordaligned(2 * sizeof(unsigned int),int);
@@ -345,7 +357,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	case 8:
 		{	ulng *v = ((ulng*) task->src) + task->start, *w= v+1, val= *v,val2= *w, mask;
 			// search first non-identical value
-			for(i = 0;i < limit-1 ;i++, w++)
+			for(i = 0; i < limit-1 ;i++, w++)
 			if( *v != *w ){
 				val2 = *w;
 				break;
@@ -395,7 +407,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 void
 MOScompress_prefix(Client cntxt, MOStask task)
 {
-	BUN limit, i, j =0 ;
+	BUN limit,  j =0 ;
 	int prefixbits, bits; 
 	lng size;
 	BitVector base;
@@ -412,35 +424,35 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	if( task->elm >=2 )
 	switch(size){
 	case 1:
-		{	unsigned char *v = ((unsigned char*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask;
+		{	unsigned char *v = ((unsigned char*) task->src) + task->start, *w= v+1, *wlimit= v + limit, val1 = *v, val2 = *w, mask;
 			unsigned char *dst = (unsigned char*) MOScodevector(task);
 			// search first non-identical value
-			for(i = 0;i < limit;i++, w++)
-			if( *v != *w ){
-				val2 = *w;
-				break;
-			}
-			w = v+1;
-			Prefix(prefixbits, mask, val, val2, 8);
+			for(; w < wlimit; w++)
+				if( *v != *w )
+					break;
+			val1 = *v;
+			val2 = *w;
+			Prefix(prefixbits, mask, val1, val2, 8);
 			bits = 8-prefixbits;
 			base = (BitVector)( ((char*)dst) + wordaligned(2 * sizeof(unsigned char),int));
 			*dst++ = mask;
-			val = *v & mask;	//reference value
-			*dst = val;
-			*dst = *dst | bits; // bits outside mask
-			dst++;
+			val1 = *v & mask;	//reference value
+			*dst++ = val1 | bits; // bits outside mask
 			base  = (BitVector) dst; // start of bit vector
 			
 #ifdef _DEBUG_PREFIX_
-			mnstr_printf(cntxt->fdout,"#prefix 1 compress %o %o val %d bits (%d, %d) mask %o",
-				*v,*w,val, prefixbits, bits,mask);
+			mnstr_printf(cntxt->fdout,"#prefix 1 compress %o %o val %d bits (%d, %d) mask %o\n",
+				*v,*w, val1, prefixbits, bits,mask);
 #endif
-			if( i < limit)
-			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
-				if ( val  != (*w & mask) )
+			if( w < wlimit)
+			for(j=0  ; v < w; v++, j++){
+				if ( val1  != (*v & mask) )
 					break;
-				compress(base, j, bits, (int)( *w & (~mask))); // bits
-				hdr->checksum.sumbte += val;
+				compress(base, j, bits, (int) (*v & (~mask))); 
+#ifdef _DEBUG_PREFIX_
+				mnstr_printf(cntxt->fdout,"#compress %d store %d\n", *v,  (int) (*v & (~mask)));
+#endif
+				hdr->checksum.sumbte += val1;
 			}
 #ifdef _DEBUG_PREFIX_
 			mnstr_printf(cntxt->fdout," blk "BUNFMT"\n",j);
@@ -449,36 +461,36 @@ MOScompress_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 2:
-		{	unsigned short *v = ((unsigned short*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask;
+		{	unsigned short *v = ((unsigned short*) task->src) + task->start, *w= v+1, *wlimit= v + limit, val1 = *v, val2 = *w, mask;
 			unsigned short *dst = (unsigned short*) MOScodevector(task);
 
 			// search first non-identical value
-			for(i = 0;i < limit;i++, w++)
-			if( *v != *w ){
-				val2 = *w;
-				break;
-			}
-			w = v+1;
-			Prefix(prefixbits, mask, val, val2, 16);
+			for(; w < wlimit; w++)
+				if( *v != *w )
+					break;
+			val1 = *v;
+			val2 = *w;
+			Prefix(prefixbits, mask, val1, val2, 16);
 			bits = 16-prefixbits;
 			base = (BitVector)( ((char*)dst) + wordaligned(2 * sizeof(unsigned short),int));
 			*dst++ = mask;
-			val = *v & mask;	//reference value
-			*dst = val;
-			*dst = *dst | bits; // bits outside mask
-			dst++;
+			val1 = *v & mask;	//reference value
+			*dst++ = val1 | bits; // bits outside mask
 			base  = (BitVector) dst; // start of bit vector
 			
 #ifdef _DEBUG_PREFIX_
-			mnstr_printf(cntxt->fdout,"#prefix 2 compress %o %o val %d bits (%d, %d) mask %o",
-				*v,*w,val,prefixbits, bits,mask);
+			mnstr_printf(cntxt->fdout,"#prefix 2 compress %o %o val %d bits (%d, %d) mask %o\n",
+				*v,*w,val1, prefixbits, bits,mask);
 #endif
-			if( i < limit)
-			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
-				if ( val  != (*w & mask) )
+			if( w < wlimit)
+			for(j=0  ; v < w; v++, j++){
+				if ( val1  != (*v & mask) )
 					break;
-				compress(base,j,bits, (int)( *w & (~mask))); 
-				hdr->checksum.sumsht += val;
+				compress(base, j, bits, (int) (*v & (~mask))); 
+#ifdef _DEBUG_PREFIX_
+				mnstr_printf(cntxt->fdout,"#compress %d store %d\n", *v,  (int) (*v & (~mask)));
+#endif
+				hdr->checksum.sumsht += val1;
 			}
 #ifdef _DEBUG_PREFIX_
 			mnstr_printf(cntxt->fdout," blk "BUNFMT"\n",j);
@@ -487,39 +499,34 @@ MOScompress_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 4:
-		{	unsigned int *v = ((unsigned int*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask;
+		{	unsigned int *v = ((unsigned int*) task->src) + task->start, *w= v+1, *wlimit=  v + limit, val1, val2, mask;
 			unsigned int *dst = (unsigned int*)  MOScodevector(task);
 
 			// search first non-identical value
-			for(i = 0;i < limit;i++, w++)
-			if( *v != *w ){
-				val2 = *w;
-				break;
-			}
-			w = v+1;
-			Prefix(prefixbits, mask, val, val2, 32);
+			for(; w < wlimit; w++)
+				if( *v != *w )
+					break;
+			val1 = *v;
+			val2 = *w;
+			Prefix(prefixbits, mask, val1, val2, 32);
 			bits = 32-prefixbits;
 			base = (BitVector)(((char*)dst) + wordaligned(2 * sizeof(unsigned int),int));
 			*dst++ = mask;
-			val = *v & mask;	//reference value
-			*dst = val;
-			*dst = *dst | bits; // bits outside mask
-			dst++;
+			val1 = *v & mask ;		//reference value 
+			*dst++ = val1 | bits;	// and keep bits
 			
 #ifdef _DEBUG_PREFIX_
-			mnstr_printf(cntxt->fdout,"#prefix 4 compress %o %o val %d bits (%d, %d) mask %o",
-				*v,*w, val, prefixbits, bits,mask);
+			mnstr_printf(cntxt->fdout,"#prefix 4 compress %o %o val %d bits (%d, %d) mask %o\n",
+				*v,*w, val1, prefixbits, bits, mask);
 #endif
-			if( i < limit)
-			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
-				if ( val  != (*w & mask) )
+			for(j=0  ; v < w; v++, j++){
+				if ( val1  != (*v & mask) )
 					break;
+				compress(base, j, bits, (int) (*v & (~mask))); 
 #ifdef _DEBUG_PREFIX_
-			mnstr_printf(cntxt->fdout,"#compress %d %d %d  diff %d\n",
-				*v,*w, val, (int) (*w & (~mask)));
+			mnstr_printf(cntxt->fdout,"#compress %d store %d\n", *v,  (int) (*v & (~mask)));
 #endif
-				compress(base,j,bits, (int) (*w & (~mask))); // bits
-				hdr->checksum.sumint += val;
+				hdr->checksum.sumint += val1;
 			}
 #ifdef _DEBUG_PREFIX_
 			mnstr_printf(cntxt->fdout," blk "BUNFMT"\n",j);
@@ -528,37 +535,34 @@ MOScompress_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 8:
-		{	ulng *v = ((ulng*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask;
+		{	ulng *v = ((ulng*) task->src) + task->start, *w= v+1, *wlimit = v + limit,  val1 = *v, val2 = *w, mask;
 			ulng *dst = (ulng*)  MOScodevector(task);
 
 			// search first non-identical value
-			for(i = 0;i < limit;i++, w++)
-			if( *v != *w ){
-				val2 = *w;
-				break;
-			}
-			w = v+1;
-			Prefix(prefixbits, mask, val, val2, 32);
+			for(; w < wlimit; w++)
+				if( *v != *w )
+					break;
+			val1 = *v;
+			val2 = *w;
+			Prefix(prefixbits, mask, val1, val2, 32);
 			bits = 64-prefixbits;
 			base = (BitVector)(((char*)dst) + wordaligned(2 * sizeof(ulng),int));
 			if (bits <= 32){
 				*dst++ = mask;
-				val = *v & mask;	//reference value
-				*dst = val;
-				*dst = *dst | bits; // bits outside mask
-				dst++;
+				val1 = *v & mask;	//reference value
+				*dst++ = val1 | bits; // bits outside mask
 				base  = (BitVector) dst; // start of bit vector
 				
 #ifdef _DEBUG_PREFIX_
 				mnstr_printf(cntxt->fdout,"#prefix 8 compress %o %o val "LLFMT" bits (%d, %d) mask %o\n",
-					(int) *v,(int) *w, (lng)val,prefixbits, bits, (int)mask);
+					(int) *v, (int) *w, (lng)val1, prefixbits, bits, (int)mask);
 #endif
-				if( i < limit)
-				for(j=0, w = v, i = 0; i < limit; w++, i++,j++){
-					if ( val  != (*w & mask) )
+				if( w < wlimit)
+				for(j=0 ; v < w ; w++, j++){
+					if ( val1  != (*v & mask) )
 						break;
-					compress(base,j,bits, (int)(*w & (~mask))); // bits
-					hdr->checksum.sumlng += val;
+					compress(base,j,bits, (int)(*v & (~mask))); // bits
+					hdr->checksum.sumlng += val1;
 				}
 			}
 #ifdef _DEBUG_PREFIX_
@@ -588,6 +592,9 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	if( ATOMstorage(task->type == TYPE_str))
 			size =task->bsrc->twidth;
 	lim= MOSgetCnt(blk);
+#ifdef _DEBUG_PREFIX_
+	mnstr_printf(cntxt->fdout,"#decompress prefix blk "BUNFMT"\n",lim);
+#endif
 	switch(size){
 	case 1:
 		{	unsigned char *dst =  (unsigned char*)  MOScodevector(task);
