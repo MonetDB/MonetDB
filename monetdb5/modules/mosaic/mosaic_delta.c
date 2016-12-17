@@ -156,9 +156,9 @@ MOSestimate_delta(Client cntxt, MOStask task)
 			// we only have to look at the index width, not the values
 			switch(task->bsrc->twidth){
 			//case 1:  no compression achievable
-			case 2: Estimate_delta(sht, (delta < 0 || delta > 255)); break;
-			case 4: Estimate_delta(int, (delta < 0 || delta > 255)); break;
-			case 8: Estimate_delta(lng, (delta < 0 || delta > 255)); break;
+			case 2: Estimate_delta(sht, (delta < -127 || delta > 127)); break;
+			case 4: Estimate_delta(int, (delta < -127 || delta > 127)); break;
+			case 8: Estimate_delta(lng, (delta < -127 || delta > 127)); break;
 		}
 	break;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
