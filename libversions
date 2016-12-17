@@ -36,7 +36,7 @@
 
 # version of the GDK library (subdirectory gdk; also includes
 # common/options and common/utils)
-GDK_VERSION=14:0:0
+GDK_VERSION=14:1:0
 
 # version of the MAPI library (subdirectory clients/mapilib)
 MAPI_VERSION=8:1:0
