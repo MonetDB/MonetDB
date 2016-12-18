@@ -2374,7 +2374,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 str
 DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval, const bat *ins)
 {
-	BAT *c, *cminu, *u_id, *u_val, *u, *i = NULL, *res;
+	BAT *c, *cminu = NULL, *u_id, *u_val, *u, *i = NULL, *res;
 	gdk_return ret;
 
 	if ((u_id = BBPquickdesc(*uid, 0)) == NULL)
@@ -4716,6 +4716,9 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 		throw(SQL, name, "42000!insufficient privileges");
 	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
 		throw(SQL, name, "%s not allowed on tables with indices", name + 4);
+	if (t->system)
+		throw(SQL, name, "%s not allowed on system tables", name + 4);
+
 	if (has_snapshots(m->session->tr))
 		throw(SQL, name, "%s not allowed on snapshots", name + 4);
 	if (!m->session->auto_commit)
@@ -4822,9 +4825,14 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.vacuum", "42000!insufficient privileges");
 	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
 		throw(SQL, "sql.vacuum", "vacuum not allowed on tables with indices");
+	if (t->system)
+		throw(SQL, "sql.vacuum", "vacuum not allowed on system tables");
+
 	if (has_snapshots(m->session->tr))
 		throw(SQL, "sql.vacuum", "vacuum not allowed on snapshots");
 
+	if (!m->session->auto_commit)
+		throw(SQL, "sql.vacuum", "vacuum only allowed in auto commit mode");
 	tr = m->session->tr;
 
 	for (o = t->columns.set->h; o && ordered == 0; o = o->next) {
@@ -4844,11 +4852,12 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (BATcount(del) > 0) {
 		/* now decide on the algorithm */
+		BBPunfix(del->batCacheid);
 		if (ordered) {
 			if (BATcount(del) > cnt / 20)
-				SQLshrink(cntxt, mb, stk, pci);
+				return SQLshrink(cntxt, mb, stk, pci);
 		} else {
-			SQLreuse(cntxt, mb, stk, pci);
+			return SQLreuse(cntxt, mb, stk, pci);
 		}
 	}
 	BBPunfix(del->batCacheid);
