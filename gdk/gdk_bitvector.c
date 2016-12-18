@@ -27,6 +27,8 @@ typedef unsigned long BUN;
 #include "gdk.h"
 #include "gdk_bitvector.h"
 
+//#define _DEBUG_BITVECTOR_
+
 #define BITS (sizeof( unsigned int) * 8)
 static unsigned int masks[BITS+1];
 
@@ -75,12 +77,16 @@ getBitVector(BitVector vector, BUN i, int bits)
 	if ( (shift + bits) <= BITS){
 		// fits in a single cell
 		value = (vector[cid] >> shift) & masks[bits];
-		//printf("#getBitVector %ld i "BUNFMT" bits %d value %3d cell %10d cid "BUNFMT" shift %d\n",(long)vector,i,bits, value, vector[cid],cid,shift);
+#ifdef _DEBUG_BITVECTOR_
+		printf("#getBitVector %ld i "BUNFMT" bits %d value %3d cell %10d cid "BUNFMT" shift %d\n",(long)vector,i,bits, value, vector[cid],cid,shift);
+#endif
 	}else{ 
 		// spread over two cells
 		m1 = BITS - shift;
 		value  = ((vector[cid] & (masks[m1]<<shift)) >> shift) | ((vector[cid+1] & masks[bits - m1]) << m1);
-		//printf("#getBitVector %ld i "BUNFMT" bits %d value %3d cell %10d %10d cid "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
+#ifdef _DEBUG_BITVECTOR_
+		printf("#getBitVector %ld i "BUNFMT" bits %d value %3d cell %10d %10d cid "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
+#endif
 	  }
 	return value;
 }
@@ -103,15 +109,22 @@ setBitVector(BitVector vector, const BUN i, const int bits, const unsigned int v
     if ( (shift + bits) <= BITS){
 		// fits in a single cell
         vector[cid]= (vector[cid]  & ~( masks[bits] << shift)) | ((value & masks[bits]) << shift);
-		//printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d cid "BUNFMT" shift %d\n",(long)vector,i,bits, value, vector[cid],cid,shift);
+#ifdef _DEBUG_BITVECTOR_
+		printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d cid "BUNFMT" shift %d\n",(long)vector,i,bits, value, vector[cid],cid,shift);
+#endif
     } else{ 
 		// spread over two cells
 		m1 = BITS - shift;
         vector[cid]= (vector[cid]  & ~( masks[m1] << shift)) | ( (value & masks[m1]) << shift);
         vector[cid+1]= 0 | ( ((value>>m1) & masks[bits-m1]));
-		//printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d %10d cid "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
+#ifdef _DEBUG_BITVECTOR_
+		printf("#setBitVector %ld i "BUNFMT" bits %d value %3d cell %10d %10d cid "BUNFMT" shift %d m1 %d\n",(long)vector,i,bits, value, vector[cid], vector[cid+1],cid,shift,m1);
+#endif
 	}
-	//printf("#get it back %d\n",getBitVector(vector,i,bits));
+#ifdef _DEBUG_BITVECTOR_
+	m1 = getBitVector(vector,i,bits);
+	printf("#get it back %s %d %d\n", (value == m1? "":"MISMATCH"),value,m1);
+#endif
 }
 
 // clear a cell

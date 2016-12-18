@@ -8,9 +8,8 @@ bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-15":date);
 bat.append(d,"2015-07-11":date);
-bat.append(d,"2015-07-12":date);
-bat.append(d,"2016-12-31":date);
-d:= bat.append(d,d);
+#bat.append(d,"2015-07-12":date);
+#bat.append(d,"2016-12-31":date);
 
 io.print(d);
 mosaic.compress(d,"calendar");

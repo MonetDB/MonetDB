@@ -30,7 +30,8 @@
 #include "mosaic.h"
 #include "mosaic_calendar.h"
 
-#define DAYMASK 037
+#define MASKDAY 037
+#define MASKBITS 5
 
 void
 MOSadvance_calendar(Client cntxt, MOStask task)
@@ -139,12 +140,12 @@ MOSskip_calendar(Client cntxt, MOStask task)
 // Store the most frequent ones in the compressed heap header directly based on estimated savings
 #define TMPDICT 16*256
 
-#define makeCalendar(TPE, MASK)\
+#define makeCalendar(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start,v,w;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
 	lng cw,cv;\
 	for(i = 0; i< limit; i++, val++){\
-		v= *val & DAYMASK; \
+		v= *val & ~MASKDAY; \
 		MOSfind(j,dict.val##TPE,v,0,dictsize);\
 		if(j == dictsize && dictsize == 0 ){\
 			dict.val##TPE[j]= v;\
@@ -190,7 +191,7 @@ MOScreatecalendar(Client cntxt, MOStask task)
 
 	// compress by factoring out the year-month, keeping 5 bits for the day
 	if( task->type == TYPE_date)
-		makeCalendar(int,DAYMASK)
+		makeCalendar(int)
 	if( task->type == TYPE_daytime){
 	}
 	if( task->type == TYPE_timestamp){
@@ -226,13 +227,14 @@ MOScreatecalendar(Client cntxt, MOStask task)
 		assert(j<256);
 	}
 	/* calculate the bit-width */
-	hdr->bits = 1;
-	hdr->mask =1;
+	hdr->bits = MASKBITS + 1;
+	hdr->mask =1;	// only for dictionary part
 	for( j=2 ; j < dictsize; j *=2){
 		hdr->bits++;
 		hdr->mask = (hdr->mask <<1) | 1;
 	}
 #ifdef _DEBUG_MOSAIC_
+	mnstr_printf(cntxt->fdout,"#Calendar size %d bits %d mask %o %o\n", task->hdr->dictsize, task->hdr->bits, task->hdr->mask, task->hdr->mask <<MASKBITS);
 	MOSdump_calendar(cntxt, task);
 #endif
 }
@@ -253,22 +255,22 @@ MOSestimate_calendar(Client cntxt, MOStask task)
 		if( task->range[MOSAIC_CALENDAR] > task->start){
 			i = task->range[MOSAIC_CALENDAR] - task->start;
 			if ( i > MOSlimit() ) i = MOSlimit();
-			if( i * sizeof(int) <= wordaligned( MosaicBlkSize + (i * (hdr->bits+5))/8,int))
+			if( i * sizeof(int) <= wordaligned( MosaicBlkSize + (i * hdr->bits)/8,int))
 				return 0.0;
-			if( task->dst +  wordaligned(MosaicBlkSize + (i * (hdr->bits+5))/8,sizeof(int)) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)
+			if( task->dst +  wordaligned(MosaicBlkSize + (i * hdr->bits)/8,sizeof(int)) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)
 				return 0.0;
-			if(i) factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + (i * (hdr->bits+5))/8,int);
+			if(i) factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int) + (i * hdr->bits)/8,int);
 			return factor;
 		}
 		for(i =0; i<limit; i++, val++){
-			v= *val & ~DAYMASK;
+			v= *val & ~MASKDAY;
 			MOSfind(j,hdr->dict.valint,v,0,hdr->dictsize);
 			if( j == hdr->dictsize || hdr->dict.valint[j] != v )
 				break;
 		}
-		if( i * sizeof(int) <= wordaligned( MosaicBlkSize + (i * (hdr->bits+5))/8 ,int))
+		if( i * sizeof(int) <= wordaligned( MosaicBlkSize + (i * hdr->bits)/8 ,int))
 			return 0.0;
-		if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + (i * (hdr->bits+5))/8,int);
+		if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + (i * hdr->bits)/8,int);
 	} else
 	if( task->type == TYPE_daytime){
 	} else
@@ -283,31 +285,45 @@ MOSestimate_calendar(Client cntxt, MOStask task)
 }
 
 // insert a series of values into the compressor block using calendar
-#define CALcompress(TPE, MASK)\
+#define CALcompress(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start, v;\
 	BitVector base = (BitVector) MOScodevector(task);\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
 	for(i =0; i<limit; i++, val++){\
-		v = *val & ~MASK;\
+		v = *val & ~MASKDAY;\
 		MOSfind(j,task->hdr->dict.val##TPE,v,0,hdr->dictsize);\
-		if(j == hdr->dictsize || task->hdr->dict.val##TPE[j] !=  v) \
+		if(j == (unsigned int) hdr->dictsize || task->hdr->dict.val##TPE[j] !=  v) \
 			break;\
 		else {\
 			hdr->checksum.sum##TPE += v;\
 			hdr->dictfreq[j]++;\
 			MOSincCnt(blk,1);\
-			setBitVector(base,i,hdr->bits+5,(unsigned int)j);\
+			setBitVector(base, i, hdr->bits , (unsigned int)( ((j & hdr->mask)<< MASKBITS) | (*val & MASKDAY)) );\
 		}\
 	}\
 	assert(i);\
 }
+//mnstr_printf(cntxt->fdout,"#CALcompress   ["BUNFMT"] val %o v [%d] %d %o residu  %o %o\n", i, *val, j, hdr->bits, v,  (unsigned int)( *val & MASKDAY), (unsigned int)( ((j & hdr->mask)<< MASKBITS) | (*val & MASKDAY)) );
 
+
+// the inverse operator, extend the src
+#define CALdecompress(TPE)\
+{	BUN lim = MOSgetCnt(blk);\
+	base = (BitVector) MOScodevector(task);\
+	for(i = 0; i < lim; i++){\
+		j= getBitVector(base,i,(int) hdr->bits ); \
+		((TPE*)task->src)[i] = task->hdr->dict.val##TPE[ (j>> MASKBITS) & task->hdr->mask] | (j & MASKDAY);\
+		hdr->checksum2.sum##TPE += task->hdr->dict.val##TPE[ (j >> MASKBITS) & task->hdr->mask];\
+	}\
+	task->src += i * sizeof(TPE);\
+}
+//mnstr_printf(cntxt->fdout,"#CALdecompress ["BUNFMT"] j %o idx %d [%d] %o val %o\n", i, j, hdr->bits, (j>> MASKBITS) & task->hdr->mask, task->hdr->dict.val##TPE[ (j>> MASKBITS) & task->hdr->mask], ((TPE*)task->src)[i]);
 
 void
 MOScompress_calendar(Client cntxt, MOStask task)
 {
 	BUN i;
-	int j;
+	unsigned int j;
 	MosaicBlk blk = task->blk;
 	MosaicHdr hdr = task->hdr;
 
@@ -318,24 +334,11 @@ MOScompress_calendar(Client cntxt, MOStask task)
 	MOSsetCnt(blk,0);
 
 	if( task->type == TYPE_date)
-		CALcompress(int, DAYMASK);
+		CALcompress(int);
 	if( task->type == TYPE_daytime){
 	}
 	if( task->type == TYPE_timestamp){
 	}
-}
-
-// the inverse operator, extend the src
-
-#define CALdecompress(TPE,MASK)\
-{	BUN lim = MOSgetCnt(blk);\
-	base = (BitVector) MOScodevector(task);\
-	for(i = 0; i < lim; i++){\
-		j= getBitVector(base,i,(int) hdr->bits + 5); \
-		((TPE*)task->src)[i] = task->hdr->dict.val##TPE[j>>5] | (j & MASK);\
-		hdr->checksum2.sum##TPE += task->hdr->dict.val##TPE[j];\
-	}\
-	task->src += i * sizeof(TPE);\
 }
 
 void
@@ -344,12 +347,12 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 	MosaicHdr hdr = task->hdr;
 	BUN i;
-	int j;
+	unsigned int j;
 	BitVector base;
 	(void) cntxt;
 
 	if( task->type == TYPE_date){
-		CALdecompress(int, DAYMASK);
+		CALdecompress(int);
 	}
 	if( task->type == TYPE_daytime){
 	}
@@ -372,7 +375,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 		if( *(TPE*) low == TPE##_nil ){\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
-				j= getBitVector(base,i,(int) hdr->bits+ BITS); \
+				j= getBitVector(base,i,(int) hdr->bits); \
 				cmp  =  ((*hi && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) <= * (TPE*)hgh ) || (!*hi && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) < *(TPE*)hgh ));\
 				if (cmp )\
 					*o++ = (oid) first;\
@@ -381,7 +384,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 		if( *(TPE*) hgh == TPE##_nil ){\
 			for(i=0; first < last; first++, i++){\
 				MOSskipit();\
-				j= getBitVector(base,i,(int) hdr->bits + BITS); \
+				j= getBitVector(base,i,(int) hdr->bits ); \
 				cmp  =  ((*li && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) >= * (TPE*)low ) || (!*li && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) > *(TPE*)low ));\
 				if (cmp )\
 					*o++ = (oid) first;\
@@ -389,7 +392,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 		} else{\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
-				j= getBitVector(base,i,(int) hdr->bits + BITS); \
+				j= getBitVector(base,i,(int) hdr->bits ); \
 				cmp  =  ((*hi && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) <= * (TPE*)hgh ) || (!*hi && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) < *(TPE*)hgh )) &&\
 						((*li && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) >= * (TPE*)low ) || (!*li && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) > *(TPE*)low ));\
 				if (cmp )\
@@ -403,7 +406,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 		if( *(TPE*) low == TPE##_nil ){\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
-				j= getBitVector(base,i,(int) hdr->bits + BITS); \
+				j= getBitVector(base,i,(int) hdr->bits ); \
 				cmp  =  ((*hi && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) <= * (TPE*)hgh ) || (!*hi && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) < *(TPE*)hgh ));\
 				if ( !cmp )\
 					*o++ = (oid) first;\
@@ -412,7 +415,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 		if( *(TPE*) hgh == TPE##_nil ){\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
-				j= getBitVector(base,i,(int) hdr->bits+BITS); \
+				j= getBitVector(base,i,(int) hdr->bits); \
 				cmp  =  ((*li && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) >= * (TPE*)low ) || (!*li && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) > *(TPE*)low ));\
 				if ( !cmp )\
 					*o++ = (oid) first;\
@@ -420,7 +423,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 		} else{\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
-				j= getBitVector(base,i,(int) hdr->bits+BITS); \
+				j= getBitVector(base,i,(int) hdr->bits); \
 				cmp  =  ((*hi && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) <= * (TPE*)hgh ) || (!*hi && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) < *(TPE*)hgh )) &&\
 						((*li && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) >= * (TPE*)low ) || (!*li && (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) > *(TPE*)low ));\
 				if ( !cmp )\
@@ -452,7 +455,7 @@ MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	o = task->lb;
 
 	if( task->type == TYPE_date){
-		select_calendar(int,5,DAYMASK); 
+		select_calendar(int, MASKBITS,MASKDAY); 
 	}
 	if( task->type == TYPE_daytime){
 	}
@@ -463,7 +466,7 @@ MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	return MAL_SUCCEED;
 }
 
-#define thetaselect_calendar(TPE,BITS,MASK)\
+#define thetaselect_calendar(TPE)\
 { 	TPE low,hgh;\
 	base = (BitVector) MOScodevector(task);\
 	low= hgh = TPE##_nil;\
@@ -490,8 +493,9 @@ MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	} \
 	for( ; first < last; first++){\
 		MOSskipit();\
-		j= getBitVector(base,first,(int) hdr->bits+ BITS); \
-		if( (low == TPE##_nil || (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK)) >= low) && ((task->hdr->dict.val##TPE[j>>BITS] | (j & MASK))  <= hgh || hgh == TPE##_nil) ){\
+		j= getBitVector(base,first,(int) hdr->bits ); \
+		if( (low == TPE##_nil || (task->hdr->dict.val##TPE[(j>>MASKBITS) & task->hdr->mask] | (j & MASKDAY)) >= low) && \
+			((task->hdr->dict.val##TPE[(j>>MASKBITS) & task->hdr->mask] | (j & MASKDAY))  <= hgh || hgh == TPE##_nil) ){\
 			if ( !anti) {\
 				*o++ = (oid) first;\
 			}\
@@ -524,7 +528,7 @@ MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
 	o = task->lb;
 
 	if( task->type == TYPE_date){
-		thetaselect_calendar(int,5,DAYMASK); 
+		thetaselect_calendar(int); 
 	}
 	if( task->type == TYPE_daytime){
 	}
@@ -535,14 +539,14 @@ MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
 	return MAL_SUCCEED;
 }
 
-#define projection_calendar(TPE,BITS,MASK)\
+#define projection_calendar(TPE,MASK)\
 {	TPE *v;\
 	base = (BitVector) MOScodevector(task);\
 	v= (TPE*) task->src;\
 	for(i=0; first < last; first++,i++){\
 		MOSskipit();\
-		j= getBitVector(base,i,(int) hdr->bits + BITS); \
-		*v++ = task->hdr->dict.val##TPE[j>>BITS] | ( j & MASK);\
+		j= getBitVector(base,i,(int) hdr->bits ); \
+		*v++ = task->hdr->dict.val##TPE[(j>>MASKBITS) & task->hdr->mask] | ( j & MASKDAY);\
 		task->n--;\
 		task->cnt++;\
 	}\
@@ -562,7 +566,7 @@ MOSprojection_calendar(Client cntxt,  MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	if( task->type == TYPE_date){
-		projection_calendar(int,5,DAYMASK); 
+		projection_calendar(int, MASKDAY); 
 	}
 	if( task->type == TYPE_daytime){
 	}
@@ -575,15 +579,15 @@ MOSprojection_calendar(Client cntxt,  MOStask task)
 #define join_calendar_str(TPE)\
 	throw(MAL,"mosaic.calendar","TBD");
 
-#define join_calendar(TPE,BITS,MASK)\
+#define join_calendar(TPE)\
 {	TPE  *w;\
 	BitVector base = (BitVector) MOScodevector(task);\
 	w = (TPE*) task->src;\
 	limit= MOSgetCnt(task->blk);\
 	for( o=0, n= task->elm; n-- > 0; o++,w++ ){\
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
-			j= getBitVector(base,i,(int) hdr->bits+BITS); \
-			if ( *w == (task->hdr->dict.val##TPE[j>>BITS] | (j & MASK))){\
+			j= getBitVector(base,i,(int) hdr->bits); \
+			if ( *w == (task->hdr->dict.val##TPE[(j>>MASKBITS) & task->hdr->mask] | (j & MASKDAY))){\
 				BUNappend(task->lbat, &oo, FALSE);\
 				BUNappend(task->rbat, &o, FALSE);\
 			}\
@@ -601,7 +605,7 @@ MOSjoin_calendar(Client cntxt,  MOStask task)
 	(void) cntxt;
 
 	if( task->type == TYPE_date){
-		join_calendar(int,5,DAYMASK); 
+		join_calendar(int); 
 	}
 	if( task->type == TYPE_daytime){
 	}
