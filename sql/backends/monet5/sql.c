@@ -4800,6 +4800,7 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	node *o;
 	int ordered = 0;
 	BUN cnt = 0;
+	BUN dcnt;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4841,17 +4842,17 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( del == NULL)
 		throw(SQL, "sql.vacuum", "Can not access deletion column");
 
-	if (BATcount(del) > 0) {
+	dcnt = BATcount(del);
+	BBPunfix(del->batCacheid);
+	if (dcnt > 0) {
 		/* now decide on the algorithm */
-		BBPunfix(del->batCacheid);
 		if (ordered) {
-			if (BATcount(del) > cnt / 20)
+			if (dcnt > cnt / 20)
 				return SQLshrink(cntxt, mb, stk, pci);
 		} else {
 			return SQLreuse(cntxt, mb, stk, pci);
 		}
 	}
-	BBPunfix(del->batCacheid);
 	return MAL_SUCCEED;
 }
 
