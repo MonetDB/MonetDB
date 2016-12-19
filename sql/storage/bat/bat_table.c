@@ -470,6 +470,32 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 	return l;
 }
 
+static int
+table_vacuum(sql_trans *tr, sql_table *t)
+{
+	BAT *tids = delta_cands(tr, t);
+	BAT **cols;
+	node *n;
+
+	cols = NEW_ARRAY(BAT*, cs_size(&t->columns));
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		BAT *v = store_funcs.bind_col(tr, c, RDONLY);
+
+		cols[c->colnr] = BATproject(tids, v);
+		BBPunfix(v->batCacheid);
+	}
+	sql_trans_clear_table(tr, t);
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+
+		store_funcs.append_col(tr, c, cols[c->colnr], TYPE_bat);
+		BBPunfix(cols[c->colnr]->batCacheid);
+	}
+	_DELETE(cols);
+	return SQL_OK;
+}
+
 int 
 bat_table_init( table_functions *tf )
 {
@@ -479,6 +505,7 @@ bat_table_init( table_functions *tf )
 	tf->column_update_value = column_update_value;
 	tf->table_insert = table_insert;
 	tf->table_delete = table_delete;
+	tf->table_vacuum = table_vacuum;
 	
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;

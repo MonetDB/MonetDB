@@ -131,7 +131,7 @@ typedef struct mvc {
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
-extern void mvc_minmaxmanager(void);
+extern void mvc_idlemanager(void);
 
 extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
 extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);

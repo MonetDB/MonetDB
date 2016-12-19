@@ -179,11 +179,11 @@ mvc_logmanager(void)
 }
 
 void
-mvc_minmaxmanager(void)
+mvc_idlemanager(void)
 {
-	Thread thr = THRnew("minmaxmanager");
+	Thread thr = THRnew("idlemanager");
 
-	minmax_manager();
+	idle_manager();
 	THRdel(thr);
 }
 
