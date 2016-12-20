@@ -692,7 +692,7 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 }
 
 static sql_rel *
-rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang)
+rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang, int replace)
 {
 	const char *fname = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -712,7 +712,9 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	char is_loader = (type == F_LOADER);
 
 	char *F = is_loader?"LOADER":(is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE"));
+	char *fn = is_loader?"loader":(is_aggr ? "aggregate" : (is_func ? "function" : "procedure"));
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
+	char *kf = type == F_FILT ? "filter " : type == F_UNION ? "union " : "";
 
 	assert(res || type == F_PROC || type == F_FILT || type == F_LOADER);
 
@@ -729,31 +731,44 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 
 	type_list = create_type_list(sql, params, 1);
 	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
-		if (params) {
-			char *arg_list = NULL;
-			node *n;
-			
-			for (n = type_list->h; n; n = n->next) {
-				char *tpe =  subtype2string((sql_subtype *) n->data);
-				
-				if (arg_list) {
-					char *t = arg_list;
-					arg_list = sql_message("%s, %s", arg_list, tpe);
-					_DELETE(t);
-					_DELETE(tpe);
-				} else {
-					arg_list = tpe;
-				}
+		if (replace) {
+			sql_func *func = sf->func;
+			int action = 0;
+			if (!mvc_schema_privs(sql, s)) {
+				return sql_error(sql, 02, "CREATE OR REPLACE %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 			}
-			(void)sql_error(sql, 02, "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list);
-			_DELETE(arg_list);
-			list_destroy(type_list);
-			return NULL;
+			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
+				return sql_error(sql, 02, "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, func->base.name);
+
+			mvc_drop_func(sql, s, func, action);
 		} else {
-			list_destroy(type_list);
-			return sql_error(sql, 02, "CREATE %s%s: name '%s' already in use", KF, F, fname);
+			if (params) {
+				char *arg_list = NULL;
+				node *n;
+				
+				for (n = type_list->h; n; n = n->next) {
+					char *tpe =  subtype2string((sql_subtype *) n->data);
+					
+					if (arg_list) {
+						char *t = arg_list;
+						arg_list = sql_message("%s, %s", arg_list, tpe);
+						_DELETE(t);
+						_DELETE(tpe);
+					} else {
+						arg_list = tpe;
+					}
+				}
+				(void)sql_error(sql, 02, "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list);
+				_DELETE(arg_list);
+				list_destroy(type_list);
+				return NULL;
+			} else {
+				list_destroy(type_list);
+				return sql_error(sql, 02, "CREATE %s%s: name '%s' already in use", KF, F, fname);
+			}
 		}
-	} else {
+	}
+	if (!sf || (sf && replace)) {
 		list_destroy(type_list);
 		if (create && !mvc_schema_privs(sql, s)) {
 			return sql_error(sql, 02, "CREATE %s%s: insufficient privileges "
@@ -1311,8 +1326,9 @@ rel_psm(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 		int type = l->h->next->next->next->next->next->data.i_val;
 		int lang = l->h->next->next->next->next->next->next->data.i_val;
+		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
 
-		ret = rel_create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang);
+		ret = rel_create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang, repl);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:

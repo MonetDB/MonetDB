@@ -340,6 +340,8 @@ scanner_init_keywords(void)
 	keywords_insert("PROCEDURE", PROCEDURE);
 	keywords_insert("FUNCTION", FUNCTION);
 	keywords_insert("LOADER", sqlLOADER);
+	keywords_insert("REPLACE", REPLACE);
+
 	keywords_insert("FILTER", FILTER);
 	keywords_insert("AGGREGATE", AGGREGATE);
 	keywords_insert("RETURNS", RETURNS);
