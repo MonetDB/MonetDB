@@ -93,6 +93,8 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			unsigned char mask = *dst++;
 			unsigned char val = *dst++;
 			bits = (int)(val & (~mask));
+			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned char),int);
+			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
 		}
 		break;
 	case 2:
@@ -100,6 +102,8 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			unsigned short mask = *dst++;
 			unsigned short val = *dst++;
 			bits = (int)(val & (~mask));
+			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned short),int);
+			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
 		}
 		break;
 	case 4:
@@ -107,6 +111,8 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			unsigned int mask = *dst++;
 			unsigned int val = *dst++;
 			bits = (int)(val & (~mask));
+			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned int),int);
+			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
 		}
 		break;
 	case 8:
@@ -114,9 +120,10 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			ulng mask = *dst++;
 			ulng val = *dst++;
 			bits = (int)(val & (~mask));
+			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(ulng),int);
+			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
 		}
 	}
-	bytes = sizeof(int) * ((MOSgetCnt(task->blk) * bits)/32 + (((MOSgetCnt(task->blk) * bits) %32) != 0));
 	output = wordaligned(bytes, int); 
 	BUNappend(binput, &input, FALSE);
 	BUNappend(boutput, &output, FALSE);
@@ -664,7 +671,6 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	case 1:
 		{	unsigned char *dst =  (unsigned char*)  MOScodevector(task);
 			unsigned char mask = *dst++, val  =  *dst++, v;
-			unsigned char *w = ((unsigned char*) task->src) + task->start;
 
 			base = (BitVector)((char*)MOScodevector(task) + wordaligned(2 * sizeof(unsigned char),int));
 			bits =(int) (val & (~mask));
@@ -673,7 +679,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			for(i = 0; i < lim; i++){
 				v = val | decompress(base,i,bits);
 				hdr->checksum2.sumsht += v;
-				*w++ = v;
+				((unsigned char*) task->src)[i] = v;
 			}
 			task->src += i * sizeof(unsigned char);
 		}
@@ -681,7 +687,6 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	case 2:
 		{	unsigned short *dst =  (unsigned short*)   MOScodevector(task);
 			unsigned short mask = *dst++, val  =  *dst++, v;
-			unsigned short *w = ((unsigned short*) task->src) + task->start;
 
 			base = (BitVector)((char*)MOScodevector(task) + wordaligned(2 * sizeof(unsigned short),int));
 			bits = (int) (val & (~mask));
@@ -696,7 +701,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 					i, val, decompress(base,i,bits), v);
 #endif
 				hdr->checksum2.sumsht += v;
-				*w++ = v;
+				((unsigned short*) task->src)[i] = v;
 			}
 			task->src += i * sizeof(unsigned short);
 		}
@@ -704,7 +709,6 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	case 4:
 		{	unsigned int *dst =  (unsigned int*)  MOScodevector(task);
 			unsigned int mask = *dst++, val  =  *dst++, v;
-			unsigned int *w = ((unsigned int*) task->src) + task->start;
 
 			base = (BitVector)(MOScodevector(task) + wordaligned(2 * sizeof(unsigned int),int));
 			bits = (int)(val & (~mask));
@@ -719,7 +723,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 					i, val, decompress(base,i,bits), v);
 #endif
 				hdr->checksum2.sumint += v;
-				*w++ = v;
+				((unsigned int*) task->src)[i] = v;
 			}
 			task->src += i * sizeof(unsigned int);
 		}
@@ -727,7 +731,6 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	case 8:
 		{	ulng *dst =  (ulng*)  MOScodevector(task);
 			ulng mask = *dst++, val  =  *dst++, v;
-			ulng *w = ((ulng*) task->src) + task->start;
 
 			base = (BitVector)((char*)MOScodevector(task) + wordaligned(2 * sizeof(ulng),int));
 			bits = (int)(val & (~mask));
@@ -736,7 +739,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			for(i = 0; i < lim; i++){
 				v= val | decompress(base,i,bits);
 				hdr->checksum2.sumlng += v;
-				*w++ = v;
+				((ulng*) task->src)[i] = v;
 			}
 			task->src += i * sizeof(ulng);
 		}
