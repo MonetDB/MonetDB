@@ -76,6 +76,18 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)	\
 	return MAL_SUCCEED;											\
 }
 
+#define unopM5NOT(NAME, FUNC)					\
+str												\
+MATHunary##NAME##dbl(dbl *res , const dbl *a)	\
+{												\
+	throw(MAL, "mmath." #FUNC, PROGRAM_NYI);	\
+}												\
+str												\
+MATHunary##NAME##flt(flt *res , const flt *a)	\
+{												\
+	throw(MAL, "mmath." #FUNC, PROGRAM_NYI);	\
+}
+
 #define binopM5(NAME, FUNC)						\
   binopbaseM5(NAME, FUNC, dbl)					\
   binopbaseM5(NAME, FUNC, flt)
@@ -127,7 +139,11 @@ unopM5(_LOG10,log10)
 
 binopM5(_POW,pow)
 unopM5(_SQRT,sqrt)
+#ifdef HAVE_CBRT
 unopM5(_CBRT,cbrt)
+#else
+unopM5NOT(_CBRT,cbrt)
+#endif
 
 unopM5(_CEIL,ceil)
 unopM5(_FLOOR,floor)

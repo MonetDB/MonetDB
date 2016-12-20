@@ -1700,6 +1700,46 @@ store_flush_log(void)
 	need_flush = 1;
 }
 
+static int
+store_needs_vacuum( sql_trans *tr )
+{
+	sql_schema *s = find_sql_schema(tr, "sys");
+	node *n;
+
+	for( n = s->tables.set->h; n; n = n->next) {
+		sql_table *t = n->data;
+		sql_column *c = t->columns.set->h->data;
+
+		/* no inserts, updates and enough deletes ? */
+		if (!store_funcs.count_col(tr, c, 0) && 
+		    !store_funcs.count_upd(tr, t) && 
+		    store_funcs.count_del(tr, t) > 128) 
+			return 1;
+	}
+	return 0;
+}
+
+static void
+store_vacuum( sql_trans *tr )
+{
+	/* tables */
+	sql_schema *s = find_sql_schema(tr, "sys");
+	node *n;
+
+	for( n = s->tables.set->h; n; n = n->next) {
+		sql_table *t = n->data;
+		sql_column *c = t->columns.set->h->data;
+		int cnt = 0;
+
+		if (!store_funcs.count_col(tr, c, 0) && 
+		    !store_funcs.count_upd(tr, t) && 
+		    (cnt = store_funcs.count_del(tr, t)) > 128) {
+			/*printf("vacuum (%d) %s\n", cnt, t->base.name);*/
+			table_funcs.table_vacuum(tr, t);
+		}
+	}
+}
+
 void
 store_manager(void)
 {
@@ -1791,23 +1831,32 @@ store_manager(void)
 }
 
 void
-minmax_manager(void)
+idle_manager(void)
 {
+	const int timeout = GDKdebug & FORCEMITOMASK ? 10 : 50;
+
 	while (!GDKexiting()) {
+		sql_session *s;
 		int t;
 
-		for (t = 30000; t > 0; t -= 50) {
-			MT_sleep_ms(50);
+		for (t = 5000; t > 0; t -= timeout) {
+			MT_sleep_ms(timeout);
 			if (GDKexiting())
 				return;
 		}
 		MT_lock_set(&bs_lock);
-		if (store_nr_active || GDKexiting()) {
+		if (store_nr_active || GDKexiting() || !store_needs_vacuum(gtrans)) {
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
-		if (store_funcs.gtrans_minmax)
-			store_funcs.gtrans_minmax(gtrans);
+
+		s = sql_session_create(gtrans->stk, 0);
+		sql_trans_begin(s);
+		store_vacuum( s->tr );
+		sql_trans_commit(s->tr);
+		sql_trans_end(s);
+		sql_session_destroy(s);
+
 		MT_lock_unset(&bs_lock);
 	}
 }

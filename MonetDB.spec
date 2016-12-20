@@ -124,7 +124,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jun2016-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Dec2016/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -955,6 +955,185 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Sat Dec 17 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.3-20161217
+- Rebuilt.
+
+* Wed Dec 14 2016 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.1-20161214
+- Rebuilt.
+- BZ#3357: Implement setQueryTimeout()
+- BZ#3445: Add support for database name to dotmonetdb file
+- BZ#3973: JDBC hangs
+- BZ#3976: Performance enhancement to LIKE without wildcards
+- BZ#4005: Correlated update causes incorrect null constraint violation
+- BZ#4016: merge table only optimises for point query
+- BZ#4040: sys.storage call can take a long time
+- BZ#4047: Segfault when updating a dropped table
+- BZ#4050: Database corruption when running low on inode
+- BZ#4057: missing bulk operations between constant and bat
+- BZ#4061: SIGSEGV in candscan_lng
+- BZ#4066: Deadlocked monetdbd
+- BZ#6068: Error message about incompatible BBP version should be clearer
+- BZ#6069: query with union all silently crashes
+- BZ#6070: setting negative session query timeout should not be
+  possible/allowed
+- BZ#6071: where clause with cast and floor fails to sigsegv
+- BZ#6072: Bind to UPD delta column does not get/show type information
+  in EXPLAIN
+- BZ#6073: Missing type information for constants in MAL explain
+- BZ#6074: SET ROLE command does not work
+- BZ#6075: gdk_calc.c:13113: BATcalcifthenelse_intern: Assertion `col2 !=
+  NULL' failed.
+- BZ#6076: rel_optimizer.c:5426: rel_push_project_up: Assertion `e'
+  failed.
+- BZ#6077: mserver5: rel_optimizer.c:5444: rel_push_project_up: Assertion
+  `e' failed.
+- BZ#6078: rel_bin.c:2402: rel2bin_project: Assertion `0' failed.
+- BZ#6084: Merge table point to wrong columns if columns in partition
+  tables are deleted
+- BZ#6108: monetdb5-sql sysv init script does not wait for shutdown
+- BZ#6114: segfault raised in the query rewriter due to a null pointer
+- BZ#6115: Assertion hit in the codegen
+- BZ#6116: Codegen does not support certain kind of selects on scalar
+  subqueries
+- BZ#6117: Assertion hit in the query rewriting stage during the push
+  down phase
+- BZ#6118: SIGSEGV in strPut due to shared heap
+- BZ#6119: Assertion hit in the MAL optimiser on a complex query
+- BZ#6120: QUANTILE() treats NULL as if it is zero
+- BZ#6121: SELECT a.col IN ( b.col FROM b ) FROM a statements with no
+  error but no result
+- BZ#6123: Assertion hit in the codegen #2
+- BZ#6124: CASE <column> WHEN NULL THEN 0 ELSE 1 END returns wrong result
+- BZ#6125: Stack overflow in the query rewriter with a query having an
+  OR condition and a nested SELECT subexpression
+- BZ#6126: batcalc.== can't handle void BATs
+- BZ#6139: Debian libmonetdb13 conflicts with libmonetdb5-server-geom
+
+* Tue Dec  6 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- buildtools: New packages MonetDB-python2 (Fedora) and monetdb-python2 (Debian/Ubuntu)
+  have been created for Python 2 integration into MonetDB.
+
+* Thu Dec  1 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: The tnokey values must now be 0 if it is not known whether all values
+  in a column are distinct.
+- gdk: The 2-bit tkey field in the bat descriptor has been split into two
+  single bit fields: tkey and tunique.  The old tkey&BOUND2BTRUE value
+  is now stored in tunique.
+
+* Wed Oct 26 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Implemented conversion to str from any type (not just the internal
+  types).
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- MonetDB: The Perl, PHP, and Python clients, and the JDBC driver each now have
+  their own repositories and release cycles.  The Python client is
+  maintained by Gijs Molenaar on Github
+  (https://github.com/gijzelaerr/pymonetdb), the other clients are
+  maintained by CWI/MonetDB on our own server
+  (https://dev.monetdb.org/hg/monetdb-java,
+  https://dev.monetdb.org/hg/monetdb-perl,
+  https://dev.monetdb.org/hg/monetdb-php).
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: VALcopy and VALinit both return their first argument on success or
+  (and that's new) NULL on (allocation) failure.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- monetdb5: Removed the zorder module with functions zorder.encode, zorder.decode_x
+  and zorder.decode_y.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- sql: Removed functions sys.zorder_encode, sys.zorder_decode_x, and
+  sys.zorder_decode_y.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: BATattach now can also create a str BAT from a file consisting of
+  null-terminated strings.  The input file must be encoded using UTF-8.
+- gdk: BATattach now copies the input file instead of "stealing" it.
+- gdk: Removed the lastused "timestamp" from the BBP.
+- gdk: Removed batStamp field from BAT descriptor, and removed the BBPcurstamp
+  function.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- monetdb5: Removed command bbp.getHeat().
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Removed unused functions BBPhot and BBPcold.
+
+* Fri Oct  7 2016 Stefan Manegold <Stefan.Manegold@cwi.nl> - 11.25.1-20161214
+- buildtools: With OID size equal to ABI/word size, mserver5 does not need to print
+  the OID size, anymore.
+- buildtools: Removed obsolete code associated with long gone static linking option.
+
+* Fri Oct  7 2016 Martin Kersten <mk@cwi.nl> - 11.25.1-20161214
+- sql: The experimental recycler code is moved to the attic.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- buildtools: Removed configure option --enable-oid32 to compile with 32 bit OIDs
+  on a 64 bit architecture.
+
+* Fri Oct  7 2016 Martin Kersten <mk@cwi.nl> - 11.25.1-20161214
+- sql: The syntax of bat.new(:oid,:any) has been changed by dropping the
+  superflous :oid.  All BATs are now binary associations between a void
+  column and a materialized value column.  (except for the internal
+  :bat[:void,:void] representation of simple oid ranged tails.)
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Removed BATderiveTailProps and BATderiveProps.  Just set the properties
+  you know about, or use BATsettrivprop.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Removed the macro BUNfirst.  It can be replaced by 0.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Changed BATroles by removing the argument to set the name of the
+  head column.
+- gdk: The head column is now completely gone.  MonetDB is completely
+  "headless".
+- gdk: The format of the BBP.dir file was simplified.  Since the head column
+  is VOID, the only value that needs to be stored is the head seqbase.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- monetdb5: Removed bat.setColumn with two arguments and bat.setRole.  Use
+  bat.setColumn with one argument instead.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: BATs now only have a single (logical) name.
+- gdk: The function BATmirror is gone.  The HEAD column is always VOID (with
+  a non-nil seqbase) and the TAIL column carries the data.  All functions
+  that deal with data work on the TAIL column.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: BATkey now works on the TAIL column instead of the HEAD column.
+- gdk: Replaced BATseqbase with BAThseqbase and BATtseqbase, the former for
+  setting the seqbase on the HEAD, the latter for setting the seqbase
+  on the TAIL.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- monetdb5: Removed function BKCappend_reverse_val_wrap: it was unused.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Replaced function BATnew with COLnew with slightly different arguments:
+  the first argument of COLnew is the SEQBASE of the head column (which
+  is always VOID).
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: The "wrd" type has been removed from GDK and MAL.  The type was defined
+  to be a 32 bit integer on 32 bit architectures and a 64 bit integer
+  on 64 bit architectures.  We now generally use "lng" (always 64 bits)
+  where "wrd" was used.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- monetdb5: The "wrd" type has been removed from GDK and MAL.  The type was defined
+  to be a 32 bit integer on 32 bit architectures and a 64 bit integer
+  on 64 bit architectures.  We now generally use "lng" (always 64 bits)
+  where "wrd" was used.
+
+* Fri Oct  7 2016 Martin Kersten <mk@cwi.nl> - 11.25.1-20161214
+- monetdb5: Keep a collection of full traces.  Each time the SQL user applies
+  the TRACE option, the full json trace is retained within the
+  <dbpath>/<dbname>/sql_traces
+
 * Fri Oct 07 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.13-20161007
 - Rebuilt.
 - BZ#4058: Server crashes with a particular conditional query

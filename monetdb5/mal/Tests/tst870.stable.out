@@ -31,35 +31,35 @@ Ready.
 
 function user.foo():void;               	#[0] (0)  0 
     b:bat[:oid] := bat.new(:oid);       	#[1] (0) CMDBATnew 1 <- 2 
-    bat.append(b:bat[:oid],0@0:oid);    	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
-    bat.append(b:bat[:oid],1@0:oid);    	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
-    bat.append(b:bat[:oid],2@0:oid);    	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
-    bat.append(b:bat[:oid],3@0:oid);    	#[5] (0) BKCappend_val_wrap 9 <- 1 10 
-    bat.append(b:bat[:oid],2@0:oid);    	#[6] (0) BKCappend_val_wrap 11 <- 1 8 
-    bat.append(b:bat[:oid],0@0:oid);    	#[7] (0) BKCappend_val_wrap 12 <- 1 4 
-    bat.append(b:bat[:oid],3@0:oid);    	#[8] (0) BKCappend_val_wrap 13 <- 1 10 
-    bat.append(b:bat[:oid],nil:oid);    	#[9] (0) BKCappend_val_wrap 14 <- 1 15 
-    bat.append(b:bat[:oid],1@0:oid);    	#[10] (0) BKCappend_val_wrap 16 <- 1 6 
+    bat.append(b:bat[:oid], 0@0:oid);   	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    bat.append(b:bat[:oid], 1@0:oid);   	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
+    bat.append(b:bat[:oid], 2@0:oid);   	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
+    bat.append(b:bat[:oid], 3@0:oid);   	#[5] (0) BKCappend_val_wrap 9 <- 1 10 
+    bat.append(b:bat[:oid], 2@0:oid);   	#[6] (0) BKCappend_val_wrap 11 <- 1 8 
+    bat.append(b:bat[:oid], 0@0:oid);   	#[7] (0) BKCappend_val_wrap 12 <- 1 4 
+    bat.append(b:bat[:oid], 3@0:oid);   	#[8] (0) BKCappend_val_wrap 13 <- 1 10 
+    bat.append(b:bat[:oid], nil:oid);   	#[9] (0) BKCappend_val_wrap 14 <- 1 15 
+    bat.append(b:bat[:oid], 1@0:oid);   	#[10] (0) BKCappend_val_wrap 16 <- 1 6 
     g:bat[:oid] := bat.new(:oid);       	#[11] (0) CMDBATnew 17 <- 2 
-    bat.append(g:bat[:oid],0@0:oid);    	#[12] (0) BKCappend_val_wrap 18 <- 17 4 
-    bat.append(g:bat[:oid],1@0:oid);    	#[13] (0) BKCappend_val_wrap 19 <- 17 6 
-    bat.append(g:bat[:oid],1@0:oid);    	#[14] (0) BKCappend_val_wrap 20 <- 17 6 
-    bat.append(g:bat[:oid],1@0:oid);    	#[15] (0) BKCappend_val_wrap 21 <- 17 6 
-    bat.append(g:bat[:oid],2@0:oid);    	#[16] (0) BKCappend_val_wrap 22 <- 17 8 
-    bat.append(g:bat[:oid],2@0:oid);    	#[17] (0) BKCappend_val_wrap 23 <- 17 8 
-    bat.append(g:bat[:oid],2@0:oid);    	#[18] (0) BKCappend_val_wrap 24 <- 17 8 
-    bat.append(g:bat[:oid],3@0:oid);    	#[19] (0) BKCappend_val_wrap 25 <- 17 10 
-    bat.append(g:bat[:oid],3@0:oid);    	#[20] (0) BKCappend_val_wrap 26 <- 17 10 
-    io.print(g:bat[:oid],b:bat[:oid]);  	#[21] (0) IOtable 27 <- 17 1 
+    bat.append(g:bat[:oid], 0@0:oid);   	#[12] (0) BKCappend_val_wrap 18 <- 17 4 
+    bat.append(g:bat[:oid], 1@0:oid);   	#[13] (0) BKCappend_val_wrap 19 <- 17 6 
+    bat.append(g:bat[:oid], 1@0:oid);   	#[14] (0) BKCappend_val_wrap 20 <- 17 6 
+    bat.append(g:bat[:oid], 1@0:oid);   	#[15] (0) BKCappend_val_wrap 21 <- 17 6 
+    bat.append(g:bat[:oid], 2@0:oid);   	#[16] (0) BKCappend_val_wrap 22 <- 17 8 
+    bat.append(g:bat[:oid], 2@0:oid);   	#[17] (0) BKCappend_val_wrap 23 <- 17 8 
+    bat.append(g:bat[:oid], 2@0:oid);   	#[18] (0) BKCappend_val_wrap 24 <- 17 8 
+    bat.append(g:bat[:oid], 3@0:oid);   	#[19] (0) BKCappend_val_wrap 25 <- 17 10 
+    bat.append(g:bat[:oid], 3@0:oid);   	#[20] (0) BKCappend_val_wrap 26 <- 17 10 
+    io.print(g:bat[:oid], b:bat[:oid]); 	#[21] (0) IOtable 27 <- 17 1 
 # only head is used                     
     e:bat[:oid] := bat.new(:oid);       	#[23] (0) CMDBATnew 29 <- 2 
-    bat.append(e:bat[:oid],0@0:oid);    	#[24] (0) BKCappend_val_wrap 30 <- 29 4 
-    bat.append(e:bat[:oid],1@0:oid);    	#[25] (0) BKCappend_val_wrap 31 <- 29 6 
-    bat.append(e:bat[:oid],2@0:oid);    	#[26] (0) BKCappend_val_wrap 32 <- 29 8 
-    bat.append(e:bat[:oid],3@0:oid);    	#[27] (0) BKCappend_val_wrap 33 <- 29 10 
-    i:bat[:oid] := aggr.min(b:bat[:oid],g:bat[:oid],e:bat[:oid]);	#[28] (0) AGGRmin3 34 <- 1 17 29 
+    bat.append(e:bat[:oid], 0@0:oid);   	#[24] (0) BKCappend_val_wrap 30 <- 29 4 
+    bat.append(e:bat[:oid], 1@0:oid);   	#[25] (0) BKCappend_val_wrap 31 <- 29 6 
+    bat.append(e:bat[:oid], 2@0:oid);   	#[26] (0) BKCappend_val_wrap 32 <- 29 8 
+    bat.append(e:bat[:oid], 3@0:oid);   	#[27] (0) BKCappend_val_wrap 33 <- 29 10 
+    i:bat[:oid] := aggr.min(b:bat[:oid], g:bat[:oid], e:bat[:oid]);	#[28] (0) AGGRmin3 34 <- 1 17 29 
     io.print(i:bat[:oid]);              	#[29] (0) IOprint_val 35 <- 34 
-    h:bat[:oid] := aggr.max(b:bat[:oid],g:bat[:oid],e:bat[:oid]);	#[30] (0) AGGRmax3 36 <- 1 17 29 
+    h:bat[:oid] := aggr.max(b:bat[:oid], g:bat[:oid], e:bat[:oid]);	#[30] (0) AGGRmax3 36 <- 1 17 29 
     io.print(h:bat[:oid]);              	#[31] (0) IOprint_val 37 <- 36 
 end user.foo;                           	#[32] (0)  
 #--------------------------#

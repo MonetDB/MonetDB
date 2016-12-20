@@ -6,16 +6,28 @@
 
 module group;
 
-command subgroup(b:bat[:any_1]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
-address GRPsubgroup1;
+command group(b:bat[:any_1]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
+address GRPgroup1;
+command group(b:bat[:any_1],s:bat[:oid]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
+address GRPgroup2;
 command subgroup(b:bat[:any_1],g:bat[:oid]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
 address GRPsubgroup2;
+command subgroup(b:bat[:any_1],s:bat[:oid],g:bat[:oid]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
+address GRPsubgroup3;
 command subgroup(b:bat[:any_1],g:bat[:oid],e:bat[:oid],h:bat[:lng]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
 address GRPsubgroup4;
+command subgroup(b:bat[:any_1],s:bat[:oid],g:bat[:oid],e:bat[:oid],h:bat[:lng]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
+address GRPsubgroup5;
 
-command subgroupdone(b:bat[:any_1]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
-address GRPsubgroup1;
+command groupdone(b:bat[:any_1]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
+address GRPgroup1;
+command groupdone(b:bat[:any_1],s:bat[:oid]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
+address GRPgroup2;
 command subgroupdone(b:bat[:any_1],g:bat[:oid]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
 address GRPsubgroup2;
+command subgroupdone(b:bat[:any_1],s:bat[:oid],g:bat[:oid]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
+address GRPsubgroup3;
 command subgroupdone(b:bat[:any_1],g:bat[:oid],e:bat[:oid],h:bat[:lng]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
 address GRPsubgroup4;
+command subgroupdone(b:bat[:any_1],s:bat[:oid],g:bat[:oid],e:bat[:oid],h:bat[:lng]) (groups:bat[:oid],extents:bat[:oid],histo:bat[:lng])
+address GRPsubgroup5;

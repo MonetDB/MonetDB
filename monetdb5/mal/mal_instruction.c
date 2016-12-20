@@ -805,7 +805,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 		setVarUDFtype(tm, res);
 	if (isVarCleanup(mb, x))
 		setVarCleanup(tm, res);
-	strncpy(getSTC(tm,x),getSTC(mb,x), 2 *IDLENGTH);
+	tm->var[x]->stc = mb->var[x]->stc;
 	return res;
 }
 
@@ -853,6 +853,7 @@ copyVariable(MalBlkPtr dst, VarPtr v)
 	w->declared = v->declared;
 	w->updated = v->updated;
 	w->eolife = v->eolife;
+	w->stc = v->stc;
 	if (VALcopy(&w->value, &v->value) == NULL) {
 		GDKfree(w);
 		return -1;
@@ -876,7 +877,7 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->flags = 0;
 	v->rowcnt = 0;
 	v->eolife = 0;
-	v->stc[0] = 0;
+	v->stc = 0;
 }
 
 void

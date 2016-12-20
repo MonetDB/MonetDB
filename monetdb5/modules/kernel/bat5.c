@@ -750,8 +750,6 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bv, local_itoa((ssize_t)(b->tkey)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tvarsized", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t)(b->tvarsized)), FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "talign", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->talign), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnosorted", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->tnosorted), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnorevsorted", FALSE) != GDK_SUCCEED ||

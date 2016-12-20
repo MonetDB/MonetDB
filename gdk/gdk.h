@@ -768,7 +768,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           bit    tnonil;           // tail has no nils
  *           bit    tsorted;          // are tail values currently ordered?
  *           bit    tvarsized;        // for speed: tail type is varsized?
- *           oid    talign;           // alignment OID for head.
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
@@ -832,7 +831,6 @@ typedef struct {
 	 nil:1,			/* there is a nil in the column */
 	 sorted:1,		/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
-	oid align;		/* OID for sync alignment */
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
@@ -859,7 +857,8 @@ typedef struct {
 #define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
 #define GDKLIBRARY_HEADED	061033	/* head properties are stored */
 #define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
-#define GDKLIBRARY		061035
+#define GDKLIBRARY_TALIGN	061035	/* talign field in BBP.dir */
+#define GDKLIBRARY		061036
 
 typedef struct BAT {
 	/* static bat properties */
@@ -900,7 +899,6 @@ typedef struct BATiter {
 #define trevsorted	T.revsorted
 #define tdense		T.dense
 #define tident		T.id
-#define talign		T.align
 #define torderidx	T.orderidx
 #define twidth		T.width
 #define tshift		T.shift
@@ -1464,7 +1462,7 @@ gdk_export int BATgetaccess(BAT *b);
 gdk_export gdk_return BATclear(BAT *b, int force);
 gdk_export BAT *COLcopy(BAT *b, int tt, int writeable, int role);
 
-gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
+gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h);
 
 /*
  * @- BAT Input/Output
@@ -1919,29 +1917,6 @@ gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export int ATOMformat(int id, const void *val, char **buf);
 
 gdk_export ptr ATOMdup(int id, const void *val);
-
-/*
- * @- Unique OIDs
- * @multitable @columnfractions 0.08 0.7
- * @item oid
- * @tab
- * OIDseed (oid seed);
- * @item oid
- * @tab
- * OIDnew (oid inc);
- * @end multitable
- *
- * OIDs are special kinds of unsigned integers because the system
- * guarantees uniqueness. For system simplicity and performance, OIDs
- * are now represented as (signed) integers; however this is hidden in
- * the system internals and shouldn't affect semantics.
- *
- * The OIDnew(N) claims a range of N contiguous unique, unused OIDs,
- * and returns the starting value of this range.  The highest OIDBITS
- * designate site. [ DEPRECATED]
- */
-gdk_export oid OIDbase(oid base);
-gdk_export oid OIDnew(oid inc);
 
 /*
  * @- Built-in Accelerator Functions
@@ -2688,10 +2663,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 
-#define ALIGNins(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
-#define ALIGNdel(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
-#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
-#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
+#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e); } while (0)
+#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e); } while (0)
 
 #define BAThrestricted(b) ((b)->batRestricted)
 #define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)

@@ -133,13 +133,13 @@ command sqrt(y:flt)  	  :flt
 address MATHunary_SQRTflt;
 command sqrt(y:dbl)  	  :dbl 
 address MATHunary_SQRTdbl
-comment "The cbrt(x) function returns the non-negative cube root of x.";
+comment "The sqrt(x) function returns the non-negative root of x.";
 
 command cbrt(y:flt)  	  :flt 
 address MATHunary_CBRTflt;
-command cnrt(y:dbl)  	  :dbl 
+command cbrt(y:dbl)  	  :dbl 
 address MATHunary_CBRTdbl
-comment "The cbrt(x) function returns the non-negative cube root of x.";
+comment "The cbrt(x) function returns the cube root of x.";
 
 
 command ceil(y:flt)     :flt 

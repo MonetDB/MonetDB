@@ -854,7 +854,7 @@ GDKlockHome(void)
 	 * this section.
 	 */
 	MT_init();
-	OIDinit();
+	BBPdirty(1);
 	/*
 	 * Print the new process list in the global lock file.
 	 */

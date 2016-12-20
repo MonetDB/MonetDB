@@ -1065,7 +1065,8 @@ mat_pack_group(MalBlkPtr mb, matlist_t *ml, int g)
 	InstrPtr cur = NULL;
 
 	for(i=cnt-1; i>=0; i--) {
-		InstrPtr grp = newInstruction(mb, groupRef,i?subgroupRef:subgroupdoneRef);
+		/* if cur is non-NULL, it's a subgroup; if i is zero, it's "done" */
+		InstrPtr grp = newInstruction(mb, groupRef,cur?i?subgroupRef:subgroupdoneRef:i?groupRef:groupdoneRef);
 		int ogrp = walk_n_back(mat, g, i);
 		int oext = group_by_ext(ml, ogrp);
 		int attr = mat[oext].im;
@@ -1137,7 +1138,7 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 	int atp = getArgType(mb,p,3), i, a, g, push = 0;
 	InstrPtr r0, r1, r2, attr;
 
-	if (getFunctionId(p) == subgroupdoneRef)
+	if (getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef)
 		push = 1;
 
 	r0 = newInstruction(mb, matRef, packRef);
@@ -1205,7 +1206,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 	int atp = getArgType(mb,p,3), i, a, push = 0; 
 	InstrPtr r0, r1, r2, attr;
 
-	if (getFunctionId(p) == subgroupdoneRef)
+	if (getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef)
 		push = 1;
 
 	if (ml->v[g].im == -1){ /* already packed */
@@ -1491,10 +1492,13 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* pack if there is a group statement following a groupdone (ie aggr(distinct)) */
 		if (getModuleId(p) == groupRef && p->argc == 5 && 
-		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef)) {
+		   (getFunctionId(p) == subgroupRef ||
+			getFunctionId(p) == subgroupdoneRef ||
+			getFunctionId(p) == groupRef ||
+			getFunctionId(p) == groupdoneRef)) {
 			InstrPtr q = old[vars[getArg(p, p->argc-1)]]; /* group result from a previous group(done) */
 
-			if (getModuleId(q) == groupRef && getFunctionId(q) == subgroupdoneRef)
+			if (getFunctionId(q) == subgroupdoneRef || getFunctionId(q) == groupdoneRef)
 				groupdone = 1;
 		}
 		if (getModuleId(p) == algebraRef && 
@@ -1636,14 +1640,14 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* Now we handle subgroup and aggregation statements. */
 		if (!groupdone && match == 1 && bats == 1 && p->argc == 4 && getModuleId(p) == groupRef && 
-		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) && 
+		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) && 
 	 	   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
 			mat_group_new(mb, p, &ml, m);
 			actions++;
 			continue;
 		}
 		if (!groupdone && match == 2 && bats == 2 && p->argc == 5 && getModuleId(p) == groupRef && 
-		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) && 
+		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) && 
 		   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0) &&
 		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) && 
 		     ml.v[n].im >= 0 /* not packed */) {

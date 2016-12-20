@@ -1369,7 +1369,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "", anti);
 		if (s) {
-			return COLcopy(s, s->ttype, 0, TRANSIENT);
+			oid o = b->hseqbase + BATcount(b);
+			BUN q = SORTfndfirst(s, &o);
+			BUN p = SORTfndfirst(s, &b->hseqbase);
+			return BATslice(s, p, q);
 		} else {
 			return BATdense(0, b->hseqbase, BATcount(b));
 		}

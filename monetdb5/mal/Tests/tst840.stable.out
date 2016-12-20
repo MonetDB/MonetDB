@@ -32,7 +32,7 @@ Ready.
 function user.foo():void;               	#[0] (0)  0 
     s:str := " \nline1\n\nline2\n":str; 	#[1] (0)  1 <- 2 
     io.printf("----\n":str);            	#[2] (0) IOprintf 3 <- 4 
-    io.printf("%s":str,s:str);          	#[3] (0) IOprintf 5 <- 6 1 
+    io.printf("%s":str, s:str);         	#[3] (0) IOprintf 5 <- 6 1 
     io.printf("----\n":str);            	#[4] (0) IOprintf 7 <- 4 
 end user.foo;                           	#[5] (0)  
 ----

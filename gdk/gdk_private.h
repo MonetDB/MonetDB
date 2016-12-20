@@ -28,8 +28,6 @@ enum heaptype {
 	mosaicheap
 };
 
-__hidden void ALIGNcommit(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__visibility__("hidden")));
 __hidden int ATOMisdescendant(int id, int parentid)
@@ -59,7 +57,7 @@ __hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted)
+__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, int subsorted)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -168,14 +166,6 @@ __hidden void MT_init_posix(void)
 __hidden void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 	__attribute__((__visibility__("hidden")));
 __hidden int MT_msync(void *p, size_t len)
-	__attribute__((__visibility__("hidden")));
-__hidden int OIDdirty(void)
-	__attribute__((__visibility__("hidden")));
-__hidden int OIDinit(void)
-	__attribute__((__visibility__("hidden")));
-__hidden oid OIDread(str buf)
-	__attribute__((__visibility__("hidden")));
-__hidden int OIDwrite(FILE *f)
 	__attribute__((__visibility__("hidden")));
 __hidden void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));

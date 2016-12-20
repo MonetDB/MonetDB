@@ -729,10 +729,6 @@ BATsave(BAT *bd)
 	if (!BATdirty(b)) {
 		return GDK_SUCCEED;
 	}
-	if (!DELTAdirty(b))
-		ALIGNcommit(b);
-	if (!b->talign)
-		b->talign = OIDnew(1);
 
 	/* copy the descriptor to a local variable in order to let our
 	 * messing in the BAT descriptor not affect other threads that
@@ -818,10 +814,6 @@ BATload_intern(bat bid, int lock)
 
 	/* load succeeded; register it in BBP */
 	BBPcacheit(b, lock);
-
-	if (!DELTAdirty(b)) {
-		ALIGNcommit(b);
-	}
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & CHECKMASK)) ||
 	    (GDKdebug & PROPMASK)) {

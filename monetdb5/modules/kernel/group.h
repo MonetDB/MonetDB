@@ -10,12 +10,19 @@
 #define _GROUP_H_
 #include "gdk.h"
 
-mal_export str GRPsubgroup1(bat *ngid, bat *next, bat *nhis,
-							  const bat *bid);
+mal_export str GRPgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid);
+mal_export str GRPgroup2(bat *ngid, bat *next, bat *nhis,
+						 const bat *bid, const bat *sid);
 mal_export str GRPsubgroup2(bat *ngid, bat *next, bat *nhis,
-							  const bat *bid, const bat *gid);
+							const bat *bid, const bat *gid);
+mal_export str GRPsubgroup3(bat *ngid, bat *next, bat *nhis,
+							const bat *bid, const bat *sid,
+							const bat *gid);
 mal_export str GRPsubgroup4(bat *ngid, bat *next, bat *nhis,
-							  const bat *bid, const bat *gid,
-							  const bat *eid, const bat *hid);
+							const bat *bid, const bat *gid,
+							const bat *eid, const bat *hid);
+mal_export str GRPsubgroup5(bat *ngid, bat *next, bat *nhis,
+							const bat *bid, const bat *sid,
+							const bat *gid, const bat *eid, const bat *hid);
 
 #endif /* _GROUP_H_ */

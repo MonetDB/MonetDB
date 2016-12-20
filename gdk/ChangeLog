@@ -1,6 +1,14 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Fri Dec 16 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed automatic conversion of 32-bit OIDs to 64 bits on 64-bit
+  architectures.
+
+* Tue Dec 13 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed functions OIDbase() and OIDnew().
+- Removed talign field from BAT descriptor.
+
 * Mon Dec  5 2016 Sjoerd Mullender <sjoerd@acm.org>
 - BATappend now takes an optional (NULL if not used) candidate list for
   the to-be-appended BAT.

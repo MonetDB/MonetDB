@@ -168,6 +168,16 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 	scienceFcnImpl(Operator,dbl,)				\
 	scienceFcnImpl(Operator,flt,f)
 
+#define scienceNotImpl(FUNC)							\
+str CMDscience_bat_flt_##FUNC(bat *ret, const bat *bid)	\
+{														\
+	throw(MAL, "batmmath." #FUNC, PROGRAM_NYI);			\
+}														\
+str CMDscience_bat_dbl_##FUNC(bat *ret, const bat *bid)	\
+{														\
+	throw(MAL, "batmmath." #FUNC, PROGRAM_NYI);			\
+}
+
 scienceImpl(asin)
 scienceImpl(acos)
 scienceImpl(atan)
@@ -183,7 +193,11 @@ scienceImpl(exp)
 scienceImpl(log)
 scienceImpl(log10)
 scienceImpl(sqrt)
+#ifdef HAVE_CBRT
 scienceImpl(cbrt)
+#else
+scienceNotImpl(cbrt)
+#endif
 scienceImpl(ceil)
 scienceImpl(fabs)
 scienceImpl(floor)

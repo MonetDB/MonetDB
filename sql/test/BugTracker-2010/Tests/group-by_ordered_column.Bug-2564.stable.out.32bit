@@ -68,7 +68,7 @@ function user.s7_1():void;
     X_26:bat[:int] := sql.bind(X_1,"sys","t2564","c2",1);
     X_27 := sql.delta(X_22,C_24,r1_24,X_26);
     X_28 := algebra.projection(C_2,X_27);
-    (X_29,r1_29,r2_29) := group.subgroup(X_28);
+    (X_29,r1_29,r2_29) := group.group(X_28);
     (X_32,r1_32,r2_32) := group.subgroup(X_21,X_29);
     (X_35,r1_35,r2_35) := group.subgroupdone(X_14,X_32);
     X_38:bat[:wrd] := aggr.subcount(X_35,X_35,r1_35,false);

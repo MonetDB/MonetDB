@@ -40,7 +40,6 @@ BATcommit(BAT *b)
 			   b->theap.free,
 			   b->batInserted,
 			   PTRFMTCAST b->theap.base);
-	ALIGNcommit(b);
 	if (!BATdirty(b)) {
 		b->batDirtyflushed = 0;
 	}

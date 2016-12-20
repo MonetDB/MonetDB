@@ -306,13 +306,6 @@ address QOTgetStatistics
 comment "Get optimizer property statistics 
 such as #calls, #total actions, #total time";
 
-#opt_support.mal
-
-command mdb.traceOptimizer(flg:str)
-address OPTsetDebugStr
-comment "Otherwise it is considered a request to trace the optimizers,
-which requires a comma separated list or pipeline name.";
-
 #opt_trace.mal
 
 pattern optimizer.trace():str

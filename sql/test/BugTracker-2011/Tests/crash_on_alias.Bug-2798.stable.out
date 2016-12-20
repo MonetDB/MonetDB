@@ -42,7 +42,7 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 142 # length
+% 145 # length
 function user.s8_1():void;
     X_59:void := querylog.define("explain select a as d, sum(b), (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",35);
     X_26 := bat.new(nil:str);
@@ -69,7 +69,7 @@ function user.s8_1():void;
     C_1:bat[:oid] := sql.tid(X_0,"sys","dbg");
     X_4:bat[:int] := sql.bind(X_0,"sys","dbg","a",0);
     X_7 := algebra.projection(C_1,X_4);
-    (X_8,r1_11,r2_11) := group.subgroupdone(X_7);
+    (X_8,r1_11,r2_11) := group.groupdone(X_7);
     X_11 := algebra.projection(r1_11,X_7);
     X_14:bat[:int] := sql.bind(X_0,"sys","dbg","b",0);
     X_16 := algebra.projection(C_1,X_14);
@@ -103,8 +103,8 @@ end user.s8_1;
 #total                actions= 1 time=311 usec 
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% sys.dbg,	sys.L2,	sys.L5 # table_name
-% d,	L1,	f # name
+% sys.dbg,	sys.L4,	sys.L11 # table_name
+% d,	L3,	f # name
 % int,	bigint,	bigint # type
 % 2,	2,	2 # length
 [ 10,	10,	10	]
@@ -128,7 +128,7 @@ project (
 % .explain # table_name
 % mal # name
 % clob # type
-% 147 # length
+% 150 # length
 function user.s20_1():void;
     X_59:void := querylog.define("explain select a as d, sum(b) as e, (2 * (sum(b) / (select 2))) as f from dbg group by d;","sequential_pipe",35);
     X_26 := bat.new(nil:str);
@@ -155,7 +155,7 @@ function user.s20_1():void;
     C_1:bat[:oid] := sql.tid(X_0,"sys","dbg");
     X_4:bat[:int] := sql.bind(X_0,"sys","dbg","a",0);
     X_7 := algebra.projection(C_1,X_4);
-    (X_8,r1_11,r2_11) := group.subgroupdone(X_7);
+    (X_8,r1_11,r2_11) := group.groupdone(X_7);
     X_11 := algebra.projection(r1_11,X_7);
     X_14:bat[:int] := sql.bind(X_0,"sys","dbg","b",0);
     X_16 := algebra.projection(C_1,X_14);

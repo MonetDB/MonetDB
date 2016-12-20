@@ -14,6 +14,7 @@
 logger *bat_logger = NULL;
 logger *bat_logger_shared = NULL;
 
+/* return 0 if we can handle the upgrade from oldversion to newversion */
 static int
 bl_preversion( int oldversion, int newversion)
 {
@@ -21,6 +22,7 @@ bl_preversion( int oldversion, int newversion)
 
 	(void)newversion;
 	if (oldversion == CATALOG_JUL2015) {
+		/* upgrade to Jun2016 releases */
 		catalog_version = oldversion;
 		geomversion_set();
 		return 0;

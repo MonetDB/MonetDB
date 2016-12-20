@@ -892,6 +892,62 @@ count_del(sql_trans *tr, sql_table *t)
 	return d->cnt;
 }
 
+static size_t
+count_col_upd(sql_trans *tr, sql_column *c)
+{
+	sql_delta *b;
+
+	assert (isTable(c->t)) ;
+	if (!c->data) {
+		sql_column *oc = tr_find_column(tr->parent, c);
+		c->data = timestamp_delta(oc->data, tr->stime);
+	}
+        b = c->data;
+	if (!b)
+		return 1;
+	return b->ucnt;
+}
+
+static size_t
+count_idx_upd(sql_trans *tr, sql_idx *i)
+{
+	sql_delta *b;
+
+	assert (isTable(i->t)) ;
+	if (!i->data) {
+		sql_idx *oi = tr_find_idx(tr->parent, i);
+		i->data = timestamp_delta(oi->data, tr->stime);
+	}
+	b = i->data;
+	if (!b)
+		return 0;
+	return b->ucnt;
+}
+
+static size_t
+count_upd(sql_trans *tr, sql_table *t)
+{
+	node *n;
+
+	if (!isTable(t)) 
+		return 0;
+
+	for( n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+
+		if (count_col_upd(tr, c))
+			return 1;
+	}
+	if (t->idxs.set)
+	for( n = t->idxs.set->h; n; n = n->next) {
+		sql_idx *i = n->data;
+
+		if (count_idx_upd(tr, i))
+			return 1;
+	}
+	return 0;
+}
+
 static int
 sorted_col(sql_trans *tr, sql_column *col)
 {
@@ -2456,6 +2512,7 @@ bat_storage_init( store_functions *sf)
 	sf->delete_tab = (delete_tab_fptr)&delete_tab;
 
 	sf->count_del = (count_del_fptr)&count_del;
+	sf->count_upd = (count_upd_fptr)&count_upd;
 	sf->count_col = (count_col_fptr)&count_col;
 	sf->count_idx = (count_idx_fptr)&count_idx;
 	sf->dcount_col = (dcount_col_fptr)&dcount_col;

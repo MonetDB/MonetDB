@@ -2560,6 +2560,7 @@ LIBS="$LIBS $MATH_LIBS"
 AC_CHECK_FUNCS([\
 	asctime_r \
 	backtrace \
+	cbrt \
 	ctime_r \
 	fabsf \
 	fallocate \

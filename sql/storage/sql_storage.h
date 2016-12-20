@@ -47,6 +47,7 @@ typedef void *(*column_find_value_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, void *value);
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
 typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
+typedef int (*table_vacuum_fptr)(sql_trans *tr, sql_table *t);
 
 typedef struct rids {
 	BUN cur;
@@ -92,6 +93,7 @@ typedef struct table_functions {
 	column_update_value_fptr column_update_value;
 	table_insert_fptr table_insert;
 	table_delete_fptr table_delete;
+	table_vacuum_fptr table_vacuum;
 
 	rids_select_fptr rids_select;
 	rids_orderby_fptr rids_orderby;
@@ -130,6 +132,7 @@ typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 -- check for sortedness
  */
 typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t);
+typedef size_t (*count_upd_fptr) (sql_trans *tr, sql_table *t);
 typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int all /* all or new only */);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int all /* all or new only */);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
@@ -207,6 +210,7 @@ typedef struct store_functions {
 	delete_tab_fptr delete_tab;
 
 	count_del_fptr count_del;
+	count_upd_fptr count_upd;
 	count_col_fptr count_col;
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
@@ -323,7 +327,7 @@ extern void store_exit(void);
 extern void store_apply_deltas(void);
 extern void store_flush_log(void);
 extern void store_manager(void);
-extern void minmax_manager(void);
+extern void idle_manager(void);
 
 extern void store_lock(void);
 extern void store_unlock(void);

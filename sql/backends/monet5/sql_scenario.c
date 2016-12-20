@@ -203,7 +203,7 @@ SQLepilogue(void *ret)
 	return res;
 }
 
-MT_Id sqllogthread, minmaxthread;
+MT_Id sqllogthread, idlethread;
 
 static str
 SQLinit(void)
@@ -251,12 +251,10 @@ SQLinit(void)
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
 	GDKregister(sqllogthread);
-#if 0
-	if (MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_JOINABLE) != 0) {
-		throw(SQL, "SQLinit", "Starting minmax manager failed");
+	if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
+		throw(SQL, "SQLinit", "Starting idle manager failed");
 	}
-	GDKregister(minmaxthread);
-#endif
+	GDKregister(idlethread);
 	return MAL_SUCCEED;
 }
 

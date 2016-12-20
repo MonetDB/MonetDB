@@ -137,38 +137,6 @@ full_destroy(sql_column *c, BAT *b)
 }
 
 static oid
-column_lookup_row(sql_trans *tr, sql_column *c, const void *value) 
-{
-	BAT *b = NULL, *s = NULL;
-	oid rid = oid_nil;
-
-	b = full_column(tr, c);
-	if (!b)
-		return oid_nil;
-
-	if (store_funcs.count_del(tr, c->t)) 
-		s = store_funcs.bind_del(tr, c->t, RD_INS);
-
-	if (BAThash(b, 0) == GDK_SUCCEED) {
-		BATiter cni = bat_iterator(b);
-		BUN p;
-
-		HASHloop(cni, cni.b->thash, p, value) {
-			oid pos = p;
-
-			if (!s || BUNfnd(s, &pos) == BUN_NONE) {
-				rid = p;
-				break;
-			}
-		}
-	}
-	if (s)
-		bat_destroy(s);
-	full_destroy(c, b);
-	return rid;
-}
-
-static oid
 column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 {
 	va_list va;
@@ -177,9 +145,6 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	sql_column *n = NULL;
 
 	va_start(va, value);
-	if ((n = va_arg(va, sql_column *)) == NULL) 
-		return column_lookup_row(tr, c, value);
-
 	s = delta_cands(tr, c->t);
 	if (!s)
 		return oid_nil;
@@ -192,7 +157,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	bat_destroy(s);
 	s = r;
 	full_destroy(c, b);
-	do {
+	while ((n = va_arg(va, sql_column *)) != NULL) {
 		value = va_arg(va, void *);
 		c = n;
 
@@ -205,7 +170,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 		bat_destroy(s);
 		s = r;
 		full_destroy(c, b);
-	} while ((n = va_arg(va, sql_column *)) != NULL); 
+	}
 	va_end(va);
 	if (BATcount(s) == 1) {
 		BATiter ri = bat_iterator(s);
@@ -505,6 +470,32 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 	return l;
 }
 
+static int
+table_vacuum(sql_trans *tr, sql_table *t)
+{
+	BAT *tids = delta_cands(tr, t);
+	BAT **cols;
+	node *n;
+
+	cols = NEW_ARRAY(BAT*, cs_size(&t->columns));
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		BAT *v = store_funcs.bind_col(tr, c, RDONLY);
+
+		cols[c->colnr] = BATproject(tids, v);
+		BBPunfix(v->batCacheid);
+	}
+	sql_trans_clear_table(tr, t);
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+
+		store_funcs.append_col(tr, c, cols[c->colnr], TYPE_bat);
+		BBPunfix(cols[c->colnr]->batCacheid);
+	}
+	_DELETE(cols);
+	return SQL_OK;
+}
+
 int 
 bat_table_init( table_functions *tf )
 {
@@ -514,6 +505,7 @@ bat_table_init( table_functions *tf )
 	tf->column_update_value = column_update_value;
 	tf->table_insert = table_insert;
 	tf->table_delete = table_delete;
+	tf->table_vacuum = table_vacuum;
 	
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;
