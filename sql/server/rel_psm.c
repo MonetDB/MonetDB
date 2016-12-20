@@ -741,6 +741,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				return sql_error(sql, 02, "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, func->base.name);
 
 			mvc_drop_func(sql, s, func, action);
+			sf = NULL;
 		} else {
 			if (params) {
 				char *arg_list = NULL;
@@ -768,115 +769,113 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			}
 		}
 	}
-	if (!sf || (sf && replace)) {
-		list_destroy(type_list);
-		if (create && !mvc_schema_privs(sql, s)) {
-			return sql_error(sql, 02, "CREATE %s%s: insufficient privileges "
-					"for user '%s' in schema '%s'", KF, F,
-					stack_get_string(sql, "current_user"), s->base.name);
+	list_destroy(type_list);
+	if (create && !mvc_schema_privs(sql, s)) {
+		return sql_error(sql, 02, "CREATE %s%s: insufficient privileges "
+				"for user '%s' in schema '%s'", KF, F,
+				stack_get_string(sql, "current_user"), s->base.name);
+	} else {
+		char *q = QUERY(sql->scanner);
+		list *l = NULL;
+
+	 	if (params) {
+			for (n = params->h; n; n = n->next) {
+				dnode *an = n->data.lval->h;
+				sql_add_param(sql, an->data.sval, &an->next->data.typeval);
+			}
+			l = sql->params;
+			if (l && list_length(l) == 1) {
+				sql_arg *a = l->h->data;
+
+				if (strcmp(a->name, "*") == 0) {
+					l = NULL;
+					vararg = TRUE;
+				}
+			}
+		}
+		if (!l)
+			l = sa_list(sql->sa);
+		if (res) {
+			restype = result_type(sql, res);
+			if (!restype)
+				return sql_error(sql, 01,
+						"CREATE %s%s: failed to get restype", KF, F);
+		}
+		if (body && lang > FUNC_LANG_SQL) {
+			char *lang_body = body->h->data.sval;
+			char *mod = 	
+					(lang == FUNC_LANG_R)?"rapi":
+					(lang == FUNC_LANG_C)?"capi":
+					(lang == FUNC_LANG_J)?"japi":
+					(lang == FUNC_LANG_PY)?"pyapi":
+ 					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
+			sql->params = NULL;
+			if (create) {
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg);
+			} else if (!sf) {
+				return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
+			} /*else {
+				sql_func *f = sf->func;
+				f->mod = _STRDUP("rapi");
+				f->imp = _STRDUP("eval");
+				if (res && restype)
+					f->res = restype;
+				f->sql = 0;
+				f->lang = FUNC_LANG_INT;
+			}*/
+		} else if (body) {
+			sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
+			list *b = NULL;
+			sql_schema *old_schema = cur_schema(sql);
+
+			if (create) { /* needed for recursive functions */
+				q = query_cleaned(q);
+				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
+				GDKfree(q);
+			}
+			sql->session->schema = s;
+			b = sequential_block(sql, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
+			sql->forward = NULL;
+			sql->session->schema = old_schema;
+			sql->params = NULL;
+			if (!b) 
+				return NULL;
+		
+			/* check if we have a return statement */
+			if (is_func && restype && !has_return(b)) {
+				return sql_error(sql, 01,
+						"CREATE %s%s: missing return statement", KF, F);
+			}
+			if (!is_func && !restype && has_return(b)) {
+				return sql_error(sql, 01, "CREATE %s%s: procedures "
+						"cannot have return statements", KF, F);
+			}
+
+			/* in execute mode we instantiate the function */
+			if (instantiate || deps) {
+				return rel_psm_block(sql->sa, b);
+			}
 		} else {
-			char *q = QUERY(sql->scanner);
-			list *l = NULL;
+			char *fmod = qname_module(ext_name);
+			char *fnme = qname_fname(ext_name);
 
-		 	if (params) {
-				for (n = params->h; n; n = n->next) {
-					dnode *an = n->data.lval->h;
-					sql_add_param(sql, an->data.sval, &an->next->data.typeval);
-				}
-				l = sql->params;
-				if (l && list_length(l) == 1) {
-					sql_arg *a = l->h->data;
-
-					if (strcmp(a->name, "*") == 0) {
-						l = NULL;
-						vararg = TRUE;
-					}
-				}
-			}
-			if (!l)
-				l = sa_list(sql->sa);
-			if (res) {
-				restype = result_type(sql, res);
-				if (!restype)
-					return sql_error(sql, 01,
-							"CREATE %s%s: failed to get restype", KF, F);
-			}
-			if (body && lang > FUNC_LANG_SQL) {
-				char *lang_body = body->h->data.sval;
-				char *mod = 	
-						(lang == FUNC_LANG_R)?"rapi":
-						(lang == FUNC_LANG_C)?"capi":
-						(lang == FUNC_LANG_J)?"japi":
-						(lang == FUNC_LANG_PY)?"pyapi":
-     					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
-				sql->params = NULL;
-				if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg);
-				} else if (!sf) {
-					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
-				} /*else {
-					sql_func *f = sf->func;
-					f->mod = _STRDUP("rapi");
-					f->imp = _STRDUP("eval");
-					if (res && restype)
-						f->res = restype;
-					f->sql = 0;
-					f->lang = FUNC_LANG_INT;
-				}*/
-			} else if (body) {
-				sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
-				list *b = NULL;
-				sql_schema *old_schema = cur_schema(sql);
-	
-				if (create) { /* needed for recursive functions */
-					q = query_cleaned(q);
-					sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
-					GDKfree(q);
-				}
-				sql->session->schema = s;
-				b = sequential_block(sql, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
-				sql->forward = NULL;
-				sql->session->schema = old_schema;
-				sql->params = NULL;
-				if (!b) 
-					return NULL;
-			
-				/* check if we have a return statement */
-				if (is_func && restype && !has_return(b)) {
-					return sql_error(sql, 01,
-							"CREATE %s%s: missing return statement", KF, F);
-				}
-				if (!is_func && !restype && has_return(b)) {
-					return sql_error(sql, 01, "CREATE %s%s: procedures "
-							"cannot have return statements", KF, F);
-				}
-	
-				/* in execute mode we instantiate the function */
-				if (instantiate || deps) {
-					return rel_psm_block(sql->sa, b);
-				}
+			if (!fmod || !fnme)
+				return NULL;
+			sql->params = NULL;
+			if (create) {
+				q = query_cleaned(q);
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg);
+				GDKfree(q);
+			} else if (!sf) {
+				return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
 			} else {
-				char *fmod = qname_module(ext_name);
-				char *fnme = qname_fname(ext_name);
-
-				if (!fmod || !fnme)
-					return NULL;
-				sql->params = NULL;
-				if (create) {
-					q = query_cleaned(q);
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg);
-					GDKfree(q);
-				} else if (!sf) {
-					return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
-				} else {
-					sql_func *f = sf->func;
-					if (!f->mod || strcmp(f->mod, fmod))
-						f->mod = _STRDUP(fmod);
-					if (!f->imp || strcmp(f->imp, fnme)) 
-						f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
-					f->sql = 0; /* native */
-					f->lang = FUNC_LANG_INT;
-				}
+				sql_func *f = sf->func;
+				if (!f->mod || strcmp(f->mod, fmod))
+					f->mod = _STRDUP(fmod);
+				if (!f->imp || strcmp(f->imp, fnme)) 
+					f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
+				f->sql = 0; /* native */
+				f->lang = FUNC_LANG_INT;
 			}
 		}
 	}
