@@ -1,0 +1,88 @@
+stdout of test 'prefix` in directory 'sql/test/mosaic` itself:
+
+
+# 12:53:32 >  
+# 12:53:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35122" "--set" "mapi_usock=/var/tmp/mtest-21664/.s.monetdb.35122" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_sql_test_mosaic"
+# 12:53:32 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mosaic', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35122/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21664/.s.monetdb.35122
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:53:32 >  
+# 12:53:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21664" "--port=35122"
+# 12:53:32 >  
+
+#set optimizer='sequential_pipe';
+#create table tmpPrefix( i integer);
+#insert into tmpPrefix values (1), (1), (1), (1), (1), (1), (2), (2);
+[ 8	]
+#select * from tmpPrefix;
+% sys.tmpprefix # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 2	]
+[ 2	]
+#alter table tmpPrefix alter column i set storage 'prefix';
+#select * from tmpPrefix;
+% sys.tmpprefix # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 2	]
+[ 2	]
+#select count(*) from tmpPrefix;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 8	]
+#alter table tmpPrefix alter column i set storage NULL;
+#select * from tmpPrefix;
+% sys.tmpprefix # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 2	]
+[ 2	]
+#select sum(i) from tmpPrefix;
+% sys.L4 # table_name
+% L3 # name
+% hugeint # type
+% 2 # length
+[ 10	]
+#drop table tmpPrefix;
+
+# 12:53:32 >  
+# 12:53:32 >  "Done."
+# 12:53:32 >  
+
