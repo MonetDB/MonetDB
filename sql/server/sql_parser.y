@@ -5230,6 +5230,7 @@ non_reserved_word:
 |  MINMAX	{ $$ = sa_strdup(SA, "MinMax"); }
 |  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 |  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
+|  REPLACE	{ $$ = sa_strdup(SA, "replace"); }
 ;
 
 name_commalist:
