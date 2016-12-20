@@ -121,8 +121,6 @@ sql_update_hugeint(Client c, mvc *sql)
 #endif
 
 static str
-			"  orderidx bigint,\n"
-			" compressed boolean\n"
 sql_update_epoch(Client c, mvc *m)
 {
 	size_t bufsize = 1000, pos = 0;
