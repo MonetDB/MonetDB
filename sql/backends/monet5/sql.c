@@ -686,7 +686,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 }
 
 static char *
-drop_table(mvc *sql, char *sname, char *tname, int drop_action)
+drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -702,7 +702,11 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 		t = mvc_bind_table(sql, s, tname);
 	}
 	if (!t) {
-		return sql_message("42S02!DROP TABLE: no such table '%s'", tname);
+		if (if_exists) {
+			return MAL_SUCCEED;
+		} else {
+			return sql_message("42S02!DROP TABLE: no such table '%s'", tname);
+		}
 	} else if (isView(t)) {
 		return sql_message("42000!DROP TABLE: cannot drop VIEW '%s'", tname);
 	} else if (t->system) {
@@ -1350,7 +1354,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int action = *getArgReference_int(stk, pci, 4);
 		str name = *getArgReference_str(stk, pci, 3);
 
-		msg = drop_table(sql, sname, name, action);
+		msg = drop_table(sql, sname, name, action, if_exists);
 		break;
 	}
 	case DDL_DROP_VIEW_IF_EXISTS:

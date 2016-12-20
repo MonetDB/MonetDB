@@ -154,7 +154,7 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 	
 	assert(n->next->next->next->type == type_int);
 	
-	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL);
+	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL, 0);
 
 	if (!rel || rel->op != op_ddl || rel->flag != DDL_CREATE_TABLE)
 		return NULL;

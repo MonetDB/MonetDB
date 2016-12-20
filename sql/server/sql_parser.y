@@ -1146,6 +1146,7 @@ drop_table_element:
 	{ dlist *l = L();
 	  append_string(l, $2 );
 	  append_int(l, $3 );
+	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
   ;
 
@@ -1314,78 +1315,84 @@ table_opt_storage:
  ;
 
 table_def:
-    TABLE qname table_content_source  table_opt_storage
+    TABLE if_not_exists qname table_content_source  table_opt_storage
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 
 	  append_int(l, SQL_PERSIST);
-	  append_list(l, $2);
-	  append_symbol(l, $3);
+	  append_list(l, $3);
+	  append_symbol(l, $4);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
-	  append_list(l, $4);
+	  append_int(l, $2);
+	  append_list(l, $5);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- |  TABLE qname FROM sqlLOADER func_ref
+ |  TABLE if_not_exists qname FROM sqlLOADER func_ref
     {
       dlist *l = L();
-      append_list(l, $2);
-      append_symbol(l, $5);
+      append_list(l, $3);
+      append_symbol(l, $6);
       $$ = _symbol_create_list( SQL_CREATE_TABLE_LOADER, l);
     }
- |  STREAM TABLE qname table_content_source 
+ |  STREAM TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
 	  dlist *l = L();
 
 	  append_int(l, tpe);
-	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- |  MERGE TABLE qname table_content_source 
+ |  MERGE TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
 	  dlist *l = L();
 
 	  append_int(l, tpe);
-	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- |  REPLICA TABLE qname table_content_source 
+ |  REPLICA TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_REPLICA_TABLE;
 	  dlist *l = L();
 
 	  append_int(l, tpe);
-	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  /* mapi:monetdb://host:port/database[/schema[/table]] 
     This also allows access via monetdbd. 
     We assume the monetdb user with default password */
- |  REMOTE TABLE qname table_content_source ON STRING
+ |  REMOTE TABLE if_not_exists qname table_content_source ON STRING
 	{ int commit_action = CA_COMMIT, tpe = SQL_REMOTE;
 	  dlist *l = L();
 
 	  append_int(l, tpe);
-	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
 	  append_int(l, commit_action);
-	  append_string(l, $6);
+	  append_string(l, $7);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
-  | opt_temp TABLE qname table_content_source opt_on_commit 
+  | opt_temp TABLE if_not_exists qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 
 	  append_int(l, $1);
-	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
 	  if ($1 != SQL_PERSIST)
-		commit_action = $5;
+		commit_action = $6;
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
 
@@ -2394,10 +2401,11 @@ routine_designator:
  ;
 
 drop_statement:
-   drop TABLE qname drop_action
+   drop TABLE if_exists qname drop_action
 	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_int(l, $4 );
+	  append_list(l, $4 );
+	  append_int(l, $5 );
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
  | drop routine_designator drop_action
 	{ dlist *l = $2;
