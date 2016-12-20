@@ -1257,6 +1257,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int type = *getArgReference_int(stk, pci, 1);
 	str sname = *getArgReference_str(stk, pci, 2);
+	int if_exists = 0;
 
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
 		return msg;
@@ -1308,12 +1309,19 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		break;
 	}
+	case DDL_DROP_SCHEMA_IF_EXISTS:
+		if_exists = 1;
 	case DDL_DROP_SCHEMA:{
 		int action = *getArgReference_int(stk, pci, 4);
+
 		sql_schema *s = mvc_bind_schema(sql, sname);
 
 		if (!s) {
-			msg = sql_message("3F000!DROP SCHEMA: name %s does not exist", sname);
+			if (!if_exists) {
+				msg = sql_message("3F000!DROP SCHEMA: name %s does not exist", sname);
+			} else {
+				break;
+			}
 		} else if (!mvc_schema_privs(sql, s)) {
 			msg = sql_message("42000!DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 		} else if (s == cur_schema(sql)) {
@@ -1336,6 +1344,8 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = create_table_or_view(sql, sname, t, temp);
 		break;
 	}
+	case DDL_DROP_TABLE_IF_EXISTS:
+		if_exists = 1;
 	case DDL_DROP_TABLE:{
 		int action = *getArgReference_int(stk, pci, 4);
 		str name = *getArgReference_str(stk, pci, 3);
@@ -1343,6 +1353,8 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = drop_table(sql, sname, name, action);
 		break;
 	}
+	case DDL_DROP_VIEW_IF_EXISTS:
+		if_exists = 1;
 	case DDL_DROP_VIEW:{
 		int action = *getArgReference_int(stk, pci, 4);
 		str name = *getArgReference_str(stk, pci, 3);
@@ -1547,6 +1559,8 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		return alter_table_set_access(sql, sname, tname, access);
 	}
+	case DDL_EMPTY:
+		break;
 	default:
 		throw(SQL, "sql.catalog", "catalog unknown type");
 	}

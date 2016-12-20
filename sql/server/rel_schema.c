@@ -1163,6 +1163,7 @@ rel_schema(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
+
 	if (auth)
 		append(exps, exp_atom_clob(sa, auth));
 	rel->l = NULL;
@@ -1176,7 +1177,7 @@ rel_schema(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
-rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
+rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int ignore_in_use)
 {
 	char *name = dlist_get_schema_name(auth_name);
 	char *auth = schema_auth(auth_name);
@@ -1194,8 +1195,12 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		name = auth;
 	assert(name);
 	if (mvc_bind_schema(sql, name)) {
-		sql_error(sql, 02, "3F000!CREATE SCHEMA: name '%s' already in use", name);
-		return NULL;
+		if (!ignore_in_use) {
+			sql_error(sql, 02, "3F000!CREATE SCHEMA: name '%s' already in use", name);
+			return NULL;
+		} else {
+			return NULL;
+		}
 	} else {
 		sql_schema *os = sql->session->schema;
 		dnode *n;
@@ -1935,7 +1940,7 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = rel_create_schema(sql, l->h->data.lval,
-				l->h->next->next->next->data.lval);
+				l->h->next->next->next->data.lval, l->h->next->next->next->next->data.i_val);
 	} 	break;
 	case SQL_DROP_SCHEMA:
 	{
@@ -1943,7 +1948,8 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *auth_name = l->h->data.lval;
 
 		assert(l->h->next->type == type_int);
-		ret = rel_schema(sql->sa, DDL_DROP_SCHEMA, 
+		ret = rel_schema(sql->sa, 
+			   l->h->next->next->data.i_val ? DDL_DROP_SCHEMA_IF_EXISTS : DDL_DROP_SCHEMA, 
 			   dlist_get_schema_name(auth_name),
 			   NULL,
 			   l->h->next->data.i_val);	/* drop_action */

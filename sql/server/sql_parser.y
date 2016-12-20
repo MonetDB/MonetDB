@@ -495,6 +495,8 @@ int yydebug=1;
 	opt_with_check_option
 	create
 	create_or_replace
+	if_exists
+	if_not_exists
 
 	opt_with_grant
 	opt_with_admin
@@ -700,6 +702,16 @@ create_or_replace:
 	create
 |	CREATE OR REPLACE { $$ = TRUE; }
 
+
+if_exists:
+	/* empty */   { $$ = FALSE; }
+|	IF EXISTS     { $$ = TRUE; }
+
+if_not_exists:
+	/* empty */   { $$ = FALSE; }
+|	IF NOT EXISTS { $$ = TRUE; }
+
+
 drop:
     DROP 		
 
@@ -805,18 +817,20 @@ set_statement:
   ;
 
 schema:
-	create SCHEMA schema_name_clause opt_schema_default_char_set
+	create SCHEMA if_not_exists schema_name_clause opt_schema_default_char_set
 			opt_path_specification	opt_schema_element_list
 		{ dlist *l = L();
-		append_list(l, $3);
-		append_symbol(l, $4);
+		append_list(l, $4);
 		append_symbol(l, $5);
-		append_list(l, $6);
+		append_symbol(l, $6);
+		append_list(l, $7);
+		append_int(l, $3);
 		$$ = _symbol_create_list( SQL_CREATE_SCHEMA, l); }
-  |	drop SCHEMA qname drop_action
+  |	drop SCHEMA if_exists qname drop_action
 		{ dlist *l = L();
-		append_list(l, $3);
-		append_int(l, $4);
+		append_list(l, $4);
+		append_int(l, $5);
+		append_int(l, $3);
 		$$ = _symbol_create_list( SQL_DROP_SCHEMA, l); }
  ;
 
