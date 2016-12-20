@@ -1,9 +1,9 @@
 stderr of test 'mosaic_calendar` in directory 'monetdb5/modules/mosaic` itself:
 
 
-# 10:49:14 >  
-# 10:49:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33013" "--set" "mapi_usock=/var/tmp/mtest-2985/.s.monetdb.33013" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mosaic" "--set" "embedded_r=yes" "--set" "embedded_py=true"
-# 10:49:14 >  
+# 11:44:50 >  
+# 11:44:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34331" "--set" "mapi_usock=/var/tmp/mtest-15740/.s.monetdb.34331" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mosaic" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 11:44:50 >  
 
 # builtin opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -17,20 +17,20 @@ stderr of test 'mosaic_calendar` in directory 'monetdb5/modules/mosaic` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 33013
-# cmdline opt 	mapi_usock = /var/tmp/mtest-2985/.s.monetdb.33013
+# cmdline opt 	mapi_port = 34331
+# cmdline opt 	mapi_usock = /var/tmp/mtest-15740/.s.monetdb.34331
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mosaic
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	embedded_py = true
 # cmdline opt 	gdk_debug = 536870922
 
-# 10:49:15 >  
-# 10:49:15 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-2985" "--port=33013"
-# 10:49:15 >  
+# 11:44:51 >  
+# 11:44:51 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-15740" "--port=34331"
+# 11:44:51 >  
 
 
-# 10:49:15 >  
-# 10:49:15 >  "Done."
-# 10:49:15 >  
+# 11:44:51 >  
+# 11:44:51 >  "Done."
+# 11:44:51 >  
 

@@ -1,9 +1,9 @@
 stdout of test 'mosaic_calendar` in directory 'monetdb5/modules/mosaic` itself:
 
 
-# 10:49:14 >  
-# 10:49:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33013" "--set" "mapi_usock=/var/tmp/mtest-2985/.s.monetdb.33013" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mosaic" "--set" "embedded_r=yes" "--set" "embedded_py=true"
-# 10:49:14 >  
+# 11:44:50 >  
+# 11:44:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34331" "--set" "mapi_usock=/var/tmp/mtest-15740/.s.monetdb.34331" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mosaic" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 11:44:50 >  
 
 # MonetDB 5 server v11.26.0
 # This is an unreleased version
@@ -13,17 +13,17 @@ stdout of test 'mosaic_calendar` in directory 'monetdb5/modules/mosaic` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33013/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2985/.s.monetdb.33013
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:34331/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15740/.s.monetdb.34331
 # MonetDB/SQL module loaded
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
 Ready.
 
-# 10:49:15 >  
-# 10:49:15 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-2985" "--port=33013"
-# 10:49:15 >  
+# 11:44:51 >  
+# 11:44:51 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-15740" "--port=34331"
+# 11:44:51 >  
 
 #--------------------------#
 # h	t  # name
@@ -35,16 +35,6 @@ Ready.
 [ 3@0,	2014-08-14	]
 [ 4@0,	2014-08-15	]
 [ 5@0,	2015-07-11	]
-[ 6@0,	2015-07-12	]
-[ 7@0,	2016-12-31	]
-[ 8@0,	2014-08-14	]
-[ 9@0,	2014-08-14	]
-[ 10@0,	2014-08-14	]
-[ 11@0,	2014-08-14	]
-[ 12@0,	2014-08-15	]
-[ 13@0,	2015-07-11	]
-[ 14@0,	2015-07-12	]
-[ 15@0,	2016-12-31	]
 #--------------------------#
 # h	t  # name
 # void	date  # type
@@ -55,16 +45,6 @@ Ready.
 [ 3@0,	2014-08-14	]
 [ 4@0,	2014-08-15	]
 [ 5@0,	2015-07-11	]
-[ 6@0,	2015-07-12	]
-[ 7@0,	2016-12-31	]
-[ 8@0,	2014-08-14	]
-[ 9@0,	2014-08-14	]
-[ 10@0,	2014-08-14	]
-[ 11@0,	2014-08-14	]
-[ 12@0,	2014-08-15	]
-[ 13@0,	2015-07-11	]
-[ 14@0,	2015-07-12	]
-[ 15@0,	2016-12-31	]
 #--------------------------#
 # h	t  # name
 # void	timestamp  # type
@@ -102,7 +82,7 @@ Ready.
 [ 12@0,	2014-08-14 12:01:00.000	]
 [ 13@0,	2014-08-14 12:02:00.000	]
 
-# 10:49:15 >  
-# 10:49:15 >  "Done."
-# 10:49:15 >  
+# 11:44:51 >  
+# 11:44:51 >  "Done."
+# 11:44:51 >  
 
