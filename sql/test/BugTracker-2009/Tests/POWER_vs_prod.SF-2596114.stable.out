@@ -73,22 +73,22 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 99 # length
+% 98 # length
 function user.main():void;
-    X_1108:void := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",14:int);
-    X_1131 := bat.new(nil:str);
-    X_1138 := bat.append(X_1131,"sys.L2");
-    X_1133 := bat.new(nil:str);
-    X_1140 := bat.append(X_1133,"L2");
-    X_1134 := bat.new(nil:str);
-    X_1142 := bat.append(X_1134,"double");
-    X_1135 := bat.new(nil:int);
-    X_1144 := bat.append(X_1135,53:int);
-    X_1137 := bat.new(nil:int);
-    X_1146 := bat.append(X_1137,0:int);
-    X_1124 := bat.new(nil:dbl);
-    X_1127:bat[:dbl] := batmmath.pow(X_1124,2:dbl);
-    sql.resultSet(X_1138,X_1140,X_1142,X_1144,X_1146,X_1127);
+    X_705:void := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",14:int);
+    X_728 := bat.new(nil:str);
+    X_735 := bat.append(X_728,"sys.L2");
+    X_730 := bat.new(nil:str);
+    X_737 := bat.append(X_730,"L2");
+    X_731 := bat.new(nil:str);
+    X_739 := bat.append(X_731,"double");
+    X_732 := bat.new(nil:int);
+    X_741 := bat.append(X_732,53:int);
+    X_734 := bat.new(nil:int);
+    X_743 := bat.append(X_734,0:int);
+    X_721 := bat.new(nil:dbl);
+    X_724:bat[:dbl] := batmmath.pow(X_721,2:dbl);
+    sql.resultSet(X_735,X_737,X_739,X_741,X_743,X_724);
 end user.main;
 #inline               actions= 0 time=2 usec 
 #remap                actions= 1 time=15 usec 
