@@ -99,6 +99,7 @@ antiselect
 median_stdev
 
 ifexists
+subqueries
 
 #HAVE_GEOM?trace
 
