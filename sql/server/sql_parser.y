@@ -3537,7 +3537,7 @@ filter_exp:
  ;
 
 subquery:
-    '(' select_no_parens ')'	{ $$ = $2; }
+    '(' select_no_parens_orderby ')'	{ $$ = $2; }
  |  '(' VALUES row_commalist ')'	
 				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
  |  '(' with_query ')'	
