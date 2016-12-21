@@ -137,7 +137,7 @@ Depends: ${shlibs:Depends}, libmonetdb-client-odbc (= ${source:Version}),
  monetdb5-server (= ${source:Version}),
  libdbd-monetdb-perl (>= 1.0),
  php-monetdb (>= 1.0),
- python-monetdb (>= 1.0),
+ python-pymonetdb (>= 1.0),
  monetdb5-sql (= ${source:Version})
 Description: MonetDB client testing tools
  MonetDB is a database management system that is developed from a
