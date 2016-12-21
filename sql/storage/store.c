@@ -1729,12 +1729,10 @@ store_vacuum( sql_trans *tr )
 	for( n = s->tables.set->h; n; n = n->next) {
 		sql_table *t = n->data;
 		sql_column *c = t->columns.set->h->data;
-		int cnt = 0;
 
 		if (!store_funcs.count_col(tr, c, 0) && 
 		    !store_funcs.count_upd(tr, t) && 
-		    (cnt = store_funcs.count_del(tr, t)) > 128) {
-			/*printf("vacuum (%d) %s\n", cnt, t->base.name);*/
+		    store_funcs.count_del(tr, t) > 128) {
 			table_funcs.table_vacuum(tr, t);
 		}
 	}
