@@ -45,7 +45,7 @@ size_t
 getBitVectorSize(const BUN cnt, const int width)
 {
 	size_t size;
-	size = ((cnt * width) / BITS + ((cnt * width) % BITS ) > 0) * sizeof(unsigned int);
+	size = ((cnt * width) / BITS + (((cnt * width) % BITS ) > 0) ) * sizeof(unsigned int);
 	return size;
 }
 

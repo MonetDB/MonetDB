@@ -95,7 +95,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			unsigned char val = *dst;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned char),int);
-			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
+			bytes += wordaligned(getBitVectorSize(cnt,bits), int);
 		}
 		break;
 	case 2:
@@ -104,7 +104,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			unsigned short val = *dst;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned short),int);
-			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
+			bytes += wordaligned(getBitVectorSize(cnt,bits) , int);
 		}
 		break;
 	case 4:
@@ -113,7 +113,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			unsigned int val = *dst;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned int),int);
-			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
+			bytes += wordaligned(getBitVectorSize(cnt,bits) , int);
 		}
 		break;
 	case 8:
@@ -122,7 +122,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			ulng val = *dst;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(ulng),int);
-			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
+			bytes += wordaligned(getBitVectorSize(cnt,bits) , int);
 		}
 	}
 	output = wordaligned(bytes, int); 
@@ -152,7 +152,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			unsigned char val = *dst++;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(2 * sizeof(unsigned char),int);
-			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits) * sizeof(int), int);
+			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits), int);
 			task->blk = (MosaicBlk) (((char*) dst)  + bytes); 
 		}
 		break;
@@ -162,7 +162,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			unsigned short val = *dst++;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(2 * sizeof(unsigned short),int);
-			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits) * sizeof(int), int);
+			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits), int);
 			task->blk = (MosaicBlk) (((char*) dst)  + bytes); 
 		}
 		break;
@@ -172,7 +172,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			unsigned int val = *dst++;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(2 * sizeof(unsigned int),int);
-			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits) * sizeof(int), int);
+			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits), int);
 			task->blk = (MosaicBlk) (((char*) dst)  + bytes); 
 		}
 		break;
@@ -182,7 +182,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			ulng val = *dst++;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(2 * sizeof(ulng),int);
-			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits) * sizeof(int), int);
+			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits), int);
 			task->blk = (MosaicBlk) (((char*) dst)  + bytes); 
 		}
 	}
@@ -366,14 +366,14 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	if( task->elm >= 2)
 	switch(size){
 	case 1:
-		{	unsigned char *v = ((unsigned char*) task->src) + task->start, *w= v+1, val= *v, mask;
+		{	unsigned char *v = ((unsigned char*) task->src) + task->start, val= *v, mask;
 			findPrefixBit(cntxt, v, LOOKAHEAD, &prefixbits, &mask);
 			if( prefixbits == 0)
 				break;
 
 #ifdef _DEBUG_PREFIX_
-            mnstr_printf(cntxt->fdout,"#prefix  estimate size 1 %o %o val %d bits %d mask %o\n",
-                *v,*w, val, prefixbits, mask);
+            mnstr_printf(cntxt->fdout,"#prefix  estimate size 1 %o val %d bits %d mask %o\n",
+                *v, val, prefixbits, mask);
 #endif
 			if( task->range[MOSAIC_PREFIX] > task->start +1 /* need at least two*/){
 				bits = (task->range[MOSAIC_PREFIX] - task->start) * (8-prefixbits);
@@ -388,8 +388,8 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			
 			// calculate the number of values covered by this prefix
 			val = *v & mask;
-			for(w=v, i = 0; i < limit ; w++, i++){
-				if ( val != (*w & mask) )
+			for( i = 0; i < limit ; v++, i++){
+				if ( val != (*v & mask) )
 					break;
 			}
 			bits = i * (8-prefixbits);
@@ -404,13 +404,13 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 2:
-		{	unsigned short *v = ((unsigned short*) task->src) + task->start, *w= v+1, val= *v, mask;
+		{	unsigned short *v = ((unsigned short*) task->src) + task->start, val= *v, mask;
 			findPrefixSht(cntxt, v, LOOKAHEAD, &prefixbits, &mask);
 			if( prefixbits == 0)
 				break;
 #ifdef _DEBUG_PREFIX_
-            mnstr_printf(cntxt->fdout,"#prefix  estimate size 2 %u %o elm "BUNFMT" val %d bits %d mask %o\n",
-                *v,*w, i,val, prefixbits, mask);
+            mnstr_printf(cntxt->fdout,"#prefix  estimate size 2 %u  elm "BUNFMT" val %d bits %d mask %o\n",
+                *v, i,val, prefixbits, mask);
 #endif
 
 			if( task->range[MOSAIC_PREFIX] > task->start + 1){
@@ -425,8 +425,8 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			
 			// calculate the number of values covered by this prefix
 			val = *v & mask;
-			for(w=v,i = 0; i < limit ; w++, i++){
-				if ( val != (*w & mask) )
+			for(i = 0; i < limit ; v++, i++){
+				if ( val != (*v & mask) )
 					break;
 			}
 			bits = i * (16-prefixbits);
@@ -441,7 +441,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 4:
-		{	unsigned int *v = ((unsigned int*) task->src) + task->start, *w= v+1, val= *v, mask;
+		{	unsigned int *v = ((unsigned int*) task->src) + task->start, val= *v, mask;
 			findPrefixInt(cntxt, v, LOOKAHEAD, &prefixbits,&mask);
 			if( prefixbits == 0)
 				break;
@@ -462,8 +462,8 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			
 			// calculate the number of values covered by this prefix
 			val = *v & mask;
-			for(w=v,i = 0; i < limit; w++, i++){
-				if ( val != (*w & mask) )
+			for(i = 0; i < limit; v++, i++){
+				if ( val != (*v & mask) )
 					break;
 			}
 			bits = i * (32-prefixbits);
@@ -479,9 +479,9 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 8:
-		{	ulng *v = ((ulng*) task->src) + task->start, *w= v+1, val= *v,mask;
+		{	ulng *v = ((ulng*) task->src) + task->start, val= *v, mask;
 			findPrefixLng(cntxt, v, LOOKAHEAD, &prefixbits,&mask);
-			if( prefixbits == 0 )
+			if( prefixbits < 32 ) // residu should fit bitvector cell
 				break;
 
 			if( task->range[MOSAIC_PREFIX] > task->start + 1){
@@ -495,11 +495,11 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 			}
 			
 			val = *v & mask;
-			for(w=v, i = 0; i < limit ; w++, i++){
-				if ( val != (*w & mask) )
+			for(i = 0; i < limit ; v++, i++){
+				if ( val != (*v & mask) )
 					break;
 			}
-			bits = (int)(i * (32-prefixbits));
+			bits = (int)(i * (64-prefixbits));
 			store = wordaligned(2 * sizeof(ulng),int);
 			store += wordaligned(bits/8 + ((bits % 8) >0),int);
 			store = wordaligned( MosaicBlkSize + store,int);
