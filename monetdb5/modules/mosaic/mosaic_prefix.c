@@ -80,6 +80,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 	int bits =0, bytes=0;
 	int size = ATOMsize(task->type);
+	char buf[32];
 
 	(void) cntxt;
 	if( ATOMstorage(task->type == TYPE_str))
@@ -91,7 +92,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	case 1:
 		{	unsigned char *dst = (unsigned char*)  MOScodevector(task);
 			unsigned char mask = *dst++;
-			unsigned char val = *dst++;
+			unsigned char val = *dst;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned char),int);
 			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
@@ -100,7 +101,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	case 2:
 		{	unsigned short *dst = (unsigned short*)  MOScodevector(task);
 			unsigned short mask = *dst++;
-			unsigned short val = *dst++;
+			unsigned short val = *dst;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned short),int);
 			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
@@ -109,7 +110,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	case 4:
 		{	unsigned int *dst = (unsigned int*)  MOScodevector(task);
 			unsigned int mask = *dst++;
-			unsigned int val = *dst++;
+			unsigned int val = *dst;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned int),int);
 			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
@@ -118,7 +119,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	case 8:
 		{	ulng *dst = (ulng*)  MOScodevector(task);
 			ulng mask = *dst++;
-			ulng val = *dst++;
+			ulng val = *dst;
 			bits = (int)(val & (~mask));
 			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(ulng),int);
 			bytes += wordaligned(getBitVectorSize(cnt,bits) * sizeof(int), int);
@@ -127,7 +128,8 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	output = wordaligned(bytes, int); 
 	BUNappend(binput, &input, FALSE);
 	BUNappend(boutput, &output, FALSE);
-	BUNappend(bproperties, "", FALSE);
+	snprintf(buf,32,"%d bits",bits);
+	BUNappend(bproperties, buf, FALSE);
 }
 
 void
@@ -205,6 +207,8 @@ findPrefixBit(Client cntxt, unsigned char *v, int limit, int *bits, unsigned cha
 {
 	int i, step = 8, width = 0;
 	unsigned char prefix, mask;
+	*bits = 0;
+	*prefixmask = 0;
 	do{
 		step /=2;
 		mask = 1 ;
@@ -236,6 +240,8 @@ findPrefixSht(Client cntxt, unsigned short *v, int limit, int *bits, unsigned sh
 {
 	int i, step = 16, width = 0;
 	unsigned short prefix, mask;
+	*bits = 0;
+	*prefixmask = 0;
 #ifdef _DEBUG_PREFIX_
 	mnstr_printf(cntxt->fdout,"#findprefix start %u %d \n", *v, *bits);
 #endif
@@ -270,6 +276,8 @@ findPrefixInt(Client cntxt, unsigned int *v, int limit, int *bits, unsigned int 
 {
 	int i, step = 32, width = 0;
 	unsigned int prefix, mask;
+	*bits = 0;
+	*prefixmask = 0;
 	do{
 		step /=2;
 		mask = 1 ;
@@ -301,6 +309,8 @@ findPrefixLng(Client cntxt, ulng *v, int limit, int *bits, ulng *prefixmask)
 {
 	int i, step = 64, width = 0;
 	ulng prefix, mask;
+	*bits = 0;
+	*prefixmask = 0;
 	do{
 		step /=2;
 		mask = 1 ;
@@ -514,8 +524,8 @@ void
 MOScompress_prefix(Client cntxt, MOStask task)
 {
 	BUN limit,  j =0 ;
-	int prefixbits, bits; 
-	lng size;
+	int prefixbits,bits;
+	lng size; 
 	BitVector base;
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = task->blk;
@@ -619,13 +629,14 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	case 8:
 		{	ulng *v = ((ulng*) task->src) + task->start, *wlimit = v + limit,  val1, mask;
 			ulng *dst = (ulng*)  MOScodevector(task);
+			
 			findPrefixLng(cntxt, v, LOOKAHEAD, &prefixbits,&mask);
 			bits = 64-prefixbits;
 			base = (BitVector)(((char*)dst) + wordaligned(2 * sizeof(ulng),int));
 			if (bits <= 32){
 				*dst++ = mask;
 				val1 = *v & mask;	//reference value
-				*dst++ = val1 | bits; // bits outside mask
+				*dst++ = val1 | (ulng) bits; // bits outside mask
 				
 #ifdef _DEBUG_PREFIX_
 			mnstr_printf(cntxt->fdout,"#compress[4] bits %d mask "LLFMT" address "LLFMT"\n",bits,mask,(lng) MOScodevector(task));
