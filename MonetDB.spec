@@ -136,6 +136,7 @@ BuildRequires: bzip2-devel
 %if %{?with_fits:1}%{!?with_fits:0}
 BuildRequires: cfitsio-devel
 %endif
+BuildRequires: gcc
 %if %{?with_geos:1}%{!?with_geos:0}
 BuildRequires: geos-devel >= 3.4.0
 %endif
@@ -389,7 +390,7 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires: python-monetdb >= 1.0
+Requires: python-pymonetdb >= 1.0
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -864,6 +865,7 @@ Group: Applications/Databases
 Requires: %{name}-testing = %{version}-%{release}
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: python
+BuildArch: noarch
 
 %description testing-python
 MonetDB is a database management system that is developed from a

@@ -5417,8 +5417,22 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		if (is_join(rel->op) && r) {
 			t = (l->op == op_project && l->l)?l->l:l;
 			l_exps = rel_projections(sql, t, NULL, 1, 1);
+			/* conflict with old right expressions */
+			r_exps = rel_projections(sql, r, NULL, 1, 1);
+			for(n = l_exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				const char *rname = exp_relname(e);
+				const char *name = exp_name(e);
+	
+				if (exp_is_atom(e))
+					continue;
+				if ((rname && exps_bind_column2(r_exps, rname, name) != NULL) || 
+				    (!rname && exps_bind_column(r_exps, name, NULL) != NULL)) 
+					return rel;
+			}
 			t = (r->op == op_project && r->l)?r->l:r;
 			r_exps = rel_projections(sql, t, NULL, 1, 1);
+			/* conflict with new right expressions */
 			for(n = l_exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 	
@@ -5428,6 +5442,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 				   (exps_bind_column(r_exps, e->r, NULL) != NULL && (!e->l || !e->r)))
 					return rel;
 			}
+			/* conflict with new left expressions */
 			for(n = r_exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 	

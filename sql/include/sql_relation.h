@@ -85,55 +85,60 @@ typedef struct expression {
 #define GET_PSM_LEVEL(level)	(level>>8)
 
 /* todo make enum */
-#define DDL_OUTPUT	1
-#define DDL_LIST	2	
-#define DDL_PSM		3	
+#define DDL_OUTPUT	               1
+#define DDL_LIST	               2	
+#define DDL_PSM		               3	
 
-#define DDL_CREATE_SEQ  5
-#define DDL_ALTER_SEQ   6
-#define DDL_DROP_SEQ    7
+#define DDL_CREATE_SEQ             5
+#define DDL_ALTER_SEQ              6
+#define DDL_DROP_SEQ               7
 
-#define DDL_RELEASE	11
-#define DDL_COMMIT	12
-#define DDL_ROLLBACK	13
-#define DDL_TRANS	14
+#define DDL_RELEASE	               11
+#define DDL_COMMIT	               12
+#define DDL_ROLLBACK	           13
+#define DDL_TRANS	               14
 
-#define DDL_CREATE_SCHEMA 21
-#define DDL_DROP_SCHEMA   22
+#define DDL_CREATE_SCHEMA          21
+#define DDL_DROP_SCHEMA_IF_EXISTS  22
+#define DDL_DROP_SCHEMA            23
 
-#define DDL_CREATE_TABLE 24
-#define DDL_DROP_TABLE 	 25
-#define DDL_CREATE_VIEW  26
-#define DDL_DROP_VIEW    27
-#define DDL_DROP_CONSTRAINT    28
-#define DDL_ALTER_TABLE  29
+#define DDL_CREATE_TABLE           24
+#define DDL_DROP_TABLE_IF_EXISTS   25
+#define DDL_DROP_TABLE 	           26
+#define DDL_CREATE_VIEW            27
+#define DDL_DROP_VIEW_IF_EXISTS    28
+#define DDL_DROP_VIEW              29
+#define DDL_DROP_CONSTRAINT        30
+#define DDL_ALTER_TABLE            31
 
-#define DDL_CREATE_TYPE 30 
-#define DDL_DROP_TYPE   31 
+#define DDL_CREATE_TYPE            32 
+#define DDL_DROP_TYPE              33 
 
-#define DDL_DROP_INDEX    33
+#define DDL_DROP_INDEX             34
 
-#define DDL_CREATE_FUNCTION 41 
-#define DDL_DROP_FUNCTION   42 
-#define DDL_CREATE_TRIGGER 43 
-#define DDL_DROP_TRIGGER   44 
+#define DDL_CREATE_FUNCTION        41 
+#define DDL_DROP_FUNCTION          42 
+#define DDL_CREATE_TRIGGER         43 
+#define DDL_DROP_TRIGGER           44 
 
-#define DDL_GRANT_ROLES 51
-#define DDL_REVOKE_ROLES 52
-#define DDL_GRANT 	53
-#define DDL_REVOKE 	54
-#define DDL_GRANT_FUNC 	55
-#define DDL_REVOKE_FUNC 56
-#define DDL_CREATE_USER 57
-#define DDL_DROP_USER 	58
-#define DDL_ALTER_USER 	59
-#define DDL_RENAME_USER 60
-#define DDL_CREATE_ROLE 61
-#define DDL_DROP_ROLE 	62
+#define DDL_GRANT_ROLES            51
+#define DDL_REVOKE_ROLES           52
+#define DDL_GRANT 	               53
+#define DDL_REVOKE 	               54
+#define DDL_GRANT_FUNC 	           55
+#define DDL_REVOKE_FUNC            56
+#define DDL_CREATE_USER            57
+#define DDL_DROP_USER 	           58
+#define DDL_ALTER_USER 	           59
+#define DDL_RENAME_USER            60
+#define DDL_CREATE_ROLE            61
+#define DDL_DROP_ROLE 	           62
 
 #define DDL_ALTER_TABLE_ADD_TABLE  63
 #define DDL_ALTER_TABLE_DEL_TABLE  64
-#define DDL_ALTER_TABLE_SET_ACCESS  65
+#define DDL_ALTER_TABLE_SET_ACCESS 65
+
+#define DDL_EMPTY 100
 
 #define MAXOPS 21
 
