@@ -1,0 +1,43 @@
+stderr of test 'mserver5--help` in directory 'monetdb5/tools` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./mserver5--help mserver5--help 
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 mserver5 --config= --help
+# 16:36:12 >  
+
+Usage: mserver5.exe [options] [scripts]
+    --dbpath=<directory>      Specify database location
+    --dbextra=<directory>     Directory for transient BATs
+    --dbinit=<stmt>           Execute statement at startup
+    --config=<config_file>    Use config_file to read options from
+    --daemon=yes|no           Do not read commands from standard input [no]
+    --single-user             Allow only one user at a time
+    --readonly                Safeguard database
+    --set <option>=<value>    Set configuration option
+    --help                    Print this list of options
+    --version                 Print version and compile time info
+The debug, testing & trace options:
+     --threads
+     --memory
+     --io
+     --heaps
+     --properties
+     --transactions
+     --modules
+     --algorithms
+     --performance
+     --optimizers
+     --trace
+     --forcemito
+     --recycler
+     --debug=<bitmask>
+
+# 10:03:11 >  
+# 10:03:11 >  Done.
+# 10:03:11 >  
+

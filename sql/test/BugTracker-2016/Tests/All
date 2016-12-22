@@ -21,7 +21,7 @@ rank_rewrite.Bug-3890
 HAVE_LIBBZ2?min-max-uuid-column-wrong-results.Bug-3953
 update_crash.Bug-3954
 group_distinct_quantile.Bug-3927
-merge_project.Bug-3955
+HAVE_GEOM?merge_project.Bug-3955
 decimal_vs_integer.Bug-3941
 foreign_key.Bug-3938
 invalidcolumns.Bug-3968
@@ -57,8 +57,8 @@ cast_and_floor.Bug-6071
 union.Bug-6069
 ifthenelse-void.Bug-6075
 assert-on-table-producing-function.Bug-6076
-assert-on-push-project-up.Bug-6077
-assert-on-project.Bug-6078
+HAVE_NETCDF?assert-on-push-project-up.Bug-6077
+HAVE_SAMTOOLS?assert-on-project.Bug-6078
 crash.Bug-6081
 merge-table-edit.Bug-6084
 dce.Bug-6114
