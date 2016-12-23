@@ -167,6 +167,7 @@ mvc_exit(void)
 
 	store_exit();
 	keyword_exit();
+	sa_exit();
 }
 
 void

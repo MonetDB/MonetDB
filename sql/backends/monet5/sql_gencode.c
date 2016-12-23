@@ -3232,6 +3232,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (sideeffects)
 		curBlk->unsafeProp = 1;
 	f->sa = sa;
+	sa_register(sa);
 	/* optimize the code */
 	SQLaddQueryToCache(c);
 	if( curBlk->inlineProp == 0)

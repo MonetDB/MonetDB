@@ -58,8 +58,11 @@ typedef struct sql_allocator {
 	char **blks;
 	size_t used; 	/* memory used in last block */
 	size_t usedmem;	/* used memory */
+	struct sql_allocator *prev, *next;
 } sql_allocator;
 
+extern void sa_exit(void);
+extern void sa_register(sql_allocator *sa);
 extern sql_allocator *sa_create(void);
 extern sql_allocator *sa_reset( sql_allocator *sa );
 extern char *sa_alloc( sql_allocator *sa,  size_t sz );

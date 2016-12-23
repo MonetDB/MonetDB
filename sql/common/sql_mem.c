@@ -47,6 +47,8 @@ sql_allocator *sa_create(void)
 	if (sa == NULL) {
 		return NULL;
 	}
+	sa->prev = NULL;
+	sa->next = NULL;
 	sa->size = 64;
 	sa->nr = 1;
 	sa->blks = NEW_ARRAY(char*,sa->size);
@@ -131,15 +133,58 @@ char *sa_zalloc( sql_allocator *sa, size_t sz )
 	return r;
 }	
 
+/* We maintain a doubly linked list (for easy element removal) of
+ * allocators that are to be destroyed on program end.
+ * Enter into list by calling sa_register; allocators are
+ * automatically removed in sa_destroy. */
+static MT_Lock listlock MT_LOCK_INITIALIZER("listlock");
+static sql_allocator *list;
+
 void sa_destroy( sql_allocator *sa ) 
 {
 	size_t i ;
 
+	MT_lock_set(&listlock);
+	if (sa->next)
+		sa->next->prev = sa->prev;
+	if (sa->prev)
+		sa->prev->next = sa->next;
+	if (list == sa)
+		list = sa->next;
+	MT_lock_unset(&listlock);
 	for (i = 0; i<sa->nr; i++) {
 		GDKfree(sa->blks[i]);
 	}
 	GDKfree(sa->blks);
 	GDKfree(sa);
+}
+
+void sa_register(sql_allocator *sa)
+{
+	MT_lock_set(&listlock);
+	sa->next = list;
+	if (list)
+		list->prev = sa;
+	list = sa;
+	MT_lock_unset(&listlock);
+}
+
+void sa_exit(void)
+{
+	sql_allocator *sa;
+	size_t i;
+
+	MT_lock_set(&listlock);
+	while (list) {
+		sa = list;
+		list = sa->next;
+		for (i = 0; i<sa->nr; i++) {
+			GDKfree(sa->blks[i]);
+		}
+		GDKfree(sa->blks);
+		GDKfree(sa);
+	}
+	MT_lock_unset(&listlock);
 }
 
 char *sa_strndup( sql_allocator *sa, const char *s, size_t l) 
