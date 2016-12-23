@@ -121,6 +121,14 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 #endif
 
+	/* rename all temporaries for ease of debugging */
+	for( i = 0; i < mb->vtop; i++)
+	if( sscanf(getVarName(mb,i),"X_%d", &j) == 1)
+		snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
+	else
+	if( sscanf(getVarName(mb,i),"C_%d", &j) == 1)
+		snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
+
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
     /* Defense line against incorrect plans */
