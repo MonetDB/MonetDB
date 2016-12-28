@@ -1531,13 +1531,27 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 static void
 mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 {
+	/* transform
+	 * a := sample.subuniform(b,n);
+	 * into
+	 * t1 := sample.subuniform(b1,n);
+	 * t2 := sample.subuniform(b2,n);
+	 * ...
+	 * t0 := mat.pack(t1,t2,...);
+	 * tn := sample.subuniform(t0,n);
+	 * a := algebra.projection(tn,t0);
+	 *
+	 * Note that this does *not* give a uniform sample of the original
+	 * bat b!
+	 */
+
 	int tpe = getArgType(mb,p,0), k, piv;
-	InstrPtr pck, q;
+	InstrPtr pck, q, r;
 
 	pck = newInstruction(mb,ASSIGNsymbol);
 	setModuleId(pck, matRef);
 	setFunctionId(pck, packRef);
-	getArg(pck,0) = getArg(p,0);
+	getArg(pck,0) = newTmpVariable(mb, tpe);
 
 	for(k=1; k< ml->v[m].mi->argc; k++) {
 		q = copyInstruction(p);
@@ -1552,8 +1566,17 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	pushInstruction(mb,pck);
 
 	q = copyInstruction(p);
+	getArg(q,0) = newTmpVariable(mb, tpe);
 	getArg(q,q->retc) = getArg(pck,0);
 	pushInstruction(mb,q);
+
+	r = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(r, algebraRef);
+	setFunctionId(r, projectionRef);
+	getArg(r,0) = getArg(p,0);
+	pushArgument(mb, r, getArg(q, 0));
+	pushArgument(mb, r, getArg(pck, 0));
+	pushInstruction(mb, r);
 
 	ml->v[piv].packed = 1;
 	ml->v[piv].type = mat_slc;
