@@ -2137,8 +2137,23 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 
 	if (chain->nr < 0)
 		return NULL;
-	q = newStmt(mb, sqlRef, "trans");
-	q = pushInt(mb, q, type);
+
+	switch(type){
+	case DDL_RELEASE:
+		q = newStmt(mb, sqlRef, transaction_releaseRef);
+		break;
+	case DDL_COMMIT:
+		q = newStmt(mb, sqlRef, transaction_commitRef);
+		break;
+	case DDL_ROLLBACK:
+		q = newStmt(mb, sqlRef, transaction_rollbackRef);
+		break;
+	case DDL_TRANS:
+		q = newStmt(mb, sqlRef, transaction_beginRef);
+		break;
+	default:
+		showException(GDKout, SQL, "sql.trans", "transaction unknown type");
+	}
 	q = pushArgument(mb, q, chain->nr);
 	if (name)
 		q = pushArgument(mb, q, name->nr);
@@ -2163,12 +2178,53 @@ stmt_catalog(backend *be, int type, stmt *args)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	node *n;
+	int if_exists =0;
 
 	if (args->nr < 0)
 		return NULL;
 
-	q = newStmt(mb, sqlRef, catalogRef);
-	q = pushInt(mb, q, type);
+	/* cast them into properly named operations */
+	switch(type){
+	case DDL_CREATE_SEQ:	q = newStmt(mb, sqlcatalogRef, create_seqRef); break;
+	case DDL_ALTER_SEQ:	q = newStmt(mb, sqlcatalogRef, alter_seqRef); break;
+	case DDL_DROP_SEQ:	q = newStmt(mb, sqlcatalogRef, drop_seqRef); break;
+	case DDL_CREATE_SCHEMA:	q = newStmt(mb, sqlcatalogRef, create_schemaRef); break;
+	case DDL_DROP_SCHEMA_IF_EXISTS: if_exists =1;
+	case DDL_DROP_SCHEMA:	q = newStmt(mb, sqlcatalogRef, drop_schemaRef); break;
+	case DDL_CREATE_TABLE:	q = newStmt(mb, sqlcatalogRef, create_tableRef); break;
+	case DDL_CREATE_VIEW:	q = newStmt(mb, sqlcatalogRef, create_viewRef); break;
+	case DDL_DROP_TABLE_IF_EXISTS: if_exists =1;
+	case DDL_DROP_TABLE:	q = newStmt(mb, sqlcatalogRef, drop_tableRef); break;
+	case DDL_DROP_VIEW_IF_EXISTS: if_exists = 1;
+	case DDL_DROP_VIEW:	q = newStmt(mb, sqlcatalogRef, drop_viewRef); break;
+	case DDL_DROP_CONSTRAINT:	q = newStmt(mb, sqlcatalogRef, drop_constraintRef); break;
+	case DDL_ALTER_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_tableRef); break;
+	case DDL_CREATE_TYPE:	q = newStmt(mb, sqlcatalogRef, create_typeRef); break;
+	case DDL_DROP_TYPE:	q = newStmt(mb, sqlcatalogRef, drop_typeRef); break;
+	case DDL_GRANT_ROLES:	q = newStmt(mb, sqlcatalogRef, grant_rolesRef); break;
+	case DDL_REVOKE_ROLES:	q = newStmt(mb, sqlcatalogRef, revoke_rolesRef); break;
+	case DDL_GRANT:		q = newStmt(mb, sqlcatalogRef, grantRef); break;
+	case DDL_REVOKE:	q = newStmt(mb, sqlcatalogRef, revokeRef); break;
+	case DDL_GRANT_FUNC:	q = newStmt(mb, sqlcatalogRef, grant_functionRef); break;
+	case DDL_REVOKE_FUNC:	q = newStmt(mb, sqlcatalogRef, revoke_functionRef); break;
+	case DDL_CREATE_USER:	q = newStmt(mb, sqlcatalogRef, create_userRef); break;
+	case DDL_DROP_USER:		q = newStmt(mb, sqlcatalogRef, drop_userRef); break;
+	case DDL_ALTER_USER:	q = newStmt(mb, sqlcatalogRef, alter_userRef); break;
+	case DDL_RENAME_USER:	q = newStmt(mb, sqlcatalogRef, rename_userRef); break;
+	case DDL_CREATE_ROLE:	q = newStmt(mb, sqlcatalogRef, create_roleRef); break;
+	case DDL_DROP_ROLE:		q = newStmt(mb, sqlcatalogRef, drop_roleRef); break;
+	case DDL_DROP_INDEX:	q = newStmt(mb, sqlcatalogRef, drop_indexRef); break;
+	case DDL_DROP_FUNCTION:	q = newStmt(mb, sqlcatalogRef, drop_functionRef); break;
+	case DDL_CREATE_FUNCTION:	q = newStmt(mb, sqlcatalogRef, create_functionRef); break;
+	case DDL_CREATE_TRIGGER:	q = newStmt(mb, sqlcatalogRef, create_triggerRef); break;
+	case DDL_DROP_TRIGGER:	q = newStmt(mb, sqlcatalogRef, drop_triggerRef); break;
+	case DDL_ALTER_TABLE_ADD_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_add_tableRef); break;
+	case DDL_ALTER_TABLE_DEL_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_del_tableRef); break;
+	case DDL_ALTER_TABLE_SET_ACCESS:q = newStmt(mb, sqlcatalogRef, alter_set_tableRef); break;
+	default:
+		showException(GDKout, SQL, "sql", "catalog operation unknown\n");
+	}
+	// pass all arguments as before
 	for (n = args->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
 
@@ -2176,6 +2232,10 @@ stmt_catalog(backend *be, int type, stmt *args)
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_catalog);
+
+		if( if_exists)
+			pushInt(mb,q,1);
+		//printInstruction(GDKout, mb, 0, q, LIST_MAL_ALL);
 	
 		s->op1 = args;
 		s->flag = type;

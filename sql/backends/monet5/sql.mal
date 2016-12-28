@@ -39,10 +39,6 @@ comment "Get the multiversion catalog context.
 Needed for correct statement dependencies
 (ie sql.update, should be after sql.bind in concurrent execution)";
 
-pattern trans(type:int,chain:int,name:str):void
-address SQLtransaction
-comment "A transaction statement (type can be commit,release,rollback or start)";
-
 unsafe pattern transaction()
 address SQLtransaction2
 comment "Start an autocommit transaction";
@@ -55,65 +51,6 @@ pattern abort()
 address SQLabort
 comment "Trigger the abort operation for a MAL block";
 
-pattern catalog(type:int,sname:str,name:str,action:int):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,name:str,funcid:int,ft:int,action:int):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,name:str,tname:str,time:int,o:int,event:int,oname:str,nname:str,condition:str,query:str):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,t:ptr):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,t:ptr,temp:int):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,t:ptr,restart:lng):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,tname:str):void
-address SQLcatalog
-comment "a catalog trigger statement";
-
-pattern catalog(type:int,grantee:str,role:str,grantor:int,admin:int):void
-address SQLcatalog
-comment "a grant/revoke role statement";
-
-pattern catalog(type:int,user:str,passwd:str,enc:int,schema:str,fullname:str):void
-address SQLcatalog
-comment "a user catalog statement";
-
-pattern catalog(type:int,sname:str,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void
-address SQLcatalog
-comment "a grant/revoke privileges statement";
-
-pattern catalog(type:int,sname:str,func:int,grantee:str,privs:int,grant:int,grantor:int):void
-address SQLcatalog
-comment "a grant/revoke function privileges statement";
-
-pattern catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void
-address SQLcatalog
-comment "a create index catalog statement";
-
-pattern catalog(type:int,sname:str,tname:str,access:int):void
-address SQLcatalog
-comment "a alter table access statement";
-
-pattern catalog(type:int,msname:str,mtname:str,psname:str,ptname:str,action:int):void
-address SQLcatalog
-comment "a alter table add/del table catalog statement";
-
-pattern catalog(type:int,sname:str,tname:str,impl:str):void
-address SQLcatalog
-comment "a create type catalog statement";
 
 pattern eval(cmd:str):void 
 address SQLstatement
