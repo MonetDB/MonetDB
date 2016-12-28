@@ -480,7 +480,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 		break;
 	case 8:
 		{	ulng *v = ((ulng*) task->src) + task->start, val= *v, mask;
-			findPrefixLng(cntxt, v, LOOKAHEAD, &prefixbits,&mask);
+			findPrefixLng(cntxt, v, LOOKAHEAD, &prefixbits, &mask);
 			if( prefixbits < 32 ) // residu should fit bitvector cell
 				break;
 
@@ -524,8 +524,8 @@ void
 MOScompress_prefix(Client cntxt, MOStask task)
 {
 	BUN limit,  j =0 ;
-	int prefixbits,bits;
-	lng size; 
+	int prefixbits;
+	lng bits,size;
 	BitVector base;
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = task->blk;

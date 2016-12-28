@@ -548,7 +548,7 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int flg = 0;
 #endif
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
+		throw(MAL, "mosaic.compress", INTERNAL_BAT_ACCESS);
 
 	(void) mb;
 	task= (MOStask) GDKzalloc(sizeof(*task));
