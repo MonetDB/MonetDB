@@ -59,6 +59,10 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if(getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef)
 				setVarCList(mb,getArg(p,0));
 		}
+		else if (getModuleId(p) == sampleRef) {
+			if (getFunctionId(p) == subuniformRef)
+				setVarCList(mb, getArg(p, 0));
+		}
 	}
 
     /* Defense line against incorrect plans */
