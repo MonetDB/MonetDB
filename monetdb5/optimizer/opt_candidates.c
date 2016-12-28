@@ -32,30 +32,30 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if( getModuleId(p) == sqlRef){
 			if(getFunctionId(p) == tidRef) 
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == subdeltaRef) 
+			else if(getFunctionId(p) == subdeltaRef) 
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == emptybindRef && p->retc == 2) 
+			else if(getFunctionId(p) == emptybindRef && p->retc == 2) 
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == bindRef && p->retc == 2) 
+			else if(getFunctionId(p) == bindRef && p->retc == 2) 
 				setVarCList(mb,getArg(p,0));
 		}
-		if( getModuleId(p) == algebraRef ){
+		else if( getModuleId(p) == algebraRef ){
 			if(getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef)
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == likesubselectRef || getFunctionId(p) == likethetasubselectRef)
+			else if(getFunctionId(p) == likesubselectRef || getFunctionId(p) == likethetasubselectRef)
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == subinterRef )
+			else if(getFunctionId(p) == subinterRef )
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == subuniqueRef )
+			else if(getFunctionId(p) == subuniqueRef )
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == firstnRef )
+			else if(getFunctionId(p) == firstnRef )
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == mergecandRef )
+			else if(getFunctionId(p) == mergecandRef )
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == intersectcandRef )
+			else if(getFunctionId(p) == intersectcandRef )
 				setVarCList(mb,getArg(p,0));
 		}
-		if( getModuleId(p) == generatorRef){
+		else if( getModuleId(p) == generatorRef){
 			if(getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef)
 				setVarCList(mb,getArg(p,0));
 		}
