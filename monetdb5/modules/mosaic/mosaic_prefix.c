@@ -644,7 +644,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 				for(j=0 ; v < wlimit ; v++, j++){
 					if ( val1  != (*v & mask) )
 						break;
-					compress(base,j,bits, (int)(*v & (~mask))); // bits
+					compress(base,j,bits, (int)(*v  & UINT_MAX & (~mask))); // bits
 					hdr->checksum.sumlng += *v;
 				}
 			}
