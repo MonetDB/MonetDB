@@ -24,7 +24,71 @@ Ready.
 # 12:35:21 >  
 
 
-# 12:35:21 >  
-# 12:35:21 >  Done.
-# 12:35:21 >  
+# 09:40:47 >  
+# 09:40:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20871" "--port=38406"
+# 09:40:47 >  
+
+#select name from (select name, id from tables order by id) as x;
+% .x # table_name
+% name # name
+% varchar # type
+% 17 # length
+[ "schemas"	]
+[ "types"	]
+[ "functions"	]
+[ "args"	]
+[ "sequences"	]
+[ "dependencies"	]
+[ "connections"	]
+[ "_tables"	]
+[ "_columns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "triggers"	]
+[ "objects"	]
+[ "_tables"	]
+[ "_columns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "triggers"	]
+[ "objects"	]
+[ "tables"	]
+[ "columns"	]
+[ "db_user_info"	]
+[ "users"	]
+[ "user_role"	]
+[ "auths"	]
+[ "privileges"	]
+[ "querylog_catalog"	]
+[ "querylog_calls"	]
+[ "querylog_history"	]
+[ "tracelog"	]
+[ "sessions"	]
+[ "optimizers"	]
+[ "environment"	]
+[ "queue"	]
+[ "rejects"	]
+[ "keywords"	]
+[ "table_types"	]
+[ "dependency_types"	]
+[ "netcdf_files"	]
+[ "netcdf_dims"	]
+[ "netcdf_vars"	]
+[ "netcdf_vardim"	]
+[ "netcdf_attrs"	]
+[ "storage"	]
+[ "storagemodelinput"	]
+[ "storagemodel"	]
+[ "tablestoragemodel"	]
+[ "statistics"	]
+[ "files"	]
+[ "sq"	]
+[ "rg"	]
+[ "pg"	]
+[ "export"	]
+[ "systemfunctions"	]
+
+# 09:40:47 >  
+# 09:40:47 >  "Done."
+# 09:40:47 >  
 

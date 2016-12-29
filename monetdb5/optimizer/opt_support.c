@@ -435,6 +435,8 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == rapiRef)
 		return TRUE;
 
+	if (getModuleId(p) == sqlcatalogRef)
+		return TRUE;
 	if (getModuleId(p) == sqlRef){
 		if (getFunctionId(p) == tidRef) return FALSE;
 		if (getFunctionId(p) == deltaRef) return FALSE;
@@ -523,7 +525,7 @@ isBlocking(InstrPtr p)
 
 	if( getModuleId(p) == aggrRef ||
 		getModuleId(p) == groupRef ||
-		getModuleId(p) == sqlRef )
+		getModuleId(p) == sqlcatalogRef )
 			return TRUE;
 	return FALSE;
 }

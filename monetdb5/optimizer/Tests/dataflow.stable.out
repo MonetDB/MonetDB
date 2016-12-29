@@ -30,7 +30,7 @@ function user.tst():void;               	#[0] (0)  0
     h:int := l:int;                     	#[3] (0)  6 <- 5 
 #mdb.setTimer(true);                    
 #mdb.setThread(true);                   
-barrier X_14:bit := language.dataflow();	#[6] (0) MALstartDataflow 28 
+barrier X_28:bit := language.dataflow();	#[6] (0) MALstartDataflow 28 
     z:bat[:oid] := nil:bat[:oid];       	#[7] (0)  9 <- 10 
     t1:bat[:oid] := algebra.select(s:bat[:int], l:int, h:int, true:bit, true:bit, false:bit);	#[8] (0) ALGselect1 11 <- 1 5 6 12 13 14 
     t2:bat[:oid] := algebra.select(s:bat[:int], l:int, h:int, true:bit, true:bit, false:bit);	#[9] (0) ALGselect1 15 <- 1 5 6 12 12 14 
@@ -41,7 +41,7 @@ barrier X_14:bit := language.dataflow();	#[6] (0) MALstartDataflow 28
     t7:bat[:oid] := algebra.select(s:bat[:int], l:int, h:int, true:bit, true:bit, false:bit);	#[14] (0) ALGselect1 20 <- 1 5 6 12 12 14 
     t8:bat[:oid] := algebra.select(s:bat[:int], l:int, h:int, true:bit, true:bit, false:bit);	#[15] (0) ALGselect1 21 <- 1 5 6 12 12 14 
     language.pass(s:bat[:int]);         	#[16] (0) MALpass 27 <- 1 
-exit X_14:bit;                          	#[17] (0)  28 
+exit X_28:bit;                          	#[17] (0)  28 
     z:bat[:oid] := mat.pack(t1:bat[:oid], t2:bat[:oid], t3:bat[:oid], t4:bat[:oid], t5:bat[:oid], t6:bat[:oid], t7:bat[:oid], t8:bat[:oid]);	#[18] (0) MATpack 9 <- 11 15 16 17 18 19 20 21 
     mdb.var();                          	#[19] (0) MDBvar 22 
     c:lng := aggr.count(z:bat[:oid]);   	#[20] (0) ALGcount_bat 23 <- 9 

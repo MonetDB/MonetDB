@@ -154,7 +154,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 						break;
 					}
 				}
-				if(q && getModuleId(q) == sqlRef && getFunctionId(q) == catalogRef){
+				if(q && getModuleId(q) == sqlcatalogRef){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 ){
 						marked[getArg(p,0)] = 0;
 						if( p->retc == 2){
@@ -218,7 +218,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 						break;
 					}
 				}
-				if(q && getModuleId(q) == sqlRef && getFunctionId(q) == catalogRef){
+				if(q && getModuleId(q) == sqlcatalogRef){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 ){
 						marked[getArg(p,0)] = 0;
 						break;

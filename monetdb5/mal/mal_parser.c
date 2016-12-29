@@ -949,6 +949,15 @@ static str parseModule(Client cntxt)
 	return "";
 }
 
+
+static int
+malLibraryEnabled(str name) {
+	if (strcmp(name, "pyapi") == 0) {
+		return GDKgetenv_istrue("embedded_py") || GDKgetenv_isyes("embedded_py");
+	}
+	return 1;
+}
+
 /*
  * Include statement
  * An include statement is immediately taken into effect. This
@@ -994,6 +1003,10 @@ parseInclude(Client cntxt)
 		return 0;
 	}
 	skipToEnd(cntxt);
+
+	if (!malLibraryEnabled(modnme)) {
+		return "";
+	}
 
 	s = loadLibrary(modnme, FALSE);
 	if (s) {
