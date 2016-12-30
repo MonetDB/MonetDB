@@ -27,8 +27,12 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) stk;		/* to fool compilers */
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
-		if( p->token == ASSIGNsymbol && isVarCList(mb,getArg(p,1)))
-			setVarCList(mb,getArg(p,0));
+		if( p->token == ASSIGNsymbol) {
+			int j;
+			for (j = 0; j < p->retc && j + p->retc < p->argc; j++)
+				if (isVarCList(mb,getArg(p,p->retc + j)))
+					setVarCList(mb,getArg(p,j));
+		}
 		if( getModuleId(p) == sqlRef){
 			if(getFunctionId(p) == tidRef) 
 				setVarCList(mb,getArg(p,0));
