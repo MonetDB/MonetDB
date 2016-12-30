@@ -63,6 +63,10 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (getFunctionId(p) == subuniformRef)
 				setVarCList(mb, getArg(p, 0));
 		}
+		else if (getModuleId(p) == groupRef && p->retc > 1) {
+			if (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef)
+				setVarCList(mb, getArg(p, 1));
+		}
 	}
 
     /* Defense line against incorrect plans */
