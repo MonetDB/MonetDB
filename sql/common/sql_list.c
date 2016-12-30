@@ -242,6 +242,8 @@ list_remove_data(list *s, void *data)
 	node *n;
 
 	/* maybe use compare func */
+	if (s == NULL)
+		return;
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
 			MT_lock_set(&s->ht_lock);
