@@ -3174,11 +3174,15 @@ BBPrecover(int farmid)
 gdk_return
 BBPrecover_subdir(void)
 {
-	str subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
-	DIR *dirp = opendir(subdirpath);
+	str subdirpath;
+	DIR *dirp;
 	struct dirent *dent;
 	gdk_return ret = GDK_SUCCEED;
 
+	subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
+	if (subdirpath == NULL)
+		return GDK_FAIL;
+	dirp = opendir(subdirpath);
 	GDKfree(subdirpath);
 	if (dirp == NULL) {
 		return GDK_SUCCEED;	/* nothing to do */
