@@ -23,7 +23,7 @@ BEGIN
       // Maintained via vertoo. Please don't modify by hand!
       // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
       VALUE "InternalName", "libmonetdb5\0"
-      VALUE "LegalCopyright", "Copyright © MonetDB B.V. 2008-2016\0"
+      VALUE "LegalCopyright", "Copyright © MonetDB B.V. 2008-2017\0"
       VALUE "LegalTrademarks", "\0"
       VALUE "OriginalFilename", "libmonetdb5.dll\0"
       VALUE "PrivateBuild", "\0"
