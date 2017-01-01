@@ -88,6 +88,7 @@ static struct PIPELINES {
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 //	 "optimizer.jit();" awaiting the new batcalc api
+//	 "optimizer.oltp();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /*

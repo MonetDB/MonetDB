@@ -44,6 +44,7 @@ MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
 MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
 MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
 MT_Lock     mal_beatLock MT_LOCK_INITIALIZER("mal_beatLock");
+MT_Lock     mal_oltpLock MT_LOCK_INITIALIZER("mal_oltpLock");
 
 /*
  * Initialization of the MAL context
@@ -87,6 +88,7 @@ int mal_init(void){
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
 	MT_lock_init( &mal_beatLock, "mal_beatLock");
+	MT_lock_init( &mal_oltpLock, "mal_beatLock");
 #endif
 
 	tstAligned();

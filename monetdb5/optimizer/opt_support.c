@@ -48,6 +48,7 @@ struct OPTcatalog {
 {"mergetable",	0,	0,	0},
 {"mitosis",		0,	0,	0},
 {"multiplex",	0,	0,	0},
+{"oltp",		0,	0,	0},
 {"reduce",		0,	0,	0},
 {"remap",		0,	0,	0},
 {"remote",		0,	0,	0},
@@ -403,9 +404,6 @@ hasSideEffects(InstrPtr p, int strict)
 		  getFunctionId(p) == clear_tableRef))
 		return TRUE;
 
-	if (getFunctionId(p) == depositRef)
-		return TRUE;
-
 	if (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
 		return FALSE;
 
@@ -468,6 +466,10 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) != groupRef )
 		return TRUE;
 
+	if ( getModuleId(p) == sqlcatalogRef)
+		return TRUE;
+	if ( getModuleId(p) == oltpRef)
+		return TRUE;
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;
 	return FALSE;

@@ -318,5 +318,13 @@ pattern optimizer.pushselect(mod:str, fcn:str):str
 address OPTwrapper
 comment "Push selects down projections";
 
+#opt_oltp.mal
+
+pattern optimizer.oltp():str
+address OPTwrapper;
+pattern optimizer.oltp(mod:str, fcn:str):str
+address OPTwrapper
+comment "Inject the OLTP locking primitives.";
+
 optimizer.prelude();
 
