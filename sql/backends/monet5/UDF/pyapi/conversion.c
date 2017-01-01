@@ -216,7 +216,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
 				BATloop(b, p, q) {
 					char *t = (char *) BUNtail(li, p);
 					for(; *t != 0; t++) {
-						if (*t < 0) {
+						if (*t & 0x80) {
 							unicode = true;
 							break;
 						}
