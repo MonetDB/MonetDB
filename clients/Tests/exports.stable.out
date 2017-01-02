@@ -2247,6 +2247,8 @@ str mal2str(MalBlkPtr mb, int first, int last);
 int malAtomSize(int size, int align, char *name);
 int malBootstrap(void);
 str malCommandCall(MalStkPtr stk, InstrPtr pci);
+bool malLibraryEnabled(str name);
+char *malLibraryHowToEnable(str name);
 int malProfileMode;
 str malRef;
 MT_Lock mal_beatLock;
