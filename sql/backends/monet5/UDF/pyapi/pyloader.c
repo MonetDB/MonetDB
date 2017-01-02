@@ -58,12 +58,6 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
     char * loader_additional_args[] = {"_emit", "_conn"};
 
-    if (!PyAPIEnabled()) {
-        throw(MAL, "pyapi.eval",
-              "Embedded Python has not been enabled. Start server with --set %s=true",
-              pyapi_enableflag);
-    }
-
     if (!PyAPIInitialized()) {
         throw(MAL, "pyapi.eval",
               "Embedded Python is enabled but an error was thrown during initialization.");
