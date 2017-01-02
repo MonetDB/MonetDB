@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 INCLUDES = ../../mal ../atoms ../kernel \
 	../../../clients/mapilib \
@@ -35,6 +35,7 @@ lib_mal = {
 		mdb.c mdb.h \
 		mkey.c mkey.h \
 		manifold.c manifold.h \
+		oltp.c oltp.h \
 		pcre.c \
 		profiler.c profiler.h \
 		querylog.c querylog.h \
@@ -58,7 +59,7 @@ headers_mal = {
 		inspect.mal manual.mal mal_io.mal mkey.mal manifold.mal \
 		iterator.mal clients.mal \
 		factories.mal groupby.mal mdb.mal pcre.mal mat.mal \
-		transaction.mal \
+		transaction.mal oltp.mal \
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal \
 		tokenizer.mal sample.mal json_util.mal \

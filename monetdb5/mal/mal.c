@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -45,6 +45,7 @@ MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
 MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
 MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
 MT_Lock     mal_beatLock MT_LOCK_INITIALIZER("mal_beatLock");
+MT_Lock     mal_oltpLock MT_LOCK_INITIALIZER("mal_oltpLock");
 
 /*
  * Initialization of the MAL context
@@ -88,6 +89,7 @@ int mal_init(void){
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
 	MT_lock_init( &mal_beatLock, "mal_beatLock");
+	MT_lock_init( &mal_oltpLock, "mal_beatLock");
 #endif
 
 	tstAligned();

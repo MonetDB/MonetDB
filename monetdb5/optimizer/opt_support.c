@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -51,16 +51,12 @@ struct OPTcatalog {
 {"mergetable",	0,	0,	0},
 {"mitosis",		0,	0,	0},
 {"mosaic",		0,	0,	0},
-{"origin",		0,	0,	0},
 {"peephole",	0,	0,	0},
 {"reduce",		0,	0,	0},
 {"remap",		0,	0,	0},
 {"remote",		0,	0,	0},
 {"reorder",		0,	0,	0},
 {"replication",	0,	0,	0},
-{"selcrack",	0,	0,	0},
-{"sidcrack",	0,	0,	0},
-{"strengthreduction",	0,	0,	0},
 {"pushselect",	0,	0,	0},
 { 0,	0,	0,	0}
 };
@@ -411,9 +407,6 @@ hasSideEffects(InstrPtr p, int strict)
 		  getFunctionId(p) == clear_tableRef))
 		return TRUE;
 
-	if (getFunctionId(p) == depositRef)
-		return TRUE;
-
 	if (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
 		return FALSE;
 
@@ -476,6 +469,10 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) != groupRef )
 		return TRUE;
 
+	if ( getModuleId(p) == sqlcatalogRef)
+		return TRUE;
+	if ( getModuleId(p) == oltpRef)
+		return TRUE;
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;
 	return FALSE;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -3174,11 +3174,15 @@ BBPrecover(int farmid)
 gdk_return
 BBPrecover_subdir(void)
 {
-	str subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
-	DIR *dirp = opendir(subdirpath);
+	str subdirpath;
+	DIR *dirp;
 	struct dirent *dent;
 	gdk_return ret = GDK_SUCCEED;
 
+	subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
+	if (subdirpath == NULL)
+		return GDK_FAIL;
+	dirp = opendir(subdirpath);
 	GDKfree(subdirpath);
 	if (dirp == NULL) {
 		return GDK_SUCCEED;	/* nothing to do */
