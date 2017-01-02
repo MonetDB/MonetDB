@@ -497,7 +497,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		} else {
 			backup = backups;
 			garbage = garbages;
-			memset((char*) garbages, 0, 16 * sizeof(int));
+			memset(garbages, 0, sizeof(garbages));
 		}
 	} else if ( mb->maxarg > 16 ){
 		backup = GDKzalloc(mb->maxarg * sizeof(ValRecord));
@@ -511,7 +511,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	} else {
 		backup = backups;
 		garbage = garbages;
-		memset((char*) garbages, 0, 16 * sizeof(int));
+		memset(garbages, 0, sizeof(garbages));
 	}
 
 	/* also produce event record for start of function */
