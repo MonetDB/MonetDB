@@ -115,7 +115,7 @@ VALget(ValPtr v)
 void
 VALclear(ValPtr v)
 {
-	if (v->vtype == TYPE_str || ATOMextern(v->vtype)) {
+	if (ATOMextern(v->vtype)) {
 		if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype))
 			GDKfree(v->val.pval);
 	}
