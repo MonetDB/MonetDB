@@ -70,34 +70,34 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 	str ret= MAL_SUCCEED;
 
 	switch (pci->argc) {
-	case 0: ret = (str)(*pci->fcn)();
+	case 0: ret = (*pci->fcn)();
 		break;
-	case 1: ret = (str)(*pci->fcn)(
+	case 1: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0));
 		break;
-	case 2: ret = (str)(*pci->fcn)(
+	case 2: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1));
 		break;
-	case 3: ret = (str)(*pci->fcn)(
+	case 3: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2));
 		break;
-	case 4: ret = (str)(*pci->fcn)(
+	case 4: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
 			getArgReference(stk, pci, 3));
 		break;
-	case 5: ret = (str)(*pci->fcn)(
+	case 5: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
 			getArgReference(stk, pci, 3),
 			getArgReference(stk, pci, 4));
 		break;
-	case 6: ret = (str)(*pci->fcn)(
+	case 6: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -105,7 +105,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 4),
 			getArgReference(stk, pci, 5));
 		break;
-	case 7: ret = (str)(*pci->fcn)(
+	case 7: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -114,7 +114,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 5),
 			getArgReference(stk, pci, 6));
 		break;
-	case 8: ret = (str)(*pci->fcn)(
+	case 8: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -124,7 +124,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 6),
 			getArgReference(stk, pci, 7));
 		break;
-	case 9: ret = (str)(*pci->fcn)(
+	case 9: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -135,7 +135,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 7),
 			getArgReference(stk, pci, 8));
 		break;
-	case 10: ret = (str)(*pci->fcn)(
+	case 10: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -147,7 +147,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 8),
 			getArgReference(stk, pci, 9));
 		break;
-	case 11: ret = (str)(*pci->fcn)(
+	case 11: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -160,7 +160,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 9),
 			getArgReference(stk, pci, 10));
 		break;
-	case 12: ret = (str)(*pci->fcn)(
+	case 12: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -174,7 +174,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 10),
 			getArgReference(stk, pci, 11));
 		break;
-	case 13: ret = (str)(*pci->fcn)(
+	case 13: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -189,7 +189,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 11),
 			getArgReference(stk, pci, 12));
 		break;
-	case 14: ret = (str)(*pci->fcn)(
+	case 14: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -205,7 +205,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 12),
 			getArgReference(stk, pci, 13));
 		break;
-	case 15: ret = (str)(*pci->fcn)(
+	case 15: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -222,7 +222,7 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 13),
 			getArgReference(stk, pci, 14));
 		break;
-	case 16: ret = (str)(*pci->fcn)(
+	case 16: ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -644,7 +644,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret = createScriptException(mb, stkpc, MAL, NULL,
 					"address of pattern %s.%s missing", pci->modname, pci->fcnname);
 			} else {
-				ret = (str)(*pci->fcn)(cntxt, mb, stk, pci);
+				ret = (*pci->fcn)(cntxt, mb, stk, pci);
 #ifndef NDEBUG
 				/* check that the types of actual results match
 				 * expected results */
@@ -914,7 +914,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				*msg = ':';
 			}
 			if (exceptionVar == -1)
-				exceptionVar = findVariableLength(mb, (str)"ANYexception", 12);
+				exceptionVar = findVariableLength(mb, "ANYexception", 12);
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
