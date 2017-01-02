@@ -305,6 +305,7 @@ stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int leve
 		(void) snprintf(buf, MAXIDENTLEN, "A%s", varname);
 		q = newAssignment(mb);
 		q = pushArgumentId(mb, q, buf);
+		GDKfree(buf);
 	} else {
 		char *buf;
 		int tt;
