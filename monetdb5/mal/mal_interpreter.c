@@ -570,7 +570,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 		/* The interpreter loop
 		 * The interpreter is geared towards execution a MAL
-		 * procedure together with all its decendant
+		 * procedure together with all its descendant
 		 * invocations. As such, it provides the MAL abtract
 		 * machine processor.
 		 *
