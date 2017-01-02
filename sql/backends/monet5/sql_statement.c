@@ -286,6 +286,7 @@ stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int leve
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
+	char buf[IDLENGTH];
 
 	if (level == 1 ) { /* global */
 		int tt = t->type->localtype;
@@ -298,26 +299,16 @@ stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int leve
 		setVarType(mb, getArg(q, 0), tt);
 		setVarUDFtype(mb, getArg(q, 0));
 	} else if (!declare) {
-		char *buf = GDKmalloc(MAXIDENTLEN);
-
-		if (buf == NULL)
-			return NULL;
-		(void) snprintf(buf, MAXIDENTLEN, "A%s", varname);
+		(void) snprintf(buf, sizeof(buf), "A%s", varname);
 		q = newAssignment(mb);
 		q = pushArgumentId(mb, q, buf);
-		GDKfree(buf);
 	} else {
-		char *buf;
 		int tt;
 
 		tt = t->type->localtype;
-	       	buf = GDKmalloc(MAXIDENTLEN);
-		if (buf == NULL)
-			return NULL;
-		(void) snprintf(buf, MAXIDENTLEN, "A%s", varname);
+		(void) snprintf(buf, sizeof(buf), "A%s", varname);
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
-			GDKfree(buf);
 			return NULL;
 		}
 		q->argc = q->retc = 0;
@@ -349,20 +340,15 @@ stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-
-	char *buf;
+	char buf[IDLENGTH];
 	int tt = 0;
 
 	/* declared table */
 	if (dump_table(mb, t) < 0)
 		return NULL;
-	buf = GDKmalloc(MAXIDENTLEN);
-	if (buf == NULL)
-		return NULL;
-	(void) snprintf(buf, MAXIDENTLEN, "A%s", varname);
+	(void) snprintf(buf, sizeof(buf), "A%s", varname);
 	q = newInstruction(mb, NULL, NULL);
 	if (q == NULL) {
-		GDKfree(buf);
 		return NULL;
 	}
 	q->argc = q->retc = 0;
@@ -398,11 +384,9 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 	if (be->mvc->argc && be->mvc->args[nr]->varid >= 0) {
 		q = pushArgument(mb, q, be->mvc->args[nr]->varid);
 	} else {
-		char *buf = GDKmalloc(IDLENGTH);
+		char buf[IDLENGTH];
 
-		if (buf == NULL)
-			return NULL;
-		(void) snprintf(buf, IDLENGTH, "A%d", nr);
+		(void) snprintf(buf, sizeof(buf), "A%d", nr);
 		q = pushArgumentId(mb, q, buf);
 	}
 	if (q) {
@@ -3414,7 +3398,7 @@ stmt_assign(backend *be, const char *varname, stmt *val, int level)
 	if (val && val->nr < 0)
 		return NULL;
 	if (level != 1) {	
-		char *buf;
+		char buf[IDLENGTH];
 
 		if (!val) {
 			/* drop declared table */
@@ -3423,13 +3407,9 @@ stmt_assign(backend *be, const char *varname, stmt *val, int level)
 			if (getDestVar(k) < 0)
 				return NULL;
 		}
-		buf = GDKmalloc(MAXIDENTLEN);
-		if (buf == NULL)
-			return NULL;
-		(void) snprintf(buf, MAXIDENTLEN, "A%s", varname);
+		(void) snprintf(buf, sizeof(buf), "A%s", varname);
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
-			GDKfree(buf);
 			return NULL;
 		}
 		q->argc = q->retc = 0;
