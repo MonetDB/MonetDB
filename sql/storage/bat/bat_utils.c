@@ -42,14 +42,14 @@ void
 temp_destroy(log_bid b)
 {
 	if (b)
-		BBPdecref(b, TRUE);
+		BBPrelease(b);
 }
 
 void
 temp_dup(log_bid b)
 {
 	if (b)
-		BBPincref(b, TRUE);
+		BBPretain(b);
 }
 
 log_bid

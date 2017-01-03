@@ -867,7 +867,7 @@ AGGRsubmin_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	r = BATproject(a, b);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
-	BBPdecref(ret, TRUE);
+	BBPrelease(ret);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -895,7 +895,7 @@ AGGRsubmincand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 	r = BATproject(a, b);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
-	BBPdecref(ret, TRUE);
+	BBPrelease(ret);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -923,7 +923,7 @@ AGGRsubmax_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	r = BATproject(a, b);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
-	BBPdecref(ret, TRUE);
+	BBPrelease(ret);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -951,7 +951,7 @@ AGGRsubmaxcand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 	r = BATproject(a, b);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
-	BBPdecref(ret, TRUE);
+	BBPrelease(ret);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }

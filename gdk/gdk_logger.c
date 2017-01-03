@@ -1359,19 +1359,19 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 
 		/* give the catalog bats names so we can find them
 		 * next time */
-		BBPincref(lg->catalog_bid->batCacheid, TRUE);
+		BBPretain(lg->catalog_bid->batCacheid);
 		snprintf(bak, sizeof(bak), "%s_catalog_bid", fn);
 		if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
 				     bak, 0, 0);
 
-		BBPincref(lg->catalog_nme->batCacheid, TRUE);
+		BBPretain(lg->catalog_nme->batCacheid);
 		snprintf(bak, sizeof(bak), "%s_catalog_nme", fn);
 		if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
 				     bak, 0, 0);
 
-		BBPincref(lg->dcatalog->batCacheid, TRUE);
+		BBPretain(lg->dcatalog->batCacheid);
 		snprintf(bak, sizeof(bak), "%s_dcatalog", fn);
 		if (BBPrename(lg->dcatalog->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
@@ -1457,15 +1457,15 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		lg->catalog_bid = b;
 		lg->catalog_nme = n;
 		lg->dcatalog = d;
-		BBPincref(lg->catalog_bid->batCacheid, TRUE);
-		BBPincref(lg->catalog_nme->batCacheid, TRUE);
-		BBPincref(lg->dcatalog->batCacheid, TRUE);
+		BBPretain(lg->catalog_bid->batCacheid);
+		BBPretain(lg->catalog_nme->batCacheid);
+		BBPretain(lg->dcatalog->batCacheid);
 		BATloop(b, p, q) {
 			bat bid = *(log_bid *) Tloc(b, p);
 			oid pos = p;
 
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
-				BBPincref(bid, TRUE);
+				BBPretain(bid);
 		}
 	}
 	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
@@ -1796,12 +1796,12 @@ logger_destroy(logger *lg)
 			oid pos = p;
 
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
-				BBPdecref(bid, TRUE);
+				BBPrelease(bid);
 		}
 
-		BBPdecref(lg->catalog_bid->batCacheid, TRUE);
-		BBPdecref(lg->catalog_nme->batCacheid, TRUE);
-		BBPdecref(lg->dcatalog->batCacheid, TRUE);
+		BBPrelease(lg->catalog_bid->batCacheid);
+		BBPrelease(lg->catalog_nme->batCacheid);
+		BBPrelease(lg->dcatalog->batCacheid);
 		logbat_destroy(lg->catalog_bid);
 		logbat_destroy(lg->catalog_nme);
 		logbat_destroy(lg->dcatalog);
@@ -2502,7 +2502,7 @@ bm_commit(logger *lg)
 					"#commit deleted (snapshot) %s (%d)\n",
 					name, bid);
 			BUNappend(n, name, FALSE);
-			BBPdecref(bid, TRUE);
+			BBPrelease(bid);
 		}
 	}
 
@@ -2565,7 +2565,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name)
 	lg->changes += BATcount(b) + 1;
 	BUNappend(lg->catalog_bid, &bid, FALSE);
 	BUNappend(lg->catalog_nme, name, FALSE);
-	BBPincref(bid, TRUE);
+	BBPretain(bid);
 	return bid;
 }
 
@@ -2589,7 +2589,7 @@ logger_del_bat(logger *lg, log_bid bid)
 				bid, BBP_lrefs(bid));
 		BUNappend(lg->freed, &bid, FALSE);
 	} else if (p >= lg->catalog_bid->batInserted) {
-		BBPdecref(bid, TRUE);
+		BBPrelease(bid);
 	} else {
 		BUNappend(lg->freed, &bid, FALSE);
 	}

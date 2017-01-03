@@ -574,7 +574,7 @@ TKNZRgetIndex(bat *r)
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 	*r = tokenBAT[INDEX].val->batCacheid;
-	BBPincref(*r, TRUE);
+	BBPretain(*r);
 	return MAL_SUCCEED;
 }
 

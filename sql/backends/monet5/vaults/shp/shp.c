@@ -518,7 +518,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	for(i = 0; i < colsNum; i++) {
 		store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat);
 		BBPunfix(colsBAT[i]->batCacheid);
-		//BBPdecref(colsBAT[i]->batCacheid, TRUE);
+		//BBPrelease(colsBAT[i]->batCacheid);
 	}
 
 	/* free the memory */
@@ -710,7 +710,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	for(i = 0; i < colsNum; i++) {
 		store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat);
 		BBPunfix(colsBAT[i]->batCacheid);
-		BBPdecref(colsBAT[i]->batCacheid, TRUE);
+		BBPrelease(colsBAT[i]->batCacheid);
 	}
 		
 	/* free the memory */

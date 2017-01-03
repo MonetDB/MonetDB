@@ -159,7 +159,7 @@ QOTgetStatistics(bat *ret, str *nme)
 	idx= QOTindex(*nme);
 	if( idx <  0 || qotStat[idx] == 0 )
 		throw(ILLARG,"optimizer.getStatistics",RUNTIME_OBJECT_MISSING);
-	BBPincref(*ret= qotStat[idx]->batCacheid, TRUE);
+	BBPretain(*ret= qotStat[idx]->batCacheid);
 	return MAL_SUCCEED;
 }
 
