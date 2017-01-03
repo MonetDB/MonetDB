@@ -13,7 +13,6 @@
 #ifndef _PYPI_LIB_
 #define _PYPI_LIB_
 
-#include "monetdb_config.h"
 #include "mal.h"
 #include "mal_stack.h"
 #include "mal_linker.h"

@@ -6,6 +6,7 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
+#include "monetdb_config.h"
 #include "pytypes.h"
 
 #if PY_MAJOR_VERSION >= 3
