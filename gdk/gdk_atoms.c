@@ -114,13 +114,13 @@ hgeHash(const hge *v)
 /*
  * @+ Standard Atoms
  */
-static inline int
+static int
 batFix(const bat *b)
 {
 	return BBPincref(*b, TRUE);
 }
 
-static inline int
+static int
 batUnfix(const bat *b)
 {
 	return BBPdecref(*b, TRUE);
