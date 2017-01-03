@@ -409,7 +409,7 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 }
 
 
-bool
+int
 malLibraryEnabled(str name) {
 	if (strcmp(name, "pyapi") == 0) {
 		return GDKgetenv_istrue("embedded_py") || GDKgetenv_isyes("embedded_py");
