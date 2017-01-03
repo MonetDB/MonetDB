@@ -90,7 +90,7 @@ static void monetdb_disconnect(void* conn) {
 
 static str monetdb_initialize(void) {
 	opt *set = NULL;
-	int setlen = 0;
+	volatile int setlen = 0; /* use volatile for setjmp */
 	str retval = MAL_SUCCEED;
 	char prmodpath[1024];
 	char *modpath = NULL;
