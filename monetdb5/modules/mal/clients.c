@@ -540,7 +540,7 @@ str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 str
 CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret  = getArgReference_str(stk,pci,0);
-	int delay = *getArgReference_int(stk,pci,1);
+	int delay;
 	bit force = FALSE;
 	int leftover;
 	char buf[1024]={"safe to stop last connection"};
@@ -551,11 +551,14 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	(void) mb;
 	switch( getArgType(mb,pci,1)){
 	case TYPE_bte:
+		delay = *getArgReference_bte(stk,pci,1);
+		break;
 	case TYPE_sht:
 		delay = *getArgReference_sht(stk,pci,1);
 		break;
 	default:
 		delay = *getArgReference_int(stk,pci,1);
+		break;
 	}
 
 	if ( cntxt->user != mal_clients[0].user)

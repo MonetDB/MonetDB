@@ -1,4 +1,5 @@
 
+#include "monetdb_config.h"
 #include "conversion.h"
 #include "convert_loops.h"
 #include "pytypes.h"

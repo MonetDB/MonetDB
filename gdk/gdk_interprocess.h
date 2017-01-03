@@ -14,8 +14,6 @@
 #ifndef _GDK_INTERPROCES_H_
 #define _GDK_INTERPROCES_H_
 
-#include "monetdb_config.h"
-
 #ifdef HAVE_FORK
 #include "gdk.h"
 

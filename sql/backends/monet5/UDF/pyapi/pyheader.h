@@ -16,7 +16,6 @@
 #ifndef _PYHEADER_H_
 #define _PYHEADER_H_
 
-#include "monetdb_config.h"
 #include "mal.h"
 #include "mal_stack.h"
 #include "mal_linker.h"

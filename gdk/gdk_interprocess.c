@@ -6,10 +6,11 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-#include "gdk_interprocess.h"
+#include "monetdb_config.h"
 
 #ifdef HAVE_FORK
 
+#include "gdk_interprocess.h"
 #include "gdk.h"
 #include "gdk_private.h"
 
