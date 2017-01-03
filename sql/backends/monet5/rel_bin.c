@@ -3058,8 +3058,6 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
 
-	(void) sql;		/* unused! */
-
 	if (pin && list_length(pin->op4.lval)) 
 		s = pin->op4.lval->h->data;
 	if (s->key && s->nrcols == 0) {
