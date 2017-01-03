@@ -1055,9 +1055,9 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifndef NDEBUG
 	fprintf(stderr,"#Total time %d ms\n", GDKms() - time0);
 #endif
-	BBPdecref(x->batCacheid, TRUE);
-	BBPdecref(y->batCacheid, TRUE);
-	BBPdecref(z->batCacheid, TRUE);
+	BBPrelease(x->batCacheid);
+	BBPrelease(y->batCacheid);
+	BBPrelease(z->batCacheid);
 	BBPunfix(x->batCacheid);
 	BBPunfix(y->batCacheid);
 	BBPunfix(z->batCacheid);

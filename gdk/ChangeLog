@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Jan  3 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Replaced BBPincref/BBPdecref with BBPfix/BBPunfix for physical reference
+  count and BBPretain/BBPrelease for logical reference count maintenance.
+
 * Fri Dec 16 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Removed automatic conversion of 32-bit OIDs to 64 bits on 64-bit
   architectures.

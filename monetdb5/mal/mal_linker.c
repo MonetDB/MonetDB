@@ -407,3 +407,20 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 	/* no directory semantics (yet) */
 	return locate_file(filename, SQL_EXT, recurse);
 }
+
+
+int
+malLibraryEnabled(str name) {
+	if (strcmp(name, "pyapi") == 0) {
+		return GDKgetenv_istrue("embedded_py") || GDKgetenv_isyes("embedded_py");
+	}
+	return true;
+}
+
+char*
+malLibraryHowToEnable(str name) {
+	if (strcmp(name, "pyapi") == 0) {
+		return "Embedded Python has not been enabled. Start server with --set embedded_py=true";
+	}
+	return "";
+}

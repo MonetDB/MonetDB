@@ -1239,7 +1239,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 
 	/* no updates, no inserts */
 	if (BATcount(u_id) == 0 && (!i || BATcount(i) == 0)) {
-		BBPincref(*result = *col, TRUE);
+		BBPretain(*result = *col);
 		return MAL_SUCCEED;
 	}
 
@@ -1248,7 +1248,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 
 	/* bat may change */
 	if (i && BATcount(c) == 0 && BATcount(u_id) == 0) {
-		BBPincref(*result = *ins, TRUE);
+		BBPretain(*result = *ins);
 		return MAL_SUCCEED;
 	}
 
@@ -1293,7 +1293,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 
 	/* no updates, no inserts */
 	if (BATcount(u_id) == 0 && (!i || BATcount(i) == 0)) {
-		BBPincref(*result = *col, TRUE);
+		BBPretain(*result = *col);
 		return MAL_SUCCEED;
 	}
 
@@ -1302,7 +1302,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 
 	/* bat may change */
 	if (i && BATcount(c) == 0 && BATcount(u_id) == 0) {
-		BBPincref(*result = *ins, TRUE);
+		BBPretain(*result = *ins);
 		return MAL_SUCCEED;
 	}
 
@@ -3648,7 +3648,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 		b = store_funcs.bind_col(tr, c, RDONLY);
 		if (b == NULL || (msg = (*func) (&bid, &b->batCacheid, &del->batCacheid)) != NULL) {
 			for (i--; i >= 0; i--)
-				BBPdecref(bids[i], TRUE);
+				BBPrelease(bids[i]);
 			if (b)
 				BBPunfix(b->batCacheid);
 			BBPunfix(del->batCacheid);
@@ -3664,7 +3664,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 	}
 	if (i >= 2048) {
 		for (i--; i >= 0; i--)
-			BBPdecref(bids[i], TRUE);
+			BBPrelease(bids[i]);
 		throw(SQL, name, "Too many columns to handle, use copy instead");
 	}
 	BBPunfix(del->batCacheid);
@@ -3678,7 +3678,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 			store_funcs.append_col(tr, c, ins, TYPE_bat);
 			BBPunfix(ins->batCacheid);
 		}
-		BBPdecref(bids[i], TRUE);
+		BBPrelease(bids[i]);
 	}
 	/* TODO indices */
 	return MAL_SUCCEED;

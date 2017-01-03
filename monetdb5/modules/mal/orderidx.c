@@ -144,7 +144,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		newstk->up = 0;
 		newstk->stk[arg].vtype= TYPE_bat;
 		newstk->stk[arg].val.bval= b->batCacheid;
-		BBPincref(newstk->stk[arg].val.bval, TRUE);
+		BBPretain(newstk->stk[arg].val.bval);
 		msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 		freeStack(newstk);
 	}

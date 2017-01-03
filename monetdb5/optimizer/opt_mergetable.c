@@ -1045,10 +1045,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	ai2 = pushArgument(mb, ai2, getArg(ai1, 0));
 	ai2 = pushArgument(mb, ai2, mat[g].mv);
 	ai2 = pushArgument(mb, ai2, mat[e].mv);
-	if (isAvg)
-		ai2 = pushBit(mb, ai2, 0); /* do not skip nils */
-	else
-		ai2 = pushBit(mb, ai2, 1); /* skip nils */
+	ai2 = pushBit(mb, ai2, 1); /* skip nils */
 	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef)
 		ai2 = pushBit(mb, ai2, 1);
 	pushInstruction(mb, ai2);

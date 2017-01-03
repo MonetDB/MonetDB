@@ -13,13 +13,13 @@
 static void
 bat_incref(bat bid)
 {
-	BBPincref(bid, TRUE);
+	BBPretain(bid);
 }
 
 static void
 bat_decref(bat bid)
 {
-	BBPdecref(bid, TRUE);
+	BBPrelease(bid);
 }
 
 

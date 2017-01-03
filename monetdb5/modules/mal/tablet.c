@@ -194,16 +194,17 @@ str
 TABLETcreate_bats(Tablet *as, BUN est)
 {
 	Column *fmt = as->format;
-	BUN i, j;
+	BUN i;
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		if (fmt[i].skip)
 			continue;
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		if (!fmt[i].c) {
-			for (j = 0; j < i; j++)
-				if (!fmt[i].skip)
-					BBPdecref(fmt[j].c->batCacheid, FALSE);
+			while (i > 0) {
+				if (!fmt[--i].skip)
+					BBPreclaim(fmt[i].c);
+			}
 			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", as->nr);
 		}
 		fmt[i].ci = bat_iterator(fmt[i].c);
@@ -2063,10 +2064,10 @@ COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	create_rejects_table(cntxt);
 	if (cntxt->error_row == NULL)
 		throw(MAL, "sql.rejects", "No reject table available");
-	BBPincref(*row = cntxt->error_row->batCacheid, TRUE);
-	BBPincref(*fld = cntxt->error_fld->batCacheid, TRUE);
-	BBPincref(*msg = cntxt->error_msg->batCacheid, TRUE);
-	BBPincref(*inp = cntxt->error_input->batCacheid, TRUE);
+	BBPretain(*row = cntxt->error_row->batCacheid);
+	BBPretain(*fld = cntxt->error_fld->batCacheid);
+	BBPretain(*msg = cntxt->error_msg->batCacheid);
+	BBPretain(*inp = cntxt->error_input->batCacheid);
 	(void) mb;
 	return MAL_SUCCEED;
 }

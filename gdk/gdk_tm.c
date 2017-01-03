@@ -258,7 +258,7 @@ TMabort(void)
 
 			if (b) {
 				if (b->batPersistence == PERSISTENT)
-					BBPdecref(i, TRUE);
+					BBPrelease(i);
 				b->batPersistence = TRANSIENT;
 				b->batDirtydesc = 1;
 			}
@@ -295,7 +295,7 @@ TMabort(void)
 			if (BBP_status(i) & BBPDELETED) {
 				BBP_status_on(i, BBPEXISTING, "TMabort");
 				if (b->batPersistence != PERSISTENT)
-					BBPincref(i, TRUE);
+					BBPretain(i);
 				b->batPersistence = PERSISTENT;
 				b->batDirtydesc = 1;
 			}

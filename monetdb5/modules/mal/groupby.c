@@ -201,9 +201,9 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*ext = 0;
 			*hist = 0;
 			msg = GRPsubgroup5(grp, ext, hist, &aggr->bid[i], NULL, &oldgrp, &oldext, &oldhist);
-			BBPdecref(oldgrp, TRUE);
-			BBPdecref(oldext, TRUE);
-			BBPdecref(oldhist, TRUE);
+			BBPrelease(oldgrp);
+			BBPrelease(oldext);
+			BBPrelease(oldhist);
 		} while (msg == MAL_SUCCEED && ++i < aggr->last);
 	GROUPdelete(aggr);
 	return msg;

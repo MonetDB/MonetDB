@@ -1,23 +1,35 @@
 stderr of test 'subquery_orderby.SF-1688915` in directory 'sql/test/BugTracker` itself:
 
 
-# 10:11:41 >  
-# 10:11:41 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=35778 --set xrpc_port=45704 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 10:11:41 >  
+# 14:49:16 >  
+# 14:49:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32077" "--set" "mapi_usock=/var/tmp/mtest-71873/.s.monetdb.32077" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/myth/opt/var/MonetDB/mTests_sql_test_BugTracker" "--set" "embedded_py=true"
+# 14:49:16 >  
+
+# builtin opt 	gdk_dbpath = /Users/myth/opt/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32077
+# cmdline opt 	mapi_usock = /var/tmp/mtest-71873/.s.monetdb.32077
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/myth/opt/var/MonetDB/mTests_sql_test_BugTracker
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:49:17 >  
+# 14:49:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-71873" "--port=32077"
+# 14:49:17 >  
 
 
-# 10:11:41 >  
-# 10:11:41 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35778 
-# 10:11:41 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
-QUERY = select name from (select name, id from tables order by id) as x;
-ERROR = !syntax error, unexpected ORDER, expecting UNION or EXCEPT or INTERSECT or ')' in: "select name from (select name, id from tables order"
-
-
-
-
-# 10:11:41 >  
-# 10:11:41 >  Done.
-# 10:11:41 >  
+# 14:49:17 >  
+# 14:49:17 >  "Done."
+# 14:49:17 >  
 

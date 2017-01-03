@@ -400,10 +400,10 @@ freeClient(Client c)
 	GDKfree(c->glb);
 	c->glb = NULL;
 	if( c->error_row){
-		BBPdecref(c->error_row->batCacheid,TRUE);
-		BBPdecref(c->error_fld->batCacheid,TRUE);
-		BBPdecref(c->error_msg->batCacheid,TRUE);
-		BBPdecref(c->error_input->batCacheid,TRUE);
+		BBPrelease(c->error_row->batCacheid);
+		BBPrelease(c->error_fld->batCacheid);
+		BBPrelease(c->error_msg->batCacheid);
+		BBPrelease(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 		if( c->wlcr)
 			freeMalBlk(c->wlcr);
