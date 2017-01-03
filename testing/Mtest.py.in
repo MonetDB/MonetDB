@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 #TODO:
 #=====
@@ -1374,6 +1374,13 @@ def ApproveOutput (env, TST) :
             proc.wait()
             f.close()
             if os.path.getsize(patch + ".0"):
+                # if a file TST.stable.{out,err}-noapprove exists, we
+                # refuse to approve the output by (silently) skipping
+                if os.path.isfile(TSTSRCDIRTST + '.stable.' + WHAT + '-noapprove'):
+                    remove(patch + ".0")
+                    if verbose:
+                        print("NOT approving %s  ->  stable.%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM))
+                    continue
                 if not verbose:
                     oc = ''
                 print("Approving  %s  ->  stable.%s%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc))
@@ -1567,7 +1574,7 @@ def GetBitsAndModsAndThreads(env) :
         t.start()
         input = '''\
                 c := mdb.modules();
-                modsid := algebra.subunique(c);
+                modsid := algebra.unique(c);
                 mods := algebra.projection(modsid,c);
                 s := "\\nModules: ";
                 sep := "";

@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 DH_VERBOSE=1
 
@@ -26,13 +26,12 @@ override_dh_auto_configure:
 	--enable-instrument=no \
 	--enable-lidar=yes \
 	--enable-mapi=yes \
-	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-oid32=no \
 	--enable-optimize=yes \
 	--enable-profile=no \
+	--enable-pyintegration=yes \
 	--enable-rintegration=yes \
 	--enable-shp=no \
 	--enable-sql=yes \
@@ -46,11 +45,10 @@ override_dh_auto_configure:
 	--with-libxml2=yes \
 	--with-lzma=yes \
 	--with-openssl=yes \
-	--with-perl=yes \
-	--with-perl-libdir=lib/perl5 \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python=yes \
+	--with-python2=yes \
+	--with-python3=no \
 	--with-readline=yes \
 	--with-samtools=yes \
 	--with-sphinxclient=no \

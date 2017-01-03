@@ -1,0 +1,36 @@
+stderr of test 'math` in directory 'monetdb5/modules/kernel` itself:
+
+
+# 22:14:38 >  
+# 22:14:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32230" "--set" "mapi_usock=/var/tmp/mtest-11255/.s.monetdb.32230" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_kernel" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 22:14:38 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32230
+# cmdline opt 	mapi_usock = /var/tmp/mtest-11255/.s.monetdb.32230
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_kernel
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 22:14:38 >  
+# 22:14:38 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-11255" "--port=32230"
+# 22:14:38 >  
+
+
+# 22:14:38 >  
+# 22:14:38 >  "Done."
+# 22:14:38 >  
+

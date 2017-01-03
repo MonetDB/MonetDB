@@ -1,0 +1,48 @@
+stderr of test 'ifexists` in directory 'sql/test` itself:
+
+
+# 16:49:35 >  
+# 16:49:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38832" "--set" "mapi_usock=/var/tmp/mtest-81010/.s.monetdb.38832" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/myth/opt/var/MonetDB/mTests_sql_test" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 16:49:35 >  
+
+# builtin opt 	gdk_dbpath = /Users/myth/opt/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38832
+# cmdline opt 	mapi_usock = /var/tmp/mtest-81010/.s.monetdb.38832
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/myth/opt/var/MonetDB/mTests_sql_test
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 16:49:36 >  
+# 16:49:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-81010" "--port=38832"
+# 16:49:36 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-81010/.s.monetdb.38832
+QUERY = CREATE TABLE hello(i INTEGER);
+ERROR = !CREATE TABLE: name 'hello' already in use
+MAPI  = (monetdb) /var/tmp/mtest-81010/.s.monetdb.38832
+QUERY = DROP TABLE hello;
+ERROR = !DROP TABLE: no such table 'hello'
+MAPI  = (monetdb) /var/tmp/mtest-81010/.s.monetdb.38832
+QUERY = CREATE SCHEMA hello;
+ERROR = !CREATE SCHEMA: name 'hello' already in use
+MAPI  = (monetdb) /var/tmp/mtest-81010/.s.monetdb.38832
+QUERY = DROP SCHEMA hello;
+ERROR = !DROP SCHEMA: name hello does not exist
+
+# 16:49:36 >  
+# 16:49:36 >  "Done."
+# 16:49:36 >  
+

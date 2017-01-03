@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -18,7 +18,14 @@
 
 #define MAXSYMBOLS 12000 /* enough for the startup and some queries */
 static SymRecord symbolpool[MAXSYMBOLS];
-static int symboltop;
+static int symboltop = 0;
+
+
+void
+mal_instruction_reset(void)
+{
+	symboltop = 0;
+}
 
 Symbol
 newSymbol(str nme, int kind)
@@ -798,7 +805,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 		setVarUDFtype(tm, res);
 	if (isVarCleanup(mb, x))
 		setVarCleanup(tm, res);
-	strncpy(getSTC(tm,x),getSTC(mb,x), 2 *IDLENGTH);
+	tm->var[x]->stc = mb->var[x]->stc;
 	return res;
 }
 
@@ -843,6 +850,10 @@ copyVariable(MalBlkPtr dst, VarPtr v)
 	w->type = v->type;
 	w->flags = v->flags;
 	w->rowcnt = v->rowcnt;
+	w->declared = v->declared;
+	w->updated = v->updated;
+	w->eolife = v->eolife;
+	w->stc = v->stc;
 	if (VALcopy(&w->value, &v->value) == NULL) {
 		GDKfree(w);
 		return -1;
@@ -866,7 +877,7 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->flags = 0;
 	v->rowcnt = 0;
 	v->eolife = 0;
-	v->stc[0] = 0;
+	v->stc = 0;
 }
 
 void

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -88,11 +88,11 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 
 	bn->ttype = tt;
 	bn->tkey = FALSE;
+	bn->tunique = FALSE;
 	bn->tnonil = TRUE;
 	bn->tnil = FALSE;
 	bn->tsorted = bn->trevsorted = ATOMlinear(tt) != 0;
 	bn->tident = BATstring_t;
-	bn->talign = OIDnew(1);
 	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 	bn->tprops = NULL;
 
@@ -909,7 +909,7 @@ setcolprops(BAT *b, const void *x)
 		/* first value */
 		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
 		b->tnosorted = b->tnorevsorted = 0;
-		b->tkey |= 1;
+		b->tkey = 1;
 		b->tnokey[0] = b->tnokey[1] = 0;
 		b->tnodense = 0;
 		if (b->ttype == TYPE_void) {
@@ -954,7 +954,8 @@ setcolprops(BAT *b, const void *x)
 		prv = BUNtail(bi, pos - 1);
 		cmp = atom_CMP(prv, x, b->ttype);
 
-		if (b->tkey == 1 && /* assume outside check if BOUND2BTRUE */
+		if (!b->tunique && /* assume outside check if tunique */
+		    b->tkey &&
 		    (cmp == 0 || /* definitely not KEY */
 		     (b->batCount > 1 && /* can't guarantee KEY if unordered */
 		      ((b->tsorted && cmp > 0) ||
@@ -1002,7 +1003,7 @@ BUNappend(BAT *b, const void *t, bit force)
 	BATcheck(b, "BUNappend", GDK_FAIL);
 
 	assert(!isVIEW(b));
-	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, t) != BUN_NONE) {
+	if (b->tunique && BUNfnd(b, t) != BUN_NONE) {
 		return GDK_SUCCEED;
 	}
 
@@ -1042,10 +1043,10 @@ BUNappend(BAT *b, const void *t, bit force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-
-	/* first adapt the hashes; then the user-defined accelerators.
-	 * REASON: some accelerator updates (qsignature) use the hashes!
-	 */
+	if (b->thash == (Hash *) 1) {
+		/* don't bother first loading the hash to then change it */
+		HASHdestroy(b);
+	}
 	if (b->thash) {
 		HASHins(b, p, t);
 		if (tsize && tsize != b->tvheap->size)
@@ -1094,7 +1095,7 @@ BUNdelete(BAT *b, oid o)
 	b->batCount--;
 	if (b->batCount <= 1) {
 		/* some trivial properties */
-		b->tkey |= 1;
+		b->tkey = 1;
 		b->tsorted = b->trevsorted = 1;
 		b->tnosorted = b->tnorevsorted = 0;
 		if (b->batCount == 0) {
@@ -1185,7 +1186,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 		}
 	} else if (b->tnorevsorted >= p)
 		b->tnorevsorted = 0;
-	if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
+	if (((b->ttype != TYPE_void) & b->tkey & !b->tunique) && b->batCount > 1) {
 		BATkey(b, FALSE);
 	}
 	if (b->tnonil)
@@ -1211,7 +1212,7 @@ BUNreplace(BAT *b, oid id, const void *t, bit force)
 	if (id < b->hseqbase || id >= b->hseqbase + BATcount(b))
 		return GDK_SUCCEED;
 
-	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, t) != BUN_NONE) {
+	if (b->tunique && BUNfnd(b, t) != BUN_NONE) {
 		return GDK_SUCCEED;
 	}
 	if (b->ttype == TYPE_void) {
@@ -1236,7 +1237,7 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 		GDKerror("void_inplace: id out of range\n");
 		return GDK_FAIL;
 	}
-	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, val) != BUN_NONE)
+	if (b->tunique && BUNfnd(b, val) != BUN_NONE)
 		return GDK_SUCCEED;
 	if (b->ttype == TYPE_void)
 		return GDK_SUCCEED;
@@ -1433,11 +1434,9 @@ BATkey(BAT *b, int flag)
 {
 	BATcheck(b, "BATkey", GDK_FAIL);
 	assert(b->batCacheid > 0);
+	assert(flag == 0 || flag == 1);
+	assert(!b->tunique || flag);
 	if (b->ttype == TYPE_void) {
-		if (b->tseqbase == oid_nil && flag == BOUND2BTRUE) {
-			GDKerror("BATkey: nil-column cannot be kept unique.\n");
-			return GDK_FAIL;
-		}
 		if (b->tseqbase != oid_nil && flag == FALSE) {
 			GDKerror("BATkey: dense column must be unique.\n");
 			return GDK_FAIL;
@@ -1447,13 +1446,13 @@ BATkey(BAT *b, int flag)
 			return GDK_FAIL;
 		}
 	}
-	if (flag)
-		flag |= (1 | b->tkey);
-	if (b->tkey != flag)
+	if (b->tkey != (flag != 0))
 		b->batDirtydesc = TRUE;
-	b->tkey = flag;
+	b->tkey = flag != 0;
 	if (!flag)
 		b->tdense = 0;
+	else
+		b->tnokey[0] = b->tnokey[1] = 0;
 	if (flag && VIEWtparent(b)) {
 		/* if a view is key, then so is the parent if the two
 		 * are aligned */
@@ -1462,8 +1461,7 @@ BATkey(BAT *b, int flag)
 		    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
 		    !BATtkey(bp) &&
 		    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
-		     BATcount(b) == 0 ||
-		     (b->talign && b->talign == bp->talign)))
+		     BATcount(b) == 0))
 			return BATkey(bp, TRUE);
 	}
 	return GDK_SUCCEED;
@@ -1494,10 +1492,6 @@ BATtseqbase(BAT *b, oid o)
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		if (b->tseqbase != o) {
 			b->batDirtydesc = TRUE;
-			/* zap alignment if column is changed by new
-			 * seqbase */
-			if (b->ttype == TYPE_void)
-				b->talign = 0;
 		}
 		b->tseqbase = o;
 		if (b->ttype == TYPE_oid && o == oid_nil) {
@@ -1940,9 +1934,9 @@ BATmode(BAT *b, int mode)
 		}
 		/* persistent BATs get a logical reference */
 		if (mode == PERSISTENT) {
-			BBPincref(bid, TRUE);
+			BBPretain(bid);
 		} else if (b->batPersistence == PERSISTENT) {
-			BBPdecref(bid, TRUE);
+			BBPrelease(bid);
 		}
 		MT_lock_set(&GDKswapLock(bid));
 		if (mode == PERSISTENT) {
@@ -2002,11 +1996,17 @@ BATmode(BAT *b, int mode)
  *		then all values are equal.
  * revsorted	The column is reversely sorted (descending).  If
  *		also sorted, then all values are equal.
+ * nosorted	BUN position which proofs not sorted (given position
+ *		and one before are not ordered correctly).
+ * norevsorted	BUN position which proofs not revsorted (given position
+ *		and one before are not ordered correctly).
+ * nokey	Pair of BUN positions that proof not all values are
+ *		distinct (i.e. values at given locations are equal).
  *
- * The "key" property consists of two bits.  The lower bit, when set,
- * indicates that all values in the column are distinct.  The upper
- * bit, when set, indicates that all values must be distinct
- * (BOUND2BTRUE).
+ * In addition there is a property "unique" that, when set, indicates
+ * that values must be kept unique (and hence that the "key" property
+ * must be set).  This property is only used when changing (adding,
+ * replacing) values.
  *
  * Note that the functions BATtseqbase and BATkey also set more
  * properties than you might suspect.  When setting properties on a
@@ -2045,8 +2045,7 @@ BATassertProps(BAT *b)
 	assert(b->ttype >= TYPE_void);
 	assert(b->ttype < GDKatomcnt);
 	assert(b->ttype != TYPE_bat);
-	/* if BOUND2BTRUE is set, then so must the low order bit */
-	assert(!(b->tkey & BOUND2BTRUE) || (b->tkey & 1)); /* tkey != 2 */
+	assert(!b->tunique || b->tkey); /* if unique, then key */
 	assert(isVIEW(b) ||
 	       b->ttype == TYPE_void ||
 	       BBPfarms[b->theap.farmid].roles & (1 << b->batRole));
@@ -2132,6 +2131,18 @@ BATassertProps(BAT *b)
 		    b->tnorevsorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnorevsorted - 1),
 				    BUNtail(bi, b->tnorevsorted)) < 0);
+	}
+	/* if tkey property set, both tnokey values must be 0 */
+	assert(!b->tkey || (b->tnokey[0] == 0 && b->tnokey[1] == 0));
+	if (!b->tkey && (b->tnokey[0] != 0 || b->tnokey[1] != 0)) {
+		/* if tkey not set and tnokey indicates a proof of
+		 * non-key-ness, make sure the tnokey values are in
+		 * range and indeed provide a proof */
+		assert(b->tnokey[0] != b->tnokey[1]);
+		assert(b->tnokey[0] < b->batCount);
+		assert(b->tnokey[1] < b->batCount);
+		assert(cmpf(BUNtail(bi, b->tnokey[0]),
+			    BUNtail(bi, b->tnokey[1])) == 0);
 	}
 	/* var heaps must have sane sizes */
 	assert(b->tvheap == NULL || b->tvheap->free <= b->tvheap->size);

@@ -1,4 +1,13 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ */
+
 #include "pyapi.h"
+#include "conversion.h"
 #include "connection.h"
 #include "emit.h"
 
@@ -9,7 +18,7 @@
 #include "formatinput.h"
 
 static void _loader_import_array(void) {
-    import_array();
+    _import_array();
 }
 
 str _loader_init(void)
@@ -48,12 +57,6 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     BUN nval = 0;
 
     char * loader_additional_args[] = {"_emit", "_conn"};
-
-    if (!PyAPIEnabled()) {
-        throw(MAL, "pyapi.eval",
-              "Embedded Python has not been enabled. Start server with --set %s=true",
-              pyapi_enableflag);
-    }
 
     if (!PyAPIInitialized()) {
         throw(MAL, "pyapi.eval",

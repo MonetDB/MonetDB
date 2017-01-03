@@ -18,7 +18,7 @@ ti:= bat.append(ti,2:oid);
 ti:= bat.append(ti,3:oid);
 
 ti_gv:bat[:int] := algebra.projection(ti,gv);
-(grp:bat[:oid],r1_9:bat[:oid],r2_9:bat[:lng]) := group.subgroupdone(ti_gv);
+(grp:bat[:oid],r1_9:bat[:oid],r2_9:bat[:lng]) := group.groupdone(ti_gv);
 ti_dv:bat[:int] := algebra.projection(ti,dv); 
 
 io.print(grp);

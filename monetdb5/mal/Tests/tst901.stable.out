@@ -32,20 +32,20 @@ Ready.
 function user.foo():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
 barrier i:int := 0:int;                 	#[2] (0)  3 <- 4 
-    bat.append(b:bat[:int],i:int);      	#[3] (0) BKCappend_val_wrap 5 <- 1 3 
-    redo i:int := iterator.next(1:int,10:int);	#[4] (0) ITRnext_int 3 <- 6 7 
+    bat.append(b:bat[:int], i:int);     	#[3] (0) BKCappend_val_wrap 5 <- 1 3 
+    redo i:int := iterator.next(1:int, 10:int);	#[4] (0) ITRnext_int 3 <- 6 7 
 exit i:int;                             	#[5] (0)  3 
     c:bat[:int] := algebra.copy(b:bat[:int]);	#[6] (0) ALGcopy 8 <- 1 
     io.print(c:bat[:int]);              	#[7] (0) IOprint_val 9 <- 8 
-    x:bat[:int] := batcalc.+(b:bat[:int],c:bat[:int]);	#[8] (0) CMDbatADDsignal 10 <- 1 8 
+    x:bat[:int] := batcalc.+(b:bat[:int], c:bat[:int]);	#[8] (0) CMDbatADDsignal 10 <- 1 8 
     io.print(x:bat[:int]);              	#[9] (0) IOprint_val 11 <- 10 
-    x:bat[:int] := batcalc.+(b:bat[:int],1:int);	#[10] (0) CMDbatADDsignal 10 <- 1 6 
+    x:bat[:int] := batcalc.+(b:bat[:int], 1:int);	#[10] (0) CMDbatADDsignal 10 <- 1 6 
     io.print(x:bat[:int]);              	#[11] (0) IOprint_val 12 <- 10 
-    x:bat[:int] := batcalc.*(b:bat[:int],c:bat[:int]);	#[12] (0) CMDbatMULsignal 10 <- 1 8 
+    x:bat[:int] := batcalc.*(b:bat[:int], c:bat[:int]);	#[12] (0) CMDbatMULsignal 10 <- 1 8 
     io.print(x:bat[:int]);              	#[13] (0) IOprint_val 13 <- 10 
-    y:bat[:bit] := batcalc.==(b:bat[:int],b:bat[:int]);	#[14] (0) CMDbatEQ 14 <- 1 1 
+    y:bat[:bit] := batcalc.==(b:bat[:int], b:bat[:int]);	#[14] (0) CMDbatEQ 14 <- 1 1 
     io.print(y:bat[:bit]);              	#[15] (0) IOprint_val 15 <- 14 
-    y:bat[:bit] := batcalc.==(b:bat[:int],x:bat[:int]);	#[16] (0) CMDbatEQ 14 <- 1 10 
+    y:bat[:bit] := batcalc.==(b:bat[:int], x:bat[:int]);	#[16] (0) CMDbatEQ 14 <- 1 10 
     io.print(y:bat[:bit]);              	#[17] (0) IOprint_val 16 <- 14 
     z:bat[:bit] := batcalc.not(y:bat[:bit]);	#[18] (0) CMDbatNOT 17 <- 14 
     io.print(z:bat[:bit]);              	#[19] (0) IOprint_val 18 <- 17 

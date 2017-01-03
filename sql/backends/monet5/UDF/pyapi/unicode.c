@@ -3,9 +3,9 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
- 
+
 #include "unicode.h"
 
 #include <string.h>
@@ -207,5 +207,5 @@ bool utf8_to_utf32(size_t offset, size_t size, Py_UNICODE *utf32_storage, const 
 }
 
 void _unicode_init(void) {
-    import_array();
+    _import_array();
 }

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef _GDK_UTILS_H_
@@ -95,7 +95,7 @@ gdk_export int GDKexiting(void);
 
 gdk_export void GDKregister(MT_Id pid);
 gdk_export void GDKprepareExit(void);
-gdk_export void GDKreset(int status);
+gdk_export void GDKreset(int status, int exit);
 gdk_export const char *GDKversion(void);
 
 gdk_export gdk_return GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir);

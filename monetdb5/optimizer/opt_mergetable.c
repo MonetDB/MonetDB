@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -331,7 +331,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 static InstrPtr
 mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 {
-	int tpe, k, is_select = isSubSelect(p), is_mirror = (getFunctionId(p) == mirrorRef);
+	int tpe, k, is_select = isSelect(p), is_mirror = (getFunctionId(p) == mirrorRef);
 	int is_identity = (getFunctionId(p) == identityRef && getModuleId(p) == batcalcRef);
 	int ident_var = 0, is_assign = (getFunctionId(p) == NULL), n = 0;
 	InstrPtr r = NULL, q;
@@ -394,7 +394,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 static void
 mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int mvar, int nvar)
 {
-	int k, is_select = isSubSelect(p);
+	int k, is_select = isSelect(p);
 	InstrPtr *r = NULL;
 
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
@@ -628,7 +628,7 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 }
 
 static int
-subjoin_split(Client cntxt, InstrPtr p, int args)
+join_split(Client cntxt, InstrPtr p, int args)
 {
 	char *name = NULL;
 	size_t len;
@@ -645,7 +645,7 @@ subjoin_split(Client cntxt, InstrPtr p, int args)
 	if (!name)
 		return -1;
 	strncpy(name, getFunctionId(p), len-7);
-	strcpy(name+len-7, "subselect");
+	strcpy(name+len-7, "join");
 
 	sym = findSymbol(cntxt->nspace, getModuleId(p), name);
 	assert(sym);
@@ -694,7 +694,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 	if (args == nr_mats) {
 		int mv1 = mats[0], i;
 		int mv2 = mats[args-1];
-		int split = subjoin_split(cntxt, p, args);
+		int split = join_split(cntxt, p, args);
 		int nr_mv1 = split;
 
 		if (split < 0) {
@@ -1065,7 +1065,8 @@ mat_pack_group(MalBlkPtr mb, matlist_t *ml, int g)
 	InstrPtr cur = NULL;
 
 	for(i=cnt-1; i>=0; i--) {
-		InstrPtr grp = newInstruction(mb, groupRef,i?subgroupRef:subgroupdoneRef);
+		/* if cur is non-NULL, it's a subgroup; if i is zero, it's "done" */
+		InstrPtr grp = newInstruction(mb, groupRef,cur?i?subgroupRef:subgroupdoneRef:i?groupRef:groupdoneRef);
 		int ogrp = walk_n_back(mat, g, i);
 		int oext = group_by_ext(ml, ogrp);
 		int attr = mat[oext].im;
@@ -1137,7 +1138,7 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 	int atp = getArgType(mb,p,3), i, a, g, push = 0;
 	InstrPtr r0, r1, r2, attr;
 
-	if (getFunctionId(p) == subgroupdoneRef)
+	if (getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef)
 		push = 1;
 
 	r0 = newInstruction(mb, matRef, packRef);
@@ -1205,7 +1206,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 	int atp = getArgType(mb,p,3), i, a, push = 0; 
 	InstrPtr r0, r1, r2, attr;
 
-	if (getFunctionId(p) == subgroupdoneRef)
+	if (getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef)
 		push = 1;
 
 	if (ml->v[g].im == -1){ /* already packed */
@@ -1428,11 +1429,25 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 static void
 mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 {
+	/* transform
+	 * a := sample.subuniform(b,n);
+	 * into
+	 * t1 := sample.subuniform(b1,n);
+	 * t2 := sample.subuniform(b2,n);
+	 * ...
+	 * t0 := mat.pack(t1,t2,...);
+	 * tn := sample.subuniform(t0,n);
+	 * a := algebra.projection(tn,t0);
+	 *
+	 * Note that this does *not* give a uniform sample of the original
+	 * bat b!
+	 */
+
 	int tpe = getArgType(mb,p,0), k, piv;
-	InstrPtr pck, q;
+	InstrPtr pck, q, r;
 
 	pck = newInstruction(mb,matRef,packRef);
-	getArg(pck,0) = getArg(p,0);
+	getArg(pck,0) = newTmpVariable(mb, tpe);
 
 	for(k=1; k< ml->v[m].mi->argc; k++) {
 		q = copyInstruction(p);
@@ -1447,8 +1462,15 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	pushInstruction(mb,pck);
 
 	q = copyInstruction(p);
+	getArg(q,0) = newTmpVariable(mb, tpe);
 	getArg(q,q->retc) = getArg(pck,0);
 	pushInstruction(mb,q);
+
+	r = newInstruction(mb, algebraRef, projectionRef);
+	getArg(r,0) = getArg(p,0);
+	pushArgument(mb, r, getArg(q, 0));
+	pushArgument(mb, r, getArg(pck, 0));
+	pushInstruction(mb, r);
 
 	ml->v[piv].packed = 1;
 	ml->v[piv].type = mat_slc;
@@ -1491,10 +1513,13 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* pack if there is a group statement following a groupdone (ie aggr(distinct)) */
 		if (getModuleId(p) == groupRef && p->argc == 5 && 
-		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef)) {
+		   (getFunctionId(p) == subgroupRef ||
+			getFunctionId(p) == subgroupdoneRef ||
+			getFunctionId(p) == groupRef ||
+			getFunctionId(p) == groupdoneRef)) {
 			InstrPtr q = old[vars[getArg(p, p->argc-1)]]; /* group result from a previous group(done) */
 
-			if (getModuleId(q) == groupRef && getFunctionId(q) == subgroupdoneRef)
+			if (getFunctionId(q) == subgroupdoneRef || getFunctionId(q) == groupdoneRef)
 				groupdone = 1;
 		}
 		if (getModuleId(p) == algebraRef && 
@@ -1636,14 +1661,14 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* Now we handle subgroup and aggregation statements. */
 		if (!groupdone && match == 1 && bats == 1 && p->argc == 4 && getModuleId(p) == groupRef && 
-		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) && 
+		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) && 
 	 	   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
 			mat_group_new(mb, p, &ml, m);
 			actions++;
 			continue;
 		}
 		if (!groupdone && match == 2 && bats == 2 && p->argc == 5 && getModuleId(p) == groupRef && 
-		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) && 
+		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) && 
 		   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0) &&
 		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) && 
 		     ml.v[n].im >= 0 /* not packed */) {
@@ -1702,8 +1727,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		/* Handle setops */
 		if (match > 0 && getModuleId(p) == algebraRef &&
-		    (getFunctionId(p) == subdiffRef || 
-		     getFunctionId(p) == subinterRef) && 
+		    (getFunctionId(p) == differenceRef || 
+		     getFunctionId(p) == intersectRef) && 
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) { 
 		   	n=is_a_mat(getArg(p,2), &ml);
 			mat_setop(mb, p, &ml, m, n);
@@ -1749,8 +1774,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
-		/* subselect on insert, should use last tid only */
-		if (match == 1 && fm == 2 && isSubSelect(p) && p->retc == 1 &&
+		/* select on insert, should use last tid only */
+		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && 
 		   !ml.v[m].packed && /* not packed yet */ 
 		   !was_a_mat(getArg(p,fm-1), &ml)){ /* not previously packed */
@@ -1761,8 +1786,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
-		/* subselect on update, with nil bat */
-		if (match == 1 && fm == 1 && isSubSelect(p) && p->retc == 1 && 
+		/* select on update, with nil bat */
+		if (match == 1 && fm == 1 && isSelect(p) && p->retc == 1 && 
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && bats == 2 &&
 		   isaBatType(getArgType(mb,p,2)) && isVarConstant(mb,getArg(p,2)) && getVarConstant(mb,getArg(p,2)).val.bval == bat_nil) {
 			if ((r = mat_apply1(mb, p, &ml, m, fm)) != NULL)

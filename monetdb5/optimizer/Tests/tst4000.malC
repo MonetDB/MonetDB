@@ -3,8 +3,8 @@
 function foo();
 b:= bat.new(:int);
 c:= bat.new(:int);       # identical until insert takes place
-d:= algebra.subselect(b,0,100,true,true,false);
-e:= algebra.subselect(b,0,100,true,true,false);    # mapped onto one instruction
+d:= algebra.select(b,0,100,true,true,false);
+e:= algebra.select(b,0,100,true,true,false);    # mapped onto one instruction
 k1:= 24;
 k2:= 27;
 l:= k1+k2;

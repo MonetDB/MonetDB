@@ -32,7 +32,7 @@ Ready.
 function user.foo():void;               	#[0] (0)  0 
     p1:bat[:sht] := bat.new(:sht);      	#[1] (0) CMDBATnew 1 <- 2 
     p2:bat[:sht] := bat.new(:sht);      	#[2] (0) CMDBATnew 3 <- 2 
-    z:bat[:sht] := user.extralongfunctionsignature(p1:bat[:sht],p2:bat[:sht]);	#[3] (0)  4 <- 1 3 
+    z:bat[:sht] := user.extralongfunctionsignature(p1:bat[:sht], p2:bat[:sht]);	#[3] (0)  4 <- 1 3 
 end user.foo;                           	#[4] (0)  
 
 # 21:21:41 >  

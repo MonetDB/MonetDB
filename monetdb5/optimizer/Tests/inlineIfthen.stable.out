@@ -31,10 +31,10 @@ Ready.
 
 function user.qry():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
-    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
-    bat.append(b:bat[:int],10:int);     	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
-    bat.append(b:bat[:int],20:int);     	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
-    r:bat[:int] := mal.multiplex("user":str,"foo":str,b:bat[:int]);	#[5] (0) MANIFOLDremapMultiplex 9 <- 10 11 1 
+    bat.append(b:bat[:int], 1:int);     	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    bat.append(b:bat[:int], 10:int);    	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
+    bat.append(b:bat[:int], 20:int);    	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
+    r:bat[:int] := mal.multiplex("user":str, "foo":str, b:bat[:int]);	#[5] (0) MANIFOLDremapMultiplex 9 <- 10 11 1 
     io.print(r:bat[:int]);              	#[6] (0) IOprint_val 12 <- 9 
 end user.qry;                           	#[7] (0)  
 

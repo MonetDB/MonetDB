@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -221,10 +221,11 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		bat->cached = NULL;
 	}
 	if (!is_new && bat->uibid && bat->uvbid) {
-		BAT *ib = temp_descriptor(bat->ibid), *otids = tids;
+		BAT *ib = temp_descriptor(bat->ibid);
+		BAT *o = NULL;
 
 		if (BATcount(ib)) { 
-			BAT *nui = tids, *nuv = updates, *o;
+			BAT *nui = tids, *nuv = updates;
 
 			o = BATthetaselect(tids, NULL, &ib->hseqbase, ">=");
 			nui = BATproject(o, tids);
@@ -236,13 +237,6 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 			bat_destroy(nuv);
 
 			o = BATthetaselect(tids, NULL, &ib->hseqbase, "<");
-			nui = BATproject(o, tids);
-			nuv = BATproject(o, updates);
-			assert(BATcount(nui) == BATcount(nuv));
-			bat_destroy(o);
-
-			tids = nui;
-			updates = nuv;
 		}
 		bat_destroy(ib);
 
@@ -265,16 +259,12 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 			bat_destroy(uv);
 			uv = temp_descriptor(bat->uvbid);
 		}
-		BATappend(ui, tids, TRUE);
-		BATappend(uv, updates, TRUE);
+		BATappend(ui, tids, o, TRUE);
+		BATappend(uv, updates, o, TRUE);
 		assert(BATcount(tids) == BATcount(updates));
+		bat_destroy(o);
 		bat_destroy(ui);
 		bat_destroy(uv);
-		if (tids != otids) {
-			bat_destroy(tids);
-			bat_destroy(updates);
-			tids = otids;
-		}
 	} else if (is_new && bat->bid) { 
 		BAT *ib = temp_descriptor(bat->ibid);
 		b = temp_descriptor(bat->bid);
@@ -526,10 +516,10 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		}
 		if (isVIEW(i) && b->batCacheid == VIEWtparent(i)) {
 			BAT *ic = COLcopy(i, i->ttype, TRUE, TRANSIENT);
-			BATappend(b, ic, TRUE);
+			BATappend(b, ic, NULL, TRUE);
 			bat_destroy(ic);
 		} else 
-			BATappend(b, i, TRUE);
+			BATappend(b, i, NULL, TRUE);
 		assert(BUNlast(b) > b->batInserted);
 		bat_destroy(b);
 	}
@@ -716,7 +706,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 		b = temp_descriptor(bat->dbid);
 	}
 	assert(b->theap.storage != STORE_PRIV);
-	BATappend(b, i, TRUE);
+	BATappend(b, i, NULL, TRUE);
 	BATkey(b, TRUE);
 	bat_destroy(b);
 
@@ -900,6 +890,62 @@ count_del(sql_trans *tr, sql_table *t)
 	if (!d)
 		return 0;
 	return d->cnt;
+}
+
+static size_t
+count_col_upd(sql_trans *tr, sql_column *c)
+{
+	sql_delta *b;
+
+	assert (isTable(c->t)) ;
+	if (!c->data) {
+		sql_column *oc = tr_find_column(tr->parent, c);
+		c->data = timestamp_delta(oc->data, tr->stime);
+	}
+        b = c->data;
+	if (!b)
+		return 1;
+	return b->ucnt;
+}
+
+static size_t
+count_idx_upd(sql_trans *tr, sql_idx *i)
+{
+	sql_delta *b;
+
+	assert (isTable(i->t)) ;
+	if (!i->data) {
+		sql_idx *oi = tr_find_idx(tr->parent, i);
+		i->data = timestamp_delta(oi->data, tr->stime);
+	}
+	b = i->data;
+	if (!b)
+		return 0;
+	return b->ucnt;
+}
+
+static size_t
+count_upd(sql_trans *tr, sql_table *t)
+{
+	node *n;
+
+	if (!isTable(t)) 
+		return 0;
+
+	for( n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+
+		if (count_col_upd(tr, c))
+			return 1;
+	}
+	if (t->idxs.set)
+	for( n = t->idxs.set->h; n; n = n->next) {
+		sql_idx *i = n->data;
+
+		if (count_idx_upd(tr, i))
+			return 1;
+	}
+	return 0;
 }
 
 static int
@@ -1664,7 +1710,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 	if (BUNlast(ins) > 0) {
 		(*changes)++;
 		assert(cur->theap.storage != STORE_PRIV);
-		BATappend(cur,ins,TRUE);
+		BATappend(cur, ins, NULL, TRUE);
 		cbat->cnt = cbat->ibase = BATcount(cur);
 		BATcleanProps(cur);
 		temp_destroy(cbat->ibid);
@@ -1916,7 +1962,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			assert((BATcount(cur) + BATcount(ins)) == cbat->cnt);
 			//assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
 			assert(!BATcount(ins) || !isEbat(ins));
-			BATappend(cur,ins,TRUE);
+			BATappend(cur, ins, NULL, TRUE);
 			BATcleanProps(cur);
 			temp_destroy(cbat->bid);
 			temp_destroy(cbat->ibid);
@@ -1996,7 +2042,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 			ins = cur;
 			cur = newcur;
 		} else {
-			BATappend(cur,ins,TRUE);
+			BATappend(cur, ins, NULL, TRUE);
 			BATcleanProps(cur);
 			if (cur->batPersistence == PERSISTENT)
 				BATmsync(cur);
@@ -2466,6 +2512,7 @@ bat_storage_init( store_functions *sf)
 	sf->delete_tab = (delete_tab_fptr)&delete_tab;
 
 	sf->count_del = (count_del_fptr)&count_del;
+	sf->count_upd = (count_upd_fptr)&count_upd;
 	sf->count_col = (count_col_fptr)&count_col;
 	sf->count_idx = (count_idx_fptr)&count_idx;
 	sf->dcount_col = (dcount_col_fptr)&dcount_col;

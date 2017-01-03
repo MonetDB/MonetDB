@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -171,6 +171,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	if (msg){
 		return msg;
 	}
+	mb->keephistory |= be->mvc->emod & mod_debug;
 	if (be->mvc->no_mitosis) {
 		for (i = mb->stop - 1; i > 0; i--) {
 			q = getInstrPtr(mb, i);
@@ -200,7 +201,7 @@ SQLoptimizeFunction(Client c, MalBlkPtr mb)
 	msg = addOptimizers(c, mb, pipe, TRUE);
 	if (msg)
 		return msg;
-	mb->keephistory = be->mvc->emod & mod_debug;
+	mb->keephistory |= be->mvc->emod & mod_debug;
 	msg = optimizeMALBlock(c, mb);
 	mb->keephistory = FALSE;
 	return msg;
@@ -249,6 +250,7 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	msg = addOptimizers(c, mb, pipe, FALSE);
 	if (msg)
 		return msg;
+	mb->keephistory |= be->mvc->emod & mod_debug;
 	msg = optimizeMALBlock(c, mb);
 	return msg;
 }

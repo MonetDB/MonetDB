@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -26,8 +26,6 @@ enum heaptype {
 	orderidxheap
 };
 
-__hidden void ALIGNcommit(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__visibility__("hidden")));
 __hidden int ATOMisdescendant(int id, int parentid)
@@ -57,7 +55,7 @@ __hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted)
+__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, int subsorted)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -123,9 +121,9 @@ __hidden gdk_return GDKremovedir(int farmid, const char *nme)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
 	__attribute__((__visibility__("hidden")));
-__hidden int GDKssort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+__hidden gdk_return GDKssort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__visibility__("hidden")));
-__hidden int GDKssort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+__hidden gdk_return GDKssort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
@@ -166,14 +164,6 @@ __hidden void MT_init_posix(void)
 __hidden void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 	__attribute__((__visibility__("hidden")));
 __hidden int MT_msync(void *p, size_t len)
-	__attribute__((__visibility__("hidden")));
-__hidden int OIDdirty(void)
-	__attribute__((__visibility__("hidden")));
-__hidden int OIDinit(void)
-	__attribute__((__visibility__("hidden")));
-__hidden oid OIDread(str buf)
-	__attribute__((__visibility__("hidden")));
-__hidden int OIDwrite(FILE *f)
 	__attribute__((__visibility__("hidden")));
 __hidden void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));

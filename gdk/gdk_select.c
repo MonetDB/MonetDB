@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1369,7 +1369,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "", anti);
 		if (s) {
-			return COLcopy(s, s->ttype, 0, TRANSIENT);
+			oid o = b->hseqbase + BATcount(b);
+			BUN q = SORTfndfirst(s, &o);
+			BUN p = SORTfndfirst(s, &b->hseqbase);
+			return BATslice(s, p, q);
 		} else {
 			return BATdense(0, b->hseqbase, BATcount(b));
 		}

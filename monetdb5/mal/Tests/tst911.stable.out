@@ -33,29 +33,29 @@ function user.foo():void;               	#[0] (0)  0
     b:bat[:lng] := bat.new(:lng);       	#[1] (0) CMDBATnew 1 <- 2 
     INT_MAX:int := 2147483647:int;      	#[2] (0)  3 <- 4 
     dbgmsk_restore:int := mdb.getDebug();	#[3] (0) MDBgetDebug 5 
-    dbgmsk_unset:int := calc.+(8:int,8388608:int);	#[4] (0) CMDvarADDsignal 6 <- 7 8 
-    dbgmsk_keep:int := calc.xor(INT_MAX:int,dbgmsk_unset:int);	#[5] (0) CMDvarXOR 9 <- 3 6 
-    dbgmsk_set:int := calc.and(dbgmsk_restore:int,dbgmsk_keep:int);	#[6] (0) CMDvarAND 10 <- 5 9 
+    dbgmsk_unset:int := calc.+(8:int, 8388608:int);	#[4] (0) CMDvarADDsignal 6 <- 7 8 
+    dbgmsk_keep:int := calc.xor(INT_MAX:int, dbgmsk_unset:int);	#[5] (0) CMDvarXOR 9 <- 3 6 
+    dbgmsk_set:int := calc.and(dbgmsk_restore:int, dbgmsk_keep:int);	#[6] (0) CMDvarAND 10 <- 5 9 
     mdb.setDebug(dbgmsk_set:int);       	#[7] (0) MDBsetDebug 11 <- 10 
     r:void := mmath.srand(0:int);       	#[8] (0) MATHsrandint 12 <- 13 
 barrier i:lng := 0:lng;                 	#[9] (0)  14 <- 15 
     k:int := mmath.rand();              	#[10] (0) MATHrandint 16 
     l:lng := calc.lng(k:int);           	#[11] (0) CMDvarCONVERT 17 <- 16 
-    bat.append(b:bat[:lng],l:lng);      	#[12] (0) BKCappend_val_wrap 18 <- 1 17 
-    redo i:lng := iterator.next(1:lng,1000000:lng);	#[13] (0) ITRnext_lng 14 <- 19 20 
+    bat.append(b:bat[:lng], l:lng);     	#[12] (0) BKCappend_val_wrap 18 <- 1 17 
+    redo i:lng := iterator.next(1:lng, 1000000:lng);	#[13] (0) ITRnext_lng 14 <- 19 20 
 exit i:lng;                             	#[14] (0)  14 
     mdb.setDebug(dbgmsk_restore:int);   	#[15] (0) MDBsetDebug 21 <- 5 
     t0:lng := alarm.usec();             	#[16] (0) ALARMusec 22 
 barrier doit:bit := true:bit;           	#[17] (0)  23 <- 24 
-    t:bat[:oid] := algebra.subselect(b:bat[:lng],256000:lng,266000:lng,true:bit,true:bit,false:bit);	#[18] (0) ALGsubselect1 25 <- 1 26 27 24 24 28 
+    t:bat[:oid] := algebra.select(b:bat[:lng], 256000:lng, 266000:lng, true:bit, true:bit, false:bit);	#[18] (0) ALGselect1 25 <- 1 26 27 24 24 28 
 exit doit:bit;                          	#[19] (0)  23 
     t1:lng := alarm.usec();             	#[20] (0) ALARMusec 29 
-    base:lng := calc.-(t1:lng,t0:lng);  	#[21] (0) CMDvarSUBsignal 30 <- 29 22 
-    io.printf("#select direct %d usec\n":str,base:lng);	#[22] (0) IOprintf 31 <- 32 30 
-    user.choptest(b:bat[:lng],100000:lng,base:lng);	#[23] (0)  33 <- 1 34 30 
-    user.choptest(b:bat[:lng],10000:lng,base:lng);	#[24] (0)  35 <- 1 36 30 
-    user.choptest(b:bat[:lng],1000:lng,base:lng);	#[25] (0)  37 <- 1 38 30 
-    user.choptest(b:bat[:lng],100:lng,base:lng);	#[26] (0)  39 <- 1 40 30 
+    base:lng := calc.-(t1:lng, t0:lng); 	#[21] (0) CMDvarSUBsignal 30 <- 29 22 
+    io.printf("#select direct %d usec\n":str, base:lng);	#[22] (0) IOprintf 31 <- 32 30 
+    user.choptest(b:bat[:lng], 100000:lng, base:lng);	#[23] (0)  33 <- 1 34 30 
+    user.choptest(b:bat[:lng], 10000:lng, base:lng);	#[24] (0)  35 <- 1 36 30 
+    user.choptest(b:bat[:lng], 1000:lng, base:lng);	#[25] (0)  37 <- 1 38 30 
+    user.choptest(b:bat[:lng], 100:lng, base:lng);	#[26] (0)  39 <- 1 40 30 
 end user.foo;                           	#[27] (0)  
 #select direct 4533 usec
 #chopped at 100000 5256 723  at 72.300003 usec

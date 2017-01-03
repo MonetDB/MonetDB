@@ -1,24 +1,18 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ */
 
 #include "emit.h"
+#include "conversion.h"
+#include "convert_loops.h"
 #include "type_conversion.h"
 #include "gdk_interprocess.h"
 
-#include "convert_loops.h"
 #include "unicode.h"
-
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#define PyString_FromString PyUnicode_FromString
-#define PyString_Check PyUnicode_Check
-#define PyString_CheckExact PyUnicode_CheckExact
-#define PyString_AsString PyUnicode_AsUTF8
-#define PyString_AS_STRING PyUnicode_AsUTF8
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_Check PyLong_Check
-#define PythonUnicodeType char
-#else
-#define PythonUnicodeType Py_UNICODE
-#endif
 
 #define scalar_convert(tpe) {\
     tpe val = (tpe) tpe##_nil; msg = pyobject_to_##tpe(&dictEntry, 42, &val); \
@@ -312,9 +306,21 @@ static PyMethodDef _emitObject_methods[] = {
 };
 
 PyTypeObject PyEmitType = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "monetdb._emit",
+    _PyObject_EXTRA_INIT
+// in python3 they use structs within structs to represent this information, and many compilers throw warnings if you don't use separate braces
+// to initialize these separate structs. However, in Python2, they use #defines to put this information in, so we have these nice #ifdefs
+#ifdef IS_PY3K
+    { { 
+#endif
+        1, NULL 
+#ifdef IS_PY3K
+    }
+#endif 
+    , 0
+#ifdef IS_PY3K
+    }
+#endif
+    , "monetdb._emit",
     sizeof(PyEmitObject),
     0,
     0,                                          /* tp_dealloc */

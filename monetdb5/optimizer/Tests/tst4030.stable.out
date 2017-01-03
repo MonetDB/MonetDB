@@ -29,18 +29,18 @@ Ready.
 #mdb.list("user","foo");
 function user.foo():void;
     r := bat.new(:int);
-    bat.append(r,1:int);
-    bat.append(r,2:int);
-    bat.append(r,3:int);
-    bat.append(r,4:int);
-    s := algebra.subselect(r,0:int,5:int,true,true,false);
+    bat.append(r, 1:int);
+    bat.append(r, 2:int);
+    bat.append(r, 3:int);
+    bat.append(r, 4:int);
+    s := algebra.select(r, 0:int, 5:int, true, true, false);
 # equal to a copy 
-    r1 := algebra.projection(s,r);
+    r1 := algebra.projection(s, r);
     io.print(r1);
-    t := algebra.subselect(r,0:int,3:int,true,true,false);
+    t := algebra.select(r, 0:int, 3:int, true, true, false);
 #print(t); 
 # reuse t 
-    r1 := algebra.projection(t,r);
+    r1 := algebra.projection(t, r);
     io.print(r1);
     io.print("done");
 end user.foo;

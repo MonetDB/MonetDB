@@ -33,10 +33,10 @@ function user.getz(p:int):int;          	#[0] (0)  0 <- 1
     x:int := nil:int;                   	#[1] (0)  2 <- 3 
     V6:sht := calc.sht(10:int);         	#[2] (0) CMDvarCONVERT 5 <- 6 
     V9:int := calc.int(V6:sht);         	#[3] (0) CMDvarCONVERT 7 <- 5 
-    V11:bit := calc.>(p:int,V9:int);    	#[4] (0) CMDvarGT 8 <- 1 7 
+    V11:bit := calc.>(p:int, V9:int);   	#[4] (0) CMDvarGT 8 <- 1 7 
 barrier V12:bit := V11:bit;             	#[5] (0)  9 <- 8 
     V15:int := calc.int(2:int);         	#[6] (0) CMDvarCONVERT 11 <- 12 
-    V22:int := calc.*(p:int,V15:int);   	#[7] (0) CMDvarMULsignal 13 <- 1 11 
+    V22:int := calc.*(p:int, V15:int);  	#[7] (0) CMDvarMULsignal 13 <- 1 11 
     V24:int := calc.int(V22:int);       	#[8] (0) CMDvarCONVERT 14 <- 13 
     x:int := V24:int;                   	#[9] (0)  2 <- 14 
 exit V12:bit;                           	#[10] (0)  9 

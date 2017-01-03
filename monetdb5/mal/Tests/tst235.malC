@@ -5,7 +5,7 @@ function dir():void;
 	d:= bbp.getRefCount();
 	dl:=bbp.getLRefCount();
 	dn:= bbp.getNames();
-	ds:= algebra.subsort(dn,false,false);
+	ds:= algebra.sort(dn,false,false);
 	io.print(ds,d,dl);
 end dir;
 

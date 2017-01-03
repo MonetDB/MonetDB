@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -280,7 +280,7 @@ base_colors[NUM_COLORS] = {
 /* 10355 */	{ 0, 0, "language", "pass", 0 },
 /*  5941 */	{ 0, 0, "sql", "bind", 0 },
 /*  5664 */	{ 0, 0, "mat", "packIncrement", 0 },
-/*  4796 */	{ 0, 0, "algebra", "subselect", 0 },
+/*  4796 */	{ 0, 0, "algebra", "select", 0 },
 /*  4789 */	{ 0, 0, "algebra", "subjoin", 0 },
 /*  2664 */	{ 0, 0, "sql", "projectdelta", 0 },
 /*  2112 */	{ 0, 0, "batcalc", "!=", 0 },
@@ -294,17 +294,19 @@ base_colors[NUM_COLORS] = {
 /*   766 */	{ 0, 0, "aggr", "subsum", 0 },
 /*   610 */	{ 0, 0, "batcalc", "*", 0 },
 /*   577 */	{ 0, 0, "group", "subgroupdone", 0 },
+/*   577 */	{ 0, 0, "group", "groupdone", 0 },
 /*   481 */	{ 0, 0, "sql", "subdelta", 0 },
 /*   481 */	{ 0, 0, "sql", "subsort", 0 },
 /*   448 */	{ 0, 0, "batcalc", "-", 0 },
 /*   334 */	{ 0, 0, "bat", "mirror", 0 },
 /*   300 */	{ 0, 0, "group", "subgroup", 0 },
+/*   300 */	{ 0, 0, "group", "group", 0 },
 /*   264 */	{ 0, 0, "batcalc", "==", 0 },
 /*   260 */	{ 0, 0, "batcalc", "ifthenelse", 0 },
 /*   209 */	{ 0, 0, "batcalc", "hge", 0 },
 /*   209 */	{ 0, 0, "calc", "str", 0 },
 /*   207 */	{ 0, 0, "aggr", "sum", 0 },
-/*   200 */	{ 0, 0, "algebra", "thetasubselect", 0 },
+/*   200 */	{ 0, 0, "algebra", "thetaselect", 0 },
 /*   200 */	{ 0, 0, "algebra", "selectNotNil", 0 },
 /*   197 */	{ 0, 0, "aggr", "subcount", 0 },
 /*   166 */	{ 0, 0, "batcalc", "dbl", 0 },
@@ -325,7 +327,7 @@ base_colors[NUM_COLORS] = {
 /*    66 */	{ 0, 0, "pqueue", "utopn_max", 0 },
 /*    66 */	{ 0, 0, "algebra", "tdiff", 0 },
 /*    53 */	{ 0, 0, "calc", "int", 0 },
-/*    47 */	{ 0, 0, "algebra", "likesubselect", 0 },
+/*    47 */	{ 0, 0, "algebra", "likeselect", 0 },
 /*    44 */	{ 0, 0, "sql", "exportOperation", 0 },
 /*    42 */	{ 0, 0, "algebra", "subslice", 0 },
 /*    36 */	{ 0, 0, "pqueue", "utopn_min", 0 },

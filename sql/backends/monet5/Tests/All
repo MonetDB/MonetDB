@@ -61,6 +61,8 @@ HAVE_LIBPY?pyloader05
 HAVE_LIBPY?pyloader06
 HAVE_LIBPY?pyloader07
 
+HAVE_LIBPY?createorreplace
+
 # should this work?
 #inlineUDF
 
@@ -69,5 +71,6 @@ HAVE_LIBPY?pyloader07
 
 simpleSQL
 limithack
+shutdown
 
 HAVE_HGE?int_notation_1e5

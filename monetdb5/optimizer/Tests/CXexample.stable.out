@@ -30,16 +30,16 @@ Ready.
 function user.foo():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     c:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 3 <- 2 
-    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[3] (0) ALGsubselect1 4 <- 1 5 6 7 8 9 
-    l:int := calc.+(24:int,27:int);     	#[4] (0) CMDvarADDsignal 15 <- 12 14 
-    l3:int := calc.+(l:int,24:int);     	#[5] (0) CMDvarADDsignal 17 <- 15 12 
+    d:bat[:oid] := algebra.select(b:bat[:int], 0:int, 100:int, true:bit, true:bit, false:bit);	#[3] (0) ALGselect1 4 <- 1 5 6 7 8 9 
+    l:int := calc.+(24:int, 27:int);    	#[4] (0) CMDvarADDsignal 15 <- 12 14 
+    l3:int := calc.+(l:int, 24:int);    	#[5] (0) CMDvarADDsignal 17 <- 15 12 
 end user.foo;                           	#[6] (0)  
 function user.foo():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     c:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 3 <- 2 
-    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[3] (0) ALGsubselect1 4 <- 1 5 6 7 8 9 
-    l:int := calc.+(24:int,27:int);     	#[4] (0) CMDvarADDsignal 15 <- 12 14 
-    l3:int := calc.+(l:int,24:int);     	#[5] (0) CMDvarADDsignal 17 <- 15 12 
+    d:bat[:oid] := algebra.select(b:bat[:int], 0:int, 100:int, true:bit, true:bit, false:bit);	#[3] (0) ALGselect1 4 <- 1 5 6 7 8 9 
+    l:int := calc.+(24:int, 27:int);    	#[4] (0) CMDvarADDsignal 15 <- 12 14 
+    l3:int := calc.+(l:int, 24:int);    	#[5] (0) CMDvarADDsignal 17 <- 15 12 
 end user.foo;                           	#[6] (0)  
 
 # 15:36:19 >  

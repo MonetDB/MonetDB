@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 module batsql;
 module sql;
@@ -39,10 +39,6 @@ comment "Get the multiversion catalog context.
 Needed for correct statement dependencies
 (ie sql.update, should be after sql.bind in concurrent execution)";
 
-pattern trans(type:int,chain:int,name:str):void
-address SQLtransaction
-comment "A transaction statement (type can be commit,release,rollback or start)";
-
 unsafe pattern transaction()
 address SQLtransaction2
 comment "Start an autocommit transaction";
@@ -55,65 +51,6 @@ pattern abort()
 address SQLabort
 comment "Trigger the abort operation for a MAL block";
 
-pattern catalog(type:int,sname:str,name:str,action:int):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,name:str,funcid:int,ft:int,action:int):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,name:str,tname:str,time:int,o:int,event:int,oname:str,nname:str,condition:str,query:str):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,t:ptr):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,t:ptr,temp:int):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,t:ptr,restart:lng):void
-address SQLcatalog
-comment "a catalog statement";
-
-pattern catalog(type:int,sname:str,tname:str):void
-address SQLcatalog
-comment "a catalog trigger statement";
-
-pattern catalog(type:int,grantee:str,role:str,grantor:int,admin:int):void
-address SQLcatalog
-comment "a grant/revoke role statement";
-
-pattern catalog(type:int,user:str,passwd:str,enc:int,schema:str,fullname:str):void
-address SQLcatalog
-comment "a user catalog statement";
-
-pattern catalog(type:int,sname:str,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void
-address SQLcatalog
-comment "a grant/revoke privileges statement";
-
-pattern catalog(type:int,sname:str,func:int,grantee:str,privs:int,grant:int,grantor:int):void
-address SQLcatalog
-comment "a grant/revoke function privileges statement";
-
-pattern catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void
-address SQLcatalog
-comment "a create index catalog statement";
-
-pattern catalog(type:int,sname:str,tname:str,access:int):void
-address SQLcatalog
-comment "a alter table access statement";
-
-pattern catalog(type:int,msname:str,mtname:str,psname:str,ptname:str,action:int):void
-address SQLcatalog
-comment "a alter table add/del table catalog statement";
-
-pattern catalog(type:int,sname:str,tname:str,impl:str):void
-address SQLcatalog
-comment "a create type catalog statement";
 
 pattern eval(cmd:str):void 
 address SQLstatement
@@ -253,25 +190,25 @@ command delta( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3]
 address DELTAbat
 comment "Return column bat with delta's applied.";
 
-command projectdelta( subselect:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3] ) :bat[:any_3] 
+command projectdelta( select:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3] ) :bat[:any_3] 
 address DELTAproject
 comment "Return column bat with delta's applied.";
 
 command subdelta( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid], ins:bat[:oid] ) :bat[:oid]
 address DELTAsub
-comment "Return a single bat of subselected delta.";
+comment "Return a single bat of selected delta.";
 
 command delta( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
 address DELTAbat2
 comment "Return column bat with delta's applied.";
 
-command projectdelta( subselect:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
+command projectdelta( select:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
 address DELTAproject2
 comment "Return column bat with delta's applied.";
 
 command subdelta( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid]) :bat[:oid]
 address DELTAsub2
-comment "Return a single bat of subselected delta.";
+comment "Return a single bat of selected delta.";
 
 command project( col:bat[:oid], l:bat[:oid], r:bat[:oid]) :bat[:oid]
 address BATleftproject
@@ -279,38 +216,38 @@ comment "Last step of a left outer join, ie project the inner join (l,r) over th
 
 command getVersion(clientid:int):lng
 address mvc_getVersion
-comment "Return the database version identifier for a client";
+comment "Return the database version identifier for a client.";
 
 pattern append(mvc:int, sname:str, tname:str, cname:str, ins:any):int
 address mvc_append_wrap
-comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname (returns sequence number for order dependence)";
+comment "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.";
 
 pattern update(mvc:int, sname:str, tname:str, cname:str, rids:any, upd:any):int
 address mvc_update_wrap
-comment "Update the values of the column tname.cname";
+comment "Update the values of the column tname.cname. Returns sequence number for order dependence)";
 
 unsafe pattern clear_table(sname:str, tname:str) :lng
 address mvc_clear_table_wrap
-comment "Clear table";
+comment "Clear the table sname.tname.";
 
 pattern tid( mvc:int, sname:str, tname:str):bat[:oid] 
 address SQLtid
-comment "Return the tables tid column.";
+comment "Return a column with the valid tuple identifiers associated with the table sname.tname.";
 pattern tid( mvc:int, sname:str, tname:str, part_nr:int, nr_parts:int ):bat[:oid] 
 address SQLtid
 comment "Return the tables tid column.";
 
 unsafe pattern delete(mvc:int, sname:str, tname:str, b:any):int
 address mvc_delete_wrap
-comment "delete from table";
+comment "Delete a row from a table. Returns sequence number for order dependece.";
 
 unsafe pattern resultSet(tbl:str, attr:str, tpe:str, len:int, scale:int, eclass:int, val:any) :int 
 address mvc_scalar_value_wrap
-comment "Prepare a table result set";
+comment "Prepare a table result set for the client front-end.";
 
 unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:any...) :int 
 address mvc_row_result_wrap
-comment "Prepare a table result set";
+comment "Prepare a table result set for the client front-end";
 
 unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int 
 address mvc_table_result_wrap
@@ -396,7 +333,7 @@ address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
 
 inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
-	(g,e,h) := group.subgroup(gp);
+	(g,e,h) := group.group(gp);
 	m := aggr.max(h);
 	c0 := calc.isnil(m);
 	c01 := calc.not(c0);
@@ -415,7 +352,7 @@ comment "if col contains exactly one value return this. Incase of more raise an 
 
 # todo implement = all aggregator (ie keep last value and compare status)
 inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
-	(g,e,h) := group.subgroup(gp);
+	(g,e,h) := group.group(gp);
 	m := aggr.max(h);
 	c0 := calc.isnil(m);
 	c01 := calc.not(c0);

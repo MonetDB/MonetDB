@@ -1,15 +1,13 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ */
 
 #include "formatinput.h"
 #include "type_conversion.h"
-
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#define PyString_FromStringAndSize PyUnicode_FromStringAndSize
-#endif
-
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#endif
 
 //! Parse a PyCodeObject from a string, the string is expected to be in the format {@<encoded_function>};, where <encoded_function> is the Marshalled code object
 PyObject *PyCodeObject_ParseString(char *string, char **msg);
@@ -373,5 +371,5 @@ finally:
 }
 
 void _formatinput_init(void) {
-    import_array();
+    _import_array();
 }

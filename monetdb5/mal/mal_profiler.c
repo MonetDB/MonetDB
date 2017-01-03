@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -278,6 +278,14 @@ This information can be used to determine memory footprint and variable life tim
 				logadd("{");
 				logadd("\"index\":\"%d\",%s", j,pret);
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
+				if( mb->var[getArg(pci,j)]->stc){
+					InstrPtr stc = getInstrPtr(mb, mb->var[getArg(pci,j)]->stc);
+					if(stc && strcmp(getModuleId(stc),"sql") ==0  && strncmp(getFunctionId(stc),"bind",4)==0)
+						logadd("\"alias\":\"%s.%s.%s\",%s", 
+							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
+							getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
+							getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval, pret);
+				}
 				if( isaBatType(tpe) ){
 					BAT *d= BATdescriptor( bid = stk->stk[getArg(pci,j)].val.bval);
 					tname = getTypeName(getBatType(tpe));

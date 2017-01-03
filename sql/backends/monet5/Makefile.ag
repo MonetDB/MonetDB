@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 SUBDIRS = NOT_WIN32?vaults UDF LSST HAVE_GSL?gsl generator
 
@@ -31,6 +31,8 @@ lib__sql = {
 		sql_assert.c sql_assert.h \
 		sql_upgrades.c sql_upgrades.h \
 		rel_bin.c rel_bin.h \
+		sql_cat.c sql_cat.h \
+		sql_transaction.c sql_transaction.h \
 		sql_statement.c sql_statement.h \
 		sql_statistics.c sql_statistics.h \
 		sql_gencode.c sql_gencode.h \
@@ -62,7 +64,7 @@ headers_mal = {
 	DIR = libdir/monetdb5
 	SOURCES = sql_aggr_bte.mal  sql_aggr_flt.mal sql_aggr_dbl.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
 		sql_aggr_sht.mal  sql_decimal.mal  sql_inspect.mal \
-		sql_rank.mal sql.mal
+		sql_rank.mal sqlcatalog.mal sql_transaction.mal  sql.mal
 }
 
 headers_mal_hge = {
@@ -89,6 +91,6 @@ EXTRA_DIST = 40_sql.mal \
 	41_sql_hge.mal sql_hge.mal sql_aggr_hge.mal sql_decimal_hge.mal \
 	sql_aggr_bte.mal  sql_aggr_flt.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
 	sql_aggr_sht.mal  sql_decimal.mal  sql_inspect.mal \
-	sql_rank.mal sql.mal 
+	sql_rank.mal sqlcatalog.mal sql_transaction.mal  sql.mal 
 
 EXTRA_DIST_DIR = Tests

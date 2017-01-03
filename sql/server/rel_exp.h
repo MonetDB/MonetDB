@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef _REL_EXP_H_
@@ -86,6 +86,7 @@ extern void exp_setrelname(sql_allocator *sa, sql_exp *e, int nr );
 extern void noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name );
 extern char* make_label(sql_allocator *sa, int nr);
 extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);
+extern sql_exp* exp_label_table(sql_allocator *sa, sql_exp *e, int nr);
 
 extern sql_exp * exp_copy( sql_allocator *sa, sql_exp *e);
 extern list * exps_copy( sql_allocator *sa, list *exps);

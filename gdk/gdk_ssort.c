@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -58,9 +58,9 @@ typedef struct {
 
 	/* 'ah' and 'at' are temp storage to help with merges.  They
 	 * contain room for alloced[ht] entries. */
-	void **ah;
+	void *ah;
 	ssize_t allocedh;
-	void **at;
+	void *at;
 	ssize_t allocedt;
 
 	/* A stack of n pending runs yet to be merged.  Run #i starts
@@ -101,7 +101,7 @@ merge_freemem(MergeState *ms)
 /* Ensure enough temp memory for 'need' array slots is available.
  * Returns 0 on success and -1 if the memory can't be gotten. */
 static int
-merge_getmem(MergeState *ms, ssize_t need, void ***ap,
+merge_getmem(MergeState *ms, ssize_t need, void **ap,
 	     ssize_t *allocedp, int s, char *temparray)
 {
 	assert(ms != NULL);
@@ -177,23 +177,23 @@ merge_getmem(MergeState *ms, ssize_t need, void ***ap,
 		case 0:							\
 			break;						\
 		case sizeof(bte):					\
-			for(i=0; i<N; i++)				\
+			for (i = 0; i < N; i++)				\
 				((bte*)(d))[i] = ((bte*)(s))[i];	\
 			break;						\
 		case sizeof(sht):					\
-			for(i=0; i<N; i++)				\
+			for (i = 0; i < N; i++)				\
 				((sht*)(d))[i] = ((sht*)(s))[i];	\
 			break;						\
 		case sizeof(int):					\
-			for(i=0; i<N; i++)				\
+			for (i = 0; i < N; i++)				\
 				((int*)(d))[i] = ((int*)(s))[i];	\
 			break;						\
 		case sizeof(lng):					\
-			for(i=0; i<N; i++)				\
+			for (i = 0; i < N; i++)				\
 				((lng*)(d))[i] = ((lng*)(s))[i];	\
 			break;						\
 		case 2 * sizeof(lng):					\
-			for(i=0; i<(N<2); i++)				\
+			for (i = 0; i < N*2; i++)			\
 				((lng*)(d))[i] = ((lng*)(s))[i];	\
 			break;						\
 		default:						\

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -51,10 +51,10 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 
 		if( count < MAXdelays && getModuleId(p) == algebraRef ){
-			if( getFunctionId(p) == subselectRef ||
-				getFunctionId(p) == thetasubselectRef ||
-				getFunctionId(p) == likesubselectRef ||
-				getFunctionId(p) == subjoinRef
+			if( getFunctionId(p) == selectRef ||
+				getFunctionId(p) == thetaselectRef ||
+				getFunctionId(p) == likeselectRef ||
+				getFunctionId(p) == joinRef
 			){
 				q= newInstruction(0,languageRef,blockRef);
 				setDestVar(q, newTmpVariable(mb,TYPE_any));
@@ -67,7 +67,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			continue;
 		}
 		if( count < MAXdelays && getModuleId(p) == groupRef ){
-			if( getFunctionId(p) == subgroupdoneRef ){
+			if( getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef ){
 				q= newInstruction(0,languageRef,blockRef);
 				setDestVar(q, newTmpVariable(mb,TYPE_any));
 				q =  pushArgument(mb,q,mvcvar);

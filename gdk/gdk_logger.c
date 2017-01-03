@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -346,10 +346,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			tv = lg->buf;
 		else if (tt > TYPE_str)
 			tv = ATOMnil(tt);
-#if SIZEOF_OID == 8
-		if (tt == TYPE_oid && lg->read32bitoid)
-			rt = BATatoms[TYPE_int].atomRead;
-#endif
 		assert(l->nr <= (lng) BUN_MAX);
 		if (l->flag == LOG_UPDATE) {
 			uid = COLnew(0, ht, (BUN) l->nr, PERSISTENT);
@@ -370,15 +366,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 					res = LOG_ERR;
 					break;
 				}
-#if SIZEOF_OID == 8
-				if (tt == TYPE_oid && lg->read32bitoid) {
-					int vi = * (int *) t;
-					if (vi == int_nil)
-						* (oid *) t = oid_nil;
-					else
-						* (oid *) t = vi;
-				}
-#endif
 				BUNappend(r, t, TRUE);
 				if (t != tv)
 					GDKfree(t);
@@ -387,11 +374,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			void *(*rh) (ptr, stream *, size_t) = ht == TYPE_void ? BATatoms[TYPE_oid].atomRead : BATatoms[ht].atomRead;
 			void *hv = ATOMnil(ht);
 
-#if SIZEOF_OID == 8
-			if ((ht == TYPE_oid || ht == TYPE_void) &&
-			    lg->read32bitoid)
-				rh = BATatoms[TYPE_int].atomRead;
-#endif
 			for (; l->nr > 0; l->nr--) {
 				void *h = rh(hv, lg->log, 1);
 				void *t = rt(tv, lg->log, 1);
@@ -400,24 +382,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 					res = LOG_ERR;
 					break;
 				}
-#if SIZEOF_OID == 8
-				if (lg->read32bitoid) {
-					if (ht == TYPE_void || ht == TYPE_oid) {
-						int vi = * (int *) h;
-						if (vi == int_nil)
-							* (oid *) h = oid_nil;
-						else
-							* (oid *) h = vi;
-					}
-					if (tt == TYPE_oid) {
-						int vi = * (int *) t;
-						if (vi == int_nil)
-							* (oid *) t = oid_nil;
-						else
-							* (oid *) t = vi;
-					}
-				}
-#endif
 				BUNappend(uid, h, TRUE);
 				BUNappend(r, t, TRUE);
 				if (t != tv)
@@ -463,7 +427,7 @@ la_bat_updates(logger *lg, logaction *la)
 	assert(b);
 	if (b) {
 		if (la->type == LOG_INSERT) {
-			BATappend(b, la->b, TRUE);
+			BATappend(b, la->b, NULL, TRUE);
 		} else if (la->type == LOG_UPDATE) {
 			BATiter vi = bat_iterator(la->b);
 			BATiter ii = bat_iterator(la->uid);
@@ -1254,16 +1218,12 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	n[i++] = catalog_nme->batCacheid;
 	n[i++] = dcatalog->batCacheid;
 	if (BATcount(dcatalog) > (BATcount(catalog_nme)/2) && catalog_bid == list_bid && catalog_nme == list_nme && lg->catalog_bid == catalog_bid) {
-		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog), *b;
+		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog);
 
 		bids = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
 		nmes = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
-		b = BATproject(tids, catalog_bid);
-		BATappend(bids, b, TRUE);
-		logbat_destroy(b);
-		b = BATproject(tids, catalog_nme);
-		BATappend(nmes, b, TRUE);
-		logbat_destroy(b);
+		BATappend(bids, catalog_bid, tids, TRUE);
+		BATappend(nmes, catalog_nme, tids, TRUE);
 		logbat_destroy(tids);
 		BATclear(dcatalog, TRUE);
 
@@ -1399,19 +1359,19 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 
 		/* give the catalog bats names so we can find them
 		 * next time */
-		BBPincref(lg->catalog_bid->batCacheid, TRUE);
+		BBPretain(lg->catalog_bid->batCacheid);
 		snprintf(bak, sizeof(bak), "%s_catalog_bid", fn);
 		if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
 				     bak, 0, 0);
 
-		BBPincref(lg->catalog_nme->batCacheid, TRUE);
+		BBPretain(lg->catalog_nme->batCacheid);
 		snprintf(bak, sizeof(bak), "%s_catalog_nme", fn);
 		if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
 				     bak, 0, 0);
 
-		BBPincref(lg->dcatalog->batCacheid, TRUE);
+		BBPretain(lg->dcatalog->batCacheid);
 		snprintf(bak, sizeof(bak), "%s_dcatalog", fn);
 		if (BBPrename(lg->dcatalog->batCacheid, bak) < 0)
 			logger_fatal("logger_load: BBPrename to %s failed",
@@ -1497,15 +1457,15 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		lg->catalog_bid = b;
 		lg->catalog_nme = n;
 		lg->dcatalog = d;
-		BBPincref(lg->catalog_bid->batCacheid, TRUE);
-		BBPincref(lg->catalog_nme->batCacheid, TRUE);
-		BBPincref(lg->dcatalog->batCacheid, TRUE);
+		BBPretain(lg->catalog_bid->batCacheid);
+		BBPretain(lg->catalog_nme->batCacheid);
+		BBPretain(lg->dcatalog->batCacheid);
 		BATloop(b, p, q) {
 			bat bid = *(log_bid *) Tloc(b, p);
 			oid pos = p;
 
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
-				BBPincref(bid, TRUE);
+				BBPretain(bid);
 		}
 	}
 	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
@@ -1627,122 +1587,15 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 	}
 
 	if (fp != NULL) {
-#if SIZEOF_OID == 8
-		char cvfile[PATHLENGTH];
-#endif
-
 		if (check_version(lg, fp) != GDK_SUCCEED) {
 			goto error;
 		}
 
-#if SIZEOF_OID == 8
-		/* When a file *_32-64-convert exists in the database,
-		 * it was left there by the BBP initialization code
-		 * when it did a conversion of 32-bit OIDs to 64 bits
-		 * (see the comment above fixoidheapcolumn and
-		 * fixoidheap in gdk_bbp).  It the file exists, we
-		 * first create a file called convert-32-64 in the log
-		 * directory and we write the current log ID into that
-		 * file.  After this file is created, we delete the
-		 * *_32-64-convert file in the database.  We then know
-		 * that while reading the logs, we have to read OID
-		 * values as 32 bits (this is indicated by setting the
-		 * read32bitoid flag).  When we're done reading the
-		 * logs, we remove the file (and reset the flag).  If
-		 * we get interrupted before we have written this
-		 * file, the file in the database will still exist, so
-		 * the next time we're started, BBPinit will not
-		 * convert OIDs (that was done before we got
-		 * interrupted), but we will still know to convert the
-		 * OIDs ourselves.  If we get interrupted after we
-		 * have deleted the file from the database, we check
-		 * whether the file convert-32-64 exists and if it
-		 * contains the expected ID.  If it does, we again
-		 * know that we have to convert.  If the ID is not
-		 * what we expect, the conversion was apparently done
-		 * already, and so we can delete the file. */
-
-		/* Do not do conversion if logger is shared/read-only */
-		if (!lg->shared) {
-			snprintf(cvfile, sizeof(cvfile), "%sconvert-32-64", lg->dir);
-			snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
-			{
-				FILE *fp1;
-				long off; /* type long required by ftell() & fseek() */
-				int curid;
-
-				/* read the current log id without disturbing
-				 * the file pointer */
-				off = ftell(fp);
-				if (off < 0) /* should never happen */
-					goto error;
-				if (fscanf(fp, "%d", &curid) != 1)
-					curid = -1; /* shouldn't happen? */
-				fseek(fp, off, SEEK_SET);
-
-
-				if ((fp1 = GDKfileopen(farmid, NULL, bak, NULL, "r")) != NULL) {
-					/* file indicating that we need to do
-					 * a 32->64 bit OID conversion exists;
-					 * record the fact in case we get
-					 * interrupted, and set the flag so
-					 * that we actually do what's asked */
-					fclose(fp1);
-					/* first create a versioned file using
-					 * the current log id */
-					if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "w")) == NULL ||
-					    fprintf(fp1, "%d\n", curid) < 2 ||
-					    fflush(fp1) != 0 || /* make sure it's save on disk */
-#if defined(_MSC_VER)
-					    _commit(_fileno(fp1)) < 0 ||
-#elif defined(HAVE_FDATASYNC)
-					    fdatasync(fileno(fp1)) < 0 ||
-#elif defined(HAVE_FSYNC)
-					    fsync(fileno(fp1)) < 0 ||
-#endif
-					    fclose(fp1) != 0)
-						logger_fatal("logger_load: failed to write %s\n", cvfile, 0, 0);
-					/* then remove the unversioned file
-					 * that gdk_bbp created (in this
-					 * order!) */
-					unlink(bak);
-					/* set the flag that we need to convert */
-					lg->read32bitoid = 1;
-				} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "r")) != NULL) {
-					/* the versioned conversion file
-					 * exists: check version */
-					int newid;
-
-					if (fscanf(fp1, "%d", &newid) == 1 &&
-					    newid == curid) {
-						/* versions match, we need to
-						 * convert */
-						lg->read32bitoid = 1;
-					}
-					fclose(fp1);
-					if (!lg->read32bitoid) {
-						/* no conversion, so we can
-						 * remove the versioned
-						 * file */
-						unlink(cvfile);
-					}
-				}
-			}
-		}
-#endif
 		if (logger_readlogs(lg, fp, filename) == LOG_ERR) {
 			goto error;
 		}
 		fclose(fp);
 		fp = NULL;
-#if SIZEOF_OID == 8
-		if (lg->read32bitoid && !lg->shared) {
-			/* we converted, remove versioned file and
-			 * reset conversion flag */
-			unlink(cvfile);
-			lg->read32bitoid = 0;
-		}
-#endif
 		if (lg->postfuncp)
 			(*lg->postfuncp)(lg);
 
@@ -1787,9 +1640,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->id = 1;
 
 	lg->tid = 0;
-#if SIZEOF_OID == 8
-	lg->read32bitoid = 0;
-#endif
 
 	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);;
 	lg->fn = GDKstrdup(fn);
@@ -1946,12 +1796,12 @@ logger_destroy(logger *lg)
 			oid pos = p;
 
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
-				BBPdecref(bid, TRUE);
+				BBPrelease(bid);
 		}
 
-		BBPdecref(lg->catalog_bid->batCacheid, TRUE);
-		BBPdecref(lg->catalog_nme->batCacheid, TRUE);
-		BBPdecref(lg->dcatalog->batCacheid, TRUE);
+		BBPrelease(lg->catalog_bid->batCacheid);
+		BBPrelease(lg->catalog_nme->batCacheid);
+		BBPrelease(lg->dcatalog->batCacheid);
 		logbat_destroy(lg->catalog_bid);
 		logbat_destroy(lg->catalog_nme);
 		logbat_destroy(lg->dcatalog);
@@ -2652,7 +2502,7 @@ bm_commit(logger *lg)
 					"#commit deleted (snapshot) %s (%d)\n",
 					name, bid);
 			BUNappend(n, name, FALSE);
-			BBPdecref(bid, TRUE);
+			BBPrelease(bid);
 		}
 	}
 
@@ -2715,7 +2565,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name)
 	lg->changes += BATcount(b) + 1;
 	BUNappend(lg->catalog_bid, &bid, FALSE);
 	BUNappend(lg->catalog_nme, name, FALSE);
-	BBPincref(bid, TRUE);
+	BBPretain(bid);
 	return bid;
 }
 
@@ -2739,7 +2589,7 @@ logger_del_bat(logger *lg, log_bid bid)
 				bid, BBP_lrefs(bid));
 		BUNappend(lg->freed, &bid, FALSE);
 	} else if (p >= lg->catalog_bid->batInserted) {
-		BBPdecref(bid, TRUE);
+		BBPrelease(bid);
 	} else {
 		BUNappend(lg->freed, &bid, FALSE);
 	}

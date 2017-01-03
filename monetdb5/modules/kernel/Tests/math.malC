@@ -1,0 +1,23 @@
+#some mmath functions.
+
+b:= bat.new(:dbl);
+bat.append(b,27.0:dbl);
+bat.append(b,16.0:dbl);
+bat.append(b,nil:dbl);
+
+z:= batmmath.sqrt(b);
+io.print(z);
+
+zz:= batmmath.cbrt(b);
+io.print(zz);
+
+f:= bat.new(:flt);
+bat.append(f,27.0:flt);
+bat.append(f,16.0:flt);
+bat.append(f,nil:flt);
+
+zf:= batmmath.sqrt(f);
+io.print(zf);
+
+zzf:= batmmath.cbrt(f);
+io.print(zzf);

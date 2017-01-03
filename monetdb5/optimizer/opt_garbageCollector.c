@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -120,6 +120,14 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		mnstr_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
 #endif
+
+	/* rename all temporaries for ease of debugging */
+	for( i = 0; i < mb->vtop; i++)
+	if( sscanf(getVarName(mb,i),"X_%d", &j) == 1)
+		snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
+	else
+	if( sscanf(getVarName(mb,i),"C_%d", &j) == 1)
+		snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);

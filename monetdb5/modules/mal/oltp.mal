@@ -1,0 +1,33 @@
+module oltp;
+
+pattern init()
+address OLTPinit
+comment "Initialize the lock table";
+
+pattern enable()
+address OLTPenable
+comment "Enable the OLTP delay monitor";
+
+pattern disable()
+address OLTPdisable
+comment "Disable the OLTP delay monitor";
+
+pattern reset()
+address OLTPreset
+comment "Reset the OLTP lock table";
+
+pattern lock(lck:int...):void
+address OLTPlock
+comment "Wait for all write locks needed";
+
+pattern release(lck:int...):void
+address OLTPrelease
+comment "Release for all write locks needed";
+
+pattern table() (start:bat[:timestamp], usr:bat[:str], unit:bat[:int], cnt:bat[:int])
+address OLTPtable
+comment "Show status of lock table";
+
+command isenabled():int
+address OLTPis_enabled
+comment "Query the OLTP state";

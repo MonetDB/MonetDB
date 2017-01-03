@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -44,6 +44,7 @@ MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
 MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
 MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
 MT_Lock     mal_beatLock MT_LOCK_INITIALIZER("mal_beatLock");
+MT_Lock     mal_oltpLock MT_LOCK_INITIALIZER("mal_oltpLock");
 
 /*
  * Initialization of the MAL context
@@ -87,6 +88,7 @@ int mal_init(void){
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
 	MT_lock_init( &mal_beatLock, "mal_beatLock");
+	MT_lock_init( &mal_oltpLock, "mal_beatLock");
 #endif
 
 	tstAligned();
@@ -117,7 +119,7 @@ int mal_init(void){
  * activity first.
  * This function should be called after you have issued sql_reset();
  */
-void mserver_reset(void)
+void mserver_reset(int exit)
 {
 	str err = 0;
 
@@ -154,6 +156,7 @@ void mserver_reset(void)
 	mal_resource_reset();
 	mal_runtime_reset();
 	mal_module_reset();
+	mal_instruction_reset();
 
 	memset((char*)monet_cwd,0, sizeof(monet_cwd));
 	monet_memory = 0;
@@ -161,7 +164,7 @@ void mserver_reset(void)
 	mal_trace = 0;
 	/* No need to clean up the namespace, it will simply be extended
 	 * upon restart mal_namespace_reset(); */
-	GDKreset(0);	// terminate all other threads
+	GDKreset(0, exit);	// terminate all other threads
 }
 
 
@@ -176,6 +179,6 @@ void mserver_reset(void)
  */
 
 void mal_exit(void){
-	mserver_reset();
+	mserver_reset(1);
 	GDKexit(0); 	/* properly end GDK */
 }

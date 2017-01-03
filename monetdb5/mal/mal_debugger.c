@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -522,11 +522,16 @@ retryRead:
 					}
 				}
 				continue;
-			} else{
-				Module m;
+			} else {
+				Module* list;
+				int length;
+				int i;
 				mnstr_printf(out,"#%s ",cntxt->nspace->name);
-				for( m = getModuleChain(); m; m = m->next)
-					mnstr_printf(out,"%s ",m->name);
+				getModuleList(&list, &length);
+				for(i = 0; i < length; i++) {
+					mnstr_printf(out, "%s ", list[i]->name);	
+				}
+				freeModuleList(list);
 				mnstr_printf(out,"\n");
 			}
 		}

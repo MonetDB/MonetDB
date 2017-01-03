@@ -28,11 +28,11 @@ Ready.
 function user.foo():void;               	#[0] (0)  0 
     t0:lng := alarm.usec();             	#[1] (0) ALARMusec 1 
     base:str := "hello  ":str;          	#[2] (0)  2 <- 3 
-    s:str := str.insert(base:str,6:int,6:int,"world":str);	#[3] (0) STRinsert 4 <- 2 5 6 7 
+    s:str := str.insert(base:str, 6:int, 6:int, "world":str);	#[3] (0) STRinsert 4 <- 2 5 6 7 
     io.print(s:str);                    	#[4] (0) IOprint_val 8 <- 4 
 barrier i:lng := 0:lng;                 	#[5] (0)  9 <- 10 
-    s:str := str.insert(base:str,6:int,6:int,"world":str);	#[6] (0) STRinsert 4 <- 2 5 5 7 
-    redo i:lng := iterator.next(1:lng,200:lng);	#[7] (0) ITRnext_lng 9 <- 11 12 
+    s:str := str.insert(base:str, 6:int, 6:int, "world":str);	#[6] (0) STRinsert 4 <- 2 5 5 7 
+    redo i:lng := iterator.next(1:lng, 200:lng);	#[7] (0) ITRnext_lng 9 <- 11 12 
 exit i:lng;                             	#[8] (0)  9 
 end user.foo;                           	#[9] (0)  
 [ "hello world" ]

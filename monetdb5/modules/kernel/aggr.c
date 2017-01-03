@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -867,7 +867,7 @@ AGGRsubmin_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	r = BATproject(a, b);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
-	BBPdecref(ret, TRUE);
+	BBPrelease(ret);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -895,7 +895,7 @@ AGGRsubmincand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 	r = BATproject(a, b);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
-	BBPdecref(ret, TRUE);
+	BBPrelease(ret);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -923,7 +923,7 @@ AGGRsubmax_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	r = BATproject(a, b);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
-	BBPdecref(ret, TRUE);
+	BBPrelease(ret);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -951,7 +951,7 @@ AGGRsubmaxcand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 	r = BATproject(a, b);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
-	BBPdecref(ret, TRUE);
+	BBPrelease(ret);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }

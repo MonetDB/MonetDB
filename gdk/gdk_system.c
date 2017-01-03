@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -420,7 +420,6 @@ pthread_sema_down(pthread_sema_t *s)
 
 #else  /* !defined(HAVE_PTHREAD_H) && defined(_MSC_VER) */
 
-#ifdef HAVE_PTHREAD_SIGMASK
 static struct posthread {
 	struct posthread *next;
 	pthread_t tid;
@@ -455,6 +454,7 @@ find_posthread(pthread_t tid)
 }
 #endif
 
+#ifdef HAVE_PTHREAD_SIGMASK
 static void
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {

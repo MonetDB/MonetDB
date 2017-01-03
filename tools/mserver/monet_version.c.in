@@ -5,14 +5,16 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "mal.h"
 #include <stdio.h>
 #include "monet_version.h"
+#ifdef HAVE_LIBPCRE
 #include <pcre.h>
+#endif
 #ifdef HAVE_OPENSSL
 #include <openssl/opensslv.h>
 #endif
@@ -46,7 +48,7 @@ monet_version(void)
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("This is an unreleased version\n");
 	printf("Copyright (c) 1993-July 2008 CWI\n"
-			"Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved\n");
+			"Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved\n");
 	printf("Visit http://www.monetdb.org/ for further information\n");
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
 			sz_mem_gb, cores, cores != 1 ? "s" : "");
@@ -54,6 +56,7 @@ monet_version(void)
 			"using %d thread%s\n",
 			GDKnr_threads, GDKnr_threads != 1 ? "s" : ""); */
 	printf("Libraries:\n");
+#ifdef HAVE_LIBPCRE
 	{
 		char pcreversion[] = "@pcreversion@";
 		printf("  libpcre: %s", pcre_version());
@@ -61,6 +64,7 @@ monet_version(void)
 			printf(" (%s)", pcreversion);
 		printf("\n");
 	}
+#endif
 #ifdef HAVE_OPENSSL
 	{
 		char opensslversion[] = "@opensslversion@";

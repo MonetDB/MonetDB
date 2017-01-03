@@ -29,10 +29,10 @@ function user.tst():void;               	#[0] (0)  0
     X102:lng := -1:lng;                 	#[2] (0)  3 <- 2 
     X103:lng := -1:lng;                 	#[3] (0)  4 <- 2 
     X104:lng := -1:lng;                 	#[4] (0)  5 <- 2 
-    (X112:bte,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeSchedule(2:int,X100:lng,X103:lng,X102:lng,X104:lng);	#[5] (0) MDBdummy 6 7 8 9 10 <- 11 1 4 3 5 
-    (X118:int,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeScheduleB(2:int,X100:lng,X103:lng,X102:lng,X104:lng);	#[6] (0) MDBdummy 12 7 8 9 10 <- 11 1 4 3 5 
-    (X118:int,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeScheduleC(2:int,X100:lng,X103:lng,X102:lng,X104:lng);	#[7] (0) MDBdummy 12 7 8 9 10 <- 11 1 4 3 5 
-    (X118:int,X113:bte,X114:bte,X115:bte,X116:bte) := user.makeScheduleD(2:int,X100:lng,X103:lng,X102:lng,X104:lng);	#[8] (0) MDBdummy 12 7 8 9 10 <- 11 1 4 3 5 
+    (X112:bte, X113:bte, X114:bte, X115:bte, X116:bte) := user.makeSchedule(2:int, X100:lng, X103:lng, X102:lng, X104:lng);	#[5] (0) MDBdummy 6 7 8 9 10 <- 11 1 4 3 5 
+    (X118:int, X113:bte, X114:bte, X115:bte, X116:bte) := user.makeScheduleB(2:int, X100:lng, X103:lng, X102:lng, X104:lng);	#[6] (0) MDBdummy 12 7 8 9 10 <- 11 1 4 3 5 
+    (X118:int, X113:bte, X114:bte, X115:bte, X116:bte) := user.makeScheduleC(2:int, X100:lng, X103:lng, X102:lng, X104:lng);	#[7] (0) MDBdummy 12 7 8 9 10 <- 11 1 4 3 5 
+    (X118:int, X113:bte, X114:bte, X115:bte, X116:bte) := user.makeScheduleD(2:int, X100:lng, X103:lng, X102:lng, X104:lng);	#[8] (0) MDBdummy 12 7 8 9 10 <- 11 1 4 3 5 
 end user.tst;                           	#[9] (0)  
 
 # 16:39:29 >  

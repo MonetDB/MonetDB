@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -521,7 +521,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 }
 
 str
-LSSTxmatchsubjoin(bat *lres, bat *rres, bat *lid, bat *rid, int *delta, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
+LSSTxmatchjoin(bat *lres, bat *rres, bat *lid, bat *rid, int *delta, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
 {
 	(void)sl;
 	(void)sr;
@@ -544,7 +544,7 @@ LSSTxmatch(bit *res, lng *l, lng *r, int *delta)
 }
 
 str
-LSSTxmatchsubselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
+LSSTxmatchselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 {
 	int shift;
 	BAT *b, *s = NULL, *bn;

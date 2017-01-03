@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "pyapi.h"
+#include "pyheader.h"
 
 //! Returns the amount of characters in the utf8 formatted string, returns -1 if the string is not a valid utf8 string
 /* Arguments:

@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 module optimizer;
 
@@ -65,14 +65,6 @@ address OPTwrapper;
 pattern optimizer.costModel(mod:str, fcn:str):str
 address OPTwrapper
 comment "Estimate the cost of a relational expression";
-
-#opt_crackers.mal
-
-pattern optimizer.crackers():str
-address OPTwrapper;
-pattern optimizer.crackers(mod:str, fcn:str):str
-address OPTwrapper
-comment "Replace algebra select with crackers select";
 
 #opt_dataflow.mal
 
@@ -299,27 +291,12 @@ pattern optimizer.reorder(mod:str, fcn:str):str
 address OPTwrapper
 comment "Reorder by dataflow dependencies";
 
-#opt_selcrack.mal
-
-pattern optimizer.selcrack():str
-address OPTwrapper;
-pattern optimizer.selcrack(mod:str, fcn:str):str
-address OPTwrapper
-comment "Selection cracking";
-
 #opt_statistics.mal
 
 command inspect.getStatistics(nme:str):bat[:any_2]
 address QOTgetStatistics
 comment "Get optimizer property statistics 
 such as #calls, #total actions, #total time";
-
-#opt_support.mal
-
-command mdb.traceOptimizer(flg:str)
-address OPTsetDebugStr
-comment "Otherwise it is considered a request to trace the optimizers,
-which requires a comma separated list or pipeline name.";
 
 #opt_trace.mal
 
@@ -340,6 +317,14 @@ address OPTwrapper;
 pattern optimizer.pushselect(mod:str, fcn:str):str
 address OPTwrapper
 comment "Push selects down projections";
+
+#opt_oltp.mal
+
+pattern optimizer.oltp():str
+address OPTwrapper;
+pattern optimizer.oltp(mod:str, fcn:str):str
+address OPTwrapper
+comment "Inject the OLTP locking primitives.";
 
 optimizer.prelude();
 

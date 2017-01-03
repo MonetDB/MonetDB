@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -346,7 +346,7 @@ BATcalcnot(BAT *b, BAT *s)
 	bn->tnonil = nils == 0;
 	bn->tsorted = cnt <= 1 || (nils == 0 && b->trevsorted);
 	bn->trevsorted = cnt <= 1 || (nils == 0 && b->tsorted);
-	bn->tkey = cnt <= 1 || b->tkey & 1;
+	bn->tkey = cnt <= 1 || b->tkey;
 
 	return bn;
 }
@@ -451,7 +451,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	bn->tnonil = nils == 0;
 	bn->tsorted = cnt <= 1 || (nils == 0 && b->trevsorted);
 	bn->trevsorted = cnt <= 1 || (nils == 0 && b->tsorted);
-	bn->tkey = cnt <= 1 || b->tkey & 1;
+	bn->tkey = cnt <= 1 || b->tkey;
 
 	return bn;
 }

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -27,43 +27,50 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) stk;		/* to fool compilers */
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
-		if( p->token == ASSIGNsymbol && isVarCList(mb,getArg(p,1)))
-			setVarCList(mb,getArg(p,0));
+		if( p->token == ASSIGNsymbol) {
+			int j;
+			for (j = 0; j < p->retc && j + p->retc < p->argc; j++)
+				if (isVarCList(mb,getArg(p,p->retc + j)))
+					setVarCList(mb,getArg(p,j));
+		}
 		if( getModuleId(p) == sqlRef){
 			if(getFunctionId(p) == tidRef) 
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == subdeltaRef) 
+			else if(getFunctionId(p) == subdeltaRef) 
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == emptybindRef && p->retc == 2) 
+			else if(getFunctionId(p) == emptybindRef && p->retc == 2) 
 				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == bindRef && p->retc == 2) 
-				setVarCList(mb,getArg(p,0));
-		}
-		if( getModuleId(p) == algebraRef ){
-			if(getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef)
-				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == likesubselectRef || getFunctionId(p) == likethetasubselectRef)
-				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == subinterRef )
-				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == subuniqueRef )
-				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == firstnRef )
-				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == crossRef ){
-				setVarCList(mb,getArg(p,0));
-				setVarCList(mb,getArg(p,1));
-			}
-		}
-		if( getModuleId(p) == batRef){
-			if(getFunctionId(p) == mergecandRef )
-				setVarCList(mb,getArg(p,0));
-			if(getFunctionId(p) == intersectcandRef )
+			else if(getFunctionId(p) == bindRef && p->retc == 2) 
 				setVarCList(mb,getArg(p,0));
 		}
-		if( getModuleId(p) == generatorRef){
-			if(getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef)
+		else if( getModuleId(p) == algebraRef ){
+			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)
 				setVarCList(mb,getArg(p,0));
+			else if(getFunctionId(p) == likeselectRef || getFunctionId(p) == likethetaselectRef)
+				setVarCList(mb,getArg(p,0));
+			else if(getFunctionId(p) == intersectRef )
+				setVarCList(mb,getArg(p,0));
+			else if(getFunctionId(p) == uniqueRef )
+				setVarCList(mb,getArg(p,0));
+			else if(getFunctionId(p) == firstnRef )
+				setVarCList(mb,getArg(p,0));
+			else if(getFunctionId(p) == mergecandRef )
+				setVarCList(mb,getArg(p,0));
+			else if(getFunctionId(p) == intersectcandRef )
+				setVarCList(mb,getArg(p,0));
+		}
+		else if( getModuleId(p) == generatorRef){
+			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)
+				setVarCList(mb,getArg(p,0));
+		}
+		else if (getModuleId(p) == sampleRef) {
+			if (getFunctionId(p) == subuniformRef)
+				setVarCList(mb, getArg(p, 0));
+		}
+		else if (getModuleId(p) == groupRef && p->retc > 1) {
+			if (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef ||
+			    getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)
+				setVarCList(mb, getArg(p, 1));
 		}
 	}
 

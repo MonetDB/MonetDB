@@ -33,7 +33,7 @@ function user.foo():void;               	#[0] (0)  0
     raise IllegalAccess:str := "an exception":str;	#[1] (0)  1 <- 2 
     io.print("should not come here\n":str);	#[2] (0) IOprint_val 3 <- 4 
 catch IllegalAccess:str;                	#[3] (0)  1 
-    io.printf("caught %s\n":str,IllegalAccess:str);	#[4] (0) IOprintf 5 <- 6 1 
+    io.printf("caught %s\n":str, IllegalAccess:str);	#[4] (0) IOprintf 5 <- 6 1 
     raise IllegalAccess:str := "a second exception raised":str;	#[5] (0)  1 <- 7 
     io.print("should not come here either\n":str);	#[6] (0) IOprint_val 8 <- 9 
 exit IllegalAccess:str;                 	#[7] (0)  1 

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -513,7 +513,6 @@
 #define TRUE		true
 #define FALSE		false
 #endif
-#define BOUND2BTRUE	2	/* TRUE, and bound to be so */
 
 #define IDLENGTH	64	/* maximum BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
@@ -764,11 +763,11 @@ gdk_export int VALisnil(const ValRecord *v);
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
- *           bit    tkey;             // tail values should be unique?
+ *           bit    tkey;             // tail values are unique
+ *           bit    tunique;          // tail values must be kept unique
  *           bit    tnonil;           // tail has no nils
  *           bit    tsorted;          // are tail values currently ordered?
  *           bit    tvarsized;        // for speed: tail type is varsized?
- *           oid    talign;           // alignment OID for head.
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
@@ -824,14 +823,14 @@ typedef struct {
 	bte shift;		/* log2 of bunwidth */
 	unsigned int
 	 varsized:1,		/* varsized (1) or fixedsized (0) */
-	 key:2,			/* duplicates allowed? */
+	 key:1,			/* no duplicate values present */
+	 unique:1,		/* no duplicate values allowed */
 	 dense:1,		/* OID only: only consecutive values */
 	 nonil:1,		/* there are no nils in the column */
 	 nil:1,			/* there is a nil in the column */
 	 sorted:1,		/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
-	oid align;		/* OID for sync alignment */
-	BUN nokey[2];		/* positions that prove key ==FALSE */
+	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN nodense;		/* position that proves dense==FALSE */
@@ -855,7 +854,9 @@ typedef struct {
 #define GDKLIBRARY_OLDWKB	061031	/* old geom WKB format */
 #define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
 #define GDKLIBRARY_HEADED	061033	/* head properties are stored */
-#define GDKLIBRARY		061034
+#define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
+#define GDKLIBRARY_TALIGN	061035	/* talign field in BBP.dir */
+#define GDKLIBRARY		061036
 
 typedef struct BAT {
 	/* static bat properties */
@@ -889,13 +890,13 @@ typedef struct BATiter {
 #define creator_tid	S.tid
 #define ttype		T.type
 #define tkey		T.key
+#define tunique		T.unique
 #define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
 #define tdense		T.dense
 #define tident		T.id
-#define talign		T.align
 #define torderidx	T.orderidx
 #define twidth		T.width
 #define tshift		T.shift
@@ -1027,7 +1028,7 @@ gdk_export bte ATOMelmshift(int sz);
  * @- BUN manipulation
  * @multitable @columnfractions 0.08 0.7
  * @item BAT*
- * @tab BATappend (BAT *b, BAT *c, bit force)
+ * @tab BATappend (BAT *b, BAT *n, BAT *s, bit force)
  * @item BAT*
  * @tab BUNappend (BAT *b, ptr right, bit force)
  * @item BAT*
@@ -1259,7 +1260,7 @@ gdk_export bte ATOMelmshift(int sz);
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare);
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
-gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
+gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bit force);
 
 gdk_export gdk_return BUNdelete(BAT *b, oid o);
 gdk_export gdk_return BATdel(BAT *b, BAT *d);
@@ -1458,7 +1459,7 @@ gdk_export int BATgetaccess(BAT *b);
 gdk_export gdk_return BATclear(BAT *b, int force);
 gdk_export BAT *COLcopy(BAT *b, int tt, int writeable, int role);
 
-gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
+gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h);
 
 /*
  * @- BAT Input/Output
@@ -1538,6 +1539,7 @@ gdk_export gdk_return BATprintf(stream *f, BAT *b);
  * ordered. The result is returned and stored in the tsorted field of
  * the BAT.
  */
+gdk_export int BATkeyed(BAT *b);
 gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
 gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable);
@@ -1615,9 +1617,9 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  * @item int
  * @tab BBPunfix (bat bi)
  * @item int
- * @tab BBPincref (bat bi, int logical)
+ * @tab BBPretain (bat bi)
  * @item int
- * @tab BBPdecref (bat bi, int logical)
+ * @tab BBPrelease (bat bi)
  * @item str
  * @tab BBPname (bat bi)
  * @item bat
@@ -1706,8 +1708,6 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 	 "")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)
-#define BBPfix(i)	BBPincref((i), FALSE)
-#define BBPunfix(i)	BBPdecref((i), FALSE)
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)
@@ -1912,29 +1912,6 @@ gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export int ATOMformat(int id, const void *val, char **buf);
 
 gdk_export ptr ATOMdup(int id, const void *val);
-
-/*
- * @- Unique OIDs
- * @multitable @columnfractions 0.08 0.7
- * @item oid
- * @tab
- * OIDseed (oid seed);
- * @item oid
- * @tab
- * OIDnew (oid inc);
- * @end multitable
- *
- * OIDs are special kinds of unsigned integers because the system
- * guarantees uniqueness. For system simplicity and performance, OIDs
- * are now represented as (signed) integers; however this is hidden in
- * the system internals and shouldn't affect semantics.
- *
- * The OIDnew(N) claims a range of N contiguous unique, unused OIDs,
- * and returns the starting value of this range.  The highest OIDBITS
- * designate site. [ DEPRECATED]
- */
-gdk_export oid OIDbase(oid base);
-gdk_export oid OIDnew(oid inc);
 
 /*
  * @- Built-in Accelerator Functions
@@ -2675,10 +2652,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 
-#define ALIGNins(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
-#define ALIGNdel(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
-#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
-#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
+#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e); } while (0)
+#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e); } while (0)
 
 #define BAThrestricted(b) ((b)->batRestricted)
 #define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)

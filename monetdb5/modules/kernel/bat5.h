@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef _BAT_H_
@@ -20,8 +20,10 @@ mal_export str BKCdelete(bat *r, const bat *bid, const oid *h);
 mal_export str BKCdelete_multi(bat *r, const bat *bid, const bat *sid);
 mal_export str BKCdelete_all(bat *r, const bat *bid);
 mal_export str BKCappend_wrap(bat *r, const bat *bid, const bat *uid);
-mal_export str BKCappend_val_wrap(bat *r, const bat *bid, const void *u);
 mal_export str BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force);
+mal_export str BKCappend_cand_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid);
+mal_export str BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid, const bit *force);
+mal_export str BKCappend_val_wrap(bat *r, const bat *bid, const void *u);
 mal_export str BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force);
 mal_export str BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t);
 mal_export str BKCbat_inplace(bat *r, const bat *bid, const bat *rid, const bat *uid);

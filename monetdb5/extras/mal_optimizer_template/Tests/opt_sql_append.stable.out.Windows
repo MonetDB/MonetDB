@@ -61,16 +61,16 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 129 # length
+% 149 # length
 function user.s8_1():void;
-    X_38:void := querylog.define("explain copy into ttt from \\'a:\\\\tmp/xyz\\';","default_pipe",10);
-    X_0 := sql.mvc();
-    (X_21:bat[:int],X_22:bat[:int],X_23:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","a:\\tmp/xyz",-1,0,0,0,nil:str);
-    X_25 := sql.append(X_0,"sys","ttt","a",X_21);
-    X_30 := sql.append(X_25,"sys","ttt","b",X_22);
-    X_33 := sql.append(X_30,"sys","ttt","c",X_23);
-    X_35 := aggr.count(X_23);
-    sql.affectedRows(X_33,X_35);
+    X_0:void := querylog.define("explain copy into ttt from \\'a:\\\\tmp/xyz\\';","default_pipe",4:int);
+    X_3 := sql.mvc();
+    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","a:\\tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
+    X_28 := sql.append(X_3,"sys","ttt","a",X_24);
+    X_33 := sql.append(X_28,"sys","ttt","b",X_25);
+    X_36 := sql.append(X_33,"sys","ttt","c",X_26);
+    X_38 := aggr.count(X_26);
+    sql.affectedRows(X_36,X_38);
 end user.s8_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=5 usec 
@@ -115,16 +115,16 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 128 # length
+% 148 # length
 function user.s24_1():void;
-    X_38:void := querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';","user_1",10);
-    X_0 := sql.mvc();
-    (X_21:bat[:int],X_22:bat[:int],X_23:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","Z:/tmp/xyz",-1,0,0,0,nil:str);
-    X_25 := sql.append(X_0,"sys","ttt","a",X_21);
-    X_30 := sql.append(X_25,"sys","ttt","b",X_22);
-    X_35 := aggr.count(X_23);
-    X_33 := sql.append(X_30,"sys","ttt","c",X_23);
-    sql.affectedRows(X_33,X_35);
+    X_0:void := querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';","user_1",4:int);
+    X_3 := sql.mvc();
+    (X_24:bat[:int],X_25:bat[:int],X_26:bat[:int]) := sql.copy_from(nil:ptr,"|","\\n",nil:str,"null","Z:/tmp/xyz",-1:lng,0:lng,0:int,0:int,nil:str);
+    X_28 := sql.append(X_3,"sys","ttt","a",X_24);
+    X_33 := sql.append(X_28,"sys","ttt","b",X_25);
+    X_38 := aggr.count(X_26);
+    X_36 := sql.append(X_33,"sys","ttt","c",X_26);
+    sql.affectedRows(X_36,X_38);
 end user.s24_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=4 usec 

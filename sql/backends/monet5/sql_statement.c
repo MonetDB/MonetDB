@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -214,7 +214,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	if (grp && (grp->nr < 0 || ext->nr < 0 || cnt->nr < 0)) 
 		return NULL;
 
-	q = newStmt(mb, groupRef, done ? subgroupdoneRef : subgroupRef);
+	q = newStmt(mb, groupRef, done ? grp ? subgroupdoneRef : groupdoneRef : grp ? subgroupRef : groupRef);
 
 	/* output variables extend and hist */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -286,6 +286,7 @@ stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int leve
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
+	char buf[IDLENGTH];
 
 	if (level == 1 ) { /* global */
 		int tt = t->type->localtype;
@@ -298,25 +299,16 @@ stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int leve
 		setVarType(mb, getArg(q, 0), tt);
 		setVarUDFtype(mb, getArg(q, 0));
 	} else if (!declare) {
-		char *buf = GDKmalloc(MAXIDENTLEN);
-
-		if (buf == NULL)
-			return NULL;
-		(void) snprintf(buf, MAXIDENTLEN, "A%s", varname);
+		(void) snprintf(buf, sizeof(buf), "A%s", varname);
 		q = newAssignment(mb);
 		q = pushArgumentId(mb, q, buf);
 	} else {
-		char *buf;
 		int tt;
 
 		tt = t->type->localtype;
-	       	buf = GDKmalloc(MAXIDENTLEN);
-		if (buf == NULL)
-			return NULL;
-		(void) snprintf(buf, MAXIDENTLEN, "A%s", varname);
+		(void) snprintf(buf, sizeof(buf), "A%s", varname);
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
-			GDKfree(buf);
 			return NULL;
 		}
 		q->argc = q->retc = 0;
@@ -348,20 +340,15 @@ stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-
-	char *buf;
+	char buf[IDLENGTH];
 	int tt = 0;
 
 	/* declared table */
 	if (dump_table(mb, t) < 0)
 		return NULL;
-	buf = GDKmalloc(MAXIDENTLEN);
-	if (buf == NULL)
-		return NULL;
-	(void) snprintf(buf, MAXIDENTLEN, "A%s", varname);
+	(void) snprintf(buf, sizeof(buf), "A%s", varname);
 	q = newInstruction(mb, NULL, NULL);
 	if (q == NULL) {
-		GDKfree(buf);
 		return NULL;
 	}
 	q->argc = q->retc = 0;
@@ -397,11 +384,9 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 	if (be->mvc->argc && be->mvc->args[nr]->varid >= 0) {
 		q = pushArgument(mb, q, be->mvc->args[nr]->varid);
 	} else {
-		char *buf = GDKmalloc(IDLENGTH);
+		char buf[IDLENGTH];
 
-		if (buf == NULL)
-			return NULL;
-		(void) snprintf(buf, IDLENGTH, "A%d", nr);
+		(void) snprintf(buf, sizeof(buf), "A%d", nr);
 		q = pushArgumentId(mb, q, buf);
 	}
 	if (q) {
@@ -1038,7 +1023,7 @@ stmt_order(backend *be, stmt *s, int direction)
 
 	if (s->nr < 0)
 		return NULL;
-	q = newStmt(mb, algebraRef, subsortRef);
+	q = newStmt(mb, algebraRef, sortRef);
 	/* both ordered result and oid's order en subgroups */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -1072,7 +1057,7 @@ stmt_reorder(backend *be, stmt *s, int direction, stmt *orderby_ids, stmt *order
 
 	if (s->nr < 0 || orderby_ids->nr < 0 || orderby_grp->nr < 0)
 		return NULL;
-	q = newStmt(mb, algebraRef, subsortRef);
+	q = newStmt(mb, algebraRef, sortRef);
 	/* both ordered result and oid's order en subgroups */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -1164,7 +1149,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		}
 		k = getDestVar(q);
 
-		q = newStmt(mb, algebraRef, subselectRef);
+		q = newStmt(mb, algebraRef, selectRef);
 		q = pushArgument(mb, q, k);
 		if (sub)
 			q = pushArgument(mb, q, sub->nr);
@@ -1176,7 +1161,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 	} else {
 		node *n;
 
-		op = sa_strconcat(be->mvc->sa, op, subselectRef);
+		op = sa_strconcat(be->mvc->sa, op, selectRef);
 		q = newStmt(mb, mod, convertOperator(op));
 		// push pointer to the SQL structure into the MAL call
 		// allows getting argument names for example
@@ -1266,7 +1251,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			return NULL;
 		k = getDestVar(q);
 
-		q = newStmt(mb, algebraRef, subselectRef);
+		q = newStmt(mb, algebraRef, selectRef);
 		q = pushArgument(mb, q, k);
 		if (sub)
 			q = pushArgument(mb, q, sub->nr);
@@ -1279,10 +1264,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			return NULL;
 		k = getDestVar(q);
 	} else {
-		char *cmd = subselectRef;
+		char *cmd = selectRef;
 
 		if (cmptype != cmp_equal && cmptype != cmp_notequal)
-			cmd = thetasubselectRef;
+			cmd = thetaselectRef;
 
 		assert (cmptype != cmp_filter);
 		switch (cmptype) {
@@ -1355,7 +1340,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				return NULL;
 			break;
 		default:
-			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible subselect compare\n");
+			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
 		}
 	}
 	if (q) {
@@ -1428,7 +1413,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	MalBlkPtr mb = be->mb;
 	InstrPtr r, p, q;
 	int l;
-	char *cmd = (type == st_uselect2) ? subselectRef : subrangejoinRef;
+	char *cmd = (type == st_uselect2) ? selectRef : rangejoinRef;
 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
@@ -1469,7 +1454,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 			k = getDestVar(p);
 		}
 
-		q = newStmt(mb, algebraRef, subselectRef);
+		q = newStmt(mb, algebraRef, selectRef);
 		q = pushArgument(mb, q, k);
 		if (sub)
 			q = pushArgument(mb, q, sub->nr);
@@ -1502,7 +1487,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 					return -1;
 			} else
 				r2 = argumentZero(mb, tt);
-			cmd = subbandjoinRef;
+			cmd = bandjoinRef;
 		}
 	*/
 
@@ -1625,7 +1610,7 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2)
 
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
-	q = newStmt(mb, algebraRef, subdiffRef);
+	q = newStmt(mb, algebraRef, differenceRef);
 	q = pushArgument(mb, q, op1->nr); /* left */
 	q = pushArgument(mb, q, op2->nr); /* right */
 	q = pushNil(mb, q, TYPE_bat); /* left candidate */
@@ -1656,7 +1641,7 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2)
 
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
-	q = newStmt(mb, algebraRef, subinterRef);
+	q = newStmt(mb, algebraRef, intersectRef);
 	q = pushArgument(mb, q, op1->nr); /* left */
 	q = pushArgument(mb, q, op2->nr); /* right */
 	q = pushNil(mb, q, TYPE_bat); /* left candidate */
@@ -1685,13 +1670,13 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int left = (cmptype == cmp_left);
-	char *sjt = "subjoin";
+	char *sjt = "join";
 
 	(void)anti;
 
 	if (left) {
 		cmptype = cmp_equal;
-		sjt = "subleftjoin";
+		sjt = "leftjoin";
 	}
 	if (op1->nr < 0 || op2->nr < 0)
 		return NULL;
@@ -1722,7 +1707,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 			return NULL;
 		break;
 	case cmp_notequal:
-		q = newStmt(mb, algebraRef, subantijoinRef);
+		q = newStmt(mb, algebraRef, antijoinRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
@@ -1737,7 +1722,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 	case cmp_lte:
 	case cmp_gt:
 	case cmp_gte:
-		q = newStmt(mb, algebraRef, subthetajoinRef);
+		q = newStmt(mb, algebraRef, thetajoinRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
@@ -1923,7 +1908,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 		return NULL;
 	mod = sql_func_mod(op->func);
 	fimp = sql_func_imp(op->func);
-	fimp = sa_strconcat(be->mvc->sa, fimp, "subjoin");
+	fimp = sa_strconcat(be->mvc->sa, fimp, "join");
 
 	/* filter qualifying tuples, return oids of h and tail */
 	q = newStmt(mb, mod, fimp);
@@ -2137,8 +2122,23 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 
 	if (chain->nr < 0)
 		return NULL;
-	q = newStmt(mb, sqlRef, "trans");
-	q = pushInt(mb, q, type);
+
+	switch(type){
+	case DDL_RELEASE:
+		q = newStmt(mb, sqlRef, transaction_releaseRef);
+		break;
+	case DDL_COMMIT:
+		q = newStmt(mb, sqlRef, transaction_commitRef);
+		break;
+	case DDL_ROLLBACK:
+		q = newStmt(mb, sqlRef, transaction_rollbackRef);
+		break;
+	case DDL_TRANS:
+		q = newStmt(mb, sqlRef, transaction_beginRef);
+		break;
+	default:
+		showException(GDKout, SQL, "sql.trans", "transaction unknown type");
+	}
 	q = pushArgument(mb, q, chain->nr);
 	if (name)
 		q = pushArgument(mb, q, name->nr);
@@ -2163,12 +2163,53 @@ stmt_catalog(backend *be, int type, stmt *args)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	node *n;
+	int if_exists =0;
 
 	if (args->nr < 0)
 		return NULL;
 
-	q = newStmt(mb, sqlRef, catalogRef);
-	q = pushInt(mb, q, type);
+	/* cast them into properly named operations */
+	switch(type){
+	case DDL_CREATE_SEQ:	q = newStmt(mb, sqlcatalogRef, create_seqRef); break;
+	case DDL_ALTER_SEQ:	q = newStmt(mb, sqlcatalogRef, alter_seqRef); break;
+	case DDL_DROP_SEQ:	q = newStmt(mb, sqlcatalogRef, drop_seqRef); break;
+	case DDL_CREATE_SCHEMA:	q = newStmt(mb, sqlcatalogRef, create_schemaRef); break;
+	case DDL_DROP_SCHEMA_IF_EXISTS: if_exists =1;
+	case DDL_DROP_SCHEMA:	q = newStmt(mb, sqlcatalogRef, drop_schemaRef); break;
+	case DDL_CREATE_TABLE:	q = newStmt(mb, sqlcatalogRef, create_tableRef); break;
+	case DDL_CREATE_VIEW:	q = newStmt(mb, sqlcatalogRef, create_viewRef); break;
+	case DDL_DROP_TABLE_IF_EXISTS: if_exists =1;
+	case DDL_DROP_TABLE:	q = newStmt(mb, sqlcatalogRef, drop_tableRef); break;
+	case DDL_DROP_VIEW_IF_EXISTS: if_exists = 1;
+	case DDL_DROP_VIEW:	q = newStmt(mb, sqlcatalogRef, drop_viewRef); break;
+	case DDL_DROP_CONSTRAINT:	q = newStmt(mb, sqlcatalogRef, drop_constraintRef); break;
+	case DDL_ALTER_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_tableRef); break;
+	case DDL_CREATE_TYPE:	q = newStmt(mb, sqlcatalogRef, create_typeRef); break;
+	case DDL_DROP_TYPE:	q = newStmt(mb, sqlcatalogRef, drop_typeRef); break;
+	case DDL_GRANT_ROLES:	q = newStmt(mb, sqlcatalogRef, grant_rolesRef); break;
+	case DDL_REVOKE_ROLES:	q = newStmt(mb, sqlcatalogRef, revoke_rolesRef); break;
+	case DDL_GRANT:		q = newStmt(mb, sqlcatalogRef, grantRef); break;
+	case DDL_REVOKE:	q = newStmt(mb, sqlcatalogRef, revokeRef); break;
+	case DDL_GRANT_FUNC:	q = newStmt(mb, sqlcatalogRef, grant_functionRef); break;
+	case DDL_REVOKE_FUNC:	q = newStmt(mb, sqlcatalogRef, revoke_functionRef); break;
+	case DDL_CREATE_USER:	q = newStmt(mb, sqlcatalogRef, create_userRef); break;
+	case DDL_DROP_USER:		q = newStmt(mb, sqlcatalogRef, drop_userRef); break;
+	case DDL_ALTER_USER:	q = newStmt(mb, sqlcatalogRef, alter_userRef); break;
+	case DDL_RENAME_USER:	q = newStmt(mb, sqlcatalogRef, rename_userRef); break;
+	case DDL_CREATE_ROLE:	q = newStmt(mb, sqlcatalogRef, create_roleRef); break;
+	case DDL_DROP_ROLE:		q = newStmt(mb, sqlcatalogRef, drop_roleRef); break;
+	case DDL_DROP_INDEX:	q = newStmt(mb, sqlcatalogRef, drop_indexRef); break;
+	case DDL_DROP_FUNCTION:	q = newStmt(mb, sqlcatalogRef, drop_functionRef); break;
+	case DDL_CREATE_FUNCTION:	q = newStmt(mb, sqlcatalogRef, create_functionRef); break;
+	case DDL_CREATE_TRIGGER:	q = newStmt(mb, sqlcatalogRef, create_triggerRef); break;
+	case DDL_DROP_TRIGGER:	q = newStmt(mb, sqlcatalogRef, drop_triggerRef); break;
+	case DDL_ALTER_TABLE_ADD_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_add_tableRef); break;
+	case DDL_ALTER_TABLE_DEL_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_del_tableRef); break;
+	case DDL_ALTER_TABLE_SET_ACCESS:q = newStmt(mb, sqlcatalogRef, alter_set_tableRef); break;
+	default:
+		showException(GDKout, SQL, "sql", "catalog operation unknown\n");
+	}
+	// pass all arguments as before
 	for (n = args->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
 
@@ -2176,6 +2217,10 @@ stmt_catalog(backend *be, int type, stmt *args)
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_catalog);
+
+		if( if_exists)
+			pushInt(mb,q,1);
+		//printInstruction(GDKout, mb, 0, q, LIST_MAL_ALL);
 	
 		s->op1 = args;
 		s->flag = type;
@@ -3353,7 +3398,7 @@ stmt_assign(backend *be, const char *varname, stmt *val, int level)
 	if (val && val->nr < 0)
 		return NULL;
 	if (level != 1) {	
-		char *buf;
+		char buf[IDLENGTH];
 
 		if (!val) {
 			/* drop declared table */
@@ -3362,13 +3407,9 @@ stmt_assign(backend *be, const char *varname, stmt *val, int level)
 			if (getDestVar(k) < 0)
 				return NULL;
 		}
-		buf = GDKmalloc(MAXIDENTLEN);
-		if (buf == NULL)
-			return NULL;
-		(void) snprintf(buf, MAXIDENTLEN, "A%s", varname);
+		(void) snprintf(buf, sizeof(buf), "A%s", varname);
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
-			GDKfree(buf);
 			return NULL;
 		}
 		q->argc = q->retc = 0;

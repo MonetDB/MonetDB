@@ -1,7 +1,5 @@
 #Same as tst270, but includes testing of the profiler trace
 
-o:= calc.oid(20000000);
-calc.setoid(o);
 b:= bat.new(:int);
 #test basic functionality of the BAT library.
 #focussed on integers
