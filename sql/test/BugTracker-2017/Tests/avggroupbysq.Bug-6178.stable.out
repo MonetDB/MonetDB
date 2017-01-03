@@ -64,31 +64,48 @@ Ready.
 #"N907MQ",
 #"N907MQ",191
 [ 2	]
-#SELECT * FROM x;
-% sys.x,	sys.x # table_name
-% tailnum,	arr_delay # name
-% clob,	int # type
-% 6,	3 # length
-[ "N907MQ",	NULL	]
-[ "N907MQ",	191	]
+#SELECT AVG( arr_delay ) FROM x;
+% sys.L4 # table_name
+% L3 # name
+% double # type
+% 24 # length
+[ 191	]
 #SELECT tailnum , AVG( arr_delay ) FROM x GROUP BY tailnum;
 % sys.x,	sys.L4 # table_name
 % tailnum,	L3 # name
 % clob,	double # type
 % 6,	24 # length
-[ "N907MQ",	NULL	]
+[ "N907MQ",	191	]
+#SELECT tailnum , MIN( arr_delay ) FROM x GROUP BY tailnum;
+% sys.x,	sys.L4 # table_name
+% tailnum,	L3 # name
+% clob,	int # type
+% 6,	3 # length
+[ "N907MQ",	191	]
 #SELECT tailnum , AVG( arr_delay ) FROM x WHERE tailnum = 'N907MQ' GROUP BY tailnum;
 % sys.x,	sys.L4 # table_name
 % tailnum,	L3 # name
 % clob,	double # type
 % 6,	24 # length
-[ "N907MQ",	NULL	]
+[ "N907MQ",	191	]
 #SELECT * FROM ( SELECT tailnum , AVG( arr_delay ) FROM x GROUP BY tailnum ) AS xxx WHERE tailnum = 'N907MQ';
 % sys.xxx,	sys.xxx # table_name
 % tailnum,	L3 # name
 % clob,	double # type
 % 6,	24 # length
-[ "N907MQ",	NULL	]
+[ "N907MQ",	191	]
+#SELECT tailnum , MIN( arr_delay ) FROM x WHERE tailnum = 'N907MQ' GROUP BY tailnum;
+% sys.x,	sys.L4 # table_name
+% tailnum,	L3 # name
+% clob,	int # type
+% 6,	3 # length
+[ "N907MQ",	191	]
+#SELECT * FROM ( SELECT tailnum , MIN( arr_delay ) FROM x GROUP BY tailnum ) AS xxx WHERE tailnum = 'N907MQ';
+% sys.xxx,	sys.xxx # table_name
+% tailnum,	L3 # name
+% clob,	int # type
+% 6,	3 # length
+[ "N907MQ",	191	]
 
 # 18:20:39 >  
 # 18:20:39 >  "Done."
