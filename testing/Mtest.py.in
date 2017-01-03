@@ -4232,6 +4232,14 @@ def main(argv) :
                         break
                     if global_timeout and start_time + global_timeout < time.time():
                         break
+                    if not testweb:
+                        # after a directory has been tested, create
+                        # the index file so that we can look at test
+                        # results while the tests are running
+                        env['TSTDIR'] = ""
+                        env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
+                        body = body_bad + body_good
+                        CreateHtmlIndex(env, *body)
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
             pass
