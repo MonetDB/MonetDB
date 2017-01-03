@@ -117,13 +117,13 @@ hgeHash(const hge *v)
 static int
 batFix(const bat *b)
 {
-	return BBPincref(*b, TRUE);
+	return BBPretain(*b);
 }
 
 static int
 batUnfix(const bat *b)
 {
-	return BBPdecref(*b, TRUE);
+	return BBPrelease(*b);
 }
 
 /*

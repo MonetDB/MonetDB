@@ -1934,9 +1934,9 @@ BATmode(BAT *b, int mode)
 		}
 		/* persistent BATs get a logical reference */
 		if (mode == PERSISTENT) {
-			BBPincref(bid, TRUE);
+			BBPretain(bid);
 		} else if (b->batPersistence == PERSISTENT) {
-			BBPdecref(bid, TRUE);
+			BBPrelease(bid);
 		}
 		MT_lock_set(&GDKswapLock(bid));
 		if (mode == PERSISTENT) {

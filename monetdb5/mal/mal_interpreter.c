@@ -434,7 +434,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 			if (VALcopy(lhs, argv[i]) == NULL)
 				throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
-				BBPincref(lhs->val.bval, TRUE);
+				BBPretain(lhs->val.bval);
 		}
 		stk->cmd = debug;
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
@@ -634,7 +634,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				rhs = &stk->stk[pci->argv[i]];
 				VALcopy(lhs, rhs);
 				if (lhs->vtype == TYPE_bat && lhs->val.bval != bat_nil)
-					BBPincref(lhs->val.bval, TRUE);
+					BBPretain(lhs->val.bval);
 			}
 			freeException(ret);
 			ret = 0;
@@ -758,7 +758,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					rhs = &stk->stk[pci->argv[ii]];
 					VALcopy(lhs, rhs);
 					if (lhs->vtype == TYPE_bat)
-						BBPincref(lhs->val.bval, TRUE);
+						BBPretain(lhs->val.bval);
 				}
 				ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 				for (ii = 0; ii < nstk->stktop; ii++)
@@ -844,13 +844,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (i < pci->retc && backup[i].val.bval != bat_nil) {
 							bat bx = backup[i].val.bval;
 							backup[i].val.bval = bat_nil;
-							BBPdecref(bx, TRUE);
+							BBPrelease(bx);
 						}
 						if (garbage[i] >= 0) {
 							PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 							bid = stk->stk[garbage[i]].val.bval;
 							stk->stk[garbage[i]].val.bval = bat_nil;
-							BBPdecref(bid, TRUE);
+							BBPrelease(bid);
 						}
 					} else if (i < pci->retc &&
 							   0 < stk->stk[a].vtype &&
@@ -1180,7 +1180,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						lhs = &env->stk[pci->argv[i]];
 						VALcopy(lhs, rhs);
 						if (lhs->vtype == TYPE_bat)
-							BBPincref(lhs->val.bval, TRUE);
+							BBPretain(lhs->val.bval);
 					}
 					if (garbageControl(getInstrPtr(mb, 0)))
 						garbageCollector(cntxt, mb, stk, TRUE);
@@ -1398,7 +1398,7 @@ void garbageElement(Client cntxt, ValPtr v)
 			return;
 		if (!BBP_lrefs(bid))
 			return;
-		BBPdecref(bid, TRUE);
+		BBPrelease(bid);
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
 		if (v->val.pval)
 			GDKfree(v->val.pval);

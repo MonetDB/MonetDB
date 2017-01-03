@@ -583,9 +583,9 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 		sermsg = NCDFARRAYseries(&dim_bids[i], 0, 1, dlen[i], val_rep[i], grp_rep[i]);
 
 		if (sermsg != MAL_SUCCEED) {
-			BBPdecref(vbid, 1); /* undo the BBPkeepref(vbid) above */
+			BBPrelease(vbid); /* undo the BBPkeepref(vbid) above */
 			for ( j = 0; j < i; j++) /* undo log. ref of previous dimensions */
-				BBPdecref(dim_bids[j], 1);
+				BBPrelease(dim_bids[j]);
 			GDKfree(dlen);
 			GDKfree(val_rep);
 			GDKfree(grp_rep);
@@ -721,7 +721,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	vbat = BATdescriptor(vbatid);
 	store_funcs.append_col(m->session->tr, col, vbat, TYPE_bat);
 	BBPunfix(vbatid);
-	BBPdecref(vbatid, 1);
+	BBPrelease(vbatid);
 	vbat = NULL;
 
 	/* associate dimension bats  */
@@ -733,7 +733,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		dimbat = BATdescriptor(dim_bids[i]);
 		store_funcs.append_col(m->session->tr, col, dimbat, TYPE_bat);
 		BBPunfix(dim_bids[i]); /* phys. ref from BATdescriptor */
-		BBPdecref(dim_bids[i], 1); /* log. ref. from loadVar */
+		BBPrelease(dim_bids[i]); /* log. ref. from loadVar */
 		dimbat = NULL;
 	}
 

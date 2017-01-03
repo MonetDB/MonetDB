@@ -1617,9 +1617,9 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  * @item int
  * @tab BBPunfix (bat bi)
  * @item int
- * @tab BBPincref (bat bi, int logical)
+ * @tab BBPretain (bat bi)
  * @item int
- * @tab BBPdecref (bat bi, int logical)
+ * @tab BBPrelease (bat bi)
  * @item str
  * @tab BBPname (bat bi)
  * @item bat
@@ -1708,8 +1708,6 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 	 "")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)
-#define BBPfix(i)	BBPincref((i), FALSE)
-#define BBPunfix(i)	BBPdecref((i), FALSE)
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)

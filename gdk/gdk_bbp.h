@@ -73,9 +73,11 @@ gdk_export BAT *BBPdescriptor(bat b);
 
 /* swapping interface */
 gdk_export gdk_return BBPsync(int cnt, bat *subcommit);
-gdk_export int BBPincref(bat b, int logical);
+gdk_export int BBPfix(bat b);
+gdk_export int BBPunfix(bat b);
+gdk_export int BBPretain(bat b);
+gdk_export int BBPrelease(bat b);
 gdk_export void BBPkeepref(bat i);
-gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 
 #define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)

@@ -215,7 +215,7 @@ RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			else if (VALcopy(lhs, rhs) == NULL)
 				throw(MAL, "scheduler.pick", MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
-				BBPincref(lhs->val.bval, TRUE);
+				BBPretain(lhs->val.bval);
 			return MAL_SUCCEED;
 		}
 
