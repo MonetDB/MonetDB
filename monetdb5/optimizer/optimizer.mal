@@ -326,5 +326,13 @@ pattern optimizer.oltp(mod:str, fcn:str):str
 address OPTwrapper
 comment "Inject the OLTP locking primitives.";
 
+#opt_wlcr.mal
+
+pattern optimizer.wlcr():str
+address OPTwrapper;
+pattern optimizer.wlcr(mod:str, fcn:str):str
+address OPTwrapper
+comment "Inject the workload capture-replay primitives.";
+
 optimizer.prelude();
 

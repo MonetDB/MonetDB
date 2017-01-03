@@ -454,11 +454,16 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 	if (q == NULL)
 		return NULL;
 	cst.vtype= TYPE_str;
-	if ((cst.val.sval= GDKstrdup(Val)) == NULL) {
-		freeInstruction(q);
-		return NULL;
+	if( Val == 0){
+		cst.val.sval = 0;
+		cst.len= 0;
+	} else{
+		if ( Val != NULL && (cst.val.sval= GDKstrdup(Val)) == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+		cst.len= (int) strlen(cst.val.sval);
 	}
-	cst.len= (int) strlen(cst.val.sval);
 	_t = defConstant(mb,TYPE_str,&cst);
 	return pushArgument(mb, q, _t);
 }

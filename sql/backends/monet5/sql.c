@@ -34,6 +34,7 @@
 #include <bbp.h>
 #include <opt_pipes.h>
 #include <orderidx.h>
+#include <wlcr.h>
 #include "clients.h"
 #include "mal_instruction.h"
 #include "mal_resource.h"
@@ -238,8 +239,11 @@ SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sql->session->auto_commit != 0)
 		throw(SQL, "sql.trans", "2DM30!COMMIT: not allowed in auto commit mode");
 	ret = mvc_commit(sql, 0, 0);
-	if (ret < 0)
+	if (ret < 0) {
+		WLCRrollback(cntxt);
 		throw(SQL, "sql.trans", "2D000!COMMIT: failed");
+	}
+	WLCRcommit(cntxt);
 	return msg;
 }
 

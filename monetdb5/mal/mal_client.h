@@ -171,6 +171,11 @@ typedef struct CLIENT {
 	 */
 	bit		active;		/* processing a query or not */
 	Workset inprogress[THREADS];
+	/*
+	 * The workload for replication/replay is saved initially as a MAL block.
+	 */
+	int wlcr_kind;	
+	MalBlkPtr wlcr;
 	/*	
 	 *	Errors during copy into are collected in a user specific column set
 	 */

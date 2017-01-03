@@ -56,6 +56,7 @@
 #include "opt_reorder.h"
 #include "opt_statistics.h"
 #include "opt_volcano.h"
+#include "opt_wlcr.h"
 
 struct{
 	str nme;
@@ -82,6 +83,7 @@ struct{
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
 	{"oltp", &OPToltpImplementation},
+	{"wlcr", &OPTwlcrImplementation},
 	{"profiler", &OPTprofilerImplementation},
 	{"pushselect", &OPTpushselectImplementation},
 	{"querylog", &OPTquerylogImplementation},

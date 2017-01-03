@@ -1,0 +1,214 @@
+module wlcr;
+
+pattern properties(duration:int, threshold:int, deltas:int, all:int)
+address WLCRproperties
+comment "Set the workload-capture-replay properties";
+
+pattern job(user:str, snapshotid:str, tid:int, started:str, runtime:int)
+address WLCRjob
+comment "Mark the beginning of the work unit which can be a compound transaction";
+
+pattern fin()
+address WLCRfinished
+comment "Mark the end of the work unit";
+
+pattern query(q:str,pipe:str)
+address WLCRquery
+comment "Initialize the workload-capture-replay ";
+
+pattern append(sname:str, tname:str, cname:str, ins:any):int
+address WLCRappend
+comment "Keep the insertions in the workload-capture-replay list";
+
+pattern update(sname:str, tname:str, cname:str, rids:any, upd:any):int
+address WLCRupdate
+comment "Keep the updates in the workload-capture-replay list";
+
+pattern delete(sname:str, tname:str, b:any):int
+address WLCRreset
+comment "Keep the deletions in the workload-capture-replay list";
+
+pattern clear_table(sname:str, tname:str):int
+address WLCRclear_table
+comment "Keep the deletions in the workload-capture-replay list";
+
+pattern commit()
+address WLCRcommitCmd
+comment "Commit the workload-capture-replay record";
+
+pattern rollback()
+address WLCRcommitCmd
+comment "Rollback the workload-capture-replay record";
+
+# The wrapping of the catalog and transaction operations
+pattern create_seq( sname:str, action:int)
+address WLCRgeneric
+comment "Catalog operation create_seq";
+
+pattern alter_seq( sname:str, val:lng)
+address WLCRgeneric
+comment "Catalog operation alter_seq";
+
+pattern drop_seq( sname:str, nme:str, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_seq";
+
+pattern create_schema(sname:str, auth:str, action:int)
+address WLCRgeneric
+comment "Catalog operation create_schema";
+
+pattern drop_schema( sname:str, s:str, action:int, ifexists:int)
+address WLCRgeneric
+comment "Catalog operation drop_schema";
+
+pattern drop_schema( sname:str, s:str, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_schema";
+
+pattern create_table(sname:str, temp:int)
+address WLCRgeneric
+comment "Catalog operation create_table";
+
+pattern create_view(sname:str, temp:int)
+address WLCRgeneric
+comment "Catalog operation create_view";
+
+pattern drop_table( sname:str, name:str, action:int , ifexists:int)
+address WLCRgeneric
+comment "Catalog operation drop_table";
+
+pattern drop_table( sname:str, name:str, action:int )
+address WLCRgeneric
+comment "Catalog operation drop_table";
+
+pattern drop_view( sname:str, name:str, action:int, ifexists:int)
+address WLCRgeneric
+comment "Catalog operation drop_view";
+
+pattern drop_view( sname:str, name:str, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_view";
+
+pattern drop_constraint( sname:str, name:str, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_constraint";
+
+pattern alter_table( sname:str, action:int)
+address WLCRgeneric
+comment "Catalog operation alter_table";
+
+pattern create_type( sname:str, nme:str, impl:str)
+address WLCRgeneric
+comment "Catalog operation create_type";
+
+pattern drop_type( sname:str, nme:str, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_type";
+
+pattern grant_roles( sname:str, auth:str, grantor:int, admin:int)
+address WLCRgeneric
+comment "Catalog operation grant_roles";
+
+pattern revoke_roles( sname:str, auth:str, grantor:int, admin:int)
+address WLCRgeneric
+comment "Catalog operation revoke_roles";
+
+pattern grant( sname:str, tbl:str, grantee:str, privs:int, cname:str, gr:int, grantor:int)
+address WLCRgeneric
+comment "Catalog operation grant";
+
+pattern revoke ( sname:str, tbl:str, grantee:str, privs:int, cname:str,grant:int, grantor:int)
+address WLCRgeneric
+comment "Catalog operation revoke";
+
+pattern grant_function( sname:str, fcnid:int, grantee:str, privs:int, grant:int, grantor:int)
+address WLCRgeneric
+comment "Catalog operation grant_function";
+
+pattern revoke_function( sname:str, fcnid:int, grantee:str, privs:int, grant:int, grantor:int)
+address WLCRgeneric
+comment "Catalog operation revoke_function";
+
+pattern create_user( sname:str, passwrd:str, enc:int, schema:str, fullname:str)
+address WLCRgeneric
+comment "Catalog operation create_user";
+
+pattern drop_user(sname:str, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_user";
+
+pattern drop_user(sname:str, auth:str, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_user";
+
+
+pattern alter_user( sname:str, passwrd:str, enc:int, schema:str, oldpasswrd:str)
+address WLCRgeneric
+comment "Catalog operation alter_user";
+
+pattern rename_user( sname:str, newnme:str, action:int)
+address WLCRgeneric
+comment "Catalog operation rename_user";
+
+pattern create_role(sname:str,role:str,grator:int)
+address WLCRgeneric
+comment "Catalog operation create_role";
+
+pattern drop_role( auth:str, role:str, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_role";
+pattern drop_role( role:str, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_role";
+
+pattern drop_index( sname:str, iname:str, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_index";
+
+pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
+address WLCRgeneric
+comment "Catalog operation drop_function";
+
+pattern create_function( sname:str)
+address WLCRgeneric
+comment "Catalog operation create_function";
+
+pattern create_trigger( sname:str, tname:str, triggername:str, time:int, orientation:int, event:int, old:str, new:str, cond:str, qry:str)
+address WLCRgeneric
+comment "Catalog operation create_trigger";
+
+pattern drop_trigger(sname:str,nme:str )
+address WLCRgeneric
+comment "Catalog operation drop_trigger";
+
+pattern alter_add_table( sname:str, mtnme:str, psnme:str, ptnme:str, action:int)
+address WLCRgeneric
+comment "Catalog operation alter_add_table";
+
+pattern alter_del_table( sname:str, mtnme:str, psnme:str, ptnme:str, action:int)
+address WLCRgeneric
+comment "Catalog operation alter_del_table";
+
+pattern alter_set_table( sname:str, tnme:str, access:int)
+address WLCRgeneric
+comment "Catalog operation alter_set_table";
+
+pattern transaction_release(chain:int,name:str):void
+address WLCRgeneric
+comment "A transaction statement (type can be commit,release,rollback or start)";
+
+pattern transaction_commit(chain:int,name:str):void
+address WLCRgeneric
+comment "A transaction statement (type can be commit,release,rollback or start)";
+
+pattern transaction_rollback(chain:int,name:str):void
+address WLCRgeneric
+comment "A transaction statement (type can be commit,release,rollback or start)";
+
+pattern transaction_begin(chain:int,name:str):void
+address WLCRgeneric
+comment "A transaction statement (type can be commit,release,rollback or start)";
+
+unsafe pattern transaction()
+address WLCRgeneric
+comment "Start an autocommit transaction";

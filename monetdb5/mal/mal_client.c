@@ -251,6 +251,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	/* create a recycler cache */
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+	c->wlcr_kind = 0;
+	c->wlcr = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
 	{
 		str msg = AUTHgetUsername(&c->username, c);
@@ -403,6 +405,10 @@ freeClient(Client c)
 		BBPdecref(c->error_msg->batCacheid,TRUE);
 		BBPdecref(c->error_input->batCacheid,TRUE);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+		if( c->wlcr)
+			freeMalBlk(c->wlcr);
+		c->wlcr_kind = 0;
+		c->wlcr = NULL;
 	}
 	if (t)
 		THRdel(t);  /* you may perform suicide */
