@@ -151,6 +151,7 @@ void mserver_reset(int exit)
 	GDKfree(mal_clients->prompt);
 	GDKfree(mal_clients->username);
 	freeStack(mal_clients->glb);
+	freeSymbol(mal_clients->curprg);
 	mal_client_reset();
   	mal_linker_reset();
 	mal_resource_reset();
