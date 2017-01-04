@@ -767,11 +767,17 @@ variable_list:
     ;
 
 set_statement:
-	set ident '=' simple_atom
+	/*set ident '=' simple_atom*/
+        set ident '=' search_condition
 		{ dlist *l = L();
 		append_string(l, $2 );
 		append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
+  |     set column_commalist_parens '=' subquery
+		{ dlist *l = L();
+	  	append_list(l, $2);
+	  	append_symbol(l, $4);
+	  	$$ = _symbol_create_list( SQL_SET, l ); }
   |	set sqlSESSION AUTHORIZATION ident
 		{ dlist *l = L();
 		  sql_subtype t;
