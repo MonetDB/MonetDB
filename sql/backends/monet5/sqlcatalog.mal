@@ -6,11 +6,11 @@
 
 module sqlcatalog;
 
-pattern create_seq( sname:str, seq:ptr, action:int)
+pattern create_seq( sname:str, seqname:str, seq:ptr, action:int)
 address SQLcreate_seq 
 comment "Catalog operation create_seq";
 
-pattern alter_seq( sname:str, seq:ptr, val:lng) 
+pattern alter_seq( sname:str, seqname:str, seq:ptr, val:lng) 
 address SQLalter_seq 
 comment "Catalog operation alter_seq";
 
@@ -30,11 +30,11 @@ pattern drop_schema( sname:str, s:str, action:int)
 address SQLdrop_schema 
 comment "Catalog operation drop_schema";
 
-pattern create_table(sname:str, tbl:ptr, temp:int) 
+pattern create_table(sname:str, tname:str, tbl:ptr, temp:int) 
 address SQLcreate_table 
 comment "Catalog operation create_table";
 
-pattern create_view(sname:str, tbl:ptr, temp:int) 
+pattern create_view(sname:str, vname:str, tbl:ptr, temp:int) 
 address SQLcreate_view 
 comment "Catalog operation create_view";
 
@@ -58,7 +58,7 @@ pattern drop_constraint( sname:str, name:str, action:int)
 address SQLdrop_constraint 
 comment "Catalog operation drop_constraint";
 
-pattern alter_table( sname:str, tbl:ptr, action:int) 
+pattern alter_table( sname:str, tname:str, tbl:ptr, action:int) 
 address SQLalter_table 
 comment "Catalog operation alter_table";
 
@@ -134,7 +134,7 @@ pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
 address SQLdrop_function 
 comment "Catalog operation drop_function";
 
-pattern create_function( sname:str, fcn:ptr) 
+pattern create_function( sname:str, fname:str, fcn:ptr) 
 address SQLcreate_function 
 comment "Catalog operation create_function";
 

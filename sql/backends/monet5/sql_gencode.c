@@ -954,7 +954,13 @@ backend_create_subfunc(backend *be, sql_subfunc *f, list *ops)
 int
 backend_create_subaggr(backend *be, sql_subaggr *f)
 {
-	return backend_create_func(be, f->aggr, f->res, NULL);
+	int res;
+	MalBlkPtr mb = be->mb;
+
+	be->mb = NULL;
+	res = backend_create_func(be, f->aggr, f->res, NULL);
+	be->mb = mb;
+	return res;
 }
 
 void

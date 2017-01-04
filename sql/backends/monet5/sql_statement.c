@@ -2220,8 +2220,6 @@ stmt_catalog(backend *be, int type, stmt *args)
 
 		if( if_exists)
 			pushInt(mb,q,1);
-		//printInstruction(GDKout, mb, 0, q, LIST_MAL_ALL);
-	
 		s->op1 = args;
 		s->flag = type;
 		s->q = q;
