@@ -25,24 +25,24 @@
  * Some utility routines to generate code
  * The equality operator in MAL is '==' instead of '='.
  */
-static str
-convertMultiplexMod(str mod, str op)
+static const char *
+convertMultiplexMod(const char *mod, const char *op)
 {
 	if (strcmp(op, "=") == 0)
 		return "calc";
 	return mod;
 }
 
-static str
-convertMultiplexFcn(str op)
+static const char *
+convertMultiplexFcn(const char *op)
 {
 	if (strcmp(op, "=") == 0)
 		return "==";
 	return op;
 }
 
-static str
-convertOperator(str op)
+static const char *
+convertOperator(const char *op)
 {
 	if (strcmp(op, "=") == 0)
 		return "==";
@@ -50,7 +50,7 @@ convertOperator(str op)
 }
 
 static InstrPtr
-multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, int o2, int rtype)
+multiplex2(MalBlkPtr mb, const char *mod, const char *name, int o1, int o2, int rtype)
 {
 	InstrPtr q = NULL;
 
@@ -67,7 +67,7 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, i
 }
 
 static InstrPtr
-dump_1(MalBlkPtr mb, char *mod, char *name, stmt *o1)
+dump_1(MalBlkPtr mb, const char *mod, const char *name, stmt *o1)
 {
 	InstrPtr q = NULL;
 
@@ -79,7 +79,7 @@ dump_1(MalBlkPtr mb, char *mod, char *name, stmt *o1)
 }
 
 static InstrPtr
-dump_2(MalBlkPtr mb, char *mod, char *name, stmt *o1, stmt *o2)
+dump_2(MalBlkPtr mb, const char *mod, const char *name, stmt *o1, stmt *o2)
 {
 	InstrPtr q = NULL;
 
@@ -1120,7 +1120,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	char *mod, *op;
+	const char *mod, *op;
 	node *n;
 	int k;
 
@@ -1220,8 +1220,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 	if (op2->nrcols >= 1) {
 		bit need_not = FALSE;
-		char *mod = calcRef;
-		char *op = "=";
+		const char *mod = calcRef;
+		const char *op = "=";
 		int k;
 
 		switch (cmptype) {
@@ -1264,7 +1264,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			return NULL;
 		k = getDestVar(q);
 	} else {
-		char *cmd = selectRef;
+		const char *cmd = selectRef;
 
 		if (cmptype != cmp_equal && cmptype != cmp_notequal)
 			cmd = thetaselectRef;
@@ -1413,15 +1413,15 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	MalBlkPtr mb = be->mb;
 	InstrPtr r, p, q;
 	int l;
-	char *cmd = (type == st_uselect2) ? selectRef : rangejoinRef;
+	const char *cmd = (type == st_uselect2) ? selectRef : rangejoinRef;
 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
 	if ((op2->nrcols > 0 || op3->nrcols) && (type == st_uselect2)) {
 		int k, symmetric = cmp&CMP_SYMMETRIC;
-		char *mod = calcRef;
-		char *OP1 = "<", *OP2 = "<";
+		const char *mod = calcRef;
+		const char *OP1 = "<", *OP2 = "<";
 
 		if (op2->nr < 0 || op3->nr < 0)
 			return NULL;
@@ -1670,7 +1670,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int left = (cmptype == cmp_left);
-	char *sjt = "join";
+	const char *sjt = "join";
 
 	(void)anti;
 
@@ -1900,7 +1900,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	char *mod, *fimp;
+	const char *mod, *fimp;
 	node *n;
 
 	(void)anti;
@@ -2457,7 +2457,7 @@ stmt_table_clear(backend *be, sql_table *t)
 }
 
 stmt *
-stmt_exception(backend *be, stmt *cond, char *errstr, int errcode)
+stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -2488,7 +2488,7 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	char *convert = t->type->base.name;
+	const char *convert = t->type->base.name;
 	/* convert types and make sure they are rounded up correctly */
 
 	if (v->nr < 0)
@@ -2609,7 +2609,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	char *mod, *fimp;
+	const char *mod, *fimp;
 	sql_subtype *tpe = NULL;
 	int special = 0;
 
@@ -2713,24 +2713,23 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	char *mod = "user";
-	char *fimp = (char*)name;
+	const char *mod = "user";
 	node *n;
 
 	/* dump args */
 	if (ops && ops->nr < 0)
 		return NULL;
-	if (monet5_create_relational_function(be->mvc, mod, fimp, rel, ops, NULL, 1) < 0)
+	if (monet5_create_relational_function(be->mvc, mod, name, rel, ops, NULL, 1) < 0)
 		 return NULL;
 
 	if (f_union) 
 		q = newStmt(mb, batmalRef, multiplexRef);
 	else
-		q = newStmt(mb, mod, fimp);
+		q = newStmt(mb, mod, name);
 	q = relational_func_create_result(be->mvc, mb, q, rel);
 	if (f_union) {
 		q = pushStr(mb, q, mod);
-		q = pushStr(mb, q, fimp);
+		q = pushStr(mb, q, name);
 	}
 	if (ops) {
 		for (n = ops->op4.lval->h; n; n = n->next) {
@@ -2778,7 +2777,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	char *mod, *aggrfunc;
+	const char *mod, *aggrfunc;
 	char aggrF[64];
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
