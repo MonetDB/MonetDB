@@ -1175,7 +1175,7 @@ str INETnetmask(inet *retval, const inet *val);
 str INETnetwork(inet *retval, const inet *val);
 str INETnew(inet *retval, str *in);
 inet *INETnull(void);
-str INETsetmasklen(inet *retval, const inet *val, const int *mask);
+str INETsetmasklen(inet *retval, const inet *val, const int *msk);
 str INETtext(str *retval, const inet *val);
 int INETtoString(str *retval, int *len, const inet *handle);
 str INSPECTatom_names(bat *ret);
