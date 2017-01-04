@@ -913,7 +913,6 @@ cleanup:
 	if (backup)
 		c->curprg = backup;
 	return -1;
-
 }
 
 /* TODO handle aggr */
