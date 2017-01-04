@@ -21,14 +21,11 @@
 #define WLCR_UPDATE 	2
 #define WLCR_CATALOG 	3
 
-mal_export int wlcr_duration; // how long to capture default= 0
 mal_export int wlcr_threshold; // threshold (seconds) for sending readonly queries
-mal_export int wlcr_deltas;  // sent the delta values
-mal_export int wlcr_all;	// also ship failed transaction
 mal_export str wlcr_snapshot;	// name assigned to the snapshot
 mal_export int wlcr_lastunit;	// last job executed
 
-mal_export str WLCRproperties(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRfin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

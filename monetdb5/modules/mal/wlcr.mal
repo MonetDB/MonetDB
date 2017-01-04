@@ -1,8 +1,46 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+
 module wlcr;
 
-pattern properties(duration:int, threshold:int, deltas:int, all:int)
-address WLCRproperties
-comment "Set the workload-capture-replay properties";
+pattern master()
+address WLCRmaster
+comment "Activate the workload-capture-replay";
+
+pattern master(path:str)
+address WLCRmaster
+comment "Activate the workload-capture-replay";
+
+pattern master(threshold:int)
+address WLCRmaster
+comment "Activate the workload-capture-replay";
+
+pattern master(path:str, threshold:int)
+address WLCRmaster
+comment "Activate the workload-capture-replay";
+
+pattern replay(threshold:int)
+address WLCRreplay
+comment "Re-run all operations";
+
+pattern replay(path:str)
+address WLCRreplay
+comment "Re-run all operations";
+
+pattern replay(path:str,threshold:int)
+address WLCRreplay
+comment "Re-run all operations";
+
+pattern replay()
+address WLCRreplay
+comment "Re-run all operations";
+
+pattern synchronize()
+address WLCRsynchronize
+comment "Roll forward the replica using the wlcr logs";
 
 pattern job(user:str, snapshotid:str, tid:int, started:str, runtime:int)
 address WLCRjob
