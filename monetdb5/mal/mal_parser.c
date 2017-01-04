@@ -1108,6 +1108,7 @@ fcnHeader(Client cntxt, int kind)
 	}
 	advance(cntxt, 1);
 
+	assert(!cntxt->backup);
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
 	curPrg = cntxt->curprg;
@@ -1144,6 +1145,11 @@ fcnHeader(Client cntxt, int kind)
 	}
 	if (currChar(cntxt) != ')') {
 		freeInstruction(curInstr);
+		if (cntxt->backup) {
+			freeSymbol(cntxt->curprg);
+			cntxt->curprg = cntxt->backup;
+			cntxt->backup = 0;
+		}
 		parseError(cntxt, "')' expected\n");
 		skipToEnd(cntxt);
 		return curBlk;
@@ -1181,6 +1187,11 @@ fcnHeader(Client cntxt, int kind)
 			if ((ch = currChar(cntxt)) != ',') {
 				if (ch == ')')
 					break;
+		if (cntxt->backup) {
+			freeSymbol(cntxt->curprg);
+			cntxt->curprg = cntxt->backup;
+			cntxt->backup = 0;
+		}
 				parseError(cntxt, "',' expected\n");
 				skipToEnd(cntxt);
 				return curBlk;
@@ -1195,6 +1206,11 @@ fcnHeader(Client cntxt, int kind)
 		newarg = (short *) GDKmalloc(max * sizeof(curInstr->argv[0]));
 		if (newarg == NULL){
 			parseError(cntxt, MAL_MALLOC_FAIL);
+		if (cntxt->backup) {
+			freeSymbol(cntxt->curprg);
+			cntxt->curprg = cntxt->backup;
+			cntxt->backup = 0;
+		}
 			skipToEnd(cntxt);
 			return curBlk;
 		}
@@ -1304,8 +1320,12 @@ parseCommandPattern(Client cntxt, int kind)
 	modnme = putNameLen(modnme, l);
 	if (isModuleDefined(cntxt->nspace, modnme))
 		insertSymbol(findModule(cntxt->nspace, modnme), curPrg);
-	else
+	else {
+		freeSymbol(curPrg);
+		cntxt->curprg = cntxt->backup;
+		cntxt->backup = 0;
 		return (MalBlkPtr) parseError(cntxt, "<module> not found\n");
+	}
 	chkProgram(cntxt->fdout, cntxt->nspace, curBlk);
 	if (cntxt->backup) {
 		cntxt->curprg = cntxt->backup;

@@ -487,9 +487,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 #endif
-		/* always keep it around for inspection */
-		SQLaddQueryToCache(c);
-		msg =SQLoptimizeFunction(c,c->curprg->def);
+		msg =SQLoptimizeFunction(c, c->curprg->def);
 		if( msg)
 			goto endofcompile;
 

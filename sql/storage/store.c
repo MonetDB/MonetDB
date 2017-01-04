@@ -471,21 +471,18 @@ load_trigger(sql_trans *tr, sql_table *t, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "event"), rid);
 	nt->event = *(sht*)v;			_DELETE(v);
 
-	nt->old_name = table_funcs.column_find_value(tr, find_sql_column(triggers, "old_name"), rid);
-	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), nt->old_name) != 0) {
-		_DELETE(nt->old_name);	
-		nt->old_name = NULL;
-	}
-	nt->new_name = table_funcs.column_find_value(tr, find_sql_column(triggers, "new_name"), rid);
-	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), nt->new_name) != 0) {
-		_DELETE(nt->new_name);	
-		nt->new_name = NULL;
-	}
-	nt->condition = table_funcs.column_find_value(tr, find_sql_column(triggers, "condition"), rid);
-	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), nt->condition) != 0) {
-		_DELETE(nt->condition);	
-		nt->condition = NULL;
-	}
+	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "old_name"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) 
+		nt->old_name = sa_strdup(tr->sa, v);
+	_DELETE(v);	
+	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "new_name"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) 
+		nt->new_name = sa_strdup(tr->sa, v);
+	_DELETE(v);	
+	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "condition"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0)
+		nt->condition = sa_strdup(tr->sa, v);
+	_DELETE(v);	
 	nt->statement = table_funcs.column_find_value(tr, find_sql_column(triggers, "statement"), rid);
 
 	nt->t = t;
@@ -536,9 +533,8 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	c->def = NULL;
 	def = table_funcs.column_find_value(tr, find_sql_column(columns, "default"), rid);
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
-		c->def = def;
-	else
-		_DELETE(def);
+		c->def = sa_strdup(tr->sa, def);
+	_DELETE(def);
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "null"), rid);
 	c->null = *(bit *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "number"), rid);
@@ -547,9 +543,8 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	c->storage_type = NULL;
 	st = table_funcs.column_find_value(tr, find_sql_column(columns, "storage"), rid);
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), st) != 0)
-		c->storage_type = st;
-	else
-		_DELETE(st);
+		c->storage_type = sa_strdup(tr->sa, st);
+	_DELETE(st);
 	c->t = t;
 	if (isTable(c->t))
 		store_funcs.create_col(tr, c);
@@ -4789,13 +4784,16 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 			sql_column *stats_column_id = find_sql_column(stats, "column_id");
 			oid rid = table_funcs.column_find_row(tr, stats_column_id, &col->base.id, NULL);
 			if (rid != oid_nil) {
+				char *v;
 				sql_column *stats_min = find_sql_column(stats, "minval");
 				sql_column *stats_max = find_sql_column(stats, "maxval");
 
-				*min = table_funcs.column_find_value(tr, stats_min, rid);
-				*max = table_funcs.column_find_value(tr, stats_max, rid);
-				col->min = *min;
-				col->max = *max;
+				v = table_funcs.column_find_value(tr, stats_min, rid);
+				*min = col->min = sa_strdup(tr->sa, v);
+				_DELETE(v);
+				v = table_funcs.column_find_value(tr, stats_max, rid);
+				*max = col->max = sa_strdup(tr->sa, v);
+				_DELETE(v);
 				return 1;
 			}
 		}
