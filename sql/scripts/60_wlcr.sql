@@ -32,6 +32,9 @@ external name wlcr.replay;
 create procedure wlcr.replay(path string, threshold int)
 external name wlcr.replay;
 
+create procedure wlcr.synchronize(path string)
+external name wlcr.synchronize;
+
 create procedure wlcr.synchronize()
 external name wlcr.synchronize;
 

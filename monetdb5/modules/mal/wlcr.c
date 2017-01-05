@@ -117,7 +117,7 @@ WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( fscanf(fd,"%d %d", &wlcr_batch, &wlcr_threshold) != 3)
 		fprintf(fd,"0 %d\n", wlcr_threshold);
 	fclose(fd);
-	mnstr_printf(cntxt->fdout,"#master wlcr_batch %d\n",wlcr_batch, wlcr_threshold);
+	mnstr_printf(cntxt->fdout,"#master wlcr_batch %d threshold %d\n",wlcr_batch, wlcr_threshold);
 	return MAL_SUCCEED;
 }
 
