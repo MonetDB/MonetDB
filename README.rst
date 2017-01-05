@@ -8,13 +8,21 @@ Via the MonetDB project we have brought the MonetDB system in open source,
 where it is accessible at http://www.monetdb.org/Downloads/
 
 The MonetDB database system is a high-performance database kernel for
-query-intensive applications. The MonetDB kernel works together with an
-SQL frontend that is in a separate CVS module.
+query-intensive applications. The MonetDB source can be found at our `Mercurial
+server`__. There is also a `github mirror`__ that is updated once a day.
+
+.. _MonetDB: http://dev.monetdb.org/hg/MonetDB/
+__ MonetDB_
+
+.. _github: https://github.com/MonetDB/MonetDB
+__ github_
 
 If you got a source distribution, please compile and install MonetDB first,
-following the instructions in the file 'HowToStart.rst' (for Unix)
-or 'buildtools/doc/windowsbuild.rst' (for Windows).
+following the instructions in the file `HowToStart.rst`__ (for Unix)
+or `buildtools/doc/windowsbuild.rst`__ (for Windows).
 
+__ HowToStart.rst
+__ buildtools/doc/windowsbuild.rst
 
 Copyright Notice
 ================
