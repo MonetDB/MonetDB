@@ -441,8 +441,8 @@ static void ctl_handle_client(
 							}
 							GDKinit(set, setlen);
 							vaultkey = buf2;
-							if ((err = AUTHunlockVault(&vaultkey)) != NULL ||
-								(err = AUTHinitTables(&p)) != NULL) {
+							if ((err = AUTHunlockVault(vaultkey)) != NULL ||
+								(err = AUTHinitTables(p)) != NULL) {
 								Mfprintf(_mero_ctlerr, "%s: could not setup "
 										"database '%s': %s\n", origin, q, err);
 								GDKfree(err);

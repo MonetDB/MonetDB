@@ -226,7 +226,7 @@ static str monetdb_initialize(void) {
 			}
 			fclose(secretf);
 		}
-		if ((retval = AUTHunlockVault(&secretp)) != MAL_SUCCEED) {
+		if ((retval = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			msab_registerStop();
 			GDKfatal("%s", retval);
