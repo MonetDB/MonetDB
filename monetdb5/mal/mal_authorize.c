@@ -91,12 +91,13 @@ AUTHrequireAdmin(Client cntxt) {
 	id = cntxt->user;
 
 	if (id != 0) {
-		char u[BUFSIZ] = "";
-		str user = u;
+		str user = NULL;
 		str tmp;
 
 		rethrow("requireAdmin", tmp, AUTHresolveUser(&user, id));
-		throw(INVCRED, "requireAdmin", INVCRED_ACCESS_DENIED " '%s'", user);
+		tmp = createException(INVCRED, "requireAdmin", INVCRED_ACCESS_DENIED " '%s'", user);
+		GDKfree(user);
+		return tmp;
 	}
 
 	return(MAL_SUCCEED);
