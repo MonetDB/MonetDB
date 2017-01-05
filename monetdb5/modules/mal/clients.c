@@ -442,7 +442,7 @@ str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 	
-	return AUTHaddUser(ret, cntxt, usr, pw);
+	return AUTHaddUser(ret, cntxt, *usr, *pw);
 }
 
 str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -451,7 +451,7 @@ str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	usr = getArgReference_str(stk, pci, 1);
 
-	return AUTHremoveUser(cntxt, usr);
+	return AUTHremoveUser(cntxt, *usr);
 }
 
 str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -467,7 +467,7 @@ str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 
 	(void)mb;
 
-	return AUTHgetPasswordHash(ret, cntxt, user);
+	return AUTHgetPasswordHash(ret, cntxt, *user);
 }
 
 str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -476,7 +476,7 @@ str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 
-	return AUTHchangeUsername(cntxt, old, new);
+	return AUTHchangeUsername(cntxt, *old, *new);
 }
 
 str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -485,7 +485,7 @@ str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 
-	return AUTHchangePassword(cntxt, old, new);
+	return AUTHchangePassword(cntxt, *old, *new);
 }
 
 str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -494,7 +494,7 @@ str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 
-	return AUTHsetPassword(cntxt, usr, new);
+	return AUTHsetPassword(cntxt, *usr, *new);
 }
 
 str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -509,7 +509,7 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	(void)mb;
 
 	pwd = mcrypt_SHA1Sum(*pw, strlen(*pw));
-	msg = AUTHcheckCredentials(&id, cntxt, usr, &pwd, &ch, &algo);
+	msg = AUTHcheckCredentials(&id, cntxt, *usr, pwd, ch, algo);
 	free(pwd);
 	return msg;
 #else

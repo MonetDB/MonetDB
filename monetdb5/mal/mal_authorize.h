@@ -14,18 +14,18 @@
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-mal_export str AUTHcheckCredentials(oid *ret, Client c, str *user, str *passwd, str *challenge, str *algo);
-mal_export str AUTHaddUser(oid *ret, Client c, str *user, str *pass);
-mal_export str AUTHremoveUser(Client c, str *username);
-mal_export str AUTHchangeUsername(Client c, str *olduser, str *newuser);
-mal_export str AUTHchangePassword(Client c, str *oldpass, str *passwd);
-mal_export str AUTHsetPassword(Client c, str *username, str *passwd);
-mal_export str AUTHresolveUser(str *ret, oid *uid);
+mal_export str AUTHcheckCredentials(oid *ret, Client c, const char *user, const char *passwd, const char *challenge, const char *algo);
+mal_export str AUTHaddUser(oid *ret, Client c, const char *user, const char *pass);
+mal_export str AUTHremoveUser(Client c, const char *username);
+mal_export str AUTHchangeUsername(Client c, const char *olduser, const char *newuser);
+mal_export str AUTHchangePassword(Client c, const char *oldpass, const char *passwd);
+mal_export str AUTHsetPassword(Client c, const char *username, const char *passwd);
+mal_export str AUTHresolveUser(str *ret, oid uid);
 mal_export str AUTHgetUsername(str *ret, Client c);
 mal_export str AUTHgetUsers(BAT **ret1, BAT **ret2, Client c);
-mal_export str AUTHgetPasswordHash(str *ret, Client c, str *username);
+mal_export str AUTHgetPasswordHash(str *ret, Client c, const char *username);
 
-mal_export str AUTHinitTables(str *passwd);
+mal_export str AUTHinitTables(const char *passwd);
 
 
 /*
@@ -39,6 +39,6 @@ mal_export str AUTHinitTables(str *passwd);
  * needed.  A locked vault means noone can log into the system, hence, the
  * vault needs to be unlocked as part of the server startup ritual.
  */
-mal_export str AUTHunlockVault(str *password);
+mal_export str AUTHunlockVault(const char *password);
 
 #endif /* _MAL_AUTHORIZE_H */

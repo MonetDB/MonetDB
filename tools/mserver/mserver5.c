@@ -636,7 +636,7 @@ main(int argc, char **av)
 			}
 			fclose(secretf);
 		}
-		if ((err = AUTHunlockVault(&secretp)) != MAL_SUCCEED) {
+		if ((err = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			msab_registerStop();
 			GDKfatal("%s", err);

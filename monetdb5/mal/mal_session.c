@@ -257,7 +257,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		/* access control: verify the credentials supplied by the user,
 		 * no need to check for database stuff, because that is done per
 		 * database itself (one gets a redirect) */
-		err = AUTHcheckCredentials(&uid, root, &user, &passwd, &challenge, &algo);
+		err = AUTHcheckCredentials(&uid, root, user, passwd, challenge, algo);
 		if (err != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", err);
 			exit_streams(fin, fout);
