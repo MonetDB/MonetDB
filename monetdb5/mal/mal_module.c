@@ -27,8 +27,8 @@
  *
  * All modules are persistent during a server session
  */
-Module moduleIndex[256][256]; 	/* to speedup access to correct scope */
-Module moduleChain;				/* keep the modules in a chain as well */
+Module moduleIndex[256][256];	/* to speedup access to correct scope */
+static Module moduleChain;		/* keep the modules in a chain as well */
 
 static void newModuleSpace(Module scope){
 	scope->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
@@ -42,14 +42,9 @@ getModuleChain(void){
 void
 mal_module_reset(void)
 {
-	Module m,n;
-
-	for( m = moduleChain, moduleChain = 0; m; ){
-		n = m->next;
-		freeModule(m);
-		m= n;
-	}
-	memset(moduleIndex, 0, 256 * 256 * sizeof(Module));
+	while (moduleChain)
+		freeModule(moduleChain);
+	memset(moduleIndex, 0, sizeof(moduleIndex));
 }
 
 static void clrModuleIndex(str nme, Module cur){
@@ -149,6 +144,19 @@ void freeModule(Module m)
 			(void)ret;
 		}
 	}
+	if (moduleChain == m)
+		moduleChain = m->next;
+	else {
+		Module tm = moduleChain;
+		while (tm && tm->next) {
+			if (tm->next == m) {
+				tm->next = m->next;
+				break;
+			}
+			tm = tm->next;
+		}
+	}
+	m->next = NULL;
 	freeSubScope(m);
 	clrModuleIndex(m->name, m);
 	if (m->help)
