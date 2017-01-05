@@ -13,11 +13,8 @@
  * The collection of routines provided here are map operations
  * for the color string primitives.
  *
- * In line with the batcalc module, we assume that
- * if two bat operands are provided that they are already
- * aligned on the head. Moreover, the head of the BATs
- * are limited to :oid, which can be cheaply realized using
- * the GRPsplit operation.
+ * In line with the batcalc module, we assume that if two bat operands
+ * are provided that they are aligned.
  */
 
 #include "monetdb_config.h"
