@@ -22,9 +22,10 @@
 #define WLCR_CATALOG 	3
 
 mal_export int wlcr_threshold; // threshold (seconds) for sending readonly queries
-mal_export str wlcr_snapshot;	// name assigned to the snapshot
-mal_export int wlcr_lastunit;	// last job executed
+mal_export str wlcr_dir;
 
+mal_export str WLCRinit(Client cntxt);
+mal_export str WLCRinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRfin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

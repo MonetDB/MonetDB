@@ -11,46 +11,46 @@
  * This module collects the workload-capture-replay statements during transaction execution. 
  * It is used primarilly for replication management and workload replay
  *
- * The goal is to maintain a replica of a master database. All data of the master
+ * The goal is to create and use a replica of a master database. All data of the master
  * is basically only available for read only access. Accidental corruption of this
  * data is avoided by setting ownership and access properties at the SQL level in the replica.
  *
  *
  * IMPLEMENTATION
  *
- * The replica directory should be on a shared (global) file system.
- * As default we use dbfarm/master.
+ * A database can be set into 'master' mode only once.
+ * As default we use dbfarm/master to collect the necessary information.
  *
  * The binary dump for the database snapshot should be stored there in  master/bat.
  * The associated log files are stored as master/wlcr<number>.
  * Creation and restore of a snapshot should be a  monetdb option. TODO
  *
  * Replication management start when you run the command 
- * CALL wlcr.master("(full)path to snapshot dir")
- * It can also be passed as a command line parameter 
- * --set wlcr_dir="(full)path to snapshot dir"
+ * CALL wlcr.master()
+ * It can also be activated as a command line parameter 
+ * --set wlcr=yes
  *
  * Each wlcr log file contains a serial log for a transaction batch. 
- * Each job is identified by the owner of the query, the snapshot tag,
+ * Each job is identified by the owner of the query, 
  * commit/rollback, its starting time and runtime (in ms).
  *
  * Logging of queries can be further limited to those that satisfy a threshold.
- * CALL wlcr.master("(full)path to snapshot dir", threshold)
+ * CALL wlcr.master(threshold)
  * The threshold is given in milliseconds. A negative threshold leads to ignoring all queries.
  *
  * A replica server should issue the matching call
- * CALL wlcr.synchronize("(full)path to snapshot dir")
+ * CALL wlcr.synchronize("dbname")
  *
- * During synchronization only updates are executed for the user responsible for the call. 
+ * During synchronization only updates are executed.
  * Queries are simply ignored unless needed as replacement for update actions.
  *
  * The alternative is to replay the log
- * CALL wlcr.replay("(full)path to snapshot dir")
+ * CALL wlcr.replay("dbname")
  * In this mode all queries are executed under the credentials of the query owner, including those that lead to updates.
  *
  * Any failure encountered terminates the synchronization process, leaving a message in the merovingian log.
  *
- * The replay progress can be inspected using the function wlcr.drift() and wlcr.synced().
+ * The replay progress can be inspected using the function wlcr.synced().
  * The latter is true if all accessible log files have been processed.
  * 
  * The wlcr files purposely have a textual format derived from the MAL statements.
@@ -58,6 +58,8 @@
  *
  * The integrity of the wlcr directories is critical. For now we assume that all batches are available. 
  * We should detect that wlcr.master() is issued after updates have taken place on the snapshot TODO.
+ *
+ * The WLCR logs are always private a given thread
  *
  */
 #include "monetdb_config.h"
@@ -69,13 +71,13 @@ static MT_Lock     wlcr_lock MT_LOCK_INITIALIZER("wlcr_lock");
 
 
 int wlcr_threshold = 0; // threshold (milliseconds) for keeping readonly queries
-str wlcr_snapshot= 0;	// name assigned to the snapshot
-int wlcr_batch = 0;	// last job executed
+int wlcr_batch = 0;	// last batch jon identifier 
+int wlcr_tid = 0;	// last transaction id
 
 static char *wlcr_name[]= {"","query","update","catalog"};
 
 static stream *wlcr_fd = 0;
-static str wlcr_dir = 0;
+str wlcr_dir = 0;
 
 /* The database snapshots are binary copies of the dbfarm/database/bat
  * New snapshots are created currently using the 'monetdb snapshot <db>' command
@@ -84,6 +86,81 @@ static str wlcr_dir = 0;
  *
  * The wlcr logs are stored in the snapshot directory as a time-stamped list
  */
+
+// creation of file and updating the version file should be atomic TODO!!!
+static str
+WLCRloggerfile(Client cntxt)
+{
+	char path[PATHLENGTH];
+	FILE *fd;
+
+	(void) cntxt;
+	snprintf(path,PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
+	mnstr_printf(cntxt->fdout,"#WLCRloggerfile %s\n",wlcr_dir);
+	fd = fopen(path,"w");
+	if( fd == NULL)
+		throw(MAL,"wlcr.logger","Could not access %s\n",path);
+	fprintf(fd,"%d %d\n", wlcr_batch, wlcr_threshold);
+	fclose(fd);
+	wlcr_batch++;
+	wlcr_tid = 0;
+	snprintf(path,PATHLENGTH,"%s%cwlcr_%06d",wlcr_dir,DIR_SEP,wlcr_batch);
+	mnstr_printf(cntxt->fdout,"#WLCRloggerfile batch %s\n",path);
+	wlcr_fd = open_wastream(path);
+	if( wlcr_fd == 0)
+		throw(MAL,"wlcr.logger","Could not create %s\n",path);
+	return MAL_SUCCEED;
+}
+
+/*
+ * The existence of the master directory should be checked upon server restart.
+ * A new batch file should be created as a result.
+ */
+str 
+WLCRinit(Client cntxt)
+{
+	str dbname= (str) GDKgetenv("gdk_dbname");
+	str dir;
+	str msg = MAL_SUCCEED;
+	FILE *fd;
+	char path[PATHLENGTH];
+	
+	if( wlcr_dir){
+		mnstr_printf(cntxt->fdout,"#WLCR already running\n");
+		return MAL_SUCCEED;
+	}
+
+	if (dbname){
+		dir = GDKfilepath(0,0,"master",0);
+		snprintf(path, PATHLENGTH,"%s%cwlcr",dir, DIR_SEP);
+		mnstr_printf(cntxt->fdout,"#Testing WLCR %s\n", path);
+		fd = fopen(path,"r");
+		if( fd){
+			// database is in master tracking mode
+			if( fscanf(fd,"%d %d", &wlcr_batch, &wlcr_threshold) == 2){
+				wlcr_dir = dir;
+				wlcr_batch++;
+				mnstr_printf(cntxt->fdout,"#Master control active:%d %d\n", wlcr_batch, wlcr_threshold);
+				(void) fclose(fd);
+				msg = WLCRloggerfile(cntxt);
+			} else
+				mnstr_printf(cntxt->fdout,"#Inconsistent master control:%d %d\n", wlcr_batch, wlcr_threshold);
+			(void) fclose(fd);
+		} else
+				mnstr_printf(cntxt->fdout,"#Master control not active\n");
+	}
+	return msg;
+}
+
+str 
+WLCRinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return WLCRinit(cntxt);
+}
+
 str 
 WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -93,7 +170,6 @@ WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	wlcr_dir = GDKgetenv("gdk_wlcrdir");
 	if (i< pci->argc+1 && getArgType(mb, pci, i) == TYPE_str){
 		wlcr_dir =  *getArgReference_str(stk,pci,i);
 		wlcr_dir = GDKfilepath(0,wlcr_dir,"master",0);
@@ -144,8 +220,7 @@ WLCRaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 	if( cntxt->wlcr->stop == 0){\
 		p = newStmt(cntxt->wlcr,"wlreplay","job");\
 		p = pushStr(cntxt->wlcr,p, cntxt->username);\
-		p = pushStr(cntxt->wlcr,p, wlcr_snapshot? wlcr_snapshot:"dummy");\
-		p = pushInt(cntxt->wlcr,p, wlcr_batch);\
+		p = pushInt(cntxt->wlcr,p, wlcr_tid);\
 		p = WLCRaddtime(cntxt,pci, p); \
 		p->ticks = GDKms();\
 }	}
@@ -153,15 +228,12 @@ WLCRaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 str
 WLCRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str snapshot = *getArgReference_str(stk,pci,1);
-	int tid = *getArgReference_int(stk,pci,2);
+	int tid = *getArgReference_int(stk,pci,1);
 
 	(void) cntxt;
 	(void) mb;
 
-	if ( strcmp(snapshot, wlcr_snapshot))
-		throw(MAL,"wlcr.job","Incompatible snapshot identifier");
-	if ( tid < wlcr_batch)
+	if ( tid < wlcr_tid)
 		throw(MAL,"wlcr.job","Work unit identifier is before last one executed");
 	return MAL_SUCCEED;
 }
@@ -182,7 +254,7 @@ WLCRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	if ( strcmp("-- no query",getVarConstant(mb, getArg(pci,1)).val.sval) == 0)
-		return MAL_SUCCEED;
+		return MAL_SUCCEED;	// ignore system internal queries.
 	WLCR_start();
 	p = newStmt(cntxt->wlcr, "wlreplay","query");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
@@ -410,35 +482,18 @@ WLCRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-// creation of file and updating the version file should be atomic TODO!!!
 static str
-WLCRloggerfile(Client cntxt)
-{
-	char path[PATHLENGTH];
-	FILE *fd;
-
-	(void) cntxt;
-	snprintf(path,PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
-	mnstr_printf(cntxt->fdout,"#WLCRloggerfile %s\n",wlcr_dir);
-	fd = fopen(path,"w");
-	if( fd == NULL)
-		return "unknown";
-	fprintf(fd,"%d %d\n", wlcr_batch, wlcr_threshold);
-	fclose(fd);
-	snprintf(path,PATHLENGTH,"%s%cwlcr_%06d",wlcr_dir,DIR_SEP,wlcr_batch);
-	wlcr_batch++;
-	return GDKstrdup(path);
-}
-
-static str
-WLCRwrite(Client cntxt)
-{	str fname;
-	// save the wlcr record on a file and ship it to registered slaves
+WLCRwrite(Client cntxt, str kind)
+{	str msg;
+	InstrPtr p;
+	// save the wlcr record on a file 
+	if( cntxt->wlcr == 0 || cntxt->wlcr->stop == 0)
+		return MAL_SUCCEED;
 	if( wlcr_dir ){
 		if ( wlcr_fd == NULL){
-			fname= WLCRloggerfile(cntxt);
-			mnstr_printf(cntxt->fdout,"#WLCRloggerfile batch %s\n",fname);
-			wlcr_fd = open_wastream(fname);
+			msg = WLCRloggerfile(cntxt);
+			if( msg) 
+				return msg;
 		}
 		// Limit the size of the log files
 		
@@ -449,11 +504,18 @@ WLCRwrite(Client cntxt)
 			return MAL_SUCCEED;
 
 		newStmt(cntxt->wlcr,"wlreplay","fin");
+		wlcr_tid++;
 		MT_lock_set(&wlcr_lock);
+		p = getInstrPtr(cntxt->wlcr,0);
+		p = pushStr(cntxt->wlcr,p,kind);
+		p = pushStr(cntxt->wlcr, p, wlcr_name[cntxt->wlcr_kind]);
+		p = pushInt(cntxt->wlcr,p, GDKms() - p->ticks);
 		printFunction(wlcr_fd, cntxt->wlcr, 0, LIST_MAL_DEBUG );
 		(void) mnstr_flush(wlcr_fd);
-		wlcr_batch++;
 		MT_lock_unset(&wlcr_lock);
+		trimMalVariables(cntxt->wlcr, NULL);
+		resetMalBlk(cntxt->wlcr, 0);
+		cntxt->wlcr_kind = WLCR_QUERY;
 	}
 
 #ifdef _DEBUG_WLCR_
@@ -464,21 +526,8 @@ WLCRwrite(Client cntxt)
 
 str
 WLCRcommit(Client cntxt)
-{	str msg = MAL_SUCCEED;
-	InstrPtr p;
-	
-	if(cntxt->wlcr && cntxt->wlcr->stop){
-		p= getInstrPtr(cntxt->wlcr,0);
-		p = pushStr(cntxt->wlcr,p,"commit");
-		p = pushStr(cntxt->wlcr, p, wlcr_name[cntxt->wlcr_kind]);
-		p = pushInt(cntxt->wlcr,p, GDKms() - p->ticks);
-		getInstrPtr(cntxt->wlcr,0) = p;	// plan may be too long to find it automatically
-		msg = WLCRwrite(cntxt);
-		trimMalVariables(cntxt->wlcr, NULL);
-		resetMalBlk(cntxt->wlcr, 0);
-		cntxt->wlcr_kind = WLCR_QUERY;
-	}
-	return msg;
+{
+		return WLCRwrite(cntxt, "commit");
 }
 
 str
@@ -492,23 +541,8 @@ WLCRcommitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLCRrollback(Client cntxt)
-{	str msg = MAL_SUCCEED;
-	InstrPtr p;
-	
-	if( cntxt->wlcr){
-		if (cntxt->wlcr->stop){
-			p= getInstrPtr(cntxt->wlcr,0);
-			p = pushStr(cntxt->wlcr,p,"rollback");
-			p = pushStr(cntxt->wlcr, p, wlcr_name[cntxt->wlcr_kind]);
-			p = pushInt(cntxt->wlcr,p, GDKms() - p->ticks);
-			getInstrPtr(cntxt->wlcr,0) = p;	// plan may be too long to find it automatically
-			msg = WLCRwrite(cntxt);
-		}
-		trimMalVariables(cntxt->wlcr, NULL);
-		resetMalBlk(cntxt->wlcr, 0);
-		cntxt->wlcr_kind = WLCR_QUERY;
-	}
-	return msg;
+{
+	return WLCRwrite(cntxt, "rollback");
 }
 str
 WLCRrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

@@ -6,43 +6,19 @@
 
 module wlcr;
 
-pattern master()
-address WLCRmaster
-comment "Activate the workload-capture-replay";
+pattern init()
+address WLCRinitCmd
+comment "Test for running as master";
 
-pattern master(path:str)
+pattern master()
 address WLCRmaster
 comment "Activate the workload-capture-replay";
 
 pattern master(threshold:int)
 address WLCRmaster
-comment "Activate the workload-capture-replay";
+comment "Activate the workload-capture-replay. Only queries surpassing the threshold are kept for replay.";
 
-pattern master(path:str, threshold:int)
-address WLCRmaster
-comment "Activate the workload-capture-replay";
-
-pattern replay(threshold:int)
-address WLCRreplay
-comment "Re-run all operations";
-
-pattern replay(path:str)
-address WLCRreplay
-comment "Re-run all operations";
-
-pattern replay(path:str,threshold:int)
-address WLCRreplay
-comment "Re-run all operations";
-
-pattern replay()
-address WLCRreplay
-comment "Re-run all operations";
-
-pattern synchronize()
-address WLCRsynchronize
-comment "Roll forward the replica using the wlcr logs";
-
-pattern job(user:str, snapshotid:str, tid:int, started:str, runtime:int)
+pattern job(user:str, tid:int, started:str, runtime:int)
 address WLCRjob
 comment "Mark the beginning of the work unit which can be a compound transaction";
 
@@ -79,11 +55,11 @@ address WLCRcommitCmd
 comment "Rollback the workload-capture-replay record";
 
 # The wrapping of the catalog and transaction operations
-pattern create_seq( sname:str, action:int)
+pattern create_seq( sname:str, seqname:str, action:int)
 address WLCRgeneric
 comment "Catalog operation create_seq";
 
-pattern alter_seq( sname:str, val:lng)
+pattern alter_seq( sname:str, seqname:str, val:lng)
 address WLCRgeneric
 comment "Catalog operation alter_seq";
 
@@ -103,11 +79,11 @@ pattern drop_schema( sname:str, s:str, action:int)
 address WLCRgeneric
 comment "Catalog operation drop_schema";
 
-pattern create_table(sname:str, temp:int)
+pattern create_table(sname:str, tname:str, temp:int)
 address WLCRgeneric
 comment "Catalog operation create_table";
 
-pattern create_view(sname:str, temp:int)
+pattern create_view(sname:str, tname:str, temp:int)
 address WLCRgeneric
 comment "Catalog operation create_view";
 
@@ -207,7 +183,7 @@ pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
 address WLCRgeneric
 comment "Catalog operation drop_function";
 
-pattern create_function( sname:str)
+pattern create_function( sname:str, fname:str)
 address WLCRgeneric
 comment "Catalog operation create_function";
 
