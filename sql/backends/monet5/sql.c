@@ -279,13 +279,14 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
+create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 {
 	sql_allocator *osa;
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL;
 	node *n;
 
+	(void)tname;
 	if (STORE_READONLY)
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
@@ -408,7 +409,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
     			goto cleanup;
         	}
     	}
-    	msg = create_table_or_view(sql, sname, t, 0);
+    	msg = create_table_or_view(sql, sname, t->base.name, t, 0);
     	if (msg != MAL_SUCCEED) {
     		goto cleanup;
     	}

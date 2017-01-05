@@ -139,7 +139,7 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 
 
 static int
-_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
+_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
 {
 	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
@@ -245,7 +245,7 @@ rel2str( mvc *sql, sql_rel *rel)
 
 /* stub and remote function */
 static int
-_create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, prop *prp)
+_create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, prop *prp)
 {
 	Client c = MCgetClient(m->clientid);
 	MalBlkPtr curBlk = 0;
@@ -255,7 +255,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	node *n;
 	int i, q, v;
 	int *lret, *rret;
-	char old = name[0];
+	char *lname = GDKstrdup(name);
 	sql_rel *r = rel;
 
 	if (is_topn(r->op))
@@ -266,12 +266,11 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	rret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
 
 	/* create stub */
-	name[0] = old;
 	backup = c->curprg;
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 	if( c->curprg == NULL)
 		return -1;
-	name[0] = 'l';
+	lname[0] = 'l';
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
 
@@ -336,7 +335,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	o = pushArgument(curBlk, o, q);
-	o = pushStr(curBlk, o, name);
+	o = pushStr(curBlk, o, lname);
 	p = pushArgument(curBlk, p, getArg(o,0));
 
 	{ 
@@ -375,7 +374,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	p = newInstruction(curBlk, remoteRef, execRef);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, mod);
-	p = pushStr(curBlk, p, name);
+	p = pushStr(curBlk, p, lname);
 	getArg(p, 0) = -1;
 
 	for (i = 0, n = r->exps->h; n; n = n->next, i++) {
@@ -432,12 +431,12 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	SQLoptimizeFunction(c, c->curprg->def);
 	if (backup)
 		c->curprg = backup;
-	name[0] = old;		/* make sure stub is called */
+	GDKfree(lname);		/* make sure stub is called */
 	return 0;
 }
 
 int
-monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
+monet5_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
 {
 	prop *p = NULL;
 
@@ -914,7 +913,6 @@ cleanup:
 	if (backup)
 		c->curprg = backup;
 	return -1;
-
 }
 
 /* TODO handle aggr */
@@ -954,7 +952,13 @@ backend_create_subfunc(backend *be, sql_subfunc *f, list *ops)
 int
 backend_create_subaggr(backend *be, sql_subaggr *f)
 {
-	return backend_create_func(be, f->aggr, f->res, NULL);
+	int res;
+	MalBlkPtr mb = be->mb;
+
+	be->mb = NULL;
+	res = backend_create_func(be, f->aggr, f->res, NULL);
+	be->mb = mb;
+	return res;
 }
 
 void

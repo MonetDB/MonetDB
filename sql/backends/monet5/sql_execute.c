@@ -272,7 +272,7 @@ SQLrun(Client c, backend *be, mvc *m){
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
 	mb->history = c->curprg->def->history;
-	c->curprg->def->history =0;
+	c->curprg->def->history = 0;
 
 	/* only consider a re-optimization when we are dealing with query templates */
 	for ( i= 1; i < mb->stop;i++){
@@ -283,10 +283,10 @@ SQLrun(Client c, backend *be, mvc *m){
 			return msg;
 		}
 		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
-			mc= copyMalBlk(p->blk);
-			retc =p->retc;
+			mc = copyMalBlk(p->blk);
+			retc = p->retc;
 			freeMalBlk(mb);
-			mb= mc;
+			mb = mc;
 			// declare the argument values as a constant
 			// We use the knowledge that the arguments are first on the stack
 			for (j = 0; j < m->argc; j++) {
@@ -321,16 +321,16 @@ SQLrun(Client c, backend *be, mvc *m){
 	if (m->emod & mod_explain) {
 		if (c->curprg->def)
 			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
-	} else
-	if( m->emod & mod_debug)
+	} else if( m->emod & mod_debug) {
 		msg = runMALDebugger(c, mb);
-	 else{
+	} else {
 		if( m->emod & mod_trace){
 			SQLsetTrace(c,mb);
 			msg = runMAL(c, mb, 0, 0);
 			stopTrace(0);
-		} else
+		} else {
 			msg = runMAL(c, mb, 0, 0);
+		}
 	}
 
 	// release the resources
@@ -482,9 +482,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 #endif
-		/* always keep it around for inspection */
-		SQLaddQueryToCache(c);
-		msg =SQLoptimizeFunction(c,c->curprg->def);
+		msg =SQLoptimizeFunction(c, c->curprg->def);
 		if( msg)
 			goto endofcompile;
 

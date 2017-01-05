@@ -236,9 +236,9 @@ void insertSymbol(Module scope, Symbol prg){
 			return;
 	}
 	assert(scope->space);
-	if(scope->space[t] == prg){
+	if (scope->space[t] == prg){
 		/* already known, last inserted */
-	 } else  {
+	} else {
 		prg->peer= scope->space[t];
 		scope->space[t] = prg;
 		if( prg->peer &&

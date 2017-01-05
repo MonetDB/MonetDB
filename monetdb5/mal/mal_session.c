@@ -468,8 +468,19 @@ MSserveClient(void *dummy)
 	/*
 	 * At this stage we should clean out the MAL block
 	 */
-	freeMalBlk(c->curprg->def);
-	c->curprg->def = 0;
+	if (c->backup) {
+		assert(0);
+		freeSymbol(c->backup);
+		c->backup = 0;
+	}
+	if (c->curprg) {
+		assert(0);
+		freeSymbol(c->curprg);
+		c->curprg = 0;
+	}
+	if (c->nspace) {
+		assert(0);
+	}
 
 	if (c->mode > FINISHCLIENT) {
 		if (isAdministrator(c) /* && moreClients(0)==0 */) {
@@ -480,7 +491,7 @@ MSserveClient(void *dummy)
 	}
 	if (!isAdministrator(c))
 		MCcloseClient(c);
-	if (strcmp(c->nspace->name, "user") == 0) {
+	if (c->nspace && strcmp(c->nspace->name, "user") == 0) {
 		GDKfree(c->nspace->space);
 		GDKfree(c->nspace);
 		c->nspace = NULL;
@@ -514,6 +525,17 @@ MALexitClient(Client c)
 	if (c->bak)
 		return NULL;
 	c->mode = FINISHCLIENT;
+	if (c->backup) {
+		assert(0);
+		freeSymbol(c->backup);
+		c->backup = NULL;
+	}
+	/* should be in the nspace */
+	c->curprg = NULL;
+	if (c->nspace) {
+		freeModule(c->nspace);
+		c->nspace = NULL;
+	}
 	return NULL;
 }
 

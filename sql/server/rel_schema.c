@@ -44,6 +44,7 @@ rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 
 	append(exps, exp_atom_int(sql->sa, nr));
 	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, t->base.name, sql_bind_localtype("str") ));
 	append(exps, exp_atom_ptr(sql->sa, t));
 	rel->l = rel_basetable(sql, t, t->base.name);
 	rel->r = NULL;

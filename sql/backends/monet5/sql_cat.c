@@ -376,10 +376,11 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 }
 
 static str
-create_seq(mvc *sql, char *sname, sql_sequence *seq)
+create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 {
 	sql_schema *s = NULL;
 
+	(void)seqname;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!CREATE SEQUENCE: no such schema '%s'", sname);
 	if (s == NULL)
@@ -394,11 +395,12 @@ create_seq(mvc *sql, char *sname, sql_sequence *seq)
 }
 
 static str
-alter_seq(mvc *sql, char *sname, sql_sequence *seq, lng *val)
+alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, lng *val)
 {
 	sql_schema *s = NULL;
 	sql_sequence *nseq = NULL;
 
+	(void)seqname;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!ALTER SEQUENCE: no such schema '%s'", sname);
 	if (s == NULL)
@@ -489,7 +491,7 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 }
 
 static char *
-create_func(mvc *sql, char *sname, sql_func *f)
+create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 {
 	sql_func *nf;
 	sql_schema *s = NULL;
@@ -498,6 +500,7 @@ create_func(mvc *sql, char *sname, sql_func *f)
 	char *F = is_aggr ? "AGGREGATE" : (is_func ? "FUNCTION" : "PROCEDURE");
 	char *KF = f->type == F_FILT ? "FILTER " : f->type == F_UNION ? "UNION " : "";
 
+	(void)fname;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (!s)
@@ -685,7 +688,8 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1), osname;
-	str func = *getArgReference_str(stk, pci, 2);
+	str fname = *getArgReference_str(stk, pci, 2);
+	str func = *getArgReference_str(stk, pci, 3);
 	stmt *s;
 	backend *be;
 
@@ -700,7 +704,7 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
 
-		msg = create_func(sql, schema, func);
+		msg = create_func(sql, schema, fname, func);
 		mvc_set_schema(sql, osname);
 	} else {
 		mvc_set_schema(sql, osname);
@@ -732,7 +736,7 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;
 		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
 
-		msg = create_table_or_view(sql, schema, v, temp);
+		msg = create_table_or_view(sql, schema, v->base.name, v, temp);
 		mvc_set_schema(sql, osname);
 	} else {
 		mvc_set_schema(sql, osname);
@@ -747,10 +751,11 @@ SQLcreate_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
-	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 2);
+	str seqname = *getArgReference_str(stk, pci, 2); 
+	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
 
 	initcontext();
-	msg = create_seq(sql, sname, s);
+	msg = create_seq(sql, sname, seqname, s);
 	return msg;
 }
 
@@ -759,16 +764,17 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
+	str seqname = *getArgReference_str(stk, pci, 2); 
+	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
 	lng *val = NULL;
-	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 2);
 
 	initcontext();
-	if (getArgType(mb, pci, 3) == TYPE_lng)
-		val = getArgReference_lng(stk, pci, 3);
+	if (getArgType(mb, pci, 4) == TYPE_lng)
+		val = getArgReference_lng(stk, pci, 4);
 	if (val == NULL || *val == lng_nil)
 		msg = sql_message("42M36!ALTER SEQUENCE: cannot (re)start with NULL");
 	else
-		msg = alter_seq(sql, sname, s, val);
+		msg = alter_seq(sql, sname, seqname, s, val);
 	return msg;
 }
 
@@ -846,11 +852,12 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
-	sql_table *t = *(sql_table **) getArgReference(stk, pci, 2);
-	int temp = *getArgReference_int(stk, pci, 3);
+	str tname = *getArgReference_str(stk, pci, 2); 
+	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
+	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, t, temp);
+	msg = create_table_or_view(sql, sname, tname, t, temp);
 	return msg;
 }
 
@@ -859,11 +866,12 @@ SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
-	sql_table *t = *(sql_table **) getArgReference(stk, pci, 2);
-	int temp = *getArgReference_int(stk, pci, 3);
+	str vname = *getArgReference_str(stk, pci, 2); 
+	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
+	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, t, temp);
+	msg = create_table_or_view(sql, sname, vname, t, temp);
 	return msg;
 }
 
@@ -916,8 +924,10 @@ SQLalter_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
-	sql_table *t = *(sql_table **) getArgReference(stk, pci, 2);
+	str tname = *getArgReference_str(stk, pci, 2); 
+	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 
+	(void)tname;
 	initcontext();
 	msg = alter_table(cntxt, sql, sname, t);
 	return msg;
@@ -1175,10 +1185,11 @@ SQLcreate_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
-	sql_func *f = *(sql_func **) getArgReference(stk, pci, 2);
+	str fname = *getArgReference_str(stk, pci, 2); 
+	sql_func *f = *(sql_func **) getArgReference(stk, pci, 3);
 
 	initcontext();
-	msg = create_func(sql, sname, f);
+	msg = create_func(sql, sname, fname, f);
 	return msg;
 }
 
