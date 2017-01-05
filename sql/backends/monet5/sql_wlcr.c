@@ -16,91 +16,153 @@
  * Alternatively you start with an empty database.
  *
  * Since the wlcr files can be stored anywhere, the full path should be given.
+ *
+ * At any time there can only be on choice to interpret the files.
  */
 #include "monetdb_config.h"
 #include "sql.h"
 #include "wlcr.h"
 #include "sql_wlcr.h"
+#include "mal_client.h"
+
+#define WLCR_REPLAY 1
+#define WLCR_SYNC 2
+static int wlcr_mode;
 
 static str wlcr_master;
 static int wlcr_replaythreshold;
-static int wlcr_replaybatch;
+static int wlcr_replaybatches;
+
+static MT_Id wlcr_thread;
 
 static str
-WLCRinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCRreplayinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    int i = 1, j,k,l;
+    int i = 1, j,k;
 	char path[PATHLENGTH];
+	str dbname,dir;
 	FILE *fd;
 
 	(void) cntxt;
 	(void) k;
-	(void) l;
 
-    wlcr_master = GDKgetenv("gdk_master");
-    if (i< pci->argc+1 && getArgType(mb, pci, i) == TYPE_str){
-        wlcr_master =  *getArgReference_str(stk,pci,i);
+    if (getArgType(mb, pci, i) == TYPE_str){
+        dbname =  *getArgReference_str(stk,pci,i);
         i++;
     }
-	if( wlcr_master == NULL){
-		throw(SQL,"wlcr.init","Can not access the wlcr directory");
+	if( dbname == NULL){
+		throw(SQL,"wlcr.init","Master database name missing.");
 	}
-	snprintf(path,PATHLENGTH,"%s%cwlcr", wlcr_master, DIR_SEP);
-	mnstr_printf(cntxt->fdout,"#Testing '%s'\n", path);
+	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,dbname);
+	dir = GDKfilepath(0,path,"master",0);
+	wlcr_master = GDKstrdup(dir);
+	mnstr_printf(cntxt->fdout,"#WLCR master '%s'\n", wlcr_master);
+	snprintf(path,PATHLENGTH,"%s%cwlcr", dir, DIR_SEP);
+	mnstr_printf(cntxt->fdout,"#Testing access to master '%s'\n", path);
 	fd = fopen(path,"r");
 	if( fd == NULL){
-		throw(SQL,"wlcr.init","Can not access '%s'\n",path);
+		throw(SQL,"wlcr.init","Can not access master control file '%s'\n",path);
 	}
-	if( fscanf(fd,"%d %d %d", &j,&k,&l) != 3){
+	if( fscanf(fd,"%d %d", &j,&k) != 2){
 		throw(SQL,"wlcr.init","'%s' does not have proper number of arguments\n",path);
 	}
-	wlcr_replaybatch = j;
+	wlcr_replaybatches = j;
 
-    if ( i < pci->argc+1 && getArgType(mb, pci, i) == TYPE_int){
+    if ( i < pci->argc && getArgType(mb, pci, i) == TYPE_int){
         wlcr_replaythreshold = *getArgReference_int(stk,pci,i);
 	}
 	return MAL_SUCCEED;
 }
 
-str
-WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str msg;
+void
+WLCRprocess(void *arg)
+{	
+	Client cntxt = (Client) arg;
 	int i;
 	char path[PATHLENGTH];
 	stream *fd;
+	Client c;
 
-	msg = WLCRinit(cntxt, mb, stk, pci);
-	mnstr_printf(cntxt->fdout,"#Ready to start the replay against '%s' threshold %d", wlcr_master, wlcr_replaythreshold);
+	c =MCforkClient(cntxt);
+	if( c == 0){
+		GDKerror("Could not create user for WLCR process\n");
+		return;
+	}
+    c->prompt = GDKstrdup("");  /* do not produce visible prompts */
+    c->promptlength = 0;
+    c->listing = 0;
 
-	for( i= 0; i < wlcr_replaybatch; i++){
+	mnstr_printf(cntxt->fdout,"#Ready to start the replayagainst '%s' batches %d threshold %d", wlcr_master, wlcr_replaybatches, wlcr_replaythreshold);
+	for( i= 0; i < wlcr_replaybatches; i++){
 		snprintf(path,PATHLENGTH,"%s%cwlcr_%06d", wlcr_master, DIR_SEP,i);
+		mnstr_printf(cntxt->fdout,"#WLCR processing %s\n",path);
 		fd= open_rstream(path);
-		if( fd == NULL){
-			throw(SQL,"wlcr.replay","'%s' can not be accessed \n",path);
+		if( c->fdin == NULL || MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), 0, "") < 0){
+			mnstr_printf(cntxt->fdout,"#wlcr.replay:'%s' can not be accessed \n",path);
 		}
+		c->yycur = 0;
+		// preload the complete file
+		// now parse the file line by line
 		close_stream(fd);
 	}
-	return msg;
+}
+
+str
+WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	str msg;
+	char path[PATHLENGTH];
+	stream *fd;
+
+	if( wlcr_mode == WLCR_SYNC){
+		throw(SQL,"wlcr.replay","System already in synchronization mode");
+	}
+	if( wlcr_mode == WLCR_REPLAY){
+		throw(SQL,"wlcr.replay","System already in replay mode");
+	}
+	wlcr_mode = WLCR_REPLAY;
+	msg = WLCRreplayinit(cntxt, mb, stk, pci);
+	if( msg)
+		return msg;
+
+	snprintf(path,PATHLENGTH,"%s%cwlcr", wlcr_master, DIR_SEP);
+	fd= open_rstream(path);
+	if( fd == NULL){
+		throw(SQL,"wlcr.replay","'%s' can not be accessed \n",path);
+	}
+	close_stream(fd);
+
+    if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
+			throw(SQL,"wlcr.replay","can not be accessed \n");
+	}
+	return MAL_SUCCEED;
 }
 
 str
 WLCRsynchronize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
-	int i;
 	char path[PATHLENGTH];
 	stream *fd;
 
-	msg = WLCRinit(cntxt, mb, stk, pci);
-	mnstr_printf(cntxt->fdout,"#Ready to start the synchronization against '%s' threshold %d", wlcr_master, wlcr_replaythreshold);
-
-	for( i= 0; i < wlcr_replaybatch; i++){
-		snprintf(path,PATHLENGTH,"%s%cwlcr_%06d", wlcr_master, DIR_SEP,i);
-		fd= open_rstream(path);
-		if( fd == NULL){
-			throw(SQL,"wlcr.synchronize","'%s' can not be accessed \n",path);
-		}
-		close_stream(fd);
+	if( wlcr_mode == WLCR_SYNC){
+		throw(SQL,"wlcr.replay","System already in synchronization mode");
 	}
-	return msg;
+	if( wlcr_mode == WLCR_REPLAY){
+		throw(SQL,"wlcr.replay","System already in replay mode");
+	}
+	snprintf(path,PATHLENGTH,"%s%cwlcr", wlcr_master, DIR_SEP);
+	fd= open_rstream(path);
+	if( fd == NULL){
+		throw(SQL,"wlcr.replay","'%s' can not be accessed \n",path);
+	}
+	close_stream(fd);
+
+	wlcr_mode = WLCR_SYNC;
+	msg = WLCRreplayinit(cntxt, mb, stk, pci);
+	if( msg)
+		return msg;
+    if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
+			throw(SQL,"wlcr.synchronize","can not be started \n");
+	}
+	return MAL_SUCCEED;
 }
 
