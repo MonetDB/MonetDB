@@ -12,7 +12,6 @@
  * We don't need the actual name of the objects
  */
 #include "monetdb_config.h"
-#include "wlcr.h"
 #include "opt_wlcr.h"
 
 

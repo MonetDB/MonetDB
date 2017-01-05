@@ -6,16 +6,16 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-#ifndef _WLCR_H
-#define _WLCR_H
-/* #define _WLCR_DEBUG_*/
+#ifndef _OPT_WLCR_H
+#define _OPT_WLCR_H
+/* #define _OPT_WLCR_DEBUG_*/
 
 #include "mal_interpreter.h"
 #include "mal_scenario.h"
-#include "opt_wlcr.h"
+#include "wlcr.h"
 #include "opt_support.h"
 #include "opt_prelude.h"
 
 mal_export int OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#endif /* _WLCR_H */
+#endif /* _OPT_WLCR_H */
