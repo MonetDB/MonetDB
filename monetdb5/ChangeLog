@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thu Jan  5 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Changed the interfaces of the AUTH* functions: pass values, not pointers
+  to values.
+
 * Tue Dec 13 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Removed calc.setoid().
 - group.subgroup is now called group.group if it is not refining a group.

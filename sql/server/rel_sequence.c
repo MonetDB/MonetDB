@@ -54,6 +54,7 @@ rel_seq(sql_allocator *sa, int cat_type, char *sname, sql_sequence *s, sql_rel *
 	else
 		append(exps, exp_atom_int(sa, 0));
 	append(exps, exp_atom_str(sa, sname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sa, s->base.name, sql_bind_localtype("str") ));
 	append(exps, exp_atom_ptr(sa, s));
 	rel->l = r;
 	rel->r = NULL;

@@ -1187,9 +1187,6 @@ SQLCacheRemove(Client c, str nme)
 	s = findSymbolInModule(c->nspace, nme);
 	if (s == NULL)
 		throw(MAL, "cache.remove", "internal error, symbol missing\n");
-	if (getInstrPtr(s->def, 0)->token == FACTORYsymbol)
-		shutdownFactoryByName(c, c->nspace, nme);
-	else
-		deleteSymbol(c->nspace, s);
+	deleteSymbol(c->nspace, s);
 	return MAL_SUCCEED;
 }

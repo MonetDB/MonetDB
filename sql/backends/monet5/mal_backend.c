@@ -18,6 +18,7 @@ backend_reset(backend *b)
 
 	b->vtop = 0;
 	b->q = NULL;
+	b->mb = NULL;
 	b->mvc_var = 0;
 	b->output_format = OFMT_CSV;
 	return b;
