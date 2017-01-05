@@ -12,6 +12,7 @@
  * We don't need the actual name of the objects
  */
 #include "monetdb_config.h"
+#include "wlcr.h"
 #include "opt_wlcr.h"
 
 
@@ -27,6 +28,8 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
+	if( wlcr_dir == NULL)
+		goto wrapup;
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit = mb->ssize;
@@ -59,7 +62,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q= copyInstruction(p);
 			setModuleId(q, wlcrRef);
 			getArg(q,0) = newTmpVariable(mb,TYPE_any);
-			delArgument(q, 2);
+			delArgument(q, 3);
 			pushInstruction(mb,q);
 		} else
 		if( getModuleId(p) == sqlcatalogRef){
@@ -102,6 +105,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 #endif
 
+wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","wlcr",updates,GDKusec() - usec);
     newComment(mb,buf);
 	return 1;
