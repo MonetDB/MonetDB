@@ -84,8 +84,7 @@ Module newModule(Module scope, str nme){
 	// User modules are never global
 	if( strcmp(nme,"user")){
 		setModuleIndex(nme,cur);
-		if ( moduleChain)
-			cur->next = moduleChain;
+		cur->next = moduleChain;
 		moduleChain = cur;
 	}
 	return cur;
@@ -99,8 +98,7 @@ Module fixModule(Module scope, str nme){
 	
 	if( strcmp(nme,"user")==0)
 		return scope;
-	if( moduleIndex[(int)(*nme)][(int)(*(nme+1))])
-		s= moduleIndex[(int)(*nme)][(int)(*(nme+1))];
+	s= moduleIndex[(int)(*nme)][(int)(*(nme+1))];
 	while(s != NULL){
 		if( nme == s->name )
 			return s;
