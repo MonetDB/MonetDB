@@ -1,6 +1,6 @@
 # what is the overhead of MAL in multiplex situations
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 t0:= alarm.usec();
 barrier i:= 0:lng;
 	o:= calc.oid(i);
@@ -10,7 +10,7 @@ exit i;
 t1:= alarm.usec();
 c:= algebra.copy(b);
 t2:= alarm.usec();
-d:= bat.new(:oid,:lng);
+d:= bat.new(:lng);
 barrier (h,t):= iterator.new(b);
         zz:= algebra.fetch(b,h);
         z:= algebra.fetch(c,h);

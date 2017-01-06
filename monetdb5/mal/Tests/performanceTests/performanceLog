@@ -1218,7 +1218,7 @@ tst901a		1.315/0.651/0.595
 tst901b		1.313/1.222/0.016
 ======================== 20 mar 2013 ===================
 Vienna Fedora 18
-Default release
+Default branch
 The compilation mode for is --enable-optimize --disable-debug
 compilation took ?
 command: time mserver5 TST </dev/null >/dev/null
@@ -1233,7 +1233,7 @@ tst901a		0.655/0.409/0.038
 tst901b		1.417/1.100/0.038
 ======================== 12 oct 2014 ===================
 Vienna Fedora 20 
-Default release
+Default branch
 The compilation mode for is --enable-optimize --disable-debug
 compilation took ?
 command: time mserver5 TST </dev/null >/dev/null
@@ -1248,7 +1248,7 @@ tst901a		0.812/0.750/0.032
 tst901b		2.112/2.051/0.038
 ======================== 23 apr 2015 ===================
 Vienna Fedora 20 
-Default release
+Default branch
 The compilation mode for is --enable-optimize --disable-debug
 compilation took ?
 command: time mserver5 TST </dev/null >/dev/null
@@ -1261,3 +1261,32 @@ tst400e		1.006/0.986/0.020
 
 tst901a		0.790/0.760/0.030
 tst901b		2.053/2.016/0.037
+======================== 6 jan 2017 ===================
+Vienna Fedora 25 
+Default branch
+The compilation mode for is --enable-optimize --disable-debug
+command: time mserver5 TST </dev/null >/dev/null
+base		0.280/0.185/0.016
+tst400a		0.295/0.273/0.011
+tst400bHuge	0.324/0.281/0.031
+tst400cHuge	0.276/0.226/0.026
+tst400d		0.647/0.620/0.016
+tst400e		1.097/1.060/0.019
+
+tst901a		0.777/0.736/0.030
+tst901b		1.777/1.744/0.023
+======================== 6 jan 2017 ===================
+Vienna Fedora 25 
+Default branch
+After fixing the timing.
+The compilation mode for is --enable-optimize --disable-debug
+command: time mserver5 TST </dev/null >/dev/null
+base		0.220/0.183/0.022
+tst400a		0.298/0.281/0.015
+tst400bHuge	0.323/0.291/0.021
+tst400cHuge	0.225/0.194/0.013
+tst400d		0.651/0.625/0.016
+tst400e		1.074/1.063/0.010
+
+tst901a		0.800/0.776/0.018
+tst901b		1.848/1.812/0.023
