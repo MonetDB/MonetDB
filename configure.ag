@@ -2543,6 +2543,7 @@ LIBS="$LIBS $MATH_LIBS"
 AC_CHECK_FUNCS([\
 	asctime_r \
 	backtrace \
+	clock_gettime \
 	ctime_r \
 	fabsf \
 	fallocate \
