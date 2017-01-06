@@ -898,8 +898,6 @@ GDKusec(void)
 #ifdef HAVE_CLOCK_GETTIME
 #if defined(CLOCK_UPTIME_FAST)
 #define CLK_ID CLOCK_UPTIME_FAST	/* FreeBSD */
-#elif defined(CLOCK_MONOTONIC_COARSE)
-#define CLK_ID CLOCK_MONOTONIC_COARSE	/* Linux >= 2.6.32 */
 #else
 #define CLK_ID CLOCK_MONOTONIC		/* Posix (fallback) */
 #endif
