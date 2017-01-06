@@ -143,9 +143,10 @@ WLCRinit(Client cntxt)
 				mnstr_printf(cntxt->fdout,"#Master control active:%d %d\n", wlcr_batch, wlcr_threshold);
 				(void) fclose(fd);
 				msg = WLCRloggerfile(cntxt);
-			} else
+			} else{
 				mnstr_printf(cntxt->fdout,"#Inconsistent master control:%d %d\n", wlcr_batch, wlcr_threshold);
-			(void) fclose(fd);
+				(void) fclose(fd);
+			}
 		} else
 				mnstr_printf(cntxt->fdout,"#Master control not active\n");
 	}
@@ -166,35 +167,35 @@ WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char path[PATHLENGTH];
 	FILE *fd;
-	int i = 1;
+	str msg = MAL_SUCCEED;
 	(void) stk;
 	(void) pci;
 
-	if (i< pci->argc+1 && getArgType(mb, pci, i) == TYPE_str){
-		wlcr_dir =  *getArgReference_str(stk,pci,i);
-		wlcr_dir = GDKfilepath(0,wlcr_dir,"master",0);
-		i++;
-	}
-	// if the master director does not exit, create it
-	if ( wlcr_dir == NULL)
+	(void) mb;
+
+	if ( pci->argc == 2 )
+		wlcr_threshold = *getArgReference_int(stk,pci,1);
+
+	WLCRinit(cntxt);
+	// if the master directory does not exit, create it
+	if ( wlcr_dir == NULL){
 		wlcr_dir = GDKfilepath(0,0,"master",0);
+		snprintf(path, PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
+		if( GDKcreatedir(path) == GDK_FAIL)
+			mnstr_printf(cntxt->fdout,"#Could not create %s\n",wlcr_dir);
+		mnstr_printf(cntxt->fdout,"#Snapshot directory '%s'\n", wlcr_dir);
 
-	if ( i < pci->argc+1 && getArgType(mb, pci, i) == TYPE_int)
-		wlcr_threshold = *getArgReference_int(stk,pci,i);
-
-	snprintf(path, PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
-	if( GDKcreatedir(path) == GDK_FAIL)
-		mnstr_printf(cntxt->fdout,"#Could not create %s\n",wlcr_dir);
-	mnstr_printf(cntxt->fdout,"#Snapshot directory '%s'\n", wlcr_dir);
-
-	fd = fopen(path,"w");
-	if ( fd == NULL)
-		return createException(MAL,"wlcr.master","Unable to initialize WLCR %s", path);
-	if( fscanf(fd,"%d %d", &wlcr_batch, &wlcr_threshold) != 3)
-		fprintf(fd,"0 %d\n", wlcr_threshold);
-	fclose(fd);
-	mnstr_printf(cntxt->fdout,"#master wlcr_batch %d threshold %d\n",wlcr_batch, wlcr_threshold);
-	return MAL_SUCCEED;
+		fd = fopen(path,"w");
+		if ( fd == NULL)
+			return createException(MAL,"wlcr.master","Unable to initialize WLCR %s", path);
+		if( fscanf(fd,"%d %d", &wlcr_batch, &wlcr_threshold) != 3)
+			fprintf(fd,"0 %d\n", wlcr_threshold);
+		(void) fclose(fd);
+	}
+	if( wlcr_fd == NULL)
+		msg = WLCRloggerfile(cntxt);
+	mnstr_printf(cntxt->fdout,"#master wlcr_batch %d threshold %d file open %d\n",wlcr_batch, wlcr_threshold, wlcr_fd != NULL);
+	return msg;
 }
 
 static InstrPtr
