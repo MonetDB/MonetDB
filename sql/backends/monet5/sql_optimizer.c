@@ -60,11 +60,11 @@ SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 	return size;
 }
 
-static lng 
+static lng
 SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 {
 	sql_trans *tr = m->session->tr;
-	lng size,space = 0, i; 
+	lng size,space = 0, i;
 
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
@@ -80,7 +80,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			sql_table *t = 0;
 			sql_column *c = 0;
 
-			if (!s || strcmp(s->base.name, dt_schema) == 0) 
+			if (!s || strcmp(s->base.name, dt_schema) == 0)
 				continue;
 			t = mvc_bind_table(m, s, tname);
 			if (!t)

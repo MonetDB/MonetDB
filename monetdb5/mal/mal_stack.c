@@ -59,8 +59,9 @@ newGlobalStack(int size)
 	MalStkPtr s;
 
 	s = (MalStkPtr) GDKzalloc(stackSize(size) + offsetof(MalStack, stk));
-	if (s == NULL)
-		GDKfatal("newGlobalStack:can not obtain memory\n");
+	if (!s) {
+		return NULL;
+	}
 	s->stksize = size;
 	return s;
 }
@@ -75,6 +76,9 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 		return old;
 	k = ((cnt / STACKINCR) + 1) * STACKINCR;
 	s = newGlobalStack(k);
+	if (!s) {
+		return NULL;
+	}
 	memcpy(s, old, stackSize(old->stksize));
 	s->stksize = k;
 	GDKfree(old);
