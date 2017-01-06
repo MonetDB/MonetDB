@@ -10,19 +10,19 @@ cursor = dbh.cursor()
 q = """
 
 create procedure setmallocsuccesscount(count BIGINT)
-	external name "io"."setmallocsuccesscount";
+    external name "io"."setmallocsuccesscount";
 
 call setmallocsuccesscount(%d);
 SELECT * FROM tables;
 """
 i = 3300
 while i > 1000:
-	#print(i)
-	i-=1
-	try:
-	    cursor.execute(q % (i))
-	except Exception as e:
-		#print(e)
-		pass
-	finally:
-		dbh.rollback()
+    #print(i)
+    i-=1
+    try:
+        cursor.execute(q % (i))
+    except Exception as e:
+        #print(e)
+        pass
+    finally:
+        dbh.rollback()
