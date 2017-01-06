@@ -730,7 +730,6 @@ makeVarSpace(MalBlkPtr mb)
 		if (new == NULL) {
 			mb->errors++;
 			showScriptException(GDKout, mb, 0, MAL, "newMalBlk:no storage left\n");
-			assert(0);
 			return -1;
 		}
 		memset(new + mb->vsize, 0, (s - mb->vsize) * sizeof(VarPtr));
@@ -1258,6 +1257,9 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		return k;
 	}
 	k = newTmpVariable(mb, type);
+	if (k == -1) {
+		return k;
+	}
 	setVarConstant(mb, k);
 	setVarFixed(mb, k);
 	if (type >= 0 && type < GDKatomcnt && ATOMextern(type))
