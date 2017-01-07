@@ -36,8 +36,6 @@ __hidden str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 __hidden str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
 	__attribute__((__visibility__("hidden")));
 
-__hidden str malInclude(Client c, str name, int listing)
-	__attribute__((__visibility__("hidden")));
 #endif
 
 __hidden void initResource(void)

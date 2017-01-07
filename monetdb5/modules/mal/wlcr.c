@@ -95,13 +95,6 @@ WLCRloggerfile(Client cntxt)
 	FILE *fd;
 
 	(void) cntxt;
-	snprintf(path,PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
-	mnstr_printf(cntxt->fdout,"#WLCRloggerfile %s\n",wlcr_dir);
-	fd = fopen(path,"w");
-	if( fd == NULL)
-		throw(MAL,"wlcr.logger","Could not access %s\n",path);
-	fprintf(fd,"%d %d\n", wlcr_batch, wlcr_threshold);
-	fclose(fd);
 	wlcr_batch++;
 	wlcr_tid = 0;
 	snprintf(path,PATHLENGTH,"%s%cwlcr_%06d",wlcr_dir,DIR_SEP,wlcr_batch);
@@ -109,6 +102,14 @@ WLCRloggerfile(Client cntxt)
 	wlcr_fd = open_wastream(path);
 	if( wlcr_fd == 0)
 		throw(MAL,"wlcr.logger","Could not create %s\n",path);
+
+	snprintf(path,PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
+	mnstr_printf(cntxt->fdout,"#WLCRloggerfile %s\n",wlcr_dir);
+	fd = fopen(path,"w");
+	if( fd == NULL)
+		throw(MAL,"wlcr.logger","Could not access %s\n",path);
+	fprintf(fd,"%d %d\n", wlcr_batch, wlcr_threshold);
+	fclose(fd);
 	return MAL_SUCCEED;
 }
 
@@ -139,7 +140,6 @@ WLCRinit(Client cntxt)
 			// database is in master tracking mode
 			if( fscanf(fd,"%d %d", &wlcr_batch, &wlcr_threshold) == 2){
 				wlcr_dir = dir;
-				wlcr_batch++;
 				mnstr_printf(cntxt->fdout,"#Master control active:%d %d\n", wlcr_batch, wlcr_threshold);
 				(void) fclose(fd);
 				msg = WLCRloggerfile(cntxt);

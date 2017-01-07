@@ -23,6 +23,7 @@
 #include "sql.h"
 #include "wlcr.h"
 #include "sql_wlcr.h"
+#include "mal_parser.h"
 #include "mal_client.h"
 
 #define WLCR_REPLAY 1
@@ -91,20 +92,30 @@ WLCRprocess(void *arg)
     c->prompt = GDKstrdup("");  /* do not produce visible prompts */
     c->promptlength = 0;
     c->listing = 0;
+	c->curprg = newFunction(putName("user"), putName("wlcr"), FUNCTIONsymbol);
+
 
 	mnstr_printf(cntxt->fdout,"#Ready to start the replayagainst '%s' batches %d threshold %d", wlcr_master, wlcr_replaybatches, wlcr_replaythreshold);
 	for( i= 0; i < wlcr_replaybatches; i++){
 		snprintf(path,PATHLENGTH,"%s%cwlcr_%06d", wlcr_master, DIR_SEP,i);
-		mnstr_printf(cntxt->fdout,"#WLCR processing %s\n",path);
 		fd= open_rstream(path);
-		if( c->fdin == NULL || MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), 0, "") < 0){
-			mnstr_printf(cntxt->fdout,"#wlcr.replay:'%s' can not be accessed \n",path);
+		if( fd == NULL){
+			mnstr_printf(cntxt->fdout,"#wlcr.process:'%s' can not be accessed \n",path);
+			continue;
 		}
+		if( MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), 0, "") < 0){
+			mnstr_printf(cntxt->fdout,"#wlcr.process: client can not be initialized \n");
+		}
+		mnstr_printf(cntxt->fdout,"#wlcr.process:start processing log file '%s'\n",path);
 		c->yycur = 0;
+		if( parseMAL(c, c->curprg, 1, 1)  || c->curprg->def->errors){
+			mnstr_printf(cntxt->fdout,"#wlcr.process:parsing failed '%s'\n",path);
+		}
 		// preload the complete file
 		// now parse the file line by line
 		close_stream(fd);
 	}
+	(void) mnstr_flush(cntxt->fdout);
 }
 
 str
@@ -132,7 +143,7 @@ WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	close_stream(fd);
 
     if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlcr.replay","can not be accessed \n");
+			throw(SQL,"wlcr.replay","replay process can not be started\n");
 	}
 	return MAL_SUCCEED;
 }
@@ -143,16 +154,13 @@ WLCRsynchronize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char path[PATHLENGTH];
 	stream *fd;
 
-	if( wlcr_mode == WLCR_SYNC){
-		throw(SQL,"wlcr.replay","System already in synchronization mode");
-	}
-	if( wlcr_mode == WLCR_REPLAY){
-		throw(SQL,"wlcr.replay","System already in replay mode");
+	if( wlcr_mode == WLCR_SYNC || wlcr_mode == WLCR_REPLAY){
+		throw(SQL,"wlcr.synchronize","System already in synchronization mode");
 	}
 	snprintf(path,PATHLENGTH,"%s%cwlcr", wlcr_master, DIR_SEP);
 	fd= open_rstream(path);
 	if( fd == NULL){
-		throw(SQL,"wlcr.replay","'%s' can not be accessed \n",path);
+		throw(SQL,"wlcr.synchronize","'%s' can not be accessed \n",path);
 	}
 	close_stream(fd);
 
@@ -161,7 +169,7 @@ WLCRsynchronize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( msg)
 		return msg;
     if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlcr.synchronize","can not be started \n");
+			throw(SQL,"wlcr.synchronize","replay process can not be started\n");
 	}
 	return MAL_SUCCEED;
 }
