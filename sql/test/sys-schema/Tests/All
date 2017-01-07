@@ -1,2 +1,3 @@
 check_PrimaryKey_uniqueness
 check_AlternateKey_uniqueness
+check_ForeignKey_referential_integrity

@@ -167,8 +167,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	}
 
 	/* always collect the MAL instruction execution time */
-	gettimeofday(&pci->clock,NULL);
-	prof->ticks = GDKusec();
+	pci->clock = prof->ticks = GDKusec();
 
 	/* keep track of actual running instructions over BATs */
 	if( isaBatType(getArgType(mb, pci, 0)) )

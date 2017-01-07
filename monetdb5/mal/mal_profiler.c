@@ -104,11 +104,8 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 {
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
-	char ctm[26];
-	time_t clk;
-	struct timeval clock;
+	lng clock;
 	str stmt, c;
-	char *tbuf;
 	str stmtq;
 	lng usec= GDKusec();
 
@@ -118,30 +115,17 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		return;
 	if( start) // show when instruction was started
 		clock = pci->clock;
-	else 
-		gettimeofday(&clock, NULL);
-	clk = clock.tv_sec;
+	else
+		clock = usec;
 
 	/* make profile event tuple  */
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
 
-#ifdef HAVE_CTIME_R3
-	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
-#else
-#ifdef HAVE_CTIME_R
-	tbuf = ctime_r(&clk, ctm);
-#else
-	tbuf = ctime(&clk);
-#endif
-#endif
-	tbuf[19]=0;
-	/* there should be less than 10^6 == 1M usecs in 1 sec */
-	assert(clock.tv_usec >= 0 && clock.tv_usec < 1000000);
 	if( usrname)
 		logadd("\"user\":\"%s\",%s",usrname, prettify);
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
-	logadd("\"ctime\":\"%s.%06ld\",%s", tbuf+11, (long)clock.tv_usec, prettify);
+	logadd("\"ctime\":"LLFMT".%06ld\",%s", clock / 1000000, (long) (clock % 1000000), prettify);
 	logadd("\"thread\":%d,%s", THRgettid(),prettify);
 
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
@@ -403,10 +387,7 @@ profilerHeartbeatEvent(char *alter)
 	char cpuload[BUFSIZ];
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
-	char ctm[26];
-	time_t clk;
-	struct timeval clock;
-	char *tbuf;
+	lng clock;
 
 	if (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL)
 		return;
@@ -414,23 +395,12 @@ profilerHeartbeatEvent(char *alter)
 	/* get CPU load on beat boundaries only */
 	if ( getCPULoad(cpuload) )
 		return;
-	gettimeofday(&clock, NULL);
-	clk = clock.tv_sec;
-	
+	clock = GDKusec();
+
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
-#ifdef HAVE_CTIME_R3
-	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
-#else
-#ifdef HAVE_CTIME_R
-	tbuf = ctime_r(&clk, ctm);
-#else
-	tbuf = ctime(&clk);
-#endif
-#endif
-	tbuf[19]=0;
 	logadd("\"user\":\"heartbeat\",%s", prettify);
-	logadd("\"ctime\":\"%s.%06ld\",%s",tbuf+11, (long)clock.tv_usec, prettify);
+	logadd("\"ctime\":"LLFMT".%06ld\",%s", clock / 1000000, (long) (clock % 1000000), prettify);
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -822,26 +792,16 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	/* static struct Mallinfo prevMalloc; */
 	char buf[BUFSIZ]= {0};
-	char ctm[27]={0}, *ct= ctm+10;
 	int tid = (int)THRgettid();
 	lng v1 = 0, v2= 0, v3=0, v4=0, v5=0;
 	str stmt, c;
-	time_t clk;
-	struct timeval clock;
+	lng clock;
 	lng rssMB = MT_getrss()/1024/1024;
 	lng tmpspace = pci->wbytes/1024/1024;
 	int errors = 0;
-
-#ifdef HAVE_TIMES
-	struct tms newTms;
-#endif
-
 	/* struct Mallinfo infoMalloc; */
-	gettimeofday(&clock, NULL);
-	clk= clock.tv_sec;
-#ifdef HAVE_TIMES
-	times(&newTms);
-#endif
+
+	clock = GDKusec();
 	/* infoMalloc = MT_mallinfo(); */
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -853,23 +813,6 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(buf, BUFSIZ, "%s.%s[%d]%d",
 	getModuleId(getInstrPtr(mb, 0)),
 	getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
-
-#ifdef HAVE_CTIME_R3
-	if (ctime_r(&clk, ctm, sizeof(ctm)) == NULL)
-		strncpy(ctm, "", sizeof(ctm));
-#else
-#ifdef HAVE_CTIME_R
-	if (ctime_r(&clk, ctm) == NULL)
-		strncpy(ctm, "", sizeof(ctm));
-#else
-	{
-		char *tbuf = ctime(&clk);
-		strncpy(ctm, tbuf ? tbuf : "", sizeof(ctm));
-	}
-#endif
-#endif
-	/* sneakily overwrite year with second fraction */
-	snprintf(ctm + 19, 6, ".%03d", (int)(clock.tv_usec / 1000));
 
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
@@ -895,8 +838,9 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return;
 	}
 	errors += BUNappend(TRACE_id_event, &TRACE_event, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_time, ct, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_pc, buf, FALSE) != GDK_SUCCEED;
+	snprintf(buf, sizeof(buf), LLFMT ".%06ld", clock / 1000000, (long) (clock % 1000000));
+	errors += BUNappend(TRACE_id_time, buf, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_thread, &tid, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_ticks, &pci->ticks, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_rssMB, &rssMB, FALSE) != GDK_SUCCEED;

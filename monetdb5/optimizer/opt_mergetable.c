@@ -1544,8 +1544,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	ml.vsize = mb->vsize;
 	ml.horigin = (int*) GDKmalloc(sizeof(int)* ml.vsize);
 	ml.torigin = (int*) GDKmalloc(sizeof(int)* ml.vsize);
-	if ( ml.v == NULL || ml.horigin == NULL || ml.torigin == NULL) 
+	if ( ml.v == NULL || ml.horigin == NULL || ml.torigin == NULL) {
 		goto cleanup;
+	}
 	for (i=0; i<ml.vsize; i++) 
 		ml.horigin[i] = ml.torigin[i] = -1;
 
@@ -1860,9 +1861,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			freeInstruction(ml.v[i].mi);
 	}
 cleanup:
-	GDKfree(ml.v);
-	GDKfree(ml.horigin);
-	GDKfree(ml.torigin);
+	if (ml.v) GDKfree(ml.v);
+	if (ml.horigin) GDKfree(ml.horigin);
+	if (ml.torigin) GDKfree(ml.torigin);
     /* Defense line against incorrect plans */
     if( actions > 0){
         chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);

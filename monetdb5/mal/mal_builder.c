@@ -108,6 +108,10 @@ newComment(MalBlkPtr mb, const char *val)
 	}
 	cst.len= (int) strlen(cst.val.sval);
 	getArg(q,0) = defConstant(mb,TYPE_str,&cst);
+	if (getArg(q,0) < 0) {
+		freeInstruction(q);
+		return NULL;
+	}
 	clrVarConstant(mb,getArg(q,0));
 	setVarDisabled(mb,getArg(q,0));
 	if (mb->errors) {
