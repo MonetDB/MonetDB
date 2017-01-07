@@ -1640,6 +1640,7 @@ GDKmalloc_prefixsize(size_t size)
 }
 
 #ifndef NDEBUG
+static int mallocsuccesslock_init = 0;
 static MT_Lock mallocsuccesslock;
 #endif
 
@@ -1648,8 +1649,10 @@ GDKsetmallocsuccesscount(lng count)
 {
 	(void) count;
 #ifndef NDEBUG
+	if (mallocsuccesslock_init == 0)
 	MT_lock_init(&mallocsuccesslock, "mallocsuccesslock");
 	GDK_malloc_success_count = count;
+	mallocsuccesslock_init++;
 #endif
 }
 
