@@ -7761,7 +7761,7 @@ Ready.
 [ "io",	"printf",	"pattern io.printf(fmt:str, val:any...):void ",	"IOprintf;",	"Select default format "	]
 [ "io",	"printf",	"pattern io.printf(filep:streams, fmt:str):void ",	"IOprintfStream;",	"Select default format "	]
 [ "io",	"printf",	"pattern io.printf(filep:streams, fmt:str, val:any...):void ",	"IOprintfStream;",	"Select default format "	]
-[ "io",	"setmemorylimit",	"command io.setmemorylimit(nbytes:lng):void ",	"IOsetmemorylimit;",	"Set memory limit for testing"	]
+[ "io",	"setmallocsuccesscount",	"command io.setmallocsuccesscount(count:lng):void ",	"IOsetmallocsuccesscount;",	"Set number of mallocs that are allowed to succeed."	]
 [ "io",	"stderr",	"pattern io.stderr():streams ",	"io_stderr;",	"return the error stream for the database console"	]
 [ "io",	"stdin",	"pattern io.stdin():bstream ",	"io_stdin;",	"return the input stream to the database client"	]
 [ "io",	"stdout",	"pattern io.stdout():streams ",	"io_stdout;",	"return the output stream for the database client"	]
