@@ -94,6 +94,8 @@ Ready.
 [ "environment"	]
 [ "queue"	]
 [ "rejects"	]
+[ "spatial_ref_sys"	]
+[ "geometry_columns"	]
 [ "keywords"	]
 [ "table_types"	]
 [ "dependency_types"	]
@@ -107,6 +109,11 @@ Ready.
 [ "storagemodel"	]
 [ "tablestoragemodel"	]
 [ "statistics"	]
+[ "files"	]
+[ "sq"	]
+[ "rg"	]
+[ "pg"	]
+[ "export"	]
 [ "systemfunctions"	]
 
 # 14:49:17 >  
