@@ -451,6 +451,10 @@ MT_init(void)
 static void THRinit(void);
 static void GDKlockHome(void);
 
+#ifndef NDEBUG
+static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
+#endif
+
 int
 GDKinit(opt *set, int setlen)
 {
@@ -481,6 +485,9 @@ GDKinit(opt *set, int setlen)
 	MT_lock_init(&GDKnameLock, "GDKnameLock");
 	MT_lock_init(&GDKthreadLock, "GDKthreadLock");
 	MT_lock_init(&GDKtmLock, "GDKtmLock");
+#ifndef NDEBUG
+	MT_lock_init(&mallocsuccesslock, "mallocsuccesslock");
+#endif
 #endif
 	for (i = 0; i <= BBP_BATMASK; i++) {
 		MT_lock_init(&GDKbatLock[i].swap, "GDKswapLock");
@@ -1639,16 +1646,11 @@ GDKmalloc_prefixsize(size_t size)
 	return s;
 }
 
-#ifndef NDEBUG
-static MT_Lock mallocsuccesslock;
-#endif
-
 void
 GDKsetmallocsuccesscount(lng count)
 {
 	(void) count;
 #ifndef NDEBUG
-	MT_lock_init(&mallocsuccesslock, "mallocsuccesslock");
 	GDK_malloc_success_count = count;
 #endif
 }
@@ -1675,7 +1677,8 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	/* fail malloc for testing purposes depending on set limit */
 	if (GDK_malloc_success_count > 0) {
 		MT_lock_set(&mallocsuccesslock);
-		if (GDK_malloc_success_count > 0) GDK_malloc_success_count--;
+		if (GDK_malloc_success_count > 0)
+			GDK_malloc_success_count--;
 		MT_lock_unset(&mallocsuccesslock);
 	}
 	if (GDK_malloc_success_count == 0) {
