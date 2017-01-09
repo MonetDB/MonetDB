@@ -4354,6 +4354,8 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 			je && !find_prop(je->p, PROP_JOINIDX) && /* FKEY JOIN */
 			!rel_is_join_on_pkey(rel))) /* aligned PKEY JOIN */
 			return rel;
+		if (is_semi(rel->op) && is_union(l->op) && je && !find_prop(je->p, PROP_JOINIDX))
+			return rel;
 
 		ol->subquery = or->subquery = 0;
 		if ((is_union(l->op) && !need_distinct(l)) && !is_union(r->op)){
