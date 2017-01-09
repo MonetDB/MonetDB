@@ -71,7 +71,8 @@ static MT_Lock     wlcr_lock MT_LOCK_INITIALIZER("wlcr_lock");
 
 
 int wlcr_threshold = 0; // threshold (milliseconds) for keeping readonly queries
-int wlcr_batch = 0;	// last batch jon identifier 
+int wlcr_batch = 0;	// last batch job identifier 
+int wlcr_start = 0;	// first batch to check next
 int wlcr_tid = 0;	// last transaction id
 
 static char *wlcr_name[]= {"","query","update","catalog"};
@@ -95,14 +96,14 @@ WLCRloggerfile(Client cntxt)
 	FILE *fd;
 
 	(void) cntxt;
-	wlcr_batch++;
-	wlcr_tid = 0;
 	snprintf(path,PATHLENGTH,"%s%cwlcr_%06d",wlcr_dir,DIR_SEP,wlcr_batch);
 	mnstr_printf(cntxt->fdout,"#WLCRloggerfile batch %s\n",path);
 	wlcr_fd = open_wastream(path);
 	if( wlcr_fd == 0)
 		throw(MAL,"wlcr.logger","Could not create %s\n",path);
 
+	wlcr_batch++;
+	wlcr_tid = 0;
 	snprintf(path,PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
 	mnstr_printf(cntxt->fdout,"#WLCRloggerfile %s\n",wlcr_dir);
 	fd = fopen(path,"w");
@@ -116,6 +117,7 @@ WLCRloggerfile(Client cntxt)
 /*
  * The existence of the master directory should be checked upon server restart.
  * A new batch file should be created as a result.
+ * We also have to keep track on the files that have been read by the clone from the parent.
  */
 str 
 WLCRinit(Client cntxt)
@@ -135,6 +137,7 @@ WLCRinit(Client cntxt)
 		dir = GDKfilepath(0,0,"master",0);
 		snprintf(path, PATHLENGTH,"%s%cwlcr",dir, DIR_SEP);
 		mnstr_printf(cntxt->fdout,"#Testing WLCR %s\n", path);
+		wlcr_start = 0;
 		fd = fopen(path,"r");
 		if( fd){
 			// database is in master tracking mode
@@ -202,9 +205,13 @@ static InstrPtr
 WLCRaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 {
 	char tbuf[26];
-    time_t clk = pci->clock.tv_sec;
+	struct timeval clock;
+	time_t clk ;
 	struct tm ctm;
 
+	(void) pci;
+	gettimeofday(&clock,NULL);
+	clk = clock.tv_sec;
 	ctm = *localtime(&clk);
 	strftime(tbuf, 26, "%Y-%m-%dT%H:%M:%S",&ctm);
 	return pushStr(cntxt->wlcr, p, tbuf);
@@ -219,7 +226,7 @@ WLCRaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 		s->def = NULL;\
 	} \
 	if( cntxt->wlcr->stop == 0){\
-		p = newStmt(cntxt->wlcr,"wlreplay","job");\
+		p = newStmt(cntxt->wlcr,"clone","job");\
 		p = pushStr(cntxt->wlcr,p, cntxt->username);\
 		p = pushInt(cntxt->wlcr,p, wlcr_tid);\
 		p = WLCRaddtime(cntxt,pci, p); \
@@ -240,7 +247,7 @@ WLCRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCRfin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCRexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
@@ -257,7 +264,7 @@ WLCRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( strcmp("-- no query",getVarConstant(mb, getArg(pci,1)).val.sval) == 0)
 		return MAL_SUCCEED;	// ignore system internal queries.
 	WLCR_start();
-	p = newStmt(cntxt->wlcr, "wlreplay","query");
+	p = newStmt(cntxt->wlcr, "clone","query");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p->ticks = GDKms();
@@ -271,7 +278,7 @@ WLCRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	
 	WLCR_start();
-	p = newStmt(cntxt->wlcr, "wlreplay",getFunctionId(pci));
+	p = newStmt(cntxt->wlcr, "clone",getFunctionId(pci));
 	for( i = pci->retc; i< pci->argc; i++){
 		tpe =getArgType(mb, pci, i);
 		switch(tpe){
@@ -294,7 +301,7 @@ WLCRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int k=0; \
 	for( ; p < q; p++, k++){\
 		if( k % 32 == 31){\
-			pci = newStmt(cntxt->wlcr, "wlreplay",getFunctionId(pci));\
+			pci = newStmt(cntxt->wlcr, "clone",getFunctionId(pci));\
 			pci = pushStr(cntxt->wlcr, pci, sch);\
 			pci = pushStr(cntxt->wlcr, pci, tbl);\
 			pci = pushStr(cntxt->wlcr, pci, col);\
@@ -339,7 +346,7 @@ WLCRdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 			bi= bat_iterator(b);
 			BATloop(b,p,q){
 				if( k % 32 == 31){
-					pci = newStmt(cntxt->wlcr, "wlreplay",getFunctionId(pci));
+					pci = newStmt(cntxt->wlcr, "clone",getFunctionId(pci));
 					pci = pushStr(cntxt->wlcr, pci, sch);
 					pci = pushStr(cntxt->wlcr, pci, tbl);
 					pci = pushStr(cntxt->wlcr, pci, col);
@@ -365,7 +372,7 @@ WLCRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	
 	WLCR_start();
-	p = newStmt(cntxt->wlcr, "wlreplay","append");
+	p = newStmt(cntxt->wlcr, "clone","append");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
@@ -399,7 +406,7 @@ WLCRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	
 	WLCR_start();
-	p = newStmt(cntxt->wlcr, "wlreplay","delete");
+	p = newStmt(cntxt->wlcr, "clone","delete");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
@@ -428,7 +435,7 @@ WLCRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	
 	WLCR_start();
-	p = newStmt(cntxt->wlcr, "wlreplay","updateOID");
+	p = newStmt(cntxt->wlcr, "clone","updateOID");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
@@ -445,7 +452,7 @@ WLCRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	p = newStmt(cntxt->wlcr, "wlreplay","updateVALUE");
+	p = newStmt(cntxt->wlcr, "clone","updateVALUE");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
@@ -473,7 +480,7 @@ WLCRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	
 	WLCR_start();
-	p = newStmt(cntxt->wlcr, "wlr","clear_table");
+	p = newStmt(cntxt->wlcr, "clone","clear_table");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p->ticks = GDKms();
@@ -504,7 +511,7 @@ WLCRwrite(Client cntxt, str kind)
 		if(cntxt->wlcr->stop == 0)
 			return MAL_SUCCEED;
 
-		newStmt(cntxt->wlcr,"wlreplay","fin");
+		newStmt(cntxt->wlcr,"clone","exec");
 		wlcr_tid++;
 		MT_lock_set(&wlcr_lock);
 		p = getInstrPtr(cntxt->wlcr,0);

@@ -23,12 +23,13 @@
 #include "sql.h"
 #include "wlcr.h"
 #include "sql_wlcr.h"
+#include "sql_scenario.h"
+#include "opt_prelude.h"
 #include "mal_parser.h"
 #include "mal_client.h"
 
 #define WLCR_REPLAY 1
-#define WLCR_SYNC 2
-static int wlcr_mode;
+#define WLCR_CLONE 2
 
 static str wlcr_master;
 static int wlcr_replaythreshold;
@@ -75,14 +76,22 @@ WLCRreplayinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+/*
+ * Run the clone actions under a new client
+ * and safe debugging in a tmp file.
+ */
 void
 WLCRprocess(void *arg)
 {	
 	Client cntxt = (Client) arg;
-	int i;
+	int i, pc;
 	char path[PATHLENGTH];
 	stream *fd;
 	Client c;
+	size_t sz;
+	MalBlkPtr mb;
+	InstrPtr q;
+	str msg;
 
 	c =MCforkClient(cntxt);
 	if( c == 0){
@@ -92,30 +101,64 @@ WLCRprocess(void *arg)
     c->prompt = GDKstrdup("");  /* do not produce visible prompts */
     c->promptlength = 0;
     c->listing = 0;
-	c->curprg = newFunction(putName("user"), putName("wlcr"), FUNCTIONsymbol);
+	c->fdout = open_wastream("/tmp/wlcr");
+	c->curprg = newFunction(putName("user"), putName("sql_wlcr"), FUNCTIONsymbol);
+	mb = c->curprg->def;
+	setVarType(mb, 0, TYPE_void);
 
+	msg = SQLinitClient(c);
+	if( msg != MAL_SUCCEED)
+		mnstr_printf(c->fdout,"#Failed to initialize the client\n");
 
-	mnstr_printf(cntxt->fdout,"#Ready to start the replayagainst '%s' batches %d threshold %d", wlcr_master, wlcr_replaybatches, wlcr_replaythreshold);
+	mnstr_printf(c->fdout,"#Ready to start the replayagainst '%s' batches %d threshold %d\n", 
+		wlcr_master, wlcr_replaybatches, wlcr_replaythreshold);
 	for( i= 0; i < wlcr_replaybatches; i++){
 		snprintf(path,PATHLENGTH,"%s%cwlcr_%06d", wlcr_master, DIR_SEP,i);
 		fd= open_rstream(path);
 		if( fd == NULL){
-			mnstr_printf(cntxt->fdout,"#wlcr.process:'%s' can not be accessed \n",path);
+			mnstr_printf(c->fdout,"#wlcr.process:'%s' can not be accessed \n",path);
 			continue;
 		}
-		if( MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), 0, "") < 0){
-			mnstr_printf(cntxt->fdout,"#wlcr.process: client can not be initialized \n");
+		sz = getFileSize(fd);
+		if (sz > (size_t) 1 << 29) {
+			mnstr_destroy(fd);
+			mnstr_printf(c->fdout, "wlcr.process File %s too large to process", path);
+			continue;
 		}
-		mnstr_printf(cntxt->fdout,"#wlcr.process:start processing log file '%s'\n",path);
+		c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
+		if (bstream_next(c->fdin) < 0)
+			mnstr_printf(c->fdout, "!WARNING: could not read %s\n", path);
+
+		mnstr_printf(c->fdout,"#wlcr.process:start processing log file '%s'\n",path);
 		c->yycur = 0;
-		if( parseMAL(c, c->curprg, 1, 1)  || c->curprg->def->errors){
-			mnstr_printf(cntxt->fdout,"#wlcr.process:parsing failed '%s'\n",path);
-		}
-		// preload the complete file
-		// now parse the file line by line
+		//
+		// now parse the file line by line to reconstruct the WLCR blocks
+		do{
+			pc = mb->stop;
+			if( parseMAL(c, c->curprg, 1, 1)  || mb->errors){
+				mnstr_printf(c->fdout,"#wlcr.process:parsing failed '%s'\n",path);
+			}
+			q= getInstrPtr(mb, mb->stop-1);
+			if ( getModuleId(q) == cloneRef && getFunctionId(q) ==execRef){
+				printFunction(c->fdout, mb, 0, LIST_MAL_DEBUG );
+				// execute this block
+				chkTypes(c->fdout,c->nspace, mb, FALSE);
+				chkFlow(c->fdout,mb);
+				chkDeclarations(c->fdout,mb);
+				msg= runMAL(c,mb,0,0);
+				if( msg != MAL_SUCCEED) // they should succeed
+					break;
+				// cleanup
+				trimMalVariables(mb, NULL);
+				resetMalBlk(mb, 1);
+				pc = 0;
+			}
+		} while( mb->errors == 0 && pc != mb->stop);
 		close_stream(fd);
 	}
-	(void) mnstr_flush(cntxt->fdout);
+	(void) mnstr_flush(c->fdout);
+	MCcloseClient(c);
+	cntxt->wlcr_mode = 0;
 }
 
 str
@@ -124,13 +167,10 @@ WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char path[PATHLENGTH];
 	stream *fd;
 
-	if( wlcr_mode == WLCR_SYNC){
-		throw(SQL,"wlcr.replay","System already in synchronization mode");
-	}
-	if( wlcr_mode == WLCR_REPLAY){
+	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
 		throw(SQL,"wlcr.replay","System already in replay mode");
 	}
-	wlcr_mode = WLCR_REPLAY;
+	cntxt->wlcr_mode = WLCR_REPLAY;
 	msg = WLCRreplayinit(cntxt, mb, stk, pci);
 	if( msg)
 		return msg;
@@ -142,6 +182,9 @@ WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	close_stream(fd);
 
+/*
+	WLCRprocess((void*) cntxt);
+*/
     if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
 			throw(SQL,"wlcr.replay","replay process can not be started\n");
 	}
@@ -149,28 +192,125 @@ WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCRsynchronize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
 	char path[PATHLENGTH];
 	stream *fd;
 
-	if( wlcr_mode == WLCR_SYNC || wlcr_mode == WLCR_REPLAY){
-		throw(SQL,"wlcr.synchronize","System already in synchronization mode");
+	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
+		throw(SQL,"wlcr.clone","System already in synchronization mode");
 	}
+	msg = WLCRreplayinit(cntxt, mb, stk, pci);
 	snprintf(path,PATHLENGTH,"%s%cwlcr", wlcr_master, DIR_SEP);
 	fd= open_rstream(path);
 	if( fd == NULL){
-		throw(SQL,"wlcr.synchronize","'%s' can not be accessed \n",path);
+		throw(SQL,"wlcr.clone","'%s' can not be accessed \n",path);
 	}
 	close_stream(fd);
 
-	wlcr_mode = WLCR_SYNC;
+	cntxt->wlcr_mode = WLCR_CLONE;
 	msg = WLCRreplayinit(cntxt, mb, stk, pci);
 	if( msg)
 		return msg;
+/*
+	WLCRprocess((void*) cntxt);
+*/
     if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlcr.synchronize","replay process can not be started\n");
+			throw(SQL,"wlcr.clone","replay process can not be started\n");
+	}
+	return MAL_SUCCEED;
+}
+str
+CLONEjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	str kind = *getArgReference_str(stk,pci,5);
+	(void) cntxt;
+	(void) mb;
+	if( strcmp(kind,"catalog") == 0)
+		cntxt->wlcr_kind = WLCR_CATALOG;
+	if( strcmp(kind,"update") == 0)
+		cntxt->wlcr_kind = WLCR_UPDATE;
+	if( strcmp(kind,"query") == 0)
+		cntxt->wlcr_kind = WLCR_QUERY;
+	return MAL_SUCCEED;
+}
+
+
+str
+CLONEexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	// perform any cleanup
+	cntxt->wlcr_mode = 0;
+	return MAL_SUCCEED;
+}
+
+str
+CLONEquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	str qry =  *getArgReference_str(stk,pci,1);
+
+	(void) mb;
+	// execute the query in replay mode
+	if( cntxt->wlcr_kind == WLCR_CATALOG || cntxt->wlcr_kind == WLCR_QUERY){
+		mnstr_printf(cntxt->fdout,"#execute %s",qry);
+		return SQLstatementIntern(cntxt, &qry, "SQLstatement", TRUE, TRUE, NULL);
 	}
 	return MAL_SUCCEED;
 }
 
+str
+CLONEgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+
+str
+CLONEappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+str
+CLONEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+str
+CLONEupdateOID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+str
+CLONEupdateValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
+str
+CLONEclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}

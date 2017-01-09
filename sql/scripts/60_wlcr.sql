@@ -26,6 +26,6 @@ external name wlcr.replay;
 create procedure wlcr.replay(dbname string, threshold int)
 external name wlcr.replay;
 
-create procedure wlcr.synchronize(dbname string)
-external name wlcr.synchronize;
+create procedure wlcr.clone(dbname string)
+external name wlcr.clone;
 

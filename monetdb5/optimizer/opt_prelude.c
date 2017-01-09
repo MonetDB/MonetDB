@@ -56,6 +56,7 @@ str betweensymmetricRef;
 str blockRef;
 str bbpRef;
 str tidRef;
+str cloneRef;
 str dateRef;
 str deltaRef;
 str subdeltaRef;
@@ -378,6 +379,7 @@ void optimizerInit(void)
 	create_indexRef = putName("create_index");
 	create_functionRef = putName("create_function");
 	create_triggerRef = putName("create_trigger");
+	cloneRef = putName("clone");
 	dateRef = putName("date");
 	dataflowRef = putName("dataflow");
 	dblRef = putName("dbl");

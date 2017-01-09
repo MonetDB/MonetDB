@@ -18,12 +18,12 @@ pattern master(threshold:int)
 address WLCRmaster
 comment "Activate the workload-capture-replay. Only queries surpassing the threshold are kept for replay.";
 
-pattern job(user:str, tid:int, started:str, runtime:int)
+pattern job(user:str, tid:int, started:str, action:str, kind:str, runtime:int)
 address WLCRjob
 comment "Mark the beginning of the work unit which can be a compound transaction";
 
-pattern fin()
-address WLCRfinished
+pattern exec()
+address WLCRexec
 comment "Mark the end of the work unit";
 
 pattern query(q:str,pipe:str)

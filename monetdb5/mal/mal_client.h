@@ -175,6 +175,7 @@ typedef struct CLIENT {
 	 * The workload for replication/replay is saved initially as a MAL block.
 	 */
 	int wlcr_kind;	
+	int wlcr_mode;
 	MalBlkPtr wlcr;
 	/*	
 	 *	Errors during copy into are collected in a user specific column set
