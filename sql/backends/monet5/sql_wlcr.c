@@ -92,6 +92,7 @@ WLCRprocess(void *arg)
 	MalBlkPtr mb;
 	InstrPtr q;
 	str msg;
+	mvc *sql;
 
 	c =MCforkClient(cntxt);
 	if( c == 0){
@@ -109,6 +110,11 @@ WLCRprocess(void *arg)
 	msg = SQLinitClient(c);
 	if( msg != MAL_SUCCEED)
 		mnstr_printf(c->fdout,"#Failed to initialize the client\n");
+	msg = getSQLContext(c, mb, &sql, NULL);
+	if( msg)
+		mnstr_printf(c->fdout,"#Failed to access the transaction context: %s\n",msg);
+    if ((msg = checkSQLContext(c)) != NULL)
+		mnstr_printf(c->fdout,"#Inconsitent SQL contex : %s\n",msg);
 
 	mnstr_printf(c->fdout,"#Ready to start the replayagainst '%s' batches %d threshold %d\n", 
 		wlcr_master, wlcr_replaybatches, wlcr_replaythreshold);
@@ -145,9 +151,16 @@ WLCRprocess(void *arg)
 				chkTypes(c->fdout,c->nspace, mb, FALSE);
 				chkFlow(c->fdout,mb);
 				chkDeclarations(c->fdout,mb);
+				sql->session->auto_commit = 0;
+				sql->session->ac_on_commit = 1;
+				sql->session->level = 0;
+				(void) mvc_trans(sql);
 				msg= runMAL(c,mb,0,0);
 				if( msg != MAL_SUCCEED) // they should succeed
 					break;
+				if( mvc_commit(sql, 0, 0) < 0)
+					mnstr_printf(c->fdout,"#wlcr.process transaction commit failed");
+
 				// cleanup
 				trimMalVariables(mb, NULL);
 				resetMalBlk(mb, 1);
