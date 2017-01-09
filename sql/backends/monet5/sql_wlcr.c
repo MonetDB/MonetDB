@@ -275,6 +275,7 @@ CLONEquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLONEgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	// currently they are informative only
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
@@ -284,13 +285,53 @@ CLONEgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 CLONEappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
+{	str sname, tname, cname;
+    int tpe,i;
+	mvc *m=NULL;
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
+	BAT *ins = 0;
+	str msg;
+
+	sname = *getArgReference_str(stk,pci,2);
+	tname = *getArgReference_str(stk,pci,3);
+	cname = *getArgReference_str(stk,pci,4);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		throw(SQL, "sql.append", "Schema missing");
+	t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		throw(SQL, "sql.append", "Table missing");
+	// get the data into local BAT
+
+	tpe= getArgType(mb,pci,5);
+	ins = COLnew(0, tpe, 0, TRANSIENT);
+	if( ins == NULL){
+		throw(SQL,"CLONEappend",MAL_MALLOC_FAIL);
+	}
+
+	for( i = 5; i < pci->argc; i++)
+		BATappend(ins, NULL, (void*) getArgReference(stk,pci,i), FALSE);
+
+	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
+		store_funcs.append_col(m->session->tr, c, ins, tpe);
+	} else if (cname[0] == '%') {
+		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
+		if (i)
+			store_funcs.append_idx(m->session->tr, i, ins, tpe);
+	}
+	BBPunfix(((BAT *) ins)->batCacheid);
+
 	return MAL_SUCCEED;
 }
+
 str
 CLONEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
