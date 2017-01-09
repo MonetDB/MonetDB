@@ -25,7 +25,9 @@ BATidxsync(void *arg)
 	struct idxsync *hs = arg;
 	Heap *hp = hs->hp;
 	int fd;
-	lng t0 = GDKusec();
+	lng t0 = 0;
+
+	ALGODEBUG t0 = GDKusec();
 
 	if (HEAPsave(hp, hp->filename, NULL) != GDK_SUCCEED ||
 	    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0) {
@@ -58,10 +60,10 @@ int
 BATcheckorderidx(BAT *b)
 {
 	int ret;
-	lng t;
+	lng t = 0;
 
 	assert(b->batCacheid > 0);
-	t = GDKusec();
+	ALGODEBUG t = GDKusec();
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (b->torderidx == (Heap *) 1) {
 		Heap *hp;
