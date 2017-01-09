@@ -400,12 +400,12 @@ Ready.
 #SELECT * FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
 % .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel # table_name
 % schema,	table,	count,	columnsize,	heapsize,	hashes,	imprints,	auxiliary # name
-% clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	hugeint # type
+% clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length
 #SELECT * FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables);
 % .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel # table_name
 % schema,	table,	count,	columnsize,	heapsize,	hashes,	imprints,	auxiliary # name
-% clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	hugeint # type
+% clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length
 
 # 16:15:38 >  
