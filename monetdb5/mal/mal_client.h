@@ -176,6 +176,7 @@ typedef struct CLIENT {
 	 */
 	int wlcr_kind;	
 	int wlcr_mode;
+	str wlcr_replaylog;
 	MalBlkPtr wlcr;
 	/*	
 	 *	Errors during copy into are collected in a user specific column set
