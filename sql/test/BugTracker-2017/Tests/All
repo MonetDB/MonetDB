@@ -1,3 +1,4 @@
 shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
+heapextend.Bug-6134
