@@ -6,26 +6,25 @@
 
 -- Workload Capture and Replay
 
-create schema wlcr;
 
-create procedure wlcr.master()
+create procedure master()
 external name wlcr.master;
 
-create procedure wlcr.master(threshold integer)
+create procedure master(threshold integer)
 external name wlcr.master;
 
-create procedure wlcr.replay()
+create procedure replay()
 external name wlcr.replay;
 
-create procedure wlcr.replay(threshold int)
+create procedure replay(threshold int)
 external name wlcr.replay;
 
-create procedure wlcr.replay(dbname string)
+create procedure replay(dbname string)
 external name wlcr.replay;
 
-create procedure wlcr.replay(dbname string, threshold int)
+create procedure replay(dbname string, threshold int)
 external name wlcr.replay;
 
-create procedure wlcr.clone(dbname string)
+create procedure clone(dbname string)
 external name wlcr.clone;
 
