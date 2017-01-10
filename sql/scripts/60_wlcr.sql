@@ -6,12 +6,14 @@
 
 -- Workload Capture and Replay
 
-
 create procedure master()
 external name wlcr.master;
 
 create procedure master(threshold integer)
 external name wlcr.master;
+
+declare replaylog string;
+set replaylog = '/tmp/wlcr';
 
 create procedure replay()
 external name wlcr.replay;
