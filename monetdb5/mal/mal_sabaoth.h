@@ -12,16 +12,10 @@
 #include <mal.h>
 #include <mal_exception.h>
 #include <msabaoth.h>
-mal_export str SABAOTHgetDBfarm(str *ret);
-mal_export str SABAOTHgetDBname(str *ret);
-mal_export str SABAOTHmarchScenario(void *ret, str *lang);
-mal_export str SABAOTHretreatScenario(void *ret, str *lang);
-mal_export str SABAOTHmarchConnection(void *ret, str *host, int *port);
+mal_export str SABAOTHmarchScenario(str *lang);
+mal_export str SABAOTHretreatScenario(str *lang);
+mal_export str SABAOTHmarchConnection(str *host, int *port);
 mal_export str SABAOTHgetLocalConnection(str *ret);
 mal_export str SABAOTHgetMyStatus(sabdb** ret);
-mal_export str SABAOTHgetStatus(sabdb** ret, str dbname);
 mal_export str SABAOTHfreeStatus(sabdb** ret);
-mal_export str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db);
-mal_export str SABAOTHserialise(str *ret, sabdb *db);
-mal_export str SABAOTHdeserialise(sabdb **ret, str *sabdb);
 #endif

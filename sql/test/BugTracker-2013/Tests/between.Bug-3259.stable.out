@@ -43,70 +43,11 @@ Ready.
 #SELECT t1.subject as id1, t2.subject as id2
 #FROM  treeitems t1, treeitems t2
 #WHERE t2.pre between t1.pre and t1.pre + t1.size;
-% .explain # table_name
-% mal # name
-% clob # type
-% 194 # length
-function user.s6_1():void;
-    X_0:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",35:int);
-barrier X_80 := language.dataflow();
-    X_35 := bat.new(nil:str);
-    X_42 := bat.append(X_35,"sys.L2");
-    X_52 := bat.append(X_42,"sys.L4");
-    X_37 := bat.new(nil:str);
-    X_44 := bat.append(X_37,"id1");
-    X_54 := bat.append(X_44,"id2");
-    X_38 := bat.new(nil:str);
-    X_46 := bat.append(X_38,"int");
-    X_56 := bat.append(X_46,"int");
-    X_39 := bat.new(nil:int);
-    X_48 := bat.append(X_39,32:int);
-    X_57 := bat.append(X_48,32:int);
-    X_41 := bat.new(nil:int);
-    X_50 := bat.append(X_41,0:int);
-    X_58 := bat.append(X_50,0:int);
-    X_3 := sql.mvc();
-    C_4:bat[:oid] := sql.tid(X_3,"sys","treeitems");
-    X_7:bat[:lng] := sql.bind(X_3,"sys","treeitems","pre",0:int);
-    X_10 := algebra.projection(C_4,X_7);
-    X_14:bat[:lng] := sql.bind(X_3,"sys","treeitems","size",0:int);
-    X_16 := algebra.projection(C_4,X_14);
-    X_17:bat[:lng] := batcalc.+(X_10,X_16);
-    (X_20,r1_21) := algebra.subrangejoin(X_10,X_10,X_17,nil:BAT,nil:BAT,true,true,nil:lng);
-    X_27:bat[:int] := sql.bind(X_3,"sys","treeitems","subject",0:int);
-    X_29 := algebra.projection(C_4,X_27);
-    X_30 := algebra.projection(r1_21,X_29);
-    X_33 := algebra.projection(X_20,X_29);
-    language.pass(X_10);
-    language.pass(X_10);
-    language.pass(C_4);
-    language.pass(X_29);
-exit X_80;
-    sql.resultSet(X_52,X_54,X_56,X_57,X_58,X_30,X_33);
-end user.s6_1;
-#inline               actions= 0 time=3 usec 
-#remap                actions= 1 time=31 usec 
-#costmodel            actions= 1 time=2 usec 
-#coercion             actions= 0 time=1 usec 
-#evaluate             actions= 0 time=3 usec 
-#emptybind            actions= 0 time=7 usec 
-#aliases              actions= 0 time=5 usec 
-#mergetable           actions= 0 time=33 usec 
-#deadcode             actions= 0 time=6 usec 
-#aliases              actions= 0 time=5 usec 
-#constants            actions= 3 time=8 usec 
-#commonTerms          actions= 5 time=12 usec 
-#projectionpath       actions= 0 time=5 usec 
-#deadcode             actions= 5 time=7 usec 
-#reorder              actions= 1 time=21 usec 
-#reduce               actions=28 time=8 usec 
-#matpack              actions= 0 time=3 usec 
-#dataflow             actions=27 time=24 usec 
-#multiplex            actions= 0 time=2 usec 
-#profiler             actions= 1 time=3 usec 
-#candidates           actions= 1 time=1 usec 
-#garbagecollector     actions= 1 time=18 usec 
-#total                actions= 1 time=309 usec 
+% sys.L2,	sys.L4 # table_name
+% id1,	id2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
 #ROLLBACK;
 
 # 20:18:31 >  

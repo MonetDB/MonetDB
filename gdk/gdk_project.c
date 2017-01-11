@@ -191,7 +191,9 @@ BATproject(BAT *l, BAT *r)
 	gdk_return res;
 	int tpe = ATOMtype(r->ttype), nilcheck = 1, stringtrick = 0;
 	BUN lcount = BATcount(l), rcount = BATcount(r);
-	lng t0 = GDKusec();
+	lng t0 = 0;
+
+	ALGODEBUG t0 = GDKusec();
 
 	ALGODEBUG fprintf(stderr, "#BATproject(l=%s#" BUNFMT "%s%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s%s)\n",

@@ -1,36 +1,36 @@
 stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/sys-schema` itself:
 
 
-# 16:15:38 >  
-# 16:15:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34676" "--set" "mapi_usock=/var/tmp/mtest-32669/.s.monetdb.34676" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_sys-schema"
-# 16:15:38 >  
+# 12:34:36 >  
+# 12:34:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31305" "--set" "mapi_usock=/var/tmp/mtest-4387/.s.monetdb.31305" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_sql_test_sys-schema"
+# 12:34:36 >  
 
-# MonetDB 5 server v11.25.4
+# MonetDB 5 server v11.26.0 (hg id: 4402dbd26688)
 # This is an unreleased version
 # Serving database 'mTests_sql_test_sys-schema', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Compiled for x86_64-unknown-linux-gnu/64bit
 # Found 15.589 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:34676/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32669/.s.monetdb.34676
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:31305/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4387/.s.monetdb.31305
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
 Ready.
 #WARNING To speedup user.columnsize a bulk operator implementation is needed
-#    X_61:bat[:lng] := mal.multiplex("user":str,"columnsize":str,X_46:bat[:str],X_53:bat[:lng],X_60:bat[:lng]);
+#    X_113:bat[:lng] := mal.multiplex("user":str, "columnsize":str, X_49:bat[:str], X_63:bat[:lng], X_70:bat[:lng]);
 #WARNING To speedup user.heapsize a bulk operator implementation is needed
-#    X_71:bat[:lng] := mal.multiplex("user":str,"heapsize":str,X_46:bat[:str],X_60:bat[:lng],X_70:bat[:int]);
+#    X_116:bat[:lng] := mal.multiplex("user":str, "heapsize":str, X_49:bat[:str], X_70:bat[:lng], X_77:bat[:int]);
 #WARNING To speedup user.hashsize a bulk operator implementation is needed
-#    X_80:bat[:lng] := mal.multiplex("user":str,"hashsize":str,X_79:bat[:bit],X_53:bat[:lng]);
+#    X_118:bat[:lng] := mal.multiplex("user":str, "hashsize":str, X_84:bat[:bit], X_63:bat[:lng]);
 #WARNING To speedup user.imprintsize a bulk operator implementation is needed
-#    X_82:bat[:lng] := mal.multiplex("user":str,"imprintsize":str,X_53:bat[:lng],X_46:bat[:str]);
+#    X_120:bat[:lng] := mal.multiplex("user":str, "imprintsize":str, X_63:bat[:lng], X_49:bat[:str]);
 
-# 16:15:38 >  
-# 16:15:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32669" "--port=34676"
-# 16:15:38 >  
+# 12:34:37 >  
+# 12:34:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4387" "--port=31305"
+# 12:34:37 >  
 
 #SELECT * FROM sys.schemas WHERE authorization NOT IN (SELECT id FROM sys.auths);
 % sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
@@ -400,15 +400,15 @@ Ready.
 #SELECT * FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
 % .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel # table_name
 % schema,	table,	count,	columnsize,	heapsize,	hashes,	imprints,	auxiliary # name
-% clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	hugeint # type
+% clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length
 #SELECT * FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables);
 % .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel # table_name
 % schema,	table,	count,	columnsize,	heapsize,	hashes,	imprints,	auxiliary # name
-% clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	hugeint # type
+% clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length
 
-# 16:15:38 >  
-# 16:15:38 >  "Done."
-# 16:15:38 >  
+# 12:34:37 >  
+# 12:34:37 >  "Done."
+# 12:34:37 >  
 

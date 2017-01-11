@@ -120,6 +120,7 @@ CMDcleanupTraces(void *res)
 	return MAL_SUCCEED;
 }
 
+#if 0
 str
 CMDclearTrace(void *res)
 {
@@ -127,6 +128,7 @@ CMDclearTrace(void *res)
 	clearTrace();
 	return MAL_SUCCEED;
 }
+#endif	/* unused */
 
 str
 CMDgetTrace(bat *res, str *ev)
