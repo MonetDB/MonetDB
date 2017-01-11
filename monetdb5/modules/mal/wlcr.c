@@ -197,7 +197,7 @@ WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( wlcr_fd == NULL)
 		msg = WLCRloggerfile(cntxt);
-	mnstr_printf(cntxt->fdout,"#master wlcr_batch %d threshold %d file open %d\n",wlcr_batch, wlcr_threshold, wlcr_fd != NULL);
+	mnstr_printf(cntxt->fdout,"#master batches %d threshold %d file open %d\n",wlcr_batch, wlcr_threshold, wlcr_fd != NULL);
 	return msg;
 }
 
@@ -217,7 +217,7 @@ WLCRaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 	return pushStr(cntxt->wlcr, p, tbuf);
 }
 
-#define WLCR_start()\
+#define WLCR_start(P)\
 { Symbol s; \
 	if( cntxt->wlcr == NULL){\
 		s = newSymbol("wlrc", FUNCTIONsymbol);\
@@ -226,11 +226,11 @@ WLCRaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 		s->def = NULL;\
 	} \
 	if( cntxt->wlcr->stop == 0){\
-		p = newStmt(cntxt->wlcr,"clone","job");\
-		p = pushStr(cntxt->wlcr,p, cntxt->username);\
-		p = pushInt(cntxt->wlcr,p, wlcr_tid);\
-		p = WLCRaddtime(cntxt,pci, p); \
-		p->ticks = GDKms();\
+		P = newStmt(cntxt->wlcr,"clone","job");\
+		P = pushStr(cntxt->wlcr, P, cntxt->username);\
+		P = pushInt(cntxt->wlcr, P, wlcr_tid);\
+		P = WLCRaddtime(cntxt,pci, P); \
+		P->ticks = GDKms();\
 }	}
 
 str
@@ -263,7 +263,7 @@ WLCRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	if ( strcmp("-- no query",getVarConstant(mb, getArg(pci,1)).val.sval) == 0)
 		return MAL_SUCCEED;	// ignore system internal queries.
-	WLCR_start();
+	WLCR_start(p);
 	p = newStmt(cntxt->wlcr, "clone","query");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -277,7 +277,7 @@ WLCRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, tpe, varid;
 	(void) stk;
 	
-	WLCR_start();
+	WLCR_start(p);
 	p = newStmt(cntxt->wlcr, "clone",getFunctionId(pci));
 	for( i = pci->retc; i< pci->argc; i++){
 		tpe =getArgType(mb, pci, i);
@@ -310,11 +310,23 @@ WLCRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pci = push##TPE2(cntxt->wlcr, pci ,*p);\
 } }
 
+#define updateBatch(TPE1,TPE2)\
+{	TPE1 *x = (TPE1 *) Tloc(bval,0);\
+	TPE1 *y = (TPE1 *) Tloc(bval, BUNlast(b));\
+	int k=0; \
+	for( ; x < y; x++, k++){\
+		p = newStmt(cntxt->wlcr, "clone","update");\
+		p = pushStr(cntxt->wlcr, p, sch);\
+		p = pushStr(cntxt->wlcr, p, tbl);\
+		p = pushStr(cntxt->wlcr, p, col);\
+		p = pushOid(cntxt->wlcr, p, (ol? *ol++: o++));\
+		p = push##TPE2(cntxt->wlcr, p ,*x);\
+} }
+
 static void
 WLCRdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 {	BAT *b;
 	str sch,tbl,col;
-	(void) cntxt;
 	(void) mb;
 	b= BATdescriptor(bid);
 	assert(b);
@@ -350,7 +362,6 @@ WLCRdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 					pci = pushStr(cntxt->wlcr, pci, sch);
 					pci = pushStr(cntxt->wlcr, pci, tbl);
 					pci = pushStr(cntxt->wlcr, pci, col);
-					pci->ticks = GDKms();
 				}
 				k++;
 				pci = pushStr(cntxt->wlcr, pci ,(str) BUNtail(bi,p));
@@ -371,12 +382,11 @@ WLCRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) mb;
 	
-	WLCR_start();
+	WLCR_start(p);
 	p = newStmt(cntxt->wlcr, "clone","append");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
-	p->ticks = GDKms();
 
 	// extend the instructions with all values. 
 	// If this become too large we can always switch to a "catalog" mode
@@ -405,12 +415,11 @@ WLCRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) mb;
 	
-	WLCR_start();
+	WLCR_start(p);
 	p = newStmt(cntxt->wlcr, "clone","delete");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
-	p->ticks = GDKms();
 	
 	tpe= getArgType(mb,pci,4);
 	if (isaBatType(tpe) ){
@@ -430,44 +439,66 @@ WLCRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLCRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	 InstrPtr p;
+{	InstrPtr p;
+	str sch,tbl,col;
+	ValRecord cst;
 	int tpe, varid;
-	(void) stk;
+	oid o = 0, *ol;
 	
-	WLCR_start();
-	p = newStmt(cntxt->wlcr, "clone","updateOID");
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
-	p->ticks = GDKms();
-	
-	tpe= getArgType(mb,pci,4);
-	if (isaBatType(tpe) ){
-		WLCRdatashipping(cntxt, mb, p, stk->stk[getArg(pci,4)].val.bval);
-	} else {
-		ValRecord cst;
-		if (VALcopy(&cst, getArgReference(stk,pci,4)) != NULL){
-			varid = defConstant(cntxt->wlcr, tpe, &cst);
-			p = pushArgument(cntxt->wlcr, p, varid);
-		}
-	}
-
-	p = newStmt(cntxt->wlcr, "clone","updateVALUE");
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
-	p->ticks = GDKms();
-	
+	sch = *getArgReference_str(stk,pci,1);
+	tbl = *getArgReference_str(stk,pci,2);
+	col = *getArgReference_str(stk,pci,3);
+	WLCR_start(p);
 	tpe= getArgType(mb,pci,5);
 	if (isaBatType(tpe) ){
-		WLCRdatashipping(cntxt, mb, p, stk->stk[getArg(pci,5)].val.bval);
+		BAT *b, *bval;
+		b= BATdescriptor(stk->stk[getArg(pci,4)].val.bval);
+		assert(b);
+		bval= BATdescriptor(stk->stk[getArg(pci,5)].val.bval);
+		assert(bval);
+		o = b->hseqbase;
+		ol = (oid*) Tloc(b,0);
+		switch( ATOMstorage(bval->ttype)){
+		case TYPE_bit: updateBatch(bit,Bit); break;
+		case TYPE_bte: updateBatch(bte,Bte); break;
+		case TYPE_sht: updateBatch(sht,Sht); break;
+		case TYPE_int: updateBatch(int,Int); break;
+		case TYPE_lng: updateBatch(lng,Lng); break;
+		case TYPE_flt: updateBatch(flt,Flt); break;
+		case TYPE_dbl: updateBatch(dbl,Dbl); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: updateBatch(hge,Hge); break;
+#endif
+		case TYPE_str:
+		{	BATiter bi;
+			int k=0; 
+			BUN x,y;
+			bi = bat_iterator(bval);
+			BATloop(bval,x,y){
+				p = newStmt(cntxt->wlcr, "clone","update");
+				p = pushStr(cntxt->wlcr, p, sch);
+				p = pushStr(cntxt->wlcr, p, tbl);
+				p = pushStr(cntxt->wlcr, p, col);
+				p = pushOid(cntxt->wlcr, p, (ol? *ol++ : o++));
+				p = pushStr(cntxt->wlcr, p , BUNtail(bi,x));
+				k++;
+		} }
+		default:
+			cntxt->wlcr_kind = WLCR_CATALOG;
+		}
 	} else {
-		ValRecord cst;
+		p = newStmt(cntxt->wlcr, "clone","update");
+		p = pushStr(cntxt->wlcr, p, sch);
+		p = pushStr(cntxt->wlcr, p, tbl);
+		p = pushStr(cntxt->wlcr, p, col);
+		o = *getArgReference_oid(stk,pci,4);
+		p = pushOid(cntxt->wlcr,p, o);
 		if (VALcopy(&cst, getArgReference(stk,pci,5)) != NULL){
 			varid = defConstant(cntxt->wlcr, tpe, &cst);
 			p = pushArgument(cntxt->wlcr, p, varid);
 		}
 	}
+
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 
@@ -479,11 +510,10 @@ WLCRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	 InstrPtr p;
 	(void) stk;
 	
-	WLCR_start();
+	WLCR_start(p);
 	p = newStmt(cntxt->wlcr, "clone","clear_table");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
-	p->ticks = GDKms();
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 

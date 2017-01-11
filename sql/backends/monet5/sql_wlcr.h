@@ -27,8 +27,7 @@ extern str CLONEquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str CLONEgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str CLONEappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str CLONEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str CLONEupdateOID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str CLONEupdateValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str CLONEupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str CLONEclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /*SQL_CLONE_H*/

@@ -71,6 +71,7 @@ CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( msg)
 		return msg;
 
+
     if (getArgType(mb, pci, i) == TYPE_str){
         dbname =  *getArgReference_str(stk,pci,i);
         i++;
@@ -316,7 +317,6 @@ CLONEgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BUNappend(ins, (void*) &val, FALSE);\
 		}
 
-
 str
 CLONEappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str sname, tname, cname;
@@ -423,24 +423,80 @@ CLONEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#define CLONEvalue(TPE) \
+{	TPE val = *getArgReference_##TPE(stk,pci,5);\
+	BUNappend(upd, (void*) &val, FALSE);\
+}
+
+
 str
-CLONEupdateOID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLONEupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
+	str sname, tname, cname;
+	mvc *m=NULL;
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
+	BAT *upd = 0, *tids=0;
+	str msg;
+	oid o;
+	int tpe = getArgType(mb,pci,5);
+
+	sname = *getArgReference_str(stk,pci,1);
+	tname = *getArgReference_str(stk,pci,2);
+	cname = *getArgReference_str(stk,pci,3);
+	o = *getArgReference_oid(stk,pci,4);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		throw(SQL, "sql.update", "Schema missing");
+	t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		throw(SQL, "sql.update", "Table missing");
+	// get the data into local BAT
+
+	tids = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if( tids == NULL){
+		throw(SQL,"CLONEupdate",MAL_MALLOC_FAIL);
+	}
+	BUNappend(tids, &o, FALSE);
+
+	switch(ATOMstorage(tpe)){
+	case TYPE_bit: CLONEvalue(bit); break;
+	case TYPE_bte: CLONEvalue(bte); break;
+	case TYPE_sht: CLONEvalue(sht); break;
+	case TYPE_int: CLONEvalue(int); break;
+	case TYPE_lng: CLONEvalue(lng); break;
+	case TYPE_oid: CLONEvalue(oid); break;
+	case TYPE_flt: CLONEvalue(flt); break;
+	case TYPE_dbl: CLONEvalue(dbl); break;
+#ifdef HAVE
+	case TYPE_hge: CLONEvalue(hge); break;
+#endif
+	case TYPE_str:
+		{ 	str val = *getArgReference_str(stk,pci,5);
+			BUNappend(upd, (void*) val, FALSE);
+		}
+		break;
+	}
+
+    if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
+        store_funcs.update_col(m->session->tr, c, tids, upd, tpe);
+    } else if (cname[0] == '%') {
+        sql_idx *i = mvc_bind_idx(m, s, cname + 1);
+        if (i)
+            store_funcs.update_idx(m->session->tr, i, tids, upd, tpe);
+    }
+	BBPunfix(((BAT *) tids)->batCacheid);
+	BBPunfix(((BAT *) upd)->batCacheid);
 	return MAL_SUCCEED;
 }
-str
-CLONEupdateValue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	return MAL_SUCCEED;
-}
+
 str
 CLONEclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

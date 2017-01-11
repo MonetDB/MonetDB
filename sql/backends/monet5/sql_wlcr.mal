@@ -29,27 +29,23 @@ comment "Mark the end of the work unit";
 
 pattern query(q:str,pipe:str)
 address CLONEquery
-comment "Initialize the workload-capture-replay ";
+comment "The actual query applied";
 
 pattern append(sname:str, tname:str, cname:str, ins:any...):int
 address CLONEappend
-comment "Keep the insertions in the workload-capture-replay list";
+comment "Apply the insertions in the workload-capture-replay list";
 
-pattern updateOID(sname:str, tname:str, cname:str, rids:any, upd:any...):int
-address CLONEupdateOID
-comment "Keep the updates in the workload-capture-replay list";
-
-pattern updateValue(sname:str, tname:str, cname:str, rids:any, upd:any...):int
-address CLONEupdateValue
-comment "Keep the updates in the workload-capture-replay list";
+pattern update(sname:str, tname:str, cname:str, tid:oid, val:any):int
+address CLONEupdate
+comment "Apply the update in the workload-capture-replay list";
 
 pattern delete(sname:str, tname:str, b:any):int
 address CLONEreset
-comment "Keep the deletions in the workload-capture-replay list";
+comment "Apply the deletions in the workload-capture-replay list";
 
 pattern clear_table(sname:str, tname:str):int
 address CLONEclear_table
-comment "Keep the deletions in the workload-capture-replay list";
+comment "Destroy the tuples in the table";
 
 pattern create_seq( sname:str, seqname:str, action:int)
 address CLONEgeneric

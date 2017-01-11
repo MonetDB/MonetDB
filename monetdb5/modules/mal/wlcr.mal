@@ -34,9 +34,9 @@ pattern append(sname:str, tname:str, cname:str, ins:any):int
 address WLCRappend
 comment "Keep the insertions in the workload-capture-replay list";
 
-pattern update(sname:str, tname:str, cname:str, rids:any, upd:any):int
+pattern update(sname:str, tname:str, cname:str, tid:any, val:any):int
 address WLCRupdate
-comment "Keep the updates in the workload-capture-replay list";
+comment "Keep the update in the workload-capture-replay list";
 
 pattern delete(sname:str, tname:str, b:any):int
 address WLCRreset
