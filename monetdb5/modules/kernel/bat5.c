@@ -548,7 +548,7 @@ BKCgetKey(bit *ret, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCpersists(void *r, const bat *bid, const bit *flg)
 {
 	BAT *b;
@@ -1101,6 +1101,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	return MAL_SUCCEED;
 }
 
+#if 0
 str
 BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 {
@@ -1156,6 +1157,8 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
+#endif	/* unused */
+
 /*
  * Shrinking a void-headed BAT using a list of oids to ignore.
  */

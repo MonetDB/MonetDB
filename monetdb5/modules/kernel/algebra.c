@@ -812,50 +812,6 @@ ALGcount_no_nil(lng *result, const bat *bid)
 }
 
 str
-ALGtmark(bat *result, const bat *bid, const oid *base)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.mark", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATdense(b->hseqbase, *base, BATcount(b));
-	if (bn != NULL) {
-		BBPunfix(b->batCacheid);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "algebra.mark", GDK_EXCEPTION);
-}
-
-str
-ALGtmark_default(bat *result, const bat *bid)
-{
-	oid o = 0;
-
-	return ALGtmark(result, bid, &o);
-}
-
-str
-ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr)
-{
-#if SIZEOF_OID == 4
-	int bits = 31;
-#else
-	int bits = 63;
-#endif
-	oid base = 0;
-
-	assert(*part_nr < *nr_parts);
-	base = ((oid)1)<<bits;
-	base /= *nr_parts;
-	base *= *part_nr;
-	return ALGtmark(result, bid, &base);
-}
-
-str
 ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 {
 	BAT *b, *bn = NULL;
