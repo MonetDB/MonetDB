@@ -1531,7 +1531,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, r);
 					q = pushArgument(mb, q, r);
 					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, FALSE);
+					q = pushBit(mb, q, TRUE);
 					q = pushBit(mb, q, FALSE);
 					if (q == NULL)
 						return -1;

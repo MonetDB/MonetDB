@@ -2,3 +2,4 @@ shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
 HAVE_LIBZ?heapextend.Bug-6134
+empty-interval.Bug-6184
