@@ -11,55 +11,55 @@
  * This module collects the workload-capture-replay statements during transaction execution. 
  * It is used primarilly for replication management and workload replay
  *
- * The goal is to create and use a replica of a master database. All data of the master
+ * The goal is to easily clone a master database. All data of the master
  * is basically only available for read only access. Accidental corruption of this
  * data is avoided by setting ownership and access properties at the SQL level in the replica.
  *
  *
  * IMPLEMENTATION
  *
- * A database can be set into 'master' mode only once.
- * As default we use dbfarm/master to collect the necessary information.
+ * A database can be set into 'master' mode only once using the SQL command:
+ * CALL master()
  *
- * The binary dump for the database snapshot should be stored there in  master/bat.
+ * It creates directory .../dbfarm/dbname/master to hold all necessary information
+ * for the creation and maintenance of replicas.
+ *
+ * Every replica should start off with a copy of binary snapshot stored 
+ * in .../dbfarm/dbname/master/bat or an empty database.
  * The associated log files are stored as master/wlcr<number>.
- * Creation and restore of a snapshot should be a  monetdb option. TODO
- *
- * Replication management start when you run the command 
- * CALL wlcr.master()
- * It can also be activated as a command line parameter 
- * --set wlcr=yes
  *
  * Each wlcr log file contains a serial log for a transaction batch. 
  * Each job is identified by the owner of the query, 
- * commit/rollback, its starting time and runtime (in ms).
+ * commit/rollback status, its starting time and runtime (in ms).
  *
  * Logging of queries can be further limited to those that satisfy a threshold.
- * CALL wlcr.master(threshold)
+ * CALL master(threshold)
  * The threshold is given in milliseconds. A negative threshold leads to ignoring all queries.
  *
  * A replica server should issue the matching call
- * CALL wlcr.synchronize("dbname")
+ * CALL clone("dbname")
+ * It (should) leads to taking a copy of the snapshot following by server restart[TODO]
+ * and processing of the log files starts in the background.
+ * Queries are simply ignored unless needed as replacement for catalog actions.
+ * [TODO] the user might wait until the database is fresh
+ * [TODO] the user might want to take a time-stamped version only, ignoring all actions afterwards.
  *
- * During synchronization only updates are executed.
- * Queries are simply ignored unless needed as replacement for update actions.
+ * The alternative is to replay the complete log
+ * CALL replay("dbname")
+ * In this mode all queries are executed under the credentials of the query owner[TODO], 
+ * including those that lead to updates.
  *
- * The alternative is to replay the log
- * CALL wlcr.replay("dbname")
- * In this mode all queries are executed under the credentials of the query owner, including those that lead to updates.
+ * Any failure encountered during a log replay terminates the process,
+ * leaving a message in the merovingian log.
  *
- * Any failure encountered terminates the synchronization process, leaving a message in the merovingian log.
- *
- * The replay progress can be inspected using the function wlcr.synced().
+ * [TODO]The progress can be inspected using the boolean function wlcr.synced().
  * The latter is true if all accessible log files have been processed.
  * 
  * The wlcr files purposely have a textual format derived from the MAL statements.
- * It creates some overhead for copy into situations.
+ * Simplicity and ease of control has been the driving argument here.
  *
  * The integrity of the wlcr directories is critical. For now we assume that all batches are available. 
  * We should detect that wlcr.master() is issued after updates have taken place on the snapshot TODO.
- *
- * The WLCR logs are always private a given thread
  *
  */
 #include "monetdb_config.h"
