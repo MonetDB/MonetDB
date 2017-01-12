@@ -82,9 +82,13 @@ CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,dbname);
 	dir = GDKfilepath(0,path,"master",0);
 	wlcr_master = GDKstrdup(dir);
+#ifdef _WLCR_DEBUG_
 	mnstr_printf(cntxt->fdout,"#WLCR master '%s'\n", wlcr_master);
+#endif
 	snprintf(path,PATHLENGTH,"%s%cwlcr", dir, DIR_SEP);
+#ifdef _WLCR_DEBUG_
 	mnstr_printf(cntxt->fdout,"#Testing access to master '%s'\n", path);
+#endif
 	fd = fopen(path,"r");
 	if( fd == NULL){
 		throw(SQL,"wlcr.init","Can not access master control file '%s'\n",path);
@@ -133,40 +137,44 @@ WLCRprocess(void *arg)
 
 	msg = SQLinitClient(c);
 	if( msg != MAL_SUCCEED)
-		mnstr_printf(c->fdout,"#Failed to initialize the client\n");
+		mnstr_printf(GDKerr,"#Failed to initialize the client\n");
 	msg = getSQLContext(c, mb, &sql, NULL);
 	if( msg)
-		mnstr_printf(c->fdout,"#Failed to access the transaction context: %s\n",msg);
+		mnstr_printf(GDKerr,"#Failed to access the transaction context: %s\n",msg);
     if ((msg = checkSQLContext(c)) != NULL)
-		mnstr_printf(c->fdout,"#Inconsitent SQL contex : %s\n",msg);
+		mnstr_printf(GDKerr,"#Inconsitent SQL contex : %s\n",msg);
 
+#ifdef _WLCR_DEBUG_
 	mnstr_printf(c->fdout,"#Ready to start the replayagainst '%s' batches %d threshold %d\n", 
 		wlcr_master, wlcr_replaybatches, wlcr_replaythreshold);
+#endif
 	for( i= 0; i < wlcr_replaybatches; i++){
 		snprintf(path,PATHLENGTH,"%s%cwlcr_%06d", wlcr_master, DIR_SEP,i);
 		fd= open_rstream(path);
 		if( fd == NULL){
-			mnstr_printf(c->fdout,"#wlcr.process:'%s' can not be accessed \n",path);
+			mnstr_printf(GDKerr,"#wlcr.process:'%s' can not be accessed \n",path);
 			continue;
 		}
 		sz = getFileSize(fd);
 		if (sz > (size_t) 1 << 29) {
 			mnstr_destroy(fd);
-			mnstr_printf(c->fdout, "wlcr.process File %s too large to process", path);
+			mnstr_printf(GDKerr, "wlcr.process File %s too large to process", path);
 			continue;
 		}
 		c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
 		if (bstream_next(c->fdin) < 0)
-			mnstr_printf(c->fdout, "!WARNING: could not read %s\n", path);
+			mnstr_printf(GDKerr, "!WARNING: could not read %s\n", path);
 
+#ifdef _WLCR_DEBUG_
 		mnstr_printf(c->fdout,"#wlcr.process:start processing log file '%s'\n",path);
+#endif
 		c->yycur = 0;
 		//
 		// now parse the file line by line to reconstruct the WLCR blocks
 		do{
 			pc = mb->stop;
 			if( parseMAL(c, c->curprg, 1, 1)  || mb->errors){
-				mnstr_printf(c->fdout,"#wlcr.process:parsing failed '%s'\n",path);
+				mnstr_printf(GDKerr,"#wlcr.process:parsing failed '%s'\n",path);
 			}
 			mb = c->curprg->def; // needed
 			q= getInstrPtr(mb, mb->stop-1);
@@ -185,7 +193,7 @@ WLCRprocess(void *arg)
 				if( msg != MAL_SUCCEED) // they should succeed
 					break;
 				if( mvc_commit(sql, 0, 0) < 0)
-					mnstr_printf(c->fdout,"#wlcr.process transaction commit failed");
+					mnstr_printf(GDKerr,"#wlcr.process transaction commit failed");
 
 				// cleanup
 				resetMalBlk(mb, 1);

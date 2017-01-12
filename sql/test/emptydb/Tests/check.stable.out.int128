@@ -107,6 +107,7 @@ Ready.
 \dSf sys."broadcast"
 \dSf sys."chi2prob"
 \dSf sys."clearrejects"
+\dSf sys."clone"
 \dSf sys."columnsize"
 \dSf sys."contains"
 \dSf sys."corr"
@@ -179,6 +180,7 @@ Ready.
 \dSf sys."listdirpat"
 \dSf sys."malfunctions"
 \dSf sys."masklen"
+\dSf sys."master"
 \dSf sys."mbr"
 \dSf sys."md5"
 \dSf sys."median"
@@ -206,6 +208,7 @@ Ready.
 \dSf sys."queue"
 \dSf sys."radians"
 \dSf sys."rejects"
+\dSf sys."replay"
 \dSf sys."resume"
 \dSf sys."reuse"
 \dSf sys."reverse"
@@ -411,6 +414,7 @@ SYSTEM FUNCTION sys.character_length
 SYSTEM FUNCTION sys.charindex
 SYSTEM FUNCTION  sys.chi2prob
 SYSTEM FUNCTION  sys.clearrejects
+SYSTEM FUNCTION  sys.clone
 SYSTEM FUNCTION sys.code
 SYSTEM FUNCTION  sys.columnsize
 SYSTEM FUNCTION sys.concat
@@ -530,6 +534,7 @@ SYSTEM FUNCTION sys.lpad
 SYSTEM FUNCTION sys.ltrim
 SYSTEM FUNCTION sys.malfunctions
 SYSTEM FUNCTION  sys.masklen
+SYSTEM FUNCTION  sys.master
 SYSTEM FUNCTION sys.max
 SYSTEM FUNCTION  sys.mbr
 SYSTEM FUNCTION sys.mbr_above
@@ -593,6 +598,7 @@ SYSTEM FUNCTION sys.rank
 SYSTEM FUNCTION  sys.rejects
 SYSTEM FUNCTION sys.repeat
 SYSTEM FUNCTION sys.replace
+SYSTEM FUNCTION  sys.replay
 SYSTEM FUNCTION sys.restart
 SYSTEM FUNCTION  sys.resume
 SYSTEM FUNCTION  sys.reuse
@@ -830,6 +836,7 @@ create function sys.bbp () returns table (id int, name string, ttype string, cou
 create function "broadcast" (p inet) returns inet external name inet."broadcast";
 create function sys.chi2prob(chi2 double, datapoints double) returns double external name gsl."chi2prob";
 create procedure sys.clearrejects() external name sql.copy_rejects_clear;
+create procedure clone(dbname string) external name wlcr.clone;
 create function sys.columnsize(nme string, i bigint, d bigint) returns bigint begin case when nme = 'boolean' then return i; when nme = 'char' then return 2*i; when nme = 'smallint' then return 2 * i; when nme = 'int' then return 4 * i; when nme = 'bigint' then return 8 * i; when nme = 'hugeint' then return 16 * i; when nme = 'timestamp' then return 8 * i; when nme = 'varchar' then case when cast(d as bigint) << 8 then return i; when cast(d as bigint) << 16 then return 2 * i; when cast(d as bigint) << 32 then return 4 * i; else return 8 * i; end case; else return 8 * i; end case; end;
 create function contains(a geometry, x double, y double) returns boolean external name geom."Contains";
 create aggregate corr(e1 tinyint, e2 tinyint) returns tinyint external name "aggr"."corr";
@@ -929,6 +936,8 @@ create procedure listdir(dirname string) external name fits.listdir;
 create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;
 create function sys.malfunctions() returns table("module" string, "function" string, "signature" string, "address" string, "comment" string) external name "manual"."functions";
 create function "masklen" (p inet) returns int external name inet."masklen";
+create procedure master() external name wlcr.master;
+create procedure master(threshold integer) external name wlcr.master;
 create function mbr(geom geometry) returns mbr external name geom."mbr";
 create function sys.md5(v string) returns string external name clients.md5sum;
 create aggregate median(val tinyint) returns tinyint external name "aggr"."median";
@@ -979,6 +988,10 @@ create procedure sys.querylog_enable(threshold smallint) external name sql.query
 create function sys.queue() returns table(qtag bigint, "user" string, started timestamp, estimate timestamp, progress int, status string, tag oid, query string) external name sql.sysmon_queue;
 create function radians(d double) returns double return d*pi()/180;
 create function sys.rejects() returns table(rowid bigint, fldid int, "message" string, "input" string) external name sql.copy_rejects;
+create procedure replay() external name wlcr.replay;
+create procedure replay(threshold int) external name wlcr.replay;
+create procedure replay(dbname string) external name wlcr.replay;
+create procedure replay(dbname string, threshold int) external name wlcr.replay;
 create procedure sys.resume(tag int) external name sql.sysmon_resume;
 create procedure sys.resume(tag bigint) external name sql.sysmon_resume;
 create procedure reuse(sys string, tab string) external name sql.reuse;
@@ -1872,6 +1885,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"charindex",	"locate",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"chi2prob",	"create function sys.chi2prob(chi2 double, datapoints double) returns double external name gsl.\"chi2prob\";",	"gsl",	1,	1,	false,	false,	false	]
 [ "sys",	"clearrejects",	"create procedure sys.clearrejects() external name sql.copy_rejects_clear;",	"sql",	1,	2,	true,	false,	false	]
+[ "sys",	"clone",	"create procedure clone(dbname string) external name wlcr.clone;",	"wlcr",	1,	2,	true,	false,	false	]
 [ "sys",	"code",	"unicode",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"code",	"unicode",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"code",	"unicode",	"str",	0,	1,	false,	false,	false	]
@@ -2095,6 +2109,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"ltrim",	"ltrim",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"malfunctions",	"create function sys.malfunctions() returns table(\"module\" string, \"function\" string, \"signature\" string, \"address\" string, \"comment\" string) external name \"manual\".\"functions\";",	"manual",	1,	5,	false,	false,	false	]
 [ "sys",	"masklen",	"create function \"masklen\" (p inet) returns int external name inet.\"masklen\";",	"inet",	1,	1,	false,	false,	false	]
+[ "sys",	"master",	"create procedure master() external name wlcr.master;",	"wlcr",	1,	2,	true,	false,	false	]
+[ "sys",	"master",	"create procedure master(threshold integer) external name wlcr.master;",	"wlcr",	1,	2,	true,	false,	false	]
 [ "sys",	"max",	"max",	"aggr",	0,	3,	false,	false,	false	]
 [ "sys",	"mbr",	"create function mbr(geom geometry) returns mbr external name geom.\"mbr\";",	"geom",	1,	1,	false,	false,	false	]
 [ "sys",	"mbr_above",	"mbrAbove",	"geom",	0,	1,	false,	false,	false	]
@@ -2248,6 +2264,10 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"replace",	"replace",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"replace",	"replace",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"replace",	"replace",	"str",	0,	1,	false,	false,	false	]
+[ "sys",	"replay",	"create procedure replay() external name wlcr.replay;",	"wlcr",	1,	2,	true,	false,	false	]
+[ "sys",	"replay",	"create procedure replay(dbname string) external name wlcr.replay;",	"wlcr",	1,	2,	true,	false,	false	]
+[ "sys",	"replay",	"create procedure replay(dbname string, threshold int) external name wlcr.replay;",	"wlcr",	1,	2,	true,	false,	false	]
+[ "sys",	"replay",	"create procedure replay(threshold int) external name wlcr.replay;",	"wlcr",	1,	2,	true,	false,	false	]
 [ "sys",	"restart",	"restart",	"sql",	0,	1,	false,	false,	false	]
 [ "sys",	"resume",	"create procedure sys.resume(tag bigint) external name sql.sysmon_resume;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"resume",	"create procedure sys.resume(tag int) external name sql.sysmon_resume;",	"sql",	1,	2,	true,	false,	false	]
@@ -3602,6 +3622,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"charindex",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	"arg_3",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"chi2prob",	"chi2",	"double",	53,	0,	1,	"datapoints",	"double",	53,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"clearrejects",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"clone",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"code",	"arg_1",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"code",	"arg_1",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"code",	"arg_1",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3825,6 +3846,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"ltrim",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"malfunctions",	"function",	"clob",	0,	0,	0,	"signature",	"clob",	0,	0,	0,	"address",	"clob",	0,	0,	0,	"comment",	"clob",	0,	0,	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"masklen",	"p",	"inet",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"master",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"master",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"max",	"arg",	"any",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"mbr",	"geom",	"geometry",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"mbr_above",	"arg_1",	"geometry",	0,	0,	1,	"arg_2",	"geometry",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3978,6 +4001,10 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"replace",	"arg_1",	"char",	0,	0,	1,	"arg_2",	"char",	0,	0,	1,	"arg_3",	"char",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"replace",	"arg_1",	"clob",	0,	0,	1,	"arg_2",	"clob",	0,	0,	1,	"arg_3",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"replace",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	"arg_3",	"varchar",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"replay",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"replay",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"replay",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"replay",	"threshold",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"restart",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	"arg_3",	"bigint",	64,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"resume",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"resume",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -6132,6 +6159,7 @@ drop function pcre_replace(string, string, string, string);
 [ "charindex"	]
 [ "chi2prob"	]
 [ "clearrejects"	]
+[ "clone"	]
 [ "code"	]
 [ "code"	]
 [ "code"	]
@@ -6370,6 +6398,8 @@ drop function pcre_replace(string, string, string, string);
 [ "ltrim"	]
 [ "malfunctions"	]
 [ "masklen"	]
+[ "master"	]
+[ "master"	]
 [ "max"	]
 [ "mbr"	]
 [ "mbr_above"	]
@@ -6524,6 +6554,10 @@ drop function pcre_replace(string, string, string, string);
 [ "replace"	]
 [ "replace"	]
 [ "replace"	]
+[ "replay"	]
+[ "replay"	]
+[ "replay"	]
+[ "replay"	]
 [ "restart"	]
 [ "resume"	]
 [ "resume"	]

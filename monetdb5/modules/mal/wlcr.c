@@ -97,7 +97,9 @@ WLCRloggerfile(Client cntxt)
 
 	(void) cntxt;
 	snprintf(path,PATHLENGTH,"%s%cwlcr_%06d",wlcr_dir,DIR_SEP,wlcr_batch);
+#ifdef _WLCR_DEBUG_
 	mnstr_printf(cntxt->fdout,"#WLCRloggerfile batch %s\n",path);
+#endif
 	wlcr_fd = open_wastream(path);
 	if( wlcr_fd == 0)
 		throw(MAL,"wlcr.logger","Could not create %s\n",path);
@@ -105,7 +107,9 @@ WLCRloggerfile(Client cntxt)
 	wlcr_batch++;
 	wlcr_tid = 0;
 	snprintf(path,PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
+#ifdef _WLCR_DEBUG_
 	mnstr_printf(cntxt->fdout,"#WLCRloggerfile %s\n",wlcr_dir);
+#endif
 	fd = fopen(path,"w");
 	if( fd == NULL)
 		throw(MAL,"wlcr.logger","Could not access %s\n",path);
@@ -129,29 +133,40 @@ WLCRinit(Client cntxt)
 	char path[PATHLENGTH];
 	
 	if( wlcr_dir){
+#ifdef _WLCR_DEBUG_
 		mnstr_printf(cntxt->fdout,"#WLCR already running\n");
+#endif
 		return MAL_SUCCEED;
 	}
 
 	if (dbname){
 		dir = GDKfilepath(0,0,"master",0);
 		snprintf(path, PATHLENGTH,"%s%cwlcr",dir, DIR_SEP);
+#ifdef _WLCR_DEBUG_
 		mnstr_printf(cntxt->fdout,"#Testing WLCR %s\n", path);
+#endif
 		wlcr_start = 0;
 		fd = fopen(path,"r");
 		if( fd){
 			// database is in master tracking mode
 			if( fscanf(fd,"%d %d", &wlcr_batch, &wlcr_threshold) == 2){
 				wlcr_dir = dir;
+#ifdef _WLCR_DEBUG_
 				mnstr_printf(cntxt->fdout,"#Master control active:%d %d\n", wlcr_batch, wlcr_threshold);
+#endif
 				(void) fclose(fd);
 				msg = WLCRloggerfile(cntxt);
 			} else{
+#ifdef _WLCR_DEBUG_
 				mnstr_printf(cntxt->fdout,"#Inconsistent master control:%d %d\n", wlcr_batch, wlcr_threshold);
+#endif
 				(void) fclose(fd);
 			}
-		} else
+		} 
+#ifdef _WLCR_DEBUG_
+		else
 				mnstr_printf(cntxt->fdout,"#Master control not active\n");
+#endif
 	}
 	return msg;
 }
@@ -185,8 +200,10 @@ WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wlcr_dir = GDKfilepath(0,0,"master",0);
 		snprintf(path, PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
 		if( GDKcreatedir(path) == GDK_FAIL)
-			mnstr_printf(cntxt->fdout,"#Could not create %s\n",wlcr_dir);
+			throw(SQL,"wlcr.master","Could not create %s\n",wlcr_dir);
+#ifdef _WLCR_DEBUG_
 		mnstr_printf(cntxt->fdout,"#Snapshot directory '%s'\n", wlcr_dir);
+#endif
 
 		fd = fopen(path,"w");
 		if ( fd == NULL)
@@ -197,7 +214,9 @@ WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( wlcr_fd == NULL)
 		msg = WLCRloggerfile(cntxt);
+#ifdef _WLCR_DEBUG_
 	mnstr_printf(cntxt->fdout,"#master batches %d threshold %d file open %d\n",wlcr_batch, wlcr_threshold, wlcr_fd != NULL);
+#endif
 	return msg;
 }
 
