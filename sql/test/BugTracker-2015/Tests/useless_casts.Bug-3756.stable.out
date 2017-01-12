@@ -57,7 +57,7 @@ function user.s6_1():void;
     X_3 := sql.mvc();
     X_7:bat[:int] := sql.bind(X_3,"sys","test","value",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","test");
-    C_18 := algebra.subselect(X_7,C_4,1:int,1:int,true,false,false);
+    C_18 := algebra.subselect(X_7,C_4,1:int,1:int,true,true,false);
     X_22 := algebra.projection(C_18,X_7);
     sql.resultSet(X_31,X_33,X_34,X_36,X_38,X_22);
 end user.s6_1;
