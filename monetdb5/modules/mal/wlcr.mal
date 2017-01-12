@@ -14,6 +14,10 @@ pattern master()
 address WLCRmaster
 comment "Activate the workload-capture-replay";
 
+pattern stop()
+address WLCRstop
+comment "Terminate keeping a log on this branch":
+
 pattern master(threshold:int)
 address WLCRmaster
 comment "Activate the workload-capture-replay. Only queries surpassing the threshold are kept for replay.";

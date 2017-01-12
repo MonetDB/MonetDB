@@ -12,6 +12,9 @@ external name wlcr.master;
 create procedure master(threshold integer)
 external name wlcr.master;
 
+create procedure stopmaster()
+external name wlcr.stop;
+
 declare replaylog string;
 set replaylog = '/tmp/wlcr';
 

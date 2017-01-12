@@ -96,6 +96,9 @@ CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( fscanf(fd,"%d %d", &j,&k) != 2){
 		throw(SQL,"wlcr.init","'%s' does not have proper number of arguments\n",path);
 	}
+	if ( j < 0)
+		// log capturing stopped at j steps
+		j = -j;
 	wlcr_replaybatches = j;
 
     if ( i < pci->argc && getArgType(mb, pci, i) == TYPE_int){

@@ -142,14 +142,16 @@ WLCRinit(Client cntxt)
 	if (dbname){
 		dir = GDKfilepath(0,0,"master",0);
 		snprintf(path, PATHLENGTH,"%s%cwlcr",dir, DIR_SEP);
-#ifdef _WLCR_DEBUG_
-		mnstr_printf(cntxt->fdout,"#Testing WLCR %s\n", path);
-#endif
 		wlcr_start = 0;
 		fd = fopen(path,"r");
 		if( fd){
 			// database is in master tracking mode
 			if( fscanf(fd,"%d %d", &wlcr_batch, &wlcr_threshold) == 2){
+				if( wlcr_batch < 0){
+					// logging was stopped
+					(void) fclose(fd);
+					return MAL_SUCCEED;
+				}
 				wlcr_dir = dir;
 #ifdef _WLCR_DEBUG_
 				mnstr_printf(cntxt->fdout,"#Master control active:%d %d\n", wlcr_batch, wlcr_threshold);
@@ -169,6 +171,29 @@ WLCRinit(Client cntxt)
 #endif
 	}
 	return msg;
+}
+
+str
+WLCRstop (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	FILE *fd;
+	str	dir = GDKfilepath(0,0,"master",0);
+	char path[PATHLENGTH];
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+	if( wlcr_dir == NULL)
+		throw(MAL,"wlcr.stop","Replica control not active");
+
+	snprintf(path, PATHLENGTH,"%s%cwlcr",dir, DIR_SEP);
+	fd = fopen(path,"w");
+	if( fd == NULL)
+		throw(MAL,"wlcr.stop","File can not be access");
+	fprintf(fd,"%d %d\n", - wlcr_batch, wlcr_threshold);
+	(void) fflush(fd);
+	return MAL_SUCCEED;
 }
 
 str 

@@ -11158,6 +11158,7 @@ Ready.
 [ "wlcr",	"revoke_function",	"pattern wlcr.revoke_function(sname:str, fcnid:int, grantee:str, privs:int, grant:int, grantor:int):void ",	"WLCRgeneric;",	"Catalog operation revoke_function"	]
 [ "wlcr",	"revoke_roles",	"pattern wlcr.revoke_roles(sname:str, auth:str, grantor:int, admin:int):void ",	"WLCRgeneric;",	"Catalog operation revoke_roles"	]
 [ "wlcr",	"rollback",	"pattern wlcr.rollback():void ",	"WLCRcommitCmd;",	"Rollback the workload-capture-replay record"	]
+[ "wlcr",	"stop",	"pattern wlcr.stop():void ",	"WLCRstop;",	"Terminate keeping a log on this branch"	]
 [ "wlcr",	"transaction",	"pattern wlcr.transaction():void ",	"WLCRgeneric;",	"Start an autocommit transaction"	]
 [ "wlcr",	"transaction_begin",	"pattern wlcr.transaction_begin(chain:int, name:str):void ",	"WLCRgeneric;",	"A transaction statement (type can be commit,release,rollback or start)"	]
 [ "wlcr",	"transaction_commit",	"pattern wlcr.transaction_commit(chain:int, name:str):void ",	"WLCRgeneric;",	"A transaction statement (type can be commit,release,rollback or start)"	]
