@@ -261,7 +261,8 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 	BAT *b = NULL, *r = NULL, *s = NULL;
 	rids *rs = ZNEW(rids);
 	const void *kvl = key_value_low, *kvh = key_value_high;
-	int hi = 0;
+	/* if pointers are equal, make it an inclusive select */
+	int hi = key_value_low == key_value_high;
 
 	s = delta_cands(tr, key->t);
 	b = full_column(tr, key);
