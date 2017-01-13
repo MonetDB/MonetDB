@@ -124,7 +124,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Dec2016/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Dec2016-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -957,6 +957,21 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Jan 13 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.5-20170113
+- Rebuilt.
+- BZ#4039: Slow mserver5 start after drop of tables (> 1 hour)
+- BZ#4048: Segfault on vacuum with parallel updates
+- BZ#6079: pushselect optimizer bug on MAL snippet
+- BZ#6140: INNER JOIN gives the results of a CROSS JOIN
+- BZ#6150: Query giving wrong results, extra records are appearing
+- BZ#6175: The program can't start because python27.dll is missing from
+  your computer.
+- BZ#6178: AVG + GROUP BY returns NULL for some records that should
+  have results
+- BZ#6179: mergetable optimizer messes up sample
+- BZ#6182: sys.shutdown triggers assertion in clients.c
+- BZ#6184: Incorrect result set - Extra records in result set
+
 * Sat Dec 17 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.3-20161217
 - Rebuilt.
 
