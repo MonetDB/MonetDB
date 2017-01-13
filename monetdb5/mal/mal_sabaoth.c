@@ -34,14 +34,6 @@
 #define close _close
 #endif
 
-inline static char *
-fromMallocToGDK(char *val)
-{
-	char *ret = GDKstrdup(val);
-	free(val);
-	return(ret);
-}
-
 #define excFromMem(TPE, WHRE, X)						\
 	do {												\
 		str _me = createException(TPE, WHRE, "%s", X);	\
