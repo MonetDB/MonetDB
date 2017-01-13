@@ -176,6 +176,7 @@ typedef struct CLIENT {
 	 */
 	int wlcr_kind;	
 	int wlcr_mode;
+	int wlcr_threshold;
 	str wlcr_replaylog;
 	MalBlkPtr wlcr;
 	/*	

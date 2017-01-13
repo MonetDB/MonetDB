@@ -6,28 +6,19 @@
 
 -- Workload Capture and Replay
 
-create procedure master()
-external name wlcr.master;
+declare replaythreshold integer;
+set replaythreshold = 0;
 
-create procedure master(threshold integer)
+declare replaylog string;
+set replaylog = '/tmp/wlcr';
+
+create procedure master()
 external name wlcr.master;
 
 create procedure stopmaster()
 external name wlcr.stop;
 
-declare replaylog string;
-set replaylog = '/tmp/wlcr';
-
-create procedure replay()
-external name wlcr.replay;
-
-create procedure replay(threshold int)
-external name wlcr.replay;
-
 create procedure replay(dbname string)
-external name wlcr.replay;
-
-create procedure replay(dbname string, threshold int)
 external name wlcr.replay;
 
 create procedure clone(dbname string)

@@ -10,10 +10,6 @@ pattern wlcr.replay(dbname:str)
 address WLCRreplay
 comment "Re-run all operations from another database in the same dbfarm";
 
-pattern wlcr.replay(dbname:str, threshold:int)
-address WLCRreplay
-comment "Re-run all operations from another database in the dbfarm using a query execution threshold";
-
 pattern wlcr.clone(dbname:str)
 address WLCRclone
 comment "Roll the snapshot forward to a uptodate clone";

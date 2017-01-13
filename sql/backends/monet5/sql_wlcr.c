@@ -32,7 +32,6 @@
 #define WLCR_CLONE 2
 
 static str wlcr_master;
-static int wlcr_replaythreshold;
 static int wlcr_replaybatches;
 
 static MT_Id wlcr_thread;
@@ -53,6 +52,25 @@ CLONEgetlogfile( Client cntxt, MalBlkPtr mb)
 		throw(SQL, "sql.getVariable", "variable 'replaylog' unknown");
 	}
 	cntxt->wlcr_replaylog = GDKstrdup(a->data.val.sval);
+	return MAL_SUCCEED;
+}
+
+static str
+CLONEgetThreshold( Client cntxt, MalBlkPtr mb)
+{
+	mvc *m = NULL;
+	str msg;
+	atom *a;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	a = stack_get_var(m, "replaythreshold");
+	if (!a) {
+		throw(SQL, "sql.getVariable", "variable 'replaylog' unknown");
+	}
+	cntxt->wlcr_threshold = atoi(a->data.val.sval);
 	return MAL_SUCCEED;
 }
 
@@ -101,10 +119,7 @@ CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		j = -j;
 	wlcr_replaybatches = j;
 
-    if ( i < pci->argc && getArgType(mb, pci, i) == TYPE_int){
-        wlcr_replaythreshold = *getArgReference_int(stk,pci,i);
-	}
-	return MAL_SUCCEED;
+	return CLONEgetThreshold(cntxt,mb);
 }
 
 /*
@@ -233,11 +248,6 @@ WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	close_stream(fd);
 
 	WLCRprocess((void*) cntxt);
-/*
-    if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlcr.replay","replay process can not be started\n");
-	}
-*/
 	return MAL_SUCCEED;
 }
 
@@ -262,9 +272,6 @@ WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = CLONEinit(cntxt, mb, stk, pci);
 	if( msg)
 		return msg;
-/*
-	WLCRprocess((void*) cntxt);
-*/
     if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
 			throw(SQL,"wlcr.clone","replay process can not be started\n");
 	}

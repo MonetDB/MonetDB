@@ -33,7 +33,7 @@
  * commit/rollback status, its starting time and runtime (in ms).
  *
  * Logging of queries can be further limited to those that satisfy a threshold.
- * CALL master(threshold)
+ * SET replaythreshold= <number>
  * The threshold is given in milliseconds. A negative threshold leads to ignoring all queries.
  *
  * A replica server should issue the matching call

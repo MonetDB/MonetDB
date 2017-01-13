@@ -11153,7 +11153,6 @@ Ready.
 [ "wlcr",	"query",	"pattern wlcr.query(q:str, pipe:str):void ",	"WLCRquery;",	"Initialize the workload-capture-replay "	]
 [ "wlcr",	"rename_user",	"pattern wlcr.rename_user(sname:str, newnme:str, action:int):void ",	"WLCRgeneric;",	"Catalog operation rename_user"	]
 [ "wlcr",	"replay",	"pattern wlcr.replay(dbname:str):void ",	"WLCRreplay;",	"Re-run all operations from another database in the same dbfarm"	]
-[ "wlcr",	"replay",	"pattern wlcr.replay(dbname:str, threshold:int):void ",	"WLCRreplay;",	"Re-run all operations from another database in the dbfarm using a query execution threshold"	]
 [ "wlcr",	"revoke",	"pattern wlcr.revoke(sname:str, tbl:str, grantee:str, privs:int, cname:str, grant:int, grantor:int):void ",	"WLCRgeneric;",	"Catalog operation revoke"	]
 [ "wlcr",	"revoke_function",	"pattern wlcr.revoke_function(sname:str, fcnid:int, grantee:str, privs:int, grant:int, grantor:int):void ",	"WLCRgeneric;",	"Catalog operation revoke_function"	]
 [ "wlcr",	"revoke_roles",	"pattern wlcr.revoke_roles(sname:str, auth:str, grantor:int, admin:int):void ",	"WLCRgeneric;",	"Catalog operation revoke_roles"	]
