@@ -591,7 +591,7 @@ WLCRwrite(Client cntxt, str kind)
 		p = getInstrPtr(cntxt->wlcr,0);
 		p = pushStr(cntxt->wlcr,p,kind);
 		p = pushStr(cntxt->wlcr, p, wlcr_name[cntxt->wlcr_kind]);
-		p = pushInt(cntxt->wlcr,p, GDKms() - p->ticks);
+		p = pushLng(cntxt->wlcr,p, GDKms() - p->ticks);
 		printFunction(wlcr_fd, cntxt->wlcr, 0, LIST_MAL_DEBUG );
 		(void) mnstr_flush(wlcr_fd);
 		MT_lock_unset(&wlcr_lock);

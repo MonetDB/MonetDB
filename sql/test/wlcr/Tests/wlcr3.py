@@ -37,7 +37,7 @@ c = process.client('sql', dbname = dbnameclone, port = cloneport, stdin = proces
 cout, cerr = c.communicate('''\
 call clone('%s');
 select * from tmp;
-''' % tstdb)
+''' % dbname)
 
 sout, serr = slave.communicate()
 mout, merr = master.communicate()

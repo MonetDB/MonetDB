@@ -77,26 +77,17 @@ CLONEgetThreshold( Client cntxt, MalBlkPtr mb)
 static str
 CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    int i = 1, j,k;
+    int j,k;
 	char path[PATHLENGTH];
 	str dbname,dir;
 	FILE *fd;
 	str msg;
 
-	(void) cntxt;
-	(void) k;
 	msg = CLONEgetlogfile(cntxt, mb);
 	if( msg)
 		return msg;
 
-
-    if (getArgType(mb, pci, i) == TYPE_str){
-        dbname =  *getArgReference_str(stk,pci,i);
-        i++;
-    }
-	if( dbname == NULL){
-		throw(SQL,"wlcr.init","Master database name missing.");
-	}
+	dbname =  *getArgReference_str(stk,pci,1);
 	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,dbname);
 	dir = GDKfilepath(0,path,"master",0);
 	wlcr_master = GDKstrdup(dir);
@@ -118,6 +109,7 @@ CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		// log capturing stopped at j steps
 		j = -j;
 	wlcr_replaybatches = j;
+	(void)k;
 
 	return CLONEgetThreshold(cntxt,mb);
 }
@@ -260,7 +252,10 @@ WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
 		throw(SQL,"wlcr.clone","System already in synchronization mode");
 	}
+	cntxt->wlcr_mode = WLCR_CLONE;
 	msg = CLONEinit(cntxt, mb, stk, pci);
+	if( msg)
+		return msg;
 	snprintf(path,PATHLENGTH,"%s%cwlcr", wlcr_master, DIR_SEP);
 	fd= open_rstream(path);
 	if( fd == NULL){
@@ -269,9 +264,6 @@ WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	close_stream(fd);
 
 	cntxt->wlcr_mode = WLCR_CLONE;
-	msg = CLONEinit(cntxt, mb, stk, pci);
-	if( msg)
-		return msg;
     if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
 			throw(SQL,"wlcr.clone","replay process can not be started\n");
 	}
