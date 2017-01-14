@@ -28,6 +28,7 @@ mal_export str WLCRinit(Client cntxt);
 mal_export str WLCRinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCRthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

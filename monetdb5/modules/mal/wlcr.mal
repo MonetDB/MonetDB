@@ -18,8 +18,8 @@ pattern stop()
 address WLCRstop
 comment "Terminate keeping a log on this branch":
 
-pattern master(threshold:int)
-address WLCRmaster
+pattern threshold(limit:int)
+address WLCRthreshold
 comment "Activate the workload-capture-replay. Only queries surpassing the threshold are kept for replay.";
 
 pattern job(user:str, tid:int, started:str, action:str, kind:str, runtime:int)

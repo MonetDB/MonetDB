@@ -36,6 +36,7 @@ static int wlcr_replaybatches;
 
 static MT_Id wlcr_thread;
 
+/*
 static str
 CLONEgetlogfile( Client cntxt, MalBlkPtr mb)
 {
@@ -54,7 +55,9 @@ CLONEgetlogfile( Client cntxt, MalBlkPtr mb)
 	cntxt->wlcr_replaylog = GDKstrdup(a->data.val.sval);
 	return MAL_SUCCEED;
 }
+*/
 
+/*
 static str
 CLONEgetThreshold( Client cntxt, MalBlkPtr mb)
 {
@@ -73,6 +76,7 @@ CLONEgetThreshold( Client cntxt, MalBlkPtr mb)
 	cntxt->wlcr_threshold = atoi(a->data.val.sval);
 	return MAL_SUCCEED;
 }
+*/
 
 static str
 CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -81,11 +85,15 @@ CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char path[PATHLENGTH];
 	str dbname,dir;
 	FILE *fd;
+/*
 	str msg;
 
 	msg = CLONEgetlogfile(cntxt, mb);
 	if( msg)
 		return msg;
+*/
+	(void) cntxt;
+	(void) mb;
 
 	dbname =  *getArgReference_str(stk,pci,1);
 	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,dbname);
@@ -102,7 +110,7 @@ CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( fd == NULL){
 		throw(SQL,"wlcr.init","Can not access master control file '%s'\n",path);
 	}
-	if( fscanf(fd,"%d %d", &j,&k) != 2){
+	if( fscanf(fd,"%d", &j) != 1){
 		throw(SQL,"wlcr.init","'%s' does not have proper number of arguments\n",path);
 	}
 	if ( j < 0)
@@ -111,7 +119,7 @@ CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	wlcr_replaybatches = j;
 	(void)k;
 
-	return CLONEgetThreshold(cntxt,mb);
+	return MAL_SUCCEED;
 }
 
 /*
@@ -155,8 +163,8 @@ WLCRprocess(void *arg)
 		mnstr_printf(GDKerr,"#Inconsitent SQL contex : %s\n",msg);
 
 #ifdef _WLCR_DEBUG_
-	mnstr_printf(c->fdout,"#Ready to start the replayagainst '%s' batches %d threshold %d\n", 
-		wlcr_master, wlcr_replaybatches, wlcr_replaythreshold);
+	mnstr_printf(c->fdout,"#Ready to start the replayagainst '%s' batches %d \n", 
+		wlcr_master, wlcr_replaybatches);
 #endif
 	for( i= 0; i < wlcr_replaybatches; i++){
 		snprintf(path,PATHLENGTH,"%s%cwlcr_%06d", wlcr_master, DIR_SEP,i);
@@ -190,18 +198,22 @@ WLCRprocess(void *arg)
 			q= getInstrPtr(mb, mb->stop-1);
 			if ( getModuleId(q) == cloneRef && getFunctionId(q) ==execRef){
 				pushEndInstruction(mb);
-				printFunction(c->fdout, mb, 0, LIST_MAL_DEBUG );
 				// execute this block
 				chkTypes(c->fdout,c->nspace, mb, FALSE);
 				chkFlow(c->fdout,mb);
 				chkDeclarations(c->fdout,mb);
+				//printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
+
 				sql->session->auto_commit = 0;
 				sql->session->ac_on_commit = 1;
 				sql->session->level = 0;
 				(void) mvc_trans(sql);
 				msg= runMAL(c,mb,0,0);
-				if( msg != MAL_SUCCEED) // they should succeed
+				if( msg != MAL_SUCCEED){
+					 // they should succeed
+					mvc_rollback(sql,0,NULL);
 					break;
+				}
 				if( mvc_commit(sql, 0, 0) < 0)
 					mnstr_printf(GDKerr,"#wlcr.process transaction commit failed");
 
@@ -221,8 +233,6 @@ WLCRprocess(void *arg)
 str
 WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
-	char path[PATHLENGTH];
-	stream *fd;
 
 	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
 		throw(SQL,"wlcr.replay","System already in replay mode");
@@ -232,13 +242,6 @@ WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( msg)
 		return msg;
 
-	snprintf(path,PATHLENGTH,"%s%cwlcr", wlcr_master, DIR_SEP);
-	fd= open_rstream(path);
-	if( fd == NULL){
-		throw(SQL,"wlcr.replay","'%s' can not be accessed \n",path);
-	}
-	close_stream(fd);
-
 	WLCRprocess((void*) cntxt);
 	return MAL_SUCCEED;
 }
@@ -246,22 +249,13 @@ WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
-	char path[PATHLENGTH];
-	stream *fd;
 
 	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
 		throw(SQL,"wlcr.clone","System already in synchronization mode");
 	}
-	cntxt->wlcr_mode = WLCR_CLONE;
 	msg = CLONEinit(cntxt, mb, stk, pci);
 	if( msg)
 		return msg;
-	snprintf(path,PATHLENGTH,"%s%cwlcr", wlcr_master, DIR_SEP);
-	fd= open_rstream(path);
-	if( fd == NULL){
-		throw(SQL,"wlcr.clone","'%s' can not be accessed \n",path);
-	}
-	close_stream(fd);
 
 	cntxt->wlcr_mode = WLCR_CLONE;
     if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
@@ -472,6 +466,11 @@ CLONEupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	tids = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( tids == NULL){
+		throw(SQL,"CLONEupdate",MAL_MALLOC_FAIL);
+	}
+	upd = COLnew(0, tpe, 0, TRANSIENT);
+	if( tids == NULL){
+		BBPunfix(((BAT *) tids)->batCacheid);
 		throw(SQL,"CLONEupdate",MAL_MALLOC_FAIL);
 	}
 	BUNappend(tids, &o, FALSE);

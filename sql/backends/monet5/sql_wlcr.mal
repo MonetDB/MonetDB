@@ -15,7 +15,7 @@ address WLCRclone
 comment "Roll the snapshot forward to a uptodate clone";
 
 module clone;
-pattern job(user:str, tid:int, started:str, action:str, kind:str, runtime:int)
+pattern job(user:str, tid:int, started:str, action:str, kind:str, runtime:lng)
 address CLONEjob
 comment "Mark the beginning of the work unit which can be a compound transaction";
 

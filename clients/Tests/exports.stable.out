@@ -1897,6 +1897,7 @@ str WLCRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str WLCRrollback(Client cntxt);
 str WLCRrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str WLCRstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str WLCRthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str WLCRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str XMLattribute(xml *ret, str *name, str *val);
 str XMLcomment(xml *x, str *s);

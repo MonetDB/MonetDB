@@ -35,6 +35,7 @@
  * Logging of queries can be further limited to those that satisfy a threshold.
  * SET replaythreshold= <number>
  * The threshold is given in milliseconds. A negative threshold leads to ignoring all queries.
+ * The threshold setting is not saved because it is a client specific action.
  *
  * A replica server should issue the matching call
  * CALL clone("dbname")
@@ -70,7 +71,6 @@
 static MT_Lock     wlcr_lock MT_LOCK_INITIALIZER("wlcr_lock");
 
 
-int wlcr_threshold = 0; // threshold (milliseconds) for keeping readonly queries
 int wlcr_batch = 0;	// last batch job identifier 
 int wlcr_start = 0;	// first batch to check next
 int wlcr_tid = 0;	// last transaction id
@@ -113,7 +113,7 @@ WLCRloggerfile(Client cntxt)
 	fd = fopen(path,"w");
 	if( fd == NULL)
 		throw(MAL,"wlcr.logger","Could not access %s\n",path);
-	fprintf(fd,"%d %d\n", wlcr_batch, wlcr_threshold);
+	fprintf(fd,"%d\n", wlcr_batch );
 	fclose(fd);
 	return MAL_SUCCEED;
 }
@@ -146,7 +146,7 @@ WLCRinit(Client cntxt)
 		fd = fopen(path,"r");
 		if( fd){
 			// database is in master tracking mode
-			if( fscanf(fd,"%d %d", &wlcr_batch, &wlcr_threshold) == 2){
+			if( fscanf(fd,"%d", &wlcr_batch ) == 1){
 				if( wlcr_batch < 0){
 					// logging was stopped
 					(void) fclose(fd);
@@ -154,13 +154,13 @@ WLCRinit(Client cntxt)
 				}
 				wlcr_dir = dir;
 #ifdef _WLCR_DEBUG_
-				mnstr_printf(cntxt->fdout,"#Master control active:%d %d\n", wlcr_batch, wlcr_threshold);
+				mnstr_printf(cntxt->fdout,"#Master control active:%d\n", wlcr_batch);
 #endif
 				(void) fclose(fd);
 				msg = WLCRloggerfile(cntxt);
 			} else{
 #ifdef _WLCR_DEBUG_
-				mnstr_printf(cntxt->fdout,"#Inconsistent master control:%d %d\n", wlcr_batch, wlcr_threshold);
+				mnstr_printf(cntxt->fdout,"#Inconsistent master control:%d\n", wlcr_batch);
 #endif
 				(void) fclose(fd);
 			}
@@ -191,7 +191,7 @@ WLCRstop (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fd = fopen(path,"w");
 	if( fd == NULL)
 		throw(MAL,"wlcr.stop","File can not be access");
-	fprintf(fd,"%d %d\n", - wlcr_batch, wlcr_threshold);
+	fprintf(fd,"%d\n", - wlcr_batch);
 	(void) fflush(fd);
 	return MAL_SUCCEED;
 }
@@ -206,6 +206,14 @@ WLCRinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str 
+WLCRthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	cntxt->wlcr_threshold = * getArgReference_int(stk,pci,1);
+	return MAL_SUCCEED;
+}
+
+str 
 WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char path[PATHLENGTH];
@@ -215,9 +223,6 @@ WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 
 	(void) mb;
-
-	if ( pci->argc == 2 )
-		wlcr_threshold = *getArgReference_int(stk,pci,1);
 
 	WLCRinit(cntxt);
 	// if the master directory does not exit, create it
@@ -233,14 +238,14 @@ WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fd = fopen(path,"w");
 		if ( fd == NULL)
 			return createException(MAL,"wlcr.master","Unable to initialize WLCR %s", path);
-		if( fscanf(fd,"%d %d", &wlcr_batch, &wlcr_threshold) != 3)
-			fprintf(fd,"0 %d\n", wlcr_threshold);
+		if( fscanf(fd,"%d", &wlcr_batch) != 3)
+			fprintf(fd,"0\n");
 		(void) fclose(fd);
 	}
 	if( wlcr_fd == NULL)
 		msg = WLCRloggerfile(cntxt);
 #ifdef _WLCR_DEBUG_
-	mnstr_printf(cntxt->fdout,"#master batches %d threshold %d file open %d\n",wlcr_batch, wlcr_threshold, wlcr_fd != NULL);
+	mnstr_printf(cntxt->fdout,"#master batches %d file open %d\n",wlcr_batch,  wlcr_fd != NULL);
 #endif
 	return msg;
 }
