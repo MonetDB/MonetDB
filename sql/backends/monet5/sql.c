@@ -240,10 +240,8 @@ SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.trans", "2DM30!COMMIT: not allowed in auto commit mode");
 	ret = mvc_commit(sql, 0, 0);
 	if (ret < 0) {
-		WLCRrollback(cntxt);
 		throw(SQL, "sql.trans", "2D000!COMMIT: failed");
 	}
-	WLCRcommit(cntxt);
 	return msg;
 }
 

@@ -381,13 +381,10 @@ SQLautocommit(Client c, mvc *m)
 {
 	if (m->session->auto_commit && m->session->active) {
 		if (mvc_status(m) < 0) {
-			WLCRrollback(c);
 			mvc_rollback(m, 0, NULL);
 		} else if (mvc_commit(m, 0, NULL) < 0) {
-			WLCRrollback(c);
 			return handle_error(m, c->fdout, 0);
-		} else
-			WLCRcommit(c);
+		} 
 	}
 	return TRUE;
 }
@@ -608,13 +605,10 @@ SQLexitClient(Client c)
 		assert(m->session);
 		if (m->session->auto_commit && m->session->active) {
 			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0){
-				WLCRrollback(c);
 				(void) handle_error(m, c->fdout, 0);
-			} else
-				WLCRcommit(c);
+			} 
 		}
 		if (m->session->active) {
-			WLCRrollback(c);
 			mvc_rollback(m, 0, NULL);
 		}
 
@@ -993,15 +987,12 @@ SQLparser(Client c)
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
 				if (commit && mvc_commit(m, 0, NULL) < 0) {
-					WLCRrollback(c);
 					mnstr_printf(out, "!COMMIT: commit failed while " "enabling auto_commit\n");
 					msg = createException(SQL, "SQLparser", "Xauto_commit (commit) failed");
 				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
-					WLCRrollback(c);
 					mnstr_printf(out, "!COMMIT: rollback failed while " "disabling auto_commit\n");
 					msg = createException(SQL, "SQLparser", "Xauto_commit (rollback) failed");
-				} else
-					WLCRcommit(c);
+				} 
 			}
 			in->pos = in->len;	/* HACK: should use parsed length */
 			if (msg != NULL)

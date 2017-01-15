@@ -124,7 +124,7 @@ WLCRloggerfile(Client cntxt)
 	fd = fopen(path,"w");
 	if( fd == NULL)
 		throw(MAL,"wlcr.logger","Could not access %s\n",path);
-	fprintf(fd,"%d\n", wlcr_batch );
+	fprintf(fd,"%d %d\n", wlcr_start, wlcr_batch );
 	fclose(fd);
 	return MAL_SUCCEED;
 }
@@ -645,9 +645,9 @@ WLCRwrite(Client cntxt, str kind)
 }
 
 str
-WLCRcommit(Client cntxt)
+WLCRcommit(int clientid)
 {
-		return WLCRwrite(cntxt, "commit");
+		return WLCRwrite( &mal_clients[clientid], "commit");
 }
 
 str
@@ -656,13 +656,13 @@ WLCRcommitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return WLCRcommit(cntxt);
+	return WLCRcommit(cntxt->idx);
 }
 
 str
-WLCRrollback(Client cntxt)
+WLCRrollback(int clientid)
 {
-	return WLCRwrite(cntxt, "rollback");
+	return WLCRwrite( &mal_clients[clientid], "rollback");
 }
 str
 WLCRrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -670,5 +670,5 @@ WLCRrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return WLCRrollback(cntxt);
+	return WLCRrollback(cntxt->idx);
 }

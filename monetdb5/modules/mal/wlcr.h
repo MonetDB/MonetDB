@@ -38,8 +38,8 @@ mal_export str WLCRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 mal_export str WLCRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLCRcommit(Client cntxt);
+mal_export str WLCRcommit(int clientid);
 mal_export str WLCRcommitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLCRrollback(Client cntxt);
+mal_export str WLCRrollback(int clientid);
 mal_export str WLCRrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _WLCR_H */
