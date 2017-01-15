@@ -93,15 +93,17 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
+
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "sql");
 	// Wait for any recovery process to be finished
 	do {
-		MT_sleep_ms(1000);
 		logmsg = GDKgetenv("recovery");
-		if( logmsg== NULL && ++cnt  == 5)
+		if( logmsg== NULL && ++cnt  == 10)
 			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
+		if( logmsg == NULL)
+			MT_sleep_ms(500);
     }while (logmsg == NULL);
 	return msg;
 }
@@ -121,10 +123,11 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = setScenario(cntxt, "msql");
 	// Wait for any recovery process to be finished
 	do {
-		MT_sleep_ms(1000);
 		logmsg = GDKgetenv("recovery");
 		if( logmsg== NULL && ++cnt  == 5)
 			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
+		if ( logmsg == NULL)
+			MT_sleep_ms(1000);
     }while (logmsg == NULL);
 	return msg;
 }
@@ -158,8 +161,8 @@ SQLprelude(void *ret)
 	ms->name = "M_S_Q_L";
 	ms->language = "msql";
 	ms->initSystem = NULL;
-	ms->exitSystem = "SQLexit";
-	ms->initClient = "SQLinitClient";
+ms->exitSystem = "SQLexit";
+ms->initClient = "SQLinitClient";
 	ms->exitClient = "SQLexitClient";
 	ms->reader = "MALreader";
 	ms->parser = "MALparser";
@@ -256,6 +259,8 @@ SQLinit(void)
 		throw(SQL, "SQLinit", "Starting idle manager failed");
 	}
 	GDKregister(idlethread);
+	// check WLCR status
+	WLCRinit(&mal_clients[0]);
 	return MAL_SUCCEED;
 }
 

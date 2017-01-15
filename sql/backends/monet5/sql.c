@@ -34,7 +34,6 @@
 #include <bbp.h>
 #include <opt_pipes.h>
 #include <orderidx.h>
-#include <wlcr.h>
 #include "clients.h"
 #include "mal_instruction.h"
 #include "mal_resource.h"

@@ -152,9 +152,8 @@ WLCRinit(Client cntxt)
 	}
 
 	if (dbname){
-		wlcr_dbname = GDKstrdup(dbname);
 		dir = GDKfilepath(0,0,"master",0);
-		snprintf(path, PATHLENGTH,"%s%c%s_wlcr",dir, DIR_SEP, wlcr_dbname);
+		snprintf(path, PATHLENGTH,"%s%c%s_wlcr",dir, DIR_SEP, dbname);
 		fd = fopen(path,"r");
 		if( fd){
 			// database is in master tracking mode
@@ -164,6 +163,7 @@ WLCRinit(Client cntxt)
 					(void) fclose(fd);
 					return MAL_SUCCEED;
 				}
+				wlcr_dbname = GDKstrdup(dbname);
 				wlcr_dir = dir;
 #ifdef _WLCR_DEBUG_
 				mnstr_printf(cntxt->fdout,"#Master control active:%d\n", wlcr_batch);

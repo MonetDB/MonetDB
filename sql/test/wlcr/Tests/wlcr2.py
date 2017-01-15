@@ -18,7 +18,6 @@ s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE,
 c = process.client('sql', dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 cout, cerr = c.communicate('''\
-call master();
 update tmp set i = 3 where i = 1;
 update tmp set s = 'blah';
 select * from tmp;

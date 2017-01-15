@@ -20,7 +20,6 @@
 #include "sql_qc.h"
 #include "sql_optimizer.h"
 #include "mal_namespace.h"
-#include "wlcr.h"
 #include "opt_prelude.h"
 #include "querylog.h"
 #include "mal_builder.h"
