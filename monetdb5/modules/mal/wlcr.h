@@ -24,6 +24,7 @@
 mal_export int wlcr_threshold; // threshold (seconds) for sending readonly queries
 
 mal_export str WLCRinit(Client cntxt);
+mal_export str WLCRexit(void);
 mal_export int WLCRused(void);
 mal_export str WLCRinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -133,6 +133,7 @@ WLCRloggerfile(Client cntxt)
  * The existence of the master directory should be checked upon server restart.
  * A new batch file should be created as a result.
  * We also have to keep track on the files that have been read by the clone from the parent.
+ * Upon exit we should check the log file size. If empty we need not safe it. [TODO]
  */
 str 
 WLCRinit(Client cntxt)
@@ -184,6 +185,27 @@ WLCRinit(Client cntxt)
 	return msg;
 }
 
+str 
+WLCRexit(void)
+{
+	size_t sz;
+	FILE *fd;
+	char path[PATHLENGTH];
+
+ 	// only keep non-empty log files  [TODO]
+	if( wlcr_fd){
+		sz = getFileSize(wlcr_fd);
+		if (sz == 0){
+			snprintf(path, PATHLENGTH,"%s%c%s_wlcr",wlcr_dir, DIR_SEP,wlcr_dbname);
+			fd = fopen(path,"w");
+			if( fd == NULL)
+				throw(MAL,"wlcr.exit","File can not be access");
+			fprintf(fd,"%d %d\n", wlcr_start, wlcr_batch -1);
+		}
+	}
+	return MAL_SUCCEED;
+}
+
 str
 WLCRstop (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -202,7 +224,7 @@ WLCRstop (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fd = fopen(path,"w");
 	if( fd == NULL)
 		throw(MAL,"wlcr.stop","File can not be access");
-	fprintf(fd,"%d\n", - wlcr_batch);
+	fprintf(fd,"%d %d\n", wlcr_start, -wlcr_batch );
 	(void) fflush(fd);
 	return MAL_SUCCEED;
 }
