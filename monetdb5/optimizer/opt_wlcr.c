@@ -27,7 +27,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-	if( wlcr_dir == NULL)
+	if( ! WLCRused() )
 		goto wrapup;
 	old= mb->stmt;
 	limit= mb->stop;

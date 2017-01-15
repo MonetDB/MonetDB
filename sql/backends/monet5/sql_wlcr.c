@@ -31,10 +31,12 @@
 #define WLCR_REPLAY 1
 #define WLCR_CLONE 2
 
-static str wlcr_master;
-static int wlcr_replaybatches;
+/* TODO actually move these to the WLCRprocess or client record */
+static str wlcr_dbname;
+static str wlcr_dir;
+static int wlcr_firstbatch;
+static int wlcr_lastbatch;;
 
-static MT_Id wlcr_thread;
 
 /*
 static str
@@ -78,49 +80,47 @@ CLONEgetThreshold( Client cntxt, MalBlkPtr mb)
 }
 */
 
-static str
-CLONEinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    int j,k;
-	char path[PATHLENGTH];
-	str dbname,dir;
-	FILE *fd;
 /*
-	str msg;
+ * The log files are identified by a range. It starts with 0 when an empty
+ * database was used to bootstrap. Otherwise it the range of the dbmaster.
+ * At any time we should be able to restart the synchronization
+ * process by grabbing a new set of log files.
+ * This calls for keeping track in the replica what log files have been applied.
+ * It is stored in a separate directory for two purposes. It allows us to fuse
+ * different masters and even to consider bulk copying the logfiles into a local
+ * cache structure before applying them.
+ */
+static str
+CLONEinit(str dbname)
+{
+    int i, j,k;
+	char path[PATHLENGTH];
+	str dir;
+	FILE *fd;
 
-	msg = CLONEgetlogfile(cntxt, mb);
-	if( msg)
-		return msg;
-*/
-	(void) cntxt;
-	(void) mb;
-
-	dbname =  *getArgReference_str(stk,pci,1);
+	wlcr_dbname = GDKstrdup(dbname);
 	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,dbname);
 	dir = GDKfilepath(0,path,"master",0);
-	wlcr_master = GDKstrdup(dir);
-#ifdef _WLCR_DEBUG_
-	mnstr_printf(cntxt->fdout,"#WLCR master '%s'\n", wlcr_master);
-#endif
-	snprintf(path,PATHLENGTH,"%s%cwlcr", dir, DIR_SEP);
-#ifdef _WLCR_DEBUG_
-	mnstr_printf(cntxt->fdout,"#Testing access to master '%s'\n", path);
-#endif
+	wlcr_dir = GDKstrdup(dir);
+	snprintf(path,PATHLENGTH,"%s%c%s_wlcr", dir, DIR_SEP, wlcr_dbname);
 	fd = fopen(path,"r");
 	if( fd == NULL){
 		throw(SQL,"wlcr.init","Can not access master control file '%s'\n",path);
 	}
-	if( fscanf(fd,"%d", &j) != 1){
+	if( fscanf(fd,"%d %d", &i,&j) != 2){
 		throw(SQL,"wlcr.init","'%s' does not have proper number of arguments\n",path);
 	}
 	if ( j < 0)
 		// log capturing stopped at j steps
 		j = -j;
-	wlcr_replaybatches = j;
+	wlcr_firstbatch = i;
+	wlcr_lastbatch = j;
 	(void)k;
 
 	return MAL_SUCCEED;
 }
+
+
 
 /*
  * Run the clone actions under a new client
@@ -148,7 +148,7 @@ WLCRprocess(void *arg)
     c->prompt = GDKstrdup("");  /* do not produce visible prompts */
     c->promptlength = 0;
     c->listing = 0;
-	c->fdout = open_wastream("/tmp/wlcr");
+	c->fdout = open_wastream(".wlcr");
 	c->curprg = newFunction(putName("user"), putName("sql_wlcr"), FUNCTIONsymbol);
 	mb = c->curprg->def;
 	setVarType(mb, 0, TYPE_void);
@@ -163,11 +163,11 @@ WLCRprocess(void *arg)
 		mnstr_printf(GDKerr,"#Inconsitent SQL contex : %s\n",msg);
 
 #ifdef _WLCR_DEBUG_
-	mnstr_printf(c->fdout,"#Ready to start the replayagainst '%s' batches %d \n", 
-		wlcr_master, wlcr_replaybatches);
+	mnstr_printf(c->fdout,"#Ready to start the replayagainst '%s' batches %d:%d \n", 
+		wlcr_dir, wlcr_firstbatch, wlcr_lastbatch);
 #endif
-	for( i= 0; i < wlcr_replaybatches; i++){
-		snprintf(path,PATHLENGTH,"%s%cwlcr_%06d", wlcr_master, DIR_SEP,i);
+	for( i= wlcr_firstbatch; i < wlcr_lastbatch; i++){
+		snprintf(path,PATHLENGTH,"%s%c%s_%06d", wlcr_dir, DIR_SEP, wlcr_dbname, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlcr.process:'%s' can not be accessed \n",path);
@@ -210,7 +210,9 @@ WLCRprocess(void *arg)
 				(void) mvc_trans(sql);
 				msg= runMAL(c,mb,0,0);
 				if( msg != MAL_SUCCEED){
-					 // they should succeed
+					// they should always succeed
+					mnstr_printf(GDKerr,"ERROR in processing batch %d \n", i);
+					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 					mvc_rollback(sql,0,NULL);
 					break;
 				}
@@ -224,6 +226,7 @@ WLCRprocess(void *arg)
 			}
 		} while( mb->errors == 0 && pc != mb->stop);
 		close_stream(fd);
+		// we should remember that we have processed this batch
 	}
 	(void) mnstr_flush(c->fdout);
 	MCcloseClient(c);
@@ -233,12 +236,13 @@ WLCRprocess(void *arg)
 str
 WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
+	(void) mb;
 
 	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
 		throw(SQL,"wlcr.replay","System already in replay mode");
 	}
 	cntxt->wlcr_mode = WLCR_REPLAY;
-	msg = CLONEinit(cntxt, mb, stk, pci);
+	msg = CLONEinit( *getArgReference_str(stk,pci,1));
 	if( msg)
 		return msg;
 
@@ -249,11 +253,13 @@ WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
+	MT_Id wlcr_thread;
+	(void) mb;
 
 	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
 		throw(SQL,"wlcr.clone","System already in synchronization mode");
 	}
-	msg = CLONEinit(cntxt, mb, stk, pci);
+	msg = CLONEinit( *getArgReference_str(stk,pci,1));
 	if( msg)
 		return msg;
 
@@ -263,6 +269,7 @@ WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return MAL_SUCCEED;
 }
+
 str
 CLONEjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str kind = *getArgReference_str(stk,pci,5);

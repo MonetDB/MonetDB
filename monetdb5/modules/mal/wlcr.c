@@ -11,9 +11,8 @@
  * This module collects the workload-capture-replay statements during transaction execution. 
  * It is used primarilly for replication management and workload replay
  *
- * The goal is to easily clone a master database. All data of the master
- * is basically only available for read only access. Accidental corruption of this
- * data is avoided by setting ownership and access properties at the SQL level in the replica.
+ * The goal is to easily clone a master database.  Accidental corruption of this
+ * data should ne avoided by setting ownership and access properties at the SQL level in the replica.
  *
  *
  * IMPLEMENTATION
@@ -21,31 +20,41 @@
  * A database can be set into 'master' mode only once using the SQL command:
  * CALL master()
  *
- * It creates directory .../dbfarm/dbname/master to hold all necessary information
+ * It creates a directory .../dbfarm/dbname/master to hold all necessary information
  * for the creation and maintenance of replicas.
  *
  * Every replica should start off with a copy of binary snapshot stored 
- * in .../dbfarm/dbname/master/bat or an empty database.
+ * in .../dbfarm/dbname/master/bat or with an empty database.
  * The associated log files are stored as master/wlcr<number>.
  *
- * Each wlcr log file contains a serial log for a transaction batch. 
- * Each job is identified by the owner of the query, 
+ * Each wlcr log file contains a serial log of committed transactions.
+ * The log records are represented as ordinary MAL statements, which
+ * are executed in serial mode.
+ * Each transaction job is identified by the owner of the query, 
  * commit/rollback status, its starting time and runtime (in ms).
+ * The end of the transaction is marked as exec()
  *
- * Logging of queries can be further limited to those that satisfy a threshold.
+ * Logging of queries can be limited to those that satisfy an execution threshold.
  * SET replaythreshold= <number>
  * The threshold is given in milliseconds. A negative threshold leads to ignoring all queries.
  * The threshold setting is not saved because it is a client specific action.
  *
- * A replica server should issue the matching call
+ * A replica is constructed in three steps. 
+ * 1) a snapshot copy of the BAT directory is created within a SQL transaction.[TODO]
+ * 2) a new database is created from this snapshot using monetdb[TODO]
+ * 3) The logs are replayed to bring the snapshot up to date.
+ *
+ * Step 1) and 2) can be avoided by starting with an empty database and 
+ * under the assumption that the log files reflect the complete history.
+ * The monetdb program will check for this.
+ *
+ * Processing the log files starts in the background using the call.
  * CALL clone("dbname")
- * It (should) leads to taking a copy of the snapshot following by server restart[TODO]
- * and processing of the log files starts in the background.
- * Queries are simply ignored unless needed as replacement for catalog actions.
- * [TODO] the user might wait until the database is fresh
+ * It will iterate through the log files, applying all transactions.
+ * Queries are simply ignored unless needed as replacement for catalog actions..
  * [TODO] the user might want to take a time-stamped version only, ignoring all actions afterwards.
  *
- * The alternative is to replay the complete log
+ * The alternative is to replay the complete query log
  * CALL replay("dbname")
  * In this mode all queries are executed under the credentials of the query owner[TODO], 
  * including those that lead to updates.
@@ -60,7 +69,6 @@
  * Simplicity and ease of control has been the driving argument here.
  *
  * The integrity of the wlcr directories is critical. For now we assume that all batches are available. 
- * We should detect that wlcr.master() is issued after updates have taken place on the snapshot TODO.
  *
  */
 #include "monetdb_config.h"
@@ -71,24 +79,30 @@
 static MT_Lock     wlcr_lock MT_LOCK_INITIALIZER("wlcr_lock");
 
 
+int wlcr_start = 0;	// first batch associated with snapshot
 int wlcr_batch = 0;	// last batch job identifier 
-int wlcr_start = 0;	// first batch to check next
 int wlcr_tid = 0;	// last transaction id
 
 static char *wlcr_name[]= {"","query","update","catalog"};
 
+static str wlcr_dbname = 0; 
 static stream *wlcr_fd = 0;
-str wlcr_dir = 0;
+static str wlcr_dir = 0;
 
 /* The database snapshots are binary copies of the dbfarm/database/bat
  * New snapshots are created currently using the 'monetdb snapshot <db>' command
  * or a SQL procedure.
- * It requires a database halt.
  *
  * The wlcr logs are stored in the snapshot directory as a time-stamped list
  */
 
+int
+WLCRused(void)
+{
+	return wlcr_dir != NULL;
+}
 // creation of file and updating the version file should be atomic TODO!!!
+// The log files are marked with the database name. This allows for easy recognition later on.
 static str
 WLCRloggerfile(Client cntxt)
 {
@@ -96,19 +110,16 @@ WLCRloggerfile(Client cntxt)
 	FILE *fd;
 
 	(void) cntxt;
-	snprintf(path,PATHLENGTH,"%s%cwlcr_%06d",wlcr_dir,DIR_SEP,wlcr_batch);
-#ifdef _WLCR_DEBUG_
-	mnstr_printf(cntxt->fdout,"#WLCRloggerfile batch %s\n",path);
-#endif
+	snprintf(path,PATHLENGTH,"%s%c%s_%06d", wlcr_dir, DIR_SEP, wlcr_dbname, wlcr_batch);
 	wlcr_fd = open_wastream(path);
 	if( wlcr_fd == 0)
 		throw(MAL,"wlcr.logger","Could not create %s\n",path);
 
 	wlcr_batch++;
 	wlcr_tid = 0;
-	snprintf(path,PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
+	snprintf(path,PATHLENGTH,"%s%c%s_wlcr", wlcr_dir, DIR_SEP, wlcr_dbname);
 #ifdef _WLCR_DEBUG_
-	mnstr_printf(cntxt->fdout,"#WLCRloggerfile %s\n",wlcr_dir);
+	mnstr_printf(cntxt->fdout,"#WLCRloggerfile %s\n", wlcr_dir);
 #endif
 	fd = fopen(path,"w");
 	if( fd == NULL)
@@ -140,13 +151,13 @@ WLCRinit(Client cntxt)
 	}
 
 	if (dbname){
+		wlcr_dbname = GDKstrdup(dbname);
 		dir = GDKfilepath(0,0,"master",0);
-		snprintf(path, PATHLENGTH,"%s%cwlcr",dir, DIR_SEP);
-		wlcr_start = 0;
+		snprintf(path, PATHLENGTH,"%s%c%s_wlcr",dir, DIR_SEP, wlcr_dbname);
 		fd = fopen(path,"r");
 		if( fd){
 			// database is in master tracking mode
-			if( fscanf(fd,"%d", &wlcr_batch ) == 1){
+			if( fscanf(fd,"%d %d", &wlcr_start, &wlcr_batch ) == 2){
 				if( wlcr_batch < 0){
 					// logging was stopped
 					(void) fclose(fd);
@@ -187,7 +198,7 @@ WLCRstop (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( wlcr_dir == NULL)
 		throw(MAL,"wlcr.stop","Replica control not active");
 
-	snprintf(path, PATHLENGTH,"%s%cwlcr",dir, DIR_SEP);
+	snprintf(path, PATHLENGTH,"%s%c%s_wlcr",dir, DIR_SEP,wlcr_dbname);
 	fd = fopen(path,"w");
 	if( fd == NULL)
 		throw(MAL,"wlcr.stop","File can not be access");
@@ -228,9 +239,9 @@ WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// if the master directory does not exit, create it
 	if ( wlcr_dir == NULL){
 		wlcr_dir = GDKfilepath(0,0,"master",0);
-		snprintf(path, PATHLENGTH,"%s%cwlcr",wlcr_dir, DIR_SEP);
+		snprintf(path, PATHLENGTH,"%s%c%s_wlcr", wlcr_dir, DIR_SEP, wlcr_dbname);
 		if( GDKcreatedir(path) == GDK_FAIL)
-			throw(SQL,"wlcr.master","Could not create %s\n",wlcr_dir);
+			throw(SQL,"wlcr.master","Could not create %s\n", wlcr_dir);
 #ifdef _WLCR_DEBUG_
 		mnstr_printf(cntxt->fdout,"#Snapshot directory '%s'\n", wlcr_dir);
 #endif
@@ -238,8 +249,8 @@ WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fd = fopen(path,"w");
 		if ( fd == NULL)
 			return createException(MAL,"wlcr.master","Unable to initialize WLCR %s", path);
-		if( fscanf(fd,"%d", &wlcr_batch) != 3)
-			fprintf(fd,"0\n");
+		if( fscanf(fd,"%d %d", &wlcr_start, &wlcr_batch) != 2)
+			fprintf(fd,"0 0\n");
 		(void) fclose(fd);
 	}
 	if( wlcr_fd == NULL)
