@@ -472,11 +472,13 @@ CLONEupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// get the data into local BAT
 
 	tids = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	BAThseqbase(tids,0);
 	if( tids == NULL){
 		throw(SQL,"CLONEupdate",MAL_MALLOC_FAIL);
 	}
 	upd = COLnew(0, tpe, 0, TRANSIENT);
-	if( tids == NULL){
+	BAThseqbase(tids,0);
+	if( upd == NULL){
 		BBPunfix(((BAT *) tids)->batCacheid);
 		throw(SQL,"CLONEupdate",MAL_MALLOC_FAIL);
 	}
@@ -499,6 +501,8 @@ CLONEupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BUNappend(upd, (void*) val, FALSE);
 		}
 		break;
+	default:
+		GDKerror("Missing type in CLONEupdate");
 	}
 
     if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
