@@ -100,6 +100,8 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
 	int i,j;
 
 	(void) cntxt;
+	if( QRYqueue == NULL)
+		return;
 
 	MT_lock_set(&mal_delayLock);
 	for( i=j=0; i< qtop; i++)
