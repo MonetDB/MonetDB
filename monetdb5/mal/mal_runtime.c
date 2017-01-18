@@ -27,7 +27,6 @@
 QueryQueue QRYqueue;
 static int qtop, qsize;
 static int qtag= 1;
-static int calltag =0; // to identify each invocation
 
 void
 mal_runtime_reset(void)
@@ -37,7 +36,6 @@ mal_runtime_reset(void)
 	qtop = 0;
 	qsize = 0;
 	qtag= 1;
-	calltag =0; 
 }
 
 static str isaSQLquery(MalBlkPtr mb){
@@ -76,7 +74,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		if ( QRYqueue[i].mb == mb)
 			break;
 
-	stk->tag = calltag++;
 	if ( i == qtop ) {
 		mb->tag = qtag;
 		QRYqueue[i].mb = mb;	// for detecting duplicates
@@ -89,7 +86,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue[i].status = "running";
 		QRYqueue[i].cntxt = cntxt;
 	}
-
+	stk->tag = QRYqueue[i].tag;
 	qtop += i == qtop;
 	MT_lock_unset(&mal_delayLock);
 }
