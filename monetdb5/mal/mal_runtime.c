@@ -101,6 +101,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	int i,j;
 
 	(void) cntxt;
+	(void) mb;
 
 	MT_lock_set(&mal_delayLock);
 	for( i=j=0; i< qtop; i++)
