@@ -173,7 +173,7 @@ BATunique(BAT *b, BAT *s)
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
 		assert(vars == NULL);
-		seen = GDKzalloc(256 / 16);
+		seen = GDKzalloc((256 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
 			goto bunins_failed;
 		for (;;) {
@@ -210,7 +210,7 @@ BATunique(BAT *b, BAT *s)
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
 		assert(vars == NULL);
-		seen = GDKzalloc(65536 / 16);
+		seen = GDKzalloc((65536 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
 			goto bunins_failed;
 		for (;;) {
