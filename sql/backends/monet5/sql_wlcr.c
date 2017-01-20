@@ -31,16 +31,69 @@
 #define WLCR_REPLAY 1
 #define WLCR_CLONE 2
 
-/* TODO actually move these to the WLCRprocess or client record */
-static str wlcr_dbname;
-static str wlcr_dir;
-static int wlcr_firstbatch;
-static int wlcr_lastbatch;;
+/* The current status of the replica  */
+/* TODO actually move these to the WLRprocess client record */
+static str wlr_dbname;
+static str wlr_snapshot;
+static str wlr_archive;
+static int wlr_firstbatch; // the next log file to handle
+static int wlr_lastbatch; // the last log file report by the master
+static int wlr_tag;
 
+/* The master configuration file is a simple key=value table.
+ * It is analysed here. 
+ * We assume that there always only one master from which we collect the logs */
+static
+str WLRgetConfig(void){
+    char path[PATHLENGTH];
+    FILE *fd;
+
+    snprintf(path,PATHLENGTH,"%s%cwlcr.config", wlr_archive, DIR_SEP);
+    fd = fopen(path,"r");
+    if( fd == NULL)
+        throw(MAL,"wlr.getConfig","Could not access %s\n",path);
+    while( fgets(path, PATHLENGTH, fd) ){
+		path[strlen(path)-1]= 0;
+        if( strncmp("archive=", path,8) == 0)
+            wlr_archive = GDKstrdup(path + 8);
+        if( strncmp("snapshot=", path,9) == 0)
+            wlr_snapshot = GDKstrdup(path + 9);
+        if( strncmp("start=", path,6) == 0)
+            wlr_firstbatch = atoi(path+ 6);
+        if( strncmp("last=", path, 5) == 0)
+            wlr_lastbatch = atoi(path+ 5);
+    }
+    fclose(fd);
+    return MAL_SUCCEED;
+}
+
+static
+str WLRsetConfig(void){
+    char path[PATHLENGTH];
+    FILE *fd;
+
+    snprintf(path,PATHLENGTH,"%s%cwlcr.config", wlr_archive, DIR_SEP);
+    fd = fopen(path,"w");
+    if( fd == NULL)
+        throw(MAL,"wlr.setConfig","Could not access %s\n",path);
+    while( fgets(path, PATHLENGTH, fd) ){
+		path[strlen(path)-1]= 0;
+        if( strncmp("archive=", path,8) == 0)
+            wlr_archive = GDKstrdup(path + 8);
+        if( strncmp("snapshot=", path,9) == 0)
+            wlr_snapshot = GDKstrdup(path + 9);
+        if( strncmp("start=", path,6) == 0)
+            wlr_firstbatch = atoi(path+ 6);
+        if( strncmp("last=", path, 5) == 0)
+            wlr_lastbatch = atoi(path+ 5);
+    }
+    fclose(fd);
+    return MAL_SUCCEED;
+}
 
 /*
 static str
-CLONEgetlogfile( Client cntxt, MalBlkPtr mb)
+WLRgetlogfile( Client cntxt, MalBlkPtr mb)
 {
 	mvc *m = NULL;
 	str msg;
@@ -61,7 +114,7 @@ CLONEgetlogfile( Client cntxt, MalBlkPtr mb)
 
 /*
 static str
-CLONEgetThreshold( Client cntxt, MalBlkPtr mb)
+WLRgetThreshold( Client cntxt, MalBlkPtr mb)
 {
 	mvc *m = NULL;
 	str msg;
@@ -82,7 +135,7 @@ CLONEgetThreshold( Client cntxt, MalBlkPtr mb)
 
 /*
  * The log files are identified by a range. It starts with 0 when an empty
- * database was used to bootstrap. Otherwise it the range of the dbmaster.
+ * database was used to bootstrap. Otherwise it is the range of the dbmaster.
  * At any time we should be able to restart the synchronization
  * process by grabbing a new set of log files.
  * This calls for keeping track in the replica what log files have been applied.
@@ -91,37 +144,36 @@ CLONEgetThreshold( Client cntxt, MalBlkPtr mb)
  * cache structure before applying them.
  */
 static str
-CLONEinit(str dbname)
+WLRinit(str dbname)
 {
-    int i, j,k;
 	char path[PATHLENGTH];
 	str dir;
-	FILE *fd;
 
-	wlcr_dbname = GDKstrdup(dbname);
+	wlr_dbname = GDKstrdup(dbname);
 	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,dbname);
 	dir = GDKfilepath(0,path,"master",0);
-	wlcr_dir = GDKstrdup(dir);
-	snprintf(path,PATHLENGTH,"%s%c%s_wlcr", dir, DIR_SEP, wlcr_dbname);
-	fd = fopen(path,"r");
-	if( fd == NULL){
-		throw(SQL,"wlcr.init","Can not access master control file '%s'\n",path);
-	}
-	if( fscanf(fd,"%d %d", &i,&j) != 2){
-		throw(SQL,"wlcr.init","'%s' does not have proper number of arguments\n",path);
-	}
-	if ( j < 0)
-		// log capturing stopped at j steps
-		j = -j;
-	wlcr_firstbatch = i;
-	wlcr_lastbatch = j;
-	(void)k;
-
+	wlr_archive = GDKstrdup(dir);
+	WLRgetConfig();
 	return MAL_SUCCEED;
 }
 
 
-
+/*
+static void
+WLRstatus(int idx, int tag)
+{
+	FILE *fd;
+	char path[PATHLENGTH];
+	snprintf(path,PATHLENGTH,"status_%s",wlr_dbname);
+	fd = fopen(path,"w");
+	if( fd == NULL)
+		GDKerror("Could not create clone status file");
+	else {
+		fprintf(fd,"%d %d\n", idx, tag);
+		fclose(fd);
+	}
+}
+*/
 /*
  * Run the clone actions under a new client
  * and safe debugging in a tmp file.
@@ -142,7 +194,7 @@ WLCRprocess(void *arg)
 
 	c =MCforkClient(cntxt);
 	if( c == 0){
-		GDKerror("Could not create user for WLCR process\n");
+		GDKerror("Could not create user for WLR process\n");
 		return;
 	}
     c->prompt = GDKstrdup("");  /* do not produce visible prompts */
@@ -162,12 +214,13 @@ WLCRprocess(void *arg)
     if ((msg = checkSQLContext(c)) != NULL)
 		mnstr_printf(GDKerr,"#Inconsitent SQL contex : %s\n",msg);
 
-#ifdef _WLCR_DEBUG_
+#ifdef _WLR_DEBUG_
 	mnstr_printf(c->fdout,"#Ready to start the replayagainst '%s' batches %d:%d \n", 
-		wlcr_dir, wlcr_firstbatch, wlcr_lastbatch);
+		wlr_archive, wlr_firstbatch, wlr_lastbatch);
 #endif
-	for( i= wlcr_firstbatch; i < wlcr_lastbatch; i++){
-		snprintf(path,PATHLENGTH,"%s%c%s_%06d", wlcr_dir, DIR_SEP, wlcr_dbname, i);
+	wlr_tag = 0;
+	for( i= wlr_firstbatch; i < wlr_lastbatch; i++){
+		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlr_archive, DIR_SEP, wlr_dbname, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlcr.process:'%s' can not be accessed \n",path);
@@ -183,12 +236,12 @@ WLCRprocess(void *arg)
 		if (bstream_next(c->fdin) < 0)
 			mnstr_printf(GDKerr, "!WARNING: could not read %s\n", path);
 
-#ifdef _WLCR_DEBUG_
+#ifdef _WLR_DEBUG_
 		mnstr_printf(c->fdout,"#wlcr.process:start processing log file '%s'\n",path);
 #endif
 		c->yycur = 0;
 		//
-		// now parse the file line by line to reconstruct the WLCR blocks
+		// now parse the file line by line to reconstruct the WLR blocks
 		do{
 			pc = mb->stop;
 			if( parseMAL(c, c->curprg, 1, 1)  || mb->errors){
@@ -196,7 +249,7 @@ WLCRprocess(void *arg)
 			}
 			mb = c->curprg->def; // needed
 			q= getInstrPtr(mb, mb->stop-1);
-			if ( getModuleId(q) == cloneRef && getFunctionId(q) ==execRef){
+			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==execRef){
 				pushEndInstruction(mb);
 				// execute this block
 				chkTypes(c->fdout,c->nspace, mb, FALSE);
@@ -209,6 +262,8 @@ WLCRprocess(void *arg)
 				sql->session->level = 0;
 				(void) mvc_trans(sql);
 				msg= runMAL(c,mb,0,0);
+				wlr_tag++;
+				WLRsetConfig();
 				if( msg != MAL_SUCCEED){
 					// they should always succeed
 					mnstr_printf(GDKerr,"ERROR in processing batch %d \n", i);
@@ -226,7 +281,6 @@ WLCRprocess(void *arg)
 			}
 		} while( mb->errors == 0 && pc != mb->stop);
 		close_stream(fd);
-		// we should remember that we have processed this batch
 	}
 	(void) mnstr_flush(c->fdout);
 	MCcloseClient(c);
@@ -242,7 +296,7 @@ WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"wlcr.replay","System already in replay mode");
 	}
 	cntxt->wlcr_mode = WLCR_REPLAY;
-	msg = CLONEinit( *getArgReference_str(stk,pci,1));
+	msg = WLRinit( *getArgReference_str(stk,pci,1));
 	if( msg)
 		return msg;
 
@@ -259,7 +313,7 @@ WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
 		throw(SQL,"wlcr.clone","System already in synchronization mode");
 	}
-	msg = CLONEinit( *getArgReference_str(stk,pci,1));
+	msg = WLRinit( *getArgReference_str(stk,pci,1));
 	if( msg)
 		return msg;
 
@@ -271,7 +325,7 @@ WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLONEjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str kind = *getArgReference_str(stk,pci,5);
 	(void) cntxt;
 	(void) mb;
@@ -286,7 +340,7 @@ CLONEjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-CLONEexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) stk;
@@ -297,7 +351,7 @@ CLONEexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLONEquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str qry =  *getArgReference_str(stk,pci,1);
 	str msg = MAL_SUCCEED;
 	lng clk = GDKms();
@@ -312,7 +366,7 @@ CLONEquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLONEgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	// currently they are informative only
 	(void) cntxt;
@@ -322,14 +376,14 @@ CLONEgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define CLONEcolumn(TPE) \
+#define WLRcolumn(TPE) \
 		for( i = 4; i < pci->argc; i++){\
 			TPE val = *getArgReference_##TPE(stk,pci,i);\
 			BUNappend(ins, (void*) &val, FALSE);\
 		}
 
 str
-CLONEappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str sname, tname, cname;
     int tpe,i;
 	mvc *m=NULL;
@@ -359,20 +413,20 @@ CLONEappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe= getArgType(mb,pci,4);
 	ins = COLnew(0, tpe, 0, TRANSIENT);
 	if( ins == NULL){
-		throw(SQL,"CLONEappend",MAL_MALLOC_FAIL);
+		throw(SQL,"WLRappend",MAL_MALLOC_FAIL);
 	}
 
 	switch(ATOMstorage(tpe)){
-	case TYPE_bit: CLONEcolumn(bit); break;
-	case TYPE_bte: CLONEcolumn(bte); break;
-	case TYPE_sht: CLONEcolumn(sht); break;
-	case TYPE_int: CLONEcolumn(int); break;
-	case TYPE_lng: CLONEcolumn(lng); break;
-	case TYPE_oid: CLONEcolumn(oid); break;
-	case TYPE_flt: CLONEcolumn(flt); break;
-	case TYPE_dbl: CLONEcolumn(dbl); break;
+	case TYPE_bit: WLRcolumn(bit); break;
+	case TYPE_bte: WLRcolumn(bte); break;
+	case TYPE_sht: WLRcolumn(sht); break;
+	case TYPE_int: WLRcolumn(int); break;
+	case TYPE_lng: WLRcolumn(lng); break;
+	case TYPE_oid: WLRcolumn(oid); break;
+	case TYPE_flt: WLRcolumn(flt); break;
+	case TYPE_dbl: WLRcolumn(dbl); break;
 #ifdef HAVE
-	case TYPE_hge: CLONEcolumn(hge); break;
+	case TYPE_hge: WLRcolumn(hge); break;
 #endif
 	case TYPE_str:
 		for( i = 4; i < pci->argc; i++){
@@ -395,7 +449,7 @@ CLONEappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLONEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	str sname, tname;
     int i;
@@ -423,10 +477,10 @@ CLONEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	ins = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( ins == NULL){
-		throw(SQL,"CLONEappend",MAL_MALLOC_FAIL);
+		throw(SQL,"WLRappend",MAL_MALLOC_FAIL);
 	}
 
-	CLONEcolumn(oid); 
+	WLRcolumn(oid); 
 
     store_funcs.delete_tab(m->session->tr, t, ins, TYPE_bat);
 	BBPunfix(((BAT *) ins)->batCacheid);
@@ -434,14 +488,14 @@ CLONEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define CLONEvalue(TPE) \
+#define WLRvalue(TPE) \
 {	TPE val = *getArgReference_##TPE(stk,pci,5);\
 	BUNappend(upd, (void*) &val, FALSE);\
 }
 
 
 str
-CLONEupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sname, tname, cname;
 	mvc *m=NULL;
@@ -472,29 +526,27 @@ CLONEupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// get the data into local BAT
 
 	tids = COLnew(0, TYPE_oid, 0, TRANSIENT);
-	BAThseqbase(tids,0);
 	if( tids == NULL){
-		throw(SQL,"CLONEupdate",MAL_MALLOC_FAIL);
+		throw(SQL,"WLRupdate",MAL_MALLOC_FAIL);
 	}
 	upd = COLnew(0, tpe, 0, TRANSIENT);
-	BAThseqbase(tids,0);
 	if( upd == NULL){
 		BBPunfix(((BAT *) tids)->batCacheid);
-		throw(SQL,"CLONEupdate",MAL_MALLOC_FAIL);
+		throw(SQL,"WLRupdate",MAL_MALLOC_FAIL);
 	}
 	BUNappend(tids, &o, FALSE);
 
 	switch(ATOMstorage(tpe)){
-	case TYPE_bit: CLONEvalue(bit); break;
-	case TYPE_bte: CLONEvalue(bte); break;
-	case TYPE_sht: CLONEvalue(sht); break;
-	case TYPE_int: CLONEvalue(int); break;
-	case TYPE_lng: CLONEvalue(lng); break;
-	case TYPE_oid: CLONEvalue(oid); break;
-	case TYPE_flt: CLONEvalue(flt); break;
-	case TYPE_dbl: CLONEvalue(dbl); break;
+	case TYPE_bit: WLRvalue(bit); break;
+	case TYPE_bte: WLRvalue(bte); break;
+	case TYPE_sht: WLRvalue(sht); break;
+	case TYPE_int: WLRvalue(int); break;
+	case TYPE_lng: WLRvalue(lng); break;
+	case TYPE_oid: WLRvalue(oid); break;
+	case TYPE_flt: WLRvalue(flt); break;
+	case TYPE_dbl: WLRvalue(dbl); break;
 #ifdef HAVE
-	case TYPE_hge: CLONEvalue(hge); break;
+	case TYPE_hge: WLRvalue(hge); break;
 #endif
 	case TYPE_str:
 		{ 	str val = *getArgReference_str(stk,pci,5);
@@ -502,9 +554,11 @@ CLONEupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		break;
 	default:
-		GDKerror("Missing type in CLONEupdate");
+		GDKerror("Missing type in WLRupdate");
 	}
 
+	BATmsync(tids);
+	BATmsync(upd);
     if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
         store_funcs.update_col(m->session->tr, c, tids, upd, tpe);
     } else if (cname[0] == '%') {
@@ -518,7 +572,7 @@ CLONEupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLONEclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	sql_schema *s;
 	sql_table *t;

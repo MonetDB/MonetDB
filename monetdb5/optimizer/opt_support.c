@@ -470,6 +470,8 @@ hasSideEffects(InstrPtr p, int strict)
 		return TRUE;
 	if ( getModuleId(p) == oltpRef)
 		return TRUE;
+	if ( getModuleId(p) == wlrRef)
+		return TRUE;
 	if ( getModuleId(p) == wlcrRef)
 		return TRUE;
 	if ( getModuleId(p) == remoteRef)

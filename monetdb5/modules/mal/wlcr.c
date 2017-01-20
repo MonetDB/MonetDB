@@ -8,8 +8,9 @@
 
 /*
  * (c) 2017 Martin Kersten
- * This module collects the workload-capture-replay statements during transaction execution. 
- * It is used primarilly for replication management and workload replay
+ * This module collects the workload-capture-replay statements during transaction execution,
+ * also called asynchronous logical replication log management.
+ * It is used primarilly for recovery and replication management. 
  *
  * The goal is to easily clone a master database.  Accidental corruption of this
  * data should ne avoided by setting ownership and access properties at the SQL level in the replica.
@@ -22,26 +23,33 @@
  *
  * It creates a directory .../dbfarm/dbname/master to hold all necessary information
  * for the creation and maintenance of replicas.
+ * A configuration file is added to keep track on the status of the master.
+ * It contains the following key=value pairs:
+ * 		snapshot=<path to binary snapshot>
+ * 		archive=<path to location of the log files>
+ * 		start=<first batch file to be applied>
+ * 		last=<last batch file to be applied>
  *
  * Every replica should start off with a copy of binary snapshot stored 
- * in .../dbfarm/dbname/master/bat or with an empty database.
- * The associated log files are stored as master/wlcr<number>.
+ * by deault in .../dbfarm/dbname/master/bat. A missing path to the snapshot
+ * is assumed to denote that we can start with an empty database.
+ * The log files are stored as master/<dbname>_<batchnumber>.
  *
  * Each wlcr log file contains a serial log of committed transactions.
  * The log records are represented as ordinary MAL statements, which
- * are executed in serial mode.
+ * are executed in serial mode. (parallelism can be considered for large updates)
  * Each transaction job is identified by the owner of the query, 
  * commit/rollback status, its starting time and runtime (in ms).
  * The end of the transaction is marked as exec()
  *
- * Logging of queries can be limited to those that satisfy an execution threshold.
+ * Logging of queries can be limited to those that satisfy an minimum execution threshold.
  * SET replaythreshold= <number>
  * The threshold is given in milliseconds. A negative threshold leads to ignoring all queries.
  * The threshold setting is not saved because it is a client specific action.
  *
  * A replica is constructed in three steps. 
- * 1) a snapshot copy of the BAT directory is created within a SQL transaction.[TODO]
- * 2) a new database is created from this snapshot using monetdb[TODO]
+ * 1a) a snapshot copy of the BAT directory is created within a SQL transaction.[TODO or
+ * 1b)) a new database is created .
  * 3) The logs are replayed to bring the snapshot up to date.
  *
  * Step 1) and 2) can be avoided by starting with an empty database and 
@@ -51,8 +59,8 @@
  * Processing the log files starts in the background using the call.
  * CALL clone("dbname")
  * It will iterate through the log files, applying all transactions.
- * Queries are simply ignored unless needed as replacement for catalog actions..
- * [TODO] the user might want to take a time-stamped version only, ignoring all actions afterwards.
+ * Queries are simply ignored unless needed as replacement for catalog actions.
+ * [TODO] the user might want to indicate a time-stamped, ignoring all actions afterwards.
  *
  * The alternative is to replay the complete query log
  * CALL replay("dbname")
@@ -78,16 +86,16 @@
 
 static MT_Lock     wlcr_lock MT_LOCK_INITIALIZER("wlcr_lock");
 
-
-int wlcr_start = 0;	// first batch associated with snapshot
-int wlcr_batch = 0;	// last batch job identifier 
-int wlcr_tid = 0;	// last transaction id
-
 static char *wlcr_name[]= {"","query","update","catalog"};
 
-static str wlcr_dbname = 0; 
+static str wlcr_snapshot= 0; // The name of the snapshot against the logs work
+static str wlcr_archive = 0; // The location in the global file store for the logs
+static str wlcr_dbname = 0;  // The current database name
 static stream *wlcr_fd = 0;
-static str wlcr_dir = 0;
+
+int wlcr_start = 0;	// first log file  associated with snapshot
+int wlcr_last = 0;	// last log file identifier 
+int wlcr_tid = 0;	// last transaction id
 
 /* The database snapshots are binary copies of the dbfarm/database/bat
  * New snapshots are created currently using the 'monetdb snapshot <db>' command
@@ -97,35 +105,82 @@ static str wlcr_dir = 0;
  */
 
 int
-WLCRused(void)
+WLCused(void)
 {
-	return wlcr_dir != NULL;
+	return wlcr_archive != NULL;
 }
-// creation of file and updating the version file should be atomic TODO!!!
-// The log files are marked with the database name. This allows for easy recognition later on.
-static str
-WLCRloggerfile(Client cntxt)
-{
+
+/* The master configuration file is a simple key=value table */
+static 
+str WLCgetConfig(void){
 	char path[PATHLENGTH];
 	FILE *fd;
 
-	(void) cntxt;
-	snprintf(path,PATHLENGTH,"%s%c%s_%06d", wlcr_dir, DIR_SEP, wlcr_dbname, wlcr_batch);
-	wlcr_fd = open_wastream(path);
-	if( wlcr_fd == 0)
-		throw(MAL,"wlcr.logger","Could not create %s\n",path);
+	snprintf(path,PATHLENGTH,"%s%cwlcr.config", wlcr_archive, DIR_SEP);
+	fd = fopen(path,"r");
+	if( fd == NULL)
+		throw(MAL,"wlcr.getConfig","Could not access %s\n",path);
+	while( fgets(path, PATHLENGTH, fd) ){
+		path[strlen(path)-1] = 0;
+		if( strncmp("archive=", path,8) == 0)
+			wlcr_archive = GDKstrdup(path + 8);
+		if( strncmp("snapshot=", path,9) == 0)
+			wlcr_snapshot = GDKstrdup(path + 9);
+		if( strncmp("start=", path,6) == 0)
+			wlcr_start = atoi(path+ 6);
+		if( strncmp("last=", path, 5) == 0)
+			wlcr_last = atoi(path+ 5);
+	}
+	fclose(fd);
+	return MAL_SUCCEED;
+}
 
-	wlcr_batch++;
-	wlcr_tid = 0;
-	snprintf(path,PATHLENGTH,"%s%c%s_wlcr", wlcr_dir, DIR_SEP, wlcr_dbname);
-#ifdef _WLCR_DEBUG_
-	mnstr_printf(cntxt->fdout,"#WLCRloggerfile %s\n", wlcr_dir);
-#endif
+static 
+str WLCsetConfig(void){
+	char path[PATHLENGTH];
+	FILE *fd;
+
+	// default setting for the archive directory is the db itself
+	if( wlcr_archive == NULL){
+		snprintf(path,PATHLENGTH,"%s%c", wlcr_archive, DIR_SEP);
+		wlcr_archive = GDKstrdup(path);
+	}
+
+	snprintf(path,PATHLENGTH,"%s%cwlcr.config", wlcr_archive, DIR_SEP);
 	fd = fopen(path,"w");
 	if( fd == NULL)
-		throw(MAL,"wlcr.logger","Could not access %s\n",path);
-	fprintf(fd,"%d %d\n", wlcr_start, wlcr_batch );
+		throw(MAL,"wlcr.setConfig","Could not access %s\n",path);
+	if( wlcr_snapshot)
+		fprintf(fd,"snapshot=%s\n", wlcr_snapshot);
+	if( wlcr_archive)
+		fprintf(fd,"archive=%s\n", wlcr_archive);
+	fprintf(fd,"start=%d\n", wlcr_start);
+	fprintf(fd,"last=%d\n", wlcr_last );
 	fclose(fd);
+	return MAL_SUCCEED;
+}
+
+// creation of the logger file and updating the configuration file should be atomic !!!
+// The log files are marked with the database name. This allows for easy recognition later on.
+static str
+WLCsetlogger(void)
+{
+	char path[PATHLENGTH];
+
+	if( wlcr_archive == NULL)
+		throw(MAL,"wlcr.setlogger","Path not initalized");
+	MT_lock_set(&wlcr_lock);
+	snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlcr_archive, DIR_SEP, wlcr_dbname, wlcr_last);
+	wlcr_fd = open_wastream(path);
+	if( wlcr_fd == 0){
+		MT_lock_unset(&wlcr_lock);
+		throw(MAL,"wlcr.logger","Could not create %s\n",path);
+	}
+
+	wlcr_last++;
+	wlcr_tid = 0;
+	WLCsetConfig();
+	MT_lock_unset(&wlcr_lock);
 	return MAL_SUCCEED;
 }
 
@@ -136,110 +191,77 @@ WLCRloggerfile(Client cntxt)
  * Upon exit we should check the log file size. If empty we need not safe it. [TODO]
  */
 str 
-WLCRinit(Client cntxt)
+WLCinit(Client cntxt)
 {
-	str dbname= (str) GDKgetenv("gdk_dbname");
-	str dir;
-	str msg = MAL_SUCCEED;
-	FILE *fd;
 	char path[PATHLENGTH];
-	
-	if( wlcr_dir){
-#ifdef _WLCR_DEBUG_
-		mnstr_printf(cntxt->fdout,"#WLCR already running\n");
-#endif
-		return MAL_SUCCEED;
-	}
+	str pathname;
+	FILE *fd;
 
-	if (dbname){
-		dir = GDKfilepath(0,0,"master",0);
-		snprintf(path, PATHLENGTH,"%s%c%s_wlcr",dir, DIR_SEP, dbname);
+	if( wlcr_archive){
+#ifdef _WLC_DEBUG_
+		mnstr_printf(cntxt->fdout,"#WLC already running\n");
+#else
+	(void) cntxt;
+#endif
+	} else{
+		// use default location for archive
+		pathname = GDKfilepath(0,0,"master",0);
+		snprintf(path, PATHLENGTH,"%s%cwlcr.config", pathname, DIR_SEP);
+
 		fd = fopen(path,"r");
-		if( fd){
-			// database is in master tracking mode
-			if( fscanf(fd,"%d %d", &wlcr_start, &wlcr_batch ) == 2){
-				if( wlcr_batch < 0){
-					// logging was stopped
-					(void) fclose(fd);
-					return MAL_SUCCEED;
-				}
-				wlcr_dbname = GDKstrdup(dbname);
-				wlcr_dir = dir;
-#ifdef _WLCR_DEBUG_
-				mnstr_printf(cntxt->fdout,"#Master control active:%d\n", wlcr_batch);
-#endif
-				(void) fclose(fd);
-				msg = WLCRloggerfile(cntxt);
-			} else{
-#ifdef _WLCR_DEBUG_
-				mnstr_printf(cntxt->fdout,"#Inconsistent master control:%d\n", wlcr_batch);
-#endif
-				(void) fclose(fd);
-			}
-		} 
-#ifdef _WLCR_DEBUG_
-		else
-				mnstr_printf(cntxt->fdout,"#Master control not active\n");
-#endif
+		if( fd == NULL)
+			return MAL_SUCCEED;
+		fclose(fd);
+		wlcr_dbname = GDKgetenv("gdk_dbname");
+		wlcr_archive = pathname;
+		return WLCgetConfig();
 	}
-	return msg;
+	return MAL_SUCCEED;
 }
 
 str 
-WLCRexit(void)
+WLCexit(void)
 {
 	size_t sz;
-	FILE *fd;
-	char path[PATHLENGTH];
 
- 	// only keep non-empty log files  [TODO]
+ 	// only keep non-empty log files 
 	if( wlcr_fd){
 		sz = getFileSize(wlcr_fd);
 		if (sz == 0){
-			snprintf(path, PATHLENGTH,"%s%c%s_wlcr",wlcr_dir, DIR_SEP,wlcr_dbname);
-			fd = fopen(path,"w");
-			if( fd == NULL)
-				throw(MAL,"wlcr.exit","File can not be access");
-			fprintf(fd,"%d %d\n", wlcr_start, wlcr_batch -1);
+			wlcr_last --;
+			WLCsetConfig();
 		}
 	}
 	return MAL_SUCCEED;
 }
 
 str
-WLCRstop (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCstop (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	FILE *fd;
-	str	dir = GDKfilepath(0,0,"master",0);
-	char path[PATHLENGTH];
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 
-	if( wlcr_dir == NULL)
+	if( wlcr_archive == NULL)
 		throw(MAL,"wlcr.stop","Replica control not active");
+	wlcr_last = - wlcr_last;
+	WLCsetConfig();
 
-	snprintf(path, PATHLENGTH,"%s%c%s_wlcr",dir, DIR_SEP,wlcr_dbname);
-	fd = fopen(path,"w");
-	if( fd == NULL)
-		throw(MAL,"wlcr.stop","File can not be access");
-	fprintf(fd,"%d %d\n", wlcr_start, -wlcr_batch );
-	(void) fflush(fd);
 	return MAL_SUCCEED;
 }
 
 str 
-WLCRinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return WLCRinit(cntxt);
+	return WLCinit(cntxt);
 }
 
 str 
-WLCRthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	cntxt->wlcr_threshold = * getArgReference_int(stk,pci,1);
@@ -247,44 +269,41 @@ WLCRthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str 
-WLCRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char path[PATHLENGTH];
-	FILE *fd;
 	str msg = MAL_SUCCEED;
 	(void) stk;
 	(void) pci;
 
 	(void) mb;
 
-	WLCRinit(cntxt);
+	msg = WLCinit(cntxt);
+	if( msg)
+		return msg;
 	// if the master directory does not exit, create it
-	if ( wlcr_dir == NULL){
-		wlcr_dir = GDKfilepath(0,0,"master",0);
-		snprintf(path, PATHLENGTH,"%s%c%s_wlcr", wlcr_dir, DIR_SEP, wlcr_dbname);
-		if( GDKcreatedir(path) == GDK_FAIL)
-			throw(SQL,"wlcr.master","Could not create %s\n", wlcr_dir);
-#ifdef _WLCR_DEBUG_
-		mnstr_printf(cntxt->fdout,"#Snapshot directory '%s'\n", wlcr_dir);
-#endif
 
-		fd = fopen(path,"w");
-		if ( fd == NULL)
-			return createException(MAL,"wlcr.master","Unable to initialize WLCR %s", path);
-		if( fscanf(fd,"%d %d", &wlcr_start, &wlcr_batch) != 2)
-			fprintf(fd,"0 0\n");
-		(void) fclose(fd);
+	if ( wlcr_archive == NULL){
+		wlcr_dbname = GDKgetenv("gdk_dbname");
+		wlcr_archive = GDKfilepath(0,0,"master",0);
+		snprintf(path, PATHLENGTH,"%s%c%s_wlcr", wlcr_archive, DIR_SEP, wlcr_dbname);
+		if( GDKcreatedir(path) == GDK_FAIL)
+			throw(SQL,"wlcr.master","Could not create %s\n", wlcr_archive);
+#ifdef _WLC_DEBUG_
+		mnstr_printf(cntxt->fdout,"#Snapshot directory '%s'\n", wlcr_archive);
+#endif
+		WLCsetConfig();
 	}
 	if( wlcr_fd == NULL)
-		msg = WLCRloggerfile(cntxt);
-#ifdef _WLCR_DEBUG_
-	mnstr_printf(cntxt->fdout,"#master batches %d file open %d\n",wlcr_batch,  wlcr_fd != NULL);
+		msg = WLCsetlogger();
+#ifdef _WLC_DEBUG_
+	mnstr_printf(cntxt->fdout,"#master batches %d file open %d\n",wlcr_last,  wlcr_fd != NULL);
 #endif
 	return msg;
 }
 
 static InstrPtr
-WLCRaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
+WLCaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 {
 	char tbuf[26];
 	struct timeval clock;
@@ -299,7 +318,7 @@ WLCRaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 	return pushStr(cntxt->wlcr, p, tbuf);
 }
 
-#define WLCR_start(P)\
+#define WLCstart(P)\
 { Symbol s; \
 	if( cntxt->wlcr == NULL){\
 		s = newSymbol("wlrc", FUNCTIONsymbol);\
@@ -311,12 +330,12 @@ WLCRaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 		P = newStmt(cntxt->wlcr,"clone","job");\
 		P = pushStr(cntxt->wlcr, P, cntxt->username);\
 		P = pushInt(cntxt->wlcr, P, wlcr_tid);\
-		P = WLCRaddtime(cntxt,pci, P); \
+		P = WLCaddtime(cntxt,pci, P); \
 		P->ticks = GDKms();\
 }	}
 
 str
-WLCRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tid = *getArgReference_int(stk,pci,1);
 
@@ -329,7 +348,7 @@ WLCRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCRexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
@@ -339,13 +358,13 @@ WLCRexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 
 	(void) stk;
 	if ( strcmp("-- no query",getVarConstant(mb, getArg(pci,1)).val.sval) == 0)
 		return MAL_SUCCEED;	// ignore system internal queries.
-	WLCR_start(p);
+	WLCstart(p);
 	p = newStmt(cntxt->wlcr, "clone","query");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -354,12 +373,12 @@ WLCRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 	int i, tpe, varid;
 	(void) stk;
 	
-	WLCR_start(p);
+	WLCstart(p);
 	p = newStmt(cntxt->wlcr, "clone",getFunctionId(pci));
 	for( i = pci->retc; i< pci->argc; i++){
 		tpe =getArgType(mb, pci, i);
@@ -406,7 +425,7 @@ WLCRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 } }
 
 static void
-WLCRdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
+WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 {	BAT *b;
 	str sch,tbl,col;
 	(void) mb;
@@ -458,13 +477,13 @@ WLCRdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 }
 
 str
-WLCRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	 InstrPtr p;
 	int tpe, varid;
 	(void) stk;
 	(void) mb;
 	
-	WLCR_start(p);
+	WLCstart(p);
 	p = newStmt(cntxt->wlcr, "clone","append");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -476,7 +495,7 @@ WLCRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe= getArgType(mb,pci,4);
 	if (isaBatType(tpe) ){
 		// actually check the size of the BAT first, most have few elements
-		WLCRdatashipping(cntxt, mb, p, stk->stk[getArg(pci,4)].val.bval);
+		WLCdatashipping(cntxt, mb, p, stk->stk[getArg(pci,4)].val.bval);
 	} else {
 		ValRecord cst;
 		if (VALcopy(&cst, getArgReference(stk,pci,4)) != NULL){
@@ -491,13 +510,13 @@ WLCRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;	
 	int tpe, varid;
 	(void) stk;
 	(void) mb;
 	
-	WLCR_start(p);
+	WLCstart(p);
 	p = newStmt(cntxt->wlcr, "clone","delete");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -505,7 +524,7 @@ WLCRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	tpe= getArgType(mb,pci,4);
 	if (isaBatType(tpe) ){
-		WLCRdatashipping(cntxt, mb, p, stk->stk[getArg(pci,4)].val.bval);
+		WLCdatashipping(cntxt, mb, p, stk->stk[getArg(pci,4)].val.bval);
 	} else {
 		ValRecord cst;
 		if (VALcopy(&cst, getArgReference(stk,pci,4)) != NULL){
@@ -520,7 +539,7 @@ WLCRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 	str sch,tbl,col;
 	ValRecord cst;
@@ -530,7 +549,7 @@ WLCRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sch = *getArgReference_str(stk,pci,1);
 	tbl = *getArgReference_str(stk,pci,2);
 	col = *getArgReference_str(stk,pci,3);
-	WLCR_start(p);
+	WLCstart(p);
 	tpe= getArgType(mb,pci,5);
 	if (isaBatType(tpe) ){
 		BAT *b, *bval;
@@ -588,11 +607,11 @@ WLCRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	 InstrPtr p;
 	(void) stk;
 	
-	WLCR_start(p);
+	WLCstart(p);
 	p = newStmt(cntxt->wlcr, "clone","clear_table");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -603,22 +622,22 @@ WLCRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-WLCRwrite(Client cntxt, str kind)
+WLCwrite(Client cntxt, str kind)
 {	str msg;
 	InstrPtr p;
 	// save the wlcr record on a file 
 	if( cntxt->wlcr == 0 || cntxt->wlcr->stop == 0)
 		return MAL_SUCCEED;
-	if( wlcr_dir ){
+	if( wlcr_archive ){
 		if ( wlcr_fd == NULL){
-			msg = WLCRloggerfile(cntxt);
+			msg = WLCsetlogger();
 			if( msg) 
 				return msg;
 		}
 		// Limit the size of the log files
 		
 		if ( wlcr_fd == NULL)
-			throw(MAL,"wlcr.write","WLCR log file not accessible");
+			throw(MAL,"wlcr.write","WLC log file not accessible");
 
 		if(cntxt->wlcr->stop == 0)
 			return MAL_SUCCEED;
@@ -638,37 +657,37 @@ WLCRwrite(Client cntxt, str kind)
 		cntxt->wlcr_kind = WLCR_QUERY;
 	}
 
-#ifdef _DEBUG_WLCR_
+#ifdef _WLC_DEBUG_
 	printFunction(cntxt->fdout, cntxt->wlcr, 0, LIST_MAL_ALL );
 #endif
 	return MAL_SUCCEED;
 }
 
 str
-WLCRcommit(int clientid)
+WLCcommit(int clientid)
 {
-		return WLCRwrite( &mal_clients[clientid], "commit");
+		return WLCwrite( &mal_clients[clientid], "commit");
 }
 
 str
-WLCRcommitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCcommitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return WLCRcommit(cntxt->idx);
+	return WLCcommit(cntxt->idx);
 }
 
 str
-WLCRrollback(int clientid)
+WLCrollback(int clientid)
 {
-	return WLCRwrite( &mal_clients[clientid], "rollback");
+	return WLCwrite( &mal_clients[clientid], "rollback");
 }
 str
-WLCRrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return WLCRrollback(cntxt->idx);
+	return WLCrollback(cntxt->idx);
 }

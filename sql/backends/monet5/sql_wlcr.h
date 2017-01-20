@@ -6,8 +6,8 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-#ifndef SQL_WLCR_H
-#define SQL_WLCR_H
+#ifndef SQL_WLR_H
+#define SQL_WLR_H
 
 #include <streams.h>
 #include <mal.h>
@@ -21,13 +21,13 @@ extern void WLCRprocess(void *arg);
 extern str WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str CLONEjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str CLONEexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str CLONEquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str CLONEgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str CLONEappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str CLONEdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str CLONEupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str CLONEclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLRexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#endif /*SQL_CLONE_H*/
+#endif /*SQL_WLR_H*/

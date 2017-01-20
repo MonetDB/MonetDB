@@ -27,7 +27,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-	if( ! WLCRused() )
+	if( ! WLCused() )
 		goto wrapup;
 	old= mb->stmt;
 	limit= mb->stop;
@@ -105,7 +105,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 wrapup:
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","wlcr",updates,GDKusec() - usec);
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","wlc",updates,GDKusec() - usec);
     newComment(mb,buf);
 	return 1;
 }

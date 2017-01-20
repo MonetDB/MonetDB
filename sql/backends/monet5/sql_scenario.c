@@ -260,7 +260,7 @@ SQLinit(void)
 	}
 	GDKregister(idlethread);
 	// check WLCR status
-	WLCRinit(&mal_clients[0]);
+	WLCinit(&mal_clients[0]);
 	return MAL_SUCCEED;
 }
 

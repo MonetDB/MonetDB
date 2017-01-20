@@ -307,7 +307,7 @@ mvc_commit(mvc *m, int chain, const char *name)
 			fprintf(stderr, "#mvc_savepoint\n");
 		store_lock();
 		m->session->tr = sql_trans_create(m->session->stk, tr, name);
-		WLCRcommit(m->clientid);
+		WLCcommit(m->clientid);
 		store_unlock();
 		m->type = Q_TRANS;
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
@@ -343,7 +343,7 @@ build up the hash (not copied in the trans dup)) */
 		if (!chain) 
 			sql_trans_end(m->session);
 		m->type = Q_TRANS;
-		WLCRcommit(m->clientid);
+		WLCcommit(m->clientid);
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
 		store_unlock();
@@ -376,7 +376,7 @@ build up the hash (not copied in the trans dup)) */
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
-	WLCRcommit(m->clientid);
+	WLCcommit(m->clientid);
 	sql_trans_end(m->session);
 	if (chain) 
 		sql_trans_begin(m->session);
@@ -436,7 +436,7 @@ mvc_rollback(mvc *m, int chain, const char *name)
 		if (chain) 
 			sql_trans_begin(m->session);
 	}
-	WLCRrollback(m->clientid);
+	WLCrollback(m->clientid);
 	store_unlock();
 	m->type = Q_TRANS;
 	if (mvc_debug)

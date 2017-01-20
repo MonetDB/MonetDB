@@ -67,7 +67,6 @@ mal_export  str bpmRef;
 mal_export  str bstreamRef;
 mal_export  str calcRef;
 mal_export  str clear_tableRef;
-mal_export	str cloneRef;
 mal_export  str closeRef;
 mal_export  str columnRef;
 mal_export  str commitRef;
@@ -295,6 +294,7 @@ mal_export  str not_likeRef;
 mal_export  str not_ilikeRef;
 mal_export  str userRef;
 mal_export  str wlcrRef;
+mal_export  str wlrRef;
 mal_export  str vectorRef;
 mal_export  str zero_or_oneRef;
 #endif
