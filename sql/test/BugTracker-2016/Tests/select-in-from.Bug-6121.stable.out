@@ -178,19 +178,19 @@ Ready.
 % 1,	1 # length
 [ 2,	1	]
 [ 3,	0	]
-#select count(*), 1 from (
+#select cast(count(*) as bigint) as count, 1 from (
 #    (select this_column from table_one)
 #    intersect
 #    (select this_column from table_two)
 #) as "existing"
 #union all
-#select count(*), 0 from (
+#select cast(count(*) as bigint) as count, 0 from (
 #    (select this_column from table_one)
 #    except
 #    (select this_column from table_two)
 #) as "missing";
-% .L34,	.L34 # table_name
-% L11,	L14 # name
+% .L36,	.L36 # table_name
+% count,	L15 # name
 % bigint,	tinyint # type
 % 1,	1 # length
 [ 2,	1	]

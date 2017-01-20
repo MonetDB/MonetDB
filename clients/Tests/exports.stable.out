@@ -2473,7 +2473,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPt
 str runScenario(Client c);
 void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
-void runtimeProfileFinish(Client cntxt, MalBlkPtr mb);
+void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 int safetyBarrier(InstrPtr p, InstrPtr q);
 str sampleRef;
