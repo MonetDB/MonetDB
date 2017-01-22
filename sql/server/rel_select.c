@@ -4660,6 +4660,8 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			rel = rel_groupby(sql, rel, gbe);
 			aggr = 1;
 		}
+		if (!sn->having)
+			set_processed(rel);
 	}
 
 	if (sn->having) {
