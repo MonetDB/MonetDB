@@ -413,6 +413,7 @@ static void ctl_handle_client(
 							free(sadbfarm);
 							setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", buf2);
 							setlen = mo_system_config(&set, setlen);
+							BBPaddfarm(buf2, (1 << PERSISTENT) | (1 << TRANSIENT));
 							/* the child, pollute scope by loading BBP */
 							if (chdir(q) < 0) {
 								/* Fabian says "Ignore the output.

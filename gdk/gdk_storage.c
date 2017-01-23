@@ -637,6 +637,7 @@ DESCclean(BAT *b)
 #define MSYNC_BACKGROUND
 
 #ifndef DISABLE_MSYNC
+#ifndef MS_ASYNC
 struct msync {
 	bat id;
 	Heap *h;
@@ -646,26 +647,24 @@ static void
 BATmsyncImplementation(void *arg)
 {
 	Heap *h = ((struct msync *) arg)->h;
-	char *adr;
-	size_t len;
-	size_t offset;
 
-	adr = h->base;
-	offset = ((size_t) adr % MT_pagesize());
-	len = MT_pagesize() * (1 + ((h->base + h->free - adr) / MT_pagesize()));
-	if (offset)
-		adr -= MT_pagesize() - offset;
-	if (len)
-		(void) MT_msync(adr, len);
+	(void) MT_msync(h->base, h->size);
 	BBPunfix(((struct msync *) arg)->id);
 	GDKfree(arg);
 }
+#endif
 #endif
 
 void
 BATmsync(BAT *b)
 {
 #ifndef DISABLE_MSYNC
+#ifdef MS_ASYNC
+	if (b->theap.storage == STORE_MMAP)
+		(void) msync(b->theap.base, b->theap.free, MS_ASYNC);
+	if (b->tvheap && b->tvheap->storage == STORE_MMAP)
+		(void) msync(b->tvheap->base, b->tvheap->free, MS_ASYNC);
+#else
 #ifdef MSYNC_BACKGROUND
 	MT_Id tid;
 #endif
@@ -703,6 +702,7 @@ BATmsync(BAT *b)
 		BATmsyncImplementation(arg);
 #endif
 	}
+#endif
 #else
 	(void) b;
 #endif	/* DISABLE_MSYNC */
