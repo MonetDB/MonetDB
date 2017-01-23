@@ -646,17 +646,8 @@ static void
 BATmsyncImplementation(void *arg)
 {
 	Heap *h = ((struct msync *) arg)->h;
-	char *adr;
-	size_t len;
-	size_t offset;
 
-	adr = h->base;
-	offset = ((size_t) adr % MT_pagesize());
-	len = MT_pagesize() * (1 + ((h->base + h->free - adr) / MT_pagesize()));
-	if (offset)
-		adr -= MT_pagesize() - offset;
-	if (len)
-		(void) MT_msync(adr, len);
+	(void) MT_msync(h->base, h->size);
 	BBPunfix(((struct msync *) arg)->id);
 	GDKfree(arg);
 }
