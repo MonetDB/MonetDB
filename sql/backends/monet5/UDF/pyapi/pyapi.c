@@ -26,7 +26,7 @@
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
 #define PyString_FromString PyUnicode_FromString
-#define PyString_Check PyUnicode_Check
+#define PyString_Check PyUnicode_Check 
 #define PyString_CheckExact PyUnicode_CheckExact
 #define PyString_AsString PyUnicode_AsUTF8
 #define PyString_AS_STRING PyUnicode_AsUTF8
@@ -1175,15 +1175,19 @@ returnvalues:
         }
 
         msg = MAL_SUCCEED;
-        if (isaBatType(getArgType(mb,pci,i)))
-        {
+        if (isaBatType(getArgType(mb,pci,i))) {
             *getArgReference_bat(stk, pci, i) = b->batCacheid;
             BBPkeepref(b->batCacheid);
         }
-        else
-        { // single value return, only for non-grouped aggregations
-            if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) == NULL)
-                msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+        else { // single value return, only for non-grouped aggregations
+            if (bat_type != TYPE_str) {
+                if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) == NULL)
+                    msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+            } else {
+                BATiter li = bat_iterator(b);
+                if (VALinit(&stk->stk[pci->argv[i]], bat_type, BUNtail(li, 0)) == NULL)
+                    msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+            }
         }
         if (argnode) {
             argnode = argnode->next;
