@@ -161,7 +161,7 @@ typedef struct VARRECORD {
  */
 
 typedef struct {
-	bit token;					/* instruction type */
+	bte token;					/* instruction type */
 	bit barrier;				/* flow of control modifier takes:
 								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */
 	bit typechk;				/* type check status */
