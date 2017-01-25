@@ -28,7 +28,7 @@ str
 FUN(,TP1,_dec2_,TP2) (TP2 *res, const int *s1, const TP1 *v)
 {
 	int scale = *s1;
-	lng val = *v, h = 0;
+	TP1 val = *v, h = 0;
 
 	/* shortcut nil */
 	if (*v == NIL(TP1)) {
@@ -39,12 +39,17 @@ FUN(,TP1,_dec2_,TP2) (TP2 *res, const int *s1, const TP1 *v)
 	if (scale)
 		val = (val + h * scales[scale - 1]) / scales[scale];
 	/* see if the number fits in the data type */
-	if (val > (lng) GDKmin(TP2) && val <= GDKmax(TP2)
+	if (val > (TP1) GDKmin(TP2) && val <= (TP1) GDKmax(TP2)
 		) {
 		*res = (TP2) val;
 		return MAL_SUCCEED;
 	} else {
-		throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type "STRNG(TP2), val);
+		char *buf = NULL, *msg;
+		int len = 0;
+		BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val);
+		msg = createException(SQL, "convert", "22003!value (%s) exceeds limits of type "STRNG(TP2), buf);
+		GDKfree(buf);
+		return msg;
 	}
 }
 
@@ -52,7 +57,7 @@ str
 FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, const int *S2)
 {
 	int p = *d2, inlen = 1;
-	lng val = *v, cpyval = val, h = (val < 0) ? -5 : 5;
+	TP1 val = *v, cpyval = val, h = (val < 0) ? -5 : 5;
 	int s1 = *S1, s2 = *S2;
 
 	/* shortcut nil */
@@ -76,12 +81,17 @@ FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, c
 		val = (val + h * scales[s1 - s2 - 1]) / scales[s1 - s2];
 
 	/* see if the number fits in the data type */
-	if (val > (lng) GDKmin(TP2) && val <= GDKmax(TP2)
+	if (val > (TP1) GDKmin(TP2) && val <= (TP1) GDKmax(TP2)
 		) {
 		*res = (TP2) val;
 		return MAL_SUCCEED;
 	} else {
-		throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type "STRNG(TP2), val);
+		char *buf = NULL, *msg;
+		int len = 0;
+		BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val);
+		msg = createException(SQL, "convert", "22003!value (%s) exceeds limits of type "STRNG(TP2), buf);
+		GDKfree(buf);
+		return msg;
 	}
 }
 
@@ -121,13 +131,18 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 			else
 				val = (TP1) (*p);
 			/* see if the number fits in the data type */
-			if (val > (lng) GDKmin(TP2) && val <= GDKmax(TP2)
+			if (val > (TP1) GDKmin(TP2) && val <= (TP1) GDKmax(TP2)
 				)
 				*o = (TP2) val;
 			else {
+				char *buf = NULL, *msg;
+				int len = 0;
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
-				throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type "STRNG(TP2), (lng) val);
+				BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val);
+				msg = createException(SQL, "convert", "22003!value (%s) exceeds limits of type "STRNG(TP2), buf);
+				GDKfree(buf);
+				return msg;
 			}
 		}
 	} else {
@@ -141,14 +156,19 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 				else
 					val = (TP1) (*p);
 				/* see if the number fits in the data type */
-				if (val > (lng) GDKmin(TP2)
+				if (val > (TP1) GDKmin(TP2)
 				    && val <= GDKmax(TP2)
 					)
 					*o = (TP2) val;
 				else {
+					char *buf = NULL, *msg;
+					int len = 0;
 					BBPunfix(b->batCacheid);
 					BBPunfix(bn->batCacheid);
-					throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type "STRNG(TP2), (lng) val);
+					BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val);
+					msg = createException(SQL, "convert", "22003!value (%s) exceeds limits of type "STRNG(TP2), buf);
+					GDKfree(buf);
+					return msg;
 				}
 			}
 		}
