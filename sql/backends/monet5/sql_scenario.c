@@ -36,6 +36,7 @@
 #include "mal_linker.h"
 #include "bat5.h"
 #include "wlcr.h"
+#include "sql_wlcr.h"
 #include "msabaoth.h"
 #include <mtime.h>
 #include "optimizer.h"
@@ -261,6 +262,7 @@ SQLinit(void)
 	GDKregister(idlethread);
 	// check WLCR status
 	WLCinit(&mal_clients[0]);
+	WLRinit(&mal_clients[0]);
 	return MAL_SUCCEED;
 }
 

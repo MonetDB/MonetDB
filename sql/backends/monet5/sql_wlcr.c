@@ -10,14 +10,12 @@
  * A master can be replicated by taking a binary copy of the 'bat' directory.
  * This should be done under control of the program monetdb, e.g.
  * monetdb replica <masterlocation> <dbname>+
+ * Alternatively you start with an empty database.
  * 
  * After restart of a mserver against the newly created image,
  * the log files from the master are processed.
- * Alternatively you start with an empty database.
+ * The SQL variable replaythreshold can be set to run/ignore pure queries as well.
  *
- * Since the wlcr files can be stored anywhere, the full path should be given.
- *
- * At any time there can only be on choice to interpret the files.
  */
 #include "monetdb_config.h"
 #include "sql.h"
@@ -29,39 +27,34 @@
 #include "mal_client.h"
 
 #define WLCR_REPLAY 1
-#define WLCR_CLONE 2
+#define WLCR_REPLICATE 2
 
-/* The current status of the replica  */
-/* TODO actually move these to the WLRprocess client record */
+/* The current status of the replica  processing */
+static str wlr_master;
 static str wlr_dbname;
-static str wlr_snapshot;
-static str wlr_archive;
-static int wlr_firstbatch; // the next log file to handle
-static int wlr_lastbatch; // the last log file report by the master
-static int wlr_tag;
+static int wlr_lastbatch; // the last log file processed completely
+static int wlr_tag;		// tag of last record processed
+static lng wlr_threshold;	// minimum time for a query to be re-executed
 
-/* The master configuration file is a simple key=value table.
- * It is analysed here. 
- * We assume that there always only one master from which we collect the logs */
 static
 str WLRgetConfig(void){
-    char path[PATHLENGTH];
+    char *path;
     FILE *fd;
 
-    snprintf(path,PATHLENGTH,"%s%cwlcr.config", wlr_archive, DIR_SEP);
+	path = GDKfilepath(0,0,"wlr.config",0);
     fd = fopen(path,"r");
     if( fd == NULL)
         throw(MAL,"wlr.getConfig","Could not access %s\n",path);
     while( fgets(path, PATHLENGTH, fd) ){
 		path[strlen(path)-1]= 0;
-        if( strncmp("archive=", path,8) == 0)
-            wlr_archive = GDKstrdup(path + 8);
-        if( strncmp("snapshot=", path,9) == 0)
-            wlr_snapshot = GDKstrdup(path + 9);
-        if( strncmp("start=", path,6) == 0)
-            wlr_firstbatch = atoi(path+ 6);
-        if( strncmp("last=", path, 5) == 0)
-            wlr_lastbatch = atoi(path+ 5);
+        if( strncmp("dbname=", path,7) == 0)
+            wlr_dbname = GDKstrdup(path + 7);
+        if( strncmp("master=", path,7) == 0)
+            wlr_master = GDKstrdup(path + 7);
+        if( strncmp("lastbatch=", path, 10) == 0)
+            wlr_lastbatch = atoi(path+ 10);
+        if( strncmp("tag=", path, 4) == 0)
+            wlr_tag = atoi(path+ 4);
     }
     fclose(fd);
     return MAL_SUCCEED;
@@ -69,50 +62,111 @@ str WLRgetConfig(void){
 
 static
 str WLRsetConfig(void){
-    char path[PATHLENGTH];
+    char *path;
     FILE *fd;
 
-    snprintf(path,PATHLENGTH,"%s%cwlcr.config", wlr_archive, DIR_SEP);
+	path = GDKfilepath(0,0,"wlr.config",0);
     fd = fopen(path,"w");
     if( fd == NULL)
         throw(MAL,"wlr.setConfig","Could not access %s\n",path);
-    while( fgets(path, PATHLENGTH, fd) ){
-		path[strlen(path)-1]= 0;
-        if( strncmp("archive=", path,8) == 0)
-            wlr_archive = GDKstrdup(path + 8);
-        if( strncmp("snapshot=", path,9) == 0)
-            wlr_snapshot = GDKstrdup(path + 9);
-        if( strncmp("start=", path,6) == 0)
-            wlr_firstbatch = atoi(path+ 6);
-        if( strncmp("last=", path, 5) == 0)
-            wlr_lastbatch = atoi(path+ 5);
-    }
+	fprintf(fd,"dbname=%s\n", wlr_dbname);
+	fprintf(fd,"master=%s\n", wlr_master);
+	fprintf(fd,"lastbatch=%d\n", wlr_lastbatch);
+	fprintf(fd,"tag=%d\n", wlr_tag);
     fclose(fd);
     return MAL_SUCCEED;
 }
 
-/*
-static str
-WLRgetlogfile( Client cntxt, MalBlkPtr mb)
-{
-	mvc *m = NULL;
-	str msg;
-	atom *a;
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	a = stack_get_var(m, "replaylog");
-	if (!a) {
-		throw(SQL, "sql.getVariable", "variable 'replaylog' unknown");
+/*
+ * When the master database exist, we should set the replica administration.
+ * But only once.
+ *
+ * The log files are identified by a range. It starts with 0 when an empty
+ * database was used to bootstrap. Otherwise it is the range of the dbmaster.
+ * At any time we should be able to restart the synchronization
+ * process by grabbing a new set of log files.
+ * This calls for keeping track in the replica what log files have been applied.
+ */
+static str
+WLRgetMaster(str dbname)
+{
+	char path[PATHLENGTH];
+	str dir;
+	FILE *fd;
+
+	if( dbname == 0)
+		return MAL_SUCCEED;
+
+	/* collect master properties */
+	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,dbname);
+	dir = GDKfilepath(0,path,"master",0);
+
+	fd = fopen(dir,"r");
+	if( fd == NULL){
+		GDKfree(dir);
+		throw(SQL,"getMaster","Database '%s' not acting as a master",dbname);
 	}
-	cntxt->wlcr_replaylog = GDKstrdup(a->data.val.sval);
+	(void) fclose(fd);
+
+	wlr_master = dir;
+	snprintf(path,PATHLENGTH,"..%c%s%cmaster",DIR_SEP,dbname,DIR_SEP);
+	dir = GDKfilepath(0,path,"wlcr.config",0);
+	fd = fopen(dir,"r");
+	if( fd == NULL){
+		GDKfree(dir);
+		GDKfree(wlr_master);
+		wlr_master = 0;
+		throw(SQL,"getMaster","missing configuration file");
+	}
+
+	wlr_dbname = GDKstrdup(dbname);
+    while( fgets(path, PATHLENGTH, fd) ){
+		path[strlen(path)-1]= 0;
+        if( strncmp("lastbatch=", path, 10) == 0)
+            wlcr_lastbatch = atoi(path+ 10);
+    }
+	GDKfree(dir);
+	(void) fclose(fd);
 	return MAL_SUCCEED;
 }
-*/
 
-/*
+void
+WLRinit(Client cntxt)
+{
+	(void) cntxt;
+	WLRgetConfig();
+	(void) WLRgetMaster(wlr_dbname);
+}
+
+static str
+WLRinitReplica(str dbname)
+{
+	str dir, msg;
+	FILE *fd;
+
+	/* The replica mode can be set only once */
+	dir = GDKfilepath(0,0,"wlr.config",0);
+	fd = fopen(dir,"r");
+	if( fd ){
+		(void) fclose(fd);
+		throw(SQL,"setreplica","Already in replica mode '%s'",dbname);
+	}
+	GDKfree(dir);
+
+	msg = WLRgetMaster(dbname);
+	if( msg)
+		return msg;
+
+	wlr_dbname = GDKstrdup(dbname);
+	wlr_lastbatch = 0;
+	wlr_tag = 0;
+
+	WLRsetConfig();	// initialize the replica configuration setting
+	return MAL_SUCCEED;
+}
+
+
 static str
 WLRgetThreshold( Client cntxt, MalBlkPtr mb)
 {
@@ -128,56 +182,10 @@ WLRgetThreshold( Client cntxt, MalBlkPtr mb)
 	if (!a) {
 		throw(SQL, "sql.getVariable", "variable 'replaylog' unknown");
 	}
-	cntxt->wlcr_threshold = atoi(a->data.val.sval);
-	return MAL_SUCCEED;
-}
-*/
-
-/*
- * The log files are identified by a range. It starts with 0 when an empty
- * database was used to bootstrap. Otherwise it is the range of the dbmaster.
- * At any time we should be able to restart the synchronization
- * process by grabbing a new set of log files.
- * This calls for keeping track in the replica what log files have been applied.
- * It is stored in a separate directory for two purposes. It allows us to fuse
- * different masters and even to consider bulk copying the logfiles into a local
- * cache structure before applying them.
- */
-static str
-WLRinit(str dbname)
-{
-	char path[PATHLENGTH];
-	str dir;
-
-	wlr_dbname = GDKstrdup(dbname);
-	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,dbname);
-	dir = GDKfilepath(0,path,"master",0);
-	wlr_archive = GDKstrdup(dir);
-	WLRgetConfig();
+	wlr_threshold = a->data.val.ival;
 	return MAL_SUCCEED;
 }
 
-
-/*
-static void
-WLRstatus(int idx, int tag)
-{
-	FILE *fd;
-	char path[PATHLENGTH];
-	snprintf(path,PATHLENGTH,"status_%s",wlr_dbname);
-	fd = fopen(path,"w");
-	if( fd == NULL)
-		GDKerror("Could not create clone status file");
-	else {
-		fprintf(fd,"%d %d\n", idx, tag);
-		fclose(fd);
-	}
-}
-*/
-/*
- * Run the clone actions under a new client
- * and safe debugging in a tmp file.
- */
 void
 WLCRprocess(void *arg)
 {	
@@ -214,13 +222,14 @@ WLCRprocess(void *arg)
     if ((msg = checkSQLContext(c)) != NULL)
 		mnstr_printf(GDKerr,"#Inconsitent SQL contex : %s\n",msg);
 
+	WLRgetThreshold(cntxt, 0);
 #ifdef _WLR_DEBUG_
-	mnstr_printf(c->fdout,"#Ready to start the replayagainst '%s' batches %d:%d \n", 
-		wlr_archive, wlr_firstbatch, wlr_lastbatch);
+	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d  threshold %d\n", 
+		wlcr_archive, wlr_firstbatch, wlr_lastbatch, wlr_threshold);
 #endif
 	wlr_tag = 0;
-	for( i= wlr_firstbatch; i < wlr_lastbatch; i++){
-		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlr_archive, DIR_SEP, wlr_dbname, i);
+	for( i= wlr_lastbatch; i < wlcr_lastbatch; i++){
+		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlr_master, DIR_SEP, wlr_dbname, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlcr.process:'%s' can not be accessed \n",path);
@@ -251,7 +260,7 @@ WLCRprocess(void *arg)
 			q= getInstrPtr(mb, mb->stop-1);
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==execRef){
 				pushEndInstruction(mb);
-				// execute this block
+				// execute this block if no errors are found
 				chkTypes(c->fdout,c->nspace, mb, FALSE);
 				chkFlow(c->fdout,mb);
 				chkDeclarations(c->fdout,mb);
@@ -266,7 +275,7 @@ WLCRprocess(void *arg)
 				WLRsetConfig();
 				if( msg != MAL_SUCCEED){
 					// they should always succeed
-					mnstr_printf(GDKerr,"ERROR in processing batch %d \n", i);
+					mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
 					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 					mvc_rollback(sql,0,NULL);
 					break;
@@ -288,36 +297,19 @@ WLCRprocess(void *arg)
 }
 
 str
-WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str msg;
-	(void) mb;
-
-	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
-		throw(SQL,"wlcr.replay","System already in replay mode");
-	}
-	cntxt->wlcr_mode = WLCR_REPLAY;
-	msg = WLRinit( *getArgReference_str(stk,pci,1));
-	if( msg)
-		return msg;
-
-	WLCRprocess((void*) cntxt);
-	return MAL_SUCCEED;
-}
-
-str
 WLCRsetreplica(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
 	MT_Id wlcr_thread;
 	(void) mb;
 
-	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
+	if( cntxt->wlcr_mode == WLCR_REPLICATE || cntxt->wlcr_mode == WLCR_REPLAY){
 		throw(SQL,"wlcr.setreplica","System already in synchronization mode");
 	}
-	msg = WLRinit( *getArgReference_str(stk,pci,1));
+	msg = WLRinitReplica( *getArgReference_str(stk,pci,1));
 	if( msg)
 		return msg;
 
-	cntxt->wlcr_mode = WLCR_CLONE;
+	cntxt->wlcr_mode = WLCR_REPLICATE;
     if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
 			throw(SQL,"wlcr.setreplica","replay process can not be started\n");
 	}
@@ -327,14 +319,18 @@ WLCRsetreplica(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 WLRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str kind = *getArgReference_str(stk,pci,5);
-	(void) cntxt;
+	lng duration = *getArgReference_lng(stk,pci,6);
 	(void) mb;
 	if( strcmp(kind,"catalog") == 0)
 		cntxt->wlcr_kind = WLCR_CATALOG;
 	if( strcmp(kind,"update") == 0)
 		cntxt->wlcr_kind = WLCR_UPDATE;
-	if( strcmp(kind,"query") == 0)
-		cntxt->wlcr_kind = WLCR_QUERY;
+	if( strcmp(kind,"query") == 0){
+		if(wlr_threshold < 0 ||  duration < wlr_threshold)
+			cntxt->wlcr_kind = WLCR_IGNORE;
+		else
+			cntxt->wlcr_kind = WLCR_QUERY;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -358,7 +354,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	// execute the query in replay mode
-	if( cntxt->wlcr_kind == WLCR_CATALOG || cntxt->wlcr_kind == WLCR_QUERY){
+	if( cntxt->wlcr_kind == WLCR_CATALOG || cntxt->wlcr_kind == WLCR_QUERY ){
 		msg =  SQLstatementIntern(cntxt, &qry, "SQLstatement", TRUE, TRUE, NULL);
 		mnstr_printf(cntxt->fdout,"# "LLFMT"ms\n",GDKms() - clk);
 	}

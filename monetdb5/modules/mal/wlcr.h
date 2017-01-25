@@ -20,15 +20,19 @@
 #define WLCR_QUERY		1
 #define WLCR_UPDATE 	2
 #define WLCR_CATALOG 	3
+#define WLCR_IGNORE		4
 
 mal_export int wlcr_threshold; // threshold (seconds) for sending readonly queries
+mal_export int wlcr_lastbatch;
+mal_export str wlcr_dbname;
 
 mal_export str WLCinit(Client cntxt);
 mal_export str WLCexit(void);
 mal_export int WLCused(void);
+mal_export str WLCgetConfig(void);
 mal_export str WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCsetmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

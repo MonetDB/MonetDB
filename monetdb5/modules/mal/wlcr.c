@@ -31,6 +31,7 @@
  * A configuration file is added to keep track on the status of the master.
  * It contains the following key=value pairs:
  * 		snapshot=<path to a binary snapshot>
+ * 		archive=<path to a wlcr log files>
  * 		start=<first batch file to be applied>
  * 		last=<last batch file to be applied>
  *
@@ -92,15 +93,16 @@
 
 static MT_Lock     wlcr_lock MT_LOCK_INITIALIZER("wlcr_lock");
 
-static char *wlcr_name[]= {"","query","update","catalog"};
+static char *wlcr_name[]= {"","query","update","catalog","ignore"};
 
 static str wlcr_snapshot= 0; // The name of the snapshot against the logs work
 static str wlcr_archive = 0; // The location in the global file store for the logs
-static str wlcr_dbname = 0;  // The current database name
+static char wlcr_time[26];	 // The timestamp of the last committed transaction.
 static stream *wlcr_fd = 0;
 
-int wlcr_start = 0;	// first log file  associated with snapshot
-int wlcr_last = 0;	// last log file identifier 
+str wlcr_dbname = 0;  // The current database name
+int wlcr_firstbatch = 0;	// first log file  associated with snapshot
+int wlcr_lastbatch = 0;	// last log file identifier 
 int wlcr_tid = 0;	// last transaction id
 
 /* The database snapshots are binary copies of the dbfarm/database/bat
@@ -117,7 +119,6 @@ WLCused(void)
 }
 
 /* The master configuration file is a simple key=value table */
-static 
 str WLCgetConfig(void){
 	char path[PATHLENGTH];
 	FILE *fd;
@@ -132,10 +133,10 @@ str WLCgetConfig(void){
 			wlcr_archive = GDKstrdup(path + 8);
 		if( strncmp("snapshot=", path,9) == 0)
 			wlcr_snapshot = GDKstrdup(path + 9);
-		if( strncmp("start=", path,6) == 0)
-			wlcr_start = atoi(path+ 6);
-		if( strncmp("last=", path, 5) == 0)
-			wlcr_last = atoi(path+ 5);
+		if( strncmp("firstbatch=", path,11) == 0)
+			wlcr_firstbatch = atoi(path+ 11);
+		if( strncmp("lastbatch=", path, 10) == 0)
+			wlcr_lastbatch = atoi(path+ 10);
 	}
 	fclose(fd);
 	return MAL_SUCCEED;
@@ -160,8 +161,8 @@ str WLCsetConfig(void){
 		fprintf(fd,"snapshot=%s\n", wlcr_snapshot);
 	if( wlcr_archive)
 		fprintf(fd,"archive=%s\n", wlcr_archive);
-	fprintf(fd,"start=%d\n", wlcr_start);
-	fprintf(fd,"last=%d\n", wlcr_last );
+	fprintf(fd,"firstbatch=%d\n", wlcr_firstbatch);
+	fprintf(fd,"lastbatch=%d\n", wlcr_lastbatch );
 	fclose(fd);
 	return MAL_SUCCEED;
 }
@@ -176,14 +177,14 @@ WLCsetlogger(void)
 	if( wlcr_archive == NULL)
 		throw(MAL,"wlcr.setlogger","Path not initalized");
 	MT_lock_set(&wlcr_lock);
-	snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlcr_archive, DIR_SEP, wlcr_dbname, wlcr_last);
+	snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlcr_archive, DIR_SEP, wlcr_dbname, wlcr_lastbatch);
 	wlcr_fd = open_wastream(path);
 	if( wlcr_fd == 0){
 		MT_lock_unset(&wlcr_lock);
 		throw(MAL,"wlcr.logger","Could not create %s\n",path);
 	}
 
-	wlcr_last++;
+	wlcr_lastbatch++;
 	wlcr_tid = 0;
 	WLCsetConfig();
 	MT_lock_unset(&wlcr_lock);
@@ -193,7 +194,6 @@ WLCsetlogger(void)
 /*
  * The existence of the master directory should be checked upon server restart.
  * A new batch file should be created as a result.
- * We also have to keep track on the files that have been read by the clone from the parent.
  * Upon exit we should check the log file size. If empty we need not safe it. [TODO]
  */
 str 
@@ -215,12 +215,13 @@ WLCinit(Client cntxt)
 		snprintf(path, PATHLENGTH,"%s%cwlcr.config", pathname, DIR_SEP);
 
 		fd = fopen(path,"r");
-		if( fd == NULL)
+		if( fd == NULL)	// no master mode
 			return MAL_SUCCEED;
 		fclose(fd);
 		wlcr_dbname = GDKgetenv("gdk_dbname");
 		wlcr_archive = pathname;
-		return WLCgetConfig();
+		(void) WLCgetConfig();
+		return WLCsetlogger();
 	}
 	return MAL_SUCCEED;
 }
@@ -234,7 +235,7 @@ WLCexit(void)
 	if( wlcr_fd){
 		sz = getFileSize(wlcr_fd);
 		if (sz == 0){
-			wlcr_last --;
+			wlcr_lastbatch --;
 			WLCsetConfig();
 		}
 	}
@@ -242,7 +243,7 @@ WLCexit(void)
 }
 
 str
-WLCstop (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
@@ -250,8 +251,8 @@ WLCstop (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 
 	if( wlcr_archive == NULL)
-		throw(MAL,"wlcr.stop","Replica control not active");
-	wlcr_last = - wlcr_last;
+		throw(MAL,"wlcr.stopmaster","Replica control not active");
+	wlcr_lastbatch = - wlcr_lastbatch;
 	WLCsetConfig();
 
 	return MAL_SUCCEED;
@@ -303,15 +304,14 @@ WLCsetmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( wlcr_fd == NULL)
 		msg = WLCsetlogger();
 #ifdef _WLC_DEBUG_
-	mnstr_printf(cntxt->fdout,"#master batches %d file open %d\n",wlcr_last,  wlcr_fd != NULL);
+	mnstr_printf(cntxt->fdout,"#master batches %d file open %d\n",wlcr_lastbatch,  wlcr_fd != NULL);
 #endif
 	return msg;
 }
 
 static InstrPtr
-WLCaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
+WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p)
 {
-	char tbuf[26];
 	struct timeval clock;
 	time_t clk ;
 	struct tm ctm;
@@ -320,8 +320,8 @@ WLCaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 	gettimeofday(&clock,NULL);
 	clk = clock.tv_sec;
 	ctm = *localtime(&clk);
-	strftime(tbuf, 26, "%Y-%m-%dT%H:%M:%S",&ctm);
-	return pushStr(cntxt->wlcr, p, tbuf);
+	strftime(wlcr_time, 26, "%Y-%m-%dT%H:%M:%S",&ctm);
+	return pushStr(cntxt->wlcr, p, wlcr_time);
 }
 
 #define WLCstart(P)\
@@ -333,10 +333,10 @@ WLCaddtime(Client cntxt, InstrPtr pci, InstrPtr p)
 		s->def = NULL;\
 	} \
 	if( cntxt->wlcr->stop == 0){\
-		P = newStmt(cntxt->wlcr,"clone","job");\
+		P = newStmt(cntxt->wlcr,"wlr","job");\
 		P = pushStr(cntxt->wlcr, P, cntxt->username);\
 		P = pushInt(cntxt->wlcr, P, wlcr_tid);\
-		P = WLCaddtime(cntxt,pci, P); \
+		P = WLCsettime(cntxt,pci, P); \
 		P->ticks = GDKms();\
 }	}
 
@@ -371,7 +371,7 @@ WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( strcmp("-- no query",getVarConstant(mb, getArg(pci,1)).val.sval) == 0)
 		return MAL_SUCCEED;	// ignore system internal queries.
 	WLCstart(p);
-	p = newStmt(cntxt->wlcr, "clone","query");
+	p = newStmt(cntxt->wlcr, "wlr","query");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p->ticks = GDKms();
@@ -385,7 +385,7 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	
 	WLCstart(p);
-	p = newStmt(cntxt->wlcr, "clone",getFunctionId(pci));
+	p = newStmt(cntxt->wlcr, "wlr",getFunctionId(pci));
 	for( i = pci->retc; i< pci->argc; i++){
 		tpe =getArgType(mb, pci, i);
 		switch(tpe){
@@ -408,7 +408,7 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int k=0; \
 	for( ; p < q; p++, k++){\
 		if( k % 32 == 31){\
-			pci = newStmt(cntxt->wlcr, "clone",getFunctionId(pci));\
+			pci = newStmt(cntxt->wlcr, "wlr",getFunctionId(pci));\
 			pci = pushStr(cntxt->wlcr, pci, sch);\
 			pci = pushStr(cntxt->wlcr, pci, tbl);\
 			pci = pushStr(cntxt->wlcr, pci, col);\
@@ -422,7 +422,7 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TPE1 *y = (TPE1 *) Tloc(bval, BUNlast(b));\
 	int k=0; \
 	for( ; x < y; x++, k++){\
-		p = newStmt(cntxt->wlcr, "clone","update");\
+		p = newStmt(cntxt->wlcr, "wlr","update");\
 		p = pushStr(cntxt->wlcr, p, sch);\
 		p = pushStr(cntxt->wlcr, p, tbl);\
 		p = pushStr(cntxt->wlcr, p, col);\
@@ -465,7 +465,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 			bi= bat_iterator(b);
 			BATloop(b,p,q){
 				if( k % 32 == 31){
-					pci = newStmt(cntxt->wlcr, "clone",getFunctionId(pci));
+					pci = newStmt(cntxt->wlcr, "wlr",getFunctionId(pci));
 					pci = pushStr(cntxt->wlcr, pci, sch);
 					pci = pushStr(cntxt->wlcr, pci, tbl);
 					pci = pushStr(cntxt->wlcr, pci, col);
@@ -490,7 +490,7 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	
 	WLCstart(p);
-	p = newStmt(cntxt->wlcr, "clone","append");
+	p = newStmt(cntxt->wlcr, "wlr","append");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
@@ -523,7 +523,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	
 	WLCstart(p);
-	p = newStmt(cntxt->wlcr, "clone","delete");
+	p = newStmt(cntxt->wlcr, "wlr","delete");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
@@ -582,7 +582,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BUN x,y;
 			bi = bat_iterator(bval);
 			BATloop(bval,x,y){
-				p = newStmt(cntxt->wlcr, "clone","update");
+				p = newStmt(cntxt->wlcr, "wlr","update");
 				p = pushStr(cntxt->wlcr, p, sch);
 				p = pushStr(cntxt->wlcr, p, tbl);
 				p = pushStr(cntxt->wlcr, p, col);
@@ -594,7 +594,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			cntxt->wlcr_kind = WLCR_CATALOG;
 		}
 	} else {
-		p = newStmt(cntxt->wlcr, "clone","update");
+		p = newStmt(cntxt->wlcr, "wlr","update");
 		p = pushStr(cntxt->wlcr, p, sch);
 		p = pushStr(cntxt->wlcr, p, tbl);
 		p = pushStr(cntxt->wlcr, p, col);
@@ -618,7 +618,7 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	
 	WLCstart(p);
-	p = newStmt(cntxt->wlcr, "clone","clear_table");
+	p = newStmt(cntxt->wlcr, "wlr","clear_table");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
@@ -648,7 +648,7 @@ WLCwrite(Client cntxt, str kind)
 		if(cntxt->wlcr->stop == 0)
 			return MAL_SUCCEED;
 
-		newStmt(cntxt->wlcr,"clone","exec");
+		newStmt(cntxt->wlcr,"wlr","exec");
 		wlcr_tid++;
 		MT_lock_set(&wlcr_lock);
 		p = getInstrPtr(cntxt->wlcr,0);

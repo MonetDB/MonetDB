@@ -11,15 +11,15 @@ address WLCinitCmd
 comment "Test for running as master";
 
 pattern setmaster()
-address WLCmaster
+address WLCsetmaster
 comment "Activate the workload-capture-replay";
 
-pattern exit()
-address WLCexit
+pattern commit()
+address WLCcommit
 comment "Finish keeping a log for this session":
 
-pattern stop()
-address WLCstop
+pattern stopmaster()
+address WLCstopmaster
 comment "Terminate keeping a log on this branch":
 
 pattern threshold(limit:int)
@@ -162,7 +162,6 @@ comment "Catalog operation drop_user";
 pattern drop_user(sname:str, auth:str, action:int)
 address WLCgeneric
 comment "Catalog operation drop_user";
-
 
 pattern alter_user( sname:str, passwrd:str, enc:int, schema:str, oldpasswrd:str)
 address WLCgeneric

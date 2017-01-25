@@ -7,19 +7,13 @@
 -- Workload Capture and Replay
 
 declare replaythreshold integer;
-set replaythreshold = 0;
-
-declare replaylog string;
-set replaylog = '/tmp/wlcr';
+set replaythreshold = -1; -- don't replay
 
 create procedure setmaster()
 external name wlcr.setmaster;
 
 create procedure stopmaster()
-external name wlcr.stop;
-
-create procedure replay(dbname string)
-external name wlcr.replay;
+external name wlcr.stopmaster;
 
 create procedure setreplica(dbname string)
 external name wlcr.setreplica;
