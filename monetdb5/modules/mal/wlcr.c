@@ -9,34 +9,39 @@
 /*
  * (c) 2017 Martin Kersten
  * This module collects the workload-capture-replay statements during transaction execution,
- * also called asynchronous logical replication log management.
+ * also known as asynchronous logical replication log management.
  * It is used primarilly for recovery and replication management. 
  *
- * The goal is to easily clone a master database.  Accidental corruption of this
- * data should ne avoided by setting ownership and access properties at the SQL level in the replica.
+ * The goal is to easily clone a master database.  Accidental corruption of the  replicated
+ * data should be avoided by setting ownership and access properties at the SQL level.
  *
  *
  * IMPLEMENTATION
+ * The underlying assumption of the techniques deployed is that the database
+ * resides on a proper (global) file system to guarantees recovery from most
+ * storage system related failures. Such as RAID disks.
+ * Furthermore, when deployed in a Cloud setting, the database recides in the
+ * global file system.
  *
- * A database can be set into 'master' mode only once using the SQL command:
- * CALL master()
+ * A database can be set once into 'master' mode only once using the SQL command:
+ * CALL setmaster()
  *
  * It creates a directory .../dbfarm/dbname/master to hold all necessary information
  * for the creation and maintenance of replicas.
  * A configuration file is added to keep track on the status of the master.
  * It contains the following key=value pairs:
- * 		snapshot=<path to binary snapshot>
- * 		archive=<path to location of the log files>
+ * 		snapshot=<path to a binary snapshot>
  * 		start=<first batch file to be applied>
  * 		last=<last batch file to be applied>
  *
- * Every replica should start off with a copy of binary snapshot stored 
- * by deault in .../dbfarm/dbname/master/bat. A missing path to the snapshot
- * is assumed to denote that we can start with an empty database.
+ * Every replica should start off with a copy of binary snapshot identified by 'snapshot'
+ * by default stored in .../dbfarm/dbname/master/bat. An alternative path can be given
+ * to reduce the storage cost at the expense of slower recovery time (e.g. AWS glacier).
+ * A missing path to the snapshot denotes that we can start rebuilding with an empty database instead.
  * The log files are stored as master/<dbname>_<batchnumber>.
- *
+ * 
  * Each wlcr log file contains a serial log of committed transactions.
- * The log records are represented as ordinary MAL statements, which
+ * The log records are represented as ordinary MAL statement blocks, which
  * are executed in serial mode. (parallelism can be considered for large updates)
  * Each transaction job is identified by the owner of the query, 
  * commit/rollback status, its starting time and runtime (in ms).
@@ -45,38 +50,39 @@
  * Logging of queries can be limited to those that satisfy an minimum execution threshold.
  * SET replaythreshold= <number>
  * The threshold is given in milliseconds. A negative threshold leads to ignoring all queries.
- * The threshold setting is not saved because it is a client specific action.
+ * The threshold setting is not saved because it is a client session specific action.
+ * The default for a production system version is set to -1
  *
- * A replica is constructed in three steps. 
- * 1a) a snapshot copy of the BAT directory is created within a SQL transaction.[TODO or
- * 1b)) a new database is created .
- * 3) The logs are replayed to bring the snapshot up to date.
+ * A more secure way to set a database into master mode is to use the command
+ *	 monetdb master <dbname> [ <optional snapshot path>]
+ * which locks the database, takes a save copy, initializes the state chance. 
  *
- * Step 1) and 2) can be avoided by starting with an empty database and 
- * under the assumption that the log files reflect the complete history.
- * The monetdb program will check for this.
+ * A replica can be constructed as follows:
+ * 	monetdb replica <dbname> <mastername>
+ *
+ * Instead of using the monetdb command line we can use the SQL calls directly
+ * master and replica, provided we start with a fresh database.
  *
  * Processing the log files starts in the background using the call.
- * CALL clone("dbname")
+ * CALL setreplica("mastername")
  * It will iterate through the log files, applying all transactions.
  * Queries are simply ignored unless needed as replacement for catalog actions.
- * [TODO] the user might want to indicate a time-stamped, ignoring all actions afterwards.
  *
- * The alternative is to replay the complete query log
- * CALL replay("dbname")
- * In this mode all queries are executed under the credentials of the query owner[TODO], 
- * including those that lead to updates.
+ * The alternative is to replay only the query log
+ * CALL replay("dbname",threshold)
+ * In this mode all pure queries are executed under the credentials of the query owner
+ * for which the reported threshold exceeds the argument[TODO].
+ * It excludes catalog and update queries.
  *
  * Any failure encountered during a log replay terminates the process,
  * leaving a message in the merovingian log.
  *
- * [TODO]The progress can be inspected using the boolean function wlcr.synced().
- * The latter is true if all accessible log files have been processed.
- * 
  * The wlcr files purposely have a textual format derived from the MAL statements.
  * Simplicity and ease of control has been the driving argument here.
  *
- * The integrity of the wlcr directories is critical. For now we assume that all batches are available. 
+ * [TODO]The progress can be inspected using the timestamp function wlcr.drift(),
+ * which indicates how far apart the current replica is compared to the master transaction log.
+ * [TODO] the user might want to indicate a time-stamped, ignoring all actions afterwards.
  *
  */
 #include "monetdb_config.h"
@@ -269,7 +275,7 @@ WLCthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str 
-WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCsetmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char path[PATHLENGTH];
 	str msg = MAL_SUCCEED;
@@ -288,7 +294,7 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wlcr_archive = GDKfilepath(0,0,"master",0);
 		snprintf(path, PATHLENGTH,"%s%c%s_wlcr", wlcr_archive, DIR_SEP, wlcr_dbname);
 		if( GDKcreatedir(path) == GDK_FAIL)
-			throw(SQL,"wlcr.master","Could not create %s\n", wlcr_archive);
+			throw(SQL,"wlcr.setmaster","Could not create %s\n", wlcr_archive);
 #ifdef _WLC_DEBUG_
 		mnstr_printf(cntxt->fdout,"#Snapshot directory '%s'\n", wlcr_archive);
 #endif

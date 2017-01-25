@@ -12,8 +12,8 @@ set replaythreshold = 0;
 declare replaylog string;
 set replaylog = '/tmp/wlcr';
 
-create procedure master()
-external name wlcr.master;
+create procedure setmaster()
+external name wlcr.setmaster;
 
 create procedure stopmaster()
 external name wlcr.stop;
@@ -21,6 +21,6 @@ external name wlcr.stop;
 create procedure replay(dbname string)
 external name wlcr.replay;
 
-create procedure clone(dbname string)
-external name wlcr.clone;
+create procedure setreplica(dbname string)
+external name wlcr.setreplica;
 

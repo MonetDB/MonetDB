@@ -10,8 +10,8 @@ pattern wlcr.replay(dbname:str)
 address WLCRreplay
 comment "Re-run all operations from another database in the same dbfarm";
 
-pattern wlcr.clone(dbname:str)
-address WLCRclone
+pattern wlcr.setreplica(dbname:str)
+address WLCRsetreplica
 comment "Roll the snapshot forward to a uptodate clone";
 
 module wlr;

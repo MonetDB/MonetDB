@@ -19,7 +19,7 @@
  */
 extern void WLCRprocess(void *arg);
 extern str WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLCRsetreplica(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 extern str WLRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str WLRexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

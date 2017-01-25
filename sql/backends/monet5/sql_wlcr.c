@@ -305,13 +305,13 @@ WLCRreplay(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCRsetreplica(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
 	MT_Id wlcr_thread;
 	(void) mb;
 
 	if( cntxt->wlcr_mode == WLCR_CLONE || cntxt->wlcr_mode == WLCR_REPLAY){
-		throw(SQL,"wlcr.clone","System already in synchronization mode");
+		throw(SQL,"wlcr.setreplica","System already in synchronization mode");
 	}
 	msg = WLRinit( *getArgReference_str(stk,pci,1));
 	if( msg)
@@ -319,7 +319,7 @@ WLCRclone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	cntxt->wlcr_mode = WLCR_CLONE;
     if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlcr.clone","replay process can not be started\n");
+			throw(SQL,"wlcr.setreplica","replay process can not be started\n");
 	}
 	return MAL_SUCCEED;
 }

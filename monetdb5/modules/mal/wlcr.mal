@@ -10,7 +10,7 @@ pattern init()
 address WLCinitCmd
 comment "Test for running as master";
 
-pattern master()
+pattern setmaster()
 address WLCmaster
 comment "Activate the workload-capture-replay";
 
