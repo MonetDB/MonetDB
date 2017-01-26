@@ -118,6 +118,6 @@ SELECT * FROM sys.storagemodelinput WHERE table NOT IN (SELECT name FROM sys._ta
 SELECT * FROM sys.storagemodelinput WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM sys.keys);
 SELECT * FROM sys.storagemodelinput WHERE type NOT IN (SELECT sqlname FROM sys.types);
 
-SELECT * FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
-SELECT * FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables);
+SELECT schema, table, count, columnsize, heapsize, hashes, imprints, cast(auxiliary as bigint) as auxiliary FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
+SELECT schema, table, count, columnsize, heapsize, hashes, imprints, cast(auxiliary as bigint) as auxiliary FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables);
 

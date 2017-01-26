@@ -312,7 +312,7 @@ Ready.
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.queue WHERE tag NOT IN (SELECT qtag FROM sys.queue);
+#SELECT * FROM sys.queue WHERE tag > 0 AND tag NOT IN (SELECT qtag FROM sys.queue);
 % .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
 % qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
 % bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
@@ -397,13 +397,13 @@ Ready.
 % schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	revsorted,	unique,	orderidx # name
 % clob,	clob,	clob,	clob,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	bigint # type
 % 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	1 # length
-#SELECT * FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
-% .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel # table_name
+#SELECT schema, table, count, columnsize, heapsize, hashes, imprints, cast(auxiliary as bigint) as auxiliary FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
+% .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.L52 # table_name
 % schema,	table,	count,	columnsize,	heapsize,	hashes,	imprints,	auxiliary # name
 % clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables);
-% .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel # table_name
+#SELECT schema, table, count, columnsize, heapsize, hashes, imprints, cast(auxiliary as bigint) as auxiliary FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables);
+% .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.L52 # table_name
 % schema,	table,	count,	columnsize,	heapsize,	hashes,	imprints,	auxiliary # name
 % clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length
