@@ -156,7 +156,11 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -189,7 +193,11 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);

@@ -3,16 +3,16 @@
 --
 
 CREATE TABLE num_data (id integer, val numeric(18,9));
-CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(38,20));
-CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(38,20));
-CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(38,20));
-CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(38,20));
-CREATE TABLE num_exp_sqrt (id integer, expected numeric(38,20));
-CREATE TABLE num_exp_ln (id integer, expected numeric(38,20));
-CREATE TABLE num_exp_log10 (id integer, expected numeric(38,20));
-CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(38,20));
+CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(38,19));
+CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(38,19));
+CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(38,19));
+CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(38,19));
+CREATE TABLE num_exp_sqrt (id integer, expected numeric(38,19));
+CREATE TABLE num_exp_ln (id integer, expected numeric(38,19));
+CREATE TABLE num_exp_log10 (id integer, expected numeric(38,19));
+CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(38,19));
 
-CREATE TABLE num_result (id1 integer, id2 integer, result numeric(38,20));
+CREATE TABLE num_result (id1 integer, id2 integer, result numeric(38,19));
 
 
 -- ******************************
@@ -466,7 +466,7 @@ INSERT INTO num_exp_power_10_ln VALUES (3,'28.90266599445155957393');
 INSERT INTO num_exp_power_10_ln VALUES (4,'7405685069594999.07733999469386277636');
 INSERT INTO num_exp_power_10_ln VALUES (5,'5068226527.32127265408584640098');
 INSERT INTO num_exp_power_10_ln VALUES (6,'281839893606.99372343357047819067');
-INSERT INTO num_exp_power_10_ln VALUES (7,'1716699575118597095.42330819910640247627');
+INSERT INTO num_exp_power_10_ln VALUES (7,'1716699575118597095.4233081991064024762');
 INSERT INTO num_exp_power_10_ln VALUES (8,'167361463828.07491320069016125952');
 INSERT INTO num_exp_power_10_ln VALUES (9,'107511333880052007.04141124673540337457');
 --COMMIT;
