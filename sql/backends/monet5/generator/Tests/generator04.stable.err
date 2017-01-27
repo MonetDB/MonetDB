@@ -31,8 +31,8 @@ stderr of test 'generator04` in directory 'sql/backends/monet5/generator` itself
 
 MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
 QUERY = select * from generate_series('a','a','c');
-ERROR = !conversion of string 'c' to type bte failed.
-MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
+ERROR = !conversion of string 'a' to type bte failed.
+MAPI  = (monetdb) /var/tmp/mtest-3000/.s.monetdb.31545
 QUERY = select * from generate_series(false,true,false) ;
 ERROR = !zero step size not allowed
 MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
