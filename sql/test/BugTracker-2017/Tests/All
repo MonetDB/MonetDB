@@ -5,3 +5,4 @@ HAVE_LIBZ?heapextend.Bug-6134
 empty-interval.Bug-6184
 too-large-decimals.Bug-6192
 round-or-truncate.Bug-6193
+HAVE_HGE?cast-with-many-decimals.Bug-6195

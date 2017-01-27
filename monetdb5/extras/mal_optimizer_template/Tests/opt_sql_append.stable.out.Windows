@@ -71,7 +71,7 @@ function user.s8_1():void;
     X_36 := sql.append(X_33,"sys","ttt","c",X_26);
     X_38 := aggr.count(X_26);
     sql.affectedRows(X_36,X_38);
-end user.s8_1;
+end user.s10_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=5 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -125,7 +125,7 @@ function user.s24_1():void;
     X_38 := aggr.count(X_26);
     X_36 := sql.append(X_33,"sys","ttt","c",X_26);
     sql.affectedRows(X_36,X_38);
-end user.s24_1;
+end user.s26_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=4 usec 
 #costmodel            actions= 1 time=1 usec 
