@@ -28,37 +28,45 @@
 #define FUN(a,b,c,d) CONCAT_4(a,b,c,d)
 
 
-/* when casting a floating point to an decimal we like to preserve the 
+/* when casting a floating point to a decimal we like to preserve the
  * precision.  This means we first scale the float before converting.
 */
 str
-FUN(,TP1,_num2dec_,TP2) (TP2 *res, const TP1 *v, const int *d2, const int *s2)
+FUN(,TP1,_num2dec_,TP2)(TP2 *res, const TP1 *v, const int *d2, const int *s2)
 {
-	int p = *d2, inlen = 1, scale = *s2;
-	TP1 r;
-	lng cpyval;
+	TP1 val = *v;
+	int scale = *s2;
+	int precision = *d2;
+	int inlen;
 
-	/* shortcut nil */
-	if (*v == NIL(TP1)) {
+	if (val == NIL(TP1)) {
 		*res = NIL(TP2);
-		return (MAL_SUCCEED);
+		return MAL_SUCCEED;
 	}
 
-	/* since the TP2 type is bigger than or equal to the TP1 type, it will
-	   always fit */
-	r = (TP1) *v;
-	if (scale)
-		r *= scales[scale];
-	cpyval = (lng) r;
-
-	/* count the number of digits in the input */
-	while (cpyval /= 10)
-		inlen++;
-	/* rounding is allowed */
-	if (p && inlen > p) {
-		throw(SQL, "convert", "22003!too many digits (%d > %d)", inlen, p);
+	if (val <= -1) {
+		/* (-Inf, -1] */
+		inlen = (int) floor(log10(-val)) + 1;
+	} else if (val < 1) {
+		/* (-1, 1) */
+		inlen = 1;
+	} else {
+		/* [1, Inf) */
+		inlen = (int) floor(log10(val)) + 1;
 	}
-	*res = (TP2) r;
+	if (inlen + scale > precision)
+		throw(SQL, "convert", "22003!too many digits (%d > %d)",
+		      inlen + scale, precision);
+
+#ifndef TRUNCATE_NUMBERS
+#if TPE(TP1) == TYPE_flt
+	*res = (TP2) roundf(val * scales[scale]);
+#else
+	*res = (TP2) round(val * scales[scale]);
+#endif
+#endif
+
+
 	return MAL_SUCCEED;
 }
 
@@ -88,7 +96,11 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);

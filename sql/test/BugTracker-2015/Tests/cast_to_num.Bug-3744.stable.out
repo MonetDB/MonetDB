@@ -30,17 +30,17 @@ Ready.
 # 21:30:40 >  
 
 #select cast(cast(13.8 as decimal(10,7)) as int);
-% .L2 # table_name
-% L2 # name
+% .L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
-[ 13	]
+[ 14	]
 #select cast(cast(13.8 as double) as int);
-% .L2 # table_name
-% L2 # name
+% .L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
-[ 13	]
+[ 14	]
 
 # 21:30:41 >  
 # 21:30:41 >  "Done."

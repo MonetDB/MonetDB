@@ -157,8 +157,8 @@ static struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
-	 "optimizer.profiler();"
 	 "optimizer.generator();"
+	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
