@@ -24,7 +24,7 @@
  * global file system.
  *
  * A database can be set once into 'master' mode only once using the SQL command:
- * CALL setmaster()
+ * CALL master()
  *
  * It creates a directory .../dbfarm/dbname/master to hold all necessary information
  * for the creation and maintenance of replicas.
@@ -276,7 +276,7 @@ WLCthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str 
-WLCsetmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char path[PATHLENGTH];
 	str msg = MAL_SUCCEED;
@@ -295,7 +295,7 @@ WLCsetmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wlcr_archive = GDKfilepath(0,0,"master",0);
 		snprintf(path, PATHLENGTH,"%s%c%s_wlcr", wlcr_archive, DIR_SEP, wlcr_dbname);
 		if( GDKcreatedir(path) == GDK_FAIL)
-			throw(SQL,"wlcr.setmaster","Could not create %s\n", wlcr_archive);
+			throw(SQL,"wlcr.master","Could not create %s\n", wlcr_archive);
 #ifdef _WLC_DEBUG_
 		mnstr_printf(cntxt->fdout,"#Snapshot directory '%s'\n", wlcr_archive);
 #endif

@@ -105,7 +105,7 @@ WLRgetMaster(str dbname)
 	fd = fopen(dir,"r");
 	if( fd == NULL){
 		GDKfree(dir);
-		throw(SQL,"getMaster","Database '%s' not acting as a master",dbname);
+		throw(SQL,"getMaster","Database '%s' not acting as a master",dir);
 	}
 	(void) fclose(fd);
 
@@ -150,7 +150,7 @@ WLRinitReplica(str dbname)
 	fd = fopen(dir,"r");
 	if( fd ){
 		(void) fclose(fd);
-		throw(SQL,"setreplica","Already in replica mode '%s'",dbname);
+		throw(SQL,"setreplica","Already in replica mode for '%s'",dbname);
 	}
 	GDKfree(dir);
 
@@ -186,6 +186,10 @@ WLRgetThreshold( Client cntxt, MalBlkPtr mb)
 	return MAL_SUCCEED;
 }
 
+/* 
+ * Run once through the list of pending WLCR logs
+ * Continuing where you left off the previous time.
+ */
 void
 WLCRprocess(void *arg)
 {	
@@ -228,11 +232,13 @@ WLCRprocess(void *arg)
 		wlcr_archive, wlr_firstbatch, wlr_lastbatch, wlr_threshold);
 #endif
 	wlr_tag = 0;
-	for( i= wlr_lastbatch; i < wlcr_lastbatch; i++){
+	for( i= wlr_lastbatch; i < wlcr_lastbatch && ! GDKexiting(); i++){
 		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlr_master, DIR_SEP, wlr_dbname, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlcr.process:'%s' can not be accessed \n",path);
+			// Be careful not to miss log files.
+			// In the future wait for more files becoming available.
 			continue;
 		}
 		sz = getFileSize(fd);
@@ -297,21 +303,28 @@ WLCRprocess(void *arg)
 }
 
 str
-WLCRsetreplica(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
+	bit waitfor= 0;
 	MT_Id wlcr_thread;
 	(void) mb;
 
 	if( cntxt->wlcr_mode == WLCR_REPLICATE || cntxt->wlcr_mode == WLCR_REPLAY){
-		throw(SQL,"wlcr.setreplica","System already in synchronization mode");
+		throw(SQL,"wlcr.replicate","System already in synchronization mode");
 	}
 	msg = WLRinitReplica( *getArgReference_str(stk,pci,1));
 	if( msg)
 		return msg;
 
+	if ( pci->argc ==3)
+		waitfor = *getArgReference_bit(stk,pci,2);
 	cntxt->wlcr_mode = WLCR_REPLICATE;
+	// For testing it is helpful to wait for completion of the replication process
+	if( waitfor)
+		WLCRprocess(cntxt);
+	// start the process for continual integration in the background
     if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlcr.setreplica","replay process can not be started\n");
+			throw(SQL,"wlcr.replicate","replay process can not be started\n");
 	}
 	return MAL_SUCCEED;
 }

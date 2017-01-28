@@ -6,9 +6,13 @@
 
 module wlcr;
 
-pattern wlcr.setreplica(dbname:str)
-address WLCRsetreplica
-comment "Roll the snapshot forward to a uptodate clone";
+pattern wlcr.replicate(dbname:str)
+address WLCRreplicate
+comment "Roll the snapshot forward to an up-to-date clone";
+
+pattern wlcr.replicate(dbname:str, waitformaster:bit)
+address WLCRreplicate
+comment "Roll the snapshot forward to an up-to-date clone and wait for it";
 
 module wlr;
 pattern job(user:str, tid:int, started:str, action:str, kind:str, runtime:lng)

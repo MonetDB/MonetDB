@@ -9,12 +9,15 @@
 declare replaythreshold integer;
 set replaythreshold = -1; -- don't replay
 
-create procedure setmaster()
-external name wlcr.setmaster;
+create procedure master()
+external name wlcr.master;
 
 create procedure stopmaster()
 external name wlcr.stopmaster;
 
-create procedure setreplica(dbname string)
-external name wlcr.setreplica;
+create procedure replicate(dbname string)
+external name wlcr.replicate;
+
+create procedure replicate(dbname string, waitforsync bool)
+external name wlcr.replicate;
 
