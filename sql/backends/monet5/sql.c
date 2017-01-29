@@ -2589,13 +2589,13 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			// no filename for this column, skip for now because we potentially don't know the count yet
 			continue;
 		} else if (tpe < TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
-			c = BATattach(col->type.type->localtype, fname, PERSISTENT);
+			c = BATattach(col->type.type->localtype, fname, TRANSIENT);
 			if (c == NULL)
 				throw(SQL, "sql", "Failed to attach file %s", fname);
 			BATsetaccess(c, BAT_READ);
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
-			c = COLnew(0, TYPE_str, 0, PERSISTENT);
+			c = COLnew(0, TYPE_str, 0, TRANSIENT);
 			if (c == NULL)
 				throw(SQL, "sql", MAL_MALLOC_FAIL);
 			/* this code should be extended to deal with larger text strings. */
@@ -2638,7 +2638,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				BUN loop = 0;
 				const void* nil = ATOMnilptr(tpe);
 				// fill the new BAT with NULL values
-				c = COLnew(0, tpe, cnt, PERSISTENT);
+				c = COLnew(0, tpe, cnt, TRANSIENT);
 				for(loop = 0; loop < cnt; loop++) {
 					BUNappend(c, nil, 0);
 				}
