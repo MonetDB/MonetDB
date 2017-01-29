@@ -1,11 +1,11 @@
-stdout of test 'wlcr2` in directory 'sql/test/wlcr` itself:
+stdout of test 'wlc21` in directory 'sql/test/wlcr` itself:
 
 
-# 11:51:21 >  
-# 11:51:21 >  "/usr/bin/python2" "wlcr2.py" "wlcr2"
-# 11:51:21 >  
+# 21:28:52 >  
+# 21:28:52 >  "/usr/bin/python2" "wlc21.py" "wlc21"
+# 21:28:52 >  
 
-# MonetDB 5 server v11.26.0 (hg id: 2ae362ab5225+)
+# MonetDB 5 server v11.26.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_wlcr', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
@@ -13,11 +13,11 @@ stdout of test 'wlcr2` in directory 'sql/test/wlcr` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:37590/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25896/.s.monetdb.37590
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:31055/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7935/.s.monetdb.31055
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-#insert into tmp values(3,'blah'),(4,'bloh');
+#insert into tmp values(5,'red'),(6,'fox');
 [ 2	]
 #select * from tmp;
 % sys.tmp,	sys.tmp # table_name
@@ -28,8 +28,10 @@ stdout of test 'wlcr2` in directory 'sql/test/wlcr` itself:
 [ 2,	"world"	]
 [ 3,	"blah"	]
 [ 4,	"bloh"	]
+[ 5,	"red"	]
+[ 6,	"fox"	]
 
-# 11:51:22 >  
-# 11:51:22 >  "Done."
-# 11:51:22 >  
+# 21:28:52 >  
+# 21:28:52 >  "Done."
+# 21:28:52 >  
 

@@ -1,11 +1,11 @@
-stdout of test 'wlcr1` in directory 'sql/test/wlcr` itself:
+stdout of test 'wlc01` in directory 'sql/test/wlcr` itself:
 
 
-# 11:49:25 >  
-# 11:49:25 >  "/usr/bin/python2" "wlcr1.py" "wlcr1"
-# 11:49:25 >  
+# 21:28:50 >  
+# 21:28:50 >  "/usr/bin/python2" "wlc01.py" "wlc01"
+# 21:28:50 >  
 
-# MonetDB 5 server v11.26.0 (hg id: 2ae362ab5225+)
+# MonetDB 5 server v11.26.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_wlcr', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
@@ -13,8 +13,8 @@ stdout of test 'wlcr1` in directory 'sql/test/wlcr` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:31022/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25725/.s.monetdb.31022
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:31055/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7935/.s.monetdb.31055
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 # SQL catalog created, loading sql scripts once
@@ -75,7 +75,7 @@ stdout of test 'wlcr1` in directory 'sql/test/wlcr` itself:
 [ 1,	"hello"	]
 [ 2,	"world"	]
 
-# 11:49:27 >  
-# 11:49:27 >  "Done."
-# 11:49:27 >  
+# 21:28:51 >  
+# 21:28:51 >  "Done."
+# 21:28:51 >  
 

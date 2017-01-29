@@ -18,10 +18,7 @@ s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE,
 c = process.client('sql', dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 cout, cerr = c.communicate('''\
-call master();
-select 1;
-create table tmp(i int, s string);
-insert into tmp values(1,'hello'), (2,'world');
+insert into tmp values(5,'red'),(6,'fox');
 select * from tmp;
 ''')
 
