@@ -1488,7 +1488,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * @emph{th}) for variable-sized atoms.
  */
 
-gdk_export gdk_return BATsave(BAT *b);
 gdk_export void BATmsync(BAT *b);
 
 gdk_export size_t BATmemsize(BAT *b, int dirty);
