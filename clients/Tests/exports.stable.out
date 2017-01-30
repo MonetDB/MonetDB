@@ -159,7 +159,6 @@ gdk_return BATorderidx(BAT *b, int stable);
 gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_return BATprint(BAT *b);
 gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
-gdk_return BATprintf(stream *f, BAT *b);
 gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
 BAT *BATproject(BAT *l, BAT *r);
 BAT *BATprojectchain(BAT **bats);
