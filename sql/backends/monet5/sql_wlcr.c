@@ -34,7 +34,7 @@ static str wlr_master;
 static str wlr_dbname;
 static int wlr_nextbatch; // the last log file processed completely
 static int wlr_tag;		// tag of last record processed
-static lng wlr_threshold;	// minimum time for a query to be re-executed
+static int wlr_threshold = -1;	// minimum time for a query to be re-executed
 
 static
 str WLRgetConfig(void){
@@ -71,7 +71,7 @@ str WLRsetConfig(void){
         throw(MAL,"wlr.setConfig","Could not access %s\n",path);
 	fprintf(fd,"dbname=%s\n", wlr_dbname);
 	fprintf(fd,"master=%s\n", wlr_master);
-	fprintf(fd,"nextbatch=%d\n", ++wlr_nextbatch);
+	fprintf(fd,"nextbatch=%d\n", wlr_nextbatch);
 	fprintf(fd,"tag=%d\n", wlr_tag);
     fclose(fd);
     return MAL_SUCCEED;
@@ -171,10 +171,8 @@ WLRgetThreshold( Client cntxt, MalBlkPtr mb)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	a = stack_get_var(m, "replaythreshold");
-	if (!a) {
-		throw(SQL, "sql.getVariable", "variable 'replaylog' unknown");
-	}
-	wlr_threshold = a->data.val.ival;
+	if (a)
+		wlr_threshold = a->data.val.ival;
 	return MAL_SUCCEED;
 }
 
@@ -287,6 +285,8 @@ WLCRprocess(void *arg)
 				pc = 0;
 			}
 		} while( mb->errors == 0 && pc != mb->stop);
+		wlr_nextbatch++;
+		WLRsetConfig();
 		close_stream(fd);
 	}
 	(void) mnstr_flush(c->fdout);
