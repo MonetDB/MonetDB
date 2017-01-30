@@ -23,7 +23,6 @@
 #include "clients.h"
 #include "mal_instruction.h"
 
-/* Windows doesn't have round or trunc, but it does have floor and ceil */
 #ifndef HAVE_ROUND
 static inline double
 round(double val)

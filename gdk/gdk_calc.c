@@ -13455,7 +13455,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 #define rounddbl(x)	round(x)
 #endif
 
-/* Windows doesn't have round or trunc, but it does have floor and ceil */
 #ifndef HAVE_ROUND
 static inline double
 round(double val)
