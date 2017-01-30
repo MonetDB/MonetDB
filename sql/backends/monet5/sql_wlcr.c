@@ -32,7 +32,7 @@
 /* The current status of the replica  processing */
 static str wlr_master;
 static str wlr_dbname;
-static int wlr_lastbatch; // the last log file processed completely
+static int wlr_nextbatch; // the last log file processed completely
 static int wlr_tag;		// tag of last record processed
 static lng wlr_threshold;	// minimum time for a query to be re-executed
 
@@ -51,8 +51,8 @@ str WLRgetConfig(void){
             wlr_dbname = GDKstrdup(path + 7);
         if( strncmp("master=", path,7) == 0)
             wlr_master = GDKstrdup(path + 7);
-        if( strncmp("lastbatch=", path, 10) == 0)
-            wlr_lastbatch = atoi(path+ 10);
+        if( strncmp("nextbatch=", path, 10) == 0)
+            wlr_nextbatch = atoi(path+ 10);
         if( strncmp("tag=", path, 4) == 0)
             wlr_tag = atoi(path+ 4);
     }
@@ -71,7 +71,7 @@ str WLRsetConfig(void){
         throw(MAL,"wlr.setConfig","Could not access %s\n",path);
 	fprintf(fd,"dbname=%s\n", wlr_dbname);
 	fprintf(fd,"master=%s\n", wlr_master);
-	fprintf(fd,"lastbatch=%d\n", wlr_lastbatch);
+	fprintf(fd,"nextbatch=%d\n", ++wlr_nextbatch);
 	fprintf(fd,"tag=%d\n", wlr_tag);
     fclose(fd);
     return MAL_SUCCEED;
@@ -131,14 +131,6 @@ WLRgetMaster(str dbname)
 	return MAL_SUCCEED;
 }
 
-void
-WLRinit(Client cntxt)
-{
-	(void) cntxt;
-	WLRgetConfig();
-	(void) WLRgetMaster(wlr_dbname);
-}
-
 static str
 WLRinitReplica(str dbname)
 {
@@ -159,7 +151,7 @@ WLRinitReplica(str dbname)
 		return msg;
 
 	wlr_dbname = GDKstrdup(dbname);
-	wlr_lastbatch = 0;
+	wlr_nextbatch = -1;
 	wlr_tag = 0;
 
 	WLRsetConfig();	// initialize the replica configuration setting
@@ -229,10 +221,10 @@ WLCRprocess(void *arg)
 	WLRgetThreshold(cntxt, 0);
 #ifdef _WLR_DEBUG_
 	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d  threshold %d\n", 
-		wlcr_archive, wlr_firstbatch, wlr_lastbatch, wlr_threshold);
+		wlcr_archive, wlr_firstbatch, wlr_nextbatch, wlr_threshold);
 #endif
 	wlr_tag = 0;
-	for( i= wlr_lastbatch; i < wlcr_lastbatch && ! GDKexiting(); i++){
+	for( i= wlr_nextbatch; i < wlcr_lastbatch && ! GDKexiting(); i++){
 		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlr_master, DIR_SEP, wlr_dbname, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
@@ -302,6 +294,22 @@ WLCRprocess(void *arg)
 	cntxt->wlcr_mode = 0;
 }
 
+void
+WLRinit(Client cntxt)
+{
+	MT_Id wlcr_thread;
+	
+	WLRgetConfig();
+	(void) WLRgetMaster(wlr_dbname);
+	// time to start the consolidation process
+	if( wlr_master){
+		cntxt->wlcr_mode = WLCR_REPLICATE;
+		if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
+				GDKerror("wlcr.replicate:replay process can not be started");
+		}
+	}
+}
+
 str
 WLCRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
@@ -364,13 +372,25 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str qry =  *getArgReference_str(stk,pci,1);
 	str msg = MAL_SUCCEED;
 	lng clk = GDKms();
+	char *x, *y, *qtxt;
 
+	// we need to get rid of the escaped quote.
+	x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
+	for(y = qry; *y; y++){
+		if( *y == '\\' ){
+			if( *(y+1) ==  '\'')
+			y += 1;
+		}
+		*x++ = *y;
+	}
+	*x = 0;
 	(void) mb;
 	// execute the query in replay mode
 	if( cntxt->wlcr_kind == WLCR_CATALOG || cntxt->wlcr_kind == WLCR_QUERY ){
-		msg =  SQLstatementIntern(cntxt, &qry, "SQLstatement", TRUE, TRUE, NULL);
+		msg =  SQLstatementIntern(cntxt, &qtxt, "SQLstatement", TRUE, TRUE, NULL);
 		mnstr_printf(cntxt->fdout,"# "LLFMT"ms\n",GDKms() - clk);
 	}
+	GDKfree(qtxt);
 	return msg;
 }
 
