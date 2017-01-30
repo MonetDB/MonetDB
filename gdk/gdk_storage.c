@@ -658,6 +658,13 @@ BATmsyncImplementation(void *arg)
 void
 BATmsync(BAT *b)
 {
+	/* we don't sync views */
+	if (isVIEW(b))
+		return;
+	/* we don't sync transients */
+	if (b->theap.farmid != 0 ||
+	    (b->tvheap != NULL && b->tvheap->farmid != 0))
+		return;
 #ifndef DISABLE_MSYNC
 #ifdef MS_ASYNC
 	if (b->theap.storage == STORE_MMAP)
