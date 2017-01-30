@@ -374,23 +374,23 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk = GDKms();
 	char *x, *y, *qtxt;
 
-	// we need to get rid of the escaped quote.
-	x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
-	for(y = qry; *y; y++){
-		if( *y == '\\' ){
-			if( *(y+1) ==  '\'')
-			y += 1;
-		}
-		*x++ = *y;
-	}
-	*x = 0;
 	(void) mb;
 	// execute the query in replay mode
 	if( cntxt->wlcr_kind == WLCR_CATALOG || cntxt->wlcr_kind == WLCR_QUERY ){
+		// we need to get rid of the escaped quote.
+		x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
+		for(y = qry; *y; y++){
+			if( *y == '\\' ){
+				if( *(y+1) ==  '\'')
+				y += 1;
+			}
+			*x++ = *y;
+		}
+		*x = 0;
 		msg =  SQLstatementIntern(cntxt, &qtxt, "SQLstatement", TRUE, TRUE, NULL);
 		mnstr_printf(cntxt->fdout,"# "LLFMT"ms\n",GDKms() - clk);
+		GDKfree(qtxt);
 	}
-	GDKfree(qtxt);
 	return msg;
 }
 
