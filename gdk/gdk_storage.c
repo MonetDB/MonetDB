@@ -672,42 +672,44 @@ BATmsync(BAT *b)
 	if (b->tvheap && b->tvheap->storage == STORE_MMAP)
 		(void) msync(b->tvheap->base, b->tvheap->free, MS_ASYNC);
 #else
+	{
 #ifdef MSYNC_BACKGROUND
-	MT_Id tid;
+		MT_Id tid;
 #endif
-	struct msync *arg;
+		struct msync *arg;
 
-	assert(b->batPersistence == PERSISTENT);
-	if (b->theap.storage == STORE_MMAP &&
-	    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-		arg->id = b->batCacheid;
-		arg->h = &b->theap;
-		BBPfix(b->batCacheid);
+		assert(b->batPersistence == PERSISTENT);
+		if (b->theap.storage == STORE_MMAP &&
+		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
+			arg->id = b->batCacheid;
+			arg->h = &b->theap;
+			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-		if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
-			/* don't bother if we can't create a thread */
-			BBPunfix(b->batCacheid);
-			GDKfree(arg);
-		}
+			if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+				/* don't bother if we can't create a thread */
+				BBPunfix(b->batCacheid);
+				GDKfree(arg);
+			}
 #else
-		BATmsyncImplementation(arg);
+			BATmsyncImplementation(arg);
 #endif
-	}
+		}
 
-	if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
-	    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-		arg->id = b->batCacheid;
-		arg->h = b->tvheap;
-		BBPfix(b->batCacheid);
+		if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
+		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
+			arg->id = b->batCacheid;
+			arg->h = b->tvheap;
+			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-		if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
-			/* don't bother if we can't create a thread */
-			BBPunfix(b->batCacheid);
-			GDKfree(arg);
-		}
+			if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+				/* don't bother if we can't create a thread */
+				BBPunfix(b->batCacheid);
+				GDKfree(arg);
+			}
 #else
-		BATmsyncImplementation(arg);
+			BATmsyncImplementation(arg);
 #endif
+		}
 	}
 #endif
 #else
@@ -889,12 +891,10 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	int i;
 	BUN n, cnt;
 	struct colinfo {
-		int (*s) (str *, int *, const void *);
+		int t;
 		BATiter i;
 	} *colinfo;
 	char *buf;
-	int buflen = 0;
-	int len;
 
 	/* error checking */
 	for (i = 0; i < argc; i++) {
@@ -915,7 +915,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 
 	for (i = 0; i < argc; i++) {
 		colinfo[i].i = bat_iterator(argv[i]);
-		colinfo[i].s = BATatoms[argv[i]->ttype].atomToStr;
+		colinfo[i].t = argv[i]->ttype;
 	}
 
 	mnstr_write(s, "#--------------------------#\n", 1, 29);
@@ -936,20 +936,17 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	}
 	mnstr_write(s, "  # type\n", 1, 9);
 	mnstr_write(s, "#--------------------------#\n", 1, 29);
-	buf = NULL;
 
 	for (n = 0, cnt = BATcount(argv[0]); n < cnt; n++) {
 		mnstr_write(s, "[ ", 1, 2);
 		for (i = 0; i < argc; i++) {
-			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n));
 			if (i > 0)
 				mnstr_write(s, ",\t", 1, 2);
-			mnstr_write(s, buf, 1, len);
+			ATOMprint(colinfo[i].t, BUNtail(colinfo[i].i, n), s);
 		}
 		mnstr_write(s, "  ]\n", 1, 4);
 	}
 
-	GDKfree(buf);
 	GDKfree(colinfo);
 
 	return GDK_SUCCEED;
