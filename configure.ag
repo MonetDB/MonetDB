@@ -2561,6 +2561,7 @@ AC_CHECK_FUNCS([\
 	asctime_r \
 	backtrace \
 	cbrt \
+	clock_gettime \
 	ctime_r \
 	fabsf \
 	fallocate \

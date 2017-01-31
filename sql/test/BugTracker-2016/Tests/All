@@ -1,5 +1,5 @@
 HAVE_GEOM?storagemodel
-THREADS=1?convert-function-test.Bug-3460
+convert-function-test.Bug-3460
 HAVE_HGE?convert-function-test-hge.Bug-3460
 LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908
 incorrect_column_name_in_OR_condition_of_LEFT-JOIN_crashes_mserver.Bug-3909

@@ -57,7 +57,10 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 {
 	char *message;
 	int len;
-
+	// if there is an error we allow memory allocation once again
+#ifndef NDEBUG
+	GDKsetmallocsuccesscount(-1);
+#endif
 	message = GDKmalloc(GDKMAXERRLEN);
 	if (message == NULL)
 		return M5OutOfMemory;	/* last resort */

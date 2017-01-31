@@ -40,9 +40,8 @@ lib__sql = {
 		sql_result.c sql_result.h \
 		sql_cast.c sql_cast.h \
 		sql_cast_impl_down_from_flt.h \
-		sql_cast_impl_down_from_int.h \
+		sql_cast_impl_int.h \
 		sql_cast_impl_up_to_flt.h \
-		sql_cast_impl_up_to_int.h \
 		sql_round.c sql_round_impl.h sql_bat2time.c \
 		sql_fround.c sql_fround_impl.h \
 		sql_orderidx.c sql_orderidx.h \

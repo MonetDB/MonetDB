@@ -110,6 +110,9 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if( p == NULL)
 		throw(MAL, "opt_wrapper", "missing optimizer statement");
+
+	if( mb->errors)
+		throw(MAL, "opt_wrapper", "MAL block contains errors");
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
 	
 	curmodnme = getModuleId(p);

@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Mon Jan 30 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function BATprintf.  Use BATprint or BATprintcolumns instead.
+- Removed BATsave from the list of exported functions.
+
 * Tue Jan  3 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Replaced BBPincref/BBPdecref with BBPfix/BBPunfix for physical reference
   count and BBPretain/BBPrelease for logical reference count maintenance.

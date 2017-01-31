@@ -3821,7 +3821,8 @@ gdk_return
 BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   0, 0, 0, estimate, "BATleftjoin", GDKusec());
+			   0, 0, 0, estimate, "BATleftjoin",
+			   GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
 /* Performs a left outer join over l and r.  Returns two new, aligned,
@@ -3833,7 +3834,8 @@ gdk_return
 BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   1, 0, 0, estimate, "BATouterjoin", GDKusec());
+			   1, 0, 0, estimate, "BATouterjoin",
+			   GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
 /* Perform a semi-join over l and r.  Returns two new, aligned,
@@ -3844,7 +3846,8 @@ gdk_return
 BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   0, 1, 0, estimate, "BATsemijoin", GDKusec());
+			   0, 1, 0, estimate, "BATsemijoin",
+			   GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
 /* Return the difference of l and r.  The result is a BAT with in the
@@ -3857,7 +3860,8 @@ BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 	BAT *bn;
 
 	if (subleftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
-			0, 0, 1, estimate, "BATdiff", GDKusec()) == GDK_SUCCEED)
+			0, 0, 1, estimate, "BATdiff",
+			GDKdebug & ALGOMASK ? GDKusec() : 0) == GDK_SUCCEED)
 		return bn;
 	return NULL;
 }
@@ -3868,7 +3872,7 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int
 	BAT *r1, *r2;
 	BUN maxsize;
 	int opcode = 0;
-	lng t0;
+	lng t0 = 0;
 
 	/* encode operator as a bit mask into opcode */
 	switch (op) {
@@ -3894,7 +3898,7 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int
 		return GDK_FAIL;
 	}
 
-	t0 = GDKusec();
+	ALGODEBUG t0 = GDKusec();
 	*r1p = NULL;
 	*r2p = NULL;
 	if (joinparamcheck(l, r, NULL, sl, sr, "BATthetajoin") != GDK_SUCCEED)
@@ -3920,8 +3924,10 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 #endif
 	int swap;
 	size_t mem_size;
-	lng t0 = GDKusec();
+	lng t0 = 0;
 	const char *reason = "";
+
+	ALGODEBUG t0 = GDKusec();
 
 	*r1p = NULL;
 	*r2p = NULL;
@@ -4067,7 +4073,9 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 {
 	BAT *r1, *r2;
 	BUN maxsize;
-	lng t0 = GDKusec();
+	lng t0 = 0;
+
+	ALGODEBUG t0 = GDKusec();
 
 	*r1p = NULL;
 	*r2p = NULL;

@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "opt_statistics.h"
 /*
- * @
  * Upon loading the module it should inspect the scenario table
  * for any unresolved references to the MALoptimizer and set the
  * callback function.

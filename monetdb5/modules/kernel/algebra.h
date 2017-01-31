@@ -47,9 +47,6 @@ mal_export str ALGcopy(bat *result, const bat *bid);
 mal_export str ALGunique2(bat *result, const bat *bid, const bat *sid);
 mal_export str ALGunique1(bat *result, const bat *bid);
 mal_export str ALGprojection(bat *result, const bat *lid, const bat *rid);
-mal_export str ALGtinter(bat *result, const bat *lid, const bat *rid);
-mal_export str ALGtdiff(bat *result, const bat *lid, const bat *rid);
-mal_export str ALGsample(bat *result, const bat *bid, const int *param);
 
 mal_export str ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable);
 mal_export str ALGsort12(bat *result, bat *norder, const bat *bid, const bit *reverse, const bit *stable);
@@ -63,9 +60,6 @@ mal_export str ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, 
 mal_export str ALGcount_bat(lng *result, const bat *bid);
 mal_export str ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils);
 mal_export str ALGcount_no_nil(lng *result, const bat *bid);
-mal_export str ALGtmark(bat *result, const bat *bid, const oid *base);
-mal_export str ALGtmark_default(bat *result, const bat *bid);
-mal_export str ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr);
 mal_export str ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end);
 mal_export str ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end);
 mal_export str ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end);

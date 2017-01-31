@@ -4441,10 +4441,12 @@ literal:
 		  if (!err) {
 		    int bits = digits2bits(digits), obits = bits;
 
-		    for (;(one<<(bits-1)) > value; bits--)
-			    ;
-		   
- 		    if (bits != obits && 
+		    while (bits > 0 &&
+			   (bits == sizeof(value) * 8 ||
+			    (one << (bits - 1)) > value))
+			  bits--;
+
+ 		    if (bits != obits &&
 		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
 				bits++;
 		

@@ -29,17 +29,17 @@ Ready.
 #create table x  ( i int, j int );
 #drop table x;
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% .L2,	.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 9,	3 # length
 [ "transient",	158	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% .L2,	.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 10,	3 # length
-[ "persistent",	266	]
+[ "persistent",	291	]
 
 # 16:21:17 >  
 # 16:21:17 >  "Done."

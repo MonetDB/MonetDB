@@ -51,15 +51,18 @@ str SABepilogue(void *ret) {
 }
 
 str SABmarchScenario(void *ret, str *lang){
-	return SABAOTHmarchScenario(ret, lang);
+	(void) ret;
+	return SABAOTHmarchScenario(lang);
 }
 
 str SABretreatScenario(void *ret, str *lang){
-	return SABAOTHretreatScenario(ret, lang);
+	(void) ret;
+	return SABAOTHretreatScenario(lang);
 }
 
 str SABmarchConnection(void *ret, str *host, int *port) {
-	return SABAOTHmarchConnection(ret, host, port);
+	(void) ret;
+	return SABAOTHmarchConnection(host, port);
 }
 
 str SABgetLocalConnectionURI(str *ret) {

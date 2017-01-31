@@ -1,6 +1,8 @@
 -- test SQL functions: convert(fromType, toType) and cast(fromType as toType) for all SQL data types and data values
 -- See also https://www.monetdb.org/bugzilla/show_bug.cgi?id=3460
 
+set optimizer = 'sequential_pipe'; -- to get predictable errors
+
 SET TIME ZONE INTERVAL '+02:00' HOUR TO MINUTE;
 
 -- BOOLEAN (true, false)

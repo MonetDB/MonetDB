@@ -82,8 +82,12 @@ Ready.
 \dSt sys.db_user_info
 \dSt sys.dependencies
 \dSt sys.dependency_types
+\dSt sys.function_languages
+\dSt sys.function_types
 \dSt sys.functions
 \dSt sys.idxs
+\dSt sys.index_types
+\dSt sys.key_types
 \dSt sys.keys
 \dSt sys.keywords
 \dSt sys.netcdf_attrs
@@ -92,6 +96,7 @@ Ready.
 \dSt sys.netcdf_vardim
 \dSt sys.netcdf_vars
 \dSt sys.objects
+\dSt sys.privilege_codes
 \dSt sys.privileges
 \dSt sys.schemas
 \dSt sys.sequences
@@ -369,8 +374,12 @@ SYSTEM TABLE  sys.connections
 SYSTEM TABLE  sys.db_user_info
 SYSTEM TABLE  sys.dependencies
 SYSTEM TABLE  sys.dependency_types
+SYSTEM TABLE  sys.function_languages
+SYSTEM TABLE  sys.function_types
 SYSTEM TABLE  sys.functions
 SYSTEM TABLE  sys.idxs
+SYSTEM TABLE  sys.index_types
+SYSTEM TABLE  sys.key_types
 SYSTEM TABLE  sys.keys
 SYSTEM TABLE  sys.keywords
 SYSTEM TABLE  sys.netcdf_attrs
@@ -379,6 +388,7 @@ SYSTEM TABLE  sys.netcdf_files
 SYSTEM TABLE  sys.netcdf_vardim
 SYSTEM TABLE  sys.netcdf_vars
 SYSTEM TABLE  sys.objects
+SYSTEM TABLE  sys.privilege_codes
 SYSTEM TABLE  sys.privileges
 SYSTEM TABLE  sys.schemas
 SYSTEM TABLE  sys.sequences
@@ -802,8 +812,12 @@ CREATE TABLE "sys"."connections" ("id" INTEGER, "server" CHAR(1024), "port" INTE
 CREATE TABLE "sys"."db_user_info" ("name" VARCHAR(1024), "fullname" VARCHAR(2048), "default_schema" INTEGER);
 CREATE TABLE "sys"."dependencies" ("id" INTEGER, "depend_id" INTEGER, "depend_type" SMALLINT);
 CREATE TABLE "sys"."dependency_types" ("dependency_type_id" SMALLINT NOT NULL, "dependency_type_name" VARCHAR(15) NOT NULL, CONSTRAINT "dependency_types_dependency_type_id_pkey" PRIMARY KEY ("dependency_type_id"), CONSTRAINT "dependency_types_dependency_type_name_unique" UNIQUE ("dependency_type_name"));
+CREATE TABLE "sys"."function_languages" ("language_id" SMALLINT NOT NULL, "language_name" VARCHAR(20) NOT NULL, CONSTRAINT "function_languages_language_id_pkey" PRIMARY KEY ("language_id"), CONSTRAINT "function_languages_language_name_unique" UNIQUE ("language_name"));
+CREATE TABLE "sys"."function_types" ("function_type_id" SMALLINT NOT NULL, "function_type_name" VARCHAR(30) NOT NULL, CONSTRAINT "function_types_function_type_id_pkey" PRIMARY KEY ("function_type_id"), CONSTRAINT "function_types_function_type_name_unique" UNIQUE ("function_type_name"));
 CREATE TABLE "sys"."functions" ("id" INTEGER, "name" VARCHAR(256), "func" VARCHAR(8196), "mod" VARCHAR(8196), "language" INTEGER, "type" INTEGER, "side_effect" BOOLEAN, "varres" BOOLEAN, "vararg" BOOLEAN, "schema_id" INTEGER);
 CREATE TABLE "sys"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024));
+CREATE TABLE "sys"."index_types" ("index_type_id" SMALLINT NOT NULL, "index_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "index_types_index_type_id_pkey" PRIMARY KEY ("index_type_id"), CONSTRAINT "index_types_index_type_name_unique" UNIQUE ("index_type_name"));
+CREATE TABLE "sys"."key_types" ("key_type_id" SMALLINT NOT NULL, "key_type_name" VARCHAR(15) NOT NULL, CONSTRAINT "key_types_key_type_id_pkey" PRIMARY KEY ("key_type_id"), CONSTRAINT "key_types_key_type_name_unique" UNIQUE ("key_type_name"));
 CREATE TABLE "sys"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024), "rkey" INTEGER, "action" INTEGER);
 CREATE TABLE "sys"."keywords" ("keyword" VARCHAR(40) NOT NULL, CONSTRAINT "keywords_keyword_pkey" PRIMARY KEY ("keyword"));
 CREATE TABLE "sys"."netcdf_attrs" ("obj_name" VARCHAR(256), "att_name" VARCHAR(256), "att_type" VARCHAR(64), "value" CHARACTER LARGE OBJECT, "file_id" INTEGER, "gr_name" VARCHAR(256));
@@ -812,6 +826,7 @@ CREATE TABLE "sys"."netcdf_files" ("file_id" INTEGER, "location" CHAR(256));
 CREATE TABLE "sys"."netcdf_vardim" ("var_id" INTEGER, "dim_id" INTEGER, "file_id" INTEGER, "dimpos" INTEGER);
 CREATE TABLE "sys"."netcdf_vars" ("var_id" INTEGER, "file_id" INTEGER, "name" VARCHAR(64), "vartype" VARCHAR(64), "ndim" INTEGER, "coord_dim_id" INTEGER);
 CREATE TABLE "sys"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
+CREATE TABLE "sys"."privilege_codes" ("privilege_code_id" INTEGER NOT NULL, "privilege_code_name" VARCHAR(30) NOT NULL, CONSTRAINT "privilege_codes_privilege_code_id_pkey" PRIMARY KEY ("privilege_code_id"), CONSTRAINT "privilege_codes_privilege_code_name_unique" UNIQUE ("privilege_code_name"));
 CREATE TABLE "sys"."privileges" ("obj_id" INTEGER, "auth_id" INTEGER, "privileges" INTEGER, "grantor" INTEGER, "grantable" INTEGER);
 CREATE TABLE "sys"."schemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN);
 CREATE TABLE "sys"."sequences" ("id" INTEGER, "schema_id" INTEGER, "name" VARCHAR(256), "start" BIGINT, "minvalue" BIGINT, "maxvalue" BIGINT, "increment" BIGINT, "cacheinc" BIGINT, "cycle" BOOLEAN);
@@ -1297,7 +1312,7 @@ drop function pcre_replace(string, string, string, string);
 % .s,	.t,	.L4,	.t,	.t,	.t,	.t # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 3,	17,	597,	1,	5,	1,	1 # length
+% 3,	18,	597,	1,	5,	1,	1 # length
 [ "bam",	"export",	NULL,	0,	true,	0,	0	]
 [ "bam",	"files",	NULL,	0,	true,	0,	0	]
 [ "bam",	"pg",	NULL,	0,	true,	0,	0	]
@@ -1313,9 +1328,13 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"dependencies",	NULL,	0,	true,	0,	0	]
 [ "sys",	"dependency_types",	NULL,	0,	true,	0,	0	]
 [ "sys",	"environment",	"create view sys.environment as select * from sys.environment();",	1,	true,	0,	0	]
+[ "sys",	"function_languages",	NULL,	0,	true,	0,	0	]
+[ "sys",	"function_types",	NULL,	0,	true,	0,	0	]
 [ "sys",	"functions",	NULL,	0,	true,	0,	0	]
 [ "sys",	"geometry_columns",	"create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, has_z(info)+has_m(info)+2 as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';",	1,	true,	0,	0	]
 [ "sys",	"idxs",	NULL,	0,	true,	0,	0	]
+[ "sys",	"index_types",	NULL,	0,	true,	0,	0	]
+[ "sys",	"key_types",	NULL,	0,	true,	0,	0	]
 [ "sys",	"keys",	NULL,	0,	true,	0,	0	]
 [ "sys",	"keywords",	NULL,	0,	true,	0,	0	]
 [ "sys",	"netcdf_attrs",	NULL,	0,	true,	0,	0	]
@@ -1325,6 +1344,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"netcdf_vars",	NULL,	0,	true,	0,	0	]
 [ "sys",	"objects",	NULL,	0,	true,	0,	0	]
 [ "sys",	"optimizers",	"create view sys.optimizers as select * from sys.optimizers();",	1,	true,	0,	0	]
+[ "sys",	"privilege_codes",	NULL,	0,	true,	0,	0	]
 [ "sys",	"privileges",	NULL,	0,	true,	0,	0	]
 [ "sys",	"querylog_calls",	"create view sys.querylog_calls as select * from sys.querylog_calls();",	1,	true,	0,	0	]
 [ "sys",	"querylog_catalog",	"create view sys.querylog_catalog as select * from sys.querylog_catalog();",	1,	true,	0,	0	]
@@ -1358,7 +1378,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.t,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c # table_name
 % name,	name,	type,	type_digits,	type_scale,	default,	null,	number,	storage # name
 % varchar,	varchar,	varchar,	int,	int,	varchar,	boolean,	int,	varchar # type
-% 17,	20,	9,	4,	1,	0,	5,	2,	0 # length
+% 18,	20,	9,	4,	1,	0,	5,	2,	0 # length
 [ "_columns",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "_columns",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "_columns",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
@@ -1451,6 +1471,10 @@ drop function pcre_replace(string, string, string, string);
 [ "files",	"format_version",	"varchar",	7,	0,	NULL,	true,	3,	NULL	]
 [ "files",	"sorting_order",	"varchar",	10,	0,	NULL,	true,	4,	NULL	]
 [ "files",	"comments",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
+[ "function_languages",	"language_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
+[ "function_languages",	"language_name",	"varchar",	20,	0,	NULL,	false,	1,	NULL	]
+[ "function_types",	"function_type_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
+[ "function_types",	"function_type_name",	"varchar",	30,	0,	NULL,	false,	1,	NULL	]
 [ "functions",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "functions",	"name",	"varchar",	256,	0,	NULL,	true,	1,	NULL	]
 [ "functions",	"func",	"varchar",	8196,	0,	NULL,	true,	2,	NULL	]
@@ -1476,6 +1500,10 @@ drop function pcre_replace(string, string, string, string);
 [ "idxs",	"type",	"int",	32,	0,	NULL,	true,	2,	NULL	]
 [ "idxs",	"name",	"varchar",	1024,	0,	NULL,	true,	3,	NULL	]
 [ "idxs",	"name",	"varchar",	1024,	0,	NULL,	true,	3,	NULL	]
+[ "index_types",	"index_type_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
+[ "index_types",	"index_type_name",	"varchar",	25,	0,	NULL,	false,	1,	NULL	]
+[ "key_types",	"key_type_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
+[ "key_types",	"key_type_name",	"varchar",	15,	0,	NULL,	false,	1,	NULL	]
 [ "keys",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "keys",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "keys",	"table_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
@@ -1526,6 +1554,8 @@ drop function pcre_replace(string, string, string, string);
 [ "pg",	"cl",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
 [ "pg",	"pp",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
 [ "pg",	"vn",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
+[ "privilege_codes",	"privilege_code_id",	"int",	32,	0,	NULL,	false,	0,	NULL	]
+[ "privilege_codes",	"privilege_code_name",	"varchar",	30,	0,	NULL,	false,	1,	NULL	]
 [ "privileges",	"obj_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "privileges",	"auth_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "privileges",	"privileges",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -5548,7 +5578,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	sys.k2,	.dt # table_name
 % name,	name,	name,	name,	name,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	char # type
-% 3,	16,	18,	3,	16,	40,	20 # length
+% 3,	18,	18,	3,	18,	40,	20 # length
 [ "bam",	"files",	"file_id",	"bam",	"files",	"files_pkey_file_id",	"KEY_DEPENDENCY"	]
 [ "bam",	"pg",	"file_id",	"bam",	"pg",	"pg_fkey_file_id",	"FKEY_DEPENDENCY"	]
 [ "bam",	"pg",	"file_id",	"bam",	"pg",	"pg_pkey_id_file_id",	"KEY_DEPENDENCY"	]
@@ -5560,14 +5590,19 @@ drop function pcre_replace(string, string, string, string);
 [ "bam",	"sq",	"file_id",	"bam",	"sq",	"sq_pkey_sn_file_id",	"KEY_DEPENDENCY"	]
 [ "bam",	"sq",	"sn",	"bam",	"sq",	"sq_pkey_sn_file_id",	"KEY_DEPENDENCY"	]
 [ "sys",	"dependency_types",	"dependency_type_id",	"sys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"KEY_DEPENDENCY"	]
+[ "sys",	"function_languages",	"language_id",	"sys",	"function_languages",	"function_languages_language_id_pkey",	"KEY_DEPENDENCY"	]
+[ "sys",	"function_types",	"function_type_id",	"sys",	"function_types",	"function_types_function_type_id_pkey",	"KEY_DEPENDENCY"	]
+[ "sys",	"index_types",	"index_type_id",	"sys",	"index_types",	"index_types_index_type_id_pkey",	"KEY_DEPENDENCY"	]
+[ "sys",	"key_types",	"key_type_id",	"sys",	"key_types",	"key_types_key_type_id_pkey",	"KEY_DEPENDENCY"	]
 [ "sys",	"keywords",	"keyword",	"sys",	"keywords",	"keywords_keyword_pkey",	"KEY_DEPENDENCY"	]
+[ "sys",	"privilege_codes",	"privilege_code_id",	"sys",	"privilege_codes",	"privilege_codes_privilege_code_id_pkey",	"KEY_DEPENDENCY"	]
 [ "sys",	"spatial_ref_sys",	"srid",	"sys",	"spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	"KEY_DEPENDENCY"	]
 [ "sys",	"table_types",	"table_type_id",	"sys",	"table_types",	"table_types_table_type_id_pkey",	"KEY_DEPENDENCY"	]
 #select s1.name, t1.name, c1.name, s2.name, t2.name, i2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, idxs i2 where d.depend_type = dt.id and d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	sys.i2,	.dt # table_name
 % name,	name,	name,	name,	name,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	char # type
-% 3,	16,	20,	3,	16,	44,	20 # length
+% 3,	18,	20,	3,	18,	44,	20 # length
 [ "bam",	"files",	"file_id",	"bam",	"files",	"files_pkey_file_id",	"INDEX_DEPENDENCY"	]
 [ "bam",	"pg",	"file_id",	"bam",	"pg",	"pg_fkey_file_id",	"INDEX_DEPENDENCY"	]
 [ "bam",	"pg",	"file_id",	"bam",	"pg",	"pg_pkey_id_file_id",	"INDEX_DEPENDENCY"	]
@@ -5580,7 +5615,17 @@ drop function pcre_replace(string, string, string, string);
 [ "bam",	"sq",	"sn",	"bam",	"sq",	"sq_pkey_sn_file_id",	"INDEX_DEPENDENCY"	]
 [ "sys",	"dependency_types",	"dependency_type_id",	"sys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"INDEX_DEPENDENCY"	]
 [ "sys",	"dependency_types",	"dependency_type_name",	"sys",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"INDEX_DEPENDENCY"	]
+[ "sys",	"function_languages",	"language_id",	"sys",	"function_languages",	"function_languages_language_id_pkey",	"INDEX_DEPENDENCY"	]
+[ "sys",	"function_languages",	"language_name",	"sys",	"function_languages",	"function_languages_language_name_unique",	"INDEX_DEPENDENCY"	]
+[ "sys",	"function_types",	"function_type_id",	"sys",	"function_types",	"function_types_function_type_id_pkey",	"INDEX_DEPENDENCY"	]
+[ "sys",	"function_types",	"function_type_name",	"sys",	"function_types",	"function_types_function_type_name_unique",	"INDEX_DEPENDENCY"	]
+[ "sys",	"index_types",	"index_type_id",	"sys",	"index_types",	"index_types_index_type_id_pkey",	"INDEX_DEPENDENCY"	]
+[ "sys",	"index_types",	"index_type_name",	"sys",	"index_types",	"index_types_index_type_name_unique",	"INDEX_DEPENDENCY"	]
+[ "sys",	"key_types",	"key_type_id",	"sys",	"key_types",	"key_types_key_type_id_pkey",	"INDEX_DEPENDENCY"	]
+[ "sys",	"key_types",	"key_type_name",	"sys",	"key_types",	"key_types_key_type_name_unique",	"INDEX_DEPENDENCY"	]
 [ "sys",	"keywords",	"keyword",	"sys",	"keywords",	"keywords_keyword_pkey",	"INDEX_DEPENDENCY"	]
+[ "sys",	"privilege_codes",	"privilege_code_id",	"sys",	"privilege_codes",	"privilege_codes_privilege_code_id_pkey",	"INDEX_DEPENDENCY"	]
+[ "sys",	"privilege_codes",	"privilege_code_name",	"sys",	"privilege_codes",	"privilege_codes_privilege_code_name_unique",	"INDEX_DEPENDENCY"	]
 [ "sys",	"spatial_ref_sys",	"srid",	"sys",	"spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	"INDEX_DEPENDENCY"	]
 [ "sys",	"table_types",	"table_type_id",	"sys",	"table_types",	"table_types_table_type_id_pkey",	"INDEX_DEPENDENCY"	]
 [ "sys",	"table_types",	"table_type_name",	"sys",	"table_types",	"table_types_table_type_name_unique",	"INDEX_DEPENDENCY"	]
@@ -5639,13 +5684,23 @@ drop function pcre_replace(string, string, string, string);
 % .t,	.i,	.i # table_name
 % name,	name,	type # name
 % varchar,	varchar,	int # type
-% 16,	44,	1 # length
+% 18,	44,	1 # length
 [ "dependency_types",	"dependency_types_dependency_type_id_pkey",	0	]
 [ "dependency_types",	"dependency_types_dependency_type_name_unique",	0	]
 [ "files",	"files_pkey_file_id",	0	]
+[ "function_languages",	"function_languages_language_id_pkey",	0	]
+[ "function_languages",	"function_languages_language_name_unique",	0	]
+[ "function_types",	"function_types_function_type_id_pkey",	0	]
+[ "function_types",	"function_types_function_type_name_unique",	0	]
+[ "index_types",	"index_types_index_type_id_pkey",	0	]
+[ "index_types",	"index_types_index_type_name_unique",	0	]
+[ "key_types",	"key_types_key_type_id_pkey",	0	]
+[ "key_types",	"key_types_key_type_name_unique",	0	]
 [ "keywords",	"keywords_keyword_pkey",	0	]
 [ "pg",	"pg_fkey_file_id",	1	]
 [ "pg",	"pg_pkey_id_file_id",	0	]
+[ "privilege_codes",	"privilege_codes_privilege_code_id_pkey",	0	]
+[ "privilege_codes",	"privilege_codes_privilege_code_name_unique",	0	]
 [ "rg",	"rg_fkey_file_id",	1	]
 [ "rg",	"rg_pkey_id_file_id",	0	]
 [ "spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	0	]
@@ -5657,13 +5712,23 @@ drop function pcre_replace(string, string, string, string);
 % .x,	.x,	.x,	.y,	.x # table_name
 % tname,	kname,	type,	kname,	action # name
 % varchar,	varchar,	int,	varchar,	int # type
-% 16,	44,	1,	18,	3 # length
+% 18,	44,	1,	18,	3 # length
 [ "dependency_types",	"dependency_types_dependency_type_id_pkey",	0,	NULL,	-1	]
 [ "dependency_types",	"dependency_types_dependency_type_name_unique",	1,	NULL,	-1	]
 [ "files",	"files_pkey_file_id",	0,	NULL,	-1	]
+[ "function_languages",	"function_languages_language_id_pkey",	0,	NULL,	-1	]
+[ "function_languages",	"function_languages_language_name_unique",	1,	NULL,	-1	]
+[ "function_types",	"function_types_function_type_id_pkey",	0,	NULL,	-1	]
+[ "function_types",	"function_types_function_type_name_unique",	1,	NULL,	-1	]
+[ "index_types",	"index_types_index_type_id_pkey",	0,	NULL,	-1	]
+[ "index_types",	"index_types_index_type_name_unique",	1,	NULL,	-1	]
+[ "key_types",	"key_types_key_type_id_pkey",	0,	NULL,	-1	]
+[ "key_types",	"key_types_key_type_name_unique",	1,	NULL,	-1	]
 [ "keywords",	"keywords_keyword_pkey",	0,	NULL,	-1	]
 [ "pg",	"pg_fkey_file_id",	2,	"files_pkey_file_id",	514	]
 [ "pg",	"pg_pkey_id_file_id",	0,	NULL,	-1	]
+[ "privilege_codes",	"privilege_codes_privilege_code_id_pkey",	0,	NULL,	-1	]
+[ "privilege_codes",	"privilege_codes_privilege_code_name_unique",	1,	NULL,	-1	]
 [ "rg",	"rg_fkey_file_id",	2,	"files_pkey_file_id",	514	]
 [ "rg",	"rg_pkey_id_file_id",	0,	NULL,	-1	]
 [ "spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	0,	NULL,	-1	]
@@ -5694,12 +5759,32 @@ drop function pcre_replace(string, string, string, string);
 [ "file_id",	1	]
 [ "file_id",	1	]
 [ "file_id",	1	]
+[ "function_type_id",	0	]
+[ "function_type_id",	0	]
+[ "function_type_name",	0	]
+[ "function_type_name",	0	]
 [ "id",	0	]
 [ "id",	0	]
 [ "id",	0	]
 [ "id",	0	]
+[ "index_type_id",	0	]
+[ "index_type_id",	0	]
+[ "index_type_name",	0	]
+[ "index_type_name",	0	]
+[ "key_type_id",	0	]
+[ "key_type_id",	0	]
+[ "key_type_name",	0	]
+[ "key_type_name",	0	]
 [ "keyword",	0	]
 [ "keyword",	0	]
+[ "language_id",	0	]
+[ "language_id",	0	]
+[ "language_name",	0	]
+[ "language_name",	0	]
+[ "privilege_code_id",	0	]
+[ "privilege_code_id",	0	]
+[ "privilege_code_name",	0	]
+[ "privilege_code_name",	0	]
 [ "sn",	0	]
 [ "sn",	0	]
 [ "srid",	0	]

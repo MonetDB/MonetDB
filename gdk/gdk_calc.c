@@ -9472,6 +9472,54 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 	return nils;							\
 }
 
+#ifdef TRUNCATE_NUMBERS
+#define roundflt(x)	(x)
+#define rounddbl(x)	(x)
+#else
+#define roundflt(x)	roundf(x)
+#define rounddbl(x)	round(x)
+#endif
+
+#ifndef HAVE_ROUND
+static inline double
+round(double val)
+{
+	/* round to nearest integer, away from zero */
+	if (val < 0)
+		return -floor(-val + 0.5);
+	else
+		return floor(val + 0.5);
+}
+#define roundf(x)	((float)round((double)(x)))
+#endif
+
+#define CONVERT_float(TYPE1, TYPE2)					\
+static BUN								\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
+			  const oid *restrict cand, BUN start, BUN cnt, \
+			  oid hoff, TYPE2 min, TYPE2 max, int abort_on_error) \
+{									\
+	TYPE1 v1;							\
+	BUN nils = 0;							\
+	BUN i;								\
+									\
+	for (i = 0; i < cnt; i++) {					\
+		v1 = src[cand ? cand[i] - hoff : start + i];		\
+		if (v1 == TYPE1##_nil) {				\
+			dst[i] = TYPE2##_nil;				\
+			nils++;						\
+		} else if (v1 < (TYPE1) min || v1 > (TYPE1) max) {	\
+			if (abort_on_error)				\
+				CONV_OVERFLOW(TYPE1, TYPE2, v1);	\
+			dst[i] = TYPE2##_nil;				\
+			nils++;						\
+		} else {						\
+			dst[i] = (TYPE2) round##TYPE1(v1);		\
+		}							\
+	}								\
+	return nils;							\
+}
+
 #define CONVERT_2bit(TYPE)						\
 static BUN								\
 convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
@@ -9551,23 +9599,23 @@ CONVERT_enlarge(hge, dbl)
 #endif
 
 CONVERT_2bit(flt)
-CONVERT_reduce(flt, bte)
-CONVERT_reduce(flt, sht)
-CONVERT_reduce(flt, int)
-CONVERT_reduce(flt, lng)
+CONVERT_float(flt, bte)
+CONVERT_float(flt, sht)
+CONVERT_float(flt, int)
+CONVERT_float(flt, lng)
 #ifdef HAVE_HGE
-CONVERT_reduce(flt, hge)
+CONVERT_float(flt, hge)
 #endif
 CONVERT_reduce(flt, flt)
 CONVERT_enlarge(flt, dbl)
 
 CONVERT_2bit(dbl)
-CONVERT_reduce(dbl, bte)
-CONVERT_reduce(dbl, sht)
-CONVERT_reduce(dbl, int)
-CONVERT_reduce(dbl, lng)
+CONVERT_float(dbl, bte)
+CONVERT_float(dbl, sht)
+CONVERT_float(dbl, int)
+CONVERT_float(dbl, lng)
 #ifdef HAVE_HGE
-CONVERT_reduce(dbl, hge)
+CONVERT_float(dbl, hge)
 #endif
 CONVERT_reduce(dbl, flt)
 CONVERT_reduce(dbl, dbl)

@@ -1257,6 +1257,20 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* can we use the base type? */
 	t = ATOMbasetype(t);
 	lnil = ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
+
+	if (!lnil && th != NULL && (!li || !hi) && !anti && ATOMcmp(t, tl, th) == 0) {
+		/* upper and lower bound of range are equal and we
+		 * want an interval that's open on at least one
+		 * side */
+		ALGODEBUG fprintf(stderr, "#BATselect(b=%s#" BUNFMT
+				  ",s=%s%s,li=%d,hi=%d,anti=%d): empty interval\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL",
+				  s && BATtdense(s) ? "(dense)" : "",
+				  li, hi, anti);
+		return newempty();
+	}
+
 	lval = !lnil || th == NULL;	 /* low value used for comparison */
 	equi = th == NULL || (lval && ATOMcmp(t, tl, th) == 0); /* point select? */
 	if (equi) {

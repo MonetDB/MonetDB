@@ -3126,14 +3126,6 @@ def Check(command, input) :
                 STDERR.write("\n")
                 STDERR.flush()
                 #sys.exit(1)
-                if sys.platform == 'linux2':
-                    proc = process.Popen(['netstat', '-ap'],
-                                         stdout = process.PIPE,
-                                         stderr = process.PIPE,
-                                         universal_newlines = True)
-                    out, err = proc.communicate()
-                    STDERR.write(err)
-                    STDOUT.write(out)
     if noErr:
         STDOUT.flush()
         STDERR.writelines(noErr)

@@ -1488,7 +1488,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * @emph{th}) for variable-sized atoms.
  */
 
-gdk_export gdk_return BATsave(BAT *b);
 gdk_export void BATmsync(BAT *b);
 
 gdk_export size_t BATmemsize(BAT *b, int dirty);
@@ -1504,8 +1503,6 @@ gdk_export void OIDXdestroy(BAT *b);
  * @- Printing
  * @multitable @columnfractions 0.08 0.7
  * @item int
- * @tab BATprintf (stream *f, BAT *b)
- * @item int
  * @tab BATprintcolumns (stream *f, int argc, BAT *b[]);
  * @end multitable
  *
@@ -1517,7 +1514,6 @@ gdk_export void OIDXdestroy(BAT *b);
  */
 gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_export gdk_return BATprint(BAT *b);
-gdk_export gdk_return BATprintf(stream *f, BAT *b);
 
 /*
  * @- BAT clustering

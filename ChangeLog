@@ -1,3 +1,8 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Jan 12 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added 5 new sys schema tables: function_languages, function_types,
+  key_types, index_types and privilege_codes.  They are pre-loaded with
+  static content and contain descriptive names for the various integer
+  type and code values.  See also sql/scripts/51_sys_schema_extension.sql

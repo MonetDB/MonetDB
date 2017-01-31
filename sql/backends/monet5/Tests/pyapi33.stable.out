@@ -1,22 +1,22 @@
-stdout of test 'setmemorylimit` in directory 'sql/test/malloc_fail` itself:
+stdout of test 'pyapi33` in directory 'sql/backends/monet5` itself:
 
 
-# 11:39:58 >  
-# 11:39:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36345" "--set" "mapi_usock=/var/tmp/mtest-21164/.s.monetdb.36345" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/hannes/monetdb-install/var/MonetDB/mTests_sql_test_malloc_fail"
-# 11:39:58 >  
+# 14:44:15 >  
+# 14:44:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34589" "--set" "mapi_usock=/var/tmp/mtest-6105/.s.monetdb.34589" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/myth/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_py=true"
+# 14:44:15 >  
 
-# MonetDB 5 server v11.24.0
+# MonetDB 5 server v11.25.6
 # This is an unreleased version
-# Serving database 'mTests_sql_test_malloc_fail', using 4 threads
-# Compiled for x86_64-apple-darwin15.5.0/64bit with 128bit integers
-# Found 16.000 GiB available main-memory.
+# Serving database 'mTests_sql_backends_monet5', using 4 threads
+# Compiled for x86_64-apple-darwin15.6.0/64bit with 128bit integers
+# Found 8.000 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://dakar.da.cwi.nl:36345/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21164/.s.monetdb.36345
-# MonetDB/GIS module loaded
+# Listening for connection requests on mapi:monetdb://dhcp-46.eduroam.cwi.nl:34589/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6105/.s.monetdb.34589
 # MonetDB/SQL module loaded
+# MonetDB/Python module loaded
 
 Ready.
 # SQL catalog created, loading sql scripts once
@@ -34,21 +34,19 @@ Ready.
 # loading sql script: 21_dependency_functions.sql
 # loading sql script: 22_clients.sql
 # loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
 # loading sql script: 25_debug.sql
 # loading sql script: 26_sysmon.sql
 # loading sql script: 27_rejects.sql
 # loading sql script: 39_analytics.sql
 # loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
 # loading sql script: 40_json_hge.sql
 # loading sql script: 41_md5sum.sql
 # loading sql script: 45_uuid.sql
-# loading sql script: 46_gsl.sql
 # loading sql script: 46_profiler.sql
 # loading sql script: 51_sys_schema_extension.sql
 # loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
 # loading sql script: 75_storagemodel.sql
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
@@ -57,19 +55,21 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 11:39:58 >  
-# 11:39:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21164" "--port=36345"
-# 11:39:58 >  
+# 14:44:15 >  
+# 14:44:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6105" "--port=34589"
+# 14:44:15 >  
 
-#create procedure setmemorylimit(nbytes BIGINT) external name "io"."setmemorylimit";
-#select name from tables where 1=0;
-% .tables # table_name
-% name # name
-% varchar # type
-% 0 # length
-#drop procedure setmemorylimit;
+#START TRANSACTION;
+#CREATE FUNCTION pyapi33() RETURNS STRING LANGUAGE PYTHON { return 'hello'; };
+#SELECT pyapi33();
+% .L2 # table_name
+% L2 # name
+% clob # type
+% 5 # length
+[ "hello"	]
+#ROLLBACK;
 
-# 11:39:59 >  
-# 11:39:59 >  "Done."
-# 11:39:59 >  
+# 14:44:16 >  
+# 14:44:16 >  "Done."
+# 14:44:16 >  
 

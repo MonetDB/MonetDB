@@ -43,8 +43,12 @@ null	sys	connections	SYSTEM TABLE	null	null	null	null	null	null
 null	sys	db_user_info	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	dependencies	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	dependency_types	SYSTEM TABLE	null	null	null	null	null	null	
+null	sys	function_languages	SYSTEM TABLE	null	null	null	null	null	null	
+null	sys	function_types	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	functions	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	idxs	SYSTEM TABLE	null	null	null	null	null	null	
+null	sys	index_types	SYSTEM TABLE	null	null	null	null	null	null	
+null	sys	key_types	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	keys	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	keywords	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	netcdf_attrs	SYSTEM TABLE	null	null	null	null	null	null	
@@ -53,6 +57,7 @@ null	sys	netcdf_files	SYSTEM TABLE	null	null	null	null	null	null
 null	sys	netcdf_vardim	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	netcdf_vars	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	objects	SYSTEM TABLE	null	null	null	null	null	null	
+null	sys	privilege_codes	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	privileges	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	schemas	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	sequences	SYSTEM TABLE	null	null	null	null	null	null	

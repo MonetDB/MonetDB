@@ -363,8 +363,18 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
                 del cmd[i]
                 del cmd[i - 1]
                 break
+        usock = None
+        for i in range(len(cmd)):
+            if cmd[i][:11] == 'mapi_usock=':
+                usock = cmd[i][11:cmd[i].rfind('.')]
+                del cmd[i]
+                del cmd[i - 1]
+                break
         cmd.append('--set')
         cmd.append('mapi_port=%d' % int(mapiport))
+        if usock is not None:
+            cmd.append('--set')
+            cmd.append('mapi_usock=%s.%d' % (usock, int(mapiport)))
     for i in range(len(cmd)):
         if cmd[i][:9] == '--dbpath=':
             dbpath = cmd[i][9:]

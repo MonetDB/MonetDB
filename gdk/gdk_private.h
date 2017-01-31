@@ -65,6 +65,8 @@ __hidden gdk_return BATmaterialize(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden str BATrename(BAT *b, const char *nme)
 	__attribute__((__visibility__("hidden")));
+__hidden gdk_return BATsave(BAT *b)
+	__attribute__((__visibility__("hidden")));
 __hidden void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden size_t BATvmsize(BAT *b, int dirty)
