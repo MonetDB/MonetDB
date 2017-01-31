@@ -273,7 +273,7 @@ isUnsafeFunction(InstrPtr q)
 }
 
 /*
- * Instructions are unsafe is one of the arguments is also mentioned
+ * Instructions are unsafe if one of the arguments is also mentioned
  * in the result list. Alternatively, the 'unsafe' property is set
  * for the function call itself.
  */
