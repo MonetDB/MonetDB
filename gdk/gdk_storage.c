@@ -710,11 +710,11 @@ BATmsync(BAT *b)
 			BATmsyncImplementation(arg);
 #endif
 		}
+	}
 #endif
 #else
-		(void) b;
+	(void) b;
 #endif	/* DISABLE_MSYNC */
-	}
 }
 
 gdk_return
