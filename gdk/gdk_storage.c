@@ -710,11 +710,11 @@ BATmsync(BAT *b)
 			BATmsyncImplementation(arg);
 #endif
 		}
-	}
 #endif
 #else
-	(void) b;
+		(void) b;
 #endif	/* DISABLE_MSYNC */
+	}
 }
 
 gdk_return
@@ -891,10 +891,12 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	int i;
 	BUN n, cnt;
 	struct colinfo {
-		int t;
+		int (*s) (str *, int *, const void *);
 		BATiter i;
 	} *colinfo;
 	char *buf;
+	int buflen = 0;
+	int len;
 
 	/* error checking */
 	for (i = 0; i < argc; i++) {
@@ -915,7 +917,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 
 	for (i = 0; i < argc; i++) {
 		colinfo[i].i = bat_iterator(argv[i]);
-		colinfo[i].t = argv[i]->ttype;
+		colinfo[i].s = BATatoms[argv[i]->ttype].atomToStr;
 	}
 
 	mnstr_write(s, "#--------------------------#\n", 1, 29);
@@ -936,17 +938,20 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	}
 	mnstr_write(s, "  # type\n", 1, 9);
 	mnstr_write(s, "#--------------------------#\n", 1, 29);
+	buf = NULL;
 
 	for (n = 0, cnt = BATcount(argv[0]); n < cnt; n++) {
 		mnstr_write(s, "[ ", 1, 2);
 		for (i = 0; i < argc; i++) {
+			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n));
 			if (i > 0)
 				mnstr_write(s, ",\t", 1, 2);
-			ATOMprint(colinfo[i].t, BUNtail(colinfo[i].i, n), s);
+			mnstr_write(s, buf, 1, len);
 		}
 		mnstr_write(s, "  ]\n", 1, 4);
 	}
 
+	GDKfree(buf);
 	GDKfree(colinfo);
 
 	return GDK_SUCCEED;
