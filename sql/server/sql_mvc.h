@@ -30,6 +30,7 @@
 #define type_value	0
 #define type_predicate	1
 
+/* todo cleanup card_row and card_set, both seem to be not used */
 /* cardinality expected by enclosing operator */
 #define card_none	-1	/* psm call doesn't return anything */
 #define card_value	0
@@ -39,6 +40,7 @@
 #define card_relation 	4
 #define card_loader 	5
 
+#define CARD_VALUE(card) (card == card_value || card == card_row || card == card_column || card == card_set)
 
 /* allowed to reduce (in the where and having parts we can reduce) */
 

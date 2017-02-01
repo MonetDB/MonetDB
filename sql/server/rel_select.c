@@ -25,7 +25,8 @@
 #include "mal.h"		/* for have_hge */
 #endif
 
-#define check_card(card,f) ((card == card_none && !f->res) || (card != card_none && (f->res || f->func->type == F_FILT)) || card == card_loader)
+#define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
+#define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
 
 static void
 rel_setsubquery(sql_rel*r)
