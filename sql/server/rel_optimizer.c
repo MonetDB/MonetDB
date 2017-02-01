@@ -7926,8 +7926,6 @@ exp_apply_rename(mvc *sql, sql_exp *e, list *aliases, int setname)
 			ne = exp_op(sql->sa, nl, e->f);
 		else 
 			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
-		if (e && e->rname)
-			exp_setname(sql->sa, ne, e->rname, e->name);
 		break;
 	}	
 	case e_atom:
@@ -7936,6 +7934,8 @@ exp_apply_rename(mvc *sql, sql_exp *e, list *aliases, int setname)
 	}
 	if (ne && e->p)
 		ne->p = prop_copy(sql->sa, e->p);
+	if (ne && !ne->used && e->rname)
+		exp_setname(sql->sa, ne, e->rname, e->name);
 	return ne;
 }
 
