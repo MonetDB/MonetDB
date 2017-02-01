@@ -9,3 +9,4 @@ round-or-truncate.Bug-6193
 splitpart.Bug-6194
 HAVE_HGE?cast-with-many-decimals.Bug-6195
 union_func_crash.Bug-6196
+complicated_logic.Bug-105
