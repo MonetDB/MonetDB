@@ -373,3 +373,17 @@ char *db_release(char *dbname) {
 
 	return(NULL);
 }
+
+char *db_master(char *dbname) {
+	/* sabdb *stats; */
+	/* char *e; */
+	/* char buf[8096]; */
+
+	/* if ((e = msab_getStatus(&stats, dbname)) != NULL) { */
+	/* 	snprintf(buf, sizeof(buf), "internal error: %s", e); */
+	/* 	free(e); */
+	/* 	return(strdup(buf)); */
+	/* } */
+	(void)dbname;
+	return strdup("executing db_master");
+}

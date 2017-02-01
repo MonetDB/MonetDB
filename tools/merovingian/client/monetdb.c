@@ -1623,16 +1623,40 @@ command_release(int argc, char *argv[])
 static void
 command_master(int argc, char *argv[])
 {
-	int i;
+	char *e = NULL;
+	sabdb *orig = NULL;
+	sabdb *stats = NULL;
+	char *target_path = NULL;
+
+
 	if (argc != 2 && argc != 3) {
 		/* print help message for this command */
 		command_help(argc + 1, &argv[-1]);
 		exit(1);
 	}
 
-	fprintf(stderr, "Called master with args:\n");
-	for (i = 0; i < argc; i++)
-		fprintf(stderr, "  %s\n", argv[i]);
+	if (argc == 3)
+		target_path = strdup(argv[2]);
+
+	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
+		fprintf(stderr, "master: %s\n", e);
+		free(e);
+		exit(2);
+	}
+	stats = globMatchDBS(argc, argv, &orig, "master");
+	msab_freeStatus(&orig);
+	orig = stats;
+
+	if (target_path != NULL) {
+		size_t len = strlen("master path=") + strlen(target_path) + 1;
+		char *cmd = (char *)malloc(len);
+		snprintf(cmd, len, "master path=%s", target_path);
+		simple_argv_cmd(argv[0], orig, cmd,
+						"set database as master", NULL);
+	} else {
+		simple_argv_cmd(argv[0], orig, "master",
+						"set database as master", NULL);
+	}
 }
 
 static void
@@ -1644,7 +1668,7 @@ command_replica(int argc, char *argv[])
 		command_help(argc + 1, &argv[-1]);
 		exit(1);
 	}
-	fprintf(stderr, "Called replica with args:\n");
+	fprintf(stderr, "Called replica with %d args:\n", argc);
 	for (i = 0; i < argc; i++)
 		fprintf(stderr, "  %s\n", argv[i]);
 }

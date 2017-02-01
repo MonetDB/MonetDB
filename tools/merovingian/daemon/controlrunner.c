@@ -618,6 +618,18 @@ static void ctl_handle_client(
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 				}
+			} else if (strcmp(p, "master") == 0 ||
+					   strncmp(p, "master path=", strlen("master path=")) == 0) {
+				char *e = db_master(q);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: got command master %s: %s\n", origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2),
+								   "%s\n", getErrMsg(e));
+					send_client("!");
+					free(e);
+				} else {
+
+				}
 			} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 				char *e;
 
