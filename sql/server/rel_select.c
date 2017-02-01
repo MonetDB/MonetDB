@@ -25,7 +25,8 @@
 #include "mal.h"		/* for have_hge */
 #endif
 
-#define check_card(card,f) ((card == card_none && !f->res) || (card != card_none && (f->res || f->func->type == F_FILT)) || card == card_loader)
+#define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
+#define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
 
 static void
 rel_setsubquery(sql_rel*r)
@@ -995,10 +996,15 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			return rel_var_ref(sql, name, 0);
 		}
 		if (!exp && !var) {
-			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel)
-				return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
-			else
-				return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
+			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel) {
+				sql_rel *gb = *rel;
+
+				while(gb->l && !is_groupby(gb->op))
+					gb = gb->l;
+				if (gb && gb->l && rel_bind_column(sql, gb->l, name, f)) 
+					return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
+			}
+			return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
 		}
 		
 	} else if (dlist_length(l) == 2) {
@@ -1026,10 +1032,15 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) {
-			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel)
-				return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
-			else
-				return sql_error(sql, 02, "42S22!SELECT: no such column '%s.%s'", tname, cname);
+			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel) {
+				sql_rel *gb = *rel;
+
+				while(gb->l && !is_groupby(gb->op))
+					gb = gb->l;
+				if (gb && gb->l && rel_bind_column2(sql, gb->l, tname, cname, f))
+					return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+			}
+			return sql_error(sql, 02, "42S22!SELECT: no such column '%s.%s'", tname, cname);
 		}
 	} else if (dlist_length(l) >= 3) {
 		return sql_error(sql, 02, "TODO: column names of level >= 3");

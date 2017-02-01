@@ -2,7 +2,12 @@ shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
 HAVE_LIBZ?heapextend.Bug-6134
+incorrect_error.Bug-6141
 empty-interval.Bug-6184
+drop_not_null_on_pkey.Bug-6189
 too-large-decimals.Bug-6192
 round-or-truncate.Bug-6193
+splitpart.Bug-6194
 HAVE_HGE?cast-with-many-decimals.Bug-6195
+union_func_crash.Bug-6196
+complicated_logic.Bug-105
