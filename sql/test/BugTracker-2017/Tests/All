@@ -3,6 +3,7 @@ avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
 HAVE_LIBZ?heapextend.Bug-6134
 empty-interval.Bug-6184
+drop_not_null_on_pkey.Bug-6189
 too-large-decimals.Bug-6192
 round-or-truncate.Bug-6193
 splitpart.Bug-6194

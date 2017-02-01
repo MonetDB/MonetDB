@@ -1,0 +1,65 @@
+stdout of test 'drop_not_null_on_pkey.Bug-6189` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 13:54:58 >  
+# 13:54:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35008" "--set" "mapi_usock=/var/tmp/mtest-2736/.s.monetdb.35008" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 13:54:58 >  
+
+# MonetDB 5 server v11.25.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:35008/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2736/.s.monetdb.35008
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:54:58 >  
+# 13:54:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2736" "--port=35008"
+# 13:54:58 >  
+
+#CREATE TABLE "PKeyNotNull" (
+#	"PK_COL1" varchar(4) NOT NULL,
+#	"PK_COL2" varchar(4) NOT NULL,
+#	"DataCol" int DEFAULT NULL,
+#	PRIMARY KEY ("PK_COL1","PK_COL2") );
+CREATE TABLE "sys"."PKeyNotNull" (
+	"PK_COL1" VARCHAR(4)    NOT NULL,
+	"PK_COL2" VARCHAR(4)    NOT NULL,
+	"DataCol" INTEGER,
+	CONSTRAINT "PKeyNotNull_PK_COL1_PK_COL2_pkey" PRIMARY KEY ("PK_COL1", "PK_COL2")
+);
+#SELECT * FROM "PKeyNotNull";
+% sys.PKeyNotNull,	sys.PKeyNotNull,	sys.PKeyNotNull # table_name
+% PK_COL1,	PK_COL2,	DataCol # name
+% varchar,	varchar,	int # type
+% 0,	0,	1 # length
+#DROP TABLE "PKeyNotNull";
+#CREATE TABLE "PKeyImplicitNotNull" (
+#	"PK_COL1" varchar(4) NULL,
+#	"PK_COL2" varchar(4) NULL,
+#	"DataCol" int DEFAULT NULL,
+#	PRIMARY KEY ("PK_COL1","PK_COL2") );
+CREATE TABLE "sys"."PKeyImplicitNotNull" (
+	"PK_COL1" VARCHAR(4)    NOT NULL,
+	"PK_COL2" VARCHAR(4)    NOT NULL,
+	"DataCol" INTEGER,
+	CONSTRAINT "PKeyImplicitNotNull_PK_COL1_PK_COL2_pkey" PRIMARY KEY ("PK_COL1", "PK_COL2")
+);
+#SELECT * FROM "PKeyImplicitNotNull";
+% sys.PKeyImplicitNotNull,	sys.PKeyImplicitNotNull,	sys.PKeyImplicitNotNull # table_name
+% PK_COL1,	PK_COL2,	DataCol # name
+% varchar,	varchar,	int # type
+% 0,	0,	1 # length
+#DROP TABLE "PKeyImplicitNotNull";
+
+# 13:54:58 >  
+# 13:54:58 >  "Done."
+# 13:54:58 >  
+
