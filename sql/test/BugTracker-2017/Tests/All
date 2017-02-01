@@ -2,6 +2,7 @@ shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
 HAVE_LIBZ?heapextend.Bug-6134
+incorrect_error.Bug-6141
 empty-interval.Bug-6184
 drop_not_null_on_pkey.Bug-6189
 too-large-decimals.Bug-6192
