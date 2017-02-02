@@ -22,6 +22,10 @@ pattern stopmaster()
 address WLCstopmaster
 comment "Terminate keeping a log on this branch":
 
+pattern drift(duration:int)
+address WLCdrift
+comment "Maximal duration of collecting a transaction log befor releasing it";
+
 pattern threshold(limit:int)
 address WLCthreshold
 comment "Activate the workload-capture-replay. Only queries surpassing the threshold are kept for replay.";

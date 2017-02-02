@@ -25,6 +25,9 @@ dbname = tstdb
 dbnameclone = tstdb + '-clone'
 
 # clean up before we start
+#if os.path.exists(os.path.join(dbfarm, dbname)):
+    #import shutil
+    #shutil.rmtree(os.path.join(dbfarm, dbname))
 #if os.path.exists(os.path.join(dbfarm, dbnameclone)):
     #import shutil
     #shutil.rmtree(os.path.join(dbfarm, dbnameclone))

@@ -173,12 +173,13 @@ typedef struct CLIENT {
 	Workset inprogress[THREADS];
 	/*
 	 * The workload for replication/replay is saved initially as a MAL block.
+	 * It is split into the capturing part (wlc) and the replay part (wlr).
+	 * This allows a single server to act as both a master and a replica.
 	 */
-	int wlcr_kind;	
-	int wlcr_mode;
-	int wlcr_threshold;
-	str wlcr_replaylog;
+	int wlcr_kind;	// used by master to characterise the compound transaction
+	int wlcr_mode;	// used by replica to control rerunning the transaction
 	MalBlkPtr wlcr;
+
 	/*	
 	 *	Errors during copy into are collected in a user specific column set
 	 */

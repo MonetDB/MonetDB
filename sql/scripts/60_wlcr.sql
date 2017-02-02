@@ -9,6 +9,9 @@
 declare replaythreshold integer;
 set replaythreshold = -1; -- don't replay
 
+create procedure drift(duration int)
+external name wlcr.drift;
+
 create procedure master()
 external name wlcr.master;
 

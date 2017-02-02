@@ -30,10 +30,10 @@
 #define WLCR_REPLICATE 2
 
 /* The current status of the replica  processing */
+static str wlr_logs;
 static str wlr_master;
-static str wlr_dbname;
-static int wlr_nextbatch; // the last log file processed completely
-static int wlr_tag;		// tag of last record processed
+static int wlr_nextbatch; 	// the next file to be processed
+static int wlr_tag;			// the next transaction to be processed
 static int wlr_threshold = -1;	// minimum time for a query to be re-executed
 
 static
@@ -47,10 +47,10 @@ str WLRgetConfig(void){
         throw(MAL,"wlr.getConfig","Could not access %s\n",path);
     while( fgets(path, PATHLENGTH, fd) ){
 		path[strlen(path)-1]= 0;
-        if( strncmp("dbname=", path,7) == 0)
-            wlr_dbname = GDKstrdup(path + 7);
         if( strncmp("master=", path,7) == 0)
             wlr_master = GDKstrdup(path + 7);
+        if( strncmp("logs=", path,5) == 0)
+            wlr_logs = GDKstrdup(path + 5);
         if( strncmp("nextbatch=", path, 10) == 0)
             wlr_nextbatch = atoi(path+ 10);
         if( strncmp("tag=", path, 4) == 0)
@@ -69,8 +69,8 @@ str WLRsetConfig(void){
     fd = fopen(path,"w");
     if( fd == NULL)
         throw(MAL,"wlr.setConfig","Could not access %s\n",path);
-	fprintf(fd,"dbname=%s\n", wlr_dbname);
 	fprintf(fd,"master=%s\n", wlr_master);
+	fprintf(fd,"logs=%s\n", wlr_logs);
 	fprintf(fd,"nextbatch=%d\n", wlr_nextbatch);
 	fprintf(fd,"tag=%d\n", wlr_tag);
     fclose(fd);
@@ -109,22 +109,24 @@ WLRgetMaster(str dbname)
 	}
 	(void) fclose(fd);
 
-	wlr_master = dir;
+	wlr_logs = dir;
 	snprintf(path,PATHLENGTH,"..%c%s%cmaster",DIR_SEP,dbname,DIR_SEP);
-	dir = GDKfilepath(0,path,"wlcr.config",0);
+	dir = GDKfilepath(0,path,"wlc.config",0);
 	fd = fopen(dir,"r");
 	if( fd == NULL){
 		GDKfree(dir);
-		GDKfree(wlr_master);
-		wlr_master = 0;
+		GDKfree(wlr_logs);
+		wlr_logs = 0;
 		throw(SQL,"getMaster","missing configuration file");
 	}
 
-	wlr_dbname = GDKstrdup(dbname);
+	wlr_master = GDKstrdup(dbname);
     while( fgets(path, PATHLENGTH, fd) ){
 		path[strlen(path)-1]= 0;
-        if( strncmp("lastbatch=", path, 10) == 0)
-            wlcr_lastbatch = atoi(path+ 10);
+        if( strncmp("batches=", path, 8) == 0)
+            wlcr_batches = atoi(path+ 8);
+        if( strncmp("drift=", path, 6) == 0)
+            wlcr_drift = atoi(path+ 6);
     }
 	GDKfree(dir);
 	(void) fclose(fd);
@@ -150,8 +152,8 @@ WLRinitReplica(str dbname)
 	if( msg)
 		return msg;
 
-	wlr_dbname = GDKstrdup(dbname);
-	wlr_nextbatch = -1;
+	wlr_master = GDKstrdup(dbname);
+	wlr_nextbatch = 0;
 	wlr_tag = 0;
 
 	WLRsetConfig();	// initialize the replica configuration setting
@@ -177,11 +179,11 @@ WLRgetThreshold( Client cntxt, MalBlkPtr mb)
 }
 
 /* 
- * Run once through the list of pending WLCR logs
+ * Run once through the list of pending WLC logs
  * Continuing where you left off the previous time.
  */
-void
-WLCRprocess(void *arg)
+static void
+WLRprocess(void *arg)
 {	
 	Client cntxt = (Client) arg;
 	int i, pc;
@@ -222,8 +224,8 @@ WLCRprocess(void *arg)
 		wlcr_archive, wlr_firstbatch, wlr_nextbatch, wlr_threshold);
 #endif
 	wlr_tag = 0;
-	for( i= wlr_nextbatch; i < wlcr_lastbatch && ! GDKexiting(); i++){
-		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlr_master, DIR_SEP, wlr_dbname, i);
+	for( i= wlr_nextbatch; i < wlcr_batches && ! GDKexiting(); i++){
+		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlr_logs, DIR_SEP, wlr_master, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlcr.process:'%s' can not be accessed \n",path);
@@ -245,6 +247,7 @@ WLCRprocess(void *arg)
 		mnstr_printf(c->fdout,"#wlcr.process:start processing log file '%s'\n",path);
 #endif
 		c->yycur = 0;
+		mnstr_printf(cntxt->fdout,"#replay log file:%s\n",path);
 		//
 		// now parse the file line by line to reconstruct the WLR blocks
 		do{
@@ -294,18 +297,35 @@ WLCRprocess(void *arg)
 	cntxt->wlcr_mode = 0;
 }
 
+static void
+WLRprocessScheduler(void *arg)
+{
+	Client cntxt = (Client) arg;
+
+	while(1){
+		if( wlr_master)
+			WLRgetMaster(wlr_master);
+		if( wlr_nextbatch < wlcr_batches)
+			WLRprocess(cntxt);
+		// wait at most for the drift period
+		MT_sleep_ms( (wlcr_drift? wlcr_drift:1) * 1000 );
+	}
+}
+
 void
 WLRinit(Client cntxt)
 {
 	MT_Id wlcr_thread;
 	
 	WLRgetConfig();
-	(void) WLRgetMaster(wlr_dbname);
-	// time to start the consolidation process
-	if( wlr_master){
+	(void) WLRgetMaster(wlr_master);
+	// time to continue the consolidation process in the background
+	if( wlr_logs){
+		// Always try to roll forward before you continue
 		cntxt->wlcr_mode = WLCR_REPLICATE;
-		if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-				GDKerror("wlcr.replicate:replay process can not be started");
+		WLRprocess(cntxt);
+		if (MT_create_thread(&wlcr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
+				GDKerror("wlcr.replicate:replay scheduling process can not be started");
 		}
 	}
 }
@@ -313,26 +333,22 @@ WLRinit(Client cntxt)
 str
 WLCRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
-	bit waitfor= 0;
 	MT_Id wlcr_thread;
 	(void) mb;
 
 	if( cntxt->wlcr_mode == WLCR_REPLICATE || cntxt->wlcr_mode == WLCR_REPLAY){
-		throw(SQL,"wlcr.replicate","System already in synchronization mode");
+		throw(SQL,"wlr.replicate","System already in synchronization mode");
 	}
 	msg = WLRinitReplica( *getArgReference_str(stk,pci,1));
 	if( msg)
 		return msg;
 
-	if ( pci->argc ==3)
-		waitfor = *getArgReference_bit(stk,pci,2);
 	cntxt->wlcr_mode = WLCR_REPLICATE;
 	// For testing it is helpful to wait for completion of the replication process
-	if( waitfor)
-		WLCRprocess(cntxt);
+	WLRprocess(cntxt);
 	// start the process for continual integration in the background
-    if (MT_create_thread(&wlcr_thread, WLCRprocess, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlcr.replicate","replay process can not be started\n");
+    if (MT_create_thread(&wlcr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
+			throw(SQL,"wlr.replicate","replay scheduling process can not be started\n");
 	}
 	return MAL_SUCCEED;
 }

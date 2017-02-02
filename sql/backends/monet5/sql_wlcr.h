@@ -17,7 +17,6 @@
 
 /*
  */
-extern void WLCRprocess(void *arg);
 extern void WLRinit(Client cntxt);
 extern str WLCRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
