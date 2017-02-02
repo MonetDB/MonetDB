@@ -54,10 +54,18 @@ headers_h = {
 	HEADERS = h
 	SOURCES = \
 		mal.h \
+		mal_client.h \
 		mal_errors.h \
 		mal_exception.h \
+		mal_factory.h \
+		mal_function.h \
 		mal_instruction.h \
+		mal_interpreter.h \
+		mal_listing.h \
+		mal_module.h \
 		mal_namespace.h \
+		mal_profiler.h \
+		mal_resolve.h \
 		mal_stack.h \
 		mal_type.h
 }
