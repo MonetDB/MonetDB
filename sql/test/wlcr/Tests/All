@@ -1,5 +1,7 @@
 # This  is a scenario for continual replication
 # first create a master with some data
+wlcr00
+
 wlc01
 
 # create the replica synchronized with the master
