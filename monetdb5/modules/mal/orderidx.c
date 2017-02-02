@@ -47,6 +47,25 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	if (b->torderidx)
 		return MAL_SUCCEED;
 
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_flt:
+	case TYPE_dbl:
+		break;
+	case TYPE_str:
+		/* TODO: support strings etc. */
+	case TYPE_void:
+	case TYPE_ptr:
+	default:
+		throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
+	}
+
 	if( pieces < 0 ){
 		if (GDKnr_threads <= 1) {
 			pieces = 1;

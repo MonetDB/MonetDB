@@ -642,8 +642,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (i->type == ordered_idx) {
 				sql_kc *ic = i->columns->h->data;
 				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
-				OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
+				char *msg = OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
 				BBPunfix(b->batCacheid);
+				if (msg != MAL_SUCCEED) {
+					char *smsg = sql_message("40002!CREATE ORDERED INDEX: %s", msg);
+					freeException(msg);
+					return smsg;
+				}
 			}
 			if (i->type == imprints_idx) {
 				sql_kc *ic = i->columns->h->data;
