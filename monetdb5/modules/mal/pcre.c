@@ -823,14 +823,8 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 	return MAL_SUCCEED;
 }
 
-#ifdef HAVE_LIBPCRE
 /* special characters in PCRE that need to be escaped */
 static const char *pcre_specials = ".+?*()[]{}|^$\\";
-#else
-/* special characters in POSIX basic regular expressions that need to
- * be escaped */
-static const char *pcre_specials = "*^$\\";
-#endif
 
 /* change SQL LIKE pattern into PCRE pattern */
 static str
