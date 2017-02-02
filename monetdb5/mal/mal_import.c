@@ -130,7 +130,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 
 #define restoreClient1 \
 	if (c->fdin)  \
-		(void) bstream_destroy(c->fdin); \
+		bstream_destroy(c->fdin); \
 	c->fdin = oldfdin;  \
 	c->yycur = oldyycur;  \
 	c->listing = oldlisting; \

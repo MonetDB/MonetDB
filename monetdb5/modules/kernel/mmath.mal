@@ -194,7 +194,7 @@ unsafe command rand () :int
 address MATHrandint
 comment "return a random number";
 
-command rand (v:int) :int 
+unsafe command rand (v:int) :int 
 address MATHrandintarg
 comment "return a random number";
 

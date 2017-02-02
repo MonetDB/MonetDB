@@ -483,7 +483,7 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 }
 
 static str
-sql_update_default(Client c, mvc *sql)
+sql_update_dec2016(Client c, mvc *sql)
 {
 	size_t bufsize = 12240, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
@@ -1284,7 +1284,7 @@ SQLupgrades(Client c, mvc *m)
 
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!sql_bind_func3(m->sa, s, "createorderindex", &tp, &tp, &tp, F_PROC)) {
-		if ((err = sql_update_default(c, m)) != NULL) {
+		if ((err = sql_update_dec2016(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}

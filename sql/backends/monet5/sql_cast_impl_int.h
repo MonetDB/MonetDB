@@ -48,7 +48,7 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 			GDKfree(buf);
 			return msg;
 		}
-		val *= scales[s2 - s1];
+		val *= (TP1) scales[s2 - s1];
 	} else if (s2 < s1) {
 		if (val / scales[s1 - s2] <= GDKmin(TP2) ||
 		    val / scales[s1 - s2] > GDKmax(TP2)) {
@@ -75,9 +75,9 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 	*res = (TP2) val;
 #else
 	if (s2 > s1) {
-		r *= scales[s2 - s1];
+		r *= (TP2) scales[s2 - s1];
 	} else if (s2 < s1) {
-		r = (TP1) ((r
+		r = (TP2) ((r
 #ifndef TRUNCATE_NUMBERS
 			      + (val < 0 ? -5 : 5) * scales[s1 - s2 - 1]
 #endif

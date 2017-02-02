@@ -1,0 +1,38 @@
+stdout of test 'incorrect_error.Bug-6141` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 14:15:17 >  
+# 14:15:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31566" "--set" "mapi_usock=/var/tmp/mtest-7159/.s.monetdb.31566" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 14:15:17 >  
+
+# MonetDB 5 server v11.25.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.615 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mosquitto:31566/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7159/.s.monetdb.31566
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:15:19 >  
+# 14:15:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7159" "--port=31566"
+# 14:15:19 >  
+
+#create table t1 ( c1 int, c2 int );
+#select count(c1) as c2 from (select count(*) as c1, c2 from t1 group by c2) as t2 group by c2;
+% sys.L7 # table_name
+% c2 # name
+% bigint # type
+% 1 # length
+#drop table t1;
+
+# 14:15:19 >  
+# 14:15:19 >  "Done."
+# 14:15:19 >  
+

@@ -1863,11 +1863,11 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 	}
    
 	if (p == 0) {
-		len = UTF8_strlen(s);
+		len = strlen(s);
 	} else if ((p = strstr(s, s2)) != 0) {
 		len = (int) (p - s);
 	} else {
-		len = UTF8_strlen(s);
+		len = strlen(s);
 	}
 
 	if (len == int_nil || len == 0) {

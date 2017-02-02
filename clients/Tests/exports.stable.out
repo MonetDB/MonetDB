@@ -159,7 +159,6 @@ gdk_return BATorderidx(BAT *b, int stable);
 gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_return BATprint(BAT *b);
 gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
-gdk_return BATprintf(stream *f, BAT *b);
 gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
 BAT *BATproject(BAT *l, BAT *r);
 BAT *BATprojectchain(BAT **bats);
@@ -167,7 +166,6 @@ gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl,
 gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force);
 void BATroles(BAT *b, const char *tnme);
 BAT *BATsample(BAT *b, BUN n);
-gdk_return BATsave(BAT *b);
 BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_return BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_return BATsetaccess(BAT *b, int mode);

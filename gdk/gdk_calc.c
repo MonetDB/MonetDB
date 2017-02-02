@@ -13454,6 +13454,20 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 #define roundflt(x)	roundf(x)
 #define rounddbl(x)	round(x)
 #endif
+
+#ifndef HAVE_ROUND
+static inline double
+round(double val)
+{
+	/* round to nearest integer, away from zero */
+	if (val < 0)
+		return -floor(-val + 0.5);
+	else
+		return floor(val + 0.5);
+}
+#define roundf(x)	((float)round((double)(x)))
+#endif
+
 #define convertimpl_reduce_float(TYPE1, TYPE2)				\
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \

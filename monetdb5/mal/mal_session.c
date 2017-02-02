@@ -157,7 +157,7 @@ exit_streams( bstream *fin, stream *fout )
 		close_stream(fout);
 	}
 	if (fin)
-		(void) bstream_destroy(fin);
+		bstream_destroy(fin);
 }
 
 const char* mal_enableflag = "mal_for_all";

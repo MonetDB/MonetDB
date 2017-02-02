@@ -465,6 +465,19 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+#ifndef HAVE_ROUND
+static inline double
+round(double val)
+{
+	/* round to nearest integer, away from zero */
+	if (val < 0)
+		return -floor(-val + 0.5);
+	else
+		return floor(val + 0.5);
+}
+#define roundf(x)	((float)round((double)(x)))
+#endif
+
 /* up casting */
 
 #define TP1 bte
