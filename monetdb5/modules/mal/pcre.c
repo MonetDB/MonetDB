@@ -319,7 +319,7 @@ static str
 pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int anti)
 {
 #ifdef HAVE_LIBPCRE
-	int options = PCRE_UTF8 | PCRE_MULTILINE;
+	int options = PCRE_UTF8 | PCRE_MULTILINE | PCRE_DOTALL;
 	pcre *re;
 	pcre_extra *pe;
 	const char *error;
@@ -1074,7 +1074,7 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, 
 str
 PCREmatch(bit *ret, const str *val, const str *pat)
 {
-	char *flags = "";
+	char *flags = "s";
 	return pcre_match_with_flags(ret, *val, *pat, flags);
 }
 
@@ -1300,7 +1300,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 #ifdef HAVE_LIBPCRE
 			const char err[BUFSIZ], *err_p = err;
 			int errpos = 0;
-			int options = PCRE_UTF8;
+			int options = PCRE_UTF8 | PCRE_DOTALL;
 			pcre *re;
 #else
 			pcre re;
