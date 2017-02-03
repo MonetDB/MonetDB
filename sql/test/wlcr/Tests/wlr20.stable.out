@@ -5,9 +5,7 @@ stdout of test 'wlr20` in directory 'sql/test/wlcr` itself:
 # 22:38:44 >  "/usr/bin/python2" "wlr20.py" "wlr20"
 # 22:38:44 >  
 
-Executing: Mtimeout -timeout 60 mserver5 --debug=10 --set gdk_nr_threads=0 --set mapi_open=true --set monet_prompt= --forcemito --set mapi_port=57635 --set mapi_usock=/var/tmp/mtest-21578/.s.monetdb.57635 --dbpath=/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
-Executing: Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-21578 --port=57635 --database=mTests_sql_test_wlcr-clone
-# MonetDB 5 server v11.26.0
+# MonetDB 5 server v11.26.0 (hg id: cbfc9f47e58c)
 # This is an unreleased version
 # Serving database 'mTests_sql_test_wlcr-clone', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers

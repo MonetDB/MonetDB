@@ -4,7 +4,6 @@ except ImportError:
     import process
 import os, sys, socket
 
-process.verbose = True
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
 
