@@ -288,7 +288,7 @@ handleClient(void *data)
 		if (top == NULL) {
 			mnstr_printf(fout, "!monetdbd: no such database '%s', please create it first\n", database);
 		} else {
-			mnstr_printf(fout, "!monetdbd: internal error while starting mserver '%s', please refer to the logs\n",e);
+			mnstr_printf(fout, "!monetdbd: internal error while starting mserver '%s'%s\n", e, strstr(e, "logfile")?"":", please refer to the logs");
 			Mfprintf(_mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
 		}
 		mnstr_flush(fout);
