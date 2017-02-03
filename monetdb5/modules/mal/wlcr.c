@@ -50,17 +50,17 @@
  * The end of the transaction is marked as exec()
  *
  * Logging of queries can be limited to those that satisfy an minimum execution threshold.
- * SET replaythreshold= <number>
+ * CALL logthreshold(duration)
  * The threshold is given in milliseconds. A negative threshold leads to ignoring all queries.
- * The threshold setting is not saved because it is a client session specific action.
- * The default for a production system version is set to -1
+ * The threshold setting is saved and affects all future master log records.
+ * The default for a production system version should be set to -1
  *
  * A transaction log is owned by the master. He decides when the log may be globally
  * used. There are several triggers for this. A new transaction log is created when
  * the system has been collecting logs for some time (drift).
  * The problem here is that we should ensure that the log file is closed even if there
- * are no transactions running. After closing, the replicas can see from the
- * master configuration file that a new batch is available.
+ * are no transactions running. It is solved with a separate thread.
+ * After closing, the replicas can see from the master configuration file that a log is available.
  * The maximum drift can be set using a SQL command. Setting it to zero leads to a
  * log file per transaction.
  *
@@ -68,22 +68,26 @@
  *	 monetdb master <dbname> [ <optional snapshot path>]
  * which locks the database, takes a save copy, initializes the state chance. 
  *
- * A replica can be constructed as follows:
+ * A fresh replica can be constructed as follows:
  * 	monetdb replica <dbname> <mastername>
  *
  * Instead of using the monetdb command line we can use the SQL calls directly
  * master and replica, provided we start with a fresh database.
  *
- * Processing the log files starts in the background using the call.
+ * A fresh database can be turned into a replica using the call
  * CALL replicate("mastername")
+ * It will grab the latest snapshot of the master and applies all
+ * known log files before releasing returning a prompt. Progress of
+ * the replication can be monitored using the -fraw option in mclient.
+ *
  * It will iterate through the log files, applying all transactions.
  * Queries are simply ignored unless needed as replacement for catalog actions.
  *
- * The alternative is to replay only the query log
- * CALL replicate("dbname",threshold)
+ * The alternative is to also replay the queries as well.
+ * CALL replaythreshold(threshold)
  * In this mode all pure queries are executed under the credentials of the query owner
  * for which the reported threshold exceeds the argument[TODO].
- * It excludes catalog and update queries.
+ * It excludes catalog and update queries, which are always executed.
  *
  * Any failure encountered during a log replay terminates the process,
  * leaving a message in the merovingian log.
@@ -110,9 +114,9 @@ static str wlcr_logs = 0; 	// The location in the global file store for the logs
 static char wlcr_time[26];	// The timestamp of the last committed transaction.
 static stream *wlcr_fd = 0;
 static int wlcr_start = 0;	// time stamp of first transaction in log file
-int wlcr_threshold;
 
 // These properties are needed by the replica to direct the roll-forward.
+int wlcr_threshold = 0;		// should be set to -1 for production
 str wlcr_dbname = 0;  		// The master database name
 int wlcr_firstbatch = 0;	// first log file  associated with the snapshot
 int wlcr_batches = 0;		// identifier of next batch
@@ -153,6 +157,8 @@ str WLCgetConfig(void){
 			wlcr_batches = atoi(path+ 8);
 		if( strncmp("drift=", path, 6) == 0)
 			wlcr_drift = atoi(path+ 6);
+		if( strncmp("threshold=", path, 10) == 0)
+			wlcr_threshold = atoi(path+ 10);
 	}
 	fclose(fd);
 	return MAL_SUCCEED;
@@ -180,6 +186,7 @@ str WLCsetConfig(void){
 	fprintf(fd,"firstbatch=%d\n", wlcr_firstbatch);
 	fprintf(fd,"batches=%d\n", wlcr_batches );
 	fprintf(fd,"drift=%d\n", wlcr_drift );
+	fprintf(fd,"threshold=%d\n", wlcr_threshold );
 	fclose(fd);
 	return MAL_SUCCEED;
 }
@@ -322,7 +329,7 @@ WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str 
-WLCthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLClogthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) cntxt;
@@ -708,21 +715,23 @@ WLCwrite(Client cntxt, str kind)
 		if ( wlcr_fd == NULL)
 			throw(MAL,"wlcr.write","WLC log file not accessible");
 		else {
-
-
-			newStmt(cntxt->wlcr,"wlr","exec");
-			wlcr_tid++;
-			MT_lock_set(&wlcr_lock);
+			// filter out queries that run too shortly
 			p = getInstrPtr(cntxt->wlcr,0);
-			p = pushStr(cntxt->wlcr,p,kind);
-			p = pushStr(cntxt->wlcr, p, wlcr_name[cntxt->wlcr_kind]);
-			p = pushLng(cntxt->wlcr,p, GDKms() - p->ticks);
-			printFunction(wlcr_fd, cntxt->wlcr, 0, LIST_MAL_DEBUG );
-			(void) mnstr_flush(wlcr_fd);
-			if( wlcr_drift == 0 || wlcr_start + wlcr_drift < GDKms()/1000)
-				WLCcloselogger();
+			if( cntxt->wlcr_kind != WLCR_QUERY ||  wlcr_threshold == 0 || wlcr_threshold < GDKms() - p->ticks ) {
+				newStmt(cntxt->wlcr,"wlr","exec");
+				wlcr_tid++;
+				MT_lock_set(&wlcr_lock);
+				p = getInstrPtr(cntxt->wlcr,0);
+				p = pushStr(cntxt->wlcr,p,kind);
+				p = pushStr(cntxt->wlcr, p, wlcr_name[cntxt->wlcr_kind]);
+				p = pushLng(cntxt->wlcr,p, GDKms() - p->ticks);
+				printFunction(wlcr_fd, cntxt->wlcr, 0, LIST_MAL_DEBUG );
+				(void) mnstr_flush(wlcr_fd);
+				if( wlcr_drift == 0 || wlcr_start + wlcr_drift < GDKms()/1000)
+					WLCcloselogger();
 
-			MT_lock_unset(&wlcr_lock);
+				MT_lock_unset(&wlcr_lock);
+			}
 			trimMalVariables(cntxt->wlcr, NULL);
 			resetMalBlk(cntxt->wlcr, 0);
 			cntxt->wlcr_kind = WLCR_QUERY;

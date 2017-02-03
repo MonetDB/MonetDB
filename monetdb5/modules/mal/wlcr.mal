@@ -26,9 +26,9 @@ pattern drift(duration:int)
 address WLCdrift
 comment "Maximal duration of collecting a transaction log befor releasing it";
 
-pattern threshold(limit:int)
-address WLCthreshold
-comment "Activate the workload-capture-replay. Only queries surpassing the threshold are kept for replay.";
+pattern logthreshold(limit:int)
+address WLClogthreshold
+comment "Activate the workload-capture-replay. Only queries surpassing the threshold (in milliseconds) are kept.";
 
 pattern job(user:str, tid:int, started:str, action:str, kind:str, runtime:int)
 address WLCjob

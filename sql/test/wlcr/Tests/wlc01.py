@@ -20,6 +20,7 @@ s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE,
 c = process.client('sql', dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 cout, cerr = c.communicate('''\
+call logthreshold(0);
 call drift(0);
 call master();
 select 1;

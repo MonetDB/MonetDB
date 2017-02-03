@@ -15,6 +15,10 @@ address WLCRreplicate
 comment "Roll the snapshot forward to an up-to-date clone and wait for it";
 
 module wlr;
+pattern replaythreshold(dur:int)
+address WLRreplaythreshold
+comment "Threshold (in milliseconds) for re-running queries";
+
 pattern job(user:str, tid:int, started:str, action:str, kind:str, runtime:lng)
 address WLRjob
 comment "Mark the beginning of the work unit which can be a compound transaction";

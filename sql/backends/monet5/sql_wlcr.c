@@ -14,8 +14,9 @@
  * 
  * After restart of a mserver against the newly created image,
  * the log files from the master are processed.
- * The SQL variable replaythreshold can be set to run/ignore pure queries as well.
  *
+ * In replay mode also all queries are executed if they surpass
+ * the latest threshold set for by the master.
  */
 #include "monetdb_config.h"
 #include "sql.h"
@@ -33,8 +34,8 @@
 static str wlr_logs;
 static str wlr_master;
 static int wlr_nextbatch; 	// the next file to be processed
-static int wlr_tag;			// the next transaction to be processed
-static int wlr_threshold = -1;	// minimum time for a query to be re-executed
+static int wlr_tag;			// the next transaction to be processeds
+static int wlr_threshold;	// replay threshold set by user.
 
 #define MAXLINE 2048
 
@@ -82,6 +83,16 @@ str WLRsetConfig(void){
     return MAL_SUCCEED;
 }
 
+str
+WLRreplaythreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    (void) mb;
+    (void) cntxt;
+    wlr_threshold = * getArgReference_int(stk,pci,1);
+	if( (wlr_threshold >=0 && wlr_threshold < wlcr_threshold) || wlcr_threshold < 0)
+		throw(SQL,"wlr.replaythreshold","Warning: threshold is smaller then those currently reported");
+    return MAL_SUCCEED;
+}
 
 /*
  * When the master database exist, we should set the replica administration.
@@ -164,24 +175,6 @@ WLRinitReplica(str dbname)
 	return MAL_SUCCEED;
 }
 
-
-static str
-WLRgetThreshold( Client cntxt, MalBlkPtr mb)
-{
-	mvc *m = NULL;
-	str msg;
-	atom *a;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	a = stack_get_var(m, "replaythreshold");
-	if (a)
-		wlr_threshold = a->data.val.ival;
-	return MAL_SUCCEED;
-}
-
 /* 
  * Run once through the list of pending WLC logs
  * Continuing where you left off the previous time.
@@ -222,7 +215,6 @@ WLRprocess(void *arg)
     if ((msg = checkSQLContext(c)) != NULL)
 		mnstr_printf(GDKerr,"#Inconsitent SQL contex : %s\n",msg);
 
-	WLRgetThreshold(cntxt, 0);
 #ifdef _WLR_DEBUG_
 	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d  threshold %d\n", 
 		wlcr_archive, wlr_firstbatch, wlr_nextbatch, wlr_threshold);
@@ -327,6 +319,7 @@ WLRinit(Client cntxt)
 	if( wlr_logs){
 		// Always try to roll forward before you continue
 		cntxt->wlcr_mode = WLCR_REPLICATE;
+		// The client has to wait initially for all logs known to be processed.
 		WLRprocess(cntxt);
 		if (MT_create_thread(&wlcr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
 				GDKerror("wlcr.replicate:replay scheduling process can not be started");
@@ -348,7 +341,7 @@ WLCRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	cntxt->wlcr_mode = WLCR_REPLICATE;
-	// For testing it is helpful to wait for completion of the replication process
+	// The client has to wait initially for all logs known to be processed.
 	WLRprocess(cntxt);
 	// start the process for continual integration in the background
     if (MT_create_thread(&wlcr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
@@ -367,7 +360,7 @@ WLRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( strcmp(kind,"update") == 0)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 	if( strcmp(kind,"query") == 0){
-		if(wlr_threshold < 0 ||  duration < wlr_threshold)
+		if(wlcr_threshold < 0 ||  duration < wlcr_threshold)
 			cntxt->wlcr_kind = WLCR_IGNORE;
 		else
 			cntxt->wlcr_kind = WLCR_QUERY;

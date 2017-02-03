@@ -21,6 +21,7 @@ extern void WLRinit(Client cntxt);
 extern str WLCRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 extern str WLRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLRreplaythreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str WLRexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str WLRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

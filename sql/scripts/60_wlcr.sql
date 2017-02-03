@@ -6,8 +6,9 @@
 
 -- Workload Capture and Replay
 
-declare replaythreshold integer;
-set replaythreshold = -1; -- don't replay
+-- Master commands
+create procedure logthreshold(duration int)
+external name wlcr.logthreshold;
 
 create procedure drift(duration int)
 external name wlcr.drift;
@@ -18,9 +19,10 @@ external name wlcr.master;
 create procedure stopmaster()
 external name wlcr.stopmaster;
 
+-- Replica commands
 create procedure replicate(dbname string)
 external name wlcr.replicate;
 
-create procedure replicate(dbname string, waitforsync bool)
-external name wlcr.replicate;
+create procedure replaythreshold(duration int)
+external name wlr.replaythreshold;
 

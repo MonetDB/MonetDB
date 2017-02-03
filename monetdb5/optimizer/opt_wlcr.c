@@ -49,8 +49,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q->argc--; // no need for the userid
 			pushInstruction(mb,q);
 		} else
-/* CATALOG functions need not yet be reported explicitly.
- * They are already captured in the query define.
+		/* the catalog operations are needed to determine the job kind later on */
 		if( getModuleId(p) == sqlcatalogRef &&
 		 (
 			getFunctionId(p) == create_seqRef ||
@@ -72,7 +71,6 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(q,0) = newTmpVariable(mb,TYPE_any);
 			pushInstruction(mb,q);
 		} else
-*/
 		if( getModuleId(p) == sqlRef && 
 			(getFunctionId(p) == clear_tableRef || 
 			 getFunctionId(p) == sqlcatalogRef) ){
