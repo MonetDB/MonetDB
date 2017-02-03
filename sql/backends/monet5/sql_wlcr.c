@@ -26,6 +26,7 @@
 #include "opt_prelude.h"
 #include "mal_parser.h"
 #include "mal_client.h"
+#include "querylog.h"
 
 #define WLCR_REPLAY 1
 #define WLCR_REPLICATE 2
@@ -360,7 +361,7 @@ WLRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( strcmp(kind,"update") == 0)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 	if( strcmp(kind,"query") == 0){
-		if(wlcr_threshold < 0 ||  duration < wlcr_threshold)
+		if(wlcr_threshold < 0 ||  duration < wlcr_threshold || duration < wlr_threshold )
 			cntxt->wlcr_kind = WLCR_IGNORE;
 		else
 			cntxt->wlcr_kind = WLCR_QUERY;
@@ -389,7 +390,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	// execute the query in replay mode
-	if( cntxt->wlcr_kind == WLCR_CATALOG || cntxt->wlcr_kind == WLCR_QUERY ){
+	if( cntxt->wlcr_kind == WLCR_CATALOG || cntxt->wlcr_kind == WLCR_QUERY  ){
 		// we need to get rid of the escaped quote.
 		x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
 		for(y = qry; *y; y++){

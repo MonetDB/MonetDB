@@ -42,9 +42,9 @@ pattern exec()
 address WLCexec
 comment "Mark the end of the work unit";
 
-pattern query(q:str,pipe:str)
+pattern query(q:str, pipe:str)
 address WLCquery
-comment "Initialize the workload-capture-replay ";
+comment "Keep the queries for replay";
 
 pattern append(sname:str, tname:str, cname:str, ins:any):int
 address WLCappend

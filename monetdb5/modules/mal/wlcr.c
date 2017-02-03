@@ -32,9 +32,11 @@
  * It contains the following key=value pairs:
  * 		snapshot=<path to a binary snapshot>
  * 		logs=<path to the wlcr log directory>
- * 		start=<first batch file to be applied>
- * 		last=<last batch file to be applied>
+ * 		firstbatch=<first batch file to be applied>
+ * 		batches=<last batch file to be applied>
  * 		drift=<maximal delay before transactions are seen globally, in seconds>
+ * 		threshold=<min response time for queries to be kept>
+ * 		rollbock=<flag to indicate keeping the aborted transactions as well>
  *
  * Every replica should start off with a copy of binary snapshot identified by 'snapshot'
  * by default stored in .../dbfarm/dbname/master/bat. An alternative path can be given
@@ -90,8 +92,8 @@
  *
  * The alternative is to also replay the queries as well.
  * CALL replaythreshold(threshold)
- * In this mode all pure queries are executed under the credentials of the query owner
- * for which the reported threshold exceeds the argument[TODO].
+ * In this mode all pure queries are executed for which the reported threshold exceeds the argument.
+ * Enabling the query log collects the execution times for these queries.
  * It excludes catalog and update queries, which are always executed.
  *
  * Any failure encountered during a log replay terminates the process,
@@ -458,6 +460,7 @@ WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	p->ticks = GDKms();
+	p = pushInt(cntxt->wlcr, p, p->ticks);
 	return MAL_SUCCEED;
 }
 

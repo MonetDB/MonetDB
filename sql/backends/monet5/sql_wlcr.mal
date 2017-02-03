@@ -27,7 +27,7 @@ pattern exec()
 address WLRexec
 comment "Mark the end of the work unit";
 
-pattern query(q:str,pipe:str)
+pattern query(q:str,pipe:str,duration:int)
 address WLRquery
 comment "The actual query applied";
 
