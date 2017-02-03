@@ -1316,17 +1316,14 @@ sqltypeinit( sql_allocator *sa)
 	*t++ = sql_create_type(sa, "DECIMAL",  4, SCALE_FIX, 10, EC_DEC, "sht");
 	DEC =
 	*t++ = sql_create_type(sa, "DECIMAL",  9, SCALE_FIX, 10, EC_DEC, "int");
+	LargestDEC =
+	*t++ = sql_create_type(sa, "DECIMAL", 18, SCALE_FIX, 10, EC_DEC, "lng");
 #ifdef HAVE_HGE
 	if (have_hge) {
-		*t++ = sql_create_type(sa, "DECIMAL", 18, SCALE_FIX, 10, EC_DEC, "lng");
 		LargestDEC =
-		*t++ = sql_create_type(sa, "DECIMAL", 39, SCALE_FIX, 10, EC_DEC, "hge");
-	} else
-#endif
-	{
-		LargestDEC =
-		*t++ = sql_create_type(sa, "DECIMAL", 19, SCALE_FIX, 10, EC_DEC, "lng");
+		*t++ = sql_create_type(sa, "DECIMAL", 38, SCALE_FIX, 10, EC_DEC, "hge");
 	}
+#endif
 
 	/* float(n) (n indicates precision of atleast n digits) */
 	/* ie n <= 23 -> flt */

@@ -33,7 +33,7 @@ Ready.
 % sys.L5 # table_name
 % promo_revenue # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ 15.48654	]
 #select * from optimizer_stats() stats;
 % .stats,	.stats # table_name

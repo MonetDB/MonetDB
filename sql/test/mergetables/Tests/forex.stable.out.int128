@@ -191,13 +191,13 @@ Ready.
 % .L4,	.L7 # table_name
 % L3,	L6 # name
 % double,	decimal # type
-% 24,	41 # length
+% 24,	40 # length
 [ 42.33074767,	1269.922430	]
 #SELECT currency, cast(avg(bid) AS DECIMAL(12,6)), sum(bid) FROM forex GROUP BY currency;
 % .forex,	.L4,	.L7 # table_name
 % currency,	L4,	L6 # name
 % clob,	decimal,	decimal # type
-% 7,	14,	41 # length
+% 7,	14,	40 # length
 [ "EUR/USD",	1.271833,	3.815500	]
 [ "USD/JPY",	107.118333,	321.355000	]
 [ "GBP/USD",	1.606837,	4.820510	]
