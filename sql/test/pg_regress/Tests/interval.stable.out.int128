@@ -87,7 +87,7 @@ Ready.
 % sys.L5 # table_name
 % L4 # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ 63513504001234.000	]
 #select count(f1) from interval_tbl;
 % sys.L4 # table_name

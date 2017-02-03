@@ -24,6 +24,10 @@ stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade-chain` itself:
 # MonetDB/R   module loaded
 
 Ready.
+Running database upgrade commands:
+set schema "sys";
+update sys.types set digits = 18 where sqlname = 'decimal' and digits = 19;
+set schema "sys";
 
 # 15:41:19 >  
 # 15:41:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7576" "--port=32696"

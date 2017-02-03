@@ -26,10 +26,10 @@ Ready.
 #	and l_shipdate < date '1994-01-01' + interval '1' year
 #	and l_discount between 0.06 - 0.01 and 0.06 + 0.01
 #	and l_quantity < 24;
-% sys.L1 # table_name
+% sys.L4 # table_name
 % revenue # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ 1193053.2253	]
 % .stats,	.stats # table_name
 % rewrite,	count # name

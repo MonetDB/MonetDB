@@ -49,7 +49,7 @@ Ready.
 % sys.L2 # table_name
 % r # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ 0.023	]
 [ -1.000	]
 [ -1.000	]

@@ -93,6 +93,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (itemsize)
 		h->size = MAX(1, nitems) * itemsize;
 	h->free = 0;
+	h->cleanhash = 0;
 
 	/* check for overflow */
 	if (itemsize && nitems > (h->size / itemsize)) {
@@ -556,6 +557,7 @@ HEAPcopy(Heap *dst, Heap *src)
 		dst->free = src->free;
 		memcpy(dst->base, src->base, src->free);
 		dst->hashash = src->hashash;
+		dst->cleanhash = src->cleanhash;
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;

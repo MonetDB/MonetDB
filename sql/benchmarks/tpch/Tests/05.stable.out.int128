@@ -44,7 +44,7 @@ Ready.
 % sys.nation,	sys.L4 # table_name
 % n_name,	revenue # name
 % char,	decimal # type
-% 25,	41 # length
+% 25,	40 # length
 [ "VIETNAM",	1000926.6999	]
 [ "CHINA",	740210.7570	]
 [ "JAPAN",	660651.2425	]
