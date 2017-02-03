@@ -271,8 +271,10 @@ WLCinit(Client cntxt)
 		snprintf(path, PATHLENGTH,"%s%cwlc.config", pathname, DIR_SEP);
 
 		fd = fopen(path,"r");
-		if( fd == NULL)	// not in master mode
+		if( fd == NULL){	// not in master mode
+			GDKfree(pathname);
 			return MAL_SUCCEED;
+		}
 		fclose(fd);
 		// we are in master mode
 		wlcr_dbname = GDKgetenv("gdk_dbname");
@@ -350,8 +352,12 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wlcr_dbname = GDKgetenv("gdk_dbname");
 		wlcr_logs = GDKfilepath(0,0,"master",0);
 		snprintf(path, PATHLENGTH,"%s%c%s_wlcr", wlcr_logs, DIR_SEP, wlcr_dbname);
-		if( GDKcreatedir(path) == GDK_FAIL)
+		if( GDKcreatedir(path) == GDK_FAIL){
+			wlcr_dbname = NULL;
+			GDKfree(wlcr_logs);
+			wlcr_logs = NULL;
 			throw(SQL,"wlcr.master","Could not create %s\n", wlcr_logs);
+		}
 		WLCsetConfig();
 	} else
 		WLCgetConfig();
@@ -478,7 +484,7 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = pushStr(cntxt->wlcr, p, sch);\
 		p = pushStr(cntxt->wlcr, p, tbl);\
 		p = pushStr(cntxt->wlcr, p, col);\
-		p = pushOid(cntxt->wlcr, p, (ol? *ol++: o++));\
+		p = pushOid(cntxt->wlcr, p,  (ol? *ol++: o++));\
 		p = push##TPE2(cntxt->wlcr, p ,*x);\
 } }
 
@@ -602,7 +608,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sch,tbl,col;
 	ValRecord cst;
 	int tpe, varid;
-	oid o = 0, *ol;
+	oid o = 0, *ol = 0;
 	
 	sch = *getArgReference_str(stk,pci,1);
 	tbl = *getArgReference_str(stk,pci,2);
@@ -615,8 +621,10 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(b);
 		bval= BATdescriptor(stk->stk[getArg(pci,5)].val.bval);
 		assert(bval);
-		o = b->hseqbase;
-		ol = (oid*) Tloc(b,0);
+		if( b->ttype == TYPE_void)
+			o = b->tseqbase;
+		else
+			ol = (oid*) Tloc(b,0);
 		switch( ATOMstorage(bval->ttype)){
 		case TYPE_bit: updateBatch(bit,Bit); break;
 		case TYPE_bte: updateBatch(bte,Bte); break;

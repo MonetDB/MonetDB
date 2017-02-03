@@ -36,25 +36,29 @@ static int wlr_nextbatch; 	// the next file to be processed
 static int wlr_tag;			// the next transaction to be processed
 static int wlr_threshold = -1;	// minimum time for a query to be re-executed
 
+#define MAXLINE 2048
+
 static
 str WLRgetConfig(void){
     char *path;
+	char line[MAXLINE];
     FILE *fd;
 
 	path = GDKfilepath(0,0,"wlr.config",0);
     fd = fopen(path,"r");
+	GDKfree(path);
     if( fd == NULL)
-        throw(MAL,"wlr.getConfig","Could not access %s\n",path);
-    while( fgets(path, PATHLENGTH, fd) ){
-		path[strlen(path)-1]= 0;
-        if( strncmp("master=", path,7) == 0)
-            wlr_master = GDKstrdup(path + 7);
-        if( strncmp("logs=", path,5) == 0)
-            wlr_logs = GDKstrdup(path + 5);
-        if( strncmp("nextbatch=", path, 10) == 0)
-            wlr_nextbatch = atoi(path+ 10);
-        if( strncmp("tag=", path, 4) == 0)
-            wlr_tag = atoi(path+ 4);
+        throw(MAL,"wlr.getConfig","Could not access configuration file\n");
+    while( fgets(line, MAXLINE, fd) ){
+		line[strlen(line)-1]= 0;
+        if( strncmp("master=", line,7) == 0)
+            wlr_master = GDKstrdup(line + 7);
+        if( strncmp("logs=", line,5) == 0)
+            wlr_logs = GDKstrdup(line + 5);
+        if( strncmp("nextbatch=", line, 10) == 0)
+            wlr_nextbatch = atoi(line+ 10);
+        if( strncmp("tag=", line, 4) == 0)
+            wlr_tag = atoi(line+ 4);
     }
     fclose(fd);
     return MAL_SUCCEED;
@@ -67,8 +71,9 @@ str WLRsetConfig(void){
 
 	path = GDKfilepath(0,0,"wlr.config",0);
     fd = fopen(path,"w");
+	GDKfree(path);
     if( fd == NULL)
-        throw(MAL,"wlr.setConfig","Could not access %s\n",path);
+        throw(MAL,"wlr.setConfig","Could not access configuration file\n");
 	fprintf(fd,"master=%s\n", wlr_master);
 	fprintf(fd,"logs=%s\n", wlr_logs);
 	fprintf(fd,"nextbatch=%d\n", wlr_nextbatch);
@@ -105,7 +110,7 @@ WLRgetMaster(str dbname)
 	fd = fopen(dir,"r");
 	if( fd == NULL){
 		GDKfree(dir);
-		throw(SQL,"getMaster","Database '%s' not acting as a master",dir);
+		throw(SQL,"getMaster","Database '%s' not acting as a master",dbname);
 	}
 	(void) fclose(fd);
 
@@ -113,8 +118,8 @@ WLRgetMaster(str dbname)
 	snprintf(path,PATHLENGTH,"..%c%s%cmaster",DIR_SEP,dbname,DIR_SEP);
 	dir = GDKfilepath(0,path,"wlc.config",0);
 	fd = fopen(dir,"r");
+	GDKfree(dir);
 	if( fd == NULL){
-		GDKfree(dir);
 		GDKfree(wlr_logs);
 		wlr_logs = 0;
 		throw(SQL,"getMaster","missing configuration file");
@@ -128,7 +133,6 @@ WLRgetMaster(str dbname)
         if( strncmp("drift=", path, 6) == 0)
             wlcr_drift = atoi(path+ 6);
     }
-	GDKfree(dir);
 	(void) fclose(fd);
 	return MAL_SUCCEED;
 }
@@ -142,11 +146,11 @@ WLRinitReplica(str dbname)
 	/* The replica mode can be set only once */
 	dir = GDKfilepath(0,0,"wlr.config",0);
 	fd = fopen(dir,"r");
+	GDKfree(dir);
 	if( fd ){
 		(void) fclose(fd);
 		throw(SQL,"setreplica","Already in replica mode for '%s'",dbname);
 	}
-	GDKfree(dir);
 
 	msg = WLRgetMaster(dbname);
 	if( msg)
@@ -605,11 +609,11 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATmsync(tids);
 	BATmsync(upd);
     if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-        store_funcs.update_col(m->session->tr, c, tids, upd, tpe);
+        store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
     } else if (cname[0] == '%') {
         sql_idx *i = mvc_bind_idx(m, s, cname + 1);
         if (i)
-            store_funcs.update_idx(m->session->tr, i, tids, upd, tpe);
+            store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
     }
 	BBPunfix(((BAT *) tids)->batCacheid);
 	BBPunfix(((BAT *) upd)->batCacheid);
