@@ -55,6 +55,11 @@
  * The threshold setting is saved and affects all future master log records.
  * The default for a production system version should be set to -1
  *
+ * The aborted transactions can also be gathered using the call
+ * CALL logrollback(1);
+ * Such queries may be helpful in the analysis of failures.
+ * They will end up in the querlog for inspection.
+ *
  * A transaction log is owned by the master. He decides when the log may be globally
  * used. There are several triggers for this. A new transaction log is created when
  * the system has been collecting logs for some time (drift).
@@ -122,6 +127,7 @@ int wlcr_firstbatch = 0;	// first log file  associated with the snapshot
 int wlcr_batches = 0;		// identifier of next batch
 int wlcr_drift = 10;	// maximal period covered by a single log file in seconds
 int wlcr_tid = 0;			// transaction id of next to be processed
+int wlcr_rollback= 0;		// also log the aborted queries.
 
 /* The database snapshots are binary copies of the dbfarm/database/bat
  * New snapshots are created currently using the 'monetdb snapshot <db>' command
@@ -159,6 +165,8 @@ str WLCgetConfig(void){
 			wlcr_drift = atoi(path+ 6);
 		if( strncmp("threshold=", path, 10) == 0)
 			wlcr_threshold = atoi(path+ 10);
+		if( strncmp("rollback=", path, 9) == 0)
+			wlcr_threshold = atoi(path+ 9);
 	}
 	fclose(fd);
 	return MAL_SUCCEED;
@@ -187,6 +195,7 @@ str WLCsetConfig(void){
 	fprintf(fd,"batches=%d\n", wlcr_batches );
 	fprintf(fd,"drift=%d\n", wlcr_drift );
 	fprintf(fd,"threshold=%d\n", wlcr_threshold );
+	fprintf(fd,"rollback=%d\n", wlcr_rollback );
 	fclose(fd);
 	return MAL_SUCCEED;
 }
@@ -334,6 +343,15 @@ WLClogthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) cntxt;
 	wlcr_threshold = * getArgReference_int(stk,pci,1);
+	return MAL_SUCCEED;
+}
+
+str 
+WLClogrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) cntxt;
+	wlcr_rollback = * getArgReference_int(stk,pci,1);
 	return MAL_SUCCEED;
 }
 
@@ -718,7 +736,9 @@ WLCwrite(Client cntxt, str kind)
 		else {
 			// filter out queries that run too shortly
 			p = getInstrPtr(cntxt->wlcr,0);
-			if( cntxt->wlcr_kind != WLCR_QUERY ||  wlcr_threshold == 0 || wlcr_threshold < GDKms() - p->ticks ) {
+			if ( ( cntxt->wlcr_kind != WLCR_QUERY ||  wlcr_threshold == 0 || wlcr_threshold < GDKms() - p->ticks ) &&
+				(strcmp(kind,"rollback") != 0 || wlcr_rollback)
+			){
 				newStmt(cntxt->wlcr,"wlr","exec");
 				wlcr_tid++;
 				MT_lock_set(&wlcr_lock);

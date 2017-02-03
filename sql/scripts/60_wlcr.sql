@@ -10,6 +10,9 @@
 create procedure logthreshold(duration int)
 external name wlcr.logthreshold;
 
+create procedure logrollback(flag int)
+external name wlcr.logrollback;
+
 create procedure drift(duration int)
 external name wlcr.drift;
 

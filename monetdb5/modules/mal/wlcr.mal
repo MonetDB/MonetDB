@@ -30,6 +30,10 @@ pattern logthreshold(limit:int)
 address WLClogthreshold
 comment "Activate the workload-capture-replay. Only queries surpassing the threshold (in milliseconds) are kept.";
 
+pattern logrollback(flag:int)
+address WLClogrollback
+comment "Activate the workload-capture-replay. Also keep the aborted transactions is flag !=0";
+
 pattern job(user:str, tid:int, started:str, action:str, kind:str, runtime:int)
 address WLCjob
 comment "Mark the beginning of the work unit which can be a compound transaction";

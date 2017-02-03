@@ -26,6 +26,7 @@ mal_export int wlcr_threshold;
 mal_export int wlcr_batches;
 mal_export int wlcr_drift;
 mal_export str wlcr_dbname;
+mal_export int wlcr_rollback;
 
 mal_export str WLCinit(Client cntxt);
 mal_export str WLCexit(void);
@@ -35,6 +36,7 @@ mal_export str WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 mal_export str WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLClogthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLClogrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
