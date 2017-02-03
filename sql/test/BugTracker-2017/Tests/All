@@ -14,3 +14,4 @@ union_func_crash.Bug-6196
 complicated_logic.Bug-105
 crash_on_count_div_count.Bug-6201
 oidx-on-strings.Bug-6202
+group-by-on-constant.Bug-6082
