@@ -126,7 +126,10 @@ Ready.
 % sys.systemfunctions # table_name
 % function_id # name
 % int # type
-% 1 # length
+% 4 # length
+[ 6841	]
+[ 6851	]
+[ 6861	]
 #SELECT * FROM sys.args WHERE func_id NOT IN (SELECT id FROM sys.functions);
 % sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
 % id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
@@ -338,65 +341,65 @@ Ready.
 % int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
 % 1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
 #SELECT * FROM sys.storage WHERE schema NOT IN (SELECT name FROM sys.schemas);
-% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
-% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1 # length
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storage WHERE table NOT IN (SELECT name FROM sys._tables);
-% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
-% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1 # length
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storage WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM sys.keys);
-% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
-% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1 # length
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storage WHERE type NOT IN (SELECT sqlname FROM sys.types);
-% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
-% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1 # length
+% .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
+% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storagemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
-% .storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel # table_name
-% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	5,	5,	1 # length
+% .storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel # table_name
+% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storagemodel WHERE table NOT IN (SELECT name FROM sys._tables);
-% .storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel # table_name
-% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	5,	5,	1 # length
+% .storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel # table_name
+% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storagemodel WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM sys.keys);
-% .storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel # table_name
-% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	5,	5,	1 # length
+% .storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel # table_name
+% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storagemodel WHERE type NOT IN (SELECT sqlname FROM sys.types);
-% .storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel # table_name
-% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	5,	5,	1 # length
+% .storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel,	.storagemodel # table_name
+% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storagemodelinput WHERE schema NOT IN (SELECT name FROM sys.schemas);
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	1 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storagemodelinput WHERE table NOT IN (SELECT name FROM sys._tables);
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	1 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storagemodelinput WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM sys.keys);
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	1 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	1,	5 # length
 #SELECT * FROM sys.storagemodelinput WHERE type NOT IN (SELECT sqlname FROM sys.types);
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	revsorted,	unique,	orderidx # name
-% clob,	clob,	clob,	clob,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	bigint # type
-% 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	1 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	revsorted,	unique,	orderidx,	compressed # name
+% clob,	clob,	clob,	clob,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	bigint,	boolean # type
+% 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	1,	5 # length
 #SELECT schema, table, count, columnsize, heapsize, hashes, imprints, cast(auxiliary as bigint) as auxiliary FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
 % .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.L52 # table_name
 % schema,	table,	count,	columnsize,	heapsize,	hashes,	imprints,	auxiliary # name
