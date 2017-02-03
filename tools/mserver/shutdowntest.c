@@ -90,7 +90,7 @@ static void monetdb_disconnect(void* conn) {
 
 static str monetdb_initialize(void) {
 	opt *set = NULL;
-	volatile int setlen = 0;
+	volatile int setlen = 0; /* use volatile for setjmp */
 	str retval = MAL_SUCCEED;
 	char prmodpath[1024];
 	char *modpath = NULL;
@@ -226,7 +226,7 @@ static str monetdb_initialize(void) {
 			}
 			fclose(secretf);
 		}
-		if ((retval = AUTHunlockVault(&secretp)) != MAL_SUCCEED) {
+		if ((retval = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			msab_registerStop();
 			GDKfatal("%s", retval);
@@ -261,8 +261,13 @@ static str monetdb_initialize(void) {
 		retval = monetdb_query(c, query);
 		monetdb_disconnect(c);
 	}
+
+	mo_free_options(set, setlen);
+
 	return MAL_SUCCEED;
 cleanup:
+	if (set)
+		mo_free_options(set, setlen);
 	monetdb_initialized = 0;
 	return retval;
 }

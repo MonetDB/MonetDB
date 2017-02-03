@@ -13,7 +13,7 @@ SUBDIRS = buildtools common clients \
 	HAVE_TESTING?testing \
 
 EXTRA_DIST = bootstrap configure configure.ac configure.ag libversions \
-			 MonetDB.spec rpm.mk.in COPYING README license.txt HowToStart.rst
+			 MonetDB.spec rpm.mk.in COPYING README.rst license.txt HowToStart.rst
 
 EXTRA_DIST_DIR = NT debian MacOSX
 

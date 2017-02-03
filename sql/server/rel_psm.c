@@ -44,52 +44,106 @@ rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 	return NULL;
 }
 
-/* SET variable = value */
+/* SET variable = value and set (variable1, .., variableN) = (query) */
 static sql_exp *
 psm_set_exp(mvc *sql, dnode *n)
 {
-	exp_kind ek = {type_value, card_value, FALSE};
-	const char *name = n->data.sval;
 	symbol *val = n->next->data.sym;
 	sql_exp *e = NULL;
 	int level = 0, is_last = 0;
 	sql_subtype *tpe = NULL;
 	sql_rel *rel = NULL;
 	sql_exp *res = NULL;
+	int single = (n->type == type_string);
 
-	/* name can be 
-		'parameter of the function' (ie in the param list)
-		or a local or global variable, declared earlier
-	*/
 
-	/* check if variable is known from the stack */
-	if (!stack_find_var(sql, name)) {
-		sql_arg *a = sql_bind_param(sql, name);
+	if (single) {
+		exp_kind ek = {type_value, card_value, FALSE};
+		const char *name = n->data.sval;
+		/* name can be 
+			'parameter of the function' (ie in the param list)
+			or a local or global variable, declared earlier
+		*/
 
-		if (!a) /* not parameter, ie local var ? */
-			return sql_error(sql, 01, "Variable %s unknown", name);
-		tpe = &a->type;
-	} else { 
-		tpe = stack_find_type(sql, name);
-	}
+		/* check if variable is known from the stack */
+		if (!stack_find_var(sql, name)) {
+			sql_arg *a = sql_bind_param(sql, name);
 
-	e = rel_value_exp2(sql, &rel, val, sql_sel, ek, &is_last);
-	if (!e || (rel && e->card > CARD_AGGR))
-		return NULL;
+			if (!a) /* not parameter, ie local var ? */
+				return sql_error(sql, 01, "Variable %s unknown", name);
+			tpe = &a->type;
+		} else { 
+			tpe = stack_find_type(sql, name);
+		}
 
-	level = stack_find_frame(sql, name);
-	e = rel_check_type(sql, tpe, e, type_cast); 
-	if (!e)
-		return NULL;
-	if (rel) {
-		sql_exp *er = exp_rel(sql, rel);
-		list *b = sa_list(sql->sa);
+		e = rel_value_exp2(sql, &rel, val, sql_sel, ek, &is_last);
+		if (!e || (rel && e->card > CARD_AGGR))
+			return NULL;
 
-		append(b, er);
-		append(b, exp_set(sql->sa, name, e, level));
+		level = stack_find_frame(sql, name);
+		e = rel_check_type(sql, tpe, e, type_cast); 
+		if (!e)
+			return NULL;
+		if (rel) {
+			sql_exp *er = exp_rel(sql, rel);
+			list *b = sa_list(sql->sa);
+
+			append(b, er);
+			append(b, exp_set(sql->sa, name, e, level));
+			res = exp_rel(sql, rel_psm_block(sql->sa, b));
+		} else {
+			res = exp_set(sql->sa, name, e, level);
+		}
+	} else { /* multi assignment */
+		exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
+		sql_rel *rel_val = rel_subquery(sql, NULL, val, ek, APPLY_JOIN);
+		dlist *vars = n->data.lval;
+		dnode *m;
+		node *n;
+		list *b;
+
+		if (!rel_val || !is_project(rel_val->op) ||
+			    dlist_length(vars) != list_length(rel_val->exps)) {
+			return sql_error(sql, 02, "SET: Number of variables not equal to number of supplied values");
+		}
+
+	       	b = sa_list(sql->sa);
+		if (rel_val) {
+			sql_exp *er = exp_rel(sql, rel_val);
+
+			append(b, er);
+		}
+
+		for(m = vars->h, n = rel_val->exps->h; n && m; n = n->next, m = m->next) {
+			char *vname = m->data.sval;
+			sql_exp *v = n->data;
+
+			if (!stack_find_var(sql, vname)) {
+				sql_arg *a = sql_bind_param(sql, vname);
+
+				if (!a) /* not parameter, ie local var ? */
+					return sql_error(sql, 01, "Variable %s unknown", vname);
+				tpe = &a->type;
+			} else { 
+				tpe = stack_find_type(sql, vname);
+			}
+
+			if (!exp_name(v))
+				exp_label(sql->sa, v, ++sql->label);
+			v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+
+			level = stack_find_frame(sql, vname);
+			v = rel_check_type(sql, tpe, v, type_cast); 
+			if (!v)
+				return NULL;
+			if (v->card > CARD_AGGR) {
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v));
+				assert(zero_or_one);
+				v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, 0);
+			}
+			append(b, exp_set(sql->sa, vname, v, level));
+		}
 		res = exp_rel(sql, rel_psm_block(sql->sa, b));
-	} else {
-		res = exp_set(sql->sa, name, e, level);
 	}
 	return res;
 }
@@ -680,6 +734,8 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 	list *exps = new_exp_list(sa);
 
 	append(exps, exp_atom_clob(sa, sname));
+	if (f)
+		append(exps, exp_atom_clob(sa, f->base.name));
 	append(exps, exp_atom_ptr(sa, f));
 	rel->l = NULL;
 	rel->r = NULL;

@@ -192,7 +192,7 @@ extern void stmt_set_nrcols(stmt *s);
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
-extern stmt *stmt_exception(backend *be, stmt *cond, char *errstr, int errcode);
+extern stmt *stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode);
 
 extern stmt *stmt_const(backend *be, stmt *s, stmt *val);
 

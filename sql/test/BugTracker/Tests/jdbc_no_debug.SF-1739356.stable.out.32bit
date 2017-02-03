@@ -46,33 +46,33 @@ Operation successful
 +-------------------------------------------------------------------------------------------------------+
 | mal                                                                                              |
 +=======================================================================================================+
-| function user.s4_1():void;                                                                       |
-|     X_0:void := querylog.define("explain select count(*) from tables\n;", "sequential_pipe", 30:int); |
-|     X_38:bat[:lng] := bat.new(nil:lng);                                                               |
-|     X_3 := sql.mvc();                                                                                 |
-|     X_17:bat[:sht] := sql.bind(X_3, "sys", "_tables", "type", 0:int);                                 |
-|     C_4:bat[:oid] := sql.tid(X_3, "sys", "_tables");                                                  |
-|     C_59 := algebra.select(X_17, C_4, 2:sht, 2:sht, true, true, true);                                |
-|     (C_20:bat[:oid], X_21:bat[:sht]) := sql.bind(X_3, "sys", "_tables", "type", 2:int);               |
-|     C_60 := algebra.select(X_21, nil:bat[:oid], 2:sht, 2:sht, true, true, true);                      |
-|     X_19:bat[:sht] := sql.bind(X_3, "sys", "_tables", "type", 1:int);                                 |
-|     C_62 := algebra.select(X_19, C_4, 2:sht, 2:sht, true, true, true);                                |
-|     C_26 := sql.subdelta(C_59, C_4, C_20, C_60, C_62);                                                |
-|     X_7:bat[:int] := sql.bind(X_3, "sys", "_tables", "id", 0:int);                                    |
-|     (C_12:bat[:oid], X_13:bat[:int]) := sql.bind(X_3, "sys", "_tables", "id", 2:int);                 |
-|     X_10:bat[:int] := sql.bind(X_3, "sys", "_tables", "id", 1:int);                                   |
-|     X_29 := sql.projectdelta(C_26, X_7, C_12, X_13, X_10);                                            |
-|     X_31 := aggr.count(X_29);                                                                         |
-|     X_37 := sql.single(X_31);                                                                         |
-|     X_40 := bat.append(X_38, X_37, true);                                                             |
-|     C_32:bat[:oid] := sql.tid(X_3, "tmp", "_tables");                                                 |
-|     X_34:bat[:int] := sql.bind(X_3, "tmp", "_tables", "id", 0:int);                                   |
-|     X_35 := algebra.projection(C_32, X_34);                                                           |
-|     X_36 := aggr.count(X_35);                                                                    |
-|     X_41 := bat.append(X_40, X_36, true);                                                             |
-|     X_42:lng := aggr.sum(X_41);                                                                       |
-|     sql.resultSet(".L41", "L40", "bigint", 64:int, 0:int, 7:int, X_42);                               |
-| end user.s4_1;                                                                                   |
+| function user.s4_1():void;                                                                            |
+|     X_1:void := querylog.define("explain select count(*) from tables\n;", "sequential_pipe", 30:int); |
+|     X_39:bat[:lng] := bat.new(nil:lng);                                                               |
+|     X_4 := sql.mvc();                                                                                 |
+|     X_18:bat[:sht] := sql.bind(X_4, "sys", "_tables", "type", 0:int);                                 |
+|     C_5:bat[:oid] := sql.tid(X_4, "sys", "_tables");                                                  |
+|     C_83 := algebra.select(X_18, C_5, 2:sht, 2:sht, true, true, true);                                |
+|     (C_21:bat[:oid], X_22:bat[:sht]) := sql.bind(X_4, "sys", "_tables", "type", 2:int);               |
+|     C_84 := algebra.select(X_22, nil:bat[:oid], 2:sht, 2:sht, true, true, true);                      |
+|     X_20:bat[:sht] := sql.bind(X_4, "sys", "_tables", "type", 1:int);                                 |
+|     C_86 := algebra.select(X_20, C_5, 2:sht, 2:sht, true, true, true);                                |
+|     C_27 := sql.subdelta(C_83, C_5, C_21, C_84, C_86);                                                |
+|     X_8:bat[:int] := sql.bind(X_4, "sys", "_tables", "id", 0:int);                                    |
+|     (C_13:bat[:oid], X_14:bat[:int]) := sql.bind(X_4, "sys", "_tables", "id", 2:int);                 |
+|     X_11:bat[:int] := sql.bind(X_4, "sys", "_tables", "id", 1:int);                                   |
+|     X_30 := sql.projectdelta(C_27, X_8, C_13, X_14, X_11);                                            |
+|     X_32 := aggr.count(X_30);                                                                         |
+|     X_38 := sql.single(X_32);                                                                         |
+|     X_41 := bat.append(X_39, X_38, true);                                                             |
+|     C_33:bat[:oid] := sql.tid(X_4, "tmp", "_tables");                                                 |
+|     X_35:bat[:int] := sql.bind(X_4, "tmp", "_tables", "id", 0:int);                                   |
+|     X_36 := algebra.projection(C_33, X_35);                                                           |
+|     X_37 := aggr.count(X_36);                                                                         |
+|     X_42 := bat.append(X_41, X_37, true);                                                             |
+|     X_43:lng := aggr.sum(X_42);                                                                       |
+|     sql.resultSet(".L41", "L40", "bigint", 64:int, 0:int, 7:int, X_43);                               |
+| end user.s4_1;                                                                                        |
 | #inline               actions= 0 time=1 usec                                                     |
 | #remap                actions= 0 time=3 usec                                                          |
 | #costmodel            actions= 1 time=2 usec                                                          |

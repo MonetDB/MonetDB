@@ -13,7 +13,7 @@ Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
 Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
 
-Package: libmonetdb14
+Package: libmonetdb13
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libmonetdb5-server-geom (<< ${source:Version})
@@ -32,7 +32,7 @@ Description: MonetDB core library
 Package: libmonetdb-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libatomic-ops-dev,
- libmonetdb14, libmonetdb-stream-dev
+ libmonetdb13, libmonetdb-stream-dev
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,

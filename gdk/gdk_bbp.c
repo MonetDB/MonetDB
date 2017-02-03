@@ -59,9 +59,8 @@
  *
  * @item reference counting
  * Bats use have two kinds of references: logical and physical
- * (pointer) ones.  Both are administered with the BBPincref/BBPdecref
- * routines. For backward compatibility, we maintain BBPfix/BBPunfix
- * as shorthands for the adjusting the pointer references.
+ * (pointer) ones.  The logical references are administered by
+ * BBPretain/BBPrelease, the physical ones by BBPfix/BBPunfix.
  *
  * @item share counting
  * Views use the heaps of there parent bats. To save guard this, the
@@ -2044,7 +2043,7 @@ incref(bat i, int logical, int lock)
 		return 0;
 	}
 
-	if (!BBPcheck(i, "BBPincref"))
+	if (!BBPcheck(i, logical ? "BBPretain" : "BBPfix"))
 		return 0;
 
 	if (lock) {
@@ -2084,7 +2083,7 @@ incref(bat i, int logical, int lock)
 			 * lock.  Set the BBPLOADING flag so that
 			 * other threads will wait until we're
 			 * done. */
-			BBP_status_on(i, BBPLOADING, "BBPincref");
+			BBP_status_on(i, BBPLOADING, "BBPfix");
 			load = 1;
 		}
 	}
@@ -2112,17 +2111,25 @@ incref(bat i, int logical, int lock)
 			(void) getBBPdescriptor(tvp, lock);
 		}
 		/* done loading, release descriptor */
-		BBP_status_off(i, BBPLOADING, "BBPincref");
+		BBP_status_off(i, BBPLOADING, "BBPfix");
 	}
 	return refs;
 }
 
 int
-BBPincref(bat i, int logical)
+BBPfix(bat i)
 {
 	int lock = locked_by ? MT_getpid() != locked_by : 1;
 
-	return incref(i, logical, lock);
+	return incref(i, FALSE, lock);
+}
+
+int
+BBPretain(bat i)
+{
+	int lock = locked_by ? MT_getpid() != locked_by : 1;
+
+	return incref(i, TRUE, lock);
 }
 
 void
@@ -2142,7 +2149,7 @@ BBPshare(bat parent)
 }
 
 static inline int
-decref(bat i, int logical, int releaseShare, int lock)
+decref(bat i, int logical, int releaseShare, int lock, const char *func)
 {
 	int refs = 0, swap = 0;
 	bat tp = 0, tvp = 0;
@@ -2161,7 +2168,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 	while (BBP_status(i) & BBPUNLOADING) {
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
-		BBPspin(i, "BBPdecref", BBPUNLOADING);
+		BBPspin(i, func, BBPUNLOADING);
 		if (lock)
 			MT_lock_set(&GDKswapLock(i));
 	}
@@ -2171,14 +2178,14 @@ decref(bat i, int logical, int releaseShare, int lock)
 	/* decrement references by one */
 	if (logical) {
 		if (BBP_lrefs(i) == 0) {
-			GDKerror("BBPdecref: %s does not have logical references.\n", BBPname(i));
+			GDKerror("%s: %s does not have logical references.\n", func, BBPname(i));
 			assert(0);
 		} else {
 			refs = --BBP_lrefs(i);
 		}
 	} else {
 		if (BBP_refs(i) == 0) {
-			GDKerror("BBPdecref: %s does not have pointer fixes.\n", BBPname(i));
+			GDKerror("%s: %s does not have pointer fixes.\n", func, BBPname(i));
 			assert(0);
 		} else {
 			assert(b == NULL || b->theap.parentid == 0 || BBP_refs(b->theap.parentid) > 0);
@@ -2210,9 +2217,9 @@ decref(bat i, int logical, int releaseShare, int lock)
 		 * available anymore */
 		assert((BBP_status(i) & BBPUNLOADING) == 0);
 		BATDEBUG {
-			fprintf(stderr, "#BBPdecref set to unloading BAT %d\n", i);
+			fprintf(stderr, "#%s set to unloading BAT %d\n", func, i);
 		}
-		BBP_status_on(i, BBPUNLOADING, "BBPdecref");
+		BBP_status_on(i, BBPUNLOADING, func);
 		swap = TRUE;
 	}
 
@@ -2228,34 +2235,42 @@ decref(bat i, int logical, int releaseShare, int lock)
 			BBPdestroy(b);
 		} else {
 			BATDEBUG {
-				fprintf(stderr, "#BBPdecref unload and free bat %d\n", i);
+				fprintf(stderr, "#%s unload and free bat %d\n", func, i);
 			}
-			BBP_unload_inc(i, "BBPdecref");
+			BBP_unload_inc(i, func);
 			/* free memory of transient */
-			if (BBPfree(b, "BBPdecref") != GDK_SUCCEED)
+			if (BBPfree(b, func) != GDK_SUCCEED)
 				return -1;	/* indicate failure */
 		}
 	}
 	if (tp)
-		decref(tp, FALSE, FALSE, lock);
+		decref(tp, FALSE, FALSE, lock, func);
 	if (tvp)
-		decref(tvp, FALSE, FALSE, lock);
+		decref(tvp, FALSE, FALSE, lock, func);
 	return refs;
 }
 
-#undef BBPdecref
 int
-BBPdecref(bat i, int logical)
+BBPunfix(bat i)
 {
-	if (BBPcheck(i, "BBPdecref") == 0) {
+	if (BBPcheck(i, "BBPunfix") == 0) {
 		return -1;
 	}
-	return decref(i, logical, FALSE, TRUE);
+	return decref(i, FALSE, FALSE, TRUE, "BBPunfix");
+}
+
+int
+BBPrelease(bat i)
+{
+	if (BBPcheck(i, "BBPrelease") == 0) {
+		return -1;
+	}
+	return decref(i, TRUE, FALSE, TRUE, "BBPrelease");
 }
 
 /*
  * M5 often changes the physical ref into a logical reference.  This
- * state change consist of the sequence BBPincref(b,TRUE);BBPunfix(b).
+ * state change consist of the sequence BBPretain(b);BBPunfix(b).
  * A faster solution is given below, because it does not trigger the
  * BBP management actions, such as garbage collecting the bats.
  * [first step, initiate code change]
@@ -2277,15 +2292,15 @@ BBPkeepref(bat i)
 
 		incref(i, TRUE, lock);
 		assert(BBP_refs(i));
-		decref(i, FALSE, FALSE, lock);
+		decref(i, FALSE, FALSE, lock, "BBPkeepref");
 	}
 }
 
 static inline void
 GDKunshare(bat parent)
 {
-	(void) decref(parent, FALSE, TRUE, TRUE);
-	(void) decref(parent, TRUE, FALSE, TRUE);
+	(void) decref(parent, FALSE, TRUE, TRUE, "GDKunshare");
+	(void) decref(parent, TRUE, FALSE, TRUE, "GDKunshare");
 }
 
 void
@@ -2315,7 +2330,7 @@ BBPreclaim(BAT *b)
 
 	assert(BBP_refs(i) == 1);
 
-	return decref(i, 0, 0, lock) <0;
+	return decref(i, 0, 0, lock, "BBPreclaim") <0;
 }
 
 /*

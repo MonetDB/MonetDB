@@ -6,6 +6,7 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
+#include "monetdb_config.h"
 #include "pyapi.h"
 #include "conversion.h"
 #include "connection.h"
@@ -57,12 +58,6 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     BUN nval = 0;
 
     char * loader_additional_args[] = {"_emit", "_conn"};
-
-    if (!PyAPIEnabled()) {
-        throw(MAL, "pyapi.eval",
-              "Embedded Python has not been enabled. Start server with --set %s=true",
-              pyapi_enableflag);
-    }
 
     if (!PyAPIInitialized()) {
         throw(MAL, "pyapi.eval",

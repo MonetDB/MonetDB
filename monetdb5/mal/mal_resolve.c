@@ -19,6 +19,7 @@
 #include "mal_resolve.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
+#include "mal_linker.h"
 
 static malType getPolyType(malType t, int *polytype);
 static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
@@ -626,15 +627,19 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		if (!isaSignature(p) && !getInstrPtr(mb, 0)->polymorphic) {
 			mb->errors++;
 			if (!silent) {
-				char *errsig;
+				if (!malLibraryEnabled(p->modname)) {
+					dumpExceptionsToStream(out, malLibraryHowToEnable(p->modname));
+				} else {
+					char *errsig;
 
-				errsig = instruction2str(mb,0,p,(LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
-				showScriptException(out, mb, getPC(mb, p), TYPE,
-									"'%s%s%s' undefined in: %s",
-									(getModuleId(p) ? getModuleId(p) : ""),
-									(getModuleId(p) ? "." : ""),
-									getFunctionId(p), errsig?errsig:"failed instruction2str()");
-				GDKfree(errsig);
+					errsig = instruction2str(mb,0,p,(LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+					showScriptException(out, mb, getPC(mb, p), TYPE,
+										"'%s%s%s' undefined in: %s",
+										(getModuleId(p) ? getModuleId(p) : ""),
+										(getModuleId(p) ? "." : ""),
+										getFunctionId(p), errsig?errsig:"failed instruction2str()");
+					GDKfree(errsig);
+				}
 			} else
 				mb->errors = olderrors;
 			p->typechk = TYPE_UNKNOWN;

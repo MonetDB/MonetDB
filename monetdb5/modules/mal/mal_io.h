@@ -29,6 +29,6 @@ mal_export str io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 mal_export str io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-mal_export str IOsetmemorylimit(void *res, lng *nbytes);
+mal_export str IOsetmallocsuccesscount(void *res, lng *nbytes);
 
 #endif /* _PRINT_H_ */

@@ -1,3 +1,5 @@
+set optimizer = 'sequential_pipe'; -- to get predictable errors
+
 CREATE TABLE geoms (id INTEGER, g GEOMETRY);
 INSERT INTO geoms values (1, 'POINT(10 10)');
 INSERT INTO geoms values (2, 'LINESTRING(10 10, 20 20, 30 40)');

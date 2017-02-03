@@ -163,11 +163,11 @@ typedef struct VARRECORD {
  */
 
 typedef struct {
-	bit token;					/* instruction type */
+	bte token;					/* instruction type */
 	bit barrier;				/* flow of control modifier takes:
 								   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE */
 	bit typechk;				/* type check status */
-	bit gc;						/* garbage control flags */
+	bte gc;						/* garbage control flags */
 	bit polymorphic;			/* complex type analysis */
 	bit varargs;				/* variable number of arguments */
 	int jump;					/* controlflow program counter */
@@ -176,7 +176,7 @@ typedef struct {
 	struct MALBLK *blk;			/* resolved MAL function address */
 	int mitosis;				/* old mtProp value */
 	/* inline statistics */
-	struct timeval clock;		/* when the last call was started */
+	lng clock;					/* when the last call was started */
 	lng ticks;					/* total micro seconds spent in last call */
 	int calls;					/* number of calls made to this instruction */
 	lng totticks;				/* total time spent on this instruction. */

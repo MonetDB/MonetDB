@@ -13447,6 +13447,27 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 /* Special version of the above for converting from floating point.
  * The final assignment rounds the value which can still come out to
  * the NIL representation, so we need to check for that. */
+#ifdef TRUNCATE_NUMBERS
+#define roundflt(x)	(x)
+#define rounddbl(x)	(x)
+#else
+#define roundflt(x)	roundf(x)
+#define rounddbl(x)	round(x)
+#endif
+
+#ifndef HAVE_ROUND
+static inline double
+round(double val)
+{
+	/* round to nearest integer, away from zero */
+	if (val < 0)
+		return -floor(-val + 0.5);
+	else
+		return floor(val + 0.5);
+}
+#define roundf(x)	((float)round((double)(x)))
+#endif
+
 #define convertimpl_reduce_float(TYPE1, TYPE2)				\
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
@@ -13468,7 +13489,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\
 			dst[i] = TYPE2##_nil;				\
 			nils++;						\
-		} else if ((dst[i] = (TYPE2) src[i]) == TYPE2##_nil &&	\
+		} else if ((dst[i] = (TYPE2) round##TYPE1(src[i])) == TYPE2##_nil && \
 			   abort_on_error)				\
 			CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);		\
 	}								\
@@ -13575,6 +13596,9 @@ convertimpl_reduce_float(dbl, lng)
 #ifdef HAVE_HGE
 convertimpl_reduce_float(dbl, hge)
 #endif
+#undef rounddbl
+/* no rounding here */
+#define rounddbl(x)	(x)
 convertimpl_reduce_float(dbl, flt)
 convertimpl_copy(dbl)
 

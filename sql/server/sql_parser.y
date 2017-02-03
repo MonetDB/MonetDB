@@ -193,6 +193,7 @@ int yydebug=1;
 	select_no_parens
 	select_no_parens_orderby
 	subquery
+	subquery_with_orderby
 	test_for_null
 	values_or_query_spec
 	grant
@@ -766,11 +767,17 @@ variable_list:
     ;
 
 set_statement:
-	set ident '=' simple_atom
+	/*set ident '=' simple_atom*/
+        set ident '=' search_condition
 		{ dlist *l = L();
 		append_string(l, $2 );
 		append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
+  |     set column_commalist_parens '=' subquery
+		{ dlist *l = L();
+	  	append_list(l, $2);
+	  	append_symbol(l, $4);
+	  	$$ = _symbol_create_list( SQL_SET, l ); }
   |	set sqlSESSION AUTHORIZATION ident
 		{ dlist *l = L();
 		  sql_subtype t;
@@ -3164,7 +3171,7 @@ table_ref:
 		  	  	  append_symbol(l, $3);
 		  	  	  append_int(l, 1);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
- |  subquery table_name		
+ |  subquery_with_orderby table_name		
 				{
 				  $$ = $1;
 				  if ($$->token == SQL_SELECT) {
@@ -3186,7 +3193,7 @@ table_ref:
 	  				append_int($2->data.lval, 1);
 				  }
 				}
- |  subquery
+ |  subquery_with_orderby
 				{ $$ = NULL;
 				  yyerror(m, "subquery table reference needs alias, use AS xxx");
 				  YYABORT;
@@ -3536,8 +3543,17 @@ filter_exp:
 		  $$ = _symbol_create_list(SQL_FILTER, l ); }
  ;
 
-subquery:
+
+subquery_with_orderby:
     '(' select_no_parens_orderby ')'	{ $$ = $2; }
+ |  '(' VALUES row_commalist ')'	
+				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
+ |  '(' with_query ')'	
+				{ $$ = $2; }
+ ;
+
+subquery:
+    '(' select_no_parens ')'	{ $$ = $2; }
  |  '(' VALUES row_commalist ')'	
 				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
  |  '(' with_query ')'	
@@ -4425,10 +4441,12 @@ literal:
 		  if (!err) {
 		    int bits = digits2bits(digits), obits = bits;
 
-		    for (;(one<<(bits-1)) > value; bits--)
-			    ;
-		   
- 		    if (bits != obits && 
+		    while (bits > 0 &&
+			   (bits == sizeof(value) * 8 ||
+			    (one << (bits - 1)) > value))
+			  bits--;
+
+ 		    if (bits != obits &&
 		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
 				bits++;
 		

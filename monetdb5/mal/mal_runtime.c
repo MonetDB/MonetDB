@@ -27,7 +27,6 @@
 QueryQueue QRYqueue;
 static int qtop, qsize;
 static int qtag= 1;
-static int calltag =0; // to identify each invocation
 
 void
 mal_runtime_reset(void)
@@ -37,7 +36,6 @@ mal_runtime_reset(void)
 	qtop = 0;
 	qsize = 0;
 	qtag= 1;
-	calltag =0; 
 }
 
 static str isaSQLquery(MalBlkPtr mb){
@@ -72,41 +70,48 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		MT_lock_unset(&mal_delayLock);
 		return;
 	}
+	// check for recursive call
 	for( i = 0; i < qtop; i++)
-		if ( QRYqueue[i].mb == mb)
-			break;
+		if ( QRYqueue[i].mb == mb &&  stk->up == QRYqueue[i].stk){
+			QRYqueue[i].stk = stk;
+			stk->tag = QRYqueue[i].tag;
+			MT_lock_unset(&mal_delayLock);
+			return;
+		}
 
-	stk->tag = calltag++;
-	if ( i == qtop ) {
-		mb->tag = qtag;
-		QRYqueue[i].mb = mb;	// for detecting duplicates
-		QRYqueue[i].stk = stk;	// for status pause 'p'/running '0'/ quiting 'q'
-		QRYqueue[i].tag = qtag++;
-		QRYqueue[i].start = (lng)time(0);
-		QRYqueue[i].runtime = mb->runtime;
-		q = isaSQLquery(mb);
-		QRYqueue[i].query = q? GDKstrdup(q):0;
-		QRYqueue[i].status = "running";
-		QRYqueue[i].cntxt = cntxt;
-	}
-
+	// add new invokation
+	QRYqueue[i].mb = mb;	
+	QRYqueue[i].tag = qtag++;
+	QRYqueue[i].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
+	QRYqueue[i].start = (lng)time(0);
+	QRYqueue[i].runtime = mb->runtime; 	// the estimated execution time
+	q = isaSQLquery(mb);
+	QRYqueue[i].query = q? GDKstrdup(q):0;
+	QRYqueue[i].status = "running";
+	QRYqueue[i].cntxt = cntxt;
 	qtop += i == qtop;
-
 	MT_lock_unset(&mal_delayLock);
 }
 
 void
-runtimeProfileFinish(Client cntxt, MalBlkPtr mb)
+runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	int i,j;
 
 	(void) cntxt;
+	(void) mb;
 
 	MT_lock_set(&mal_delayLock);
 	for( i=j=0; i< qtop; i++)
-	if ( QRYqueue[i].mb != mb)
+	if ( QRYqueue[i].stk != stk)
 		QRYqueue[j++] = QRYqueue[i];
 	else  {
+		if( stk->up){
+			// recursive call
+			QRYqueue[i].stk = stk->up;
+			MT_lock_unset(&mal_delayLock);
+			return;
+		}
 		QRYqueue[i].mb->calls++;
 		QRYqueue[i].mb->runtime += (lng) (((lng)time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls);
 
@@ -167,8 +172,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	}
 
 	/* always collect the MAL instruction execution time */
-	gettimeofday(&pci->clock,NULL);
-	prof->ticks = GDKusec();
+	pci->clock = prof->ticks = GDKusec();
 
 	/* keep track of actual running instructions over BATs */
 	if( isaBatType(getArgType(mb, pci, 0)) )

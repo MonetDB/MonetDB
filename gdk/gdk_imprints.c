@@ -279,7 +279,7 @@ BATimprints(BAT *b)
 {
 	BAT *o = NULL, *s1 = NULL, *s2 = NULL, *s3 = NULL, *s4 = NULL;
 	Imprints *imprints;
-	lng t0 = 0, t1 = 0;
+	lng t0 = 0;
 
 	/* we only create imprints for types that look like types we know */
 	switch (ATOMbasetype(b->ttype)) {
@@ -316,7 +316,7 @@ BATimprints(BAT *b)
 		assert(b->timprints == NULL);
 	}
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
-	t0 = GDKusec();
+	ALGODEBUG t0 = GDKusec();
 	if (b->timprints == NULL) {
 		BUN cnt;
 		str nme = BBP_physical(b->batCacheid);
@@ -496,8 +496,7 @@ BATimprints(BAT *b)
 		b->timprints = imprints;
 	}
 
-	t1 = GDKusec();
-	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
+	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", GDKusec() - t0);
 	MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 
 	/* BBPUnfix tries to get the imprints lock which might lead to a deadlock

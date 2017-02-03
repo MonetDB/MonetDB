@@ -3,7 +3,7 @@ set optimizer='sequential_pipe';
 
 start transaction;
 
--- only explain output because not like's give to many rows.
+-- only explain output because not like's give too many rows.
 explain select name,func from functions where name like '%optimizers%';
 explain select name,func from functions where name not like '%optimizers%';
 explain select name,func from functions where name ilike '%optimizers%';

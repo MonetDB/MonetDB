@@ -47,6 +47,25 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	if (b->torderidx)
 		return MAL_SUCCEED;
 
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_flt:
+	case TYPE_dbl:
+		break;
+	case TYPE_str:
+		/* TODO: support strings etc. */
+	case TYPE_void:
+	case TYPE_ptr:
+	default:
+		throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
+	}
+
 	if( pieces < 0 ){
 		if (GDKnr_threads <= 1) {
 			pieces = 1;
@@ -144,7 +163,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		newstk->up = 0;
 		newstk->stk[arg].vtype= TYPE_bat;
 		newstk->stk[arg].val.bval= b->batCacheid;
-		BBPincref(newstk->stk[arg].val.bval, TRUE);
+		BBPretain(newstk->stk[arg].val.bval);
 		msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 		freeStack(newstk);
 	}

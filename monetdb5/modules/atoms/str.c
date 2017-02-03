@@ -1831,8 +1831,8 @@ STRReverseStrSearch(int *res, const str *arg1, const str *arg2)
 str
 STRsplitpart(str *res, str *haystack, str *needle, int *field)
 {
-	size_t slen;
-	int len, f = *field;
+	size_t len;
+	int f = *field;
 	char *p;
 	const char *s = *haystack;
 	const char *s2 = *needle;
@@ -1848,10 +1848,10 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 		throw(MAL, "str.splitpart", "field position must be greater than zero");
 	}
 
-	slen = strlen(s2);
+	len = strlen(s2);
 
 	while ((p = strstr(s, s2)) != 0 && f > 1) {
-		s = p + slen;
+		s = p + len;
 		f--;
 	}
 
@@ -1861,16 +1861,16 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 			throw(MAL, "str.splitpart", MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-   
+
 	if (p == 0) {
-		len = UTF8_strlen(s);
+		len = strlen(s);
 	} else if ((p = strstr(s, s2)) != 0) {
-		len = (int) (p - s);
+		len = (size_t) (p - s);
 	} else {
-		len = UTF8_strlen(s);
+		len = strlen(s);
 	}
 
-	if (len == int_nil || len == 0) {
+	if (len == 0) {
 		*res = GDKstrdup("");
 		if (*res == NULL)
 			throw(MAL, "str.splitpart", MAL_MALLOC_FAIL);

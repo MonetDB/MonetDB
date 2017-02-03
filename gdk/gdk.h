@@ -1491,7 +1491,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * @emph{th}) for variable-sized atoms.
  */
 
-gdk_export gdk_return BATsave(BAT *b);
 gdk_export void BATmsync(BAT *b);
 
 gdk_export size_t BATmemsize(BAT *b, int dirty);
@@ -1507,8 +1506,6 @@ gdk_export void OIDXdestroy(BAT *b);
  * @- Printing
  * @multitable @columnfractions 0.08 0.7
  * @item int
- * @tab BATprintf (stream *f, BAT *b)
- * @item int
  * @tab BATprintcolumns (stream *f, int argc, BAT *b[]);
  * @end multitable
  *
@@ -1520,7 +1517,6 @@ gdk_export void OIDXdestroy(BAT *b);
  */
 gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_export gdk_return BATprint(BAT *b);
-gdk_export gdk_return BATprintf(stream *f, BAT *b);
 
 /*
  * @- BAT clustering
@@ -1620,9 +1616,9 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  * @item int
  * @tab BBPunfix (bat bi)
  * @item int
- * @tab BBPincref (bat bi, int logical)
+ * @tab BBPretain (bat bi)
  * @item int
- * @tab BBPdecref (bat bi, int logical)
+ * @tab BBPrelease (bat bi)
  * @item str
  * @tab BBPname (bat bi)
  * @item bat
@@ -1711,8 +1707,6 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 	 "")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)
-#define BBPfix(i)	BBPincref((i), FALSE)
-#define BBPunfix(i)	BBPdecref((i), FALSE)
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)

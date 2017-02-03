@@ -3058,8 +3058,6 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
 
-	(void) sql;		/* unused! */
-
 	if (pin && list_length(pin->op4.lval)) 
 		s = pin->op4.lval->h->data;
 	if (s->key && s->nrcols == 0) {
@@ -4554,7 +4552,7 @@ rel2bin_seq(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
-	stmt *restart, *sname, *seq, *sl = NULL;
+	stmt *restart, *sname, *seq, *seqname, *sl = NULL;
 	list *l = sa_list(sql->sa);
 
 	if (rel->l)  /* first construct the sub relation */
@@ -4562,10 +4560,12 @@ rel2bin_seq(backend *be, sql_rel *rel, list *refs)
 
 	restart = exp_bin(be, en->data, sl, NULL, NULL, NULL, NULL, NULL);
 	sname = exp_bin(be, en->next->data, sl, NULL, NULL, NULL, NULL, NULL);
-	seq = exp_bin(be, en->next->next->data, sl, NULL, NULL, NULL, NULL, NULL);
+	seqname = exp_bin(be, en->next->next->data, sl, NULL, NULL, NULL, NULL, NULL);
+	seq = exp_bin(be, en->next->next->next->data, sl, NULL, NULL, NULL, NULL, NULL);
 
 	(void)refs;
 	append(l, sname);
+	append(l, seqname);
 	append(l, seq);
 	append(l, restart);
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
@@ -4613,17 +4613,24 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
 	stmt *action = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
-	stmt *table = NULL, *sname;
+	stmt *table = NULL, *sname, *tname = NULL;
 	list *l = sa_list(sql->sa);
 
 	(void)refs;
 	en = en->next;
 	sname = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
 	en = en->next;
+	if (en) {
+		tname = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
+		en = en->next;
+	}
 	if (en) 
 		table = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
 	append(l, sname);
-	append(l, table);
+	assert(tname);
+	append(l, tname);
+	if (rel->flag != DDL_DROP_TABLE && rel->flag != DDL_DROP_TABLE_IF_EXISTS && rel->flag != DDL_DROP_VIEW && rel->flag != DDL_DROP_VIEW_IF_EXISTS && rel->flag != DDL_DROP_CONSTRAINT)
+		append(l, table);
 	append(l, action);
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
 }

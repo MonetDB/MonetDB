@@ -27,7 +27,7 @@ sql5_export int backend_create_func(backend *be, sql_func *f, list *restypes, li
 extern int backend_create_subfunc(backend *be, sql_subfunc *f, list *ops);
 extern int backend_create_subaggr(backend *be, sql_subaggr *f);
 
-sql5_export int monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func);
+sql5_export int monet5_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func);
 
 extern void rel_print(mvc *sql, sql_rel *rel, int depth);
 extern void _rel_print(mvc *sql, sql_rel *rel);

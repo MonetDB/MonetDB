@@ -77,7 +77,7 @@ gdk_export void MT_init(void);	/*  init the package. */
 gdk_export int GDKinit(opt *set, int setlen);
 
 /* used for testing only */
-gdk_export void GDKsetmemorylimit(lng nbytes);
+gdk_export void GDKsetmallocsuccesscount(lng count);
 
 /*
  * Upon closing the session, all persistent BATs should be saved and

@@ -1,0 +1,152 @@
+stdout of test 'round-or-truncate.Bug-6193` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 11:24:34 >  
+# 11:24:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31451" "--set" "mapi_usock=/var/tmp/mtest-3036/.s.monetdb.31451" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 11:24:34 >  
+
+# MonetDB 5 server v11.25.6 (hg id: 2ef2c9472336+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:31451/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3036/.s.monetdb.31451
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 11:24:34 >  
+# 11:24:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3036" "--port=31451"
+# 11:24:34 >  
+
+#select 6e-1;
+% .L2 # table_name
+% L2 # name
+% double # type
+% 24 # length
+[ 0.6	]
+#select cast(6e-1 as integer);
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 1	]
+#select cast(0.6 as integer);
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 1	]
+#select 1.7777777;
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 10 # length
+[ 1.7777777	]
+#select cast(1.7777777 as integer);
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 2	]
+#select cast(cast(1.7777777 as decimal(10,7)) as integer);
+% .L3 # table_name
+% L3 # name
+% int # type
+% 1 # length
+[ 2	]
+#create table testdec(testdec decimal(5,4));
+#insert into testdec values (-0.12341);
+[ 1	]
+#insert into testdec values (-0.12347);
+[ 1	]
+#prepare insert into testdec (testdec) values (?);
+#prepare insert into testdec (testdec) values (?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	0,	0 # length
+[ "decimal",	5,	4,	NULL,	NULL,	NULL	]
+#exec 19 (-0.12341);
+[ 1	]
+#exec 19 (-0.12347);
+[ 1	]
+#select * from testdec;
+% sys.testdec # table_name
+% testdec # name
+% decimal # type
+% 7 # length
+[ -0.1234	]
+[ -0.1235	]
+[ -0.1234	]
+[ -0.1235	]
+#select cast(13.8 as int);
+% .L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 14	]
+#select cast(cast(13.8 as decimal(10,7)) as int);
+% .L3 # table_name
+% L3 # name
+% int # type
+% 2 # length
+[ 14	]
+#select cast(cast(13.8 as double) as int);
+% .L3 # table_name
+% L3 # name
+% int # type
+% 2 # length
+[ 14	]
+
+# 11:24:35 >  
+# 11:24:35 >  "Done."
+# 11:24:35 >  
+

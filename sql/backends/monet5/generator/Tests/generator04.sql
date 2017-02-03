@@ -1,3 +1,5 @@
+set optimizer = 'sequential_pipe'; -- to get predictable errors
+
 -- some unit  tests
 select * from generate_series('a','a','c');
 

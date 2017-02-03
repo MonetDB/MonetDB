@@ -6,6 +6,7 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
+#include "monetdb_config.h"
 #include "unicode.h"
 
 #include <string.h>
@@ -28,12 +29,12 @@ int utf8_strlen(const char *utf8_str, bool *ascii)
     return utf8_char_count;
 }
 
-int utf32_strlen(const Py_UNICODE *utf32_str)
+size_t utf32_strlen(const Py_UNICODE *utf32_str)
 {
-	int i = 0;
+	size_t i = 0;
 	while(utf32_str[i] != 0)
 		i++;
-	return (i - 1);
+	return i;
 }
 
 int utf8_length(unsigned char utf8_char)

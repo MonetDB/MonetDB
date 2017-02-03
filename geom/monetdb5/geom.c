@@ -2645,14 +2645,6 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 		}
 	}
 
-	//print areas
-	for (i = 0; i < itemsNum; i++) {
-		char *toStr = NULL;
-		int len = 0;
-		wkbTOSTR(&toStr, &len, linestringsWKB[i]);
-		GDKfree(toStr);
-	}
-
 	if (*flag == 0) {
 		//the biggest polygon is the external shell
 		GEOSCoordSeq coordSeq_external;

@@ -779,8 +779,8 @@ IOimport(void *ret, bat *bid, str *fnme)
 
 
 str
-IOsetmemorylimit(void *res, lng *nbytes) {
+IOsetmallocsuccesscount(void *res, lng *count) {
 	(void) res;
-	GDKsetmemorylimit(*nbytes);
+	GDKsetmallocsuccesscount(*count);
 	return MAL_SUCCEED;
 }

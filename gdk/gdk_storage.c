@@ -637,6 +637,7 @@ DESCclean(BAT *b)
 #define MSYNC_BACKGROUND
 
 #ifndef DISABLE_MSYNC
+#ifndef MS_ASYNC
 struct msync {
 	bat id;
 	Heap *h;
@@ -646,63 +647,71 @@ static void
 BATmsyncImplementation(void *arg)
 {
 	Heap *h = ((struct msync *) arg)->h;
-	char *adr;
-	size_t len;
-	size_t offset;
 
-	adr = h->base;
-	offset = ((size_t) adr % MT_pagesize());
-	len = MT_pagesize() * (1 + ((h->base + h->free - adr) / MT_pagesize()));
-	if (offset)
-		adr -= MT_pagesize() - offset;
-	if (len)
-		(void) MT_msync(adr, len);
+	(void) MT_msync(h->base, h->size);
 	BBPunfix(((struct msync *) arg)->id);
 	GDKfree(arg);
 }
+#endif
 #endif
 
 void
 BATmsync(BAT *b)
 {
+	/* we don't sync views */
+	if (isVIEW(b))
+		return;
+	/* we don't sync transients */
+	if (b->theap.farmid != 0 ||
+	    (b->tvheap != NULL && b->tvheap->farmid != 0))
+		return;
 #ifndef DISABLE_MSYNC
-#ifdef MSYNC_BACKGROUND
-	MT_Id tid;
-#endif
-	struct msync *arg;
-
-	assert(b->batPersistence == PERSISTENT);
-	if (b->theap.storage == STORE_MMAP &&
-	    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-		arg->id = b->batCacheid;
-		arg->h = &b->theap;
-		BBPfix(b->batCacheid);
-#ifdef MSYNC_BACKGROUND
-		if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
-			/* don't bother if we can't create a thread */
-			BBPunfix(b->batCacheid);
-			GDKfree(arg);
-		}
+#ifdef MS_ASYNC
+	if (b->theap.storage == STORE_MMAP)
+		(void) msync(b->theap.base, b->theap.free, MS_ASYNC);
+	if (b->tvheap && b->tvheap->storage == STORE_MMAP)
+		(void) msync(b->tvheap->base, b->tvheap->free, MS_ASYNC);
 #else
-		BATmsyncImplementation(arg);
-#endif
-	}
-
-	if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
-	    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-		arg->id = b->batCacheid;
-		arg->h = b->tvheap;
-		BBPfix(b->batCacheid);
+	{
 #ifdef MSYNC_BACKGROUND
-		if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
-			/* don't bother if we can't create a thread */
-			BBPunfix(b->batCacheid);
-			GDKfree(arg);
-		}
-#else
-		BATmsyncImplementation(arg);
+		MT_Id tid;
 #endif
+		struct msync *arg;
+
+		assert(b->batPersistence == PERSISTENT);
+		if (b->theap.storage == STORE_MMAP &&
+		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
+			arg->id = b->batCacheid;
+			arg->h = &b->theap;
+			BBPfix(b->batCacheid);
+#ifdef MSYNC_BACKGROUND
+			if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+				/* don't bother if we can't create a thread */
+				BBPunfix(b->batCacheid);
+				GDKfree(arg);
+			}
+#else
+			BATmsyncImplementation(arg);
+#endif
+		}
+
+		if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
+		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
+			arg->id = b->batCacheid;
+			arg->h = b->tvheap;
+			BBPfix(b->batCacheid);
+#ifdef MSYNC_BACKGROUND
+			if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+				/* don't bother if we can't create a thread */
+				BBPunfix(b->batCacheid);
+				GDKfree(arg);
+			}
+#else
+			BATmsyncImplementation(arg);
+#endif
+		}
 	}
+#endif
 #else
 	(void) b;
 #endif	/* DISABLE_MSYNC */
@@ -949,7 +958,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 }
 
 gdk_return
-BATprintf(stream *s, BAT *b)
+BATprint(BAT *b)
 {
 	BAT *argv[2];
 	gdk_return ret = GDK_FAIL;
@@ -958,15 +967,9 @@ BATprintf(stream *s, BAT *b)
 	argv[1] = b;
 	if (argv[0] && argv[1]) {
 		BATroles(argv[0], "h");
-		ret = BATprintcolumns(s, 2, argv);
+		ret = BATprintcolumns(GDKstdout, 2, argv);
 	}
 	if (argv[0])
 		BBPunfix(argv[0]->batCacheid);
 	return ret;
-}
-
-gdk_return
-BATprint(BAT *b)
-{
-	return BATprintf(GDKstdout, b);
 }

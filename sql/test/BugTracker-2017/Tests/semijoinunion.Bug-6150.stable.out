@@ -1,0 +1,75 @@
+stdout of test 'semijoinunion.Bug-6150` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 19:06:12 >  
+# 19:06:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39841" "--set" "mapi_usock=/var/tmp/mtest-8990/.s.monetdb.39841" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 19:06:12 >  
+
+# MonetDB 5 server v11.25.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.584 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rocks073.scilens.private:39841/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8990/.s.monetdb.39841
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 19:06:12 >  
+# 19:06:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8990" "--port=39841"
+# 19:06:12 >  
+
+#CREATE TABLE "test_join_right_table" ("r_c" VARCHAR(255), "d" VARCHAR(255));
+#INSERT INTO "test_join_right_table"("r_c", "d") values ('c1', 'd1');
+[ 1	]
+#INSERT INTO "test_join_right_table"("r_c", "d") values ('c2', 'd2');
+[ 1	]
+#INSERT INTO "test_join_right_table"("r_c", "d") values ('c5', 'd3');
+[ 1	]
+#INSERT INTO "test_join_right_table"("r_c", "d") values (null, 'd4');
+[ 1	]
+#CREATE TABLE lineitem_denormalized_first1k
+#(
+#   customer_gender char(1),
+#   customer_region varchar(15) NOT NULL,
+#   customer_country varchar(40) NOT NULL,
+#   customer_state varchar(40),
+#   customer_city varchar(50) NOT NULL,
+#   customer_date_of_birth date,
+#   customer_id integer NOT NULL,
+#   product_family varchar(20) NOT NULL,
+#   product_category varchar(30) NOT NULL,
+#   product_subcategory varchar(30) NOT NULL,
+#   product_name varchar(50) NOT NULL,
+#   product_id integer NOT NULL,
+#   store_id integer NOT NULL,
+#copy 1000 records into lineitem_denormalized_first1k from stdin using delimiters ',','\n','\"';
+#F,APAC,People's Republic of China,Sichuan,Yibin,1957-09-19,99425,Non-consumables,Clothing,Clothing,Croft & Barrow Velour Separates,1757,30,-3.20000000,55.95000000,"Edinburgh, United Kingdom",Melody J. Hambard,+44-875-777-1712,EUROPE,United Kingdom,Scotland,Edinburgh,2010-11-03,2010-01-01,2010-10-01,2010-11-01,201011,20101103,03NOV2010,482.70,354.87,127.83,26.482
+#F,APAC,People's Republic of China,Sichuan,Yibin,1957-09-19,99425,Non-consumables,Clothing,Clothing,Men's Beanies,2951,30,-3.20000000,55.95000000,"Edinburgh, United Kingdom",Melody J. Hambard,+44-875-777-1712,EUROPE,United Kingdom,Scotland,Edinburgh,2010-11-03,2010-01-01,2010-10-01,2010-11-01,201011,20101103,03NOV2010,260.20,72.76,187.44,72.036
+[ 1000	]
+#select "t3e"."c22_store_phone_number" as "c3c_r_c" 
+#from (
+#	(select null as "c22_store_phone_number" from "test_join_right_table") union all 
+#	(select "store_phone_number" as "c22_store_phone_number" from "lineitem_denormalized_first1k")
+#) as "t3e"
+#where  exists (select 1 as "one" from "test_join_right_table" as "t3d" where ("t3e"."c22_store_phone_number" = "t3d"."r_c" or ("t3e"."c22_store_phone_number" is null and "t3d"."r_c" is null)));
+% .L15 # table_name
+% c3c_r_c # name
+% varchar # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#drop table test_join_right_table;
+#drop table lineitem_denormalized_first1k;
+
+# 19:06:12 >  
+# 19:06:12 >  "Done."
+# 19:06:12 >  
+

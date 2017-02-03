@@ -1,3 +1,21 @@
+monetdb (11.25.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#4039: Slow mserver5 start after drop of tables (> 1 hour)
+  * BZ#4048: Segfault on vacuum with parallel updates
+  * BZ#6079: pushselect optimizer bug on MAL snippet
+  * BZ#6140: INNER JOIN gives the results of a CROSS JOIN
+  * BZ#6150: Query giving wrong results, extra records are appearing
+  * BZ#6175: The program can't start because python27.dll is missing from
+    your computer.
+  * BZ#6178: AVG + GROUP BY returns NULL for some records that should
+    have results
+  * BZ#6179: mergetable optimizer messes up sample
+  * BZ#6182: sys.shutdown triggers assertion in clients.c
+  * BZ#6184: Incorrect result set - Extra records in result set
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Fri, 13 Jan 2017 11:15:52 +0100
+
 monetdb (11.25.3) unstable; urgency=low
 
   * Rebuilt.

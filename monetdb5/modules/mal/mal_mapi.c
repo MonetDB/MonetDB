@@ -1696,7 +1696,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		SERVERsessions[i].hdl= mapi_query(mid, buf);
 
 		GDKfree(ht); GDKfree(tt);
-		BBPdecref(b->batCacheid,TRUE);
+		BBPrelease(b->batCacheid);
 		break;
 		}
 	case TYPE_str:
