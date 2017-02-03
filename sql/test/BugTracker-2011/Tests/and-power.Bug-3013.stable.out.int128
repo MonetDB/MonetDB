@@ -48,7 +48,7 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % decimal # type
-% 40 # length
+% 39 # length
 [ 0	]
 
 # 14:12:27 >  

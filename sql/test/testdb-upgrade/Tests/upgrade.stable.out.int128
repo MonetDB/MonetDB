@@ -57,7 +57,7 @@ insert into sys.systemfunctions (select id from sys.functions where name in ('fu
 insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));
 update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');
 insert into sys.types values (13, 'hge', 'hugeint', 128, 1, 2, 7, 0);
-insert into sys.types values (18, 'hge', 'decimal', 39, 1, 10, 10, 0);
+insert into sys.types values (18, 'hge', 'decimal', 38, 1, 10, 10, 0);
 set schema "testschema";
 
 

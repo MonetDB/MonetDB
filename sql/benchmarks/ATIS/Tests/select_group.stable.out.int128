@@ -20,8 +20,8 @@ Ready.
 #end main;
 
 #select day_name.day_name,day_name.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by day_name.day_name,day_name.day_code order by day_code;
-% sys.day_name,	sys.day_name,	sys.L1 # table_name
-% day_name,	day_code,	L1 # name
+% sys.day_name,	sys.day_name,	sys.L5 # table_name
+% day_name,	day_code,	L4 # name
 % char,	decimal,	bigint # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
@@ -32,8 +32,8 @@ Ready.
 [ "SATURDAY",	6,	64	]
 [ "SUNDAY",	7,	64	]
 #select day_name.day_name,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by day_name.day_name;
-% sys.day_name,	sys.L1 # table_name
-% day_name,	L1 # name
+% sys.day_name,	sys.L4 # table_name
+% day_name,	L3 # name
 % char,	bigint # type
 % 9,	2 # length
 [ "MONDAY",	64	]
@@ -52,8 +52,8 @@ Ready.
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
 #select day_name.day_name,flight_day.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by flight_day.day_code,day_name.day_name order by day_code;
-% sys.day_name,	sys.flight_day,	sys.L1 # table_name
-% day_name,	day_code,	L1 # name
+% sys.day_name,	sys.flight_day,	sys.L5 # table_name
+% day_name,	day_code,	L4 # name
 % char,	decimal,	bigint # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
@@ -64,68 +64,68 @@ Ready.
 [ "SATURDAY",	6,	64	]
 [ "SUNDAY",	7,	64	]
 #select sum(engines) from aircraft;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % decimal # type
-% 40 # length
+% 39 # length
 [ 278	]
 #select avg(engines) from aircraft;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 2.059259259	]
 #select avg(engines) from aircraft where engines>0;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 2.376068376	]
 #select count(*),min(pay_load),max(pay_load) from aircraft where pay_load>0;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L4,	sys.L7,	sys.L12 # table_name
+% L3,	L6,	L11 # name
 % bigint,	int,	int # type
 % 2,	3,	6 # length
 [ 94,	240,	165710	]
 #select min(flight_code),min(flight_code) from flight;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L4,	sys.L7 # table_name
+% L3,	L6 # name
 % int,	int # type
 % 6,	6 # length
 [ 101908,	101908	]
 #select min(from_airport),min(to_airport) from flight;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L4,	sys.L7 # table_name
+% L3,	L6 # name
 % char,	char # type
 % 3,	3 # length
 [ "ATL",	"ATL"	]
 #select count(*) from aircraft where pay_load>10000;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 50	]
 #select count(*) from aircraft where pay_load<>0;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 94	]
 #select count(*) from flight where flight_code >= 112793;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 279	]
 #SELECT from_airport,to_airport,avg(time_elapsed) FROM flight WHERE from_airport='ATL' AND to_airport='BOS' group by from_airport,to_airport;
-% sys.flight,	sys.flight,	sys.L1 # table_name
-% from_airport,	to_airport,	L1 # name
+% sys.flight,	sys.flight,	sys.L5 # table_name
+% from_airport,	to_airport,	L4 # name
 % char,	char,	double # type
 % 3,	3,	24 # length
 [ "ATL",	"BOS",	154.3684211	]
 #select city_code, avg(ground_fare) from ground_service where ground_fare<>0 group by city_code;
-% sys.ground_service,	sys.L1 # table_name
-% city_code,	L1 # name
+% sys.ground_service,	sys.L4 # table_name
+% city_code,	L3 # name
 % char,	double # type
 % 4,	24 # length
 [ "MATL",	9	]
@@ -140,8 +140,8 @@ Ready.
 [ "WWAS",	12	]
 [ "BBWI",	5	]
 #select count(*), ground_service.city_code from ground_service group by ground_service.city_code;
-% sys.L1,	sys.ground_service # table_name
-% L1,	city_code # name
+% sys.L3,	sys.ground_service # table_name
+% L2,	city_code # name
 % bigint,	char # type
 % 1,	4 # length
 [ 3,	"MATL"	]
@@ -157,7 +157,7 @@ Ready.
 [ 3,	"BBWI"	]
 [ 1,	""	]
 #select category,count(*) as totalnr from aircraft where engines=2 group by category having count(*)>4 order by category;
-% sys.aircraft,	sys.L1 # table_name
+% sys.aircraft,	sys.L4 # table_name
 % category,	totalnr # name
 % char,	bigint # type
 % 10,	2 # length
@@ -165,8 +165,8 @@ Ready.
 [ "PROPELLER",	16	]
 [ "TURBOPROP",	32	]
 #select category,count(*) from aircraft where engines=2 group by category having count(*)>4 order by category;
-% sys.aircraft,	sys.L1 # table_name
-% category,	L1 # name
+% sys.aircraft,	sys.L4 # table_name
+% category,	L3 # name
 % char,	bigint # type
 % 10,	2 # length
 [ "JET",	15	]

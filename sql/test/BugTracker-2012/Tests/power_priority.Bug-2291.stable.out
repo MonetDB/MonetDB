@@ -50,7 +50,7 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ -0.00076334574955	]
 
 # 15:05:38 >  

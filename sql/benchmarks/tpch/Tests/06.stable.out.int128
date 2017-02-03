@@ -29,7 +29,7 @@ Ready.
 % sys.L4 # table_name
 % revenue # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ 1193053.2253	]
 % .stats,	.stats # table_name
 % rewrite,	count # name

@@ -63,7 +63,7 @@ Ready.
 % sys.customer,	sys.customer,	sys.L5,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
 % c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
 % int,	varchar,	decimal,	decimal,	char,	varchar,	char,	varchar # type
-% 4,	18,	21,	17,	25,	40,	15,	116 # length
+% 4,	18,	20,	17,	25,	40,	15,	116 # length
 [ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"ely pending frays boost carefully"	]
 [ 1201,	"Customer#000001201",	374331.5340,	5165.39,	"IRAN",	"LfCSVKWozyWOGDW02g9UX,XgH5YU2o5ql1zBrN",	"20-825-400-1187",	"lyly pending packages. special requests sleep-- platelets use blithely after the instructions. sometimes even id"	]
 [ 422,	"Customer#000000422",	366451.0126,	-272.14,	"INDONESIA",	"AyNzZBvmIDo42JtjP9xzaK3pnvkh Qc0o08ssnvq",	"19-299-247-2444",	"eposits; furiously ironic packages accordi"	]
