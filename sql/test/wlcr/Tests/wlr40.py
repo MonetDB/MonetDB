@@ -2,7 +2,7 @@ try:
     from MonetDBtesting import process
 except ImportError:
     import process
-import os, sys, socket, time
+import os, sys, socket
 
 process.verbose = True
 dbfarm = os.getenv('GDK_DBFARM')
@@ -24,15 +24,14 @@ cloneport = freeport()
 dbname = tstdb
 dbnameclone = tstdb + '-clone'
 
-# master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+#master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 c = process.client('sql', dbname = dbnameclone, port = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-time.sleep(2)
 cout, cerr = c.communicate('''\
 select * from tmp;
-''')
+''' )
 
 sout, serr = slave.communicate()
 #mout, merr = master.communicate()

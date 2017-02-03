@@ -19,3 +19,7 @@ wlc30
 
 # roll forward to replica
 wlr30
+
+#clear the complete table
+wlc40
+wlr40

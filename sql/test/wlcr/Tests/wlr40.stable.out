@@ -1,0 +1,34 @@
+stdout of test 'wlr40` in directory 'sql/test/wlcr` itself:
+
+
+# 13:02:55 >  
+# 13:02:55 >  "/usr/bin/python2" "wlr40.py" "wlr40"
+# 13:02:55 >  
+
+Executing: Mtimeout -timeout 60 mserver5 --debug=10 --set gdk_nr_threads=0 --set mapi_open=true --set monet_prompt= --forcemito --set mapi_port=49945 --set mapi_usock=/var/tmp/mtest-24794/.s.monetdb.49945 --dbpath=/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
+Executing: Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-24794 --port=49945 --database=mTests_sql_test_wlcr-clone
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_wlcr-clone', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:49945/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24794/.s.monetdb.49945
+# MonetDB/GIS module loaded
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone/../mTests_sql_test_wlcr/master/mTests_sql_test_wlcr_000000000014
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone/../mTests_sql_test_wlcr/master/mTests_sql_test_wlcr_000000000015
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone/../mTests_sql_test_wlcr/master/mTests_sql_test_wlcr_000000000016
+# MonetDB/SQL module loaded
+#select * from tmp;
+% sys.tmp,	sys.tmp # table_name
+% i,	s # name
+% int,	clob # type
+% 1,	0 # length
+
+# 13:02:55 >  
+# 13:02:55 >  "Done."
+# 13:02:55 >  
+
