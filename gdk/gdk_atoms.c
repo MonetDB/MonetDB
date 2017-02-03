@@ -1130,6 +1130,9 @@ void
 strCleanHash(Heap *h, int rebuild)
 {
 	(void) rebuild;
+	if (!h->cleanhash)
+		return;
+	h->cleanhash = 0;
 	if (!GDK_ELIMDOUBLES(h)) {
 		/* flush hash table for security */
 		memset(h->base, 0, GDK_STRHASHSIZE);
