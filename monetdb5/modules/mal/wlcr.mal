@@ -51,7 +51,7 @@ address WLCupdate
 comment "Keep the update in the workload-capture-replay list";
 
 pattern delete(sname:str, tname:str, b:any):int
-address WLCreset
+address WLCdelete
 comment "Keep the deletions in the workload-capture-replay list";
 
 pattern clear_table(sname:str, tname:str):int

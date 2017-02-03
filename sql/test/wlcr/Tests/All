@@ -20,6 +20,10 @@ wlc30
 # roll forward to replica
 wlr30
 
-#clear the complete table
+#delete some tupples
 wlc40
 wlr40
+
+#clear the complete table
+wlc50
+wlr50

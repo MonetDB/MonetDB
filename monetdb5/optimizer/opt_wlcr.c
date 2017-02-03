@@ -48,6 +48,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(q,0) = newTmpVariable(mb,TYPE_any);
 			q->argc--; // no need for the userid
 			pushInstruction(mb,q);
+			updates++;
 		} else
 		/* the catalog operations are needed to determine the job kind later on */
 		if( getModuleId(p) == sqlcatalogRef &&
@@ -64,12 +65,14 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(q,0) = newTmpVariable(mb,TYPE_any);
 			delArgument(q, 3);
 			pushInstruction(mb,q);
+			updates++;
 		} else
 		if( getModuleId(p) == sqlcatalogRef){
 			q= copyInstruction(p);
 			setModuleId(q, wlcrRef);
 			getArg(q,0) = newTmpVariable(mb,TYPE_any);
 			pushInstruction(mb,q);
+			updates++;
 		} else
 		if( getModuleId(p) == sqlRef && 
 			(getFunctionId(p) == clear_tableRef || 
@@ -78,6 +81,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			setModuleId(q, wlcrRef);
 			getArg(q,0) = newTmpVariable(mb,TYPE_any);
 			pushInstruction(mb,q);
+			updates++;
 		} else
 		if( getModuleId(p) == sqlRef && 
 			( getFunctionId(p) == appendRef  ||
@@ -89,6 +93,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for( j=0; j< p->retc; j++)
 					getArg(q,j) = newTmpVariable(mb,TYPE_any);
 				pushInstruction(mb,q);
+				updates++;
 		}
 	} 
 	for(; i<slimit; i++)

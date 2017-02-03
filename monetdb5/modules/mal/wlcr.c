@@ -583,7 +583,7 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;	
-	int tpe, varid;
+	int tpe;
 	(void) stk;
 	(void) mb;
 	
@@ -591,18 +591,19 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = newStmt(cntxt->wlcr, "wlr","delete");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
 	
-	tpe= getArgType(mb,pci,4);
+	tpe= getArgType(mb,pci,3);
 	if (isaBatType(tpe) ){
-		WLCdatashipping(cntxt, mb, p, stk->stk[getArg(pci,4)].val.bval);
-	} else {
+		WLCdatashipping(cntxt, mb, p, stk->stk[getArg(pci,3)].val.bval);
+	} else
+		throw(MAL,"wlcr.delete","BAT expected");
+/*
 		ValRecord cst;
 		if (VALcopy(&cst, getArgReference(stk,pci,4)) != NULL){
 			varid = defConstant(cntxt->wlcr, tpe, &cst);
 			p = pushArgument(cntxt->wlcr, p, varid);
 		}
-	}
+*/
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 

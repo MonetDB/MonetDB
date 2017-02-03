@@ -17,13 +17,27 @@ stdout of test 'wlc40` in directory 'sql/test/wlcr` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24794/.s.monetdb.34000
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-#delete from tmp;
-[ 6	]
 #select * from tmp;
 % sys.tmp,	sys.tmp # table_name
 % i,	s # name
 % int,	clob # type
-% 1,	0 # length
+% 1,	4 # length
+[ 3,	"blah"	]
+[ 2,	"blah"	]
+[ 3,	"blah"	]
+[ 4,	"blah"	]
+[ 5,	"blah"	]
+[ 6,	"blah"	]
+#delete from tmp where i < 4;
+[ 3	]
+#select * from tmp;
+% sys.tmp,	sys.tmp # table_name
+% i,	s # name
+% int,	clob # type
+% 1,	4 # length
+[ 4,	"blah"	]
+[ 5,	"blah"	]
+[ 6,	"blah"	]
 
 # 13:02:55 >  
 # 13:02:55 >  "Done."

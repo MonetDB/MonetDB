@@ -24,7 +24,10 @@ stdout of test 'wlr40` in directory 'sql/test/wlcr` itself:
 % sys.tmp,	sys.tmp # table_name
 % i,	s # name
 % int,	clob # type
-% 1,	0 # length
+% 1,	4 # length
+[ 4,	"blah"	]
+[ 5,	"blah"	]
+[ 6,	"blah"	]
 
 # 13:02:55 >  
 # 13:02:55 >  "Done."
