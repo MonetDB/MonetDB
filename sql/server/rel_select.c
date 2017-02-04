@@ -4335,19 +4335,10 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 					exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 					e = ne;
 				} else if (f == sql_sel && is_project(p->op) && !is_processed(p)) {
-					sql_rel *pp = p;
-					if (p->l) 
-						pp = p->l;
-					if (is_groupby(pp->op)) {
-						pp->l = rel_crossproduct(sql->sa, pp->l, r, op_join);
-						e = rel_groupby_add_aggr(sql, pp, e);
-					} else if (p->l) {
+					if (p->l) {
 						p->l = rel_crossproduct(sql->sa, p->l, r, op_join);
-					} else if (!p->l) {
-						p->l = r;
 					} else {
-						assert(0);
-						*rel = rel_crossproduct(sql->sa, p, r, op_join);
+						p->l = r;
 					}
 				} else {
 					*rel = rel_crossproduct(sql->sa, p, r, op_join);

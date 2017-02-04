@@ -36,6 +36,27 @@ MAPI  = (monetdb) /var/tmp/mtest-19864/.s.monetdb.34473
 QUERY = drop index test_oidx1;
 ERROR = !DROP INDEX: no such index 'test_oidx1'
 
+MAPI  = (monetdb) /var/tmp/mtest-19864/.s.monetdb.34473
+QUERY = create ordered index test_oidx1 on test_oidx (c2);
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-19864/.s.monetdb.34473
+QUERY = drop index test_oidx1;
+ERROR = !DROP INDEX: no such index 'test_oidx1'
+
+MAPI  = (monetdb) /var/tmp/mtest-19864/.s.monetdb.34473
+QUERY = create ordered index test_oidx1 on test_oidx (c2);
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-19864/.s.monetdb.34473
+QUERY = drop index test_oidx1;
+ERROR = !DROP INDEX: no such index 'test_oidx1'
+
+MAPI  = (monetdb) /var/tmp/mtest-19864/.s.monetdb.34473
+QUERY = create ordered index test_oidx1 on test_oidx (c2);
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-19864/.s.monetdb.34473
+QUERY = drop index test_oidx1;
+ERROR = !DROP INDEX: no such index 'test_oidx1'
+
 # 17:01:36 >  
 # 17:01:36 >  "Done."
 # 17:01:36 >  

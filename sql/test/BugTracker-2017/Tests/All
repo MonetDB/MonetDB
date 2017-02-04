@@ -12,4 +12,7 @@ splitpart.Bug-6194
 HAVE_HGE?cast-with-many-decimals.Bug-6195
 union_func_crash.Bug-6196
 complicated_logic.Bug-105
+crash_on_count_div_count.Bug-6201
 oidx-on-strings.Bug-6202
+group-by-on-constant.Bug-6082
+rel2bin_project-assert.Bug-6080

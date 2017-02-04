@@ -52,7 +52,7 @@ Ready.
 % sys.lineitem,	sys.lineitem,	sys.L5,	sys.L10,	sys.L13,	sys.L16,	sys.L21,	sys.L24,	sys.L27,	sys.L32 # table_name
 % l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
 % char,	char,	decimal,	decimal,	decimal,	decimal,	double,	double,	double,	bigint # type
-% 1,	1,	21,	21,	21,	21,	24,	24,	24,	5 # length
+% 1,	1,	20,	20,	20,	20,	24,	24,	24,	5 # length
 [ "A",	"F",	380456.00,	532348211.65,	505822441.4861,	526165934.000839,	25.57515461,	35785.70931,	0.05008133907,	14876	]
 [ "N",	"F",	8971.00,	12384801.37,	11798257.2080,	12282485.056933,	25.77873563,	35588.50968,	0.04775862069,	348	]
 [ "N",	"O",	742802.00,	1041502841.45,	989737518.6346,	1029418531.523350,	25.45498783,	35691.12921,	0.04993111956,	29181	]
@@ -113,7 +113,7 @@ Ready.
 % sys.lineitem,	sys.L4,	sys.orders,	sys.orders # table_name
 % l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
 % int,	decimal,	date,	int # type
-% 5,	21,	10,	1 # length
+% 5,	20,	10,	1 # length
 [ 47714,	267010.5894,	1995-03-11,	0	]
 [ 22276,	266351.5562,	1995-01-29,	0	]
 [ 32965,	263768.3414,	1995-02-25,	0	]
@@ -201,7 +201,7 @@ Ready.
 % sys.nation,	sys.L4 # table_name
 % n_name,	revenue # name
 % char,	decimal # type
-% 25,	21 # length
+% 25,	20 # length
 [ "VIETNAM",	1000926.6999	]
 [ "CHINA",	740210.7570	]
 [ "JAPAN",	660651.2425	]
@@ -229,7 +229,7 @@ Ready.
 % sys.L4 # table_name
 % revenue # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ 1193053.2253	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
@@ -271,7 +271,7 @@ Ready.
 % sys.shipping,	sys.shipping,	sys.shipping,	sys.L16 # table_name
 % supp_nation,	cust_nation,	l_year,	revenue # name
 % char,	char,	int,	decimal # type
-% 25,	25,	4,	21 # length
+% 25,	25,	4,	20 # length
 [ "FRANCE",	"GERMANY",	1995,	268068.5774	]
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
@@ -317,7 +317,7 @@ Ready.
 % sys.all_nations,	sys.L14 # table_name
 % o_year,	mkt_share # name
 % int,	decimal # type
-% 4,	21 # length
+% 4,	20 # length
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
 % .stats,	.stats # table_name
@@ -359,7 +359,7 @@ Ready.
 % sys.profit,	sys.profit,	sys.L13 # table_name
 % nation,	o_year,	sum_profit # name
 % char,	int,	decimal # type
-% 25,	4,	21 # length
+% 25,	4,	20 # length
 [ "ALGERIA",	1998,	97864.5682	]
 [ "ALGERIA",	1997,	368231.6695	]
 [ "ALGERIA",	1996,	196525.8046	]
@@ -579,7 +579,7 @@ Ready.
 % sys.customer,	sys.customer,	sys.L5,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
 % c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
 % int,	varchar,	decimal,	decimal,	char,	varchar,	char,	varchar # type
-% 4,	18,	21,	17,	25,	40,	15,	116 # length
+% 4,	18,	20,	17,	25,	40,	15,	116 # length
 [ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"ely pending frays boost carefully"	]
 [ 1201,	"Customer#000001201",	374331.5340,	5165.39,	"IRAN",	"LfCSVKWozyWOGDW02g9UX,XgH5YU2o5ql1zBrN",	"20-825-400-1187",	"lyly pending packages. special requests sleep-- platelets use blithely after the instructions. sometimes even id"	]
 [ 422,	"Customer#000000422",	366451.0126,	-272.14,	"INDONESIA",	"AyNzZBvmIDo42JtjP9xzaK3pnvkh Qc0o08ssnvq",	"19-299-247-2444",	"eposits; furiously ironic packages accordi"	]
@@ -637,7 +637,7 @@ Ready.
 % sys.partsupp,	sys.L4 # table_name
 % ps_partkey,	value # name
 % int,	decimal # type
-% 4,	21 # length
+% 4,	20 # length
 [ 1376,	13271249.89	]
 #select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
@@ -774,7 +774,7 @@ Ready.
 % sys.L5 # table_name
 % promo_revenue # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ 15.48654	]
 #select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
@@ -790,7 +790,7 @@ Ready.
 % sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.revenue0 # table_name
 % s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
 % int,	char,	varchar,	char,	decimal # type
-% 2,	25,	36,	15,	21 # length
+% 2,	25,	36,	15,	20 # length
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
@@ -1162,7 +1162,7 @@ Ready.
 % sys.L12 # table_name
 % avg_yearly # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ NULL	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
@@ -1210,7 +1210,7 @@ Ready.
 % sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L22 # table_name
 % c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L21 # name
 % varchar,	int,	int,	date,	decimal,	decimal # type
-% 18,	3,	5,	10,	17,	21 # length
+% 18,	3,	5,	10,	17,	20 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305.00	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303.00	]
 #select * from optimizer_stats() stats;
@@ -1248,7 +1248,7 @@ Ready.
 % sys.L4 # table_name
 % revenue # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ 22923.0280	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
@@ -1352,7 +1352,7 @@ Ready.
 % sys.custsale,	sys.L17,	sys.L22 # table_name
 % cntrycode,	numcust,	totacctbal # name
 % char,	bigint,	decimal # type
-% 15,	2,	21 # length
+% 15,	2,	20 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]
 [ "18",	14,	111072.45	]

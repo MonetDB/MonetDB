@@ -40,10 +40,10 @@ Ready.
 #	revenue desc,
 #	o_orderdate
 #limit 10;
-% sys.lineitem,	sys.L1,	sys.orders,	sys.orders # table_name
+% sys.lineitem,	sys.L4,	sys.orders,	sys.orders # table_name
 % l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
 % int,	decimal,	date,	int # type
-% 5,	21,	10,	1 # length
+% 5,	20,	10,	1 # length
 [ 47714,	267010.5894,	1995-03-11,	0	]
 [ 22276,	266351.5562,	1995-01-29,	0	]
 [ 32965,	263768.3414,	1995-02-25,	0	]

@@ -48,7 +48,7 @@ Ready.
 % sys.all_nations,	sys.L14 # table_name
 % o_year,	mkt_share # name
 % int,	decimal # type
-% 4,	41 # length
+% 4,	40 # length
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
 % .stats,	.stats # table_name
