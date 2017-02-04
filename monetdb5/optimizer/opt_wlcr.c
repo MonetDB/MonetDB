@@ -18,7 +18,7 @@
 int
 OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int i, j, limit, slimit, updates=0;
-	InstrPtr p,q;
+	InstrPtr p, q, def;
 	InstrPtr *old;
 	lng usec = GDKusec();
 	char buf[256];
@@ -46,47 +46,33 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			setModuleId(q, wlcrRef);
 			setFunctionId(q,queryRef);
 			getArg(q,0) = newTmpVariable(mb,TYPE_any);
-			q->argc--; // no need for the userid
 			pushInstruction(mb,q);
+			def = q;
+			def->argc -=2;
 			updates++;
 		} else
-		/* the catalog operations are needed to determine the job kind later on */
-		if( getModuleId(p) == sqlcatalogRef &&
-		 (
-			getFunctionId(p) == create_seqRef ||
-			getFunctionId(p) == alter_seqRef ||
-			getFunctionId(p) == create_tableRef ||
-			getFunctionId(p) == alter_tableRef ||
-			getFunctionId(p) == create_viewRef ||
-			getFunctionId(p) == create_functionRef
-		 )){
-			q= copyInstruction(p);
-			setModuleId(q, wlcrRef);
-			getArg(q,0) = newTmpVariable(mb,TYPE_any);
-			delArgument(q, 3);
-			pushInstruction(mb,q);
-			updates++;
-		} else
+		/* the catalog operations all need to be re-executed */
 		if( getModuleId(p) == sqlcatalogRef){
-			q= copyInstruction(p);
-			setModuleId(q, wlcrRef);
-			getArg(q,0) = newTmpVariable(mb,TYPE_any);
-			pushInstruction(mb,q);
+			assert( def);// should always be there
+			setFunctionId(def,catalogRef);
 			updates++;
 		} else
-		if( getModuleId(p) == sqlRef && 
-			(getFunctionId(p) == clear_tableRef || 
-			 getFunctionId(p) == sqlcatalogRef) ){
-			q= copyInstruction(p);
-			setModuleId(q, wlcrRef);
-			getArg(q,0) = newTmpVariable(mb,TYPE_any);
-			pushInstruction(mb,q);
-			updates++;
+		if( getModuleId(p) == sqlRef && getFunctionId(p) == clear_tableRef ){
+			setFunctionId(def,changeRef);
+				q= copyInstruction(p);
+				setModuleId(q, wlcrRef);
+				for( j=0; j< p->retc; j++)
+					getArg(q,j) = newTmpVariable(mb,TYPE_any);
+				pushInstruction(mb,q);
+				updates++;
 		} else
 		if( getModuleId(p) == sqlRef && 
 			( getFunctionId(p) == appendRef  ||
 			  getFunctionId(p) == updateRef  ||
-			  getFunctionId(p) == deleteRef  )){
+			  getFunctionId(p) == deleteRef  ||
+			  getFunctionId(p) == clear_tableRef )){
+				assert( def);// should always be there
+				setFunctionId(def,changeRef);
 				q= copyInstruction(p);
 				delArgument(q, q->retc);
 				setModuleId(q, wlcrRef);

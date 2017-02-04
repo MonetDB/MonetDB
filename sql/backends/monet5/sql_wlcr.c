@@ -31,6 +31,9 @@
 #define WLCR_REPLAY 1
 #define WLCR_REPLICATE 2
 
+#define WLCR_COMMIT 4
+#define WLCR_ROLLBACK 5
+
 /* The current status of the replica  processing */
 static str wlr_logs;
 static str wlr_master;
@@ -254,7 +257,8 @@ WLRprocess(void *arg)
 			}
 			mb = c->curprg->def; // needed
 			q= getInstrPtr(mb, mb->stop-1);
-			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==execRef){
+			// only re-execute successful transactions.
+			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef ){
 				pushEndInstruction(mb);
 				// execute this block if no errors are found
 				chkTypes(c->fdout,c->nspace, mb, FALSE);
@@ -352,26 +356,27 @@ WLCRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLRjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str kind = *getArgReference_str(stk,pci,5);
-	lng duration = *getArgReference_lng(stk,pci,6);
-	(void) mb;
-	if( strcmp(kind,"catalog") == 0)
-		cntxt->wlcr_kind = WLCR_CATALOG;
-	if( strcmp(kind,"update") == 0)
-		cntxt->wlcr_kind = WLCR_UPDATE;
-	if( strcmp(kind,"query") == 0){
-		if(wlcr_threshold < 0 ||  duration < wlcr_threshold || duration < wlr_threshold )
-			cntxt->wlcr_kind = WLCR_IGNORE;
-		else
-			cntxt->wlcr_kind = WLCR_QUERY;
+WLRtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	InstrPtr p;
+	int i;
+
+	(void) cntxt;
+	(void) pci;
+	(void) stk;
+	cntxt->wlcr_kind = 0;
+	for( i = mb->stop-1; cntxt->wlcr_kind == 0 && i > 1; i--){
+		p = getInstrPtr(mb,i);
+		if( getModuleId(p) == wlrRef && getFunctionId(p)== commitRef) 
+			cntxt->wlcr_kind = WLCR_COMMIT;
+		if( getModuleId(p) == wlrRef && getFunctionId(p)== rollbackRef)
+			cntxt->wlcr_kind = WLCR_ROLLBACK;
 	}
 	return MAL_SUCCEED;
 }
 
 
 str
-WLRexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRfinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) stk;
@@ -385,12 +390,14 @@ str
 WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str qry =  *getArgReference_str(stk,pci,1);
 	str msg = MAL_SUCCEED;
-	lng clk = GDKms();
 	char *x, *y, *qtxt;
 
 	(void) mb;
-	// execute the query in replay mode
-	if( cntxt->wlcr_kind == WLCR_CATALOG || cntxt->wlcr_kind == WLCR_QUERY  ){
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+		return msg;
+	// execute the query in replay mode when required.
+	// check the old timings
+	if( wlr_threshold >= 0){
 		// we need to get rid of the escaped quote.
 		x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
 		for(y = qry; *y; y++){
@@ -402,10 +409,39 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		*x = 0;
 		msg =  SQLstatementIntern(cntxt, &qtxt, "SQLstatement", TRUE, TRUE, NULL);
-		mnstr_printf(cntxt->fdout,"# "LLFMT"ms\n",GDKms() - clk);
 		GDKfree(qtxt);
 	}
 	return msg;
+}
+
+str
+WLRchange(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	str qry =  *getArgReference_str(stk,pci,1);
+	str msg = MAL_SUCCEED;
+	char *x, *y, *qtxt;
+
+	(void) mb;
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+		return msg;
+	// we need to get rid of the escaped quote.
+	x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
+	for(y = qry; *y; y++){
+		if( *y == '\\' ){
+			if( *(y+1) ==  '\'')
+			y += 1;
+		}
+		*x++ = *y;
+	}
+	*x = 0;
+	msg =  SQLstatementIntern(cntxt, &qtxt, "SQLstatement", TRUE, TRUE, NULL);
+	GDKfree(qtxt);
+	return msg;
+}
+
+str
+WLRcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	
+	return WLRchange(cntxt,mb,stk,pci);
 }
 
 str
@@ -434,8 +470,10 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 	BAT *ins = 0;
-	str msg;
+	str msg= MAL_SUCCEED;
 
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
 	cname = *getArgReference_str(stk,pci,3);
@@ -500,8 +538,10 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_table *t;
 	BAT *ins = 0;
-	str msg;
+	str msg= MAL_SUCCEED;
 
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
 
@@ -546,10 +586,12 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 	BAT *upd = 0, *tids=0;
-	str msg;
+	str msg= MAL_SUCCEED;
 	oid o;
 	int tpe = getArgType(mb,pci,5);
 
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
 	cname = *getArgReference_str(stk,pci,3);
@@ -620,10 +662,12 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_table *t;
 	mvc *m = NULL;
-	str msg;
+	str msg= MAL_SUCCEED;
 	str *sname = getArgReference_str(stk, pci, 1);
 	str *tname = getArgReference_str(stk, pci, 2);
 
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+		return msg;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)

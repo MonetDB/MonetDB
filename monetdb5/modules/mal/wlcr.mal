@@ -14,10 +14,6 @@ pattern master()
 address WLCmaster
 comment "Activate the workload-capture-replay";
 
-pattern commit()
-address WLCcommit
-comment "Finish keeping a log for this session":
-
 pattern stopmaster()
 address WLCstopmaster
 comment "Terminate keeping a log on this branch":
@@ -34,17 +30,29 @@ pattern logrollback(flag:int)
 address WLClogrollback
 comment "Activate the workload-capture-replay. Also keep the aborted transactions is flag !=0";
 
-pattern job(user:str, tid:int, started:str, action:str, kind:str, runtime:int)
+pattern finish(started:str, user:str, action:str, runtime:int)
 address WLCjob
 comment "Mark the beginning of the work unit which can be a compound transaction";
 
-pattern exec()
-address WLCexec
+pattern rollback()
+address WLCfinish
 comment "Mark the end of the work unit";
 
-pattern query(q:str, pipe:str)
+pattern commit()
+address WLCfinish
+comment "Mark the end of the work unit";
+
+pattern query(q:str)
 address WLCquery
-comment "Keep the queries for replay";
+comment "Keep the queries for replay.";
+
+pattern catalog(q:str)
+address WLCcatalog
+comment "Keep the catalog changing queries for replay. ";
+
+pattern change(q:str)
+address WLCchange
+comment "Keep the database changing queries for replay. ";
 
 pattern append(sname:str, tname:str, cname:str, ins:any):int
 address WLCappend

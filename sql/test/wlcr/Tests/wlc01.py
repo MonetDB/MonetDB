@@ -23,7 +23,6 @@ cout, cerr = c.communicate('''\
 call logthreshold(0);
 call drift(0);
 call master();
-select 1;
 create table tmp(i int, s string);
 insert into tmp values(1,'hello'), (2,'world');
 select * from tmp;

@@ -10,26 +10,35 @@ pattern wlcr.replicate(dbname:str)
 address WLCRreplicate
 comment "Roll the snapshot forward to an up-to-date clone";
 
-pattern wlcr.replicate(dbname:str, waitformaster:bit)
-address WLCRreplicate
-comment "Roll the snapshot forward to an up-to-date clone and wait for it";
-
 module wlr;
 pattern replaythreshold(dur:int)
 address WLRreplaythreshold
 comment "Threshold (in milliseconds) for re-running queries";
 
-pattern job(user:str, tid:int, started:str, action:str, kind:str, runtime:lng)
-address WLRjob
+pattern transaction(started:str, user:str, runtime:lng)
+address WLRtransaction
 comment "Mark the beginning of the work unit which can be a compound transaction";
 
-pattern exec()
-address WLRexec
+pattern commit()
+address WLRfinish
 comment "Mark the end of the work unit";
 
-pattern query(q:str,pipe:str,duration:int)
+pattern rollback()
+address WLRfinish
+comment "Mark the end of the work unit";
+
+pattern query(q:str)
 address WLRquery
 comment "The actual query applied";
+
+pattern catalog(q:str)
+address WLRcatalog
+comment "A catalog changing query";
+
+pattern change(q:str)
+address WLRchange
+comment "A query producing updates";
+
 
 pattern append(sname:str, tname:str, cname:str, ins:any...):int
 address WLRappend

@@ -58,12 +58,6 @@ stdout of test 'wlc01` in directory 'sql/test/wlcr` itself:
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-#select 1;
-% .L2 # table_name
-% L2 # name
-% tinyint # type
-% 1 # length
-[ 1	]
 #create table tmp(i int, s string);
 #insert into tmp values(1,'hello'), (2,'world');
 [ 2	]

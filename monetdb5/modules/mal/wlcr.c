@@ -9,11 +9,9 @@
 /*
  * (c) 2017 Martin Kersten
  * This module collects the workload-capture-replay statements during transaction execution,
- * also known as asynchronous logical replication log management.
- * It is used primarilly for recovery and replication management. 
+ * also known as asynchronous logical replication management.
  *
- * The goal is to easily clone a master database.  Accidental corruption of the  replicated
- * data should be avoided by setting ownership and access properties at the SQL level.
+ * The goal is to easily clone a master database.  
  *
  *
  * IMPLEMENTATION
@@ -44,34 +42,35 @@
  * A missing path to the snapshot denotes that we can start rebuilding with an empty database instead.
  * The log files are stored as master/<dbname>_<batchnumber>.
  * 
- * Each wlcr log file contains a serial log of committed transactions.
+ * Each wlcr log file contains a serial log of committed compound transactions.
  * The log records are represented as ordinary MAL statement blocks, which
- * are executed in serial mode. (parallelism can be considered for large updates)
+ * are executed in serial mode. (parallelism can be considered for large updates later)
  * Each transaction job is identified by the owner of the query, 
  * commit/rollback status, its starting time and runtime (in ms).
- * The end of the transaction is marked as exec()
  *
- * Logging of queries can be limited to those that satisfy an minimum execution threshold.
+ * Update queries are always logged and pure queries can be limited to those 
+ * that satisfy an minimum execution threshold.
  * CALL logthreshold(duration)
- * The threshold is given in milliseconds. A negative threshold leads to ignoring all queries.
+ * The threshold is given in milliseconds. 
  * The threshold setting is saved and affects all future master log records.
- * The default for a production system version should be set to -1
+ * The default for a production system version should be set to -1, which ignores all pure queries.
  *
  * The aborted transactions can also be gathered using the call
  * CALL logrollback(1);
- * Such queries may be helpful in the analysis of failures.
- * They will end up in the querlog for inspection.
+ * Such queries may be helpful in the analysis of transactions with failures.
  *
- * A transaction log is owned by the master. He decides when the log may be globally
- * used. There are several triggers for this. A new transaction log is created when
- * the system has been collecting logs for some time (drift).
- * The problem here is that we should ensure that the log file is closed even if there
- * are no transactions running. It is solved with a separate thread.
- * After closing, the replicas can see from the master configuration file that a log is available.
+ * A transaction log is owned by the master. He decides when the log may be globally used.
+ * The trigger for this is the allowed drift. A new transaction log is created when
+ * the system has been collecting logs for some time (drift in seconds).
+ * The drift determines the maximal window of transactions loss that is permitted.
  * The maximum drift can be set using a SQL command. Setting it to zero leads to a
- * log file per transaction.
+ * log file per transaction and may cause a large overhead for short running transactions.
  *
- * A more secure way to set a database into master mode is to use the command
+ * A minor problem here is that we should ensure that the log file is closed even if there
+ * are no transactions running. It is solved with a separate monitor thread.
+ * After closing, the replicas can see from the master configuration file that a log is available.
+ *
+ *[TODO] A more secure way to set a database into master mode is to use the command
  *	 monetdb master <dbname> [ <optional snapshot path>]
  * which locks the database, takes a save copy, initializes the state chance. 
  *
@@ -79,32 +78,32 @@
  * 	monetdb replica <dbname> <mastername>
  *
  * Instead of using the monetdb command line we can use the SQL calls directly
- * master and replica, provided we start with a fresh database.
+ * master() and replicate(), provided we start with a fresh database.
  *
  * A fresh database can be turned into a replica using the call
  * CALL replicate("mastername")
  * It will grab the latest snapshot of the master and applies all
- * known log files before releasing returning a prompt. Progress of
+ * known log files before releasing the system. Progress of
  * the replication can be monitored using the -fraw option in mclient.
  *
  * It will iterate through the log files, applying all transactions.
- * Queries are simply ignored unless needed as replacement for catalog actions.
- *
- * The alternative is to also replay the queries as well.
- * CALL replaythreshold(threshold)
- * In this mode all pure queries are executed for which the reported threshold exceeds the argument.
- * Enabling the query log collects the execution times for these queries.
  * It excludes catalog and update queries, which are always executed.
+ * Queries are simply ignored.
  *
- * Any failure encountered during a log replay terminates the process,
+ * The alternative is to also replay the queries .
+ * CALL replaythreshold(threshold)
+ * In this mode all pure queries are also executed for which the reported threshold exceeds the argument.
+ * Enabling the query log collects the execution times for these queries.
+ *
+ * Any failure encountered during a log replay terminates the replication process,
  * leaving a message in the merovingian log.
  *
  * The wlcr files purposely have a textual format derived from the MAL statements.
  * Simplicity and ease of control has been the driving argument here.
  *
- * [TODO]The progress can be inspected using the timestamp function wlcr.drift(),
- * which indicates how far apart the current replica is compared to the master transaction log.
- * [TODO] the user might want to indicate a time-stamped, ignoring all actions afterwards.
+ * [TODO] consider the roll forward of SQL session variables, i.e. optimizer_pipe (for now assume default pipe).
+ * [TODO] The status of the master/replica should be accessible for inspection
+ * [TODO] the user might want to indicate a time-stamp, to rebuild to a certain point
  *
  */
 #include "monetdb_config.h"
@@ -114,11 +113,8 @@
 
 static MT_Lock     wlcr_lock MT_LOCK_INITIALIZER("wlcr_lock");
 
-static char *wlcr_name[]= {"","query","update","catalog","ignore"};
-
-static str wlcr_snapshot= 0; // The name of the snapshot against the logs work
+static str wlcr_snapshot= 0; // The location of the snapshot against which the logs work
 static str wlcr_logs = 0; 	// The location in the global file store for the logs
-static char wlcr_time[26];	// The timestamp of the last committed transaction.
 static stream *wlcr_fd = 0;
 static int wlcr_start = 0;	// time stamp of first transaction in log file
 
@@ -127,8 +123,7 @@ int wlcr_threshold = 0;		// should be set to -1 for production
 str wlcr_dbname = 0;  		// The master database name
 int wlcr_firstbatch = 0;	// first log file  associated with the snapshot
 int wlcr_batches = 0;		// identifier of next batch
-int wlcr_drift = 10;	// maximal period covered by a single log file in seconds
-int wlcr_tid = 0;			// transaction id of next to be processed
+int wlcr_drift = 10;		// maximal period covered by a single log file in seconds
 int wlcr_rollback= 0;		// also log the aborted queries.
 
 /* The database snapshots are binary copies of the dbfarm/database/bat
@@ -221,7 +216,6 @@ WLCsetlogger(void)
 	}
 
 	wlcr_batches++;
-	wlcr_tid = 0;
 	wlcr_start = GDKms()/1000;
 	WLCsetConfig();
 	MT_lock_unset(&wlcr_lock);
@@ -233,9 +227,9 @@ WLCcloselogger(void)
 {
 	if( wlcr_fd == NULL)
 		return ;
+	mnstr_fsync(wlcr_fd);
 	close_stream(wlcr_fd);
 	wlcr_fd= NULL;
-	wlcr_tid = 0;
 	wlcr_start = 0;
 	WLCsetConfig();
 }
@@ -400,6 +394,7 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p)
 	struct timeval clock;
 	time_t clk ;
 	struct tm ctm;
+	char wlcr_time[26];	
 
 	(void) pci;
 	gettimeofday(&clock,NULL);
@@ -418,33 +413,30 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p)
 		s->def = NULL;\
 	} \
 	if( cntxt->wlcr->stop == 0){\
-		P = newStmt(cntxt->wlcr,"wlr","job");\
-		P = pushStr(cntxt->wlcr, P, cntxt->username);\
-		P = pushInt(cntxt->wlcr, P, wlcr_tid);\
+		P = newStmt(cntxt->wlcr,"wlr","transaction");\
 		P = WLCsettime(cntxt,pci, P); \
+		P = pushStr(cntxt->wlcr, P, cntxt->username);\
 		P->ticks = GDKms();\
 }	}
 
 str
-WLCjob(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int tid = *getArgReference_int(stk,pci,1);
-
-	(void) cntxt;
-	(void) mb;
-
-	if ( tid < wlcr_tid)
-		throw(MAL,"wlcr.job","Work unit identifier is before last one executed");
-	return MAL_SUCCEED;
-}
-
-str
-WLCexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
+
+	return MAL_SUCCEED;
+}
+
+str
+WLCfinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) pci;
+	(void) mb;
+	(void) stk;
 	return MAL_SUCCEED;
 }
 
@@ -458,12 +450,35 @@ WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	WLCstart(p);
 	p = newStmt(cntxt->wlcr, "wlr","query");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
-	p->ticks = GDKms();
-	p = pushInt(cntxt->wlcr, p, p->ticks);
 	return MAL_SUCCEED;
 }
 
+str
+WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	InstrPtr p;
+
+	(void) stk;
+	WLCstart(p);
+	p = newStmt(cntxt->wlcr, "wlr","catalog");
+	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+	return MAL_SUCCEED;
+}
+
+str
+WLCchange(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	InstrPtr p;
+
+	(void) stk;
+	WLCstart(p);
+	p = newStmt(cntxt->wlcr, "wlr","change");
+	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+	return MAL_SUCCEED;
+}
+
+/*
+ * We actually don't need the catalog operations in the log.
+ * It is sufficient to upgrade the replay block to WLR_CATALOG.
+ */
 str
 WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
@@ -618,13 +633,6 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		WLCdatashipping(cntxt, mb, p, stk->stk[getArg(pci,3)].val.bval);
 	} else
 		throw(MAL,"wlcr.delete","BAT expected");
-/*
-		ValRecord cst;
-		if (VALcopy(&cst, getArgReference(stk,pci,4)) != NULL){
-			varid = defConstant(cntxt->wlcr, tpe, &cst);
-			p = pushArgument(cntxt->wlcr, p, varid);
-		}
-*/
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 
@@ -717,7 +725,7 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-WLCwrite(Client cntxt, str kind)
+WLCwrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
 	InstrPtr p;
 	// save the wlcr record on a file 
@@ -739,15 +747,9 @@ WLCwrite(Client cntxt, str kind)
 		else {
 			// filter out queries that run too shortly
 			p = getInstrPtr(cntxt->wlcr,0);
-			if ( ( cntxt->wlcr_kind != WLCR_QUERY ||  wlcr_threshold == 0 || wlcr_threshold < GDKms() - p->ticks ) &&
-				(strcmp(kind,"rollback") != 0 || wlcr_rollback)
-			){
-				newStmt(cntxt->wlcr,"wlr","exec");
-				wlcr_tid++;
+			if ( ( cntxt->wlcr_kind != WLCR_QUERY ||  wlcr_threshold == 0 || wlcr_threshold < GDKms() - p->ticks ) ){
 				MT_lock_set(&wlcr_lock);
 				p = getInstrPtr(cntxt->wlcr,0);
-				p = pushStr(cntxt->wlcr,p,kind);
-				p = pushStr(cntxt->wlcr, p, wlcr_name[cntxt->wlcr_kind]);
 				p = pushLng(cntxt->wlcr,p, GDKms() - p->ticks);
 				printFunction(wlcr_fd, cntxt->wlcr, 0, LIST_MAL_DEBUG );
 				(void) mnstr_flush(wlcr_fd);
@@ -772,7 +774,11 @@ WLCwrite(Client cntxt, str kind)
 str
 WLCcommit(int clientid)
 {
-		return WLCwrite( &mal_clients[clientid], "commit");
+	if( mal_clients[clientid].wlcr){
+		newStmt(mal_clients[clientid].wlcr,"wlr","commit");
+		return WLCwrite( &mal_clients[clientid]);
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -787,7 +793,11 @@ WLCcommitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 WLCrollback(int clientid)
 {
-	return WLCwrite( &mal_clients[clientid], "rollback");
+	if( mal_clients[clientid].wlcr){
+		newStmt(mal_clients[clientid].wlcr,"wlr","rollback");
+		return WLCwrite( &mal_clients[clientid]);
+	}
+	return MAL_SUCCEED;
 }
 str
 WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
