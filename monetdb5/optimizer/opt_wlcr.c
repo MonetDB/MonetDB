@@ -18,7 +18,7 @@
 int
 OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int i, j, limit, slimit, updates=0;
-	InstrPtr p, q, def;
+	InstrPtr p, q, def = 0;
 	InstrPtr *old;
 	lng usec = GDKusec();
 	char buf[256];
@@ -59,6 +59,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else
 		if( getModuleId(p) == sqlRef && getFunctionId(p) == clear_tableRef ){
 			setFunctionId(def,changeRef);
+				assert(def);
 				q= copyInstruction(p);
 				setModuleId(q, wlcrRef);
 				for( j=0; j< p->retc; j++)

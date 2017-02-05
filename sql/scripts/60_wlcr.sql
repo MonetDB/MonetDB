@@ -24,7 +24,10 @@ external name wlcr.stopmaster;
 
 -- Replica commands
 create procedure replicate(dbname string)
-external name wlcr.replicate;
+external name wlr.replicate;
+
+create procedure waitformaster()
+external name wlr.waitformaster;
 
 create procedure replaythreshold(duration int)
 external name wlr.replaythreshold;

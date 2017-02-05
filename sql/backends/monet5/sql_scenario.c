@@ -260,10 +260,8 @@ SQLinit(void)
 		throw(SQL, "SQLinit", "Starting idle manager failed");
 	}
 	GDKregister(idlethread);
-	// check WLCR status
-	WLCinit(&mal_clients[0]);
-	WLRinit(&mal_clients[0]);
-	return MAL_SUCCEED;
+	WLCinit();
+	return WLRinit();
 }
 
 str
@@ -639,13 +637,12 @@ SQLexitClient(Client c)
  */
 str
 SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
+{ 
 	(void) mb;
 	(void) stk;
 	(void) pci;
 	return SQLinitClient(cntxt);
 }
-
 
 str
 SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

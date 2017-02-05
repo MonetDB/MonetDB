@@ -245,7 +245,7 @@ static void
 WLCRlogger(void *arg)
 {
 	(void) arg;
-	while(1){
+	while(!GDKexiting()){
 		if( wlcr_logs && wlcr_fd ){
 			if (wlcr_start + wlcr_drift < GDKms() / 1000){
 				MT_lock_set(&wlcr_lock);
@@ -257,7 +257,7 @@ WLCRlogger(void *arg)
 		if( wlcr_drift)
 				MT_sleep_ms( wlcr_drift * 1000);
 		else
-				MT_sleep_ms(  10  * 1000);
+				MT_sleep_ms(  1  * 1000);
 	}
 }
 /*
@@ -265,19 +265,13 @@ WLCRlogger(void *arg)
  * Then the master record information should be set and the WLClogger started.
  */
 str 
-WLCinit(Client cntxt)
+WLCinit(void)
 {
 	char path[PATHLENGTH];
 	str pathname, msg= MAL_SUCCEED;
 	FILE *fd;
 
-	if( wlcr_logs){
-#ifdef _WLC_DEBUG_
-		mnstr_printf(cntxt->fdout,"#WLC already running\n");
-#else
-	(void) cntxt;
-#endif
-	} else{
+	if( wlcr_logs == NULL){
 		// use default location for archive
 		pathname = GDKfilepath(0,0,"master",0);
 		snprintf(path, PATHLENGTH,"%s%cwlc.config", pathname, DIR_SEP);
@@ -297,6 +291,7 @@ WLCinit(Client cntxt)
 		if (MT_create_thread(&wlcr_logger, WLCRlogger , (void*) 0, MT_THR_JOINABLE) < 0) {
                 GDKerror("wlcr.logger thread could not be spawned");
         }
+		GDKregister(wlcr_logger);
 	}
 	return MAL_SUCCEED;
 }
@@ -327,10 +322,11 @@ WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str 
 WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return WLCinit(cntxt);
+	return WLCinit();
 }
 
 str 
@@ -351,12 +347,16 @@ WLClogrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+/* Changing the drift should have immediate effect
+ * It forces a new log file
+ */
 str 
 WLCdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) cntxt;
 	wlcr_drift = * getArgReference_int(stk,pci,1);
+	WLCcloselogger();
 	return MAL_SUCCEED;
 }
 
@@ -729,7 +729,7 @@ WLCwrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
 	InstrPtr p;
 	// save the wlcr record on a file 
-	if( cntxt->wlcr == 0 || cntxt->wlcr->stop == 0)
+	if( cntxt->wlcr == 0 || cntxt->wlcr->stop <= 1)
 		return MAL_SUCCEED;
 
 	if( wlcr_logs ){	
@@ -774,7 +774,7 @@ WLCwrite(Client cntxt)
 str
 WLCcommit(int clientid)
 {
-	if( mal_clients[clientid].wlcr){
+	if( mal_clients[clientid].wlcr && mal_clients[clientid].wlcr->stop > 1){
 		newStmt(mal_clients[clientid].wlcr,"wlr","commit");
 		return WLCwrite( &mal_clients[clientid]);
 	}

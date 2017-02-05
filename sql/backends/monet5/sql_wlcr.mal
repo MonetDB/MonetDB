@@ -4,13 +4,16 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
-module wlcr;
+module wlr;
 
-pattern wlcr.replicate(dbname:str)
-address WLCRreplicate
+pattern replicate(dbname:str)
+address WLRreplicate
 comment "Roll the snapshot forward to an up-to-date clone";
 
-module wlr;
+pattern waitformaster()
+address WLRwaitformaster
+comment "Wait until all known log files have been processed";
+
 pattern replaythreshold(dur:int)
 address WLRreplaythreshold
 comment "Threshold (in milliseconds) for re-running queries";

@@ -15,9 +15,9 @@
 #include <sql_mvc.h>
 #include <sql_qc.h>
 
-extern void WLRinit(Client cntxt);
-extern str WLCRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
+extern str WLRinit(void);
+extern str WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str WLRwaitformaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str WLRtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str WLRreplaythreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str WLRfinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -164,7 +164,7 @@ WLRinitReplica(str dbname)
 	GDKfree(dir);
 	if( fd ){
 		(void) fclose(fd);
-		throw(SQL,"setreplica","Already in replica mode for '%s'",dbname);
+		return MAL_SUCCEED;
 	}
 
 	msg = WLRgetMaster(dbname);
@@ -253,7 +253,7 @@ WLRprocess(void *arg)
 		do{
 			pc = mb->stop;
 			if( parseMAL(c, c->curprg, 1, 1)  || mb->errors){
-				mnstr_printf(GDKerr,"#wlcr.process:parsing failed '%s'\n",path);
+				mnstr_printf(GDKerr,"#wlcr.process:parsing failed '%s':\n",path);
 			}
 			mb = c->curprg->def; // needed
 			q= getInstrPtr(mb, mb->stop-1);
@@ -298,24 +298,31 @@ WLRprocess(void *arg)
 	cntxt->wlcr_mode = 0;
 }
 
+/*
+ * A timing issue. The WLRprocess can only start after the
+ * SQL environment has been initialized.
+ * It is now activated as part of the startup, but before
+ * a SQL client is known.
+ */
 static void
 WLRprocessScheduler(void *arg)
 {
 	Client cntxt = (Client) arg;
 
-	while(1){
+	while(!GDKexiting()){
+		// wait at most for the drift period, also at start
+		MT_sleep_ms( (wlcr_drift? wlcr_drift:1) * 1000 );
 		if( wlr_master)
 			WLRgetMaster(wlr_master);
-		if( wlr_nextbatch < wlcr_batches)
+		if( wlr_nextbatch < wlcr_batches )
 			WLRprocess(cntxt);
-		// wait at most for the drift period
-		MT_sleep_ms( (wlcr_drift? wlcr_drift:1) * 1000 );
 	}
 }
 
-void
-WLRinit(Client cntxt)
+str
+WLRinit(void)
 {
+	Client cntxt = &mal_clients[0];
 	MT_Id wlcr_thread;
 	
 	WLRgetConfig();
@@ -324,16 +331,36 @@ WLRinit(Client cntxt)
 	if( wlr_logs){
 		// Always try to roll forward before you continue
 		cntxt->wlcr_mode = WLCR_REPLICATE;
-		// The client has to wait initially for all logs known to be processed.
-		WLRprocess(cntxt);
 		if (MT_create_thread(&wlcr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-				GDKerror("wlcr.replicate:replay scheduling process can not be started");
+				throw(SQL,"wlcr.init","Starting wlr manager failed");
 		}
+		GDKregister(wlcr_thread);
 	}
+	return MAL_SUCCEED;
+}
+
+/* for testing it is helpful to be able to wait until all log files have been processed */
+str
+WLRwaitformaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{ 	int i = 0;
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+	WLRgetMaster(wlr_master);
+	while( wlr_nextbatch < wlcr_batches && ! GDKexiting() && i++  < 60){
+		mnstr_printf(cntxt->fdout,"#waiting for master %d < %d\n",wlr_nextbatch, wlcr_batches);
+		MT_sleep_ms(1000);
+	}
+	if( i >= 60)
+		throw(SQL,"waitformaster","Time out (> 60 seconds)");
+	mnstr_printf(cntxt->fdout,"#in sync with master %d == %d\n",wlr_nextbatch, wlcr_batches);
+	return MAL_SUCCEED;
 }
 
 str
-WLCRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg;
 	MT_Id wlcr_thread;
 	(void) mb;
@@ -414,34 +441,23 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+/* A change event need not be executed, because it is already captured
+ * in the update/append/delete
+ */
 str
 WLRchange(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str qry =  *getArgReference_str(stk,pci,1);
-	str msg = MAL_SUCCEED;
-	char *x, *y, *qtxt;
-
+{	
+	(void) cntxt;
+	(void) pci;
+	(void) stk;
 	(void) mb;
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
-		return msg;
-	// we need to get rid of the escaped quote.
-	x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
-	for(y = qry; *y; y++){
-		if( *y == '\\' ){
-			if( *(y+1) ==  '\'')
-			y += 1;
-		}
-		*x++ = *y;
-	}
-	*x = 0;
-	msg =  SQLstatementIntern(cntxt, &qtxt, "SQLstatement", TRUE, TRUE, NULL);
-	GDKfree(qtxt);
-	return msg;
+	return MAL_SUCCEED;
 }
 
 str
 WLRcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
-	return WLRchange(cntxt,mb,stk,pci);
+	return WLRquery(cntxt,mb,stk,pci);
 }
 
 str

@@ -30,6 +30,7 @@ c = process.client('sql', dbname = dbnameclone, port = cloneport, stdin = proces
 
 time.sleep(2)
 cout, cerr = c.communicate('''\
+call waitformaster();
 select * from tmp;
 ''')
 
