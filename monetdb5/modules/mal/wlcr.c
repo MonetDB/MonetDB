@@ -243,7 +243,7 @@ static MT_Id wlcr_logger;
 
 static void
 WLCRlogger(void *arg)
-{
+{	 int seconds;
 	(void) arg;
 	while(!GDKexiting()){
 		if( wlcr_logs && wlcr_fd ){
@@ -252,12 +252,9 @@ WLCRlogger(void *arg)
 				WLCcloselogger();
 				MT_lock_unset(&wlcr_lock);
 			}
-			MT_sleep_ms( (wlcr_drift? wlcr_drift:1 ) * 1000);
-		} else
-		if( wlcr_drift)
-				MT_sleep_ms( wlcr_drift * 1000);
-		else
-				MT_sleep_ms(  1  * 1000);
+		} 
+		for( seconds = 0; wlcr_drift == 0 || seconds < wlcr_drift; seconds++)
+			MT_sleep_ms( 1000);
 	}
 }
 /*
