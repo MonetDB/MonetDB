@@ -31,7 +31,7 @@ address WLClogrollback
 comment "Activate the workload-capture-replay. Also keep the aborted transactions is flag !=0";
 
 pattern finish(started:str, user:str, action:str, runtime:int)
-address WLCjob
+address WLCfinish
 comment "Mark the beginning of the work unit which can be a compound transaction";
 
 pattern rollback()

@@ -11095,7 +11095,7 @@ Ready.
 [ "wlcr",	"drop_user",	"pattern wlcr.drop_user(sname:str, auth:str, action:int):void ",	"WLCgeneric;",	"Catalog operation drop_user"	]
 [ "wlcr",	"drop_view",	"pattern wlcr.drop_view(sname:str, name:str, action:int):void ",	"WLCgeneric;",	"Catalog operation drop_view"	]
 [ "wlcr",	"drop_view",	"pattern wlcr.drop_view(sname:str, name:str, action:int, ifexists:int):void ",	"WLCgeneric;",	"Catalog operation drop_view"	]
-[ "wlcr",	"finish",	"pattern wlcr.finish(started:str, user:str, action:str, runtime:int):void ",	"WLCjob;",	"Mark the beginning of the work unit which can be a compound transaction"	]
+[ "wlcr",	"finish",	"pattern wlcr.finish(started:str, user:str, action:str, runtime:int):void ",	"WLCfinish;",	"Mark the beginning of the work unit which can be a compound transaction"	]
 [ "wlcr",	"grant",	"pattern wlcr.grant(sname:str, tbl:str, grantee:str, privs:int, cname:str, gr:int, grantor:int):void ",	"WLCgeneric;",	"Catalog operation grant"	]
 [ "wlcr",	"grant_function",	"pattern wlcr.grant_function(sname:str, fcnid:int, grantee:str, privs:int, grant:int, grantor:int):void ",	"WLCgeneric;",	"Catalog operation grant_function"	]
 [ "wlcr",	"grant_roles",	"pattern wlcr.grant_roles(sname:str, auth:str, grantor:int, admin:int):void ",	"WLCgeneric;",	"Catalog operation grant_roles"	]
