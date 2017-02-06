@@ -28,15 +28,17 @@
 #include "mal_client.h"
 #include "querylog.h"
 
-#define WLCR_REPLAY 1
-#define WLCR_REPLICATE 2
+#define WLCR_REPLAY 10
+#define WLCR_REPLICATE 20
 
-#define WLCR_COMMIT 4
-#define WLCR_ROLLBACK 5
+#define WLCR_COMMIT 40
+#define WLCR_ROLLBACK 50
+#define WLCR_ERROR 60
 
 /* The current status of the replica  processing */
 static str wlr_logs;
 static str wlr_master;
+static str wlr_error;		// errors should stop the process
 static int wlr_nextbatch; 	// the next file to be processed
 static int wlr_tag;			// the next transaction to be processeds
 static int wlr_threshold;	// replay threshold set by user.
@@ -64,6 +66,8 @@ str WLRgetConfig(void){
             wlr_nextbatch = atoi(line+ 10);
         if( strncmp("tag=", line, 4) == 0)
             wlr_tag = atoi(line+ 4);
+        if( strncmp("error=", line, 6) == 0)
+            wlr_error = GDKstrdup(line+ 6);
     }
     fclose(fd);
     return MAL_SUCCEED;
@@ -83,6 +87,8 @@ str WLRsetConfig(void){
 	fprintf(fd,"logs=%s\n", wlr_logs);
 	fprintf(fd,"nextbatch=%d\n", wlr_nextbatch);
 	fprintf(fd,"tag=%d\n", wlr_tag);
+	if( wlr_error)
+		fprintf(fd,"error=%s\n", wlr_error);
     fclose(fd);
     return MAL_SUCCEED;
 }
@@ -253,7 +259,11 @@ WLRprocess(void *arg)
 		do{
 			pc = mb->stop;
 			if( parseMAL(c, c->curprg, 1, 1)  || mb->errors){
-				mnstr_printf(GDKerr,"#wlcr.process:parsing failed '%s':\n",path);
+				char line[PATHLENGTH];
+				snprintf(line, PATHLENGTH,"#wlcr.process:typechecking failed '%s':\n",path);
+				wlr_error= GDKstrdup(line);
+				mnstr_printf(GDKerr,"%s",line);
+				printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 			}
 			mb = c->curprg->def; // needed
 			q= getInstrPtr(mb, mb->stop-1);
@@ -264,25 +274,31 @@ WLRprocess(void *arg)
 				chkTypes(c->fdout,c->nspace, mb, FALSE);
 				chkFlow(c->fdout,mb);
 				chkDeclarations(c->fdout,mb);
-				//printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 
-				sql->session->auto_commit = 0;
-				sql->session->ac_on_commit = 1;
-				sql->session->level = 0;
-				(void) mvc_trans(sql);
-				msg= runMAL(c,mb,0,0);
-				wlr_tag++;
-				WLRsetConfig();
-				if( msg != MAL_SUCCEED){
-					// they should always succeed
-					mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
+				if( mb->errors == 0){
+					sql->session->auto_commit = 0;
+					sql->session->ac_on_commit = 1;
+					sql->session->level = 0;
+					(void) mvc_trans(sql);
+					msg= runMAL(c,mb,0,0);
+					wlr_tag++;
+					WLRsetConfig();
+					if( msg != MAL_SUCCEED){
+						// they should always succeed
+						mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
+						printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
+						mvc_rollback(sql,0,NULL);
+						break;
+					}
+					if( mvc_commit(sql, 0, 0) < 0)
+						mnstr_printf(GDKerr,"#wlcr.process transaction commit failed");
+				} else {
+					char line[PATHLENGTH];
+					snprintf(line, PATHLENGTH,"#wlcr.process:typechecking failed '%s':\n",path);
+					wlr_error= GDKstrdup(line);
+					mnstr_printf(GDKerr,"%s",line);
 					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
-					mvc_rollback(sql,0,NULL);
-					break;
 				}
-				if( mvc_commit(sql, 0, 0) < 0)
-					mnstr_printf(GDKerr,"#wlcr.process transaction commit failed");
-
 				// cleanup
 				resetMalBlk(mb, 1);
 				trimMalVariables(mb, NULL);
@@ -291,7 +307,6 @@ WLRprocess(void *arg)
 		} while( mb->errors == 0 && pc != mb->stop);
 		wlr_nextbatch++;
 		WLRsetConfig();
-		close_stream(fd);
 	}
 	(void) mnstr_flush(c->fdout);
 	MCcloseClient(c);
@@ -349,7 +364,7 @@ WLRwaitformaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 
 	WLRgetMaster(wlr_master);
-	while( wlr_nextbatch < wlcr_batches && ! GDKexiting() && i++  < 60){
+	while(wlcr_batches &&  wlr_nextbatch < wlcr_batches && ! GDKexiting() && i++  < 60){
 		mnstr_printf(cntxt->fdout,"#waiting for master %d < %d\n",wlr_nextbatch, wlcr_batches);
 		MT_sleep_ms(1000);
 	}
@@ -391,6 +406,10 @@ WLRtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) stk;
 	cntxt->wlcr_kind = 0;
+	if( wlr_error){
+		cntxt->wlcr_kind = WLCR_ERROR;
+		return MAL_SUCCEED;
+	}
 	for( i = mb->stop-1; cntxt->wlcr_kind == 0 && i > 1; i--){
 		p = getInstrPtr(mb,i);
 		if( getModuleId(p) == wlrRef && getFunctionId(p)== commitRef) 
@@ -420,7 +439,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *x, *y, *qtxt;
 
 	(void) mb;
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
 		return msg;
 	// execute the query in replay mode when required.
 	// check the old timings
@@ -488,7 +507,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *ins = 0;
 	str msg= MAL_SUCCEED;
 
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
 		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
@@ -554,9 +573,10 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_table *t;
 	BAT *ins = 0;
+	oid o;
 	str msg= MAL_SUCCEED;
 
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
 		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
@@ -579,7 +599,10 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"WLRappend",MAL_MALLOC_FAIL);
 	}
 
-	WLRcolumn(oid); 
+	for( i = 3; i < pci->argc; i++){
+		o = *getArgReference_oid(stk,pci,i);
+		BUNappend(ins, (void*) &o, FALSE);
+	}
 
     store_funcs.delete_tab(m->session->tr, t, ins, TYPE_bat);
 	BBPunfix(((BAT *) ins)->batCacheid);
@@ -606,7 +629,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid o;
 	int tpe = getArgType(mb,pci,5);
 
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
 		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
@@ -682,7 +705,7 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *sname = getArgReference_str(stk, pci, 1);
 	str *tname = getArgReference_str(stk, pci, 2);
 
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK)
+	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
 		return msg;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
