@@ -51,8 +51,8 @@ pattern update(sname:str, tname:str, cname:str, tid:oid, val:any):int
 address WLRupdate
 comment "Apply the update in the workload-capture-replay list";
 
-pattern delete(sname:str, tname:str, b:any):int
-address WLRreset
+pattern delete(sname:str, tname:str, b:oid...):int
+address WLRdelete
 comment "Apply the deletions in the workload-capture-replay list";
 
 pattern clear_table(sname:str, tname:str):int
