@@ -11137,7 +11137,7 @@ Ready.
 [ "wlr",	"create_type",	"pattern wlr.create_type(sname:str, nme:str, impl:str):void ",	"WLRgeneric;",	"Catalog operation create_type"	]
 [ "wlr",	"create_user",	"pattern wlr.create_user(sname:str, passwrd:str, enc:int, schema:str, fullname:str):void ",	"WLRgeneric;",	"Catalog operation create_user"	]
 [ "wlr",	"create_view",	"pattern wlr.create_view(sname:str, tname:str, temp:int):void ",	"WLRgeneric;",	"Catalog operation create_view"	]
-[ "wlr",	"delete",	"pattern wlr.delete(sname:str, tname:str, b:any):int ",	"WLRreset;",	"Apply the deletions in the workload-capture-replay list"	]
+[ "wlr",	"delete",	"pattern wlr.delete(sname:str, tname:str, b:oid...):int ",	"WLRdelete;",	"Apply the deletions in the workload-capture-replay list"	]
 [ "wlr",	"drop_constraint",	"pattern wlr.drop_constraint(sname:str, name:str, action:int):void ",	"WLRgeneric;",	"Catalog operation drop_constraint"	]
 [ "wlr",	"drop_function",	"pattern wlr.drop_function(sname:str, fname:str, fid:int, type:int, action:int):void ",	"WLRgeneric;",	"Catalog operation drop_function"	]
 [ "wlr",	"drop_index",	"pattern wlr.drop_index(sname:str, iname:str, action:int):void ",	"WLRgeneric;",	"Catalog operation drop_index"	]
