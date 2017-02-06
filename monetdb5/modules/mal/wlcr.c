@@ -253,7 +253,7 @@ WLCRlogger(void *arg)
 				MT_lock_unset(&wlcr_lock);
 			}
 		} 
-		for( seconds = 0; wlcr_drift == 0 || seconds < wlcr_drift; seconds++)
+		for( seconds = 0; (wlcr_drift == 0 || seconds < wlcr_drift) && ! GDKexiting(); seconds++)
 			MT_sleep_ms( 1000);
 	}
 }
@@ -573,6 +573,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 		} }
 		break;
 	default:
+		mnstr_printf(cntxt->fdout,"#wlc datashipping, non-supported type\n");
 		cntxt->wlcr_kind = WLCR_CATALOG;
 	}
 	GDKfree(sch);
@@ -613,13 +614,20 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+/* check for empty BATs first */
 str
 WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;	
-	int tpe;
+	int tpe, k = 0;
+	int bid =  stk->stk[getArg(pci,3)].val.bval;
+	oid o=0, last, *ol;
+	BAT *b;
 	(void) stk;
 	(void) mb;
 	
+	b= BBPquickdesc(bid, FALSE);
+	if( BATcount(b) == 0)
+		return MAL_SUCCEED;
 	WLCstart(p);
 	p = newStmt(cntxt->wlcr, "wlr","delete");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
@@ -627,7 +635,30 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	tpe= getArgType(mb,pci,3);
 	if (isaBatType(tpe) ){
-		WLCdatashipping(cntxt, mb, p, stk->stk[getArg(pci,3)].val.bval);
+		b= BATdescriptor(bid);
+		o = b->tseqbase;
+		last = o + BATcount(b);
+		if( b->ttype == TYPE_void){
+			for( ; o < last; o++, k++){
+				if( k%32 == 31){
+					p = newStmt(cntxt->wlcr, "wlr","delete");
+					p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+					p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
+				}
+				p = pushOid(cntxt->wlcr,p, o);
+			}
+		} else {
+			ol = (oid*) Tloc(b,0);
+			for( ; o < last; o++, k++){
+				if( k%32 == 31){
+					p = newStmt(cntxt->wlcr, "wlr","delete");
+					p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+					p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
+				}
+				p = pushOid(cntxt->wlcr,p, *ol);
+			}
+		}
+		BBPunfix(b->batCacheid);
 	} else
 		throw(MAL,"wlcr.delete","BAT expected");
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
@@ -652,9 +683,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(tpe) ){
 		BAT *b, *bval;
 		b= BATdescriptor(stk->stk[getArg(pci,4)].val.bval);
-		assert(b);
 		bval= BATdescriptor(stk->stk[getArg(pci,5)].val.bval);
-		assert(bval);
 		if( b->ttype == TYPE_void)
 			o = b->tseqbase;
 		else
@@ -687,6 +716,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 			cntxt->wlcr_kind = WLCR_CATALOG;
 		}
+		BBPunfix(b->batCacheid);
 	} else {
 		p = newStmt(cntxt->wlcr, "wlr","update");
 		p = pushStr(cntxt->wlcr, p, sch);
