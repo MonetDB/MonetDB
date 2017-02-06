@@ -1382,7 +1382,7 @@ Ready.
 [ "sys",	"replace",	2,	"clob",	""	]
 [ "sys",	"replace",	3,	"clob",	""	]
 [ "sys",	"replaythreshold",	0,	"int",	"create procedure replaythreshold(duration int)\nexternal name wlr.replaythreshold;"	]
-[ "sys",	"replicate",	0,	"clob",	"create procedure replicate(dbname string)\nexternal name wlcr.replicate;"	]
+[ "sys",	"replicate",	0,	"clob",	"create procedure replicate(dbname string)\nexternal name wlr.replicate;"	]
 [ "sys",	"restart",	0,	"bigint",	"restart"	]
 [ "sys",	"restart",	1,	"varchar",	""	]
 [ "sys",	"restart",	2,	"varchar",	""	]

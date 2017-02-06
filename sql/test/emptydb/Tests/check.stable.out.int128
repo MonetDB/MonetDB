@@ -343,6 +343,7 @@ Ready.
 \dSf sys."var"
 \dSf sys."var_pop"
 \dSf sys."var_samp"
+\dSf sys."waitformaster"
 SYSTEM SCHEMA  bam
 SYSTEM SCHEMA  json
 SYSTEM SCHEMA profiler
@@ -778,6 +779,7 @@ SYSTEM FUNCTION  sys.vacuum
 SYSTEM FUNCTION  sys.var
 SYSTEM FUNCTION  sys.var_pop
 SYSTEM FUNCTION  sys.var_samp
+SYSTEM FUNCTION  sys.waitformaster
 SYSTEM FUNCTION sys.week
 SYSTEM FUNCTION sys.weekofyear
 SYSTEM FUNCTION sys.xor
@@ -1013,7 +1015,7 @@ create function sys.queue() returns table(qtag bigint, "user" string, started ti
 create function radians(d double) returns double return d*pi()/180;
 create function sys.rejects() returns table(rowid bigint, fldid int, "message" string, "input" string) external name sql.copy_rejects;
 create procedure replaythreshold(duration int) external name wlr.replaythreshold;
-create procedure replicate(dbname string) external name wlcr.replicate;
+create procedure replicate(dbname string) external name wlr.replicate;
 create procedure sys.resume(tag int) external name sql.sysmon_resume;
 create procedure sys.resume(tag bigint) external name sql.sysmon_resume;
 create procedure reuse(sys string, tab string) external name sql.reuse;
@@ -1208,6 +1210,7 @@ create aggregate var_samp(val date) returns double external name "aggr"."varianc
 create aggregate var_samp(val time) returns double external name "aggr"."variance";
 create aggregate var_samp(val timestamp) returns double external name "aggr"."variance";
 create aggregate var_samp(val hugeint) returns double external name "aggr"."variance";
+create procedure waitformaster() external name wlr.waitformaster;
 
 -- helper function
 create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;
@@ -2304,7 +2307,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"replace",	"replace",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"replace",	"replace",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"replaythreshold",	"create procedure replaythreshold(duration int) external name wlr.replaythreshold;",	"wlr",	1,	2,	true,	false,	false	]
-[ "sys",	"replicate",	"create procedure replicate(dbname string) external name wlcr.replicate;",	"wlcr",	1,	2,	true,	false,	false	]
+[ "sys",	"replicate",	"create procedure replicate(dbname string) external name wlr.replicate;",	"wlr",	1,	2,	true,	false,	false	]
 [ "sys",	"restart",	"restart",	"sql",	0,	1,	false,	false,	false	]
 [ "sys",	"resume",	"create procedure sys.resume(tag bigint) external name sql.sysmon_resume;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"resume",	"create procedure sys.resume(tag int) external name sql.sysmon_resume;",	"sql",	1,	2,	true,	false,	false	]
@@ -3493,6 +3496,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"var_samp",	"create aggregate var_samp(val time) returns double external name \"aggr\".\"variance\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_samp",	"create aggregate var_samp(val timestamp) returns double external name \"aggr\".\"variance\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_samp",	"create aggregate var_samp(val tinyint) returns double external name \"aggr\".\"variance\";",	"aggr",	1,	3,	false,	false,	false	]
+[ "sys",	"waitformaster",	"create procedure waitformaster() external name wlr.waitformaster;",	"wlr",	1,	2,	true,	false,	false	]
 [ "sys",	"week",	"weekofyear",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"weekofyear",	"weekofyear",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"xor",	"xor",	"calc",	0,	1,	false,	false,	false	]
@@ -5230,6 +5234,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"var_samp",	"val",	"time",	1,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"var_samp",	"val",	"timestamp",	7,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"var_samp",	"val",	"tinyint",	8,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"waitformaster",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"week",	"arg_1",	"date",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"weekofyear",	"arg_1",	"date",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"xor",	"arg_1",	"boolean",	1,	0,	1,	"arg_2",	"boolean",	1,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -7856,6 +7861,7 @@ drop function pcre_replace(string, string, string, string);
 [ "var_samp"	]
 [ "var_samp"	]
 [ "var_samp"	]
+[ "waitformaster"	]
 [ "week"	]
 [ "weekofyear"	]
 [ "xor"	]
