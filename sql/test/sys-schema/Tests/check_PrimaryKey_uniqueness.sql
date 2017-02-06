@@ -43,7 +43,6 @@ SELECT COUNT(*) AS duplicates, name FROM sys.environment GROUP BY name HAVING CO
 SELECT COUNT(*) AS duplicates, keyword FROM sys.keywords GROUP BY keyword HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, name FROM sys.db_user_info GROUP BY name HAVING COUNT(*) > 1;
-SELECT COUNT(*) AS duplicates, id FROM sys.connections GROUP BY id HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, "user", login, active FROM sys.sessions GROUP BY "user", login, active HAVING COUNT(*) > 1;  -- is this really always unique?
 
 SELECT COUNT(*) AS duplicates, column_id FROM sys.statistics GROUP BY column_id HAVING COUNT(*) > 1;

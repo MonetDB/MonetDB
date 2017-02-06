@@ -405,10 +405,6 @@ extern int sql_trans_get_dependency_type(sql_trans *tr, int depend_id, short dep
 extern int sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, short depend_type);
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int id);
 
-extern int sql_trans_connect_catalog(sql_trans *tr, const char *server, int port, const char *db, const char *db_alias, const char *user, const char *passwd, const char *lng);
-extern int sql_trans_disconnect_catalog(sql_trans *tr, const char *db_alias);
-extern int sql_trans_disconnect_catalog_ALL(sql_trans *tr);
-
 extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action);
 extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe);
 extern sql_ukey *create_sql_ukey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt);

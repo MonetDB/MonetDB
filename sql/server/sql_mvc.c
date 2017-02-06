@@ -1238,36 +1238,6 @@ mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 	return NO_DEPENDENCY;
 }
 
-int
-mvc_connect_catalog(mvc *m, const char *server, int port, const char *db, const char *db_alias, const char *user, const char *passwd, const char *lng)
-{
-	if (mvc_debug)
-		fprintf(stderr, "#mvc_connect_catalog of database %s on server %s\n",db, server);
-
-	return sql_trans_connect_catalog(m->session->tr, server, port, db, db_alias, user, passwd, lng);
-		
-}
-
-int
-mvc_disconnect_catalog(mvc *m, const char *db_alias)
-{
-	if (mvc_debug)
-		fprintf(stderr, "#mvc_disconnect_catalog for db_alias %s\n",db_alias);
-
-	return sql_trans_disconnect_catalog(m->session->tr, db_alias);
-		
-}
-
-int
-mvc_disconnect_catalog_ALL(mvc *m)
-{
-	if (mvc_debug)
-		fprintf(stderr, "#mvc_disconnect_catalog_ALL \n");
-
-	return sql_trans_disconnect_catalog_ALL(m->session->tr);
-		
-}
-
 sql_column *
 mvc_null(mvc *m, sql_column *col, int isnull)
 {
