@@ -10,13 +10,14 @@ pattern init()
 address WLCinitCmd
 comment "Test for running as master";
 
+pattern master(flag:int)
+address WLCmaster
+comment "Activate the workload-capture-replay in a particular mode.
+Start/Pause/Resume/Stop = 0/1/2/3";
+
 pattern master()
 address WLCmaster
 comment "Activate the workload-capture-replay";
-
-pattern stopmaster()
-address WLCstopmaster
-comment "Terminate keeping a log on this branch":
 
 pattern drift(duration:int)
 address WLCdrift

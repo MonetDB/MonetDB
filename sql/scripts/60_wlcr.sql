@@ -19,8 +19,8 @@ external name wlcr.drift;
 create procedure master()
 external name wlcr.master;
 
-create procedure stopmaster()
-external name wlcr.stopmaster;
+create procedure master(role integer)
+external name wlcr.master;
 
 -- Replica commands
 create procedure replicate(dbname string)

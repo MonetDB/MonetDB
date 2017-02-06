@@ -30,6 +30,7 @@
  * It contains the following key=value pairs:
  * 		snapshot=<path to a binary snapshot>
  * 		logs=<path to the wlcr log directory>
+ * 		role=<started, paused,(resume), stopped>
  * 		firstbatch=<first batch file to be applied>
  * 		batches=<last batch file to be applied>
  * 		drift=<maximal delay before transactions are seen globally, in seconds>
@@ -70,6 +71,18 @@
  * are no transactions running. It is solved with a separate monitor thread.
  * After closing, the replicas can see from the master configuration file that a log is available.
  *
+ * The transaction loggin can be temporarily paused using the command
+ * CALL master(2)
+ * This mode should be uses sparingly. For example if you plan to perform a COPY INTO LOCKED mode
+ * and want to avoid an avalanche of update records.
+ *
+ * Logging is resumed using the command 
+ * CALL master(3)
+ * A warning is issued when during the suspension update transactions have been issued.
+ * The final step is to close transaction logging with the command
+ * CALL master(4).
+ * It typically is the end-of-life-time for a snapshot and its log files.
+ *
  *[TODO] A more secure way to set a database into master mode is to use the command
  *	 monetdb master <dbname> [ <optional snapshot path>]
  * which locks the database, takes a save copy, initializes the state chance. 
@@ -101,6 +114,7 @@
  * The wlcr files purposely have a textual format derived from the MAL statements.
  * Simplicity and ease of control has been the driving argument here.
  *
+ * [TODO] stop taking log files
  * [TODO] consider the roll forward of SQL session variables, i.e. optimizer_pipe (for now assume default pipe).
  * [TODO] The status of the master/replica should be accessible for inspection
  * [TODO] the user might want to indicate a time-stamp, to rebuild to a certain point
@@ -117,6 +131,9 @@ static str wlcr_snapshot= 0; // The location of the snapshot against which the l
 static str wlcr_logs = 0; 	// The location in the global file store for the logs
 static stream *wlcr_fd = 0;
 static int wlcr_start = 0;	// time stamp of first transaction in log file
+static int wlcr_role = 0;	// The current status of the in the life cycle
+static int wlcr_tag = 0;	// number of database chancing transactions
+static int wlcr_pausetag = 0;	// number of database chancing transactions when pausing
 
 // These properties are needed by the replica to direct the roll-forward.
 int wlcr_threshold = 0;		// should be set to -1 for production
@@ -164,6 +181,8 @@ str WLCgetConfig(void){
 			wlcr_threshold = atoi(path+ 10);
 		if( strncmp("rollback=", path, 9) == 0)
 			wlcr_threshold = atoi(path+ 9);
+		if( strncmp("role=", path, 5) == 0)
+			wlcr_role = atoi(path+ 5);
 	}
 	fclose(fd);
 	return MAL_SUCCEED;
@@ -188,6 +207,7 @@ str WLCsetConfig(void){
 		fprintf(fd,"snapshot=%s\n", wlcr_snapshot);
 	if( wlcr_logs)
 		fprintf(fd,"logs=%s\n", wlcr_logs);
+	fprintf(fd,"role=%d\n", wlcr_role );
 	fprintf(fd,"firstbatch=%d\n", wlcr_firstbatch);
 	fprintf(fd,"batches=%d\n", wlcr_batches );
 	fprintf(fd,"drift=%d\n", wlcr_drift );
@@ -300,22 +320,6 @@ WLCexit(void)
 	return MAL_SUCCEED;
 }
 
-str
-WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-
-	if( wlcr_logs == NULL)
-		throw(MAL,"wlcr.stopmaster","Replica control not active");
-	wlcr_batches = - wlcr_batches;
-	WLCsetConfig();
-
-	return MAL_SUCCEED;
-}
-
 str 
 WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -360,11 +364,37 @@ WLCdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str 
 WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int role = 0;
 	char path[PATHLENGTH];
 	(void) stk;
 	(void) pci;
 	(void) cntxt;
 	(void) mb;
+	if( pci->argc ==2){
+		role = *getArgReference_int(stk, pci,1);
+		switch(wlcr_role){
+		case 0:
+			if( role != WLCR_STARTED)
+				throw(MAL,"master","WARNING: use master() or master(1) to start master role");
+			break;
+		case WLCR_STARTED:
+			if( role != WLCR_PAUSED && role != WLCR_STOPPED)
+				throw(MAL,"master","WARNING: use master(2) to pause, and master(4) to stop");
+			break;
+		case WLCR_PAUSED:
+			if( role != WLCR_RESUMED && role != WLCR_STOPPED)
+				throw(MAL,"master","WARNING: use master(3) to resume, and master(4) to stop");
+			break;
+		case WLCR_RESUMED:
+			if( role != WLCR_PAUSED && role != WLCR_STOPPED)
+				throw(MAL,"master","WARNING: use master(2) to pause, and master(4) to stop");
+			break;
+		default:
+		case WLCR_STOPPED:
+			// end of life cycle;
+			;
+		}
+	}
 
 	if ( wlcr_logs == NULL){
 		wlcr_dbname = GDKgetenv("gdk_dbname");
@@ -376,12 +406,25 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			wlcr_logs = NULL;
 			throw(SQL,"wlcr.master","Could not create %s\n", wlcr_logs);
 		}
+		wlcr_role = WLCR_STARTED;
 		WLCsetConfig();
-	} else
+	} else{
 		WLCgetConfig();
+		if( role){
+			if(role == WLCR_RESUMED){
+				wlcr_role = WLCR_STARTED;
+			} else
+				wlcr_role = role;
+			if( role == WLCR_PAUSED)
+				wlcr_pausetag = wlcr_tag;
+			WLCsetConfig();
+		}
+	}
 #ifdef _WLC_DEBUG_
 	mnstr_printf(cntxt->fdout,"#master batches %d file open %d\n", wlcr_batches,  wlcr_fd != NULL);
 #endif
+	if(role == WLCR_RESUMED)
+		throw(MAL,"wlcr.master","#WARNING: %d update transaction missed due to paused logging", wlcr_tag - wlcr_pausetag);
 	return MAL_SUCCEED;
 }
 
@@ -458,6 +501,7 @@ WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	WLCstart(p);
 	p = newStmt(cntxt->wlcr, "wlr","catalog");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+	wlcr_tag++;
 	return MAL_SUCCEED;
 }
 
@@ -611,6 +655,7 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 	
+	wlcr_tag++;
 	return MAL_SUCCEED;
 }
 
@@ -664,6 +709,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 
+	wlcr_tag++;
 	return MAL_SUCCEED;
 }
 
@@ -732,7 +778,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
-
+	wlcr_tag++;
 	return MAL_SUCCEED;
 }
 
@@ -748,6 +794,7 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 
+	wlcr_tag++;
 	return MAL_SUCCEED;
 }
 
@@ -774,7 +821,7 @@ WLCwrite(Client cntxt)
 		else {
 			// filter out queries that run too shortly
 			p = getInstrPtr(cntxt->wlcr,0);
-			if ( ( cntxt->wlcr_kind != WLCR_QUERY ||  wlcr_threshold == 0 || wlcr_threshold < GDKms() - p->ticks ) ){
+			if ( wlcr_role != WLCR_STOPPED && ( cntxt->wlcr_kind != WLCR_QUERY ||  wlcr_threshold == 0 || wlcr_threshold < GDKms() - p->ticks ) ){
 				MT_lock_set(&wlcr_lock);
 				p = getInstrPtr(cntxt->wlcr,0);
 				p = pushLng(cntxt->wlcr,p, GDKms() - p->ticks);
@@ -795,6 +842,8 @@ WLCwrite(Client cntxt)
 #ifdef _WLC_DEBUG_
 	printFunction(cntxt->fdout, cntxt->wlcr, 0, LIST_MAL_ALL );
 #endif
+	if( wlcr_role == WLCR_STOPPED)
+		throw(MAL,"wlcr.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
 	return msg;
 }
 
