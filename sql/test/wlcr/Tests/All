@@ -27,3 +27,7 @@ wlr40
 #clear the complete table
 wlc50
 wlr50
+
+#shuffle the master state
+wlc60
+wlr60

@@ -7,6 +7,21 @@
 -- Workload Capture and Replay
 
 -- Master commands
+create procedure master()
+external name wlcr.master;
+
+create procedure master(path string)
+external name wlcr.master;
+
+create procedure pausemaster()
+external name wlcr.pausemaster;
+
+create procedure resumemaster()
+external name wlcr.resumemaster;
+
+create procedure stopmaster()
+external name wlcr.stopmaster;
+
 create procedure logthreshold(duration int)
 external name wlcr.logthreshold;
 
@@ -15,9 +30,6 @@ external name wlcr.logrollback;
 
 create procedure drift(duration int)
 external name wlcr.drift;
-
-create procedure master()
-external name wlcr.master;
 
 create procedure master(role integer)
 external name wlcr.master;

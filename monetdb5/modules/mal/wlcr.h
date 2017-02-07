@@ -23,10 +23,9 @@
 #define WLCR_IGNORE		4
 
 /* WLCR modes */
-#define WLCR_STARTED	1	// started for the current snapshot
-#define WLCR_PAUSED		2	// suspend the creation of log files
-#define WLCR_RESUMED	3	// restart log file creation
-#define WLCR_STOPPED	4	// finished last log file for this snapsho
+#define WLCR_RUN		1	// started for the current snapshot
+#define WLCR_PAUSE		2	// suspend the creation of log files
+#define WLCR_STOP		3	// finished last log file for this snapsho
 
 mal_export int wlcr_threshold;
 mal_export int wlcr_batches;
@@ -40,6 +39,9 @@ mal_export int WLCused(void);
 mal_export str WLCgetConfig(void);
 mal_export str WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCpausemaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCresumemaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLClogthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLClogrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

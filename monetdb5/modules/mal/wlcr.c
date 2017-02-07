@@ -363,38 +363,16 @@ WLCdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str 
 WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int role = 0;
+{	
 	char path[PATHLENGTH];
-	(void) stk;
-	(void) pci;
 	(void) cntxt;
 	(void) mb;
-	if( pci->argc ==2){
-		role = *getArgReference_int(stk, pci,1);
-		switch(wlcr_role){
-		case 0:
-			if( role != WLCR_STARTED)
-				throw(MAL,"master","WARNING: use master() or master(1) to start master role");
-			break;
-		case WLCR_STARTED:
-			if( role != WLCR_PAUSED && role != WLCR_STOPPED)
-				throw(MAL,"master","WARNING: use master(2) to pause, and master(4) to stop");
-			break;
-		case WLCR_PAUSED:
-			if( role != WLCR_RESUMED && role != WLCR_STOPPED)
-				throw(MAL,"master","WARNING: use master(3) to resume, and master(4) to stop");
-			break;
-		case WLCR_RESUMED:
-			if( role != WLCR_PAUSED && role != WLCR_STOPPED)
-				throw(MAL,"master","WARNING: use master(2) to pause, and master(4) to stop");
-			break;
-		default:
-		case WLCR_STOPPED:
-			// end of life cycle;
-			;
-		}
-	}
+	if( wlcr_role == WLCR_STOP)
+		throw(MAL,"master","WARNING: logging has been stopped. Use new snapshot");
+	if( wlcr_role == WLCR_RUN)
+		throw(MAL,"master","WARNING: already in master mode, call ignored");
+	if( pci->argc == 2)
+		wlcr_logs = GDKstrdup( *getArgReference_str(stk, pci,1));
 
 	if ( wlcr_logs == NULL){
 		wlcr_dbname = GDKgetenv("gdk_dbname");
@@ -406,25 +384,54 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			wlcr_logs = NULL;
 			throw(SQL,"wlcr.master","Could not create %s\n", wlcr_logs);
 		}
-		wlcr_role = WLCR_STARTED;
-		WLCsetConfig();
-	} else{
-		WLCgetConfig();
-		if( role){
-			if(role == WLCR_RESUMED){
-				wlcr_role = WLCR_STARTED;
-			} else
-				wlcr_role = role;
-			if( role == WLCR_PAUSED)
-				wlcr_pausetag = wlcr_tag;
-			WLCsetConfig();
-		}
-	}
-#ifdef _WLC_DEBUG_
-	mnstr_printf(cntxt->fdout,"#master batches %d file open %d\n", wlcr_batches,  wlcr_fd != NULL);
-#endif
-	if(role == WLCR_RESUMED)
-		throw(MAL,"wlcr.master","#WARNING: %d update transaction missed due to paused logging", wlcr_tag - wlcr_pausetag);
+	} 
+	wlcr_role= WLCR_RUN;
+	WLCsetConfig();
+	return MAL_SUCCEED;
+}
+
+str 
+WLCpausemaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	if( wlcr_role != WLCR_RUN )
+		throw(MAL,"master","WARNING: master role not active");
+	wlcr_role = WLCR_PAUSE;
+	wlcr_pausetag = wlcr_tag;
+	WLCsetConfig();
+	return MAL_SUCCEED;
+}
+
+str 
+WLCresumemaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	if( wlcr_role != WLCR_PAUSE )
+		throw(MAL,"master","WARNING: master role not suspended");
+	wlcr_role = WLCR_RUN;
+	WLCsetConfig();
+	if( wlcr_tag - wlcr_pausetag)
+		throw(MAL,"wlcr.master","#WARNING: %d updates missed due to paused logging", wlcr_tag - wlcr_pausetag);
+	return MAL_SUCCEED;
+}
+
+str 
+WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	if( wlcr_role != WLCR_RUN )
+		throw(MAL,"master","WARNING: master role not active");
+	wlcr_role = WLCR_STOP;
+	WLCsetConfig();
 	return MAL_SUCCEED;
 }
 
@@ -806,6 +813,12 @@ WLCwrite(Client cntxt)
 	if( cntxt->wlcr == 0 || cntxt->wlcr->stop <= 1)
 		return MAL_SUCCEED;
 
+	if( wlcr_role != WLCR_RUN){
+		trimMalVariables(cntxt->wlcr, NULL);
+		resetMalBlk(cntxt->wlcr, 0);
+		cntxt->wlcr_kind = WLCR_QUERY;
+		return MAL_SUCCEED;
+	}
 	if( wlcr_logs ){	
 		if( wlcr_start + wlcr_drift < GDKms()/1000)
 			WLCcloselogger();
@@ -821,7 +834,7 @@ WLCwrite(Client cntxt)
 		else {
 			// filter out queries that run too shortly
 			p = getInstrPtr(cntxt->wlcr,0);
-			if ( wlcr_role != WLCR_STOPPED && ( cntxt->wlcr_kind != WLCR_QUERY ||  wlcr_threshold == 0 || wlcr_threshold < GDKms() - p->ticks ) ){
+			if (  cntxt->wlcr_kind != WLCR_QUERY ||  wlcr_threshold == 0 || wlcr_threshold < GDKms() - p->ticks ){
 				MT_lock_set(&wlcr_lock);
 				p = getInstrPtr(cntxt->wlcr,0);
 				p = pushLng(cntxt->wlcr,p, GDKms() - p->ticks);
@@ -842,7 +855,7 @@ WLCwrite(Client cntxt)
 #ifdef _WLC_DEBUG_
 	printFunction(cntxt->fdout, cntxt->wlcr, 0, LIST_MAL_ALL );
 #endif
-	if( wlcr_role == WLCR_STOPPED)
+	if( wlcr_role == WLCR_STOP)
 		throw(MAL,"wlcr.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
 	return msg;
 }

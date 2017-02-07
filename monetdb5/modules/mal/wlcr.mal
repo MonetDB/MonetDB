@@ -19,6 +19,22 @@ pattern master()
 address WLCmaster
 comment "Activate the workload-capture-replay";
 
+pattern master(path:str)
+address WLCmaster
+comment "Activate the workload-capture-replay. Use a different location for the logs.";
+
+pattern pausemaster()
+address WLCpausemaster
+comment "Suspend capturing the logs";
+
+pattern resumemaster()
+address WLCresumemaster
+comment "Resume capturing the logs";
+
+pattern stopmaster()
+address WLCstopmaster
+comment "Stop capturing the logs";
+
 pattern drift(duration:int)
 address WLCdrift
 comment "Maximal duration of collecting a transaction log befor releasing it";

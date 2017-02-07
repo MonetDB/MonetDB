@@ -283,13 +283,19 @@ WLRprocess(void *arg)
 					msg= runMAL(c,mb,0,0);
 					wlr_tag++;
 					WLRsetConfig();
+					// ignore warnings
+					if (msg && strstr(msg,"WARNING"))
+						msg = MAL_SUCCEED;
 					if( msg != MAL_SUCCEED){
 						// they should always succeed
 						mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
 						printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 						mvc_rollback(sql,0,NULL);
-						break;
-					}
+						// cleanup
+						resetMalBlk(mb, 1);
+						trimMalVariables(mb, NULL);
+						pc = 0;
+					} else
 					if( mvc_commit(sql, 0, 0) < 0)
 						mnstr_printf(GDKerr,"#wlcr.process transaction commit failed");
 				} else {
@@ -299,6 +305,12 @@ WLRprocess(void *arg)
 					mnstr_printf(GDKerr,"%s",line);
 					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 				}
+				// cleanup
+				resetMalBlk(mb, 1);
+				trimMalVariables(mb, NULL);
+				pc = 0;
+			} else
+			if ( getModuleId(q) == wlrRef && getFunctionId(q) == rollbackRef ){
 				// cleanup
 				resetMalBlk(mb, 1);
 				trimMalVariables(mb, NULL);
