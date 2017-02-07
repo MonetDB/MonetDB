@@ -56,7 +56,7 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % int # type
-% 11 # length
+% 1 # length
 [ NULL	]
 
 # 18:33:32 >  
