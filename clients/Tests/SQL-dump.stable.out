@@ -234,6 +234,7 @@ Ready.
 \dSf sys."password_hash"
 \dSf sys."pause"
 \dSf sys."pausemaster"
+\dSf sys."pausereplicate"
 \dSf sys."quantile"
 \dSf sys."querycache"
 \dSf sys."querylog"
@@ -249,6 +250,7 @@ Ready.
 \dSf sys."replicate"
 \dSf sys."resume"
 \dSf sys."resumemaster"
+\dSf sys."resumereplicate"
 \dSf sys."reuse"
 \dSf sys."reverse"
 \dSf sys."right_shift"
@@ -628,6 +630,7 @@ SYSTEM FUNCTION  sys.password_hash
 SYSTEM FUNCTION  sys.patindex
 SYSTEM FUNCTION  sys.pause
 SYSTEM FUNCTION  sys.pausemaster
+SYSTEM FUNCTION  sys.pausereplicate
 SYSTEM FUNCTION  sys.pi
 SYSTEM FUNCTION  sys.power
 SYSTEM FUNCTION  sys.prod
@@ -652,6 +655,7 @@ SYSTEM FUNCTION  sys.replicate
 SYSTEM FUNCTION  sys.restart
 SYSTEM FUNCTION  sys.resume
 SYSTEM FUNCTION  sys.resumemaster
+SYSTEM FUNCTION  sys.resumereplicate
 SYSTEM FUNCTION  sys.reuse
 SYSTEM FUNCTION  sys.reverse
 SYSTEM FUNCTION  sys.right
@@ -1025,6 +1029,7 @@ create function sys.password_hash (username string) returns string external name
 create procedure sys.pause(tag int) external name sql.sysmon_pause;
 create procedure sys.pause(tag bigint) external name sql.sysmon_pause;
 create procedure pausemaster() external name wlcr.pausemaster;
+create procedure pausereplicate() external name wlr.pausereplicate;
 create aggregate quantile(val tinyint, q double) returns tinyint external name "aggr"."quantile";
 create aggregate quantile(val smallint, q double) returns smallint external name "aggr"."quantile";
 create aggregate quantile(val integer, q double) returns integer external name "aggr"."quantile";
@@ -1051,6 +1056,7 @@ create procedure replicate(dbname string) external name wlr.replicate;
 create procedure sys.resume(tag int) external name sql.sysmon_resume;
 create procedure sys.resume(tag bigint) external name sql.sysmon_resume;
 create procedure resumemaster() external name wlcr.resumemaster;
+create procedure resumereplicate() external name wlr.resumereplicate;
 create procedure reuse(sys string, tab string) external name sql.reuse;
 create function reverse(src string) returns string external name udf.reverse;
 create function "right_shift"(i1 inet, i2 inet) returns boolean external name inet.">>";
@@ -2266,6 +2272,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"pause",	"create procedure sys.pause(tag bigint) external name sql.sysmon_pause;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"pause",	"create procedure sys.pause(tag int) external name sql.sysmon_pause;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"pausemaster",	"create procedure pausemaster() external name wlcr.pausemaster;",	"wlcr",	1,	2,	true,	false,	false	]
+[ "sys",	"pausereplicate",	"create procedure pausereplicate() external name wlr.pausereplicate;",	"wlr",	1,	2,	true,	false,	false	]
 [ "sys",	"pcre_replace",	"create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;",	"pcre",	1,	1,	false,	false,	false	]
 [ "sys",	"pi",	"pi",	"mmath",	0,	1,	false,	false,	false	]
 [ "sys",	"power",	"pow",	"mmath",	0,	1,	false,	false,	false	]
@@ -2319,6 +2326,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"resume",	"create procedure sys.resume(tag bigint) external name sql.sysmon_resume;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"resume",	"create procedure sys.resume(tag int) external name sql.sysmon_resume;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"resumemaster",	"create procedure resumemaster() external name wlcr.resumemaster;",	"wlcr",	1,	2,	true,	false,	false	]
+[ "sys",	"resumereplicate",	"create procedure resumereplicate() external name wlr.resumereplicate;",	"wlr",	1,	2,	true,	false,	false	]
 [ "sys",	"reuse",	"create procedure reuse(sys string, tab string) external name sql.reuse;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"reverse",	"create function reverse(src string) returns string external name udf.reverse;",	"udf",	1,	1,	false,	false,	false	]
 [ "sys",	"right",	"stringright",	"str",	0,	1,	false,	false,	false	]
@@ -3827,6 +3835,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"pause",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"pause",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"pausemaster",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"pausereplicate",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"pcre_replace",	"origin",	"clob",	0,	0,	1,	"pat",	"clob",	0,	0,	1,	"repl",	"clob",	0,	0,	1,	"flags",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"pi",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"power",	"arg_1",	"double",	53,	0,	1,	"arg_2",	"double",	53,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3880,6 +3889,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"resume",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"resume",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"resumemaster",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"resumereplicate",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"reuse",	"tab",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"reverse",	"src",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"right",	"arg_1",	"char",	0,	0,	1,	"arg_2",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -6251,6 +6261,7 @@ drop function pcre_replace(string, string, string, string);
 [ "pause"	]
 [ "pause"	]
 [ "pausemaster"	]
+[ "pausereplicate"	]
 [ "pi"	]
 [ "power"	]
 [ "power"	]
@@ -6303,6 +6314,7 @@ drop function pcre_replace(string, string, string, string);
 [ "resume"	]
 [ "resume"	]
 [ "resumemaster"	]
+[ "resumereplicate"	]
 [ "reuse"	]
 [ "reverse"	]
 [ "reverse_qual"	]
