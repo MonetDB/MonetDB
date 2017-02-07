@@ -34,7 +34,6 @@ mal_export str wlcr_dbname;
 mal_export int wlcr_rollback;
 
 mal_export str WLCinit(void);
-mal_export str WLCexit(void);
 mal_export int WLCused(void);
 mal_export str WLCgetConfig(void);
 mal_export str WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
