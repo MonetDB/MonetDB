@@ -35,7 +35,7 @@ insert into tmp values(40,'after being stopped');
 select * from tmp;
 
 call stopmaster();
-call master(); 
+call master();
 ''')
 
 sout, serr = s.communicate()
