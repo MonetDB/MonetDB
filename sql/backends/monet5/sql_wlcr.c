@@ -41,6 +41,7 @@ static str wlr_master;
 static str wlr_error;		// errors should stop the process
 static int wlr_nextbatch; 	// the next file to be processed
 static int wlr_tag;			// the next transaction to be processeds
+static int wlr_state;		// which state RUN/PAUSE
 static int wlr_threshold;	// replay threshold set by user.
 
 #define MAXLINE 2048
@@ -66,6 +67,8 @@ str WLRgetConfig(void){
             wlr_nextbatch = atoi(line+ 10);
         if( strncmp("tag=", line, 4) == 0)
             wlr_tag = atoi(line+ 4);
+        if( strncmp("state=", line, 6) == 0)
+            wlr_state = atoi(line+ 6);
         if( strncmp("error=", line, 6) == 0)
             wlr_error = GDKstrdup(line+ 6);
     }
@@ -87,6 +90,7 @@ str WLRsetConfig(void){
 	fprintf(fd,"logs=%s\n", wlr_logs);
 	fprintf(fd,"nextbatch=%d\n", wlr_nextbatch);
 	fprintf(fd,"tag=%d\n", wlr_tag);
+	fprintf(fd,"state=%d\n", wlr_state);
 	if( wlr_error)
 		fprintf(fd,"error=%s\n", wlr_error);
     fclose(fd);
@@ -230,7 +234,7 @@ WLRprocess(void *arg)
 		wlcr_archive, wlr_firstbatch, wlr_nextbatch, wlr_threshold);
 #endif
 	wlr_tag = 0;
-	for( i= wlr_nextbatch; i < wlcr_batches && ! GDKexiting(); i++){
+	for( i= wlr_nextbatch; wlr_state == WLCR_RUN && i < wlcr_batches && ! GDKexiting(); i++){
 		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlr_logs, DIR_SEP, wlr_master, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
@@ -338,6 +342,7 @@ WLRprocessScheduler(void *arg)
 
 	while(!GDKexiting()){
 		// wait at most for the drift period, also at start
+		mnstr_printf(cntxt->fdout,"#sleep %d ms\n",(wlcr_drift? wlcr_drift:1) * 1000);
 		MT_sleep_ms( (wlcr_drift? wlcr_drift:1) * 1000 );
 		if( wlr_master)
 			WLRgetMaster(wlr_master);
@@ -365,6 +370,35 @@ WLRinit(void)
 	}
 	return MAL_SUCCEED;
 }
+
+str
+WLRpausereplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{ 	
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	if( wlr_state != WLCR_RUN)
+		throw(SQL,"wlr.resumereplicate","Server not in replicate mode");
+	wlr_state = WLCR_PAUSE;
+	WLRsetConfig();
+	return MAL_SUCCEED;
+}
+
+str
+WLRresumereplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{ 	
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	if(wlr_state != WLCR_PAUSE)
+		throw(SQL,"wlr.resumereplicate","Server not in replicate pause mode");
+	wlr_state = WLCR_RUN;
+	WLRsetConfig();
+	return MAL_SUCCEED;
+}
+
 
 /* for testing it is helpful to be able to wait until all log files have been processed */
 str
@@ -400,6 +434,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	cntxt->wlcr_mode = WLCR_REPLICATE;
+	wlr_state = WLCR_RUN;
 	// The client has to wait initially for all logs known to be processed.
 	WLRprocess(cntxt);
 	// start the process for continual integration in the background

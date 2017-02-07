@@ -18,16 +18,8 @@ s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE,
 c = process.client('sql', dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 cout, cerr = c.communicate('''\
-call master();
-
-call pausemaster();
-call pausemaster();
-
-select * from tmp;
-insert into tmp values(30,'2 lost update requests');
-
-call resumemaster();
-insert into tmp values(35,'resumed logging');
+call stopmaster();
+insert into tmp values(40,'after being stopped');
 select * from tmp;
 ''')
 

@@ -31,7 +31,6 @@ c = process.client('sql', dbname = dbnameclone, port = cloneport, stdin = proces
 cout, cerr = c.communicate('''\
 call waitformaster();
 select * from tmp;
-call pausereplicate();
 ''' )
 
 sout, serr = slave.communicate()

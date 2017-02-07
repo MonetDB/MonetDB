@@ -38,6 +38,12 @@ external name wlcr.master;
 create procedure replicate(dbname string)
 external name wlr.replicate;
 
+create procedure pausereplicate()
+external name wlr.pausereplicate;
+
+create procedure resumereplicate()
+external name wlr.resumereplicate;
+
 create procedure waitformaster()
 external name wlr.waitformaster;
 

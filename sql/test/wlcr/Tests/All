@@ -31,3 +31,11 @@ wlr50
 #shuffle the master state
 wlc60
 wlr60
+
+#temporarily suspend log propagation
+wlc70
+wlr70
+
+#stop the master
+wlc80
+wlr80

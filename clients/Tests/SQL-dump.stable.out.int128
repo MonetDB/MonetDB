@@ -229,6 +229,7 @@ Ready.
 \dSf sys."optimizers"
 \dSf sys."password_hash"
 \dSf sys."pause"
+\dSf sys."pausemaster"
 \dSf sys."quantile"
 \dSf sys."querycache"
 \dSf sys."querylog"
@@ -243,6 +244,7 @@ Ready.
 \dSf sys."replaythreshold"
 \dSf sys."replicate"
 \dSf sys."resume"
+\dSf sys."resumemaster"
 \dSf sys."reuse"
 \dSf sys."reverse"
 \dSf sys."right_shift"
@@ -351,6 +353,7 @@ Ready.
 \dSf sys."stddev_pop"
 \dSf sys."stddev_samp"
 \dSf sys."stop"
+\dSf sys."stopmaster"
 \dSf sys."storage"
 \dSf sys."storagemodel"
 \dSf sys."storagemodelinit"
@@ -620,6 +623,7 @@ SYSTEM FUNCTION  sys.or
 SYSTEM FUNCTION  sys.password_hash
 SYSTEM FUNCTION  sys.patindex
 SYSTEM FUNCTION  sys.pause
+SYSTEM FUNCTION  sys.pausemaster
 SYSTEM FUNCTION  sys.pi
 SYSTEM FUNCTION  sys.power
 SYSTEM FUNCTION  sys.prod
@@ -643,6 +647,7 @@ SYSTEM FUNCTION  sys.replaythreshold
 SYSTEM FUNCTION  sys.replicate
 SYSTEM FUNCTION  sys.restart
 SYSTEM FUNCTION  sys.resume
+SYSTEM FUNCTION  sys.resumemaster
 SYSTEM FUNCTION  sys.reuse
 SYSTEM FUNCTION  sys.reverse
 SYSTEM FUNCTION  sys.right
@@ -776,6 +781,7 @@ SYSTEM FUNCTION  sys.st_z
 SYSTEM FUNCTION  sys.stddev_pop
 SYSTEM FUNCTION  sys.stddev_samp
 SYSTEM FUNCTION  sys.stop
+SYSTEM FUNCTION  sys.stopmaster
 SYSTEM FUNCTION  sys.storage
 SYSTEM FUNCTION  sys.storagemodel
 SYSTEM FUNCTION  sys.storagemodelinit
@@ -989,6 +995,7 @@ create procedure logthreshold(duration int) external name wlcr.logthreshold;
 create function sys.malfunctions() returns table("module" string, "function" string, "signature" string, "address" string, "comment" string) external name "manual"."functions";
 create function "masklen" (p inet) returns int external name inet."masklen";
 create procedure master() external name wlcr.master;
+create procedure master(path string) external name wlcr.master;
 create procedure master(role integer) external name wlcr.master;
 create function mbr(geom geometry) returns mbr external name geom."mbr";
 create function sys.md5(v string) returns string external name clients.md5sum;
@@ -1018,6 +1025,7 @@ create function sys.optimizers () returns table (name string, def string, status
 create function sys.password_hash (username string) returns string external name sql.password;
 create procedure sys.pause(tag int) external name sql.sysmon_pause;
 create procedure sys.pause(tag bigint) external name sql.sysmon_pause;
+create procedure pausemaster() external name wlcr.pausemaster;
 create aggregate quantile(val tinyint, q double) returns tinyint external name "aggr"."quantile";
 create aggregate quantile(val smallint, q double) returns smallint external name "aggr"."quantile";
 create aggregate quantile(val integer, q double) returns integer external name "aggr"."quantile";
@@ -1044,6 +1052,7 @@ create procedure replaythreshold(duration int) external name wlr.replaythreshold
 create procedure replicate(dbname string) external name wlr.replicate;
 create procedure sys.resume(tag int) external name sql.sysmon_resume;
 create procedure sys.resume(tag bigint) external name sql.sysmon_resume;
+create procedure resumemaster() external name wlcr.resumemaster;
 create procedure reuse(sys string, tab string) external name sql.reuse;
 create function reverse(src string) returns string external name udf.reverse;
 create function "right_shift"(i1 inet, i2 inet) returns boolean external name inet.">>";
@@ -1198,6 +1207,7 @@ create aggregate stddev_samp(val timestamp) returns double external name "aggr".
 create aggregate stddev_samp(val hugeint) returns double external name "aggr"."stdev";
 create procedure sys.stop(tag int) external name sql.sysmon_stop;
 create procedure sys.stop(tag bigint) external name sql.sysmon_stop;
+create procedure stopmaster() external name wlcr.stopmaster;
 create function sys."storage"() returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, revsorted boolean, "unique" boolean, orderidx bigint) external name sql."storage";
 create function sys."storage"(sname string) returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, revsorted boolean, "unique" boolean, orderidx bigint) external name sql."storage";
 create function sys."storage"(sname string, tname string) returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, "imprints" bigint, sorted boolean, revsorted boolean, "unique" boolean, orderidx bigint) external name sql."storage";
@@ -2178,6 +2188,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"malfunctions",	"create function sys.malfunctions() returns table(\"module\" string, \"function\" string, \"signature\" string, \"address\" string, \"comment\" string) external name \"manual\".\"functions\";",	"manual",	1,	5,	false,	false,	false	]
 [ "sys",	"masklen",	"create function \"masklen\" (p inet) returns int external name inet.\"masklen\";",	"inet",	1,	1,	false,	false,	false	]
 [ "sys",	"master",	"create procedure master() external name wlcr.master;",	"wlcr",	1,	2,	true,	false,	false	]
+[ "sys",	"master",	"create procedure master(path string) external name wlcr.master;",	"wlcr",	1,	2,	true,	false,	false	]
 [ "sys",	"master",	"create procedure master(role integer) external name wlcr.master;",	"wlcr",	1,	2,	true,	false,	false	]
 [ "sys",	"max",	"max",	"aggr",	0,	3,	false,	false,	false	]
 [ "sys",	"mbr",	"create function mbr(geom geometry) returns mbr external name geom.\"mbr\";",	"geom",	1,	1,	false,	false,	false	]
@@ -2282,6 +2293,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"patindex",	"patindex",	"pcre",	0,	1,	false,	false,	false	]
 [ "sys",	"pause",	"create procedure sys.pause(tag bigint) external name sql.sysmon_pause;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"pause",	"create procedure sys.pause(tag int) external name sql.sysmon_pause;",	"sql",	1,	2,	true,	false,	false	]
+[ "sys",	"pausemaster",	"create procedure pausemaster() external name wlcr.pausemaster;",	"wlcr",	1,	2,	true,	false,	false	]
 [ "sys",	"pcre_replace",	"create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;",	"pcre",	1,	1,	false,	false,	false	]
 [ "sys",	"pi",	"pi",	"mmath",	0,	1,	false,	false,	false	]
 [ "sys",	"power",	"pow",	"mmath",	0,	1,	false,	false,	false	]
@@ -2337,6 +2349,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"restart",	"restart",	"sql",	0,	1,	false,	false,	false	]
 [ "sys",	"resume",	"create procedure sys.resume(tag bigint) external name sql.sysmon_resume;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"resume",	"create procedure sys.resume(tag int) external name sql.sysmon_resume;",	"sql",	1,	2,	true,	false,	false	]
+[ "sys",	"resumemaster",	"create procedure resumemaster() external name wlcr.resumemaster;",	"wlcr",	1,	2,	true,	false,	false	]
 [ "sys",	"reuse",	"create procedure reuse(sys string, tab string) external name sql.reuse;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"reverse",	"create function reverse(src string) returns string external name udf.reverse;",	"udf",	1,	1,	false,	false,	false	]
 [ "sys",	"right",	"stringright",	"str",	0,	1,	false,	false,	false	]
@@ -3436,6 +3449,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"stddev_samp",	"create aggregate stddev_samp(val tinyint) returns double external name \"aggr\".\"stdev\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stop",	"create procedure sys.stop(tag bigint) external name sql.sysmon_stop;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"stop",	"create procedure sys.stop(tag int) external name sql.sysmon_stop;",	"sql",	1,	2,	true,	false,	false	]
+[ "sys",	"stopmaster",	"create procedure stopmaster() external name wlcr.stopmaster;",	"wlcr",	1,	2,	true,	false,	false	]
 [ "sys",	"storage",	"create function sys.\"storage\"() returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, revsorted boolean, \"unique\" boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
 [ "sys",	"storage",	"create function sys.\"storage\"(sname string) returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, revsorted boolean, \"unique\" boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
 [ "sys",	"storage",	"create function sys.\"storage\"(sname string, tname string) returns table (\"schema\" string, \"table\" string, \"column\" string, \"type\" string, \"mode\" string, location string, \"count\" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, \"imprints\" bigint, sorted boolean, revsorted boolean, \"unique\" boolean, orderidx bigint) external name sql.\"storage\";",	"sql",	1,	5,	false,	false,	false	]
@@ -3917,6 +3931,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"masklen",	"p",	"inet",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"master",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"master",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"master",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"max",	"arg",	"any",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"mbr",	"geom",	"geometry",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"mbr_above",	"arg_1",	"geometry",	0,	0,	1,	"arg_2",	"geometry",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4020,6 +4035,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"patindex",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"pause",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"pause",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"pausemaster",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"pcre_replace",	"origin",	"clob",	0,	0,	1,	"pat",	"clob",	0,	0,	1,	"repl",	"clob",	0,	0,	1,	"flags",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"pi",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"power",	"arg_1",	"double",	53,	0,	1,	"arg_2",	"double",	53,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4075,6 +4091,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"restart",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	"arg_3",	"bigint",	64,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"resume",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"resume",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"resumemaster",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"reuse",	"tab",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"reverse",	"src",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"right",	"arg_1",	"char",	0,	0,	1,	"arg_2",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5174,6 +5191,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"stddev_samp",	"val",	"tinyint",	8,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"stop",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"stop",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"stopmaster",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"revsorted",	"boolean",	1,	0,	0,	"unique",	"boolean",	1,	0,	0	]
 [ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"revsorted",	"boolean",	1,	0,	0,	"unique",	"boolean",	1,	0,	0	]
 [ "sys",	"storage",	"table",	"clob",	0,	0,	0,	"column",	"clob",	0,	0,	0,	"type",	"clob",	0,	0,	0,	"mode",	"clob",	0,	0,	0,	"location",	"clob",	0,	0,	0,	"count",	"bigint",	64,	0,	0,	"typewidth",	"int",	32,	0,	0,	"columnsize",	"bigint",	64,	0,	0,	"heapsize",	"bigint",	64,	0,	0,	"hashes",	"bigint",	64,	0,	0,	"phash",	"boolean",	1,	0,	0,	"imprints",	"bigint",	64,	0,	0,	"sorted",	"boolean",	1,	0,	0,	"revsorted",	"boolean",	1,	0,	0,	"unique",	"boolean",	1,	0,	0	]
@@ -6525,6 +6543,7 @@ drop function pcre_replace(string, string, string, string);
 [ "masklen"	]
 [ "master"	]
 [ "master"	]
+[ "master"	]
 [ "max"	]
 [ "mbr"	]
 [ "mbr_above"	]
@@ -6630,6 +6649,7 @@ drop function pcre_replace(string, string, string, string);
 [ "patindex"	]
 [ "pause"	]
 [ "pause"	]
+[ "pausemaster"	]
 [ "pi"	]
 [ "power"	]
 [ "power"	]
@@ -6684,6 +6704,7 @@ drop function pcre_replace(string, string, string, string);
 [ "restart"	]
 [ "resume"	]
 [ "resume"	]
+[ "resumemaster"	]
 [ "reuse"	]
 [ "reverse"	]
 [ "reverse_qual"	]
@@ -7794,6 +7815,7 @@ drop function pcre_replace(string, string, string, string);
 [ "stop"	]
 [ "stop"	]
 [ "stop"	]
+[ "stopmaster"	]
 [ "storage"	]
 [ "storage"	]
 [ "storage"	]

@@ -24,21 +24,13 @@ stderr of test 'wlc60` in directory 'sql/test/wlcr` itself:
 # cmdline opt 	gdk_debug = 536870922
 MAPI  = (monetdb) /var/tmp/mtest-13682/.s.monetdb.39678
 QUERY = call master();
-
-MAPI  = (monetdb) /var/tmp/mtest-13682/.s.monetdb.39678
+ERROR = !WARNING: already in master mode, call ignored
+MAPI  = (monetdb) /var/tmp/mtest-15762/.s.monetdb.32018
 QUERY = call pausemaster();
 ERROR = !WARNING: master role not active
 MAPI  = (monetdb) /var/tmp/mtest-24190/.s.monetdb.51073
 QUERY = call resumemaster();
 ERROR = !#WARNING: 2 updates missed due to paused logging
-MAPI  = (monetdb) /var/tmp/mtest-24190/.s.monetdb.51073
-QUERY = call stopmaster();
-ERROR = !WARNING: master role not active
-MAPI  = (monetdb) /var/tmp/mtest-24190/.s.monetdb.51073
-QUERY = call master(); 
-ERROR = !WARNING: logging has been stopped. Use new snapshot
-
-
 
 # 10:50:36 >  
 # 10:50:36 >  "Done."

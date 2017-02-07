@@ -33,16 +33,6 @@ stdout of test 'wlc60` in directory 'sql/test/wlcr` itself:
 % 2,	22 # length
 [ 30,	"2 lost update requests"	]
 [ 35,	"resumed logging"	]
-#insert into tmp values(40,'after being stopped');
-[ 1	]
-#select * from tmp;
-% sys.tmp,	sys.tmp # table_name
-% i,	s # name
-% int,	clob # type
-% 2,	22 # length
-[ 30,	"2 lost update requests"	]
-[ 35,	"resumed logging"	]
-[ 40,	"after being stopped"	]
 
 # 10:50:36 >  
 # 10:50:36 >  "Done."

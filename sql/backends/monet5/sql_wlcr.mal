@@ -10,6 +10,14 @@ pattern replicate(dbname:str)
 address WLRreplicate
 comment "Roll the snapshot forward to an up-to-date clone";
 
+pattern pausereplicate()
+address WLRpausereplicate
+comment "Suspend replica synchronisation";
+
+pattern resumereplicate()
+address WLRresumereplicate
+comment "Resume replica synchronisation";
+
 pattern waitformaster()
 address WLRwaitformaster
 comment "Wait until all known log files have been processed";

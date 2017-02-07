@@ -93,6 +93,8 @@
  * Instead of using the monetdb command line we can use the SQL calls directly
  * master() and replicate(), provided we start with a fresh database.
  *
+ * REPLICAS
+ *
  * A fresh database can be turned into a replica using the call
  * CALL replicate("mastername")
  * It will grab the latest snapshot of the master and applies all
@@ -111,10 +113,12 @@
  * Any failure encountered during a log replay terminates the replication process,
  * leaving a message in the merovingian log.
  *
+ * The replica creation can be suspended at the master and at the clone.
+ * It will continue after the corresponding resume* operation is issues.
+ *
  * The wlcr files purposely have a textual format derived from the MAL statements.
  * Simplicity and ease of control has been the driving argument here.
  *
- * [TODO] stop taking log files
  * [TODO] consider the roll forward of SQL session variables, i.e. optimizer_pipe (for now assume default pipe).
  * [TODO] The status of the master/replica should be accessible for inspection
  * [TODO] the user might want to indicate a time-stamp, to rebuild to a certain point
