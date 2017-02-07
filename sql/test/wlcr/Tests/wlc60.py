@@ -36,7 +36,7 @@ select * from tmp;
 
 call stopmaster();
 call master(); 
-''' )
+''')
 
 sout, serr = s.communicate()
 
