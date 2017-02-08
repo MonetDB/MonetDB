@@ -270,22 +270,29 @@ nil_2dec(TYPE *res, const void *val, const int *d, const int *sc)
 str
 str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 {
-	char *s = strip_extra_zeros(*val);
-	char *dot = strchr(s, '.'), *end = NULL;
-	int digits = _strlen(s);
-	int scale = digits - (int) (dot - s) - 1;
-	BIG value = 0;
+	char *s;
+	char *dot, *end;
+	int digits;
+	int scale;
+	BIG value;
 
-	if (!dot) {
-		if (GDK_STRNIL(*val)) {
-			*res = NIL(TYPE);
-			return MAL_SUCCEED;
-		} else {
-			scale = 0;
-		}
-	} else { /* we have a dot in the string */
-		digits--;
+	s = *val;
+	if (GDK_STRNIL(s)) {
+		*res = NIL(TYPE);
+		return MAL_SUCCEED;
 	}
+	dot = strchr(s, '.');
+	if (dot != NULL) {
+		s = strip_extra_zeros(s);
+		digits = _strlen(s) - 1;
+		scale = _strlen(dot + 1);
+	} else {
+		digits = _strlen(s);
+		scale = 0;
+	}
+	end = NULL;
+	value = 0;
+
 	if (digits < 0)
 		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 	if (*d < 0 || *d >= (int) (sizeof(scales) / sizeof(scales[0])))

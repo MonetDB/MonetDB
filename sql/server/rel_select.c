@@ -3581,7 +3581,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 			return NULL;
 
 		/* remove any null's in the condition */
-		if (has_nil(cond)) {
+		if (has_nil(cond) && token != SQL_COALESCE) {
 			sql_exp *condnil = rel_unop_(sql, cond, NULL, "isnull", card_value);
 			cond = rel_nop_(sql, condnil, exp_atom_bool(sql->sa, 0), cond, NULL, NULL, "ifthenelse", card_value);
 		}
