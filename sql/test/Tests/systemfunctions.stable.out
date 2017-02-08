@@ -984,6 +984,8 @@ Ready.
 [ "sys",	"malfunctions",	4,	"clob",	""	]
 [ "sys",	"masklen",	0,	"int",	"create function \"masklen\" (p inet) returns int\n external name inet.\"masklen\";"	]
 [ "sys",	"masklen",	1,	"inet",	""	]
+[ "sys",	"master",	0,	"clob",	"create procedure master(path string)\nexternal name wlcr.master;"	]
+[ "sys",	"master",	0,	"int",	"create procedure master(role integer)\nexternal name wlcr.master;"	]
 [ "sys",	"max",	0,	"any",	"max"	]
 [ "sys",	"max",	1,	"any",	""	]
 [ "sys",	"mbr",	0,	"mbr",	"create function mbr(geom geometry) returns mbr external name geom.\"mbr\";"	]
