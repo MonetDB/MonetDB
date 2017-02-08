@@ -36,7 +36,7 @@ Ready.
 #		and lo_quantity < 25;
 % sys.L4 # table_name
 % revenue # name
-% hugeint # type
+% bigint # type
 % 10 # length
 [ 4199635969	]
 
@@ -52,7 +52,7 @@ Ready.
 #		and lo_quantity between 26 and 35;
 % sys.L4 # table_name
 % revenue # name
-% hugeint # type
+% bigint # type
 % 9 # length
 [ 927530712	]
 
@@ -68,7 +68,7 @@ Ready.
 #		and lo_quantity between 36 and 40;
 % sys.L4 # table_name
 % revenue # name
-% hugeint # type
+% bigint # type
 % 9 # length
 [ 213477639	]
 
@@ -85,8 +85,8 @@ Ready.
 #		and s_region = 'AMERICA'
 #	group by d_year, p_brand1
 #	order by d_year, p_brand1;
-% sys.L2,	sys.dwdate,	sys.part # table_name
-% L1,	d_year,	p_brand1 # name
+% sys.L3,	sys.dwdate,	sys.part # table_name
+% L2,	d_year,	p_brand1 # name
 % bigint,	int,	clob # type
 % 8,	4,	9 # length
 [ 35741623,	1992,	"MFGR#1211"	]
@@ -260,8 +260,8 @@ Ready.
 #		and s_region = 'ASIA'
 #	group by d_year, p_brand1
 #	order by d_year, p_brand1;
-% sys.L2,	sys.dwdate,	sys.part # table_name
-% L1,	d_year,	p_brand1 # name
+% sys.L3,	sys.dwdate,	sys.part # table_name
+% L2,	d_year,	p_brand1 # name
 % bigint,	int,	clob # type
 % 8,	4,	9 # length
 [ 10306232,	1992,	"MFGR#2221"	]
@@ -325,8 +325,8 @@ Ready.
 #		and s_region = 'EUROPE'
 #	group by d_year, p_brand1
 #	order by d_year, p_brand1;
-% sys.L2,	sys.dwdate,	sys.part # table_name
-% L1,	d_year,	p_brand1 # name
+% sys.L3,	sys.dwdate,	sys.part # table_name
+% L2,	d_year,	p_brand1 # name
 % bigint,	int,	clob # type
 % 8,	4,	9 # length
 [ 2535744,	1992,	"MFGR#2221"	]
