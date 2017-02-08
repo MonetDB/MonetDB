@@ -1,0 +1,157 @@
+stdout of test 'str2decimal.Bug-6206` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 13:58:24 >  
+# 13:58:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35723" "--set" "mapi_usock=/var/tmp/mtest-5413/.s.monetdb.35723" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 13:58:24 >  
+
+# MonetDB 5 server v11.25.6 (hg id: 4fd4deabce9a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:35723/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5413/.s.monetdb.35723
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 13:58:25 >  
+# 13:58:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5413" "--port=35723"
+# 13:58:25 >  
+
+#select cast(1 as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 1.000	]
+#select cast('1' as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 1.000	]
+#select cast(10 as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 10.000	]
+#select cast('10' as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 10.000	]
+#select cast(100 as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 100.000	]
+#select cast('100' as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 100.000	]
+#select cast(110 as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 110.000	]
+#select cast('110' as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 110.000	]
+#select cast(1000 as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 1000.000	]
+#select cast('1000' as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 1000.000	]
+#select cast(1100 as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 1100.000	]
+#select cast('1100' as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 1100.000	]
+#select cast(1110 as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 1110.000	]
+#select cast('1110' as decimal(7,3));
+% .L2 # table_name
+% L2 # name
+% decimal # type
+% 9 # length
+[ 1110.000	]
+
+# 13:58:25 >  
+# 13:58:25 >  "Done."
+# 13:58:25 >  
+
