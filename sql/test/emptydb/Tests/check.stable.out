@@ -49,7 +49,6 @@ Ready.
 \dSt sys._tables
 \dSt sys.args
 \dSt sys.auths
-\dSt sys.connections
 \dSt sys.db_user_info
 \dSt sys.dependencies
 \dSt sys.dependency_types
@@ -343,7 +342,6 @@ SYSTEM TABLE  sys._columns
 SYSTEM TABLE  sys._tables
 SYSTEM TABLE  sys.args
 SYSTEM TABLE  sys.auths
-SYSTEM TABLE  sys.connections
 SYSTEM TABLE  sys.db_user_info
 SYSTEM TABLE  sys.dependencies
 SYSTEM TABLE  sys.dependency_types
@@ -781,7 +779,6 @@ CREATE TABLE "sys"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHA
 CREATE TABLE "sys"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(2048), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
 CREATE TABLE "sys"."args" ("id" INTEGER, "func_id" INTEGER, "name" VARCHAR(256), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "inout" TINYINT, "number" INTEGER);
 CREATE TABLE "sys"."auths" ("id" INTEGER, "name" VARCHAR(1024), "grantor" INTEGER);
-CREATE TABLE "sys"."connections" ("id" INTEGER, "server" CHAR(1024), "port" INTEGER, "db" CHAR(64), "db_alias" CHAR(1024), "user" CHAR(1024), "password" CHAR(1024), "language" CHAR(1024));
 CREATE TABLE "sys"."db_user_info" ("name" VARCHAR(1024), "fullname" VARCHAR(2048), "default_schema" INTEGER);
 CREATE TABLE "sys"."dependencies" ("id" INTEGER, "depend_id" INTEGER, "depend_type" SMALLINT);
 CREATE TABLE "sys"."dependency_types" ("dependency_type_id" SMALLINT NOT NULL, "dependency_type_name" VARCHAR(15) NOT NULL, CONSTRAINT "dependency_types_dependency_type_id_pkey" PRIMARY KEY ("dependency_type_id"), CONSTRAINT "dependency_types_dependency_type_name_unique" UNIQUE ("dependency_type_name"));
@@ -1207,8 +1204,6 @@ arg16 (id, id1, name1, type1, type_digits1, type_scale1, inout1, id2, name2, typ
 select s.name, f.name, arg16.name1, arg16.type1, arg16.type_digits1, arg16.type_scale1, arg16.inout1, arg16.name2, arg16.type2, arg16.type_digits2, arg16.type_scale2, arg16.inout2, arg16.name3, arg16.type3, arg16.type_digits3, arg16.type_scale3, arg16.inout3, arg16.name4, arg16.type4, arg16.type_digits4, arg16.type_scale4, arg16.inout4, arg16.name5, arg16.type5, arg16.type_digits5, arg16.type_scale5, arg16.inout5, arg16.name6, arg16.type6, arg16.type_digits6, arg16.type_scale6, arg16.inout6, arg16.name7, arg16.type7, arg16.type_digits7, arg16.type_scale7, arg16.inout7, arg16.name8, arg16.type8, arg16.type_digits8, arg16.type_scale8, arg16.inout8, arg16.name9, arg16.type9, arg16.type_digits9, arg16.type_scale9, arg16.inout9, arg16.name10, arg16.type10, arg16.type_digits10, arg16.type_scale10, arg16.inout10, arg16.name11, arg16.type11, arg16.type_digits11, arg16.type_scale11, arg16.inout11, arg16.name12, arg16.type12, arg16.type_digits12, arg16.type_scale12, arg16.inout12, arg16.name13, arg16.type13, arg16.type_digits13, arg16.type_scale13, arg16.inout13, arg16.name14, arg16.type14, arg16.type_digits14, arg16.type_scale14, arg16.inout14, arg16.name15, arg16.type15, arg16.type_digits15, arg16.type_scale15, arg16.inout15 from arg16, sys.schemas s, sys.functions f where s.id = f.schema_id and f.id = arg16.id order by s.name, f.name, arg16.name1, arg16.type1, arg16.type_digits1, arg16.type_scale1, arg16.inout1, arg16.name2, arg16.type2, arg16.type_digits2, arg16.type_scale2, arg16.inout2, arg16.name3, arg16.type3, arg16.type_digits3, arg16.type_scale3, arg16.inout3, arg16.name4, arg16.type4, arg16.type_digits4, arg16.type_scale4, arg16.inout4, arg16.name5, arg16.type5, arg16.type_digits5, arg16.type_scale5, arg16.inout5, arg16.name6, arg16.type6, arg16.type_digits6, arg16.type_scale6, arg16.inout6, arg16.name7, arg16.type7, arg16.type_digits7, arg16.type_scale7, arg16.inout7, arg16.name8, arg16.type8, arg16.type_digits8, arg16.type_scale8, arg16.inout8, arg16.name9, arg16.type9, arg16.type_digits9, arg16.type_scale9, arg16.inout9, arg16.name10, arg16.type10, arg16.type_digits10, arg16.type_scale10, arg16.inout10, arg16.name11, arg16.type11, arg16.type_digits11, arg16.type_scale11, arg16.inout11, arg16.name12, arg16.type12, arg16.type_digits12, arg16.type_scale12, arg16.inout12, arg16.name13, arg16.type13, arg16.type_digits13, arg16.type_scale13, arg16.inout13, arg16.name14, arg16.type14, arg16.type_digits14, arg16.type_scale14, arg16.inout14, arg16.name15, arg16.type15, arg16.type_digits15, arg16.type_scale15, arg16.inout15;
 -- auths
 select name, grantor from sys.auths;
--- connections (expect empty)
-select server, port, db, db_alias, user, password, language from sys.connections order by server, port;
 -- db_user_info
 select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
 -- dependencies
@@ -1284,7 +1279,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"args",	NULL,	0,	true,	0,	0	]
 [ "sys",	"auths",	NULL,	0,	true,	0,	0	]
 [ "sys",	"columns",	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	1,	true,	0,	0	]
-[ "sys",	"connections",	NULL,	0,	true,	0,	0	]
 [ "sys",	"db_user_info",	NULL,	0,	true,	0,	0	]
 [ "sys",	"dependencies",	NULL,	0,	true,	0,	0	]
 [ "sys",	"dependency_types",	NULL,	0,	true,	0,	0	]
@@ -1397,14 +1391,6 @@ drop function pcre_replace(string, string, string, string);
 [ "columns",	"null",	"boolean",	1,	0,	NULL,	true,	7,	NULL	]
 [ "columns",	"number",	"int",	32,	0,	NULL,	true,	8,	NULL	]
 [ "columns",	"storage",	"varchar",	2048,	0,	NULL,	true,	9,	NULL	]
-[ "connections",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "connections",	"server",	"char",	1024,	0,	NULL,	true,	1,	NULL	]
-[ "connections",	"port",	"int",	32,	0,	NULL,	true,	2,	NULL	]
-[ "connections",	"db",	"char",	64,	0,	NULL,	true,	3,	NULL	]
-[ "connections",	"db_alias",	"char",	1024,	0,	NULL,	true,	4,	NULL	]
-[ "connections",	"user",	"char",	1024,	0,	NULL,	true,	5,	NULL	]
-[ "connections",	"password",	"char",	1024,	0,	NULL,	true,	6,	NULL	]
-[ "connections",	"language",	"char",	1024,	0,	NULL,	true,	7,	NULL	]
 [ "db_user_info",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "db_user_info",	"fullname",	"varchar",	2048,	0,	NULL,	true,	1,	NULL	]
 [ "db_user_info",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL	]
@@ -4846,11 +4832,6 @@ drop function pcre_replace(string, string, string, string);
 [ "public",	0	]
 [ "sysadmin",	0	]
 [ "monetdb",	0	]
-#select server, port, db, db_alias, user, password, language from sys.connections order by server, port;
-% sys.connections,	sys.connections,	sys.connections,	sys.connections,	.L6,	sys.connections,	sys.connections # table_name
-% server,	port,	db,	db_alias,	L6,	password,	language # name
-% char,	int,	char,	char,	varchar,	char,	char # type
-% 1024,	1,	64,	1024,	0,	1024,	1024 # length
 #select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
 % .u,	.u,	.s # table_name
 % name,	fullname,	name # name
@@ -5418,7 +5399,6 @@ drop function pcre_replace(string, string, string, string);
 [ "args",	"public",	1,	NULL,	0	]
 [ "auths",	"public",	1,	NULL,	0	]
 [ "columns",	"public",	1,	NULL,	0	]
-[ "connections",	"public",	1,	NULL,	0	]
 [ "dependencies",	"public",	1,	NULL,	0	]
 [ "functions",	"public",	1,	NULL,	0	]
 [ "geometry_columns",	"public",	1,	"monetdb",	0	]

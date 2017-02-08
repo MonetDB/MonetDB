@@ -10,7 +10,6 @@
 #include "sql_types.h"
 #include "sql_storage.h"
 #include "store_dependency.h"
-#include "store_connections.h"
 #include "store_sequence.h"
 
 #include <bat/bat_utils.h>
@@ -1461,16 +1460,6 @@ store_load(void) {
 	bootstrap_create_column(tr, t, "id", "int", 32);
 	bootstrap_create_column(tr, t, "depend_id", "int", 32);
 	bootstrap_create_column(tr, t, "depend_type", "smallint", 16);
-
-	t = bootstrap_create_table(tr, s, "connections");
-	bootstrap_create_column(tr, t, "id", "int", 32);
-	bootstrap_create_column(tr, t, "server", "char", 1024);
-	bootstrap_create_column(tr, t, "port", "int", 32);
-	bootstrap_create_column(tr, t, "db", "char", 64);
-	bootstrap_create_column(tr, t, "db_alias", "char", 1024);
-	bootstrap_create_column(tr, t, "user", "char", 1024);
-	bootstrap_create_column(tr, t, "password", "char", 1024);
-	bootstrap_create_column(tr, t, "language", "char", 1024);
 
 	while(s) {
 		t = bootstrap_create_table(tr, s, "_tables");

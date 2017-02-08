@@ -199,14 +199,14 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 #ifdef HAVE_HGE
 		if (have_hge) {
 			localtype = TYPE_hge;
-			if (digits > 128)
-				digits = 128;
+			if (digits >= 128)
+				digits = 127;
 		} else
 #endif
 		{
 			localtype = TYPE_lng;
-			if (digits > 64)
-				digits = 64;
+			if (digits >= 64)
+				digits = 63;
 		}
 	}
 
@@ -214,7 +214,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 		sql_type *t = n->data;
 
 		if (localtypes_cmp(t->localtype, localtype)) {
-			if ((digits && t->digits >= digits) || (digits == t->digits)) {
+			if ((digits && t->digits > digits) || (!digits && digits == t->digits)) {
 				sql_init_subtype(r, t, digits, 0);
 				return r;
 			}
@@ -224,7 +224,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 					break;
 				}
 				n = m;
-				if ((digits && t->digits >= digits) || (digits == t->digits)) {
+				if ((digits && t->digits > digits) || (!digits && digits == t->digits)) {
 					sql_init_subtype(r, t, digits, 0);
 					return r;
 				}

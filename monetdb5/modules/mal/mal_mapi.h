@@ -28,7 +28,6 @@
 #define SERVERPORT		50000
 #define SERVERMAXUSERS 		5
 
-mal_export str SERVERlisten(int *Port, str *Usockfile, int *Maxusers);
 mal_export str SERVERlisten_default(int *ret);
 mal_export str SERVERlisten_port(int *ret, int *pid);
 mal_export str SERVERlisten_usock(int *ret, str *usock);
