@@ -594,8 +594,8 @@ MALparser(Client c)
 	c->yycur = 0;
 
 	/* check for unfinished blocks */
-	//if (c->blkmode)
-		//return MAL_SUCCEED;
+	if (c->blkmode)
+		return MAL_SUCCEED;
 	/* empty files should be skipped as well */
 	if (c->curprg->def->stop == 1)
 		return MAL_SUCCEED;
@@ -640,8 +640,8 @@ MALengine(Client c)
 	MalBlkRecord oldstate = *c->curprg->def;
 	oldstate.stop = 0;
 
-	//if (c->blkmode)
-		//return MAL_SUCCEED;
+	if (c->blkmode)
+		return MAL_SUCCEED;
 	prg = c->curprg;
 	if (prg == NULL)
 		throw(SYNTAX, "mal.engine", SYNTAX_SIGNATURE);
