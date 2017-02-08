@@ -60,11 +60,11 @@ function user.s8_1():void;
     X_33 := bat.new(nil:int);
     X_42 := bat.append(X_33,32:int);
     X_52 := bat.append(X_42,128:int);
-    X_60 := bat.append(X_52,128:int);
+    X_60 := bat.append(X_52,127:int);
     X_35 := bat.new(nil:int);
     X_44 := bat.append(X_35,0:int);
     X_54 := bat.append(X_44,0:int);
-    X_61 := bat.append(X_54,0:int);
+    X_62 := bat.append(X_54,0:int);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","dbg");
     X_7:bat[:int] := sql.bind(X_3,"sys","dbg","a",0:int);
@@ -77,7 +77,7 @@ function user.s8_1():void;
     X_15 := bat.setKey(X_14,true);
     X_22:bat[:hge] := batcalc./(X_20,2:bte);
     X_26:bat[:hge] := batcalc.*(X_22,2:bte);
-    sql.resultSet(X_55,X_57,X_59,X_60,X_61,X_15,X_20,X_26);
+    sql.resultSet(X_55,X_57,X_59,X_60,X_62,X_15,X_20,X_26);
 end user.s8_1;
 #inline               actions= 0 time=3 usec 
 #candidates           actions= 1 time=22 usec 
@@ -149,11 +149,11 @@ function user.s20_1():void;
     X_33 := bat.new(nil:int);
     X_42 := bat.append(X_33,32:int);
     X_52 := bat.append(X_42,128:int);
-    X_60 := bat.append(X_52,128:int);
+    X_60 := bat.append(X_52,127:int);
     X_35 := bat.new(nil:int);
     X_44 := bat.append(X_35,0:int);
     X_54 := bat.append(X_44,0:int);
-    X_61 := bat.append(X_54,0:int);
+    X_62 := bat.append(X_54,0:int);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","dbg");
     X_7:bat[:int] := sql.bind(X_3,"sys","dbg","a",0:int);
@@ -166,7 +166,7 @@ function user.s20_1():void;
     X_15 := bat.setKey(X_14,true);
     X_22:bat[:hge] := batcalc./(X_20,2:bte);
     X_26:bat[:hge] := batcalc.*(X_22,2:bte);
-    sql.resultSet(X_55,X_57,X_59,X_60,X_61,X_15,X_20,X_26);
+    sql.resultSet(X_55,X_57,X_59,X_60,X_62,X_15,X_20,X_26);
 end user.s20_1;
 #inline               actions= 0 time=2 usec 
 #candidates           actions= 1 time=20 usec 

@@ -36,7 +36,7 @@ Ready.
 #		and lo_quantity < 25;
 % sys.L4 # table_name
 % revenue # name
-% bigint # type
+% hugeint # type
 % 10 # length
 [ 4199635969	]
 
@@ -52,7 +52,7 @@ Ready.
 #		and lo_quantity between 26 and 35;
 % sys.L4 # table_name
 % revenue # name
-% bigint # type
+% hugeint # type
 % 9 # length
 [ 927530712	]
 
@@ -68,7 +68,7 @@ Ready.
 #		and lo_quantity between 36 and 40;
 % sys.L4 # table_name
 % revenue # name
-% bigint # type
+% hugeint # type
 % 9 # length
 [ 213477639	]
 

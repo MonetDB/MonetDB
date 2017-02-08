@@ -221,9 +221,9 @@ function user.s12_1():void;
     X_3 := sql.mvc();
     # querylog.define("explain set e = d + a;","default_pipe")
     X_8:hge := sql.getVariable(X_3,"d");
-    X_11:hge := sql.getVariable(X_3,"a");
-    X_12:hge := calc.+(X_8,X_11);
-    sql.setVariable(X_3,"e",X_12);
+    X_12:hge := sql.getVariable(X_3,"a");
+    X_14:hge := calc.+(X_8,X_12);
+    sql.setVariable(X_3,"e",X_14);
     sql.exportOperation();
 end user.s12_1;
 #inline               actions= 0 time=3 usec 
