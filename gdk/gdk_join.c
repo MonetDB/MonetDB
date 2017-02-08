@@ -3191,69 +3191,69 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 			}
 			lo = lstart++ + l->hseqbase;
 		}
-		if (cmp(vl, nil) == 0)
-			continue;
 		nr = 0;
-		p = rcand;
-		n = rstart;
-		for (;;) {
-			if (rcand) {
-				if (p == rcandend)
-					break;
-				ro = *p++;
-				vr = VALUE(r, ro - r->hseqbase);
-			} else {
-				if (n == rend)
-					break;
-				if (rvals) {
-					vr = VALUE(r, n);
-					if (roff != 0) {
-						rval = (oid) (*(const oid *)vr + roff);
+		if (cmp(vl, nil) != 0) {
+			p = rcand;
+			n = rstart;
+			for (;;) {
+				if (rcand) {
+					if (p == rcandend)
+						break;
+					ro = *p++;
+					vr = VALUE(r, ro - r->hseqbase);
+				} else {
+					if (n == rend)
+						break;
+					if (rvals) {
+						vr = VALUE(r, n);
+						if (roff != 0) {
+							rval = (oid) (*(const oid *)vr + roff);
+							vr = (const char *) &rval;
+						}
+					} else {
+						rval = n + r->tseqbase;
 						vr = (const char *) &rval;
 					}
-				} else {
-					rval = n + r->tseqbase;
-					vr = (const char *) &rval;
+					ro = n++ + r->hseqbase;
 				}
-				ro = n++ + r->hseqbase;
-			}
-			if (cmp(vr, nil) == 0)
-				continue;
-			c = cmp(vl, vr);
-			if (!((opcode & MASK_LT && c < 0) ||
-			      (opcode & MASK_GT && c > 0) ||
-			      (opcode & MASK_EQ && c == 0)))
-				continue;
-			if (BUNlast(r1) == BATcapacity(r1)) {
-				newcap = BATgrows(r1);
-				if (newcap > maxsize)
-					newcap = maxsize;
-				BATsetcount(r1, BATcount(r1));
-				BATsetcount(r2, BATcount(r2));
-				if (BATextend(r1, newcap) != GDK_SUCCEED ||
-				    BATextend(r2, newcap) != GDK_SUCCEED)
-					goto bailout;
-				assert(BATcapacity(r1) == BATcapacity(r2));
-			}
-			if (BATcount(r2) > 0) {
-				if (lastr + 1 != ro)
-					r2->tdense = 0;
-				if (nr == 0) {
-					r1->trevsorted = 0;
-					if (lastr > ro) {
-						r2->tsorted = 0;
-						r2->tkey = 0;
-					} else if (lastr < ro) {
-						r2->trevsorted = 0;
-					} else {
-						r2->tkey = 0;
+				if (cmp(vr, nil) == 0)
+					continue;
+				c = cmp(vl, vr);
+				if (!((opcode & MASK_LT && c < 0) ||
+				      (opcode & MASK_GT && c > 0) ||
+				      (opcode & MASK_EQ && c == 0)))
+					continue;
+				if (BUNlast(r1) == BATcapacity(r1)) {
+					newcap = BATgrows(r1);
+					if (newcap > maxsize)
+						newcap = maxsize;
+					BATsetcount(r1, BATcount(r1));
+					BATsetcount(r2, BATcount(r2));
+					if (BATextend(r1, newcap) != GDK_SUCCEED ||
+					    BATextend(r2, newcap) != GDK_SUCCEED)
+						goto bailout;
+					assert(BATcapacity(r1) == BATcapacity(r2));
+				}
+				if (BATcount(r2) > 0) {
+					if (lastr + 1 != ro)
+						r2->tdense = 0;
+					if (nr == 0) {
+						r1->trevsorted = 0;
+						if (lastr > ro) {
+							r2->tsorted = 0;
+							r2->tkey = 0;
+						} else if (lastr < ro) {
+							r2->trevsorted = 0;
+						} else {
+							r2->tkey = 0;
+						}
 					}
 				}
+				APPEND(r1, lo);
+				APPEND(r2, ro);
+				lastr = ro;
+				nr++;
 			}
-			APPEND(r1, lo);
-			APPEND(r2, ro);
-			lastr = ro;
-			nr++;
 		}
 		if (nr > 1) {
 			r1->tkey = 0;
