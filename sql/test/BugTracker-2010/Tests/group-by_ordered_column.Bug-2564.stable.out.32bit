@@ -40,17 +40,12 @@ Ready.
 % clob # type
 % 116 # length
 function user.s10_1():void;
-    X_0:void := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",24:int);
+    X_0:void := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",19:int);
     X_43 := bat.new(nil:str);
-    X_50 := bat.append(X_43,"sys.L3");
-    X_45 := bat.new(nil:str);
-    X_52 := bat.append(X_45,"L2");
-    X_46 := bat.new(nil:str);
-    X_54 := bat.append(X_46,"bigint");
-    X_47 := bat.new(nil:int);
-    X_56 := bat.append(X_47,64:int);
     X_49 := bat.new(nil:int);
-    X_58 := bat.append(X_49,0:int);
+    X_47 := bat.new(nil:int);
+    X_46 := bat.new(nil:str);
+    X_45 := bat.new(nil:str);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","t2564");
     X_7:bat[:int] := sql.bind(X_3,"sys","t2564","c3",0:int);
@@ -63,6 +58,11 @@ function user.s10_1():void;
     (X_34,C1_35,r2_35) := group.subgroup(X_23,X_31);
     (X_37,C1_38,r2_38) := group.subgroupdone(X_16,X_34);
     X_40:bat[:lng] := aggr.subcount(X_37,X_37,C1_38,false);
+    X_50 := bat.append(X_43,"sys.L3");
+    X_52 := bat.append(X_45,"L2");
+    X_54 := bat.append(X_46,"bigint");
+    X_56 := bat.append(X_47,64:int);
+    X_58 := bat.append(X_49,0:int);
     sql.resultSet(X_50,X_52,X_54,X_56,X_58,X_40);
 end user.s10_1;
 #inline               actions= 0 time=1 usec 
