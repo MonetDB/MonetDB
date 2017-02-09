@@ -1,3 +1,5 @@
+set optimizer = 'sequential_pipe';
+
 create table test(value int);
 insert into test values (1), (2), (3);
 

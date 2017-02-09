@@ -46,10 +46,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 194 # length
-function user.s6_1():void;
-    X_0:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",27:int);
-barrier X_82 := language.dataflow();
+% 197 # length
+function user.s8_1():void;
+    X_0:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","sequential_pipe",21:int);
     X_37 := bat.new(nil:str);
     X_43 := bat.new(nil:int);
     X_41 := bat.new(nil:int);
@@ -69,11 +68,6 @@ barrier X_82 := language.dataflow();
     X_31 := algebra.projection(C_4,X_29);
     X_35 := algebra.projection(X_22,X_31);
     X_32 := algebra.projection(r1_23,X_31);
-    language.pass(X_10);
-    language.pass(X_10);
-    language.pass(C_4);
-    language.pass(X_31);
-exit X_82;
     X_44 := bat.append(X_37,"sys.L2");
     X_46 := bat.append(X_39,"id1");
     X_48 := bat.append(X_40,"int");
@@ -85,7 +79,7 @@ exit X_82;
     X_59 := bat.append(X_50,32:int);
     X_60 := bat.append(X_52,0:int);
     sql.resultSet(X_54,X_56,X_58,X_59,X_60,X_32,X_35);
-end user.s6_1;
+end user.s8_1;
 #inline               actions= 0 time=3 usec 
 #remap                actions= 1 time=31 usec 
 #costmodel            actions= 1 time=2 usec 
