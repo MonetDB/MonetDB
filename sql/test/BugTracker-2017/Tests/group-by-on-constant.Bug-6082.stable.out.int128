@@ -29,7 +29,7 @@ Ready.
 #select 1 + 1 as bar, sum(b) from foo group by bar;
 % .L2,	sys.L5 # table_name
 % bar,	L4 # name
-% tinyint,	bigint # type
+% tinyint,	hugeint # type
 % 1,	1 # length
 #rollback;
 

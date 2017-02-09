@@ -398,6 +398,10 @@ hasSideEffects(InstrPtr p, int strict)
 {
 	if( getFunctionId(p) == NULL) return FALSE;
 
+	/* update instructions have side effects */
+	if (isUpdateInstruction(p))
+		return TRUE;
+
 	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
 	     (getFunctionId(p) == setAccessRef ||
 	 	  getFunctionId(p) == setWriteModeRef ||
@@ -442,10 +446,6 @@ hasSideEffects(InstrPtr p, int strict)
 		if (getFunctionId(p) == zero_or_oneRef) return FALSE;
 		if (getFunctionId(p) == mvcRef) return FALSE;
 		if (getFunctionId(p) == singleRef) return FALSE;
-		/* the update instructions for SQL has side effects.
-		   whether this is relevant should be explicitly checked
-		   in the environment of the call */
-		if (isUpdateInstruction(p)) return TRUE;
 		return TRUE;
 	}
 	if( getModuleId(p) == languageRef){
