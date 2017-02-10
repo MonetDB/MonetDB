@@ -187,7 +187,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
     } else if (PyInt_CheckExact(ptr) || PyBool_Check(ptr)) {		\
         *value = (type)((PyIntObject*)ptr)->ob_ival;			\
     } else if (PyFloat_CheckExact(ptr)) {				\
-        *value = (type) ((PyFloatObject*)ptr)->ob_fval;			\
+        *value = isnan(((PyFloatObject*)ptr)->ob_fval) ? type##_nil : (type) ((PyFloatObject*)ptr)->ob_fval; \
     } else if (PyString_CheckExact(ptr)) {				\
         return str_to_##type(((PyStringObject*)ptr)->ob_sval, 0, value); \
     }  else if (PyByteArray_CheckExact(ptr)) {				\
@@ -238,7 +238,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
     } else if (PyBool_Check(ptr)) {					\
         *value = ptr == Py_True ? 1 : 0;				\
     } else if (PyFloat_CheckExact(ptr)) {				\
-        *value = (type) ((PyFloatObject*)ptr)->ob_fval;			\
+        *value = isnan(((PyFloatObject*)ptr)->ob_fval) ? type##_nil : (type) ((PyFloatObject*)ptr)->ob_fval; \
     } else if (PyUnicode_CheckExact(ptr)) {				\
         return str_to_##type(PyUnicode_AsUTF8(ptr), 0, value);		\
     }  else if (PyByteArray_CheckExact(ptr)) {				\
