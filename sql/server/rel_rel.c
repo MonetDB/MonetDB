@@ -294,6 +294,7 @@ rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, lis
 	if (l && r)
 		rel->nrcols = l->nrcols + r->nrcols;
 	rel->exps = exps;
+	set_processed(rel);
 	return rel;
 }
 
@@ -1109,6 +1110,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 	set_processed(r);
 	rel = rel_setop(sql->sa, l, r, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
+	set_processed(rel);
 	rel = rel_distinct(rel);
 	if (exps_card(l->exps) <= CARD_AGGR &&
 	    exps_card(r->exps) <= CARD_AGGR)
