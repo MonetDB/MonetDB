@@ -1,7 +1,7 @@
 shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
-HAVE_LIBZ?heapextend.Bug-6134
+#HAVE_LIBZ?heapextend.Bug-6134
 incorrect_error.Bug-6141
 empty-interval.Bug-6184
 crash_in_null_cast.Bug-6186
@@ -19,3 +19,4 @@ rel2bin_project-assert.Bug-6080
 str2decimal.Bug-6202
 integer_addition_overflow.Bug-6205
 dce_bug-6177
+crash_on_NULL_ptr.Bug-6130
