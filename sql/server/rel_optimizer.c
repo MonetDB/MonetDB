@@ -5637,8 +5637,14 @@ exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 		int len = list_length(rel->exps), i;
 		sql_exp **exps = SA_NEW_ARRAY(sa, sql_exp*, len);
 
-		for (n=rel->exps->h, i = 0; n; n = n->next, i++) 
-			exps[i] = n->data;
+		for (n=rel->exps->h, i = 0; n; n = n->next, i++) {
+			sql_exp *e = exps[i] = n->data;
+
+			nr += e->used;
+		}
+
+		if (!nr && is_project(rel->op)) /* project atleast one column */
+			exps[0]->used = 1; 
 
 		for (i = len-1; i >= 0; i--) {
 			sql_exp *e = exps[i];
