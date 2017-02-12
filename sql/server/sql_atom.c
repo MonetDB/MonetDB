@@ -1196,18 +1196,9 @@ atom_cmp(atom *a1, atom *a2)
 atom * 
 atom_add(atom *a1, atom *a2)
 {
-//	ValRecord res;
-
 	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype) {
 		return NULL;
 	}
-	/*
-	if (VARcalcadd(&res, &a1->data, &a2->data, 1) == GDK_FAIL) {
-
-		return NULL;
-	}
-	a1->data = res;
-	*/
 	switch(a1->tpe.type->localtype) {
 	case TYPE_bte:
 			a1->data.val.btval += a2->data.val.btval;
