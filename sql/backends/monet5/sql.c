@@ -282,6 +282,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	sql_table *nt = NULL;
 	node *n;
 
+	(void)tname;
 	if (STORE_READONLY)
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
