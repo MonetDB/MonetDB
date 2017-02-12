@@ -5304,6 +5304,7 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 	set_processed(rv);
 	rel = rel_setop(sql->sa, lv, rv, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
+	set_processed(rel);
 	if (!all)
 		rel = rel_distinct(rel);
 	return rel;
