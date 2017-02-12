@@ -18,3 +18,4 @@ group-by-on-constant.Bug-6082
 rel2bin_project-assert.Bug-6080
 str2decimal.Bug-6202
 integer_addition_overflow.Bug-6205
+dce_bug-6177
