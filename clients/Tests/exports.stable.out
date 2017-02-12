@@ -2197,6 +2197,7 @@ int isOptimizerPipe(str name);
 int isOrderby(InstrPtr q);
 int isProcedure(MalBlkPtr mb, InstrPtr p);
 int isSample(InstrPtr q);
+int isSealedFunction(InstrPtr q);
 int isSelect(InstrPtr q);
 int isSideEffectFree(MalBlkPtr mb);
 int isSlice(InstrPtr q);
