@@ -31,8 +31,8 @@ stderr of test 'columns` in directory 'sql/test/copy` itself:
 MAPI  = (monetdb) /var/tmp/mtest-15100/.s.monetdb.36199
 QUERY = copy 3 records into tbl (i, d) from stdin delimiters ',','\n';
         1,2.0
-ERROR = !Failed to import table Column value 2 missing
-MAPI  = (monetdb) /var/tmp/mtest-15100/.s.monetdb.36199
+ERROR = !Failed to import table 'tbl', Column value 2 missing
+MAPI  = (monetdb) /var/tmp/mtest-25850/.s.monetdb.38004
 QUERY = 2,2.1
         3,2.2
         select * from tbl;
