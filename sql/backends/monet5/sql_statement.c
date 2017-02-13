@@ -1418,7 +1418,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if ((op2->nrcols > 0 || op3->nrcols) && (type == st_uselect2)) {
+	if ((op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
 		int k, symmetric = cmp&CMP_SYMMETRIC;
 		const char *mod = calcRef;
 		const char *OP1 = "<", *OP2 = "<";
@@ -2629,7 +2629,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		return NULL;
 	mod = sql_func_mod(f->func);
 	fimp = sql_func_imp(f->func);
-	if (o && o->nrcols) {
+	if (o && o->nrcols > 0) {
 		sql_subtype *res = f->res->h->data;
 		fimp = convertMultiplexFcn(fimp);
 		q = NULL;

@@ -290,72 +290,72 @@ Ready.
 #--
 #-- variations on unary minus parsing
 #SELECT -2+3 AS one;
-% .L # table_name
+% .L2 # table_name
 % one # name
 % tinyint # type
 % 1 # length
 [ 1 ]
 
 #SELECT 4-2 AS two;
-% .L # table_name
+% .L2 # table_name
 % two # name
 % tinyint # type
 % 1 # length
 [ 2 ]
 
 #SELECT 2- -1 AS three;
-% .L # table_name
+% .L2 # table_name
 % three # name
 % tinyint # type
 % 1 # length
 [ 3 ]
 
 #SELECT 2 - -2 AS four;
-% .L # table_name
+% .L2 # table_name
 % four # name
 % tinyint # type
 % 1 # length
 [ 4 ]
 #SELECT cast('2' as smallint) * cast('2' as smallint) = cast('16' as smallint) / cast('4' as smallint) AS "true";
-% .L4 # table_name
+% .L6 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT cast('2' as integer) * cast('2' as smallint) = cast('16' as smallint) / cast('4' as integer) AS "true";
-% .L4 # table_name
+% .L6 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT cast('2' as smallint) * cast('2' as integer) = cast('16' as integer) / cast('4' as smallint) AS "true";
-% .L4 # table_name
+% .L6 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT cast('1000' as integer)  < cast('999' as integer) AS "false";
-% .L2 # table_name
+% .L4 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 AS ten;
-% .L # table_name
+% .L2 # table_name
 % ten # name
 % bigint # type
 % 2 # length
 [ 10 ]
 
 #SELECT 2 + 2 / 2 AS three;
-% .L # table_name
+% .L2 # table_name
 % three # name
 % smallint # type
 % 1 # length
 [ 3 ]
 
 #SELECT (2 + 2) / 2 AS two;
-% .L # table_name
+% .L2 # table_name
 % two # name
 % tinyint # type
 % 1 # length

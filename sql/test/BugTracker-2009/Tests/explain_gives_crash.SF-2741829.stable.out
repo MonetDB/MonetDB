@@ -36,21 +36,20 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 121 # length
+% 122 # length
 function user.s8_1():void;
-    X_58:void := querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe",16:int);
-# querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe")
-    sql.catalog(29:int,"sys",nil:ptr,0:int);
-    X_39 := bat.new(nil:int);
-    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);
-    X_45 := algebra.projection(C_42,X_39);
-    (X_46,X_47,X_48) := group.groupdone(X_45);
-    X_49:lng := aggr.sum(X_48);
-    X_53 := aggr.count(X_48);
-    X_51:bit := calc.isnil(X_49);
-    X_52:lng := calc.ifthenelse(X_51,0:lng,X_49);
-    X_54:bit := calc.!=(X_53,X_52);
-    sql.assert(X_54,"UPDATE: UNIQUE constraint 'blabla.dada' violated");
+    X_1:void := querylog.define("explain alter table blabla add constraint dada unique (id);", "sequential_pipe", 40:int);
+    sqlcatalog.alter_table("sys", "blabla", nil:ptr, 0:int);
+    X_40 := bat.new(nil:int);
+    C_43 := algebra.select(X_40, nil:int, nil:int, true, true, true);
+    X_46 := algebra.projection(C_43, X_40);
+    (X_47, C_48, X_49) := group.groupdone(X_46);
+    X_50:lng := aggr.sum(X_49);
+    X_54 := aggr.count(X_49);
+    X_52:bit := calc.isnil(X_50);
+    X_53:lng := calc.ifthenelse(X_52, 0:lng, X_50);
+    X_55:bit := calc.!=(X_54, X_53);
+    sql.assert(X_55, "UPDATE: UNIQUE constraint 'blabla.dada' violated");
     sql.exportOperation();
 end user.s8_1;
 #inline               actions= 0 time=1 usec 
@@ -78,21 +77,20 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 121 # length
+% 122 # length
 function user.s10_1():void;
-    X_58:void := querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe",16:int);
-# querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe")
-    sql.catalog(29:int,"sys",nil:ptr,0:int);
-    X_39 := bat.new(nil:int);
-    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);
-    X_45 := algebra.projection(C_42,X_39);
-    (X_46,X_47,X_48) := group.groupdone(X_45);
-    X_49:lng := aggr.sum(X_48);
-    X_53 := aggr.count(X_48);
-    X_51:bit := calc.isnil(X_49);
-    X_52:lng := calc.ifthenelse(X_51,0:lng,X_49);
-    X_54:bit := calc.!=(X_53,X_52);
-    sql.assert(X_54,"UPDATE: UNIQUE constraint 'blabla.dada' violated");
+    X_1:void := querylog.define("explain alter table blabla add constraint dada unique (id);", "sequential_pipe", 40:int);
+    sqlcatalog.alter_table("sys", "blabla", nil:ptr, 0:int);
+    X_40 := bat.new(nil:int);
+    C_43 := algebra.select(X_40, nil:int, nil:int, true, true, true);
+    X_46 := algebra.projection(C_43, X_40);
+    (X_47, C_48, X_49) := group.groupdone(X_46);
+    X_50:lng := aggr.sum(X_49);
+    X_54 := aggr.count(X_49);
+    X_52:bit := calc.isnil(X_50);
+    X_53:lng := calc.ifthenelse(X_52, 0:lng, X_50);
+    X_55:bit := calc.!=(X_54, X_53);
+    sql.assert(X_55, "UPDATE: UNIQUE constraint 'blabla.dada' violated");
     sql.exportOperation();
 end user.s10_1;
 #inline               actions= 0 time=1 usec 
@@ -132,21 +130,20 @@ end user.s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 121 # length
+% 122 # length
 function user.s18_1():void;
-    X_58:void := querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe",16:int);
-# querylog.define("explain alter table blabla add constraint dada unique (id);","sequential_pipe")
-    sql.catalog(29:int,"sys",nil:ptr,0:int);
-    X_39 := bat.new(nil:int);
-    C_42 := algebra.subselect(X_39,nil:int,nil:int,true,true,true);
-    X_45 := algebra.projection(C_42,X_39);
-    (X_46,X_47,X_48) := group.groupdone(X_45);
-    X_49:lng := aggr.sum(X_48);
-    X_53 := aggr.count(X_48);
-    X_51:bit := calc.isnil(X_49);
-    X_52:lng := calc.ifthenelse(X_51,0:lng,X_49);
-    X_54:bit := calc.!=(X_53,X_52);
-    sql.assert(X_54,"UPDATE: UNIQUE constraint 'blabla.dada' violated");
+    X_1:void := querylog.define("explain alter table blabla add constraint dada unique (id);", "sequential_pipe", 40:int);
+    sqlcatalog.alter_table("sys", "blabla", nil:ptr, 0:int);
+    X_40 := bat.new(nil:int);
+    C_43 := algebra.select(X_40, nil:int, nil:int, true, true, true);
+    X_46 := algebra.projection(C_43, X_40);
+    (X_47, C_48, X_49) := group.groupdone(X_46);
+    X_50:lng := aggr.sum(X_49);
+    X_54 := aggr.count(X_49);
+    X_52:bit := calc.isnil(X_50);
+    X_53:lng := calc.ifthenelse(X_52, 0:lng, X_50);
+    X_55:bit := calc.!=(X_54, X_53);
+    sql.assert(X_55, "UPDATE: UNIQUE constraint 'blabla.dada' violated");
     sql.exportOperation();
 end user.s18_1;
 #inline               actions= 0 time=1 usec 

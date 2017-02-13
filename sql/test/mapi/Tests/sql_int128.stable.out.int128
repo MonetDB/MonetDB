@@ -138,12 +138,12 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 81 # length
+% 82 # length
 function user.s8_1():void;
-    X_1:void := querylog.define("explain set c = a * b;", "default_pipe", 9:int);
-barrier X_57 := language.dataflow();
+    X_1:void := querylog.define("explain set c = a * b;", "default_pipe", 10:int);
+barrier X_58 := language.dataflow();
     X_4 := sql.mvc();
-exit X_57;
+exit X_58;
     X_5:hge := sql.getVariable(X_4, "a");
     X_7:hge := sql.getVariable(X_4, "b");
     X_9:hge := calc.*(X_5, X_7);
@@ -181,12 +181,12 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 81 # length
+% 82 # length
 function user.s10_1():void;
-    X_1:void := querylog.define("explain set d = c * b;", "default_pipe", 9:int);
-barrier X_57 := language.dataflow();
+    X_1:void := querylog.define("explain set d = c * b;", "default_pipe", 10:int);
+barrier X_58 := language.dataflow();
     X_4 := sql.mvc();
-exit X_57;
+exit X_58;
     X_5:hge := sql.getVariable(X_4, "c");
     X_7:hge := sql.getVariable(X_4, "b");
     X_9:hge := calc.*(X_5, X_7);
@@ -224,16 +224,16 @@ end user.s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 81 # length
+% 82 # length
 function user.s12_1():void;
-    X_1:void := querylog.define("explain set e = d + a;", "default_pipe", 9:int);
-barrier X_57 := language.dataflow();
+    X_1:void := querylog.define("explain set e = d + a;", "default_pipe", 11:int);
+barrier X_59 := language.dataflow();
     X_4 := sql.mvc();
-exit X_57;
+exit X_59;
     X_5:hge := sql.getVariable(X_4, "d");
-    X_7:hge := sql.getVariable(X_4, "a");
-    X_9:hge := calc.+(X_5, X_7);
-    sql.setVariable(X_4, "e", X_9);
+    X_8:hge := sql.getVariable(X_4, "a");
+    X_11:hge := calc.+(X_5, X_8);
+    sql.setVariable(X_4, "e", X_11);
     sql.exportOperation();
 end user.s12_1;
 #inline               actions= 0 time=3 usec 

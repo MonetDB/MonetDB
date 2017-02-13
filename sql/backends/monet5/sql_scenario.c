@@ -251,10 +251,12 @@ SQLinit(void)
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
 	GDKregister(sqllogthread);
-	if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
-		throw(SQL, "SQLinit", "Starting idle manager failed");
+	if (!(SQLdebug&1024)) {
+		if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
+			throw(SQL, "SQLinit", "Starting idle manager failed");
+		}
+		GDKregister(idlethread);
 	}
-	GDKregister(idlethread);
 	return MAL_SUCCEED;
 }
 

@@ -148,6 +148,10 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 		snprintf(t,(len-(t-base)), "unsafe ");
 		advance(t, base, len);
 	}
+	if( mb->sealedProp){
+		snprintf(t,(len-(t-base)), "sealed ");
+		advance(t, base, len);
+	}
 	snprintf(t,(len-(t-base)), "%s ",  operatorName(p->token));
 
 	advance(t, base, len);

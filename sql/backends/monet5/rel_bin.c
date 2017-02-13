@@ -2632,6 +2632,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				assert(0);
 				return NULL;
 			}
+			if (!gbcol->nrcols)
+				gbcol = stmt_const(be, bin_first_column(be, sub), gbcol);
 			groupby = stmt_group(be, gbcol, grp, ext, cnt, !en->next);
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);

@@ -27,6 +27,7 @@ mal_export void showOptimizerHistory(void);
 mal_export int optimizerIsApplied(MalBlkPtr mb, str name);
 mal_export int isUnsafeInstruction(InstrPtr q);
 mal_export int isUnsafeFunction(InstrPtr q);
+mal_export int isSealedFunction(InstrPtr q);
 mal_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 mal_export int isDependent(InstrPtr p, InstrPtr q);
 mal_export int safetyBarrier(InstrPtr p, InstrPtr q);
