@@ -201,6 +201,7 @@ package, and most likely also %{name}-SQL-server5, as well as one or
 more client packages.
 
 %files
+%license COPYING
 %defattr(-,root,root)
 %{_libdir}/libbat.so.*
 
@@ -242,6 +243,7 @@ This package contains a shared library (libstream) which is needed by
 various other components.
 
 %files stream
+%license COPYING
 %defattr(-,root,root)
 %{_libdir}/libstream.so.*
 
@@ -289,6 +291,7 @@ SQL database so that it can be loaded back later.  If you want to use
 MonetDB, you will very likely need this package.
 
 %files client
+%license COPYING
 %defattr(-,root,root)
 %{_bindir}/mclient
 %{_bindir}/msqldump
@@ -375,6 +378,7 @@ odbcinst -u -d -n MonetDB
 fi
 
 %files client-odbc
+%license COPYING
 %defattr(-,root,root)
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
@@ -854,6 +858,7 @@ MonetDB packages.  You probably don't need this, unless you are a
 developer.  If you do want to test, install %{name}-testing-python.
 
 %files testing
+%license COPYING
 %defattr(-,root,root)
 %{_bindir}/Mdiff
 %{_bindir}/MkillUsers
