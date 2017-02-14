@@ -24,6 +24,37 @@
 
 // This #define creates a new BAT with the internal data and mask from a Numpy array, without copying the data
 // 'bat' is a BAT* pointer, which will contain the new BAT. TYPE_'mtpe' is the BAT type, and 'batstore' is the heap storage type of the BAT (this should be STORE_CMEM or STORE_SHARED)
+#if defined(_MSC_VER) && _MSC_VER <= 1600
+#define isnan(x) _isnan(x)
+#endif
+
+#define nancheck_flt(bat)							\
+	do {								\
+		for (iu = 0; iu < ret->count; iu++) {			\
+			if (isnan(((flt*)data)[index_offset * ret->count + iu])) { \
+				((flt*)data)[index_offset * ret->count + iu] = flt_nil; \
+				bat->tnil = 1;				\
+			}						\
+		}							\
+		bat->tnonil = !bat->tnil;				\
+	} while (0)
+#define nancheck_dbl(bat)							\
+	do {								\
+		for (iu = 0; iu < ret->count; iu++) {			\
+			if (isnan(((dbl*)data)[index_offset * ret->count + iu])) { \
+				((dbl*)data)[index_offset * ret->count + iu] = dbl_nil; \
+				bat->tnil = 1;				\
+			}						\
+		}							\
+		bat->tnonil = !bat->tnil;				\
+	} while (0)
+#define nancheck_bit(bat) ((void) 0)
+#define nancheck_bte(bat) ((void) 0)
+#define nancheck_sht(bat) ((void) 0)
+#define nancheck_int(bat) ((void) 0)
+#define nancheck_lng(bat) ((void) 0)
+#define nancheck_hge(bat) ((void) 0) /* not used if no HAVE_HGE */
+#define nancheck_oid(bat) ((void) 0)
 #if defined (HAVE_FORK) && !defined(HAVE_EMBEDDED)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
@@ -43,6 +74,7 @@
             bat->tnonil = 1 - bat->tnil;                                                                            \
         } else {                                                                                                        \
             bat->tnil = 0; bat->tnonil = 0;                                                                         \
+	    nancheck_##mtpe(bat);\
         }                                                                                                               \
                                                                                                                         \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
@@ -90,6 +122,7 @@
             bat->tnonil = 1 - bat->tnil;                                                                            \
         } else {                                                                                                        \
             bat->tnil = 0; bat->tnonil = 0;                                                                         \
+	    nancheck_##mtpe(bat);\
         }                                                                                                               \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
         GDKfree(bat->theap.base);                                                                                     \
