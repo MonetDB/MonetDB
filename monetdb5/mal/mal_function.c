@@ -924,7 +924,7 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 {
 	(void) mb;     /* fool the compiler */
 	(void) stk;     /* fool the compiler */
-	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"%s\"]\n", pc, getFunctionId(p));
+	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"%s\"]\n", pc, getFunctionId(p) ? getFunctionId(p) : "<noname>");
 }
 
 /* the stethoscope needs dot files for its graphical interface.
