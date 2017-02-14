@@ -17,7 +17,7 @@
 
 int
 OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	int i, j, limit, slimit, updates=0;
+{	int i, j, limit, slimit, updates=0, query=1;
 	InstrPtr p, q, def = 0;
 	InstrPtr *old;
 	lng usec = GDKusec();
@@ -29,9 +29,26 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( ! WLCused() )
 		goto wrapup;
+
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit = mb->ssize;
+
+	/* check if we are dealing with an update */
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if( getModuleId(p) == sqlcatalogRef)
+			query = 0;
+		if( getModuleId(p) == sqlRef && 
+			( getFunctionId(p) == appendRef  ||
+			  getFunctionId(p) == updateRef  ||
+			  getFunctionId(p) == deleteRef  ||
+			  getFunctionId(p) == clear_tableRef ))
+			query = 0;
+	}
+
+	if( query) // nothing to log
+		return 0;
 	
 	// We use a fake collection of objects to speed up the checking later.
 

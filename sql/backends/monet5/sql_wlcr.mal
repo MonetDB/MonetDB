@@ -6,41 +6,57 @@
 
 module wlr;
 
+pattern replicate()
+address WLRreplicate
+comment "Roll the snapshot forward to an up-to-date clone";
+
 pattern replicate(dbname:str)
 address WLRreplicate
 comment "Roll the snapshot forward to an up-to-date clone";
 
-pattern pausereplicate()
-address WLRpausereplicate
-comment "Suspend replica synchronisation";
+pattern replicate(dbname:str, ts:timestamp)
+address WLRreplicate
+comment "Roll the snapshot forward to the time TS";
 
-pattern resumereplicate()
-address WLRresumereplicate
-comment "Resume replica synchronisation";
+pattern replicate(dbname:str, id:bte)
+address WLRreplicate
+comment "Roll the snapshot forward to a specific transaction id";
 
-pattern waitformaster()
-address WLRwaitformaster
-comment "Wait until all known log files have been processed";
+pattern replicate(dbname:str, id:sht)
+address WLRreplicate
+comment "Roll the snapshot forward to a specific transaction id";
 
-pattern replaythreshold(dur:int)
-address WLRreplaythreshold
-comment "Threshold (in milliseconds) for re-running queries";
+pattern replicate(dbname:str, id:int)
+address WLRreplicate
+comment "Roll the snapshot forward to a specific transaction id";
 
-pattern transaction(started:str, user:str, runtime:lng)
+pattern replicate(dbname:str, id:lng)
+address WLRreplicate
+comment "Roll the snapshot forward to a specific transaction id";
+
+pattern setreplicadrift(dur:int)
+address WLRsetreplicadrift
+comment "Threshold (in seconds) for re-running queries";
+
+pattern getreplicaclock():str
+address WLRgetreplicaclock
+comment "Timestamp of last replicated transaction.";
+
+pattern getreplicabacklog():int
+address WLRgetreplicabacklog
+comment "Number of transactions pending execution";
+
+pattern transaction(tid:lng, started:str, user:str)
 address WLRtransaction
 comment "Mark the beginning of the work unit which can be a compound transaction";
 
 pattern commit()
-address WLRfinish
+address WLRcommit
 comment "Mark the end of the work unit";
 
 pattern rollback()
-address WLRfinish
+address WLRrollback
 comment "Mark the end of the work unit";
-
-pattern query(q:str)
-address WLRquery
-comment "The actual query applied";
 
 pattern catalog(q:str)
 address WLRcatalog

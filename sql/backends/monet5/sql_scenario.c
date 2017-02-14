@@ -261,7 +261,7 @@ SQLinit(void)
 	}
 	GDKregister(idlethread);
 	WLCinit();
-	return WLRinit();
+	return MAL_SUCCEED;
 }
 
 str
@@ -435,6 +435,7 @@ SQLinitClient(Client c)
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	MT_lock_set(&sql_contextLock);
+	WLRinit();
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog

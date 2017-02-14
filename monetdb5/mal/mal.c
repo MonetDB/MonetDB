@@ -36,6 +36,7 @@ int have_hge;
 #include "mal_runtime.h"
 #include "mal_resource.h"
 #include "opt_statistics.h"
+#include "wlcr.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
@@ -124,6 +125,7 @@ void mserver_reset(int exit)
 	str err = 0;
 
 	GDKprepareExit();
+	WLCreset();
 	MCstopClients(0);
 	setHeartbeat(-1);
 	stopProfiler();

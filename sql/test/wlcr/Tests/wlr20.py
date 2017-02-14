@@ -28,11 +28,15 @@ slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = proce
 
 c = process.client('sql', dbname = dbnameclone, port = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-time.sleep(2)
+#two step roll forward, where first step shouldn't do anything because already in previous test
 cout, cerr = c.communicate('''\
-call waitformaster();
+call replicate('%s',1);
 select * from tmp;
-''')
+call replicate('%s',2);
+select * from tmp;
+call replicate('%s',3);
+select * from tmp;
+''' % (dbname,dbname,dbname))
 
 sout, serr = slave.communicate()
 #mout, merr = master.communicate()

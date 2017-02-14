@@ -13,40 +13,43 @@ external name wlcr.master;
 create procedure master(path string)
 external name wlcr.master;
 
-create procedure pausemaster()
-external name wlcr.pausemaster;
-
-create procedure resumemaster()
-external name wlcr.resumemaster;
-
 create procedure stopmaster()
 external name wlcr.stopmaster;
 
-create procedure logthreshold(duration int)
-external name wlcr.logthreshold;
+create procedure masterdrift( duration int)
+external name wlcr."setmasterdrift";
 
-create procedure logrollback(flag int)
-external name wlcr.logrollback;
-
-create procedure drift(duration int)
-external name wlcr.drift;
-
-create procedure master(role integer)
-external name wlcr.master;
+create function masterClock() returns string
+external name wlcr."getmasterclock";
 
 -- Replica commands
+create procedure replicate()
+external name wlr.replicate;
+
 create procedure replicate(dbname string)
 external name wlr.replicate;
 
-create procedure pausereplicate()
-external name wlr.pausereplicate;
+create procedure replicate(dbname string, pit timestamp)
+external name wlr.replicate;
 
-create procedure resumereplicate()
-external name wlr.resumereplicate;
+create procedure replicate(dbname string, id tinyint)
+external name wlr.replicate;
 
-create procedure waitformaster()
-external name wlr.waitformaster;
+create procedure replicate(dbname string, id smallint)
+external name wlr.replicate;
 
-create procedure replaythreshold(duration int)
-external name wlr.replaythreshold;
+create procedure replicate(dbname string, id integer)
+external name wlr.replicate;
+
+create procedure replicate(dbname string, id bigint)
+external name wlr.replicate;
+
+create procedure replicadrift(duration int)
+external name wlr."setreplicadrift";
+
+create function replicaClock() returns string
+external name wlr."getreplicaclock";
+
+create function replicaBacklog() returns integer
+external name wlr."getreplicabacklog";
 

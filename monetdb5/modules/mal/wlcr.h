@@ -23,29 +23,41 @@
 #define WLCR_IGNORE		4
 
 /* WLCR modes */
+#define WLCR_STARTUP	0	// wlcr not yet initialized
 #define WLCR_RUN		1	// started for the current snapshot
-#define WLCR_PAUSE		2	// suspend the creation of log files
-#define WLCR_STOP		3	// finished last log file for this snapsho
+#define WLCR_STOP		2	// finished last log file for this snapsho
+#define WLCR_CLONE		3	// logs used in replica construction
 
-mal_export int wlcr_threshold;
-mal_export int wlcr_batches;
-mal_export int wlcr_drift;
-mal_export str wlcr_dbname;
-mal_export int wlcr_rollback;
+/*
+ * returns 1 if the file exists
+ */
+#ifndef F_OK
+#define F_OK 0
+#endif
+#ifdef _MSC_VER
+#define access(f, m)    _access(f, m)
+#endif
+
+mal_export MT_Lock wlcr_lock;
+mal_export char wlc_dir[PATHLENGTH];
+mal_export lng wlc_id;
+mal_export int wlc_batches;
+mal_export int wlc_state;
+mal_export int wlc_drift;
+mal_export char wlc_write[26];
 
 mal_export str WLCinit(void);
 mal_export int WLCused(void);
+mal_export void WLCreset(void);
 mal_export str WLCgetConfig(void);
+mal_export void WLCreadConfig(FILE *fd);
 mal_export str WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLCpausemaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLCresumemaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLClogthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLClogrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLCdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCsetmasterdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCgetmasterdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCgetmasterclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLCfinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCchange(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

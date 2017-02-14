@@ -243,7 +243,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->wlcr_kind = 0;
-	c->wlcr_mode = 0;
 	c->wlcr = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
 	{
@@ -400,7 +399,6 @@ freeClient(Client c)
 		if( c->wlcr)
 			freeMalBlk(c->wlcr);
 		c->wlcr_kind = 0;
-		c->wlcr_mode = 0;
 		c->wlcr = NULL;
 	}
 	if (t)

@@ -10,42 +10,29 @@ pattern init()
 address WLCinitCmd
 comment "Test for running as master";
 
-pattern master(flag:int)
-address WLCmaster
-comment "Activate the workload-capture-replay in a particular mode.
-Start/Pause/Resume/Stop = 0/1/2/3";
-
 pattern master()
 address WLCmaster
-comment "Activate the workload-capture-replay";
+comment "Activate the workload-capture-replay process";
 
 pattern master(path:str)
 address WLCmaster
-comment "Activate the workload-capture-replay. Use a different location for the logs.";
-
-pattern pausemaster()
-address WLCpausemaster
-comment "Suspend capturing the logs";
-
-pattern resumemaster()
-address WLCresumemaster
-comment "Resume capturing the logs";
+comment "Activate the workload-capture-replay process. Use a different location for the logs.";
 
 pattern stopmaster()
 address WLCstopmaster
 comment "Stop capturing the logs";
 
-pattern drift(duration:int)
-address WLCdrift
-comment "Maximal duration of collecting a transaction log befor releasing it";
+pattern setmasterdrift(duration:int)
+address WLCsetmasterdrift
+comment "Maximal delay for transaction log flushing";
 
-pattern logthreshold(limit:int)
-address WLClogthreshold
-comment "Activate the workload-capture-replay. Only queries surpassing the threshold (in milliseconds) are kept.";
+pattern getmasterdrift(duration:int):str
+address WLCgetmasterdrift
+comment "Maximal delay for transaction log flushing";
 
-pattern logrollback(flag:int)
-address WLClogrollback
-comment "Activate the workload-capture-replay. Also keep the aborted transactions is flag !=0";
+pattern getmasterclock():str
+address WLCgetmasterclock
+comment "Timestamp of last update transaction";
 
 pattern finish(started:str, user:str, action:str, runtime:int)
 address WLCfinish

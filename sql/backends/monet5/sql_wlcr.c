@@ -28,26 +28,29 @@
 #include "mal_client.h"
 #include "querylog.h"
 
-#define WLCR_REPLAY 10
-#define WLCR_REPLICATE 20
+#define WLR_START 0
+#define WLR_RUN   100
+#define WLR_PAUSE 200
 
 #define WLCR_COMMIT 40
 #define WLCR_ROLLBACK 50
 #define WLCR_ERROR 60
 
 /* The current status of the replica  processing */
-static str wlr_logs;
-static str wlr_master;
-static str wlr_error;		// errors should stop the process
-static int wlr_nextbatch; 	// the next file to be processed
-static int wlr_tag;			// the next transaction to be processeds
+static char wlr_master[IDLENGTH];
+static char wlr_error[PATHLENGTH];		// errors should stop the process
+static int wlr_batches; 	// the next file to be processed
+static lng wlr_tag;			// the next transaction id to be processed
+static lng wlr_limit = -1;		// stop re-processing transactions when limit is reached
+static char wlr_timelimit[26];		// stop re-processing transactions when time limit is reached
+static char wlr_read[26];		// stop re-processing transactions when time limit is reached
 static int wlr_state;		// which state RUN/PAUSE
-static int wlr_threshold;	// replay threshold set by user.
+static MT_Id wlr_thread;
 
 #define MAXLINE 2048
 
-static
-str WLRgetConfig(void){
+static void
+WLRgetConfig(void){
     char *path;
 	char line[MAXLINE];
     FILE *fd;
@@ -56,56 +59,45 @@ str WLRgetConfig(void){
     fd = fopen(path,"r");
 	GDKfree(path);
     if( fd == NULL)
-        throw(MAL,"wlr.getConfig","Could not access configuration file\n");
+        return ;
     while( fgets(line, MAXLINE, fd) ){
 		line[strlen(line)-1]= 0;
         if( strncmp("master=", line,7) == 0)
-            wlr_master = GDKstrdup(line + 7);
-        if( strncmp("logs=", line,5) == 0)
-            wlr_logs = GDKstrdup(line + 5);
-        if( strncmp("nextbatch=", line, 10) == 0)
-            wlr_nextbatch = atoi(line+ 10);
+            strncpy(wlr_master, line + 7, IDLENGTH);
+        if( strncmp("batches=", line, 8) == 0)
+            wlr_batches = atoi(line+ 8);
         if( strncmp("tag=", line, 4) == 0)
             wlr_tag = atoi(line+ 4);
-        if( strncmp("state=", line, 6) == 0)
-            wlr_state = atoi(line+ 6);
+        if( strncmp("limit=", line, 6) == 0)
+            wlr_limit = atol(line+ 6);
+        if( strncmp("timelimit=", line, 10) == 0)
+            strncpy(wlr_master, line + 10, 26);
         if( strncmp("error=", line, 6) == 0)
-            wlr_error = GDKstrdup(line+ 6);
+            strncpy(wlr_error, line+ 6, PATHLENGTH);
     }
     fclose(fd);
-    return MAL_SUCCEED;
 }
 
-static
-str WLRsetConfig(void){
+static void
+WLRsetConfig(void){
     char *path;
-    FILE *fd;
+    stream *fd;
 
 	path = GDKfilepath(0,0,"wlr.config",0);
-    fd = fopen(path,"w");
+    fd = open_wastream(path);
 	GDKfree(path);
-    if( fd == NULL)
-        throw(MAL,"wlr.setConfig","Could not access configuration file\n");
-	fprintf(fd,"master=%s\n", wlr_master);
-	fprintf(fd,"logs=%s\n", wlr_logs);
-	fprintf(fd,"nextbatch=%d\n", wlr_nextbatch);
-	fprintf(fd,"tag=%d\n", wlr_tag);
-	fprintf(fd,"state=%d\n", wlr_state);
-	if( wlr_error)
-		fprintf(fd,"error=%s\n", wlr_error);
-    fclose(fd);
-    return MAL_SUCCEED;
-}
-
-str
-WLRreplaythreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    (void) mb;
-    (void) cntxt;
-    wlr_threshold = * getArgReference_int(stk,pci,1);
-	if( (wlr_threshold >=0 && wlr_threshold < wlcr_threshold) || wlcr_threshold < 0)
-		throw(SQL,"wlr.replaythreshold","Warning: threshold is smaller then those currently reported");
-    return MAL_SUCCEED;
+    if( fd == NULL){
+        return;
+	}
+	mnstr_printf(fd,"master=%s\n", wlr_master);
+	mnstr_printf(fd,"batches=%d\n", wlr_batches);
+	mnstr_printf(fd,"tag="LLFMT"\n", wlr_tag);
+	mnstr_printf(fd,"limit="LLFMT"\n", wlr_limit);
+	if( wlr_timelimit[0])
+		mnstr_printf(fd,"timelimit=%s\n", wlr_timelimit);
+	if( wlr_error[0])
+		mnstr_printf(fd,"error=%s\n", wlr_error);
+    close_stream(fd);
 }
 
 /*
@@ -118,81 +110,34 @@ WLRreplaythreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * process by grabbing a new set of log files.
  * This calls for keeping track in the replica what log files have been applied.
  */
-static str
-WLRgetMaster(str dbname)
+static void
+WLRgetMaster(void)
 {
 	char path[PATHLENGTH];
 	str dir;
 	FILE *fd;
 
-	if( dbname == 0)
-		return MAL_SUCCEED;
+	if( wlr_master[0] == 0 )
+		return ;
 
 	/* collect master properties */
-	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,dbname);
-	dir = GDKfilepath(0,path,"master",0);
-
-	fd = fopen(dir,"r");
-	if( fd == NULL){
-		GDKfree(dir);
-		throw(SQL,"getMaster","Database '%s' not acting as a master",dbname);
-	}
-	(void) fclose(fd);
-
-	wlr_logs = dir;
-	snprintf(path,PATHLENGTH,"..%c%s%cmaster",DIR_SEP,dbname,DIR_SEP);
+	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,wlr_master);
 	dir = GDKfilepath(0,path,"wlc.config",0);
+
 	fd = fopen(dir,"r");
-	GDKfree(dir);
-	if( fd == NULL){
-		GDKfree(wlr_logs);
-		wlr_logs = 0;
-		throw(SQL,"getMaster","missing configuration file");
-	}
-
-	wlr_master = GDKstrdup(dbname);
-    while( fgets(path, PATHLENGTH, fd) ){
-		path[strlen(path)-1]= 0;
-        if( strncmp("batches=", path, 8) == 0)
-            wlcr_batches = atoi(path+ 8);
-        if( strncmp("drift=", path, 6) == 0)
-            wlcr_drift = atoi(path+ 6);
-    }
-	(void) fclose(fd);
-	return MAL_SUCCEED;
-}
-
-static str
-WLRinitReplica(str dbname)
-{
-	str dir, msg;
-	FILE *fd;
-
-	/* The replica mode can be set only once */
-	dir = GDKfilepath(0,0,"wlr.config",0);
-	fd = fopen(dir,"r");
-	GDKfree(dir);
 	if( fd ){
-		(void) fclose(fd);
-		return MAL_SUCCEED;
+		WLCreadConfig(fd);
+		wlc_state = WLCR_CLONE; // not used as master
 	}
-
-	msg = WLRgetMaster(dbname);
-	if( msg)
-		return msg;
-
-	wlr_master = GDKstrdup(dbname);
-	wlr_nextbatch = 0;
-	wlr_tag = 0;
-
-	WLRsetConfig();	// initialize the replica configuration setting
-	return MAL_SUCCEED;
+	GDKfree(dir);
 }
 
 /* 
  * Run once through the list of pending WLC logs
  * Continuing where you left off the previous time.
  */
+static int wlrprocessrunning;
+
 static void
 WLRprocess(void *arg)
 {	
@@ -206,9 +151,18 @@ WLRprocess(void *arg)
 	InstrPtr q;
 	str msg;
 	mvc *sql;
+	lng currid =0;
 
+    MT_lock_set(&wlcr_lock);
+	if( wlrprocessrunning){
+		MT_lock_unset(&wlcr_lock);
+		return;
+	}
+	wlrprocessrunning ++;
+    MT_lock_unset(&wlcr_lock);
 	c =MCforkClient(cntxt);
 	if( c == 0){
+		wlrprocessrunning =0;
 		GDKerror("Could not create user for WLR process\n");
 		return;
 	}
@@ -230,12 +184,11 @@ WLRprocess(void *arg)
 		mnstr_printf(GDKerr,"#Inconsitent SQL contex : %s\n",msg);
 
 #ifdef _WLR_DEBUG_
-	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d  threshold %d\n", 
-		wlcr_archive, wlr_firstbatch, wlr_nextbatch, wlr_threshold);
+	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d\n", 
+		wlcr_archive, wlr_firstbatch, wlr_batches );
 #endif
-	wlr_tag = 0;
-	for( i= wlr_nextbatch; wlr_state == WLCR_RUN && i < wlcr_batches && ! GDKexiting(); i++){
-		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlr_logs, DIR_SEP, wlr_master, i);
+	for( i= wlr_batches; wlr_state == WLR_RUN && i < wlc_batches && ! GDKexiting(); i++){
+		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlcr.process:'%s' can not be accessed \n",path);
@@ -253,9 +206,6 @@ WLRprocess(void *arg)
 		if (bstream_next(c->fdin) < 0)
 			mnstr_printf(GDKerr, "!WARNING: could not read %s\n", path);
 
-#ifdef _WLR_DEBUG_
-		mnstr_printf(c->fdout,"#wlcr.process:start processing log file '%s'\n",path);
-#endif
 		c->yycur = 0;
 		mnstr_printf(cntxt->fdout,"#replay log file:%s\n",path);
 		//
@@ -264,13 +214,28 @@ WLRprocess(void *arg)
 			pc = mb->stop;
 			if( parseMAL(c, c->curprg, 1, 1)  || mb->errors){
 				char line[PATHLENGTH];
-				snprintf(line, PATHLENGTH,"#wlcr.process:typechecking failed '%s':\n",path);
-				wlr_error= GDKstrdup(line);
+				snprintf(line, PATHLENGTH,"#wlcr.process:failed further parsing '%s':\n",path);
+				strncpy(wlr_error,line, PATHLENGTH);
 				mnstr_printf(GDKerr,"%s",line);
 				printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 			}
 			mb = c->curprg->def; // needed
 			q= getInstrPtr(mb, mb->stop-1);
+			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef && (currid = getVarConstant(mb, getArg(q,1)).val.lval) < wlr_tag){
+				/* skip already executed transactions */
+			} else
+			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef && 
+				( ( (currid = getVarConstant(mb, getArg(q,1)).val.lval) >= wlr_limit && wlr_limit != -1) ||
+				( wlr_timelimit[0] && strcmp(getVarConstant(mb, getArg(q,1)).val.sval, wlr_timelimit) >= 0))
+				){
+				/* stop execution of the transactions if your reached the limit */
+				resetMalBlk(mb, 1);
+				trimMalVariables(mb, NULL);
+				goto wrapup;
+			} else
+			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef ){
+				strncpy(wlr_read, getVarConstant(mb, getArg(q,2)).val.sval,26);
+			}
 			// only re-execute successful transactions.
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef ){
 				pushEndInstruction(mb);
@@ -286,7 +251,7 @@ WLRprocess(void *arg)
 					(void) mvc_trans(sql);
 					msg= runMAL(c,mb,0,0);
 					wlr_tag++;
-					WLRsetConfig();
+					WLRsetConfig( );
 					// ignore warnings
 					if (msg && strstr(msg,"WARNING"))
 						msg = MAL_SUCCEED;
@@ -305,7 +270,7 @@ WLRprocess(void *arg)
 				} else {
 					char line[PATHLENGTH];
 					snprintf(line, PATHLENGTH,"#wlcr.process:typechecking failed '%s':\n",path);
-					wlr_error= GDKstrdup(line);
+					strncpy(wlr_error, line, PATHLENGTH);
 					mnstr_printf(GDKerr,"%s",line);
 					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 				}
@@ -321,12 +286,20 @@ WLRprocess(void *arg)
 				pc = 0;
 			}
 		} while( mb->errors == 0 && pc != mb->stop);
-		wlr_nextbatch++;
+#ifdef _WLR_DEBUG_
+		mnstr_printf(c->fdout,"#wlcr.process:processed log file '%s'\n",path);
+#endif
+		// skip to next file when all is read
+		wlr_batches++;
 		WLRsetConfig();
+		// stop when we are about to read the limited transaction
+		if(wlr_limit != -1 && wlr_limit <= wlr_tag)
+			break;
 	}
+wrapup:
+	wlrprocessrunning =0;
 	(void) mnstr_flush(c->fdout);
 	MCcloseClient(c);
-	cntxt->wlcr_mode = 0;
 }
 
 /*
@@ -337,109 +310,86 @@ WLRprocess(void *arg)
  */
 static void
 WLRprocessScheduler(void *arg)
-{
-	Client cntxt = (Client) arg;
+{	Client cntxt = (Client) arg;
+	int duration;
 
-	while(!GDKexiting()){
+	wlr_state = WLR_RUN;
+	while(!GDKexiting() && wlr_state == WLR_RUN){
 		// wait at most for the drift period, also at start
-		mnstr_printf(cntxt->fdout,"#sleep %d ms\n",(wlcr_drift? wlcr_drift:1) * 1000);
-		MT_sleep_ms( (wlcr_drift? wlcr_drift:1) * 1000 );
-		if( wlr_master)
-			WLRgetMaster(wlr_master);
-		if( wlr_nextbatch < wlcr_batches )
-			WLRprocess(cntxt);
+		//mnstr_printf(cntxt->fdout,"#sleep %d ms\n",(wlc_drift? wlc_drift:1) * 1000);
+		duration = (wlc_drift? wlc_drift:1) * 1000 ;
+		for( ; duration > 0 && wlr_state == WLR_PAUSE; duration -= 100)
+			MT_sleep_ms( 100);
+		if( wlr_master[0] && wlr_state != WLR_PAUSE){
+			WLRgetMaster();
+			if( wlr_batches < wlc_batches && (wlr_tag < wlr_limit || wlr_limit == -1) )
+				WLRprocess(cntxt);
+		}
 	}
+	wlr_state = WLR_START;
 }
 
 str
 WLRinit(void)
-{
-	Client cntxt = &mal_clients[0];
-	MT_Id wlcr_thread;
+{	Client cntxt = &mal_clients[0];
 	
-	WLRgetConfig();
-	(void) WLRgetMaster(wlr_master);
+	if( wlr_master[0] == 0)
+		return MAL_SUCCEED;
+	if( wlr_state != WLR_START)
+		return MAL_SUCCEED;
 	// time to continue the consolidation process in the background
-	if( wlr_logs){
-		// Always try to roll forward before you continue
-		cntxt->wlcr_mode = WLCR_REPLICATE;
-		if (MT_create_thread(&wlcr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-				throw(SQL,"wlcr.init","Starting wlr manager failed");
-		}
-		GDKregister(wlcr_thread);
+	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
+			throw(SQL,"wlcr.init","Starting wlr manager failed");
 	}
-	return MAL_SUCCEED;
-}
-
-str
-WLRpausereplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{ 	
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if( wlr_state != WLCR_RUN)
-		throw(SQL,"wlr.resumereplicate","Server not in replicate mode");
-	wlr_state = WLCR_PAUSE;
-	WLRsetConfig();
-	return MAL_SUCCEED;
-}
-
-str
-WLRresumereplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{ 	
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if(wlr_state != WLCR_PAUSE)
-		throw(SQL,"wlr.resumereplicate","Server not in replicate pause mode");
-	wlr_state = WLCR_RUN;
-	WLRsetConfig();
-	return MAL_SUCCEED;
-}
-
-
-/* for testing it is helpful to be able to wait until all log files have been processed */
-str
-WLRwaitformaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{ 	int i = 0;
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-
-	WLRgetMaster(wlr_master);
-	while(wlcr_batches &&  wlr_nextbatch < wlcr_batches && ! GDKexiting() && i++  < 60){
-		mnstr_printf(cntxt->fdout,"#waiting for master %d < %d\n",wlr_nextbatch, wlcr_batches);
-		MT_sleep_ms(1000);
-	}
-	if( i >= 60)
-		throw(SQL,"waitformaster","Time out (> 60 seconds)");
-	mnstr_printf(cntxt->fdout,"#in sync with master %d == %d\n",wlr_nextbatch, wlcr_batches);
+	GDKregister(wlr_thread);
 	return MAL_SUCCEED;
 }
 
 str
 WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str msg;
-	MT_Id wlcr_thread;
+{	str timelimit  = wlr_timelimit;
+	int size = 26;
+	str msg;
 	(void) mb;
 
-	if( cntxt->wlcr_mode == WLCR_REPLICATE || cntxt->wlcr_mode == WLCR_REPLAY){
-		throw(SQL,"wlr.replicate","System already in synchronization mode");
+	// first stop the background process
+	WLRgetConfig();
+	if( wlr_state != WLR_START){
+		wlr_state = WLR_PAUSE;
+		while(wlr_state != WLR_START){
+			mnstr_printf(cntxt->fdout,"#Waiting for replay scheduler to stop\n");
+			MT_sleep_ms( 200);
+		}	
 	}
-	msg = WLRinitReplica( *getArgReference_str(stk,pci,1));
-	if( msg)
-		return msg;
 
-	cntxt->wlcr_mode = WLCR_REPLICATE;
-	wlr_state = WLCR_RUN;
+	if( pci->argc > 1){
+		strncpy(wlr_master, *getArgReference_str(stk,pci,1), IDLENGTH);
+	} else  wlr_limit = -1;
+
+	if( getArgType(mb, pci, pci->argc-1) == TYPE_timestamp)
+		timestamp_tostr(&timelimit, &size, (timestamp*) &getVarConstant(mb,getArg(pci,2)).val.lval);
+	else
+	if( getArgType(mb, pci, pci->argc-1) == TYPE_bte)
+		wlr_limit = getVarConstant(mb,getArg(pci,2)).val.btval;
+	else
+	if( getArgType(mb, pci, pci->argc-1) == TYPE_sht)
+		wlr_limit = getVarConstant(mb,getArg(pci,2)).val.shval;
+	else
+	if( getArgType(mb, pci, pci->argc-1) == TYPE_int)
+		wlr_limit = getVarConstant(mb,getArg(pci,2)).val.ival;
+	else
+	if( getArgType(mb, pci, pci->argc-1) == TYPE_lng)
+		wlr_limit = getVarConstant(mb,getArg(pci,2)).val.lval;
+	// stop any concurrent WLRprocess first
+	WLRsetConfig();
+	WLRgetMaster();
 	// The client has to wait initially for all logs known to be processed.
-	WLRprocess(cntxt);
-	// start the process for continual integration in the background
-    if (MT_create_thread(&wlcr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlr.replicate","replay scheduling process can not be started\n");
+	if( wlr_limit > 0)
+		WLRprocess(cntxt);
+	if( wlr_limit < 0){
+		msg = WLRinit();
+		if( msg )
+			GDKfree(msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -453,7 +403,7 @@ WLRtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) stk;
 	cntxt->wlcr_kind = 0;
-	if( wlr_error){
+	if( wlr_error[0]){
 		cntxt->wlcr_kind = WLCR_ERROR;
 		return MAL_SUCCEED;
 	}
@@ -469,17 +419,52 @@ WLRtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-WLRfinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRstopreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 	// perform any cleanup
-	cntxt->wlcr_mode = 0;
 	return MAL_SUCCEED;
 }
 
 str
+WLRgetreplicaclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *ret = getArgReference_str(stk,pci,0);
+	WLRgetMaster();
+	if( wlr_read[0])
+		*ret= GDKstrdup(wlr_read);
+	else *ret= GDKstrdup(str_nil);
+	(void) cntxt;
+	(void) mb;
+	return MAL_SUCCEED;
+}
+
+str
+WLRgetreplicabacklog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = getArgReference_int(stk,pci,0);
+	(void) cntxt;
+	(void) mb;
+	WLRgetMaster();
+	*ret = wlc_id - wlr_tag;
+	return MAL_SUCCEED;
+}
+
+str
+WLRsetreplicadrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	// perform any cleanup
+	return MAL_SUCCEED;
+}
+
+static str
 WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str qry =  *getArgReference_str(stk,pci,1);
 	str msg = MAL_SUCCEED;
@@ -489,27 +474,44 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
 		return msg;
 	// execute the query in replay mode when required.
-	// check the old timings
-	if( wlr_threshold >= 0){
-		// we need to get rid of the escaped quote.
-		x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
-		for(y = qry; *y; y++){
-			if( *y == '\\' ){
-				if( *(y+1) ==  '\'')
-				y += 1;
-			}
-			*x++ = *y;
+	// we need to get rid of the escaped quote.
+	x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
+	for(y = qry; *y; y++){
+		if( *y == '\\' ){
+			if( *(y+1) ==  '\'')
+			y += 1;
 		}
-		*x = 0;
-		msg =  SQLstatementIntern(cntxt, &qtxt, "SQLstatement", TRUE, TRUE, NULL);
-		GDKfree(qtxt);
+		*x++ = *y;
 	}
+	*x = 0;
+	msg =  SQLstatementIntern(cntxt, &qtxt, "SQLstatement", TRUE, TRUE, NULL);
+	GDKfree(qtxt);
 	return msg;
 }
 
 /* A change event need not be executed, because it is already captured
  * in the update/append/delete
  */
+str
+WLRcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	
+	(void) cntxt;
+	(void) pci;
+	(void) stk;
+	(void) mb;
+	return MAL_SUCCEED;
+}
+
+str
+WLRrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	
+	(void) cntxt;
+	(void) pci;
+	(void) stk;
+	(void) mb;
+	return MAL_SUCCEED;
+}
+
 str
 WLRchange(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	

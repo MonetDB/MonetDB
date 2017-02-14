@@ -177,7 +177,6 @@ typedef struct CLIENT {
 	 * This allows a single server to act as both a master and a replica.
 	 */
 	int wlcr_kind;	// used by master to characterise the compound transaction
-	int wlcr_mode;	// used by replica to control rerunning the transaction
 	MalBlkPtr wlcr;
 
 	/*	

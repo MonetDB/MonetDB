@@ -1,22 +1,10 @@
 stdout of test 'wlr01` in directory 'sql/test/wlcr` itself:
 
 
-# 22:16:34 >  
-# 22:16:34 >  "/usr/bin/python2" "wlr01.py" "wlr01"
-# 22:16:34 >  
+# 21:37:58 >  
+# 21:37:58 >  "/usr/bin/python2" "wlr01.py" "wlr01"
+# 21:37:58 >  
 
-# MonetDB 5 server v11.26.0 (hg id: cbfc9f47e58c)
-# This is an unreleased version
-# Serving database 'mTests_sql_test_wlcr', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
-# Found 15.589 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:36992/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32142/.s.monetdb.36992
-# MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
 # MonetDB 5 server v11.26.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_wlcr-clone', using 8 threads
@@ -25,8 +13,8 @@ stdout of test 'wlr01` in directory 'sql/test/wlcr` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:34919/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32142/.s.monetdb.34919
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:36435/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32399/.s.monetdb.36435
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 # SQL catalog created, loading sql scripts once
@@ -70,17 +58,15 @@ stdout of test 'wlr01` in directory 'sql/test/wlcr` itself:
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-#call replicate('mTests_sql_test_wlcr',true);
-#wlcr.process:'/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone/../mTests_sql_test_wlcr/master/mTests_sql_test_wlcr_000000000001' can not be accessed 
+#call replicate('mTests_sql_test_wlcr',1);
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlcr_logs//mTests_sql_test_wlcr_000000000000
 #select * from tmp;
 % sys.tmp,	sys.tmp # table_name
 % i,	s # name
 % int,	clob # type
-% 1,	5 # length
-[ 1,	"hello"	]
-[ 2,	"world"	]
+% 1,	0 # length
 
-# 22:16:35 >  
-# 22:16:35 >  "Done."
-# 22:16:35 >  
+# 21:37:59 >  
+# 21:37:59 >  "Done."
+# 21:37:59 >  
 

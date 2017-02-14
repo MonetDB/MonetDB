@@ -29,8 +29,7 @@ slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = proce
 c = process.client('sql', dbname = dbnameclone, port = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 cout, cerr = c.communicate('''\
-call replaythreshold(100);
-call replicate('%s');
+call replicate('%s',1);
 select * from tmp;
 ''' % dbname)
 

@@ -9,118 +9,127 @@
 /*
  * (c) 2017 Martin Kersten
  * This module collects the workload-capture-replay statements during transaction execution,
- * also known as asynchronous logical replication management.
+ * also known as asynchronous logical replication management. It can be used for
+ * multiple purposes: BACKUP, REPLICATION, and REPLAY
  *
- * The goal is to easily clone a master database.  
+ * For a BACKUP we need either a complete update log from the beginning, or
+ * a binary snapshot with a collection of logs recording its changes since.
+ * To ensure transaction ACID properties, the log record should be stored on
+ * disk within the transaction brackets, which may cause a serious IO load.
+ * (Tip, store these logs files on an SSD or NVM)
  *
+ * For REPLICATION, also called a database clone or slave, we take a snapshot and the
+ * log files that reflect the recent changes. The log updates are replayed against
+ * the snapshot until a specific time point is reached. 
+ * 
+ * Some systems also use the logical logs to REPLAY all (expensive) queries
+ * against the database. 
+ *
+ * The goal of this module is to ease BACKUP and REPPLICATION of a master database 
+ * with a time-bounded delay.
+ * Such a clone is a database replica that aid in query workload sharing,
+ * database versioning, and (re-)partitioning.
+ *
+ * Simplicity and ease of end-user control has been the driving argument here.
  *
  * IMPLEMENTATION
  * The underlying assumption of the techniques deployed is that the database
- * resides on a proper (global) file system to guarantees recovery from most
- * storage system related failures. Such as RAID disks.
- * Furthermore, when deployed in a Cloud setting, the database recides in the
- * global file system.
+ * resides on a proper (global/distributed) file system to guarantees recovery 
+ * from most storage system related failures, e.g. using RAID disks or LSFsystems.
  *
- * A database can be set once into 'master' mode only once using the SQL command:
+ * A database can be set into 'master' mode only once using the SQL command:
  * CALL master()
+ * An alternative path to the log records can be given to reduce the storage cost,
+ * e.g. a nearby SSD.
+ * By default, it creates a directory .../dbfarm/dbname/master to hold all 
+ * necessary information for the creation of a database clone.
  *
- * It creates a directory .../dbfarm/dbname/master to hold all necessary information
- * for the creation and maintenance of replicas.
- * A configuration file is added to keep track on the status of the master.
+ * A master configuration file is added to the database directory to keep the state/
  * It contains the following key=value pairs:
- * 		snapshot=<path to a binary snapshot>
+ * 		snapshot=<path to a snapshot directory>
  * 		logs=<path to the wlcr log directory>
- * 		state=<started, paused,(resume), stopped>
- * 		firstbatch=<first batch file to be applied>
- * 		batches=<last batch file to be applied>
- * 		drift=<maximal delay before transactions are seen globally, in seconds>
- * 		threshold=<min response time for queries to be kept>
- * 		rollbock=<flag to indicate keeping the aborted transactions as well>
+ * 		state=<started, stopped>
+ * 		batches=<next available batch file to be applied>
+ * 		drift=<maximal delay before transactions are published as a separate log, in seconds>
+ * 		write=<timestamp of the last transaction recorded>
  *
- * Every replica should start off with a copy of binary snapshot identified by 'snapshot'
- * by default stored in .../dbfarm/dbname/master/bat. An alternative path can be given
- * to reduce the storage cost at the expense of slower recovery time (e.g. AWS glacier).
- * A missing path to the snapshot denotes that we can start rebuilding with an empty database instead.
- * The log files are stored as master/<dbname>_<batchnumber>.
+ * A missing path to the snapshot denotes that we can start the clone with an empty database.
+ * The log files are stored as master/<dbname>_<batchnumber>. They belong to the snapshot.
  * 
  * Each wlcr log file contains a serial log of committed compound transactions.
  * The log records are represented as ordinary MAL statement blocks, which
  * are executed in serial mode. (parallelism can be considered for large updates later)
- * Each transaction job is identified by the owner of the query, 
- * commit/rollback status, its starting time and runtime (in ms).
+ * Each transaction job is identified by the owner of the query, its starting time and runtime (in ms).
+ * The log-record should end with a commit.
  *
- * Update queries are always logged and pure queries can be limited to those 
- * that satisfy an minimum execution threshold.
- * CALL logthreshold(duration)
- * The threshold is given in milliseconds. 
- * The threshold setting is saved and affects all future master log records.
- * The default for a production system version should be set to -1, which ignores all pure queries.
- *
- * The aborted transactions can also be gathered using the call
- * CALL logrollback(1);
- * Such queries may be helpful in the analysis of transactions with failures.
- *
- * A transaction log is owned by the master. He decides when the log may be globally used.
- * The trigger for this is the allowed drift. A new transaction log is created when
+ * A transaction log is created by the master. He decides when the log may be globally used.
+ * The trigger for this is the allowed 'drift'. A new transaction log is created when
  * the system has been collecting logs for some time (drift in seconds).
  * The drift determines the maximal window of transactions loss that is permitted.
- * The maximum drift can be set using a SQL command. Setting it to zero leads to a
- * log file per transaction and may cause a large overhead for short running transactions.
+ * The maximum drift can be set using a SQL command, e.g.
+ * CALL drift(duration)
+ * Setting it to zero leads to a log file per transaction and may cause a large log directory.
+ * A default of 5 minutes should balance polling overhead.
  *
  * A minor problem here is that we should ensure that the log file is closed even if there
- * are no transactions running. It is solved with a separate monitor thread.
- * After closing, the replicas can see from the master configuration file that a log is available.
+ * are no transactions running. It is solved with a separate monitor thread, which ensures
+ * that the logs are flushed at least after 'drift' seconds since the first logrecord was created.
+ * After closing, the replicas can see from the master configuration file that a new log batch is available.
  *
- * The transaction loggin can be temporarily paused using the command
- * CALL master(2)
- * This mode should be uses sparingly. For example if you plan to perform a COPY INTO LOCKED mode
- * and want to avoid an avalanche of update records.
- *
- * Logging is resumed using the command 
- * CALL master(3)
- * A warning is issued when during the suspension update transactions have been issued.
- * The final step is to close transaction logging with the command
- * CALL master(4).
- * It typically is the end-of-life-time for a snapshot and its log files.
+ * The final step is to close stop ransaction logging with the command
+ * CALL stopmaster.
+ * It typically is the end-of-life-time for a snapshot. For example, when planning to do
+ * a large bulk load of the database, stopping logging avoids a double write into the
+ * database. The database can be brought back into wlcr mode using a fresh snapshot.
  *
  *[TODO] A more secure way to set a database into master mode is to use the command
  *	 monetdb master <dbname> [ <optional snapshot path>]
  * which locks the database, takes a save copy, initializes the state chance. 
  *
  * A fresh replica can be constructed as follows:
- * 	monetdb replica <dbname> <mastername>
+ * 	monetdb replicate <dbname> <mastername>
  *
  * Instead of using the monetdb command line we can use the SQL calls directly
  * master() and replicate(), provided we start with a fresh database.
  *
- * REPLICAS
+ * CLONE
  *
- * A fresh database can be turned into a replica using the call
- * CALL replicate("mastername")
+ * Every clone should start off with a copy of the binary snapshot identified by 'snapshot'.
+ * A fresh database can be turned into a clone using the call
+ * CALL replicate('mastername')
  * It will grab the latest snapshot of the master and applies all
- * known log files before releasing the system. Progress of
+ * available log files before releasing the system. Progress of
  * the replication can be monitored using the -fraw option in mclient.
+ * The master has no knowledge about the number of clones and their whereabouts.
  *
- * It will iterate through the log files, applying all transactions.
- * It excludes catalog and update queries, which are always executed.
- * Queries are simply ignored.
+ * The clone process will iterate in the background through the log files, 
+ * applying all update transactions.
  *
- * The alternative is to also replay the queries .
- * CALL replaythreshold(threshold)
- * In this mode all pure queries are also executed for which the reported threshold exceeds the argument.
- * Enabling the query log collects the execution times for these queries.
+ * An optional timestamp or transaction id can be added to apply the logs until
+ * a given moment. This is particularly handy when an unexpected 
+ * desastrous user action (drop persisten table) has to be recovered from.
+ *
+ * CALL replicate('mastername');
+ * CALL replicate('mastername',NOW()); -- stops after we are in sink
+ * ...
+ * CALL replicate(NOW()); -- partial roll forward
+ * ...
+ * CALL replicate(); --continue nondisturbed
+ *
+ * SELECT replicaClock();
+ * returns the timestamp of the last replicated transaction.
+ * SELECT replicaBacklog();
+ * returns the number of pending transactions to be in sink with master.
+ * SELECT masterClock();
+ * return the timestamp of the last committed transaction in the master.
  *
  * Any failure encountered during a log replay terminates the replication process,
- * leaving a message in the merovingian log.
- *
- * The replica creation can be suspended at the master and at the clone.
- * It will continue after the corresponding resume* operation is issues.
+ * leaving a message in the merovingian log configuration.
  *
  * The wlcr files purposely have a textual format derived from the MAL statements.
- * Simplicity and ease of control has been the driving argument here.
+ * This provides a stepping stone for remote execution later.
  *
  * [TODO] consider the roll forward of SQL session variables, i.e. optimizer_pipe (for now assume default pipe).
- * [TODO] The status of the master/replica should be accessible for inspection
  * [TODO] the user might want to indicate a time-stamp, to rebuild to a certain point
  *
  */
@@ -129,23 +138,20 @@
 #include "mal_builder.h"
 #include "wlcr.h"
 
-static MT_Lock     wlcr_lock MT_LOCK_INITIALIZER("wlcr_lock");
+MT_Lock     wlcr_lock MT_LOCK_INITIALIZER("wlcr_lock");
 
-static str wlcr_snapshot= 0; // The location of the snapshot against which the logs work
-static str wlcr_logs = 0; 	// The location in the global file store for the logs
-static stream *wlcr_fd = 0;
-static int wlcr_start = 0;	// time stamp of first transaction in log file
-static int wlcr_state = 0;	// The current status of the in the life cycle
-static int wlcr_tag = 0;	// number of database chancing transactions
-static int wlcr_pausetag = 0;	// number of database chancing transactions when pausing
+static char wlc_snapshot[PATHLENGTH]; // The location of the snapshot against which the logs work
+static lng wlc_start= 0;			// Start time of first transaction
+static stream *wlc_fd = 0;
 
 // These properties are needed by the replica to direct the roll-forward.
-int wlcr_threshold = 0;		// should be set to -1 for production
-str wlcr_dbname = 0;  		// The master database name
-int wlcr_firstbatch = 0;	// first log file  associated with the snapshot
-int wlcr_batches = 0;		// identifier of next batch
-int wlcr_drift = 10;		// maximal period covered by a single log file in seconds
-int wlcr_rollback= 0;		// also log the aborted queries.
+char wlc_dir[PATHLENGTH]; 	// The location in the global file store for the logs
+char wlc_name[IDLENGTH];  	// The master database name
+lng   wlc_id = 0;			// next transaction id
+int  wlc_state = 0;			// The current status of the in the life cycle
+char wlc_write[26];			// The timestamp of the last committed transaction
+int  wlc_batches = 0;		// identifier of next batch
+int  wlc_drift = 10;		// maximal period covered by a single log file in seconds
 
 /* The database snapshots are binary copies of the dbfarm/database/bat
  * New snapshots are created currently using the 'monetdb snapshot <db>' command
@@ -157,67 +163,67 @@ int wlcr_rollback= 0;		// also log the aborted queries.
 int
 WLCused(void)
 {
-	return wlcr_logs != NULL;
+	return wlc_dir[0] != 0;
 }
 
 /* The master configuration file is a simple key=value table */
-str WLCgetConfig(void){
-	char path[PATHLENGTH];
-	FILE *fd;
-
-	snprintf(path,PATHLENGTH,"%s%cwlc.config", wlcr_logs, DIR_SEP);
-	fd = fopen(path,"r");
-	if( fd == NULL)
-		throw(MAL,"wlcr.getConfig","Could not access %s\n",path);
+void
+WLCreadConfig(FILE *fd)
+{	char path[PATHLENGTH];
 	while( fgets(path, PATHLENGTH, fd) ){
 		path[strlen(path)-1] = 0;
 		if( strncmp("logs=", path,5) == 0)
-			wlcr_logs = GDKstrdup(path + 5);
+			strncpy(wlc_dir, path + 5, PATHLENGTH);
 		if( strncmp("snapshot=", path,9) == 0)
-			wlcr_snapshot = GDKstrdup(path + 9);
-		if( strncmp("firstbatch=", path,11) == 0)
-			wlcr_firstbatch = atoi(path+ 11);
+			strncpy(wlc_snapshot, path + 9, PATHLENGTH);
+		if( strncmp("id=", path,3) == 0)
+			wlc_id = atol(path+ 3);
+		if( strncmp("write=", path,6) == 0)
+			strncpy(wlc_write, path + 6, 26);
 		if( strncmp("batches=", path, 8) == 0)
-			wlcr_batches = atoi(path+ 8);
+			wlc_batches = atoi(path+ 8);
 		if( strncmp("drift=", path, 6) == 0)
-			wlcr_drift = atoi(path+ 6);
-		if( strncmp("threshold=", path, 10) == 0)
-			wlcr_threshold = atoi(path+ 10);
-		if( strncmp("rollback=", path, 9) == 0)
-			wlcr_threshold = atoi(path+ 9);
+			wlc_drift = atoi(path+ 6);
 		if( strncmp("state=", path, 6) == 0)
-			wlcr_state = atoi(path+ 6);
+			wlc_state = atoi(path+ 6);
 	}
 	fclose(fd);
+}
+
+str
+WLCgetConfig(void){
+	str l;
+	FILE *fd;
+
+	l = GDKfilepath(0,0,"wlc.config",0);
+	fd = fopen(l,"r");
+	GDKfree(l);
+	if( fd == NULL)
+		throw(MAL,"wlcr.getConfig","Could not access %s\n",l);
+	WLCreadConfig(fd);
 	return MAL_SUCCEED;
 }
 
 static 
 str WLCsetConfig(void){
-	char path[PATHLENGTH];
-	FILE *fd;
+	str path;
+	stream *fd;
 
-	// default setting for the archive directory is the db itself
-	if( wlcr_logs == NULL){
-		snprintf(path,PATHLENGTH,"%s%c", wlcr_logs, DIR_SEP);
-		wlcr_logs = GDKstrdup(path);
-	}
-
-	snprintf(path,PATHLENGTH,"%s%cwlc.config", wlcr_logs, DIR_SEP);
-	fd = fopen(path,"w");
+	/* be aware to be safe, on a failing fopen */
+	path = GDKfilepath(0,0,"wlc.config",0);
+	fd = open_wastream(path);
+	GDKfree(path);
 	if( fd == NULL)
-		throw(MAL,"wlcr.setConfig","Could not access %s\n",path);
-	if( wlcr_snapshot)
-		fprintf(fd,"snapshot=%s\n", wlcr_snapshot);
-	if( wlcr_logs)
-		fprintf(fd,"logs=%s\n", wlcr_logs);
-	fprintf(fd,"state=%d\n", wlcr_state );
-	fprintf(fd,"firstbatch=%d\n", wlcr_firstbatch);
-	fprintf(fd,"batches=%d\n", wlcr_batches );
-	fprintf(fd,"drift=%d\n", wlcr_drift );
-	fprintf(fd,"threshold=%d\n", wlcr_threshold );
-	fprintf(fd,"rollback=%d\n", wlcr_rollback );
-	fclose(fd);
+		throw(MAL,"wlcr.setConfig","Could not access wlc.config\n");
+	if( wlc_snapshot[0] )
+		mnstr_printf(fd,"snapshot=%s\n", wlc_snapshot);
+	mnstr_printf(fd,"logs=%s\n", wlc_dir);
+	mnstr_printf(fd,"id="LLFMT"\n", wlc_id );
+	mnstr_printf(fd,"write=%s\n", wlc_write );
+	mnstr_printf(fd,"state=%d\n", wlc_state );
+	mnstr_printf(fd,"batches=%d\n", wlc_batches );
+	mnstr_printf(fd,"drift=%d\n", wlc_drift );
+	close_stream(fd);
 	return MAL_SUCCEED;
 }
 
@@ -228,19 +234,19 @@ WLCsetlogger(void)
 {
 	char path[PATHLENGTH];
 
-	if( wlcr_logs == NULL)
+	if( wlc_dir[0] == 0)
 		throw(MAL,"wlcr.setlogger","Path not initalized");
 	MT_lock_set(&wlcr_lock);
-	snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlcr_logs, DIR_SEP, wlcr_dbname, wlcr_batches);
-	wlcr_fd = open_wastream(path);
-	if( wlcr_fd == 0){
+	snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlc_name, wlc_batches);
+	wlc_fd = open_wastream(path);
+	if( wlc_fd == 0){
 		MT_lock_unset(&wlcr_lock);
 		GDKerror("wlcr.logger:Could not create %s\n",path);
 		throw(MAL,"wlcr.logger","Could not create %s\n",path);
 	}
 
-	wlcr_batches++;
-	wlcr_start = GDKms()/1000;
+	wlc_batches++;
+	wlc_start = GDKms()/1000;
 	WLCsetConfig();
 	MT_lock_unset(&wlcr_lock);
 	return MAL_SUCCEED;
@@ -250,13 +256,25 @@ WLCsetlogger(void)
 static void
 WLCcloselogger(void)
 {
-	if( wlcr_fd == NULL)
+	if( wlc_fd == NULL)
 		return ;
-	mnstr_fsync(wlcr_fd);
-	close_stream(wlcr_fd);
-	wlcr_fd= NULL;
-	wlcr_start = 0;
+	mnstr_fsync(wlc_fd);
+	close_stream(wlc_fd);
+	wlc_fd= NULL;
+	wlc_start = 0;
 	WLCsetConfig();
+}
+
+void
+WLCreset(void)
+{
+	MT_lock_set(&wlcr_lock);
+	WLCcloselogger();
+	wlc_snapshot[0]=0;
+	wlc_dir[0]= 0;
+	wlc_name[0]= 0;
+	wlc_write[0] =0;
+	MT_lock_unset(&wlcr_lock);
 }
 
 /*
@@ -264,21 +282,21 @@ WLCcloselogger(void)
  * and released when their drift time window has expired.
  */
 
-static MT_Id wlcr_logger;
+static MT_Id wlc_logger;
 
 static void
 WLCRlogger(void *arg)
 {	 int seconds;
 	(void) arg;
 	while(!GDKexiting()){
-		if( wlcr_logs && wlcr_fd ){
-			if (wlcr_start + wlcr_drift < GDKms() / 1000){
+		if( wlc_dir[0] && wlc_fd ){
+			if (wlc_start + wlc_drift < GDKms() / 1000){
 				MT_lock_set(&wlcr_lock);
 				WLCcloselogger();
 				MT_lock_unset(&wlcr_lock);
 			}
 		} 
-		for( seconds = 0; (wlcr_drift == 0 || seconds < wlcr_drift) && ! GDKexiting(); seconds++)
+		for( seconds = 0; (wlc_drift == 0 || seconds < wlc_drift) && ! GDKexiting(); seconds++)
 			MT_sleep_ms( 1000);
 	}
 }
@@ -288,32 +306,26 @@ WLCRlogger(void *arg)
  */
 str 
 WLCinit(void)
-{
-	char path[PATHLENGTH];
-	str pathname, msg= MAL_SUCCEED;
-	FILE *fd;
+{ str conf, msg= MAL_SUCCEED;
 
-	if( wlcr_logs == NULL){
-		// use default location for archive
-		pathname = GDKfilepath(0,0,"master",0);
-		snprintf(path, PATHLENGTH,"%s%cwlc.config", pathname, DIR_SEP);
+	if( wlc_state == WLCR_STARTUP){
+		// use default location for master configuration file
+		conf = GDKfilepath(0,0,"wlc.config",0);
 
-		fd = fopen(path,"r");
-		if( fd == NULL){	// not in master mode
-			GDKfree(pathname);
+		if( access(conf,F_OK) ){
+			GDKfree(conf);
 			return MAL_SUCCEED;
 		}
-		fclose(fd);
+		GDKfree(conf);
 		// we are in master mode
-		wlcr_dbname = GDKgetenv("gdk_dbname");
-		wlcr_logs = pathname;
+		strncpy(wlc_name, GDKgetenv("gdk_dbname"),IDLENGTH );
 		msg =  WLCgetConfig();
 		if( msg)
 			GDKerror("%s",msg);
-		if (MT_create_thread(&wlcr_logger, WLCRlogger , (void*) 0, MT_THR_JOINABLE) < 0) {
+		if (MT_create_thread(&wlc_logger, WLCRlogger , (void*) 0, MT_THR_JOINABLE) < 0) {
                 GDKerror("wlcr.logger thread could not be spawned");
         }
-		GDKregister(wlcr_logger);
+		GDKregister(wlc_logger);
 	}
 	return MAL_SUCCEED;
 }
@@ -329,20 +341,14 @@ WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str 
-WLClogthreshold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
+WLCgetmasterclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	str *ret = getArgReference_str(stk,pci,0);
 	(void) cntxt;
-	wlcr_threshold = * getArgReference_int(stk,pci,1);
-	return MAL_SUCCEED;
-}
-
-str 
-WLClogrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
 	(void) mb;
-	(void) cntxt;
-	wlcr_rollback = * getArgReference_int(stk,pci,1);
+	if( wlc_write[0])
+		*ret = GDKstrdup(wlc_write);
+	else
+		*ret = GDKstrdup(str_nil);
 	return MAL_SUCCEED;
 }
 
@@ -350,12 +356,21 @@ WLClogrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * It forces a new log file
  */
 str 
-WLCdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCsetmasterdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) cntxt;
-	wlcr_drift = * getArgReference_int(stk,pci,1);
+	wlc_drift = * getArgReference_int(stk,pci,1);
 	WLCcloselogger();
+	return MAL_SUCCEED;
+}
+
+str 
+WLCgetmasterdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	int *ret = getArgReference_int(stk,pci,0);
+	(void) mb;
+	(void) cntxt;
+	*ret = wlc_drift;
 	return MAL_SUCCEED;
 }
 
@@ -363,59 +378,28 @@ str
 WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	char path[PATHLENGTH];
+	str l;
+
 	(void) cntxt;
 	(void) mb;
-	if( wlcr_state == WLCR_STOP)
+	if( wlc_state == WLCR_STOP)
 		throw(MAL,"master","WARNING: logging has been stopped. Use new snapshot");
-	if( wlcr_state == WLCR_RUN)
+	if( wlc_state == WLCR_RUN)
 		throw(MAL,"master","WARNING: already in master mode, call ignored");
 	if( pci->argc == 2)
-		wlcr_logs = GDKstrdup( *getArgReference_str(stk, pci,1));
-
-	if ( wlcr_logs == NULL){
-		wlcr_dbname = GDKgetenv("gdk_dbname");
-		wlcr_logs = GDKfilepath(0,0,"master",0);
-		snprintf(path, PATHLENGTH,"%s%c%s_wlcr", wlcr_logs, DIR_SEP, wlcr_dbname);
-		if( GDKcreatedir(path) == GDK_FAIL){
-			wlcr_dbname = NULL;
-			GDKfree(wlcr_logs);
-			wlcr_logs = NULL;
-			throw(SQL,"wlcr.master","Could not create %s\n", wlcr_logs);
-		}
-	} 
-	wlcr_state= WLCR_RUN;
+		strncpy(path, *getArgReference_str(stk, pci,1), PATHLENGTH);
+	else{
+		l = GDKfilepath(0,0,"wlcr_logs",0);
+		snprintf(path,PATHLENGTH,"%s%c",l, DIR_SEP);
+		GDKfree(l);
+	}
+	// set location for logs
+	if( GDKcreatedir(path) == GDK_FAIL)
+		throw(SQL,"wlcr.master","Could not create %s\n", path);
+	strncpy(wlc_name, GDKgetenv("gdk_dbname"),IDLENGTH );
+	strncpy(wlc_dir,path, PATHLENGTH);
+	wlc_state= WLCR_RUN;
 	WLCsetConfig();
-	return MAL_SUCCEED;
-}
-
-str 
-WLCpausemaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if( wlcr_state != WLCR_RUN )
-		throw(MAL,"master","WARNING: master role not active");
-	wlcr_state = WLCR_PAUSE;
-	wlcr_pausetag = wlcr_tag;
-	WLCsetConfig();
-	return MAL_SUCCEED;
-}
-
-str 
-WLCresumemaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if( wlcr_state != WLCR_PAUSE )
-		throw(MAL,"master","WARNING: master role not suspended");
-	wlcr_state = WLCR_RUN;
-	WLCsetConfig();
-	if( wlcr_tag - wlcr_pausetag)
-		throw(MAL,"wlcr.master","#WARNING: %d updates missed due to paused logging", wlcr_tag - wlcr_pausetag);
 	return MAL_SUCCEED;
 }
 
@@ -426,9 +410,9 @@ WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	if( wlcr_state != WLCR_RUN )
+	if( wlc_state != WLCR_RUN )
 		throw(MAL,"master","WARNING: master role not active");
-	wlcr_state = WLCR_STOP;
+	wlc_state = WLCR_STOP;
 	WLCsetConfig();
 	return MAL_SUCCEED;
 }
@@ -449,11 +433,11 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p)
 	return pushStr(cntxt->wlcr, p, wlcr_time);
 }
 
-#define WLCstart(P)\
+#define WLCstart(P, K)\
 { Symbol s; \
 	if( cntxt->wlcr == NULL){\
 		s = newSymbol("wlrc", FUNCTIONsymbol);\
-		cntxt->wlcr_kind = WLCR_QUERY;\
+		cntxt->wlcr_kind = K;\
 		cntxt->wlcr = s->def;\
 		s->def = NULL;\
 	} \
@@ -476,23 +460,13 @@ WLCtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCfinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) pci;
-	(void) mb;
-	(void) stk;
-	return MAL_SUCCEED;
-}
-
-str
 WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 
 	(void) stk;
 	if ( strcmp("-- no query",getVarConstant(mb, getArg(pci,1)).val.sval) == 0)
 		return MAL_SUCCEED;	// ignore system internal queries.
-	WLCstart(p);
+	WLCstart(p, WLCR_QUERY);
 	p = newStmt(cntxt->wlcr, "wlr","query");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	return MAL_SUCCEED;
@@ -503,10 +477,9 @@ WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 
 	(void) stk;
-	WLCstart(p);
+	WLCstart(p,WLCR_CATALOG);
 	p = newStmt(cntxt->wlcr, "wlr","catalog");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
-	wlcr_tag++;
 	return MAL_SUCCEED;
 }
 
@@ -515,7 +488,7 @@ WLCchange(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 
 	(void) stk;
-	WLCstart(p);
+	WLCstart(p, WLCR_UPDATE);
 	p = newStmt(cntxt->wlcr, "wlr","change");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	return MAL_SUCCEED;
@@ -531,7 +504,7 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, tpe, varid;
 	(void) stk;
 	
-	WLCstart(p);
+	WLCstart(p,WLCR_IGNORE);
 	p = newStmt(cntxt->wlcr, "wlr",getFunctionId(pci));
 	for( i = pci->retc; i< pci->argc; i++){
 		tpe =getArgType(mb, pci, i);
@@ -637,7 +610,7 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) mb;
 	
-	WLCstart(p);
+	WLCstart(p, WLCR_UPDATE);
 	p = newStmt(cntxt->wlcr, "wlr","append");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -660,7 +633,6 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 	
-	wlcr_tag++;
 	return MAL_SUCCEED;
 }
 
@@ -678,7 +650,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b= BBPquickdesc(bid, FALSE);
 	if( BATcount(b) == 0)
 		return MAL_SUCCEED;
-	WLCstart(p);
+	WLCstart(p, WLCR_UPDATE);
 	p = newStmt(cntxt->wlcr, "wlr","delete");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -714,7 +686,6 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 
-	wlcr_tag++;
 	return MAL_SUCCEED;
 }
 
@@ -729,7 +700,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sch = *getArgReference_str(stk,pci,1);
 	tbl = *getArgReference_str(stk,pci,2);
 	col = *getArgReference_str(stk,pci,3);
-	WLCstart(p);
+	WLCstart(p, WLCR_UPDATE);
 	tpe= getArgType(mb,pci,5);
 	if (isaBatType(tpe) ){
 		BAT *b, *bval;
@@ -783,7 +754,6 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
-	wlcr_tag++;
 	return MAL_SUCCEED;
 }
 
@@ -792,14 +762,13 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	 InstrPtr p;
 	(void) stk;
 	
-	WLCstart(p);
+	WLCstart(p, WLCR_UPDATE);
 	p = newStmt(cntxt->wlcr, "wlr","clear_table");
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	if( cntxt->wlcr_kind < WLCR_UPDATE)
 		cntxt->wlcr_kind = WLCR_UPDATE;
 
-	wlcr_tag++;
 	return MAL_SUCCEED;
 }
 
@@ -807,53 +776,60 @@ static str
 WLCwrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
 	InstrPtr p;
+	int tag;
+	ValRecord cst;
 	// save the wlcr record on a file 
-	if( cntxt->wlcr == 0 || cntxt->wlcr->stop <= 1)
+	if( cntxt->wlcr == 0 || cntxt->wlcr->stop <= 1 ||  cntxt->wlcr_kind == WLCR_QUERY )
 		return MAL_SUCCEED;
 
-	if( wlcr_state != WLCR_RUN){
+	if( wlc_state != WLCR_RUN){
 		trimMalVariables(cntxt->wlcr, NULL);
 		resetMalBlk(cntxt->wlcr, 0);
 		cntxt->wlcr_kind = WLCR_QUERY;
 		return MAL_SUCCEED;
 	}
-	if( wlcr_logs ){	
-		if( wlcr_start + wlcr_drift < GDKms()/1000)
+	if( wlc_dir[0] ){	
+		if( wlc_start + wlc_drift < GDKms()/1000)
 			WLCcloselogger();
 
-		if (wlcr_fd == NULL){
+		if (wlc_fd == NULL){
 			msg = WLCsetlogger();
 			if( msg) 
 				return msg;
 		}
 		
-		if ( wlcr_fd == NULL)
-			throw(MAL,"wlcr.write","WLC log file not accessible");
-		else {
-			// filter out queries that run too shortly
-			p = getInstrPtr(cntxt->wlcr,0);
-			if (  cntxt->wlcr_kind != WLCR_QUERY ||  wlcr_threshold == 0 || wlcr_threshold < GDKms() - p->ticks ){
-				MT_lock_set(&wlcr_lock);
-				p = getInstrPtr(cntxt->wlcr,0);
-				p = pushLng(cntxt->wlcr,p, GDKms() - p->ticks);
-				printFunction(wlcr_fd, cntxt->wlcr, 0, LIST_MAL_DEBUG );
-				(void) mnstr_flush(wlcr_fd);
-				if( wlcr_drift == 0 || wlcr_start + wlcr_drift < GDKms()/1000)
-					WLCcloselogger();
+		p = getInstrPtr(cntxt->wlcr,0);
+		MT_lock_set(&wlcr_lock);
+		// Tag each transaction record with an unique id
+		cst.vtype= TYPE_lng;
+		cst.val.lval = wlc_id;
+		tag = defConstant(cntxt->wlcr,TYPE_lng, &cst);
+		p = getInstrPtr(cntxt->wlcr,0);
+		p = setArgument(cntxt->wlcr, p, p->retc, tag);
 
-				MT_lock_unset(&wlcr_lock);
-			}
-			trimMalVariables(cntxt->wlcr, NULL);
-			resetMalBlk(cntxt->wlcr, 0);
-			cntxt->wlcr_kind = WLCR_QUERY;
-		}
+		// save it as an ordinary MAL block
+		printFunction(wlc_fd, cntxt->wlcr, 0, LIST_MAL_DEBUG );
+		(void) mnstr_flush(wlc_fd);
+		
+		// Update wlcr administration
+		wlc_id++;
+		strncpy(wlc_write, getVarConstant(cntxt->wlcr, getArg(p, 2)).val.sval, 26);
+
+		// close file if no drift is allowed
+		if( wlc_drift == 0 || wlc_start + wlc_drift < GDKms()/1000)
+			WLCcloselogger();
+
+		MT_lock_unset(&wlcr_lock);
+		trimMalVariables(cntxt->wlcr, NULL);
+		resetMalBlk(cntxt->wlcr, 0);
+		cntxt->wlcr_kind = WLCR_QUERY;
 	} else
 			throw(MAL,"wlcr.write","WLC log path missing ");
 
 #ifdef _WLC_DEBUG_
 	printFunction(cntxt->fdout, cntxt->wlcr, 0, LIST_MAL_ALL );
 #endif
-	if( wlcr_state == WLCR_STOP)
+	if( wlc_state == WLCR_STOP)
 		throw(MAL,"wlcr.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
 	return msg;
 }

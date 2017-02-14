@@ -4,38 +4,38 @@ wlcr00
 
 wlc01
 
-# create the replica synchronized with the master
+# create the clone synchronized with the master
 wlr01
 
 # add two sets of tuples to the master
 wlc20
 wlc21
 
-#and automatically roll forward the replica
+#and automatically roll forward the clone in 2 steps
 wlr20
 
 # prepare an update to the master
 wlc30
-
-# roll forward to replica
+#
+# roll forward to clone
 wlr30
-
-#delete some tupples
-wlc40
+#
+##delete some tupples
+#wlc40
 wlr40
-
-#clear the complete table
-wlc50
-wlr50
-
-#shuffle the master state
-wlc60
-wlr60
-
-#temporarily suspend log propagation
-wlc70
-wlr70
-
-#stop the master
-wlc80
-wlr80
+#
+##clear the complete table
+#wlc50
+#wlr50
+#
+##shuffle the master state
+#wlc60
+#wlr60
+#
+##temporarily suspend log propagation
+#wlc70
+#wlr70
+#
+##stop the master
+#wlc80
+#wlr80
