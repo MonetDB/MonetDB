@@ -27,6 +27,7 @@ Ready.
 Running database upgrade commands:
 set schema "sys";
 update sys.types set digits = 38 where sqlname = 'decimal' and digits = 39;
+update sys.args set type_digits = 38 where type = 'decimal' and type_digits = 39;
 set schema "testschema";
 
 # 15:26:24 >  

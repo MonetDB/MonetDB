@@ -24,7 +24,7 @@ Ready.
 #create table x ("\t" int);
 #select * from x;
 % sys.x # table_name
-% \t # name
+% "\\t" # name
 % int # type
 % 1 # length
 #drop table "x";

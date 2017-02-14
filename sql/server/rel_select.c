@@ -772,17 +772,27 @@ rel_values( mvc *sql, symbol *tableref)
 		sql_exp *vals = m->data;
 		list *vals_list = vals->f;
 		list *nexps = sa_list(sql->sa);
+		sql_subtype *tpe = exp_subtype(vals_list->h->data);
+
+		if (tpe)
+			vals->tpe = *tpe;
 
 		/* first get super type */
-		vals->tpe = *exp_subtype(vals_list->h->data);
-
 		for (n = vals_list->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			sql_subtype super;
+			sql_subtype super, *ttpe;
 
-			supertype(&super, &vals->tpe, exp_subtype(e));
-			vals->tpe = super;
+			ttpe = exp_subtype(e);
+			if (tpe && ttpe) {
+				supertype(&super, tpe, ttpe);
+				vals->tpe = super;
+				tpe = &vals->tpe;
+			} else {
+				tpe = ttpe;
+			}
 		}
+		if (!tpe)
+			continue;
 		for (n = vals_list->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			
@@ -3581,7 +3591,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 			return NULL;
 
 		/* remove any null's in the condition */
-		if (has_nil(cond)) {
+		if (has_nil(cond) && token != SQL_COALESCE) {
 			sql_exp *condnil = rel_unop_(sql, cond, NULL, "isnull", card_value);
 			cond = rel_nop_(sql, condnil, exp_atom_bool(sql->sa, 0), cond, NULL, NULL, "ifthenelse", card_value);
 		}
@@ -5298,6 +5308,7 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 	set_processed(rv);
 	rel = rel_setop(sql->sa, lv, rv, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
+	set_processed(rel);
 	if (!all)
 		rel = rel_distinct(rel);
 	return rel;

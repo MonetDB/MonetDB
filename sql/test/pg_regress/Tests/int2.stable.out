@@ -159,7 +159,7 @@ Ready.
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i;
 % .L2,	sys.i,	sys.L6 # table_name
 % five,	f1,	x # name
-% char,	smallint,	int # type
+% char,	smallint,	bigint # type
 % 0,	6,	6 # length
 [ "",	0,	0	]
 [ "",	1234,	2468	]
@@ -170,7 +170,7 @@ Ready.
 #WHERE abs(f1) < 16384;
 % .L2,	sys.i,	sys.L6 # table_name
 % five,	f1,	x # name
-% char,	smallint,	int # type
+% char,	smallint,	bigint # type
 % 0,	5,	5 # length
 [ "",	0,	0	]
 [ "",	1234,	2468	]

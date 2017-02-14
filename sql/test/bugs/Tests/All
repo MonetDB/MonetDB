@@ -109,4 +109,4 @@ cur_date_crash-JIRA-42
 WHERE_and_multiple_LEFT_JOIN_incorrect_results-JIRA-43
 WHERE_IN_subquery_incorrect_results-JIRA-44
 select_select_bug
-filter_error
+HAVE_GEOM?filter_error

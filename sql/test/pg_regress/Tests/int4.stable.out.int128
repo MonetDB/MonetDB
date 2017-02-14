@@ -168,7 +168,7 @@ Ready.
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT4_TBL i;
 % .L2,	sys.i,	sys.L6 # table_name
 % five,	f1,	x # name
-% char,	int,	bigint # type
+% char,	int,	hugeint # type
 % 0,	11,	11 # length
 [ "",	0,	0	]
 [ "",	123456,	246912	]
@@ -179,7 +179,7 @@ Ready.
 #WHERE abs(f1) < 1073741824;
 % .L2,	sys.i,	sys.L6 # table_name
 % five,	f1,	x # name
-% char,	int,	bigint # type
+% char,	int,	hugeint # type
 % 0,	7,	7 # length
 [ "",	0,	0	]
 [ "",	123456,	246912	]

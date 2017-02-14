@@ -66,8 +66,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			// calculate progress based on past observations
 			prog = (int) ((now- QRYqueue[i].start) / (QRYqueue[i].runtime/100.0));
-		
-		BUNappend(tag, &QRYqueue[i].tag, FALSE);
+		now = QRYqueue[i].tag;	/* temporarily use so that we have correct type */
+		BUNappend(tag, &now, FALSE);
 		msg = AUTHgetUsername(&usr, cntxt);
 		if (msg != MAL_SUCCEED)
 			goto bailout;

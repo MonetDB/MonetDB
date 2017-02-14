@@ -39,7 +39,6 @@ null	sys	_columns	SYSTEM TABLE	null	null	null	null	null	null
 null	sys	_tables	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	args	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	auths	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	connections	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	db_user_info	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	dependencies	SYSTEM TABLE	null	null	null	null	null	null	
 null	sys	dependency_types	SYSTEM TABLE	null	null	null	null	null	null	

@@ -94,17 +94,15 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "sql");
 	// Wait for any recovery process to be finished
 	do {
+		MT_sleep_ms(1000);
 		logmsg = GDKgetenv("recovery");
-		if( logmsg== NULL && ++cnt  == 10)
+		if( logmsg== NULL && ++cnt  == 5)
 			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
-		if( logmsg == NULL)
-			MT_sleep_ms(500);
     }while (logmsg == NULL);
 	return msg;
 }
@@ -124,11 +122,10 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = setScenario(cntxt, "msql");
 	// Wait for any recovery process to be finished
 	do {
+		MT_sleep_ms(1000);
 		logmsg = GDKgetenv("recovery");
 		if( logmsg== NULL && ++cnt  == 5)
 			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
-		if ( logmsg == NULL)
-			MT_sleep_ms(1000);
     }while (logmsg == NULL);
 	return msg;
 }
@@ -162,8 +159,8 @@ SQLprelude(void *ret)
 	ms->name = "M_S_Q_L";
 	ms->language = "msql";
 	ms->initSystem = NULL;
-ms->exitSystem = "SQLexit";
-ms->initClient = "SQLinitClient";
+	ms->exitSystem = "SQLexit";
+	ms->initClient = "SQLinitClient";
 	ms->exitClient = "SQLexitClient";
 	ms->reader = "MALreader";
 	ms->parser = "MALparser";
@@ -256,10 +253,12 @@ SQLinit(void)
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
 	GDKregister(sqllogthread);
-	if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
-		throw(SQL, "SQLinit", "Starting idle manager failed");
+	if (!(SQLdebug&1024)) {
+		if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
+			throw(SQL, "SQLinit", "Starting idle manager failed");
+		}
+		GDKregister(idlethread);
 	}
-	GDKregister(idlethread);
 	WLCinit();
 	return MAL_SUCCEED;
 }
@@ -610,9 +609,8 @@ SQLexitClient(Client c)
 
 		assert(m->session);
 		if (m->session->auto_commit && m->session->active) {
-			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0){
+			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0)
 				(void) handle_error(m, c->fdout, 0);
-			} 
 		}
 		if (m->session->active) {
 			mvc_rollback(m, 0, NULL);
@@ -638,12 +636,13 @@ SQLexitClient(Client c)
  */
 str
 SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{ 
+{
 	(void) mb;
 	(void) stk;
 	(void) pci;
 	return SQLinitClient(cntxt);
 }
+
 
 str
 SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -997,7 +996,7 @@ SQLparser(Client c)
 				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
 					mnstr_printf(out, "!COMMIT: rollback failed while " "disabling auto_commit\n");
 					msg = createException(SQL, "SQLparser", "Xauto_commit (rollback) failed");
-				} 
+				}
 			}
 			in->pos = in->len;	/* HACK: should use parsed length */
 			if (msg != NULL)

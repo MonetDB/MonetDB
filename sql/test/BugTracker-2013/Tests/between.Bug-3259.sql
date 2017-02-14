@@ -1,3 +1,5 @@
+set optimizer = 'sequential_pipe';
+
 START TRANSACTION;
 
 CREATE TABLE treeitems (

@@ -459,7 +459,7 @@ static void SERVERannounce(struct in_addr addr, int port, str usockfile) {
 	}
 }
 
-str
+static str
 SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 {
 	struct sockaddr_in server;

@@ -247,11 +247,6 @@ Ready.
 % duplicates,	name # name
 % bigint,	varchar # type
 % 1,	0 # length
-#SELECT COUNT(*) AS duplicates, id FROM sys.connections GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.connections # table_name
-% duplicates,	id # name
-% bigint,	int # type
-% 1,	1 # length
 #SELECT COUNT(*) AS duplicates, "user", login, active FROM sys.sessions GROUP BY "user", login, active HAVING COUNT(*) > 1;  -- is this really always unique?
 % .L10,	.sessions,	.sessions,	.sessions # table_name
 % duplicates,	user,	login,	active # name

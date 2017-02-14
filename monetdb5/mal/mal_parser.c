@@ -1749,7 +1749,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 	int cntrl = 0;
 	/*Symbol curPrg= cntxt->curprg;*/
 	char c;
-	int inlineProp =0, unsafeProp = 0;
+	int inlineProp =0, unsafeProp = 0, sealedProp = 0;
 
 	echoInput(cntxt);
 	/* here the work takes place */
@@ -1816,10 +1816,12 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			if (MALkeyword(cntxt, "command", 7)) {
 				parseCommandPattern(cntxt, COMMANDsymbol);
 				cntxt->curprg->def->unsafeProp = unsafeProp;
-				if( inlineProp )
+				cntxt->curprg->def->sealedProp = sealedProp;
+				if (inlineProp)
 					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				continue;
 			}
 			if (MALkeyword(cntxt, "catch", 5)) {
@@ -1843,8 +1845,10 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				if (parseFunction(cntxt, FUNCTIONsymbol)){
 					cntxt->curprg->def->inlineProp = inlineProp;
 					cntxt->curprg->def->unsafeProp = unsafeProp;
+					cntxt->curprg->def->sealedProp = sealedProp;
 					inlineProp = 0;
 					unsafeProp = 0;
+					sealedProp = 0;
 					break;
 				}
 			} else if (MALkeyword(cntxt, "factory", 7)) {
@@ -1852,8 +1856,11 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				if( unsafeProp)
 					showException(cntxt->fdout, SYNTAX, "parseError", "UNSAFE ignored");
+				if( sealedProp)
+					showException(cntxt->fdout, SYNTAX, "parseError", "SEALED ignored");
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				cntxt->blkmode++;
 				parseFunction(cntxt, FACTORYsymbol);
 				break;
@@ -1883,8 +1890,10 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				parseCommandPattern(cntxt, PATTERNsymbol);
 				cntxt->curprg->def->unsafeProp = unsafeProp;
+				cntxt->curprg->def->sealedProp = sealedProp;
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				continue;
 			}
 			goto allLeft;
@@ -1899,6 +1908,13 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			}
 			if (MALkeyword(cntxt, "return", 6)) {
 				cntrl = RETURNsymbol;
+			}
+			goto allLeft;
+		case 's':
+			if (MALkeyword(cntxt, "sealed", 6)) {
+				sealedProp= 1;
+				skipSpace(cntxt);
+				continue;
 			}
 			goto allLeft;
 		case 'U': case 'u': 

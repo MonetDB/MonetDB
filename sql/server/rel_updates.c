@@ -211,6 +211,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		rel_destroy(ins);
 		rt = inserts->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
 		rt->exps = rel_projections(sql, nnlls, NULL, 1, 1);
+		set_processed(rt);
 	} else {
 		inserts->r = nnlls;
 	}
@@ -721,6 +722,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		rel_destroy(ups);
 		rt = updates->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
 		rt->exps = rel_projections(sql, nnlls, NULL, 1, 1);
+		set_processed(rt);
 	} else {
 		updates->r = nnlls;
 	}
@@ -1351,8 +1353,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 
 			if (!rel)
 				rel = nrel;
-			else
+			else {
 				rel = rel_setop(sql->sa, rel, nrel, op_union);
+				set_processed(rel);
+			}
 			if (!rel)
 				return rel;
 		}

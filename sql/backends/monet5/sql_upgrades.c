@@ -1220,11 +1220,13 @@ sql_update_dec2016_sp2(Client c, mvc *sql)
 #ifdef HAVE_HGE
 			if (have_hge) {
 				pos += snprintf(buf + pos, bufsize - pos,
-				"update sys.types set digits = 38 where sqlname = 'decimal' and digits = 39;\n");
+						"update sys.types set digits = 38 where sqlname = 'decimal' and digits = 39;\n"
+						"update sys.args set type_digits = 38 where type = 'decimal' and type_digits = 39;\n");
 			} else
 #endif
 				pos += snprintf(buf + pos, bufsize - pos,
-						"update sys.types set digits = 18 where sqlname = 'decimal' and digits = 19;\n");
+						"update sys.types set digits = 18 where sqlname = 'decimal' and digits = 19;\n"
+						"update sys.args set type_digits = 18 where type = 'decimal' and type_digits = 19;\n");
 
 			if (schema)
 				pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);

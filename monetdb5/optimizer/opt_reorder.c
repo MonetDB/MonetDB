@@ -135,7 +135,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 	}
 	uselist = GDKzalloc(sizeof(int)*sz);
 	if (!uselist) {
-		GDKfree(list);
+		OPTremoveDep(list, mb->stop);
 		GDKfree(var);
 		return NULL;
 	}

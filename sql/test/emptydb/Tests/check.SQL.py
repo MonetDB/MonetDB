@@ -117,8 +117,6 @@ out += ";"
 out += '''
 -- auths
 select name, grantor from sys.auths;
--- connections (expect empty)
-select server, port, db, db_alias, user, password, language from sys.connections order by server, port;
 -- db_user_info
 select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
 -- dependencies
