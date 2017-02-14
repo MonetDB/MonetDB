@@ -171,6 +171,34 @@
             }                                                                                                                                    \
         }                                                                                                                                        \
     } }
+#define NP_COL_BAT_LOOPF(bat, mtpe_to, mtpe_from,index) {                                                                                        \
+    if (mask == NULL)                                                                                                                            \
+    {                                                                                                                                            \
+        for (iu = 0; iu < ret->count; iu++)                                                                                                      \
+        {                                                                                                                                        \
+            if (isnan(((mtpe_from*)data)[index_offset * ret->count + iu])) {                                                                     \
+		bat->tnil = 1;                                                                                                                   \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = mtpe_to##_nil;                                                                           \
+            } else {                                                                                                                             \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = (mtpe_to)((mtpe_from*)data)[index_offset * ret->count + iu];                             \
+            }                                                                                                                                    \
+        }                                                                                                                                        \
+    }                                                                                                                                            \
+    else                                                                                                                                         \
+    {                                                                                                                                            \
+        for (iu = 0; iu < ret->count; iu++)                                                                                                      \
+        {                                                                                                                                        \
+            if (mask[index_offset * ret->count + iu] == TRUE || isnan(((mtpe_from*)data)[index_offset * ret->count + iu]))                       \
+            {                                                                                                                                    \
+                bat->tnil = 1;                                                                                                                 \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = mtpe_to##_nil;                                                               \
+            }                                                                                                                                    \
+            else                                                                                                                                 \
+            {                                                                                                                                    \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));\
+            }                                                                                                                                    \
+        }                                                                                                                                        \
+    } }
 
 // This #define converts a Numpy Array to a BAT by copying the internal data to the BAT. It converts the data from the Numpy Array to the BAT using a function
 // This function has to have the prototype 'bool function(void *data, size_t memory_size, mtpe_to *resulting_value)', and either return False (if conversion fails)
@@ -253,9 +281,9 @@
         case NPY_ULONG:      NP_COL_BAT_LOOP(bat, mtpe, unsigned long, index); break;                                                                   \
         case NPY_ULONGLONG:  NP_COL_BAT_LOOP(bat, mtpe, unsigned long long, index); break;                                                              \
         case NPY_FLOAT16:                                                                                                                               \
-        case NPY_FLOAT:      NP_COL_BAT_LOOP(bat, mtpe, float, index); break;                                                                           \
-        case NPY_DOUBLE:     NP_COL_BAT_LOOP(bat, mtpe, double, index); break;                                                                          \
-        case NPY_LONGDOUBLE: NP_COL_BAT_LOOP(bat, mtpe, long double, index); break;                                                                     \
+        case NPY_FLOAT:      NP_COL_BAT_LOOPF(bat, mtpe, float, index); break;                                                                          \
+        case NPY_DOUBLE:     NP_COL_BAT_LOOPF(bat, mtpe, double, index); break;                                                                         \
+        case NPY_LONGDOUBLE: NP_COL_BAT_LOOPF(bat, mtpe, long double, index); break;                                                                    \
         case NPY_STRING:     NP_COL_BAT_LOOP_FUNC(bat, mtpe, str_to_##mtpe, char, index); break;                                                        \
         case NPY_UNICODE:    NP_COL_BAT_LOOP_FUNC(bat, mtpe, unicode_to_##mtpe, PythonUnicodeType, index); break;                                       \
         case NPY_OBJECT:     NP_COL_BAT_LOOP_FUNC(bat, mtpe, pyobject_to_##mtpe, PyObject*, index); break;                                              \
