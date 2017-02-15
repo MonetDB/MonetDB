@@ -19,7 +19,7 @@ def query(conn, sql):
     try:
         cur.execute(sql)
     except pymonetdb.OperationalError, e:
-        print e
+        print "!", e
         return
     r = cur.fetchall()
     cur.close()
@@ -30,9 +30,10 @@ def run(conn, sql):
     try:
         r = conn.execute(sql)
     except pymonetdb.OperationalError, e:
-        print e
+        print "!", e
         return
-    print(r)
+    print '# OK'
+
 
 c1 = connect('monetdb', 'monetdb')
 # Create a new schema with a new table.
