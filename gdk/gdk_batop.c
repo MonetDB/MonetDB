@@ -1501,6 +1501,8 @@ BATcount_no_nil(BAT *b)
 	return cnt;
 }
 
+/* create a new, dense candidate list with values from `first' up to,
+ * but not including, `last' */
 static BAT *
 newdensecand(oid first, oid last)
 {
@@ -1510,7 +1512,7 @@ newdensecand(oid first, oid last)
 		return NULL;
 	if (last < first)
 		first = last = 0; /* empty range */
-	BATsetcount(bn, last - first + 1);
+	BATsetcount(bn, last - first);
 	BATtseqbase(bn, first);
 	return bn;
 }
@@ -1562,19 +1564,19 @@ BATmergecand(BAT *a, BAT *b)
 		if (af <= bf && bf <= al + 1) {
 			/* partial overlap starting with a, or b is
 			 * smack bang after a */
-			return newdensecand(af, al < bl ? bl : al);
+			return newdensecand(af, al < bl ? bl + 1 : al + 1);
 		}
 		if (bf <= af && af <= bl + 1) {
 			/* partial overlap starting with b, or a is
 			 * smack bang after b */
-			return newdensecand(bf, al < bl ? bl : al);
+			return newdensecand(bf, al < bl ? bl + 1 : al + 1);
 		}
 	}
 	if (ad && af <= bf && al >= bl) {
-		return newdensecand(af, al);
+		return newdensecand(af, al + 1);
 	}
 	if (bd && bf <= af && bl >= al) {
-		return newdensecand(bf, bl);
+		return newdensecand(bf, bl + 1);
 	}
 
 	bn = COLnew(0, TYPE_oid, BATcount(a) + BATcount(b), TRANSIENT);
@@ -1684,7 +1686,7 @@ BATintersectcand(BAT *a, BAT *b)
 
 	if ((af + BATcount(a) - 1 == al) && (bf + BATcount(b) - 1 == bl)) {
 		/* both lists are VOID */
-		return newdensecand(MAX(af, bf), MIN(al, bl));
+		return newdensecand(MAX(af, bf), MIN(al, bl) + 1);
 	}
 
 	bn = COLnew(0, TYPE_oid, MIN(BATcount(a), BATcount(b)), TRANSIENT);
