@@ -1627,8 +1627,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				rbn = (oid *) Tloc((bn), 0);
 
 				for (i = low; i < high; i++) {
-					if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
-						*rbn++ = ((*rs)&BUN_UNMSK);
+					if (vwl <= *rs && *rs < vwh) {
+						*rbn++ = *rs;
 						cnt++;
 					}
 					rs++;
@@ -2079,15 +2079,12 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 			high += l->hseqbase;
 			if (use_orderidx) {
 				const oid *ord;
-				oid o;
 				ord = (const oid *) l->torderidx->base + ORDERIDXOFF;
 
 				if (sl) {
 					assert(BATtdense(sl));
-					o = (oid) ((*(ord+low))&BUN_UNMSK);
-					ll = SORTfndfirst(sl, &o);
-					o = (oid) ((*(ord+high))&BUN_UNMSK);
-					lh = SORTfndfirst(sl, &o);
+					ll = SORTfndfirst(sl, ord + low);
+					lh = SORTfndfirst(sl, ord + high);
 				}
 				assert(lh >= ll);
 
@@ -2107,8 +2104,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 
 				ord += low;
 				while (low < high) {
-					if (ll <= ((*ord)&BUN_UNMSK) && ((*ord)&BUN_UNMSK) < lh) {
-						dst1[r1->batCount++] = ((*ord)&BUN_UNMSK);
+					if (ll <= *ord && *ord < lh) {
+						dst1[r1->batCount++] = *ord;
 						dst2[r2->batCount++] = ro;
 						low++;
 						ord++;

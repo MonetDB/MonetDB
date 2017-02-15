@@ -66,31 +66,31 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 	if (ordering > 0) {						\
 		if (indir) {						\
 			if (last > 0) {					\
-				if ((x = vals[(indir[lo] & BUN_UNMSK) - offset]) > v) \
+				if ((x = vals[indir[lo] - offset]) > v) \
 					return lo;			\
-				if ((x = vals[(indir[hi] & BUN_UNMSK) - offset]) <= v) \
+				if ((x = vals[indir[hi] - offset]) <= v) \
 					return hi + 1;			\
 									\
 				/* loop invariant: */			\
 				/* value@lo <= v < value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[(indir[mid] & BUN_UNMSK) - offset] > v) \
+					if (vals[indir[mid] - offset] > v) \
 						hi = mid;		\
 					else				\
 						lo = mid;		\
 				}					\
 			} else {					\
-				if ((x = vals[(indir[lo] & BUN_UNMSK) - offset]) >= v) \
+				if ((x = vals[indir[lo] - offset]) >= v) \
 					return last == 0 || x == v ? lo : BUN_NONE; \
-				if ((x = vals[(indir[hi] & BUN_UNMSK) - offset]) < v) \
+				if ((x = vals[indir[hi] - offset]) < v) \
 					return last == 0 ? hi + 1 : BUN_NONE; \
 									\
 				/* loop invariant: */			\
 				/* value@lo < v <= value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[(indir[mid] & BUN_UNMSK) - offset] >= v) \
+					if (vals[indir[mid] - offset] >= v) \
 						hi = mid;		\
 					else				\
 						lo = mid;		\
@@ -132,31 +132,31 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 	} else {							\
 		if (indir) {						\
 			if (last > 0) {					\
-				if ((x = vals[(indir[lo] & BUN_UNMSK) - offset]) < v) \
+				if ((x = vals[indir[lo] - offset]) < v) \
 					return lo;			\
-				if ((x = vals[(indir[hi] & BUN_UNMSK) - offset]) >= v) \
+				if ((x = vals[indir[hi] - offset]) >= v) \
 					return hi + 1;			\
 									\
 				/* loop invariant: */			\
 				/* value@lo >= v > value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[(indir[mid] & BUN_UNMSK) - offset] < v) \
+					if (vals[indir[mid] - offset] < v) \
 						hi = mid;		\
 					else				\
 						lo = mid;		\
 				}					\
 			} else {					\
-				if ((x = vals[(indir[lo] & BUN_UNMSK) - offset]) <= v) \
+				if ((x = vals[indir[lo] - offset]) <= v) \
 					return last == 0 || x == v ? lo : BUN_NONE; \
-				if ((x = vals[(indir[hi] & BUN_UNMSK) - offset]) > v) \
+				if ((x = vals[indir[hi] - offset]) > v) \
 					return last == 0 ? hi + 1 : BUN_NONE; \
 									\
 				/* loop invariant: */			\
 				/* value@lo > v >= value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[(indir[mid] & BUN_UNMSK) - offset] <= v) \
+					if (vals[indir[mid] - offset] <= v) \
 						hi = mid;		\
 					else				\
 						lo = mid;		\
@@ -196,7 +196,7 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 			}						\
 		}							\
 	}								\
-	return last >= 0 || (indir ? vals[(indir[hi] & BUN_UNMSK) - offset] : vals[hi]) == v ? hi : BUN_NONE; \
+	return last >= 0 || (indir ? vals[indir[hi] - offset] : vals[hi]) == v ? hi : BUN_NONE; \
 }
 
 BINSEARCHFUNC(bte)
@@ -261,21 +261,21 @@ binsearch(const oid *restrict indir, oid offset,
 	cmp = ATOMcompare(type);
 
 	if (last > 0) {
-		if ((c = ordering * cmp(VALUE(indir ? (indir[lo] & BUN_UNMSK) - offset : lo), v)) > 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[lo] - offset : lo), v)) > 0)
 			return lo;
-		if ((c = ordering * cmp(VALUE(indir ? (indir[hi] & BUN_UNMSK) - offset : hi), v)) <= 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[hi] - offset : hi), v)) <= 0)
 			return hi + 1;
 	} else if (last == 0) {
-		if ((c = ordering * cmp(VALUE(indir ? (indir[lo] & BUN_UNMSK) - offset : lo), v)) >= 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[lo] - offset : lo), v)) >= 0)
 			return lo;
-		if ((c = ordering * cmp(VALUE(indir ? (indir[hi] & BUN_UNMSK) - offset : hi), v)) < 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[hi] - offset : hi), v)) < 0)
 			return hi + 1;
 	} else {
-		if ((c = ordering * cmp(VALUE(indir ? (indir[lo] & BUN_UNMSK) - offset : lo), v)) > 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[lo] - offset : lo), v)) > 0)
 			return BUN_NONE;
 		if (c == 0)
 			return lo;
-		if ((c = ordering * cmp(VALUE(indir ? (indir[hi] & BUN_UNMSK) - offset : hi), v)) < 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[hi] - offset : hi), v)) < 0)
 			return BUN_NONE;
 		if (c == 0)
 			return hi;
@@ -295,7 +295,7 @@ binsearch(const oid *restrict indir, oid offset,
 	 * vars (in VALUE()) already, so we're beyond caring. */
 	while (hi - lo > 1) {
 		mid = (hi + lo) / 2;
-		if ((c = ordering * cmp(VALUE(indir ? (indir[mid] & BUN_UNMSK) - offset : mid), v)) > 0 ||
+		if ((c = ordering * cmp(VALUE(indir ? indir[mid] - offset : mid), v)) > 0 ||
 		    (last <= 0 && c == 0))
 			hi = mid;
 		else
