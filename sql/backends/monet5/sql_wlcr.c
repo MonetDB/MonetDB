@@ -363,6 +363,8 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if( pci->argc > 1){
+		if( strcmp(GDKgetenv("gdk_dbname"),*getArgReference_str(stk,pci,1)) == 0)
+			throw(SQL,"wlcr.replicate","Master and replicate should be different");
 		strncpy(wlr_master, *getArgReference_str(stk,pci,1), IDLENGTH);
 	} else  wlr_limit = -1;
 
@@ -445,7 +447,7 @@ WLRgetreplicaclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 WLRgetreplicabacklog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = getArgReference_int(stk,pci,0);
+	lng *ret = getArgReference_lng(stk,pci,0);
 	(void) cntxt;
 	(void) mb;
 	WLRgetMaster();

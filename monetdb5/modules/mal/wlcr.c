@@ -20,15 +20,17 @@
  *
  * For REPLICATION, also called a database clone or slave, we take a snapshot and the
  * log files that reflect the recent changes. The log updates are replayed against
- * the snapshot until a specific time point is reached. 
+ * the snapshot until a specific time point or transaction id is reached. 
  * 
  * Some systems also use the logical logs to REPLAY all (expensive) queries
- * against the database. 
+ * against the database. We skip this for the time being.
  *
  * The goal of this module is to ease BACKUP and REPPLICATION of a master database 
  * with a time-bounded delay.
  * Such a clone is a database replica that aid in query workload sharing,
  * database versioning, and (re-)partitioning.
+ * Tables taken from the master version are not protected against local updates.
+ * However, any transaction being replay that fails finalizes the cloning process.
  *
  * Simplicity and ease of end-user control has been the driving argument here.
  *
@@ -39,9 +41,9 @@
  *
  * A database can be set into 'master' mode only once using the SQL command:
  * CALL master()
- * An alternative path to the log records can be given to reduce the storage cost,
+ * An alternative path to the log records can be given to reduce the IO latency,
  * e.g. a nearby SSD.
- * By default, it creates a directory .../dbfarm/dbname/master to hold all 
+ * By default, it creates a directory .../dbfarm/dbname/wlcr_logs to hold all 
  * necessary information for the creation of a database clone.
  *
  * A master configuration file is added to the database directory to keep the state/
@@ -59,32 +61,32 @@
  * Each wlcr log file contains a serial log of committed compound transactions.
  * The log records are represented as ordinary MAL statement blocks, which
  * are executed in serial mode. (parallelism can be considered for large updates later)
- * Each transaction job is identified by the owner of the query, its starting time and runtime (in ms).
+ * Each transaction job is identified by a unique id, its starting time, and the user responsible..
  * The log-record should end with a commit.
  *
  * A transaction log is created by the master. He decides when the log may be globally used.
- * The trigger for this is the allowed 'drift'. A new transaction log is created when
+ * The trigger for this is the allowed 'drift'. A new transaction log file is published when
  * the system has been collecting logs for some time (drift in seconds).
  * The drift determines the maximal window of transactions loss that is permitted.
  * The maximum drift can be set using a SQL command, e.g.
- * CALL drift(duration)
+ * CALL setmasterdrift(duration)
  * Setting it to zero leads to a log file per transaction and may cause a large log directory.
- * A default of 5 minutes should balance polling overhead.
+ * A default of 5 minutes should balance polling overhead in most practical situations.
  *
  * A minor problem here is that we should ensure that the log file is closed even if there
  * are no transactions running. It is solved with a separate monitor thread, which ensures
  * that the logs are flushed at least after 'drift' seconds since the first logrecord was created.
  * After closing, the replicas can see from the master configuration file that a new log batch is available.
  *
- * The final step is to close stop ransaction logging with the command
- * CALL stopmaster.
+ * The final step is to close stop transaction logging with the command
+ * CALL stopmaster().
  * It typically is the end-of-life-time for a snapshot. For example, when planning to do
  * a large bulk load of the database, stopping logging avoids a double write into the
  * database. The database can be brought back into wlcr mode using a fresh snapshot.
  *
  *[TODO] A more secure way to set a database into master mode is to use the command
  *	 monetdb master <dbname> [ <optional snapshot path>]
- * which locks the database, takes a save copy, initializes the state chance. 
+ * which locks the database, takes a save copy, initializes the state chance to master. 
  *
  * A fresh replica can be constructed as follows:
  * 	monetdb replicate <dbname> <mastername>
@@ -105,16 +107,16 @@
  * The clone process will iterate in the background through the log files, 
  * applying all update transactions.
  *
- * An optional timestamp or transaction id can be added to apply the logs until
- * a given moment. This is particularly handy when an unexpected 
- * desastrous user action (drop persisten table) has to be recovered from.
+ * An optional timestamp or transaction id can be added to the replicate() command to
+ * apply the logs until a given moment. This is particularly handy when an unexpected 
+ * desastrous user action (drop persistent table) has to be recovered from.
  *
  * CALL replicate('mastername');
  * CALL replicate('mastername',NOW()); -- stops after we are in sink
  * ...
  * CALL replicate(NOW()); -- partial roll forward
  * ...
- * CALL replicate(); --continue nondisturbed
+ * CALL replicate(); --continue nondisturbed synchronisation
  *
  * SELECT replicaClock();
  * returns the timestamp of the last replicated transaction.
@@ -130,8 +132,7 @@
  * This provides a stepping stone for remote execution later.
  *
  * [TODO] consider the roll forward of SQL session variables, i.e. optimizer_pipe (for now assume default pipe).
- * [TODO] the user might want to indicate a time-stamp, to rebuild to a certain point
- *
+ * For updates we don't need special care for this.
  */
 #include "monetdb_config.h"
 #include <time.h>
