@@ -1431,8 +1431,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    !(b->tsorted || b->trevsorted) &&
 	    (!s || (s && BATtdense(s)))    &&
 	    (BATcheckorderidx(b) ||
-	     (VIEWtparent(b) && BATcheckorderidx(BBPquickdesc(VIEWtparent(b), 0)))))
-	{
+	     (VIEWtparent(b) &&
+	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), 0))))) {
 		BAT *view = NULL;
 		if (VIEWtparent(b) && !BATcheckorderidx(b)) {
 			view = b;
@@ -1441,8 +1441,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* Is query selective enough to use the ordered index ? */
 		/* TODO: Test if this heuristic works in practice */
 		/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))*/
-		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3)
-		{
+		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3) {
 			use_orderidx = 1;
 			if (view) {
 				vwl = view->hseqbase;
@@ -1627,47 +1626,28 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 				rbn = (oid *) Tloc((bn), 0);
 
-				if (s && !BATtdense(s)) {
-					const oid *rcand = (const oid *) Tloc((s), 0);
-					assert("should not use orderidx with non dense cand list, too expensive");
-
-					for (i = low; i < high; i++) {
-						if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
-							if (binsearchcand(rcand, 0, s->batCount, ((*rs)&BUN_UNMSK))) {
-								*rbn++ = ((*rs)&BUN_UNMSK);
-								cnt++;
-							}
-						}
-						rs++;
+				for (i = low; i < high; i++) {
+					if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
+						*rbn++ = ((*rs)&BUN_UNMSK);
+						cnt++;
 					}
-					BATsetcount(bn, cnt);
-
-				} else {
-					if (s) {
-						assert(BATtdense(s));
-						if (vwl < s->tseqbase)
-							vwl = s->tseqbase;
-						if (s->tseqbase + BATcount(s) < vwh)
-							vwh = s->tseqbase + BATcount(s);
-					}
-					for (i = low; i < high; i++) {
-						if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
-							*rbn++ = ((*rs)&BUN_UNMSK);
-							cnt++;
-						}
-						rs++;
-					}
-					BATsetcount(bn, cnt);
+					rs++;
 				}
+				BATsetcount(bn, cnt);
 
 				/* output must be sorted */
-				GDKqsort((oid *) Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
+				GDKqsort(Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
 				bn->tsorted = 1;
 				bn->trevsorted = bn->batCount <= 1;
 				bn->tkey = 1;
 				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? 0 : oid_nil;
 				bn->tnil = 0;
 				bn->tnonil = 1;
+				if (s) {
+					s = BATintersectcand(bn, s);
+					BBPunfix(bn->batCacheid);
+					bn = s;
+				}
 			} else {
 				/* match: [low..high) */
 				if (s) {
