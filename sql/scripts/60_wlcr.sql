@@ -22,6 +22,9 @@ external name wlcr."setmasterdrift";
 create function masterClock() returns string
 external name wlcr."getmasterclock";
 
+create function masterTick() returns integer
+external name wlcr."getmastertick";
+
 -- Replica commands
 create procedure replicate()
 external name wlr.replicate;
@@ -44,12 +47,12 @@ external name wlr.replicate;
 create procedure replicate(dbname string, id bigint)
 external name wlr.replicate;
 
-create procedure replicadrift(duration int)
+create procedure replicadrift(duration integer)
 external name wlr."setreplicadrift";
 
 create function replicaClock() returns string
 external name wlr."getreplicaclock";
 
-create function replicaBacklog() returns integer
-external name wlr."getreplicabacklog";
+create function replicaTick() returns integer
+external name wlr."getreplicatick";
 

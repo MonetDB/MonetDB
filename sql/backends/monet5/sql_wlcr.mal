@@ -42,9 +42,9 @@ pattern getreplicaclock():str
 address WLRgetreplicaclock
 comment "Timestamp of last replicated transaction.";
 
-pattern getreplicabacklog():lng
-address WLRgetreplicabacklog
-comment "Number of transactions pending execution";
+pattern getreplicatick():lng
+address WLRgetreplicatick
+comment "Transaction identifier of the last replicated transaction.";
 
 pattern transaction(tid:lng, started:str, user:str)
 address WLRtransaction

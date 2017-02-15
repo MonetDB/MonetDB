@@ -34,6 +34,10 @@ pattern getmasterclock():str
 address WLCgetmasterclock
 comment "Timestamp of last update transaction";
 
+pattern getmastertick():lng
+address WLCgetmastertick
+comment "Transaction identifier of the last committed transaction";
+
 pattern finish(started:str, user:str, action:str, runtime:int)
 address WLCfinish
 comment "Mark the beginning of the work unit which can be a compound transaction";

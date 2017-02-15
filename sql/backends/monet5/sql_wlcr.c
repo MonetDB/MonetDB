@@ -235,6 +235,7 @@ WLRprocess(void *arg)
 			} else
 			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef ){
 				strncpy(wlr_read, getVarConstant(mb, getArg(q,2)).val.sval,26);
+				wlr_tag = getVarConstant(mb, getArg(q,1)).val.lval;
 			}
 			// only re-execute successful transactions.
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef ){
@@ -250,7 +251,6 @@ WLRprocess(void *arg)
 					sql->session->level = 0;
 					(void) mvc_trans(sql);
 					msg= runMAL(c,mb,0,0);
-					wlr_tag++;
 					WLRsetConfig( );
 					// ignore warnings
 					if (msg && strstr(msg,"WARNING"))
@@ -435,23 +435,27 @@ str
 WLRgetreplicaclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *ret = getArgReference_str(stk,pci,0);
-	WLRgetMaster();
+
+	(void) cntxt;
+	(void) mb;
+
+	WLRgetConfig();
 	if( wlr_read[0])
 		*ret= GDKstrdup(wlr_read);
 	else *ret= GDKstrdup(str_nil);
-	(void) cntxt;
-	(void) mb;
 	return MAL_SUCCEED;
 }
 
 str
-WLRgetreplicabacklog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRgetreplicatick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *ret = getArgReference_lng(stk,pci,0);
+
 	(void) cntxt;
 	(void) mb;
-	WLRgetMaster();
-	*ret = wlc_id - wlr_tag;
+
+	WLRgetConfig();
+	*ret = wlr_tag;
 	return MAL_SUCCEED;
 }
 

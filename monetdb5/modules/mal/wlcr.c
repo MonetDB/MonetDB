@@ -26,11 +26,13 @@
  * against the database. We skip this for the time being.
  *
  * The goal of this module is to ease BACKUP and REPPLICATION of a master database 
- * with a time-bounded delay.
+ * with a time-bounded delay. 
  * Such a clone is a database replica that aid in query workload sharing,
  * database versioning, and (re-)partitioning.
  * Tables taken from the master version are not protected against local updates.
  * However, any transaction being replay that fails finalizes the cloning process.
+ * Furthermore, only persistent tables are considered for replication.
+ * Tables under the 'tmp' schema are ignored.
  *
  * Simplicity and ease of end-user control has been the driving argument here.
  *
@@ -351,6 +353,15 @@ WLCgetmasterclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ret = GDKstrdup(wlc_write);
 	else
 		*ret = GDKstrdup(str_nil);
+	return MAL_SUCCEED;
+}
+
+str 
+WLCgetmastertick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	lng *ret = getArgReference_lng(stk,pci,0);
+	(void) cntxt;
+	(void) mb;
+	*ret = wlc_id -1;
 	return MAL_SUCCEED;
 }
 
