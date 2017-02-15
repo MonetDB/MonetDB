@@ -69,12 +69,14 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			updates++;
 		} else
 		/* the catalog operations all need to be re-executed */
-		if( getModuleId(p) == sqlcatalogRef){
+		if( getModuleId(p) == sqlcatalogRef &&
+			strcmp( getVarConstant(mb,getArg(p,1)).val.sval, "tmp") != 0 ){
 			assert( def);// should always be there
 			setFunctionId(def,catalogRef);
 			updates++;
 		} else
-		if( getModuleId(p) == sqlRef && getFunctionId(p) == clear_tableRef ){
+		if( getModuleId(p) == sqlRef && getFunctionId(p) == clear_tableRef &&
+			strcmp( getVarConstant(mb,getArg(p,1)).val.sval, "tmp") != 0 ){
 			setFunctionId(def,changeRef);
 				assert(def);
 				q= copyInstruction(p);
@@ -88,8 +90,9 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			( getFunctionId(p) == appendRef  ||
 			  getFunctionId(p) == updateRef  ||
 			  getFunctionId(p) == deleteRef  ||
-			  getFunctionId(p) == clear_tableRef )){
-				assert( def);// should always be there
+			  getFunctionId(p) == clear_tableRef ) &&
+			  strcmp( getVarConstant(mb,getArg(p,2)).val.sval, "tmp") != 0 ){
+				assert( def);// should always be there, temporary tables are always ignored
 				setFunctionId(def,changeRef);
 				q= copyInstruction(p);
 				delArgument(q, q->retc);

@@ -133,6 +133,7 @@
  *
  * [TODO] consider the roll forward of SQL session variables, i.e. optimizer_pipe (for now assume default pipe).
  * For updates we don't need special care for this.
+ * [TODO] limit replication logs to persistent tables. Temporary tables should never be forwarded to the clone.
  */
 #include "monetdb_config.h"
 #include <time.h>
