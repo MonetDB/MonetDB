@@ -140,7 +140,6 @@ BuildRequires: gcc
 %if %{?with_geos:1}%{!?with_geos:0}
 BuildRequires: geos-devel >= 3.4.0
 %endif
-BuildRequires: gsl-devel
 %if %{?with_lidar:1}%{!?with_lidar:0}
 BuildRequires: liblas-devel >= 1.8.0
 BuildRequires: gdal-devel
@@ -468,27 +467,6 @@ This package contains support for reading and writing LiDAR data.
 %{_libdir}/monetdb5/lib_lidar.so
 %endif
 
-%package gsl-MonetDB5
-Summary: MonetDB5 SQL interface to the gsl library
-Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-
-%description gsl-MonetDB5
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the interface to the GNU Scientific Library for
-numerical analysis (gsl).
-
-%files gsl-MonetDB5
-%defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/*_gsl.mal
-%{_libdir}/monetdb5/createdb/*_gsl.sql
-%{_libdir}/monetdb5/gsl.mal
-%{_libdir}/monetdb5/lib_gsl.so
-
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %package bam-MonetDB5
 Summary: MonetDB5 SQL interface to the bam library
@@ -647,7 +625,6 @@ fi
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
-%exclude %{_libdir}/monetdb5/gsl.mal
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/lidar.mal
 %endif
@@ -666,7 +643,6 @@ fi
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
-%exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
@@ -681,7 +657,6 @@ fi
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
-%exclude %{_libdir}/monetdb5/lib_gsl.so
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/lib_lidar.so
 %endif
@@ -800,7 +775,6 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
-%exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
 %endif
@@ -904,7 +878,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
 	--enable-gdk=yes \
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
-	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
