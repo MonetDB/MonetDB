@@ -4038,7 +4038,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									bitval = bit_nil;
 								BUNappend(key, &bitval, FALSE);
 
-								sz = bn->torderidx ? bn->torderidx->free : 0;
+								sz = bn->torderidx && bn->torderidx != (Heap *) 1 ? bn->torderidx->free : 0;
 								BUNappend(oidx, &sz, FALSE);
 								BBPunfix(bn->batCacheid);
 							}
@@ -4126,7 +4126,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (!bitval && bn->tnokey[0] == 0 && bn->tnokey[1] == 0)
 										bitval = bit_nil;
 									BUNappend(key, &bitval, FALSE);
-									sz = bn->torderidx ? bn->torderidx->free : 0;
+									sz = bn->torderidx && bn->torderidx != (Heap *) 1 ? bn->torderidx->free : 0;
 									BUNappend(oidx, &sz, FALSE);
 									BBPunfix(bn->batCacheid);
 								}
