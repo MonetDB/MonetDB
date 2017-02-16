@@ -78,6 +78,14 @@
 %endif
 %endif
 
+# If the _without_pcre macro is not set, the PCRE library is used for
+# the implementation of the SQL LIKE and ILIKE operators.  Otherwise
+# the POSIX regex functions are used.  The macro can be set when using
+# mock by passing it the flag --without=pcre.
+%if %{?_without_pcre:0}%{!?_without_pcre:1}
+%define with_pcre 1
+%endif
+
 %if %{fedpkgs}
 # If the _without_rintegration macro is not set, the MonetDB-R RPM
 # will be created.  The macro can be set when using mock by passing it
@@ -155,7 +163,9 @@ BuildRequires: xz-devel
 BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
+%if %{?with_pcre:1}%{!?with_pcre:0}
 BuildRequires: pcre-devel >= 4.5
+%endif
 BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
@@ -901,6 +911,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-libxml2=yes \
 	--with-lzma=yes \
 	--with-openssl=yes \
+	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
 	--with-proj=no \
 	--with-pthread=yes \
 	--with-python2=yes \
