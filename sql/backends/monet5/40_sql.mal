@@ -8,4 +8,4 @@
 include sql;
 include sqlcatalog;
 include sql_transaction;
-include sql_wlcr;
+include wlr;

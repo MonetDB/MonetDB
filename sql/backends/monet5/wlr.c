@@ -20,8 +20,8 @@
  */
 #include "monetdb_config.h"
 #include "sql.h"
-#include "wlcr.h"
-#include "sql_wlcr.h"
+#include "wlc.h"
+#include "wlr.h"
 #include "sql_scenario.h"
 #include "opt_prelude.h"
 #include "mal_parser.h"
@@ -32,9 +32,9 @@
 #define WLR_RUN   100
 #define WLR_PAUSE 200
 
-#define WLCR_COMMIT 40
-#define WLCR_ROLLBACK 50
-#define WLCR_ERROR 60
+#define WLC_COMMIT 40
+#define WLC_ROLLBACK 50
+#define WLC_ERROR 60
 
 /* The current status of the replica  processing */
 static char wlr_master[IDLENGTH];
@@ -45,6 +45,7 @@ static lng wlr_limit = -1;		// stop re-processing transactions when limit is rea
 static char wlr_timelimit[26];		// stop re-processing transactions when time limit is reached
 static char wlr_read[26];		// stop re-processing transactions when time limit is reached
 static int wlr_state;		// which state RUN/PAUSE
+static int wlr_beat;		// period between successive synchronisations with master
 static MT_Id wlr_thread;
 
 #define MAXLINE 2048
@@ -68,6 +69,8 @@ WLRgetConfig(void){
             wlr_batches = atoi(line+ 8);
         if( strncmp("tag=", line, 4) == 0)
             wlr_tag = atoi(line+ 4);
+        if( strncmp("beat=", line, 5) == 0)
+            wlr_beat = atoi(line+ 5);
         if( strncmp("limit=", line, 6) == 0)
             wlr_limit = atol(line+ 6);
         if( strncmp("timelimit=", line, 10) == 0)
@@ -93,6 +96,7 @@ WLRsetConfig(void){
 	mnstr_printf(fd,"batches=%d\n", wlr_batches);
 	mnstr_printf(fd,"tag="LLFMT"\n", wlr_tag);
 	mnstr_printf(fd,"limit="LLFMT"\n", wlr_limit);
+	mnstr_printf(fd,"beat=%d\n", wlr_beat);
 	if( wlr_timelimit[0])
 		mnstr_printf(fd,"timelimit=%s\n", wlr_timelimit);
 	if( wlr_error[0])
@@ -127,7 +131,7 @@ WLRgetMaster(void)
 	fd = fopen(dir,"r");
 	if( fd ){
 		WLCreadConfig(fd);
-		wlc_state = WLCR_CLONE; // not used as master
+		wlc_state = WLC_CLONE; // not used as master
 	}
 	GDKfree(dir);
 }
@@ -153,13 +157,13 @@ WLRprocess(void *arg)
 	mvc *sql;
 	lng currid =0;
 
-    MT_lock_set(&wlcr_lock);
+    MT_lock_set(&wlc_lock);
 	if( wlrprocessrunning){
-		MT_lock_unset(&wlcr_lock);
+		MT_lock_unset(&wlc_lock);
 		return;
 	}
 	wlrprocessrunning ++;
-    MT_lock_unset(&wlcr_lock);
+    MT_lock_unset(&wlc_lock);
 	c =MCforkClient(cntxt);
 	if( c == 0){
 		wlrprocessrunning =0;
@@ -169,8 +173,8 @@ WLRprocess(void *arg)
     c->prompt = GDKstrdup("");  /* do not produce visible prompts */
     c->promptlength = 0;
     c->listing = 0;
-	c->fdout = open_wastream(".wlcr");
-	c->curprg = newFunction(putName("user"), putName("sql_wlcr"), FUNCTIONsymbol);
+	c->fdout = open_wastream(".wlr");
+	c->curprg = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
 	mb = c->curprg->def;
 	setVarType(mb, 0, TYPE_void);
 
@@ -185,13 +189,13 @@ WLRprocess(void *arg)
 
 #ifdef _WLR_DEBUG_
 	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d\n", 
-		wlcr_archive, wlr_firstbatch, wlr_batches );
+		wlr_archive, wlr_firstbatch, wlr_batches );
 #endif
 	for( i= wlr_batches; wlr_state == WLR_RUN && i < wlc_batches && ! GDKexiting(); i++){
 		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
-			mnstr_printf(GDKerr,"#wlcr.process:'%s' can not be accessed \n",path);
+			mnstr_printf(GDKerr,"#wlr.process:'%s' can not be accessed \n",path);
 			// Be careful not to miss log files.
 			// In the future wait for more files becoming available.
 			continue;
@@ -199,7 +203,7 @@ WLRprocess(void *arg)
 		sz = getFileSize(fd);
 		if (sz > (size_t) 1 << 29) {
 			mnstr_destroy(fd);
-			mnstr_printf(GDKerr, "wlcr.process File %s too large to process", path);
+			mnstr_printf(GDKerr, "wlr.process File %s too large to process", path);
 			continue;
 		}
 		c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
@@ -214,7 +218,7 @@ WLRprocess(void *arg)
 			pc = mb->stop;
 			if( parseMAL(c, c->curprg, 1, 1)  || mb->errors){
 				char line[PATHLENGTH];
-				snprintf(line, PATHLENGTH,"#wlcr.process:failed further parsing '%s':\n",path);
+				snprintf(line, PATHLENGTH,"#wlr.process:failed further parsing '%s':\n",path);
 				strncpy(wlr_error,line, PATHLENGTH);
 				mnstr_printf(GDKerr,"%s",line);
 				printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
@@ -266,10 +270,10 @@ WLRprocess(void *arg)
 						pc = 0;
 					} else
 					if( mvc_commit(sql, 0, 0) < 0)
-						mnstr_printf(GDKerr,"#wlcr.process transaction commit failed");
+						mnstr_printf(GDKerr,"#wlr.process transaction commit failed");
 				} else {
 					char line[PATHLENGTH];
-					snprintf(line, PATHLENGTH,"#wlcr.process:typechecking failed '%s':\n",path);
+					snprintf(line, PATHLENGTH,"#wlr.process:typechecking failed '%s':\n",path);
 					strncpy(wlr_error, line, PATHLENGTH);
 					mnstr_printf(GDKerr,"%s",line);
 					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
@@ -287,7 +291,7 @@ WLRprocess(void *arg)
 			}
 		} while( mb->errors == 0 && pc != mb->stop);
 #ifdef _WLR_DEBUG_
-		mnstr_printf(c->fdout,"#wlcr.process:processed log file '%s'\n",path);
+		mnstr_printf(c->fdout,"#wlr.process:processed log file '%s'\n",path);
 #endif
 		// skip to next file when all is read
 		wlr_batches++;
@@ -315,9 +319,9 @@ WLRprocessScheduler(void *arg)
 
 	wlr_state = WLR_RUN;
 	while(!GDKexiting() && wlr_state == WLR_RUN){
-		// wait at most for the drift period, also at start
-		//mnstr_printf(cntxt->fdout,"#sleep %d ms\n",(wlc_drift? wlc_drift:1) * 1000);
-		duration = (wlc_drift? wlc_drift:1) * 1000 ;
+		// wait at most for the cycle period, also at start
+		//mnstr_printf(cntxt->fdout,"#sleep %d ms\n",(wlc_beat? wlc_beat:1) * 1000);
+		duration = (wlc_beat? wlc_beat:1) * 1000 ;
 		for( ; duration > 0 && wlr_state == WLR_PAUSE; duration -= 100)
 			MT_sleep_ms( 100);
 		if( wlr_master[0] && wlr_state != WLR_PAUSE){
@@ -339,7 +343,7 @@ WLRinit(void)
 		return MAL_SUCCEED;
 	// time to continue the consolidation process in the background
 	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlcr.init","Starting wlr manager failed");
+			throw(SQL,"wlr.init","Starting wlr manager failed");
 	}
 	GDKregister(wlr_thread);
 	return MAL_SUCCEED;
@@ -364,7 +368,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( pci->argc > 1){
 		if( strcmp(GDKgetenv("gdk_dbname"),*getArgReference_str(stk,pci,1)) == 0)
-			throw(SQL,"wlcr.replicate","Master and replicate should be different");
+			throw(SQL,"wlr.replicate","Master and replicate should be different");
 		strncpy(wlr_master, *getArgReference_str(stk,pci,1), IDLENGTH);
 	} else  wlr_limit = -1;
 
@@ -404,17 +408,17 @@ WLRtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) pci;
 	(void) stk;
-	cntxt->wlcr_kind = 0;
+	cntxt->wlc_kind = 0;
 	if( wlr_error[0]){
-		cntxt->wlcr_kind = WLCR_ERROR;
+		cntxt->wlc_kind = WLC_ERROR;
 		return MAL_SUCCEED;
 	}
-	for( i = mb->stop-1; cntxt->wlcr_kind == 0 && i > 1; i--){
+	for( i = mb->stop-1; cntxt->wlc_kind == 0 && i > 1; i--){
 		p = getInstrPtr(mb,i);
 		if( getModuleId(p) == wlrRef && getFunctionId(p)== commitRef) 
-			cntxt->wlcr_kind = WLCR_COMMIT;
+			cntxt->wlc_kind = WLC_COMMIT;
 		if( getModuleId(p) == wlrRef && getFunctionId(p)== rollbackRef)
-			cntxt->wlcr_kind = WLCR_ROLLBACK;
+			cntxt->wlc_kind = WLC_ROLLBACK;
 	}
 	return MAL_SUCCEED;
 }
@@ -459,14 +463,18 @@ WLRgetreplicatick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+/* the replica cycle can be set to fixed interval.
+ * This allows for ensuring an up to date version every N seconds
+ */
 str
-WLRsetreplicadrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
+WLRsetreplicabeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	int new;
 	(void) cntxt;
 	(void) mb;
-	(void) stk;
-	(void) pci;
-	// perform any cleanup
+	new = *getArgReference_int(stk,pci,1);
+	if ( new < wlc_beat || new < 1)
+		throw(SQL,"replicatebeat","Cycle time should be larger then master or >= 1 second");
+	wlr_beat = new;
 	return MAL_SUCCEED;
 }
 
@@ -477,7 +485,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *x, *y, *qtxt;
 
 	(void) mb;
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
+	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
 	// execute the query in replay mode when required.
 	// we need to get rid of the escaped quote.
@@ -562,7 +570,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *ins = 0;
 	str msg= MAL_SUCCEED;
 
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
+	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
@@ -631,7 +639,7 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid o;
 	str msg= MAL_SUCCEED;
 
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
+	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
@@ -684,7 +692,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid o;
 	int tpe = getArgType(mb,pci,5);
 
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
+	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
 	sname = *getArgReference_str(stk,pci,1);
 	tname = *getArgReference_str(stk,pci,2);
@@ -760,7 +768,7 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *sname = getArgReference_str(stk, pci, 1);
 	str *tname = getArgReference_str(stk, pci, 2);
 
-	if( cntxt->wlcr_kind == WLCR_ROLLBACK || cntxt->wlcr_kind == WLCR_ERROR)
+	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;

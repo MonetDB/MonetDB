@@ -17,16 +17,16 @@
 
 /* #define _WLC_DEBUG_ */
 
-#define WLCR_QUERY		1
-#define WLCR_UPDATE 	2
-#define WLCR_CATALOG 	3
-#define WLCR_IGNORE		4
+#define WLC_QUERY		1
+#define WLC_UPDATE 		2
+#define WLC_CATALOG 	3
+#define WLC_IGNORE		4
 
-/* WLCR modes */
-#define WLCR_STARTUP	0	// wlcr not yet initialized
-#define WLCR_RUN		1	// started for the current snapshot
-#define WLCR_STOP		2	// finished last log file for this snapsho
-#define WLCR_CLONE		3	// logs used in replica construction
+/* WLC modes */
+#define WLC_STARTUP	0	// wlc not yet initialized
+#define WLC_RUN		1	// started for the current snapshot
+#define WLC_STOP		2	// finished last log file for this snapsho
+#define WLC_CLONE		3	// logs used in replica construction
 
 /*
  * returns 1 if the file exists
@@ -38,12 +38,12 @@
 #define access(f, m)    _access(f, m)
 #endif
 
-mal_export MT_Lock wlcr_lock;
+mal_export MT_Lock wlc_lock;
 mal_export char wlc_dir[PATHLENGTH];
 mal_export lng wlc_id;
 mal_export int wlc_batches;
 mal_export int wlc_state;
-mal_export int wlc_drift;
+mal_export int wlc_beat;
 mal_export char wlc_write[26];
 
 mal_export str WLCinit(void);
@@ -54,8 +54,8 @@ mal_export void WLCreadConfig(FILE *fd);
 mal_export str WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLCsetmasterdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLCgetmasterdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCsetmasterbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCgetmasterbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCgetmasterclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCgetmastertick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

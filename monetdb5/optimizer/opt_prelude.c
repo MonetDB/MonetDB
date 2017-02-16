@@ -291,7 +291,7 @@ str unlockRef;
 str unpackRef;
 str unpinRef;
 str updateRef;
-str wlcrRef;
+str wlcRef;
 str wlrRef;
 str timestampRef;
 str thetaselectRef;
@@ -577,7 +577,7 @@ void optimizerInit(void)
 	unpinRef = putName("unpin");
 	updateRef = putName("update");
 	userRef = putName("user");
-	wlcrRef = putName("wlcr");
+	wlcRef = putName("wlc");
 	wlrRef = putName("wlr");
 	selectRef = putName("select");
 	thetaselectRef = putName("thetaselect");

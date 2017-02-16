@@ -23,16 +23,18 @@
  * the snapshot until a specific time point or transaction id is reached. 
  * 
  * Some systems also use the logical logs to REPLAY all (expensive) queries
- * against the database. We skip this for the time being.
+ * against the database. We skip this for the time being, as those queries
+ * can be captured already in the server.
  *
  * The goal of this module is to ease BACKUP and REPPLICATION of a master database 
- * with a time-bounded delay. 
- * Such a clone is a database replica that aid in query workload sharing,
- * database versioning, and (re-)partitioning.
- * Tables taken from the master version are not protected against local updates.
- * However, any transaction being replay that fails finalizes the cloning process.
+ * with a time-bounded delay. This means that both master and replica run at a certain beat
+ * (in seconds) by which information is made available or read by the replica.
+ *
+ * Such a replica in query workload sharing, database versioning, and (re-)partitioning.
+ * Tables taken from the master are not protected against local updates.
+ * However, any replay transaction that fails stops the cloning process.
  * Furthermore, only persistent tables are considered for replication.
- * Tables under the 'tmp' schema are ignored.
+ * Updates under the 'tmp' schema are ignored.
  *
  * Simplicity and ease of end-user control has been the driving argument here.
  *
@@ -45,46 +47,46 @@
  * CALL master()
  * An alternative path to the log records can be given to reduce the IO latency,
  * e.g. a nearby SSD.
- * By default, it creates a directory .../dbfarm/dbname/wlcr_logs to hold all 
+ * By default, it creates a directory .../dbfarm/dbname/wlc_logs to hold all 
  * necessary information for the creation of a database clone.
  *
  * A master configuration file is added to the database directory to keep the state/
  * It contains the following key=value pairs:
  * 		snapshot=<path to a snapshot directory>
- * 		logs=<path to the wlcr log directory>
+ * 		logs=<path to the wlc log directory>
  * 		state=<started, stopped>
  * 		batches=<next available batch file to be applied>
- * 		drift=<maximal delay before transactions are published as a separate log, in seconds>
+ * 		beat=<maximal delay between log files, in seconds>
  * 		write=<timestamp of the last transaction recorded>
  *
  * A missing path to the snapshot denotes that we can start the clone with an empty database.
  * The log files are stored as master/<dbname>_<batchnumber>. They belong to the snapshot.
  * 
- * Each wlcr log file contains a serial log of committed compound transactions.
+ * Each wlc log file contains a serial log of committed compound transactions.
  * The log records are represented as ordinary MAL statement blocks, which
  * are executed in serial mode. (parallelism can be considered for large updates later)
  * Each transaction job is identified by a unique id, its starting time, and the user responsible..
  * The log-record should end with a commit.
  *
- * A transaction log is created by the master. He decides when the log may be globally used.
- * The trigger for this is the allowed 'drift'. A new transaction log file is published when
- * the system has been collecting logs for some time (drift in seconds).
- * The drift determines the maximal window of transactions loss that is permitted.
- * The maximum drift can be set using a SQL command, e.g.
- * CALL setmasterdrift(duration)
+ * A transaction log is created by the master using a heartbeat (in seconds).
+ * A new transaction log file is published when the system has been 
+ * collecting logs for some time.
+ * The cycle time determines the drift of the replica, excluding its own speed to catch up.
+ * The beat can be set using a SQL command, e.g.
+ * CALL masterbeat(duration)
  * Setting it to zero leads to a log file per transaction and may cause a large log directory.
  * A default of 5 minutes should balance polling overhead in most practical situations.
  *
  * A minor problem here is that we should ensure that the log file is closed even if there
  * are no transactions running. It is solved with a separate monitor thread, which ensures
- * that the logs are flushed at least after 'drift' seconds since the first logrecord was created.
+ * that the logs are flushed at least after 'beat' seconds since the first logrecord was created.
  * After closing, the replicas can see from the master configuration file that a new log batch is available.
  *
  * The final step is to close stop transaction logging with the command
  * CALL stopmaster().
  * It typically is the end-of-life-time for a snapshot. For example, when planning to do
  * a large bulk load of the database, stopping logging avoids a double write into the
- * database. The database can be brought back into wlcr mode using a fresh snapshot.
+ * database. The database can be brought back into wlc mode using a fresh snapshot.
  *
  *[TODO] A more secure way to set a database into master mode is to use the command
  *	 monetdb master <dbname> [ <optional snapshot path>]
@@ -122,30 +124,30 @@
  *
  * SELECT replicaClock();
  * returns the timestamp of the last replicated transaction.
- * SELECT replicaBacklog();
- * returns the number of pending transactions to be in sink with master.
+ * SELECT replicaTick();
+ * returns the transaction id of the last replicated transaction.
  * SELECT masterClock();
  * return the timestamp of the last committed transaction in the master.
+ * SELECT masterTick();
+ * return the transaction id of the last committed transaction in the master.
  *
  * Any failure encountered during a log replay terminates the replication process,
  * leaving a message in the merovingian log configuration.
  *
- * The wlcr files purposely have a textual format derived from the MAL statements.
+ * The wlc files purposely have a textual format derived from the MAL statements.
  * This provides a stepping stone for remote execution later.
  *
- * [TODO] consider the roll forward of SQL session variables, i.e. optimizer_pipe (for now assume default pipe).
+ * [TODO] consider the roll forward of SQL session variables, i.e. optimizer_pipe
  * For updates we don't need special care for this.
- * [TODO] limit replication logs to persistent tables. Temporary tables should never be forwarded to the clone.
  */
 #include "monetdb_config.h"
 #include <time.h>
 #include "mal_builder.h"
-#include "wlcr.h"
+#include "wlc.h"
 
-MT_Lock     wlcr_lock MT_LOCK_INITIALIZER("wlcr_lock");
+MT_Lock     wlc_lock MT_LOCK_INITIALIZER("wlc_lock");
 
 static char wlc_snapshot[PATHLENGTH]; // The location of the snapshot against which the logs work
-static lng wlc_start= 0;			// Start time of first transaction
 static stream *wlc_fd = 0;
 
 // These properties are needed by the replica to direct the roll-forward.
@@ -155,13 +157,13 @@ lng   wlc_id = 0;			// next transaction id
 int  wlc_state = 0;			// The current status of the in the life cycle
 char wlc_write[26];			// The timestamp of the last committed transaction
 int  wlc_batches = 0;		// identifier of next batch
-int  wlc_drift = 10;		// maximal period covered by a single log file in seconds
+int  wlc_beat = 10;		// maximal period covered by a single log file in seconds
 
 /* The database snapshots are binary copies of the dbfarm/database/bat
  * New snapshots are created currently using the 'monetdb snapshot <db>' command
  * or a SQL procedure.
  *
- * The wlcr logs are stored in the snapshot directory as a time-stamped list
+ * The wlc logs are stored in the snapshot directory as a time-stamped list
  */
 
 int
@@ -186,8 +188,8 @@ WLCreadConfig(FILE *fd)
 			strncpy(wlc_write, path + 6, 26);
 		if( strncmp("batches=", path, 8) == 0)
 			wlc_batches = atoi(path+ 8);
-		if( strncmp("drift=", path, 6) == 0)
-			wlc_drift = atoi(path+ 6);
+		if( strncmp("beat=", path, 5) == 0)
+			wlc_beat = atoi(path+ 5);
 		if( strncmp("state=", path, 6) == 0)
 			wlc_state = atoi(path+ 6);
 	}
@@ -203,7 +205,7 @@ WLCgetConfig(void){
 	fd = fopen(l,"r");
 	GDKfree(l);
 	if( fd == NULL)
-		throw(MAL,"wlcr.getConfig","Could not access %s\n",l);
+		throw(MAL,"wlc.getConfig","Could not access %s\n",l);
 	WLCreadConfig(fd);
 	return MAL_SUCCEED;
 }
@@ -218,7 +220,7 @@ str WLCsetConfig(void){
 	fd = open_wastream(path);
 	GDKfree(path);
 	if( fd == NULL)
-		throw(MAL,"wlcr.setConfig","Could not access wlc.config\n");
+		throw(MAL,"wlc.setConfig","Could not access wlc.config\n");
 	if( wlc_snapshot[0] )
 		mnstr_printf(fd,"snapshot=%s\n", wlc_snapshot);
 	mnstr_printf(fd,"logs=%s\n", wlc_dir);
@@ -226,7 +228,7 @@ str WLCsetConfig(void){
 	mnstr_printf(fd,"write=%s\n", wlc_write );
 	mnstr_printf(fd,"state=%d\n", wlc_state );
 	mnstr_printf(fd,"batches=%d\n", wlc_batches );
-	mnstr_printf(fd,"drift=%d\n", wlc_drift );
+	mnstr_printf(fd,"beat=%d\n", wlc_beat );
 	close_stream(fd);
 	return MAL_SUCCEED;
 }
@@ -239,20 +241,19 @@ WLCsetlogger(void)
 	char path[PATHLENGTH];
 
 	if( wlc_dir[0] == 0)
-		throw(MAL,"wlcr.setlogger","Path not initalized");
-	MT_lock_set(&wlcr_lock);
+		throw(MAL,"wlc.setlogger","Path not initalized");
+	MT_lock_set(&wlc_lock);
 	snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlc_name, wlc_batches);
 	wlc_fd = open_wastream(path);
 	if( wlc_fd == 0){
-		MT_lock_unset(&wlcr_lock);
-		GDKerror("wlcr.logger:Could not create %s\n",path);
-		throw(MAL,"wlcr.logger","Could not create %s\n",path);
+		MT_lock_unset(&wlc_lock);
+		GDKerror("wlc.logger:Could not create %s\n",path);
+		throw(MAL,"wlc.logger","Could not create %s\n",path);
 	}
 
 	wlc_batches++;
-	wlc_start = GDKms()/1000;
 	WLCsetConfig();
-	MT_lock_unset(&wlcr_lock);
+	MT_lock_unset(&wlc_lock);
 	return MAL_SUCCEED;
 }
 
@@ -265,42 +266,39 @@ WLCcloselogger(void)
 	mnstr_fsync(wlc_fd);
 	close_stream(wlc_fd);
 	wlc_fd= NULL;
-	wlc_start = 0;
 	WLCsetConfig();
 }
 
 void
 WLCreset(void)
 {
-	MT_lock_set(&wlcr_lock);
+	MT_lock_set(&wlc_lock);
 	WLCcloselogger();
 	wlc_snapshot[0]=0;
 	wlc_dir[0]= 0;
 	wlc_name[0]= 0;
 	wlc_write[0] =0;
-	MT_lock_unset(&wlcr_lock);
+	MT_lock_unset(&wlc_lock);
 }
 
 /*
- * The WLCRlogger process ensures that log files are properly closed
- * and released when their drift time window has expired.
+ * The WLClogger process ensures that log files are properly closed
+ * and released when their cycle time window has expired.
  */
 
 static MT_Id wlc_logger;
 
 static void
-WLCRlogger(void *arg)
+WLClogger(void *arg)
 {	 int seconds;
 	(void) arg;
 	while(!GDKexiting()){
 		if( wlc_dir[0] && wlc_fd ){
-			if (wlc_start + wlc_drift < GDKms() / 1000){
-				MT_lock_set(&wlcr_lock);
+				MT_lock_set(&wlc_lock);
 				WLCcloselogger();
-				MT_lock_unset(&wlcr_lock);
+				MT_lock_unset(&wlc_lock);
 			}
-		} 
-		for( seconds = 0; (wlc_drift == 0 || seconds < wlc_drift) && ! GDKexiting(); seconds++)
+		for( seconds = 0; (wlc_beat == 0 || seconds < wlc_beat) && ! GDKexiting(); seconds++)
 			MT_sleep_ms( 1000);
 	}
 }
@@ -312,7 +310,7 @@ str
 WLCinit(void)
 { str conf, msg= MAL_SUCCEED;
 
-	if( wlc_state == WLCR_STARTUP){
+	if( wlc_state == WLC_STARTUP){
 		// use default location for master configuration file
 		conf = GDKfilepath(0,0,"wlc.config",0);
 
@@ -326,8 +324,8 @@ WLCinit(void)
 		msg =  WLCgetConfig();
 		if( msg)
 			GDKerror("%s",msg);
-		if (MT_create_thread(&wlc_logger, WLCRlogger , (void*) 0, MT_THR_JOINABLE) < 0) {
-                GDKerror("wlcr.logger thread could not be spawned");
+		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0, MT_THR_JOINABLE) < 0) {
+                GDKerror("wlc.logger thread could not be spawned");
         }
 		GDKregister(wlc_logger);
 	}
@@ -361,29 +359,29 @@ WLCgetmastertick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	lng *ret = getArgReference_lng(stk,pci,0);
 	(void) cntxt;
 	(void) mb;
-	*ret = wlc_id -1;
+	*ret = wlc_id;
 	return MAL_SUCCEED;
 }
 
-/* Changing the drift should have immediate effect
+/* Changing the beat should have immediate effect
  * It forces a new log file
  */
 str 
-WLCsetmasterdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCsetmasterbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) cntxt;
-	wlc_drift = * getArgReference_int(stk,pci,1);
+	wlc_beat = * getArgReference_int(stk,pci,1);
 	WLCcloselogger();
 	return MAL_SUCCEED;
 }
 
 str 
-WLCgetmasterdrift(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCgetmasterbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int *ret = getArgReference_int(stk,pci,0);
 	(void) mb;
 	(void) cntxt;
-	*ret = wlc_drift;
+	*ret = wlc_beat;
 	return MAL_SUCCEED;
 }
 
@@ -395,23 +393,23 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	if( wlc_state == WLCR_STOP)
+	if( wlc_state == WLC_STOP)
 		throw(MAL,"master","WARNING: logging has been stopped. Use new snapshot");
-	if( wlc_state == WLCR_RUN)
+	if( wlc_state == WLC_RUN)
 		throw(MAL,"master","WARNING: already in master mode, call ignored");
 	if( pci->argc == 2)
 		strncpy(path, *getArgReference_str(stk, pci,1), PATHLENGTH);
 	else{
-		l = GDKfilepath(0,0,"wlcr_logs",0);
+		l = GDKfilepath(0,0,"wlc_logs",0);
 		snprintf(path,PATHLENGTH,"%s%c",l, DIR_SEP);
 		GDKfree(l);
 	}
 	// set location for logs
 	if( GDKcreatedir(path) == GDK_FAIL)
-		throw(SQL,"wlcr.master","Could not create %s\n", path);
+		throw(SQL,"wlc.master","Could not create %s\n", path);
 	strncpy(wlc_name, GDKgetenv("gdk_dbname"),IDLENGTH );
 	strncpy(wlc_dir,path, PATHLENGTH);
-	wlc_state= WLCR_RUN;
+	wlc_state= WLC_RUN;
 	WLCsetConfig();
 	return MAL_SUCCEED;
 }
@@ -423,9 +421,9 @@ WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	if( wlc_state != WLCR_RUN )
+	if( wlc_state != WLC_RUN )
 		throw(MAL,"master","WARNING: master role not active");
-	wlc_state = WLCR_STOP;
+	wlc_state = WLC_STOP;
 	WLCsetConfig();
 	return MAL_SUCCEED;
 }
@@ -436,28 +434,28 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p)
 	struct timeval clock;
 	time_t clk ;
 	struct tm ctm;
-	char wlcr_time[26];	
+	char wlc_time[26];	
 
 	(void) pci;
 	gettimeofday(&clock,NULL);
 	clk = clock.tv_sec;
 	ctm = *localtime(&clk);
-	strftime(wlcr_time, 26, "%Y-%m-%dT%H:%M:%S",&ctm);
-	return pushStr(cntxt->wlcr, p, wlcr_time);
+	strftime(wlc_time, 26, "%Y-%m-%dT%H:%M:%S",&ctm);
+	return pushStr(cntxt->wlc, p, wlc_time);
 }
 
 #define WLCstart(P, K)\
 { Symbol s; \
-	if( cntxt->wlcr == NULL){\
+	if( cntxt->wlc == NULL){\
 		s = newSymbol("wlrc", FUNCTIONsymbol);\
-		cntxt->wlcr_kind = K;\
-		cntxt->wlcr = s->def;\
+		cntxt->wlc_kind = K;\
+		cntxt->wlc = s->def;\
 		s->def = NULL;\
 	} \
-	if( cntxt->wlcr->stop == 0){\
-		P = newStmt(cntxt->wlcr,"wlr","transaction");\
+	if( cntxt->wlc->stop == 0){\
+		P = newStmt(cntxt->wlc,"wlr","transaction");\
 		P = WLCsettime(cntxt,pci, P); \
-		P = pushStr(cntxt->wlcr, P, cntxt->username);\
+		P = pushStr(cntxt->wlc, P, cntxt->username);\
 		P->ticks = GDKms();\
 }	}
 
@@ -479,9 +477,9 @@ WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	if ( strcmp("-- no query",getVarConstant(mb, getArg(pci,1)).val.sval) == 0)
 		return MAL_SUCCEED;	// ignore system internal queries.
-	WLCstart(p, WLCR_QUERY);
-	p = newStmt(cntxt->wlcr, "wlr","query");
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+	WLCstart(p, WLC_QUERY);
+	p = newStmt(cntxt->wlc, "wlr","query");
+	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	return MAL_SUCCEED;
 }
 
@@ -490,9 +488,9 @@ WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 
 	(void) stk;
-	WLCstart(p,WLCR_CATALOG);
-	p = newStmt(cntxt->wlcr, "wlr","catalog");
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+	WLCstart(p,WLC_CATALOG);
+	p = newStmt(cntxt->wlc, "wlr","catalog");
+	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	return MAL_SUCCEED;
 }
 
@@ -501,9 +499,9 @@ WLCchange(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 
 	(void) stk;
-	WLCstart(p, WLCR_UPDATE);
-	p = newStmt(cntxt->wlcr, "wlr","change");
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+	WLCstart(p, WLC_UPDATE);
+	p = newStmt(cntxt->wlc, "wlr","change");
+	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	return MAL_SUCCEED;
 }
 
@@ -517,21 +515,21 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, tpe, varid;
 	(void) stk;
 	
-	WLCstart(p,WLCR_IGNORE);
-	p = newStmt(cntxt->wlcr, "wlr",getFunctionId(pci));
+	WLCstart(p,WLC_IGNORE);
+	p = newStmt(cntxt->wlc, "wlr",getFunctionId(pci));
 	for( i = pci->retc; i< pci->argc; i++){
 		tpe =getArgType(mb, pci, i);
 		switch(tpe){
 		case TYPE_str:
-			p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci, i)).val.sval);
+			p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci, i)).val.sval);
 			break;
 		default:
-			varid = defConstant(cntxt->wlcr, tpe, getArgReference(stk, pci, i));
-			p = pushArgument(cntxt->wlcr, p, varid);
+			varid = defConstant(cntxt->wlc, tpe, getArgReference(stk, pci, i));
+			p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 	p->ticks = GDKms();
-	cntxt->wlcr_kind = WLCR_CATALOG;
+	cntxt->wlc_kind = WLC_CATALOG;
 	return MAL_SUCCEED;
 }
 
@@ -541,13 +539,13 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int k=0; \
 	for( ; p < q; p++, k++){\
 		if( k % 32 == 31){\
-			pci = newStmt(cntxt->wlcr, "wlr",getFunctionId(pci));\
-			pci = pushStr(cntxt->wlcr, pci, sch);\
-			pci = pushStr(cntxt->wlcr, pci, tbl);\
-			pci = pushStr(cntxt->wlcr, pci, col);\
+			pci = newStmt(cntxt->wlc, "wlr",getFunctionId(pci));\
+			pci = pushStr(cntxt->wlc, pci, sch);\
+			pci = pushStr(cntxt->wlc, pci, tbl);\
+			pci = pushStr(cntxt->wlc, pci, col);\
 			pci->ticks = GDKms();\
 		}\
-		pci = push##TPE2(cntxt->wlcr, pci ,*p);\
+		pci = push##TPE2(cntxt->wlc, pci ,*p);\
 } }
 
 #define updateBatch(TPE1,TPE2)\
@@ -555,12 +553,12 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TPE1 *y = (TPE1 *) Tloc(bval, BUNlast(b));\
 	int k=0; \
 	for( ; x < y; x++, k++){\
-		p = newStmt(cntxt->wlcr, "wlr","update");\
-		p = pushStr(cntxt->wlcr, p, sch);\
-		p = pushStr(cntxt->wlcr, p, tbl);\
-		p = pushStr(cntxt->wlcr, p, col);\
-		p = pushOid(cntxt->wlcr, p,  (ol? *ol++: o++));\
-		p = push##TPE2(cntxt->wlcr, p ,*x);\
+		p = newStmt(cntxt->wlc, "wlr","update");\
+		p = pushStr(cntxt->wlc, p, sch);\
+		p = pushStr(cntxt->wlc, p, tbl);\
+		p = pushStr(cntxt->wlc, p, col);\
+		p = pushOid(cntxt->wlc, p,  (ol? *ol++: o++));\
+		p = push##TPE2(cntxt->wlc, p ,*x);\
 } }
 
 static void
@@ -575,11 +573,11 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 // Copy into should always be expanded, because the source may not
 // be accessible in the replica. TODO
 
-	sch = GDKstrdup(getVarConstant(cntxt->wlcr, getArg(pci,1)).val.sval);
-	tbl = GDKstrdup(getVarConstant(cntxt->wlcr, getArg(pci,2)).val.sval);
-	col = GDKstrdup(getVarConstant(cntxt->wlcr, getArg(pci,3)).val.sval);
-	if (cntxt->wlcr_kind < WLCR_UPDATE)
-		cntxt->wlcr_kind = WLCR_UPDATE;
+	sch = GDKstrdup(getVarConstant(cntxt->wlc, getArg(pci,1)).val.sval);
+	tbl = GDKstrdup(getVarConstant(cntxt->wlc, getArg(pci,2)).val.sval);
+	col = GDKstrdup(getVarConstant(cntxt->wlc, getArg(pci,3)).val.sval);
+	if (cntxt->wlc_kind < WLC_UPDATE)
+		cntxt->wlc_kind = WLC_UPDATE;
 	switch( ATOMstorage(b->ttype)){
 	case TYPE_bit: bulk(bit,Bit); break;
 	case TYPE_bte: bulk(bte,Bte); break;
@@ -598,18 +596,18 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 			bi= bat_iterator(b);
 			BATloop(b,p,q){
 				if( k % 32 == 31){
-					pci = newStmt(cntxt->wlcr, "wlr",getFunctionId(pci));
-					pci = pushStr(cntxt->wlcr, pci, sch);
-					pci = pushStr(cntxt->wlcr, pci, tbl);
-					pci = pushStr(cntxt->wlcr, pci, col);
+					pci = newStmt(cntxt->wlc, "wlr",getFunctionId(pci));
+					pci = pushStr(cntxt->wlc, pci, sch);
+					pci = pushStr(cntxt->wlc, pci, tbl);
+					pci = pushStr(cntxt->wlc, pci, col);
 				}
 				k++;
-				pci = pushStr(cntxt->wlcr, pci ,(str) BUNtail(bi,p));
+				pci = pushStr(cntxt->wlc, pci ,(str) BUNtail(bi,p));
 		} }
 		break;
 	default:
 		mnstr_printf(cntxt->fdout,"#wlc datashipping, non-supported type\n");
-		cntxt->wlcr_kind = WLCR_CATALOG;
+		cntxt->wlc_kind = WLC_CATALOG;
 	}
 	GDKfree(sch);
 	GDKfree(tbl);
@@ -623,11 +621,11 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) mb;
 	
-	WLCstart(p, WLCR_UPDATE);
-	p = newStmt(cntxt->wlcr, "wlr","append");
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,3)).val.sval);
+	WLCstart(p, WLC_UPDATE);
+	p = newStmt(cntxt->wlc, "wlr","append");
+	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
+	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,3)).val.sval);
 
 	// extend the instructions with all values. 
 	// If this become too large we can always switch to a "catalog" mode
@@ -639,12 +637,12 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		ValRecord cst;
 		if (VALcopy(&cst, getArgReference(stk,pci,4)) != NULL){
-			varid = defConstant(cntxt->wlcr, tpe, &cst);
-			p = pushArgument(cntxt->wlcr, p, varid);
+			varid = defConstant(cntxt->wlc, tpe, &cst);
+			p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
-	if( cntxt->wlcr_kind < WLCR_UPDATE)
-		cntxt->wlcr_kind = WLCR_UPDATE;
+	if( cntxt->wlc_kind < WLC_UPDATE)
+		cntxt->wlc_kind = WLC_UPDATE;
 	
 	return MAL_SUCCEED;
 }
@@ -663,10 +661,10 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b= BBPquickdesc(bid, FALSE);
 	if( BATcount(b) == 0)
 		return MAL_SUCCEED;
-	WLCstart(p, WLCR_UPDATE);
-	p = newStmt(cntxt->wlcr, "wlr","delete");
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
+	WLCstart(p, WLC_UPDATE);
+	p = newStmt(cntxt->wlc, "wlr","delete");
+	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 	
 	tpe= getArgType(mb,pci,3);
 	if (isaBatType(tpe) ){
@@ -676,28 +674,28 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( b->ttype == TYPE_void){
 			for( ; o < last; o++, k++){
 				if( k%32 == 31){
-					p = newStmt(cntxt->wlcr, "wlr","delete");
-					p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
-					p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
+					p = newStmt(cntxt->wlc, "wlr","delete");
+					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 				}
-				p = pushOid(cntxt->wlcr,p, o);
+				p = pushOid(cntxt->wlc,p, o);
 			}
 		} else {
 			ol = (oid*) Tloc(b,0);
 			for( ; o < last; o++, k++){
 				if( k%32 == 31){
-					p = newStmt(cntxt->wlcr, "wlr","delete");
-					p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
-					p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
+					p = newStmt(cntxt->wlc, "wlr","delete");
+					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
 				}
-				p = pushOid(cntxt->wlcr,p, *ol);
+				p = pushOid(cntxt->wlc,p, *ol);
 			}
 		}
 		BBPunfix(b->batCacheid);
 	} else
-		throw(MAL,"wlcr.delete","BAT expected");
-	if( cntxt->wlcr_kind < WLCR_UPDATE)
-		cntxt->wlcr_kind = WLCR_UPDATE;
+		throw(MAL,"wlc.delete","BAT expected");
+	if( cntxt->wlc_kind < WLC_UPDATE)
+		cntxt->wlc_kind = WLC_UPDATE;
 
 	return MAL_SUCCEED;
 }
@@ -713,7 +711,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sch = *getArgReference_str(stk,pci,1);
 	tbl = *getArgReference_str(stk,pci,2);
 	col = *getArgReference_str(stk,pci,3);
-	WLCstart(p, WLCR_UPDATE);
+	WLCstart(p, WLC_UPDATE);
 	tpe= getArgType(mb,pci,5);
 	if (isaBatType(tpe) ){
 		BAT *b, *bval;
@@ -740,33 +738,33 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BUN x,y;
 			bi = bat_iterator(bval);
 			BATloop(bval,x,y){
-				p = newStmt(cntxt->wlcr, "wlr","update");
-				p = pushStr(cntxt->wlcr, p, sch);
-				p = pushStr(cntxt->wlcr, p, tbl);
-				p = pushStr(cntxt->wlcr, p, col);
-				p = pushOid(cntxt->wlcr, p, (ol? *ol++ : o++));
-				p = pushStr(cntxt->wlcr, p , BUNtail(bi,x));
+				p = newStmt(cntxt->wlc, "wlr","update");
+				p = pushStr(cntxt->wlc, p, sch);
+				p = pushStr(cntxt->wlc, p, tbl);
+				p = pushStr(cntxt->wlc, p, col);
+				p = pushOid(cntxt->wlc, p, (ol? *ol++ : o++));
+				p = pushStr(cntxt->wlc, p , BUNtail(bi,x));
 				k++;
 		} }
 		default:
-			cntxt->wlcr_kind = WLCR_CATALOG;
+			cntxt->wlc_kind = WLC_CATALOG;
 		}
 		BBPunfix(b->batCacheid);
 	} else {
-		p = newStmt(cntxt->wlcr, "wlr","update");
-		p = pushStr(cntxt->wlcr, p, sch);
-		p = pushStr(cntxt->wlcr, p, tbl);
-		p = pushStr(cntxt->wlcr, p, col);
+		p = newStmt(cntxt->wlc, "wlr","update");
+		p = pushStr(cntxt->wlc, p, sch);
+		p = pushStr(cntxt->wlc, p, tbl);
+		p = pushStr(cntxt->wlc, p, col);
 		o = *getArgReference_oid(stk,pci,4);
-		p = pushOid(cntxt->wlcr,p, o);
+		p = pushOid(cntxt->wlc,p, o);
 		if (VALcopy(&cst, getArgReference(stk,pci,5)) != NULL){
-			varid = defConstant(cntxt->wlcr, tpe, &cst);
-			p = pushArgument(cntxt->wlcr, p, varid);
+			varid = defConstant(cntxt->wlc, tpe, &cst);
+			p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 
-	if( cntxt->wlcr_kind < WLCR_UPDATE)
-		cntxt->wlcr_kind = WLCR_UPDATE;
+	if( cntxt->wlc_kind < WLC_UPDATE)
+		cntxt->wlc_kind = WLC_UPDATE;
 	return MAL_SUCCEED;
 }
 
@@ -775,12 +773,12 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	 InstrPtr p;
 	(void) stk;
 	
-	WLCstart(p, WLCR_UPDATE);
-	p = newStmt(cntxt->wlcr, "wlr","clear_table");
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,1)).val.sval);
-	p = pushStr(cntxt->wlcr, p, getVarConstant(mb, getArg(pci,2)).val.sval);
-	if( cntxt->wlcr_kind < WLCR_UPDATE)
-		cntxt->wlcr_kind = WLCR_UPDATE;
+	WLCstart(p, WLC_UPDATE);
+	p = newStmt(cntxt->wlc, "wlr","clear_table");
+	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
+	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
+	if( cntxt->wlc_kind < WLC_UPDATE)
+		cntxt->wlc_kind = WLC_UPDATE;
 
 	return MAL_SUCCEED;
 }
@@ -791,67 +789,64 @@ WLCwrite(Client cntxt)
 	InstrPtr p;
 	int tag;
 	ValRecord cst;
-	// save the wlcr record on a file 
-	if( cntxt->wlcr == 0 || cntxt->wlcr->stop <= 1 ||  cntxt->wlcr_kind == WLCR_QUERY )
+	// save the wlc record on a file 
+	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
 		return MAL_SUCCEED;
 
-	if( wlc_state != WLCR_RUN){
-		trimMalVariables(cntxt->wlcr, NULL);
-		resetMalBlk(cntxt->wlcr, 0);
-		cntxt->wlcr_kind = WLCR_QUERY;
+	if( wlc_state != WLC_RUN){
+		trimMalVariables(cntxt->wlc, NULL);
+		resetMalBlk(cntxt->wlc, 0);
+		cntxt->wlc_kind = WLC_QUERY;
 		return MAL_SUCCEED;
 	}
 	if( wlc_dir[0] ){	
-		if( wlc_start + wlc_drift < GDKms()/1000)
-			WLCcloselogger();
-
 		if (wlc_fd == NULL){
 			msg = WLCsetlogger();
 			if( msg) 
 				return msg;
 		}
 		
-		p = getInstrPtr(cntxt->wlcr,0);
-		MT_lock_set(&wlcr_lock);
+		p = getInstrPtr(cntxt->wlc,0);
+		MT_lock_set(&wlc_lock);
 		// Tag each transaction record with an unique id
 		cst.vtype= TYPE_lng;
 		cst.val.lval = wlc_id;
-		tag = defConstant(cntxt->wlcr,TYPE_lng, &cst);
-		p = getInstrPtr(cntxt->wlcr,0);
-		p = setArgument(cntxt->wlcr, p, p->retc, tag);
+		tag = defConstant(cntxt->wlc,TYPE_lng, &cst);
+		p = getInstrPtr(cntxt->wlc,0);
+		p = setArgument(cntxt->wlc, p, p->retc, tag);
 
 		// save it as an ordinary MAL block
-		printFunction(wlc_fd, cntxt->wlcr, 0, LIST_MAL_DEBUG );
+		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_DEBUG );
 		(void) mnstr_flush(wlc_fd);
 		
-		// Update wlcr administration
+		// Update wlc administration
 		wlc_id++;
-		strncpy(wlc_write, getVarConstant(cntxt->wlcr, getArg(p, 2)).val.sval, 26);
+		strncpy(wlc_write, getVarConstant(cntxt->wlc, getArg(p, 2)).val.sval, 26);
 
-		// close file if no drift is allowed
-		if( wlc_drift == 0 || wlc_start + wlc_drift < GDKms()/1000)
+		// close file if no delay is allowed
+		if( wlc_beat == 0 )
 			WLCcloselogger();
 
-		MT_lock_unset(&wlcr_lock);
-		trimMalVariables(cntxt->wlcr, NULL);
-		resetMalBlk(cntxt->wlcr, 0);
-		cntxt->wlcr_kind = WLCR_QUERY;
+		MT_lock_unset(&wlc_lock);
+		trimMalVariables(cntxt->wlc, NULL);
+		resetMalBlk(cntxt->wlc, 0);
+		cntxt->wlc_kind = WLC_QUERY;
 	} else
-			throw(MAL,"wlcr.write","WLC log path missing ");
+			throw(MAL,"wlc.write","WLC log path missing ");
 
 #ifdef _WLC_DEBUG_
-	printFunction(cntxt->fdout, cntxt->wlcr, 0, LIST_MAL_ALL );
+	printFunction(cntxt->fdout, cntxt->wlc, 0, LIST_MAL_ALL );
 #endif
-	if( wlc_state == WLCR_STOP)
-		throw(MAL,"wlcr.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
+	if( wlc_state == WLC_STOP)
+		throw(MAL,"wlc.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
 	return msg;
 }
 
 str
 WLCcommit(int clientid)
 {
-	if( mal_clients[clientid].wlcr && mal_clients[clientid].wlcr->stop > 1){
-		newStmt(mal_clients[clientid].wlcr,"wlr","commit");
+	if( mal_clients[clientid].wlc && mal_clients[clientid].wlc->stop > 1){
+		newStmt(mal_clients[clientid].wlc,"wlr","commit");
 		return WLCwrite( &mal_clients[clientid]);
 	}
 	return MAL_SUCCEED;
@@ -869,8 +864,8 @@ WLCcommitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 WLCrollback(int clientid)
 {
-	if( mal_clients[clientid].wlcr){
-		newStmt(mal_clients[clientid].wlcr,"wlr","rollback");
+	if( mal_clients[clientid].wlc){
+		newStmt(mal_clients[clientid].wlc,"wlr","rollback");
 		return WLCwrite( &mal_clients[clientid]);
 	}
 	return MAL_SUCCEED;

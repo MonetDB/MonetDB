@@ -12,11 +12,11 @@
  * We don't need the actual name of the objects
  */
 #include "monetdb_config.h"
-#include "opt_wlcr.h"
+#include "opt_wlc.h"
 
 
 int
-OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int i, j, limit, slimit, updates=0, query=1;
 	InstrPtr p, q, def = 0;
 	InstrPtr *old;
@@ -60,7 +60,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pushInstruction(mb,p);
 		if( getModuleId(p) == querylogRef && getFunctionId(p) == defineRef){
 			q= copyInstruction(p);
-			setModuleId(q, wlcrRef);
+			setModuleId(q, wlcRef);
 			setFunctionId(q,queryRef);
 			getArg(q,0) = newTmpVariable(mb,TYPE_any);
 			pushInstruction(mb,q);
@@ -80,7 +80,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			setFunctionId(def,changeRef);
 				assert(def);
 				q= copyInstruction(p);
-				setModuleId(q, wlcrRef);
+				setModuleId(q, wlcRef);
 				for( j=0; j< p->retc; j++)
 					getArg(q,j) = newTmpVariable(mb,TYPE_any);
 				pushInstruction(mb,q);
@@ -96,7 +96,7 @@ OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				setFunctionId(def,changeRef);
 				q= copyInstruction(p);
 				delArgument(q, q->retc);
-				setModuleId(q, wlcrRef);
+				setModuleId(q, wlcRef);
 				for( j=0; j< p->retc; j++)
 					getArg(q,j) = newTmpVariable(mb,TYPE_any);
 				pushInstruction(mb,q);

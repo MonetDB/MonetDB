@@ -35,8 +35,8 @@
 #include "mal_debugger.h"
 #include "mal_linker.h"
 #include "bat5.h"
-#include "wlcr.h"
-#include "sql_wlcr.h"
+#include "wlc.h"
+#include "wlr.h"
 #include "msabaoth.h"
 #include <mtime.h>
 #include "optimizer.h"

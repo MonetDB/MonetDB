@@ -12,10 +12,10 @@
 
 #include "mal_interpreter.h"
 #include "mal_scenario.h"
-#include "wlcr.h"
+#include "wlc.h"
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-mal_export int OPTwlcrImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _OPT_WLCR_H */

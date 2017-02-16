@@ -296,7 +296,7 @@ mal_export  str ilikeRef;
 mal_export  str not_likeRef;
 mal_export  str not_ilikeRef;
 mal_export  str userRef;
-mal_export  str wlcrRef;
+mal_export  str wlcRef;
 mal_export  str wlrRef;
 mal_export  str vectorRef;
 mal_export  str zero_or_oneRef;

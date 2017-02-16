@@ -19,7 +19,7 @@
 #include "sql_privileges.h"
 #include "rel_rel.h"
 #include "gdk_logger.h"
-#include "wlcr.h"
+#include "wlc.h"
 
 static int mvc_debug = 0;
 

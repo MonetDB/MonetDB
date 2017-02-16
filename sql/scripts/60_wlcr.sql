@@ -8,22 +8,22 @@
 
 -- Master commands
 create procedure master()
-external name wlcr.master;
+external name wlc.master;
 
 create procedure master(path string)
-external name wlcr.master;
+external name wlc.master;
 
 create procedure stopmaster()
-external name wlcr.stopmaster;
+external name wlc.stopmaster;
 
-create procedure masterdrift( duration int)
-external name wlcr."setmasterdrift";
+create procedure masterbeat( duration int)
+external name wlc."setmasterbeat";
 
 create function masterClock() returns string
-external name wlcr."getmasterclock";
+external name wlc."getmasterclock";
 
-create function masterTick() returns integer
-external name wlcr."getmastertick";
+create function masterTick() returns bigint
+external name wlc."getmastertick";
 
 -- Replica commands
 create procedure replicate()
@@ -32,7 +32,7 @@ external name wlr.replicate;
 create procedure replicate(dbname string)
 external name wlr.replicate;
 
-create procedure replicate(dbname string, pit timestamp)
+create procedure replicate(dbname string, pointintime timestamp)
 external name wlr.replicate;
 
 create procedure replicate(dbname string, id tinyint)
@@ -47,12 +47,12 @@ external name wlr.replicate;
 create procedure replicate(dbname string, id bigint)
 external name wlr.replicate;
 
-create procedure replicadrift(duration integer)
-external name wlr."setreplicadrift";
+create procedure replicabeat(duration integer)
+external name wlr."setreplicabeat";
 
 create function replicaClock() returns string
 external name wlr."getreplicaclock";
 
-create function replicaTick() returns integer
+create function replicaTick() returns bigint
 external name wlr."getreplicatick";
 

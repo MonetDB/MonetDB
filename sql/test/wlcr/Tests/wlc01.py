@@ -20,7 +20,7 @@ s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE,
 c = process.client('sql', dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 cout, cerr = c.communicate('''\
-call masterdrift(0);
+call masterbeat(0);
 call master();
 create table tmp(i int, s string);
 insert into tmp values(1,'hello'), (2,'world');
