@@ -587,8 +587,6 @@ typedef size_t BUN;
 #else
 #define BUN_NONE ((BUN) LLONG_MAX)
 #endif
-#define BUN_MSK (~BUN_NONE)
-#define BUN_UNMSK BUN_NONE
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
 #define BUN2 2

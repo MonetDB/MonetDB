@@ -57,7 +57,7 @@ cast_and_floor.Bug-6071
 union.Bug-6069
 ifthenelse-void.Bug-6075
 assert-on-table-producing-function.Bug-6076
-HAVE_NETCDF?assert-on-push-project-up.Bug-6077
+HAVE_NETCDF&HAVE_SAMTOOLS?assert-on-push-project-up.Bug-6077
 HAVE_SAMTOOLS?assert-on-project.Bug-6078
 crash.Bug-6081
 merge-table-edit.Bug-6084

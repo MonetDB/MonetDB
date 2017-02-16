@@ -10,7 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#define ORDERIDX_VERSION	((oid) 1)
+#define ORDERIDX_VERSION	((oid) 2)
 
 #ifdef PERSISTENTIDX
 struct idxsync {
@@ -205,22 +205,6 @@ BATorderidx(BAT *b, int stable)
 	return GDK_SUCCEED;
 }
 
-#define UNARY_MERGE(TYPE)						\
-	do {								\
-		TYPE *v = (TYPE *) Tloc(b, 0);				\
-		if (p < q) {						\
-			*mv++ = *p++;					\
-		}							\
-		while (p < q) {						\
-			*mv = *p++;					\
-			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-				*(mv-1) |= BUN_MSK;			\
-			}						\
-			mv++;						\
-		}							\
-		*(mv-1) |= BUN_MSK;					\
-	} while (0)
-
 #define BINARY_MERGE(TYPE)						\
 	do {								\
 		TYPE *v = (TYPE *) Tloc(b, 0);				\
@@ -242,34 +226,17 @@ BATorderidx(BAT *b, int stable)
 		}							\
 		while (p0 < q0 && p1 < q1) {				\
 			if (v[*p0 - b->hseqbase] <= v[*p1 - b->hseqbase]) { \
-				*mv = *p0++;				\
-				if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-					*(mv-1) |= BUN_MSK;		\
-				}					\
-				mv++;					\
+				*mv++ = *p0++;				\
 			} else {					\
-				*mv = *p1++;				\
-				if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-					*(mv-1) |= BUN_MSK;		\
-				}					\
-				mv++;					\
+				*mv++ = *p1++;				\
 			}						\
 		}							\
 		while (p0 < q0) {					\
-			*mv = *p0++;					\
-			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-				*(mv-1) |= BUN_MSK;			\
-			}						\
-			mv++;						\
+			*mv++ = *p0++;					\
 		}							\
 		while (p1 < q1) {					\
-			*mv = *p1++;					\
-			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-				*(mv-1) |= BUN_MSK;			\
-			}						\
-			mv++;						\
+			*mv++ = *p1++;					\
 		}							\
-		*(mv-1) |= BUN_MSK;					\
 	} while(0)
 
 #define swap(X,Y,TMP)  (TMP)=(X);(X)=(Y);(Y)=(TMP)
@@ -329,11 +296,7 @@ BATorderidx(BAT *b, int stable)
 			HEAPIFY(0);					\
 		}							\
 		while (n_ar > 1) {					\
-			*mv = *(p[0])++;				\
-			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-				*(mv-1) |= BUN_MSK;			\
-			}						\
-			mv++;						\
+			*mv++ = *(p[0])++;				\
 			if (p[0] < q[0]) {				\
 				minhp[0] = v[*p[0] - b->hseqbase];	\
 				HEAPIFY(0);				\
@@ -346,13 +309,8 @@ BATorderidx(BAT *b, int stable)
 			}						\
 		}							\
 		while (p[0] < q[0]) {					\
-			*mv = *(p[0])++;				\
-			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-				*(mv-1) |= BUN_MSK;			\
-			}						\
-			mv++;						\
+			*mv++ = *(p[0])++;				\
 		}							\
-		*(mv-1) |= BUN_MSK;					\
 		GDKfree(minhp);						\
 	} while (0)
 
@@ -391,33 +349,13 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	*mv++ = (oid) BATcount(b);
 
 	if (n_ar == 1) {
-		const oid *restrict p, *q;
 		/* One oid order bat, nothing to merge */
 		assert(BATcount(a[0]) == BATcount(b));
 		assert((VIEWtparent(a[0]) == b->batCacheid ||
 			VIEWtparent(a[0]) == VIEWtparent(b)) &&
 		       a[0]->torderidx);
-		p = (const oid *) a[0]->torderidx->base + ORDERIDXOFF;
-		q = p + BATcount(a[0]);
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte: UNARY_MERGE(bte); break;
-		case TYPE_sht: UNARY_MERGE(sht); break;
-		case TYPE_int: UNARY_MERGE(int); break;
-		case TYPE_lng: UNARY_MERGE(lng); break;
-#ifdef HAVE_HGE
-		case TYPE_hge: UNARY_MERGE(hge); break;
-#endif
-		case TYPE_flt: UNARY_MERGE(flt); break;
-		case TYPE_dbl: UNARY_MERGE(dbl); break;
-		case TYPE_str:
-		default:
-			/* TODO: support strings, date, timestamps etc. */
-			assert(0);
-			HEAPfree(m, 1);
-			GDKfree(m);
-			MT_lock_unset(&GDKhashLock(b->batCacheid));
-			return GDK_FAIL;
-		}
+		memcpy(mv, (const oid *) a[0]->torderidx->base + ORDERIDXOFF,
+		       BATcount(a[0]) * SIZEOF_OID);
 	} else if (n_ar == 2) {
 		/* sort merge with 1 comparison per BUN */
 		const oid *restrict p0, *restrict p1, *q0, *q1;

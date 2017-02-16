@@ -916,7 +916,8 @@ count_idx_upd(sql_trans *tr, sql_idx *i)
 	assert (isTable(i->t)) ;
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
-		i->data = timestamp_delta(oi->data, tr->stime);
+		if (oi)
+			i->data = timestamp_delta(oi->data, tr->stime);
 	}
 	b = i->data;
 	if (!b)

@@ -2998,11 +2998,11 @@ with_list:
  ;
 
 with_list_element: 
-    ident opt_column_list AS '(' with_query_expression ')'
+    ident opt_column_list AS subquery_with_orderby 
 	{  dlist *l = L();
 	  append_list(l, append_string(L(), $1));
 	  append_list(l, $2);
-	  append_symbol(l, $5);
+	  append_symbol(l, $4);
 	  append_int(l, FALSE);	/* no with check */
 	  append_int(l, FALSE);	/* inlined view  (ie not persistent) */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
