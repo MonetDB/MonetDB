@@ -312,7 +312,7 @@ sqlstore_export logger_functions logger_funcs;
 
 /* we need to add an interface for result_tables later */
 
-extern res_table *res_table_create(sql_trans *tr, int res_id, int nr_cols, int querytype, res_table *next, void *order);
+extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, int querytype, res_table *next, void *order);
 extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, int mtype, void *v);
 
 extern void res_table_destroy(res_table *t);

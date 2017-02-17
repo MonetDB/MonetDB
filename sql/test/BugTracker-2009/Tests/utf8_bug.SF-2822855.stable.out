@@ -37,7 +37,7 @@ Ready.
 [ "€",	1	]
 #select 'Liever €uro' as "Liever euro";
 % .L2 # table_name
-% Liever euro # name
+% "Liever euro" # name
 % char # type
 % 11 # length
 [ "Liever €uro"	]

@@ -505,7 +505,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			sql->out = NULL;	/* no output stream */
 		if (execute)
 			msg = SQLrun(c,be,m);
-
 		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c, c->curprg->def, NULL, oldvtop);
 
@@ -521,7 +520,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 				int ncol = 0;
 				res_table *res;
 				for (n = r->exps->h; n; n = n->next) ncol++;
-				res = res_table_create(m->session->tr, m->result_id++, ncol, 1, NULL, NULL);
+				res = res_table_create(m->session->tr, m->result_id++, 0, ncol, 1, NULL, NULL);
 				for (n = r->exps->h; n; n = n->next) {
 					const char *name, *rname;
 					sql_exp *e = n->data;
