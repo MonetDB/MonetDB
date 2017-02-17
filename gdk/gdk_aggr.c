@@ -2416,9 +2416,13 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		/* there is a candidate list, replace b (and g, if
 		 * given) with just the values we're interested in */
 		b = BATproject(s, b);
+		if (b == NULL)
+			return NULL;
 		freeb = 1;
 		if (g) {
 			g = BATproject(s, g);
+			if (g == NULL)
+				goto bunins_failed;
 			freeg = 1;
 		}
 	}
@@ -2436,7 +2440,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				BBPunfix(g->batCacheid);
 			return bn;
 		}
-		BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0);
+		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0) != GDK_SUCCEED)
+			goto bunins_failed;
 		if (freeg)
 			BBPunfix(g->batCacheid);
 		g = t1;
@@ -2444,7 +2449,11 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	} else {
 		t2 = NULL;
 	}
-	BATsort(&t1, NULL, NULL, b, t2, g, 0, 0);
+	if (BATsort(&t1, NULL, NULL, b, t2, g, 0, 0) != GDK_SUCCEED) {
+		if (t2)
+			BBPunfix(t2->batCacheid);
+		goto bunins_failed;
+	}
 	if (freeb)
 		BBPunfix(b->batCacheid);
 	b = t1;
@@ -2454,7 +2463,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 
 	bn = COLnew(g ? min : 0, b->ttype, ngrp, TRANSIENT);
 	if (bn == NULL)
-		return NULL;
+		goto bunins_failed;
 
 	bi = bat_iterator(b);
 	nil = ATOMnilptr(b->ttype);
@@ -2511,7 +2520,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		}
 		index = (BUN) (r + (p-r-1) * quantile);
 		v = BUNtail(bi, index);
-		BUNappend(bn, v, FALSE);
+		if (BUNappend(bn, v, FALSE) != GDK_SUCCEED)
+			goto bunins_failed;
 		nils += (*atomcmp)(v, nil) == 0;
 	}
 
@@ -2532,7 +2542,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		BBPunfix(b->batCacheid);
 	if (freeg)
 		BBPunfix(g->batCacheid);
-	BBPunfix(bn->batCacheid);
+	if (bn)
+		BBPunfix(bn->batCacheid);
 	return NULL;
 }
 

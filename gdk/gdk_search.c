@@ -131,6 +131,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		if (b->torderidx == NULL ||
 		    b->torderidx->base == NULL) {
 			GDKerror("ORDERfindwhich: order idx not found\n");
+			return BUN_NONE;
 		}
 		o = (const oid *) b->torderidx->base + ORDERIDXOFF;
 		lo = 0;

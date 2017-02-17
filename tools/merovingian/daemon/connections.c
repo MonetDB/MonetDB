@@ -156,13 +156,13 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	int sock;
 	int omask;
 
+	if (strlen(path) >= sizeof(server.sun_path))
+		return newErr("pathname for UNIX stream socket too long");
+
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock == -1)
 		return(newErr("creation of UNIX stream socket failed: %s",
 					strerror(errno)));
-
-	if (strlen(path) >= sizeof(server.sun_path))
-		return newErr("pathname for UNIX stream socket too long");
 
 	memset(&server, 0, sizeof(struct sockaddr_un));
 	server.sun_family = AF_UNIX;
