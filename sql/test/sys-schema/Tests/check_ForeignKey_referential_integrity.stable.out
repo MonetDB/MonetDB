@@ -107,12 +107,22 @@ Ready.
 % id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
 % int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
 % 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
-#SELECT * FROM sys.functions WHERE type NOT IN (1,2,3,4,5,6,7);  -- replace this check when table sys.function_types becomes available
+#SELECT * FROM sys.functions WHERE type NOT IN (SELECT function_type_id FROM sys.function_types);
 % sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
 % id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
 % int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
 % 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
-#SELECT * FROM sys.functions WHERE language NOT IN (0,1,2,3,4,5,6,7);  -- replace this check when table sys.function_languages becomes available
+#SELECT * FROM sys.functions WHERE type NOT IN (1,2,3,4,5,6,7);  -- old check before table sys.function_types existed
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT * FROM sys.functions WHERE language NOT IN (SELECT language_id FROM sys.function_languages);
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT * FROM sys.functions WHERE language NOT IN (0,1,2,3,4,5,6,7);  -- old check before table sys.function_languages existed
 % sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
 % id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
 % int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
@@ -162,12 +172,22 @@ Ready.
 % id,	table_id,	type,	name,	rkey,	action # name
 % int,	int,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1 # length
-#SELECT * FROM sys.keys WHERE type NOT IN (0, 1, 2);  -- replace this check when table sys.key_types becomes available
+#SELECT * FROM sys.keys WHERE type NOT IN (SELECT key_type_id FROM sys.key_types);
 % sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
 % id,	table_id,	type,	name,	rkey,	action # name
 % int,	int,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1 # length
-#SELECT * FROM tmp.keys WHERE type NOT IN (0, 1, 2);  -- replace this check when table sys.key_types becomes available
+#SELECT * FROM tmp.keys WHERE type NOT IN (SELECT key_type_id FROM sys.key_types);
+% tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys # table_name
+% id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	0,	1,	1 # length
+#SELECT * FROM sys.keys WHERE type NOT IN (0, 1, 2);  -- old check before table sys.key_types existed
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	0,	1,	1 # length
+#SELECT * FROM tmp.keys WHERE type NOT IN (0, 1, 2);  -- old check before table sys.key_types existed
 % tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys # table_name
 % id,	table_id,	type,	name,	rkey,	action # name
 % int,	int,	int,	varchar,	int,	int # type
@@ -187,12 +207,22 @@ Ready.
 % id,	table_id,	type,	name # name
 % int,	int,	int,	varchar # type
 % 1,	1,	1,	0 # length
-#SELECT * FROM sys.idxs WHERE type NOT IN (0, 1, 2);  -- replace this check when table sys.index_types becomes available
+#SELECT * FROM sys.idxs WHERE type NOT IN (SELECT index_type_id FROM sys.index_types);
 % sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % id,	table_id,	type,	name # name
 % int,	int,	int,	varchar # type
 % 1,	1,	1,	0 # length
-#SELECT * FROM tmp.idxs WHERE type NOT IN (0, 1, 2);  -- replace this check when table sys.index_types becomes available
+#SELECT * FROM tmp.idxs WHERE type NOT IN (SELECT index_type_id FROM sys.index_types);
+% tmp.idxs,	tmp.idxs,	tmp.idxs,	tmp.idxs # table_name
+% id,	table_id,	type,	name # name
+% int,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
+#SELECT * FROM sys.idxs WHERE type NOT IN (0, 1, 2);  -- old check before table sys.index_types existed
+% sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% id,	table_id,	type,	name # name
+% int,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
+#SELECT * FROM tmp.idxs WHERE type NOT IN (0, 1, 2);  -- old check before table sys.index_types existed
 % tmp.idxs,	tmp.idxs,	tmp.idxs,	tmp.idxs # table_name
 % id,	table_id,	type,	name # name
 % int,	int,	int,	varchar # type
@@ -292,7 +322,12 @@ Ready.
 % obj_id,	auth_id,	privileges,	grantor,	grantable # name
 % int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.privileges WHERE privileges NOT IN (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,32); -- replace this check when table sys.privilege_codes becomes available
+#SELECT * FROM sys.privileges WHERE privileges NOT IN (SELECT privilege_code_id FROM sys.privilege_codes);
+% sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% obj_id,	auth_id,	privileges,	grantor,	grantable # name
+% int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1 # length
+#SELECT * FROM sys.privileges WHERE privileges NOT IN (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,32); -- old check before table sys.privilege_codes existed
 % sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
 % obj_id,	auth_id,	privileges,	grantor,	grantable # name
 % int,	int,	int,	int,	int # type

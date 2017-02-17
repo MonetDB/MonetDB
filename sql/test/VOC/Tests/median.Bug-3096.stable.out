@@ -43,13 +43,13 @@ Ready.
 % sys.L5 # table_name
 % L5 # name
 % int # type
-% 11 # length
+% 1 # length
 [ NULL	]
 #select max(departure_date) - min(departure_date) from voyages;
 % sys.L5 # table_name
 % L5 # name
 % int # type
-% 11 # length
+% 1 # length
 [ NULL	]
 #drop table voyages;
 

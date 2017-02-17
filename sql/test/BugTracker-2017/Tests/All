@@ -24,3 +24,6 @@ sqlsmith01
 sqlsmith02
 sqlsmith03
 sqlsmith04
+nested_with.Bug-6187
+prepare.Bug-6133
+null-quantile.Bug-6218

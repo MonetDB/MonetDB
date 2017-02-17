@@ -86,6 +86,26 @@ __hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch(const oid *restrict indir, oid offset, int type, const char *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const char *restrict v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_sht(const oid *restrict indir, oid offset, const sht *restrict vals, BUN lo, BUN hi, sht v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_int(const oid *restrict indir, oid offset, const int *restrict vals, BUN lo, BUN hi, int v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_lng(const oid *restrict indir, oid offset, const lng *restrict vals, BUN lo, BUN hi, lng v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+#ifdef HAVE_HGE
+__hidden BUN binsearch_hge(const oid *restrict indir, oid offset, const hge *restrict vals, BUN lo, BUN hi, hge v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+#endif
+__hidden BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden Heap *createOIDXheap(BAT *b, int stable)
+	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bit force)
@@ -168,6 +188,8 @@ __hidden void *MT_mremap(const char *path, int mode, void *old_address, size_t o
 __hidden int MT_msync(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
 __hidden void OIDXfree(BAT *b)
+	__attribute__((__visibility__("hidden")));
+__hidden void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));

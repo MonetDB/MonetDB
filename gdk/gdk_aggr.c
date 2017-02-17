@@ -2383,8 +2383,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	BAT *t1, *t2;
 	BATiter bi;
 	const void *v;
-	const void *nil;
-	int (*atomcmp)(const void *, const void *);
+	const void *nil = ATOMnilptr(tp);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 	const char *err;
 	(void) abort_on_error;
 
@@ -2394,9 +2394,9 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		return NULL;
 	}
 	assert(tp == b->ttype);
-	if (!ATOMlinear(b->ttype)) {
+	if (!ATOMlinear(tp)) {
 		GDKerror("BATgroupquantile: cannot determine quantile on "
-			 "non-linear type %s\n", ATOMname(b->ttype));
+			 "non-linear type %s\n", ATOMname(tp));
 		return NULL;
 	}
 	if (quantile < 0 || quantile > 1) {
@@ -2404,21 +2404,24 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			 "p=%f (p has to be in [0,1])\n", quantile);
 		return NULL;
 	}
-	assert(quantile >=0 && quantile <=1);
 
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no values, thus also no quantiles,
 		 * so return bat aligned with e with nil in the tail */
-		return BATconstant(ngrp == 0 ? 0 : min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+		return BATconstant(ngrp == 0 ? 0 : min, tp, nil, ngrp, TRANSIENT);
 	}
 
 	if (s) {
 		/* there is a candidate list, replace b (and g, if
 		 * given) with just the values we're interested in */
 		b = BATproject(s, b);
+		if (b == NULL)
+			return NULL;
 		freeb = 1;
 		if (g) {
 			g = BATproject(s, g);
+			if (g == NULL)
+				goto bunins_failed;
 			freeg = 1;
 		}
 	}
@@ -2427,43 +2430,43 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	 * if g is given, sort g and subsort b so that we can get the
 	 * quantile for each group */
 	if (g) {
+		const oid *restrict grps;
+		oid prev;
+		BUN p, q, r;
+
 		if (BATtdense(g)) {
 			/* singleton groups, so calculating quantile is
 			 * easy */
-			bn = COLcopy(b, b->ttype, 0, TRANSIENT);
+			bn = COLcopy(b, tp, 0, TRANSIENT);
 			BAThseqbase(bn, g->tseqbase);
+			if (freeb)
+				BBPunfix(b->batCacheid);
 			if (freeg)
 				BBPunfix(g->batCacheid);
 			return bn;
 		}
-		BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0);
+		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0) != GDK_SUCCEED)
+			goto bunins_failed;
 		if (freeg)
 			BBPunfix(g->batCacheid);
 		g = t1;
 		freeg = 1;
-	} else {
-		t2 = NULL;
-	}
-	BATsort(&t1, NULL, NULL, b, t2, g, 0, 0);
-	if (freeb)
-		BBPunfix(b->batCacheid);
-	b = t1;
-	freeb = 1;
-	if (t2)
+
+		if (BATsort(&t1, NULL, NULL, b, t2, g, 0, 0) != GDK_SUCCEED) {
+			BBPunfix(t2->batCacheid);
+			goto bunins_failed;
+		}
+		if (freeb)
+			BBPunfix(b->batCacheid);
+		b = t1;
+		freeb = 1;
 		BBPunfix(t2->batCacheid);
 
-	bn = COLnew(g ? min : 0, b->ttype, ngrp, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
+		bn = COLnew(min, tp, ngrp, TRANSIENT);
+		if (bn == NULL)
+			goto bunins_failed;
 
-	bi = bat_iterator(b);
-	nil = ATOMnilptr(b->ttype);
-	atomcmp = ATOMcompare(b->ttype);
-
-	if (g) { /* we have to do this by group */
-		const oid *restrict grps;
-		oid prev;
-		BUN p, q, r;
+		bi = bat_iterator(b);
 
 		grps = (const oid *) Tloc(g, 0);
 		prev = grps[0];
@@ -2471,26 +2474,26 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		  * of the current group, respectively) */
 		for (r = 0, p = 1, q = BATcount(g); p <= q; p++) {
 			assert(r < p);
-			if ( p == q || grps[p] != prev) {
+			if (p == q || grps[p] != prev) {
 				BUN qindex;
-				if (skip_nils) {
-					while (r < p && (*atomcmp)(BUNtail(bi, r), nil) == 0)
-						r++;
-					if (r == p)
-						break;
+				if (skip_nils && !b->tnonil) {
+					r = binsearch(NULL, 0, tp, Tloc(b, 0),
+						      b->tvheap ? b->tvheap->base : NULL,
+						      b->twidth, r, p, nil,
+						      1, 1);
 				}
-				while (BATcount(bn) < prev - min) {
-					bunfastapp_nocheck(bn, BUNlast(bn),
-							   nil, Tsize(bn));
+				if (r == p) {
+					v = nil;
 					nils++;
+				} else {
+					/* round *down* to nearest integer */
+					qindex = r + p - (BUN) (p + 0.5 - (p - r - 1) * quantile);
+					/* be a little paranoid about the index */
+					assert(qindex >= r && qindex <  p);
+					v = BUNtail(bi, qindex);
+					nils += (*atomcmp)(v, nil) == 0;
 				}
-				qindex = (BUN) (r + (p-r-1) * quantile);
-				/* be a little paranoid about the index */
-				assert(qindex >= r);
-				assert(qindex <  p);
-				v = BUNtail(bi, qindex);
 				bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn));
-				nils += (*atomcmp)(v, nil) == 0;
 
 				r = p;
 				if (p < q)
@@ -2501,24 +2504,67 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		while (BATcount(bn) < ngrp) {
 			bunfastapp_nocheck(bn, BUNlast(bn), nil, Tsize(bn));
 		}
-	} else { /* quantiles for entire BAT b, EZ */
+		BBPunfix(g->batCacheid);
+	} else {
+		BUN index, r, p = BATcount(b);
+		BAT *pb = NULL;
+		const oid *ords;
 
-		BUN index, r = 0, p = BATcount(b);
+		bn = COLnew(0, tp, 1, TRANSIENT);
+		if (bn == NULL)
+			goto bunins_failed;
 
-		if (skip_nils) {
-			while (r < p && (*atomcmp)(BUNtail(bi, r), nil) == 0)
-				r++;
+		t1 = NULL;
+
+		if (BATcheckorderidx(b) ||
+		    (VIEWtparent(b) &&
+		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
+		     pb->theap.base == b->theap.base &&
+		     BATcount(pb) == BATcount(b) &&
+		     pb->hseqbase == b->hseqbase &&
+		     BATcheckorderidx(pb))) {
+			ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+		} else {
+			BATsort(NULL, &t1, NULL, b, NULL, g, 0, 0);
+			if (BATtdense(t1))
+				ords = NULL;
+			else
+				ords = (const oid *) Tloc(t1, 0);
 		}
-		index = (BUN) (r + (p-r-1) * quantile);
-		v = BUNtail(bi, index);
-		BUNappend(bn, v, FALSE);
-		nils += (*atomcmp)(v, nil) == 0;
+
+		if (skip_nils && !b->tnonil)
+			r = binsearch(ords, 0, tp, Tloc(b, 0),
+				      b->tvheap ? b->tvheap->base : NULL,
+				      b->twidth, 0, p,
+				      nil, 1, 1);
+		else
+			r = 0;
+
+		if (r == p) {
+			/* no non-nil values, so quantile is nil */
+			v = nil;
+			nils++;
+		} else {
+			bi = bat_iterator(b);
+			/* round (p-r-1)*quantile *down* to nearest
+			 * integer (i.e., 1.49 and 1.5 are rounded to
+			 * 1, 1.51 is rounded to 2) */
+			index = r + p - (BUN) (p + 0.5 - (p - r - 1) * quantile);
+			if (ords)
+				index = ords[index] - b->hseqbase;
+			else
+				index = index + t1->tseqbase;
+			v = BUNtail(bi, index);
+			nils += (*atomcmp)(v, nil) == 0;
+		}
+		if (t1)
+			BBPunfix(t1->batCacheid);
+		if (BUNappend(bn, v, FALSE) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 
 	if (freeb)
 		BBPunfix(b->batCacheid);
-	if (freeg)
-		BBPunfix(g->batCacheid);
 
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
@@ -2532,7 +2578,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		BBPunfix(b->batCacheid);
 	if (freeg)
 		BBPunfix(g->batCacheid);
-	BBPunfix(bn->batCacheid);
+	if (bn)
+		BBPunfix(bn->batCacheid);
 	return NULL;
 }
 

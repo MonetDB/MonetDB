@@ -83,6 +83,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	if (i == qtop) {
 		QRYqueue[i].mb = mb;
 		QRYqueue[i].tag = qtag++;
+		mb->tag = QRYqueue[i].tag;
 		QRYqueue[i].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
 		QRYqueue[i].start = (lng)time(0);
 		QRYqueue[i].runtime = mb->runtime; 	// the estimated execution time

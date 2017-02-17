@@ -258,13 +258,6 @@ AS_CASE([$enable_geom-$have_shp],
 	have_shp=no
 	disable_shp="(ESRI Shapefile vault requires the geom module)"])
 
-dft_gsl=auto
-AC_ARG_ENABLE([gsl],
-	[AS_HELP_STRING([--enable-gsl],
-		[enable support for GSL (default=auto)])],
-	[enable_gsl=$enableval],
-	[enable_gsl=$dft_gsl])
-
 dft_embedded=no
 AC_ARG_ENABLE([embedded],
 	[AS_HELP_STRING([--enable-embedded],
@@ -1686,38 +1679,59 @@ AS_CASE([$host],
 			AC_DEFINE([HAVE_OPENSSL], 1, [Define if you have the OpenSSL library])])])])
 
 
-# PCRE library
-# required on Windows, optional on POSIX systems with GNU regex
-req_pcre_ver='4.5'
-PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver],
-	[have_pcre=yes], [have_pcre=no; why_have_pcre="(libpcre >= $req_pcre_ver not found)"])
-AS_VAR_IF([have_pcre], [yes], [
-	AC_MSG_CHECKING([whether pcre comes with UTF-8 support])
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $pcre_LIBS"
-	save_CFLAGS="$CFLAGS"
-	CFLAGS="$CFLAGS $pcre_CFLAGS"
-	AC_RUN_IFELSE([AC_LANG_PROGRAM(
-		[[@%:@include <pcre.h>]],
-		[[int rc; pcre_config(PCRE_CONFIG_UTF8, &rc); exit(!rc);]])],
-		[AC_MSG_RESULT([yes])],
-		[have_pcre=no; why_have_pcre="(libpcre found but no UTF-8 support)"; AC_MSG_RESULT([no])],
-		[AC_MSG_RESULT([assuming yes])])
-	LIBS="$save_LIBS"
-	CFLAGS="$save_CFLAGS"])
+org_have_regex=auto
+dft_regex=auto
+AC_ARG_WITH([regex],
+	[AS_HELP_STRING([--with-regex=TYPE],
+	[use either PRCE or POSIX regular expressions (default=PCRE if available)])],
+	[AS_CASE([$withval],
+		[pcre|PCRE], [have_regex=pcre],
+		[posix|POSIX], [have_regex=posix],
+		[auto|AUTO], [have_regex=auto],
+		[AC_MSG_ERROR([--with-regex argument must be either PCRE or POSIX])])],
+	[have_regex=$dft_regex])
+
+AS_VAR_IF([have_regex], [posix],
+	[have_pcre=no; why_have_pcre="(PCRE disabled)"],
+	[
+	# PCRE library
+	# required on Windows, optional on POSIX systems with GNU regex
+	req_pcre_ver='4.5'
+	PKG_CHECK_MODULES([pcre], [libpcre >= $req_pcre_ver],
+		[have_pcre=yes],
+		[AS_VAR_IF([have_regex], [pcre],
+			[AC_MSG_ERROR([PCRE library not found or not usable])],
+			[have_pcre=no; why_have_pcre="(libpcre >= $req_pcre_ver not found)"])])
+	AS_VAR_IF([have_pcre], [yes], [
+		AC_MSG_CHECKING([whether pcre comes with UTF-8 support])
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $pcre_LIBS"
+		save_CFLAGS="$CFLAGS"
+		CFLAGS="$CFLAGS $pcre_CFLAGS"
+		AC_RUN_IFELSE([AC_LANG_PROGRAM(
+			[[@%:@include <pcre.h>]],
+			[[int rc; pcre_config(PCRE_CONFIG_UTF8, &rc); exit(!rc);]])],
+			[AC_MSG_RESULT([yes])],
+			[have_pcre=no; why_have_pcre="(libpcre found but no UTF-8 support)"; AC_MSG_RESULT([no])],
+			[AC_MSG_RESULT([assuming yes])])
+		LIBS="$save_LIBS"
+		CFLAGS="$save_CFLAGS"
+		have_regex=PCRE])
+	])
 
 AS_VAR_IF([have_pcre], [yes], [
 	AC_DEFINE([HAVE_LIBPCRE], 1, [Define if you have the pcre library])])
 AM_CONDITIONAL([HAVE_PCRE], [test x"$have_pcre" != xno])
 
 have_gnuregex=yes
-AS_VAR_IF([have_pcre], [yes], [], [
+AS_VAR_IF([have_pcre], [no], [
+	AC_MSG_CHECKING([whether for POSIX regex support])
 	AC_RUN_IFELSE([AC_LANG_PROGRAM(
 		[[@%:@include <regex.h>]],
 		[[regex_t re; regcomp(&re, "hello", REG_EXTENDED|REG_NOSUB);]])],
-		[AC_MSG_RESULT([yes])],
-		[have_gnuregex=no],
-		[have_gnuregex=no])
+		[AC_MSG_RESULT([yes]); have_regex=POSIX],
+		[AC_MSG_RESULT([no]); have_gnuregex=no],
+		[AC_MSG_RESULT([no]); have_gnuregex=no])
 ])
 
 AS_CASE([$enable_monetdb5-$have_pcre-$have_gnuregex],
@@ -2274,7 +2288,7 @@ AS_VAR_IF([have_gdal], [no], [], [
 AS_VAR_IF([have_gdal], [no],
 	[],
 	[AS_VAR_IF([have_gdal], [pkgconf],
-		[],
+		[have_gdal=yes],
 		[save_CPPFLAGS="$CPPFLAGS"
 		 save_LDFLAGS="$LDFLAGS"
 		 save_LIBS="$LIBS"
@@ -2353,17 +2367,6 @@ AS_VAR_IF([have_atomic_ops], [yes], [
 			AC_DEFINE([HAVE_LIBATOMIC_OPS], 1, [Define if you have the libatomic_ops library])
 			CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
 			LIBS="$LIBS $atomic_ops_LIBS"])])])
-
-# Check for gsl library for statistical functions
-org_have_gsl=no
-have_gsl=$org_have_gsl
-AS_VAR_IF([enable_gsl], [no], [], [
-	PKG_CHECK_MODULES([gsl], [gsl],
-		[have_gsl=yes],
-		[have_gsl=no; why_have_gsl="(gsl library not found)"
-		 AS_VAR_IF([enable_gsl], [yes], [AC_MSG_ERROR([gsl library required for GSL support])])
-		 enable_gsl=no; disable_gsl="(gsl library not found)"])])
-AM_CONDITIONAL([HAVE_GSL], [test x"$have_gsl" != xno])
 
 #    checks for header files
 AC_HEADER_STDBOOL
@@ -3071,19 +3074,18 @@ for comp in \
 	'fits         ' \
 	'getaddrinfo  ' \
 	'gdal         ' \
-	'gsl          ' \
 	'liblas       ' \
 	'liblzma      ' \
 	'libxml2      ' \
 	'lidar        ' \
 	'netcdf       ' \
 	'openssl      ' \
-	'pcre         ' \
 	'proj         ' \
 	'pthread      ' \
 	'python2      ' \
 	'python3      ' \
 	'readline     ' \
+	'regex        ' \
 	'samtools     ' \
 	'shp          ' \
 	'sphinxclient ' \
@@ -3099,7 +3101,9 @@ for comp in \
 		[-no-no], [why="(by default)"],
 		[-no-*], [why="(by command line option)"])
 	echo $ECHO_N "    $comp = $ECHO_C"
-	AS_VAR_IF([have], [no], [echo "no  $why"], [echo "yes"])
+	AS_VAR_IF([have], [no],
+		[echo "no  $why"],
+		[AS_VAR_IF([have], [auto], [echo "yes"], [echo "$have"])])
 done
 AS_VAR_IF([have_hge], [yes], [
 	hge_bits='128'
