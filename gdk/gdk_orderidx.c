@@ -10,7 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#define ORDERIDX_VERSION	((oid) 2)
+#define ORDERIDX_VERSION	((oid) 3)
 
 #ifdef PERSISTENTIDX
 struct idxsync {
@@ -88,6 +88,7 @@ BATcheckorderidx(BAT *b)
 #endif
 					    ORDERIDX_VERSION) &&
 				    hdata[1] == (oid) BATcount(b) &&
+				    (hdata[2] == 0 || hdata[2] == 1) &&
 				    fstat(fd, &st) == 0 &&
 				    st.st_size >= (off_t) (hp->size = hp->free = (ORDERIDXOFF + hdata[1]) * SIZEOF_OID) &&
 				    HEAPload(hp, nme, "torderidx", 0) == GDK_SUCCEED) {
@@ -112,23 +113,15 @@ BATcheckorderidx(BAT *b)
 	return ret;
 }
 
-gdk_return
-BATorderidx(BAT *b, int stable)
+/* create the heap for an order index; returns NULL on failure */
+Heap *
+createOIDXheap(BAT *b, int stable)
 {
 	Heap *m;
 	size_t nmelen;
 	oid *restrict mv;
 	const char *nme;
-	oid seq;
-	BUN p, q;
 
-	if (BATcheckorderidx(b))
-		return GDK_SUCCEED;
-	MT_lock_set(&GDKhashLock(b->batCacheid));
-	if (b->torderidx) {
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
-		return GDK_SUCCEED;
-	}
 	nme = BBP_physical(b->batCacheid);
 	nmelen = strlen(nme) + 12;
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
@@ -139,14 +132,61 @@ BATorderidx(BAT *b, int stable)
 		if (m)
 			GDKfree(m->filename);
 		GDKfree(m);
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
-		return GDK_FAIL;
+		return NULL;
 	}
 	m->free = (BATcount(b) + ORDERIDXOFF) * SIZEOF_OID;
 
 	mv = (oid *) m->base;
 	*mv++ = ORDERIDX_VERSION;
 	*mv++ = (oid) BATcount(b);
+	*mv++ = (oid) !!stable;
+	return m;
+}
+
+/* maybe persist the order index heap */
+void
+persistOIDX(BAT *b)
+{
+#ifdef PERSISTENTIDX
+	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
+	    b->batInserted == b->batCount) {
+		MT_Id tid;
+		struct idxsync *hs = GDKmalloc(sizeof(*hs));
+		if (hs != NULL) {
+			BBPfix(b->batCacheid);
+			hs->id = b->batCacheid;
+			hs->hp = b->torderidx;
+			hs->func = "BATorderidx";
+			MT_create_thread(&tid, BATidxsync, hs, MT_THR_DETACHED);
+		}
+	} else
+		ALGODEBUG fprintf(stderr, "#BATorderidx: NOT persisting index %d\n", b->batCacheid);
+#else
+	(void) b;
+#endif
+}
+
+gdk_return
+BATorderidx(BAT *b, int stable)
+{
+	Heap *m;
+	oid *restrict mv;
+	oid seq;
+	BUN p, q;
+
+	if (BATcheckorderidx(b))
+		return GDK_SUCCEED;
+	MT_lock_set(&GDKhashLock(b->batCacheid));
+	if (b->torderidx) {
+		MT_lock_unset(&GDKhashLock(b->batCacheid));
+		return GDK_SUCCEED;
+	}
+	if ((m = createOIDXheap(b, stable)) == NULL) {
+		MT_lock_unset(&GDKhashLock(b->batCacheid));
+		return GDK_FAIL;
+	}
+
+	mv = (oid *) m->base + ORDERIDXOFF;
 
 	seq = b->hseqbase;
 	for (p = 0, q = BATcount(b); p < q; p++)
@@ -182,24 +222,9 @@ BATorderidx(BAT *b, int stable)
 		BBPunfix(bn->batCacheid);
 	}
 
-#ifdef PERSISTENTIDX
-	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
-	    b->batInserted == b->batCount) {
-		MT_Id tid;
-		struct idxsync *hs = GDKmalloc(sizeof(*hs));
-		if (hs != NULL) {
-			BBPfix(b->batCacheid);
-			hs->id = b->batCacheid;
-			hs->hp = m;
-			hs->func = "BATorderidx";
-			MT_create_thread(&tid, BATidxsync, hs, MT_THR_DETACHED);
-		}
-	} else
-		ALGODEBUG fprintf(stderr, "#BATorderidx: NOT persisting index %d\n", b->batCacheid);
-#endif
-
-	b->batDirtydesc = TRUE;
 	b->torderidx = m;
+	b->batDirtydesc = TRUE;
+	persistOIDX(b);
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
 
 	return GDK_SUCCEED;
@@ -347,6 +372,14 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	mv = (oid *) m->base;
 	*mv++ = ORDERIDX_VERSION;
 	*mv++ = (oid) BATcount(b);
+	/* all participating indexes must be stable for the combined
+	 * index to be stable */
+	*mv = 1;
+	for (i = 0; i < n_ar; i++) {
+		if ((*mv &= ((const oid *) a[i]->torderidx->base)[2]) == 0)
+			break;
+	}
+	mv++;
 
 	if (n_ar == 1) {
 		/* One oid order bat, nothing to merge */

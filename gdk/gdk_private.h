@@ -104,6 +104,8 @@ __hidden BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *res
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
+__hidden Heap *createOIDXheap(BAT *b, int stable)
+	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bit force)
@@ -186,6 +188,8 @@ __hidden void *MT_mremap(const char *path, int mode, void *old_address, size_t o
 __hidden int MT_msync(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
 __hidden void OIDXfree(BAT *b)
+	__attribute__((__visibility__("hidden")));
+__hidden void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));
