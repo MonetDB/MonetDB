@@ -2482,24 +2482,22 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			assert(r < p);
 			if ( p == q || grps[p] != prev) {
 				BUN qindex;
-				if (skip_nils) {
+				if (skip_nils && !b->tnonil) {
 					while (r < p && (*atomcmp)(BUNtail(bi, r), nil) == 0)
 						r++;
-					if (r == p)
-						break;
 				}
-				while (BATcount(bn) < prev - min) {
-					bunfastapp_nocheck(bn, BUNlast(bn),
-							   nil, Tsize(bn));
+				if (r == p) {
+					v = nil;
 					nils++;
+				} else {
+					qindex = (BUN) (r + (p-r-1) * quantile);
+					/* be a little paranoid about the index */
+					assert(qindex >= r);
+					assert(qindex <  p);
+					v = BUNtail(bi, qindex);
+					nils += (*atomcmp)(v, nil) == 0;
 				}
-				qindex = (BUN) (r + (p-r-1) * quantile);
-				/* be a little paranoid about the index */
-				assert(qindex >= r);
-				assert(qindex <  p);
-				v = BUNtail(bi, qindex);
 				bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn));
-				nils += (*atomcmp)(v, nil) == 0;
 
 				r = p;
 				if (p < q)

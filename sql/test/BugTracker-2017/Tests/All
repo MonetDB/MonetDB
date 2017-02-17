@@ -21,3 +21,4 @@ integer_addition_overflow.Bug-6205
 dce_bug-6177
 crash_on_NULL_ptr.Bug-6130
 prepare.Bug-6133
+null-quantile.Bug-6218
