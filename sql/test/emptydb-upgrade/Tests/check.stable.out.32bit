@@ -109,7 +109,6 @@ Ready.
 \dSf sys."analyze"
 \dSf sys."bbp"
 \dSf sys."broadcast"
-\dSf sys."chi2prob"
 \dSf sys."clearrejects"
 \dSf sys."columnsize"
 \dSf sys."contains"
@@ -417,7 +416,6 @@ SYSTEM FUNCTION sys.ceiling
 SYSTEM FUNCTION sys.char_length
 SYSTEM FUNCTION sys.character_length
 SYSTEM FUNCTION sys.charindex
-SYSTEM FUNCTION  sys.chi2prob
 SYSTEM FUNCTION  sys.clearrejects
 SYSTEM FUNCTION sys.code
 SYSTEM FUNCTION  sys.columnsize
@@ -840,7 +838,6 @@ create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string
 create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string, col string) external name sql.analyze;
 create function sys.bbp () returns table (id int, name string, ttype string, count bigint, refcnt int, lrefcnt int, location string, heat int, dirty string, status string, kind string) external name bbp.get;
 create function "broadcast" (p inet) returns inet external name inet."broadcast";
-create function sys.chi2prob(chi2 double, datapoints double) returns double external name gsl."chi2prob";
 create procedure sys.clearrejects() external name sql.copy_rejects_clear;
 create function sys.columnsize(nme string, i bigint, d bigint) returns bigint begin case when nme = 'boolean' then return i; when nme = 'char' then return 2*i; when nme = 'smallint' then return 2 * i; when nme = 'int' then return 4 * i; when nme = 'bigint' then return 8 * i; when nme = 'hugeint' then return 16 * i; when nme = 'timestamp' then return 8 * i; when nme = 'varchar' then case when cast(d as bigint) << 8 then return i; when cast(d as bigint) << 16 then return 2 * i; when cast(d as bigint) << 32 then return 4 * i; else return 8 * i; end case; else return 8 * i; end case; end;
 create function contains(a geometry, x double, y double) returns boolean external name geom."Contains";
@@ -1864,7 +1861,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"charindex",	"locate",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"charindex",	"locate",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"charindex",	"locate",	"str",	0,	1,	false,	false,	false	]
-[ "sys",	"chi2prob",	"create function sys.chi2prob(chi2 double, datapoints double) returns double external name gsl.\"chi2prob\";",	"gsl",	1,	1,	false,	false,	false	]
 [ "sys",	"clearrejects",	"create procedure sys.clearrejects() external name sql.copy_rejects_clear;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"code",	"unicode",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"code",	"unicode",	"str",	0,	1,	false,	false,	false	]
@@ -3413,7 +3409,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"charindex",	"arg_1",	"clob",	0,	0,	1,	"arg_2",	"clob",	0,	0,	1,	"arg_3",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"charindex",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"charindex",	"arg_1",	"varchar",	0,	0,	1,	"arg_2",	"varchar",	0,	0,	1,	"arg_3",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"chi2prob",	"chi2",	"double",	53,	0,	1,	"datapoints",	"double",	53,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"clearrejects",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"code",	"arg_1",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"code",	"arg_1",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5803,7 +5798,6 @@ drop function pcre_replace(string, string, string, string);
 [ "charindex"	]
 [ "charindex"	]
 [ "charindex"	]
-[ "chi2prob"	]
 [ "clearrejects"	]
 [ "code"	]
 [ "code"	]

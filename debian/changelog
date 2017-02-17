@@ -1,3 +1,49 @@
+monetdb (11.25.7) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#4034: argnames array in rapi.c has fixed length (that was too short)
+  * BZ#6080: mserver5: rel_bin.c:2391: rel2bin_project: Assertion `0'
+    failed.
+  * BZ#6081: Segmentation fault (core dumped)
+  * BZ#6082: group.subgroup is undefined if group by is used on an
+    expression involving only constants
+  * BZ#6111: Maximum number of digits for hge decimal is listed as 39 in
+    sys.types. Should be 38 as DECIMAL(39) is not supported.
+  * BZ#6112: Crash upgrading Jul2015->Jun2016
+  * BZ#6130: Query rewriter crashes on a NULL pointer when having a
+    correlated subquery
+  * BZ#6133: A crash occurs when preparing an INSERT on joined tables
+    during the query semantic phase
+  * BZ#6141: Getting an error message regarding a non-GROUP-BY column
+    rather than an unknown identifier
+  * BZ#6177: Server crashes
+  * BZ#6186: Null casting causes no results (silent server crash?)
+  * BZ#6189: Removing a NOT NULL constraint from a PKey column should NOT
+    be allowed
+  * BZ#6190: CASE query crashes database
+  * BZ#6191: MT_msync failed with "Cannot allocate memory"
+  * BZ#6192: Numeric column stores wrong values after adding large numbers
+  * BZ#6193: converting to a smaller precision (fewer or no decimals after
+    decimal point) should round/truncate consistently
+  * BZ#6194: splitpart returns truncated last part if it contains non
+    ascii caracters
+  * BZ#6195: Cast from huge decimal type to smaller returns wrong results
+  * BZ#6196: Database crashes after generate_series query
+  * BZ#6198: COALESCE could be more optimized
+  * BZ#6201: MonetDB completely giving up on certain queries - no error
+    and no result
+  * BZ#6202: querying a table with an ordered index on string/varchar
+    column crashes server and makes server unrestartable!
+  * BZ#6203: copy into: Failed to import table Leftover data 'False'
+  * BZ#6205: Integer addition overflow
+  * BZ#6206: casting strings with more than one trailing zero ('0') to
+    decimal goes wrong
+  * BZ#6209: Aggregation over complex OR expressions produce wrong results
+  * BZ#6210: Upgrading a database from Jun2015 or older crashes the server
+  * BZ#6213: SQLsmith causes server to crash
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Thu, 16 Feb 2017 10:44:44 +0100
+
 monetdb (11.25.5) unstable; urgency=low
 
   * Rebuilt.

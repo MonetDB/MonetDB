@@ -29,6 +29,11 @@ SELECT COUNT(*) AS duplicates, table_id, name FROM tmp.triggers GROUP BY table_i
 SELECT COUNT(*) AS duplicates, schema_id, name FROM sys.sequences GROUP BY schema_id, name HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, dependency_type_name FROM sys.dependency_types GROUP BY dependency_type_name HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, function_type_name FROM sys.function_types GROUP BY function_type_name HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, language_name FROM sys.function_languages GROUP BY language_name HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, key_type_name FROM sys.key_types GROUP BY key_type_name HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, index_type_name FROM sys.index_types GROUP BY index_type_name HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, privilege_code_name FROM sys.privilege_codes GROUP BY privilege_code_name HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, name FROM sys.auths GROUP BY name HAVING COUNT(*) > 1;
 

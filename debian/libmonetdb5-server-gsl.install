@@ -1,4 +1,0 @@
-debian/tmp/usr/lib/monetdb5/autoload/*_gsl.mal usr/lib/monetdb5/autoload
-debian/tmp/usr/lib/monetdb5/createdb/*_gsl.sql usr/lib/monetdb5/createdb
-debian/tmp/usr/lib/monetdb5/gsl.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/lib_gsl.so usr/lib/monetdb5
