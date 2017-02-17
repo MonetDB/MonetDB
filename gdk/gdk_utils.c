@@ -1636,15 +1636,6 @@ GDKmalloc_prefixsize(size_t size)
 	return s;
 }
 
-void
-GDKsetmemorylimit(lng nbytes)
-{
-	(void) nbytes;
-#ifndef NDEBUG
-	GDK_mallocedbytes_limit = nbytes;
-#endif
-}
-
 
 /*
  * The emergency flag can be set to force a fatal error if needed.
@@ -1897,6 +1888,15 @@ GDKstrdup(const char *s)
 }
 
 #endif	/* STATIC_CODE_ANALYSIS */
+
+void
+GDKsetmemorylimit(lng nbytes)
+{
+	(void) nbytes;
+#ifndef NDEBUG
+	GDK_mallocedbytes_limit = nbytes;
+#endif
+}
 
 #undef GDKstrndup
 char *
