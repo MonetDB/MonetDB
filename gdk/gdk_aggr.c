@@ -2490,7 +2490,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 					v = nil;
 					nils++;
 				} else {
-					qindex = (BUN) (r + (p-r-1) * quantile);
+					/* round *down* to nearest integer */
+					qindex = r + p - (BUN) (p + 0.5 - (p - r - 1) * quantile);
 					/* be a little paranoid about the index */
 					assert(qindex >= r);
 					assert(qindex <  p);
@@ -2516,7 +2517,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			while (r < p && (*atomcmp)(BUNtail(bi, r), nil) == 0)
 				r++;
 		}
-		index = (BUN) (r + (p-r-1) * quantile);
+		index = r + p - (BUN) (p + 0.5 - (p - r - 1) * quantile);
 		v = BUNtail(bi, index);
 		if (BUNappend(bn, v, FALSE) != GDK_SUCCEED)
 			goto bunins_failed;
