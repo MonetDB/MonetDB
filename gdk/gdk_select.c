@@ -1622,7 +1622,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				rs += low;
 				bn = COLnew(0, TYPE_oid, high-low, TRANSIENT);
 				if (bn == NULL)
-					GDKerror("memory allocation error");
+					return NULL;
 
 				rbn = (oid *) Tloc((bn), 0);
 
