@@ -16,6 +16,7 @@
 #include "optimizer_private.h"
 
 str abortRef;
+str actionRef;
 str affectedRowsRef;
 str aggrRef;
 str alarmRef;
@@ -69,7 +70,6 @@ str bpmRef;
 str bstreamRef;
 str calcRef;
 str catalogRef;
-str changeRef;
 str clear_tableRef;
 str closeRef;
 str columnRef;
@@ -304,6 +304,7 @@ str zero_or_oneRef;
 void optimizerInit(void)
 {
 	abortRef = putName("abort");
+	actionRef = putName("action");
 	affectedRowsRef = putName("affectedRows");
 	aggrRef = putName("aggr");
 	alarmRef = putName("alarm");
@@ -356,7 +357,6 @@ void optimizerInit(void)
 	bstreamRef = putName("bstream");
 	calcRef = putName("calc");
 	catalogRef = putName("catalog");
-	changeRef = putName("change");
 	clear_tableRef = putName("clear_table");
 	closeRef = putName("close");
 	columnRef = putName("column");

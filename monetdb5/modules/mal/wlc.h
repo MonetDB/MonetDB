@@ -61,7 +61,7 @@ mal_export str WLCgetmastertick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 mal_export str WLCtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str WLCchange(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str WLCaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

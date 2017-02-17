@@ -1,9 +1,9 @@
 stdout of test 'wlr20` in directory 'sql/test/wlcr` itself:
 
 
-# 21:38:02 >  
-# 21:38:02 >  "/usr/bin/python2" "wlr20.py" "wlr20"
-# 21:38:02 >  
+# 13:22:29 >  
+# 13:22:29 >  "/usr/bin/python2" "wlr20.py" "wlr20"
+# 13:22:29 >  
 
 # MonetDB 5 server v11.26.0
 # This is an unreleased version
@@ -13,12 +13,13 @@ stdout of test 'wlr20` in directory 'sql/test/wlcr` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:53807/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32399/.s.monetdb.53807
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:58415/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3357/.s.monetdb.58415
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 #call replicate('mTests_sql_test_wlcr',1);
-#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlcr_logs//mTests_sql_test_wlcr_000000000001
+#Waiting for replay scheduler to stop
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000001
 #select * from tmp;
 % sys.tmp,	sys.tmp # table_name
 % i,	s # name
@@ -26,7 +27,7 @@ stdout of test 'wlr20` in directory 'sql/test/wlcr` itself:
 % 1,	0 # length
 #call replicate('mTests_sql_test_wlcr',2);
 #Waiting for replay scheduler to stop
-#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlcr_logs//mTests_sql_test_wlcr_000000000001
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000001
 #select * from tmp;
 % sys.tmp,	sys.tmp # table_name
 % i,	s # name
@@ -34,9 +35,10 @@ stdout of test 'wlr20` in directory 'sql/test/wlcr` itself:
 % 1,	5 # length
 [ 1,	"hello"	]
 [ 2,	"world"	]
-#call replicate('mTests_sql_test_wlcr',3);
+#call replicate('mTests_sql_test_wlcr',4);
 #Waiting for replay scheduler to stop
-#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlcr_logs//mTests_sql_test_wlcr_000000000002
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000002
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000003
 #select * from tmp;
 % sys.tmp,	sys.tmp # table_name
 % i,	s # name
@@ -46,8 +48,10 @@ stdout of test 'wlr20` in directory 'sql/test/wlcr` itself:
 [ 2,	"world"	]
 [ 3,	"blah"	]
 [ 4,	"bloh"	]
+[ 5,	"red"	]
+[ 6,	"fox"	]
 
-# 21:38:03 >  
-# 21:38:03 >  "Done."
-# 21:38:03 >  
+# 13:22:30 >  
+# 13:22:30 >  "Done."
+# 13:22:30 >  
 

@@ -14,6 +14,7 @@
 #define DEBUGoptimizers     if (GDKdebug & GRPoptimizers)
 
 mal_export  str abortRef;
+mal_export  str actionRef;
 mal_export  str affectedRowsRef;
 mal_export  str aggrRef;
 mal_export  str alarmRef;
@@ -67,7 +68,6 @@ mal_export  str bpmRef;
 mal_export  str bstreamRef;
 mal_export  str calcRef;
 mal_export  str catalogRef;
-mal_export  str changeRef;
 mal_export  str clear_tableRef;
 mal_export  str closeRef;
 mal_export  str columnRef;

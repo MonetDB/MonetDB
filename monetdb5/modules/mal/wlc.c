@@ -495,12 +495,12 @@ WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLCchange(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 
 	(void) stk;
 	WLCstart(p, WLC_UPDATE);
-	p = newStmt(cntxt->wlc, "wlr","change");
+	p = newStmt(cntxt->wlc, "wlr","action");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	return MAL_SUCCEED;
 }

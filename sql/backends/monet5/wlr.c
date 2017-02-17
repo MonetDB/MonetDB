@@ -254,7 +254,9 @@ WLRprocess(void *arg)
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
 					(void) mvc_trans(sql);
+					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 					msg= runMAL(c,mb,0,0);
+					wlr_tag++;
 					WLRsetConfig( );
 					// ignore warnings
 					if (msg && strstr(msg,"WARNING"))
@@ -317,6 +319,7 @@ WLRprocessScheduler(void *arg)
 {	Client cntxt = (Client) arg;
 	int duration;
 
+	WLRgetConfig();
 	wlr_state = WLR_RUN;
 	while(!GDKexiting() && wlr_state == WLR_RUN){
 		// wait at most for the cycle period, also at start
@@ -326,8 +329,10 @@ WLRprocessScheduler(void *arg)
 			MT_sleep_ms( 100);
 		if( wlr_master[0] && wlr_state != WLR_PAUSE){
 			WLRgetMaster();
-			if( wlr_batches < wlc_batches && (wlr_tag < wlr_limit || wlr_limit == -1) )
-				WLRprocess(cntxt);
+			if( wlrprocessrunning == 0 && 
+				( (wlr_batches == wlc_batches && wlr_tag < wlr_limit) || wlr_limit > wlr_tag  ||
+				  (wlr_limit == -1 && wlr_batches < wlc_batches) ) )
+					WLRprocess(cntxt);
 		}
 	}
 	wlr_state = WLR_START;
@@ -337,6 +342,7 @@ str
 WLRinit(void)
 {	Client cntxt = &mal_clients[0];
 	
+	WLRgetConfig();
 	if( wlr_master[0] == 0)
 		return MAL_SUCCEED;
 	if( wlr_state != WLR_START)
@@ -367,10 +373,14 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if( pci->argc > 1){
-		if( strcmp(GDKgetenv("gdk_dbname"),*getArgReference_str(stk,pci,1)) == 0)
-			throw(SQL,"wlr.replicate","Master and replicate should be different");
-		strncpy(wlr_master, *getArgReference_str(stk,pci,1), IDLENGTH);
-	} else  wlr_limit = -1;
+		if( getArgType(mb, pci, 1) == TYPE_str){
+			wlr_limit = -1;
+			if( strcmp(GDKgetenv("gdk_dbname"),*getArgReference_str(stk,pci,1)) == 0)
+				throw(SQL,"wlr.replicate","Master and replicate should be different");
+			strncpy(wlr_master, *getArgReference_str(stk,pci,1), IDLENGTH);
+		}
+	} else  
+		wlr_limit = -1;
 
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_timestamp)
 		timestamp_tostr(&timelimit, &size, (timestamp*) &getVarConstant(mb,getArg(pci,2)).val.lval);
@@ -527,7 +537,7 @@ WLRrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-WLRchange(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLRaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	(void) cntxt;
 	(void) pci;

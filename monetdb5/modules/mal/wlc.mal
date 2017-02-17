@@ -58,8 +58,8 @@ pattern catalog(q:str)
 address WLCcatalog
 comment "Keep the catalog changing queries for replay. ";
 
-pattern change(q:str)
-address WLCchange
+pattern action(q:str)
+address WLCaction
 comment "Keep the database changing queries for replay. ";
 
 pattern append(sname:str, tname:str, cname:str, ins:any):int

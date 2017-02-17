@@ -62,8 +62,8 @@ pattern catalog(q:str)
 address WLRcatalog
 comment "A catalog changing query";
 
-pattern change(q:str)
-address WLRchange
+pattern action(q:str)
+address WLRaction
 comment "A query producing updates";
 
 

@@ -77,7 +77,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else
 		if( getModuleId(p) == sqlRef && getFunctionId(p) == clear_tableRef &&
 			strcmp( getVarConstant(mb,getArg(p,1)).val.sval, "tmp") != 0 ){
-			setFunctionId(def,changeRef);
+			setFunctionId(def,actionRef);
 				assert(def);
 				q= copyInstruction(p);
 				setModuleId(q, wlcRef);
@@ -93,7 +93,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			  getFunctionId(p) == clear_tableRef ) &&
 			  strcmp( getVarConstant(mb,getArg(p,2)).val.sval, "tmp") != 0 ){
 				assert( def);// should always be there, temporary tables are always ignored
-				setFunctionId(def,changeRef);
+				setFunctionId(def,actionRef);
 				q= copyInstruction(p);
 				delArgument(q, q->retc);
 				setModuleId(q, wlcRef);

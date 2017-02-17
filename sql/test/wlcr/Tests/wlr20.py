@@ -34,7 +34,7 @@ call replicate('%s',1);
 select * from tmp;
 call replicate('%s',2);
 select * from tmp;
-call replicate('%s',3);
+call replicate('%s',4);
 select * from tmp;
 ''' % (dbname,dbname,dbname))
 
