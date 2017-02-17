@@ -1,4 +1,0 @@
-a:=20:dbl;
-b:=5:dbl;
-c:=gsl.chi2prob(a,b);
-io.print(c);

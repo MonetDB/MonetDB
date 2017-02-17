@@ -1206,6 +1206,7 @@ sql_update_mosaic(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	/* 76_mosaic.sql */
+						"update sys.args set type_digits = 38 where type = 'decimal' and type_digits = 39;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop function mosaic_layout(sch string, tbl string, col string,compression string);"
 			"drop function mosaic_layout(sch string, tbl string, col string);"

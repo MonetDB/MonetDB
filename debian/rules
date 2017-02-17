@@ -50,6 +50,7 @@ override_dh_auto_configure:
 	--with-python2=yes \
 	--with-python3=no \
 	--with-readline=yes \
+	--with-regex=PCRE \
 	--with-samtools=yes \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \

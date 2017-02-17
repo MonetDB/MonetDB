@@ -78,6 +78,14 @@
 %endif
 %endif
 
+# If the _without_pcre macro is not set, the PCRE library is used for
+# the implementation of the SQL LIKE and ILIKE operators.  Otherwise
+# the POSIX regex functions are used.  The macro can be set when using
+# mock by passing it the flag --without=pcre.
+%if %{?_without_pcre:0}%{!?_without_pcre:1}
+%define with_pcre 1
+%endif
+
 %if %{fedpkgs}
 # If the _without_rintegration macro is not set, the MonetDB-R RPM
 # will be created.  The macro can be set when using mock by passing it
@@ -124,7 +132,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Dec2016-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Dec2016-SP2/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -140,7 +148,6 @@ BuildRequires: gcc
 %if %{?with_geos:1}%{!?with_geos:0}
 BuildRequires: geos-devel >= 3.4.0
 %endif
-BuildRequires: gsl-devel
 %if %{?with_lidar:1}%{!?with_lidar:0}
 BuildRequires: liblas-devel >= 1.8.0
 BuildRequires: gdal-devel
@@ -156,7 +163,9 @@ BuildRequires: xz-devel
 BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
+%if %{?with_pcre:1}%{!?with_pcre:0}
 BuildRequires: pcre-devel >= 4.5
+%endif
 BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
@@ -201,6 +210,7 @@ package, and most likely also %{name}-SQL-server5, as well as one or
 more client packages.
 
 %files
+%license COPYING
 %defattr(-,root,root)
 %{_libdir}/libbat.so.*
 
@@ -242,6 +252,7 @@ This package contains a shared library (libstream) which is needed by
 various other components.
 
 %files stream
+%license COPYING
 %defattr(-,root,root)
 %{_libdir}/libstream.so.*
 
@@ -289,6 +300,7 @@ SQL database so that it can be loaded back later.  If you want to use
 MonetDB, you will very likely need this package.
 
 %files client
+%license COPYING
 %defattr(-,root,root)
 %{_bindir}/mclient
 %{_bindir}/msqldump
@@ -375,6 +387,7 @@ odbcinst -u -d -n MonetDB
 fi
 
 %files client-odbc
+%license COPYING
 %defattr(-,root,root)
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
@@ -463,27 +476,6 @@ This package contains support for reading and writing LiDAR data.
 %{_libdir}/monetdb5/lidar.mal
 %{_libdir}/monetdb5/lib_lidar.so
 %endif
-
-%package gsl-MonetDB5
-Summary: MonetDB5 SQL interface to the gsl library
-Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-
-%description gsl-MonetDB5
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the interface to the GNU Scientific Library for
-numerical analysis (gsl).
-
-%files gsl-MonetDB5
-%defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/*_gsl.mal
-%{_libdir}/monetdb5/createdb/*_gsl.sql
-%{_libdir}/monetdb5/gsl.mal
-%{_libdir}/monetdb5/lib_gsl.so
 
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %package bam-MonetDB5
@@ -643,7 +635,6 @@ fi
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
-%exclude %{_libdir}/monetdb5/gsl.mal
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/lidar.mal
 %endif
@@ -662,7 +653,6 @@ fi
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
-%exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
@@ -677,7 +667,6 @@ fi
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
-%exclude %{_libdir}/monetdb5/lib_gsl.so
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/lib_lidar.so
 %endif
@@ -796,7 +785,6 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
-%exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
 %endif
@@ -853,6 +841,7 @@ MonetDB packages.  You probably don't need this, unless you are a
 developer.  If you do want to test, install %{name}-testing-python.
 
 %files testing
+%license COPYING
 %defattr(-,root,root)
 %{_bindir}/Mdiff
 %{_bindir}/MkillUsers
@@ -899,7 +888,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
 	--enable-gdk=yes \
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
-	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
@@ -923,6 +911,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-libxml2=yes \
 	--with-lzma=yes \
 	--with-openssl=yes \
+	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
 	--with-proj=no \
 	--with-pthread=yes \
 	--with-python2=yes \
@@ -957,6 +946,49 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Feb 16 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.7-20170216
+- Rebuilt.
+- BZ#4034: argnames array in rapi.c has fixed length (that was too short)
+- BZ#6080: mserver5: rel_bin.c:2391: rel2bin_project: Assertion `0'
+  failed.
+- BZ#6081: Segmentation fault (core dumped)
+- BZ#6082: group.subgroup is undefined if group by is used on an
+  expression involving only constants
+- BZ#6111: Maximum number of digits for hge decimal is listed as 39 in
+  sys.types. Should be 38 as DECIMAL(39) is not supported.
+- BZ#6112: Crash upgrading Jul2015->Jun2016
+- BZ#6130: Query rewriter crashes on a NULL pointer when having a
+  correlated subquery
+- BZ#6133: A crash occurs when preparing an INSERT on joined tables
+  during the query semantic phase
+- BZ#6141: Getting an error message regarding a non-GROUP-BY column
+  rather than an unknown identifier
+- BZ#6177: Server crashes
+- BZ#6186: Null casting causes no results (silent server crash?)
+- BZ#6189: Removing a NOT NULL constraint from a PKey column should NOT
+  be allowed
+- BZ#6190: CASE query crashes database
+- BZ#6191: MT_msync failed with "Cannot allocate memory"
+- BZ#6192: Numeric column stores wrong values after adding large numbers
+- BZ#6193: converting to a smaller precision (fewer or no decimals after
+  decimal point) should round/truncate consistently
+- BZ#6194: splitpart returns truncated last part if it contains non
+  ascii caracters
+- BZ#6195: Cast from huge decimal type to smaller returns wrong results
+- BZ#6196: Database crashes after generate_series query
+- BZ#6198: COALESCE could be more optimized
+- BZ#6201: MonetDB completely giving up on certain queries - no error
+  and no result
+- BZ#6202: querying a table with an ordered index on string/varchar
+  column crashes server and makes server unrestartable!
+- BZ#6203: copy into: Failed to import table Leftover data 'False'
+- BZ#6205: Integer addition overflow
+- BZ#6206: casting strings with more than one trailing zero ('0') to
+  decimal goes wrong
+- BZ#6209: Aggregation over complex OR expressions produce wrong results
+- BZ#6210: Upgrading a database from Jun2015 or older crashes the server
+- BZ#6213: SQLsmith causes server to crash
+
 * Fri Jan 13 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.5-20170113
 - Rebuilt.
 - BZ#4039: Slow mserver5 start after drop of tables (> 1 hour)

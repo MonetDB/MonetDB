@@ -27,7 +27,7 @@ Ready.
 
 #SELECT cast('-05' as interval second) AS "Five hours";
 % .L3 # table_name
-% Five hours # name
+% "Five hours" # name
 % sec_interval # type
 % 6 # length
 [ -5.000	]

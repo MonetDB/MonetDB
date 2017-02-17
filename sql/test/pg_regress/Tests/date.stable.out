@@ -1021,37 +1021,37 @@ Ready.
 [ NULL	]
 #SELECT sql_sub(current_date, 24*60*60.0) - current_date AS "One day";
 % .L2 # table_name
-% One day # name
+% "One day" # name
 % int # type
 % 2 # length
 [ -1 ]
 #SELECT current_date - sql_add(current_date, 24*60*60.0) AS "One day";
 % .L2 # table_name
-% One day # name
+% "One day" # name
 % int # type
 % 2 # length
 [ -1 ]
 #SELECT sql_sub(current_date, 24*60*60.0) - sql_add(current_date, 24*60*60.0) AS "Two days";
 % .L2 # table_name
-% Two days # name
+% "Two days" # name
 % int # type
 % 2 # length
 [ -2 ]
 #SELECT sql_add(current_date, 24*60*60.0) - current_date AS "One day";
 % .L2 # table_name
-% One day # name
+% "One day" # name
 % int # type
 % 1 # length
 [ 1 ]
 #SELECT current_date - sql_sub(current_date, 24*60*60.0) AS "One day";
 % .L2 # table_name
-% One day # name
+% "One day" # name
 % int # type
 % 1 # length
 [ 1 ]
 #SELECT sql_add(current_date, 24*60*60.0) - sql_sub(current_date, 24*60*60.0) AS "Two days";
 % .L2 # table_name
-% Two days # name
+% "Two days" # name
 % int # type
 % 1 # length
 [ 2 ]

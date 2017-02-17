@@ -104,7 +104,6 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 {
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
-	lng clock;
 	str stmt, c;
 	str stmtq;
 	lng usec= GDKusec();
@@ -113,10 +112,6 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	// ignore generation of events for instructions that are called too often
 	if(highwatermark && highwatermark + (start == 0) < pci->calls)
 		return;
-	if( start) // show when instruction was started
-		clock = pci->clock;
-	else
-		clock = usec;
 
 	/* make profile event tuple  */
 	lognew();
@@ -125,7 +120,6 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	if( usrname)
 		logadd("\"user\":\"%s\",%s",usrname, prettify);
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
-	logadd("\"ctime\":"LLFMT".%06ld\",%s", clock / 1000000, (long) (clock % 1000000), prettify);
 	logadd("\"thread\":%d,%s", THRgettid(),prettify);
 
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
@@ -387,7 +381,6 @@ profilerHeartbeatEvent(char *alter)
 	char cpuload[BUFSIZ];
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
-	lng clock;
 
 	if (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL)
 		return;
@@ -395,12 +388,10 @@ profilerHeartbeatEvent(char *alter)
 	/* get CPU load on beat boundaries only */
 	if ( getCPULoad(cpuload) )
 		return;
-	clock = GDKusec();
 
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
 	logadd("\"user\":\"heartbeat\",%s", prettify);
-	logadd("\"ctime\":"LLFMT".%06ld\",%s", clock / 1000000, (long) (clock % 1000000), prettify);
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);

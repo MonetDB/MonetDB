@@ -1647,15 +1647,6 @@ GDKmalloc_prefixsize(size_t size)
 	return s;
 }
 
-void
-GDKsetmallocsuccesscount(lng count)
-{
-	(void) count;
-#ifndef NDEBUG
-	GDK_malloc_success_count = count;
-#endif
-}
-
 
 /*
  * The emergency flag can be set to force a fatal error if needed.
@@ -1914,6 +1905,15 @@ GDKstrdup(const char *s)
 }
 
 #endif	/* STATIC_CODE_ANALYSIS */
+
+void
+GDKsetmallocsuccesscount(lng count)
+{
+	(void) count;
+#ifndef NDEBUG
+	GDK_malloc_success_count = count;
+#endif
+}
 
 #undef GDKstrndup
 char *

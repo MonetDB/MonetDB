@@ -1,0 +1,50 @@
+stdout of test 'sqlsmith03` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 23:03:00 >  
+# 23:03:00 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30090" "--set" "mapi_usock=/var/tmp/mtest-6840/.s.monetdb.30090" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 23:03:00 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30090/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6840/.s.monetdb.30090
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 23:03:00 >  
+# 23:03:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6840" "--port=30090"
+# 23:03:00 >  
+
+#select
+#  8 as c0
+#from
+#  tmp.keys as ref_68
+#      left join sys.auths as ref_70
+#        inner join sys._columns as ref_86
+#            inner join tmp.keys as ref_101
+#                inner join sys.querylog_calls as ref_102
+#                on (ref_101.type = ref_102.cpu )
+#              inner join sys.idxs as ref_103
+#              on (ref_102.io = ref_103.id )
+#            on (ref_86.table_id = ref_102.cpu )
+#          right join sys.privileges as ref_111
+#              left join sys.systemfunctions as ref_112
+#                left join sys.querylog_calls as ref_113
+% .L152 # table_name
+% c0 # name
+% tinyint # type
+% 1 # length
+
+# 23:03:00 >  
+# 23:03:00 >  "Done."
+# 23:03:00 >  
+

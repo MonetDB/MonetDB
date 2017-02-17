@@ -25,40 +25,40 @@ Ready.
 # 11:50:59 >  
 
 #select CASE WHEN 1=1 THEN 1 ELSE NULL END;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select CASE WHEN 1=0 THEN 1 ELSE NULL END;
-% .L1 # table_name
-% L1 # name
-% tinyint # type
-% 4 # length
-[ NULL	]
-#select CASE WHEN 2=2 THEN 2 else cast(null as char) end;
 % .L2 # table_name
 % L2 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+#select CASE WHEN 2=2 THEN 2 else cast(null as char) end;
+% .L3 # table_name
+% L3 # name
 % char # type
 % 1 # length
 [ "2"	]
 #select CASE WHEN 2=0 THEN 2 else cast(null as char) end;
-% .L2 # table_name
-% L2 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 1 # length
 [ NULL	]
 #select CASE WHEN 3=3 THEN 3 else cast(null as int) end;
-% .L2 # table_name
-% L2 # name
+% .L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 3	]
 #select CASE WHEN 3=0 THEN 3 else cast(null as int) end;
-% .L2 # table_name
-% L2 # name
+% .L3 # table_name
+% L3 # name
 % int # type
-% 11 # length
+% 1 # length
 [ NULL	]
 
 # 11:35:46 >  

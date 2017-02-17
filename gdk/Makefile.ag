@@ -36,7 +36,6 @@ lib_gdk = {
 		gdk_bitvector.c gdk_bitvector.h \
 		gdk_firstn.c \
 		gdk_mosaic.c \
-		bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \
 		../common/stream/libstream \

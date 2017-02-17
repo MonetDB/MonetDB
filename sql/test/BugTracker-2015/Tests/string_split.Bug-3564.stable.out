@@ -61,25 +61,25 @@ Ready.
 # 15:17:35 >  
 
 #select split_part('joeuser@mydatabase','@',1) AS "joeuser";
-% .L1 # table_name
+% .L2 # table_name
 % joeuser # name
 % char # type
 % 18 # length
 [ "joeuser"	]
 #select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
-% .L1 # table_name
+% .L2 # table_name
 % mydatabase # name
 % char # type
 % 18 # length
 [ "mydatabase"	]
 #select split_part('joeuser@mydatabase','@',3) AS "empty string";
-% .L1 # table_name
-% empty string # name
+% .L2 # table_name
+% "empty string" # name
 % char # type
 % 18 # length
 [ ""	]
 #select split_part('','@',3) AS "error";
-% .L1 # table_name
+% .L2 # table_name
 % error # name
 % char # type
 % 0 # length
@@ -101,8 +101,8 @@ Ready.
 [ "a@@@b"	]
 [ "@@b"	]
 #select split_part(a,'@',1), split_part(a,'@',2) from somestrings;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % varchar,	varchar # type
 % 7,	10 # length
 [ "",	""	]

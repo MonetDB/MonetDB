@@ -32,13 +32,13 @@ Ready.
 % sys.L2 # table_name
 % L1 # name
 % bigint # type
-% 20 # length
+% 1 # length
 [ NULL	]
 #SELECT MIN(a) FROM casebug;
 % sys.L2 # table_name
 % L1 # name
 % int # type
-% 11 # length
+% 1 # length
 [ NULL	]
 #SELECT COALESCE(MIN(a), 0) FROM casebug;
 % sys.L2 # table_name

@@ -1336,6 +1336,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0);
 		rel = rel_setop(sql->sa, lrel, rrel, j);
 		rel->exps = exps;
+		set_processed(rel);
 		return rel;
 	case 'd':
 		/* 'ddl' not supported */

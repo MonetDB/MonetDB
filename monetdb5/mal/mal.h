@@ -185,39 +185,39 @@ typedef struct {
 	/* the core admin */
 	str modname;				/* module context, reference into namespace */
 	str fcnname;				/* function name, reference into namespace */
-	int argc, retc, maxarg;		/* total and result argument count */
-	int argv[FLEXIBLE_ARRAY_MEMBER]; /* at least a few entries */
+	int argc, retc, maxarg;			/* total and result argument count */
+	int argv[FLEXIBLE_ARRAY_MEMBER]; 	/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK {
-	char binding[IDLENGTH];		/* related C-function */
-	str help;					/* supportive commentary */
-	oid tag;					/* unique block tag */
+	char binding[IDLENGTH];			/* related C-function */
+	str help;				/* supportive commentary */
+	oid tag;				/* unique block tag */
 	struct MALBLK *alternative;
-	int vtop;					/* next free slot */
-	int vsize;					/* size of variable arena */
-	int vid;	 				/* generate local variable counter */
+	int vtop;				/* next free slot */
+	int vsize;				/* size of variable arena */
+	int vid;	 			/* generate local variable counter */
 	VarRecord **var;			/* Variable table */
-	int stop;					/* next free slot */
-	int ssize;					/* byte size of arena */
+	int stop;				/* next free slot */
+	int ssize;				/* byte size of arena */
 	InstrPtr *stmt;				/* Instruction location */
-	int ptop;					/* next free slot */
-	int psize;					/* byte size of arena */
-	int inlineProp;				/* inline property */
-	int unsafeProp;				/* unsafe property */
 
-	int errors;					/* left over errors */
+	unsigned int inlineProp:1,		/* inline property */
+		     unsafeProp:1,		/* unsafe property */
+		     sealedProp:1;		/* sealed property (opertions for sealed object should be on the full object once) */
+
+	int errors;				/* left over errors */
 	int typefixed;				/* no undetermined instruction */
 	int flowfixed;				/* all flow instructions are fixed */
-	struct MALBLK *history;		/* of optimizer actions */
+	struct MALBLK *history;			/* of optimizer actions */
 	short keephistory;			/* do we need the history at all */
 	short dotfile;				/* send dot file to stethoscope? */
-	int maxarg;					/* keep track on the maximal arguments used */
+	int maxarg;				/* keep track on the maximal arguments used */
 	ptr replica;				/* for the replicator tests */
-	sht trap;					/* call debugger when called */
+	sht trap;				/* call debugger when called */
 	lng starttime;				/* track when the query started, for resource management */
 	lng runtime;				/* average execution time of block in ticks */
-	int calls;					/* number of calls */
+	int calls;				/* number of calls */
 	lng optimize;				/* total optimizer time */
 	int activeClients;			/* load during mitosis optimization */
 } *MalBlkPtr, MalBlkRecord;

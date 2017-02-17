@@ -10,7 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#define ORDERIDX_VERSION	((oid) 1)
+#define ORDERIDX_VERSION	((oid) 3)
 
 #ifdef PERSISTENTIDX
 struct idxsync {
@@ -88,6 +88,7 @@ BATcheckorderidx(BAT *b)
 #endif
 					    ORDERIDX_VERSION) &&
 				    hdata[1] == (oid) BATcount(b) &&
+				    (hdata[2] == 0 || hdata[2] == 1) &&
 				    fstat(fd, &st) == 0 &&
 				    st.st_size >= (off_t) (hp->size = hp->free = (ORDERIDXOFF + hdata[1]) * SIZEOF_OID) &&
 				    HEAPload(hp, nme, "torderidx", 0) == GDK_SUCCEED) {
@@ -112,23 +113,15 @@ BATcheckorderidx(BAT *b)
 	return ret;
 }
 
-gdk_return
-BATorderidx(BAT *b, int stable)
+/* create the heap for an order index; returns NULL on failure */
+Heap *
+createOIDXheap(BAT *b, int stable)
 {
 	Heap *m;
 	size_t nmelen;
 	oid *restrict mv;
 	const char *nme;
-	oid seq;
-	BUN p, q;
 
-	if (BATcheckorderidx(b))
-		return GDK_SUCCEED;
-	MT_lock_set(&GDKhashLock(b->batCacheid));
-	if (b->torderidx) {
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
-		return GDK_SUCCEED;
-	}
 	nme = BBP_physical(b->batCacheid);
 	nmelen = strlen(nme) + 12;
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
@@ -139,14 +132,61 @@ BATorderidx(BAT *b, int stable)
 		if (m)
 			GDKfree(m->filename);
 		GDKfree(m);
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
-		return GDK_FAIL;
+		return NULL;
 	}
 	m->free = (BATcount(b) + ORDERIDXOFF) * SIZEOF_OID;
 
 	mv = (oid *) m->base;
 	*mv++ = ORDERIDX_VERSION;
 	*mv++ = (oid) BATcount(b);
+	*mv++ = (oid) !!stable;
+	return m;
+}
+
+/* maybe persist the order index heap */
+void
+persistOIDX(BAT *b)
+{
+#ifdef PERSISTENTIDX
+	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
+	    b->batInserted == b->batCount) {
+		MT_Id tid;
+		struct idxsync *hs = GDKmalloc(sizeof(*hs));
+		if (hs != NULL) {
+			BBPfix(b->batCacheid);
+			hs->id = b->batCacheid;
+			hs->hp = b->torderidx;
+			hs->func = "BATorderidx";
+			MT_create_thread(&tid, BATidxsync, hs, MT_THR_DETACHED);
+		}
+	} else
+		ALGODEBUG fprintf(stderr, "#BATorderidx: NOT persisting index %d\n", b->batCacheid);
+#else
+	(void) b;
+#endif
+}
+
+gdk_return
+BATorderidx(BAT *b, int stable)
+{
+	Heap *m;
+	oid *restrict mv;
+	oid seq;
+	BUN p, q;
+
+	if (BATcheckorderidx(b))
+		return GDK_SUCCEED;
+	MT_lock_set(&GDKhashLock(b->batCacheid));
+	if (b->torderidx) {
+		MT_lock_unset(&GDKhashLock(b->batCacheid));
+		return GDK_SUCCEED;
+	}
+	if ((m = createOIDXheap(b, stable)) == NULL) {
+		MT_lock_unset(&GDKhashLock(b->batCacheid));
+		return GDK_FAIL;
+	}
+
+	mv = (oid *) m->base + ORDERIDXOFF;
 
 	seq = b->hseqbase;
 	for (p = 0, q = BATcount(b); p < q; p++)
@@ -182,44 +222,13 @@ BATorderidx(BAT *b, int stable)
 		BBPunfix(bn->batCacheid);
 	}
 
-#ifdef PERSISTENTIDX
-	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
-	    b->batInserted == b->batCount) {
-		MT_Id tid;
-		struct idxsync *hs = GDKmalloc(sizeof(*hs));
-		if (hs != NULL) {
-			BBPfix(b->batCacheid);
-			hs->id = b->batCacheid;
-			hs->hp = m;
-			hs->func = "BATorderidx";
-			MT_create_thread(&tid, BATidxsync, hs, MT_THR_DETACHED);
-		}
-	} else
-		ALGODEBUG fprintf(stderr, "#BATorderidx: NOT persisting index %d\n", b->batCacheid);
-#endif
-
-	b->batDirtydesc = TRUE;
 	b->torderidx = m;
+	b->batDirtydesc = TRUE;
+	persistOIDX(b);
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
 
 	return GDK_SUCCEED;
 }
-
-#define UNARY_MERGE(TYPE)						\
-	do {								\
-		TYPE *v = (TYPE *) Tloc(b, 0);				\
-		if (p < q) {						\
-			*mv++ = *p++;					\
-		}							\
-		while (p < q) {						\
-			*mv = *p++;					\
-			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-				*(mv-1) |= BUN_MSK;			\
-			}						\
-			mv++;						\
-		}							\
-		*(mv-1) |= BUN_MSK;					\
-	} while (0)
 
 #define BINARY_MERGE(TYPE)						\
 	do {								\
@@ -242,34 +251,17 @@ BATorderidx(BAT *b, int stable)
 		}							\
 		while (p0 < q0 && p1 < q1) {				\
 			if (v[*p0 - b->hseqbase] <= v[*p1 - b->hseqbase]) { \
-				*mv = *p0++;				\
-				if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-					*(mv-1) |= BUN_MSK;		\
-				}					\
-				mv++;					\
+				*mv++ = *p0++;				\
 			} else {					\
-				*mv = *p1++;				\
-				if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-					*(mv-1) |= BUN_MSK;		\
-				}					\
-				mv++;					\
+				*mv++ = *p1++;				\
 			}						\
 		}							\
 		while (p0 < q0) {					\
-			*mv = *p0++;					\
-			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-				*(mv-1) |= BUN_MSK;			\
-			}						\
-			mv++;						\
+			*mv++ = *p0++;					\
 		}							\
 		while (p1 < q1) {					\
-			*mv = *p1++;					\
-			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-				*(mv-1) |= BUN_MSK;			\
-			}						\
-			mv++;						\
+			*mv++ = *p1++;					\
 		}							\
-		*(mv-1) |= BUN_MSK;					\
 	} while(0)
 
 #define swap(X,Y,TMP)  (TMP)=(X);(X)=(Y);(Y)=(TMP)
@@ -329,11 +321,7 @@ BATorderidx(BAT *b, int stable)
 			HEAPIFY(0);					\
 		}							\
 		while (n_ar > 1) {					\
-			*mv = *(p[0])++;				\
-			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-				*(mv-1) |= BUN_MSK;			\
-			}						\
-			mv++;						\
+			*mv++ = *(p[0])++;				\
 			if (p[0] < q[0]) {				\
 				minhp[0] = v[*p[0] - b->hseqbase];	\
 				HEAPIFY(0);				\
@@ -346,13 +334,8 @@ BATorderidx(BAT *b, int stable)
 			}						\
 		}							\
 		while (p[0] < q[0]) {					\
-			*mv = *(p[0])++;				\
-			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {	\
-				*(mv-1) |= BUN_MSK;			\
-			}						\
-			mv++;						\
+			*mv++ = *(p[0])++;				\
 		}							\
-		*(mv-1) |= BUN_MSK;					\
 		GDKfree(minhp);						\
 	} while (0)
 
@@ -389,35 +372,23 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	mv = (oid *) m->base;
 	*mv++ = ORDERIDX_VERSION;
 	*mv++ = (oid) BATcount(b);
+	/* all participating indexes must be stable for the combined
+	 * index to be stable */
+	*mv = 1;
+	for (i = 0; i < n_ar; i++) {
+		if ((*mv &= ((const oid *) a[i]->torderidx->base)[2]) == 0)
+			break;
+	}
+	mv++;
 
 	if (n_ar == 1) {
-		const oid *restrict p, *q;
 		/* One oid order bat, nothing to merge */
 		assert(BATcount(a[0]) == BATcount(b));
 		assert((VIEWtparent(a[0]) == b->batCacheid ||
 			VIEWtparent(a[0]) == VIEWtparent(b)) &&
 		       a[0]->torderidx);
-		p = (const oid *) a[0]->torderidx->base + ORDERIDXOFF;
-		q = p + BATcount(a[0]);
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte: UNARY_MERGE(bte); break;
-		case TYPE_sht: UNARY_MERGE(sht); break;
-		case TYPE_int: UNARY_MERGE(int); break;
-		case TYPE_lng: UNARY_MERGE(lng); break;
-#ifdef HAVE_HGE
-		case TYPE_hge: UNARY_MERGE(hge); break;
-#endif
-		case TYPE_flt: UNARY_MERGE(flt); break;
-		case TYPE_dbl: UNARY_MERGE(dbl); break;
-		case TYPE_str:
-		default:
-			/* TODO: support strings, date, timestamps etc. */
-			assert(0);
-			HEAPfree(m, 1);
-			GDKfree(m);
-			MT_lock_unset(&GDKhashLock(b->batCacheid));
-			return GDK_FAIL;
-		}
+		memcpy(mv, (const oid *) a[0]->torderidx->base + ORDERIDXOFF,
+		       BATcount(a[0]) * SIZEOF_OID);
 	} else if (n_ar == 2) {
 		/* sort merge with 1 comparison per BUN */
 		const oid *restrict p0, *restrict p1, *q0, *q1;
