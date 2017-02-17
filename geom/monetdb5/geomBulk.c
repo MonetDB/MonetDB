@@ -1167,6 +1167,7 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 		GDKfree(MBRoriginal);
 	}
 
+	GDKfree(geomMBR);
 	BBPunfix(BAToriginal->batCacheid);
 	BBPkeepref(*BATfiltered_id = BATfiltered->batCacheid);
 
