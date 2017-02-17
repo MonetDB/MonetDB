@@ -868,6 +868,8 @@ AGGRsubmin_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
 	BBPdecref(ret, TRUE);
+	if (r == NULL)
+		throw(MAL, "aggr.submin", MAL_MALLOC_FAIL);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -896,6 +898,8 @@ AGGRsubmincand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
 	BBPdecref(ret, TRUE);
+	if (r == NULL)
+		throw(MAL, "aggr.submin", MAL_MALLOC_FAIL);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -924,6 +928,8 @@ AGGRsubmax_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
 	BBPdecref(ret, TRUE);
+	if (r == NULL)
+		throw(MAL, "aggr.submax", MAL_MALLOC_FAIL);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -952,6 +958,8 @@ AGGRsubmaxcand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
 	BBPdecref(ret, TRUE);
+	if (r == NULL)
+		throw(MAL, "aggr.submax", MAL_MALLOC_FAIL);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }

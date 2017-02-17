@@ -1991,9 +1991,14 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL,"sql.bind","Cannot access the update column");
 				id = BATproject(b, ui);
 				vl = BATproject(b, uv);
-				assert(BATcount(id) == BATcount(vl));
 				bat_destroy(ui);
 				bat_destroy(uv);
+				if (id == NULL || vl == NULL) {
+					bat_destroy(id);
+					bat_destroy(vl);
+					throw(SQL, "sql.bind", MAL_MALLOC_FAIL);
+				}
+				assert(BATcount(id) == BATcount(vl));
 				BBPkeepref(*bid = id->batCacheid);
 				BBPkeepref(*uvl = vl->batCacheid);
 			} else {
@@ -2086,9 +2091,14 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL,"sql.bindidx","can not access index column");
 				id = BATproject(b, ui);
 				vl = BATproject(b, uv);
-				assert(BATcount(id) == BATcount(vl));
 				bat_destroy(ui);
 				bat_destroy(uv);
+				if (id == NULL || vl == NULL) {
+					bat_destroy(id);
+					bat_destroy(vl);
+					throw(SQL, "sql.idxbind", MAL_MALLOC_FAIL);
+				}
+				assert(BATcount(id) == BATcount(vl));
 				BBPkeepref(*bid = id->batCacheid);
 				BBPkeepref(*uvl = vl->batCacheid);
 			} else {
@@ -2414,13 +2424,18 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 	}
 
 	c = BATdescriptor(*col);
+	if (c == NULL)
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	res = c;
 	if (BATcount(u_id)) {
 		u_id = BATdescriptor(*uid);
-		if (!u_id)
+		if (!u_id) {
+			BBPunfix(c->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		cminu = BATdiff(c, u_id, NULL, NULL, 0, BUN_NONE);
 		if (!cminu) {
+			BBPunfix(c->batCacheid);
 			BBPunfix(u_id->batCacheid);
 			throw(MAL, "sql.delta", MAL_MALLOC_FAIL " intermediate");
 		}
@@ -2449,7 +2464,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BAT *c_ids = BATdescriptor(*cid);
 			gdk_return rc;
 
-			if (!c_ids){
+			if (!c_ids) {
 				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
@@ -2457,21 +2472,29 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			rc = BATsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
 			if (rc != GDK_SUCCEED) {
+				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			}
 			c_ids = BATproject(cminu, u);
 			BBPunfix(cminu->batCacheid);
 			BBPunfix(u->batCacheid);
+			if (c_ids == NULL) {
+				BBPunfix(c->batCacheid);
+				throw(MAL, "sql.delta", GDK_EXCEPTION);
+			}
 			u = c_ids;
 		}
-		BATappend(res, u, TRUE);
+		ret = BATappend(res, u, TRUE);
 		BBPunfix(u->batCacheid);
+		if (ret != GDK_SUCCEED) {
+			BBPunfix(res->batCacheid);
+			throw(MAL, "sql.delta", GDK_EXCEPTION);
+		}
 
 		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
 		if (ret != GDK_SUCCEED) {
-			BBPunfix(c->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		}
 		res = u;
@@ -2479,14 +2502,24 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 
 	if (i) {
 		i = BATdescriptor(*ins);
-		if (!i)
+		if (!i) {
+			BBPunfix(res->batCacheid);
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
 		if (BATcount(u_id)) {
 			u_id = BATdescriptor(*uid);
+			if (!u_id) {
+				BBPunfix(res->batCacheid);
+				BBPunfix(i->batCacheid);
+				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			}
 			cminu = BATdiff(i, u_id, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(u_id->batCacheid);
-			if (!cminu)
+			if (!cminu) {
+				BBPunfix(res->batCacheid);
+				BBPunfix(i->batCacheid);
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+			}
 			u_id = BATproject(cminu, i);
 			BBPunfix(cminu->batCacheid);
 			BBPunfix(i->batCacheid);
@@ -2503,8 +2536,12 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				throw(MAL, "sql.delta", OPERATION_FAILED);
 			}
 		}
-		BATappend(res, i, TRUE);
+		ret = BATappend(res, i, TRUE);
 		BBPunfix(i->batCacheid);
+		if (ret != GDK_SUCCEED) {
+			BBPunfix(res->batCacheid);
+			throw(MAL, "sql.delta", GDK_EXCEPTION);
+		}
 
 		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
@@ -2533,8 +2570,9 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	if (i && BATcount(s) == 0) {
 		res = BATproject(s, i);
 		BBPunfix(s->batCacheid);
-		if (i)
-			BBPunfix(i->batCacheid);
+		BBPunfix(i->batCacheid);
+		if (res == NULL)
+			throw(MAL, "sql.projectdelta", GDK_EXCEPTION);
 
 		BBPkeepref(*result = res->batCacheid);
 		return MAL_SUCCEED;
@@ -2554,18 +2592,29 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			res = i;
 			i = c;
 		} else {
-			if ((res = COLcopy(c, c->ttype, TRUE, TRANSIENT)) == NULL)
+			if ((res = COLcopy(c, c->ttype, TRUE, TRANSIENT)) == NULL) {
+				BBPunfix(s->batCacheid);
+				BBPunfix(i->batCacheid);
+				BBPunfix(c->batCacheid);
 				throw(MAL, "sql.projectdelta", OPERATION_FAILED);
-			BATappend(res, i, FALSE);
+			}
 			BBPunfix(c->batCacheid);
+			if (BATappend(res, i, FALSE) != GDK_SUCCEED) {
+				BBPunfix(s->batCacheid);
+				BBPunfix(i->batCacheid);
+				throw(MAL, "sql.projectdelta", OPERATION_FAILED);
+			}
 		}
 	}
 	if (i)
 		BBPunfix(i->batCacheid);
 
 	tres = BATproject(s, res);
-	assert(tres);
 	BBPunfix(res->batCacheid);
+	if (tres == NULL) {
+		BBPunfix(s->batCacheid);
+		throw(MAL, "sql.projectdelta", OPERATION_FAILED);
+	}
 	res = tres;
 
 	if ((u_id = BATdescriptor(*uid)) == NULL) {

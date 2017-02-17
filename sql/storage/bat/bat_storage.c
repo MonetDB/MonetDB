@@ -146,18 +146,39 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 	if (temp || access == RD_INS) {
 		assert(bat->ibid);
 		b = temp_descriptor(bat->ibid);
+		if (b == NULL)
+			return NULL;
 		if (BATcount(b) && bat->uibid && bat->uvbid) {
 			/* apply updates to the inserted */
 			BAT *ui = temp_descriptor(bat->uibid), *uv = temp_descriptor(bat->uvbid), *nui = ui, *nuv = uv, *o;
-			
+
+			if (ui == NULL || uv == NULL) {
+				bat_destroy(ui);
+				bat_destroy(uv);
+				bat_destroy(b);
+				return NULL;
+			}
 			if (BATcount(nui)) {
 				o = BATthetaselect(ui, NULL, &b->hseqbase, ">=");
+				if (o == NULL) {
+					bat_destroy(ui);
+					bat_destroy(uv);
+					bat_destroy(b);
+					return NULL;
+				}
 				nui = BATproject(o, ui);
 				bat_destroy(ui);
 				nuv = BATproject(o, uv);
 				bat_destroy(uv);
 				bat_destroy(o);
-				void_replace_bat(b, nui, nuv, TRUE);
+				if (nui == NULL ||
+				    nuv == NULL ||
+				    void_replace_bat(b, nui, nuv, TRUE) == BUN_NONE) {
+					bat_destroy(nui);
+					bat_destroy(nuv);
+					bat_destroy(b);
+					return NULL;
+				}
 			}
 			bat_destroy(nui);
 			bat_destroy(nuv);
@@ -165,11 +186,17 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 	} else if (!bat->bid) {
 		int tt = 0;
 		b = temp_descriptor(bat->ibid);
+		if (b == NULL)
+			return NULL;
 		tt = b->ttype;
 		bat_destroy(b);
 		b = e_BAT(tt);
+		if (b == NULL)
+			return NULL;
 	} else {
 		b = temp_descriptor(bat->bid);
+		if (b == NULL)
+			return NULL;
 		bat_set_access(b, BAT_READ);
 	}
 	assert(b);
@@ -212,6 +239,7 @@ static int
 delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new) 
 {
 	BAT *b, *ui = NULL, *uv = NULL;
+	BUN cnt;
 
 	if (!BATcount(tids))
 		return LOG_OK;
@@ -223,23 +251,50 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 	if (!is_new && bat->uibid && bat->uvbid) {
 		BAT *ib = temp_descriptor(bat->ibid), *otids = tids;
 
+		if (ib == NULL)
+			return LOG_ERR;
+
 		if (BATcount(ib)) { 
 			BAT *nui = tids, *nuv = updates, *o;
 
 			o = BATthetaselect(tids, NULL, &ib->hseqbase, ">=");
+			if (o == NULL) {
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
 			nui = BATproject(o, tids);
 			nuv = BATproject(o, updates);
-			assert(BATcount(nui) == BATcount(nuv));
 			bat_destroy(o);
-			void_replace_bat(ib, nui, nuv, TRUE);
+			if (nui == NULL || nuv == NULL) {
+				bat_destroy(ib);
+				bat_destroy(nui);
+				bat_destroy(nuv);
+				return LOG_ERR;
+			}
+			assert(BATcount(nui) == BATcount(nuv));
+			cnt = void_replace_bat(ib, nui, nuv, TRUE);
 			bat_destroy(nui);
 			bat_destroy(nuv);
+			if (cnt == BUN_NONE) {
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
 
 			o = BATthetaselect(tids, NULL, &ib->hseqbase, "<");
+			if (o == NULL) {
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
 			nui = BATproject(o, tids);
 			nuv = BATproject(o, updates);
-			assert(BATcount(nui) == BATcount(nuv));
 			bat_destroy(o);
+			if (nui == NULL || nuv == NULL) {
+				bat_destroy(ib);
+				bat_destroy(nui);
+				bat_destroy(nuv);
+				return LOG_ERR;
+			}
+			assert(BATcount(nui) == BATcount(nuv));
 
 			tids = nui;
 			updates = nuv;
@@ -248,25 +303,54 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 
 		ui = temp_descriptor(bat->uibid);
 		uv = temp_descriptor(bat->uvbid);
+		if (ui == NULL || uv == NULL) {
+			if (tids != otids) {
+				bat_destroy(tids);
+				bat_destroy(updates);
+			}
+			bat_destroy(ui);
+			bat_destroy(uv);
+			return LOG_ERR;
+		}
 		assert(ui && uv);
 		if (isEbat(ui)){
 			temp_destroy(bat->uibid);
 			bat->uibid = temp_copy(ui->batCacheid, FALSE);
-			if (bat->uibid == BID_NIL) 
-				return LOG_ERR;
 			bat_destroy(ui);
-			ui = temp_descriptor(bat->uibid);
+			if (bat->uibid == BID_NIL ||
+			    (ui = temp_descriptor(bat->uibid)) == NULL) {
+				if (tids != otids) {
+					bat_destroy(tids);
+					bat_destroy(updates);
+				}
+				bat_destroy(uv);
+				return LOG_ERR;
+			}
 		}
 		if (isEbat(uv)){
 			temp_destroy(bat->uvbid);
 			bat->uvbid = temp_copy(uv->batCacheid, FALSE);
-			if (bat->uvbid == BID_NIL) 
-				return LOG_ERR;
 			bat_destroy(uv);
-			uv = temp_descriptor(bat->uvbid);
+			if (bat->uvbid == BID_NIL ||
+			    (uv = temp_descriptor(bat->uvbid)) == NULL) {
+				if (tids != otids) {
+					bat_destroy(tids);
+					bat_destroy(updates);
+				}
+				bat_destroy(ui);
+				return LOG_ERR;
+			}
 		}
-		BATappend(ui, tids, TRUE);
-		BATappend(uv, updates, TRUE);
+		if (BATappend(ui, tids, TRUE) != GDK_SUCCEED ||
+		    BATappend(uv, updates, TRUE) != GDK_SUCCEED) {
+			bat_destroy(ui);
+			bat_destroy(uv);
+			if (tids != otids) {
+				bat_destroy(tids);
+				bat_destroy(updates);
+			}
+			return LOG_ERR;
+		}
 		assert(BATcount(tids) == BATcount(updates));
 		bat_destroy(ui);
 		bat_destroy(uv);
@@ -275,40 +359,87 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 			bat_destroy(updates);
 			tids = otids;
 		}
-	} else if (is_new && bat->bid) { 
+	} else if (is_new && bat->bid) {
 		BAT *ib = temp_descriptor(bat->ibid);
 		b = temp_descriptor(bat->bid);
 
-		if (BATcount(ib)) { 
+		if (b == NULL || ib == NULL) {
+			bat_destroy(b);
+			bat_destroy(ib);
+			return LOG_ERR;
+		}
+		if (BATcount(ib)) {
 			BAT *nui = tids, *nuv = updates, *o;
 
 			o = BATthetaselect(tids, NULL, &ib->hseqbase, ">=");
+			if (o == NULL) {
+				bat_destroy(b);
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
 			nui = BATproject(o, tids);
 			nuv = BATproject(o, updates);
-			assert(BATcount(nui) == BATcount(nuv));
 			bat_destroy(o);
-			void_replace_bat(ib, nui, nuv, TRUE);
+			if (nui == NULL || nuv == NULL) {
+				bat_destroy(nui);
+				bat_destroy(nuv);
+				bat_destroy(b);
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
+			assert(BATcount(nui) == BATcount(nuv));
+			cnt = void_replace_bat(ib, nui, nuv, TRUE);
 			bat_destroy(nui);
 			bat_destroy(nuv);
+			if (cnt == BUN_NONE) {
+				bat_destroy(b);
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
 
 			o = BATthetaselect(tids, NULL, &ib->hseqbase, "<");
+			if (o == NULL) {
+				bat_destroy(b);
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
 			nui = BATproject(o, tids);
 			nuv = BATproject(o, updates);
-			assert(BATcount(nui) == BATcount(nuv));
 			bat_destroy(o);
-			void_replace_bat(b, nui, nuv, TRUE);
+			if (nui == NULL || nuv == NULL) {
+				bat_destroy(nui);
+				bat_destroy(nuv);
+				bat_destroy(b);
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
+			assert(BATcount(nui) == BATcount(nuv));
+			cnt = void_replace_bat(b, nui, nuv, TRUE);
 			bat_destroy(nui);
 			bat_destroy(nuv);
+			if (cnt == BUN_NONE) {
+				bat_destroy(b);
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
 		} else {
-			b = temp_descriptor(bat->bid);
-			void_replace_bat(b, tids, updates, TRUE);
+			if (void_replace_bat(b, tids, updates, TRUE) == BUN_NONE) {
+				bat_destroy(b);
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
 		}
 		bat_destroy(ib);
 		bat_destroy(b);
 	} else {
 		b = temp_descriptor(bat->ibid);
-		void_replace_bat(b, tids, updates, TRUE);
+		if (b == NULL)
+			return LOG_ERR;
+		cnt = void_replace_bat(b, tids, updates, TRUE);
 		bat_destroy(b);
+		if (cnt == BUN_NONE) {
+			return LOG_ERR;
+		}
 	}
 	bat->ucnt += BATcount(tids);
 	return LOG_OK;

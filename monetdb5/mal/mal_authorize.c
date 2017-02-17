@@ -585,6 +585,8 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 	rethrow("getUsers", tmp, AUTHrequireAdmin(cntxt));
 
 	*ret1 = BATdense(user->hseqbase, user->hseqbase, BATcount(user));
+	if (*ret1 == NULL)
+		throw(MAL, "getUsers", MAL_MALLOC_FAIL);
 	if (BATcount(duser)) {
 		bn = BATdiff(*ret1, duser, NULL, NULL, 0, BUN_NONE);
 		BBPunfix((*ret1)->batCacheid);
@@ -592,6 +594,13 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 		*ret1 = bn;
 	} else {
 		*ret2 = COLcopy(user, user->ttype, FALSE, TRANSIENT);
+	}
+	if (*ret1 == NULL || *ret2 == NULL) {
+		if (*ret1)
+			BBPunfix((*ret1)->batCacheid);
+		if (*ret2)
+			BBPunfix((*ret2)->batCacheid);
+		throw(MAL, "getUsers", MAL_MALLOC_FAIL);
 	}
 	return(NULL);
 }
