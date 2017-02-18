@@ -26,12 +26,12 @@
  * against the database. We skip this for the time being, as those queries
  * can be captured already in the server.
  *
- * The goal of this module is to ease BACKUP and REPPLICATION of a master database 
+ * The goal of this module is to ease BACKUP and REPLICATION of a master database 
  * with a time-bounded delay. This means that both master and replica run at a certain beat
  * (in seconds) by which information is made available or read by the replica.
  *
  * Such a replica in query workload sharing, database versioning, and (re-)partitioning.
- * Tables taken from the master are not protected against local updates.
+ * Tables taken from the master are not protected against local updates in the clone.
  * However, any replay transaction that fails stops the cloning process.
  * Furthermore, only persistent tables are considered for replication.
  * Updates under the 'tmp' schema are ignored.
@@ -46,11 +46,10 @@
  * A database can be set into 'master' mode only once using the SQL command:
  * CALL master()
  * An alternative path to the log records can be given to reduce the IO latency,
- * e.g. a nearby SSD.
+ * e.g. using a nearby SSD.
  * By default, it creates a directory .../dbfarm/dbname/wlc_logs to hold all 
- * necessary information for the creation of a database clone.
- *
- * A master configuration file is added to the database directory to keep the state/
+ * necessary information for the creation of a database clone and
+ * a configuration file .../dbfarm/dbname/wlc.config to hold the state of the transaction logs.
  * It contains the following key=value pairs:
  * 		snapshot=<path to a snapshot directory>
  * 		logs=<path to the wlc log directory>
@@ -79,7 +78,7 @@
  *
  * A minor problem here is that we should ensure that the log file is closed even if there
  * are no transactions running. It is solved with a separate monitor thread, which ensures
- * that the logs are flushed at least after 'beat' seconds since the first logrecord was created.
+ * that the a new log file is created at least after 'beat' seconds since the first logrecord was created.
  * After closing, the replicas can see from the master configuration file that a new log batch is available.
  *
  * The final step is to close stop transaction logging with the command
