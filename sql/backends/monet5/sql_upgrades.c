@@ -593,8 +593,7 @@ sql_update_dec2016(Client c, mvc *sql)
 			" sorted boolean,\n"
 			" revsorted boolean,\n"
 			" \"unique\" boolean,\n"
-			" orderidx bigint,\n"
-			" compressed boolean\n"
+			" orderidx bigint\n"
 			")\n"
 			"external name sql.\"storage\";\n"
 			"create view sys.\"storage\" as select * from sys.\"storage\"();\n"
@@ -616,8 +615,7 @@ sql_update_dec2016(Client c, mvc *sql)
 			" sorted boolean,\n"
 			" revsorted boolean,\n"
 			" \"unique\" boolean,\n"
-			" orderidx bigint,\n"
-			" compressed boolean\n"
+			" orderidx bigint\n"
 			")\n"
 			"external name sql.\"storage\";\n"
 			"create function sys.\"storage\"( sname string, tname string)\n"
@@ -638,8 +636,7 @@ sql_update_dec2016(Client c, mvc *sql)
 			" sorted boolean,\n"
 			" revsorted boolean,\n"
 			" \"unique\" boolean,\n"
-			" orderidx bigint,"
-			" compressed boolean\n"
+			" orderidx bigint\n"
 			")\n"
 			"external name sql.\"storage\";\n"
 			"create function sys.\"storage\"( sname string, tname string, cname string)\n"
@@ -660,15 +657,14 @@ sql_update_dec2016(Client c, mvc *sql)
 			" sorted boolean,\n"
 			" revsorted boolean,\n"
 			" \"unique\" boolean,\n"
-			" orderidx bigint,\n"
-			" compressed boolean\n"
+			" orderidx bigint\n"
 			")\n"
 			"external name sql.\"storage\";\n"
 			"create procedure sys.storagemodelinit()\n"
 			"begin\n"
 			" delete from sys.storagemodelinput;\n"
 			" insert into sys.storagemodelinput\n"
-			" select X.\"schema\", X.\"table\", X.\"column\", X.\"type\", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X.\"unique\", X.orderidx, X.compressed from sys.\"storage\"() X;\n"
+			" select X.\"schema\", X.\"table\", X.\"column\", X.\"type\", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X.\"unique\", X.orderidx from sys.\"storage\"() X;\n"
 			" update sys.storagemodelinput\n"
 			" set reference = true\n"
 			" where concat(concat(\"schema\",\"table\"), \"column\") in (\n"
@@ -699,15 +695,14 @@ sql_update_dec2016(Client c, mvc *sql)
 			" sorted boolean,\n"
 			" revsorted boolean,\n"
 			" \"unique\" boolean,\n"
-			" orderidx bigint,"
-			"compressed boolean)\n"
+			" orderidx bigint)\n"
 			"begin\n"
 			" return select I.\"schema\", I.\"table\", I.\"column\", I.\"type\", I.\"count\",\n"
 			" columnsize(I.\"type\", I.count, I.\"distinct\"),\n"
 			" heapsize(I.\"type\", I.\"distinct\", I.\"atomwidth\"),\n"
 			" hashsize(I.\"reference\", I.\"count\"),\n"
 			" imprintsize(I.\"count\",I.\"type\"),\n"
-			" I.sorted, I.revsorted, I.\"unique\", I.orderidx, I.compressed\n"
+			" I.sorted, I.revsorted, I.\"unique\", I.orderidx\n"
 			" from sys.storagemodelinput I;\n"
 			"end;\n"
 			"create view sys.storagemodel as select * from sys.storagemodel();\n"
@@ -1189,6 +1184,7 @@ sql_update_jun2016_sp2(Client c, mvc *sql)
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
@@ -1230,6 +1226,55 @@ sql_update_mosaic(Client c, mvc *sql)
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+static str
+sql_update_dec2016_sp2(Client c, mvc *sql)
+{
+	size_t bufsize = 2048, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+	res_table *output;
+	BAT *b;
+
+	pos += snprintf(buf + pos, bufsize - pos, "select id from sys.types where sqlname = 'decimal' and digits = %d;\n",
+#ifdef HAVE_HGE
+			have_hge ? 39 :
+#endif
+			19);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err) {
+		GDKfree(buf);
+		return err;
+	}
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			pos = 0;
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+#ifdef HAVE_HGE
+			if (have_hge) {
+				pos += snprintf(buf + pos, bufsize - pos,
+						"update sys.types set digits = 38 where sqlname = 'decimal' and digits = 39;\n"
+						"update sys.args set type_digits = 38 where type = 'decimal' and type_digits = 39;\n");
+			} else
+#endif
+				pos += snprintf(buf + pos, bufsize - pos,
+						"update sys.types set digits = 18 where sqlname = 'decimal' and digits = 19;\n"
+						"update sys.args set type_digits = 18 where type = 'decimal' and type_digits = 19;\n");
+
+			if (schema)
+				pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_tables_destroy(output);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -1338,6 +1383,11 @@ SQLupgrades(Client c, mvc *m)
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
+	}
+
+	if ((sql_update_dec2016_sp2(c, m)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		GDKfree(err);
 	}
 	if(0)	sql_update_mosaic(c, m);
 }
