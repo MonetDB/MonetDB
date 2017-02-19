@@ -4088,7 +4088,7 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 	list *exps = NULL;
 
 	(void)*changes;
-	if (!rel_is_ref(rel) && (((is_join(rel->op) && rel->exps) || is_semi(rel->op)) && rel->l)) {
+	if (!rel_is_ref(rel) && ((is_join(rel->op) || is_semi(rel->op)) && rel->l && rel->exps)) {
 		sql_rel *gb = rel->r, *ogb = gb, *l = NULL, *rell = rel->l;
 
 		if (gb->op == op_project)
