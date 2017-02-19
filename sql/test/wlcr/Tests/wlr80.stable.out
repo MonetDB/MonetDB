@@ -27,9 +27,7 @@ stdout of test 'wlr80` in directory 'sql/test/wlcr` itself:
 % sys.tmp,	sys.tmp # table_name
 % i,	s # name
 % int,	clob # type
-% 3,	31 # length
-[ 35,	"resumed logging"	]
-[ 100,	"inserted while logging was idle"	]
+% 1,	0 # length
 
 # 21:26:05 >  
 # 21:26:05 >  "Done."

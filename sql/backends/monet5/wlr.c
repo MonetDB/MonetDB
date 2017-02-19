@@ -254,7 +254,7 @@ WLRprocess(void *arg)
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
 					(void) mvc_trans(sql);
-					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
+					//printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 					msg= runMAL(c,mb,0,0);
 					wlr_tag++;
 					WLRsetConfig( );
@@ -400,8 +400,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	WLRsetConfig();
 	WLRgetMaster();
 	// The client has to wait initially for all logs known to be processed.
-	if( wlr_limit > 0)
-		WLRprocess(cntxt);
+	WLRprocess(cntxt);
 	if( wlr_limit < 0){
 		msg = WLRinit();
 		if( msg )

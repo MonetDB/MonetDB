@@ -25,6 +25,21 @@ stdout of test 'wlr30` in directory 'sql/test/wlcr` itself:
 % sys.tmp,	sys.tmp # table_name
 % i,	s # name
 % int,	clob # type
+% 1,	5 # length
+[ 1,	"hello"	]
+[ 2,	"world"	]
+[ 3,	"blah"	]
+[ 4,	"bloh"	]
+[ 5,	"red"	]
+[ 6,	"fox"	]
+#call replicate('mTests_sql_test_wlcr');
+#Waiting for replay scheduler to stop
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000004
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000005
+#select * from tmp;
+% sys.tmp,	sys.tmp # table_name
+% i,	s # name
+% int,	clob # type
 % 1,	4 # length
 [ 3,	"blah"	]
 [ 2,	"blah"	]

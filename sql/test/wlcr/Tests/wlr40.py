@@ -28,7 +28,10 @@ slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = proce
 
 c = process.client('sql', dbname = dbnameclone, port = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
+# be aware that the replication thread may be running behind
+# For testing we need to wait for it.
 cout, cerr = c.communicate('''\
+call replicate();
 select * from tmp;
 ''' )
 

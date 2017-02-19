@@ -21,21 +21,13 @@ wlc30
 wlr30
 #
 ##delete some tupples
-#wlc40
+wlc40
 wlr40
 #
 ##clear the complete table
-#wlc50
-#wlr50
-#
-##shuffle the master state
-#wlc60
-#wlr60
-#
-##temporarily suspend log propagation
-#wlc70
-#wlr70
+wlc50
+wlr50
 #
 ##stop the master
-#wlc80
-#wlr80
+wlc80
+wlr80
