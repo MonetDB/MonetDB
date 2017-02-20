@@ -1227,18 +1227,27 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		BAT *bids, *nmes, *tids;
 
 		tids = bm_tids(catalog_bid, dcatalog);
-		bids = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
-		nmes = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
-		if (tids == NULL || bids == NULL || nmes == NULL) {
-			if (tids)
-				BBPunfix(tids->batCacheid);
-			BBPreclaim(bids);
-			BBPreclaim(nmes);
+		if (tids == NULL) {
 			GDKfree(n);
 			return GDK_FAIL;
 		}
-		BATappend(bids, catalog_bid, tids, TRUE);
-		BATappend(nmes, catalog_nme, tids, TRUE);
+		bids = logbat_new(TYPE_int, BATcount(tids), PERSISTENT);
+		nmes = logbat_new(TYPE_str, BATcount(tids), PERSISTENT);
+		if (bids == NULL || nmes == NULL) {
+			logbat_destroy(tids);
+			logbat_destroy(bids);
+			logbat_destroy(nmes);
+			GDKfree(n);
+			return GDK_FAIL;
+		}
+		if (BATappend(bids, catalog_bid, tids, TRUE) != GDK_SUCCEED ||
+		    BATappend(nmes, catalog_nme, tids, TRUE) != GDK_SUCCEED) {
+			logbat_destroy(tids);
+			logbat_destroy(bids);
+			logbat_destroy(nmes);
+			GDKfree(n);
+			return GDK_FAIL;
+		}
 		logbat_destroy(tids);
 		BATclear(dcatalog, TRUE);
 
