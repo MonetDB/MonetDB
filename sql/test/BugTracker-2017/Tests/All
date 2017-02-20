@@ -27,3 +27,5 @@ sqlsmith04
 nested_with.Bug-6187
 prepare.Bug-6133
 null-quantile.Bug-6218
+sqlsmith.Bug-6216
+sqlsmith.Bug-6217

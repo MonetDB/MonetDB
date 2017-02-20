@@ -35,8 +35,6 @@ test = (
         re.compile('(?:'+')|(?:'.join([
                 # MAPI port numbers
                     r"^MAPI  = (.*@.*:\d*|\([a-zA-Z0-9_]+\) /.*\.s\.monetdb\.\d+)$",
-                # SPHINX is optional in monetdb5/modules/mal/inspec05
-                    r'\[\s+"[^"]*",\s+"(?:command|function|pattern)",\s+"sphinx",\s+"[^"]*",\s+"[^"]*"\s+\]',
                 # dplyr (R package) includes the MonetDB version in its output, ignore
                     r"^Source: MonetDB .*$",
                  ])+')',  re.MULTILINE),
