@@ -191,6 +191,7 @@ WLRprocess(void *arg)
 	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d\n", 
 		wlr_archive, wlr_firstbatch, wlr_batches );
 #endif
+	path[0]=0;
 	for( i= wlr_batches; wlr_state == WLR_RUN && i < wlc_batches && ! GDKexiting(); i++){
 		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
 		fd= open_rstream(path);
@@ -233,6 +234,7 @@ WLRprocess(void *arg)
 				( wlr_timelimit[0] && strcmp(getVarConstant(mb, getArg(q,2)).val.sval, wlr_timelimit) >= 0))
 				){
 				/* stop execution of the transactions if your reached the limit */
+				mnstr_printf(GDKerr,"#skip tlimit %s  tag %s\n", wlr_timelimit,getVarConstant(mb, getArg(q,2)).val.sval);
 				resetMalBlk(mb, 1);
 				trimMalVariables(mb, NULL);
 				goto wrapup;
@@ -240,6 +242,7 @@ WLRprocess(void *arg)
 			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef ){
 				strncpy(wlr_read, getVarConstant(mb, getArg(q,2)).val.sval,26);
 				wlr_tag = getVarConstant(mb, getArg(q,1)).val.lval;
+				mnstr_printf(GDKerr,"#run tlimit %s  tag %s\n", wlr_timelimit, wlr_read);
 			}
 			// only re-execute successful transactions.
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef ){
@@ -329,19 +332,26 @@ WLRprocessScheduler(void *arg)
 		// wait at most for the cycle period, also at start
 		//mnstr_printf(cntxt->fdout,"#sleep %d ms\n",(wlc_beat? wlc_beat:1) * 1000);
 		duration = (wlc_beat? wlc_beat:1) * 1000 ;
-		gettimeofday(&clock, NULL);
-		clk = clock.tv_sec;
-		ctm = *localtime(&clk);
-		strftime(clktxt, 26, "%Y-%m-%d %H:%M:%S.000",&ctm);
-		mnstr_printf(cntxt->fdout,"#now %s tlimit %s\n",clktxt, wlr_timelimit);
-		for( ; duration > 0 && wlr_state == WLR_PAUSE; duration -= 100)
+		if( wlr_timelimit[0]){
+			gettimeofday(&clock, NULL);
+			clk = clock.tv_sec;
+			ctm = *localtime(&clk);
+			strftime(clktxt, 26, "%Y-%m-%dT%H:%M:%S.000",&ctm);
+			mnstr_printf(cntxt->fdout,"#now %s tlimit %s\n",clktxt, wlr_timelimit);
+			// actually never wait longer then the timelimit requires
+			// preference is given to the beat.
+			if(strncmp(clktxt, wlr_timelimit,26) >= 0) 
+				MT_sleep_ms(duration);
+		} else
+		for( ; duration > 0  && wlr_state == WLR_PAUSE; duration -= 100){
 			MT_sleep_ms( 100);
+		}
 		if( wlr_master[0] && wlr_state != WLR_PAUSE){
 			WLRgetMaster();
 			if( wlrprocessrunning == 0 && 
 				( (wlr_batches == wlc_batches && wlr_tag < wlr_limit) || wlr_limit > wlr_tag  ||
 				  (wlr_limit == -1 && wlr_timelimit[0] == 0 && wlr_batches < wlc_batches) ||
-				  (wlr_timelimit[0]  && strncmp(clktxt,wlr_timelimit,26)>= 0)  ) )
+				  (wlr_timelimit[0]  && strncmp(clktxt, wlr_timelimit, 26)> 0)  ) )
 					WLRprocess(cntxt);
 		}
 	}
@@ -393,7 +403,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wlr_limit = -1;
 
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_timestamp){
-		timestamp_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,2));
+		timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,2), &tzone_local);
 		mnstr_printf(cntxt->fdout,"#time limit %s\n",timelimit);
 	} else
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_bte)

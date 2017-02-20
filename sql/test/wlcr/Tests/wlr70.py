@@ -29,11 +29,11 @@ slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = proce
 c = process.client('sql', dbname = dbnameclone, port = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 cout, cerr = c.communicate('''\
-call replicate('%s', now());
-select * from tmp;
-call replicate('%s', now());
-select * from tmp;
-''' % (dbname,dbname))
+call replicate(now());
+select * from tmp2;
+call replicate();
+select * from tmp2;
+''' )
 
 sout, serr = slave.communicate()
 #mout, merr = master.communicate()
