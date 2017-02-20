@@ -1812,38 +1812,6 @@ AS_VAR_IF([have_valgrind], [no], [], [
 		[AC_DEFINE([HAVE_VALGRIND], 1, [Define if you have valgrind installed and want to use it])],
 		[AS_VAR_IF([have_valgrind], [yes], [AC_MSG_ERROR([no valgrind support found])])])])
 
-# check for sphinxclient
-org_have_sphinxclient="auto"
-have_sphinxclient=$org_have_sphinxclient
-AC_ARG_WITH([sphinxclient],
-    [AS_HELP_STRING([--with-sphinxclient=DIR], [sphinxclient library is installed in DIR])],
-    [have_sphinxclient="$withval"])
-AS_VAR_IF([have_sphinxclient], [no], [], [
-	AS_CASE([$have_sphinxclient],
-	[auto|yes], [],
-	[
-	    SPHINXCLIENT_CFLAGS="-I$have_sphinxclient/include"
-	    SPHINXCLIENT_LIBS="-L$have_sphinxclient/lib"])
-
-	save_CPPFLAGS="$CPPFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	CPPFLAGS="$CPPFLAGS $SPHINXCLIENT_CFLAGS"
-	LDFLAGS="$LDFLAGS $SPHINXCLIENT_LIBS"
-	AC_CHECK_HEADER([sphinxclient.h],
-		AC_CHECK_LIB([sphinxclient], [sphinx_create],
-			[AC_DEFINE([HAVE_SPHINXCLIENT], 1, [Define if you have the sphinxclient library])]
-			[have_sphinxclient=yes]
-			[SPHINXCLIENT_LIBS="$SPHINXCLIENT_LIBS -lsphinxclient"],
-			[AS_VAR_IF([have_sphinxclient], [auto], [], [AC_MSG_ERROR([-lsphinxclient library not found])])
-			  have_sphinxclient=no; why_have_sphinxclient="(sphinxclient library not found)" ]),
-		[AS_VAR_IF([have_sphinxclient], [auto], [], [AC_MSG_ERROR([sphinxclient.h header not found])])
-		  have_sphinxclient=no; why_have_sphinxclient="(sphinxclient.h header not found)" ])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"])
-AC_SUBST([SPHINXCLIENT_CFLAGS], [$SPHINXCLIENT_CFLAGS])
-AC_SUBST([SPHINXCLIENT_LIBS], [$SPHINXCLIENT_LIBS])
-AM_CONDITIONAL([HAVE_SPHINXCLIENT], [test x"$have_sphinxclient" != xno])
-
 # R API (R UDFs)
 have_libr=no
 AS_VAR_IF([enable_rintegration], [no], [], [
@@ -3088,7 +3056,6 @@ for comp in \
 	'regex        ' \
 	'samtools     ' \
 	'shp          ' \
-	'sphinxclient ' \
 	'unixodbc     ' \
 	'valgrind     ' \
 	'zlib         ' \

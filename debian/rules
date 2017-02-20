@@ -52,7 +52,6 @@ override_dh_auto_configure:
 	--with-readline=yes \
 	--with-regex=PCRE \
 	--with-samtools=yes \
-	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \
 	--with-valgrind=no \
