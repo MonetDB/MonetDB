@@ -159,7 +159,6 @@ BuildRequires: libatomic_ops-devel
 BuildRequires: libcurl-devel
 BuildRequires: xz-devel
 # BuildRequires: libmicrohttpd-devel
-# BuildRequires: libsphinxclient-devel
 BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
@@ -918,7 +917,6 @@ developer, but if you do want to test, this is the package you need.
 	--with-python3=no \
 	--with-readline=yes \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
-	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \
 	--with-valgrind=no \
