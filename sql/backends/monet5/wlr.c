@@ -382,9 +382,10 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else  
 		wlr_limit = -1;
 
-	if( getArgType(mb, pci, pci->argc-1) == TYPE_timestamp)
-		timestamp_tostr(&timelimit, &size, (timestamp*) &getVarConstant(mb,getArg(pci,2)).val.lval);
-	else
+	if( getArgType(mb, pci, pci->argc-1) == TYPE_timestamp){
+		timestamp_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,2));
+		mnstr_printf(cntxt->fdout,"#time limit %s\n",timelimit);
+	} else
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_bte)
 		wlr_limit = getVarConstant(mb,getArg(pci,2)).val.btval;
 	else
