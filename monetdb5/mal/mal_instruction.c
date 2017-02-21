@@ -790,7 +790,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 		setVarUDFtype(tm, res);
 	if (isVarCleanup(mb, x))
 		setVarCleanup(tm, res);
-	tm->var[x]->stc = mb->var[x]->stc;
+	getSTC(tm,x) = getSTC(mb,x);
 	return res;
 }
 
