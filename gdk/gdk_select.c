@@ -1877,7 +1877,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)
 		return newempty();
-	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
 		/* "=" or "==" */
 		return BATselect(b, s, val, NULL, 1, 1, 0);
 	}
