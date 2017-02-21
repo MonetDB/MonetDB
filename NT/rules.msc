@@ -396,11 +396,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_SAMTOOLS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_SPHINXCLIENT
-	$(ECHO) HAVE_SPHINXCLIENT_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_SPHINXCLIENT_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_SQL
 	$(ECHO) HAVE_SQL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
