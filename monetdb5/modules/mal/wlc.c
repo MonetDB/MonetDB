@@ -30,11 +30,11 @@
  * with a time-bounded delay. This means that both master and replica run at a certain beat
  * (in seconds) by which information is made available or read by the replica.
  *
- * Such a replica in query workload sharing, database versioning, and (re-)partitioning.
- * Tables taken from the master are not protected against local updates in the clone.
+ * Such a replica is used in query workload sharing, database versioning, and (re-)partitioning.
+ * Tables taken from the master are not protected against local updates in the replica.
  * However, any replay transaction that fails stops the cloning process.
  * Furthermore, only persistent tables are considered for replication.
- * Updates under the 'tmp' schema are ignored.
+ * Updates under the 'tmp' schema, i.e. temporary tables, are ignored.
  *
  * Simplicity and ease of end-user control has been the driving argument here.
  *
@@ -45,11 +45,12 @@
  *
  * A database can be set into 'master' mode only once using the SQL command:
  * CALL master()
- * An alternative path to the log records can be given to reduce the IO latency,
- * e.g. using a nearby SSD.
- * By default, it creates a directory .../dbfarm/dbname/wlc_logs to hold all 
- * necessary information for the creation of a database clone and
- * a configuration file .../dbfarm/dbname/wlc.config to hold the state of the transaction logs.
+ * An optional path to the log record directory can be given to reduce the IO latency,
+ * e.g. using a nearby SSD, or where there is ample of space to keep a long history,
+ * e.g. a HDD or cold storage location.
+ *
+ * By default, the command creates a directory .../dbfarm/dbname/wlc_logs to hold all logs
+ * and a configuration file .../dbfarm/dbname/wlc.config to hold the state of the transaction logs.
  * It contains the following key=value pairs:
  * 		snapshot=<path to a snapshot directory>
  * 		logs=<path to the wlc log directory>
@@ -65,12 +66,11 @@
  * The log records are represented as ordinary MAL statement blocks, which
  * are executed in serial mode. (parallelism can be considered for large updates later)
  * Each transaction job is identified by a unique id, its starting time, and the user responsible..
- * The log-record should end with a commit.
+ * The log-record should end with a commit to be allowed for re-execution.
+ * Log records with a rollback tag are merely for analysis by the DBA.
  *
- * A transaction log is created by the master using a heartbeat (in seconds).
- * A new transaction log file is published when the system has been 
- * collecting logs for some time.
- * The cycle time determines the drift of the replica, excluding its own speed to catch up.
+ * A transaction log file is created by the master using a heartbeat (in seconds).
+ * A new transaction log file is published when the system has been collecting transaction records for some time.
  * The beat can be set using a SQL command, e.g.
  * CALL masterbeat(duration)
  * Setting it to zero leads to a log file per transaction and may cause a large log directory.
@@ -85,9 +85,15 @@
  * CALL stopmaster().
  * It typically is the end-of-life-time for a snapshot. For example, when planning to do
  * a large bulk load of the database, stopping logging avoids a double write into the
- * database. The database can be brought back into wlc mode using a fresh snapshot.
+ * database. The database can only be brought back into master mode using a fresh snapshot.
  *
- *[TODO] A more secure way to set a database into master mode is to use the command
+ * One of the key challenges for a DBA is to keep the log directory manageable, because it grows
+ * with the speed up updates being applied to the database. This calls for regularly checking
+ * for their disk footprint and taking a new snapshot as a frame of reference.
+ *
+ * The DBA tool 'monetdb' provides options to create a master and its replicas.
+ * It will also maintain the list of replicas for inspection and managing their drift.
+ * For example,
  *	 monetdb master <dbname> [ <optional snapshot path>]
  * which locks the database, takes a save copy, initializes the state chance to master. 
  *
@@ -101,7 +107,7 @@
  *
  * Every clone should start off with a copy of the binary snapshot identified by 'snapshot'.
  * A fresh database can be turned into a clone using the call
- * CALL replicate('mastername')
+ *     CALL replicate('mastername')
  * It will grab the latest snapshot of the master and applies all
  * available log files before releasing the system. Progress of
  * the replication can be monitored using the -fraw option in mclient.

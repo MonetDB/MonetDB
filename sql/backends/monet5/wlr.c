@@ -212,7 +212,9 @@ WLRprocess(void *arg)
 			mnstr_printf(GDKerr, "!WARNING: could not read %s\n", path);
 
 		c->yycur = 0;
+#ifdef _WLR_DEBUG_
 		mnstr_printf(cntxt->fdout,"#replay log file:%s\n",path);
+#endif
 
 		// now parse the file line by line to reconstruct the WLR blocks
 		do{
@@ -234,7 +236,9 @@ WLRprocess(void *arg)
 				( wlr_timelimit[0] && strcmp(getVarConstant(mb, getArg(q,2)).val.sval, wlr_timelimit) >= 0))
 				){
 				/* stop execution of the transactions if your reached the limit */
+#ifdef _WLR_DEBUG_
 				mnstr_printf(GDKerr,"#skip tlimit %s  tag %s\n", wlr_timelimit,getVarConstant(mb, getArg(q,2)).val.sval);
+#endif
 				resetMalBlk(mb, 1);
 				trimMalVariables(mb, NULL);
 				goto wrapup;
@@ -242,7 +246,9 @@ WLRprocess(void *arg)
 			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef ){
 				strncpy(wlr_read, getVarConstant(mb, getArg(q,2)).val.sval,26);
 				wlr_tag = getVarConstant(mb, getArg(q,1)).val.lval;
+#ifdef _WLR_DEBUG_
 				mnstr_printf(GDKerr,"#run tlimit %s  tag %s\n", wlr_timelimit, wlr_read);
+#endif
 			}
 			// only re-execute successful transactions.
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef ){
