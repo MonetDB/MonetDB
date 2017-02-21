@@ -52,6 +52,10 @@
 #ifdef HAVE_FORK
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
+        if (bat == NULL) {						\
+                msg = createException(MAL, "pyapi.eval", "Cannor create BAT"); \
+                goto wrapup;						\
+        }								\
         bat->tnil = 0; bat->tnonil = 1;                                                   \
         bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
         /*Change nil values to the proper values, if they exist*/                                                       \
@@ -100,6 +104,10 @@
 #else
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
+        if (bat == NULL) {						\
+                msg = createException(MAL, "pyapi.eval", "Cannor create BAT"); \
+                goto wrapup;						\
+        }								\
         bat->tnil = 0; bat->tnonil = 1;                                                   \
         bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
         /*Change nil values to the proper values, if they exist*/                                                       \
@@ -399,6 +407,10 @@
             }                                                                                                                                                  \
         } else {                                                                                                                                               \
             bat = COLnew(seqbase, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                   \
+            if (bat == NULL) {						\
+                msg = createException(MAL, "pyapi.eval", "Cannor create BAT"); \
+                goto wrapup;						\
+            }								\
             if (NOT_HGE(mtpe) && TYPE_##mtpe != PyType_ToBat(ret->result_type)) WARNING_MESSAGE("!PERFORMANCE WARNING: You are returning a Numpy Array of type %s, which has to be converted to a BAT of type %s. If you return a Numpy\
 Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type), BatType_Format(TYPE_##mtpe), PyType_Format(BatType_ToPyType(TYPE_##mtpe)));   \
             bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                                                              \

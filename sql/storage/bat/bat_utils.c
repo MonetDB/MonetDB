@@ -119,16 +119,18 @@ ebat2real(log_bid b, oid ibase)
 log_bid 
 e_bat(int type)
 {
-	if (!ebats[type]) 
-		ebats[type] = bat_new(type, 0, TRANSIENT);
+	if (ebats[type] == NULL &&
+	    (ebats[type] = bat_new(type, 0, TRANSIENT)) == NULL)
+		return BID_NIL;
 	return temp_create(ebats[type]);
 }
 
 BAT * 
 e_BAT(int type)
 {
-	if (!ebats[type]) 
-		ebats[type] = bat_new(type, 0, TRANSIENT);
+	if (ebats[type] == NULL &&
+	    (ebats[type] = bat_new(type, 0, TRANSIENT)) == NULL)
+		return NULL;
 	return temp_descriptor(ebats[type]->batCacheid);
 }
 
