@@ -1635,8 +1635,10 @@ command_master(int argc, char *argv[])
 		exit(1);
 	}
 
-	if (argc == 3)
+	if (argc == 3) {
 		target_path = strdup(argv[2]);
+		argv[2] = NULL;
+	}
 
 	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
 		fprintf(stderr, "master: %s\n", e);
@@ -1653,6 +1655,8 @@ command_master(int argc, char *argv[])
 		snprintf(cmd, len, "master path=%s", target_path);
 		simple_argv_cmd(argv[0], orig, cmd,
 						"set database as master", NULL);
+		free(target_path);
+		free(cmd);
 	} else {
 		simple_argv_cmd(argv[0], orig, "master",
 						"set database as master", NULL);

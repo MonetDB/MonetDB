@@ -628,7 +628,10 @@ static void ctl_handle_client(
 					send_client("!");
 					free(e);
 				} else {
-
+					Mfprintf(_mero_ctlout, "%s: set database '%s' to master mode\n",
+							 origin, q);
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
 				}
 			} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 				char *e;
