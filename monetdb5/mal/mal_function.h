@@ -34,7 +34,6 @@ mal_export void setVariableScope(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
 mal_export void debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size);
-mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 
 #include "mal_exception.h"
 

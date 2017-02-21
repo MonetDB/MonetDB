@@ -560,47 +560,6 @@ MDBgetExceptionReason(str *ret, str *msg)
 	return MAL_SUCCEED;
 }
 
-
-str
-MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	str fname;
-	str modnme;
-	str fcnnme;
-	Symbol s = NULL;
-
-	(void)cntxt;
-
-	if (stk != 0) {
-		if (p->argc == 2) {
-			modnme = fcnnme = NULL;
-			fname = *getArgReference_str(stk, p, 1);
-		} else {
-			modnme = *getArgReference_str(stk, p, 1);
-			fcnnme = *getArgReference_str(stk, p, 2);
-			fname = *getArgReference_str(stk, p, 3);
-		}
-	} else {
-		modnme = getArgDefault(mb, p, 1);
-		fcnnme = getArgDefault(mb, p, 2);
-		fname = getArgDefault(mb, p, 3);
-	}
-
-	if (modnme != NULL) {
-		s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
-
-		if (s == NULL) {
-			char buf[1024];
-			snprintf(buf,1024, "Could not find %s.%s\n", modnme, fcnnme);
-			throw(MAL, "mdb.dot", "%s", buf);
-		}
-		showFlowGraph(s->def, stk, fname);
-	} else {
-		showFlowGraph(mb, stk, fname);
-	}
-	return MAL_SUCCEED;
-}
-
 str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	mdbDump(cntxt,mb,stk,pci);

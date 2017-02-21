@@ -701,39 +701,6 @@ retryRead:
 				mb = stk->blk;
 				break;
 			}
-			if (strncmp(b, "dot", 3) == 0) {
-				/* produce the dot file for graphical display */
-				/* its argument is the optimizer level followed by filename*/
-				MalBlkPtr mdot;
-				char fname[2 * PATHLENGTH] = "";
-				char name[PATHLENGTH], *nme;
-
-				skipWord(cntxt, b);
-				nme = b;
-				skipNonBlanc(cntxt, b);
-				strncpy(name, nme, PATHLENGTH - 1);
-				if (b - nme < PATHLENGTH)
-					name[ b - nme] = 0;
-				mdot = mdbLocateMalBlk(cntxt, mb, name, out);
-				skipBlanc(cntxt, b);
-				if (mdot == NULL)
-					mdot = mb;
-				snprintf(name, PATHLENGTH, "/%s.%s.dot", getModuleId(getInstrPtr(mdot, 0)), getFunctionId(getInstrPtr(mdot, 0)));
-				/* optional file */
-				skipBlanc(cntxt, b);
-				if (*b == 0) {
-					snprintf(fname, sizeof(fname), "%s%s", monet_cwd, name);
-				} else if (*b != '/') {
-					snprintf(fname, sizeof(fname), "%s%s", monet_cwd, name);
-				} else if (b[strlen(b) - 1] == '/') {
-					snprintf(fname, sizeof(fname), "%s%s", b, name + 1);
-				} else
-					snprintf(fname, sizeof(fname), "%s", b);
-
-				showFlowGraph(mdot, 0, fname);
-				mnstr_printf(out, "#dot file '%s' created\n", fname);
-				break;
-			}
 			skipWord(cntxt, b);
 			/* get rid of break point */
 			if (*b && !isspace((int) *b) && !isdigit((int) *b))

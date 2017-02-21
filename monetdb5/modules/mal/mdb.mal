@@ -86,16 +86,6 @@ pattern var(M:str,F:str):void
 address MDBvar3
 comment "Dump the symboltable of routine M.F on standard out.";
 
-pattern dot(s:str):void 
-address MDBshowFlowGraph
-comment "Dump the data flow of the current routine in a format recognizable by the command 'dot' to the file s";
-
-pattern dot(M:str,F:str,s:str):void 
-address MDBshowFlowGraph
-comment "Dump the data flow of the function 
-	M.F in a format recognizable by the 
-	command 'dot' on the file s";
-
 pattern getStackDepth():int 
 address MDBStkDepth
 comment "Return the depth of the calling stack.";

@@ -40,7 +40,6 @@ mal_export str MDBgetExceptionReason(str *ret, str *msg);
 mal_export str MDBgetExceptionContext(str *ret, str *msg);
 mal_export str MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
