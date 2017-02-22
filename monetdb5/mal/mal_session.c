@@ -574,7 +574,9 @@ MALparser(Client c)
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
 
-	prepareMalBlk(c->curprg->def, CURRENT(c));
+	if( prepareMalBlk(c->curprg->def, CURRENT(c))){
+		throw(MAL, "mal.parser", MAL_MALLOC_FAIL);
+	}
 	if (parseMAL(c, c->curprg, 0) || c->curprg->def->errors) {
 		/* just complete it for visibility */
 		pushEndInstruction(c->curprg->def);

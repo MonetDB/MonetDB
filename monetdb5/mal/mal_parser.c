@@ -1740,9 +1740,6 @@ part3:
 		parseError(cntxt, "return assignment expected\n");
 }
 
-
-#define BRKONERR if (curPrg->def->errors >= MAXERRORS) \
-		return curPrg->def->errors;
 int
 parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 {
@@ -1931,7 +1928,8 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 		default: allLeft :
 			parseAssign(cntxt, cntrl);
 			cntrl = 0;
-			BRKONERR;
+			if (curPrg->def->errors >= MAXERRORS) \
+				return curPrg->def->errors;
 		}
 	}
 	return curPrg->def->errors;

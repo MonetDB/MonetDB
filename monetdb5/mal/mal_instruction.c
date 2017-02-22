@@ -86,15 +86,15 @@ newMalBlk(int elements)
 	MalBlkPtr mb;
 	VarRecord *v;
 
-	/* each MAL instruction implies at least on variable */
-	// TODO: this check/assignment makes little sense
 	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
 	if (mb == NULL) {
 		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 
-	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * elements);
+	/* each MAL instruction implies at least on variable 
+ 	 * we reserve some extra for constants */
+	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * (elements + 8) );
 	if (v == NULL) {
 		GDKfree(mb);
 		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
@@ -134,7 +134,7 @@ newMalBlk(int elements)
 }
 
 /* We only grow until the MAL block can be used */
-void
+int
 resizeMalBlk(MalBlkPtr mb, int elements)
 {
 	int i;
@@ -149,6 +149,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 		} else {
 			mb->errors++;
 			showException(GDKout, MAL, "resizeMalBlk", "out of memory (requested: "LLFMT" bytes)", (lng) elements * sizeof(InstrPtr));
+			return -1;
 		}
 	}
 
@@ -161,8 +162,10 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 		} else{
 			mb->errors++;
 			showException(GDKout, MAL, "resizeMalBlk", "out of memory (requested: "LLFMT" bytes)", (lng) elements * sizeof(InstrPtr));
+			return -1;
 		}
 	}
+	return 0;
 }
 /* The resetMalBlk code removes instructions, but without freeing the
  * space. This way the structure is prepared for re-use */
@@ -316,7 +319,7 @@ getMalBlkHistory(MalBlkPtr mb, int idx)
  * string length could been derived from the test cases. An error in
  * the estimate is more expensive than just counting the lines.
  */
-void
+int
 prepareMalBlk(MalBlkPtr mb, str s)
 {
 	int cnt = STMT_INCREMENT;
@@ -329,7 +332,7 @@ prepareMalBlk(MalBlkPtr mb, str s)
 		}
 	}
 	cnt = (int) (cnt * 1.1);
-	resizeMalBlk(mb, cnt);
+	return resizeMalBlk(mb, cnt);
 }
 
 /* The MAL records should be managed from a pool to
@@ -350,12 +353,10 @@ newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 		 * The hack is to re-use an already allocated instruction.
 		 * The marking of the block as containing errors should protect further actions.
 		 */
-		showException(GDKout, MAL, "newEndInstruction", MAL_MALLOC_FAIL);
+		showException(GDKout, MAL, "newInstruction", MAL_MALLOC_FAIL);
 		if( mb)
 			mb->errors ++;
-		else 
-			return NULL;
-	 	p = getInstrPtr(mb,0);
+		return NULL;
 	}
 	p->maxarg = MAXARG;
 	p->typechk = TYPE_UNKNOWN;
@@ -665,6 +666,7 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 	if( len >= IDLENGTH)
 		return -1;
 	if (makeVarSpace(mb)) 
+		/* no space for a new variable */
 		return -1;
 	n = mb->vtop;
 	if( name == 0 || len == 0)
@@ -1352,11 +1354,8 @@ setPolymorphic(InstrPtr p, int tpe, int force)
 
 }
 
-/* Instructions are simply appended to a MAL block. 
- * The assumption is to push it when you are completely done
- * with its preparation.
- * Failures to allocate space is fatal.
- * After a pushInstruction you can not extend the argument list anymore.
+/* Instructions are simply appended to a MAL block. It should always succeed.
+ * The assumption is to push it when you are completely done with its preparation.
  */
 
 void
@@ -1369,23 +1368,28 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 		return;
 
 	if (mb->stop + 1 >= mb->ssize) {
-		resizeMalBlk(mb,mb->ssize + STMT_INCREMENT);
-		if( mb->errors){
-			/* we are now left with the situation that the instruction is dangling .
-			 * The hack is to take an instruction out of the block that is likely not referenced independently
-			 * The last resort is to take the first, which should always be there
+		if( resizeMalBlk(mb,mb->ssize + STMT_INCREMENT)){
+			/* perhaps we can continue with a smaller increment.
+			 * But we block remains marked as faulty.
 			 */
-			for( i = 1; i < mb->stop; i++){
-				q= getInstrPtr(mb,i);
-				if( q->token == REMsymbol){
-					freeInstruction(q);
-					mb->stmt[i] = p;
-					return;
-				}		
+			if( resizeMalBlk(mb,mb->ssize + 1)){
+				/* we are now left with the situation that the new instruction is dangling .
+				 * The hack is to take an instruction out of the block that is likely not referenced independently
+				 * The last resort is to take the first, which should always be there
+				 * This assumes that no references are kept elsewhere to the statement
+				 */
+				for( i = 1; i < mb->stop; i++){
+					q= getInstrPtr(mb,i);
+					if( q->token == REMsymbol){
+						freeInstruction(q);
+						mb->stmt[i] = p;
+						return;
+					}		
+				}
+				freeInstruction(getInstrPtr(mb,0));
+				mb->stmt[0] = p;
+				return;
 			}
-			freeInstruction(getInstrPtr(mb,0));
-			mb->stmt[0] = p;
-			return;
 		}
 	}
 	mb->stmt[mb->stop++] = p;

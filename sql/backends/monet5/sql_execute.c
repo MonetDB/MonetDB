@@ -86,7 +86,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= pushStr(mb,q,"sql_traces");
 	/* cook a new resultSet instruction */
 	resultset = newInstruction(mb,sqlRef, resultSetRef);
-	getArg(resultset,0)= newTmpVariable(mb,TYPE_int);
+	setVarType(mb, getArg(resultset,0), TYPE_int);
 
 	/* build table defs */
 	tbls = newStmt(mb,batRef, newRef);
