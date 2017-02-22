@@ -396,13 +396,15 @@ isUpdateInstruction(InstrPtr p){
 	   ( getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == replaceRef ))
+		getFunctionId(p) == replaceRef ||
+		getFunctionId(p) == clear_tableRef))
 			return TRUE;
 	if ( getModuleId(p) == batRef &&
 	   ( getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == replaceRef ))
+		getFunctionId(p) == replaceRef ||
+		getFunctionId(p) == clear_tableRef))
 			return TRUE;
 	return FALSE;
 }
@@ -417,8 +419,7 @@ hasSideEffects(InstrPtr p, int strict)
 
 	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
 	     (getFunctionId(p) == setAccessRef ||
-	 	  getFunctionId(p) == setWriteModeRef ||
-		  getFunctionId(p) == clear_tableRef))
+	 	  getFunctionId(p) == setWriteModeRef ))
 		return TRUE;
 
 	if (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
