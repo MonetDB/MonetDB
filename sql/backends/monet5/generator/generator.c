@@ -365,10 +365,12 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			    tlow.days == thgh.days &&
 			    !timestamp_isnil(tlow))
 				hi = li;
-			if( hi && !timestamp_isnil(thgh) )
-				MTIMEtimestamp_add(&thgh, &thgh, &one);
-			if( !li && !timestamp_isnil(tlow) )
-				MTIMEtimestamp_add(&tlow, &tlow, &one);
+			if( hi && !timestamp_isnil(thgh) &&
+			    (msg = MTIMEtimestamp_add(&thgh, &thgh, &one)) != MAL_SUCCEED)
+				return msg;
+			if( !li && !timestamp_isnil(tlow) &&
+			    (msg = MTIMEtimestamp_add(&tlow, &tlow, &one)) != MAL_SUCCEED)
+				return msg;
 
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
@@ -633,7 +635,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if ( strcmp(oper,"<") == 0){
 				lng minone = -1;
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				MTIMEtimestamp_add(&hgh, &hgh, &minone);
+				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &minone)) != MAL_SUCCEED)
+					return msg;
 			} else
 			if ( strcmp(oper,"<=") == 0){
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp) ;
@@ -641,7 +644,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if ( strcmp(oper,">") == 0){
 				lng one = 1;
 				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				MTIMEtimestamp_add(&hgh, &hgh, &one);
+				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &one)) != MAL_SUCCEED)
+					return msg;
 			} else
 			if ( strcmp(oper,">=") == 0){
 				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
