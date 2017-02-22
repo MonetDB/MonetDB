@@ -444,9 +444,12 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		getModuleId(p) != groupRef )
 		return TRUE;
 
-	// all sqlcatalog routines are unsafe
-	// all oltp routines are unsafe
-	// all remote routines are unsafe
+	if ( getModuleId(p) == sqlcatalogRef)
+		return TRUE;
+	if ( getModuleId(p) == oltpRef)
+		return TRUE;
+	if ( getModuleId(p) == remoteRef)
+		return TRUE;
 	return FALSE;
 }
 
