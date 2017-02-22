@@ -119,7 +119,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --trace\n");
 	fprintf(stderr, "     --forcemito\n");
-	fprintf(stderr, "     --recycler\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
 	exit(xit);
@@ -269,7 +268,6 @@ main(int argc, char **av)
 		{ "optimizers", 0, 0, 0 },
 		{ "performance", 0, 0, 0 },
 		{ "forcemito", 0, 0, 0 },
-		{ "recycler", 0, 0, 0 },
 		{ "heaps", 0, 0, 0 },
 		{ 0, 0, 0, 0 }
 	};
