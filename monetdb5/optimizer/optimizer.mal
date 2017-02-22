@@ -82,14 +82,6 @@ pattern optimizer.deadcode(mod:str, fcn:str):str
 address OPTwrapper
 comment "Dead code optimizer";
 
-#opt_derivepath.mal
-
-pattern optimizer.derivePath():str
-address OPTwrapper;
-pattern optimizer.derivePath(mod:str, fcn:str):str
-address OPTwrapper
-comment "Join path constructor";
-
 #opt_emptybind.mal
 
 pattern optimizer.emptybind():str
@@ -164,13 +156,6 @@ pattern algebra.projectionpath(l:bat[:any]...):bat[:any]
 address ALGprojectionpath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
-#opt_joinselect
-pattern optimizer.joinselect():str
-address OPTwrapper;
-pattern optimizer.joinselect(mod:str, fcn:str):str
-address OPTwrapper
-comment "Replace select with join select";
-
 #opt_macro.mal
 
 pattern optimizer.macro(targetmod:str,targetfcn:str):void
@@ -226,39 +211,6 @@ pattern optimizer.json(mod:str, fcn:str):str
 address OPTwrapper
 comment "Unroll the mat.pack operation";
 
-#opt_origin
-pattern optimizer.origin():str
-address OPTwrapper;
-pattern optimizer.origin(mod:str, fcn:str):str
-address OPTwrapper
-comment "OID origin tracker";
-
-#opt_partitions.mal
-
-pattern optimizer.partitions():str
-address OPTwrapper;
-pattern optimizer.partitions(mod:str, fcn:str):str
-address OPTwrapper
-comment "Experiment with partitioned databases";
-
-#opt_prejoin.mal
-pattern optimizer.prejoin():str
-address OPTwrapper;
-pattern optimizer.prejoin(mod:str, fcn:str):str
-address OPTwrapper
-comment "Dead code optimizer";
-# command algebra.prejoin(a:bat[:oid],b:bat[:any_1])(c:bat[:oid],d:bat[:any_1])
-# address ALGprejoin
-# comment "Recluster the table to reduce random access behavior.";
-
-#opt_recycler.mal
-
-pattern optimizer.recycler():str
-address OPTwrapper;
-pattern optimizer.recycler(mod:str, fcn:str):str
-address OPTwrapper
-comment "Recycler marking and code injection";
-
 #opt_reduce.mal
 
 pattern optimizer.reduce():str
@@ -297,18 +249,6 @@ command inspect.getStatistics(nme:str):bat[:any_2]
 address QOTgetStatistics
 comment "Get optimizer property statistics 
 such as #calls, #total actions, #total time";
-
-#opt_trace.mal
-
-pattern optimizer.trace():str
-address OPTwrapper;
-pattern optimizer.trace(mod:str, fcn:str):str
-address OPTwrapper
-comment "Collect trace of a specific operation";
-
-# pattern mdb.collect(v:any_1):void
-# address OPTtraceCall
-# comment "Dump the previous instruction to a temporary file";
 
 #opt_pushselect.mal
 

@@ -575,7 +575,6 @@ setVariableScope(MalBlkPtr mb)
 		setVarEolife(mb,k,mb->stop);
 	} else {
 		setVarScope(mb,k,0);
-		mb->var[k].declared = 0;
 		setVarDeclared(mb,k,0);
 		setVarUpdated(mb,k,0);
 		setVarEolife(mb,k,0);
