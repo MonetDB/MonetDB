@@ -1473,11 +1473,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				k = getDestVar(q);
 			} else {
-				char *cmd = subselectRef;
-
-				if (s->flag != cmp_equal && s->flag != cmp_notequal)
-					cmd = thetasubselectRef;
-
 				if (get_cmp(s) == cmp_filter) {
 					node *n;
 					char *mod, *fimp;
@@ -1522,78 +1517,38 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					break;
 				}
 
+				q = newStmt(mb, algebraRef, thetasubselectRef);
+				q = pushArgument(mb, q, l);
+				if (sub > 0)
+					q = pushArgument(mb, q, sub);
+				q = pushArgument(mb, q, r);
 				switch (s->flag) {
-				case cmp_equal:{
-					q = newStmt(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
-					q = pushArgument(mb, q, r);
-					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, FALSE);
-					if (q == NULL)
-						return -1;
+				case cmp_equal:
+					q = pushStr(mb, q, "==");
 					break;
-				}
-				case cmp_notequal:{
-					q = newStmt(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
-					q = pushArgument(mb, q, r);
-					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, TRUE);
-					q = pushBit(mb, q, TRUE);
-					if (q == NULL)
-						return -1;
+				case cmp_notequal:
+					q = pushStr(mb, q, "!=");
 					break;
-				}
 				case cmp_lt:
-					q = newStmt(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
 					q = pushStr(mb, q, "<");
-					if (q == NULL)
-						return -1;
 					break;
 				case cmp_lte:
-					q = newStmt(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
 					q = pushStr(mb, q, "<=");
-					if (q == NULL)
-						return -1;
 					break;
 				case cmp_gt:
-					q = newStmt(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
 					q = pushStr(mb, q, ">");
-					if (q == NULL)
-						return -1;
 					break;
 				case cmp_gte:
-					q = newStmt(mb, algebraRef, cmd);
-					q = pushArgument(mb, q, l);
-					if (sub > 0)
-						q = pushArgument(mb, q, sub);
-					q = pushArgument(mb, q, r);
 					q = pushStr(mb, q, ">=");
-					if (q == NULL)
-						return -1;
 					break;
 				default:
 					showException(GDKout, SQL, "sql", "SQL2MAL: error impossible subselect compare\n");
+					if (q)
+						freeInstruction(q);
+					q = NULL;
 				}
+				if (q == NULL)
+					return -1;
 			}
 			if (q)
 				s->nr = getDestVar(q);

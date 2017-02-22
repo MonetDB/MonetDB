@@ -44,22 +44,22 @@ Ready.
 % 104 # length
 function user.s8_1():void;
     X_0:void := querylog.define("explain select * from test where value = 1;","sequential_pipe",12:int);
-    X_24 := bat.new(nil:str);
-    X_30 := bat.new(nil:int);
+    X_22 := bat.new(nil:str);
     X_28 := bat.new(nil:int);
-    X_27 := bat.new(nil:str);
-    X_26 := bat.new(nil:str);
+    X_26 := bat.new(nil:int);
+    X_25 := bat.new(nil:str);
+    X_24 := bat.new(nil:str);
     X_3 := sql.mvc();
     X_7:bat[:int] := sql.bind(X_3,"sys","test","value",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","test");
-    C_18 := algebra.subselect(X_7,C_4,1:int,1:int,true,true,false);
-    X_22 := algebra.projection(C_18,X_7);
-    X_31 := bat.append(X_24,"sys.test");
-    X_33 := bat.append(X_26,"value");
-    X_34 := bat.append(X_27,"int");
-    X_36 := bat.append(X_28,32:int);
-    X_38 := bat.append(X_30,0:int);
-    sql.resultSet(X_31,X_33,X_34,X_36,X_38,X_22);
+    C_18 := algebra.thetasubselect(X_7,C_4,1:int,"==");
+    X_20 := algebra.projection(C_18,X_7);
+    X_29 := bat.append(X_22,"sys.test");
+    X_31 := bat.append(X_24,"value");
+    X_32 := bat.append(X_25,"int");
+    X_34 := bat.append(X_26,32:int);
+    X_36 := bat.append(X_28,0:int);
+    sql.resultSet(X_29,X_31,X_32,X_34,X_36,X_20);
 end user.s8_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -313,22 +313,22 @@ end user.s16_1;
 % 105 # length
 function user.s18_1():void;
     X_0:void := querylog.define("explain select * from test where value <> 1;","sequential_pipe",12:int);
-    X_23 := bat.new(nil:str);
-    X_29 := bat.new(nil:int);
-    X_27 := bat.new(nil:int);
-    X_26 := bat.new(nil:str);
+    X_22 := bat.new(nil:str);
+    X_28 := bat.new(nil:int);
+    X_26 := bat.new(nil:int);
     X_25 := bat.new(nil:str);
+    X_24 := bat.new(nil:str);
     X_3 := sql.mvc();
     X_7:bat[:int] := sql.bind(X_3,"sys","test","value",0:int);
     C_4:bat[:oid] := sql.tid(X_3,"sys","test");
-    C_18 := algebra.subselect(X_7,C_4,1:int,1:int,true,true,true);
-    X_21 := algebra.projection(C_18,X_7);
-    X_30 := bat.append(X_23,"sys.test");
-    X_32 := bat.append(X_25,"value");
-    X_33 := bat.append(X_26,"int");
-    X_35 := bat.append(X_27,32:int);
-    X_37 := bat.append(X_29,0:int);
-    sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_21);
+    C_18 := algebra.thetasubselect(X_7,C_4,1:int,"!=");
+    X_20 := algebra.projection(C_18,X_7);
+    X_29 := bat.append(X_22,"sys.test");
+    X_31 := bat.append(X_24,"value");
+    X_32 := bat.append(X_25,"int");
+    X_34 := bat.append(X_26,32:int);
+    X_36 := bat.append(X_28,0:int);
+    sql.resultSet(X_29,X_31,X_32,X_34,X_36,X_20);
 end user.s18_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
