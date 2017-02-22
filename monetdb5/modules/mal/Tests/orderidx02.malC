@@ -16,7 +16,7 @@ bat.setAccess(bv,"r");
 
 vv:= algebra.slice(bv,0,10);
 
-s0:= algebra.subselect(vv,nil:bat[:oid],nil:int,nil:int,false,false,false);
+s0:= algebra.subselect(vv,nil:bat[:oid],nil:int,nil:int,true,true,false);
 s0v := algebra.projection(s0,vv);
 io.print(s0,s0v);
 
@@ -36,7 +36,7 @@ io.print(s3,s3v);
 bat.orderidx(vv,3);
 ord := bat.getorderidx(vv);
 io.print(ord,vv);
-x0:= algebra.subselect(vv,nil:bat[:oid],nil:int,nil:int,false,false,false);
+x0:= algebra.subselect(vv,nil:bat[:oid],nil:int,nil:int,true,true,false);
 x0v := algebra.projection(x0,vv);
 io.print(x0,x0v);
 

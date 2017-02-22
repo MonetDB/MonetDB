@@ -1,0 +1,1010 @@
+b := bat.new(:int);
+bat.append(b, 7);
+bat.append(b, 6);
+bat.append(b, 8);
+bat.append(b, nil:int);
+bat.append(b, 9);
+bat.append(b, 5);
+bat.append(b, 0);
+bat.append(b, 3);
+bat.append(b, 2);
+bat.append(b, 1);
+bat.append(b, 4);
+s := algebra.subsort(b, false, true);
+r := algebra.subsort(b, true, true);
+bat.setAccess(b, "r");
+bat.setAccess(s, "r");
+bat.setAccess(r, "r");
+
+# if tl and th are both nil, and li and hi are both true,
+# algebra.subselect translates th to NULL
+
+x := algebra.subselect(b, nil:int, nil:int, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nil
+io.print("nil");
+x := algebra.subselect(b, nil:int, nil:int, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, nil:int, nil:int, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, nil:int, nil:int, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, nil:int, nil:int, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, nil:int, nil:int, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, nil:int, nil:int, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, nil:int, nil:int, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+
+x := algebra.subselect(b, 4, nil:int, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(b, 4, nil:int, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(b, 4, nil:int, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(b, 4, nil:int, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(b, 4, nil:int, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(b, 4, nil:int, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(b, 4, nil:int, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(b, 4, nil:int, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+
+x := algebra.subselect(b, nil:int, 4, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(b, nil:int, 4, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(b, nil:int, 4, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(b, nil:int, 4, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(b, nil:int, 4, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(b, nil:int, 4, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(b, nil:int, 4, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(b, nil:int, 4, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+
+x := algebra.subselect(b, 4, 4, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4
+io.print("4");
+x := algebra.subselect(b, 4, 4, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 4, 4, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 4, 4, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 4, 4, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,5,6,7,8,9
+io.print("0,1,2,3,5,6,7,8,9");
+x := algebra.subselect(b, 4, 4, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, 4, 4, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, 4, 4, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+
+x := algebra.subselect(b, 3, 7, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 3,4,5,6,7
+io.print("3,4,5,6,7");
+x := algebra.subselect(b, 3, 7, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 3,4,5,6
+io.print("3,4,5,6");
+x := algebra.subselect(b, 3, 7, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7
+io.print("4,5,6,7");
+x := algebra.subselect(b, 3, 7, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6
+io.print("4,5,6");
+x := algebra.subselect(b, 3, 7, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,8,9
+io.print("0,1,2,8,9");
+x := algebra.subselect(b, 3, 7, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,7,8,9
+io.print("0,1,2,7,8,9");
+x := algebra.subselect(b, 3, 7, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,8,9
+io.print("0,1,2,3,8,9");
+x := algebra.subselect(b, 3, 7, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,7,8,9
+io.print("0,1,2,3,7,8,9");
+
+x := algebra.subselect(b, 7, 3, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+
+
+bat.orderidx(b,3);
+o := bat.getorderidx(b);
+io.print(o);
+x := algebra.subselect(b, nil:int, nil:int, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nil
+io.print("nil");
+x := algebra.subselect(b, nil:int, nil:int, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, nil:int, nil:int, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, nil:int, nil:int, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, nil:int, nil:int, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, nil:int, nil:int, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, nil:int, nil:int, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, nil:int, nil:int, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+
+x := algebra.subselect(b, 4, nil:int, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(b, 4, nil:int, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(b, 4, nil:int, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(b, 4, nil:int, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(b, 4, nil:int, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(b, 4, nil:int, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(b, 4, nil:int, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(b, 4, nil:int, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+
+x := algebra.subselect(b, nil:int, 4, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(b, nil:int, 4, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(b, nil:int, 4, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(b, nil:int, 4, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(b, nil:int, 4, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(b, nil:int, 4, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(b, nil:int, 4, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(b, nil:int, 4, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+
+x := algebra.subselect(b, 4, 4, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4
+io.print("4");
+x := algebra.subselect(b, 4, 4, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 4, 4, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 4, 4, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 4, 4, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,5,6,7,8,9
+io.print("0,1,2,3,5,6,7,8,9");
+x := algebra.subselect(b, 4, 4, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, 4, 4, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(b, 4, 4, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+
+x := algebra.subselect(b, 3, 7, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 3,4,5,6,7
+io.print("3,4,5,6,7");
+x := algebra.subselect(b, 3, 7, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 3,4,5,6
+io.print("3,4,5,6");
+x := algebra.subselect(b, 3, 7, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7
+io.print("4,5,6,7");
+x := algebra.subselect(b, 3, 7, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6
+io.print("4,5,6");
+x := algebra.subselect(b, 3, 7, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,8,9
+io.print("0,1,2,8,9");
+x := algebra.subselect(b, 3, 7, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,7,8,9
+io.print("0,1,2,7,8,9");
+x := algebra.subselect(b, 3, 7, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,8,9
+io.print("0,1,2,3,8,9");
+x := algebra.subselect(b, 3, 7, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,7,8,9
+io.print("0,1,2,3,7,8,9");
+
+x := algebra.subselect(b, 7, 3, true, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, true, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, false, true, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, false, false, false);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, true, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, true, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, false, true, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(b, 7, 3, false, false, true);
+z := algebra.projection(x, b);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+
+
+x := algebra.subselect(s, nil:int, nil:int, true, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nil
+io.print("nil");
+x := algebra.subselect(s, nil:int, nil:int, true, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(s, nil:int, nil:int, false, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(s, nil:int, nil:int, false, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(s, nil:int, nil:int, true, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(s, nil:int, nil:int, true, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, nil:int, nil:int, false, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, nil:int, nil:int, false, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+
+x := algebra.subselect(s, 4, nil:int, true, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(s, 4, nil:int, true, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(s, 4, nil:int, false, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(s, 4, nil:int, false, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(s, 4, nil:int, true, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(s, 4, nil:int, true, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(s, 4, nil:int, false, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(s, 4, nil:int, false, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+
+x := algebra.subselect(s, nil:int, 4, true, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(s, nil:int, 4, true, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(s, nil:int, 4, false, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(s, nil:int, 4, false, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(s, nil:int, 4, true, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(s, nil:int, 4, true, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(s, nil:int, 4, false, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(s, nil:int, 4, false, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+
+x := algebra.subselect(s, 4, 4, true, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4
+io.print("4");
+x := algebra.subselect(s, 4, 4, true, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, 4, 4, false, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, 4, 4, false, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, 4, 4, true, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,5,6,7,8,9
+io.print("0,1,2,3,5,6,7,8,9");
+x := algebra.subselect(s, 4, 4, true, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(s, 4, 4, false, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(s, 4, 4, false, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+
+x := algebra.subselect(s, 3, 7, true, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 3,4,5,6,7
+io.print("3,4,5,6,7");
+x := algebra.subselect(s, 3, 7, true, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 3,4,5,6
+io.print("3,4,5,6");
+x := algebra.subselect(s, 3, 7, false, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7
+io.print("4,5,6,7");
+x := algebra.subselect(s, 3, 7, false, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6
+io.print("4,5,6");
+x := algebra.subselect(s, 3, 7, true, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,8,9
+io.print("0,1,2,8,9");
+x := algebra.subselect(s, 3, 7, true, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,7,8,9
+io.print("0,1,2,7,8,9");
+x := algebra.subselect(s, 3, 7, false, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,8,9
+io.print("0,1,2,3,8,9");
+x := algebra.subselect(s, 3, 7, false, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,7,8,9
+io.print("0,1,2,3,7,8,9");
+
+x := algebra.subselect(s, 7, 3, true, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, 7, 3, true, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, 7, 3, false, true, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, 7, 3, false, false, false);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, 7, 3, true, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, 7, 3, true, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, 7, 3, false, true, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(s, 7, 3, false, false, true);
+z := algebra.projection(x, s);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+
+
+x := algebra.subselect(r, nil:int, nil:int, true, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nil
+io.print("nil");
+x := algebra.subselect(r, nil:int, nil:int, true, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(r, nil:int, nil:int, false, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(r, nil:int, nil:int, false, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(r, nil:int, nil:int, true, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(r, nil:int, nil:int, true, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, nil:int, nil:int, false, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, nil:int, nil:int, false, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+
+x := algebra.subselect(r, 4, nil:int, true, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(r, 4, nil:int, true, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(r, 4, nil:int, false, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(r, 4, nil:int, false, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(r, 4, nil:int, true, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(r, 4, nil:int, true, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(r, 4, nil:int, false, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(r, 4, nil:int, false, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+
+x := algebra.subselect(r, nil:int, 4, true, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(r, nil:int, 4, true, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(r, nil:int, 4, false, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4");
+x := algebra.subselect(r, nil:int, 4, false, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3");
+x := algebra.subselect(r, nil:int, 4, true, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(r, nil:int, 4, true, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+x := algebra.subselect(r, nil:int, 4, false, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9");
+x := algebra.subselect(r, nil:int, 4, false, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9");
+
+x := algebra.subselect(r, 4, 4, true, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4
+io.print("4");
+x := algebra.subselect(r, 4, 4, true, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, 4, 4, false, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, 4, 4, false, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, 4, 4, true, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,5,6,7,8,9
+io.print("0,1,2,3,5,6,7,8,9");
+x := algebra.subselect(r, 4, 4, true, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(r, 4, 4, false, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+x := algebra.subselect(r, 4, 4, false, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
+
+x := algebra.subselect(r, 3, 7, true, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 3,4,5,6,7
+io.print("3,4,5,6,7");
+x := algebra.subselect(r, 3, 7, true, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 3,4,5,6
+io.print("3,4,5,6");
+x := algebra.subselect(r, 3, 7, false, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6,7
+io.print("4,5,6,7");
+x := algebra.subselect(r, 3, 7, false, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 4,5,6
+io.print("4,5,6");
+x := algebra.subselect(r, 3, 7, true, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,8,9
+io.print("0,1,2,8,9");
+x := algebra.subselect(r, 3, 7, true, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,7,8,9
+io.print("0,1,2,7,8,9");
+x := algebra.subselect(r, 3, 7, false, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,8,9
+io.print("0,1,2,3,8,9");
+x := algebra.subselect(r, 3, 7, false, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # 0,1,2,3,7,8,9
+io.print("0,1,2,3,7,8,9");
+
+x := algebra.subselect(r, 7, 3, true, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, 7, 3, true, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, 7, 3, false, true, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, 7, 3, false, false, false);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, 7, 3, true, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, 7, 3, true, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, 7, 3, false, true, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
+x := algebra.subselect(r, 7, 3, false, false, true);
+z := algebra.projection(x, r);
+z := algebra.subsort(z, false, true);
+io.print(z);                    # nothing
+io.print("nothing");
