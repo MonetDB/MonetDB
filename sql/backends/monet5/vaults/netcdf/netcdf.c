@@ -185,20 +185,24 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 		bte sta = (bte) start, ste = (bte) step, sto = (bte) stop;
 
 		bn = COLnew(0, TYPE_bte, cnt, TRANSIENT);
+		if ( bn == NULL)
+			throw(MAL, "array.series", MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, bte);
 	} else if (stop <= (int) GDK_sht_max) {
 		sht sta = (sht) start, ste = (sht) step, sto = (sht) stop;
 
 		bn = COLnew(0, TYPE_sht, cnt, TRANSIENT);
+		if ( bn == NULL)
+			throw(MAL, "array.series", MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, sht);
 	} else {
 		int sta = (int) start, ste = (int) step, sto = (int) stop;
 
 		bn = COLnew(0, TYPE_int, cnt, TRANSIENT);
+		if ( bn == NULL)
+			throw(MAL, "array.series", MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, int);
 	}
-	if ( bn == NULL)
-		throw(MAL, "array.series", MAL_MALLOC_FAIL);
 
 	BATsetcount(bn, cnt);
 	bn->tsorted = (cnt <= 1 || (series == 1 && step > 0));

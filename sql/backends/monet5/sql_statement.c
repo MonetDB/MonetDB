@@ -1264,84 +1264,39 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			return NULL;
 		k = getDestVar(q);
 	} else {
-		const char *cmd = selectRef;
-
-		if (cmptype != cmp_equal && cmptype != cmp_notequal)
-			cmd = thetaselectRef;
-
 		assert (cmptype != cmp_filter);
+		q = newStmt(mb, algebraRef, thetaselectRef);
+		q = pushArgument(mb, q, l);
+		if (sub)
+			q = pushArgument(mb, q, sub->nr);
+		q = pushArgument(mb, q, r);
 		switch (cmptype) {
-		case cmp_equal:{
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
-			q = pushArgument(mb, q, r);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, FALSE);
-			if (q == NULL)
-				return NULL;
+		case cmp_equal:
+			q = pushStr(mb, q, "==");
 			break;
-		}
-		case cmp_notequal:{
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
-			q = pushArgument(mb, q, r);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, TRUE);
-			if (q == NULL)
-				return NULL;
+		case cmp_notequal:
+			q = pushStr(mb, q, "!=");
 			break;
-		}
 		case cmp_lt:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, "<");
-			if (q == NULL)
-				return NULL;
 			break;
 		case cmp_lte:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, "<=");
-			if (q == NULL)
-				return NULL;
 			break;
 		case cmp_gt:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, ">");
-			if (q == NULL)
-				return NULL;
 			break;
 		case cmp_gte:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, ">=");
-			if (q == NULL)
-				return NULL;
 			break;
 		default:
 			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
+			if (q)
+				freeInstruction(q);
+			q = NULL;
 		}
+		if (q == NULL)
+			return NULL;
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_uselect);

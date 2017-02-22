@@ -1598,6 +1598,8 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 				logger_fatal("Logger_new: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
 		} else {
 			lg->dsnapshots = logbat_new(TYPE_oid, 1, PERSISTENT);
+			if (lg->dsnapshots == NULL)
+				logger_fatal("Logger_new: cannot create dsnapshot bat", 0, 0, 0);
 			snprintf(bak, sizeof(bak), "%s_dsnapshots", fn);
 			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0)
 				logger_fatal("Logger_new: BBPrename to %s failed", bak, 0, 0);
@@ -2512,6 +2514,9 @@ bm_commit(logger *lg)
 	BAT *b = lg->catalog_bid;
 	BAT *n = logbat_new(TYPE_str, BATcount(lg->freed), TRANSIENT);
 	gdk_return res;
+
+	if (n == NULL)
+		return LOG_ERR;
 
 	/* subcommit the freed bats */
 	if (BATcount(lg->freed)) {

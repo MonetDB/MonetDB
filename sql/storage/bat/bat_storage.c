@@ -491,6 +491,8 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 		} else if (oc_isnew && !bat->bid) { 
 			/* move the bat to the new col, fixup the old col*/
 			b = COLnew((oid) obat->cnt, type, sz, PERSISTENT);
+			if (b == NULL)
+				return LOG_ERR;
 			bat_set_access(b, BAT_READ);
 			obat->ibid = temp_create(b);
 			obat->ibase = bat->ibase = (oid) obat->cnt;
@@ -503,6 +505,8 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 				bat->bid = bat->ibid;
 
 				b = COLnew(bat->ibase, type, sz, PERSISTENT);
+				if (b == NULL)
+					return LOG_ERR;
 				bat_set_access(b, BAT_READ);
 				bat->ibid = temp_create(b);
 			}
@@ -517,15 +521,21 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 			if (c_isnew && tr->parent == gtrans) { 
 				obat->uibid = ebat_copy(bat->uibid, 0, 0);
 				obat->uvbid = ebat_copy(bat->uvbid, 0, 0);
+				if (obat->uibid == BID_NIL ||
+				    obat->uvbid == BID_NIL)
+					return LOG_ERR;
 			} else {
 				bat->uibid = ebat_copy(bat->uibid, 0, 0); 
 				bat->uvbid = ebat_copy(bat->uvbid, 0, 0); 
+				if (bat->uibid == BID_NIL ||
+				    bat->uvbid == BID_NIL)
+					return LOG_ERR;
 			}
-			if (bat->uibid == BID_NIL || bat->uvbid == BID_NIL) 
-				return LOG_ERR;
 		} else {
 			bat->uibid = e_bat(TYPE_oid);
 			obat->uvbid = e_bat(type);
+			if (bat->uibid == BID_NIL || obat->uvbid == BID_NIL)
+				return LOG_ERR;
 		}
 	}
 	if (bat->bid)
@@ -1183,14 +1193,19 @@ new_persistent_delta( sql_delta *bat, int sz )
 		bat_destroy(i);
 	} else {
 		BAT *i, *b = temp_descriptor(bat->ibid);
-		int type = b->ttype;
+		int type;
 
+		if (b == NULL)
+			return LOG_ERR;
+		type = b->ttype;
 		bat->bid = bat->ibid;
 		bat->cnt = bat->ibase = BATcount(b);
 		bat->ucnt = 0;
 		bat_destroy(b);
 
 		i = COLnew(bat->ibase, type, sz, PERSISTENT);
+		if (i == NULL)
+			return LOG_ERR;
 		bat_set_access(i, BAT_READ);
 		bat->ibid = temp_create(i);
 		bat_destroy(i);

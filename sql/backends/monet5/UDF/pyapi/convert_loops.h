@@ -58,6 +58,10 @@
 #if defined (HAVE_FORK) && !defined(HAVE_EMBEDDED)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
+        if (bat == NULL) {						\
+                msg = createException(MAL, "pyapi.eval", "Cannor create BAT"); \
+                goto wrapup;						\
+        }								\
         bat->tnil = 0; bat->tnonil = 1;                                                   \
         bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
         /*Change nil values to the proper values, if they exist*/                                                       \
@@ -106,6 +110,10 @@
 #else
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
+        if (bat == NULL) {						\
+                msg = createException(MAL, "pyapi.eval", "Cannor create BAT"); \
+                goto wrapup;						\
+        }								\
         bat->tnil = 0; bat->tnonil = 1;                                                   \
         bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
         /*Change nil values to the proper values, if they exist*/                                                       \
@@ -402,6 +410,10 @@
             }                                                                                                                                                  \
         } else {                                                                                                                                               \
             bat = COLnew(seqbase, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                   \
+            if (bat == NULL) {						\
+                msg = createException(MAL, "pyapi.eval", "Cannor create BAT"); \
+                goto wrapup;						\
+            }								\
             bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                                                              \
             NP_INSERT_BAT(bat, mtpe, 0);                                                                                                                       \
             if (!mask) { bat->tnil = 0; bat->tnonil = 0; }                                                                                                 \
