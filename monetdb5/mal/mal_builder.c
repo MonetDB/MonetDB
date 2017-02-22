@@ -178,6 +178,21 @@ newExitStmt(MalBlkPtr mb, str nme)
 	return q;
 }
 
+InstrPtr
+pushEndInstruction(MalBlkPtr mb)
+{
+    InstrPtr p;
+
+    p = newInstruction(mb,NULL, NULL);
+    p->token = ENDsymbol;
+    p->barrier = 0;
+    p->argc = 0;
+    p->retc = 0;
+    p->argv[0] = 0;
+    pushInstruction(mb, p);
+	return p;
+}
+
 int
 getIntConstant(MalBlkPtr mb, int val)
 {
@@ -526,7 +541,7 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 		cst.vtype = TYPE_bat;
 		cst.val.bval = bat_nil;
 		_t = defConstant(mb,TYPE_bat,&cst);
-		mb->var[_t]->type = tpe;
+		getVarType(mb,_t) = tpe;
 	}
 	q= pushArgument(mb, q, _t);
 	setVarUDFtype(mb,getArg(q,q->argc-1)); /* needed */

@@ -256,8 +256,8 @@ This information can be used to determine memory footprint and variable life tim
 				logadd("{");
 				logadd("\"index\":\"%d\",%s", j,pret);
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
-				if( mb->var[getArg(pci,j)]->stc){
-					InstrPtr stc = getInstrPtr(mb, mb->var[getArg(pci,j)]->stc);
+				if( getVarSTC(mb,getArg(pci,j))){
+					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
 					if(stc && strcmp(getModuleId(stc),"sql") ==0  && strncmp(getFunctionId(stc),"bind",4)==0)
 						logadd("\"alias\":\"%s.%s.%s\",%s", 
 							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,

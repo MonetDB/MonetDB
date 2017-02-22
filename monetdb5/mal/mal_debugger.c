@@ -66,12 +66,11 @@ mdbInit(void)
 	/*
 	 * Each client has its own breakpoint administration, kept in a
 	 * global table.  Although a little space consumptive, it is the
-	 * easiest to maintain and much less expensive than reserving
-	 * debugger space in each instruction.
+	 * easiest to maintain and much less expensive as reserving debugger
+	 * space in each instruction.
 	 */
-	if (mdbTable)
-		memset(mdbTable, 0, sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
-	else if ((mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS)) == NULL) {
+	mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
+	if (mdbTable == NULL) {
 		showException(GDKout,MAL, "mdbInit",MAL_MALLOC_FAIL);
 		return -1;
 	}

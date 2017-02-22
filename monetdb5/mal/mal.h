@@ -197,7 +197,7 @@ typedef struct MALBLK {
 	int vtop;				/* next free slot */
 	int vsize;				/* size of variable arena */
 	int vid;	 			/* generate local variable counter */
-	VarRecord **var;			/* Variable table */
+	VarRecord *var;			/* Variable table */
 	int stop;				/* next free slot */
 	int ssize;				/* byte size of arena */
 	InstrPtr *stmt;				/* Instruction location */

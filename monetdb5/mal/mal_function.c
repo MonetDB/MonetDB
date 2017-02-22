@@ -33,7 +33,7 @@ Symbol newFunction(str mod, str nme,int kind){
 		return NULL;
 	}
 
-	p = newInstruction(NULL,mod,nme);
+	p = newInstruction(NULL, mod, nme);
 	if (p == NULL) {
 		freeSymbol(s);
 		return NULL;
@@ -570,14 +570,15 @@ setVariableScope(MalBlkPtr mb)
 	for (k = 0; k < mb->vtop; k++)
 	if( isVarConstant(mb,k)){
 		setVarScope(mb,k,0);
-		mb->var[k]->declared = 0;
-		mb->var[k]->updated = 0;
-		mb->var[k]->eolife = mb->stop;
+		setVarDeclared(mb,k,0);
+		setVarUpdated(mb,k,0);
+		setVarEolife(mb,k,mb->stop);
 	} else {
 		setVarScope(mb,k,0);
-		mb->var[k]->declared = 0;
-		mb->var[k]->updated = 0;
-		mb->var[k]->eolife = 0;
+		mb->var[k].declared = 0;
+		setVarDeclared(mb,k,0);
+		setVarUpdated(mb,k,0);
+		setVarEolife(mb,k,0);
 	}
 
 	for (pc = 0; pc < mb->stop; pc++) {
@@ -598,20 +599,20 @@ setVariableScope(MalBlkPtr mb)
 
 		for (k = 0; k < p->argc; k++) {
 			int v = getArg(p,k);
-			if( isVarConstant(mb,v) && mb->var[v]->updated == 0)
-				mb->var[v]->updated= pc;
+			if( isVarConstant(mb,v) && getVarUpdated(mb,v) == 0)
+				setVarUpdated(mb,v, pc);
 
-			if (mb->var[v]->declared == 0 ){
-				mb->var[v]->declared = pc;
+			if ( getVarDeclared(mb,v) == 0 ){
+				setVarDeclared(mb,v, pc);
 				setVarScope(mb,v,depth);
 			}
 			if (k < p->retc )
-				mb->var[v]->updated= pc;
+				setVarUpdated(mb,v, pc);
 			if ( getVarScope(mb,v) == depth )
-				mb->var[v]->eolife = pc;
+				setVarEolife(mb,v,pc);
 
 			if ( k >= p->retc && getVarScope(mb,v) < depth )
-				mb->var[v]->eolife = -1;
+				setVarEolife(mb,v,-1);
 		}
 		/*
 		 * At a block exit we can finalize all variables defined within that block.
@@ -620,10 +621,10 @@ setVariableScope(MalBlkPtr mb)
 		 */
 		if( blockExit(p) ){
 			for (k = 0; k < mb->vtop; k++)
-			if ( mb->var[k]->eolife == 0 && getVarScope(mb,k) ==depth )
-				mb->var[k]->eolife = pc;
-			else if ( mb->var[k]->eolife == -1 )
-				mb->var[k]->eolife = pc;
+			if ( getVarEolife(mb,k) == 0 && getVarScope(mb,k) ==depth )
+				setVarEolife(mb,k,pc);
+			else if ( getVarEolife(mb,k) == -1 )
+				setVarEolife(mb,k,pc);
 			
 			if( dflow == depth)
 				dflow= -1;
@@ -631,8 +632,8 @@ setVariableScope(MalBlkPtr mb)
 		}
 	}
 	for (k = 0; k < mb->vtop; k++)
-		if( mb->var[k]->eolife == 0)
-			mb->var[k]->eolife = mb->stop-1;
+		if( getVarEolife(mb,k) == 0)
+			setVarEolife(mb,k, mb->stop-1);
 }
 
 int
@@ -705,8 +706,8 @@ malGarbageCollector(MalBlkPtr mb)
 
 	for (i = 0; i < mb->vtop; i++)
 		if( isVarCleanup(mb,i) && getEndScope(mb,i) >= 0) {
-			mb->var[i]->eolife = getEndScope(mb,i);
-			mb->stmt[mb->var[i]->eolife]->gc |= GARBAGECONTROL;
+			setVarEolife(mb,i, getEndScope(mb,i));
+			mb->stmt[getVarEolife(mb,i)]->gc |= GARBAGECONTROL;
 		}
 }
 /*
@@ -743,6 +744,8 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 	short blks[MAXDEPTH], top= 0, blkId=1;
 	int dflow = -1;
 
+	if( mb->errors)
+		return;
 	blks[top] = blkId;
 
 	/* initialize the scope */

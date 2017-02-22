@@ -10273,8 +10273,6 @@ Ready.
 [ "mcurl",	"putrequest",	"command mcurl.putrequest(s:str):str ",	"CURLputRequest;",	"Perform a http put request"	]
 [ "mdb",	"List",	"pattern mdb.List(M:str, F:str):void ",	"MDBlist3Detail;",	"Dump the routine M.F on standard out."	]
 [ "mdb",	"List",	"pattern mdb.List():void ",	"MDBlistDetail;",	"Dump the current routine on standard out."	]
-[ "mdb",	"dot",	"pattern mdb.dot(M:str, F:str, s:str):void ",	"MDBshowFlowGraph;",	"Dump the data flow of the function \n\tM.F in a format recognizable by the \n\tcommand 'dot' on the file s"	]
-[ "mdb",	"dot",	"pattern mdb.dot(s:str):void ",	"MDBshowFlowGraph;",	"Dump the data flow of the current routine in a format recognizable by the command 'dot' to the file s"	]
 [ "mdb",	"dump",	"pattern mdb.dump():void ",	"MDBdump;",	"Dump instruction, stacktrace, and stack"	]
 [ "mdb",	"getContext",	"command mdb.getContext(s:str):str ",	"MDBgetExceptionContext;",	"Extract the context string from the exception message"	]
 [ "mdb",	"getDebug",	"command mdb.getDebug():int ",	"MDBgetDebug;",	"Get the kernel debugging bit-set.\nSee the MonetDB configuration file for details"	]

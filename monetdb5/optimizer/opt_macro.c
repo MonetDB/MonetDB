@@ -128,8 +128,8 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	/* add all variables of the new block to the target environment */
 	for (n = 0; n < mc->vtop; n++) {
-		if (isExceptionVariable(mc->var[n]->id)) {
-			nv[n] = newVariable(mb, mc->var[n]->id, strlen(mc->var[n]->id), TYPE_str);
+		if (isExceptionVariable(getVarName(mc,n))) {
+			nv[n] = newVariable(mb, getVarName(mc,n), strlen(getVarName(mc,n)), TYPE_str);
 			if (isVarUDFtype(mc,n))
 				setVarUDFtype(mb,nv[n]);
 		} else if (isVarTypedef(mc,n)) {

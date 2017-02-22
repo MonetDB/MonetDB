@@ -13,9 +13,9 @@
 #include "mal_module.h"
 #include "mal_resolve.h"
 
-#define getLastUpdate(L,I)	((L)->var[I]->updated)
-#define getEndScope(L,I)	((L)->var[I]->eolife)
-#define getBeginScope(L,I)	((L)->var[I]->declared)
+#define getLastUpdate(L,I)	((L)->var[I].updated)
+#define getEndScope(L,I)	((L)->var[I].eolife)
+#define getBeginScope(L,I)	((L)->var[I].declared)
 
 /* #define DEBUG_MAL_FCN */
 /* #define DEBUG_CLONE */
