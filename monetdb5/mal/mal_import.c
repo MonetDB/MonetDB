@@ -222,7 +222,7 @@ malInclude(Client c, str name, int listing)
 				parseMAL(c, c->curprg, 1);
 				bstream_destroy(c->fdin);
 			} else {
-				GDKfree(s); // not interested in error here
+				freeException(s); // not interested in error here
 				s = MAL_SUCCEED;
 			}
 			if (p)
