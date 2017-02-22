@@ -4,6 +4,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
+# All routines are unsafe
 module remote;
 
 command prelude():void
@@ -14,61 +15,61 @@ command epilogue():void
 address RMTepilogue
 comment "release the resources held by the remote module";
 
-command resolve(pattern:str):bat[:str]
+unsafe command resolve(pattern:str):bat[:str]
 address RMTresolve
 comment "resolve a pattern against Merovingian and return the URIs";
 
-command connect(uri:str, user:str, passwd:str):str
+unsafe command connect(uri:str, user:str, passwd:str):str
 address RMTconnect
 comment "returns a newly created connection for uri, using user name and password";
-command connect(uri:str, user:str, passwd:str, scen:str):str
+unsafe command connect(uri:str, user:str, passwd:str, scen:str):str
 address RMTconnectScen
 comment "returns a newly created connection for uri, using user name, password and scenario";
 
-command disconnect(conn:str):void
+unsafe command disconnect(conn:str):void
 address RMTdisconnect
 comment "disconnects the connection pointed to by handle (received from a call to connect()";
 
-pattern get(conn:str, ident:str):any
+unsafe pattern get(conn:str, ident:str):any
 address RMTget
 comment "retrieves a copy of remote object ident";
 
-pattern put(conn:str, object:any):str
+unsafe pattern put(conn:str, object:any):str
 address RMTput
 comment "copies object to the remote site and returns its identifier";
 
-pattern register(conn:str, mod:str, fcn:str):void
+unsafe pattern register(conn:str, mod:str, fcn:str):void
 address RMTregister
 comment "register <mod>.<fcn> at the remote site";
 
-pattern exec(conn:str, mod:str, func:str):str
+unsafe pattern exec(conn:str, mod:str, func:str):str
 address RMTexec
 comment "remotely executes <mod>.<func> and returns the handle to its result";
-pattern exec(conn:str, mod:str, func:str):str...
+unsafe pattern exec(conn:str, mod:str, func:str):str...
 address RMTexec
 comment "remotely executes <mod>.<func> and returns the handle to its result";
-pattern exec(conn:str, mod:str, func:str, :str...):str
+unsafe pattern exec(conn:str, mod:str, func:str, :str...):str
 address RMTexec
 comment "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
-pattern exec(conn:str, mod:str, func:str, :str...):str...
+unsafe pattern exec(conn:str, mod:str, func:str, :str...):str...
 address RMTexec
 comment "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
-command isalive(conn:str):int
+unsafe command isalive(conn:str):int
 address RMTisalive
 comment "check if conn is still valid and connected";
 
-pattern batload(tt:any_1, size:int):bat[:any_1]
+unsafe pattern batload(tt:any_1, size:int):bat[:any_1]
 address RMTbatload
 comment "create a BAT of the given type and size, and load values from the input stream";
 
-pattern batbincopy(b:bat[:any]):void
+unsafe pattern batbincopy(b:bat[:any]):void
 address RMTbincopyto
 comment "dump BAT b in binary form to the stream";
-pattern batbincopy():bat[:any]
+unsafe pattern batbincopy():bat[:any]
 address RMTbincopyfrom
 comment "store the binary BAT data in the BBP and return as BAT";
 
-pattern bintype():void
+unsafe pattern bintype():void
 address RMTbintype
 comment "print the binary type of this mserver5";
 

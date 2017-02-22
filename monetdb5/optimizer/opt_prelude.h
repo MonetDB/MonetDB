@@ -72,7 +72,6 @@ mal_export  str columnRef;
 mal_export  str commitRef;
 mal_export  str columnBindRef;
 mal_export  str connectRef;
-mal_export  str constraintsRef;
 mal_export  str countRef;
 mal_export  str subcountRef;
 mal_export  str copyRef;
