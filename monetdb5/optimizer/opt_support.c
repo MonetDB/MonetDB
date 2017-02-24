@@ -146,9 +146,10 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
-					msg= createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
+					str nmsg= createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
 					GDKfree(place);
-					return msg;
+					GDKfree(msg);
+					return nmsg;
 				}
 				pc= -1;
 			}
