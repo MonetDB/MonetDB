@@ -180,8 +180,7 @@ typedef struct {
 	lng ticks;					/* total micro seconds spent in last call */
 	int calls;					/* number of calls made to this instruction */
 	lng totticks;				/* total time spent on this instruction. */
-	lng rbytes;					/* accumulated number of bytes read, currently ignored */
-	lng wbytes;					/* accumulated number of bytes produced */
+	lng wbytes;					/* number of bytes produced in last instruction */
 	/* the core admin */
 	str modname;				/* module context, reference into namespace */
 	str fcnname;				/* function name, reference into namespace */
