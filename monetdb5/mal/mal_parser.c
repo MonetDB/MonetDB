@@ -145,6 +145,7 @@ static int
 typeidLength(Client cntxt)
 {
 	int l;
+	char id[IDLENGTH], *t= id;
 	str s;
 	skipSpace(cntxt);
 	s = CURRENT(cntxt);
@@ -152,13 +153,16 @@ typeidLength(Client cntxt)
 	if (!idCharacter[(int) (*s)])
 		return 0;
 	l = 1;
-	s++;
-	idCharacter[TMPMARKER] = 0;
+	*t++ = *s++;
 	while (l < IDLENGTH && (idCharacter[(int) (*s)] || isdigit(*s)) ) {
-		s++;
+		*t++ = *s++;
 		l++;
 	}
-	idCharacter[TMPMARKER] = 1;
+	/* recognize the special type variables {any, any_<nr>} */
+	if( strncmp(id, "any",3) == 0)
+		return 3;
+	if( strncmp(id, "any_",4) == 0)
+		return 4;
 	return l;
 }
 
