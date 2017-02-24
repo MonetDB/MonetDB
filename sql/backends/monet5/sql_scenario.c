@@ -1146,7 +1146,7 @@ SQLparser(Client c)
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (opt ) {
-			str msg = SQLoptimizeQuery(c, c->curprg->def);
+			msg = SQLoptimizeQuery(c, c->curprg->def);
 
 			if (msg != MAL_SUCCEED) {
 				sqlcleanup(m, err);

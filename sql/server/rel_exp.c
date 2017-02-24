@@ -319,7 +319,7 @@ exp_atom_flt(sql_allocator *sa, flt f)
 {
 	sql_subtype it; 
 
-	sql_find_subtype(&it, "double", 24, 0);
+	sql_find_subtype(&it, "real", 24, 0);
 	return exp_atom(sa, atom_float(sa, &it, (dbl)f ));
 }
 
