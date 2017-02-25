@@ -134,6 +134,18 @@ newMalBlk(int elements)
 }
 
 /* We only grow until the MAL block can be used */
+static int growBlk(int elm)
+{
+	int steps =1 ;
+	int old = elm;
+
+	while( old / 2 > 1){
+		old /= 2;
+		steps++;
+	}
+	return elm + steps * STMT_INCREMENT;
+}
+
 int
 resizeMalBlk(MalBlkPtr mb, int elements)
 {
@@ -642,7 +654,7 @@ makeVarSpace(MalBlkPtr mb)
 {
 	if (mb->vtop >= mb->vsize) {
 		VarRecord *new;
-		int s = mb->vsize + STMT_INCREMENT;
+		int s = growBlk(mb->vsize);
 
 		new = (VarRecord*) GDKrealloc(mb->var, s * sizeof(VarRecord));
 		if (new == NULL) {
@@ -650,7 +662,7 @@ makeVarSpace(MalBlkPtr mb)
 			showException(GDKout, MAL, "newMalBlk",MAL_MALLOC_FAIL);
 			return -1;
 		}
-		memset( ((char*) new) + mb->vsize * sizeof(VarRecord), 0, STMT_INCREMENT * sizeof(VarRecord));
+		memset( ((char*) new) + mb->vsize * sizeof(VarRecord), 0, (s- mb->vsize) * sizeof(VarRecord));
 		mb->vsize = s;
 		mb->var = new;
 	}
@@ -1368,9 +1380,9 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 		return;
 
 	if (mb->stop + 1 >= mb->ssize) {
-		if( resizeMalBlk(mb,mb->ssize + STMT_INCREMENT)){
+		if( resizeMalBlk(mb, growBlk(mb->ssize)) ){
 			/* perhaps we can continue with a smaller increment.
-			 * But we block remains marked as faulty.
+			 * But the block remains marked as faulty.
 			 */
 			if( resizeMalBlk(mb,mb->ssize + 1)){
 				/* we are now left with the situation that the new instruction is dangling .
