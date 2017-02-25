@@ -21,6 +21,7 @@ mal_export InstrPtr newExitStmt(MalBlkPtr mb, str nme);
 mal_export InstrPtr newReturnStmt(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
 mal_export InstrPtr pushSht(MalBlkPtr mb, InstrPtr q, sht val);
+mal_export InstrPtr pushEndInstruction(MalBlkPtr mb);   
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
 mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, lng val);
 #ifdef HAVE_HGE

@@ -888,7 +888,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		InstrPtr p = getInstrPtr(curBlk, i);
 		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
 			continue;
-		sideeffects = sideeffects || hasSideEffects(p, FALSE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)); 
+		sideeffects = sideeffects || hasSideEffects(curBlk, p, FALSE); 
 		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);
 		if (p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;

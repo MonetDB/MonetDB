@@ -472,6 +472,8 @@ rel_select_add_exp(sql_allocator *sa, sql_rel *l, sql_exp *e)
 		sql_exp *t = exp_atom_bool(sa, 1);
 		e = exp_compare(sa, e, t, cmp_equal);
 	}
+	if (!l->exps)
+		l->exps = new_exp_list(sa);
 	append(l->exps, e);
 }
 

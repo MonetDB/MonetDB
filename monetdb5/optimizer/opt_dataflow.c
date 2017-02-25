@@ -59,8 +59,8 @@ simpleFlow(InstrPtr *old, int start, int last)
 }
 
 // take care of side-effects in updates
-static void setAssigned(InstrPtr p, int k, int *assigned){
-	if ( isUpdateInstruction(p) || hasSideEffects(p,TRUE))
+static void setAssigned(MalBlkPtr mb, InstrPtr p, int k, int *assigned){
+	if ( isUpdateInstruction(p) || hasSideEffects(mb,p,TRUE))
 		assigned[getArg(p,p->retc)] ++;
 	assigned[getArg(p,k)]++;
 }
@@ -103,7 +103,7 @@ dataflowConflict(Client cntxt, MalBlkPtr mb,InstrPtr p)
 	case CMDcall:
 	case FACcall:
 	case FCNcall:
-		return (hasSideEffects(p,FALSE) || isUnsafeFunction(p) );
+		return (hasSideEffects(mb,p,FALSE) || isUnsafeFunction(p) );
 	}
 	return TRUE;
 }
@@ -275,7 +275,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		} 
 		// remember you assigned to variables
 		for ( k = 0; k < p->retc; k++)
-			setAssigned(p,k,assigned);
+			setAssigned(mb,p,k,assigned);
 	}
 	/* take the remainder as is */
 	for (; i<slimit; i++) 

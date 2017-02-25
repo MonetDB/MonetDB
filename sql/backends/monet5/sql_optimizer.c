@@ -217,9 +217,9 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	if (mb->stop > 0 &&
 	    mb->stmt[mb->stop-1]->token == REMsymbol &&
 	    mb->stmt[mb->stop-1]->argc > 0 &&
-	    mb->var[mb->stmt[mb->stop-1]->argv[0]]->value.vtype == TYPE_str &&
-	    mb->var[mb->stmt[mb->stop-1]->argv[0]]->value.val.sval &&
-	    strncmp(mb->var[mb->stmt[mb->stop-1]->argv[0]]->value.val.sval, "total", 5) == 0)
+	    mb->var[mb->stmt[mb->stop-1]->argv[0]].value.vtype == TYPE_str &&
+	    mb->var[mb->stmt[mb->stop-1]->argv[0]].value.val.sval &&
+	    strncmp(mb->var[mb->stmt[mb->stop-1]->argv[0]].value.val.sval, "total", 5) == 0)
 		return MAL_SUCCEED; /* already optimized */
 
 	be = (backend *) c->sqlcontext;

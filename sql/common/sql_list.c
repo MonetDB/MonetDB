@@ -15,6 +15,8 @@ node_create(sql_allocator *sa, void *data)
 {
 	node *n = (sa)?SA_NEW(sa, node):MNEW(node);
 
+	if (n == NULL)
+		return NULL;
 	n->next = NULL;
 	n->data = data;
 	return n;
@@ -130,6 +132,8 @@ list_append(list *l, void *data)
 {
 	node *n = node_create(l->sa, data);
 
+	if (n == NULL)
+		return NULL;
 	if (l->cnt) {
 		l->t->next = n;
 	} else {
@@ -141,7 +145,10 @@ list_append(list *l, void *data)
 	if (l->ht) {
 		int key = l->ht->key(data);
 	
-		hash_add(l->ht, key, data);
+		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
+			return NULL;
+		}
 	}
 	MT_lock_unset(&l->ht_lock);
 	return l;
@@ -153,6 +160,8 @@ list_append_before(list *l, node *m, void *data)
 	node *p = l->h;
 	node *n = node_create(l->sa, data);
 
+	if (n == NULL)
+		return NULL;
 	n->next = m;
 	if (p == m){
 		l->h = n;
@@ -166,7 +175,10 @@ list_append_before(list *l, node *m, void *data)
 	if (l->ht) {
 		int key = l->ht->key(data);
 	
-		hash_add(l->ht, key, data);
+		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
+			return NULL;
+		}
 	}
 	MT_lock_unset(&l->ht_lock);
 	return l;
@@ -177,6 +189,8 @@ list_prepend(list *l, void *data)
 {
 	node *n = node_create(l->sa, data);
 
+	if (n == NULL)
+		return NULL;
 	if (!l->cnt) {
 		l->t = n;
 	}
@@ -187,7 +201,10 @@ list_prepend(list *l, void *data)
 	if (l->ht) {
 		int key = l->ht->key(data);
 	
-		hash_add(l->ht, key, data);
+		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
+			return NULL;
+		}
 	}
 	MT_lock_unset(&l->ht_lock);
 	return l;

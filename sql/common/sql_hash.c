@@ -27,6 +27,8 @@ hash_new(sql_allocator *sa, int size, fkeyvalue key)
 	int i;
 	sql_hash *ht = SA_ZNEW(sa, sql_hash);
 
+	if (ht == NULL)
+		return NULL;
 	ht->sa = sa;
 	ht->size = (1<<log_base2(size-1));
 	ht->key = key;
@@ -41,6 +43,8 @@ hash_add(sql_hash *h, int key, void *value)
 {
 	sql_hash_e *e = SA_ZNEW(h->sa, sql_hash_e);
 
+	if (e == NULL)
+		return NULL;
 	e->chain = h->buckets[key&(h->size-1)];
 	h->buckets[key&(h->size-1)] = e;
 	e->key = key;

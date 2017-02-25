@@ -747,6 +747,7 @@ BATprojectchain(BAT **bats)
 	return bn;
 
   bunins_failed:
+	GDKfree(ba);
 	BBPreclaim(bn);
 	return NULL;
 }

@@ -15,6 +15,7 @@
 #include "mal_parser.h"	     /* for parseMAL() */
 #include "mal_namespace.h"
 #include "mal_readline.h"
+#include "mal_builder.h"
 #include "mal_authorize.h"
 #include "mal_sabaoth.h"
 #include "mal_private.h"
@@ -396,7 +397,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 	if (mb->errors == 0)
 		for (i = start; i < mb->vtop; i++) {
 			if (isVarUsed(mb,i) || !isTmpVar(mb,i)){
-				assert(!mb->var[i]->value.vtype || isVarConstant(mb, i));
+				assert(!mb->var[i].value.vtype || isVarConstant(mb, i));
 				setVarUsed(mb,i);
 			}
 			if (glb && !isVarUsed(mb,i)) {
@@ -573,7 +574,9 @@ MALparser(Client c)
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
 
-	prepareMalBlk(c->curprg->def, CURRENT(c));
+	if( prepareMalBlk(c->curprg->def, CURRENT(c))){
+		throw(MAL, "mal.parser", MAL_MALLOC_FAIL);
+	}
 	if (parseMAL(c, c->curprg, 0) || c->curprg->def->errors) {
 		/* just complete it for visibility */
 		pushEndInstruction(c->curprg->def);

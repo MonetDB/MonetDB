@@ -61,6 +61,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	node *nsch, *ntab, *ncol;
 	char *query, *dquery;
 	char *maxval = NULL, *minval = NULL;
+	int minlen = 0, maxlen = 0;
 	str sch = 0, tbl = 0, col = 0;
 	int sorted, revsorted;
 	lng nils = 0;
@@ -114,18 +115,25 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 						sql_base *bc = ncol->data;
 						sql_column *c = (sql_column *) ncol->data;
-						BAT *bn = store_funcs.bind_col(tr, c, RDONLY), *br;
+						BAT *bn, *br;
 						BAT *bsample;
-						lng sz = BATcount(bn);
-						int (*tostr)(str*,int*,const void*) = BATatoms[bn->ttype].atomToStr;
-						int len = 0;
+						lng sz;
+						int (*tostr)(str*,int*,const void*);
 						void *val=0;
+
+						if (col && strcmp(bc->name, col))
+							continue;
+
+						if ((bn = store_funcs.bind_col(tr, c, RDONLY)) == NULL) {
+							/* XXX throw error instead? */
+							continue;
+						}
+						sz = BATcount(bn);
+						tostr = BATatoms[bn->ttype].atomToStr;
 
 						if (tostr == BATatoms[TYPE_str].atomToStr)
 							tostr = strToStrSQuote;
 
-						if (col && strcmp(bc->name, col))
-							continue;
 						snprintf(dquery, 8192, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
 						cfnd = 1;
 						if (samplesize > 0) {
@@ -133,6 +141,11 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						} else
 							bsample = NULL;
 						br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, 0, 0, 0);
+						if (br == NULL) {
+							BBPunfix(bn->batCacheid);
+							/* XXX throw error instead? */
+							continue;
+						}
 						nils = BATcount(br);
 						BBPunfix(br->batCacheid);
 						if (bn->tkey)
@@ -164,18 +177,32 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						// Gather the min/max value for builtin types
 						width = bn->twidth;
 
-						if (tostr) { 
-							val = BATmax(bn,0); len = 0;
-							tostr(&maxval, &len,val); 
-							GDKfree(val);
-							val = BATmin(bn,0); len = 0;
-							tostr(&minval, &len,val); 
-							GDKfree(val);
-						} else {
+						if (maxlen < 4) {
+							GDKfree(maxval);
 							maxval = GDKmalloc(4);
+							maxlen = 4;
+						}
+						if (minlen < 4) {
+							GDKfree(minval);
 							minval = GDKmalloc(4);
-							snprintf(maxval, 4, "nil");
-							snprintf(minval, 4, "nil");
+							minlen = 4;
+						}
+						if (tostr) {
+							if ((val = BATmax(bn,0)) == NULL)
+								strcpy(maxval, "nil");
+							else {
+								tostr(&maxval, &maxlen, val);
+								GDKfree(val);
+							}
+							if ((val = BATmin(bn,0)) == NULL)
+								strcpy(minval, "nil");
+							else {
+								tostr(&minval, &minlen, val);
+								GDKfree(val);
+							}
+						} else {
+							strcpy(maxval, "nil");
+							strcpy(minval, "nil");
 						}
 						snprintf(query, 8192, "insert into sys.statistics (column_id,type,width,stamp,\"sample\",count,\"unique\",nils,minval,maxval,sorted,revsorted) values(%d,'%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s,%s);", c->base.id, c->type.type->sqlname, width, (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false", revsorted ? "true" : "false");
 #ifdef DEBUG_SQL_STATISTICS

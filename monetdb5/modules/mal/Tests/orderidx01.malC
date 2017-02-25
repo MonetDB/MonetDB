@@ -12,11 +12,10 @@ bat.append(bv,266430612 );
 bat.append(bv,1674978691 );
 bat.append(bv,1863672321 );
 bat.append(bv,58690783 );
-bat.setAccess(bv,"r");
 
 io.print(bv);
 
-s0:= algebra.select(bv,nil:bat[:oid],nil:int,nil:int,false,false,false);
+s0:= algebra.select(bv,nil:bat[:oid],nil:int,nil:int,true,true,false);
 io.print(s0);
 
 s1:= algebra.select(bv,nil:bat[:oid],nil:int,959217167,true,true,false);
@@ -32,7 +31,7 @@ io.print(s3);
 bat.orderidx(bv,3);
 ord := bat.getorderidx(bv);
 io.print(ord);
-x0:= algebra.select(bv,nil:bat[:oid],nil:int,nil:int,false,false,false);
+x0:= algebra.select(bv,nil:bat[:oid],nil:int,nil:int,true,true,false);
 io.print(x0);
 
 x1:= algebra.select(bv,nil:bat[:oid],nil:int,959217167,true,true,false);

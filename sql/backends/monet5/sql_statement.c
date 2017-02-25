@@ -1264,84 +1264,39 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			return NULL;
 		k = getDestVar(q);
 	} else {
-		const char *cmd = selectRef;
-
-		if (cmptype != cmp_equal && cmptype != cmp_notequal)
-			cmd = thetaselectRef;
-
 		assert (cmptype != cmp_filter);
+		q = newStmt(mb, algebraRef, thetaselectRef);
+		q = pushArgument(mb, q, l);
+		if (sub)
+			q = pushArgument(mb, q, sub->nr);
+		q = pushArgument(mb, q, r);
 		switch (cmptype) {
-		case cmp_equal:{
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
-			q = pushArgument(mb, q, r);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, FALSE);
-			if (q == NULL)
-				return NULL;
+		case cmp_equal:
+			q = pushStr(mb, q, "==");
 			break;
-		}
-		case cmp_notequal:{
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
-			q = pushArgument(mb, q, r);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, TRUE);
-			if (q == NULL)
-				return NULL;
+		case cmp_notequal:
+			q = pushStr(mb, q, "!=");
 			break;
-		}
 		case cmp_lt:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, "<");
-			if (q == NULL)
-				return NULL;
 			break;
 		case cmp_lte:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, "<=");
-			if (q == NULL)
-				return NULL;
 			break;
 		case cmp_gt:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, ">");
-			if (q == NULL)
-				return NULL;
 			break;
 		case cmp_gte:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, ">=");
-			if (q == NULL)
-				return NULL;
 			break;
 		default:
 			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
+			if (q)
+				freeInstruction(q);
+			q = NULL;
 		}
+		if (q == NULL)
+			return NULL;
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_uselect);
@@ -2908,84 +2863,92 @@ stmt_alias(backend *be, stmt *op1, const char *tname, const char *alias)
 sql_subtype *
 tail_type(stmt *st)
 {
-	switch (st->type) {
-	case st_const:
-		return tail_type(st->op2);
+	for (;;) {
+		switch (st->type) {
+		case st_const:
+			st = st->op2;
+			continue;
 
-	case st_uselect:
-	case st_uselect2:
-	case st_limit:
-	case st_limit2:
-	case st_sample:
-	case st_tunion:
-	case st_tdiff:
-	case st_tinter:
-	case st_append:
-	case st_alias:
-	case st_gen_group:
-	case st_order:
-		return tail_type(st->op1);
+		case st_uselect:
+		case st_uselect2:
+		case st_limit:
+		case st_limit2:
+		case st_sample:
+		case st_tunion:
+		case st_tdiff:
+		case st_tinter:
+		case st_append:
+		case st_alias:
+		case st_gen_group:
+		case st_order:
+			st = st->op1;
+			continue;
 
-	case st_list:
-		return tail_type(st->op4.lval->h->data);
+		case st_list:
+			st = st->op4.lval->h->data;
+			continue;
 
-	case st_bat:
-		return &st->op4.cval->type;
-	case st_idxbat:
-		if (hash_index(st->op4.idxval->type)) {
-			return sql_bind_localtype("lng");
-		} else if (st->op4.idxval->type == join_idx) {
+		case st_bat:
+			return &st->op4.cval->type;
+		case st_idxbat:
+			if (hash_index(st->op4.idxval->type)) {
+				return sql_bind_localtype("lng");
+			} else if (st->op4.idxval->type == join_idx) {
+				return sql_bind_localtype("oid");
+			}
+			/* fall through */
+		case st_join:
+		case st_join2:
+		case st_joinN:
+			if (st->flag == cmp_project) {
+				st = st->op2;
+				continue;
+			}
+			/* fall through */
+		case st_reorder:
+		case st_group:
+		case st_result:
+		case st_tid:
+		case st_mirror:
 			return sql_bind_localtype("oid");
+		case st_table_clear:
+			return sql_bind_localtype("lng");
+
+		case st_aggr: {
+			list *res = st->op4.aggrval->res;
+
+			if (res && list_length(res) == 1)
+				return res->h->data;
+
+			return NULL;
 		}
-		/* fall through */
-	case st_join:
-	case st_join2:
-	case st_joinN:
-		if (st->flag == cmp_project)
-			return tail_type(st->op2);
-		/* fall through */
-	case st_reorder:
-	case st_group:
-	case st_result:
-	case st_tid:
-	case st_mirror:
-		return sql_bind_localtype("oid");
-	case st_table_clear:
-		return sql_bind_localtype("lng");
+		case st_Nop: {
+			list *res = st->op4.funcval->res;
 
-	case st_aggr: {
-		list *res = st->op4.aggrval->res; 
-
-		if (res && list_length(res) == 1)
-			return res->h->data;
-		
-	} 	break;
-	case st_Nop: {
-		list *res = st->op4.funcval->res; 
-
-		if (res && list_length(res) == 1)
-			return res->h->data;
-	} break;
-	case st_atom:
-		return atom_type(st->op4.aval);
-	case st_convert:
-	case st_temp:
-	case st_single:
-	case st_rs_column:
-		return &st->op4.typeval;
-	case st_var:
-		if (st->op4.typeval.type)
+			if (res && list_length(res) == 1)
+				return res->h->data;
+			return NULL;
+		}
+		case st_atom:
+			return atom_type(st->op4.aval);
+		case st_convert:
+		case st_temp:
+		case st_single:
+		case st_rs_column:
 			return &st->op4.typeval;
-		/* fall through */
-	case st_exception:
-		return NULL;
-	case st_table:
-		return sql_bind_localtype("bat");
-	default:
-		assert(0);
-		return NULL;
+		case st_var:
+			if (st->op4.typeval.type)
+				return &st->op4.typeval;
+			/* fall through */
+		case st_exception:
+			return NULL;
+		case st_table:
+			return sql_bind_localtype("bat");
+		default:
+			assert(0);
+			return NULL;
+		}
 	}
-	return NULL;
 }
 
 int

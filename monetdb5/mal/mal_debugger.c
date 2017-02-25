@@ -66,12 +66,11 @@ mdbInit(void)
 	/*
 	 * Each client has its own breakpoint administration, kept in a
 	 * global table.  Although a little space consumptive, it is the
-	 * easiest to maintain and much less expensive than reserving
-	 * debugger space in each instruction.
+	 * easiest to maintain and much less expensive as reserving debugger
+	 * space in each instruction.
 	 */
-	if (mdbTable)
-		memset(mdbTable, 0, sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
-	else if ((mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS)) == NULL) {
+	mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
+	if (mdbTable == NULL) {
 		showException(GDKout,MAL, "mdbInit",MAL_MALLOC_FAIL);
 		return -1;
 	}
@@ -699,39 +698,6 @@ retryRead:
 					stk = stk->up;
 				mnstr_printf(out, "#%sgo down the stack\n", "#mdb ");
 				mb = stk->blk;
-				break;
-			}
-			if (strncmp(b, "dot", 3) == 0) {
-				/* produce the dot file for graphical display */
-				/* its argument is the optimizer level followed by filename*/
-				MalBlkPtr mdot;
-				char fname[2 * PATHLENGTH] = "";
-				char name[PATHLENGTH], *nme;
-
-				skipWord(cntxt, b);
-				nme = b;
-				skipNonBlanc(cntxt, b);
-				strncpy(name, nme, PATHLENGTH - 1);
-				if (b - nme < PATHLENGTH)
-					name[ b - nme] = 0;
-				mdot = mdbLocateMalBlk(cntxt, mb, name, out);
-				skipBlanc(cntxt, b);
-				if (mdot == NULL)
-					mdot = mb;
-				snprintf(name, PATHLENGTH, "/%s.%s.dot", getModuleId(getInstrPtr(mdot, 0)), getFunctionId(getInstrPtr(mdot, 0)));
-				/* optional file */
-				skipBlanc(cntxt, b);
-				if (*b == 0) {
-					snprintf(fname, sizeof(fname), "%s%s", monet_cwd, name);
-				} else if (*b != '/') {
-					snprintf(fname, sizeof(fname), "%s%s", monet_cwd, name);
-				} else if (b[strlen(b) - 1] == '/') {
-					snprintf(fname, sizeof(fname), "%s%s", b, name + 1);
-				} else
-					snprintf(fname, sizeof(fname), "%s", b);
-
-				showFlowGraph(mdot, 0, fname);
-				mnstr_printf(out, "#dot file '%s' created\n", fname);
 				break;
 			}
 			skipWord(cntxt, b);

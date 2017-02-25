@@ -74,5 +74,3 @@ THREADS>=2?dataflow
 THREADS>=2?dataflow3
 THREADS>=2?dataflow4
 THREADS>=2?dataflow5
-
-flowgraph

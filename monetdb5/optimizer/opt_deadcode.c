@@ -55,7 +55,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			varused[getArg(p,0)]++; // force keeping 
 			continue;
 		}
-		if (hasSideEffects(p, FALSE) || isUpdateInstruction(p) || !isLinearFlow(p) || isProcedure(mb,p)  || 
+		if (hasSideEffects(mb, p, FALSE) || !isLinearFlow(p) || 
 				(p->retc == 1 && mb->unsafeProp) || p->barrier /* ==side-effect */){
 			varused[getArg(p,0)]++; // force keeping it
 			continue;
