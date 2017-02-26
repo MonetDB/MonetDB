@@ -1,7 +1,7 @@
 shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
-HAVE_LIBZ?heapextend.Bug-6134
+#HAVE_LIBZ?heapextend.Bug-6134
 incorrect_error.Bug-6141
 empty-interval.Bug-6184
 crash_in_null_cast.Bug-6186
@@ -30,3 +30,4 @@ null-quantile.Bug-6218
 sqlsmith.Bug-6216
 sqlsmith.Bug-6217
 real-power.Bug-6228
+sqlsmith.Bug-6219

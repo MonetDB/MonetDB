@@ -31,15 +31,15 @@ Ready.
 | | | | | | | table(sys._tables) [ _tables.id, _tables.type ] COUNT  |
 | | | | | | ) [ _tables.type != smallint "2" ]                       |
 | | | | | ) [ _tables.id as tables.id ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as L40.L40 ],                  |
+| | | | ) [  ] [ sys.count() NOT NULL as L41.L41 ],                  |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | table(tmp._tables) [ _tables.id ] COUNT                  |
 | | | | | ) [ _tables.id as tables.id ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as L40.L40 ]                   |
-| | | ) [ L40.L40 ]                                                  |
-| | ) [  ] [ sys.sum no nil (L40.L40) as L40.L40 ]                   |
-| ) [ L40 NOT NULL as L41.L40 ]                                      |
+| | | | ) [  ] [ sys.count() NOT NULL as L41.L41 ]                   |
+| | | ) [ L41.L41 ]                                                  |
+| | ) [  ] [ sys.sum no nil (L41.L41) as L41.L41 ]                   |
+| ) [ L41 NOT NULL as L42.L41 ]                                      |
 +--------------------------------------------------------------------+
 18 rows
 Operation successful
@@ -71,30 +71,30 @@ Operation successful
 |     X_40 := bat.append(X_38, X_37, true);                                                             |
 |     X_42 := bat.append(X_40, X_36, true);                                                             |
 |     X_43:lng := aggr.sum(X_42);                                                                       |
-|     sql.resultSet(".L41", "L40", "bigint", 64:int, 0:int, 7:int, X_43);                               |
+|     sql.resultSet(".L42", "L41", "bigint", 64:int, 0:int, 7:int, X_43);                               |
 | end user.s4_1;                                                                                   |
 | #inline               actions= 0 time=1 usec                                                          |
-| #remap                actions= 0 time=2 usec                                                        |
-| #costmodel            actions= 1 time=2 usec                                                          |
-| #coercion             actions= 1 time=5 usec                                                          |
-| #evaluate             actions= 0 time=2 usec                                                          |
-| #emptybind            actions= 0 time=0 usec                                                          |
-| #pushselect           actions= 5 time=24 usec                                                         |
-| #aliases              actions= 2 time=7 usec                                                        |
-| #mergetable           actions= 0 time=27 usec                                                       |
-| #deadcode             actions= 3 time=6 usec                                                          |
+| #remap                actions= 0 time=3 usec                                                          |
+| #costmodel            actions= 1 time=3 usec                                                          |
+| #coercion             actions= 1 time=9 usec                                                          |
+| #evaluate             actions= 0 time=4 usec                                                          |
+| #emptybind            actions= 0 time=1 usec                                                          |
+| #pushselect           actions= 5 time=45 usec                                                         |
+| #aliases              actions= 2 time=9 usec                                                          |
+| #mergetable           actions= 0 time=38 usec                                                         |
+| #deadcode             actions= 3 time=8 usec                                                          |
 | #aliases              actions= 0 time=1 usec                                                          |
-| #constants            actions= 1 time=6 usec                                                        |
-| #commonTerms          actions= 0 time=5 usec                                                        |
-| #projectionpath       actions= 0 time=2 usec                                                        |
-| #reorder              actions= 1 time=33 usec                                                         |
-| #deadcode             actions= 0 time=4 usec                                                        |
+| #constants            actions= 1 time=9 usec                                                          |
+| #commonTerms          actions= 0 time=7 usec                                                          |
+| #projectionpath       actions= 0 time=3 usec                                                          |
+| #reorder              actions= 1 time=29 usec                                                         |
+| #deadcode             actions= 0 time=6 usec                                                          |
 | #matpack              actions= 0 time=0 usec                                                          |
-| #multiplex            actions= 0 time=1 usec                                                          |
+| #multiplex            actions= 0 time=2 usec                                                          |
 | #profiler             actions= 1 time=1 usec                                                          |
-| #candidates           actions= 1 time=0 usec                                                          |
-| #garbagecollector     actions= 1 time=39 usec                                                         |
-| #total                actions=23 time=252 usec                                                        |
+| #candidates           actions= 1 time=1 usec                                                          |
+| #garbagecollector     actions= 1 time=53 usec                                                         |
+| #total                actions=23 time=354 usec                                                        |
 +-------------------------------------------------------------------------------------------------------+
 49 rows
 
