@@ -758,7 +758,7 @@ exps_has_nil(list *exps)
 list *
 rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern )
 {
-	list *rexps, *exps;
+	list *lexps, *rexps, *exps;
 	int intern_only = (intern==2)?1:0;
 
 	if (!rel || (is_subquery(rel) /*&& is_project(rel->op)*/ && rel->op == op_project))
@@ -806,15 +806,18 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 			}
 			return exps;
 		}
-		exps = rel_projections(sql, rel->l, tname, settname, intern );
-		if (exps) {
-			node *en;
+		lexps = rel_projections(sql, rel->l, tname, settname, intern );
+		rexps = rel_projections(sql, rel->r, tname, settname, intern );
+		exps = sa_list(sql->sa);
+		if (lexps && rexps && exps) {
+			node *en, *ren;
 			int label = ++sql->label;
-			for (en = exps->h; en; en = en->next) {
+			for (en = lexps->h, ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
 				sql_exp *e = en->data;
 				e->card = rel->card;
 				if (!settname) /* noname use alias */
 					exp_setrelname(sql->sa, e, label);
+				append(exps, e);
 			}
 		}
 		return exps;
