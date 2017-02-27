@@ -40,7 +40,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	varlnk = (int*) GDKzalloc(mb->vtop * sizeof(int));
 	if( varlnk == NULL)
 		return 0;
-	stmtlnk = (int*) GDKzalloc(mb->stop * sizeof(int));
+	stmtlnk = (int*) GDKzalloc((mb->stop + 1) * sizeof(int));
 	if( stmtlnk == NULL){
 		GDKfree(varlnk);
 		return 0;
@@ -70,6 +70,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	// Construct the linked list of variables based on end-of-scope
 	setVariableScope(mb);
 	for( i = 0; i < mb->vtop; i++){
+		assert(getEndScope(mb,i) >= 0);
+		assert(getEndScope(mb,i) <= mb->stop);
 	  varlnk[i] = stmtlnk[getEndScope(mb,i)];
 	  stmtlnk[getEndScope(mb,i)] = i;
 	}
