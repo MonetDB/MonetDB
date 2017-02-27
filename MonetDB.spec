@@ -944,6 +944,13 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Feb 27 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.9-20170227
+- Rebuilt.
+- BZ#6217: Segfault in rel_optimizer (sqlsmith)
+- BZ#6218: grouped quantiles with all null group causes following groups
+  to return null
+- BZ#6224: mal_parser: cannot refer to types containing an underscore
+
 * Thu Feb 16 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.7-20170216
 - Rebuilt.
 - BZ#4034: argnames array in rapi.c has fixed length (that was too short)
