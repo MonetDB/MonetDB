@@ -1108,7 +1108,7 @@ strHeap(Heap *d, size_t cap)
 		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		d->dirty = 1;
 		memset(d->base, 0, d->free);
-		d->hashash = 1;	/* new string heaps get the hash value (and length) stored */
+		d->hashash = 0;
 #ifndef NDEBUG
 		/* fill should solve initialization problems within valgrind */
 		memset(d->base + d->free, 0, d->size - d->free);
