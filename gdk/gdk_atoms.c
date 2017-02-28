@@ -1243,13 +1243,15 @@ strPut(Heap *h, var_t *dst, const char *v)
 			/* if not, pad more */
 			pad += GDK_VARALIGN;
 		}
-	} else if (*bucket) {
+	} else {
 		/* large string heap (>=64KB) --
 		 * opportunistic/probabilistic double elimination */
-		pos = elimbase + *bucket + extralen;
-		if (GDK_STRCMP(v, h->base + pos) == 0) {
-			/* already in heap; do not insert! */
-			return *dst = (var_t) (pos >> GDK_VARSHIFT);
+		if (*bucket) {
+			pos = elimbase + *bucket + extralen;
+			if (GDK_STRCMP(v, h->base + pos) == 0) {
+				/* already in heap; do not insert! */
+				return *dst = (var_t) (pos >> GDK_VARSHIFT);
+			}
 		}
 #if SIZEOF_VAR_T >= SIZEOF_VOID_P /* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
 		if (extralen == 0)
