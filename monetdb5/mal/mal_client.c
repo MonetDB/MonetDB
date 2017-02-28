@@ -239,7 +239,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->actions = 0;
 	c->totaltime = 0;
-	/* create a recycler cache */
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
