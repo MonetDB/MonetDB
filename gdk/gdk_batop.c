@@ -275,10 +275,13 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			}
 			bunfastapp(b, tp);
 		}
-	} else if (b->tvheap->free < n->tvheap->free / 2) {
+	} else if (b->tvheap->free < n->tvheap->free / 2 ||
+		   GDK_ELIMDOUBLES(b->tvheap)) {
 		/* if b's string heap is much smaller than n's string
 		 * heap, don't bother checking whether n's string
-		 * values occur in b's string heap */
+		 * values occur in b's string heap; also, if b is
+		 * (still) fully double eliminated, we must continue
+		 * to use the double elimination mechanism */
 		BATloop(n, p, q) {
 			bunfastapp(b, BUNtvar(ni, p));
 		}
