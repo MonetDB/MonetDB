@@ -60,6 +60,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr = m->session->tr;
 	node *nsch, *ntab, *ncol;
 	char *query, *dquery;
+	size_t querylen;
 	char *maxval = NULL, *minval = NULL;
 	int minlen = 0, maxlen = 0;
 	str sch = 0, tbl = 0, col = 0;
@@ -75,11 +76,10 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
+	querylen = 0;
+	query = NULL;
 	dquery = (char *) GDKzalloc(8192);
-	query = (char *) GDKzalloc(8192);
-	if (!(dquery && query)) {
-		GDKfree(dquery);
-		GDKfree(query);
+	if (dquery == NULL) {
 		throw(SQL, "analyze", MAL_MALLOC_FAIL);
 	}
 
@@ -204,7 +204,18 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							strcpy(maxval, "nil");
 							strcpy(minval, "nil");
 						}
-						snprintf(query, 8192, "insert into sys.statistics (column_id,type,width,stamp,\"sample\",count,\"unique\",nils,minval,maxval,sorted,revsorted) values(%d,'%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s,%s);", c->base.id, c->type.type->sqlname, width, (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false", revsorted ? "true" : "false");
+						if (strlen(minval) + strlen(maxval) + 1024 > querylen) {
+							querylen = strlen(minval) + strlen(maxval) + 1024;
+							GDKfree(query);
+							query = GDKmalloc(querylen);
+							if (query == NULL) {
+								GDKfree(dquery);
+								GDKfree(maxval);
+								GDKfree(minval);
+								throw(SQL, "analyze", MAL_MALLOC_FAIL);
+							}
+						}
+						snprintf(query, querylen, "insert into sys.statistics (column_id,type,width,stamp,\"sample\",count,\"unique\",nils,minval,maxval,sorted,revsorted) values(%d,'%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s,%s);", c->base.id, c->type.type->sqlname, width, (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false", revsorted ? "true" : "false");
 #ifdef DEBUG_SQL_STATISTICS
 						mnstr_printf(cntxt->fdout, "%s\n", dquery);
 						mnstr_printf(cntxt->fdout, "%s\n", query);
