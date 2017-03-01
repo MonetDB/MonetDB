@@ -1,0 +1,19 @@
+# This test fails before changeset 1f5498568a24.
+b := bat.new(:str);
+bat.append(b, nil:str);
+bat.append(b, "short_1");
+bat.append(b, "longer_string");
+bat.append(b, "8charstr");
+bat.append(b, "");
+bat.append(b, "10-longstr");
+n := bat.new(:str);
+bat.append(n, nil:str);
+bat.append(n, "short_1");
+bat.append(n, "short_2");
+bat.append(n, "8charstr");
+bat.append(n, "");
+bat.append(n, "another 1");
+b := bat.append(b, n);
+
+(g,e,h) := group.subgroup(b);
+io.print(b,g);
