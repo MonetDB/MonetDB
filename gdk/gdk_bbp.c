@@ -897,13 +897,18 @@ fixstroffheap(BAT *b, int *restrict offsets)
 {
 	long_str filename;
 	Heap h1;		/* old offset heap */
+	Heap h2;		/* new string heap */
+	Heap h3;		/* new offset heap */
 	Heap *h;		/* string heap */
 	int noffsets = 0;
 	const size_t extralen = b->tvheap->hashash ? EXTRALEN : 0;
-	size_t pos, emptyoff = 0;
+	size_t pos;
+	var_t emptyoff = 0;
 	const char *nme, *bnme;
 	char *srcdir;
 	BUN i;
+	int width;
+	int nofix = 1;
 
 	assert(GDK_ELIMDOUBLES(b->tvheap));
 
@@ -930,31 +935,64 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		pos += pad + extralen;
 		s = h->base + pos;
 		if (*s == '\0')
-			emptyoff = pos;
+			emptyoff = (var_t) pos;
 		offsets[noffsets++] = (int) pos; /* < 65536, i.e. fits */
 		pos += GDK_STRLEN(s);
 	}
 	HEAPfree(b->tvheap, 0);
-	if (emptyoff == 0) {
-		/* no empty string encountered in the heap, so the bug
-		 * is extremely unlikely to have occurred (we need an
-		 * area of zero bytes that is aligned on a var_t
-		 * boundary and two var_t's long -- in the absence of
-		 * an empty string, this can only happen if hashash is
-		 * set and a string hashes to zero) */
-		GDKfree(srcdir);
-		return;
-	}
 
 	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
 		bnme++;
 	else
 		bnme = nme;
 	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
+
+	width = b->twidth;
+	h2.dirty = 0;
+	if (emptyoff == 0) {
+		/* no legitimate empty string in the string heap; we
+		 * now make a backup of the old string heap and create
+		 * a new one to which we add an empty string */
+		h2 = *b->tvheap;
+		if (GDKmove(h2.farmid, srcdir, bnme, "theap", BAKDIR, bnme, "theap") != GDK_SUCCEED)
+			GDKfatal("fixstroffheap: cannot make backup of %s.theap\n", nme);
+		h2.filename = GDKfilepath(NOFARM, NULL, nme, "theap");
+		if (h2.filename == NULL)
+			GDKfatal("fixstroffheap: GDKmalloc failed\n");
+		h2.base = NULL;
+		if (HEAPalloc(&h2, h2.size, 1) != GDK_SUCCEED)
+			GDKfatal("fixstroffheap: allocating new string heap "
+				 "for BAT %d failed\n", b->batCacheid);
+		h2.cleanhash = b->tvheap->cleanhash;
+		h2.hashash = b->tvheap->hashash;
+		h2.free = b->tvheap->free;
+		/* load old offset heap and copy contents to new heap */
+		h1 = *b->tvheap;
+		h1.filename = NULL;
+		h1.base = NULL;
+		h1.dirty = 0;
+		if (HEAPload(&h1, filename, "theap", 0) != GDK_SUCCEED)
+			GDKfatal("fixstroffheap: loading old tail heap "
+				 "for BAT %d failed\n", b->batCacheid);
+		memcpy(h2.base, h1.base, h2.free);
+		HEAPfree(&h1, 0);
+		h2.dirty = 1;
+		if ((*BATatoms[TYPE_str].atomPut)(&h2, &emptyoff, "") == 0)
+			GDKfatal("fixstroffheap: cannot insert empty string "
+				 "in BAT %d failed\n", b->batCacheid);
+		/* if the offset of the new empty string doesn't fit
+		 * in the offset heap (too many bits for the current
+		 * width), we will also make the new offset heap
+		 * wider */
+		if ((width <= 2 ? emptyoff - GDK_VAROFFSET : emptyoff) >= (var_t) (1 << (width * 8))) {
+			width <<= 1;
+			assert((width <= 2 ? emptyoff - GDK_VAROFFSET : emptyoff) < (var_t) (1 << (width * 8)));
+		}
+	}
+
+	/* make backup of offset heap */
 	if (GDKmove(b->theap.farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED)
 		GDKfatal("fixstroffheap: cannot make backup of %s.tail\n", nme);
-	GDKfree(srcdir);
-
 	/* load old offset heap */
 	h1 = b->theap;
 	h1.filename = NULL;
@@ -965,58 +1003,98 @@ fixstroffheap(BAT *b, int *restrict offsets)
 			 "for BAT %d failed\n", b->batCacheid);
 
 	/* create new offset heap */
-	b->theap.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
-	if (b->theap.filename == NULL)
+	h3 = b->theap;
+	h3.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
+	if (h3.filename == NULL)
 		GDKfatal("fixstroffheap: GDKmalloc failed\n");
-	if (HEAPalloc(&b->theap, b->batCapacity, b->twidth) != GDK_SUCCEED)
+	if (HEAPalloc(&h3, b->batCapacity, width) != GDK_SUCCEED)
 		GDKfatal("fixstroffheap: allocating new tail heap "
 			 "for BAT %d failed\n", b->batCacheid);
-	memcpy(b->theap.base, h1.base, h1.free);
-	b->theap.dirty = TRUE;
-	b->theap.free = h1.free;
+	h3.dirty = TRUE;
+	h3.free = h1.free;
 
 	switch (b->twidth) {
 	case 1:
 		for (i = 0; i < b->batCount; i++) {
 			pos = ((var_t) ((unsigned char *) h1.base)[i] + GDK_VAROFFSET) << GDK_VARSHIFT;
-			if (offsearch(offsets, noffsets, (int) pos))
-				continue;
-			((unsigned char *) b->theap.base)[i] = (unsigned char) ((emptyoff >> GDK_VARSHIFT) - GDK_VAROFFSET);
+			if (!offsearch(offsets, noffsets, (int) pos)) {
+				pos = emptyoff;
+				nofix = 0;
+			}
+			if (width == 1)
+				((unsigned char *) h3.base)[i] = (unsigned char) ((pos >> GDK_VARSHIFT) - GDK_VAROFFSET);
+			else
+				((unsigned short *) h3.base)[i] = (unsigned short) ((pos >> GDK_VARSHIFT) - GDK_VAROFFSET);
 		}
 		break;
 	case 2:
 		for (i = 0; i < b->batCount; i++) {
 			pos = ((var_t) ((unsigned short *) h1.base)[i] + GDK_VAROFFSET) << GDK_VARSHIFT;
-			if (offsearch(offsets, noffsets, (int) pos))
-				continue;
-			((unsigned short *) b->theap.base)[i] = (unsigned short) ((emptyoff >> GDK_VARSHIFT) - GDK_VAROFFSET);
+			if (!offsearch(offsets, noffsets, (int) pos)) {
+				pos = emptyoff;
+				nofix = 0;
+			}
+			if (width == 2)
+				((unsigned short *) h3.base)[i] = (unsigned short) ((pos >> GDK_VARSHIFT) - GDK_VAROFFSET);
+			else
+				((unsigned int *) h3.base)[i] = (unsigned int) ((pos >> GDK_VARSHIFT) - GDK_VAROFFSET);
 		}
 		break;
 	case 4:
 		for (i = 0; i < b->batCount; i++) {
 			pos = (var_t) ((unsigned int *) h1.base)[i] << GDK_VARSHIFT;
-			if (offsearch(offsets, noffsets, (int) pos))
-				continue;
-			((unsigned int *) b->theap.base)[i] = (unsigned int) (emptyoff >> GDK_VARSHIFT);
+			if (!offsearch(offsets, noffsets, (int) pos)) {
+				pos = emptyoff;
+				nofix = 0;
+			}
+			((unsigned int *) h3.base)[i] = (unsigned int) (pos >> GDK_VARSHIFT);
 		}
 		break;
 #if SIZEOF_VAR_T == 8
 	case 8:
 		for (i = 0; i < b->batCount; i++) {
 			pos = (var_t) ((ulng *) h1.base)[i] << GDK_VARSHIFT;
-			if (offsearch(offsets, noffsets, (int) pos))
-				continue;
-			((ulng *) b->theap.base)[i] = (ulng) (emptyoff >> GDK_VARSHIFT);
+			if (!offsearch(offsets, noffsets, (int) pos)) {
+				pos = emptyoff;
+				nofix = 0;
+			}
+			((ulng *) h3.base)[i] = (ulng) (pos >> GDK_VARSHIFT);
 		}
 		break;
 #endif
 	default:
 		/* cannot happen */
-		break;
+		assert(0);
 	}
+
+	/* cleanup */
 	HEAPfree(&h1, 0);
-	HEAPsave(&b->theap, nme, "tail");
-	HEAPfree(&b->theap, 0);
+	if (nofix) {
+		/* didn't fix anything, move backups back */
+		if (h2.dirty) {
+			HEAPfree(&h2, 1);
+			if (GDKmove(b->tvheap->farmid, BAKDIR, bnme, "theap", srcdir, bnme, "theap") != GDK_SUCCEED)
+				GDKfatal("fixstroffheap: cannot restore backup of %s.theap\n", nme);
+		}
+		HEAPfree(&h3, 1);
+		if (GDKmove(b->theap.farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED)
+			GDKfatal("fixstroffheap: cannot restore backup of %s.tail\n", nme);
+	} else {
+		/* offset heap was fixed */
+		b->twidth = width;
+		b->batDirtydesc = 1;
+		if (h2.dirty) {
+			/* in addition, we added an empty string to
+			 * the string heap */
+			HEAPsave(&h2, nme, "theap");
+			HEAPfree(&h2, 0);
+			*b->tvheap = h2;
+		}
+		HEAPsave(&h3, nme, "tail");
+		HEAPfree(&h3, 0);
+		b->theap = h3;
+	}
+	GDKfree(srcdir);
 }
 
 static void
