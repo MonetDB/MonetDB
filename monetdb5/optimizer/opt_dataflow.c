@@ -210,9 +210,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 						}
 				}
 				flowblock = newTmpVariable(mb,TYPE_bit);
-				q= newFcnCall(mb,languageRef,dataflowRef);\
-				q->barrier= BARRIERsymbol;\
-				getArg(q,0)= flowblock;\
+				q= newFcnCall(mb,languageRef,dataflowRef);
+				q->barrier= BARRIERsymbol;
+				getArg(q,0)= flowblock;
+				actions++;
 			}
 			//copyblock 
 			for( j=start ; j<i; j++) 
@@ -230,7 +231,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			(void) memset((char*)assigned, 0, vlimit * sizeof (int));
 			(void) memset((char*) used, 0, vlimit * sizeof(int));
 			top = 0;
-			actions++;
 			start = i+1;
 			if ( ! blockStart(p) && !conflict  ){
 				for ( k = 0; k < p->retc; k++)
