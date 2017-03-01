@@ -15,6 +15,5 @@ char* db_destroy(char* dbname);
 char* db_rename(char* olddb, char* newdb);
 char* db_lock(char* dbname);
 char* db_release(char* dbname);
-char* db_master(char *dbname);
 
 #endif

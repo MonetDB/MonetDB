@@ -1620,63 +1620,6 @@ command_release(int argc, char *argv[])
 	simple_command(argc, argv, "release", "taken database out of maintenance mode", 1);
 }
 
-static void
-command_master(int argc, char *argv[])
-{
-	char *e = NULL;
-	sabdb *orig = NULL;
-	sabdb *stats = NULL;
-	char *target_path = NULL;
-
-
-	if (argc != 2 && argc != 3) {
-		/* print help message for this command */
-		command_help(argc + 1, &argv[-1]);
-		exit(1);
-	}
-
-	if (argc == 3) {
-		target_path = strdup(argv[2]);
-		argv[2] = NULL;
-	}
-
-	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-		fprintf(stderr, "master: %s\n", e);
-		free(e);
-		exit(2);
-	}
-	stats = globMatchDBS(argc, argv, &orig, "master");
-	msab_freeStatus(&orig);
-	orig = stats;
-
-	if (target_path != NULL) {
-		size_t len = strlen("master path=") + strlen(target_path) + 1;
-		char *cmd = (char *)malloc(len);
-		snprintf(cmd, len, "master path=%s", target_path);
-		simple_argv_cmd(argv[0], orig, cmd,
-						"set database as master", NULL);
-		free(target_path);
-		free(cmd);
-	} else {
-		simple_argv_cmd(argv[0], orig, "master",
-						"set database as master", NULL);
-	}
-}
-
-static void
-command_replica(int argc, char *argv[])
-{
-	int i;
-	if (argc != 3) {
-		/* print help message for this command */
-		command_help(argc + 1, &argv[-1]);
-		exit(1);
-	}
-	fprintf(stderr, "Called replica with %d args:\n", argc);
-	for (i = 0; i < argc; i++)
-		fprintf(stderr, "  %s\n", argv[i]);
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -1870,10 +1813,6 @@ main(int argc, char *argv[])
 		command_set(argc - i, &argv[i], INHERIT);
 	} else if (strcmp(argv[i], "discover") == 0) {
 		command_discover(argc - i, &argv[i]);
-	} else if (strcmp(argv[i], "master") == 0) {
-		command_master(argc - i, &argv[i]);
-	} else if (strcmp(argv[i], "replica") == 0) {
-		command_replica(argc - i, &argv[i]);
 	} else {
 		fprintf(stderr, "monetdb: unknown command: %s\n", argv[i]);
 		command_help(0, NULL);
