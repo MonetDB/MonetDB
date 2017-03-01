@@ -629,6 +629,10 @@ setVariableScope(MalBlkPtr mb)
 				dflow= -1;
 			else depth--;
 		}
+		if( blockReturn(p)){
+			for (k = 0; k < p->argc; k++)
+				setVarEolife(mb,getArg(p,k),pc);
+		}
 	}
 	for (k = 0; k < mb->vtop; k++)
 		if( getVarEolife(mb,k) == 0)

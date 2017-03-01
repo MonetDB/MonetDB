@@ -768,7 +768,13 @@ clearVariable(MalBlkPtr mb, int varid)
 	if (isVarConstant(mb, varid) || isVarDisabled(mb, varid))
 		VALclear(&v->value);
 	v->type = 0;
-	v->flags = 0;
+	v->constant= 0;
+	v->typevar= 0;		
+	v->fixedtype= 0;
+	v->udftype= 0;
+	v->cleanup= 0;
+	v->initialized= 0;
+	v->used= 0;
 	v->rowcnt = 0;
 	v->eolife = 0;
 	v->stc = 0;
