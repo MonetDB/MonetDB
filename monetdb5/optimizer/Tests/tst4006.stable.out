@@ -34,12 +34,10 @@ barrier V12:bit := true:bit;            	#[4] (0)  6 <- 7
     V13:any := algebra.union(x:bat[:int], z:bat[:int]);	#[5] (0)  8 <- 2 4 
     V30:bat[:int] := V13:any;           	#[6] (0)  5 <- 8 
 exit V12:bit;                           	#[7] (0)  6 
-    z:bat[:int] := nil:bat[:int];       	#[8] (0)  4 <- 12 
-    x:bat[:int] := nil:bat[:int];       	#[9] (0)  2 <- 14 
-    return V31:bat[:int] := V30:bat[:int];	#[10] (0)  9 <- 5 
-end user.getz;                          	#[11] (0)  
-#aliases              actions= 0 time=6 usec 
-#garbagecollector     actions= 3 time=30 usec 
+    return V31:bat[:int] := V30:bat[:int];	#[8] (0)  9 <- 5 
+end user.getz;                          	#[9] (0)  
+#aliases              actions= 0 time=4 usec 
+#garbagecollector     actions= 1 time=12 usec 
 function user.getz(p:int):bat[:int];    	#[0] (0)  0 <- 1 
     x:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 2 <- 3 
     z:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 4 <- 3 
@@ -48,12 +46,10 @@ barrier V12:bit := true:bit;            	#[4] (0)  6 <- 7
     V13:any := algebra.union(x:bat[:int], z:bat[:int]);	#[5] (0)  8 <- 2 4 
     V30:bat[:int] := V13:any;           	#[6] (0)  5 <- 8 
 exit V12:bit;                           	#[7] (0)  6 
-    z:bat[:int] := nil:bat[:int];       	#[8] (0)  4 <- 12 
-    x:bat[:int] := nil:bat[:int];       	#[9] (0)  2 <- 14 
-    return V31:bat[:int] := V30:bat[:int];	#[10] (0)  9 <- 5 
-end user.getz;                          	#[11] (0)  
-#aliases              actions= 0 time=6 usec 
-#garbagecollector     actions= 3 time=30 usec 
+    return V31:bat[:int] := V30:bat[:int];	#[8] (0)  9 <- 5 
+end user.getz;                          	#[9] (0)  
+#aliases              actions= 0 time=4 usec 
+#garbagecollector     actions= 1 time=12 usec 
 
 # 15:27:10 >  
 # 15:27:10 >  "Done."
