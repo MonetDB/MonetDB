@@ -868,6 +868,209 @@ fixwkbheap(void)
 }
 #endif
 
+#ifdef GDKLIBRARY_BADEMPTY
+/* There was a bug (fixed in changeset 1f5498568a24) which could
+ * result in empty strings not being double-eliminated.  This code
+ * fixes the affected bats.
+ * Note that we only fix BATs whose string heap is still fully double
+ * eliminated. */
+static inline int
+offsearch(const int *restrict offsets, int noffsets, int val)
+{
+	/* binary search on offsets for val, return whether present */
+	int lo = 0, hi = noffsets - 1, mid;
+
+	while (hi > lo) {
+		mid = (lo + hi) / 2;
+		if (offsets[mid] == val)
+			return 1;
+		if (offsets[mid] < val)
+			lo = mid + 1;
+		else
+			hi = mid - 1;
+	}
+	return offsets[lo] == val;
+}
+
+static void
+fixstroffheap(BAT *b, int *restrict offsets)
+{
+	long_str filename;
+	Heap h1;		/* old offset heap */
+	Heap *h;		/* string heap */
+	int noffsets = 0;
+	const size_t extralen = b->tvheap->hashash ? EXTRALEN : 0;
+	size_t pos, emptyoff = 0;
+	const char *nme, *bnme;
+	char *srcdir;
+	BUN i;
+
+	assert(GDK_ELIMDOUBLES(b->tvheap));
+
+	nme = BBP_physical(b->batCacheid);
+	srcdir = GDKfilepath(NOFARM, BATDIR, nme, NULL);
+	if (srcdir == NULL)
+		GDKfatal("fixstroffheap: GDKmalloc failed\n");
+	*strrchr(srcdir, DIR_SEP) = 0;
+
+	/* load string heap */
+	if (HEAPload(b->tvheap, nme, "theap", 0) != GDK_SUCCEED)
+		GDKfatal("fixstroffheap: loading string (theap) heap "
+			 "for BAT %d failed\n", b->batCacheid);
+	h = b->tvheap;		/* abbreviation */
+	/* collect valid offsets */
+	pos = GDK_STRHASHSIZE;
+	while (pos < h->free) {
+		const char *s;
+		size_t pad;
+
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+		if (pad < sizeof(stridx_t))
+			pad += GDK_VARALIGN;
+		pos += pad + extralen;
+		s = h->base + pos;
+		if (*s == '\0')
+			emptyoff = pos;
+		offsets[noffsets++] = (int) pos; /* < 65536, i.e. fits */
+		pos += GDK_STRLEN(s);
+	}
+	HEAPfree(b->tvheap, 0);
+	if (emptyoff == 0) {
+		/* no empty string encountered in the heap, so the bug
+		 * is extremely unlikely to have occurred (we need an
+		 * area of zero bytes that is aligned on a var_t
+		 * boundary and two var_t's long -- in the absence of
+		 * an empty string, this can only happen if hashash is
+		 * set and a string hashes to zero) */
+		GDKfree(srcdir);
+		return;
+	}
+
+	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
+		bnme++;
+	else
+		bnme = nme;
+	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
+	if (GDKmove(b->theap.farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED)
+		GDKfatal("fixstroffheap: cannot make backup of %s.tail\n", nme);
+	GDKfree(srcdir);
+
+	/* load old offset heap */
+	h1 = b->theap;
+	h1.filename = NULL;
+	h1.base = NULL;
+	h1.dirty = 0;
+	if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED)
+		GDKfatal("fixstroffheap: loading old tail heap "
+			 "for BAT %d failed\n", b->batCacheid);
+
+	/* create new offset heap */
+	b->theap.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
+	if (b->theap.filename == NULL)
+		GDKfatal("fixstroffheap: GDKmalloc failed\n");
+	if (HEAPalloc(&b->theap, b->batCapacity, b->twidth) != GDK_SUCCEED)
+		GDKfatal("fixstroffheap: allocating new tail heap "
+			 "for BAT %d failed\n", b->batCacheid);
+	memcpy(b->theap.base, h1.base, h1.free);
+	b->theap.dirty = TRUE;
+	b->theap.free = h1.free;
+
+	switch (b->twidth) {
+	case 1:
+		for (i = 0; i < b->batCount; i++) {
+			pos = ((var_t) ((unsigned char *) h1.base)[i] + GDK_VAROFFSET) << GDK_VARSHIFT;
+			if (offsearch(offsets, noffsets, (int) pos))
+				continue;
+			((unsigned char *) b->theap.base)[i] = (unsigned char) ((emptyoff >> GDK_VARSHIFT) - GDK_VAROFFSET);
+		}
+		break;
+	case 2:
+		for (i = 0; i < b->batCount; i++) {
+			pos = ((var_t) ((unsigned short *) h1.base)[i] + GDK_VAROFFSET) << GDK_VARSHIFT;
+			if (offsearch(offsets, noffsets, (int) pos))
+				continue;
+			((unsigned short *) b->theap.base)[i] = (unsigned short) ((emptyoff >> GDK_VARSHIFT) - GDK_VAROFFSET);
+		}
+		break;
+	case 4:
+		for (i = 0; i < b->batCount; i++) {
+			pos = (var_t) ((unsigned int *) h1.base)[i] << GDK_VARSHIFT;
+			if (offsearch(offsets, noffsets, (int) pos))
+				continue;
+			((unsigned int *) b->theap.base)[i] = (unsigned int) (emptyoff >> GDK_VARSHIFT);
+		}
+		break;
+#if SIZEOF_VAR_T == 8
+	case 8:
+		for (i = 0; i < b->batCount; i++) {
+			pos = (var_t) ((ulng *) h1.base)[i] << GDK_VARSHIFT;
+			if (offsearch(offsets, noffsets, (int) pos))
+				continue;
+			((ulng *) b->theap.base)[i] = (ulng) (emptyoff >> GDK_VARSHIFT);
+		}
+		break;
+#endif
+	default:
+		/* cannot happen */
+		break;
+	}
+	HEAPfree(&h1, 0);
+	HEAPsave(&b->theap, nme, "tail");
+	HEAPfree(&b->theap, 0);
+}
+
+static void
+fixstrbats(void)
+{
+	bat bid;
+	BAT *b;
+	int *offsets;
+	int tt;
+
+	fprintf(stderr,
+		"# fixing string offset heaps\n");
+	fflush(stderr);
+
+	/* The minimum size a string occupies in the double-eliminated
+	 * part of a string heap is SIZEOF_VAR_T (due to padding to
+	 * multiples of this value) plus the size of the chain pointer
+	 * (another var_t), and if hashes are stored, plus the size of
+	 * a hash value (yet another var_t).  In total, 2 or 3 var_t
+	 * sizes.  The hash table itself is 1024 times the size of a
+	 * var_t.  So on 32 bit architectures, 8000 is plenty, and on
+	 * 64 bit architectures, 4000 is plenty.  But we need less if
+	 * the heap is not fully occupied.  This results in the
+	 * following calculation. */
+	offsets = GDKmalloc((GDK_ELIMLIMIT / (2 * SIZEOF_VAR_T)) * sizeof(int));
+	if (offsets == NULL)
+		GDKfatal("fixstroffheap: cannot allocate memory\n");
+
+	for (bid = 1; bid < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); bid++) {
+		if ((b = BBP_desc(bid)) == NULL || b->batCount == 0)
+			continue;	/* not a valid BAT, or an empty one */
+		if ((tt = b->ttype) < 0) {
+			const char *anme;
+
+			/* as yet unknown tail column type */
+			anme = ATOMunknown_name(tt);
+			/* known string types */
+			if (strcmp(anme, "url") == 0 ||
+			    strcmp(anme, "json") == 0 ||
+			    strcmp(anme, "xml") == 0 ||
+			    strcmp(anme, "identifier") == 0)
+				tt = TYPE_str;
+		}
+
+		if (tt != TYPE_str || !GDK_ELIMDOUBLES(b->tvheap))
+			continue;	/* nothing to do for this BAT */
+
+		fixstroffheap(b, offsets);
+	}
+
+	GDKfree(offsets);
+}
+#endif
+
 /*
  * A read only BAT can be shared in a file system by reading its
  * descriptor separately.  The default src=0 is to read the full
@@ -1218,6 +1421,7 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_BADEMPTY &&
 	    bbpversion != GDKLIBRARY_NOKEY &&
 	    bbpversion != GDKLIBRARY_SORTEDPOS &&
 	    bbpversion != GDKLIBRARY_OLDWKB &&
@@ -1401,6 +1605,10 @@ BBPinit(void)
 #ifdef GDKLIBRARY_OLDWKB
 	if (bbpversion <= GDKLIBRARY_OLDWKB)
 		fixwkbheap();
+#endif
+#ifdef GDKLIBRARY_BADEMPTY
+	if (bbpversion <= GDKLIBRARY_BADEMPTY)
+		fixstrbats();
 #endif
 	if (bbpversion < GDKLIBRARY || needcommit)
 		TMcommit();
