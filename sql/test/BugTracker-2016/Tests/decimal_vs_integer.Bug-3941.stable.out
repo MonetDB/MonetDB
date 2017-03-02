@@ -38,9 +38,7 @@ Ready.
 % 112 # length
 function user.s4_1():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;", "default_pipe", 12:int);
-    X_12 := bat.new(nil:int);
-    C_14 := algebra.thetaselect(X_12, 20160222:int, "==");
-    X_16 := algebra.projection(C_14, X_12);
+    X_16 := bat.new(nil:int);
     X_17 := aggr.count(X_16);
     sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_17);
 end user.s4_1;
@@ -53,9 +51,7 @@ end user.s4_1;
 % 118 # length
 function user.s6_1():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';", "default_pipe", 13:int);
-    X_12 := bat.new(nil:int);
-    C_16 := algebra.thetaselect(X_12, 20160222:int, "==");
-    X_18 := algebra.projection(C_16, X_12);
+    X_18 := bat.new(nil:int);
     X_19 := aggr.count(X_18);
     sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_19);
 end user.s6_1;
@@ -68,10 +64,7 @@ end user.s6_1;
 % 113 # length
 function user.s8_1():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;", "default_pipe", 13:int);
-    X_12 := bat.new(nil:int);
-    X_13:bat[:int] := batcalc.int(0:int, X_12, 9:int, 0:int);
-    C_18 := algebra.thetaselect(X_13, 201602221:int, "==");
-    X_20 := algebra.projection(C_18, X_12);
+    X_20 := bat.new(nil:int);
     X_21 := aggr.count(X_20);
     sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_21);
 end user.s8_1;
