@@ -13,9 +13,9 @@
 #include "mal_module.h"
 #include "mal_resolve.h"
 
-#define getLastUpdate(L,I)	((L)->var[I]->updated)
-#define getEndScope(L,I)	((L)->var[I]->eolife)
-#define getBeginScope(L,I)	((L)->var[I]->declared)
+#define getLastUpdate(L,I)	((L)->var[I].updated)
+#define getEndScope(L,I)	((L)->var[I].eolife)
+#define getBeginScope(L,I)	((L)->var[I].declared)
 
 /* #define DEBUG_MAL_FCN */
 /* #define DEBUG_CLONE */
@@ -34,7 +34,6 @@ mal_export void setVariableScope(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
 mal_export void debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size);
-mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 
 #include "mal_exception.h"
 

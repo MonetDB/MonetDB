@@ -16,6 +16,7 @@
 #include "mal_namespace.h"
 #include "mal_readline.h"
 #include "mal_authorize.h"
+#include "mal_builder.h"
 #include "mal_sabaoth.h"
 #include "mal_private.h"
 #include <gdk.h>	/* for opendir and friends */
@@ -396,7 +397,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 	if (mb->errors == 0)
 		for (i = start; i < mb->vtop; i++) {
 			if (isVarUsed(mb,i) || !isTmpVar(mb,i)){
-				assert(!mb->var[i]->value.vtype || isVarConstant(mb, i));
+				assert(!mb->var[i].value.vtype || isVarConstant(mb, i));
 				setVarUsed(mb,i);
 			}
 			if (glb && !isVarUsed(mb,i)) {

@@ -86,7 +86,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= pushStr(mb,q,"sql_traces");
 	/* cook a new resultSet instruction */
 	resultset = newInstruction(mb,sqlRef, resultSetRef);
-	getArg(resultset,0)= newTmpVariable(mb,TYPE_int);
+	setVarType(mb, getArg(resultset,0), TYPE_int);
 
 	/* build table defs */
 	tbls = newStmt(mb,batRef, newRef);
@@ -297,7 +297,7 @@ SQLrun(Client c, backend *be, mvc *m){
 					throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 				}
 				val= (ValPtr) &arg->data;
-				if (VALcopy(&mb->var[j+retc]->value, val) == NULL)
+				if (VALcopy(&mb->var[j+retc].value, val) == NULL)
 					throw(MAL, "sql.prepare", MAL_MALLOC_FAIL);
 				setVarConstant(mb, j+retc);
 				setVarFixed(mb, j+retc);

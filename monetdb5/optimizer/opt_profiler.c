@@ -67,26 +67,26 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if ( getModuleId(p) == NULL || getFunctionId(p) == NULL)
 			continue;
 		if( getModuleId(p)== sqlRef && (getFunctionId(p)== bindRef || getFunctionId(p) == bindidxRef)){
-			getSTC(mb,getArg(p,0)) = i;
+			getVarSTC(mb,getArg(p,0)) = i;
 		} else
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== tidRef){
-			getSTC(mb,getArg(p,0)) = i;
+			getVarSTC(mb,getArg(p,0)) = i;
 		} else
 		if( getModuleId(p)== batRef && (getFunctionId(p)== deltaRef || getFunctionId(p) == subdeltaRef)){
 			// inherit property of first argument
-			getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,1));
+			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,1));
 		} else
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== projectdeltaRef){
-			getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,1));
+			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,1));
 		} else
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== projectionRef){
-			getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,p->argc-1));
+			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->argc-1));
 		} else
 		if( getModuleId(p)== algebraRef && (getFunctionId(p)== selectRef || getFunctionId(p) == thetaselectRef)){
-			getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,p->retc));
+			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
 		} else
 		if( getModuleId(p)== algebraRef && (getFunctionId(p)== likeselectRef || getFunctionId(p) == ilikeselectRef)){
-			getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,p->retc));
+			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
 		} else
 		if( getModuleId(p)== algebraRef && 
 			( getFunctionId(p)== joinRef ||
@@ -95,8 +95,8 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			  getFunctionId(p) == antijoinRef ||
 			  getFunctionId(p) == bandjoinRef ||
 			  getFunctionId(p) == rangejoinRef )){
-				getSTC(mb,getArg(p,0)) = getSTC(mb,getArg(p,p->retc));
-				getSTC(mb,getArg(p,1)) = getSTC(mb,getArg(p,p->retc +1));
+				getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
+				getVarSTC(mb,getArg(p,1)) = getVarSTC(mb,getArg(p,p->retc +1));
 		} 
 	}
     /* Defense line against incorrect plans */

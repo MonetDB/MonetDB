@@ -76,7 +76,6 @@ str columnRef;
 str columnBindRef;
 str commitRef;
 str connectRef;
-str constraintsRef;
 str countRef;
 str subcountRef;
 str copyRef;
@@ -363,7 +362,6 @@ void optimizerInit(void)
 	columnBindRef = putName("columnBind");
 	commitRef = putName("commit");
 	connectRef = putName("connect");
-	constraintsRef = putName("constraints");
 	countRef = putName("count");
 	subcountRef = putName("subcount");
 	copyRef = putName("copy");

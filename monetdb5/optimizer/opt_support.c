@@ -143,8 +143,10 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
-					msg= createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
+					str nmsg= createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
 					GDKfree(place);
+					GDKfree(msg);
+					msg = nmsg;
 					goto wrapup;
 				}
 				if (cntxt->mode == FINISHCLIENT)
@@ -250,7 +252,7 @@ hasCommonResults(InstrPtr p, InstrPtr q)
  * Dependency between target variables and arguments can be
  * checked with isDependent().
  */
-int
+static int
 isDependent(InstrPtr p, InstrPtr q){
 	int i,j;
 	for(i= 0; i<q->retc; i++)
@@ -307,20 +309,6 @@ isUnsafeInstruction(InstrPtr q)
 }
 
 /*
- * The routine isInvariant determines if the variable V is not
- * changed in the instruction sequence identified by the range [pcf,pcl].
- */
-int
-isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid)
-{
-	(void) mb;
-	(void) pcf;
-	(void) pcl;
-	(void) varid;		/*fool compiler */
-	return TRUE;
-}
-
-/*
  * Any instruction may block identification of a common
  * subexpression. It suffices to stumble upon an unsafe function
  * whose parameter lists has a non-empty intersection with the
@@ -359,36 +347,6 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 	return FALSE;
 }
 
-/*
- * In many cases we should be assured that a variable is not used in
- * the instruction range identified. For, we may exchange some instructions that
- * might change its content.
- */
-#if 0
-int
-isTouched(MalBlkPtr mb, int varid, int p1, int p2)
-{
-	int i, k;
-
-	for (i = p1; i < p2; i++) {
-		InstrPtr p = getInstrPtr(mb, i);
-
-		for (k = 0; k < p->argc; k++)
-			if (p->argv[k] == varid)
-				return TRUE;
-	}
-	return FALSE;
-}
-#endif
-
-int
-isProcedure(MalBlkPtr mb, InstrPtr p)
-{
-	if (p->retc == 0 || (p->retc == 1 && getArgType(mb,p,0) == TYPE_void))
-		return TRUE;
-	//if( mb->unsafeProp) return TRUE;
-	return FALSE;
-}
 
 int
 isUpdateInstruction(InstrPtr p){
@@ -396,29 +354,45 @@ isUpdateInstruction(InstrPtr p){
 	   ( getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == replaceRef ))
+		getFunctionId(p) == replaceRef ||
+		getFunctionId(p) == clear_tableRef))
 			return TRUE;
 	if ( getModuleId(p) == batRef &&
 	   ( getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == replaceRef ))
+		getFunctionId(p) == replaceRef ||
+		getFunctionId(p) == clear_tableRef))
 			return TRUE;
 	return FALSE;
 }
 int
-hasSideEffects(InstrPtr p, int strict)
+hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 {
 	if( getFunctionId(p) == NULL) return FALSE;
 
-	/* update instructions have side effects */
+/* 
+ * Void-returning operations have side-effects and
+ * should be considered as such
+ */
+	if (p->retc == 0 || (p->retc == 1 && getArgType(mb,p,0) == TYPE_void))
+		return TRUE;
+
+/*
+ * Any function marked as unsafe can not be moved around without
+ * affecting its behavior on the program. For example, because they
+ * check for volatile resource levels.
+ */
+	if ( isUnsafeFunction(p))
+		return TRUE;
+
+	/* update instructions have side effects, they can be marked as unsafe */
 	if (isUpdateInstruction(p))
 		return TRUE;
 
 	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
 	     (getFunctionId(p) == setAccessRef ||
-	 	  getFunctionId(p) == setWriteModeRef ||
-		  getFunctionId(p) == clear_tableRef))
+	 	  getFunctionId(p) == setWriteModeRef ))
 		return TRUE;
 
 	if (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
@@ -430,7 +404,6 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == mdbRef ||
 		getModuleId(p) == malRef ||
 		getModuleId(p) == remapRef ||
-		getModuleId(p) == constraintsRef ||
 		getModuleId(p) == optimizerRef ||
 		getModuleId(p) == lockRef ||
 		getModuleId(p) == semaRef ||
@@ -461,12 +434,6 @@ hasSideEffects(InstrPtr p, int strict)
 		if (getFunctionId(p) == singleRef) return FALSE;
 		return TRUE;
 	}
-	if( getModuleId(p) == languageRef){
-		if( getFunctionId(p) == assertRef) return TRUE;
-		return FALSE;
-	}
-	if (getModuleId(p) == constraintsRef)
-		return FALSE;
 	if( getModuleId(p) == mapiRef){
 		if( getFunctionId(p) == rpcRef)
 			return TRUE;
@@ -502,7 +469,7 @@ mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 	if( tpe == TYPE_void)
 		return TRUE;
 	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
-		return hasSideEffects( p, strict);
+		return hasSideEffects(mb, p, strict);
 	if (MANIFOLDtypecheck(cntxt,mb,p) == NULL)
 		return TRUE;
 	return FALSE;
@@ -515,13 +482,14 @@ int
 isSideEffectFree(MalBlkPtr mb){
 	int i;
 	for(i=1; i< mb->stop && getInstrPtr(mb,i)->token != ENDsymbol; i++){
-		if( hasSideEffects(getInstrPtr(mb,i), TRUE))
+		if( hasSideEffects(mb,getInstrPtr(mb,i), TRUE))
 			return FALSE;
 	}
 	return TRUE;
 }
+
 /*
- * Breaking up a MAL program into pieces for distributed requires
+ * Breaking up a MAL program into pieces for distributed processing requires
  * identification of (partial) blocking instructions. A conservative
  * definition can be used.
  */
@@ -539,15 +507,6 @@ isBlocking(InstrPtr p)
 		getModuleId(p) == sqlcatalogRef )
 			return TRUE;
 	return FALSE;
-}
-
-int isAllScalar(MalBlkPtr mb, InstrPtr p)
-{
-	int i;
-	for (i=p->retc; i<p->argc; i++)
-	if (isaBatType(getArgType(mb,p,i)) || getArgType(mb,p,i)==TYPE_bat)
-		return FALSE;
-	return TRUE;
 }
 
 /*

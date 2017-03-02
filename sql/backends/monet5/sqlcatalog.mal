@@ -4,6 +4,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
+# All functions eturn a void and this are unsafe, having side effects.
 module sqlcatalog;
 
 pattern create_seq( sname:str, seqname:str, seq:ptr, action:int)

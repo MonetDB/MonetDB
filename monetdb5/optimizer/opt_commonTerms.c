@@ -112,7 +112,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		mnstr_printf(cntxt->fdout,"#TARGET CANDIDATE[%d] ",i);
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
-		prop = mayhaveSideEffects(cntxt, mb, p,TRUE) || isUpdateInstruction(p);
+		prop = mayhaveSideEffects(cntxt, mb, p,TRUE);
 		cnt = i; /* / 128 < 32? 32 : mb->stop/128;	limit search depth */
 		if ( !prop)
 		for (j = list[i]; cnt > 0 && j ; cnt--, j = list[j]) 

@@ -33,7 +33,7 @@ Symbol newFunction(str mod, str nme,int kind){
 		return NULL;
 	}
 
-	p = newInstruction(NULL,mod,nme);
+	p = newInstruction(NULL, mod, nme);
 	if (p == NULL) {
 		freeSymbol(s);
 		return NULL;
@@ -570,14 +570,14 @@ setVariableScope(MalBlkPtr mb)
 	for (k = 0; k < mb->vtop; k++)
 	if( isVarConstant(mb,k)){
 		setVarScope(mb,k,0);
-		mb->var[k]->declared = 0;
-		mb->var[k]->updated = 0;
-		mb->var[k]->eolife = mb->stop;
+		setVarDeclared(mb,k,0);
+		setVarUpdated(mb,k,0);
+		setVarEolife(mb,k,mb->stop);
 	} else {
 		setVarScope(mb,k,0);
-		mb->var[k]->declared = 0;
-		mb->var[k]->updated = 0;
-		mb->var[k]->eolife = 0;
+		setVarDeclared(mb,k,0);
+		setVarUpdated(mb,k,0);
+		setVarEolife(mb,k,0);
 	}
 
 	for (pc = 0; pc < mb->stop; pc++) {
@@ -598,20 +598,20 @@ setVariableScope(MalBlkPtr mb)
 
 		for (k = 0; k < p->argc; k++) {
 			int v = getArg(p,k);
-			if( isVarConstant(mb,v) && mb->var[v]->updated == 0)
-				mb->var[v]->updated= pc;
+			if( isVarConstant(mb,v) && getVarUpdated(mb,v) == 0)
+				setVarUpdated(mb,v, pc);
 
-			if (mb->var[v]->declared == 0 ){
-				mb->var[v]->declared = pc;
+			if ( getVarDeclared(mb,v) == 0 ){
+				setVarDeclared(mb,v, pc);
 				setVarScope(mb,v,depth);
 			}
 			if (k < p->retc )
-				mb->var[v]->updated= pc;
+				setVarUpdated(mb,v, pc);
 			if ( getVarScope(mb,v) == depth )
-				mb->var[v]->eolife = pc;
+				setVarEolife(mb,v,pc);
 
 			if ( k >= p->retc && getVarScope(mb,v) < depth )
-				mb->var[v]->eolife = -1;
+				setVarEolife(mb,v,-1);
 		}
 		/*
 		 * At a block exit we can finalize all variables defined within that block.
@@ -620,19 +620,23 @@ setVariableScope(MalBlkPtr mb)
 		 */
 		if( blockExit(p) ){
 			for (k = 0; k < mb->vtop; k++)
-			if ( mb->var[k]->eolife == 0 && getVarScope(mb,k) ==depth )
-				mb->var[k]->eolife = pc;
-			else if ( mb->var[k]->eolife == -1 )
-				mb->var[k]->eolife = pc;
+			if ( getVarEolife(mb,k) == 0 && getVarScope(mb,k) ==depth )
+				setVarEolife(mb,k,pc);
+			else if ( getVarEolife(mb,k) == -1 )
+				setVarEolife(mb,k,pc);
 			
 			if( dflow == depth)
 				dflow= -1;
 			else depth--;
 		}
+		if( blockReturn(p)){
+			for (k = 0; k < p->argc; k++)
+				setVarEolife(mb,getArg(p,k),pc);
+		}
 	}
 	for (k = 0; k < mb->vtop; k++)
-		if( mb->var[k]->eolife == 0)
-			mb->var[k]->eolife = mb->stop-1;
+		if( getVarEolife(mb,k) == 0)
+			setVarEolife(mb,k, mb->stop-1);
 }
 
 int
@@ -705,8 +709,8 @@ malGarbageCollector(MalBlkPtr mb)
 
 	for (i = 0; i < mb->vtop; i++)
 		if( isVarCleanup(mb,i) && getEndScope(mb,i) >= 0) {
-			mb->var[i]->eolife = getEndScope(mb,i);
-			mb->stmt[mb->var[i]->eolife]->gc |= GARBAGECONTROL;
+			setVarEolife(mb,i, getEndScope(mb,i));
+			mb->stmt[getVarEolife(mb,i)]->gc |= GARBAGECONTROL;
 		}
 }
 /*
@@ -743,6 +747,8 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 	short blks[MAXDEPTH], top= 0, blkId=1;
 	int dflow = -1;
 
+	if( mb->errors)
+		return;
 	blks[top] = blkId;
 
 	/* initialize the scope */
@@ -864,193 +870,3 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 		}
 	}
 }
-
-/*
- * Data flow analysis.
- * Flow graph display is handy for debugging and analysis.
- * A better flow analysis is needed, which takes into account barrier blocks 
- */
-static void
-showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
-{
-	InstrPtr p;
-	int i, k, found;
-
-	for (i = pc + 1; i < mb->stop - 1; i++) {
-		p = getInstrPtr(mb, i);
-		found = 0;
-		for (k = 0; k < p->argc; k++) {
-			if (p->argv[k] == varid) {
-				mnstr_printf(f, "n%d -> n%d\n", pc, i);
-				found++;
-			}
-		}
-		/* stop as soon you find a re-assignment */
-		for (k = 0; k < p->retc; k++) {
-			if (getArg(p, k) == varid)
-				i = mb->stop;
-		}
-		/* or a side-effect usage */
-		if (found &&
-			(p->retc == 0 || getArgType(mb, p, 0) == TYPE_void))
-			i = mb->stop;
-	}
-}
-
-static void
-showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
-{
-	InstrPtr p;
-	int i, k;
-
-	/* find last use, needed for operations with side effects */
-	for (i = pc - 1; i >= 0; i--) {
-		p = getInstrPtr(mb, i);
-		for (k = 0; k < p->argc; k++) {
-			if (p->argv[k] == varid ) {
-				mnstr_printf(f, "n%d -> n%d\n", i, pc);
-				return;
-			}
-		}
-	}
-}
-
-/*
- * We only display the minimal debugging information. The remainder
- * can be obtained through the profiler.
- */
-static void
-showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
-{
-	(void) mb;     /* fool the compiler */
-	(void) stk;     /* fool the compiler */
-	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"%s\"]\n", pc, getFunctionId(p) ? getFunctionId(p) : "<noname>");
-}
-
-/* Produce a file with the flow graph in dot format.
- */
-#define MAXFLOWGRAPHS 128
-
-static int getFlowGraphs(MalBlkPtr mb, MalStkPtr stk, MalBlkPtr *mblist, MalStkPtr *stklist,int top){
-	int i;
-	InstrPtr p;
-
-	for ( i=0; i<top; i++)
-	if ( mblist[i] == mb)
-		return top;
-
-	if ( top == MAXFLOWGRAPHS)
-		return top; /* just bail out */
-	mblist[top] = mb;
-	stklist[top++] = stk;
-	for (i=1; i < mb->stop; i++){
-		p = getInstrPtr(mb,i);
-		if ( p->token == FCNcall || p->token == FACcall )
-			top =getFlowGraphs(p->blk, 0,mblist, stklist, top);
-	}
-	return top;
-}
-
-void
-showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
-{
-	stream *f;
-	InstrPtr p;
-	int i, j,k;
-	char mapimode = 0;
-	buffer *bufstr = NULL;
-	MalBlkPtr mblist[MAXFLOWGRAPHS];
-	MalStkPtr stklist[MAXFLOWGRAPHS];
-	int top =0;
-
-	(void) stk;     /* fool the compiler */
-
-	memset(mblist, 0, sizeof(mblist));
-	memset(stklist, 0, sizeof(stklist));
-
-	if (idcmp(fname, "stdout") == 0) {
-		f = GDKout;
-	} else if (idcmp(fname, "stdout-mapi") == 0) {
-		bufstr = buffer_create(8096);
-		f = buffer_wastream(bufstr, "bufstr_write");
-		mapimode = 1;
-	} else {
-		f = open_wastream(fname);
-	}
-	if ( f == NULL)
-		return;
-
-	top = getFlowGraphs(mb,stk,mblist,stklist,0);
-	for( j=0; j< top; j++){
-		mb = mblist[j];
-		stk = stklist[j];
-		if (mb == 0 )
-			continue; /* already sent */
-		p = getInstrPtr(mb, 0);
-		mnstr_printf(f, "digraph %s {\n", getFunctionId(p));
-		p = getInstrPtr(mb, 0);
-		showFlowDetails(mb, stk, p, 0, f);
-		for (k = p->retc; k < p->argc; k++) {
-			showOutFlow(mb, 0, p->argv[k], f);
-		}
-		for (i = 1; i < mb->stop; i++) {
-			p = getInstrPtr(mb, i);
-
-			showFlowDetails(mb, stk, p, i, f);
-
-			for (k = 0; k < p->retc; k++)
-				showOutFlow(mb, i, p->argv[k], f);
-
-			if (p->retc == 0 || getArgType(mb, p, 0) == TYPE_void) /* assume side effects */
-				for (k = p->retc; k < p->argc; k++)
-					if (getArgType(mb, p, k) != TYPE_void &&
-						!isVarConstant(mb, getArg(p, k)))
-						showOutFlow(mb, i, p->argv[k], f);
-
-			if (getFunctionId(p) == 0)
-				for (k = 0; k < p->retc; k++)
-					if (getArgType(mb, p, k) != TYPE_void)
-						showInFlow(mb, i, p->argv[k], f);
-			if (p->token == ENDsymbol)
-				break;
-		}
-		mnstr_printf(f, "}\n");
-		mb->dotfile++;
-	}
-
-	if (mapimode == 1) {
-		size_t maxlen = 0;
-		size_t rows = 0;
-		str buf = buffer_get_buf(bufstr);
-		str line, oline;
-
-		/* calculate width of column, and the number of tuples */
-		oline = buf;
-		while ((line = strchr(oline, '\n')) != NULL) {
-			if ((size_t) (line - oline) > maxlen)
-				maxlen = line - oline;
-			rows++;
-			oline = line + 1;
-		} /* see printf before this mapimode if, last line ends with \n */
-
-		/* write mapi header */
-		if ( f == GDKout) {
-			mnstr_printf(f, "&1 0 " SZFMT " 1 " SZFMT "\n",
-					/* type id rows columns tuples */ rows, rows);
-			mnstr_printf(f, "%% .dot # table_name\n");
-			mnstr_printf(f, "%% dot # name\n");
-			mnstr_printf(f, "%% clob # type\n");
-			mnstr_printf(f, "%% " SZFMT " # length\n", maxlen);
-		}
-		oline = buf;
-		while ((line = strchr(oline, '\n')) != NULL) {
-			*line++ = '\0';
-			mnstr_printf(GDKout, "=%s\n", oline);
-			oline = line;
-		}
-		free(buf);
-	}
-	if (f != GDKout) 
-			close_stream(f);
-}
-

@@ -29,7 +29,6 @@ The debug, testing & trace options:
      --optimizers
      --trace
      --forcemito
-     --recycler
      --debug=<bitmask>
 
 # 10:03:11 >  

@@ -1,3 +1,13 @@
+monetdb (11.25.9) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6217: Segfault in rel_optimizer (sqlsmith)
+  * BZ#6218: grouped quantiles with all null group causes following groups
+    to return null
+  * BZ#6224: mal_parser: cannot refer to types containing an underscore
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Mon, 27 Feb 2017 11:15:08 +0100
+
 monetdb (11.25.7) unstable; urgency=low
 
   * Rebuilt.

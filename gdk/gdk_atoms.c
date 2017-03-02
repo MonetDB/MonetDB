@@ -1108,7 +1108,7 @@ strHeap(Heap *d, size_t cap)
 		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		d->dirty = 1;
 		memset(d->base, 0, d->free);
-		d->hashash = 1;	/* new string heaps get the hash value (and length) stored */
+		d->hashash = 0;
 #ifndef NDEBUG
 		/* fill should solve initialization problems within valgrind */
 		memset(d->base + d->free, 0, d->size - d->free);
@@ -1243,13 +1243,15 @@ strPut(Heap *h, var_t *dst, const char *v)
 			/* if not, pad more */
 			pad += GDK_VARALIGN;
 		}
-	} else if (*bucket) {
+	} else {
 		/* large string heap (>=64KB) --
 		 * opportunistic/probabilistic double elimination */
-		pos = elimbase + *bucket + extralen;
-		if (GDK_STRCMP(v, h->base + pos) == 0) {
-			/* already in heap; do not insert! */
-			return *dst = (var_t) (pos >> GDK_VARSHIFT);
+		if (*bucket) {
+			pos = elimbase + *bucket + extralen;
+			if (GDK_STRCMP(v, h->base + pos) == 0) {
+				/* already in heap; do not insert! */
+				return *dst = (var_t) (pos >> GDK_VARSHIFT);
+			}
 		}
 #if SIZEOF_VAR_T >= SIZEOF_VOID_P /* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
 		if (extralen == 0)

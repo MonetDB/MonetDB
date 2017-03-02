@@ -410,7 +410,7 @@ DFLOWworker(void *T)
 		/* update the numa information. keep the thread-id producing the value */
 		p= getInstrPtr(flow->mb,fe->pc);
 		for( i = 0; i < p->argc; i++)
-			flow->mb->var[getArg(p,i)]->worker = thr->tid;
+			setVarWorker(flow->mb,getArg(p,i),thr->tid);
 
 		MT_lock_set(&flow->flowlock);
 		fe->state = DFLOWwrapup;

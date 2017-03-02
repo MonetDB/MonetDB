@@ -146,14 +146,21 @@ typedef struct SYMDEF {
 typedef struct VARRECORD {
 	char id[IDLENGTH];			/* use the space for the full name */
 	malType type;				/* internal type signature */
-	int flags;					/* see below, reserve some space */
+    unsigned short constant:1,
+            typevar:1,
+            fixedtype:1,
+            udftype:1,
+            cleanup:1,
+            initialized:1,
+            used:1,
+            disabled:1;
+	short depth;				/* scope block depth, set to -1 if not used */
+	short worker;				/* thread id of last worker producing it */
 	ValRecord value;
 	int declared;				/* pc index when it was first assigned */
 	int updated;				/* pc index when it was first updated */
 	int eolife;					/* pc index when it should be garbage collected */
-	int depth;					/* scope block depth, set to -1 if not used */
-	int worker;					/* thread id of last worker producing it */
-	int stc;					/* pc for rendering schema.table.column */
+	int stc;				    /* pc index for rendering schema.table.column  */
 	BUN rowcnt;					/* estimated row count*/
 } *VarPtr, VarRecord;
 
@@ -180,24 +187,23 @@ typedef struct {
 	lng ticks;					/* total micro seconds spent in last call */
 	int calls;					/* number of calls made to this instruction */
 	lng totticks;				/* total time spent on this instruction. */
-	lng rbytes;					/* accumulated number of bytes read, currently ignored */
-	lng wbytes;					/* accumulated number of bytes produced */
+	lng wbytes;					/* number of bytes produced in last instruction */
 	/* the core admin */
 	str modname;				/* module context, reference into namespace */
 	str fcnname;				/* function name, reference into namespace */
-	int argc, retc, maxarg;			/* total and result argument count */
-	int argv[FLEXIBLE_ARRAY_MEMBER]; 	/* at least a few entries */
+	int argc, retc, maxarg;		/* total and result argument count */
+	int argv[FLEXIBLE_ARRAY_MEMBER]; /* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK {
-	char binding[IDLENGTH];			/* related C-function */
+	char binding[IDLENGTH];	/* related C-function */
 	str help;				/* supportive commentary */
 	oid tag;				/* unique block tag */
 	struct MALBLK *alternative;
 	int vtop;				/* next free slot */
 	int vsize;				/* size of variable arena */
 	int vid;	 			/* generate local variable counter */
-	VarRecord **var;			/* Variable table */
+	VarRecord *var;			/* Variable table */
 	int stop;				/* next free slot */
 	int ssize;				/* byte size of arena */
 	InstrPtr *stmt;				/* Instruction location */
@@ -207,19 +213,18 @@ typedef struct MALBLK {
 		     sealedProp:1;		/* sealed property (opertions for sealed object should be on the full object once) */
 
 	int errors;				/* left over errors */
-	int typefixed;				/* no undetermined instruction */
-	int flowfixed;				/* all flow instructions are fixed */
-	struct MALBLK *history;			/* of optimizer actions */
-	short keephistory;			/* do we need the history at all */
-	short dotfile;				/* send dot file to stethoscope? */
+	int typefixed;			/* no undetermined instruction */
+	int flowfixed;			/* all flow instructions are fixed */
+	struct MALBLK *history;	/* of optimizer actions */
+	short keephistory;		/* do we need the history at all */
 	int maxarg;				/* keep track on the maximal arguments used */
-	ptr replica;				/* for the replicator tests */
+	ptr replica;			/* for the replicator tests */
 	sht trap;				/* call debugger when called */
-	lng starttime;				/* track when the query started, for resource management */
-	lng runtime;				/* average execution time of block in ticks */
+	lng starttime;			/* track when the query started, for resource management */
+	lng runtime;			/* average execution time of block in ticks */
 	int calls;				/* number of calls */
-	lng optimize;				/* total optimizer time */
-	int activeClients;			/* load during mitosis optimization */
+	lng optimize;			/* total optimizer time */
+	int activeClients;		/* load during mitosis optimization */
 } *MalBlkPtr, MalBlkRecord;
 
 #define STACKINCR   128

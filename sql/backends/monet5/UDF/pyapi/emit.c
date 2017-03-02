@@ -142,7 +142,22 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
             }
             if (!found) {
                 // unrecognized column, create the column in the table
-                self->cols[self->ncols].b = COLnew(0, TYPE_int, 0, TRANSIENT);
+                // first infer the type from the value
+                // we use NumPy for this by creating an array from the object
+                // without specifying the type
+                PyObject* value = PyDict_GetItem(args, key);
+                PyObject* array = PyArray_FromAny(value, NULL, 0, 0, NPY_ARRAY_CARRAY | NPY_ARRAY_FORCECAST, NULL);
+                PyArray_Descr* array_type = NULL;
+                int bat_type = TYPE_int;
+                if (!array) {
+                    PyErr_Format(PyExc_TypeError, "Failed to create NumPy array.");
+                    return NULL;
+                }
+                array_type = (PyArray_Descr*) PyArray_DESCR((PyArrayObject*)array);
+                bat_type = PyType_ToBat(array_type->type_num);
+                Py_DECREF(array);
+
+                self->cols[self->ncols].b = COLnew(0, bat_type, 0, TRANSIENT);
                 self->cols[self->ncols].name = GDKstrdup(val);
                 if (self->nvals > 0) {
                     // insert NULL values up until the current entry

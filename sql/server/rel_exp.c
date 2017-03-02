@@ -319,7 +319,7 @@ exp_atom_flt(sql_allocator *sa, flt f)
 {
 	sql_subtype it; 
 
-	sql_find_subtype(&it, "double", 24, 0);
+	sql_find_subtype(&it, "real", 24, 0);
 	return exp_atom(sa, atom_float(sa, &it, (dbl)f ));
 }
 
@@ -1465,13 +1465,19 @@ exps_bind_column( list *exps, const char *cname, int *ambiguous )
 			MT_lock_set(&exps->ht_lock);
 			if (!exps->ht && list_length(exps) > HASH_MIN_SIZE) {
 				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
-
+				if (exps->ht == NULL) {
+					MT_lock_unset(&exps->ht_lock);
+					return NULL;
+				}
 				for (en = exps->h; en; en = en->next ) {
 					sql_exp *e = en->data;
 					if (e->name) {
 						int key = exp_key(e);
 
-						hash_add(exps->ht, key, e);
+						if (hash_add(exps->ht, key, e) == NULL) {
+							MT_lock_unset(&exps->ht_lock);
+							return NULL;
+						}
 					}
 				}
 			}
@@ -1522,13 +1528,20 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 			MT_lock_set(&exps->ht_lock);
 			if (!exps->ht && list_length(exps) > HASH_MIN_SIZE) {
 				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
+				if (exps->ht == NULL) {
+					MT_lock_unset(&exps->ht_lock);
+					return NULL;
+				}
 
 				for (en = exps->h; en; en = en->next ) {
 					sql_exp *e = en->data;
 					if (e->name) {
 						int key = exp_key(e);
 
-						hash_add(exps->ht, key, e);
+						if (hash_add(exps->ht, key, e) == NULL) {
+							MT_lock_unset(&exps->ht_lock);
+							return NULL;
+						}
 					}
 				}
 			}

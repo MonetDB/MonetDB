@@ -33,7 +33,7 @@ list_init(size_t capacity)
 		return NULL;
 	l->capacity = capacity;
 	l->count = 0;
-	if ((l->elements = GDKmalloc(capacity*sizeof(list_element))) == NULL) {
+	if ((l->elements = GDKzalloc(capacity*sizeof(list_element))) == NULL) {
 		GDKfree(l);
 		return NULL;
 	}
@@ -44,8 +44,13 @@ static int
 list_delete(ulist* ul)
 {
 	size_t i;
-	for (i = 0; i < ul->count; i++)
+	for (i = 0; i < ul->count; i++) {
 		GDKfree(ul->elements[i].n);
+		if (ul->elements[i].ob)
+			BBPunfix(ul->elements[i].ob->batCacheid);
+		if (ul->elements[i].nb)
+			BBPunfix(ul->elements[i].nb->batCacheid);
+	}
 	GDKfree(ul->elements);
 	GDKfree(ul);
 	return 1;
@@ -72,8 +77,10 @@ list_add(ulist **ul, BAT *ob, BAT *nb, const char *n)
 	if ((nn =  GDKstrdup(n)) == NULL)
 		return 0;
 	if ((*ul)->count == (*ul)->capacity)
-		if (!list_extend(ul))
+		if (!list_extend(ul)) {
+			GDKfree(nn);
 			return 0;
+		}
 	(*ul)->elements[(*ul)->count].ob = ob;
 	(*ul)->elements[(*ul)->count].nb = nb;
 	(*ul)->elements[(*ul)->count].n = nn;
@@ -115,12 +122,31 @@ geom_catalog_upgrade(void *lg, int olddb)
 		cs = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale")));
 		csi = bat_iterator(cs);
 
+		if (!ct || !cd || !cs) {
+			list_delete(ul);
+			if (ct)
+				BBPunfix(ct->batCacheid);
+			if (cd)
+				BBPunfix(cd->batCacheid);
+			if (cs)
+				BBPunfix(cs->batCacheid);
+			return 0;
+		}
+
 		cnt = COLnew(ct->hseqbase, TYPE_str, BATcount(ct), PERSISTENT);
 		cnd = COLnew(cd->hseqbase, TYPE_int, BATcount(cd), PERSISTENT);
 		cns = COLnew(cs->hseqbase, TYPE_int, BATcount(cs), PERSISTENT);
 
-		if (!cnt || !cnd || !cns || !ct || !cd || !cs)
+		if (!cnt || !cnd || !cns) {
+			list_delete(ul);
+			BBPreclaim(cnt);
+			BBPreclaim(cnd);
+			BBPreclaim(cns);
+			BBPunfix(ct->batCacheid);
+			BBPunfix(cd->batCacheid);
+			BBPunfix(cs->batCacheid);
 			return 0;
+		}
 
 		for(p=0, q=BUNlast(ct); p<q; p++) {
 			const char *type = BUNtail(cti, p);
