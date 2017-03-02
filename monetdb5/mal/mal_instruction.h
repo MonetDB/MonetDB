@@ -22,9 +22,8 @@
 #define DEBUG_MAL_INSTR
 /* #define DEBUG_REDUCE */
 #define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
-#define STMT_INCREMENT 256
+#define STMT_INCREMENT 4
 #define MAL_VAR_WINDOW  32
-#define MAXVARS STMT_INCREMENT	/* >= STMT_INCREMENT */
 #define MAXLISTING 64*1024
 
 /* Allocation of space assumes a rather exotic number of
@@ -52,38 +51,39 @@
 #define getVarGDKType(M,I)	getGDKType((M)->var[I].type)
 #define setVarType(M,I,V)   (M)->var[I].type = V
 
-#define clrVarFixed(M,I)		((M)->var[I].flags &= ~VAR_FIXTYPE)
-#define setVarFixed(M,I)		((M)->var[I].flags |= VAR_FIXTYPE)
-#define isVarFixed(M,I)		((M)->var[I].flags & VAR_FIXTYPE)
+#define clrVarFixed(M,I)		((M)->var[I].fixedtype = 0)
+#define setVarFixed(M,I)		((M)->var[I].fixedtype =1)
+#define isVarFixed(M,I)		((M)->var[I].fixedtype)
 
-#define clrVarCleanup(M,I)		((M)->var[I].flags &= ~VAR_CLEANUP)
-#define setVarCleanup(M,I)		((M)->var[I].flags |= VAR_CLEANUP)
-#define isVarCleanup(M,I)		((M)->var[I].flags & VAR_CLEANUP)
+#define clrVarCleanup(M,I)		((M)->var[I].cleanup = 0)
+#define setVarCleanup(M,I)		((M)->var[I].cleanup = 1)
+#define isVarCleanup(M,I)		((M)->var[I].cleanup )
+
 #define isTmpVar(M,I)			(*getVarName(M,I) == REFMARKER && *(getVarName(M,I)+1) == TMPMARKER)
 
-#define clrVarUsed(M,I)		((M)->var[I].flags &= ~VAR_USED)
-#define setVarUsed(M,I)		((M)->var[I].flags |= VAR_USED)
-#define isVarUsed(M,I)		((M)->var[I].flags & VAR_USED)
+#define clrVarUsed(M,I)		((M)->var[I].used = 0)
+#define setVarUsed(M,I)		((M)->var[I].used = 1)
+#define isVarUsed(M,I)		((M)->var[I].used)
 
-#define clrVarDisabled(M,I)		((M)->var[I].flags &= ~VAR_DISABLED)
-#define setVarDisabled(M,I)		((M)->var[I].flags |= VAR_DISABLED)
-#define isVarDisabled(M,I)		((M)->var[I].flags & VAR_DISABLED)
+#define clrVarDisabled(M,I)		((M)->var[I].disabled= 0 )
+#define setVarDisabled(M,I)		((M)->var[I].disabled = 1)
+#define isVarDisabled(M,I)		((M)->var[I].disabled)
 
-#define clrVarInit(M,I)		((M)->var[I].flags &= ~VAR_INIT)
-#define setVarInit(M,I)		((M)->var[I].flags |= VAR_INIT)
-#define isVarInit(M,I)		((M)->var[I].flags & VAR_INIT)
+#define clrVarInit(M,I)		((M)->var[I].initialized = 0)
+#define setVarInit(M,I)		((M)->var[I].initialized = 1)
+#define isVarInit(M,I)		((M)->var[I].initialized)
 
-#define clrVarTypedef(M,I)		((M)->var[I].flags &= ~VAR_TYPEVAR)
-#define setVarTypedef(M,I)		((M)->var[I].flags |= VAR_TYPEVAR)
-#define isVarTypedef(M,I)		((M)->var[I].flags & VAR_TYPEVAR)
+#define clrVarTypedef(M,I)		((M)->var[I].typevar = 0)
+#define setVarTypedef(M,I)		((M)->var[I].typevar = 1)
+#define isVarTypedef(M,I)		((M)->var[I].typevar)
 
-#define clrVarUDFtype(M,I)		((M)->var[I].flags &= ~VAR_UDFTYPE)
-#define setVarUDFtype(M,I)		((M)->var[I].flags |= VAR_UDFTYPE)
-#define isVarUDFtype(M,I)		((M)->var[I].flags & VAR_UDFTYPE)
+#define clrVarUDFtype(M,I)		((M)->var[I].udftype = 0)
+#define setVarUDFtype(M,I)		((M)->var[I].udftype = 1)
+#define isVarUDFtype(M,I)		((M)->var[I].udftype)
 
-#define clrVarConstant(M,I)		((M)->var[I].flags &= ~VAR_CONSTANT)
-#define setVarConstant(M,I)		((M)->var[I].flags |= VAR_CONSTANT)
-#define isVarConstant(M,I)		((M)->var[I].flags & VAR_CONSTANT)
+#define clrVarConstant(M,I)		((M)->var[I].constant = 0)
+#define setVarConstant(M,I)		((M)->var[I].constant = 1)
+#define isVarConstant(M,I)		((M)->var[I].constant)
 
 #define setVarDeclared(M,I,X)	((M)->var[I].declared = X )
 #define getVarDeclared(M,I)		((M)->var[I].declared)
@@ -192,6 +192,7 @@ mal_export void setPolymorphic(InstrPtr p, int tpe, int force);
 #define blockStart(X)   ((X)->barrier && (((X)->barrier == BARRIERsymbol || \
              (X)->barrier == CATCHsymbol )))
 #define blockExit(X) ((X)->barrier == EXITsymbol)
+#define blockReturn(X) ((X)->barrier == RETURNsymbol)
 #define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
              (X)->barrier== REDOsymbol || (X)->barrier== RETURNsymbol )
 #define isLinearFlow(X)  (!(blockStart(X) || blockExit(X) || \

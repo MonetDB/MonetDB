@@ -128,6 +128,7 @@ AS_CASE([$CC],
 			[10.*], [CC="$CC -no-gcc"],
 			[11.*], [CC="$CC -no-gcc"],
 			[15.*], [CC="$CC -no-gcc"],
+			[17.*], [CC="$CC -no-gcc"],
 			[AC_MSG_WARN([icc ($CC) $icc_ver not handled, yet])])])
 
 AS_IF([test -f "$srcdir"/vertoo.data],
@@ -683,6 +684,7 @@ AS_VAR_IF([enable_strict], [yes], [
 			[10.*], [],
 			[11.*], [],
 			[15.*], [],
+			[17.*], [],
 			[CFLAGS="$CFLAGS -ansi"])
 		# Be picky; "-Werror" seems to be too rigid for autoconf...
 		CFLAGS="$CFLAGS -Wall -w2 -Wcheck"
@@ -704,7 +706,8 @@ AS_VAR_IF([enable_strict], [yes], [
 		# constants like short s = 1234, which is too much
 		AS_CASE([$icc_ver],
 			[11.*], [X_CFLAGS="$X_CFLAGS,2259"],
-			[15.*], [X_CFLAGS="$X_CFLAGS,2259"])
+			[15.*], [X_CFLAGS="$X_CFLAGS,2259"],
+			[17.*], [X_CFLAGS="$X_CFLAGS,2259"])
 		AS_CASE([$icc_ver],
 			[8.[[1-9]]*], [X_CFLAGS="$X_CFLAGS,1572"],
 			[9.[[1-9]]*], [X_CFLAGS="$X_CFLAGS,1572,1599"],

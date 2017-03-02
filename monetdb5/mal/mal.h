@@ -146,7 +146,14 @@ typedef struct SYMDEF {
 typedef struct VARRECORD {
 	char id[IDLENGTH];			/* use the space for the full name */
 	malType type;				/* internal type signature */
-	short flags;					/* see below, reserve some space */
+    unsigned short constant:1,
+            typevar:1,
+            fixedtype:1,
+            udftype:1,
+            cleanup:1,
+            initialized:1,
+            used:1,
+            disabled:1;
 	short depth;				/* scope block depth, set to -1 if not used */
 	short worker;				/* thread id of last worker producing it */
 	ValRecord value;

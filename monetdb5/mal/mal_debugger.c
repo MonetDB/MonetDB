@@ -1228,7 +1228,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	if (strcmp(nmeOnStk, nme) && strncmp(nmeOnStk, "BAT", 3))
 		mnstr_printf(f, "!%s ", nmeOnStk);
 	mnstr_printf(f, " %s", (isVarConstant(mb, index) ? " constant" : ""));
-	/* mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));*/
+	mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));
 	mnstr_printf(f, " %s", (isVarTypedef(mb, index) ? " type variable" : ""));
 	GDKfree(nme);
 	mnstr_printf(f, "\n");

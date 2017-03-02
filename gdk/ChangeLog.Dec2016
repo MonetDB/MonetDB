@@ -1,3 +1,12 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Feb 28 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a bug when appending string bats that are fully duplicate
+  eliminated.  It could happend that the to-be-appended bat had an empty
+  string at an offset and at that same offset in the to-be-appended-to bat
+  there happened to be a (sequence of) NULL(s).  Then this offset would be
+  used, even though it might nog be the right offset for the empty string
+  in the to-be-appended-to bat.  This would result in multiple offsets for
+  the empty string, breaking the promise of being duplicate eliminated.
+
