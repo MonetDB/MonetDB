@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Mar  2 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Made the operator precedence of % equal to those of * and /.  All three
+  are evaluated from left to right.
+
 * Mon Feb  6 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Removed table sys.connections.  It was a remnant of an experimental
   change that had already been removed in 2012.
