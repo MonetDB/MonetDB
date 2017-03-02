@@ -32,3 +32,4 @@ sqlsmith.Bug-6217
 real-power.Bug-6228
 sqlsmith.Bug-6219
 create_view_order_by.Bug-3465
+cast_boolean_to_string.Bug-6110
