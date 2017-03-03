@@ -4885,7 +4885,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = 0;
-				if (used)
+				if (used && rel)
 					rel = rel_dup(rel);
 				if (!used && (!sn->lateral && !lateral) && rel) {
 					sql_rel *o = rel;
