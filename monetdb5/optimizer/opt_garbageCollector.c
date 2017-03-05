@@ -30,13 +30,14 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
-	int *varlnk, *stmtlnk;
+	//int *varlnk, *stmtlnk;
 
 	(void) pci;
 	(void) cntxt;
 	(void) stk;
 	if ( mb->inlineProp)
 		return 0;
+/*
 	varlnk = (int*) GDKzalloc(mb->vtop * sizeof(int));
 	if( varlnk == NULL)
 		return 0;
@@ -45,6 +46,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		GDKfree(varlnk);
 		return 0;
 	}
+*/
 	
 	old= mb->stmt;
 	limit = mb->stop;
@@ -68,6 +70,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	// Actual garbage collection stuff
 	// Construct the linked list of variables based on end-of-scope
+/*
 	setVariableScope(mb);
 	for( i = 0; i < mb->vtop; i++){
 		assert(getEndScope(mb,i) >= 0);
@@ -75,6 +78,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	  varlnk[i] = stmtlnk[getEndScope(mb,i)];
 	  stmtlnk[getEndScope(mb,i)] = i;
 	}
+*/
 
 	if ( newMalBlkStmt(mb,mb->ssize) < 0) 
 		return 0;
@@ -97,9 +101,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 		/* A block exit is never within a parallel block,
 		 * otherwise we could not inject the assignment */
-		if (blockExit(p) ){
 			/* force garbage collection of all declared within output block and ending here  */
 /* ignore for the time being, it requires a more thorough analysis of dependencies.
+		if (blockExit(p) ){
 			for( k = stmtlnk[i]; k; k = varlnk[k])
 			if( isaBatType(getVarType(mb,k)) ){
 				q = newAssignment(mb);
@@ -111,8 +115,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 				setVarEolife(mb,k,mb->stop-1);
 				actions++;
 			}
-*/
 		}
+*/
 	}
 	assert(p);
 	assert( p->token == ENDsymbol);
@@ -123,8 +127,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		if (old[i])
 			freeInstruction(old[i]);
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
-	GDKfree(varlnk);
-	GDKfree(stmtlnk);
+	//GDKfree(varlnk);
+	//GDKfree(stmtlnk);
 	GDKfree(old);
 #ifdef DEBUG_OPT_GARBAGE
 	{ 	int k;
