@@ -747,10 +747,10 @@ newTypeVariable(MalBlkPtr mb, malType type)
 {
 	int n, i;
 	for (i = 0; i < mb->vtop; i++)
-		if (isTmpVar(mb, i) && getVarType(mb, i) == type)
+		if (isVarTypedef(mb, i) && getVarType(mb, i) == type)
 			break;
 
-	if( i < mb->vtop && isVarTypedef(mb,i))
+	if( i < mb->vtop )
 		return i;
 	n = newTmpVariable(mb, type);
 	setVarTypedef(mb, n);
