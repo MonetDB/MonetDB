@@ -27,15 +27,11 @@ newAssignment(MalBlkPtr mb)
 
 	if ( q == NULL)
 		return NULL;
-	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0) {
+	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0 || mb->errors) {
 		freeInstruction(q);
 		return NULL;
 	}
 	pushInstruction(mb, q);
-	if (mb->errors) {
-		freeInstruction(q);
-		return NULL;
-	}
 	return q;
 }
 
@@ -47,15 +43,11 @@ newStmt(MalBlkPtr mb, const char *module, const char *name)
 	if ( q == NULL)
 		return NULL;
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
-	if (getDestVar(q) < 0) {
+	if (getDestVar(q) < 0 || mb->errors) {
 		freeInstruction(q);
 		return NULL;
 	}
 	pushInstruction(mb, q);
-	if (mb->errors) {
-		freeInstruction(q);
-		return NULL;
-	}
 	return q;
 }
 
@@ -66,16 +58,12 @@ newReturnStmt(MalBlkPtr mb)
 
 	if ( q == NULL)
 		return NULL;
-	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0) {
+	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0 || mb->errors) {
 		freeInstruction(q);
 		return NULL;
 	}
 	q->barrier= RETURNsymbol;
 	pushInstruction(mb, q);
-	if (mb->errors) {
-		freeInstruction(q);
-		return NULL;
-	}
 	return q;
 }
 
@@ -115,10 +103,6 @@ newComment(MalBlkPtr mb, const char *val)
 		return NULL;
 	}
 	pushInstruction(mb, q);
-	if (mb->errors) {
-		freeInstruction(q);
-		return NULL;
-	}
 	return q;
 }
 
@@ -132,7 +116,7 @@ newCatchStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = CATCHsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0 || mb->errors) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -140,6 +124,7 @@ newCatchStmt(MalBlkPtr mb, str nme)
 	} else getArg(q,0) = i;
 	return q;
 }
+
 InstrPtr
 newRaiseStmt(MalBlkPtr mb, str nme)
 {
@@ -150,7 +135,7 @@ newRaiseStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = RAISEsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0 || mb->errors) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -169,17 +154,13 @@ newExitStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = EXITsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme,strlen(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme,strlen(nme),TYPE_str)) < 0 || mb->errors) {
 			freeInstruction(q);
 			return NULL;
 		}
 	} else
 		getArg(q,0) = i;
     pushInstruction(mb, q);
-	if (mb->errors) {
-		freeInstruction(q);
-		return NULL;
-	}
 	return q;
 }
 
