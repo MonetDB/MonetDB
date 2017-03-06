@@ -167,7 +167,6 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 				toff = b->batCount == 0 ? 0 : b->tvheap->free;
 				/* make sure we get alignment right */
 				toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
-				assert(((toff >> GDK_VARSHIFT) << GDK_VARSHIFT) == toff);
 				/* if in "force" mode, the heap may be
 				 * shared when memory mapped */
 				if (HEAPextend(b->tvheap, toff + n->tvheap->size, force) != GDK_SUCCEED) {
@@ -189,10 +188,10 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 			 * first that the width of b's offset heap can
 			 * accommodate all values. */
 			if (b->twidth < SIZEOF_VAR_T &&
-			    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? (b->tvheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->tvheap->size >> GDK_VARSHIFT))) {
+			    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? b->tvheap->size - GDK_VAROFFSET : b->tvheap->size)) {
 				/* offsets aren't going to fit, so
 				 * widen offset heap */
-				if (GDKupgradevarheap(b, (var_t) (b->tvheap->size >> GDK_VARSHIFT), 0, force) != GDK_SUCCEED) {
+				if (GDKupgradevarheap(b, (var_t) b->tvheap->size, 0, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}
@@ -278,9 +277,9 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 				v = tvp[p];
 				break;
 			}
-			v = (var_t) ((((size_t) v << GDK_VARSHIFT) + toff) >> GDK_VARSHIFT);
+			v = (var_t) ((size_t) v + toff);
 			assert(v >= GDK_VAROFFSET);
-			assert(((size_t) v << GDK_VARSHIFT) < b->tvheap->free);
+			assert((size_t) v < b->tvheap->free);
 			switch (b->twidth) {
 			case 1:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
@@ -356,7 +355,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 				 * in n's string heap, so we don't
 				 * have to insert a new string into b:
 				 * we can just copy the offset */
-				v = (var_t) (off >> GDK_VARSHIFT);
+				v = (var_t) off;
 				if (b->twidth < SIZEOF_VAR_T &&
 				    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? v - GDK_VAROFFSET : v)) {
 					/* offset isn't going to fit,
@@ -1775,21 +1774,21 @@ BATcount_no_nil(BAT *b)
 		switch (b->twidth) {
 		case 1:
 			for (i = 0; i < n; i++)
-				cnt += base[((var_t) ((const unsigned char *) p)[i] + GDK_VAROFFSET) << GDK_VARSHIFT] != '\200';
+				cnt += base[(var_t) ((const unsigned char *) p)[i] + GDK_VAROFFSET] != '\200';
 			break;
 		case 2:
 			for (i = 0; i < n; i++)
-				cnt += base[((var_t) ((const unsigned short *) p)[i] + GDK_VAROFFSET) << GDK_VARSHIFT] != '\200';
+				cnt += base[(var_t) ((const unsigned short *) p)[i] + GDK_VAROFFSET] != '\200';
 			break;
 #if SIZEOF_VAR_T != SIZEOF_INT
 		case 4:
 			for (i = 0; i < n; i++)
-				cnt += base[(var_t) ((const unsigned int *) p)[i] << GDK_VARSHIFT] != '\200';
+				cnt += base[(var_t) ((const unsigned int *) p)[i]] != '\200';
 			break;
 #endif
 		default:
 			for (i = 0; i < n; i++)
-				cnt += base[((const var_t *) p)[i] << GDK_VARSHIFT] != '\200';
+				cnt += base[((const var_t *) p)[i]] != '\200';
 			break;
 		}
 		break;

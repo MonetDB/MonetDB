@@ -1206,7 +1206,7 @@ strLocate(Heap *h, const char *v)
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
 		next = (stridx_t *) (h->base + *ref);
 		if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0)
-			return (var_t) ((sizeof(stridx_t) + *ref + extralen) >> GDK_VARSHIFT);	/* found */
+			return (var_t) ((sizeof(stridx_t) + *ref + extralen));	/* found */
 	}
 	return 0;
 }
@@ -1235,7 +1235,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0) {
 				/* found */
 				pos = sizeof(stridx_t) + *ref + extralen;
-				return *dst = (var_t) (pos >> GDK_VARSHIFT);
+				return *dst = (var_t) pos;
 			}
 		}
 		/* is there room for the next pointer in the padding space? */
@@ -1250,17 +1250,15 @@ strPut(Heap *h, var_t *dst, const char *v)
 			pos = elimbase + *bucket + extralen;
 			if (GDK_STRCMP(v, h->base + pos) == 0) {
 				/* already in heap; do not insert! */
-				return *dst = (var_t) (pos >> GDK_VARSHIFT);
+				return *dst = (var_t) pos;
 			}
 		}
-#if SIZEOF_VAR_T >= SIZEOF_VOID_P /* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
 		if (extralen == 0)
 			/* i.e., h->hashash == FALSE */
 			/* no VARSHIFT and no string hash value stored
 			 * => no padding/alignment needed */
 			pad = 0;
 		else
-#endif
 			/* pad to align on VARALIGN for VARSHIFT
 			 * and/or string hash value */
 			pad &= (GDK_VARALIGN - 1);
@@ -1281,8 +1279,8 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 		assert(newsize);
 
-		if (h->free + pad + len + extralen >= (((size_t) VAR_MAX) << GDK_VARSHIFT)) {
-			GDKerror("strPut: string heaps gets larger than " SZFMT "GB.\n", (((size_t) VAR_MAX) << GDK_VARSHIFT) >> 30);
+		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
+			GDKerror("strPut: string heaps gets larger than " SZFMT "GiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
@@ -1301,7 +1299,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 	/* insert string */
 	pos = h->free + pad + extralen;
-	*dst = (var_t) (pos >> GDK_VARSHIFT);
+	*dst = (var_t) pos;
 #ifndef NDEBUG
 	/* just before inserting into the heap, make sure that the
 	 * string is actually UTF-8 (if we encountered a return

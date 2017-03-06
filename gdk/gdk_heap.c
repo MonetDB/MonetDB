@@ -1088,7 +1088,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	}
 
 	block += hheader->alignment;
-	return (var_t) (block >> GDK_VARSHIFT);
+	return (var_t) block;
 }
 
 void
@@ -1098,7 +1098,7 @@ HEAP_free(Heap *heap, var_t mem)
 	CHUNK *beforep;
 	CHUNK *blockp;
 	CHUNK *afterp;
-	size_t after, before, block = mem << GDK_VARSHIFT;
+	size_t after, before, block = mem;
 
 	if (hheader->alignment != 8 && hheader->alignment != 4) {
 		GDKfatal("HEAP_free: Heap structure corrupt\n");
