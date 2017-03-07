@@ -1,0 +1,199 @@
+stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 16:55:19 >  
+# 16:55:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32925" "--set" "mapi_usock=/var/tmp/mtest-8699/.s.monetdb.32925" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 16:55:19 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:32925/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8699/.s.monetdb.32925
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 16:55:20 >  
+# 16:55:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8699" "--port=32925"
+# 16:55:20 >  
+
+#CREATE TABLE t_boolean (val BOOLEAN, valstr VARCHAR(5));
+#INSERT INTO t_boolean VALUES (true, 'True');
+[ 1	]
+#INSERT INTO t_boolean VALUES (false, 'False');
+[ 1	]
+#INSERT INTO t_boolean VALUES (Null, 'Null');
+[ 1	]
+#SELECT val, valstr, cast(val as bool) as cast2bool FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	cast2bool # name
+% boolean,	varchar,	boolean # type
+% 5,	5,	5 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	false	]
+[ true,	"True",	true	]
+#SELECT val, valstr, cast(valstr as bool) as caststr2bool FROM t_boolean where val is not null order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	caststr2bool # name
+% boolean,	varchar,	boolean # type
+% 5,	5,	5 # length
+[ false,	"False",	false	]
+[ true,	"True",	true	]
+#SELECT val, valstr, cast(val as string) as cast2str FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	cast2str # name
+% boolean,	varchar,	clob # type
+% 5,	5,	5 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	"false"	]
+[ true,	"True",	"true"	]
+#SELECT val, valstr, cast(val as char(5)) as cast2char5 FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	cast2char5 # name
+% boolean,	varchar,	char # type
+% 5,	5,	5 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	"false"	]
+[ true,	"True",	"true"	]
+#SELECT val, valstr, cast(val as varchar(5)) as cast2varchar5 FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	cast2varchar5 # name
+% boolean,	varchar,	varchar # type
+% 5,	5,	5 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	"false"	]
+[ true,	"True",	"true"	]
+#SELECT val, valstr, cast(val as clob) as cast2clob FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	cast2clob # name
+% boolean,	varchar,	clob # type
+% 5,	5,	5 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	"false"	]
+[ true,	"True",	"true"	]
+#SELECT val, valstr, convert(val, string) as convert2str FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	convert2str # name
+% boolean,	varchar,	clob # type
+% 5,	5,	5 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	"false"	]
+[ true,	"True",	"true"	]
+#SELECT val, valstr, convert(val, char(5)) as convert2char5 FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	convert2char5 # name
+% boolean,	varchar,	char # type
+% 5,	5,	5 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	"false"	]
+[ true,	"True",	"true"	]
+#SELECT val, valstr, convert(val, varchar(5)) as convert2varchar5 FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	convert2varchar5 # name
+% boolean,	varchar,	varchar # type
+% 5,	5,	5 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	"false"	]
+[ true,	"True",	"true"	]
+#SELECT val, valstr, convert(val, clob) as convert2clob FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	convert2clob # name
+% boolean,	varchar,	clob # type
+% 5,	5,	5 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	"false"	]
+[ true,	"True",	"true"	]
+#SELECT val, valstr, cast(val as int) as cast2int FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	cast2int # name
+% boolean,	varchar,	int # type
+% 5,	5,	1 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	0	]
+[ true,	"True",	1	]
+#SELECT val, valstr, cast(val as smallint) as cast2smallint FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	cast2smallint # name
+% boolean,	varchar,	smallint # type
+% 5,	5,	1 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	0	]
+[ true,	"True",	1	]
+#SELECT val, valstr, cast(val as tinyint) as cast2tinyint FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	cast2tinyint # name
+% boolean,	varchar,	tinyint # type
+% 5,	5,	1 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	0	]
+[ true,	"True",	1	]
+#SELECT val, valstr, cast(val as bigint) as cast2bigint FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% val,	valstr,	cast2bigint # name
+% boolean,	varchar,	bigint # type
+% 5,	5,	1 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	0	]
+[ true,	"True",	1	]
+#SELECT val, valstr, cast(cast(val as tinyint) as char(1)) as cast2char1 FROM t_boolean order by val;
+% sys.t_boolean,	sys.t_boolean,	sys.L6 # table_name
+% val,	valstr,	cast2char1 # name
+% boolean,	varchar,	char # type
+% 5,	5,	1 # length
+[ NULL,	"Null",	NULL	]
+[ false,	"False",	"0"	]
+[ true,	"True",	"1"	]
+#DROP TABLE t_boolean;
+
+# 16:55:21 >  
+# 16:55:21 >  "Done."
+# 16:55:21 >  
+

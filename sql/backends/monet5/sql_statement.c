@@ -2309,6 +2309,7 @@ stmt_output(backend *be, stmt *lst)
 		snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
 		q = newStmt(mb, sqlRef, resultSetRef);
+		getArg(q,0) = newTmpVariable(mb,TYPE_int);
 		if (q) {
 			q = pushStr(mb, q, fqtn);
 			q = pushStr(mb, q, cn);

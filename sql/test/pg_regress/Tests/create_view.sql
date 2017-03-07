@@ -28,7 +28,6 @@ CREATE VIEW toyemp AS
 --
 -- CREATE OR REPLACE VIEW
 -- MonetDB does not (yet) support CREATE OR REPLACE VIEW,  see https://www.monetdb.org/bugzilla/show_bug.cgi?id=3574
--- MonetDB does not (yet) support ORDER BY in CREATE VIEW, see https://www.monetdb.org/bugzilla/show_bug.cgi?id=3465
 --
 
 CREATE TABLE viewtest_tbl (a int, b int);
@@ -60,9 +59,6 @@ CREATE OR REPLACE VIEW viewtest AS
 DROP VIEW viewtest;
 CREATE VIEW viewtest AS
 	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
--- MonetDB does not (yet) support ORDER BY in CREATE VIEW, 
-CREATE VIEW viewtest AS
-	SELECT a, b FROM viewtest_tbl WHERE a > 5;
 
 SELECT * FROM viewtest;
 
@@ -89,3 +85,4 @@ CREATE VIEW viewtest AS
 
 DROP VIEW viewtest;
 DROP TABLE viewtest_tbl;
+

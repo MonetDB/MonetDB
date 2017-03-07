@@ -659,6 +659,8 @@ makeVarSpace(MalBlkPtr mb)
 
 		new = (VarRecord*) GDKrealloc(mb->var, s * sizeof(VarRecord));
 		if (new == NULL) {
+			// the only place to return an error signal at this stage.
+			// The Client context should be passed around more deeply
 			mb->errors++;
 			showException(GDKout, MAL, "newMalBlk",MAL_MALLOC_FAIL);
 			return -1;
@@ -748,10 +750,10 @@ newTypeVariable(MalBlkPtr mb, malType type)
 {
 	int n, i;
 	for (i = 0; i < mb->vtop; i++)
-		if (isTmpVar(mb, i) && getVarType(mb, i) == type)
+		if (isVarTypedef(mb, i) && getVarType(mb, i) == type)
 			break;
 
-	if( i < mb->vtop && isVarTypedef(mb,i))
+	if( i < mb->vtop )
 		return i;
 	n = newTmpVariable(mb, type);
 	setVarTypedef(mb, n);
