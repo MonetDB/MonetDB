@@ -2369,6 +2369,13 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	return BATgroupquantile(b,g,e,s,tp,0.5,skip_nils,abort_on_error);
 }
 
+#if SIZEOF_OID == SIZEOF_INT
+#define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_int(indir, offset, (const int *) vals, lo, hi, (int) (v), ordering, last)
+#endif
+#if SIZEOF_OID == SIZEOF_LNG
+#define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_lng(indir, offset, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
+#endif
+
 BAT *
 BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		 int skip_nils, int abort_on_error)
@@ -2469,36 +2476,35 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		bi = bat_iterator(b);
 
 		grps = (const oid *) Tloc(g, 0);
-		prev = grps[0];
 		 /* for each group (r and p are the beginning and end
 		  * of the current group, respectively) */
-		for (r = 0, p = 1, q = BATcount(g); p <= q; p++) {
-			assert(r < p);
-			if (p == q || grps[p] != prev) {
-				BUN qindex;
-				if (skip_nils && !b->tnonil) {
-					r = binsearch(NULL, 0, tp, Tloc(b, 0),
-						      b->tvheap ? b->tvheap->base : NULL,
-						      b->twidth, r, p, nil,
-						      1, 1);
-				}
-				if (r == p) {
-					v = nil;
-					nils++;
-				} else {
-					/* round *down* to nearest integer */
-					qindex = r + p - (BUN) (p + 0.5 - (p - r - 1) * quantile);
-					/* be a little paranoid about the index */
-					assert(qindex >= r && qindex <  p);
-					v = BUNtail(bi, qindex);
-					nils += (*atomcmp)(v, nil) == 0;
-				}
-				bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn));
-
-				r = p;
-				if (p < q)
-					prev = grps[p];
+		for (r = 0, q = BATcount(g); r < q; r = p) {
+			BUN qindex;
+			prev = grps[r];
+			/* search for end of current group (grps is
+			 * sorted so we can use binary search) */
+			p = binsearch_oid(NULL, 0, grps, r, q - 1, prev, 1, 1);
+			if (skip_nils && !b->tnonil) {
+				/* within group, locate start of non-nils */
+				r = binsearch(NULL, 0, tp, Tloc(b, 0),
+					      b->tvheap ? b->tvheap->base : NULL,
+					      b->twidth, r, p, nil,
+					      1, 1);
 			}
+			if (r == p) {
+				/* no non-nils found */
+				v = nil;
+				nils++;
+			} else {
+				/* round *down* to nearest integer */
+				qindex = r + p - (BUN) (p + 0.5 - (p - r - 1) * quantile);
+				/* be a little paranoid about the index */
+				assert(qindex >= r && qindex <  p);
+				v = BUNtail(bi, qindex);
+				if (!skip_nils && !b->tnonil)
+					nils += (*atomcmp)(v, nil) == 0;
+			}
+			bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn));
 		}
 		nils += ngrp - BATcount(bn);
 		while (BATcount(bn) < ngrp) {
