@@ -173,8 +173,8 @@ Ready.
 % decimal,	decimal,	decimal # type
 % 20,	20,	20 # length
 [ 4424.440,	36960.680,	80045.910	]
-[ 3885.880,	37144.200,	79010.100	]
-[ 4171.320,	35937.880,	78572.760	]
+[ 3889.960,	37144.200,	79010.100	]
+[ 4204.470,	35937.880,	78572.760	]
 #select quantile(l_extendedprice,1) from lit group by l_returnflag;
 % sys.L3 # table_name
 % L2 # name
