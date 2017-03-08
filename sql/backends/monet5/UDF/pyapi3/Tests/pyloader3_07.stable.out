@@ -36,10 +36,10 @@ Ready.
 #};
 #SELECT * FROM pyloader07table;
 % sys.pyloader07table,	sys.pyloader07table # table_name
-% t,	s # name
-% int,	int # type
+% s,	t # name
+% bigint,	bigint # type
 % 2,	2 # length
-[ 42,	33	]
+[ 33,	42	]
 #DROP TABLE pyloader07table;
 #DROP LOADER pyloader07;
 #ROLLBACK;

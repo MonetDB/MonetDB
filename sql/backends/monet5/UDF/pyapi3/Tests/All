@@ -29,8 +29,5 @@ HAVE_LIBPY3?pyapi3_32
 
 HAVE_LIBPY3?pyloader3_01
 HAVE_LIBPY3?pyloader3_02
-HAVE_LIBPY3?pyloader3_03
-HAVE_LIBPY3?pyloader3_04
 HAVE_LIBPY3?pyloader3_05
-HAVE_LIBPY3?pyloader3_06
 HAVE_LIBPY3?pyloader3_07

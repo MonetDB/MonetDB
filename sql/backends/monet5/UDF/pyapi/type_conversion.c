@@ -202,20 +202,6 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
     }									\
     return retval;							\
 }
-#define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)			\
-    STRING_TO_NUMBER_FACTORY(tpe)					\
-    str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value)	\
-    {									\
-        char utf8[1024];						\
-	if (maxsize == 0)						\
-            maxsize = utf32_strlen(ptr);				\
-	if (maxsize > 255)						\
-            maxsize = 255;						\
-        unicode_to_utf8(0, maxsize, utf8, ptr);				\
-        return str_to_##tpe(utf8, 0, value);				\
-    }									\
-    PY_TO_(tpe, inttpe);
-
 #else
 #define PY_TO_(type, inttpe)						\
 str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
@@ -251,15 +237,21 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
     }									\
     return retval;							\
 }
-#define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)			\
-    STRING_TO_NUMBER_FACTORY(tpe)					\
-    str unicode_to_##tpe(char *ptr, size_t maxsize, tpe *value)		\
-    {									\
-	return str_to_##tpe(ptr, maxsize, value);			\
-    }									\
-    PY_TO_(tpe, inttpe);
-
 #endif
+
+#define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)            \
+    STRING_TO_NUMBER_FACTORY(tpe)                   \
+    str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value)   \
+    {                                   \
+        char utf8[1024];                        \
+    if (maxsize == 0)                       \
+            maxsize = utf32_strlen(ptr);                \
+    if (maxsize > 255)                      \
+            maxsize = 255;                      \
+        unicode_to_utf8(0, maxsize / sizeof(Py_UNICODE), utf8, ptr);             \
+        return str_to_##tpe(utf8, 0, value);                \
+    }                                   \
+    PY_TO_(tpe, inttpe);
 
 CONVERSION_FUNCTION_FACTORY(bte, bte)
 CONVERSION_FUNCTION_FACTORY(oid, oid)
