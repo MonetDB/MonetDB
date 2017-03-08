@@ -3,7 +3,7 @@
 
 case $# in
 1)
-    if [ -d "$1" ] && [ -f "$1"/Tests/load.sql ] && [ -f "$1"/Tests/check.SQL.py.src ]; then
+    if [ -d "$1" ] && [ -f "$1"/Tests/load.sql ] && [ -f "$1"/Tests/check.SQL.py ]; then
 	cd "$1" || exit 1
     else
 	echo "bad argument"
@@ -14,7 +14,7 @@ case $# in
     case $0 in
     */*) cd ${0%/*};;
     esac
-    if [ -f Tests/load.sql ] && [ -f Tests/check.SQL.py.src ]; then
+    if [ -f Tests/load.sql ] && [ -f Tests/check.SQL.py ]; then
 	:
     else
 	echo "bad directory"

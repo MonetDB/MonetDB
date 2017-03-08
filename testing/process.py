@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 import subprocess
 import os
@@ -363,8 +363,18 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
                 del cmd[i]
                 del cmd[i - 1]
                 break
+        usock = None
+        for i in range(len(cmd)):
+            if cmd[i][:11] == 'mapi_usock=':
+                usock = cmd[i][11:cmd[i].rfind('.')]
+                del cmd[i]
+                del cmd[i - 1]
+                break
         cmd.append('--set')
         cmd.append('mapi_port=%d' % int(mapiport))
+        if usock is not None:
+            cmd.append('--set')
+            cmd.append('mapi_usock=%s.%d' % (usock, int(mapiport)))
     for i in range(len(cmd)):
         if cmd[i][:9] == '--dbpath=':
             dbpath = cmd[i][9:]

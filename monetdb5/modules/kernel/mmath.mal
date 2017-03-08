@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 module mmath;
 
@@ -133,7 +133,13 @@ command sqrt(y:flt)  	  :flt
 address MATHunary_SQRTflt;
 command sqrt(y:dbl)  	  :dbl 
 address MATHunary_SQRTdbl
-comment "The sqrt(x) function returns the non-negative square root of x.";
+comment "The sqrt(x) function returns the non-negative root of x.";
+
+command cbrt(y:flt)  	  :flt 
+address MATHunary_CBRTflt;
+command cbrt(y:dbl)  	  :dbl 
+address MATHunary_CBRTdbl
+comment "The cbrt(x) function returns the cube root of x.";
 
 
 command ceil(y:flt)     :flt 
@@ -188,7 +194,7 @@ unsafe command rand () :int
 address MATHrandint
 comment "return a random number";
 
-command rand (v:int) :int 
+unsafe command rand (v:int) :int 
 address MATHrandintarg
 comment "return a random number";
 

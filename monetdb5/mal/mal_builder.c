@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -25,17 +25,13 @@ newAssignment(MalBlkPtr mb)
 {
 	InstrPtr q = newInstruction(mb,NULL,NULL);
 
-	if (q == NULL)
+	if ( q == NULL)
 		return NULL;
-	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0) {
+	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0 || mb->errors) {
 		freeInstruction(q);
 		return NULL;
 	}
 	pushInstruction(mb, q);
-	if (mb->errors) {
-		freeInstruction(q);
-		return NULL;
-	}
 	return q;
 }
 
@@ -44,38 +40,30 @@ newStmt(MalBlkPtr mb, const char *module, const char *name)
 {
 	InstrPtr q = newInstruction(mb, putName(module), putName(name));
 
-	if (q == NULL)
+	if ( q == NULL)
 		return NULL;
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
-	if (getDestVar(q) < 0) {
+	if (getDestVar(q) < 0 || mb->errors) {
 		freeInstruction(q);
 		return NULL;
 	}
 	pushInstruction(mb, q);
-	if (mb->errors) {
-		freeInstruction(q);
-		return NULL;
-	}
 	return q;
 }
 
 InstrPtr
 newReturnStmt(MalBlkPtr mb)
 {
-	InstrPtr q = newInstruction(mb, NULL,NULL);
+	InstrPtr q = newInstruction(mb, NULL, NULL);
 
-	if (q == NULL)
+	if ( q == NULL)
 		return NULL;
-	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0) {
-		freeInstruction(q);
-		return NULL;
-	}
-	pushInstruction(mb, q);
-	if (mb->errors) {
+	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0 || mb->errors) {
 		freeInstruction(q);
 		return NULL;
 	}
 	q->barrier= RETURNsymbol;
+	pushInstruction(mb, q);
 	return q;
 }
 
@@ -84,7 +72,7 @@ newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 {
 	InstrPtr q = newAssignment(mb);
 
-	if (q == NULL || mod == NULL || fcn == NULL)
+	if ( q == NULL || mod == NULL || fcn == NULL)
 		return NULL;
 	setModuleId(q, putName(mod));
 	setFunctionId(q, putName(fcn));
@@ -94,10 +82,10 @@ newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 InstrPtr
 newComment(MalBlkPtr mb, const char *val)
 {
-	InstrPtr q = newInstruction(mb, NULL,NULL);
+	InstrPtr q = newInstruction(mb, NULL, NULL);
 	ValRecord cst;
 
-	if (q == NULL)
+	if ( q == NULL)
 		return NULL;
 	q->token = REMsymbol;
 	q->barrier = 0;
@@ -124,11 +112,11 @@ newCatchStmt(MalBlkPtr mb, str nme)
 	InstrPtr q = newAssignment(mb);
 	int i= findVariable(mb,nme);
 
-	if (q == NULL)
+	if ( q == NULL)
 		return NULL;
 	q->barrier = CATCHsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0 || mb->errors) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -136,17 +124,18 @@ newCatchStmt(MalBlkPtr mb, str nme)
 	} else getArg(q,0) = i;
 	return q;
 }
+
 InstrPtr
 newRaiseStmt(MalBlkPtr mb, str nme)
 {
 	InstrPtr q = newAssignment(mb);
 	int i= findVariable(mb,nme);
 
-	if (q == NULL)
+	if ( q == NULL)
 		return NULL;
 	q->barrier = RAISEsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0 || mb->errors) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -161,16 +150,34 @@ newExitStmt(MalBlkPtr mb, str nme)
 	InstrPtr q = newAssignment(mb);
 	int i= findVariable(mb,nme);
 
-	if (q == NULL)
+	if ( q == NULL)
 		return NULL;
 	q->barrier = EXITsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme,strlen(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme,strlen(nme),TYPE_str)) < 0 || mb->errors) {
 			freeInstruction(q);
 			return NULL;
 		}
 	} else
 		getArg(q,0) = i;
+    pushInstruction(mb, q);
+	return q;
+}
+
+InstrPtr
+pushEndInstruction(MalBlkPtr mb)
+{
+    InstrPtr q;
+
+    q = newInstruction(mb,NULL, NULL);
+	if ( q == NULL)
+		return NULL;
+    q->token = ENDsymbol;
+    q->barrier = 0;
+    q->argc = 0;
+    q->retc = 0;
+    q->argv[0] = 0;
+    pushInstruction(mb, q);
 	return q;
 }
 
@@ -330,6 +337,8 @@ pushSht(MalBlkPtr mb, InstrPtr q, sht val)
 	int _t;
 	ValRecord cst;
 
+	if ( q == NULL)
+		return NULL;
 	cst.vtype= TYPE_sht;
 	cst.val.shval= val;
 	cst.len = 0;
@@ -359,6 +368,8 @@ pushHge(MalBlkPtr mb, InstrPtr q, hge val)
 	int _t;
 	ValRecord cst;
 
+	if ( q == NULL)
+		return NULL;
 	cst.vtype= TYPE_hge;
 	cst.val.hval= val;
 	cst.len = 0;
@@ -522,7 +533,7 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 		cst.vtype = TYPE_bat;
 		cst.val.bval = bat_nil;
 		_t = defConstant(mb,TYPE_bat,&cst);
-		mb->var[_t]->type = tpe;
+		getVarType(mb,_t) = tpe;
 	}
 	q= pushArgument(mb, q, _t);
 	setVarUDFtype(mb,getArg(q,q->argc-1)); /* needed */

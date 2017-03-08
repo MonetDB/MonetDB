@@ -3,13 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-#include "gdk_interprocess.h"
+#include "monetdb_config.h"
 
 #ifdef HAVE_FORK
 
+#include "gdk_interprocess.h"
 #include "gdk.h"
 #include "gdk_private.h"
 
@@ -80,6 +81,9 @@ GDKinitmmap(size_t id, size_t size, void **return_ptr, size_t *return_size, str 
 	int fd;
 	int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC | MAP_SHARED;
 	char *path = NULL;
+
+	assert(return_ptr != NULL);
+
 	GDKmmapfile(address, 100, id);
 
 	/* round up to multiple of GDK_mmap_pagesize with a
@@ -108,9 +112,7 @@ GDKinitmmap(size_t id, size_t size, void **return_ptr, size_t *return_size, str 
 		goto cleanup;
 	}
 	GDKfree(path);
-	if (return_ptr != NULL) {
-		*return_ptr = ptr;
-	}
+	*return_ptr = ptr;
 	if (return_size != NULL) {
 		*return_size = size;
 	}

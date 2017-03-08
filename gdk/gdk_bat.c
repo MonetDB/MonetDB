@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -93,7 +93,6 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	bn->tnil = FALSE;
 	bn->tsorted = bn->trevsorted = ATOMlinear(tt) != 0;
 	bn->tident = BATstring_t;
-	bn->talign = OIDnew(1);
 	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 	bn->tprops = NULL;
 
@@ -1462,8 +1461,7 @@ BATkey(BAT *b, int flag)
 		    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
 		    !BATtkey(bp) &&
 		    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
-		     BATcount(b) == 0 ||
-		     (b->talign && b->talign == bp->talign)))
+		     BATcount(b) == 0))
 			return BATkey(bp, TRUE);
 	}
 	return GDK_SUCCEED;
@@ -1494,10 +1492,6 @@ BATtseqbase(BAT *b, oid o)
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		if (b->tseqbase != o) {
 			b->batDirtydesc = TRUE;
-			/* zap alignment if column is changed by new
-			 * seqbase */
-			if (b->ttype == TYPE_void)
-				b->talign = 0;
 		}
 		b->tseqbase = o;
 		if (b->ttype == TYPE_oid && o == oid_nil) {
@@ -1940,9 +1934,9 @@ BATmode(BAT *b, int mode)
 		}
 		/* persistent BATs get a logical reference */
 		if (mode == PERSISTENT) {
-			BBPincref(bid, TRUE);
+			BBPretain(bid);
 		} else if (b->batPersistence == PERSISTENT) {
-			BBPdecref(bid, TRUE);
+			BBPrelease(bid);
 		}
 		MT_lock_set(&GDKswapLock(bid));
 		if (mode == PERSISTENT) {

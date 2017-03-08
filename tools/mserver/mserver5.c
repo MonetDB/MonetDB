@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -119,7 +119,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --trace\n");
 	fprintf(stderr, "     --forcemito\n");
-	fprintf(stderr, "     --recycler\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
 	exit(xit);
@@ -167,7 +166,7 @@ monet_hello(void)
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
 	printf("# Copyright (c) 1993-July 2008 CWI.\n");
-	printf("# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved\n");
+	printf("# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved\n");
 	printf("# Visit http://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
@@ -269,7 +268,6 @@ main(int argc, char **av)
 		{ "optimizers", 0, 0, 0 },
 		{ "performance", 0, 0, 0 },
 		{ "forcemito", 0, 0, 0 },
-		{ "recycler", 0, 0, 0 },
 		{ "heaps", 0, 0, 0 },
 		{ 0, 0, 0, 0 }
 	};
@@ -636,7 +634,7 @@ main(int argc, char **av)
 			}
 			fclose(secretf);
 		}
-		if ((err = AUTHunlockVault(&secretp)) != MAL_SUCCEED) {
+		if ((err = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			msab_registerStop();
 			GDKfatal("%s", err);

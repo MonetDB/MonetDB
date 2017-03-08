@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 import sys
 import os
@@ -35,8 +35,6 @@ test = (
         re.compile('(?:'+')|(?:'.join([
                 # MAPI port numbers
                     r"^MAPI  = (.*@.*:\d*|\([a-zA-Z0-9_]+\) /.*\.s\.monetdb\.\d+)$",
-                # SPHINX is optional in monetdb5/modules/mal/inspec05
-                    r'\[\s+"[^"]*",\s+"(?:command|function|pattern)",\s+"sphinx",\s+"[^"]*",\s+"[^"]*"\s+\]',
                 # dplyr (R package) includes the MonetDB version in its output, ignore
                     r"^Source: MonetDB .*$",
                  ])+')',  re.MULTILINE),

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -114,16 +114,16 @@ hgeHash(const hge *v)
 /*
  * @+ Standard Atoms
  */
-static inline int
+static int
 batFix(const bat *b)
 {
-	return BBPincref(*b, TRUE);
+	return BBPretain(*b);
 }
 
-static inline int
+static int
 batUnfix(const bat *b)
 {
-	return BBPdecref(*b, TRUE);
+	return BBPrelease(*b);
 }
 
 /*
@@ -1108,7 +1108,7 @@ strHeap(Heap *d, size_t cap)
 		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		d->dirty = 1;
 		memset(d->base, 0, d->free);
-		d->hashash = 1;	/* new string heaps get the hash value (and length) stored */
+		d->hashash = 0;
 #ifndef NDEBUG
 		/* fill should solve initialization problems within valgrind */
 		memset(d->base + d->free, 0, d->size - d->free);
@@ -1130,6 +1130,9 @@ void
 strCleanHash(Heap *h, int rebuild)
 {
 	(void) rebuild;
+	if (!h->cleanhash)
+		return;
+	h->cleanhash = 0;
 	if (!GDK_ELIMDOUBLES(h)) {
 		/* flush hash table for security */
 		memset(h->base, 0, GDK_STRHASHSIZE);
@@ -1203,7 +1206,7 @@ strLocate(Heap *h, const char *v)
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
 		next = (stridx_t *) (h->base + *ref);
 		if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0)
-			return (var_t) ((sizeof(stridx_t) + *ref + extralen) >> GDK_VARSHIFT);	/* found */
+			return (var_t) ((sizeof(stridx_t) + *ref + extralen));	/* found */
 	}
 	return 0;
 }
@@ -1232,7 +1235,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0) {
 				/* found */
 				pos = sizeof(stridx_t) + *ref + extralen;
-				return *dst = (var_t) (pos >> GDK_VARSHIFT);
+				return *dst = (var_t) pos;
 			}
 		}
 		/* is there room for the next pointer in the padding space? */
@@ -1240,22 +1243,22 @@ strPut(Heap *h, var_t *dst, const char *v)
 			/* if not, pad more */
 			pad += GDK_VARALIGN;
 		}
-	} else if (*bucket) {
+	} else {
 		/* large string heap (>=64KB) --
 		 * opportunistic/probabilistic double elimination */
-		pos = elimbase + *bucket + extralen;
-		if (GDK_STRCMP(v, h->base + pos) == 0) {
-			/* already in heap; do not insert! */
-			return *dst = (var_t) (pos >> GDK_VARSHIFT);
+		if (*bucket) {
+			pos = elimbase + *bucket + extralen;
+			if (GDK_STRCMP(v, h->base + pos) == 0) {
+				/* already in heap; do not insert! */
+				return *dst = (var_t) pos;
+			}
 		}
-#if SIZEOF_VAR_T >= SIZEOF_VOID_P /* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
 		if (extralen == 0)
 			/* i.e., h->hashash == FALSE */
 			/* no VARSHIFT and no string hash value stored
 			 * => no padding/alignment needed */
 			pad = 0;
 		else
-#endif
 			/* pad to align on VARALIGN for VARSHIFT
 			 * and/or string hash value */
 			pad &= (GDK_VARALIGN - 1);
@@ -1276,8 +1279,8 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 		assert(newsize);
 
-		if (h->free + pad + len + extralen >= (((size_t) VAR_MAX) << GDK_VARSHIFT)) {
-			GDKerror("strPut: string heaps gets larger than " SZFMT "GB.\n", (((size_t) VAR_MAX) << GDK_VARSHIFT) >> 30);
+		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
+			GDKerror("strPut: string heaps gets larger than " SZFMT "GiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
@@ -1296,7 +1299,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 	/* insert string */
 	pos = h->free + pad + extralen;
-	*dst = (var_t) (pos >> GDK_VARSHIFT);
+	*dst = (var_t) pos;
 #ifndef NDEBUG
 	/* just before inserting into the heap, make sure that the
 	 * string is actually UTF-8 (if we encountered a return
@@ -1756,130 +1759,6 @@ strWrite(const char *a, stream *s, size_t cnt)
 		return GDK_SUCCEED;
 	else
 		return GDK_FAIL;
-}
-
-/*
- * @+ Unique OIDs
- * The basic type OID represents unique values. Refinements should be
- * considered to link oids in time order.
- *
- * Values start from the "seqbase" (usually 0@0). A nil seqbase makes
- * the entire column nil.  Monet's BUN access methods
- * BUNhead(b,p)/BUNtail(b,p) instantiate a value on-the-fly by looking
- * at the position p in BAT b.
- */
-static volatile ATOMIC_TYPE GDKoid;
-#ifdef ATOMIC_LOCK
-static MT_Lock GDKoidLock MT_LOCK_INITIALIZER("GDKoidLock");
-#endif
-static oid GDKflushed;		/* protected by MT_system_lock */
-
-/*
- * Make up some new OID for a specified database, based on the current
- * time.
- */
-static oid
-OIDrand(void)
-{
-	return 1000000;
-}
-
-/*
- * Init the shared array of oid bases.
- */
-int
-OIDinit(void)
-{
-#ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(GDKoidLock);
-#endif
-	GDKflushed = 0;
-	GDKoid = OIDrand();
-	assert(oid_nil == * (const oid *) ATOMnilptr(TYPE_oid));
-	return 0;
-}
-
-/*
- * Initialize the current OID number to be starting at 'o'.
- */
-oid
-OIDbase(oid o)
-{
-	ATOMIC_SET(GDKoid, (ATOMIC_TYPE) o, GDKoidLock);
-	return o;
-}
-
-static oid
-OIDseed(oid o)
-{
-	oid t, p = (oid) ATOMIC_GET(GDKoid, GDKoidLock);
-
-	t = OIDrand();
-	if (o > t)
-		t = o;
-	if (p >= t)
-		t = p;
-	return t;
-}
-
-/*
- * Initialize a sequence of OID seeds (for a sequence of database) as
- * stored in a string.
- */
-oid
-OIDread(str s)
-{
-	oid new = 0, *p = &new;
-	int l = sizeof(oid);
-
-	while (GDKisspace(*s))
-		s++;
-	while (GDKisdigit(*s)) {
-		s += OIDfromStr(s, &l, &p);
-		while (GDKisspace(*s))
-			s++;
-		new = OIDseed(new);
-	}
-	return new;
-}
-
-/*
- * Write the current sequence of OID seeds to a file in string format.
- */
-int
-OIDwrite(FILE *f)
-{
-	int ret = 0;
-	ATOMIC_TYPE o;
-
-	MT_lock_set(&MT_system_lock);
-	o = ATOMIC_GET(GDKoid, GDKoidLock);
-	if (o) {
-		GDKflushed = (oid) o;
-		if (fprintf(f, OIDFMT "@0", GDKflushed) < 0 || ferror(f))
-			ret = -1;
-	}
-	MT_lock_unset(&MT_system_lock);
-	return ret;
-}
-
-int
-OIDdirty(void)
-{
-	int ret;
-	MT_lock_set(&MT_system_lock);
-	ret = (oid) ATOMIC_GET(GDKoid, GDKoidLock) > GDKflushed;
-	MT_lock_unset(&MT_system_lock);
-	return ret;
-}
-
-/*
- * Reserve a range of unique OIDs
- */
-oid
-OIDnew(oid inc)
-{
-	return (oid) ATOMIC_ADD(GDKoid, (ATOMIC_TYPE) inc, GDKoidLock);
 }
 
 /*

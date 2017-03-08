@@ -47,7 +47,7 @@ Ready.
 % sys.L12 # table_name
 % avg_yearly # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ NULL	]
 % .stats,	.stats # table_name
 % rewrite,	count # name

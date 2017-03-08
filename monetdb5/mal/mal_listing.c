@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -148,6 +148,10 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 		snprintf(t,(len-(t-base)), "unsafe ");
 		advance(t, base, len);
 	}
+	if( mb->sealedProp){
+		snprintf(t,(len-(t-base)), "sealed ");
+		advance(t, base, len);
+	}
 	snprintf(t,(len-(t-base)), "%s ",  operatorName(p->token));
 
 	advance(t, base, len);
@@ -164,7 +168,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 		}
 		advance(t,  base, len);
 		if( i<p->argc-1) {
-			sprintf(t,",");
+			sprintf(t,", ");
 			advance(t,base,len);
 		}
 	}
@@ -194,7 +198,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 			}
 			advance(t,base,len);
 			if( i<p->retc-1 && t < base + len) {
-				sprintf(t,",");
+				sprintf(t,", ");
 				advance(t,base,len);
 			}
 		}
@@ -259,7 +263,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		}
 	}
 	advance(t,base,len);
-	if (p->token == REMsymbol) {
+	if (p->token == REMsymbol && !( getModuleId(p) && strcmp(getModuleId(p),"querylog") == 0  && getFunctionId(p) && strcmp(getFunctionId(p),"define") == 0)) {
 		/* do nothing */
 	} else if (p->barrier) {
 		if (p->barrier == LEAVEsymbol || 
@@ -309,8 +313,10 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				GDKfree(arg);
 			}
 			advance(t,base,len);
-			if ( t < base+len && i < p->retc - 1)
+			if ( t < base+len && i < p->retc - 1){
 				*t++ = ',';
+				*t++ = ' ';
+			}
 		}
 		if (p->retc > 1)
 			if( t< base+len) *t++ = ')';
@@ -367,7 +373,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		advance(t,base,len);
 
 		if (i < p->argc -1 && t < base + len){
-			snprintf(t, (len-(t-base)), ",");
+			snprintf(t, (len-(t-base)), ", ");
 			advance(t,base,len);
 		}
 	} 
@@ -410,9 +416,7 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 	} else {
 		val = &stk->stk[varid];
 		VALformat(&cv, val);
-		nme = getSTC(mb, varid);
-		if( nme[0]== 0) 
-			nme = getVarName(mb, varid);
+		nme = getVarName(mb, varid);
 		if ( isaBatType(getArgType(mb,p,idx))){
 			b = BBPquickdesc(stk->stk[varid].val.bval,TRUE);
 			snprintf(s,BUFSIZ,"%s["BUNFMT"]" ,nme, b?BATcount(b):0);
@@ -438,7 +442,7 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 		return s;
 	*s =0;
 	t=s;
-	if (p->token == REMsymbol) 
+	if (p->token == REMsymbol && !( getModuleId(p) && strcmp(getModuleId(p),"querylog") == 0  && getFunctionId(p) && strcmp(getFunctionId(p),"define") == 0)) 
 		return base;
 	if (p->barrier == LEAVEsymbol || 
 		p->barrier == REDOsymbol || 
@@ -474,7 +478,7 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 
 		for (i = 0; i < p->retc; i++) {
 			nme = shortRenderingTerm(mb, stk, p,i);
-			snprintf(t,(len-(t-base)), "%s%s", (i?",":""), nme);
+			snprintf(t,(len-(t-base)), "%s%s", (i?", ":""), nme);
 			GDKfree(nme);
 			advance(t,base,len);
 		}
@@ -498,11 +502,13 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 	if( t< base + len) *t++ = '(';
 	for (i = p->retc; i < p->argc; i++) {
 		nme = shortRenderingTerm(mb, stk, p,i);
-		snprintf(t,(len-(t-base)), "%c%s", (i!= p->retc? ',':' '), nme);
+		snprintf(t,(len-(t-base)), "%s%s", (i!= p->retc? ", ":" "), nme);
 		GDKfree(nme);
 		advance(t,base,len);
-		if (i < p->retc - 1 && t < base+len)
+		if (i < p->retc - 1 && t < base+len){
 			*t++ = ',';
+			*t++ = ' ';
+		}
 	}
 	if( t < base + len) *t++ = ' ';
 	if( t < base + len) *t++ = ')';

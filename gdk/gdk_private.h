@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -26,8 +26,6 @@ enum heaptype {
 	orderidxheap
 };
 
-__hidden void ALIGNcommit(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__visibility__("hidden")));
 __hidden int ATOMisdescendant(int id, int parentid)
@@ -57,7 +55,7 @@ __hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted)
+__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, int subsorted)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -66,6 +64,8 @@ __hidden BAT *BATload_intern(bat bid, int lock)
 __hidden gdk_return BATmaterialize(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden str BATrename(BAT *b, const char *nme)
+	__attribute__((__visibility__("hidden")));
+__hidden gdk_return BATsave(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -85,6 +85,26 @@ __hidden bat BBPinsert(BAT *bn)
 __hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPunshare(bat b)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch(const oid *restrict indir, oid offset, int type, const char *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const char *restrict v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_sht(const oid *restrict indir, oid offset, const sht *restrict vals, BUN lo, BUN hi, sht v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_int(const oid *restrict indir, oid offset, const int *restrict vals, BUN lo, BUN hi, int v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_lng(const oid *restrict indir, oid offset, const lng *restrict vals, BUN lo, BUN hi, lng v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+#ifdef HAVE_HGE
+__hidden BUN binsearch_hge(const oid *restrict indir, oid offset, const hge *restrict vals, BUN lo, BUN hi, hge v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+#endif
+__hidden BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden Heap *createOIDXheap(BAT *b, int stable)
 	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
@@ -167,15 +187,9 @@ __hidden void *MT_mremap(const char *path, int mode, void *old_address, size_t o
 	__attribute__((__visibility__("hidden")));
 __hidden int MT_msync(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
-__hidden int OIDdirty(void)
-	__attribute__((__visibility__("hidden")));
-__hidden int OIDinit(void)
-	__attribute__((__visibility__("hidden")));
-__hidden oid OIDread(str buf)
-	__attribute__((__visibility__("hidden")));
-__hidden int OIDwrite(FILE *f)
-	__attribute__((__visibility__("hidden")));
 __hidden void OIDXfree(BAT *b)
+	__attribute__((__visibility__("hidden")));
+__hidden void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));

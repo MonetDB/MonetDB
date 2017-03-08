@@ -1,6 +1,7 @@
 HAVE_GEOM?storagemodel
-THREADS=1?convert-function-test.Bug-3460
+convert-function-test.Bug-3460
 HAVE_HGE?convert-function-test-hge.Bug-3460
+groupby_on_column_expression.Bug-3832
 LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908
 incorrect_column_name_in_OR_condition_of_LEFT-JOIN_crashes_mserver.Bug-3909
 copy_into_with_header.Bug-3910
@@ -21,7 +22,7 @@ rank_rewrite.Bug-3890
 HAVE_LIBBZ2?min-max-uuid-column-wrong-results.Bug-3953
 update_crash.Bug-3954
 group_distinct_quantile.Bug-3927
-merge_project.Bug-3955
+HAVE_GEOM?merge_project.Bug-3955
 decimal_vs_integer.Bug-3941
 foreign_key.Bug-3938
 invalidcolumns.Bug-3968
@@ -57,8 +58,8 @@ cast_and_floor.Bug-6071
 union.Bug-6069
 ifthenelse-void.Bug-6075
 assert-on-table-producing-function.Bug-6076
-assert-on-push-project-up.Bug-6077
-assert-on-project.Bug-6078
+HAVE_NETCDF&HAVE_SAMTOOLS?assert-on-push-project-up.Bug-6077
+HAVE_SAMTOOLS?assert-on-project.Bug-6078
 crash.Bug-6081
 merge-table-edit.Bug-6084
 dce.Bug-6114
@@ -70,3 +71,4 @@ select-in-from.Bug-6119
 select-in-from.Bug-6121
 nested-subquery-in-select.Bug-6125
 column_name_lost_in_in_operator.Bug-6123
+inner_join_cross_join.Bug-6140

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -687,12 +687,38 @@ daytime_fromstr(const char *buf, int *len, daytime **ret)
 		}
 		if ((buf[pos] == '.' || (synonyms && buf[pos] == ':')) &&
 			GDKisdigit(buf[pos + 1])) {
-			int fac = 100;
-
-			for (pos++, msec = 0; GDKisdigit(buf[pos]); pos++) {
-				msec += (buf[pos] - '0') * fac;
-				fac /= 10;
+			int i;
+			pos++;
+			for (i = 0; i < 3; i++) {
+				msec *= 10;
+				if (GDKisdigit(buf[pos])) {
+					msec += buf[pos] - '0';
+					pos++;
+				}
 			}
+#ifndef TRUNCATE_NUMBERS
+			if (GDKisdigit(buf[pos]) && buf[pos] >= '5') {
+				/* round the value */
+				if (++msec == 1000) {
+					msec = 0;
+					if (++sec == 60) {
+						sec = 0;
+						if (++min == 60) {
+							min = 0;
+							if (++hour == 24) {
+								/* forget about rounding if it doesn't fit */
+								hour = 23;
+								min = 59;
+								sec = 59;
+								msec = 999;
+							}
+						}
+					}
+				}
+			}
+#endif
+			while (GDKisdigit(buf[pos]))
+				pos++;
 		}
 	}
 	/* handle semantic error here (returns nil in that case) */

@@ -52,6 +52,7 @@ HAVE_LIBPY?pyapi28
 HAVE_LIBPY?pyapi29
 HAVE_LIBPY?pyapi30
 HAVE_LIBPY?pyapi32
+HAVE_LIBPY?pyapi33
 
 HAVE_LIBPY?pyloader01
 HAVE_LIBPY?pyloader02
@@ -60,6 +61,9 @@ HAVE_LIBPY?pyloader04
 HAVE_LIBPY?pyloader05
 HAVE_LIBPY?pyloader06
 HAVE_LIBPY?pyloader07
+HAVE_LIBPY?pyloader08
+
+HAVE_LIBPY?createorreplace
 
 # should this work?
 #inlineUDF

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -60,11 +60,11 @@ SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 	return size;
 }
 
-static lng 
+static lng
 SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 {
 	sql_trans *tr = m->session->tr;
-	lng size,space = 0, i; 
+	lng size,space = 0, i;
 
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
@@ -80,7 +80,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			sql_table *t = 0;
 			sql_column *c = 0;
 
-			if (!s || strcmp(s->base.name, dt_schema) == 0) 
+			if (!s || strcmp(s->base.name, dt_schema) == 0)
 				continue;
 			t = mvc_bind_table(m, s, tname);
 			if (!t)
@@ -217,9 +217,9 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	if (mb->stop > 0 &&
 	    mb->stmt[mb->stop-1]->token == REMsymbol &&
 	    mb->stmt[mb->stop-1]->argc > 0 &&
-	    mb->var[mb->stmt[mb->stop-1]->argv[0]]->value.vtype == TYPE_str &&
-	    mb->var[mb->stmt[mb->stop-1]->argv[0]]->value.val.sval &&
-	    strncmp(mb->var[mb->stmt[mb->stop-1]->argv[0]]->value.val.sval, "total", 5) == 0)
+	    mb->var[mb->stmt[mb->stop-1]->argv[0]].value.vtype == TYPE_str &&
+	    mb->var[mb->stmt[mb->stop-1]->argv[0]].value.val.sval &&
+	    strncmp(mb->var[mb->stmt[mb->stop-1]->argv[0]].value.val.sval, "total", 5) == 0)
 		return MAL_SUCCEED; /* already optimized */
 
 	be = (backend *) c->sqlcontext;

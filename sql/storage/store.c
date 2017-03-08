@@ -3,14 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sql_types.h"
 #include "sql_storage.h"
 #include "store_dependency.h"
-#include "store_connections.h"
 #include "store_sequence.h"
 
 #include <bat/bat_utils.h>
@@ -471,21 +470,18 @@ load_trigger(sql_trans *tr, sql_table *t, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "event"), rid);
 	nt->event = *(sht*)v;			_DELETE(v);
 
-	nt->old_name = table_funcs.column_find_value(tr, find_sql_column(triggers, "old_name"), rid);
-	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), nt->old_name) != 0) {
-		_DELETE(nt->old_name);	
-		nt->old_name = NULL;
-	}
-	nt->new_name = table_funcs.column_find_value(tr, find_sql_column(triggers, "new_name"), rid);
-	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), nt->new_name) != 0) {
-		_DELETE(nt->new_name);	
-		nt->new_name = NULL;
-	}
-	nt->condition = table_funcs.column_find_value(tr, find_sql_column(triggers, "condition"), rid);
-	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), nt->condition) != 0) {
-		_DELETE(nt->condition);	
-		nt->condition = NULL;
-	}
+	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "old_name"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) 
+		nt->old_name = sa_strdup(tr->sa, v);
+	_DELETE(v);	
+	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "new_name"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) 
+		nt->new_name = sa_strdup(tr->sa, v);
+	_DELETE(v);	
+	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "condition"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0)
+		nt->condition = sa_strdup(tr->sa, v);
+	_DELETE(v);	
 	nt->statement = table_funcs.column_find_value(tr, find_sql_column(triggers, "statement"), rid);
 
 	nt->t = t;
@@ -536,9 +532,8 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	c->def = NULL;
 	def = table_funcs.column_find_value(tr, find_sql_column(columns, "default"), rid);
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
-		c->def = def;
-	else
-		_DELETE(def);
+		c->def = sa_strdup(tr->sa, def);
+	_DELETE(def);
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "null"), rid);
 	c->null = *(bit *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "number"), rid);
@@ -547,9 +542,8 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	c->storage_type = NULL;
 	st = table_funcs.column_find_value(tr, find_sql_column(columns, "storage"), rid);
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), st) != 0)
-		c->storage_type = st;
-	else
-		_DELETE(st);
+		c->storage_type = sa_strdup(tr->sa, st);
+	_DELETE(st);
 	c->t = t;
 	if (isTable(c->t))
 		store_funcs.create_col(tr, c);
@@ -1467,16 +1461,6 @@ store_load(void) {
 	bootstrap_create_column(tr, t, "depend_id", "int", 32);
 	bootstrap_create_column(tr, t, "depend_type", "smallint", 16);
 
-	t = bootstrap_create_table(tr, s, "connections");
-	bootstrap_create_column(tr, t, "id", "int", 32);
-	bootstrap_create_column(tr, t, "server", "char", 1024);
-	bootstrap_create_column(tr, t, "port", "int", 32);
-	bootstrap_create_column(tr, t, "db", "char", 64);
-	bootstrap_create_column(tr, t, "db_alias", "char", 1024);
-	bootstrap_create_column(tr, t, "user", "char", 1024);
-	bootstrap_create_column(tr, t, "password", "char", 1024);
-	bootstrap_create_column(tr, t, "language", "char", 1024);
-
 	while(s) {
 		t = bootstrap_create_table(tr, s, "_tables");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -1700,6 +1684,44 @@ store_flush_log(void)
 	need_flush = 1;
 }
 
+static int
+store_needs_vacuum( sql_trans *tr )
+{
+	sql_schema *s = find_sql_schema(tr, "sys");
+	node *n;
+
+	for( n = s->tables.set->h; n; n = n->next) {
+		sql_table *t = n->data;
+		sql_column *c = t->columns.set->h->data;
+
+		/* no inserts, updates and enough deletes ? */
+		if (!store_funcs.count_col(tr, c, 0) && 
+		    !store_funcs.count_upd(tr, t) && 
+		    store_funcs.count_del(tr, t) > 128) 
+			return 1;
+	}
+	return 0;
+}
+
+static void
+store_vacuum( sql_trans *tr )
+{
+	/* tables */
+	sql_schema *s = find_sql_schema(tr, "sys");
+	node *n;
+
+	for( n = s->tables.set->h; n; n = n->next) {
+		sql_table *t = n->data;
+		sql_column *c = t->columns.set->h->data;
+
+		if (!store_funcs.count_col(tr, c, 0) && 
+		    !store_funcs.count_upd(tr, t) && 
+		    store_funcs.count_del(tr, t) > 128) {
+			table_funcs.table_vacuum(tr, t);
+		}
+	}
+}
+
 void
 store_manager(void)
 {
@@ -1791,23 +1813,32 @@ store_manager(void)
 }
 
 void
-minmax_manager(void)
+idle_manager(void)
 {
+	const int timeout = GDKdebug & FORCEMITOMASK ? 10 : 50;
+
 	while (!GDKexiting()) {
+		sql_session *s;
 		int t;
 
-		for (t = 30000; t > 0; t -= 50) {
-			MT_sleep_ms(50);
+		for (t = 5000; t > 0; t -= timeout) {
+			MT_sleep_ms(timeout);
 			if (GDKexiting())
 				return;
 		}
 		MT_lock_set(&bs_lock);
-		if (store_nr_active || GDKexiting()) {
+		if (store_nr_active || GDKexiting() || !store_needs_vacuum(gtrans)) {
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
-		if (store_funcs.gtrans_minmax)
-			store_funcs.gtrans_minmax(gtrans);
+
+		s = sql_session_create(gtrans->stk, 0);
+		sql_trans_begin(s);
+		store_vacuum( s->tr );
+		sql_trans_commit(s->tr);
+		sql_trans_end(s);
+		sql_session_destroy(s);
+
 		MT_lock_unset(&bs_lock);
 	}
 }
@@ -4742,13 +4773,16 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 			sql_column *stats_column_id = find_sql_column(stats, "column_id");
 			oid rid = table_funcs.column_find_row(tr, stats_column_id, &col->base.id, NULL);
 			if (rid != oid_nil) {
+				char *v;
 				sql_column *stats_min = find_sql_column(stats, "minval");
 				sql_column *stats_max = find_sql_column(stats, "maxval");
 
-				*min = table_funcs.column_find_value(tr, stats_min, rid);
-				*max = table_funcs.column_find_value(tr, stats_max, rid);
-				col->min = *min;
-				col->max = *max;
+				v = table_funcs.column_find_value(tr, stats_min, rid);
+				*min = col->min = sa_strdup(tr->sa, v);
+				_DELETE(v);
+				v = table_funcs.column_find_value(tr, stats_max, rid);
+				*max = col->max = sa_strdup(tr->sa, v);
+				_DELETE(v);
 				return 1;
 			}
 		}

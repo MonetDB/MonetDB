@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -442,7 +442,7 @@ str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 	
-	return AUTHaddUser(ret, cntxt, usr, pw);
+	return AUTHaddUser(ret, cntxt, *usr, *pw);
 }
 
 str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -451,7 +451,7 @@ str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	usr = getArgReference_str(stk, pci, 1);
 
-	return AUTHremoveUser(cntxt, usr);
+	return AUTHremoveUser(cntxt, *usr);
 }
 
 str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -467,7 +467,7 @@ str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 
 	(void)mb;
 
-	return AUTHgetPasswordHash(ret, cntxt, user);
+	return AUTHgetPasswordHash(ret, cntxt, *user);
 }
 
 str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -476,7 +476,7 @@ str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 
-	return AUTHchangeUsername(cntxt, old, new);
+	return AUTHchangeUsername(cntxt, *old, *new);
 }
 
 str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -485,7 +485,7 @@ str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 
-	return AUTHchangePassword(cntxt, old, new);
+	return AUTHchangePassword(cntxt, *old, *new);
 }
 
 str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -494,7 +494,7 @@ str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 
-	return AUTHsetPassword(cntxt, usr, new);
+	return AUTHsetPassword(cntxt, *usr, *new);
 }
 
 str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -509,7 +509,7 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	(void)mb;
 
 	pwd = mcrypt_SHA1Sum(*pw, strlen(*pw));
-	msg = AUTHcheckCredentials(&id, cntxt, usr, &pwd, &ch, &algo);
+	msg = AUTHcheckCredentials(&id, cntxt, *usr, pwd, ch, algo);
 	free(pwd);
 	return msg;
 #else
@@ -540,7 +540,7 @@ str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 str
 CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret  = getArgReference_str(stk,pci,0);
-	int delay = *getArgReference_int(stk,pci,1);
+	int delay;
 	bit force = FALSE;
 	int leftover;
 	char buf[1024]={"safe to stop last connection"};
@@ -551,11 +551,14 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	(void) mb;
 	switch( getArgType(mb,pci,1)){
 	case TYPE_bte:
+		delay = *getArgReference_bte(stk,pci,1);
+		break;
 	case TYPE_sht:
 		delay = *getArgReference_sht(stk,pci,1);
 		break;
 	default:
 		delay = *getArgReference_int(stk,pci,1);
+		break;
 	}
 
 	if ( cntxt->user != mal_clients[0].user)

@@ -3,55 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-
-static gdk_return
-BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
-{
-	BAT *bn1, *bn2;
-	BUN i, j;
-	oid *restrict p1, *restrict p2;
-
-	bn1 = COLnew(0, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
-	bn2 = COLnew(0, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
-	if (bn1 == NULL || bn2 == NULL) {
-		BBPreclaim(bn1);
-		BBPreclaim(bn2);
-		return GDK_FAIL;
-	}
-	p1 = (oid *) Tloc(bn1, 0);
-	p2 = (oid *) Tloc(bn2, 0);
-	for (i = 0; i < BATcount(l); i++) {
-		for (j = 0; j < BATcount(r); j++) {
-			*p1++ = i + l->hseqbase;
-			*p2++ = j + r->hseqbase;
-		}
-	}
-	BATsetcount(bn1, BATcount(l) * BATcount(r));
-	BATsetcount(bn2, BATcount(l) * BATcount(r));
-	bn1->tsorted = 1;
-	bn1->trevsorted = BATcount(l) <= 1;
-	bn1->tkey = BATcount(r) <= 1;
-	bn1->tdense = bn1->tkey != 0;
-	bn1->tnil = 0;
-	bn1->tnonil = 1;
-	bn2->tsorted = BATcount(l) <= 1;
-	bn2->trevsorted = BATcount(bn2) <= 1;
-	bn2->tkey = BATcount(l) <= 1;
-	bn2->tdense = bn2->tkey != 0;
-	bn2->tnil = 0;
-	bn2->tnonil = 1;
-	BATtseqbase(bn1, l->hseqbase);
-	BATtseqbase(bn2, r->hseqbase);
-	*r1p = bn1;
-	*r2p = bn2;
-	return GDK_SUCCEED;
-}
+#include "gdk_cand.h"
 
 /* Calculate a cross product between bats l and r with optional
  * candidate lists sl for l and sr for r.
@@ -60,28 +18,75 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 gdk_return
 BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 {
-	BAT *bn1, *bn2, *t;
+	BAT *bn1, *bn2;
+	BUN start1, start2;
+	BUN end1, end2;
+	BUN cnt1, cnt2;
+	const oid *restrict lcand, *restrict rcand;
+	const oid *lcandend, *rcandend;
+	oid seq;
+	oid *restrict p;
+	BUN i, j;
 
-	if (BATcross1(&bn1, &bn2, sl ? sl : l, sr ? sr : r) != GDK_SUCCEED)
+	CANDINIT(l, sl, start1, end1, cnt1, lcand, lcandend);
+	CANDINIT(r, sr, start2, end2, cnt2, rcand, rcandend);
+	if (lcand)
+		cnt1 = lcandend - lcand;
+	if (rcand)
+		cnt2 = rcandend - rcand;
+
+	bn1 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
+	if (bn1 == NULL)
 		return GDK_FAIL;
-	if (sl) {
-		t = BATproject(bn1, sl);
-		BBPunfix(bn1->batCacheid);
-		if (t == NULL) {
-			BBPunfix(bn2->batCacheid);
-			return GDK_FAIL;
-		}
-		bn1 = t;
+	BATsetcount(bn1, cnt1 * cnt2);
+	bn1->tsorted = 1;
+	bn1->trevsorted = cnt1 <= 1;
+	bn1->tkey = cnt2 <= 1;
+	bn1->tnil = 0;
+	bn1->tnonil = 1;
+	p = (oid *) Tloc(bn1, 0);
+	if (lcand) {
+		for (i = 0; i < cnt1; i++)
+			for (j = 0; j < cnt2; j++)
+				*p++ = lcand[i];
+		bn1->tdense = 0;
+	} else {
+		seq = l->hseqbase + start1;
+		for (i = 0; i < cnt1; i++)
+			for (j = 0; j < cnt2; j++)
+				*p++ = i + seq;
+		bn1->tdense = bn1->tkey != 0;
+		if (bn1->tdense)
+			BATtseqbase(bn1, seq);
 	}
-	if (sr) {
-		t = BATproject(bn2, sr);
-		BBPunfix(bn2->batCacheid);
-		if (t == NULL) {
-			BBPunfix(bn1->batCacheid);
-			return GDK_FAIL;
-		}
-		bn2 = t;
+
+	bn2 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
+	if (bn2 == NULL) {
+		BBPreclaim(bn1);
+		return GDK_FAIL;
 	}
+	BATsetcount(bn2, cnt1 * cnt2);
+	bn2->tsorted = cnt1 <= 1;
+	bn2->trevsorted = cnt2 <= 1;
+	bn2->tkey = cnt1 <= 1;
+	bn2->tnil = 0;
+	bn2->tnonil = 1;
+	p = (oid *) Tloc(bn2, 0);
+	if (rcand) {
+		for (i = 0; i < cnt1; i++)
+			for (j = 0; j < cnt2; j++)
+				*p++ = rcand[j];
+		bn2->tdense = 0;
+	} else {
+		seq = r->hseqbase + start2;
+		for (i = 0; i < cnt1; i++)
+			for (j = 0; j < cnt2; j++)
+				*p++ = j + seq;
+		bn2->tdense = bn2->tkey != 0;
+		if (bn2->tdense)
+			BATtseqbase(bn2, seq);
+	}
+
 	*r1p = bn1;
 	*r2p = bn2;
 	return GDK_SUCCEED;

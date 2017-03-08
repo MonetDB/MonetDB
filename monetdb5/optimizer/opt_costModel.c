@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -57,7 +57,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} else if (
 				getFunctionId(p) == selectNotNilRef  ||
 				getFunctionId(p) == sortRef  ||
-				getFunctionId(p) == subsortRef  ||
+				getFunctionId(p) == sortRef  ||
 				getFunctionId(p) == projectRef  ){
 				newRows(1,1,c1,0);
 			} else if (getFunctionId(p) == joinRef ||
@@ -120,7 +120,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				}
 			} 
 		} else if (getModuleId(p)==groupRef) {
-			if (getFunctionId(p) ==subgroupRef ) {
+			if (getFunctionId(p) ==subgroupRef || getFunctionId(p) ==groupRef ) {
 				newRows(1,1,( c1 / 10+1),0);
 			} else {
 				newRows(1,1, c1,0);

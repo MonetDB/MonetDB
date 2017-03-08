@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -26,7 +26,7 @@
 	ascii: a pointer to a boolean, this is set to true if the string is ascii-encoded and to false otherwise
 */
 int utf8_strlen(const char *utf8_str, bool *ascii);
-int utf32_strlen(const Py_UNICODE *utf32_str);
+size_t utf32_strlen(const Py_UNICODE *utf32_str);
 
 //! Returns the length in bytes of a single utf8 character [1,2,3 or 4] based on the signature of the first byte, returns -1 if the character is not a valid utf8 character
 /* Arguments:

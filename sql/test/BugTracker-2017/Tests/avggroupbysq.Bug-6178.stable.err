@@ -1,0 +1,35 @@
+stderr of test 'avggroupbysq.Bug-6178` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 18:20:38 >  
+# 18:20:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36572" "--set" "mapi_usock=/var/tmp/mtest-8698/.s.monetdb.36572" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/hannes/monetdb-install/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_py=true"
+# 18:20:38 >  
+
+# builtin opt 	gdk_dbpath = /Users/hannes/monetdb-install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36572
+# cmdline opt 	mapi_usock = /var/tmp/mtest-8698/.s.monetdb.36572
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/hannes/monetdb-install/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 18:20:38 >  
+# 18:20:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8698" "--port=36572"
+# 18:20:38 >  
+
+
+# 18:20:39 >  
+# 18:20:39 >  "Done."
+# 18:20:39 >  
+

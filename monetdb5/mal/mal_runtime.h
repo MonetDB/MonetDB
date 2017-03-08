@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef _MAL_RUNTIME_H
@@ -28,7 +28,7 @@ typedef struct QRYQUEUE{
 	Client cntxt;
 	MalBlkPtr mb;
 	MalStkPtr stk;
-	lng tag;
+	int tag;
 	str query;
 	str status;
 	lng start;
@@ -36,7 +36,7 @@ typedef struct QRYQUEUE{
 } *QueryQueue;
 
 mal_export void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
-mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb);
+mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 mal_export void finishSessionProfiler(Client cntxt);

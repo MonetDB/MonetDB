@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -134,6 +134,11 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 		sz += list[i]->used;
 	}
 	uselist = GDKzalloc(sizeof(int)*sz);
+	if (!uselist) {
+		OPTremoveDep(list, mb->stop);
+		GDKfree(var);
+		return NULL;
+	}
 
 	for(i=0;i<mb->stop; i++) {
 		if (list[i]->cnt) {
@@ -282,11 +287,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	
 	pushInstruction(mb,old[0]);
 	old[0]=0;
-	for( i=1; i<limit; i++)
-		if ( getModuleId(old[i]) == datacyclotronRef && getFunctionId(old[i]) == bindRef){
-			pushInstruction(mb,old[i]);
-			old[i] = 0;
-		}
 
 	start=1;
 	for (i=1; i<limit; i++){
@@ -295,7 +295,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		if( p->token == ENDsymbol)
 			break;
-		if( hasSideEffects(p,FALSE) || isUnsafeFunction(p) || p->barrier ){
+		if( hasSideEffects(mb, p,FALSE) || isUnsafeFunction(p) || p->barrier ){
 			if (OPTbreadthfirst(cntxt, mb, i, i, old, dep, uselist) < 0)
 				break;
 			/* remove last instruction and keep for later */

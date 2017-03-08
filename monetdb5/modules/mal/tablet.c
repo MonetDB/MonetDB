@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -194,16 +194,17 @@ str
 TABLETcreate_bats(Tablet *as, BUN est)
 {
 	Column *fmt = as->format;
-	BUN i, j;
+	BUN i;
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		if (fmt[i].skip)
 			continue;
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		if (!fmt[i].c) {
-			for (j = 0; j < i; j++)
-				if (!fmt[i].skip)
-					BBPdecref(fmt[j].c->batCacheid, FALSE);
+			while (i > 0) {
+				if (!fmt[--i].skip)
+					BBPreclaim(fmt[i].c);
+			}
 			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", as->nr);
 		}
 		fmt[i].ci = bat_iterator(fmt[i].c);
@@ -958,6 +959,9 @@ SQLworker_column(READERtask *task, int col)
 	int i;
 	Column *fmt = task->as->format;
 
+	if (fmt[col].c == NULL)
+		return 0;
+
 	/* watch out for concurrent threads */
 	MT_lock_set(&mal_copyLock);
 	if (!fmt[col].skip && BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next) {
@@ -1616,6 +1620,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	BUN cnt = 0, cntstart = 0, leftover = 0;
 	int res = 0;		/* < 0: error, > 0: success, == 0: continue processing */
 	int j;
+	BUN firstcol;
 	BUN i, attr;
 	READERtask *task = (READERtask *) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[MAXWORKERS];
@@ -1761,10 +1766,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #ifdef MLOCK_TST
 	mlock(task->b->buf, task->b->size);
 #endif
+	for (firstcol = 0; firstcol < task->as->nr_attrs; firstcol++)
+		if (task->as->format[firstcol].c != NULL)
+			break;
 	while (res == 0 && cnt < task->maxrow) {
 
 		// track how many elements are in the aggregated BATs
-		cntstart = BATcount(task->as->format[0].c);
+		cntstart = BATcount(task->as->format[firstcol].c);
 		/* block until the producer has data available */
 		MT_sema_down(&task->consumer);
 		cnt += task->top[task->cur];
@@ -1856,9 +1864,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "#Trim bbest %d table size " BUNFMT " rows found so far " BUNFMT "\n",
-					 best, BATcount(as->format[0].c), task->cnt);
+					 best, BATcount(as->format[firstcol].c), task->cnt);
 #endif
-		if (best && BATcount(as->format[0].c)) {
+		if (best && BATcount(as->format[firstcol].c)) {
 			BUN limit;
 			int width;
 
@@ -1919,7 +1927,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 				 task->ateof, res);
 #endif
 
-	cnt = BATcount(task->as->format[0].c);
+	cnt = BATcount(task->as->format[firstcol].c);
 	if (GDKdebug & GRPalgorithms) {
 		mnstr_printf(GDKout, "#COPY reader time " LLFMT " line break " LLFMT " io " LLFMT "\n",
 					 total, lio, iototal);
@@ -2063,10 +2071,10 @@ COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	create_rejects_table(cntxt);
 	if (cntxt->error_row == NULL)
 		throw(MAL, "sql.rejects", "No reject table available");
-	BBPincref(*row = cntxt->error_row->batCacheid, TRUE);
-	BBPincref(*fld = cntxt->error_fld->batCacheid, TRUE);
-	BBPincref(*msg = cntxt->error_msg->batCacheid, TRUE);
-	BBPincref(*inp = cntxt->error_input->batCacheid, TRUE);
+	BBPretain(*row = cntxt->error_row->batCacheid);
+	BBPretain(*fld = cntxt->error_fld->batCacheid);
+	BBPretain(*msg = cntxt->error_msg->batCacheid);
+	BBPretain(*inp = cntxt->error_input->batCacheid);
 	(void) mb;
 	return MAL_SUCCEED;
 }

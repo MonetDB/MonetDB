@@ -12,7 +12,6 @@ bat.append(bv,266430612 );
 bat.append(bv,1674978691 );
 bat.append(bv,1863672321 );
 bat.append(bv,58690783 );
-bat.setAccess(bv,"r");
 io.print(bv);
 
 bat.orderidx(bv,3);
@@ -25,6 +24,6 @@ seq := algebra.projection(ord,bv);
 
 io.print(seq);
 
-(k,l):= algebra.subsort(bv,0:bit,1:bit);
+(k,l):= algebra.sort(bv,0:bit,1:bit);
 
 io.print(k,l);

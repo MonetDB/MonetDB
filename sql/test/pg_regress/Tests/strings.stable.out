@@ -35,7 +35,7 @@ Ready.
 #	' - third line'
 #	AS "Three lines to one";
 % .L2 # table_name
-% Three lines to one # name
+% "Three lines to one" # name
 % char # type
 % 35 # length
 [ "first line - next line - third line"	]
@@ -44,7 +44,7 @@ Ready.
 #' - third line'
 #	AS "Illegal comment within continuation";
 % .L2 # table_name
-% Illegal comment within continuation # name
+% "Illegal comment within continuation" # name
 % char # type
 % 35 # length
 [ "first line - next line - third line" ]
@@ -167,25 +167,25 @@ Ready.
 #DROP TABLE TEXT_TBL;
 #SELECT TRIM('  bunch o blanks  ') = 'bunch o blanks' AS "bunch o blanks";
 % .L2 # table_name
-% bunch o blanks # name
+% "bunch o blanks" # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT LTRIM('  bunch o blanks  ') = 'bunch o blanks  ' AS "bunch o blanks  ";
 % .L2 # table_name
-% bunch o blanks   # name
+% "bunch o blanks  " # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT RTRIM('  bunch o blanks  ') = '  bunch o blanks' AS "  bunch o blanks";
 % .L2 # table_name
-%   bunch o blanks # name
+% "  bunch o blanks" # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT TRIM(replace('xxxxxsome Xsxxxxx', 'x', ' ')) = 'some Xs' AS "some Xs";
 % .L2 # table_name
-% some Xs # name
+% "some Xs" # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -527,31 +527,31 @@ Ready.
 [ false	]
 #SELECT 'unknown' || ' and unknown' AS "Concat unknown types";
 % .L2 # table_name
-% Concat unknown types # name
+% "Concat unknown types" # name
 % varchar # type
 % 19 # length
 [ "unknown and unknown" ]
 #SELECT cast('text' as text) || ' and unknown' AS "Concat text to unknown type";
 % .L3 # table_name
-% Concat text to unknown type # name
+% "Concat text to unknown type" # name
 % varchar # type
 % 16 # length
 [ "text and unknown" ]
 #SELECT cast('characters' as char(20)) || ' and text' AS "Concat char to unknown type";
 % .L3 # table_name
-% Concat char to unknown type # name
+% "Concat char to unknown type" # name
 % varchar # type
 % 19 # length
 [ "characters and text" ]
 #SELECT cast('text' as text) || cast(' and characters' as char(20)) AS "Concat text to char";
 % .L4 # table_name
-% Concat text to char # name
+% "Concat text to char" # name
 % varchar # type
 % 19 # length
 [ "text and characters" ]
 #SELECT cast('text' as text) || cast(' and varchar' as varchar(20)) AS "Concat text to varchar";
 % .L4 # table_name
-% Concat text to varchar # name
+% "Concat text to varchar" # name
 % varchar # type
 % 16 # length
 [ "text and varchar" ]
@@ -704,7 +704,7 @@ Ready.
 [ "mydatabase"  ]
 #select split_part('joeuser@mydatabase','@',3) AS "empty string";
 % .L2 # table_name
-% empty string # name
+% "empty string" # name
 % char # type
 % 18 # length
 [ ""    ]

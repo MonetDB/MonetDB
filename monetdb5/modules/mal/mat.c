@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -119,7 +119,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		BATtseqbase(bn, b->tseqbase);
 		BATappend(bn, b, NULL, FALSE);
 		assert(!bn->tnil || !bn->tnonil);
-		bn->talign = (pieces-1); /* misuse talign field */
+		bn->S.unused = (pieces-1); /* misuse "unused" field */
 		BBPkeepref(*ret = bn->batCacheid);
 		BBPunfix(b->batCacheid);
 	} else {
@@ -132,8 +132,8 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			BATappend(b, bb, NULL, FALSE);
 		}
-		b->talign--;
-		if(b->talign == 0)
+		b->S.unused--;
+		if(b->S.unused == 0)
 			BATsetaccess(b, BAT_READ);
 		assert(!b->tnil || !b->tnonil);
 		BBPkeepref(*ret = b->batCacheid);

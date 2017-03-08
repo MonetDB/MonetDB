@@ -1,3 +1,5 @@
+set optimizer = 'sequential_pipe'; -- to get predictable errors
+
 --
 -- bigint
 -- Test bigint 64-bit integers.

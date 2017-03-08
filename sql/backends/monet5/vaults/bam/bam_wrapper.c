@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -1613,13 +1613,16 @@ bam1_t2alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
 		a_out->cigar[1] = '\0';
 	} else {
 		uint32_t *cigar_bin = bam1_cigar(a_in);
+		uint32_t c;
 		int index = 0;
 
 		for (i = 0; i < a_in->core.n_cigar; ++i) {
+			/* work around unaligned access */
+			memcpy(&c, &cigar_bin[i], sizeof(c));
 			snprintf(&a_out->cigar[index],
 				 a_out->cigar_size - index, "%u%c",
-				 cigar_bin[i] >> BAM_CIGAR_SHIFT,
-				 bam_cigar_opchr(cigar_bin[i]));
+				 c >> BAM_CIGAR_SHIFT,
+				 bam_cigar_opchr(c));
 			index += strlen(&a_out->cigar[index]);
 		}
 	}
@@ -1750,25 +1753,37 @@ write_aux_bam1_t(bam_wrapper * bw, bam1_t *alig, lng virtual_offset) {
 			kputw(*(int8_t *) s, &aux_value_stream);
 			++s;
 		} else if (type == 'S') {
+			uint16_t u;
+			memcpy(&u, s, sizeof(uint16_t));
 			type_str[0] = 'i';
-			kputw(*(uint16_t *) s, &aux_value_stream);
+			kputw(u, &aux_value_stream);
 			s += 2;
 		} else if (type == 's') {
+			int16_t i;
+			memcpy(&i, s, sizeof(int16_t));
 			type_str[0] = 'i';
-			kputw(*(int16_t *) s, &aux_value_stream);
+			kputw(i, &aux_value_stream);
 			s += 2;
 		} else if (type == 'I') {
+			uint32_t u;
+			memcpy(&u, s, sizeof(uint32_t));
 			type_str[0] = 'i';
-			kputuw(*(uint32_t *) s, &aux_value_stream);
+			kputuw(u, &aux_value_stream);
 			s += 4;
 		} else if (type == 'i') {
-			kputw(*(int32_t *) s, &aux_value_stream);
+			int32_t i;
+			memcpy(&i, s, sizeof(int32_t));
+			kputw(i, &aux_value_stream);
 			s += 4;
 		} else if (type == 'f') {
-			ksprintf(&aux_value_stream, "%g", *(float *) s);
+			float f;
+			memcpy(&f, s, sizeof(float));
+			ksprintf(&aux_value_stream, "%g", f);
 			s += 4;
 		} else if (type == 'd') {
-			ksprintf(&aux_value_stream, "%lg", *(double *) s);
+			double d;
+			memcpy(&d, s, sizeof(double));
+			ksprintf(&aux_value_stream, "%lg", d);
 			s += 8;
 		} else if (type == 'Z' || type == 'H') {
 			while (*s) {
@@ -1794,24 +1809,29 @@ write_aux_bam1_t(bam_wrapper * bw, bam1_t *alig, lng virtual_offset) {
 						  &aux_value_stream);
 					++s;
 				} else if ('s' == sub_type) {
-					kputw(*(int16_t *) s,
-						  &aux_value_stream);
+					int16_t i;
+					memcpy(&i, s, sizeof(int16_t));
+					kputw(i, &aux_value_stream);
 					s += 2;
 				} else if ('S' == sub_type) {
-					kputw(*(uint16_t *) s,
-						  &aux_value_stream);
+					uint16_t u;
+					memcpy(&u, s, sizeof(uint16_t));
+					kputw(u, &aux_value_stream);
 					s += 2;
 				} else if ('i' == sub_type) {
-					kputw(*(int32_t *) s,
-						  &aux_value_stream);
+					int32_t i;
+					memcpy(&i, s, sizeof(int32_t));
+					kputw(i, &aux_value_stream);
 					s += 4;
 				} else if ('I' == sub_type) {
-					kputuw(*(uint32_t *) s,
-						   &aux_value_stream);
+					uint32_t u;
+					memcpy(&u, s, sizeof(uint32_t));
+					kputuw(u, &aux_value_stream);
 					s += 4;
 				} else if ('f' == sub_type) {
-					ksprintf(&aux_value_stream, "%g",
-						 *(float *) s);
+					float f;
+					memcpy(&f, s, sizeof(float));
+					ksprintf(&aux_value_stream, "%g", f);
 					s += 4;
 				}
 			}

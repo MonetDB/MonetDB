@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -164,7 +164,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for (i = 1; i < limit && cntxt->mode != FINISHCLIENT; i++) {
 		p = getInstrPtr(mb, i);
 		// to avoid management of duplicate assignments over multiple blocks
-		// we limit ourselfs to evaluation of the first assignment only.
+		// we limit ourselves to evaluation of the first assignment only.
 		use = assigned[getArg(p,0)] == 1 && !(p->argc == p->retc && blockExit(p));
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])

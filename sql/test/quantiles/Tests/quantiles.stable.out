@@ -94,98 +94,98 @@ Ready.
 #7532.30	"A"
 [ 10000	]
 #select quantile(l_extendedprice,0.5) from lit;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % decimal # type
 % 20 # length
 [ 36724.500	]
 #select median(l_extendedprice) from lit;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % decimal # type
 % 20 # length
 [ 36724.50	]
 #select quantile(l_extendedprice,0.0) from lit;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % decimal # type
 % 20 # length
 [ 947.020	]
 #select quantile(l_extendedprice,1.0) from lit;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % decimal # type
 % 20 # length
 [ 103149.000	]
 #select quantile(l_extendedprice,0.05),quantile(l_extendedprice,0.5),quantile(l_extendedprice,0.95) from lit;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L4,	sys.L7,	sys.L12 # table_name
+% L3,	L6,	L11 # name
 % decimal,	decimal,	decimal # type
 % 20,	20,	20 # length
-[ 4171.320,	36724.500,	79584.120	]
+[ 4200.320,	36724.500,	79584.120	]
 #select quantile(l_extendedprice,1) from lit;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % decimal # type
 % 20 # length
 [ 103149.000	]
 #select quantile(l_extendedprice,0) from lit;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % decimal # type
 % 20 # length
 [ 947.020	]
 #select quantile(l_extendedprice,0.5) from lit group by l_returnflag;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % decimal # type
 % 20 # length
 [ 36960.680	]
 [ 37144.200	]
 [ 35937.880	]
 #select median(l_extendedprice) from lit group by l_returnflag;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % decimal # type
 % 20 # length
 [ 36960.68	]
 [ 37144.20	]
 [ 35937.88	]
 #select quantile(l_extendedprice,0.0) from lit group by l_returnflag;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % decimal # type
 % 20 # length
 [ 947.020	]
 [ 1027.010	]
 [ 1012.090	]
 #select quantile(l_extendedprice,1.0) from lit group by l_returnflag;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % decimal # type
 % 20 # length
 [ 103149.000	]
 [ 100248.500	]
 [ 101896.500	]
 #select quantile(l_extendedprice,0.05),quantile(l_extendedprice,0.5),quantile(l_extendedprice,0.95) from lit  group by l_returnflag;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L3,	sys.L6,	sys.L11 # table_name
+% L2,	L5,	L10 # name
 % decimal,	decimal,	decimal # type
 % 20,	20,	20 # length
 [ 4424.440,	36960.680,	80045.910	]
-[ 3885.880,	37144.200,	79010.100	]
-[ 4171.320,	35937.880,	78572.760	]
+[ 3889.960,	37144.200,	79010.100	]
+[ 4204.470,	35937.880,	78572.760	]
 #select quantile(l_extendedprice,1) from lit group by l_returnflag;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % decimal # type
 % 20 # length
 [ 103149.000	]
 [ 100248.500	]
 [ 101896.500	]
 #select quantile(l_extendedprice,0) from lit group by l_returnflag;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % decimal # type
 % 20 # length
 [ 947.020	]

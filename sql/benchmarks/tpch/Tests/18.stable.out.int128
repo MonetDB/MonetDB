@@ -63,7 +63,7 @@ Ready.
 % sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L22 # table_name
 % c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L21 # name
 % varchar,	int,	int,	date,	decimal,	decimal # type
-% 18,	3,	5,	10,	17,	41 # length
+% 18,	3,	5,	10,	17,	40 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305.00	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303.00	]
 #select * from optimizer_stats() stats;

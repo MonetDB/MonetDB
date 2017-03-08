@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 %{
@@ -193,6 +193,7 @@ int yydebug=1;
 	select_no_parens
 	select_no_parens_orderby
 	subquery
+	subquery_with_orderby
 	test_for_null
 	values_or_query_spec
 	grant
@@ -493,6 +494,10 @@ int yydebug=1;
 	opt_constraint
 	set_distinct
 	opt_with_check_option
+	create
+	create_or_replace
+	if_exists
+	if_not_exists
 
 	opt_with_grant
 	opt_with_admin
@@ -568,8 +573,7 @@ int yydebug=1;
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
 %right UMINUS
-%left <operation> '*' '/'
-%left <operation> '%'
+%left <operation> '*' '/' '%'
 %left <operation> '~'
 
 %left <operatio> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT 
@@ -603,7 +607,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
 %token COPY RECORDS DELIMITERS STDIN STDOUT FWF
-%token INDEX
+%token INDEX REPLACE
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
 %token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED
@@ -692,7 +696,21 @@ sqlstmt:
 
 
 create:
-    CREATE 		
+    CREATE  { $$ = FALSE; }
+
+create_or_replace:
+	create
+|	CREATE OR REPLACE { $$ = TRUE; }
+
+
+if_exists:
+	/* empty */   { $$ = FALSE; }
+|	IF EXISTS     { $$ = TRUE; }
+
+if_not_exists:
+	/* empty */   { $$ = FALSE; }
+|	IF NOT EXISTS { $$ = TRUE; }
+
 
 drop:
     DROP 		
@@ -748,11 +766,17 @@ variable_list:
     ;
 
 set_statement:
-	set ident '=' simple_atom
+	/*set ident '=' simple_atom*/
+        set ident '=' search_condition
 		{ dlist *l = L();
 		append_string(l, $2 );
 		append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
+  |     set column_commalist_parens '=' subquery
+		{ dlist *l = L();
+	  	append_list(l, $2);
+	  	append_symbol(l, $4);
+	  	$$ = _symbol_create_list( SQL_SET, l ); }
   |	set sqlSESSION AUTHORIZATION ident
 		{ dlist *l = L();
 		  sql_subtype t;
@@ -799,18 +823,20 @@ set_statement:
   ;
 
 schema:
-	create SCHEMA schema_name_clause opt_schema_default_char_set
+	create SCHEMA if_not_exists schema_name_clause opt_schema_default_char_set
 			opt_path_specification	opt_schema_element_list
 		{ dlist *l = L();
-		append_list(l, $3);
-		append_symbol(l, $4);
+		append_list(l, $4);
 		append_symbol(l, $5);
-		append_list(l, $6);
+		append_symbol(l, $6);
+		append_list(l, $7);
+		append_int(l, $3);
 		$$ = _symbol_create_list( SQL_CREATE_SCHEMA, l); }
-  |	drop SCHEMA qname drop_action
+  |	drop SCHEMA if_exists qname drop_action
 		{ dlist *l = L();
-		append_list(l, $3);
-		append_int(l, $4);
+		append_list(l, $4);
+		append_int(l, $5);
+		append_int(l, $3);
 		$$ = _symbol_create_list( SQL_DROP_SCHEMA, l); }
  ;
 
@@ -1126,6 +1152,7 @@ drop_table_element:
 	{ dlist *l = L();
 	  append_string(l, $2 );
 	  append_int(l, $3 );
+	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
   ;
 
@@ -1294,78 +1321,84 @@ table_opt_storage:
  ;
 
 table_def:
-    TABLE qname table_content_source  table_opt_storage
+    TABLE if_not_exists qname table_content_source  table_opt_storage
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 
 	  append_int(l, SQL_PERSIST);
-	  append_list(l, $2);
-	  append_symbol(l, $3);
+	  append_list(l, $3);
+	  append_symbol(l, $4);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
-	  append_list(l, $4);
+	  append_int(l, $2);
+	  append_list(l, $5);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- |  TABLE qname FROM sqlLOADER func_ref
+ |  TABLE if_not_exists qname FROM sqlLOADER func_ref
     {
       dlist *l = L();
-      append_list(l, $2);
-      append_symbol(l, $5);
+      append_list(l, $3);
+      append_symbol(l, $6);
       $$ = _symbol_create_list( SQL_CREATE_TABLE_LOADER, l);
     }
- |  STREAM TABLE qname table_content_source 
+ |  STREAM TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
 	  dlist *l = L();
 
 	  append_int(l, tpe);
-	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- |  MERGE TABLE qname table_content_source 
+ |  MERGE TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
 	  dlist *l = L();
 
 	  append_int(l, tpe);
-	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- |  REPLICA TABLE qname table_content_source 
+ |  REPLICA TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_REPLICA_TABLE;
 	  dlist *l = L();
 
 	  append_int(l, tpe);
-	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  /* mapi:monetdb://host:port/database[/schema[/table]] 
     This also allows access via monetdbd. 
     We assume the monetdb user with default password */
- |  REMOTE TABLE qname table_content_source ON STRING
+ |  REMOTE TABLE if_not_exists qname table_content_source ON STRING
 	{ int commit_action = CA_COMMIT, tpe = SQL_REMOTE;
 	  dlist *l = L();
 
 	  append_int(l, tpe);
-	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
 	  append_int(l, commit_action);
-	  append_string(l, $6);
+	  append_string(l, $7);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
-  | opt_temp TABLE qname table_content_source opt_on_commit 
+  | opt_temp TABLE if_not_exists qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 
 	  append_int(l, $1);
-	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
 	  if ($1 != SQL_PERSIST)
-		commit_action = $5;
+		commit_action = $6;
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
 
@@ -1762,7 +1795,7 @@ function_body:
 
 
 func_def:
-    create FUNCTION qname
+    create_or_replace FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
     EXTERNAL sqlNAME external_function_name 	
@@ -1774,8 +1807,9 @@ func_def:
 				append_list(f, NULL);
 				append_int(f, F_FUNC);
 				append_int(f, FUNC_LANG_MAL);
+				append_int(f, $1);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
- |  create FUNCTION qname
+ |  create_or_replace FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
     routine_body
@@ -1787,8 +1821,9 @@ func_def:
 				append_list(f, $9);
 				append_int(f, F_FUNC);
 				append_int(f, FUNC_LANG_SQL);
+				append_int(f, $1);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  | create FUNCTION qname
+  | create_or_replace FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
     LANGUAGE IDENT function_body { 
@@ -1832,8 +1867,9 @@ func_def:
 			append_list(f, append_string(L(), $11));
 			append_int(f, F_FUNC);
 			append_int(f, lang);
+			append_int(f, $1);
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  | create FILTER FUNCTION qname
+  | create_or_replace FILTER FUNCTION qname
 	'(' opt_paramlist ')'
     EXTERNAL sqlNAME external_function_name 	
 			{ dlist *f = L();
@@ -1845,8 +1881,9 @@ func_def:
 				append_list(f, NULL);
 				append_int(f, F_FILT);
 				append_int(f, FUNC_LANG_MAL);
+				append_int(f, $1);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  | create AGGREGATE qname
+  | create_or_replace AGGREGATE qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
     EXTERNAL sqlNAME external_function_name 	
@@ -1858,8 +1895,9 @@ func_def:
 				append_list(f, NULL);
 				append_int(f, F_AGGR);
 				append_int(f, FUNC_LANG_MAL);
+				append_int(f, $1);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  | create AGGREGATE qname
+  | create_or_replace AGGREGATE qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
     LANGUAGE IDENT function_body { 
@@ -1902,9 +1940,10 @@ func_def:
 			append_list(f, append_string(L(), $11));
 			append_int(f, F_AGGR);
 			append_int(f, lang);
+			append_int(f, $1);
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  | /* proc ie no result */
-    create PROCEDURE qname
+    create_or_replace PROCEDURE qname
 	'(' opt_paramlist ')'
     EXTERNAL sqlNAME external_function_name 	
 			{ dlist *f = L();
@@ -1915,8 +1954,9 @@ func_def:
 				append_list(f, NULL);
 				append_int(f, F_PROC);
 				append_int(f, FUNC_LANG_MAL);
+				append_int(f, $1);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  | create PROCEDURE qname
+  | create_or_replace PROCEDURE qname
 	'(' opt_paramlist ')'
     routine_body
 			{ dlist *f = L();
@@ -1927,8 +1967,9 @@ func_def:
 				append_list(f, $7);
 				append_int(f, F_PROC);
 				append_int(f, FUNC_LANG_SQL);
+				append_int(f, $1);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  |	create sqlLOADER qname
+  |	create_or_replace sqlLOADER qname
 	'(' opt_paramlist ')'
     LANGUAGE IDENT function_body { 
 			int lang = 0;
@@ -1949,6 +1990,7 @@ func_def:
 			append_list(f, append_string(L(), $9));
 			append_int(f, F_LOADER);
 			append_int(f, lang);
+			append_int(f, $1);
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
 ;
 
@@ -2386,10 +2428,11 @@ routine_designator:
  ;
 
 drop_statement:
-   drop TABLE qname drop_action
+   drop TABLE if_exists qname drop_action
 	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_int(l, $4 );
+	  append_list(l, $4 );
+	  append_int(l, $5 );
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
  | drop routine_designator drop_action
 	{ dlist *l = $2;
@@ -2975,11 +3018,11 @@ with_list:
  ;
 
 with_list_element: 
-    ident opt_column_list AS '(' with_query_expression ')'
+    ident opt_column_list AS subquery_with_orderby 
 	{  dlist *l = L();
 	  append_list(l, append_string(L(), $1));
 	  append_list(l, $2);
-	  append_symbol(l, $5);
+	  append_symbol(l, $4);
 	  append_int(l, FALSE);	/* no with check */
 	  append_int(l, FALSE);	/* inlined view  (ie not persistent) */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
@@ -3148,7 +3191,7 @@ table_ref:
 		  	  	  append_symbol(l, $3);
 		  	  	  append_int(l, 1);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
- |  subquery table_name		
+ |  subquery_with_orderby table_name		
 				{
 				  $$ = $1;
 				  if ($$->token == SQL_SELECT) {
@@ -3170,7 +3213,7 @@ table_ref:
 	  				append_int($2->data.lval, 1);
 				  }
 				}
- |  subquery
+ |  subquery_with_orderby
 				{ $$ = NULL;
 				  yyerror(m, "subquery table reference needs alias, use AS xxx");
 				  YYABORT;
@@ -3518,6 +3561,15 @@ filter_exp:
 		  append_list(l, $2);
 		  append_list(l, $3);
 		  $$ = _symbol_create_list(SQL_FILTER, l ); }
+ ;
+
+
+subquery_with_orderby:
+    '(' select_no_parens_orderby ')'	{ $$ = $2; }
+ |  '(' VALUES row_commalist ')'	
+				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
+ |  '(' with_query ')'	
+				{ $$ = $2; }
  ;
 
 subquery:
@@ -4409,10 +4461,12 @@ literal:
 		  if (!err) {
 		    int bits = digits2bits(digits), obits = bits;
 
-		    for (;(one<<(bits-1)) > value; bits--)
-			    ;
-		   
- 		    if (bits != obits && 
+		    while (bits > 0 &&
+			   (bits == sizeof(value) * 8 ||
+			    (one << (bits - 1)) > value))
+			  bits--;
+
+ 		    if (bits != obits &&
 		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
 				bits++;
 		
@@ -5222,6 +5276,7 @@ non_reserved_word:
 |  MINMAX	{ $$ = sa_strdup(SA, "MinMax"); }
 |  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 |  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
+|  REPLACE	{ $$ = sa_strdup(SA, "replace"); }
 ;
 
 name_commalist:

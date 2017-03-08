@@ -188,25 +188,25 @@ Ready.
 [ 2014-10-14 06:12:56.000000,	"EUR/USD",	2014-10-14 06:12:57.168000,	1.271780,	1.271880,	0.000100	]
 [ 2014-10-14 06:13:01.000000,	"EUR/USD",	2014-10-14 06:13:02.327000,	1.271910,	1.271990,	0.000080	]
 #SELECT avg(bid), sum(bid) FROM forex;
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .L4,	.L7 # table_name
+% L3,	L6 # name
 % double,	decimal # type
-% 24,	41 # length
+% 24,	40 # length
 [ 42.33074767,	1269.922430	]
 #SELECT currency, cast(avg(bid) AS DECIMAL(12,6)), sum(bid) FROM forex GROUP BY currency;
-% .forex,	.L2,	.L3 # table_name
-% currency,	L2,	L3 # name
+% .forex,	.L4,	.L7 # table_name
+% currency,	L4,	L6 # name
 % clob,	decimal,	decimal # type
-% 7,	14,	41 # length
+% 7,	14,	40 # length
 [ "EUR/USD",	1.271833,	3.815500	]
 [ "USD/JPY",	107.118333,	321.355000	]
-[ "GBP/USD",	1.606836,	4.820510	]
+[ "GBP/USD",	1.606837,	4.820510	]
 [ "EUR/GBP",	0.791463,	2.374390	]
 [ "USD/CHF",	0.950400,	2.851200	]
-[ "EUR/JPY",	136.238666,	408.716000	]
+[ "EUR/JPY",	136.238667,	408.716000	]
 [ "EUR/CHF",	1.208763,	3.626290	]
-[ "USD/CAD",	1.121149,	3.363450	]
-[ "AUD/USD",	0.878696,	2.636090	]
+[ "USD/CAD",	1.121150,	3.363450	]
+[ "AUD/USD",	0.878697,	2.636090	]
 [ "GBP/JPY",	172.121333,	516.364000	]
 #ALTER TABLE forex DROP TABLE day1;
 #SELECT * FROM forex WHERE currency = 'EUR/USD';

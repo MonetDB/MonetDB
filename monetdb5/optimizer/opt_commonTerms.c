@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -112,7 +112,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		mnstr_printf(cntxt->fdout,"#TARGET CANDIDATE[%d] ",i);
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
-		prop = mayhaveSideEffects(cntxt, mb, p,TRUE) || isUpdateInstruction(p);
+		prop = mayhaveSideEffects(cntxt, mb, p,TRUE);
 		cnt = i; /* / 128 < 32? 32 : mb->stop/128;	limit search depth */
 		if ( !prop)
 		for (j = list[i]; cnt > 0 && j ; cnt--, j = list[j]) 

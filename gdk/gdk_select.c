@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1257,18 +1257,31 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* can we use the base type? */
 	t = ATOMbasetype(t);
 	lnil = ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
+
+	if (!lnil && th != NULL && (!li || !hi) && !anti && ATOMcmp(t, tl, th) == 0) {
+		/* upper and lower bound of range are equal and we
+		 * want an interval that's open on at least one
+		 * side */
+		ALGODEBUG fprintf(stderr, "#BATselect(b=%s#" BUNFMT
+				  ",s=%s%s,li=%d,hi=%d,anti=%d): empty interval\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL",
+				  s && BATtdense(s) ? "(dense)" : "",
+				  li, hi, anti);
+		return newempty();
+	}
+
 	lval = !lnil || th == NULL;	 /* low value used for comparison */
 	equi = th == NULL || (lval && ATOMcmp(t, tl, th) == 0); /* point select? */
 	if (equi) {
 		assert(lval);
-		hi = li;
+		if (th == NULL)
+			hi = li;
 		th = tl;
 		hval = 1;
 	} else {
 		hval = ATOMcmp(t, th, nil) != 0;
 	}
-	if (!equi && !lval && !hval && lnil) 
-		anti = !anti;
 	if (anti) {
 		if (lval != hval) {
 			/* one of the end points is nil and the other
@@ -1369,7 +1382,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "", anti);
 		if (s) {
-			return COLcopy(s, s->ttype, 0, TRANSIENT);
+			oid o = b->hseqbase + BATcount(b);
+			BUN q = SORTfndfirst(s, &o);
+			BUN p = SORTfndfirst(s, &b->hseqbase);
+			return BATslice(s, p, q);
 		} else {
 			return BATdense(0, b->hseqbase, BATcount(b));
 		}
@@ -1414,8 +1430,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    !(b->tsorted || b->trevsorted) &&
 	    (!s || (s && BATtdense(s)))    &&
 	    (BATcheckorderidx(b) ||
-	     (VIEWtparent(b) && BATcheckorderidx(BBPquickdesc(VIEWtparent(b), 0)))))
-	{
+	     (VIEWtparent(b) &&
+	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), 0))))) {
 		BAT *view = NULL;
 		if (VIEWtparent(b) && !BATcheckorderidx(b)) {
 			view = b;
@@ -1424,8 +1440,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* Is query selective enough to use the ordered index ? */
 		/* TODO: Test if this heuristic works in practice */
 		/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))*/
-		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3)
-		{
+		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3) {
 			use_orderidx = 1;
 			if (view) {
 				vwl = view->hseqbase;
@@ -1606,51 +1621,32 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				rs += low;
 				bn = COLnew(0, TYPE_oid, high-low, TRANSIENT);
 				if (bn == NULL)
-					GDKerror("memory allocation error");
+					return NULL;
 
 				rbn = (oid *) Tloc((bn), 0);
 
-				if (s && !BATtdense(s)) {
-					const oid *rcand = (const oid *) Tloc((s), 0);
-					assert("should not use orderidx with non dense cand list, too expensive");
-
-					for (i = low; i < high; i++) {
-						if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
-							if (binsearchcand(rcand, 0, s->batCount, ((*rs)&BUN_UNMSK))) {
-								*rbn++ = ((*rs)&BUN_UNMSK);
-								cnt++;
-							}
-						}
-						rs++;
+				for (i = low; i < high; i++) {
+					if (vwl <= *rs && *rs < vwh) {
+						*rbn++ = *rs;
+						cnt++;
 					}
-					BATsetcount(bn, cnt);
-
-				} else {
-					if (s) {
-						assert(BATtdense(s));
-						if (vwl < s->tseqbase)
-							vwl = s->tseqbase;
-						if (s->tseqbase + BATcount(s) < vwh)
-							vwh = s->tseqbase + BATcount(s);
-					}
-					for (i = low; i < high; i++) {
-						if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
-							*rbn++ = ((*rs)&BUN_UNMSK);
-							cnt++;
-						}
-						rs++;
-					}
-					BATsetcount(bn, cnt);
+					rs++;
 				}
+				BATsetcount(bn, cnt);
 
 				/* output must be sorted */
-				GDKqsort((oid *) Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
+				GDKqsort(Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
 				bn->tsorted = 1;
 				bn->trevsorted = bn->batCount <= 1;
 				bn->tkey = 1;
 				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? 0 : oid_nil;
 				bn->tnil = 0;
 				bn->tnonil = 1;
+				if (s) {
+					s = BATintersectcand(bn, s);
+					BBPunfix(bn->batCacheid);
+					bn = s;
+				}
 			} else {
 				/* match: [low..high) */
 				if (s) {
@@ -1860,7 +1856,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)
 		return newempty();
-	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
 		/* "=" or "==" */
 		return BATselect(b, s, val, NULL, 1, 1, 0);
 	}
@@ -2082,15 +2078,12 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 			high += l->hseqbase;
 			if (use_orderidx) {
 				const oid *ord;
-				oid o;
 				ord = (const oid *) l->torderidx->base + ORDERIDXOFF;
 
 				if (sl) {
 					assert(BATtdense(sl));
-					o = (oid) ((*(ord+low))&BUN_UNMSK);
-					ll = SORTfndfirst(sl, &o);
-					o = (oid) ((*(ord+high))&BUN_UNMSK);
-					lh = SORTfndfirst(sl, &o);
+					ll = SORTfndfirst(sl, ord + low);
+					lh = SORTfndfirst(sl, ord + high);
 				}
 				assert(lh >= ll);
 
@@ -2110,8 +2103,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 
 				ord += low;
 				while (low < high) {
-					if (ll <= ((*ord)&BUN_UNMSK) && ((*ord)&BUN_UNMSK) < lh) {
-						dst1[r1->batCount++] = ((*ord)&BUN_UNMSK);
+					if (ll <= *ord && *ord < lh) {
+						dst1[r1->batCount++] = *ord;
 						dst2[r2->batCount++] = ro;
 						low++;
 						ord++;

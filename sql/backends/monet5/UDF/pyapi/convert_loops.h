@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -24,9 +24,44 @@
 
 // This #define creates a new BAT with the internal data and mask from a Numpy array, without copying the data
 // 'bat' is a BAT* pointer, which will contain the new BAT. TYPE_'mtpe' is the BAT type, and 'batstore' is the heap storage type of the BAT (this should be STORE_CMEM or STORE_SHARED)
+#if defined(_MSC_VER) && _MSC_VER <= 1600
+#define isnan(x) _isnan(x)
+#endif
+
+#define nancheck_flt(bat)							\
+	do {								\
+		for (iu = 0; iu < ret->count; iu++) {			\
+			if (isnan(((flt*)data)[index_offset * ret->count + iu])) { \
+				((flt*)data)[index_offset * ret->count + iu] = flt_nil; \
+				bat->tnil = 1;				\
+			}						\
+		}							\
+		bat->tnonil = !bat->tnil;				\
+	} while (0)
+#define nancheck_dbl(bat)							\
+	do {								\
+		for (iu = 0; iu < ret->count; iu++) {			\
+			if (isnan(((dbl*)data)[index_offset * ret->count + iu])) { \
+				((dbl*)data)[index_offset * ret->count + iu] = dbl_nil; \
+				bat->tnil = 1;				\
+			}						\
+		}							\
+		bat->tnonil = !bat->tnil;				\
+	} while (0)
+#define nancheck_bit(bat) ((void) 0)
+#define nancheck_bte(bat) ((void) 0)
+#define nancheck_sht(bat) ((void) 0)
+#define nancheck_int(bat) ((void) 0)
+#define nancheck_lng(bat) ((void) 0)
+#define nancheck_hge(bat) ((void) 0) /* not used if no HAVE_HGE */
+#define nancheck_oid(bat) ((void) 0)
 #if defined (HAVE_FORK) && !defined(HAVE_EMBEDDED)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
+        if (bat == NULL) {						\
+                msg = createException(MAL, "pyapi.eval", "Cannor create BAT"); \
+                goto wrapup;						\
+        }								\
         bat->tnil = 0; bat->tnonil = 1;                                                   \
         bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
         /*Change nil values to the proper values, if they exist*/                                                       \
@@ -43,6 +78,7 @@
             bat->tnonil = 1 - bat->tnil;                                                                            \
         } else {                                                                                                        \
             bat->tnil = 0; bat->tnonil = 0;                                                                         \
+	    nancheck_##mtpe(bat);\
         }                                                                                                               \
                                                                                                                         \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
@@ -74,6 +110,10 @@
 #else
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
+        if (bat == NULL) {						\
+                msg = createException(MAL, "pyapi.eval", "Cannor create BAT"); \
+                goto wrapup;						\
+        }								\
         bat->tnil = 0; bat->tnonil = 1;                                                   \
         bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
         /*Change nil values to the proper values, if they exist*/                                                       \
@@ -90,6 +130,7 @@
             bat->tnonil = 1 - bat->tnil;                                                                            \
         } else {                                                                                                        \
             bat->tnil = 0; bat->tnonil = 0;                                                                         \
+	    nancheck_##mtpe(bat);\
         }                                                                                                               \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
         GDKfree(bat->theap.base);                                                                                     \
@@ -128,6 +169,34 @@
         for (iu = 0; iu < ret->count; iu++)                                                                                                      \
         {                                                                                                                                        \
             if (mask[index_offset * ret->count + iu] == TRUE)                                                                                    \
+            {                                                                                                                                    \
+                bat->tnil = 1;                                                                                                                 \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = mtpe_to##_nil;                                                               \
+            }                                                                                                                                    \
+            else                                                                                                                                 \
+            {                                                                                                                                    \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));\
+            }                                                                                                                                    \
+        }                                                                                                                                        \
+    } }
+#define NP_COL_BAT_LOOPF(bat, mtpe_to, mtpe_from,index) {                                                                                        \
+    if (mask == NULL)                                                                                                                            \
+    {                                                                                                                                            \
+        for (iu = 0; iu < ret->count; iu++)                                                                                                      \
+        {                                                                                                                                        \
+            if (isnan(((mtpe_from*)data)[index_offset * ret->count + iu])) {                                                                     \
+		bat->tnil = 1;                                                                                                                   \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = mtpe_to##_nil;                                                                           \
+            } else {                                                                                                                             \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = (mtpe_to)((mtpe_from*)data)[index_offset * ret->count + iu];                             \
+            }                                                                                                                                    \
+        }                                                                                                                                        \
+    }                                                                                                                                            \
+    else                                                                                                                                         \
+    {                                                                                                                                            \
+        for (iu = 0; iu < ret->count; iu++)                                                                                                      \
+        {                                                                                                                                        \
+            if (mask[index_offset * ret->count + iu] == TRUE || isnan(((mtpe_from*)data)[index_offset * ret->count + iu]))                       \
             {                                                                                                                                    \
                 bat->tnil = 1;                                                                                                                 \
                 ((mtpe_to*) Tloc(bat, 0))[index + iu] = mtpe_to##_nil;                                                               \
@@ -220,9 +289,9 @@
         case NPY_ULONG:      NP_COL_BAT_LOOP(bat, mtpe, unsigned long, index); break;                                                                   \
         case NPY_ULONGLONG:  NP_COL_BAT_LOOP(bat, mtpe, unsigned long long, index); break;                                                              \
         case NPY_FLOAT16:                                                                                                                               \
-        case NPY_FLOAT:      NP_COL_BAT_LOOP(bat, mtpe, float, index); break;                                                                           \
-        case NPY_DOUBLE:     NP_COL_BAT_LOOP(bat, mtpe, double, index); break;                                                                          \
-        case NPY_LONGDOUBLE: NP_COL_BAT_LOOP(bat, mtpe, long double, index); break;                                                                     \
+        case NPY_FLOAT:      NP_COL_BAT_LOOPF(bat, mtpe, float, index); break;                                                                          \
+        case NPY_DOUBLE:     NP_COL_BAT_LOOPF(bat, mtpe, double, index); break;                                                                         \
+        case NPY_LONGDOUBLE: NP_COL_BAT_LOOPF(bat, mtpe, long double, index); break;                                                                    \
         case NPY_STRING:     NP_COL_BAT_LOOP_FUNC(bat, mtpe, str_to_##mtpe, char, index); break;                                                        \
         case NPY_UNICODE:    NP_COL_BAT_LOOP_FUNC(bat, mtpe, unicode_to_##mtpe, PythonUnicodeType, index); break;                                       \
         case NPY_OBJECT:     NP_COL_BAT_LOOP_FUNC(bat, mtpe, pyobject_to_##mtpe, PyObject*, index); break;                                              \
@@ -341,6 +410,10 @@
             }                                                                                                                                                  \
         } else {                                                                                                                                               \
             bat = COLnew(seqbase, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                   \
+            if (bat == NULL) {						\
+                msg = createException(MAL, "pyapi.eval", "Cannor create BAT"); \
+                goto wrapup;						\
+            }								\
             bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                                                              \
             NP_INSERT_BAT(bat, mtpe, 0);                                                                                                                       \
             if (!mask) { bat->tnil = 0; bat->tnonil = 0; }                                                                                                 \

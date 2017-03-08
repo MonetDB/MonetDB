@@ -50,7 +50,7 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ 11510005109700.000000	]
 #select convert (                   10000000                *          100000 * 11.51 , decimal(15)) + convert (51.097 *          100000 , decimal(15));
 % .L4 # table_name
@@ -62,7 +62,7 @@ Ready.
 % .L5 # table_name
 % L5 # name
 % decimal # type
-% 40 # length
+% 39 # length
 [ 1151000000000000005109700000000000	]
 
 # 14:36:23 >  

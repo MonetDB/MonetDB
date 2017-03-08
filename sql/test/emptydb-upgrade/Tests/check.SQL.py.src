@@ -1,1 +1,1 @@
-$RELSRCDIR/../../../../clients/Tests/SQL-dump.SQL.py
+$RELSRCDIR/../../emptydb/Tests/check.SQL.py

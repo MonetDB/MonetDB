@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -895,16 +895,34 @@ GDKusec(void)
 		return (lng) (((ctr.QuadPart - start.QuadPart) * 1000000) / freq.QuadPart);
 	}
 #endif
+#ifdef HAVE_CLOCK_GETTIME
+#if defined(CLOCK_UPTIME_FAST)
+#define CLK_ID CLOCK_UPTIME_FAST	/* FreeBSD */
+#else
+#define CLK_ID CLOCK_MONOTONIC		/* Posix (fallback) */
+#endif
+	{
+		static struct timespec tsbase;
+		struct timespec ts;
+		if (tsbase.tv_sec == 0) {
+			clock_gettime(CLK_ID, &tsbase);
+			return tsbase.tv_nsec / 1000;
+		}
+		if (clock_gettime(CLK_ID, &ts) == 0)
+			return (ts.tv_sec - tsbase.tv_sec) * 1000000 + ts.tv_nsec / 1000;
+	}
+#endif
 #ifdef HAVE_GETTIMEOFDAY
 	{
 		static struct timeval tpbase;	/* automatically initialized to 0 */
 		struct timeval tp;
 
-		if (tpbase.tv_sec == 0)
+		if (tpbase.tv_sec == 0) {
 			gettimeofday(&tpbase, NULL);
+			return (lng) tpbase.tv_usec;
+		}
 		gettimeofday(&tp, NULL);
-		tp.tv_sec -= tpbase.tv_sec;
-		return (lng) tp.tv_sec * 1000000 + (lng) tp.tv_usec;
+		return (lng) (tp.tv_sec - tpbase.tv_sec) * 1000000 + (lng) tp.tv_usec;
 	}
 #else
 #ifdef HAVE_FTIME
@@ -912,11 +930,12 @@ GDKusec(void)
 		static struct timeb tbbase;	/* automatically initialized to 0 */
 		struct timeb tb;
 
-		if (tbbase.time == 0)
+		if (tbbase.time == 0) {
 			ftime(&tbbase);
+			return (lng) tbbase.millitm * 1000;
+		}
 		ftime(&tb);
-		tb.time -= tbbase.time;
-		return (lng) tb.time * 1000000 + (lng) tb.millitm * 1000;
+		return (lng) (tb.time - tbbase.time) * 1000000 + (lng) tb.millitm * 1000;
 	}
 #endif
 #endif

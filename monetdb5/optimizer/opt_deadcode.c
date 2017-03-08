@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* (c) Martin Kersten
@@ -55,7 +55,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			varused[getArg(p,0)]++; // force keeping 
 			continue;
 		}
-		if (hasSideEffects(p, FALSE) || isUpdateInstruction(p) || !isLinearFlow(p) || isProcedure(mb,p)  || 
+		if (hasSideEffects(mb, p, FALSE) || !isLinearFlow(p) || 
 				(p->retc == 1 && mb->unsafeProp) || p->barrier /* ==side-effect */){
 			varused[getArg(p,0)]++; // force keeping it
 			continue;

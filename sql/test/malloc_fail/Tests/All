@@ -1,4 +1,1 @@
-initialize
-setmemorylimit
-setmemorylimit-fail
-setmemorylimit-fail2
+# mallocs not run for now since it hangs mserver

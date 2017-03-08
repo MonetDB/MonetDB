@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -319,7 +319,7 @@ int GDK_vm_trim = 1;
 #include "gdk_atomic.h"
 static volatile ATOMIC_TYPE GDK_mallocedbytes_estimate = 0;
 #ifndef NDEBUG
-static volatile lng GDK_mallocedbytes_limit = -1;
+static volatile lng GDK_malloc_success_count = -1;
 #endif
 static volatile ATOMIC_TYPE GDK_vm_cursize = 0;
 #ifdef GDK_VM_KEEPHISTO
@@ -451,6 +451,10 @@ MT_init(void)
 static void THRinit(void);
 static void GDKlockHome(void);
 
+#ifndef NDEBUG
+static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
+#endif
+
 int
 GDKinit(opt *set, int setlen)
 {
@@ -481,6 +485,9 @@ GDKinit(opt *set, int setlen)
 	MT_lock_init(&GDKnameLock, "GDKnameLock");
 	MT_lock_init(&GDKthreadLock, "GDKthreadLock");
 	MT_lock_init(&GDKtmLock, "GDKtmLock");
+#ifndef NDEBUG
+	MT_lock_init(&mallocsuccesslock, "mallocsuccesslock");
+#endif
 #endif
 	for (i = 0; i <= BBP_BATMASK; i++) {
 		MT_lock_init(&GDKbatLock[i].swap, "GDKswapLock");
@@ -853,7 +860,7 @@ GDKlockHome(void)
 	 * this section.
 	 */
 	MT_init();
-	OIDinit();
+	BBPdirty(1);
 	/*
 	 * Print the new process list in the global lock file.
 	 */
@@ -1639,15 +1646,6 @@ GDKmalloc_prefixsize(size_t size)
 	return s;
 }
 
-void
-GDKsetmemorylimit(lng nbytes)
-{
-	(void) nbytes;
-#ifndef NDEBUG
-	GDK_mallocedbytes_limit = nbytes;
-#endif
-}
-
 
 /*
  * The emergency flag can be set to force a fatal error if needed.
@@ -1668,10 +1666,16 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	}
 #ifndef NDEBUG
 	/* fail malloc for testing purposes depending on set limit */
-	if (GDK_mallocedbytes_limit >= 0 &&
-	    size > (size_t) GDK_mallocedbytes_limit) {
+	if (GDK_malloc_success_count > 0) {
+		MT_lock_set(&mallocsuccesslock);
+		if (GDK_malloc_success_count > 0)
+			GDK_malloc_success_count--;
+		MT_lock_unset(&mallocsuccesslock);
+	}
+	if (GDK_malloc_success_count == 0) {
 		return NULL;
 	}
+
 #endif
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
 	s = GDKmalloc_prefixsize(size);
@@ -1900,6 +1904,15 @@ GDKstrdup(const char *s)
 }
 
 #endif	/* STATIC_CODE_ANALYSIS */
+
+void
+GDKsetmallocsuccesscount(lng count)
+{
+	(void) count;
+#ifndef NDEBUG
+	GDK_malloc_success_count = count;
+#endif
+}
 
 #undef GDKstrndup
 char *

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -87,7 +87,7 @@ blob_put(Heap *h, var_t *bun, blob *val)
 	*bun = HEAP_malloc(h, blobsize(val->nitems));
  	base = h->base;
 	if (*bun) {
-		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, blobsize(val->nitems));
+		memcpy(&base[*bun], (char *) val, blobsize(val->nitems));
 		h->dirty = 1;
 	}
 	return *bun;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -762,81 +762,110 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			} else {
 				/* only round when going to a lower scale */
 				mul = scales[at->scale-tp->scale];
+#ifndef TRUNCATE_NUMBERS
 				rnd = mul>>1;
+#endif
 				div = 1;
 			}
 			a->tpe = *tp;
 			a->data.vtype = tp->type->localtype;
 #ifdef HAVE_HGE
 			if (a->data.vtype == TYPE_hge) {
-				a->data.val.hval += rnd;
-				if (div)
+				if (div) {
+					if (a->data.val.hval < 0)
+						a->data.val.hval -= rnd;
+					else
+						a->data.val.hval += rnd;
 					a->data.val.hval /= mul;
-				else
+				} else
 					a->data.val.hval *= mul;
 			} else if (a->data.vtype == TYPE_lng) {
 				if (!div && ((hge) GDK_lng_min > (hge) a->data.val.lval * mul || (hge) a->data.val.lval * mul > (hge) GDK_lng_max))
 					return 0;
-				a->data.val.lval += (lng)rnd;
-				if (div)
+				if (div) {
+					if (a->data.val.lval < 0)
+						a->data.val.lval -= (lng)rnd;
+					else
+						a->data.val.lval += (lng)rnd;
 					a->data.val.lval /= (lng) mul;
-				else
+				} else
 					a->data.val.lval *= (lng) mul;
 			} else if (a->data.vtype == TYPE_int) {
 				if (!div && ((hge) GDK_int_min > (hge) a->data.val.ival * mul || (hge) a->data.val.ival * mul > (hge) GDK_int_max))
 					return 0;
-				a->data.val.ival += (int)rnd;
-				if (div)
+				if (div) {
+					if (a->data.val.ival < 0)
+						a->data.val.ival -= (int)rnd;
+					else
+						a->data.val.ival += (int)rnd;
 					a->data.val.ival /= (int) mul;
-				else
+				} else
 					a->data.val.ival *= (int) mul;
 			} else if (a->data.vtype == TYPE_sht) {
 				if (!div && ((hge) GDK_sht_min > (hge) a->data.val.shval * mul || (hge) a->data.val.shval * mul > (hge) GDK_sht_max))
 					return 0;
-				a->data.val.shval += (sht)rnd;
-				if (div)
+				if (div) {
+					if (a->data.val.shval < 0)
+						a->data.val.shval -= (sht)rnd;
+					else
+						a->data.val.shval += (sht)rnd;
 					a->data.val.shval /= (sht) mul;
-				else
+				} else
 					a->data.val.shval *= (sht) mul;
 			} else if (a->data.vtype == TYPE_bte) {
 				if (!div && ((hge) GDK_bte_min > (hge) a->data.val.btval * mul || (hge) a->data.val.btval * mul > (hge) GDK_bte_max))
 					return 0;
-				a->data.val.btval += (bte)rnd;
-				if (div)
+				if (div) {
+					if (a->data.val.btval < 0)
+						a->data.val.btval -= (bte)rnd;
+					else
+						a->data.val.btval += (bte)rnd;
 					a->data.val.btval /= (bte) mul;
-				else
+				} else
 					a->data.val.btval *= (bte) mul;
 			}
 #else
 			if (a->data.vtype == TYPE_lng) {
-				a->data.val.lval += rnd;
-				if (div)
+				if (div) {
+					if (a->data.val.lval < 0)
+						a->data.val.lval -= rnd;
+					else
+						a->data.val.lval += rnd;
 					a->data.val.lval /= mul;
-				else
+				} else
 					a->data.val.lval *= mul;
 			} else if (a->data.vtype == TYPE_int) {
 				if (!div && ((lng) GDK_int_min > (lng) a->data.val.ival * mul || (lng) a->data.val.ival * mul > (lng) GDK_int_max))
 					return 0;
-				a->data.val.ival += (int)rnd;
-				if (div)
+				if (div) {
+					if (a->data.val.ival < 0)
+						a->data.val.ival -= (int)rnd;
+					else
+						a->data.val.ival += (int)rnd;
 					a->data.val.ival /= (int) mul;
-				else
+				} else
 					a->data.val.ival *= (int) mul;
 			} else if (a->data.vtype == TYPE_sht) {
 				if (!div && ((lng) GDK_sht_min > (lng) a->data.val.shval * mul || (lng) a->data.val.shval * mul > (lng) GDK_sht_max))
 					return 0;
-				a->data.val.shval += (sht)rnd;
-				if (div)
+				if (div) {
+					if (a->data.val.shval < 0)
+						a->data.val.shval -= (sht)rnd;
+					else
+						a->data.val.shval += (sht)rnd;
 					a->data.val.shval /= (sht) mul;
-				else
+				} else
 					a->data.val.shval *= (sht) mul;
 			} else if (a->data.vtype == TYPE_bte) {
 				if (!div && ((lng) GDK_bte_min > (lng) a->data.val.btval * mul || (lng) a->data.val.btval * mul > (lng) GDK_bte_max))
 					return 0;
-				a->data.val.btval += (bte)rnd;
-				if (div)
+				if (div) {
+					if (a->data.val.btval < 0)
+						a->data.val.btval -= (bte)rnd;
+					else
+						a->data.val.btval += (bte)rnd;
 					a->data.val.btval /= (bte) mul;
-				else
+				} else
 					a->data.val.btval *= (bte) mul;
 			}
 #endif
@@ -857,7 +886,9 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 
 			/* only round when going to a lower scale */
 			mul = scales[at->scale-tp->scale];
+#ifndef TRUNCATE_NUMBERS
 			rnd = mul>>1;
+#endif
 
 #ifdef HAVE_HGE
 			if (a->data.vtype == TYPE_hge) {
@@ -874,7 +905,10 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 				val = a->data.val.btval;
 			}
 
-			val += rnd;
+			if (val < 0)
+				val -= rnd;
+			else
+				val += rnd;
 			val /= mul;
 
 			a->tpe = *tp;

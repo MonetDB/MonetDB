@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -413,6 +413,7 @@ static void ctl_handle_client(
 							free(sadbfarm);
 							setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", buf2);
 							setlen = mo_system_config(&set, setlen);
+							BBPaddfarm(buf2, (1 << PERSISTENT) | (1 << TRANSIENT));
 							/* the child, pollute scope by loading BBP */
 							if (chdir(q) < 0) {
 								/* Fabian says "Ignore the output.
@@ -441,8 +442,8 @@ static void ctl_handle_client(
 							}
 							GDKinit(set, setlen);
 							vaultkey = buf2;
-							if ((err = AUTHunlockVault(&vaultkey)) != NULL ||
-								(err = AUTHinitTables(&p)) != NULL) {
+							if ((err = AUTHunlockVault(vaultkey)) != NULL ||
+								(err = AUTHinitTables(p)) != NULL) {
 								Mfprintf(_mero_ctlerr, "%s: could not setup "
 										"database '%s': %s\n", origin, q, err);
 								GDKfree(err);

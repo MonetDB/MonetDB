@@ -38,7 +38,8 @@ QUERY = #variable arguments are only allowed in patterns
         b:= bat.new(:int);
         c:= bat.new(:int);
         user.test("hello",b,c);
-ERROR = !TypeException:user.main[4]:'user.test' undefined in:     user.test("hello":str,b:bat[:int],c:bat[:int]);
+ERROR = !TypeException:user.main[4]:'user.test' undefined in:     user.test("hello":str, b:bat[:int], c:bat[:int]);
+
 
 # 13:48:28 >  
 # 13:48:28 >  "Done."

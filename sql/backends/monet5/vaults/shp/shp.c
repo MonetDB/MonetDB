@@ -2,8 +2,8 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- * 
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -518,7 +518,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	for(i = 0; i < colsNum; i++) {
 		store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat);
 		BBPunfix(colsBAT[i]->batCacheid);
-		//BBPdecref(colsBAT[i]->batCacheid, TRUE);
+		//BBPrelease(colsBAT[i]->batCacheid);
 	}
 
 	/* free the memory */
@@ -710,7 +710,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	for(i = 0; i < colsNum; i++) {
 		store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat);
 		BBPunfix(colsBAT[i]->batCacheid);
-		BBPdecref(colsBAT[i]->batCacheid, TRUE);
+		BBPrelease(colsBAT[i]->batCacheid);
 	}
 		
 	/* free the memory */

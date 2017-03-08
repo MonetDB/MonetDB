@@ -69,7 +69,7 @@ Ready.
 #SELECT * FROM pyloader07table;
 % sys.pyloader07table,	sys.pyloader07table # table_name
 % s,	t # name
-% int,	int # type
+% bigint,	bigint # type
 % 2,	2 # length
 [ 33,	42	]
 #DROP TABLE pyloader07table;

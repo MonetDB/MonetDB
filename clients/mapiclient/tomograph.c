@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -294,11 +294,13 @@ base_colors[NUM_COLORS] = {
 /*   766 */	{ 0, 0, "aggr", "subsum", 0 },
 /*   610 */	{ 0, 0, "batcalc", "*", 0 },
 /*   577 */	{ 0, 0, "group", "subgroupdone", 0 },
+/*   577 */	{ 0, 0, "group", "groupdone", 0 },
 /*   481 */	{ 0, 0, "sql", "subdelta", 0 },
 /*   481 */	{ 0, 0, "sql", "subsort", 0 },
 /*   448 */	{ 0, 0, "batcalc", "-", 0 },
 /*   334 */	{ 0, 0, "bat", "mirror", 0 },
 /*   300 */	{ 0, 0, "group", "subgroup", 0 },
+/*   300 */	{ 0, 0, "group", "group", 0 },
 /*   264 */	{ 0, 0, "batcalc", "==", 0 },
 /*   260 */	{ 0, 0, "batcalc", "ifthenelse", 0 },
 /*   209 */	{ 0, 0, "batcalc", "hge", 0 },

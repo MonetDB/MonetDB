@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef ALGEBRA_H
@@ -47,25 +47,19 @@ mal_export str ALGcopy(bat *result, const bat *bid);
 mal_export str ALGunique2(bat *result, const bat *bid, const bat *sid);
 mal_export str ALGunique1(bat *result, const bat *bid);
 mal_export str ALGprojection(bat *result, const bat *lid, const bat *rid);
-mal_export str ALGtinter(bat *result, const bat *lid, const bat *rid);
-mal_export str ALGtdiff(bat *result, const bat *lid, const bat *rid);
-mal_export str ALGsample(bat *result, const bat *bid, const int *param);
 
-mal_export str ALGsubsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable);
-mal_export str ALGsubsort12(bat *result, bat *norder, const bat *bid, const bit *reverse, const bit *stable);
-mal_export str ALGsubsort13(bat *result, bat *norder, bat *ngroup, const bat *bid, const bit *reverse, const bit *stable);
-mal_export str ALGsubsort21(bat *result, const bat *bid, const bat *order, const bit *reverse, const bit *stable);
-mal_export str ALGsubsort22(bat *result, bat *norder, const bat *bid, const bat *order, const bit *reverse, const bit *stable);
-mal_export str ALGsubsort23(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bit *reverse, const bit *stable);
-mal_export str ALGsubsort31(bat *result, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable);
-mal_export str ALGsubsort32(bat *result, bat *norder, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable);
-mal_export str ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable);
+mal_export str ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable);
+mal_export str ALGsort12(bat *result, bat *norder, const bat *bid, const bit *reverse, const bit *stable);
+mal_export str ALGsort13(bat *result, bat *norder, bat *ngroup, const bat *bid, const bit *reverse, const bit *stable);
+mal_export str ALGsort21(bat *result, const bat *bid, const bat *order, const bit *reverse, const bit *stable);
+mal_export str ALGsort22(bat *result, bat *norder, const bat *bid, const bat *order, const bit *reverse, const bit *stable);
+mal_export str ALGsort23(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bit *reverse, const bit *stable);
+mal_export str ALGsort31(bat *result, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable);
+mal_export str ALGsort32(bat *result, bat *norder, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable);
+mal_export str ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable);
 mal_export str ALGcount_bat(lng *result, const bat *bid);
 mal_export str ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils);
 mal_export str ALGcount_no_nil(lng *result, const bat *bid);
-mal_export str ALGtmark(bat *result, const bat *bid, const oid *base);
-mal_export str ALGtmark_default(bat *result, const bat *bid);
-mal_export str ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr);
 mal_export str ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end);
 mal_export str ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end);
 mal_export str ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end);

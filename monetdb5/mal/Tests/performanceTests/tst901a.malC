@@ -1,5 +1,5 @@
 # what is the overhead of MAL in multiplex situations
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 t0:= alarm.usec();
 barrier i:= 0:lng;
 	o:= calc.oid(i);

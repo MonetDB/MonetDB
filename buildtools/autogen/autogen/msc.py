@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 import string
 import os
@@ -334,7 +334,7 @@ def msc_dep(fd, tar, deplist, msc):
         if target == "LIB":
             d, dext = split_filename(deplist[0])
             if dext in ("c", "yy.c", "tab.c"):
-                fd.write('\t$(CC) $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIB%s -Fo"%s" -c "%s"\n' %
+                fd.write('\t$(CC) $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIB%s "-Fo%s" -c "%s"\n' %
                          (split_filename(msc_basename(src))[0], name, t, src))
     if ext == 'res':
         fd.write("\t$(RC) -fo%s %s\n" % (t, src))

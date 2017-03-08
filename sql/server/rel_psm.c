@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -44,52 +44,106 @@ rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 	return NULL;
 }
 
-/* SET variable = value */
+/* SET variable = value and set (variable1, .., variableN) = (query) */
 static sql_exp *
 psm_set_exp(mvc *sql, dnode *n)
 {
-	exp_kind ek = {type_value, card_value, FALSE};
-	const char *name = n->data.sval;
 	symbol *val = n->next->data.sym;
 	sql_exp *e = NULL;
 	int level = 0, is_last = 0;
 	sql_subtype *tpe = NULL;
 	sql_rel *rel = NULL;
 	sql_exp *res = NULL;
+	int single = (n->type == type_string);
 
-	/* name can be 
-		'parameter of the function' (ie in the param list)
-		or a local or global variable, declared earlier
-	*/
 
-	/* check if variable is known from the stack */
-	if (!stack_find_var(sql, name)) {
-		sql_arg *a = sql_bind_param(sql, name);
+	if (single) {
+		exp_kind ek = {type_value, card_value, FALSE};
+		const char *name = n->data.sval;
+		/* name can be 
+			'parameter of the function' (ie in the param list)
+			or a local or global variable, declared earlier
+		*/
 
-		if (!a) /* not parameter, ie local var ? */
-			return sql_error(sql, 01, "Variable %s unknown", name);
-		tpe = &a->type;
-	} else { 
-		tpe = stack_find_type(sql, name);
-	}
+		/* check if variable is known from the stack */
+		if (!stack_find_var(sql, name)) {
+			sql_arg *a = sql_bind_param(sql, name);
 
-	e = rel_value_exp2(sql, &rel, val, sql_sel, ek, &is_last);
-	if (!e || (rel && e->card > CARD_AGGR))
-		return NULL;
+			if (!a) /* not parameter, ie local var ? */
+				return sql_error(sql, 01, "Variable %s unknown", name);
+			tpe = &a->type;
+		} else { 
+			tpe = stack_find_type(sql, name);
+		}
 
-	level = stack_find_frame(sql, name);
-	e = rel_check_type(sql, tpe, e, type_cast); 
-	if (!e)
-		return NULL;
-	if (rel) {
-		sql_exp *er = exp_rel(sql, rel);
-		list *b = sa_list(sql->sa);
+		e = rel_value_exp2(sql, &rel, val, sql_sel, ek, &is_last);
+		if (!e || (rel && e->card > CARD_AGGR))
+			return NULL;
 
-		append(b, er);
-		append(b, exp_set(sql->sa, name, e, level));
+		level = stack_find_frame(sql, name);
+		e = rel_check_type(sql, tpe, e, type_cast); 
+		if (!e)
+			return NULL;
+		if (rel) {
+			sql_exp *er = exp_rel(sql, rel);
+			list *b = sa_list(sql->sa);
+
+			append(b, er);
+			append(b, exp_set(sql->sa, name, e, level));
+			res = exp_rel(sql, rel_psm_block(sql->sa, b));
+		} else {
+			res = exp_set(sql->sa, name, e, level);
+		}
+	} else { /* multi assignment */
+		exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
+		sql_rel *rel_val = rel_subquery(sql, NULL, val, ek, APPLY_JOIN);
+		dlist *vars = n->data.lval;
+		dnode *m;
+		node *n;
+		list *b;
+
+		if (!rel_val || !is_project(rel_val->op) ||
+			    dlist_length(vars) != list_length(rel_val->exps)) {
+			return sql_error(sql, 02, "SET: Number of variables not equal to number of supplied values");
+		}
+
+	       	b = sa_list(sql->sa);
+		if (rel_val) {
+			sql_exp *er = exp_rel(sql, rel_val);
+
+			append(b, er);
+		}
+
+		for(m = vars->h, n = rel_val->exps->h; n && m; n = n->next, m = m->next) {
+			char *vname = m->data.sval;
+			sql_exp *v = n->data;
+
+			if (!stack_find_var(sql, vname)) {
+				sql_arg *a = sql_bind_param(sql, vname);
+
+				if (!a) /* not parameter, ie local var ? */
+					return sql_error(sql, 01, "Variable %s unknown", vname);
+				tpe = &a->type;
+			} else { 
+				tpe = stack_find_type(sql, vname);
+			}
+
+			if (!exp_name(v))
+				exp_label(sql->sa, v, ++sql->label);
+			v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+
+			level = stack_find_frame(sql, vname);
+			v = rel_check_type(sql, tpe, v, type_cast); 
+			if (!v)
+				return NULL;
+			if (v->card > CARD_AGGR) {
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v));
+				assert(zero_or_one);
+				v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, 0);
+			}
+			append(b, exp_set(sql->sa, vname, v, level));
+		}
 		res = exp_rel(sql, rel_psm_block(sql->sa, b));
-	} else {
-		res = exp_set(sql->sa, name, e, level);
 	}
 	return res;
 }
@@ -154,7 +208,7 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 	
 	assert(n->next->next->next->type == type_int);
 	
-	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL);
+	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL, 0);
 
 	if (!rel || rel->op != op_ddl || rel->flag != DDL_CREATE_TABLE)
 		return NULL;
@@ -680,6 +734,8 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 	list *exps = new_exp_list(sa);
 
 	append(exps, exp_atom_clob(sa, sname));
+	if (f)
+		append(exps, exp_atom_clob(sa, f->base.name));
 	append(exps, exp_atom_ptr(sa, f));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -692,7 +748,7 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 }
 
 static sql_rel *
-rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang)
+rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang, int replace)
 {
 	const char *fname = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -712,7 +768,9 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	char is_loader = (type == F_LOADER);
 
 	char *F = is_loader?"LOADER":(is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE"));
+	char *fn = is_loader?"loader":(is_aggr ? "aggregate" : (is_func ? "function" : "procedure"));
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
+	char *kf = type == F_FILT ? "filter " : type == F_UNION ? "union " : "";
 
 	assert(res || type == F_PROC || type == F_FILT || type == F_LOADER);
 
@@ -729,139 +787,151 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 
 	type_list = create_type_list(sql, params, 1);
 	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
-		if (params) {
-			char *arg_list = NULL;
-			node *n;
-			
-			for (n = type_list->h; n; n = n->next) {
-				char *tpe =  subtype2string((sql_subtype *) n->data);
-				
-				if (arg_list) {
-					char *t = arg_list;
-					arg_list = sql_message("%s, %s", arg_list, tpe);
-					_DELETE(t);
-					_DELETE(tpe);
-				} else {
-					arg_list = tpe;
-				}
+		if (replace) {
+			sql_func *func = sf->func;
+			int action = 0;
+			if (!mvc_schema_privs(sql, s)) {
+				return sql_error(sql, 02, "CREATE OR REPLACE %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 			}
-			(void)sql_error(sql, 02, "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list);
-			_DELETE(arg_list);
-			list_destroy(type_list);
-			return NULL;
-		} else {
-			list_destroy(type_list);
-			return sql_error(sql, 02, "CREATE %s%s: name '%s' already in use", KF, F, fname);
-		}
-	} else {
-		list_destroy(type_list);
-		if (create && !mvc_schema_privs(sql, s)) {
-			return sql_error(sql, 02, "CREATE %s%s: insufficient privileges "
-					"for user '%s' in schema '%s'", KF, F,
-					stack_get_string(sql, "current_user"), s->base.name);
-		} else {
-			char *q = QUERY(sql->scanner);
-			list *l = NULL;
+			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
+				return sql_error(sql, 02, "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, func->base.name);
 
-		 	if (params) {
-				for (n = params->h; n; n = n->next) {
-					dnode *an = n->data.lval->h;
-					sql_add_param(sql, an->data.sval, &an->next->data.typeval);
-				}
-				l = sql->params;
-				if (l && list_length(l) == 1) {
-					sql_arg *a = l->h->data;
-
-					if (strcmp(a->name, "*") == 0) {
-						l = NULL;
-						vararg = TRUE;
+			mvc_drop_func(sql, s, func, action);
+			sf = NULL;
+		} else {
+			if (params) {
+				char *arg_list = NULL;
+				node *n;
+				
+				for (n = type_list->h; n; n = n->next) {
+					char *tpe =  subtype2string((sql_subtype *) n->data);
+					
+					if (arg_list) {
+						char *t = arg_list;
+						arg_list = sql_message("%s, %s", arg_list, tpe);
+						_DELETE(t);
+						_DELETE(tpe);
+					} else {
+						arg_list = tpe;
 					}
 				}
-			}
-			if (!l)
-				l = sa_list(sql->sa);
-			if (res) {
-				restype = result_type(sql, res);
-				if (!restype)
-					return sql_error(sql, 01,
-							"CREATE %s%s: failed to get restype", KF, F);
-			}
-			if (body && lang > FUNC_LANG_SQL) {
-				char *lang_body = body->h->data.sval;
-				char *mod = 	
-						(lang == FUNC_LANG_R)?"rapi":
-						(lang == FUNC_LANG_C)?"capi":
-						(lang == FUNC_LANG_J)?"japi":
-						(lang == FUNC_LANG_PY)?"pyapi":
-     					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
-				sql->params = NULL;
-				if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg);
-				} else if (!sf) {
-					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
-				} /*else {
-					sql_func *f = sf->func;
-					f->mod = _STRDUP("rapi");
-					f->imp = _STRDUP("eval");
-					if (res && restype)
-						f->res = restype;
-					f->sql = 0;
-					f->lang = FUNC_LANG_INT;
-				}*/
-			} else if (body) {
-				sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
-				list *b = NULL;
-				sql_schema *old_schema = cur_schema(sql);
-	
-				if (create) { /* needed for recursive functions */
-					q = query_cleaned(q);
-					sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
-					GDKfree(q);
-				}
-				sql->session->schema = s;
-				b = sequential_block(sql, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
-				sql->forward = NULL;
-				sql->session->schema = old_schema;
-				sql->params = NULL;
-				if (!b) 
-					return NULL;
-			
-				/* check if we have a return statement */
-				if (is_func && restype && !has_return(b)) {
-					return sql_error(sql, 01,
-							"CREATE %s%s: missing return statement", KF, F);
-				}
-				if (!is_func && !restype && has_return(b)) {
-					return sql_error(sql, 01, "CREATE %s%s: procedures "
-							"cannot have return statements", KF, F);
-				}
-	
-				/* in execute mode we instantiate the function */
-				if (instantiate || deps) {
-					return rel_psm_block(sql->sa, b);
-				}
+				(void)sql_error(sql, 02, "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list);
+				_DELETE(arg_list);
+				list_destroy(type_list);
+				return NULL;
 			} else {
-				char *fmod = qname_module(ext_name);
-				char *fnme = qname_fname(ext_name);
+				list_destroy(type_list);
+				return sql_error(sql, 02, "CREATE %s%s: name '%s' already in use", KF, F, fname);
+			}
+		}
+	}
+	list_destroy(type_list);
+	if (create && !mvc_schema_privs(sql, s)) {
+		return sql_error(sql, 02, "CREATE %s%s: insufficient privileges "
+				"for user '%s' in schema '%s'", KF, F,
+				stack_get_string(sql, "current_user"), s->base.name);
+	} else {
+		char *q = QUERY(sql->scanner);
+		list *l = NULL;
 
-				if (!fmod || !fnme)
-					return NULL;
-				sql->params = NULL;
-				if (create) {
-					q = query_cleaned(q);
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg);
-					GDKfree(q);
-				} else if (!sf) {
-					return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
-				} else {
-					sql_func *f = sf->func;
-					if (!f->mod || strcmp(f->mod, fmod))
-						f->mod = _STRDUP(fmod);
-					if (!f->imp || strcmp(f->imp, fnme)) 
-						f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
-					f->sql = 0; /* native */
-					f->lang = FUNC_LANG_INT;
+	 	if (params) {
+			for (n = params->h; n; n = n->next) {
+				dnode *an = n->data.lval->h;
+				sql_add_param(sql, an->data.sval, &an->next->data.typeval);
+			}
+			l = sql->params;
+			if (l && list_length(l) == 1) {
+				sql_arg *a = l->h->data;
+
+				if (strcmp(a->name, "*") == 0) {
+					l = NULL;
+					vararg = TRUE;
 				}
+			}
+		}
+		if (!l)
+			l = sa_list(sql->sa);
+		if (res) {
+			restype = result_type(sql, res);
+			if (!restype)
+				return sql_error(sql, 01,
+						"CREATE %s%s: failed to get restype", KF, F);
+		}
+		if (body && lang > FUNC_LANG_SQL) {
+			char *lang_body = body->h->data.sval;
+			char *mod = 	
+					(lang == FUNC_LANG_R)?"rapi":
+					(lang == FUNC_LANG_C)?"capi":
+					(lang == FUNC_LANG_J)?"japi":
+					(lang == FUNC_LANG_PY)?"pyapi":
+ 					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
+			sql->params = NULL;
+			if (create) {
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg);
+			} else if (!sf) {
+				return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
+			} /*else {
+				sql_func *f = sf->func;
+				f->mod = _STRDUP("rapi");
+				f->imp = _STRDUP("eval");
+				if (res && restype)
+					f->res = restype;
+				f->sql = 0;
+				f->lang = FUNC_LANG_INT;
+			}*/
+		} else if (body) {
+			sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
+			list *b = NULL;
+			sql_schema *old_schema = cur_schema(sql);
+
+			if (create) { /* needed for recursive functions */
+				q = query_cleaned(q);
+				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
+				GDKfree(q);
+			}
+			sql->session->schema = s;
+			b = sequential_block(sql, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
+			sql->forward = NULL;
+			sql->session->schema = old_schema;
+			sql->params = NULL;
+			if (!b) 
+				return NULL;
+		
+			/* check if we have a return statement */
+			if (is_func && restype && !has_return(b)) {
+				return sql_error(sql, 01,
+						"CREATE %s%s: missing return statement", KF, F);
+			}
+			if (!is_func && !restype && has_return(b)) {
+				return sql_error(sql, 01, "CREATE %s%s: procedures "
+						"cannot have return statements", KF, F);
+			}
+
+			/* in execute mode we instantiate the function */
+			if (instantiate || deps) {
+				return rel_psm_block(sql->sa, b);
+			}
+		} else {
+			char *fmod = qname_module(ext_name);
+			char *fnme = qname_fname(ext_name);
+
+			if (!fmod || !fnme)
+				return NULL;
+			sql->params = NULL;
+			if (create) {
+				q = query_cleaned(q);
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg);
+				GDKfree(q);
+			} else if (!sf) {
+				return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s.%s)", KF, F, fmod, fnme, s->base.name, fname );
+			} else {
+				sql_func *f = sf->func;
+				if (!f->mod || strcmp(f->mod, fmod))
+					f->mod = _STRDUP(fmod);
+				if (!f->imp || strcmp(f->imp, fnme)) 
+					f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
+				f->sql = 0; /* native */
+				f->lang = FUNC_LANG_INT;
 			}
 		}
 	}
@@ -1311,8 +1381,9 @@ rel_psm(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 		int type = l->h->next->next->next->next->next->data.i_val;
 		int lang = l->h->next->next->next->next->next->next->data.i_val;
+		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
 
-		ret = rel_create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang);
+		ret = rel_create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang, repl);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:

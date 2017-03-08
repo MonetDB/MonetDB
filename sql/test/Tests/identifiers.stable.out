@@ -58,13 +58,13 @@ Ready.
 #CREATE TABLE "B\"la\"" (id int); -- should fail
 #SELECT 1 AS "B\"la\""; -- should fail
 % .L2 # table_name
-% B\"la\" # name
+% "B\\\"la\\\"" # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS "\"Bla\""; -- should fail
 % .L2 # table_name
-% \"Bla\" # name
+% "\\\"Bla\\\"" # name
 % tinyint # type
 % 1 # length
 [ 1	]

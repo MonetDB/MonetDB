@@ -111,7 +111,7 @@ io.printf("#select 1.0 %d",d0);
 cnt:= aggr.count(z9);
 io.printf(" count %d\n",cnt);
 t0:= alarm.usec();
-s:= algebra.subsort(b,false,false);
+s:= algebra.sort(b,false,false);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#head sort %d",d0);

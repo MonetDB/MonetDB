@@ -28,9 +28,6 @@ stderr of test 'storagemodel` in directory 'sql/test/BugTracker-2016` itself:
 # 23:38:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21747" "--port=30783"
 # 23:38:44 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-545/.s.monetdb.36257
-QUERY = crate schema bug3923schema;
-ERROR = !syntax error, unexpected IDENT in: "crate"
 
 # 23:38:44 >  
 # 23:38:44 >  "Done."

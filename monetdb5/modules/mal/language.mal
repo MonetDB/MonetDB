@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 module language;
 
@@ -18,23 +18,23 @@ pattern source(f:str):void
 address CMDevalFile
 comment "Merge the instructions stored in the file with the current program.";
 
-command raise(msg:str) :str 
+unsafe command raise(msg:str) :str 
 address CMDraise
 comment "Raise an exception labeled 
 	with a specific message.";
-command assert(v:bit,term:str):void
+unsafe command assert(v:bit,term:str):void
 address MALassertBit;
-command assert(v:sht,term:str):void
+unsafe command assert(v:sht,term:str):void
 address MALassertSht;
-command assert(v:int,term:str):void
+unsafe command assert(v:int,term:str):void
 address MALassertInt;
-command assert(v:lng,term:str):void
+unsafe command assert(v:lng,term:str):void
 address MALassertLng;
-command assert(v:str,term:str):void
+unsafe command assert(v:str,term:str):void
 address MALassertStr;
-command assert(v:oid,term:str):void
+unsafe command assert(v:oid,term:str):void
 address MALassertOid;
-pattern assert(v:any_1,pname:str,oper:str,val:any_2):void
+unsafe pattern assert(v:any_1,pname:str,oper:str,val:any_2):void
 address MALassertTriple
 comment "Assertion test.";
 

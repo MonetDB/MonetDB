@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 sed '/^$/q' $0			# copy copyright from this file
 
@@ -325,13 +325,6 @@ cat <<EOF
 command ptr(v:ptr) :ptr
 address CMDvarCONVERTptr
 comment "Cast VALUE to ptr";
-
-pattern setoid(v:int) :void
-address CMDsetoid;
-pattern setoid(v:oid) :void
-address CMDsetoid;
-pattern setoid(v:lng) :void
-address CMDsetoid;
 
 pattern ifthenelse(b:bit,t:any_1,f:any_1):any_1
 address CALCswitchbit

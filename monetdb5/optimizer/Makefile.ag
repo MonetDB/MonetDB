@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 INCLUDES = ../mal ../modules/atoms ../modules/mal ../modules/kernel \
 	../../clients/mapilib \
@@ -40,6 +40,7 @@ lib_optimizer = {
 		opt_mergetable.c opt_mergetable.h \
 		opt_mitosis.c opt_mitosis.h \
 		opt_multiplex.c opt_multiplex.h \
+		opt_oltp.c opt_oltp.h \
 		opt_pipes.c opt_pipes.h \
 		opt_prelude.c opt_prelude.h \
 		opt_reduce.c opt_reduce.h \

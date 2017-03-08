@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -44,6 +44,7 @@ rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 
 	append(exps, exp_atom_int(sql->sa, nr));
 	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, t->base.name, sql_bind_localtype("str") ));
 	append(exps, exp_atom_ptr(sql->sa, t));
 	rel->l = rel_basetable(sql, t, t->base.name);
 	rel->r = NULL;
@@ -870,7 +871,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 sql_rel *
-rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc)
+rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, int if_not_exists)
 {
 	sql_schema *s = NULL;
 
@@ -904,8 +905,12 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		sname = s->base.name;
 
 	if (mvc_bind_table(sql, s, name)) {
-		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
-		return sql_error(sql, 02, "42S01!%s TABLE: name '%s' already in use", cd, name);
+		if (if_not_exists) {
+			return NULL;
+		} else {
+			char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
+			return sql_error(sql, 02, "42S01!%s TABLE: name '%s' already in use", cd, name);
+		}
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
@@ -1018,8 +1023,6 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 
 			if (sn->limit)
 				return sql_error(sql, 01, "0A000!42000!CREATE VIEW: LIMIT not supported");
-			if (sn->orderby)
-				return sql_error(sql, 01, "42000!CREATE VIEW: ORDER BY not supported");
 		}
 
 		sq = schema_selects(sql, s, query);
@@ -1163,6 +1166,7 @@ rel_schema(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
+
 	if (auth)
 		append(exps, exp_atom_clob(sa, auth));
 	rel->l = NULL;
@@ -1176,7 +1180,7 @@ rel_schema(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
-rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
+rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int ignore_in_use)
 {
 	char *name = dlist_get_schema_name(auth_name);
 	char *auth = schema_auth(auth_name);
@@ -1194,8 +1198,12 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 		name = auth;
 	assert(name);
 	if (mvc_bind_schema(sql, name)) {
-		sql_error(sql, 02, "3F000!CREATE SCHEMA: name '%s' already in use", name);
-		return NULL;
+		if (!ignore_in_use) {
+			sql_error(sql, 02, "3F000!CREATE SCHEMA: name '%s' already in use", name);
+			return NULL;
+		} else {
+			return NULL;
+		}
 	} else {
 		sql_schema *os = sql->session->schema;
 		dnode *n;
@@ -1935,7 +1943,7 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = rel_create_schema(sql, l->h->data.lval,
-				l->h->next->next->next->data.lval);
+				l->h->next->next->next->data.lval, l->h->next->next->next->next->data.i_val);
 	} 	break;
 	case SQL_DROP_SCHEMA:
 	{
@@ -1943,7 +1951,8 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *auth_name = l->h->data.lval;
 
 		assert(l->h->next->type == type_int);
-		ret = rel_schema(sql->sa, DDL_DROP_SCHEMA, 
+		ret = rel_schema(sql->sa, 
+			   l->h->next->next->data.i_val ? DDL_DROP_SCHEMA_IF_EXISTS : DDL_DROP_SCHEMA, 
 			   dlist_get_schema_name(auth_name),
 			   NULL,
 			   l->h->next->data.i_val);	/* drop_action */
@@ -1958,7 +1967,7 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.sval);
+		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.sval, l->h->next->next->next->next->next->data.i_val);
 	} 	break;
 	case SQL_CREATE_VIEW:
 	{
@@ -1976,7 +1985,7 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
-		ret = rel_schema(sql->sa, DDL_DROP_TABLE, sname, tname, l->h->next->data.i_val);
+		ret = rel_schema(sql->sa, l->h->next->next->data.i_val ? DDL_DROP_TABLE_IF_EXISTS : DDL_DROP_TABLE, sname, tname, l->h->next->data.i_val);
 	} 	break;
 	case SQL_DROP_VIEW:
 	{

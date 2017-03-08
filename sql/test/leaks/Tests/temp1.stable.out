@@ -28,17 +28,17 @@ Ready.
 #set optimizer='minimal_pipe';
 #create temporary table x  ( i int, j int );
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% .L2,	.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 9,	3 # length
 [ "transient",	163	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% .L2,	.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 10,	3 # length
-[ "persistent",	266	]
+[ "persistent",	282	]
 
 # 16:21:16 >  
 # 16:21:16 >  "Done."

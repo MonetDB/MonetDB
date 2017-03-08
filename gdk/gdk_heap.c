@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -93,6 +93,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (itemsize)
 		h->size = MAX(1, nitems) * itemsize;
 	h->free = 0;
+	h->cleanhash = 0;
 
 	/* check for overflow */
 	if (itemsize && nitems > (h->size / itemsize)) {
@@ -556,6 +557,7 @@ HEAPcopy(Heap *dst, Heap *src)
 		dst->free = src->free;
 		memcpy(dst->base, src->base, src->free);
 		dst->hashash = src->hashash;
+		dst->cleanhash = src->cleanhash;
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
@@ -1086,7 +1088,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	}
 
 	block += hheader->alignment;
-	return (var_t) (block >> GDK_VARSHIFT);
+	return (var_t) block;
 }
 
 void
@@ -1096,7 +1098,7 @@ HEAP_free(Heap *heap, var_t mem)
 	CHUNK *beforep;
 	CHUNK *blockp;
 	CHUNK *afterp;
-	size_t after, before, block = mem << GDK_VARSHIFT;
+	size_t after, before, block = mem;
 
 	if (hheader->alignment != 8 && hheader->alignment != 4) {
 		GDKfatal("HEAP_free: Heap structure corrupt\n");

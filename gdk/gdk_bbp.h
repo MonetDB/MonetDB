@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef _GDK_BBP_H_
@@ -73,9 +73,11 @@ gdk_export BAT *BBPdescriptor(bat b);
 
 /* swapping interface */
 gdk_export gdk_return BBPsync(int cnt, bat *subcommit);
-gdk_export int BBPincref(bat b, int logical);
+gdk_export int BBPfix(bat b);
+gdk_export int BBPunfix(bat b);
+gdk_export int BBPretain(bat b);
+gdk_export int BBPrelease(bat b);
 gdk_export void BBPkeepref(bat i);
-gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 
 #define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)

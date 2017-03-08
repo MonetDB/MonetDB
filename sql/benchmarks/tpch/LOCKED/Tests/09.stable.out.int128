@@ -43,10 +43,10 @@ Ready.
 #			and s_nationkey = n_nationkey
 #			and p_name like '%green%'
 #	) as profit
-% sys.profit,	sys.profit,	sys.L1 # table_name
+% sys.profit,	sys.profit,	sys.L13 # table_name
 % nation,	o_year,	sum_profit # name
 % char,	int,	decimal # type
-% 25,	4,	41 # length
+% 25,	4,	40 # length
 [ "ALGERIA",	1998,	97864.5682	]
 [ "ALGERIA",	1997,	368231.6695	]
 [ "ALGERIA",	1996,	196525.8046	]

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef _OPT_SUPPORT_H
@@ -27,19 +27,16 @@ mal_export void showOptimizerHistory(void);
 mal_export int optimizerIsApplied(MalBlkPtr mb, str name);
 mal_export int isUnsafeInstruction(InstrPtr q);
 mal_export int isUnsafeFunction(InstrPtr q);
-mal_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
-mal_export int isDependent(InstrPtr p, InstrPtr q);
+mal_export int isSealedFunction(InstrPtr q);
 mal_export int safetyBarrier(InstrPtr p, InstrPtr q);
 mal_export int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop);
 mal_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 mal_export int hasCommonResults(InstrPtr p, InstrPtr q);
-mal_export int isProcedure(MalBlkPtr mb, InstrPtr p);
 mal_export int isUpdateInstruction(InstrPtr p);
-mal_export int hasSideEffects(InstrPtr p, int strict);
+mal_export int hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict);
 mal_export int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict);
 mal_export int isSideEffectFree(MalBlkPtr mb);
 mal_export int isBlocking(InstrPtr p);
-mal_export int isAllScalar(MalBlkPtr mb, InstrPtr p);
 mal_export int isFragmentGroup(InstrPtr q);
 mal_export int isFragmentGroup2(InstrPtr q);
 mal_export int isDelta(InstrPtr q);

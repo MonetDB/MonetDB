@@ -1,0 +1,45 @@
+stdout of test 'addtable` in directory 'sql/test/mergetables` itself:
+
+
+# 13:47:16 >  
+# 13:47:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38251" "--set" "mapi_usock=/var/tmp/mtest-19670/.s.monetdb.38251" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 13:47:16 >  
+
+# MonetDB 5 server v11.25.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:38251/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19670/.s.monetdb.38251
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:47:16 >  
+# 13:47:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19670" "--port=38251"
+# 13:47:16 >  
+
+#create table tmp1(i int);
+#insert into tmp1 values(1);
+[ 1	]
+#create table tmp2(i int);
+#insert into tmp2 values(2);
+[ 1	]
+#select * from tmp1;
+% sys.tmp1 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+#drop table tmp1;
+#drop table tmp2;
+
+# 13:47:16 >  
+# 13:47:16 >  "Done."
+# 13:47:16 >  
+

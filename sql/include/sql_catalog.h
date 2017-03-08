@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
@@ -525,6 +525,7 @@ typedef struct res_col {
 
 typedef struct res_table {
 	int id;
+	oid query_id;
 	int query_type;
 	int nr_cols;
 	int cur_col;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -13,11 +13,8 @@
  * The collection of routines provided here are map operations
  * for the atom string primitives.
  *
- * In line with the batcalc module, we assume that
- * if two bat operands are provided that they are already
- * aligned on the head. Moreover, the head of the BATs
- * are limited to :void, which can be cheaply realized using
- * the GRPsplit operation.
+ * In line with the batcalc module, we assume that if two bat operands
+ * are provided that they are aligned.
  */
 #include "monetdb_config.h"
 #include <gdk.h>

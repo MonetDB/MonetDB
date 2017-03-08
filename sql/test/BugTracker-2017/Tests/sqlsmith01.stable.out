@@ -1,0 +1,64 @@
+stdout of test 'sqlsmith01` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 17:13:49 >  
+# 17:13:49 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33167" "--set" "mapi_usock=/var/tmp/mtest-17366/.s.monetdb.33167" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 17:13:49 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:33167/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17366/.s.monetdb.33167
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:13:50 >  
+# 17:13:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17366" "--port=33167"
+# 17:13:50 >  
+
+#select
+#  ref_20.sm as c0,
+#  cast(coalesce(ref_20.file_id,
+#    ref_20.file_id) as bigint) as c1
+#from
+#  bam.rg as ref_20
+#where ref_20.fo is not NULL;
+% bam.L2,	bam.L5 # table_name
+% c0,	c1 # name
+% clob,	bigint # type
+% 0,	1 # length
+#select
+#  cast(coalesce(subq_0.c0,
+#    subq_0.c0) as int) as c0,
+#  subq_0.c0 as c1,
+#  subq_0.c0 as c2,
+#  subq_0.c0 as c3
+#from
+#  (select
+#        ref_20.id as c0
+#      from
+#        sys.querylog_history as ref_11
+#          inner join sys.users as ref_18
+#                inner join sys.geometry_columns as ref_19
+#                on (ref_18.default_schema = ref_19.srid )
+#              right join tmp.keys as ref_20
+#              on (ref_18.fullname = ref_20.name )
+#            left join sys._columns as ref_21
+#              inner join sys.columns as ref_22
+% .L155,	.L157,	.L161,	.L163 # table_name
+% c0,	c1,	c2,	c3 # name
+% int,	int,	int,	int # type
+% 1,	1,	1,	1 # length
+
+# 17:13:50 >  
+# 17:13:50 >  "Done."
+# 17:13:50 >  
+

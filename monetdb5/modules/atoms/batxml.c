@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -13,10 +13,8 @@
  * The collection of routines provided here are map operations
  * for the atom xml primitives.
  *
- * In line with the batcalc module, we assume that
- * if two bat operands are provided that they are already
- * aligned on the head. Moreover, the head of the BATs
- * are limited to :oid.
+ * In line with the batcalc module, we assume that if two bat operands
+ * are provided that they are aligned.
  *
  * The implementation is focussed on functionality. At a later stage
  * we may postpone string contstruction until it is really needed.

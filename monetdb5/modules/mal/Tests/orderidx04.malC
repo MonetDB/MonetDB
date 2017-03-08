@@ -10,14 +10,13 @@ bat.append(bv,266430612 );
 bat.append(bv,1674978691 );
 bat.append(bv,1863672321 );
 bat.append(bv,58690783 );
-bat.setAccess(bv,"r");
 io.print(bv);
 
 bat.orderidx(bv,3);
 ord := bat.getorderidx(bv);
 io.print(ord);
 
-s:= algebra.subsort(bv,false,false);
+s:= algebra.sort(bv,false,false);
 io.print(s);
 # check for resilience against multiple calls
 bat.orderidx(bv,3);

@@ -1,0 +1,39 @@
+stdout of test 'group-by-on-constant.Bug-6082` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 20:09:41 >  
+# 20:09:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30955" "--set" "mapi_usock=/var/tmp/mtest-28866/.s.monetdb.30955" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 20:09:41 >  
+
+# MonetDB 5 server v11.25.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:30955/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28866/.s.monetdb.30955
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 20:09:41 >  
+# 20:09:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28866" "--port=30955"
+# 20:09:41 >  
+
+#start transaction;
+#create table foo (a int, b int);
+#select 1 + 1 as bar, sum(b) from foo group by bar;
+% .L2,	sys.L5 # table_name
+% bar,	L4 # name
+% tinyint,	hugeint # type
+% 1,	1 # length
+#rollback;
+
+# 20:09:42 >  
+# 20:09:42 >  "Done."
+# 20:09:42 >  
+

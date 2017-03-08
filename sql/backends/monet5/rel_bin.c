@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -64,12 +64,19 @@ list_find_column(backend *be, list *l, const char *rname, const char *name )
 	MT_lock_set(&l->ht_lock);
 	if (!l->ht && list_length(l) > HASH_MIN_SIZE) {
 		l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
+		if (l->ht == NULL) {
+			MT_lock_unset(&l->ht_lock);
+			return NULL;
+		}
 
 		for (n = l->h; n; n = n->next) {
 			const char *nme = column_name(be->mvc->sa, n->data);
 			int key = hash_key(nme);
 
-			hash_add(l->ht, key, n->data);
+			if (hash_add(l->ht, key, n->data) == NULL) {
+				MT_lock_unset(&l->ht_lock);
+				return NULL;
+			}
 		}
 	}
 	if (l->ht) {
@@ -2632,6 +2639,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				assert(0);
 				return NULL;
 			}
+			if (!gbcol->nrcols)
+				gbcol = stmt_const(be, bin_first_column(be, sub), gbcol);
 			groupby = stmt_group(be, gbcol, grp, ext, cnt, !en->next);
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);
@@ -2960,7 +2969,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 			stmt *orderby_ids = NULL, *orderby_grp = NULL;
 
-			/* implementation uses subsort key check */
+			/* implementation uses sort key check */
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *orderby;
@@ -3057,8 +3066,6 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
-
-	(void) sql;		/* unused! */
 
 	if (pin && list_length(pin->op4.lval)) 
 		s = pin->op4.lval->h->data;
@@ -4554,7 +4561,7 @@ rel2bin_seq(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
-	stmt *restart, *sname, *seq, *sl = NULL;
+	stmt *restart, *sname, *seq, *seqname, *sl = NULL;
 	list *l = sa_list(sql->sa);
 
 	if (rel->l)  /* first construct the sub relation */
@@ -4562,10 +4569,12 @@ rel2bin_seq(backend *be, sql_rel *rel, list *refs)
 
 	restart = exp_bin(be, en->data, sl, NULL, NULL, NULL, NULL, NULL);
 	sname = exp_bin(be, en->next->data, sl, NULL, NULL, NULL, NULL, NULL);
-	seq = exp_bin(be, en->next->next->data, sl, NULL, NULL, NULL, NULL, NULL);
+	seqname = exp_bin(be, en->next->next->data, sl, NULL, NULL, NULL, NULL, NULL);
+	seq = exp_bin(be, en->next->next->next->data, sl, NULL, NULL, NULL, NULL, NULL);
 
 	(void)refs;
 	append(l, sname);
+	append(l, seqname);
 	append(l, seq);
 	append(l, restart);
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
@@ -4613,17 +4622,24 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
 	stmt *action = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
-	stmt *table = NULL, *sname;
+	stmt *table = NULL, *sname, *tname = NULL;
 	list *l = sa_list(sql->sa);
 
 	(void)refs;
 	en = en->next;
 	sname = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
 	en = en->next;
+	if (en) {
+		tname = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
+		en = en->next;
+	}
 	if (en) 
 		table = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
 	append(l, sname);
-	append(l, table);
+	assert(tname);
+	append(l, tname);
+	if (rel->flag != DDL_DROP_TABLE && rel->flag != DDL_DROP_TABLE_IF_EXISTS && rel->flag != DDL_DROP_VIEW && rel->flag != DDL_DROP_VIEW_IF_EXISTS && rel->flag != DDL_DROP_CONSTRAINT)
+		append(l, table);
 	append(l, action);
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
 }

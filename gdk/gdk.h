@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -587,8 +587,6 @@ typedef size_t BUN;
 #else
 #define BUN_NONE ((BUN) LLONG_MAX)
 #endif
-#define BUN_MSK (~BUN_NONE)
-#define BUN_UNMSK BUN_NONE
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
 #define BUN2 2
@@ -635,7 +633,8 @@ typedef struct {
 
 	unsigned int copied:1,	/* a copy of an existing map. */
 		hashash:1,	/* the string heap contains hash values */
-		forcemap:1;	/* force STORE_MMAP even if heap exists */
+		forcemap:1,	/* force STORE_MMAP even if heap exists */
+		cleanhash:1;	/* string heaps must clean hash */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
@@ -768,7 +767,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           bit    tnonil;           // tail has no nils
  *           bit    tsorted;          // are tail values currently ordered?
  *           bit    tvarsized;        // for speed: tail type is varsized?
- *           oid    talign;           // alignment OID for head.
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
@@ -831,7 +829,6 @@ typedef struct {
 	 nil:1,			/* there is a nil in the column */
 	 sorted:1,		/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */
-	oid align;		/* OID for sync alignment */
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
@@ -847,7 +844,7 @@ typedef struct {
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
 
-#define ORDERIDXOFF		2
+#define ORDERIDXOFF		3
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
@@ -857,7 +854,9 @@ typedef struct {
 #define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
 #define GDKLIBRARY_HEADED	061033	/* head properties are stored */
 #define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
-#define GDKLIBRARY		061035
+#define GDKLIBRARY_BADEMPTY	061035	/* possibility of duplicate empty str */
+#define GDKLIBRARY_TALIGN	061036	/* talign field in BBP.dir */
+#define GDKLIBRARY		061037
 
 typedef struct BAT {
 	/* static bat properties */
@@ -898,7 +897,6 @@ typedef struct BATiter {
 #define trevsorted	T.revsorted
 #define tdense		T.dense
 #define tident		T.id
-#define talign		T.align
 #define torderidx	T.orderidx
 #define twidth		T.width
 #define tshift		T.shift
@@ -1299,37 +1297,9 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define Tloc(b,p)	((b)->theap.base+(((size_t)(p))<<(b)->tshift))
 
-#if SIZEOF_VAR_T < SIZEOF_VOID_P
-/* NEW 11/4/2009: when compiled with 32-bits oids/var_t on 64-bits
- * systems, align heap strings on 8 byte boundaries always (wasting 4
- * padding bytes on avg). Note that in heaps where duplicate
- * elimination is successful, such padding occurs anyway (as an aside,
- * a better implementation with two-bytes pointers in the string heap
- * hash table, could reduce that padding to avg 1 byte wasted -- see
- * TODO below).
- *
- * This 8 byte alignment allows the offset in the fixed part of the
- * BAT string column to be interpreted as an index, which should be
- * multiplied by 8 to get the position (VARSHIFT). The overall effect
- * is that 32GB heaps can be addressed even when oids are limited to
- * 4G tuples.
- *
- * In the future, we might extend this such that the string alignment
- * is set in the BAT header (columns with long strings take more
- * storage space, but could tolerate more padding).  It would mostly
- * work, only the sort routine and strPut/strLocate (which do not see
- * the BAT header) extra parameters would be needed in their APIs.
- */
-typedef unsigned short stridx_t;
-#define SIZEOF_STRIDX_T SIZEOF_SHORT
-#define GDK_VARSHIFT 3
-#define GDK_VARALIGN (1<<GDK_VARSHIFT)
-#else
-typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_t not to break BAT images */
+typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
-#define GDK_VARSHIFT 0
 #define GDK_VARALIGN SIZEOF_STRIDX_T
-#endif
 
 #if SIZEOF_VAR_T == 8
 #define VarHeapValRaw(b,p,w)						\
@@ -1343,7 +1313,7 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 	 (w) == 2 ? (var_t) ((unsigned short *) (b))[p] + GDK_VAROFFSET : \
 	 ((var_t *) (b))[p])
 #endif
-#define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w)  << GDK_VARSHIFT)
+#define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w))
 #define BUNtvaroff(bi,p) VarHeapVal((bi).b->theap.base, (p), (bi).b->twidth)
 
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
@@ -1461,7 +1431,7 @@ gdk_export int BATgetaccess(BAT *b);
 gdk_export gdk_return BATclear(BAT *b, int force);
 gdk_export BAT *COLcopy(BAT *b, int tt, int writeable, int role);
 
-gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
+gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h);
 
 /*
  * @- BAT Input/Output
@@ -1490,7 +1460,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * @emph{th}) for variable-sized atoms.
  */
 
-gdk_export gdk_return BATsave(BAT *b);
 gdk_export void BATmsync(BAT *b);
 
 gdk_export size_t BATmemsize(BAT *b, int dirty);
@@ -1506,8 +1475,6 @@ gdk_export void OIDXdestroy(BAT *b);
  * @- Printing
  * @multitable @columnfractions 0.08 0.7
  * @item int
- * @tab BATprintf (stream *f, BAT *b)
- * @item int
  * @tab BATprintcolumns (stream *f, int argc, BAT *b[]);
  * @end multitable
  *
@@ -1519,7 +1486,6 @@ gdk_export void OIDXdestroy(BAT *b);
  */
 gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_export gdk_return BATprint(BAT *b);
-gdk_export gdk_return BATprintf(stream *f, BAT *b);
 
 /*
  * @- BAT clustering
@@ -1619,9 +1585,9 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  * @item int
  * @tab BBPunfix (bat bi)
  * @item int
- * @tab BBPincref (bat bi, int logical)
+ * @tab BBPretain (bat bi)
  * @item int
- * @tab BBPdecref (bat bi, int logical)
+ * @tab BBPrelease (bat bi)
  * @item str
  * @tab BBPname (bat bi)
  * @item bat
@@ -1710,8 +1676,6 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 	 "")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)
-#define BBPfix(i)	BBPincref((i), FALSE)
-#define BBPunfix(i)	BBPdecref((i), FALSE)
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)
@@ -1916,29 +1880,6 @@ gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export int ATOMformat(int id, const void *val, char **buf);
 
 gdk_export ptr ATOMdup(int id, const void *val);
-
-/*
- * @- Unique OIDs
- * @multitable @columnfractions 0.08 0.7
- * @item oid
- * @tab
- * OIDseed (oid seed);
- * @item oid
- * @tab
- * OIDnew (oid inc);
- * @end multitable
- *
- * OIDs are special kinds of unsigned integers because the system
- * guarantees uniqueness. For system simplicity and performance, OIDs
- * are now represented as (signed) integers; however this is hidden in
- * the system internals and shouldn't affect semantics.
- *
- * The OIDnew(N) claims a range of N contiguous unique, unused OIDs,
- * and returns the starting value of this range.  The highest OIDBITS
- * designate site. [ DEPRECATED]
- */
-gdk_export oid OIDbase(oid base);
-gdk_export oid OIDnew(oid inc);
 
 /*
  * @- Built-in Accelerator Functions
@@ -2679,10 +2620,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 
-#define ALIGNins(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
-#define ALIGNdel(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
-#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
-#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
+#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e); } while (0)
+#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e); } while (0)
 
 #define BAThrestricted(b) ((b)->batRestricted)
 #define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
