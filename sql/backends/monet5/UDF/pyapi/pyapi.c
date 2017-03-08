@@ -29,17 +29,6 @@ static bool option_disable_fork = false;
 static PyObject *marshal_module = NULL;
 PyObject *marshal_loads = NULL;
 
-int PYFUNCNAME(PyAPIEnabled)(void) {
-    char* env = GDKgetenv(pyapi_enableflag);
-#ifndef IS_PY3K
-    return (GDKgetenv_istrue(pyapi_enableflag)
-            || GDKgetenv_isyes(pyapi_enableflag) ||
-            (env && strncmp(env, "2", 1) == 0));
-#else
-    return (env && strncmp(env, "3", 1) == 0);
-#endif
-}
-
 typedef struct _AggrParams{
     PyInput **pyinput_values;
     void ****split_bats;
@@ -189,12 +178,6 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 #ifndef HAVE_FORK
     (void) mapped;
 #endif
-
-    if (!PYFUNCNAME(PyAPIEnabled)()) {
-        throw(MAL, "pyapi.eval",
-              "Embedded Python has not been enabled. Start server with --set %s=true",
-              pyapi_enableflag);
-    }
 
     if (!pyapiInitialized) {
         throw(MAL, "pyapi.eval",
@@ -1265,54 +1248,50 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
     (void) ret;
     MT_lock_init(&pyapiLock, "pyapi_lock");
     MT_lock_init(&queryLock, "query_lock");
-    if (PYFUNCNAME(PyAPIEnabled)()) {
-        MT_lock_set(&pyapiLock);
-        if (!pyapiInitialized) {
-            str msg = MAL_SUCCEED;
-            Py_Initialize();
-            _import_array();
-            msg = _connection_init();
-            if (msg != MAL_SUCCEED) {
-                MT_lock_unset(&pyapiLock);
-                return msg;
-            }
-            msg = _conversion_init();
-            if (msg != MAL_SUCCEED) {
-                MT_lock_unset(&pyapiLock);
-                return msg;
-            }
-            _pytypes_init();
-            _loader_init();
-            marshal_module = PyImport_Import(PyString_FromString("marshal"));
-            if (marshal_module == NULL) {
-                return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
-            }
-            marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
-            if (marshal_loads == NULL) {
-                return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
-            }
-            if (PyRun_SimpleString("import numpy") != 0) {
-                return PyError_CreateException("Failed to initialize embedded python", NULL);
-            }
-            PyEval_SaveThread();
-            if (msg != MAL_SUCCEED) {
-                MT_lock_unset(&pyapiLock);
-                return msg;
-            }
-            pyapiInitialized++;
+    MT_lock_set(&pyapiLock);
+    if (!pyapiInitialized) {
+        str msg = MAL_SUCCEED;
+        Py_Initialize();
+        _import_array();
+        msg = _connection_init();
+        if (msg != MAL_SUCCEED) {
+            MT_lock_unset(&pyapiLock);
+            return msg;
         }
-        MT_lock_unset(&pyapiLock);
+        msg = _conversion_init();
+        if (msg != MAL_SUCCEED) {
+            MT_lock_unset(&pyapiLock);
+            return msg;
+        }
+        _pytypes_init();
+        _loader_init();
+        marshal_module = PyImport_Import(PyString_FromString("marshal"));
+        if (marshal_module == NULL) {
+            return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
+        }
+        marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
+        if (marshal_loads == NULL) {
+            return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
+        }
+        if (PyRun_SimpleString("import numpy") != 0) {
+            return PyError_CreateException("Failed to initialize embedded python", NULL);
+        }
+        PyEval_SaveThread();
+        if (msg != MAL_SUCCEED) {
+            MT_lock_unset(&pyapiLock);
+            return msg;
+        }
+        pyapiInitialized++;
         fprintf(stdout, "# MonetDB/Python%d module loaded\n",
 #ifdef IS_PY3K
             3
 #else
             2
 #endif
-
-            );
+        );
     }
     MT_lock_unset(&pyapiLock);
-    fprintf(stdout, "# MonetDB/Python module loaded\n");
+    MT_lock_unset(&pyapiLock);
     option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
     return MAL_SUCCEED;
 }

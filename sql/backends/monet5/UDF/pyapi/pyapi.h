@@ -24,13 +24,10 @@ pyapi_export str PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkP
 
 pyapi_export str PYFUNCNAME(PyAPIprelude)(void *ret);
 
-int PYFUNCNAME(PyAPIEnabled)(void);
 int PYFUNCNAME(PyAPIInitialized)(void);
 
 str _loader_init(void);
 
 pyapi_export char *PyError_CreateException(char *error_text, char *pycall);
-
-#define pyapi_enableflag "embedded_py"
 
 #endif /* _PYPI_LIB_ */
