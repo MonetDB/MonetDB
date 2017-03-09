@@ -197,8 +197,6 @@ __hidden void strCleanHash(Heap *hp, int rebuild)
 	__attribute__((__visibility__("hidden")));
 __hidden int strCmpNoNil(const unsigned char *l, const unsigned char *r)
 	__attribute__((__visibility__("hidden")));
-__hidden int strElimDoubles(Heap *h)
-	__attribute__((__visibility__("hidden")));
 __hidden var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return unshare_string_heap(BAT *b)
