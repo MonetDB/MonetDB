@@ -1412,5 +1412,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 			}
 		}
 	}
+	if (mb->stmt[mb->stop])
+		freeInstruction(mb->stmt[mb->stop]);
 	mb->stmt[mb->stop++] = p;
 }
