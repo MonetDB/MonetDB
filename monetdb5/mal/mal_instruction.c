@@ -153,12 +153,14 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 
 	assert(mb->vsize >= mb->ssize);
 	if( elements > mb->ssize){
+		InstrPtr *ostmt = mb->stmt;
 		mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, elements * sizeof(InstrPtr));
 		if ( mb->stmt ){
 			for ( i = mb->ssize; i < elements; i++)
 				mb->stmt[i] = 0;
 			mb->ssize = elements;
 		} else {
+			mb->stmt = ostmt;	/* reinstate old pointer */
 			mb->errors++;
 			showException(GDKout, MAL, "resizeMalBlk", "out of memory (requested: "LLFMT" bytes)", (lng) elements * sizeof(InstrPtr));
 			return -1;
@@ -167,11 +169,13 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 
 
 	if( elements > mb->vsize){
+		VarRecord *ovar = mb->var;
 		mb->var = (VarRecord*) GDKrealloc(mb->var, elements * sizeof (VarRecord));
 		if ( mb->var ){
 			memset( ((char*) mb->var) + sizeof(VarRecord) * mb->vsize, 0, (elements - mb->vsize) * sizeof(VarRecord));
 			mb->vsize = elements;
 		} else{
+			mb->var = ovar;
 			mb->errors++;
 			showException(GDKout, MAL, "resizeMalBlk", "out of memory (requested: "LLFMT" bytes)", (lng) elements * sizeof(InstrPtr));
 			return -1;
