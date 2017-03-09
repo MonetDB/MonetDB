@@ -73,7 +73,7 @@ BATcheckorderidx(BAT *b)
 		b->torderidx = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0 &&
-		    (hp->filename = GDKmalloc(strlen(nme) + 10)) != NULL) {
+		    (hp->filename = GDKmalloc(strlen(nme) + 11)) != NULL) {
 			sprintf(hp->filename, "%s.torderidx", nme);
 
 			/* check whether a persisted orderidx can be found */
