@@ -1,0 +1,230 @@
+stdout of test 'BugResultSetMetaData_Bug_6183` in directory 'sql/jdbc/tests` itself:
+
+
+# 14:03:01 >  
+# 14:03:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31087" "--set" "mapi_usock=/var/tmp/mtest-23856/.s.monetdb.31087" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_jdbc_tests" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 14:03:01 >  
+
+# MonetDB 5 server v11.25.10
+# This is an unreleased version
+# Serving database 'mTests_sql_jdbc_tests', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:31087/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23856/.s.monetdb.31087
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 14:03:02 >  
+# 14:03:02 >  "./BugResultSetMetaData_Bug_6183.SQL.sh" "BugResultSetMetaData_Bug_6183"
+# 14:03:02 >  
+
+
+# 14:03:02 >  
+# 14:03:02 >  java BugResultSetMetaData_Bug_6183 "jdbc:monetdb://toulouse:31087/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 14:03:02 >  
+
+1. create table "my dq_table"
+ returned: -2 (expected -2)
+
+2. show column names of this new table (my dq_table) via sys.columns query
+Resultset with 3 columns
+	Column Name, Column Label:
+1	number	number
+2	name	name
+3	type	type
+Data rows:
+0	my space	varchar
+1	my, comma_space	varchar
+2	my$dollar	varchar
+3	my#hash	varchar
+4	my	tab	varchar
+5	my	,tab_comma	varchar
+6	my,	comma_tab	varchar
+7	my\"backslash_doublequote	varchar
+8	Abc	varchar
+9	 	varchar
+10	123	varchar
+Listed 11 rows
+
+3. insert 1 row of data with values same as column names
+ returned: 1 (expected 1)
+
+4. insert 1 row of data with values same as column names but without enclosing double quotes
+ returned: 1 (expected 1)
+
+5. show content of column(s): "my space"
+Resultset with 1 columns
+	Column Name, Column Label:
+1	my space	my space
+Data rows:
+"my space"
+my space
+Listed 2 rows
+
+6. show content of column(s): "my, comma_space"
+Resultset with 1 columns
+	Column Name, Column Label:
+1	my, comma_space	my, comma_space
+Data rows:
+"my, comma_space"
+my, comma_space
+Listed 2 rows
+
+7. show content of column(s): "my$dollar"
+Resultset with 1 columns
+	Column Name, Column Label:
+1	my$dollar	my$dollar
+Data rows:
+"my$dollar"
+my$dollar
+Listed 2 rows
+
+8. show content of column(s): "my#hash"
+Resultset with 1 columns
+	Column Name, Column Label:
+1	my#hash	my#hash
+Data rows:
+"my#hash"
+my#hash
+Listed 2 rows
+
+9. show content of column(s): "my	tab"
+Resultset with 1 columns
+	Column Name, Column Label:
+1	my	tab	my	tab
+Data rows:
+"my	tab"
+my	tab
+Listed 2 rows
+
+10. show content of column(s): "my	,tab_comma"
+Resultset with 1 columns
+	Column Name, Column Label:
+1	my	,tab_comma	my	,tab_comma
+Data rows:
+"my	,tab_comma"
+my	,tab_comma
+Listed 2 rows
+
+11. show content of column(s): "my,	comma_tab"
+Resultset with 1 columns
+	Column Name, Column Label:
+1	my,	comma_tab	my,	comma_tab
+Data rows:
+"my,	comma_tab"
+my,	comma_tab
+Listed 2 rows
+
+12. show content of column(s): "my\"backslash_doublequote"
+Resultset with 1 columns
+	Column Name, Column Label:
+1	my\\\"backslash_doublequote	my\\\"backslash_doublequote
+Data rows:
+"my\"backslash_doublequote"
+my\"backslash_doublequote
+Listed 2 rows
+
+13. show content of column(s): "Abc"
+Resultset with 1 columns
+	Column Name, Column Label:
+1	Abc	Abc
+Data rows:
+"Abc"
+Abc
+Listed 2 rows
+
+14. show content of column(s): " "
+Resultset with 1 columns
+	Column Name, Column Label:
+1	 	 
+Data rows:
+" "
+ 
+Listed 2 rows
+
+15. show content of column(s): "123"
+Resultset with 1 columns
+	Column Name, Column Label:
+1	123	123
+Data rows:
+"123"
+123
+Listed 2 rows
+
+16. show content of column(s): *
+Resultset with 11 columns
+	Column Name, Column Label:
+1	my space	my space
+2	my, comma_space	my, comma_space
+3	my$dollar	my$dollar
+4	my#hash	my#hash
+5	my	tab	my	tab
+6	my	,tab_comma	my	,tab_comma
+7	my,	comma_tab	my,	comma_tab
+8	my\\\"backslash_doublequote	my\\\"backslash_doublequote
+9	Abc	Abc
+10	 	 
+11	123	123
+Data rows:
+"my space"	"my, comma_space"	"my$dollar"	"my#hash"	"my	tab"	"my	,tab_comma"	"my,	comma_tab"	"my\"backslash_doublequote"	"Abc"	" "	"123"
+my space	my, comma_space	my$dollar	my#hash	my	tab	my	,tab_comma	my,	comma_tab	my\"backslash_doublequote	Abc	 	123
+Listed 2 rows
+
+Finally drop table "my dq_table"
+ returned: -2 (expected -2)
+
+
+# 14:03:02 >  
+# 14:03:02 >  "Done."
+# 14:03:02 >  
+
+
+
