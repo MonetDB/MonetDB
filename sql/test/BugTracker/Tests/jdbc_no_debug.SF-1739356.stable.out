@@ -52,12 +52,12 @@ Operation successful
 |     X_4 := sql.mvc();                                                                                 |
 |     X_18:bat[:sht] := sql.bind(X_4, "sys", "_tables", "type", 0:int);                                 |
 |     C_5:bat[:oid] := sql.tid(X_4, "sys", "_tables");                                                  |
-|     C_83 := algebra.thetaselect(X_18, C_5, 2:sht, "!=");                                              |
+|     C_84 := algebra.thetaselect(X_18, C_5, 2:sht, "!=");                                              |
 |     (C_21:bat[:oid], X_22:bat[:sht]) := sql.bind(X_4, "sys", "_tables", "type", 2:int);               |
-|     C_84 := algebra.thetaselect(X_22, nil:bat[:oid], 2:sht, "!=");                                    |
+|     C_85 := algebra.thetaselect(X_22, nil:bat[:oid], 2:sht, "!=");                                    |
 |     X_20:bat[:sht] := sql.bind(X_4, "sys", "_tables", "type", 1:int);                                 |
-|     C_86 := algebra.thetaselect(X_20, C_5, 2:sht, "!=");                                              |
-|     C_27 := sql.subdelta(C_83, C_5, C_21, C_84, C_86);                                                |
+|     C_87 := algebra.thetaselect(X_20, C_5, 2:sht, "!=");                                              |
+|     C_27 := sql.subdelta(C_84, C_5, C_21, C_85, C_87);                                                |
 |     X_8:bat[:int] := sql.bind(X_4, "sys", "_tables", "id", 0:int);                                    |
 |     (C_13:bat[:oid], X_14:bat[:int]) := sql.bind(X_4, "sys", "_tables", "id", 2:int);                 |
 |     X_11:bat[:int] := sql.bind(X_4, "sys", "_tables", "id", 1:int);                                   |
@@ -74,27 +74,27 @@ Operation successful
 |     sql.resultSet(".L42", "L41", "bigint", 64:int, 0:int, 7:int, X_43);                               |
 | end user.s4_1;                                                                                   |
 | #inline               actions= 0 time=1 usec                                                          |
-| #remap                actions= 0 time=3 usec                                                          |
-| #costmodel            actions= 1 time=3 usec                                                          |
-| #coercion             actions= 1 time=9 usec                                                          |
-| #evaluate             actions= 0 time=4 usec                                                          |
+| #remap                actions= 0 time=1 usec                                                          |
+| #costmodel            actions= 1 time=1 usec                                                          |
+| #coercion             actions= 1 time=5 usec                                                          |
+| #evaluate             actions= 0 time=2 usec                                                          |
 | #emptybind            actions= 0 time=1 usec                                                          |
-| #pushselect           actions= 5 time=45 usec                                                         |
-| #aliases              actions= 2 time=9 usec                                                          |
-| #mergetable           actions= 0 time=38 usec                                                         |
-| #deadcode             actions= 3 time=8 usec                                                          |
-| #aliases              actions= 0 time=1 usec                                                          |
-| #constants            actions= 1 time=9 usec                                                          |
-| #commonTerms          actions= 0 time=7 usec                                                          |
-| #projectionpath       actions= 0 time=3 usec                                                          |
-| #reorder              actions= 1 time=29 usec                                                         |
-| #deadcode             actions= 0 time=6 usec                                                          |
+| #pushselect           actions= 5 time=22 usec                                                         |
+| #aliases              actions= 2 time=6 usec                                                          |
+| #mergetable           actions= 0 time=27 usec                                                         |
+| #deadcode             actions= 3 time=5 usec                                                          |
+| #aliases              actions= 0 time=0 usec                                                          |
+| #constants            actions= 1 time=6 usec                                                          |
+| #commonTerms          actions= 0 time=4 usec                                                          |
+| #projectionpath       actions= 0 time=2 usec                                                          |
+| #reorder              actions= 1 time=20 usec                                                         |
+| #deadcode             actions= 0 time=4 usec                                                          |
 | #matpack              actions= 0 time=0 usec                                                          |
-| #multiplex            actions= 0 time=2 usec                                                          |
+| #multiplex            actions= 0 time=1 usec                                                          |
 | #profiler             actions= 1 time=1 usec                                                          |
-| #candidates           actions= 1 time=1 usec                                                          |
-| #garbagecollector     actions= 1 time=53 usec                                                         |
-| #total                actions=23 time=354 usec                                                        |
+| #candidates           actions= 1 time=0 usec                                                          |
+| #garbagecollector     actions= 2 time=33 usec                                                         |
+| #total                actions=23 time=242 usec                                                        |
 +-------------------------------------------------------------------------------------------------------+
 49 rows
 
