@@ -1,3 +1,4 @@
+unknown_col_in_order_by.Bug-3535
 shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
