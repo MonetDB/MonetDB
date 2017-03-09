@@ -319,6 +319,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
 	p = newInstruction(curBlk, remoteRef, execRef);
+	getArg(p,0) = newTmpVariable(curBlk,TYPE_any);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, sqlRef);
 	p = pushStr(curBlk, p, registerRef);
