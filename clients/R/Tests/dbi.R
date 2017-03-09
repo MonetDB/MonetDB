@@ -43,6 +43,7 @@ dbRemoveTable(con,tname)
 stopifnot(identical(dbExistsTable(con,tname),FALSE))
 
 # write test table iris
+# iris is one of the built-in datasets in R
 data(iris)
 dbWriteTable(con,tname,iris)
 
@@ -65,9 +66,12 @@ stopifnot(identical(res@env$success,TRUE))
 stopifnot(dbColumnInfo(res)[[1,1]] == "Species")
 stopifnot(dbColumnInfo(res)[[2,1]] == "Sepal.Width")
 
-stopifnot(dbGetRowCount(res) == 150 && res@env$info$rows == 150)
+stopifnot(dbGetRowCount(res) == 0)
 
 data <- dbFetch(res,10)
+
+stopifnot(dbGetRowCount(res) == 10)
+
 
 stopifnot(dim(data)[[1]] == 10)
 stopifnot(dim(data)[[2]] == 2)
@@ -75,6 +79,9 @@ stopifnot(res@env$delivered == 10)
 stopifnot(dbHasCompleted(res) == FALSE)
 
 data2 <- dbFetch(res,-1)
+
+stopifnot(dbGetRowCount(res) == 150)
+
 stopifnot(dim(data2)[[1]] == 140)
 stopifnot(dbHasCompleted(res) == TRUE)
 

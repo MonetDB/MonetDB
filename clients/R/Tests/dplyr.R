@@ -15,9 +15,15 @@ if (length(args) > 1)
 	dbname <- args[[2]]
 
 dps <- MonetDBLite::src_monetdb(dbname=dbname, port=dbport)
-copy_lahman(dps)
+if (!DBI::dbExistsTable(con_acquire(dps), "AllstarFull")) copy_lahman(dps)
 
 }))
+
+printn <- 10
+printsth <- function(s) {
+	print(nrow(collect(head(s, printn))))
+	printn <<- printn+1
+}
 
 # the remainder is pretty much the example from the manpage.
 
@@ -25,28 +31,31 @@ copy_lahman(dps)
 batting <- tbl(dps, "Batting")
 
 length(dim(batting)) == 2
-
 length(colnames(batting)) > 1
-nrow(head(batting, n=10L))
+
+printsth(batting)
 
 # co* verbs
-cc <- collapse(batting)
-cc <- collect(batting)
-# cc <- compute(batting)
-# head(cc)
+c1 <- collapse(batting)
+c2 <- collect(batting)
+c3 <- compute(batting)
+
+printsth(c1)
+printsth(c2)
+printsth(c3)
 
 
 # Data manipulation verbs ---------------------------------------------------
-nrow(head(filter(batting, yearID > 2005, G > 130), n=11L))
-nrow(head(select(batting, playerID:lgID), n=12L))
-nrow(head(arrange(batting, playerID, desc(yearID)), n=13L))
+printsth(filter(batting, yearID > 2005, G > 130))
+printsth(select(batting, playerID:lgID))
+#printsth(arrange(batting, playerID, desc(yearID)))
 length(summarise(batting, G = mean(G), n = n())) > 1
-nrow(head(mutate(batting, rbi2 = if(!is.null(AB) & AB > 0) 1.0 * R / AB else 0), n=14L))
+printsth(mutate(batting, rbi2 = if(!is.null(AB) & AB > 0) 1.0 * R / AB else 0))
 
 # note that all operations are lazy: they don't do anything until you
 # request the data, either by `print()`ing it (which shows the first ten
 # rows), by looking at the `head()`, or `collect()` the results locally.
-nrow(head(collect(filter(batting, yearID > 2010)), n=15L))
+printsth(filter(batting, yearID > 2010))
 
 # Group by operations -------------------------------------------------------
 # To perform operations by group, create a grouped object with group_by
@@ -69,13 +78,13 @@ hof <- select(filter(tbl(dps, "HallOfFame"), inducted == "Y"),
 invisible(suppressMessages( {
 
 # Match players and their hall of fame data
-print(nrow(head(inner_join(player_info, hof), n=20L)))
+printsth(inner_join(player_info, hof))
 # Keep all players, match hof data where available
-print(nrow(head(left_join(player_info, hof), n=21L)))
+printsth(left_join(player_info, hof))
 # Find only players in hof
-print(nrow(head(semi_join(player_info, hof), n=22L)))
+printsth(semi_join(player_info, hof))
 # Find players not in hof
-print(nrow(head(anti_join(player_info, hof), n=23L)))
+printsth(anti_join(player_info, hof))
 
 }))
 # TODO: set ops
@@ -84,14 +93,14 @@ print(nrow(head(anti_join(player_info, hof), n=23L)))
 # You can also provide sql as is, using the sql function:
 batting2008 <- tbl(dps,
   sql('SELECT * FROM "Batting" WHERE "yearID" = 2008'))
-nrow(head(batting2008, n=26L))
+printsth(batting2008)
 
 # sample functions
-print(nrow(sample_n(player_info, 24L)))
-print(nrow(head(sample_frac(player_info, .5), n=25L)))
+printsth(sample_n(player_info, 24L))
+printsth(sample_frac(player_info, .5))
 
 
-DBI::dbWriteTable(dps$con, "mtcars", mtcars)
+DBI::dbWriteTable(con_acquire(dps), "mtcars", mtcars, overwrite=T)
 my_tbl <- tbl(dps, "mtcars") 
 
 # https://github.com/hadley/dplyr/issues/1165
@@ -100,29 +109,14 @@ aa <- my_tbl %>%
     summarise( n = n() ) %>% collect()
 print(nrow(aa))
 
-# this works fin
+# this works fine
 aa <- my_tbl %>% 
     group_by( cyl , gear ) %>% 
     summarise( n = n() ) %>% collect()
 print(nrow(aa))
 
-# this breaks
-# aa <- my_tbl %>% 
-#     group_by( cyl , gear ) %>% 
-#     summarise( n = n() ) %>% 
-#     mutate( pct = 100 * n / sum( n ) ) %>% collect()
 
-# aa <- my_tbl %>%
-#     group_by( cyl , gear ) %>%
-#     tally %>%
-#     group_by( cyl ) %>%
-#     mutate( pct = ( 100 * n ) / sum( n ) )  %>% collect()
-# print(nrow(aa))
-
-
-
-
-DBI::dbRemoveTable(dps$con, "mtcars")
+DBI::dbRemoveTable(con_acquire(dps), "mtcars")
 
 
 print("SUCCESS")

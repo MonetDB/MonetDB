@@ -24,11 +24,8 @@ Ready.
 # 16:40:23 >  "R" "--vanilla" "--slave" "--args" "30658"
 # 16:40:23 >  
 
-[1] TRUE
 <MonetDBResult>
   SQL  CREATE TABLE mtcars (mpg DOUBLE PRECISION, cyl DOUBLE PRECISION, disp DOUBLE PRECISION, hp DOUBLE PRECISION, drat DOUBLE PRECISION, wt DOUBLE PRECISION, qsec DOUBLE PRECISION, vs DOUBLE PRECISION, am DOUBLE PRECISION, gear DOUBLE PRECISION, carb DOUBLE PRECISION)
-  ROWS Fetched: 0 [complete]
-       Changed: NA
     mpg cyl  disp  hp drat    wt  qsec vs am gear carb
 1  21.0   6 160.0 110 3.90 2.620 16.46  0  1    4    4
 2  21.0   6 160.0 110 3.90 2.875 17.02  0  1    4    4
@@ -62,7 +59,6 @@ Ready.
 30 19.7   6 145.0 175 3.62 2.770 15.50  0  1    5    6
 31 15.0   8 301.0 335 3.54 3.570 14.60  0  1    5    8
 32 21.4   4 121.0 109 4.11 2.780 18.60  1  1    4    2
-[1] TRUE
 [1] "SUCCESS"
 
 # 16:40:23 >  
