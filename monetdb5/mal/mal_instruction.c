@@ -392,10 +392,9 @@ newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 InstrPtr
 copyInstruction(InstrPtr p)
 {
-	InstrPtr new;
-	new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->maxarg));
-	if( new == NULL) {
-		GDKerror("copyInstruction:failed to allocated space");
+	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->maxarg));
+	if(new == NULL) {
+		GDKerror("copyInstruction: failed to allocated space");
 		return new;
 	}
 	oldmoveInstruction(new, p);

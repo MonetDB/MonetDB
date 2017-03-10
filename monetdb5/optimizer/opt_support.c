@@ -124,8 +124,8 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	/* force at least once a complete type check by resetting the type check flag */
 
-	resetMalBlk(mb,mb->stop);
-	chkProgram(cntxt->fdout,cntxt->nspace,mb);
+	resetMalBlk(mb, mb->stop);
+	chkProgram(cntxt->fdout, cntxt->nspace,mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
@@ -133,7 +133,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
      * When no optimzer call is found, be terminate. */
 	do {
 		qot = 0;
-		for (pc = 0; pc < mb->stop ; pc++) {
+		for (pc = 0; pc < mb->stop; pc++) {
 			p = getInstrPtr(mb, pc);
 			if (getModuleId(p) == optimizerRef && p->fcn && p->token != REMsymbol) {
 				/* all optimizers should behave like patterns */
@@ -143,7 +143,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
-					str nmsg= createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
+					str nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
 					GDKfree(place);
 					GDKfree(msg);
 					msg = nmsg;

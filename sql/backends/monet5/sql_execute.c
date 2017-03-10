@@ -310,7 +310,7 @@ SQLrun(Client c, backend *be, mvc *m){
 	// This include template constants, BAT sizes.
 	if( m->emod & mod_debug)
 		mb->keephistory = TRUE;
-	msg = SQLoptimizeQuery(c,mb);
+	msg = SQLoptimizeQuery(c, mb);
 	mb->keephistory = FALSE;
 
 	if( mb->errors){
