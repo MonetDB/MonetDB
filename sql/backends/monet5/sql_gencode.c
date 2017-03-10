@@ -662,6 +662,10 @@ backend_call(backend *be, Client c, cq *cq)
 	MalBlkPtr mb = c->curprg->def;
 
 	q = newStmt(mb, userRef, cq->name);
+	if (!q) {
+		m->session->status = -3;
+		return;
+	}
 	/* cached (factorized queries return bit??) */
 	if (cq->code && getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol) {
 		setVarType(mb, getArg(q, 0), TYPE_bit);

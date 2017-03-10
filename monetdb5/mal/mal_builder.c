@@ -85,7 +85,7 @@ newComment(MalBlkPtr mb, const char *val)
 	InstrPtr q = newInstruction(mb, NULL, NULL);
 	ValRecord cst;
 
-	if ( q == NULL)
+	if (q == NULL)
 		return NULL;
 	q->token = REMsymbol;
 	q->barrier = 0;

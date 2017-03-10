@@ -144,9 +144,11 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				if (msg) {
 					str place = getExceptionPlace(msg);
 					str nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
-					GDKfree(place);
-					GDKfree(msg);
-					msg = nmsg;
+					if (nmsg && place) {
+						GDKfree(msg);
+						msg = nmsg;
+						GDKfree(place);
+					}
 					goto wrapup;
 				}
 				if (cntxt->mode == FINISHCLIENT)
@@ -158,10 +160,13 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 wrapup:
 	/* Keep the total time spent on optimizing the plan for inspection */
-	if( actions){
-		mb->optimize= GDKusec() - clk;
-		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total",actions, mb->optimize);
+	if(actions > 0 && msg == MAL_SUCCEED){
+		mb->optimize = GDKusec() - clk;
+		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total", actions, mb->optimize);
 		newComment(mb, buf);
+	}
+	if (msg != MAL_SUCCEED) {
+		mb->errors++;
 	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);

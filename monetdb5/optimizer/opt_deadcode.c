@@ -34,8 +34,10 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if (newMalBlkStmt(mb, mb->ssize) < 0)
+	if (newMalBlkStmt(mb, mb->ssize) < 0) {
+		actions = -1;
 		goto wrapup;
+	}
 
 	// Calculate the instructions in which a variable is used.
 	// Variables can be used multiple times in an instruction.

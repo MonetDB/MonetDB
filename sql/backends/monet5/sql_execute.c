@@ -319,8 +319,9 @@ SQLrun(Client c, backend *be, mvc *m){
 	msg = SQLoptimizeQuery(c, mb);
 	mb->keephistory = FALSE;
 
-	if( mb->errors){
-		freeMalBlk(mb);
+	if (mb->errors){
+		//freeMalBlk(mb);
+		// mal block might be so broken free causes segfault
 		return msg;
 	}
 
