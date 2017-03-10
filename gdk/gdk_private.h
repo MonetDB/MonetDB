@@ -129,15 +129,11 @@ __hidden char *GDKload(int farmid, const char *nme, const char *ext, size_t size
 __hidden void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)))
 	__attribute__((__visibility__("hidden")));
-__hidden void *GDKmallocmax(size_t size, size_t *maxsize, int emergency)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
 	__attribute__((__visibility__("hidden")));
 __hidden void *GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKmunmap(void *addr, size_t len)
-	__attribute__((__visibility__("hidden")));
-__hidden void *GDKreallocmax(void *pold, size_t size, size_t *maxsize, int emergency)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKremovedir(int farmid, const char *nme)
 	__attribute__((__visibility__("hidden")));
@@ -323,19 +319,6 @@ extern MT_Lock MT_system_lock;
 #if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
 /* see comment in gdk.h */
 #ifdef __GNUC__
-#define GDKmallocmax(s,ps,e)						\
-	({								\
-		size_t _size = (s);					\
-		size_t *_psize  = (ps);					\
-		void *_res = GDKmallocmax(_size,_psize,e);		\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmallocmax(" SZFMT ",(" SZFMT ")) -> " \
-				PTRFMT " %s[%s:%d]\n",			\
-				_size, *_psize, PTRFMTCAST _res,	\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
-	 })
 #define GDKmunmap(p, l)							\
 	({	void *_ptr = (p);					\
 		size_t _len = (l);					\
@@ -348,21 +331,6 @@ extern MT_Lock MT_system_lock;
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	})
-#define GDKreallocmax(p,s,ps,e)						\
-	({								\
-		void *_ptr = (p);					\
-		size_t _size = (s);					\
-		size_t *_psize  = (ps);					\
-		void *_res = GDKreallocmax(_ptr,_size,_psize,e);	\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKreallocmax(" PTRFMT "," SZFMT \
-				",(" SZFMT ")) -> " PTRFMT		\
-				" %s[%s:%d]\n", PTRFMTCAST _ptr,	\
-				_size, *_psize, PTRFMTCAST _res,	\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
-	 })
 #define GDKmremap(p, m, oa, os, ns)					\
 	({								\
 		const char *_path = (p);				\
@@ -383,18 +351,6 @@ extern MT_Lock MT_system_lock;
 		_res;							\
 	 })
 #else
-static inline void *
-GDKmallocmax_debug(size_t size, size_t *psize, int emergency,
-		   const char *filename, int lineno)
-{
-	void *res = GDKmallocmax(size, psize, emergency);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmallocmax(" SZFMT ",(" SZFMT ")) -> "
-			   PTRFMT " [%s:%d]\n",
-			   size, *psize, PTRFMTCAST res, filename, lineno);
-	return res;
-}
-#define GDKmallocmax(s, ps, e)	GDKmallocmax_debug((s), (ps), (e), __FILE__, __LINE__)
 static inline gdk_return
 GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
 {
@@ -405,19 +361,6 @@ GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
 	return res;
 }
 #define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)
-static inline void *
-GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
-		    const char *filename, int lineno)
-{
-	void *res = GDKreallocmax(ptr, size, psize, emergency);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKreallocmax(" PTRFMT "," SZFMT
-			   ",(" SZFMT ")) -> " PTRFMT " [%s:%d]\n",
-			   PTRFMTCAST ptr, size, *psize, PTRFMTCAST res,
-			   filename, lineno);
-	return res;
-}
-#define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
 static inline void *
 GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size, const char *filename, int lineno)
 {
