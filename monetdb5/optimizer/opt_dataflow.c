@@ -201,9 +201,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
-	if ( newMalBlkStmt(mb, mb->ssize) <0 )
+	if (newMalBlkStmt(mb, mb->ssize) < 0) {
+		actions = -1;
 		goto wrapup;
-	
+	}
 	pushInstruction(mb,old[0]);
 
 	/* inject new dataflow barriers using a single pass through the program */
@@ -320,9 +321,9 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     newComment(mb,buf);
 
 wrapup:
-	if( states) GDKfree(states);
-	if( sink) GDKfree(sink);
-	if( old) GDKfree(old);
+	if(states) GDKfree(states);
+	if(sink)   GDKfree(sink);
+	if(old)    GDKfree(old);
 
 	return actions;
 }

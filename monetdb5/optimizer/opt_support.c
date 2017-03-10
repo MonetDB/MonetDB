@@ -124,8 +124,8 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	/* force at least once a complete type check by resetting the type check flag */
 
-	resetMalBlk(mb,mb->stop);
-	chkProgram(cntxt->fdout,cntxt->nspace,mb);
+	resetMalBlk(mb, mb->stop);
+	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
@@ -133,7 +133,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
      * When no optimzer call is found, be terminate. */
 	do {
 		qot = 0;
-		for (pc = 0; pc < mb->stop ; pc++) {
+		for (pc = 0; pc < mb->stop; pc++) {
 			p = getInstrPtr(mb, pc);
 			if (getModuleId(p) == optimizerRef && p->fcn && p->token != REMsymbol) {
 				/* all optimizers should behave like patterns */
@@ -143,10 +143,12 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
-					str nmsg= createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
-					GDKfree(place);
-					GDKfree(msg);
-					msg = nmsg;
+					str nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
+					if (nmsg && place) {
+						GDKfree(msg);
+						msg = nmsg;
+						GDKfree(place);
+					}
 					goto wrapup;
 				}
 				if (cntxt->mode == FINISHCLIENT)
@@ -158,10 +160,13 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 wrapup:
 	/* Keep the total time spent on optimizing the plan for inspection */
-	if( actions){
-		mb->optimize= GDKusec() - clk;
-		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total",actions, mb->optimize);
+	if(actions > 0 && msg == MAL_SUCCEED){
+		mb->optimize = GDKusec() - clk;
+		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total", actions, mb->optimize);
 		newComment(mb, buf);
+	}
+	if (msg != MAL_SUCCEED) {
+		mb->errors++;
 	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);

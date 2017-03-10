@@ -143,12 +143,15 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	} else if( p ) 
 		removeInstruction(mb, p);
 
-	for ( i=0; codes[i].nme; i++)
-		if ( strcmp(codes[i].nme, optimizer)== 0 ){
-			actions = (int)(*(codes[i].fcn))(cntxt, mb, stk,0);
+	for (i=0; codes[i].nme; i++)
+		if (strcmp(codes[i].nme, optimizer) == 0){
+			actions = (int)(*(codes[i].fcn))(cntxt, mb, stk, 0);
+			if (actions < 0) {
+				throw(MAL, optimizer, "Error in optimizer %s", optimizer);
+			}
 			break;	
 		}
-	if ( codes[i].nme == 0)
+	if (codes[i].nme == 0)
 		throw(MAL, optimizer, "Optimizer implementation '%s' missing", fcnnme);
 
 	OPTIMIZERDEBUG {

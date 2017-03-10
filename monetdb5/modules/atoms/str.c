@@ -1553,7 +1553,10 @@ STRtostr(str *res, const str *src)
 {
 	if( *src == 0)
 		*res= GDKstrdup(str_nil);
-	else *res = GDKstrdup(*src);
+	else
+		*res = GDKstrdup(*src);
+	if (*res == NULL)
+		throw(MAL, "str.str", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -2415,20 +2418,35 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 {
 	str v;
 	int strt = *start;
-	if (strcmp(*s2, str_nil) == 0 || strcmp(*s, str_nil) == 0)
-		*ret = GDKstrdup((str) str_nil);
-	else {
-		if (strt < 0)
-			strt = 1;
-		if(strlen(*s)+strlen(*s2)+1 >= INT_MAX) {
+	if (strcmp(*s2, str_nil) == 0 || strcmp(*s, str_nil) == 0) {
+		if ((*ret = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "str.insert", MAL_MALLOC_FAIL);
+	} else {
+		size_t l1 = strlen(*s);
+		size_t l2 = strlen(*s2);
+
+		if (l1 + l2 + 1 >= INT_MAX) {
 			throw(MAL, "str.insert", MAL_MALLOC_FAIL);
 		}
-		v= *ret = GDKmalloc((int)strlen(*s)+(int)strlen(*s2)+1 );
-		strncpy(v, *s,strt);
-		v[strt]=0;
-		strcat(v,*s2);
-		if( strt + *l < (int) strlen(*s))
-			strcat(v,*s + strt + *l);
+		if (*l < 0)
+			throw(MAL, "str.insert", ILLEGAL_ARGUMENT);
+		if (strt < 0) {
+			if ((size_t) -strt <= l1)
+				strt = (int) (l1 + strt);
+			else
+				strt = 0;
+		}
+		if ((size_t) strt > l1)
+			strt = (int) l1;
+		v = *ret = GDKmalloc(strlen(*s) + strlen(*s2) + 1);
+		if (v == NULL)
+			throw(MAL, "str.insert", MAL_MALLOC_FAIL);
+		if (strt > 0)
+			strncpy(v, *s, strt);
+		v[strt] = 0;
+		strcpy(v + strt, *s2);
+		if (strt + *l < (int) l1)
+			strcat(v, *s + strt + *l);
 	}
 	return MAL_SUCCEED;
 }
@@ -2447,7 +2465,8 @@ STRrepeat(str *ret, const str *s, const int *c)
 	size_t l;
 
 	if (*c < 0 || strcmp(*s, str_nil) == 0) {
-		*ret = GDKstrdup(str_nil);
+		if ((*ret = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "str.repeat", MAL_MALLOC_FAIL);
 	} else {
 		l = strlen(*s);
 		if (l >= INT_MAX)

@@ -153,12 +153,14 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 
 	assert(mb->vsize >= mb->ssize);
 	if( elements > mb->ssize){
+		InstrPtr *ostmt = mb->stmt;
 		mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, elements * sizeof(InstrPtr));
 		if ( mb->stmt ){
 			for ( i = mb->ssize; i < elements; i++)
 				mb->stmt[i] = 0;
 			mb->ssize = elements;
 		} else {
+			mb->stmt = ostmt;	/* reinstate old pointer */
 			mb->errors++;
 			showException(GDKout, MAL, "resizeMalBlk", "out of memory (requested: "LLFMT" bytes)", (lng) elements * sizeof(InstrPtr));
 			return -1;
@@ -167,11 +169,13 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 
 
 	if( elements > mb->vsize){
+		VarRecord *ovar = mb->var;
 		mb->var = (VarRecord*) GDKrealloc(mb->var, elements * sizeof (VarRecord));
 		if ( mb->var ){
 			memset( ((char*) mb->var) + sizeof(VarRecord) * mb->vsize, 0, (elements - mb->vsize) * sizeof(VarRecord));
 			mb->vsize = elements;
 		} else{
+			mb->var = ovar;
 			mb->errors++;
 			showException(GDKout, MAL, "resizeMalBlk", "out of memory (requested: "LLFMT" bytes)", (lng) elements * sizeof(InstrPtr));
 			return -1;
@@ -259,13 +263,17 @@ copyMalBlk(MalBlkPtr old)
 	// copy all variable records
 	for (i = 0; i < old->vtop; i++) {
 		mb->var[i]=  old->var[i];
-		VALcopy(&(mb->var[i].value), &(old->var[i].value));
+		if (!VALcopy(&(mb->var[i].value), &(old->var[i].value))) {
+			GDKfree(mb);
+			GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
+			return NULL;
+		}
 	}
 
 	mb->stmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * old->ssize);
 
 	if (mb->stmt == NULL) {
-		GDKfree(mb->var);
+		GDKfree(mb->var); // this leaks strings in var
 		GDKfree(mb);
 		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
@@ -274,10 +282,20 @@ copyMalBlk(MalBlkPtr old)
 	mb->stop = old->stop;
 	mb->ssize = old->ssize;
 	assert(old->stop < old->ssize);
-	for (i = 0; i < old->stop; i++)
+	for (i = 0; i < old->stop; i++) {
 		mb->stmt[i] = copyInstruction(old->stmt[i]);
-
+		if(!mb->stmt[i]) {
+			GDKfree(mb);
+			GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
+			return NULL;
+		}
+	}
 	mb->help = old->help ? GDKstrdup(old->help) : NULL;
+	if (old->help && !mb->help) {
+		GDKfree(mb);
+		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	strncpy(mb->binding,  old->binding, IDLENGTH);
 	mb->errors = old->errors;
 	mb->tag = old->tag;
@@ -388,10 +406,9 @@ newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 InstrPtr
 copyInstruction(InstrPtr p)
 {
-	InstrPtr new;
-	new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->maxarg));
-	if( new == NULL) {
-		GDKerror("copyInstruction:failed to allocated space");
+	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->maxarg));
+	if(new == NULL) {
+		GDKerror("copyInstruction: failed to allocated space");
 		return new;
 	}
 	oldmoveInstruction(new, p);
@@ -1412,5 +1429,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 			}
 		}
 	}
+	if (mb->stmt[mb->stop])
+		freeInstruction(mb->stmt[mb->stop]);
 	mb->stmt[mb->stop++] = p;
 }

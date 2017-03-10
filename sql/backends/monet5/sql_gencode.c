@@ -319,6 +319,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
 	p = newInstruction(curBlk, remoteRef, execRef);
+	getArg(p,0) = newTmpVariable(curBlk,TYPE_any);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, sqlRef);
 	p = pushStr(curBlk, p, registerRef);
@@ -661,6 +662,10 @@ backend_call(backend *be, Client c, cq *cq)
 	MalBlkPtr mb = c->curprg->def;
 
 	q = newStmt(mb, userRef, cq->name);
+	if (!q) {
+		m->session->status = -3;
+		return;
+	}
 	/* cached (factorized queries return bit??) */
 	if (cq->code && getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol) {
 		setVarType(mb, getArg(q, 0), TYPE_bit);

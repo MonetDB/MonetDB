@@ -179,7 +179,11 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			profiler = malProfileMode;	/* we don't trace it */
 			malProfileMode = 0;
 			if ( env == NULL) {
-				env = prepareMALstack(mb,  2 * mb->vsize );
+				env = prepareMALstack(mb,  2 * mb->vsize);
+				if (!env) {
+					actions = -1;
+					goto wrapup;
+				}
 				env->keepAlive = TRUE;
 			}
 			msg = reenterMAL(cntxt, mb, i, i + 1, env);

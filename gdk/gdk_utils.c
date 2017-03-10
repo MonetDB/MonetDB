@@ -1228,7 +1228,7 @@ THRnew(const char *name)
 			return NULL;
 		}
 		tid = s->tid;
-		memset((char *) s, 0, sizeof(*s));
+		memset(s, 0, sizeof(*s));
 		s->pid = pid;
 		s->tid = tid;
 		s->data[1] = THRdata[1];
@@ -1557,45 +1557,6 @@ GDKmemdump(void)
 }
 
 
-/*
- * @+ Malloc
- * Malloc normally maps through directly to the OS provided
- * malloc/free/realloc calls. Where possible, we want to use the
- * -lmalloc library on Unix systems, because it allows to influence
- * the memory allocation strategy. This can prevent fragmentation and
- * greatly help enhance performance.
- *
- * The "added-value" of the GDKmalloc/GDKfree/GDKrealloc over the
- * standard OS primitives is that additional information on block
- * sizes is kept (helping efficient reallocations) as well as some
- * debugging that guards against duplicate frees.
- *
- * A number of different strategies are available using different
- * switches, however:
- *
- * - zero sized blocks
- *   Normally, GDK gives fatal errors on illegal block sizes.
- *   This can be overridden with  GDK_MEM_NULLALLOWED.
- *
- * - resource tracking
- *   Many malloc interfaces lack a routine that tells the size of a
- *   block by the pointer. We need this information for correct malloc
- *   statistics.
- *
- * - outstanding block histograms
- *   In order to solve the problem, we allocate extra memory in front
- *   of the returned block. With the resource tracking in place, we
- *   keep a total of allocated bytes.  Also, if GDK_MEM_KEEPHISTO is
- *   defined, we keep a histogram of the outstanding blocks on the
- *   log2 of the block size (similarly for virtual.  memory blocks;
- *   define GDK_VM_KEEPHISTO).
- *
- * 64-bits update: Some 64-bit implementations (Linux) of mallinfo is
- * severely broken, as they use int-s for memory sizes!!  This causes
- * corruption of mallinfo stats. As we depend on those, we should keep
- * the malloc arena small. Thus, VM redirection is now quickly
- * applied: for all mallocs > 1MB.
- */
 static void
 GDKmemfail(const char *s, size_t len)
 {
@@ -1619,51 +1580,40 @@ GDKmemfail(const char *s, size_t len)
 	GDKmemdump();
 }
 
-/* the blocksize is stored in the ssize_t before it. Negative size <=>
- * VM memory */
-#define GDK_MEM_BLKSIZE(p) ((ssize_t*) (p))[-1]
-#ifdef __GLIBC__
-#define GLIBC_BUG 8
-#else
-#define GLIBC_BUG 0
-#endif
+/* Memory allocation
+ *
+ * The functions GDKmalloc, GDKzalloc, GDKrealloc, GDKstrdup, and
+ * GDKfree are used throughout to allocate and free memory.  These
+ * functions are almost directly mapped onto the system
+ * malloc/realloc/free functions, but they give us some extra
+ * debugging hooks.
+ *
+ * When allocating memory, we allocate a bit more than was asked for.
+ * The extra space is added onto the front of the memory area that is
+ * returned, and in debug builds also some at the end.  The area in
+ * front is used to store the actual size of the allocated area.  The
+ * most important use is to be able to keep statistics on how much
+ * memory is being used.  In debug builds, the size is also used to
+ * make sure that we don't write outside of the allocated arena.  This
+ * is also where the extra space at the end comes in.
+ */
 
 /* we allocate extra space and return a pointer offset by this amount */
 #define MALLOC_EXTRA_SPACE	(2 * SIZEOF_VOID_P)
 
-/* allocate 8 bytes extra (so it stays 8-bytes aligned) and put
- * realsize in front */
-static inline void *
-GDKmalloc_prefixsize(size_t size)
-{
-	ssize_t *s;
+#ifdef NDEBUG
+#define DEBUG_SPACE	0
+#else
+#define DEBUG_SPACE	16
+#endif
 
-	if ((s = malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG)) != NULL) {
-		assert((((uintptr_t) s) & 7) == 0); /* no MISALIGN */
-		s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE);
-		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);
-	}
-	return s;
-}
-
-
-/*
- * The emergency flag can be set to force a fatal error if needed.
- * Otherwise, the caller is able to deal with the lack of memory.
- */
-#undef GDKmallocmax
-void *
-GDKmallocmax(size_t size, size_t *maxsize, int emergency)
+static void *
+GDKmalloc_internal(size_t size)
 {
 	void *s;
+	size_t nsize;
 
-	if (size == 0) {
-#ifdef GDK_MEM_NULLALLOWED
-		return NULL;
-#else
-		GDKfatal("GDKmallocmax: called with size " SZFMT "", size);
-#endif
-	}
+	assert(size != 0);
 #ifndef NDEBUG
 	/* fail malloc for testing purposes depending on set limit */
 	if (GDK_malloc_success_count > 0) {
@@ -1675,20 +1625,30 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 	if (GDK_malloc_success_count == 0) {
 		return NULL;
 	}
-
 #endif
-	size = (size + 7) & ~7;	/* round up to a multiple of eight */
-	s = GDKmalloc_prefixsize(size);
-	if (s == NULL) {
+
+	/* pad to multiple of eight bytes and add some extra space to
+	 * write real size in front; when debugging, also allocate
+	 * extra space for check bytes */
+	nsize = (size + 7) & ~7;
+	if ((s = malloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE)) == NULL) {
 		GDKmemfail("GDKmalloc", size);
-		if (emergency == 0) {
-			GDKerror("GDKmallocmax: failed for " SZFMT " bytes", size);
-			return NULL;
-		}
-		GDKfatal("GDKmallocmax: failed for " SZFMT " bytes", size);
+		GDKerror("GDKmalloc_internal: failed for " SZFMT " bytes", size);
+		return NULL;
 	}
-	*maxsize = size;
-	heapinc(size + MALLOC_EXTRA_SPACE);
+	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
+
+	heapinc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+
+	/* just before the pointer that we return, write how much we
+	 * asked of malloc */
+	((size_t *) s)[-1] = nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE;
+#ifndef NDEBUG
+	/* just before that, write how much was asked of us */
+	((size_t *) s)[-2] = size;
+	/* write pattern to help find out-of-bounds writes */
+	memset((char *) s + size, '\xBD', nsize + DEBUG_SPACE - size);
+#endif
 	return s;
 }
 
@@ -1696,152 +1656,161 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 void *
 GDKmalloc(size_t size)
 {
-	void *p = GDKmallocmax(size, &size, 0);
+	void *s;
+
+	if ((s = GDKmalloc_internal(size)) == NULL)
+		return NULL;
 #ifndef NDEBUG
-	DEADBEEFCHK if (p)
-		memset(p, 0xBD, size);
+	/* write a pattern to help make sure all data is properly
+	 * initialized by the caller */
+	DEADBEEFCHK memset(s, '\xBD', size);
 #endif
-	return p;
+	return s;
 }
 
 #undef GDKzalloc
 void *
 GDKzalloc(size_t size)
 {
-	size_t maxsize = size;
-	void *p = GDKmallocmax(size, &maxsize, 0);
-	if (p) {
-		memset(p, 0, size);
-#ifndef NDEBUG
-		/* DeadBeef allocated area beyond what was requested */
-		DEADBEEFCHK if (maxsize > size)
-			memset((char *) p + size, 0xBD, maxsize - size);
-#endif
-	}
-	return p;
-}
+	void *s;
 
-#undef GDKfree
-void
-GDKfree(void *blk)
-{
-	ssize_t size = 0, *s = (ssize_t *) blk;
-
-	if (s == NULL)
-		return;
-
-	size = GDK_MEM_BLKSIZE(s);
-
-	/* check against duplicate free */
-	assert((size & 2) == 0);
-
-	assert(size != 0);
-
-#ifndef NDEBUG
-	/* The check above detects obvious duplicate free's, but fails
-	 * in case the "check-bit" is cleared between two free's
-	 * (e.g., as the respective memory has been re-allocated and
-	 * initialized.
-	 * To simplify detection & debugging of duplicate free's, we
-	 * now overwrite the to be freed memory, which will trigger a
-	 * segfault in case the memory had already been freed and/or
-	 * trigger some error in case the memory is accessed after is
-	 * has been freed.
-	 * To avoid performance penalty in the "production version",
-	 * we only do this in debugging/development mode (i.e., when
-	 * configured with --enable-assert).
-	 * Disable at command line using --debug=33554432
-	 */
-	DEADBEEFCHK memset(s, 0xDB, size - (MALLOC_EXTRA_SPACE + (size & 1)));	/* 0xDeadBeef */
-#endif
-	free(((char *) s) - MALLOC_EXTRA_SPACE);
-	heapdec(size);
-}
-
-#undef GDKreallocmax
-ptr
-GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
-{
-	ssize_t oldsize = 0;
-	size_t newsize;
-
-	if (blk == NULL) {
-		return GDKmallocmax(size, maxsize, emergency);
-	}
-	if (size == 0) {
-#ifdef GDK_MEM_NULLALLOWED
-		GDKfree(blk);
-		*maxsize = 0;
+	if ((s = GDKmalloc_internal(size)) == NULL)
 		return NULL;
-#else
-		GDKfatal("GDKreallocmax: called with size 0");
-#endif
-	}
-	size = (size + 7) & ~7;	/* round up to a multiple of eight */
-	oldsize = GDK_MEM_BLKSIZE(blk);
-
-	/* check against duplicate free */
-	assert((oldsize & 2) == 0);
-
-	newsize = size + MALLOC_EXTRA_SPACE;
-
-	blk = realloc(((char *) blk) - MALLOC_EXTRA_SPACE,
-		      newsize + GLIBC_BUG);
-	if (blk == NULL) {
-		GDKmemfail("GDKrealloc", newsize);
-		if (emergency == 0) {
-			GDKerror("GDKreallocmax: failed for "
-				 SZFMT " bytes", newsize);
-			return NULL;
-		}
-		GDKfatal("GDKreallocmax: failed for " SZFMT " bytes", newsize);
-	}
-	/* place MALLOC_EXTRA_SPACE bytes before it */
-	assert((((uintptr_t) blk) & 4) == 0);
-	blk = ((char *) blk) + MALLOC_EXTRA_SPACE;
-	((ssize_t *) blk)[-1] = (ssize_t) newsize;
-
-	/* adapt statistics */
-	heapinc(newsize);
-	heapdec(oldsize);
-	*maxsize = size;
-	return blk;
-}
-
-#undef GDKrealloc
-ptr
-GDKrealloc(void *blk, size_t size)
-{
-	size_t sz = size;
-
-	return GDKreallocmax(blk, sz, &size, 0);
+	memset(s, 0, size);
+	return s;
 }
 
 #undef GDKstrdup
 char *
 GDKstrdup(const char *s)
 {
-	int l = strLen(s);
-	char *n = GDKmalloc(l);
+	size_t size;
+	char *p;
 
-	if (n)
-		memcpy(n, s, l);
-	return n;
+	if (s == NULL)
+		return NULL;
+	size = strlen(s) + 1;
+
+	if ((p = GDKmalloc_internal(size)) == NULL)
+		return NULL;
+	memcpy(p, s, size);	/* including terminating NULL byte */
+	return p;
+}
+
+#undef GDKstrndup
+char *
+GDKstrndup(const char *s, size_t size)
+{
+	char *p;
+
+	if (s == NULL || size == 0)
+		return NULL;
+	if ((p = GDKmalloc_internal(size + 1)) == NULL)
+		return NULL;
+	memcpy(p, s, size);
+	p[size] = '\0';		/* make sure it's NULL terminated */
+	return p;
+}
+
+#undef GDKfree
+void
+GDKfree(void *s)
+{
+	size_t asize;
+
+	if (s == NULL)
+		return;
+
+	asize = ((size_t *) s)[-1]; /* how much allocated last */
+
+#ifndef NDEBUG
+	assert((asize & 2) == 0);   /* check against duplicate free */
+	/* check for out-of-bounds writes */
+	{
+		size_t i = ((size_t *) s)[-2]; /* how much asked for last */
+		for (; i < asize - MALLOC_EXTRA_SPACE; i++)
+			assert(((char *) s)[i] == '\xBD');
+	}
+	((size_t *) s)[-1] |= 2; /* indicate area is freed */
+#endif
+
+#ifndef NDEBUG
+	/* overwrite memory that is to be freed with a pattern that
+	 * will help us recognize access to already freed memory in
+	 * the debugger */
+	DEADBEEFCHK memset(s, '\xDB', asize - MALLOC_EXTRA_SPACE);
+#endif
+
+	free((char *) s - MALLOC_EXTRA_SPACE);
+	heapdec((ssize_t) asize);
+}
+
+#undef GDKrealloc
+void *
+GDKrealloc(void *s, size_t size)
+{
+	size_t nsize, asize;
+#ifndef NDEBUG
+	size_t osize;
+	size_t *os;
+#endif
+
+	assert(size != 0);
+
+	if (s == NULL)
+		return GDKmalloc(size);
+
+	nsize = (size + 7) & ~7;
+	asize = ((size_t *) s)[-1]; /* how much allocated last */
+
+#ifndef NDEBUG
+	assert((asize & 2) == 0);   /* check against duplicate free */
+	/* check for out-of-bounds writes */
+	osize = ((size_t *) s)[-2]; /* how much asked for last */
+	{
+		size_t i;
+		for (i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
+			assert(((char *) s)[i] == '\xBD');
+	}
+	/* if shrinking, write debug pattern into to-be-freed memory */
+	DEADBEEFCHK if (size < osize)
+		memset((char *) s + size, '\xDB', osize - size);
+	os = s;
+	os[-1] |= 2;		/* indicate area is freed */
+#endif
+	s = realloc((char *) s - MALLOC_EXTRA_SPACE,
+		    nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+	if (s == NULL) {
+#ifndef NDEBUG
+		os[-1] &= ~2;	/* not freed after all */
+#endif
+		GDKmemfail("GDKrealloc", size);
+		GDKerror("GDKrealloc: failed for " SZFMT " bytes", size);
+		return NULL;
+	}
+	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
+	/* just before the pointer that we return, write how much we
+	 * asked of malloc */
+	((size_t *) s)[-1] = nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE;
+#ifndef NDEBUG
+	/* just before that, write how much was asked of us */
+	((size_t *) s)[-2] = size;
+	/* if growing, initialize new memory with debug pattern */
+	DEADBEEFCHK if (size > osize)
+ 		memset((char *) s + osize, '\xBD', size - osize);
+	/* write pattern to help find out-of-bounds writes */
+	memset((char *) s + size, '\xBD', nsize + DEBUG_SPACE - size);
+#endif
+
+	heapinc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+	heapdec((ssize_t) asize);
+
+	return s;
 }
 
 #else
 
 #define GDKmemfail(s, len)	/* nothing */
-
-void *
-GDKmallocmax(size_t size, size_t *maxsize, int emergency)
-{
-	void *ptr = malloc(size);
-	*maxsize = size;
-	if (ptr == 0 && emergency)
-		GDKfatal("fatal\n");
-	return ptr;
-}
 
 void *
 GDKmalloc(size_t size)
@@ -1862,26 +1831,9 @@ GDKfree(void *ptr)
 void *
 GDKzalloc(size_t size)
 {
-	void *ptr = malloc(size);
-	if (ptr)
-		memset(ptr, 0, size);
-	else
+	void *ptr = calloc(size, 1);
+	if (ptr == NULL)
 		GDKerror("GDKzalloc: failed for " SZFMT " bytes", size);
-	return ptr;
-}
-
-void *
-GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
-{
-	void *ptr = realloc(blk, size);
-	*maxsize = size;
-	if (ptr == 0) {
-		if (emergency)
-			GDKfatal("fatal\n");
-		else
-			GDKerror("GDKreallocmax: failed for "
-				 SZFMT " bytes", size);
-	}
 	return ptr;
 }
 
@@ -1903,6 +1855,17 @@ GDKstrdup(const char *s)
 	return p;
 }
 
+char *
+GDKstrndup(const char *s, size_t size)
+{
+	char *p = malloc(size + 1);
+	if (p == NULL)
+		GDKerror("GDKstrdup failed for %s\n", s);
+	memcpy(p, s, size);
+	p[size] = 0;
+	return p;
+}
+
 #endif	/* STATIC_CODE_ANALYSIS */
 
 void
@@ -1912,19 +1875,6 @@ GDKsetmallocsuccesscount(lng count)
 #ifndef NDEBUG
 	GDK_malloc_success_count = count;
 #endif
-}
-
-#undef GDKstrndup
-char *
-GDKstrndup(const char *s, size_t n)
-{
-	char *r = GDKmalloc(n+1);
-
-	if (r) {
-		memcpy(r, s, n);
-		r[n] = '\0';
-	}
-	return r;
 }
 
 /*

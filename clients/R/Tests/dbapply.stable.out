@@ -29,14 +29,10 @@ Ready.
 # 11:43:14 >  "R" "--vanilla" "--slave" "--args" "35780"
 # 11:43:14 >  
 
-[1] TRUE
-[1] TRUE
-[1] TRUE
 [1] 32
 [1] TRUE
 [1] 32
 [1] 42
-[1] TRUE
 [1] "SUCCESS"
 
 # 11:43:21 >  
