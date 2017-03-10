@@ -276,7 +276,7 @@ SQLrun(Client c, backend *be, mvc *m){
 
 	/* only consider a re-optimization when we are dealing with query templates */
 	for ( i= 1; i < mb->stop;i++){
-		p=getInstrPtr(mb,i);
+		p = getInstrPtr(mb,i);
 		if( getFunctionId(p) &&  qc_isapreparedquerytemplate(getFunctionId(p) ) ){
 			msg = SQLexecutePrepared(c, be, p->blk);
 			freeMalBlk(mb);
@@ -284,6 +284,9 @@ SQLrun(Client c, backend *be, mvc *m){
 		}
 		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
 			mc = copyMalBlk(p->blk);
+			if (!mc) {
+				throw(SQL, "sql.prepare", "Out of memory");
+			}
 			retc = p->retc;
 			freeMalBlk(mb);
 			mb = mc;
