@@ -953,18 +953,6 @@ static str parseModule(Client cntxt)
 	return "";
 }
 
-#define pyapi_enableflag "embedded_py"
-// returns the currently enabled python version, if any
-// defaults to python 2 if none is enabled
-static int
-enabled_python_version(void) {
-    char* env = GDKgetenv(pyapi_enableflag);
-    if (env && strncmp(env, "3", 1) == 0) {
-        return 3;
-    }
-   	return 2;
-}
-
 /*
  * Include statement
  * An include statement is immediately taken into effect. This
