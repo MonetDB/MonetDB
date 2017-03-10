@@ -1855,6 +1855,17 @@ GDKstrdup(const char *s)
 	return p;
 }
 
+char *
+GDKstrndup(const char *s, size_t size)
+{
+	char *p = malloc(size + 1);
+	if (p == NULL)
+		GDKerror("GDKstrdup failed for %s\n", s);
+	memcpy(p, s, size);
+	p[size] = 0;
+	return p;
+}
+
 #endif	/* STATIC_CODE_ANALYSIS */
 
 void
