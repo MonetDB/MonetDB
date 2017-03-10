@@ -1742,7 +1742,7 @@ GDKfree(void *s)
 #endif
 
 	free((char *) s - MALLOC_EXTRA_SPACE);
-	heapdec(asize);
+	heapdec((ssize_t) asize);
 }
 
 #undef GDKrealloc
@@ -1803,7 +1803,7 @@ GDKrealloc(void *s, size_t size)
 #endif
 
 	heapinc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
-	heapdec(asize);
+	heapdec((ssize_t) asize);
 
 	return s;
 }
