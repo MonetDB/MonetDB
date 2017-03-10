@@ -263,13 +263,17 @@ copyMalBlk(MalBlkPtr old)
 	// copy all variable records
 	for (i = 0; i < old->vtop; i++) {
 		mb->var[i]=  old->var[i];
-		VALcopy(&(mb->var[i].value), &(old->var[i].value));
+		if (!VALcopy(&(mb->var[i].value), &(old->var[i].value))) {
+			GDKfree(mb);
+			GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
+			return NULL;
+		}
 	}
 
 	mb->stmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * old->ssize);
 
 	if (mb->stmt == NULL) {
-		GDKfree(mb->var);
+		GDKfree(mb->var); // this leaks strings in var
 		GDKfree(mb);
 		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
@@ -278,10 +282,20 @@ copyMalBlk(MalBlkPtr old)
 	mb->stop = old->stop;
 	mb->ssize = old->ssize;
 	assert(old->stop < old->ssize);
-	for (i = 0; i < old->stop; i++)
+	for (i = 0; i < old->stop; i++) {
 		mb->stmt[i] = copyInstruction(old->stmt[i]);
-
+		if(!mb->stmt[i]) {
+			GDKfree(mb);
+			GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
+			return NULL;
+		}
+	}
 	mb->help = old->help ? GDKstrdup(old->help) : NULL;
+	if (old->help && !mb->help) {
+		GDKfree(mb);
+		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	strncpy(mb->binding,  old->binding, IDLENGTH);
 	mb->errors = old->errors;
 	mb->tag = old->tag;

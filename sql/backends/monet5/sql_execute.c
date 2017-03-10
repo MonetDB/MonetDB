@@ -271,6 +271,9 @@ SQLrun(Client c, backend *be, mvc *m){
 		return createException(PARSE, "SQLparser", "%s", m->errstr);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
+	if (!mb) {
+		throw(SQL, "sql.prepare", "Out of memory");
+	}
 	mb->history = c->curprg->def->history;
 	c->curprg->def->history = 0;
 
