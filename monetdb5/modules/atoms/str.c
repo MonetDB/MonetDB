@@ -1553,7 +1553,10 @@ STRtostr(str *res, const str *src)
 {
 	if( *src == 0)
 		*res= GDKstrdup(str_nil);
-	else *res = GDKstrdup(*src);
+	else
+		*res = GDKstrdup(*src);
+	if (*res == NULL)
+		throw(MAL, "str.str", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -2462,7 +2465,8 @@ STRrepeat(str *ret, const str *s, const int *c)
 	size_t l;
 
 	if (*c < 0 || strcmp(*s, str_nil) == 0) {
-		*ret = GDKstrdup(str_nil);
+		if ((*ret = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "str.repeat", MAL_MALLOC_FAIL);
 	} else {
 		l = strlen(*s);
 		if (l >= INT_MAX)
