@@ -27,7 +27,7 @@
 	if (b) {\
 	   if (ATOMextern(t)) {\
 	      *(ptr*) res = (ptr) ATOMnil(t);\
-		// FIXME unchecked_malloc ATOMnil can return NULL \
+		/* FIXME unchecked_malloc ATOMnil can return NULL */ \
 	   } else {\
 	      memcpy(res, ATOMnilptr(t), ATOMsize(t));\
  	   }\
