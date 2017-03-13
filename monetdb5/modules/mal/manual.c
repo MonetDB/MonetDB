@@ -40,16 +40,18 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sig = COLnew(0, TYPE_str, 0, TRANSIENT);
 	adr = COLnew(0, TYPE_str, 0, TRANSIENT);
 	com = COLnew(0, TYPE_str, 0, TRANSIENT);
-	if( sig == NULL || adr == NULL || com == NULL){
-		if(mod) BBPunfix(mod->batCacheid);
-		if(fcn) BBPunfix(fcn->batCacheid);
-		if(sig) BBPunfix(sig->batCacheid);
-		if(adr) BBPunfix(adr->batCacheid);
-		if(com) BBPunfix(com->batCacheid);
+	if (mod == NULL || fcn == NULL || sig == NULL || adr == NULL || com == NULL) {
+		BBPreclaim(mod);
+		BBPreclaim(fcn);
+		BBPreclaim(sig);
+		BBPreclaim(adr);
+		BBPreclaim(com);
 	}
 
 	list[top++] = cntxt->nspace;
 	getModuleList(&moduleList, &length);
+	if (moduleList == NULL)
+		goto bailout;
 	while (top < 256 && top <= length) {
 		list[top] = moduleList[top - 1];
 		top++;
@@ -60,33 +62,44 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = list[k];
 		ftop = 0;
 		if( s->space)
-		for(j=0;j<MAXSCOPE;j++)
-		if(s->space[j]){
-			for(t= s->space[j];t!=NULL;t=t->peer) {
-				mtab[ftop]= t->def->stmt[0]->modname;
-				ftab[ftop]= t->def->stmt[0]->fcnname;
-				hlp[ftop]= t->def->help;
-				blks[ftop]= t->def;
-				ftop++;
-				if( ftop == 25000)
-					throw(MAL,"manual.functions","Out of space");
-			}
-		}
+			for(j=0;j<MAXSCOPE;j++)
+				if(s->space[j]){
+					for(t= s->space[j];t!=NULL;t=t->peer) {
+						mtab[ftop]= t->def->stmt[0]->modname;
+						ftab[ftop]= t->def->stmt[0]->fcnname;
+						hlp[ftop]= t->def->help;
+						blks[ftop]= t->def;
+						ftop++;
+						if( ftop == 25000) {
+							BBPreclaim(mod);
+							BBPreclaim(fcn);
+							BBPreclaim(sig);
+							BBPreclaim(adr);
+							BBPreclaim(com);
+							throw(MAL,"manual.functions","Out of space");
+						}
+					}
+				}
 
 		for(j=0; j < ftop; j++){
-			BUNappend(mod,mtab[j],TRUE);
-			BUNappend(fcn,ftab[j],TRUE);
+			if (BUNappend(mod,mtab[j],TRUE) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(fcn,ftab[j],TRUE) != GDK_SUCCEED)
+				goto bailout;
 			buf[0]=0;
-			BUNappend(com, hlp[j] ? hlp[j]:buf, TRUE);
+			if (BUNappend(com, hlp[j] ? hlp[j]:buf, TRUE) != GDK_SUCCEED)
+				goto bailout;
 			fcnDefinition(blks[j], getInstrPtr(blks[j],0), buf, TRUE, buf, BUFSIZ);
 			tt = strstr(buf,"address ");
 			if( tt){
 				*tt = 0;
 				tt += 8;
 			}
-			BUNappend(sig,buf,TRUE);
+			if (BUNappend(sig,buf,TRUE) != GDK_SUCCEED)
+				goto bailout;
 			buf[0]=0;
-			BUNappend(adr,tt?tt:buf,TRUE);
+			if (BUNappend(adr,tt?tt:buf,TRUE) != GDK_SUCCEED)
+				goto bailout;
 		}
 	}
 
@@ -97,4 +110,12 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref( *cx = com->batCacheid);
 	(void)mb;
 	return MAL_SUCCEED;
+
+  bailout:
+	BBPreclaim(mod);
+	BBPreclaim(fcn);
+	BBPreclaim(sig);
+	BBPreclaim(adr);
+	BBPreclaim(com);
+	throw(MAL, "manual.functions", GDK_EXCEPTION);
 }
