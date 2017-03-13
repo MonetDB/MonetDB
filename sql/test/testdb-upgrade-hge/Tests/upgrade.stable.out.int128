@@ -61,6 +61,9 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
 (9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),
 (13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');
 update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');
+drop procedure SHPload(integer);
+create procedure SHPload(fid integer) external name shp.import;
+insert into sys.systemfunctions (select id from sys.functions where name = 'shpload' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 set schema "testschema";
 
 # 15:26:24 >  
