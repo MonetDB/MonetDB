@@ -1262,6 +1262,8 @@ sql_update_default(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create function profiler.getlimit() returns integer external name profiler.getlimit;\n"
 			"create procedure profiler.setlimit(lim integer) external name profiler.setlimit;\n"
+			"drop procedure profiler.setpoolsize;\n"
+			"drop procedure profiler.setstream;\n"
 			"insert into sys.systemfunctions (select id from sys.functions where name in ('getlimit', 'setlimit') and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));\n");
 
 	/* 51_sys_schema_extensions.sql */

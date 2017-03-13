@@ -69,6 +69,8 @@ delete from sys._columns where table_id = (select id from sys._tables where name
 delete from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys');
 create function profiler.getlimit() returns integer external name profiler.getlimit;
 create procedure profiler.setlimit(lim integer) external name profiler.setlimit;
+drop procedure profiler.setpoolsize;
+drop procedure profiler.setstream;
 insert into sys.systemfunctions (select id from sys.functions where name in ('getlimit', 'setlimit') and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));
 CREATE TABLE sys.function_types (
 function_type_id   SMALLINT NOT NULL PRIMARY KEY,
