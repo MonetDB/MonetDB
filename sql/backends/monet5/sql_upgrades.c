@@ -1242,6 +1242,91 @@ sql_update_dec2016_sp2(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default(Client c, mvc *sql)
+{
+	size_t bufsize = 10000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+	char *q1 = "select id from sys.functions where name = 'shpload' and schema_id = (select id from sys.schemas where name = 'sys');\n";
+	res_table *output;
+	BAT *b;
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys._columns where table_id = (select id from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys'));\n"
+			"delete from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 46_profiler.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create function profiler.getlimit() returns integer external name profiler.getlimit;\n"
+			"create procedure profiler.setlimit(lim integer) external name profiler.setlimit;\n"
+			"drop procedure profiler.setpoolsize;\n"
+			"drop procedure profiler.setstream;\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('getlimit', 'setlimit') and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));\n");
+
+	/* 51_sys_schema_extensions.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"CREATE TABLE sys.function_types (\n"
+			"function_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
+			"function_type_name VARCHAR(30) NOT NULL UNIQUE);\n"
+			"INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES\n"
+			"(1, 'Scalar function'), (2, 'Procedure'), (3, 'Aggregate function'), (4, 'Filter function'), (5, 'Function returning a table'),\n"
+			"(6, 'Analytic function'), (7, 'Loader function');\n"
+			"CREATE TABLE sys.function_languages (\n"
+			"language_id   SMALLINT NOT NULL PRIMARY KEY,\n"
+			"language_name VARCHAR(20) NOT NULL UNIQUE);\n"
+			"INSERT INTO sys.function_languages (language_id, language_name) VALUES\n"
+			"(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (4, 'C'), (5, 'Java'), (6, 'Python'), (7, 'Python Mapped');\n"
+			"CREATE TABLE sys.key_types (\n"
+			"key_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
+			"key_type_name VARCHAR(15) NOT NULL UNIQUE);\n"
+			"INSERT INTO sys.key_types (key_type_id, key_type_name) VALUES\n"
+			"(0, 'Primary Key'), (1, 'Unique Key'), (2, 'Foreign Key');\n"
+			"CREATE TABLE sys.index_types (\n"
+			"index_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
+			"index_type_name VARCHAR(25) NOT NULL UNIQUE);\n"
+			"INSERT INTO sys.index_types (index_type_id, index_type_name) VALUES\n"
+			"(0, 'Hash'), (1, 'Join'), (2, 'Order preserving hash'), (3, 'No-index'), (4, 'Imprint'), (5, 'Ordered');\n"
+			"CREATE TABLE sys.privilege_codes (\n"
+			"privilege_code_id   INT NOT NULL PRIMARY KEY,\n"
+			"privilege_code_name VARCHAR(30) NOT NULL UNIQUE);\n"
+			"INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES\n"
+			"(1, 'SELECT'), (2, 'UPDATE'), (4, 'INSERT'), (8, 'DELETE'), (16, 'EXECUTE'), (32, 'GRANT'),\n"
+			"(3, 'SELECT,UPDATE'), (5, 'SELECT,INSERT'), (6, 'INSERT,UPDATE'), (7, 'SELECT,INSERT,UPDATE'),\n"
+			"(9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),\n"
+			"(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');\n"
+			"update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 75_shp.sql, if shp extension available */
+	err = SQLstatementIntern(c, &q1, "update", 1, 0, &output);
+	if (err) {
+		GDKfree(buf);
+		return err;
+	}
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			pos += snprintf(buf + pos, bufsize - pos,
+					"drop procedure SHPload(integer);\n"
+					"create procedure SHPload(fid integer) external name shp.import;\n"
+					"insert into sys.systemfunctions (select id from sys.functions where name = 'shpload' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_tables_destroy(output);
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1351,5 +1436,12 @@ SQLupgrades(Client c, mvc *m)
 	if ((sql_update_dec2016_sp2(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
 		GDKfree(err);
+	}
+
+	if (mvc_bind_table(m, s, "function_languages") == NULL) {
+		if ((sql_update_default(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
 	}
 }

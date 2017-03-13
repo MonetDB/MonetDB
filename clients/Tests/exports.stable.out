@@ -2432,6 +2432,7 @@ str putNameLen(const char *nme, size_t len);
 str putRef;
 str pyapiRef;
 str pyapimapRef;
+int qtop;
 str queryRef;
 str querylogRef;
 str raiseRef;

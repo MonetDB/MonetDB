@@ -1297,37 +1297,9 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define Tloc(b,p)	((b)->theap.base+(((size_t)(p))<<(b)->tshift))
 
-#if SIZEOF_VAR_T < SIZEOF_VOID_P
-/* NEW 11/4/2009: when compiled with 32-bits oids/var_t on 64-bits
- * systems, align heap strings on 8 byte boundaries always (wasting 4
- * padding bytes on avg). Note that in heaps where duplicate
- * elimination is successful, such padding occurs anyway (as an aside,
- * a better implementation with two-bytes pointers in the string heap
- * hash table, could reduce that padding to avg 1 byte wasted -- see
- * TODO below).
- *
- * This 8 byte alignment allows the offset in the fixed part of the
- * BAT string column to be interpreted as an index, which should be
- * multiplied by 8 to get the position (VARSHIFT). The overall effect
- * is that 32GB heaps can be addressed even when oids are limited to
- * 4G tuples.
- *
- * In the future, we might extend this such that the string alignment
- * is set in the BAT header (columns with long strings take more
- * storage space, but could tolerate more padding).  It would mostly
- * work, only the sort routine and strPut/strLocate (which do not see
- * the BAT header) extra parameters would be needed in their APIs.
- */
-typedef unsigned short stridx_t;
-#define SIZEOF_STRIDX_T SIZEOF_SHORT
-#define GDK_VARSHIFT 3
-#define GDK_VARALIGN (1<<GDK_VARSHIFT)
-#else
-typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_t not to break BAT images */
+typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
-#define GDK_VARSHIFT 0
 #define GDK_VARALIGN SIZEOF_STRIDX_T
-#endif
 
 #if SIZEOF_VAR_T == 8
 #define VarHeapValRaw(b,p,w)						\
@@ -1341,7 +1313,7 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 	 (w) == 2 ? (var_t) ((unsigned short *) (b))[p] + GDK_VAROFFSET : \
 	 ((var_t *) (b))[p])
 #endif
-#define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w)  << GDK_VARSHIFT)
+#define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w))
 #define BUNtvaroff(bi,p) VarHeapVal((bi).b->theap.base, (p), (bi).b->twidth)
 
 #define BUNtloc(bi,p)	Tloc((bi).b,p)

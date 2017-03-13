@@ -308,25 +308,25 @@ gdk_export const ptr ptr_nil;
 /* string heaps:
  * - strings are 8 byte aligned
  * - start with a 1024 bucket hash table
- * - heaps < 64KB are fully duplicate eliminated with this hash tables
- * - heaps >= 64KB are opportunistically (imperfect) duplicate
- *   eliminated as only the last 128KB chunk is considered and there
+ * - heaps < 64KiB are fully duplicate eliminated with this hash tables
+ * - heaps >= 64KiB are opportunistically (imperfect) duplicate
+ *   eliminated as only the last 128KiB chunk is considered and there
  *   is no linked list
  * - buckets and next pointers are unsigned short "indices"
  * - indices should be multiplied by 8 and takes from ELIMBASE to get
  *   an offset
- * Note that a 64KB chunk of the heap contains at most 8K 8-byte
+ * Note that a 64KiB chunk of the heap contains at most 8K 8-byte
  * aligned strings. The 1K bucket list means that in worst load, the
  * list length is 8 (OK).
  */
 #define GDK_STRHASHTABLE	(1<<10)	/* 1024 */
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
 #define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(stridx_t))
-#define GDK_ELIMPOWER		16	/* 64KB is the threshold */
+#define GDK_ELIMPOWER		16	/* 64KiB is the threshold */
 #define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
 #define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)	/* equivalently: ELIMBASE == 0 */
 #define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
-#define GDK_VAROFFSET		((var_t) (GDK_STRHASHSIZE >> GDK_VARSHIFT))
+#define GDK_VAROFFSET		((var_t) GDK_STRHASHSIZE)
 
 /*
  * @- String Comparison, NILs and UTF-8

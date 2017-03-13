@@ -150,7 +150,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 	restoreClient1 \
 	restoreClient2
 #define restoreClient3 \
-	if (c->fdin)  \
+	if (c->fdin && c->bak)  \
 		MCpopClientInput(c); \
 	c->mode = oldmode; \
 	c->blkmode = oldblkmode; \

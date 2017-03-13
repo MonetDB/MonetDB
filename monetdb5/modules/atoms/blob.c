@@ -87,7 +87,7 @@ blob_put(Heap *h, var_t *bun, blob *val)
 	*bun = HEAP_malloc(h, blobsize(val->nitems));
  	base = h->base;
 	if (*bun) {
-		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, blobsize(val->nitems));
+		memcpy(&base[*bun], (char *) val, blobsize(val->nitems));
 		h->dirty = 1;
 	}
 	return *bun;

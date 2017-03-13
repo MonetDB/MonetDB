@@ -499,6 +499,9 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 	if (pipes[i].mb) {
 		for (j = 1; j < pipes[i].mb->stop - 1; j++) {
 			p = copyInstruction(pipes[i].mb->stmt[j]);
+			if (!p) { // oh malloc you cruel mistress
+				throw(MAL, "optimizer.addOptimizerPipe", "Out of memory");
+			}
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
 			typeChecker(cntxt->fdout, cntxt->nspace, mb, p, FALSE);

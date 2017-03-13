@@ -26,7 +26,7 @@
 		q= newStmt(mb, batRef, newRef);					\
 		getArg(q,0)= getArg(p,I);						\
 		q = pushType(mb, q, getBatType(tpe));			\
-		empty[getArg(q,0)]= 1;							\
+		empty[getArg(q,0)]= i;							\
 	} while (0)
 
 #define emptyresult(I)									\
@@ -39,7 +39,7 @@
 		p = pushType(mb,p, getBatType(tpe));			\
 		setVarType(mb, getArg(p,0), tpe);				\
 		setVarFixed(mb, getArg(p,0));					\
-		empty[getArg(p,0)]= 1;							\
+		empty[getArg(p,0)]= i;							\
 	} while (0)
 
 
@@ -63,6 +63,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		actions += getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef;
 	if( actions == 0)
 		goto wrapup;
+	actions = 0;
 
 	// track of where 'emptybind' results are produced
 	empty = (int *) GDKzalloc(mb->vsize * sizeof(int));
@@ -133,7 +134,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #ifdef DEBUG_OPT_EMPTYBIND
 			mnstr_printf(cntxt->fdout, "#empty bind  pc %d var %d\n",i , getArg(p,0) );
 #endif
-			actions++;
 			setFunctionId(p,bindRef);
 			p->typechk= TYPE_UNKNOWN;
 			empty[getArg(p,0)] = i;
@@ -179,6 +179,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			}
 			if( empty[getArg(p,0)]){
                 int tpe;
+				actions++;
 				if( p->retc == 2){
 					tpe = getBatType(getVarType(mb,getArg(p,1)));
 					q= newInstruction(0, batRef, newRef);
@@ -186,6 +187,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					getArg(q,0)= getArg(p,1);
 					setVarFixed(mb, getArg(p,0));
 					pushInstruction(mb,q);
+					empty[getArg(q,0)]= i;
 				}
 
                 tpe = getBatType(getVarType(mb,getArg(p,0)));
@@ -195,6 +197,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
                 p->argc = p->retc = 1;
                 p = pushType(mb,p,tpe);
 				setVarFixed(mb, getArg(p,0));
+				empty[getArg(p,0)]= i;
 			}
 			continue;
 		}
@@ -203,7 +206,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #ifdef DEBUG_OPT_EMPTYBIND
 			mnstr_printf(cntxt->fdout, "#empty bindidx  pc %d var %d\n",i , getArg(p,0) );
 #endif
-			actions++;
 			setFunctionId(p,bindidxRef);
 			p->typechk= TYPE_UNKNOWN;
 			empty[getArg(p,0)] = i;
@@ -237,6 +239,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			}
 			if( empty[getArg(p,0)]){
 				int tpe;
+				actions++;
 				if( p->retc == 2){
 					tpe = getBatType(getVarType(mb,getArg(p,1)));
 					q= newInstruction(0, batRef, newRef);
@@ -244,6 +247,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					getArg(q,0)= getArg(p,1);
 					setVarFixed(mb,getArg(q,0));
 					pushInstruction(mb,q);
+					empty[getArg(q,0)]= i;
 				}
 				
 				tpe = getBatType(getVarType(mb,getArg(p,0)));
@@ -253,6 +257,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				p->argc = p->retc = 1;
 				p = pushType(mb,p,tpe);
 				setVarFixed(mb, getArg(p,0));
+				empty[getArg(p,0)]= i;
 			}
 			continue;
 		}
@@ -307,10 +312,15 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				}
 			}
 		}
-		if (getModuleId(p)== batRef && isUpdateInstruction(p) && empty[getArg(p,2)]){
-			actions++;
-			clrFunction(p);	
-			p->argc = 2;
+		if (getModuleId(p)== batRef && isUpdateInstruction(p)){
+			if( empty[getArg(p,1)] && empty[getArg(p,2)]){
+				emptyresult(0);
+			} else
+			if( empty[getArg(p,2)]){
+				actions++;
+				clrFunction(p);	
+				p->argc = 2;
+			}
 		}
 	}
 

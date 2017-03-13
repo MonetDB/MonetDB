@@ -58,7 +58,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "SYSMONqueue", MAL_MALLOC_FAIL);
 	}
 
-	for ( i = 0; i< QRYqueue[i].tag; i++)
+	for ( i = 0; i< qtop; i++)
 	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
 		now= (lng) time(0);
 		if ( (now-QRYqueue[i].start) > QRYqueue[i].runtime)

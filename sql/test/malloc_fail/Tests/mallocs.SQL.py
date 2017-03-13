@@ -1,6 +1,10 @@
 import pymonetdb
 import os
 
+import logging
+logging.basicConfig()
+
+
 dbh = pymonetdb.connect(database = os.environ['TSTDB'],
                         port = int(os.environ['MAPIPORT']),
                         hostname = "localhost")
@@ -15,14 +19,15 @@ create procedure setmallocsuccesscount(count BIGINT)
 call setmallocsuccesscount(%d);
 SELECT * FROM tables;
 """
-i = 3300
+i = 3000
+
 while i > 1000:
-    #print(i)
+    print(i)
     i-=1
     try:
         cursor.execute(q % (i))
     except Exception as e:
-        #print(e)
+      # print(e)
         pass
     finally:
         dbh.rollback()

@@ -319,6 +319,12 @@ SORTfnd(BAT *b, const void *v)
 			return BUN_NONE;
 		return *(oid*)v - b->tseqbase;
 	}
+	if (b->ttype == TYPE_void) {
+		assert(b->tseqbase == oid_nil);
+		if (*(const oid *) v == oid_nil)
+			return 0;
+		return BUN_NONE;
+	}
 	return binsearch(NULL, 0, b->ttype, Tloc(b, 0),
 			 b->tvheap ? b->tvheap->base : NULL, b->twidth, 0,
 			 BATcount(b), v, b->tsorted ? 1 : -1, -1);
@@ -351,6 +357,10 @@ SORTfndfirst(BAT *b, const void *v)
 			return BATcount(b);
 		return *(oid*)v - b->tseqbase;
 	}
+	if (b->ttype == TYPE_void) {
+		assert(b->tseqbase == oid_nil);
+		return 0;
+	}
 	return binsearch(NULL, 0, b->ttype, Tloc(b, 0),
 			 b->tvheap ? b->tvheap->base : NULL, b->twidth, 0,
 			 BATcount(b), v, b->tsorted ? 1 : -1, 0);
@@ -381,6 +391,12 @@ SORTfndlast(BAT *b, const void *v)
 		if (*(oid*)v >= b->tseqbase + BATcount(b))
 			return BATcount(b);
 		return *(oid*)v - b->tseqbase;
+	}
+	if (b->ttype == TYPE_void) {
+		assert(b->tseqbase == oid_nil);
+		if (*(const oid *) v == oid_nil)
+			return 0;
+		return BATcount(b);
 	}
 	return binsearch(NULL, 0, b->ttype, Tloc(b, 0),
 			 b->tvheap ? b->tvheap->base : NULL, b->twidth, 0,

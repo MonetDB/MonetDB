@@ -608,12 +608,12 @@ fixwkbheap(void)
 		new = (var_t *) Tloc(b, 0);
 		for (i = 0; i < b->batCount; i++) {
 			int len;
-			owkb = (struct old_wkb *) (h2.base + (old[i] << GDK_VARSHIFT));
+			owkb = (struct old_wkb *) (h2.base + old[i]);
 			if ((len = owkb->len) == ~0)
 				len = 0;
 			if ((new[i] = HEAP_malloc(b->tvheap, offsetof(struct new_wkb, data) + len)) == 0)
 				GDKfatal("fixwkbheap: cannot allocate heap space\n");
-			nwkb = (struct new_wkb *) (b->tvheap->base + (new[i] << GDK_VARSHIFT));
+			nwkb = (struct new_wkb *) (b->tvheap->base + new[i]);
 			nwkb->len = owkb->len;
 			nwkb->srid = 0;
 			if (len > 0)
@@ -777,49 +777,49 @@ fixstroffheap(BAT *b, int *restrict offsets)
 	switch (b->twidth) {
 	case 1:
 		for (i = 0; i < b->batCount; i++) {
-			pos = ((var_t) ((unsigned char *) h1.base)[i] + GDK_VAROFFSET) << GDK_VARSHIFT;
+			pos = (var_t) ((unsigned char *) h1.base)[i] + GDK_VAROFFSET;
 			if (!offsearch(offsets, noffsets, (int) pos)) {
 				pos = emptyoff;
 				nofix = 0;
 			}
 			if (width == 1)
-				((unsigned char *) h3.base)[i] = (unsigned char) ((pos >> GDK_VARSHIFT) - GDK_VAROFFSET);
+				((unsigned char *) h3.base)[i] = (unsigned char) (pos - GDK_VAROFFSET);
 			else
-				((unsigned short *) h3.base)[i] = (unsigned short) ((pos >> GDK_VARSHIFT) - GDK_VAROFFSET);
+				((unsigned short *) h3.base)[i] = (unsigned short) (pos - GDK_VAROFFSET);
 		}
 		break;
 	case 2:
 		for (i = 0; i < b->batCount; i++) {
-			pos = ((var_t) ((unsigned short *) h1.base)[i] + GDK_VAROFFSET) << GDK_VARSHIFT;
+			pos = (var_t) ((unsigned short *) h1.base)[i] + GDK_VAROFFSET;
 			if (!offsearch(offsets, noffsets, (int) pos)) {
 				pos = emptyoff;
 				nofix = 0;
 			}
 			if (width == 2)
-				((unsigned short *) h3.base)[i] = (unsigned short) ((pos >> GDK_VARSHIFT) - GDK_VAROFFSET);
+				((unsigned short *) h3.base)[i] = (unsigned short) (pos - GDK_VAROFFSET);
 			else
-				((unsigned int *) h3.base)[i] = (unsigned int) ((pos >> GDK_VARSHIFT) - GDK_VAROFFSET);
+				((unsigned int *) h3.base)[i] = (unsigned int) (pos - GDK_VAROFFSET);
 		}
 		break;
 	case 4:
 		for (i = 0; i < b->batCount; i++) {
-			pos = (var_t) ((unsigned int *) h1.base)[i] << GDK_VARSHIFT;
+			pos = (var_t) ((unsigned int *) h1.base)[i];
 			if (!offsearch(offsets, noffsets, (int) pos)) {
 				pos = emptyoff;
 				nofix = 0;
 			}
-			((unsigned int *) h3.base)[i] = (unsigned int) (pos >> GDK_VARSHIFT);
+			((unsigned int *) h3.base)[i] = (unsigned int) pos;
 		}
 		break;
 #if SIZEOF_VAR_T == 8
 	case 8:
 		for (i = 0; i < b->batCount; i++) {
-			pos = (var_t) ((ulng *) h1.base)[i] << GDK_VARSHIFT;
+			pos = (var_t) ((ulng *) h1.base)[i];
 			if (!offsearch(offsets, noffsets, (int) pos)) {
 				pos = emptyoff;
 				nofix = 0;
 			}
-			((ulng *) h3.base)[i] = (ulng) (pos >> GDK_VARSHIFT);
+			((ulng *) h3.base)[i] = (ulng) pos;
 		}
 		break;
 #endif
