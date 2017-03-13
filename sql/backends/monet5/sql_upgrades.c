@@ -1258,6 +1258,12 @@ sql_update_default(Client c, mvc *sql)
 			"delete from sys._columns where table_id = (select id from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys'));\n"
 			"delete from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
+	/* 25_debug.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.malfunctions;\n"
+			"create function sys.malfunctions() returns table(\"module\" string, \"function\" string, \"signature\" string, \"address\" string, \"comment\" string) external name \"manual\".\"functions\";\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'malfunctions' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+
 	/* 46_profiler.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create function profiler.getlimit() returns integer external name profiler.getlimit;\n"
