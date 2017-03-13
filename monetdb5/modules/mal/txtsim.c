@@ -27,6 +27,7 @@
 	if (b) {\
 	   if (ATOMextern(t)) {\
 	      *(ptr*) res = (ptr) ATOMnil(t);\
+		// FIXME unchecked_malloc ATOMnil can return NULL \
 	   } else {\
 	      memcpy(res, ATOMnilptr(t), ATOMsize(t));\
  	   }\
@@ -308,7 +309,7 @@ CMDqgramnormalize(str *res, str *Input)
 	char c, last = ' ';
 
 	RETURN_NIL_IF(strNil(input), TYPE_str);
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 
 	for (i = 0; input[i]; i++) {

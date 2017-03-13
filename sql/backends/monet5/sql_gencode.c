@@ -342,6 +342,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	{ 
 	int len = 1024, nr = 0;
 	char *s, *buf = GDKmalloc(len);
+	if (!buf) {
+		return -1;
+	}
 	s = rel2str(m, rel);
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	o = pushArgument(curBlk, o, q);

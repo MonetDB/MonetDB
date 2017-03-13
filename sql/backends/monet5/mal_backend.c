@@ -27,6 +27,7 @@ backend_reset(backend *b)
 backend *
 backend_create(mvc *m, Client c)
 {
+	// FIXME unchecked_malloc MNEW can return NULL
 	backend *b = MNEW(backend);
 
 	b->console = isAdministrator(c);

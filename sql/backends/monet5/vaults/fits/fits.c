@@ -214,7 +214,9 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	set = (*tbl).columns.set;
 
 	columns = list_length(set);
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	colname = (str *) GDKmalloc(columns * sizeof(str));
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	tform = (str *) GDKmalloc(columns * sizeof(str));
 
 	/*	fprintf(stderr,"Number of columns: %d\n", columns);*/

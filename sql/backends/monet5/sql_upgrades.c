@@ -27,6 +27,7 @@ static str
 sql_update_hugeint(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
@@ -124,6 +125,7 @@ static str
 sql_update_epoch(Client c, mvc *m)
 {
 	size_t bufsize = 1000, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(m, "current_schema");
 	sql_subtype tp;
@@ -175,6 +177,7 @@ static str
 sql_update_jun2016(Client c, mvc *sql)
 {
 	size_t bufsize = 1000000, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 	node *n;
@@ -456,6 +459,7 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 
 	geomupgrade = (*fixfunc)(olddb);
 	bufsize = strlen(geomupgrade) + 512;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	buf = GDKmalloc(bufsize);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
@@ -486,6 +490,7 @@ static str
 sql_update_dec2016(Client c, mvc *sql)
 {
 	size_t bufsize = 12240, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 	sql_schema *s;
@@ -749,6 +754,7 @@ static str
 sql_update_nowrd(Client c, mvc *sql)
 {
 	size_t bufsize = 10240, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 	sql_schema *s;
@@ -902,6 +908,7 @@ static str
 sql_update_geom_jun2016_sp2(Client c, mvc *sql)
 {
 	size_t bufsize = 1000000, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
@@ -1047,6 +1054,7 @@ static str
 sql_update_jun2016_sp2(Client c, mvc *sql)
 {
 	size_t bufsize = 1000000, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
@@ -1196,6 +1204,7 @@ static str
 sql_update_dec2016_sp2(Client c, mvc *sql)
 {
 	size_t bufsize = 2048, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 	res_table *output;

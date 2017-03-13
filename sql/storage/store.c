@@ -4163,6 +4163,7 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	sql_func *func = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
@@ -4196,6 +4197,7 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop
 		func = (sql_func *) n->data;
 
 		if (! list_find_id(tr->dropped, func->base.id)){ 
+			// FIXME unchecked_malloc MNEW can return NULL
 			int *local_id = MNEW(int);
 
 			*local_id = func->base.id;
@@ -4248,6 +4250,7 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 	if (rid == oid_nil)
 		return ;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
@@ -4487,6 +4490,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		return;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
@@ -4603,6 +4607,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 	sql_column *col = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
@@ -4942,7 +4947,7 @@ table_has_idx( sql_table *t, list *keycols)
 	node *n, *m, *o;
 	char *found = NULL;
 	int len = list_length(keycols);
-	
+	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	found = NEW_ARRAY(char, len);
 	if (t->idxs.set) for ( n = t->idxs.set->h; n; n = n->next ) {
 		sql_idx *i = n->data;
@@ -5044,6 +5049,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	sql_key *k = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
@@ -5158,6 +5164,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 
 	i = n->data;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		// FIXME unchecked_malloc NNEW can return NULL
 		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 
@@ -5245,6 +5252,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	sql_trigger *i = n->data;
 	
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
 
 		if (! tr->dropped) 

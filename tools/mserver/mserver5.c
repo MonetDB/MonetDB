@@ -339,6 +339,7 @@ main(int argc, char **av)
 				       (optarg[optarglen - 1] == '/' ||
 					optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
+				// FIXME unchecked_malloc absolute_path can return NULL
 				dbpath = absolute_path(optarg);
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbpath);
 				break;
@@ -487,6 +488,7 @@ main(int argc, char **av)
 	if (monet_script) {
 		monet_script[idx] = NULL;
 		while (optind < argc) {
+			// FIXME unchecked_malloc absolute_path can return NULL
 			monet_script[idx] = absolute_path(av[optind]);
 			monet_script[idx + 1] = NULL;
 			optind++;
@@ -494,6 +496,7 @@ main(int argc, char **av)
 		}
 	}
 	if (!dbpath) {
+		// FIXME unchecked_malloc absolute_path can return NULL
 		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
 	}
 	if (GDKcreatedir(dbpath) != GDK_SUCCEED) {

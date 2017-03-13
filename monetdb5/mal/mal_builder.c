@@ -520,6 +520,7 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 			cst.vtype=TYPE_void;
 			cst.val.oval= oid_nil;
 		} else if (ATOMextern(tpe)) {
+			// FIXME unchecked_malloc ATOMnil can return NULL
 			ptr p = ATOMnil(tpe);
 			VALset(&cst, tpe, p);
 		} else {

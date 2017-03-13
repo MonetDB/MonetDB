@@ -345,7 +345,10 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		if (tt < TYPE_str)
 			tv = lg->buf;
 		else if (tt > TYPE_str)
+			// FIXME unchecked_malloc ATOMnil can return NULL
+
 			tv = ATOMnil(tt);
+
 		assert(l->nr <= (lng) BUN_MAX);
 		if (l->flag == LOG_UPDATE) {
 			uid = COLnew(0, ht, (BUN) l->nr, PERSISTENT);
@@ -372,6 +375,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			}
 		} else {
 			void *(*rh) (ptr, stream *, size_t) = ht == TYPE_void ? BATatoms[TYPE_oid].atomRead : BATatoms[ht].atomRead;
+			// FIXME unchecked_malloc ATOMnil can return NULL
+
 			void *hv = ATOMnil(ht);
 
 			for (; l->nr > 0; l->nr--) {

@@ -668,6 +668,7 @@ XMLtoString(str *s, int *len, xml src)
 	l = (int) strlen(src) + 1;
 	if (l >= *len) {
 		GDKfree(*s);
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		*s = (str) GDKmalloc(l);
 	}
 	strcpy(*s, src);

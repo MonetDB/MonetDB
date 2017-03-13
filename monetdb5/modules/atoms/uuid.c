@@ -173,6 +173,7 @@ UUIDgenerateUuid(uuid **retval)
 	int i = 0, r = 0;
 
 	if (*retval == NULL)
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		*retval = GDKmalloc(UUID_SIZE);
 	u = *retval;
 #ifdef HAVE_UUID

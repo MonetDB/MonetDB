@@ -396,7 +396,7 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 {
 	int k, is_select = isSelect(p);
 	InstrPtr *r = NULL;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
 	for(k=0; k < p->retc; k++) {
 		r[k] = newInstruction(mb, matRef, packRef);
@@ -435,7 +435,7 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 {
 	int k;
 	InstrPtr *r = NULL;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
 	for(k=0; k < p->retc; k++) {
 		r[k] = newInstruction(mb, matRef, packRef);

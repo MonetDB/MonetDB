@@ -1745,7 +1745,7 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 	str err = MAL_SUCCEED;
 
 	(*lvl)++;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	newPath = GDKmalloc(pathLength + lvlDigitsNum + 1);
 	sprintf(newPath, "%s%u", path, *lvl);
 
@@ -1805,7 +1805,7 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 		throw(MAL, "geom.DumpPoints", "GEOSGetExteriorRing failed");
 
 	(*lvl)++;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
 	sprintf(newPath, "%s%u%s", path, *lvl, extraStr);
 
@@ -1858,6 +1858,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 		multiGeometry = GEOSGetGeometryN(geosGeometry, i);
 		lvl++;
 
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
 		sprintf(newPath, "%s%u%s", path, lvl, extraStr);
 
@@ -2165,6 +2166,7 @@ wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid, size_t *nr
 	if (strncasecmp(geomWKT, polyhedralSurface, strlen(polyhedralSurface)) == 0) {
 		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface);
 		geomWKT_original = geomWKT;
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		geomWKT = GDKmalloc(sizeOfInfo + strlen(multiPolygon) + 1);
 		strcpy(geomWKT, multiPolygon);
 		memcpy(geomWKT + strlen(multiPolygon), &geomWKT_original[strlen(polyhedralSurface)], sizeOfInfo);
@@ -2219,7 +2221,7 @@ wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
 	//read the number of items from the beginning of the string
 	memcpy(&items, fromStr, sizeof(int));
 	skipBytes += sizeof(int);
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	*toArray = GDKmalloc(wkba_size(items));
 
 	for (i = 0; i < items; i++) {
@@ -5056,6 +5058,7 @@ wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB)
 		if (*len < (int) dstStrLen + 1) {
 			*len = (int) dstStrLen + 1;
 			GDKfree(*geomWKT);
+			// FIXME unchecked_malloc GDKmalloc can return NULL
 			*geomWKT = GDKmalloc(*len);
 		}
 		snprintf(*geomWKT, *len, "\"%s\"", wkt);
@@ -5221,6 +5224,7 @@ mbrTOSTR(char **dst, int *len, mbr *atom)
 
 	if (*len < (int) dstStrLen + 1 || *dst == NULL) {
 		GDKfree(*dst);
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		*dst = GDKmalloc(*len = (int) dstStrLen + 1);
 	}
 
@@ -5262,6 +5266,7 @@ mbrFROMSTR(char *src, int *len, mbr **atom)
 	if (*len < (int) sizeof(mbr)) {
 		if (*atom)
 			GDKfree(*atom);
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		*atom = GDKmalloc(*len = sizeof(mbr));
 	}
 	if (nil) {
@@ -5388,6 +5393,7 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 	size_t dataSize;	//, skipBytes=0;
 	char **partialStrs;
 	char *nilStr = "nil";
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *toStrPtr = NULL, *itemsNumStr = GDKmalloc((itemsNumDigits + 1) * sizeof(char));
 
 	sprintf(itemsNumStr, "%d", items);
@@ -5407,6 +5413,7 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 			GDKfree(partialStrs);
 			if (*len < 4 || *toStr == NULL) {
 				GDKfree(*toStr);
+				// FIXME unchecked_malloc GDKmalloc can return NULL
 				*toStr = GDKmalloc(*len = 4);
 			}
 			strcpy(*toStr, "nil");
@@ -5771,6 +5778,7 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 
 	/*Lets get the polygon */
 	token = strtok_r(token, ")", &saveptr1);
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	vert_x = GDKmalloc(POLY_NUM_VERT * sizeof(double));
 	vert_y = GDKmalloc(POLY_NUM_VERT * sizeof(double));
 

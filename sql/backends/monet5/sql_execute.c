@@ -201,6 +201,7 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 
 	pci = getInstrPtr(mb, 0);
 	if (pci->argc >= MAXARG)
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
 	else
 		argv = argvbuffer;
@@ -538,6 +539,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					rname = e->rname;
 					if (!rname && e->type == e_column && e->l)
 						rname = e->l;
+					// FIXME unchecked_malloc ATOMnil can return NULL
 					res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
 							t->scale, t->type->localtype, ATOMnil(t->type->localtype));
 				}

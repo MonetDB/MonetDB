@@ -903,6 +903,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		if (task->rowerror) {
 			if (s) {
 				size_t slen = mystrlen(s);
+				// FIXME unchecked_malloc GDKmalloc can return NULL, and asserts are not the way to check the result
 				char *scpy = GDKmalloc(slen + 1);
 				assert(scpy);
 				if (scpy)

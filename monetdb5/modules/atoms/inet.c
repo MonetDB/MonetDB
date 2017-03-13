@@ -752,7 +752,7 @@ INETabbrev(str *retval, const inet *val)
 		 * &:    00 00 00 00
 		 * all zero, thus no bits on the right side of the mask
 		 */
-
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		ip = GDKmalloc(sizeof(char) * 19);
 
 		if (msk > 24) {

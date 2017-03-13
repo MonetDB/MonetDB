@@ -1849,15 +1849,19 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	l = strlen((char *) (*T));
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	GDKstrFromStr(tsep = GDKmalloc(l + 1), *T, l);
 	l = 0;
 	l = strlen((char *) (*R));
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	GDKstrFromStr(rsep = GDKmalloc(l + 1), *R, l);
 	l = 0;
 	l = strlen((char *) (*S));
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	GDKstrFromStr(ssep = GDKmalloc(l + 1), *S, l);
 	l = 0;
 	l = strlen((char *) (*N));
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	GDKstrFromStr(ns = GDKmalloc(l + 1), *N, l);
 	t->tsep = (char *) tsep;
 	t->rsep = (char *) rsep;
@@ -2024,15 +2028,19 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	l = strlen((char *) (*T));
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	GDKstrFromStr(tsep = GDKmalloc(l + 1), *T, l);
 	l = 0;
 	l = strlen((char *) (*R));
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	GDKstrFromStr(rsep = GDKmalloc(l + 1), *R, l);
 	l = 0;
 	l = strlen((char *) (*S));
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	GDKstrFromStr(ssep = GDKmalloc(l + 1), *S, l);
 	l = 0;
 	l = strlen((char *) (*N));
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	GDKstrFromStr(ns = GDKmalloc(l + 1), *N, l);
 	t->tsep = (char *) tsep;
 	t->rsep = (char *) rsep;
@@ -2608,6 +2616,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		if (ATOMvarsized(col->type.type->localtype) && col->type.type->localtype != TYPE_str)
 			throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		fn = GDKmalloc(flen + 1);
 		GDKstrFromStr((unsigned char *) fn, (const unsigned char *) fname, flen);
 		if (fn == NULL)
@@ -2720,6 +2729,7 @@ zero_or_one(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
@@ -2775,6 +2785,7 @@ SQLall(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;

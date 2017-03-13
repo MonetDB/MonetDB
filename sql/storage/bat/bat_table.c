@@ -201,6 +201,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 
 		res = BUNtail(bi, q);
 		sz = ATOMlen(b->ttype, res);
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		r = GDKmalloc(sz);
 		memcpy(r,res,sz);
 		res = r;
@@ -477,7 +478,7 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	BAT *tids = delta_cands(tr, t);
 	BAT **cols;
 	node *n;
-
+	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	cols = NEW_ARRAY(BAT*, cs_size(&t->columns));
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;

@@ -113,6 +113,7 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
         if (potential_size > self->maxcols) {
             // allocate space for new columns (if any new columns show up)
             sql_emit_col *old = self->cols;
+        	// FIXME unchecked_malloc GDKmalloc can return NULL
             self->cols = GDKmalloc(sizeof(sql_emit_col) * potential_size);
             if (old) {
                 memcpy(self->cols, old, sizeof(sql_emit_col) * self->maxcols);
@@ -162,6 +163,7 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
                 if (self->nvals > 0) {
                     // insert NULL values up until the current entry
                     for (ai = 0; ai < self->nvals; ai++) {
+                		// FIXME unchecked_malloc ATOMnil can return NULL
                         BUNappend(self->cols[self->ncols].b, ATOMnil(self->cols[self->ncols].b->ttype), 0);
                     }
                     self->cols[i].b->tnil = 1;

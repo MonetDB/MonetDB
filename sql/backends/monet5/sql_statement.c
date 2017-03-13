@@ -1999,6 +1999,7 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 		char *fqtn;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
+			// FIXME unchecked_malloc NEW_ARRAY can return NULL
 			fqtn = NEW_ARRAY(char, fqtnl);
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
@@ -2250,6 +2251,7 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		char *fqtn;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
+			// FIXME unchecked_malloc NEW_ARRAY can return NULL
 			fqtn = NEW_ARRAY(char, fqtnl);
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 

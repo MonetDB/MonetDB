@@ -577,6 +577,8 @@ BLOBblob_blob(blob **d, blob **s)
 	blob *b;
 
 	if( (*s)->nitems == ~(size_t) 0){
+		// FIXME unchecked_malloc BLOBnull can return NULL
+
 		*d= BLOBnull();
 	} else {
 		*d= b= (blob *) GDKmalloc(len);
