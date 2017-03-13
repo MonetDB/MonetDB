@@ -1849,20 +1849,36 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	l = strlen((char *) (*T));
-	// FIXME unchecked_malloc GDKmalloc can return NULL
-	GDKstrFromStr(tsep = GDKmalloc(l + 1), *T, l);
+	tsep = GDKmalloc(l + 1);
+	if(tsep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set1;
+	}
+	GDKstrFromStr(tsep, *T, l);
 	l = 0;
 	l = strlen((char *) (*R));
-	// FIXME unchecked_malloc GDKmalloc can return NULL
-	GDKstrFromStr(rsep = GDKmalloc(l + 1), *R, l);
+	rsep = GDKmalloc(l + 1);
+	if(rsep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set1;
+	}
+	GDKstrFromStr(rsep, *R, l);
 	l = 0;
 	l = strlen((char *) (*S));
-	// FIXME unchecked_malloc GDKmalloc can return NULL
-	GDKstrFromStr(ssep = GDKmalloc(l + 1), *S, l);
+	ssep = GDKmalloc(l + 1);
+	if(ssep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set1;
+	}
+	GDKstrFromStr(ssep, *S, l);
 	l = 0;
 	l = strlen((char *) (*N));
-	// FIXME unchecked_malloc GDKmalloc can return NULL
-	GDKstrFromStr(ns = GDKmalloc(l + 1), *N, l);
+	ns = GDKmalloc(l + 1);
+	if(ns == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set1;
+	}
+	GDKstrFromStr(ns, *N, l);
 	t->tsep = (char *) tsep;
 	t->rsep = (char *) rsep;
 	t->ssep = (char *) ssep;
@@ -2028,20 +2044,36 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	l = strlen((char *) (*T));
-	// FIXME unchecked_malloc GDKmalloc can return NULL
-	GDKstrFromStr(tsep = GDKmalloc(l + 1), *T, l);
+	tsep = GDKmalloc(l + 1);
+	if(tsep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
+	GDKstrFromStr(tsep, *T, l);
 	l = 0;
 	l = strlen((char *) (*R));
-	// FIXME unchecked_malloc GDKmalloc can return NULL
-	GDKstrFromStr(rsep = GDKmalloc(l + 1), *R, l);
+	rsep = GDKmalloc(l + 1);
+	if(rsep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
+	GDKstrFromStr(rsep, *R, l);
 	l = 0;
 	l = strlen((char *) (*S));
-	// FIXME unchecked_malloc GDKmalloc can return NULL
-	GDKstrFromStr(ssep = GDKmalloc(l + 1), *S, l);
+	ssep = GDKmalloc(l + 1);
+	if(ssep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
+	GDKstrFromStr(ssep, *S, l);
 	l = 0;
 	l = strlen((char *) (*N));
-	// FIXME unchecked_malloc GDKmalloc can return NULL
-	GDKstrFromStr(ns = GDKmalloc(l + 1), *N, l);
+	ns = GDKmalloc(l + 1);
+	if(ns == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
+	GDKstrFromStr(ns, *N, l);
 	t->tsep = (char *) tsep;
 	t->rsep = (char *) rsep;
 	t->ssep = (char *) ssep;
@@ -2531,8 +2563,11 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* overwrite other delimiters to the ones the FWF stream uses */
 			sprintf((char*) tsep, "%c", STREAM_FWF_FIELD_SEP);
 			sprintf((char*) rsep, "%c", STREAM_FWF_RECORD_SEP);
-			if (!ssep) 
+			if (!ssep) {
 				ssep = GDKmalloc(2);
+				if(ssep == NULL)
+					throw(SQL, "sql.copy_from", MAL_MALLOC_FAIL);
+			}
 			ssep[0] = 0;
 
 			ss = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
@@ -2595,7 +2630,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return msg;
 
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.drop", "3F000!Schema missing");
+		throw(SQL, "sql.import_table", "3F000!Schema missing");
 	t = mvc_bind_table(m, s, tname);
 	if (!t)
 		throw(SQL, "sql", "42S02!table %s not found", tname);
@@ -2616,8 +2651,9 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		if (ATOMvarsized(col->type.type->localtype) && col->type.type->localtype != TYPE_str)
 			throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
-		// FIXME unchecked_malloc GDKmalloc can return NULL
 		fn = GDKmalloc(flen + 1);
+		if(fn == NULL)
+			throw(SQL, "sql.attach", MAL_MALLOC_FAIL);
 		GDKstrFromStr((unsigned char *) fn, (const unsigned char *) fname, flen);
 		if (fn == NULL)
 			throw(SQL, "sql", MAL_MALLOC_FAIL);
@@ -2729,8 +2765,11 @@ zero_or_one(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		// FIXME unchecked_malloc GDKmalloc can return NULL
 		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
+		if(ret == NULL){
+			BBPunfix(b->batCacheid);
+			throw(SQL, "zero_or_one", MAL_MALLOC_FAIL);
+		}
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		*(BAT **) ret = BATdescriptor(bid);
@@ -2785,8 +2824,11 @@ SQLall(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		// FIXME unchecked_malloc GDKmalloc can return NULL
 		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
+		if(ret == NULL){
+			BBPunfix(b->batCacheid);
+			throw(SQL, "SQLall", MAL_MALLOC_FAIL);
+		}
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		*(BAT **) ret = BATdescriptor(bid);

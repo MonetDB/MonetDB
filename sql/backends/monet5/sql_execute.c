@@ -200,15 +200,19 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	cq *q= be->q;
 
 	pci = getInstrPtr(mb, 0);
-	if (pci->argc >= MAXARG)
+	if (pci->argc >= MAXARG){
 		// FIXME unchecked_malloc GDKmalloc can return NULL
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
-	else
+		if( argv == NULL)
+			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
+	} else
 		argv = argvbuffer;
 
-	if (pci->retc >= MAXARG)
+	if (pci->retc >= MAXARG){
 		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
-	else
+		if( argrec == NULL)
+			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
+	} else
 		argrec = argrecbuffer;
 
 	/* prepare the target variables */
@@ -405,7 +409,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 	/* mimic a client channel on which the query text is received */
 	b = (buffer *) GDKmalloc(sizeof(buffer));
+	if( b == NULL)
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
+	if( n == NULL)
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
 	strncpy(n, *expr, len);
 	n[len] = '\n';
 	n[len + 1] = 0;

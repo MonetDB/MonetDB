@@ -441,6 +441,9 @@ SQLinitClient(Client c)
 		buffer *b = (buffer *) GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
 		bstream *fdin;
+	
+		if( b == NULL)
+			throw(SQL,"sql.initClient",MAL_MALLOC_FAIL);
 
 		buffer_init(b, _STRDUP(sqlinit), len);
 		fdin = bstream_create(buffer_rastream(b, "si"), b->len);

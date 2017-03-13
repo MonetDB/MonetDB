@@ -1033,7 +1033,11 @@ rel_parse_value(backend *be, char *query, char emode)
 	m->emode = emode;
 	// FIXME unchecked_malloc GDKmalloc can return NULL
 	b = (buffer*)GDKmalloc(sizeof(buffer));
+	if (b == 0)
+		return sql_error(m, 02, MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
+	if (n == 0)
+		return sql_error(m, 02, MAL_MALLOC_FAIL);
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';
@@ -2814,7 +2818,11 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	m->emode = mode;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
+	if (b == 0)
+		return sql_error(m, 02, MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
+	if (n == 0)
+		return sql_error(m, 02, MAL_MALLOC_FAIL);
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';

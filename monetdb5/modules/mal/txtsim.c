@@ -23,6 +23,7 @@
 #include "mal_exception.h"
 
 
+// FIXME unchecked_malloc ATOMnil can return NULL 
 #define RETURN_NIL_IF(b,t) \
 	if (b) {\
 	   if (ATOMextern(t)) {\
