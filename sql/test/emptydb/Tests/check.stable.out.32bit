@@ -1182,6 +1182,8 @@ select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
 -- functions
 select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, query;
+-- external functions that don't reference existing MAL function (should be empty)
+with x(name,func) as (select name, splitpart(func, ' external name ', 2) from sys.functions where func like '% external name %' union select name, splitpart(func, ' EXTERNAL NAME ', 2) from sys.functions where func like '% EXTERNAL NAME %'), y(name,func) as (select name, trim(splitpart(func, ';', 1)) from x), z(name, mod, func) as (select name, trim(splitpart(func, '.', 1), '"'), trim(splitpart(func, '.', 2), '"') from y) select z.name, z.mod, z.func from z where z.mod || '.' || z.func not in (select m.module || '.' || m."function" from sys.malfunctions() m);
 -- args
 with
 arg1 (id, id1, name1, type1, type_digits1, type_scale1, inout1) as (select f.id, a1.id, a1.name, a1.type, a1.type_digits, a1.type_scale, a1.inout from sys.functions f left outer join args a1 on a1.func_id = f.id and a1.number = 1),
@@ -3262,6 +3264,11 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"year",	"year",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"year",	"year",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"zero_or_one",	"zero_or_one",	"sql",	0,	3,	false,	false,	false	]
+#with x(name,func) as (select name, splitpart(func, ' external name ', 2) from sys.functions where func like '% external name %' union select name, splitpart(func, ' EXTERNAL NAME ', 2) from sys.functions where func like '% EXTERNAL NAME %'), y(name,func) as (select name, trim(splitpart(func, ';', 1)) from x), z(name, mod, func) as (select name, trim(splitpart(func, '.', 1), '"'), trim(splitpart(func, '.', 2), '"') from y) select z.name, z.mod, z.func from z where z.mod || '.' || z.func not in (select m.module || '.' || m."function" from sys.malfunctions() m);
+% .z,	.z,	.z # table_name
+% name,	mod,	func # name
+% varchar,	varchar,	varchar # type
+% 0,	0,	0 # length
 #with
 #arg1 (id, id1, name1, type1, type_digits1, type_scale1, inout1) as (select f.id, a1.id, a1.name, a1.type, a1.type_digits, a1.type_scale, a1.inout from sys.functions f left outer join args a1 on a1.func_id = f.id and a1.number = 1),
 #arg2 (id, id1, name1, type1, type_digits1, type_scale1, inout1, id2, name2, type2, type_digits2, type_scale2, inout2) as (select arg1.*, a2.id, a2.name, a2.type, a2.type_digits, a2.type_scale, a2.inout from arg1 left outer join args a2 on a2.func_id = arg1.id and a2.number = 2),

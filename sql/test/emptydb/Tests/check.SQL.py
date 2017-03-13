@@ -72,6 +72,8 @@ select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
 -- functions
 select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, query;
+-- external functions that don't reference existing MAL function (should be empty)
+with x(name,func) as (select name, splitpart(func, ' external name ', 2) from sys.functions where func like '% external name %' union select name, splitpart(func, ' EXTERNAL NAME ', 2) from sys.functions where func like '% EXTERNAL NAME %'), y(name,func) as (select name, trim(splitpart(func, ';', 1)) from x), z(name, mod, func) as (select name, trim(splitpart(func, '.', 1), '"'), trim(splitpart(func, '.', 2), '"') from y) select z.name, z.mod, z.func from z where z.mod || '.' || z.func not in (select m.module || '.' || m."function" from sys.malfunctions() m);
 -- args
 '''
 # generate a monster query to get all functions with all their
