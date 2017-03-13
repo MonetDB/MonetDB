@@ -396,6 +396,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	m->type = Q_PARSE;
 	be = sql;
 	sql = backend_create(m, c);
+	if( sql == NULL)
+		throw(SQL,"SQLstatement",MAL_MALLOC_FAIL);
 	sql->output_format = be->output_format;
 	if (!output) {
 		sql->output_format = OFMT_NONE;

@@ -457,6 +457,8 @@ SQLinitClient(Client c)
 		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
+		if( be == NULL)
+			throw(SQL,"sql.init", MAL_MALLOC_FAIL);
 	} else {
 		be = c->sqlcontext;
 		m = be->mvc;
