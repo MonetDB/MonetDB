@@ -2306,6 +2306,7 @@ stmt_output(backend *be, stmt *lst)
 		const char *ntn = sql_escape_ident(tn);
 		const char *nsn = sql_escape_ident(sn);
 		size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
+		// FIXME unchecked_malloc NEW_ARRAY can return NULL
 		char *fqtn = NEW_ARRAY(char, fqtnl);
 
 		snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
