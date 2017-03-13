@@ -249,13 +249,13 @@ copyMalBlk(MalBlkPtr old)
 	mb->keephistory = old->keephistory;
 
 	mb->var = (VarRecord *) GDKzalloc(sizeof(VarRecord) * old->vsize);
-	mb->activeClients = 1;
-
 	if (mb->var == NULL) {
 		GDKfree(mb);
 		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
+
+	mb->activeClients = 1;
 	mb->vsize = old->vsize;
 	mb->vtop = old->vtop;
 	mb->vid = old->vid;

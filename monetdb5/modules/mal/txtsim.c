@@ -23,12 +23,12 @@
 #include "mal_exception.h"
 
 
-// FIXME unchecked_malloc ATOMnil can return NULL 
 #define RETURN_NIL_IF(b,t) \
 	if (b) {\
 	   if (ATOMextern(t)) {\
 	      *(ptr*) res = (ptr) ATOMnil(t);\
-		/* FIXME unchecked_malloc ATOMnil can return NULL */ \
+		  if ( *(ptr *) res == NULL)\
+			throw(MAL,"txtsim", MAL_MALLOC_FAIL);\
 	   } else {\
 	      memcpy(res, ATOMnilptr(t), ATOMsize(t));\
  	   }\
@@ -310,8 +310,9 @@ CMDqgramnormalize(str *res, str *Input)
 	char c, last = ' ';
 
 	RETURN_NIL_IF(strNil(input), TYPE_str);
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
+	if (*res == NULL)
+		throw(MAL,"qgram",MAL_MALLOC_FAIL);
 
 	for (i = 0; input[i]; i++) {
 		c = toupper(input[i]);

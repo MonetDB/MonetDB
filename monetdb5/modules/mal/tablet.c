@@ -905,9 +905,18 @@ SQLinsert_val(READERtask *task, int col, int idx)
 				size_t slen = mystrlen(s);
 				// FIXME unchecked_malloc GDKmalloc can return NULL, and asserts are not the way to check the result
 				char *scpy = GDKmalloc(slen + 1);
-				assert(scpy);
-				if (scpy)
-					mycpstr(scpy, s);
+				if ( scpy == NULL){
+					task->rowerror[idx]++;
+					task->errorcnt++;
+					task->besteffort = 0; /* no longer best effort */
+					BUNappend(task->cntxt->error_row, &row, FALSE);
+					BUNappend(task->cntxt->error_fld, &col, FALSE);
+					BUNappend(task->cntxt->error_msg, MAL_MALLOC_FAIL, FALSE);
+					BUNappend(task->cntxt->error_input, err, FALSE);
+					GDKfree(err);
+					return -1;
+				}
+				mycpstr(scpy, s);
 				s = scpy;
 			}
 			MT_lock_set(&errorlock);
