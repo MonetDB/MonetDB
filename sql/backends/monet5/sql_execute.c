@@ -201,7 +201,6 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 
 	pci = getInstrPtr(mb, 0);
 	if (pci->argc >= MAXARG){
-		// FIXME unchecked_malloc GDKmalloc can return NULL
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
 		if( argv == NULL)
 			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
@@ -210,8 +209,11 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 
 	if (pci->retc >= MAXARG){
 		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
-		if( argrec == NULL)
+		if( argrec == NULL){
+			if( argv != argvbuffer)
+				GDKfree(argv);
 			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
+		}
 	} else
 		argrec = argrecbuffer;
 
@@ -225,9 +227,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	parc = q->paramlen;
 
 	if (argc != parc) {
-		if (pci->argc >= MAXARG)
+		if (pci->argc >= MAXARG && argv != argvbuffer)
 			GDKfree(argv);
-		if (pci->retc >= MAXARG)
+		if (pci->retc >= MAXARG && argrec != argrecbuffer)
 			GDKfree(argrec);
 		throw(SQL, "sql.prepare", "07001!EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
 	} else {
@@ -237,9 +239,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 
 			if (!atom_cast(m->sa, arg, pt)) {
 				/*sql_error(c, 003, buf); */
-				if (pci->argc >= MAXARG)
+				if (pci->argc >= MAXARG && argv != argvbuffer)
 					GDKfree(argv);
-				if (pci->retc >= MAXARG)
+				if (pci->retc >= MAXARG && argrec != argrecbuffer)
 					GDKfree(argrec);
 				throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "prepared statement: %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 			}
@@ -257,9 +259,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	q->stk = (backend_stack) glb; /* save garbageCollected stack */
 	if (glb && SQLdebug & 1)
 		printStack(GDKstdout, mb, glb);
-	if (pci->argc >= MAXARG)
+	if (pci->argc >= MAXARG && argv != argvbuffer)
 		GDKfree(argv);
-	if (pci->retc >= MAXARG)
+	if (pci->retc >= MAXARG && argrec != argrecbuffer)
 		GDKfree(argrec);
 	return ret;
 }
