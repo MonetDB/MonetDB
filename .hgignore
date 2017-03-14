@@ -61,21 +61,10 @@ lex.yy.c
 *.lib
 # notwithstanding clients/odbc/winsetup/winredist/*.dll:
 *.dll
-# ruby:
-*.gem
-# java:
-*.jar
-java/build
-java/target
-java/bin
-java/src/main/java/nl/cwi/monetdb/jdbc/MonetDriver.java
-# python:
-dist
 
 # other files we don't want
 TAGS
 tags
-*.elc
 *.pyo
 *.rej
 *.orig
@@ -99,11 +88,3 @@ NT/unistd.h
 # package building on Mac OS X
 MacOSX/build
 MacOSX/usr
-
-# Build directory
-BUILD
-
-syntax: regexp
-^java/build$
-syntax: regexp
-^java/target$

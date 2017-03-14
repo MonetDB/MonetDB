@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* (c): M. L. Kersten
@@ -145,6 +145,7 @@ static int
 typeidLength(Client cntxt)
 {
 	int l;
+	char id[IDLENGTH], *t= id;
 	str s;
 	skipSpace(cntxt);
 	s = CURRENT(cntxt);
@@ -152,13 +153,16 @@ typeidLength(Client cntxt)
 	if (!idCharacter[(int) (*s)])
 		return 0;
 	l = 1;
-	s++;
-	idCharacter[TMPMARKER] = 0;
+	*t++ = *s++;
 	while (l < IDLENGTH && (idCharacter[(int) (*s)] || isdigit(*s)) ) {
-		s++;
+		*t++ = *s++;
 		l++;
 	}
-	idCharacter[TMPMARKER] = 1;
+	/* recognize the special type variables {any, any_<nr>} */
+	if( strncmp(id, "any",3) == 0)
+		return 3;
+	if( strncmp(id, "any_",4) == 0)
+		return 4;
 	return l;
 }
 
@@ -995,6 +999,10 @@ parseInclude(Client cntxt)
 	}
 	skipToEnd(cntxt);
 
+	if (!malLibraryEnabled(modnme)) {
+		return "";
+	}
+
 	s = loadLibrary(modnme, FALSE);
 	if (s) {
 		parseError(cntxt, s);
@@ -1095,6 +1103,7 @@ fcnHeader(Client cntxt, int kind)
 	}
 	advance(cntxt, 1);
 
+	assert(!cntxt->backup);
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
 	curPrg = cntxt->curprg;
@@ -1131,6 +1140,11 @@ fcnHeader(Client cntxt, int kind)
 	}
 	if (currChar(cntxt) != ')') {
 		freeInstruction(curInstr);
+		if (cntxt->backup) {
+			freeSymbol(cntxt->curprg);
+			cntxt->curprg = cntxt->backup;
+			cntxt->backup = 0;
+		}
 		parseError(cntxt, "')' expected\n");
 		skipToEnd(cntxt);
 		return curBlk;
@@ -1168,6 +1182,11 @@ fcnHeader(Client cntxt, int kind)
 			if ((ch = currChar(cntxt)) != ',') {
 				if (ch == ')')
 					break;
+				if (cntxt->backup) {
+					freeSymbol(cntxt->curprg);
+					cntxt->curprg = cntxt->backup;
+					cntxt->backup = 0;
+				}
 				parseError(cntxt, "',' expected\n");
 				skipToEnd(cntxt);
 				return curBlk;
@@ -1182,6 +1201,11 @@ fcnHeader(Client cntxt, int kind)
 		newarg = (short *) GDKmalloc(max * sizeof(curInstr->argv[0]));
 		if (newarg == NULL){
 			parseError(cntxt, MAL_MALLOC_FAIL);
+			if (cntxt->backup) {
+				freeSymbol(cntxt->curprg);
+				cntxt->curprg = cntxt->backup;
+				cntxt->backup = 0;
+			}
 			skipToEnd(cntxt);
 			return curBlk;
 		}
@@ -1291,8 +1315,12 @@ parseCommandPattern(Client cntxt, int kind)
 	modnme = putNameLen(modnme, l);
 	if (isModuleDefined(cntxt->nspace, modnme))
 		insertSymbol(findModule(cntxt->nspace, modnme), curPrg);
-	else
+	else {
+		freeSymbol(curPrg);
+		cntxt->curprg = cntxt->backup;
+		cntxt->backup = 0;
 		return (MalBlkPtr) parseError(cntxt, "<module> not found\n");
+	}
 	chkProgram(cntxt->fdout, cntxt->nspace, curBlk);
 	if (cntxt->backup) {
 		cntxt->curprg = cntxt->backup;
@@ -1716,16 +1744,13 @@ part3:
 		parseError(cntxt, "return assignment expected\n");
 }
 
-
-#define BRKONERR if (curPrg->def->errors >= MAXERRORS) \
-		return curPrg->def->errors;
 int
 parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 {
 	int cntrl = 0;
 	/*Symbol curPrg= cntxt->curprg;*/
 	char c;
-	int inlineProp =0, unsafeProp = 0;
+	int inlineProp =0, unsafeProp = 0, sealedProp = 0;
 
 	echoInput(cntxt);
 	/* here the work takes place */
@@ -1791,10 +1816,12 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 			if (MALkeyword(cntxt, "command", 7)) {
 				parseCommandPattern(cntxt, COMMANDsymbol);
 				cntxt->curprg->def->unsafeProp = unsafeProp;
-				if( inlineProp )
+				cntxt->curprg->def->sealedProp = sealedProp;
+				if (inlineProp)
 					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				continue;
 			}
 			if (MALkeyword(cntxt, "catch", 5)) {
@@ -1818,8 +1845,10 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 				if (parseFunction(cntxt, FUNCTIONsymbol)){
 					cntxt->curprg->def->inlineProp = inlineProp;
 					cntxt->curprg->def->unsafeProp = unsafeProp;
+					cntxt->curprg->def->sealedProp = sealedProp;
 					inlineProp = 0;
 					unsafeProp = 0;
+					sealedProp = 0;
 					break;
 				}
 			} else if (MALkeyword(cntxt, "factory", 7)) {
@@ -1827,8 +1856,11 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				if( unsafeProp)
 					showException(cntxt->fdout, SYNTAX, "parseError", "UNSAFE ignored");
+				if( sealedProp)
+					showException(cntxt->fdout, SYNTAX, "parseError", "SEALED ignored");
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				cntxt->blkmode++;
 				parseFunction(cntxt, FACTORYsymbol);
 				break;
@@ -1858,8 +1890,10 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				parseCommandPattern(cntxt, PATTERNsymbol);
 				cntxt->curprg->def->unsafeProp = unsafeProp;
+				cntxt->curprg->def->sealedProp = sealedProp;
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				continue;
 			}
 			goto allLeft;
@@ -1874,6 +1908,13 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 			}
 			if (MALkeyword(cntxt, "return", 6)) {
 				cntrl = RETURNsymbol;
+			}
+			goto allLeft;
+		case 's':
+			if (MALkeyword(cntxt, "sealed", 6)) {
+				sealedProp= 1;
+				skipSpace(cntxt);
+				continue;
 			}
 			goto allLeft;
 		case 'U': case 'u': 
@@ -1891,7 +1932,8 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 		default: allLeft :
 			parseAssign(cntxt, cntrl);
 			cntrl = 0;
-			BRKONERR;
+			if (curPrg->def->errors >= MAXERRORS) \
+				return curPrg->def->errors;
 		}
 	}
 	return curPrg->def->errors;

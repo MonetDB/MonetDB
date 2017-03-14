@@ -294,6 +294,7 @@ rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, lis
 	if (l && r)
 		rel->nrcols = l->nrcols + r->nrcols;
 	rel->exps = exps;
+	set_processed(rel);
 	return rel;
 }
 
@@ -471,6 +472,8 @@ rel_select_add_exp(sql_allocator *sa, sql_rel *l, sql_exp *e)
 		sql_exp *t = exp_atom_bool(sa, 1);
 		e = exp_compare(sa, e, t, cmp_equal);
 	}
+	if (!l->exps)
+		l->exps = new_exp_list(sa);
 	append(l->exps, e);
 }
 
@@ -755,7 +758,7 @@ exps_has_nil(list *exps)
 list *
 rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern )
 {
-	list *rexps, *exps;
+	list *lexps, *rexps, *exps;
 	int intern_only = (intern==2)?1:0;
 
 	if (!rel || (is_subquery(rel) /*&& is_project(rel->op)*/ && rel->op == op_project))
@@ -803,15 +806,18 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 			}
 			return exps;
 		}
-		exps = rel_projections(sql, rel->l, tname, settname, intern );
-		if (exps) {
-			node *en;
+		lexps = rel_projections(sql, rel->l, tname, settname, intern );
+		rexps = rel_projections(sql, rel->r, tname, settname, intern );
+		exps = sa_list(sql->sa);
+		if (lexps && rexps && exps) {
+			node *en, *ren;
 			int label = ++sql->label;
-			for (en = exps->h; en; en = en->next) {
+			for (en = lexps->h, ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
 				sql_exp *e = en->data;
 				e->card = rel->card;
 				if (!settname) /* noname use alias */
 					exp_setrelname(sql->sa, e, label);
+				append(exps, e);
 			}
 		}
 		return exps;
@@ -1109,6 +1115,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 	set_processed(r);
 	rel = rel_setop(sql->sa, l, r, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
+	set_processed(rel);
 	rel = rel_distinct(rel);
 	if (exps_card(l->exps) <= CARD_AGGR &&
 	    exps_card(r->exps) <= CARD_AGGR)

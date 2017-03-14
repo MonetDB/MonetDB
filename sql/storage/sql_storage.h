@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef SQL_STORAGE_H
@@ -47,6 +47,7 @@ typedef void *(*column_find_value_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, void *value);
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
 typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
+typedef int (*table_vacuum_fptr)(sql_trans *tr, sql_table *t);
 
 typedef struct rids {
 	BUN cur;
@@ -92,6 +93,7 @@ typedef struct table_functions {
 	column_update_value_fptr column_update_value;
 	table_insert_fptr table_insert;
 	table_delete_fptr table_delete;
+	table_vacuum_fptr table_vacuum;
 
 	rids_select_fptr rids_select;
 	rids_orderby_fptr rids_orderby;
@@ -130,6 +132,7 @@ typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 -- check for sortedness
  */
 typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t);
+typedef size_t (*count_upd_fptr) (sql_trans *tr, sql_table *t);
 typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int all /* all or new only */);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int all /* all or new only */);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
@@ -207,6 +210,7 @@ typedef struct store_functions {
 	delete_tab_fptr delete_tab;
 
 	count_del_fptr count_del;
+	count_upd_fptr count_upd;
 	count_col_fptr count_col;
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
@@ -308,7 +312,7 @@ sqlstore_export logger_functions logger_funcs;
 
 /* we need to add an interface for result_tables later */
 
-extern res_table *res_table_create(sql_trans *tr, int res_id, int nr_cols, int querytype, res_table *next, void *order);
+extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, int querytype, res_table *next, void *order);
 extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, int mtype, void *v);
 
 extern void res_table_destroy(res_table *t);
@@ -323,7 +327,7 @@ extern void store_exit(void);
 extern void store_apply_deltas(void);
 extern void store_flush_log(void);
 extern void store_manager(void);
-extern void minmax_manager(void);
+extern void idle_manager(void);
 
 extern void store_lock(void);
 extern void store_unlock(void);
@@ -400,10 +404,6 @@ extern list* sql_trans_get_dependencies(sql_trans *tr, int id, short depend_type
 extern int sql_trans_get_dependency_type(sql_trans *tr, int depend_id, short depend_type);
 extern int sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, short depend_type);
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int id);
-
-extern int sql_trans_connect_catalog(sql_trans *tr, const char *server, int port, const char *db, const char *db_alias, const char *user, const char *passwd, const char *lng);
-extern int sql_trans_disconnect_catalog(sql_trans *tr, const char *db_alias);
-extern int sql_trans_disconnect_catalog_ALL(sql_trans *tr);
 
 extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action);
 extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe);

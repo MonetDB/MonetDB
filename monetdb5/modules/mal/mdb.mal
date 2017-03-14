@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 module mdb;
 
@@ -85,16 +85,6 @@ comment "Dump the symboltable of current routine on standard out.";
 pattern var(M:str,F:str):void 
 address MDBvar3
 comment "Dump the symboltable of routine M.F on standard out.";
-
-pattern dot(s:str):void 
-address MDBshowFlowGraph
-comment "Dump the data flow of the current routine in a format recognizable by the command 'dot' to the file s";
-
-pattern dot(M:str,F:str,s:str):void 
-address MDBshowFlowGraph
-comment "Dump the data flow of the function 
-	M.F in a format recognizable by the 
-	command 'dot' on the file s";
 
 pattern getStackDepth():int 
 address MDBStkDepth

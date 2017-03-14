@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef _SQL_STATEMENT_H_
@@ -192,7 +192,7 @@ extern void stmt_set_nrcols(stmt *s);
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
-extern stmt *stmt_exception(backend *be, stmt *cond, char *errstr, int errcode);
+extern stmt *stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode);
 
 extern stmt *stmt_const(backend *be, stmt *s, stmt *val);
 

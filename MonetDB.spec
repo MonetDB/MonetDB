@@ -78,6 +78,14 @@
 %endif
 %endif
 
+# If the _without_pcre macro is not set, the PCRE library is used for
+# the implementation of the SQL LIKE and ILIKE operators.  Otherwise
+# the POSIX regex functions are used.  The macro can be set when using
+# mock by passing it the flag --without=pcre.
+%if %{?_without_pcre:0}%{!?_without_pcre:1}
+%define with_pcre 1
+%endif
+
 %if %{fedpkgs}
 # If the _without_rintegration macro is not set, the MonetDB-R RPM
 # will be created.  The macro can be set when using mock by passing it
@@ -124,7 +132,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jun2016-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Dec2016-SP3/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -136,10 +144,10 @@ BuildRequires: bzip2-devel
 %if %{?with_fits:1}%{!?with_fits:0}
 BuildRequires: cfitsio-devel
 %endif
+BuildRequires: gcc
 %if %{?with_geos:1}%{!?with_geos:0}
 BuildRequires: geos-devel >= 3.4.0
 %endif
-BuildRequires: gsl-devel
 %if %{?with_lidar:1}%{!?with_lidar:0}
 BuildRequires: liblas-devel >= 1.8.0
 BuildRequires: gdal-devel
@@ -151,11 +159,12 @@ BuildRequires: libatomic_ops-devel
 BuildRequires: libcurl-devel
 BuildRequires: xz-devel
 # BuildRequires: libmicrohttpd-devel
-# BuildRequires: libsphinxclient-devel
 BuildRequires: libuuid-devel
 BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
+%if %{?with_pcre:1}%{!?with_pcre:0}
 BuildRequires: pcre-devel >= 4.5
+%endif
 BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
@@ -200,6 +209,7 @@ package, and most likely also %{name}-SQL-server5, as well as one or
 more client packages.
 
 %files
+%license COPYING
 %defattr(-,root,root)
 %{_libdir}/libbat.so.*
 
@@ -241,6 +251,7 @@ This package contains a shared library (libstream) which is needed by
 various other components.
 
 %files stream
+%license COPYING
 %defattr(-,root,root)
 %{_libdir}/libstream.so.*
 
@@ -288,6 +299,7 @@ SQL database so that it can be loaded back later.  If you want to use
 MonetDB, you will very likely need this package.
 
 %files client
+%license COPYING
 %defattr(-,root,root)
 %{_bindir}/mclient
 %{_bindir}/msqldump
@@ -374,6 +386,7 @@ odbcinst -u -d -n MonetDB
 fi
 
 %files client-odbc
+%license COPYING
 %defattr(-,root,root)
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
@@ -389,7 +402,7 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires: python-monetdb >= 1.0
+Requires: python-pymonetdb >= 1.0
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -462,27 +475,6 @@ This package contains support for reading and writing LiDAR data.
 %{_libdir}/monetdb5/lidar.mal
 %{_libdir}/monetdb5/lib_lidar.so
 %endif
-
-%package gsl-MonetDB5
-Summary: MonetDB5 SQL interface to the gsl library
-Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-
-%description gsl-MonetDB5
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the interface to the GNU Scientific Library for
-numerical analysis (gsl).
-
-%files gsl-MonetDB5
-%defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/*_gsl.mal
-%{_libdir}/monetdb5/createdb/*_gsl.sql
-%{_libdir}/monetdb5/gsl.mal
-%{_libdir}/monetdb5/lib_gsl.so
 
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %package bam-MonetDB5
@@ -642,7 +634,6 @@ fi
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
-%exclude %{_libdir}/monetdb5/gsl.mal
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/lidar.mal
 %endif
@@ -661,7 +652,6 @@ fi
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
-%exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
@@ -676,7 +666,6 @@ fi
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
-%exclude %{_libdir}/monetdb5/lib_gsl.so
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/lib_lidar.so
 %endif
@@ -795,7 +784,6 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
-%exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
 %if %{?with_lidar:1}%{!?with_lidar:0}
 %exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
 %endif
@@ -852,6 +840,7 @@ MonetDB packages.  You probably don't need this, unless you are a
 developer.  If you do want to test, install %{name}-testing-python.
 
 %files testing
+%license COPYING
 %defattr(-,root,root)
 %{_bindir}/Mdiff
 %{_bindir}/MkillUsers
@@ -864,6 +853,7 @@ Group: Applications/Databases
 Requires: %{name}-testing = %{version}-%{release}
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: python
+BuildArch: noarch
 
 %description testing-python
 MonetDB is a database management system that is developed from a
@@ -897,7 +887,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
 	--enable-gdk=yes \
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
-	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
@@ -921,13 +910,13 @@ developer, but if you do want to test, this is the package you need.
 	--with-libxml2=yes \
 	--with-lzma=yes \
 	--with-openssl=yes \
+	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
 	--with-proj=no \
 	--with-pthread=yes \
 	--with-python2=yes \
 	--with-python3=no \
 	--with-readline=yes \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
-	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \
 	--with-valgrind=no \
@@ -955,6 +944,270 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Mar 13 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.11-20170313
+- Rebuilt.
+- BZ#6138: Weak duplicate elimination in string heaps > 64KB
+- BZ#6183: ResultSet returns double quoted column name if name contains
+  space characters
+- BZ#6219: Crash in rel_optimizer (sqlsmith)
+- BZ#6228: mclient crashes if real column is multiplied by it itself
+- BZ#6229: ANALYZE, unexpected end of input
+- BZ#6230: ANALYZE, syntax error
+- BZ#6237: semijoin with empty right bat does not return immediately
+
+* Tue Feb 28 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.11-20170313
+- gdk: Fixed a bug when appending string bats that are fully duplicate
+  eliminated.  It could happend that the to-be-appended bat had an empty
+  string at an offset and at that same offset in the to-be-appended-to bat
+  there happened to be a (sequence of) NULL(s).  Then this offset would be
+  used, even though it might nog be the right offset for the empty string
+  in the to-be-appended-to bat.  This would result in multiple offsets for
+  the empty string, breaking the promise of being duplicate eliminated.
+
+* Mon Feb 27 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.9-20170227
+- Rebuilt.
+- BZ#6217: Segfault in rel_optimizer (sqlsmith)
+- BZ#6218: grouped quantiles with all null group causes following groups
+  to return null
+- BZ#6224: mal_parser: cannot refer to types containing an underscore
+
+* Thu Feb 16 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.7-20170216
+- Rebuilt.
+- BZ#4034: argnames array in rapi.c has fixed length (that was too short)
+- BZ#6080: mserver5: rel_bin.c:2391: rel2bin_project: Assertion `0'
+  failed.
+- BZ#6081: Segmentation fault (core dumped)
+- BZ#6082: group.subgroup is undefined if group by is used on an
+  expression involving only constants
+- BZ#6111: Maximum number of digits for hge decimal is listed as 39 in
+  sys.types. Should be 38 as DECIMAL(39) is not supported.
+- BZ#6112: Crash upgrading Jul2015->Jun2016
+- BZ#6130: Query rewriter crashes on a NULL pointer when having a
+  correlated subquery
+- BZ#6133: A crash occurs when preparing an INSERT on joined tables
+  during the query semantic phase
+- BZ#6141: Getting an error message regarding a non-GROUP-BY column
+  rather than an unknown identifier
+- BZ#6177: Server crashes
+- BZ#6186: Null casting causes no results (silent server crash?)
+- BZ#6189: Removing a NOT NULL constraint from a PKey column should NOT
+  be allowed
+- BZ#6190: CASE query crashes database
+- BZ#6191: MT_msync failed with "Cannot allocate memory"
+- BZ#6192: Numeric column stores wrong values after adding large numbers
+- BZ#6193: converting to a smaller precision (fewer or no decimals after
+  decimal point) should round/truncate consistently
+- BZ#6194: splitpart returns truncated last part if it contains non
+  ascii caracters
+- BZ#6195: Cast from huge decimal type to smaller returns wrong results
+- BZ#6196: Database crashes after generate_series query
+- BZ#6198: COALESCE could be more optimized
+- BZ#6201: MonetDB completely giving up on certain queries - no error
+  and no result
+- BZ#6202: querying a table with an ordered index on string/varchar
+  column crashes server and makes server unrestartable!
+- BZ#6203: copy into: Failed to import table Leftover data 'False'
+- BZ#6205: Integer addition overflow
+- BZ#6206: casting strings with more than one trailing zero ('0') to
+  decimal goes wrong
+- BZ#6209: Aggregation over complex OR expressions produce wrong results
+- BZ#6210: Upgrading a database from Jun2015 or older crashes the server
+- BZ#6213: SQLsmith causes server to crash
+
+* Fri Jan 13 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.5-20170113
+- Rebuilt.
+- BZ#4039: Slow mserver5 start after drop of tables (> 1 hour)
+- BZ#4048: Segfault on vacuum with parallel updates
+- BZ#6079: pushselect optimizer bug on MAL snippet
+- BZ#6140: INNER JOIN gives the results of a CROSS JOIN
+- BZ#6150: Query giving wrong results, extra records are appearing
+- BZ#6175: The program can't start because python27.dll is missing from
+  your computer.
+- BZ#6178: AVG + GROUP BY returns NULL for some records that should
+  have results
+- BZ#6179: mergetable optimizer messes up sample
+- BZ#6182: sys.shutdown triggers assertion in clients.c
+- BZ#6184: Incorrect result set - Extra records in result set
+
+* Sat Dec 17 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.3-20161217
+- Rebuilt.
+
+* Wed Dec 14 2016 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.1-20161214
+- Rebuilt.
+- BZ#3357: Implement setQueryTimeout()
+- BZ#3445: Add support for database name to dotmonetdb file
+- BZ#3973: JDBC hangs
+- BZ#3976: Performance enhancement to LIKE without wildcards
+- BZ#4005: Correlated update causes incorrect null constraint violation
+- BZ#4016: merge table only optimises for point query
+- BZ#4040: sys.storage call can take a long time
+- BZ#4047: Segfault when updating a dropped table
+- BZ#4050: Database corruption when running low on inode
+- BZ#4057: missing bulk operations between constant and bat
+- BZ#4061: SIGSEGV in candscan_lng
+- BZ#4066: Deadlocked monetdbd
+- BZ#6068: Error message about incompatible BBP version should be clearer
+- BZ#6069: query with union all silently crashes
+- BZ#6070: setting negative session query timeout should not be
+  possible/allowed
+- BZ#6071: where clause with cast and floor fails to sigsegv
+- BZ#6072: Bind to UPD delta column does not get/show type information
+  in EXPLAIN
+- BZ#6073: Missing type information for constants in MAL explain
+- BZ#6074: SET ROLE command does not work
+- BZ#6075: gdk_calc.c:13113: BATcalcifthenelse_intern: Assertion `col2 !=
+  NULL' failed.
+- BZ#6076: rel_optimizer.c:5426: rel_push_project_up: Assertion `e'
+  failed.
+- BZ#6077: mserver5: rel_optimizer.c:5444: rel_push_project_up: Assertion
+  `e' failed.
+- BZ#6078: rel_bin.c:2402: rel2bin_project: Assertion `0' failed.
+- BZ#6084: Merge table point to wrong columns if columns in partition
+  tables are deleted
+- BZ#6108: monetdb5-sql sysv init script does not wait for shutdown
+- BZ#6114: segfault raised in the query rewriter due to a null pointer
+- BZ#6115: Assertion hit in the codegen
+- BZ#6116: Codegen does not support certain kind of selects on scalar
+  subqueries
+- BZ#6117: Assertion hit in the query rewriting stage during the push
+  down phase
+- BZ#6118: SIGSEGV in strPut due to shared heap
+- BZ#6119: Assertion hit in the MAL optimiser on a complex query
+- BZ#6120: QUANTILE() treats NULL as if it is zero
+- BZ#6121: SELECT a.col IN ( b.col FROM b ) FROM a statements with no
+  error but no result
+- BZ#6123: Assertion hit in the codegen #2
+- BZ#6124: CASE <column> WHEN NULL THEN 0 ELSE 1 END returns wrong result
+- BZ#6125: Stack overflow in the query rewriter with a query having an
+  OR condition and a nested SELECT subexpression
+- BZ#6126: batcalc.== can't handle void BATs
+- BZ#6139: Debian libmonetdb13 conflicts with libmonetdb5-server-geom
+
+* Tue Dec  6 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- buildtools: New packages MonetDB-python2 (Fedora) and monetdb-python2 (Debian/Ubuntu)
+  have been created for Python 2 integration into MonetDB.
+
+* Thu Dec  1 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: The tnokey values must now be 0 if it is not known whether all values
+  in a column are distinct.
+- gdk: The 2-bit tkey field in the bat descriptor has been split into two
+  single bit fields: tkey and tunique.  The old tkey&BOUND2BTRUE value
+  is now stored in tunique.
+
+* Wed Oct 26 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Implemented conversion to str from any type (not just the internal
+  types).
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- MonetDB: The Perl, PHP, and Python clients, and the JDBC driver each now have
+  their own repositories and release cycles.  The Python client is
+  maintained by Gijs Molenaar on Github
+  (https://github.com/gijzelaerr/pymonetdb), the other clients are
+  maintained by CWI/MonetDB on our own server
+  (https://dev.monetdb.org/hg/monetdb-java,
+  https://dev.monetdb.org/hg/monetdb-perl,
+  https://dev.monetdb.org/hg/monetdb-php).
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: VALcopy and VALinit both return their first argument on success or
+  (and that's new) NULL on (allocation) failure.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- monetdb5: Removed the zorder module with functions zorder.encode, zorder.decode_x
+  and zorder.decode_y.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- sql: Removed functions sys.zorder_encode, sys.zorder_decode_x, and
+  sys.zorder_decode_y.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: BATattach now can also create a str BAT from a file consisting of
+  null-terminated strings.  The input file must be encoded using UTF-8.
+- gdk: BATattach now copies the input file instead of "stealing" it.
+- gdk: Removed the lastused "timestamp" from the BBP.
+- gdk: Removed batStamp field from BAT descriptor, and removed the BBPcurstamp
+  function.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- monetdb5: Removed command bbp.getHeat().
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Removed unused functions BBPhot and BBPcold.
+
+* Fri Oct  7 2016 Stefan Manegold <Stefan.Manegold@cwi.nl> - 11.25.1-20161214
+- buildtools: With OID size equal to ABI/word size, mserver5 does not need to print
+  the OID size, anymore.
+- buildtools: Removed obsolete code associated with long gone static linking option.
+
+* Fri Oct  7 2016 Martin Kersten <mk@cwi.nl> - 11.25.1-20161214
+- sql: The experimental recycler code is moved to the attic.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- buildtools: Removed configure option --enable-oid32 to compile with 32 bit OIDs
+  on a 64 bit architecture.
+
+* Fri Oct  7 2016 Martin Kersten <mk@cwi.nl> - 11.25.1-20161214
+- sql: The syntax of bat.new(:oid,:any) has been changed by dropping the
+  superflous :oid.  All BATs are now binary associations between a void
+  column and a materialized value column.  (except for the internal
+  :bat[:void,:void] representation of simple oid ranged tails.)
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Removed BATderiveTailProps and BATderiveProps.  Just set the properties
+  you know about, or use BATsettrivprop.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Removed the macro BUNfirst.  It can be replaced by 0.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Changed BATroles by removing the argument to set the name of the
+  head column.
+- gdk: The head column is now completely gone.  MonetDB is completely
+  "headless".
+- gdk: The format of the BBP.dir file was simplified.  Since the head column
+  is VOID, the only value that needs to be stored is the head seqbase.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- monetdb5: Removed bat.setColumn with two arguments and bat.setRole.  Use
+  bat.setColumn with one argument instead.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: BATs now only have a single (logical) name.
+- gdk: The function BATmirror is gone.  The HEAD column is always VOID (with
+  a non-nil seqbase) and the TAIL column carries the data.  All functions
+  that deal with data work on the TAIL column.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: BATkey now works on the TAIL column instead of the HEAD column.
+- gdk: Replaced BATseqbase with BAThseqbase and BATtseqbase, the former for
+  setting the seqbase on the HEAD, the latter for setting the seqbase
+  on the TAIL.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- monetdb5: Removed function BKCappend_reverse_val_wrap: it was unused.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: Replaced function BATnew with COLnew with slightly different arguments:
+  the first argument of COLnew is the SEQBASE of the head column (which
+  is always VOID).
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- gdk: The "wrd" type has been removed from GDK and MAL.  The type was defined
+  to be a 32 bit integer on 32 bit architectures and a 64 bit integer
+  on 64 bit architectures.  We now generally use "lng" (always 64 bits)
+  where "wrd" was used.
+
+* Fri Oct  7 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.25.1-20161214
+- monetdb5: The "wrd" type has been removed from GDK and MAL.  The type was defined
+  to be a 32 bit integer on 32 bit architectures and a 64 bit integer
+  on 64 bit architectures.  We now generally use "lng" (always 64 bits)
+  where "wrd" was used.
+
+* Fri Oct  7 2016 Martin Kersten <mk@cwi.nl> - 11.25.1-20161214
+- monetdb5: Keep a collection of full traces.  Each time the SQL user applies
+  the TRACE option, the full json trace is retained within the
+  <dbpath>/<dbname>/sql_traces
+
 * Fri Oct 07 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.13-20161007
 - Rebuilt.
 - BZ#4058: Server crashes with a particular conditional query

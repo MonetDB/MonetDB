@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -121,7 +121,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 		if (VALcopy(lhs, rhs) == NULL)
 			throw(MAL, "factory.call", MAL_MALLOC_FAIL);
 		if( lhs->vtype == TYPE_bat )
-			BBPincref(lhs->val.bval, TRUE);
+			BBPretain(lhs->val.bval);
 	}
 	if (mb->errors)
 		throw(MAL, "factory.call", PROGRAM_GENERAL);
@@ -205,7 +205,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		for (i = psig->retc; i < psig->argc; i++) {
 			lhs = &pl->stk->stk[psig->argv[i]];
 			if( lhs->vtype == TYPE_bat )
-				BBPdecref(lhs->val.bval, TRUE);
+				BBPrelease(lhs->val.bval);
 		}
 	}
 	/* copy the calling arguments onto the stack of the factory */
@@ -215,7 +215,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		if (VALcopy(lhs, argv[i]) == NULL)
 			throw(MAL, "factory.call", MAL_MALLOC_FAIL);
 		if( lhs->vtype == TYPE_bat )
-			BBPincref(lhs->val.bval, TRUE);
+			BBPretain(lhs->val.bval);
 	}
 	ret=  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
 	/* garbage collect the string arguments, these positions

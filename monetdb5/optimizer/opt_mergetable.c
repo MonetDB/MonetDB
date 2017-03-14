@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -396,7 +396,7 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 {
 	int k, is_select = isSelect(p);
 	InstrPtr *r = NULL;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
 	for(k=0; k < p->retc; k++) {
 		r[k] = newInstruction(mb, matRef, packRef);
@@ -435,7 +435,7 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 {
 	int k;
 	InstrPtr *r = NULL;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
 	for(k=0; k < p->retc; k++) {
 		r[k] = newInstruction(mb, matRef, packRef);
@@ -1045,10 +1045,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	ai2 = pushArgument(mb, ai2, getArg(ai1, 0));
 	ai2 = pushArgument(mb, ai2, mat[g].mv);
 	ai2 = pushArgument(mb, ai2, mat[e].mv);
-	if (isAvg)
-		ai2 = pushBit(mb, ai2, 0); /* do not skip nils */
-	else
-		ai2 = pushBit(mb, ai2, 1); /* skip nils */
+	ai2 = pushBit(mb, ai2, 1); /* skip nils */
 	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef)
 		ai2 = pushBit(mb, ai2, 1);
 	pushInstruction(mb, ai2);
@@ -1065,7 +1062,8 @@ mat_pack_group(MalBlkPtr mb, matlist_t *ml, int g)
 	InstrPtr cur = NULL;
 
 	for(i=cnt-1; i>=0; i--) {
-		InstrPtr grp = newInstruction(mb, groupRef,i?subgroupRef:subgroupdoneRef);
+		/* if cur is non-NULL, it's a subgroup; if i is zero, it's "done" */
+		InstrPtr grp = newInstruction(mb, groupRef,cur?i?subgroupRef:subgroupdoneRef:i?groupRef:groupdoneRef);
 		int ogrp = walk_n_back(mat, g, i);
 		int oext = group_by_ext(ml, ogrp);
 		int attr = mat[oext].im;
@@ -1137,7 +1135,7 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 	int atp = getArgType(mb,p,3), i, a, g, push = 0;
 	InstrPtr r0, r1, r2, attr;
 
-	if (getFunctionId(p) == subgroupdoneRef)
+	if (getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef)
 		push = 1;
 
 	r0 = newInstruction(mb, matRef, packRef);
@@ -1205,7 +1203,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 	int atp = getArgType(mb,p,3), i, a, push = 0; 
 	InstrPtr r0, r1, r2, attr;
 
-	if (getFunctionId(p) == subgroupdoneRef)
+	if (getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef)
 		push = 1;
 
 	if (ml->v[g].im == -1){ /* already packed */
@@ -1428,11 +1426,25 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 static void
 mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 {
+	/* transform
+	 * a := sample.subuniform(b,n);
+	 * into
+	 * t1 := sample.subuniform(b1,n);
+	 * t2 := sample.subuniform(b2,n);
+	 * ...
+	 * t0 := mat.pack(t1,t2,...);
+	 * tn := sample.subuniform(t0,n);
+	 * a := algebra.projection(tn,t0);
+	 *
+	 * Note that this does *not* give a uniform sample of the original
+	 * bat b!
+	 */
+
 	int tpe = getArgType(mb,p,0), k, piv;
-	InstrPtr pck, q;
+	InstrPtr pck, q, r;
 
 	pck = newInstruction(mb,matRef,packRef);
-	getArg(pck,0) = getArg(p,0);
+	getArg(pck,0) = newTmpVariable(mb, tpe);
 
 	for(k=1; k< ml->v[m].mi->argc; k++) {
 		q = copyInstruction(p);
@@ -1447,8 +1459,15 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	pushInstruction(mb,pck);
 
 	q = copyInstruction(p);
+	getArg(q,0) = newTmpVariable(mb, tpe);
 	getArg(q,q->retc) = getArg(pck,0);
 	pushInstruction(mb,q);
+
+	r = newInstruction(mb, algebraRef, projectionRef);
+	getArg(r,0) = getArg(p,0);
+	pushArgument(mb, r, getArg(q, 0));
+	pushArgument(mb, r, getArg(pck, 0));
+	pushInstruction(mb, r);
 
 	ml->v[piv].packed = 1;
 	ml->v[piv].type = mat_slc;
@@ -1491,10 +1510,13 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* pack if there is a group statement following a groupdone (ie aggr(distinct)) */
 		if (getModuleId(p) == groupRef && p->argc == 5 && 
-		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef)) {
+		   (getFunctionId(p) == subgroupRef ||
+			getFunctionId(p) == subgroupdoneRef ||
+			getFunctionId(p) == groupRef ||
+			getFunctionId(p) == groupdoneRef)) {
 			InstrPtr q = old[vars[getArg(p, p->argc-1)]]; /* group result from a previous group(done) */
 
-			if (getModuleId(q) == groupRef && getFunctionId(q) == subgroupdoneRef)
+			if (getFunctionId(q) == subgroupdoneRef || getFunctionId(q) == groupdoneRef)
 				groupdone = 1;
 		}
 		if (getModuleId(p) == algebraRef && 
@@ -1522,8 +1544,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	ml.vsize = mb->vsize;
 	ml.horigin = (int*) GDKmalloc(sizeof(int)* ml.vsize);
 	ml.torigin = (int*) GDKmalloc(sizeof(int)* ml.vsize);
-	if ( ml.v == NULL || ml.horigin == NULL || ml.torigin == NULL) 
+	if ( ml.v == NULL || ml.horigin == NULL || ml.torigin == NULL) {
 		goto cleanup;
+	}
 	for (i=0; i<ml.vsize; i++) 
 		ml.horigin[i] = ml.torigin[i] = -1;
 
@@ -1636,14 +1659,14 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* Now we handle subgroup and aggregation statements. */
 		if (!groupdone && match == 1 && bats == 1 && p->argc == 4 && getModuleId(p) == groupRef && 
-		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) && 
+		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) && 
 	 	   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
 			mat_group_new(mb, p, &ml, m);
 			actions++;
 			continue;
 		}
 		if (!groupdone && match == 2 && bats == 2 && p->argc == 5 && getModuleId(p) == groupRef && 
-		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) && 
+		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) && 
 		   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0) &&
 		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) && 
 		     ml.v[n].im >= 0 /* not packed */) {
@@ -1838,9 +1861,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			freeInstruction(ml.v[i].mi);
 	}
 cleanup:
-	GDKfree(ml.v);
-	GDKfree(ml.horigin);
-	GDKfree(ml.torigin);
+	if (ml.v) GDKfree(ml.v);
+	if (ml.horigin) GDKfree(ml.horigin);
+	if (ml.torigin) GDKfree(ml.torigin);
     /* Defense line against incorrect plans */
     if( actions > 0){
         chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);

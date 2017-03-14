@@ -3,13 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "opt_statistics.h"
 /*
- * @
  * Upon loading the module it should inspect the scenario table
  * for any unresolved references to the MALoptimizer and set the
  * callback function.
@@ -159,7 +158,7 @@ QOTgetStatistics(bat *ret, str *nme)
 	idx= QOTindex(*nme);
 	if( idx <  0 || qotStat[idx] == 0 )
 		throw(ILLARG,"optimizer.getStatistics",RUNTIME_OBJECT_MISSING);
-	BBPincref(*ret= qotStat[idx]->batCacheid, TRUE);
+	BBPretain(*ret= qotStat[idx]->batCacheid);
 	return MAL_SUCCEED;
 }
 

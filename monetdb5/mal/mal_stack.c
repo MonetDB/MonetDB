@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -50,6 +50,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_stack.h"
+#include "mal_exception.h"
 
 /* #define DEBUG_MAL_STACK*/
 
@@ -59,8 +60,10 @@ newGlobalStack(int size)
 	MalStkPtr s;
 
 	s = (MalStkPtr) GDKzalloc(stackSize(size) + offsetof(MalStack, stk));
-	if (s == NULL)
-		GDKfatal("newGlobalStack:can not obtain memory\n");
+	if (!s) {
+		GDKerror("newGlobalStack:"MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	s->stksize = size;
 	return s;
 }
@@ -75,6 +78,9 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 		return old;
 	k = ((cnt / STACKINCR) + 1) * STACKINCR;
 	s = newGlobalStack(k);
+	if (!s) {
+		return NULL;
+	}
 	memcpy(s, old, stackSize(old->stksize));
 	s->stksize = k;
 	GDKfree(old);

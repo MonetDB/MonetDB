@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -48,6 +48,7 @@ struct OPTcatalog {
 {"mergetable",	0,	0,	0},
 {"mitosis",		0,	0,	0},
 {"multiplex",	0,	0,	0},
+{"oltp",		0,	0,	0},
 {"reduce",		0,	0,	0},
 {"remap",		0,	0,	0},
 {"remote",		0,	0,	0},
@@ -123,8 +124,8 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	/* force at least once a complete type check by resetting the type check flag */
 
-	resetMalBlk(mb,mb->stop);
-	chkProgram(cntxt->fdout,cntxt->nspace,mb);
+	resetMalBlk(mb, mb->stop);
+	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
@@ -132,7 +133,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
      * When no optimzer call is found, be terminate. */
 	do {
 		qot = 0;
-		for (pc = 0; pc < mb->stop ; pc++) {
+		for (pc = 0; pc < mb->stop; pc++) {
 			p = getInstrPtr(mb, pc);
 			if (getModuleId(p) == optimizerRef && p->fcn && p->token != REMsymbol) {
 				/* all optimizers should behave like patterns */
@@ -142,8 +143,12 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
-					msg= createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
-					GDKfree(place);
+					str nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
+					if (nmsg && place) {
+						GDKfree(msg);
+						msg = nmsg;
+						GDKfree(place);
+					}
 					goto wrapup;
 				}
 				if (cntxt->mode == FINISHCLIENT)
@@ -155,10 +160,13 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 wrapup:
 	/* Keep the total time spent on optimizing the plan for inspection */
-	if( actions){
-		mb->optimize= GDKusec() - clk;
-		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total",actions, mb->optimize);
+	if(actions > 0 && msg == MAL_SUCCEED){
+		mb->optimize = GDKusec() - clk;
+		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total", actions, mb->optimize);
 		newComment(mb, buf);
+	}
+	if (msg != MAL_SUCCEED) {
+		mb->errors++;
 	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
@@ -249,7 +257,7 @@ hasCommonResults(InstrPtr p, InstrPtr q)
  * Dependency between target variables and arguments can be
  * checked with isDependent().
  */
-int
+static int
 isDependent(InstrPtr p, InstrPtr q){
 	int i,j;
 	for(i= 0; i<q->retc; i++)
@@ -275,8 +283,21 @@ isUnsafeFunction(InstrPtr q)
 	return q->blk->unsafeProp;
 }
 
+int
+isSealedFunction(InstrPtr q)
+{
+	InstrPtr p;
+
+	if (q->fcn == 0 || getFunctionId(q) == 0 || q->blk == NULL)
+		return FALSE;
+	p= getInstrPtr(q->blk,0);
+	if( p->retc== 0)
+		return TRUE;
+	return q->blk->sealedProp;
+}
+
 /*
- * Instructions are unsafe is one of the arguments is also mentioned
+ * Instructions are unsafe if one of the arguments is also mentioned
  * in the result list. Alternatively, the 'unsafe' property is set
  * for the function call itself.
  */
@@ -290,20 +311,6 @@ isUnsafeInstruction(InstrPtr q)
 			if (q->argv[k] == q->argv[j])
 				return TRUE;
 	return FALSE;
-}
-
-/*
- * The routine isInvariant determines if the variable V is not
- * changed in the instruction sequence identified by the range [pcf,pcl].
- */
-int
-isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid)
-{
-	(void) mb;
-	(void) pcf;
-	(void) pcl;
-	(void) varid;		/*fool compiler */
-	return TRUE;
 }
 
 /*
@@ -345,36 +352,6 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 	return FALSE;
 }
 
-/*
- * In many cases we should be assured that a variable is not used in
- * the instruction range identified. For, we may exchange some instructions that
- * might change its content.
- */
-#if 0
-int
-isTouched(MalBlkPtr mb, int varid, int p1, int p2)
-{
-	int i, k;
-
-	for (i = p1; i < p2; i++) {
-		InstrPtr p = getInstrPtr(mb, i);
-
-		for (k = 0; k < p->argc; k++)
-			if (p->argv[k] == varid)
-				return TRUE;
-	}
-	return FALSE;
-}
-#endif
-
-int
-isProcedure(MalBlkPtr mb, InstrPtr p)
-{
-	if (p->retc == 0 || (p->retc == 1 && getArgType(mb,p,0) == TYPE_void))
-		return TRUE;
-	//if( mb->unsafeProp) return TRUE;
-	return FALSE;
-}
 
 int
 isUpdateInstruction(InstrPtr p){
@@ -382,28 +359,45 @@ isUpdateInstruction(InstrPtr p){
 	   ( getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == replaceRef ))
+		getFunctionId(p) == replaceRef ||
+		getFunctionId(p) == clear_tableRef))
 			return TRUE;
 	if ( getModuleId(p) == batRef &&
 	   ( getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == replaceRef ))
+		getFunctionId(p) == replaceRef ||
+		getFunctionId(p) == clear_tableRef))
 			return TRUE;
 	return FALSE;
 }
 int
-hasSideEffects(InstrPtr p, int strict)
+hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 {
 	if( getFunctionId(p) == NULL) return FALSE;
 
-	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
-	     (getFunctionId(p) == setAccessRef ||
-	 	  getFunctionId(p) == setWriteModeRef ||
-		  getFunctionId(p) == clear_tableRef))
+/* 
+ * Void-returning operations have side-effects and
+ * should be considered as such
+ */
+	if (p->retc == 0 || (p->retc == 1 && getArgType(mb,p,0) == TYPE_void))
 		return TRUE;
 
-	if (getFunctionId(p) == depositRef)
+/*
+ * Any function marked as unsafe can not be moved around without
+ * affecting its behavior on the program. For example, because they
+ * check for volatile resource levels.
+ */
+	if ( isUnsafeFunction(p))
+		return TRUE;
+
+	/* update instructions have side effects, they can be marked as unsafe */
+	if (isUpdateInstruction(p))
+		return TRUE;
+
+	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
+	     (getFunctionId(p) == setAccessRef ||
+	 	  getFunctionId(p) == setWriteModeRef ))
 		return TRUE;
 
 	if (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
@@ -415,7 +409,6 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == mdbRef ||
 		getModuleId(p) == malRef ||
 		getModuleId(p) == remapRef ||
-		getModuleId(p) == constraintsRef ||
 		getModuleId(p) == optimizerRef ||
 		getModuleId(p) == lockRef ||
 		getModuleId(p) == semaRef ||
@@ -427,6 +420,8 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == rapiRef)
 		return TRUE;
 
+	if (getModuleId(p) == sqlcatalogRef)
+		return TRUE;
 	if (getModuleId(p) == sqlRef){
 		if (getFunctionId(p) == tidRef) return FALSE;
 		if (getFunctionId(p) == deltaRef) return FALSE;
@@ -442,18 +437,8 @@ hasSideEffects(InstrPtr p, int strict)
 		if (getFunctionId(p) == zero_or_oneRef) return FALSE;
 		if (getFunctionId(p) == mvcRef) return FALSE;
 		if (getFunctionId(p) == singleRef) return FALSE;
-		/* the update instructions for SQL has side effects.
-		   whether this is relevant should be explicitly checked
-		   in the environment of the call */
-		if (isUpdateInstruction(p)) return TRUE;
 		return TRUE;
 	}
-	if( getModuleId(p) == languageRef){
-		if( getFunctionId(p) == assertRef) return TRUE;
-		return FALSE;
-	}
-	if (getModuleId(p) == constraintsRef)
-		return FALSE;
 	if( getModuleId(p) == mapiRef){
 		if( getFunctionId(p) == rpcRef)
 			return TRUE;
@@ -466,6 +451,10 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) != groupRef )
 		return TRUE;
 
+	if ( getModuleId(p) == sqlcatalogRef)
+		return TRUE;
+	if ( getModuleId(p) == oltpRef)
+		return TRUE;
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;
 	return FALSE;
@@ -481,7 +470,7 @@ mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 	if( tpe == TYPE_void)
 		return TRUE;
 	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
-		return hasSideEffects( p, strict);
+		return hasSideEffects(mb, p, strict);
 	if (MANIFOLDtypecheck(cntxt,mb,p) == NULL)
 		return TRUE;
 	return FALSE;
@@ -494,13 +483,14 @@ int
 isSideEffectFree(MalBlkPtr mb){
 	int i;
 	for(i=1; i< mb->stop && getInstrPtr(mb,i)->token != ENDsymbol; i++){
-		if( hasSideEffects(getInstrPtr(mb,i), TRUE))
+		if( hasSideEffects(mb,getInstrPtr(mb,i), TRUE))
 			return FALSE;
 	}
 	return TRUE;
 }
+
 /*
- * Breaking up a MAL program into pieces for distributed requires
+ * Breaking up a MAL program into pieces for distributed processing requires
  * identification of (partial) blocking instructions. A conservative
  * definition can be used.
  */
@@ -515,18 +505,9 @@ isBlocking(InstrPtr p)
 
 	if( getModuleId(p) == aggrRef ||
 		getModuleId(p) == groupRef ||
-		getModuleId(p) == sqlRef )
+		getModuleId(p) == sqlcatalogRef )
 			return TRUE;
 	return FALSE;
-}
-
-int isAllScalar(MalBlkPtr mb, InstrPtr p)
-{
-	int i;
-	for (i=p->retc; i<p->argc; i++)
-	if (isaBatType(getArgType(mb,p,i)) || getArgType(mb,p,i)==TYPE_bat)
-		return FALSE;
-	return TRUE;
 }
 
 /*
@@ -548,6 +529,8 @@ isOrderDepenent(InstrPtr p)
 }
 
 int isMapOp(InstrPtr p){
+	if (isUnsafeFunction(p) || isSealedFunction(p))
+		return 0;
 	return	getModuleId(p) &&
 		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||

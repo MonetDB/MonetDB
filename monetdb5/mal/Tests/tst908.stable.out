@@ -32,10 +32,10 @@ Ready.
 function user.foo():void;               	#[0] (0)  0 
     b:bat[:lng] := bat.new(:lng);       	#[1] (0) CMDBATnew 1 <- 2 
 barrier i:lng := 0:lng;                 	#[2] (0)  3 <- 4 
-    bat.append(b:bat[:lng],i:lng);      	#[3] (0) BKCappend_val_wrap 5 <- 1 3 
-    redo i:lng := iterator.next(1:lng,10:lng);	#[4] (0) ITRnext_lng 3 <- 6 7 
+    bat.append(b:bat[:lng], i:lng);     	#[3] (0) BKCappend_val_wrap 5 <- 1 3 
+    redo i:lng := iterator.next(1:lng, 10:lng);	#[4] (0) ITRnext_lng 3 <- 6 7 
 exit i:lng;                             	#[5] (0)  3 
-    user.perftst(b:bat[:lng],1:lng);    	#[6] (0)  8 <- 1 6 
+    user.perftst(b:bat[:lng], 1:lng);   	#[6] (0)  8 <- 1 6 
 end user.foo;                           	#[7] (0)  
 [ "perftst" ]
 [ 1 ]

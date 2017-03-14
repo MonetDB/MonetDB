@@ -288,7 +288,7 @@ Ready.
 % sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sav # table_name
 % sugg_id,	sugg_product_id,	sugg_sku,	sugg_price,	sugg_weight,	sugg_height,	sugg_width,	sugg_depth,	sugg_deleted_at,	id,	product_id,	sku,	price,	weight,	height,	width,	depth,	deleted_at,	line_item_id,	order_id,	amount # name
 % int,	int,	varchar,	decimal,	decimal,	decimal,	decimal,	decimal,	timestamp,	int,	int,	varchar,	decimal,	decimal,	decimal,	decimal,	decimal,	timestamp,	int,	int,	decimal # type
-% 1,	1,	0,	10,	10,	10,	10,	10,	26,	1,	1,	0,	10,	10,	10,	10,	10,	26,	1,	1,	21 # length
+% 1,	1,	0,	10,	10,	10,	10,	10,	26,	1,	1,	0,	10,	10,	10,	10,	10,	26,	1,	1,	20 # length
 #DROP TABLE payments; -- dep: orders
 #DROP TABLE shipments; -- dep: orders
 #DROP TABLE line_items; -- dep:  orders

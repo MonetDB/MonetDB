@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -61,7 +61,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	if (r == NULL)
 		return GDK_FAIL;
 	if (gids->ttype == TYPE_void) {
-		oid id = gids->hseqbase;
+		oid id = gids->tseqbase;
 		lng *cnt = (lng*)Tloc(cnts, 0);
 		for(j = 0; j < gcnt; j++) {
 			lng i, sz = cnt[j];
@@ -809,50 +809,6 @@ ALGcount_no_nil(lng *result, const bat *bid)
 	bit ignore_nils = 1;
 
 	return ALGcount_nil(result, bid, &ignore_nils);
-}
-
-str
-ALGtmark(bat *result, const bat *bid, const oid *base)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.mark", RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATdense(b->hseqbase, *base, BATcount(b));
-	if (bn != NULL) {
-		BBPunfix(b->batCacheid);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	BBPunfix(b->batCacheid);
-	throw(MAL, "algebra.mark", GDK_EXCEPTION);
-}
-
-str
-ALGtmark_default(bat *result, const bat *bid)
-{
-	oid o = 0;
-
-	return ALGtmark(result, bid, &o);
-}
-
-str
-ALGtmarkp(bat *result, const bat *bid, const int *nr_parts, const int *part_nr)
-{
-#if SIZEOF_OID == 4
-	int bits = 31;
-#else
-	int bits = 63;
-#endif
-	oid base = 0;
-
-	assert(*part_nr < *nr_parts);
-	base = ((oid)1)<<bits;
-	base /= *nr_parts;
-	base *= *part_nr;
-	return ALGtmark(result, bid, &base);
 }
 
 str

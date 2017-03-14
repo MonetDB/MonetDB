@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* This file is included multiple times (from sql_cast.c).
@@ -156,7 +156,11 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -189,7 +193,11 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);

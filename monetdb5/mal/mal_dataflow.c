@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -410,7 +410,7 @@ DFLOWworker(void *T)
 		/* update the numa information. keep the thread-id producing the value */
 		p= getInstrPtr(flow->mb,fe->pc);
 		for( i = 0; i < p->argc; i++)
-			flow->mb->var[getArg(p,i)]->worker = thr->tid;
+			setVarWorker(flow->mb,getArg(p,i),thr->tid);
 
 		MT_lock_set(&flow->flowlock);
 		fe->state = DFLOWwrapup;

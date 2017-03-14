@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -57,7 +57,10 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 {
 	char *message;
 	int len;
-
+	// if there is an error we allow memory allocation once again
+#ifndef NDEBUG
+	GDKsetmallocsuccesscount(-1);
+#endif
 	message = GDKmalloc(GDKMAXERRLEN);
 	if (message == NULL)
 		return M5OutOfMemory;	/* last resort */

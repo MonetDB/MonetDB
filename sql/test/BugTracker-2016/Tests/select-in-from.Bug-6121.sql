@@ -45,13 +45,13 @@ SELECT COUNT(*) AS count, (CASE WHEN t2.this_column IS NULL THEN 0 ELSE 1 END) A
  GROUP BY new_column;
 
 
-select count(*), 1 from (
+select cast(count(*) as bigint) as count, 1 from (
     (select this_column from table_one)
     intersect
     (select this_column from table_two)
 ) as "existing"
 union all
-select count(*), 0 from (
+select cast(count(*) as bigint) as count, 0 from (
     (select this_column from table_one)
     except
     (select this_column from table_two)

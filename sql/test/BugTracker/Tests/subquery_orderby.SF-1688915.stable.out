@@ -14,17 +14,149 @@ stdout of test 'subquery_orderby.SF-1688915` in directory 'sql/test/BugTracker` 
 # MonetDB/SQL module v2.21.0 loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
 
+# 14:49:17 >  
+# 14:49:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-71873" "--port=32077"
+# 14:49:17 >  
 
-# 12:35:21 >  
-# 12:35:21 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=31630 
-# 12:35:21 >  
+#create table foo (
+#id int,
+#name varchar(100)
+#);
+#copy 56 records into foo from stdin;
+#2001|schemas
+#2007|types
+#2016|functions
+#2027|args
+#2036|sequences
+#2046|dependencies
+#2050|connections
+#2059|_tables
+#2068|_columns
+#2079|keys
+#2086|idxs
+#2091|triggers
+#2102|objects
+#2107|_tables
+#2116|_columns
+#2127|keys
+#2134|idxs
+#2139|triggers
+#2150|objects
+#5956|tables
+#5966|columns
+#5982|db_user_info
+#5988|users
+#5992|user_role
+#5995|auths
+#5999|privileges
+#6221|querylog_catalog
+#6232|querylog_calls
+#6250|querylog_history
+#6289|tracelog
+#6432|sessions
+#6499|optimizers
+#6507|environment
+#6557|queue
+[ 56	]
+#select name from (select name, id from foo order by id) as x;
+% sys.x # table_name
+% name # name
+% varchar # type
+% 17 # length
+[ "schemas"	]
+[ "types"	]
+[ "functions"	]
+[ "args"	]
+[ "sequences"	]
+[ "dependencies"	]
+[ "connections"	]
+[ "_tables"	]
+[ "_columns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "triggers"	]
+[ "objects"	]
+[ "_tables"	]
+[ "_columns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "triggers"	]
+[ "objects"	]
+[ "tables"	]
+[ "columns"	]
+[ "db_user_info"	]
+[ "users"	]
+[ "user_role"	]
+[ "auths"	]
+[ "privileges"	]
+[ "querylog_catalog"	]
+[ "querylog_calls"	]
+[ "querylog_history"	]
+[ "tracelog"	]
+[ "sessions"	]
+[ "optimizers"	]
+[ "environment"	]
+[ "queue"	]
+[ "rejects"	]
+[ "spatial_ref_sys"	]
+[ "geometry_columns"	]
+[ "keywords"	]
+[ "table_types"	]
+[ "dependency_types"	]
+[ "netcdf_files"	]
+[ "netcdf_dims"	]
+[ "netcdf_vars"	]
+[ "netcdf_vardim"	]
+[ "netcdf_attrs"	]
+[ "storage"	]
+[ "storagemodelinput"	]
+[ "storagemodel"	]
+[ "tablestoragemodel"	]
+[ "statistics"	]
+[ "files"	]
+[ "sq"	]
+[ "rg"	]
+[ "pg"	]
+[ "export"	]
+[ "systemfunctions"	]
 
-
-# 12:35:21 >  
-# 12:35:21 >  Done.
-# 12:35:21 >  
+# 14:49:17 >  
+# 14:49:17 >  "Done."
+# 14:49:17 >  
 

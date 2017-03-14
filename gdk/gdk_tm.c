@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -258,7 +258,7 @@ TMabort(void)
 
 			if (b) {
 				if (b->batPersistence == PERSISTENT)
-					BBPdecref(i, TRUE);
+					BBPrelease(i);
 				b->batPersistence = TRANSIENT;
 				b->batDirtydesc = 1;
 			}
@@ -295,7 +295,7 @@ TMabort(void)
 			if (BBP_status(i) & BBPDELETED) {
 				BBP_status_on(i, BBPEXISTING, "TMabort");
 				if (b->batPersistence != PERSISTENT)
-					BBPincref(i, TRUE);
+					BBPretain(i);
 				b->batPersistence = PERSISTENT;
 				b->batDirtydesc = 1;
 			}

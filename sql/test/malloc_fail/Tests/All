@@ -1,4 +1,1 @@
-initialize
-setmemorylimit
-setmemorylimit-fail
-setmemorylimit-fail2
+# mallocs still hangs

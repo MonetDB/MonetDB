@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -465,96 +465,109 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* sql_cast_impl_up_to_int */
+#ifndef HAVE_ROUND
+static inline double
+round(double val)
+{
+	/* round to nearest integer, away from zero */
+	if (val < 0)
+		return -floor(-val + 0.5);
+	else
+		return floor(val + 0.5);
+}
+#define roundf(x)	((float)round((double)(x)))
+#endif
+
+/* up casting */
 
 #define TP1 bte
 #define TP2 bte
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 bte
 #define TP2 sht
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 sht
 #define TP2 sht
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 bte
 #define TP2 int
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 sht
 #define TP2 int
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 int
 #define TP2 int
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 bte
 #define TP2 lng
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 sht
 #define TP2 lng
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 int
 #define TP2 lng
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 lng
 #define TP2 lng
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 bte
 #define TP2 hge
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 sht
 #define TP2 hge
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 int
 #define TP2 hge
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 lng
 #define TP2 hge
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 hge
 #define TP2 hge
-#include "sql_cast_impl_up_to_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 #endif
@@ -691,64 +704,66 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP1
 #endif
 
-/* sql_cast_impl_down_from_int */
+/* down casting */
+
+#define DOWNCAST
 
 #define TP1 sht
 #define TP2 bte
-#include "sql_cast_impl_down_from_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 int
 #define TP2 bte
-#include "sql_cast_impl_down_from_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 lng
 #define TP2 bte
-#include "sql_cast_impl_down_from_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 hge
 #define TP2 bte
-#include "sql_cast_impl_down_from_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 #endif
 
 #define TP1 int
 #define TP2 sht
-#include "sql_cast_impl_down_from_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #define TP1 lng
 #define TP2 sht
-#include "sql_cast_impl_down_from_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 hge
 #define TP2 sht
-#include "sql_cast_impl_down_from_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 #endif
 
 #define TP1 lng
 #define TP2 int
-#include "sql_cast_impl_down_from_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 hge
 #define TP2 int
-#include "sql_cast_impl_down_from_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 #endif
@@ -756,7 +771,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef HAVE_HGE
 #define TP1 hge
 #define TP2 lng
-#include "sql_cast_impl_down_from_int.h"
+#include "sql_cast_impl_int.h"
 #undef TP2
 #undef TP1
 #endif

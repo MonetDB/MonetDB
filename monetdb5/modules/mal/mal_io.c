@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -535,12 +535,14 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(pci->retc == 1);
 	assert(pci->argc >= 2);
 
+	memset(piv, 0, sizeof(BAT*) * MAXPARAMS);
 	for (i = 1; i < pci->argc; i++) {
 		tpe = getArgType(mb, pci, i);
 		val = getArgReference(stk, pci, i);
 		if (!isaBatType(tpe)) {
 			while (--i >= 1)
-				BBPunfix(piv[i]->batCacheid);
+				if (piv[i] != NULL)
+					BBPunfix(piv[i]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " BAT expected");
 		}
 		if ((piv[i] = BATdescriptor(*(int *) val)) == NULL) {
@@ -779,8 +781,8 @@ IOimport(void *ret, bat *bid, str *fnme)
 
 
 str
-IOsetmemorylimit(void *res, lng *nbytes) {
+IOsetmallocsuccesscount(void *res, lng *count) {
 	(void) res;
-	GDKsetmemorylimit(*nbytes);
+	GDKsetmallocsuccesscount(*count);
 	return MAL_SUCCEED;
 }

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include <monetdb_config.h>
@@ -185,20 +185,24 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 		bte sta = (bte) start, ste = (bte) step, sto = (bte) stop;
 
 		bn = COLnew(0, TYPE_bte, cnt, TRANSIENT);
+		if ( bn == NULL)
+			throw(MAL, "array.series", MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, bte);
 	} else if (stop <= (int) GDK_sht_max) {
 		sht sta = (sht) start, ste = (sht) step, sto = (sht) stop;
 
 		bn = COLnew(0, TYPE_sht, cnt, TRANSIENT);
+		if ( bn == NULL)
+			throw(MAL, "array.series", MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, sht);
 	} else {
 		int sta = (int) start, ste = (int) step, sto = (int) stop;
 
 		bn = COLnew(0, TYPE_int, cnt, TRANSIENT);
+		if ( bn == NULL)
+			throw(MAL, "array.series", MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, int);
 	}
-	if ( bn == NULL)
-		throw(MAL, "array.series", MAL_MALLOC_FAIL);
 
 	BATsetcount(bn, cnt);
 	bn->tsorted = (cnt <= 1 || (series == 1 && step > 0));
@@ -567,6 +571,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	res = NULL;
 
 	/* Manually create dimensions with range [0:1:dlen[i]] */
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	val_rep = (size_t *)GDKmalloc(sizeof(size_t) * vndims);
 	grp_rep = (size_t *)GDKmalloc(sizeof(size_t) * vndims);
 
@@ -583,9 +588,9 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 		sermsg = NCDFARRAYseries(&dim_bids[i], 0, 1, dlen[i], val_rep[i], grp_rep[i]);
 
 		if (sermsg != MAL_SUCCEED) {
-			BBPdecref(vbid, 1); /* undo the BBPkeepref(vbid) above */
+			BBPrelease(vbid); /* undo the BBPkeepref(vbid) above */
 			for ( j = 0; j < i; j++) /* undo log. ref of previous dimensions */
-				BBPdecref(dim_bids[j], 1);
+				BBPrelease(dim_bids[j]);
 			GDKfree(dlen);
 			GDKfree(val_rep);
 			GDKfree(grp_rep);
@@ -702,6 +707,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 /* load variable data */
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	dim_bids = (bat *)GDKmalloc(sizeof(bat) * vndims);
 
 	msg = NCDFloadVar(&dim_bids, &vbatid, ncid, varid, vtype, vndims, vdims);
@@ -721,7 +727,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	vbat = BATdescriptor(vbatid);
 	store_funcs.append_col(m->session->tr, col, vbat, TYPE_bat);
 	BBPunfix(vbatid);
-	BBPdecref(vbatid, 1);
+	BBPrelease(vbatid);
 	vbat = NULL;
 
 	/* associate dimension bats  */
@@ -733,7 +739,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		dimbat = BATdescriptor(dim_bids[i]);
 		store_funcs.append_col(m->session->tr, col, dimbat, TYPE_bat);
 		BBPunfix(dim_bids[i]); /* phys. ref from BATdescriptor */
-		BBPdecref(dim_bids[i], 1); /* log. ref. from loadVar */
+		BBPrelease(dim_bids[i]); /* log. ref. from loadVar */
 		dimbat = NULL;
 	}
 

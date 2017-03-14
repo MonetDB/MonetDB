@@ -25,7 +25,7 @@ bool-str-bug
 rollback_bug
 update-crash
 correlated-selection-bug
-THREADS=1?segfault_when_quitting_debugger.SF-2538837
+segfault_when_quitting_debugger.SF-2538837
 row_number_bug.SF-2546109
 #set_history_and_drop_table.SF-2607045  not relevant anymore
 TypeException_having_count_distinct.SF-2494227
@@ -46,7 +46,6 @@ insert_order_by.SF-2658243
 not_equal.SF-2678502
 TribooleanFailureWithSubquery.SF-2679434
 nullstr.SF-2704016
-POWER_vs_prod.SF-2596114
 parallel_bulk-load.SF-2771052.unpack_csv
 parallel_bulk-load.SF-2771052.test
 parallel_bulk-load.SF-2771052.clean

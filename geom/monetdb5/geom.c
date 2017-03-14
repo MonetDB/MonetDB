@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -12,6 +12,7 @@
  */
 
 #include "geom.h"
+#include "mal_exception.h"
 
 int TYPE_mbr;
 
@@ -464,7 +465,7 @@ wkbTransform(wkb **transformedWKB, wkb **geomWKB, int *srid_src, int *srid_dst, 
 		ret = createException(MAL, "geom.Transform", "Unknown geometry type");
 	}
 
-	if (transformedGeosGeometry) {
+	if (ret == MAL_SUCCEED && transformedGeosGeometry) {
 		/* set the new srid */
 		GEOSSetSRID(transformedGeosGeometry, *srid_dst);
 		/* get the wkb */
@@ -1745,8 +1746,9 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 	str err = MAL_SUCCEED;
 
 	(*lvl)++;
-
 	newPath = GDKmalloc(pathLength + lvlDigitsNum + 1);
+	if( newPath == NULL)
+		throw(MAL, "geom.PointsPoint", MAL_MALLOC_FAIL);
 	sprintf(newPath, "%s%u", path, *lvl);
 
 	if (BUNappend(idBAT, newPath, TRUE) != GDK_SUCCEED ||
@@ -1805,8 +1807,9 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 		throw(MAL, "geom.DumpPoints", "GEOSGetExteriorRing failed");
 
 	(*lvl)++;
-
 	newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
+	if( newPath == NULL)
+		throw(MAL,"geom.dumpPointsPolygon",MAL_MALLOC_FAIL);
 	sprintf(newPath, "%s%u%s", path, *lvl, extraStr);
 
 	//get the points in the exterior ring
@@ -1859,6 +1862,8 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 		lvl++;
 
 		newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
+		if( newPath == NULL)
+			throw(MAL,"geom.dumpPointsGeometry",MAL_MALLOC_FAIL);
 		sprintf(newPath, "%s%u%s", path, lvl, extraStr);
 
 		//*secondLevel = 0;
@@ -2166,6 +2171,8 @@ wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid, size_t *nr
 		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface);
 		geomWKT_original = geomWKT;
 		geomWKT = GDKmalloc(sizeOfInfo + strlen(multiPolygon) + 1);
+		if( geomWKT == NULL)
+			throw(MAL,"geomWKT",MAL_MALLOC_FAIL);
 		strcpy(geomWKT, multiPolygon);
 		memcpy(geomWKT + strlen(multiPolygon), &geomWKT_original[strlen(polyhedralSurface)], sizeOfInfo);
 		geomWKT[sizeOfInfo + strlen(multiPolygon)] = '\0';
@@ -2219,8 +2226,11 @@ wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
 	//read the number of items from the beginning of the string
 	memcpy(&items, fromStr, sizeof(int));
 	skipBytes += sizeof(int);
-
 	*toArray = GDKmalloc(wkba_size(items));
+	if( *toArray == NULL){
+		GDKerror("FROMSTR_withSRID" MAL_MALLOC_FAIL);
+		return 0;
+	}
 
 	for (i = 0; i < items; i++) {
 		size_t parsedBytes;
@@ -2645,14 +2655,6 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 		}
 	}
 
-	//print areas
-	for (i = 0; i < itemsNum; i++) {
-		char *toStr = NULL;
-		int len = 0;
-		wkbTOSTR(&toStr, &len, linestringsWKB[i]);
-		GDKfree(toStr);
-	}
-
 	if (*flag == 0) {
 		//the biggest polygon is the external shell
 		GEOSCoordSeq coordSeq_external;
@@ -2678,7 +2680,7 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 		}
 
 		//all remaining should be internal
-		internalGeometries = GDKmalloc((itemsNum - 1) * sizeof(GEOSGeom *));
+		internalGeometries = GDKmalloc((itemsNum - 1) * sizeof(GEOSGeom));
 		if (internalGeometries == NULL) {
 			GEOSGeom_destroy(linearRingExternalGeometry);
 			ret = createException(MAL, "geom.MLineStringToPolygon", MAL_MALLOC_FAIL);
@@ -2738,8 +2740,8 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 
 			GEOSGeom_destroy(finalGeometry);
 
-			throw(MAL, "geom.MLineStringToPolygon", "The provided MultiLineString does not create a valid Polygon");
-
+			ret = createException(MAL, "geom.MLineStringToPolygon", "The provided MultiLineString does not create a valid Polygon");
+			goto bailout;
 		}
 
 		GEOSSetSRID(finalGeometry, *srid);
@@ -3055,6 +3057,7 @@ wkbMakePolygon(wkb **out, wkb **external, bat *internalBAT_id, int *srid)
 	GEOSGeom geosGeometry, externalGeometry, linearRingGeometry;
 	bit closed = 0;
 	GEOSCoordSeq coordSeq_copy;
+	str err;
 
 	if (wkb_isnil(*external) || *srid == int_nil) {
 		if ((*out = wkbNULLcopy()) == NULL)
@@ -3073,7 +3076,10 @@ wkbMakePolygon(wkb **out, wkb **external, bat *internalBAT_id, int *srid)
 		throw(MAL, "geom.Polygon", "Geometries should be LineString");
 	}
 	//check whether the linestring is closed
-	wkbIsClosed(&closed, external);
+	if ((err = wkbIsClosed(&closed, external)) != MAL_SUCCEED) {
+		GEOSGeom_destroy(externalGeometry);
+		return err;
+	}
 	if (!closed) {
 		*out = NULL;
 		GEOSGeom_destroy(externalGeometry);
@@ -3119,13 +3125,14 @@ str
 wkbMakeLine(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 {
 	GEOSGeom outGeometry, geom1Geometry, geom2Geometry;
-	GEOSCoordSeq outCoordSeq;
+	GEOSCoordSeq outCoordSeq = NULL;
 	const GEOSCoordSequence *geom1CoordSeq = NULL, *geom2CoordSeq = NULL;
 	unsigned int i = 0, geom1Size = 0, geom2Size = 0;
 	unsigned geom1Dimension = 0, geom2Dimension = 0;
 	double x, y, z;
 	str err = MAL_SUCCEED;
 
+	*out = NULL;
 	if (wkb_isnil(*geom1WKB) || wkb_isnil(*geom2WKB)) {
 		if ((*out = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.MakeLine", MAL_MALLOC_FAIL);
@@ -3147,78 +3154,93 @@ wkbMakeLine(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 	//make sure the geometries are of the same srid
 	if (GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry)) {
 		err = createException(MAL, "geom.MakeLine", "Geometries of different SRID");
+		goto bailout;
 	}
 	//check the types of the geometries
-	else if (GEOSGeomTypeId(geom1Geometry) + 1 != wkbPoint_mdb &&
+	if (GEOSGeomTypeId(geom1Geometry) + 1 != wkbPoint_mdb &&
 		 GEOSGeomTypeId(geom1Geometry) + 1 != wkbLineString_mdb &&
 		 GEOSGeomTypeId(geom2Geometry) + 1 != wkbPoint_mdb &&
 		 GEOSGeomTypeId(geom2Geometry) + 1 != wkbLineString_mdb) {
 		err = createException(MAL, "geom.MakeLine", "Geometries should be Point or LineString");
+		goto bailout;
 	}
 	//get the coordinate sequences of the geometries
-	else if ((geom1CoordSeq = GEOSGeom_getCoordSeq(geom1Geometry)) == NULL ||
+	if ((geom1CoordSeq = GEOSGeom_getCoordSeq(geom1Geometry)) == NULL ||
 		 (geom2CoordSeq = GEOSGeom_getCoordSeq(geom2Geometry)) == NULL) {
 		err = createException(MAL, "geom.MakeLine", "GEOSGeom_getCoordSeq failed");
+		goto bailout;
 	}
 	//make sure that the dimensions of the geometries are the same
-	else if (!GEOSCoordSeq_getDimensions(geom1CoordSeq, &geom1Dimension) ||
+	if (!GEOSCoordSeq_getDimensions(geom1CoordSeq, &geom1Dimension) ||
 		 !GEOSCoordSeq_getDimensions(geom2CoordSeq, &geom2Dimension)) {
 		err = createException(MAL, "geom.MakeLine", "GEOSGeom_getDimensions failed");
+		goto bailout;
 	}
-	else if (geom1Dimension != geom2Dimension) {
+	if (geom1Dimension != geom2Dimension) {
 		err = createException(MAL, "geom.MakeLine", "Geometries should be of the same dimension");
+		goto bailout;
 	}
 	//get the number of coordinates in the two geometries
-	else if (!GEOSCoordSeq_getSize(geom1CoordSeq, &geom1Size) ||
+	if (!GEOSCoordSeq_getSize(geom1CoordSeq, &geom1Size) ||
 		 !GEOSCoordSeq_getSize(geom2CoordSeq, &geom2Size)) {
 		err = createException(MAL, "geom.MakeLine", "GEOSGeom_getSize failed");
+		goto bailout;
 	}
 	//create the coordSeq for the new geometry
-	else if ((outCoordSeq = GEOSCoordSeq_create(geom1Size + geom2Size, geom1Dimension)) == NULL) {
+	if ((outCoordSeq = GEOSCoordSeq_create(geom1Size + geom2Size, geom1Dimension)) == NULL) {
 		err = createException(MAL, "geom.MakeLine", "GEOSCoordSeq_create failed");
-	}
-	if (err != MAL_SUCCEED) {
-		*out = NULL;
-		GEOSGeom_destroy(geom1Geometry);
-		GEOSGeom_destroy(geom2Geometry);
-		return err;
+		goto bailout;
 	}
 	for (i = 0; i < geom1Size; i++) {
 		GEOSCoordSeq_getX(geom1CoordSeq, i, &x);
-		GEOSCoordSeq_setX(outCoordSeq, i, x);
 		GEOSCoordSeq_getY(geom1CoordSeq, i, &y);
-		GEOSCoordSeq_setY(outCoordSeq, i, y);
+		if (!GEOSCoordSeq_setX(outCoordSeq, i, x) ||
+		    !GEOSCoordSeq_setY(outCoordSeq, i, y)) {
+			err = createException(MAL, "geom.MakeLine", "GEOSCoordSeq_set[XY] failed");
+			goto bailout;
+		}
 		if (geom1Dimension > 2) {
 			GEOSCoordSeq_getZ(geom1CoordSeq, i, &z);
-			GEOSCoordSeq_setZ(outCoordSeq, i, z);
+			if (!GEOSCoordSeq_setZ(outCoordSeq, i, z)) {
+				err = createException(MAL, "geom.MakeLine", "GEOSCoordSeq_setZ failed");
+				goto bailout;
+			}
 		}
 	}
 	for (i = 0; i < geom2Size; i++) {
 		GEOSCoordSeq_getX(geom2CoordSeq, i, &x);
-		GEOSCoordSeq_setX(outCoordSeq, i + geom1Size, x);
 		GEOSCoordSeq_getY(geom2CoordSeq, i, &y);
-		GEOSCoordSeq_setY(outCoordSeq, i + geom1Size, y);
+		if (!GEOSCoordSeq_setX(outCoordSeq, i + geom1Size, x) ||
+		    !GEOSCoordSeq_setY(outCoordSeq, i + geom1Size, y)) {
+			err = createException(MAL, "geom.MakeLine", "GEOSCoordSeq_set[XY] failed");
+			goto bailout;
+		}
 		if (geom2Dimension > 2) {
 			GEOSCoordSeq_getZ(geom2CoordSeq, i, &z);
-			GEOSCoordSeq_setZ(outCoordSeq, i + geom1Size, z);
+			if (!GEOSCoordSeq_setZ(outCoordSeq, i + geom1Size, z)) {
+				err = createException(MAL, "geom.MakeLine", "GEOSCoordSeq_setZ failed");
+				goto bailout;
+			}
 		}
 	}
 
 	if ((outGeometry = GEOSGeom_createLineString(outCoordSeq)) == NULL) {
-		*out = NULL;
-		GEOSCoordSeq_destroy(outCoordSeq);
-		GEOSGeom_destroy(geom1Geometry);
-		GEOSGeom_destroy(geom2Geometry);
-		throw(MAL, "geom.MakeLine", "GEOSGeom_createLineString failed");
+		err = createException(MAL, "geom.MakeLine", "GEOSGeom_createLineString failed");
+		goto bailout;
 	}
+	outCoordSeq = NULL;
 
 	GEOSSetSRID(outGeometry, GEOSGetSRID(geom1Geometry));
 	*out = geos2wkb(outGeometry);
 	GEOSGeom_destroy(outGeometry);
+
+  bailout:
+	if (outCoordSeq)
+		GEOSCoordSeq_destroy(outCoordSeq);
 	GEOSGeom_destroy(geom1Geometry);
 	GEOSGeom_destroy(geom2Geometry);
 
-	return MAL_SUCCEED;
+	return err;
 }
 
 //Gets a BAT with geometries and returns a single LineString
@@ -3661,7 +3683,7 @@ wkbInteriorRings(wkba **geomArray, wkb **geomWKB)
 
 	if (ret != MAL_SUCCEED) {
 		GEOSGeom_destroy(geosGeometry);
-		throw(MAL, "geom.InteriorRings", "Error in wkbNumRings");
+		return ret;
 	}
 
 	*geomArray = GDKmalloc(wkba_size(interiorRingsNum));
@@ -5045,6 +5067,10 @@ wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB)
 			*len = (int) dstStrLen + 1;
 			GDKfree(*geomWKT);
 			*geomWKT = GDKmalloc(*len);
+			if( *geomWKT == NULL){
+				GDKerror("wkbTOSTR" MAL_MALLOC_FAIL);
+				return 0;
+			}
 		}
 		snprintf(*geomWKT, *len, "\"%s\"", wkt);
 		GEOSFree(wkt);
@@ -5052,6 +5078,10 @@ wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB)
 		if (*len < 4) {
 			GDKfree(*geomWKT);
 			*geomWKT = GDKmalloc(*len = 4);
+			if( *geomWKT == NULL){
+				GDKerror("wkbTOSTR" MAL_MALLOC_FAIL);
+				return 0;
+			}
 		}
 		strcpy(*geomWKT, "nil");
 	}
@@ -5161,7 +5191,7 @@ wkbPUT(Heap *h, var_t *bun, wkb *val)
 	*bun = HEAP_malloc(h, wkb_size(val->len));
 	base = h->base;
 	if (*bun) {
-		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkb_size(val->len));
+		memcpy(&base[*bun], (char *) val, wkb_size(val->len));
 		h->dirty = 1;
 	}
 	return *bun;
@@ -5210,6 +5240,10 @@ mbrTOSTR(char **dst, int *len, mbr *atom)
 	if (*len < (int) dstStrLen + 1 || *dst == NULL) {
 		GDKfree(*dst);
 		*dst = GDKmalloc(*len = (int) dstStrLen + 1);
+		if( *dst == NULL){
+			GDKerror("mbrTOSTR" MAL_MALLOC_FAIL);
+			return 0;
+		}
 	}
 
 	if (dstStrLen > 3)
@@ -5251,6 +5285,10 @@ mbrFROMSTR(char *src, int *len, mbr **atom)
 		if (*atom)
 			GDKfree(*atom);
 		*atom = GDKmalloc(*len = sizeof(mbr));
+		if( *atom == NULL){
+			GDKerror("mbrFROMSTR" MAL_MALLOC_FAIL);
+			return 0;
+		}
 	}
 	if (nil) {
 		nchars = 3;
@@ -5378,20 +5416,32 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 	char *nilStr = "nil";
 	char *toStrPtr = NULL, *itemsNumStr = GDKmalloc((itemsNumDigits + 1) * sizeof(char));
 
+	if( itemsNumStr == NULL){
+		GDKerror("wkbaTOSTR" MAL_MALLOC_FAIL);
+		return 0;
+	}
 	sprintf(itemsNumStr, "%d", items);
 	dataSize = strlen(itemsNumStr);
 
 	//reserve space for an array with pointers to the partial strings, i.e. for each wkbTOSTR
-	partialStrs = GDKzalloc(items * sizeof(char **));
+	partialStrs = GDKzalloc(items * sizeof(char *));
 	//create the string version of each wkb
 	for (i = 0; i < items; i++) {
 		int llen = 0;
 		dataSize += wkbTOSTR(&partialStrs[i], &llen, fromArray->data[i]) - 2;	//remove quotes
 
 		if (strcmp(partialStrs[i], nilStr) == 0) {
+			GDKfree(itemsNumStr);
+			while (i >= 0)
+				GDKfree(partialStrs[i--]);
+			GDKfree(partialStrs);
 			if (*len < 4 || *toStr == NULL) {
 				GDKfree(*toStr);
 				*toStr = GDKmalloc(*len = 4);
+				if( *toStr == NULL){
+					GDKerror("wkbaTOSTR" MAL_MALLOC_FAIL);
+					return 0;
+				}
 			}
 			strcpy(*toStr, "nil");
 			return 3;
@@ -5541,7 +5591,7 @@ wkbaPUT(Heap *h, var_t *bun, wkba *val)
 	*bun = HEAP_malloc(h, wkba_size(val->itemsNum));
 	base = h->base;
 	if (*bun) {
-		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkba_size(val->itemsNum));
+		memcpy(&base[*bun], (char *) val, wkba_size(val->itemsNum));
 		h->dirty = 1;
 	}
 	return *bun;
@@ -5739,9 +5789,7 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 	double *vert_x, *vert_y, **holes_x = NULL, **holes_y = NULL;
 	int *holes_n = NULL, j;
 	wkb *geom = NULL;
-	str msg = NULL;
-
-	str err = NULL;
+	str err = MAL_SUCCEED;
 	str geom_str = NULL;
 	char *str2, *token, *subtoken;
 	char *saveptr1 = NULL, *saveptr2 = NULL;
@@ -5752,13 +5800,22 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 	if ((err = wkbAsText(&geom_str, &geom, NULL)) != MAL_SUCCEED) {
 		return err;
 	}
-	geom_str = strchr(geom_str, '(');
-	geom_str += 2;
+	token = strchr(geom_str, '(');
+	token += 2;
 
 	/*Lets get the polygon */
-	token = strtok_r(geom_str, ")", &saveptr1);
+	token = strtok_r(token, ")", &saveptr1);
 	vert_x = GDKmalloc(POLY_NUM_VERT * sizeof(double));
+	if ( vert_x == NULL){
+		GDKfree(geom_str);
+		throw(MAL,"wkbContains_point_bat", MAL_MALLOC_FAIL);
+	}
 	vert_y = GDKmalloc(POLY_NUM_VERT * sizeof(double));
+	if ( vert_y == NULL){
+		GDKfree(geom_str);
+		GDKfree(vert_x);
+		throw(MAL,"wkbContains_point_bat", MAL_MALLOC_FAIL);
+	}
 
 	for (str2 = token;; str2 = NULL) {
 		subtoken = strtok_r(str2, ",", &saveptr2);
@@ -5814,11 +5871,12 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 	}
 
 	if (nholes)
-		msg = pnpolyWithHoles(out, (int) nvert, vert_x, vert_y, nholes, holes_x, holes_y, holes_n, point_x, point_y);
+		err = pnpolyWithHoles(out, (int) nvert, vert_x, vert_y, nholes, holes_x, holes_y, holes_n, point_x, point_y);
 	else {
-		msg = pnpoly(out, (int) nvert, vert_x, vert_y, point_x, point_y);
+		err = pnpoly(out, (int) nvert, vert_x, vert_y, point_x, point_y);
 	}
 
+	GDKfree(geom_str);
 	GDKfree(vert_x);
 	GDKfree(vert_y);
 	if (holes_x && holes_y && holes_n) {
@@ -5831,7 +5889,7 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 		GDKfree(holes_n);
 	}
 
-	return msg;
+	return err;
 }
 
 str

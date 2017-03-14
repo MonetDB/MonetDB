@@ -49,10 +49,10 @@ Ready.
 #order by
 #	l_returnflag,
 #	l_linestatus;
-% sys.lineitem,	sys.lineitem,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
+% sys.lineitem,	sys.lineitem,	sys.L5,	sys.L10,	sys.L13,	sys.L16,	sys.L21,	sys.L24,	sys.L27,	sys.L32 # table_name
 % l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
 % char,	char,	decimal,	decimal,	decimal,	decimal,	double,	double,	double,	bigint # type
-% 1,	1,	41,	41,	41,	41,	24,	24,	24,	5 # length
+% 1,	1,	40,	40,	40,	40,	24,	24,	24,	5 # length
 [ "A",	"F",	380456.00,	532348211.65,	505822441.4861,	526165934.000839,	25.57515461,	35785.70931,	0.05008133907,	14876	]
 [ "N",	"F",	8971.00,	12384801.37,	11798257.2080,	12282485.056933,	25.77873563,	35588.50968,	0.04775862069,	348	]
 [ "N",	"O",	742802.00,	1041502841.45,	989737518.6346,	1029418531.523350,	25.45498783,	35691.12921,	0.04993111956,	29181	]
@@ -110,10 +110,10 @@ Ready.
 #	revenue desc,
 #	o_orderdate
 #limit 10;
-% sys.lineitem,	sys.L1,	sys.orders,	sys.orders # table_name
+% sys.lineitem,	sys.L4,	sys.orders,	sys.orders # table_name
 % l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
 % int,	decimal,	date,	int # type
-% 5,	41,	10,	1 # length
+% 5,	40,	10,	1 # length
 [ 47714,	267010.5894,	1995-03-11,	0	]
 [ 22276,	266351.5562,	1995-01-29,	0	]
 [ 32965,	263768.3414,	1995-02-25,	0	]
@@ -155,7 +155,7 @@ Ready.
 #	o_orderpriority
 #order by
 #	o_orderpriority;
-% sys.orders,	sys.L1 # table_name
+% sys.orders,	sys.L10 # table_name
 % o_orderpriority,	order_count # name
 % char,	bigint # type
 % 15,	3 # length
@@ -198,10 +198,10 @@ Ready.
 #	n_name
 #order by
 #	revenue desc;
-% sys.nation,	sys.L1 # table_name
+% sys.nation,	sys.L4 # table_name
 % n_name,	revenue # name
 % char,	decimal # type
-% 25,	41 # length
+% 25,	40 # length
 [ "VIETNAM",	1000926.6999	]
 [ "CHINA",	740210.7570	]
 [ "JAPAN",	660651.2425	]
@@ -226,10 +226,10 @@ Ready.
 #	and l_shipdate < date '1994-01-01' + interval '1' year
 #	and l_discount between 0.06 - 0.01 and 0.06 + 0.01
 #	and l_quantity < 24;
-% sys.L1 # table_name
+% sys.L4 # table_name
 % revenue # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ 1193053.2253	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
@@ -268,10 +268,10 @@ Ready.
 #			and c_nationkey = n2.n_nationkey
 #			and (
 #				(n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY')
-% sys.shipping,	sys.shipping,	sys.shipping,	sys.L1 # table_name
+% sys.shipping,	sys.shipping,	sys.shipping,	sys.L16 # table_name
 % supp_nation,	cust_nation,	l_year,	revenue # name
 % char,	char,	int,	decimal # type
-% 25,	25,	4,	41 # length
+% 25,	25,	4,	40 # length
 [ "FRANCE",	"GERMANY",	1995,	268068.5774	]
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
@@ -314,10 +314,10 @@ Ready.
 #			and o_custkey = c_custkey
 #			and c_nationkey = n1.n_nationkey
 #			and n1.n_regionkey = r_regionkey
-% sys.all_nations,	sys.L3 # table_name
+% sys.all_nations,	sys.L14 # table_name
 % o_year,	mkt_share # name
 % int,	decimal # type
-% 4,	41 # length
+% 4,	40 # length
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
 % .stats,	.stats # table_name
@@ -356,10 +356,10 @@ Ready.
 #			and s_nationkey = n_nationkey
 #			and p_name like '%green%'
 #	) as profit
-% sys.profit,	sys.profit,	sys.L1 # table_name
+% sys.profit,	sys.profit,	sys.L13 # table_name
 % nation,	o_year,	sum_profit # name
 % char,	int,	decimal # type
-% 25,	4,	41 # length
+% 25,	4,	40 # length
 [ "ALGERIA",	1998,	97864.5682	]
 [ "ALGERIA",	1997,	368231.6695	]
 [ "ALGERIA",	1996,	196525.8046	]
@@ -576,10 +576,10 @@ Ready.
 #order by
 #	revenue desc
 #limit 20;
-% sys.customer,	sys.customer,	sys.L1,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
+% sys.customer,	sys.customer,	sys.L5,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
 % c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
 % int,	varchar,	decimal,	decimal,	char,	varchar,	char,	varchar # type
-% 4,	18,	41,	17,	25,	40,	15,	116 # length
+% 4,	18,	40,	17,	25,	40,	15,	116 # length
 [ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"ely pending frays boost carefully"	]
 [ 1201,	"Customer#000001201",	374331.5340,	5165.39,	"IRAN",	"LfCSVKWozyWOGDW02g9UX,XgH5YU2o5ql1zBrN",	"20-825-400-1187",	"lyly pending packages. special requests sleep-- platelets use blithely after the instructions. sometimes even id"	]
 [ 422,	"Customer#000000422",	366451.0126,	-272.14,	"INDONESIA",	"AyNzZBvmIDo42JtjP9xzaK3pnvkh Qc0o08ssnvq",	"19-299-247-2444",	"eposits; furiously ironic packages accordi"	]
@@ -634,14 +634,10 @@ Ready.
 #		from
 #			partsupp,
 #			supplier,
-#			nation
-#		where
-#			ps_suppkey = s_suppkey
-#			and s_nationkey = n_nationkey
-% sys.partsupp,	sys.L1 # table_name
+% sys.partsupp,	sys.L4 # table_name
 % ps_partkey,	value # name
 % int,	decimal # type
-% 4,	41 # length
+% 4,	40 # length
 [ 1376,	13271249.89	]
 #select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
@@ -678,7 +674,7 @@ Ready.
 #	and l_shipdate < l_commitdate
 #	and l_receiptdate >= date '1994-01-01'
 #	and l_receiptdate < date '1994-01-01' + interval '1' year
-% sys.lineitem,	sys.L1,	sys.L2 # table_name
+% sys.lineitem,	sys.L4,	sys.L7 # table_name
 % l_shipmode,	high_line_count,	low_line_count # name
 % char,	hugeint,	hugeint # type
 % 10,	2,	2 # length
@@ -714,7 +710,7 @@ Ready.
 #order by
 #	custdist desc,
 #	c_count desc;
-% .c_orders,	.L2 # table_name
+% .c_orders,	.L10 # table_name
 % c_count,	custdist # name
 % bigint,	bigint # type
 % 2,	3 # length
@@ -775,10 +771,10 @@ Ready.
 #	l_partkey = p_partkey
 #	and l_shipdate >= date '1995-09-01'
 #	and l_shipdate < date '1995-09-01' + interval '1' month;
-% sys.L2 # table_name
+% sys.L5 # table_name
 % promo_revenue # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ 15.48654	]
 #select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
@@ -794,7 +790,7 @@ Ready.
 % sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.revenue0 # table_name
 % s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
 % int,	char,	varchar,	char,	decimal # type
-% 2,	25,	36,	15,	41 # length
+% 2,	25,	36,	15,	40 # length
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
@@ -836,7 +832,7 @@ Ready.
 #	p_brand,
 #	p_type,
 #	p_size;
-% sys.part,	sys.part,	sys.part,	sys.L4 # table_name
+% sys.part,	sys.part,	sys.part,	sys.L15 # table_name
 % p_brand,	p_type,	p_size,	supplier_cnt # name
 % char,	varchar,	int,	bigint # type
 % 10,	25,	2,	1 # length
@@ -1163,10 +1159,10 @@ Ready.
 #		where
 #			l_partkey = p_partkey
 #	);
-% sys.L3 # table_name
+% sys.L12 # table_name
 % avg_yearly # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ NULL	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
@@ -1211,10 +1207,10 @@ Ready.
 #	o_totalprice desc,
 #	o_orderdate
 #limit 100;
-% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L6 # table_name
-% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L6 # name
+% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L22 # table_name
+% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L21 # name
 % varchar,	int,	int,	date,	decimal,	decimal # type
-% 18,	3,	5,	10,	17,	41 # length
+% 18,	3,	5,	10,	17,	40 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305.00	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303.00	]
 #select * from optimizer_stats() stats;
@@ -1249,10 +1245,10 @@ Ready.
 #		and p_brand = 'Brand#23'
 #		and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
 #		and l_quantity >= 10 and l_quantity <= 10 + 10
-% sys.L1 # table_name
+% sys.L4 # table_name
 % revenue # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ 22923.0280	]
 % .stats,	.stats # table_name
 % rewrite,	count # name
@@ -1345,7 +1341,7 @@ Ready.
 #			l3.l_orderkey = l1.l_orderkey
 #			and l3.l_suppkey <> l1.l_suppkey
 #			and l3.l_receiptdate > l3.l_commitdate
-% sys.supplier,	sys.L1 # table_name
+% sys.supplier,	sys.L22 # table_name
 % s_name,	numwait # name
 % char,	bigint # type
 % 25,	1 # length
@@ -1388,10 +1384,10 @@ Ready.
 #				select
 #					*
 #				from
-% sys.custsale,	sys.L2,	sys.L3 # table_name
+% sys.custsale,	sys.L17,	sys.L22 # table_name
 % cntrycode,	numcust,	totacctbal # name
 % char,	bigint,	decimal # type
-% 15,	2,	41 # length
+% 15,	2,	40 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]
 [ "18",	14,	111072.45	]

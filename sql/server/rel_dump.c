@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1336,6 +1336,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0);
 		rel = rel_setop(sql->sa, lrel, rrel, j);
 		rel->exps = exps;
+		set_processed(rel);
 		return rel;
 	case 'd':
 		/* 'ddl' not supported */

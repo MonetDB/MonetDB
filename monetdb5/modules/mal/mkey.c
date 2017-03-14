@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -50,6 +50,11 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	res= getArgReference_lng(stk,p,0);
 	val= getArgReference(stk,p,1);
 	switch (ATOMstorage(tpe)) {
+	case TYPE_void:
+	case TYPE_bat:
+	case TYPE_ptr:
+		// illegal types, avoid falling into the default case.
+		assert(0);
 	case TYPE_bte:
 		*res = MKEYHASH_bte(val);
 		break;

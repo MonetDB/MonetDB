@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -139,7 +139,7 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 
 
 static int
-_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
+_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
 {
 	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
@@ -245,7 +245,7 @@ rel2str( mvc *sql, sql_rel *rel)
 
 /* stub and remote function */
 static int
-_create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, prop *prp)
+_create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, prop *prp)
 {
 	Client c = MCgetClient(m->clientid);
 	MalBlkPtr curBlk = 0;
@@ -255,7 +255,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	node *n;
 	int i, q, v;
 	int *lret, *rret;
-	char old = name[0];
+	char *lname = GDKstrdup(name);
 	sql_rel *r = rel;
 
 	if (is_topn(r->op))
@@ -266,12 +266,11 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	rret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
 
 	/* create stub */
-	name[0] = old;
 	backup = c->curprg;
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 	if( c->curprg == NULL)
 		return -1;
-	name[0] = 'l';
+	lname[0] = 'l';
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
 
@@ -320,6 +319,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 
 	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
 	p = newInstruction(curBlk, remoteRef, execRef);
+	getArg(p,0) = newTmpVariable(curBlk,TYPE_any);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, sqlRef);
 	p = pushStr(curBlk, p, registerRef);
@@ -336,12 +336,15 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	o = pushArgument(curBlk, o, q);
-	o = pushStr(curBlk, o, name);
+	o = pushStr(curBlk, o, lname);
 	p = pushArgument(curBlk, p, getArg(o,0));
 
 	{ 
 	int len = 1024, nr = 0;
 	char *s, *buf = GDKmalloc(len);
+	if (!buf) {
+		return -1;
+	}
 	s = rel2str(m, rel);
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	o = pushArgument(curBlk, o, q);
@@ -375,7 +378,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	p = newInstruction(curBlk, remoteRef, execRef);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, mod);
-	p = pushStr(curBlk, p, name);
+	p = pushStr(curBlk, p, lname);
 	getArg(p, 0) = -1;
 
 	for (i = 0, n = r->exps->h; n; n = n->next, i++) {
@@ -432,12 +435,12 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	SQLoptimizeFunction(c, c->curprg->def);
 	if (backup)
 		c->curprg = backup;
-	name[0] = old;		/* make sure stub is called */
+	GDKfree(lname);		/* make sure stub is called */
 	return 0;
 }
 
 int
-monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
+monet5_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
 {
 	prop *p = NULL;
 
@@ -662,6 +665,10 @@ backend_call(backend *be, Client c, cq *cq)
 	MalBlkPtr mb = c->curprg->def;
 
 	q = newStmt(mb, userRef, cq->name);
+	if (!q) {
+		m->session->status = -3;
+		return;
+	}
 	/* cached (factorized queries return bit??) */
 	if (cq->code && getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol) {
 		setVarType(mb, getArg(q, 0), TYPE_bit);
@@ -889,7 +896,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		InstrPtr p = getInstrPtr(curBlk, i);
 		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
 			continue;
-		sideeffects = sideeffects || hasSideEffects(p, FALSE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)); 
+		sideeffects = sideeffects || hasSideEffects(curBlk, p, FALSE); 
 		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);
 		if (p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;
@@ -914,7 +921,6 @@ cleanup:
 	if (backup)
 		c->curprg = backup;
 	return -1;
-
 }
 
 /* TODO handle aggr */
@@ -954,7 +960,13 @@ backend_create_subfunc(backend *be, sql_subfunc *f, list *ops)
 int
 backend_create_subaggr(backend *be, sql_subaggr *f)
 {
-	return backend_create_func(be, f->aggr, f->res, NULL);
+	int res;
+	MalBlkPtr mb = be->mb;
+
+	be->mb = NULL;
+	res = backend_create_func(be, f->aggr, f->res, NULL);
+	be->mb = mb;
+	return res;
 }
 
 void

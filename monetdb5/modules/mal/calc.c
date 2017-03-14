@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -606,30 +606,6 @@ CMDvarDECRsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDsetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDsetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-
-	switch (getArgType(mb, pci, 1)) {
-	case TYPE_int:
-		OIDbase((oid) * getArgReference_int(stk, pci, 1));
-		break;
-	case TYPE_oid:
-		OIDbase(*getArgReference_oid(stk, pci, 1));
-		break;
-	case TYPE_lng:
-		OIDbase((oid) * getArgReference_lng(stk, pci, 1));
-		break;
-	default:
-		return mythrow(MAL, "calc.setoid", ILLEGAL_ARGUMENT);
-	}
-	return MAL_SUCCEED;
-}
-
 mal_export str CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 str
@@ -656,6 +632,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getArgReference(stk, pci, 3);
 	}
 	if (ATOMextern(t1)) {
+		// FIXME unchecked_malloc ATOMdup could return NULL
 		*(ptr **) retval = ATOMdup(t1, *(ptr**)p);
 	} else if (t1 == TYPE_void) {
 		memcpy(retval, p, sizeof(oid));

@@ -74,10 +74,10 @@ project (
 | | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | | ) [ t2606b.a ]
 | | ) [ t2606b.a ] [ t2606b.a ]
-| ) [ t2606a.a as L10.a ]
-) [ L10.a ] [ L10.a ASC ]
+| ) [ t2606a.a as L11.a ]
+) [ L11.a ] [ L11.a ASC ]
 #select * from t2606a   union   select * from t2606b   order by a;
-% .L10 # table_name
+% .L11 # table_name
 % a # name
 % int # type
 % 2 # length
@@ -107,10 +107,10 @@ project (
 | | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | | ) [ t2606b.a ]
 | | ) [ t2606b.a ] [ t2606b.a ]
-| ) [ t2606a.a as L10.a ]
-) [ L10.a ] [ L10.a ASC ]
+| ) [ t2606a.a as L11.a ]
+) [ L11.a ] [ L11.a ASC ]
 #( select * from t2606a   union   select * from t2606b ) order by a;
-% .L10 # table_name
+% .L11 # table_name
 % a # name
 % int # type
 % 2 # length
@@ -140,10 +140,10 @@ project (
 | | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | | ) [ t2606b.a ]
 | | ) [ t2606b.a ] [ t2606b.a ]
-| ) [ t2606a.a as L10.a ]
-) [ L10.a ] [ L10.a ASC ]
+| ) [ t2606a.a as L11.a ]
+) [ L11.a ] [ L11.a ASC ]
 #( select * from t2606a ) union ( select * from t2606b ) order by a;
-% .L10 # table_name
+% .L11 # table_name
 % a # name
 % int # type
 % 2 # length
@@ -169,10 +169,10 @@ project (
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
-| ) [ t2606a.a as L10.a ]
-) [ L10.a ] [ L10.a ASC ]
+| ) [ t2606a.a as L11.a ]
+) [ L11.a ] [ L11.a ASC ]
 #select * from t2606a   except   select * from t2606b   order by a;
-% sys.L10 # table_name
+% sys.L11 # table_name
 % a # name
 % int # type
 % 2 # length
@@ -192,10 +192,10 @@ project (
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
-| ) [ t2606a.a as L10.a ]
-) [ L10.a ] [ L10.a ASC ]
+| ) [ t2606a.a as L11.a ]
+) [ L11.a ] [ L11.a ASC ]
 #( select * from t2606a   except   select * from t2606b ) order by a;
-% sys.L10 # table_name
+% sys.L11 # table_name
 % a # name
 % int # type
 % 2 # length
@@ -215,10 +215,10 @@ project (
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
-| ) [ t2606a.a as L10.a ]
-) [ L10.a ] [ L10.a ASC ]
+| ) [ t2606a.a as L11.a ]
+) [ L11.a ] [ L11.a ASC ]
 #( select * from t2606a ) except ( select * from t2606b ) order by a;
-% sys.L10 # table_name
+% sys.L11 # table_name
 % a # name
 % int # type
 % 2 # length
@@ -238,10 +238,10 @@ project (
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
-| ) [ t2606a.a as L10.a ]
-) [ L10.a ] [ L10.a ASC ]
+| ) [ t2606a.a as L11.a ]
+) [ L11.a ] [ L11.a ASC ]
 #select * from t2606a   intersect   select * from t2606b   order by a;
-% sys.L10 # table_name
+% sys.L11 # table_name
 % a # name
 % int # type
 % 2 # length
@@ -261,10 +261,10 @@ project (
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
-| ) [ t2606a.a as L10.a ]
-) [ L10.a ] [ L10.a ASC ]
+| ) [ t2606a.a as L11.a ]
+) [ L11.a ] [ L11.a ASC ]
 #( select * from t2606a   intersect   select * from t2606b ) order by a;
-% sys.L10 # table_name
+% sys.L11 # table_name
 % a # name
 % int # type
 % 2 # length
@@ -284,10 +284,10 @@ project (
 | | project (
 | | | table(sys.t2606b) [ t2606b.a ] COUNT 
 | | ) [ t2606b.a ]
-| ) [ t2606a.a as L10.a ]
-) [ L10.a ] [ L10.a ASC ]
+| ) [ t2606a.a as L11.a ]
+) [ L11.a ] [ L11.a ASC ]
 #( select * from t2606a ) intersect ( select * from t2606b ) order by a;
-% sys.L10 # table_name
+% sys.L11 # table_name
 % a # name
 % int # type
 % 2 # length

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -203,7 +203,7 @@ SQLepilogue(void *ret)
 	return res;
 }
 
-MT_Id sqllogthread, minmaxthread;
+MT_Id sqllogthread, idlethread;
 
 static str
 SQLinit(void)
@@ -251,12 +251,12 @@ SQLinit(void)
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
 	GDKregister(sqllogthread);
-#if 0
-	if (MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_JOINABLE) != 0) {
-		throw(SQL, "SQLinit", "Starting minmax manager failed");
+	if (!(SQLdebug&1024)) {
+		if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
+			throw(SQL, "SQLinit", "Starting idle manager failed");
+		}
+		GDKregister(idlethread);
 	}
-	GDKregister(minmaxthread);
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -437,9 +437,13 @@ SQLinitClient(Client c)
 	 * based on the mandatory scripts to be executed.
 	 */
 	if (sqlinit) {		/* add sqlinit to the fdin stack */
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		buffer *b = (buffer *) GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
 		bstream *fdin;
+	
+		if( b == NULL)
+			throw(SQL,"sql.initClient",MAL_MALLOC_FAIL);
 
 		buffer_init(b, _STRDUP(sqlinit), len);
 		fdin = bstream_create(buffer_rastream(b, "si"), b->len);
@@ -453,6 +457,8 @@ SQLinitClient(Client c)
 		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
+		if( be == NULL)
+			throw(SQL,"sql.init", MAL_MALLOC_FAIL);
 	} else {
 		be = c->sqlcontext;
 		m = be->mvc;
@@ -1146,7 +1152,7 @@ SQLparser(Client c)
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (opt ) {
-			str msg = SQLoptimizeQuery(c, c->curprg->def);
+			msg = SQLoptimizeQuery(c, c->curprg->def);
 
 			if (msg != MAL_SUCCEED) {
 				sqlcleanup(m, err);
@@ -1189,9 +1195,6 @@ SQLCacheRemove(Client c, str nme)
 	s = findSymbolInModule(c->nspace, nme);
 	if (s == NULL)
 		throw(MAL, "cache.remove", "internal error, symbol missing\n");
-	if (getInstrPtr(s->def, 0)->token == FACTORYsymbol)
-		shutdownFactoryByName(c, c->nspace, nme);
-	else
-		deleteSymbol(c->nspace, s);
+	deleteSymbol(c->nspace, s);
 	return MAL_SUCCEED;
 }

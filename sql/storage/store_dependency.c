@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -111,6 +111,7 @@ sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type, list * igno
 		for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
 			v = table_funcs.column_find_value(tr, tri_id, rid);
 			list_append(dep_list, v);
+			// FIXME unchecked_malloc MNEW can return NULL
 			v = MNEW(sht);
 			*(sht*)v = depend_type;
 			list_append(dep_list, v);
@@ -191,6 +192,7 @@ sql_trans_schema_user_dependencies(sql_trans *tr, int schema_id)
 	for(rid = table_funcs.rids_next(users); rid != oid_nil; rid = table_funcs.rids_next(users)) {
 		v = table_funcs.column_find_value(tr, auth_id, rid);
 		list_append(l,v);
+		// FIXME unchecked_malloc MNEW can return NULL
 		v = MNEW(sht);
 		*(sht*)v = type;
 		list_append(l,v);
@@ -216,6 +218,7 @@ sql_trans_owner_schema_dependencies(sql_trans *tr, int owner_id)
 	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
 		v = table_funcs.column_find_value(tr, schema_id, rid);
 		list_append(l, v);
+		// FIXME unchecked_malloc MNEW can return NULL
 		v = MNEW(sht);
 		*(sht*)v = type;
 		list_append(l,v);

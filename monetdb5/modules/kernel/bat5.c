@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -548,7 +548,7 @@ BKCgetKey(bit *ret, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCpersists(void *r, const bat *bid, const bit *flg)
 {
 	BAT *b;
@@ -750,8 +750,6 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bv, local_itoa((ssize_t)(b->tkey)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tvarsized", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t)(b->tvarsized)), FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "talign", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->talign), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnosorted", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->tnosorted), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnorevsorted", FALSE) != GDK_SUCCEED ||
@@ -1103,6 +1101,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	return MAL_SUCCEED;
 }
 
+#if 0
 str
 BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 {
@@ -1158,6 +1157,8 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
+#endif	/* unused */
+
 /*
  * Shrinking a void-headed BAT using a list of oids to ignore.
  */

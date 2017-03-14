@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -26,8 +26,6 @@ enum heaptype {
 	orderidxheap
 };
 
-__hidden void ALIGNcommit(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__visibility__("hidden")));
 __hidden int ATOMisdescendant(int id, int parentid)
@@ -57,7 +55,7 @@ __hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted)
+__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, int subsorted)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -66,6 +64,8 @@ __hidden BAT *BATload_intern(bat bid, int lock)
 __hidden gdk_return BATmaterialize(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden str BATrename(BAT *b, const char *nme)
+	__attribute__((__visibility__("hidden")));
+__hidden gdk_return BATsave(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -85,6 +85,26 @@ __hidden bat BBPinsert(BAT *bn)
 __hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPunshare(bat b)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch(const oid *restrict indir, oid offset, int type, const char *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const char *restrict v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_sht(const oid *restrict indir, oid offset, const sht *restrict vals, BUN lo, BUN hi, sht v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_int(const oid *restrict indir, oid offset, const int *restrict vals, BUN lo, BUN hi, int v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_lng(const oid *restrict indir, oid offset, const lng *restrict vals, BUN lo, BUN hi, lng v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+#ifdef HAVE_HGE
+__hidden BUN binsearch_hge(const oid *restrict indir, oid offset, const hge *restrict vals, BUN lo, BUN hi, hge v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+#endif
+__hidden BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden Heap *createOIDXheap(BAT *b, int stable)
 	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
@@ -109,15 +129,11 @@ __hidden char *GDKload(int farmid, const char *nme, const char *ext, size_t size
 __hidden void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)))
 	__attribute__((__visibility__("hidden")));
-__hidden void *GDKmallocmax(size_t size, size_t *maxsize, int emergency)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
 	__attribute__((__visibility__("hidden")));
 __hidden void *GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKmunmap(void *addr, size_t len)
-	__attribute__((__visibility__("hidden")));
-__hidden void *GDKreallocmax(void *pold, size_t size, size_t *maxsize, int emergency)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKremovedir(int farmid, const char *nme)
 	__attribute__((__visibility__("hidden")));
@@ -167,23 +183,15 @@ __hidden void *MT_mremap(const char *path, int mode, void *old_address, size_t o
 	__attribute__((__visibility__("hidden")));
 __hidden int MT_msync(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
-__hidden int OIDdirty(void)
-	__attribute__((__visibility__("hidden")));
-__hidden int OIDinit(void)
-	__attribute__((__visibility__("hidden")));
-__hidden oid OIDread(str buf)
-	__attribute__((__visibility__("hidden")));
-__hidden int OIDwrite(FILE *f)
-	__attribute__((__visibility__("hidden")));
 __hidden void OIDXfree(BAT *b)
+	__attribute__((__visibility__("hidden")));
+__hidden void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));
 __hidden void strCleanHash(Heap *hp, int rebuild)
 	__attribute__((__visibility__("hidden")));
 __hidden int strCmpNoNil(const unsigned char *l, const unsigned char *r)
-	__attribute__((__visibility__("hidden")));
-__hidden int strElimDoubles(Heap *h)
 	__attribute__((__visibility__("hidden")));
 __hidden var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
@@ -311,19 +319,6 @@ extern MT_Lock MT_system_lock;
 #if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
 /* see comment in gdk.h */
 #ifdef __GNUC__
-#define GDKmallocmax(s,ps,e)						\
-	({								\
-		size_t _size = (s);					\
-		size_t *_psize  = (ps);					\
-		void *_res = GDKmallocmax(_size,_psize,e);		\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmallocmax(" SZFMT ",(" SZFMT ")) -> " \
-				PTRFMT " %s[%s:%d]\n",			\
-				_size, *_psize, PTRFMTCAST _res,	\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
-	 })
 #define GDKmunmap(p, l)							\
 	({	void *_ptr = (p);					\
 		size_t _len = (l);					\
@@ -336,21 +331,6 @@ extern MT_Lock MT_system_lock;
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	})
-#define GDKreallocmax(p,s,ps,e)						\
-	({								\
-		void *_ptr = (p);					\
-		size_t _size = (s);					\
-		size_t *_psize  = (ps);					\
-		void *_res = GDKreallocmax(_ptr,_size,_psize,e);	\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKreallocmax(" PTRFMT "," SZFMT \
-				",(" SZFMT ")) -> " PTRFMT		\
-				" %s[%s:%d]\n", PTRFMTCAST _ptr,	\
-				_size, *_psize, PTRFMTCAST _res,	\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
-	 })
 #define GDKmremap(p, m, oa, os, ns)					\
 	({								\
 		const char *_path = (p);				\
@@ -371,18 +351,6 @@ extern MT_Lock MT_system_lock;
 		_res;							\
 	 })
 #else
-static inline void *
-GDKmallocmax_debug(size_t size, size_t *psize, int emergency,
-		   const char *filename, int lineno)
-{
-	void *res = GDKmallocmax(size, psize, emergency);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmallocmax(" SZFMT ",(" SZFMT ")) -> "
-			   PTRFMT " [%s:%d]\n",
-			   size, *psize, PTRFMTCAST res, filename, lineno);
-	return res;
-}
-#define GDKmallocmax(s, ps, e)	GDKmallocmax_debug((s), (ps), (e), __FILE__, __LINE__)
 static inline gdk_return
 GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
 {
@@ -393,19 +361,6 @@ GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
 	return res;
 }
 #define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)
-static inline void *
-GDKreallocmax_debug(void *ptr, size_t size, size_t *psize, int emergency,
-		    const char *filename, int lineno)
-{
-	void *res = GDKreallocmax(ptr, size, psize, emergency);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKreallocmax(" PTRFMT "," SZFMT
-			   ",(" SZFMT ")) -> " PTRFMT " [%s:%d]\n",
-			   PTRFMTCAST ptr, size, *psize, PTRFMTCAST res,
-			   filename, lineno);
-	return res;
-}
-#define GDKreallocmax(p, s, ps, e)	GDKreallocmax_debug((p), (s), (ps), (e), __FILE__, __LINE__)
 static inline void *
 GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size, const char *filename, int lineno)
 {

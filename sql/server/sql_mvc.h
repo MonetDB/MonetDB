@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -30,6 +30,7 @@
 #define type_value	0
 #define type_predicate	1
 
+/* todo cleanup card_row and card_set, both seem to be not used */
 /* cardinality expected by enclosing operator */
 #define card_none	-1	/* psm call doesn't return anything */
 #define card_value	0
@@ -39,6 +40,7 @@
 #define card_relation 	4
 #define card_loader 	5
 
+#define CARD_VALUE(card) (card == card_value || card == card_row || card == card_column || card == card_set)
 
 /* allowed to reduce (in the where and having parts we can reduce) */
 
@@ -131,7 +133,7 @@ typedef struct mvc {
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
-extern void mvc_minmaxmanager(void);
+extern void mvc_idlemanager(void);
 
 extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
 extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
@@ -212,9 +214,6 @@ extern void mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);
 extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type);
 extern int mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids);
-extern int mvc_connect_catalog(mvc *m, const char *server, int port, const char *db, const char *db_alias, const char *user, const char *passwd, const char *lng);
-extern int mvc_disconnect_catalog(mvc *m, const char *db_alias);
-extern int mvc_disconnect_catalog_ALL(mvc *m);
 
 /* variable management */
 extern void stack_push_var(mvc *sql, const char *name, sql_subtype *type);

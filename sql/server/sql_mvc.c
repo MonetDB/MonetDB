@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -179,11 +179,11 @@ mvc_logmanager(void)
 }
 
 void
-mvc_minmaxmanager(void)
+mvc_idlemanager(void)
 {
-	Thread thr = THRnew("minmaxmanager");
+	Thread thr = THRnew("idlemanager");
 
-	minmax_manager();
+	idle_manager();
 	THRdel(thr);
 }
 
@@ -501,6 +501,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 
 	m->params = NULL;
 	m->sizevars = MAXPARAMS;
+	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	m->vars = NEW_ARRAY(sql_var, m->sizevars);
 	m->topvars = 0;
 	m->frame = 1;
@@ -1236,36 +1237,6 @@ mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 	
 	list_destroy(dep_list);
 	return NO_DEPENDENCY;
-}
-
-int
-mvc_connect_catalog(mvc *m, const char *server, int port, const char *db, const char *db_alias, const char *user, const char *passwd, const char *lng)
-{
-	if (mvc_debug)
-		fprintf(stderr, "#mvc_connect_catalog of database %s on server %s\n",db, server);
-
-	return sql_trans_connect_catalog(m->session->tr, server, port, db, db_alias, user, passwd, lng);
-		
-}
-
-int
-mvc_disconnect_catalog(mvc *m, const char *db_alias)
-{
-	if (mvc_debug)
-		fprintf(stderr, "#mvc_disconnect_catalog for db_alias %s\n",db_alias);
-
-	return sql_trans_disconnect_catalog(m->session->tr, db_alias);
-		
-}
-
-int
-mvc_disconnect_catalog_ALL(mvc *m)
-{
-	if (mvc_debug)
-		fprintf(stderr, "#mvc_disconnect_catalog_ALL \n");
-
-	return sql_trans_disconnect_catalog_ALL(m->session->tr);
-		
 }
 
 sql_column *

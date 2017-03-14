@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -27,6 +27,8 @@
 	if (b) {\
 	   if (ATOMextern(t)) {\
 	      *(ptr*) res = (ptr) ATOMnil(t);\
+		  if ( *(ptr *) res == NULL)\
+			throw(MAL,"txtsim", MAL_MALLOC_FAIL);\
 	   } else {\
 	      memcpy(res, ATOMnilptr(t), ATOMsize(t));\
  	   }\
@@ -308,8 +310,9 @@ CMDqgramnormalize(str *res, str *Input)
 	char c, last = ' ';
 
 	RETURN_NIL_IF(strNil(input), TYPE_str);
-
 	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
+	if (*res == NULL)
+		throw(MAL,"qgram",MAL_MALLOC_FAIL);
 
 	for (i = 0; input[i]; i++) {
 		c = toupper(input[i]);

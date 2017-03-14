@@ -55,16 +55,16 @@ Ready.
 [ 15,	20 ]
 [ 20,	25 ]
 
-#CREATE OR REPLACE VIEW viewtest AS
+#CREATE VIEW viewtest AS
 #	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
 #SELECT * FROM viewtest;
 % sys.viewtest,	sys.viewtest # table_name
 % a,	b # name
 % int,	int # type
 % 2,	2 # length
+[ 20,	25 ]
+[ 15,	20 ]
 [ 10,	15 ]
-[ 15,	20	]
-[ 20,	25	]
 #DROP VIEW viewtest;
 #CREATE VIEW viewtest AS
 #	SELECT a FROM viewtest_tbl WHERE a <> 20;

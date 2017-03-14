@@ -1,6 +1,4 @@
 #Same as tst200, but includes testing of the profiler
-o:= calc.oid(20000000);
-calc.setoid(o);
 #test basic functionality of the BAT library.
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.

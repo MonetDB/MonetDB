@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -172,15 +172,15 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	aggr = GROUPcollect(cntxt, mb, stk, pci);
 	if( aggr == NULL)
-		throw(MAL,"group.subgroup",MAL_MALLOC_FAIL);
+		throw(MAL,"group.multicolumn",MAL_MALLOC_FAIL);
 	GROUPcollectSort(aggr, 0, aggr->last);
 
-	/* (grp,ext,hist) := group.subgroup(..) */
+	/* (grp,ext,hist) := group.group(..) */
 	/* use the old pattern to perform the incremental grouping */
 	*grp = 0;
 	*ext = 0;
 	*hist = 0;
-	msg = GRPsubgroup1(grp, ext, hist, &aggr->bid[0]);
+	msg = GRPgroup1(grp, ext, hist, &aggr->bid[0]);
 	i = 1;
 	if (msg == MAL_SUCCEED && aggr->last > 1)
 		do {
@@ -200,10 +200,10 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*grp = 0;
 			*ext = 0;
 			*hist = 0;
-			msg = GRPsubgroup4(grp, ext, hist, &aggr->bid[i], &oldgrp, &oldext, &oldhist);
-			BBPdecref(oldgrp, TRUE);
-			BBPdecref(oldext, TRUE);
-			BBPdecref(oldhist, TRUE);
+			msg = GRPsubgroup5(grp, ext, hist, &aggr->bid[i], NULL, &oldgrp, &oldext, &oldhist);
+			BBPrelease(oldgrp);
+			BBPrelease(oldext);
+			BBPrelease(oldhist);
 		} while (msg == MAL_SUCCEED && ++i < aggr->last);
 	GROUPdelete(aggr);
 	return msg;

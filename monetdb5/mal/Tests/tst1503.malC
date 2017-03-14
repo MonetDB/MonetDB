@@ -36,7 +36,7 @@
 	if_a := bat.append(z,"c");
 	jf_a := bat.append(z,"a");
 io.print("group x");io.print(x,y,z);
-	(g1,e1,h1) := group.subgroup(x);
+	(g1,e1,h1) := group.group(x);
 io.print("g1 becomes"); io.print(g1);
 io.print("e1 becomes"); io.print(e1);
 io.print("h1 becomes"); io.print(h1);

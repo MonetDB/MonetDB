@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -2009,7 +2009,7 @@ doRequest(Mapi mid, const char *buf)
 	return 0;
 }
 
-#define CHECK_RESULT(mid, hdl, break_or_continue, buf)			\
+#define CHECK_RESULT(mid, hdl, break_or_continue, buf, fp)		\
 		switch (mapi_error(mid)) {				\
 		case MOK:						\
 			/* everything A OK */				\
@@ -2048,6 +2048,8 @@ doRequest(Mapi mid, const char *buf)
 			timerEnd();					\
 			if (buf)					\
 				free(buf);				\
+			if (fp)						\
+				close_stream(fp);			\
 			return 1;					\
 		}
 
@@ -2094,12 +2096,12 @@ doFileBulk(Mapi mid, stream *fp)
 		timerResume();
 		if (hdl == NULL) {
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, continue, buf);
+			CHECK_RESULT(mid, hdl, continue, buf, fp);
 		}
 
 		assert(hdl != NULL);
 		mapi_query_part(hdl, buf, (size_t) length);
-		CHECK_RESULT(mid, hdl, continue, buf);
+		CHECK_RESULT(mid, hdl, continue, buf, fp);
 
 		/* if not at EOF, make sure there is a newline in the
 		 * buffer */
@@ -2118,14 +2120,14 @@ doFileBulk(Mapi mid, stream *fp)
 				(length > 0 || mapi_query_done(hdl) == MMORE))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, continue, buf);
+		CHECK_RESULT(mid, hdl, continue, buf, fp);
 
 		rc = format_result(mid, hdl, 0);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, continue, buf);
+		CHECK_RESULT(mid, hdl, continue, buf, fp);
 
 		mapi_close_handle(hdl);
 		hdl = NULL;
@@ -2185,8 +2187,6 @@ showCommands(void)
 #define MD_SEQ      4
 #define MD_FUNC     8
 #define MD_SCHEMA  16
-
-enum hmyesno { UNKNOWN, YES, NO };
 
 #define READBLOCK 8192
 
@@ -2260,8 +2260,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 	MapiHdl hdl;
 	MapiMsg rc = MOK;
 	int lineno = 1;
-	enum hmyesno hassysfuncs = UNKNOWN;
-	enum hmyesno hasschemsys = UNKNOWN;
 	char *prompt = NULL;
 	int prepno = 0;
 #ifdef HAVE_LIBREADLINE
@@ -2523,11 +2521,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						char nameq[128];
 						char funcq[512];
 
-						if (hassysfuncs == UNKNOWN)
-							hassysfuncs = has_systemfunctions(mid) ? YES : NO;
-						if (hasschemsys == UNKNOWN)
-							hasschemsys = has_schemas_system(mid) ? YES : NO;
-
 						if (!*line) {
 							line = "%";
 							hasSchema = 0;
@@ -2542,46 +2535,26 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 									"o.name LIKE '%s'",
 									line);
 						}
-						if (hassysfuncs == YES) {
-							snprintf(funcq, sizeof(funcq),
-								 "SELECT o.name, "
-									"(CASE WHEN sf.function_id IS NOT NULL "
-									      "THEN 'SYSTEM ' "
-									      "ELSE '' "
-									  "END || 'FUNCTION') AS type, "
-									 "CASE WHEN sf.function_id IS NULL "
-									      "THEN false "
-									      "ELSE true "
-									 "END AS system, "
-									 "s.name AS sname, "
-									 "%d AS ntype "
-								 "FROM sys.functions o "
-								       "LEFT JOIN sys.systemfunctions sf "
-									     "ON o.id = sf.function_id, "
-								       "sys.schemas s "
-								 "WHERE o.schema_id = s.id AND "
-								       "%s ",
-								 MD_FUNC,
-								 nameq);
-						} else {
-							snprintf(funcq, sizeof(funcq),
-								 "SELECT o.name, "
-									"(CASE WHEN o.id <= 2000 "
-									      "THEN 'SYSTEM ' "
-									      "ELSE '' "
-									 "END || 'FUNCTION') AS type, "
-									"CASE WHEN o.id > 2000 "
-									     "THEN false "
-									     "ELSE true END AS system, "
-									"s.name AS sname, "
-									"%d AS ntype "
-								 "FROM sys.functions o, "
-								      "sys.schemas s "
-								 "WHERE o.schema_id = s.id AND "
-								       "%s ",
-								 MD_FUNC,
-								 nameq);
-						}
+						snprintf(funcq, sizeof(funcq),
+							 "SELECT o.name, "
+								"(CASE WHEN sf.function_id IS NOT NULL "
+								      "THEN 'SYSTEM ' "
+								      "ELSE '' "
+								  "END || 'FUNCTION') AS type, "
+								 "CASE WHEN sf.function_id IS NULL "
+								      "THEN false "
+								      "ELSE true "
+								 "END AS system, "
+								 "s.name AS sname, "
+								 "%d AS ntype "
+							 "FROM sys.functions o "
+							       "LEFT JOIN sys.systemfunctions sf "
+								     "ON o.id = sf.function_id, "
+							       "sys.schemas s "
+							 "WHERE o.schema_id = s.id AND "
+							       "%s ",
+							 MD_FUNC,
+							 nameq);
 						snprintf(q, sizeof(q),
 							 "SELECT name, "
 								"CAST(type AS VARCHAR(30)) AS type, "
@@ -2632,8 +2605,8 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 							       "%s "
 							       "UNION "
 							       "SELECT NULL AS name, "
-								      "(CASE WHEN %s THEN 'SYSTEM ' ELSE '' END || 'SCHEMA') AS type, "
-								      "%s AS system, "
+								      "(CASE WHEN o.system THEN 'SYSTEM ' ELSE '' END || 'SCHEMA') AS type, "
+								      "o.system AS system, "
 								      "o.name AS sname, "
 								      "%d AS ntype "
 							       "FROM sys.schemas o "
@@ -2646,15 +2619,13 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 							 nameq,
 							 MD_SEQ,
 							 nameq, funcq,
-							 hasschemsys ? "o.system" : "o.name LIKE 'sys'",
-							 hasschemsys ? "o.system" : "o.name LIKE 'sys'",
 							 MD_SCHEMA,
 							 line, x,
 							 (wantsSystem ?
 							   "" :
 							   "AND system = false"));
 						hdl = mapi_query(mid, q);
-						CHECK_RESULT(mid, hdl, continue, buf);
+						CHECK_RESULT(mid, hdl, continue, buf, fp);
 						while (fetch_row(hdl) == 5) {
 							name = mapi_fetch_field(hdl, 0);
 							type = mapi_fetch_field(hdl, 1);
@@ -2860,7 +2831,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 		if (hdl == NULL) {
 			timerStart();
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, continue, buf);
+			CHECK_RESULT(mid, hdl, continue, buf, fp);
 		} else
 			timerResume();
 
@@ -2869,7 +2840,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 		if (length > 0) {
 			SQLsetSpecial(line);
 			mapi_query_part(hdl, line, length);
-			CHECK_RESULT(mid, hdl, continue, buf);
+			CHECK_RESULT(mid, hdl, continue, buf, fp);
 		}
 
 		/* If the server wants more but we're at the
@@ -2887,7 +2858,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 				continue;	/* done */
 			}
 		}
-		CHECK_RESULT(mid, hdl, continue, buf);
+		CHECK_RESULT(mid, hdl, continue, buf, fp);
 
 		if (mapi_get_querytype(hdl) == Q_PREPARE) {
 			prepno = mapi_get_tableid(hdl);
@@ -2899,7 +2870,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, continue, buf);
+		CHECK_RESULT(mid, hdl, continue, buf, fp);
 
 		timerEnd();
 		mapi_close_handle(hdl);

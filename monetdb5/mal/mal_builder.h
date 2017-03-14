@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #ifndef _MAL_BUILDER_
@@ -21,6 +21,7 @@ mal_export InstrPtr newExitStmt(MalBlkPtr mb, str nme);
 mal_export InstrPtr newReturnStmt(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
 mal_export InstrPtr pushSht(MalBlkPtr mb, InstrPtr q, sht val);
+mal_export InstrPtr pushEndInstruction(MalBlkPtr mb);   
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
 mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, lng val);
 #ifdef HAVE_HGE

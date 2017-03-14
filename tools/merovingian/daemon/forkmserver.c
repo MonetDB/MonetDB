@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -686,26 +686,29 @@ forkMserver(char *database, sabdb** stats, int force)
 							   "(sabaoth administration reports running, "
 							   "but process seems gone), "
 							   "review monetdbd's "
-							   "logfile for any peculiarities", database));
+							   "logfile (%s) for any peculiarities", database,
+							   getConfVal(_mero_props, "logfile")));
 				case SABdbCrashed:
 					return(newErr(
 							   "database '%s' has crashed after starting, "
 							   "manual intervention needed, "
-							   "check monetdbd's logfile for details",
-							   database));
+							   "check monetdbd's logfile (%s) for details",
+							   database, getConfVal(_mero_props, "logfile")));
 				case SABdbInactive:
 					return(newErr(
 							   "database '%s' appears to shut "
 							   "itself down after starting, "
-							   "check monetdbd's logfile for possible "
-							   "hints", database));
+							   "check monetdbd's logfile (%s) for possible "
+							   "hints", database,
+							   getConfVal(_mero_props, "logfile")));
 				case SABdbStarting:
 					return(newErr(
 							   "database '%s' has inconsistent state "
 							   "(sabaoth administration reports starting up, "
 							   "but process seems gone), "
 							   "review monetdbd's "
-							   "logfile for any peculiarities", database));
+							   "logfile (%s) for any peculiarities", database,
+							   getConfVal(_mero_props, "logfile")));
 				default:
 					return(newErr("unknown state: %d", (int)state));
 				}

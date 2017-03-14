@@ -36,7 +36,7 @@ Ready.
 % .L12 # table_name
 % suma # name
 % bigint # type
-% 20 # length
+% 1 # length
 [ NULL	]
 #SELECT SUM(a) AS suma
 #FROM ( 

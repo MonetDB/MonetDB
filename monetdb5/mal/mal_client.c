@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -49,15 +49,6 @@
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
-
-/*
- * This should be in src/mal/mal.h, as the function is implemented in
- * src/mal/mal.c; however, it cannot, as "Client" isn't known there ...
- * |-( For now, we move the prototype here, as it it only used here.
- * Maybe, we should consider also moving the implementation here...
- */
-
-static void freeClient(Client c);
 
 int MAL_MAXCLIENTS = 0;
 ClientRec *mal_clients;
@@ -119,7 +110,7 @@ MCpopClientInput(Client c)
 	ClientInput *x = c->bak;
 	if (c->fdin) {
 		/* missing protection against closing stdin stream */
-		(void) bstream_destroy(c->fdin);
+		bstream_destroy(c->fdin);
 	}
 	GDKfree(c->prompt);
 	c->fdin = x->fdin;
@@ -193,7 +184,7 @@ MCexitClient(Client c)
 		assert(c->bak == NULL);
 		if (c->fdin) {
 			/* missing protection against closing stdin stream */
-			(void) bstream_destroy(c->fdin);
+			bstream_destroy(c->fdin);
 		}
 		c->fdout = NULL;
 		c->fdin = NULL;
@@ -248,7 +239,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->actions = 0;
 	c->totaltime = 0;
-	/* create a recycler cache */
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
@@ -359,7 +349,7 @@ MCforkClient(Client father)
  * effects of sharing IO descriptors, also its children. Conversely, a
  * child can not close a parent.
  */
-void
+static void
 freeClient(Client c)
 {
 	Thread t = c->mythread;
@@ -401,10 +391,10 @@ freeClient(Client c)
 	GDKfree(c->glb);
 	c->glb = NULL;
 	if( c->error_row){
-		BBPdecref(c->error_row->batCacheid,TRUE);
-		BBPdecref(c->error_fld->batCacheid,TRUE);
-		BBPdecref(c->error_msg->batCacheid,TRUE);
-		BBPdecref(c->error_input->batCacheid,TRUE);
+		BBPrelease(c->error_row->batCacheid);
+		BBPrelease(c->error_fld->batCacheid);
+		BBPrelease(c->error_msg->batCacheid);
+		BBPrelease(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	}
 	if (t)

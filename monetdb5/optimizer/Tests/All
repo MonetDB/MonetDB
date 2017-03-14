@@ -4,6 +4,7 @@ tst4002
 tst4003
 tst4004
 tst4005
+tst4006
 tst4010
 tst4030
 tst4601
@@ -74,5 +75,3 @@ THREADS>=2?dataflow
 THREADS>=2?dataflow3
 THREADS>=2?dataflow4
 THREADS>=2?dataflow5
-
-flowgraph

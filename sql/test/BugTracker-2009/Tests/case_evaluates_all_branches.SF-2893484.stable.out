@@ -36,7 +36,7 @@ Ready.
 % sys.L7 # table_name
 % avg_cost_cpc # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ 0.0000	]
 
 # 18:09:40 >  

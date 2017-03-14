@@ -3,9 +3,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
+#include "monetdb_config.h"
 #include "pyapi.h"
 #include "connection.h"
 
@@ -182,12 +183,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
 #ifndef HAVE_FORK
     (void) mapped;
 #endif
-
-    if (!PyAPIEnabled()) {
-        throw(MAL, "pyapi.eval",
-              "Embedded Python has not been enabled. Start server with --set %s=true",
-              pyapi_enableflag);
-    }
 
     if (!pyapiInitialized) {
         throw(MAL, "pyapi.eval",
@@ -1124,15 +1119,19 @@ returnvalues:
         }
 
         msg = MAL_SUCCEED;
-        if (isaBatType(getArgType(mb,pci,i)))
-        {
+        if (isaBatType(getArgType(mb,pci,i))) {
             *getArgReference_bat(stk, pci, i) = b->batCacheid;
             BBPkeepref(b->batCacheid);
         }
-        else
-        { // single value return, only for non-grouped aggregations
-            if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) == NULL)
-                msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+        else { // single value return, only for non-grouped aggregations
+            if (bat_type != TYPE_str) {
+                if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) == NULL)
+                    msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+            } else {
+                BATiter li = bat_iterator(b);
+                if (VALinit(&stk->stk[pci->argv[i]], bat_type, BUNtail(li, 0)) == NULL)
+                    msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+            }
         }
         if (argnode) {
             argnode = argnode->next;
@@ -1250,48 +1249,46 @@ wrapup:
 }
 
 str
- PyAPIprelude(void *ret) {
+PyAPIprelude(void *ret) {
     (void) ret;
     MT_lock_init(&pyapiLock, "pyapi_lock");
     MT_lock_init(&queryLock, "query_lock");
-    if (PyAPIEnabled()) {
-        MT_lock_set(&pyapiLock);
-        if (!pyapiInitialized) {
-            str msg = MAL_SUCCEED;
-            Py_Initialize();
-            if (PyRun_SimpleString("import numpy") != 0 || _import_array() < 0) {
-                return PyError_CreateException("Failed to initialize embedded python", NULL);
-            }
-            msg = _connection_init();
-            if (msg != MAL_SUCCEED) {
-                MT_lock_unset(&pyapiLock);
-                return msg;
-            }
-            msg = _conversion_init();
-            if (msg != MAL_SUCCEED) {
-                MT_lock_unset(&pyapiLock);
-                return msg;
-            }
-            _pytypes_init();
-            _loader_init();
-            marshal_module = PyImport_Import(PyString_FromString("marshal"));
-            if (marshal_module == NULL) {
-                return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
-            }
-            marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
-            if (marshal_loads == NULL) {
-                return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
-            }
-            PyEval_SaveThread();
-            if (msg != MAL_SUCCEED) {
-                MT_lock_unset(&pyapiLock);
-                return msg;
-            }
-            pyapiInitialized++;
+    MT_lock_set(&pyapiLock);
+    if (!pyapiInitialized) {
+        str msg = MAL_SUCCEED;
+        Py_Initialize();
+        if (PyRun_SimpleString("import numpy") != 0 || _import_array() < 0) {
+            return PyError_CreateException("Failed to initialize embedded python", NULL);
         }
-        MT_lock_unset(&pyapiLock);
-        fprintf(stdout, "# MonetDB/Python module loaded\n");
+        msg = _connection_init();
+        if (msg != MAL_SUCCEED) {
+            MT_lock_unset(&pyapiLock);
+            return msg;
+        }
+        msg = _conversion_init();
+        if (msg != MAL_SUCCEED) {
+            MT_lock_unset(&pyapiLock);
+            return msg;
+        }
+        _pytypes_init();
+        _loader_init();
+        marshal_module = PyImport_Import(PyString_FromString("marshal"));
+        if (marshal_module == NULL) {
+            return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
+        }
+        marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
+        if (marshal_loads == NULL) {
+            return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
+        }
+        PyEval_SaveThread();
+        if (msg != MAL_SUCCEED) {
+            MT_lock_unset(&pyapiLock);
+            return msg;
+        }
+        pyapiInitialized++;
     }
+    MT_lock_unset(&pyapiLock);
+    fprintf(stdout, "# MonetDB/Python module loaded\n");
     option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
     return MAL_SUCCEED;
 }

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
@@ -130,7 +130,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 
 #define restoreClient1 \
 	if (c->fdin)  \
-		(void) bstream_destroy(c->fdin); \
+		bstream_destroy(c->fdin); \
 	c->fdin = oldfdin;  \
 	c->yycur = oldyycur;  \
 	c->listing = oldlisting; \
@@ -150,7 +150,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 	restoreClient1 \
 	restoreClient2
 #define restoreClient3 \
-	if (c->fdin)  \
+	if (c->fdin && c->bak)  \
 		MCpopClientInput(c); \
 	c->mode = oldmode; \
 	c->blkmode = oldblkmode; \
@@ -222,7 +222,7 @@ malInclude(Client c, str name, int listing)
 				parseMAL(c, c->curprg, 1);
 				bstream_destroy(c->fdin);
 			} else {
-				GDKfree(s); // not interested in error here
+				freeException(s); // not interested in error here
 				s = MAL_SUCCEED;
 			}
 			if (p)

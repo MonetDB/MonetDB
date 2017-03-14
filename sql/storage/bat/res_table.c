@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -13,28 +13,29 @@
 static void
 bat_incref(bat bid)
 {
-	BBPincref(bid, TRUE);
+	BBPretain(bid);
 }
 
 static void
 bat_decref(bat bid)
 {
-	BBPdecref(bid, TRUE);
+	BBPrelease(bid);
 }
 
 
 res_table *
-res_table_create(sql_trans *tr, int res_id, int nr_cols, int type, res_table *next, void *O)
+res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, int type, res_table *next, void *O)
 {
 	BAT *order = (BAT*)O;
 	res_table *t = ZNEW(res_table);
 
 	(void) tr;
 	t->id = res_id;
-
+	t->query_id = query_id;
 	t->query_type = type;
 	t->nr_cols = nr_cols;
 	t->cur_col = 0;
+	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	t->cols = NEW_ARRAY(res_col, nr_cols);
 	memset((char*) t->cols, 0, nr_cols * sizeof(res_col));
 	t->tsep = t->rsep = t->ssep = t->ns = NULL;
@@ -64,18 +65,14 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	if (mtype == TYPE_bat) {
 		b = (BAT*)val;
 	} else { // wrap scalar values in BATs for result consistency
-		b = COLnew(0, mtype, 0, TRANSIENT);
+		b = COLnew(0, mtype, 1, TRANSIENT);
 		assert (b != NULL);
 		BUNappend(b, val, FALSE);
-		BATsetcount(b, 1);
-		BATsettrivprop(b);
 		/* we need to set the order bat otherwise mvc_export_result won't work with single-row result sets containing BATs */
 		if (!t->order) {
 			oid zero = 0;
-			BAT *o = COLnew(0, TYPE_oid, 0, TRANSIENT);
+			BAT *o = COLnew(0, TYPE_oid, 1, TRANSIENT);
 			BUNappend(o, &zero, FALSE);
-			BATsetcount(o, 1);
-			BATsettrivprop(o);
 			t->order = o->batCacheid;
 			bat_incref(t->order);
 		}

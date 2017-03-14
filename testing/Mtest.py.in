@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 #TODO:
 #=====
@@ -305,7 +305,6 @@ CONDITIONALS = {
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
     'HAVE_GDK'             : "@HAVE_GDK_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
-    'HAVE_GSL'             : "@HAVE_GSL_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
@@ -323,7 +322,6 @@ CONDITIONALS = {
     'HAVE_PYTHON2'         : "@HAVE_PYTHON2_FALSE@",
     'HAVE_PYTHON3'         : "@HAVE_PYTHON3_FALSE@",
     'HAVE_SAMTOOLS'        : "@HAVE_SAMTOOLS_FALSE@",
-    'HAVE_SPHINXCLIENT'    : "@HAVE_SPHINXCLIENT_FALSE@",
     'HAVE_SQL'             : "@HAVE_SQL_FALSE@",
     'HAVE_TESTING'         : "@HAVE_TESTING_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
@@ -1374,6 +1372,13 @@ def ApproveOutput (env, TST) :
             proc.wait()
             f.close()
             if os.path.getsize(patch + ".0"):
+                # if a file TST.stable.{out,err}-noapprove exists, we
+                # refuse to approve the output by (silently) skipping
+                if os.path.isfile(TSTSRCDIRTST + '.stable.' + WHAT + '-noapprove'):
+                    remove(patch + ".0")
+                    if verbose:
+                        print("NOT approving %s  ->  stable.%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM))
+                    continue
                 if not verbose:
                     oc = ''
                 print("Approving  %s  ->  stable.%s%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc))
@@ -3119,14 +3124,6 @@ def Check(command, input) :
                 STDERR.write("\n")
                 STDERR.flush()
                 #sys.exit(1)
-                if sys.platform == 'linux2':
-                    proc = process.Popen(['netstat', '-ap'],
-                                         stdout = process.PIPE,
-                                         stderr = process.PIPE,
-                                         universal_newlines = True)
-                    out, err = proc.communicate()
-                    STDERR.write(err)
-                    STDOUT.write(out)
     if noErr:
         STDOUT.flush()
         STDERR.writelines(noErr)
@@ -4225,6 +4222,14 @@ def main(argv) :
                         break
                     if global_timeout and start_time + global_timeout < time.time():
                         break
+                    if not testweb:
+                        # after a directory has been tested, create
+                        # the index file so that we can look at test
+                        # results while the tests are running
+                        env['TSTDIR'] = ""
+                        env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
+                        body = body_bad + body_good
+                        CreateHtmlIndex(env, *body)
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
             pass

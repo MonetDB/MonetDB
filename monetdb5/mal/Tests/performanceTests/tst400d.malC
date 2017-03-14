@@ -1,9 +1,9 @@
 # simple iterator loop test
 
-	b:= bat.new(:oid,:int);
-barrier i:= 0:lng;
-	z:= bat.append(b,1);
-	redo i:= iterator.next(1:lng,1000000:lng);
+	b:= bat.new(:int);
+barrier i:= 0:int;
+	bat.append(b,1);
+	redo i:= iterator.next(1:int,1000000:int);
 exit	i;
 	c:= aggr.count(b);
 	io.print(c);

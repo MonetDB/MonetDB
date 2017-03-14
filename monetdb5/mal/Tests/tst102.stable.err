@@ -37,7 +37,8 @@ QUERY = # the calls are wrong, they violate the type constraint
         
         a:=1+"hello";
         b:=3.5+1;
-ERROR = !TypeException:user.main[3]:'calc.+' undefined in:     a:any := calc.+(1:int,"hello":str);
+ERROR = !TypeException:user.main[3]:'calc.+' undefined in:     a:any := calc.+(1:int, "hello":str);
+
 
 
 # 20:43:12 >  

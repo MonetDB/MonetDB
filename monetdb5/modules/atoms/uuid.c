@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -172,8 +172,11 @@ UUIDgenerateUuid(uuid **retval)
 	uuid *u;
 	int i = 0, r = 0;
 
-	if (*retval == NULL)
+	if (*retval == NULL){
 		*retval = GDKmalloc(UUID_SIZE);
+		if( *retval == NULL)
+			throw(MAL,"uuid.generate",MAL_MALLOC_FAIL);
+	}
 	u = *retval;
 #ifdef HAVE_UUID
 	uuid_generate(u->u);

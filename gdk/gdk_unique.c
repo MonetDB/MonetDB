@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -15,8 +15,7 @@
 /* BATunique returns a bat that indicates the unique tail values of
  * the input bat.  This is essentially the same output as the
  * "extents" output of BATgroup.  The difference is that BATunique
- * can optionally take a candidate list, something that doesn't make
- * sense for BATgroup, and does not return the grouping bat.
+ * does not return the grouping bat.
  *
  * The inputs must be dense-headed, the first input is the bat from
  * which unique rows are selected, the second input is a list of
@@ -173,7 +172,7 @@ BATunique(BAT *b, BAT *s)
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
 		assert(vars == NULL);
-		seen = GDKzalloc(256 / 16);
+		seen = GDKzalloc((256 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
 			goto bunins_failed;
 		for (;;) {
@@ -210,7 +209,7 @@ BATunique(BAT *b, BAT *s)
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
 		assert(vars == NULL);
-		seen = GDKzalloc(65536 / 16);
+		seen = GDKzalloc((65536 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
 			goto bunins_failed;
 		for (;;) {

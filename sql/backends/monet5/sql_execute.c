@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -86,7 +86,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= pushStr(mb,q,"sql_traces");
 	/* cook a new resultSet instruction */
 	resultset = newInstruction(mb,sqlRef, resultSetRef);
-	getArg(resultset,0)= newTmpVariable(mb,TYPE_int);
+	getArg(resultset,0) = newTmpVariable(mb, TYPE_int);
 
 	/* build table defs */
 	tbls = newStmt(mb,batRef, newRef);
@@ -200,14 +200,19 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	cq *q= be->q;
 
 	pci = getInstrPtr(mb, 0);
-	if (pci->argc >= MAXARG)
+	if (pci->argc >= MAXARG){
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
-	else
+		if( argv == NULL)
+			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
+	} else
 		argv = argvbuffer;
 
-	if (pci->retc >= MAXARG)
+	if (pci->retc >= MAXARG){
 		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
-	else
+		if( argrec == NULL)
+			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
+	} else
 		argrec = argrecbuffer;
 
 	/* prepare the target variables */
@@ -271,22 +276,28 @@ SQLrun(Client c, backend *be, mvc *m){
 		return createException(PARSE, "SQLparser", "%s", m->errstr);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
+	if (!mb) {
+		throw(SQL, "sql.prepare", "Out of memory");
+	}
 	mb->history = c->curprg->def->history;
-	c->curprg->def->history =0;
+	c->curprg->def->history = 0;
 
 	/* only consider a re-optimization when we are dealing with query templates */
 	for ( i= 1; i < mb->stop;i++){
-		p=getInstrPtr(mb,i);
+		p = getInstrPtr(mb,i);
 		if( getFunctionId(p) &&  qc_isapreparedquerytemplate(getFunctionId(p) ) ){
 			msg = SQLexecutePrepared(c, be, p->blk);
 			freeMalBlk(mb);
 			return msg;
 		}
 		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
-			mc= copyMalBlk(p->blk);
-			retc =p->retc;
+			mc = copyMalBlk(p->blk);
+			if (!mc) {
+				throw(SQL, "sql.prepare", "Out of memory");
+			}
+			retc = p->retc;
 			freeMalBlk(mb);
-			mb= mc;
+			mb = mc;
 			// declare the argument values as a constant
 			// We use the knowledge that the arguments are first on the stack
 			for (j = 0; j < m->argc; j++) {
@@ -297,7 +308,7 @@ SQLrun(Client c, backend *be, mvc *m){
 					throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 				}
 				val= (ValPtr) &arg->data;
-				if (VALcopy(&mb->var[j+retc]->value, val) == NULL)
+				if (VALcopy(&mb->var[j+retc].value, val) == NULL)
 					throw(MAL, "sql.prepare", MAL_MALLOC_FAIL);
 				setVarConstant(mb, j+retc);
 				setVarFixed(mb, j+retc);
@@ -310,27 +321,28 @@ SQLrun(Client c, backend *be, mvc *m){
 	// This include template constants, BAT sizes.
 	if( m->emod & mod_debug)
 		mb->keephistory = TRUE;
-	msg = SQLoptimizeQuery(c,mb);
+	msg = SQLoptimizeQuery(c, mb);
 	mb->keephistory = FALSE;
 
-	if( mb->errors){
-		freeMalBlk(mb);
+	if (mb->errors){
+		//freeMalBlk(mb);
+		// mal block might be so broken free causes segfault
 		return msg;
 	}
 
 	if (m->emod & mod_explain) {
 		if (c->curprg->def)
 			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
-	} else
-	if( m->emod & mod_debug)
+	} else if( m->emod & mod_debug) {
 		msg = runMALDebugger(c, mb);
-	 else{
+	} else {
 		if( m->emod & mod_trace){
 			SQLsetTrace(c,mb);
 			msg = runMAL(c, mb, 0, 0);
 			stopTrace(0);
-		} else
+		} else {
 			msg = runMAL(c, mb, 0, 0);
+		}
 	}
 
 	// release the resources
@@ -384,6 +396,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	m->type = Q_PARSE;
 	be = sql;
 	sql = backend_create(m, c);
+	if( sql == NULL)
+		throw(SQL,"SQLstatement",MAL_MALLOC_FAIL);
 	sql->output_format = be->output_format;
 	if (!output) {
 		sql->output_format = OFMT_NONE;
@@ -397,7 +411,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 	/* mimic a client channel on which the query text is received */
 	b = (buffer *) GDKmalloc(sizeof(buffer));
+	if( b == NULL)
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
+	if( n == NULL)
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
 	strncpy(n, *expr, len);
 	n[len] = '\n';
 	n[len + 1] = 0;
@@ -482,9 +500,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 #endif
-		/* always keep it around for inspection */
-		SQLaddQueryToCache(c);
-		msg =SQLoptimizeFunction(c,c->curprg->def);
+		msg =SQLoptimizeFunction(c, c->curprg->def);
 		if( msg)
 			goto endofcompile;
 
@@ -507,7 +523,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			sql->out = NULL;	/* no output stream */
 		if (execute)
 			msg = SQLrun(c,be,m);
-
 		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c, c->curprg->def, NULL, oldvtop);
 
@@ -523,7 +538,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 				int ncol = 0;
 				res_table *res;
 				for (n = r->exps->h; n; n = n->next) ncol++;
-				res = res_table_create(m->session->tr, m->result_id++, ncol, 1, NULL, NULL);
+				res = res_table_create(m->session->tr, m->result_id++, 0, ncol, 1, NULL, NULL);
 				for (n = r->exps->h; n; n = n->next) {
 					const char *name, *rname;
 					sql_exp *e = n->data;
@@ -534,6 +549,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					rname = e->rname;
 					if (!rname && e->type == e_column && e->l)
 						rname = e->l;
+					// FIXME unchecked_malloc ATOMnil can return NULL
 					res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
 							t->scale, t->type->localtype, ATOMnil(t->type->localtype));
 				}

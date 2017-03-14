@@ -57,213 +57,54 @@ insert into sys.systemfunctions (select id from sys.functions where name in ('fu
 insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));
 update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');
 insert into sys.types values (13, 'hge', 'hugeint', 128, 1, 2, 7, 0);
-insert into sys.types values (18, 'hge', 'decimal', 39, 1, 10, 10, 0);
+insert into sys.types values (18, 'hge', 'decimal', 38, 1, 10, 10, 0);
 set schema "testschema";
 
 Running database upgrade commands:
 set schema "sys";
-create procedure sys.createorderindex(sys string, tab string, col string)
-external name sql.createorderindex;
-create procedure sys.droporderindex(sys string, tab string, col string)
-external name sql.droporderindex;
-drop function sys.zorder_decode_y;
-drop function sys.zorder_decode_x;
-drop function sys.zorder_encode;
-create function profiler.getprofilerlimit() returns integer external name profiler.getprofilerlimit;
-create procedure  profiler.setprofilerlimit(lim integer) external name profiler.setprofilerlimit;
-drop view sys.tablestoragemodel;
-drop view sys.storagemodel;
-drop function sys.storagemodel();
-drop procedure sys.storagemodelinit();
-drop function sys."storage"(string, string, string);
-drop function sys."storage"(string, string);
-drop function sys."storage"(string);
-drop view sys."storage";
-drop function sys."storage"();
-alter table sys.storagemodelinput add column "revsorted" boolean;
-alter table sys.storagemodelinput add column "unique" boolean;
-alter table sys.storagemodelinput add column "orderidx" bigint;
-create function sys."storage"()
-returns table (
- "schema" string,
- "table" string,
- "column" string,
- "type" string,
- "mode" string,
- location string,
- "count" bigint,
- typewidth int,
- columnsize bigint,
- heapsize bigint,
- hashes bigint,
- phash boolean,
- "imprints" bigint,
- sorted boolean,
- revsorted boolean,
- "unique" boolean,
- orderidx bigint
-)
-external name sql."storage";
-create view sys."storage" as select * from sys."storage"();
-create function sys."storage"( sname string)
-returns table (
- "schema" string,
- "table" string,
- "column" string,
- "type" string,
- "mode" string,
- location string,
- "count" bigint,
- typewidth int,
- columnsize bigint,
- heapsize bigint,
- hashes bigint,
- phash boolean,
- "imprints" bigint,
- sorted boolean,
- revsorted boolean,
- "unique" boolean,
- orderidx bigint
-)
-external name sql."storage";
-create function sys."storage"( sname string, tname string)
-returns table (
- "schema" string,
- "table" string,
- "column" string,
- "type" string,
- "mode" string,
- location string,
- "count" bigint,
- typewidth int,
- columnsize bigint,
- heapsize bigint,
- hashes bigint,
- phash boolean,
- "imprints" bigint,
- sorted boolean,
- revsorted boolean,
- "unique" boolean,
- orderidx bigint
-)
-external name sql."storage";
-create function sys."storage"( sname string, tname string, cname string)
-returns table (
- "schema" string,
- "table" string,
- "column" string,
- "type" string,
- "mode" string,
- location string,
- "count" bigint,
- typewidth int,
- columnsize bigint,
- heapsize bigint,
- hashes bigint,
- phash boolean,
- "imprints" bigint,
- sorted boolean,
- revsorted boolean,
- "unique" boolean,
- orderidx bigint
-)
-external name sql."storage";
-create procedure sys.storagemodelinit()
-begin
- delete from sys.storagemodelinput;
- insert into sys.storagemodelinput
- select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X."unique", X.orderidx from sys."storage"() X;
- update sys.storagemodelinput
- set reference = true
- where concat(concat("schema","table"), "column") in (
-  SELECT concat( concat("fkschema"."name", "fktable"."name"), "fkkeycol"."name" )
-  FROM "sys"."keys" AS    "fkkey",
-    "sys"."objects" AS "fkkeycol",
-    "sys"."tables" AS  "fktable",
-    "sys"."schemas" AS "fkschema"
-  WHERE   "fktable"."id" = "fkkey"."table_id"
-   AND "fkkey"."id" = "fkkeycol"."id"
-   AND "fkschema"."id" = "fktable"."schema_id"
-   AND "fkkey"."rkey" > -1);
- update sys.storagemodelinput
- set "distinct" = "count"
- where "type" = 'varchar' or "type"='clob';
-end;
-create function sys.storagemodel()
-returns table (
- "schema" string,
- "table" string,
- "column" string,
- "type" string,
- "count" bigint,
- columnsize bigint,
- heapsize bigint,
- hashes bigint,
- "imprints" bigint,
- sorted boolean,
- revsorted boolean,
- "unique" boolean,
- orderidx bigint)
-begin
- return select I."schema", I."table", I."column", I."type", I."count",
- columnsize(I."type", I.count, I."distinct"),
- heapsize(I."type", I."distinct", I."atomwidth"),
- hashsize(I."reference", I."count"),
- imprintsize(I."count",I."type"),
- I.sorted, I.revsorted, I."unique", I.orderidx
- from sys.storagemodelinput I;
-end;
-create view sys.storagemodel as select * from sys.storagemodel();
-create view sys.tablestoragemodel
-as select "schema","table",max(count) as "count",
- sum(columnsize) as columnsize,
- sum(heapsize) as heapsize,
- sum(hashes) as hashes,
- sum("imprints") as "imprints",
- sum(case when sorted = false then 8 * count else 0 end) as auxiliary
-from sys.storagemodel() group by "schema","table";
-update sys._tables set system = true where name in ('storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
-alter table sys.statistics add column "revsorted" boolean;
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('getprofilerlimit') and f.type = 1 and f.schema_id = s.id and s.name = 'profiler');
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('setprofilerlimit') and f.type = 2 and f.schema_id = s.id and s.name = 'profiler');
-delete from systemfunctions where function_id not in (select id from functions);
-set schema "testschema";
-
-Running database upgrade commands:
-set schema "sys";
-drop view sys.querylog_history;
-drop view sys.querylog_calls;
-drop function sys.querylog_calls();
-create function sys.querylog_calls()
-returns table(
- id oid,
- "start" timestamp,
- "stop" timestamp,
- arguments string,
- tuples bigint,
- run bigint,
- ship bigint,
- cpu int,
- io int
-)
-external name sql.querylog_calls;
-create view sys.querylog_calls as select * from sys.querylog_calls();
-create view sys.querylog_history as
-select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io
-from sys.querylog_catalog() qd, sys.querylog_calls() ql
-where qd.id = ql.id and qd.owner = user;
-update _tables set system = true where name in ('querylog_calls', 'querylog_history') and schema_id = (select id from schemas where name = 'sys');
-drop aggregate sys.stddev_pop(wrd);
-drop aggregate sys.stddev_samp(wrd);
-drop aggregate sys.var_pop(wrd);
-drop aggregate sys.var_samp(wrd);
-drop aggregate sys.median(wrd);
-drop aggregate sys.quantile(wrd, double);
-drop aggregate sys.corr(wrd, wrd);
-insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_calls') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
-delete from systemfunctions where function_id not in (select id from functions);
+delete from sys._columns where table_id = (select id from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys'));
+delete from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys');
+drop function sys.malfunctions;
+create function sys.malfunctions() returns table("module" string, "function" string, "signature" string, "address" string, "comment" string) external name "manual"."functions";
+insert into sys.systemfunctions (select id from sys.functions where name = 'malfunctions' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+create function profiler.getlimit() returns integer external name profiler.getlimit;
+create procedure profiler.setlimit(lim integer) external name profiler.setlimit;
+drop procedure profiler.setpoolsize;
+drop procedure profiler.setstream;
+insert into sys.systemfunctions (select id from sys.functions where name in ('getlimit', 'setlimit') and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));
+CREATE TABLE sys.function_types (
+function_type_id   SMALLINT NOT NULL PRIMARY KEY,
+function_type_name VARCHAR(30) NOT NULL UNIQUE);
+INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES
+(1, 'Scalar function'), (2, 'Procedure'), (3, 'Aggregate function'), (4, 'Filter function'), (5, 'Function returning a table'),
+(6, 'Analytic function'), (7, 'Loader function');
+CREATE TABLE sys.function_languages (
+language_id   SMALLINT NOT NULL PRIMARY KEY,
+language_name VARCHAR(20) NOT NULL UNIQUE);
+INSERT INTO sys.function_languages (language_id, language_name) VALUES
+(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (4, 'C'), (5, 'Java'), (6, 'Python'), (7, 'Python Mapped');
+CREATE TABLE sys.key_types (
+key_type_id   SMALLINT NOT NULL PRIMARY KEY,
+key_type_name VARCHAR(15) NOT NULL UNIQUE);
+INSERT INTO sys.key_types (key_type_id, key_type_name) VALUES
+(0, 'Primary Key'), (1, 'Unique Key'), (2, 'Foreign Key');
+CREATE TABLE sys.index_types (
+index_type_id   SMALLINT NOT NULL PRIMARY KEY,
+index_type_name VARCHAR(25) NOT NULL UNIQUE);
+INSERT INTO sys.index_types (index_type_id, index_type_name) VALUES
+(0, 'Hash'), (1, 'Join'), (2, 'Order preserving hash'), (3, 'No-index'), (4, 'Imprint'), (5, 'Ordered');
+CREATE TABLE sys.privilege_codes (
+privilege_code_id   INT NOT NULL PRIMARY KEY,
+privilege_code_name VARCHAR(30) NOT NULL UNIQUE);
+INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
+(1, 'SELECT'), (2, 'UPDATE'), (4, 'INSERT'), (8, 'DELETE'), (16, 'EXECUTE'), (32, 'GRANT'),
+(3, 'SELECT,UPDATE'), (5, 'SELECT,INSERT'), (6, 'INSERT,UPDATE'), (7, 'SELECT,INSERT,UPDATE'),
+(9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),
+(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');
+update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');
+drop procedure SHPload(integer);
+create procedure SHPload(fid integer) external name shp.import;
+insert into sys.systemfunctions (select id from sys.functions where name = 'shpload' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 set schema "testschema";
 
 
