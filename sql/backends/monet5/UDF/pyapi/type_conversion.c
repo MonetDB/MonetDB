@@ -248,7 +248,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
             maxsize = utf32_strlen(ptr);                \
     if (maxsize > 255)                      \
             maxsize = 255;                      \
-        unicode_to_utf8(0, maxsize / sizeof(Py_UNICODE), utf8, ptr);             \
+        unicode_to_utf8(0, maxsize, utf8, ptr);             \
         return str_to_##tpe(utf8, 0, value);                \
     }                                   \
     PY_TO_(tpe, inttpe);
