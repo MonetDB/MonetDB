@@ -385,7 +385,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
 	if (!o)
-		throw(SQL, "SQLstatement", "Out of memory");
+		throw(SQL, "SQLstatement", MAL_MALLOC_FAIL);
 	*o = *m;
 	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
 	m->qc = NULL;
@@ -545,15 +545,20 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					const char *name, *rname;
 					sql_exp *e = n->data;
 					sql_subtype *t = exp_subtype(e);
+					void *ptr =ATOMnil(t->type->localtype);
+
+					if( ptr == NULL){
+						msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+						goto endofcompile;
+					}
 					name = e->name;
 					if (!name && e->type == e_column && e->r)
 						name = e->r;
 					rname = e->rname;
 					if (!rname && e->type == e_column && e->l)
 						rname = e->l;
-					// FIXME unchecked_malloc ATOMnil can return NULL
 					res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
-							t->scale, t->type->localtype, ATOMnil(t->type->localtype));
+							t->scale, t->type->localtype, ptr);
 				}
 				*result = res;
 			}
