@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "opt_generator.h"
+#include "opt_statistics.h"
 #include "mal_builder.h"
 
 /*
@@ -170,8 +171,12 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	//chkFlow(cntxt->fdout, mb);
 	//chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions, usec);
     newComment(mb,buf);
+	QOTupdateStatistics("generator",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 	return actions;
 }

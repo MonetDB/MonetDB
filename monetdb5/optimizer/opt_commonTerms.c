@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "opt_commonTerms.h"
+#include "opt_statistics.h"
 #include "mal_exception.h"
  /*
  * Caveat. A lot of time was lost due to constants that are indistinguisable
@@ -179,8 +180,12 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","commonTerms",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","commonTerms",actions,usec);
     newComment(mb,buf);
+	QOTupdateStatistics("commonTerms",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 wrapup:
 	if(alias) GDKfree(alias);

@@ -18,6 +18,7 @@
 #include "opt_emptybind.h"
 #include "opt_aliases.h"
 #include "opt_deadcode.h"
+#include "opt_statistics.h"
 #include "mal_builder.h"
 
 #define addresult(I)									\
@@ -342,7 +343,11 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
 wrapup:
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",actions, usec);
     newComment(mb,buf);
+	QOTupdateStatistics("emptybind",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 	return 1;
 }

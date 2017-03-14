@@ -12,6 +12,7 @@
 #include "monetdb_config.h"
 #include "opt_deadcode.h"
 #include "opt_projectionpath.h"
+#include "opt_statistics.h"
 
 
 // Common prefix reduction was not effective it is retained for 
@@ -315,9 +316,13 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","projectionpath",actions,GDKusec() - usec);
-    newComment(mb,buf);
 wrapupall:
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","projectionpath",actions, usec);
+    newComment(mb,buf);
+	QOTupdateStatistics("projectionpath",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 	if (pc ) GDKfree(pc);
 	if (varcnt ) GDKfree(varcnt);
 	if(old) GDKfree(old);

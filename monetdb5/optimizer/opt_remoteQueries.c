@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "opt_remoteQueries.h"
+#include "opt_statistics.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
@@ -369,8 +370,12 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remoteQueries",doit, GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remoteQueries",doit,  usec);
     newComment(mb,buf);
+	QOTupdateStatistics("remoteQueries",doit,usec);
+	if( doit >= 0)
+		addtoMalBlkHistory(mb);
 
 	return doit;
 }

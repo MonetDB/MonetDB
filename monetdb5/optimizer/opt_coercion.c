@@ -12,6 +12,7 @@
 
 #include "monetdb_config.h"
 #include "opt_coercion.h"
+#include "opt_statistics.h"
 
 typedef struct{
 	int pc;
@@ -196,8 +197,12 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions, usec);
     newComment(mb,buf);
+	QOTupdateStatistics("coercion",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 	return actions;
 }

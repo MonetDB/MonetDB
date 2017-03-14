@@ -15,6 +15,7 @@
 #include "mal_instruction.h"
 #include "opt_prelude.h"
 #include "opt_profiler.h"
+#include "opt_statistics.h"
 
 /*
 static struct{
@@ -106,8 +107,10 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	//chkDeclarations(cntxt->fdout, mb);
 	//
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","profiler",1,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","profiler", usec);
     newComment(mb,buf);
-
+	QOTupdateStatistics("profiler",1,usec);
+	addtoMalBlkHistory(mb);
 	return 1;
 }

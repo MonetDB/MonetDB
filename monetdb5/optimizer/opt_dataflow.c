@@ -11,6 +11,7 @@
  */
 #include "monetdb_config.h"
 #include "opt_dataflow.h"
+#include "opt_statistics.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "manifold.h"
@@ -317,8 +318,12 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,usec);
     newComment(mb,buf);
+	QOTupdateStatistics("dataflow",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 wrapup:
 	if(states) GDKfree(states);

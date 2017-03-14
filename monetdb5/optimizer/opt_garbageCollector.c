@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "opt_garbageCollector.h"
+#include "opt_statistics.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 #include "mal_function.h"
@@ -160,8 +161,12 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions+1,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions+1, usec);
     newComment(mb,buf);
+	QOTupdateStatistics("garbagecollector",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 	return actions+1;
 }

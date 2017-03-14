@@ -12,6 +12,7 @@
  * We don't need the actual name of the objects
  */
 #include "monetdb_config.h"
+#include "opt_statistics.h"
 #include "opt_oltp.h"
 
 static void
@@ -128,7 +129,11 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//chkFlow(cntxt->fdout, mb);
 	//chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","oltp",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","oltp",actions, usec);
     newComment(mb,buf);
+	QOTupdateStatistics("oltp",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 	return 1;
 }

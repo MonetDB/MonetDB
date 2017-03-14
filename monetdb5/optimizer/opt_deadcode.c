@@ -9,6 +9,7 @@
 /* (c) Martin Kersten
  */
 #include "monetdb_config.h"
+#include "opt_statistics.h"
 #include "opt_deadcode.h"
 
 int 
@@ -111,8 +112,12 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
         //chkDeclarations(cntxt->fdout, mb);
     //}
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, usec);
     newComment(mb,buf);
+	QOTupdateStatistics("deadcode",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 wrapup:
 	if(old) GDKfree(old);

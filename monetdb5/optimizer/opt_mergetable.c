@@ -7,6 +7,7 @@
  */
 
 #include "monetdb_config.h"
+#include "opt_statistics.h"
 #include "opt_mergetable.h"
 
 typedef enum mat_type_t {
@@ -1871,9 +1872,12 @@ cleanup:
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions,GDKusec() - usec);
-    if ( mb->errors == 0) 
-   	 newComment(mb,buf);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions, usec);
+   	newComment(mb,buf);
+	QOTupdateStatistics("candidates",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 	return actions;
 }

@@ -13,6 +13,7 @@
 
 #include "monetdb_config.h"
 #include "mal_instruction.h"
+#include "opt_statistics.h"
 #include "opt_volcano.h"
 
 // delaying the startup should not be continued throughout the plan
@@ -98,8 +99,12 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","vulcano",count,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","volcano",count,usec);
     newComment(mb,buf);
+	QOTupdateStatistics("volcano",count,usec);
+	if( count >= 0)
+		addtoMalBlkHistory(mb);
 
 	return count;
 }

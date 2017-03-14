@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "opt_evaluate.h"
 #include "opt_aliases.h"
+#include "opt_statistics.h"
 
 static int
 OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
@@ -246,8 +247,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	//chkDeclarations(cntxt->fdout, mb);
     
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,GDKusec() -usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,usec);
     newComment(mb,buf);
+	QOTupdateStatistics("evaluate",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 wrapup:
 	if ( env) freeStack(env);

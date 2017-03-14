@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "opt_querylog.h"
+#include "opt_statistics.h"
 #include "mtime.h"
 #include "querylog.h"
 
@@ -192,8 +193,10 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","querylog",1,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","querylog", usec);
     newComment(mb,buf);
-
+	QOTupdateStatistics("querylog",1,usec);
+	addtoMalBlkHistory(mb);
 	return 1;
 }

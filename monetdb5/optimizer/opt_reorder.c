@@ -43,6 +43,7 @@
  */
 #include "monetdb_config.h"
 #include "opt_reorder.h"
+#include "opt_statistics.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 /*
@@ -343,8 +344,11 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
     newComment(mb,buf);
+	QOTupdateStatistics("reorder",1,usec);
+	addtoMalBlkHistory(mb);
 
 	return 1;
 }

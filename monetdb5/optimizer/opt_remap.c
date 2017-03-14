@@ -16,6 +16,7 @@
 #include "opt_remap.h"
 #include "opt_macro.h"
 #include "opt_multiplex.h"
+#include "opt_statistics.h"
 
 static int
 OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
@@ -465,8 +466,12 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remap",doit,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remap",doit, usec);
     newComment(mb,buf);
+	QOTupdateStatistics("remap",doit,usec);
+	if( doit >= 0)
+		addtoMalBlkHistory(mb);
 
 	return mb->errors? 0: doit;
 }

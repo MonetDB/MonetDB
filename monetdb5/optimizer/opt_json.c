@@ -13,6 +13,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
+#include "opt_statistics.h"
 #include "opt_json.h"
 
 int 
@@ -77,8 +78,12 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","json",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","json",actions, usec);
     newComment(mb,buf);
+	QOTupdateStatistics("json",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 	return actions;
 }

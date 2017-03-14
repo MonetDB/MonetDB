@@ -11,6 +11,7 @@
  * This could speedup parallel processing and releases resources faster.
  */
 #include "monetdb_config.h"
+#include "opt_statistics.h"
 #include "opt_matpack.h"
 
 int 
@@ -80,8 +81,12 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     }
     /* keep all actions taken as a post block comment */
 wrapup:
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","matpack",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","matpack",actions, usec);
     newComment(mb,buf);
+	QOTupdateStatistics("matpack",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 	return actions;
 }

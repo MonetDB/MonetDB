@@ -15,6 +15,7 @@
 #include "mal_listing.h"
 #include "mal_debugger.h"
 #include "opt_multiplex.h"
+#include "opt_statistics.h"
 #include "optimizer_private.h"
 #include "manifold.h"
 
@@ -95,6 +96,9 @@ optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec)
 	/* keep all actions taken as a post block comment */
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
 	newComment(mb,buf);
+	QOTupdateStatistics("macro",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, name, PROGRAM_GENERAL);
 	return MAL_SUCCEED;

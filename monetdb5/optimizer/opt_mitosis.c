@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "opt_mitosis.h"
+#include "opt_statistics.h"
 #include "mal_interpreter.h"
 #include <gdk_utils.h>
 
@@ -261,8 +262,11 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mitosis",1,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","mitosis", usec);
     newComment(mb,buf);
+	QOTupdateStatistics("mitosis",1,usec);
+	addtoMalBlkHistory(mb);
 
 	return 1;
 }

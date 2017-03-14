@@ -20,6 +20,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
+#include "opt_statistics.h"
 #include "opt_jit.h"
 
 int
@@ -86,7 +87,11 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	chkFlow(cntxt->fdout, mb);
 	chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","jit",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","jit",actions, usec);
     newComment(mb,buf);
+	QOTupdateStatistics("jit",actions,usec);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 	return 1;
 }

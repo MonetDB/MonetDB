@@ -102,8 +102,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol s= NULL;
 	int i, actions = 0;
 	char optimizer[256];
-	str curmodnme=0;
-	lng usec = GDKusec();
 
     if (cntxt->mode == FINISHCLIENT)
         throw(MAL, "optimizer", "prematurely stopped client");
@@ -115,7 +113,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		throw(MAL, "opt_wrapper", "MAL block contains errors");
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
 	
-	curmodnme = getModuleId(p);
 	OPTIMIZERDEBUG 
 		mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",fcnnme);
 	if( p && p->argc > 1 ){
@@ -158,14 +155,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		mnstr_printf(cntxt->fdout,"=FINISHED %s  %d\n",optimizer, actions);
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG );
 	}
-	usec= GDKusec() - usec;
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#optimizer %-11s %3d actions %5d MAL instructions ("SZFMT" K) " LLFMT" usec\n", optimizer, actions, mb->stop, 
-		((sizeof( MalBlkRecord) +mb->ssize * offsetof(InstrRecord, argv)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024),
-		usec);
-	QOTupdateStatistics(curmodnme,actions,usec);
-	if( actions >= 0)
-		addtoMalBlkHistory(mb);
 	if ( mb->errors)
 		throw(MAL, optimizer, PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
 	return MAL_SUCCEED;
