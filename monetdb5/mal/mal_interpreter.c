@@ -323,9 +323,9 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	if (env != NULL) {
 		stk = env;
 		if (mb != stk->blk)
-			showScriptException(cntxt->fdout, mb, 0, MAL, "runMAL:misalignment of symbols\n");
+			throw(MAL, "mal.interpreter","misalignment of symbols");
 		if (mb->vtop > stk->stksize)
-			showScriptException(cntxt->fdout, mb, 0, MAL, "stack too small\n");
+			throw(MAL, "mal.interpreter","stack too small");
 		initStack(env->stkbot);
 	} else {
 		stk = prepareMALstack(mb, mb->vsize);
