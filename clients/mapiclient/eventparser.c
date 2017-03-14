@@ -175,9 +175,7 @@ int
 keyvalueparser(char *txt, EventRecord *ev)
 {
 	char *c, *s, *key, *val;
-	//struct tm stm;
-
-	c= txt;
+	c = txt;
 
 	if( strstr(c,"\"argument\":") || strstr(c,"\"result\":"))
 		return parseArgument(txt,ev);
