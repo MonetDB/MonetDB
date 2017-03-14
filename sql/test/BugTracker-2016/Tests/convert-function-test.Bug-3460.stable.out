@@ -316,7 +316,7 @@ Ready.
 [ 11,	11	]
 [ 0123456789,	0123456789	]
 [ A0B2C3D4F5,	A0B2C3D4F5	]
-[ ""	]
+[ ,		]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(16)) from T_blob;
 % sys.t_blob,	sys.L3 # table_name
@@ -360,7 +360,7 @@ Ready.
 [ 11,	11	]
 [ 0123456789,	0123456789	]
 [ A0B2C3D4F5,	A0B2C3D4F5	]
-[ ""	]
+[ ,		]
 [ NULL,	NULL	]
 #DROP TABLE T_blob;
 #CREATE TABLE T_tinyint (v tinyint);
