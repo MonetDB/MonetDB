@@ -1,0 +1,41 @@
+stdout of test 'python2_dec38` in directory 'sql/test/mapi` itself:
+
+
+# 18:07:09 >  
+# 18:07:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31922" "--set" "mapi_usock=/var/tmp/mtest-28749/.s.monetdb.31922" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/dec38/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_test_mapi" "--set" "mal_listing=0"
+# 18:07:09 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mapi', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:31922/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28749/.s.monetdb.31922
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:23:27 >  
+# 18:23:27 >  "./python2_dec38.SQL.sh" "python2_dec38"
+# 18:23:27 >  
+
+
+# 18:23:27 >  
+# 18:23:27 >  /usr/bin/python2 /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/int128/source/MonetDB/sql/test/mapi/Tests/python_dec38.py 35903 mTests_sql_test_mapi /var/tmp/mtest-10465
+# 18:23:27 >  
+
+[(Decimal('12345678901234567899876543210987654321'), Decimal('1234567890123456789.9876543210987654321'), Decimal('0.12345678901234567899876543210987654321'))]
+(Decimal('12345678901234567899876543210987654321'), Decimal('1234567890123456789.9876543210987654321'), Decimal('0.12345678901234567899876543210987654321'))
+12345678901234567899876543210987654321
+1234567890123456789.9876543210987654321
+0.12345678901234567899876543210987654321
+
+# 18:23:27 >  
+# 18:23:27 >  "Done."
+# 18:23:27 >  
+

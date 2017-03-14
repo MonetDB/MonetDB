@@ -1,0 +1,39 @@
+stdout of test 'python3_int128` in directory 'sql/test/mapi` itself:
+
+
+# 18:07:10 >  
+# 18:07:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31922" "--set" "mapi_usock=/var/tmp/mtest-28749/.s.monetdb.31922" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/int128/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_test_mapi" "--set" "mal_listing=0"
+# 18:07:10 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mapi', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:31922/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28749/.s.monetdb.31922
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:07:10 >  
+# 18:07:10 >  "./python3_int128.SQL.sh" "python3_int128"
+# 18:07:10 >  
+
+
+# 18:17:59 >  
+# 18:17:59 >  /usr/bin/python3 /net/rome.ins.cwi.nl/export/scratch2/manegold/.rig./scratch0/Monet/HG/int128/source/MonetDB/sql/test/mapi/Tests/python_int128.py 31201 mTests_sql_test_mapi /var/tmp/mtest-6230
+# 18:17:59 >  
+
+[(123456789098765432101234567890987654321,)]
+(123456789098765432101234567890987654321,)
+123456789098765432101234567890987654321
+
+# 18:17:59 >  
+# 18:17:59 >  "Done."
+# 18:17:59 >  
+

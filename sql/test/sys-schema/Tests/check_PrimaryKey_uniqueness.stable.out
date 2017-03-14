@@ -1,0 +1,314 @@
+stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` itself:
+
+
+# 16:31:34 >  
+# 16:31:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31486" "--set" "mapi_usock=/var/tmp/mtest-10384/.s.monetdb.31486" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_sys-schema"
+# 16:31:34 >  
+
+# MonetDB 5 server v11.25.2
+# This is an unreleased version
+# Serving database 'mTests_sql_test_sys-schema', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:31486/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10384/.s.monetdb.31486
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+#WARNING To speedup user.columnsize a bulk operator implementation is needed
+#    X_61:bat[:lng] := mal.multiplex("user":str,"columnsize":str,X_46:bat[:str],X_53:bat[:lng],X_60:bat[:lng]);
+#WARNING To speedup user.heapsize a bulk operator implementation is needed
+#    X_71:bat[:lng] := mal.multiplex("user":str,"heapsize":str,X_46:bat[:str],X_60:bat[:lng],X_70:bat[:int]);
+#WARNING To speedup user.hashsize a bulk operator implementation is needed
+#    X_80:bat[:lng] := mal.multiplex("user":str,"hashsize":str,X_79:bat[:bit],X_53:bat[:lng]);
+#WARNING To speedup user.imprintsize a bulk operator implementation is needed
+#    X_82:bat[:lng] := mal.multiplex("user":str,"imprintsize":str,X_53:bat[:lng],X_46:bat[:str]);
+
+# 16:31:34 >  
+# 16:31:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10384" "--port=31486"
+# 16:31:34 >  
+
+#SELECT COUNT(*) AS duplicates, id FROM sys.schemas GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys.schemas # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, table_type_id FROM sys.table_types GROUP BY table_type_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.table_types # table_name
+% duplicates,	table_type_id # name
+% bigint,	smallint # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys._tables GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys._tables # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM tmp._tables GROUP BY id HAVING COUNT(*) > 1;
+% tmp.L3,	tmp._tables # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.tables GROUP BY id HAVING COUNT(*) > 1;
+% .L40,	.tables # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys._columns GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys._columns # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM tmp._columns GROUP BY id HAVING COUNT(*) > 1;
+% tmp.L3,	tmp._columns # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.columns GROUP BY id HAVING COUNT(*) > 1;
+% .L14,	.columns # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, function_type_id FROM sys.function_types GROUP BY function_type_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.function_types # table_name
+% duplicates,	function_type_id # name
+% bigint,	smallint # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, language_id FROM sys.function_languages GROUP BY language_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.function_languages # table_name
+% duplicates,	language_id # name
+% bigint,	smallint # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.functions GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys.functions # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, function_id FROM sys.systemfunctions GROUP BY function_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.systemfunctions # table_name
+% duplicates,	function_id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.args GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys.args # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.types GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys.types # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id, nr FROM sys.objects GROUP BY id, nr HAVING COUNT(*) > 1;  -- without column: nr it returns duplicates
+% sys.L3,	sys.objects,	sys.objects # table_name
+% duplicates,	id,	nr # name
+% bigint,	int,	int # type
+% 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, id, nr FROM tmp.objects GROUP BY id, nr HAVING COUNT(*) > 1;
+% tmp.L3,	tmp.objects,	tmp.objects # table_name
+% duplicates,	id,	nr # name
+% bigint,	int,	int # type
+% 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, key_type_id FROM sys.key_types GROUP BY key_type_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.key_types # table_name
+% duplicates,	key_type_id # name
+% bigint,	smallint # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.keys GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys.keys # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM tmp.keys GROUP BY id HAVING COUNT(*) > 1;
+% tmp.L3,	tmp.keys # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, index_type_id FROM sys.index_types GROUP BY index_type_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.index_types # table_name
+% duplicates,	index_type_id # name
+% bigint,	smallint # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.idxs GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys.idxs # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM tmp.idxs GROUP BY id HAVING COUNT(*) > 1;
+% tmp.L3,	tmp.idxs # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.triggers GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys.triggers # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM tmp.triggers GROUP BY id HAVING COUNT(*) > 1;
+% tmp.L3,	tmp.triggers # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.sequences GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys.sequences # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, dependency_type_id FROM sys.dependency_types GROUP BY dependency_type_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.dependency_types # table_name
+% duplicates,	dependency_type_id # name
+% bigint,	smallint # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id, depend_id FROM sys.dependencies GROUP BY id, depend_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.dependencies,	sys.dependencies # table_name
+% duplicates,	id,	depend_id # name
+% bigint,	int,	int # type
+% 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.auths GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys.auths # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, name FROM sys.users GROUP BY name HAVING COUNT(*) > 1;
+% .L10,	.users # table_name
+% duplicates,	name # name
+% bigint,	varchar # type
+% 1,	0 # length
+#SELECT COUNT(*) AS duplicates, login_id, role_id FROM sys.user_role GROUP BY login_id, role_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.user_role,	sys.user_role # table_name
+% duplicates,	login_id,	role_id # name
+% bigint,	int,	int # type
+% 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, privilege_code_id FROM sys.privilege_codes GROUP BY privilege_code_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.privilege_codes # table_name
+% duplicates,	privilege_code_id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, obj_id FROM sys.privileges GROUP BY obj_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.privileges # table_name
+% duplicates,	obj_id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.querylog_catalog GROUP BY id HAVING COUNT(*) >1;
+% .L10,	.querylog_catalog # table_name
+% duplicates,	id # name
+% bigint,	oid # type
+% 1,	3 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.querylog_calls GROUP BY id HAVING COUNT(*) > 1;
+% .L10,	.querylog_calls # table_name
+% duplicates,	id # name
+% bigint,	oid # type
+% 1,	3 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.querylog_history GROUP BY id HAVING COUNT(*) >1;
+% .L17,	.querylog_history # table_name
+% duplicates,	id # name
+% bigint,	oid # type
+% 1,	3 # length
+#SELECT COUNT(*) AS duplicates, qtag FROM sys.queue GROUP BY qtag HAVING COUNT(*) > 1;
+% .L10,	.queue # table_name
+% duplicates,	qtag # name
+% bigint,	bigint # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, name FROM sys.optimizers GROUP BY name HAVING COUNT(*) > 1;
+% .L10,	.optimizers # table_name
+% duplicates,	name # name
+% bigint,	clob # type
+% 1,	0 # length
+#SELECT COUNT(*) AS duplicates, name FROM sys.environment GROUP BY name HAVING COUNT(*) > 1;
+% .L10,	.environment # table_name
+% duplicates,	name # name
+% bigint,	clob # type
+% 1,	0 # length
+#SELECT COUNT(*) AS duplicates, keyword FROM sys.keywords GROUP BY keyword HAVING COUNT(*) > 1;
+% sys.L3,	sys.keywords # table_name
+% duplicates,	keyword # name
+% bigint,	varchar # type
+% 1,	0 # length
+#SELECT COUNT(*) AS duplicates, name FROM sys.db_user_info GROUP BY name HAVING COUNT(*) > 1;
+% sys.L3,	sys.db_user_info # table_name
+% duplicates,	name # name
+% bigint,	varchar # type
+% 1,	0 # length
+#SELECT COUNT(*) AS duplicates, "user", login, active FROM sys.sessions GROUP BY "user", login, active HAVING COUNT(*) > 1;  -- is this really always unique?
+% .L10,	.sessions,	.sessions,	.sessions # table_name
+% duplicates,	user,	login,	active # name
+% bigint,	clob,	timestamp,	boolean # type
+% 1,	0,	26,	5 # length
+#SELECT COUNT(*) AS duplicates, column_id FROM sys.statistics GROUP BY column_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.statistics # table_name
+% duplicates,	column_id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, rowid FROM sys.rejects GROUP BY rowid HAVING COUNT(*) > 1;
+% .L10,	.rejects # table_name
+% duplicates,	rowid # name
+% bigint,	bigint # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storage GROUP BY schema, table, column HAVING COUNT(*) > 1;
+% .L10,	.storage,	.storage,	.storage # table_name
+% duplicates,	schema,	table,	column # name
+% bigint,	clob,	clob,	clob # type
+% 1,	0,	0,	0 # length
+#SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storagemodel GROUP BY schema, table, column HAVING COUNT(*) > 1;
+% .L10,	.storagemodel,	.storagemodel,	.storagemodel # table_name
+% duplicates,	schema,	table,	column # name
+% bigint,	clob,	clob,	clob # type
+% 1,	0,	0,	0 # length
+#SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storagemodelinput GROUP BY schema, table, column HAVING COUNT(*) > 1;
+% sys.L3,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% duplicates,	schema,	table,	column # name
+% bigint,	clob,	clob,	clob # type
+% 1,	0,	0,	0 # length
+#SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestoragemodel GROUP BY schema, table HAVING COUNT(*) > 1;
+% .L32,	.tablestoragemodel,	.tablestoragemodel # table_name
+% duplicates,	schema,	table # name
+% bigint,	clob,	clob # type
+% 1,	0,	0 # length
+
+# 16:31:35 >  
+# 16:31:35 >  "Done."
+# 16:31:35 >  
+

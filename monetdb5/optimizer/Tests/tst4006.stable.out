@@ -1,0 +1,57 @@
+stdout of test 'tst4006` in directory 'monetdb5/optimizer` itself:
+
+
+# 15:27:09 >  
+# 15:27:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37447" "--set" "mapi_usock=/var/tmp/mtest-25519/.s.monetdb.37447" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_optimizer" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:27:09 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37447/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25519/.s.monetdb.37447
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:27:10 >  
+# 15:27:10 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-25519" "--port=37447"
+# 15:27:10 >  
+
+function user.getz(p:int):bat[:int];    	#[0] (0)  0 <- 1 
+    x:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 2 <- 3 
+    z:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 4 <- 3 
+    V30:bat[:int] := bat.new(:int);     	#[3] (0) CMDBATnew 5 <- 3 
+barrier V12:bit := true:bit;            	#[4] (0)  6 <- 7 
+    V13:any := algebra.union(x:bat[:int], z:bat[:int]);	#[5] (0)  8 <- 2 4 
+    V30:bat[:int] := V13:any;           	#[6] (0)  5 <- 8 
+exit V12:bit;                           	#[7] (0)  6 
+    return V31:bat[:int] := V30:bat[:int];	#[8] (0)  9 <- 5 
+end user.getz;                          	#[9] (0)  
+#aliases              actions= 0 time=4 usec 
+#garbagecollector     actions= 1 time=12 usec 
+function user.getz(p:int):bat[:int];    	#[0] (0)  0 <- 1 
+    x:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 2 <- 3 
+    z:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 4 <- 3 
+    V30:bat[:int] := bat.new(:int);     	#[3] (0) CMDBATnew 5 <- 3 
+barrier V12:bit := true:bit;            	#[4] (0)  6 <- 7 
+    V13:any := algebra.union(x:bat[:int], z:bat[:int]);	#[5] (0)  8 <- 2 4 
+    V30:bat[:int] := V13:any;           	#[6] (0)  5 <- 8 
+exit V12:bit;                           	#[7] (0)  6 
+    return V31:bat[:int] := V30:bat[:int];	#[8] (0)  9 <- 5 
+end user.getz;                          	#[9] (0)  
+#aliases              actions= 0 time=4 usec 
+#garbagecollector     actions= 1 time=12 usec 
+
+# 15:27:10 >  
+# 15:27:10 >  "Done."
+# 15:27:10 >  
+

@@ -1,0 +1,39 @@
+stdout of test 'Test_Int128` in directory 'sql/jdbc/tests` itself:
+
+
+# 14:37:35 >  
+# 14:37:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35496" "--set" "mapi_usock=/var/tmp/mtest-28293/.s.monetdb.35496" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/int128/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_jdbc_tests" "--set" "mal_listing=0"
+# 14:37:35 >  
+
+# MonetDB 5 server v11.17.17 "Jan2014-SP2"
+# Serving database 'mTests_sql_jdbc_tests', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:35496/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28293/.s.monetdb.35496
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:37:36 >  
+# 14:37:36 >  "./Test_Int128.SQL.sh" "Test_Int128"
+# 14:37:36 >  
+
+
+# 14:37:36 >  
+# 14:37:36 >  java Test_Int128 "jdbc:monetdb://rome:35496/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 14:37:36 >  
+
+Expecting 123456789012345678909876543210987654321, got 123456789012345678909876543210987654321
+Expecting 1234567890123456789.9876543210987654321, got 1234567890123456789.9876543210987654321
+SUCCESS
+
+# 14:37:36 >  
+# 14:37:36 >  "Done."
+# 14:37:36 >  
+

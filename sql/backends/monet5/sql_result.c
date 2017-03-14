@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
 /*
@@ -1188,19 +1188,8 @@ convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, cha
 		l = sql_timestamp_tostr((void *) &ts_res, buf, &len, mtype, p);
 	} else if (eclass == EC_BIT) {
 		bit b = *(bit *) p;
-		if (b == bit_nil) {
-			(*buf)[0] = 'N';
-			(*buf)[1] = 'U';
-			(*buf)[2] = 'L';
-			(*buf)[3] = 'L';
-			(*buf)[4] = 0;
-		} else if (b) {
-			(*buf)[0] = '1';
-			(*buf)[1] = 0;
-		} else {
-			(*buf)[0] = '0';
-			(*buf)[1] = 0;
-		}
+		(*buf)[0] = '0' + !!b; /* or: '1' - !b */
+		(*buf)[1] = 0;
 	} else {
 		l = (*BATatoms[mtype].atomToStr) (buf, &len, p);
 	}
@@ -1673,7 +1662,7 @@ mvc_export_operation(backend *b, stream *s, str w)
 }
 
 int
-mvc_export_affrows(backend *b, stream *s, lng val, str w)
+mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id)
 {
 	mvc *m = b->mvc;
 	/* if we don't have a stream, nothing can go wrong, so we return
@@ -1687,7 +1676,9 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w)
 
 	m->rowcnt = val;
 	stack_set_number(m, "rowcnt", m->rowcnt);
-	if (mnstr_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) || mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, m->last_id) || mnstr_write(s, "\n", 1, 1) != 1)
+	if (mnstr_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) || mnstr_write(s, " ", 1, 1) != 1
+			|| !mvc_send_lng(s, m->last_id) || mnstr_write(s, " ", 1, 1) != 1
+			|| !mvc_send_lng(s, (lng) query_id) || mnstr_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
 		return -1;
@@ -1747,6 +1738,10 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	if (!mvc_send_int(s, (m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count))
 		return -1;
 
+	// export query id
+	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, (lng) t->query_id))
+		return -1;
+
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)
 		return -1;
 	for (i = 0; i < t->nr_cols; i++) {
@@ -1764,21 +1759,16 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		if (strchr(c->name, ',') || strchr(c->name, ' ') || strchr(c->name , '\t') || strchr(c->name, '#')) {
+		if (strpbrk(c->name, ", \t#\"\\")) {
+			char *p;
 			if (mnstr_write(s, "\"", 1, 1) != 1)
 				return -1;
-			if (strchr(c->name, '"')) {
-				char *p;
-				for (p = c->name; *p; p++) {
-					if (*p == '"') {
-						if (mnstr_write(s, "\\", 1, 1) != 1)
-							return -1;
-					}
-					if (mnstr_write(s, p, 1, 1) != 1)
+			for (p = c->name; *p; p++) {
+				if (*p == '"' || *p == '\\') {
+					if (mnstr_write(s, "\\", 1, 1) != 1)
 						return -1;
 				}
-			} else {
-				if (mnstr_write(s, c->name, strlen(c->name), 1) != 1)
+				if (mnstr_write(s, p, 1, 1) != 1)
 					return -1;
 			}
 			if (mnstr_write(s, "\"", 1, 1) != 1)
@@ -2461,9 +2451,9 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 
 
 int
-mvc_result_table(mvc *m, int nr_cols, int type, BAT *order)
+mvc_result_table(mvc *m, oid query_id, int nr_cols, int type, BAT *order)
 {
-	res_table *t = res_table_create(m->session->tr, m->result_id++, nr_cols, type, m->results, order);
+	res_table *t = res_table_create(m->session->tr, m->result_id++, query_id, nr_cols, type, m->results, order);
 	m->results = t;
 	return t->id;
 }

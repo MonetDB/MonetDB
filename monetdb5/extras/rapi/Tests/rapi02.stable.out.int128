@@ -1,0 +1,181 @@
+stdout of test 'rapi02` in directory 'monetdb5/extras/rapi` itself:
+
+
+# 16:45:16 >  
+# 16:45:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33997" "--set" "mapi_usock=/var/tmp/mtest-95437/.s.monetdb.33997" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-rint-install/var/MonetDB/mTests_monetdb5_extras_rapi" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 16:45:16 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_extras_rapi', using 8 threads
+# Compiled for x86_64-apple-darwin13.2.0/64bit with 64bit OIDs dynamically linked
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://herbert2.local:33997/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-95437/.s.monetdb.33997
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:45:16 >  
+# 16:45:16 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-95437" "--port=33997"
+# 16:45:16 >  
+
+#io.print(rbit);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	2	]
+[ 1@0,	0	]
+[ 2@0,	2	]
+[ 3@0,	0	]
+#io.print(rbte);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	126	]
+[ 1@0,	0	]
+[ 2@0,	0	]
+#io.print(rsht);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	3400	]
+[ 1@0,	42	]
+[ 2@0,	-3316	]
+[ 3@0,	42	]
+#io.print(rint);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	6047549961	]
+[ 1@0,	122596606	]
+[ 2@0,	924414359	]
+[ 3@0,	122596606	]
+#io.print(rlng);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	6047549961	]
+[ 1@0,	122596606	]
+[ 2@0,	924414359	]
+[ 3@0,	122596606	]
+#io.print(rhge);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	6047549961	]
+[ 1@0,	122596606	]
+[ 2@0,	924414359	]
+[ 3@0,	122596606	]
+[ 42	]
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	1733543.517	]
+[ 1@0,	18026.0776	]
+[ 2@0,	-1697424.094	]
+[ 3@0,	18026.0776	]
+#io.print(rdbl);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	17495052.06	]
+[ 1@0,	12259.6606	]
+[ 2@0,	-16797855.63	]
+[ 3@0,	12259.6606	]
+#io.print(rstr);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	4	]
+[ 1@0,	20	]
+[ 2@0,	0	]
+[ 3@0,	nil	]
+[ "asdf"	]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1804289383	]
+[ 1@0,	846930886	]
+[ 2@0,	1681692777	]
+[ 3@0,	1714636915	]
+[ 4@0,	nil	]
+#io.print(rintbi2);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1804289383	]
+[ 1@0,	846930886	]
+[ 2@0,	1681692777	]
+[ 3@0,	1714636915	]
+[ 4@0,	nil	]
+#io.print(rintbl);
+#--------------------------#
+# h	t  # name
+# void	lng  # type
+#--------------------------#
+[ 0@0,	1804289383	]
+[ 1@0,	846930886	]
+[ 2@0,	1681692777	]
+[ 3@0,	1714636915	]
+[ 4@0,	nil	]
+#io.print(rintbh);
+#--------------------------#
+# h	t  # name
+# void	hge  # type
+#--------------------------#
+[ 0@0,	1804289383	]
+[ 1@0,	846930886	]
+[ 2@0,	1681692777	]
+[ 3@0,	1714636915	]
+[ 4@0,	nil	]
+#io.print(rintbd);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	1804289383	]
+[ 1@0,	846930886	]
+[ 2@0,	1681692777	]
+[ 3@0,	1714636915	]
+[ 4@0,	nil	]
+#io.print(rintbs);
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"1804289383"	]
+[ 1@0,	"846930886"	]
+[ 2@0,	"1681692777"	]
+[ 3@0,	"1714636915"	]
+[ 4@0,	nil	]
+#io.print(rintbf);
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"1804289383"	]
+[ 1@0,	"846930886"	]
+[ 2@0,	"1681692777"	]
+[ 3@0,	"1714636915"	]
+[ 4@0,	nil	]
+
+# 16:45:16 >  
+# 16:45:16 >  "Done."
+# 16:45:16 >  
+

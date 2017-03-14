@@ -1,0 +1,41 @@
+stdout of test 'sql_dec38` in directory 'sql/test/mapi` itself:
+
+
+# 23:45:59 >  
+# 23:45:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39955" "--set" "mapi_usock=/var/tmp/mtest-8999/.s.monetdb.39955" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/int128/prefix/_/var/MonetDB/mTests_sql_test_mapi" "--set" "mal_listing=0"
+# 23:45:59 >  
+
+# MonetDB 5 server v11.17.17 "Jan2014-SP2"
+# Serving database 'mTests_sql_test_mapi', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:39955/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8999/.s.monetdb.39955
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 23:45:59 >  
+# 23:45:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8999" "--port=39955"
+# 23:45:59 >  
+
+#START TRANSACTION;
+#CREATE TABLE sql_dec38 (d38_0 DECIMAL(38,0), d38_19 DECIMAL(38,19), d38_38 DECIMAL(38,38));
+#INSERT INTO sql_dec38 VALUES (12345678901234567899876543210987654321, 1234567890123456789.9876543210987654321, .12345678901234567899876543210987654321);
+[ 1	]
+#SELECT * FROM sql_dec38;
+% sys.sql_dec38,	sys.sql_dec38,	sys.sql_dec38 # table_name
+% d38_0,	d38_19,	d38_38 # name
+% decimal,	decimal,	decimal # type
+% 39,	40,	40 # length
+[ 12345678901234567899876543210987654321,	1234567890123456789.9876543210987654321,	0.12345678901234567899876543210987654321	]
+
+# 23:45:59 >  
+# 23:45:59 >  "Done."
+# 23:45:59 >  
+

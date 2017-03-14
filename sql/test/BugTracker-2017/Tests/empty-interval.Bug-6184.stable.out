@@ -1,0 +1,108 @@
+stdout of test 'empty-interval.Bug-6184` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 09:13:08 >  
+# 09:13:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36197" "--set" "mapi_usock=/var/tmp/mtest-25462/.s.monetdb.36197" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 09:13:08 >  
+
+# MonetDB 5 server v11.25.4 (hg id: f0eaa26022fe+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.523 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://meeuw.mullender.nl:36197/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25462/.s.monetdb.36197
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 09:13:08 >  
+# 09:13:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25462" "--port=36197"
+# 09:13:08 >  
+
+#START TRANSACTION;
+#CREATE TABLE "sys"."unitTestDontDelete" (
+#	"A" VARCHAR(255),
+#	"B" BIGINT,
+#	"C" DOUBLE,
+#	"D" TIMESTAMP
+#);
+#COPY 10 RECORDS INTO "sys"."unitTestDontDelete" FROM stdin USING DELIMITERS '\t','\n','"';
+#NULL	NULL	NULL	NULL
+#"Cat1"	0	0.5	2013-06-10 11:10:10.000000
+#"Cat2"	1	1.5	2013-06-11 12:11:11.000000
+#"Cat1"	2	2.5	2013-06-12 13:12:12.000000
+#"Cat2"	3	3.5	2013-06-13 14:13:13.000000
+#"Cat1"	4	4.5	2013-06-14 15:14:14.000000
+#"Cat2"	5	5.5	2013-06-15 16:15:15.000000
+#"Cat1"	6	6.5	2013-06-16 17:16:16.000000
+#"Cat2"	7	7.5	2013-06-17 18:17:17.000000
+#"Cat1"	8	8.5	2013-06-18 19:18:18.000000
+[ 10	]
+#select * from "unitTestDontDelete" where "B" < 5 AND "B" >= 5;
+% sys.unitTestDontDelete,	sys.unitTestDontDelete,	sys.unitTestDontDelete,	sys.unitTestDontDelete # table_name
+% A,	B,	C,	D # name
+% varchar,	bigint,	double,	timestamp # type
+% 0,	1,	24,	26 # length
+#select * from "unitTestDontDelete" where "A" < 'Cat2' AND "A" >= 'Cat2';
+% sys.unitTestDontDelete,	sys.unitTestDontDelete,	sys.unitTestDontDelete,	sys.unitTestDontDelete # table_name
+% A,	B,	C,	D # name
+% varchar,	bigint,	double,	timestamp # type
+% 0,	1,	24,	26 # length
+#select * from "unitTestDontDelete" where "C" < 5.5 AND "C" >= 5.5;
+% sys.unitTestDontDelete,	sys.unitTestDontDelete,	sys.unitTestDontDelete,	sys.unitTestDontDelete # table_name
+% A,	B,	C,	D # name
+% varchar,	bigint,	double,	timestamp # type
+% 0,	1,	24,	26 # length
+#ROLLBACK;
+
+# 09:13:09 >  
+# 09:13:09 >  "Done."
+# 09:13:09 >  
+
