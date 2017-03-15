@@ -14,7 +14,7 @@
 #include "opt_statistics.h"
 #include "opt_matpack.h"
 
-int 
+str 
 OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int v, i, j, limit, slimit;
@@ -40,7 +40,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	limit= mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb,mb->stop) < 0)
-		return 0;
+		throw(MAL,"optimizer.matpack",MAL_MALLOC_FAIL);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( getModuleId(p) == matRef  && getFunctionId(p) == packRef && isaBatType(getArgType(mb,p,1))) {
@@ -84,9 +84,8 @@ wrapup:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","matpack",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("matpack",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return actions;
+	return MAL_SUCCEED;
 }

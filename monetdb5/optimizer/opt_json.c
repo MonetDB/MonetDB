@@ -16,7 +16,7 @@
 #include "opt_statistics.h"
 #include "opt_json.h"
 
-int 
+str 
 OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, limit, slimit;
@@ -35,7 +35,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit= mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb,mb->stop) < 0)
-		return 0;
+		throw(MAL,"optimizer.json",MAL_MALLOC_FAIL);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( getModuleId(p) == sqlRef  && getFunctionId(p) == affectedRowsRef) {
@@ -81,9 +81,8 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","json",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("json",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return actions;
+	return MAL_SUCCEED;
 }

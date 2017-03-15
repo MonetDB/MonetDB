@@ -44,7 +44,7 @@
 	} while (0)
 
 
-int
+str
 OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, actions =0;
@@ -55,6 +55,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	lng usec = GDKusec();
 	str sch,tbl;
 	int etop= 0, esize= 256;
+	str msg = MAL_SUCCEED;
 
 	//if ( optimizerIsApplied(mb,"emptybind") )
 		//return 0;
@@ -69,7 +70,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	// track of where 'emptybind' results are produced
 	empty = (int *) GDKzalloc(mb->vsize * sizeof(int));
 	if ( empty == NULL)
-		return 0;
+		throw(MAL,"optimizer.emptybind",MAL_MALLOC_FAIL);
 
 	updated= (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
 	if( updated == 0){
@@ -91,7 +92,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #endif
 
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
-		return 0;
+		throw(MAL,"optimizer.emptybind",MAL_MALLOC_FAIL);
 
 	/* Symbolic evaluation of the empty BAT variables */
 	/* by looking at empty BAT arguments */
@@ -346,8 +347,7 @@ wrapup:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("emptybind",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-	return 1;
+	return msg;
 }

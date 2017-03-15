@@ -8,16 +8,10 @@
 
 /*  author M.L. Kersten
  * The optimizer wrapper code is the interface to the MAL optimizer calls.
- * It prepares the environment for the optimizers to do their work and removes
- * the call itself to avoid endless recursions.
  * 
  * Before an optimizer is finished, it should leave a clean state behind.
- * Moreover, the information of the optimization step is saved for
+ * Moreover, some information of the optimization step is saved for
  * debugging and analysis.
- * 
- * The wrapper expects the optimizers to return the number of
- * actions taken, i.e. number of succesful changes to the code.
-
 */
 
 #include "monetdb_config.h"
@@ -59,38 +53,40 @@
 
 struct{
 	str nme;
-	int (*fcn)();
+	str (*fcn)();
+	int calls;
+	lng timing;
 } codes[] = {
-	{"aliases", &OPTaliasesImplementation},
-	{"candidates", &OPTcandidatesImplementation},
-	{"coercions", &OPTcoercionImplementation},
-	{"commonTerms", &OPTcommonTermsImplementation},
-	{"constants", &OPTconstantsImplementation},
-	{"costModel", &OPTcostModelImplementation},
-	{"dataflow", &OPTdataflowImplementation},
-	{"deadcode", &OPTdeadcodeImplementation},
-	{"emptybind", &OPTemptybindImplementation},
-	{"evaluate", &OPTevaluateImplementation},
-	{"garbageCollector", &OPTgarbageCollectorImplementation},
-	{"generator", &OPTgeneratorImplementation},
-	{"inline", &OPTinlineImplementation},
-	{"jit", &OPTjitImplementation},
-	{"json", &OPTjsonImplementation},
-	{"matpack", &OPTmatpackImplementation},
-	{"mergetable", &OPTmergetableImplementation},
-	{"mitosis", &OPTmitosisImplementation},
-	{"multiplex", &OPTmultiplexImplementation},
-	{"oltp", &OPToltpImplementation},
-	{"profiler", &OPTprofilerImplementation},
-	{"projectionpath", &OPTprojectionpathImplementation},
-	{"pushselect", &OPTpushselectImplementation},
-	{"querylog", &OPTquerylogImplementation},
-	{"reduce", &OPTreduceImplementation},
-	{"remap", &OPTremapImplementation},
-	{"remoteQueries", &OPTremoteQueriesImplementation},
-	{"reorder", &OPTreorderImplementation},
-	{"volcano", &OPTvolcanoImplementation},
-	{0,0}
+	{"aliases", &OPTaliasesImplementation,0,0},
+	{"candidates", &OPTcandidatesImplementation,0,0},
+	{"coercions", &OPTcoercionImplementation,0,0},
+	{"commonTerms", &OPTcommonTermsImplementation,0,0},
+	{"constants", &OPTconstantsImplementation,0,0},
+	{"costModel", &OPTcostModelImplementation,0,0},
+	{"dataflow", &OPTdataflowImplementation,0,0},
+	{"deadcode", &OPTdeadcodeImplementation,0,0},
+	{"emptybind", &OPTemptybindImplementation,0,0},
+	{"evaluate", &OPTevaluateImplementation,0,0},
+	{"garbageCollector", &OPTgarbageCollectorImplementation,0,0},
+	{"generator", &OPTgeneratorImplementation,0,0},
+	{"inline", &OPTinlineImplementation,0,0},
+	{"jit", &OPTjitImplementation,0,0},
+	{"json", &OPTjsonImplementation,0,0},
+	{"matpack", &OPTmatpackImplementation,0,0},
+	{"mergetable", &OPTmergetableImplementation,0,0},
+	{"mitosis", &OPTmitosisImplementation,0,0},
+	{"multiplex", &OPTmultiplexImplementation,0,0},
+	{"oltp", &OPToltpImplementation,0,0},
+	{"profiler", &OPTprofilerImplementation,0,0},
+	{"projectionpath", &OPTprojectionpathImplementation,0,0},
+	{"pushselect", &OPTpushselectImplementation,0,0},
+	{"querylog", &OPTquerylogImplementation,0,0},
+	{"reduce", &OPTreduceImplementation,0,0},
+	{"remap", &OPTremapImplementation,0,0},
+	{"remoteQueries", &OPTremoteQueriesImplementation,0,0},
+	{"reorder", &OPTreorderImplementation,0,0},
+	{"volcano", &OPTvolcanoImplementation,0,0},
+	{0,0,0,0}
 };
 mal_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
@@ -102,6 +98,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol s= NULL;
 	int i, actions = 0;
 	char optimizer[256];
+	str msg = MAL_SUCCEED;
+	lng clk;
 
     if (cntxt->mode == FINISHCLIENT)
         throw(MAL, "optimizer", "prematurely stopped client");
@@ -142,10 +140,12 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	for (i=0; codes[i].nme; i++)
 		if (strcmp(codes[i].nme, optimizer) == 0){
-			actions = (int)(*(codes[i].fcn))(cntxt, mb, stk, 0);
-			if (actions < 0) {
+			clk = GDKusec();
+			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, 0);
+			codes[i].timing += GDKusec() - clk;
+			codes[i].calls++;
+			if (msg) 
 				throw(MAL, optimizer, "Error in optimizer %s", optimizer);
-			}
 			break;	
 		}
 	if (codes[i].nme == 0)

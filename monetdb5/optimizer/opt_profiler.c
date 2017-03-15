@@ -49,7 +49,7 @@ static struct{
     {0,0,0}};
 */
 
-int
+str
 OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
@@ -110,7 +110,6 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","profiler", usec);
     newComment(mb,buf);
-	QOTupdateStatistics("profiler",1,usec);
 	addtoMalBlkHistory(mb);
-	return 1;
+	return MAL_SUCCEED;
 }

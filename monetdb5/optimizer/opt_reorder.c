@@ -262,7 +262,7 @@ OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return actions;
 }
 
-int
+str
 OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j, start;
@@ -276,14 +276,14 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) stk;
 	dep = OPTdependencies(cntxt,mb,&uselist);
 	if ( dep == NULL)
-		return 0;
+		return MAL_SUCCEED;
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(uselist);
 		OPTremoveDep(dep, limit);
-		return 0;
+		throw(MAL,"optimizer.reorder", MAL_MALLOC_FAIL);
 	}
 	
 	pushInstruction(mb,old[0]);
@@ -347,8 +347,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
     newComment(mb,buf);
-	QOTupdateStatistics("reorder",1,usec);
 	addtoMalBlkHistory(mb);
 
-	return 1;
+	return MAL_SUCCEED;
 }

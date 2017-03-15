@@ -57,7 +57,7 @@ pushInstruction(mb,P);
 			series[getArg(p,0)] = p;\
 			pushInstruction(mb,p);
 
-int 
+str 
 OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p,q, *old, *series;
@@ -78,7 +78,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
 	if(series == NULL)
-		return 0;
+		throw(MAL,"optimizer.generator", MAL_MALLOC_FAIL);
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -96,7 +96,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(series);
-		return 0;
+		throw(MAL,"optimizer.generator", MAL_MALLOC_FAIL);
 	}
 
 	for( i=0; i < limit; i++){
@@ -174,9 +174,8 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("generator",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return actions;
+	return MAL_SUCCEED;
 }

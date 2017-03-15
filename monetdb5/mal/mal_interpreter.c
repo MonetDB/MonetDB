@@ -283,7 +283,6 @@ prepareMALstack(MalBlkPtr mb, int size)
 	int i;
 	ValPtr lhs, rhs;
 
-	assert(size >= mb->vsize);
 	stk = newGlobalStack(size);
 	if (!stk) {
 		return NULL;

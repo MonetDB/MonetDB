@@ -210,7 +210,7 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 	}
 	return 0;
 }
-int
+str
 OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *old = 0, p;
@@ -226,7 +226,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
-		return 0;
+		throw(MAL,"optimizer.mergetable", MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -255,10 +255,6 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if( old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
-	if (mb->errors){
-		/* rollback */
-	}
-	GDKfree(msg);
 
     /* Defense line against incorrect plans */
     if( mb->errors == 0 && actions > 0){
@@ -270,9 +266,8 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","multiplex",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("multiplex",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return mb->errors? 0: actions;
+	return msg;
 }

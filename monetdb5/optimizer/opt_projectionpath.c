@@ -137,7 +137,11 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 		pushInstruction(mb,p);
 	}
 #ifdef DEBUG_OPT_PROJECTIONPATH
-	chkProgram(cntxt->fdout, cntxt->nspace, mb);
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
 	mnstr_printf(cntxt->fdout,"#projectionpath prefix actions %d\n",actions);
 	if(actions) printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 #endif
@@ -151,7 +155,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 }
 #endif
 
-int
+str
 OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, actions=0, maxprefixlength=0;
@@ -162,11 +166,12 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	int limit,slimit;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
 	if ( mb->inlineProp)
-		return 0;
+		return MAL_SUCCEED;
 	//if ( optimizerIsApplied(mb,"projectionpath") )
 		//return 0;
 
@@ -178,13 +183,15 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb,mb->ssize + mb->stop) < 0)
-		return 0;
+		throw(MAL,"optimizer.projectionpath", MAL_MALLOC_FAIL);
 
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
 	varcnt= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); 
-	if (pc == NULL || varcnt == NULL )
+	if (pc == NULL || varcnt == NULL ){
+		msg = createException(MAL,"optimizer.projectionpath", MAL_MALLOC_FAIL);
 		goto wrapupall;
+	}
 
 	/*
 	 * Count the variable re-use  used as arguments first.
@@ -320,12 +327,11 @@ wrapupall:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","projectionpath",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("projectionpath",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 	if (pc ) GDKfree(pc);
 	if (varcnt ) GDKfree(varcnt);
 	if(old) GDKfree(old);
 
-	return actions;
+	return msg;
 }

@@ -16,7 +16,7 @@
  * are introduced too far apart in the MAL program.
  * It requires the constant optimizer to be ran first.
  */
-int
+str
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, prop, barrier= 0, cnt;
@@ -31,6 +31,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int *vars;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
@@ -38,13 +39,16 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	alias = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
 	vars = (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	if ( alias == NULL || list == NULL || vars == NULL)
+	if ( alias == NULL || list == NULL || vars == NULL){
+		msg = createException(MAL,"optimizer.commonTerms",MAL_MALLOC_FAIL);
 		goto wrapup;
+	}
 
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
+		msg = createException(MAL,"optimizer.commonTerms",MAL_MALLOC_FAIL);
 		old = NULL;
 		goto wrapup;
 	}
@@ -183,7 +187,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","commonTerms",actions,usec);
     newComment(mb,buf);
-	QOTupdateStatistics("commonTerms",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
@@ -192,5 +195,5 @@ wrapup:
 	if(list) GDKfree(list);
 	if(vars) GDKfree(vars);
 	if(old) GDKfree(old);
-	return actions;
+	return msg;
 }

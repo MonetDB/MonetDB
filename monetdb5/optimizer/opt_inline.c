@@ -47,7 +47,7 @@ static int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 }
 
 
-int
+str
 OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
@@ -102,9 +102,8 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","inline",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("inline",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return actions;
+	return MAL_SUCCEED;
 }

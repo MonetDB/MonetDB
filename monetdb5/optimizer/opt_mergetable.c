@@ -1474,7 +1474,7 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	ml->v[piv].type = mat_slc;
 }
 
-int
+str
 OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
 {
 	InstrPtr *old;
@@ -1483,6 +1483,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	//if( optimizerIsApplied(mb, "mergetable") || !optimizerIsApplied(mb,"mitosis"))
 		//return 0;
@@ -1495,8 +1496,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL){
-		GDKerror("mergetable"MAL_MALLOC_FAIL);
-		return 0;
+		throw(MAL, "optimizer.mergetable", MAL_MALLOC_FAIL);
 	}
 	/* check for bailout conditions */
 	for (i = 1; i < oldtop; i++) {
@@ -1535,8 +1535,10 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	ml.horigin = 0;
 	ml.torigin = 0;
 	ml.v = 0;
-	if (bailout)
+	if (bailout){
+		msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
 		goto cleanup;
+	}
 
 	/* the number of MATs is limited to the variable stack*/
 	ml.size = mb->vtop;
@@ -1556,6 +1558,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
 	if ( mb->stmt == NULL) {
 		mb->stmt = old;
+		msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	mb->ssize = size;
@@ -1845,7 +1848,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	{
 		str err;
 		mnstr_printf(GDKout,"#Result of multi table optimizer\n");
-		err= optimizerCheck(cntxt,mb,"merge test",1,0);
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
 		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 		if( err) GDKfree(err);
 	}
@@ -1875,9 +1880,8 @@ cleanup:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions, usec);
    	newComment(mb,buf);
-	QOTupdateStatistics("candidates",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return actions;
+	return msg;
 }

@@ -33,7 +33,7 @@ addLock(Client cntxt, OLTPlocks locks, MalBlkPtr mb, InstrPtr p, int sch, int tb
 #endif
 }
 
-int
+str
 OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int i, limit, slimit, updates=0;
 	InstrPtr p, q, lcks;
@@ -97,7 +97,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( lcks->argc == 1 ){
 		freeInstruction(lcks);
-		return 0;
+		return MAL_SUCCEED;
 	}
 
 	// Now optimize the code
@@ -132,8 +132,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","oltp",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("oltp",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-	return 1;
+	return MAL_SUCCEED;
 }

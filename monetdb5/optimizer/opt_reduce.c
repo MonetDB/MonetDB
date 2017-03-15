@@ -11,7 +11,7 @@
 #include "opt_statistics.h"
 #include "mal_interpreter.h"
 
-int
+str
 OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int actions = 0;
@@ -37,9 +37,8 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reduce",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("reduce",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return actions;
+	return MAL_SUCCEED;
 }

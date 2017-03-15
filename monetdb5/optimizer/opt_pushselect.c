@@ -129,7 +129,7 @@ no_updates(InstrPtr *old, int *vars, int oldv, int newv)
 	return 1;
 }
 
-int
+str
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, limit, slimit, actions=0, *vars, *slices = NULL, push_down_delta = 0, nr_topn = 0, nr_likes = 0;
@@ -141,7 +141,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	memset(&subselects, 0, sizeof(subselects));
 	if( mb->errors) 
-		return 0;
+		return MAL_SUCCEED;
 
 #ifdef DEBUG_OPT_PUSHSELECT
 		mnstr_printf(cntxt->fdout,"#Push select optimizer started\n");
@@ -150,7 +150,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL)
-		return 0;
+		throw(MAL,"optimizer.pushselect", MAL_MALLOC_FAIL);
 
 	limit = mb->stop;
 	slimit= mb->ssize;
@@ -612,9 +612,8 @@ wrapup:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("pushselect",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return actions;
+	return MAL_SUCCEED;
 }

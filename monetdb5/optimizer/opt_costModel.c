@@ -33,7 +33,7 @@
  * Also make sure you don't re-use variables, because then the
  * row count becomes non-deterministic.
  */
-int
+str
 OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
@@ -47,7 +47,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) pci;
 
 	if ( mb->inlineProp )
-		return 0;
+		return MAL_SUCCEED;
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
@@ -153,8 +153,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","costmodel",usec);
     newComment(mb,buf);
-	QOTupdateStatistics("costmodel",1,usec);
 	addtoMalBlkHistory(mb);
 
-	return 1;
+	return MAL_SUCCEED;
 }

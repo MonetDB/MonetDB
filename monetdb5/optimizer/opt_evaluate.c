@@ -115,25 +115,25 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 	return action;
 }
 
-int
+str
 OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
 	int i, k, limit, *alias = 0, barrier;
 	MalStkPtr env = NULL;
 	int profiler;
-	str msg;
 	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
 	int *assigned = 0, use; 
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	cntxt->itrace = 0;
 	(void)stk;
 	(void)pci;
 
 	if ( mb->inlineProp )
-		return 0;
+		return MAL_SUCCEED;
 
 	(void)cntxt;
 #ifdef DEBUG_OPT_EVALUATE
@@ -142,11 +142,13 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if (assigned == NULL)
-		return 0;
+		throw(MAL,"optimzier.evaluate", MAL_MALLOC_FAIL);
 
 	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
-	if (alias == NULL)
-		goto wrapup;
+	if (alias == NULL){
+		GDKfree(assigned);
+		throw(MAL,"optimzier.evaluate", MAL_MALLOC_FAIL);
+	}
 
 	// arguments are implicitly assigned by context
 	p = getInstrPtr(mb, 0);
@@ -182,7 +184,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if ( env == NULL) {
 				env = prepareMALstack(mb,  2 * mb->vsize);
 				if (!env) {
-					actions = -1;
+					msg = createException(MAL,"optimizer.evaluate", MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
 				env->keepAlive = TRUE;
@@ -230,6 +232,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				mnstr_printf(cntxt->fdout, "Evaluated %s\n", msg);
 #endif
 				GDKfree(msg);
+				msg= MAL_SUCCEED;
 				mb->errors = 0;
 			}
 		}
@@ -250,7 +253,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,usec);
     newComment(mb,buf);
-	QOTupdateStatistics("evaluate",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
@@ -258,5 +260,5 @@ wrapup:
 	if ( env) freeStack(env);
 	if(assigned) GDKfree(assigned);
 	if(alias)	GDKfree(alias);
-	return actions;
+	return msg;
 }

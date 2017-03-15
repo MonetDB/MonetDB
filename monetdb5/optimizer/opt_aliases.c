@@ -21,7 +21,7 @@ OPTaliasRemap(InstrPtr p, int *alias){
 		getArg(p,i) = alias[getArg(p,i)];
 }
 
-int
+str
 OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k=1, limit, actions=0;
@@ -43,7 +43,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( i < limit){
 		alias= (int*) GDKzalloc(sizeof(int)* mb->vtop);
 		if (alias == NULL)
-			return 0;
+			throw(MAL,"optimizer.aliases",MAL_MALLOC_FAIL);
 		setVariableScope(mb);
 		for(j=1; j<mb->vtop; j++) alias[j]=j;
 	}
@@ -83,9 +83,8 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	usec= GDKusec() - usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","aliases",actions,usec);
     newComment(mb,buf);
-	QOTupdateStatistics("aliases",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return actions;
+	return MAL_SUCCEED;
 }

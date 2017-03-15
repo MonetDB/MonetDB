@@ -21,7 +21,7 @@
 //A heuristic to check it
 #define MAXdelays 128
 
-int
+str
 OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, limit;
@@ -36,11 +36,11 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) stk;		/* to fool compilers */
 
     if ( mb->inlineProp )
-        return 0;
+        return MAL_SUCCEED;
 
     limit= mb->stop;
     if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
-		return 0;
+		throw(MAL,"optimizer.volcano",MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -102,9 +102,8 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","volcano",count,usec);
     newComment(mb,buf);
-	QOTupdateStatistics("volcano",count,usec);
 	if( count >= 0)
 		addtoMalBlkHistory(mb);
 
-	return count;
+	return MAL_SUCCEED;
 }

@@ -15,7 +15,7 @@
 #include "opt_candidates.h"
 #include "opt_statistics.h"
 
-int
+str
 OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
@@ -84,8 +84,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","candidates",usec);
     newComment(mb,buf);
-	QOTupdateStatistics("candidates",1,usec);
 	addtoMalBlkHistory(mb);
 
-	return 1;
+	return MAL_SUCCEED;
 }

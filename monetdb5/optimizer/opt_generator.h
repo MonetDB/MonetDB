@@ -14,6 +14,6 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-mal_export int OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

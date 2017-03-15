@@ -23,7 +23,7 @@
  *
  * The life time of such BATs is forcefully terminated after the block exit.
  */
-int
+str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, limit, slimit;
@@ -82,7 +82,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 */
 
 	if ( newMalBlkStmt(mb,mb->ssize) < 0) 
-		return 0;
+		throw(MAL, "optimizer.garbagecollector", MAL_MALLOC_FAIL);
 
 	p = NULL;
 	for (i = 0; i < limit; i++) {
@@ -162,12 +162,11 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions+1, usec);
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("garbagecollector",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return actions+1;
+	return MAL_SUCCEED;
 }
 

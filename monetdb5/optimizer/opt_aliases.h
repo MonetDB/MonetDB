@@ -14,6 +14,6 @@
 
 mal_export int OPTisAlias(InstrPtr p);
 mal_export void OPTaliasRemap(InstrPtr p, int *alias);
-mal_export int OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

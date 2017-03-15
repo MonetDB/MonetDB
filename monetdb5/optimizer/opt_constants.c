@@ -23,7 +23,7 @@
 #include "opt_statistics.h"
 #include "opt_constants.h"
 
-int
+str
 OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,k=1, n=0, fnd=0, actions=0;
@@ -31,6 +31,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	VarPtr x,y, *cst;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 #ifdef DEBUG_OPT_CONSTANTS
 	mnstr_printf(cntxt->fdout,"#OPT_CONSTANTS: MATCHING CONSTANTS ELEMENTS\n");
@@ -40,8 +41,10 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 
-	if ( alias == NULL || cst == NULL || index == NULL)
+	if ( alias == NULL || cst == NULL || index == NULL){
+		msg = createException(MAL,"optimizer.constants",MAL_MALLOC_FAIL);
 		goto wrapup;
+	}
 
 	(void) stk;
 	(void) cntxt;
@@ -97,7 +100,6 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);
     newComment(mb,buf);
-	QOTupdateStatistics("constants",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
@@ -105,5 +107,5 @@ wrapup:
 	if( alias) GDKfree(alias);
 	if( cst) GDKfree(cst);
 	if( index) GDKfree(index);
-	return actions;
+	return msg;
 }

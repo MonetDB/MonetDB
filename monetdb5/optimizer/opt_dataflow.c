@@ -164,7 +164,7 @@ dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
 /* dataflow blocks are transparent, because they are always
    executed, either sequentially or in parallel */
 
-int
+str
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, start=1, slimit, breakpoint, actions=0, simple = TRUE;
@@ -174,17 +174,18 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	States states;
 	char  buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1)
-		return 0;
+		return MAL_SUCCEED;
 
 	if ( optimizerIsApplied(mb,"dataflow"))
-		return 0;
+		return MAL_SUCCEED;
 	(void) stk;
 	/* inlined functions will get their dataflow control later */
 	if ( mb->inlineProp)
-		return 0;
+		return MAL_SUCCEED;
 
 #ifdef DEBUG_OPT_DATAFLOW
 		mnstr_printf(cntxt->fdout,"#dataflow input\n");
@@ -194,8 +195,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	vlimit = mb->vsize;
 	states = (States) GDKzalloc(vlimit * sizeof(char));
 	sink = (InstrPtr *) GDKzalloc(mb->stop * sizeof(InstrPtr));
-	if (states == NULL || sink == NULL)
+	if (states == NULL || sink == NULL){
+		msg= createException(MAL,"optimizer.dataflow",MAL_MALLOC_FAIL);
 		goto wrapup;
+	}
 	
 	setVariableScope(mb);
 
@@ -203,6 +206,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	slimit= mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
+		msg= createException(MAL,"optimizer.dataflow",MAL_MALLOC_FAIL);
 		actions = -1;
 		goto wrapup;
 	}
@@ -321,7 +325,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,usec);
     newComment(mb,buf);
-	QOTupdateStatistics("dataflow",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
@@ -330,5 +333,5 @@ wrapup:
 	if(sink)   GDKfree(sink);
 	if(old)    GDKfree(old);
 
-	return actions;
+	return msg;
 }

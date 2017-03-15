@@ -23,7 +23,7 @@
 #include "opt_statistics.h"
 #include "opt_jit.h"
 
-int
+str
 OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,actions = 0;
@@ -43,7 +43,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	setVariableScope(mb);
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
-		return 0;
+		throw(MAL,"optimizer.jit", MAL_MALLOC_FAIL);
 
 	/* peephole optimization */
 	for (i = 0; i < limit; i++) {
@@ -90,8 +90,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","jit",actions, usec);
     newComment(mb,buf);
-	QOTupdateStatistics("jit",actions,usec);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-	return 1;
+	return MAL_SUCCEED;
 }
