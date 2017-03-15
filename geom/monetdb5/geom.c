@@ -5353,16 +5353,22 @@ mbrCOMP(mbr *l, mbr *r)
 
 /* read mbr from log */
 mbr *
-mbrREAD(mbr *a, stream *s, size_t cnt)
+mbrREAD(mbr *A, stream *s, size_t cnt)
 {
+	mbr *a = A;
 	mbr *c;
 	size_t i;
 	int v[4];
 	flt vals[4];
 
+	if (a == NULL && (a = GDKmalloc(cnt * sizeof(mbr))) == NULL)
+		return NULL;
 	for (i = 0, c = a; i < cnt; i++, c++) {
-		if (!mnstr_readIntArray(s, v, 4))
+		if (!mnstr_readIntArray(s, v, 4)) {
+			if (a != A)
+				GDKfree(a);
 			return NULL;
+		}
 		memcpy(vals, v, 4 * sizeof(int));
 		c->xmin = vals[0];
 		c->ymin = vals[1];

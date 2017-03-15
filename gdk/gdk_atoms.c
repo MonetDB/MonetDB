@@ -496,25 +496,6 @@ bitToStr(char **dst, int *len, const bit *src)
 	return snprintf(*dst, *len, "false");
 }
 
-static bit *
-bitRead(bit *a, stream *s, size_t cnt)
-{
-	if (mnstr_read(s, (char *) a, 1, cnt) < 0)
-		return NULL;
-	return mnstr_errnr(s) ? NULL : a;
-}
-
-static gdk_return
-bitWrite(const bit *a, stream *s, size_t cnt)
-{
-	if (mnstr_write(s, (const char *) a, 1, cnt) == (ssize_t) cnt)
-		return GDK_SUCCEED;
-	else {
-		GDKsyserror("bitWrite: write failure\n");
-		return GDK_FAIL;
-	}
-}
-
 int
 batFromStr(const char *src, int *len, bat **dst)
 {
@@ -563,20 +544,6 @@ batToStr(char **dst, int *len, const bat *src)
 	i = (int) (strlen(s) + 4);
 	atommem(char, i);
 	return snprintf(*dst, *len, "<%s>", s);
-}
-
-static bat *
-batRead(bat *a, stream *s, size_t cnt)
-{
-	/* bat==int */
-	return mnstr_readIntArray(s, (int *) a, cnt) ? a : NULL;
-}
-
-static gdk_return
-batWrite(const bat *a, stream *s, size_t cnt)
-{
-	/* bat==int */
-	return mnstr_writeIntArray(s, (const int *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 
@@ -761,10 +728,18 @@ hgeFromStr(const char *src, int *len, hge **dst)
 
 #define atom_io(TYPE, NAME, CAST)					\
 static TYPE *								\
-TYPE##Read(TYPE *a, stream *s, size_t cnt)				\
+TYPE##Read(TYPE *A, stream *s, size_t cnt)				\
 {									\
-	mnstr_read##NAME##Array(s, (CAST *) a, cnt);			\
-	return mnstr_errnr(s) ? NULL : a;				\
+	TYPE *a = A;							\
+	if (a == NULL && (a = GDKmalloc(cnt * sizeof(TYPE))) == NULL)	\
+		return NULL;						\
+	if (mnstr_read##NAME##Array(s, (CAST *) a, cnt) == 0 ||		\
+	    mnstr_errnr(s)) {						\
+		if (a != A)						\
+			GDKfree(a);					\
+		return NULL;						\
+	}								\
+	return a;							\
 }									\
 static gdk_return							\
 TYPE##Write(const TYPE *a, stream *s, size_t cnt)			\
@@ -772,6 +747,9 @@ TYPE##Write(const TYPE *a, stream *s, size_t cnt)			\
 	return mnstr_write##NAME##Array(s, (const CAST *) a, cnt) ?	\
 		GDK_SUCCEED : GDK_FAIL;					\
 }
+
+atom_io(bat, Int, int)
+atom_io(bit, Bte, bte)
 
 atomtostr(bte, "%hhd", )
 atom_io(bte, Bte, bte)

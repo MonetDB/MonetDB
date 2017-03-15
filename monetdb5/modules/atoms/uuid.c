@@ -265,10 +265,16 @@ UUIDnull(void)
 }
 
 uuid *
-UUIDread(uuid *u, stream *s, size_t cnt)
+UUIDread(uuid *U, stream *s, size_t cnt)
 {
-	if (mnstr_read(s, u, UUID_SIZE, cnt) < (ssize_t) cnt)
+	uuid *u = U;
+	if (u == NULL && (u = GDKmalloc(cnt * sizeof(uuid))) == NULL)
 		return NULL;
+	if (mnstr_read(s, u, UUID_SIZE, cnt) < (ssize_t) cnt) {
+		if (u != U)
+			GDKfree(u);
+		return NULL;
+	}
 	return u;
 }
 

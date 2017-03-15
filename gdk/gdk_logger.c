@@ -346,12 +346,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[tt].atomRead;
 		void *tv = NULL;
 
-		if (tt < TYPE_str)
+		if (ATOMstorage(tt) < TYPE_str)
 			tv = lg->buf;
-		else if (tt > TYPE_str)
-			// FIXME unchecked_malloc ATOMnil can return NULL
-
-			tv = ATOMnil(tt);
 
 		assert(l->nr <= (lng) BUN_MAX);
 		if (l->flag == LOG_UPDATE) {
@@ -369,7 +365,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			for (; l->nr > 0; l->nr--) {
 				void *t = rt(tv, lg->log, 1);
 
-				if (!t) {
+				if (t == NULL) {
 					res = GDK_FAIL;
 					break;
 				}
@@ -383,11 +379,14 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 
 			void *hv = ATOMnil(ht);
 
+			if (hv == NULL)
+				res = GDK_FAIL;
+
 			for (; l->nr > 0; l->nr--) {
 				void *h = rh(hv, lg->log, 1);
 				void *t = rt(tv, lg->log, 1);
 
-				if (!h || !t) {
+				if (h == NULL || t == NULL)
 					res = GDK_FAIL;
 					break;
 				}
