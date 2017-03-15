@@ -352,24 +352,30 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		assert(l->nr <= (lng) BUN_MAX);
 		if (l->flag == LOG_UPDATE) {
 			uid = COLnew(0, ht, (BUN) l->nr, PERSISTENT);
-			r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
+			if (uid == NULL)
+				return GDK_FAIL;
 		} else {
 			assert(ht == TYPE_void);
-			r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
+		}
+		r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
+		if (r == NULL) {
+			BBPreclaim(uid);
+			return GDK_FAIL;
 		}
 
 		if (tseq)
 			BATtseqbase(r, 0);
 
 		if (ht == TYPE_void && l->flag == LOG_INSERT) {
-			for (; l->nr > 0; l->nr--) {
+			for (; res == GDK_SUCCEED && l->nr > 0; l->nr--) {
 				void *t = rt(tv, lg->log, 1);
 
 				if (t == NULL) {
 					res = GDK_FAIL;
 					break;
 				}
-				BUNappend(r, t, TRUE);
+				if (BUNappend(r, t, TRUE) != GDK_SUCCEED)
+					res = GDK_FAIL;
 				if (t != tv)
 					GDKfree(t);
 			}
@@ -382,16 +388,15 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			if (hv == NULL)
 				res = GDK_FAIL;
 
-			for (; l->nr > 0; l->nr--) {
+			for (; res == GDK_SUCCEED && l->nr > 0; l->nr--) {
 				void *h = rh(hv, lg->log, 1);
 				void *t = rt(tv, lg->log, 1);
 
 				if (h == NULL || t == NULL)
 					res = GDK_FAIL;
-					break;
-				}
-				BUNappend(uid, h, TRUE);
-				BUNappend(r, t, TRUE);
+				else if (BUNappend(uid, h, TRUE) != GDK_SUCCEED ||
+					 BUNappend(r, t, TRUE) != GDK_SUCCEED)
+					res = GDK_FAIL;
 				if (t != tv)
 					GDKfree(t);
 			}
@@ -401,7 +406,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			GDKfree(tv);
 		logbat_destroy(b);
 
-		if (tr_grow(tr)) {
+		if (res == GDK_SUCCEED && tr_grow(tr)) {
 			tr->changes[tr->nr].type = l->flag;
 			tr->changes[tr->nr].nr = l->nr;
 			tr->changes[tr->nr].ht = ht;
@@ -1111,19 +1116,22 @@ logger_commit(logger *lg)
 
 	p = log_find(lg->seqs_id, lg->dseqs, id);
 	if (p >= lg->seqs_val->batInserted) {
-		BUNinplace(lg->seqs_val, p, &lg->id, FALSE);
+		if (BUNinplace(lg->seqs_val, p, &lg->id, FALSE) != GDK_SUCCEED)
+			return GDK_FAIL;
 	} else {
 		oid pos = p;
-		BUNappend(lg->dseqs, &pos, FALSE);
-		BUNappend(lg->seqs_id, &id, FALSE);
-		BUNappend(lg->seqs_val, &lg->id, FALSE);
+		if (BUNappend(lg->dseqs, &pos, FALSE) != GDK_SUCCEED ||
+		    BUNappend(lg->seqs_id, &id, FALSE) != GDK_SUCCEED ||
+		    BUNappend(lg->seqs_val, &lg->id, FALSE) != GDK_SUCCEED)
+			return GDK_FAIL;
 	}
 
 	/* cleanup old snapshots */
 	if (BATcount(lg->snapshots_bid)) {
-		BATclear(lg->snapshots_bid, TRUE);
-		BATclear(lg->snapshots_tid, TRUE);
-		BATclear(lg->dsnapshots, TRUE);
+		if (BATclear(lg->snapshots_bid, TRUE) != GDK_SUCCEED ||
+		    BATclear(lg->snapshots_tid, TRUE) != GDK_SUCCEED ||
+		    BATclear(lg->dsnapshots, TRUE) != GDK_SUCCEED)
+			return GDK_FAIL;
 		BATcommit(lg->snapshots_bid);
 		BATcommit(lg->snapshots_tid);
 		BATcommit(lg->dsnapshots);
