@@ -360,25 +360,11 @@ BBPextend(int idx, int buildhash)
 	}
 }
 
-static inline str
-BBPtmpname(str s, int len, bat i)
+static inline char *
+BBPtmpname(char *s, size_t len, bat i)
 {
-	int reverse = i < 0;
-
-	if (reverse)
-		i = -i;
-	s[--len] = 0;
-	while (i > 0) {
-		s[--len] = '0' + (i & 7);
-		i >>= 3;
-	}
-	s[--len] = '_';
-	if (reverse)
-		s[--len] = 'r';
-	s[--len] = 'p';
-	s[--len] = 'm';
-	s[--len] = 't';
-	return s + len;
+	snprintf(s, len, "tmp_%o", (int) i);
+	return s;
 }
 
 static inline str
