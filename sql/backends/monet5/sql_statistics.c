@@ -180,9 +180,10 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (maxlen < 4) {
 							GDKfree(maxval);
 							maxval = GDKmalloc(4);
-							if( maxval== NULL)
+							if( maxval== NULL) {
 								GDKfree(dquery);
 								throw(SQL, "analyze", MAL_MALLOC_FAIL);
+							}
 							maxlen = 4;
 						}
 						if (minlen < 4) {
