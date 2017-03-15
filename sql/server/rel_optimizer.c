@@ -2722,7 +2722,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				atom *ra = exp_flatten(sql, re);
 
 				if (la && ra) {
-					atom *a = atom_mul(sql->sa, la, ra);
+					atom *a = atom_mul(la, ra);
 
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
@@ -2768,10 +2768,11 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					sql_exp *lle = l->h->data;
 					sql_exp *lre = l->h->next->data;
 					if (exp_equal(re, lle)==0) {
-						atom_inc(exp_value(sql, lre, sql->args, sql->argc));
-						(*changes)++;
-						exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
-						return le;
+						if (atom_inc(exp_value(sql, lre, sql->args, sql->argc))) {
+							(*changes)++;
+							exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+							return le;
+						}
 					}
 				}
 				if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {

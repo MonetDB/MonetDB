@@ -25,3 +25,4 @@ crash_on_NULL_ptr.Bug-6130
 prepare.Bug-6133
 null-quantile.Bug-6218
 real-power.Bug-6228
+one-plus-nil.Bug-6243
