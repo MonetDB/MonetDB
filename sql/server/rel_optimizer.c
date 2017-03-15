@@ -85,12 +85,14 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 		}
 		if (t->idxs.set)
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
-			sql_idx *c = cn->data;
-			if (strcmp(c->base.name, name+1 /* skip % */) == 0) {
+			sql_idx *i = cn->data;
+			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
 				*bt = rel;
-				if (pnr < 0 || (c->t->p &&
-				    list_position(c->t->p->tables.set, c->t) == pnr))
-					return c;
+				if (pnr < 0 || (i->t->p &&
+				    list_position(i->t->p->tables.set, i->t) == pnr)) {
+					sql_kc *c = i->columns->h->data;
+					return c->c;
+				}
 			}
 		}
 		break;
