@@ -116,8 +116,6 @@ __hidden void gdk_bbp_reset(void)
 __hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bit force)
 	__attribute__ ((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden void GDKclrerr(void)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextend(const char *fn, size_t size)
 	__attribute__ ((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));

@@ -2315,9 +2315,8 @@ __declspec(noreturn) gdk_export void GDKfatal(_In_z_ _Printf_format_string_ cons
 gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 #endif
-/*
- * @
- */
+gdk_export void GDKclrerr(void);
+
 #include "gdk_delta.h"
 #include "gdk_hash.h"
 #include "gdk_atoms.h"

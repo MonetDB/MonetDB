@@ -220,6 +220,7 @@ size_t GDKbatcopysize(BAT *bat, str colname);
 size_t GDKbatread(char *src, BAT **bat, str *colname);
 gdk_return GDKchangesemval(int sem_id, int number, int change, str *msg);
 gdk_return GDKchangesemval_timeout(int sem_id, int number, int change, int timeout_mseconds, bool *succeed, str *msg);
+void GDKclrerr(void);
 gdk_return GDKcreatedir(const char *nme);
 gdk_return GDKcreatesem(int id, int count, int *semid, str *msg);
 int GDKdebug;

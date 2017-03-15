@@ -339,7 +339,7 @@ DFLOWworker(void *T)
 	if( GDKerrbuf == 0)
 		fprintf(stderr,"DFLOWworker:Could not allocate GDKerrbuf\n");
 	else
-		GDKerrbuf[0] = 0;
+		GDKclrerr();
 	MT_lock_set(&dataflowLock);
 	cntxt = t->cntxt;
 	MT_lock_unset(&dataflowLock);
