@@ -18,7 +18,6 @@
 #include "opt_emptybind.h"
 #include "opt_aliases.h"
 #include "opt_deadcode.h"
-#include "opt_statistics.h"
 #include "mal_builder.h"
 
 #define addresult(I)									\

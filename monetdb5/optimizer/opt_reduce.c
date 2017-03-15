@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "opt_reduce.h"
-#include "opt_statistics.h"
 #include "mal_interpreter.h"
 
 str

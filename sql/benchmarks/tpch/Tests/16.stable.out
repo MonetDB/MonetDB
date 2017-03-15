@@ -353,11 +353,6 @@ Ready.
 [ "Brand#55",	"STANDARD ANODIZED BRASS",	36,	4	]
 [ "Brand#55",	"STANDARD BRUSHED COPPER",	3,	4	]
 [ "Brand#55",	"STANDARD BRUSHED STEEL",	19,	4	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	1	]
 
 # 12:34:53 >  
 # 12:34:53 >  Done.

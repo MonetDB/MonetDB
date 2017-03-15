@@ -23,11 +23,6 @@ Ready.
 % char,	varchar # type
 % 25,	30 # length
 [ "Supplier#000000013",	"HK71HQyWoqRWOX8GI FpgAifW,2PoH"	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
 
 # 09:17:20 >  
 # 09:17:20 >  Done.

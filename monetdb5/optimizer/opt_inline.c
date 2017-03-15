@@ -7,7 +7,6 @@
  */
 
 #include "monetdb_config.h"
-#include "opt_statistics.h"
 #include "opt_inline.h"
 
 static int

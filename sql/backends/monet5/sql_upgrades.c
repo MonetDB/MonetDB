@@ -1336,7 +1336,14 @@ sql_update_default(Client c, mvc *sql)
 			"(3, 'SELECT,UPDATE'), (5, 'SELECT,INSERT'), (6, 'INSERT,UPDATE'), (7, 'SELECT,INSERT,UPDATE'),\n"
 			"(9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),\n"
 			"(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');\n"
-			"update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+			"update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');\n"
+
+	/* optimizer  funtion */
+			"drop function sys.optimizer_stats();\n"
+			"create function sys.optimizer_stats ()\n"
+			"returns table (optname string, count int, timing bigint)\n"
+			"external name inspect.optimizer_stats;\n"
+	);
 
 	/* 75_shp.sql, if shp extension available */
 	err = SQLstatementIntern(c, &q1, "update", 1, 0, &output);

@@ -15,7 +15,6 @@
 #include "mal_instruction.h"
 #include "opt_prelude.h"
 #include "opt_profiler.h"
-#include "opt_statistics.h"
 
 /*
 static struct{

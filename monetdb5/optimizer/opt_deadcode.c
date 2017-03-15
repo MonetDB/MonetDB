@@ -9,7 +9,6 @@
 /* (c) Martin Kersten
  */
 #include "monetdb_config.h"
-#include "opt_statistics.h"
 #include "opt_deadcode.h"
 
 str 

@@ -39,4 +39,3 @@ group by
 order by
 	cntrycode;
 
-select * from optimizer_stats() stats;

@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "opt_prelude.h"
 #include "opt_macro.h"
-#include "opt_statistics.h"
 #include "mal_interpreter.h"
 #include "mal_instruction.h"
 
@@ -501,7 +500,6 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	/* keep all actions taken as a post block comment */
 	snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","macro",usec);
 	newComment(mb,buf);
-	QOTupdateStatistics("macro",1,usec);
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.macro", PROGRAM_GENERAL);

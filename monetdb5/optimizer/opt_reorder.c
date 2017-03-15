@@ -43,7 +43,6 @@
  */
 #include "monetdb_config.h"
 #include "opt_reorder.h"
-#include "opt_statistics.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 /*

@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "mal_instruction.h"
 #include "opt_candidates.h"
-#include "opt_statistics.h"
 
 str
 OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

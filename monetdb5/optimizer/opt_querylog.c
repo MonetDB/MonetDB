@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "opt_querylog.h"
-#include "opt_statistics.h"
 #include "mtime.h"
 #include "querylog.h"
 

@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "opt_commonTerms.h"
-#include "opt_statistics.h"
 #include "mal_exception.h"
  /*
  * Caveat. A lot of time was lost due to constants that are indistinguisable

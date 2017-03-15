@@ -12,7 +12,6 @@
  * We don't need the actual name of the objects
  */
 #include "monetdb_config.h"
-#include "opt_statistics.h"
 #include "opt_oltp.h"
 
 static void

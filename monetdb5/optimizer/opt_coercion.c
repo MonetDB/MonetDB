@@ -12,7 +12,6 @@
 
 #include "monetdb_config.h"
 #include "opt_coercion.h"
-#include "opt_statistics.h"
 
 typedef struct{
 	int pc;

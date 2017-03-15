@@ -38,7 +38,6 @@
 #include "msabaoth.h"
 #include <mtime.h>
 #include "optimizer.h"
-#include "opt_statistics.h"
 #include "opt_prelude.h"
 #include "opt_pipes.h"
 #include "opt_mitosis.h"

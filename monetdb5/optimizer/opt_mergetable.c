@@ -7,7 +7,6 @@
  */
 
 #include "monetdb_config.h"
-#include "opt_statistics.h"
 #include "opt_mergetable.h"
 
 typedef enum mat_type_t {

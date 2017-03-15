@@ -1573,6 +1573,7 @@ str OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 str OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str PCREilike2(bit *ret, const str *s, const str *pat);
@@ -1609,10 +1610,7 @@ str QLOGenable(void *ret);
 str QLOGenableThreshold(void *ret, int *threshold);
 int QLOGisset(void);
 str QLOGissetFcn(int *ret);
-str QOTgetStatistics(bat *ret, str *nme);
 str QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-void QOTstatisticsExit(void);
-void QOTupdateStatistics(str nme, int prop, lng val);
 QueryQueue QRYqueue;
 str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

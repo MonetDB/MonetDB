@@ -35,4 +35,3 @@ order by
 
 drop view revenue0;
 
-select * from optimizer_stats() stats;

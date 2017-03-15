@@ -20,7 +20,6 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
-#include "opt_statistics.h"
 #include "opt_jit.h"
 
 str

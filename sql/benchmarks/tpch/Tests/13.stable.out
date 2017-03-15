@@ -84,12 +84,6 @@ Ready.
 [ 31,	1	]
 [ 2,	1	]
 [ 1,	1	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	1	]
 
 # 09:17:17 >  
 # 09:17:17 >  Done.

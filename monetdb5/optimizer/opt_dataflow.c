@@ -11,7 +11,6 @@
  */
 #include "monetdb_config.h"
 #include "opt_dataflow.h"
-#include "opt_statistics.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "manifold.h"

@@ -12,7 +12,6 @@
 #include "monetdb_config.h"
 #include "opt_deadcode.h"
 #include "opt_projectionpath.h"
-#include "opt_statistics.h"
 
 
 // Common prefix reduction was not effective it is retained for 

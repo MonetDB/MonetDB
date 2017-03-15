@@ -84,12 +84,6 @@ Ready.
 [ 1030,	"Customer#000001030",	282557.3566,	6359.27,	"INDIA",	"Xpt1BiB5h9o",	"18-759-877-1870",	"ding to the slyly unusual accounts. even requests among the evenly"	]
 [ 1049,	"Customer#000001049",	281134.1117,	8747.99,	"INDONESIA",	"bZ1OcFhHaIZ5gMiH",	"19-499-258-2851",	"uriously according to the furiously silent packages"	]
 [ 1094,	"Customer#000001094",	274877.4440,	2544.49,	"BRAZIL",	"OFz0eedTmPmXk2 3XM9v9Mcp13NVC0PK",	"12-234-721-9871",	"tes serve blithely quickly pending foxes. express, quick accounts"	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	3	]
 
 # 09:17:15 >  
 # 09:17:15 >  Done.

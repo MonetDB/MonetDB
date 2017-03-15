@@ -48,7 +48,6 @@
 #include "opt_remap.h"
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
-#include "opt_statistics.h"
 #include "opt_volcano.h"
 
 struct{
@@ -160,3 +159,35 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return MAL_SUCCEED;
 }
 
+mal_export str OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+str
+OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	bat  *nme = (bat*) getArgReference_bat(stk, p, 0);
+	bat  *cnt = (bat*) getArgReference_bat(stk, p, 1);
+	bat  *time = (bat*) getArgReference_bat(stk, p, 2);
+	BAT *n, *c, *t;
+	int i;
+
+	(void) cntxt;
+	(void) mb;
+	n = COLnew(0, TYPE_str, 256, TRANSIENT);
+	c = COLnew(0, TYPE_int, 256, TRANSIENT);
+	t = COLnew(0, TYPE_lng, 256, TRANSIENT);
+	if( n == NULL || c == NULL || t == NULL){
+		if( n) BBPrelease(n->batCacheid);
+		if( c) BBPrelease(c->batCacheid);
+		if( t) BBPrelease(t->batCacheid);
+		throw(MAL,"optimizer.statistics", MAL_MALLOC_FAIL);
+	}
+	for( i= 0; codes[i].nme; i++){
+		BUNappend(n, codes[i].nme, FALSE);
+		BUNappend(c, &codes[i].calls, FALSE);
+		BUNappend(t, &codes[i].timing, FALSE);
+	}
+	BBPkeepref( *nme = n->batCacheid);
+	BBPkeepref( *cnt = c->batCacheid);
+	BBPkeepref( *time = t->batCacheid);
+	return MAL_SUCCEED;
+}

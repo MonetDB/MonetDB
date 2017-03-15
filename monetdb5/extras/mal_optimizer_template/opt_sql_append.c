@@ -71,7 +71,6 @@
 #include "monetdb_config.h"
 #include "opt_sql_append.h"
 #include "mal_interpreter.h"
-#include "opt_statistics.h"
 
 /* focus initially on persistent tables. */
 

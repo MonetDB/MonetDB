@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "opt_multiplex.h"
-#include "opt_statistics.h"
 #include "manifold.h"
 #include "mal_interpreter.h"
 

@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "opt_mitosis.h"
-#include "opt_statistics.h"
 #include "mal_interpreter.h"
 #include <gdk_utils.h>
 

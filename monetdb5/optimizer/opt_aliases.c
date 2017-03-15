@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "mal_instruction.h"
 #include "opt_aliases.h"
-#include "opt_statistics.h"
 
 /* an alias is recognized by a simple assignment */
 #define OPTisAlias(X) (X->token == ASSIGNsymbol && X->barrier == 0 && X->argc == 2)

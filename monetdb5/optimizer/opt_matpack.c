@@ -11,7 +11,6 @@
  * This could speedup parallel processing and releases resources faster.
  */
 #include "monetdb_config.h"
-#include "opt_statistics.h"
 #include "opt_matpack.h"
 
 str 

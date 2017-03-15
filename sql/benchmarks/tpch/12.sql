@@ -30,4 +30,3 @@ group by
 order by
 	l_shipmode;
 
-select * from optimizer_stats() stats;
