@@ -1589,55 +1589,6 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 }
 
 int
-mvc_export_value(backend *b, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w, str ns)
-{
-	mvc *m = b->mvc;
-	char *buf = NULL;
-	int len = 0;
-	int ok = 1;
-	char *rsep = "\t]\n";
-	int csv = (b->output_format == OFMT_CSV);
-	int json = (b->output_format == OFMT_JSON);
-
-#ifdef NDEBUG
-	(void) qtype;		/* pacify compiler in case asserts are disabled */
-#endif
-	assert(qtype == Q_TABLE);
-
-	if (csv && 
-	   (mnstr_write(s, "&1 0 1 1 1\n", 11, 1) != 1 ||
-		/* fallback to default tuplecount (1) and id (0) */
-			/* TODO first header name then values */
-		mnstr_write(s, "% ", 2, 1) != 1 || 
-		mnstr_write(s, tn, strlen(tn), 1) != 1 || 
-		mnstr_write(s, " # table_name\n% ", 16, 1) != 1 || 
-		mnstr_write(s, cn, strlen(cn), 1) != 1 ||
-		mnstr_write(s, " # name\n% ", 10, 1) != 1 ||
-		mnstr_write(s, type, strlen(type), 1) != 1 ||
-		mnstr_write(s, " # type\n% ", 10, 1) != 1 ||
-		!export_length(s, mtype, eclass, d, sc, has_tz(eclass, type), 0, p) ||
-		mnstr_write(s, " # length\n[ ", 12, 1) != 1))
-		ok = 0; 
-	if (ok) {
-		if (json) {
-			mnstr_write(s, cn, strlen(cn), 1);
-			mnstr_write(s, ": ", 2, 1);
-		}
-		ok = export_value(m, s, eclass, type, d, sc, p, mtype, &buf, &len, ns);
-	}
-
-	if (ok && !json)
-		ok = (mnstr_write(s, rsep, strlen(rsep), 1) == 1);
-
-	if (buf)
-		_DELETE(buf);
-
-	if (ok)
-		ok = mvc_export_warning(s, w);
-	return ok;
-}
-
-int
 mvc_export_operation(backend *b, stream *s, str w)
 {
 	mvc *m = b->mvc;
