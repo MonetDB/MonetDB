@@ -27,6 +27,8 @@ extern char *strptime(const char *, const char *, struct tm *);
 #include "strptime.c"
 #endif
 
+#define DATETIME_CHAR_LENGTH 27
+
 static void
 clearArguments(void)
 {
@@ -224,8 +226,8 @@ keyvalueparser(char *txt, EventRecord *ev)
 #else
 		curr_time = *localtime(&sec);
 #endif
-		ev->time = malloc(26*sizeof(char));
-		snprintf(ev->time, 26, "%d/%02d/%02d %02d:%02d:%02d.%s",
+		ev->time = malloc(DATETIME_CHAR_LENGTH*sizeof(char));
+		snprintf(ev->time, DATETIME_CHAR_LENGTH, "%d/%02d/%02d %02d:%02d:%02d.%s",
 				 curr_time.tm_year + 1900, curr_time.tm_mon, curr_time.tm_mday,
 				 curr_time.tm_hour, curr_time.tm_min, curr_time.tm_sec,
 				 c);
