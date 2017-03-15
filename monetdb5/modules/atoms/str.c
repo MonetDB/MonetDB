@@ -1107,10 +1107,19 @@ strPrelude(void *ret)
 			BUNappend(UTF8_upperBat, &UTF8_lower_upper[i].upper, FALSE);
 			BUNappend(UTF8_lowerBat, &UTF8_lower_upper[i].lower, FALSE);
 		}
-		BATname(UTF8_upperBat, "monet_unicode_toupper");
-		BATname(UTF8_lowerBat, "monet_unicode_tolower");
+		if (BBPrename(UTF8_upperBat->batCacheid, "monet_unicode_toupper") != 0 ||
+			BBPrename(UTF8_lowerBat->batCacheid, "monet_unicode_tolower") != 0) {
+			goto bailout;
+		}
 	}
-	return NULL;
+	return MAL_SUCCEED;
+
+  bailout:
+	BBPreclaim(UTF8_upperBat);
+	BBPreclaim(UTF8_lowerBat);
+	UTF8_upperBat = NULL;
+	UTF8_lowerBat = NULL;
+	throw(MAL, "str.prelude", GDK_EXCEPTION);
 }
 
 str

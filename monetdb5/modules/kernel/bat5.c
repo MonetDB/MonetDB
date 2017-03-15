@@ -885,14 +885,18 @@ BKCsetName(void *r, const bat *bid, const char * const *s)
 			throw(MAL, "bat.setName", ILLEGAL_ARGUMENT ": identifier expected: %s", *s);
 
 	t = *s;
-	ret = BATname(b, t);
+	ret = BBPrename(b->batCacheid, t);
 	BBPunfix(b->batCacheid);
 	switch (ret) {
 	case BBPRENAME_ILLEGAL:
+		GDKclrerr();
 		throw(MAL, "bat.setName", ILLEGAL_ARGUMENT ": illegal temporary name: '%s'", t);
 	case BBPRENAME_LONG:
+		GDKclrerr();
 		throw(MAL, "bat.setName", ILLEGAL_ARGUMENT ": name too long: '%s'", t);
 	case BBPRENAME_ALREADY:
+		GDKclrerr();
+		/* fall through */
 	case 0:
 		break;
 	}

@@ -1344,8 +1344,6 @@ bat_iterator(BAT *b)
  * @tab BATsetcapacity (BAT *b, BUN cnt)
  * @item void
  * @tab BATsetcount (BAT *b, BUN cnt)
- * @item BUN
- * @tab BATrename (BAT *b, str nme)
  * @item BAT *
  * @tab BATkey (BAT *b, int onoff)
  * @item BAT *
@@ -1361,7 +1359,7 @@ bat_iterator(BAT *b)
  * The function BATcount returns the number of associations stored in
  * the BAT.
  *
- * The BAT is given a new logical name using BATrename.
+ * The BAT is given a new logical name using BBPrename.
  *
  * The integrity properties to be maintained for the BAT are
  * controlled separately.  A key property indicates that duplicates in
@@ -1392,7 +1390,6 @@ gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, int onoff);
 gdk_export gdk_return BATmode(BAT *b, int onoff);
 gdk_export void BATroles(BAT *b, const char *tnme);
-gdk_export int BATname(BAT *b, const char *nme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 gdk_export gdk_return BATsetaccess(BAT *b, int mode);

@@ -67,8 +67,6 @@ __hidden BAT *BATload_intern(bat bid, int lock)
 __hidden gdk_return BATmaterialize(BAT *b)
 	__attribute__ ((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden str BATrename(BAT *b, const char *nme)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATsave(BAT *b)
 	__attribute__ ((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));

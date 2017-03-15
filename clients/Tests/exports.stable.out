@@ -152,7 +152,6 @@ BAT *BATmergecand(BAT *a, BAT *b);
 void *BATmin(BAT *b, void *aggr);
 gdk_return BATmode(BAT *b, int onoff);
 void BATmsync(BAT *b);
-int BATname(BAT *b, const char *nme);
 int BATordered(BAT *b);
 int BATordered_rev(BAT *b);
 gdk_return BATorderidx(BAT *b, int stable);

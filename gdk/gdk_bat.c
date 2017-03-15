@@ -1529,41 +1529,6 @@ BATtseqbase(BAT *b, oid o)
 	}
 }
 
-/*
- * BATs have a logical name that is independent of their location in
- * the file system (this depends on batCacheid).  The dimensions of
- * the BAT can be given a separate name.  It helps front-ends in
- * identifying the column of interest.  The new name should be
- * recognizable as an identifier.  Otherwise interaction through the
- * front-ends becomes complicated.
- */
-int
-BATname(BAT *b, const char *nme)
-{
-	BATcheck(b, "BATname", 0);
-	return BBPrename(b->batCacheid, nme);
-}
-
-str
-BATrename(BAT *b, const char *nme)
-{
-	int ret;
-
-	BATcheck(b, "BATrename", NULL);
-	ret = BATname(b, nme);
-	if (ret == 1) {
-		GDKerror("BATrename: identifier expected: %s\n", nme);
-	} else if (ret == BBPRENAME_ALREADY) {
-		GDKerror("BATrename: name is in use: '%s'.\n", nme);
-	} else if (ret == BBPRENAME_ILLEGAL) {
-		GDKerror("BATrename: illegal temporary name: '%s'\n", nme);
-	} else if (ret == BBPRENAME_LONG) {
-		GDKerror("BATrename: name too long: '%s'\n", nme);
-	}
-	return BBPname(b->batCacheid);
-}
-
-
 void
 BATroles(BAT *b, const char *tnme)
 {

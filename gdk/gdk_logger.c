@@ -1199,12 +1199,10 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 	}
 	snprintf(bak, sizeof(bak), "tmp_%o", old->batCacheid);
 	if (BBPrename(old->batCacheid, bak) != 0) {
-		GDKerror("Logger_new: cannot rename old %s", name);
 		return GDK_FAIL;
 	}
 	snprintf(bak, sizeof(bak), "%s_%s", fn, name);
 	if (BBPrename(new->batCacheid, bak) != 0) {
-		GDKerror("Logger_new: cannot rename new %s", name);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -1440,19 +1438,16 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 		 * next time */
 		snprintf(bak, sizeof(bak), "%s_catalog_bid", fn);
 		if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0) {
-			GDKerror("logger_load: BBPrename to %s failed", bak);
 			goto error;
 		}
 
 		snprintf(bak, sizeof(bak), "%s_catalog_nme", fn);
 		if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0) {
-			GDKerror("logger_load: BBPrename to %s failed", bak);
 			goto error;
 		}
 
 		snprintf(bak, sizeof(bak), "%s_dcatalog", fn);
 		if (BBPrename(lg->dcatalog->batCacheid, bak) < 0) {
-			GDKerror("logger_load: BBPrename to %s failed", bak);
 			goto error;
 		}
 
@@ -1538,7 +1533,6 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 				goto error;
 			}
 			if (BBPrename(d->batCacheid, bak) < 0) {
-				GDKerror("logger_load: BBPrename to %s failed", bak);
 				BBPunfix(b->batCacheid);
 				BBPunfix(n->batCacheid);
 				goto error;
@@ -1582,7 +1576,6 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 	snprintf(bak, sizeof(bak), "%s_freed", fn);
 	/* do not rename it if this is a shared logger */
 	if (!lg->shared && BBPrename(lg->freed->batCacheid, bak) < 0) {
-		GDKerror("logger_load: BBPrename to %s failed", bak);
 		goto error;
 	}
 	snapshots_bid = logger_find_bat(lg, "snapshots_bid");
@@ -1618,7 +1611,6 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 
 		snprintf(bak, sizeof(bak), "%s_snapshots_bid", fn);
 		if (BBPrename(lg->snapshots_bid->batCacheid, bak) < 0) {
-			GDKerror("logger_load: BBPrename to %s failed", bak);
 			goto error;
 		}
 		if (logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid") != GDK_SUCCEED) {
@@ -1629,7 +1621,6 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 
 		snprintf(bak, sizeof(bak), "%s_snapshots_tid", fn);
 		if (BBPrename(lg->snapshots_tid->batCacheid, bak) < 0) {
-			GDKerror("logger_load: BBPrename to %s failed", bak);
 			goto error;
 		}
 		if (logger_add_bat(lg, lg->snapshots_tid, "snapshots_tid") != GDK_SUCCEED) {
@@ -1640,7 +1631,6 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 
 		snprintf(bak, sizeof(bak), "%s_dsnapshots", fn);
 		if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0) {
-			GDKerror("Logger_new: BBPrename to %s failed", bak);
 			goto error;
 		}
 		if (logger_add_bat(lg, lg->dsnapshots, "dsnapshots") != GDK_SUCCEED) {
@@ -1723,7 +1713,6 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 			}
 			snprintf(bak, sizeof(bak), "%s_dsnapshots", fn);
 			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0) {
-				GDKerror("Logger_new: BBPrename to %s failed", bak);
 				goto error;
 			}
 			if (logger_add_bat(lg, lg->dsnapshots, "dsnapshots") != GDK_SUCCEED) {

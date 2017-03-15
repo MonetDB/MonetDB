@@ -20,7 +20,7 @@ pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
 	if (BBPindex(buf) <= 0)
-		BATname(b,buf);
+		BBPrename(b->batCacheid, buf);
 	BATroles(b,X2);
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
@@ -421,7 +421,10 @@ CMDsetName(str *rname, const bat *bid, str *name)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bbp.setName", INTERNAL_BAT_ACCESS);
 	}
-	BBPrename(b->batCacheid, *name);
+	if (BBPrename(b->batCacheid, *name) != 0) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bbp.setName", GDK_EXCEPTION);
+	}
 	*rname = GDKstrdup(*name);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

@@ -38,8 +38,11 @@ QOT_create(str hnme, str tnme, int tt)
 	if (b == NULL)
 		return NULL;
 
-	BBPrename(b->batCacheid, buf);
-	BATmode(b, PERSISTENT);
+	if (BBPrename(b->batCacheid, buf) != 0 ||
+		BATmode(b, PERSISTENT) != GDK_SUCCEED) {
+		BBPreclaim(b);
+		return NULL;
+	}
 	return b;
 }
 

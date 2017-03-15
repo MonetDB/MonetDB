@@ -695,7 +695,10 @@ TRACEcreate(const char *hnme, const char *tnme, int tt)
 	b = COLnew(0, tt, 1 << 16, TRANSIENT);
 	if (b == NULL)
 		return NULL;
-	BBPrename(b->batCacheid, buf);
+	if (BBPrename(b->batCacheid, buf) != 0) {
+		BBPreclaim(b);
+		return NULL;
+	}
 	return b;
 }
 
