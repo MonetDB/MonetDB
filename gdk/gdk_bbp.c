@@ -397,8 +397,10 @@ recover_dir(int farmid, int direxists)
 {
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
-		(void) GDKunlink(farmid, BATDIR, "BBP", "bak");
-		(void) GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak");
+		if (GDKunlink(farmid, BATDIR, "BBP", "bak") != GDK_SUCCEED)
+			fprintf(stderr, "#recover_dir: unlink of BBP.bak failed\n");
+		if (GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak") != GDK_SUCCEED)
+			fprintf(stderr, "#recover_dir: rename of BBP.dir to BBP.bak failed\n");
 	}
 	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
 }
@@ -621,9 +623,10 @@ fixwkbheap(void)
 		}
 		HEAPfree(&h1, 0);
 		HEAPfree(&h2, 0);
-		HEAPsave(&b->theap, nme, "tail");
+		if (HEAPsave(&b->theap, nme, "tail") != GDK_SUCCEED ||
+		    HEAPsave(b->tvheap, nme, "theap") != GDK_SUCCEED)
+			GDKfatal("fixwkbheap: saving heap failed\n");
 		HEAPfree(&b->theap, 0);
-		HEAPsave(b->tvheap, nme, "theap");
 		HEAPfree(b->tvheap, 0);
 	}
 }
@@ -847,11 +850,13 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		if (h2.dirty) {
 			/* in addition, we added an empty string to
 			 * the string heap */
-			HEAPsave(&h2, nme, "theap");
+			if (HEAPsave(&h2, nme, "theap") != GDK_SUCCEED)
+				GDKfatal("fixstroffheap: saving heap failed\n");
 			HEAPfree(&h2, 0);
 			*b->tvheap = h2;
 		}
-		HEAPsave(&h3, nme, "tail");
+		if (HEAPsave(&h3, nme, "tail") != GDK_SUCCEED)
+			GDKfatal("fixstroffheap: saving heap failed\n");
 		HEAPfree(&h3, 0);
 		b->theap = h3;
 	}
@@ -1357,7 +1362,8 @@ BBPinit(void)
 		BBPaddfarm(".", 1 << TRANSIENT);
 	}
 
-	GDKremovedir(0, DELDIR);
+	if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
+		GDKfatal("BBPinit: cannot remove directory %s\n", DELDIR);
 
 	/* first move everything from SUBDIR to BAKDIR (its parent) */
 	if (BBPrecover_subdir() != GDK_SUCCEED)
@@ -3280,7 +3286,8 @@ BBPsync(int cnt, bat *subcommit)
 			BBP_dirty = 0;
 			backup_files = subcommit ? (backup_files - backup_subdir) : 0;
 			backup_dir = backup_subdir = 0;
-			(void) GDKremovedir(0, DELDIR);
+			if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
+				fprintf(stderr, "#BBPsync: cannot remove directory %s\n", DELDIR);
 			(void) BBPprepare(0);	/* (try to) remove DELDIR and set up new BAKDIR */
 			if (backup_files > 1) {
 				PERFDEBUG fprintf(stderr, "#BBPsync (backup_files %d > 1)\n", backup_files);

@@ -223,7 +223,8 @@ geom_catalog_upgrade(void *lg, int olddb)
 
 		for (ii = 0; ii < ul->count; ii++) {
 			BATsetaccess(ul->elements[ii].nb, BAT_READ);
-			logger_add_bat(lg, ul->elements[ii].nb, ul->elements[ii].n);
+			if (logger_add_bat(lg, ul->elements[ii].nb, ul->elements[ii].n) != GDK_SUCCEED)
+				return 0;
 			if (ul->elements[ii].ob)
 				BBPunfix(ul->elements[ii].ob->batCacheid);
 		}

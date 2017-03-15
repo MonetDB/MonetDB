@@ -166,8 +166,14 @@ SQLprelude(void *ret)
 	/* ms->tactics = .. */
 	ms->engine = "MALengine";
 	tmp = SQLinit();
-	if (tmp != MAL_SUCCEED)
-		return (tmp);
+	if (tmp != MAL_SUCCEED) {
+		fprintf(stderr, "Fatal error during initialization:\n%s\n", tmp);
+		freeException(tmp);
+		if ((tmp = GDKerrbuf) && *tmp)
+			fprintf(stderr, "GDK reported: %s\n", tmp);
+		fflush(stderr);
+		exit(1);
+	}
 #ifndef HAVE_EMBEDDED
 	fprintf(stdout, "# MonetDB/SQL module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */

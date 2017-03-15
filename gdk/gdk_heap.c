@@ -128,8 +128,8 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			if (fd >= 0) {
 				close(fd);
 				h->newstorage = STORE_MMAP;
-				/* coverity[check_return] */
-				HEAPload(h, of, ext, FALSE);
+				if (HEAPload(h, of, ext, FALSE) != GDK_SUCCEED)
+					h->base = NULL; /* superfluous */
 				/* success checked by looking at
 				 * h->base below */
 			}

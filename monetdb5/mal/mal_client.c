@@ -71,7 +71,10 @@ MCinit(void)
 		maxclients = atoi(max_clients);
 	if (maxclients <= 0) {
 		maxclients = 64;
-		GDKsetenv("max_clients", "64");
+		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
+			showException(GDKout, MAL, "MCinit", "GDKsetenv failed");
+			mal_exit();
+		}
 	}
 
 	MAL_MAXCLIENTS =

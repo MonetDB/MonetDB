@@ -99,8 +99,11 @@ epilogue(int cnt, bat *subcommit)
 			 * consistency risk.
 			 */
 			BAT *b = BBP_cache(bid);
-			if (b)
-				(void) BATcheckmodes(b, TRUE);	/* check mmap modes */
+			if (b) {
+				/* check mmap modes */
+				if (BATcheckmodes(b, TRUE) != GDK_SUCCEED)
+					fprintf(stderr, "#epilogue: BATcheckmodes failed\n");
+			}
 		}
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
 			BAT *b = BBPquickdesc(bid, TRUE);

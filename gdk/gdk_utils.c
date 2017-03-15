@@ -137,13 +137,15 @@ GDKgetenv_int(const char *name, int def)
 	return def;
 }
 
-void
-GDKsetenv(str name, str value)
+gdk_return
+GDKsetenv(const char *name, const char *value)
 {
-	BUNappend(GDKkey, name, FALSE);
-	BUNappend(GDKval, value, FALSE);
+	if (BUNappend(GDKkey, name, FALSE) != GDK_SUCCEED ||
+	    BUNappend(GDKval, value, FALSE) != GDK_SUCCEED)
+		return GDK_FAIL;
 	BATfakeCommit(GDKkey);
 	BATfakeCommit(GDKval);
+	return GDK_SUCCEED;
 }
 
 
@@ -585,7 +587,8 @@ GDKinit(opt *set, int setlen)
 
 	/* store options into environment BATs */
 	for (i = 0; i < nlen; i++)
-		GDKsetenv(n[i].name, n[i].value);
+		if (GDKsetenv(n[i].name, n[i].value) != GDK_SUCCEED)
+			GDKfatal("GDKinit: GDKsetenv failed");
 	free(n);
 
 	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
@@ -594,36 +597,44 @@ GDKinit(opt *set, int setlen)
 
 	if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
 	    (p = strrchr(p, DIR_SEP)) != NULL) {
-		GDKsetenv("gdk_dbname", p + 1);
+		if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED)
+			GDKfatal("GDKinit: GDKsetenv failed");
 #if DIR_SEP != '/'		/* on Windows look for different separator */
 	} else if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
 	    (p = strrchr(p, '/')) != NULL) {
-		GDKsetenv("gdk_dbname", p + 1);
+		if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED)
+			GDKfatal("GDKinit: GDKsetenv failed");
 #endif
 	}
 	if (GDKgetenv("gdk_vm_maxsize") == NULL) {
 		snprintf(buf, sizeof(buf), SZFMT, GDK_vm_maxsize);
-		GDKsetenv("gdk_vm_maxsize", buf);
+		if (GDKsetenv("gdk_vm_maxsize", buf) != GDK_SUCCEED)
+			GDKfatal("GDKinit: GDKsetenv failed");
 	}
 	if (GDKgetenv("gdk_mem_maxsize") == NULL) {
 		snprintf(buf, sizeof(buf), SZFMT, GDK_mem_maxsize);
-		GDKsetenv("gdk_mem_maxsize", buf);
+		if (GDKsetenv("gdk_mem_maxsize", buf) != GDK_SUCCEED)
+			GDKfatal("GDKinit: GDKsetenv failed");
 	}
 	if (GDKgetenv("gdk_mmap_minsize_persistent") == NULL) {
 		snprintf(buf, sizeof(buf), SZFMT, GDK_mmap_minsize_persistent);
-		GDKsetenv("gdk_mmap_minsize_persistent", buf);
+		if (GDKsetenv("gdk_mmap_minsize_persistent", buf) != GDK_SUCCEED)
+			GDKfatal("GDKinit: GDKsetenv failed");
 	}
 	if (GDKgetenv("gdk_mmap_minsize_transient") == NULL) {
 		snprintf(buf, sizeof(buf), SZFMT, GDK_mmap_minsize_transient);
-		GDKsetenv("gdk_mmap_minsize_transient", buf);
+		if (GDKsetenv("gdk_mmap_minsize_transient", buf) != GDK_SUCCEED)
+			GDKfatal("GDKinit: GDKsetenv failed");
 	}
 	if (GDKgetenv("gdk_mmap_pagesize") == NULL) {
 		snprintf(buf, sizeof(buf), SZFMT, GDK_mmap_pagesize);
-		GDKsetenv("gdk_mmap_pagesize", buf);
+		if (GDKsetenv("gdk_mmap_pagesize", buf) != GDK_SUCCEED)
+			GDKfatal("GDKinit: GDKsetenv failed");
 	}
 	if (GDKgetenv("monet_pid") == NULL) {
 		snprintf(buf, sizeof(buf), "%d", (int) getpid());
-		GDKsetenv("monet_pid", buf);
+		if (GDKsetenv("monet_pid", buf) != GDK_SUCCEED)
+			GDKfatal("GDKinit: GDKsetenv failed");
 	}
 
 	return 1;
