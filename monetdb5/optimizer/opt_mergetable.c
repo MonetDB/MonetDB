@@ -1490,8 +1490,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	old = mb->stmt;
 	oldtop= mb->stop;
 #ifdef DEBUG_OPT_MERGETABLE
-	mnstr_printf(GDKout,"#Start of multi table optimizer\n");
-	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
+	fprintf(stderr,"#Start of multi table optimizer\n");
+	fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 #endif
 
 	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
@@ -1831,7 +1831,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * It requires MAT materialization.
 		 */
 #ifdef DEBUG_OPT_MERGETABLE
-		mnstr_printf(GDKout, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
+		fprintf(stderr, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
 #endif
 
 		for (k = p->retc; k<p->argc; k++) {
@@ -1847,11 +1847,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 #ifdef DEBUG_OPT_MERGETABLE
 	{
 		str err;
-		mnstr_printf(GDKout,"#Result of multi table optimizer\n");
+		fprintf(stderr,"#Result of multi table optimizer\n");
         chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
         chkFlow(cntxt->fdout, mb);
         chkDeclarations(cntxt->fdout, mb);
-		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
+		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 		if( err) GDKfree(err);
 	}
 #endif

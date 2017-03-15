@@ -178,8 +178,8 @@ doChallenge(void *data)
 	}
 	buf[len] = 0;
 #ifdef DEBUG_SERVER
-	printf("mal_mapi:Client accepted %s\n", buf);
-	fflush(stdout);
+	fprintf(stderr,"mal_mapi:Client accepted %s\n", buf);
+	fflush(stderr);
 
 	mnstr_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
 	mnstr_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
@@ -367,7 +367,7 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 #ifdef DEBUG_SERVER
-		printf("server:accepted\n");
+		fprintf(stderr,"server:accepted\n");
 		fflush(stdout);
 #endif
 		data = GDKmalloc(sizeof(*data));
@@ -671,7 +671,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 
 #ifdef DEBUG_SERVER
-	mnstr_printf(cntxt->fdout, "#SERVERlisten:Network started at %d\n", port);
+	fprintf(stderr, "#SERVERlisten:Network started at %d\n", port);
 #endif
 
 	psock[0] = sock;
@@ -691,7 +691,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #ifdef DEBUG_SERVER
 	gethostname(host, (int) 512);
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
-	mnstr_printf(cntxt->fdout, "%s", msg);
+	fprintf(stderr, "%s", msg);
 #endif
 
 	/* seed the randomiser such that our challenges aren't

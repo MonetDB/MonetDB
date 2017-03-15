@@ -69,8 +69,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		for ( k = 0; k < p->retc; k++)
 			if( vars[getArg(p,k)] && p->barrier != RETURNsymbol){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-				mnstr_printf(cntxt->fdout, "#ERROR MULTIPLE ASSIGNMENTS[%d] ",i);
-				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+				fprintf(stderr, "#ERROR MULTIPLE ASSIGNMENTS[%d] ",i);
+				fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 #endif
 				pushInstruction(mb,p);
 				barrier= TRUE; // no more optimization allowed
@@ -85,8 +85,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			for(i++; i<limit; i++)
 				if( old[i]){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-					mnstr_printf(cntxt->fdout, "#FINALIZE[%d] ",i);
-					printInstruction(cntxt->fdout, mb, 0, old[i], LIST_MAL_ALL);
+					fprintf(stderr, "#FINALIZE[%d] ",i);
+					fprintInstruction(stderr, mb, 0, old[i], LIST_MAL_ALL);
 #endif
 					pushInstruction(mb,old[i]);
 			}
@@ -107,15 +107,15 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		barrier |= getFunctionId(p) == assertRef;
 		if (barrier || p->token == NOOPsymbol || p->token == ASSIGNsymbol /* || p->retc == p->argc */) {
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-				mnstr_printf(cntxt->fdout, "#COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
+				fprintf(stderr, "#COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
 #endif
 			continue;
 		}
 
 		/* from here we have a candidate to look for a match */
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-		mnstr_printf(cntxt->fdout,"#TARGET CANDIDATE[%d] ",i);
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+		fprintf(stderr,"#TARGET CANDIDATE[%d] ",i);
+		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 #endif
 		prop = mayhaveSideEffects(cntxt, mb, p,TRUE);
 		cnt = i; /* / 128 < 32? 32 : mb->stop/128;	limit search depth */
@@ -123,7 +123,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		for (j = list[i]; cnt > 0 && j ; cnt--, j = list[j]) 
 			if ( getFunctionId(q=getInstrPtr(mb,j)) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-			mnstr_printf(cntxt->fdout,"#CANDIDATE[%d->%d] %d %d", j, list[j], 
+			fprintf(stderr,"#CANDIDATE[%d->%d] %d %d", j, list[j], 
 				hasSameSignature(mb, p, q, p->retc), 
 				hasSameArguments(mb, p, q));
 				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d ", 
@@ -149,7 +149,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				   ) {
 						if (safetyBarrier(p, q) ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-						mnstr_printf(cntxt->fdout,"#safetybarrier reached\n");
+						fprintf(stderr,"#safetybarrier reached\n");
 #endif
 						break;
 					}
@@ -160,8 +160,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 						p= pushArgument(mb,p, getArg(q,k));
 					}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-					mnstr_printf(cntxt->fdout, "#MODIFIED EXPRESSION %d -> %d ",getArg(p,0),getArg(p,1));
-					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+					fprintf(stderr, "#MODIFIED EXPRESSION %d -> %d ",getArg(p,0),getArg(p,1));
+					fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 #endif
 					actions++;
 					break; /* end of search */
@@ -169,8 +169,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			else if ( mayhaveSideEffects(cntxt, mb, q, TRUE) || isUpdateInstruction(p)){
-				mnstr_printf(cntxt->fdout, "#COMMON SKIPPED %d %d ", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
-				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
+				fprintf(stderr, "#COMMON SKIPPED %d %d ", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
+				fprintInstruction(stderr, mb, 0, q, LIST_MAL_ALL);
 			}
 #endif
 	}

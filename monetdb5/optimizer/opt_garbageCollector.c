@@ -133,14 +133,14 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	GDKfree(old);
 #ifdef DEBUG_OPT_GARBAGE
 	{ 	int k;
-		mnstr_printf(cntxt->fdout, "#Garbage collected BAT variables \n");
+		fprintf(stderr, "#Garbage collected BAT variables \n");
 		for ( k =0; k < vlimit; k++)
-		mnstr_printf(cntxt->fdout,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
+		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
 			getVarName(mb,k), mb->var[k]->eolife,
 			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
 		chkFlow(cntxt->fdout,mb);
-		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
-		mnstr_printf(cntxt->fdout, "End of GCoptimizer\n");
+		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
+		fprintf(stderr, "End of GCoptimizer\n");
 	}
 #endif
 

@@ -162,7 +162,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     	GDKfree(series);
 
 #ifdef VLT_DEBUG
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+	fprintFunction(stderr,mb,0,LIST_MAL_ALL);
 #endif
 
     /* Defense line against incorrect plans */

@@ -152,7 +152,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 
 #ifdef DEBUG_OPT_MITOSIS
-	mnstr_printf(cntxt->fdout, "#opt_mitosis: target is %s.%s "
+	fprintf(stderr, "#opt_mitosis: target is %s.%s "
 							   " with " BUNFMT " rows of size %d into " SZFMT
 								" rows/piece %d threads %d pieces"
 								" fixed parts %d fixed size %d\n",

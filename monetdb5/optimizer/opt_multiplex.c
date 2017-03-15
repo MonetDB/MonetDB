@@ -59,8 +59,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn);
 #ifndef NDEBUG
-	mnstr_printf(GDKstdout,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
-	printInstruction(GDKstdout, mb, stk, pci, LIST_MAL_DEBUG);
+	fprintf(stderr,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
+	fprintInstruction(stderr, mb, stk, pci, LIST_MAL_DEBUG);
 #endif
 
 	/* search the iterator bat */
@@ -74,12 +74,12 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #ifdef DEBUG_OPT_MULTIPLEX
 	{	char *tpenme;
-		mnstr_printf(cntxt->fdout,"#calling the optimize multiplex script routine\n");
-		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL );
+		fprintf(stderr,"#calling the optimize multiplex script routine\n");
+		fprintFunction(stderr,mb, 0, LIST_MAL_ALL );
 		tpenme = getTypeName(getVarType(mb,iter));
-		mnstr_printf(cntxt->fdout,"#multiplex against operator %d %s\n",iter, tpenme);
+		fprintf(stderr,"#multiplex against operator %d %s\n",iter, tpenme);
 		GDKfree(tpenme);
-		printInstruction(cntxt->fdout,mb, 0, pci,LIST_MAL_ALL);
+		fprintInstruction(stderr,mb, 0, pci,LIST_MAL_ALL);
 	}
 #endif
 	/*

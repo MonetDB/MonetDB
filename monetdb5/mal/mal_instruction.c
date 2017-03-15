@@ -844,9 +844,9 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		cnt++;
 	}
 #ifdef DEBUG_REDUCE
-	mnstr_printf(GDKout, "Variable reduction %d -> %d\n", mb->vtop, cnt);
+	fprintf(stderr, "Variable reduction %d -> %d\n", mb->vtop, cnt);
 	for (i = 0; i < mb->vtop; i++)
-		mnstr_printf(GDKout, "map %d->%d\n", i, alias[i]);
+		fprintf(stderr, "map %d->%d\n", i, alias[i]);
 #endif
 
 	/* remap all variable references to their new position. */
@@ -864,8 +864,8 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
         (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	
 #ifdef DEBUG_REDUCE
-	mnstr_printf(GDKout, "After reduction \n");
-	printFunction(GDKout, mb, 0, 0);
+	fprintf(stderr, "After reduction \n");
+	fprintFunction(stderr, mb, 0, 0);
 #endif
 	GDKfree(alias);
 	mb->vtop = cnt;

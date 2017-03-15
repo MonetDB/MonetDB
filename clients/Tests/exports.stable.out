@@ -2074,6 +2074,8 @@ void finishSessionProfiler(Client cntxt);
 str firstnRef;
 Module fixModule(Module scope, str nme);
 int fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth);
+void fprintFunction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
+void fprintInstruction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
 void freeException(str);
 void freeInstruction(InstrPtr p);
 void freeMalBlk(MalBlkPtr mb);

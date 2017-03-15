@@ -312,8 +312,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			for(j=i-1; j>=start;j--) {
 #ifdef DEBUG_OPT_REORDER
 				if( old[j]){
-					mnstr_printf(cntxt->fdout,"leftover: %d",start+1);
-					printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_DEBUG);
+					fprintf(stderr,"leftover: %d",start+1);
+					fprintInstruction(stderr,mb,0,old[j],LIST_MAL_DEBUG);
 				}
 #endif
 				if (OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist) < 0) {

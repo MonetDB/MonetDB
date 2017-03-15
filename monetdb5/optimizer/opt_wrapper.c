@@ -112,7 +112,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
 	
 	OPTIMIZERDEBUG 
-		mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",fcnnme);
+		fprintf(stderr,"=APPLY OPTIMIZER %s\n",fcnnme);
 	if( p && p->argc > 1 ){
 		if( getArgType(mb,p,1) != TYPE_str ||
 			getArgType(mb,p,2) != TYPE_str ||
@@ -152,8 +152,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		throw(MAL, optimizer, "Optimizer implementation '%s' missing", fcnnme);
 
 	OPTIMIZERDEBUG {
-		mnstr_printf(cntxt->fdout,"=FINISHED %s  %d\n",optimizer, actions);
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG );
+		fprintf(stderr,"=FINISHED %s  %d\n",optimizer, actions);
+		fprintFunction(stderr,mb,0,LIST_MAL_DEBUG );
 	}
 	if ( mb->errors)
 		throw(MAL, optimizer, PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);

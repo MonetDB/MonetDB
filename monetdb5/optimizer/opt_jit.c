@@ -37,8 +37,8 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 
 	OPTDEBUGjit{
-		mnstr_printf(GDKout, "#Optimize JIT\n");
-		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
+		fprintf(stderr, "#Optimize JIT\n");
+		fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG);
 	}
 
 	setVariableScope(mb);
@@ -67,8 +67,8 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				getArg(p,2)=  getArg(q,2);
 				p= pushArgument(mb,p, getArg(q,1));
 				OPTDEBUGjit{
-					mnstr_printf(GDKout, "#Optimize JIT case 1\n");
-					printInstruction(cntxt->fdout, mb,0,p,LIST_MAL_DEBUG);
+					fprintf(stderr, "#Optimize JIT case 1\n");
+					fprintInstruction(stderr, mb,0,p,LIST_MAL_DEBUG);
 				}
 			}
 		}
@@ -77,8 +77,8 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	OPTDEBUGjit{
 		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
-		mnstr_printf(GDKout, "#Optimize JIT done\n");
-		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
+		fprintf(stderr, "#Optimize JIT done\n");
+		fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG);
 	}
 
 	GDKfree(old);

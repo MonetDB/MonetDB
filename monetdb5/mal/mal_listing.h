@@ -17,6 +17,7 @@
 
 mal_export str fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len);
 mal_export void printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
+mal_export void fprintInstruction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
 mal_export str instructionCall(MalBlkPtr mb, InstrPtr p, str s, str base, size_t len);
 mal_export void promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
 mal_export str instruction2str(MalBlkPtr mb, MalStkPtr stl, InstrPtr p, int hidden);

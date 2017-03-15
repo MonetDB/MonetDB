@@ -306,7 +306,6 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	clk = GDKusec()- clk;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","optimizer.sql_append",actions, clk);
     newComment(mb,buf);
-	QOTupdateStatistics("optimizer.sql_append",actions,clk);
 	addtoMalBlkHistory(mb);
 	return msg;
 }

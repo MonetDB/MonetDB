@@ -144,7 +144,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		return MAL_SUCCEED;
 
 #ifdef DEBUG_OPT_PUSHSELECT
-		mnstr_printf(cntxt->fdout,"#Push select optimizer started\n");
+		fprintf(stderr,"#Push select optimizer started\n");
 #endif
 	(void) stk;
 	(void) pci;

@@ -631,7 +631,7 @@ SQLengineIntern(Client c, backend *be)
 	}
 
 #ifdef SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
+	fprintf(stderr, "#Ready to execute SQL statement\n");
 #endif
 
 	if (c->curprg->def->stop == 1) {

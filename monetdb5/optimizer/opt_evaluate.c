@@ -137,7 +137,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	(void)cntxt;
 #ifdef DEBUG_OPT_EVALUATE
-	mnstr_printf(cntxt->fdout, "Constant expression optimizer started\n");
+	fprintf(stderr, "Constant expression optimizer started\n");
 #endif
 
 	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
@@ -173,7 +173,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
 #ifdef DEBUG_OPT_EVALUATE
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+		fprintInstruction(stderr , mb, 0, p, LIST_MAL_ALL);
 #endif
 		/* be aware that you only assign once to a variable */
 		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
@@ -193,8 +193,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			malProfileMode= profiler;
 			p->barrier = barrier;
 #ifdef DEBUG_OPT_EVALUATE
-			mnstr_printf(cntxt->fdout, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
-			mnstr_printf(cntxt->fdout, "#result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
+			fprintf(stderr, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
+			fprintf(stderr, "#result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
 #endif
 			if (msg == MAL_SUCCEED) {
 				int nvar;
@@ -220,7 +220,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				setVarUDFtype(mb,getArg(p,1));
 #ifdef DEBUG_OPT_EVALUATE
 				{str tpename;
-				mnstr_printf(cntxt->fdout, "Evaluated new constant=%d -> %d:%s\n",
+				fprintf(stderr, "Evaluated new constant=%d -> %d:%s\n",
 					getArg(p, 0), getArg(p, 1), tpename = getTypeName(getArgType(mb, p, 1)));
 				GDKfree(tpename);
 				}
@@ -229,7 +229,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				/* if there is an error, we should postpone message handling,
 					as the actual error (eg. division by zero ) may not happen) */
 #ifdef DEBUG_OPT_EVALUATE
-				mnstr_printf(cntxt->fdout, "Evaluated %s\n", msg);
+				fprintf(stderr, "Evaluated %s\n", msg);
 #endif
 				GDKfree(msg);
 				msg= MAL_SUCCEED;

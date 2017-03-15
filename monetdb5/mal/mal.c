@@ -127,7 +127,6 @@ void mserver_reset(int exit)
 	MCstopClients(0);
 	setHeartbeat(-1);
 	stopProfiler();
-	QOTstatisticsExit();
 	AUTHreset(); 
 	if ((err = msab_wildRetreat()) != NULL) {
 		fprintf(stderr, "!%s", err);
