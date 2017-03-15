@@ -548,6 +548,9 @@ fixwkbheap(void)
 	} *nwkb;
 	char *oldname, *newname;
 
+	if (utypewkb == 0)
+		GDKfatal("fixwkbheap: no space for wkb atom");
+
 	for (bid = 1; bid < bbpsize; bid++) {
 		if ((b = BBP_desc(bid)) == NULL)
 			continue; /* not a valid BAT */
@@ -1012,9 +1015,10 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, 
 	else if (strcmp(type, "hge") == 0)
 		havehge = 1;
 #endif
-	if ((t = ATOMindex(type)) < 0)
-		t = ATOMunknown_find(type);
-	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
+	if ((t = ATOMindex(type)) < 0) {
+		if ((t = ATOMunknown_find(type)) == 0)
+			GDKfatal("BBPinit: no space for atom %s", type);
+	} else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
 		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.varsized mismatch for BAT %d\n", HT, (int) bid);
 	else if (var && t != 0 ?
 		 ATOMsize(t) < width ||
@@ -3688,54 +3692,6 @@ BBPdiskscan(const char *parent)
 	closedir(dirp);
 	return 0;
 }
-
-#if 0
-void
-BBPatom_drop(int atom)
-{
-	int i;
-	const char *nme = ATOMname(atom);
-	int unknown = ATOMunknown_add(nme);
-
-	BBPlock();
-	for (i = 0; i < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); i++) {
-		if (BBPvalid(i)) {
-			BAT *b = BBP_desc(i);
-
-			if (!b)
-				continue;
-
-			if (b->ttype == atom)
-				b->ttype = unknown;
-		}
-	}
-	BBPunlock();
-}
-
-void
-BBPatom_load(int atom)
-{
-	const char *nme;
-	int i, unknown;
-
-	BBPlock();
-	nme = ATOMname(atom);
-	unknown = ATOMunknown_find(nme);
-	ATOMunknown_del(unknown);
-	for (i = 0; i < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); i++) {
-		if (BBPvalid(i)) {
-			BAT *b = BBP_desc(i);
-
-			if (!b)
-				continue;
-
-			if (b->ttype == unknown)
-				b->ttype = atom;
-		}
-	}
-	BBPunlock();
-}
-#endif
 
 void
 gdk_bbp_reset(void)

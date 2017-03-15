@@ -2066,8 +2066,7 @@ int GDKatomcnt = TYPE_str + 1;
  * Sometimes a bat descriptor is loaded before the dynamic module
  * defining the atom is loaded. To support this an extra set of
  * unknown atoms is kept.  These can be accessed via the ATOMunknown
- * interface. Adding atoms to this set is done via the ATOMunknown_add
- * function. Finding an (negative) atom index can be done via
+ * interface. Finding an (negative) atom index can be done via
  * ATOMunknown_find, which simply adds the atom if it's not in the
  * unknown set. The index van be used to find the name of an unknown
  * ATOM via ATOMunknown_name. Once an atom becomes known, ie the
@@ -2075,21 +2074,6 @@ int GDKatomcnt = TYPE_str + 1;
  * set using ATOMunknown_del.
  */
 static str unknown[MAXATOMS] = { NULL };
-
-int
-ATOMunknown_add(const char *nme)
-{
-	int i = 1;
-
-	for (; i < MAXATOMS; i++) {
-		if (!unknown[i]) {
-			unknown[i] = GDKstrdup(nme);
-			return -i;
-		}
-	}
-	assert(0);
-	return 0;
-}
 
 int
 ATOMunknown_del(int i)
@@ -2103,14 +2087,24 @@ ATOMunknown_del(int i)
 int
 ATOMunknown_find(const char *nme)
 {
-	int i = 1;
+	int i, j = 0;
 
-	for (; i < MAXATOMS; i++) {
-		if (unknown[i] && strcmp(unknown[i], nme) == 0) {
-			return -i;
-		}
+	/* first try to find the atom */
+	for (i = 1; i < MAXATOMS; i++) {
+		if (unknown[i]) {
+			if (strcmp(unknown[i], nme) == 0) {
+				return -i;
+			}
+		} else if (j == 0)
+			j = i;
 	}
-	return ATOMunknown_add(nme);
+	if (j == 0) {
+		/* no space for new atom (shouldn't happen) */
+		return 0;
+	}
+	if ((unknown[j] = GDKstrdup(nme)) == NULL)
+		return 0;
+	return -j;
 }
 
 str

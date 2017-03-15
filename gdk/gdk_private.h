@@ -31,11 +31,10 @@ __hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__visibility__("hidden")));
 __hidden int ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
-__hidden int ATOMunknown_add(const char *nme)
-	__attribute__((__visibility__("hidden")));
 __hidden int ATOMunknown_del(int a)
 	__attribute__((__visibility__("hidden")));
 __hidden int ATOMunknown_find(const char *nme)
+	__attribute__ ((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
