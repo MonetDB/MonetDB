@@ -178,7 +178,7 @@ ATOMallocate(const char *id)
 		if (strlen(id) >= IDLENGTH)
 			GDKfatal("ATOMallocate: name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
-		snprintf(BATatoms[t].name, IDLENGTH, "%s", id);
+		snprintf(BATatoms[t].name, sizeof(BATatoms[t].name), "%s", id);
 		BATatoms[t].size = sizeof(int);		/* default */
 		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;			/* default */
@@ -2069,20 +2069,9 @@ int GDKatomcnt = TYPE_str + 1;
  * interface. Finding an (negative) atom index can be done via
  * ATOMunknown_find, which simply adds the atom if it's not in the
  * unknown set. The index van be used to find the name of an unknown
- * ATOM via ATOMunknown_name. Once an atom becomes known, ie the
- * module defining it is loaded, it should be removed from the unknown
- * set using ATOMunknown_del.
+ * ATOM via ATOMunknown_name.
  */
 static str unknown[MAXATOMS] = { NULL };
-
-int
-ATOMunknown_del(int i)
-{
-	assert(unknown[-i]);
-	GDKfree(unknown[-i]);
-	unknown[-i] = NULL;
-	return 0;
-}
 
 int
 ATOMunknown_find(const char *nme)
@@ -2090,9 +2079,11 @@ ATOMunknown_find(const char *nme)
 	int i, j = 0;
 
 	/* first try to find the atom */
+	MT_lock_set(&GDKthreadLock);
 	for (i = 1; i < MAXATOMS; i++) {
 		if (unknown[i]) {
 			if (strcmp(unknown[i], nme) == 0) {
+				MT_lock_unset(&GDKthreadLock);
 				return -i;
 			}
 		} else if (j == 0)
@@ -2100,10 +2091,14 @@ ATOMunknown_find(const char *nme)
 	}
 	if (j == 0) {
 		/* no space for new atom (shouldn't happen) */
+		MT_lock_unset(&GDKthreadLock);
 		return 0;
 	}
-	if ((unknown[j] = GDKstrdup(nme)) == NULL)
+	if ((unknown[j] = GDKstrdup(nme)) == NULL) {
+		MT_lock_unset(&GDKthreadLock);
 		return 0;
+	}
+	MT_lock_unset(&GDKthreadLock);
 	return -j;
 }
 
