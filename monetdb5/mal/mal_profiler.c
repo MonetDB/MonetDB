@@ -22,7 +22,9 @@
 #include "mal_debugger.h"
 #include "mal_resource.h"
 
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 
 static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 

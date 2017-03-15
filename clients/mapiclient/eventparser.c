@@ -209,7 +209,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 		return 0;
 	}
 	if( strstr(key,"ctime")){
-		long sec;
+		time_t sec;
 		struct tm curr_time;
 
 		c = strchr(val,'.');
