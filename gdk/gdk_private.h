@@ -71,7 +71,8 @@ __hidden void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden size_t BATvmsize(BAT *b, int dirty)
 	__attribute__((__visibility__("hidden")));
-__hidden void BBPcacheit(BAT *bn, int lock)
+__hidden gdk_return BBPcacheit(BAT *bn, int lock)
+	__attribute__ ((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void);		/* never called: for debugging only */
 __hidden void BBPexit(void)
@@ -81,6 +82,7 @@ __hidden BAT *BBPgetdesc(bat i)
 __hidden void BBPinit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden bat BBPinsert(BAT *bn)
+	__attribute__ ((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));

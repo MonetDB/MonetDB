@@ -101,7 +101,10 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	/*
 	 * add to BBP
 	 */
-	BBPinsert(bn);
+	if (BBPinsert(bn) == 0) {
+		GDKfree(bn);
+		return NULL;
+	}
 	/*
  	* Default zero for order oid index
  	*/
@@ -204,7 +207,10 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 		goto bailout;
 	}
 	DELTAinit(bn);
-	BBPcacheit(bn, 1);
+	if (BBPcacheit(bn, 1) != GDK_SUCCEED) {
+		GDKfree(bn->tvheap);
+		goto bailout;
+	}
 	return bn;
   bailout:
 	HEAPfree(&bn->theap, 1);

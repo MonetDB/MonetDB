@@ -333,19 +333,23 @@ BBPselectfarm(int role, int type, enum heaptype hptype)
  * BBPextend must take the trimlock, as it is called when other BBP
  * locks are held and it will allocate memory.
  */
-static void
+static gdk_return
 BBPextend(int idx, int buildhash)
 {
-	if ((bat) ATOMIC_GET(BBPsize, BBPsizeLock) >= N_BBPINIT * BBPINIT)
-		GDKfatal("BBPextend: trying to extend BAT pool beyond the "
+	if ((bat) ATOMIC_GET(BBPsize, BBPsizeLock) >= N_BBPINIT * BBPINIT) {
+		GDKerror("BBPextend: trying to extend BAT pool beyond the "
 			 "limit (%d)\n", N_BBPINIT * BBPINIT);
+		return GDK_FAIL;
+	}
 
 	/* make sure the new size is at least BBPsize large */
 	while (BBPlimit < (bat) ATOMIC_GET(BBPsize, BBPsizeLock)) {
 		assert(BBP[BBPlimit >> BBPINITLOG] == NULL);
 		BBP[BBPlimit >> BBPINITLOG] = GDKzalloc(BBPINIT * sizeof(BBPrec));
-		if (BBP[BBPlimit >> BBPINITLOG] == NULL)
-			GDKfatal("BBPextend: failed to extend BAT pool\n");
+		if (BBP[BBPlimit >> BBPINITLOG] == NULL) {
+			GDKerror("BBPextend: failed to extend BAT pool\n");
+			return GDK_FAIL;
+		}
 		BBPlimit += BBPINIT;
 	}
 
@@ -358,6 +362,7 @@ BBPextend(int idx, int buildhash)
 			BBP_free(i) = 0;
 		BBPinithash(idx);
 	}
+	return GDK_SUCCEED;
 }
 
 static inline char *
@@ -1973,7 +1978,7 @@ BBPgetsubdir(str s, bat i)
  * increasing BBPsize (up to BBPlimit) or extending the BBP (which
  * increases BBPlimit).  Every time this function is called we start
  * searching in a following free list (variable "last"). */
-static void
+static gdk_return
 maybeextend(int idx)
 {
 	int t, m;
@@ -2004,14 +2009,31 @@ maybeextend(int idx)
 	} else {
 		/* let the longest list alone, get a fresh entry */
 		if ((bat) ATOMIC_ADD(BBPsize, 1, BBPsizeLock) >= BBPlimit) {
-			BBPextend(idx, TRUE);
+			if (BBPextend(idx, TRUE) != GDK_SUCCEED) {
+				/* undo add */
+				ATOMIC_SUB(BBPsize, 1, BBPsizeLock);
+				/* couldn't extend; if there is any
+				 * free entry, take it from the
+				 * longest list after all */
+				if (l > 0) {
+					i = BBP_free(m);
+					BBP_free(m) = BBP_next(i);
+					BBP_next(i) = 0;
+					BBP_free(idx) = i;
+				} else {
+					/* nothing available */
+					return GDK_FAIL;
+				}
+			}
 		} else {
 			BBP_free(idx) = (bat) ATOMIC_GET(BBPsize, BBPsizeLock) - 1;
 		}
 	}
 	last = (last + 1) & BBP_THREADMASK;
+	return GDK_SUCCEED;
 }
 
+/* return new BAT id (> 0); return 0 on failure */
 bat
 BBPinsert(BAT *bn)
 {
@@ -2031,6 +2053,7 @@ BBPinsert(BAT *bn)
 	/* find an empty slot */
 	if (BBP_free(idx) <= 0) {
 		/* we need to extend the BBP */
+		gdk_return r = GDK_SUCCEED;
 		if (lock) {
 			/* we must take all locks in a consistent
 			 * order so first unset the one we've already
@@ -2043,13 +2066,20 @@ BBPinsert(BAT *bn)
 		/* check again in case some other thread extended
 		 * while we were waiting */
 		if (BBP_free(idx) <= 0) {
-			maybeextend(idx);
+			r = maybeextend(idx);
 		}
 		MT_lock_unset(&GDKnameLock);
 		if (lock)
 			for (i = BBP_THREADMASK; i >= 0; i--)
 				if (i != idx)
 					MT_lock_unset(&GDKcacheLock(i));
+		if (r != GDK_SUCCEED) {
+			if (lock) {
+				MT_lock_unset(&GDKcacheLock(idx));
+				MT_lock_unset(&GDKtrimLock(idx));
+			}
+			return 0;
+		}
 	}
 	i = BBP_free(idx);
 	assert(i > 0);
@@ -2101,7 +2131,7 @@ BBPinsert(BAT *bn)
 	return i;
 }
 
-void
+gdk_return
 BBPcacheit(BAT *bn, int lock)
 {
 	bat i = bn->batCacheid;
@@ -2114,6 +2144,8 @@ BBPcacheit(BAT *bn, int lock)
 		assert(i > 0);
 	} else {
 		i = BBPinsert(bn);	/* bat was not previously entered */
+		if (i == 0)
+			return GDK_FAIL;
 		if (bn->tvheap)
 			bn->tvheap->parentid = i;
 	}
@@ -2130,6 +2162,7 @@ BBPcacheit(BAT *bn, int lock)
 
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
+	return GDK_SUCCEED;
 }
 
 /*
