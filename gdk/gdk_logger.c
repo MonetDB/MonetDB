@@ -809,7 +809,7 @@ logger_update_catalog_file(logger *lg, const char *dir, const char *filename, in
 	/* check if an older file exists and move bak it up */
 	if (access(filename, 0) != -1) {
 		bak_exists = 1;
-		if (GDKmove(farmid, dir, filename, NULL, dir, filename, "bak") == GDK_FAIL) {
+		if (GDKmove(farmid, dir, filename, NULL, dir, filename, "bak") != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: logger_update_catalog_file: rename %s to %s.bak in %s failed\n", filename, filename, dir);
 			return GDK_FAIL;
 		}
@@ -1067,7 +1067,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		} else {
 			while (lid >= lg->id && res != GDK_FAIL) {
 				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
-				if ((logger_readlog(lg, log_filename)) == GDK_FAIL && lg->shared && lg->id > 1) {
+				if ((logger_readlog(lg, log_filename)) != GDK_SUCCEED && lg->shared && lg->id > 1) {
 					/* The only special case is if
 					 * the files is missing
 					 * altogether and the logger
@@ -1746,7 +1746,7 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 			goto error;
 		}
 
-		if (logger_readlogs(lg, fp, filename) == GDK_FAIL) {
+		if (logger_readlogs(lg, fp, filename) != GDK_SUCCEED) {
 			goto error;
 		}
 		fclose(fp);
@@ -1912,7 +1912,7 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
 		fflush(stdout);
 	}
-	if (logger_open(lg) == GDK_FAIL) {
+	if (logger_open(lg) != GDK_SUCCEED) {
 		logger_destroy(lg);
 		return NULL;
 	}
@@ -2265,8 +2265,8 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 	l.flag = flag;
 	l.tid = lg->tid;
 	lg->changes++;
-	if (log_write_format(lg, &l) == GDK_FAIL ||
-	    log_write_string(lg, name) == GDK_FAIL)
+	if (log_write_format(lg, &l) != GDK_SUCCEED ||
+	    log_write_string(lg, name) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	if (lg->debug & 1)
@@ -2352,8 +2352,8 @@ log_bat_transient(logger *lg, const char *name)
 		//	assert(lg->tid == tid);
 	}
 
-	if (log_write_format(lg, &l) == GDK_FAIL ||
-	    log_write_string(lg, name) == GDK_FAIL) {
+	if (log_write_format(lg, &l) != GDK_SUCCEED ||
+	    log_write_string(lg, name) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: log_bat_transient: write failed\n");
 		return GDK_FAIL;
 	}
@@ -2387,8 +2387,8 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[uval->ttype].atomWrite;
 
 		l.flag = LOG_UPDATE;
-		if (log_write_format(lg, &l) == GDK_FAIL ||
-		    log_write_string(lg, name) == GDK_FAIL)
+		if (log_write_format(lg, &l) != GDK_SUCCEED ||
+		    log_write_string(lg, name) != GDK_SUCCEED)
 			return GDK_FAIL;
 
 		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
@@ -2429,8 +2429,8 @@ log_bat(logger *lg, BAT *b, const char *name)
 		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 		l.flag = LOG_INSERT;
-		if (log_write_format(lg, &l) == GDK_FAIL ||
-		    log_write_string(lg, name) == GDK_FAIL)
+		if (log_write_format(lg, &l) != GDK_SUCCEED ||
+		    log_write_string(lg, name) != GDK_SUCCEED)
 			return GDK_FAIL;
 
 		if (b->ttype > TYPE_void &&
@@ -2471,8 +2471,8 @@ log_bat_clear(logger *lg, const char *name)
 	lg->changes += l.nr;
 
 	l.flag = LOG_CLEAR;
-	if (log_write_format(lg, &l) == GDK_FAIL ||
-	    log_write_string(lg, name) == GDK_FAIL)
+	if (log_write_format(lg, &l) != GDK_SUCCEED ||
+	    log_write_string(lg, name) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	if (lg->debug & 1)
@@ -2560,7 +2560,7 @@ log_tend(logger *lg)
 	l.nr = lg->tid;
 
 	if (res != GDK_SUCCEED ||
-	    log_write_format(lg, &l) == GDK_FAIL ||
+	    log_write_format(lg, &l) != GDK_SUCCEED ||
 	    mnstr_flush(lg->log) ||
 	    mnstr_fsync(lg->log) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
@@ -2582,7 +2582,7 @@ log_abort(logger *lg)
 	l.tid = lg->tid;
 	l.nr = -1;
 
-	if (log_write_format(lg, &l) == GDK_FAIL)
+	if (log_write_format(lg, &l) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	return GDK_SUCCEED;
@@ -2600,7 +2600,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_sequence_ (%d," LLFMT ")\n", seq, val);
 
-	if (log_write_format(lg, &l) == GDK_FAIL ||
+	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->log, val) ||
 	    (flush && mnstr_flush(lg->log)) ||
 	    (flush && mnstr_fsync(lg->log)) ||
