@@ -209,8 +209,7 @@ freeMalBlk(MalBlkPtr mb)
 		}
 	mb->stop = 0;
 	for(i=0; i< mb->vtop; i++)
-		if (isVarConstant(mb, i))
-			VALclear(&getVarConstant(mb,i));
+		VALclear(&getVarConstant(mb,i));
 	mb->vtop = 0;
 	mb->vid = 0;
 	GDKfree(mb->stmt);
