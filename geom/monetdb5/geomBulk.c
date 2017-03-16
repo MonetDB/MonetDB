@@ -651,9 +651,11 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		wkb *bWKB = (wkb *) BUNtail(bBAT_iter, i);
 
 		if ((ret = wkbBox2D(&outSingle, &aWKB, &bWKB)) != MAL_SUCCEED) {
+			BBPreclaim(outBAT);
 			goto clean;
 		}
 		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(outBAT);
 			GDKfree(outSingle);
 			ret = createException(MAL, "batgeom.wkbBox2D", MAL_MALLOC_FAIL);
 			goto clean;
@@ -664,7 +666,6 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
       clean:
-	BBPreclaim(outBAT);
 	if (aBAT)
 		BBPunfix(aBAT->batCacheid);
 	if (bBAT)
@@ -708,9 +709,11 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		wkb *bWKB = (wkb *) BUNtail(bBAT_iter, i);
 
 		if ((ret = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
+			BBPreclaim(outBAT);
 			goto clean;
 		}
 		if (BUNappend(outBAT, &outBIT, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(outBAT);
 			ret = createException(MAL, "batgeom.Contains", MAL_MALLOC_FAIL);
 			goto clean;
 		}
@@ -719,7 +722,6 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
       clean:
-	BBPreclaim(outBAT);
 	if (aBAT)
 		BBPunfix(aBAT->batCacheid);
 	if (bBAT)
@@ -922,9 +924,11 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 
 		if ((ret = wkbMakePoint(&pointWKB, &x, &y, &z, &m, zmFlag)) != MAL_SUCCEED) {	//check
 
+			BBPreclaim(outBAT);
 			goto clean;
 		}
 		if (BUNappend(outBAT, pointWKB, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(outBAT);
 			GDKfree(pointWKB);
 			ret = createException(MAL, "batgeom.WkbMakePoint", MAL_MALLOC_FAIL);
 			goto clean;
@@ -935,7 +939,6 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
       clean:
-	BBPreclaim(outBAT);
 	if (xBAT)
 		BBPunfix(xBAT->batCacheid);
 	if (yBAT)
@@ -1033,9 +1036,11 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 
 		if ((ret = wkbDistance(&distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) {	//check
 
+			BBPreclaim(outBAT);
 			goto clean;
 		}
 		if (BUNappend(outBAT, &distanceVal, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(outBAT);
 			ret = createException(MAL, "batgeom.Distance", MAL_MALLOC_FAIL);
 			goto clean;
 		}
@@ -1044,7 +1049,6 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
       clean:
-	BBPreclaim(outBAT);
 	if (aBAT)
 		BBPunfix(aBAT->batCacheid);
 	if (bBAT)
