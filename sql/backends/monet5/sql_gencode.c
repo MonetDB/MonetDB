@@ -474,7 +474,10 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 			char buf[64];
 
-			snprintf(buf,64,"A%s",nme);
+			if (op->op3)
+				snprintf(buf,64,"A%s",nme);
+			else
+				snprintf(buf,64,"%s",nme);
 			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -721,11 +724,12 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	pushEndInstruction(curBlk);
 
 	/* SQL function definitions meant for inlineing should not be optimized before */
-	curBlk->inlineProp = 1;
+	//for now no inline of the remote function, this gives garbage collection problems
+	//curBlk->inlineProp = 1;
 
 	SQLaddQueryToCache(c);
-	chkProgram(c->fdout, c->nspace, c->curprg->def);
-	//SQLoptimizeFunction(c,c->curprg->def);
+	//chkProgram(c->fdout, c->nspace, c->curprg->def);
+	SQLoptimizeFunction(c, c->curprg->def);
 	if (backup)
 		c->curprg = backup;
 	name[0] = old;		/* make sure stub is called */
