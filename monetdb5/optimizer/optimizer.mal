@@ -245,7 +245,7 @@ comment "Reorder by dataflow dependencies";
 
 #opt_statistics.mal
 
-command inspect.optimizer_stats()(:bat[:str], :bat[:int], :bat[:lng])
+pattern inspect.optimizer_stats()(:bat[:str], :bat[:int], :bat[:lng])
 address OPTstatistics
 comment "Get optimizer use statistics, i.e. calls and total time";
 

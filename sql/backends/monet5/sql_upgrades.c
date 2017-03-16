@@ -1295,7 +1295,11 @@ sql_update_default(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop function sys.malfunctions;\n"
 			"create function sys.malfunctions() returns table(\"module\" string, \"function\" string, \"signature\" string, \"address\" string, \"comment\" string) external name \"manual\".\"functions\";\n"
-			"insert into sys.systemfunctions (select id from sys.functions where name = 'malfunctions' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+			"drop function sys.optimizer_stats();\n"
+			"create function sys.optimizer_stats() "
+			"returns table (optname string, count int, timing bigint) "
+			"external name inspect.optimizer_stats;\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('malfunctions', 'optimizer_stats') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
 	/* 46_profiler.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1336,14 +1340,7 @@ sql_update_default(Client c, mvc *sql)
 			"(3, 'SELECT,UPDATE'), (5, 'SELECT,INSERT'), (6, 'INSERT,UPDATE'), (7, 'SELECT,INSERT,UPDATE'),\n"
 			"(9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),\n"
 			"(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');\n"
-			"update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');\n"
-
-	/* optimizer  funtion */
-			"drop function sys.optimizer_stats();\n"
-			"create function sys.optimizer_stats ()\n"
-			"returns table (optname string, count int, timing bigint)\n"
-			"external name inspect.optimizer_stats;\n"
-	);
+			"update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	/* 75_shp.sql, if shp extension available */
 	err = SQLstatementIntern(c, &q1, "update", 1, 0, &output);
@@ -1362,6 +1359,9 @@ sql_update_default(Client c, mvc *sql)
 		BBPunfix(b->batCacheid);
 	}
 	res_tables_destroy(output);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);

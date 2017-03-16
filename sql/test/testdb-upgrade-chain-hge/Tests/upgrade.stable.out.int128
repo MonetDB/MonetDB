@@ -28,7 +28,9 @@ delete from sys._columns where table_id = (select id from sys._tables where name
 delete from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys');
 drop function sys.malfunctions;
 create function sys.malfunctions() returns table("module" string, "function" string, "signature" string, "address" string, "comment" string) external name "manual"."functions";
-insert into sys.systemfunctions (select id from sys.functions where name = 'malfunctions' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+drop function sys.optimizer_stats();
+create function sys.optimizer_stats() returns table (optname string, count int, timing bigint) external name inspect.optimizer_stats;
+insert into sys.systemfunctions (select id from sys.functions where name in ('malfunctions', 'optimizer_stats') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 create function profiler.getlimit() returns integer external name profiler.getlimit;
 create procedure profiler.setlimit(lim integer) external name profiler.setlimit;
 drop procedure profiler.setpoolsize;
@@ -64,6 +66,7 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
 (9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),
 (13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');
 update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');
+delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 set schema "testschema";
 
 # 15:26:22 >  
