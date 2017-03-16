@@ -894,7 +894,7 @@ logger_close(logger *lg)
 	lg->log = NULL;
 }
 
-static gdk_return
+static int
 logger_readlog(logger *lg, char *filename)
 {
 	trans *tr = NULL;
@@ -915,14 +915,14 @@ logger_readlog(logger *lg, char *filename)
 		if (lg->log)
 			mnstr_destroy(lg->log);
 		lg->log = NULL;
-		return GDK_FAIL;
+		return -1;
 	}
 	if (fstat(fileno(getFile(lg->log)), &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
 		mnstr_destroy(lg->log);
 		lg->log = NULL;
 		/* If we can't read the files, it might simply be empty.
-		 * In that case we can't return GDK_FAIL, since it's actually fine */
+		 * In that case we can't return -1, since it's actually fine */
 		return 1;
 	}
 	t0 = time(NULL);
@@ -1032,7 +1032,7 @@ logger_readlog(logger *lg, char *filename)
 		printf("# Finished reading the write-ahead log '%s'\n", filename);
 		fflush(stdout);
 	}
-	return GDK_SUCCEED;
+	return 0;
 }
 
 /*
@@ -1060,18 +1060,26 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		if (!lg->shared && lid >= lg->id) {
 			lg->id = lid;
 			snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
-			if ((res = logger_readlog(lg, log_filename)) != 0) {
+			switch (logger_readlog(lg, log_filename)) {
+			case 0:
+				res = GDK_SUCCEED;
+				break;
+			case -1:
+				res = GDK_FAIL;
+				break;
+			case 1:
 				/* we cannot distinguish errors from
 				 * incomplete transactions (even if we
 				 * would log aborts in the logs). So
 				 * we simply abort and move to the
 				 * next log file */
-				(void) res;
+				res = GDK_SUCCEED;
+				break;
 			}
 		} else {
-			while (lid >= lg->id && res != GDK_FAIL) {
+			while (lid >= lg->id && res == GDK_SUCCEED) {
 				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
-				if ((logger_readlog(lg, log_filename)) != GDK_SUCCEED && lg->shared && lg->id > 1) {
+				if (logger_readlog(lg, log_filename) == -1 && lg->shared && lg->id > 1) {
 					/* The only special case is if
 					 * the files is missing
 					 * altogether and the logger
