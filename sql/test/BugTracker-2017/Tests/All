@@ -3,7 +3,7 @@ insert_self_ref_FK.Bug-6131
 shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
-HAVE_LIBZ?heapextend.Bug-6134
+#HAVE_LIBZ?heapextend.Bug-6134
 incorrect_error.Bug-6141
 empty-interval.Bug-6184
 crash_in_null_cast.Bug-6186
@@ -26,3 +26,4 @@ prepare.Bug-6133
 null-quantile.Bug-6218
 real-power.Bug-6228
 one-plus-nil.Bug-6243
+with-alias-bug.6246

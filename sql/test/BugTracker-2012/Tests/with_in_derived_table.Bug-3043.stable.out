@@ -27,7 +27,7 @@ Ready.
 #    WITH x AS (SELECT 1)
 #        SELECT * FROM x
 #) y;
-% .x # table_name
+% .y # table_name
 % L2 # name
 % tinyint # type
 % 1 # length
