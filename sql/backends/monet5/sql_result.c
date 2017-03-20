@@ -2055,7 +2055,7 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 	while (row < (size_t) count) {
 		char *buf = bs2_buffer(s).buf;
 		size_t crow = 0;
-		size_t bytes_left = bsize - sizeof(lng) - 1;
+		size_t bytes_left = bsize - sizeof(lng) - 1 - 2 * sizeof(char);
 		// potential padding that has to be added for each column
 		bytes_left -= t->nr_cols * 7;
 
@@ -2144,11 +2144,11 @@ int mvc_export_resultset_prot10(mvc *m, res_table* t, stream* s, stream *c, size
 #endif
 		assert(bs2_buffer(s).pos == 0);
 
-		if (!mnstr_writeLng(s, (lng)(row - srow))) {
+		if (!mnstr_writeStr(s, "+\n") || !mnstr_writeLng(s, (lng)(row - srow))) {
 			fres = -1;
 			goto cleanup;
 		}
-		buf += sizeof(lng);
+		buf += sizeof(lng) + 2 * sizeof(char);
 
 		for (i = 0; i < (size_t) t->nr_cols; i++) {
 			res_col *c = t->cols + i;
