@@ -474,7 +474,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 			char buf[64];
 
-			if (op->op3)
+			if (nme[0] != 'A')
 				snprintf(buf,64,"A%s",nme);
 			else
 				snprintf(buf,64,"%s",nme);

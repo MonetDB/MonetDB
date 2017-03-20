@@ -8358,7 +8358,7 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			return l;
 		}
 	}
-	if (rel->flag == APPLY_LOJ && r->op == op_select) {
+	if (rel->flag == APPLY_LOJ && (r->op == op_select || is_join(r->op))) {
 		sql_rel *nr, *ns;
 
 		nr = rel_project(sql->sa, rel_dup(r), 
