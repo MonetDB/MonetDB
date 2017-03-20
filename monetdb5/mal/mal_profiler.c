@@ -624,6 +624,7 @@ static BAT *TRACE_id_stmt = 0;
 int
 TRACEtable(BAT **r)
 {
+	initTrace();
 	MT_lock_set(&mal_profileLock);
 	if (TRACE_init == 0) {
 		MT_lock_unset(&mal_profileLock);
