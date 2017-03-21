@@ -2341,7 +2341,7 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if ((sql_update_dec2016_sp2(c, m)) != NULL) {
+	if ((err = sql_update_dec2016_sp2(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
 		GDKfree(err);
 	}
