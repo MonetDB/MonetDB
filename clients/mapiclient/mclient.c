@@ -334,16 +334,13 @@ fetch_line(MapiHdl hdl)
 static int
 fetch_row(MapiHdl hdl)
 {
-	// yeah right. circumvent your own api...
-//	char *reply;
-//
-//	do {
-//		if ((reply = fetch_line(hdl)) == NULL)
-//			return 0;
-//	} while (*reply != '[' && *reply != '=');
-//	return mapi_split_line(hdl);
-//
-	return mapi_fetch_row(hdl);
+	char *reply;
+
+	do {
+		if ((reply = fetch_line(hdl)) == NULL)
+			return 0;
+	} while (*reply != '[' && *reply != '=');
+	return mapi_split_line(hdl);
 }
 
 static void
@@ -1045,29 +1042,6 @@ classify(const char *s, size_t l)
 	}
 }
 
-
-static char* 
-mapi_escape_name(char *name) {
-	char *startbuffer = malloc(strlen(name) * 2 + 2);
-	char *buffer = startbuffer;
-	if (!startbuffer) return NULL;
-	if (strchr(name, ',') || strchr(name, ' ') || strchr(name, '\t') || strchr(name, '#')) {
-		char *p;
-		*buffer++ = '"';
-		for (p = name; *p; p++) {
-			if (*p == '"') {
-				*buffer++ = '\\';
-			}
-			*buffer++ = *p;
-		}
-		*buffer++ = '"';
-		*buffer = '\0';
-	} else {
-		strcpy(buffer, name);
-	}
-	return startbuffer;
-}
-
 static void
 TESTrenderer(MapiHdl hdl)
 {
@@ -1078,51 +1052,16 @@ TESTrenderer(MapiHdl hdl)
 	char *tp;
 	char *sep;
 	int i;
-	int prot10 = mapi_is_protocol10(hdl);
 
 	SQLqueryEcho(hdl);
-	if (prot10) {
-		fields = mapi_get_field_count(hdl);
-		// for protocol 10, we don't have any headers we can render
-		// so we generate fake MAPI headers for the testweb
-		// table names
-		mnstr_printf(toConsole, "%% ");
-		for(i = 0; i < fields; i++) {
-			mnstr_printf(toConsole, "%s%s", mapi_get_table(hdl, i), i < fields - 1 ? ",\t" : " ");
+	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
+		if (*reply != '[') {
+			if (*reply == '=')
+				reply++;
+			mnstr_printf(toConsole, "%s\n", reply);
+			continue;
 		}
-		mnstr_printf(toConsole, "# table_name\n");
-		// column names
-		mnstr_printf(toConsole, "%% ");
-		for(i = 0; i < fields; i++) {
-			char *name = mapi_escape_name(mapi_get_name(hdl, i));
-			mnstr_printf(toConsole, "%s%s", name, i < fields - 1 ? ",\t" : " ");
-			if (name) free(name);
-		}
-		mnstr_printf(toConsole, "# name\n");
-		// column type names
-		mnstr_printf(toConsole, "%% ");
-		for(i = 0; i < fields; i++) {
-			mnstr_printf(toConsole, "%s%s", mapi_get_type(hdl, i), i < fields - 1 ? ",\t" : " ");
-		}
-		mnstr_printf(toConsole, "# type\n");
-		// column lengths
-		mnstr_printf(toConsole, "%% ");
-		for(i = 0; i < fields; i++) {
-			mnstr_printf(toConsole, "%d%s", mapi_get_len(hdl, i), i < fields - 1 ? ",\t" : " ");
-		}
-		mnstr_printf(toConsole, "# length\n");
-	}
-	while (!mnstr_errnr(toConsole) && (!prot10 ? (reply = fetch_line(hdl)) != 0 : (fields = fetch_row(hdl)) != 0)) {
-		if (!prot10) {
-			// for protocol 9, render any non-result set messages
-			if (*reply != '[') {
-				if (*reply == '=')
-					reply++;
-				mnstr_printf(toConsole, "%s\n", reply);
-				continue;
-			}
-			fields = mapi_split_line(hdl);
-		}
+		fields = mapi_split_line(hdl);
 		sep = "[ ";
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
@@ -1256,6 +1195,7 @@ static void
 CLEANrenderer(MapiHdl hdl)
 {
 	char *reply;
+
 	SQLqueryEcho(hdl);
 	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
 		if (*reply == '%')
@@ -1270,18 +1210,12 @@ static void
 RAWrenderer(MapiHdl hdl)
 {
 	char *line;
-	int prot10 = mapi_is_protocol10(hdl);
+
 	SQLqueryEcho(hdl);
-	if (prot10) {
-		// "raw" renderer does not make much sense with prot10, because the raw protocol is binary data
-		separator = ",";
-		CSVrenderer(hdl);
-	} else {
-		while ((line = fetch_line(hdl)) != 0) {
-			if (*line == '=')
-				line++;
-			mnstr_printf(toConsole, "%s\n", line);
-		}
+	while ((line = fetch_line(hdl)) != 0) {
+		if (*line == '=')
+			line++;
+		mnstr_printf(toConsole, "%s\n", line);
 	}
 }
 
@@ -1819,6 +1753,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 #endif
 
 	setWidth();
+
 	do {
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {
@@ -2978,11 +2913,6 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -E charset  | --encoding=charset specify encoding (character set) of the terminal\n");
 #endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
-	fprintf(stderr, " -C version  | --compression=type specify compression method {auto,none,snappy,lz4}\n");
-	fprintf(stderr, " -P version  | --protocol=version specify protocol version {auto,prot9,prot10}\n");
-	fprintf(stderr, " -B size     | --blocksize=size   specify protocol block size (>= %d)\n", BLOCK);
-	fprintf(stderr, " -c colcomp  | --colcomp=type     specify column compression type {none}");
-
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -i          | --interactive[=tm] interpret `\\' commands on stdin, use time formatting {ms,s,m}\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
@@ -3020,10 +2950,6 @@ main(int argc, char **argv)
 	char *command = NULL;
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
-	char *protocol = NULL;
-	char *compression = NULL;
-	char *colcomp = NULL;
-	size_t blocksize = 0;
 	FILE *fp = NULL;
 	int trace = 0;
 	int dump = 0;
@@ -3047,10 +2973,6 @@ main(int argc, char **argv)
 		{"encoding", 1, 0, 'E'},
 #endif
 		{"format", 1, 0, 'f'},
-		{"protocol", 1, 0, 'P'},
-		{"blocksize", 1, 0, 'B'},
-		{"compression", 1, 0, 'C'},
-		{"colcomp", 1, 0, 'c'},
 		{"help", 0, 0, '?'},
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
@@ -3183,28 +3105,6 @@ main(int argc, char **argv)
 			if (output != NULL)
 				free(output);
 			output = strdup(optarg);	/* output format */
-			break;
-		case 'P':
-			assert(optarg);
-			if (protocol != NULL)
-				free(protocol);
-			protocol = strdup(optarg);
-			break;
-		case 'C':
-			assert(optarg);
-			if (compression != NULL)
-				free(compression);
-			compression = strdup(optarg);
-			break;
-		case 'c':
-			assert(optarg);
-			if (colcomp != NULL)
-				free(colcomp);
-			colcomp = strdup(optarg);
-			break;
-		case 'B':
-			assert(optarg);
-			blocksize = (size_t) atol(optarg);
 			break;
 		case 'i':
 			interactive = 1;
@@ -3354,53 +3254,9 @@ main(int argc, char **argv)
 	if (passwd)
 		free(passwd);
 	passwd = NULL;
-
-
-
-	if (blocksize > 0) {
-		if (blocksize < BLOCK) {
-			fprintf(stderr, "invalid block size (needs to be bigger than %d)\n", BLOCK);
-			exit(1);
-		} else {
-			mapi_set_blocksize(mid, blocksize);
-		}
-	}
-
-	if (protocol) {
-		if (mapi_set_protocol(mid, protocol) != 0) {
-			fprintf(stderr, "%s\n", mapi_error_str(mid));
-			exit(1);
-		}
-	}
-	if (compression) {
-		if (mapi_set_compression(mid, compression) != 0) {
-			fprintf(stderr, "%s\n", mapi_error_str(mid));
-			exit(1);
-		}
-	}
-
-	if (colcomp) {
-		if (mapi_set_column_compression(mid, colcomp) != 0) {
-			fprintf(stderr, "%s\n", mapi_error_str(mid));
-			exit(1);
-		}
-	}
-
-	// we need to know the column render width for the TEST and TABLE formatters
-	if (output) {
-		setFormatter(output);
-	}
-
-	if (!output || (formatter == TESTformatter || formatter == TABLEformatter)) {
-		mapi_set_compute_column_width(mid, 1);
-	} else {
-		mapi_set_compute_column_width(mid, 0);
-	}
-
-	if (formatter == RAWformatter) {
-		mapi_set_protocol(mid, "prot9");
-	}
-
+	if (dbname)
+		free(dbname);
+	dbname = NULL;
 	if (mid && mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
 
@@ -3443,7 +3299,6 @@ main(int argc, char **argv)
 			setFormatter("raw");
 		}
 	}
-
 	if (formatter == TIMERformatter) {
 		mapi_cache_limit(mid, 1);
 	}

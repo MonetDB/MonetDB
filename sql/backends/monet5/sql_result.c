@@ -1350,13 +1350,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 	}
 
 	// ensure the buffer is currently empty
-	if (bs2_buffer(s).pos != 0) {
-		// clear the buffer
-		if (mnstr_flush(s) < 0) {
-			fres = -1;
-			goto cleanup;
-		}
-	}
+	assert(bs2_buffer(s).pos == 0);
 
 	// inspect all the columns to figure out how many bytes it takes to transfer one row
 	for (i = 0; i < (size_t) t->nr_cols; i++) {
@@ -1611,6 +1605,8 @@ cleanup:
 	if (result) {
 		GDKfree(result);
 	}
+	if (mnstr_errnr(s))
+		return -1;
 	return fres;
 }
 
@@ -2105,6 +2101,10 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 			fres = -1;
 			goto cleanup;
 		}
+	}
+	if (mnstr_flush(s) < 0) {
+		fres = -1;
+		goto cleanup;
 	}
 cleanup:
 	return fres;
