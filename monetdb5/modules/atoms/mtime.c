@@ -2659,6 +2659,24 @@ MTIMEepoch2int(int *ret, const timestamp *t)
 }
 
 str
+MTIMEepoch2lng(lng *ret, const timestamp *t)
+{
+	timestamp e;
+	lng v;
+	str err;
+
+	if ((err = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
+		return err;
+	if ((err = MTIMEtimestamp_diff(&v, t, &e)) != MAL_SUCCEED)
+		return err;
+	if (v == lng_nil)
+		*ret = int_nil;
+	else
+		*ret = v;
+	return MAL_SUCCEED;
+}
+
+str
 MTIMEepoch_bulk(bat *ret, bat *bid)
 {
 	timestamp epoch;
