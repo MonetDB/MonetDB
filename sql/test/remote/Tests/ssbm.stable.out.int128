@@ -12,9 +12,9 @@ Ready.
 356
 # Running Q 01
 
-# 10:41:04 >  
-# 10:41:04 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=43953 --database=master --host=localhost < "/net/madrid/export/scratch1/sjoerd/src/MonetDB/virgin-candidate/sql/benchmarks/ssbm/Tests/01.sql"
-# 10:41:04 >  
+# 21:57:34 >  
+# 21:57:34 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=39831 --database=master --host=localhost < "/home/niels/data/rc/clean/sql/benchmarks/ssbm/Tests/01.sql"
+# 21:57:34 >  
 
 #select sum(lo_extendedprice*lo_discount) as revenue
 #	from lineorder, dwdate
@@ -24,13 +24,13 @@ Ready.
 #		and lo_quantity < 25;
 % .L4 # table_name
 % revenue # name
-% bigint # type
+% hugeint # type
 % 10 # length
 [ 4199635969	]
 
-# 10:41:04 >  
-# 10:41:04 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=43953 --database=master --host=localhost < "/net/madrid/export/scratch1/sjoerd/src/MonetDB/virgin-candidate/sql/benchmarks/ssbm/Tests/02.sql"
-# 10:41:04 >  
+# 21:57:34 >  
+# 21:57:34 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=39831 --database=master --host=localhost < "/home/niels/data/rc/clean/sql/benchmarks/ssbm/Tests/02.sql"
+# 21:57:34 >  
 
 #select sum(lo_extendedprice*lo_discount) as revenue
 #	from lineorder, dwdate
@@ -40,13 +40,13 @@ Ready.
 #		and lo_quantity between 26 and 35;
 % .L4 # table_name
 % revenue # name
-% bigint # type
+% hugeint # type
 % 9 # length
 [ 927530712	]
 
-# 10:41:04 >  
-# 10:41:04 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=43953 --database=master --host=localhost < "/net/madrid/export/scratch1/sjoerd/src/MonetDB/virgin-candidate/sql/benchmarks/ssbm/Tests/03.sql"
-# 10:41:04 >  
+# 21:57:34 >  
+# 21:57:34 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=39831 --database=master --host=localhost < "/home/niels/data/rc/clean/sql/benchmarks/ssbm/Tests/03.sql"
+# 21:57:34 >  
 
 #select sum(lo_extendedprice*lo_discount) as revenue
 #	from lineorder, dwdate
@@ -56,13 +56,13 @@ Ready.
 #		and lo_quantity between 36 and 40;
 % .L4 # table_name
 % revenue # name
-% bigint # type
+% hugeint # type
 % 9 # length
 [ 213477639	]
 
-# 10:41:04 >  
-# 10:41:04 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=43953 --database=master --host=localhost < "/net/madrid/export/scratch1/sjoerd/src/MonetDB/virgin-candidate/sql/benchmarks/ssbm/Tests/04.sql"
-# 10:41:04 >  
+# 21:57:34 >  
+# 21:57:34 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=39831 --database=master --host=localhost < "/home/niels/data/rc/clean/sql/benchmarks/ssbm/Tests/04.sql"
+# 21:57:34 >  
 
 #select sum(lo_revenue), d_year, p_brand1
 #	from lineorder, dwdate, part, supplier
@@ -233,9 +233,9 @@ Ready.
 [ 2768015,	1998,	"MFGR#128"	]
 [ 11569138,	1998,	"MFGR#129"	]
 
-# 10:41:04 >  
-# 10:41:04 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=43953 --database=master --host=localhost < "/net/madrid/export/scratch1/sjoerd/src/MonetDB/virgin-candidate/sql/benchmarks/ssbm/Tests/05.sql"
-# 10:41:04 >  
+# 21:57:35 >  
+# 21:57:35 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=39831 --database=master --host=localhost < "/home/niels/data/rc/clean/sql/benchmarks/ssbm/Tests/05.sql"
+# 21:57:35 >  
 
 #select sum(lo_revenue), d_year, p_brand1
 #	from lineorder, dwdate, part, supplier
@@ -298,9 +298,9 @@ Ready.
 [ 5931644,	1998,	"MFGR#2226"	]
 [ 18442636,	1998,	"MFGR#2227"	]
 
-# 10:41:04 >  
-# 10:41:04 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=43953 --database=master --host=localhost < "/net/madrid/export/scratch1/sjoerd/src/MonetDB/virgin-candidate/sql/benchmarks/ssbm/Tests/06.sql"
-# 10:41:04 >  
+# 21:57:35 >  
+# 21:57:35 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=39831 --database=master --host=localhost < "/home/niels/data/rc/clean/sql/benchmarks/ssbm/Tests/06.sql"
+# 21:57:35 >  
 
 #select sum(lo_revenue), d_year, p_brand1
 #	from lineorder, dwdate, part, supplier
