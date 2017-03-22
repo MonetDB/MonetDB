@@ -342,8 +342,11 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	/* we assume the BATs are still aligned */
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
 	/* needs force, as SQL makes a view over user */
-	BUNappend(user, username, TRUE);
-	BUNappend(pass, hash, TRUE);
+	if (BUNappend(user, username, TRUE) != GDK_SUCCEED ||
+		BUNappend(pass, hash, TRUE) != GDK_SUCCEED) {
+		GDKfree(hash);
+		throw(MAL, "addUser", MAL_MALLOC_FAIL);
+	}
 	GDKfree(hash);
 	/* retrieve the oid of the just inserted user */
 	p = AUTHfindUser(username);
@@ -384,7 +387,8 @@ AUTHremoveUser(Client cntxt, const char *username)
 		throw(MAL, "removeUser", "cannot remove yourself");
 
 	/* now, we got the oid, start removing the related tuples */
-	BUNappend(duser, &id, TRUE);
+	if (BUNappend(duser, &id, TRUE) != GDK_SUCCEED)
+		throw(MAL, "removeUser", MAL_MALLOC_FAIL);
 
 	/* make the stuff persistent */
 	AUTHcommit();

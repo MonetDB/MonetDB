@@ -1180,14 +1180,19 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 	BATloop(b, p, q) {
 		str t =  (str) BUNtail(bi, p);
 
-		if ((msg=STRsubstring(&res, &t, start, length)))
-			goto bunins_failed;
-		BUNappend(bn, (ptr)res, FALSE);
+		if ((msg = STRsubstring(&res, &t, start, length)) != MAL_SUCCEED ||
+			BUNappend(bn, (ptr)res, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
+			if (msg != MAL_SUCCEED)
+				return msg;
+			GDKfree(res);
+			throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
+		}
 		GDKfree(res);
 	}
 
 	bn->tnonil = 0;
-  bunins_failed:
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);

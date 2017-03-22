@@ -1266,22 +1266,28 @@ union lng_tzone {
  * Wrapper
  * The Monet V5 API interface is defined here
  */
-#define TIMEZONES(X1, X2)										\
-	do {														\
-		ticks = (X2);											\
-		MTIMEtzone_create(&ltz.tzval, &ticks);					\
-		vr.val.lval = ltz.lval;									\
-		BUNappend(tzbatnme, (X1), FALSE);			\
-		BUNappend(tzbatdef, &vr.val.lval, FALSE);	\
+#define TIMEZONES(X1, X2)												\
+	do {																\
+		str err;														\
+		ticks = (X2);													\
+		if ((err = MTIMEtzone_create(&ltz.tzval, &ticks)) != MAL_SUCCEED) \
+			return err;													\
+		vr.val.lval = ltz.lval;											\
+		if (BUNappend(tzbatnme, (X1), FALSE) != GDK_SUCCEED ||			\
+			BUNappend(tzbatdef, &vr.val.lval, FALSE) != GDK_SUCCEED)	\
+			goto bailout;												\
 	} while (0)
 
-#define TIMEZONES2(X1, X2, X3, X4)									\
-	do {															\
-		ticks = (X2);												\
-		MTIMEtzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4));	\
-		vr.val.lval = ltz.lval;										\
-		BUNappend(tzbatnme, (X1), FALSE);				\
-		BUNappend(tzbatdef, &vr.val.lval, FALSE);		\
+#define TIMEZONES2(X1, X2, X3, X4)										\
+	do {																\
+		str err;														\
+		ticks = (X2);													\
+		if ((err = MTIMEtzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4))) != MAL_SUCCEED) \
+			return err;													\
+		vr.val.lval = ltz.lval;											\
+		if (BUNappend(tzbatnme, (X1), FALSE) != GDK_SUCCEED ||			\
+			BUNappend(tzbatdef, &vr.val.lval, FALSE) != GDK_SUCCEED)	\
+			goto bailout;												\
 	} while (0)
 
 /*
@@ -1414,6 +1420,8 @@ MTIMEprelude(void *ret)
 	TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT);
 	msg = "West/Europe";
 	return MTIMEtimezone(&tz, &msg);
+  bailout:
+	throw(MAL, "mtime.prelude", MAL_MALLOC_FAIL);
 }
 
 str

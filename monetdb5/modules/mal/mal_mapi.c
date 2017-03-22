@@ -1421,12 +1421,14 @@ SERVERfetch_field_bat(bat *bid, int *key){
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
 		if( mapi_error(mid) ) {
-			*bid = b->batCacheid;
-			BBPkeepref(*bid);
+			BBPreclaim(b);
 			throw(MAL, "mapi.fetch_field_bat", "%s",
 				mapi_result_error(SERVERsessions[i].hdl));
 		}
-		BUNappend(b,fld, FALSE);
+		if (BUNappend(b,fld, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			throw(MAL, "mapi.fetch_field_bat", MAL_MALLOC_FAIL);
+		}
 	}
 	*bid = b->batCacheid;
 	BBPkeepref(*bid);
@@ -1648,7 +1650,10 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	while( mapi_fetch_row(hdl)){
 		fld2= mapi_fetch_field(hdl,1);
 		SERVERfieldAnalysis(fld2, tt, &tval);
-		BUNappend(b,VALptr(&tval), FALSE);
+		if (BUNappend(b,VALptr(&tval), FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			throw(MAL, "mapi.rpc", MAL_MALLOC_FAIL);
+		}
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
