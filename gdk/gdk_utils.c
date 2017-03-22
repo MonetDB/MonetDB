@@ -1040,7 +1040,8 @@ GDKerror(const char *format, ...)
 		strcpy(message, GDKERROR);
 	}
 	va_start(ap, format);
-	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
+	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0)
+		strcpy(message, GDKERROR "an error occurred within GDKerror, possibly malloc failure.\n");
 	va_end(ap);
 
 	GDKaddbuf(message);
