@@ -322,7 +322,6 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
 	p = newInstruction(curBlk, remoteRef, execRef);
-	getArg(p,0) = newTmpVariable(curBlk,TYPE_any);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, sqlRef);
 	p = pushStr(curBlk, p, registerRef);
@@ -480,7 +479,7 @@ int
 backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, char *query)
 {
 	mvc *c = be->mvc;
-	InstrPtr q, querylog;
+	InstrPtr q, querylog = NULL;
 	int old_mv = be->mvc_var;
 	MalBlkPtr old_mb = be->mb;
 	stmt *s;
@@ -488,23 +487,22 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
        
 	// Always keep the SQL query around for monitoring
 
-	if( query == 0)
-		tt = t = GDKstrdup("-- no query");
-	else
+	if (query) {
 		tt = t = GDKstrdup(query);
-	while (t && isspace((int) *t))
-		t++;
+		while (t && isspace((int) *t))
+			t++;
 
-	querylog = q = newStmt(mb, querylogRef, defineRef);
-	if (q == NULL) {
+		querylog = q = newStmt(mb, querylogRef, defineRef);
+		if (q == NULL) {
+			GDKfree(tt);
+			return -1;
+		}
+		setVarType(mb, getArg(q, 0), TYPE_void);
+		setVarUDFtype(mb, getArg(q, 0));
+		q = pushStr(mb, q, t);
 		GDKfree(tt);
-		return -1;
+		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 	}
-	setVarType(mb, getArg(q, 0), TYPE_void);
-	setVarUDFtype(mb, getArg(q, 0));
-	q = pushStr(mb, q, t);
-	GDKfree(tt);
-	q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 
 	/* announce the transaction mode */
 	q = newStmt(mb, sqlRef, "mvc");
@@ -514,7 +512,8 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 	be->mb = mb;
        	s = sql_relation2stmt(be, r);
 	if (!s) {
-		(void) pushInt(mb, querylog, mb->stop);
+		if (querylog)
+			(void) pushInt(mb, querylog, mb->stop);
 		return 0;
 	}
 
@@ -535,7 +534,8 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 	}
 	if (add_end)
 		pushEndInstruction(mb);
-	(void) pushInt(mb, querylog, mb->stop);
+	if (querylog)
+		(void) pushInt(mb, querylog, mb->stop);
 	return 0;
 }
 
@@ -845,9 +845,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		if (f->type == F_UNION)
 			curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
 		else
-			setVarType(curBlk, 0, res->type.type->localtype);
+			setArgType(curBlk, curInstr, 0, res->type.type->localtype);
 	} else {
-		setVarType(curBlk, 0, TYPE_void);
+		setArgType(curBlk, curInstr, 0, TYPE_void);
 	}
 	setVarUDFtype(curBlk, 0);
 
@@ -905,7 +905,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			retseen++;
 	}
 	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION && !no_inline)
-		curBlk->inlineProp =1;
+		curBlk->inlineProp = 1;
 	if (sideeffects)
 		curBlk->unsafeProp = 1;
 	/* optimize the code */

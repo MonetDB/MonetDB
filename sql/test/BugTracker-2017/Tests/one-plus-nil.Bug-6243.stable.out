@@ -70,7 +70,7 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % tinyint # type
-% 4 # length
+% 1 # length
 [ NULL	]
 
 # 21:23:58 >  
