@@ -99,13 +99,15 @@ typedef struct logformat_t {
 	lng nr;
 } logformat;
 
+typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
+
 /* When reading an old format database, we may need to read the geom
  * Well-known Binary (WKB) type differently.  This variable is used to
  * indicate that to the function wkbREAD during reading of the log. */
 static int geomisoldversion;
 
 static gdk_return bm_commit(logger *lg);
-static int tr_grow(trans *tr);
+static gdk_return tr_grow(trans *tr);
 
 static BUN
 log_find(BAT *b, BAT *d, int val)
@@ -193,7 +195,8 @@ log_read_string(logger *l)
 	buf = GDKmalloc(len);
 	if (buf == NULL) {
 		fprintf(stderr, "!ERROR: log_read_string: malloc failed\n");
-		return NULL;
+		/* this is bad */
+		return (char *) -1;
 	}
 
 	if ((nr = mnstr_read(l->log, buf, 1, len)) != (ssize_t) len) {
@@ -221,17 +224,18 @@ log_write_string(logger *l, const char *n)
 	return GDK_SUCCEED;
 }
 
-static void
+static log_return
 log_read_clear(logger *lg, trans *tr, char *name)
 {
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger found log_read_clear %s\n", name);
-
-	if (tr_grow(tr)) {
-		tr->changes[tr->nr].type = LOG_CLEAR;
-		tr->changes[tr->nr].name = GDKstrdup(name);
-		tr->nr++;
-	}
+	if (tr_grow(tr) != GDK_SUCCEED)
+		return LOG_ERR;
+	tr->changes[tr->nr].type = LOG_CLEAR;
+	if ((tr->changes[tr->nr].name = GDKstrdup(name)) == NULL)
+		return LOG_ERR;
+	tr->nr++;
+	return LOG_OK;
 }
 
 static int
@@ -274,7 +278,7 @@ la_bat_clear(logger *lg, logaction *la)
 	return GDK_SUCCEED;
 }
 
-static gdk_return
+static log_return
 log_read_seq(logger *lg, logformat *l)
 {
 	int seq = (int) l->nr;
@@ -284,32 +288,32 @@ log_read_seq(logger *lg, logformat *l)
 	assert(l->nr <= (lng) INT_MAX);
 	if (mnstr_readLng(lg->log, &val) != 1) {
 		fprintf(stderr, "!ERROR: log_read_seq: read failed\n");
-		return GDK_FAIL;
+		return LOG_EOF;
 	}
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
 		if (BUNinplace(lg->seqs_val, p, &val, FALSE) != GDK_SUCCEED)
-			return GDK_FAIL;
+			return LOG_ERR;
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;
 			if (BUNappend(lg->dseqs, &pos, FALSE) != GDK_SUCCEED)
-				return GDK_FAIL;
+				return LOG_ERR;
 		}
 		if (BUNappend(lg->seqs_id, &seq, FALSE) != GDK_SUCCEED ||
 		    BUNappend(lg->seqs_val, &val, FALSE) != GDK_SUCCEED)
-			return GDK_FAIL;
+			return LOG_ERR;
 	}
-	return GDK_SUCCEED;
+	return LOG_OK;
 }
 
-static gdk_return
+static log_return
 log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 {
 	log_bid bid = logger_find_bat(lg, name);
 	BAT *b = BATdescriptor(bid);
-	gdk_return res = GDK_SUCCEED;
+	log_return res = LOG_OK;
 	int ht = -1, tt = -1, tseq = 0;
 
 	if (lg->debug & 1)
@@ -353,50 +357,60 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		if (l->flag == LOG_UPDATE) {
 			uid = COLnew(0, ht, (BUN) l->nr, PERSISTENT);
 			if (uid == NULL)
-				return GDK_FAIL;
+				return LOG_ERR;
 		} else {
 			assert(ht == TYPE_void);
 		}
 		r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
 		if (r == NULL) {
 			BBPreclaim(uid);
-			return GDK_FAIL;
+			return LOG_ERR;
 		}
 
 		if (tseq)
 			BATtseqbase(r, 0);
 
 		if (ht == TYPE_void && l->flag == LOG_INSERT) {
-			for (; res == GDK_SUCCEED && l->nr > 0; l->nr--) {
+			for (; res == LOG_OK && l->nr > 0; l->nr--) {
 				void *t = rt(tv, lg->log, 1);
 
 				if (t == NULL) {
-					res = GDK_FAIL;
+					/* see if failure was due to
+					 * malloc or something less
+					 * serious (in the current
+					 * context) */
+					if (strstr(GDKerrbuf, "alloc") == NULL)
+						res = LOG_EOF;
+					else
+						res = LOG_ERR;
 					break;
 				}
 				if (BUNappend(r, t, TRUE) != GDK_SUCCEED)
-					res = GDK_FAIL;
+					res = LOG_ERR;
 				if (t != tv)
 					GDKfree(t);
 			}
 		} else {
 			void *(*rh) (ptr, stream *, size_t) = ht == TYPE_void ? BATatoms[TYPE_oid].atomRead : BATatoms[ht].atomRead;
-			// FIXME unchecked_malloc ATOMnil can return NULL
-
 			void *hv = ATOMnil(ht);
 
 			if (hv == NULL)
-				res = GDK_FAIL;
+				res = LOG_ERR;
 
-			for (; res == GDK_SUCCEED && l->nr > 0; l->nr--) {
+			for (; res == LOG_OK && l->nr > 0; l->nr--) {
 				void *h = rh(hv, lg->log, 1);
 				void *t = rt(tv, lg->log, 1);
 
-				if (h == NULL || t == NULL)
-					res = GDK_FAIL;
-				else if (BUNappend(uid, h, TRUE) != GDK_SUCCEED ||
-					 BUNappend(r, t, TRUE) != GDK_SUCCEED)
-					res = GDK_FAIL;
+				if (h == NULL)
+					res = LOG_EOF;
+				else if (t == NULL) {
+					if (strstr(GDKerrbuf, "malloc") == NULL)
+						res = LOG_EOF;
+					else
+						res = LOG_ERR;
+				} else if (BUNappend(uid, h, TRUE) != GDK_SUCCEED ||
+					   BUNappend(r, t, TRUE) != GDK_SUCCEED)
+					res = LOG_ERR;
 				if (t != tv)
 					GDKfree(t);
 			}
@@ -406,19 +420,25 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			GDKfree(tv);
 		logbat_destroy(b);
 
-		if (res == GDK_SUCCEED && tr_grow(tr)) {
-			tr->changes[tr->nr].type = l->flag;
-			tr->changes[tr->nr].nr = l->nr;
-			tr->changes[tr->nr].ht = ht;
-			tr->changes[tr->nr].tt = tt;
-			tr->changes[tr->nr].name = GDKstrdup(name);
-			tr->changes[tr->nr].b = r;
-			tr->changes[tr->nr].uid = uid;
-			tr->nr++;
+		if (res == LOG_OK) {
+			if (tr_grow(tr) == GDK_SUCCEED) {
+				tr->changes[tr->nr].type = l->flag;
+				tr->changes[tr->nr].nr = l->nr;
+				tr->changes[tr->nr].ht = ht;
+				tr->changes[tr->nr].tt = tt;
+				if ((tr->changes[tr->nr].name = GDKstrdup(name)) == NULL) {
+					return LOG_ERR;
+				}
+				tr->changes[tr->nr].b = r;
+				tr->changes[tr->nr].uid = uid;
+				tr->nr++;
+			} else {
+				res = LOG_ERR;
+			}
 		}
 	} else {
 		/* bat missing ERROR or ignore ? currently error. */
-		res = GDK_FAIL;
+		res = LOG_ERR;
 	}
 	return res;
 }
@@ -485,15 +505,17 @@ la_bat_updates(logger *lg, logaction *la)
 	return GDK_SUCCEED;
 }
 
-static void
+static log_return
 log_read_destroy(logger *lg, trans *tr, char *name)
 {
 	(void) lg;
-	if (tr_grow(tr)) {
+	if (tr_grow(tr) == GDK_SUCCEED) {
 		tr->changes[tr->nr].type = LOG_DESTROY;
-		tr->changes[tr->nr].name = GDKstrdup(name);
+		if ((tr->changes[tr->nr].name = GDKstrdup(name)) == NULL)
+			return LOG_ERR;
 		tr->nr++;
 	}
+	return LOG_OK;
 }
 
 static gdk_return
@@ -524,62 +546,64 @@ la_bat_destroy(logger *lg, logaction *la)
 	return GDK_SUCCEED;
 }
 
-static gdk_return
+static log_return
 log_read_create(logger *lg, trans *tr, char *name)
 {
 	char *buf = log_read_string(lg);
+	int ht, tt;
+	char *ha, *ta;
+
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_read_create %s\n", name);
 
-	if (!buf) {
-		return GDK_FAIL;
-	} else {
-		int ht, tt;
-		char *ha = buf, *ta = strchr(buf, ',');
-
-		if (!ta) {
-			fprintf(stderr, "!ERROR: log_read_create: inconsistent data read\n");
-			return GDK_FAIL;
-		}
-		*ta = 0;
-		ta++;		/* skip over , */
-		if (strcmp(ha, "wrd") == 0) {
-#if SIZEOF_SSIZE_T == SIZEOF_INT
-			ha = "int";
-#else
-			ha = "lng";
-#endif
-		}
-		if (strcmp(ha, "vid") == 0) {
-			ht = -1;
-		} else {
-			ht = ATOMindex(ha);
-		}
-		if (strcmp(ta, "wrd") == 0) {
-#if SIZEOF_SSIZE_T == SIZEOF_INT
-			ta = "int";
-#else
-			ta = "lng";
-#endif
-		}
-		if (strcmp(ta, "vid") == 0) {
-			tt = -1;
-		} else {
-			tt = ATOMindex(ta);
-		}
-		if (tr_grow(tr)) {
-			tr->changes[tr->nr].type = LOG_CREATE;
-			tr->changes[tr->nr].ht = ht;
-			tr->changes[tr->nr].tt = tt;
-			tr->changes[tr->nr].name = GDKstrdup(name);
-			tr->changes[tr->nr].b = NULL;
-			tr->nr++;
-		}
+	if (buf == NULL)
+		return LOG_EOF;
+	if (buf == (char *) -1)
+		return LOG_ERR;
+	ha = buf;
+	ta = strchr(buf, ',');
+	if (ta == NULL) {
+		fprintf(stderr, "!ERROR: log_read_create: inconsistent data read\n");
+		return LOG_ERR;
 	}
-	if (buf)
-		GDKfree(buf);
-	return GDK_SUCCEED;
+	*ta++ = 0;		/* skip over , */
+	if (strcmp(ha, "wrd") == 0) {
+#if SIZEOF_SSIZE_T == SIZEOF_INT
+		ha = "int";
+#else
+		ha = "lng";
+#endif
+	}
+	if (strcmp(ha, "vid") == 0) {
+		ht = -1;
+	} else {
+		ht = ATOMindex(ha);
+	}
+	if (strcmp(ta, "wrd") == 0) {
+#if SIZEOF_SSIZE_T == SIZEOF_INT
+		ta = "int";
+#else
+		ta = "lng";
+#endif
+	}
+	if (strcmp(ta, "vid") == 0) {
+		tt = -1;
+	} else {
+		tt = ATOMindex(ta);
+	}
+	GDKfree(buf);
+	if (tr_grow(tr) == GDK_SUCCEED) {
+		tr->changes[tr->nr].type = LOG_CREATE;
+		tr->changes[tr->nr].ht = ht;
+		tr->changes[tr->nr].tt = tt;
+		if ((tr->changes[tr->nr].name = GDKstrdup(name)) == NULL)
+			return LOG_ERR;
+		tr->changes[tr->nr].b = NULL;
+		tr->nr++;
+	}
+
+	return LOG_OK;
 }
 
 static gdk_return
@@ -603,17 +627,19 @@ la_bat_create(logger *lg, logaction *la)
 	return GDK_SUCCEED;
 }
 
-static void
+static log_return
 log_read_use(logger *lg, trans *tr, logformat *l, char *name)
 {
 	(void) lg;
-	if (tr_grow(tr)) {
-		tr->changes[tr->nr].type = LOG_USE;
-		tr->changes[tr->nr].nr = l->nr;
-		tr->changes[tr->nr].name = GDKstrdup(name);
-		tr->changes[tr->nr].b = NULL;
-		tr->nr++;
-	}
+	if (tr_grow(tr) != GDK_SUCCEED)
+		return LOG_ERR;
+	tr->changes[tr->nr].type = LOG_USE;
+	tr->changes[tr->nr].nr = l->nr;
+	if ((tr->changes[tr->nr].name = GDKstrdup(name)) == NULL)
+		return LOG_ERR;
+	tr->changes[tr->nr].b = NULL;
+	tr->nr++;
+	return LOG_OK;
 }
 
 static gdk_return
@@ -695,7 +721,7 @@ tr_find(trans *tr, int tid)
 		p = t;
 		t = t->tr;
 	}
-	if (!t)
+	if (t == NULL)
 		return NULL;	/* BAD missing transaction */
 	if (t == tr)
 		return tr;
@@ -741,19 +767,21 @@ la_destroy(logaction *c)
 		logbat_destroy(c->b);
 }
 
-static int
+static gdk_return
 tr_grow(trans *tr)
 {
 	if (tr->nr == tr->sz) {
+		logaction *changes;
 		tr->sz <<= 1;
-		tr->changes = (logaction *) GDKrealloc(tr->changes, tr->sz * sizeof(logaction));
-		if (tr->changes == NULL)
-			return 0;
+		changes = GDKrealloc(tr->changes, tr->sz * sizeof(logaction));
+		if (changes == NULL)
+			return GDK_FAIL;
+		tr->changes = changes;
 	}
 	/* cleanup the next */
 	tr->changes[tr->nr].name = NULL;
 	tr->changes[tr->nr].b = NULL;
-	return 1;
+	return GDK_SUCCEED;
 }
 
 static trans *
@@ -767,21 +795,6 @@ tr_destroy(trans *tr)
 }
 
 static trans *
-tr_commit(logger *lg, trans *tr)
-{
-	int i;
-
-	if (lg->debug & 1)
-		fprintf(stderr, "#tr_commit\n");
-
-	for (i = 0; i < tr->nr; i++) {
-		la_apply(lg, &tr->changes[i]);
-		la_destroy(&tr->changes[i]);
-	}
-	return tr_destroy(tr);
-}
-
-static trans *
 tr_abort(logger *lg, trans *tr)
 {
 	int i;
@@ -791,6 +804,26 @@ tr_abort(logger *lg, trans *tr)
 
 	for (i = 0; i < tr->nr; i++)
 		la_destroy(&tr->changes[i]);
+	return tr_destroy(tr);
+}
+
+static trans *
+tr_commit(logger *lg, trans *tr)
+{
+	int i;
+
+	if (lg->debug & 1)
+		fprintf(stderr, "#tr_commit\n");
+
+	for (i = 0; i < tr->nr; i++) {
+		if (la_apply(lg, &tr->changes[i]) != GDK_SUCCEED) {
+			do {
+				tr = tr_abort(lg, tr);
+			} while (tr != NULL);
+			return (trans *) -1;
+		}
+		la_destroy(&tr->changes[i]);
+	}
 	return tr_destroy(tr);
 }
 
@@ -820,12 +853,14 @@ logger_update_catalog_file(logger *lg, const char *dir, const char *filename, in
 	}
 
 	if ((fp = GDKfileopen(farmid, dir, filename, NULL, "w")) != NULL) {
-		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
+		if (fprintf(fp, "%06d\n\n", lg->version) < 0 ||
+		    fprintf(fp, LLFMT "\n", lg->id) < 0) {
 			fprintf(stderr, "!ERROR: logger_update_catalog_file: write to %s failed\n", filename);
+			fclose(fp);
 			return GDK_FAIL;
 		}
 
-		if (fprintf(fp, LLFMT "\n", lg->id) < 0 || fclose(fp) < 0) {
+		if (fclose(fp) < 0) {
 			fprintf(stderr, "!ERROR: logger_update_catalog_file: write/flush to %s failed\n", filename);
 			return GDK_FAIL;
 		}
@@ -886,23 +921,18 @@ logger_open(logger *lg)
 static void
 logger_close(logger *lg)
 {
-	stream *log = lg->log;
-
-	if (log) {
-		close_stream(log);
-	}
+	close_stream(lg->log);
 	lg->log = NULL;
 }
 
-static int
+static gdk_return
 logger_readlog(logger *lg, char *filename)
 {
 	trans *tr = NULL;
 	logformat l;
-	int err = 0;
+	log_return err = LOG_OK;
 	time_t t0, t1;
 	struct stat sb;
-	lng fpos;
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
@@ -911,30 +941,30 @@ logger_readlog(logger *lg, char *filename)
 	lg->log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
-	if (!lg->log || mnstr_errnr(lg->log)) {
-		if (lg->log)
-			mnstr_destroy(lg->log);
+	if (lg->log == NULL || mnstr_errnr(lg->log)) {
+		mnstr_destroy(lg->log);
 		lg->log = NULL;
-		return -1;
+		return GDK_SUCCEED;
 	}
 	if (fstat(fileno(getFile(lg->log)), &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
 		mnstr_destroy(lg->log);
 		lg->log = NULL;
-		/* If we can't read the files, it might simply be empty.
-		 * In that case we can't return -1, since it's actually fine */
-		return 1;
+		/* If the file could be opened, but fstat fails,
+		 * something weird is going on */
+		return GDK_FAIL;
 	}
 	t0 = time(NULL);
 	if (lg->debug & 1) {
 		printf("# Start reading the write-ahead log '%s'\n", filename);
 		fflush(stdout);
 	}
-	while (!err && log_read_format(lg, &l)) {
+	while (err == LOG_OK && log_read_format(lg, &l)) {
 		char *name = NULL;
 
 		t1 = time(NULL);
 		if (t1 - t0 > 10) {
+			lng fpos;
 			t0 = t1;
 			/* not more than once every 10 seconds */
 			if (mnstr_fgetpos(lg->log, &fpos) == 0) {
@@ -945,8 +975,12 @@ logger_readlog(logger *lg, char *filename)
 		if (l.flag != LOG_START && l.flag != LOG_END && l.flag != LOG_SEQ) {
 			name = log_read_string(lg);
 
-			if (!name) {
-				err = -1;
+			if (name == NULL) {
+				err = LOG_EOF;
+				break;
+			}
+			if (name == (char *) -1) {
+				err = LOG_ERR;
 				break;
 			}
 		}
@@ -965,62 +999,78 @@ logger_readlog(logger *lg, char *filename)
 		/* find proper transaction record */
 		if (l.flag != LOG_START)
 			tr = tr_find(tr, l.tid);
+		/* the functions we call here can succeed (LOG_OK),
+		 * but they can also fail for two different reasons:
+		 * they can run out of input (LOG_EOF -- this is not
+		 * serious, we just abort the remaining transactions),
+		 * or some malloc or BAT update fails (LOG_ERR -- this
+		 * is serious, we must abort the complete process);
+		 * the latter failure causes the current function to
+		 * return GDK_FAIL */
 		switch (l.flag) {
 		case LOG_START:
 			assert(l.nr <= (lng) INT_MAX);
 			if (l.nr > lg->tid)
 				lg->tid = (int)l.nr;
-			tr = tr_create(tr, (int)l.nr);
+			if ((tr = tr_create(tr, (int)l.nr)) == NULL) {
+				err = LOG_ERR;
+				break;
+			}
 			if (lg->debug & 1)
 				fprintf(stderr, "#logger tstart %d\n", tr->tid);
 			break;
 		case LOG_END:
 			if (tr == NULL)
-				err = 1;
+				err = LOG_EOF;
 			else if (l.tid != l.nr)	/* abort record */
 				tr = tr_abort(lg, tr);
 			else
 				tr = tr_commit(lg, tr);
 			break;
 		case LOG_SEQ:
-			err = (log_read_seq(lg, &l) != GDK_SUCCEED);
+			err = log_read_seq(lg, &l);
 			break;
 		case LOG_INSERT:
 		case LOG_UPDATE:
 			if (name == NULL || tr == NULL)
-				err = 1;
+				err = LOG_EOF;
 			else
-				err = (log_read_updates(lg, tr, &l, name) != GDK_SUCCEED);
+				err = log_read_updates(lg, tr, &l, name);
 			break;
 		case LOG_CREATE:
 			if (name == NULL || tr == NULL)
-				err = 1;
+				err = LOG_EOF;
 			else
-				err = (log_read_create(lg, tr, name) != GDK_SUCCEED);
+				err = log_read_create(lg, tr, name);
 			break;
 		case LOG_USE:
 			if (name == NULL || tr == NULL)
-				err = 1;
+				err = LOG_EOF;
 			else
-				log_read_use(lg, tr, &l, name);
+				err = log_read_use(lg, tr, &l, name);
 			break;
 		case LOG_DESTROY:
 			if (name == NULL || tr == NULL)
-				err = 1;
+				err = LOG_EOF;
 			else
-				log_read_destroy(lg, tr, name);
+				err = log_read_destroy(lg, tr, name);
 			break;
 		case LOG_CLEAR:
 			if (name == NULL || tr == NULL)
-				err = 1;
+				err = LOG_EOF;
 			else
-				log_read_clear(lg, tr, name);
+				err = log_read_clear(lg, tr, name);
 			break;
 		default:
-			err = -2;
+			err = LOG_ERR;
 		}
 		if (name)
 			GDKfree(name);
+		if (tr == (trans *) -1) {
+			err = LOG_ERR;
+			tr = NULL;
+			break;
+		}
 	}
 	logger_close(lg);
 
@@ -1032,7 +1082,10 @@ logger_readlog(logger *lg, char *filename)
 		printf("# Finished reading the write-ahead log '%s'\n", filename);
 		fflush(stdout);
 	}
-	return 0;
+	/* we cannot distinguish errors from incomplete transactions
+	 * (even if we would log aborts in the logs). So we simply
+	 * abort and move to the next log file */
+	return err == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
 }
 
 /*
@@ -1060,28 +1113,13 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		if (!lg->shared && lid >= lg->id) {
 			lg->id = lid;
 			snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
-			switch (logger_readlog(lg, log_filename)) {
-			case 0:
-				res = GDK_SUCCEED;
-				break;
-			case -1:
-				res = GDK_FAIL;
-				break;
-			case 1:
-				/* we cannot distinguish errors from
-				 * incomplete transactions (even if we
-				 * would log aborts in the logs). So
-				 * we simply abort and move to the
-				 * next log file */
-				res = GDK_SUCCEED;
-				break;
-			}
+			res = logger_readlog(lg, log_filename);
 		} else {
 			while (lid >= lg->id && res == GDK_SUCCEED) {
 				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
-				if (logger_readlog(lg, log_filename) == -1 && lg->shared && lg->id > 1) {
+				if ((res = logger_readlog(lg, log_filename)) != GDK_SUCCEED && lg->shared && lg->id > 1) {
 					/* The only special case is if
-					 * the files is missing
+					 * the file is missing
 					 * altogether and the logger
 					 * is a shared one, then we
 					 * have missing transactions
@@ -1089,7 +1127,6 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 					 * and we also ignore the 1st
 					 * files it most likely never
 					 * exists. */
-					res = GDK_FAIL;
 					fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", log_filename);
 				}
 				/* Increment the id only at the end,
