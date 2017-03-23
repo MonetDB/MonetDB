@@ -243,21 +243,13 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for( i = 0; msg ==  MAL_SUCCEED && i < MAXOLTPLOCKS; i++)
 	if (oltp_locks[i].used ){
 		now = oltp_locks[i].start * 1000; // convert to timestamp microsecond
-		msg= MTIMEunix_epoch(&ts);
-		if ( msg == MAL_SUCCEED)
-			msg = MTIMEtimestamp_add(&tsn, &ts, &now);
-
-		if( msg== MAL_SUCCEED && oltp_locks[i].start)
-			BUNappend(bs, &tsn, FALSE);
-		else
-			BUNappend(bs, timestamp_nil, FALSE);
-
-		if( oltp_locks[i].cntxt)
-			BUNappend(bu, &oltp_locks[i].cntxt->username, FALSE);
-		else 
-			BUNappend(bu, str_nil, FALSE);
-		BUNappend(bl, &i, FALSE);
-		BUNappend(bc, &oltp_locks[i].used, FALSE);
+		if ((msg = MTIMEunix_epoch(&ts)) != MAL_SUCCEED ||
+			(msg = MTIMEtimestamp_add(&tsn, &ts, &now)) != MAL_SUCCEED ||
+			BUNappend(bs, oltp_locks[i].start ? &tsn : timestamp_nil, FALSE) != GDK_SUCCEED ||
+			BUNappend(bu, oltp_locks[i].cntxt ? oltp_locks[i].cntxt->username : str_nil, FALSE) != GDK_SUCCEED ||
+			BUNappend(bl, &i, FALSE) != GDK_SUCCEED ||
+			BUNappend(bc, &oltp_locks[i].used, FALSE) != GDK_SUCCEED)
+			goto bailout;
 	}
 	//OLTPdump_(cntxt,"#lock table\n");
 	BBPkeepref(*started = bs->batCacheid);
@@ -265,6 +257,13 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*lockid = bl->batCacheid);
 	BBPkeepref(*used = bc->batCacheid);
 	return msg;
+  bailout:
+	BBPunfix(bs->batCacheid);
+	BBPunfix(bl->batCacheid);
+	BBPunfix(bu->batCacheid);
+	BBPunfix(bc->batCacheid);
+	BBPunfix(bq->batCacheid);
+	return msg ? msg : createException(MAL, "oltp.table", MAL_MALLOC_FAIL);
 }
 
 str

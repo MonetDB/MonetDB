@@ -75,10 +75,6 @@ static unsigned char localtype = 0177;
 static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
 
-#define newColumn(Var,Type,sz,Tag)						\
-	Var = COLnew(0, Type, sz, TRANSIENT);				\
-	if ( Var == NULL) throw(MAL,Tag,MAL_MALLOC_FAIL);
-
 /**
  * Returns a BAT with valid redirects for the given pattern.  If
  * merovingian is not running, this function throws an error.
@@ -104,7 +100,9 @@ str RMTresolve(bat *ret, str *pat) {
 		throw(MAL, "remote.resolve", "this function needs the mserver "
 				"have been started by merovingian");
 
-	newColumn(list, TYPE_str, 0, "remote.resolve");
+	list = COLnew(0, TYPE_str, 0, TRANSIENT);
+	if (list == NULL)
+		throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
 
 	/* extract port from mero_uri, let mapi figure out the rest */
 	mero_uri+=strlen("mapi:monetdb://");
@@ -119,7 +117,14 @@ str RMTresolve(bat *ret, str *pat) {
 		throw(MAL, "remote.resolve", "unknown failure when resolving pattern");
 
 	while (*redirs != NULL) {
-		BUNappend(list, (ptr)*redirs, FALSE);
+		if (BUNappend(list, (ptr)*redirs, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(list);
+			do
+				free(*redirs);
+			while (*++redirs);
+			free(or);
+			throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
+		}
 		free(*redirs);
 		redirs++;
 	}
@@ -523,15 +528,17 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			return var;
 		}
 		t = getBatType(rtype);
-		newColumn(b, t, 0, "remote.get");
+		b = COLnew(0, t, 0, TRANSIENT);
+		if (b == NULL)
+			throw(MAL, "remote.get", MAL_MALLOC_FAIL);
 
 		if (ATOMvarsized(t)) {
 			while (mapi_fetch_row(mhdl)) {
-				var = mapi_fetch_field(mhdl, 1); 
-				if( var == NULL)
-					BUNappend(b, str_nil, FALSE);
-				else 
-					BUNappend(b, var, FALSE);
+				var = mapi_fetch_field(mhdl, 1);
+				if (BUNappend(b, var == NULL ? str_nil : var, FALSE) != GDK_SUCCEED) {
+					BBPreclaim(b);
+					throw(MAL, "remote.get", MAL_MALLOC_FAIL);
+				}
 			}
 		} else
 			while (mapi_fetch_row(mhdl)) {
@@ -540,8 +547,12 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					var = "nil";
 				s = 0;
 				r = NULL;
-				ATOMfromstr(t, &r, &s, var);
-				BUNappend(b, r, FALSE);
+				if (ATOMfromstr(t, &r, &s, var) <= 0 ||
+					BUNappend(b, r, FALSE) != GDK_SUCCEED) {
+					BBPreclaim(b);
+					GDKfree(r);
+					throw(MAL, "remote.get", GDK_EXCEPTION);
+				}
 				GDKfree(r);
 			}
 
@@ -969,7 +980,9 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	t = getArgType(mb, pci, 1); /* tail type */
 	size = *getArgReference_int(stk, pci, 2); /* size */
 
-	newColumn(b, t, size, "remote.load");
+	b = COLnew(0, t, size, TRANSIENT);
+	if (b == NULL)
+		throw(MAL, "remote.load", MAL_MALLOC_FAIL);
 
 	/* grab the input stream and start reading */
 	fdin->eof = 0;
@@ -997,8 +1010,12 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		s = 0;
 		r = NULL;
-		ATOMfromstr(t, &r, &s, var);
-		BUNappend(b, r, FALSE);
+		if (ATOMfromstr(t, &r, &s, var) <= 0 ||
+			BUNappend(b, r, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			GDKfree(r);
+			throw(MAL, "remote.get", GDK_EXCEPTION);
+		}
 		GDKfree(r);
 	}
 
@@ -1193,7 +1210,9 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		hdr++;
 	}
 
-	newColumn(b, bb.Ttype, bb.size, "remote.get");
+	b = COLnew(0, bb.Ttype, bb.size, TRANSIENT);
+	if (b == NULL)
+		throw(MAL, "remote.get", MAL_MALLOC_FAIL);
 
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */
