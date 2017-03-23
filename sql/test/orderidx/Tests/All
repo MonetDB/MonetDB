@@ -1,3 +1,4 @@
 simpletable
 smalltable
 oidx_all_types
+HAVE_HGE?oidx_hge_type
