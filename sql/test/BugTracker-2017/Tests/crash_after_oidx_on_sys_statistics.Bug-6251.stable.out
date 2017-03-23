@@ -1,0 +1,129 @@
+stdout of test 'crash_after_oidx_on_sys_statistics.Bug-6251` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 17:38:14 >  
+# 17:38:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32740" "--set" "mapi_usock=/var/tmp/mtest-1294/.s.monetdb.32740" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 17:38:14 >  
+
+# MonetDB 5 server v11.25.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:32740/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1294/.s.monetdb.32740
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 17:38:15 >  
+# 17:38:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1294" "--port=32740"
+# 17:38:15 >  
+
+#DELETE FROM sys.statistics;
+[ 0	]
+#SELECT /*column_id,*/ type, width, /*stamp,*/ "sample", count, "unique", nils, /*minval,*/ /*maxval,*/ sorted, revsorted FROM sys.statistics ORDER BY column_id;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
+% clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
+% 9,	1,	1,	1,	1,	1,	5,	5 # length
+[ "int",	4,	0,	0,	0,	0,	true,	true	]
+[ "clob",	1,	0,	0,	0,	0,	true,	true	]
+[ "int",	4,	0,	0,	0,	0,	true,	true	]
+[ "timestamp",	8,	0,	0,	0,	0,	true,	true	]
+[ "bigint",	8,	0,	0,	0,	0,	true,	true	]
+[ "bigint",	8,	0,	0,	0,	0,	true,	true	]
+[ "bigint",	8,	0,	0,	0,	0,	true,	true	]
+[ "bigint",	8,	0,	0,	0,	0,	true,	true	]
+[ "clob",	1,	0,	0,	0,	0,	true,	true	]
+[ "clob",	1,	0,	0,	0,	0,	true,	true	]
+[ "boolean",	1,	0,	0,	0,	0,	true,	true	]
+[ "boolean",	1,	0,	0,	0,	0,	true,	true	]
+#SELECT /*column_id,*/ type, width, /*stamp,*/ "sample", count, "unique", nils, /*minval,*/ /*maxval,*/ sorted, revsorted FROM sys.statistics ORDER BY column_id;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
+% clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
+% 9,	1,	2,	2,	2,	1,	5,	5 # length
+[ "int",	4,	12,	12,	12,	0,	true,	false	]
+[ "clob",	1,	12,	12,	5,	0,	false,	false	]
+[ "int",	4,	12,	12,	3,	0,	false,	false	]
+[ "timestamp",	8,	12,	12,	1,	0,	true,	true	]
+[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
+[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
+[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
+[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
+[ "clob",	1,	12,	12,	1,	0,	true,	true	]
+[ "clob",	1,	12,	12,	1,	0,	true,	true	]
+[ "boolean",	1,	12,	12,	1,	0,	true,	true	]
+[ "boolean",	1,	12,	12,	1,	0,	true,	true	]
+#CREATE ORDERED INDEX stat_oidx ON sys.statistics (width);
+#SELECT /*column_id,*/ type, width, /*stamp,*/ "sample", count, "unique", nils, /*minval,*/ /*maxval,*/ sorted, revsorted FROM sys.statistics ORDER BY column_id;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
+% clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
+% 9,	1,	2,	2,	2,	1,	5,	5 # length
+[ "int",	4,	12,	12,	12,	0,	true,	false	]
+[ "clob",	1,	12,	12,	5,	0,	false,	false	]
+[ "int",	4,	12,	12,	3,	0,	false,	false	]
+[ "timestamp",	8,	12,	12,	1,	0,	true,	true	]
+[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
+[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
+[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
+[ "bigint",	8,	12,	12,	1,	0,	true,	true	]
+[ "clob",	1,	12,	12,	1,	0,	true,	true	]
+[ "clob",	1,	12,	12,	1,	0,	true,	true	]
+[ "boolean",	1,	12,	12,	1,	0,	true,	true	]
+[ "boolean",	1,	12,	12,	1,	0,	true,	true	]
+#DELETE FROM sys.statistics;
+[ 12	]
+
+# 17:38:15 >  
+# 17:38:15 >  "Done."
+# 17:38:15 >  
+
