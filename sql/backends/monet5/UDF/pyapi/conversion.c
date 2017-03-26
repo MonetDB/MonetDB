@@ -731,7 +731,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
 				ele_blob->nitems = blob_len;
 				memcpy(ele_blob->data, data, blob_len);
 			}
-			BUNappend(b, ele_blob, FALSE);
+			if (BUNappend(b, ele_blob, FALSE) != GDK_SUCCEED) {
+				goto bunins_failed;
+			}
 			GDKfree(ele_blob);
 			data += ret->memory_size;
 		}
@@ -812,6 +814,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
 	}
 
 	return b;
+  bunins_failed:
+	BBPunfix(b->batCacheid);
+	msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
 wrapup:
 	*return_message = msg;
 	return NULL;
@@ -872,7 +877,10 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,  int *re
 			if (strConversion(&result, &length, element) == 0) {
 				return createException(MAL, "pyapi.eval", "Failed to convert element to string.");
 			}
-			BUNappend(*ret_bat, result, FALSE);
+			if (BUNappend(*ret_bat, result, FALSE) != GDK_SUCCEED) {
+				BBPunfix((*ret_bat)->batCacheid);
+				throw(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+			}
 		}
 		if (result) {
 			GDKfree(result);

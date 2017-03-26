@@ -965,8 +965,16 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	for (i = 0; i < n - 1; i++) {
 		for (j = i + 1; (j < n && qbuf[j] == qbuf[i] && pbuf[j] <= (pbuf[i] + (*k + *c * MYMIN(lbuf[i], lbuf[j])))); j++) {
 			if (ibuf[i] != ibuf[j] && abs(lbuf[i] - lbuf[j]) <= (*k + *c * MYMIN(lbuf[i], lbuf[j]))) {
-				BUNappend(bn, ibuf + i, FALSE);
-				BUNappend(bn2, ibuf + j, FALSE);
+				if (BUNappend(bn, ibuf + i, FALSE) != GDK_SUCCEED ||
+					BUNappend(bn2, ibuf + j, FALSE) != GDK_SUCCEED) {
+					BBPunfix(qgram->batCacheid);
+					BBPunfix(id->batCacheid);
+					BBPunfix(pos->batCacheid);
+					BBPunfix(len->batCacheid);
+					BBPreclaim(bn);
+					BBPreclaim(bn2);
+					throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
+				}
 			}
 		}
 	}
@@ -1030,7 +1038,11 @@ CMDstr2qgrams(bat *ret, str *val)
 	while (s[i]) {
 		if (utf8strncpy(qgram, sizeof(qgram), s + i, 4) < 4)
 			break;
-		BUNappend(bn, qgram, FALSE);
+		if (BUNappend(bn, qgram, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			GDKfree(s);
+			throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);
+		}
 		if ((s[i++] & 0xC0) == 0xC0) {
 			while ((s[i] & 0xC0) == 0x80)
 				i++;
