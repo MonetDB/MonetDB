@@ -63,7 +63,14 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		    	getFunctionId(p) != submaxRef &&
 		    	getFunctionId(p) != subavgRef &&
 		    	getFunctionId(p) != subsumRef &&
-		    	getFunctionId(p) != subprodRef)
+		    	getFunctionId(p) != subprodRef &&
+
+		        getFunctionId(p) != countRef &&
+		    	getFunctionId(p) != minRef &&
+		    	getFunctionId(p) != maxRef &&
+		    	getFunctionId(p) != avgRef &&
+		    	getFunctionId(p) != sumRef &&
+		    	getFunctionId(p) != prodRef)
 			return 0;
 
 		if (p->argc > 2 && (getModuleId(p) == rapiRef || getModuleId(p) == pyapiRef) && 
