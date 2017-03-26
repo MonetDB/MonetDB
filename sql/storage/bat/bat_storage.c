@@ -1779,7 +1779,7 @@ empty_idx(sql_idx *i)
 	sql_delta *bat = i->data;
 
 	if (!isTable(i->t) || !idx_has_column(i->type))
-		return ;
+		return LOG_OK;
 	assert(i->data && i->base.allocated && bat->bid == 0);
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
