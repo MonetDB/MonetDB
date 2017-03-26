@@ -1110,9 +1110,13 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 	set_processed(l);
 	set_processed(r);
 	rel = rel_setop(sql->sa, l, r, op_union);
+	if (!rel)
+		return NULL;
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 	set_processed(rel);
 	rel = rel_distinct(rel);
+	if (!rel)
+		return NULL;
 	if (exps_card(l->exps) <= CARD_AGGR &&
 	    exps_card(r->exps) <= CARD_AGGR)
 	{

@@ -622,39 +622,47 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			sel1 = sel;
 			sel2 = sel;
 			for( n = l->h; n; n = n->next ) {
-				s = exp_bin(sql, n->data, left, right, grp, ext, cnt, sel1); 
+				stmt *sin = (sel1 && sel1->nrcols)?sel1:NULL;
+
+				s = exp_bin(sql, n->data, left, right, grp, ext, cnt, sin); 
 				if (!s) 
 					return s;
-				if (sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
+				if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
 					assert(f);
 					s = stmt_binop(sql->sa, sel1, s, f);
-				}
-				if (sel1 && sel1->nrcols && s->nrcols == 0) {
+				} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
 					stmt *predicate = bin_first_column(sql->sa, left);
 				
 					predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
-					s = stmt_uselect(sql->sa, predicate, s, cmp_equal, sel1);
+					if (s->nrcols == 0)
+						s = stmt_uselect(sql->sa, predicate, s, cmp_equal, sel1);
+					else
+						s = stmt_uselect(sql->sa, predicate, sel1, cmp_equal, s);
 				}
 				sel1 = s;
 			}
 			l = e->r;
 			for( n = l->h; n; n = n->next ) {
-				s = exp_bin(sql, n->data, left, right, grp, ext, cnt, sel2); 
+				stmt *sin = (sel2 && sel2->nrcols)?sel2:NULL;
+
+				s = exp_bin(sql, n->data, left, right, grp, ext, cnt, sin); 
 				if (!s) 
 					return s;
-				if (sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
+				if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
 					assert(f);
 					s = stmt_binop(sql->sa, sel2, s, f);
-				}
-				if (sel2 && sel2->nrcols && s->nrcols == 0) {
+				} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
 					stmt *predicate = bin_first_column(sql->sa, left);
 				
 					predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
-					s = stmt_uselect(sql->sa, predicate, s, cmp_equal, sel2);
+					if (s->nrcols == 0)
+						s = stmt_uselect(sql->sa, predicate, s, cmp_equal, sel2);
+					else
+						s = stmt_uselect(sql->sa, predicate, sel2, cmp_equal, s);
 				}
 				sel2 = s;
 			}
