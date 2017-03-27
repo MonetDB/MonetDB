@@ -504,7 +504,7 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 		break;
 	case 4:
 #ifndef NDEBUG
-		memset(ps, 0, b->theap.base + b->theap.size - (char *) pi);
+		memset(pi, 0, b->theap.base + b->theap.size - (char *) pi);
 #endif
 		switch (b->twidth) {
 		case 1:
@@ -520,7 +520,7 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 #if SIZEOF_VAR_T == 8
 	case 8:
 #ifndef NDEBUG
-		memset(ps, 0, b->theap.base + b->theap.size - (char *) pv);
+		memset(pv, 0, b->theap.base + b->theap.size - (char *) pv);
 #endif
 		switch (b->twidth) {
 		case 1:
