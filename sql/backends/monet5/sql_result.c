@@ -1414,7 +1414,16 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 							blob *b = (blob*) BUNtail(iterators[i], row);
 							rowsize += sizeof(lng) + ((b->nitems == ~(size_t) 0) ? 0 : b->nitems);
 						} else {
-							size_t slen = strlen((const char*) BUNtail(iterators[i], row));
+							size_t slen = 0;
+							if (convert_to_string) {
+								void *element = (void*) BUNtail(iterators[i], crow);
+								if ((slen = BATatoms[mtype].atomToStr(&result, &length, element)) == 0) {
+									fres = -1;
+									goto cleanup;
+								}
+							} else {
+								slen = strlen((const char*) BUNtail(iterators[i], row));
+							}
 							rowsize += slen + 1;
 						}
 					}
