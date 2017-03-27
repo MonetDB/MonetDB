@@ -51,7 +51,7 @@ pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
 	if (BBPindex(buf) <= 0)
-		BATname(b,buf);
+		BBPrename(b->batCacheid, buf);
 	BATroles(b,X2);
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);

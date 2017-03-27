@@ -39,4 +39,3 @@ where
 order by
 	s_name;
 
-select * from optimizer_stats() stats;

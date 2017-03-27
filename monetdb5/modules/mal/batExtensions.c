@@ -169,7 +169,7 @@ CMDBATimprints(void *ret, bat *bid)
 
 	r = BATimprints(b);
 	BBPunfix(b->batCacheid);
-	if (r == GDK_FAIL)
+	if (r != GDK_SUCCEED)
 		throw(MAL, "bat.imprints", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

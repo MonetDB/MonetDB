@@ -1375,8 +1375,9 @@ MTIMEprelude(void *ret)
 		BBPreclaim(tzbatdef);
 		throw(MAL, "time.prelude", MAL_MALLOC_FAIL);
 	}
-	BBPrename(tzbatnme->batCacheid, "timezone_name");
-	BBPrename(tzbatdef->batCacheid, "timezone_def");
+	if (BBPrename(tzbatnme->batCacheid, "timezone_name") != 0 ||
+		BBPrename(tzbatdef->batCacheid, "timezone_def") != 0)
+		throw(MAL, "time.prelude", GDK_EXCEPTION);
 	timezone_name = tzbatnme;
 	timezone_def = tzbatdef;
 

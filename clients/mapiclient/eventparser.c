@@ -27,6 +27,8 @@ extern char *strptime(const char *, const char *, struct tm *);
 #include "strptime.c"
 #endif
 
+#define DATETIME_CHAR_LENGTH 27
+
 static void
 clearArguments(void)
 {
@@ -112,6 +114,8 @@ resetEventRecord(EventRecord *ev)
 	if( ev->stmt) free(ev->stmt);
 	if( ev->fcn) free(ev->fcn);
 	if( ev->numa) free(ev->numa);
+	if(ev->beauty) free(ev->beauty);
+	if(ev->prereq) free(ev->prereq);
 	memset( (char*) ev, 0, sizeof(EventRecord));
 	ev->eventnr = -1;
 	clearArguments();
@@ -173,9 +177,7 @@ int
 keyvalueparser(char *txt, EventRecord *ev)
 {
 	char *c, *s, *key, *val;
-	struct tm stm;
-
-	c= txt;
+	c = txt;
 
 	if( strstr(c,"\"argument\":") || strstr(c,"\"result\":"))
 		return parseArgument(txt,ev);
@@ -205,20 +207,35 @@ keyvalueparser(char *txt, EventRecord *ev)
 	} else val =c;
 
 	if( strstr(key,"clk")){
-		ev->clk = atol(val); 
+		ev->clk = atol(val);
 		return 0;
 	}
 	if( strstr(key,"ctime")){
-		/* convert time to epoch in seconds*/
-		ev->time= strdup(val);
-		memset(&stm, 0, sizeof(struct tm));
-		c = strptime(val + 1, "%H:%M:%S", &stm);
-		ev->clkticks = (((lng) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
-		c=  strchr(val,'.');
+		time_t sec;
+		struct tm curr_time;
+
+		c = strchr(val,'.');
+		if (c != NULL) {
+			*c = '\0';
+			c++;
+		}
+
+		sec = atol(val);
+#ifdef HAVE_LOCALTIME_R
+		(void)localtime_r(&sec, &curr_time);
+#else
+		curr_time = *localtime(&sec);
+#endif
+		ev->time = malloc(DATETIME_CHAR_LENGTH*sizeof(char));
+		snprintf(ev->time, DATETIME_CHAR_LENGTH, "%d/%02d/%02d %02d:%02d:%02d.%s",
+				 curr_time.tm_year + 1900, curr_time.tm_mon, curr_time.tm_mday,
+				 curr_time.tm_hour, curr_time.tm_min, curr_time.tm_sec,
+				 c);
+		ev->clkticks = sec * 1000000;
 		if (c != NULL) {
 			lng usec;
 			/* microseconds */
-			usec = strtoll(c + 1, NULL, 10);
+			usec = strtoll(c, NULL, 10);
 			assert(usec >= 0 && usec < 1000000);
 			ev->clkticks += usec;
 		}

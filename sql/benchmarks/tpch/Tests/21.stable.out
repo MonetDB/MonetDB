@@ -63,11 +63,6 @@ Ready.
 % char,	bigint # type
 % 25,	1 # length
 [ "Supplier#000000074",	9	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	2	]
 
 # 09:17:21 >  
 # 09:17:21 >  Done.

@@ -22,7 +22,7 @@
  *
  * The life time of such BATs is forcefully terminated after the block exit.
  */
-int
+str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, limit, slimit;
@@ -81,7 +81,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 */
 
 	if ( newMalBlkStmt(mb,mb->ssize) < 0) 
-		return 0;
+		throw(MAL, "optimizer.garbagecollector", MAL_MALLOC_FAIL);
 
 	p = NULL;
 	for (i = 0; i < limit; i++) {
@@ -132,14 +132,14 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	GDKfree(old);
 #ifdef DEBUG_OPT_GARBAGE
 	{ 	int k;
-		mnstr_printf(cntxt->fdout, "#Garbage collected BAT variables \n");
+		fprintf(stderr, "#Garbage collected BAT variables \n");
 		for ( k =0; k < vlimit; k++)
-		mnstr_printf(cntxt->fdout,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
+		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
 			getVarName(mb,k), mb->var[k]->eolife,
 			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
 		chkFlow(cntxt->fdout,mb);
-		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
-		mnstr_printf(cntxt->fdout, "End of GCoptimizer\n");
+		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
+		fprintf(stderr, "End of GCoptimizer\n");
 	}
 #endif
 
@@ -160,9 +160,12 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions+1,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
     newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
-	return actions+1;
+	return MAL_SUCCEED;
 }
 

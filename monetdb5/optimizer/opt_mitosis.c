@@ -29,7 +29,7 @@ eligible(MalBlkPtr mb)
 	return 1;
 }
 
-int
+str
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0, mito_size = 0, row_size = 0, mt = -1;
@@ -48,7 +48,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) stk;
 	if (!eligible(mb))
-		return 0;
+		return MAL_SUCCEED;
 
 	activeClients = mb->activeClients = MCactiveClients();
 	old = mb->stmt;
@@ -151,7 +151,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 
 #ifdef DEBUG_OPT_MITOSIS
-	mnstr_printf(cntxt->fdout, "#opt_mitosis: target is %s.%s "
+	fprintf(stderr, "#opt_mitosis: target is %s.%s "
 							   " with " BUNFMT " rows of size %d into " SZFMT
 								" rows/piece %d threads %d pieces"
 								" fixed parts %d fixed size %d\n",
@@ -165,7 +165,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->stop + 2 * estimate) < 0)
-		return 0;
+		throw(MAL,"optimizer.mitosis", MAL_MALLOC_FAIL);
 	estimate = 0;
 
 	schema = getVarConstant(mb, getArg(target, 2)).val.sval;
@@ -261,8 +261,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mitosis",1,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","mitosis", usec);
     newComment(mb,buf);
+	addtoMalBlkHistory(mb);
 
-	return 1;
+	return MAL_SUCCEED;
 }

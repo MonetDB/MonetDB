@@ -14,7 +14,7 @@
 #include "mal_instruction.h"
 #include "opt_candidates.h"
 
-int
+str
 OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
@@ -80,8 +80,10 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	//chkFlow(cntxt->fdout, mb);
 	//chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","candidates",1,GDKusec() -usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","candidates",usec);
     newComment(mb,buf);
+	addtoMalBlkHistory(mb);
 
-	return 1;
+	return MAL_SUCCEED;
 }

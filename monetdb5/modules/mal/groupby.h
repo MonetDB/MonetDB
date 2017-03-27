@@ -9,8 +9,6 @@
 #ifndef _GROUPBY_H
 #define _GROUPBY_H
 
-//#define _DEBUG_GROUPBY_
-
 #include "mal.h"
 #include "mal_interpreter.h"
 

@@ -92,7 +92,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sch = *getArgReference_str(stk, pci, 3);
 	}
 #ifdef DEBUG_SQL_STATISTICS
-	mnstr_printf(cntxt->fdout, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
+	fprintf(stderr, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
 #endif
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
@@ -179,16 +179,15 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 						if (maxlen < 4) {
 							GDKfree(maxval);
-							// FIXME unchecked_malloc GDKmalloc can return NULL
 							maxval = GDKmalloc(4);
-							if( maxval== NULL)
+							if( maxval== NULL) {
 								GDKfree(dquery);
 								throw(SQL, "analyze", MAL_MALLOC_FAIL);
+							}
 							maxlen = 4;
 						}
 						if (minlen < 4) {
 							GDKfree(minval);
-							// FIXME unchecked_malloc GDKmalloc can return NULL
 							minval = GDKmalloc(4);
 							if( minval== NULL){
 								GDKfree(dquery);
@@ -227,8 +226,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 						snprintf(query, querylen, "insert into sys.statistics (column_id,type,width,stamp,\"sample\",count,\"unique\",nils,minval,maxval,sorted,revsorted) values(%d,'%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s,%s);", c->base.id, c->type.type->sqlname, width, (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false", revsorted ? "true" : "false");
 #ifdef DEBUG_SQL_STATISTICS
-						mnstr_printf(cntxt->fdout, "%s\n", dquery);
-						mnstr_printf(cntxt->fdout, "%s\n", query);
+						fprintf(stderr, "%s\n", dquery);
+						fprintf(stderr, "%s\n", query);
 #endif
 						BBPunfix(bn->batCacheid);
 						msg = SQLstatementIntern(cntxt, &dquery, "SQLanalyze", TRUE, FALSE, NULL);

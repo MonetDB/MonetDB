@@ -521,8 +521,11 @@ main(int argc, char **av)
 	}
 	mo_free_options(set, setlen);
 
-	GDKsetenv("monet_version", VERSION);
-	GDKsetenv("monet_release", MONETDB_RELEASE);
+	if (GDKsetenv("monet_version", VERSION) != GDK_SUCCEED ||
+	    GDKsetenv("monet_release", MONETDB_RELEASE) != GDK_SUCCEED) {
+		fprintf(stderr, "!ERROR: GDKsetenv failed\n");
+		exit(1);
+	}
 
 	if ((modpath = GDKgetenv("monet_mod_path")) == NULL) {
 		/* start probing based on some heuristics given the binary
@@ -560,8 +563,11 @@ main(int argc, char **av)
 				   "allow finding modules\n");
 			fflush(NULL);
 		}
-		if (modpath != NULL)
-			GDKsetenv("monet_mod_path", modpath);
+		if (modpath != NULL &&
+		    GDKsetenv("monet_mod_path", modpath) != GDK_SUCCEED) {
+			fprintf(stderr, "!ERROR: GDKsetenv failed\n");
+			exit(1);
+		}
 	}
 
 	/* configure sabaoth to use the right dbpath and active database */

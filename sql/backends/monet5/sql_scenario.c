@@ -38,7 +38,6 @@
 #include "msabaoth.h"
 #include <mtime.h>
 #include "optimizer.h"
-#include "opt_statistics.h"
 #include "opt_prelude.h"
 #include "opt_pipes.h"
 #include "opt_mitosis.h"
@@ -60,7 +59,7 @@ monet5_freestack(int clientid, backend_stack stk)
 	if (p != NULL)
 		freeStack(p);
 #ifdef _SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#monet5_freestack\n");
+	fprintf(stderr, "#monet5_freestack\n");
 #endif
 }
 
@@ -78,7 +77,7 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 		GDKfree(msg);	/* do something with error? */
 
 #ifdef _SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#monet5_free:%d\n", nr);
+	fprintf(stderr, "#monet5_free:%d\n", nr);
 #endif
 }
 
@@ -166,8 +165,14 @@ SQLprelude(void *ret)
 	/* ms->tactics = .. */
 	ms->engine = "MALengine";
 	tmp = SQLinit();
-	if (tmp != MAL_SUCCEED)
-		return (tmp);
+	if (tmp != MAL_SUCCEED) {
+		fprintf(stderr, "Fatal error during initialization:\n%s\n", tmp);
+		freeException(tmp);
+		if ((tmp = GDKerrbuf) && *tmp)
+			fprintf(stderr, "GDK reported: %s\n", tmp);
+		fflush(stderr);
+		exit(1);
+	}
 #ifndef HAVE_EMBEDDED
 	fprintf(stdout, "# MonetDB/SQL module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */
@@ -215,7 +220,7 @@ SQLinit(void)
 	tzone tz;
 
 #ifdef _SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#SQLinit Monet 5\n");
+	fprintf(stderr, "#SQLinit Monet 5\n");
 #endif
 	if (SQLinitialized)
 		return MAL_SUCCEED;
@@ -264,7 +269,7 @@ str
 SQLexit(Client c)
 {
 #ifdef _SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#SQLexit\n");
+	fprintf(stderr, "#SQLexit\n");
 #endif
 	(void) c;		/* not used */
 	if (SQLinitialized == FALSE)
@@ -426,7 +431,7 @@ SQLinitClient(Client c)
 	static int maybeupgrade = 1;
 
 #ifdef _SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#SQLinitClient\n");
+	fprintf(stderr, "#SQLinitClient\n");
 #endif
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
@@ -597,7 +602,7 @@ str
 SQLexitClient(Client c)
 {
 #ifdef _SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#SQLexitClient\n");
+	fprintf(stderr, "#SQLexitClient\n");
 #endif
 	if (SQLinitialized == FALSE)
 		throw(SQL, "SQLexitClient", "Catalogue not available");
@@ -754,13 +759,13 @@ SQLreader(Client c)
 	}
 	if (!be || c->mode <= FINISHCLIENT) {
 #ifdef _SQL_READER_DEBUG
-		mnstr_printf(GDKout, "#SQL client finished\n");
+		fprintf(stderr, "#SQL client finished\n");
 #endif
 		c->mode = FINISHCLIENT;
 		return NULL;
 	}
 #ifdef _SQL_READER_DEBUG
-	mnstr_printf(GDKout, "#SQLparser: start reading SQL %s %s\n", (be->console ? " from console" : ""), (blocked ? "Blocked read" : ""));
+	fprintf(stderr, "#SQLparser: start reading SQL %s %s\n", (be->console ? " from console" : ""), (blocked ? "Blocked read" : ""));
 #endif
 	language = be->language;	/* 'S' for SQL, 'D' from debugger */
 	m = be->mvc;
@@ -770,7 +775,7 @@ SQLreader(Client c)
 	 */
 
 #ifdef _SQL_READER_DEBUG
-	mnstr_printf(GDKout, "#pos %d len %d eof %d \n", in->pos, in->len, in->eof);
+	fprintf(stderr, "#pos %d len %d eof %d \n", in->pos, in->len, in->eof);
 #endif
 	/*
 	 * Distinguish between console reading and mclient connections.
@@ -796,7 +801,7 @@ SQLreader(Client c)
 
 			if (c->bak) {
 #ifdef _SQL_READER_DEBUG
-				mnstr_printf(GDKout, "#Switch to backup stream\n");
+				fprintf(stderr, "#Switch to backup stream\n");
 #endif
 				in = c->fdin;
 				blocked = isa_block_stream(in->s);
@@ -825,7 +830,7 @@ SQLreader(Client c)
 				go = FALSE;
 			} else if (go && (rd = bstream_next(in)) <= 0) {
 #ifdef _SQL_READER_DEBUG
-				mnstr_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
+				fprintf(stderr, "#rd %d  language %d eof %d\n", rd, language, in->eof);
 #endif
 				if (be->language == 'D' && in->eof == 0)
 					return 0;
@@ -852,7 +857,7 @@ SQLreader(Client c)
 				}
 			}
 #ifdef _SQL_READER_DEBUG
-			mnstr_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
+			fprintf(stderr, "#SQL blk:%s\n", in->buf + in->pos);
 #endif
 		}
 	}
@@ -933,8 +938,8 @@ SQLparser(Client c)
 	oldstop = c->curprg->def->stop;
 	be->vtop = oldvtop;
 #ifdef _SQL_PARSER_DEBUG
-	mnstr_printf(GDKout, "#SQL compilation \n");
-	printf("debugger? %d(%d)\n", (int) be->mvc->emode, (int) be->mvc->emod);
+	fprintf(stderr, "#SQL compilation \n");
+	fprintf(stderr,"debugger? %d(%d)\n", (int) be->mvc->emode, (int) be->mvc->emod);
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
@@ -1189,7 +1194,7 @@ SQLCacheRemove(Client c, str nme)
 	Symbol s;
 
 #ifdef _SQL_CACHE_DEBUG
-	mnstr_printf(GDKout, "#SQLCacheRemove %s\n", nme);
+	fprintf(stderr, "#SQLCacheRemove %s\n", nme);
 #endif
 
 	s = findSymbolInModule(c->nspace, nme);

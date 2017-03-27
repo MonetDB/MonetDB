@@ -228,7 +228,7 @@ void chkFlow(stream *out, MalBlkPtr mb)
 		showScriptException(out, mb,lastInstruction,SYNTAX,
 			"instructions after END");
 #ifdef DEBUG_MAL_FCN
-		printFunction(out, mb, 0, LIST_MAL_ALL);
+		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 #endif
 		mb->errors++;
 	}
@@ -288,13 +288,13 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int j,i,x,y;
 #ifdef DEBUG_MAL_FCN
 	char *tpenme = getTypeName(t);
-	mnstr_printf(GDKout,"replace type _%d by type %s\n",v, tpenme);
+	fprintf(stderr,"#replace type _%d by type %s\n",v, tpenme);
 	GDKfree(tpenme);
 #endif
 	for(j=0; j<mb->stop; j++){
 	    p= getInstrPtr(mb,j);
 #ifdef DEBUG_MAL_FCN
-		printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
+		fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
 #endif
 	if( p->polymorphic)
 	for(i=0;i<p->argc; i++)
@@ -314,7 +314,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 #ifdef DEBUG_MAL_FCN
 			{
 				char *xnme = getTypeName(x), *ynme = getTypeName(y);
-				mnstr_printf(GDKout," %d replaced %s->%s \n",i,xnme,ynme);
+				fprintf(stderr," %d replaced %s->%s \n",i,xnme,ynme);
 				GDKfree(xnme);
 				GDKfree(ynme);
 			}
@@ -323,7 +323,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 		if(getTypeIndex(x) == v){
 #ifdef DEBUG_MAL_FCN
 			char *xnme = getTypeName(x);
-			mnstr_printf(GDKout," replace x= %s polymorphic\n",xnme);
+			fprintf(stderr," replace x= %s polymorphic\n",xnme);
 			GDKfree(xnme);
 #endif
 			setArgType(mb,p,i,t);
@@ -331,13 +331,13 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 #ifdef DEBUG_MAL_FCN
 		else {
 			char *xnme = getTypeName(x);
-			mnstr_printf(GDKout," non x= %s %d\n",xnme,getTypeIndex(x));
+			fprintf(stderr," non x= %s %d\n",xnme,getTypeIndex(x));
 			GDKfree(xnme);
 		}
 #endif
 	}
 #ifdef DEBUG_MAL_FCN
-		printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
+		fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
 #endif
 	}
 }
@@ -393,9 +393,9 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	InstrPtr pp;
 
 #ifdef DEBUG_CLONE
-	mnstr_printf(out,"clone the function %s to scope %s\n",
+	fprintf(stderr,"clone the function %s to scope %s\n",
 				 proc->name,scope->name);
-	printInstruction(out,mb,0,p,LIST_MAL_ALL);
+	fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
 #endif
 	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
 	if( new == NULL){
@@ -406,8 +406,8 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 #ifdef DEBUG_CLONE
-	mnstr_printf(out, "CLONED VERSION\n");
-	printFunction(out, new->def, 0, LIST_MAL_ALL);
+	fprintf(stderr, "CLONED VERSION\n");
+	fprintFunction(stderr, new->def, 0, LIST_MAL_ALL);
 #endif
 	/* check for errors after fixation , TODO*/
 	pp = getSignature(new);
@@ -426,7 +426,7 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 #ifdef DEBUG_MAL_FCN
 		else {
 			char *tpenme = getTypeName(v);
-			mnstr_printf(out,"%d remains %s\n", i, tpenme);
+			fprintf(stderr,"%d remains %s\n", i, tpenme);
 			GDKfree(tpenme);
 		}
 #endif
@@ -443,8 +443,8 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 		clrVarFixed(new->def, i);
 
 #ifdef DEBUG_MAL_FCN
-	mnstr_printf(out, "FUNCTION TO BE CHECKED\n");
-	printFunction(out, new->def, 0, LIST_MAL_ALL);
+	fprintf(stderr, "FUNCTION TO BE CHECKED\n");
+	fprintFunction(stderr, new->def, 0, LIST_MAL_ALL);
 #endif
 
 	/* check for errors after fixation , TODO*/
@@ -455,12 +455,12 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			showScriptException(out, new->def, 0, MAL,
 								"Error in cloned function");
 #ifdef DEBUG_MAL_FCN
-			printFunction(out, new->def, 0, LIST_MAL_ALL);
+			fprintFunction(stderr, new->def, 0, LIST_MAL_ALL);
 #endif
 		}
 	}
 #ifdef DEBUG_CLONE
-	mnstr_printf(out, "newly cloned function added to %s %d \n",
+	fprintf(stderr, "newly cloned function added to %s %d \n",
 				 scope->name, i);
 	printFunction(out, new->def, 0, LIST_MAL_ALL);
 #endif
@@ -557,6 +557,25 @@ void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 				setVarUsed(mb, getArg(p,j));
 	}
 	listFunction(fd,mb,stk,flg,0,mb->stop);
+}
+
+void fprintFunction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
+{
+	int i,j;
+	InstrPtr p;
+	// Set the used bits properly
+	for(i=0; i< mb->vtop; i++)
+		clrVarUsed(mb,i);
+	for(i=0; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		for(j= p->retc; j<p->argc; j++)
+			setVarUsed(mb, getArg(p,j));
+		if( p->barrier)
+			for(j= 0; j< p->retc; j++)
+				setVarUsed(mb, getArg(p,j));
+	}
+	for (i = 0; i < mb->stop; i++)
+		fprintInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }
 
 /* initialize the static scope boundaries for all variables */
@@ -821,8 +840,7 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 				else
 					setVarScope(mb, l, blks[top]);
 #ifdef DEBUG_MAL_FCN
-				mnstr_printf(out,"defined %s in block %d\n",
-					getVarName(mb,l), getVarScope(mb,l));
+				fprintf(stderr,"#defined %s in block %d\n", getVarName(mb,l), getVarScope(mb,l));
 #endif
 			}
 			if( blockCntrl(p) || blockStart(p) )
@@ -845,12 +863,12 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 				} 
 				blks[++top]= blkId;
 #ifdef DEBUG_MAL_FCN
-				mnstr_printf(out,"new block %d at top %d\n",blks[top], top);
+				fprintf(stderr,"#new block %d at top %d\n",blks[top], top);
 #endif
 			}
 			if( blockExit(p) && top > 0 ){
 #ifdef DEBUG_MAL_FCN
-				mnstr_printf(out,"leave block %d at top %d\n",blks[top], top);
+				fprintf(stderr,"leave block %d at top %d\n",blks[top], top);
 #endif
 				if( dflow == blkId){
 					dflow = -1;

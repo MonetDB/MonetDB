@@ -138,8 +138,11 @@ QLOGcreate(str hnme, str tnme, int tt)
 	if (b == NULL)
 		return NULL;
 
-	BATmode(b, PERSISTENT);
-	BBPrename(b->batCacheid, buf);
+	if (BBPrename(b->batCacheid, buf) != 0 ||
+		BATmode(b, PERSISTENT) != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		return NULL;
+	}
 	commitlist[committop++]= b->batCacheid;
 	assert(committop < 32);
 	return b;

@@ -51,7 +51,14 @@ create table "typestest" (
         "clob100" clob(100),
         "character" character,
         "varchar100" character varying(100),
-        "character10" character(10)
+        "character10" character(10),
+        "inet"   inet,
+        "inet9"  inet(9),
+        "json"   json,
+        "json10" json(10),
+        "url"    url,
+        "url55"  URL(55),
+        "uuid"   uuid
 );
 insert into "typestest" values (true, 10, 10000, 1000000,
 	10000000000, 1e30, 1e20, 1, 123456789, 12345.678, 3.1415, 3.1415,
@@ -64,7 +71,12 @@ insert into "typestest" values (true, 10, 10000, 1000000,
 	timestamp '1995-07-15 07:30', timestamp '1995-07-15 07:30',
 	time '07:30', time '07:30', time '07:30', time '07:30',
 	blob '123456', blob '123456',
-	'123456', '123456', 'x', 'varchar', '0123456789');
+	'123456', '123456', 'x', 'varchar', '0123456789',
+        '127.0.0.0', '127.127.127.255',
+        '{"a": 123}', '{"b": 456}',
+        'https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes',
+        'https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype',
+        'ae106ad4-81fd-4f1a-85e8-5efface60da4');
 
 create table keytest1 (
 	key1 int,
@@ -80,3 +92,4 @@ insert into keytest1 values (0, 0);
 insert into keytest1 values (0, 1);
 insert into keytest2 values (0, 0);
 insert into keytest2 values (0, 1);
+

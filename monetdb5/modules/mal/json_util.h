@@ -13,8 +13,6 @@
 #ifndef _JSON_H_
 #define _JSON_H_
 
-/* #define _DEBUG_JSON_ */
-
 #include "json.h"
 
 mal_export str

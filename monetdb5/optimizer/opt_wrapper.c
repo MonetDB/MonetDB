@@ -8,16 +8,10 @@
 
 /*  author M.L. Kersten
  * The optimizer wrapper code is the interface to the MAL optimizer calls.
- * It prepares the environment for the optimizers to do their work and removes
- * the call itself to avoid endless recursions.
  * 
  * Before an optimizer is finished, it should leave a clean state behind.
- * Moreover, the information of the optimization step is saved for
+ * Moreover, some information of the optimization step is saved for
  * debugging and analysis.
- * 
- * The wrapper expects the optimizers to return the number of
- * actions taken, i.e. number of succesful changes to the code.
-
 */
 
 #include "monetdb_config.h"
@@ -54,43 +48,44 @@
 #include "opt_remap.h"
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
-#include "opt_statistics.h"
 #include "opt_volcano.h"
 
 struct{
 	str nme;
-	int (*fcn)();
+	str (*fcn)();
+	int calls;
+	lng timing;
 } codes[] = {
-	{"aliases", &OPTaliasesImplementation},
-	{"candidates", &OPTcandidatesImplementation},
-	{"coercions", &OPTcoercionImplementation},
-	{"commonTerms", &OPTcommonTermsImplementation},
-	{"constants", &OPTconstantsImplementation},
-	{"costModel", &OPTcostModelImplementation},
-	{"dataflow", &OPTdataflowImplementation},
-	{"deadcode", &OPTdeadcodeImplementation},
-	{"emptybind", &OPTemptybindImplementation},
-	{"evaluate", &OPTevaluateImplementation},
-	{"garbageCollector", &OPTgarbageCollectorImplementation},
-	{"generator", &OPTgeneratorImplementation},
-	{"inline", &OPTinlineImplementation},
-	{"jit", &OPTjitImplementation},
-	{"json", &OPTjsonImplementation},
-	{"matpack", &OPTmatpackImplementation},
-	{"mergetable", &OPTmergetableImplementation},
-	{"mitosis", &OPTmitosisImplementation},
-	{"multiplex", &OPTmultiplexImplementation},
-	{"oltp", &OPToltpImplementation},
-	{"profiler", &OPTprofilerImplementation},
-	{"projectionpath", &OPTprojectionpathImplementation},
-	{"pushselect", &OPTpushselectImplementation},
-	{"querylog", &OPTquerylogImplementation},
-	{"reduce", &OPTreduceImplementation},
-	{"remap", &OPTremapImplementation},
-	{"remoteQueries", &OPTremoteQueriesImplementation},
-	{"reorder", &OPTreorderImplementation},
-	{"volcano", &OPTvolcanoImplementation},
-	{0,0}
+	{"aliases", &OPTaliasesImplementation,0,0},
+	{"candidates", &OPTcandidatesImplementation,0,0},
+	{"coercions", &OPTcoercionImplementation,0,0},
+	{"commonTerms", &OPTcommonTermsImplementation,0,0},
+	{"constants", &OPTconstantsImplementation,0,0},
+	{"costModel", &OPTcostModelImplementation,0,0},
+	{"dataflow", &OPTdataflowImplementation,0,0},
+	{"deadcode", &OPTdeadcodeImplementation,0,0},
+	{"emptybind", &OPTemptybindImplementation,0,0},
+	{"evaluate", &OPTevaluateImplementation,0,0},
+	{"garbageCollector", &OPTgarbageCollectorImplementation,0,0},
+	{"generator", &OPTgeneratorImplementation,0,0},
+	{"inline", &OPTinlineImplementation,0,0},
+	{"jit", &OPTjitImplementation,0,0},
+	{"json", &OPTjsonImplementation,0,0},
+	{"matpack", &OPTmatpackImplementation,0,0},
+	{"mergetable", &OPTmergetableImplementation,0,0},
+	{"mitosis", &OPTmitosisImplementation,0,0},
+	{"multiplex", &OPTmultiplexImplementation,0,0},
+	{"oltp", &OPToltpImplementation,0,0},
+	{"profiler", &OPTprofilerImplementation,0,0},
+	{"projectionpath", &OPTprojectionpathImplementation,0,0},
+	{"pushselect", &OPTpushselectImplementation,0,0},
+	{"querylog", &OPTquerylogImplementation,0,0},
+	{"reduce", &OPTreduceImplementation,0,0},
+	{"remap", &OPTremapImplementation,0,0},
+	{"remoteQueries", &OPTremoteQueriesImplementation,0,0},
+	{"reorder", &OPTreorderImplementation,0,0},
+	{"volcano", &OPTvolcanoImplementation,0,0},
+	{0,0,0,0}
 };
 mal_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
@@ -102,8 +97,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol s= NULL;
 	int i, actions = 0;
 	char optimizer[256];
-	str curmodnme=0;
-	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
+	lng clk;
 
     if (cntxt->mode == FINISHCLIENT)
         throw(MAL, "optimizer", "prematurely stopped client");
@@ -115,9 +110,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		throw(MAL, "opt_wrapper", "MAL block contains errors");
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
 	
-	curmodnme = getModuleId(p);
 	OPTIMIZERDEBUG 
-		mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",fcnnme);
+		fprintf(stderr,"=APPLY OPTIMIZER %s\n",fcnnme);
 	if( p && p->argc > 1 ){
 		if( getArgType(mb,p,1) != TYPE_str ||
 			getArgType(mb,p,2) != TYPE_str ||
@@ -145,29 +139,55 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	for (i=0; codes[i].nme; i++)
 		if (strcmp(codes[i].nme, optimizer) == 0){
-			actions = (int)(*(codes[i].fcn))(cntxt, mb, stk, 0);
-			if (actions < 0) {
+			clk = GDKusec();
+			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, 0);
+			codes[i].timing += GDKusec() - clk;
+			codes[i].calls++;
+			if (msg) 
 				throw(MAL, optimizer, "Error in optimizer %s", optimizer);
-			}
 			break;	
 		}
 	if (codes[i].nme == 0)
 		throw(MAL, optimizer, "Optimizer implementation '%s' missing", fcnnme);
 
 	OPTIMIZERDEBUG {
-		mnstr_printf(cntxt->fdout,"=FINISHED %s  %d\n",optimizer, actions);
-		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG );
+		fprintf(stderr,"=FINISHED %s  %d\n",optimizer, actions);
+		fprintFunction(stderr,mb,0,LIST_MAL_DEBUG );
 	}
-	usec= GDKusec() - usec;
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#optimizer %-11s %3d actions %5d MAL instructions ("SZFMT" K) " LLFMT" usec\n", optimizer, actions, mb->stop, 
-		((sizeof( MalBlkRecord) +mb->ssize * offsetof(InstrRecord, argv)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024),
-		usec);
-	QOTupdateStatistics(curmodnme,actions,usec);
-	if( actions >= 0)
-		addtoMalBlkHistory(mb);
 	if ( mb->errors)
 		throw(MAL, optimizer, PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
 	return MAL_SUCCEED;
 }
 
+mal_export str OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+str
+OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	bat  *nme = (bat*) getArgReference_bat(stk, p, 0);
+	bat  *cnt = (bat*) getArgReference_bat(stk, p, 1);
+	bat  *time = (bat*) getArgReference_bat(stk, p, 2);
+	BAT *n, *c, *t;
+	int i;
+
+	(void) cntxt;
+	(void) mb;
+	n = COLnew(0, TYPE_str, 256, TRANSIENT);
+	c = COLnew(0, TYPE_int, 256, TRANSIENT);
+	t = COLnew(0, TYPE_lng, 256, TRANSIENT);
+	if( n == NULL || c == NULL || t == NULL){
+		if( n) BBPrelease(n->batCacheid);
+		if( c) BBPrelease(c->batCacheid);
+		if( t) BBPrelease(t->batCacheid);
+		throw(MAL,"optimizer.statistics", MAL_MALLOC_FAIL);
+	}
+	for( i= 0; codes[i].nme; i++){
+		BUNappend(n, codes[i].nme, FALSE);
+		BUNappend(c, &codes[i].calls, FALSE);
+		BUNappend(t, &codes[i].timing, FALSE);
+	}
+	BBPkeepref( *nme = n->batCacheid);
+	BBPkeepref( *cnt = c->batCacheid);
+	BBPkeepref( *time = t->batCacheid);
+	return MAL_SUCCEED;
+}

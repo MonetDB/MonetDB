@@ -50,11 +50,6 @@ Ready.
 [ "JAPAN",	660651.2425	]
 [ "INDONESIA",	566379.5276	]
 [ "INDIA",	422874.6844	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	4	]
 
 # 09:17:14 >  
 # 09:17:14 >  Done.

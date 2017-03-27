@@ -1145,7 +1145,7 @@ SQLworker(void *arg)
 
 	thr = THRnew("SQLworker");
 	GDKsetbuf(GDKzalloc(GDKMAXERRLEN));	/* where to leave errors */
-	GDKerrbuf[0] = 0;
+	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#SQLworker %d started\n", task->id);

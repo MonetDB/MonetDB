@@ -175,7 +175,10 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 			char buf[64];
 
-			snprintf(buf,64,"A%s",nme);
+			if (nme[0] != 'A')
+				snprintf(buf,64,"A%s",nme);
+			else
+				snprintf(buf,64,"%s",nme);
 			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);

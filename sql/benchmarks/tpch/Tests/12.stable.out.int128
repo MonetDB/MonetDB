@@ -58,11 +58,6 @@ Ready.
 % 10,	2,	2 # length
 [ "MAIL",	64,	86	]
 [ "SHIP",	61,	96	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	1	]
 
 # 09:17:16 >  
 # 09:17:16 >  Done.

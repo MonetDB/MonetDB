@@ -216,7 +216,7 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 	assert(rid != oid_nil);
 
 	store_funcs.update_col(tr, c, &rid, value, c->type.type->localtype);
-	return 0;
+	return LOG_OK;
 }
 
 static int
@@ -238,9 +238,9 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	if (n) {
 		fprintf(stderr, "called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);
-		return -1;
+		return LOG_ERR;
 	}
-	return 0;
+	return LOG_OK;
 }
 
 static int
@@ -249,7 +249,7 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	assert(rid != oid_nil);
 
 	store_funcs.delete_tab(tr, t, &rid, TYPE_oid);
-	return 0;
+	return LOG_OK;
 }
 
 
@@ -495,10 +495,10 @@ table_vacuum(sql_trans *tr, sql_table *t)
 		BBPunfix(cols[c->colnr]->batCacheid);
 	}
 	_DELETE(cols);
-	return SQL_OK;
+	return LOG_OK;
 }
 
-int 
+void
 bat_table_init( table_functions *tf )
 {
 	tf->column_find_row = column_find_row;
@@ -521,5 +521,4 @@ bat_table_init( table_functions *tf )
 	tf->subrids_nextid = subrids_nextid;
 	tf->subrids_destroy = subrids_destroy;
 	tf->rids_diff = rids_diff;
-	return LOG_OK;
 }

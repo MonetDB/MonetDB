@@ -2735,8 +2735,7 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 		//check of the created polygon is valid
 		if (GEOSisValid(finalGeometry) != 1) {
 			//suppress the GEOS message
-			if (GDKerrbuf)
-				GDKerrbuf[0] = '\0';
+			GDKclrerr();
 
 			GEOSGeom_destroy(finalGeometry);
 
@@ -2844,7 +2843,7 @@ wkbBasicInt(int *out, wkb *geom, int (*func) (const GEOSGeometry *), const char 
 		ret = createException(MAL, name, "%s", GDKerrbuf);
 
 		//clear the error buffer
-		GDKerrbuf[0] = '\0';
+		GDKclrerr();
 	}
 
 	return ret;
@@ -3919,8 +3918,8 @@ wkbIsValid(bit *out, wkb **geomWKB)
 {
 	str err = wkbBasicBoolean(out, geomWKB, GEOSisValid, "geom.IsValid");
 	/* GOESisValid may cause GDKerror to be called: ignore it */
-	if (err == MAL_SUCCEED && GDKerrbuf)
-		*GDKerrbuf = 0;
+	if (err == MAL_SUCCEED)
+		GDKclrerr();
 	return err;
 }
 
@@ -4999,8 +4998,7 @@ mbrFromString(mbr **w, str *src)
 
 	ex = createException(MAL, "mbr.FromString", "%s", errbuf);
 
-	if (GDKerrbuf)
-		GDKerrbuf[0] = '\0';
+	GDKclrerr();
 
 	return ex;
 }
@@ -5355,16 +5353,22 @@ mbrCOMP(mbr *l, mbr *r)
 
 /* read mbr from log */
 mbr *
-mbrREAD(mbr *a, stream *s, size_t cnt)
+mbrREAD(mbr *A, stream *s, size_t cnt)
 {
+	mbr *a = A;
 	mbr *c;
 	size_t i;
 	int v[4];
 	flt vals[4];
 
+	if (a == NULL && (a = GDKmalloc(cnt * sizeof(mbr))) == NULL)
+		return NULL;
 	for (i = 0, c = a; i < cnt; i++, c++) {
-		if (!mnstr_readIntArray(s, v, 4))
+		if (!mnstr_readIntArray(s, v, 4)) {
+			if (a != A)
+				GDKfree(a);
 			return NULL;
+		}
 		memcpy(vals, v, 4 * sizeof(int));
 		c->xmin = vals[0];
 		c->ymin = vals[1];

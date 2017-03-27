@@ -45,12 +45,6 @@ Ready.
 % int,	decimal # type
 % 4,	40 # length
 [ 1376,	13271249.89	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	4	]
 
 # 12:34:45 >  
 # 12:34:45 >  Done.

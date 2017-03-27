@@ -541,7 +541,7 @@ mal2str(MalBlkPtr mb, int first, int last)
 		else
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_CALL | LIST_MAL_PROPS | LIST_MAL_REMOTE);
 #ifdef _DEBUG_LISTING_
-		mnstr_printf(GDKout,"%s\n",txt[i]);
+		fprintf(stderr,"%s\n",txt[i]);
 #endif
 
 		if ( txt[i])
@@ -584,6 +584,22 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 		GDKfree(ps);
 	}
 	mnstr_printf(fd, "\n");
+}
+
+void
+fprintInstruction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
+{
+	str ps;
+
+	if (fd == 0)
+		return;
+	ps = instruction2str(mb, stk, p, flg);
+	/* ps[strlen(ps)-1] = 0; remove '\n' */
+	if ( ps ){
+		fprintf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
+		GDKfree(ps);
+	}
+	fprintf(fd, "\n");
 }
 
 void

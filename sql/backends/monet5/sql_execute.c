@@ -201,7 +201,6 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 
 	pci = getInstrPtr(mb, 0);
 	if (pci->argc >= MAXARG){
-		// FIXME unchecked_malloc GDKmalloc can return NULL
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
 		if( argv == NULL)
 			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
@@ -210,8 +209,11 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 
 	if (pci->retc >= MAXARG){
 		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
-		if( argrec == NULL)
+		if( argrec == NULL){
+			if( argv != argvbuffer)
+				GDKfree(argv);
 			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
+		}
 	} else
 		argrec = argrecbuffer;
 
@@ -225,9 +227,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	parc = q->paramlen;
 
 	if (argc != parc) {
-		if (pci->argc >= MAXARG)
+		if (pci->argc >= MAXARG && argv != argvbuffer)
 			GDKfree(argv);
-		if (pci->retc >= MAXARG)
+		if (pci->retc >= MAXARG && argrec != argrecbuffer)
 			GDKfree(argrec);
 		throw(SQL, "sql.prepare", "07001!EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
 	} else {
@@ -237,9 +239,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 
 			if (!atom_cast(m->sa, arg, pt)) {
 				/*sql_error(c, 003, buf); */
-				if (pci->argc >= MAXARG)
+				if (pci->argc >= MAXARG && argv != argvbuffer)
 					GDKfree(argv);
-				if (pci->retc >= MAXARG)
+				if (pci->retc >= MAXARG && argrec != argrecbuffer)
 					GDKfree(argrec);
 				throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "prepared statement: %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 			}
@@ -257,9 +259,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	q->stk = (backend_stack) glb; /* save garbageCollected stack */
 	if (glb && SQLdebug & 1)
 		printStack(GDKstdout, mb, glb);
-	if (pci->argc >= MAXARG)
+	if (pci->argc >= MAXARG && argv != argvbuffer)
 		GDKfree(argv);
-	if (pci->retc >= MAXARG)
+	if (pci->retc >= MAXARG && argrec != argrecbuffer)
 		GDKfree(argrec);
 	return ret;
 }
@@ -383,7 +385,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
 	if (!o)
-		throw(SQL, "SQLstatement", "Out of memory");
+		throw(SQL, "SQLstatement", MAL_MALLOC_FAIL);
 	*o = *m;
 	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
 	m->qc = NULL;
@@ -543,15 +545,20 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					const char *name, *rname;
 					sql_exp *e = n->data;
 					sql_subtype *t = exp_subtype(e);
+					void *ptr =ATOMnil(t->type->localtype);
+
+					if( ptr == NULL){
+						msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+						goto endofcompile;
+					}
 					name = e->name;
 					if (!name && e->type == e_column && e->r)
 						name = e->r;
 					rname = e->rname;
 					if (!rname && e->type == e_column && e->l)
 						rname = e->l;
-					// FIXME unchecked_malloc ATOMnil can return NULL
 					res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
-							t->scale, t->type->localtype, ATOMnil(t->type->localtype));
+							t->scale, t->type->localtype, ptr);
 				}
 				*result = res;
 			}
@@ -624,7 +631,7 @@ SQLengineIntern(Client c, backend *be)
 	}
 
 #ifdef SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
+	fprintf(stderr, "#Ready to execute SQL statement\n");
 #endif
 
 	if (c->curprg->def->stop == 1) {

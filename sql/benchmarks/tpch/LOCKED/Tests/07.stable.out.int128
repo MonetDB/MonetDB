@@ -63,11 +63,6 @@ Ready.
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
 [ "GERMANY",	"FRANCE",	1996,	379095.8854	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	4	]
 
 # 09:17:14 >  
 # 09:17:14 >  Done.

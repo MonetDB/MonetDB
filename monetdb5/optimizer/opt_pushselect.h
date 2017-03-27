@@ -11,6 +11,6 @@
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-mal_export int OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

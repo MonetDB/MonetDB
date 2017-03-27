@@ -39,4 +39,3 @@ group by
 order by
 	o_year;
 
-select * from optimizer_stats() stats;

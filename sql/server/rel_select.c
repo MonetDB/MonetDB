@@ -306,7 +306,15 @@ query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 {
 	switch (q->token) {
 	case SQL_WITH:
-		return rel_with_query(sql, q);
+	{
+		sql_rel *tq = rel_with_query(sql, q);
+
+		if (!tq)
+			return NULL;
+		if (q->data.lval->t->type == type_symbol)
+			return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+		return tq;
+	}
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:

@@ -34,9 +34,9 @@ int store_readonly = 0;
 int store_singleuser = 0;
 int store_initialized = 0;
 
-int keep_persisted_log_files = 0;
-int create_shared_logger = 0;
-int shared_drift_threshold = -1;
+static int keep_persisted_log_files = 0;
+static int create_shared_logger = 0;
+static int shared_drift_threshold = -1;
 
 backend_stack backend_stk;
 
@@ -1593,7 +1593,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v, keep_persisted_log_files) == LOG_ERR) {
+	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v, keep_persisted_log_files) != LOG_OK) {
 		MT_lock_unset(&bs_lock);
 		return -1;
 	}
@@ -1603,7 +1603,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store_init creating shared logger\n");
 #endif
-		if (!shared_logger_funcs.create_shared || shared_logger_funcs.create_shared(debug, log_settings->shared_logdir, CATALOG_VERSION*v, log_settings->logdir) == LOG_ERR) {
+		if (!shared_logger_funcs.create_shared || shared_logger_funcs.create_shared(debug, log_settings->shared_logdir, CATALOG_VERSION*v, log_settings->logdir) != LOG_OK) {
 			MT_lock_unset(&bs_lock);
 			return -1;
 		}
@@ -1744,7 +1744,7 @@ store_manager(void)
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store_manager shared_transactions_drift is " LLFMT "\n", shared_transactions_drift);
 #endif
-			if (shared_transactions_drift == LOG_ERR) {
+			if (shared_transactions_drift == -1) {
 				GDKfatal("shared write-ahead log last transaction read failure");
 			}
 		}
@@ -2290,7 +2290,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 
 	if (isDeclaredTable(c->t)) 
 	if (isTable(t))
-		if (store_funcs.create_col(tr, col) == LOG_ERR)
+		if (store_funcs.create_col(tr, col) != LOG_OK)
 			return NULL;
 	if (!isDeclaredTable(t)) {
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
@@ -4559,7 +4559,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
  	col = create_sql_column(tr->sa, t, name, tpe );
 
 	if (isTable(col->t))
-		if (store_funcs.create_col(tr, col) == LOG_ERR)
+		if (store_funcs.create_col(tr, col) != LOG_OK)
 			return NULL;
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
