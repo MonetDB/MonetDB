@@ -394,7 +394,7 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 	size_t i, n;
 	size_t savefree;
 	const char *filename;
-	bat bid;
+	bat bid = b->batCacheid;
 
 	assert(b->theap.parentid == 0);
 	assert(width != 0);
@@ -429,7 +429,6 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 		filename = b->theap.filename;
 	else
 		filename++;
-	bid = strtol(filename, NULL, 8);
 	if ((BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
 	    !file_exists(b->theap.farmid, BAKDIR, filename, NULL) &&
 	    (b->theap.storage != STORE_MEM ||
