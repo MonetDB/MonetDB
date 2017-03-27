@@ -311,14 +311,17 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if ( o == BUN_NONE){
 		*ret = mb->tag;
-		BUNappend(QLOG_cat_id,&mb->tag,FALSE);
-		BUNappend(QLOG_cat_query,*q,FALSE);
-		BUNappend(QLOG_cat_pipe,*pipe,FALSE);
-		BUNappend(QLOG_cat_plan,nme,FALSE);
-		BUNappend(QLOG_cat_mal,&mb->stop,FALSE);
-		BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE);
-		BUNappend(QLOG_cat_user,*usr,FALSE);
-		BUNappend(QLOG_cat_defined,tick,FALSE);
+		if (BUNappend(QLOG_cat_id,&mb->tag,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_query,*q,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_pipe,*pipe,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_plan,nme,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_mal,&mb->stop,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_user,*usr,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_defined,tick,FALSE) != GDK_SUCCEED) {
+			MT_lock_unset(&mal_profileLock);
+			throw(MAL, "querylog.append", MAL_MALLOC_FAIL);
+		}
 	}
 	MT_lock_unset(&mal_profileLock);
 	TMsubcommit_list(commitlist, committop);
@@ -353,15 +356,18 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( *xtime + *rtime < QLOGthreshold)
 		return MAL_SUCCEED;
 	MT_lock_set(&mal_profileLock);
-	BUNappend(QLOG_calls_id,&mb->tag,FALSE);
-	BUNappend(QLOG_calls_start,tick1,FALSE);
-	BUNappend(QLOG_calls_stop,tick2,FALSE);
-	BUNappend(QLOG_calls_arguments,*arg,FALSE);
-	BUNappend(QLOG_calls_tuples,tuples,FALSE);
-	BUNappend(QLOG_calls_exec,xtime,FALSE);
-	BUNappend(QLOG_calls_result,rtime,FALSE);
-	BUNappend(QLOG_calls_cpuload,cpu,FALSE);
-	BUNappend(QLOG_calls_iowait,iowait,FALSE);
+	if (BUNappend(QLOG_calls_id,&mb->tag,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_start,tick1,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_stop,tick2,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_arguments,*arg,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_tuples,tuples,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_exec,xtime,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_result,rtime,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_cpuload,cpu,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_iowait,iowait,FALSE) != GDK_SUCCEED) {
+		MT_lock_unset(&mal_profileLock);
+		throw(MAL, "querylog.call", MAL_MALLOC_FAIL);
+	}
 	MT_lock_unset(&mal_profileLock);
 	TMsubcommit_list(commitlist, committop);
 	return MAL_SUCCEED;

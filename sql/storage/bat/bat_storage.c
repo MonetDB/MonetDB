@@ -691,6 +691,8 @@ dup_idx(sql_trans *tr, sql_idx *i, sql_idx *ni )
 {
 	int ok = LOG_OK;
 
+	if (!isTable(i->t) || !idx_has_column(i->type))
+		return ok;
 	if (i->data) {
 		int type = (oid_index(ni->type))?TYPE_oid:TYPE_lng;
 		sql_delta *bat = ni->data = ZNEW(sql_delta), *obat = i->data;
@@ -898,6 +900,8 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 			sql_idx *i = n->data;
 			sql_delta *bat;
 
+			if (!isTable(i->t) || !idx_has_column(i->type)) 
+				continue;
 			if (!i->data) {
 				sql_idx *oi = tr_find_idx(tr->parent, i);
 				i->data = timestamp_delta(oi->data, tr->stime);
@@ -979,7 +983,7 @@ count_idx(sql_trans *tr, sql_idx *i, int all)
 {
 	sql_delta *b;
 
-	if (!isTable(i->t)) 
+	if (!isTable(i->t) || !idx_has_column(i->type)) 
 		return 0;
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
@@ -1032,7 +1036,8 @@ count_idx_upd(sql_trans *tr, sql_idx *i)
 {
 	sql_delta *b;
 
-	assert (isTable(i->t)) ;
+	if (!isTable(i->t) || !idx_has_column(i->type)) 
+		return 0;
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		if (oi)
@@ -1062,6 +1067,8 @@ count_upd(sql_trans *tr, sql_table *t)
 	for( n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 
+		if (!isTable(i->t) || !idx_has_column(i->type)) 
+			continue;
 		if (count_idx_upd(tr, i))
 			return 1;
 	}
@@ -1699,10 +1706,14 @@ clear_col(sql_trans *tr, sql_column *c)
 static BUN
 clear_idx(sql_trans *tr, sql_idx *i)
 {
+	if (!isTable(i->t) || !idx_has_column(i->type))
+		return 0;
 	if (!i->data || !i->base.allocated) {
 		int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
-		sql_delta *bat = i->data = ZNEW(sql_delta), *obat = timestamp_delta(oi->data, tr->stime);
+		sql_delta *bat = i->data = ZNEW(sql_delta), *obat;
+	       
+		obat = timestamp_delta(oi->data, tr->stime);
 		(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
 		i->base.allocated = 1;
 	}
@@ -1767,6 +1778,8 @@ empty_idx(sql_idx *i)
 	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
 	sql_delta *bat = i->data;
 
+	if (!isTable(i->t) || !idx_has_column(i->type))
+		return LOG_OK;
 	assert(i->data && i->base.allocated && bat->bid == 0);
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
@@ -1949,6 +1962,8 @@ gtr_update_table(sql_trans *tr, sql_table *t, int *tchanges)
 			sql_idx *ci = n->data;
 
 			/* some indices have no bats */
+			if (!isTable(ci->t) || !idx_has_column(ci->type)) 
+				continue;
 			if (!ci->base.wtime || ci->base.wtime <= ci->base.allocated) 
 				continue;
 

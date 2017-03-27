@@ -943,7 +943,8 @@ SQLparser(Client c)
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
-	SQLtrans(m);
+	if (be->language != 'X')
+		SQLtrans(m);
 	pstatus = m->session->status;
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at

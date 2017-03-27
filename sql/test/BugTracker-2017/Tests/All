@@ -38,3 +38,4 @@ cast_boolean_to_string.Bug-6110
 modulo.Bug-6225
 one-plus-nil.Bug-6243
 with-alias-bug.6246
+crash_after_oidx_on_sys_statistics.Bug-6251

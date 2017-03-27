@@ -13253,7 +13253,7 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 
 	if (checkbats(b, b1, "BATcalcifthenelse") != GDK_SUCCEED)
 		return NULL;
-	if (b->ttype != TYPE_bit || b1->ttype != c2->vtype) {
+	if (b->ttype != TYPE_bit || ATOMtype(b1->ttype) != ATOMtype(c2->vtype)) {
 		GDKerror("BATcalcifthenelsecst: \"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
@@ -13272,7 +13272,7 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 
 	if (checkbats(b, b2, "BATcalcifthenelse") != GDK_SUCCEED)
 		return NULL;
-	if (b->ttype != TYPE_bit || b2->ttype != c1->vtype) {
+	if (b->ttype != TYPE_bit || ATOMtype(b2->ttype) != ATOMtype(c1->vtype)) {
 		GDKerror("BATcalcifthencstelse: \"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
@@ -13289,7 +13289,7 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 	BATcheck(c1, "BATcalcifthenelsecst", NULL);
 	BATcheck(c2, "BATcalcifthenelsecst", NULL);
 
-	if (b->ttype != TYPE_bit || c1->vtype != c2->vtype) {
+	if (b->ttype != TYPE_bit || ATOMtype(c1->vtype) != ATOMtype(c2->vtype)) {
 		GDKerror("BATcalcifthencstelsecst: \"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}

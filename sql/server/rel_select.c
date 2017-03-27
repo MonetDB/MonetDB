@@ -4978,40 +4978,22 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 	sql_rel *rel;
 
 	if (!cols) {
-		list *ls, *rs, *nls, *nrs;
-		node *n, *m;
-		int changes = 0;
+		list *ls, *rs;
 
 		l = rel_unique_names(sql, l);
 		r = rel_unique_names(sql, r);
 		ls = rel_projections(sql, l, NULL, 0, 1);
 		rs = rel_projections(sql, r, NULL, 0, 1);
-		nls = new_exp_list(sql->sa);
-		nrs = new_exp_list(sql->sa);
-		for (n = ls->h, m = rs->h; n && m; n = n->next, m = m->next) {
-			sql_exp *le = n->data, *lb = le;
-			sql_exp *re = m->data, *rb = re;
-
-			if ((rel_convert_types(sql, &le, &re, 1, type_set) < 0))
-				return NULL;
-			if (le != lb || re != rb)
-				changes = 1;
-			append(nls, le);
-			append(nrs, re);
-		}
-		if (changes) {
-			l = rel_project(sql->sa, l, nls);
-			r = rel_project(sql->sa, r, nrs);
-			set_processed(l);
-			set_processed(r);
-		}
+		rel = rel_setop_check_types(sql, l, r, ls, rs, (operator_type)op);
+	} else {
+		rel = rel_setop(sql->sa, l, r, (operator_type)op);
 	}
-	rel = rel_setop(sql->sa, l, r, (operator_type)op);
-	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
-	set_processed(rel);
+	if (rel) {
+		rel->exps = rel_projections(sql, rel, NULL, 0, 1);
+		set_processed(rel);
+	}
 	return rel;
 }
-
 
 static sql_rel *
 rel_setquery(mvc *sql, sql_rel *rel, symbol *q)

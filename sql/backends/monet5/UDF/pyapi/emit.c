@@ -308,6 +308,7 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
 
     self->nvals += el_count;
     Py_RETURN_NONE;
+  bunins_failed:
 wrapup:
     if (msg != MAL_SUCCEED) {
         PyErr_Format(PyExc_TypeError, "Failed conversion: %s", msg);

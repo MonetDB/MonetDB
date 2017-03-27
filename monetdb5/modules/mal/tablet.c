@@ -713,12 +713,15 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 {
 	if (task->cntxt->error_row != NULL) {
 		MT_lock_set(&errorlock);
-		BUNappend(task->cntxt->error_row, &row, FALSE);
-		BUNappend(task->cntxt->error_fld, &col, FALSE);
-		BUNappend(task->cntxt->error_msg, msg, FALSE);
-		BUNappend(task->cntxt->error_input, fcn, FALSE);
-		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL))
+		if (BUNappend(task->cntxt->error_row, &row, FALSE) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_fld, &col, FALSE) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_msg, msg, FALSE) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_input, fcn, FALSE) != GDK_SUCCEED)
+			task->besteffort = 0;
+		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL)) {
 			task->as->error = createException(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+			task->besteffort = 0;
+		}
 		if (row != lng_nil)
 			task->rowerror[row]++;
 #ifdef _DEBUG_TABLET_
@@ -729,8 +732,10 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 		MT_lock_unset(&errorlock);
 	} else {
 		MT_lock_set(&errorlock);
-		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL))
+		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL)) {
 			task->as->error = createException(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+			task->besteffort = 0;
+		}
 		task->errorcnt++;
 		MT_lock_unset(&errorlock);
 	}
@@ -903,16 +908,17 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		if (task->rowerror) {
 			if (s) {
 				size_t slen = mystrlen(s);
-				// FIXME unchecked_malloc GDKmalloc can return NULL, and asserts are not the way to check the result
 				char *scpy = GDKmalloc(slen + 1);
 				if ( scpy == NULL){
 					task->rowerror[idx]++;
 					task->errorcnt++;
 					task->besteffort = 0; /* no longer best effort */
-					BUNappend(task->cntxt->error_row, &row, FALSE);
-					BUNappend(task->cntxt->error_fld, &col, FALSE);
-					BUNappend(task->cntxt->error_msg, MAL_MALLOC_FAIL, FALSE);
-					BUNappend(task->cntxt->error_input, err, FALSE);
+					if (BUNappend(task->cntxt->error_row, &row, FALSE) != GDK_SUCCEED ||
+						BUNappend(task->cntxt->error_fld, &col, FALSE) != GDK_SUCCEED ||
+						BUNappend(task->cntxt->error_msg, MAL_MALLOC_FAIL, FALSE) != GDK_SUCCEED ||
+						BUNappend(task->cntxt->error_input, err, FALSE) != GDK_SUCCEED) {
+						;		/* ignore error here: we're already not best effort */
+					}
 					GDKfree(err);
 					return -1;
 				}
@@ -933,6 +939,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 				BUNappend(task->cntxt->error_input, err, FALSE) != GDK_SUCCEED) {
 				GDKfree(err);
 				task->besteffort = 0; /* no longer best effort */
+				MT_lock_unset(&errorlock);
 				return -1;
 			}
 			MT_lock_unset(&errorlock);
@@ -949,11 +956,12 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	if (task->rowerror) {
 		lng row = BATcount(fmt->c);
 		MT_lock_set(&errorlock);
-		BUNappend(task->cntxt->error_row, &row, FALSE);
-		BUNappend(task->cntxt->error_fld, &col, FALSE);
-		BUNappend(task->cntxt->error_msg, "insert failed", FALSE);
-		err = SQLload_error(task, idx,task->as->nr_attrs);
-		BUNappend(task->cntxt->error_input, err, FALSE);
+		if (BUNappend(task->cntxt->error_row, &row, FALSE) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_fld, &col, FALSE) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_msg, "insert failed", FALSE) != GDK_SUCCEED ||
+			(err = SQLload_error(task, idx,task->as->nr_attrs)) == NULL ||
+			BUNappend(task->cntxt->error_input, err, FALSE) != GDK_SUCCEED)
+			task->besteffort = 0;
 		GDKfree(err);
 		task->rowerror[idx]++;
 		task->errorcnt++;

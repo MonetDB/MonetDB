@@ -22,17 +22,19 @@
 #include "monetdb_config.h"
 #include "inspect.h"
 
-static void
+static int
 pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
-	if (BBPindex(buf) <= 0)
-		BBPrename(b->batCacheid, buf);
+	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
+		return -1;
 	BATroles(b,X2);
-	BATmode(b,TRANSIENT);
+	if (BATmode(b,TRANSIENT) != GDK_SUCCEED)
+		return -1;
 	BATfakeCommit(b);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
+	return 0;
 }
 
 /*
@@ -67,15 +69,20 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
-					BUNappend(b, getFunctionId(sig), FALSE);
+					if (BUNappend(b, getFunctionId(sig), FALSE) != GDK_SUCCEED)
+						goto bailout;
 				}
 			}
 		}
 	}
 	freeModuleList(moduleList);
-	pseudo(ret,b,"view","symbol","function");
+	if (pseudo(ret,b,"view","symbol","function"))
+		goto bailout;
 
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.getgetFunctionId", MAL_MALLOC_FAIL);
 }
 
 str
@@ -101,15 +108,20 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 
-					BUNappend(b, getModuleId(sig), FALSE);
+					if (BUNappend(b, getModuleId(sig), FALSE) != GDK_SUCCEED)
+						goto bailout;
 				}
 			}
 		}
 	}
 	freeModuleList(moduleList);
-	pseudo(ret,b,"view","symbol","module");
+	if (pseudo(ret,b,"view","symbol","module"))
+		goto bailout;
 
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.getmodule", MAL_MALLOC_FAIL);
 }
 
 str
@@ -135,15 +147,20 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 					str kind = operatorName(sig->token);
-					BUNappend(b, kind, FALSE);
+					if (BUNappend(b, kind, FALSE) != GDK_SUCCEED)
+						goto bailout;
 				}
 			}
 		}
 	}
 	freeModuleList(moduleList);
-	pseudo(ret,b,"view","symbol","kind");
+	if (pseudo(ret,b,"view","symbol","kind"))
+		goto bailout;
 
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
 }
 
 
@@ -172,14 +189,19 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if(a) *a = 0;
-					BUNappend(b, (a = strchr(sig, '(')) ? a : "", FALSE);
+					if (BUNappend(b, (a = strchr(sig, '(')) ? a : "", FALSE) != GDK_SUCCEED)
+						goto bailout;
 				}
 			}
 	}
 	freeModuleList(moduleList);
-	pseudo(ret,b,"view"," symbol","address");
+	if (pseudo(ret,b,"view"," symbol","address"))
+		goto bailout;
 
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
 }
 str
 INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -210,14 +232,19 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if( a)
 						for( a=a+7; isspace((int) *a); a++)
 							;
-					BUNappend(b, (a? a: "nil"), FALSE);
+					if (BUNappend(b, (a? a: "nil"), FALSE) != GDK_SUCCEED)
+						goto bailout;
 				}
 			}
 	}
 	freeModuleList(moduleList);
-	pseudo(ret,b,"view"," symbol","address");
+	if (pseudo(ret,b,"view"," symbol","address"))
+		goto bailout;
 
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
 }
 
 str
@@ -244,14 +271,21 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		for (i = 0; i < s->def->stop; i++) {
 			ps = instruction2str(s->def,0, getInstrPtr(s->def, i), 0);
-			BUNappend(b, ps + 1, FALSE);
+			if (BUNappend(b, ps + 1, FALSE) != GDK_SUCCEED) {
+				GDKfree(ps);
+				goto bailout;
+			}
 			GDKfree(ps);
 		}
 		s = s->peer;
 	}
-	pseudo(ret,b,"view","fcn","stmt");
+	if (pseudo(ret,b,"view","fcn","stmt"))
+		goto bailout;
 
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.getDefinition", MAL_MALLOC_FAIL);
 }
 
 str
@@ -287,14 +321,21 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*tail = 0;
 			if (tail && (w=strchr(tail, ';')) )
 				*w = 0;
-			BUNappend(b, c, FALSE);
+			if (BUNappend(b, c, FALSE) != GDK_SUCCEED) {
+				GDKfree(ps);
+				goto bailout;
+			}
 			GDKfree(ps);
 		}
 		s = s->peer;
 	}
 
-	pseudo(ret,b,"view","input","result");
+	if (pseudo(ret,b,"view","input","result"))
+		goto bailout;
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.getSignature", MAL_MALLOC_FAIL);
 }
 
 str
@@ -334,14 +375,21 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			if (tail && (w=strchr(tail, ';')) )
 				*w = 0;
-			BUNappend(b, (tail? tail: "nil"), FALSE);
+			if (BUNappend(b, (tail? tail: "nil"), FALSE) != GDK_SUCCEED) {
+				GDKfree(ps);
+				goto bailout;
+			}
 			GDKfree(ps);
 		}
 		s = s->peer;
 	}
 
-	pseudo(ret,b,"view","input","result");
+	if (pseudo(ret,b,"view","input","result"))
+		goto bailout;
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.getAddress", MAL_MALLOC_FAIL);
 }
 str
 INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -361,14 +409,18 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "inspect.getComment", MAL_MALLOC_FAIL);
 
 	while (s != NULL) {
-		if (idcmp(s->name, *fcn) == 0) {
-			BUNappend(b, s->def->help, FALSE);
-		}
+		if (idcmp(s->name, *fcn) == 0 &&
+			BUNappend(b, s->def->help, FALSE) != GDK_SUCCEED)
+			goto bailout;
 		s = s->peer;
 	}
 
-	pseudo(ret,b,"view","input","result");
+	if (pseudo(ret,b,"view","input","result"))
+		goto bailout;
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.getComment", MAL_MALLOC_FAIL);
 }
 
 str
@@ -434,11 +486,16 @@ INSPECTatom_names(bat *ret)
 		throw(MAL, "inspect.getAtomNames", MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++)
-		BUNappend(b, ATOMname(i), FALSE);
+		if (BUNappend(b, ATOMname(i), FALSE) != GDK_SUCCEED)
+			goto bailout;
 
-	pseudo(ret,b,"view","atom","name");
+	if (pseudo(ret,b,"view","atom","name"))
+		goto bailout;
 
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.getAtomNames", MAL_MALLOC_FAIL);
 }
 str
 INSPECTgetEnvironment(bat *ret, bat *ret2)
@@ -488,12 +545,17 @@ INSPECTatom_sup_names(bat *ret)
 	for (i = 0; i < GDKatomcnt; i++) {
 		for (k = ATOMstorage(i); k > TYPE_str; k = ATOMstorage(k))
 			;
-		BUNappend(b, ATOMname(k), FALSE);
+		if (BUNappend(b, ATOMname(k), FALSE) != GDK_SUCCEED)
+			goto bailout;
 	}
 
-	pseudo(ret,b,"view","atom","sup_name");
+	if (pseudo(ret,b,"view","atom","sup_name"))
+		goto bailout;
 
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.getAtomSuper", MAL_MALLOC_FAIL);
 }
 
 str
@@ -508,12 +570,17 @@ INSPECTatom_sizes(bat *ret)
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		s = ATOMsize(i);
-		BUNappend(b, &s, FALSE);
+		if (BUNappend(b, &s, FALSE) != GDK_SUCCEED)
+			goto bailout;
 	}
 
-	pseudo(ret,b,"view","atom","size");
+	if (pseudo(ret,b,"view","atom","size"))
+		goto bailout;
 
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.getAtomSizes", MAL_MALLOC_FAIL);
 }
 
 /* calculate to trimmed storage space */

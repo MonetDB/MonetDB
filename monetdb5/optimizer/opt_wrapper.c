@@ -176,15 +176,20 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	c = COLnew(0, TYPE_int, 256, TRANSIENT);
 	t = COLnew(0, TYPE_lng, 256, TRANSIENT);
 	if( n == NULL || c == NULL || t == NULL){
-		if( n) BBPrelease(n->batCacheid);
-		if( c) BBPrelease(c->batCacheid);
-		if( t) BBPrelease(t->batCacheid);
+		BBPreclaim(n);
+		BBPreclaim(c);
+		BBPreclaim(t);
 		throw(MAL,"optimizer.statistics", MAL_MALLOC_FAIL);
 	}
 	for( i= 0; codes[i].nme; i++){
-		BUNappend(n, codes[i].nme, FALSE);
-		BUNappend(c, &codes[i].calls, FALSE);
-		BUNappend(t, &codes[i].timing, FALSE);
+		if (BUNappend(n, codes[i].nme, FALSE) != GDK_SUCCEED ||
+			BUNappend(c, &codes[i].calls, FALSE) != GDK_SUCCEED ||
+			BUNappend(t, &codes[i].timing, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(n);
+			BBPreclaim(c);
+			BBPreclaim(t);
+			throw(MAL,"optimizer.statistics", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref( *nme = n->batCacheid);
 	BBPkeepref( *cnt = c->batCacheid);

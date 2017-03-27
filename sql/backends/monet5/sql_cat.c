@@ -110,6 +110,8 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 		mt = mvc_bind_table(sql, ms, mtname);
 	if (ps)
 		pt = mvc_bind_table(sql, ps, ptname);
+	if (mt && (mt->type != tt_merge_table && mt->type != tt_replica_table))
+		return sql_message("42S02!ALTER TABLE: cannot add table '%s.%s' to table '%s.%s'", psname, ptname, msname, mtname);
 	if (mt && pt) {
 		char *msg;
 		node *n = cs_find_id(&mt->tables, pt->base.id);
