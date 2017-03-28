@@ -109,6 +109,15 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		GDKclrerr();
 		return ret;
 	}
+	if (strcmp(format, GDK_EXCEPTION) == 0 && GDKerrbuf[0]) {
+		/* for GDK errors, report the underlying error */
+		char *p = GDKerrbuf;
+		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0)
+			p += strlen(GDKERROR);
+		ret = createException(type, fcn, "GDK reported error: %s", p);
+		GDKclrerr();
+		return ret;
+	}
 	va_start(ap, format);
 	ret = createExceptionInternal(type, fcn, format, ap);
 	va_end(ap);
