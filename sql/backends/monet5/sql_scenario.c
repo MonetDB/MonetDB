@@ -955,7 +955,7 @@ SQLparser(Client c)
 		mnstr_printf(out, "!Could not create SQL allocator\n");
 		mnstr_flush(out);
 		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", "Could not create SQL allocator");
+		throw(SQL, "SQLparser", MAL_MALLOC_FAIL " for SQL allocator");
 	}
 
 	m->emode = m_normal;

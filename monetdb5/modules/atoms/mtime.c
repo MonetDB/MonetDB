@@ -3061,7 +3061,7 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.year", "memory allocation failure");
+		throw(MAL, "batmtime.year", MAL_MALLOC_FAIL);
 	}
 	bn->tnonil = 1;
 	bn->tnil = 0;
@@ -3106,7 +3106,7 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.month", "memory allocation failure");
+		throw(MAL, "batmtime.month", MAL_MALLOC_FAIL);
 	}
 	bn->tnonil = 1;
 	bn->tnil = 0;
@@ -3150,7 +3150,7 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.day", "memory allocation failure");
+		throw(MAL, "batmtime.day", MAL_MALLOC_FAIL);
 	}
 	bn->tnonil = 1;
 	bn->tnil = 0;
@@ -3195,7 +3195,7 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.hours", "memory allocation failure");
+		throw(MAL, "batmtime.hours", MAL_MALLOC_FAIL);
 	}
 	bn->tnonil = 1;
 	bn->tnil = 0;
@@ -3239,7 +3239,7 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.minutes", "memory allocation failure");
+		throw(MAL, "batmtime.minutes", MAL_MALLOC_FAIL);
 	}
 
 	t = (const date *) Tloc(b, 0);
@@ -3281,7 +3281,7 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.seconds", "memory allocation failure");
+		throw(MAL, "batmtime.seconds", MAL_MALLOC_FAIL);
 	}
 
 	t = (const date *) Tloc(b, 0);
@@ -3322,7 +3322,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.sql_seconds", "memory allocation failure");
+		throw(MAL, "batmtime.sql_seconds", MAL_MALLOC_FAIL);
 	}
 
 	t = (const date *) Tloc(b, 0);
@@ -3365,7 +3365,7 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.milliseconds", "memory allocation failure");
+		throw(MAL, "batmtime.milliseconds", MAL_MALLOC_FAIL);
 	}
 
 	t = (const date *) Tloc(b, 0);
@@ -3429,7 +3429,7 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 		throw(MAL, "mtime.date_to_str", "failed to convert date to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
-		throw(MAL, "mtime.date_to_str", "memory allocation failure");
+		throw(MAL, "mtime.date_to_str", MAL_MALLOC_FAIL);
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
 #else
@@ -3473,7 +3473,7 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 		throw(MAL, "mtime.time_to_str", "failed to convert time to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
-		throw(MAL, "mtime.time_to_str", "memory allocation failure");
+		throw(MAL, "mtime.time_to_str", MAL_MALLOC_FAIL);
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
 #else
@@ -3521,7 +3521,7 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 		throw(MAL, "mtime.timestamp_to_str", "failed to convert timestampt to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
-		throw(MAL, "mtime.timestamp_to_str", "memory allocation failure");
+		throw(MAL, "mtime.timestamp_to_str", MAL_MALLOC_FAIL);
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
 #else
