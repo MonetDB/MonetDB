@@ -29,7 +29,8 @@ stderr of test 'comment-on` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-60809/.s.monetdb.31874
 QUERY = COMMENT ON TABLE sys.comments IS 'For every catalog object, an optional remark';
-ERROR = !syntax error, unexpected COMMENT in: "comment"
+ERROR = !symbol type not found
+
 
 # 13:09:13 >  
 # 13:09:13 >  "Done."

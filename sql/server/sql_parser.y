@@ -131,6 +131,8 @@ int yydebug=1;
 	create_statement
 	drop_statement
 	declare_statement
+	comment_on_statement
+	catalog_object
 	set_statement
 	sql
 	sqlstmt
@@ -739,6 +741,7 @@ sql:
 		append_int(l, $5);
 		$$ = _symbol_create_list( SQL_ANALYZE, l); }
  |  call_procedure_statement
+ |  comment_on_statement
  ;
 
 opt_minmax:
@@ -5277,6 +5280,7 @@ non_reserved_word:
 |  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 |  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 |  REPLACE	{ $$ = sa_strdup(SA, "replace"); }
+|  COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 ;
 
 name_commalist:
@@ -5408,6 +5412,20 @@ path_specification:
    ;
 
 schema_name_list: name_commalist ;
+
+
+comment_on_statement:
+	COMMENT ON catalog_object IS string 
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_string(l, $5);
+	  $$ = _symbol_create_list( COMMENT, l );
+	}
+	;
+
+catalog_object:
+	TABLE qname { $$ = _symbol_create_list( TABLE, $2); }
+	;
 
 XML_value_expression:
   XML_primary	
