@@ -140,6 +140,7 @@ scanner_init_keywords(void)
 	keywords_insert("TINYTEXT", sqlTEXT);
 	keywords_insert("STRING", CLOB);	/* ? */
 	keywords_insert("CHECK", CHECK);
+	keywords_insert("COMMENT", COMMENT);
 	keywords_insert("CONSTRAINT", CONSTRAINT);
 	keywords_insert("CREATE", CREATE);
 	keywords_insert("CROSS", CROSS);

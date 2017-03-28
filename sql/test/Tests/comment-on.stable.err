@@ -1,0 +1,37 @@
+stderr of test 'comment-on` in directory 'sql/test` itself:
+
+
+# 13:09:12 >  
+# 13:09:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32134" "--set" "mapi_usock=/var/tmp/mtest-44551/.s.monetdb.32134" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/joeri/monets/default/var/MonetDB/mTests_sql_test"
+# 13:09:12 >  
+
+# builtin opt 	gdk_dbpath = /Users/joeri/monets/default/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32134
+# cmdline opt 	mapi_usock = /var/tmp/mtest-44551/.s.monetdb.32134
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/joeri/monets/default/var/MonetDB/mTests_sql_test
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:09:12 >  
+# 13:09:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-44551" "--port=32134"
+# 13:09:12 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-60809/.s.monetdb.31874
+QUERY = COMMENT ON TABLE sys.comments IS 'For every catalog object, an optional remark';
+ERROR = !syntax error, unexpected COMMENT in: "comment"
+
+# 13:09:13 >  
+# 13:09:13 >  "Done."
+# 13:09:13 >  
+
