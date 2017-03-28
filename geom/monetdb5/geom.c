@@ -2236,7 +2236,7 @@ wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
 		size_t parsedBytes;
 		str err = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &(*toArray)->data[i], srid, &parsedBytes);
 		if (err != MAL_SUCCEED) {
-			GDKfree(err);
+			freeException(err);
 			return 0;
 		}
 		skipBytes += parsedBytes;
@@ -3272,7 +3272,7 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err) {
-			GDKfree(err);
+			freeException(err);
 			throw(MAL, "geom.MakeLine", MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
@@ -4223,7 +4223,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err) {
-			GDKfree(err);
+			freeException(err);
 			throw(MAL, "geom.Union", MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
@@ -5096,7 +5096,7 @@ wkbFROMSTR(char *geomWKT, int *len, wkb **geomWKB)
 
 	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
 	if (err != MAL_SUCCEED) {
-		GDKfree(err);
+		freeException(err);
 		return 0;
 	}
 	return (int) parsedBytes;

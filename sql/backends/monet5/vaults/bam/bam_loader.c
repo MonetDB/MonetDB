@@ -683,7 +683,7 @@ bam_drop_file(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str msg2 = createException(MAL, "bam_drop_file",
 			  "Error when dropping file with file id '" LLFMT
 			  "': %s\n", file_id, msg);
-		GDKfree(msg);
+		freeException(msg);
 		return msg2;
 	}
 

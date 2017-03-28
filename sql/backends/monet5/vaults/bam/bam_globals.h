@@ -96,7 +96,7 @@ hash_fprintf(FILE *f, const char *format, ...) {
 #define REUSE_EXCEPTION(msg, type, fnc, ...)				\
 	do {								\
 		str msg_tmp = createException(type, fnc, __VA_ARGS__);	\
-		GDKfree(msg);						\
+		freeException(msg);						\
 		msg = msg_tmp;						\
 	} while (0)
 

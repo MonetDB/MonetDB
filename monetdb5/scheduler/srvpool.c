@@ -179,7 +179,7 @@ SRVPOOLdisconnect(Client cntxt)
 	for ( i=0; i< srvtop; i++)
 	if ( servers[i].conn != NULL ) {
 		if( msg) 
-			GDKfree(msg);
+			freeException(msg);
 		msg = RMTdisconnect(cntxt,&servers[i].conn);
 		GDKfree(servers[i].conn);
 		servers[i].conn = NULL;
@@ -288,7 +288,7 @@ SRVPOOLdiscover(Client cntxt)
 #endif
 						/* Upon receiving an initialization error, the entry should be ignored */
 						SRVPOOLdropServer(j);
-						GDKfree(msg);
+						freeException(msg);
 						msg = MAL_SUCCEED;
 					}
 				}
@@ -307,7 +307,7 @@ SRVPOOLdiscover(Client cntxt)
 #ifdef DEBUG_RUN_SRVPOOL
 		fprintf(stderr,"#%s\n", msg);
 #endif
-		GDKfree(msg);
+		freeException(msg);
 		msg = MAL_SUCCEED;
 	}
 
@@ -325,7 +325,7 @@ SRVPOOLdiscover(Client cntxt)
 			fprintf(stderr,"#Worker site %d connection %s %s\n", j, servers[j].conn, s);
 #endif
 		} else
-			GDKfree(msg);
+			freeException(msg);
 	}
 
 #ifdef DEBUG_RUN_SRVPOOL

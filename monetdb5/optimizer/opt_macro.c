@@ -409,7 +409,7 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					// failures from the macro expansion are ignored
 					// They leave the scene as is
 					if ( msg)
-						GDKfree(msg);
+						freeException(msg);
 				}
 			}
 	}
@@ -490,7 +490,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		msg= OPTmacroImplementation(cntxt,mb,stk,p);
 	// similar to OPTmacro
 	if( msg) 
-		GDKfree(msg);
+		freeException(msg);
 
     /* Defense line against incorrect plans */
 	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);

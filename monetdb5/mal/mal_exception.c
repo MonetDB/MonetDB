@@ -236,7 +236,7 @@ showScriptException(stream *out, MalBlkPtr mb, int pc, enum malexception type, c
 	va_end(ap);
 
 	dumpExceptionsToStream(out,msg);
-	GDKfree(msg);
+	freeException(msg);
 }
 
 /**
