@@ -1373,6 +1373,21 @@ sql_update_default(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+
+static str
+sql_create_comments_table(Client c)
+{
+	char *err;
+
+	char *q1 = "CREATE TABLE sys.comments (id INTEGER, remark CLOB);\n";
+	err = SQLstatementIntern(c, &q1, "update", 1, 0, NULL);
+	if (err)
+		return err;
+
+	char *q2 = "UPDATE sys._tables SET system = true WHERE name = 'comments' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
+	return SQLstatementIntern(c, &q2, "update", 1, 0, NULL);
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1488,6 +1503,13 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_default(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
+		}
+	}
+
+	if (mvc_bind_table(m, s, "comments") == NULL) {
+		if ((err = sql_create_comments_table(c)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
 		}
 	}
 }
