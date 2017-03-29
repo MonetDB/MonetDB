@@ -1705,6 +1705,8 @@ store_needs_vacuum( sql_trans *tr )
 		sql_table *t = n->data;
 		sql_column *c = t->columns.set->h->data;
 
+		if (!t->system)
+			continue;
 		/* no inserts, updates and enough deletes ? */
 		if (!store_funcs.count_col(tr, c, 0) && 
 		    !store_funcs.count_upd(tr, t) && 
@@ -1725,6 +1727,8 @@ store_vacuum( sql_trans *tr )
 		sql_table *t = n->data;
 		sql_column *c = t->columns.set->h->data;
 
+		if (!t->system)
+			continue;
 		if (!store_funcs.count_col(tr, c, 0) && 
 		    !store_funcs.count_upd(tr, t) && 
 		    store_funcs.count_del(tr, t) > 128) {
