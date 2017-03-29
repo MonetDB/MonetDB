@@ -5419,12 +5419,12 @@ comment_on_statement:
 	{ dlist *l = L();
 	  append_symbol(l, $3);
 	  append_string(l, $5);
-	  $$ = _symbol_create_list( COMMENT, l );
+	  $$ = _symbol_create_list( SQL_COMMENT, l );
 	}
 	;
 
 catalog_object:
-	TABLE qname { $$ = _symbol_create_list( TABLE, $2); }
+	TABLE qname { $$ = _symbol_create_list( SQL_TABLE, $2); }
 	;
 
 XML_value_expression:
@@ -6002,6 +6002,7 @@ char *token2string(int token)
 	SQL(DROP_CONSTRAINT);
 	SQL(DROP_DEFAULT);
 	SQL(DECLARE);
+	SQL(COMMENT);
 	SQL(SET);
 	SQL(PREP);
 	SQL(NAME);

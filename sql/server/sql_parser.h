@@ -49,6 +49,7 @@ typedef enum tokens {
 	SQL_DROP_DEFAULT,
 	SQL_ANALYZE,
 	SQL_DECLARE,
+	SQL_COMMENT,
 	SQL_SET,
 	SQL_CALL,
 	SQL_PREP,
