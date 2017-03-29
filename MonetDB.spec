@@ -963,6 +963,22 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Mar 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.13-20170329
+- Rebuilt.
+- BZ#6216: Assertion raised (sqlsmith)
+- BZ#6227: Monetdb fails on remote tables
+- BZ#6242: Crash on rel_reduce_groupby_exps (sqlsmith)
+- BZ#6243: Static optimization gives wrong result (1 + NULL = -127)
+- BZ#6245: Nested query crashes all versions of MonetDB or gives wrong
+  result starting from Dec2016-SP2
+- BZ#6246: update statements: references to a table do not bind to
+  its alias
+- BZ#6247: Type analysis issue (sqlsmith)
+- BZ#6248: update statements: the semantic stage does not resolve the
+  relation in the from clause
+- BZ#6251: Crash after adding an ordered index on sys.statistics column
+  and querying sys.statistics
+
 * Mon Mar 13 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.11-20170313
 - Rebuilt.
 - BZ#6138: Weak duplicate elimination in string heaps > 64KB
