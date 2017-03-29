@@ -77,12 +77,6 @@ Ready.
 % 3,	24 # length
 [ "Tex",	200	]
 [ "Tex",	250	]
-#SELECT LEFT("State", 3) AS "State",  SUM("Sales") AS "Sales" FROM test3832 GROUP BY LEFT("State", 3);
-% sys.L2,	sys.L5 # table_name
-% State,	Sales # name
-% varchar,	double # type
-% 3,	24 # length
-[ "Tex",	450	]
 #SELECT LEFT("State", 3) AS "State3", SUM("Sales") AS "Sales" FROM test3832 GROUP BY "State3";
 % sys.L2,	sys.L5 # table_name
 % State3,	Sales # name
@@ -142,15 +136,6 @@ Ready.
 [ "c3",	2,	3,	3	]
 [ "c4",	2,	4,	4	]
 [ "c4",	2,	4,	4	]
-#SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY RTRIM(name) ORDER BY RTRIM(name);
-% sys.L2,	sys.L5,	sys.L10,	sys.L13 # table_name
-% nametrimmed,	count,	max_pos,	min_pos # name
-% varchar,	bigint,	int,	int # type
-% 2,	1,	1,	1 # length
-[ "c1",	4,	1,	1	]
-[ "c2",	4,	2,	2	]
-[ "c3",	4,	3,	3	]
-[ "c4",	4,	4,	4	]
 #SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY nametrimmed ORDER BY nametrimmed;
 % sys.L2,	sys.L5,	sys.L10,	sys.L13 # table_name
 % nametrimmed,	count,	max_pos,	min_pos # name
