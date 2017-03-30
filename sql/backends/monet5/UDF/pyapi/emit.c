@@ -235,8 +235,8 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
                     case TYPE_str:
                     {
                         str val = NULL;
+			gdk_return retval;
                         msg = pyobject_to_str(&dictEntry, 42, &val);
-                        gdk_return retval;
                         if (msg != MAL_SUCCEED) {
                             goto wrapup;
                         }
