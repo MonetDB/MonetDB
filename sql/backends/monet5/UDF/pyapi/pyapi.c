@@ -2270,9 +2270,15 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,  int *re
             int length = 0;
             void *element = (void*) BUNtail(li, p);
             if (strConversion(&result, &length, element) == 0) {
+                BBPunfix((*ret_bat)->batCacheid);
+                *ret_bat = NULL;
                 return createException(MAL, "pyapi.eval", "Failed to convert element to string.");
             }
-            BUNappend(*ret_bat, result, FALSE);
+            if (BUNappend(*ret_bat, result, FALSE) != GDK_SUCCEED) {
+                BBPunfix((*ret_bat)->batCacheid);
+                *ret_bat = NULL;
+                return createException(MAL, "pyapi.eval", "BUNappend failed.");
+            }
         }
         return res;
     }

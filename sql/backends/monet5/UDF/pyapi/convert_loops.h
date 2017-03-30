@@ -247,7 +247,10 @@
         for (iu = 0; iu < ret->count; iu++)                                                                                                           \
         {                                                                                                                                             \
             snprintf(utf8_string, utf8string_minlength, fmt, *((mtpe*)&data[(index_offset * ret->count + iu) * ret->memory_size]));                   \
-            BUNappend(bat, utf8_string, FALSE);                                                                                                       \
+            if (BUNappend(bat, utf8_string, FALSE) != GDK_SUCCEED) { \
+                msg = createException(MAL, "pyapi.eval", "BUNappend failed.\n");     \
+                goto wrapup;                                                                                                                                      \
+            }                                                                                                                         \
         }                                                                                                                                             \
     }                                                                                                                                                 \
     else                                                                                                                                              \
@@ -257,12 +260,18 @@
             if (mask[index_offset * ret->count + iu] == TRUE)                                                                                         \
             {                                                                                                                                         \
                 bat->tnil = 1;                                                                                                                      \
-                BUNappend(bat, str_nil, FALSE);                                                                                                         \
+                if (BUNappend(bat, str_nil, FALSE) != GDK_SUCCEED) { \
+                    msg = createException(MAL, "pyapi.eval", "BUNappend failed.\n");     \
+                    goto wrapup;                                                                                                                                      \
+                }                                                                                                                         \
             }                                                                                                                                         \
             else                                                                                                                                      \
             {                                                                                                                                         \
                 snprintf(utf8_string, utf8string_minlength, fmt, *((mtpe*)&data[(index_offset * ret->count + iu) * ret->memory_size]));               \
-                BUNappend(bat, utf8_string, FALSE);                                                                                                   \
+                if (BUNappend(bat, utf8_string, FALSE) != GDK_SUCCEED) { \
+                    msg = createException(MAL, "pyapi.eval", "BUNappend failed.\n");     \
+                    goto wrapup;                                                                                                                                      \
+                }                                                                                                                         \
             }                                                                                                                                         \
         }                                                                                                                                             \
     }
@@ -318,13 +327,19 @@
 	        for (iu = 0; iu < ret->count; iu++) {                                                                                                                         \
 	            if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {                                                                                     \
 	                b->tnil = 1;                                                                                                                                        \
-	                BUNappend(b, str_nil, FALSE);                                                                                                                         \
+	                if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) { \
+                        msg = createException(MAL, "pyapi.eval", "BUNappend failed.\n");     \
+                        goto wrapup;                                                                                                                                      \
+                    }                                                                                                                         \
 	            }  else {                                                                                                                                                 \
 	                if (!string_copy(&data[(index_offset * ret->count + iu) * ret->memory_size], utf8_string, ret->memory_size, true)) {                                  \
 	                    msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");     \
 	                    goto wrapup;                                                                                                                                      \
 	                }                                                                                                                                                     \
-	                BUNappend(b, utf8_string, FALSE);                                                                                                                     \
+                    if (BUNappend(b, utf8_string, FALSE) != GDK_SUCCEED) { \
+                        msg = createException(MAL, "pyapi.eval", "BUNappend failed.\n");     \
+                        goto wrapup;                                                                                                                                      \
+                    }                                                                                                                         \
 	            }                                                                                                                                                         \
 	        }                                                                                                                                                             \
 	        break;                                                                                                                                                        \
@@ -332,10 +347,16 @@
 	        for (iu = 0; iu < ret->count; iu++) {                                                                                                                         \
 	            if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {                                                                                     \
 	                b->tnil = 1;                                                                                                                                        \
-	                BUNappend(b, str_nil, FALSE);                                                                                                                         \
+                    if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) { \
+                        msg = createException(MAL, "pyapi.eval", "BUNappend failed.\n");     \
+                        goto wrapup;                                                                                                                                      \
+                    }                                                                                                                         \
 	            }  else {                                                                                                                                                 \
 	                utf32_to_utf8(0, ret->memory_size / 4, utf8_string, (const Py_UNICODE*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));                 \
-	                BUNappend(b, utf8_string, FALSE);                                                                                                                     \
+                    if (BUNappend(b, utf8_string, FALSE) != GDK_SUCCEED) { \
+                        msg = createException(MAL, "pyapi.eval", "BUNappend failed.\n");     \
+                        goto wrapup;                                                                                                                                      \
+                    }                                                                                                                         \
 	            }                                                                                                                                                         \
 	        }                                                                                                                                                             \
 	        break;                                                                                                                                                        \
@@ -357,11 +378,17 @@
 	        for (iu = 0; iu < ret->count; iu++) {                                                                                                                         \
 	            if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {                                                                                     \
 	                b->tnil = 1;                                                                                                                                        \
-	                BUNappend(b, str_nil, FALSE);                                                                                                                         \
+                    if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) { \
+                        msg = createException(MAL, "pyapi.eval", "BUNappend failed.\n");     \
+                        goto wrapup;                                                                                                                                      \
+                    }                                                                                                                         \
 	            } else {                                                                                                                                                  \
 	                /* we try to handle as many types as possible */                                                                                                      \
 	                pyobject_to_str(((PyObject**) &data[(index_offset * ret->count + iu) * ret->memory_size]), utf8_size, &utf8_string);                                  \
-	                BUNappend(b, utf8_string, FALSE);                                                                                                                     \
+                    if (BUNappend(b, utf8_string, FALSE) != GDK_SUCCEED) { \
+                        msg = createException(MAL, "pyapi.eval", "BUNappend failed.\n");     \
+                        goto wrapup;                                                                                                                                      \
+                    }                                                                                                                         \
 	            }                                                                                                                                                         \
 	        }                                                                                                                                                             \
 	        break;                                                                                                                                                        \
