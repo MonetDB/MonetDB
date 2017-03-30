@@ -1537,17 +1537,17 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					atom_size = ATOMsize(ATOMstorage(mtype));
 				}
 				if (c->type.type->eclass == EC_TIMESTAMP) {
-					atom_size = sizeof(lng);
 					// convert timestamp values to epoch
 					lng time;
 					size_t j = 0;
-					bool swap = mnstr_byteorder(s) != 1234;
+					int swap = mnstr_byteorder(s) != 1234;
 					timestamp *times = (timestamp*) Tloc(iterators[i].b, srow);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
 						MTIMEepoch2lng(&time, times + j);
 						bufptr[j] = swap ? long_long_SWAP(time) : time;
 					}
+					atom_size = sizeof(lng);
 				} else {
 					if (mnstr_byteorder(s) != 1234) {
 						size_t j = 0;
