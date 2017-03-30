@@ -1,0 +1,35 @@
+stdout of test 'crash_correlated_subqueries_in_select.Bug-6254` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 14:28:48 >  
+# 14:28:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33692" "--set" "mapi_usock=/var/tmp/mtest-6451/.s.monetdb.33692" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 14:28:48 >  
+
+# MonetDB 5 server v11.25.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:33692/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6451/.s.monetdb.33692
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+# 14:28:48 >  
+# 14:28:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6451" "--port=33692"
+# 14:28:48 >  
+
+
+
+# 14:28:49 >  
+# 14:28:49 >  "Done."
+# 14:28:49 >  
+
