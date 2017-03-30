@@ -69,7 +69,7 @@ FITSinitCatalog(mvc *m)
 		mvc_create_column_(m, fits_col, "id", "int", 32);
 		mvc_create_column_(m, fits_col, "name", "varchar", 80);
 		mvc_create_column_(m, fits_col, "type", "varchar", 80);
-		mvc_create_column_(m, fits_col, "units", "varchar", 10);
+		mvc_create_column_(m, fits_col, "units", "varchar", 80);
 		mvc_create_column_(m, fits_col, "number", "int", 32);
 		mvc_create_column_(m, fits_col, "table_id", "int", 32);
 	}
