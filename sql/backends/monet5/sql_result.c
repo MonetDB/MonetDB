@@ -1382,6 +1382,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 	row = srow = offset;
 	count = nr;
 	while (row < (size_t) count) {
+		char* message_header;
 		char *buf = bs2_buffer(s).buf;
 		size_t crow = 0;
 		size_t bytes_left = bsize - sizeof(lng) - 2 * sizeof(char) - 1;
@@ -1459,7 +1460,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 		assert(bs2_buffer(s).pos == 0);
 
 		// continuation message
-		char* message_header = "+\n";
+		message_header = "+\n";
 		if (row >= (size_t) count) {
 			// final message
 			message_header = "-\n";
