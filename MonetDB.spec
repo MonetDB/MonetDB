@@ -963,6 +963,13 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Mar 30 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.15-20170330
+- Rebuilt.
+- BZ#6250: Assertion failure when querying a Blob column with order
+  by DESC
+- BZ#6253: FITS Data Vaults does not work when using user/pw and other
+  than sys schema name
+
 * Wed Mar 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.13-20170329
 - Rebuilt.
 - BZ#6216: Assertion raised (sqlsmith)
