@@ -72,9 +72,8 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     sqlfun = sqlmorefun->func;
     exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
-
     args = (str*) GDKzalloc(pci->argc * sizeof(str));
-    if (args == NULL) {
+    if (!args) {
         throw(MAL, "pyapi.eval", MAL_MALLOC_FAIL" arguments.");
     }
 
@@ -91,7 +90,7 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
     // We name all the unknown arguments
     for (i = pci->retc + 2; i < argcount; i++) {
-        if (args[i] == NULL) {
+        if (!args[i]) {
             char argbuf[64];
             snprintf(argbuf, sizeof(argbuf), "arg%i", i - pci->retc - 1);
             args[i] = GDKstrdup(argbuf);
@@ -135,10 +134,9 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
         // TODO deal with sql types
     }
 
-    pConnection = Py_Connection_Create(cntxt, 0, 0, 0);
     if (sqlmorefun->colnames) {
         n = sqlmorefun->colnames->h;
-        cols = GDKmalloc(sizeof(sql_emit_col) * pci->retc);
+        cols = GDKzalloc(sizeof(sql_emit_col) * pci->retc);
         if (!cols) {
             msg = createException(MAL, "pyapi.eval_loader", MAL_MALLOC_FAIL"column list");
             goto wrapup;
@@ -146,7 +144,7 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
         i = 0;
         while (n) {
             assert(i < pci->retc);
-            cols[i].name = *((char**) n->data);
+            cols[i].name = GDKstrdup(*((char**) n->data));
             n = n->next;
             cols[i].b = COLnew(0, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
             cols[i].b->tnil = 0;
@@ -160,8 +158,9 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
         retvals = 0;
         create_table = true;
     }
-    pEmit = PyEmit_Create(cols, retvals);
 
+    pConnection = Py_Connection_Create(cntxt, 0, 0, 0);
+    pEmit = PyEmit_Create(cols, retvals);
     if (!pConnection || !pEmit) {
         msg = createException(MAL, "pyapi.eval_loader", MAL_MALLOC_FAIL"python object");
         goto wrapup;
@@ -171,8 +170,10 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     PyTuple_SetItem(pArgs, ai++, pConnection);
 
     pycall = FormatCode(exprStr, args, argcount, 4, &code_object, &msg, loader_additional_args, additional_columns);
-    if (pycall == NULL && code_object == NULL) {
-        if (msg == NULL) { msg = createException(MAL, "pyapi.eval_loader", "Error while parsing Python code."); }
+    if (!pycall && !code_object) {
+        if (msg == MAL_SUCCEED) {
+            msg = createException(MAL, "pyapi.eval_loader", "Error while parsing Python code.");
+        }
         goto wrapup;
     }
 
@@ -213,7 +214,6 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
         if (PyErr_Occurred()) {
             Py_DECREF(pFunc);
-            Py_DECREF(pArgs);
             msg = PyError_CreateException("Python exception", pycall);
             if (code_object == NULL) { PyRun_SimpleString("del pyfun"); }
             goto wrapup;
@@ -222,7 +222,6 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
         if (ret != Py_None) {
             if (PyEmit_Emit((PyEmitObject *) pEmit, ret) == NULL) {
                 Py_DECREF(pFunc);
-                Py_DECREF(pArgs);
                 msg = PyError_CreateException("Python exception", pycall);
                 goto wrapup;
             }
@@ -233,6 +232,7 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
         retvals = (int) ((PyEmitObject *) pEmit)->ncols;
         Py_DECREF(pFunc);
         Py_DECREF(pArgs);
+        pArgs = NULL;
 
         if (retvals == 0) {
             msg = createException(MAL, "pyapi.eval_loader", "No elements emitted by the loader."); 
@@ -251,6 +251,7 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
             b->trevsorted = 0;
 
             *getArgReference_bat(stk, pci, i) = b->batCacheid;
+            cols[i].b = NULL;
             BBPkeepref(b->batCacheid);
         }
     } else {
@@ -262,22 +263,36 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
             b->trevsorted = 0;
         }
         msg = _connection_create_table(cntxt, sqlmorefun->sname, sqlmorefun->tname, cols, retvals);
-        for(i = 0; i < retvals; i++) {
-            BAT *b = cols[i].b;
-            BBPunfix(b->batCacheid);
-        }
         goto wrapup;
     }
 
 wrapup:
+    if (cols) {
+        for(i = 0; i < retvals; i++) {
+            if (cols[i].b) {
+                BBPunfix(cols[i].b->batCacheid);
+            }
+            if (cols[i].name) {
+                GDKfree(cols[i].name);
+            }
+        }
+        GDKfree(cols);
+    }
     if (gstate) {
+        if (pArgs) {
+            Py_DECREF(pArgs);
+        }
         gstate = Python_ReleaseGIL(gstate);
     }
     if (pycall) GDKfree(pycall);
-    if (args) GDKfree(args);
-    if (cols) GDKfree(cols);
-
-    // TODO: fix leaks of which there are many
+    if (args) {
+        for (i = pci->retc + 2; i < argcount; i++) {
+            if (args[i]) {
+                GDKfree(args[i]);
+            }
+        }
+        GDKfree(args);
+    }
     return(msg);
 
 }
