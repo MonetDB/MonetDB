@@ -29,11 +29,11 @@
 #include "clients.h"
 #include "mal_exception.h"
 
-#define FITS_INS_COL "INSERT INTO fits_columns(id, name, type, units, number, table_id) \
+#define FITS_INS_COL "INSERT INTO sys.fits_columns(id, name, type, units, number, table_id) \
 	 VALUES(%d,'%s','%s','%s',%d,%d);"
-#define FILE_INS "INSERT INTO fits_files(id, name) VALUES (%d, '%s');"
-#define DEL_TABLE "DELETE FROM fitsfiles;"
-#define ATTACHDIR "call fitsattach('%s');"
+#define FILE_INS "INSERT INTO sys.fits_files(id, name) VALUES (%d, '%s');"
+#define DEL_TABLE "DELETE FROM sys.fitsfiles;"
+#define ATTACHDIR "call sys.fitsattach('%s');"
 
 static void
 FITSinitCatalog(mvc *m)
