@@ -10,7 +10,7 @@ atom blob;
 
 command tostr()   address BLOBtostr;
 command fromstr() address BLOBfromstr;
-command nequal()  address BLOBnequal;
+command cmp()     address BLOBcmp;
 command hash()    address BLOBhash;
 command null()    address BLOBnull;
 command read()    address BLOBread;

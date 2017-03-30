@@ -227,7 +227,7 @@ UUIDuuid2str(str *retval, uuid **u)
 	int l = 0;
 	*retval = NULL;
 	if (UUIDtoString(retval, &l, *u) == 0)
-		throw(MAL, "uuid.str", "Allocation failure");
+		throw(MAL, "uuid.str", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

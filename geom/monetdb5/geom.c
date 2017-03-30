@@ -854,18 +854,18 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 	//store the points so that I do not have to read them multiple times using geos
 	if ((xCoords_org = GDKmalloc(pointsNum * sizeof(double))) == NULL) {
 		*outGeometry = NULL;
-		throw(MAL, "geom.Segmentize", "Could not allocate memory for %d double values", pointsNum);
+		throw(MAL, "geom.Segmentize", MAL_MALLOC_FAIL " for %d double values", pointsNum);
 	}
 	if ((yCoords_org = GDKmalloc(pointsNum * sizeof(double))) == NULL) {
 		GDKfree(xCoords_org);
 		*outGeometry = NULL;
-		throw(MAL, "geom.Segmentize", "Could not allocate memory for %d double values", pointsNum);
+		throw(MAL, "geom.Segmentize", MAL_MALLOC_FAIL " for %d double values", pointsNum);
 	}
 	if ((zCoords_org = GDKmalloc(pointsNum * sizeof(double))) == NULL) {
 		GDKfree(xCoords_org);
 		GDKfree(yCoords_org);
 		*outGeometry = NULL;
-		throw(MAL, "geom.Segmentize", "Could not allocate memory for %d double values", pointsNum);
+		throw(MAL, "geom.Segmentize", MAL_MALLOC_FAIL " for %d double values", pointsNum);
 	}
 
 	if (!GEOSCoordSeq_getX(gcs_old, 0, &xCoords_org[0])) {
@@ -2236,7 +2236,7 @@ wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
 		size_t parsedBytes;
 		str err = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &(*toArray)->data[i], srid, &parsedBytes);
 		if (err != MAL_SUCCEED) {
-			GDKfree(err);
+			freeException(err);
 			return 0;
 		}
 		skipBytes += parsedBytes;
@@ -3272,7 +3272,7 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err) {
-			GDKfree(err);
+			freeException(err);
 			throw(MAL, "geom.MakeLine", MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
@@ -4223,7 +4223,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err) {
-			GDKfree(err);
+			freeException(err);
 			throw(MAL, "geom.Union", MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
@@ -5096,7 +5096,7 @@ wkbFROMSTR(char *geomWKT, int *len, wkb **geomWKB)
 
 	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
 	if (err != MAL_SUCCEED) {
-		GDKfree(err);
+		freeException(err);
 		return 0;
 	}
 	return (int) parsedBytes;

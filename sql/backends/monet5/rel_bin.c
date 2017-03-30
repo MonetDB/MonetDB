@@ -1204,7 +1204,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			sql_idx *i = find_sql_idx(t, oname+1);
 
 			/* do not include empty indices in the plan */
-			if (hash_index(i->type) && list_length(i->columns) <= 1)
+			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 			s = stmt_idx(be, i, dels);
 		} else {

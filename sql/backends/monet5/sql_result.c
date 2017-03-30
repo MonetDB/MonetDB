@@ -133,7 +133,6 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 				GDKfree(*buf);
 			*buf = (str) GDKzalloc(*len = 4);
 			if (*buf == NULL) {
-				GDKerror("Allocation failed\n");
 				return 0;
 			}
 		}
@@ -151,7 +150,6 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 			GDKfree(*buf);
 		*buf = (str) GDKzalloc(*len = len1 + 8);
 		if (*buf == NULL) {
-			GDKerror("Allocation failed\n");
 			return 0;
 		}
 	}
@@ -202,7 +200,6 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 			GDKfree(*buf);
 		*buf = (str) GDKzalloc(*len = len1 + len2 + 8);
 		if (*buf == NULL) {
-			GDKerror("Allocation failed\n");
 			return 0;
 		}
 	}
@@ -719,7 +716,6 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 			*len = 2 * l + 3;
 			*buf = GDKzalloc(*len);
 			if (*buf == NULL) {
-				GDKerror("Allocation failed\n");
 				return 0;
 			}
 		}

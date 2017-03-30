@@ -268,12 +268,12 @@ Ready.
 % v # name
 % blob # type
 % 0 # length
+[ NULL	]
+[ 	]
 [ 00	]
 [ 11	]
 [ 0123456789	]
 [ A0B2C3D4F5	]
-[ 	]
-[ NULL	]
 #SELECT v, convert(v, varchar(16)) from T_blob;
 % sys.t_blob,	sys.L3 # table_name
 % v,	L3 # name

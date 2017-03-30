@@ -263,6 +263,9 @@ copyMalBlk(MalBlkPtr old)
 	for (i = 0; i < old->vtop; i++) {
 		mb->var[i]=  old->var[i];
 		if (!VALcopy(&(mb->var[i].value), &(old->var[i].value))) {
+			while (--i >= 0)
+				VALclear(&mb->var[i].value);
+			GDKfree(mb->var);
 			GDKfree(mb);
 			GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 			return NULL;
@@ -272,7 +275,9 @@ copyMalBlk(MalBlkPtr old)
 	mb->stmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * old->ssize);
 
 	if (mb->stmt == NULL) {
-		GDKfree(mb->var); // this leaks strings in var
+		for (i = 0; i < old->vtop; i++)
+			VALclear(&mb->var[i].value);
+		GDKfree(mb->var);
 		GDKfree(mb);
 		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
@@ -284,6 +289,12 @@ copyMalBlk(MalBlkPtr old)
 	for (i = 0; i < old->stop; i++) {
 		mb->stmt[i] = copyInstruction(old->stmt[i]);
 		if(!mb->stmt[i]) {
+			while (--i >= 0)
+				freeInstruction(mb->stmt[i]);
+			for (i = 0; i < old->vtop; i++)
+				VALclear(&mb->var[i].value);
+			GDKfree(mb->var);
+			GDKfree(mb->stmt);
 			GDKfree(mb);
 			GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 			return NULL;
@@ -291,6 +302,12 @@ copyMalBlk(MalBlkPtr old)
 	}
 	mb->help = old->help ? GDKstrdup(old->help) : NULL;
 	if (old->help && !mb->help) {
+		for (i = 0; i < old->stop; i++)
+			freeInstruction(mb->stmt[i]);
+		for (i = 0; i < old->vtop; i++)
+			VALclear(&mb->var[i].value);
+		GDKfree(mb->var);
+		GDKfree(mb->stmt);
 		GDKfree(mb);
 		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
@@ -1159,7 +1176,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			GDKfree(ft);
 			GDKfree(tt);
 			mb->errors++;
-			GDKfree(msg);
+			freeException(msg);
 		} else {
 			assert(cst->vtype == type);
 		}

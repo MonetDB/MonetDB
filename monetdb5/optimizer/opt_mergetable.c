@@ -1845,13 +1845,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 #ifdef DEBUG_OPT_MERGETABLE
 	{
-		str err;
 		fprintf(stderr,"#Result of multi table optimizer\n");
         chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
         chkFlow(cntxt->fdout, mb);
         chkDeclarations(cntxt->fdout, mb);
 		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-		if( err) GDKfree(err);
 	}
 #endif
 

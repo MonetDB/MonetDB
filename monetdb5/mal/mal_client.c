@@ -248,7 +248,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	{
 		str msg = AUTHgetUsername(&c->username, c);
 		if (msg)				/* shouldn't happen */
-			GDKfree(msg);
+			freeException(msg);
 	}
 #endif
 	c->blocksize = BLOCK;

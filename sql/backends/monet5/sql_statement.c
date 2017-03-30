@@ -1356,7 +1356,7 @@ argumentZero(MalBlkPtr mb, int tpe)
 	cst.val.ival = 0;
 	msg = convertConstant(tpe, &cst);
 	if( msg)
-		GDKfree(msg); // will not be called
+		freeException(msg); // will not be called
 	return defConstant(mb, tpe, &cst);
 }
 */

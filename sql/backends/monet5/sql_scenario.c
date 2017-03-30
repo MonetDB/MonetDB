@@ -74,7 +74,7 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 	(void) clientid;
 	msg = SQLCacheRemove(MCgetClient(clientid), name);
 	if (msg)
-		GDKfree(msg);	/* do something with error? */
+		freeException(msg);	/* do something with error? */
 
 #ifdef _SQL_SCENARIO_DEBUG
 	fprintf(stderr, "#monet5_free:%d\n", nr);
@@ -955,7 +955,7 @@ SQLparser(Client c)
 		mnstr_printf(out, "!Could not create SQL allocator\n");
 		mnstr_flush(out);
 		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", "Could not create SQL allocator");
+		throw(SQL, "SQLparser", MAL_MALLOC_FAIL " for SQL allocator");
 	}
 
 	m->emode = m_normal;

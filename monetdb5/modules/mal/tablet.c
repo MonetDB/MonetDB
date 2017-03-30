@@ -1681,7 +1681,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		task->base[i] = GDKzalloc(MAXROWSIZE(2 * b->size) + 2);
 		task->rowlimit[i] = MAXROWSIZE(2 * b->size);
 		if (task->base[i] == 0) {
-			tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file");
+			tablet_error(task, lng_nil, int_nil, MAL_MALLOC_FAIL, "SQLload_file");
 			goto bailout;
 		}
 		task->base[i][b->size + 1] = 0;
@@ -1695,7 +1695,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		task->maxrow = (BUN) maxrow;
 
 	if (task->fields == 0 || task->cols == 0 || task->time == 0) {
-		tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file");
+		tablet_error(task, lng_nil, int_nil, MAL_MALLOC_FAIL, "SQLload_file");
 		goto bailout;
 	}
 
@@ -1745,13 +1745,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	for (i = 0; i < MAXBUFFERS; i++) {
 		task->lines[i] = GDKzalloc(sizeof(char *) * task->limit);
 		if (task->lines[i] == NULL) {
-			tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file:failed to alloc buffers");
+			tablet_error(task, lng_nil, int_nil, MAL_MALLOC_FAIL, "SQLload_file:failed to alloc buffers");
 			goto bailout;
 		}
 	}
 	task->rowerror = (bte *) GDKzalloc(sizeof(bte) * task->limit);
 	if( task->rowerror == NULL){
-		tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file:failed to alloc rowerror buffer");
+		tablet_error(task, lng_nil, int_nil, MAL_MALLOC_FAIL, "SQLload_file:failed to alloc rowerror buffer");
 		goto bailout;
 	}
 
@@ -1767,7 +1767,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		ptask[j].id = j;
 		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 		if (ptask[j].cols == 0) {
-			tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file");
+			tablet_error(task, lng_nil, int_nil, MAL_MALLOC_FAIL, "SQLload_file");
 			goto bailout;
 		}
 #ifdef MLOCK_TST
