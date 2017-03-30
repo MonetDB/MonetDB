@@ -8152,7 +8152,7 @@ Ready.
 [ "bbp",	"getRefCount",	"command bbp.getRefCount(b:bat[:any_1]):int ",	"CMDgetBATrefcnt;",	"Utility for debugging MAL interpreter"	]
 [ "bbp",	"getStatus",	"command bbp.getStatus():bat[:str] ",	"CMDbbpStatus;",	"Create a BAT with the disk/load status"	]
 [ "bbp",	"setName",	"command bbp.setName(b:bat[:any_1],n:str):str ",	"CMDsetName;",	"Rename a BAT"	]
-[ "blob",	"#cmp",	"command blob.#cmp():void ",	"BLOBcmp;",	""	]
+[ "blob",	"#cmp",	"command blob.#cmp():void ",	"BLOBnequal;",	""	]
 [ "blob",	"#del",	"command blob.#del():void ",	"BLOBdel;",	""	]
 [ "blob",	"#fromstr",	"command blob.#fromstr():void ",	"BLOBfromstr;",	""	]
 [ "blob",	"#hash",	"command blob.#hash():void ",	"BLOBhash;",	""	]

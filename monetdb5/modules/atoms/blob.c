@@ -39,7 +39,7 @@ mal_export str BLOBprelude(void *ret);
 
 mal_export int BLOBtostr(str *tostr, int *l, blob *pin);
 mal_export int BLOBfromstr(char *instr, int *l, blob **val);
-mal_export int BLOBcmp(blob *l, blob *r);
+mal_export int BLOBnequal(blob *l, blob *r);
 mal_export BUN BLOBhash(blob *b);
 mal_export blob * BLOBnull(void);
 mal_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
@@ -94,7 +94,7 @@ blob_put(Heap *h, var_t *bun, blob *val)
 }
 
 static int
-blob_cmp(blob *l, blob *r)
+blob_nequal(blob *l, blob *r)
 {
 	size_t len = l->nitems;
 
@@ -447,9 +447,9 @@ fromblob_idx(str *retval, blob *b, int *idx)
  * @-
  */
 int
-BLOBcmp(blob *l, blob *r)
+BLOBnequal(blob *l, blob *r)
 {
-	return blob_cmp(l, r);
+	return blob_nequal(l, r);
 }
 
 void
