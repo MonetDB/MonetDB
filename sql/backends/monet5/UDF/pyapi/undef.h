@@ -8,8 +8,10 @@
 
 /*
  * M. Raasveldt
- * On Windows, we have to #undef a number of variables to prevent #define conflicts between MonetDB and Python.
- * This file should be included after MonetDB headers are included and before Python headers are included to clean up conflicting #defines.
+ * On Windows, we have to #undef a number of variables to prevent #define
+ * conflicts between MonetDB and Python.
+ * This file should be included after MonetDB headers are included and before
+ * Python headers are included to clean up conflicting #defines.
  */
 
 #ifdef WIN32
