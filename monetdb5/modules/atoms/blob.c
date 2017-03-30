@@ -99,7 +99,7 @@ blob_cmp(blob *l, blob *r)
 	size_t len = l->nitems;
 
 	if (len != r->nitems)
-		return len - r->nitems;
+		return len < r->nitems ? -1 : len > r->nitems ? 1 : 0;
 
 	if (len == ~(size_t) 0)
 		return (0);

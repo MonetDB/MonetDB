@@ -15,12 +15,12 @@
 
 #include "unicode.h"
 
-#define scalar_convert(tpe) {\
-    tpe val = (tpe) tpe##_nil; msg = pyobject_to_##tpe(&dictEntry, 42, &val); \
-    BUNappend(self->cols[i].b, &val, 0); \
-    if (msg != MAL_SUCCEED) { \
-        PyErr_Format(PyExc_TypeError, "Conversion Failed: %s", msg); \
-        return NULL; \
+#define scalar_convert(tpe) { \
+    tpe val = (tpe) tpe##_nil; \
+    msg = pyobject_to_##tpe(&dictEntry, 42, &val); \
+    if (msg != MAL_SUCCEED || BUNappend(self->cols[i].b, &val, 0) != GDK_SUCCEED) { \
+        if (msg == MAL_SUCCEED) msg = GDKstrdup("BUNappend failed."); \
+        goto wrapup; \
     }}
 
 
@@ -30,6 +30,7 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
     ssize_t el_count = -1; // the amount of elements this emit call will write to the table
     size_t dict_elements, matched_elements;
     str msg = MAL_SUCCEED; // return message
+    bool error = false;
 
     if (!PyDict_Check(args)) {
         PyErr_SetString(PyExc_TypeError, "need dict");
@@ -80,6 +81,10 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
         if (matched_elements != dict_elements) {
             // not all elements in the dictionary were matched, look for the element that was not matched
             PyObject *keys = PyDict_Keys(args);
+            if (!keys) {
+                msg = GDKstrdup(MAL_MALLOC_FAIL);
+                goto wrapup;
+            }
             for(i = 0; i < (size_t) PyList_Size(keys); i++) {
                 PyObject *key = PyList_GetItem(keys, i);
                 char *val = NULL;
@@ -100,6 +105,7 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
                 if (!found) {
                     // the current element was present in the dictionary, but it has no matching column
                     PyErr_Format(PyExc_TypeError, "Unmatched element \"%s\" in dict", val);
+                    error = true;
                     goto loop_end;
                 }
             }
@@ -114,7 +120,7 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
             // allocate space for new columns (if any new columns show up)
             sql_emit_col *old = self->cols;
         	// FIXME unchecked_malloc GDKmalloc can return NULL
-            self->cols = GDKmalloc(sizeof(sql_emit_col) * potential_size);
+            self->cols = GDKzalloc(sizeof(sql_emit_col) * potential_size);
             if (old) {
                 memcpy(self->cols, old, sizeof(sql_emit_col) * self->maxcols);
                 GDKfree(old);
@@ -132,6 +138,7 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
             if (msg != MAL_SUCCEED) {
                 // one of the keys in the dictionary was not a string
                 PyErr_Format(PyExc_TypeError, "Could not convert object type %s to a string: %s", PyString_AsString(PyObject_Str(PyObject_Type(key))), msg);
+                error = true;
                 Py_DECREF(keys);
                 goto wrapup;
             }
@@ -152,7 +159,8 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
                 int bat_type = TYPE_int;
                 if (!array) {
                     PyErr_Format(PyExc_TypeError, "Failed to create NumPy array.");
-                    return NULL;
+                    error = true;
+                    goto wrapup;
                 }
                 array_type = (PyArray_Descr*) PyArray_DESCR((PyArrayObject*)array);
                 bat_type = PyType_ToBat(array_type->type_num);
@@ -163,8 +171,10 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
                 if (self->nvals > 0) {
                     // insert NULL values up until the current entry
                     for (ai = 0; ai < self->nvals; ai++) {
-                		// FIXME unchecked_malloc ATOMnil can return NULL
-                        BUNappend(self->cols[self->ncols].b, ATOMnil(self->cols[self->ncols].b->ttype), 0);
+                        if (BUNappend(self->cols[self->ncols].b, ATOMnil(self->cols[self->ncols].b->ttype), 0) != GDK_SUCCEED) {
+                            msg = GDKstrdup("BUNappend failed.");
+                            goto wrapup;
+                        }
                     }
                     self->cols[i].b->tnil = 1;
                     self->cols[i].b->tnonil = 0;
@@ -213,20 +223,24 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
                     case TYPE_str:
                     {
                         str val = NULL;
+			gdk_return retval;
                         msg = pyobject_to_str(&dictEntry, 42, &val);
-                        BUNappend(self->cols[i].b, val, 0);
-                        if (val) {
-                            free(val);
-                        }
                         if (msg != MAL_SUCCEED) {
-                            PyErr_Format(PyExc_TypeError, "Conversion Failed: %s", msg);
-                            return NULL;
+                            goto wrapup;
+                        }
+                        assert(val);
+                        retval = BUNappend(self->cols[i].b, val, 0);
+                        free(val);
+                        if (retval != GDK_SUCCEED) {
+                            msg = GDKstrdup("BUNappend failed.");
+                            goto wrapup;
                         }
                     }
                         break;
                     default:
                         PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->ttype));
-                        return NULL;
+                        error = true;
+                        goto wrapup;
                 }
             } else {
                 bool *mask = NULL;
@@ -236,17 +250,18 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
                 size_t index_offset = 0;
                 size_t iu = 0;
                 if (BATextend(self->cols[i].b, self->nvals + el_count) != GDK_SUCCEED) {
-                    PyErr_Format(PyExc_TypeError, "Failed to allocate memory to extend BAT.");
-                    return NULL;
-                }
-                msg = PyObject_GetReturnValues(dictEntry, ret);
-                if (ret->mask_data != NULL) {
-                    mask = (bool*) ret->mask_data;
-                }
-                if (ret->array_data == NULL) {
-                    msg = createException(MAL, "pyapi.eval", "No return value stored in the structure.\n");
+                    msg = GDKstrdup("Failed to allocate memory to extend BAT.");
                     goto wrapup;
                 }
+                msg = PyObject_GetReturnValues(dictEntry, ret);
+                if (msg != MAL_SUCCEED) {
+                    goto wrapup;
+                }
+                if (ret->array_data == NULL) {
+                    msg = GDKstrdup("No return value stored in the structure.");
+                    goto wrapup;
+                }
+                mask = (bool*) ret->mask_data;
                 data = (char*) ret->array_data;
                 assert((size_t) el_count == (size_t) ret->count);
                 switch (self->cols[i].b->ttype) {
@@ -292,13 +307,16 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
                         break;
                     default:
                         PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->ttype));
-                        return NULL;
+                        error = true;
+                        goto wrapup;
                 }
                 self->cols[i].b->tnonil = 1 - self->cols[i].b->tnil;
             }
         } else {
             for (ai = 0; ai < (size_t) el_count; ai++) {
-                BUNappend(self->cols[i].b, ATOMnil(self->cols[i].b->ttype), 0);
+                if (BUNappend(self->cols[i].b, ATOMnil(self->cols[i].b->ttype), 0) != GDK_SUCCEED) {
+                    goto wrapup;
+                }
             }
             self->cols[i].b->tnil = 1;
             self->cols[i].b->tnonil = 0;
@@ -307,12 +325,10 @@ PyEmit_Emit(PyEmitObject *self, PyObject *args) {
     }
 
     self->nvals += el_count;
-    Py_RETURN_NONE;
-  bunins_failed:
 wrapup:
     if (msg != MAL_SUCCEED) {
         PyErr_Format(PyExc_TypeError, "Failed conversion: %s", msg);
-    } else {
+    } else if (!error) {
         Py_RETURN_NONE;
     }
     return NULL;
