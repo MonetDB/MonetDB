@@ -170,13 +170,13 @@ Ready.
 % L2 # name
 % url # type
 % 33 # length
-[ "https://www.monetdb.org:8080/blah"	]
+[ https://www.monetdb.org:8080/blah	]
 #select newurl('https','localhost','boe');
 % .L2 # table_name
 % L2 # name
 % url # type
 % 21 # length
-[ "https://localhost/boe"	]
+[ https://localhost/boe	]
 #drop table t2972;
 #create table t2972(u url);
 #insert into t2972 values ('file:///export/home/fabian/monetdb/Apr2012/hgrepo/sql/test/BugTracker-2012/Tests/url_script_test.Bug-2972.txt');

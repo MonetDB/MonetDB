@@ -72,7 +72,7 @@ Ready.
 % .L7,	.L12 # table_name
 % c0,	c1 # name
 % int,	oid # type
-% 1,	4 # length
+% 1,	3 # length
 
 # 16:07:10 >  
 # 16:07:10 >  "Done."
