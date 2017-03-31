@@ -58,8 +58,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn);
 #ifndef NDEBUG
-	mnstr_printf(GDKstdout,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
-	printInstruction(GDKstdout, mb, stk, pci, LIST_MAL_DEBUG);
+	fprintf(stderr,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
+	fprintInstruction(stderr, mb, stk, pci, LIST_MAL_DEBUG);
 #endif
 
 	/* search the iterator bat */
@@ -73,12 +73,12 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #ifdef DEBUG_OPT_MULTIPLEX
 	{	char *tpenme;
-		mnstr_printf(cntxt->fdout,"#calling the optimize multiplex script routine\n");
-		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL );
+		fprintf(stderr,"#calling the optimize multiplex script routine\n");
+		fprintFunction(stderr,mb, 0, LIST_MAL_ALL );
 		tpenme = getTypeName(getVarType(mb,iter));
-		mnstr_printf(cntxt->fdout,"#multiplex against operator %d %s\n",iter, tpenme);
+		fprintf(stderr,"#multiplex against operator %d %s\n",iter, tpenme);
 		GDKfree(tpenme);
-		printInstruction(cntxt->fdout,mb, 0, pci,LIST_MAL_ALL);
+		fprintInstruction(stderr,mb, 0, pci,LIST_MAL_ALL);
 	}
 #endif
 	/*
@@ -209,7 +209,7 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 	}
 	return 0;
 }
-int
+str
 OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *old = 0, p;
@@ -225,7 +225,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
-		return 0;
+		throw(MAL,"optimizer.mergetable", MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -254,10 +254,6 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if( old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
-	if (mb->errors){
-		/* rollback */
-	}
-	GDKfree(msg);
 
     /* Defense line against incorrect plans */
     if( mb->errors == 0 && actions > 0){
@@ -266,8 +262,11 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","multiplex",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","multiplex",actions, usec);
     newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
-	return mb->errors? 0: actions;
+	return msg;
 }

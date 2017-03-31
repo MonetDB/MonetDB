@@ -9,9 +9,6 @@
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
 
-#define LOG_OK 0
-#define LOG_ERR (-1)
-
 #define LOGFILE "log"
 #define LOGFILE_SHARED "log_shared"
 
@@ -37,8 +34,8 @@ typedef struct trans {
 	struct trans *tr;
 } trans;
 
-typedef int (*preversionfix_fptr)(int oldversion, int newversion);
-typedef void (*postversionfix_fptr)(void *lg);
+typedef gdk_return (*preversionfix_fptr)(int oldversion, int newversion);
+typedef gdk_return (*postversionfix_fptr)(void *lg);
 
 typedef struct logger {
 	int debug;
@@ -109,29 +106,31 @@ typedef int log_bid;
 gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int keep_persisted_log_files);
 gdk_export logger *logger_create_shared(int debug, const char *fn, const char *logdir, const char *slave_logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
-gdk_export int logger_exit(logger *lg);
-gdk_export int logger_restart(logger *lg);
-gdk_export int logger_cleanup(logger *lg, int keep_persisted_log_files);
+gdk_export gdk_return logger_exit(logger *lg);
+gdk_export gdk_return logger_restart(logger *lg);
+gdk_export gdk_return logger_cleanup(logger *lg, int keep_persisted_log_files);
 gdk_export lng logger_changes(logger *lg);
 gdk_export lng logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
-gdk_export int logger_reload(logger *lg);
+gdk_export gdk_return logger_reload(logger *lg);
 
 /* todo pass the transaction id */
-gdk_export int log_bat(logger *lg, BAT *b, const char *n);
-gdk_export int log_bat_clear(logger *lg, const char *n);
-gdk_export int log_bat_persists(logger *lg, BAT *b, const char *n);
-gdk_export int log_bat_transient(logger *lg, const char *n);
-gdk_export int log_delta(logger *lg, BAT *uid, BAT *uval, const char *n);
+gdk_export gdk_return log_bat(logger *lg, BAT *b, const char *n);
+gdk_export gdk_return log_bat_clear(logger *lg, const char *n);
+gdk_export gdk_return log_bat_persists(logger *lg, BAT *b, const char *n);
+gdk_export gdk_return log_bat_transient(logger *lg, const char *n);
+gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, const char *n);
 
-gdk_export int log_tstart(logger *lg);	/* TODO return transaction id */
-gdk_export int log_tend(logger *lg);
-gdk_export int log_abort(logger *lg);
+gdk_export gdk_return log_tstart(logger *lg);	/* TODO return transaction id */
+gdk_export gdk_return log_tend(logger *lg);
+gdk_export gdk_return log_abort(logger *lg);
 
-gdk_export int log_sequence(logger *lg, int seq, lng id);
+gdk_export gdk_return log_sequence(logger *lg, int seq, lng id);
 
-gdk_export log_bid logger_add_bat(logger *lg, BAT *b, const char *name);
-gdk_export void logger_del_bat(logger *lg, log_bid bid);
+gdk_export gdk_return logger_add_bat(logger *lg, BAT *b, const char *name)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return logger_del_bat(logger *lg, log_bid bid)
+	__attribute__ ((__warn_unused_result__));
 gdk_export log_bid logger_find_bat(logger *lg, const char *name);
 
 typedef int (*geomcatalogfix_fptr)(void *, int);

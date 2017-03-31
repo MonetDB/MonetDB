@@ -16,6 +16,6 @@
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-mal_export int OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _OLTP_H */

@@ -132,7 +132,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Dec2016-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Dec2016-SP3/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -944,6 +944,49 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Mar 30 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.15-20170330
+- Rebuilt.
+- BZ#6250: Assertion failure when querying a Blob column with order
+  by DESC
+- BZ#6253: FITS Data Vaults does not work when using user/pw and other
+  than sys schema name
+
+* Wed Mar 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.13-20170329
+- Rebuilt.
+- BZ#6216: Assertion raised (sqlsmith)
+- BZ#6227: Monetdb fails on remote tables
+- BZ#6242: Crash on rel_reduce_groupby_exps (sqlsmith)
+- BZ#6243: Static optimization gives wrong result (1 + NULL = -127)
+- BZ#6245: Nested query crashes all versions of MonetDB or gives wrong
+  result starting from Dec2016-SP2
+- BZ#6246: update statements: references to a table do not bind to
+  its alias
+- BZ#6247: Type analysis issue (sqlsmith)
+- BZ#6248: update statements: the semantic stage does not resolve the
+  relation in the from clause
+- BZ#6251: Crash after adding an ordered index on sys.statistics column
+  and querying sys.statistics
+
+* Mon Mar 13 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.11-20170313
+- Rebuilt.
+- BZ#6138: Weak duplicate elimination in string heaps > 64KB
+- BZ#6183: ResultSet returns double quoted column name if name contains
+  space characters
+- BZ#6219: Crash in rel_optimizer (sqlsmith)
+- BZ#6228: mclient crashes if real column is multiplied by it itself
+- BZ#6229: ANALYZE, unexpected end of input
+- BZ#6230: ANALYZE, syntax error
+- BZ#6237: semijoin with empty right bat does not return immediately
+
+* Tue Feb 28 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.11-20170313
+- gdk: Fixed a bug when appending string bats that are fully duplicate
+  eliminated.  It could happend that the to-be-appended bat had an empty
+  string at an offset and at that same offset in the to-be-appended-to bat
+  there happened to be a (sequence of) NULL(s).  Then this offset would be
+  used, even though it might nog be the right offset for the empty string
+  in the to-be-appended-to bat.  This would result in multiple offsets for
+  the empty string, breaking the promise of being duplicate eliminated.
+
 * Mon Feb 27 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.9-20170227
 - Rebuilt.
 - BZ#6217: Segfault in rel_optimizer (sqlsmith)

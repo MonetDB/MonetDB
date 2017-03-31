@@ -11,7 +11,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-mal_export int OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #define OPTDEBUGemptybind  if ( optDebug & ((lng) 1 <<DEBUG_OPT_EMPTYBIND) )
 //#define OPTDEBUGemptybind  if (1)

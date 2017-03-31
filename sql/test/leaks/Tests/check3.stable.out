@@ -79,8 +79,6 @@ Ready.
 [ "int",	0	]
 [ "int",	0	]
 [ "int",	1	]
-[ "int",	1	]
-[ "int",	1	]
 [ "int",	3	]
 [ "int",	3	]
 [ "int",	5	]
@@ -166,7 +164,6 @@ Ready.
 [ "lng",	0	]
 [ "lng",	0	]
 [ "lng",	0	]
-[ "lng",	1	]
 [ "oid",	0	]
 [ "oid",	0	]
 [ "oid",	0	]
@@ -282,7 +279,6 @@ Ready.
 [ "str",	1	]
 [ "str",	1	]
 [ "str",	1	]
-[ "str",	1	]
 [ "str",	3	]
 [ "str",	3	]
 [ "str",	5	]
@@ -326,7 +322,7 @@ Ready.
 % L2,	L5 # name
 % char,	bigint # type
 % 10,	3 # length
-[ "persistent",	282	]
+[ "persistent",	278	]
 
 # 16:21:17 >  
 # 16:21:17 >  "Done."

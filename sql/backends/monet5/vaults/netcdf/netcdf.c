@@ -571,6 +571,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	res = NULL;
 
 	/* Manually create dimensions with range [0:1:dlen[i]] */
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	val_rep = (size_t *)GDKmalloc(sizeof(size_t) * vndims);
 	grp_rep = (size_t *)GDKmalloc(sizeof(size_t) * vndims);
 
@@ -706,6 +707,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 /* load variable data */
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	dim_bids = (bat *)GDKmalloc(sizeof(bat) * vndims);
 
 	msg = NCDFloadVar(&dim_bids, &vbatid, ncid, varid, vtype, vndims, vdims);

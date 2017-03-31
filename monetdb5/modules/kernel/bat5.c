@@ -885,14 +885,18 @@ BKCsetName(void *r, const bat *bid, const char * const *s)
 			throw(MAL, "bat.setName", ILLEGAL_ARGUMENT ": identifier expected: %s", *s);
 
 	t = *s;
-	ret = BATname(b, t);
+	ret = BBPrename(b->batCacheid, t);
 	BBPunfix(b->batCacheid);
 	switch (ret) {
 	case BBPRENAME_ILLEGAL:
+		GDKclrerr();
 		throw(MAL, "bat.setName", ILLEGAL_ARGUMENT ": illegal temporary name: '%s'", t);
 	case BBPRENAME_LONG:
+		GDKclrerr();
 		throw(MAL, "bat.setName", ILLEGAL_ARGUMENT ": name too long: '%s'", t);
 	case BBPRENAME_ALREADY:
+		GDKclrerr();
+		/* fall through */
 	case 0:
 		break;
 	}
@@ -1067,7 +1071,11 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 				if ( o < ol && *o == oidx ){
 					o++;
 				} else {
-					BUNappend(bn, BUNtail(bi, p), FALSE);
+					if (BUNappend(bn, BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
+						BBPunfix(b->batCacheid);
+						BBPunfix(bn->batCacheid);
+						throw(MAL, "bat.shrink", MAL_MALLOC_FAIL);
+					}
 					cnt++;
 				}
 			}
@@ -1081,6 +1089,8 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 			case 16:shrinkloop(hge); break;
 #endif
 			default:
+				BBPunfix(b->batCacheid);
+				BBPunfix(bn->batCacheid);
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}
 		}
@@ -1240,11 +1250,19 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 						q--;
 						ol--;
 					}
-					BUNappend(bn, BUNtail(bi, --q), FALSE);
+					if (BUNappend(bn, BUNtail(bi, --q), FALSE) != GDK_SUCCEED) {
+						BBPunfix(b->batCacheid);
+						BBPunfix(bn->batCacheid);
+						throw(MAL, "bat.shrink", MAL_MALLOC_FAIL);
+					}
 					o += (o < ol);
 					bidx--;
 				} else {
-					BUNappend(bn, BUNtail(bi, p), FALSE);
+					if (BUNappend(bn, BUNtail(bi, p), FALSE) != GDK_SUCCEED) {
+						BBPunfix(b->batCacheid);
+						BBPunfix(bn->batCacheid);
+						throw(MAL,  "bat.shrink", MAL_MALLOC_FAIL);
+					}
 				}
 			}
 		} else {
@@ -1257,6 +1275,8 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 			case 16:reuseloop(hge); break;
 #endif
 			default:
+				BBPunfix(b->batCacheid);
+				BBPunfix(bn->batCacheid);
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}
 		}

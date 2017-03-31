@@ -11,7 +11,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-mal_export int OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #define OPTDEBUGjit  if (0)
 

@@ -29,11 +29,11 @@
 #include "clients.h"
 #include "mal_exception.h"
 
-#define FITS_INS_COL "INSERT INTO fits_columns(id, name, type, units, number, table_id) \
+#define FITS_INS_COL "INSERT INTO sys.fits_columns(id, name, type, units, number, table_id) \
 	 VALUES(%d,'%s','%s','%s',%d,%d);"
-#define FILE_INS "INSERT INTO fits_files(id, name) VALUES (%d, '%s');"
-#define DEL_TABLE "DELETE FROM fitsfiles;"
-#define ATTACHDIR "call fitsattach('%s');"
+#define FILE_INS "INSERT INTO sys.fits_files(id, name) VALUES (%d, '%s');"
+#define DEL_TABLE "DELETE FROM sys.fitsfiles;"
+#define ATTACHDIR "call sys.fitsattach('%s');"
 
 static void
 FITSinitCatalog(mvc *m)
@@ -69,7 +69,7 @@ FITSinitCatalog(mvc *m)
 		mvc_create_column_(m, fits_col, "id", "int", 32);
 		mvc_create_column_(m, fits_col, "name", "varchar", 80);
 		mvc_create_column_(m, fits_col, "type", "varchar", 80);
-		mvc_create_column_(m, fits_col, "units", "varchar", 10);
+		mvc_create_column_(m, fits_col, "units", "varchar", 80);
 		mvc_create_column_(m, fits_col, "number", "int", 32);
 		mvc_create_column_(m, fits_col, "table_id", "int", 32);
 	}
@@ -214,7 +214,9 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	set = (*tbl).columns.set;
 
 	columns = list_length(set);
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	colname = (str *) GDKmalloc(columns * sizeof(str));
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	tform = (str *) GDKmalloc(columns * sizeof(str));
 
 	/*	fprintf(stderr,"Number of columns: %d\n", columns);*/

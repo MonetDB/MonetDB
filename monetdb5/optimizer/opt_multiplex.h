@@ -13,7 +13,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-mal_export int OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str OPTmultiplexSimple(Client cntxt, MalBlkPtr mb);
 
 #endif

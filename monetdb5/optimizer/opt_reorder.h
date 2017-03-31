@@ -11,6 +11,6 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-mal_export int OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

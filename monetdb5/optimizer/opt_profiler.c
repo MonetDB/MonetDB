@@ -48,7 +48,7 @@ static struct{
     {0,0,0}};
 */
 
-int
+str
 OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
@@ -106,8 +106,9 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	//chkDeclarations(cntxt->fdout, mb);
 	//
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","profiler",1,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","profiler", usec);
     newComment(mb,buf);
-
-	return 1;
+	addtoMalBlkHistory(mb);
+	return MAL_SUCCEED;
 }

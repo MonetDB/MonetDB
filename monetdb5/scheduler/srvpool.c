@@ -179,7 +179,7 @@ SRVPOOLdisconnect(Client cntxt)
 	for ( i=0; i< srvtop; i++)
 	if ( servers[i].conn != NULL ) {
 		if( msg) 
-			GDKfree(msg);
+			freeException(msg);
 		msg = RMTdisconnect(cntxt,&servers[i].conn);
 		GDKfree(servers[i].conn);
 		servers[i].conn = NULL;
@@ -284,18 +284,18 @@ SRVPOOLdiscover(Client cntxt)
 						servers[j].conn = GDKstrdup(conn);
 					else {
 #ifdef DEBUG_RUN_SRVPOOL
-						mnstr_printf(cntxt->fdout,"#Worker site %d reports %s \n", j, msg);
+						fprintf(stderr,"#Worker site %d reports %s \n", j, msg);
 #endif
 						/* Upon receiving an initialization error, the entry should be ignored */
 						SRVPOOLdropServer(j);
-						GDKfree(msg);
+						freeException(msg);
 						msg = MAL_SUCCEED;
 					}
 				}
 
 #ifdef DEBUG_RUN_SRVPOOL
 				else 
-					mnstr_printf(cntxt->fdout,"#Worker site %d alias %s %s\n", j, (servers[j].conn?servers[j].conn:""), t);
+					fprintf(stderr,"#Worker site %d alias %s %s\n", j, (servers[j].conn?servers[j].conn:""), t);
 #endif
 				assert(srvtop <MAXSITES);
 			}
@@ -305,9 +305,9 @@ SRVPOOLdiscover(Client cntxt)
 	if( msg) {
 		/* ignore merovingian complaints */
 #ifdef DEBUG_RUN_SRVPOOL
-		mnstr_printf(cntxt->fdout,"#%s\n", msg);
+		fprintf(stderr,"#%s\n", msg);
 #endif
-		GDKfree(msg);
+		freeException(msg);
 		msg = MAL_SUCCEED;
 	}
 
@@ -322,14 +322,14 @@ SRVPOOLdiscover(Client cntxt)
 		if ( j >= 0 && msg == MAL_SUCCEED ) {
 			servers[j].conn = GDKstrdup(conn);
 #ifdef DEBUG_RUN_SRVPOOL
-			mnstr_printf(cntxt->fdout,"#Worker site %d connection %s %s\n", j, servers[j].conn, s);
+			fprintf(stderr,"#Worker site %d connection %s %s\n", j, servers[j].conn, s);
 #endif
 		} else
-			GDKfree(msg);
+			freeException(msg);
 	}
 
 #ifdef DEBUG_RUN_SRVPOOL
-	mnstr_printf(cntxt->fdout,"#Servers available %d\n", srvtop);
+	fprintf(stderr,"#Servers available %d\n", srvtop);
 #else
 	(void) cntxt;
 #endif
@@ -375,7 +375,7 @@ SRVPOOLregisterInternal(Client cntxt, str uri, str fname)
 	if ( srv < 0)
 		throw(MAL,"srvpool.register","Server not registered");
 #ifdef DEBUG_RUN_SRVPOOL
-		mnstr_printf(GDKout,"#register %s at site %s\n", fname, servers[srv].conn);
+		fprintf(stderr,"#register %s at site %s\n", fname, servers[srv].conn);
 #else
 	(void) cntxt;
 #endif
@@ -393,8 +393,8 @@ SRVPOOLregisterInternal(Client cntxt, str uri, str fname)
 				if ( msg) {
 					Symbol sf = findSymbol(cntxt->nspace, userRef,putName(fname));
 					if (sf){
-						mnstr_printf(cntxt->fdout,"#Failed to register\n");
-						printFunction(cntxt->fdout, sf->def, 0, LIST_MAL_DEBUG);
+						fprintf(stderr,"#Failed to register\n");
+						fprintFunction(stderr, sf->def, 0, LIST_MAL_DEBUG);
 					} else
 						mnstr_printf(cntxt->fdout,"#undefined registration function\n");
 				}
@@ -474,8 +474,8 @@ SRVPOOLquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if ( msg) {
 					/* registration should succeed on all hots */
 #ifdef DEBUG_RUN_SRVPOOL
-					mnstr_printf(cntxt->fdout,"#failed to register %s at %d\n",plan,i);
-					mnstr_printf(cntxt->fdout,"#%s\n",msg);
+					fprintf(stderr,"#failed to register %s at %d\n",plan,i);
+					fprintf(stderr,"#%s\n",msg);
 #endif
 					break;
 				}
@@ -483,13 +483,13 @@ SRVPOOLquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if ( SRVPOOLfind(cntxt, j,plan) ){
 				*getArgReference_str(stk,pci,i++) = GDKstrdup(servers[j].conn);
 #ifdef DEBUG_RUN_SRVPOOL
-				mnstr_printf(cntxt->fdout,"#found %s on server %d\n",plan,j);
+				fprintf(stderr,"#found %s on server %d\n",plan,j);
 #endif
 				fnd ++;
 			}
 		}
 #ifdef DEBUG_RUN_SRVPOOL
-		mnstr_printf(cntxt->fdout,"#server %d uri %s conn %s\n", j,
+		fprintf(stderr,"#server %d uri %s conn %s\n", j,
 			(servers[j].uri?servers[j].uri:"null"),
 			(servers[j].conn?servers[j].conn:"null"));
 #endif

@@ -46,17 +46,19 @@
 	else if(stk->cmd==0 && X) \
 		mnstr_printf(cntxt->fdout,"#Monet Debugger on\n");
 
-static void
-pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
+static int
+pseudo(bat *ret, BAT *b, const char *X1, const char *X2, const char *X3) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
-	if (BBPindex(buf) <= 0)
-		BATname(b,buf);
+	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
+		return -1;
 	BATroles(b,X2);
-	BATmode(b,TRANSIENT);
+	if (BATmode(b, TRANSIENT) != GDK_SUCCEED)
+		return -1;
 	BATfakeCommit(b);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
+	return 0;
 }
 #if 0
 str
@@ -277,20 +279,27 @@ MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 }
 
 static str
-MDBgetFrame(BAT *b, BAT*bn, Client cntxt, MalBlkPtr mb, MalStkPtr s, int depth)
+MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *name)
 {
 	ValPtr v;
 	int i;
 	char *buf = 0;
 
-	if (depth > 0)
-		return MDBgetFrame(b,bn, cntxt, mb, s->up, depth - 1);
+	while (depth > 0 && s) {
+		depth--;
+		s = s->up;
+	}
 	if (s != 0)
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
 			ATOMformat(v->vtype, VALptr(v), &buf);
-			BUNappend(b, getVarName(mb, i), FALSE);
-			BUNappend(bn, buf, FALSE);
+			if (BUNappend(b, getVarName(mb, i), FALSE) != GDK_SUCCEED ||
+				BUNappend(bn, buf, FALSE) != GDK_SUCCEED) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(bn->batCacheid);
+				GDKfree(buf);
+				throw(MAL, name, MAL_MALLOC_FAIL);
+			}
 			GDKfree(buf);
 			buf = NULL;
 		}
@@ -304,15 +313,30 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	bat *ret2 = getArgReference_bat(s, p, 1);
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	BAT *bn = COLnew(0, TYPE_str, 256, TRANSIENT);
+	str err;
 
+	(void) cntxt;
 	if (b == 0 || bn == 0) {
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
 	}
-	pseudo(ret,b,"view","stk","frame");
-	pseudo(ret2,bn,"view","stk","frame");
-	return MDBgetFrame(b,bn, cntxt, m, s, 0);
+	if ((err = MDBgetFrame(b, bn, m, s, 0, "mdb.getStackFrame")) != MAL_SUCCEED) {
+		BBPreclaim(b);
+		BBPreclaim(bn);
+		return err;
+	}
+	if (pseudo(ret,b,"view","stk","frame")) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
+		throw(MAL, "mdb.getStackFrame", GDK_EXCEPTION);
+	}
+	if (pseudo(ret2,bn,"view","stk","frame")) {
+		BBPrelease(*ret);
+		BBPunfix(bn->batCacheid);
+		throw(MAL, "mdb.getStackFrame", GDK_EXCEPTION);
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -321,23 +345,39 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int n;
 	bat *ret = getArgReference_bat(s, p, 0);
 	bat *ret2 = getArgReference_bat(s, p, 1);
-	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
-	BAT *bn = COLnew(0, TYPE_str, 256, TRANSIENT);
-	
+	BAT *b;
+	BAT *bn;
+	str err;
+
+	(void) cntxt;
+	n = *getArgReference_int(s, p, 2);
+	if (n < 0 || n >= getStkDepth(s))
+		throw(MAL, "mdb.getStackFrame", ILLEGAL_ARGUMENT " Illegal depth.");
+
+	b = COLnew(0, TYPE_str, 256, TRANSIENT);
+	bn = COLnew(0, TYPE_str, 256, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
 	}
 
-	n = *getArgReference_int(s, p, 2);
-	if (n < 0 || n >= getStkDepth(s)){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "mdb.getStackFrame", ILLEGAL_ARGUMENT " Illegal depth.");
+	if ((err = MDBgetFrame(b, bn, m, s, n, "mdb.getStackFrameN")) != MAL_SUCCEED) {
+		BBPreclaim(b);
+		BBPreclaim(bn);
+		return err;
 	}
-	pseudo(ret,b,"view","stk","frame");
-	pseudo(ret2,bn,"view","stk","frameB");
-	return MDBgetFrame(b, bn, cntxt, m, s, n);
+	if (pseudo(ret,b,"view","stk","frame")) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
+		throw(MAL, "mdb.getStackFrameN", GDK_EXCEPTION);
+	}
+	if (pseudo(ret2,bn,"view","stk","frameB")) {
+		BBPrelease(*ret);
+		BBPunfix(bn->batCacheid);
+		throw(MAL, "mdb.getStackFrameN", GDK_EXCEPTION);
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -360,18 +400,26 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		throw(MAL, "mdb.getStackTrace", MAL_MALLOC_FAIL);
 	}
 	(void) cntxt;
-	msg = instruction2str(s->blk, s, p, LIST_MAL_DEBUG);
+	if ((msg = instruction2str(s->blk, s, p, LIST_MAL_DEBUG)) == NULL) {
+		BBPreclaim(b);
+		throw(MAL, "mdb.getStackTrace", MAL_MALLOC_FAIL);
+	}
 	len = strlen(msg);
 	buf = (char*) GDKmalloc(len +1024);
 	if ( buf == NULL){
 		GDKfree(msg);
+		BBPreclaim(b);
 		throw(MAL,"mdb.setTrace",MAL_MALLOC_FAIL);
 	}
 	snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 		getModuleId(getInstrPtr(m,0)),
 		getFunctionId(getInstrPtr(m,0)), getPC(m, p));
-	BUNappend(b, &k, FALSE);
-	BUNappend(bn, buf, FALSE);
+	if (BUNappend(b, &k, FALSE) != GDK_SUCCEED ||
+		BUNappend(bn, buf, FALSE) != GDK_SUCCEED) {
+		GDKfree(msg);
+		BBPreclaim(b);
+		throw(MAL,"mdb.setTrace",MAL_MALLOC_FAIL);
+	}
 	GDKfree(msg);
 
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
@@ -391,13 +439,27 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 			getModuleId(getInstrPtr(s->blk,0)),
 			getFunctionId(getInstrPtr(s->blk,0)), s->pcup);
-		BUNappend(b, &k, FALSE);
-		BUNappend(bn, buf, FALSE);
+		if (BUNappend(b, &k, FALSE) != GDK_SUCCEED ||
+			BUNappend(bn, buf, FALSE) != GDK_SUCCEED) {
+			GDKfree(buf);
+			GDKfree(msg);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "mdb.setTrace", MAL_MALLOC_FAIL);
+		}
 		GDKfree(msg);
 	}
 	GDKfree(buf);
-	pseudo(ret,b,"view","stk","trace");
-	pseudo(ret2,bn,"view","stk","traceB");
+	if (pseudo(ret,b,"view","stk","trace")) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
+		throw(MAL, "mdb.setTrace", GDK_EXCEPTION);
+	}
+	if (pseudo(ret2,bn,"view","stk","traceB")) {
+		BBPrelease(*ret);
+		BBPunfix(bn->batCacheid);
+		throw(MAL, "mdb.setTrace", GDK_EXCEPTION);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -503,10 +565,17 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 
 	for (i = 0; i < m->stop; i++) {
 		ps = instruction2str(m,0, getInstrPtr(m, i), 1);
-		BUNappend(b, ps, FALSE);
+		if (BUNappend(b, ps, FALSE) != GDK_SUCCEED) {
+			GDKfree(ps);
+			BBPreclaim(b);
+			throw(MAL, "mdb.getDefinition",  MAL_MALLOC_FAIL);
+		}
 		GDKfree(ps);
 	}
-	pseudo(ret,b,"view","fcn","stmt");
+	if (pseudo(ret,b,"view","fcn","stmt")) {
+		BBPreclaim(b);
+		throw(MAL, "mdb.getDefinition", GDK_EXCEPTION);
+	}
 
 	return MAL_SUCCEED;
 }
@@ -591,7 +660,7 @@ TBL_getdir(void)
 	DIR *dirp = NULL;
 
 	if ( b == 0)
-		return 0;
+		return NULL;
 	mod_path = GDKgetenv("monet_mod_path");
 	if (mod_path == NULL)
 		return b;
@@ -613,8 +682,8 @@ TBL_getdir(void)
 			}
 			cur_dir = GDKmalloc(l + 1);
 			if ( cur_dir == NULL){
-				GDKsyserror("mdb.modules"MAL_MALLOC_FAIL);
-				return b;
+				BBPreclaim(b);
+				return NULL;
 			}
 			strncpy(cur_dir, mod_path, l);
 			cur_dir[l] = 0;
@@ -636,7 +705,10 @@ TBL_getdir(void)
 		if (len < extlen || strcmp(dent->d_name + len - extlen, MAL_EXT) != 0)
 			continue;
 		dent->d_name[len - extlen] = 0;
-		BUNappend(b, dent->d_name, FALSE);
+		if (BUNappend(b, dent->d_name, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			return NULL;
+		}
 		i++;
 	}
 	return b;
@@ -647,10 +719,10 @@ CMDmodules(bat *bid)
 {
 	BAT *b = TBL_getdir();
 
-	if (b) {
-		*bid = b->batCacheid;
-		BBPkeepref(*bid);
-	}
+	if (b == NULL)
+		throw(MAL, "mdb.modules", MAL_MALLOC_FAIL);
+	*bid = b->batCacheid;
+	BBPkeepref(*bid);
 	return MAL_SUCCEED;
 }
 

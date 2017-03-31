@@ -822,7 +822,12 @@ BATload_intern(bat bid, int lock)
 	b->theap.parentid = 0;
 
 	/* load succeeded; register it in BBP */
-	BBPcacheit(b, lock);
+	if (BBPcacheit(b, lock) != GDK_SUCCEED) {
+		HEAPfree(&b->theap, 0);
+		if (b->tvheap)
+			HEAPfree(b->tvheap, 0);
+		return NULL;
+	}
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & CHECKMASK)) ||
 	    (GDKdebug & PROPMASK)) {

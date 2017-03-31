@@ -113,7 +113,10 @@ UDFBATreverse_(BAT **ret, BAT *src)
 		assert(tr != NULL);
 
 		/* append reversed tail in result BAT */
-		BUNappend(bn, tr, FALSE);
+		if (BUNappend(bn, tr, FALSE) != GDK_SUCCEED) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
+		}
 
 		/* free memory allocated in UDFreverse_() */
 		GDKfree(tr);

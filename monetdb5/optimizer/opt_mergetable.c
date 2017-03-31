@@ -396,7 +396,7 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 {
 	int k, is_select = isSelect(p);
 	InstrPtr *r = NULL;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
 	for(k=0; k < p->retc; k++) {
 		r[k] = newInstruction(mb, matRef, packRef);
@@ -435,7 +435,7 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 {
 	int k;
 	InstrPtr *r = NULL;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
 	for(k=0; k < p->retc; k++) {
 		r[k] = newInstruction(mb, matRef, packRef);
@@ -1473,7 +1473,7 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	ml->v[piv].type = mat_slc;
 }
 
-int
+str
 OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
 {
 	InstrPtr *old;
@@ -1482,20 +1482,20 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	//if( optimizerIsApplied(mb, "mergetable") || !optimizerIsApplied(mb,"mitosis"))
 		//return 0;
 	old = mb->stmt;
 	oldtop= mb->stop;
 #ifdef DEBUG_OPT_MERGETABLE
-	mnstr_printf(GDKout,"#Start of multi table optimizer\n");
-	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
+	fprintf(stderr,"#Start of multi table optimizer\n");
+	fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 #endif
 
 	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL){
-		GDKerror("mergetable"MAL_MALLOC_FAIL);
-		return 0;
+		throw(MAL, "optimizer.mergetable", MAL_MALLOC_FAIL);
 	}
 	/* check for bailout conditions */
 	for (i = 1; i < oldtop; i++) {
@@ -1534,8 +1534,10 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	ml.horigin = 0;
 	ml.torigin = 0;
 	ml.v = 0;
-	if (bailout)
+	if (bailout){
+		msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
 		goto cleanup;
+	}
 
 	/* the number of MATs is limited to the variable stack*/
 	ml.size = mb->vtop;
@@ -1555,6 +1557,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
 	if ( mb->stmt == NULL) {
 		mb->stmt = old;
+		msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	mb->ssize = size;
@@ -1827,7 +1830,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * It requires MAT materialization.
 		 */
 #ifdef DEBUG_OPT_MERGETABLE
-		mnstr_printf(GDKout, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
+		fprintf(stderr, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
 #endif
 
 		for (k = p->retc; k<p->argc; k++) {
@@ -1842,11 +1845,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 #ifdef DEBUG_OPT_MERGETABLE
 	{
-		str err;
-		mnstr_printf(GDKout,"#Result of multi table optimizer\n");
-		err= optimizerCheck(cntxt,mb,"merge test",1,0);
-		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
-		if( err) GDKfree(err);
+		fprintf(stderr,"#Result of multi table optimizer\n");
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 	}
 #endif
 
@@ -1871,9 +1874,11 @@ cleanup:
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions,GDKusec() - usec);
-    if ( mb->errors == 0) 
-   	 newComment(mb,buf);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions, usec);
+   	newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
-	return actions;
+	return msg;
 }

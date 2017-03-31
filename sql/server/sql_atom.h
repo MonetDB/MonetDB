@@ -62,8 +62,8 @@ extern int atom_cmp(atom *a1, atom *a2);
 
 extern atom *atom_add(atom *a1, atom *a2);
 extern atom *atom_sub(atom *a1, atom *a2);
-extern atom *atom_mul(sql_allocator *sa, atom *a1, atom *a2);
-extern void atom_inc(atom *a);
+extern atom *atom_mul(atom *a1, atom *a2);
+extern int atom_inc(atom *a);
 extern int atom_is_zero(atom *a);
 
 #ifdef HAVE_HGE

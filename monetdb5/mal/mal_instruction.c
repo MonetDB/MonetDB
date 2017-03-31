@@ -209,8 +209,7 @@ freeMalBlk(MalBlkPtr mb)
 		}
 	mb->stop = 0;
 	for(i=0; i< mb->vtop; i++)
-		if (isVarConstant(mb, i))
-			VALclear(&getVarConstant(mb,i));
+		VALclear(&getVarConstant(mb,i));
 	mb->vtop = 0;
 	mb->vid = 0;
 	GDKfree(mb->stmt);
@@ -249,13 +248,13 @@ copyMalBlk(MalBlkPtr old)
 	mb->keephistory = old->keephistory;
 
 	mb->var = (VarRecord *) GDKzalloc(sizeof(VarRecord) * old->vsize);
-	mb->activeClients = 1;
-
 	if (mb->var == NULL) {
 		GDKfree(mb);
 		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
+
+	mb->activeClients = 1;
 	mb->vsize = old->vsize;
 	mb->vtop = old->vtop;
 	mb->vid = old->vid;
@@ -264,6 +263,9 @@ copyMalBlk(MalBlkPtr old)
 	for (i = 0; i < old->vtop; i++) {
 		mb->var[i]=  old->var[i];
 		if (!VALcopy(&(mb->var[i].value), &(old->var[i].value))) {
+			while (--i >= 0)
+				VALclear(&mb->var[i].value);
+			GDKfree(mb->var);
 			GDKfree(mb);
 			GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 			return NULL;
@@ -273,7 +275,9 @@ copyMalBlk(MalBlkPtr old)
 	mb->stmt = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * old->ssize);
 
 	if (mb->stmt == NULL) {
-		GDKfree(mb->var); // this leaks strings in var
+		for (i = 0; i < old->vtop; i++)
+			VALclear(&mb->var[i].value);
+		GDKfree(mb->var);
 		GDKfree(mb);
 		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
@@ -285,6 +289,12 @@ copyMalBlk(MalBlkPtr old)
 	for (i = 0; i < old->stop; i++) {
 		mb->stmt[i] = copyInstruction(old->stmt[i]);
 		if(!mb->stmt[i]) {
+			while (--i >= 0)
+				freeInstruction(mb->stmt[i]);
+			for (i = 0; i < old->vtop; i++)
+				VALclear(&mb->var[i].value);
+			GDKfree(mb->var);
+			GDKfree(mb->stmt);
 			GDKfree(mb);
 			GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 			return NULL;
@@ -292,6 +302,12 @@ copyMalBlk(MalBlkPtr old)
 	}
 	mb->help = old->help ? GDKstrdup(old->help) : NULL;
 	if (old->help && !mb->help) {
+		for (i = 0; i < old->stop; i++)
+			freeInstruction(mb->stmt[i]);
+		for (i = 0; i < old->vtop; i++)
+			VALclear(&mb->var[i].value);
+		GDKfree(mb->var);
+		GDKfree(mb->stmt);
 		GDKfree(mb);
 		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
@@ -844,9 +860,9 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		cnt++;
 	}
 #ifdef DEBUG_REDUCE
-	mnstr_printf(GDKout, "Variable reduction %d -> %d\n", mb->vtop, cnt);
+	fprintf(stderr, "Variable reduction %d -> %d\n", mb->vtop, cnt);
 	for (i = 0; i < mb->vtop; i++)
-		mnstr_printf(GDKout, "map %d->%d\n", i, alias[i]);
+		fprintf(stderr, "map %d->%d\n", i, alias[i]);
 #endif
 
 	/* remap all variable references to their new position. */
@@ -864,8 +880,8 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
         (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	
 #ifdef DEBUG_REDUCE
-	mnstr_printf(GDKout, "After reduction \n");
-	printFunction(GDKout, mb, 0, 0);
+	fprintf(stderr, "After reduction \n");
+	fprintFunction(stderr, mb, 0, 0);
 #endif
 	GDKfree(alias);
 	mb->vtop = cnt;
@@ -1160,7 +1176,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			GDKfree(ft);
 			GDKfree(tt);
 			mb->errors++;
-			GDKfree(msg);
+			freeException(msg);
 		} else {
 			assert(cst->vtype == type);
 		}

@@ -42,4 +42,3 @@ order by
 	s_name
 limit 100;
 
-select * from optimizer_stats() stats;

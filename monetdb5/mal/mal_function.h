@@ -33,6 +33,7 @@ mal_export int getBlockBegin(MalBlkPtr mb,int pc);
 mal_export void setVariableScope(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
+mal_export void fprintFunction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
 mal_export void debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size);
 
 #include "mal_exception.h"

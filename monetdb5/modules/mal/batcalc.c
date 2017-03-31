@@ -28,7 +28,7 @@ mythrow(enum malexception type, const char *fcn, const char *msg)
 		} else {
 			s = createException(type, fcn, "%s", errbuf);
 		}
-		*GDKerrbuf = 0;
+		GDKclrerr();
 		return s;
 	}
 	return createException(type, fcn, "%s", msg);

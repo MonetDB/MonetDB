@@ -35,6 +35,7 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, int type,
 	t->query_type = type;
 	t->nr_cols = nr_cols;
 	t->cur_col = 0;
+	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	t->cols = NEW_ARRAY(res_col, nr_cols);
 	memset((char*) t->cols, 0, nr_cols * sizeof(res_col));
 	t->tsep = t->rsep = t->ssep = t->ns = NULL;

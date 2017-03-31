@@ -65,7 +65,7 @@ GDALWConnection * GDALWConnect(char * source) {
 	conn = malloc(sizeof(GDALWConnection));
 	if (conn == NULL) {
 		fprintf(stderr, "Could not allocate memory\n");
-		exit(-1);
+		return NULL;
 	}
 	conn->handler = OGROpen(source, 0 , &(conn->driver));
 	if (conn->handler == NULL) {
@@ -86,7 +86,8 @@ GDALWConnection * GDALWConnect(char * source) {
 	conn->fieldDefinitions = malloc(fieldCount * sizeof(OGRFieldDefnH));
 	if (conn->fieldDefinitions == NULL) {
 		fprintf(stderr, "Could not allocate memory\n");
-		exit(-1);
+		GDKfree(conn);
+		return NULL;	
 	}
 	for (i=0 ; i<fieldCount ; i++) {
 		conn->fieldDefinitions[i] = OGR_FD_GetFieldDefn(featureDefn, i);

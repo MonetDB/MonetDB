@@ -22,6 +22,10 @@
 #include "mal_debugger.h"
 #include "mal_resource.h"
 
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+
 static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 stream *eventstream = 0;
@@ -35,6 +39,8 @@ static int highwatermark = 5;	// conservative initialization
 
 static int TRACE_init = 0;
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
+
+static struct timeval startup_time;
 
 static volatile ATOMIC_TYPE hbdelay = 0;
 
@@ -107,7 +113,12 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	str stmt, c;
 	str stmtq;
 	lng usec= GDKusec();
+	lng sec = (lng)startup_time.tv_sec + usec/1000000;
+	long microseconds = (long)startup_time.tv_usec + (usec % 1000000);
 
+	assert (microseconds / 1000000 >= 0 && microseconds / 1000000 < 2);
+	sec += (microseconds / 1000000);
+	microseconds %= 1000000;
 
 	// ignore generation of events for instructions that are called too often
 	if(highwatermark && highwatermark + (start == 0) < pci->calls)
@@ -120,6 +131,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	if( usrname)
 		logadd("\"user\":\"%s\",%s",usrname, prettify);
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
+	logadd("\"ctime\":"LLFMT".%06ld,%s", sec, microseconds, prettify);
 	logadd("\"thread\":%d,%s", THRgettid(),prettify);
 
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
@@ -612,6 +624,7 @@ static BAT *TRACE_id_stmt = 0;
 int
 TRACEtable(BAT **r)
 {
+	initTrace();
 	MT_lock_set(&mal_profileLock);
 	if (TRACE_init == 0) {
 		MT_lock_unset(&mal_profileLock);
@@ -683,7 +696,10 @@ TRACEcreate(const char *hnme, const char *tnme, int tt)
 	b = COLnew(0, tt, 1 << 16, TRANSIENT);
 	if (b == NULL)
 		return NULL;
-	BBPrename(b->batCacheid, buf);
+	if (BBPrename(b->batCacheid, buf) != 0) {
+		BBPreclaim(b);
+		return NULL;
+	}
 	return b;
 }
 
@@ -1022,6 +1038,7 @@ void setHeartbeat(int delay)
 
 void initProfiler(void)
 {
+	gettimeofday(&startup_time, NULL);
 	if( mal_trace)
 		openProfilerStream(mal_clients[0].fdout,0);
 }

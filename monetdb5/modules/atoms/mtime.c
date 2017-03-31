@@ -1266,22 +1266,28 @@ union lng_tzone {
  * Wrapper
  * The Monet V5 API interface is defined here
  */
-#define TIMEZONES(X1, X2)										\
-	do {														\
-		ticks = (X2);											\
-		MTIMEtzone_create(&ltz.tzval, &ticks);					\
-		vr.val.lval = ltz.lval;									\
-		BUNappend(tzbatnme, (X1), FALSE);			\
-		BUNappend(tzbatdef, &vr.val.lval, FALSE);	\
+#define TIMEZONES(X1, X2)												\
+	do {																\
+		str err;														\
+		ticks = (X2);													\
+		if ((err = MTIMEtzone_create(&ltz.tzval, &ticks)) != MAL_SUCCEED) \
+			return err;													\
+		vr.val.lval = ltz.lval;											\
+		if (BUNappend(tzbatnme, (X1), FALSE) != GDK_SUCCEED ||			\
+			BUNappend(tzbatdef, &vr.val.lval, FALSE) != GDK_SUCCEED)	\
+			goto bailout;												\
 	} while (0)
 
-#define TIMEZONES2(X1, X2, X3, X4)									\
-	do {															\
-		ticks = (X2);												\
-		MTIMEtzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4));	\
-		vr.val.lval = ltz.lval;										\
-		BUNappend(tzbatnme, (X1), FALSE);				\
-		BUNappend(tzbatdef, &vr.val.lval, FALSE);		\
+#define TIMEZONES2(X1, X2, X3, X4)										\
+	do {																\
+		str err;														\
+		ticks = (X2);													\
+		if ((err = MTIMEtzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4))) != MAL_SUCCEED) \
+			return err;													\
+		vr.val.lval = ltz.lval;											\
+		if (BUNappend(tzbatnme, (X1), FALSE) != GDK_SUCCEED ||			\
+			BUNappend(tzbatdef, &vr.val.lval, FALSE) != GDK_SUCCEED)	\
+			goto bailout;												\
 	} while (0)
 
 /*
@@ -1375,8 +1381,9 @@ MTIMEprelude(void *ret)
 		BBPreclaim(tzbatdef);
 		throw(MAL, "time.prelude", MAL_MALLOC_FAIL);
 	}
-	BBPrename(tzbatnme->batCacheid, "timezone_name");
-	BBPrename(tzbatdef->batCacheid, "timezone_def");
+	if (BBPrename(tzbatnme->batCacheid, "timezone_name") != 0 ||
+		BBPrename(tzbatdef->batCacheid, "timezone_def") != 0)
+		throw(MAL, "time.prelude", GDK_EXCEPTION);
 	timezone_name = tzbatnme;
 	timezone_def = tzbatdef;
 
@@ -1413,6 +1420,8 @@ MTIMEprelude(void *ret)
 	TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT);
 	msg = "West/Europe";
 	return MTIMEtimezone(&tz, &msg);
+  bailout:
+	throw(MAL, "mtime.prelude", MAL_MALLOC_FAIL);
 }
 
 str
@@ -3052,7 +3061,7 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.year", "memory allocation failure");
+		throw(MAL, "batmtime.year", MAL_MALLOC_FAIL);
 	}
 	bn->tnonil = 1;
 	bn->tnil = 0;
@@ -3097,7 +3106,7 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.month", "memory allocation failure");
+		throw(MAL, "batmtime.month", MAL_MALLOC_FAIL);
 	}
 	bn->tnonil = 1;
 	bn->tnil = 0;
@@ -3141,7 +3150,7 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.day", "memory allocation failure");
+		throw(MAL, "batmtime.day", MAL_MALLOC_FAIL);
 	}
 	bn->tnonil = 1;
 	bn->tnil = 0;
@@ -3186,7 +3195,7 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.hours", "memory allocation failure");
+		throw(MAL, "batmtime.hours", MAL_MALLOC_FAIL);
 	}
 	bn->tnonil = 1;
 	bn->tnil = 0;
@@ -3230,7 +3239,7 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.minutes", "memory allocation failure");
+		throw(MAL, "batmtime.minutes", MAL_MALLOC_FAIL);
 	}
 
 	t = (const date *) Tloc(b, 0);
@@ -3272,7 +3281,7 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.seconds", "memory allocation failure");
+		throw(MAL, "batmtime.seconds", MAL_MALLOC_FAIL);
 	}
 
 	t = (const date *) Tloc(b, 0);
@@ -3313,7 +3322,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.sql_seconds", "memory allocation failure");
+		throw(MAL, "batmtime.sql_seconds", MAL_MALLOC_FAIL);
 	}
 
 	t = (const date *) Tloc(b, 0);
@@ -3356,7 +3365,7 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.milliseconds", "memory allocation failure");
+		throw(MAL, "batmtime.milliseconds", MAL_MALLOC_FAIL);
 	}
 
 	t = (const date *) Tloc(b, 0);
@@ -3420,7 +3429,7 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 		throw(MAL, "mtime.date_to_str", "failed to convert date to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
-		throw(MAL, "mtime.date_to_str", "memory allocation failure");
+		throw(MAL, "mtime.date_to_str", MAL_MALLOC_FAIL);
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
 #else
@@ -3464,7 +3473,7 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 		throw(MAL, "mtime.time_to_str", "failed to convert time to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
-		throw(MAL, "mtime.time_to_str", "memory allocation failure");
+		throw(MAL, "mtime.time_to_str", MAL_MALLOC_FAIL);
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
 #else
@@ -3512,7 +3521,7 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 		throw(MAL, "mtime.timestamp_to_str", "failed to convert timestampt to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
-		throw(MAL, "mtime.timestamp_to_str", "memory allocation failure");
+		throw(MAL, "mtime.timestamp_to_str", MAL_MALLOC_FAIL);
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
 #else

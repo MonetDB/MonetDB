@@ -11,11 +11,11 @@ stdout of test 'new-readonly-db.Bug-2695` in directory 'sql/test/BugTracker-2010
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 7.750 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:33084/
-# MonetDB/SQL module v2.40.0 loaded
-!SQLException:SQLinit:Catalogue initialization failed
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:33246/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10796/.s.monetdb.33246
+# MonetDB/GIS module loaded
 
 # 12:51:24 >  
 # 12:51:24 >  Done.

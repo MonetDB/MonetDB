@@ -1,3 +1,58 @@
+monetdb (11.25.15) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6250: Assertion failure when querying a Blob column with order
+    by DESC
+  * BZ#6253: FITS Data Vaults does not work when using user/pw and other
+    than sys schema name
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 30 Mar 2017 14:00:54 +0200
+
+monetdb (11.25.13) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6216: Assertion raised (sqlsmith)
+  * BZ#6227: Monetdb fails on remote tables
+  * BZ#6242: Crash on rel_reduce_groupby_exps (sqlsmith)
+  * BZ#6243: Static optimization gives wrong result (1 + NULL = -127)
+  * BZ#6245: Nested query crashes all versions of MonetDB or gives wrong
+    result starting from Dec2016-SP2
+  * BZ#6246: update statements: references to a table do not bind to
+    its alias
+  * BZ#6247: Type analysis issue (sqlsmith)
+  * BZ#6248: update statements: the semantic stage does not resolve the
+    relation in the from clause
+  * BZ#6251: Crash after adding an ordered index on sys.statistics column
+    and querying sys.statistics
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Mar 2017 13:18:23 +0200
+
+monetdb (11.25.11) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6138: Weak duplicate elimination in string heaps > 64KB
+  * BZ#6183: ResultSet returns double quoted column name if name contains
+    space characters
+  * BZ#6219: Crash in rel_optimizer (sqlsmith)
+  * BZ#6228: mclient crashes if real column is multiplied by it itself
+  * BZ#6229: ANALYZE, unexpected end of input
+  * BZ#6230: ANALYZE, syntax error
+  * BZ#6237: semijoin with empty right bat does not return immediately
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 13 Mar 2017 10:10:14 +0100
+
+monetdb (11.25.11) unstable; urgency=low
+
+  * gdk: Fixed a bug when appending string bats that are fully duplicate
+    eliminated.  It could happend that the to-be-appended bat had an empty
+    string at an offset and at that same offset in the to-be-appended-to bat
+    there happened to be a (sequence of) NULL(s).  Then this offset would be
+    used, even though it might nog be the right offset for the empty string
+    in the to-be-appended-to bat.  This would result in multiple offsets for
+    the empty string, breaking the promise of being duplicate eliminated.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 28 Feb 2017 10:10:14 +0100
+
 monetdb (11.25.9) unstable; urgency=low
 
   * Rebuilt.

@@ -35,7 +35,6 @@ int have_hge;
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_resource.h"
-#include "opt_statistics.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
@@ -127,7 +126,6 @@ void mserver_reset(int exit)
 	MCstopClients(0);
 	setHeartbeat(-1);
 	stopProfiler();
-	QOTstatisticsExit();
 	AUTHreset(); 
 	if ((err = msab_wildRetreat()) != NULL) {
 		fprintf(stderr, "!%s", err);

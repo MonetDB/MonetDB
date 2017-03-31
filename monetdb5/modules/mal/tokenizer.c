@@ -136,16 +136,23 @@ TKNZRopen(void *ret, str *in)
 		b = COLnew(0, TYPE_oid, 1024, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
+		if (BKCsetName(&r, &b->batCacheid, (const char*const*) &batname) != MAL_SUCCEED ||
+			BKCsetPersistent(&r, &b->batCacheid) != MAL_SUCCEED ||
+			BUNappend(TRANS, batname, FALSE) != GDK_SUCCEED) {
+			GDKfree(batname);
+			BBPreclaim(b);
+			throw(MAL, "tokenizer.open", OPERATION_FAILED);
+		}
 		tokenBAT[INDEX].val = b;
-		if (BKCsetName(&r, &b->batCacheid, (const char*const*) &batname) != MAL_SUCCEED)
-			throw(MAL, "tokenizer.open", OPERATION_FAILED);
-		if (BKCsetPersistent(&r, &b->batCacheid) != MAL_SUCCEED)
-			throw(MAL, "tokenizer.open", OPERATION_FAILED);
-		BUNappend(TRANS, batname, FALSE);
 	} else { /* existing tokenizer */
 		tokenBAT[INDEX].val = BATdescriptor(idx);
 
-		BUNappend(TRANS, batname, FALSE);
+		if (BUNappend(TRANS, batname, FALSE) != GDK_SUCCEED) {
+			BBPunfix(tokenBAT[INDEX].val->batCacheid);
+			tokenBAT[INDEX].val = NULL;
+			GDKfree(batname);
+			throw(MAL, "tokenizer.open", OPERATION_FAILED);
+		}
 
 		for (depth = 0; depth < MAX_TKNZR_DEPTH; depth++) {
 			snprintf(batname, 128, "%s_%d", name, depth);
@@ -153,15 +160,25 @@ TKNZRopen(void *ret, str *in)
 			if (idx == 0)
 				break;
 			tokenBAT[depth].val = BATdescriptor(idx);
-			BUNappend(TRANS, batname, FALSE);
+			if (BUNappend(TRANS, batname, FALSE) != GDK_SUCCEED) {
+				BBPunfix(tokenBAT[depth].val->batCacheid);
+				tokenBAT[depth].val = NULL;
+				GDKfree(batname);
+				throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
+			}
 
 			/* For idx BATs */
 			snprintf(batname, 132, "%s_idx_%d", name, depth);
 			idx = BBPindex(batname); 
 			if (idx == 0)
-                        	break;
+				break;
 			tokenBAT[depth].idx = BATdescriptor(idx);
-			BUNappend(TRANS, batname, FALSE);
+			if (BUNappend(TRANS, batname, FALSE) != GDK_SUCCEED) {
+				BBPunfix(tokenBAT[depth].idx->batCacheid);
+				tokenBAT[depth].idx = NULL;
+				GDKfree(batname);
+				throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
+			}
 
 		}
 		tokenDepth = depth;
@@ -274,19 +291,13 @@ TKNZRappend(oid *pos, str *s)
 			
 			tokenBAT[i].val = bVal;
 
-			if ((msg = BKCsetName(&r, &bVal->batCacheid, (const char*const*) &batname))
-				!= MAL_SUCCEED) {
+			if ((msg = BKCsetName(&r, &bVal->batCacheid, (const char*const*) &batname)) != MAL_SUCCEED ||
+				(msg = BKCsetPersistent(&r, &bVal->batCacheid)) != MAL_SUCCEED ||
+				BUNappend(TRANS, batname, FALSE) != GDK_SUCCEED) {
 				GDKfree(batname);
 				GDKfree(url);
-				return msg;
+				return msg ? msg : createException(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
 			}
-			if ((msg = BKCsetPersistent(&r, &bVal->batCacheid))
-				!= MAL_SUCCEED) {
-				GDKfree(batname);
-				GDKfree(url);
-				return msg;
-			}
-			BUNappend(TRANS, batname, FALSE);
 
 			/* make new bat for index */
 			snprintf(batname, 132, "%s_idx_%d", name, i);
@@ -299,18 +310,13 @@ TKNZRappend(oid *pos, str *s)
 			
 			tokenBAT[i].idx = bIdx;
 
-			if ((msg = BKCsetName(&r, &bIdx->batCacheid, (const char*const*) &batname)) != MAL_SUCCEED) {
+			if ((msg = BKCsetName(&r, &bIdx->batCacheid, (const char*const*) &batname)) != MAL_SUCCEED ||
+				(msg = BKCsetPersistent(&r, &bIdx->batCacheid)) != MAL_SUCCEED ||
+				BUNappend(TRANS, batname, FALSE) != GDK_SUCCEED) {
 				GDKfree(batname);
 				GDKfree(url);
-				return msg;
+				return msg ? msg : createException(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
 			}
-			if ( (msg=BKCsetPersistent(&r, &bIdx->batCacheid)) != MAL_SUCCEED) {
-				GDKfree(batname);
-				GDKfree(url);
-				return msg;
-			}
-			BUNappend(TRANS, batname, FALSE);
-
 
 			GDKfree(batname);
 		}
@@ -371,7 +377,10 @@ TKNZRappend(oid *pos, str *s)
 
 	*pos = (oid) BATcount(tokenBAT[INDEX].val);
 	comp = COMP(prv, depth);
-	BUNappend(tokenBAT[INDEX].val, (ptr) & comp, TRUE);
+	if (BUNappend(tokenBAT[INDEX].val, &comp, TRUE) != GDK_SUCCEED) {
+		GDKfree(url);
+		throw(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
+	}
 	if (tokenBAT[INDEX].val->thash == NULL ||
 		tokenBAT[INDEX].val->thash == (Hash *) 1 ||
 		BATcount(tokenBAT[INDEX].val) > 4 * tokenBAT[INDEX].val->thash->mask) {
@@ -609,7 +618,10 @@ TKNZRgetCount(bat *r)
 		throw(MAL, "tokenizer.getCount", MAL_MALLOC_FAIL);
 	for (i = 0; i < tokenDepth; i++) {
 		cnt = (lng) BATcount(tokenBAT[i].val);
-		BUNappend(b, &cnt, FALSE);
+		if (BUNappend(b, &cnt, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			throw(MAL, "tokenizer", MAL_MALLOC_FAIL);
+		}
 	}
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
@@ -636,7 +648,10 @@ TKNZRgetCardinality(bat *r)
 		}
 		cnt = (lng) BATcount(en);
 		BBPunfix(en->batCacheid);
-		BUNappend(b, &cnt, FALSE);
+		if (BUNappend(b, &cnt, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
+		}
 	}
 
 	BATsetcount(b, tokenDepth);

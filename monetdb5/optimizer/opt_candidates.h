@@ -12,6 +12,6 @@
 #include "opt_support.h"
 #include "mal_exception.h"
 
-mal_export int OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

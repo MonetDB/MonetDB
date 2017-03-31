@@ -956,7 +956,7 @@ create function "netmask" (p inet) returns inet external name inet."netmask";
 create function "network" (p inet) returns inet external name inet."network";
 create function newurl(protocol string, hostname string, "port" int, file string) returns url external name url."new";
 create function newurl(protocol string, hostname string, file string) returns url external name url."new";
-create function sys.optimizer_stats () returns table (rewrite string, count int) external name sql.dump_opt_stats;
+create function sys.optimizer_stats () returns table (optname string, count int, timing bigint) external name inspect.optimizer_stats;
 create function sys.optimizers () returns table (name string, def string, status string) external name sql.optimizers;
 create function sys.password_hash (username string) returns string external name sql.password;
 create procedure sys.pause(tag int) external name sql.sysmon_pause;
@@ -994,7 +994,7 @@ create procedure sys.setsession("timeout" bigint) external name clients.setsessi
 create procedure sys.settimeout("query" bigint) external name clients.settimeout;
 create procedure sys.settimeout("query" bigint, "session" bigint) external name clients.settimeout;
 create procedure shpattach(fname string) external name shp.attach;
-create procedure shpload(fid integer) external name shp.load;
+create procedure shpload(fid integer) external name shp.import;
 create procedure shpload(fid integer, filter geometry) external name shp.import;
 create procedure shrink(sys string, tab string) external name sql.shrink;
 create procedure sys.shutdown(delay tinyint) external name sql.shutdown;
@@ -1182,6 +1182,8 @@ select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
 -- functions
 select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, query;
+-- external functions that don't reference existing MAL function (should be empty)
+with x(name,func) as (select name, splitpart(func, ' external name ', 2) from sys.functions where func like '% external name %' union select name, splitpart(func, ' EXTERNAL NAME ', 2) from sys.functions where func like '% EXTERNAL NAME %'), y(name,func) as (select name, trim(splitpart(func, ';', 1)) from x), z(name, mod, func) as (select name, trim(splitpart(func, '.', 1), '"'), trim(splitpart(func, '.', 2), '"') from y) select z.name, z.mod, z.func from z where z.mod || '.' || z.func not in (select m.module || '.' || m."function" from sys.malfunctions() m);
 -- args
 with
 arg1 (id, id1, name1, type1, type_digits1, type_scale1, inout1) as (select f.id, a1.id, a1.name, a1.type, a1.type_digits, a1.type_scale, a1.inout from sys.functions f left outer join args a1 on a1.func_id = f.id and a1.number = 1),
@@ -1759,8 +1761,6 @@ drop function pcre_replace(string, string, string, string);
 [ "profiler",	"getlimit",	"create function profiler.getlimit() returns integer external name profiler.getlimit;",	"profiler",	1,	1,	false,	false,	false	]
 [ "profiler",	"setheartbeat",	"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;",	"profiler",	1,	2,	true,	false,	false	]
 [ "profiler",	"setlimit",	"create procedure profiler.setlimit(lim integer) external name profiler.setlimit;",	"profiler",	1,	2,	true,	false,	false	]
-[ "profiler",	"setpoolsize",	"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;",	"profiler",	1,	2,	true,	false,	false	]
-[ "profiler",	"setstream",	"create procedure profiler.setstream(host string, port int) external name profiler.setstream;",	"profiler",	1,	2,	true,	false,	false	]
 [ "profiler",	"start",	"create procedure profiler.start() external name profiler.\"start\";",	"profiler",	1,	2,	true,	false,	false	]
 [ "profiler",	"stop",	"create procedure profiler.stop() external name profiler.stop;",	"profiler",	1,	2,	true,	false,	false	]
 [ "sys",	"<",	"<",	"calc",	0,	1,	false,	false,	false	]
@@ -2170,7 +2170,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"octet_length",	"nbytes",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"octet_length",	"nbytes",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"octet_length",	"nbytes",	"str",	0,	1,	false,	false,	false	]
-[ "sys",	"optimizer_stats",	"create function sys.optimizer_stats () returns table (rewrite string, count int) external name sql.dump_opt_stats;",	"sql",	1,	5,	false,	false,	false	]
+[ "sys",	"optimizer_stats",	"create function sys.optimizer_stats () returns table (optname string, count int, timing bigint) external name inspect.optimizer_stats;",	"inspect",	1,	5,	false,	false,	false	]
 [ "sys",	"optimizers",	"create function sys.optimizers () returns table (name string, def string, status string) external name sql.optimizers;",	"sql",	1,	5,	false,	false,	false	]
 [ "sys",	"or",	"or",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"password_hash",	"create function sys.password_hash (username string) returns string external name sql.password;",	"sql",	1,	1,	false,	false,	false	]
@@ -2790,7 +2790,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint) external name clients.settimeout;",	"clients",	1,	2,	true,	false,	false	]
 [ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name clients.settimeout;",	"clients",	1,	2,	true,	false,	false	]
 [ "sys",	"shpattach",	"create procedure shpattach(fname string) external name shp.attach;",	"shp",	1,	2,	true,	false,	false	]
-[ "sys",	"shpload",	"create procedure shpload(fid integer) external name shp.load;",	"shp",	1,	2,	true,	false,	false	]
+[ "sys",	"shpload",	"create procedure shpload(fid integer) external name shp.import;",	"shp",	1,	2,	true,	false,	false	]
 [ "sys",	"shpload",	"create procedure shpload(fid integer, filter geometry) external name shp.import;",	"shp",	1,	2,	true,	false,	false	]
 [ "sys",	"shrink",	"create procedure shrink(sys string, tab string) external name sql.shrink;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"shutdown",	"create procedure sys.shutdown(delay tinyint) external name sql.shutdown;",	"sql",	1,	2,	true,	false,	false	]
@@ -3264,6 +3264,11 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"year",	"year",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"year",	"year",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"zero_or_one",	"zero_or_one",	"sql",	0,	3,	false,	false,	false	]
+#with x(name,func) as (select name, splitpart(func, ' external name ', 2) from sys.functions where func like '% external name %' union select name, splitpart(func, ' EXTERNAL NAME ', 2) from sys.functions where func like '% EXTERNAL NAME %'), y(name,func) as (select name, trim(splitpart(func, ';', 1)) from x), z(name, mod, func) as (select name, trim(splitpart(func, '.', 1), '"'), trim(splitpart(func, '.', 2), '"') from y) select z.name, z.mod, z.func from z where z.mod || '.' || z.func not in (select m.module || '.' || m."function" from sys.malfunctions() m);
+% .z,	.z,	.z # table_name
+% name,	mod,	func # name
+% varchar,	varchar,	varchar # type
+% 0,	0,	0 # length
 #with
 #arg1 (id, id1, name1, type1, type_digits1, type_scale1, inout1) as (select f.id, a1.id, a1.name, a1.type, a1.type_digits, a1.type_scale, a1.inout from sys.functions f left outer join args a1 on a1.func_id = f.id and a1.number = 1),
 #arg2 (id, id1, name1, type1, type_digits1, type_scale1, inout1, id2, name2, type2, type_digits2, type_scale2, inout2) as (select arg1.*, a2.id, a2.name, a2.type, a2.type_digits, a2.type_scale, a2.inout from arg1 left outer join args a2 on a2.func_id = arg1.id and a2.number = 2),
@@ -3307,8 +3312,6 @@ drop function pcre_replace(string, string, string, string);
 [ "profiler",	"getlimit",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"setheartbeat",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"setlimit",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "profiler",	"setpoolsize",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "profiler",	"setstream",	"port",	"int",	32,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"start",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"stop",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"<",	"arg_1",	"any",	0,	0,	1,	"arg_2",	"any",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3718,7 +3721,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"octet_length",	"arg_1",	"char",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"octet_length",	"arg_1",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"octet_length",	"arg_1",	"varchar",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"optimizer_stats",	"count",	"int",	32,	0,	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"optimizer_stats",	"count",	"int",	32,	0,	0,	"timing",	"bigint",	64,	0,	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"optimizers",	"def",	"clob",	0,	0,	0,	"status",	"clob",	0,	0,	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"or",	"arg_1",	"boolean",	1,	0,	1,	"arg_2",	"boolean",	1,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"password_hash",	"username",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -6745,9 +6748,7 @@ drop function pcre_replace(string, string, string, string);
 [ "setheartbeat"	]
 [ "setlimit"	]
 [ "setmasklen"	]
-[ "setpoolsize"	]
 [ "setsession"	]
-[ "setstream"	]
 [ "settimeout"	]
 [ "settimeout"	]
 [ "shpattach"	]

@@ -66,11 +66,6 @@ Ready.
 [ "29",	11,	88722.85	]
 [ "30",	17,	122189.33	]
 [ "31",	8,	66313.16	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
 
 # 09:17:21 >  
 # 09:17:21 >  Done.

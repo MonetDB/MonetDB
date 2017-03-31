@@ -164,12 +164,17 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if (ATOMextern(type)) {
 		for(i = first; i < p->argc; i++)
-			BUNappend(bn, stk->stk[getArg(p,i)].val.pval, TRUE);
+			if (BUNappend(bn, stk->stk[getArg(p,i)].val.pval, TRUE) != GDK_SUCCEED)
+				goto bailout;
 	} else {
 		for(i = first; i < p->argc; i++)
-			BUNappend(bn, getArgReference(stk, p, i), TRUE);
+			if (BUNappend(bn, getArgReference(stk, p, i), TRUE) != GDK_SUCCEED)
+				goto bailout;
 	}
 	ret= getArgReference_bat(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(bn);
+	throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 }
