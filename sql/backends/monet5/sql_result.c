@@ -1373,7 +1373,6 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 		}
 	}
 
-
 	// now perform the actual transfer
 	row = srow = offset;
 	count = nr;
@@ -1993,9 +1992,11 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	m->rowcnt = count;
 
 	// protocol 10 result sets start with "*\n" followed by the binary data:
-	// [tableid][rowcount][colcount][timezone]
+	// [tableid][queryid][rowcount][colcount][timezone]
 	if (!mnstr_writeStr(s, "*\n") || 
-		!mnstr_writeInt(s, t->id) || !mnstr_writeLng(s, count) || !mnstr_writeLng(s, (lng) t->nr_cols)) {
+		!mnstr_writeInt(s, t->id) || 
+		!mnstr_writeLng(s, (lng) t->query_id) ||
+		!mnstr_writeLng(s, count) || !mnstr_writeLng(s, (lng) t->nr_cols)) {
 		fres = -1;
 		goto cleanup;
 	}
