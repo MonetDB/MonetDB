@@ -1336,6 +1336,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 	BATiter *iterators = NULL;
 	char *result = NULL;
 	int length = 0;
+	int initial_transfer = 1;
 
 	(void) order; // FIXME: respect explicitly ordered output
 
@@ -1375,7 +1376,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 
 	// now perform the actual transfer
 	row = srow = offset;
-	count = nr;
+	count = offset + nr;
 	while (row < (size_t) count) {
 		char* message_header;
 		char *buf = bs2_buffer(s).buf;
@@ -1454,12 +1455,14 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 		// buffer has to be empty currently
 		assert(bs2_buffer(s).pos == 0);
 
-		// continuation message
+		// initial message
 		message_header = "+\n";
-		if (row >= (size_t) count) {
-			// final message
+		if (initial_transfer == 0) {
+			// continuation message
 			message_header = "-\n";
 		}
+		initial_transfer = 0;
+		
 		if (!mnstr_writeStr(s, message_header) || !mnstr_writeLng(s, (lng)(row - srow))) {
 			fres = -1;
 			goto cleanup;
