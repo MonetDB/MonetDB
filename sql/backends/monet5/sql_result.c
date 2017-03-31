@@ -1304,7 +1304,7 @@ static int type_supports_binary_transfer(sql_type *type) {
 		type->eclass == EC_BLOB ||
 		type->eclass == EC_FLT || 
 		type->eclass == EC_NUM || 
-//		type->eclass == EC_DATE || 
+		type->eclass == EC_DATE || 
 		type->eclass == EC_TIME || 
 		type->eclass == EC_SEC ||
 		type->eclass == EC_MONTH || 
@@ -1360,8 +1360,8 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 
 		iterators[i] = bat_iterator(b);
 		
-		if (type->eclass == EC_TIMESTAMP) {
-			// timestamps are converted to Unix Timestamps
+		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
+			// dates and timestamps are converted to Unix Timestamps
 			mtype = TYPE_lng;
 			typelen = sizeof(lng);	
 		}
@@ -1544,6 +1544,20 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
 						MTIMEepoch2lng(&time, times + j);
+						bufptr[j] = swap ? long_long_SWAP(time) : time;
+					}
+					atom_size = sizeof(lng);
+				} else if (c->type.type->eclass == EC_DATE) {
+					// convert dates into timestamps since epoch
+					lng time;
+					timestamp tstamp;
+					size_t j = 0;
+					int swap = mnstr_byteorder(s) != 1234;
+					date *dates = (date*) Tloc(iterators[i].b, srow);
+					lng *bufptr = (lng*) buf;
+					for(j = 0; j < (row - srow); j++) {
+						tstamp.payload.p_days = dates[j];
+						MTIMEepoch2lng(&time, &tstamp);
 						bufptr[j] = swap ? long_long_SWAP(time) : time;
 					}
 					atom_size = sizeof(lng);
@@ -2028,7 +2042,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 		}
 		BBPunfix(b->batCacheid);
 
-		if (type->eclass == EC_TIMESTAMP) {
+		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
 			// timestamps are converted to Unix Timestamps
 			mtype = TYPE_lng;
 			typelen = sizeof(lng);	
@@ -2054,9 +2068,10 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 			goto cleanup;
 		}
 
-		if (type->eclass == EC_BLOB) {
+		if ((b->tnil == 0 && b->tnonil == 1) || type->eclass == EC_BLOB) {
 			nil_len = 0;
 		}
+
 
 		// write NULL values for this column to the stream
 		// NULL values are encoded as [size:int][NULL value] ([size] is always [typelen] for fixed size columns)
@@ -2065,7 +2080,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 			goto cleanup;
 		}
 		// transfer the actual NULL value
-		if (type->eclass != EC_BLOB) {
+		if (nil_len > 0) {
 			switch(nil_type) {
 				case TYPE_str:
 					retval = write_str_term(s, str_nil);
@@ -2089,11 +2104,11 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 				case TYPE_dbl:
 					retval = mnstr_writeDbl(s, dbl_nil);
 					break;
-	#ifdef HAVE_HGE
+#ifdef HAVE_HGE
 				case TYPE_hge:
 					retval = mnstr_writeHge(s, hge_nil);
 					break;
-	#endif
+#endif
 				case TYPE_void:
 					break;
 				default:
