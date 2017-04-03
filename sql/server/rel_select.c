@@ -227,8 +227,16 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			}
 		}
 		if (!columnrefs && sq->exps) {
-			node *ne = sq->exps->h;
-
+			node *ne;
+			if (is_topn(sq->op)) {
+				// if the current node is a LIMIT statement
+				// we perform the alias on the underlying projection
+				assert(sq->l);
+				assert(is_project(((sql_rel*)sq->l)->op));
+				ne = ((sql_rel*)sq->l)->exps->h;
+			} else {
+				ne = sq->exps->h;
+			}
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
 
