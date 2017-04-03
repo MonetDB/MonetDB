@@ -1,3 +1,5 @@
+SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE;
+
 -- first create a table for all basic data types and fill it with some data rows (including duplicate rows)
 create table all_types (
 	"boolean" boolean,

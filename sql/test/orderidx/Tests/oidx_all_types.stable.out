@@ -66,6 +66,7 @@ Ready.
 # 15:05:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13546" "--port=31953"
 # 15:05:54 >  
 
+#SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE;
 #create table all_types (
 #	"boolean" boolean,
 #	"tinyint" tinyint,
@@ -597,8 +598,8 @@ Ready.
 % blob # type
 % 0 # length
 [ 123456	]
-[ 01234567	]
 [ 123456	]
+[ 01234567	]
 [ 01234567	]
 #select "blob100" from all_types order by "blob100" ASC;
 % sys.all_types # table_name
@@ -606,8 +607,8 @@ Ready.
 % blob # type
 % 0 # length
 [ 123456	]
-[ 01234567	]
 [ 123456	]
+[ 01234567	]
 [ 01234567	]
 #select "clob" from all_types order by "clob" ASC;
 % sys.all_types # table_name
@@ -1086,6 +1087,24 @@ Ready.
 [ 08:30:00.00000+01:00	]
 [ 07:30:00.00000+01:00	]
 [ 07:30:00.00000+01:00	]
+#select "blob" from all_types order by "blob" DESC;
+% sys.all_types # table_name
+% blob # name
+% blob # type
+% 0 # length
+[ 01234567	]
+[ 01234567	]
+[ 123456	]
+[ 123456	]
+#select "blob100" from all_types order by "blob100" DESC;
+% sys.all_types # table_name
+% blob100 # name
+% blob # type
+% 0 # length
+[ 01234567	]
+[ 01234567	]
+[ 123456	]
+[ 123456	]
 #select "clob" from all_types order by "clob" DESC;
 % sys.all_types # table_name
 % clob # name
