@@ -8149,7 +8149,8 @@ rel_find_conflicts(mvc *sql, sql_rel *rel, list *exps, list *conflicts)
 	case op_project:
 		if (rel->l)
 			exps_find_conflicts(sql, rel->exps, exps, conflicts);
-		rel->l = rel_find_conflicts(sql, rel->l, exps, conflicts);
+		if (rel->l && rel_uses_exps(rel->l, exps))
+			rel->l = rel_find_conflicts(sql, rel->l, exps, conflicts);
 		/* if project produces given names, then we have a conflict */
 		if (rel->l)
 			exps_mark_conflicts(sql, rel->exps, conflicts, 0); 
@@ -8173,7 +8174,7 @@ rel_find_conflicts(mvc *sql, sql_rel *rel, list *exps, list *conflicts)
 
 	case op_union: 
 	case op_inter: 
-	case op_except: 
+	case op_except:
 		exps_find_conflicts(sql, rel->exps, exps, conflicts);
 		rel->l = rel_find_conflicts(sql, rel->l, exps, conflicts);
 		if (!is_semi(rel->op))
@@ -8358,7 +8359,7 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			return l;
 		}
 	}
-	if (rel->flag == APPLY_LOJ && (r->op == op_select || is_join(r->op))) {
+	if (rel->flag == APPLY_LOJ && ((r->op == op_select && exps_uses_exps(r->exps, rel->exps)) || is_join(r->op))) {
 		sql_rel *nr, *ns;
 
 		nr = rel_project(sql->sa, rel_dup(r), 
