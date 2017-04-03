@@ -666,11 +666,11 @@ comment "Returns the number of geometries";
 command NumRings(w:bat[:wkb], exterior:int) :bat[:int] address wkbNumRings_bat
 comment "Returns the number of interior rings+exterior on the first polygon of the geometry";
 function NumInteriorRings(w:bat[:wkb]) :bat[:int];
-	x := geom.NumRings(w, 0);
+	x := batgeom.NumRings(w, 0);
 	return x;
 end NumInteriorRings;
 function NRings(w:bat[:wkb]) :bat[:int];
-	x := geom.NumRings(w, 1);
+	x := batgeom.NumRings(w, 1);
 	return x;
 end NRings;
 
