@@ -39,3 +39,4 @@ modulo.Bug-6225
 one-plus-nil.Bug-6243
 with-alias-bug.6246
 crash_after_oidx_on_sys_statistics.Bug-6251
+crash_correlated_subqueries_in_select.Bug-6254
