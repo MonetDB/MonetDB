@@ -6,6 +6,6 @@ BEGIN ATOMIC
 -- select * from marketdata.quotes limit 1;
 END;
 --syntax error, unexpected '.', expecting WHILE in: "create trigger marketdata.calc_sdate before insert on marketdata."
-drop table marketdata.quotes;
+drop table marketdata.quotes cascade;
 drop schema marketdata;
 
