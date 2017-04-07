@@ -35,11 +35,11 @@ str _loader_init(void)
 	return msg;
 }
 
-str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	sql_func *sqlfun;
-	sql_subfunc *sqlmorefun;
-	str exprStr;
+str 
+PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+    sql_func * sqlfun;
+    sql_subfunc * sqlmorefun;
+    str exprStr;
 
 	const int additional_columns = 2;
 	int i = 1, ai = 0;
@@ -60,13 +60,13 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	char *loader_additional_args[] = {"_emit", "_conn"};
 
-	if (!PyAPIInitialized()) {
-		throw(MAL, "pyapi.eval", "Embedded Python is enabled but an error was "
-								 "thrown during initialization.");
-	}
-	sqlmorefun = *(sql_subfunc **)getArgReference(stk, pci, pci->retc);
-	sqlfun = sqlmorefun->func;
-	exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
+    if (!PYFUNCNAME(PyAPIInitialized())) {
+        throw(MAL, "pyapi.eval",
+              "Embedded Python is enabled but an error was thrown during initialization.");
+    }
+    sqlmorefun = *(sql_subfunc**) getArgReference(stk, pci, pci->retc);
+    sqlfun = sqlmorefun->func;
+    exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
 	args = (str *)GDKzalloc(pci->argc * sizeof(str));
 	if (!args) {

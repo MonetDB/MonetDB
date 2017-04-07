@@ -1835,16 +1835,27 @@ func_def:
 				lang = FUNC_LANG_R;
 			else if (l == 'P' || l == 'p')
             {
-                if (strcasecmp($10, "PYTHON_MAP") == 0)
-                    lang = FUNC_LANG_MAP_PY;
-                else lang = FUNC_LANG_PY;
+            	// code does not get cleaner than this people
+                if (strcasecmp($10, "PYTHON_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY;
+                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY3;
+                } else if (strcasecmp($10, "PYTHON3") == 0) {
+                	lang = FUNC_LANG_PY3;
+                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY2;
+                } else if (strcasecmp($10, "PYTHON2") == 0) {
+                	lang = FUNC_LANG_PY2;
+                } else {
+                	lang = FUNC_LANG_PY;
+                }
             }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else {
-				char *msg = sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l);
+				char *msg = sql_message("Language name R, C, PYTHON[3], PYTHON[3]_MAP or J(avascript):expected, received '%c'", l);
 				yyerror(m, msg);
 				_DELETE(msg);
 			}
@@ -1898,16 +1909,26 @@ func_def:
 				lang = FUNC_LANG_R;
 			else if (l == 'P' || l == 'p')
             {
-                if (strcasecmp($10, "PYTHON_MAP") == 0)
-                     lang = FUNC_LANG_MAP_PY;
-                else lang = FUNC_LANG_PY;
+                if (strcasecmp($10, "PYTHON_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY;
+                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY3;
+                } else if (strcasecmp($10, "PYTHON3") == 0) {
+                	lang = FUNC_LANG_PY3;
+                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY2;
+                } else if (strcasecmp($10, "PYTHON2") == 0) {
+                	lang = FUNC_LANG_PY2;
+                } else {
+                	lang = FUNC_LANG_PY;
+                }
             }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else {
-				char *msg = sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l);
+				char *msg = sql_message("Language name R, C, PYTHON[3], PYTHON[3]_MAP or J(avascript):expected, received '%c'", l);
 				yyerror(m, msg);
 				_DELETE(msg);
 			}

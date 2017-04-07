@@ -1168,7 +1168,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		if (LANG_EXT(f->func->lang))
 			q = pushPtr(mb, q, f); // nothing to see here, please move along
 		// f->query contains the R code to be run
-		if (f->func->lang == FUNC_LANG_R || f->func->lang == FUNC_LANG_PY || f->func->lang == FUNC_LANG_MAP_PY)
+		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY)
 			q = pushStr(mb, q, f->func->query);
 
 		for (n = lops->op4.lval->h; n; n = n->next) {
@@ -2624,7 +2624,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 	}
 	if (LANG_EXT(f->func->lang))
 		q = pushPtr(mb, q, f);
-	if (f->func->lang == FUNC_LANG_R || f->func->lang == FUNC_LANG_PY || f->func->lang == FUNC_LANG_MAP_PY)
+	if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY)
 		q = pushStr(mb, q, f->func->query);
 	/* first dynamic output of copy* functions */
 	if (f->func->type == F_UNION || (f->func->type == F_LOADER && f->res != NULL))
@@ -2778,9 +2778,8 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 
 	if (LANG_EXT(op->aggr->lang))
 		q = pushPtr(mb, q, op->aggr);
-	if (op->aggr->lang == FUNC_LANG_R || 
-	    op->aggr->lang == FUNC_LANG_PY || 
-	    op->aggr->lang == FUNC_LANG_MAP_PY){
+	if (op->aggr->lang == FUNC_LANG_R ||
+		op->aggr->lang >= FUNC_LANG_PY) {
 		if (!grp) {
 			setVarType(mb, getArg(q, 0), restype);
 			setVarUDFtype(mb, getArg(q, 0));

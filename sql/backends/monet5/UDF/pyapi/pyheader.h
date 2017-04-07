@@ -75,10 +75,11 @@
 #define PyString_FromStringAndSize PyUnicode_FromStringAndSize
 #define PyInt_FromLong PyLong_FromLong
 #define PyInt_Check PyLong_Check
-#define PythonUnicodeType char
-
+#define PythonUnicodeType Py_UNICODE
+#define PYFUNCNAME(name) PYAPI3##name
 #else
 #define PythonUnicodeType Py_UNICODE
+#define PYFUNCNAME(name) PYAPI2##name
 #endif
 
 #if defined(WIN32) && !defined(HAVE_EMBEDDED)
