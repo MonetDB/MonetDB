@@ -31,8 +31,6 @@
 
 #define FITS_INS_COL "INSERT INTO sys.fits_columns(id, name, type, units, number, table_id) \
 	 VALUES(%d,'%s','%s','%s',%d,%d);"
-#define FILE_INS "INSERT INTO sys.fits_files(id, name) VALUES (%d, '%s');"
-#define DEL_TABLE "DELETE FROM sys.fitsfiles;"
 #define ATTACHDIR "call sys.fitsattach('%s');"
 
 static void
@@ -572,14 +570,25 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = stmt;
 
 		while ((ep = readdir(dp)) != NULL && !msg) {
-			snprintf(fname, BUFSIZ, "%s%s", dir, ep->d_name);
+			char *filename = SQLescapeString(ep->d_name);
+			if (!filename) {
+				msg = createException(MAL, "fits.listdir", MAL_MALLOC_FAIL);
+				break;
+			}
+
+			snprintf(fname, BUFSIZ, "%s%s", dir, filename);
 			status = 0;
 			fits_open_file(&fptr, fname, READONLY, &status);
 			if (status == 0) {
 				snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
+#ifndef NDEBUG
+				fprintf(stderr, "Executing:\n%s\n", s);
+#endif
 				msg = SQLstatementIntern(cntxt, &s, "fits.listofdir", TRUE, FALSE, NULL);
 				fits_close_file(fptr, &status);
 			}
+
+			GDKfree(filename);
 		}
 		(void)closedir(dp);
 	} else
@@ -593,6 +602,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	str dir = *getArgReference_str(stk, pci, 1);
 	str pat = *getArgReference_str(stk, pci, 2);
+	char *filename = NULL;
 	fitsfile *fptr;
 	char *s;
 	int status = 0;
@@ -601,6 +611,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t j = 0;
 
 	(void)mb;
+
 	globbuf.gl_offs = 0;
 	snprintf(fulldirectory, BUFSIZ, "%s%s", dir, pat);
 	glob(fulldirectory, GLOB_DOOFFS, NULL, &globbuf);
@@ -608,7 +619,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/*	fprintf(stderr,"#fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
 
 	if (globbuf.gl_pathc == 0)
-		throw(MAL, "listdir", "Couldn't open the directory or there are no files that match the pattern");
+		throw(MAL, "fits.listdirpat", "Couldn't open the directory or there are no files that match the pattern");
 
 	for (j = 0; j < globbuf.gl_pathc; j++) {
 		char stmt[BUFSIZ];
@@ -616,12 +627,21 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		s = stmt;
 		snprintf(fname, BUFSIZ, "%s", globbuf.gl_pathv[j]);
+		filename = SQLescapeString(fname);
+		if (!filename) {
+			throw(MAL, "fits.listdirpat", MAL_MALLOC_FAIL);
+		}
 		status = 0;
-		fits_open_file(&fptr, fname, READONLY, &status);
+		fits_open_file(&fptr, filename, READONLY, &status);
 		if (status == 0) {
-			snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
+			snprintf(stmt, BUFSIZ, ATTACHDIR, filename);
+			GDKfree(filename);
+#ifndef NDEBUG
+			fprintf(stderr, "Executing:\n%s\n", s);
+#endif
 			msg = SQLstatementIntern(cntxt, &s, "fits.listofdirpat", TRUE, FALSE, NULL);
 			fits_close_file(fptr, &status);
+
 			break;
 		}
 	}
@@ -664,6 +684,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char tname[BUFSIZ], *tname_low = NULL, *s, bname[BUFSIZ], stmt[BUFSIZ];
 	long tbcol; /* type long used by fits library */
 	char cname[BUFSIZ], tform[BUFSIZ], tunit[BUFSIZ], tnull[BUFSIZ], tdisp[BUFSIZ];
+	char *esc_cname, *esc_tform, *esc_tunit;
 	double tscal, tzero;
 	char xtensionname[BUFSIZ] = "", stilversion[BUFSIZ] = "";
 	char stilclass[BUFSIZ] = "", tdate[BUFSIZ] = "", orig[BUFSIZ] = "", comm[BUFSIZ] = "";
@@ -807,7 +828,26 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cid = store_funcs.count_col(tr, col, 1) + 1;
 		for (j = 1; j <= cnum; j++, cid++) {
 			fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status);
-			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, cname, tform, tunit, j, (int)tid);
+			/* escape the various strings to avoid SQL injection attacks */
+			esc_cname = SQLescapeString(cname);
+			if (!esc_cname) {
+				throw(MAL, "fits.attach", MAL_MALLOC_FAIL);
+			}
+			esc_tform = SQLescapeString(tform);
+			if (!esc_tform) {
+				GDKfree(esc_cname);
+				throw(MAL, "fits.attach", MAL_MALLOC_FAIL);
+			}
+			esc_tunit = SQLescapeString(tunit);
+			if (!esc_tform) {
+				GDKfree(esc_tform);
+				GDKfree(esc_cname);
+				throw(MAL, "fits.attach", MAL_MALLOC_FAIL);
+			}
+			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, esc_cname, esc_tform, esc_tunit, j, (int)tid);
+			GDKfree(esc_tunit);
+			GDKfree(esc_tform);
+			GDKfree(esc_cname);
 			msg = SQLstatementIntern(cntxt, &s, "fits.attach", TRUE, FALSE, NULL);
 			if (msg != MAL_SUCCEED) {
 				fits_close_file(fptr, &status);
