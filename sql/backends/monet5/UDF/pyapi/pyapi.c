@@ -31,24 +31,24 @@ static PyObject *marshal_module = NULL;
 PyObject *marshal_loads = NULL;
 
 typedef struct _AggrParams{
-    PyInput **pyinput_values;
-    void ****split_bats;
-    size_t **group_counts;
-    str **args;
-    PyObject **connection;
-    PyObject **function;
-    PyObject **column_types_dict;
-    PyObject **result_objects;
-    str *pycall;
-    str msg;
-    size_t base;
-    size_t additional_columns;
-    size_t named_columns;
-    size_t columns;
-    size_t group_count;
-    size_t group_start;
-    size_t group_end;
-    MT_Id thread;
+	PyInput **pyinput_values;
+	void ****split_bats;
+	size_t **group_counts;
+	str **args;
+	PyObject **connection;
+	PyObject **function;
+	PyObject **column_types_dict;
+	PyObject **result_objects;
+	str *pycall;
+	str msg;
+	size_t base;
+	size_t additional_columns;
+	size_t named_columns;
+	size_t columns;
+	size_t group_count;
+	size_t group_start;
+	size_t group_end;
+	MT_Id thread;
 } AggrParams;
 
 static void ComputeParallelAggregation(AggrParams *p);
@@ -73,7 +73,7 @@ static MT_Lock queryLock;
 static int pyapiInitialized = FALSE;
 
 int PYFUNCNAME(PyAPIInitialized)(void) {
-    return pyapiInitialized;
+	return pyapiInitialized;
 }
 
 #ifdef HAVE_FORK
@@ -93,22 +93,22 @@ PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, 
 
 str
 PYFUNCNAME(PyAPIevalStd)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-    return PyAPIeval(cntxt, mb, stk, pci, 0, 0);
+	return PyAPIeval(cntxt, mb, stk, pci, 0, 0);
 }
 
 str
 PYFUNCNAME(PyAPIevalStdMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-    return PyAPIeval(cntxt, mb, stk, pci, 0, 1);
+	return PyAPIeval(cntxt, mb, stk, pci, 0, 1);
 }
 
 str
 PYFUNCNAME(PyAPIevalAggr)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-    return PyAPIeval(cntxt, mb, stk, pci, 1, 0);
+	return PyAPIeval(cntxt, mb, stk, pci, 1, 0);
 }
 
 str
 PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-    return PyAPIeval(cntxt, mb, stk, pci, 1, 1);
+	return PyAPIeval(cntxt, mb, stk, pci, 1, 1);
 }
 
 #define NP_SPLIT_BAT(tpe)                                                      \
@@ -144,8 +144,8 @@ PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 //! [RETURN_VALUES] Step 4: It collects the return values and converts them back into BATs
 //! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
 static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
-    sql_func * sqlfun = NULL;
-    str exprStr;
+	sql_func * sqlfun = NULL;
+	str exprStr;
 
 	const int additional_columns = 3;
 	int i = 1, ai = 0;
@@ -1420,55 +1420,55 @@ wrapup:
 
 str
 PYFUNCNAME(PyAPIprelude)(void *ret) {
-    (void) ret;
-    MT_lock_init(&pyapiLock, "pyapi_lock");
-    MT_lock_init(&queryLock, "query_lock");
-    MT_lock_set(&pyapiLock);
-    if (!pyapiInitialized) {
-        str msg = MAL_SUCCEED;
-        Py_Initialize();
-        _import_array();
-        msg = _connection_init();
-        if (msg != MAL_SUCCEED) {
-            MT_lock_unset(&pyapiLock);
-            return msg;
-        }
-        msg = _conversion_init();
-        if (msg != MAL_SUCCEED) {
-            MT_lock_unset(&pyapiLock);
-            return msg;
-        }
-        _pytypes_init();
-        _loader_init();
-        marshal_module = PyImport_Import(PyString_FromString("marshal"));
-        if (marshal_module == NULL) {
-            return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
-        }
-        marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
-        if (marshal_loads == NULL) {
-            return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
-        }
-        if (PyRun_SimpleString("import numpy") != 0) {
-            return PyError_CreateException("Failed to initialize embedded python", NULL);
-        }
-        PyEval_SaveThread();
-        if (msg != MAL_SUCCEED) {
-            MT_lock_unset(&pyapiLock);
-            return msg;
-        }
-        pyapiInitialized++;
-        fprintf(stdout, "# MonetDB/Python%d module loaded\n",
+	(void) ret;
+	MT_lock_init(&pyapiLock, "pyapi_lock");
+	MT_lock_init(&queryLock, "query_lock");
+	MT_lock_set(&pyapiLock);
+	if (!pyapiInitialized) {
+		str msg = MAL_SUCCEED;
+		Py_Initialize();
+		_import_array();
+		msg = _connection_init();
+		if (msg != MAL_SUCCEED) {
+			MT_lock_unset(&pyapiLock);
+			return msg;
+		}
+		msg = _conversion_init();
+		if (msg != MAL_SUCCEED) {
+			MT_lock_unset(&pyapiLock);
+			return msg;
+		}
+		_pytypes_init();
+		_loader_init();
+		marshal_module = PyImport_Import(PyString_FromString("marshal"));
+		if (marshal_module == NULL) {
+			return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
+		}
+		marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
+		if (marshal_loads == NULL) {
+			return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
+		}
+		if (PyRun_SimpleString("import numpy") != 0) {
+			return PyError_CreateException("Failed to initialize embedded python", NULL);
+		}
+		PyEval_SaveThread();
+		if (msg != MAL_SUCCEED) {
+			MT_lock_unset(&pyapiLock);
+			return msg;
+		}
+		pyapiInitialized++;
+		fprintf(stdout, "# MonetDB/Python%d module loaded\n",
 #ifdef IS_PY3K
-            3
+			3
 #else
-            2
+			2
 #endif
-        );
-    }
-    MT_lock_unset(&pyapiLock);
-    MT_lock_unset(&pyapiLock);
-    option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
-    return MAL_SUCCEED;
+		);
+	}
+	MT_lock_unset(&pyapiLock);
+	MT_lock_unset(&pyapiLock);
+	option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
+	return MAL_SUCCEED;
 }
 
 char *PyError_CreateException(char *error_text, char *pycall)
