@@ -478,12 +478,17 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	BAT *tids = delta_cands(tr, t);
 	BAT **cols;
 	node *n;
+
+	if (!tids)
+		return SQL_ERR;
 	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	cols = NEW_ARRAY(BAT*, cs_size(&t->columns));
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		BAT *v = store_funcs.bind_col(tr, c, RDONLY);
 
+		if (!v)
+			return SQL_ERR;
 		cols[c->colnr] = BATproject(tids, v);
 		BBPunfix(v->batCacheid);
 	}
