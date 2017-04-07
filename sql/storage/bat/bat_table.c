@@ -478,11 +478,15 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	BAT **cols;
 	node *n;
 
+	if (!tids)
+		return SQL_ERR;
 	cols = NEW_ARRAY(BAT*, cs_size(&t->columns));
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		BAT *v = store_funcs.bind_col(tr, c, RDONLY);
 
+		if (!v)
+			return SQL_ERR;
 		cols[c->colnr] = BATproject(tids, v);
 		BBPunfix(v->batCacheid);
 	}
