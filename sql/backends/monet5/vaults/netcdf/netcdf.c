@@ -232,13 +232,14 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	size_t dlen, alen;
 	char dname[NC_MAX_NAME+1], vname[NC_MAX_NAME+1], aname[NC_MAX_NAME +1], 
-	  abuf[80], *aval;
+		abuf[80], *aval;
 	char **dims = NULL;
 	nc_type vtype, atype; /* == int */
 
 	int retval, avalint;
 	float avalfl;
 	double avaldbl;
+	str esc_str0, esc_str1;
 
 	msg = getSQLContext(cntxt, mb, &m, NULL);
 	if (msg)
@@ -278,21 +279,34 @@ header: %s", nc_strerror(retval));
 	col = mvc_bind_column(m, tfiles, "file_id");
 	fid = store_funcs.count_col(tr, col, 1) + 1;
 
-	snprintf(buf, BUFSIZ, INSFILE, (int)fid, fname);
+	esc_str0 = SQLescapeString(fname);
+	if (!esc_str0) {
+		msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+		goto finish;
+	}
+	snprintf(buf, BUFSIZ, INSFILE, (int)fid, esc_str0);
+	GDKfree(esc_str0);
 	if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
-	        != MAL_SUCCEED )
+		 != MAL_SUCCEED )
 	    goto finish;
 
 	/* Read dimensions from NetCDF header and insert a row for each one into netcdf_dims table */
 
 	dims = (char **)GDKzalloc(sizeof(char *) * ndims);
 	for (didx = 0; didx < ndims; didx++){
-	    if ((retval = nc_inq_dim(ncid, didx, dname, &dlen)))
+		if ((retval = nc_inq_dim(ncid, didx, dname, &dlen)) != 0)
 	        return createException(MAL, "netcdf.attach", "Cannot read dimension %d : %s", didx, nc_strerror(retval));
 
-	    snprintf(buf, BUFSIZ, INSDIM, didx, (int)fid, dname, (int)dlen);
+		esc_str0 = SQLescapeString(dname);
+		if (!esc_str0) {
+			msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+			goto finish;
+		}
+
+		snprintf(buf, BUFSIZ, INSDIM, didx, (int)fid, esc_str0, (int)dlen);
+		GDKfree(esc_str0);
 	    if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
-    	 != MAL_SUCCEED )
+			 != MAL_SUCCEED )
 	        goto finish;
 
 	    dims[didx] = GDKstrdup(dname);
@@ -302,24 +316,31 @@ header: %s", nc_strerror(retval));
 	for (vidx = 0; vidx < nvars; vidx++){
 	    if ( (retval = nc_inq_var(ncid, vidx, vname, &vtype, &vndims, vdims, &vnatts)))
 	        return createException(MAL, "netcdf.attach", 
-			     "Cannot read variable %d : %s", 
-			     vidx, nc_strerror(retval));
+								   "Cannot read variable %d : %s",
+								   vidx, nc_strerror(retval));
 
     	/* Check if this is coordinate variable */
         if ( (vndims == 1) && ( strcmp(vname, dims[vdims[0]]) == 0 ))
 	        coord_dim_id = vdims[0];
         else coord_dim_id = -1;
 
-	    snprintf(buf, BUFSIZ, INSVAR, vidx, (int)fid, vname, prim_type_name(vtype), vndims, coord_dim_id);
+		esc_str0 = SQLescapeString(vname);
+		if (!esc_str0) {
+			msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+			goto finish;
+		}
+
+		snprintf(buf, BUFSIZ, INSVAR, vidx, (int)fid, esc_str0, prim_type_name(vtype), vndims, coord_dim_id);
+		GDKfree(esc_str0);
 	    if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
-	        != MAL_SUCCEED )
+			 != MAL_SUCCEED )
             goto finish;
 
 	    if ( coord_dim_id < 0 ){
 	        for (i = 0; i < vndims; i++){
                 snprintf(buf, BUFSIZ, INSVARDIM, vidx, vdims[i], (int)fid, i);
                 if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
-            	   != MAL_SUCCEED )
+					 != MAL_SUCCEED )
                 	goto finish;
 	        }
 	    }
@@ -329,62 +350,74 @@ header: %s", nc_strerror(retval));
             for (aidx = 0; aidx < vnatts; aidx++){
                 if ((retval = nc_inq_attname(ncid,vidx,aidx,aname)))
                     return createException(MAL, "netcdf.attach",
-                        "Cannot read attribute %d of variable %d: %s",
-                        aidx, vidx, nc_strerror(retval));
+										   "Cannot read attribute %d of variable %d: %s",
+										   aidx, vidx, nc_strerror(retval));
 
-		if ((retval = nc_inq_att(ncid,vidx,aname,&atype,&alen)))
+				if ((retval = nc_inq_att(ncid,vidx,aname,&atype,&alen)))
                     return createException(MAL, "netcdf.attach",
-	                    "Cannot read attribute %s type and length: %s",
-	                    aname, nc_strerror(retval));
+										   "Cannot read attribute %s type and length: %s",
+										   aname, nc_strerror(retval));
 
+				esc_str0 = SQLescapeString(vname);
+				if (!esc_str0) {
+					msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+					goto finish;
+				}
+				esc_str1 = SQLescapeString(aname);
+				if (!esc_str1) {
+					GDKfree(esc_str0);
+					msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+					goto finish;
+				}
+				switch ( atype ) {
+				case NC_CHAR:
+					aval = (char *) GDKzalloc(alen + 1);
+					if ((retval = nc_get_att_text(ncid,vidx,aname,aval)))
+						return createException(MAL, "netcdf.attach",
+											   "Cannot read attribute %s value: %s",
+											   aname, nc_strerror(retval));
+					fix_quote(aval, alen);
+					aval[alen] = '\0';
+					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, "string", aval, (int)fid, "root");
+					GDKfree(aval);
+					break;
 
-        	switch ( atype ) {
-        	case NC_CHAR:
-                aval = (char *) GDKzalloc(alen + 1);
-                if ((retval = nc_get_att_text(ncid,vidx,aname,aval)))
-                    return createException(MAL, "netcdf.attach",
-	                    "Cannot read attribute %s value: %s",
-	                    aname, nc_strerror(retval));
-		fix_quote(aval, alen);
-                aval[alen] = '\0';
-                snprintf(buf, BUFSIZ, INSATTR, vname, aname, "string", aval, (int)fid, "root");
-                GDKfree(aval);
-            break;
+				case NC_INT:
+					if ((retval = nc_get_att_int(ncid,vidx,aname,&avalint)))
+						return createException(MAL, "netcdf.attach",
+											   "Cannot read attribute %s value: %s",
+											   aname, nc_strerror(retval));
+					snprintf(abuf,80,"%d",avalint);
+					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
+					break;
 
-        	case NC_INT:
-	            if ((retval = nc_get_att_int(ncid,vidx,aname,&avalint)))
-	                return createException(MAL, "netcdf.attach",
-	                    "Cannot read attribute %s value: %s",
-	                    aname, nc_strerror(retval));
-                snprintf(abuf,80,"%d",avalint);
-                snprintf(buf, BUFSIZ, INSATTR, vname, aname, prim_type_name(atype), abuf, (int)fid, "root");
-	        break;
-	
-        	case NC_FLOAT:
-	            if ((retval = nc_get_att_float(ncid,vidx,aname,&avalfl)))
-	                return createException(MAL, "netcdf.attach",
-	                    "Cannot read attribute %s value: %s",
-	                    aname, nc_strerror(retval));
-	            snprintf(abuf,80,"%7.2f",avalfl);
-	            snprintf(buf, BUFSIZ, INSATTR, vname, aname, prim_type_name(atype), abuf, (int)fid, "root");
-	        break;
+				case NC_FLOAT:
+					if ((retval = nc_get_att_float(ncid,vidx,aname,&avalfl)))
+						return createException(MAL, "netcdf.attach",
+											   "Cannot read attribute %s value: %s",
+											   aname, nc_strerror(retval));
+					snprintf(abuf,80,"%7.2f",avalfl);
+					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
+					break;
 
-	        case NC_DOUBLE:
-	            if ((retval = nc_get_att_double(ncid,vidx,aname,&avaldbl)))
-        	        return createException(MAL, "netcdf.attach",
-	                    "Cannot read attribute %s value: %s",
-	                    aname, nc_strerror(retval));
-    	        snprintf(abuf,80,"%7.2e",avaldbl);
-	            snprintf(buf, BUFSIZ, INSATTR, vname, aname, prim_type_name(atype), abuf, (int)fid, "root");
-	        break;
+				case NC_DOUBLE:
+					if ((retval = nc_get_att_double(ncid,vidx,aname,&avaldbl)))
+						return createException(MAL, "netcdf.attach",
+											   "Cannot read attribute %s value: %s",
+											   aname, nc_strerror(retval));
+					snprintf(abuf,80,"%7.2e",avaldbl);
+					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
+					break;
 
-        	default: continue; /* next attribute */
-	        }
+				default: continue; /* next attribute */
+				}
+				GDKfree(esc_str1);
+				GDKfree(esc_str0);
 
-		printf("statement: '%s'\n", s);
-        	if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
-	            != MAL_SUCCEED )
-                goto finish;
+				printf("statement: '%s'\n", s);
+				if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
+					 != MAL_SUCCEED )
+					goto finish;
 
 	        } /* attr loop */
 
@@ -394,67 +427,75 @@ header: %s", nc_strerror(retval));
 	/* Extract global attributes */
 
 	for (aidx = 0; aidx < ngatts; aidx++){
-	    if ((retval = nc_inq_attname(ncid,NC_GLOBAL,aidx,aname)))
+		if ((retval = nc_inq_attname(ncid,NC_GLOBAL,aidx,aname)) != 0)
 	        return createException(MAL, "netcdf.attach",
-                "Cannot read global attribute %d: %s",
-                aidx, nc_strerror(retval));
+								   "Cannot read global attribute %d: %s",
+								   aidx, nc_strerror(retval));
 
-	    if ((retval = nc_inq_att(ncid,NC_GLOBAL,aname,&atype,&alen)))
+		if ((retval = nc_inq_att(ncid,NC_GLOBAL,aname,&atype,&alen)) != 0)
 	        return createException(MAL, "netcdf.attach",
-                "Cannot read global attribute %s type and length: %s",
-                aname, nc_strerror(retval));
+								   "Cannot read global attribute %s type and length: %s",
+								   aname, nc_strerror(retval));
+
+		esc_str0 = SQLescapeString(aname);
+		if (!esc_str0) {
+			msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+			goto finish;
+		}
+
     	switch ( atype ) {
-	        case NC_CHAR:
-	            aval = (char *) GDKzalloc(alen + 1);
-	            if ((retval = nc_get_att_text(ncid,NC_GLOBAL,aname,aval)))
-	                return createException(MAL, "netcdf.attach",
-	                    "Cannot read global attribute %s value: %s",
-    	                aname, nc_strerror(retval));
+		case NC_CHAR:
+			aval = (char *) GDKzalloc(alen + 1);
+			if ((retval = nc_get_att_text(ncid,NC_GLOBAL,aname,aval)))
+				return createException(MAL, "netcdf.attach",
+									   "Cannot read global attribute %s value: %s",
+									   aname, nc_strerror(retval));
 		    fix_quote(aval, alen);
-	            aval[alen] = '\0';
-	            snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", aname, "string", aval, (int)fid, "root");
-	            GDKfree(aval);
-	            break;
+			aval[alen] = '\0';
+			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, "string", aval, (int)fid, "root");
+			GDKfree(aval);
+			break;
 
-            case NC_INT:
-	            if ((retval = nc_get_att_int(ncid,NC_GLOBAL,aname,&avalint)))
-	                return createException(MAL, "netcdf.attach",
-			    	    "Cannot read global attribute %s of type %s : %s",
-	                    aname, prim_type_name(atype), nc_strerror(retval));
-    	        snprintf(abuf,80,"%d",avalint);
-	            snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", aname, prim_type_name(atype), abuf, (int)fid, "root");
-	            break;
+		case NC_INT:
+			if ((retval = nc_get_att_int(ncid,NC_GLOBAL,aname,&avalint)))
+				return createException(MAL, "netcdf.attach",
+									   "Cannot read global attribute %s of type %s : %s",
+									   aname, prim_type_name(atype), nc_strerror(retval));
+			snprintf(abuf,80,"%d",avalint);
+			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
+			break;
 
-    	    case NC_FLOAT:
-	            if ((retval = nc_get_att_float(ncid,NC_GLOBAL,aname,&avalfl)))
-	                return createException(MAL, "netcdf.attach",
-	                    "Cannot read global attribute %s of type %s: %s",
-	                    aname, prim_type_name(atype), nc_strerror(retval));
-    	        snprintf(abuf,80,"%7.2f",avalfl);
-	            snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", aname, prim_type_name(atype), abuf, (int)fid, "root");
-	            break;
+		case NC_FLOAT:
+			if ((retval = nc_get_att_float(ncid,NC_GLOBAL,aname,&avalfl)))
+				return createException(MAL, "netcdf.attach",
+									   "Cannot read global attribute %s of type %s: %s",
+									   aname, prim_type_name(atype), nc_strerror(retval));
+			snprintf(abuf,80,"%7.2f",avalfl);
+			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
+			break;
 
-            case NC_DOUBLE:
-    	        if ((retval = nc_get_att_double(ncid,NC_GLOBAL,aname,&avaldbl)))
-	                return createException(MAL, "netcdf.attach",
-	                    "Cannot read global attribute %s value: %s",
-	                    aname, nc_strerror(retval));
-	            snprintf(abuf,80,"%7.2e",avaldbl);
-    	        snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", aname, prim_type_name(atype), abuf, (int)fid, "root");
-	            break;
+		case NC_DOUBLE:
+			if ((retval = nc_get_att_double(ncid,NC_GLOBAL,aname,&avaldbl)))
+				return createException(MAL, "netcdf.attach",
+									   "Cannot read global attribute %s value: %s",
+									   aname, nc_strerror(retval));
+			snprintf(abuf,80,"%7.2e",avaldbl);
+			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
+			break;
 
-            default: continue; /* next attribute */
-        }
+		default: continue; /* next attribute */
+		}
+		GDKfree(esc_str0);
 
-	printf("global: '%s'\n", s);
+		printf("global: '%s'\n", s);
         if ( ( msg = SQLstatementIntern(cntxt, &s, "netcdf.attach", TRUE, FALSE, NULL))
-	          != MAL_SUCCEED )
+			 != MAL_SUCCEED )
 	        goto finish;
 
     } /* global attr loop */
 
 
- finish:
+finish:
     nc_close(ncid);
 
     if (dims != NULL ){
