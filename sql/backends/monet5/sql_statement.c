@@ -1356,7 +1356,7 @@ argumentZero(MalBlkPtr mb, int tpe)
 	cst.val.ival = 0;
 	msg = convertConstant(tpe, &cst);
 	if( msg)
-		GDKfree(msg); // will not be called
+		freeException(msg); // will not be called
 	return defConstant(mb, tpe, &cst);
 }
 */
@@ -1999,6 +1999,7 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 		char *fqtn;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
+			// FIXME unchecked_malloc NEW_ARRAY can return NULL
 			fqtn = NEW_ARRAY(char, fqtnl);
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
@@ -2250,6 +2251,7 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		char *fqtn;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
+			// FIXME unchecked_malloc NEW_ARRAY can return NULL
 			fqtn = NEW_ARRAY(char, fqtnl);
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
@@ -2304,11 +2306,13 @@ stmt_output(backend *be, stmt *lst)
 		const char *ntn = sql_escape_ident(tn);
 		const char *nsn = sql_escape_ident(sn);
 		size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
+		// FIXME unchecked_malloc NEW_ARRAY can return NULL
 		char *fqtn = NEW_ARRAY(char, fqtnl);
 
 		snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
 		q = newStmt(mb, sqlRef, resultSetRef);
+		getArg(q,0) = newTmpVariable(mb,TYPE_int);
 		if (q) {
 			q = pushStr(mb, q, fqtn);
 			q = pushStr(mb, q, cn);

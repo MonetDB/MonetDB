@@ -1,7 +1,9 @@
+unknown_col_in_order_by.Bug-3535
+insert_self_ref_FK.Bug-6131
 shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
-HAVE_LIBZ?heapextend.Bug-6134
+#HAVE_LIBZ?heapextend.Bug-6134
 incorrect_error.Bug-6141
 empty-interval.Bug-6184
 crash_in_null_cast.Bug-6186
@@ -20,8 +22,8 @@ str2decimal.Bug-6202
 integer_addition_overflow.Bug-6205
 dce_bug-6177
 crash_on_NULL_ptr.Bug-6130
-sqlsmith01
-sqlsmith02
+HAVE_SAMTOOLS?sqlsmith01
+HAVE_NETCDF?sqlsmith02
 sqlsmith03
 sqlsmith04
 nested_with.Bug-6187
@@ -30,4 +32,11 @@ null-quantile.Bug-6218
 sqlsmith.Bug-6216
 sqlsmith.Bug-6217
 real-power.Bug-6228
-sqlsmith.Bug-6219
+HAVE_NETCDF?sqlsmith.Bug-6219
+create_view_order_by.Bug-3465
+cast_boolean_to_string.Bug-6110
+modulo.Bug-6225
+one-plus-nil.Bug-6243
+with-alias-bug.6246
+crash_after_oidx_on_sys_statistics.Bug-6251
+crash_correlated_subqueries_in_select.Bug-6254

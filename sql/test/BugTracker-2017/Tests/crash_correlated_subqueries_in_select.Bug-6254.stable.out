@@ -1,0 +1,90 @@
+stdout of test 'crash_correlated_subqueries_in_select.Bug-6254` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 14:28:48 >  
+# 14:28:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33692" "--set" "mapi_usock=/var/tmp/mtest-6451/.s.monetdb.33692" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 14:28:48 >  
+
+# MonetDB 5 server v11.25.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:33692/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6451/.s.monetdb.33692
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+
+# 10:01:40 >  
+# 10:01:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24581" "--port=30412"
+# 10:01:40 >  
+
+#CREATE VIEW sys.view_stats AS
+#SELECT s.name AS schema_nm, s.id AS schema_id, t.name AS table_nm, t.id AS table_id, t.system AS is_system_view
+#, (SELECT CAST(COUNT(*) as int) FROM sys.columns c WHERE c.table_id = t.id) AS "# columns"
+# FROM sys.tables t JOIN sys.schemas s ON t.schema_id = s.id
+#WHERE query IS NOT NULL
+#; --ORDER BY s.name, t.name;
+#SELECT * FROM sys.view_stats;
+% .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
+% schema_nm,	schema_id,	table_nm,	table_id,	is_system_view,	"# columns" # name
+% varchar,	int,	varchar,	int,	boolean,	int # type
+% 3,	4,	17,	4,	5,	2 # length
+[ "sys",	2000,	"tables",	5956,	true,	9	]
+[ "sys",	2000,	"columns",	5966,	true,	10	]
+[ "sys",	2000,	"users",	5988,	true,	3	]
+[ "sys",	2000,	"querylog_catalog",	6221,	true,	8	]
+[ "sys",	2000,	"querylog_calls",	6232,	true,	9	]
+[ "sys",	2000,	"querylog_history",	6250,	true,	16	]
+[ "sys",	2000,	"tracelog",	6289,	true,	13	]
+[ "sys",	2000,	"sessions",	6432,	true,	6	]
+[ "sys",	2000,	"optimizers",	6499,	true,	3	]
+[ "sys",	2000,	"environment",	6507,	true,	2	]
+[ "sys",	2000,	"queue",	6557,	true,	8	]
+[ "sys",	2000,	"rejects",	6587,	true,	4	]
+[ "sys",	2000,	"geometry_columns",	6914,	true,	7	]
+[ "sys",	2000,	"storage",	7743,	true,	17	]
+[ "sys",	2000,	"storagemodel",	7875,	true,	13	]
+[ "sys",	2000,	"tablestoragemodel",	7885,	true,	8	]
+[ "sys",	2000,	"view_stats",	8548,	false,	6	]
+#SELECT * FROM sys.view_stats WHERE is_system_view;
+% .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
+% schema_nm,	schema_id,	table_nm,	table_id,	is_system_view,	"# columns" # name
+% varchar,	int,	varchar,	int,	boolean,	int # type
+% 3,	4,	17,	4,	5,	2 # length
+[ "sys",	2000,	"tables",	5956,	true,	9	]
+[ "sys",	2000,	"columns",	5966,	true,	10	]
+[ "sys",	2000,	"users",	5988,	true,	3	]
+[ "sys",	2000,	"querylog_catalog",	6221,	true,	8	]
+[ "sys",	2000,	"querylog_calls",	6232,	true,	9	]
+[ "sys",	2000,	"querylog_history",	6250,	true,	16	]
+[ "sys",	2000,	"tracelog",	6289,	true,	13	]
+[ "sys",	2000,	"sessions",	6432,	true,	6	]
+[ "sys",	2000,	"optimizers",	6499,	true,	3	]
+[ "sys",	2000,	"environment",	6507,	true,	2	]
+[ "sys",	2000,	"queue",	6557,	true,	8	]
+[ "sys",	2000,	"rejects",	6587,	true,	4	]
+[ "sys",	2000,	"geometry_columns",	6914,	true,	7	]
+[ "sys",	2000,	"storage",	7743,	true,	17	]
+[ "sys",	2000,	"storagemodel",	7875,	true,	13	]
+[ "sys",	2000,	"tablestoragemodel",	7885,	true,	8	]
+#SELECT * FROM sys.view_stats WHERE NOT is_system_view;
+% .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
+% schema_nm,	schema_id,	table_nm,	table_id,	is_system_view,	"# columns" # name
+% varchar,	int,	varchar,	int,	boolean,	int # type
+% 3,	4,	10,	4,	5,	1 # length
+[ "sys",	2000,	"view_stats",	8548,	false,	6	]
+#DROP VIEW sys.view_stats;
+
+# 10:01:40 >  
+# 10:01:40 >  "Done."
+# 10:01:40 >  
+

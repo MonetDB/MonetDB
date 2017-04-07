@@ -752,8 +752,9 @@ INETabbrev(str *retval, const inet *val)
 		 * &:    00 00 00 00
 		 * all zero, thus no bits on the right side of the mask
 		 */
-
 		ip = GDKmalloc(sizeof(char) * 19);
+		if( ip == NULL)
+			throw(MAL,"inet.abbrev", MAL_MALLOC_FAIL);
 
 		if (msk > 24) {
 			snprintf(ip, sizeof(char) * 19, "%d.%d.%d.%d/%d",

@@ -25,8 +25,8 @@
 
 // Keep a queue of running queries
 QueryQueue QRYqueue;
-static int qtop, qsize;
-static int qtag= 1;
+int qtop;
+static int qsize, qtag= 1;
 
 void
 mal_runtime_reset(void)

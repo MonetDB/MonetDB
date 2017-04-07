@@ -85,12 +85,14 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 		}
 		if (t->idxs.set)
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
-			sql_idx *c = cn->data;
-			if (strcmp(c->base.name, name+1 /* skip % */) == 0) {
+			sql_idx *i = cn->data;
+			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
 				*bt = rel;
-				if (pnr < 0 || (c->t->p &&
-				    list_position(c->t->p->tables.set, c->t) == pnr))
-					return c;
+				if (pnr < 0 || (i->t->p &&
+				    list_position(i->t->p->tables.set, i->t) == pnr)) {
+					sql_kc *c = i->columns->h->data;
+					return c->c;
+				}
 			}
 		}
 		break;
@@ -2720,7 +2722,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				atom *ra = exp_flatten(sql, re);
 
 				if (la && ra) {
-					atom *a = atom_mul(sql->sa, la, ra);
+					atom *a = atom_mul(la, ra);
 
 					if (a) {
 						sql_exp *ne = exp_atom(sql->sa, a);
@@ -2766,10 +2768,11 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					sql_exp *lle = l->h->data;
 					sql_exp *lre = l->h->next->data;
 					if (exp_equal(re, lle)==0) {
-						atom_inc(exp_value(sql, lre, sql->args, sql->argc));
-						(*changes)++;
-						exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
-						return le;
+						if (atom_inc(exp_value(sql, lre, sql->args, sql->argc))) {
+							(*changes)++;
+							exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+							return le;
+						}
 					}
 				}
 				if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
@@ -8146,7 +8149,8 @@ rel_find_conflicts(mvc *sql, sql_rel *rel, list *exps, list *conflicts)
 	case op_project:
 		if (rel->l)
 			exps_find_conflicts(sql, rel->exps, exps, conflicts);
-		rel->l = rel_find_conflicts(sql, rel->l, exps, conflicts);
+		if (rel->l && rel_uses_exps(rel->l, exps))
+			rel->l = rel_find_conflicts(sql, rel->l, exps, conflicts);
 		/* if project produces given names, then we have a conflict */
 		if (rel->l)
 			exps_mark_conflicts(sql, rel->exps, conflicts, 0); 
@@ -8170,7 +8174,7 @@ rel_find_conflicts(mvc *sql, sql_rel *rel, list *exps, list *conflicts)
 
 	case op_union: 
 	case op_inter: 
-	case op_except: 
+	case op_except:
 		exps_find_conflicts(sql, rel->exps, exps, conflicts);
 		rel->l = rel_find_conflicts(sql, rel->l, exps, conflicts);
 		if (!is_semi(rel->op))
@@ -8355,7 +8359,7 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			return l;
 		}
 	}
-	if (rel->flag == APPLY_LOJ && r->op == op_select) {
+	if (rel->flag == APPLY_LOJ && ((r->op == op_select && exps_uses_exps(r->exps, rel->exps)) || is_join(r->op))) {
 		sql_rel *nr, *ns;
 
 		nr = rel_project(sql->sa, rel_dup(r), 

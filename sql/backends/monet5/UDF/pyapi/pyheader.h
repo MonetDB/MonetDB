@@ -9,7 +9,8 @@
 /*
  * M. Raasveldt
  * This file simply includes standard MonetDB and Python headers
- * Because this needs to be done in a specific order, and this needs to happen in multiple places
+ * Because this needs to be done in a specific order, and this needs to happen
+ * in multiple places
  * We simplify our lives by only having to include this header.
  */
 
@@ -36,18 +37,18 @@
 #undef _XOPEN_SOURCE
 #undef _POSIX_C_SOURCE
 #ifdef _DEBUG
- #undef _DEBUG
- #include <Python.h>
- #define _DEBUG
+#undef _DEBUG
+#include <Python.h>
+#define _DEBUG
 #else
- #include <Python.h>
+#include <Python.h>
 #endif
 
 // Numpy Library
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #ifdef __INTEL_COMPILER
 // Intel compiler complains about trailing comma's in numpy source code,
-#pragma warning(disable:271)
+#pragma warning(disable : 271)
 #endif
 #include <numpy/arrayobject.h>
 #include <numpy/npy_common.h>
@@ -81,25 +82,27 @@
 #endif
 
 #if defined(WIN32) && !defined(HAVE_EMBEDDED)
-// On Windows we need to dynamically load any SQL functions we use 
+// On Windows we need to dynamically load any SQL functions we use
 // For embedded, this is not necessary because we create one large shared object
-#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)     \
-   typedef retval (*fcnname##_ptr_tpe)();            \
-   fcnname##_ptr_tpe fcnname##_ptr = NULL;
+#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)                               \
+	typedef retval (*fcnname##_ptr_tpe)();                                     \
+	fcnname##_ptr_tpe fcnname##_ptr = NULL;
 
-#define LOAD_SQL_FUNCTION_PTR(fcnname)                                             \
-    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress(NULL, "lib_sql.dll", #fcnname, 0); \
-    if (fcnname##_ptr == NULL) {                                                           \
-        msg = createException(MAL, "pyapi.eval", "Failed to load function %s", #fcnname);  \
-    }
+#define LOAD_SQL_FUNCTION_PTR(fcnname)                                         \
+	fcnname##_ptr =                                                            \
+		(fcnname##_ptr_tpe)getAddress(NULL, "lib_sql.dll", #fcnname, 0);       \
+	if (fcnname##_ptr == NULL) {                                               \
+		msg = createException(MAL, "pyapi.eval", "Failed to load function %s", \
+							  #fcnname);                                       \
+	}
 #else
-#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)     \
-   typedef retval (*fcnname##_ptr_tpe)();            \
-   fcnname##_ptr_tpe fcnname##_ptr = (fcnname##_ptr_tpe)fcnname;
+#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)                               \
+	typedef retval (*fcnname##_ptr_tpe)();                                     \
+	fcnname##_ptr_tpe fcnname##_ptr = (fcnname##_ptr_tpe)fcnname;
 
-#define LOAD_SQL_FUNCTION_PTR(fcnname) (void) fcnname
+#define LOAD_SQL_FUNCTION_PTR(fcnname) (void)fcnname
 #endif
-   
+
 #define utf8string_minlength 256
 
 #endif /* _PYHEADER_H_ */

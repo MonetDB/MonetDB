@@ -84,7 +84,7 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			} else {
 				s = createException(MAL, malfunc, "%s", errbuf);
 			}
-			*GDKerrbuf = 0;
+			GDKclrerr();
 			return s;
 		}
 		throw(MAL, malfunc, OPERATION_FAILED);
@@ -432,7 +432,7 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 			} else {
 				s = createException(MAL, malfunc, "%s", errbuf);
 			}
-			*GDKerrbuf = 0;
+			GDKclrerr();
 			return s;
 		}
 		throw(MAL, malfunc, OPERATION_FAILED);

@@ -32,4 +32,3 @@ order by
 	p_type,
 	p_size;
 
-select * from optimizer_stats() stats;

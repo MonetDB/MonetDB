@@ -67,6 +67,8 @@ stderr of test 'new-readonly-db.Bug-2695` in directory 'sql/test/BugTracker-2010
 #warning: please don't forget to set your vault key!
 #(see /ufs/sjoerd/Monet-candidate/etc/monetdb5.conf)
 !mvc_init: unable to create system tables
+Fatal error during initialization:
+SQLException:SQLinit:Catalogue initialization failed
 
 # 12:51:24 >  
 # 12:51:24 >  Done.

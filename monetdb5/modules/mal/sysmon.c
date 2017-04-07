@@ -32,7 +32,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, prog;
 	str usr;
 	timestamp ts, tsn;
-	str msg;
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
@@ -58,7 +58,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "SYSMONqueue", MAL_MALLOC_FAIL);
 	}
 
-	for ( i = 0; i< QRYqueue[i].tag; i++)
+	for ( i = 0; i< qtop; i++)
 	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
 		now= (lng) time(0);
 		if ( (now-QRYqueue[i].start) > QRYqueue[i].runtime)
@@ -67,15 +67,20 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			// calculate progress based on past observations
 			prog = (int) ((now- QRYqueue[i].start) / (QRYqueue[i].runtime/100.0));
 		now = QRYqueue[i].tag;	/* temporarily use so that we have correct type */
-		BUNappend(tag, &now, FALSE);
+		if (BUNappend(tag, &now, FALSE) != GDK_SUCCEED)
+			goto bailout;
 		msg = AUTHgetUsername(&usr, cntxt);
 		if (msg != MAL_SUCCEED)
 			goto bailout;
 
-		BUNappend(user, usr, FALSE);
+		if (BUNappend(user, usr, FALSE) != GDK_SUCCEED) {
+			GDKfree(usr);
+			goto bailout;
+		}
 		GDKfree(usr);
-		BUNappend(query, QRYqueue[i].query, FALSE);
-		BUNappend(activity, QRYqueue[i].status, FALSE);
+		if (BUNappend(query, QRYqueue[i].query, FALSE) != GDK_SUCCEED ||
+			BUNappend(activity, QRYqueue[i].status, FALSE) != GDK_SUCCEED)
+			goto bailout;
 
 		/* convert number of seconds into a timestamp */
 		now = QRYqueue[i].start * 1000;
@@ -85,11 +90,13 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = MTIMEtimestamp_add(&tsn, &ts, &now);
 		if (msg)
 			goto bailout;
-		BUNappend(started, &tsn, FALSE);
+		if (BUNappend(started, &tsn, FALSE) != GDK_SUCCEED)
+			goto bailout;
 
-		if ( QRYqueue[i].mb->runtime == 0)
-			BUNappend(estimate, timestamp_nil, FALSE);
-		else{
+		if ( QRYqueue[i].mb->runtime == 0) {
+			if (BUNappend(estimate, timestamp_nil, FALSE) != GDK_SUCCEED)
+				goto bailout;
+		} else {
 			now = (QRYqueue[i].start * 1000 + QRYqueue[i].mb->runtime);
 			msg = MTIMEunix_epoch(&ts);
 			if (msg)
@@ -97,10 +104,12 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = MTIMEtimestamp_add(&tsn, &ts, &now);
 			if (msg)
 				goto bailout;
-			BUNappend(estimate, &tsn, FALSE);
+			if (BUNappend(estimate, &tsn, FALSE) != GDK_SUCCEED)
+				goto bailout;
 		}
-		BUNappend(oids, &QRYqueue[i].mb->tag, FALSE);
-		BUNappend(progress, &prog, FALSE);
+		if (BUNappend(oids, &QRYqueue[i].mb->tag, FALSE) != GDK_SUCCEED ||
+			BUNappend(progress, &prog, FALSE) != GDK_SUCCEED)
+			goto bailout;
 	}
 	MT_lock_unset(&mal_delayLock);
 	BBPkeepref( *t =tag->batCacheid);
@@ -123,7 +132,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(estimate->batCacheid);
 	BBPunfix(progress->batCacheid);
 	BBPunfix(oids->batCacheid);
-	return msg;
+	return msg ? msg : createException(MAL, "SYSMONqueue", MAL_MALLOC_FAIL);
 }
 
 str

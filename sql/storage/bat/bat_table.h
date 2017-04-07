@@ -14,6 +14,6 @@
 #include "bat_utils.h"
 
 /* initialize bat storage call back functions interface */
-extern int bat_table_init( table_functions *tf );
+extern void bat_table_init( table_functions *tf );
 
 #endif /*BAT_TABLE_H*/

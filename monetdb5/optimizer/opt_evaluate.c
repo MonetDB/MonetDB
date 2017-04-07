@@ -114,38 +114,40 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 	return action;
 }
 
-int
+str
 OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
 	int i, k, limit, *alias = 0, barrier;
 	MalStkPtr env = NULL;
 	int profiler;
-	str msg;
 	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
 	int *assigned = 0, use; 
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	cntxt->itrace = 0;
 	(void)stk;
 	(void)pci;
 
 	if ( mb->inlineProp )
-		return 0;
+		return MAL_SUCCEED;
 
 	(void)cntxt;
 #ifdef DEBUG_OPT_EVALUATE
-	mnstr_printf(cntxt->fdout, "Constant expression optimizer started\n");
+	fprintf(stderr, "Constant expression optimizer started\n");
 #endif
 
 	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if (assigned == NULL)
-		return 0;
+		throw(MAL,"optimzier.evaluate", MAL_MALLOC_FAIL);
 
 	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
-	if (alias == NULL)
-		goto wrapup;
+	if (alias == NULL){
+		GDKfree(assigned);
+		throw(MAL,"optimzier.evaluate", MAL_MALLOC_FAIL);
+	}
 
 	// arguments are implicitly assigned by context
 	p = getInstrPtr(mb, 0);
@@ -170,7 +172,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
 #ifdef DEBUG_OPT_EVALUATE
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+		fprintInstruction(stderr , mb, 0, p, LIST_MAL_ALL);
 #endif
 		/* be aware that you only assign once to a variable */
 		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
@@ -179,15 +181,19 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			profiler = malProfileMode;	/* we don't trace it */
 			malProfileMode = 0;
 			if ( env == NULL) {
-				env = prepareMALstack(mb,  2 * mb->vsize );
+				env = prepareMALstack(mb,  2 * mb->vsize);
+				if (!env) {
+					msg = createException(MAL,"optimizer.evaluate", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
 				env->keepAlive = TRUE;
 			}
 			msg = reenterMAL(cntxt, mb, i, i + 1, env);
 			malProfileMode= profiler;
 			p->barrier = barrier;
 #ifdef DEBUG_OPT_EVALUATE
-			mnstr_printf(cntxt->fdout, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
-			mnstr_printf(cntxt->fdout, "#result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
+			fprintf(stderr, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
+			fprintf(stderr, "#result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
 #endif
 			if (msg == MAL_SUCCEED) {
 				int nvar;
@@ -213,7 +219,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				setVarUDFtype(mb,getArg(p,1));
 #ifdef DEBUG_OPT_EVALUATE
 				{str tpename;
-				mnstr_printf(cntxt->fdout, "Evaluated new constant=%d -> %d:%s\n",
+				fprintf(stderr, "Evaluated new constant=%d -> %d:%s\n",
 					getArg(p, 0), getArg(p, 1), tpename = getTypeName(getArgType(mb, p, 1)));
 				GDKfree(tpename);
 				}
@@ -222,9 +228,10 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				/* if there is an error, we should postpone message handling,
 					as the actual error (eg. division by zero ) may not happen) */
 #ifdef DEBUG_OPT_EVALUATE
-				mnstr_printf(cntxt->fdout, "Evaluated %s\n", msg);
+				fprintf(stderr, "Evaluated %s\n", msg);
 #endif
-				GDKfree(msg);
+				freeException(msg);
+				msg= MAL_SUCCEED;
 				mb->errors = 0;
 			}
 		}
@@ -242,12 +249,15 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	//chkDeclarations(cntxt->fdout, mb);
     
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,GDKusec() -usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,usec);
     newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 wrapup:
 	if ( env) freeStack(env);
 	if(assigned) GDKfree(assigned);
 	if(alias)	GDKfree(alias);
-	return actions;
+	return msg;
 }

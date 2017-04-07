@@ -253,10 +253,9 @@ comment "Reorder by dataflow dependencies";
 
 #opt_statistics.mal
 
-command inspect.getStatistics(nme:str):bat[:any_2]
-address QOTgetStatistics
-comment "Get optimizer property statistics 
-such as #calls, #total actions, #total time";
+pattern inspect.optimizer_stats()(:bat[:str], :bat[:int], :bat[:lng])
+address OPTstatistics
+comment "Get optimizer use statistics, i.e. calls and total time";
 
 #opt_pushselect.mal
 

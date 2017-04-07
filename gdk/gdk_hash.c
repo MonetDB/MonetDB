@@ -581,7 +581,7 @@ HASHdestroy(BAT *b)
 			GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
 				  BATDIR,
 				  BBP_physical(b->batCacheid),
-				  b->batCacheid > 0 ? "thash" : "hhash");
+				  "thash");
 		} else if (b->thash) {
 			bat p = VIEWtparent(b);
 			BAT *hp = NULL;
@@ -604,25 +604,33 @@ HASHdestroy(BAT *b)
 void
 HASHfree(BAT *b)
 {
+	int err = 0;
 	if (b) {
 		MT_lock_set(&GDKhashLock(b->batCacheid));
 		if (b->thash && b->thash != (Hash *) -1) {
 			if (b->thash != (Hash *) 1) {
 				if (b->thash->heap->storage == STORE_MEM &&
 				    b->thash->heap->dirty) {
-					GDKsave(b->thash->heap->farmid,
-						b->thash->heap->filename,
-						NULL,
-						b->thash->heap->base,
-						b->thash->heap->free,
-						STORE_MEM,
-						FALSE);
+					if (GDKsave(b->thash->heap->farmid,
+						    b->thash->heap->filename,
+						    NULL,
+						    b->thash->heap->base,
+						    b->thash->heap->free,
+						    STORE_MEM,
+						    FALSE) != GDK_SUCCEED) {
+						/* if saving failed, remove */
+						GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
+							  BATDIR,
+							  BBP_physical(b->batCacheid),
+							  "thash");
+						err = 1;
+					}
 					b->thash->heap->dirty = FALSE;
 				}
 				HEAPfree(b->thash->heap, 0);
 				GDKfree(b->thash->heap);
 				GDKfree(b->thash);
-				b->thash = (Hash *) 1;
+				b->thash = err ? NULL : (Hash *) 1;
 			}
 		} else {
 			b->thash = NULL;

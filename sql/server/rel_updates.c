@@ -925,6 +925,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				fnd = table_ref(sql, NULL, n->data.sym, 0);
 				if (fnd)
 					res = rel_crossproduct(sql->sa, res, fnd, op_join);
+				else
+					res = fnd;
 			}
 			if (!res) 
 				return NULL;
@@ -1640,7 +1642,7 @@ rel_parse_val(mvc *m, char *query, char emode)
 
 	m->caching = 0;
 	m->emode = emode;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
 	strncpy(n, query, len);

@@ -15,5 +15,5 @@ bat.append(n, "");
 bat.append(n, "another 1");
 b := bat.append(b, n);
 
-(g,e,h) := group.subgroup(b);
+(g,e,h) := group.group(b);
 io.print(b,g);

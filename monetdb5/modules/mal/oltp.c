@@ -55,7 +55,7 @@ OLTPreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	MT_lock_set(&mal_oltpLock);
 #ifdef _DEBUG_OLTP_
-	mnstr_printf(cntxt->fdout,"#OLTP %6d reset locktable\n", GDKms());
+	fprintf(stderr,"#OLTP %6d reset locktable\n", GDKms());
 #endif
 	for( i=0; i<MAXOLTPLOCKS; i++){
 		oltp_locks[i].locked = 0;
@@ -74,10 +74,9 @@ OLTPenable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-#ifdef _DEBUG_OLTP_
-	mnstr_printf(cntxt->fdout,"#OLTP %6d enabled\n",GDKms());
-#else
 	(void) cntxt;
+#ifdef _DEBUG_OLTP_
+	fprintf(stderr,"#OLTP %6d enabled\n",GDKms());
 #endif
 	oltp_delay = TRUE;
 	return MAL_SUCCEED;
@@ -89,7 +88,7 @@ OLTPdisable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OLTPreset(cntxt, mb, stk,pci);
 	oltp_delay = FALSE;
 #ifdef _DEBUG_OLTP_
-	mnstr_printf(cntxt->fdout,"#OLTP %6d disabled\n",GDKms());
+	fprintf(stderr,"#OLTP %6d disabled\n",GDKms());
 #else
 	(void) cntxt;
 #endif
@@ -119,8 +118,8 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 
 #ifdef _DEBUG_OLTP_
-	mnstr_printf(cntxt->fdout,"#OLTP %6d lock request for client %d:", GDKms(), cntxt->idx);
-	printInstruction(cntxt->fdout,mb,stk,pci, LIST_MAL_ALL);
+	fprintf(stderr,"#OLTP %6d lock request for client %d:", GDKms(), cntxt->idx);
+	fprintInstruction(stderr,mb,stk,pci, LIST_MAL_ALL);
 #endif
 	do{
 		MT_lock_set(&mal_oltpLock);
@@ -134,7 +133,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if( i  == pci->argc ){
 #ifdef _DEBUG_OLTP_
-			mnstr_printf(cntxt->fdout,"#OLTP %6d set lock for client %d\n", GDKms(), cntxt->idx);
+			fprintf(stderr,"#OLTP %6d set lock for client %d\n", GDKms(), cntxt->idx);
 #endif
 			for( i=1; i< pci->argc; i++){
 				lck= getVarConstant(mb, getArg(pci,i)).val.ival;
@@ -151,14 +150,14 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			MT_lock_unset(&mal_oltpLock);
 #ifdef _DEBUG_OLTP_
-			mnstr_printf(cntxt->fdout,"#OLTP %d delay imposed for client %d\n", GDKms(), cntxt->idx);
+			fprintf(stderr,"#OLTP %d delay imposed for client %d\n", GDKms(), cntxt->idx);
 #endif
 			MT_sleep_ms(LOCKDELAY);
 		}
 	} while( clk - wait < LOCKTIMEOUT);
 
 #ifdef _DEBUG_OLTP_
-	mnstr_printf(cntxt->fdout,"#OLTP %6d proceed query for client %d\n", GDKms(), cntxt->idx);
+	fprintf(stderr,"#OLTP %6d proceed query for client %d\n", GDKms(), cntxt->idx);
 #endif
 	// if the time out is related to a copy_from query, we should not start it either.
 	sql = getName("sql");
@@ -167,7 +166,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for( i = 0; i < mb->stop; i++)
 		if( getFunctionId(getInstrPtr(mb,i)) == cpy && getModuleId(getInstrPtr(mb,i)) == sql ){
 #ifdef _DEBUG_OLTP_
-			mnstr_printf(cntxt->fdout,"#OLTP %6d bail out a concurrent copy into %d\n", GDKms(), cntxt->idx);
+			fprintf(stderr,"#OLTP %6d bail out a concurrent copy into %d\n", GDKms(), cntxt->idx);
 #endif
 			throw(SQL,"oltp.lock","Conflicts with other write operations\n");
 		}
@@ -188,8 +187,8 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_oltpLock);
 	clk = GDKms();
 #ifdef _DEBUG_OLTP_
-	mnstr_printf(cntxt->fdout,"#OLTP %6d release the locks %d:", GDKms(), cntxt->idx);
-	printInstruction(cntxt->fdout,mb,stk,pci, LIST_MAL_ALL);
+	fprintf(stderr,"#OLTP %6d release the locks %d:", GDKms(), cntxt->idx);
+	fprintInstruction(stderr,mb,stk,pci, LIST_MAL_ALL);
 #endif
 	for( i=1; i< pci->argc; i++){
 		lck= getVarConstant(mb, getArg(pci,i)).val.ival;
@@ -204,7 +203,7 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					delay = LOCKDELAY;
 				oltp_locks[lck].retention = clk + delay;
 #ifdef _DEBUG_OLTP_
-				mnstr_printf(cntxt->fdout,"#OLTP  retention period for lock %d: "LLFMT"\n", lck,delay);
+				fprintf(stderr,"#OLTP  retention period for lock %d: "LLFMT"\n", lck,delay);
 #endif
 			}
 	}
@@ -244,21 +243,13 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for( i = 0; msg ==  MAL_SUCCEED && i < MAXOLTPLOCKS; i++)
 	if (oltp_locks[i].used ){
 		now = oltp_locks[i].start * 1000; // convert to timestamp microsecond
-		msg= MTIMEunix_epoch(&ts);
-		if ( msg == MAL_SUCCEED)
-			msg = MTIMEtimestamp_add(&tsn, &ts, &now);
-
-		if( msg== MAL_SUCCEED && oltp_locks[i].start)
-			BUNappend(bs, &tsn, FALSE);
-		else
-			BUNappend(bs, timestamp_nil, FALSE);
-
-		if( oltp_locks[i].cntxt)
-			BUNappend(bu, &oltp_locks[i].cntxt->username, FALSE);
-		else 
-			BUNappend(bu, str_nil, FALSE);
-		BUNappend(bl, &i, FALSE);
-		BUNappend(bc, &oltp_locks[i].used, FALSE);
+		if ((msg = MTIMEunix_epoch(&ts)) != MAL_SUCCEED ||
+			(msg = MTIMEtimestamp_add(&tsn, &ts, &now)) != MAL_SUCCEED ||
+			BUNappend(bs, oltp_locks[i].start ? &tsn : timestamp_nil, FALSE) != GDK_SUCCEED ||
+			BUNappend(bu, oltp_locks[i].cntxt ? oltp_locks[i].cntxt->username : str_nil, FALSE) != GDK_SUCCEED ||
+			BUNappend(bl, &i, FALSE) != GDK_SUCCEED ||
+			BUNappend(bc, &oltp_locks[i].used, FALSE) != GDK_SUCCEED)
+			goto bailout;
 	}
 	//OLTPdump_(cntxt,"#lock table\n");
 	BBPkeepref(*started = bs->batCacheid);
@@ -266,6 +257,13 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*lockid = bl->batCacheid);
 	BBPkeepref(*used = bc->batCacheid);
 	return msg;
+  bailout:
+	BBPunfix(bs->batCacheid);
+	BBPunfix(bl->batCacheid);
+	BBPunfix(bu->batCacheid);
+	BBPunfix(bc->batCacheid);
+	BBPunfix(bq->batCacheid);
+	return msg ? msg : createException(MAL, "oltp.table", MAL_MALLOC_FAIL);
 }
 
 str

@@ -44,42 +44,12 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
 
-# 12:26:31 >  
-# 12:26:31 >  "R" "--vanilla" "--slave" "--args" "31372"
-# 12:26:31 >  
+# 15:00:13 >  
+# 15:00:13 >  "R" "--vanilla" "--slave" "--args" "34632"
+# 15:00:13 >  
 
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
 [1] "\"Need to quote this table name\"" "monetdbtest"                      
 [3] "othermethod"                      
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
-[1] TRUE
 [1] "SUCCESS"
 
 # 12:26:33 >  

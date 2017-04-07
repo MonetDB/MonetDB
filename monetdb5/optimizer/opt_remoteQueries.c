@@ -134,7 +134,7 @@ typedef struct{
 	int dbhdl;
 } DBalias;
 
-int
+str
 OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
@@ -153,7 +153,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 
 #ifdef DEBUG_OPT_REMOTEQUERIES
-	mnstr_printf(cntxt->fdout, "RemoteQueries optimizer started\n");
+	fprintf(stderr, "RemoteQueries optimizer started\n");
 #endif
 	(void) cntxt;
 	(void) stk;
@@ -165,18 +165,18 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 	location= (int*) GDKzalloc(mb->vsize * sizeof(int));
 	if ( location == NULL)
-		return 0;
+		throw(MAL, "optimizer.remote",MAL_MALLOC_FAIL);
 	dbalias= (DBalias*) GDKzalloc(128 * sizeof(DBalias));
 	if (dbalias == NULL){
 		GDKfree(location);
-		return 0;
+		throw(MAL, "optimizer.remote",MAL_MALLOC_FAIL);
 	}
 	dbtop= 0;
 
 	if ( newMalBlkStmt(mb, mb->ssize) < 0){
 		GDKfree(dbalias);
 		GDKfree(location);
-		return 0;
+		throw(MAL, "optimizer.remote",MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < limit; i++) {
@@ -355,8 +355,8 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	GDKfree(old);
 #ifdef DEBUG_OPT_REMOTE
 	if (doit) {
-		mnstr_printf(cntxt->fdout, "remoteQueries %d\n", doit);
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+		fprintf(stderr, "remoteQueries %d\n", doit);
+		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 	}
 #endif
 	GDKfree(location);
@@ -369,8 +369,11 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remoteQueries",doit, GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remoteQueries",doit,  usec);
     newComment(mb,buf);
+	if( doit >= 0)
+		addtoMalBlkHistory(mb);
 
-	return doit;
+	return MAL_SUCCEED;
 }

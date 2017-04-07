@@ -1,0 +1,81 @@
+stderr of test 'oidx_all_types` in directory 'sql/test/orderidx` itself:
+
+
+# 15:05:53 >  
+# 15:05:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31953" "--set" "mapi_usock=/var/tmp/mtest-13546/.s.monetdb.31953" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_orderidx" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:05:53 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31953
+# cmdline opt 	mapi_usock = /var/tmp/mtest-13546/.s.monetdb.31953
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_orderidx
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+
+
+
+# 15:05:54 >  
+# 15:05:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13546" "--port=31953"
+# 15:05:54 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_blob" on all_types ("blob");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_blob100" on all_types ("blob100");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_clob" on all_types ("clob");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_clob100" on all_types ("clob100");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_character" on all_types ("character");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_varchar100" on all_types ("varchar100");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_character10" on all_types ("character10");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_inet" on all_types ("inet");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_inet9" on all_types ("inet9");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_json" on all_types ("json");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_json10" on all_types ("json10");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_url" on all_types ("url");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_url55" on all_types ("url55");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+MAPI  = (monetdb) /var/tmp/mtest-13546/.s.monetdb.31953
+QUERY = create ordered index "oidx_uuid" on all_types ("uuid");
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+
+# 15:05:55 >  
+# 15:05:55 >  "Done."
+# 15:05:55 >  
+

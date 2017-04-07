@@ -735,7 +735,8 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 
 	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
 		throw(MAL,"pcre_replace_bat", OPERATION_FAILED
-			"pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
+			  ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
+			  pattern, errpos, err_p);
 	}
 
 	/* Since the compiled pattern is ging to be used several times, it is worth spending
@@ -774,10 +775,11 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 
 		if (ncaptures > 0){
 			replaced_str = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
-			if (!replaced_str) {
+			if (replaced_str == NULL) {
 				my_pcre_free(pcre_code);
 				pcre_free_study(extra);
 				GDKfree(ovector);
+				BBPreclaim(tmpbat);
 				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 			}
 
@@ -807,10 +809,23 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 			strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
 			k += len;
 			replaced_str[k] = '\0';
-			BUNappend(tmpbat, replaced_str, FALSE);
+			if (BUNappend(tmpbat, replaced_str, FALSE) != GDK_SUCCEED) {
+				my_pcre_free(pcre_code);
+				pcre_free_study(extra);
+				GDKfree(ovector);
+				GDKfree(replaced_str);
+				BBPreclaim(tmpbat);
+				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+			}
 			GDKfree(replaced_str);
 		} else { /* no captured substrings, copy the original string into new bat */
-			BUNappend(tmpbat, origin_str, FALSE);
+			if (BUNappend(tmpbat, origin_str, FALSE) != GDK_SUCCEED) {
+				my_pcre_free(pcre_code);
+				pcre_free_study(extra);
+				GDKfree(ovector);
+				BBPreclaim(tmpbat);
+				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+			}
 		}
 	}
 

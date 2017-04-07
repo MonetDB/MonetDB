@@ -50,6 +50,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_stack.h"
+#include "mal_exception.h"
 
 /* #define DEBUG_MAL_STACK*/
 
@@ -60,6 +61,7 @@ newGlobalStack(int size)
 
 	s = (MalStkPtr) GDKzalloc(stackSize(size) + offsetof(MalStack, stk));
 	if (!s) {
+		GDKerror("newGlobalStack:"MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	s->stksize = size;

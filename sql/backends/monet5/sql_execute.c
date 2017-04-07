@@ -86,7 +86,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= pushStr(mb,q,"sql_traces");
 	/* cook a new resultSet instruction */
 	resultset = newInstruction(mb,sqlRef, resultSetRef);
-	setVarType(mb, getArg(resultset,0), TYPE_int);
+	getArg(resultset,0) = newTmpVariable(mb, TYPE_int);
 
 	/* build table defs */
 	tbls = newStmt(mb,batRef, newRef);
@@ -200,14 +200,21 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	cq *q= be->q;
 
 	pci = getInstrPtr(mb, 0);
-	if (pci->argc >= MAXARG)
+	if (pci->argc >= MAXARG){
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
-	else
+		if( argv == NULL)
+			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
+	} else
 		argv = argvbuffer;
 
-	if (pci->retc >= MAXARG)
+	if (pci->retc >= MAXARG){
 		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
-	else
+		if( argrec == NULL){
+			if( argv != argvbuffer)
+				GDKfree(argv);
+			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
+		}
+	} else
 		argrec = argrecbuffer;
 
 	/* prepare the target variables */
@@ -220,9 +227,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	parc = q->paramlen;
 
 	if (argc != parc) {
-		if (pci->argc >= MAXARG)
+		if (pci->argc >= MAXARG && argv != argvbuffer)
 			GDKfree(argv);
-		if (pci->retc >= MAXARG)
+		if (pci->retc >= MAXARG && argrec != argrecbuffer)
 			GDKfree(argrec);
 		throw(SQL, "sql.prepare", "07001!EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
 	} else {
@@ -232,9 +239,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 
 			if (!atom_cast(m->sa, arg, pt)) {
 				/*sql_error(c, 003, buf); */
-				if (pci->argc >= MAXARG)
+				if (pci->argc >= MAXARG && argv != argvbuffer)
 					GDKfree(argv);
-				if (pci->retc >= MAXARG)
+				if (pci->retc >= MAXARG && argrec != argrecbuffer)
 					GDKfree(argrec);
 				throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "prepared statement: %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 			}
@@ -252,9 +259,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	q->stk = (backend_stack) glb; /* save garbageCollected stack */
 	if (glb && SQLdebug & 1)
 		printStack(GDKstdout, mb, glb);
-	if (pci->argc >= MAXARG)
+	if (pci->argc >= MAXARG && argv != argvbuffer)
 		GDKfree(argv);
-	if (pci->retc >= MAXARG)
+	if (pci->retc >= MAXARG && argrec != argrecbuffer)
 		GDKfree(argrec);
 	return ret;
 }
@@ -271,12 +278,15 @@ SQLrun(Client c, backend *be, mvc *m){
 		return createException(PARSE, "SQLparser", "%s", m->errstr);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
+	if (!mb) {
+		throw(SQL, "sql.prepare", "Out of memory");
+	}
 	mb->history = c->curprg->def->history;
 	c->curprg->def->history = 0;
 
 	/* only consider a re-optimization when we are dealing with query templates */
 	for ( i= 1; i < mb->stop;i++){
-		p=getInstrPtr(mb,i);
+		p = getInstrPtr(mb,i);
 		if( getFunctionId(p) &&  qc_isapreparedquerytemplate(getFunctionId(p) ) ){
 			msg = SQLexecutePrepared(c, be, p->blk);
 			freeMalBlk(mb);
@@ -284,6 +294,9 @@ SQLrun(Client c, backend *be, mvc *m){
 		}
 		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
 			mc = copyMalBlk(p->blk);
+			if (!mc) {
+				throw(SQL, "sql.prepare", "Out of memory");
+			}
 			retc = p->retc;
 			freeMalBlk(mb);
 			mb = mc;
@@ -310,11 +323,12 @@ SQLrun(Client c, backend *be, mvc *m){
 	// This include template constants, BAT sizes.
 	if( m->emod & mod_debug)
 		mb->keephistory = TRUE;
-	msg = SQLoptimizeQuery(c,mb);
+	msg = SQLoptimizeQuery(c, mb);
 	mb->keephistory = FALSE;
 
-	if( mb->errors){
-		freeMalBlk(mb);
+	if (mb->errors){
+		//freeMalBlk(mb);
+		// mal block might be so broken free causes segfault
 		return msg;
 	}
 
@@ -364,7 +378,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){
-		GDKfree(msg);
+		freeException(msg);
 		throw(SQL, "SQLstatement", "Catalogue not available");
 	}
 
@@ -373,7 +387,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
 	if (!o)
-		throw(SQL, "SQLstatement", "Out of memory");
+		throw(SQL, "SQLstatement", MAL_MALLOC_FAIL);
 	*o = *m;
 	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
 	m->qc = NULL;
@@ -386,6 +400,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	m->type = Q_PARSE;
 	be = sql;
 	sql = backend_create(m, c);
+	if( sql == NULL)
+		throw(SQL,"SQLstatement",MAL_MALLOC_FAIL);
 	sql->output_format = be->output_format;
 	if (!output) {
 		sql->output_format = OFMT_NONE;
@@ -399,7 +415,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 	/* mimic a client channel on which the query text is received */
 	b = (buffer *) GDKmalloc(sizeof(buffer));
+	if( b == NULL)
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
+	if( n == NULL)
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
 	strncpy(n, *expr, len);
 	n[len] = '\n';
 	n[len + 1] = 0;
@@ -527,6 +547,12 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					const char *name, *rname;
 					sql_exp *e = n->data;
 					sql_subtype *t = exp_subtype(e);
+					void *ptr =ATOMnil(t->type->localtype);
+
+					if( ptr == NULL){
+						msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+						goto endofcompile;
+					}
 					name = e->name;
 					if (!name && e->type == e_column && e->r)
 						name = e->r;
@@ -534,7 +560,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					if (!rname && e->type == e_column && e->l)
 						rname = e->l;
 					res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
-							t->scale, t->type->localtype, ATOMnil(t->type->localtype));
+							t->scale, t->type->localtype, ptr);
 				}
 				*result = res;
 			}
@@ -607,7 +633,7 @@ SQLengineIntern(Client c, backend *be)
 	}
 
 #ifdef SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
+	fprintf(stderr, "#Ready to execute SQL statement\n");
 #endif
 
 	if (c->curprg->def->stop == 1) {

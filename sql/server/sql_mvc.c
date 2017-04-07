@@ -501,6 +501,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 
 	m->params = NULL;
 	m->sizevars = MAXPARAMS;
+	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	m->vars = NEW_ARRAY(sql_var, m->sizevars);
 	m->topvars = 0;
 	m->frame = 1;

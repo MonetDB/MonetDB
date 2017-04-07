@@ -93,6 +93,7 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 	sz = round16(sz);
 	if (sz > SA_BLOCK) {
 		char *t;
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		r = GDKmalloc(sz);
 		if (sa->nr >= sa->size) {
 			sa->size *=2;
@@ -106,6 +107,7 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 		return r;
 	}
 	if (sz > (SA_BLOCK-sa->used)) {
+		// FIXME unchecked_malloc GDKmalloc can return NULL
 		r = GDKmalloc(SA_BLOCK);
 		if (sa->nr >= sa->size) {
 			sa->size *=2;

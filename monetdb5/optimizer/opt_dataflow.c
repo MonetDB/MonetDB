@@ -16,14 +16,38 @@
 #include "manifold.h"
 
 /*
- * dataflow processing incurs overhead and is only
+ * Dataflow processing incurs overhead and is only
  * relevant if multiple tasks kan be handled at the same time.
- * Also simple expressions dont had to be done in parallel.
+ * Also simple expressions dont have to be executed in parallel.
  *
- * The garbagesink takes multiple variables whose endoflife is within
- * a dataflow block and who are used multiple times. They should be
- * garbage collected outside the parallel block.
+ * The garbagesink contains variables whose endoflife is within
+ * a dataflow block and who are used concurrently. 
+ * They are garbage collected at the end of the parallel block.
+ *
+ * The dataflow analysis centers around the read/write use patterns of
+ * the variables and the occurrence of side-effect bearing functions.
+ * Any such function should break the dataflow block as it may rely
+ * on the sequential order in the plan.
+ *
+ * The following state properties can be distinguished for all variables:
+ * VARWRITE  - variable assigned a value in the dataflow block
+ * VARREAD   - variable is used in an argument
+ * VAR2READ  - variable is read in concurrent mode
+ * VARBLOCK  - variable next use terminate the // block, set after encountering an update
+ *
+ * Only some combinations are allowed.
  */
+
+#define VARFREE  0
+#define VARWRITE 1
+#define VARREAD  2
+#define VARBLOCK 4
+#define VAR2READ 8
+
+typedef char *States;
+
+#define setState(S,P,K,F)  ( assert(getArg(P,K) < vlimit), (S)[getArg(P,K)] = F)
+#define getState(S,P,K)  ((S)[getArg(P,K)])
 
 static int
 simpleFlow(InstrPtr *old, int start, int last)
@@ -58,30 +82,6 @@ simpleFlow(InstrPtr *old, int start, int last)
 	return simple;
 }
 
-// take care of side-effects in updates
-static void setAssigned(MalBlkPtr mb, InstrPtr p, int k, int *assigned){
-	if ( isUpdateInstruction(p) || hasSideEffects(mb,p,TRUE))
-		assigned[getArg(p,p->retc)] ++;
-	assigned[getArg(p,k)]++;
-}
-
-static int
-dflowAssignConflict(InstrPtr p, int pc, int *assigned, int *eolife)
-{
-	int j;
-	/* flow blocks should be closed when we reach a point
-	   where a variable is assigned  more then once
-	*/
-	for(j=0; j<p->retc; j++)
-		if ( assigned[getArg(p,j)] )
-			return 1;
-	/* first argument of updates collect side-effects */
-	if ( isUpdateInstruction(p) ){
-		return eolife[getArg(p,p->retc)] != pc;
-	}
-	return 0;
-}
-
 /* Updates are permitted if it is a unique update on 
  * a BAT created in the context of this block
  * As far as we know, no SQL nor MAL test re-uses the
@@ -91,26 +91,67 @@ dflowAssignConflict(InstrPtr p, int pc, int *assigned, int *eolife)
 
 /* a limited set of MAL instructions may appear in the dataflow block*/
 static int
-dataflowConflict(Client cntxt, MalBlkPtr mb,InstrPtr p) 
+dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 {
-	if (p->token == ENDsymbol || 
-	   (isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p) == NULL) || 
-	    blockCntrl(p) || blockStart(p) || blockExit(p))
-		return TRUE;
-	switch(p->token){
-	case ASSIGNsymbol:
-	case PATcall:
-	case CMDcall:
-	case FACcall:
-	case FCNcall:
-		return (hasSideEffects(mb,p,FALSE) || isUnsafeFunction(p) );
+	int j;
+
+	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p) || 
+	   (isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p) == NULL) ){
+#ifdef DEBUG_OPT_DATAFLOW
+			fprintf(stderr,"#breakpoint on instruction\n");
+#endif
+			return TRUE;
+		}
+
+	/* flow blocks should be closed when we reach a point
+	   where a variable is assigned  more then once or already
+	   being read.
+	*/
+	for(j=0; j<p->retc; j++)
+		if ( getState(states,p,j) & (VARWRITE | VARREAD | VARBLOCK)){
+#ifdef DEBUG_OPT_DATAFLOW
+			fprintf(stderr,"#breakpoint on argument %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
+#endif
+			return 1;
+		}
+
+	/* update instructions can be updated if the target variable
+	 * has not been read in the block so far */
+	if ( isUpdateInstruction(p) ){
+#ifdef DEBUG_OPT_DATAFLOW
+		if( getState(states,p,1) & (VARREAD | VARBLOCK))
+			fprintf(stderr,"#breakpoint on update %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
+#endif
+		return getState(states,p,p->retc) & (VARREAD | VARBLOCK);
 	}
-	return TRUE;
+
+	for(j=p->retc; j < p->argc; j++)
+		if ( getState(states,p,j) == VARBLOCK){
+#ifdef DEBUG_OPT_DATAFLOW
+			if( getState(states,p,j) & VARREAD)
+				fprintf(stderr,"#breakpoint on blocked var %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
+#endif
+			return 1;
+		}
+#ifdef DEBUG_OPT_DATAFLOW
+	if( hasSideEffects(mb,p,FALSE))
+		fprintf(stderr,"#breakpoint on sideeffect var %s %s.%s\n", getVarName(mb,getArg(p,j)), getModuleId(p), getFunctionId(p));
+#endif
+	return hasSideEffects(mb,p,FALSE);
 }
 
+/* Collect the BATs that are used concurrently to ensure that
+ * there is a single point where they can be released
+ */
 static int
-dflowGarbagesink(MalBlkPtr mb, int var, InstrPtr *sink, int top){
+dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
+{
 	InstrPtr r;
+	int i;
+	for( i =0; i<top; i++)
+		if( getArg(sink[i],1) == var)
+			return top;
+	(void) cntxt;
 	
 	r = newInstruction(NULL,languageRef, passRef);
 	getArg(r,0) = newTmpVariable(mb,TYPE_void);
@@ -120,128 +161,109 @@ dflowGarbagesink(MalBlkPtr mb, int var, InstrPtr *sink, int top){
 }
 
 /* dataflow blocks are transparent, because they are always
-   executed, either sequentially or in parallell */
+   executed, either sequentially or in parallel */
 
-int
+str
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j,k, start=1, conflict, actions=0, simple = TRUE;
+	int i,j,k, start=1, slimit, breakpoint, actions=0, simple = TRUE;
 	int flowblock= 0;
 	InstrPtr *sink = NULL, *old = NULL, q;
-	int limit, slimit, vlimit, top = 0;
-	char *init = NULL;
-	int *used = NULL, *assigned = NULL, *eolife = NULL;
+	int limit, vlimit, top = 0;
+	States states;
 	char  buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1)
-		return 0;
+		return MAL_SUCCEED;
 
 	if ( optimizerIsApplied(mb,"dataflow"))
-		return 0;
+		return MAL_SUCCEED;
 	(void) stk;
 	/* inlined functions will get their dataflow control later */
 	if ( mb->inlineProp)
-		return 0;
+		return MAL_SUCCEED;
+
 #ifdef DEBUG_OPT_DATAFLOW
-		mnstr_printf(cntxt->fdout,"#dataflow input\n");
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+		fprintf(stderr,"#dataflow input\n");
+		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 #endif
 
 	vlimit = mb->vsize;
-	eolife= (int*) GDKzalloc(vlimit * sizeof(int));
-	init= (char*) GDKzalloc(mb->vtop);
-	used= (int*) GDKzalloc(vlimit * sizeof(int));
-	sink= (InstrPtr*) GDKzalloc(vlimit * sizeof(InstrPtr));
-	assigned= (int*) GDKzalloc(vlimit * sizeof(int));
-	if (eolife == NULL || init == NULL || used == NULL || sink == NULL || assigned == NULL)
+	states = (States) GDKzalloc(vlimit * sizeof(char));
+	sink = (InstrPtr *) GDKzalloc(mb->stop * sizeof(InstrPtr));
+	if (states == NULL || sink == NULL){
+		msg= createException(MAL,"optimizer.dataflow",MAL_MALLOC_FAIL);
 		goto wrapup;
+	}
 	
+	setVariableScope(mb);
+
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
-	// collect end of variable lives
-	for (i = 0; i<limit; i++) {
-		p = old[i];
-		assert( p);
-		for (j = 0; j < p->argc; j++)
-			eolife[getArg(p,j)]= i;
-	}
-
-	// make sure we have space for the language.pass operation
-	// for all variables within the barrier
-	if ( newMalBlkStmt(mb, mb->ssize) <0 )
+	if (newMalBlkStmt(mb, mb->ssize) < 0) {
+		msg= createException(MAL,"optimizer.dataflow",MAL_MALLOC_FAIL);
+		actions = -1;
 		goto wrapup;
-	
+	}
 	pushInstruction(mb,old[0]);
 
-	/* inject new dataflow barriers */
+	/* inject new dataflow barriers using a single pass through the program */
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 		assert(p);
-		conflict = 0;
-
-		if ( dataflowConflict(cntxt,mb,p) || (conflict = dflowAssignConflict(p,i,assigned,eolife)) )  {
-#ifdef DEBUG_OPT_DATAFLOW
-			mnstr_printf(cntxt->fdout,"#conflict %d dataflow %d dflowAssignConflict %d\n",i, dataflowConflict(cntxt,mb,p),dflowAssignConflict(p,i,assigned,eolife));
-			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-#endif
+		breakpoint = dataflowBreakpoint(cntxt, mb, p ,states);
+		if ( breakpoint ){
 			/* close previous flow block */
-			if ( !(simple = simpleFlow(old,start,i))){
-				for( j=start ; j<i; j++){
-					q = old[j];
-					// initialize variables used beyond the dataflow block
-					for( k=0; k<q->retc; k++)
-						if( eolife[getArg(q,k)] >= i && init[getArg(q,k)]==0){
-							InstrPtr r= newAssignment(mb);
-							getArg(r,0)= getArg(q,k);
-							pushNil(mb,r,getArgType(mb,q,k));
-							init[getArg(r,0)]=1;
-						}
-					// collect BAT variables garbage collected within the block 
-					for( k=q->retc; k<q->argc; k++)
-						if ( isaBatType(getVarType(mb,getArg(q,k))) ){
-							if( eolife[getArg(q,k)] == j && used[getArg(q,k)]>=1 )
-								top = dflowGarbagesink(mb, getArg(q,k), sink, top);
-							else
-							if( eolife[getArg(q,k)] < i )
-								used[getArg(q,k)]++;
-						}
-				}
+			simple = simpleFlow(old,start,i);
+#ifdef DEBUG_OPT_DATAFLOW
+			fprintf(stderr,"#breakpoint pc %d  %s\n",i, (simple?"simple":"") );
+#endif
+			if ( !simple){
 				flowblock = newTmpVariable(mb,TYPE_bit);
 				q= newFcnCall(mb,languageRef,dataflowRef);
 				q->barrier= BARRIERsymbol;
 				getArg(q,0)= flowblock;
 				actions++;
 			}
-			//copyblock 
-			for( j=start ; j<i; j++) 
-				pushInstruction(mb,old[j]);
-			// force the pending final garbage statements
-			for( j=0; j<top; j++) 
-				pushInstruction(mb,sink[j]);
-			/* exit block */
+			// copyblock the collected statements 
+			for( j=start ; j<i; j++) {
+				q= old[j];
+				pushInstruction(mb,q);
+				// collect BAT variables garbage collected within the block 
+				if( !simple)
+					for( k=q->retc; k<q->argc; k++){
+						if (getState(states,q,k) == VAR2READ &&  getEndScope(mb,getArg(q,k)) == j  && isaBatType(getVarType(mb,getArg(q,k))) )
+								top = dflowGarbagesink(cntxt, mb, getArg(q,k), sink, top);
+					}
+			}
+			/* exit parallel block */
 			if ( ! simple){ 
+				// force the pending final garbage statements
+				for( j=0; j<top; j++) 
+					pushInstruction(mb,sink[j]);
 				q= newAssignment(mb); 
 				q->barrier= EXITsymbol; 
 				getArg(q,0) = flowblock; 
 			}
-			// implicitly a new flow block starts
-			(void) memset((char*)assigned, 0, vlimit * sizeof (int));
-			(void) memset((char*) used, 0, vlimit * sizeof(int));
+			if (p->token == ENDsymbol){
+				for(; i < limit; i++)
+					if( old[i])
+						pushInstruction(mb,old[i]);
+				break;
+			}
+			// implicitly a new flow block starts unless we have a hard side-effect
+			memset((char*) states, 0, vlimit * sizeof(char));
 			top = 0;
-			start = i+1;
-			if ( ! blockStart(p) && !conflict  ){
-				for ( k = 0; k < p->retc; k++)
-					init[getArg(p,k)]=1;
+			if ( p->token == ENDsymbol  || (hasSideEffects(mb,p,FALSE) && !blockStart(p)) || isMultiplex(p)){
+				start = i+1;
 				pushInstruction(mb,p);
-				(void) memset((char*)assigned, 0, vlimit * sizeof (int));
-				(void) memset((char*) used, 0, vlimit * sizeof(int));
 				continue;
-			} 
-			if ( conflict ) 
-				start --;
+			}
+			start = i;
 		}
 
 		if (blockStart(p)){
@@ -250,12 +272,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* A refinement is parallelize within a barrier block */
 			int copy= 1;
 			pushInstruction(mb,p);
-			for ( k = 0; k < p->retc; k++)
-				init[getArg(p,k)]=1;
 			for ( i++; i<limit; i++) {
 				p = old[i];
-				for ( k = 0; k < p->retc; k++)
-					init[getArg(p,k)]=1;
 				pushInstruction(mb,p);
 
 				if (blockStart(p))
@@ -266,16 +284,27 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 			// reset admin
-			(void) memset((char*)assigned, 0, vlimit * sizeof (int));
-			(void) memset((char*) used, 0, vlimit * sizeof(int));
 			start = i+1;
-		} else {
-			for ( k = 0; k < p->retc; k++)
-				init[getArg(p,k)]=1;
 		} 
-		// remember you assigned to variables
+		// remember you assigned/read variables
 		for ( k = 0; k < p->retc; k++)
-			setAssigned(mb,p,k,assigned);
+			setState(states,p,k,VARWRITE);
+		if( isUpdateInstruction(p) && (getState(states,p,1) == 0 || getState(states,p,1) == VARWRITE))
+			setState(states, p,1, VARBLOCK);
+		for ( k = p->retc; k< p->argc; k++)
+		if( !isVarConstant(mb,getArg(p,k)) ){
+			if( getState(states, p, k) == VARREAD)
+				setState(states, p, k, VAR2READ);
+			else
+			if( getState(states, p, k) == VARWRITE)
+				setState(states, p ,k, VARREAD);
+		}
+#ifdef DEBUG_OPT_DATAFLOW
+		fprintf(stderr,"# variable states\n");
+		fprintInstruction(stderr,mb, 0, p , LIST_MAL_ALL);
+		for(k = 0; k < p->argc; k++)
+			fprintf(stderr,"#%s %d\n", getVarName(mb,getArg(p,k)), states[getArg(p,k)] );
+#endif
 	}
 	/* take the remainder as is */
 	for (; i<slimit; i++) 
@@ -287,17 +316,21 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
         chkFlow(cntxt->fdout, mb);
         chkDeclarations(cntxt->fdout, mb);
     }
+#ifdef DEBUG_OPT_DATAFLOW
+		fprintf(stderr,"#dataflow output %s\n", mb->errors?"ERROR":"");
+		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
+#endif
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,usec);
     newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 wrapup:
-	if( eolife) GDKfree(eolife);
-	if( init) GDKfree(init);
-	if( used) GDKfree(used);
-	if( sink) GDKfree(sink);
-	if( assigned) GDKfree(assigned);
-	if( old) GDKfree(old);
+	if(states) GDKfree(states);
+	if(sink)   GDKfree(sink);
+	if(old)    GDKfree(old);
 
-	return actions;
+	return msg;
 }

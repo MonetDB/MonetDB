@@ -178,7 +178,7 @@ ATOMallocate(const char *id)
 		if (strlen(id) >= IDLENGTH)
 			GDKfatal("ATOMallocate: name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
-		snprintf(BATatoms[t].name, IDLENGTH, "%s", id);
+		snprintf(BATatoms[t].name, sizeof(BATatoms[t].name), "%s", id);
 		BATatoms[t].size = sizeof(int);		/* default */
 		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;			/* default */
@@ -496,25 +496,6 @@ bitToStr(char **dst, int *len, const bit *src)
 	return snprintf(*dst, *len, "false");
 }
 
-static bit *
-bitRead(bit *a, stream *s, size_t cnt)
-{
-	if (mnstr_read(s, (char *) a, 1, cnt) < 0)
-		return NULL;
-	return mnstr_errnr(s) ? NULL : a;
-}
-
-static gdk_return
-bitWrite(const bit *a, stream *s, size_t cnt)
-{
-	if (mnstr_write(s, (const char *) a, 1, cnt) == (ssize_t) cnt)
-		return GDK_SUCCEED;
-	else {
-		GDKsyserror("bitWrite: write failure\n");
-		return GDK_FAIL;
-	}
-}
-
 int
 batFromStr(const char *src, int *len, bat **dst)
 {
@@ -563,20 +544,6 @@ batToStr(char **dst, int *len, const bat *src)
 	i = (int) (strlen(s) + 4);
 	atommem(char, i);
 	return snprintf(*dst, *len, "<%s>", s);
-}
-
-static bat *
-batRead(bat *a, stream *s, size_t cnt)
-{
-	/* bat==int */
-	return mnstr_readIntArray(s, (int *) a, cnt) ? a : NULL;
-}
-
-static gdk_return
-batWrite(const bat *a, stream *s, size_t cnt)
-{
-	/* bat==int */
-	return mnstr_writeIntArray(s, (const int *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 
@@ -761,10 +728,18 @@ hgeFromStr(const char *src, int *len, hge **dst)
 
 #define atom_io(TYPE, NAME, CAST)					\
 static TYPE *								\
-TYPE##Read(TYPE *a, stream *s, size_t cnt)				\
+TYPE##Read(TYPE *A, stream *s, size_t cnt)				\
 {									\
-	mnstr_read##NAME##Array(s, (CAST *) a, cnt);			\
-	return mnstr_errnr(s) ? NULL : a;				\
+	TYPE *a = A;							\
+	if (a == NULL && (a = GDKmalloc(cnt * sizeof(TYPE))) == NULL)	\
+		return NULL;						\
+	if (mnstr_read##NAME##Array(s, (CAST *) a, cnt) == 0 ||		\
+	    mnstr_errnr(s)) {						\
+		if (a != A)						\
+			GDKfree(a);					\
+		return NULL;						\
+	}								\
+	return a;							\
 }									\
 static gdk_return							\
 TYPE##Write(const TYPE *a, stream *s, size_t cnt)			\
@@ -772,6 +747,9 @@ TYPE##Write(const TYPE *a, stream *s, size_t cnt)			\
 	return mnstr_write##NAME##Array(s, (const CAST *) a, cnt) ?	\
 		GDK_SUCCEED : GDK_FAIL;					\
 }
+
+atom_io(bat, Int, int)
+atom_io(bit, Bte, bte)
 
 atomtostr(bte, "%hhd", )
 atom_io(bte, Bte, bte)
@@ -1002,70 +980,34 @@ fltToStr(char **dst, int *len, const flt *src)
 atom_io(flt, Int, int)
 
 
-/*
- * @+ String Atom Implementation
- * The Built-in type string is partly handled in an atom extension
- * library. The main reason is to limit the number of built-in types
- * in the BAT library kernel. Moreover, an extra indirection for a
- * string is less harmful than for manipulation of, e.g. an int.
+/* String Atom Implementation
  *
- * The internal representation of strings is without escape sequences.
- * When the string is printed we should add the escapes back into it.
+ * Strings are stored in two parts.  The first part is the normal tail
+ * heap which contains a list of offsets.  The second part is the
+ * theap which contains the actual strings.  The offsets in the tail
+ * heap (a.k.a. offset heap) point into the theap (a.k.a. string
+ * heap).  Strings are NULL-terminated and are stored without any
+ * escape sequec=nces.  Strings are encoded using the UTF-8 encoding
+ * of Unicode.  This means that individual "characters" (really,
+ * Unicode code points) can be between one and four bytes long.
  *
- * The current escape policy is that single- and double-quote can be
- * prepended by a backslash. Furthermore, the backslash may be
- * followed by three octal digits to denote a character.
+ * Because in many typical situations there are lots of duplicated
+ * string values that are being stored in a table, but also in many
+ * (other) typical situations there are very few duplicated string
+ * values stored, a scheme has been introduced to cater to both
+ * situations.
  *
- * @- Automatic Double Elimination
+ * When the string heap is "small" (defined as less than 64KiB), the
+ * string heap is fully duplicate eliminated.  When the string heap
+ * grows beyond this size, the heap is not kept free of duplicate
+ * strings, but there is then a heuristic that tries to limit the
+ * number of duplicates.
  *
- * Because in many typical situations lots of double string values
- * occur in tables, the string insertion provides automatic double
- * elimination.  To do this, a GDK_STRHASHTABLE(=1024) bucket
- * hashtable is hidden in the first 4096 bytes of the string heap,
- * consisting of an offset to the first string hashing to that bucket
- * in the heap.  These offsets are made small (stridx_t is an unsigned
- * short) by exploiting the fact that the double elimination chunks
- * are (now) 64KB, hence a short suffices.
- *
- * In many other situations the cardinality of string columns is
- * large, or the string values might even be unique. In those cases,
- * our fixed-size hash table will start to overflow
- * quickly. Therefore, after the hash table is full (this is measured
- * very simplistically by looking whether the string heap exceeds a
- * heap size = GDK_ELIMLIMIT = 64KB) we flush the hash table. Even
- * more, from that moment on, we do not use a linked list, but a lossy
- * hash table that just contains the last position for each
- * bucket. Basically, after exceeding GDK_ELIMLIMIT, we get a
- * probabilistic/opportunistic duplicate elimination mechanism, that
- * only looks at the last GDK_ELIMLIMIT chunk in the heap, in a lossy
- * way.
- *
- * When comparing with the previous string implementation, the biggest
- * difference is that on 64-bits but with 32-bit oids, strings are
- * always 8-byte aligned and var_t numbers are multiplied by 8 to get
- * the true offset. The goal to do this is to allow 32-bits var_t on
- * 64-bits systems to address 32GB (using string alignment=8).  For
- * large database, the cost of padding (4 bytes avg) is offset by the
- * savings in var_t (allowing to go from 64- to 32-bits). Nothing lost
- * there, and 32-bits var_t also pay in smaller OIDs and smaller hash
- * tables, reducing memory pressure. For small duplicate eliminated
- * heaps, the short indices used in the hash table have now allowed
- * more buckets (2K instead of 1K) and average 2 bytes overhead for
- * the next pointers instead of 6-12. Therefore small heaps are now
- * more compact than before.
- *
- * The routine strElimDoubles() can be used to check whether all
- * strings are still being double-eliminated in the original
- * hash-table.  Only then we know that unequal offset-integers in the
- * BUN array means guaranteed different strings in the heap. This
- * optimization is made at some points in the GDK. Make sure you check
- * GDK_ELIMDOUBLES before assuming this!
+ * This is done by having a fixed sized hash table at the start of the
+ * string heap, and allocating space for collision lists in the first
+ * 64KiB of the string heap.  After the first 64KiB no extra space is
+ * allocated for lists, so hash collisions cannot be resolved.
  */
-int
-strElimDoubles(Heap *h)
-{
-	return GDK_ELIMDOUBLES(h);
-}
 
 int
 strNil(const char *s)
@@ -1129,46 +1071,45 @@ strHash(const char *s)
 void
 strCleanHash(Heap *h, int rebuild)
 {
+	size_t pad, pos;
+	const size_t extralen = h->hashash ? EXTRALEN : 0;
+	stridx_t *bucket;
+	BUN off, strhash;
+	const char *s;
+
 	(void) rebuild;
 	if (!h->cleanhash)
 		return;
 	h->cleanhash = 0;
-	if (!GDK_ELIMDOUBLES(h)) {
-		/* flush hash table for security */
-		memset(h->base, 0, GDK_STRHASHSIZE);
-	} else {
-		/* rebuild hash table for double elimination
-		 *
-		 * If appending strings to the BAT was aborted, if the
-		 * heap was memory mapped, the hash in the string heap
-		 * may well be incorrect.  Therefore we don't trust it
-		 * when we read in a string heap and we rebuild the
-		 * complete table (it is small, so this won't take any
-		 * time at all). */
-		size_t pad, pos;
-		const size_t extralen = h->hashash ? EXTRALEN : 0;
-		stridx_t *bucket;
-		BUN off, strhash;
-		const char *s;
-
-		memset(h->base, 0, GDK_STRHASHSIZE);
-		pos = GDK_STRHASHSIZE;
-		while (pos < h->free) {
-			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
-				pad += GDK_VARALIGN;
-			pos += pad + extralen;
-			s = h->base + pos;
-			if (h->hashash)
-				strhash = ((const BUN *) s)[-1];
-			else
-				GDK_STRHASH(s, strhash);
-			off = strhash & GDK_STRHASHMASK;
-			bucket = ((stridx_t *) h->base) + off;
-			*bucket = (stridx_t) (pos - extralen - sizeof(stridx_t));
-			pos += GDK_STRLEN(s);
-		}
+	/* rebuild hash table for double elimination
+	 *
+	 * If appending strings to the BAT was aborted, if the heap
+	 * was memory mapped, the hash in the string heap may well be
+	 * incorrect.  Therefore we don't trust it when we read in a
+	 * string heap and we rebuild the complete table (it is small,
+	 * so this won't take any time at all).
+	 * Note that we will only do this the first time the heap is
+	 * loaded, and only for heaps that existed when the server was
+	 * started. */
+	memset(h->base, 0, GDK_STRHASHSIZE);
+	pos = GDK_STRHASHSIZE;
+	while (pos < h->free && pos < GDK_ELIMLIMIT) {
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+		if (pad < sizeof(stridx_t))
+			pad += GDK_VARALIGN;
+		pos += pad + extralen;
+		s = h->base + pos;
+		if (h->hashash)
+			strhash = ((const BUN *) s)[-1];
+		else
+			GDK_STRHASH(s, strhash);
+		off = strhash & GDK_STRHASHMASK;
+		bucket = ((stridx_t *) h->base) + off;
+		*bucket = (stridx_t) (pos - extralen - sizeof(stridx_t));
+		pos += GDK_STRLEN(s);
+	}
 #ifndef NDEBUG
+	if (GDK_ELIMDOUBLES(h)) {
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
 			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
@@ -1179,8 +1120,8 @@ strCleanHash(Heap *h, int rebuild)
 			assert(strLocate(h, s) != 0);
 			pos += GDK_STRLEN(s);
 		}
-#endif
 	}
+#endif
 }
 
 /*
@@ -1206,7 +1147,7 @@ strLocate(Heap *h, const char *v)
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
 		next = (stridx_t *) (h->base + *ref);
 		if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0)
-			return (var_t) ((sizeof(stridx_t) + *ref + extralen) >> GDK_VARSHIFT);	/* found */
+			return (var_t) ((sizeof(stridx_t) + *ref + extralen));	/* found */
 	}
 	return 0;
 }
@@ -1215,10 +1156,10 @@ static var_t
 strPut(Heap *h, var_t *dst, const char *v)
 {
 	size_t elimbase = GDK_ELIMBASE(h->free);
-	size_t pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
+	size_t pad;
 	size_t pos, len = GDK_STRLEN(v);
 	const size_t extralen = h->hashash ? EXTRALEN : 0;
-	stridx_t *bucket, *ref, *next;
+	stridx_t *bucket;
 	BUN off, strhash;
 
 	GDK_STRHASH(v, off);
@@ -1226,44 +1167,48 @@ strPut(Heap *h, var_t *dst, const char *v)
 	off &= GDK_STRHASHMASK;
 	bucket = ((stridx_t *) h->base) + off;
 
-	/* if double-elimination is still in place, search hash-table */
-	if (elimbase == 0) {
-		/* small string heap (<64KB) -- fully double eliminated */
-		for (ref = bucket; *ref; ref = next) {
-			/* search the linked list */
-			next = (stridx_t *) (h->base + *ref);
-			if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0) {
-				/* found */
-				pos = sizeof(stridx_t) + *ref + extralen;
-				return *dst = (var_t) (pos >> GDK_VARSHIFT);
+	if (*bucket) {
+		/* the hash list is not empty */
+		if (*bucket < GDK_ELIMLIMIT) {
+			/* small string heap (<64KiB) -- fully double
+			 * eliminated: search the linked list */
+			const stridx_t *ref = bucket;
+
+			do {
+				pos = *ref + sizeof(stridx_t) + extralen;
+				if (GDK_STRCMP(v, h->base + pos) == 0) {
+					/* found */
+					return *dst = (var_t) pos;
+				}
+				ref = (stridx_t *) (h->base + *ref);
+			} while (*ref);
+		} else {
+			/* large string heap (>=64KiB) -- there is no
+			 * linked list, so only look at single
+			 * entry */
+			pos = *bucket + extralen;
+			if (GDK_STRCMP(v, h->base + pos) == 0) {
+				/* already in heap: reuse */
+				return *dst = (var_t) pos;
 			}
 		}
-		/* is there room for the next pointer in the padding space? */
+	}
+	/* the string was not found in the heap, we need to enter it */
+
+	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
+	if (elimbase == 0) {	/* i.e. h->free < GDK_ELIMLIMIT */
 		if (pad < sizeof(stridx_t)) {
-			/* if not, pad more */
+			/* make room for hash link */
 			pad += GDK_VARALIGN;
 		}
+	} else if (extralen == 0) { /* i.e., h->hashash == FALSE */
+		/* no VARSHIFT and no string hash value stored => no
+		 * padding/alignment needed */
+		pad = 0;
 	} else {
-		/* large string heap (>=64KB) --
-		 * opportunistic/probabilistic double elimination */
-		if (*bucket) {
-			pos = elimbase + *bucket + extralen;
-			if (GDK_STRCMP(v, h->base + pos) == 0) {
-				/* already in heap; do not insert! */
-				return *dst = (var_t) (pos >> GDK_VARSHIFT);
-			}
-		}
-#if SIZEOF_VAR_T >= SIZEOF_VOID_P /* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
-		if (extralen == 0)
-			/* i.e., h->hashash == FALSE */
-			/* no VARSHIFT and no string hash value stored
-			 * => no padding/alignment needed */
-			pad = 0;
-		else
-#endif
-			/* pad to align on VARALIGN for VARSHIFT
-			 * and/or string hash value */
-			pad &= (GDK_VARALIGN - 1);
+		/* pad to align on VARALIGN for VARSHIFT and/or string
+		 * hash value */
+		pad &= (GDK_VARALIGN - 1);
 	}
 
 	/* check heap for space (limited to a certain maximum after
@@ -1281,8 +1226,8 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 		assert(newsize);
 
-		if (h->free + pad + len + extralen >= (((size_t) VAR_MAX) << GDK_VARSHIFT)) {
-			GDKerror("strPut: string heaps gets larger than " SZFMT "GB.\n", (((size_t) VAR_MAX) << GDK_VARSHIFT) >> 30);
+		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
+			GDKerror("strPut: string heaps gets larger than " SZFMT "GiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
@@ -1301,7 +1246,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 	/* insert string */
 	pos = h->free + pad + extralen;
-	*dst = (var_t) (pos >> GDK_VARSHIFT);
+	*dst = (var_t) pos;
 #ifndef NDEBUG
 	/* just before inserting into the heap, make sure that the
 	 * string is actually UTF-8 (if we encountered a return
@@ -1371,11 +1316,8 @@ strPut(Heap *h, var_t *dst, const char *v)
 		pos -= sizeof(stridx_t);
 		*(stridx_t *) (h->base + pos) = *bucket;
 	}
-	*bucket = (stridx_t) (pos - elimbase);	/* set bucket to the new string */
+	*bucket = (stridx_t) pos;	/* set bucket to the new string */
 
-	if (h->free >= elimbase + GDK_ELIMLIMIT) {
-		memset(h->base, 0, GDK_STRHASHSIZE);	/* flush hash table */
-	}
 	return *dst;
 }
 
@@ -2102,51 +2044,40 @@ int GDKatomcnt = TYPE_str + 1;
  * Sometimes a bat descriptor is loaded before the dynamic module
  * defining the atom is loaded. To support this an extra set of
  * unknown atoms is kept.  These can be accessed via the ATOMunknown
- * interface. Adding atoms to this set is done via the ATOMunknown_add
- * function. Finding an (negative) atom index can be done via
+ * interface. Finding an (negative) atom index can be done via
  * ATOMunknown_find, which simply adds the atom if it's not in the
  * unknown set. The index van be used to find the name of an unknown
- * ATOM via ATOMunknown_name. Once an atom becomes known, ie the
- * module defining it is loaded, it should be removed from the unknown
- * set using ATOMunknown_del.
+ * ATOM via ATOMunknown_name.
  */
 static str unknown[MAXATOMS] = { NULL };
 
 int
-ATOMunknown_add(const char *nme)
-{
-	int i = 1;
-
-	for (; i < MAXATOMS; i++) {
-		if (!unknown[i]) {
-			unknown[i] = GDKstrdup(nme);
-			return -i;
-		}
-	}
-	assert(0);
-	return 0;
-}
-
-int
-ATOMunknown_del(int i)
-{
-	assert(unknown[-i]);
-	GDKfree(unknown[-i]);
-	unknown[-i] = NULL;
-	return 0;
-}
-
-int
 ATOMunknown_find(const char *nme)
 {
-	int i = 1;
+	int i, j = 0;
 
-	for (; i < MAXATOMS; i++) {
-		if (unknown[i] && strcmp(unknown[i], nme) == 0) {
-			return -i;
-		}
+	/* first try to find the atom */
+	MT_lock_set(&GDKthreadLock);
+	for (i = 1; i < MAXATOMS; i++) {
+		if (unknown[i]) {
+			if (strcmp(unknown[i], nme) == 0) {
+				MT_lock_unset(&GDKthreadLock);
+				return -i;
+			}
+		} else if (j == 0)
+			j = i;
 	}
-	return ATOMunknown_add(nme);
+	if (j == 0) {
+		/* no space for new atom (shouldn't happen) */
+		MT_lock_unset(&GDKthreadLock);
+		return 0;
+	}
+	if ((unknown[j] = GDKstrdup(nme)) == NULL) {
+		MT_lock_unset(&GDKthreadLock);
+		return 0;
+	}
+	MT_lock_unset(&GDKthreadLock);
+	return -j;
 }
 
 str

@@ -40,7 +40,7 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = *getArgReference_str(stk, pci, 3);
 
 #ifdef DEBUG_SQL_ORDERIDX
-	mnstr_printf(cntxt->fdout, "#orderindex layout %s.%s.%s \n", sch, tbl, col);
+	fprintf(stderr, "#orderindex layout %s.%s.%s \n", sch, tbl, col);
 #endif
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)
@@ -81,7 +81,7 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = *getArgReference_str(stk, pci, 3);
 
 #ifdef DEBUG_SQL_ORDERIDX
-	mnstr_printf(cntxt->fdout, "#orderindex layout %s.%s.%s \n", sch, tbl, col);
+	fprintf(stderr, "#orderindex layout %s.%s.%s \n", sch, tbl, col);
 #endif
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)

@@ -25,14 +25,14 @@ addLock(Client cntxt, OLTPlocks locks, MalBlkPtr mb, InstrPtr p, int sch, int tb
 	hash += (hash == 0);
 	locks[hash] = 1;
 #ifdef _DEBUG_OLP_
-	mnstr_printf(cntxt->fdout,"#addLock %s "BUNFMT", %s "BUNFMT" combined "BUNFMT"\n",
+	fprintf(stderr,"#addLock %s "BUNFMT", %s "BUNFMT" combined "BUNFMT"\n",
 		r, strHash(r), s, strHash(s),hash);
 #else
 	(void) cntxt;
 #endif
 }
 
-int
+str
 OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int i, limit, slimit, updates=0;
 	InstrPtr p, q, lcks;
@@ -96,7 +96,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( lcks->argc == 1 ){
 		freeInstruction(lcks);
-		return 0;
+		return MAL_SUCCEED;
 	}
 
 	// Now optimize the code
@@ -128,7 +128,10 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//chkFlow(cntxt->fdout, mb);
 	//chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","oltp",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","oltp",actions, usec);
     newComment(mb,buf);
-	return 1;
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
+	return MAL_SUCCEED;
 }

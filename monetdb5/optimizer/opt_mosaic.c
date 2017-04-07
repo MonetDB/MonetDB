@@ -56,20 +56,20 @@ static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 	return 0;
 }
 
-int 
+str 
 OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p,q, *old;
-    int limit,i,j, k, target=0, actions =0;
+    int limit,i,j, k, actions =0;
 	signed char *check;
 	char buf[256];
     lng usec = GDKusec();
 
 	if( optimizerIsApplied(mb,"mosaic"))
-		return 0;
+		return MAL_SUCCEED;
 	check = GDKzalloc(mb->vsize);
 	if ( check == NULL)
-		return 0;
+		throw(MAL,"optimizer.mosaic",MAL_MALLOC_FAIL);
 
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#mosaic implementation\n");
@@ -77,8 +77,10 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	limit = mb->stop;
 	old = mb->stmt;
-	if ( newMalBlkStmt(mb, mb->ssize) < 0)
-		return 0;
+	if ( newMalBlkStmt(mb, mb->ssize) < 0){
+		GDKfree(check);
+		throw(MAL,"optimizer.mosaic",MAL_MALLOC_FAIL);
+	}
 
 	(void) cntxt;
 	(void) pci;
@@ -180,5 +182,5 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef _DEBUG_MOSAIC_
     printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
-	return target == 0;
+	return MAL_SUCCEED;
 }

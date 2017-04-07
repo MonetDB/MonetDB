@@ -15,16 +15,18 @@ stdout of test 'load` in directory 'sql/test/Dump` itself:
 # MonetDB/SQL module v2.30.3 loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
 
+# 18:42:56 >  
+# 18:42:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6207" "--port=37397"
+# 18:42:56 >  
 
-# 17:36:20 >  
-# 17:36:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32825  < load.sql
-# 17:36:20 >  
-
+#create sequence "test_seq" as smallint start with 7 increment by 3 minvalue 5 maxvalue 10 cycle;
+#create table "test" (
+#	id integer,
+#	i smallint default next value for test_seq);
+#insert into test (id) values (0);
 [ 1	]
+#insert into test (id) values (1);
 [ 1	]
 [ 1	]
 [ 1	]

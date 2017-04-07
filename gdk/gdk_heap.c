@@ -105,7 +105,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
 		h->storage = STORE_MEM;
-		h->base = (char *) GDKmallocmax(h->size, &h->size, 0);
+		h->base = (char *) GDKmalloc(h->size);
 		HEAPDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " PTRFMT "\n", h->size, PTRFMTCAST h->base);
 	}
 	if (h->filename && h->base == NULL) {
@@ -128,8 +128,8 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			if (fd >= 0) {
 				close(fd);
 				h->newstorage = STORE_MMAP;
-				/* coverity[check_return] */
-				HEAPload(h, of, ext, FALSE);
+				if (HEAPload(h, of, ext, FALSE) != GDK_SUCCEED)
+					h->base = NULL; /* superfluous */
 				/* success checked by looking at
 				 * h->base below */
 			}
@@ -218,8 +218,9 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 		if (!must_mmap) {
 			void *p = h->base;
 			h->newstorage = h->storage = STORE_MEM;
-			h->base = GDKreallocmax(h->base, size, &h->size, 0);
+			h->base = GDKrealloc(h->base, size);
 			HEAPDEBUG fprintf(stderr, "#HEAPextend: extending malloced heap " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->size, PTRFMTCAST p, PTRFMTCAST h->base);
+			h->size = size;
 			if (h->base)
 				return GDK_SUCCEED; /* success */
 			failure = "h->storage == STORE_MEM && !must_map && !h->base";
@@ -319,7 +320,7 @@ HEAPshrink(Heap *h, size_t size)
 	assert(size >= h->free);
 	assert(size <= h->size);
 	if (h->storage == STORE_MEM) {
-		p = GDKreallocmax(h->base, size, &size, 0);
+		p = GDKrealloc(h->base, size);
 		HEAPDEBUG fprintf(stderr, "#HEAPshrink: shrinking malloced "
 				  "heap " SZFMT " " SZFMT " " PTRFMT " "
 				  PTRFMT "\n", h->size, size,
@@ -394,7 +395,7 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 	size_t i, n;
 	size_t savefree;
 	const char *filename;
-	bat bid;
+	bat bid = b->batCacheid;
 
 	assert(b->theap.parentid == 0);
 	assert(width != 0);
@@ -429,7 +430,6 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 		filename = b->theap.filename;
 	else
 		filename++;
-	bid = strtol(filename, NULL, 8);
 	if ((BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
 	    !file_exists(b->theap.farmid, BAKDIR, filename, NULL) &&
 	    (b->theap.storage != STORE_MEM ||
@@ -504,7 +504,7 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 		break;
 	case 4:
 #ifndef NDEBUG
-		memset(ps, 0, b->theap.base + b->theap.size - (char *) pi);
+		memset(pi, 0, b->theap.base + b->theap.size - (char *) pi);
 #endif
 		switch (b->twidth) {
 		case 1:
@@ -520,7 +520,7 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 #if SIZEOF_VAR_T == 8
 	case 8:
 #ifndef NDEBUG
-		memset(ps, 0, b->theap.base + b->theap.size - (char *) pv);
+		memset(pv, 0, b->theap.base + b->theap.size - (char *) pv);
 #endif
 		switch (b->twidth) {
 		case 1:
@@ -1088,7 +1088,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	}
 
 	block += hheader->alignment;
-	return (var_t) (block >> GDK_VARSHIFT);
+	return (var_t) block;
 }
 
 void
@@ -1098,7 +1098,7 @@ HEAP_free(Heap *heap, var_t mem)
 	CHUNK *beforep;
 	CHUNK *blockp;
 	CHUNK *afterp;
-	size_t after, before, block = mem << GDK_VARSHIFT;
+	size_t after, before, block = mem;
 
 	if (hheader->alignment != 8 && hheader->alignment != 4) {
 		GDKfatal("HEAP_free: Heap structure corrupt\n");

@@ -34,4 +34,3 @@ order by
 	revenue desc
 limit 20;
 
-select * from optimizer_stats() stats;

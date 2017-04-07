@@ -45,6 +45,7 @@
 qc *
 qc_create(int clientid, int seqnr)
 {
+	// FIXME unchecked_malloc MNEW can return NULL
 	qc *r = MNEW(qc);
 	r->clientid = clientid;
 	r->id = seqnr;
@@ -239,6 +240,7 @@ cq *
 qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
 {
 	int i, namelen;
+	// FIXME unchecked_malloc MNEW can return NULL
 	cq *n = MNEW(cq);
 
 	n->id = cache->id++;

@@ -57,16 +57,6 @@ Ready.
 [ "N",	"F",	8971.00,	12384801.37,	11798257.2080,	12282485.056933,	25.77873563,	35588.50968,	0.04775862069,	348	]
 [ "N",	"O",	742802.00,	1041502841.45,	989737518.6346,	1029418531.523350,	25.45498783,	35691.12921,	0.04993111956,	29181	]
 [ "R",	"F",	381449.00,	534594445.35,	507996454.4067,	528524219.358903,	25.59716817,	35874.00653,	0.04982753993,	14902	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
-
-# 11:48:05 >  
-# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:05 >  
 
 % sys.supplier,	sys.supplier,	sys.nation,	sys.part,	sys.part,	sys.supplier,	sys.supplier,	sys.supplier # table_name
 % s_acctbal,	s_name,	n_name,	p_partkey,	p_mfgr,	s_address,	s_phone,	s_comment # name
@@ -76,16 +66,10 @@ Ready.
 [ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"cajole furiously special, final requests: furiously spec"	]
 [ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"eep against the furiously bold ideas. fluffily bold packa"	]
 [ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"dolites are slyly against the furiously regular packages. ironic, final deposits cajole quickly"	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	7	]
 
-# 11:48:05 >  
-# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:05 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../03.sql
+# 20:53:52 >  
 
 #select
 #	l_orderkey,
@@ -124,15 +108,10 @@ Ready.
 [ 450,	205447.4232,	1995-03-05,	0	]
 [ 47204,	204478.5213,	1995-03-13,	0	]
 [ 9696,	201502.2188,	1995-02-20,	0	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	2	]
 
-# 11:48:05 >  
-# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:05 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../04.sql
+# 20:53:52 >  
 
 #select
 #	o_orderpriority,
@@ -164,15 +143,10 @@ Ready.
 [ "3-MEDIUM",	109	]
 [ "4-NOT SPECIFIED",	102	]
 [ "5-LOW",	128	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
 
-# 11:48:05 >  
-# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:05 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../05.sql
+# 20:53:52 >  
 
 #select
 #	n_name,
@@ -207,15 +181,10 @@ Ready.
 [ "JAPAN",	660651.2425	]
 [ "INDONESIA",	566379.5276	]
 [ "INDIA",	422874.6844	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	4	]
 
-# 11:48:05 >  
-# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:05 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../06.sql
+# 20:53:52 >  
 
 #select
 #	sum(l_extendedprice * l_discount) as revenue
@@ -231,15 +200,10 @@ Ready.
 % decimal # type
 % 20 # length
 [ 1193053.2253	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
 
-# 11:48:05 >  
-# 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:05 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../07.sql
+# 20:53:52 >  
 
 #select
 #	supp_nation,
@@ -276,15 +240,10 @@ Ready.
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
 [ "GERMANY",	"FRANCE",	1996,	379095.8854	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	4	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../08.sql
+# 20:53:52 >  
 
 #select
 #	o_year,
@@ -320,15 +279,10 @@ Ready.
 % 4,	20 # length
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	5	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../09.sql
+# 20:53:52 >  
 
 #select
 #	nation,
@@ -533,16 +487,10 @@ Ready.
 [ "VIETNAM",	1994,	422644.8168	]
 [ "VIETNAM",	1993,	309063.4020	]
 [ "VIETNAM",	1992,	716126.5378	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	3	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../10.sql
+# 20:53:52 >  
 
 #select
 #	c_custkey,
@@ -600,16 +548,10 @@ Ready.
 [ 1030,	"Customer#000001030",	282557.3566,	6359.27,	"INDIA",	"Xpt1BiB5h9o",	"18-759-877-1870",	"ding to the slyly unusual accounts. even requests among the evenly"	]
 [ 1049,	"Customer#000001049",	281134.1117,	8747.99,	"INDONESIA",	"bZ1OcFhHaIZ5gMiH",	"19-499-258-2851",	"uriously according to the furiously silent packages"	]
 [ 1094,	"Customer#000001094",	274877.4440,	2544.49,	"BRAZIL",	"OFz0eedTmPmXk2 3XM9v9Mcp13NVC0PK",	"12-234-721-9871",	"tes serve blithely quickly pending foxes. express, quick accounts"	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	3	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../11.sql
+# 20:53:52 >  
 
 #select
 #	ps_partkey,
@@ -639,16 +581,10 @@ Ready.
 % int,	decimal # type
 % 4,	20 # length
 [ 1376,	13271249.89	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	4	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../12.sql
+# 20:53:52 >  
 
 #select
 #	l_shipmode,
@@ -680,15 +616,10 @@ Ready.
 % 10,	2,	2 # length
 [ "MAIL",	64,	86	]
 [ "SHIP",	61,	96	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	1	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:52 >  
+# 20:53:52 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../13.sql
+# 20:53:52 >  
 
 #select
 #	c_count,
@@ -747,16 +678,10 @@ Ready.
 [ 31,	1	]
 [ 2,	1	]
 [ 1,	1	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	1	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:53 >  
+# 20:53:53 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../14.sql
+# 20:53:53 >  
 
 #select
 #	100.00 * sum(case
@@ -1132,15 +1057,10 @@ Ready.
 [ "Brand#55",	"STANDARD ANODIZED BRASS",	36,	4	]
 [ "Brand#55",	"STANDARD BRUSHED COPPER",	3,	4	]
 [ "Brand#55",	"STANDARD BRUSHED STEEL",	19,	4	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	1	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:53 >  
+# 20:53:53 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../17.sql
+# 20:53:53 >  
 
 #select
 #	sum(l_extendedprice) / 7.0 as avg_yearly
@@ -1164,15 +1084,10 @@ Ready.
 % decimal # type
 % 20 # length
 [ NULL	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:53 >  
+# 20:53:53 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../18.sql
+# 20:53:53 >  
 
 #select
 #	c_name,
@@ -1213,16 +1128,10 @@ Ready.
 % 18,	3,	5,	10,	17,	20 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305.00	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303.00	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	1	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:53 >  
+# 20:53:53 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../19.sql
+# 20:53:53 >  
 
 #select
 #	sum(l_extendedprice* (1 - l_discount)) as revenue
@@ -1311,15 +1220,10 @@ Ready.
 % char,	bigint # type
 % 25,	1 # length
 [ "Supplier#000000074",	9	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	2	]
 
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
+# 20:53:53 >  
+# 20:53:53 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-10549 --port=38083 < /export/scratch1/mk/default/package/sql/benchmarks/tpch/LOCKED/../22.sql
+# 20:53:53 >  
 
 #select
 #	cntrycode,
@@ -1360,13 +1264,8 @@ Ready.
 [ "29",	11,	88722.85	]
 [ "30",	17,	122189.33	]
 [ "31",	8,	66313.16	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
 
-# 09:37:14 >  
-# 09:37:14 >  Done.
-# 09:37:14 >  
+# 20:53:53 >  
+# 20:53:53 >  "Done."
+# 20:53:53 >  
 
