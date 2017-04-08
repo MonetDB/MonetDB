@@ -1191,8 +1191,15 @@ convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, cha
 		l = sql_timestamp_tostr((void *) &ts_res, buf, &len, mtype, p);
 	} else if (eclass == EC_BIT) {
 		bit b = *(bit *) p;
-		(*buf)[0] = '0' + !!b; /* or: '1' - !b */
-		(*buf)[1] = 0;
+		if (len <= 0 || len > 5) {
+			if (b)
+				strcpy(*buf, "true");
+			else
+				strcpy(*buf, "false");
+		} else {
+			(*buf)[0] = b?'t':'f';
+			(*buf)[1] = 0;
+		}
 	} else {
 		l = (*BATatoms[mtype].atomToStr) (buf, &len, p);
 	}

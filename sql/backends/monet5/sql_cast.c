@@ -367,6 +367,9 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 	int sz = MAX(2, len + 1);	/* nil should fit */
 
 	if (tpe != TYPE_str) {
+		/* TODO get max size for all from type */
+		if (len == 0 && tpe == TYPE_bit) /* should hold false */
+			sz = 6;
 		r = GDKmalloc(sz);
 		if (r == NULL)
 			throw(SQL, "str_cast", MAL_MALLOC_FAIL);
