@@ -2375,7 +2375,7 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "bigint", 0, 0);
 	if ((f = sql_bind_func(m->sa, s, "settimeout", &tp, NULL, F_PROC)) != NULL &&
 	     /* The settimeout function used to be in the sql module */
-	     f->func->sql && f->func->query && strcasestr(f->func->query, "sql") != NULL) {
+	     f->func->sql && f->func->query && strstr(f->func->query, "sql") != NULL) {
 		if ((err = sql_update_dec2016_sp3(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
