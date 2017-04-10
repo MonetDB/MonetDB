@@ -1316,6 +1316,14 @@ mvc_is_sorted(mvc *m, sql_column *col)
 	return sql_trans_is_sorted(m->session->tr, col);
 }
 
+void
+mvc_comment_on(mvc *m, int id, const char *remark)
+{
+	sql_trans_comment(m->session->tr, id, remark);
+}
+
+
+
 /* variable management */
 static void
 stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, int view, int frame)

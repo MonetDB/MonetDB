@@ -5503,3 +5503,23 @@ sql_trans_end(sql_session *s)
 	store_nr_active --;
 	assert(list_length(active_sessions) == store_nr_active);
 }
+
+void
+sql_trans_comment(sql_trans *tr, int id, const char *remark) {
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	assert(sys);
+	sql_table *comments = find_sql_table(sys, "comments");
+	assert(comments);
+	sql_column *id_col = find_sql_column(comments, "id");
+	assert(id_col);
+
+	oid row = table_funcs.column_find_row(tr, id_col, &id, NULL);
+	if (row == oid_nil) {
+		table_funcs.table_insert(tr, comments, &id, remark);
+	} else {
+		sql_column *remark_col = find_sql_column(comments, "remark");
+		table_funcs.column_update_value(tr, remark_col, row, (void*)remark);
+	}
+
+	(void)remark;
+}

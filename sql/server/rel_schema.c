@@ -1957,6 +1957,11 @@ rel_commentable_object(mvc *sql, symbol *catalog_object) {
 	}
 }
 
+static sql_rel *
+rel_comment_on(mvc *sql, sqlid obj_id, char *remark) {
+	mvc_comment_on(sql, obj_id, remark); // wonder how errors are handled.
+	return NULL;
+}
 
 sql_rel *
 rel_schemas(mvc *sql, symbol *s)
@@ -2149,15 +2154,16 @@ rel_schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 		assert(l->cnt == 2);
-
 		symbol *catalog_object = l->h->data.sym;
-		sqlid id = rel_commentable_object(sql, catalog_object);
-		if (!id)
-			return NULL; /* rel_commentable_object has set an error message */
-
 		char *remark = l->h->next->data.sval;
 
-		return sql_error(sql, 01, "F00BAR!COMMENT ON %d IS '%s'", id, remark);
+		sqlid id = rel_commentable_object(sql, catalog_object);
+		if (!id) {
+			/* rel_commentable_object has already set the error message so we don't have to */
+			return NULL;
+		}
+
+		return rel_comment_on(sql, id, remark);
 	} 	break;
 	default:
 		return sql_error(sql, 01, "M0M03!schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
