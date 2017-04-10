@@ -37,7 +37,7 @@ Ready.
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	7	]
+[ "joinidx",	4	]
 
 # 09:17:12 >  
 # 09:17:12 >  Done.
