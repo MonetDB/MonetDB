@@ -1,3 +1,25 @@
+monetdb (11.25.17) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6110: cast of a SQL boolean value to a string or clob or (var)char
+    is wrong
+  * BZ#6254: Crash (and assertion failure) after querying a view which
+    uses a correlated subquery in the select-list
+  * BZ#6256: Assertion Trigger on FULL OUTER JOIN with more than two
+    BETWEEN clauses
+  * BZ#6257: wrong count values (1 instead of 0) for correlated aggregation
+    queries
+  * BZ#6258: Vulnerability in FITS and NETCDF data vaults
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 11 Apr 2017 12:49:56 +0200
+
+monetdb (11.25.17) unstable; urgency=low
+
+  * sql: Upgrade code was added for an old change in the sys.settimeout function.
+  * sql: A bug was fixed with the automatic "vacuum" operation on system tables.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 11 Apr 2017 12:49:56 +0200
+
 monetdb (11.25.15) unstable; urgency=low
 
   * Rebuilt.
