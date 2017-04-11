@@ -1,3 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Apr 11 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Upgrade code was added for an old change in the sys.settimeout function.
+- A bug was fixed with the automatic "vacuum" operation on system tables.
+
