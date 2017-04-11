@@ -27,9 +27,6 @@ stderr of test 'comment-on` in directory 'sql/test` itself:
 # 13:09:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-44551" "--port=32134"
 # 13:09:12 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-60809/.s.monetdb.31874
-QUERY = COMMENT ON TABLE sys.comments IS 'For every catalog object, an optional remark';
-ERROR = !F00BAR!COMMENT ON 7994 IS 'For every catalog object, an optional remark'
 
 
 

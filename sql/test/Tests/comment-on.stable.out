@@ -56,18 +56,57 @@ Ready.
 # loading sql script: 97_comments.sql
 # loading sql script: 99_system.sql
 
-# 12:57:58 >  
-# 12:57:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-44223" "--port=33160"
-# 12:57:58 >  
+# 13:49:04 >  
+# 13:49:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-93589" "--port=32239"
+# 13:49:04 >  
 
-#CREATE TEMPORARY TABLE orig AS SELECT * FROM sys.comments;
-#SELECT remark FROM sys.comments EXCEPT SELECT remark FROM orig;
-% sys.L7 # table_name
-% remark # name
-% clob # type
-% 0 # length
+#CREATE SCHEMA sch;
+#SET SCHEMA sch;
+#CREATE TABLE origs AS SELECT id FROM sys.comments;
+#CREATE TABLE tab (i integer, j integer);
+#CREATE FUNCTION all_kinds_of_object()
+#RETURNS TABLE (id INTEGER, name VARCHAR(30), type VARCHAR(20))
+#RETURN TABLE (
+#        SELECT id, name, table_type_name
+#        FROM sys.tables, sys.table_types
+#        WHERE type = table_type_id
+#);
+#CREATE FUNCTION new_comments()
+#RETURNS TABLE (id INTEGER, name VARCHAR(30), source VARCHAR(20), remark CLOB)
+#RETURN TABLE (
+#        SELECT o.id, o.name, o.type, c.remark
+#        FROM sys.comments AS c LEFT JOIN all_kinds_of_object() AS o ON c.id = o.id
+#        WHERE c.id NOT IN (SELECT id FROM origs)
+#);
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1,	.L1 # table_name
+% id,	name,	source,	remark # name
+% int,	varchar,	varchar,	clob # type
+% 1,	0,	0,	0 # length
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1,	.L1 # table_name
+% id,	name,	source,	remark # name
+% int,	varchar,	varchar,	clob # type
+% 4,	3,	5,	45 # length
+[ 8005,	"tab",	"TABLE",	"The id\\'s of objects with an existing comment"	]
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1,	.L1 # table_name
+% id,	name,	source,	remark # name
+% int,	varchar,	varchar,	clob # type
+% 4,	3,	5,	13 # length
+[ 8005,	"tab",	"TABLE",	"a new comment"	]
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1,	.L1 # table_name
+% id,	name,	source,	remark # name
+% int,	varchar,	varchar,	clob # type
+% 1,	0,	0,	0 # length
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1,	.L1 # table_name
+% id,	name,	source,	remark # name
+% int,	varchar,	varchar,	clob # type
+% 1,	0,	0,	0 # length
 
-# 12:57:59 >  
-# 12:57:59 >  "Done."
-# 12:57:59 >  
+# 13:49:04 >  
+# 13:49:04 >  "Done."
+# 13:49:04 >  
 

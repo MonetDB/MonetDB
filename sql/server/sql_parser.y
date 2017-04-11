@@ -5421,6 +5421,12 @@ comment_on_statement:
 	  append_string(l, $5);
 	  $$ = _symbol_create_list( SQL_COMMENT, l );
 	}
+	| COMMENT ON catalog_object IS sqlNULL
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_COMMENT, l );
+	}
 	;
 
 catalog_object:

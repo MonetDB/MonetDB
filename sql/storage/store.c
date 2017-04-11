@@ -5514,11 +5514,22 @@ sql_trans_comment(sql_trans *tr, int id, const char *remark) {
 	assert(id_col);
 
 	oid row = table_funcs.column_find_row(tr, id_col, &id, NULL);
-	if (row == oid_nil) {
-		table_funcs.table_insert(tr, comments, &id, remark);
+	if (remark && strlen(remark) > 0) {
+		if (row == oid_nil) {
+			/* insert comment */
+			table_funcs.table_insert(tr, comments, &id, remark);
+		} else {
+			/* update comment */
+			sql_column *remark_col = find_sql_column(comments, "remark");
+			table_funcs.column_update_value(tr, remark_col, row, (void*)remark);
+		}
 	} else {
-		sql_column *remark_col = find_sql_column(comments, "remark");
-		table_funcs.column_update_value(tr, remark_col, row, (void*)remark);
+		if (row == oid_nil) {
+			/* nothing to be done */
+		} else {
+			/* drop comment */
+			table_funcs.table_delete(tr, comments, row);
+		}
 	}
 
 	(void)remark;
