@@ -2201,12 +2201,14 @@ sql_update_dec2016_sp3(Client c, mvc *sql)
 
 	pos += snprintf(buf + pos, bufsize - pos, 
 			"set schema \"sys\";\n"
-			"drop procedure sys.settimeout(bigint);"
-			"drop procedure sys.settimeout(bigint,bigint);"
-			"drop procedure sys.setsession(bigint);"
-			"create procedure sys.settimeout(\"query\" bigint) external name clients.settimeout;"
-			"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name clients.settimeout;"
-			"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;");
+			"drop procedure sys.settimeout(bigint);\n"
+			"drop procedure sys.settimeout(bigint,bigint);\n"
+			"drop procedure sys.setsession(bigint);\n"
+			"create procedure sys.settimeout(\"query\" bigint) external name clients.settimeout;\n"
+			"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name clients.settimeout;\n"
+			"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('settimeout', 'setsession') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
+			"delete from systemfunctions where function_id not in (select id from functions);\n");
 	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	assert(pos < bufsize);
