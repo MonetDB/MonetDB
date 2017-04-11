@@ -3616,6 +3616,8 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 				set_has_nil(e);
 				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 				ne = exp_aggr1(sql->sa, e, a, need_distinct(e), 1, e->card, 1);
+				if (cnt)
+					ne->p = prop_create(sql->sa, PROP_COUNT, ne->p);
 			} else {
 				ne = exp_copy(sql->sa, oa);
 			}
@@ -8472,11 +8474,6 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			sql_rel *nl = rel_apply(sql, rel_dup(rel->l), rel_dup(r->l), rel->exps, rel->flag);
 			sql_rel *rr = rel_dup(r->r);
 
-			if (0 && rr->subquery) {
-				rr->subquery = 0;
-				rr = rel_project(sql->sa, rr, rel_projections(sql, rr, NULL, 1, 2));
-				rr->subquery = 1;
-			}
 			nl = rel_crossproduct(sql->sa, nl, rr, r->op);
 			nl->exps = exps_copy(sql->sa, r->exps);
 			rel_destroy(rel);
@@ -8485,11 +8482,6 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			sql_rel *nr = rel_apply(sql, rel_dup(rel->l), rel_dup(r->r), rel->exps, rel->flag);
 			sql_rel *rl = rel_dup(r->l);
 
-			if (0 && rl->subquery) {
-				rl->subquery = 0;
-				rl = rel_project(sql->sa, rl, rel_projections(sql, rl, NULL, 1, 2));
-				rl->subquery = 1;
-			}
 			nr = rel_crossproduct(sql->sa, rl, nr, r->op);
 			nr->exps = exps_copy(sql->sa, r->exps);
 			rel_destroy(rel);
@@ -8513,16 +8505,18 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		int has_gbe = (ogbe && list_length(ogbe) > 0);
 
 		node *n;
-		list *gbe = new_exp_list(sql->sa), *exps;
-		sql_exp *ident;
+		list *gbe = new_exp_list(sql->sa);//, *exps;
+		sql_exp *ident, *r_ident;
 
 		/* add project + identity around l */
 		l = rel_add_identity(sql, rel_dup(l), &ident);
 		ident = exp_column(sql->sa, exp_relname(ident), exp_name(ident), exp_subtype(ident), ident->card, has_nil(ident), is_intern(ident));
 		list_append(gbe, ident);
+		r->l = rel_add_identity(sql, rel_dup(r->l), &r_ident);
+		r_ident = exp_column(sql->sa, exp_relname(r_ident), exp_name(r_ident), exp_subtype(r_ident), r_ident->card, has_nil(r_ident), is_intern(r_ident));
 
 		aggr = rel_projections(sql, l, NULL, 1, 1); /* columns of R */
-		exps = rel_projections(sql, r->l, NULL, 1, 1); /* columns before groupgby */
+		//exps = rel_projections(sql, r->l, NULL, 1, 2); /* columns before groupgby */
 
 		if (has_gbe)
 			list_merge(gbe, ogbe, (fdup)NULL);
@@ -8531,12 +8525,13 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 
 			/* count_nil(*) -> count(col) */
 			if (!has_gbe && e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0 && !e->l) {
-				sql_exp *c = exps->t->data;
+				//sql_exp *c = exps->t->data;
+				sql_exp *c = r_ident;
 				list *l = new_exp_list(sql->sa);
 
 				set_no_nil(e);
 				e->l = l;
-				c = exp_column(sql->sa, exp_relname(c), exp_name(c), exp_subtype(c), exp_card(c), has_nil(c), is_intern(c));
+				//c = exp_column(sql->sa, exp_relname(c), exp_name(c), exp_subtype(c), exp_card(c), has_nil(c), is_intern(c));
 				append(l, c);
 			}
 			if (e->type == e_aggr && e->card < CARD_AGGR) /* also fix projects, see above */

@@ -877,6 +877,15 @@ developer, but if you do want to test, this is the package you need.
 
 %build
 
+# There is a bug in GCC version 4.8 on AArch64 architectures
+# that causes it to report an internal error when compiling
+# testing/difflib.c.  The work around is to not use -fstack-protector-strong.
+# The bug exhibits itself on CentOS 7 on AArch64.
+if [ `gcc -v 2>&1 | grep -c 'Target: aarch64\|gcc version 4\.'` -eq 2 ]; then
+	# set CFLAGS before configure, so that this value gets used
+	CFLAGS='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -grecord-gcc-switches  '
+	export CFLAGS
+fi
 %{configure} \
 	--enable-assert=no \
 	--enable-console=yes \
