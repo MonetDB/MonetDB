@@ -31,11 +31,6 @@ Ready.
 % decimal # type
 % 20 # length
 [ 1193053.2253	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
 
 # 09:17:14 >  
 # 09:17:14 >  Done.

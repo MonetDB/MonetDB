@@ -1,0 +1,54 @@
+stderr of test 'pyapi3_09` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 14:42:11 >  
+# 14:42:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35977" "--set" "mapi_usock=/var/tmp/mtest-30058/.s.monetdb.35977" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/raasveld/build/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 14:42:11 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/raasveld/build/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35977
+# cmdline opt 	mapi_usock = /var/tmp/mtest-30058/.s.monetdb.35977
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch2/raasveld/build/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = true
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:42:12 >  
+# 14:42:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30058" "--port=35977"
+# 14:42:12 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
+QUERY = SELECT * FROM pyapi09();
+ERROR = !SELECT: no such table 'unknown_table'
+        !Python exception
+        !
+        !  1. def pyfun(_columns,_column_types,_conn):
+        !> 2.   res = _conn.execute('SELECT * FROM unknown_table;')
+        !  3.   return numpy.arange(10)
+        !  4. 
+        !SQL Query Failed: ParseException:SQLparser:42S02!SELECT: no such table 'unknown_table'
+MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
+QUERY = SELECT * FROM pyapi09();
+ERROR = !SELECT: no such table 'unknown_table'
+MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
+QUERY = SELECT 1; # yes it does...
+ERROR = !current transaction is aborted (please ROLLBACK)
+
+# 14:42:12 >  
+# 14:42:12 >  "Done."
+# 14:42:12 >  
+

@@ -669,6 +669,10 @@ XMLtoString(str *s, int *len, xml src)
 	if (l >= *len) {
 		GDKfree(*s);
 		*s = (str) GDKmalloc(l);
+		if ( *s == NULL){
+			GDKerror("XMLtoString:" MAL_MALLOC_FAIL);
+			return -1;
+		}
 	}
 	strcpy(*s, src);
 	*len = l - 1;

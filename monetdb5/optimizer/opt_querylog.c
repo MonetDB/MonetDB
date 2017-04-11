@@ -11,7 +11,7 @@
 #include "mtime.h"
 #include "querylog.h"
 
-int 
+str 
 OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, limit, slimit;
@@ -25,7 +25,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	// query log needed?
 	if ( !QLOGisset() )
-		return 0;
+		return MAL_SUCCEED;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
@@ -39,12 +39,12 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	if ( defineQuery == NULL)
 		/* nothing to do */
-		return 0;
+		return MAL_SUCCEED;
 
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
-		return 0; 
+		throw(MAL,"optimizer.querylog",MAL_MALLOC_FAIL);
 
 	pushInstruction(mb, old[0]);
 	/* run the querylog.define operation */
@@ -192,8 +192,9 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","querylog",1,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","querylog", usec);
     newComment(mb,buf);
-
-	return 1;
+	addtoMalBlkHistory(mb);
+	return MAL_SUCCEED;
 }

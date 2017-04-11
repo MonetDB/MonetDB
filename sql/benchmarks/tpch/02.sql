@@ -46,4 +46,3 @@ order by
 	p_partkey
 limit 100;
 
-select * from optimizer_stats() stats;

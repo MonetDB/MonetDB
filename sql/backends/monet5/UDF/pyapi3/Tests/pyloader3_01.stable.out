@@ -1,0 +1,82 @@
+stdout of test 'pyloader3_01` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 13:26:39 >  
+# 13:26:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37683" "--set" "mapi_usock=/var/tmp/mtest-30229/.s.monetdb.37683" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_py=true"
+# 13:26:39 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.682 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin:37683/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30229/.s.monetdb.37683
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+
+Ready.
+
+# 13:26:39 >  
+# 13:26:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30229" "--port=37683"
+# 13:26:39 >  
+
+#START TRANSACTION;
+#CREATE TABLE mytable(a DOUBLE, d int, s STRING);
+#CREATE LOADER myfunc() LANGUAGE PYTHON {
+#	_emit.emit({'a':42,'d':1})
+#};
+#CREATE LOADER myfunc1(i integer) LANGUAGE PYTHON {
+#	_emit.emit({'a':i,'d':2})
+#};
+#CREATE LOADER myfunc2(i integer, f string) LANGUAGE PYTHON {
+#	_emit.emit({'a':i,'d':3})
+#};
+#CREATE LOADER myfunc3(i integer, f string, d double) LANGUAGE PYTHON {
+#	_emit.emit({'a':i,'d':4, 's': 'hello'})
+#};
+#SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHERE name='myfunc';
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% name,	func,	mod,	language,	type,	side_effect,	varres,	vararg # name
+% varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean # type
+% 6,	32,	5,	1,	1,	5,	5,	5 # length
+[ "myfunc",	"{\n\t_emit.emit({'a':42,'d':1})\n};",	"pyapi",	6,	7,	true,	true,	false	]
+#COPY INTO mytable FROM LOADER myfunc3(46, 'asdf', 3.2);
+[ 1	]
+#COPY INTO mytable FROM LOADER myfunc2(45, 'asdf');
+[ 1	]
+#COPY INTO mytable FROM LOADER myfunc1(44);
+[ 1	]
+#COPY INTO mytable FROM LOADER myfunc();
+[ 1	]
+#SELECT * FROM mytable;
+% sys.mytable,	sys.mytable,	sys.mytable # table_name
+% a,	d,	s # name
+% double,	int,	clob # type
+% 24,	1,	5 # length
+[ 46,	4,	"hello"	]
+[ 45,	3,	NULL	]
+[ 44,	2,	NULL	]
+[ 42,	1,	NULL	]
+#DROP TABLE mytable;
+#DROP ALL LOADER myfunc;
+#CREATE LOADER myfunc() LANGUAGE PYTHON {
+#};
+#DROP LOADER myfunc;
+#DROP LOADER myfunc1;
+#DROP LOADER myfunc2;
+#DROP LOADER myfunc3;
+#SELECT * FROM functions WHERE name='myfunc';
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#ROLLBACK;
+
+# 13:26:39 >  
+# 13:26:39 >  "Done."
+# 13:26:39 >  
+

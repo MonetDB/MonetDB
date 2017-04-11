@@ -315,10 +315,21 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
-			if ( getArgType(mb,pci,i) == TYPE_str)
-				BUNappend(b, *getArgReference_str(stk, pci, i), FALSE);
-			else
-				BUNappend(b, getArgReference(stk, pci, i), FALSE);
+			if ( getArgType(mb,pci,i) == TYPE_str) {
+				if (BUNappend(b, *getArgReference_str(stk, pci, i), FALSE) != GDK_SUCCEED) {
+					BBPreclaim(b);
+					b = NULL;
+					msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+			} else {
+				if (BUNappend(b, getArgReference(stk, pci, i), FALSE) != GDK_SUCCEED) {
+					BBPreclaim(b);
+					b = NULL;
+					msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+			}
 			BATsetcount(b, 1);
 			BATsettrivprop(b);
 		} else {

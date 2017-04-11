@@ -23,4 +23,3 @@ group by
 order by
 	o_orderpriority;
 
-select * from optimizer_stats() stats;

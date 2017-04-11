@@ -172,8 +172,11 @@ UUIDgenerateUuid(uuid **retval)
 	uuid *u;
 	int i = 0, r = 0;
 
-	if (*retval == NULL)
+	if (*retval == NULL){
 		*retval = GDKmalloc(UUID_SIZE);
+		if( *retval == NULL)
+			throw(MAL,"uuid.generate",MAL_MALLOC_FAIL);
+	}
 	u = *retval;
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
@@ -224,7 +227,7 @@ UUIDuuid2str(str *retval, uuid **u)
 	int l = 0;
 	*retval = NULL;
 	if (UUIDtoString(retval, &l, *u) == 0)
-		throw(MAL, "uuid.str", "Allocation failure");
+		throw(MAL, "uuid.str", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -262,10 +265,16 @@ UUIDnull(void)
 }
 
 uuid *
-UUIDread(uuid *u, stream *s, size_t cnt)
+UUIDread(uuid *U, stream *s, size_t cnt)
 {
-	if (mnstr_read(s, u, UUID_SIZE, cnt) < (ssize_t) cnt)
+	uuid *u = U;
+	if (u == NULL && (u = GDKmalloc(cnt * sizeof(uuid))) == NULL)
 		return NULL;
+	if (mnstr_read(s, u, UUID_SIZE, cnt) < (ssize_t) cnt) {
+		if (u != U)
+			GDKfree(u);
+		return NULL;
+	}
 	return u;
 }
 

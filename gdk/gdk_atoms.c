@@ -178,7 +178,7 @@ ATOMallocate(const char *id)
 		if (strlen(id) >= IDLENGTH)
 			GDKfatal("ATOMallocate: name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
-		snprintf(BATatoms[t].name, IDLENGTH, "%s", id);
+		snprintf(BATatoms[t].name, sizeof(BATatoms[t].name), "%s", id);
 		BATatoms[t].size = sizeof(int);		/* default */
 		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;			/* default */
@@ -496,25 +496,6 @@ bitToStr(char **dst, int *len, const bit *src)
 	return snprintf(*dst, *len, "false");
 }
 
-static bit *
-bitRead(bit *a, stream *s, size_t cnt)
-{
-	if (mnstr_read(s, (char *) a, 1, cnt) < 0)
-		return NULL;
-	return mnstr_errnr(s) ? NULL : a;
-}
-
-static gdk_return
-bitWrite(const bit *a, stream *s, size_t cnt)
-{
-	if (mnstr_write(s, (const char *) a, 1, cnt) == (ssize_t) cnt)
-		return GDK_SUCCEED;
-	else {
-		GDKsyserror("bitWrite: write failure\n");
-		return GDK_FAIL;
-	}
-}
-
 int
 batFromStr(const char *src, int *len, bat **dst)
 {
@@ -563,20 +544,6 @@ batToStr(char **dst, int *len, const bat *src)
 	i = (int) (strlen(s) + 4);
 	atommem(char, i);
 	return snprintf(*dst, *len, "<%s>", s);
-}
-
-static bat *
-batRead(bat *a, stream *s, size_t cnt)
-{
-	/* bat==int */
-	return mnstr_readIntArray(s, (int *) a, cnt) ? a : NULL;
-}
-
-static gdk_return
-batWrite(const bat *a, stream *s, size_t cnt)
-{
-	/* bat==int */
-	return mnstr_writeIntArray(s, (const int *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 
@@ -761,10 +728,18 @@ hgeFromStr(const char *src, int *len, hge **dst)
 
 #define atom_io(TYPE, NAME, CAST)					\
 static TYPE *								\
-TYPE##Read(TYPE *a, stream *s, size_t cnt)				\
+TYPE##Read(TYPE *A, stream *s, size_t cnt)				\
 {									\
-	mnstr_read##NAME##Array(s, (CAST *) a, cnt);			\
-	return mnstr_errnr(s) ? NULL : a;				\
+	TYPE *a = A;							\
+	if (a == NULL && (a = GDKmalloc(cnt * sizeof(TYPE))) == NULL)	\
+		return NULL;						\
+	if (mnstr_read##NAME##Array(s, (CAST *) a, cnt) == 0 ||		\
+	    mnstr_errnr(s)) {						\
+		if (a != A)						\
+			GDKfree(a);					\
+		return NULL;						\
+	}								\
+	return a;							\
 }									\
 static gdk_return							\
 TYPE##Write(const TYPE *a, stream *s, size_t cnt)			\
@@ -772,6 +747,9 @@ TYPE##Write(const TYPE *a, stream *s, size_t cnt)			\
 	return mnstr_write##NAME##Array(s, (const CAST *) a, cnt) ?	\
 		GDK_SUCCEED : GDK_FAIL;					\
 }
+
+atom_io(bat, Int, int)
+atom_io(bit, Bte, bte)
 
 atomtostr(bte, "%hhd", )
 atom_io(bte, Bte, bte)
@@ -2066,51 +2044,40 @@ int GDKatomcnt = TYPE_str + 1;
  * Sometimes a bat descriptor is loaded before the dynamic module
  * defining the atom is loaded. To support this an extra set of
  * unknown atoms is kept.  These can be accessed via the ATOMunknown
- * interface. Adding atoms to this set is done via the ATOMunknown_add
- * function. Finding an (negative) atom index can be done via
+ * interface. Finding an (negative) atom index can be done via
  * ATOMunknown_find, which simply adds the atom if it's not in the
  * unknown set. The index van be used to find the name of an unknown
- * ATOM via ATOMunknown_name. Once an atom becomes known, ie the
- * module defining it is loaded, it should be removed from the unknown
- * set using ATOMunknown_del.
+ * ATOM via ATOMunknown_name.
  */
 static str unknown[MAXATOMS] = { NULL };
 
 int
-ATOMunknown_add(const char *nme)
-{
-	int i = 1;
-
-	for (; i < MAXATOMS; i++) {
-		if (!unknown[i]) {
-			unknown[i] = GDKstrdup(nme);
-			return -i;
-		}
-	}
-	assert(0);
-	return 0;
-}
-
-int
-ATOMunknown_del(int i)
-{
-	assert(unknown[-i]);
-	GDKfree(unknown[-i]);
-	unknown[-i] = NULL;
-	return 0;
-}
-
-int
 ATOMunknown_find(const char *nme)
 {
-	int i = 1;
+	int i, j = 0;
 
-	for (; i < MAXATOMS; i++) {
-		if (unknown[i] && strcmp(unknown[i], nme) == 0) {
-			return -i;
-		}
+	/* first try to find the atom */
+	MT_lock_set(&GDKthreadLock);
+	for (i = 1; i < MAXATOMS; i++) {
+		if (unknown[i]) {
+			if (strcmp(unknown[i], nme) == 0) {
+				MT_lock_unset(&GDKthreadLock);
+				return -i;
+			}
+		} else if (j == 0)
+			j = i;
 	}
-	return ATOMunknown_add(nme);
+	if (j == 0) {
+		/* no space for new atom (shouldn't happen) */
+		MT_lock_unset(&GDKthreadLock);
+		return 0;
+	}
+	if ((unknown[j] = GDKstrdup(nme)) == NULL) {
+		MT_lock_unset(&GDKthreadLock);
+		return 0;
+	}
+	MT_lock_unset(&GDKthreadLock);
+	return -j;
 }
 
 str

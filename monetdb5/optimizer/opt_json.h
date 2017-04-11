@@ -14,7 +14,7 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-mal_export int OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /* #define _DEBUG_OPT_JSON_ */
 #undef DEBUG_OPT_JSON

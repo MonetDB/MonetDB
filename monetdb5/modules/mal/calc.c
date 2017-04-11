@@ -28,7 +28,7 @@ mythrow(enum malexception type, const char *fcn, const char *msg)
 		} else {
 			s = createException(type, fcn, "%s", errbuf);
 		}
-		*GDKerrbuf = 0;
+		GDKclrerr();
 		return s;
 	}
 	return createException(type, fcn, "%s", msg);
@@ -632,6 +632,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getArgReference(stk, pci, 3);
 	}
 	if (ATOMextern(t1)) {
+		// FIXME unchecked_malloc ATOMdup could return NULL
 		*(ptr **) retval = ATOMdup(t1, *(ptr**)p);
 	} else if (t1 == TYPE_void) {
 		memcpy(retval, p, sizeof(oid));

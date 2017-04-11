@@ -31,7 +31,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	if(strncmp(mod,"bat",3)==0)
 		mod+=3;
 #ifdef DEBUG_OPT_REMAP
-	mnstr_printf(cntxt->fdout,"#Found a candidate %s.%s\n",mod,fcn);
+	fprintf(stderr,"#Found a candidate %s.%s\n",mod,fcn);
 #endif
 
 	snprintf(buf,1024,"bat%s",mod);
@@ -46,15 +46,15 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	for(i= pci->retc+2; i<pci->argc; i++)
 		p= pushArgument(mb,p,getArg(pci,i));
 #ifdef DEBUG_OPT_REMAP
-	printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_ALL);
+	fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
 #endif
 
 	/* now see if we can resolve the instruction */
 	typeChecker(cntxt->fdout, scope,mb,p,TRUE);
 	if( p->typechk== TYPE_UNKNOWN) {
 #ifdef DEBUG_OPT_REMAP
-		mnstr_printf(cntxt->fdout,"#type error\n");
-		printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_ALL);
+		fprintf(stderr,"#type error\n");
+		fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
 #endif
 
 		freeInstruction(p);
@@ -62,7 +62,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	}
 	pushInstruction(mb,p);
 #ifdef DEBUG_OPT_REMAP
-	mnstr_printf(cntxt->fdout,"success\n");
+	fprintf(stderr,"success\n");
 #endif
 	return 1;
 }
@@ -118,9 +118,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		getInstrPtr(s->def,0)->retc != p->retc ) {
 #ifdef DEBUG_OPT_REMAP
 		if( s== NULL)
-			mnstr_printf(cntxt->fdout,"#not found \n");
+			fprintf(stderr,"#not found \n");
 		else
-			mnstr_printf(cntxt->fdout,"#side-effects\n");
+			fprintf(stderr,"#side-effects\n");
 #endif
 		return 0;
 	}
@@ -130,9 +130,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	mq= copyMalBlk(s->def);
 	sig= getInstrPtr(mq,0);
 #ifdef DEBUG_OPT_REMAP
-	mnstr_printf(cntxt->fdout,"#Modify the code\n");
-	printFunction(cntxt->fdout,mq, 0, LIST_MAL_ALL);
-	printInstruction(cntxt->fdout,mb, 0, p,LIST_MAL_ALL);
+	fprintf(stderr,"#Modify the code\n");
+	fprintFunction(stderr,mq, 0, LIST_MAL_ALL);
+	fprintInstruction(stderr,mb, 0, p,LIST_MAL_ALL);
 #endif
 
 	upgrade = (bit*) GDKzalloc(sizeof(bit)*mq->vtop);
@@ -151,12 +151,12 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 
 			if( getBatType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
 #ifdef DEBUG_OPT_REMAP
-				mnstr_printf(cntxt->fdout,"#Type mismatch %d\n",i);
+				fprintf(stderr,"#Type mismatch %d\n",i);
 #endif
 				goto terminateMX;
 			}
 #ifdef DEBUG_OPT_REMAP
-			mnstr_printf(cntxt->fdout,"#Upgrade type %d %d\n",i, getArg(sig,i-2));
+			fprintf(stderr,"#Upgrade type %d %d\n",i, getArg(sig,i-2));
 #endif
 			setVarType(mq, i-2,newBatType(getArgType(mb,p,i)));
 			upgrade[getArg(sig,i-2)]= TRUE;
@@ -265,9 +265,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	if(mq->errors){
 terminateMX:
 #ifdef DEBUG_OPT_REMAP
-		mnstr_printf(cntxt->fdout,"Abort remap\n");
+		fprintf(stderr,"Abort remap\n");
 		if (q)
-			printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
+			fprintInstruction(stderr,mb,0,q,LIST_MAL_ALL);
 #endif
 		freeMalBlk(mq);
 		GDKfree(upgrade);
@@ -287,11 +287,11 @@ terminateMX:
 	delArgument(p,1);
 	inlineMALblock(mb,pc,mq);
 #ifdef DEBUG_OPT_REMAP
-	printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_ALL);
-	mnstr_printf(cntxt->fdout,"#NEW BLOCK\n");
-	printFunction(cntxt->fdout,mq, 0, LIST_MAL_ALL);
-	mnstr_printf(cntxt->fdout,"#INLINED RESULT\n");
-	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
+	fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
+	fprintf(stderr,"#NEW BLOCK\n");
+	fprintFunction(stderr,mq, 0, LIST_MAL_ALL);
+	fprintf(stderr,"#INLINED RESULT\n");
+	fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
 #endif
 	freeMalBlk(mq);
 	GDKfree(upgrade);
@@ -347,7 +347,8 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module
 	}
 	return 0;
 }
-int
+
+str
 OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
@@ -362,7 +363,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
-		return 0;
+		throw(MAL,"optmizer.remap",MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -379,14 +380,14 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (s && s->def->inlineProp ){
 #ifdef DEBUG_OPT_REMAP
-				mnstr_printf(cntxt->fdout,"#Multiplex inline\n");
-				printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_ALL);
+				fprintf(stderr,"#Multiplex inline\n");
+				fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
 #endif
 				pushInstruction(mb, p);
 				if( OPTmultiplexInline(cntxt,mb,p,mb->stop-1) )
 					doit++;
 #ifdef DEBUG_OPT_REMAP
-				mnstr_printf(cntxt->fdout,"#actions %d\n",doit);
+				fprintf(stderr,"#actions %d\n",doit);
 #endif
 			} else if (OPTremapDirect(cntxt, mb, stk, p, scope) ||
 				OPTremapSwitched(cntxt, mb, stk, p, scope)) {
@@ -451,8 +452,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 #ifdef DEBUG_OPT_REMAP
 	if (doit){
-		mnstr_printf(cntxt->fdout,"#After remap, before type check\n");
-		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_ALL);
+		fprintf(stderr,"#After remap, before type check\n");
+		fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
 	}
 #endif
 
@@ -465,8 +466,11 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remap",doit,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remap",doit, usec);
     newComment(mb,buf);
+	if( doit >= 0)
+		addtoMalBlkHistory(mb);
 
-	return mb->errors? 0: doit;
+	return MAL_SUCCEED;
 }

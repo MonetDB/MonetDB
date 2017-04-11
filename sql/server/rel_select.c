@@ -227,8 +227,16 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			}
 		}
 		if (!columnrefs && sq->exps) {
-			node *ne = sq->exps->h;
-
+			node *ne;
+			if (is_topn(sq->op)) {
+				// if the current node is a LIMIT statement
+				// we perform the alias on the underlying projection
+				assert(sq->l);
+				assert(is_project(((sql_rel*)sq->l)->op));
+				ne = ((sql_rel*)sq->l)->exps->h;
+			} else {
+				ne = sq->exps->h;
+			}
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
 
@@ -306,7 +314,15 @@ query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 {
 	switch (q->token) {
 	case SQL_WITH:
-		return rel_with_query(sql, q);
+	{
+		sql_rel *tq = rel_with_query(sql, q);
+
+		if (!tq)
+			return NULL;
+		if (q->data.lval->t->type == type_symbol)
+			return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+		return tq;
+	}
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
@@ -2123,6 +2139,25 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			return e;
 		}
 		return NULL;
+	}
+	case SQL_EXISTS:
+	case SQL_NOT_EXISTS:
+	{
+		symbol *lo = sc->data.sym;
+		sql_exp *le = rel_value_exp(sql, rel, lo, f, ek);
+		sql_subfunc *f = NULL;
+
+		if (!le)
+			return NULL;
+
+		if (sc->token != SQL_EXISTS)
+			f = sql_bind_func(sql->sa, sql->session->schema, "sql_not_exists", exp_subtype(le), NULL, F_FUNC);
+		else
+			f = sql_bind_func(sql->sa, sql->session->schema, "sql_exists", exp_subtype(le), NULL, F_FUNC);
+
+		if (!f) 
+			return sql_error(sql, 02, "exist operator on type %s missing", exp_subtype(le)->type->sqlname);
+		return exp_unop(sql->sa, le, f);
 	}
 	case SQL_LIKE:
 	case SQL_NOT_LIKE:
@@ -4970,40 +5005,22 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 	sql_rel *rel;
 
 	if (!cols) {
-		list *ls, *rs, *nls, *nrs;
-		node *n, *m;
-		int changes = 0;
+		list *ls, *rs;
 
 		l = rel_unique_names(sql, l);
 		r = rel_unique_names(sql, r);
 		ls = rel_projections(sql, l, NULL, 0, 1);
 		rs = rel_projections(sql, r, NULL, 0, 1);
-		nls = new_exp_list(sql->sa);
-		nrs = new_exp_list(sql->sa);
-		for (n = ls->h, m = rs->h; n && m; n = n->next, m = m->next) {
-			sql_exp *le = n->data, *lb = le;
-			sql_exp *re = m->data, *rb = re;
-
-			if ((rel_convert_types(sql, &le, &re, 1, type_set) < 0))
-				return NULL;
-			if (le != lb || re != rb)
-				changes = 1;
-			append(nls, le);
-			append(nrs, re);
-		}
-		if (changes) {
-			l = rel_project(sql->sa, l, nls);
-			r = rel_project(sql->sa, r, nrs);
-			set_processed(l);
-			set_processed(r);
-		}
+		rel = rel_setop_check_types(sql, l, r, ls, rs, (operator_type)op);
+	} else {
+		rel = rel_setop(sql->sa, l, r, (operator_type)op);
 	}
-	rel = rel_setop(sql->sa, l, r, (operator_type)op);
-	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
-	set_processed(rel);
+	if (rel) {
+		rel->exps = rel_projections(sql, rel, NULL, 0, 1);
+		set_processed(rel);
+	}
 	return rel;
 }
-
 
 static sql_rel *
 rel_setquery(mvc *sql, sql_rel *rel, symbol *q)

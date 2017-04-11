@@ -521,6 +521,10 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 			cst.val.oval= oid_nil;
 		} else if (ATOMextern(tpe)) {
 			ptr p = ATOMnil(tpe);
+			if( p == NULL){
+				freeInstruction(q);
+				return NULL;
+			}
 			VALset(&cst, tpe, p);
 		} else {
 			if (VALinit(&cst, tpe, ATOMnilptr(tpe)) == NULL) {
@@ -557,7 +561,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	cst.len = 0;
 	msg = convertConstant(idx, &cst);
 	if (msg != MAL_SUCCEED) {
-		GDKfree(msg);
+		freeException(msg);
 		return NULL;
 	}
 	_t = defConstant(mb,idx,&cst);
@@ -579,7 +583,7 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 	cst.len = 0;
 	msg = convertConstant(tpe, &cst);
 	if (msg != MAL_SUCCEED) {
-		GDKfree(msg);
+		freeException(msg);
 		return NULL;
 	}
 	_t = defConstant(mb,tpe,&cst);
@@ -602,7 +606,7 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 	cst.len = 0;
 	msg = convertConstant(tpe, &cst);
 	if (msg != MAL_SUCCEED) {
-		GDKfree(msg);
+		freeException(msg);
 		return NULL;
 	}
 	_t = defConstant(mb,tpe,&cst);

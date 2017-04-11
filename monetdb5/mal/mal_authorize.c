@@ -174,9 +174,11 @@ AUTHinitTables(const char *passwd) {
 		if (user == NULL)
 			throw(MAL, "initTables.user", MAL_MALLOC_FAIL " user table");
 
-		BATkey(user, TRUE);
-		BBPrename(BBPcacheid(user), "M5system_auth_user");
-		BATmode(user, PERSISTENT);
+		if (BATkey(user, TRUE) != GDK_SUCCEED ||
+			BBPrename(BBPcacheid(user), "M5system_auth_user") != 0 ||
+			BATmode(user, PERSISTENT) != GDK_SUCCEED) {
+			throw(MAL, "initTables.user", GDK_EXCEPTION);
+		}
 	} else {
 		int dbg = GDKdebug;
 		/* don't check this bat since we'll fix it below */
@@ -194,8 +196,10 @@ AUTHinitTables(const char *passwd) {
 		if (pass == NULL)
 			throw(MAL, "initTables.passwd", MAL_MALLOC_FAIL " password table");
 
-		BBPrename(BBPcacheid(pass), "M5system_auth_passwd_v2");
-		BATmode(pass, PERSISTENT);
+		if (BBPrename(BBPcacheid(pass), "M5system_auth_passwd_v2") != 0 ||
+			BATmode(pass, PERSISTENT) != GDK_SUCCEED) {
+			throw(MAL, "initTables.user", GDK_EXCEPTION);
+		}
 	} else {
 		int dbg = GDKdebug;
 		/* don't check this bat since we'll fix it below */
@@ -213,8 +217,10 @@ AUTHinitTables(const char *passwd) {
 		if (duser == NULL)
 			throw(MAL, "initTables.duser", MAL_MALLOC_FAIL " deleted user table");
 
-		BBPrename(BBPcacheid(duser), "M5system_auth_deleted");
-		BATmode(duser, PERSISTENT);
+		if (BBPrename(BBPcacheid(duser), "M5system_auth_deleted") != 0 ||
+			BATmode(duser, PERSISTENT) != GDK_SUCCEED) {
+			throw(MAL, "initTables.user", GDK_EXCEPTION);
+		}
 		if (!isNew)
 			AUTHcommit();
 	} else {
@@ -336,8 +342,11 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	/* we assume the BATs are still aligned */
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
 	/* needs force, as SQL makes a view over user */
-	BUNappend(user, username, TRUE);
-	BUNappend(pass, hash, TRUE);
+	if (BUNappend(user, username, TRUE) != GDK_SUCCEED ||
+		BUNappend(pass, hash, TRUE) != GDK_SUCCEED) {
+		GDKfree(hash);
+		throw(MAL, "addUser", MAL_MALLOC_FAIL);
+	}
 	GDKfree(hash);
 	/* retrieve the oid of the just inserted user */
 	p = AUTHfindUser(username);
@@ -378,7 +387,8 @@ AUTHremoveUser(Client cntxt, const char *username)
 		throw(MAL, "removeUser", "cannot remove yourself");
 
 	/* now, we got the oid, start removing the related tuples */
-	BUNappend(duser, &id, TRUE);
+	if (BUNappend(duser, &id, TRUE) != GDK_SUCCEED)
+		throw(MAL, "removeUser", MAL_MALLOC_FAIL);
 
 	/* make the stuff persistent */
 	AUTHcommit();

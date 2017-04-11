@@ -320,28 +320,26 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 	int i;
 
 	b = COLnew(0, TYPE_str, 20, TRANSIENT);
-	if (b == NULL)
-		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
-
 	bn = COLnew(0, TYPE_str, 20, TRANSIENT);
-	if (bn == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
-	}
-
 	bs = COLnew(0, TYPE_str, 20, TRANSIENT);
-	if (bs == NULL) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(bn->batCacheid);
+	if (b == NULL || bn == NULL || bs == NULL) {
+		BBPreclaim(b);
+		BBPreclaim(bn);
+		BBPreclaim(bs);
 		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
 		if (pipes[i].prerequisite && getAddress(GDKout, NULL, pipes[i].prerequisite, TRUE) == NULL)
 			continue;
-		BUNappend(b, pipes[i].name, FALSE);
-		BUNappend(bn, pipes[i].def, FALSE);
-		BUNappend(bs, pipes[i].status, FALSE);
+		if (BUNappend(b, pipes[i].name, FALSE) != GDK_SUCCEED ||
+			BUNappend(bn, pipes[i].def, FALSE) != GDK_SUCCEED ||
+			BUNappend(bs, pipes[i].status, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			BBPreclaim(bn);
+			BBPreclaim(bs);
+			throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
+		}
 	}
 
 	BBPkeepref(*nme = b->batCacheid);

@@ -15,7 +15,7 @@
 #include "opt_wlc.h"
 
 
-int
+str
 OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int i, j, limit, slimit, updates=0, query=1;
 	InstrPtr p, q, def = 0;
@@ -47,14 +47,14 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			query = 0;
 	}
 
-	if( query) // nothing to log
-		return 0;
+	if(query) // nothing to log
+		return MAL_SUCCEED;
 	
 	// We use a fake collection of objects to speed up the checking later.
 
 	// Now optimize the code
-	if ( newMalBlkStmt(mb,mb->ssize + updates) < 0)
-		return 0;
+	if (newMalBlkStmt(mb,mb->ssize + updates) < 0)
+		return createException(MAL, "wlcr.optimizer", MAL_MALLOC_FAIL);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		pushInstruction(mb,p);
@@ -120,5 +120,5 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","wlc",updates,GDKusec() - usec);
     newComment(mb,buf);
-	return 1;
+	return MAL_SUCCEED;
 }

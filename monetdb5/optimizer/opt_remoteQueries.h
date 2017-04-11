@@ -11,7 +11,6 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-mal_export int
-OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

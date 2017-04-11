@@ -10,7 +10,7 @@
 #include "opt_reduce.h"
 #include "mal_interpreter.h"
 
-int
+str
 OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int actions = 0;
@@ -33,8 +33,11 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
         //chkDeclarations(cntxt->fdout, mb);
     //}
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reduce",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reduce",actions, usec);
     newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
-	return actions;
+	return MAL_SUCCEED;
 }

@@ -178,8 +178,8 @@ doChallenge(void *data)
 	}
 	buf[len] = 0;
 #ifdef DEBUG_SERVER
-	printf("mal_mapi:Client accepted %s\n", buf);
-	fflush(stdout);
+	fprintf(stderr,"mal_mapi:Client accepted %s\n", buf);
+	fflush(stderr);
 
 	mnstr_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
 	mnstr_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
@@ -367,7 +367,7 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 #ifdef DEBUG_SERVER
-		printf("server:accepted\n");
+		fprintf(stderr,"server:accepted\n");
 		fflush(stdout);
 #endif
 		data = GDKmalloc(sizeof(*data));
@@ -671,7 +671,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 
 #ifdef DEBUG_SERVER
-	mnstr_printf(cntxt->fdout, "#SERVERlisten:Network started at %d\n", port);
+	fprintf(stderr, "#SERVERlisten:Network started at %d\n", port);
 #endif
 
 	psock[0] = sock;
@@ -691,7 +691,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #ifdef DEBUG_SERVER
 	gethostname(host, (int) 512);
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
-	mnstr_printf(cntxt->fdout, "%s", msg);
+	fprintf(stderr, "%s", msg);
 #endif
 
 	/* seed the randomiser such that our challenges aren't
@@ -1421,12 +1421,14 @@ SERVERfetch_field_bat(bat *bid, int *key){
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
 		if( mapi_error(mid) ) {
-			*bid = b->batCacheid;
-			BBPkeepref(*bid);
+			BBPreclaim(b);
 			throw(MAL, "mapi.fetch_field_bat", "%s",
 				mapi_result_error(SERVERsessions[i].hdl));
 		}
-		BUNappend(b,fld, FALSE);
+		if (BUNappend(b,fld, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			throw(MAL, "mapi.fetch_field_bat", MAL_MALLOC_FAIL);
+		}
 	}
 	*bid = b->batCacheid;
 	BBPkeepref(*bid);
@@ -1648,7 +1650,10 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	while( mapi_fetch_row(hdl)){
 		fld2= mapi_fetch_field(hdl,1);
 		SERVERfieldAnalysis(fld2, tt, &tval);
-		BUNappend(b,VALptr(&tval), FALSE);
+		if (BUNappend(b,VALptr(&tval), FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			throw(MAL, "mapi.rpc", MAL_MALLOC_FAIL);
+		}
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);

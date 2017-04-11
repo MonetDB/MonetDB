@@ -48,7 +48,6 @@ lib_optimizer = {
 		opt_remap.c opt_remap.h \
 		opt_remoteQueries.c opt_remoteQueries.h \
 		opt_reorder.c opt_reorder.h \
-		opt_statistics.c opt_statistics.h \
 		opt_support.c opt_support.h \
 		opt_pushselect.c opt_pushselect.h \
 		opt_profiler.c opt_profiler.h \

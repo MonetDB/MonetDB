@@ -446,7 +446,7 @@ static void ctl_handle_client(
 								(err = AUTHinitTables(p)) != NULL) {
 								Mfprintf(_mero_ctlerr, "%s: could not setup "
 										"database '%s': %s\n", origin, q, err);
-								GDKfree(err);
+								freeException(err);
 							} else {
 								/* don't start locked */
 								unlink(".maintenance");

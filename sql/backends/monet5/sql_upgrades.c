@@ -27,8 +27,12 @@ static str
 sql_update_hugeint(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
+
+	if( buf== NULL)
+		throw(SQL, "sql_update_hugeint", MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -124,12 +128,15 @@ static str
 sql_update_epoch(Client c, mvc *m)
 {
 	size_t bufsize = 1000, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(m, "current_schema");
 	sql_subtype tp;
 	int n = 0;
 	sql_schema *s = mvc_bind_schema(m, "sys");
 
+	if( buf== NULL)
+		throw(SQL, "sql_update_epoch", MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	sql_find_subtype(&tp, "bigint", 0, 0);
@@ -175,11 +182,14 @@ static str
 sql_update_jun2016(Client c, mvc *sql)
 {
 	size_t bufsize = 1000000, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 	node *n;
 	sql_schema *s;
 
+	if( buf== NULL)
+		throw(SQL, "sql_update_jun2016", MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -456,7 +466,10 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 
 	geomupgrade = (*fixfunc)(olddb);
 	bufsize = strlen(geomupgrade) + 512;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	buf = GDKmalloc(bufsize);
+	if( buf== NULL)
+		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
 	GDKfree(geomupgrade);
@@ -486,10 +499,13 @@ static str
 sql_update_dec2016(Client c, mvc *sql)
 {
 	size_t bufsize = 12240, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 	sql_schema *s;
 
+	if( buf== NULL)
+		throw(SQL, "sql_update_dec2016", MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -749,10 +765,14 @@ static str
 sql_update_nowrd(Client c, mvc *sql)
 {
 	size_t bufsize = 10240, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 	sql_schema *s;
 
+
+	if( buf== NULL)
+		throw(SQL, "sql_update_nowrd", MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -831,6 +851,8 @@ sql_update_median(Client c, mvc *sql)
 	BAT *b;
 	int needed = 0;
 
+	if( buf== NULL)
+		throw(SQL, "sql_update_median", MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n");
 	err = SQLstatementIntern(c, &q1, "update", 1, 0, &output);
@@ -902,9 +924,12 @@ static str
 sql_update_geom_jun2016_sp2(Client c, mvc *sql)
 {
 	size_t bufsize = 1000000, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
+	if( buf== NULL)
+		throw(SQL, "sql_update_geom_jun2016", MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1047,9 +1072,12 @@ static str
 sql_update_jun2016_sp2(Client c, mvc *sql)
 {
 	size_t bufsize = 1000000, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
+	if( buf== NULL)
+		throw(SQL, "sql_update_june2016_sp", MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1196,11 +1224,14 @@ static str
 sql_update_dec2016_sp2(Client c, mvc *sql)
 {
 	size_t bufsize = 2048, pos = 0;
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 	res_table *output;
 	BAT *b;
 
+	if( buf== NULL)
+		throw(SQL, "sql_update_dec2016_sp2", MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "select id from sys.types where sqlname = 'decimal' and digits = %d;\n",
 #ifdef HAVE_HGE
 			have_hge ? 39 :
@@ -1252,11 +1283,23 @@ sql_update_default(Client c, mvc *sql)
 	res_table *output;
 	BAT *b;
 
+	if( buf== NULL)
+		throw(SQL, "sql_default", MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from sys._columns where table_id = (select id from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys'));\n"
 			"delete from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 25_debug.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.malfunctions;\n"
+			"create function sys.malfunctions() returns table(\"module\" string, \"function\" string, \"signature\" string, \"address\" string, \"comment\" string) external name \"manual\".\"functions\";\n"
+			"drop function sys.optimizer_stats();\n"
+			"create function sys.optimizer_stats() "
+			"returns table (optname string, count int, timing bigint) "
+			"external name inspect.optimizer_stats;\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('malfunctions', 'optimizer_stats') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
 	/* 46_profiler.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1317,10 +1360,38 @@ sql_update_default(Client c, mvc *sql)
 	}
 	res_tables_destroy(output);
 
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
+
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 
 	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_dec2016_sp3(Client c, mvc *sql)
+{
+	size_t bufsize = 2048, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+
+	pos += snprintf(buf + pos, bufsize - pos, 
+			"set schema \"sys\";\n"
+			"drop procedure sys.settimeout(bigint);"
+			"drop procedure sys.settimeout(bigint,bigint);"
+			"drop procedure sys.setsession(bigint);"
+			"create procedure sys.settimeout(\"query\" bigint) external name clients.settimeout;"
+			"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name clients.settimeout;"
+			"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;");
+	if (schema) 
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	assert(pos < bufsize);
+
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
@@ -1341,7 +1412,7 @@ SQLupgrades(Client c, mvc *m)
 		if (!sql_bind_aggr(m->sa, s, "var_pop", &tp)) {
 			if ((err = sql_update_hugeint(c, m)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
-				GDKfree(err);
+				freeException(err);
 			}
 		}
 	}
@@ -1350,14 +1421,14 @@ SQLupgrades(Client c, mvc *m)
 	/* add missing epoch functions */
 	if ((err = sql_update_epoch(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
-		GDKfree(err);
+		freeException(err);
 	}
 
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!sql_bind_func(m->sa, s, "storage", &tp, NULL, F_UNION)) {
 		if ((err = sql_update_jun2016(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
@@ -1378,7 +1449,7 @@ SQLupgrades(Client c, mvc *m)
 		 * database */
 		if ((err = sql_update_geom(c, m, 1)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	} else if (geomsqlfix_get() != NULL) {
 		/* the geom module is loaded... */
@@ -1388,7 +1459,7 @@ SQLupgrades(Client c, mvc *m)
 			/* ... but the database is not geom-enabled */
 			if ((err = sql_update_geom(c, m, 0)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
-				GDKfree(err);
+				freeException(err);
 			}
 		}
 	}
@@ -1396,7 +1467,7 @@ SQLupgrades(Client c, mvc *m)
 	/*
 	if ((err = sql_update_median(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
-		GDKfree(err);
+		freeException(err);
 	}
 	*/
 
@@ -1405,7 +1476,7 @@ SQLupgrades(Client c, mvc *m)
 	    sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
 		if ((err = sql_update_geom_jun2016_sp2(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
@@ -1413,7 +1484,7 @@ SQLupgrades(Client c, mvc *m)
 	    sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
 		if ((err = sql_update_jun2016_sp2(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
@@ -1421,7 +1492,7 @@ SQLupgrades(Client c, mvc *m)
 	if (!sql_bind_func3(m->sa, s, "createorderindex", &tp, &tp, &tp, F_PROC)) {
 		if ((err = sql_update_dec2016(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
@@ -1429,19 +1500,29 @@ SQLupgrades(Client c, mvc *m)
 	if (sql_bind_func(m->sa, s, "median", &tp, NULL, F_AGGR)) {
 		if ((err = sql_update_nowrd(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if ((err = sql_update_dec2016_sp2(c, m)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
+	}
+
+	sql_find_subtype(&tp, "bigint", 0, 0);
+	if ((f = sql_bind_func(m->sa, s, "settimeout", &tp, NULL, F_PROC)) != NULL &&
+	     /* The settimeout function used to be in the sql module */
+	     f->func->sql && f->func->query && strstr(f->func->query, "sql") != NULL) {
+		if ((err = sql_update_dec2016_sp3(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
 	}
 
-	if ((sql_update_dec2016_sp2(c, m)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
-		GDKfree(err);
-	}
-
 	if (mvc_bind_table(m, s, "function_languages") == NULL) {
-		if ((sql_update_default(c, m)) != NULL) {
+		if ((err = sql_update_default(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 }

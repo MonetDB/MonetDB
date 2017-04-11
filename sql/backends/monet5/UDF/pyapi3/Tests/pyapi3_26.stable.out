@@ -1,0 +1,68 @@
+stdout of test 'pyapi3_26` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 21:06:30 >  
+# 21:06:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39929" "--set" "mapi_usock=/var/tmp/mtest-1528/.s.monetdb.39929" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 21:06:30 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:39929/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1528/.s.monetdb.39929
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 21:06:31 >  
+# 21:06:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1528" "--port=39929"
+# 21:06:31 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION average(i INTEGER) RETURNS INTEGER LANGUAGE PYTHON 'pyapi26_test.py';
+#CREATE FUNCTION create_file() RETURNS TABLE(i INTEGER) LANGUAGE PYTHON {
+#    import os
+#    homedir = os.getenv('HOME');
+#    f = open("%s/pyapi26_test.py" % (homedir), 'w+')
+#    f.write("return numpy.mean(i)")
+#    f.close()  
+#    return 1
+#};
+#CREATE FUNCTION delete_file() RETURNS TABLE(i INTEGER) LANGUAGE PYTHON {
+#    import os
+#    homedir = os.getenv('HOME');
+#    os.remove("%s/pyapi26_test.py" % (homedir))
+#    return 1
+#};
+#SELECT * FROM create_file();
+% .L1 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+#CREATE FUNCTION integers() RETURNS TABLE(i INTEGER) LANGUAGE PYTHON { return numpy.arange(10000) + 1 };
+#SELECT average(i) FROM integers();
+% .L3 # table_name
+% L3 # name
+% int # type
+% 4 # length
+[ 5000	]
+#SELECT * FROM delete_file();
+% .L1 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+#ROLLBACK;
+
+# 21:06:31 >  
+# 21:06:31 >  "Done."
+# 21:06:31 >  
+

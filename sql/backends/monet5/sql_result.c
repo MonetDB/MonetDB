@@ -38,7 +38,6 @@
 				*len = 5;				\
 				*Buf = GDKzalloc(*len);			\
 				if (*Buf == NULL) {			\
-					GDKerror("Allocation failed\n"); \
 					return 0;			\
 				}					\
 			}						\
@@ -71,7 +70,6 @@
 			*len = l+1;					\
 			*Buf = GDKzalloc(*len);				\
 			if (*Buf == NULL) {				\
-				GDKerror("Allocation failed\n");	\
 				return 0;				\
 			}						\
 		}							\
@@ -136,7 +134,6 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 				GDKfree(*buf);
 			*buf = (str) GDKzalloc(*len = 4);
 			if (*buf == NULL) {
-				GDKerror("Allocation failed\n");
 				return 0;
 			}
 		}
@@ -154,7 +151,6 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 			GDKfree(*buf);
 		*buf = (str) GDKzalloc(*len = len1 + 8);
 		if (*buf == NULL) {
-			GDKerror("Allocation failed\n");
 			return 0;
 		}
 	}
@@ -205,7 +201,6 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 			GDKfree(*buf);
 		*buf = (str) GDKzalloc(*len = len1 + len2 + 8);
 		if (*buf == NULL) {
-			GDKerror("Allocation failed\n");
 			return 0;
 		}
 	}
@@ -722,7 +717,6 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 			*len = 2 * l + 3;
 			*buf = GDKzalloc(*len);
 			if (*buf == NULL) {
-				GDKerror("Allocation failed\n");
 				return 0;
 			}
 		}
@@ -1191,8 +1185,15 @@ convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, cha
 		l = sql_timestamp_tostr((void *) &ts_res, buf, &len, mtype, p);
 	} else if (eclass == EC_BIT) {
 		bit b = *(bit *) p;
-		(*buf)[0] = '0' + !!b; /* or: '1' - !b */
-		(*buf)[1] = 0;
+		if (len <= 0 || len > 5) {
+			if (b)
+				strcpy(*buf, "true");
+			else
+				strcpy(*buf, "false");
+		} else {
+			(*buf)[0] = b?'t':'f';
+			(*buf)[1] = 0;
+		}
 	} else {
 		l = (*BATatoms[mtype].atomToStr) (buf, &len, p);
 	}

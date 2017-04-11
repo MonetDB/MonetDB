@@ -571,8 +571,12 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	vars = COLnew(0, TYPE_str, m->topvars, TRANSIENT);
 	if (vars == NULL)
 		throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
-	for (i = 0; i < m->topvars && !m->vars[i].frame; i++)
-		BUNappend(vars, m->vars[i].name, FALSE);
+	for (i = 0; i < m->topvars && !m->vars[i].frame; i++) {
+		if (BUNappend(vars, m->vars[i].name, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(vars);
+			throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
+		}
+	}
 	*res = vars->batCacheid;
 	BBPkeepref(vars->batCacheid);
 	return MAL_SUCCEED;
@@ -687,7 +691,12 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			seqbulk_destroy(sb);
 			throw(SQL, "sql.next_value", "error");
 		}
-		BUNappend(r, &l, FALSE);
+		if (BUNappend(r, &l, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(r->batCacheid);
+			seqbulk_destroy(sb);
+			throw(SQL, "sql.next_value", MAL_MALLOC_FAIL);
+		}
 	}
 	if (sb)
 		seqbulk_destroy(sb);
@@ -1850,16 +1859,36 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	l = strlen((char *) (*T));
-	GDKstrFromStr(tsep = GDKmalloc(l + 1), *T, l);
+	tsep = GDKmalloc(l + 1);
+	if(tsep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set1;
+	}
+	GDKstrFromStr(tsep, *T, l);
 	l = 0;
 	l = strlen((char *) (*R));
-	GDKstrFromStr(rsep = GDKmalloc(l + 1), *R, l);
+	rsep = GDKmalloc(l + 1);
+	if(rsep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set1;
+	}
+	GDKstrFromStr(rsep, *R, l);
 	l = 0;
 	l = strlen((char *) (*S));
-	GDKstrFromStr(ssep = GDKmalloc(l + 1), *S, l);
+	ssep = GDKmalloc(l + 1);
+	if(ssep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set1;
+	}
+	GDKstrFromStr(ssep, *S, l);
 	l = 0;
 	l = strlen((char *) (*N));
-	GDKstrFromStr(ns = GDKmalloc(l + 1), *N, l);
+	ns = GDKmalloc(l + 1);
+	if(ns == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set1;
+	}
+	GDKstrFromStr(ns, *N, l);
 	t->tsep = (char *) tsep;
 	t->rsep = (char *) rsep;
 	t->ssep = (char *) ssep;
@@ -2025,16 +2054,36 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	l = strlen((char *) (*T));
-	GDKstrFromStr(tsep = GDKmalloc(l + 1), *T, l);
+	tsep = GDKmalloc(l + 1);
+	if(tsep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
+	GDKstrFromStr(tsep, *T, l);
 	l = 0;
 	l = strlen((char *) (*R));
-	GDKstrFromStr(rsep = GDKmalloc(l + 1), *R, l);
+	rsep = GDKmalloc(l + 1);
+	if(rsep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
+	GDKstrFromStr(rsep, *R, l);
 	l = 0;
 	l = strlen((char *) (*S));
-	GDKstrFromStr(ssep = GDKmalloc(l + 1), *S, l);
+	ssep = GDKmalloc(l + 1);
+	if(ssep == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
+	GDKstrFromStr(ssep, *S, l);
 	l = 0;
 	l = strlen((char *) (*N));
-	GDKstrFromStr(ns = GDKmalloc(l + 1), *N, l);
+	ns = GDKmalloc(l + 1);
+	if(ns == 0){
+		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
+	GDKstrFromStr(ns, *N, l);
 	t->tsep = (char *) tsep;
 	t->rsep = (char *) rsep;
 	t->ssep = (char *) ssep;
@@ -2524,8 +2573,11 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* overwrite other delimiters to the ones the FWF stream uses */
 			sprintf((char*) tsep, "%c", STREAM_FWF_FIELD_SEP);
 			sprintf((char*) rsep, "%c", STREAM_FWF_RECORD_SEP);
-			if (!ssep) 
+			if (!ssep) {
 				ssep = GDKmalloc(2);
+				if(ssep == NULL)
+					throw(SQL, "sql.copy_from", MAL_MALLOC_FAIL);
+			}
 			ssep[0] = 0;
 
 			ss = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
@@ -2588,7 +2640,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return msg;
 
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.drop", "3F000!Schema missing");
+		throw(SQL, "sql.import_table", "3F000!Schema missing");
 	t = mvc_bind_table(m, s, tname);
 	if (!t)
 		throw(SQL, "sql", "42S02!table %s not found", tname);
@@ -2610,6 +2662,8 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if (ATOMvarsized(col->type.type->localtype) && col->type.type->localtype != TYPE_str)
 			throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
 		fn = GDKmalloc(flen + 1);
+		if(fn == NULL)
+			throw(SQL, "sql.attach", MAL_MALLOC_FAIL);
 		GDKstrFromStr((unsigned char *) fn, (const unsigned char *) fname, flen);
 		if (fn == NULL)
 			throw(SQL, "sql", MAL_MALLOC_FAIL);
@@ -2645,27 +2699,36 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				throw(SQL, "sql", MAL_MALLOC_FAIL);
 			/* this code should be extended to deal with larger text strings. */
 			f = fopen(*getArgReference_str(stk, pci, i), "r");
-			if (f == NULL)
+			if (f == NULL) {
+				BBPreclaim(c);
 				throw(SQL, "sql", "Failed to re-open file %s", fname);
+			}
 
 			buf = GDKmalloc(bufsiz);
 			if (!buf) {
 				fclose(f);
+				BBPreclaim(c);
 				throw(SQL, "sql", "Failed to create buffer");
 			}
 			while (fgets(buf, bufsiz, f) != NULL) {
 				char *t = strrchr(buf, '\n');
 				if (t)
 					*t = 0;
-				BUNappend(c, buf, FALSE);
+				if (BUNappend(c, buf, FALSE) != GDK_SUCCEED) {
+					BBPreclaim(c);
+					fclose(f);
+					throw(SQL, "sql", MAL_MALLOC_FAIL);
+				}
 			}
 			fclose(f);
 			GDKfree(buf);
 		} else {
 			throw(SQL, "sql", "Failed to attach file %s", fname);
 		}
-		if (init && cnt != BATcount(c))
+		if (init && cnt != BATcount(c)) {
+			BBPunfix(c->batCacheid);
 			throw(SQL, "sql", "binary files for table '%s' have inconsistent counts", tname);
+		}
 		cnt = BATcount(c);
 		init = 1;
 		*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
@@ -2684,8 +2747,13 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				const void* nil = ATOMnilptr(tpe);
 				// fill the new BAT with NULL values
 				c = COLnew(0, tpe, cnt, TRANSIENT);
+				if (c == NULL)
+					throw(SQL, "sql", MAL_MALLOC_FAIL);
 				for(loop = 0; loop < cnt; loop++) {
-					BUNappend(c, nil, 0);
+					if (BUNappend(c, nil, 0) != GDK_SUCCEED) {
+						BBPreclaim(c);
+						throw(SQL, "sql", MAL_MALLOC_FAIL);
+					}
 				}
 				*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
 				BBPkeepref(c->batCacheid);
@@ -2722,6 +2790,10 @@ zero_or_one(ptr ret, const bat *bid)
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
 		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
+		if(ret == NULL){
+			BBPunfix(b->batCacheid);
+			throw(SQL, "zero_or_one", MAL_MALLOC_FAIL);
+		}
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		*(BAT **) ret = BATdescriptor(bid);
@@ -2777,6 +2849,10 @@ SQLall(ptr ret, const bat *bid)
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
 		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
+		if(ret == NULL){
+			BBPunfix(b->batCacheid);
+			throw(SQL, "SQLall", MAL_MALLOC_FAIL);
+		}
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		*(BAT **) ret = BATdescriptor(bid);
@@ -3068,7 +3144,10 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		BUNappend(bn, &r, FALSE);
+		if (BUNappend(bn, &r, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
+		}
 	}
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -3108,7 +3187,10 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		BUNappend(bn, &r, FALSE);
+		if (BUNappend(bn, &r, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3329,8 +3411,12 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (q = m->qc->q; q; q = q->next) {
 		if (q->type != Q_PREPARE) {
-			BUNappend(query, q->codestring, FALSE);
-			BUNappend(count, &q->count, FALSE);
+			if (BUNappend(query, q->codestring, FALSE) != GDK_SUCCEED ||
+			    BUNappend(count, &q->count, FALSE) != GDK_SUCCEED) {
+				BBPunfix(query->batCacheid);
+				BBPunfix(count->batCacheid);
+				throw(SQL, "sql.dumpcache", MAL_MALLOC_FAIL);
+			}
 		}
 	}
 	*rquery = query->batCacheid;
@@ -3351,20 +3437,24 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rrewrite = getArgReference_bat(stk, pci, 0);
 	bat *rcount = getArgReference_bat(stk, pci, 1);
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL ||
+	    (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	cnt = m->qc->id;
 	rewrite = COLnew(0, TYPE_str, cnt, TRANSIENT);
-	if (rewrite == NULL)
-		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
 	count = COLnew(0, TYPE_int, cnt, TRANSIENT);
-	if (count == NULL)
+	if (rewrite == NULL || count == NULL) {
+		BBPreclaim(rewrite);
+		BBPreclaim(count);
 		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
+	}
 
-	BUNappend(rewrite, "joinidx", FALSE);
-	BUNappend(count, &m->opt_stats[0], FALSE);
+	if (BUNappend(rewrite, "joinidx", FALSE) != GDK_SUCCEED ||
+	    BUNappend(count, &m->opt_stats[0], FALSE) != GDK_SUCCEED) {
+		BBPreclaim(rewrite);
+		BBPreclaim(count);
+		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
+	}
 	/* TODO add other rewrites */
 
 	*rrewrite = rewrite->batCacheid;
@@ -3526,7 +3616,7 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
-		throw(SQL, name, "cannot allocate result bat");
+		throw(SQL, name, MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		on = BUNtail(bi, p);
@@ -3538,7 +3628,12 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 			c = rank = nrank = 1;
 		oc = on;
 		gc = gn;
-		BUNappend(r, &rank, FALSE);
+		if (BUNappend(r, &rank, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(g->batCacheid);
+			BBPunfix(r->batCacheid);
+			throw(SQL, name, MAL_MALLOC_FAIL);
+		}
 		nrank += !dense || c;
 	}
 	BBPunfix(b->batCacheid);
@@ -3569,11 +3664,12 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, name, "cannot allocate result bat");
+		throw(SQL, name, MAL_MALLOC_FAIL);
 	}
 	if (BATtdense(b)) {
 		BATloop(b, p, q) {
-			BUNappend(r, &rank, FALSE);
+			if (BUNappend(r, &rank, FALSE) != GDK_SUCCEED)
+				goto bailout;
 			rank++;
 		}
 	} else {
@@ -3582,13 +3678,18 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 			if ((c = cmp(n, cur)) != 0)
 				rank = nrank;
 			cur = n;
-			BUNappend(r, &rank, FALSE);
+			if (BUNappend(r, &rank, FALSE) != GDK_SUCCEED)
+				goto bailout;
 			nrank += !dense || c;
 		}
 	}
 	BBPunfix(b->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
 	return MAL_SUCCEED;
+  bailout:
+	BBPunfix(b->batCacheid);
+	BBPunfix(r->batCacheid);
+	throw(SQL, name, MAL_MALLOC_FAIL);
 }
 
 str

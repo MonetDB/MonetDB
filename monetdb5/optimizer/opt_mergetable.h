@@ -13,6 +13,6 @@
 #include "mal_interpreter.h"
 #include "mal_builder.h"
 
-mal_export int OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

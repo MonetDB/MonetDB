@@ -1,0 +1,157 @@
+stdout of test 'pyapi3_09` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 14:42:11 >  
+# 14:42:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35977" "--set" "mapi_usock=/var/tmp/mtest-30058/.s.monetdb.35977" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/raasveld/build/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 14:42:11 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lyon.ins.cwi.nl:35977/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30058/.s.monetdb.35977
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 14:42:12 >  
+# 14:42:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30058" "--port=35977"
+# 14:42:12 >  
+
+#START TRANSACTION;
+#CREATE TABLE pyapi09table(i integer);
+#INSERT INTO pyapi09table VALUES (1), (2), (3), (4);
+[ 4	]
+#CREATE FUNCTION pyapi09() returns TABLE(i integer)
+#language P
+#{
+#    res = _conn.execute('SELECT i FROM pyapi09table;')
+#    return res
+#};
+#SELECT * FROM pyapi09();
+% .L1 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+#DROP FUNCTION pyapi09;
+#DROP TABLE pyapi09table;
+#CREATE TABLE pyapi09table(i integer);
+#INSERT INTO pyapi09table VALUES (1), (2), (3), (4);
+[ 4	]
+#CREATE TABLE pyapi09multiplication(i integer);
+#INSERT INTO pyapi09multiplication VALUES (3);
+[ 1	]
+#CREATE FUNCTION pyapi09(i integer) returns integer
+#language P
+#{
+#    res = _conn.execute('SELECT i FROM pyapi09multiplication;')
+#    return res['i'] * i
+#};
+#SELECT pyapi09(i) FROM pyapi09table; #multiply by 3
+% sys.L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 3	]
+[ 6	]
+[ 9	]
+[ 12	]
+#UPDATE pyapi09multiplication SET i=10;
+[ 1	]
+#SELECT pyapi09(i) FROM pyapi09table; #multiply by 10
+% sys.L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 10	]
+[ 20	]
+[ 30	]
+[ 40	]
+#DROP FUNCTION pyapi09;
+#DROP TABLE pyapi09table;
+#DROP TABLE pyapi09multiplication;
+#CREATE FUNCTION pyapi09create() returns TABLE(s STRING)
+#language P
+#{
+#    import cPickle
+#    result = numpy.arange(100000)
+#    return cPickle.dumps(result)
+#};
+#CREATE TABLE pyapi09objects AS SELECT * FROM pyapi09create() WITH DATA;
+#CREATE FUNCTION pyapi09load() returns TABLE(i INTEGER)
+#language P
+#{
+#    import cPickle
+#    res = _conn.execute('SELECT s FROM pyapi09objects;')
+#    array = cPickle.loads(res['s'][0])
+#    print array
+#    return array[:10]
+#};
+#SELECT * FROM pyapi09load();
+% .L1 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
+#DROP FUNCTION pyapi09create;
+#DROP FUNCTION pyapi09load;
+#DROP TABLE pyapi09objects;
+#CREATE FUNCTION pyapi09() returns TABLE(i INTEGER)
+#language P
+#{
+#    res = _conn.execute('SELECT * FROM unknown_table;')
+#    return numpy.arange(10)
+#};
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION pyapi09() returns TABLE(i INTEGER)
+#language P
+#{
+#    try: res = _conn.execute('SELECT * FROM unknown_table;')
+#    except: pass
+#    return numpy.arange(10)
+#};
+#SELECT * FROM pyapi09();
+% .L1 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
+#ROLLBACK;
+
+# 14:42:12 >  
+# 14:42:12 >  "Done."
+# 14:42:12 >  
+

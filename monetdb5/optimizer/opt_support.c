@@ -74,31 +74,6 @@ optimizerIsApplied(MalBlkPtr mb, str optname)
 	}
 	return 0;
 }
-/*
- * All optimizers should pass the optimizerCheck for defense against
- * incomplete and malicious MAL code.
- */
-str
-optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec)
-{
-	char buf[256];
-	lng clk = GDKusec();
-
-	if (cntxt->mode == FINISHCLIENT)
-		throw(MAL, name, "prematurely stopped client");
-	if( actions > 0){
-		chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-		chkFlow(cntxt->fdout, mb);
-		chkDeclarations(cntxt->fdout, mb);
-		usec += GDKusec() - clk;
-	}
-	/* keep all actions taken as a post block comment */
-	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
-	newComment(mb,buf);
-	if (mb->errors)
-		throw(MAL, name, PROGRAM_GENERAL);
-	return MAL_SUCCEED;
-}
 
 /*
  * Limit the loop count in the optimizer to guard against indefinite
@@ -124,13 +99,18 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	/* force at least once a complete type check by resetting the type check flag */
 
-	resetMalBlk(mb, mb->stop);
-	chkProgram(cntxt->fdout, cntxt->nspace, mb);
+	// strong defense line, assure that MAL plan is initially correct
+	if( mb->errors == 0){
+		resetMalBlk(mb, mb->stop);
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+	}
 	if (mb->errors)
 		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
 	/* Optimizers may massage the plan in such a way that a new pass is needed.
-     * When no optimzer call is found, be terminate. */
+     * When no optimzer call is found, then terminate. */
 	do {
 		qot = 0;
 		for (pc = 0; pc < mb->stop; pc++) {
@@ -145,7 +125,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 					str place = getExceptionPlace(msg);
 					str nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
 					if (nmsg && place) {
-						GDKfree(msg);
+						freeException(msg);
 						msg = nmsg;
 						GDKfree(place);
 					}
@@ -417,6 +397,8 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		
 	if( getModuleId(p) == pyapiRef ||
 		getModuleId(p) == pyapimapRef ||
+		getModuleId(p) == pyapi3Ref ||
+		getModuleId(p) == pyapi3mapRef ||
 		getModuleId(p) == rapiRef)
 		return TRUE;
 
@@ -542,7 +524,8 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
-		 getModuleId(p) != batpyapiRef;
+		 getModuleId(p) != batpyapiRef &&
+		 getModuleId(p) != batpyapi3Ref;
 }
 
 int isLikeOp(InstrPtr p){

@@ -70,8 +70,8 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	if ( a == r && coerce[varid].src && coerce[varid].fromtype < r ) 
 	{
 #ifdef _DEBUG_COERCION_
-		mnstr_printf(cntxt->fdout,"#remove upcast on first argument %d\n", varid);
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+		fprintf(stderr,"#remove upcast on first argument %d\n", varid);
+		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 #endif
 		getArg(p,1) = coerce[varid].src;
 		if ( chkInstruction(NULL, cntxt->nspace, mb, p) || p->typechk == TYPE_UNKNOWN)
@@ -81,16 +81,16 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	if ( b == r && coerce[varid].src &&  coerce[varid].fromtype < r ) 
 	{
 #ifdef _DEBUG_COERCION_
-		mnstr_printf(cntxt->fdout,"#remove upcast on second argument %d\n", varid);
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+		fprintf(stderr,"#remove upcast on second argument %d\n", varid);
+		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 #endif
 		getArg(p,2) = coerce[varid].src;
 		if ( chkInstruction(NULL, cntxt->nspace, mb, p) || p->typechk == TYPE_UNKNOWN)
 			getArg(p,2) = varid;
 	}
 #ifdef _DEBUG_COERCION_
-		mnstr_printf(cntxt->fdout,"#final instruction\n");
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+		fprintf(stderr,"#final instruction\n");
+		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 #endif
 	return;
 }
@@ -117,7 +117,7 @@ coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	return;
 }
 
-int
+str
 OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k;
@@ -129,7 +129,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	lng usec = GDKusec();
 
 	if( coerce == NULL)
-		return 0;
+		throw(MAL,"optimizer.coercion",MAL_MALLOC_FAIL);
 	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
@@ -196,8 +196,11 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions, usec);
     newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
-	return actions;
+	return MAL_SUCCEED;
 }

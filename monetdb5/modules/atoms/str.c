@@ -1085,7 +1085,7 @@ struct UTF8_lower_upper {
 
 #define UTF8_CONVERSIONS (sizeof(UTF8_lower_upper) / sizeof(UTF8_lower_upper[0]))
 
-static BAT *UTF8_upperBat = NULL, *UTF8_lowerBat;
+static BAT *UTF8_upperBat = NULL, *UTF8_lowerBat = NULL;
 
 str
 strPrelude(void *ret)
@@ -1095,22 +1095,29 @@ strPrelude(void *ret)
 		int i = UTF8_CONVERSIONS;
 
 		UTF8_upperBat = COLnew(0, TYPE_int, UTF8_CONVERSIONS, TRANSIENT);
-		if (UTF8_upperBat == NULL)
-			return NULL;
 		UTF8_lowerBat = COLnew(0, TYPE_int, UTF8_CONVERSIONS, TRANSIENT);
-		if (UTF8_lowerBat == NULL) {
-			BBPreclaim(UTF8_upperBat);
-			UTF8_upperBat = NULL;
-			return NULL;
-		}
+		if (UTF8_upperBat == NULL || UTF8_lowerBat == NULL)
+			goto bailout;
+
 		while (--i >= 0) {
-			BUNappend(UTF8_upperBat, &UTF8_lower_upper[i].upper, FALSE);
-			BUNappend(UTF8_lowerBat, &UTF8_lower_upper[i].lower, FALSE);
+			if (BUNappend(UTF8_upperBat, &UTF8_lower_upper[i].upper, FALSE) != GDK_SUCCEED ||
+				BUNappend(UTF8_lowerBat, &UTF8_lower_upper[i].lower, FALSE) != GDK_SUCCEED) {
+				goto bailout;
+			}
 		}
-		BATname(UTF8_upperBat, "monet_unicode_toupper");
-		BATname(UTF8_lowerBat, "monet_unicode_tolower");
+		if (BBPrename(UTF8_upperBat->batCacheid, "monet_unicode_toupper") != 0 ||
+			BBPrename(UTF8_lowerBat->batCacheid, "monet_unicode_tolower") != 0) {
+			goto bailout;
+		}
 	}
-	return NULL;
+	return MAL_SUCCEED;
+
+  bailout:
+	BBPreclaim(UTF8_upperBat);
+	BBPreclaim(UTF8_lowerBat);
+	UTF8_upperBat = NULL;
+	UTF8_lowerBat = NULL;
+	throw(MAL, "str.prelude", GDK_EXCEPTION);
 }
 
 str

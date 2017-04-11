@@ -339,7 +339,7 @@ DFLOWworker(void *T)
 	if( GDKerrbuf == 0)
 		fprintf(stderr,"DFLOWworker:Could not allocate GDKerrbuf\n");
 	else
-		GDKerrbuf[0] = 0;
+		GDKclrerr();
 	MT_lock_set(&dataflowLock);
 	cntxt = t->cntxt;
 	MT_lock_unset(&dataflowLock);
@@ -556,7 +556,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	PARDEBUG fprintf(stderr, "#Initialize dflow block\n");
 	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
 	if (assign == NULL)
-		throw(MAL, "dataflow", "DFLOWinitBlk(): Failed to allocate assign");
+		throw(MAL, "dataflow", MAL_MALLOC_FAIL " for assign");
 	etop = flow->stop - flow->start;
 	for (n = 0, pc = flow->start; pc < flow->stop; pc++, n++) {
 		p = getInstrPtr(mb, pc);
@@ -639,15 +639,15 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	GDKfree(assign);
 	PARDEBUG {
 		for (n = 0; n < flow->stop - flow->start; n++) {
-			mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
-			printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_ALL);
-			mnstr_printf(GDKstdout, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
+			fprintf(stderr, "#[%d] %d: ", flow->start + n, n);
+			fprintInstruction(stderr, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_ALL);
+			fprintf(stderr, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
 			for (j = n; flow->edges[j]; j = flow->edges[j]) {
-				mnstr_printf(GDKstdout, "%d ", flow->start + flow->nodes[j]);
+				fprintf(stderr, "%d ", flow->start + flow->nodes[j]);
 				if (flow->edges[j] == -1)
 					break;
 			}
-			mnstr_printf(GDKstdout, "\n");
+			fprintf(stderr, "\n");
 		}
 	}
 #ifdef USE_MAL_ADMISSION
@@ -790,7 +790,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 #ifdef DEBUG_FLOW
 	fprintf(stderr, "#runMALdataflow for block %d - %d\n", startpc, stoppc);
-	printFunction(GDKstdout, mb, 0, LIST_ALL);
+	fprintFunction(stderr, mb, 0, LIST_ALL);
 #endif
 
 	/* in debugging mode we should not start multiple threads */
@@ -878,7 +878,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 	flow = (DataFlow)GDKzalloc(sizeof(DataFlowRec));
 	if (flow == NULL)
-		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow");
+		throw(MAL, "dataflow", MAL_MALLOC_FAIL " for flow");
 
 	flow->cntxt = cntxt;
 	flow->mb = mb;
@@ -902,7 +902,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		q_destroy(flow->done);
 		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
-		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow->status");
+		throw(MAL, "dataflow", MAL_MALLOC_FAIL " for flow->status");
 	}
 	size = DFLOWgraphSize(mb, startpc, stoppc);
 	size += stoppc - startpc;
@@ -912,7 +912,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		q_destroy(flow->done);
 		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
-		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow->nodes");
+		throw(MAL, "dataflow", MAL_MALLOC_FAIL " for flow->nodes");
 	}
 	flow->edges = (int*)GDKzalloc(sizeof(int) * size);
 	if (flow->edges == NULL) {
@@ -921,7 +921,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		q_destroy(flow->done);
 		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
-		throw(MAL, "dataflow", "runMALdataflow(): Failed to allocate flow->edges");
+		throw(MAL, "dataflow", MAL_MALLOC_FAIL " for flow->edges");
 	}
 	msg = DFLOWinitBlk(flow, mb, size);
 

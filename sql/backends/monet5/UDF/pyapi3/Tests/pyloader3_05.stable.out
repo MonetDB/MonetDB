@@ -1,0 +1,125 @@
+stdout of test 'pyloader3_05` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 13:44:57 >  
+# 13:44:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34686" "--set" "mapi_usock=/var/tmp/mtest-17327/.s.monetdb.34686" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 13:44:57 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.682 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin:34686/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17327/.s.monetdb.34686
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 13:44:57 >  
+# 13:44:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17327" "--port=34686"
+# 13:44:57 >  
+
+#START TRANSACTION;
+#CREATE TABLE pyloader05table(s STRING);
+#CREATE LOADER pyloader05() LANGUAGE PYTHON {
+#    _emit.emit({'s': 33});
+#    _emit.emit({'s': 42.0});
+#    _emit.emit({'s': 'hello'});
+#    _emit.emit({'s': u'\u00D6'}); # \u00D6 = O + umlaut
+#    _emit.emit({'s': [33, 'hello']});
+#    _emit.emit({'s': [42.0, 33]});
+#    _emit.emit({'s': numpy.array(['hello', 'hello', 'hello'])});
+#    _emit.emit({'s': [u'\u00D6', 'hello', 33]});
+#    _emit.emit({'s': numpy.array([u'\u00D6', 'hello', 33])});
+#    _emit.emit({'s': numpy.arange(3).astype(numpy.float32)});
+#    _emit.emit({'s': numpy.arange(3).astype(numpy.float64)});
+#COPY INTO pyloader05table FROM LOADER pyloader05();
+[ 35	]
+#SELECT * FROM pyloader05table;
+% sys.pyloader05table # table_name
+% s # name
+% clob # type
+% 9 # length
+[ "33"	]
+[ "42"	]
+[ "hello"	]
+[ "Ö"	]
+[ "33"	]
+[ "hello"	]
+[ "42.000000"	]
+[ "33.000000"	]
+[ "hello"	]
+[ "hello"	]
+[ "hello"	]
+[ "Ö"	]
+[ "hello"	]
+[ "33"	]
+[ "Ö"	]
+[ "hello"	]
+[ "33"	]
+[ "0.000000"	]
+[ "1.000000"	]
+[ "2.000000"	]
+[ "0.000000"	]
+[ "1.000000"	]
+[ "2.000000"	]
+[ "0"	]
+[ "1"	]
+[ "2"	]
+[ "0"	]
+[ "1"	]
+[ "2"	]
+[ "0"	]
+[ "1"	]
+[ "2"	]
+[ "0"	]
+[ "1"	]
+[ "2"	]
+#DROP TABLE pyloader05table;
+#DROP LOADER pyloader05;
+#ROLLBACK;
+
+# 13:44:57 >  
+# 13:44:57 >  "Done."
+# 13:44:57 >  
+

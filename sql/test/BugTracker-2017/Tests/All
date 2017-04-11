@@ -3,7 +3,7 @@ insert_self_ref_FK.Bug-6131
 shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
-HAVE_LIBZ?heapextend.Bug-6134
+#HAVE_LIBZ?heapextend.Bug-6134
 incorrect_error.Bug-6141
 empty-interval.Bug-6184
 crash_in_null_cast.Bug-6186
@@ -18,7 +18,7 @@ crash_on_count_div_count.Bug-6201
 oidx-on-strings.Bug-6202
 group-by-on-constant.Bug-6082
 HAVE_NETCDF?rel2bin_project-assert.Bug-6080
-str2decimal.Bug-6202
+str2decimal.Bug-6206
 integer_addition_overflow.Bug-6205
 dce_bug-6177
 crash_on_NULL_ptr.Bug-6130
@@ -36,3 +36,9 @@ HAVE_NETCDF?sqlsmith.Bug-6219
 create_view_order_by.Bug-3465
 cast_boolean_to_string.Bug-6110
 modulo.Bug-6225
+one-plus-nil.Bug-6243
+with-alias-bug.6246
+crash_after_oidx_on_sys_statistics.Bug-6251
+crash_correlated_subqueries_in_select.Bug-6254
+fullouterjoinfilter.Bug-6256
+wrong_aggregation_count.Bug-6257

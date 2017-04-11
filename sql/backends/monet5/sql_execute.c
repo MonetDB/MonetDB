@@ -200,14 +200,21 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	cq *q= be->q;
 
 	pci = getInstrPtr(mb, 0);
-	if (pci->argc >= MAXARG)
+	if (pci->argc >= MAXARG){
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
-	else
+		if( argv == NULL)
+			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
+	} else
 		argv = argvbuffer;
 
-	if (pci->retc >= MAXARG)
+	if (pci->retc >= MAXARG){
 		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
-	else
+		if( argrec == NULL){
+			if( argv != argvbuffer)
+				GDKfree(argv);
+			throw(SQL,"sql.prepare",MAL_MALLOC_FAIL);
+		}
+	} else
 		argrec = argrecbuffer;
 
 	/* prepare the target variables */
@@ -220,9 +227,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	parc = q->paramlen;
 
 	if (argc != parc) {
-		if (pci->argc >= MAXARG)
+		if (pci->argc >= MAXARG && argv != argvbuffer)
 			GDKfree(argv);
-		if (pci->retc >= MAXARG)
+		if (pci->retc >= MAXARG && argrec != argrecbuffer)
 			GDKfree(argrec);
 		throw(SQL, "sql.prepare", "07001!EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
 	} else {
@@ -232,9 +239,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 
 			if (!atom_cast(m->sa, arg, pt)) {
 				/*sql_error(c, 003, buf); */
-				if (pci->argc >= MAXARG)
+				if (pci->argc >= MAXARG && argv != argvbuffer)
 					GDKfree(argv);
-				if (pci->retc >= MAXARG)
+				if (pci->retc >= MAXARG && argrec != argrecbuffer)
 					GDKfree(argrec);
 				throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "prepared statement: %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 			}
@@ -252,9 +259,9 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 	q->stk = (backend_stack) glb; /* save garbageCollected stack */
 	if (glb && SQLdebug & 1)
 		printStack(GDKstdout, mb, glb);
-	if (pci->argc >= MAXARG)
+	if (pci->argc >= MAXARG && argv != argvbuffer)
 		GDKfree(argv);
-	if (pci->retc >= MAXARG)
+	if (pci->retc >= MAXARG && argrec != argrecbuffer)
 		GDKfree(argrec);
 	return ret;
 }
@@ -345,6 +352,49 @@ SQLrun(Client c, backend *be, mvc *m){
 	return msg;
 }
 
+/*
+ * Escape single quotes and backslashes. This is important to do before calling
+ * SQLstatementIntern, if we are pasting user provided strings into queries
+ * passed to the SQLstatementIntern. Otherwise we open ourselves to SQL
+ * injection attacks.
+ *
+ * It returns the input string with all the single quotes(') and the backslashes
+ * (\) doubled, or NULL, if it could not allocate enough space.
+ *
+ * The caller is responsible to free the returned value.
+ */
+str
+SQLescapeString(str s)
+{
+	str ret = NULL;
+	char *p, *q;
+	size_t len = 0;
+
+	if(!s) {
+		return NULL;
+	}
+
+	/* At most we will need 2*strlen(s) + 1 characters */
+	len = strlen(s);
+	ret = (str)GDKmalloc(2*len + 1);
+	if (!ret) {
+		return NULL;
+	}
+
+	for (p = s, q = ret; *p != '\0'; p++, q++) {
+		*q = *p;
+		if (*p == '\'') {
+			*(++q) = '\'';
+		}
+		else if (*p == '\\') {
+			*(++q) = '\\';
+		}
+	}
+
+	*q = '\0';
+	return ret;
+}
+
 str
 SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
@@ -369,7 +419,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){
-		GDKfree(msg);
+		freeException(msg);
 		throw(SQL, "SQLstatement", "Catalogue not available");
 	}
 
@@ -378,7 +428,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
 	if (!o)
-		throw(SQL, "SQLstatement", "Out of memory");
+		throw(SQL, "SQLstatement", MAL_MALLOC_FAIL);
 	*o = *m;
 	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
 	m->qc = NULL;
@@ -391,6 +441,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	m->type = Q_PARSE;
 	be = sql;
 	sql = backend_create(m, c);
+	if( sql == NULL)
+		throw(SQL,"SQLstatement",MAL_MALLOC_FAIL);
 	sql->output_format = be->output_format;
 	if (!output) {
 		sql->output_format = OFMT_NONE;
@@ -404,7 +456,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 	/* mimic a client channel on which the query text is received */
 	b = (buffer *) GDKmalloc(sizeof(buffer));
+	if( b == NULL)
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
+	if( n == NULL)
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
 	strncpy(n, *expr, len);
 	n[len] = '\n';
 	n[len + 1] = 0;
@@ -532,6 +588,12 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					const char *name, *rname;
 					sql_exp *e = n->data;
 					sql_subtype *t = exp_subtype(e);
+					void *ptr =ATOMnil(t->type->localtype);
+
+					if( ptr == NULL){
+						msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+						goto endofcompile;
+					}
 					name = e->name;
 					if (!name && e->type == e_column && e->r)
 						name = e->r;
@@ -539,7 +601,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					if (!rname && e->type == e_column && e->l)
 						rname = e->l;
 					res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
-							t->scale, t->type->localtype, ATOMnil(t->type->localtype));
+							t->scale, t->type->localtype, ptr);
 				}
 				*result = res;
 			}
@@ -612,7 +674,7 @@ SQLengineIntern(Client c, backend *be)
 	}
 
 #ifdef SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
+	fprintf(stderr, "#Ready to execute SQL statement\n");
 #endif
 
 	if (c->curprg->def->stop == 1) {

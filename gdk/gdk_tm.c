@@ -13,7 +13,7 @@
  * The Transaction Manager maintains the buffer of (permanent) BATS
  * held resident.  Entries from the BAT buffer are always accessed by
  * BAT id.  A BAT becomes permanent by assigning a name with
- * @%BATrename@.  Access to the transaction table is regulated by a
+ * @%BBPrename@.  Access to the transaction table is regulated by a
  * semaphore.
  */
 #include "monetdb_config.h"
@@ -99,8 +99,11 @@ epilogue(int cnt, bat *subcommit)
 			 * consistency risk.
 			 */
 			BAT *b = BBP_cache(bid);
-			if (b)
-				(void) BATcheckmodes(b, TRUE);	/* check mmap modes */
+			if (b) {
+				/* check mmap modes */
+				if (BATcheckmodes(b, TRUE) != GDK_SUCCEED)
+					fprintf(stderr, "#epilogue: BATcheckmodes failed\n");
+			}
 		}
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
 			BAT *b = BBPquickdesc(bid, TRUE);

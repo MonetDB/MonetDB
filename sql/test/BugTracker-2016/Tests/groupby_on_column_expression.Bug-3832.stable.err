@@ -29,6 +29,12 @@ stderr of test 'groupby_on_column_expression.Bug-3832` in directory 'sql/test/Bu
 # 15:59:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2690" "--port=36841"
 # 15:59:52 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-30389/.s.monetdb.37867
+QUERY = SELECT LEFT("State", 3) AS "State",  SUM("Sales") AS "Sales" FROM test3832 GROUP BY LEFT("State", 3);
+ERROR = !syntax error, unexpected LEFT in: "select left("State", 3) as "State",  sum("Sales") as "Sales" from test3832 group"
+MAPI  = (monetdb) /var/tmp/mtest-30389/.s.monetdb.37867
+QUERY = SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY RTRIM(name) ORDER BY RTRIM(name);
+ERROR = !syntax error, unexpected '(', expecting SCOLON in: "select rtrim(name) as nametrimmed, count(*) as count, max(pos) as max_pos, min(p"
 
 
 # 15:59:52 >  

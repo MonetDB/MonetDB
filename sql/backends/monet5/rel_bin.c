@@ -217,7 +217,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		sql_subtype *bt = sql_bind_localtype("bit");
 		sql_subfunc *cmp = (in)
 			?sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(c), tail_type(c), F_FUNC)
-			:sql_bind_func(sql->sa, sql->session->schema, "!=", tail_type(c), tail_type(c), F_FUNC);
+			:sql_bind_func(sql->sa, sql->session->schema, "<>", tail_type(c), tail_type(c), F_FUNC);
 		sql_subfunc *a = (in)?sql_bind_func(sql->sa, sql->session->schema, "or", bt, bt, F_FUNC)
 				     :sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
 
@@ -578,39 +578,47 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			sel1 = sel;
 			sel2 = sel;
 			for( n = l->h; n; n = n->next ) {
-				s = exp_bin(be, n->data, left, right, grp, ext, cnt, sel1); 
+				stmt *sin = (sel1 && sel1->nrcols)?sel1:NULL;
+
+				s = exp_bin(be, n->data, left, right, grp, ext, cnt, sin); 
 				if (!s) 
 					return s;
-				if (sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
+				if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
 					assert(f);
 					s = stmt_binop(be, sel1, s, f);
-				}
-				if (sel1 && sel1->nrcols && s->nrcols == 0) {
+				} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
 					stmt *predicate = bin_first_column(be, left);
 				
 					predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-					s = stmt_uselect(be, predicate, s, cmp_equal, sel1, 0);
+					if (s->nrcols == 0)
+						s = stmt_uselect(be, predicate, s, cmp_equal, sel1, 0);
+					else
+						s = stmt_uselect(be, predicate, sel1, cmp_equal, s, 0);
 				}
 				sel1 = s;
 			}
 			l = e->r;
 			for( n = l->h; n; n = n->next ) {
-				s = exp_bin(be, n->data, left, right, grp, ext, cnt, sel2); 
+				stmt *sin = (sel2 && sel2->nrcols)?sel2:NULL;
+
+				s = exp_bin(be, n->data, left, right, grp, ext, cnt, sin); 
 				if (!s) 
 					return s;
-				if (sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
+				if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
 					assert(f);
 					s = stmt_binop(be, sel2, s, f);
-				}
-				if (sel2 && sel2->nrcols && s->nrcols == 0) {
+				} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
 					stmt *predicate = bin_first_column(be, left);
 				
 					predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-					s = stmt_uselect(be, predicate, s, cmp_equal, sel2, 0);
+					if (s->nrcols == 0)
+						s = stmt_uselect(be, predicate, s, cmp_equal, sel2, 0);
+					else
+						s = stmt_uselect(be, predicate, sel2, cmp_equal, s, 0);
 				}
 				sel2 = s;
 			}
@@ -1031,9 +1039,13 @@ rel_parse_value(backend *be, char *query, char emode)
 
 	m->caching = 0;
 	m->emode = emode;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	b = (buffer*)GDKmalloc(sizeof(buffer));
+	if (b == 0)
+		return sql_error(m, 02, MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
+	if (n == 0)
+		return sql_error(m, 02, MAL_MALLOC_FAIL);
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';
@@ -1192,7 +1204,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			sql_idx *i = find_sql_idx(t, oname+1);
 
 			/* do not include empty indices in the plan */
-			if (hash_index(i->type) && list_length(i->columns) <= 1)
+			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 			s = stmt_idx(be, i, dels);
 		} else {
@@ -1693,7 +1705,11 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			prop *p;
 
 			/* only handle simple joins here */		
-			if (exp_has_func(e) && e->flag != cmp_filter) {
+			if ((exp_has_func(e) && e->flag != cmp_filter) ||
+			    (e->flag == cmp_or && 
+			     exps_card(e->l) == CARD_MULTI &&
+			     exps_card(e->r) == CARD_MULTI) 
+					) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(be, left);
 					stmt *r = bin_first_column(be, right);
@@ -1898,6 +1914,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			/* only handle simple joins here */		
 			if (list_length(lje) && (idx || e->type != e_cmp || e->flag != cmp_equal))
 				break;
+			if ((exp_has_func(e) && e->flag != cmp_filter) ||
+			    (e->flag == cmp_or && 
+			     exps_card(e->l) == CARD_MULTI &&
+			     exps_card(e->r) == CARD_MULTI) ) { 
+				break;
+			}
 
 			s = exp_bin(be, en->data, left, right, NULL, NULL, NULL, NULL);
 			if (!s) {
@@ -1921,8 +1943,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		}
 		if (list_length(lje) > 1) {
 			join = releqjoin(be, lje, rje, 0 /* no hash used */, cmp_equal, 0);
-		} else if (!join) {
+		} else if (!join && list_length(lje) == list_length(rje) && list_length(lje)) {
 			join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal);
+		} else if (!join) {
+			stmt *l = bin_first_column(be, left);
+			stmt *r = bin_first_column(be, right);
+			join = stmt_join(be, l, r, 0, cmp_all); 
 		}
 	} else {
 		stmt *l = bin_first_column(be, left);
@@ -2814,7 +2840,11 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	m->emode = mode;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
+	if (b == 0)
+		return sql_error(m, 02, MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
+	if (n == 0)
+		return sql_error(m, 02, MAL_MALLOC_FAIL);
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';

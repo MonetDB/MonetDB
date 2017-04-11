@@ -19,7 +19,6 @@
  * to easily trace their performance.
  */
 mal_export str MALoptimizer(Client c);
-mal_export str optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec);
 mal_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 mal_export void showOptimizerStep(str fnme,int i, int flg);
 mal_export void showOptimizerHistory(void);

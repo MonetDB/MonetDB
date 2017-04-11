@@ -283,7 +283,6 @@ prepareMALstack(MalBlkPtr mb, int size)
 	int i;
 	ValPtr lhs, rhs;
 
-	assert(size >= mb->vsize);
 	stk = newGlobalStack(size);
 	if (!stk) {
 		return NULL;
@@ -323,9 +322,9 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	if (env != NULL) {
 		stk = env;
 		if (mb != stk->blk)
-			showScriptException(cntxt->fdout, mb, 0, MAL, "runMAL:misalignment of symbols\n");
+			throw(MAL, "mal.interpreter","misalignment of symbols");
 		if (mb->vtop > stk->stksize)
-			showScriptException(cntxt->fdout, mb, 0, MAL, "stack too small\n");
+			throw(MAL, "mal.interpreter","stack too small");
 		initStack(env->stkbot);
 	} else {
 		stk = prepareMALstack(mb, mb->vsize);
@@ -410,8 +409,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 
 	cntxt->lastcmd= time(0);
 #ifdef DEBUG_CALLMAL
-	mnstr_printf(cntxt->fdout, "callMAL\n");
-	printInstruction(cntxt->fdout, mb, 0, pci, LIST_MAL_ALL);
+	fprintf(stderr, "callMAL\n");
+	fprintInstruction(stderr, mb, 0, pci, LIST_MAL_ALL);
 #endif
 	switch (pci->token) {
 	case FUNCTIONsymbol:
@@ -845,7 +844,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						bat bid = stk->stk[a].val.bval;
 
 						if (garbage[i] >= 0) {
-							PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
+							PARDEBUG fprintf(stderr, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 							bid = stk->stk[garbage[i]].val.bval;
 							stk->stk[garbage[i]].val.bval = bat_nil;
 							BBPrelease(bid);

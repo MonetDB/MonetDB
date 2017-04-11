@@ -34,4 +34,3 @@ order by
 	nation,
 	o_year desc;
 
-select * from optimizer_stats() stats;
