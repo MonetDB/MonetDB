@@ -71,8 +71,7 @@ insert_string_bat(BAT *b, BAT *n, int force)
 
 	assert(b->ttype == TYPE_str);
 	/* only transient bats can use some other bat's string heap */
-	assert(b->batRole == TRANSIENT ||
-	       b->tvheap->parentid == abs(b->batCacheid));
+	assert(b->batRole == TRANSIENT || b->tvheap->parentid == b->batCacheid);
 	if (n->batCount == 0)
 		return GDK_SUCCEED;
 	ni = bat_iterator(n);
