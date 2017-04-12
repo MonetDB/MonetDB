@@ -100,7 +100,7 @@ median_stdev
 
 ifexists
 subqueries
-comment-on
+comment-on-table
 
 #HAVE_GEOM?trace
 
