@@ -23,6 +23,47 @@
 #define llabs(x)	((x) < 0 ? -(x) : (x))
 #endif
 
+// stpcpy definition, for systems that do not have stpcpy
+/* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
+   YYDEST.  */
+static char *
+mystpcpy (char *yydest, const char *yysrc) {
+	char *yyd = yydest;
+	const char *yys = yysrc;
+
+	while ((*yyd++ = *yys++) != '\0')
+	continue;
+
+	return yyd - 1;
+}
+
+#ifdef _MSC_VER
+/* use intrinsic functions on Windows */
+#define short_int_SWAP(s)	((short) _byteswap_ushort((unsigned short) (s)))
+/* on Windows, long is the same size as int */
+#define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
+#define long_long_SWAP(l)	((lng) _byteswap_uint64((unsigned __int64) (s)))
+#else
+#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
+
+#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
+			    ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
+#define long_long_SWAP(l) \
+		((((lng)normal_int_SWAP(l))<<32) |\
+		 (0xffffffff&normal_int_SWAP(l>>32)))
+#endif
+
+#ifdef HAVE_HGE
+#define huge_int_SWAP(h) \
+		((((hge)long_long_SWAP(h))<<64) |\
+		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
+#endif
+
+static lng 
+mnstr_swap_lng(stream *s, lng lngval) {
+	return mnstr_byteorder(s) != 1234 ? long_long_SWAP(lngval) : lngval;
+}
+
 #define DEC_TOSTR(TYPE)							\
 	do {								\
 		char buf[64];						\
@@ -1363,7 +1404,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 		BAT *b = BATdescriptor(c->b);
 		int mtype = b->ttype;
 		int typelen = ATOMsize(mtype);
-		int convert_to_string = !type_supports_binary_transfer(c->type.type) && b->ttype != TYPE_json;
+		int convert_to_string = !type_supports_binary_transfer(c->type.type);
 		sql_type *type = c->type.type;
 
 		iterators[i] = bat_iterator(b);
@@ -2040,7 +2081,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 		int nil_len = -1;
 		int nil_type = ATOMstorage(mtype);
 		int retval = -1;
-		int convert_to_string = !type_supports_binary_transfer(c->type.type) && b->ttype != TYPE_json;
+		int convert_to_string = !type_supports_binary_transfer(c->type.type);
 		sql_type *type = c->type.type;
 		lng print_width = -1;
 		

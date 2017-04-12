@@ -36,6 +36,30 @@
 #define atom_HASH(v,id,dst)	((dst) ATOMhash(id, v))
 
 /*
+ * @- maximum atomic string lengths
+ */
+#define bitStrlen	8
+#define bteStrlen	8
+#define shtStrlen	12
+#define intStrlen	24
+#if SIZEOF_OID == SIZEOF_INT
+#define oidStrlen	24
+#else
+#define oidStrlen	48
+#endif
+#if SIZEOF_PTR == SIZEOF_INT
+#define ptrStrlen	24
+#else
+#define ptrStrlen	48
+#endif
+#define lngStrlen	48
+#ifdef HAVE_HGE
+#define hgeStrlen	96
+#endif
+#define fltStrlen	48
+#define dblStrlen	96
+
+/*
  * The system comes with the traditional atomic types: int (4 bytes),
  * bool(1 byte) and str (variable). In addition, we support the notion
  * of an OID type, which ensures uniqueness of its members.  This
