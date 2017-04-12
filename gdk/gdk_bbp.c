@@ -1739,13 +1739,11 @@ BBPexit(void)
 						bat tp = VIEWtparent(b);
 						bat vtp = VIEWvtparent(b);
 						if (tp) {
-							if (BBP_desc(tp))
-								BBP_desc(tp)->batSharecnt--;
+							BBP_cache(tp)->batSharecnt--;
 							--BBP_lrefs(tp);
 						}
 						if (vtp) {
-							if (BBP_desc(vtp))
-								BBP_desc(vtp)->batSharecnt--;
+							BBP_cache(vtp)->batSharecnt--;
 							--BBP_lrefs(vtp);
 						}
 						VIEWdestroy(b);
