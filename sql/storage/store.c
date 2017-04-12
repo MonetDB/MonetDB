@@ -3931,6 +3931,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	if (isMergeTable(t) || isReplicaTable(t))
 		sys_table_del_tables(tr, t, drop_action);
 
+	sql_trans_drop_any_comment(tr, t->base.id);
 	sql_trans_drop_dependencies(tr, t->base.id);
 
 	if (isKindOfTable(t) || isView(t))
@@ -5531,6 +5532,18 @@ sql_trans_comment(sql_trans *tr, int id, const char *remark) {
 			table_funcs.table_delete(tr, comments, row);
 		}
 	}
+}
 
-	(void)remark;
+void sql_trans_drop_any_comment(sql_trans *tr, int id) {
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	assert(sys);
+	sql_table *comments = find_sql_table(sys, "comments");
+	assert(comments);
+	sql_column *id_col = find_sql_column(comments, "id");
+	assert(id_col);
+
+	oid row = table_funcs.column_find_row(tr, id_col, &id, NULL);
+	if (row != oid_nil) {
+		table_funcs.table_delete(tr, comments, row);
+	}
 }

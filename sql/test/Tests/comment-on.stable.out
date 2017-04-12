@@ -105,6 +105,12 @@ Ready.
 % id,	name,	source,	remark # name
 % int,	varchar,	varchar,	clob # type
 % 1,	0,	0,	0 # length
+#DROP TABLE tab;
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1,	.L1 # table_name
+% id,	name,	source,	remark # name
+% int,	varchar,	varchar,	clob # type
+% 1,	0,	0,	0 # length
 
 # 13:49:04 >  
 # 13:49:04 >  "Done."

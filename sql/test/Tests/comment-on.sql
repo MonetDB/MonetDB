@@ -1,3 +1,4 @@
+DROP SCHEMA IF EXISTS sch;
 CREATE SCHEMA sch;
 SET SCHEMA sch;
 
@@ -41,7 +42,7 @@ COMMENT ON TABLE tab IS 'yet another comment';
 COMMENT ON TABLE tab IS '';
 SELECT * FROM new_comments();
 
--- -- drop it by dropping the table
--- COMMENT ON TABLE tab IS 'banana';
--- DROP TABLE tab;
--- SELECT * FROM new_comments();
+-- drop it by dropping the table
+COMMENT ON TABLE tab IS 'banana';
+DROP TABLE tab;
+SELECT * FROM new_comments();

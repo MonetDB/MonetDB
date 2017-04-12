@@ -430,5 +430,6 @@ extern sql_key *sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k);
 extern sql_idx *sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i);
 
 extern void sql_trans_comment(sql_trans *tr, int id, const char *remark);
+extern void sql_trans_drop_any_comment(sql_trans *tr, int id);
 
 #endif /*SQL_STORAGE_H */
