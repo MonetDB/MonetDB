@@ -551,7 +551,10 @@ OIDXdestroy(BAT *b)
 		Heap *hp;
 
 		MT_lock_set(&GDKhashLock(b->batCacheid));
-		if ((hp = b->torderidx) == (Heap *) 1) {
+		hp = b->torderidx;
+		b->torderidx = NULL;
+		MT_lock_unset(&GDKhashLock(b->batCacheid));
+		if (hp == (Heap *) 1) {
 			GDKunlink(BBPselectfarm(b->batRole, b->ttype, orderidxheap),
 				  BATDIR,
 				  BBP_physical(b->batCacheid),
@@ -560,7 +563,5 @@ OIDXdestroy(BAT *b)
 			HEAPdelete(hp, BBP_physical(b->batCacheid), "torderidx");
 			GDKfree(hp);
 		}
-		b->torderidx = NULL;
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
 	}
 }
