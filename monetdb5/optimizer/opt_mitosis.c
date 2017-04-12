@@ -73,7 +73,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		    	getFunctionId(p) != prodRef)
 			return 0;
 
-		if (p->argc > 2 && (getModuleId(p) == rapiRef || getModuleId(p) == pyapiRef) && 
+		if (p->argc > 2 && (getModuleId(p) == rapiRef || getModuleId(p) == pyapiRef || getModuleId(p) == pyapi3Ref) && 
 		        getFunctionId(p) == subeval_aggrRef)
 			return 0;
 

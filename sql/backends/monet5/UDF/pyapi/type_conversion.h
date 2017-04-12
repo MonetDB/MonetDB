@@ -30,12 +30,8 @@ bool string_copy(char *source, char *dest, size_t max_size, bool allow_unicode);
 int hge_to_string(char *str, hge);
 //! Converts a base-10 string to a hge value
 str str_to_hge(char *ptr, size_t maxsize, hge *value);
-#ifdef IS_PY3K
 //! Converts a base-10 utf32-encoded string to a hge value
-str unicode_to_hge(char *utf32, size_t maxsize, hge *value);
-#else
 str unicode_to_hge(Py_UNICODE *utf32, size_t maxsize, hge *value);
-#endif
 //! Converts a PyObject to a hge value
 str pyobject_to_hge(PyObject **ptr, size_t maxsize, hge *value);
 //! Create a PyLongObject from a hge integer
@@ -48,19 +44,11 @@ size_t pyobject_get_size(PyObject *obj);
 //! string (if *value == NULL) or stored in *value (if *value != NULL)
 str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value);
 
-#ifdef IS_PY3K
-// using macros, create a number of str_to_<type>, unicode_to_<type> and
-// pyobject_to_<type> functions (we are Java now)
-#define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)                                \
-	str str_to_##tpe(char *ptr, size_t maxsize, tpe *value);                   \
-	str unicode_to_##tpe(char *ptr, size_t maxsize, tpe *value);               \
-	str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);
-#else
-#define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)                                \
-	str str_to_##tpe(char *ptr, size_t maxsize, tpe *value);                   \
-	str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value);         \
-	str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);
-#endif
+//using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
+#define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
+    str str_to_##tpe(char *ptr, size_t maxsize, tpe *value);          \
+    str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value);                  \
+    str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);
 
 CONVERSION_FUNCTION_HEADER_FACTORY(bte)
 CONVERSION_FUNCTION_HEADER_FACTORY(oid)

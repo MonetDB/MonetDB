@@ -481,7 +481,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (isSlice(p) && p->retc == 1) {
 			int var = getArg(p, 1);
 			InstrPtr q = old[vars[var]];
-			if (getModuleId(q) == sqlRef && getFunctionId(q) == projectdeltaRef) {
+			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == projectdeltaRef) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr s = copyInstruction(q);
 
@@ -545,11 +545,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int var = getArg(p, 1);
 			InstrPtr q = old[vars[var]];
 
-			if (q->token == ASSIGNsymbol) {
+			if (q && q->token == ASSIGNsymbol) {
 				var = getArg(q, 1);
 				q = old[vars[var]]; 
 			}
-			if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
+			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr s = copyInstruction(p);
 				InstrPtr t = copyInstruction(p);

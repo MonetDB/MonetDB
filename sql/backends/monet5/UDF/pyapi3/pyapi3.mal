@@ -1,0 +1,96 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 2008-2015 MonetDB B.V.
+
+module pyapi3;
+
+# The generic Python interface
+pattern eval(fptr:ptr,expr:str):any
+address PYAPI3PyAPIevalStd
+comment "Execute a simple Python script returning a single value";
+
+
+pattern eval(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalStd
+comment "Execute a simple Python script value";
+
+#grouped things
+pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalAggr
+comment "grouped aggregates through Python";
+
+pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalAggr
+comment "grouped aggregates through Python";
+
+pattern eval_loader(fptr:ptr,expr:str):any...
+address PYAPI3PyAPIevalLoader
+comment "loader functions through Python";
+
+pattern eval_loader(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalLoader
+comment "loader functions through Python";
+
+# initializer code
+command prelude() :void address PYAPI3PyAPIprelude;
+pyapi3.prelude();
+
+# The SQL compiler needs these functions for bat-wise operations
+module batpyapi3;
+
+pattern eval(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalStd
+comment "Execute a simple Python script value";
+
+pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalAggr
+comment "grouped aggregates through Python";
+
+pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalAggr
+comment "grouped aggregates through Python";
+
+pattern eval_loader(fptr:ptr,expr:str):any...
+address PYAPI3PyAPIevalLoader
+comment "loader functions through Python";
+
+pattern eval_loader(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalLoader
+comment "loader functions through Python";
+
+module pyapi3map;
+
+# The generic Python interface
+pattern eval(fptr:ptr,expr:str):any
+address PYAPI3PyAPIevalStdMap
+comment "Execute a simple Python script returning a single value";
+
+pattern eval(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalStdMap
+comment "Execute a simple Python script value";
+
+#grouped things
+pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalAggrMap
+comment "grouped aggregates through Python";
+
+pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalAggrMap
+comment "grouped aggregates through Python";
+
+# The SQL compiler needs these functions for bat-wise operations
+module batpyapi3map;
+
+pattern eval(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalStdMap
+comment "Execute a simple Python script value";
+
+pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalAggrMap
+comment "grouped aggregates through Python";
+
+pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address PYAPI3PyAPIevalAggrMap
+comment "grouped aggregates through Python";

@@ -858,8 +858,13 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	errors += BUNappend(TRACE_id_majflt, &v4, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_nvcsw, &v5, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_stmt, c, FALSE) != GDK_SUCCEED;
-	TRACE_event++;
-	eventcounter++;
+	if (errors > 0) {
+		/* stop profiling if an error occurred */
+		sqlProfiling = FALSE;
+	} else {
+		TRACE_event++;
+		eventcounter++;
+	}
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
 }

@@ -217,7 +217,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		sql_subtype *bt = sql_bind_localtype("bit");
 		sql_subfunc *cmp = (in)
 			?sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(c), tail_type(c), F_FUNC)
-			:sql_bind_func(sql->sa, sql->session->schema, "!=", tail_type(c), tail_type(c), F_FUNC);
+			:sql_bind_func(sql->sa, sql->session->schema, "<>", tail_type(c), tail_type(c), F_FUNC);
 		sql_subfunc *a = (in)?sql_bind_func(sql->sa, sql->session->schema, "or", bt, bt, F_FUNC)
 				     :sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
 
@@ -1705,7 +1705,11 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			prop *p;
 
 			/* only handle simple joins here */		
-			if (exp_has_func(e) && e->flag != cmp_filter) {
+			if ((exp_has_func(e) && e->flag != cmp_filter) ||
+			    (e->flag == cmp_or && 
+			     exps_card(e->l) == CARD_MULTI &&
+			     exps_card(e->r) == CARD_MULTI) 
+					) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(be, left);
 					stmt *r = bin_first_column(be, right);
@@ -1910,6 +1914,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			/* only handle simple joins here */		
 			if (list_length(lje) && (idx || e->type != e_cmp || e->flag != cmp_equal))
 				break;
+			if ((exp_has_func(e) && e->flag != cmp_filter) ||
+			    (e->flag == cmp_or && 
+			     exps_card(e->l) == CARD_MULTI &&
+			     exps_card(e->r) == CARD_MULTI) ) { 
+				break;
+			}
 
 			s = exp_bin(be, en->data, left, right, NULL, NULL, NULL, NULL);
 			if (!s) {
@@ -1933,8 +1943,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		}
 		if (list_length(lje) > 1) {
 			join = releqjoin(be, lje, rje, 0 /* no hash used */, cmp_equal, 0);
-		} else if (!join) {
+		} else if (!join && list_length(lje) == list_length(rje) && list_length(lje)) {
 			join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal);
+		} else if (!join) {
+			stmt *l = bin_first_column(be, left);
+			stmt *r = bin_first_column(be, right);
+			join = stmt_join(be, l, r, 0, cmp_all); 
 		}
 	} else {
 		stmt *l = bin_first_column(be, left);

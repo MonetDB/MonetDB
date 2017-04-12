@@ -16,26 +16,18 @@
 
 #include "pyheader.h"
 
-pyapi_export str PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							  InstrPtr pci);
-pyapi_export str PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							   InstrPtr pci);
-pyapi_export str PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-								 InstrPtr pci);
-pyapi_export str PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-								  InstrPtr pci);
-pyapi_export str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-								 InstrPtr pci);
+pyapi_export str PYFUNCNAME(PyAPIevalStd)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYFUNCNAME(PyAPIevalAggr)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYFUNCNAME(PyAPIevalStdMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-pyapi_export str PyAPIprelude(void *ret);
+pyapi_export str PYFUNCNAME(PyAPIprelude)(void *ret);
 
-int PyAPIEnabled(void);
-int PyAPIInitialized(void);
+int PYFUNCNAME(PyAPIInitialized)(void);
 
 str _loader_init(void);
 
 pyapi_export char *PyError_CreateException(char *error_text, char *pycall);
-
-#define pyapi_enableflag "embedded_py"
 
 #endif /* _PYPI_LIB_ */

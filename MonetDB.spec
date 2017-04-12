@@ -132,7 +132,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Dec2016-SP3/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Dec2016-SP4/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -877,6 +877,15 @@ developer, but if you do want to test, this is the package you need.
 
 %build
 
+# There is a bug in GCC version 4.8 on AArch64 architectures
+# that causes it to report an internal error when compiling
+# testing/difflib.c.  The work around is to not use -fstack-protector-strong.
+# The bug exhibits itself on CentOS 7 on AArch64.
+if [ `gcc -v 2>&1 | grep -c 'Target: aarch64\|gcc version 4\.'` -eq 2 ]; then
+	# set CFLAGS before configure, so that this value gets used
+	CFLAGS='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -grecord-gcc-switches  '
+	export CFLAGS
+fi
 %{configure} \
 	--enable-assert=no \
 	--enable-console=yes \
@@ -944,6 +953,29 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Apr 11 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.17-20170411
+- Rebuilt.
+- BZ#6110: cast of a SQL boolean value to a string or clob or (var)char
+  is wrong
+- BZ#6254: Crash (and assertion failure) after querying a view which
+  uses a correlated subquery in the select-list
+- BZ#6256: Assertion Trigger on FULL OUTER JOIN with more than two
+  BETWEEN clauses
+- BZ#6257: wrong count values (1 instead of 0) for correlated aggregation
+  queries
+- BZ#6258: Vulnerability in FITS and NETCDF data vaults
+
+* Tue Apr 11 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.17-20170411
+- sql: Upgrade code was added for an old change in the sys.settimeout function.
+- sql: A bug was fixed with the automatic "vacuum" operation on system tables.
+
+* Thu Mar 30 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.15-20170330
+- Rebuilt.
+- BZ#6250: Assertion failure when querying a Blob column with order
+  by DESC
+- BZ#6253: FITS Data Vaults does not work when using user/pw and other
+  than sys schema name
+
 * Wed Mar 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.13-20170329
 - Rebuilt.
 - BZ#6216: Assertion raised (sqlsmith)

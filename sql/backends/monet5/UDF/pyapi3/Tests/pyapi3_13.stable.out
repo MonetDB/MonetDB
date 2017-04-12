@@ -1,0 +1,143 @@
+stdout of test 'pyapi3_13` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 18:27:33 >  
+# 18:27:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37004" "--set" "mapi_usock=/var/tmp/mtest-1088/.s.monetdb.37004" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 18:27:33 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:37004/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1088/.s.monetdb.37004
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 18:20:17 >  
+# 18:20:17 >  "./pyapi3_13.SQL.sh" "pyapi3_13"
+# 18:20:17 >  
+
+
+# 18:20:17 >  
+# 18:20:17 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-56217 --port=35996 < /Users/myth/Programs/MonetDB/sql/backends/monet5/UDF/pyapi3/../../Tests/pyapi13.sql
+# 18:20:17 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION pyapi13_random_table_nulls(entries integer) returns table (i integer, j integer)
+#language P
+#{
+#    import random
+#    random.seed(123)
+#    results = [numpy.ma.masked_array(numpy.zeros(entries), 0), numpy.ma.masked_array(numpy.zeros(entries), 0)]
+#    for i in range(0,entries):
+#        for j in range(0,2):
+#            results[j][i] = random.randint(0,100)
+#            if results[j][i] < 50:
+#                results[j].mask[i] = True
+#    return(results)
+#};
+#CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer
+#language PYTHON_MAP
+#{
+#    return(i*j)
+#};
+#SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
+% .L6 # table_name
+% L5 # name
+% bigint # type
+% 4 # length
+[ 1257	]
+#DROP FUNCTION pyapi13_mult;
+#CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer
+#language PYTHON_MAP { return(i*j)
+#};
+#SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
+% .L6 # table_name
+% L5 # name
+% bigint # type
+% 4 # length
+[ 1257	]
+#DROP FUNCTION pyapi13_mult;
+#CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer language PYTHON_MAP { return(i*j) };
+#SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
+% .L6 # table_name
+% L5 # name
+% bigint # type
+% 4 # length
+[ 1257	]
+#DROP FUNCTION pyapi13_mult;
+#CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer 
+#language PYTHON_MAP 
+#{ 
+#x = "test\n\ntesttest\n"
+#print(x)
+#return(i*j) 
+#};
+#SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
+% .L6 # table_name
+% L5 # name
+% bigint # type
+% 4 # length
+[ 1257	]
+#DROP FUNCTION pyapi13_mult;
+#CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer 
+#language PYTHON_MAP 
+#{ 
+#x = """test123
+#testtest
+#""test2""
+#hello world
+#"""
+#print(x)
+#if len(x) > 10:
+#	return(i*j) 
+#else:
+#	return(i+j)
+#};
+#SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
+% .L6 # table_name
+% L5 # name
+% bigint # type
+% 4 # length
+[ 1257	]
+#DROP FUNCTION pyapi13_mult;
+#CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer 
+#language PYTHON_MAP 
+#{ 
+#	x = 5
+#    y = 4
+#    z = x + y
+#	if z > x:
+#     print("y is not negative!")
+#    else:
+#     print("y is negative!")
+#    if x + y == z:
+#    	print("Addition in python is not inconsistent!")
+#    	return(i + j)
+#    else:
+#    								return(i*j)
+#};
+#SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
+% .L6 # table_name
+% L5 # name
+% bigint # type
+% 4 # length
+[ 1257	]
+#DROP FUNCTION pyapi13_mult;
+#DROP FUNCTION pyapi13_random_table_nulls;
+#ROLLBACK;
+
+# 18:27:34 >  
+# 18:27:34 >  "Done."
+# 18:27:34 >  
+

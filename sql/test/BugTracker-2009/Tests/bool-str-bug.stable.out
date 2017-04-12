@@ -31,8 +31,8 @@ Ready.
 % b # name
 % char # type
 % 1 # length
-[ "1"	]
-[ "0"	]
+[ "t"	]
+[ "f"	]
 [ NULL	]
 
 # 19:54:05 >  

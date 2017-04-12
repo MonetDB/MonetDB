@@ -1,0 +1,128 @@
+stdout of test 'pyapi3_27` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 11:45:17 >  
+# 11:45:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36617" "--set" "mapi_usock=/var/tmp/mtest-19784/.s.monetdb.36617" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/raasveld/build/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 11:45:17 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lyon.da.cwi.nl:36617/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19784/.s.monetdb.36617
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 11:45:18 >  
+# 11:45:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19784" "--port=36617"
+# 11:45:18 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION rvalfunc() RETURNS TABLE(groupcol INTEGER, intcol INTEGER, fltcol FLOAT, dblcol DOUBLE, strcol STRING) LANGUAGE PYTHON {
+#    return {'groupcol': [0,1,2,0,1,2,3], 
+#            'intcol' : [42,84,42,21,42,21,21],
+#            'fltcol' : [42,84,42,21,42,21,21],
+#            'dblcol' : [42,84,42,21,42,21,21],
+#            'strcol' : [42,84,42,21,42,21,21]
+#            }  
+#};
+#CREATE AGGREGATE aggrmedian_int(val integer) RETURNS integer LANGUAGE PYTHON_MAP { return numpy.median(val) };
+#CREATE AGGREGATE aggrmedian_flt(val float) RETURNS integer LANGUAGE PYTHON_MAP { return numpy.median(val) };
+#CREATE AGGREGATE aggrmedian_dbl(val double) RETURNS integer LANGUAGE PYTHON_MAP { return numpy.median(val) };
+#CREATE AGGREGATE aggrmedian_str(val string) RETURNS integer LANGUAGE PYTHON_MAP { return numpy.median([int(x) for x in val]) };
+#SELECT groupcol,aggrmedian_int(intcol) FROM rvalfunc() GROUP BY groupcol;
+% .L1,	.L5 # table_name
+% groupcol,	L4 # name
+% int,	int # type
+% 1,	2 # length
+[ 0,	31	]
+[ 1,	63	]
+[ 2,	31	]
+[ 3,	21	]
+#SELECT groupcol,aggrmedian_flt(fltcol) FROM rvalfunc() GROUP BY groupcol;
+% .L1,	.L5 # table_name
+% groupcol,	L4 # name
+% int,	int # type
+% 1,	2 # length
+[ 0,	31	]
+[ 1,	63	]
+[ 2,	31	]
+[ 3,	21	]
+#SELECT groupcol,aggrmedian_dbl(dblcol) FROM rvalfunc() GROUP BY groupcol;
+% .L1,	.L5 # table_name
+% groupcol,	L4 # name
+% int,	int # type
+% 1,	2 # length
+[ 0,	31	]
+[ 1,	63	]
+[ 2,	31	]
+[ 3,	21	]
+#SELECT groupcol,aggrmedian_str(strcol) FROM rvalfunc() GROUP BY groupcol;
+% .L1,	.L5 # table_name
+% groupcol,	L4 # name
+% int,	int # type
+% 1,	2 # length
+[ 0,	31	]
+[ 1,	63	]
+[ 2,	31	]
+[ 3,	21	]
+#DROP AGGREGATE aggrmedian_flt;
+#DROP AGGREGATE aggrmedian_dbl;
+#DROP AGGREGATE aggrmedian_str;
+#DROP FUNCTION rvalfunc;
+#DROP AGGREGATE aggrmedian_int;
+#ROLLBACK;
+
+# 11:45:18 >  
+# 11:45:18 >  "Done."
+# 11:45:18 >  
+

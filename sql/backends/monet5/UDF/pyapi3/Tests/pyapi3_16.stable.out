@@ -1,0 +1,62 @@
+stdout of test 'pyapi3_16` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 16:45:16 >  
+# 16:45:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38263" "--set" "mapi_usock=/var/tmp/mtest-20609/.s.monetdb.38263" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 16:45:16 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:38263/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20609/.s.monetdb.38263
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 18:20:18 >  
+# 18:20:18 >  "./pyapi3_16.SQL.sh" "pyapi3_16"
+# 18:20:18 >  
+
+
+# 18:20:18 >  
+# 18:20:18 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-56217 --port=35996 < /Users/myth/Programs/MonetDB/sql/backends/monet5/UDF/pyapi3/../../Tests/pyapi16.sql
+# 18:20:18 >  
+
+#START TRANSACTION;
+#CREATE TABLE vals(a STRING, b STRING, c STRING, d INTEGER);
+#INSERT INTO vals VALUES ('foo', 'bar', '123', 33), ('t', 'e', 's', 7), ('f', 'o', 'u', 4), ('i', 'k', 'r', 149);
+[ 4	]
+#CREATE FUNCTION pyapi16(a STRING, b string, c STRING, d INTEGER) returns table (d boolean)
+#language P
+#{
+#	print(_columns['a'])
+#	print(_columns['b'])
+#	print(_columns['c'])
+#	print(_columns['d'])
+#	print _column_types
+#	return True
+#};
+#SELECT * FROM pyapi16( (SELECT * FROM vals) );
+% .L3 # table_name
+% d # name
+% boolean # type
+% 5 # length
+[ true	]
+#DROP FUNCTION pyapi16;
+#DROP TABLE vals;
+#ROLLBACK;
+
+# 16:45:17 >  
+# 16:45:17 >  "Done."
+# 16:45:17 >  
+

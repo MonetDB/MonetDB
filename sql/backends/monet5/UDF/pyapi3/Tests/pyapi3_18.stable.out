@@ -1,0 +1,158 @@
+stdout of test 'pyapi3_18` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 18:18:38 >  
+# 18:18:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39173" "--set" "mapi_usock=/var/tmp/mtest-21503/.s.monetdb.39173" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 18:18:38 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:39173/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21503/.s.monetdb.39173
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 18:18:39 >  
+# 18:18:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21503" "--port=39173"
+# 18:18:39 >  
+
+#START TRANSACTION;
+#CREATE TABLE date_table(d DATE); # DATE is converted to str
+#INSERT INTO date_table VALUES (cast('2000-10-10' AS DATE));
+[ 1	]
+#CREATE FUNCTION pyapi_date(d DATE) RETURNS STRING LANGUAGE PYTHON { return d; };
+#SELECT pyapi_date(d) FROM date_table;
+% sys.L2 # table_name
+% L2 # name
+% clob # type
+% 10 # length
+[ "2000-10-10"	]
+#CREATE TABLE time_table(d TIME); # TIME is converted to str
+#INSERT INTO time_table VALUES (cast('12:00:00' AS TIME));
+[ 1	]
+#CREATE FUNCTION pyapi_time(d TIME) RETURNS STRING LANGUAGE PYTHON { return d; };
+#SELECT pyapi_time(d) FROM time_table;
+% sys.L2 # table_name
+% L2 # name
+% clob # type
+% 12 # length
+[ "12:00:00.000"	]
+#CREATE TABLE timestamp_table(d TIMESTAMP); # TIMESTAMP is converted to str
+#INSERT INTO timestamp_table VALUES (cast('2000-1-1 12:00:00' AS TIMESTAMP));
+[ 1	]
+#CREATE FUNCTION pyapi_timestamp(d TIMESTAMP) RETURNS STRING LANGUAGE PYTHON { return d; };
+#SELECT pyapi_timestamp(d) FROM timestamp_table;
+% sys.L2 # table_name
+% L2 # name
+% clob # type
+% 23 # length
+[ "2000-01-01 12:00:00.000"	]
+#CREATE TABLE decimal_table(d DECIMAL(10, 3)); # DECIMAL is converted to dbl
+#INSERT INTO decimal_table VALUES (123.4567);
+[ 1	]
+#CREATE FUNCTION pyapi_decimal(d DECIMAL) RETURNS DOUBLE LANGUAGE PYTHON { return d; };
+#SELECT pyapi_decimal(d) FROM decimal_table;
+% sys.L2 # table_name
+% L2 # name
+% double # type
+% 24 # length
+[ 123.457	]
+#CREATE FUNCTION pyapi_ret_date() RETURNS TABLE(d DATE) 
+#LANGUAGE PYTHON 
+#{ 
+#    result = dict()
+#    result['d'] = '2000-10-10'
+#    return result
+#};
+#SELECT * FROM pyapi_ret_date();
+% .L1 # table_name
+% d # name
+% date # type
+% 10 # length
+[ 2000-10-10	]
+#CREATE FUNCTION pyapi_ret_time() RETURNS TABLE(d TIME) 
+#LANGUAGE PYTHON 
+#{ 
+#    result = dict()
+#    result['d'] = '12:00:00'
+#    return result
+#};
+#SELECT * FROM pyapi_ret_time();
+% .L1 # table_name
+% d # name
+% time # type
+% 8 # length
+[ 12:00:00	]
+#CREATE FUNCTION pyapi_ret_timestamp() RETURNS TABLE(d TIMESTAMP) 
+#LANGUAGE PYTHON 
+#{ 
+#    result = dict()
+#    result['d'] = '2000-1-1 12:00:00'
+#    return result
+#};
+#SELECT * FROM pyapi_ret_timestamp();
+% .L1 # table_name
+% d # name
+% timestamp # type
+% 26 # length
+[ 2000-01-01 12:00:00.000000	]
+#CREATE FUNCTION pyapi_ret_decimal() RETURNS TABLE(d DECIMAL) 
+#LANGUAGE PYTHON 
+#{ 
+#    result = dict()
+#    result['d'] = 100.33
+#    return result
+#};
+#SELECT * FROM pyapi_ret_decimal();
+% .L1 # table_name
+% d # name
+% decimal # type
+% 20 # length
+[ 100.330	]
+#DROP FUNCTION pyapi_ret_date;
+#DROP FUNCTION pyapi_ret_time;
+#DROP FUNCTION pyapi_ret_timestamp;
+#DROP FUNCTION pyapi_ret_decimal;
+#CREATE FUNCTION pyapi_ret_decimal() RETURNS TABLE(d DECIMAL) 
+#LANGUAGE PYTHON 
+#{ 
+#    return numpy.arange(100001) # return 100k decimal values
+#};
+#CREATE FUNCTION pyapi_inp_decimal(d DECIMAL) RETURNS DOUBLE
+#LANGUAGE PYTHON 
+#{ 
+#    return numpy.mean(d) # average 100k decimal values
+#};
+#SELECT pyapi_inp_decimal(d) FROM pyapi_ret_decimal();
+% .L3 # table_name
+% L3 # name
+% double # type
+% 24 # length
+[ 5e+04	]
+#CREATE TABLE uuid_tbl(d UUID);
+#INSERT INTO uuid_tbl VALUES ('54771a16-b4ad-4f1a-a9b7-4d8e8ca6fb7c');
+[ 1	]
+#CREATE FUNCTION pyapi_interval(d UUID) RETURNS STRING LANGUAGE PYTHON { return d; };
+#SELECT pyapi_interval(d) FROM uuid_tbl;
+% sys.L2 # table_name
+% L2 # name
+% clob # type
+% 36 # length
+[ "54771a16-b4ad-4f1a-a9b7-4d8e8ca6fb7c"	]
+#ROLLBACK;
+
+# 18:18:39 >  
+# 18:18:39 >  "Done."
+# 18:18:39 >  
+

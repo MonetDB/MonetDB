@@ -1,0 +1,29 @@
+
+START TRANSACTION;
+
+CREATE TABLE t1(x INTEGER, y INTEGER);
+CREATE TABLE t2(a INTEGER, b INTEGER);
+
+-- this works fine
+
+SELECT *
+FROM
+t1
+FULL OUTER JOIN
+t2
+ON
+x BETWEEN a AND b OR
+y BETWEEN a AND b;
+
+-- this triggers an assertion
+SELECT *
+FROM
+t1
+FULL OUTER JOIN
+t2
+ON
+x BETWEEN a AND b OR
+y BETWEEN a AND b OR
+a BETWEEN x AND y;
+
+ROLLBACK;
