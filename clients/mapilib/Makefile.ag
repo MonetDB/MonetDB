@@ -14,7 +14,6 @@ lib_mapi = {
 	SOURCES = mapi.c mapi.rc
 	LIBS = $(SOCKET_LIBS) ../../common/stream/libstream \
 		../../common/options/libmoptions \
-		../../common/utils/libconversion \
 		../../common/utils/libmcrypt $(openssl_LIBS)
 }
 

@@ -93,7 +93,7 @@ Ready.
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.tables GROUP BY id HAVING COUNT(*) > 1;
-% .L41,	.tables # table_name
+% .L40,	.tables # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
@@ -108,7 +108,7 @@ Ready.
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.columns GROUP BY id HAVING COUNT(*) > 1;
-% .L15,	.columns # table_name
+% .L14,	.columns # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length

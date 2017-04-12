@@ -30,9 +30,4 @@ lib_msabaoth = {
 	SOURCES = msabaoth.h msabaoth.c
 }
 
-lib_conversion = {
-	NOINST
-	SOURCES = conversion.h conversion.c
-}
-
 EXTRA_DIST = s_nextafterf.c math_private.h strptime.c

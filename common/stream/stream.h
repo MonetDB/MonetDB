@@ -282,16 +282,6 @@ stream_export void bstream_destroy(bstream *s);
 stream_export ssize_t bstream_read(bstream *s, size_t size);
 stream_export ssize_t bstream_next(bstream *s);
 
-/* Byte stream is a simple stream that sends a chunk of bytes prefixed
-   with a 64-bit integer describing the length of the chunk.
-
-   The maximum length of the byte stream must be specified upon
-   creation.
- */
-
-
-
-
 typedef enum mnstr_errors {
 	MNSTR_NO__ERROR = 0,
 	MNSTR_OPEN_ERROR,

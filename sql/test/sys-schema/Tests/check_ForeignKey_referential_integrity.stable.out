@@ -336,27 +336,27 @@ Ready.
 % .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
-% 4,	0,	26,	0,	0,	0,	1,	1 # length
+% 3,	0,	26,	0,	0,	0,	1,	1 # length
 #SELECT * FROM sys.querylog_calls WHERE id NOT IN (SELECT id FROM sys.querylog_catalog);
 % .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
 % id,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % oid,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
-% 4,	26,	26,	0,	1,	1,	1,	1,	1 # length
+% 3,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #SELECT * FROM sys.querylog_history WHERE id NOT IN (SELECT id FROM sys.querylog_catalog);
 % .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
-% 4,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
+% 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #SELECT * FROM sys.queue WHERE tag > 0 AND tag NOT IN (SELECT qtag FROM sys.queue);
 % .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
 % qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
 % bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
-% 1,	0,	26,	26,	1,	0,	4,	0 # length
+% 1,	0,	26,	26,	1,	0,	3,	0 # length
 #SELECT * FROM sys.queue WHERE "user" NOT IN (SELECT name FROM sys.users);
 % .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
 % qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
 % bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
-% 1,	0,	26,	26,	1,	0,	4,	0 # length
+% 1,	0,	26,	26,	1,	0,	3,	0 # length
 #SELECT * FROM sys.sessions WHERE "user" NOT IN (SELECT name FROM sys.users);
 % .sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
 % user,	login,	sessiontimeout,	lastcommand,	querytimeout,	active # name

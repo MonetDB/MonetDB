@@ -30,7 +30,6 @@
 #define isfinite(f)	finite(f)
 #endif
 #endif
-#include <conversion.h>
 
 static int
 bteCmp(const bte *l, const bte *r)
@@ -395,7 +394,10 @@ int							\
 TYPE##ToStr(char **dst, int *len, const TYPE *src)	\
 {							\
 	atommem(char, TYPE##Strlen);			\
-	return conversion_##TYPE##_to_string(*dst, *len, src, TYPE##_nil); \
+	if (*src == TYPE##_nil) {			\
+		return snprintf(*dst, *len, "nil");	\
+	}						\
+	return snprintf(*dst, *len, FMT, FMTCAST *src);	\
 }
 
 #define num08(x)	((x) >= '0' && (x) <= '7')
@@ -486,7 +488,12 @@ int
 bitToStr(char **dst, int *len, const bit *src)
 {
 	atommem(char, 6);
-	return conversion_bit_to_string(*dst, *len, src, bit_nil);
+
+	if (*src == bit_nil)
+		return snprintf(*dst, *len, "nil");
+	if (*src)
+		return snprintf(*dst, *len, "true");
+	return snprintf(*dst, *len, "false");
 }
 
 int
@@ -757,11 +764,30 @@ atomtostr(lng, LLFMT, )
 atom_io(lng, Lng, lng)
 
 #ifdef HAVE_HGE
+#ifdef WIN32
+#define HGE_LL018FMT "%018I64d"
+#else
+#define HGE_LL018FMT "%018lld"
+#endif
+#define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
+#define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 int
 hgeToStr(char **dst, int *len, const hge *src)
 {
 	atommem(char, hgeStrlen);
-	return conversion_hge_to_string(*dst, *len, src, hge_nil);
+	if (*src == hge_nil) {
+		strncpy(*dst, "nil", *len);
+		return 3;
+	}
+	if ((hge) GDK_lng_min < *src && *src <= (hge) GDK_lng_max) {
+		lng s = (lng) *src;
+		return lngToStr(dst, len, &s);
+	} else {
+		hge s = *src / HGE_LL18DIGITS;
+		int l = hgeToStr(dst, len, &s);
+		snprintf(*dst + l, *len - l, HGE_LL018FMT, (lng) HGE_ABS(*src % HGE_LL18DIGITS));
+		return (int) strlen(*dst);
+	}
 }
 atom_io(hge, Hge, hge)
 #endif
@@ -863,8 +889,18 @@ dblFromStr(const char *src, int *len, dbl **dst)
 int
 dblToStr(char **dst, int *len, const dbl *src)
 {
+	int i;
+
 	atommem(char, dblStrlen);
-	return conversion_dbl_to_string(*dst, *len, src, dbl_nil);
+	if (*src == dbl_nil) {
+		return snprintf(*dst, *len, "nil");
+	}
+	for (i = 4; i < 18; i++) {
+		snprintf(*dst, *len, "%.*g", i, *src);
+		if (strtod(*dst, NULL) == *src)
+			break;
+	}
+	return (int) strlen(*dst);
 }
 
 atom_io(dbl, Lng, lng)
@@ -922,8 +958,23 @@ fltFromStr(const char *src, int *len, flt **dst)
 int
 fltToStr(char **dst, int *len, const flt *src)
 {
+	int i;
+
 	atommem(char, fltStrlen);
-	return conversion_flt_to_string(*dst, *len, src, flt_nil);
+	if (*src == flt_nil) {
+		return snprintf(*dst, *len, "nil");
+	}
+	for (i = 4; i < 10; i++) {
+		snprintf(*dst, *len, "%.*g", i, *src);
+#ifdef HAVE_STRTOF
+		if (strtof(*dst, NULL) == *src)
+			break;
+#else
+		if ((float) strtod(*dst, NULL) == *src)
+			break;
+#endif
+	}
+	return (int) strlen(*dst);
 }
 
 atom_io(flt, Int, int)

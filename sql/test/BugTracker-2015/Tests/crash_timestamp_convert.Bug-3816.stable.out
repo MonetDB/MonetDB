@@ -30,11 +30,11 @@ Ready.
 # 19:04:38 >  
 
 #SELECT timestamp_to_str(current_timestamp, '%Q');
-% .L2 # table_name
-% L2 # name
+% .L1 # table_name
+% L1 # name
 % clob # type
-% 1 # length
-[ "Q"	]
+% 2 # length
+[ "%Q"	]
 
 # 19:04:38 >  
 # 19:04:38 >  "Done."

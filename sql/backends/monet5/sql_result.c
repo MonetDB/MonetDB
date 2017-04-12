@@ -9,7 +9,7 @@
 /*
  * author N.J. Nes
  */
- 
+
 #include "monetdb_config.h"
 #include "sql_result.h"
 #include <str.h>
@@ -18,79 +18,80 @@
 #include <bat/res_table.h>
 #include <bat/bat_storage.h>
 #include <rel_exp.h>
-#include <conversion.h>
-#include <json.h>
 
 #ifndef HAVE_LLABS
 #define llabs(x)	((x) < 0 ? -(x) : (x))
 #endif
 
-// stpcpy definition, for systems that do not have stpcpy
-/* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
-   YYDEST.  */
-static char *
-mystpcpy (char *yydest, const char *yysrc) {
-	char *yyd = yydest;
-	const char *yys = yysrc;
-
-	while ((*yyd++ = *yys++) != '\0')
-	continue;
-
-	return yyd - 1;
-}
-
-#ifdef _MSC_VER
-/* use intrinsic functions on Windows */
-#define short_int_SWAP(s)	((short) _byteswap_ushort((unsigned short) (s)))
-/* on Windows, long is the same size as int */
-#define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
-#define long_long_SWAP(l)	((lng) _byteswap_uint64((unsigned __int64) (s)))
-#else
-#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
-
-#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
-			    ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
-#define long_long_SWAP(l) \
-		((((lng)normal_int_SWAP(l))<<32) |\
-		 (0xffffffff&normal_int_SWAP(l>>32)))
-#endif
-
-#ifdef HAVE_HGE
-#define huge_int_SWAP(h) \
-		((((hge)long_long_SWAP(h))<<64) |\
-		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
-#endif
-
-static lng 
-mnstr_swap_lng(stream *s, lng lngval) {
-	return mnstr_byteorder(s) != 1234 ? long_long_SWAP(lngval) : lngval;
-}
+#define DEC_TOSTR(TYPE)							\
+	do {								\
+		char buf[64];						\
+		TYPE v = *(const TYPE *) a;				\
+		int scale = (int) (ptrdiff_t) extra;			\
+		int cur = 63, i, done = 0;				\
+		int neg = v < 0;					\
+		int l;							\
+		if (v == TYPE##_nil) {					\
+			if (*len < 5){					\
+				if (*Buf)				\
+					GDKfree(*Buf);			\
+				*len = 5;				\
+				*Buf = GDKzalloc(*len);			\
+				if (*Buf == NULL) {			\
+					return 0;			\
+				}					\
+			}						\
+			strcpy(*Buf, "NULL");				\
+			return 4;					\
+		}							\
+		if (v<0)						\
+			v = -v;						\
+		buf[cur--] = 0;						\
+		if (scale){						\
+			for (i=0; i<scale; i++) {			\
+				buf[cur--] = (char) (v%10 + '0');	\
+				v /= 10;				\
+			}						\
+			buf[cur--] = '.';				\
+		}							\
+		while (v) {						\
+			buf[cur--] = (char ) (v%10 + '0');		\
+			v /= 10;					\
+			done = 1;					\
+		}							\
+		if (!done)						\
+			buf[cur--] = '0';				\
+		if (neg)						\
+			buf[cur--] = '-';				\
+		l = (64-cur-1);						\
+		if (*len < l){						\
+			if (*Buf)					\
+				GDKfree(*Buf);				\
+			*len = l+1;					\
+			*Buf = GDKzalloc(*len);				\
+			if (*Buf == NULL) {				\
+				return 0;				\
+			}						\
+		}							\
+		strcpy(*Buf, buf+cur+1);				\
+		return l-1;						\
+	} while (0)
 
 static int
 dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
 {
-	if (*len < 64) {
-		if (*Buf)
-			GDKfree(*Buf);
-		*len = 64;
-		*Buf = GDKzalloc(*len);
-		if (*Buf == NULL) {
-			GDKerror("Allocation failed\n");
-			return 0;
-		}
-	}
 	/* support dec map to bte, sht, int and lng */
 	if (type == TYPE_bte) {
-		return conversion_decimal_to_string(a, *Buf, *len, (int) (ptrdiff_t) extra, 1, &bte_nil);
+		DEC_TOSTR(bte);
 	} else if (type == TYPE_sht) {
-		return conversion_decimal_to_string(a, *Buf, *len, (int) (ptrdiff_t) extra, 2, &sht_nil);
+		DEC_TOSTR(sht);
 	} else if (type == TYPE_int) {
-		return conversion_decimal_to_string(a, *Buf, *len, (int) (ptrdiff_t) extra, 4, &int_nil);
+		DEC_TOSTR(int);
 	} else if (type == TYPE_lng) {
-		return conversion_decimal_to_string(a, *Buf, *len, (int) (ptrdiff_t) extra, 8, &lng_nil);
+		DEC_TOSTR(lng);
 #ifdef HAVE_HGE
 	} else if (type == TYPE_hge) {
-		return conversion_decimal_to_string(a, *Buf, *len, (int) (ptrdiff_t) extra, 16, &hge_nil);
+		DEC_TOSTR(hge);
 #endif
 	} else {
 		GDKerror("Decimal cannot be mapped to %s\n", ATOMname(type));
@@ -248,39 +249,39 @@ STRwidth(const char *s)
 				 * Asian Fullwidth and East Asian Wide
 				 * characters as defined in Unicode 8.0 */
 				if ((0x1100 <= c && c <= 0x115F) ||
-					c == 0x2329 ||
-					c == 0x232A ||
-					(0x2E80 <= c && c <= 0x2E99) ||
-					(0x2E9B <= c && c <= 0x2EF3) ||
-					(0x2F00 <= c && c <= 0x2FD5) ||
-					(0x2FF0 <= c && c <= 0x2FFB) ||
-					(0x3000 <= c && c <= 0x303E) ||
-					(0x3041 <= c && c <= 0x3096) ||
-					(0x3099 <= c && c <= 0x30FF) ||
-					(0x3105 <= c && c <= 0x312D) ||
-					(0x3131 <= c && c <= 0x318E) ||
-					(0x3190 <= c && c <= 0x31BA) ||
-					(0x31C0 <= c && c <= 0x31E3) ||
-					(0x31F0 <= c && c <= 0x321E) ||
-					(0x3220 <= c && c <= 0x3247) ||
-					(0x3250 <= c && c <= 0x4DBF) ||
-					(0x4E00 <= c && c <= 0xA48C) ||
-					(0xA490 <= c && c <= 0xA4C6) ||
-					(0xA960 <= c && c <= 0xA97C) ||
-					(0xAC00 <= c && c <= 0xD7A3) ||
-					(0xF900 <= c && c <= 0xFAFF) ||
-					(0xFE10 <= c && c <= 0xFE19) ||
-					(0xFE30 <= c && c <= 0xFE52) ||
-					(0xFE54 <= c && c <= 0xFE66) ||
-					(0xFE68 <= c && c <= 0xFE6B) ||
-					(0xFF01 <= c && c <= 0xFFE6) ||
-					(0x1B000 <= c && c <= 0x1B001) ||
-					(0x1F200 <= c && c <= 0x1F202) ||
-					(0x1F210 <= c && c <= 0x1F23A) ||
-					(0x1F240 <= c && c <= 0x1F248) ||
-					(0x1F250 <= c && c <= 0x1F251) ||
-					(0x20000 <= c && c <= 0x2FFFD) ||
-					(0x30000 <= c && c <= 0x3FFFD))
+				    c == 0x2329 ||
+				    c == 0x232A ||
+				    (0x2E80 <= c && c <= 0x2E99) ||
+				    (0x2E9B <= c && c <= 0x2EF3) ||
+				    (0x2F00 <= c && c <= 0x2FD5) ||
+				    (0x2FF0 <= c && c <= 0x2FFB) ||
+				    (0x3000 <= c && c <= 0x303E) ||
+				    (0x3041 <= c && c <= 0x3096) ||
+				    (0x3099 <= c && c <= 0x30FF) ||
+				    (0x3105 <= c && c <= 0x312D) ||
+				    (0x3131 <= c && c <= 0x318E) ||
+				    (0x3190 <= c && c <= 0x31BA) ||
+				    (0x31C0 <= c && c <= 0x31E3) ||
+				    (0x31F0 <= c && c <= 0x321E) ||
+				    (0x3220 <= c && c <= 0x3247) ||
+				    (0x3250 <= c && c <= 0x4DBF) ||
+				    (0x4E00 <= c && c <= 0xA48C) ||
+				    (0xA490 <= c && c <= 0xA4C6) ||
+				    (0xA960 <= c && c <= 0xA97C) ||
+				    (0xAC00 <= c && c <= 0xD7A3) ||
+				    (0xF900 <= c && c <= 0xFAFF) ||
+				    (0xFE10 <= c && c <= 0xFE19) ||
+				    (0xFE30 <= c && c <= 0xFE52) ||
+				    (0xFE54 <= c && c <= 0xFE66) ||
+				    (0xFE68 <= c && c <= 0xFE6B) ||
+				    (0xFF01 <= c && c <= 0xFFE6) ||
+				    (0x1B000 <= c && c <= 0x1B001) ||
+				    (0x1F200 <= c && c <= 0x1F202) ||
+				    (0x1F210 <= c && c <= 0x1F23A) ||
+				    (0x1F240 <= c && c <= 0x1F248) ||
+				    (0x1F250 <= c && c <= 0x1F251) ||
+				    (0x20000 <= c && c <= 0x2FFFD) ||
+				    (0x30000 <= c && c <= 0x3FFFD))
 					len++;
 			}
 		} else if ((*s & 0xE0) == 0xC0) {

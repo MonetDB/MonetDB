@@ -54,7 +54,6 @@ lib__sql = {
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmcrypt \
-		   ../../../common/utils/libconversion \
 		   $(PTHREAD_LIBS) \
 		   $(openssl_LIBS) $(MATH_LIBS)
 }
