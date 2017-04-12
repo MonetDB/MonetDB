@@ -1178,6 +1178,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				th = &vh.v_##TYPE;			\
 				hval = 1;				\
 			}						\
+			if (*(TYPE*)tl > *(TYPE*)th)			\
+				return newempty();			\
 		}							\
 		assert(lval);						\
 		assert(hval);						\
