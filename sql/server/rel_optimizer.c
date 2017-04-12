@@ -1650,7 +1650,6 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
             r && !r->exps && r->op == op_join && !(rel_is_ref(r)) &&
             ((sql_exp *) rel->exps->h->data)->type == e_aggr &&
             strcmp(((sql_subaggr *) ((sql_exp *) rel->exps->h->data)->f)->aggr->base.name, "count") == 0) {
-/* TODO check for count(*) */
 	    	sql_exp *nce, *oce;
 		sql_rel *gbl, *gbr;		/* Group By */
 		sql_rel *cp;			/* Cross Product */
@@ -3631,97 +3630,6 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 }
 
 /*
- * Rewrite group(project(join(A,Dict)[a.i==dict.i])[...dict.n])[dict.n][ ... dict.n ]
- * into
- * 	project(join(groupby (A)[a.i],[a.i]), Dict)[a.i==dict.i])[dict.n] 
- *
- */
-
-static sql_rel *
-rel_push_groupby_down(int *changes, mvc *sql, sql_rel *rel) 
-{
-	sql_rel *p = rel->l, *j = rel->l;
-	list *gbe = rel->r;
-
-	if (rel->op == op_groupby && gbe && p && p->op == op_project) {
-		sql_rel *j = p->l;
-		sql_rel *jl, *jr;
-		node *n;
-
-		if (!j || j->op != op_join || list_length(j->exps) != 1)
-			return rel;
-		jl = j->l;
-		jr = j->r;
-
-		/* check if jr is a dict with index and var still used */
-		if (jr->op != op_basetable || jr->l || !jr->r || list_length(jr->exps) != 2) 
-			return rel;
-
-		/* check if group by is done on dict column */
-		for(n = gbe->h; n; n = n->next) {
-			sql_exp *ge = n->data, *pe = NULL, *e = NULL;
-
-			/* find group by exp in project, then in dict */
-			pe = rel_find_exp(p, ge);
-			if (pe) /* find project exp in right hand of join, ie dict */
-				e = rel_find_exp(jr, pe);
-			if (pe && e) {  /* Rewrite: join with dict after the group by */
-				list *pexps = rel_projections(sql, rel, NULL, 1, 1), *npexps;
-				node *m;
-				sql_exp *ne = j->exps->h->data; /* join exp */
-				p->l = jl;	/* Project now only on the left side of the join */
-
-				ne = ne->l; 	/* The left side of the compare is the index of the left */
-
-				/* find ge reference in new projection list */
-				npexps = sa_list(sql->sa);
-				for (m = pexps->h; m; m = m->next) {
-					sql_exp *a = m->data;
-
-					if (exp_refers(ge, a)) { 
-						sql_exp *sc = jr->exps->t->data;
-						sql_exp *e = exp_column(sql->sa, exp_relname(sc), exp_name(sc), exp_subtype(sc), sc->card, has_nil(sc), is_intern(sc));
-						exp_setname(sql->sa, e, exp_relname(a), exp_name(a));
-						a = e;
-					}
-					append(npexps, a);
-				}
-
-				/* find ge in aggr list */
-				for (m = rel->exps->h; m; m = m->next) {
-					sql_exp *a = m->data;
-
-					if (exp_match_exp(a, ge) || exp_refers(ge, a)) {
-						a = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
-						exp_setname(sql->sa, a, exp_relname(ne), exp_name(ne));
-						m->data = a;
-					}
-				}
-
-				/* change alias pe, ie project out the index  */
-				pe->l = (void*)exp_relname(ne); 
-				pe->r = (void*)exp_name(ne);
-				exp_setname(sql->sa, pe, exp_relname(ne), exp_name(ne));
-
-				/* change alias ge */
-				ge->l = (void*)exp_relname(pe); 
-				ge->r = (void*)exp_name(pe);
-				exp_setname(sql->sa, ge, exp_relname(pe), exp_name(pe));
-
-				/* zap both project and groupby name hash tables (as we changed names above) */
-				rel->exps->ht = NULL;
-				((list*)rel->r)->ht = NULL;
-				p->exps->ht = NULL;
-				
-				/* add join */
-				j->l = rel;
-				rel = rel_project(sql->sa, j, npexps);
-				(*changes)++;
-			}
-		}
-		(void)sql;
-	}
-/*
  * More general 
  * 	groupby(
  * 	 [ outer ] join(
@@ -3743,6 +3651,13 @@ rel_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
  * 	  ) [ B.c1 ] [ a1, a2, .. ]
  * 	) [ A.c1 = B.c1 ]
  */
+static sql_rel *
+gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel) 
+{
+	sql_rel *j = rel->l;
+	list *gbe = rel->r;
+
+	(void)changes;
 	if (rel->op == op_groupby && list_length(gbe) == 1 && is_outerjoin(j->op)) {
 		sql_rel *jl = j->l, *jr = j->r, *cr;
 		sql_exp *gb = gbe->h->data, *e;
@@ -3807,6 +3722,99 @@ rel_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 		rel -> l = NULL;
 		rel_destroy(rel);
 		return j;
+	}
+	return rel;
+}
+
+/*
+ * Rewrite group(project(join(A,Dict)[a.i==dict.i])[...dict.n])[dict.n][ ... dict.n ]
+ * into
+ * 	project(join(groupby (A)[a.i],[a.i]), Dict)[a.i==dict.i])[dict.n] 
+ *
+ */
+static sql_rel *
+rel_push_groupby_down(int *changes, mvc *sql, sql_rel *rel) 
+{
+	sql_rel *p = rel->l;
+	list *gbe = rel->r;
+
+	if (rel->op == op_groupby && gbe && p && p->op == op_project) {
+		sql_rel *j = p->l;
+		sql_rel *jl, *jr;
+		node *n;
+
+		if (!j || j->op != op_join || list_length(j->exps) != 1)
+			return gen_push_groupby_down(changes, sql, rel);
+		jl = j->l;
+		jr = j->r;
+
+		/* check if jr is a dict with index and var still used */
+		if (jr->op != op_basetable || jr->l || !jr->r || list_length(jr->exps) != 2) 
+			return gen_push_groupby_down(changes, sql, rel);
+
+		/* check if group by is done on dict column */
+		for(n = gbe->h; n; n = n->next) {
+			sql_exp *ge = n->data, *pe = NULL, *e = NULL;
+
+			/* find group by exp in project, then in dict */
+			pe = rel_find_exp(p, ge);
+			if (pe) /* find project exp in right hand of join, ie dict */
+				e = rel_find_exp(jr, pe);
+			if (pe && e) {  /* Rewrite: join with dict after the group by */
+				list *pexps = rel_projections(sql, rel, NULL, 1, 1), *npexps;
+				node *m;
+				sql_exp *ne = j->exps->h->data; /* join exp */
+				p->l = jl;	/* Project now only on the left side of the join */
+
+				ne = ne->l; 	/* The left side of the compare is the index of the left */
+
+				/* find ge reference in new projection list */
+				npexps = sa_list(sql->sa);
+				for (m = pexps->h; m; m = m->next) {
+					sql_exp *a = m->data;
+
+					if (exp_refers(ge, a)) { 
+						sql_exp *sc = jr->exps->t->data;
+						sql_exp *e = exp_column(sql->sa, exp_relname(sc), exp_name(sc), exp_subtype(sc), sc->card, has_nil(sc), is_intern(sc));
+						exp_setname(sql->sa, e, exp_relname(a), exp_name(a));
+						a = e;
+					}
+					append(npexps, a);
+				}
+
+				/* find ge in aggr list */
+				for (m = rel->exps->h; m; m = m->next) {
+					sql_exp *a = m->data;
+
+					if (exp_match_exp(a, ge) || exp_refers(ge, a)) {
+						a = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+						exp_setname(sql->sa, a, exp_relname(ne), exp_name(ne));
+						m->data = a;
+					}
+				}
+
+				/* change alias pe, ie project out the index  */
+				pe->l = (void*)exp_relname(ne); 
+				pe->r = (void*)exp_name(ne);
+				exp_setname(sql->sa, pe, exp_relname(ne), exp_name(ne));
+
+				/* change alias ge */
+				ge->l = (void*)exp_relname(pe); 
+				ge->r = (void*)exp_name(pe);
+				exp_setname(sql->sa, ge, exp_relname(pe), exp_name(pe));
+
+				/* zap both project and groupby name hash tables (as we changed names above) */
+				rel->exps->ht = NULL;
+				((list*)rel->r)->ht = NULL;
+				p->exps->ht = NULL;
+				
+				/* add join */
+				j->l = rel;
+				rel = rel_project(sql->sa, j, npexps);
+				(*changes)++;
+			}
+		}
+		(void)sql;
 	}
 	return rel;
 }
@@ -8339,21 +8347,15 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 	}
 	if (rel->flag == APPLY_LOJ && is_join(r->op)) {
 		sql_rel *rl = r->l, *rr = r->r;
-		int lused = 0, rused = 0;
+		int lused = 0;
 
 		if (is_project(rl->op) && !rl->l)
 			lused = rel_uses_exps(rl, rel->exps);
-		if (is_project(rr->op) && !rr->l)
-			rused = rel_uses_exps(rr, rel->exps);
-		if (lused || rused) {
+		if (lused) {
 			list *exps = r->exps;
-			if (lused) {
-				l = rel_dup(l);
-				r = rel_dup(rr);
-			} else {
-				l = rel_dup(rl);
-				r = rel_dup(l);
-			}
+
+			l = rel_dup(l);
+			r = rel_dup(rr);
 			l = rel_crossproduct(sql->sa, l, r, op_left);
 			l->exps = exps;
 			(*changes)++;
@@ -8361,16 +8363,6 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			return l;
 		}
 	}
-	if (rel->flag == APPLY_LOJ && ((r->op == op_select && exps_uses_exps(r->exps, rel->exps)) || is_join(r->op))) {
-		sql_rel *nr, *ns;
-
-		nr = rel_project(sql->sa, rel_dup(r), 
-			rel_projections(sql, r, NULL, 1, 1));
-		ns = rel_apply(sql, rel_dup(rel->l), nr, rel->exps, rel->flag);
-		rel_destroy(rel);
-		(*changes)++;
-		return ns;
-	}	
 	if (rel->flag == APPLY_LOJ && r->op == op_project && exps_from_rel(r->exps, rel->l)) {
 		sql_exp *ident, *le = NULL;
 
@@ -8501,38 +8493,51 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		return rel;
 	}
 	if (r->op == op_groupby) { /* groupby */ 
-		list *ogbe = r->r, *aggr = NULL;
-		int has_gbe = (ogbe && list_length(ogbe) > 0);
-
 		node *n;
-		list *gbe = new_exp_list(sql->sa);//, *exps;
-		sql_exp *ident, *r_ident;
+		sql_exp *ident;
+		list *ogbe = r->r, *aggr = NULL, *gbe = new_exp_list(sql->sa);
+		int has_gbe = (ogbe && list_length(ogbe) > 0);
 
 		/* add project + identity around l */
 		l = rel_add_identity(sql, rel_dup(l), &ident);
 		ident = exp_column(sql->sa, exp_relname(ident), exp_name(ident), exp_subtype(ident), ident->card, has_nil(ident), is_intern(ident));
 		list_append(gbe, ident);
-		r->l = rel_add_identity(sql, rel_dup(r->l), &r_ident);
-		r_ident = exp_column(sql->sa, exp_relname(r_ident), exp_name(r_ident), exp_subtype(r_ident), r_ident->card, has_nil(r_ident), is_intern(r_ident));
 
 		aggr = rel_projections(sql, l, NULL, 1, 1); /* columns of R */
-		//exps = rel_projections(sql, r->l, NULL, 1, 2); /* columns before groupgby */
-
 		if (has_gbe)
 			list_merge(gbe, ogbe, (fdup)NULL);
 		for(n=r->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			/* count_nil(*) -> count(col) */
+			/* count_nil(*) -> count(t.TID) */
 			if (!has_gbe && e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0 && !e->l) {
-				//sql_exp *c = exps->t->data;
-				sql_exp *c = r_ident;
+				sql_rel *rl = r->l;
+				sql_exp *col = NULL;
 				list *l = new_exp_list(sql->sa);
 
-				set_no_nil(e);
+				/* find right hand TID column */
+				if (is_join(rl->op)) {
+					sql_rel *r = rl->r;
+					if (!is_project(r->op)) 
+						rl->r = r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+					col = r->exps->t->data;
+					/* if not TID column create one */
+					if (strcmp(exp_name(col), TID) != 0) {
+						col = exp_column(sql->sa, exp_relname(col), exp_name(col), exp_subtype(col), col->card, has_nil(col), is_intern(col));
+						col = exp_unop(sql->sa, col, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(col), NULL, F_FUNC));
+						exp_label(sql->sa, col, ++sql->label);
+						append(r->exps, col);
+					}
+				} else if (is_semi(rl->op)) {
+					sql_rel *l = rl->l;
+					col = l->exps->t->data;
+				}
+				assert(col);
+
+				col = exp_column(sql->sa, exp_relname(col), exp_name(col), exp_subtype(col), col->card, has_nil(col), is_intern(col));
 				e->l = l;
-				//c = exp_column(sql->sa, exp_relname(c), exp_name(c), exp_subtype(c), exp_card(c), has_nil(c), is_intern(c));
-				append(l, c);
+				append(l, col);
+				set_no_nil(e);
 			}
 			if (e->type == e_aggr && e->card < CARD_AGGR) /* also fix projects, see above */
 				e->card = CARD_AGGR;
