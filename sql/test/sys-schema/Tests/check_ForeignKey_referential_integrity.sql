@@ -33,6 +33,7 @@ SELECT * FROM sys.args WHERE type NOT IN (SELECT sqlname FROM sys.types);
 SELECT * FROM sys.types WHERE schema_id NOT IN (SELECT id FROM sys.schemas);
 SELECT * FROM sys.types WHERE schema_id NOT IN (SELECT id FROM sys.schemas) AND schema_id <> 0;
 
+SELECT * FROM sys.keys WHERE id NOT IN (SELECT id FROM sys.objects);
 SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys.tables);
 SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys._tables);
 SELECT * FROM tmp.keys WHERE table_id NOT IN (SELECT id FROM tmp._tables);
@@ -41,6 +42,7 @@ SELECT * FROM tmp.keys WHERE table_id NOT IN (SELECT id FROM tmp._tables);
 SELECT * FROM sys.keys WHERE type NOT IN (0, 1, 2);  -- replace this check when table sys.key_types becomes available
 SELECT * FROM tmp.keys WHERE type NOT IN (0, 1, 2);  -- replace this check when table sys.key_types becomes available
 
+SELECT * FROM sys.idxs WHERE id NOT IN (SELECT id FROM sys.objects);
 SELECT * FROM sys.idxs WHERE table_id NOT IN (SELECT id FROM sys.tables);
 SELECT * FROM sys.idxs WHERE table_id NOT IN (SELECT id FROM sys._tables);
 SELECT * FROM tmp.idxs WHERE table_id NOT IN (SELECT id FROM tmp._tables);
@@ -81,19 +83,27 @@ SELECT * FROM sys.dependencies WHERE depend_type = 13 and depend_id NOT IN (SELE
 --SELECT * FROM sys.dependencies WHERE depend_type = 15 and depend_id NOT IN (SELECT id FROM sys.types);  -- TODO: change check as it lists all 46 rows
 
 SELECT * FROM sys.auths WHERE grantor NOT IN (SELECT id FROM sys.auths) AND grantor > 0;
+SELECT * FROM sys.users WHERE name NOT IN (SELECT name FROM sys.auths);
 SELECT * FROM sys.users WHERE default_schema NOT IN (SELECT id FROM sys.schemas);
+SELECT * FROM sys.db_user_info WHERE name NOT IN (SELECT name FROM sys.auths);
 SELECT * FROM sys.db_user_info WHERE default_schema NOT IN (SELECT id FROM sys.schemas);
 
---SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT name FROM sys.users);  -- how is user_role.login_id connected to users.name? They have different data types/domains
+SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT id FROM sys.auths);
+SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name IN (SELECT u.name FROM sys.users u));
+SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.users u));
 SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT id FROM sys.auths);
+
 SELECT * FROM sys.privileges WHERE auth_id NOT IN (SELECT id FROM sys.auths);
 SELECT * FROM sys.privileges WHERE grantor NOT IN (SELECT id FROM sys.auths) AND grantor > 0;
 -- SELECT * FROM sys.privileges WHERE privileges NOT IN (SELECT privilege_code_id FROM sys.privilege_codes); -- 1 and 16 -- table sys.privilege_codes added in default
 SELECT * FROM sys.privileges WHERE privileges NOT IN (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,32); -- replace this check when table sys.privilege_codes becomes available
 
 SELECT * FROM sys.querylog_catalog WHERE owner NOT IN (SELECT name FROM sys.users);
+SELECT * FROM sys.querylog_catalog WHERE pipe NOT IN (SELECT name FROM sys.optimizers);
 SELECT * FROM sys.querylog_calls WHERE id NOT IN (SELECT id FROM sys.querylog_catalog);
 SELECT * FROM sys.querylog_history WHERE id NOT IN (SELECT id FROM sys.querylog_catalog);
+SELECT * FROM sys.querylog_history WHERE owner NOT IN (SELECT name FROM sys.users);
+SELECT * FROM sys.querylog_history WHERE pipe NOT IN (SELECT name FROM sys.optimizers);
 
 SELECT * FROM sys.queue WHERE tag > 0 AND tag NOT IN (SELECT qtag FROM sys.queue);
 SELECT * FROM sys.queue WHERE "user" NOT IN (SELECT name FROM sys.users);
