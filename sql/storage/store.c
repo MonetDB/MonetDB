@@ -1708,7 +1708,7 @@ store_needs_vacuum( sql_trans *tr )
 	return 0;
 }
 
-static void
+static int
 store_vacuum( sql_trans *tr )
 {
 	/* tables */
@@ -1727,8 +1727,10 @@ store_vacuum( sql_trans *tr )
 		    store_funcs.count_col(tr, c, 0)) == 0 && 
 		    !store_funcs.count_upd(tr, t) && 
 		    store_funcs.count_del(tr, t) >= max_dels)
-			table_funcs.table_vacuum(tr, t);
+			if (table_funcs.table_vacuum(tr, t) != SQL_OK)
+				return -1;
 	}
+	return 0;
 }
 
 void
@@ -1845,8 +1847,8 @@ idle_manager(void)
 
 		s = sql_session_create(gtrans->stk, 0);
 		sql_trans_begin(s);
-		store_vacuum( s->tr );
-		sql_trans_commit(s->tr);
+		if (store_vacuum( s->tr ) == 0)
+			sql_trans_commit(s->tr);
 		sql_trans_end(s);
 		sql_session_destroy(s);
 

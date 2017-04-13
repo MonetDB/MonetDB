@@ -1297,7 +1297,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 					name,
 					(list_bid == catalog_bid) ? BUNtvar(iter, p) : "snapshot");
 			assert(BBPindex(name));
-			n[i++] = abs(BBPindex(name));
+			n[i++] = BBPindex(name);
 		}
 	}
 	/* now commit catalog, so it's also up to date on disk */

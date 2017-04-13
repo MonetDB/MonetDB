@@ -173,6 +173,7 @@ BATorderidx(BAT *b, int stable)
 	oid *restrict mv;
 	oid seq;
 	BUN p, q;
+	BAT *bn = NULL;
 
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
@@ -195,7 +196,7 @@ BATorderidx(BAT *b, int stable)
 	if (!BATtdense(b)) {
 		/* we need to sort a copy of the column so as not to
 		 * change the original */
-		BAT *bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
+		bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
 		if (bn == NULL) {
 			HEAPfree(m, 1);
 			GDKfree(m);
@@ -219,13 +220,20 @@ BATorderidx(BAT *b, int stable)
 				 BATcount(bn), Tsize(bn), SIZEOF_OID,
 				 bn->ttype);
 		}
-		BBPunfix(bn->batCacheid);
+		/* we must unfix after releasing the lock since we
+		 * might get deadlock otherwise (we're holding a lock
+		 * based on b->batCacheid; unfix tries to get a lock
+		 * based on bn->batCacheid, usually but (crucially)
+		 * not always a different lock) */
 	}
 
 	b->torderidx = m;
 	b->batDirtydesc = TRUE;
 	persistOIDX(b);
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
+
+	if (bn)
+		BBPunfix(bn->batCacheid);
 
 	return GDK_SUCCEED;
 }
@@ -514,7 +522,10 @@ OIDXdestroy(BAT *b)
 		Heap *hp;
 
 		MT_lock_set(&GDKhashLock(b->batCacheid));
-		if ((hp = b->torderidx) == (Heap *) 1) {
+		hp = b->torderidx;
+		b->torderidx = NULL;
+		MT_lock_unset(&GDKhashLock(b->batCacheid));
+		if (hp == (Heap *) 1) {
 			GDKunlink(BBPselectfarm(b->batRole, b->ttype, orderidxheap),
 				  BATDIR,
 				  BBP_physical(b->batCacheid),
@@ -523,7 +534,5 @@ OIDXdestroy(BAT *b)
 			HEAPdelete(hp, BBP_physical(b->batCacheid), "torderidx");
 			GDKfree(hp);
 		}
-		b->torderidx = NULL;
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
 	}
 }
