@@ -90,8 +90,8 @@ SELECT * FROM sys.db_user_info WHERE default_schema NOT IN (SELECT id FROM sys.s
 
 SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT id FROM sys.auths);
 SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name IN (SELECT u.name FROM sys.users u));
-SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.users u));
 SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT id FROM sys.auths);
+SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.users u));
 
 SELECT * FROM sys.privileges WHERE auth_id NOT IN (SELECT id FROM sys.auths);
 SELECT * FROM sys.privileges WHERE grantor NOT IN (SELECT id FROM sys.auths) AND grantor > 0;
@@ -105,7 +105,7 @@ SELECT * FROM sys.querylog_history WHERE id NOT IN (SELECT id FROM sys.querylog_
 SELECT * FROM sys.querylog_history WHERE owner NOT IN (SELECT name FROM sys.users);
 SELECT * FROM sys.querylog_history WHERE pipe NOT IN (SELECT name FROM sys.optimizers);
 
-SELECT * FROM sys.queue WHERE tag > 0 AND tag NOT IN (SELECT qtag FROM sys.queue);
+SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
 SELECT * FROM sys.queue WHERE "user" NOT IN (SELECT name FROM sys.users);
 
 SELECT * FROM sys.sessions WHERE "user" NOT IN (SELECT name FROM sys.users);

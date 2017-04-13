@@ -299,12 +299,12 @@ Ready.
 % login_id,	role_id # name
 % int,	int # type
 % 1,	1 # length
-#SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.users u));
+#SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT id FROM sys.auths);
 % sys.user_role,	sys.user_role # table_name
 % login_id,	role_id # name
 % int,	int # type
 % 1,	1 # length
-#SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT id FROM sys.auths);
+#SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.users u));
 % sys.user_role,	sys.user_role # table_name
 % login_id,	role_id # name
 % int,	int # type
@@ -354,7 +354,7 @@ Ready.
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.queue WHERE tag > 0 AND tag NOT IN (SELECT qtag FROM sys.queue);
+#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
 % .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
 % qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
 % bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
