@@ -2316,7 +2316,7 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if (mvc_export_head(b, *s, *res_id, FALSE))
+	if (mvc_export_head(b, *s, *res_id, FALSE, TRUE))
 		throw(SQL, "sql.exportHead", "failed");
 	return MAL_SUCCEED;
 }
@@ -2417,7 +2417,6 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.exportValue", "failed");
 	}
 	return MAL_SUCCEED;
-
 }
 
 static void

@@ -43,36 +43,28 @@ mcrypt_getHashAlgorithms(void)
 	 * Better/stronger/faster algorithms can be added in the future upon
 	 * desire.
 	 */
-#if !defined(HAVE_EMBEDDED) && (defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA1_UPDATE) || defined(HAVE_MD5_UPDATE))
 	const char *algorithms =
+		"PROT10"
 #ifdef HAVE_RIPEMD160_UPDATE
-		"RIPEMD160"
+		",RIPEMD160"
 #endif
 #ifdef HAVE_SHA256_UPDATE
-#if defined(HAVE_RIPEMD160_UPDATE)
-		","
-#endif
-		"SHA256"
+		",SHA256"
 #endif
 #ifdef HAVE_SHA1_UPDATE
-#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA256_UPDATE)
-		","
-#endif
-		"SHA1"
+		",SHA1"
 #endif
 #ifdef HAVE_MD5_UPDATE
-#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA1_UPDATE)
-		","
+		",MD5"
 #endif
-		"MD5"
+#ifdef HAVE_LIBSNAPPY
+		",COMPRESSION_SNAPPY"
+#endif
+#ifdef HAVE_LIBLZ4
+		",COMPRESSION_LZ4"
 #endif
 		;
 	return strdup(algorithms);
-#else
-	fprintf(stderr, "There are no digest functions available.\n");
-	exit(1);
-	return NULL;
-#endif
 }
 
 /**

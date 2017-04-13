@@ -23,6 +23,47 @@
 #define llabs(x)	((x) < 0 ? -(x) : (x))
 #endif
 
+// stpcpy definition, for systems that do not have stpcpy
+/* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
+   YYDEST.  */
+static char *
+mystpcpy (char *yydest, const char *yysrc) {
+	char *yyd = yydest;
+	const char *yys = yysrc;
+
+	while ((*yyd++ = *yys++) != '\0')
+	continue;
+
+	return yyd - 1;
+}
+
+#ifdef _MSC_VER
+/* use intrinsic functions on Windows */
+#define short_int_SWAP(s)	((short) _byteswap_ushort((unsigned short) (s)))
+/* on Windows, long is the same size as int */
+#define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
+#define long_long_SWAP(l)	((lng) _byteswap_uint64((unsigned __int64) (s)))
+#else
+#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
+
+#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
+			    ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
+#define long_long_SWAP(l) \
+		((((lng)normal_int_SWAP(l))<<32) |\
+		 (0xffffffff&normal_int_SWAP(l>>32)))
+#endif
+
+#ifdef HAVE_HGE
+#define huge_int_SWAP(h) \
+		((((hge)long_long_SWAP(h))<<64) |\
+		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
+#endif
+
+static lng 
+mnstr_swap_lng(stream *s, lng lngval) {
+	return mnstr_byteorder(s) != 1234 ? long_long_SWAP(lngval) : lngval;
+}
+
 #define DEC_TOSTR(TYPE)							\
 	do {								\
 		char buf[64];						\
@@ -533,7 +574,7 @@ bat_max_hgelength(BAT *b)
 			return NULL;					\
 		r = c->data;						\
 		if (r == NULL &&					\
-		    (r = GDKzalloc(sizeof(X))) == NULL)			\
+			(r = GDKzalloc(sizeof(X))) == NULL)			\
 			return NULL;					\
 		c->data = r;						\
 		if (neg)						\
@@ -807,7 +848,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			return NULL;
 		}
 		if (!isa_block_stream(bs->s))
-			 out = NULL;
+			out = NULL;
 
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 			sql_column *col = n->data;
@@ -1270,7 +1311,6 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 	int i, ok = 1;
 	int csv = (b->output_format == OFMT_CSV);
 	int json = (b->output_format == OFMT_JSON);
-
 	if (!s)
 		return 0;
 
@@ -1303,6 +1343,343 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 	return (ok) ? 0 : -1;
 }
 
+static int type_supports_binary_transfer(sql_type *type) {
+	return
+		type->eclass == EC_BIT ||
+		type->eclass == EC_POS ||
+		type->eclass == EC_CHAR ||
+		type->eclass == EC_STRING ||
+		type->eclass == EC_DEC ||
+		type->eclass == EC_BLOB ||
+		type->eclass == EC_FLT ||
+		type->eclass == EC_NUM ||
+		type->eclass == EC_DATE ||
+		type->eclass == EC_TIME ||
+		type->eclass == EC_SEC ||
+		type->eclass == EC_MONTH ||
+		type->eclass == EC_TIMESTAMP;
+}
+
+static int write_str_term(stream* s, const char* const val) {
+	return mnstr_writeStr(s, val) && mnstr_writeBte(s, 0);
+}
+
+// align to 8 bytes
+static char* 
+eight_byte_align(char* ptr) {
+	return (char*) (((size_t) ptr + 7) & ~7);
+}
+
+static int
+mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr) {
+	lng count = 0;
+	size_t row = 0;
+	size_t srow = 0;
+	size_t varsized = 0;
+	size_t length_prefixed = 0;
+	lng fixed_lengths = 0;
+	int fres = 0;
+	size_t i = 0;
+	size_t bsize = b->client->blocksize;
+	BATiter *iterators = NULL;
+	char *result = NULL;
+	int length = 0;
+	int initial_transfer = 1;
+
+	(void) order; // FIXME: respect explicitly ordered output
+
+	iterators = GDKzalloc(sizeof(BATiter) * t->nr_cols);
+	if (!iterators) {
+		fres = -1;
+		goto cleanup;
+	}
+
+	// ensure the buffer is currently empty
+	assert(bs2_buffer(s).pos == 0);
+
+	// inspect all the columns to figure out how many bytes it takes to transfer one row
+	for (i = 0; i < (size_t) t->nr_cols; i++) {
+		res_col *c = t->cols + i;
+		BAT *b = BATdescriptor(c->b);
+		int mtype = b->ttype;
+		int typelen = ATOMsize(mtype);
+		int convert_to_string = !type_supports_binary_transfer(c->type.type);
+		sql_type *type = c->type.type;
+
+		iterators[i] = bat_iterator(b);
+		
+		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
+			// dates and timestamps are converted to Unix Timestamps
+			mtype = TYPE_lng;
+			typelen = sizeof(lng);	
+		}
+		if (ATOMvarsized(mtype) || convert_to_string) {
+			typelen = -1;
+			varsized++;
+			length_prefixed++;
+		} else {
+			fixed_lengths += typelen;
+		}
+	}
+
+	// now perform the actual transfer
+	row = srow = offset;
+	count = offset + nr;
+	while (row < (size_t) count) {
+		char* message_header;
+		char *buf = bs2_buffer(s).buf;
+		size_t crow = 0;
+		size_t bytes_left = bsize - sizeof(lng) - 2 * sizeof(char) - 1;
+		// potential padding that has to be added for each column
+		bytes_left -= t->nr_cols * 7;
+
+		// every varsized member has an 8-byte header indicating the length of the header in the block
+		// subtract this from the amount of bytes left
+		bytes_left -= length_prefixed * sizeof(lng);
+
+		if (varsized == 0) {
+			// no varsized elements, so we can immediately compute the amount of elements
+			if (fixed_lengths == 0) {
+				row = (size_t) count;
+			} else {
+				row = (size_t) (srow + bytes_left / fixed_lengths);
+				row = row > (size_t) count ? (size_t) count : row;
+			}
+		} else {
+			size_t rowsize = 0;
+			// we have varsized elements, so we have to loop to determine how many rows fit into a buffer
+			while (row < (size_t) count) {
+				rowsize = (size_t) fixed_lengths;
+				for (i = 0; i < (size_t) t->nr_cols; i++) {
+					res_col *c = t->cols + i;
+					int mtype = iterators[i].b->ttype;
+					int convert_to_string = !type_supports_binary_transfer(c->type.type);
+					if (convert_to_string || ATOMvarsized(mtype)) {
+						if (c->type.type->eclass == EC_BLOB) {
+							blob *b = (blob*) BUNtail(iterators[i], row);
+							rowsize += sizeof(lng) + ((b->nitems == ~(size_t) 0) ? 0 : b->nitems);
+						} else {
+							size_t slen = 0;
+							if (convert_to_string) {
+								void *element = (void*) BUNtail(iterators[i], crow);
+								if ((slen = BATatoms[mtype].atomToStr(&result, &length, element)) == 0) {
+									fres = -1;
+									goto cleanup;
+								}
+							} else {
+								slen = strlen((const char*) BUNtail(iterators[i], row));
+							}
+							rowsize += slen + 1;
+						}
+					}
+				}
+				if (bytes_left < rowsize) {
+					break;
+				}
+				bytes_left -= rowsize;
+				row++;
+			}
+			if (row == srow) {
+				lng new_size = rowsize + 1024;
+				if (!mnstr_writeLng(s, (lng) -1) || 
+					!mnstr_writeLng(s, new_size) || 
+					mnstr_flush(s) < 0) {
+					fres = -1;
+					goto cleanup;
+				}
+				row = srow + 1;
+				if (bs2_resizebuf(s, (size_t) new_size) < 0) {
+					// failed to resize stream buffer
+					fres = -1;
+					goto cleanup;
+				}
+				buf = bs2_buffer(s).buf;
+				bsize = (size_t) new_size;
+			}
+		}
+
+		// have to transfer at least one row
+		assert(row > srow);
+		// buffer has to be empty currently
+		assert(bs2_buffer(s).pos == 0);
+
+		// initial message
+		message_header = "+\n";
+		if (initial_transfer == 0) {
+			// continuation message
+			message_header = "-\n";
+		}
+		initial_transfer = 0;
+		
+		if (!mnstr_writeStr(s, message_header) || !mnstr_writeLng(s, (lng)(row - srow))) {
+			fres = -1;
+			goto cleanup;
+		}
+		buf += sizeof(lng) + 2 * sizeof(char);
+
+		for (i = 0; i < (size_t) t->nr_cols; i++) {
+			res_col *c = t->cols + i;
+			int mtype = iterators[i].b->ttype;
+			int convert_to_string = !type_supports_binary_transfer(c->type.type);
+			buf = eight_byte_align(buf);
+			if (ATOMvarsized(mtype) || convert_to_string) {
+				if (c->type.type->eclass == EC_BLOB) {
+					// transfer blobs as [lng][data] combination
+					char *startbuf = buf;
+					buf += sizeof(lng);
+					for (crow = srow; crow < row; crow++) {
+						blob *b = (blob*) BUNtail(iterators[i], crow);
+						if (b->nitems == ~(size_t) 0) {
+							(*(lng*)buf) = mnstr_swap_lng(s, -1);
+							buf += sizeof(lng);
+						} else {
+							(*(lng*)buf) = mnstr_swap_lng(s, (lng) b->nitems);
+							buf += sizeof(lng);
+							memcpy(buf, b->data, b->nitems);
+							buf += b->nitems;
+						}
+					}
+					// after the loop we know the size of the column, so write it
+					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
+				} else {
+					// for variable length strings and large fixed strings we use varints
+					// variable columns are prefixed by a length, 
+					// but since we don't know the length yet, just skip over it for now
+					char *startbuf = buf;
+					buf += sizeof(lng);
+					for (crow = srow; crow < row; crow++) {
+						void *element = (void*) BUNtail(iterators[i], crow);
+						const char* str;
+						if (convert_to_string) {
+							if (BATatoms[mtype].atomCmp(element, BATatoms[mtype].atomNull) == 0) {
+								str = str_nil;
+							} else {
+								if (BATatoms[mtype].atomToStr(&result, &length, element) == 0) {
+									fres = -1;
+									goto cleanup;
+								}
+								// string conversion functions add quotes for the old protocol
+								// because obviously adding quotes in the string conversion function
+								// makes total sense, rather than adding the quotes in the protocol
+								// thus because of this totally, 100% sensical implementation
+								// we remove the quotes again here
+								if (result[0] == '"') {
+									result[strlen(result) - 1] = '\0';
+									str = result + 1;
+								} else {
+									str = result;
+								}
+							}
+						} else {
+							str = (char*) element;
+						}
+						buf = mystpcpy(buf, str) + 1;
+						assert(buf - bs2_buffer(s).buf <= (lng) bsize);
+					}
+					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
+				}
+			} else {
+				int atom_size = ATOMsize(mtype);
+				if (c->type.type->eclass == EC_DEC) {
+					atom_size = ATOMsize(ATOMstorage(mtype));
+				}
+				if (c->type.type->eclass == EC_TIMESTAMP) {
+					// convert timestamp values to epoch
+					lng time;
+					size_t j = 0;
+					int swap = mnstr_byteorder(s) != 1234;
+					timestamp *times = (timestamp*) Tloc(iterators[i].b, srow);
+					lng *bufptr = (lng*) buf;
+					for(j = 0; j < (row - srow); j++) {
+						MTIMEepoch2lng(&time, times + j);
+						bufptr[j] = swap ? long_long_SWAP(time) : time;
+					}
+					atom_size = sizeof(lng);
+				} else if (c->type.type->eclass == EC_DATE) {
+					// convert dates into timestamps since epoch
+					lng time;
+					timestamp tstamp;
+					size_t j = 0;
+					int swap = mnstr_byteorder(s) != 1234;
+					date *dates = (date*) Tloc(iterators[i].b, srow);
+					lng *bufptr = (lng*) buf;
+					for(j = 0; j < (row - srow); j++) {
+						tstamp.payload.p_days = dates[j];
+						MTIMEepoch2lng(&time, &tstamp);
+						bufptr[j] = swap ? long_long_SWAP(time) : time;
+					}
+					atom_size = sizeof(lng);
+				} else {
+					if (mnstr_byteorder(s) != 1234) {
+						size_t j = 0;
+						switch(ATOMstorage(mtype)) {
+							case TYPE_sht: {
+								short *bufptr = (short*) buf;
+								short *exported_values = (short*) Tloc(iterators[i].b, srow);
+								for(j = 0; j < (row - srow); j++) {
+									bufptr[j] = short_int_SWAP(exported_values[j]);
+								}
+								break;
+							}
+							case TYPE_int: {
+								int *bufptr = (int*) buf;
+								int *exported_values = (int*) Tloc(iterators[i].b, srow);
+								for(j = 0; j < (row - srow); j++) {
+									bufptr[j] = normal_int_SWAP(exported_values[j]);
+								}
+								break;
+							}
+							case TYPE_lng: {
+								lng *bufptr = (lng*) buf;
+								lng *exported_values = (lng*) Tloc(iterators[i].b, srow);
+								for(j = 0; j < (row - srow); j++) {
+									bufptr[j] = long_long_SWAP(exported_values[j]);
+								}
+								break;
+							}
+#ifdef HAVE_HGE
+							case TYPE_hge: {
+								hge *bufptr = (hge*) buf;
+								hge *exported_values = (hge*) Tloc(iterators[i].b, srow);
+								for(j = 0; j < (row - srow); j++) {
+									bufptr[j] = huge_int_SWAP(exported_values[j]);
+								}
+								break;
+							}
+#endif
+						}
+					} else {
+						memcpy(buf, Tloc(iterators[i].b, srow), (row - srow) * atom_size);
+					}
+				}
+				buf += (row - srow) * atom_size;
+			}
+		}
+
+		assert(buf >= bs2_buffer(s).buf);
+		if (buf - bs2_buffer(s).buf > (lng) bsize) {
+			fprintf(stderr, "Too many bytes in the buffer.\n");
+			fres = -1;
+			goto cleanup;
+		}
+
+		bs2_setpos(s, buf - bs2_buffer(s).buf);
+		// flush the current chunk
+		if (mnstr_flush(s) < 0) {
+			fres = -1;
+			goto cleanup;
+		}
+		srow = row;
+	}
+cleanup:
+	if (result) {
+		GDKfree(result);
+	}
+	if (mnstr_errnr(s))
+		return -1;
+	return fres;
+}
+
 static int
 mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, char *btag, char *sep, char *rsep, char *ssep, char *ns)
 {
@@ -1319,6 +1696,10 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		return -1;
 	if (!s)
 		return 0;
+
+	if (b->client->protocol == PROTOCOL_10) {
+		return mvc_export_table_prot10(b, s, t, order, offset, nr);
+	}
 
 	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
 	as.nr = nr;
@@ -1432,10 +1813,10 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	return 0;
 }
 
-static int
-export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p)
+
+static lng
+get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p)
 {
-	int ok = 1;
 	size_t count = 0, incr = 0;;
 
 	if (eclass == EC_SEC)
@@ -1445,7 +1826,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 	mtype = ATOMbasetype(mtype);
 	if (mtype == TYPE_str) {
 		if (eclass == EC_CHAR) {
-			ok = mvc_send_int(s, digits);
+			return digits;
 		} else {
 			int l = 0;
 			if (bid) {
@@ -1469,7 +1850,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 				if (l == int_nil)
 					l = 0;
 			}
-			ok = mvc_send_int(s, l);
+			return l;
 		}
 	} else if (eclass == EC_NUM || eclass == EC_POS || eclass == EC_MONTH || eclass == EC_SEC) {
 		count = 0;
@@ -1489,6 +1870,8 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 				} else if (mtype == TYPE_hge) {
 					count = bat_max_hgelength(b);
 #endif
+				} else if (mtype == TYPE_void) {
+					count = 4;
 				} else {
 					assert(0);
 				}
@@ -1539,7 +1922,7 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 		}
 		if (eclass == EC_SEC && count < 5)
 			count = 5;
-		ok = mvc_send_lng(s, (lng) count);
+		return count;
 		/* the following two could be done once by taking the
 		   max value and calculating the number of digits from that
 		   value, instead of the maximum values taken now, which
@@ -1548,38 +1931,45 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 		/* floats are printed using "%.9g":
 		 * [sign]+digit+period+[max 8 digits]+E+[sign]+[max 2 digits] */
 		if (mtype == TYPE_flt) {
-			ok = mvc_send_int(s, 15);
+			return 15;
 			/* doubles are printed using "%.17g":
 			 * [sign]+digit+period+[max 16 digits]+E+[sign]+[max 3 digits] */
 		} else {	/* TYPE_dbl */
-			ok = mvc_send_int(s, 24);
+			return 24;
 		}
 	} else if (eclass == EC_DEC) {
 		count = 1 + digits;
 		if (scale > 0)
 			count += 1;
-		ok = mvc_send_lng(s, (lng) count);
+		return count;
 	} else if (eclass == EC_DATE) {
-		ok = mvc_send_int(s, 10);
+		return 10;
 	} else if (eclass == EC_TIME) {
 		count = 8;
 		if (tz)		/* time zone */
 			count += 6;	/* +03:30 */
 		if (digits > 1)	/* fractional seconds precision (including dot) */
 			count += digits;
-		ok = mvc_send_lng(s, (lng) count);
+		return count;
 	} else if (eclass == EC_TIMESTAMP) {
 		count = 10 + 1 + 8;
 		if (tz)		/* time zone */
 			count += 6;	/* +03:30 */
 		if (digits)	/* fractional seconds precision */
 			count += digits;
-		ok = mvc_send_lng(s, (lng) count);
+		return count;
 	} else if (eclass == EC_BIT) {
-		ok = mvc_send_int(s, 5);	/* max(strlen("true"), strlen("false")) */
+		return 5;	/* max(strlen("true"), strlen("false")) */
 	} else {
-		ok = mvc_send_int(s, 0);
+		return 0;
 	}
+}
+
+static int
+export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p) {
+	int ok = 1;
+	lng length = get_print_width(mtype, eclass, digits, scale, tz, bid, p);
+	ok = mvc_send_lng(s, length);
 	return ok;
 }
 
@@ -1640,8 +2030,161 @@ export_error(BAT *order)
 	return -1;
 }
 
+static int
+mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int compute_lengths) {
+	mvc *m = b->mvc;
+	size_t i = 0;
+	BUN count = 0;
+	res_table *t = res_tables_find(m->results, res_id);
+	BAT *order = NULL;
+	int fres = 0;
+
+	if (!t || !s) {
+		return 0;
+	}
+
+	/* tuple count */
+	if (only_header) {
+		if (t->order) {
+			order = BBPquickdesc(t->order, FALSE);
+			if (!order)
+				return -1;
+
+			count = BATcount(order);
+		} else
+			count = 1;
+	}
+	m->rowcnt = count;
+
+	// protocol 10 result sets start with "*\n" followed by the binary data:
+	// [tableid][queryid][rowcount][colcount][timezone]
+	if (!mnstr_writeStr(s, "*\n") || 
+		!mnstr_writeInt(s, t->id) || 
+		!mnstr_writeLng(s, (lng) t->query_id) ||
+		!mnstr_writeLng(s, count) || !mnstr_writeLng(s, (lng) t->nr_cols)) {
+		fres = -1;
+		goto cleanup;
+	}
+	// write timezone to the client
+	if (!mnstr_writeInt(s, m->timezone)) {
+		fres = -1;
+		goto cleanup;
+	}
+
+	// after that, the data of the individual columns is written
+	for (i = 0; i < (size_t) t->nr_cols; i++) {
+		res_col *c = t->cols + i;
+		BAT *b = BATdescriptor(c->b);
+		int mtype = b->ttype;
+		int typelen = ATOMsize(mtype);
+		int nil_len = -1;
+		int nil_type = ATOMstorage(mtype);
+		int retval = -1;
+		int convert_to_string = !type_supports_binary_transfer(c->type.type);
+		sql_type *type = c->type.type;
+		lng print_width = -1;
+		
+		// if the client wants print widths, we compute them for this column
+		if (compute_lengths) {
+			print_width = get_print_width(mtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), b->batCacheid, c->p);
+		}
+		BBPunfix(b->batCacheid);
+
+		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
+			// timestamps are converted to Unix Timestamps
+			mtype = TYPE_lng;
+			typelen = sizeof(lng);	
+		}
+
+		if (convert_to_string) {
+			nil_type = TYPE_str;
+		}
+
+		if (ATOMvarsized(mtype) || convert_to_string) {
+			// variable length columns have typelen set to -1
+			typelen = -1;
+			nil_len = (int) strlen(str_nil) + 1;
+		} else {
+			nil_len = typelen;
+		}
+
+		// column data has the following binary format:
+		// [tablename]\0[columnname]\0[sqltypename]\0[typelen][digits][scale][nil_length][nil_value][print_width]
+		if (!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, type->sqlname) ||
+				!mnstr_writeInt(s, typelen) || !mnstr_writeInt(s, c->type.digits) || !mnstr_writeInt(s, type->eclass == EC_SEC ? 3 : c->type.scale)) {
+			fres = -1;
+			goto cleanup;
+		}
+
+		if ((b->tnil == 0 && b->tnonil == 1) || type->eclass == EC_BLOB) {
+			nil_len = 0;
+		}
+
+
+		// write NULL values for this column to the stream
+		// NULL values are encoded as [size:int][NULL value] ([size] is always [typelen] for fixed size columns)
+		if (!mnstr_writeInt(s, nil_len)) {
+			fres = -1;
+			goto cleanup;
+		}
+		// transfer the actual NULL value
+		if (nil_len > 0) {
+			switch(nil_type) {
+				case TYPE_str:
+					retval = write_str_term(s, str_nil);
+					break;
+				case TYPE_bit:
+				case TYPE_bte:
+					retval = mnstr_writeBte(s, bte_nil);
+					break;
+				case TYPE_sht:
+					retval = mnstr_writeSht(s, sht_nil);
+					break;
+				case TYPE_int:
+					retval = mnstr_writeInt(s, int_nil);
+					break;
+				case TYPE_lng:
+					retval = mnstr_writeLng(s, lng_nil);
+					break;
+				case TYPE_flt:
+					retval = mnstr_writeFlt(s, flt_nil);
+					break;
+				case TYPE_dbl:
+					retval = mnstr_writeDbl(s, dbl_nil);
+					break;
+#ifdef HAVE_HGE
+				case TYPE_hge:
+					retval = mnstr_writeHge(s, hge_nil);
+					break;
+#endif
+				case TYPE_void:
+					break;
+				default:
+					assert(0);
+					fres = -1;
+					goto cleanup;
+			}
+		}
+		if (!retval) {
+			fres = -1;
+			goto cleanup;
+		}
+		// transfer the computed print width
+		if (!mnstr_writeLng(s, print_width)) {
+			fres = -1;
+			goto cleanup;
+		}
+	}
+	if (mnstr_flush(s) < 0) {
+		fres = -1;
+		goto cleanup;
+	}
+cleanup:
+	return fres;
+}
+
 int
-mvc_export_head(backend *b, stream *s, int res_id, int only_header)
+mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths)
 {
 	mvc *m = b->mvc;
 	int i, res = 0;
@@ -1652,13 +2195,19 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 	if (!s || !t)
 		return 0;
 
+
+	if (b->client->protocol == PROTOCOL_10) {
+		// export head result set 10
+		return mvc_export_head_prot10(b, s, res_id, only_header, compute_lengths);
+	}
+
 	/* query type: Q_TABLE */
 	if (!(mnstr_write(s, "&1 ", 3, 1) == 1))
 		return -1;
 
 	/* id */
 	if (!mvc_send_int(s, t->id) || mnstr_write(s, " ", 1, 1) != 1)
-		 return -1;
+		return -1;
 
 	/* tuple count */
 	if (only_header) {
@@ -1740,20 +2289,20 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 	}
 	if (mnstr_write(s, " # type\n% ", 10, 1) != 1)
 		return -1;
+	if (compute_lengths) {
+		for (i = 0; i < t->nr_cols; i++) {
+			res_col *c = t->cols + i;
+			int mtype = c->type.type->localtype;
+			int eclass = c->type.type->eclass;
 
-	for (i = 0; i < t->nr_cols; i++) {
-		res_col *c = t->cols + i;
-		int mtype = c->type.type->localtype;
-		int eclass = c->type.type->eclass;
-
-		if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
-			return -1;
-		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
+			if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
+				return -1;
+			if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
+				return -1;
+		}
+		if (mnstr_write(s, " # length\n", 10, 1) != 1)
 			return -1;
 	}
-	if (mnstr_write(s, " # length\n", 10, 1) != 1)
-		return -1;
-
 	if (m->sizeheader) {
 		if (mnstr_write(s, "% ", 2, 1) != 1)
 			return -1;
@@ -1781,7 +2330,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 
 	if (m->scanner.ws == s)
 		/* need header */
-		mvc_export_head(b, s, t->id, TRUE);
+		mvc_export_head(b, s, t->id, TRUE, TRUE);
 
 	if (!t->order) {
 		res = mvc_export_row(b, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
@@ -1821,8 +2370,9 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		return mvc_export_file(b, s, t);
 
 	if (!json) {
-		mvc_export_head(b, s, res_id, TRUE);
+		mvc_export_head(b, s, res_id, TRUE, TRUE);
 	}
+
 	assert(t->order);
 
 	order = BATdescriptor(t->order);
@@ -1835,7 +2385,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		clean = 1;
 	}
 	if (json) {
-	 	switch(count) {
+		switch(count) {
 		case 0:
 			res = mvc_export_table(b, s, t, order, 0, count, "{\t", "", "}\n", "\"", "null");
 			break;
@@ -1845,7 +2395,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 		case 2:
 			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
 			res = mvc_export_table(b, s, t, order, 1, count - 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
-			 break;
+			break;
 		default:
 			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
 			res = mvc_export_table(b, s, t, order, 1, count - 2, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
@@ -1863,6 +2413,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	return res;
 }
 
+
 int
 mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 {
@@ -1875,19 +2426,6 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 	if (!s || !t)
 		return 0;
 
-
-	/* query type: Q_BLOCK */
-	if (!(mnstr_write(s, "&6 ", 3, 1) == 1))
-		return export_error(order);
-
-	/* result id */
-	if (!mvc_send_int(s, res_id) || mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
-
-	/* column count */
-	if (!mvc_send_int(s, t->nr_cols) || mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
-
 	order = BATdescriptor(t->order);
 	if (!order)
 		return -1;
@@ -1899,19 +2437,35 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 	if (offset + cnt > BATcount(order))
 		cnt = BATcount(order) - offset;
 
-	/* row count */
-	if (!mvc_send_lng(s, (lng) cnt) || mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+	if (b->client->protocol != PROTOCOL_10) {
+		/* query type: Q_BLOCK */
+		if (!(mnstr_write(s, "&6 ", 3, 1) == 1))
+			return export_error(order);
 
-	/* block offset */
-	if (!mvc_send_lng(s, (lng) offset))
-		return export_error(order);
+		/* result id */
+		if (!mvc_send_int(s, res_id) || mnstr_write(s, " ", 1, 1) != 1)
+			return export_error(order);
 
-	if (mnstr_write(s, "\n", 1, 1) != 1)
-		return export_error(order);
+		/* column count */
+		if (!mvc_send_int(s, t->nr_cols) || mnstr_write(s, " ", 1, 1) != 1)
+			return export_error(order);
+
+		/* row count */
+		if (!mvc_send_lng(s, (lng) cnt) || mnstr_write(s, " ", 1, 1) != 1)
+			return export_error(order);
+
+		/* block offset */
+		if (!mvc_send_lng(s, (lng) offset))
+			return export_error(order);
+
+		if (mnstr_write(s, "\n", 1, 1) != 1)
+			return export_error(order);
+	}
 
 	res = mvc_export_table(b, s, t, order, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");
-	BBPunfix(order->batCacheid);
+	if (order) {
+		BBPunfix(order->batCacheid);	
+	}
 	return res;
 }
 
