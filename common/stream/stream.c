@@ -3904,7 +3904,6 @@ bs_close(stream *ss)
 	assert(s);
 	if (s == NULL)
 		return;
-	assert(s->s);
 	if (s->s)
 		s->s->close(s->s);
 }
@@ -3917,7 +3916,6 @@ bs_destroy(stream *ss)
 	s = (bs *) ss->stream_data.p;
 	assert(s);
 	if (s) {
-		assert(s->s);
 		if (s->s)
 			s->s->destroy(s->s);
 		free(s);
