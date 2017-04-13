@@ -896,6 +896,9 @@ logger_readlog(logger *lg, char *filename)
 	time_t t0, t1;
 	struct stat sb;
 	lng fpos;
+	int dbg = GDKdebug;
+
+	GDKdebug &= ~(CHECKMASK|PROPMASK);
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
@@ -908,6 +911,7 @@ logger_readlog(logger *lg, char *filename)
 		if (lg->log)
 			mnstr_destroy(lg->log);
 		lg->log = NULL;
+		GDKdebug = dbg;
 		return LOG_ERR;
 	}
 	if (fstat(fileno(getFile(lg->log)), &sb) < 0) {
@@ -916,6 +920,7 @@ logger_readlog(logger *lg, char *filename)
 		lg->log = NULL;
 		/* If we can't read the files, it might simply be empty.
 		 * In that case we can't return LOG_ERR, since it's actually fine */
+		GDKdebug = dbg;
 		return 1;
 	}
 	t0 = time(NULL);
@@ -1025,6 +1030,7 @@ logger_readlog(logger *lg, char *filename)
 		printf("# Finished reading the write-ahead log '%s'\n", filename);
 		fflush(stdout);
 	}
+	GDKdebug = dbg;
 	return LOG_OK;
 }
 
