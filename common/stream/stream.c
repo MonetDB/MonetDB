@@ -94,7 +94,7 @@
 #include <lzma.h>
 #endif
 #ifdef HAVE_LIBSNAPPY
-#include <snappy-c.h> // C forever
+#include <snappy-c.h>
 #endif
 #ifdef HAVE_LIBLZ4
 #include <lz4.h>
@@ -3904,6 +3904,7 @@ bs_close(stream *ss)
 	assert(s);
 	if (s == NULL)
 		return;
+	assert(s->s);
 	if (s->s)
 		s->s->close(s->s);
 }
@@ -3916,6 +3917,7 @@ bs_destroy(stream *ss)
 	s = (bs *) ss->stream_data.p;
 	assert(s);
 	if (s) {
+		assert(s->s);
 		if (s->s)
 			s->s->destroy(s->s);
 		free(s);

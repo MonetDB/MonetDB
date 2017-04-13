@@ -1344,22 +1344,21 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 }
 
 static int type_supports_binary_transfer(sql_type *type) {
-	return 
+	return
 		type->eclass == EC_BIT ||
 		type->eclass == EC_POS ||
-		type->eclass == EC_CHAR || 
+		type->eclass == EC_CHAR ||
 		type->eclass == EC_STRING ||
-		type->eclass == EC_DEC || 
+		type->eclass == EC_DEC ||
 		type->eclass == EC_BLOB ||
-		type->eclass == EC_FLT || 
-		type->eclass == EC_NUM || 
-		type->eclass == EC_DATE || 
-		type->eclass == EC_TIME || 
+		type->eclass == EC_FLT ||
+		type->eclass == EC_NUM ||
+		type->eclass == EC_DATE ||
+		type->eclass == EC_TIME ||
 		type->eclass == EC_SEC ||
-		type->eclass == EC_MONTH || 
+		type->eclass == EC_MONTH ||
 		type->eclass == EC_TIMESTAMP;
 }
-
 
 static int write_str_term(stream* s, const char* const val) {
 	return mnstr_writeStr(s, val) && mnstr_writeBte(s, 0);
