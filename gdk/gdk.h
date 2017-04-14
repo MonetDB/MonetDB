@@ -1924,7 +1924,7 @@ gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
  * @- Multilevel Storage Modes
  *
  * We should bring in the compressed mode as the first, maybe
- * built-in, mode. We could than add for instance HTTP remote storage,
+ * built-in, mode. We could then add for instance HTTP remote storage,
  * SQL storage, and READONLY (cd-rom) storage.
  *
  * @+ GDK Utilities
