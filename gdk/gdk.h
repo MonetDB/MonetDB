@@ -469,8 +469,10 @@
 #define XPROPDEBUG	if (GDKdebug & XPROPMASK)
 */
 
+/* JOINPROPMASK not used anymore
 #define JOINPROPMASK	(1<<24)
 #define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
+*/
 #define DEADBEEFMASK	(1<<25)
 #define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
 
