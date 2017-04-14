@@ -4,8 +4,6 @@ SET SCHEMA sch;
 
 CREATE TABLE origs AS SELECT id FROM sys.comments;
 
-CREATE TABLE tab (i integer, j integer);
-
 CREATE FUNCTION all_kinds_of_object()
 RETURNS TABLE (id INTEGER, name VARCHAR(30), type VARCHAR(20))
 RETURN TABLE (
@@ -15,17 +13,17 @@ RETURN TABLE (
 );
 
 CREATE FUNCTION new_comments()
-RETURNS TABLE (id INTEGER, name VARCHAR(30), source VARCHAR(20), remark CLOB)
+RETURNS TABLE (name VARCHAR(30), source VARCHAR(20), remark CLOB)
 RETURN TABLE (
-        SELECT o.id, o.name, o.type, c.remark
+        SELECT o.name, o.type, c.remark
         FROM sys.comments AS c LEFT JOIN all_kinds_of_object() AS o ON c.id = o.id
         WHERE c.id NOT IN (SELECT id FROM origs)
 );
 
--- start out empty
-SELECT * FROM new_comments();
+------------------------------------------------------------------------
 
--- find this comment
+-- create a table and comment on it
+CREATE TABLE tab (i integer, j integer);
 COMMENT ON TABLE tab IS 'The id''s of objects with an existing comment';
 SELECT * FROM new_comments();
 

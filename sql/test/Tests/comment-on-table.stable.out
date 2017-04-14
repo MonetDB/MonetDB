@@ -79,40 +79,35 @@ Ready.
 #        WHERE c.id NOT IN (SELECT id FROM origs)
 #);
 #SELECT * FROM new_comments();
-% .L1,	.L1,	.L1,	.L1 # table_name
-% id,	name,	source,	remark # name
-% int,	varchar,	varchar,	clob # type
-% 1,	0,	0,	0 # length
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 3,	5,	45 # length
+[ "tab",	"TABLE",	"The id\\'s of objects with an existing comment"	]
 #SELECT * FROM new_comments();
-% .L1,	.L1,	.L1,	.L1 # table_name
-% id,	name,	source,	remark # name
-% int,	varchar,	varchar,	clob # type
-% 4,	3,	5,	45 # length
-[ 8005,	"tab",	"TABLE",	"The id\\'s of objects with an existing comment"	]
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 3,	5,	13 # length
+[ "tab",	"TABLE",	"a new comment"	]
 #SELECT * FROM new_comments();
-% .L1,	.L1,	.L1,	.L1 # table_name
-% id,	name,	source,	remark # name
-% int,	varchar,	varchar,	clob # type
-% 4,	3,	5,	13 # length
-[ 8005,	"tab",	"TABLE",	"a new comment"	]
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 0,	0,	0 # length
 #SELECT * FROM new_comments();
-% .L1,	.L1,	.L1,	.L1 # table_name
-% id,	name,	source,	remark # name
-% int,	varchar,	varchar,	clob # type
-% 1,	0,	0,	0 # length
-#SELECT * FROM new_comments();
-% .L1,	.L1,	.L1,	.L1 # table_name
-% id,	name,	source,	remark # name
-% int,	varchar,	varchar,	clob # type
-% 1,	0,	0,	0 # length
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 0,	0,	0 # length
 #DROP TABLE tab;
 #SELECT * FROM new_comments();
-% .L1,	.L1,	.L1,	.L1 # table_name
-% id,	name,	source,	remark # name
-% int,	varchar,	varchar,	clob # type
-% 1,	0,	0,	0 # length
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 0,	0,	0 # length
 
-# 13:49:04 >  
-# 13:49:04 >  "Done."
-# 13:49:04 >  
+# 14:25:22 >  
+# 14:25:22 >  "Done."
+# 14:25:22 >  
 
