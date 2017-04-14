@@ -588,13 +588,8 @@ SQLinitClient(Client c)
 }
 
 str
-SQLexitClient(Client c)
+SQLresetClient(Client c)
 {
-#ifdef _SQL_SCENARIO_DEBUG
-	mnstr_printf(GDKout, "#SQLexitClient\n");
-#endif
-	if (SQLinitialized == FALSE)
-		throw(SQL, "SQLexitClient", "Catalogue not available");
 	if (c->sqlcontext) {
 		backend *be = NULL;
 		mvc *m = NULL;
@@ -622,6 +617,20 @@ SQLexitClient(Client c)
 		c->sqlcontext = NULL;
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
+	return MAL_SUCCEED;
+}
+
+str
+SQLexitClient(Client c)
+{
+	str err;
+#ifdef _SQL_SCENARIO_DEBUG
+	mnstr_printf(GDKout, "#SQLexitClient\n");
+#endif
+	if (SQLinitialized == FALSE)
+		throw(SQL, "SQLexitClient", "Catalogue not available");
+	if ((err = SQLresetClient(c)) != MAL_SUCCEED)
+		return err;
 	MALexitClient(c);
 	return MAL_SUCCEED;
 }
@@ -633,10 +642,14 @@ SQLexitClient(Client c)
 str
 SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str err;
+
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return SQLinitClient(cntxt);
+	if ((err = SQLinitClient(cntxt)) == MAL_SUCCEED)
+		cntxt->phase[MAL_SCENARIO_EXITCLIENT] = SQLexitClient;
+	return err;
 }
 
 

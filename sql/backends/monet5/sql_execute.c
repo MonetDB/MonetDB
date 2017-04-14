@@ -399,12 +399,14 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	str msg = MAL_SUCCEED;
 	backend *be, *sql = (backend *) c->sqlcontext;
 	size_t len = strlen(*expr);
+	int inited = 0;
 
 #ifdef _SQL_COMPILE
 	mnstr_printf(c->fdout, "#SQLstatement:%s\n", *expr);
 #endif
 	if (!sql) {
-		msg = SQLinitEnvironment(c, NULL, NULL, NULL);
+		inited = 1;
+		msg = SQLinitClient(c);
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){
@@ -416,8 +418,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	m = sql->mvc;
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
-	if (!o)
+	if (!o) {
+		if (inited)
+			SQLresetClient(c);
 		throw(SQL, "SQLstatement", "Out of memory");
+	}
 	*o = *m;
 	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
 	m->qc = NULL;
@@ -637,6 +642,8 @@ endofcompile:
 	m->vars = vars;
 	m->session->status = status;
 	m->session->auto_commit = ac;
+	if (inited)
+		SQLresetClient(c);
 	return msg;
 }
 
