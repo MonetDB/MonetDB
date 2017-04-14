@@ -5431,6 +5431,7 @@ comment_on_statement:
 
 catalog_object:
 	TABLE qname { $$ = _symbol_create_list( SQL_TABLE, $2); }
+	| SCHEMA ident { $$ = _symbol_create( SQL_SCHEMA, $2); }
 	;
 
 XML_value_expression:

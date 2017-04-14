@@ -101,6 +101,7 @@ median_stdev
 ifexists
 subqueries
 comment-on-table
+comment-on-schema
 
 #HAVE_GEOM?trace
 

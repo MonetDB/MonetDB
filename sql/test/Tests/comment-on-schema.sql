@@ -25,25 +25,12 @@ RETURN TABLE (
 
 ------------------------------------------------------------------------
 
--- create a table and comment on it
-CREATE TABLE tab (i integer, j integer);
-COMMENT ON TABLE tab IS 'The id''s of objects with an existing comment';
-SELECT * FROM new_comments();
-
--- update the comment, with explicit schema
-COMMENT ON TABLE sch.tab IS 'a new comment';
-SELECT * FROM new_comments();
-
--- drop it by setting it to NULL
-COMMENT ON TABLE tab IS NULL;
-SELECT * FROM new_comments();
-
--- drop it by setting it to the empty string
-COMMENT ON TABLE tab IS 'yet another comment';
-COMMENT ON TABLE tab IS '';
+-- create a schema and comment on it
+CREATE SCHEMA sch2;
+COMMENT ON SCHEMA sch2 IS 'yet another schema';
 SELECT * FROM new_comments();
 
 -- drop it by dropping the table
-COMMENT ON TABLE tab IS 'banana';
-DROP TABLE tab;
+COMMENT ON SCHEMA sch2 IS 'banana';
+DROP SCHEMA sch2;
 SELECT * FROM new_comments();

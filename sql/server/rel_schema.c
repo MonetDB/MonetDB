@@ -1929,31 +1929,42 @@ rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schem
 	return rel;
 }
 
+
 static sqlid
 rel_commentable_object(mvc *sql, symbol *catalog_object) {
-	assert(catalog_object->type == type_list);
-	dlist *qname = catalog_object->data.lval;
-	char *sname;
-	char *tname;
-	sql_schema *s = cur_schema(sql);
-	sql_table *t;
 
 	switch (catalog_object->token) {
-		case SQL_TABLE:
-			sname = qname_schema(qname);
+		case SQL_SCHEMA: {
+			assert(catalog_object->type == type_string);
+			char *sname = catalog_object->data.sval;
+			sql_schema *s;
+			if (!(s = mvc_bind_schema(sql, sname))) {
+				sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+				return 0;
+			}
+			return s->base.id;
+		}
+		case SQL_TABLE: {
+			assert(catalog_object->type == type_list);
+			dlist *qname = catalog_object->data.lval;
+			sql_schema *s = cur_schema(sql);
+			char *sname = qname_schema(qname);
 			if (sname && !(s = mvc_bind_schema(sql, sname))) {
 				sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
 				return 0;
 			}
-			tname = qname_table(qname);
+			char *tname = qname_table(qname);
+			sql_table *t;
 			if (!(t = mvc_bind_table(sql, s, tname))) {
 				sql_error(sql, 02, "3F000!COMMENT ON:no such table: %s.%s", s->base.name, tname);
 				return 0;
 			}
 			return t->base.id;
-		default:
+		}
+		default: {
 			sql_error(sql, 2, "!COMMENT ON %s is not supported", token2string(catalog_object->token));
 			return 0;
+		}
 	}
 }
 
