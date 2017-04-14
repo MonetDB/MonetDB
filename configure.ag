@@ -1505,17 +1505,6 @@ KVM_LIBS=""
 AC_CHECK_LIB([kvm], [kvm_open], [KVM_LIBS="-lkvm" ] )
 AC_SUBST([KVM_LIBS])
 
-save_LIBS="$LIBS"
-LIBS="$LIBS $MALLOC_LIBS"
-AC_CHECK_FUNCS([mallopt])
-AC_CHECK_FUNC([mallinfo],
-	[AC_COMPILE_IFELSE(
-		[AC_LANG_PROGRAM([[@%:@include <malloc.h>]],
-			[[struct mallinfo m;int x[1+sizeof(m.usmblks)-sizeof(void *)]]])],
-		[AC_DEFINE([HAVE_USEFUL_MALLINFO], 1,
-			[Define if you have mallinfo])])])
-LIBS="$save_LIBS"
-
 # libpthread
 org_have_pthread=auto
 have_pthread=$org_have_pthread

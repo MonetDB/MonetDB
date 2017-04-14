@@ -691,31 +691,6 @@ MT_msync(void *p, size_t len)
 	return ret;
 }
 
-struct Mallinfo
-MT_mallinfo(void)
-{
-	struct Mallinfo _ret;
-
-#ifdef HAVE_USEFUL_MALLINFO
-	struct mallinfo m;
-
-	m = mallinfo();
-	_ret.arena = m.arena;
-	_ret.ordblks = m.ordblks;
-	_ret.smblks = m.smblks;
-	_ret.hblks = m.hblks;
-	_ret.hblkhd = m.hblkhd;
-	_ret.usmblks = m.usmblks;
-	_ret.fsmblks = m.fsmblks;
-	_ret.uordblks = m.uordblks;
-	_ret.fordblks = m.fordblks;
-	_ret.keepcost = m.keepcost;
-#else
-	memset(&_ret, 0, sizeof(_ret));
-#endif
-	return _ret;
-}
-
 int
 MT_path_absolute(const char *pathname)
 {
@@ -924,42 +899,6 @@ MT_msync(void *p, size_t len)
 #define _HEAPEND        (-5)
 #define _HEAPBADPTR     (-6)
 #endif
-
-struct Mallinfo
-MT_mallinfo(void)
-{
-	struct Mallinfo _ret;
-	_HEAPINFO hinfo;
-	int heapstatus;
-
-	hinfo._pentry = NULL;
-	memset(&_ret, 0, sizeof(_ret));
-
-	while ((heapstatus = _heapwalk(&hinfo)) == _HEAPOK) {
-		_ret.arena += hinfo._size;
-		if (hinfo._size > MT_SMALLBLOCK) {
-			_ret.smblks++;
-			if (hinfo._useflag == _USEDENTRY) {
-				_ret.usmblks += hinfo._size;
-			} else {
-				_ret.fsmblks += hinfo._size;
-			}
-		} else {
-			_ret.ordblks++;
-			if (hinfo._useflag == _USEDENTRY) {
-				_ret.uordblks += hinfo._size;
-			} else {
-				_ret.fordblks += hinfo._size;
-			}
-		}
-	}
-	if (heapstatus == _HEAPBADPTR || heapstatus == _HEAPBADBEGIN || heapstatus == _HEAPBADNODE) {
-
-		fprintf(stderr, "#mallinfo(): heap is corrupt.");
-	}
-	_heapmin();
-	return _ret;
-}
 
 int
 MT_path_absolute(const char *pathname)

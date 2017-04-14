@@ -208,11 +208,8 @@ static size_t memincr;
 str
 SYSmemStatistics(bat *ret, bat *ret2)
 {
-	struct Mallinfo m;
 	BAT *b, *bn;
 	lng i;
-
-	m = MT_mallinfo();
 
 	bn = COLnew(0,TYPE_str, 32, TRANSIENT);
 	b = COLnew(0, TYPE_lng, 32, TRANSIENT);
@@ -226,42 +223,6 @@ SYSmemStatistics(bat *ret, bat *ret2)
 	i = (lng) (GDKmem_cursize() - memincr);
 	memincr = GDKmem_cursize();
 	if (BUNappend(bn, "memincr", FALSE) != GDK_SUCCEED ||
-		BUNappend(b, &i, FALSE) != GDK_SUCCEED)
-		goto bailout;
-	i = (lng) m.arena;
-	if (BUNappend(bn, "arena", FALSE) != GDK_SUCCEED ||
-		BUNappend(b, &i, FALSE) != GDK_SUCCEED)
-		goto bailout;
-	i = (lng) m.ordblks;
-	if (BUNappend(bn, "ordblks", FALSE) != GDK_SUCCEED ||
-		BUNappend(b, &i, FALSE) != GDK_SUCCEED)
-		goto bailout;
-	i = (lng) m.smblks;
-	if (BUNappend(bn, "smblks", FALSE) != GDK_SUCCEED ||
-		BUNappend(b, &i, FALSE) != GDK_SUCCEED)
-		goto bailout;
-	i = (lng) m.hblkhd;
-	if (BUNappend(bn, "hblkhd", FALSE) != GDK_SUCCEED ||
-		BUNappend(b, &i, FALSE) != GDK_SUCCEED)
-		goto bailout;
-	i = (lng) m.hblks;
-	if (BUNappend(bn, "hblks", FALSE) != GDK_SUCCEED ||
-		BUNappend(b, &i, FALSE) != GDK_SUCCEED)
-		goto bailout;
-	i = (lng) m.usmblks;
-	if (BUNappend(bn, "usmblks", FALSE) != GDK_SUCCEED ||
-		BUNappend(b, &i, FALSE) != GDK_SUCCEED)
-		goto bailout;
-	i = (lng) m.fsmblks;
-	if (BUNappend(bn, "fsmblks", FALSE) != GDK_SUCCEED ||
-		BUNappend(b, &i, FALSE) != GDK_SUCCEED)
-		goto bailout;
-	i = (lng) m.uordblks;
-	if (BUNappend(bn, "uordblks", FALSE) != GDK_SUCCEED ||
-		BUNappend(b, &i, FALSE) != GDK_SUCCEED)
-		goto bailout;
-	i = (lng) m.fordblks;
-	if (BUNappend(bn, "fordblks", FALSE) != GDK_SUCCEED ||
 		BUNappend(b, &i, FALSE) != GDK_SUCCEED)
 		goto bailout;
 	if (pseudo(ret,ret2,bn,b))
@@ -302,7 +263,6 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
 	BAT *bn = COLnew(0, TYPE_str, 2 * getBBPsize(), TRANSIENT);
 	BAT *b = COLnew(0, TYPE_lng, 2 * getBBPsize(), TRANSIENT);
-	struct Mallinfo m;
 	char buf[1024];
 	bat i;
 
@@ -376,13 +336,6 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		goto bailout;
 
 	/* now look at what the global statistics report (to see if it coincides) */
-
-	/* how much *used* bytes in heap? */
-	m = MT_mallinfo();
-	sz = (size_t) m.usmblks + (size_t) m.uordblks + (size_t) m.hblkhd;
-	if (BUNappend(bn, "_tot/malloc", FALSE) != GDK_SUCCEED ||
-		BUNappend(b, &sz, FALSE) != GDK_SUCCEED)
-		goto bailout;
 
 	/* measure actual heap size, includes wasted fragmented space and anon mmap space used by malloc() */
 	sz = GDKmem_cursize();

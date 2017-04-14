@@ -298,7 +298,6 @@ size_t MT_getrss(void);
 void MT_init(void);
 int MT_join_thread(MT_Id t);
 int MT_lockf(char *filename, int mode, off_t off, off_t len);
-struct Mallinfo MT_mallinfo(void);
 void *MT_mmap(const char *path, int mode, size_t len);
 int MT_munmap(void *p, size_t len);
 int MT_path_absolute(const char *path);

@@ -1525,20 +1525,6 @@ GDKvm_cursize(void)
 static void
 GDKmemdump(void)
 {
-	struct Mallinfo m = MT_mallinfo();
-
-	MEMDEBUG {
-		fprintf(stderr, "\n");
-		fprintf(stderr, "#mallinfo.arena = " SZFMT "\n", m.arena);
-		fprintf(stderr, "#mallinfo.ordblks = " SZFMT "\n", m.ordblks);
-		fprintf(stderr, "#mallinfo.smblks = " SZFMT "\n", m.smblks);
-		fprintf(stderr, "#mallinfo.hblkhd = " SZFMT "\n", m.hblkhd);
-		fprintf(stderr, "#mallinfo.hblks = " SZFMT "\n", m.hblks);
-		fprintf(stderr, "#mallinfo.usmblks = " SZFMT "\n", m.usmblks);
-		fprintf(stderr, "#mallinfo.fsmblks = " SZFMT "\n", m.fsmblks);
-		fprintf(stderr, "#mallinfo.uordblks = " SZFMT "\n", m.uordblks);
-		fprintf(stderr, "#mallinfo.fordblks = " SZFMT "\n", m.fordblks);
-	}
 #ifdef GDK_MEM_KEEPHISTO
 	{
 		int i;
