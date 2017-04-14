@@ -822,12 +822,6 @@ BATload_intern(bat bid, int lock)
 	if (!DELTAdirty(b)) {
 		ALIGNcommit(b);
 	}
-
-	if ((b->batRestricted == BAT_WRITE && (GDKdebug & CHECKMASK)) ||
-	    (GDKdebug & PROPMASK)) {
-		++b->batSharecnt;
-		--b->batSharecnt;
-	}
 	return b;
 }
 
