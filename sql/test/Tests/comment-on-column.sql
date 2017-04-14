@@ -29,25 +29,19 @@ RETURN TABLE (
 
 ------------------------------------------------------------------------
 
--- create a table and comment on it
+-- create a table and comment on a column
 CREATE TABLE tab (i integer, j integer);
-COMMENT ON TABLE tab IS 'The id''s of objects with an existing comment';
+COMMENT ON COLUMN tab.i IS 'A column';
 SELECT * FROM new_comments();
 
--- update the comment, with explicit schema
-COMMENT ON TABLE sch.tab IS 'a new comment';
+-- again, with an explicit schema reference
+COMMENT ON COLUMN sch.tab.j IS 'Another comment';
 SELECT * FROM new_comments();
 
--- drop it by setting it to NULL
-COMMENT ON TABLE tab IS NULL;
+-- it's dropped if the column is dropped
+ALTER TABLE tab DROP COLUMN i;
 SELECT * FROM new_comments();
 
--- drop it by setting it to the empty string
-COMMENT ON TABLE tab IS 'yet another comment';
-COMMENT ON TABLE tab IS '';
-SELECT * FROM new_comments();
-
--- drop it by dropping the table
-COMMENT ON TABLE tab IS 'banana';
+-- and if the table is dropped
 DROP TABLE tab;
 SELECT * FROM new_comments();

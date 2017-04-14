@@ -1961,6 +1961,41 @@ rel_commentable_object(mvc *sql, symbol *catalog_object) {
 			}
 			return t->base.id;
 		}
+		case SQL_COLUMN: {
+			char *sname, *tname, *cname;
+			assert(catalog_object->type == type_list);
+			dlist *colname = catalog_object->data.lval;
+			assert(colname->cnt == 2 || colname->cnt == 3);
+			assert(colname->h->type == type_string);
+			assert(colname->h->next->type == type_string);
+			if (colname->cnt == 2) {
+				sname = NULL;
+				tname = colname->h->data.sval;
+				cname = colname->h->next->data.sval;
+			} else {
+				// cnt == 3
+				sname = colname->h->data.sval;
+				tname = colname->h->next->data.sval;
+				assert(colname->h->next->next->type == type_string);
+				cname = colname->h->next->next->data.sval;
+			}
+			sql_schema *s = cur_schema(sql);
+			if (sname && !(s = mvc_bind_schema(sql, sname))) {
+				sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+				return 0;
+			}
+			sql_table *t;
+			if (!(t = mvc_bind_table(sql, s, tname))) {
+				sql_error(sql, 02, "3F000!COMMENT ON:no such table: %s.%s", s->base.name, tname);
+				return 0;
+			}
+			sql_column *c;
+			if (!(c = mvc_bind_column(sql, t, cname))) {
+				sql_error(sql, 02, "3F000!COMMENT ON:no such column: %s.%s", tname, cname);
+				return 0;
+			}
+			return c->base.id;
+		}
 		default: {
 			sql_error(sql, 2, "!COMMENT ON %s is not supported", token2string(catalog_object->token));
 			return 0;

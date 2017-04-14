@@ -5432,6 +5432,19 @@ comment_on_statement:
 catalog_object:
 	TABLE qname { $$ = _symbol_create_list( SQL_TABLE, $2); }
 	| SCHEMA ident { $$ = _symbol_create( SQL_SCHEMA, $2); }
+	| COLUMN ident '.' ident
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_string(l, $4);
+	  $$ = _symbol_create_list( SQL_COLUMN, l );
+	}
+	| COLUMN ident '.' ident '.' ident
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_string(l, $4);
+	  append_string(l, $6);
+	  $$ = _symbol_create_list( SQL_COLUMN, l );
+	}
 	;
 
 XML_value_expression:

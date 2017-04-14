@@ -5,7 +5,7 @@ SET SCHEMA sch;
 CREATE TABLE origs AS SELECT id FROM sys.comments;
 
 CREATE FUNCTION all_kinds_of_object()
-RETURNS TABLE (id INTEGER, name VARCHAR(30), type VARCHAR(20))
+RETURNS TABLE (id INTEGER, name VARCHAR(50), type VARCHAR(20))
 RETURN TABLE (
         SELECT id, name, table_type_name
         FROM sys.tables, sys.table_types
@@ -13,6 +13,10 @@ RETURN TABLE (
         UNION ALL
         SELECT id, name, 'SCHEMA'
         FROM sys.schemas
+        UNION ALL
+        SELECT c.id, t.name || '.' || c.name, 'COLUMN'
+        FROM sys.columns AS c, sys.tables AS t
+        WHERE c.table_id = t.id
 );
 
 CREATE FUNCTION new_comments()
