@@ -19,14 +19,6 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup user.columnsize a bulk operator implementation is needed
-#    X_113:bat[:lng] := mal.multiplex("user":str, "columnsize":str, X_49:bat[:str], X_63:bat[:lng], X_70:bat[:lng]);
-#WARNING To speedup user.heapsize a bulk operator implementation is needed
-#    X_116:bat[:lng] := mal.multiplex("user":str, "heapsize":str, X_49:bat[:str], X_70:bat[:lng], X_77:bat[:int]);
-#WARNING To speedup user.hashsize a bulk operator implementation is needed
-#    X_118:bat[:lng] := mal.multiplex("user":str, "hashsize":str, X_84:bat[:bit], X_63:bat[:lng]);
-#WARNING To speedup user.imprintsize a bulk operator implementation is needed
-#    X_120:bat[:lng] := mal.multiplex("user":str, "imprintsize":str, X_63:bat[:lng], X_49:bat[:str]);
 
 # 12:34:37 >  
 # 12:34:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4387" "--port=31305"
@@ -157,6 +149,11 @@ Ready.
 % id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 1,	0,	0,	1,	1,	1,	1,	1 # length
+#SELECT * FROM sys.keys WHERE id NOT IN (SELECT id FROM sys.objects);
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	0,	1,	1 # length
 #SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
 % id,	table_id,	type,	name,	rkey,	action # name
@@ -192,6 +189,11 @@ Ready.
 % id,	table_id,	type,	name,	rkey,	action # name
 % int,	int,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1 # length
+#SELECT * FROM sys.idxs WHERE id NOT IN (SELECT id FROM sys.objects);
+% sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% id,	table_id,	type,	name # name
+% int,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
 #SELECT * FROM sys.idxs WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % id,	table_id,	type,	name # name
@@ -297,8 +299,18 @@ Ready.
 % id,	name,	grantor # name
 % int,	varchar,	int # type
 % 1,	0,	1 # length
+#SELECT * FROM sys.users WHERE name NOT IN (SELECT name FROM sys.auths);
+% .users,	.users,	.users # table_name
+% name,	fullname,	default_schema # name
+% varchar,	varchar,	int # type
+% 0,	0,	1 # length
 #SELECT * FROM sys.users WHERE default_schema NOT IN (SELECT id FROM sys.schemas);
 % .users,	.users,	.users # table_name
+% name,	fullname,	default_schema # name
+% varchar,	varchar,	int # type
+% 0,	0,	1 # length
+#SELECT * FROM sys.db_user_info WHERE name NOT IN (SELECT name FROM sys.auths);
+% sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
 % name,	fullname,	default_schema # name
 % varchar,	varchar,	int # type
 % 0,	0,	1 # length
@@ -307,7 +319,22 @@ Ready.
 % name,	fullname,	default_schema # name
 % varchar,	varchar,	int # type
 % 0,	0,	1 # length
+#SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT id FROM sys.auths);
+% sys.user_role,	sys.user_role # table_name
+% login_id,	role_id # name
+% int,	int # type
+% 1,	1 # length
+#SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name IN (SELECT u.name FROM sys.users u));
+% sys.user_role,	sys.user_role # table_name
+% login_id,	role_id # name
+% int,	int # type
+% 1,	1 # length
 #SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT id FROM sys.auths);
+% sys.user_role,	sys.user_role # table_name
+% login_id,	role_id # name
+% int,	int # type
+% 1,	1 # length
+#SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.users u));
 % sys.user_role,	sys.user_role # table_name
 % login_id,	role_id # name
 % int,	int # type
@@ -337,6 +364,11 @@ Ready.
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
 % 3,	0,	26,	0,	0,	0,	1,	1 # length
+#SELECT * FROM sys.querylog_catalog WHERE pipe NOT IN (SELECT name FROM sys.optimizers);
+% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
+% 3,	0,	26,	0,	0,	0,	1,	1 # length
 #SELECT * FROM sys.querylog_calls WHERE id NOT IN (SELECT id FROM sys.querylog_catalog);
 % .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
 % id,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
@@ -347,7 +379,17 @@ Ready.
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.queue WHERE tag > 0 AND tag NOT IN (SELECT qtag FROM sys.queue);
+#SELECT * FROM sys.querylog_history WHERE owner NOT IN (SELECT name FROM sys.users);
+% .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
+% 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
+#SELECT * FROM sys.querylog_history WHERE pipe NOT IN (SELECT name FROM sys.optimizers);
+% .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
+% 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
+#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
 % .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
 % qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
 % bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type

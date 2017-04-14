@@ -482,23 +482,27 @@ void* RAPIloopback(void *query) {
 	if (err) { // there was an error
 		return ScalarString(RSTR(err));
 	}
-	if (output && output->nr_cols > 0) {
-		int i, ncols = output->nr_cols;
-		SEXP retlist, names, varvalue = R_NilValue;
-		retlist = PROTECT(allocVector(VECSXP, ncols));
-		names = PROTECT(NEW_STRING(ncols));
-		for (i = 0; i < ncols; i++) {
-			if (!(varvalue = bat_to_sexp(BATdescriptor(output->cols[i].b)))) {
-				UNPROTECT(i + 3);
-				return ScalarString(RSTR("Conversion error"));
+	if (output) {
+		int ncols = output->nr_cols;
+		if (ncols > 0) {
+			int i;
+			SEXP retlist, names, varvalue = R_NilValue;
+			retlist = PROTECT(allocVector(VECSXP, ncols));
+			names = PROTECT(NEW_STRING(ncols));
+			for (i = 0; i < ncols; i++) {
+				if (!(varvalue = bat_to_sexp(BATdescriptor(output->cols[i].b)))) {
+					UNPROTECT(i + 3);
+					return ScalarString(RSTR("Conversion error"));
+				}
+				SET_STRING_ELT(names, i, RSTR(output->cols[i].name));
+				SET_VECTOR_ELT(retlist, i, varvalue);
 			}
-			SET_STRING_ELT(names, i, RSTR(output->cols[i].name));
-			SET_VECTOR_ELT(retlist, i, varvalue);
+			res_table_destroy(output);
+			SET_NAMES(retlist, names);
+			UNPROTECT(ncols + 2);
+			return retlist;
 		}
 		res_table_destroy(output);
-		SET_NAMES(retlist, names);
-		UNPROTECT(ncols + 2);
-		return retlist;
 	}
 	return ScalarLogical(1);
 }

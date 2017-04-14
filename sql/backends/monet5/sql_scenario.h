@@ -25,6 +25,7 @@ sql5_export void SQLtrans(mvc *m);
 
 sql5_export str SQLexit(Client c);
 sql5_export str SQLexitClient(Client c);
+sql5_export str SQLresetClient(Client c);
 sql5_export str SQLinitClient(Client c);
 sql5_export str SQLreader(Client c);
 sql5_export str SQLparser(Client c);

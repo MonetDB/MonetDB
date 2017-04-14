@@ -933,6 +933,9 @@ logger_readlog(logger *lg, char *filename)
 	log_return err = LOG_OK;
 	time_t t0, t1;
 	struct stat sb;
+	int dbg = GDKdebug;
+
+	GDKdebug &= ~(CHECKMASK|PROPMASK);
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
@@ -944,12 +947,14 @@ logger_readlog(logger *lg, char *filename)
 	if (lg->log == NULL || mnstr_errnr(lg->log)) {
 		mnstr_destroy(lg->log);
 		lg->log = NULL;
+		GDKdebug = dbg;
 		return GDK_SUCCEED;
 	}
 	if (fstat(fileno(getFile(lg->log)), &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
 		mnstr_destroy(lg->log);
 		lg->log = NULL;
+		GDKdebug = dbg;
 		/* If the file could be opened, but fstat fails,
 		 * something weird is going on */
 		return GDK_FAIL;
@@ -1082,6 +1087,7 @@ logger_readlog(logger *lg, char *filename)
 		printf("# Finished reading the write-ahead log '%s'\n", filename);
 		fflush(stdout);
 	}
+	GDKdebug = dbg;
 	/* we cannot distinguish errors from incomplete transactions
 	 * (even if we would log aborts in the logs). So we simply
 	 * abort and move to the next log file */

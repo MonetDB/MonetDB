@@ -391,8 +391,10 @@ freeClient(Client c)
 		c->username = 0;
 	}
 	c->mythread = 0;
-	GDKfree(c->glb);
-	c->glb = NULL;
+	if (c->glb) {
+		freeStack(c->glb);
+		c->glb = NULL;
+	}
 	if( c->error_row){
 		BBPrelease(c->error_row->batCacheid);
 		BBPrelease(c->error_fld->batCacheid);
