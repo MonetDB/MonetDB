@@ -1959,7 +1959,6 @@ gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
  * Compiled with -DMEMLEAKS the GDK memory management log their
  * activities, and are checked on inconsistent frees and memory leaks.
  */
-#define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
 gdk_export void *GDKmmap(const char *path, int mode, size_t len);
