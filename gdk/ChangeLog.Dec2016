@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Apr 18 2017 Sjoerd Mullender <sjoerd@acm.org>
+- A potential deadlock was fixed in order index creation.
+- A bug that could happen during recovery of the write-ahead log (WAL)
+  was fixed.  See changeset 98ad79c555cc for details.
+
