@@ -25,11 +25,29 @@ Ready.
 # 17:11:19 >  
 
 #CREATE TABLE RELTIME_TBL (f1 interval second);
+#INSERT INTO RELTIME_TBL (f1) VALUES (1);
+[ 1	]
+#INSERT INTO RELTIME_TBL (f1) VALUES (10);
+[ 1	]
+#INSERT INTO RELTIME_TBL (f1) VALUES (100);
+[ 1	]
+#INSERT INTO RELTIME_TBL (f1) VALUES (1000);
+[ 1	]
+#INSERT INTO RELTIME_TBL (f1) VALUES (10000);
+[ 1	]
+#INSERT INTO RELTIME_TBL (f1) VALUES (100000);
+[ 1	]
 #SELECT '' AS six, RELTIME_TBL.* FROM RELTIME_TBL;
 % .L2,	sys.reltime_tbl # table_name
 % six,	f1 # name
 % char,	sec_interval # type
-% 0,	5 # length
+% 0,	10 # length
+[ "",	1.000	]
+[ "",	10.000	]
+[ "",	100.000	]
+[ "",	1000.000	]
+[ "",	10000.000	]
+[ "",	100000.000	]
 #SELECT '' AS fifteen, r1.*, r2.*
 #   FROM RELTIME_TBL r1, RELTIME_TBL r2
 #   WHERE r1.f1 > r2.f1
@@ -37,7 +55,22 @@ Ready.
 % .L2,	sys.r1,	sys.r2 # table_name
 % fifteen,	f1,	f1 # name
 % char,	sec_interval,	sec_interval # type
-% 0,	5,	5 # length
+% 0,	10,	9 # length
+[ "",	10.000,	1.000	]
+[ "",	100.000,	1.000	]
+[ "",	100.000,	10.000	]
+[ "",	1000.000,	1.000	]
+[ "",	1000.000,	10.000	]
+[ "",	1000.000,	100.000	]
+[ "",	10000.000,	1.000	]
+[ "",	10000.000,	10.000	]
+[ "",	10000.000,	100.000	]
+[ "",	10000.000,	1000.000	]
+[ "",	100000.000,	1.000	]
+[ "",	100000.000,	10.000	]
+[ "",	100000.000,	100.000	]
+[ "",	100000.000,	1000.000	]
+[ "",	100000.000,	10000.000	]
 #DROP TABLE RELTIME_TBL;
 
 # 15:01:55 >  

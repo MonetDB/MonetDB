@@ -21,7 +21,6 @@ typedef struct rusage Rusage;
 #endif
 
 typedef struct tms Tms;
-typedef struct Mallinfo Mallinfo;
 
 mal_export int malProfileMode;
 

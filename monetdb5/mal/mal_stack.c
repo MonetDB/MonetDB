@@ -115,6 +115,10 @@ clearStack(MalStkPtr s)
 			GDKfree(v->val.pval);
 			v->vtype = 0;
 			v->val.pval = NULL;
+		} else if (BATatoms[v->vtype].atomUnfix) {
+			BATatoms[v->vtype].atomUnfix(VALget(v));
+			v->vtype = 0;
+			v->val.pval = NULL;
 		}
 	s->stkbot = 0;
 }

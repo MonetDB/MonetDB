@@ -469,8 +469,10 @@
 #define XPROPDEBUG	if (GDKdebug & XPROPMASK)
 */
 
+/* JOINPROPMASK not used anymore
 #define JOINPROPMASK	(1<<24)
 #define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
+*/
 #define DEADBEEFMASK	(1<<25)
 #define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
 
@@ -1922,7 +1924,7 @@ gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
  * @- Multilevel Storage Modes
  *
  * We should bring in the compressed mode as the first, maybe
- * built-in, mode. We could than add for instance HTTP remote storage,
+ * built-in, mode. We could then add for instance HTTP remote storage,
  * SQL storage, and READONLY (cd-rom) storage.
  *
  * @+ GDK Utilities
@@ -1957,7 +1959,6 @@ gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
  * Compiled with -DMEMLEAKS the GDK memory management log their
  * activities, and are checked on inconsistent frees and memory leaks.
  */
-#define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
 gdk_export void *GDKmmap(const char *path, int mode, size_t len);

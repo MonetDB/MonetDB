@@ -253,6 +253,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 			freeException(msg);
 	}
 #endif
+	c->blocksize = BLOCK;
+	c->protocol = PROTOCOL_9;
+	c->compute_column_widths = 0;
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
 }
@@ -390,8 +393,10 @@ freeClient(Client c)
 		c->username = 0;
 	}
 	c->mythread = 0;
-	GDKfree(c->glb);
-	c->glb = NULL;
+	if (c->glb) {
+		freeStack(c->glb);
+		c->glb = NULL;
+	}
 	if( c->error_row){
 		BBPrelease(c->error_row->batCacheid);
 		BBPrelease(c->error_fld->batCacheid);
