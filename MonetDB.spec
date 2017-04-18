@@ -953,6 +953,21 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Apr 18 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.19-20170418
+- Rebuilt.
+- BZ#6259: crash on select query from sqlitelogictests
+
+* Tue Apr 18 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.19-20170418
+- gdk: A potential deadlock was fixed in order index creation.
+- gdk: A bug that could happen during recovery of the write-ahead log (WAL)
+  was fixed.  See changeset 98ad79c555cc for details.
+
+* Tue Apr 18 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.19-20170418
+- monetdb5: Some memory leaks were plugged.
+
+* Tue Apr 18 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.19-20170418
+- sql: Some memory leaks were plugged.
+
 * Tue Apr 11 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.17-20170411
 - Rebuilt.
 - BZ#6110: cast of a SQL boolean value to a string or clob or (var)char
