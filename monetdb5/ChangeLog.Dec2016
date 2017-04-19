@@ -1,3 +1,7 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Apr 19 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a bug causing a crash during cleanup when mserver5 is stopped
+  with monetdb stop database.
+
