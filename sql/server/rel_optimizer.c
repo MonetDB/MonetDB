@@ -29,6 +29,7 @@ typedef struct global_props {
 } global_props;
 
 typedef sql_rel *(*rewrite_fptr)(int *changes, mvc *sql, sql_rel *rel);
+typedef sql_rel *(*rewrite_rel_fptr)(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes);
 typedef int (*find_prop_fptr)(mvc *sql, sql_rel *rel);
 
 static sql_rel * rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes);
@@ -8555,6 +8556,36 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_exp *
+rewrite_exp(mvc *sql, sql_exp *e, rewrite_rel_fptr rewrite_rel, rewrite_fptr rewriter, int *has_changes)
+{
+	if (e->type != e_psm)
+		return e;
+	if (e->flag & PSM_SET || e->flag & PSM_VAR) 
+		return e;
+	if (e->flag & PSM_RETURN) {
+		e->l = rewrite_exp(sql, e->l, rewrite_rel, rewriter, has_changes);
+	}
+	if (e->flag & PSM_WHILE || e->flag & PSM_IF) 
+		return e;
+	if (e->flag & PSM_REL) 
+		e->l = rewrite_rel(sql, e->l, rewriter, has_changes);
+	return e;
+}
+
+static list *
+rewrite_exps(mvc *sql, list *l, rewrite_rel_fptr rewrite_rel, rewrite_fptr rewriter, int *has_changes)
+{
+	node *n;
+
+	if (!l)
+		return l;
+	for(n = l->h; n; n = n->next) 
+		n->data = rewrite_exp(sql, n->data, rewrite_rel, rewriter, has_changes);
+	return l;
+}
+
+
 static sql_rel *
 rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes) 
 {
@@ -8590,6 +8621,8 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 		rel->l = rewrite(sql, rel->l, rewriter, has_changes);
 		break;
 	case op_ddl: 
+		if (rel->flag == DDL_PSM && rel->exps) 
+			rel->exps = rewrite_exps(sql, rel->exps, &rewrite, rewriter, has_changes);
 		rel->l = rewrite(sql, rel->l, rewriter, has_changes);
 		if (rel->r)
 			rel->r = rewrite(sql, rel->r, rewriter, has_changes);
@@ -8647,6 +8680,8 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 		rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
 		break;
 	case op_ddl: 
+		if (rel->flag == DDL_PSM && rel->exps) 
+			rewrite_exps(sql, rel->exps, &rewrite_topdown, rewriter, has_changes);
 		rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
 		if (rel->r)
 			rel->r = rewrite_topdown(sql, rel->r, rewriter, has_changes);

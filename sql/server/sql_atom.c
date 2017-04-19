@@ -1210,12 +1210,13 @@ atom *
 atom_mul(atom *a1, atom *a2)
 {
 	ValRecord dst;
+
 	if (!EC_COMPUTE(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->tpe.type->localtype == TYPE_dbl ||
 	    a2->tpe.type->localtype == TYPE_dbl) {
 		ValRecord v1, v2;
-		v1.vtype = v2.vtype = TYPE_dbl;
+		dst.vtype = v1.vtype = v2.vtype = TYPE_dbl;
 		v1.val.dval = a1->d;
 		v2.val.dval = a2->d;
 		if (VARcalcmul(&dst, &v1, &v2, 1) != GDK_SUCCEED)
