@@ -60,10 +60,10 @@ Ready.
 #order by
 #	revenue desc
 #limit 20;
-% sys.customer,	sys.customer,	sys.L1,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
+% sys.customer,	sys.customer,	sys.L5,	sys.customer,	sys.nation,	sys.customer,	sys.customer,	sys.customer # table_name
 % c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
 % int,	varchar,	decimal,	decimal,	char,	varchar,	char,	varchar # type
-% 4,	18,	21,	17,	25,	40,	15,	116 # length
+% 4,	18,	20,	17,	25,	40,	15,	116 # length
 [ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"ely pending frays boost carefully"	]
 [ 1201,	"Customer#000001201",	374331.5340,	5165.39,	"IRAN",	"LfCSVKWozyWOGDW02g9UX,XgH5YU2o5ql1zBrN",	"20-825-400-1187",	"lyly pending packages. special requests sleep-- platelets use blithely after the instructions. sometimes even id"	]
 [ 422,	"Customer#000000422",	366451.0126,	-272.14,	"INDONESIA",	"AyNzZBvmIDo42JtjP9xzaK3pnvkh Qc0o08ssnvq",	"19-299-247-2444",	"eposits; furiously ironic packages accordi"	]
@@ -84,12 +84,6 @@ Ready.
 [ 1030,	"Customer#000001030",	282557.3566,	6359.27,	"INDIA",	"Xpt1BiB5h9o",	"18-759-877-1870",	"ding to the slyly unusual accounts. even requests among the evenly"	]
 [ 1049,	"Customer#000001049",	281134.1117,	8747.99,	"INDONESIA",	"bZ1OcFhHaIZ5gMiH",	"19-499-258-2851",	"uriously according to the furiously silent packages"	]
 [ 1094,	"Customer#000001094",	274877.4440,	2544.49,	"BRAZIL",	"OFz0eedTmPmXk2 3XM9v9Mcp13NVC0PK",	"12-234-721-9871",	"tes serve blithely quickly pending foxes. express, quick accounts"	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	3	]
 
 # 09:17:15 >  
 # 09:17:15 >  Done.

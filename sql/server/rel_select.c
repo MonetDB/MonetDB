@@ -25,7 +25,8 @@
 #include "mal.h"		/* for have_hge */
 #endif
 
-#define check_card(card,f) ((card == card_none && !f->res) || (card != card_none && (f->res || f->func->type == F_FILT)) || card == card_loader)
+#define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
+#define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
 
 static void
 rel_setsubquery(sql_rel*r)
@@ -226,8 +227,16 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			}
 		}
 		if (!columnrefs && sq->exps) {
-			node *ne = sq->exps->h;
-
+			node *ne;
+			if (is_topn(sq->op)) {
+				// if the current node is a LIMIT statement
+				// we perform the alias on the underlying projection
+				assert(sq->l);
+				assert(is_project(((sql_rel*)sq->l)->op));
+				ne = ((sql_rel*)sq->l)->exps->h;
+			} else {
+				ne = sq->exps->h;
+			}
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
 
@@ -305,7 +314,15 @@ query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 {
 	switch (q->token) {
 	case SQL_WITH:
-		return rel_with_query(sql, q);
+	{
+		sql_rel *tq = rel_with_query(sql, q);
+
+		if (!tq)
+			return NULL;
+		if (q->data.lval->t->type == type_symbol)
+			return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+		return tq;
+	}
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
@@ -771,17 +788,27 @@ rel_values( mvc *sql, symbol *tableref)
 		sql_exp *vals = m->data;
 		list *vals_list = vals->f;
 		list *nexps = sa_list(sql->sa);
+		sql_subtype *tpe = exp_subtype(vals_list->h->data);
+
+		if (tpe)
+			vals->tpe = *tpe;
 
 		/* first get super type */
-		vals->tpe = *exp_subtype(vals_list->h->data);
-
 		for (n = vals_list->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			sql_subtype super;
+			sql_subtype super, *ttpe;
 
-			supertype(&super, &vals->tpe, exp_subtype(e));
-			vals->tpe = super;
+			ttpe = exp_subtype(e);
+			if (tpe && ttpe) {
+				supertype(&super, tpe, ttpe);
+				vals->tpe = super;
+				tpe = &vals->tpe;
+			} else {
+				tpe = ttpe;
+			}
 		}
+		if (!tpe)
+			continue;
 		for (n = vals_list->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			
@@ -995,10 +1022,15 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			return rel_var_ref(sql, name, 0);
 		}
 		if (!exp && !var) {
-			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel)
-				return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
-			else
-				return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
+			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel) {
+				sql_rel *gb = *rel;
+
+				while(gb->l && !is_groupby(gb->op))
+					gb = gb->l;
+				if (gb && gb->l && rel_bind_column(sql, gb->l, name, f)) 
+					return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
+			}
+			return sql_error(sql, 02, "SELECT: identifier '%s' unknown", name);
 		}
 		
 	} else if (dlist_length(l) == 2) {
@@ -1026,10 +1058,15 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) {
-			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel)
-				return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
-			else
-				return sql_error(sql, 02, "42S22!SELECT: no such column '%s.%s'", tname, cname);
+			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel) {
+				sql_rel *gb = *rel;
+
+				while(gb->l && !is_groupby(gb->op))
+					gb = gb->l;
+				if (gb && gb->l && rel_bind_column2(sql, gb->l, tname, cname, f))
+					return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+			}
+			return sql_error(sql, 02, "42S22!SELECT: no such column '%s.%s'", tname, cname);
 		}
 	} else if (dlist_length(l) >= 3) {
 		return sql_error(sql, 02, "TODO: column names of level >= 3");
@@ -2029,7 +2066,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				sql_rel *z = NULL, *rl;
 
 				r = rel_value_exp(sql, &z, sval, f, ek);
-				if (l && IS_ANY(st->type->eclass)){
+				if (l && r && IS_ANY(st->type->eclass)){
 					l = rel_check_type(sql, exp_subtype(r), l, type_equal);
 					if (l)
 						st = exp_subtype(l);
@@ -2102,6 +2139,25 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			return e;
 		}
 		return NULL;
+	}
+	case SQL_EXISTS:
+	case SQL_NOT_EXISTS:
+	{
+		symbol *lo = sc->data.sym;
+		sql_exp *le = rel_value_exp(sql, rel, lo, f, ek);
+		sql_subfunc *f = NULL;
+
+		if (!le)
+			return NULL;
+
+		if (sc->token != SQL_EXISTS)
+			f = sql_bind_func(sql->sa, sql->session->schema, "sql_not_exists", exp_subtype(le), NULL, F_FUNC);
+		else
+			f = sql_bind_func(sql->sa, sql->session->schema, "sql_exists", exp_subtype(le), NULL, F_FUNC);
+
+		if (!f) 
+			return sql_error(sql, 02, "exist operator on type %s missing", exp_subtype(le)->type->sqlname);
+		return exp_unop(sql->sa, le, f);
 	}
 	case SQL_LIKE:
 	case SQL_NOT_LIKE:
@@ -3570,7 +3626,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 			return NULL;
 
 		/* remove any null's in the condition */
-		if (has_nil(cond)) {
+		if (has_nil(cond) && token != SQL_COALESCE) {
 			sql_exp *condnil = rel_unop_(sql, cond, NULL, "isnull", card_value);
 			cond = rel_nop_(sql, condnil, exp_atom_bool(sql->sa, 0), cond, NULL, NULL, "ifthenelse", card_value);
 		}
@@ -4324,19 +4380,10 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 					exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 					e = ne;
 				} else if (f == sql_sel && is_project(p->op) && !is_processed(p)) {
-					sql_rel *pp = p;
-					if (p->l) 
-						pp = p->l;
-					if (is_groupby(pp->op)) {
-						pp->l = rel_crossproduct(sql->sa, pp->l, r, op_join);
-						e = rel_groupby_add_aggr(sql, pp, e);
-					} else if (p->l) {
+					if (p->l) {
 						p->l = rel_crossproduct(sql->sa, p->l, r, op_join);
-					} else if (!p->l) {
-						p->l = r;
 					} else {
-						assert(0);
-						*rel = rel_crossproduct(sql->sa, p, r, op_join);
+						p->l = r;
 					}
 				} else {
 					*rel = rel_crossproduct(sql->sa, p, r, op_join);
@@ -4873,7 +4920,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = 0;
-				if (used)
+				if (used && rel)
 					rel = rel_dup(rel);
 				if (!used && (!sn->lateral && !lateral) && rel) {
 					sql_rel *o = rel;
@@ -4958,40 +5005,22 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 	sql_rel *rel;
 
 	if (!cols) {
-		list *ls, *rs, *nls, *nrs;
-		node *n, *m;
-		int changes = 0;
+		list *ls, *rs;
 
 		l = rel_unique_names(sql, l);
 		r = rel_unique_names(sql, r);
 		ls = rel_projections(sql, l, NULL, 0, 1);
 		rs = rel_projections(sql, r, NULL, 0, 1);
-		nls = new_exp_list(sql->sa);
-		nrs = new_exp_list(sql->sa);
-		for (n = ls->h, m = rs->h; n && m; n = n->next, m = m->next) {
-			sql_exp *le = n->data, *lb = le;
-			sql_exp *re = m->data, *rb = re;
-
-			if ((rel_convert_types(sql, &le, &re, 1, type_set) < 0))
-				return NULL;
-			if (le != lb || re != rb)
-				changes = 1;
-			append(nls, le);
-			append(nrs, re);
-		}
-		if (changes) {
-			l = rel_project(sql->sa, l, nls);
-			r = rel_project(sql->sa, r, nrs);
-			set_processed(l);
-			set_processed(r);
-		}
+		rel = rel_setop_check_types(sql, l, r, ls, rs, (operator_type)op);
+	} else {
+		rel = rel_setop(sql->sa, l, r, (operator_type)op);
 	}
-	rel = rel_setop(sql->sa, l, r, (operator_type)op);
-	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
-	set_processed(rel);
+	if (rel) {
+		rel->exps = rel_projections(sql, rel, NULL, 0, 1);
+		set_processed(rel);
+	}
 	return rel;
 }
-
 
 static sql_rel *
 rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
@@ -5296,6 +5325,7 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 	set_processed(rv);
 	rel = rel_setop(sql->sa, lv, rv, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
+	set_processed(rel);
 	if (!all)
 		rel = rel_distinct(rel);
 	return rel;

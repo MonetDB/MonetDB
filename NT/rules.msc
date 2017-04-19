@@ -311,11 +311,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_GEOM_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_GSL
-	$(ECHO) HAVE_GSL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_GSL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_HGE
 	$(ECHO) HAVE_HGE_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -400,11 +395,6 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_SAMTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_SAMTOOLS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_SPHINXCLIENT
-	$(ECHO) HAVE_SPHINXCLIENT_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_SPHINXCLIENT_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_SQL
 	$(ECHO) HAVE_SQL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"

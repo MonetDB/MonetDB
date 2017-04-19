@@ -11,7 +11,7 @@
 #include "monetdb_config.h"
 #include "opt_deadcode.h"
 
-int 
+str 
 OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k, se,limit, slimit;
@@ -20,22 +20,25 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int *varused=0;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
 	if ( mb->inlineProp )
-		return 0;
+		return MAL_SUCCEED;
 
 	varused = GDKzalloc(mb->vtop * sizeof(int));
 	if (varused == NULL)
-		return 0;
+		return MAL_SUCCEED;
 
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if (newMalBlkStmt(mb, mb->ssize) < 0)
+	if (newMalBlkStmt(mb, mb->ssize) < 0) {
+		msg= createException(MAL,"optimizer.deadcode",MAL_MALLOC_FAIL);
 		goto wrapup;
+	}
 
 	// Calculate the instructions in which a variable is used.
 	// Variables can be used multiple times in an instruction.
@@ -55,7 +58,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			varused[getArg(p,0)]++; // force keeping 
 			continue;
 		}
-		if (hasSideEffects(p, FALSE) || isUpdateInstruction(p) || !isLinearFlow(p) || isProcedure(mb,p)  || 
+		if (hasSideEffects(mb, p, FALSE) || !isLinearFlow(p) || 
 				(p->retc == 1 && mb->unsafeProp) || p->barrier /* ==side-effect */){
 			varused[getArg(p,0)]++; // force keeping it
 			continue;
@@ -109,11 +112,14 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
         //chkDeclarations(cntxt->fdout, mb);
     //}
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, usec);
     newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
 wrapup:
 	if(old) GDKfree(old);
 	if(varused) GDKfree(varused);
-	return actions;
+	return msg;
 }

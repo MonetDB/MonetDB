@@ -1168,7 +1168,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		if (LANG_EXT(f->func->lang))
 			q = pushPtr(mb, q, f); // nothing to see here, please move along
 		// f->query contains the R code to be run
-		if (f->func->lang == FUNC_LANG_R || f->func->lang == FUNC_LANG_PY || f->func->lang == FUNC_LANG_MAP_PY)
+		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY)
 			q = pushStr(mb, q, f->func->query);
 
 		for (n = lops->op4.lval->h; n; n = n->next) {
@@ -1264,84 +1264,39 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			return NULL;
 		k = getDestVar(q);
 	} else {
-		const char *cmd = selectRef;
-
-		if (cmptype != cmp_equal && cmptype != cmp_notequal)
-			cmd = thetaselectRef;
-
 		assert (cmptype != cmp_filter);
+		q = newStmt(mb, algebraRef, thetaselectRef);
+		q = pushArgument(mb, q, l);
+		if (sub)
+			q = pushArgument(mb, q, sub->nr);
+		q = pushArgument(mb, q, r);
 		switch (cmptype) {
-		case cmp_equal:{
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
-			q = pushArgument(mb, q, r);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, FALSE);
-			if (q == NULL)
-				return NULL;
+		case cmp_equal:
+			q = pushStr(mb, q, "==");
 			break;
-		}
-		case cmp_notequal:{
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
-			q = pushArgument(mb, q, r);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, TRUE);
-			q = pushBit(mb, q, TRUE);
-			if (q == NULL)
-				return NULL;
+		case cmp_notequal:
+			q = pushStr(mb, q, "!=");
 			break;
-		}
 		case cmp_lt:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, "<");
-			if (q == NULL)
-				return NULL;
 			break;
 		case cmp_lte:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, "<=");
-			if (q == NULL)
-				return NULL;
 			break;
 		case cmp_gt:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, ">");
-			if (q == NULL)
-				return NULL;
 			break;
 		case cmp_gte:
-			q = newStmt(mb, algebraRef, cmd);
-			q = pushArgument(mb, q, l);
-			if (sub)
-				q = pushArgument(mb, q, sub->nr);
-			q = pushArgument(mb, q, r);
 			q = pushStr(mb, q, ">=");
-			if (q == NULL)
-				return NULL;
 			break;
 		default:
 			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
+			if (q)
+				freeInstruction(q);
+			q = NULL;
 		}
+		if (q == NULL)
+			return NULL;
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_uselect);
@@ -1401,7 +1356,7 @@ argumentZero(MalBlkPtr mb, int tpe)
 	cst.val.ival = 0;
 	msg = convertConstant(tpe, &cst);
 	if( msg)
-		GDKfree(msg); // will not be called
+		freeException(msg); // will not be called
 	return defConstant(mb, tpe, &cst);
 }
 */
@@ -1418,7 +1373,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if ((op2->nrcols > 0 || op3->nrcols) && (type == st_uselect2)) {
+	if ((op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
 		int k, symmetric = cmp&CMP_SYMMETRIC;
 		const char *mod = calcRef;
 		const char *OP1 = "<", *OP2 = "<";
@@ -2044,6 +1999,7 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 		char *fqtn;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
+			// FIXME unchecked_malloc NEW_ARRAY can return NULL
 			fqtn = NEW_ARRAY(char, fqtnl);
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
@@ -2295,6 +2251,7 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		char *fqtn;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
+			// FIXME unchecked_malloc NEW_ARRAY can return NULL
 			fqtn = NEW_ARRAY(char, fqtnl);
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
@@ -2349,11 +2306,13 @@ stmt_output(backend *be, stmt *lst)
 		const char *ntn = sql_escape_ident(tn);
 		const char *nsn = sql_escape_ident(sn);
 		size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
+		// FIXME unchecked_malloc NEW_ARRAY can return NULL
 		char *fqtn = NEW_ARRAY(char, fqtnl);
 
 		snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
 		q = newStmt(mb, sqlRef, resultSetRef);
+		getArg(q,0) = newTmpVariable(mb,TYPE_int);
 		if (q) {
 			q = pushStr(mb, q, fqtn);
 			q = pushStr(mb, q, cn);
@@ -2629,7 +2588,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		return NULL;
 	mod = sql_func_mod(f->func);
 	fimp = sql_func_imp(f->func);
-	if (o && o->nrcols) {
+	if (o && o->nrcols > 0) {
 		sql_subtype *res = f->res->h->data;
 		fimp = convertMultiplexFcn(fimp);
 		q = NULL;
@@ -2665,7 +2624,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 	}
 	if (LANG_EXT(f->func->lang))
 		q = pushPtr(mb, q, f);
-	if (f->func->lang == FUNC_LANG_R || f->func->lang == FUNC_LANG_PY || f->func->lang == FUNC_LANG_MAP_PY)
+	if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY)
 		q = pushStr(mb, q, f->func->query);
 	/* first dynamic output of copy* functions */
 	if (f->func->type == F_UNION || (f->func->type == F_LOADER && f->res != NULL))
@@ -2819,9 +2778,8 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 
 	if (LANG_EXT(op->aggr->lang))
 		q = pushPtr(mb, q, op->aggr);
-	if (op->aggr->lang == FUNC_LANG_R || 
-	    op->aggr->lang == FUNC_LANG_PY || 
-	    op->aggr->lang == FUNC_LANG_MAP_PY){
+	if (op->aggr->lang == FUNC_LANG_R ||
+		op->aggr->lang >= FUNC_LANG_PY) {
 		if (!grp) {
 			setVarType(mb, getArg(q, 0), restype);
 			setVarUDFtype(mb, getArg(q, 0));
@@ -2908,84 +2866,92 @@ stmt_alias(backend *be, stmt *op1, const char *tname, const char *alias)
 sql_subtype *
 tail_type(stmt *st)
 {
-	switch (st->type) {
-	case st_const:
-		return tail_type(st->op2);
+	for (;;) {
+		switch (st->type) {
+		case st_const:
+			st = st->op2;
+			continue;
 
-	case st_uselect:
-	case st_uselect2:
-	case st_limit:
-	case st_limit2:
-	case st_sample:
-	case st_tunion:
-	case st_tdiff:
-	case st_tinter:
-	case st_append:
-	case st_alias:
-	case st_gen_group:
-	case st_order:
-		return tail_type(st->op1);
+		case st_uselect:
+		case st_uselect2:
+		case st_limit:
+		case st_limit2:
+		case st_sample:
+		case st_tunion:
+		case st_tdiff:
+		case st_tinter:
+		case st_append:
+		case st_alias:
+		case st_gen_group:
+		case st_order:
+			st = st->op1;
+			continue;
 
-	case st_list:
-		return tail_type(st->op4.lval->h->data);
+		case st_list:
+			st = st->op4.lval->h->data;
+			continue;
 
-	case st_bat:
-		return &st->op4.cval->type;
-	case st_idxbat:
-		if (hash_index(st->op4.idxval->type)) {
-			return sql_bind_localtype("lng");
-		} else if (st->op4.idxval->type == join_idx) {
+		case st_bat:
+			return &st->op4.cval->type;
+		case st_idxbat:
+			if (hash_index(st->op4.idxval->type)) {
+				return sql_bind_localtype("lng");
+			} else if (st->op4.idxval->type == join_idx) {
+				return sql_bind_localtype("oid");
+			}
+			/* fall through */
+		case st_join:
+		case st_join2:
+		case st_joinN:
+			if (st->flag == cmp_project) {
+				st = st->op2;
+				continue;
+			}
+			/* fall through */
+		case st_reorder:
+		case st_group:
+		case st_result:
+		case st_tid:
+		case st_mirror:
 			return sql_bind_localtype("oid");
+		case st_table_clear:
+			return sql_bind_localtype("lng");
+
+		case st_aggr: {
+			list *res = st->op4.aggrval->res;
+
+			if (res && list_length(res) == 1)
+				return res->h->data;
+
+			return NULL;
 		}
-		/* fall through */
-	case st_join:
-	case st_join2:
-	case st_joinN:
-		if (st->flag == cmp_project)
-			return tail_type(st->op2);
-		/* fall through */
-	case st_reorder:
-	case st_group:
-	case st_result:
-	case st_tid:
-	case st_mirror:
-		return sql_bind_localtype("oid");
-	case st_table_clear:
-		return sql_bind_localtype("lng");
+		case st_Nop: {
+			list *res = st->op4.funcval->res;
 
-	case st_aggr: {
-		list *res = st->op4.aggrval->res; 
-
-		if (res && list_length(res) == 1)
-			return res->h->data;
-		
-	} 	break;
-	case st_Nop: {
-		list *res = st->op4.funcval->res; 
-
-		if (res && list_length(res) == 1)
-			return res->h->data;
-	} break;
-	case st_atom:
-		return atom_type(st->op4.aval);
-	case st_convert:
-	case st_temp:
-	case st_single:
-	case st_rs_column:
-		return &st->op4.typeval;
-	case st_var:
-		if (st->op4.typeval.type)
+			if (res && list_length(res) == 1)
+				return res->h->data;
+			return NULL;
+		}
+		case st_atom:
+			return atom_type(st->op4.aval);
+		case st_convert:
+		case st_temp:
+		case st_single:
+		case st_rs_column:
 			return &st->op4.typeval;
-		/* fall through */
-	case st_exception:
-		return NULL;
-	case st_table:
-		return sql_bind_localtype("bat");
-	default:
-		assert(0);
-		return NULL;
+		case st_var:
+			if (st->op4.typeval.type)
+				return &st->op4.typeval;
+			/* fall through */
+		case st_exception:
+			return NULL;
+		case st_table:
+			return sql_bind_localtype("bat");
+		default:
+			assert(0);
+			return NULL;
+		}
 	}
-	return NULL;
 }
 
 int

@@ -84,7 +84,7 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			} else {
 				s = createException(MAL, malfunc, "%s", errbuf);
 			}
-			*GDKerrbuf = 0;
+			GDKclrerr();
 			return s;
 		}
 		throw(MAL, malfunc, OPERATION_FAILED);
@@ -432,7 +432,7 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 			} else {
 				s = createException(MAL, malfunc, "%s", errbuf);
 			}
-			*GDKerrbuf = 0;
+			GDKclrerr();
 			return s;
 		}
 		throw(MAL, malfunc, OPERATION_FAILED);
@@ -868,6 +868,8 @@ AGGRsubmin_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
 	BBPrelease(ret);
+	if (r == NULL)
+		throw(MAL, "aggr.submin", MAL_MALLOC_FAIL);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -896,6 +898,8 @@ AGGRsubmincand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
 	BBPrelease(ret);
+	if (r == NULL)
+		throw(MAL, "aggr.submin", MAL_MALLOC_FAIL);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -924,6 +928,8 @@ AGGRsubmax_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
 	BBPrelease(ret);
+	if (r == NULL)
+		throw(MAL, "aggr.submax", MAL_MALLOC_FAIL);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -952,6 +958,8 @@ AGGRsubmaxcand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
 	BBPrelease(ret);
+	if (r == NULL)
+		throw(MAL, "aggr.submax", MAL_MALLOC_FAIL);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -1,0 +1,14 @@
+start transaction;
+CREATE TABLE tab0(pk INTEGER PRIMARY KEY, col0 INTEGER, col1 FLOAT, col2 TEXT, col3 INTEGER, col4 FLOAT, col5 TEXT);
+INSERT INTO tab0 VALUES(0,45,106.20,'qixrh',119,127.82,'lqafj');
+INSERT INTO tab0 VALUES(1,47,107.11,'avveo',120,128.36,'tzjrc');
+INSERT INTO tab0 VALUES(2,48,108.0,'htssi',121,132.69,'ablzu');
+INSERT INTO tab0 VALUES(3,116,109.7,'hvapv',123,133.8,'azmay');
+INSERT INTO tab0 VALUES(4,55,110.92,'wffzp',124,134.70,'qjqzu');
+INSERT INTO tab0 VALUES(5,117,112.62,'hkmcc',126,135.82,'rfnvr');
+INSERT INTO tab0 VALUES(6,119,113.87,'yofgi',127,136.86,'jgucx');
+INSERT INTO tab0 VALUES(7,64,114.12,'clvcm',128,137.57,'bywfe');
+INSERT INTO tab0 VALUES(8,67,5.69,'htdpm',129,138.11,'tqmqj');
+INSERT INTO tab0 VALUES(9,121,115.87,'czgiu',130,139.21,'vqktb');
+SELECT pk FROM tab0 WHERE (col1 < 94.60) AND (col0 < 90) AND col3 >= 40 AND (col0 > 89);
+rollback;

@@ -101,7 +101,10 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	/*
 	 * add to BBP
 	 */
-	BBPinsert(bn);
+	if (BBPinsert(bn) == 0) {
+		GDKfree(bn);
+		return NULL;
+	}
 	/*
  	* Default zero for order oid index
  	*/
@@ -204,7 +207,10 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 		goto bailout;
 	}
 	DELTAinit(bn);
-	BBPcacheit(bn, 1);
+	if (BBPcacheit(bn, 1) != GDK_SUCCEED) {
+		GDKfree(bn->tvheap);
+		goto bailout;
+	}
 	return bn;
   bailout:
 	HEAPfree(&bn->theap, 1);
@@ -1188,7 +1194,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 		b->tnorevsorted = 0;
 	if (((b->ttype != TYPE_void) & b->tkey & !b->tunique) && b->batCount > 1) {
 		BATkey(b, FALSE);
-	}
+	} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
+		b->tnokey[0] = b->tnokey[1] = 0;
 	if (b->tnonil)
 		b->tnonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 	b->theap.dirty = TRUE;
@@ -1528,41 +1535,6 @@ BATtseqbase(BAT *b, oid o)
 		}
 	}
 }
-
-/*
- * BATs have a logical name that is independent of their location in
- * the file system (this depends on batCacheid).  The dimensions of
- * the BAT can be given a separate name.  It helps front-ends in
- * identifying the column of interest.  The new name should be
- * recognizable as an identifier.  Otherwise interaction through the
- * front-ends becomes complicated.
- */
-int
-BATname(BAT *b, const char *nme)
-{
-	BATcheck(b, "BATname", 0);
-	return BBPrename(b->batCacheid, nme);
-}
-
-str
-BATrename(BAT *b, const char *nme)
-{
-	int ret;
-
-	BATcheck(b, "BATrename", NULL);
-	ret = BATname(b, nme);
-	if (ret == 1) {
-		GDKerror("BATrename: identifier expected: %s\n", nme);
-	} else if (ret == BBPRENAME_ALREADY) {
-		GDKerror("BATrename: name is in use: '%s'.\n", nme);
-	} else if (ret == BBPRENAME_ILLEGAL) {
-		GDKerror("BATrename: illegal temporary name: '%s'\n", nme);
-	} else if (ret == BBPRENAME_LONG) {
-		GDKerror("BATrename: name too long: '%s'\n", nme);
-	}
-	return BBPname(b->batCacheid);
-}
-
 
 void
 BATroles(BAT *b, const char *tnme)

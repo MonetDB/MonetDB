@@ -1,0 +1,86 @@
+stdout of test 'pyapi3_10` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 13:49:18 >  
+# 13:49:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30082" "--set" "mapi_usock=/var/tmp/mtest-5056/.s.monetdb.30082" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 13:49:18 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:30082/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5056/.s.monetdb.30082
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.10'
+# Finished reading the write-ahead log 'sql_logs/sql/log.10'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 13:49:18 >  
+# 13:49:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5056" "--port=30082"
+# 13:49:18 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION pyapi10_random_table(entries integer) returns table (i integer, j integer)
+#language P
+#{
+#    import random
+#    random.seed(123)
+#    results = [numpy.zeros(entries), numpy.zeros(entries)]
+#    for i in range(0,entries):
+#        results[0][i] = random.randint(0,100)
+#        results[1][i] = random.randint(0,100)
+#    return(results)
+#};
+#CREATE FUNCTION pyapi10_random_table_nulls(entries integer) returns table (i integer, j integer)
+#language P
+#{
+#    import random
+#    random.seed(123)
+#    results = [numpy.ma.masked_array(numpy.zeros(entries), 0), numpy.ma.masked_array(numpy.zeros(entries), 0)]
+#    for i in range(0,entries):
+#        for j in range(0,2):
+#            results[j][i] = random.randint(0,100)
+#            if results[j][i] < 50:
+#                results[j].mask[i] = True
+#    return(results)
+#};
+#CREATE FUNCTION pyapi10_mult(i integer,j integer) returns integer
+#language PYTHON_MAP
+#{
+#    return(i*j)
+#};
+#CREATE FUNCTION pyapi10_error(i integer,j integer) returns integer
+#language PYTHON_MAP
+#{
+#    return(i*j 
+#};
+#SELECT AVG(pyapi10_mult(i,j)) FROM pyapi10_random_table(5000);
+% .L6 # table_name
+% L5 # name
+% double # type
+% 24 # length
+[ 2487.9556	]
+#SELECT AVG(pyapi10_mult(i,j)) FROM pyapi10_random_table_nulls(5000);
+% .L6 # table_name
+% L5 # name
+% double # type
+% 24 # length
+[ 5603.14638	]
+#DROP FUNCTION pyapi10_random_table;
+#DROP FUNCTION pyapi10_mult;
+#ROLLBACK;
+
+# 13:49:18 >  
+# 13:49:18 >  "Done."
+# 13:49:18 >  
+

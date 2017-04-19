@@ -1,0 +1,55 @@
+stderr of test 'sqlsmith.Bug-6219` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 17:09:30 >  
+# 17:09:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31733" "--set" "mapi_usock=/var/tmp/mtest-20365/.s.monetdb.31733" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 17:09:30 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31733
+# cmdline opt 	mapi_usock = /var/tmp/mtest-20365/.s.monetdb.31733
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:09:30 >  
+# 17:09:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20365" "--port=31733"
+# 17:09:30 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-20365/.s.monetdb.31733
+QUERY = select  
+          subq_0.c1 as c0, 
+          subq_0.c2 as c1
+        from 
+          (select  
+                ref_25.name as c0, 
+                (select sessiontimeout from sys.sessions)
+                   as c1, 
+                63 as c2, 
+                ref_24.var_id as c3, 
+                ref_25.name as c4, 
+                (select sorted from sys.storage)
+                   as c5
+              from 
+                sys.idxs as ref_23
+                    inner join sys.netcdf_vardim as ref_24
+                      left join sys.db_user_info as ref_25
+                      on (ref_24.dimpos = ref_25.default_schema )
+                    on (ref_23.id = ref_24.var_id )
+ERROR = !cardinality violation (2>1)
+
+# 17:09:30 >  
+# 17:09:30 >  "Done."
+# 17:09:30 >  
+

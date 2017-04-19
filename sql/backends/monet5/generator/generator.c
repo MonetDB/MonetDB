@@ -343,6 +343,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			timestamp tsf,tsl;
 			timestamp tlow,thgh;
 			lng tss;
+			lng one = 1;
 			oid *ol;
 
 			tsf = *getArgReference_TYPE(stk, p, 1, timestamp);
@@ -364,10 +365,12 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			    tlow.days == thgh.days &&
 			    !timestamp_isnil(tlow))
 				hi = li;
-			if( hi && !timestamp_isnil(thgh) )
-				thgh.msecs++;
-			if( !li && !timestamp_isnil(tlow) )
-				tlow.msecs++;
+			if( hi && !timestamp_isnil(thgh) &&
+			    (msg = MTIMEtimestamp_add(&thgh, &thgh, &one)) != MAL_SUCCEED)
+				return msg;
+			if( !li && !timestamp_isnil(tlow) &&
+			    (msg = MTIMEtimestamp_add(&tlow, &tlow, &one)) != MAL_SUCCEED)
+				return msg;
 
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
@@ -381,7 +384,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ol = (oid *) Tloc(bn, 0);
 			for (c=0, o1=0; o1 <= o2; o1++) {
 				if( (((tsf.days>tlow.days || (tsf.days== tlow.days && tsf.msecs >= tlow.msecs) || timestamp_isnil(tlow))) &&
-				    ((tsf.days<thgh.days || (tsf.days== thgh.days && tsf.msecs < thgh.msecs))  || timestamp_isnil(thgh)) ) || anti ){
+				    ((tsf.days<thgh.days || (tsf.days== thgh.days && tsf.msecs < thgh.msecs))  || timestamp_isnil(thgh)) ) != anti ){
 					/* could be improved when no candidate list is available into a void/void BAT */
 					if( cl){
 						while ( c < BATcount(cand) && *cl < o1 ) {cl++; c++;}
@@ -551,17 +554,17 @@ float nextafterf(float x, float y);
 	if ( strcmp(oper,">=") == 0){\
 		low= *getArgReference_##TPE(stk,pci,idx);\
 	} else\
-	if ( strcmp(oper,"!=") == 0){\
+	if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){\
 		hgh= low= *getArgReference_##TPE(stk,pci,idx);\
-		anti++;\
+		anti = 1;\
 	} else\
-	if ( strcmp(oper,"==") == 0){\
+	if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){\
 		hgh= low= *getArgReference_##TPE(stk,pci,idx);\
 	} else\
 		throw(MAL,"generator.thetasubselect","Unknown operator");\
 	if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }\
 	for(j=0;j<cap;j++, f+=s, o++)\
-		if( ((low == TPE##_nil || f >= low) && (f <= hgh || hgh == TPE##_nil)) || anti){\
+		if( ((low == TPE##_nil || f >= low) && (f <= hgh || hgh == TPE##_nil)) != anti){\
 			if(cand){ \
 				if( cl){ while(cn-- >= 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}} \
 				else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }\
@@ -630,24 +633,30 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 			hgh = low = *timestamp_nil;
 			if ( strcmp(oper,"<") == 0){
+				lng minone = -1;
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp);
+				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &minone)) != MAL_SUCCEED)
+					return msg;
 			} else
 			if ( strcmp(oper,"<=") == 0){
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp) ;
-				hgh.msecs++;
 			} else
 			if ( strcmp(oper,">") == 0){
+				lng one = 1;
 				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				low.msecs++;
+				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &one)) != MAL_SUCCEED)
+					return msg;
 			} else
 			if ( strcmp(oper,">=") == 0){
 				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
 			} else
-			if ( strcmp(oper,"!=") == 0){
+			if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){
 				hgh= low= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				anti++;
+				anti = 1;
 			} else
-			if ( strcmp(oper,"==") != 0)
+			if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){
+				hgh= low= *getArgReference_TYPE(stk,pci,idx, timestamp);
+			} else
 				throw(MAL,"generator.thetasubselect","Unknown operator");
 
 			cap = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
@@ -660,7 +669,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			val = f;
 			for(j = 0; j< cap; j++,  o++){
 				if( (( timestamp_isnil(low) || (val.days > low.days || (val.days == low.days && val.msecs >=low.msecs))) && 
-					 ( timestamp_isnil(hgh) || (val.days < hgh.days || (val.days == hgh.days && val.msecs < hgh.msecs)))) || anti){
+					 ( timestamp_isnil(hgh) || (val.days < hgh.days || (val.days == hgh.days && val.msecs <= hgh.msecs)))) != anti){
 					if(cand){
 						if( cl){ while(cn-- >= 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}}
 						else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }

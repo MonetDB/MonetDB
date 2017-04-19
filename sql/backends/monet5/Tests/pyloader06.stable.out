@@ -73,7 +73,7 @@ Ready.
 #SELECT * FROM pyloader06table;
 % sys.pyloader06table,	sys.pyloader06table,	sys.pyloader06table # table_name
 % a,	c,	b # name
-% int,	int,	int # type
+% bigint,	bigint,	bigint # type
 % 1,	1,	1 # length
 [ 1,	3,	2	]
 #ROLLBACK;

@@ -73,8 +73,11 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b == 0)
 		throw(MAL,"bat.single","Could not create it");
 	if (ATOMextern(b->ttype))
-            	u = (ptr) *(str *)u;
-	BUNappend(b, u, FALSE);
+		u = (ptr) *(str *)u;
+	if (BUNappend(b, u, FALSE) != GDK_SUCCEED) {
+		BBPreclaim(b);
+		throw(MAL, "bat.single", MAL_MALLOC_FAIL);
+	}
 	BBPkeepref(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -169,7 +172,7 @@ CMDBATimprints(void *ret, bat *bid)
 
 	r = BATimprints(b);
 	BBPunfix(b->batCacheid);
-	if (r == GDK_FAIL)
+	if (r != GDK_SUCCEED)
 		throw(MAL, "bat.imprints", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

@@ -1023,8 +1023,6 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 
 			if (sn->limit)
 				return sql_error(sql, 01, "0A000!42000!CREATE VIEW: LIMIT not supported");
-			if (sn->orderby)
-				return sql_error(sql, 01, "42000!CREATE VIEW: ORDER BY not supported");
 		}
 
 		sq = schema_selects(sql, s, query);

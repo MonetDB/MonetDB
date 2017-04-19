@@ -1,0 +1,178 @@
+stdout of test 'wrong_aggregation_count.Bug-6257` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 16:19:39 >  
+# 16:19:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31605" "--set" "mapi_usock=/var/tmp/mtest-5849/.s.monetdb.31605" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 16:19:39 >  
+
+# MonetDB 5 server v11.25.16
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:31605/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5849/.s.monetdb.31605
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 16:19:40 >  
+# 16:19:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5849" "--port=31605"
+# 16:19:40 >  
+
+#CREATE VIEW sys.schema_stats AS
+#SELECT s.name, /* s.id AS schema_id, */ s.authorization, s.owner, s.system
+#, (SELECT CAST(COUNT(*) as int) FROM sys.tables t WHERE t.schema_id = s.id) AS "# tables/views"
+#, (SELECT CAST(COUNT(*) as int) FROM sys.tables t WHERE t.schema_id = s.id AND t.system AND t.query is NULL) AS "# system tables"
+#, (SELECT CAST(COUNT(*) as int) FROM sys.tables t WHERE t.schema_id = s.id AND NOT t.system AND t.query is NULL) AS "# user tables"
+#, (SELECT CAST(COUNT(*) as int) FROM sys.tables t WHERE t.schema_id = s.id AND t.system AND t.query is NOT NULL) AS "# system views"
+#SELECT * FROM sys.schema_stats;
+% .schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats # table_name
+% name,	authorization,	owner,	system,	"# tables/views",	"# system tables",	"# user tables",	"# system views",	"# user views" # name
+% varchar,	int,	int,	boolean,	int,	int,	int,	int,	int # type
+% 8,	1,	1,	5,	1,	1,	1,	1,	1 # length
+[ "tmp",	2,	3,	true,	6,	6,	0,	0,	0	]
+[ "json",	3,	3,	true,	0,	0,	0,	0,	0	]
+[ "profiler",	3,	3,	true,	0,	0,	0,	0,	0	]
+#SELECT count(*) as "# tmp tables/views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'tmp');
+% .L50 # table_name
+% # tmp tables/views # name
+% bigint # type
+% 1 # length
+[ 6	]
+#SELECT count(*) as "# json tables/views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'json');
+% .L50 # table_name
+% # json tables/views # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# profiler tables/views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'profiler');
+% .L50 # table_name
+% # profiler tables/views # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# tmp system tables" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'tmp') AND system AND query is NULL;
+% .L50 # table_name
+% # tmp system tables # name
+% bigint # type
+% 1 # length
+[ 6	]
+#SELECT count(*) as "# json system tables" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'json') AND system AND query is NULL;
+% .L50 # table_name
+% # json system tables # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# profiler system tables" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'profiler') AND system AND query is NULL;
+% .L50 # table_name
+% # profiler system tables # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# tmp user tables" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'tmp') AND NOT system AND query is NULL;
+% .L50 # table_name
+% # tmp user tables # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# json user tables" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'json') AND NOT system AND query is NULL;
+% .L50 # table_name
+% # json user tables # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# profiler user tables" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'profiler') AND NOT system AND query is NULL;
+% .L50 # table_name
+% # profiler user tables # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# tmp system views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'tmp') AND system AND query is NOT NULL;
+% .L50 # table_name
+% # tmp system views # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# json system views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'json') AND system AND query is NOT NULL;
+% .L50 # table_name
+% # json system views # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# profiler system views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'profiler') AND system AND query is NOT NULL;
+% .L50 # table_name
+% # profiler system views # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# tmp user views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'tmp') AND NOT system AND query is NOT NULL;
+% .L50 # table_name
+% # tmp user views # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# json user views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'json') AND NOT system AND query is NOT NULL;
+% .L50 # table_name
+% # json user views # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) as "# profiler user views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'profiler') AND NOT system AND query is NOT NULL;
+% .L50 # table_name
+% # profiler user views # name
+% bigint # type
+% 1 # length
+[ 0	]
+#DROP VIEW sys.schema_stats;
+
+# 16:19:41 >  
+# 16:19:41 >  "Done."
+# 16:19:41 >  
+

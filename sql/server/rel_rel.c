@@ -4,6 +4,7 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_remote.h"
+#include "sql_semantic.h"
 #include "sql_mvc.h"
 
 /* we don't name relations directly, but sometimes we need the relation
@@ -273,7 +274,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		   is_sort(rel) ||
 		   is_semi(rel->op) ||
 		   is_apply(rel->op) ||
-		   is_select(rel->op)) {
+		   is_select(rel->op) || 
+		   is_topn(rel->op)) {
 		if (rel->l)
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	}
@@ -294,6 +296,7 @@ rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, lis
 	if (l && r)
 		rel->nrcols = l->nrcols + r->nrcols;
 	rel->exps = exps;
+	set_processed(rel);
 	return rel;
 }
 
@@ -357,6 +360,29 @@ rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop)
 	if (l && r)
 		rel->nrcols = l->nrcols + r->nrcols;
 	return rel;
+}
+
+sql_rel *
+rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op) 
+{
+	list *nls = new_exp_list(sql->sa);
+	list *nrs = new_exp_list(sql->sa);
+	node *n, *m;
+
+	for (n = ls->h, m = rs->h; n && m; n = n->next, m = m->next) {
+		sql_exp *le = n->data;
+		sql_exp *re = m->data;
+
+		if ((rel_convert_types(sql, &le, &re, 1, type_set) < 0))
+			return NULL;
+		append(nls, le);
+		append(nrs, re);
+	}
+	l = rel_project(sql->sa, l, nls);
+	r = rel_project(sql->sa, r, nrs);
+	set_processed(l);
+	set_processed(r);
+	return rel_setop(sql->sa, l, r, op);
 }
 
 sql_rel *
@@ -471,6 +497,8 @@ rel_select_add_exp(sql_allocator *sa, sql_rel *l, sql_exp *e)
 		sql_exp *t = exp_atom_bool(sa, 1);
 		e = exp_compare(sa, e, t, cmp_equal);
 	}
+	if (!l->exps)
+		l->exps = new_exp_list(sa);
 	append(l->exps, e);
 }
 
@@ -755,10 +783,10 @@ exps_has_nil(list *exps)
 list *
 rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern )
 {
-	list *rexps, *exps;
-	int intern_only = (intern==2)?1:0;
+	list *lexps, *rexps, *exps;
+	int include_subquery = (intern==2)?1:0;
 
-	if (!rel || (is_subquery(rel) /*&& is_project(rel->op)*/ && rel->op == op_project))
+	if (!rel || (!include_subquery && is_subquery(rel) && rel->op == op_project))
 		return new_exp_list(sql->sa);
 
 	switch(rel->op) {
@@ -793,8 +821,6 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 				if (intern || !is_intern(e)) {
-					if (!is_intern(e) && intern_only && (exp_name(e)[0] != '%' && exp_name(e)[0] != 'L' && exp_relname(e)[0] != 'L')) 
-						continue;
 					append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
 					if (!settname) /* noname use alias */
 						exp_setrelname(sql->sa, e, label);
@@ -803,15 +829,18 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 			}
 			return exps;
 		}
-		exps = rel_projections(sql, rel->l, tname, settname, intern );
-		if (exps) {
-			node *en;
+		lexps = rel_projections(sql, rel->l, tname, settname, intern );
+		rexps = rel_projections(sql, rel->r, tname, settname, intern );
+		exps = sa_list(sql->sa);
+		if (lexps && rexps && exps) {
+			node *en, *ren;
 			int label = ++sql->label;
-			for (en = exps->h; en; en = en->next) {
+			for (en = lexps->h, ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
 				sql_exp *e = en->data;
 				e->card = rel->card;
 				if (!settname) /* noname use alias */
 					exp_setrelname(sql->sa, e, label);
+				append(exps, e);
 			}
 		}
 		return exps;
@@ -1067,6 +1096,7 @@ sql_rel *
 rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 {
 	sql_rel *rel, *ll = l->l, *rl = r->l;
+	list *ls, *rs;
 
 	assert(!lexps || l == r);
 	if (l == r && lexps) { /* merge both lists */
@@ -1103,13 +1133,18 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 		return l;
 	}
 
-	l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
-	r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+	ls = rel_projections(sql, l, NULL, 1, 1);
+	rs = rel_projections(sql, r, NULL, 1, 1);
 	set_processed(l);
 	set_processed(r);
-	rel = rel_setop(sql->sa, l, r, op_union);
+	rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
+	if (!rel)
+		return NULL;
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
+	set_processed(rel);
 	rel = rel_distinct(rel);
+	if (!rel)
+		return NULL;
 	if (exps_card(l->exps) <= CARD_AGGR &&
 	    exps_card(r->exps) <= CARD_AGGR)
 	{

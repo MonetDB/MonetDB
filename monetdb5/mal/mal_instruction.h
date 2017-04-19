@@ -22,9 +22,8 @@
 #define DEBUG_MAL_INSTR
 /* #define DEBUG_REDUCE */
 #define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
-#define STMT_INCREMENT 256
+#define STMT_INCREMENT 4
 #define MAL_VAR_WINDOW  32
-#define MAXVARS STMT_INCREMENT	/* >= STMT_INCREMENT */
 #define MAXLISTING 64*1024
 
 /* Allocation of space assumes a rather exotic number of
@@ -46,61 +45,75 @@
 #define getModName(M)		getModuleId(getInstrPtr(M,0))
 #define getPrgSize(M)		(M)->stop
 
-#define getVar(M,I)			(M)->var[I]
-#define getVarType(M,I)		((M)->var[I]->type)
-#define getVarName(M,I)		((M)->var[I]->id)
-#define getVarGDKType(M,I)	getGDKType((M)->var[I]->type)
+#define getVar(M,I)			(&(M)->var[I])
+#define getVarType(M,I)		((M)->var[I].type)
+#define getVarName(M,I)		((M)->var[I].id)
+#define getVarGDKType(M,I)	getGDKType((M)->var[I].type)
+#define setVarType(M,I,V)   (M)->var[I].type = V
 
-#define clrVarFixed(M,I)		((M)->var[I]->flags &= ~VAR_FIXTYPE)
-#define setVarFixed(M,I)		((M)->var[I]->flags |= VAR_FIXTYPE)
-#define isVarFixed(M,I)		((M)->var[I]->flags & VAR_FIXTYPE)
+#define clrVarFixed(M,I)		((M)->var[I].fixedtype = 0)
+#define setVarFixed(M,I)		((M)->var[I].fixedtype =1)
+#define isVarFixed(M,I)		((M)->var[I].fixedtype)
 
-#define clrVarCleanup(M,I)		((M)->var[I]->flags &= ~VAR_CLEANUP)
-#define setVarCleanup(M,I)		((M)->var[I]->flags |= VAR_CLEANUP)
-#define isVarCleanup(M,I)		((M)->var[I]->flags & VAR_CLEANUP)
+#define clrVarCleanup(M,I)		((M)->var[I].cleanup = 0)
+#define setVarCleanup(M,I)		((M)->var[I].cleanup = 1)
+#define isVarCleanup(M,I)		((M)->var[I].cleanup )
+
 #define isTmpVar(M,I)			(*getVarName(M,I) == REFMARKER && *(getVarName(M,I)+1) == TMPMARKER)
 
-#define clrVarUsed(M,I)		((M)->var[I]->flags &= ~VAR_USED)
-#define setVarUsed(M,I)		((M)->var[I]->flags |= VAR_USED)
-#define isVarUsed(M,I)		((M)->var[I]->flags & VAR_USED)
+#define clrVarUsed(M,I)		((M)->var[I].used = 0)
+#define setVarUsed(M,I)		((M)->var[I].used = 1)
+#define isVarUsed(M,I)		((M)->var[I].used)
 
-#define clrVarDisabled(M,I)		((M)->var[I]->flags &= ~VAR_DISABLED)
-#define setVarDisabled(M,I)		((M)->var[I]->flags |= VAR_DISABLED)
-#define isVarDisabled(M,I)		((M)->var[I]->flags & VAR_DISABLED)
+#define clrVarDisabled(M,I)		((M)->var[I].disabled= 0 )
+#define setVarDisabled(M,I)		((M)->var[I].disabled = 1)
+#define isVarDisabled(M,I)		((M)->var[I].disabled)
 
-#define clrVarInit(M,I)		((M)->var[I]->flags &= ~VAR_INIT)
-#define setVarInit(M,I)		((M)->var[I]->flags |= VAR_INIT)
-#define isVarInit(M,I)		((M)->var[I]->flags & VAR_INIT)
+#define clrVarInit(M,I)		((M)->var[I].initialized = 0)
+#define setVarInit(M,I)		((M)->var[I].initialized = 1)
+#define isVarInit(M,I)		((M)->var[I].initialized)
 
-#define clrVarTypedef(M,I)		((M)->var[I]->flags &= ~VAR_TYPEVAR)
-#define setVarTypedef(M,I)		((M)->var[I]->flags |= VAR_TYPEVAR)
-#define isVarTypedef(M,I)		((M)->var[I]->flags & VAR_TYPEVAR)
+#define clrVarTypedef(M,I)		((M)->var[I].typevar = 0)
+#define setVarTypedef(M,I)		((M)->var[I].typevar = 1)
+#define isVarTypedef(M,I)		((M)->var[I].typevar)
 
-#define clrVarUDFtype(M,I)		((M)->var[I]->flags &= ~VAR_UDFTYPE)
-#define setVarUDFtype(M,I)		((M)->var[I]->flags |= VAR_UDFTYPE)
-#define isVarUDFtype(M,I)		((M)->var[I]->flags & VAR_UDFTYPE)
+#define clrVarUDFtype(M,I)		((M)->var[I].udftype = 0)
+#define setVarUDFtype(M,I)		((M)->var[I].udftype = 1)
+#define isVarUDFtype(M,I)		((M)->var[I].udftype)
 
-#define clrVarConstant(M,I)		((M)->var[I]->flags &= ~VAR_CONSTANT)
-#define setVarConstant(M,I)		((M)->var[I]->flags |= VAR_CONSTANT)
-#define isVarConstant(M,I)		((M)->var[I]->flags & VAR_CONSTANT)
+#define clrVarConstant(M,I)		((M)->var[I].constant = 0)
+#define setVarConstant(M,I)		((M)->var[I].constant = 1)
+#define isVarConstant(M,I)		((M)->var[I].constant)
 
-#define setVarScope(M,I,S)		((M)->var[I]->depth = S)
-#define getVarScope(M,I)		((M)->var[I]->depth)
+#define setVarDeclared(M,I,X)	((M)->var[I].declared = X )
+#define getVarDeclared(M,I)		((M)->var[I].declared)
 
-#define clrVarCList(M,I)		((M)->var[I]->id[0]= REFMARKER)
-#define setVarCList(M,I)		((M)->var[I]->id[0]= REFMARKERC)
-#define isVarCList(M,I)			((M)->var[I]->id[0] == REFMARKERC)
+#define setVarUpdated(M,I,X)	((M)->var[I].updated = X )
+#define getVarUpdated(M,I)		((M)->var[I].updated)
 
-#define getVarConstant(M,I)	((M)->var[I]->value)
-#define getVarValue(M,I)	VALget(&(M)->var[I]->value)
+#define setVarEolife(M,I,X)	((M)->var[I].eolife = X )
+#define getVarEolife(M,I)		((M)->var[I].eolife)
 
-#define setRowCnt(M,I,C)	(M)->var[I]->rowcnt = C
-#define getRowCnt(M,I)		((M)->var[I]->rowcnt)
+#define setVarWorker(M,I,S)		((M)->var[I].worker = S)
+#define getVarWorker(M,I)		((M)->var[I].worker)
+
+#define setVarScope(M,I,S)		((M)->var[I].depth = S)
+#define getVarScope(M,I)		((M)->var[I].depth)
+
+#define clrVarCList(M,I)		((M)->var[I].id[0]= REFMARKER)
+#define setVarCList(M,I)		((M)->var[I].id[0]= REFMARKERC)
+#define isVarCList(M,I)			((M)->var[I].id[0] == REFMARKERC)
+
+#define getVarConstant(M,I)	((M)->var[I].value)
+#define getVarValue(M,I)	VALget(&(M)->var[I].value)
+
+#define setRowCnt(M,I,C)	(M)->var[I].rowcnt = C
+#define getRowCnt(M,I)		((M)->var[I].rowcnt)
 
 #define setMitosisPartition(P,C)	(P)->mitosis = C
 #define getMitosisPartition(P)		((P)->mitosis)
 
-#define getSTC(M,I)			((M)->var[I]->stc)
+#define getVarSTC(M,I)			((M)->var[I].stc)
 
 #define getDestVar(P)		(P)->argv[0]
 #define setDestVar(P,X)		(P)->argv[0]  =X
@@ -114,6 +127,7 @@
 #define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 
+mal_export void mal_instruction_reset(void);
 mal_export InstrPtr newInstruction(MalBlkPtr mb, str modnme, str fcnnme);
 mal_export InstrPtr copyInstruction(InstrPtr p);
 mal_export void oldmoveInstruction(InstrPtr dst, InstrPtr src);
@@ -125,11 +139,11 @@ mal_export void freeSymbol(Symbol s);
 mal_export void freeSymbolList(Symbol s);
 mal_export void printSignature(stream *fd, Symbol s, int flg);
 
-mal_export MalBlkPtr newMalBlk(int maxvars, int maxstmts);
+mal_export MalBlkPtr newMalBlk(int elements);
 mal_export void resetMalBlk(MalBlkPtr mb, int stop);
-mal_export int newMalBlkStmt(MalBlkPtr mb, int maxstmts);
-mal_export void resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar);
-mal_export void prepareMalBlk(MalBlkPtr mb, str s);
+mal_export int newMalBlkStmt(MalBlkPtr mb, int elements);
+mal_export int resizeMalBlk(MalBlkPtr mb, int elements);
+mal_export int prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb);
@@ -137,7 +151,6 @@ mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 mal_export void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
-mal_export void insertInstruction(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export void removeInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 mal_export str operatorName(int i);
@@ -149,7 +162,6 @@ mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void renameVariable(MalBlkPtr mb, int i, str pattern, int newid);
-mal_export int copyVariable(MalBlkPtr dst, VarPtr v);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void freeVariable(MalBlkPtr mb, int varid);
@@ -165,13 +177,11 @@ mal_export InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid);
 mal_export InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name);
 mal_export void delArgument(InstrPtr p, int varid);
-mal_export void setVarType(MalBlkPtr mb, int i, int tpe);
 mal_export void clrAllTypes(MalBlkPtr mb);
 mal_export void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
 mal_export void setReturnArgument(InstrPtr p, int varid);
 mal_export malType destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export void setPolymorphic(InstrPtr p, int tpe, int force);
-mal_export void pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.c */
 /* Utility macros to inspect an instruction */
 #define functionStart(X) ((X)->token == FUNCTIONsymbol || \
               (X)->token == COMMANDsymbol || \
@@ -182,6 +192,7 @@ mal_export void pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.
 #define blockStart(X)   ((X)->barrier && (((X)->barrier == BARRIERsymbol || \
              (X)->barrier == CATCHsymbol )))
 #define blockExit(X) ((X)->barrier == EXITsymbol)
+#define blockReturn(X) ((X)->barrier == RETURNsymbol)
 #define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
              (X)->barrier== REDOsymbol || (X)->barrier== RETURNsymbol )
 #define isLinearFlow(X)  (!(blockStart(X) || blockExit(X) || \

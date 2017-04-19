@@ -138,8 +138,11 @@ QLOGcreate(str hnme, str tnme, int tt)
 	if (b == NULL)
 		return NULL;
 
-	BATmode(b, PERSISTENT);
-	BBPrename(b->batCacheid, buf);
+	if (BBPrename(b->batCacheid, buf) != 0 ||
+		BATmode(b, PERSISTENT) != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		return NULL;
+	}
 	commitlist[committop++]= b->batCacheid;
 	assert(committop < 32);
 	return b;
@@ -191,6 +194,17 @@ _initQlog(void)
 	QLOG_calls_result = QLOGcreate("calls","result",TYPE_lng);
 	QLOG_calls_cpuload = QLOGcreate("calls","cpuload",TYPE_int);
 	QLOG_calls_iowait = QLOGcreate("calls","iowait",TYPE_int);
+
+	if( QLOG_cat_id == NULL || QLOG_cat_user == NULL || QLOG_cat_defined == NULL ||
+		QLOG_cat_query == NULL || QLOG_cat_pipe == NULL || QLOG_cat_plan == NULL ||
+		QLOG_cat_mal == NULL || QLOG_cat_optimize == NULL || QLOG_calls_id == NULL ||
+		QLOG_calls_start == NULL || QLOG_calls_stop == NULL || QLOG_calls_arguments == NULL ||
+		QLOG_calls_tuples == NULL || QLOG_calls_exec == NULL || QLOG_calls_result == NULL ||
+		QLOG_calls_cpuload == NULL || QLOG_calls_iowait == NULL){
+			_QLOGcleanup();
+			return;
+	}
+
 	if (QLOG_cat_id == NULL )
 		_QLOGcleanup();
 	else
@@ -297,14 +311,17 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if ( o == BUN_NONE){
 		*ret = mb->tag;
-		BUNappend(QLOG_cat_id,&mb->tag,FALSE);
-		BUNappend(QLOG_cat_query,*q,FALSE);
-		BUNappend(QLOG_cat_pipe,*pipe,FALSE);
-		BUNappend(QLOG_cat_plan,nme,FALSE);
-		BUNappend(QLOG_cat_mal,&mb->stop,FALSE);
-		BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE);
-		BUNappend(QLOG_cat_user,*usr,FALSE);
-		BUNappend(QLOG_cat_defined,tick,FALSE);
+		if (BUNappend(QLOG_cat_id,&mb->tag,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_query,*q,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_pipe,*pipe,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_plan,nme,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_mal,&mb->stop,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_user,*usr,FALSE) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_defined,tick,FALSE) != GDK_SUCCEED) {
+			MT_lock_unset(&mal_profileLock);
+			throw(MAL, "querylog.append", MAL_MALLOC_FAIL);
+		}
 	}
 	MT_lock_unset(&mal_profileLock);
 	TMsubcommit_list(commitlist, committop);
@@ -339,15 +356,18 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( *xtime + *rtime < QLOGthreshold)
 		return MAL_SUCCEED;
 	MT_lock_set(&mal_profileLock);
-	BUNappend(QLOG_calls_id,&mb->tag,FALSE);
-	BUNappend(QLOG_calls_start,tick1,FALSE);
-	BUNappend(QLOG_calls_stop,tick2,FALSE);
-	BUNappend(QLOG_calls_arguments,*arg,FALSE);
-	BUNappend(QLOG_calls_tuples,tuples,FALSE);
-	BUNappend(QLOG_calls_exec,xtime,FALSE);
-	BUNappend(QLOG_calls_result,rtime,FALSE);
-	BUNappend(QLOG_calls_cpuload,cpu,FALSE);
-	BUNappend(QLOG_calls_iowait,iowait,FALSE);
+	if (BUNappend(QLOG_calls_id,&mb->tag,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_start,tick1,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_stop,tick2,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_arguments,*arg,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_tuples,tuples,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_exec,xtime,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_result,rtime,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_cpuload,cpu,FALSE) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_iowait,iowait,FALSE) != GDK_SUCCEED) {
+		MT_lock_unset(&mal_profileLock);
+		throw(MAL, "querylog.call", MAL_MALLOC_FAIL);
+	}
 	MT_lock_unset(&mal_profileLock);
 	TMsubcommit_list(commitlist, committop);
 	return MAL_SUCCEED;

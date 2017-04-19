@@ -127,10 +127,15 @@ doChallenge(void *data)
 	char *buf = (char *) GDKmalloc(BLOCK + 1);
 	char challenge[13];
 	char *algos;
+
 	stream *fdin = ((struct challengedata *) data)->in;
 	stream *fdout = ((struct challengedata *) data)->out;
 	bstream *bs;
 	ssize_t len = 0;
+	protocol_version protocol = PROTOCOL_9;
+	size_t buflen = BLOCK;
+	column_compression colcomp = COLUMN_COMPRESSION_NONE;
+	int compute_column_widths = 0;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -155,7 +160,8 @@ doChallenge(void *data)
 	/* generate the challenge string */
 	generateChallenge(challenge, 8, 12);
 	algos = mcrypt_getHashAlgorithms();
-	/* note that we claim to speak proto 9 here for hashed passwords */
+
+	// send the challenge over the block stream
 	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
 			challenge,
 			algos,
@@ -177,9 +183,84 @@ doChallenge(void *data)
 		return;
 	}
 	buf[len] = 0;
+
+	if (strstr(buf, "PROT10")) {
+		char *errmsg = NULL;
+		char *buflenstrend, *buflenstr = strstr(buf, "PROT10");
+		compression_method comp;
+		protocol = PROTOCOL_10;
+		buflenstr = strchr(buflenstr, ':') + 1;
+		buflenstr = strchr(buflenstr, ':') + 1;
+		if (!buflenstr) {
+			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
+		buflenstrend = strchr(buflenstr, ':');
+
+		if (buflenstrend) buflenstrend[0] = '\0';
+		buflen = atol(buflenstr);
+		if (buflenstrend) buflenstrend[0] = ':';
+
+		if (strstr(buf, "COMPUTECOLWIDTH")) {
+			compute_column_widths = 1;
+		}
+
+		if (buflen < BLOCK) {
+			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
+
+		comp = COMPRESSION_NONE;
+		if (strstr(buf, "COMPRESSION_SNAPPY")) {
+#ifdef HAVE_LIBSNAPPY
+			comp = COMPRESSION_SNAPPY;
+#else
+			errmsg = "!server does not support Snappy compression.\n";
+#endif
+		} else if (strstr(buf, "COMPRESSION_LZ4")) {
+#ifdef HAVE_LIBLZ4
+			comp = COMPRESSION_LZ4;
+#else
+			errmsg = "!server does not support LZ4 compression.\n";
+#endif
+		} else if (strstr(buf, "COMPRESSION_NONE")) {
+			comp = COMPRESSION_NONE;
+		} else {
+			errmsg = "!no compression type specified.\n";
+		}
+
+		if (errmsg) {
+			// incorrect compression type specified
+			mnstr_printf(fdout, "%s", errmsg);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
+
+		{
+			// convert the block_stream into a block_stream2
+			stream *from, *to;
+			from = bs_stealstream(fdin);
+			to = bs_stealstream(fdout);
+			close_stream(fdin);
+			close_stream(fdout);
+			fdin = block_stream2(from, buflen, comp, colcomp);
+			fdout = block_stream2(to, buflen, comp, colcomp);
+		}
+
+		if (fdin == NULL || fdout == NULL) {
+			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+			return;
+		}
+	}
+
 #ifdef DEBUG_SERVER
-	printf("mal_mapi:Client accepted %s\n", buf);
-	fflush(stdout);
+	fprintf(stderr,"mal_mapi:Client accepted %s\n", buf);
+	fflush(stderr);
 
 	mnstr_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
 	mnstr_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
@@ -194,7 +275,7 @@ doChallenge(void *data)
 		return;
 	}
 	bs->eof = 1;
-	MSscheduleClient(buf, challenge, bs, fdout);
+	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen, compute_column_widths);
 }
 
 static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */
@@ -367,7 +448,7 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 #ifdef DEBUG_SERVER
-		printf("server:accepted\n");
+		fprintf(stderr,"server:accepted\n");
 		fflush(stdout);
 #endif
 		data = GDKmalloc(sizeof(*data));
@@ -459,7 +540,7 @@ static void SERVERannounce(struct in_addr addr, int port, str usockfile) {
 	}
 }
 
-str
+static str
 SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 {
 	struct sockaddr_in server;
@@ -671,7 +752,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 
 #ifdef DEBUG_SERVER
-	mnstr_printf(cntxt->fdout, "#SERVERlisten:Network started at %d\n", port);
+	fprintf(stderr, "#SERVERlisten:Network started at %d\n", port);
 #endif
 
 	psock[0] = sock;
@@ -691,7 +772,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #ifdef DEBUG_SERVER
 	gethostname(host, (int) 512);
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
-	mnstr_printf(cntxt->fdout, "%s", msg);
+	fprintf(stderr, "%s", msg);
 #endif
 
 	/* seed the randomiser such that our challenges aren't
@@ -1421,12 +1502,14 @@ SERVERfetch_field_bat(bat *bid, int *key){
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
 		if( mapi_error(mid) ) {
-			*bid = b->batCacheid;
-			BBPkeepref(*bid);
+			BBPreclaim(b);
 			throw(MAL, "mapi.fetch_field_bat", "%s",
 				mapi_result_error(SERVERsessions[i].hdl));
 		}
-		BUNappend(b,fld, FALSE);
+		if (BUNappend(b,fld, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			throw(MAL, "mapi.fetch_field_bat", MAL_MALLOC_FAIL);
+		}
 	}
 	*bid = b->batCacheid;
 	BBPkeepref(*bid);
@@ -1648,7 +1731,10 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	while( mapi_fetch_row(hdl)){
 		fld2= mapi_fetch_field(hdl,1);
 		SERVERfieldAnalysis(fld2, tt, &tval);
-		BUNappend(b,VALptr(&tval), FALSE);
+		if (BUNappend(b,VALptr(&tval), FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			throw(MAL, "mapi.rpc", MAL_MALLOC_FAIL);
+		}
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);

@@ -469,8 +469,10 @@
 #define XPROPDEBUG	if (GDKdebug & XPROPMASK)
 */
 
+/* JOINPROPMASK not used anymore
 #define JOINPROPMASK	(1<<24)
 #define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
+*/
 #define DEADBEEFMASK	(1<<25)
 #define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
 
@@ -587,8 +589,6 @@ typedef size_t BUN;
 #else
 #define BUN_NONE ((BUN) LLONG_MAX)
 #endif
-#define BUN_MSK (~BUN_NONE)
-#define BUN_UNMSK BUN_NONE
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
 #define BUN2 2
@@ -635,7 +635,8 @@ typedef struct {
 
 	unsigned int copied:1,	/* a copy of an existing map. */
 		hashash:1,	/* the string heap contains hash values */
-		forcemap:1;	/* force STORE_MMAP even if heap exists */
+		forcemap:1,	/* force STORE_MMAP even if heap exists */
+		cleanhash:1;	/* string heaps must clean hash */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
@@ -845,7 +846,7 @@ typedef struct {
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
 
-#define ORDERIDXOFF		2
+#define ORDERIDXOFF		3
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
@@ -855,8 +856,9 @@ typedef struct {
 #define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
 #define GDKLIBRARY_HEADED	061033	/* head properties are stored */
 #define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
-#define GDKLIBRARY_TALIGN	061035	/* talign field in BBP.dir */
-#define GDKLIBRARY		061036
+#define GDKLIBRARY_BADEMPTY	061035	/* possibility of duplicate empty str */
+#define GDKLIBRARY_TALIGN	061036	/* talign field in BBP.dir */
+#define GDKLIBRARY		061037
 
 typedef struct BAT {
 	/* static bat properties */
@@ -1297,37 +1299,9 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define Tloc(b,p)	((b)->theap.base+(((size_t)(p))<<(b)->tshift))
 
-#if SIZEOF_VAR_T < SIZEOF_VOID_P
-/* NEW 11/4/2009: when compiled with 32-bits oids/var_t on 64-bits
- * systems, align heap strings on 8 byte boundaries always (wasting 4
- * padding bytes on avg). Note that in heaps where duplicate
- * elimination is successful, such padding occurs anyway (as an aside,
- * a better implementation with two-bytes pointers in the string heap
- * hash table, could reduce that padding to avg 1 byte wasted -- see
- * TODO below).
- *
- * This 8 byte alignment allows the offset in the fixed part of the
- * BAT string column to be interpreted as an index, which should be
- * multiplied by 8 to get the position (VARSHIFT). The overall effect
- * is that 32GB heaps can be addressed even when oids are limited to
- * 4G tuples.
- *
- * In the future, we might extend this such that the string alignment
- * is set in the BAT header (columns with long strings take more
- * storage space, but could tolerate more padding).  It would mostly
- * work, only the sort routine and strPut/strLocate (which do not see
- * the BAT header) extra parameters would be needed in their APIs.
- */
-typedef unsigned short stridx_t;
-#define SIZEOF_STRIDX_T SIZEOF_SHORT
-#define GDK_VARSHIFT 3
-#define GDK_VARALIGN (1<<GDK_VARSHIFT)
-#else
-typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_t not to break BAT images */
+typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
-#define GDK_VARSHIFT 0
 #define GDK_VARALIGN SIZEOF_STRIDX_T
-#endif
 
 #if SIZEOF_VAR_T == 8
 #define VarHeapValRaw(b,p,w)						\
@@ -1341,7 +1315,7 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 	 (w) == 2 ? (var_t) ((unsigned short *) (b))[p] + GDK_VAROFFSET : \
 	 ((var_t *) (b))[p])
 #endif
-#define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w)  << GDK_VARSHIFT)
+#define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w))
 #define BUNtvaroff(bi,p) VarHeapVal((bi).b->theap.base, (p), (bi).b->twidth)
 
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
@@ -1372,8 +1346,6 @@ bat_iterator(BAT *b)
  * @tab BATsetcapacity (BAT *b, BUN cnt)
  * @item void
  * @tab BATsetcount (BAT *b, BUN cnt)
- * @item BUN
- * @tab BATrename (BAT *b, str nme)
  * @item BAT *
  * @tab BATkey (BAT *b, int onoff)
  * @item BAT *
@@ -1389,7 +1361,7 @@ bat_iterator(BAT *b)
  * The function BATcount returns the number of associations stored in
  * the BAT.
  *
- * The BAT is given a new logical name using BATrename.
+ * The BAT is given a new logical name using BBPrename.
  *
  * The integrity properties to be maintained for the BAT are
  * controlled separately.  A key property indicates that duplicates in
@@ -1420,7 +1392,6 @@ gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, int onoff);
 gdk_export gdk_return BATmode(BAT *b, int onoff);
 gdk_export void BATroles(BAT *b, const char *tnme);
-gdk_export int BATname(BAT *b, const char *nme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 gdk_export gdk_return BATsetaccess(BAT *b, int mode);
@@ -1953,7 +1924,7 @@ gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
  * @- Multilevel Storage Modes
  *
  * We should bring in the compressed mode as the first, maybe
- * built-in, mode. We could than add for instance HTTP remote storage,
+ * built-in, mode. We could then add for instance HTTP remote storage,
  * SQL storage, and READONLY (cd-rom) storage.
  *
  * @+ GDK Utilities
@@ -1988,7 +1959,6 @@ gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
  * Compiled with -DMEMLEAKS the GDK memory management log their
  * activities, and are checked on inconsistent frees and memory leaks.
  */
-#define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
 gdk_export void *GDKmmap(const char *path, int mode, size_t len);
@@ -2343,9 +2313,8 @@ __declspec(noreturn) gdk_export void GDKfatal(_In_z_ _Printf_format_string_ cons
 gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 #endif
-/*
- * @
- */
+gdk_export void GDKclrerr(void);
+
 #include "gdk_delta.h"
 #include "gdk_hash.h"
 #include "gdk_atoms.h"

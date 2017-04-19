@@ -1,3 +1,163 @@
+monetdb (11.25.19) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6259: crash on select query from sqlitelogictests
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Apr 2017 10:14:40 +0200
+
+monetdb (11.25.19) unstable; urgency=low
+
+  * gdk: A potential deadlock was fixed in order index creation.
+  * gdk: A bug that could happen during recovery of the write-ahead log (WAL)
+    was fixed.  See changeset 98ad79c555cc for details.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Apr 2017 10:14:40 +0200
+
+monetdb (11.25.19) unstable; urgency=low
+
+  * monetdb5: Some memory leaks were plugged.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Apr 2017 10:14:40 +0200
+
+monetdb (11.25.19) unstable; urgency=low
+
+  * sql: Some memory leaks were plugged.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Apr 2017 10:14:40 +0200
+
+monetdb (11.25.17) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6110: cast of a SQL boolean value to a string or clob or (var)char
+    is wrong
+  * BZ#6254: Crash (and assertion failure) after querying a view which
+    uses a correlated subquery in the select-list
+  * BZ#6256: Assertion Trigger on FULL OUTER JOIN with more than two
+    BETWEEN clauses
+  * BZ#6257: wrong count values (1 instead of 0) for correlated aggregation
+    queries
+  * BZ#6258: Vulnerability in FITS and NETCDF data vaults
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 11 Apr 2017 12:49:56 +0200
+
+monetdb (11.25.17) unstable; urgency=low
+
+  * sql: Upgrade code was added for an old change in the sys.settimeout function.
+  * sql: A bug was fixed with the automatic "vacuum" operation on system tables.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 11 Apr 2017 12:49:56 +0200
+
+monetdb (11.25.15) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6250: Assertion failure when querying a Blob column with order
+    by DESC
+  * BZ#6253: FITS Data Vaults does not work when using user/pw and other
+    than sys schema name
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 30 Mar 2017 14:00:54 +0200
+
+monetdb (11.25.13) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6216: Assertion raised (sqlsmith)
+  * BZ#6227: Monetdb fails on remote tables
+  * BZ#6242: Crash on rel_reduce_groupby_exps (sqlsmith)
+  * BZ#6243: Static optimization gives wrong result (1 + NULL = -127)
+  * BZ#6245: Nested query crashes all versions of MonetDB or gives wrong
+    result starting from Dec2016-SP2
+  * BZ#6246: update statements: references to a table do not bind to
+    its alias
+  * BZ#6247: Type analysis issue (sqlsmith)
+  * BZ#6248: update statements: the semantic stage does not resolve the
+    relation in the from clause
+  * BZ#6251: Crash after adding an ordered index on sys.statistics column
+    and querying sys.statistics
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Mar 2017 13:18:23 +0200
+
+monetdb (11.25.11) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6138: Weak duplicate elimination in string heaps > 64KB
+  * BZ#6183: ResultSet returns double quoted column name if name contains
+    space characters
+  * BZ#6219: Crash in rel_optimizer (sqlsmith)
+  * BZ#6228: mclient crashes if real column is multiplied by it itself
+  * BZ#6229: ANALYZE, unexpected end of input
+  * BZ#6230: ANALYZE, syntax error
+  * BZ#6237: semijoin with empty right bat does not return immediately
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 13 Mar 2017 10:10:14 +0100
+
+monetdb (11.25.11) unstable; urgency=low
+
+  * gdk: Fixed a bug when appending string bats that are fully duplicate
+    eliminated.  It could happend that the to-be-appended bat had an empty
+    string at an offset and at that same offset in the to-be-appended-to bat
+    there happened to be a (sequence of) NULL(s).  Then this offset would be
+    used, even though it might nog be the right offset for the empty string
+    in the to-be-appended-to bat.  This would result in multiple offsets for
+    the empty string, breaking the promise of being duplicate eliminated.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 28 Feb 2017 10:10:14 +0100
+
+monetdb (11.25.9) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6217: Segfault in rel_optimizer (sqlsmith)
+  * BZ#6218: grouped quantiles with all null group causes following groups
+    to return null
+  * BZ#6224: mal_parser: cannot refer to types containing an underscore
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Mon, 27 Feb 2017 11:15:08 +0100
+
+monetdb (11.25.7) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#4034: argnames array in rapi.c has fixed length (that was too short)
+  * BZ#6080: mserver5: rel_bin.c:2391: rel2bin_project: Assertion `0'
+    failed.
+  * BZ#6081: Segmentation fault (core dumped)
+  * BZ#6082: group.subgroup is undefined if group by is used on an
+    expression involving only constants
+  * BZ#6111: Maximum number of digits for hge decimal is listed as 39 in
+    sys.types. Should be 38 as DECIMAL(39) is not supported.
+  * BZ#6112: Crash upgrading Jul2015->Jun2016
+  * BZ#6130: Query rewriter crashes on a NULL pointer when having a
+    correlated subquery
+  * BZ#6133: A crash occurs when preparing an INSERT on joined tables
+    during the query semantic phase
+  * BZ#6141: Getting an error message regarding a non-GROUP-BY column
+    rather than an unknown identifier
+  * BZ#6177: Server crashes
+  * BZ#6186: Null casting causes no results (silent server crash?)
+  * BZ#6189: Removing a NOT NULL constraint from a PKey column should NOT
+    be allowed
+  * BZ#6190: CASE query crashes database
+  * BZ#6191: MT_msync failed with "Cannot allocate memory"
+  * BZ#6192: Numeric column stores wrong values after adding large numbers
+  * BZ#6193: converting to a smaller precision (fewer or no decimals after
+    decimal point) should round/truncate consistently
+  * BZ#6194: splitpart returns truncated last part if it contains non
+    ascii caracters
+  * BZ#6195: Cast from huge decimal type to smaller returns wrong results
+  * BZ#6196: Database crashes after generate_series query
+  * BZ#6198: COALESCE could be more optimized
+  * BZ#6201: MonetDB completely giving up on certain queries - no error
+    and no result
+  * BZ#6202: querying a table with an ordered index on string/varchar
+    column crashes server and makes server unrestartable!
+  * BZ#6203: copy into: Failed to import table Leftover data 'False'
+  * BZ#6205: Integer addition overflow
+  * BZ#6206: casting strings with more than one trailing zero ('0') to
+    decimal goes wrong
+  * BZ#6209: Aggregation over complex OR expressions produce wrong results
+  * BZ#6210: Upgrading a database from Jun2015 or older crashes the server
+  * BZ#6213: SQLsmith causes server to crash
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Thu, 16 Feb 2017 10:44:44 +0100
+
 monetdb (11.25.5) unstable; urgency=low
 
   * Rebuilt.

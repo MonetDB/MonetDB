@@ -33,7 +33,7 @@ Symbol newFunction(str mod, str nme,int kind){
 		return NULL;
 	}
 
-	p = newInstruction(NULL,mod,nme);
+	p = newInstruction(NULL, mod, nme);
 	if (p == NULL) {
 		freeSymbol(s);
 		return NULL;
@@ -228,7 +228,7 @@ void chkFlow(stream *out, MalBlkPtr mb)
 		showScriptException(out, mb,lastInstruction,SYNTAX,
 			"instructions after END");
 #ifdef DEBUG_MAL_FCN
-		printFunction(out, mb, 0, LIST_MAL_ALL);
+		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 #endif
 		mb->errors++;
 	}
@@ -288,13 +288,13 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int j,i,x,y;
 #ifdef DEBUG_MAL_FCN
 	char *tpenme = getTypeName(t);
-	mnstr_printf(GDKout,"replace type _%d by type %s\n",v, tpenme);
+	fprintf(stderr,"#replace type _%d by type %s\n",v, tpenme);
 	GDKfree(tpenme);
 #endif
 	for(j=0; j<mb->stop; j++){
 	    p= getInstrPtr(mb,j);
 #ifdef DEBUG_MAL_FCN
-		printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
+		fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
 #endif
 	if( p->polymorphic)
 	for(i=0;i<p->argc; i++)
@@ -314,7 +314,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 #ifdef DEBUG_MAL_FCN
 			{
 				char *xnme = getTypeName(x), *ynme = getTypeName(y);
-				mnstr_printf(GDKout," %d replaced %s->%s \n",i,xnme,ynme);
+				fprintf(stderr," %d replaced %s->%s \n",i,xnme,ynme);
 				GDKfree(xnme);
 				GDKfree(ynme);
 			}
@@ -323,7 +323,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 		if(getTypeIndex(x) == v){
 #ifdef DEBUG_MAL_FCN
 			char *xnme = getTypeName(x);
-			mnstr_printf(GDKout," replace x= %s polymorphic\n",xnme);
+			fprintf(stderr," replace x= %s polymorphic\n",xnme);
 			GDKfree(xnme);
 #endif
 			setArgType(mb,p,i,t);
@@ -331,13 +331,13 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 #ifdef DEBUG_MAL_FCN
 		else {
 			char *xnme = getTypeName(x);
-			mnstr_printf(GDKout," non x= %s %d\n",xnme,getTypeIndex(x));
+			fprintf(stderr," non x= %s %d\n",xnme,getTypeIndex(x));
 			GDKfree(xnme);
 		}
 #endif
 	}
 #ifdef DEBUG_MAL_FCN
-		printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
+		fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
 #endif
 	}
 }
@@ -393,9 +393,9 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	InstrPtr pp;
 
 #ifdef DEBUG_CLONE
-	mnstr_printf(out,"clone the function %s to scope %s\n",
+	fprintf(stderr,"clone the function %s to scope %s\n",
 				 proc->name,scope->name);
-	printInstruction(out,mb,0,p,LIST_MAL_ALL);
+	fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
 #endif
 	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
 	if( new == NULL){
@@ -406,8 +406,8 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 #ifdef DEBUG_CLONE
-	mnstr_printf(out, "CLONED VERSION\n");
-	printFunction(out, new->def, 0, LIST_MAL_ALL);
+	fprintf(stderr, "CLONED VERSION\n");
+	fprintFunction(stderr, new->def, 0, LIST_MAL_ALL);
 #endif
 	/* check for errors after fixation , TODO*/
 	pp = getSignature(new);
@@ -426,7 +426,7 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 #ifdef DEBUG_MAL_FCN
 		else {
 			char *tpenme = getTypeName(v);
-			mnstr_printf(out,"%d remains %s\n", i, tpenme);
+			fprintf(stderr,"%d remains %s\n", i, tpenme);
 			GDKfree(tpenme);
 		}
 #endif
@@ -443,8 +443,8 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 		clrVarFixed(new->def, i);
 
 #ifdef DEBUG_MAL_FCN
-	mnstr_printf(out, "FUNCTION TO BE CHECKED\n");
-	printFunction(out, new->def, 0, LIST_MAL_ALL);
+	fprintf(stderr, "FUNCTION TO BE CHECKED\n");
+	fprintFunction(stderr, new->def, 0, LIST_MAL_ALL);
 #endif
 
 	/* check for errors after fixation , TODO*/
@@ -455,12 +455,12 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			showScriptException(out, new->def, 0, MAL,
 								"Error in cloned function");
 #ifdef DEBUG_MAL_FCN
-			printFunction(out, new->def, 0, LIST_MAL_ALL);
+			fprintFunction(stderr, new->def, 0, LIST_MAL_ALL);
 #endif
 		}
 	}
 #ifdef DEBUG_CLONE
-	mnstr_printf(out, "newly cloned function added to %s %d \n",
+	fprintf(stderr, "newly cloned function added to %s %d \n",
 				 scope->name, i);
 	printFunction(out, new->def, 0, LIST_MAL_ALL);
 #endif
@@ -559,6 +559,25 @@ void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 	listFunction(fd,mb,stk,flg,0,mb->stop);
 }
 
+void fprintFunction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
+{
+	int i,j;
+	InstrPtr p;
+	// Set the used bits properly
+	for(i=0; i< mb->vtop; i++)
+		clrVarUsed(mb,i);
+	for(i=0; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		for(j= p->retc; j<p->argc; j++)
+			setVarUsed(mb, getArg(p,j));
+		if( p->barrier)
+			for(j= 0; j< p->retc; j++)
+				setVarUsed(mb, getArg(p,j));
+	}
+	for (i = 0; i < mb->stop; i++)
+		fprintInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
+}
+
 /* initialize the static scope boundaries for all variables */
 void
 setVariableScope(MalBlkPtr mb)
@@ -570,14 +589,14 @@ setVariableScope(MalBlkPtr mb)
 	for (k = 0; k < mb->vtop; k++)
 	if( isVarConstant(mb,k)){
 		setVarScope(mb,k,0);
-		mb->var[k]->declared = 0;
-		mb->var[k]->updated = 0;
-		mb->var[k]->eolife = mb->stop;
+		setVarDeclared(mb,k,0);
+		setVarUpdated(mb,k,0);
+		setVarEolife(mb,k,mb->stop);
 	} else {
 		setVarScope(mb,k,0);
-		mb->var[k]->declared = 0;
-		mb->var[k]->updated = 0;
-		mb->var[k]->eolife = 0;
+		setVarDeclared(mb,k,0);
+		setVarUpdated(mb,k,0);
+		setVarEolife(mb,k,0);
 	}
 
 	for (pc = 0; pc < mb->stop; pc++) {
@@ -598,20 +617,20 @@ setVariableScope(MalBlkPtr mb)
 
 		for (k = 0; k < p->argc; k++) {
 			int v = getArg(p,k);
-			if( isVarConstant(mb,v) && mb->var[v]->updated == 0)
-				mb->var[v]->updated= pc;
+			if( isVarConstant(mb,v) && getVarUpdated(mb,v) == 0)
+				setVarUpdated(mb,v, pc);
 
-			if (mb->var[v]->declared == 0 ){
-				mb->var[v]->declared = pc;
+			if ( getVarDeclared(mb,v) == 0 ){
+				setVarDeclared(mb,v, pc);
 				setVarScope(mb,v,depth);
 			}
 			if (k < p->retc )
-				mb->var[v]->updated= pc;
+				setVarUpdated(mb,v, pc);
 			if ( getVarScope(mb,v) == depth )
-				mb->var[v]->eolife = pc;
+				setVarEolife(mb,v,pc);
 
 			if ( k >= p->retc && getVarScope(mb,v) < depth )
-				mb->var[v]->eolife = -1;
+				setVarEolife(mb,v,-1);
 		}
 		/*
 		 * At a block exit we can finalize all variables defined within that block.
@@ -620,19 +639,23 @@ setVariableScope(MalBlkPtr mb)
 		 */
 		if( blockExit(p) ){
 			for (k = 0; k < mb->vtop; k++)
-			if ( mb->var[k]->eolife == 0 && getVarScope(mb,k) ==depth )
-				mb->var[k]->eolife = pc;
-			else if ( mb->var[k]->eolife == -1 )
-				mb->var[k]->eolife = pc;
+			if ( getVarEolife(mb,k) == 0 && getVarScope(mb,k) ==depth )
+				setVarEolife(mb,k,pc);
+			else if ( getVarEolife(mb,k) == -1 )
+				setVarEolife(mb,k,pc);
 			
 			if( dflow == depth)
 				dflow= -1;
 			else depth--;
 		}
+		if( blockReturn(p)){
+			for (k = 0; k < p->argc; k++)
+				setVarEolife(mb,getArg(p,k),pc);
+		}
 	}
 	for (k = 0; k < mb->vtop; k++)
-		if( mb->var[k]->eolife == 0)
-			mb->var[k]->eolife = mb->stop-1;
+		if( getVarEolife(mb,k) == 0)
+			setVarEolife(mb,k, mb->stop-1);
 }
 
 int
@@ -705,8 +728,8 @@ malGarbageCollector(MalBlkPtr mb)
 
 	for (i = 0; i < mb->vtop; i++)
 		if( isVarCleanup(mb,i) && getEndScope(mb,i) >= 0) {
-			mb->var[i]->eolife = getEndScope(mb,i);
-			mb->stmt[mb->var[i]->eolife]->gc |= GARBAGECONTROL;
+			setVarEolife(mb,i, getEndScope(mb,i));
+			mb->stmt[getVarEolife(mb,i)]->gc |= GARBAGECONTROL;
 		}
 }
 /*
@@ -743,6 +766,8 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 	short blks[MAXDEPTH], top= 0, blkId=1;
 	int dflow = -1;
 
+	if( mb->errors)
+		return;
 	blks[top] = blkId;
 
 	/* initialize the scope */
@@ -815,8 +840,7 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 				else
 					setVarScope(mb, l, blks[top]);
 #ifdef DEBUG_MAL_FCN
-				mnstr_printf(out,"defined %s in block %d\n",
-					getVarName(mb,l), getVarScope(mb,l));
+				fprintf(stderr,"#defined %s in block %d\n", getVarName(mb,l), getVarScope(mb,l));
 #endif
 			}
 			if( blockCntrl(p) || blockStart(p) )
@@ -839,12 +863,12 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 				} 
 				blks[++top]= blkId;
 #ifdef DEBUG_MAL_FCN
-				mnstr_printf(out,"new block %d at top %d\n",blks[top], top);
+				fprintf(stderr,"#new block %d at top %d\n",blks[top], top);
 #endif
 			}
 			if( blockExit(p) && top > 0 ){
 #ifdef DEBUG_MAL_FCN
-				mnstr_printf(out,"leave block %d at top %d\n",blks[top], top);
+				fprintf(stderr,"leave block %d at top %d\n",blks[top], top);
 #endif
 				if( dflow == blkId){
 					dflow = -1;
@@ -864,193 +888,3 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 		}
 	}
 }
-
-/*
- * Data flow analysis.
- * Flow graph display is handy for debugging and analysis.
- * A better flow analysis is needed, which takes into account barrier blocks 
- */
-static void
-showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
-{
-	InstrPtr p;
-	int i, k, found;
-
-	for (i = pc + 1; i < mb->stop - 1; i++) {
-		p = getInstrPtr(mb, i);
-		found = 0;
-		for (k = 0; k < p->argc; k++) {
-			if (p->argv[k] == varid) {
-				mnstr_printf(f, "n%d -> n%d\n", pc, i);
-				found++;
-			}
-		}
-		/* stop as soon you find a re-assignment */
-		for (k = 0; k < p->retc; k++) {
-			if (getArg(p, k) == varid)
-				i = mb->stop;
-		}
-		/* or a side-effect usage */
-		if (found &&
-			(p->retc == 0 || getArgType(mb, p, 0) == TYPE_void))
-			i = mb->stop;
-	}
-}
-
-static void
-showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
-{
-	InstrPtr p;
-	int i, k;
-
-	/* find last use, needed for operations with side effects */
-	for (i = pc - 1; i >= 0; i--) {
-		p = getInstrPtr(mb, i);
-		for (k = 0; k < p->argc; k++) {
-			if (p->argv[k] == varid ) {
-				mnstr_printf(f, "n%d -> n%d\n", i, pc);
-				return;
-			}
-		}
-	}
-}
-
-/*
- * We only display the minimal debugging information. The remainder
- * can be obtained through the profiler.
- */
-static void
-showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
-{
-	(void) mb;     /* fool the compiler */
-	(void) stk;     /* fool the compiler */
-	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"%s\"]\n", pc, getFunctionId(p));
-}
-
-/* Produce a file with the flow graph in dot format.
- */
-#define MAXFLOWGRAPHS 128
-
-static int getFlowGraphs(MalBlkPtr mb, MalStkPtr stk, MalBlkPtr *mblist, MalStkPtr *stklist,int top){
-	int i;
-	InstrPtr p;
-
-	for ( i=0; i<top; i++)
-	if ( mblist[i] == mb)
-		return top;
-
-	if ( top == MAXFLOWGRAPHS)
-		return top; /* just bail out */
-	mblist[top] = mb;
-	stklist[top++] = stk;
-	for (i=1; i < mb->stop; i++){
-		p = getInstrPtr(mb,i);
-		if ( p->token == FCNcall || p->token == FACcall )
-			top =getFlowGraphs(p->blk, 0,mblist, stklist, top);
-	}
-	return top;
-}
-
-void
-showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
-{
-	stream *f;
-	InstrPtr p;
-	int i, j,k;
-	char mapimode = 0;
-	buffer *bufstr = NULL;
-	MalBlkPtr mblist[MAXFLOWGRAPHS];
-	MalStkPtr stklist[MAXFLOWGRAPHS];
-	int top =0;
-
-	(void) stk;     /* fool the compiler */
-
-	memset(mblist, 0, sizeof(mblist));
-	memset(stklist, 0, sizeof(stklist));
-
-	if (idcmp(fname, "stdout") == 0) {
-		f = GDKout;
-	} else if (idcmp(fname, "stdout-mapi") == 0) {
-		bufstr = buffer_create(8096);
-		f = buffer_wastream(bufstr, "bufstr_write");
-		mapimode = 1;
-	} else {
-		f = open_wastream(fname);
-	}
-	if ( f == NULL)
-		return;
-
-	top = getFlowGraphs(mb,stk,mblist,stklist,0);
-	for( j=0; j< top; j++){
-		mb = mblist[j];
-		stk = stklist[j];
-		if (mb == 0 )
-			continue; /* already sent */
-		p = getInstrPtr(mb, 0);
-		mnstr_printf(f, "digraph %s {\n", getFunctionId(p));
-		p = getInstrPtr(mb, 0);
-		showFlowDetails(mb, stk, p, 0, f);
-		for (k = p->retc; k < p->argc; k++) {
-			showOutFlow(mb, 0, p->argv[k], f);
-		}
-		for (i = 1; i < mb->stop; i++) {
-			p = getInstrPtr(mb, i);
-
-			showFlowDetails(mb, stk, p, i, f);
-
-			for (k = 0; k < p->retc; k++)
-				showOutFlow(mb, i, p->argv[k], f);
-
-			if (p->retc == 0 || getArgType(mb, p, 0) == TYPE_void) /* assume side effects */
-				for (k = p->retc; k < p->argc; k++)
-					if (getArgType(mb, p, k) != TYPE_void &&
-						!isVarConstant(mb, getArg(p, k)))
-						showOutFlow(mb, i, p->argv[k], f);
-
-			if (getFunctionId(p) == 0)
-				for (k = 0; k < p->retc; k++)
-					if (getArgType(mb, p, k) != TYPE_void)
-						showInFlow(mb, i, p->argv[k], f);
-			if (p->token == ENDsymbol)
-				break;
-		}
-		mnstr_printf(f, "}\n");
-		mb->dotfile++;
-	}
-
-	if (mapimode == 1) {
-		size_t maxlen = 0;
-		size_t rows = 0;
-		str buf = buffer_get_buf(bufstr);
-		str line, oline;
-
-		/* calculate width of column, and the number of tuples */
-		oline = buf;
-		while ((line = strchr(oline, '\n')) != NULL) {
-			if ((size_t) (line - oline) > maxlen)
-				maxlen = line - oline;
-			rows++;
-			oline = line + 1;
-		} /* see printf before this mapimode if, last line ends with \n */
-
-		/* write mapi header */
-		if ( f == GDKout) {
-			mnstr_printf(f, "&1 0 " SZFMT " 1 " SZFMT "\n",
-					/* type id rows columns tuples */ rows, rows);
-			mnstr_printf(f, "%% .dot # table_name\n");
-			mnstr_printf(f, "%% dot # name\n");
-			mnstr_printf(f, "%% clob # type\n");
-			mnstr_printf(f, "%% " SZFMT " # length\n", maxlen);
-		}
-		oline = buf;
-		while ((line = strchr(oline, '\n')) != NULL) {
-			*line++ = '\0';
-			mnstr_printf(GDKout, "=%s\n", oline);
-			oline = line;
-		}
-		free(buf);
-	}
-	if (f != GDKout) 
-			close_stream(f);
-}
-

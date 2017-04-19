@@ -81,6 +81,9 @@ GDKinitmmap(size_t id, size_t size, void **return_ptr, size_t *return_size, str 
 	int fd;
 	int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC | MAP_SHARED;
 	char *path = NULL;
+
+	assert(return_ptr != NULL);
+
 	GDKmmapfile(address, 100, id);
 
 	/* round up to multiple of GDK_mmap_pagesize with a
@@ -109,9 +112,7 @@ GDKinitmmap(size_t id, size_t size, void **return_ptr, size_t *return_size, str 
 		goto cleanup;
 	}
 	GDKfree(path);
-	if (return_ptr != NULL) {
-		*return_ptr = ptr;
-	}
+	*return_ptr = ptr;
 	if (return_size != NULL) {
 		*return_size = size;
 	}

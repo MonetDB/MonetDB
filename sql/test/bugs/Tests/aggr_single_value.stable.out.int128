@@ -63,7 +63,7 @@ Ready.
 % .L5 # table_name
 % L4 # name
 % hugeint # type
-% 40 # length
+% 1 # length
 [ NULL	]
 #SELECT max(1);
 % .L4 # table_name
@@ -75,7 +75,7 @@ Ready.
 % .L5 # table_name
 % L4 # name
 % int # type
-% 11 # length
+% 1 # length
 [ NULL	]
 #SELECT min(1);
 % .L4 # table_name
@@ -87,7 +87,7 @@ Ready.
 % .L5 # table_name
 % L4 # name
 % int # type
-% 11 # length
+% 1 # length
 [ NULL	]
 
 # 19:26:22 >  

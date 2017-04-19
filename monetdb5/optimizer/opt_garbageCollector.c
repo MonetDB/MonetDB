@@ -10,33 +10,48 @@
 #include "opt_garbageCollector.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
+#include "mal_function.h"
 #include "opt_prelude.h"
 
-/*
- * Keeping variables around beyond their end-of-life-span
- * can be marked with the proper 'keep'.
- * Set the program counter to ease profiling
+/* The garbage collector is focused on removing temporary BATs only.
+ * Leaving some garbage on the stack is an issue.
+ *
+ * The end-of-life of a BAT may lay within block bracket. This calls
+ * for care, as the block may trigger a loop and then the BATs should
+ * still be there.
+ *
+ * The life time of such BATs is forcefully terminated after the block exit.
  */
-int
+str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, n = 0, limit, vlimit, depth=0, slimit;
-	InstrPtr p, q, *old;
+	int i, j, limit, slimit;
+	InstrPtr p, *old;
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
+	//int *varlnk, *stmtlnk;
 
 	(void) pci;
 	(void) cntxt;
 	(void) stk;
 	if ( mb->inlineProp)
 		return 0;
-
-
+/*
+	varlnk = (int*) GDKzalloc(mb->vtop * sizeof(int));
+	if( varlnk == NULL)
+		return 0;
+	stmtlnk = (int*) GDKzalloc((mb->stop + 1) * sizeof(int));
+	if( stmtlnk == NULL){
+		GDKfree(varlnk);
+		return 0;
+	}
+*/
+	
 	old= mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
-	vlimit = mb->vtop;
+	//vlimit = mb->vtop;
 
 	// move SQL query definition to the front for event profiling tools
 	p = NULL;
@@ -50,53 +65,58 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		for(  ; i > 1; i--)
 			mb->stmt[i] = mb->stmt[i-1];
 		mb->stmt[1] = p;
-		setVariableScope(mb);
+		actions =1;
 	}
 
+	// Actual garbage collection stuff
+	// Construct the linked list of variables based on end-of-scope
+/*
+	setVariableScope(mb);
+	for( i = 0; i < mb->vtop; i++){
+		assert(getEndScope(mb,i) >= 0);
+		assert(getEndScope(mb,i) <= mb->stop);
+	  varlnk[i] = stmtlnk[getEndScope(mb,i)];
+	  stmtlnk[getEndScope(mb,i)] = i;
+	}
+*/
+
 	if ( newMalBlkStmt(mb,mb->ssize) < 0) 
-		return 0;
+		throw(MAL, "optimizer.garbagecollector", MAL_MALLOC_FAIL);
 
 	p = NULL;
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		p->gc &=  ~GARBAGECONTROL;
+		/* Set the program counter to ease profiling */
 		p->pc = i;
 
 		if ( p->barrier == RETURNsymbol){
 			pushInstruction(mb, p);
 			continue;
 		}
-		if (blockStart(p) )
-			depth++;
 		if ( p->token == ENDsymbol)
 			break;
 		
 		pushInstruction(mb, p);
-		n = mb->stop-1;
-		for (j = 0; j < p->argc; j++) {
-			if (getEndScope(mb,getArg(p,j)) == i && isaBatType(getArgType(mb, p, j)) ){
-				mb->var[getArg(p,j)]->eolife = n;
-				p->gc |= GARBAGECONTROL;
-			} 
-		}
+
+		/* A block exit is never within a parallel block,
+		 * otherwise we could not inject the assignment */
+			/* force garbage collection of all declared within output block and ending here  */
+/* ignore for the time being, it requires a more thorough analysis of dependencies.
 		if (blockExit(p) ){
-			/* force garbage collection of all within upper block */
-			depth--;
-			for (k = 0; k < vlimit; k++) {
-				if (getBeginScope(mb,k) > 0  &&
-					getEndScope(mb,k) == i &&
-					isaBatType(getVarType(mb,k)) ){
-						q= newAssignment(mb);
-						getArg(q,0) = k;
-						setVarUDFtype(mb,k);
-						setVarFixed(mb,k);
-						q= pushNil(mb,q, getVarType(mb,k));
-						q->gc |= GARBAGECONTROL;
-						mb->var[k]->eolife = mb->stop-1;
-						actions++;
-				}
+			for( k = stmtlnk[i]; k; k = varlnk[k])
+			if( isaBatType(getVarType(mb,k)) ){
+				q = newAssignment(mb);
+				getArg(q,0)= k;
+				q= pushNil(mb,q, getVarType(mb,k));
+				setVarUDFtype(mb,k);
+				setVarFixed(mb,k);
+				q->gc |= GARBAGECONTROL;
+				setVarEolife(mb,k,mb->stop-1);
+				actions++;
 			}
 		}
+*/
 	}
 	assert(p);
 	assert( p->token == ENDsymbol);
@@ -107,17 +127,19 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		if (old[i])
 			freeInstruction(old[i]);
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
+	//GDKfree(varlnk);
+	//GDKfree(stmtlnk);
 	GDKfree(old);
 #ifdef DEBUG_OPT_GARBAGE
 	{ 	int k;
-		mnstr_printf(cntxt->fdout, "#Garbage collected BAT variables \n");
+		fprintf(stderr, "#Garbage collected BAT variables \n");
 		for ( k =0; k < vlimit; k++)
-		mnstr_printf(cntxt->fdout,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
+		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
 			getVarName(mb,k), mb->var[k]->eolife,
 			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
 		chkFlow(cntxt->fdout,mb);
-		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
-		mnstr_printf(cntxt->fdout, "End of GCoptimizer\n");
+		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
+		fprintf(stderr, "End of GCoptimizer\n");
 	}
 #endif
 
@@ -138,9 +160,12 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions+1,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
     newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
-	return actions+1;
+	return MAL_SUCCEED;
 }
 

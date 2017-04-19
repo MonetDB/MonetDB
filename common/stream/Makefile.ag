@@ -10,6 +10,8 @@ MTSAFE
 
 INCLUDES = $(zlib_CFLAGS) \
 		   $(BZ_CFLAGS) \
+		   $(snappy_CFLAGS) \
+   		   $(lz4_CFLAGS) \
 		   $(liblzma_CFLAGS) \
 		   $(openssl_CFLAGS) \
 		   $(curl_CFLAGS)
@@ -20,6 +22,8 @@ lib_stream  =  {
 	LIBS = $(SOCKET_LIBS) \
 		   $(zlib_LIBS) \
 		   $(BZ_LIBS) \
+		   $(snappy_LIBS) \
+   		   $(lz4_LIBS) \
 		   $(liblzma_LIBS) \
 		   $(openssl_LIBS) \
 		   $(curl_LIBS) \

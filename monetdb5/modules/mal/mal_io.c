@@ -535,12 +535,14 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(pci->retc == 1);
 	assert(pci->argc >= 2);
 
+	memset(piv, 0, sizeof(BAT*) * MAXPARAMS);
 	for (i = 1; i < pci->argc; i++) {
 		tpe = getArgType(mb, pci, i);
 		val = getArgReference(stk, pci, i);
 		if (!isaBatType(tpe)) {
 			while (--i >= 1)
-				BBPunfix(piv[i]->batCacheid);
+				if (piv[i] != NULL)
+					BBPunfix(piv[i]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " BAT expected");
 		}
 		if ((piv[i] = BATdescriptor(*(int *) val)) == NULL) {

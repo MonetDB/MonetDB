@@ -45,17 +45,12 @@ Ready.
 #			and o_custkey = c_custkey
 #			and c_nationkey = n1.n_nationkey
 #			and n1.n_regionkey = r_regionkey
-% sys.all_nations,	sys.L3 # table_name
+% sys.all_nations,	sys.L14 # table_name
 % o_year,	mkt_share # name
 % int,	decimal # type
-% 4,	21 # length
+% 4,	20 # length
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	5	]
 
 # 09:17:15 >  
 # 09:17:15 >  Done.

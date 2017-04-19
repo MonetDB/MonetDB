@@ -573,8 +573,7 @@ int yydebug=1;
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
 %right UMINUS
-%left <operation> '*' '/'
-%left <operation> '%'
+%left <operation> '*' '/' '%'
 %left <operation> '~'
 
 %left <operatio> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT 
@@ -1836,16 +1835,27 @@ func_def:
 				lang = FUNC_LANG_R;
 			else if (l == 'P' || l == 'p')
             {
-                if (strcasecmp($10, "PYTHON_MAP") == 0)
-                    lang = FUNC_LANG_MAP_PY;
-                else lang = FUNC_LANG_PY;
+            	// code does not get cleaner than this people
+                if (strcasecmp($10, "PYTHON_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY;
+                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY3;
+                } else if (strcasecmp($10, "PYTHON3") == 0) {
+                	lang = FUNC_LANG_PY3;
+                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY2;
+                } else if (strcasecmp($10, "PYTHON2") == 0) {
+                	lang = FUNC_LANG_PY2;
+                } else {
+                	lang = FUNC_LANG_PY;
+                }
             }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else {
-				char *msg = sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l);
+				char *msg = sql_message("Language name R, C, PYTHON[3], PYTHON[3]_MAP or J(avascript):expected, received '%c'", l);
 				yyerror(m, msg);
 				_DELETE(msg);
 			}
@@ -1899,16 +1909,26 @@ func_def:
 				lang = FUNC_LANG_R;
 			else if (l == 'P' || l == 'p')
             {
-                if (strcasecmp($10, "PYTHON_MAP") == 0)
-                     lang = FUNC_LANG_MAP_PY;
-                else lang = FUNC_LANG_PY;
+                if (strcasecmp($10, "PYTHON_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY;
+                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY3;
+                } else if (strcasecmp($10, "PYTHON3") == 0) {
+                	lang = FUNC_LANG_PY3;
+                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY2;
+                } else if (strcasecmp($10, "PYTHON2") == 0) {
+                	lang = FUNC_LANG_PY2;
+                } else {
+                	lang = FUNC_LANG_PY;
+                }
             }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else {
-				char *msg = sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l);
+				char *msg = sql_message("Language name R, C, PYTHON[3], PYTHON[3]_MAP or J(avascript):expected, received '%c'", l);
 				yyerror(m, msg);
 				_DELETE(msg);
 			}
@@ -2998,11 +3018,11 @@ with_list:
  ;
 
 with_list_element: 
-    ident opt_column_list AS '(' with_query_expression ')'
+    ident opt_column_list AS subquery_with_orderby 
 	{  dlist *l = L();
 	  append_list(l, append_string(L(), $1));
 	  append_list(l, $2);
-	  append_symbol(l, $5);
+	  append_symbol(l, $4);
 	  append_int(l, FALSE);	/* no with check */
 	  append_int(l, FALSE);	/* inlined view  (ie not persistent) */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 

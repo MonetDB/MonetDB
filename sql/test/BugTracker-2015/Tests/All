@@ -59,7 +59,7 @@ set_default_role.Bug-3364
 THREADS>=3?useless_casts.Bug-3756
 sum_interval.Bug-3785
 nil_cast.Bug-3787
-sql2pcre.Bug-3800
+HAVE_PCRE?sql2pcre.Bug-3800
 ambiguous.Bug-3803
 large_join.Bug-3809
 float-space-parse.Bug-3691

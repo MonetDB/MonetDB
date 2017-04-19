@@ -1,6 +1,15 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Fri Feb 17 2017 Sjoerd Mullender <sjoerd@acm.org>
+- BATsort may now create an order index as a by product.
+- Quantile calculations now use the order index if available (and use
+  BATsort otherwise, producing an order index).
+- Quantiles calculate a position in the sorted column.  If this position
+  is not an integer, we now choose the nearest position, favoring the
+  lower if the distance to the two adjacent positions is equal (round
+  down to nearest integer).
+
 * Mon Jan 30 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Removed function BATprintf.  Use BATprint or BATprintcolumns instead.
 - Removed BATsave from the list of exported functions.

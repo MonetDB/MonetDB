@@ -19,7 +19,6 @@
  * to easily trace their performance.
  */
 mal_export str MALoptimizer(Client c);
-mal_export str optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec);
 mal_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 mal_export void showOptimizerStep(str fnme,int i, int flg);
 mal_export void showOptimizerHistory(void);
@@ -27,19 +26,16 @@ mal_export void showOptimizerHistory(void);
 mal_export int optimizerIsApplied(MalBlkPtr mb, str name);
 mal_export int isUnsafeInstruction(InstrPtr q);
 mal_export int isUnsafeFunction(InstrPtr q);
-mal_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
-mal_export int isDependent(InstrPtr p, InstrPtr q);
+mal_export int isSealedFunction(InstrPtr q);
 mal_export int safetyBarrier(InstrPtr p, InstrPtr q);
 mal_export int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop);
 mal_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 mal_export int hasCommonResults(InstrPtr p, InstrPtr q);
-mal_export int isProcedure(MalBlkPtr mb, InstrPtr p);
 mal_export int isUpdateInstruction(InstrPtr p);
-mal_export int hasSideEffects(InstrPtr p, int strict);
+mal_export int hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict);
 mal_export int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict);
 mal_export int isSideEffectFree(MalBlkPtr mb);
 mal_export int isBlocking(InstrPtr p);
-mal_export int isAllScalar(MalBlkPtr mb, InstrPtr p);
 mal_export int isFragmentGroup(InstrPtr q);
 mal_export int isFragmentGroup2(InstrPtr q);
 mal_export int isDelta(InstrPtr q);

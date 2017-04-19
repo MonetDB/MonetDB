@@ -402,7 +402,7 @@ setScenario(Client c, str nme)
 {
 	int i;
 	str msg;
-	Scenario scen = scenarioRec;
+	Scenario scen;
 
 	scen = findScenario(nme);
 	if (scen == NULL)

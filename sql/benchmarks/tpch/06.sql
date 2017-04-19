@@ -11,4 +11,3 @@ where
 	and l_discount between .06 - 0.01 and .06 + 0.01
 	and l_quantity < 24;
 
-select * from optimizer_stats() stats;

@@ -22,6 +22,10 @@
 #include "mal_debugger.h"
 #include "mal_resource.h"
 
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+
 static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 stream *eventstream = 0;
@@ -35,6 +39,8 @@ static int highwatermark = 5;	// conservative initialization
 
 static int TRACE_init = 0;
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
+
+static struct timeval startup_time;
 
 static volatile ATOMIC_TYPE hbdelay = 0;
 
@@ -104,19 +110,19 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 {
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
-	lng clock;
 	str stmt, c;
 	str stmtq;
 	lng usec= GDKusec();
+	lng sec = (lng)startup_time.tv_sec + usec/1000000;
+	long microseconds = (long)startup_time.tv_usec + (usec % 1000000);
 
+	assert (microseconds / 1000000 >= 0 && microseconds / 1000000 < 2);
+	sec += (microseconds / 1000000);
+	microseconds %= 1000000;
 
 	// ignore generation of events for instructions that are called too often
 	if(highwatermark && highwatermark + (start == 0) < pci->calls)
 		return;
-	if( start) // show when instruction was started
-		clock = pci->clock;
-	else
-		clock = usec;
 
 	/* make profile event tuple  */
 	lognew();
@@ -125,7 +131,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	if( usrname)
 		logadd("\"user\":\"%s\",%s",usrname, prettify);
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
-	logadd("\"ctime\":"LLFMT".%06ld\",%s", clock / 1000000, (long) (clock % 1000000), prettify);
+	logadd("\"ctime\":"LLFMT".%06ld,%s", sec, microseconds, prettify);
 	logadd("\"thread\":%d,%s", THRgettid(),prettify);
 
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
@@ -262,8 +268,8 @@ This information can be used to determine memory footprint and variable life tim
 				logadd("{");
 				logadd("\"index\":\"%d\",%s", j,pret);
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
-				if( mb->var[getArg(pci,j)]->stc){
-					InstrPtr stc = getInstrPtr(mb, mb->var[getArg(pci,j)]->stc);
+				if( getVarSTC(mb,getArg(pci,j))){
+					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
 					if(stc && strcmp(getModuleId(stc),"sql") ==0  && strncmp(getFunctionId(stc),"bind",4)==0)
 						logadd("\"alias\":\"%s.%s.%s\",%s", 
 							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
@@ -387,7 +393,6 @@ profilerHeartbeatEvent(char *alter)
 	char cpuload[BUFSIZ];
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
-	lng clock;
 
 	if (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL)
 		return;
@@ -395,12 +400,10 @@ profilerHeartbeatEvent(char *alter)
 	/* get CPU load on beat boundaries only */
 	if ( getCPULoad(cpuload) )
 		return;
-	clock = GDKusec();
 
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
 	logadd("\"user\":\"heartbeat\",%s", prettify);
-	logadd("\"ctime\":"LLFMT".%06ld\",%s", clock / 1000000, (long) (clock % 1000000), prettify);
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -621,6 +624,7 @@ static BAT *TRACE_id_stmt = 0;
 int
 TRACEtable(BAT **r)
 {
+	initTrace();
 	MT_lock_set(&mal_profileLock);
 	if (TRACE_init == 0) {
 		MT_lock_unset(&mal_profileLock);
@@ -692,7 +696,10 @@ TRACEcreate(const char *hnme, const char *tnme, int tt)
 	b = COLnew(0, tt, 1 << 16, TRANSIENT);
 	if (b == NULL)
 		return NULL;
-	BBPrename(b->batCacheid, buf);
+	if (BBPrename(b->batCacheid, buf) != 0) {
+		BBPreclaim(b);
+		return NULL;
+	}
 	return b;
 }
 
@@ -790,7 +797,6 @@ cleanupTraces(void)
 void
 cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	/* static struct Mallinfo prevMalloc; */
 	char buf[BUFSIZ]= {0};
 	int tid = (int)THRgettid();
 	lng v1 = 0, v2= 0, v3=0, v4=0, v5=0;
@@ -799,10 +805,8 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng rssMB = MT_getrss()/1024/1024;
 	lng tmpspace = pci->wbytes/1024/1024;
 	int errors = 0;
-	/* struct Mallinfo infoMalloc; */
 
 	clock = GDKusec();
-	/* infoMalloc = MT_mallinfo(); */
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
@@ -851,8 +855,13 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	errors += BUNappend(TRACE_id_majflt, &v4, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_nvcsw, &v5, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_stmt, c, FALSE) != GDK_SUCCEED;
-	TRACE_event++;
-	eventcounter++;
+	if (errors > 0) {
+		/* stop profiling if an error occurred */
+		sqlProfiling = FALSE;
+	} else {
+		TRACE_event++;
+		eventcounter++;
+	}
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
 }
@@ -1031,6 +1040,7 @@ void setHeartbeat(int delay)
 
 void initProfiler(void)
 {
+	gettimeofday(&startup_time, NULL);
 	if( mal_trace)
 		openProfilerStream(mal_clients[0].fdout,0);
 }

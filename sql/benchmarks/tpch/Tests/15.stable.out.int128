@@ -21,13 +21,9 @@ Ready.
 % sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.revenue0 # table_name
 % s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
 % int,	char,	varchar,	char,	decimal # type
-% 2,	25,	36,	15,	41 # length
+% 2,	25,	36,	15,	40 # length
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
+#drop view revenue0;
 
 # 09:17:18 >  
 # 09:17:18 >  Done.

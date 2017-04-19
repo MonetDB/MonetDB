@@ -146,40 +146,40 @@ Ready.
 % v,	L3 # name
 % boolean,	char # type
 % 5,	1 # length
-[ true,	"1"	]
-[ false,	"0"	]
-[ true,	"1"	]
-[ false,	"0"	]
+[ true,	"t"	]
+[ false,	"f"	]
+[ true,	"t"	]
+[ false,	"f"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, varchar(6)) from T_BOOLEAN;
 % sys.t_boolean,	sys.L3 # table_name
 % v,	L3 # name
 % boolean,	varchar # type
-% 5,	1 # length
-[ true,	"1"	]
-[ false,	"0"	]
-[ true,	"1"	]
-[ false,	"0"	]
+% 5,	5 # length
+[ true,	"true"	]
+[ false,	"false"	]
+[ true,	"true"	]
+[ false,	"false"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_BOOLEAN;
 % sys.t_boolean,	sys.L3 # table_name
 % v,	L3 # name
 % boolean,	clob # type
-% 5,	1 # length
-[ true,	"1"	]
-[ false,	"0"	]
-[ true,	"1"	]
-[ false,	"0"	]
+% 5,	5 # length
+[ true,	"true"	]
+[ false,	"false"	]
+[ true,	"true"	]
+[ false,	"false"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_BOOLEAN;
 % sys.t_boolean,	sys.L3 # table_name
 % v,	L3 # name
 % boolean,	clob # type
-% 5,	1 # length
-[ true,	"1"	]
-[ false,	"0"	]
-[ true,	"1"	]
-[ false,	"0"	]
+% 5,	5 # length
+[ true,	"true"	]
+[ false,	"false"	]
+[ true,	"true"	]
+[ false,	"false"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as boolean) from T_BOOLEAN;
 % sys.t_boolean,	sys.L3 # table_name
@@ -246,40 +246,40 @@ Ready.
 % v,	L3 # name
 % boolean,	char # type
 % 5,	1 # length
-[ true,	"1"	]
-[ false,	"0"	]
-[ true,	"1"	]
-[ false,	"0"	]
+[ true,	"t"	]
+[ false,	"f"	]
+[ true,	"t"	]
+[ false,	"f"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(6)) from T_BOOLEAN;
 % sys.t_boolean,	sys.L3 # table_name
 % v,	L3 # name
 % boolean,	varchar # type
-% 5,	1 # length
-[ true,	"1"	]
-[ false,	"0"	]
-[ true,	"1"	]
-[ false,	"0"	]
+% 5,	5 # length
+[ true,	"true"	]
+[ false,	"false"	]
+[ true,	"true"	]
+[ false,	"false"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_BOOLEAN;
 % sys.t_boolean,	sys.L3 # table_name
 % v,	L3 # name
 % boolean,	clob # type
-% 5,	1 # length
-[ true,	"1"	]
-[ false,	"0"	]
-[ true,	"1"	]
-[ false,	"0"	]
+% 5,	5 # length
+[ true,	"true"	]
+[ false,	"false"	]
+[ true,	"true"	]
+[ false,	"false"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_BOOLEAN;
 % sys.t_boolean,	sys.L3 # table_name
 % v,	L3 # name
 % boolean,	clob # type
-% 5,	1 # length
-[ true,	"1"	]
-[ false,	"0"	]
-[ true,	"1"	]
-[ false,	"0"	]
+% 5,	5 # length
+[ true,	"true"	]
+[ false,	"false"	]
+[ true,	"true"	]
+[ false,	"false"	]
 [ NULL,	NULL	]
 #DROP TABLE T_BOOLEAN;
 #CREATE TABLE T_blob (v BLOB);
@@ -292,11 +292,11 @@ Ready.
 % v # name
 % blob # type
 % 0 # length
+[ 	]
 [ 00	]
 [ 11	]
 [ 0123456789	]
 [ A0B2C3D4F5	]
-[ 	]
 [ NULL	]
 #SELECT v, convert(v, varchar(16)) from T_blob;
 % sys.t_blob,	sys.L3 # table_name

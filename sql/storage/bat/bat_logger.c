@@ -14,9 +14,10 @@
 logger *bat_logger = NULL;
 logger *bat_logger_shared = NULL;
 
-/* return 0 if we can handle the upgrade from oldversion to newversion */
-static int
-bl_preversion( int oldversion, int newversion)
+/* return GDK_SUCCEED if we can handle the upgrade from oldversion to
+ * newversion */
+static gdk_return
+bl_preversion(int oldversion, int newversion)
 {
 #define CATALOG_JUL2015 52200
 
@@ -25,10 +26,10 @@ bl_preversion( int oldversion, int newversion)
 		/* upgrade to Jun2016 releases */
 		catalog_version = oldversion;
 		geomversion_set();
-		return 0;
+		return GDK_SUCCEED;
 	}
 
-	return -1;
+	return GDK_FAIL;
 }
 
 static char *
@@ -41,7 +42,7 @@ N( char *buf, char *pre, char *schema, char *post)
 	return buf;
 }
 
-static void 
+static gdk_return
 bl_postversion( void *lg) 
 {
 	(void)lg;
@@ -50,55 +51,83 @@ bl_postversion( void *lg)
 		BAT *b;
 		BATiter bi;
 		BAT *te, *tne;
-		BUN p,q;
-		char geomUpgrade = 0;
+		BUN p, q;
+		int geomUpgrade = 0;
 		char *s = "sys", n[64];
+		geomcatalogfix_fptr func;
 
 		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
 		if (te == NULL)
-			return;
+			return GDK_FAIL;
 		bi = bat_iterator(te);
 		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
-		if (!tne)
-			return;
-		for(p=0, q=BUNlast(te); p<q; p++) {
+		if (tne == NULL) {
+			bat_destroy(te);
+			return GDK_FAIL;
+		}
+		for (p = 0, q = BUNlast(te); p < q; p++) {
 			int eclass = *(int*)BUNtail(bi, p);
 
 			if (eclass == EC_GEOM)		/* old EC_EXTERNAL */
 				eclass++;		/* shift up */
-			BUNappend(tne, &eclass, TRUE);
+			if (BUNappend(tne, &eclass, TRUE) != GDK_SUCCEED) {
+				bat_destroy(tne);
+				bat_destroy(te);
+				return GDK_FAIL;
+			}
 		}
-		BATsetaccess(tne, BAT_READ);
-		logger_add_bat(lg, tne, N(n, NULL, s, "types_eclass"));
 		bat_destroy(te);
+		if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
+		    logger_add_bat(lg, tne, N(n, NULL, s, "types_eclass")) != GDK_SUCCEED) {
+			bat_destroy(tne);
+			return GDK_FAIL;
+		}
+		bat_destroy(tne);
 
 		/* in the past, the args.inout column may have been
 		 * incorrectly upgraded to a bit instead of a bte
 		 * column */
 		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "args_inout")));
 		if (te == NULL)
-			return;
+			return GDK_FAIL;
 		if (te->ttype == TYPE_bit) {
 			bi = bat_iterator(te);
 			tne = COLnew(te->hseqbase, TYPE_bte, BATcount(te), PERSISTENT);
-			if (!tne)
-				return;
-			for(p=0, q=BUNlast(te); p<q; p++) {
+			if (tne == NULL) {
+				bat_destroy(te);
+				return GDK_FAIL;
+			}
+			for (p = 0, q = BUNlast(te); p < q; p++) {
 				bte inout = (bte) *(bit*)BUNtail(bi, p);
 
-				BUNappend(tne, &inout, TRUE);
+				if (BUNappend(tne, &inout, TRUE) != GDK_SUCCEED) {
+					bat_destroy(tne);
+					bat_destroy(te);
+					return GDK_FAIL;
+				}
 			}
-			BATsetaccess(tne, BAT_READ);
-			logger_add_bat(lg, tne, N(n, NULL, s, "args_inout"));
+			if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
+			    logger_add_bat(lg, tne, N(n, NULL, s, "args_inout")) != GDK_SUCCEED) {
+				bat_destroy(tne);
+				bat_destroy(te);
+				return GDK_FAIL;
+			}
+			bat_destroy(tne);
 		}
 		bat_destroy(te);
 
 		/* test whether the catalog contains information
 		 * regarding geometry types */
 		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "types_systemname")));
+		if (b == NULL)
+			return GDK_FAIL;
 		bi = bat_iterator(b);
-		for (p=0, q=BUNlast(b); p<q; p++) {
+		for (p = 0, q = BUNlast(b); p < q; p++) {
 			char *t = toLower(BUNtail(bi, p));
+			if (t == NULL) {
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
 			geomUpgrade = strcmp(t, "wkb") == 0;
 			GDKfree(t);
 			if (geomUpgrade)
@@ -110,9 +139,15 @@ bl_postversion( void *lg)
 			/* test whether the catalog contains
 			 * information about geometry columns */
 			b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
+			if (b == NULL)
+				return GDK_FAIL;
 			bi = bat_iterator(b);
-			for (p=0, q=BUNlast(b); p<q; p++) {
+			for (p = 0, q = BUNlast(b); p < q; p++) {
 				char *t = toLower(BUNtail(bi, p));
+				if (t == NULL) {
+					bat_destroy(b);
+					return GDK_FAIL;
+				}
 				geomUpgrade = strcmp(t, "point") == 0 ||
 					strcmp(t, "curve") == 0 ||
 					strcmp(t, "linestring") == 0 ||
@@ -132,27 +167,29 @@ bl_postversion( void *lg)
 			bat_destroy(b);
 		}
 
-		if (!geomUpgrade && geomcatalogfix_get() == NULL) {
+		func = geomcatalogfix_get();
+		if (func) {
+			/* Either the catalog needs to be updated and
+			 * the geom module has been loaded
+			 * (geomUpgrade == 1), or the catalog new
+			 * nothing about geometries but the geom
+			 * module is loaded (geomUpgrade == 0) */
+			(*func)(lg, geomUpgrade);
+		} else {
+			if (geomUpgrade) {
+				/* The catalog needs to be updated but
+				 * the geom module has not been
+				 * loaded.  The case is prohibited by
+				 * the sanity check performed during
+				 * initialization */
+				GDKfatal("the catalogue needs to be updated but the geom module is not loaded.\n");
+			}
 			/* The catalog knew nothing about geometries
-			 * and the geom module is not loaded:
-			 * Do nothing */
-		} else if (!geomUpgrade && geomcatalogfix_get() != NULL) {
-			/* The catalog knew nothing about geometries
-			 * but the geom module is loaded:
-			 * Add geom functionality */
-			(*(geomcatalogfix_get()))(lg, 0);
-		} else if (geomUpgrade && geomcatalogfix_get() == NULL) {
-			/* The catalog needs to be updated but the
-			 * geom module has not been loaded.
-			 * The case is prohibited by the sanity check
-			 * performed during initialization */
-			GDKfatal("the catalogue needs to be updated but the geom module is not loaded.\n");
-		} else if (geomUpgrade && geomcatalogfix_get() != NULL) {
-			/* The catalog needs to be updated and the
-			 * geom module has been loaded */
-			(*(geomcatalogfix_get()))(lg, 1);
+			 * and the geom module is not loaded: Do
+			 * nothing */
 		}
 	}
+	return GDK_SUCCEED;
 }
 
 static int 
@@ -209,7 +246,7 @@ static int
 bl_restart(void)
 {
 	if (bat_logger)
-		return logger_restart(bat_logger);
+		return logger_restart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
@@ -217,7 +254,7 @@ static int
 bl_cleanup(int keep_persisted_log_files)
 {
 	if (bat_logger)
-		return logger_cleanup(bat_logger, keep_persisted_log_files);
+		return logger_cleanup(bat_logger, keep_persisted_log_files) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
@@ -225,7 +262,7 @@ static int
 bl_cleanup_shared(int keep_persisted_log_files)
 {
 	if (bat_logger_shared)
-		return logger_cleanup(bat_logger_shared, keep_persisted_log_files);
+		return logger_cleanup(bat_logger_shared, keep_persisted_log_files) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
@@ -245,7 +282,7 @@ static lng
 bl_get_transaction_drift_shared(void)
 {
 	lng res = bl_read_last_transaction_id_shared();
-	if (res != LOG_ERR) {
+	if (res != -1) {
 		return MIN(res, GDK_int_max) - MIN(bat_logger_shared->id, GDK_int_max);
 	}
 	return res;
@@ -284,28 +321,28 @@ bl_log_isnew_shared(void)
 static int 
 bl_tstart(void)
 {
-	return log_tstart(bat_logger);
+	return log_tstart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int 
 bl_tend(void)
 {
-	return log_tend(bat_logger);
+	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int 
 bl_sequence(int seq, lng id)
 {
-	return log_sequence(bat_logger, seq, id);
+	return log_sequence(bat_logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
 bl_reload_shared(void)
 {
-	return logger_reload(bat_logger_shared);
+	return logger_reload(bat_logger_shared) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
-int 
+void
 bat_logger_init( logger_functions *lf )
 {
 	lf->create = bl_create;
@@ -318,10 +355,9 @@ bat_logger_init( logger_functions *lf )
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
 	lf->log_sequence = bl_sequence;
-	return LOG_OK;
 }
 
-int
+void
 bat_logger_init_shared( logger_functions *lf )
 {
 	lf->create_shared = bl_create_shared;
@@ -332,5 +368,4 @@ bat_logger_init_shared( logger_functions *lf )
 	lf->get_transaction_drift = bl_get_transaction_drift_shared;
 	lf->log_isnew = bl_log_isnew_shared;
 	lf->reload = bl_reload_shared;
-	return LOG_OK;
 }

@@ -25,8 +25,8 @@
 
 // Keep a queue of running queries
 QueryQueue QRYqueue;
-static int qtop, qsize;
-static int qtag= 1;
+int qtop;
+static int qsize, qtag= 1;
 
 void
 mal_runtime_reset(void)
@@ -79,16 +79,20 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			return;
 		}
 
-	// add new invokation
-	QRYqueue[i].mb = mb;	
-	QRYqueue[i].tag = qtag++;
-	QRYqueue[i].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
-	QRYqueue[i].start = (lng)time(0);
-	QRYqueue[i].runtime = mb->runtime; 	// the estimated execution time
-	q = isaSQLquery(mb);
-	QRYqueue[i].query = q? GDKstrdup(q):0;
-	QRYqueue[i].status = "running";
-	QRYqueue[i].cntxt = cntxt;
+	// add new invocation
+	if (i == qtop) {
+		QRYqueue[i].mb = mb;
+		QRYqueue[i].tag = qtag++;
+		mb->tag = QRYqueue[i].tag;
+		QRYqueue[i].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
+		QRYqueue[i].start = (lng)time(0);
+		QRYqueue[i].runtime = mb->runtime; 	// the estimated execution time
+		q = isaSQLquery(mb);
+		QRYqueue[i].query = q? GDKstrdup(q):0;
+		QRYqueue[i].status = "running";
+		QRYqueue[i].cntxt = cntxt;
+	}
+	stk->tag = QRYqueue[i].tag;
 	qtop += i == qtop;
 	MT_lock_unset(&mal_delayLock);
 }
@@ -206,8 +210,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->calls++;
 	
 	if(malProfileMode > 0 ){
-		pci->wbytes += getVolume(stk, pci, 1);
-		pci->rbytes += getVolume(stk, pci, 0);
+		pci->wbytes = getVolume(stk, pci, 1);
 		profilerEvent(mb, stk, pci, FALSE, cntxt->username);
 	}
 	if( malProfileMode < 0){

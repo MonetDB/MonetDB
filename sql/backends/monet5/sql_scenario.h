@@ -25,6 +25,7 @@ sql5_export void SQLtrans(mvc *m);
 
 sql5_export str SQLexit(Client c);
 sql5_export str SQLexitClient(Client c);
+sql5_export str SQLresetClient(Client c);
 sql5_export str SQLinitClient(Client c);
 sql5_export str SQLreader(Client c);
 sql5_export str SQLparser(Client c);
@@ -43,6 +44,7 @@ sql5_export str SQLstatementIntern(Client c, str *expr, str nme, bit execute, bi
 sql5_export str SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLCacheRemove(Client c, str nme);
+sql5_export str SQLescapeString(str s);
 
 sql5_export MT_Lock sql_contextLock;
 #endif /* _SQL_SCENARIO_H_ */

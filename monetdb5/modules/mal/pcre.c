@@ -319,7 +319,7 @@ static str
 pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int anti)
 {
 #ifdef HAVE_LIBPCRE
-	int options = PCRE_UTF8 | PCRE_MULTILINE;
+	int options = PCRE_UTF8 | PCRE_MULTILINE | PCRE_DOTALL;
 	pcre *re;
 	pcre_extra *pe;
 	const char *error;
@@ -735,7 +735,8 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 
 	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
 		throw(MAL,"pcre_replace_bat", OPERATION_FAILED
-			"pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
+			  ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
+			  pattern, errpos, err_p);
 	}
 
 	/* Since the compiled pattern is ging to be used several times, it is worth spending
@@ -774,10 +775,11 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 
 		if (ncaptures > 0){
 			replaced_str = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
-			if (!replaced_str) {
+			if (replaced_str == NULL) {
 				my_pcre_free(pcre_code);
 				pcre_free_study(extra);
 				GDKfree(ovector);
+				BBPreclaim(tmpbat);
 				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 			}
 
@@ -807,10 +809,23 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 			strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
 			k += len;
 			replaced_str[k] = '\0';
-			BUNappend(tmpbat, replaced_str, FALSE);
+			if (BUNappend(tmpbat, replaced_str, FALSE) != GDK_SUCCEED) {
+				my_pcre_free(pcre_code);
+				pcre_free_study(extra);
+				GDKfree(ovector);
+				GDKfree(replaced_str);
+				BBPreclaim(tmpbat);
+				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+			}
 			GDKfree(replaced_str);
 		} else { /* no captured substrings, copy the original string into new bat */
-			BUNappend(tmpbat, origin_str, FALSE);
+			if (BUNappend(tmpbat, origin_str, FALSE) != GDK_SUCCEED) {
+				my_pcre_free(pcre_code);
+				pcre_free_study(extra);
+				GDKfree(ovector);
+				BBPreclaim(tmpbat);
+				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+			}
 		}
 	}
 
@@ -928,8 +943,14 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 	return MAL_SUCCEED;
 }
 
+#ifdef HAVE_LIBPCRE
 /* special characters in PCRE that need to be escaped */
 static const char *pcre_specials = ".+?*()[]{}|^$\\";
+#else
+/* special characters in POSIX basic regular expressions that need to
+ * be escaped */
+static const char *pcre_specials = ".*[]^$\\";
+#endif
 
 /* change SQL LIKE pattern into PCRE pattern */
 static str
@@ -1068,7 +1089,7 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, 
 str
 PCREmatch(bit *ret, const str *val, const str *pat)
 {
-	char *flags = "";
+	char *flags = "s";
 	return pcre_match_with_flags(ret, *val, *pat, flags);
 }
 
@@ -1294,7 +1315,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 #ifdef HAVE_LIBPCRE
 			const char err[BUFSIZ], *err_p = err;
 			int errpos = 0;
-			int options = PCRE_UTF8;
+			int options = PCRE_UTF8 | PCRE_DOTALL;
 			pcre *re;
 #else
 			pcre re;

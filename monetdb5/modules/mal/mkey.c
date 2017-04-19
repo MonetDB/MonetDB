@@ -50,6 +50,11 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	res= getArgReference_lng(stk,p,0);
 	val= getArgReference(stk,p,1);
 	switch (ATOMstorage(tpe)) {
+	case TYPE_void:
+	case TYPE_bat:
+	case TYPE_ptr:
+		// illegal types, avoid falling into the default case.
+		assert(0);
 	case TYPE_bte:
 		*res = MKEYHASH_bte(val);
 		break;

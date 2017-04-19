@@ -40,7 +40,7 @@ Ready.
 #	' - third line'
 #	AS "Three lines to one";
 % .L2 # table_name
-% Three lines to one # name
+% "Three lines to one" # name
 % char # type
 % 35 # length
 [ "first line - next line - third line"	]

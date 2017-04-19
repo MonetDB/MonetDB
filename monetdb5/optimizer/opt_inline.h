@@ -13,6 +13,6 @@
 #include "mal_interpreter.h"
 #include "opt_macro.h"
 
-mal_export int OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

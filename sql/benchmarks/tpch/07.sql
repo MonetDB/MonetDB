@@ -41,4 +41,3 @@ order by
 	cust_nation,
 	l_year;
 
-select * from optimizer_stats() stats;

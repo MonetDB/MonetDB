@@ -128,7 +128,7 @@ no_updates(InstrPtr *old, int *vars, int oldv, int newv)
 	return 1;
 }
 
-int
+str
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, limit, slimit, actions=0, *vars, *slices = NULL, push_down_delta = 0, nr_topn = 0, nr_likes = 0;
@@ -140,16 +140,16 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	memset(&subselects, 0, sizeof(subselects));
 	if( mb->errors) 
-		return 0;
+		return MAL_SUCCEED;
 
 #ifdef DEBUG_OPT_PUSHSELECT
-		mnstr_printf(cntxt->fdout,"#Push select optimizer started\n");
+		fprintf(stderr,"#Push select optimizer started\n");
 #endif
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL)
-		return 0;
+		throw(MAL,"optimizer.pushselect", MAL_MALLOC_FAIL);
 
 	limit = mb->stop;
 	slimit= mb->ssize;
@@ -481,7 +481,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (isSlice(p) && p->retc == 1) {
 			int var = getArg(p, 1);
 			InstrPtr q = old[vars[var]];
-			if (getModuleId(q) == sqlRef && getFunctionId(q) == projectdeltaRef) {
+			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == projectdeltaRef) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr s = copyInstruction(q);
 
@@ -545,11 +545,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int var = getArg(p, 1);
 			InstrPtr q = old[vars[var]];
 
-			if (q->token == ASSIGNsymbol) {
+			if (q && q->token == ASSIGNsymbol) {
 				var = getArg(q, 1);
 				q = old[vars[var]]; 
 			}
-			if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
+			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr s = copyInstruction(p);
 				InstrPtr t = copyInstruction(p);
@@ -608,8 +608,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
     }
 wrapup:
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions,GDKusec() - usec);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions, usec);
     newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 
-	return actions;
+	return MAL_SUCCEED;
 }

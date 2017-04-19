@@ -47,7 +47,7 @@ Ready.
 #order by
 #	custdist desc,
 #	c_count desc;
-% .c_orders,	.L2 # table_name
+% .c_orders,	.L10 # table_name
 % c_count,	custdist # name
 % bigint,	bigint # type
 % 2,	3 # length
@@ -84,12 +84,6 @@ Ready.
 [ 31,	1	]
 [ 2,	1	]
 [ 1,	1	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	1	]
 
 # 09:17:17 >  
 # 09:17:17 >  Done.

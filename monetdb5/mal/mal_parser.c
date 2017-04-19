@@ -145,6 +145,7 @@ static int
 typeidLength(Client cntxt)
 {
 	int l;
+	char id[IDLENGTH], *t= id;
 	str s;
 	skipSpace(cntxt);
 	s = CURRENT(cntxt);
@@ -152,13 +153,16 @@ typeidLength(Client cntxt)
 	if (!idCharacter[(int) (*s)])
 		return 0;
 	l = 1;
-	s++;
-	idCharacter[TMPMARKER] = 0;
+	*t++ = *s++;
 	while (l < IDLENGTH && (idCharacter[(int) (*s)] || isdigit(*s)) ) {
-		s++;
+		*t++ = *s++;
 		l++;
 	}
-	idCharacter[TMPMARKER] = 1;
+	/* recognize the special type variables {any, any_<nr>} */
+	if( strncmp(id, "any",3) == 0)
+		return 3;
+	if( strncmp(id, "any_",4) == 0)
+		return 4;
 	return l;
 }
 
@@ -1125,6 +1129,7 @@ fcnHeader(Client cntxt, int kind)
 				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
+				curBlk = NULL;
 			}
 			parseError(cntxt, "',' expected\n");
 			skipToEnd(cntxt);
@@ -1140,6 +1145,7 @@ fcnHeader(Client cntxt, int kind)
 			freeSymbol(cntxt->curprg);
 			cntxt->curprg = cntxt->backup;
 			cntxt->backup = 0;
+			curBlk = NULL;
 		}
 		parseError(cntxt, "')' expected\n");
 		skipToEnd(cntxt);
@@ -1182,6 +1188,7 @@ fcnHeader(Client cntxt, int kind)
 					freeSymbol(cntxt->curprg);
 					cntxt->curprg = cntxt->backup;
 					cntxt->backup = 0;
+					curBlk = NULL;
 				}
 				parseError(cntxt, "',' expected\n");
 				skipToEnd(cntxt);
@@ -1201,6 +1208,7 @@ fcnHeader(Client cntxt, int kind)
 				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
+				curBlk = NULL;
 			}
 			skipToEnd(cntxt);
 			return curBlk;
@@ -1222,6 +1230,7 @@ fcnHeader(Client cntxt, int kind)
 				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
+				curBlk = NULL;
 			}
 			parseError(cntxt, "')' expected\n");
 			skipToEnd(cntxt);
@@ -1740,16 +1749,13 @@ part3:
 		parseError(cntxt, "return assignment expected\n");
 }
 
-
-#define BRKONERR if (curPrg->def->errors >= MAXERRORS) \
-		return curPrg->def->errors;
 int
 parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 {
 	int cntrl = 0;
 	/*Symbol curPrg= cntxt->curprg;*/
 	char c;
-	int inlineProp =0, unsafeProp = 0;
+	int inlineProp =0, unsafeProp = 0, sealedProp = 0;
 
 	echoInput(cntxt);
 	/* here the work takes place */
@@ -1815,10 +1821,12 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 			if (MALkeyword(cntxt, "command", 7)) {
 				parseCommandPattern(cntxt, COMMANDsymbol);
 				cntxt->curprg->def->unsafeProp = unsafeProp;
-				if( inlineProp )
+				cntxt->curprg->def->sealedProp = sealedProp;
+				if (inlineProp)
 					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				continue;
 			}
 			if (MALkeyword(cntxt, "catch", 5)) {
@@ -1842,8 +1850,10 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 				if (parseFunction(cntxt, FUNCTIONsymbol)){
 					cntxt->curprg->def->inlineProp = inlineProp;
 					cntxt->curprg->def->unsafeProp = unsafeProp;
+					cntxt->curprg->def->sealedProp = sealedProp;
 					inlineProp = 0;
 					unsafeProp = 0;
+					sealedProp = 0;
 					break;
 				}
 			} else if (MALkeyword(cntxt, "factory", 7)) {
@@ -1851,8 +1861,11 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				if( unsafeProp)
 					showException(cntxt->fdout, SYNTAX, "parseError", "UNSAFE ignored");
+				if( sealedProp)
+					showException(cntxt->fdout, SYNTAX, "parseError", "SEALED ignored");
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				cntxt->blkmode++;
 				parseFunction(cntxt, FACTORYsymbol);
 				break;
@@ -1882,8 +1895,10 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 					showException(cntxt->fdout, SYNTAX, "parseError", "INLINE ignored");
 				parseCommandPattern(cntxt, PATTERNsymbol);
 				cntxt->curprg->def->unsafeProp = unsafeProp;
+				cntxt->curprg->def->sealedProp = sealedProp;
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				continue;
 			}
 			goto allLeft;
@@ -1898,6 +1913,13 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 			}
 			if (MALkeyword(cntxt, "return", 6)) {
 				cntrl = RETURNsymbol;
+			}
+			goto allLeft;
+		case 's':
+			if (MALkeyword(cntxt, "sealed", 6)) {
+				sealedProp= 1;
+				skipSpace(cntxt);
+				continue;
 			}
 			goto allLeft;
 		case 'U': case 'u': 
@@ -1915,7 +1937,8 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 		default: allLeft :
 			parseAssign(cntxt, cntrl);
 			cntrl = 0;
-			BRKONERR;
+			if (curPrg->def->errors >= MAXERRORS) \
+				return curPrg->def->errors;
 		}
 	}
 	return curPrg->def->errors;

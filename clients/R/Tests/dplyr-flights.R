@@ -20,7 +20,7 @@ so <- function(x) {
 }
 
 my_db <- MonetDBLite::src_monetdb(dbname=dbname, port=dbport, wait=T)
-if (!DBI::dbExistsTable(my_db$con , 'flights')) DBI::dbWriteTable( my_db$con , 'flights' , nycflights13::flights , csvdump=T, overwrite=T)
+if (!DBI::dbExistsTable(con_acquire(my_db)  , 'flights')) DBI::dbWriteTable( con_acquire(my_db) , 'flights' , nycflights13::flights , csvdump=T, overwrite=T)
 flights <- tbl( my_db , 'flights')
 
 dim(flights)
@@ -28,8 +28,9 @@ so(flights)
 so(filter(flights, month == 1, day == 1))
 so(filter(flights, month == 1 | month == 2))
 
-so(arrange(flights, year, month, day))
-so(arrange(flights, desc(arr_delay)))
+# MonetDBLite has ORDER BY in subqueries, but standalone MonetDB does not.
+# so(arrange(flights, year, month, day))
+# so(arrange(flights, desc(arr_delay)))
 so(select(flights, year, month, day))
 so(select(flights, year:day))
 so(select(flights, -(year:day)))
@@ -116,5 +117,6 @@ so(flights %>%
     dep = mean(dep_delay)
   ) %>%
   filter(arr > 30 | dep > 30))
+
 
 print("SUCCESS")

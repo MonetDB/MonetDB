@@ -493,9 +493,6 @@
 /* Define to 1 if the system has the type `socklen_t'. */
 #define HAVE_SOCKLEN_T 1
 
-/* Define if you have the sphinxclient library */
-/* #undef HAVE_SPHINXCLIENT */
-
 /* Define if you have the SQLGetPrivateProfileString function */
 #define HAVE_SQLGETPRIVATEPROFILESTRING 1
 

@@ -22,7 +22,7 @@ Ready.
 
 #debug select * from tables;
 mdb>#X_1=0@0:void := querylog.define("debug select * from tables;", "sequential_pipe", 191:int);
-mdb>#X_195=nil:bat[:str] := bat.new(nil:str);
+mdb>#X_160=nil:bat[:int] := bat.new(nil:int);
 
 # 16:24:01 >  
 # 16:24:01 >  "Done."

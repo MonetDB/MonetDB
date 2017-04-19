@@ -1,0 +1,43 @@
+stderr of test 'groupby_on_column_expression.Bug-3832` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 15:59:51 >  
+# 15:59:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36841" "--set" "mapi_usock=/var/tmp/mtest-2690/.s.monetdb.36841" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:59:51 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36841
+# cmdline opt 	mapi_usock = /var/tmp/mtest-2690/.s.monetdb.36841
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:59:52 >  
+# 15:59:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2690" "--port=36841"
+# 15:59:52 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-30389/.s.monetdb.37867
+QUERY = SELECT LEFT("State", 3) AS "State",  SUM("Sales") AS "Sales" FROM test3832 GROUP BY LEFT("State", 3);
+ERROR = !syntax error, unexpected LEFT in: "select left("State", 3) as "State",  sum("Sales") as "Sales" from test3832 group"
+MAPI  = (monetdb) /var/tmp/mtest-30389/.s.monetdb.37867
+QUERY = SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY RTRIM(name) ORDER BY RTRIM(name);
+ERROR = !syntax error, unexpected '(', expecting SCOLON in: "select rtrim(name) as nametrimmed, count(*) as count, max(pos) as max_pos, min(p"
+
+
+# 15:59:52 >  
+# 15:59:52 >  "Done."
+# 15:59:52 >  
+

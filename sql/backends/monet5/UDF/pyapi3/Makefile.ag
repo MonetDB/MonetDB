@@ -1,0 +1,50 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 2008-2015 MonetDB B.V.
+
+INCLUDES = \
+	../../../../../clients/mapilib \
+	../../../../../common/options \
+	../../../../../common/stream \
+	../../../../../monetdb5/modules/atoms \
+	../../../../../monetdb5/modules/mal \
+	../../../../../gdk \
+	../../../../../monetdb5/mal \
+	../../../../../sql/backends/monet5 \
+	../../../../../sql/common \
+	../../../../../sql/include \
+	../../../../../sql/server \
+	../../../../../sql/storage \
+	../pyapi \
+	$(libpy3_CFLAGS)
+	
+
+MTSAFE
+
+lib__pyapi3 = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = pyapi3.c unicode3.c pytypes3.c type_conversion3.c formatinput3.c connection3.c pyloader3.c emit3.c conversion3.c
+	XDEPS = $(libpy3_LIBDEP)
+	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
+	       ../../../../../gdk/libbat \
+	$(MALLOC_LIBS) $(libpy3_LIBS)
+}
+
+headers_pyapi3_mal = {
+	COND = HAVE_LIBPY3
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = pyapi3.mal
+}
+
+headers_autoload = {
+	COND = HAVE_LIBPY3
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 50_pyapi3.mal
+}
+
+EXTRA_DIST_DIR = Tests

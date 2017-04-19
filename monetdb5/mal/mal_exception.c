@@ -43,7 +43,7 @@ isExceptionVariable(str nme){
 	return 0;
 }
 
-static char *M5OutOfMemory = "Out of memory. Memory allocation failed.";
+static char *M5OutOfMemory = MAL_MALLOC_FAIL;
 
 /**
  * Internal helper function for createException and
@@ -93,6 +93,31 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	va_list ap;
 	str ret;
 
+	if (GDKerrbuf &&
+		/* prevent recursion
+		 * note, sizeof("string") includes terminating NULL byte */
+		strncmp(format, MAL_MALLOC_FAIL ":", sizeof(MAL_MALLOC_FAIL)) != 0 &&
+		(strncmp(GDKerrbuf, "GDKmalloc", 9) == 0 ||
+		 strncmp(GDKerrbuf, "GDKrealloc", 10) == 0 ||
+		 strncmp(GDKerrbuf, "GDKzalloc", 9) == 0 ||
+		 strncmp(GDKerrbuf, "GDKstrdup", 9) == 0 ||
+		 strncmp(GDKerrbuf, "allocating too much virtual address space", 41) == 0)) {
+		/* override errors when the underlying error is memory
+		 * exhaustion, but include whatever it is that the GDK level
+		 * reported */
+		ret = createException(type, fcn, MAL_MALLOC_FAIL ": %s", GDKerrbuf);
+		GDKclrerr();
+		return ret;
+	}
+	if (strcmp(format, GDK_EXCEPTION) == 0 && GDKerrbuf[0]) {
+		/* for GDK errors, report the underlying error */
+		char *p = GDKerrbuf;
+		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0)
+			p += strlen(GDKERROR);
+		ret = createException(type, fcn, "GDK reported error: %s", p);
+		GDKclrerr();
+		return ret;
+	}
 	va_start(ap, format);
 	ret = createExceptionInternal(type, fcn, format, ap);
 	va_end(ap);
@@ -220,7 +245,7 @@ showScriptException(stream *out, MalBlkPtr mb, int pc, enum malexception type, c
 	va_end(ap);
 
 	dumpExceptionsToStream(out,msg);
-	GDKfree(msg);
+	freeException(msg);
 }
 
 /**

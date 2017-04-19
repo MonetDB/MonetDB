@@ -83,27 +83,27 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
         NULL as '';
         123|1.01||a|b
-ERROR = !Failed to import table line 1 field col2 'int' expected in '1.01'
-MAPI  = (monetdb) /var/tmp/mtest-30373/.s.monetdb.34287
+ERROR = !Failed to import table 'my_copytest', line 1 field col2 'int' expected in '1.01'
+MAPI  = (monetdb) /var/tmp/mtest-19807/.s.monetdb.36283
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
         NULL as '';
         553|.02||a|b
-ERROR = !Failed to import table line 1 field col2 'int' expected in '.02'
-MAPI  = (monetdb) /var/tmp/mtest-30373/.s.monetdb.34287
+ERROR = !Failed to import table 'my_copytest', line 1 field col2 'int' expected in '.02'
+MAPI  = (monetdb) /var/tmp/mtest-19807/.s.monetdb.36283
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
         NULL as '';
         223|2.03||a|b
-ERROR = !Failed to import table line 1 field col2 'int' expected in '2.03'
-MAPI  = (monetdb) /var/tmp/mtest-30373/.s.monetdb.34287
+ERROR = !Failed to import table 'my_copytest', line 1 field col2 'int' expected in '2.03'
+MAPI  = (monetdb) /var/tmp/mtest-19807/.s.monetdb.36283
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
         NULL as '';
         223|2||aaa|b
-ERROR = !Failed to import table line 1 field col4 'varchar(1)' expected in 'aaa'
-MAPI  = (monetdb) /var/tmp/mtest-30373/.s.monetdb.34287
+ERROR = !Failed to import table 'my_copytest', line 1 field col4 'varchar(1)' expected in 'aaa'
+MAPI  = (monetdb) /var/tmp/mtest-19807/.s.monetdb.36283
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
         NULL as '';
         223|3||a|bbb
-ERROR = !Failed to import table line 1 field col5 'varchar(1)' expected in 'bbb'
+ERROR = !Failed to import table 'my_copytest', line 1 field col5 'varchar(1)' expected in 'bbb'
 
 
 # 09:34:56 >  

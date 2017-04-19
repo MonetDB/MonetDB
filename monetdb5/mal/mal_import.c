@@ -150,12 +150,11 @@ malLoadScript(Client c, str name, bstream **fdin)
 	restoreClient1 \
 	restoreClient2
 #define restoreClient3 \
-	if (c->fdin)  \
+	if (c->fdin && c->bak)  \
 		MCpopClientInput(c); \
 	c->mode = oldmode; \
 	c->blkmode = oldblkmode; \
 	c->srcFile = oldsrcFile;
-
 
 #ifdef HAVE_EMBEDDED
 extern char* mal_init_inline;
@@ -167,7 +166,7 @@ extern char* mal_init_inline;
 str
 malInclude(Client c, str name, int listing)
 {
-	str s= MAL_SUCCEED;
+	str s = MAL_SUCCEED;
 	str filename;
 	str p;
 
@@ -222,7 +221,7 @@ malInclude(Client c, str name, int listing)
 				parseMAL(c, c->curprg, 1);
 				bstream_destroy(c->fdin);
 			} else {
-				GDKfree(s); // not interested in error here
+				freeException(s); // not interested in error here
 				s = MAL_SUCCEED;
 			}
 			if (p)
@@ -296,7 +295,7 @@ evalFile(Client c, str fname, int listing)
 				msg = runScenario(c);
 			if (msg != MAL_SUCCEED) {
 				dumpExceptionsToStream(c->fdout, msg);
-				GDKfree(msg);
+				freeException(msg);
 			}
 		}
 		filename = p + 1;
@@ -395,7 +394,7 @@ compileString(Symbol *fcn, Client c, str s)
 #define runPhase(X, Y) \
 	if (msg == MAL_SUCCEED && c->phase[X] && (msg = (str) (*c->phase[X])(c))) {	\
 		/* error occurred  and ignored */ \
-		GDKfree(msg); msg = MAL_SUCCEED; \
+		freeException(msg); msg = MAL_SUCCEED; \
 		Y; \
 		if (b) \
 			GDKfree(b);	\

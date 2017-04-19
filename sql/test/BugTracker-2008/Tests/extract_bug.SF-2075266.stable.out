@@ -29,17 +29,18 @@ Ready.
 [ 1	]
 #SELECT EXTRACT (SECOND FROM FIPS2)
 #* 1000000 - 999990 FROM A;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % decimal # type
-% 21 # length
-[ -990.000000	]
+% 20 # length
+[ 10.000000	]
 #select EXTRACT (SECOND FROM FIPS2) FROM A;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % decimal # type
 % 11 # length
-[ 0.999	]
+[ 1.000	]
+#drop table A;
 
 # 14:08:04 >  
 # 14:08:04 >  Done.

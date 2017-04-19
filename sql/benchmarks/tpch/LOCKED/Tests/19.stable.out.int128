@@ -49,16 +49,11 @@ Ready.
 #		and p_brand = 'Brand#23'
 #		and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
 #		and l_quantity >= 10 and l_quantity <= 10 + 10
-% sys.L1 # table_name
+% sys.L4 # table_name
 % revenue # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ 22923.0280	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
 
 # 09:17:20 >  
 # 09:17:20 >  Done.

@@ -100,7 +100,7 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	total -= batch;
 	*getArgReference_int(stk,p,1) = total;
-	mb->var[getArg(p,1)]->value.val.ival = total; /* also set in symbol table */
+	getVar(mb,getArg(p,1))->value.val.ival = total; /* also set in symbol table */
 	if (total > 0) {
 		q = copyInstruction(p);
 		pushInstruction(mb, q);

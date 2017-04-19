@@ -38,10 +38,6 @@ QUERY = CREATE OR REPLACE VIEW viewtest AS
         	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
 ERROR = !syntax error, unexpected OR, expecting INDEX in: "create or"
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = CREATE VIEW viewtest AS
-        	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
-ERROR = !CREATE VIEW: ORDER BY not supported
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE OR REPLACE VIEW viewtest AS
 	SELECT a FROM viewtest_tbl WHERE a <> 20;
 ERROR = !syntax error, unexpected OR, expecting INDEX in: "create or"

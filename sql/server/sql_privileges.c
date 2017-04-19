@@ -852,8 +852,6 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "dependencies");
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "connections");
-	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "_tables");
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "_columns");

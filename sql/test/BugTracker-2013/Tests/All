@@ -6,7 +6,7 @@ select-around-zero.Bug-3220
 segfault_in_aggregation.Bug-3225
 subtract-one-year.Bug-3215
 HAVE_PERL?perl-undef-0.Bug-3235
-crash-from-optimizer.Bug-3241
+HAVE_PCRE?crash-from-optimizer.Bug-3241
 select-view-view.Bug-3245
 stddev-group.Bug-3257
 oid_handling

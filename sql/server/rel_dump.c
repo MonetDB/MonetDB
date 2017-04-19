@@ -592,6 +592,18 @@ skipIdent( char *r, int *pos)
 		(*pos)++;
 }
 
+static void
+skipIdentOrSymbol( char *r, int *pos)
+{
+	while(r[*pos] && (isalnum(r[*pos]) || 
+			  r[*pos] == '_' || r[*pos] == '%' ||
+			  r[*pos] == '<' || r[*pos] == '>' || 
+			  r[*pos] == '/' || r[*pos] == '*' || 
+			  r[*pos] == '-' || r[*pos] == '+' || 
+			  r[*pos] == '~' || r[*pos] == '^' ))
+		(*pos)++;
+}
+
 static int
 readInt( char *r, int *pos)
 {
@@ -724,7 +736,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		(*pos)++;
 		tname = b;
 		cname = r + *pos;
-		skipIdent(r, pos);
+		skipIdentOrSymbol(r, pos);
 		e = r+*pos;
 		skipWS(r, pos);
 		old = *e;
@@ -1336,6 +1348,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0);
 		rel = rel_setop(sql->sa, lrel, rrel, j);
 		rel->exps = exps;
+		set_processed(rel);
 		return rel;
 	case 'd':
 		/* 'ddl' not supported */

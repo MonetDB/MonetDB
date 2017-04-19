@@ -17,10 +17,9 @@
 #include "pytypes.h"
 
 typedef struct {
-    PyObject_HEAD
-	sql_emit_col *cols;
-    size_t ncols;
-    BUN nvals;
+	PyObject_HEAD sql_emit_col *cols;
+	size_t ncols;
+	BUN nvals;
 	size_t maxcols;
 	bool create_table;
 } PyEmitObject;

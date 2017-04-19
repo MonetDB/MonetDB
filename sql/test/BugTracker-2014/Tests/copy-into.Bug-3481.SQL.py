@@ -1,10 +1,28 @@
 import os
-from pymonetdb import mapi
+import pymonetdb
 
-def open(conn):
-    conn.connect(database=os.getenv('TSTDB'),username="monetdb",password="monetdb",language="sql",hostname=os.getenv('MAPIHOST'),port=int(os.getenv('MAPIPORT')))
+def connect():
+    return pymonetdb.connect(database = os.getenv('TSTDB'),
+                             hostname = '127.0.0.1',
+                             port = int(os.getenv('MAPIPORT')),
+                             username = 'monetdb',
+                             password = 'monetdb',
+                             autocommit = True)
 
-works = """-- some comment
+def query(conn, sql, result=False):
+    cur = conn.cursor()
+    cur.execute(sql)
+    r = False
+    if (result):
+        r = cur.fetchall()
+    cur.close()
+    return r
+
+
+# def open(conn):
+#     conn.connect(database=os.getenv('TSTDB'),username="monetdb",password="monetdb",language="sql",hostname=os.getenv('MAPIHOST'),port=int(os.getenv('MAPIPORT')))
+
+create1 = """-- some comment
 START TRANSACTION;
 CREATE TABLE a(i integer);
 COPY 1 RECORDS INTO a FROM STDIN USING DELIMITERS ',','\\n','"';
@@ -12,7 +30,7 @@ COPY 1 RECORDS INTO a FROM STDIN USING DELIMITERS ',','\\n','"';
 COMMIT;
 """
 
-doesnotwork = """-- some comment
+create2 = """-- some comment
 START TRANSACTION;
 CREATE TABLE b(i integer);
 COPY 1 RECORDS INTO b FROM STDIN USING DELIMITERS ',','\\n','"';
@@ -24,19 +42,21 @@ COPY 2 RECORDS INTO c FROM STDIN USING DELIMITERS ',','\\n','"';
 COMMIT;
 """
 
-cn = mapi.Connection()
+cn = connect()
+query(cn, create1);
+cn.close()
 
-open(cn)
-print(cn.cmd('s'+works+';\n'))
-cn.disconnect()
+cn = connect()
+query(cn, create2);
+cn.close()
 
-open(cn)
-print(cn.cmd('s'+doesnotwork+';\n'))
-cn.disconnect()
 
-# this should show a-e, but only shows a
-open(cn)
-print(cn.cmd('sSELECT name FROM tables WHERE system=0;\n'))
-print(cn.cmd('sDROP TABLE a;\n'))
+# this should show a-c, but only shows a
+cn = connect()
+#print()
 
-cn.disconnect()
+for x in query(cn, 'SELECT name FROM tables WHERE system=0', True):
+    print x[0]
+query(cn, 'DROP TABLE a')
+
+cn.close()

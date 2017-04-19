@@ -672,42 +672,44 @@ BATmsync(BAT *b)
 	if (b->tvheap && b->tvheap->storage == STORE_MMAP)
 		(void) msync(b->tvheap->base, b->tvheap->free, MS_ASYNC);
 #else
+	{
 #ifdef MSYNC_BACKGROUND
-	MT_Id tid;
+		MT_Id tid;
 #endif
-	struct msync *arg;
+		struct msync *arg;
 
-	assert(b->batPersistence == PERSISTENT);
-	if (b->theap.storage == STORE_MMAP &&
-	    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-		arg->id = b->batCacheid;
-		arg->h = &b->theap;
-		BBPfix(b->batCacheid);
+		assert(b->batPersistence == PERSISTENT);
+		if (b->theap.storage == STORE_MMAP &&
+		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
+			arg->id = b->batCacheid;
+			arg->h = &b->theap;
+			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-		if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
-			/* don't bother if we can't create a thread */
-			BBPunfix(b->batCacheid);
-			GDKfree(arg);
-		}
+			if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+				/* don't bother if we can't create a thread */
+				BBPunfix(b->batCacheid);
+				GDKfree(arg);
+			}
 #else
-		BATmsyncImplementation(arg);
+			BATmsyncImplementation(arg);
 #endif
-	}
+		}
 
-	if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
-	    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
-		arg->id = b->batCacheid;
-		arg->h = b->tvheap;
-		BBPfix(b->batCacheid);
+		if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
+		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
+			arg->id = b->batCacheid;
+			arg->h = b->tvheap;
+			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-		if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
-			/* don't bother if we can't create a thread */
-			BBPunfix(b->batCacheid);
-			GDKfree(arg);
-		}
+			if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+				/* don't bother if we can't create a thread */
+				BBPunfix(b->batCacheid);
+				GDKfree(arg);
+			}
 #else
-		BATmsyncImplementation(arg);
+			BATmsyncImplementation(arg);
 #endif
+		}
 	}
 #endif
 #else
@@ -820,12 +822,11 @@ BATload_intern(bat bid, int lock)
 	b->theap.parentid = 0;
 
 	/* load succeeded; register it in BBP */
-	BBPcacheit(b, lock);
-
-	if ((b->batRestricted == BAT_WRITE && (GDKdebug & CHECKMASK)) ||
-	    (GDKdebug & PROPMASK)) {
-		++b->batSharecnt;
-		--b->batSharecnt;
+	if (BBPcacheit(b, lock) != GDK_SUCCEED) {
+		HEAPfree(&b->theap, 0);
+		if (b->tvheap)
+			HEAPfree(b->tvheap, 0);
+		return NULL;
 	}
 	return b;
 }

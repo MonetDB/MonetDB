@@ -112,6 +112,16 @@ Ready.
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
+#SELECT COUNT(*) AS duplicates, function_type_id FROM sys.function_types GROUP BY function_type_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.function_types # table_name
+% duplicates,	function_type_id # name
+% bigint,	smallint # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, language_id FROM sys.function_languages GROUP BY language_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.function_languages # table_name
+% duplicates,	language_id # name
+% bigint,	smallint # type
+% 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.functions GROUP BY id HAVING COUNT(*) > 1;
 % sys.L3,	sys.functions # table_name
 % duplicates,	id # name
@@ -142,6 +152,11 @@ Ready.
 % duplicates,	id,	nr # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, key_type_id FROM sys.key_types GROUP BY key_type_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.key_types # table_name
+% duplicates,	key_type_id # name
+% bigint,	smallint # type
+% 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.keys GROUP BY id HAVING COUNT(*) > 1;
 % sys.L3,	sys.keys # table_name
 % duplicates,	id # name
@@ -151,6 +166,11 @@ Ready.
 % tmp.L3,	tmp.keys # table_name
 % duplicates,	id # name
 % bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, index_type_id FROM sys.index_types GROUP BY index_type_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.index_types # table_name
+% duplicates,	index_type_id # name
+% bigint,	smallint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.idxs GROUP BY id HAVING COUNT(*) > 1;
 % sys.L3,	sys.idxs # table_name
@@ -202,6 +222,11 @@ Ready.
 % duplicates,	login_id,	role_id # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, privilege_code_id FROM sys.privilege_codes GROUP BY privilege_code_id HAVING COUNT(*) > 1;
+% sys.L3,	sys.privilege_codes # table_name
+% duplicates,	privilege_code_id # name
+% bigint,	int # type
+% 1,	1 # length
 #SELECT COUNT(*) AS duplicates, obj_id FROM sys.privileges GROUP BY obj_id HAVING COUNT(*) > 1;
 % sys.L3,	sys.privileges # table_name
 % duplicates,	obj_id # name
@@ -247,11 +272,6 @@ Ready.
 % duplicates,	name # name
 % bigint,	varchar # type
 % 1,	0 # length
-#SELECT COUNT(*) AS duplicates, id FROM sys.connections GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.connections # table_name
-% duplicates,	id # name
-% bigint,	int # type
-% 1,	1 # length
 #SELECT COUNT(*) AS duplicates, "user", login, active FROM sys.sessions GROUP BY "user", login, active HAVING COUNT(*) > 1;  -- is this really always unique?
 % .L10,	.sessions,	.sessions,	.sessions # table_name
 % duplicates,	user,	login,	active # name

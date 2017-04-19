@@ -43,10 +43,10 @@ Ready.
 #			and s_nationkey = n_nationkey
 #			and p_name like '%green%'
 #	) as profit
-% sys.profit,	sys.profit,	sys.L1 # table_name
+% sys.profit,	sys.profit,	sys.L13 # table_name
 % nation,	o_year,	sum_profit # name
 % char,	int,	decimal # type
-% 25,	4,	21 # length
+% 25,	4,	20 # length
 [ "ALGERIA",	1998,	97864.5682	]
 [ "ALGERIA",	1997,	368231.6695	]
 [ "ALGERIA",	1996,	196525.8046	]
@@ -220,12 +220,6 @@ Ready.
 [ "VIETNAM",	1994,	422644.8168	]
 [ "VIETNAM",	1993,	309063.4020	]
 [ "VIETNAM",	1992,	716126.5378	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	3	]
 
 # 09:17:15 >  
 # 09:17:15 >  Done.

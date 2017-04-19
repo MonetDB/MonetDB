@@ -37,4 +37,3 @@ where
 		and l_shipinstruct = 'DELIVER IN PERSON'
 	);
 
-select * from optimizer_stats() stats;

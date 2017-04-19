@@ -1,0 +1,162 @@
+stdout of test 'groupby_on_column_expression.Bug-3832` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 15:59:51 >  
+# 15:59:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36841" "--set" "mapi_usock=/var/tmp/mtest-2690/.s.monetdb.36841" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:59:51 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:36841/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2690/.s.monetdb.36841
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 15:59:52 >  
+# 15:59:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2690" "--port=36841"
+# 15:59:52 >  
+
+#CREATE TABLE test3832("State" string, "Sales" double);
+#INSERT INTO test3832 VALUES('Texus', 200);
+[ 1	]
+#INSERT INTO test3832 VALUES('Texas', 250);
+[ 1	]
+#SELECT LEFT("State", 3) AS "State",  SUM("Sales") AS "Sales" FROM test3832 GROUP BY "State";
+% sys.L2,	sys.L5 # table_name
+% State,	Sales # name
+% varchar,	double # type
+% 3,	24 # length
+[ "Tex",	200	]
+[ "Tex",	250	]
+#SELECT LEFT("State", 3) AS "State3", SUM("Sales") AS "Sales" FROM test3832 GROUP BY "State3";
+% sys.L2,	sys.L5 # table_name
+% State3,	Sales # name
+% varchar,	double # type
+% 3,	24 # length
+[ "Tex",	450	]
+#DROP TABLE test3832;
+#CREATE TABLE fields (name varchar(30) NOT NULL, tablenm varchar(30) NOT NULL, pos int NOT NULL);
+#INSERT into fields VALUES ('c1 ', 't1 ', 1), ('c2 ', 't1 ', 2), ('c4 ', 't1 ', 4), ('c3 ', 't1 ', 3), ('c2 ', 't2', 2), ('c4 ', 't2', 4), ('c1 ', 't2', 1), ('c3 ', 't3', 3);
+[ 8	]
+#INSERT into fields SELECT RTRIM(name) AS name, RTRIM(tablenm) AS tablenm, pos FROM fields;
+[ 8	]
+#SELECT * FROM fields ORDER BY tablenm, pos, name;
+% sys.fields,	sys.fields,	sys.fields # table_name
+% name,	tablenm,	pos # name
+% varchar,	varchar,	int # type
+% 3,	3,	1 # length
+[ "c1",	"t1",	1	]
+[ "c2",	"t1",	2	]
+[ "c3",	"t1",	3	]
+[ "c4",	"t1",	4	]
+[ "c1 ",	"t1 ",	1	]
+[ "c2 ",	"t1 ",	2	]
+[ "c3 ",	"t1 ",	3	]
+[ "c4 ",	"t1 ",	4	]
+[ "c1",	"t2",	1	]
+[ "c1 ",	"t2",	1	]
+[ "c2",	"t2",	2	]
+[ "c2 ",	"t2",	2	]
+[ "c4",	"t2",	4	]
+[ "c4 ",	"t2",	4	]
+[ "c3",	"t3",	3	]
+[ "c3 ",	"t3",	3	]
+#SELECT name, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY name ORDER BY name;
+% sys.fields,	sys.L4,	sys.L7,	sys.L12 # table_name
+% name,	count,	max_pos,	min_pos # name
+% varchar,	bigint,	int,	int # type
+% 3,	1,	1,	1 # length
+[ "c1",	2,	1,	1	]
+[ "c1 ",	2,	1,	1	]
+[ "c2",	2,	2,	2	]
+[ "c2 ",	2,	2,	2	]
+[ "c3",	2,	3,	3	]
+[ "c3 ",	2,	3,	3	]
+[ "c4",	2,	4,	4	]
+[ "c4 ",	2,	4,	4	]
+#SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY name ORDER BY RTRIM(name);
+% sys.L2,	sys.L5,	sys.L10,	sys.L13 # table_name
+% nametrimmed,	count,	max_pos,	min_pos # name
+% varchar,	bigint,	int,	int # type
+% 2,	1,	1,	1 # length
+[ "c1",	2,	1,	1	]
+[ "c1",	2,	1,	1	]
+[ "c2",	2,	2,	2	]
+[ "c2",	2,	2,	2	]
+[ "c3",	2,	3,	3	]
+[ "c3",	2,	3,	3	]
+[ "c4",	2,	4,	4	]
+[ "c4",	2,	4,	4	]
+#SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY nametrimmed ORDER BY nametrimmed;
+% sys.L2,	sys.L5,	sys.L10,	sys.L13 # table_name
+% nametrimmed,	count,	max_pos,	min_pos # name
+% varchar,	bigint,	int,	int # type
+% 2,	1,	1,	1 # length
+[ "c1",	4,	1,	1	]
+[ "c2",	4,	2,	2	]
+[ "c3",	4,	3,	3	]
+[ "c4",	4,	4,	4	]
+#SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM (SELECT RTRIM(name) AS name, pos FROM fields) AS fromquery GROUP BY name ORDER BY RTRIM(name);
+% sys.L5,	sys.L10,	sys.L13,	sys.L16 # table_name
+% nametrimmed,	count,	max_pos,	min_pos # name
+% varchar,	bigint,	int,	int # type
+% 2,	1,	1,	1 # length
+[ "c1",	4,	1,	1	]
+[ "c2",	4,	2,	2	]
+[ "c3",	4,	3,	3	]
+[ "c4",	4,	4,	4	]
+#DROP TABLE fields;
+
+# 15:59:52 >  
+# 15:59:52 >  "Done."
+# 15:59:52 >  
+

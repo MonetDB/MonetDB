@@ -1,6 +1,7 @@
 HAVE_GEOM?storagemodel
 convert-function-test.Bug-3460
 HAVE_HGE?convert-function-test-hge.Bug-3460
+groupby_on_column_expression.Bug-3832
 LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908
 incorrect_column_name_in_OR_condition_of_LEFT-JOIN_crashes_mserver.Bug-3909
 copy_into_with_header.Bug-3910
@@ -57,7 +58,7 @@ cast_and_floor.Bug-6071
 union.Bug-6069
 ifthenelse-void.Bug-6075
 assert-on-table-producing-function.Bug-6076
-HAVE_NETCDF?assert-on-push-project-up.Bug-6077
+HAVE_NETCDF&HAVE_SAMTOOLS?assert-on-push-project-up.Bug-6077
 HAVE_SAMTOOLS?assert-on-project.Bug-6078
 crash.Bug-6081
 merge-table-edit.Bug-6084

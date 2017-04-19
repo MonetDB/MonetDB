@@ -469,6 +469,17 @@ forkMserver(char *database, sabdb** stats, int force)
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 			embeddedpy = "embedded_py=true";
 
+		kv = findConfKey(ckv, "embedpy3");
+		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+			if (embeddedpy) {
+				// only one python version can be active at a time
+				Mfprintf(stderr, "attempting to start mserver with both embedded python2 and embedded python3; only one python version can be active at a time\n");
+				exit(1);
+			}
+			embeddedpy = "embedded_py=3";
+		}
+
+
 
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
@@ -686,26 +697,29 @@ forkMserver(char *database, sabdb** stats, int force)
 							   "(sabaoth administration reports running, "
 							   "but process seems gone), "
 							   "review monetdbd's "
-							   "logfile for any peculiarities", database));
+							   "logfile (%s) for any peculiarities", database,
+							   getConfVal(_mero_props, "logfile")));
 				case SABdbCrashed:
 					return(newErr(
 							   "database '%s' has crashed after starting, "
 							   "manual intervention needed, "
-							   "check monetdbd's logfile for details",
-							   database));
+							   "check monetdbd's logfile (%s) for details",
+							   database, getConfVal(_mero_props, "logfile")));
 				case SABdbInactive:
 					return(newErr(
 							   "database '%s' appears to shut "
 							   "itself down after starting, "
-							   "check monetdbd's logfile for possible "
-							   "hints", database));
+							   "check monetdbd's logfile (%s) for possible "
+							   "hints", database,
+							   getConfVal(_mero_props, "logfile")));
 				case SABdbStarting:
 					return(newErr(
 							   "database '%s' has inconsistent state "
 							   "(sabaoth administration reports starting up, "
 							   "but process seems gone), "
 							   "review monetdbd's "
-							   "logfile for any peculiarities", database));
+							   "logfile (%s) for any peculiarities", database,
+							   getConfVal(_mero_props, "logfile")));
 				default:
 					return(newErr("unknown state: %d", (int)state));
 				}

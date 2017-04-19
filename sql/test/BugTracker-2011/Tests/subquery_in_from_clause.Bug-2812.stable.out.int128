@@ -49,7 +49,7 @@ Ready.
 % sys.L7,	sys.s,	sys.s,	sys.s,	sys.s,	sys.s # table_name
 % price,	item,	category,	city,	region,	country # name
 % decimal,	varchar,	varchar,	varchar,	varchar,	varchar # type
-% 41,	21,	4,	16,	25,	19 # length
+% 40,	21,	4,	16,	25,	19 # length
 [ 3.99,	"Tyson roasted chicken",	"Meat",	"Jose Leon Suarez",	"Buenos Aires",	"Argentina"	]
 [ 3.99,	"Tyson roasted chicken",	"Meat",	"West Long Branch",	"New Jersey",	"United States"	]
 [ 3.99,	"Tyson roasted chicken",	"Meat",	"Athens",	"Attiki",	"Greece"	]
@@ -73,7 +73,7 @@ Ready.
 % sys.L17,	sys.s,	sys.s,	sys.s,	sys.s,	sys.s # table_name
 % price,	item,	category,	city,	region,	country # name
 % decimal,	varchar,	varchar,	varchar,	varchar,	varchar # type
-% 41,	21,	4,	16,	25,	19 # length
+% 40,	21,	4,	16,	25,	19 # length
 [ 3.99,	"Tyson roasted chicken",	"Meat",	"Jose Leon Suarez",	"Buenos Aires",	"Argentina"	]
 [ 3.99,	"Tyson roasted chicken",	"Meat",	"West Long Branch",	"New Jersey",	"United States"	]
 [ 3.99,	"Tyson roasted chicken",	"Meat",	"Athens",	"Attiki",	"Greece"	]

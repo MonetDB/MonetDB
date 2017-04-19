@@ -61,6 +61,7 @@ HAVE_LIBPY?pyloader04
 HAVE_LIBPY?pyloader05
 HAVE_LIBPY?pyloader06
 HAVE_LIBPY?pyloader07
+HAVE_LIBPY?pyloader08
 
 HAVE_LIBPY?createorreplace
 

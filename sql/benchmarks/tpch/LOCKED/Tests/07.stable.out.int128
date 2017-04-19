@@ -55,19 +55,14 @@ Ready.
 #			and c_nationkey = n2.n_nationkey
 #			and (
 #				(n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY')
-% sys.shipping,	sys.shipping,	sys.shipping,	sys.L1 # table_name
+% sys.shipping,	sys.shipping,	sys.shipping,	sys.L16 # table_name
 % supp_nation,	cust_nation,	l_year,	revenue # name
 % char,	char,	int,	decimal # type
-% 25,	25,	4,	41 # length
+% 25,	25,	4,	40 # length
 [ "FRANCE",	"GERMANY",	1995,	268068.5774	]
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
 [ "GERMANY",	"FRANCE",	1996,	379095.8854	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	4	]
 
 # 09:17:14 >  
 # 09:17:14 >  Done.

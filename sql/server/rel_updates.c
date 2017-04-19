@@ -211,6 +211,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		rel_destroy(ins);
 		rt = inserts->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
 		rt->exps = rel_projections(sql, nnlls, NULL, 1, 1);
+		set_processed(rt);
 	} else {
 		inserts->r = nnlls;
 	}
@@ -721,6 +722,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		rel_destroy(ups);
 		rt = updates->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
 		rt->exps = rel_projections(sql, nnlls, NULL, 1, 1);
+		set_processed(rt);
 	} else {
 		updates->r = nnlls;
 	}
@@ -923,6 +925,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				fnd = table_ref(sql, NULL, n->data.sym, 0);
 				if (fnd)
 					res = rel_crossproduct(sql->sa, res, fnd, op_join);
+				else
+					res = fnd;
 			}
 			if (!res) 
 				return NULL;
@@ -1049,7 +1053,6 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 					return NULL;
 				}
 				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
-				assert(!updates[c->colnr]);
 				exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 				updates[c->colnr] = v;
 			}
@@ -1351,8 +1354,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 
 			if (!rel)
 				rel = nrel;
-			else
+			else {
 				rel = rel_setop(sql->sa, rel, nrel, op_union);
+				set_processed(rel);
+			}
 			if (!rel)
 				return rel;
 		}
@@ -1636,7 +1641,7 @@ rel_parse_val(mvc *m, char *query, char emode)
 
 	m->caching = 0;
 	m->emode = emode;
-
+	// FIXME unchecked_malloc GDKmalloc can return NULL
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
 	strncpy(n, query, len);

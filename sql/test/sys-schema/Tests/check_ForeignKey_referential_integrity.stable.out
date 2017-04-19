@@ -19,14 +19,6 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup user.columnsize a bulk operator implementation is needed
-#    X_113:bat[:lng] := mal.multiplex("user":str, "columnsize":str, X_49:bat[:str], X_63:bat[:lng], X_70:bat[:lng]);
-#WARNING To speedup user.heapsize a bulk operator implementation is needed
-#    X_116:bat[:lng] := mal.multiplex("user":str, "heapsize":str, X_49:bat[:str], X_70:bat[:lng], X_77:bat[:int]);
-#WARNING To speedup user.hashsize a bulk operator implementation is needed
-#    X_118:bat[:lng] := mal.multiplex("user":str, "hashsize":str, X_84:bat[:bit], X_63:bat[:lng]);
-#WARNING To speedup user.imprintsize a bulk operator implementation is needed
-#    X_120:bat[:lng] := mal.multiplex("user":str, "imprintsize":str, X_63:bat[:lng], X_49:bat[:str]);
 
 # 12:34:37 >  
 # 12:34:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4387" "--port=31305"
@@ -107,12 +99,22 @@ Ready.
 % id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
 % int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
 % 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
-#SELECT * FROM sys.functions WHERE type NOT IN (1,2,3,4,5,6,7);  -- replace this check when table sys.function_types becomes available
+#SELECT * FROM sys.functions WHERE type NOT IN (SELECT function_type_id FROM sys.function_types);
 % sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
 % id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
 % int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
 % 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
-#SELECT * FROM sys.functions WHERE language NOT IN (0,1,2,3,4,5,6,7);  -- replace this check when table sys.function_languages becomes available
+#SELECT * FROM sys.functions WHERE type NOT IN (1,2,3,4,5,6,7);  -- old check before table sys.function_types existed
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT * FROM sys.functions WHERE language NOT IN (SELECT language_id FROM sys.function_languages);
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT * FROM sys.functions WHERE language NOT IN (0,1,2,3,4,5,6,7);  -- old check before table sys.function_languages existed
 % sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
 % id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
 % int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
@@ -147,6 +149,11 @@ Ready.
 % id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 1,	0,	0,	1,	1,	1,	1,	1 # length
+#SELECT * FROM sys.keys WHERE id NOT IN (SELECT id FROM sys.objects);
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	0,	1,	1 # length
 #SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
 % id,	table_id,	type,	name,	rkey,	action # name
@@ -162,16 +169,31 @@ Ready.
 % id,	table_id,	type,	name,	rkey,	action # name
 % int,	int,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1 # length
-#SELECT * FROM sys.keys WHERE type NOT IN (0, 1, 2);  -- replace this check when table sys.key_types becomes available
+#SELECT * FROM sys.keys WHERE type NOT IN (SELECT key_type_id FROM sys.key_types);
 % sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
 % id,	table_id,	type,	name,	rkey,	action # name
 % int,	int,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1 # length
-#SELECT * FROM tmp.keys WHERE type NOT IN (0, 1, 2);  -- replace this check when table sys.key_types becomes available
+#SELECT * FROM tmp.keys WHERE type NOT IN (SELECT key_type_id FROM sys.key_types);
 % tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys # table_name
 % id,	table_id,	type,	name,	rkey,	action # name
 % int,	int,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1 # length
+#SELECT * FROM sys.keys WHERE type NOT IN (0, 1, 2);  -- old check before table sys.key_types existed
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	0,	1,	1 # length
+#SELECT * FROM tmp.keys WHERE type NOT IN (0, 1, 2);  -- old check before table sys.key_types existed
+% tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys,	tmp.keys # table_name
+% id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	0,	1,	1 # length
+#SELECT * FROM sys.idxs WHERE id NOT IN (SELECT id FROM sys.objects);
+% sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% id,	table_id,	type,	name # name
+% int,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
 #SELECT * FROM sys.idxs WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % id,	table_id,	type,	name # name
@@ -187,12 +209,22 @@ Ready.
 % id,	table_id,	type,	name # name
 % int,	int,	int,	varchar # type
 % 1,	1,	1,	0 # length
-#SELECT * FROM sys.idxs WHERE type NOT IN (0, 1, 2);  -- replace this check when table sys.index_types becomes available
+#SELECT * FROM sys.idxs WHERE type NOT IN (SELECT index_type_id FROM sys.index_types);
 % sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % id,	table_id,	type,	name # name
 % int,	int,	int,	varchar # type
 % 1,	1,	1,	0 # length
-#SELECT * FROM tmp.idxs WHERE type NOT IN (0, 1, 2);  -- replace this check when table sys.index_types becomes available
+#SELECT * FROM tmp.idxs WHERE type NOT IN (SELECT index_type_id FROM sys.index_types);
+% tmp.idxs,	tmp.idxs,	tmp.idxs,	tmp.idxs # table_name
+% id,	table_id,	type,	name # name
+% int,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
+#SELECT * FROM sys.idxs WHERE type NOT IN (0, 1, 2);  -- old check before table sys.index_types existed
+% sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% id,	table_id,	type,	name # name
+% int,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
+#SELECT * FROM tmp.idxs WHERE type NOT IN (0, 1, 2);  -- old check before table sys.index_types existed
 % tmp.idxs,	tmp.idxs,	tmp.idxs,	tmp.idxs # table_name
 % id,	table_id,	type,	name # name
 % int,	int,	int,	varchar # type
@@ -267,8 +299,18 @@ Ready.
 % id,	name,	grantor # name
 % int,	varchar,	int # type
 % 1,	0,	1 # length
+#SELECT * FROM sys.users WHERE name NOT IN (SELECT name FROM sys.auths);
+% .users,	.users,	.users # table_name
+% name,	fullname,	default_schema # name
+% varchar,	varchar,	int # type
+% 0,	0,	1 # length
 #SELECT * FROM sys.users WHERE default_schema NOT IN (SELECT id FROM sys.schemas);
 % .users,	.users,	.users # table_name
+% name,	fullname,	default_schema # name
+% varchar,	varchar,	int # type
+% 0,	0,	1 # length
+#SELECT * FROM sys.db_user_info WHERE name NOT IN (SELECT name FROM sys.auths);
+% sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
 % name,	fullname,	default_schema # name
 % varchar,	varchar,	int # type
 % 0,	0,	1 # length
@@ -277,7 +319,22 @@ Ready.
 % name,	fullname,	default_schema # name
 % varchar,	varchar,	int # type
 % 0,	0,	1 # length
+#SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT id FROM sys.auths);
+% sys.user_role,	sys.user_role # table_name
+% login_id,	role_id # name
+% int,	int # type
+% 1,	1 # length
+#SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name IN (SELECT u.name FROM sys.users u));
+% sys.user_role,	sys.user_role # table_name
+% login_id,	role_id # name
+% int,	int # type
+% 1,	1 # length
 #SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT id FROM sys.auths);
+% sys.user_role,	sys.user_role # table_name
+% login_id,	role_id # name
+% int,	int # type
+% 1,	1 # length
+#SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.users u));
 % sys.user_role,	sys.user_role # table_name
 % login_id,	role_id # name
 % int,	int # type
@@ -292,12 +349,22 @@ Ready.
 % obj_id,	auth_id,	privileges,	grantor,	grantable # name
 % int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.privileges WHERE privileges NOT IN (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,32); -- replace this check when table sys.privilege_codes becomes available
+#SELECT * FROM sys.privileges WHERE privileges NOT IN (SELECT privilege_code_id FROM sys.privilege_codes);
+% sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% obj_id,	auth_id,	privileges,	grantor,	grantable # name
+% int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1 # length
+#SELECT * FROM sys.privileges WHERE privileges NOT IN (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,32); -- old check before table sys.privilege_codes existed
 % sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
 % obj_id,	auth_id,	privileges,	grantor,	grantable # name
 % int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1 # length
 #SELECT * FROM sys.querylog_catalog WHERE owner NOT IN (SELECT name FROM sys.users);
+% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
+% 3,	0,	26,	0,	0,	0,	1,	1 # length
+#SELECT * FROM sys.querylog_catalog WHERE pipe NOT IN (SELECT name FROM sys.optimizers);
 % .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
@@ -312,7 +379,17 @@ Ready.
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.queue WHERE tag > 0 AND tag NOT IN (SELECT qtag FROM sys.queue);
+#SELECT * FROM sys.querylog_history WHERE owner NOT IN (SELECT name FROM sys.users);
+% .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
+% 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
+#SELECT * FROM sys.querylog_history WHERE pipe NOT IN (SELECT name FROM sys.optimizers);
+% .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
+% 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
+#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
 % .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
 % qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
 % bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type

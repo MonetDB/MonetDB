@@ -35,4 +35,3 @@ order by
 	o_orderdate
 limit 100;
 
-select * from optimizer_stats() stats;

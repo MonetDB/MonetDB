@@ -125,7 +125,10 @@ static str monetdb_initialize(void) {
 		goto cleanup;
 	}
 
-	GDKsetenv("mapi_disable", "true");
+	if (GDKsetenv("mapi_disable", "true") != GDK_SUCCEED) {
+		retval = GDKstrdup("GDKsetenv failed");
+		goto cleanup;
+	}
 
 	if ((modpath = GDKgetenv("monet_mod_path")) == NULL) {
 		/* start probing based on some heuristics given the binary
@@ -163,8 +166,11 @@ static str monetdb_initialize(void) {
 				   "allow finding modules\n");
 			fflush(NULL);
 		}
-		if (modpath != NULL)
-			GDKsetenv("monet_mod_path", modpath);
+		if (modpath != NULL &&
+		    GDKsetenv("monet_mod_path", modpath) != GDK_SUCCEED) {
+			retval = GDKstrdup("GDKsetenv failed");
+			goto cleanup;
+		}
 	}
 
 	/* configure sabaoth to use the right dbpath and active database */

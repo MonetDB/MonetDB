@@ -1,0 +1,14 @@
+module cip_chop;
+
+atom cipchop1 : oid;
+
+atom cip_chop1 : oid;
+
+command foo1(:bat[:oid]) :bat[:oid]
+address MATHpi;
+
+command foo2(:bat[:oid]) :bat[:cipchop1]
+address MATHpi;
+
+command foo3(:bat[:oid]) :bat[:cip_chop1]
+address MATHpi;

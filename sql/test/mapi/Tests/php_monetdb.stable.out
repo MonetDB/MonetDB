@@ -35,10 +35,10 @@ functions
 args
 sequences
 dependencies
-connections
 _tables
 _columns
 keys
+idxs
 name	schema_id	query	type	system	commit_action	access	temporary 	
 schemas	2000		10	true	0	0	0	
 types	2000		10	true	0	0	0	
@@ -46,10 +46,10 @@ functions	2000		10	true	0	0	0
 args	2000		10	true	0	0	0	
 sequences	2000		10	true	0	0	0	
 dependencies	2000		10	true	0	0	0	
-connections	2000		10	true	0	0	0	
 _tables	2000		10	true	0	0	0	
 _columns	2000		10	true	0	0	0	
 keys	2000		10	true	0	0	0	
+idxs	2000		10	true	0	0	0	
 
 # 13:02:01 >  
 # 13:02:01 >  "Done."

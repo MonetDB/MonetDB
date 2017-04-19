@@ -238,9 +238,10 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	ParseStatus status;
 	int i = 0;
 	char argbuf[64];
-	char argnames[10000] = "";
+	char *argnames = NULL;
+	size_t argnameslen;
 	size_t pos;
-	char* rcall;
+	char* rcall = NULL;
 	size_t rcalllen;
 	int ret_cols = 0; /* int because pci->retc is int, too*/
 	str *args;
@@ -265,15 +266,8 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
 	}
 
-	rcalllen = strlen(exprStr) + sizeof(argnames) + 100;
-	rcall = malloc(rcalllen);
-	if (rcall == NULL) {
-		throw(MAL, "rapi.eval", MAL_MALLOC_FAIL);
-	}
-
 	args = (str*) GDKzalloc(sizeof(str) * pci->argc);
 	if (args == NULL) {
-		free(rcall);
 		throw(MAL, "rapi.eval", MAL_MALLOC_FAIL);
 	}
 
@@ -297,6 +291,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		}
 	}
 	// the first unknown argument is the group, we don't really care for the rest.
+	argnameslen = 2;
 	for (i = pci->retc + 2; i < pci->argc; i++) {
 		if (args[i] == NULL) {
 			if (!seengrp && grouped) {
@@ -307,6 +302,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 				args[i] = GDKstrdup(argbuf);
 			}
 		}
+		argnameslen += strlen(args[i]) + 2; /* extra for ", " */
 	}
 
 	// install the MAL variables into the R environment
@@ -319,10 +315,21 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
-			if ( getArgType(mb,pci,i) == TYPE_str)
-				BUNappend(b, *getArgReference_str(stk, pci, i), FALSE);
-			else
-				BUNappend(b, getArgReference(stk, pci, i), FALSE);
+			if ( getArgType(mb,pci,i) == TYPE_str) {
+				if (BUNappend(b, *getArgReference_str(stk, pci, i), FALSE) != GDK_SUCCEED) {
+					BBPreclaim(b);
+					b = NULL;
+					msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+			} else {
+				if (BUNappend(b, getArgReference(stk, pci, i), FALSE) != GDK_SUCCEED) {
+					BBPreclaim(b);
+					b = NULL;
+					msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+			}
 			BATsetcount(b, 1);
 			BATsettrivprop(b);
 		} else {
@@ -360,20 +367,27 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	 * this is also compatible with PL/R
 	 */
 	pos = 0;
-	for (i = pci->retc + 2; i < pci->argc && pos < sizeof(argnames); i++) {
-		pos += snprintf(argnames + pos, sizeof(argnames) - pos, "%s%s",
+	argnames = malloc(argnameslen);
+	if (argnames == NULL) {
+		msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+		goto wrapup;
+	}
+	argnames[0] = '\0';
+	for (i = pci->retc + 2; i < pci->argc; i++) {
+		pos += snprintf(argnames + pos, argnameslen - pos, "%s%s",
 						args[i], i < pci->argc - 1 ? ", " : "");
 	}
-	if (pos >= sizeof(argnames)) {
-		msg = createException(MAL, "rapi.eval", "Command too large");
+	rcalllen = 2 * pos + strlen(exprStr) + 100;
+	rcall = malloc(rcalllen);
+	if (rcall == NULL) {
+		msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
-	if (snprintf(rcall, rcalllen,
-				 "ret <- as.data.frame((function(%s){%s})(%s), nm=NA, stringsAsFactors=F)\n",
-				 argnames, exprStr, argnames) >= (int) rcalllen) {
-		msg = createException(MAL, "rapi.eval", "Command too large");
-		goto wrapup;
-	}
+	snprintf(rcall, rcalllen,
+			 "ret <- as.data.frame((function(%s){%s})(%s), nm=NA, stringsAsFactors=F)\n",
+			 argnames, exprStr, argnames);
+	free(argnames);
+	argnames = NULL;
 #ifdef _RAPI_DEBUG_
 	printf("# R call %s\n",rcall);
 #endif
@@ -421,7 +435,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		if (bat_type == TYPE_any || bat_type == TYPE_void) {
 			getArgType(mb,pci,i) = bat_type;
 			msg = createException(MAL, "rapi.eval",
-									  "Unknown return value, possibly projecting with no parameters.");
+								  "Unknown return value, possibly projecting with no parameters.");
 			goto wrapup;
 		}
 
@@ -429,7 +443,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		b = sexp_to_bat(ret_col, bat_type);
 		if (b == NULL) {
 			msg = createException(MAL, "rapi.eval",
-												  "Failed to convert column %i", i);
+								  "Failed to convert column %i", i);
 			goto wrapup;
 		}
 		// bat return
@@ -449,7 +463,10 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	UNPROTECT(1);
   wrapup:
 	MT_lock_unset(&rapiLock);
-	free(rcall);
+	if (argnames)
+		free(argnames);
+	if (rcall)
+		free(rcall);
 	for (i = 0; i < pci->argc; i++)
 		GDKfree(args[i]);
 	GDKfree(args);
@@ -465,23 +482,27 @@ void* RAPIloopback(void *query) {
 	if (err) { // there was an error
 		return ScalarString(RSTR(err));
 	}
-	if (output && output->nr_cols > 0) {
-		int i, ncols = output->nr_cols;
-		SEXP retlist, names, varvalue = R_NilValue;
-		retlist = PROTECT(allocVector(VECSXP, ncols));
-		names = PROTECT(NEW_STRING(ncols));
-		for (i = 0; i < ncols; i++) {
-			if (!(varvalue = bat_to_sexp(BATdescriptor(output->cols[i].b)))) {
-				UNPROTECT(i + 3);
-				return ScalarString(RSTR("Conversion error"));
+	if (output) {
+		int ncols = output->nr_cols;
+		if (ncols > 0) {
+			int i;
+			SEXP retlist, names, varvalue = R_NilValue;
+			retlist = PROTECT(allocVector(VECSXP, ncols));
+			names = PROTECT(NEW_STRING(ncols));
+			for (i = 0; i < ncols; i++) {
+				if (!(varvalue = bat_to_sexp(BATdescriptor(output->cols[i].b)))) {
+					UNPROTECT(i + 3);
+					return ScalarString(RSTR("Conversion error"));
+				}
+				SET_STRING_ELT(names, i, RSTR(output->cols[i].name));
+				SET_VECTOR_ELT(retlist, i, varvalue);
 			}
-			SET_STRING_ELT(names, i, RSTR(output->cols[i].name));
-			SET_VECTOR_ELT(retlist, i, varvalue);
+			res_table_destroy(output);
+			SET_NAMES(retlist, names);
+			UNPROTECT(ncols + 2);
+			return retlist;
 		}
 		res_table_destroy(output);
-		SET_NAMES(retlist, names);
-		UNPROTECT(ncols + 2);
-		return retlist;
 	}
 	return ScalarLogical(1);
 }

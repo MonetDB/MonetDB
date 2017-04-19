@@ -44,16 +44,11 @@ Ready.
 #		where
 #			l_partkey = p_partkey
 #	);
-% sys.L3 # table_name
+% sys.L12 # table_name
 % avg_yearly # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ NULL	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
 
 # 09:17:19 >  
 # 09:17:19 >  Done.
