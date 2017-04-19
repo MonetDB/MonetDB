@@ -2212,6 +2212,21 @@ AS_CASE([$have_lidar],
 	AS_VAR_IF([have_liblas], [no], [], [
 		LIBLAS_INCS=`$LIBLAS_CONFIG --includes`
 		LIBLAS_LIBS=`$LIBLAS_CONFIG --libs`])
+	# liblas-config and liblas/capi/liblas.h could be in different
+	# packages (think Ubuntu) so we need to test for them both
+	AS_VAR_IF([have_liblas], [no], [], [
+		save_CPPFLAGS="$CPPFLAGS"
+		save_LDFLAGS="$LDFLAGS"
+		save_LIBS="$LIBS"
+		CPPFLAGS="$CPPFLAGS $LIBLAS_INCS"
+		LDFLAGS="$LDFLAGS $LIBLAS_LIBS"
+		LIBS=""
+		AC_CHECK_HEADER([liblas/capi/liblas.h], [],
+			[have_liblas=no
+			 why_have_liblas="(liblas/capi/liblas.h header file not found)"])
+		CPPFLAGS="$save_CPPFLAGS"
+		LDFLAGS="$save_LDFLAGS"
+		LIBS="$save_LIBS"])
 	# if lidar is enabled and liblas was not found abort
 	AS_VAR_IF([have_liblas], [no], [
 		AS_VAR_IF([have_lidar], [yes],
@@ -2232,11 +2247,8 @@ AC_SUBST([LIBLAS_RPM])
 
 AC_SUBST([LIBLAS_INCS])
 AC_SUBST([LIBLAS_LIBS])
-AC_MSG_CHECKING([enable lidar: $have_lidar])
 
 AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xauto])
-
-AC_MSG_CHECKING(['enable lidar: $have_lidar'])
 
 # gdal
 org_have_gdal="auto"
