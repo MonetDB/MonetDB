@@ -1134,6 +1134,7 @@ fcnHeader(Client cntxt, int kind)
 				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
+				curBlk = NULL;
 			}
 			parseError(cntxt, "',' expected\n");
 			skipToEnd(cntxt);
@@ -1149,6 +1150,7 @@ fcnHeader(Client cntxt, int kind)
 			freeSymbol(cntxt->curprg);
 			cntxt->curprg = cntxt->backup;
 			cntxt->backup = 0;
+			curBlk = NULL;
 		}
 		parseError(cntxt, "')' expected\n");
 		skipToEnd(cntxt);
@@ -1191,6 +1193,7 @@ fcnHeader(Client cntxt, int kind)
 					freeSymbol(cntxt->curprg);
 					cntxt->curprg = cntxt->backup;
 					cntxt->backup = 0;
+					curBlk = NULL;
 				}
 				parseError(cntxt, "',' expected\n");
 				skipToEnd(cntxt);
@@ -1210,6 +1213,7 @@ fcnHeader(Client cntxt, int kind)
 				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
+				curBlk = NULL;
 			}
 			skipToEnd(cntxt);
 			return curBlk;
@@ -1231,6 +1235,7 @@ fcnHeader(Client cntxt, int kind)
 				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
+				curBlk = NULL;
 			}
 			parseError(cntxt, "')' expected\n");
 			skipToEnd(cntxt);
