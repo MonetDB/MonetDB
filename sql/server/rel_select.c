@@ -2066,7 +2066,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				sql_rel *z = NULL, *rl;
 
 				r = rel_value_exp(sql, &z, sval, f, ek);
-				if (l && IS_ANY(st->type->eclass)){
+				if (l && r && IS_ANY(st->type->eclass)){
 					l = rel_check_type(sql, exp_subtype(r), l, type_equal);
 					if (l)
 						st = exp_subtype(l);

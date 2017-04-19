@@ -43,3 +43,5 @@ crash_correlated_subqueries_in_select.Bug-6254
 fullouterjoinfilter.Bug-6256
 wrong_aggregation_count.Bug-6257
 select.Bug-6259
+function_and_mergetable.Bug-6288
+crash_in_in_handling.Bug-6260
