@@ -20,15 +20,13 @@ lib_scheduler = {
 		run_adder.c run_adder.h \
 		run_isolate.c run_isolate.h \
 		run_memo.c run_memo.h \
-		srvpool.c srvpool.h \
 		run_pipeline.c run_pipeline.h
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = run_adder.mal run_isolate.mal run_memo.mal srvpool.mal
+	SOURCES = run_adder.mal run_isolate.mal run_memo.mal
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = run_adder.mal run_isolate.mal run_memo.mal srvpool.mal
