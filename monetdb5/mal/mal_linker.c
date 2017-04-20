@@ -65,8 +65,7 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 {
 	void *dl;
 	MALfcn adr;
-	static int idx=0;
-
+	int idx=0;
 	static int prev= -1;
 
 	/* First try the last module loaded */
@@ -82,7 +81,9 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 	 * obtained from the source-file MAL script.
 	 */
 	for (idx =0; idx < lastfile; idx++)
-		if (filesLoaded[idx].handle) {
+		if (idx != prev &&		/* skip already searched module */
+			filesLoaded[idx].handle &&
+			(idx == 0 || filesLoaded[idx].handle != filesLoaded[0].handle)) {
 			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
 			if (adr != NULL)  {
 				prev = idx;
