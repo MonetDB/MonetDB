@@ -1,9 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Mon Feb 20 2017 Sjoerd Mullender <sjoerd@acm.org>
-- The sphinx module has been moved to its own repository
-  http://dev.monetdb.hg/hg/MonetDB-sphinx/.
+* Thu Apr 20 2017 Sjoerd Mullender <sjoerd@acm.org>
+- The "sub" prefix of many functions, both at the MAL and the C level,
+  has been removed.
 
 * Thu Jan  5 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Changed the interfaces of the AUTH* functions: pass values, not pointers

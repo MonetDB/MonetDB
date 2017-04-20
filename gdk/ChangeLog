@@ -1,6 +1,13 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Wed Mar 15 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Improved error checking in the logger code (dealing with the write-ahead
+  log); changed return types a several functions from int to gdk_return
+  (i.e., they now return GDK_SUCCEED or GDK_FAIL).  The logger no longer
+  calls GDKfatal on error.  Instead the caller is responsible for dealing
+  with errors.
+
 * Fri Feb 17 2017 Sjoerd Mullender <sjoerd@acm.org>
 - BATsort may now create an order index as a by product.
 - Quantile calculations now use the order index if available (and use
