@@ -84,10 +84,4 @@ headers_autoload_hge = {
 	SOURCES = 41_sql_hge.mal
 }
 
-EXTRA_DIST = 40_sql.mal \
-	41_sql_hge.mal sql_hge.mal sql_aggr_hge.mal sql_decimal_hge.mal \
-	sql_aggr_bte.mal  sql_aggr_flt.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
-	sql_aggr_sht.mal  sql_decimal.mal  sql_inspect.mal \
-	sql_rank.mal sql.mal 
-
 EXTRA_DIST_DIR = Tests

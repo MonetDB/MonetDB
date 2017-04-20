@@ -36,4 +36,3 @@ headers_gsl = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 73_gsl.mal gsl.mal

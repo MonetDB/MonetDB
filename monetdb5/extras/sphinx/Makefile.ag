@@ -29,5 +29,3 @@ headers_autoload = {
         DIR = libdir/monetdb5/autoload
         SOURCES = 30_sphinx.mal
 }
-
-EXTRA_DIST = sphinx.mal 30_sphinx.mal
