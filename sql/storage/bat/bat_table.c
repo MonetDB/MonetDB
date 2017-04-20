@@ -106,7 +106,12 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 				bat_destroy(b); 
 				b = r;
 			}
-			void_replace_bat(b, ui, uv, TRUE);
+			if (void_replace_bat(b, ui, uv, TRUE) == BUN_NONE) {
+				bat_destroy(ui);
+				bat_destroy(uv);
+				bat_destroy(b);
+				return NULL;
+			}
 		}
 		bat_destroy(ui); 
 		bat_destroy(uv); 
@@ -319,11 +324,16 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 	b = full_column(tr, orderby_col);
 	s = BATproject(r->data, b);
 	full_destroy(orderby_col, b);
-	BATsort(NULL, &o, NULL, s, NULL, NULL, 0, 0);
+	if (BATsort(NULL, &o, NULL, s, NULL, NULL, 0, 0) != GDK_SUCCEED) {
+		bat_destroy(s);
+		return NULL;
+	}
 	bat_destroy(s);
 	s = BATproject(o, r->data);
-	bat_destroy(r->data);
 	bat_destroy(o);
+	if (s == NULL)
+		return NULL;
+	bat_destroy(r->data);
 	r->data = s;
 	return r;
 }
@@ -375,44 +385,90 @@ static subrids *
 subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_column *obc)
 {
 	/* join t1.rc with lc order by obc */
-	subrids *r = ZNEW(subrids);
+	subrids *r;
 	BAT *lcb, *rcb, *s, *obb, *d = NULL, *o, *g, *ids, *rids = NULL;
-	
+	gdk_return ret;
+
 	lcb = full_column(tr, lc);
 	rcb = full_column(tr, rc);
-
 	s = delta_cands(tr, lc->t);
-	BATjoin(&rids, &d, lcb, rcb, s, t1->data, FALSE, BATcount(lcb));
-	bat_destroy(d);
+	if (lcb == NULL || rcb == NULL || s == NULL) {
+		if (lcb)
+			full_destroy(rc, lcb);
+		if (rcb)
+			full_destroy(rc, rcb);
+		bat_destroy(s);
+		return NULL;
+	}
+
+	ret = BATjoin(&rids, &d, lcb, rcb, s, t1->data, FALSE, BATcount(lcb));
 	bat_destroy(s);
 	full_destroy(rc, rcb);
+	if (ret != GDK_SUCCEED) {
+		full_destroy(rc, lcb);
+		return NULL;
+	}
+	bat_destroy(d);
 
 	s = BATproject(rids, lcb);
 	full_destroy(lc, lcb);
+	if (s == NULL) {
+		bat_destroy(rids);
+		return NULL;
+	}
 	lcb = s;
 
-	obb = full_column(tr, obc);
+	if ((obb = full_column(tr, obc)) == NULL) {
+		bat_destroy(lcb);
+		bat_destroy(rids);
+		return NULL;
+	}
 	s = BATproject(rids, obb);
 	full_destroy(obc, obb);
+	if (s == NULL) {
+		bat_destroy(lcb);
+		bat_destroy(rids);
+		return NULL;
+	}
 	obb = s;
 
 	/* need id, obc */
 	ids = o = g = NULL;
-	BATsort(&ids, &o, &g, lcb, NULL, NULL, 0, 0);
+	ret = BATsort(&ids, &o, &g, lcb, NULL, NULL, 0, 0);
 	bat_destroy(lcb);
+	if (ret != GDK_SUCCEED) {
+		bat_destroy(obb);
+		bat_destroy(rids);
+		return NULL;
+	}
 
 	s = NULL;
-	BATsort(NULL, &s, NULL, obb, o, g, 0, 0);
+	ret = BATsort(NULL, &s, NULL, obb, o, g, 0, 0);
 	bat_destroy(obb);
 	bat_destroy(o);
 	bat_destroy(g);
+	if (ret != GDK_SUCCEED) {
+		bat_destroy(ids);
+		bat_destroy(rids);
+		return NULL;
+	}
 
 	o = BATproject(s, rids);
 	bat_destroy(rids);
 	bat_destroy(s);
+	if (o == NULL) {
+		bat_destroy(ids);
+		return NULL;
+	}
 	rids = o;
 
 	assert(ids->ttype == TYPE_int && ATOMtype(rids->ttype) == TYPE_oid);
+	r = ZNEW(subrids);
+	if (r == NULL) {
+		bat_destroy(ids);
+		bat_destroy(rids);
+		return NULL;
+	}
 	r->id = 0;
 	r->pos = 0;
 	r->ids = ids;

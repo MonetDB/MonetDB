@@ -428,7 +428,10 @@ delta_update_val( sql_delta *bat, oid rid, void *upd)
 		BAT *ib = temp_descriptor(bat->ibid);
 
 		if (BATcount(ib) && ib->hseqbase <= rid) { 
-			void_inplace(ib, rid, upd, TRUE);
+			if (void_inplace(ib, rid, upd, TRUE) != GDK_SUCCEED) {
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
 		} else {
 			BAT *ui = temp_descriptor(bat->uibid);
 			BAT *uv = temp_descriptor(bat->uvbid);
@@ -463,7 +466,10 @@ delta_update_val( sql_delta *bat, oid rid, void *upd)
 		bat_destroy(ib);
 	} else {
 		b = temp_descriptor(bat->ibid);
-		void_inplace(b, rid, upd, TRUE);
+		if (void_inplace(b, rid, upd, TRUE) != GDK_SUCCEED) {
+			bat_destroy(b);
+			return LOG_ERR;
+		}
 		bat_destroy(b);
 	}
 	return LOG_OK;
@@ -1919,7 +1925,12 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 		/* any updates */
 		if (BUNlast(ui) > 0) {
 			(*changes)++;
-			void_replace_bat(cur, ui, uv, TRUE);
+			if (void_replace_bat(cur, ui, uv, TRUE) == BUN_NONE) {
+				bat_destroy(ui);
+				bat_destroy(uv);
+				bat_destroy(cur);
+				return LOG_ERR;
+			}
 			temp_destroy(cbat->uibid);
 			temp_destroy(cbat->uvbid);
 			cbat->uibid = e_bat(TYPE_oid);
@@ -2188,7 +2199,12 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 
 		/* any updates */
 		if (BUNlast(ui) > 0) {
-			void_replace_bat(cur, ui, uv, TRUE);
+			if (void_replace_bat(cur, ui, uv, TRUE) == BUN_NONE) {
+				bat_destroy(ui);
+				bat_destroy(uv);
+				bat_destroy(cur);
+				return LOG_ERR;
+			}
 			/* cleanup the old deltas */
 			temp_destroy(obat->uibid);
 			temp_destroy(obat->uvbid);
@@ -2265,7 +2281,12 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 
 		/* any updates */
 		if (BUNlast(ui) > 0) {
-			void_replace_bat(cur, ui, uv, TRUE);
+			if (void_replace_bat(cur, ui, uv, TRUE) == BUN_NONE) {
+				bat_destroy(ui);
+				bat_destroy(uv);
+				bat_destroy(cur);
+				return LOG_ERR;
+			}
 			/* cleanup the old deltas */
 			temp_destroy(obat->uibid);
 			temp_destroy(obat->uvbid);

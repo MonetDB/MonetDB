@@ -1281,8 +1281,13 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	u_id = BATdescriptor(*uid);
 	assert(BATcount(u_id) == BATcount(u_val));
-	if (BATcount(u_id))
-		BATreplace(res, u_id, u_val, TRUE);
+	if (BATcount(u_id) &&
+	    BATreplace(res, u_id, u_val, TRUE) != GDK_SUCCEED) {
+		BBPunfix(u_id->batCacheid);
+		BBPunfix(u_val->batCacheid);
+		BBPunfix(res->batCacheid);
+		throw(MAL, "sql.delta", GDK_EXCEPTION);
+	}
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
 
