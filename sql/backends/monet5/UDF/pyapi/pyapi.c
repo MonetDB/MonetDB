@@ -1321,13 +1321,16 @@ str
         MT_lock_set(&pyapiLock);
         if (!pyapiInitialized) {
             str msg = MAL_SUCCEED;
+            PyObject *tmp;
             Py_Initialize();
             if (PyRun_SimpleString("import numpy") != 0 || _import_array() < 0) {
                 return PyError_CreateException("Failed to initialize embedded python", NULL);
             }
             msg = _connection_init();
             _loader_init();
-            marshal_module = PyImport_Import(PyString_FromString("marshal"));
+            tmp = PyString_FromString("marshal");
+            marshal_module = PyImport_Import(tmp);
+            Py_DECREF(tmp);
             if (marshal_module == NULL) {
                 return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
             }
@@ -1359,9 +1362,12 @@ str
 #else
     if (!pyapiInitialized) {
         char* iar = NULL;
+        PyObject *tmp;
         import_array1(iar);
         pyapiInitialized++;
-        marshal_module = PyImport_Import(PyString_FromString("marshal"));
+        tmp = PyString_FromString("marshal");
+        marshal_module = PyImport_Import(tmp);
+        Py_DECREF(tmp);
         if (marshal_module == NULL) {
             return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
         }
@@ -1549,10 +1555,12 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
     if (!(b->tnil == 0 && b->tnonil == 1))
     {
         PyObject *mask;
-        PyObject *mafunc = PyObject_GetAttrString(PyImport_Import(PyString_FromString("numpy.ma")), "masked_array");
+        PyObject *tmp = PyString_FromString("numpy.ma");
+        PyObject *mafunc = PyObject_GetAttrString(PyImport_Import(tmp), "masked_array");
         PyObject *maargs;
         PyObject *nullmask = PyNullMask_FromBAT(b, t_start, t_end);
 
+        Py_DECREF(tmp);
         if (nullmask == Py_None) {
             maargs = PyTuple_New(1);
             PyTuple_SetItem(maargs, 0, vararray);
