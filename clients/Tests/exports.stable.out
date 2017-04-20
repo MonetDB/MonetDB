@@ -2487,7 +2487,6 @@ str sqlRef;
 int sqlblob_fromstr(char *instr, int *l, blob **val);
 int sqlblob_tostr(str *tostr, int *l, const blob *p);
 str sqlcatalogRef;
-str srvpoolRef;
 str startProfiler(void);
 str startRef;
 str startTrace(str path);

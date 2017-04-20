@@ -263,7 +263,6 @@ str sortRef;
 str sortReverseRef;
 str sqlRef;
 str sqlcatalogRef;
-str srvpoolRef;
 str streamsRef;
 str startRef;
 str starttraceRef;
@@ -545,7 +544,6 @@ void optimizerInit(void)
 	sortReverseRef = putName("sortReverse");
 	sqlRef = putName("sql");
 	sqlcatalogRef = putName("sqlcatalog");
-	srvpoolRef = putName("srvpool");
 	streamsRef = putName("streams");
 	startRef = putName("start");
 	starttraceRef = putName("starttrace");

@@ -10630,8 +10630,6 @@ Ready.
 [ "sabaoth",	"retreatScenario",	"command sabaoth.retreatScenario(lang:str):void ",	"SABretreatScenario;",	"Unpublishes the given language as available for this server"	]
 [ "sample",	"subuniform",	"command sample.subuniform(b:bat[:any], s:lng):bat[:oid] ",	"SAMPLEuniform;",	"Returns the oids of a uniform sample of size s"	]
 [ "sample",	"subuniform",	"command sample.subuniform(b:bat[:any], p:dbl):bat[:oid] ",	"SAMPLEuniform_dbl;",	"Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0"	]
-[ "scheduler",	"pattern",	"pattern scheduler.pattern(pat:str):void ",	"SRVsetServers;",	"Activate the peers matching the pattern and return number found."	]
-[ "scheduler",	"peers",	"pattern scheduler.peers(N:int):void ",	"SRVsetServers;",	"Simulate N peers"	]
 [ "shp",	"attach",	"pattern shp.attach(filename:str):void ",	"SHPattach;",	"Register an ESRI Shapefile in the vault catalog"	]
 [ "shp",	"import",	"pattern shp.import(fileid:int):void ",	"SHPimport;",	"Import an ESRI Shapefile with given id into the vault"	]
 [ "shp",	"import",	"pattern shp.import(fileid:int, po:wkb):void ",	"SHPpartialimport;",	"Partially import an ESRI Shapefile with given id into the vault"	]

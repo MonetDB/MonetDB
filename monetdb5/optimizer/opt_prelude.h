@@ -257,7 +257,6 @@ mal_export  str sortRef;
 mal_export  str sortReverseRef;
 mal_export  str sqlRef;
 mal_export  str sqlcatalogRef;
-mal_export  str srvpoolRef;
 mal_export  str streamsRef;
 mal_export  str startRef;
 mal_export  str starttraceRef;
