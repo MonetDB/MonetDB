@@ -2481,13 +2481,13 @@ mvc_result_table(mvc *m, oid query_id, int nr_cols, int type, BAT *order)
 int
 mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
 {
-	(void) res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, TYPE_bat, b);
-	return 0;
+	/* return 0 on success, non-zero on failure */
+	return res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, TYPE_bat, b) == NULL;
 }
 
 int
 mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype)
 {
-	(void) res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, mtype, p);
-	return 0;
+	/* return 0 on success, non-zero on failure */
+	return res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, mtype, p) == NULL;
 }

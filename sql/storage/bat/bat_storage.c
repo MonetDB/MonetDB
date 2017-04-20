@@ -449,8 +449,13 @@ delta_update_val( sql_delta *bat, oid rid, void *upd)
 				bat_destroy(uv);
 				uv = temp_descriptor(bat->uvbid);
 			}
-			BUNappend(ui, (ptr) &rid, TRUE);
-			BUNappend(uv, (ptr) upd, TRUE);
+			if (BUNappend(ui, (ptr) &rid, TRUE) != GDK_SUCCEED ||
+			    BUNappend(uv, (ptr) upd, TRUE) != GDK_SUCCEED) {
+				bat_destroy(ui);
+				bat_destroy(uv);
+				bat_destroy(ib);
+				return LOG_ERR;
+			}
 			bat->ucnt++;
 			bat_destroy(ui);
 			bat_destroy(uv);
@@ -665,7 +670,10 @@ delta_append_val( sql_delta *bat, void *i )
 		bat->ibid = ebat2real(bat->ibid, bat->ibase);
 		b = temp_descriptor(bat->ibid);
 	}
-	BUNappend(b, i, TRUE);
+	if (BUNappend(b, i, TRUE) != GDK_SUCCEED) {
+		bat_destroy(b);
+		return LOG_ERR;
+	}
 	assert(BUNlast(b) > b->batInserted);
 	bat->cnt ++;
 	bat_destroy(b);
@@ -849,7 +857,10 @@ delta_delete_val( sql_dbat *bat, oid rid )
 		b = temp_descriptor(bat->dbid);
 	}
 	assert(b->theap.storage != STORE_PRIV);
-	BUNappend(b, (ptr)&rid, TRUE);
+	if (BUNappend(b, (ptr)&rid, TRUE) != GDK_SUCCEED) {
+		bat_destroy(b);
+		return LOG_ERR;
+	}
 	BATkey(b, TRUE);
 	bat_destroy(b);
 
@@ -1928,7 +1939,8 @@ gtr_update_dbat(sql_dbat *d, int *changes)
 		BAT *cdb = temp_descriptor(dbid);
 
 		(*changes)++;
-		append_inserted(cdb, idb);
+		if (append_inserted(cdb, idb) == BUN_NONE)
+			ok = LOG_ERR;
 		bat_destroy(cdb);
 	}
 	bat_destroy(idb);
@@ -2273,16 +2285,20 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 	if (BUNlast(db) > db->batInserted || cleared) {
 		BAT *odb = temp_descriptor(tdb->dbid);
 
-		append_inserted(odb, db);
-		BATcommit(odb);
+		if (append_inserted(odb, db) == BUN_NONE)
+			ok = LOG_ERR;
+		else
+			BATcommit(odb);
 		temp_destroy(fdb->dbid);
 
-		fdb->dbid = 0;
-		tdb->cnt = fdb->cnt;
+		if (ok == LOG_OK) {
+			fdb->dbid = 0;
+			tdb->cnt = fdb->cnt;
+		}
 		bat_destroy(odb);
 	}
 	bat_destroy(db);
-	if (tdb->next) {
+	if (ok == LOG_OK && tdb->next) {
 		ok = destroy_dbat(tr, tdb->next);
 		tdb->next = NULL;
 	}
@@ -2309,13 +2325,18 @@ tr_update_dbat_swap(sql_dbat *tdb, sql_dbat *fdb)
 		BAT *odb = temp_descriptor(fdb->dbid);
 
 		cnt = BATcount(odb);
-		append_inserted(odb, db);
-		BATcommit(odb);
-		BATsetcount(db, cnt);
+		if (append_inserted(odb, db) == BUN_NONE)
+			ok = LOG_ERR;
+		else {
+			BATcommit(odb);
+			BATsetcount(db, cnt);
+		}
 		bat_destroy(odb);
 	}
-	tdb->dbid = fdb->dbid; 
-	fdb->dbid = db->batCacheid;
+	if (ok == LOG_OK) {
+		tdb->dbid = fdb->dbid; 
+		fdb->dbid = db->batCacheid;
+	}
 	bat_destroy(db);
 	return ok;
 }

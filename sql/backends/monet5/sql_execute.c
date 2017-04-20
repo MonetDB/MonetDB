@@ -605,8 +605,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					rname = e->rname;
 					if (!rname && e->type == e_column && e->l)
 						rname = e->l;
-					res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
-							t->scale, t->type->localtype, ptr);
+					if (res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
+							   t->scale, t->type->localtype, ptr) == NULL) {
+						msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+						goto endofcompile;
+					}
 				}
 				*result = res;
 			}

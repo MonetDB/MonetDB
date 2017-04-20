@@ -1261,7 +1261,8 @@ gdk_export bte ATOMelmshift(int sz);
 	} while (0)
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare);
-gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
+gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force)
+	__attribute__ ((__warn_unused_result__));
 gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bit force);
 
 gdk_export gdk_return BUNdelete(BAT *b, oid o);

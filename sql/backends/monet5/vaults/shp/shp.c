@@ -421,7 +421,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 		goto final;
 	}
-	if(!(colsBAT = (BAT**)GDKmalloc(sizeof(BAT*)*colsNum))) {
+	if(!(colsBAT = (BAT**)GDKzalloc(sizeof(BAT*)*colsNum))) {
 		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 		goto unfree2;
 	}
@@ -482,6 +482,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		wkb *geomWKB;
 		int len;
 		int gidTemp = ++gidNum;
+		gdk_return rc;
 
 		OGRGeometryH geometry = OGR_F_GetGeometryRef(feature);
 
@@ -489,17 +490,24 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 			hFieldDefn = OGR_FD_GetFieldDefn( featureDefn, i );
 			if( OGR_Fld_GetType(hFieldDefn) == OFTInteger ) {
 				int val = OGR_F_GetFieldAsInteger(feature, i);
-				BUNappend(colsBAT[i], &val, TRUE);
+				rc = BUNappend(colsBAT[i], &val, TRUE);
 			} else if( OGR_Fld_GetType(hFieldDefn) == OFTReal ) {
 				double val = OGR_F_GetFieldAsDouble(feature, i);
-				BUNappend(colsBAT[i], &val, TRUE);
+				rc = BUNappend(colsBAT[i], &val, TRUE);
 			} else if( OGR_Fld_GetType(hFieldDefn) == OFTString ) {
-				BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
+				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
 			} else {
-				BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
+				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
+			}
+			if (rc != GDK_SUCCEED) {
+				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				goto unfree4;
 			}
 		}
-		BUNappend(colsBAT[colsNum - 2], &gidTemp, TRUE);
+		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, TRUE) != GDK_SUCCEED) {
+			msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			goto unfree4;
+		}
 
 		len = OGR_G_WkbSize(geometry);
 		if (!(geomWKB = GDKmalloc(sizeof(wkb) - 1 + len))) {
@@ -510,20 +518,27 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		geomWKB->len = len;
 		geomWKB->srid = 0; //FIXME: Add the real srid
 		OGR_G_ExportToWkb(geometry, wkbNDR, (unsigned char *)geomWKB->data);
-		BUNappend(colsBAT[colsNum - 1], geomWKB, TRUE);
+		rc = BUNappend(colsBAT[colsNum - 1], geomWKB, TRUE);
 		GDKfree(geomWKB);
 		OGR_F_Destroy(feature);
+		if (rc != GDK_SUCCEED)
+			goto unfree4;
 	}
 
 	/* finalise the BATs */
 	for(i = 0; i < colsNum; i++) {
-		store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat);
-		BBPunfix(colsBAT[i]->batCacheid);
-		//BBPrelease(colsBAT[i]->batCacheid);
+		if (store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat) != LOG_OK) {
+			msg = createException(MAL, "shp.import", "append_col failed");
+			goto unfree4;
+		}
 	}
 
 	/* free the memory */
 unfree4:
+	for(i = 0; i < colsNum; i++) {
+		if (colsBAT[i])
+			BBPunfix(colsBAT[i]->batCacheid);
+	}
 	free(field_definitions);
 	GDKfree(colsBAT);
 unfree2:
@@ -571,6 +586,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	GDALWSimpleFieldDef * field_definitions;
 	OGRFeatureH feature;
 	OGRFeatureDefnH featureDefn;
+	gdk_return rc;
 
 	/* calculate the mbb of the query geometry */
 	geom = OGR_G_CreateGeometry(wkbPolygon);
@@ -635,7 +651,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	colsNum += shp_conn.numFieldDefinitions;
 	if(!(cols = (sql_column**)GDKmalloc(sizeof(sql_column*)*colsNum)))
 			return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
-	if(!(colsBAT = (BAT**)GDKmalloc(sizeof(BAT*)*colsNum)))
+	if(!(colsBAT = (BAT**)GDKzalloc(sizeof(BAT*)*colsNum)))
 			return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
 	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
 	for(i = 0; i < colsNum - 2; i++) {
@@ -647,27 +663,43 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		GDKfree(nameToLowerCase);
 		/*create the BAT */
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0) {
-			if(!(colsBAT[i] = COLnew(0, TYPE_int, rowsNum, PERSISTENT)))
-				return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			if(!(colsBAT[i] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
+				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
-			if(!(colsBAT[i] = COLnew(0, TYPE_dbl, rowsNum, PERSISTENT)))
-				return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			if(!(colsBAT[i] = COLnew(0, TYPE_dbl, rowsNum, PERSISTENT))) {
+				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
-        	if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT)))
-				return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
+				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		} else {
-			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT)))
-				return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
+				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		}
 	}
-	if(!(cols[colsNum - 2] = mvc_bind_column(m, data_table, "gid")))
-		return createException(MAL, "shp.import", "Column '%s.%s(gid)' missing", sch_name, data_table_name);
-	if(!(colsBAT[colsNum - 2] = COLnew(0, TYPE_int, rowsNum, PERSISTENT)))
-		return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
-	if(!(cols[colsNum - 1] = mvc_bind_column(m, data_table, "geom")))
-		return createException(MAL, "shp.import", "Column '%s.%s(geom)' missing", sch_name, data_table_name);
-	if(!(colsBAT[colsNum - 1] = COLnew(0, ATOMindex("wkb"), rowsNum, PERSISTENT)))
-		return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+	if(!(cols[colsNum - 2] = mvc_bind_column(m, data_table, "gid"))) {
+		msg = createException(MAL, "shp.import", "Column '%s.%s(gid)' missing", sch_name, data_table_name);
+		goto bailout;
+	}
+	if(!(colsBAT[colsNum - 2] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
+		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if(!(cols[colsNum - 1] = mvc_bind_column(m, data_table, "geom"))) {
+		msg = createException(MAL, "shp.import", "Column '%s.%s(geom)' missing", sch_name, data_table_name);
+		goto bailout;
+	}
+	if(!(colsBAT[colsNum - 1] = COLnew(0, ATOMindex("wkb"), rowsNum, PERSISTENT))) {
+		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 
 	/* apply the spatial filter */
 	OGR_L_SetSpatialFilterRect(shp_conn.layer, mbb->MinX, mbb->MinY, mbb->MaxX, mbb->MaxY);
@@ -685,18 +717,25 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			hFieldDefn = OGR_FD_GetFieldDefn( featureDefn, i );
 			if( OGR_Fld_GetType(hFieldDefn) == OFTInteger ) {
 				int val = OGR_F_GetFieldAsInteger(feature, i);
-				BUNappend(colsBAT[i], &val, TRUE);
+				rc = BUNappend(colsBAT[i], &val, TRUE);
 			} else if( OGR_Fld_GetType(hFieldDefn) == OFTReal ) {
 				double val = OGR_F_GetFieldAsDouble(feature, i);
-				BUNappend(colsBAT[i], &val, TRUE);
+				rc = BUNappend(colsBAT[i], &val, TRUE);
 			} else if( OGR_Fld_GetType(hFieldDefn) == OFTString ) {
-				BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
+				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
 			} else {
-				BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
+				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
+			}
+			if (rc != GDK_SUCCEED) {
+				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				goto bailout;
 			}
 		}
 	
-		BUNappend(colsBAT[colsNum - 2], &gidTemp, TRUE);
+		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, TRUE) != GDK_SUCCEED) {
+			msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 
 		len = OGR_G_WkbSize(geometry);
 		if (!(geomWKB = GDKmalloc(sizeof(wkb) - 1 + len)))
@@ -704,16 +743,26 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		geomWKB->len = len;
 		geomWKB->srid = 0; //TODO: Add the real srid
 		OGR_G_ExportToWkb(geometry, wkbNDR, (unsigned char *)geomWKB->data);
-		BUNappend(colsBAT[colsNum - 1], geomWKB, TRUE);
+		if (BUNappend(colsBAT[colsNum - 1], geomWKB, TRUE) != GDK_SUCCEED) {
+			msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 	}
-		
+
 	/* finalise the BATs */
 	for(i = 0; i < colsNum; i++) {
-		store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat);
-		BBPunfix(colsBAT[i]->batCacheid);
-		BBPrelease(colsBAT[i]->batCacheid);
+		if (store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat) != LOG_OK) {
+			msg = createException(MAL, "shp.import", "append_col failed");
+			goto bailout;
+		}
 	}
-		
+
+  bailout:
+	for(i = 0; i < colsNum; i++) {
+		if (colsBAT[i])
+			BBPunfix(colsBAT[i]->batCacheid);
+	}
+
 	/* free the memory */
 	GDKfree(cols);
 	GDKfree(colsBAT);

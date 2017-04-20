@@ -364,7 +364,11 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	}
 	BATloop(b, p, q) {
 		TYPE r = NIL(TYPE);
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -397,7 +401,11 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -437,7 +445,11 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.num_" STRING(TYPE), MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
