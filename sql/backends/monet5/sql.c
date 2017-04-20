@@ -1288,7 +1288,11 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 
 	if (i && BATcount(i)) {
 		i = BATdescriptor(*ins);
-		BATappend(res, i, NULL, TRUE);
+		if (BATappend(res, i, NULL, TRUE) != GDK_SUCCEED) {
+			BBPunfix(res->batCacheid);
+			BBPunfix(i->batCacheid);
+			throw(MAL, "sql.delta", GDK_EXCEPTION);
+		}
 		BBPunfix(i->batCacheid);
 	}
 

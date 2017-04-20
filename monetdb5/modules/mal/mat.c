@@ -77,7 +77,11 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				BAThseqbase(bn, b->hseqbase);
 				BATtseqbase(bn, b->tseqbase);
 			}
-			BATappend(bn, b, NULL, FALSE);
+			if (BATappend(bn, b, NULL, FALSE) != GDK_SUCCEED) {
+				BBPunfix(bn->batCacheid);
+				BBPunfix(b->batCacheid);
+				throw(MAL, "mat.pack", GDK_EXCEPTION);
+			}
 			BBPunfix(b->batCacheid);
 		}
 	}
@@ -117,7 +121,11 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		}
 		BATtseqbase(bn, b->tseqbase);
-		BATappend(bn, b, NULL, FALSE);
+		if (BATappend(bn, b, NULL, FALSE) != GDK_SUCCEED) {
+			BBPunfix(bn->batCacheid);
+			BBPunfix(b->batCacheid);
+			throw(MAL, "mat.pack", GDK_EXCEPTION);
+		}
 		assert(!bn->tnil || !bn->tnonil);
 		bn->S.unused = (pieces-1); /* misuse "unused" field */
 		BBPkeepref(*ret = bn->batCacheid);
@@ -130,7 +138,11 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				BAThseqbase(b, bb->hseqbase);
 				BATtseqbase(b, bb->tseqbase);
 			}
-			BATappend(b, bb, NULL, FALSE);
+			if (BATappend(b, bb, NULL, FALSE) != GDK_SUCCEED) {
+				BBPunfix(bb->batCacheid);
+				BBPunfix(b->batCacheid);
+				throw(MAL, "mat.pack", GDK_EXCEPTION);
+			}
 		}
 		b->S.unused--;
 		if(b->S.unused == 0)

@@ -640,10 +640,16 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		}
 		if (isVIEW(i) && b->batCacheid == VIEWtparent(i)) {
 			BAT *ic = COLcopy(i, i->ttype, TRUE, TRANSIENT);
-			BATappend(b, ic, NULL, TRUE);
+			if (BATappend(b, ic, NULL, TRUE) != GDK_SUCCEED) {
+				bat_destroy(ic);
+				bat_destroy(b);
+				return LOG_ERR;
+			}
 			bat_destroy(ic);
-		} else 
-			BATappend(b, i, NULL, TRUE);
+		} else if (BATappend(b, i, NULL, TRUE) != GDK_SUCCEED) {
+			bat_destroy(b);
+			return LOG_ERR;
+		}
 		assert(BUNlast(b) > b->batInserted);
 		bat_destroy(b);
 	}
@@ -835,7 +841,10 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 		b = temp_descriptor(bat->dbid);
 	}
 	assert(b->theap.storage != STORE_PRIV);
-	BATappend(b, i, NULL, TRUE);
+	if (BATappend(b, i, NULL, TRUE) != GDK_SUCCEED) {
+		bat_destroy(b);
+		return LOG_ERR;
+	}
 	BATkey(b, TRUE);
 	bat_destroy(b);
 
@@ -1892,7 +1901,11 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 	if (BUNlast(ins) > 0) {
 		(*changes)++;
 		assert(cur->theap.storage != STORE_PRIV);
-		BATappend(cur, ins, NULL, TRUE);
+		if (BATappend(cur, ins, NULL, TRUE) != GDK_SUCCEED) {
+			bat_destroy(ins);
+			bat_destroy(cur);
+			return LOG_ERR;
+		}
 		cbat->cnt = cbat->ibase = BATcount(cur);
 		BATcleanProps(cur);
 		temp_destroy(cbat->ibid);
@@ -2147,7 +2160,11 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			assert((BATcount(cur) + BATcount(ins)) == cbat->cnt);
 			//assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
 			assert(!BATcount(ins) || !isEbat(ins));
-			BATappend(cur, ins, NULL, TRUE);
+			if (BATappend(cur, ins, NULL, TRUE) != GDK_SUCCEED) {
+				bat_destroy(cur);
+				bat_destroy(ins);
+				return LOG_ERR;
+			}
 			BATcleanProps(cur);
 			temp_destroy(cbat->bid);
 			temp_destroy(cbat->ibid);
@@ -2227,7 +2244,11 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 			ins = cur;
 			cur = newcur;
 		} else {
-			BATappend(cur, ins, NULL, TRUE);
+			if (BATappend(cur, ins, NULL, TRUE) != GDK_SUCCEED) {
+				bat_destroy(cur);
+				bat_destroy(ins);
+				return LOG_ERR;
+			}
 			BATcleanProps(cur);
 			if (cur->batPersistence == PERSISTENT)
 				BATmsync(cur);

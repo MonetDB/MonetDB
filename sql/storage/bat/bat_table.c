@@ -83,8 +83,16 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 		if (BATcount(i)) {
 			r = COLcopy(b, b->ttype, 1, TRANSIENT); 
 			bat_destroy(b); 
+			if (r == NULL) {
+				bat_destroy(i);
+				return NULL;
+			}
 			b = r;
-			BATappend(b, i, NULL, TRUE);
+			if (BATappend(b, i, NULL, TRUE) != GDK_SUCCEED) {
+				bat_destroy(b);
+				bat_destroy(i);
+				return NULL;
+			}
 			needcopy = 0;
 		}
 		bat_destroy(i); 
