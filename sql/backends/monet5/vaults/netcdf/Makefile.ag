@@ -25,7 +25,7 @@ INCLUDES = .. \
 lib__netcdf = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = netcdf.c
+	SOURCES = netcdf.c netcdf_vault.h
 	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
 	       $(netcdf_LIBS)
 }
@@ -47,5 +47,3 @@ headers_netcdfautoload = {
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 74_netcdf.mal
 }
-
-EXTRA_DIST = 74_netcdf.mal netcdf.mal 74_netcdf.sql netcdf_vault.h

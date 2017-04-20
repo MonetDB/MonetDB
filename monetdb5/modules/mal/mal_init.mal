@@ -87,11 +87,6 @@ include iterator;
 include txtsim;
 include tokenizer;
 
-# include transaction; no direct access anymore to avoid SQL interference
-
-# scheduler components, experimental components
-include srvpool;
-
 include mal_mapi;
 include oltp;
 

@@ -81,15 +81,4 @@ headers_hge = {
 		00_mal_mapi_hge.mal 00_mkey_hge.mal 00_batExtensions_hge.mal
 }
 
-EXTRA_DIST = batExtensions.mal iterator.mal \
-	groupby.mal mal_init.mal manual.mal mkey.mal manifold.mal pcre.mal \
-	profiler.mal remote.mal sabaoth.mal orderidx.mal \
-	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal json_util.mal \
-	mal_mapi.mal mat.mal tokenizer.mal \
-	batmtime.mal querylog.mal sysmon.mal \
-	01_calc.mal 01_batcalc.mal \
-	00_calc_hge.mal 00_batcalc_hge.mal \
-	00_iterator_hge.mal 00_language_hge.mal \
-	00_mal_mapi_hge.mal 00_mkey_hge.mal 00_batExtensions_hge.mal
-
 EXTRA_DIST_DIR = Tests
