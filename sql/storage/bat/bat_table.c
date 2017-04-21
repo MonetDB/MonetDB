@@ -369,13 +369,18 @@ static rids *
 rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 {
 	BAT *lcb, *rcb, *s = NULL, *d = NULL;
+	gdk_return ret;
 	
 	lcb = full_column(tr, lc);
 	rcb = full_column(tr, rc);
-	BATjoin(&s, &d, lcb, rcb, l->data, r->data, FALSE, BATcount(lcb));
+	ret = BATjoin(&s, &d, lcb, rcb, l->data, r->data, FALSE, BATcount(lcb));
 	bat_destroy(l->data);
 	bat_destroy(d);
-	l->data = s;
+	if (ret != GDK_SUCCEED) {
+		l->data = NULL;
+	} else {
+		l->data = s;
+	}
 	full_destroy(lc, lcb);
 	full_destroy(rc, rcb);
 	return l;
@@ -516,6 +521,7 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 {
 	BAT *lcb = full_column(tr, lc), *s, *d, *rids, *diff;
 	BAT *rcb = full_column(tr, rc);
+	gdk_return ret;
 
 	s = BATproject(r->rids, rcb);
 	full_destroy(rc, rcb);
@@ -525,14 +531,19 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 
 	diff = BATdiff(s, rcb, NULL, NULL, 0, BUN_NONE);
 
-	BATjoin(&rids, &d, lcb, s, NULL, diff, FALSE, BATcount(s));
+	ret = BATjoin(&rids, &d, lcb, s, NULL, diff, FALSE, BATcount(s));
 	bat_destroy(diff);
 	bat_destroy(d);
 	full_destroy(lc, lcb);
 	bat_destroy(s);
 
 	bat_destroy(l->data);
-	l->data = rids;
+	if (ret != GDK_SUCCEED) {
+		l->data = NULL;
+	}
+	else {
+		l->data = rids;
+	}
 	return l;
 }
 
