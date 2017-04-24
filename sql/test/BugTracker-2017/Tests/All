@@ -45,3 +45,4 @@ wrong_aggregation_count.Bug-6257
 select.Bug-6259
 function_and_mergetable.Bug-6288
 crash_in_in_handling.Bug-6260
+nestedoperators.Bug-6292
