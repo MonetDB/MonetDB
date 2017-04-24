@@ -1274,7 +1274,7 @@ sql_update_dec2016_sp2(Client c, mvc *sql)
 }
 
 static str
-sql_update_default(Client c, mvc *sql)
+sql_update_jul2017(Client c, mvc *sql)
 {
 	size_t bufsize = 10000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
@@ -1522,7 +1522,7 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if (mvc_bind_table(m, s, "function_languages") == NULL) {
-		if ((err = sql_update_default(c, m)) != NULL) {
+		if ((err = sql_update_jul2017(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
