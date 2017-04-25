@@ -1085,48 +1085,47 @@ SQLload_parse_line(READERtask *task, int idx)
 			if (!fmt->skip && (!quote || !fmt->null_length) && fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0)
 				task->fields[i][idx] = 0;
 		}
-		goto endofline;
-	}
-	assert(!task->quote);
-	assert(task->seplen == 1);
-	for (i = 0; i < as->nr_attrs; i++) {
-		task->fields[i][idx] = line;
+	} else {
+		assert(!task->quote);
+		assert(task->seplen == 1);
+		for (i = 0; i < as->nr_attrs; i++) {
+			task->fields[i][idx] = line;
 #ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout, "before #2 %s\n", line);
+			mnstr_printf(GDKout, "before #2 %s\n", line);
 #endif
-		/* eat away the column separator */
-		for (; *line; line++)
-			if (*line == '\\') {
-				if (line[1])
+			/* eat away the column separator */
+			for (; *line; line++)
+				if (*line == '\\') {
+					if (line[1])
+						line++;
+				} else if (*line == ch) {
+					*line = 0;
 					line++;
-			} else if (*line == ch) {
-				*line = 0;
-				line++;
-				goto endoffield2;
-			}
+					goto endoffield2;
+				}
 #ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout, "#after #23 %s\n", line);
+			mnstr_printf(GDKout, "#after #23 %s\n", line);
 #endif
-		/* not enough fields */
-		if (i < as->nr_attrs - 1) {
-			errline = SQLload_error(task, idx,i+1);
-			snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing",i+1);
-			tablet_error(task, idx, (int) i, errmsg, errline);
-			GDKfree(errline);
-			error++;
-			/* we save all errors detected */
-			for (; i < as->nr_attrs; i++)
-				task->fields[i][idx] = NULL;
-			i--;
-		}
-	  endoffield2:
-		;
-		/* check for user defined NULL string */
-		if (fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0) {
-			task->fields[i][idx] = 0;
+			/* not enough fields */
+			if (i < as->nr_attrs - 1) {
+				errline = SQLload_error(task, idx,i+1);
+				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing",i+1);
+				tablet_error(task, idx, (int) i, errmsg, errline);
+				GDKfree(errline);
+				error++;
+				/* we save all errors detected */
+				for (; i < as->nr_attrs; i++)
+					task->fields[i][idx] = NULL;
+				i--;
+			}
+		  endoffield2:
+			;
+			/* check for user defined NULL string */
+			if (fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0) {
+				task->fields[i][idx] = 0;
+			}
 		}
 	}
-endofline:
 	/* check for too many values as well*/
 	if (line && *line && i == as->nr_attrs) {
 		errline = SQLload_error(task, idx, task->as->nr_attrs);
@@ -1867,7 +1866,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 #define trimerrors(TYPE)												\
 		do {															\
 			TYPE *src, *dst;											\
-			leftover= BATcount(task->as->format[attr].c);			\
+			leftover= BATcount(task->as->format[attr].c);				\
 			limit = leftover - cntstart;								\
 			dst =src= (TYPE *) BUNtloc(task->as->format[attr].ci,cntstart);	\
 			for(j = 0; j < (int) limit; j++, src++){					\
