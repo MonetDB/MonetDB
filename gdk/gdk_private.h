@@ -226,6 +226,13 @@ __hidden int CANDbinsearch(const oid *cand, BUN lo, BUN hi, oid v)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *CANDnewdense(oid first, oid last)
 	__attribute__((__visibility__("hidden")));
+__hidden BAT *CANDslice(BAT *s, BUN l, BUN h)
+	__attribute__((__visibility__("hidden")));
+__hidden BAT *CANDdoubleslice(BAT *s, BUN l1, BUN h1, BUN l2, BUN h2)
+	__attribute__((__visibility__("hidden")));
+__hidden BAT *CANDdoublerange(oid l1, oid h1, oid l2, oid h2)
+	__attribute__((__visibility__("hidden")));
+
 
 
 __hidden void gdk_bbp_reset(void)

@@ -46,74 +46,6 @@ newempty(void)
 	return bn;
 }
 
-static BAT *
-doublerange(oid l1, oid h1, oid l2, oid h2)
-{
-	BAT *bn;
-	oid *restrict p;
-
-	assert(l1 <= h1);
-	assert(l2 <= h2);
-	assert(h1 <= l2);
-	if (l1 == h1 || l2 == h2) {
-		bn = COLnew(0, TYPE_void, h1 - l1 + h2 - l2, TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATsetcount(bn, h1 - l1 + h2 - l2);
-		BATtseqbase(bn, l1 == h1 ? l2 : l1);
-		return bn;
-	}
-	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	BATsetcount(bn, h1 - l1 + h2 - l2);
-	p = (oid *) Tloc(bn, 0);
-	while (l1 < h1)
-		*p++ = l1++;
-	while (l2 < h2)
-		*p++ = l2++;
-	bn->tkey = 1;
-	bn->tsorted = 1;
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->tnil = 0;
-	bn->tnonil = 1;
-	return bn;
-}
-
-static BAT *
-doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
-{
-	BAT *bn;
-	oid *restrict p;
-	const oid *restrict o;
-
-	assert(l1 <= h1);
-	assert(l2 <= h2);
-	assert(h1 <= l2);
-	assert(b->tsorted);
-	assert(b->tkey);
-	if (b->ttype == TYPE_void)
-		return doublerange(l1 + b->tseqbase, h1 + b->tseqbase,
-				   l2 + b->tseqbase, h2 + b->tseqbase);
-	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	BATsetcount(bn, h1 - l1 + h2 - l2);
-	p = (oid *) Tloc(bn, 0);
-	o = (const oid *) Tloc(b, l1);
-	while (l1++ < h1)
-		*p++ = *o++;
-	o = (const oid *) Tloc(b, l2);
-	while (l2++ < h2)
-		*p++ = *o++;
-	bn->tkey = 1;
-	bn->tsorted = 1;
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->tnil = 0;
-	bn->tnonil = 1;
-	return CANDvirtualize(bn);
-}
-
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\
 	for (hb = HASHget(h, HASHprobe((h), v));	\
 	     hb != HASHnil(h);				\
@@ -1359,7 +1291,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			oid o = b->hseqbase + BATcount(b);
 			BUN q = SORTfndfirst(s, &o);
 			BUN p = SORTfndfirst(s, &b->hseqbase);
-			return BATslice(s, p, q);
+			return CANDslice(s, p, q);
 		} else {
 			return BATdense(0, b->hseqbase, BATcount(b));
 		}
@@ -1552,9 +1484,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					high = SORTfndfirst(s, &o);
 					o = b->hseqbase + b->batCount;
 					last = SORTfndfirst(s, &o);
-					bn = doubleslice(s, first, low, high, last);
+					bn = CANDdoubleslice(s, first, low, high, last);
 				} else {
-					bn = doublerange(first + b->hseqbase,
+					bn = CANDdoublerange(first + b->hseqbase,
 							 low + b->hseqbase,
 							 high + b->hseqbase,
 							 BATcount(b) + b->hseqbase);
@@ -1576,9 +1508,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					high = SORTfndfirst(s, &o);
 					o = b->hseqbase;
 					first = SORTfndfirst(s, &o);
-					bn = doubleslice(s, first, low, high, last);
+					bn = CANDdoubleslice(s, first, low, high, last);
 				} else {
-					bn = doublerange(0 + b->hseqbase,
+					bn = CANDdoublerange(0 + b->hseqbase,
 							 low + b->hseqbase,
 							 high + b->hseqbase,
 							 last + b->hseqbase);
@@ -1628,9 +1560,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					low = SORTfndfirst(s, &o);
 					o = (oid) high + b->hseqbase;
 					high = SORTfndfirst(s, &o);
-					bn = doubleslice(s, 0, 0, low, high);
+					bn = CANDdoubleslice(s, 0, 0, low, high);
 				} else {
-					bn = doublerange(0, 0,
+					bn = CANDdoublerange(0, 0,
 						         low + b->hseqbase,
 						         high + b->hseqbase);
 				}

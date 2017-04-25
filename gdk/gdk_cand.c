@@ -20,14 +20,14 @@
 BAT *
 CANDnewdense(oid first, oid last)
 {
-	BAT *bn;
-	if ((bn = COLnew(0, TYPE_void, 0, TRANSIENT)) == NULL)
+	BAT *s;
+	if ((s = COLnew(0, TYPE_void, 0, TRANSIENT)) == NULL)
 		return NULL;
 	if (last < first)
 		first = last = 0; /* empty range */
-	BATsetcount(bn, last - first + 1);
-	BATtseqbase(bn, first);
-	return bn;
+	BATsetcount(s, last - first + 1);
+	BATtseqbase(s, first);
+	return s;
 }
 
 /* binary search in a candidate list, return 1 if found, 0 if not */
@@ -87,3 +87,76 @@ CANDvirtualize(BAT *bn)
 	return bn;
 }
 
+BAT *
+CANDdoublerange(oid l1, oid h1, oid l2, oid h2)
+{
+	BAT *bn;
+	oid *restrict p;
+
+	assert(l1 <= h1);
+	assert(l2 <= h2);
+	assert(h1 <= l2);
+	if (l1 == h1 || l2 == h2) {
+		bn = COLnew(0, TYPE_void, h1 - l1 + h2 - l2, TRANSIENT);
+		if (bn == NULL)
+			return NULL;
+		BATsetcount(bn, h1 - l1 + h2 - l2);
+		BATtseqbase(bn, l1 == h1 ? l2 : l1);
+		return bn;
+	}
+	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	BATsetcount(bn, h1 - l1 + h2 - l2);
+	p = (oid *) Tloc(bn, 0);
+	while (l1 < h1)
+		*p++ = l1++;
+	while (l2 < h2)
+		*p++ = l2++;
+	bn->tkey = 1;
+	bn->tsorted = 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
+	return bn;
+}
+
+BAT *
+CANDdoubleslice(BAT *s, BUN l1, BUN h1, BUN l2, BUN h2)
+{
+	BAT *bn;
+	oid *restrict p;
+	const oid *restrict o;
+
+	assert(l1 <= h1);
+	assert(l2 <= h2);
+	assert(h1 <= l2);
+	assert(s->tsorted);
+	assert(s->tkey);
+	if (s->ttype == TYPE_void)
+		return CANDdoublerange(l1 + s->tseqbase, h1 + s->tseqbase,
+				   l2 + s->tseqbase, h2 + s->tseqbase);
+	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	BATsetcount(bn, h1 - l1 + h2 - l2);
+	p = (oid *) Tloc(bn, 0);
+	o = (const oid *) Tloc(s, l1);
+	while (l1++ < h1)
+		*p++ = *o++;
+	o = (const oid *) Tloc(s, l2);
+	while (l2++ < h2)
+		*p++ = *o++;
+	bn->tkey = 1;
+	bn->tsorted = 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
+	return CANDvirtualize(bn);
+}
+
+BAT *
+CANDslice(BAT *s, BUN l, BUN h)
+{
+	return CANDdoubleslice(s, 0,0, l, h);
+}
