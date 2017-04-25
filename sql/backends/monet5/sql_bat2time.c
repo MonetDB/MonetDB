@@ -52,7 +52,11 @@ batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &u.r, FALSE);
+		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -95,7 +99,11 @@ battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &u.r, FALSE);
+		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -131,7 +139,11 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &u.r, FALSE);
+		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -167,7 +179,11 @@ batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &u.r, FALSE);
+		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -210,7 +226,11 @@ batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &u.r, FALSE);
+		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -246,7 +266,11 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &u.r, FALSE);
+		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);

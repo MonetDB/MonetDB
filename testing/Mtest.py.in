@@ -55,6 +55,23 @@ else:
     # no coloring if not to a tty
     RED = GREEN = PURPLE = BLACK = ''
 
+if os.path.exists('/usr/bin/coredumpctl'):
+    # probably Linux if /usr/bin/coredumpctl exists
+    # try raising the core dump size limit to infinite so that when we
+    # get a crash we have a chance to retrieve the stack trace
+    try:
+        import resource
+    except ImportError:
+        pass
+    else:
+        try:
+            resource.setrlimit(resource.RLIMIT_CORE,
+                               (resource.RLIM_INFINITY,
+                                resource.getrlimit(resource.RLIMIT_CORE)[1]))
+        except ValueError:
+            # if we can't raise the limit, just forget it
+            pass
+
 def ErrExit(msg):
     sys.stderr.write(msg + '\n')
     sys.exit(1)
@@ -1526,6 +1543,18 @@ def returnCode(proc, f = None):
         if proc.returncode == -signal.SIGSEGV:
             if f is not None:
                 f.write('\nSegmentation fault\n')
+                if os.path.exists('/usr/bin/coredumpctl'):
+                    # wait a few seconds for the core to be dumped
+                    time.sleep(10)
+                    if procdebug:
+                        print('Starting: coredumpctl info %d' % proc.pid)
+                    p = process.Popen(['coredumpctl', 'info', str(proc.pid)],
+                                      stdout = process.PIPE,
+                                      stderr = process.PIPE,
+                                      universal_newlines = True)
+                    out, err = p.communicate()
+                    if not err and out:
+                        f.write(out)
                 f.flush()
             return 'segfault'   # Segmentation fault
         if proc.returncode == -signal.SIGBUS:
@@ -1536,6 +1565,18 @@ def returnCode(proc, f = None):
         if proc.returncode == -signal.SIGABRT:
             if f is not None:
                 f.write('\nAborted\n')
+                if os.path.exists('/usr/bin/coredumpctl'):
+                    # wait a few seconds for the core to be dumped
+                    time.sleep(10)
+                    if procdebug:
+                        print('Starting: coredumpctl info %d' % proc.pid)
+                    p = process.Popen(['coredumpctl', 'info', str(proc.pid)],
+                                      stdout = process.PIPE,
+                                      stderr = process.PIPE,
+                                      universal_newlines = True)
+                    out, err = p.communicate()
+                    if not err and out:
+                        f.write(out)
                 f.flush()
             return 'abort'      # Aborted
         if proc.returncode == -signal.SIGINT:

@@ -2531,7 +2531,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		     BATcheckorderidx(pb))) {
 			ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
 		} else {
-			BATsort(NULL, &t1, NULL, b, NULL, g, 0, 0);
+			if (BATsort(NULL, &t1, NULL, b, NULL, g, 0, 0) != GDK_SUCCEED)
+				goto bunins_failed;
 			if (BATtdense(t1))
 				ords = NULL;
 			else

@@ -96,8 +96,10 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 void
 freeStack(MalStkPtr stk)
 {
-	clearStack(stk);
-	GDKfree(stk);
+	if (stk != NULL) {
+		clearStack(stk);
+		GDKfree(stk);
+	}
 }
 
 void

@@ -59,6 +59,11 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		sql_init_subtype(&c->type, sql_trans_bind_type(tr, NULL, typename), digits, scale);
 	c->tn = _STRDUP(tn);
 	c->name = _STRDUP(name);
+	if (c->tn == NULL || c->name == NULL) {
+		_DELETE(c->tn);
+		_DELETE(c->name);
+		return NULL;
+	}
 	c->b = 0;
 	c->p = NULL;
 	c->mtype = mtype;
@@ -66,13 +71,34 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		b = (BAT*)val;
 	} else { // wrap scalar values in BATs for result consistency
 		b = COLnew(0, mtype, 1, TRANSIENT);
-		assert (b != NULL);
-		BUNappend(b, val, FALSE);
+		if (b == NULL) {
+			_DELETE(c->tn);
+			_DELETE(c->name);
+			return NULL;
+		}
+		if (BUNappend(b, val, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			_DELETE(c->tn);
+			_DELETE(c->name);
+			return NULL;
+		}
 		/* we need to set the order bat otherwise mvc_export_result won't work with single-row result sets containing BATs */
 		if (!t->order) {
 			oid zero = 0;
 			BAT *o = COLnew(0, TYPE_oid, 1, TRANSIENT);
-			BUNappend(o, &zero, FALSE);
+			if (o == NULL) {
+				BBPreclaim(b);
+				_DELETE(c->tn);
+				_DELETE(c->name);
+				return NULL;
+			}
+			if (BUNappend(o, &zero, FALSE) != GDK_SUCCEED) {
+				BBPreclaim(b);
+				BBPreclaim(o);
+				_DELETE(c->tn);
+				_DELETE(c->name);
+				return NULL;
+			}
 			t->order = o->batCacheid;
 			bat_incref(t->order);
 		}

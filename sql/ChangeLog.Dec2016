@@ -1,6 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Tue Apr 18 2017 Sjoerd Mullender <sjoerd@acm.org>
-- Some memory leaks were plugged.
-

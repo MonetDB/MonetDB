@@ -24,7 +24,7 @@ INCLUDES = ../../../include \
 lib__vault = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = vault.c
+	SOURCES = vault.c vault.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 	       ../../../../gdk/libbat $(curl_LIBS)
 }
@@ -48,4 +48,3 @@ headers_autoload = {
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 70_vault.mal vault.mal vault.sql vault.h

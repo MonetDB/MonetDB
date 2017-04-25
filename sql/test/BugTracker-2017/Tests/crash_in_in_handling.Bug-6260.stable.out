@@ -1,0 +1,53 @@
+stdout of test 'crash_in_in_handling.Bug-6260` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 14:07:27 >  
+# 14:07:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39677" "--set" "mapi_usock=/var/tmp/mtest-29945/.s.monetdb.39677" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 14:07:27 >  
+
+# MonetDB 5 server v11.25.10
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39677/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29945/.s.monetdb.39677
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:07:27 >  
+# 14:07:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29945" "--port=39677"
+# 14:07:27 >  
+
+#CREATE TABLE tab0(pk INTEGER PRIMARY KEY, col0 INTEGER, col1 FLOAT, col2 TEXT, col3 INTEGER, col4 FLOAT, col5 TEXT);
+#INSERT INTO tab0 VALUES(0,698,169.42,'apdbu',431,316.15,'sqvis');
+[ 1	]
+#INSERT INTO tab0 VALUES(1,538,676.36,'fuqeu',514,685.97,'bgwrq');
+[ 1	]
+#INSERT INTO tab0 VALUES(2,90,205.26,'yrrzx',123,836.88,'kpuhc');
+[ 1	]
+#INSERT INTO tab0 VALUES(3,620,864.8,'myrdv',877,820.98,'oxkuv');
+[ 1	]
+#INSERT INTO tab0 VALUES(4,754,677.3,'iofrg',67,665.49,'bzqba');
+[ 1	]
+#INSERT INTO tab0 VALUES(5,107,710.19,'lhfro',286,504.28,'kwwsg');
+[ 1	]
+#INSERT INTO tab0 VALUES(6,904,193.16,'eozui',48,698.55,'ejyzs');
+[ 1	]
+#INSERT INTO tab0 VALUES(7,606,650.64,'ovmce',417,962.43,'dvkbh');
+[ 1	]
+#INSERT INTO tab0 VALUES(8,535,18.11,'ijika',630,489.63,'hpnyu');
+[ 1	]
+#INSERT INTO tab0 VALUES(9,501,776.40,'cvygg',725,75.5,'etlyv');
+[ 1	]
+#drop table tab0;
+
+# 14:07:27 >  
+# 14:07:27 >  "Done."
+# 14:07:27 >  
+

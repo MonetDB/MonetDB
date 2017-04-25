@@ -41,8 +41,11 @@ setaccess(BAT *b, int mode)
 	if (BATsetaccess(b, mode) != GDK_SUCCEED) {
 		if (b->batSharecnt && mode != BAT_READ) {
 			bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
-			if (bn != NULL)
-				BATsetaccess(bn, mode);
+			if (bn != NULL &&
+				BATsetaccess(bn, mode) != GDK_SUCCEED) {
+				BBPreclaim(bn);
+				bn = NULL;
+			}
 		} else {
 			bn = NULL;
 		}

@@ -1,3 +1,30 @@
+monetdb (11.25.19) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6259: crash on select query from sqlitelogictests
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Apr 2017 10:14:40 +0200
+
+monetdb (11.25.19) unstable; urgency=low
+
+  * gdk: A potential deadlock was fixed in order index creation.
+  * gdk: A bug that could happen during recovery of the write-ahead log (WAL)
+    was fixed.  See changeset 98ad79c555cc for details.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Apr 2017 10:14:40 +0200
+
+monetdb (11.25.19) unstable; urgency=low
+
+  * monetdb5: Some memory leaks were plugged.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Apr 2017 10:14:40 +0200
+
+monetdb (11.25.19) unstable; urgency=low
+
+  * sql: Some memory leaks were plugged.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Apr 2017 10:14:40 +0200
+
 monetdb (11.25.17) unstable; urgency=low
 
   * Rebuilt.
