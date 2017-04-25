@@ -1957,7 +1957,7 @@ BATmergecand(BAT *a, BAT *b)
 	bn->tkey = 1;
 	bn->tnil = 0;
 	bn->tnonil = 1;
-	return virtualize(bn);
+	return CANDvirtualize(bn);
 }
 
 /* intersect two candidate lists and produce a new one
@@ -2044,5 +2044,5 @@ BATintersectcand(BAT *a, BAT *b)
 	bn->tkey = 1;
 	bn->tnil = 0;
 	bn->tnonil = 1;
-	return virtualize(bn);
+	return CANDvirtualize(bn);
 }

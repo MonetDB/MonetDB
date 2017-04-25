@@ -99,6 +99,13 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 		GDKerror("%s: candidate lists must be unique.\n", func);
 		return GDK_FAIL;
 	}
+	if (!viewless(l) || !viewless(r1) || (r2 && !viewless(r2))) {
+		/*
+		GDKerror("%s: inputs are views.\n", func);
+		assert(0);
+		return GDK_FAIL;
+		*/
+	}
 	return GDK_SUCCEED;
 }
 
@@ -236,11 +243,11 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		r2->tnonil = 1;
 	}
 	if (lstart == lend || !(nil_on_miss | only_misses)) {
-		virtualize(r1);
+		CANDvirtualize(r1);
 		r1->trevsorted = 1;
 		r1->tnorevsorted = 0;
 		if (r2) {
-			virtualize(r2);
+			CANDvirtualize(r2);
 			r2->trevsorted = 1;
 			r2->tnorevsorted = 0;
 		}
@@ -740,9 +747,9 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
   doreturn:
 	if (r1->tkey)
-		virtualize(r1);
+		CANDvirtualize(r1);
 	if (r2 && r2->tkey && r2->tsorted)
-		virtualize(r2);
+		CANDvirtualize(r2);
 	ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
 			  BATgetId(r1), BATcount(r1),
@@ -2310,27 +2317,6 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_FAIL;
 }
 
-/* binary search in a candidate list, return 1 if found, 0 if not */
-inline int
-binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
-{
-	BUN mid;
-
-	--hi;			/* now hi is inclusive */
-	if (v < cand[lo] || v > cand[hi])
-		return 0;
-	while (hi > lo) {
-		mid = (lo + hi) / 2;
-		if (cand[mid] == v)
-			return 1;
-		if (cand[mid] < v)
-			lo = mid + 1;
-		else
-			hi = mid - 1;
-	}
-	return cand[lo] == v;
-}
-
 #define HASHLOOPBODY()							\
 	do {								\
 		if (BUNlast(r1) == BATcapacity(r1)) {			\
@@ -2582,7 +2568,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			} else if (rcand) {
 				HASHloop_bound(ri, hsh, rb, v, rl, rh) {
 					ro = (oid) (rb - rl + rseq);
-					if (!binsearchcand(rcand, 0, nrcand, ro))
+					if (!CANDbinsearch(rcand, 0, nrcand, ro))
 						continue;
 					if (only_misses) {
 						nr++;
@@ -2672,7 +2658,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 				if (nil_matches || cmp(v, nil) != 0) {
 					HASHloop_bound(ri, hsh, rb, v, rl, rh) {
 						ro = (oid) (rb - rl + rseq);
-						if (!binsearchcand(rcand, 0, nrcand, ro))
+						if (!CANDbinsearch(rcand, 0, nrcand, ro))
 							continue;
 						if (only_misses) {
 							nr++;
@@ -3528,7 +3514,7 @@ fetchjoin(BAT *r1, BAT *r2, BAT *l, BAT *r)
 		r2->tsorted = 1;
 		r2->trevsorted = e - b <= 1;
 		r2->tseqbase = e == b ? 0 : r->hseqbase + b;
-		virtualize(r2);
+		CANDvirtualize(r2);
 	}
 	if (BATextend(r1, e - b) != GDK_SUCCEED)
 		goto bailout;

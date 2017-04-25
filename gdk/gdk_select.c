@@ -35,41 +35,6 @@ float nextafterf(float x, float y);
 		A[(I)] = (V);						\
 	} while (0)
 
-BAT *
-virtualize(BAT *bn)
-{
-	/* input must be a valid candidate list or NULL */
-	assert(bn == NULL ||
-	       (((bn->ttype == TYPE_void && bn->tseqbase != oid_nil) ||
-		 bn->ttype == TYPE_oid) &&
-		bn->tkey && bn->tsorted));
-	/* since bn has unique and strictly ascending tail values, we
-	 * can easily check whether the tail is dense */
-	if (bn && bn->ttype == TYPE_oid &&
-	    (BATcount(bn) <= 1 ||
-	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
-	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
-		/* tail is dense, replace by virtual oid */
-		ALGODEBUG fprintf(stderr, "#virtualize(bn=%s#"BUNFMT",seq="OIDFMT")\n",
-				  BATgetId(bn), BATcount(bn),
-				  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
-		if (BATcount(bn) == 0)
-			bn->tseqbase = 0;
-		else
-			bn->tseqbase = * (const oid *) Tloc(bn, 0);
-		bn->tdense = 1;
-		HEAPfree(&bn->theap, 1);
-		bn->theap.storage = bn->theap.newstorage = STORE_MEM;
-		bn->theap.size = 0;
-		bn->ttype = TYPE_void;
-		bn->tvarsized = 1;
-		bn->twidth = 0;
-		bn->tshift = 0;
-	}
-
-	return bn;
-}
-
 static BAT *
 newempty(void)
 {
@@ -146,7 +111,7 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tnil = 0;
 	bn->tnonil = 1;
-	return virtualize(bn);
+	return CANDvirtualize(bn);
 }
 
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\
@@ -1221,6 +1186,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	BATcheck(b, "BATselect", NULL);
 	BATcheck(tl, "BATselect: tl value required", NULL);
+	if (!viewless(b)) {
+		/*
+		GDKerror("BATselect: inputs are views.\n");
+		assert(0);
+		return GDK_FAIL;
+		*/
+	}
 
 	assert(s == NULL || s->ttype == TYPE_oid || s->ttype == TYPE_void);
 	assert(hi == 0 || hi == 1);
@@ -1664,7 +1636,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				}
 			}
 		}
-		return virtualize(bn);
+		return CANDvirtualize(bn);
 	}
 
 	/* upper limit for result size */
@@ -1764,9 +1736,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			delta = 1000 / 3 / 2;
 			skip = (BATcount(b) - (2 * delta)) / 2;
 			for (pos = delta; pos < BATcount(b); pos += skip) {
-				smpl = BATslice(b, pos - delta, pos + delta);
+				smpl = CANDnewdense(pos - delta, pos + delta);
 				if (smpl) {
-					slct = BATselect(smpl, NULL, tl,
+					slct = BATselect(b, smpl, tl,
 							    th, li, hi, anti);
 					if (slct) {
 						smpl_cnt += BATcount(smpl);
@@ -1826,7 +1798,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				    lval, hval, maximum, use_imprints);
 	}
 
-	return virtualize(bn);
+	return CANDvirtualize(bn);
 }
 
 /* theta select

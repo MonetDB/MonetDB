@@ -1061,7 +1061,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		en->trevsorted = ngrp == 1;
 		en->tnonil = 1;
 		en->tnil = 0;
-		*extents = virtualize(en);
+		*extents = CANDvirtualize(en);
 	}
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
