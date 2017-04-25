@@ -140,7 +140,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		if (n >= (BUN) (candend - cand)) {
 			/* trivial: return the candidate list (the
 			 * part that refers to b, that is) */
-			return BATslice(s,
+			return CANDslice(s,
 					(BUN) (cand - (const oid *) Tloc(s, 0)),
 					(BUN) (candend - (const oid *) Tloc(s, 0)));
 		}
@@ -163,12 +163,12 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 				/* return copy of first relevant part
 				 * of candidate list */
 				i = (BUN) (cand - (const oid *) Tloc(s, 0));
-				return BATslice(s, i, i + n);
+				return CANDslice(s, i, i + n);
 			}
 			/* return copy of last relevant part of
 			 * candidate list */
 			i = (BUN) (candend - (const oid *) Tloc(s, 0));
-			return BATslice(s, i - n, i);
+			return CANDslice(s, i - n, i);
 		}
 		bn = COLnew(0, TYPE_void, n, TRANSIENT);
 		if (bn == NULL)
@@ -374,7 +374,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	if (BATtdense(g)) {
 		/* trivial: g determines ordering, return initial
 		 * slice of s */
-		return BATslice(s, 0, n);
+		return CANDslice(s, 0, n);
 	}
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -916,7 +916,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	if (BATtdense(g)) {
 		/* trivial: g determines ordering, return initial
 		 * slice of s */
-		bn = BATslice(s, 0, n);
+		bn = CANDslice(s, 0, n);
 		gn = gids ? BATslice(g, 0, n) : NULL;
 		if (bn == NULL || (gids != NULL && gn == NULL)) {
 			BBPreclaim(bn);
