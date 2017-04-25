@@ -140,13 +140,19 @@ CANDdoubleslice(BAT *s, BUN l1, BUN h1, BUN l2, BUN h2)
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, h1 - l1 + h2 - l2);
-	p = (oid *) Tloc(bn, 0);
-	o = (const oid *) Tloc(s, l1);
-	while (l1++ < h1)
-		*p++ = *o++;
-	o = (const oid *) Tloc(s, l2);
-	while (l2++ < h2)
-		*p++ = *o++;
+	if (l1 == 0 && h1 == 0) {
+		/* explicitly requesting one slice thus using memcpy */
+		memcpy(Tloc(bn, 0), Tloc(s, l2),
+		       (h2 - l2) * Tsize(bn));
+	} else {
+		p = (oid *) Tloc(bn, 0);
+		o = (const oid *) Tloc(s, l1);
+		while (l1++ < h1)
+			*p++ = *o++;
+		o = (const oid *) Tloc(s, l2);
+		while (l2++ < h2)
+			*p++ = *o++;
+	}
 	bn->tkey = 1;
 	bn->tsorted = 1;
 	bn->trevsorted = BATcount(bn) <= 1;
@@ -158,6 +164,5 @@ CANDdoubleslice(BAT *s, BUN l1, BUN h1, BUN l2, BUN h2)
 BAT *
 CANDslice(BAT *s, BUN l, BUN h)
 {
-	/* TODO: a memcopy might be faster */
 	return CANDdoubleslice(s, 0, 0, l, h);
 }
