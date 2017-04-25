@@ -32,6 +32,7 @@ def main():
     else:
         folder = r'ProgramFilesFolder'
         arch = 'x86'
+    vs = os.getenv('vs')        # inherited from TestTools\common.bat
     features = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
@@ -47,7 +48,7 @@ def main():
     print(r'    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC140_CRT_%s.msm"/>' % arch)
+    print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
     print(r'      <Directory Id="%s">' % folder)
     print(r'        <Directory Id="ProgramFilesMonetDB" Name="MonetDB">')
     print(r'          <Directory Id="INSTALLDIR" Name="MonetDB5">')
