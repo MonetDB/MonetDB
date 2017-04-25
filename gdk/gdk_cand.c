@@ -158,5 +158,6 @@ CANDdoubleslice(BAT *s, BUN l1, BUN h1, BUN l2, BUN h2)
 BAT *
 CANDslice(BAT *s, BUN l, BUN h)
 {
-	return CANDdoubleslice(s, 0,0, l, h);
+	/* TODO: a memcopy might be faster */
+	return CANDdoubleslice(s, 0, 0, l, h);
 }
