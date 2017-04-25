@@ -574,7 +574,7 @@ WLRaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLRcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
+{
 	return WLRquery(cntxt,mb,stk,pci);
 }
 
@@ -589,22 +589,31 @@ WLRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+/* TODO: Martin take a look at this.
+ *
+ * PSA: DO NOT USE THIS OUT OF WLRappend or very bad things will happen!
+ * (variable msg and tag cleanup will not be defined).
+ */
 #define WLRcolumn(TPE) \
-		for( i = 4; i < pci->argc; i++){\
-			TPE val = *getArgReference_##TPE(stk,pci,i);\
-			BUNappend(ins, (void*) &val, FALSE);\
-		}
+        for( i = 4; i < pci->argc; i++){                                \
+                TPE val = *getArgReference_##TPE(stk,pci,i);            \
+                if (BUNappend(ins, (void*) &val, FALSE) != GDK_SUCCEED) { \
+                        msg = createException(MAL, "WLRappend", "BUNappend failed"); \
+                        goto cleanup;                                   \
+                }                                                       \
+        }
 
 str
 WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str sname, tname, cname;
-    int tpe,i;
+{
+        str sname, tname, cname;
+        int tpe,i;
 	mvc *m=NULL;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
 	BAT *ins = 0;
-	str msg= MAL_SUCCEED;
+        str msg = MAL_SUCCEED;
 
 	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
@@ -646,7 +655,10 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_str:
 		for( i = 4; i < pci->argc; i++){
 			str val = *getArgReference_str(stk,pci,i);
-			BUNappend(ins, (void*) val, FALSE);
+                        if (BUNappend(ins, (void*) val, FALSE) != GDK_SUCCEED) {
+                                msg = createException(MAL, "WLRappend", "BUNappend failed");
+                                goto cleanup;
+                        }
 		}
 		break;
 	}
@@ -657,17 +669,18 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
 			store_funcs.append_idx(m->session->tr, i, ins, tpe);
-	}
+        }
+  cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
 
-	return MAL_SUCCEED;
+        return msg;
 }
 
 str
 WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
+{
 	str sname, tname;
-    int i;
+        int i;
 	mvc *m=NULL;
 	sql_schema *s;
 	sql_table *t;
@@ -700,20 +713,31 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i = 3; i < pci->argc; i++){
 		o = *getArgReference_oid(stk,pci,i);
-		BUNappend(ins, (void*) &o, FALSE);
+                if (BUNappend(ins, (void*) &o, FALSE) != GDK_SUCCEED) {
+                        msg = createException(MAL, "WLRdelete", "BUNappend failed");
+                        goto cleanup;
+                }
 	}
 
-    store_funcs.delete_tab(m->session->tr, t, ins, TYPE_bat);
+        store_funcs.delete_tab(m->session->tr, t, ins, TYPE_bat);
+  cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
 
-	return MAL_SUCCEED;
+        return msg;
 }
 
-#define WLRvalue(TPE) \
-{	TPE val = *getArgReference_##TPE(stk,pci,5);\
-	BUNappend(upd, (void*) &val, FALSE);\
-}
-
+/* TODO: Martin take a look at this.
+ *
+ * PSA: DO NOT USE THIS OUT OF WLRupdate or very bad things will happen!
+ * (variable msg and tag cleanup will not be defined).
+ */
+#define WLRvalue(TPE)                                                   \
+        {	TPE val = *getArgReference_##TPE(stk,pci,5);            \
+                if (BUNappend(upd, (void*) &val, FALSE) != GDK_SUCCEED) { \
+                        msg = createException(MAL, "WLRupdate", "BUNappend failed"); \
+                        goto cleanup;                                   \
+                }                                                       \
+        }
 
 str
 WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -757,7 +781,10 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(((BAT *) tids)->batCacheid);
 		throw(SQL,"WLRupdate",MAL_MALLOC_FAIL);
 	}
-	BUNappend(tids, &o, FALSE);
+        if (BUNappend(tids, &o, FALSE) != GDK_SUCCEED) {
+                msg = createException(MAL, "WLRupdate", "BUNappend failed");
+                goto cleanup;
+        }
 
 	switch(ATOMstorage(tpe)){
 	case TYPE_bit: WLRvalue(bit); break;
@@ -772,26 +799,32 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_hge: WLRvalue(hge); break;
 #endif
 	case TYPE_str:
-		{ 	str val = *getArgReference_str(stk,pci,5);
-			BUNappend(upd, (void*) val, FALSE);
-		}
-		break;
+        {
+                str val = *getArgReference_str(stk,pci,5);
+                if (BUNappend(upd, (void*) val, FALSE) != GDK_SUCCEED) {
+                        msg = createException(MAL, "WLRupdate", "BUNappend failed");
+                        goto cleanup;
+                }
+        }
+        break;
 	default:
 		GDKerror("Missing type in WLRupdate");
 	}
 
 	BATmsync(tids);
 	BATmsync(upd);
-    if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-        store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
-    } else if (cname[0] == '%') {
-        sql_idx *i = mvc_bind_idx(m, s, cname + 1);
-        if (i)
-            store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
-    }
+        if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
+                store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
+        } else if (cname[0] == '%') {
+                sql_idx *i = mvc_bind_idx(m, s, cname + 1);
+                if (i)
+                        store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
+        }
+
+  cleanup:
 	BBPunfix(((BAT *) tids)->batCacheid);
 	BBPunfix(((BAT *) upd)->batCacheid);
-	return MAL_SUCCEED;
+        return msg;
 }
 
 str
