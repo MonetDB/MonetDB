@@ -374,7 +374,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	if (BATtdense(g)) {
 		/* trivial: g determines ordering, return initial
 		 * slice of s */
-		return CANDslice(s, 0, n);
+		return BATslice(s, 0, n);
 	}
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
