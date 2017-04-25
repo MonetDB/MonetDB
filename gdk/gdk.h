@@ -2646,6 +2646,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 	 ((x)->theap.parentid ||					\
 	  ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid)))
 
+#define viewless(x) (!VIEWtparent(x) && !VIEWvtparent(x))
 #define VIEWtparent(x)	((x)->theap.parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
 
