@@ -340,11 +340,11 @@ str_2_sqlblob(sqlblob **res, const str *val)
 }
 
 str
-SQLsqlblob_2_str(str *res, const sqlblob * val)
+SQLsqlblob_2_str(str *res, const sqlblob *val)
 {
 	char *p = NULL;
 	int len = 0;
-	sqlblob_tostr(&p, &len, val);
+	SQLBLOBtostr(&p, &len, val);
 	*res = p;
 	return MAL_SUCCEED;
 }

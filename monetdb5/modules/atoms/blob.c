@@ -46,8 +46,6 @@ mal_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
 mal_export void BLOBdel(Heap *h, var_t *index);
 mal_export int BLOBlength(blob *p);
 mal_export void BLOBheap(Heap *heap, size_t capacity);
-mal_export int SQLBLOBfromstr(char *instr, int *l, blob **val);
-mal_export int SQLBLOBtostr(str *tostr, int *l, blob *pin);
 mal_export str BLOBtoblob(blob **retval, str *s);
 mal_export str BLOBfromblob(str *retval, blob **b);
 mal_export str BLOBfromidx(str *retval, blob **binp, int *index);
@@ -79,22 +77,39 @@ blobsize(size_t nitems)
 	return (var_t) (offsetof(blob, data) + nitems);
 }
 
-static var_t
-blob_put(Heap *h, var_t *bun, blob *val)
-{
-	char *base = NULL;
+static blob nullval = {
+	~(size_t) 0
+};
 
-	*bun = HEAP_malloc(h, blobsize(val->nitems));
- 	base = h->base;
-	if (*bun) {
-		memcpy(&base[*bun], (char *) val, blobsize(val->nitems));
-		h->dirty = 1;
+static char hexit[] = "0123456789ABCDEF";
+
+static str
+fromblob_idx(str *retval, blob *b, int *idx)
+{
+	str s, p = b->data + *idx;
+	str r, q = b->data + b->nitems;
+
+	for (r = p; r < q; r++) {
+		if (*r == 0)
+			break;
 	}
-	return *bun;
+	*retval = s = (str) GDKmalloc(1 + r - p);
+	if( *retval == NULL)
+		throw(MAL, "blob.tostring", MAL_MALLOC_FAIL);
+	for (; p < r; p++, s++)
+		*s = *p;
+	*s = 0;
+	return MAL_SUCCEED;
 }
 
-static int
-blob_cmp(blob *l, blob *r)
+/*
+ * @- Wrapping section
+ * This section contains the wrappers to re-use the implementation
+ * section of the blob modules from MonetDB 4.3
+ * @-
+ */
+int
+BLOBcmp(blob *l, blob *r)
 {
 	size_t len = l->nitems;
 
@@ -107,29 +122,29 @@ blob_cmp(blob *l, blob *r)
 	return memcmp(l->data, r->data, len);
 }
 
-static void
-blob_del(Heap *h, var_t *idx)
+void
+BLOBdel(Heap *h, var_t *idx)
 {
 	HEAP_free(h, *idx);
 }
 
-static BUN
-blob_hash(blob *b)
+BUN
+BLOBhash(blob *b)
 {
 	return (BUN) b->nitems;
 }
 
-static blob *
-blob_null(void)
+blob *
+BLOBnull(void)
 {
-	static blob nullval;
-
-	nullval.nitems = ~(size_t) 0;
-	return (&nullval);
+	blob *b= (blob*) GDKmalloc(offsetof(blob, data));
+	if( b )
+		b->nitems = ~(size_t) 0;
+	return b;
 }
 
-static blob *
-blob_read(blob *a, stream *s, size_t cnt)
+blob *
+BLOBread(blob *a, stream *s, size_t cnt)
 {
 	int len;
 
@@ -146,25 +161,57 @@ blob_read(blob *a, stream *s, size_t cnt)
 	return a;
 }
 
-static int
-blob_length(blob *p)
+gdk_return
+BLOBwrite(blob *a, stream *s, size_t cnt)
+{
+	var_t len = blobsize(a->nitems);
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
+		mnstr_write(s, (char *) a, len, 1) < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+int
+BLOBlength(blob *p)
 {
 	var_t l = blobsize(p->nitems); /* 64bit: check for overflow */
 	assert(l <= GDK_int_max);
 	return (int) l; /* 64bit: check for overflow */
 }
 
-
-static void
-blob_heap(Heap *heap, size_t capacity)
+void
+BLOBheap(Heap *heap, size_t capacity)
 {
 	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
 
-static char hexit[] = "0123456789ABCDEF";
+var_t
+BLOBput(Heap *h, var_t *bun, blob *val)
+{
+	char *base = NULL;
 
-static int
-blob_tostr(str *tostr, int *l, blob *p)
+	*bun = HEAP_malloc(h, blobsize(val->nitems));
+ 	base = h->base;
+	if (*bun) {
+		memcpy(&base[*bun], (char *) val, blobsize(val->nitems));
+		h->dirty = 1;
+	}
+	return *bun;
+}
+
+str
+BLOBnitems(int *ret, blob *b)
+{
+	assert(b->nitems <INT_MAX);
+	*ret = (int) b->nitems;
+	return MAL_SUCCEED;
+}
+
+int
+BLOBtostr(str *tostr, int *l, blob *p)
 {
 	char *s;
 	size_t i;
@@ -203,50 +250,8 @@ blob_tostr(str *tostr, int *l, blob *p)
 	return (int) (s - *tostr); /* 64bit: check for overflow */
 }
 
-/* SQL 99 compatible BLOB output string
- * differs from the MonetDB BLOB output in that it does not start with a size
- * no brackets and no spaces in between the hexits
- */
 int
-sqlblob_tostr(str *tostr, int *l, const blob *p)
-{
-	char *s;
-	size_t i;
-	size_t expectedlen;
-
-	if (p->nitems == ~(size_t) 0)
-		expectedlen = 4;
-	else
-		expectedlen = 24 + (p->nitems * 3);
-	if (*l < 0 || (size_t) * l < expectedlen) {
-		if (*tostr != NULL)
-			GDKfree(*tostr);
-		*tostr = (str) GDKmalloc(expectedlen);
-		if( *tostr == NULL)
-			return 0;
-		*l = (int) expectedlen;
-	}
-	if (p->nitems == ~(size_t) 0) {
-		strcpy(*tostr, "nil");
-		return 3;
-	}
-
-	strcpy(*tostr, "\0");
-	s = *tostr;
-
-	for (i = 0; i < p->nitems; i++) {
-		int val = (p->data[i] >> 4) & 15;
-
-		*s++ = hexit[val];
-		val = p->data[i] & 15;
-		*s++ = hexit[val];
-	}
-	*s = '\0';
-	return (int) (s - *tostr); /* 64bit: check for overflow */
-}
-
-static int
-blob_fromstr(char *instr, int *l, blob **val)
+BLOBfromstr(char *instr, int *l, blob **val)
 {
 	size_t i;
 	size_t nitems;
@@ -292,7 +297,7 @@ blob_fromstr(char *instr, int *l, blob **val)
 	}
 	if( *val == NULL)
 		return 0;
-	
+
 	result = *val;
 	result->nitems = nitems;
 
@@ -343,12 +348,82 @@ blob_fromstr(char *instr, int *l, blob **val)
 	return (int) (s - instr);
 }
 
+str
+BLOBfromidx(str *retval, blob **binp, int *idx)
+{
+	return fromblob_idx(retval, *binp, idx);
+}
+
+str
+BLOBfromblob(str *retval, blob **b)
+{
+	int zero = 0;
+
+	return fromblob_idx(retval, *b, &zero);
+}
+
+str
+BLOBtoblob(blob **retval, str *s)
+{
+	int len = strLen(*s);
+	blob *b = (blob *) GDKmalloc(blobsize(len));
+
+	if( b == NULL)
+		throw(MAL, "blob.toblob", MAL_MALLOC_FAIL);
+	b->nitems = len;
+	memcpy(b->data, *s, len);
+	*retval = b;
+	return MAL_SUCCEED;
+}
+
+/* SQL 99 compatible BLOB output string
+ * differs from the MonetDB BLOB output in that it does not start with a size
+ * no brackets and no spaces in between the hexits
+ */
+int
+SQLBLOBtostr(str *tostr, int *l, const blob *p)
+{
+	char *s;
+	size_t i;
+	size_t expectedlen;
+
+	if (p->nitems == ~(size_t) 0)
+		expectedlen = 4;
+	else
+		expectedlen = 24 + (p->nitems * 3);
+	if (*l < 0 || (size_t) * l < expectedlen) {
+		if (*tostr != NULL)
+			GDKfree(*tostr);
+		*tostr = (str) GDKmalloc(expectedlen);
+		if( *tostr == NULL)
+			return 0;
+		*l = (int) expectedlen;
+	}
+	if (p->nitems == ~(size_t) 0) {
+		strcpy(*tostr, "nil");
+		return 3;
+	}
+
+	strcpy(*tostr, "\0");
+	s = *tostr;
+
+	for (i = 0; i < p->nitems; i++) {
+		int val = (p->data[i] >> 4) & 15;
+
+		*s++ = hexit[val];
+		val = p->data[i] & 15;
+		*s++ = hexit[val];
+	}
+	*s = '\0';
+	return (int) (s - *tostr); /* 64bit: check for overflow */
+}
+
 /* SQL 99 compatible BLOB input string
  * differs from the MonetDB BLOB input in that it does not start with a size
  * no brackets and no spaces in between the hexits
  */
 int
-sqlblob_fromstr(char *instr, int *l, blob **val)
+SQLBLOBfromstr(char *instr, int *l, blob **val)
 {
 	size_t i;
 	size_t nitems;
@@ -380,7 +455,7 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 	if( *val == NULL)
 		return 0;
 	if (nil) {
-		**val = *blob_null();
+		**val = nullval;
 		return 0;
 	}
 	result = *val;
@@ -420,156 +495,6 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 	return (int) (s - instr);
 }
 
-
-static str
-fromblob_idx(str *retval, blob *b, int *idx)
-{
-	str s, p = b->data + *idx;
-	str r, q = b->data + b->nitems;
-
-	for (r = p; r < q; r++) {
-		if (*r == 0)
-			break;
-	}
-	*retval = s = (str) GDKmalloc(1 + r - p);
-	if( *retval == NULL)
-		throw(MAL, "blob.tostring", MAL_MALLOC_FAIL);
-	for (; p < r; p++, s++)
-		*s = *p;
-	*s = 0;
-	return MAL_SUCCEED;
-}
-
-/*
- * @- Wrapping section
- * This section contains the wrappers to re-use the implementation
- * section of the blob modules from MonetDB 4.3
- * @-
- */
-int
-BLOBcmp(blob *l, blob *r)
-{
-	return blob_cmp(l, r);
-}
-
-void
-BLOBdel(Heap *h, var_t *idx)
-{
-	blob_del(h, idx);
-}
-
-BUN
-BLOBhash(blob *b)
-{
-	return blob_hash(b);
-}
-
-blob *
-BLOBnull(void)
-{
-	blob *b= (blob*) GDKmalloc(offsetof(blob, data));
-	if( b )
-		b->nitems = ~(size_t) 0;
-	return b;
-}
-
-blob *
-BLOBread(blob *a, stream *s, size_t cnt)
-{
-	return blob_read(a,s,cnt);
-}
-
-gdk_return
-BLOBwrite(blob *a, stream *s, size_t cnt)
-{
-	var_t len = blobsize(a->nitems);
-
-	(void) cnt;
-	assert(cnt == 1);
-	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
-		mnstr_write(s, (char *) a, len, 1) < 0)
-		return GDK_FAIL;
-	return GDK_SUCCEED;
-}
-
-int
-BLOBlength(blob *p)
-{
-	return blob_length(p);
-}
-
-void
-BLOBheap(Heap *heap, size_t capacity)
-{
-	blob_heap(heap, capacity);
-}
-
-var_t
-BLOBput(Heap *h, var_t *bun, blob *val)
-{
-	return blob_put(h, bun, val);
-}
-
-str
-BLOBnitems(int *ret, blob *b)
-{
-	assert(b->nitems <INT_MAX);
-	*ret = (int) b->nitems;
-	return MAL_SUCCEED;
-}
-
-int
-BLOBtostr(str *tostr, int *l, blob *pin)
-{
-	return blob_tostr(tostr, l, pin);
-}
-
-int
-BLOBfromstr(char *instr, int *l, blob **val)
-{
-	return blob_fromstr(instr, l, val);
-}
-
-str
-BLOBfromidx(str *retval, blob **binp, int *idx)
-{
-	return fromblob_idx(retval, *binp, idx);
-}
-
-str
-BLOBfromblob(str *retval, blob **b)
-{
-	int zero = 0;
-
-	return fromblob_idx(retval, *b, &zero);
-}
-
-str
-BLOBtoblob(blob **retval, str *s)
-{
-	int len = strLen(*s);
-	blob *b = (blob *) GDKmalloc(blobsize(len));
-
-	if( b == NULL)
-		throw(MAL, "blob.toblob", MAL_MALLOC_FAIL);
-	b->nitems = len;
-	memcpy(b->data, *s, len);
-	*retval = b;
-	return MAL_SUCCEED;
-}
-
-int
-SQLBLOBtostr(str *retval, int *l, blob *b)
-{
-	return sqlblob_tostr(retval, l, b);
-}
-
-int
-SQLBLOBfromstr(char *s, int *l, blob **val)
-{
-	return sqlblob_fromstr(s, l, val);
-}
-
 str
 BLOBblob_blob(blob **d, blob **s)
 {
@@ -595,7 +520,7 @@ BLOBblob_fromstr(blob **b, str *s)
 {
 	int len = 0;
 
-	blob_fromstr(*s, &len, b);
+	BLOBfromstr(*s, &len, b);
 	return MAL_SUCCEED;
 }
 
@@ -605,6 +530,6 @@ BLOBsqlblob_fromstr(sqlblob **b, str *s)
 {
 	int len = 0;
 
-	sqlblob_fromstr(*s, &len, b);
+	SQLBLOBfromstr(*s, &len, b);
 	return MAL_SUCCEED;
 }
