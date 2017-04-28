@@ -73,7 +73,7 @@ typedef struct Table_t {
 	BAT *complaints;			/* lines that did not match the required input */
 } Tablet;
 
-mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow, int best);
+mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best);
 mal_export str TABLETcreate_bats(Tablet *as, BUN est);
 mal_export str TABLETcollect(BAT **bats, Tablet *as);
 mal_export str TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset);

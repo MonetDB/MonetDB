@@ -454,7 +454,7 @@ tablet_read_more(bstream *in, stream *out, size_t n)
 			if (bstream_next(in) < 0)
 				return EOF;
 			if (in->eof) {
-				if (out && mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
+				if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
 					mnstr_flush(out);
 				in->eof = 0;
 				/* we need more query text */
@@ -691,7 +691,7 @@ typedef struct {
 	MT_Sema reply;				/* let reader continue */
 	Tablet *as;
 	char *errbuf;
-	char *csep, *rsep;
+	const char *csep, *rsep;
 	size_t seplen, rseplen;
 	char quote;
 
@@ -1632,7 +1632,7 @@ create_rejects_table(Client cntxt)
 }
 
 BUN
-SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow, int best)
+SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best)
 {
 	BUN cnt = 0, cntstart = 0, leftover = 0;
 	int res = 0;		/* < 0: error, > 0: success, == 0: continue processing */
