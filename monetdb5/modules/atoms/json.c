@@ -1771,8 +1771,7 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cnt = BATcount(bl[pci->retc + 1]);
 	result = GDKmalloc(lim = BUFSIZ);
 	if( result == NULL) {
-		JSONfreeArgumentlist(bl, pci);
-		throw(MAL,"json.renderArray",MAL_MALLOC_FAIL);
+		goto memfail;
 	}
 	result[0] = '[';
 	result[1] = 0;
@@ -1789,6 +1788,7 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			lim = cnt * l <= lim ? cnt * l : lim + BUFSIZ;
 		result2 = GDKrealloc(result, lim);
 		if (result2 == NULL) {
+			GDKfree(row);
 			goto memfail;
 		}
 		result = result2;

@@ -2965,7 +2965,11 @@ file_rastream(FILE *fp, const char *name)
 			s->isutf8 = 1;
 			return s;
 		}
-		file_fsetpos(s, pos);
+		if (file_fsetpos(s, pos) < 0) {
+			/* unlikely: we couldn't seek the file back */
+			destroy(s);
+			return NULL;
+		}
 	}
 #ifdef _MSC_VER
 	if (_fileno(fp) == 0 && _isatty(0)) {

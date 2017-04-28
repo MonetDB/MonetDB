@@ -65,16 +65,19 @@ GDALWConnection * GDALWConnect(char * source) {
 	conn = malloc(sizeof(GDALWConnection));
 	if (conn == NULL) {
 		fprintf(stderr, "Could not allocate memory\n");
-		exit(-1);
+		return NULL;
 	}
 	conn->handler = OGROpen(source, 0 , &(conn->driver));
 	if (conn->handler == NULL) {
+		free(conn);
 		return NULL;
 	}
 
 
 	conn->layer = OGR_DS_GetLayer(conn->handler, 0);
 	if (conn->layer == NULL) {
+		OGRReleaseDataSource(conn->handler);
+		free(conn);
 		return NULL;
 	}
 
@@ -85,8 +88,10 @@ GDALWConnection * GDALWConnect(char * source) {
 	conn->numFieldDefinitions = fieldCount;
 	conn->fieldDefinitions = malloc(fieldCount * sizeof(OGRFieldDefnH));
 	if (conn->fieldDefinitions == NULL) {
+		OGRReleaseDataSource(conn->handler);
+		free(conn);
 		fprintf(stderr, "Could not allocate memory\n");
-		exit(-1);
+		return NULL;
 	}
 	for (i=0 ; i<fieldCount ; i++) {
 		conn->fieldDefinitions[i] = OGR_FD_GetFieldDefn(featureDefn, i);
@@ -137,8 +142,6 @@ void GDALWPrintRecords(GDALWConnection conn) {
 		    	printf( "%d,", OGR_F_GetFieldAsInteger( feature, i ) );
 		    else if( OGR_Fld_GetType(hFieldDefn) == OFTReal )
 		        printf( "%.3f,", OGR_F_GetFieldAsDouble( feature, i) );
-		    else if( OGR_Fld_GetType(hFieldDefn) == OFTString )
-		        printf( "%s,", OGR_F_GetFieldAsString( feature, i) );
 		    else
 		    	printf( "%s,", OGR_F_GetFieldAsString( feature, i) );
 
@@ -264,14 +267,16 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* create the table that will store the data of the shape file */
 	temp_buf[0]='\0';
 	for (i=0 ; i<shp_conn.numFieldDefinitions ; i++) {
+		nameToLowerCase = toLower(field_definitions[i].fieldName);
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0) {
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" INT, ", toLower(field_definitions[i].fieldName));
+			sprintf(temp_buf + strlen(temp_buf), "\"%s\" INT, ", nameToLowerCase);
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" FLOAT, ", toLower(field_definitions[i].fieldName));
+			sprintf(temp_buf + strlen(temp_buf), "\"%s\" FLOAT, ", nameToLowerCase);
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", toLower(field_definitions[i].fieldName));
+			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
         	} else 
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", toLower(field_definitions[i].fieldName));
+			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
+		GDKfree(nameToLowerCase);
 	}
 
 	sprintf(temp_buf + strlen(temp_buf), "geom GEOMETRY ");
@@ -429,11 +434,12 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		cols[i] = NULL;
 		/* bind the column */
 		nameToLowerCase = toLower(field_definitions[i].fieldName);
-		if(!(cols[i] = mvc_bind_column(m, data_table, nameToLowerCase))) {
+		cols[i] = mvc_bind_column(m, data_table, nameToLowerCase);
+		GDKfree(nameToLowerCase);
+		if(cols[i] == NULL) {
 			msg = createException(MAL, "shp.import", "Column '%s.%s(%s)' missing", sch_name, data_table_name, field_definitions[i].fieldName);
 			goto unfree4;
 		}
-		GDKfree(nameToLowerCase);
 		/*create the BAT */
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
@@ -492,8 +498,6 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 			} else if( OGR_Fld_GetType(hFieldDefn) == OFTReal ) {
 				double val = OGR_F_GetFieldAsDouble(feature, i);
 				BUNappend(colsBAT[i], &val, TRUE);
-			} else if( OGR_Fld_GetType(hFieldDefn) == OFTString ) {
-				BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
 			} else {
 				BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
 			}

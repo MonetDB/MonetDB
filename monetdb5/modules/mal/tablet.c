@@ -354,12 +354,12 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 				}
 				if (fill + l + f->seplen >= *len) {
 					/* extend the buffer */
-					*buf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
-					if( buf == NULL)
-						return -1;
+					char *nbuf;
+					nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+					if( nbuf == NULL)
+						return -1; /* *buf freed by caller */
+					*buf = nbuf;
 					*len = fill + l + f->seplen + BUFSIZ;
-					if (*buf == NULL)
-						return -1;
 				}
 				strncpy(*buf + fill, p, l);
 				fill += l;
@@ -396,12 +396,12 @@ output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *
 			}
 			if (fill + l + f->seplen >= *len) {
 				/* extend the buffer */
-				*buf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
-				if( buf == NULL)
-					return 0;
+				char *nbuf;
+				nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+				if( nbuf == NULL)
+					return -1;	/* *buf freed by caller */
+				*buf = nbuf;
 				*len = fill + l + f->seplen + BUFSIZ;
-				if (*buf == NULL)
-					return -1;
 			}
 			strncpy(*buf + fill, p, l);
 			fill += l;
@@ -718,7 +718,7 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 		BUNappend(task->cntxt->error_input, fcn, FALSE);
 		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL))
 			task->as->error = createException(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
-		if (row != lng_nil)
+		if (row != lng_nil && task->rowerror)
 			task->rowerror[row]++;
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "#tablet_error: " LLFMT ",%d:%s:%s\n",

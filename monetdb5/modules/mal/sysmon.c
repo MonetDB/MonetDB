@@ -45,7 +45,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	activity = COLnew(0, TYPE_str, 256, TRANSIENT);
 	oids = COLnew(0, TYPE_oid, 256, TRANSIENT);
 	query = COLnew(0, TYPE_str, 256, TRANSIENT);
-	if ( tag == NULL || query == NULL || started == NULL || estimate == NULL || progress == NULL || activity == NULL || oids == NULL){
+	if ( tag == NULL || user == NULL || query == NULL || started == NULL || estimate == NULL || progress == NULL || activity == NULL || oids == NULL){
 		if (tag) BBPunfix(tag->batCacheid);
 		if (user) BBPunfix(user->batCacheid);
 		if (query) BBPunfix(query->batCacheid);
