@@ -7,9 +7,7 @@
  */
 
 /* author M.Kersten
- * This optimizer prepares a MAL block for delayed locking
- * The objects are mapped to a fixed hash table to speedup testing later.
- * We don't need the actual name of the objects
+ * This optimizer prepares the code for workload-capture-replay processing.
  */
 #include "monetdb_config.h"
 #include "opt_wlc.h"
@@ -34,9 +32,15 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit= mb->stop;
 	slimit = mb->ssize;
 
-	/* check if we are dealing with an update */
+	/* check if we are dealing with an update  and move definition to front*/
 	for (i = 0; i < limit; i++) {
 		p = old[i];
+		if( getModuleId(p) == querylogRef && getFunctionId(p) == defineRef){
+			def = p;
+			for(j = i; j>1; j--)
+				old[j]= old[j-1];
+			old[j]= def;
+		}
 		if( getModuleId(p) == sqlcatalogRef)
 			query = 0;
 		if( getModuleId(p) == sqlRef && 
@@ -46,6 +50,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			  getFunctionId(p) == clear_tableRef ))
 			query = 0;
 	}
+	def = 0;
 
 	if(query) // nothing to log
 		return MAL_SUCCEED;
@@ -69,13 +74,13 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			updates++;
 		} else
 		/* the catalog operations all need to be re-executed */
-		if( getModuleId(p) == sqlcatalogRef &&
+		if( def && getModuleId(p) == sqlcatalogRef &&
 			strcmp( getVarConstant(mb,getArg(p,1)).val.sval, "tmp") != 0 ){
 			assert( def);// should always be there
 			setFunctionId(def,catalogRef);
 			updates++;
 		} else
-		if( getModuleId(p) == sqlRef && getFunctionId(p) == clear_tableRef &&
+		if( def && getModuleId(p) == sqlRef && getFunctionId(p) == clear_tableRef &&
 			strcmp( getVarConstant(mb,getArg(p,1)).val.sval, "tmp") != 0 ){
 			setFunctionId(def,actionRef);
 				assert(def);
@@ -86,7 +91,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				pushInstruction(mb,q);
 				updates++;
 		} else
-		if( getModuleId(p) == sqlRef && 
+		if( def && getModuleId(p) == sqlRef && 
 			( getFunctionId(p) == appendRef  ||
 			  getFunctionId(p) == updateRef  ||
 			  getFunctionId(p) == deleteRef  ||

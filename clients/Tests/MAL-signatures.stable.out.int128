@@ -11134,6 +11134,7 @@ Ready.
 [ "wlr",	"replicate",	"pattern wlr.replicate(dbname:str, id:lng):void ",	"WLRreplicate;",	"Roll the snapshot forward to a specific transaction id"	]
 [ "wlr",	"replicate",	"pattern wlr.replicate(dbname:str, id:sht):void ",	"WLRreplicate;",	"Roll the snapshot forward to a specific transaction id"	]
 [ "wlr",	"replicate",	"pattern wlr.replicate(dbname:str, ts:timestamp):void ",	"WLRreplicate;",	"Roll the snapshot forward to the time TS"	]
+[ "wlr",	"replicate",	"pattern wlr.replicate(ts:timestamp):void ",	"WLRreplicate;",	"Roll the snapshot forward to an up-to-date clone"	]
 [ "wlr",	"revoke",	"pattern wlr.revoke(sname:str, tbl:str, grantee:str, privs:int, cname:str, grant:int, grantor:int):void ",	"WLRgeneric;",	"Catalog operation revoke"	]
 [ "wlr",	"revoke_function",	"pattern wlr.revoke_function(sname:str, fcnid:int, grantee:str, privs:int, grant:int, grantor:int):void ",	"WLRgeneric;",	"Catalog operation revoke_function"	]
 [ "wlr",	"revoke_roles",	"pattern wlr.revoke_roles(sname:str, auth:str, grantor:int, admin:int):void ",	"WLRgeneric;",	"Catalog operation revoke_roles"	]

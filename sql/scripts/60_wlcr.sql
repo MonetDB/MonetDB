@@ -29,6 +29,9 @@ external name wlc."getmastertick";
 create procedure replicate()
 external name wlr.replicate;
 
+create procedure replicate(pointintime timestamp)
+external name wlr.replicate;
+
 create procedure replicate(dbname string)
 external name wlr.replicate;
 

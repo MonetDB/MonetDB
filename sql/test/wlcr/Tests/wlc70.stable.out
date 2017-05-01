@@ -20,8 +20,8 @@ stdout of test 'wlc70` in directory 'sql/test/wlcr` itself:
 #create table tmp2(i int, s string);
 #insert into tmp2 values(1,'hello'), (2,'world');
 [ 2	]
-#select * from tmp2;
-% sys.tmp2,	sys.tmp2 # table_name
+#select * from tmp70;
+% sys.tmp70,	sys.tmp70 # table_name
 % i,	s # name
 % int,	clob # type
 % 1,	5 # length

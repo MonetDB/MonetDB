@@ -41,7 +41,7 @@
  * IMPLEMENTATION
  * The underlying assumption of the techniques deployed is that the database
  * resides on a proper (global/distributed) file system to guarantees recovery 
- * from most storage system related failures, e.g. using RAID disks or LSFsystems.
+ * from most storage system related failures, e.g. using RAID disks or LSF systems.
  *
  * A database can be set into 'master' mode only once using the SQL command:
  * CALL master()

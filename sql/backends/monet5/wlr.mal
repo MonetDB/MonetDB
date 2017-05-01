@@ -10,6 +10,10 @@ pattern replicate()
 address WLRreplicate
 comment "Roll the snapshot forward to an up-to-date clone";
 
+pattern replicate(ts:timestamp)
+address WLRreplicate
+comment "Roll the snapshot forward to an up-to-date clone";
+
 pattern replicate(dbname:str)
 address WLRreplicate
 comment "Roll the snapshot forward to an up-to-date clone";

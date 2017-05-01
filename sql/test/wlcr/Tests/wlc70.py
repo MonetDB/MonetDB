@@ -21,9 +21,9 @@ c = process.client('sql', dbname = dbname, stdin = process.PIPE, stdout = proces
 
 #continue logging
 cout, cerr = c.communicate('''\
-create table tmp2(i int, s string);
-insert into tmp2 values(1,'hello'), (2,'world');
-select * from tmp2;
+create table tmp70(i int, s string);
+insert into tmp70 values(1,'hello'), (2,'world');
+select * from tmp70;
 ''')
 
 sout, serr = s.communicate()

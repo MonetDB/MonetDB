@@ -30,9 +30,9 @@ c = process.client('sql', dbname = dbnameclone, port = cloneport, stdin = proces
 
 cout, cerr = c.communicate('''\
 call replicate(now());
-select * from tmp2;
+select * from tmp70;
 call replicate();
-select * from tmp2;
+select * from tmp70;
 ''' )
 
 sout, serr = slave.communicate()

@@ -405,11 +405,13 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL,"wlr.replicate","Master and replicate should be different");
 			strncpy(wlr_master, *getArgReference_str(stk,pci,1), IDLENGTH);
 		}
-	} else  
+	} else  {
+		timelimit[0]=0;
 		wlr_limit = -1;
+	}
 
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_timestamp){
-		timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,2), &tzone_local);
+		timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,1), &tzone_local);
 		mnstr_printf(cntxt->fdout,"#time limit %s\n",timelimit);
 	} else
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_bte)
@@ -526,6 +528,8 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// execute the query in replay mode when required.
 	// we need to get rid of the escaped quote.
 	x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
+	if( qtxt == NULL)
+		throw(SQL,"wlr.query",MAL_MALLOC_FAIL);
 	for(y = qry; *y; y++){
 		if( *y == '\\' ){
 			if( *(y+1) ==  '\'')

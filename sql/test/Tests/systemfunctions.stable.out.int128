@@ -1444,6 +1444,7 @@ Ready.
 [ "sys",	"replace",	3,	"clob",	""	]
 [ "sys",	"replicabeat",	0,	"int",	"create procedure replicabeat(duration integer)\nexternal name wlr.\"setreplicabeat\";"	]
 [ "sys",	"replicaclock",	0,	"clob",	"create function replicaclock() returns string\nexternal name wlr.\"getreplicaclock\";"	]
+[ "sys",	"replicate",	0,	"timestamp",	"create procedure replicate(pointintime timestamp)\nexternal name wlr.replicate;"	]
 [ "sys",	"replicate",	0,	"clob",	"create procedure replicate(dbname string)\nexternal name wlr.replicate;"	]
 [ "sys",	"replicate",	0,	"clob",	"create procedure replicate(dbname string, pointintime timestamp)\nexternal name wlr.replicate;"	]
 [ "sys",	"replicate",	1,	"timestamp",	""	]
