@@ -76,6 +76,7 @@ struct{
 	{"mergetable", &OPTmergetableImplementation,0,0},
 	{"mitosis", &OPTmitosisImplementation,0,0},
 	{"mosaic", &OPTmosaicImplementation,0,0},
+	{"multiplex", &OPTmultiplexImplementation,0,0},
 	{"oltp", &OPToltpImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},
