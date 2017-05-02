@@ -8298,7 +8298,7 @@ Ready.
 [ "sql",	"bind_idxbat",	"pattern sql.bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:any_1] ",	"mvc_bind_idxbat_wrap;",	"Bind the 'schema.table.index' BAT with access kind:\n\t0 - base table\n\t1 - inserts\n\t2 - updates"	]
 [ "sql",	"clear_table",	"pattern sql.clear_table(sname:str, tname:str):lng ",	"mvc_clear_table_wrap;",	"Clear the table sname.tname."	]
 [ "sql",	"commit",	"pattern sql.commit():void ",	"SQLcommit;",	"Trigger the commit operation for a MAL block"	]
-[ "sql",	"copy_from",	"pattern sql.copy_from(t:ptr, sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int):bat[:any]... ",	"mvc_import_table_wrap;",	"Import a table from bstream s with the \n\tgiven tuple and seperators (sep/rsep)"	]
+[ "sql",	"copy_from",	"pattern sql.copy_from(t:ptr, sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int, fwf:str):bat[:any]... ",	"mvc_import_table_wrap;",	"Import a table from bstream s with the \n\tgiven tuple and seperators (sep/rsep)"	]
 [ "sql",	"copy_rejects",	"pattern sql.copy_rejects() (rowid:bat[:lng], fldid:bat[:int], msg:bat[:str], inp:bat[:str]) ",	"COPYrejects;",	""	]
 [ "sql",	"copy_rejects_clear",	"pattern sql.copy_rejects_clear():void ",	"COPYrejects_clear;",	""	]
 [ "sql",	"create_func_upgrade_oct2014",	"pattern sql.create_func_upgrade_oct2014(sname:str, f:str):int ",	"UPGcreate_func;",	"Create the function described by f, needed for the Oct2014 upgrade"	]

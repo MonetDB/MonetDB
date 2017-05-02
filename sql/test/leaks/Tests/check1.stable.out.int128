@@ -46,7 +46,7 @@ Ready.
 [ "bit",	1736	]
 [ "bit",	1736	]
 [ "bit",	1736	]
-[ "bte",	4874	]
+[ "bte",	4875	]
 [ "int",	0	]
 [ "int",	0	]
 [ "int",	0	]
@@ -123,11 +123,11 @@ Ready.
 [ "int",	1736	]
 [ "int",	3911	]
 [ "int",	3911	]
-[ "int",	4874	]
-[ "int",	4874	]
-[ "int",	4874	]
-[ "int",	4874	]
-[ "int",	4874	]
+[ "int",	4875	]
+[ "int",	4875	]
+[ "int",	4875	]
+[ "int",	4875	]
+[ "int",	4875	]
 [ "lng",	0	]
 [ "lng",	0	]
 [ "lng",	0	]
@@ -307,8 +307,8 @@ Ready.
 [ "str",	3911	]
 [ "str",	3911	]
 [ "str",	3911	]
-[ "str",	4874	]
-[ "str",	4874	]
+[ "str",	4875	]
+[ "str",	4875	]
 [ "timestamp",	0	]
 [ "timestamp",	0	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
@@ -316,7 +316,7 @@ Ready.
 % L2,	L5 # name
 % char,	bigint # type
 % 9,	3 # length
-[ "transient",	161	]
+[ "transient",	165	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L2,	.L6 # table_name
 % L2,	L5 # name

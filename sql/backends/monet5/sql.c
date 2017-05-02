@@ -2474,15 +2474,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
 	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
 	int *besteffort = getArgReference_int(stk, pci, pci->retc + 9);
-	char *fixed_widths = NULL;
+	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
-
-	if (pci->argc - pci->retc > 10) {
-		fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
-
-	}
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)

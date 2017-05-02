@@ -1091,7 +1091,7 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		bit se = f->side_effect;
 		sqlid id;
 		int number = 0;
-		char arg_nme[] = "arg_0";
+		char arg_nme[7] = "arg_0";
 
 		if (f->s)
 			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &f->s->base.id);
@@ -1116,7 +1116,14 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 			if (a->name) {
 				table_funcs.table_insert(tr, sysarg, &id, &f->base.id, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number);
 			} else {
-				arg_nme[4] = '0' + number;
+				if (number < 10) {
+					arg_nme[4] = '0' + number;
+					arg_nme[5] = 0;
+				} else {
+					arg_nme[4] = '0' + number / 10;
+					arg_nme[5] = '0' + number % 10;
+					arg_nme[6] = 0;
+				}
 				table_funcs.table_insert(tr, sysarg, &id, &f->base.id, arg_nme, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number);
 			}
 		}
