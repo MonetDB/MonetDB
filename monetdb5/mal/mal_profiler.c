@@ -797,7 +797,6 @@ cleanupTraces(void)
 void
 cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	/* static struct Mallinfo prevMalloc; */
 	char buf[BUFSIZ]= {0};
 	int tid = (int)THRgettid();
 	lng v1 = 0, v2= 0, v3=0, v4=0, v5=0;
@@ -806,10 +805,8 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng rssMB = MT_getrss()/1024/1024;
 	lng tmpspace = pci->wbytes/1024/1024;
 	int errors = 0;
-	/* struct Mallinfo infoMalloc; */
 
 	clock = GDKusec();
-	/* infoMalloc = MT_mallinfo(); */
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
@@ -858,8 +855,13 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	errors += BUNappend(TRACE_id_majflt, &v4, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_nvcsw, &v5, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_stmt, c, FALSE) != GDK_SUCCEED;
-	TRACE_event++;
-	eventcounter++;
+	if (errors > 0) {
+		/* stop profiling if an error occurred */
+		sqlProfiling = FALSE;
+	} else {
+		TRACE_event++;
+		eventcounter++;
+	}
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
 }

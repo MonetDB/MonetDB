@@ -2668,6 +2668,68 @@ MTIMEepoch2int(int *ret, const timestamp *t)
 }
 
 str
+MTIMEepoch2lng(lng *ret, const timestamp *t)
+{
+	timestamp e;
+	lng v;
+	str err;
+
+	if ((err = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
+		return err;
+	if ((err = MTIMEtimestamp_diff(&v, t, &e)) != MAL_SUCCEED)
+		return err;
+	if (v == lng_nil)
+		*ret = int_nil;
+	else
+		*ret = v;
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEepoch_bulk(bat *ret, bat *bid)
+{
+	timestamp epoch;
+	const timestamp *t;
+	lng *tn;
+	str msg = MAL_SUCCEED;
+	BAT *b, *bn;
+	BUN i, n;
+
+	if ((msg = MTIMEunix_epoch(&epoch)) != MAL_SUCCEED)
+		return msg;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "batcalc.epoch", RUNTIME_OBJECT_MISSING);
+	}
+	n = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "batcalc.epoch", MAL_MALLOC_FAIL);
+	}
+	t = (const timestamp *) Tloc(b, 0);
+	tn = (lng *) Tloc(bn, 0);
+	bn->tnonil = 1;
+	b->tnil = 0;
+	for (i = 0; i < n; i++) {
+		if (ts_isnil(*t)) {
+			*tn = lng_nil;
+			bn->tnonil = 0;
+			bn->tnil = 1;
+		} else {
+			*tn = ((lng) (t->days - epoch.days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (t->msecs - epoch.msecs));
+		}
+		t++;
+		tn++;
+	}
+	BBPunfix(b->batCacheid);
+	BATsetcount(bn, (BUN) (tn - (lng *) Tloc(bn, 0)));
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	BBPkeepref(bn->batCacheid);
+	*ret = bn->batCacheid;
+	return msg;
+}
+
+str
 MTIMEtimestamp(timestamp *ret, const int *sec)
 {
 	timestamp t;

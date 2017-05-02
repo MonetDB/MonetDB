@@ -85,8 +85,6 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	(void) cntxt;
 	if( ATOMstorage(task->type == TYPE_str))
 			size =task->bsrc->twidth;
-	BUNappend(btech, "prefix blk", FALSE);
-	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	switch(size){
 	case 1:
@@ -126,10 +124,13 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 		}
 	}
 	output = wordaligned(bytes, int); 
-	BUNappend(binput, &input, FALSE);
-	BUNappend(boutput, &output, FALSE);
 	snprintf(buf,32,"%d bits",bits);
-	BUNappend(bproperties, buf, FALSE);
+	if( BUNappend(btech, "prefix blk", FALSE) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, FALSE) != GDK_SUCCEED ||
+		BUNappend(binput, &input, FALSE) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, FALSE) != GDK_SUCCEED ||
+		BUNappend(bproperties, buf, FALSE) != GDK_SUCCEED)
+		return;
 }
 
 void
@@ -1057,8 +1058,9 @@ break;
 			v = val | decompress(base,i,bits);\
 			value =  (TPE) ((TPE2)val |(TPE2) v);\
 			if ( *w == value){\
-				BUNappend(task->lbat, &oo, FALSE);\
-				BUNappend(task->rbat, &o, FALSE);\
+				if(BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||\
+				BUNappend(task->rbat, &o, FALSE) != GDK_SUCCEED )\
+				throw(MAL,"mosaic.prefix",MAL_MALLOC_FAIL);\
 			}\
 		}\
 	}\

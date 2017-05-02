@@ -239,8 +239,9 @@ SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sql->session->auto_commit != 0)
 		throw(SQL, "sql.trans", "2DM30!COMMIT: not allowed in auto commit mode");
 	ret = mvc_commit(sql, 0, 0);
-	if (ret < 0)
+	if (ret < 0) {
 		throw(SQL, "sql.trans", "2D000!COMMIT: failed");
+	}
 	return msg;
 }
 
@@ -571,8 +572,12 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	vars = COLnew(0, TYPE_str, m->topvars, TRANSIENT);
 	if (vars == NULL)
 		throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
-	for (i = 0; i < m->topvars && !m->vars[i].frame; i++)
-		BUNappend(vars, m->vars[i].name, FALSE);
+	for (i = 0; i < m->topvars && !m->vars[i].frame; i++) {
+		if (BUNappend(vars, m->vars[i].name, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(vars);
+			throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
+		}
+	}
 	*res = vars->batCacheid;
 	BBPkeepref(vars->batCacheid);
 	return MAL_SUCCEED;
@@ -687,7 +692,12 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			seqbulk_destroy(sb);
 			throw(SQL, "sql.next_value", "error");
 		}
-		BUNappend(r, &l, FALSE);
+		if (BUNappend(r, &l, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(r->batCacheid);
+			seqbulk_destroy(sb);
+			throw(SQL, "sql.next_value", MAL_MALLOC_FAIL);
+		}
 	}
 	if (sb)
 		seqbulk_destroy(sb);
@@ -1121,11 +1131,11 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( tids && BATcount(tids) > 4096 && tids->batPersistence == PERSISTENT)
 		BATmsync(tids);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store_funcs.update_col(m->session->tr, c, tids, upd, tpe);
+		store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
-			store_funcs.update_idx(m->session->tr, i, tids, upd, tpe);
+			store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
 	}
 	BBPunfix(tids->batCacheid);
 	BBPunfix(upd->batCacheid);
@@ -1273,14 +1283,23 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	u_id = BATdescriptor(*uid);
 	assert(BATcount(u_id) == BATcount(u_val));
-	if (BATcount(u_id))
-		BATreplace(res, u_id, u_val, TRUE);
+	if (BATcount(u_id) &&
+	    BATreplace(res, u_id, u_val, TRUE) != GDK_SUCCEED) {
+		BBPunfix(u_id->batCacheid);
+		BBPunfix(u_val->batCacheid);
+		BBPunfix(res->batCacheid);
+		throw(MAL, "sql.delta", GDK_EXCEPTION);
+	}
 	BBPunfix(u_id->batCacheid);
 	BBPunfix(u_val->batCacheid);
 
 	if (i && BATcount(i)) {
 		i = BATdescriptor(*ins);
-		BATappend(res, i, NULL, TRUE);
+		if (BATappend(res, i, NULL, TRUE) != GDK_SUCCEED) {
+			BBPunfix(res->batCacheid);
+			BBPunfix(i->batCacheid);
+			throw(MAL, "sql.delta", GDK_EXCEPTION);
+		}
 		BBPunfix(i->batCacheid);
 	}
 
@@ -2308,7 +2327,7 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if (mvc_export_head(b, *s, *res_id, FALSE))
+	if (mvc_export_head(b, *s, *res_id, FALSE, TRUE))
 		throw(SQL, "sql.exportHead", "failed");
 	return MAL_SUCCEED;
 }
@@ -2401,7 +2420,8 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// scalar values are single-column result sets
 	res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL);
-	mvc_result_value(b->mvc, *tn, *cn, *type, *digits, *scale, p, mtype);
+	if (mvc_result_value(b->mvc, *tn, *cn, *type, *digits, *scale, p, mtype))
+		throw(SQL, "sql.exportValue", "failed");
 	if (b->output_format == OFMT_NONE) {
 		return MAL_SUCCEED;
 	}
@@ -2409,7 +2429,6 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.exportValue", "failed");
 	}
 	return MAL_SUCCEED;
-
 }
 
 static void
@@ -2690,27 +2709,36 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				throw(SQL, "sql", MAL_MALLOC_FAIL);
 			/* this code should be extended to deal with larger text strings. */
 			f = fopen(*getArgReference_str(stk, pci, i), "r");
-			if (f == NULL)
+			if (f == NULL) {
+				BBPreclaim(c);
 				throw(SQL, "sql", "Failed to re-open file %s", fname);
+			}
 
 			buf = GDKmalloc(bufsiz);
 			if (!buf) {
 				fclose(f);
+				BBPreclaim(c);
 				throw(SQL, "sql", "Failed to create buffer");
 			}
 			while (fgets(buf, bufsiz, f) != NULL) {
 				char *t = strrchr(buf, '\n');
 				if (t)
 					*t = 0;
-				BUNappend(c, buf, FALSE);
+				if (BUNappend(c, buf, FALSE) != GDK_SUCCEED) {
+					BBPreclaim(c);
+					fclose(f);
+					throw(SQL, "sql", MAL_MALLOC_FAIL);
+				}
 			}
 			fclose(f);
 			GDKfree(buf);
 		} else {
 			throw(SQL, "sql", "Failed to attach file %s", fname);
 		}
-		if (init && cnt != BATcount(c))
+		if (init && cnt != BATcount(c)) {
+			BBPunfix(c->batCacheid);
 			throw(SQL, "sql", "binary files for table '%s' have inconsistent counts", tname);
+		}
 		cnt = BATcount(c);
 		init = 1;
 		*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
@@ -2729,8 +2757,13 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				const void* nil = ATOMnilptr(tpe);
 				// fill the new BAT with NULL values
 				c = COLnew(0, tpe, cnt, TRANSIENT);
+				if (c == NULL)
+					throw(SQL, "sql", MAL_MALLOC_FAIL);
 				for(loop = 0; loop < cnt; loop++) {
-					BUNappend(c, nil, 0);
+					if (BUNappend(c, nil, 0) != GDK_SUCCEED) {
+						BBPreclaim(c);
+						throw(SQL, "sql", MAL_MALLOC_FAIL);
+					}
 				}
 				*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
 				BBPkeepref(c->batCacheid);
@@ -3121,7 +3154,10 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		BUNappend(bn, &r, FALSE);
+		if (BUNappend(bn, &r, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
+		}
 	}
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -3161,7 +3197,10 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		BUNappend(bn, &r, FALSE);
+		if (BUNappend(bn, &r, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3382,8 +3421,12 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (q = m->qc->q; q; q = q->next) {
 		if (q->type != Q_PREPARE) {
-			BUNappend(query, q->codestring, FALSE);
-			BUNappend(count, &q->count, FALSE);
+			if (BUNappend(query, q->codestring, FALSE) != GDK_SUCCEED ||
+			    BUNappend(count, &q->count, FALSE) != GDK_SUCCEED) {
+				BBPunfix(query->batCacheid);
+				BBPunfix(count->batCacheid);
+				throw(SQL, "sql.dumpcache", MAL_MALLOC_FAIL);
+			}
 		}
 	}
 	*rquery = query->batCacheid;
@@ -3404,20 +3447,24 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rrewrite = getArgReference_bat(stk, pci, 0);
 	bat *rcount = getArgReference_bat(stk, pci, 1);
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL ||
+	    (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	cnt = m->qc->id;
 	rewrite = COLnew(0, TYPE_str, cnt, TRANSIENT);
-	if (rewrite == NULL)
-		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
 	count = COLnew(0, TYPE_int, cnt, TRANSIENT);
-	if (count == NULL)
+	if (rewrite == NULL || count == NULL) {
+		BBPreclaim(rewrite);
+		BBPreclaim(count);
 		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
+	}
 
-	BUNappend(rewrite, "joinidx", FALSE);
-	BUNappend(count, &m->opt_stats[0], FALSE);
+	if (BUNappend(rewrite, "joinidx", FALSE) != GDK_SUCCEED ||
+	    BUNappend(count, &m->opt_stats[0], FALSE) != GDK_SUCCEED) {
+		BBPreclaim(rewrite);
+		BBPreclaim(count);
+		throw(SQL, "sql.optstats", MAL_MALLOC_FAIL);
+	}
 	/* TODO add other rewrites */
 
 	*rrewrite = rewrite->batCacheid;
@@ -3591,7 +3638,12 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 			c = rank = nrank = 1;
 		oc = on;
 		gc = gn;
-		BUNappend(r, &rank, FALSE);
+		if (BUNappend(r, &rank, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(g->batCacheid);
+			BBPunfix(r->batCacheid);
+			throw(SQL, name, MAL_MALLOC_FAIL);
+		}
 		nrank += !dense || c;
 	}
 	BBPunfix(b->batCacheid);
@@ -3626,7 +3678,8 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	}
 	if (BATtdense(b)) {
 		BATloop(b, p, q) {
-			BUNappend(r, &rank, FALSE);
+			if (BUNappend(r, &rank, FALSE) != GDK_SUCCEED)
+				goto bailout;
 			rank++;
 		}
 	} else {
@@ -3635,13 +3688,18 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 			if ((c = cmp(n, cur)) != 0)
 				rank = nrank;
 			cur = n;
-			BUNappend(r, &rank, FALSE);
+			if (BUNappend(r, &rank, FALSE) != GDK_SUCCEED)
+				goto bailout;
 			nrank += !dense || c;
 		}
 	}
 	BBPunfix(b->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
 	return MAL_SUCCEED;
+  bailout:
+	BBPunfix(b->batCacheid);
+	BBPunfix(r->batCacheid);
+	throw(SQL, name, MAL_MALLOC_FAIL);
 }
 
 str
@@ -3994,43 +4052,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
 	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL ||
 	    revsort == NULL || key == NULL || oidx == NULL || compressed == NULL) {
-		if (sch)
-			BBPunfix(sch->batCacheid);
-		if (tab)
-			BBPunfix(tab->batCacheid);
-		if (col)
-			BBPunfix(col->batCacheid);
-		if (mode)
-			BBPunfix(mode->batCacheid);
-		if (loc)
-			BBPunfix(loc->batCacheid);
-		if (cnt)
-			BBPunfix(cnt->batCacheid);
-		if (type)
-			BBPunfix(type->batCacheid);
-		if (atom)
-			BBPunfix(atom->batCacheid);
-		if (size)
-			BBPunfix(size->batCacheid);
-		if (heap)
-			BBPunfix(heap->batCacheid);
-		if (indices)
-			BBPunfix(indices->batCacheid);
-		if (phash)
-			BBPunfix(phash->batCacheid);
-		if (imprints)
-			BBPunfix(imprints->batCacheid);
-		if (sort)
-			BBPunfix(sort->batCacheid);
-		if (revsort)
-			BBPunfix(revsort->batCacheid);
-		if (key)
-			BBPunfix(key->batCacheid);
-		if (oidx)
-			BBPunfix(oidx->batCacheid);
+		goto bailout;
 		if (compressed)
 			BBPunfix(compressed->batCacheid);
-		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
 	}
 	if( pci->argc - pci->retc >= 1)
 		sname = *getArgReference_str(stk, pci, pci->retc);
@@ -4067,25 +4091,34 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									throw(SQL, "sql.storage", "Can not access column");
 
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
-								BUNappend(sch, b->name, FALSE);
-								BUNappend(tab, bt->name, FALSE);
-								BUNappend(col, bc->name, FALSE);
-								if (c->t->access == TABLE_WRITABLE)
-									BUNappend(mode, "writable", FALSE);
-								else if (c->t->access == TABLE_APPENDONLY)
-									BUNappend(mode, "appendonly", FALSE);
-								else if (c->t->access == TABLE_READONLY)
-									BUNappend(mode, "readonly", FALSE);
-								else
-									BUNappend(mode, 0, FALSE);
-								BUNappend(type, c->type.type->sqlname, FALSE);
+								if (BUNappend(sch, b->name, FALSE) != GDK_SUCCEED ||
+								    BUNappend(tab, bt->name, FALSE) != GDK_SUCCEED ||
+								    BUNappend(col, bc->name, FALSE) != GDK_SUCCEED)
+									goto bailout;
+								if (c->t->access == TABLE_WRITABLE) {
+									if (BUNappend(mode, "writable", FALSE) != GDK_SUCCEED)
+										goto bailout;
+								} else if (c->t->access == TABLE_APPENDONLY) {
+									if (BUNappend(mode, "appendonly", FALSE) != GDK_SUCCEED)
+										goto bailout;
+								} else if (c->t->access == TABLE_READONLY) {
+									if (BUNappend(mode, "readonly", FALSE) != GDK_SUCCEED)
+										goto bailout;
+								} else {
+									if (BUNappend(mode, 0, FALSE) != GDK_SUCCEED)
+										goto bailout;
+								}
+								if (BUNappend(type, c->type.type->sqlname, FALSE) != GDK_SUCCEED)
+									goto bailout;
 
 								/*printf(" cnt "BUNFMT, BATcount(bn)); */
 								sz = BATcount(bn);
-								BUNappend(cnt, &sz, FALSE);
+								if (BUNappend(cnt, &sz, FALSE) != GDK_SUCCEED)
+									goto bailout;
 
 								/*printf(" loc %s", BBP_physical(bn->batCacheid)); */
-								BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
+								if (BUNappend(loc, BBP_physical(bn->batCacheid), FALSE) != GDK_SUCCEED)
+									goto bailout;
 								/*printf(" width %d", bn->twidth); */
 								w = bn->twidth;
 								if (bn->ttype == TYPE_str) {
@@ -4107,44 +4140,55 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (cnt2)
 										w = (int) (sum / cnt2);
 								}
-								BUNappend(atom, &w, FALSE);
+								if (BUNappend(atom, &w, FALSE) != GDK_SUCCEED)
+									goto bailout;
 
 								sz = BATcount(bn) * bn->twidth; 
-								BUNappend(size, &sz, FALSE);
+								if (BUNappend(size, &sz, FALSE) != GDK_SUCCEED)
+									goto bailout;
 
 								sz = heapinfo(bn->tvheap, bn->batCacheid);
-								BUNappend(heap, &sz, FALSE);
+								if (BUNappend(heap, &sz, FALSE) != GDK_SUCCEED)
+									goto bailout;
 
 								sz = hashinfo(bn->thash, bn->batCacheid);
-								BUNappend(indices, &sz, FALSE);
+								if (BUNappend(indices, &sz, FALSE) != GDK_SUCCEED)
+									goto bailout;
 
 								bitval = 0; /* HASHispersistent(bn); */
-								BUNappend(phash, &bitval, FALSE);
+								if (BUNappend(phash, &bitval, FALSE) != GDK_SUCCEED)
+									goto bailout;
 
 								sz = IMPSimprintsize(bn);
-								BUNappend(imprints, &sz, FALSE);
+								if (BUNappend(imprints, &sz, FALSE) != GDK_SUCCEED)
+									goto bailout;
 								/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap->size:0); */
 								/*printf("\n"); */
 
 								bitval = BATtordered(bn);
 								if (!bitval && bn->tnosorted == 0)
 									bitval = bit_nil;
-								BUNappend(sort, &bitval, FALSE);
+								if (BUNappend(sort, &bitval, FALSE) != GDK_SUCCEED)
+									goto bailout;
 
 								bitval = BATtrevordered(bn);
 								if (!bitval && bn->tnorevsorted == 0)
 									bitval = bit_nil;
-								BUNappend(revsort, &bitval, FALSE);
+								if (BUNappend(revsort, &bitval, FALSE) != GDK_SUCCEED)
+									goto bailout;
 
 								bitval = BATtkey(bn);
 								if (!bitval && bn->tnokey[0] == 0 && bn->tnokey[1] == 0)
 									bitval = bit_nil;
-								BUNappend(key, &bitval, FALSE);
+								if (BUNappend(key, &bitval, FALSE) != GDK_SUCCEED)
+									goto bailout;
 
 								sz = bn->torderidx && bn->torderidx != (Heap *) 1 ? bn->torderidx->free : 0;
-								BUNappend(oidx, &sz, FALSE);
+								if (BUNappend(oidx, &sz, FALSE) != GDK_SUCCEED)
+									goto bailout;
 								w = BATcheckmosaic(bn);
-								BUNappend(compressed, &w, FALSE);
+								if( BUNappend(compressed, &w, FALSE) != GDK_SUCCEED)
+									goto bailout;
 								BBPunfix(bn->batCacheid);
 							}
 
@@ -4162,25 +4206,34 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if( cname && strcmp(bc->name, cname) )
 										continue;
 									/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
-									BUNappend(sch, b->name, FALSE);
-									BUNappend(tab, bt->name, FALSE);
-									BUNappend(col, bc->name, FALSE);
-									if (c->t->access == TABLE_WRITABLE)
-										BUNappend(mode, "writable", FALSE);
-									else if (c->t->access == TABLE_APPENDONLY)
-										BUNappend(mode, "appendonly", FALSE);
-									else if (c->t->access == TABLE_READONLY)
-										BUNappend(mode, "readonly", FALSE);
-									else
-										BUNappend(mode, 0, FALSE);
-									BUNappend(type, "oid", FALSE);
+									if (BUNappend(sch, b->name, FALSE) != GDK_SUCCEED ||
+									    BUNappend(tab, bt->name, FALSE) != GDK_SUCCEED ||
+									    BUNappend(col, bc->name, FALSE) != GDK_SUCCEED)
+										goto bailout;
+									if (c->t->access == TABLE_WRITABLE) {
+										if (BUNappend(mode, "writable", FALSE) != GDK_SUCCEED)
+											goto bailout;
+									} else if (c->t->access == TABLE_APPENDONLY) {
+										if (BUNappend(mode, "appendonly", FALSE) != GDK_SUCCEED)
+											goto bailout;
+									} else if (c->t->access == TABLE_READONLY) {
+										if (BUNappend(mode, "readonly", FALSE) != GDK_SUCCEED)
+											goto bailout;
+									} else {
+										if (BUNappend(mode, 0, FALSE) != GDK_SUCCEED)
+											goto bailout;
+									}
+									if (BUNappend(type, "oid", FALSE) != GDK_SUCCEED)
+										goto bailout;
 
 									/*printf(" cnt "BUNFMT, BATcount(bn)); */
 									sz = BATcount(bn);
-									BUNappend(cnt, &sz, FALSE);
+									if (BUNappend(cnt, &sz, FALSE) != GDK_SUCCEED)
+										goto bailout;
 
 									/*printf(" loc %s", BBP_physical(bn->batCacheid)); */
-									BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
+									if (BUNappend(loc, BBP_physical(bn->batCacheid), FALSE) != GDK_SUCCEED)
+										goto bailout;
 									/*printf(" width %d", bn->twidth); */
 									w = bn->twidth;
 									if (bn->ttype == TYPE_str) {
@@ -4202,39 +4255,50 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										if (cnt2)
 											w = (int) (sum / cnt2);
 									}
-									BUNappend(atom, &w, FALSE);
+									if (BUNappend(atom, &w, FALSE) != GDK_SUCCEED)
+										goto bailout;
 									/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->tvheap? bn->tvheap->size:0)); */
 									sz = tailsize(bn, BATcount(bn));
-									BUNappend(size, &sz, FALSE);
+									if (BUNappend(size, &sz, FALSE) != GDK_SUCCEED)
+										goto bailout;
 
 									sz = bn->tvheap ? bn->tvheap->size : 0;
-									BUNappend(heap, &sz, FALSE);
+									if (BUNappend(heap, &sz, FALSE) != GDK_SUCCEED)
+										goto bailout;
 
 									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heap->size : 0; /* HASHsize() */
-									BUNappend(indices, &sz, FALSE);
+									if (BUNappend(indices, &sz, FALSE) != GDK_SUCCEED)
+										goto bailout;
 									bitval = 0; /* HASHispersistent(bn); */
-									BUNappend(phash, &bitval, FALSE);
+									if (BUNappend(phash, &bitval, FALSE) != GDK_SUCCEED)
+										goto bailout;
 
 									sz = IMPSimprintsize(bn);
-									BUNappend(imprints, &sz, FALSE);
+									if (BUNappend(imprints, &sz, FALSE) != GDK_SUCCEED)
+										goto bailout;
 									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap->size:0); */
 									/*printf("\n"); */
 									bitval = BATtordered(bn);
 									if (!bitval && bn->tnosorted == 0)
 										bitval = bit_nil;
-									BUNappend(sort, &bitval, FALSE);
+									if (BUNappend(sort, &bitval, FALSE) != GDK_SUCCEED)
+										goto bailout;
 									bitval = BATtrevordered(bn);
 									if (!bitval && bn->tnorevsorted == 0)
 										bitval = bit_nil;
-									BUNappend(revsort, &bitval, FALSE);
+									if (BUNappend(revsort, &bitval, FALSE) != GDK_SUCCEED)
+										goto bailout;
 									bitval = BATtkey(bn);
 									if (!bitval && bn->tnokey[0] == 0 && bn->tnokey[1] == 0)
 										bitval = bit_nil;
-									BUNappend(key, &bitval, FALSE);
+									if (BUNappend(key, &bitval, FALSE) != GDK_SUCCEED)
+										goto bailout;
 									sz = bn->torderidx && bn->torderidx != (Heap *) 1 ? bn->torderidx->free : 0;
-									BUNappend(oidx, &sz, FALSE);
+									if (BUNappend(oidx, &sz, FALSE) != GDK_SUCCEED)
+										goto bailout;
 									w = BATcheckmosaic(bn);
-									BUNappend(compressed, &w, FALSE);
+									if( BUNappend(compressed, &w, FALSE) != GDK_SUCCEED)
+										goto bailout;
 									BBPunfix(bn->batCacheid);
 								}
 							}
@@ -4261,6 +4325,43 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*roidx = oidx->batCacheid);
 	BBPkeepref(*rcompressed = compressed->batCacheid);
 	return MAL_SUCCEED;
+
+  bailout:
+	if (sch)
+		BBPunfix(sch->batCacheid);
+	if (tab)
+		BBPunfix(tab->batCacheid);
+	if (col)
+		BBPunfix(col->batCacheid);
+	if (mode)
+		BBPunfix(mode->batCacheid);
+	if (loc)
+		BBPunfix(loc->batCacheid);
+	if (cnt)
+		BBPunfix(cnt->batCacheid);
+	if (type)
+		BBPunfix(type->batCacheid);
+	if (atom)
+		BBPunfix(atom->batCacheid);
+	if (size)
+		BBPunfix(size->batCacheid);
+	if (heap)
+		BBPunfix(heap->batCacheid);
+	if (indices)
+		BBPunfix(indices->batCacheid);
+	if (phash)
+		BBPunfix(phash->batCacheid);
+	if (imprints)
+		BBPunfix(imprints->batCacheid);
+	if (sort)
+		BBPunfix(sort->batCacheid);
+	if (revsort)
+		BBPunfix(revsort->batCacheid);
+	if (key)
+		BBPunfix(key->batCacheid);
+	if (oidx)
+		BBPunfix(oidx->batCacheid);
+	throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
 }
 
 void
@@ -4324,7 +4425,10 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 			pos += pad + extralen;
 			s = h->base + pos;
 			v = (int) (pos - GDK_STRHASHSIZE);
-			BUNappend(r, &v, FALSE);
+			if (BUNappend(r, &v, FALSE) != GDK_SUCCEED) {
+				BBPreclaim(r);
+				throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+			}
 			pos += GDK_STRLEN(s);
 		}
 	} else {
@@ -4379,7 +4483,10 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 			pos += pad + extralen;
 			s = h->base + pos;
 			v = (sht) (pos - GDK_STRHASHSIZE);
-			BUNappend(r, &v, FALSE);
+			if (BUNappend(r, &v, FALSE) != GDK_SUCCEED) {
+				BBPreclaim(r);
+				throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+			}
 			pos += GDK_STRLEN(s);
 		}
 	} else {
@@ -4434,7 +4541,10 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 			pos += pad + extralen;
 			s = h->base + pos;
 			v = (bte) (pos - GDK_STRHASHSIZE);
-			BUNappend(r, &v, FALSE);
+			if (BUNappend(r, &v, FALSE) != GDK_SUCCEED) {
+				BBPreclaim(r);
+				throw(SQL, "calc.index", MAL_MALLOC_FAIL);
+			}
 			pos += GDK_STRLEN(s);
 		}
 	} else {
@@ -4487,7 +4597,10 @@ BATSTRstrings(bat *res, const bat *src)
 			pad += GDK_VARALIGN;
 		pos += pad + extralen;
 		s = h->base + pos;
-		BUNappend(r, s, FALSE);
+		if (BUNappend(r, s, FALSE) != GDK_SUCCEED) {
+			BBPreclaim(r);
+			throw(SQL, "calc.strings", MAL_MALLOC_FAIL);
+		}
 		pos += GDK_STRLEN(s);
 	}
 	BBPunfix(s->batCacheid);

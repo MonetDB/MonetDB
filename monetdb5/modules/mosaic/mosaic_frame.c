@@ -103,12 +103,13 @@ MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 	(void) cntxt;
 	for(i=0; i< task->hdr->framesize; i++, j++){
 		snprintf(buf,BUFSIZ,"frame[%d]",i);
-		BUNappend(btech, buf, FALSE);
-		BUNappend(bcount, &j, FALSE);
-		BUNappend(binput, &cnt, FALSE);
-		BUNappend(boutput, &task->hdr->framefreq[i], FALSE);
 		MOSdump_frameInternal(buf, BUFSIZ, task,i);
-		BUNappend(bproperties, buf, FALSE);
+		if( BUNappend(btech, buf, FALSE) != GDK_SUCCEED ||
+			BUNappend(bcount, &j, FALSE) != GDK_SUCCEED ||
+			BUNappend(binput, &cnt, FALSE) != GDK_SUCCEED ||
+			BUNappend(boutput, &task->hdr->framefreq[i], FALSE) != GDK_SUCCEED ||
+			BUNappend(bproperties, buf, FALSE) != GDK_SUCCEED )
+			return;
 	}
 }
 
@@ -119,13 +120,14 @@ MOSlayout_frame(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	(void) cntxt;
-	BUNappend(btech, "frame blk", FALSE);
-	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	output = chunk_size(task,cnt);
-	BUNappend(binput, &input, FALSE);
-	BUNappend(boutput, &output, FALSE);
-	BUNappend(bproperties, "", FALSE);
+	if( BUNappend(btech, "frame blk", FALSE) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, FALSE) != GDK_SUCCEED ||
+		BUNappend(binput, &input, FALSE) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, FALSE) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", FALSE) != GDK_SUCCEED)
+		return;
 }
 
 void
@@ -617,8 +619,9 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
 			framedecompress(i);\
 			if ( *w == frame + task->hdr->frame.val##TPE [j]){\
-				BUNappend(task->lbat, &oo, FALSE);\
-				BUNappend(task->rbat, &o, FALSE);\
+				if(BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||\
+				BUNappend(task->rbat, &o, FALSE)!= GDK_SUCCEED)\
+				throw(MAL,"mosaic.frame",MAL_MALLOC_FAIL);\
 			}\
 		}\
 	}\

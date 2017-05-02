@@ -193,6 +193,7 @@ resetMalBlk(MalBlkPtr mb, int stop)
 	for(i=0; i<stop; i++) 
 		mb->stmt[i] ->typechk = TYPE_UNKNOWN;
 	mb->stop = stop;
+	mb->errors = 0;
 }
 
 /* The freeMalBlk code is quite defensive. It is used to localize an

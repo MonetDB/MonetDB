@@ -30,13 +30,7 @@ static bool option_disable_fork = false;
 static PyObject *marshal_module = NULL;
 PyObject *marshal_loads = NULL;
 
-int PyAPIEnabled(void)
-{
-	return (GDKgetenv_istrue(pyapi_enableflag) ||
-			GDKgetenv_isyes(pyapi_enableflag));
-}
-
-typedef struct _AggrParams {
+typedef struct _AggrParams{
 	PyInput **pyinput_values;
 	void ****split_bats;
 	size_t **group_counts;
@@ -78,7 +72,9 @@ static MT_Lock pyapiLock;
 static MT_Lock queryLock;
 static int pyapiInitialized = FALSE;
 
-int PyAPIInitialized(void) { return pyapiInitialized; }
+int PYFUNCNAME(PyAPIInitialized)(void) {
+	return pyapiInitialized;
+}
 
 #ifdef HAVE_FORK
 static bool python_call_active = false;
@@ -92,26 +88,26 @@ static bool enable_zerocopy_input = true;
 static bool enable_zerocopy_output = true;
 #endif
 
-str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  bit grouped, bit mapped);
+static str
+PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped);
 
-str PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
+str
+PYFUNCNAME(PyAPIevalStd)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return PyAPIeval(cntxt, mb, stk, pci, 0, 0);
 }
 
-str PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
+str
+PYFUNCNAME(PyAPIevalStdMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return PyAPIeval(cntxt, mb, stk, pci, 0, 1);
 }
 
-str PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
+str
+PYFUNCNAME(PyAPIevalAggr)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return PyAPIeval(cntxt, mb, stk, pci, 1, 0);
 }
 
-str PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
+str
+PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return PyAPIeval(cntxt, mb, stk, pci, 1, 1);
 }
 
@@ -144,18 +140,11 @@ str PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 //! indentation, or converts the source code into a PyCodeObject if the source
 //! code is encoded as such
 //! [CONVERT_BAT] Step 2: It converts the input BATs into Numpy Arrays
-//! [EXECUTE_CODE] Step 3: It executes the Python code using the Numpy arrays as
-//! arguments
-//! [RETURN_VALUES] Step 4: It collects the return values and converts them back
-//! into BATs
-//! If 'mapped' is set to True, it will fork a separate process at
-//! [FORK_PROCESS] that executes Step 1-3, the process will then write the
-//! return values into memory mapped files and exit, then Step 4 is executed by
-//! the main process
-str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  bit grouped, bit mapped)
-{
-	sql_func *sqlfun = NULL;
+//! [EXECUTE_CODE] Step 3: It executes the Python code using the Numpy arrays as arguments
+//! [RETURN_VALUES] Step 4: It collects the return values and converts them back into BATs
+//! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
+static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
+	sql_func * sqlfun = NULL;
 	str exprStr;
 
 	const int additional_columns = 3;
@@ -1429,19 +1418,17 @@ wrapup:
 	return msg;
 }
 
-str PyAPIprelude(void *ret)
-{
-	(void)ret;
+str
+PYFUNCNAME(PyAPIprelude)(void *ret) {
+	(void) ret;
 	MT_lock_init(&pyapiLock, "pyapi_lock");
 	MT_lock_init(&queryLock, "query_lock");
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
 		str msg = MAL_SUCCEED;
+		PyObject *tmp;
 		Py_Initialize();
-		if (PyRun_SimpleString("import numpy") != 0 || _import_array() < 0) {
-			return PyError_CreateException(
-				"Failed to initialize embedded python", NULL);
-		}
+		_import_array();
 		msg = _connection_init();
 		if (msg != MAL_SUCCEED) {
 			MT_lock_unset(&pyapiLock);
@@ -1454,16 +1441,18 @@ str PyAPIprelude(void *ret)
 		}
 		_pytypes_init();
 		_loader_init();
-		marshal_module = PyImport_Import(PyString_FromString("marshal"));
+		tmp = PyString_FromString("marshal");
+		marshal_module = PyImport_Import(tmp);
+		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
-			return createException(MAL, "pyapi.eval",
-								   "Failed to load Marshal module.");
+			return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
 		}
 		marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
 		if (marshal_loads == NULL) {
-			return createException(
-				MAL, "pyapi.eval",
-				"Failed to load function \"loads\" from Marshal module.");
+			return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
+		}
+		if (PyRun_SimpleString("import numpy") != 0) {
+			return PyError_CreateException("Failed to initialize embedded python", NULL);
 		}
 		PyEval_SaveThread();
 		if (msg != MAL_SUCCEED) {
@@ -1471,11 +1460,17 @@ str PyAPIprelude(void *ret)
 			return msg;
 		}
 		pyapiInitialized++;
+		fprintf(stdout, "# MonetDB/Python%d module loaded\n",
+#ifdef IS_PY3K
+			3
+#else
+			2
+#endif
+		);
 	}
 	MT_lock_unset(&pyapiLock);
-	fprintf(stdout, "# MonetDB/Python module loaded\n");
-	option_disable_fork =
-		GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
+	MT_lock_unset(&pyapiLock);
+	option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
 	return MAL_SUCCEED;
 }
 

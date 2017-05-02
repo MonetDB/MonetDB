@@ -36,6 +36,4 @@ headers_opt_sql_append_autoload = {
 	SOURCES = 91_opt_sql_append.mal
 }
 
-EXTRA_DIST = 91_opt_sql_append.mal
-
 EXTRA_DIST_DIR = Tests

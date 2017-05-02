@@ -1,0 +1,249 @@
+stdout of test 'pyapi3_19` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 11:59:04 >  
+# 11:59:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35428" "--set" "mapi_usock=/var/tmp/mtest-5346/.s.monetdb.35428" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 11:59:04 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:35428/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5346/.s.monetdb.35428
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.5'
+# Finished reading the write-ahead log 'sql_logs/sql/log.5'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:59:04 >  
+# 11:59:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5346" "--port=35428"
+# 11:59:04 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION mapped_query() returns table (i integer) LANGUAGE PYTHON_MAP
+#{
+#    _conn.execute('CREATE TABLE pyapi19_integers(i INTEGER);')
+#    _conn.execute('INSERT INTO pyapi19_integers VALUES (0), (1), (2);')
+#    return(1)
+#};
+#SELECT * FROM mapped_query();
+% .L1 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT * FROM pyapi19_integers;
+% sys.pyapi19_integers # table_name
+% i # name
+% int # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+#CREATE FUNCTION mapped_result_query() returns table (i integer) LANGUAGE PYTHON_MAP
+#{
+#    res = _conn.execute('SELECT * FROM pyapi19_integers;')
+#    return res['i']
+#};
+#SELECT * FROM mapped_result_query();
+% .L1 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION pyapi19_create_table() returns table (i integer) LANGUAGE P
+#{
+#    return numpy.arange(100000)
+#};
+#CREATE FUNCTION pyapi19_load_table() returns table (i integer) LANGUAGE PYTHON_MAP
+#{
+#    res = _conn.execute('SELECT * FROM pyapi19_integers;')
+#    return res['i']
+#};
+#CREATE TABLE pyapi19_integers AS SELECT * FROM pyapi19_create_table() WITH DATA;
+#SELECT COUNT(i) FROM pyapi19_load_table();
+% .L5 # table_name
+% L4 # name
+% bigint # type
+% 6 # length
+[ 100000	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE pyapi19_strings(s STRING);
+#INSERT INTO pyapi19_strings VALUES ('hello'), ('33'), ('hello world');
+[ 3	]
+#CREATE FUNCTION mapped_result_query() returns table (i STRING) LANGUAGE PYTHON_MAP
+#{
+#    res = _conn.execute('SELECT * FROM pyapi19_strings;')
+#    return res['s']
+#};
+#SELECT * FROM mapped_result_query();
+% .L1 # table_name
+% i # name
+% clob # type
+% 11 # length
+[ "hello"	]
+[ "33"	]
+[ "hello world"	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE pyapi19_dates(d DATE);
+#INSERT INTO pyapi19_dates VALUES (cast('2014-10-03' as DATE)), (cast('2000-03-24' as DATE)), ('2033-11-22');
+[ 3	]
+#CREATE FUNCTION mapped_result_query() returns table (d DATE) LANGUAGE PYTHON_MAP
+#{
+#    res = _conn.execute('SELECT * FROM pyapi19_dates;')
+#    return res
+#};
+#SELECT * FROM mapped_result_query();
+% .L1 # table_name
+% d # name
+% date # type
+% 10 # length
+[ 2014-10-03	]
+[ 2000-03-24	]
+[ 2033-11-22	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION pyapi19_create_table() returns table (i integer, j integer, k double, l float, m hugeint, n bigint, o STRING, p DECIMAL) LANGUAGE P
+#{
+#    result = dict();
+#    result['i'] = numpy.arange(100000, 0, -1);
+#    result['j'] = numpy.arange(100000, 0 , -1);
+#    result['k'] = numpy.arange(100000);
+#    result['l'] = numpy.arange(100000, 0 , -1);
+#    result['m'] = numpy.arange(100000);
+#    result['n'] = numpy.arange(100000, 0 , -1);
+#    result['o'] = numpy.arange(100000);
+#    result['p'] = numpy.arange(100000);
+#CREATE FUNCTION pyapi19_load_table() returns table (i integer, j integer, k double, l float, m hugeint, n bigint, o STRING, p DECIMAL) LANGUAGE PYTHON_MAP
+#{
+#    res = _conn.execute('SELECT * FROM pyapi19_integers;')
+#    return res
+#};
+#CREATE TABLE pyapi19_integers AS SELECT * FROM pyapi19_create_table() WITH DATA;
+#SELECT * FROM pyapi19_load_table() LIMIT 100;
+% .L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% i,	j,	k,	l,	m,	n,	o,	p # name
+% int,	int,	double,	double,	smallint,	bigint,	clob,	decimal # type
+% 6,	6,	24,	24,	2,	6,	2,	20 # length
+[ 100000,	100000,	0,	1e+05,	0,	100000,	"0",	0.000	]
+[ 99999,	99999,	1,	99999,	1,	99999,	"1",	1.000	]
+[ 99998,	99998,	2,	99998,	2,	99998,	"2",	2.000	]
+[ 99997,	99997,	3,	99997,	3,	99997,	"3",	3.000	]
+[ 99996,	99996,	4,	99996,	4,	99996,	"4",	4.000	]
+[ 99995,	99995,	5,	99995,	5,	99995,	"5",	5.000	]
+[ 99994,	99994,	6,	99994,	6,	99994,	"6",	6.000	]
+[ 99993,	99993,	7,	99993,	7,	99993,	"7",	7.000	]
+[ 99992,	99992,	8,	99992,	8,	99992,	"8",	8.000	]
+[ 99991,	99991,	9,	99991,	9,	99991,	"9",	9.000	]
+[ 99990,	99990,	10,	9.999e+04,	10,	99990,	"10",	10.000	]
+[ 99989,	99989,	11,	99989,	11,	99989,	"11",	11.000	]
+[ 99988,	99988,	12,	99988,	12,	99988,	"12",	12.000	]
+[ 99987,	99987,	13,	99987,	13,	99987,	"13",	13.000	]
+[ 99986,	99986,	14,	99986,	14,	99986,	"14",	14.000	]
+[ 99985,	99985,	15,	99985,	15,	99985,	"15",	15.000	]
+[ 99984,	99984,	16,	99984,	16,	99984,	"16",	16.000	]
+[ 99983,	99983,	17,	99983,	17,	99983,	"17",	17.000	]
+[ 99982,	99982,	18,	99982,	18,	99982,	"18",	18.000	]
+[ 99981,	99981,	19,	99981,	19,	99981,	"19",	19.000	]
+[ 99980,	99980,	20,	9.998e+04,	20,	99980,	"20",	20.000	]
+[ 99979,	99979,	21,	99979,	21,	99979,	"21",	21.000	]
+[ 99978,	99978,	22,	99978,	22,	99978,	"22",	22.000	]
+[ 99977,	99977,	23,	99977,	23,	99977,	"23",	23.000	]
+[ 99976,	99976,	24,	99976,	24,	99976,	"24",	24.000	]
+[ 99975,	99975,	25,	99975,	25,	99975,	"25",	25.000	]
+[ 99974,	99974,	26,	99974,	26,	99974,	"26",	26.000	]
+[ 99973,	99973,	27,	99973,	27,	99973,	"27",	27.000	]
+[ 99972,	99972,	28,	99972,	28,	99972,	"28",	28.000	]
+[ 99971,	99971,	29,	99971,	29,	99971,	"29",	29.000	]
+[ 99970,	99970,	30,	9.997e+04,	30,	99970,	"30",	30.000	]
+[ 99969,	99969,	31,	99969,	31,	99969,	"31",	31.000	]
+[ 99968,	99968,	32,	99968,	32,	99968,	"32",	32.000	]
+[ 99967,	99967,	33,	99967,	33,	99967,	"33",	33.000	]
+[ 99966,	99966,	34,	99966,	34,	99966,	"34",	34.000	]
+[ 99965,	99965,	35,	99965,	35,	99965,	"35",	35.000	]
+[ 99964,	99964,	36,	99964,	36,	99964,	"36",	36.000	]
+[ 99963,	99963,	37,	99963,	37,	99963,	"37",	37.000	]
+[ 99962,	99962,	38,	99962,	38,	99962,	"38",	38.000	]
+[ 99961,	99961,	39,	99961,	39,	99961,	"39",	39.000	]
+[ 99960,	99960,	40,	9.996e+04,	40,	99960,	"40",	40.000	]
+[ 99959,	99959,	41,	99959,	41,	99959,	"41",	41.000	]
+[ 99958,	99958,	42,	99958,	42,	99958,	"42",	42.000	]
+[ 99957,	99957,	43,	99957,	43,	99957,	"43",	43.000	]
+[ 99956,	99956,	44,	99956,	44,	99956,	"44",	44.000	]
+[ 99955,	99955,	45,	99955,	45,	99955,	"45",	45.000	]
+[ 99954,	99954,	46,	99954,	46,	99954,	"46",	46.000	]
+[ 99953,	99953,	47,	99953,	47,	99953,	"47",	47.000	]
+[ 99952,	99952,	48,	99952,	48,	99952,	"48",	48.000	]
+[ 99951,	99951,	49,	99951,	49,	99951,	"49",	49.000	]
+[ 99950,	99950,	50,	9.995e+04,	50,	99950,	"50",	50.000	]
+[ 99949,	99949,	51,	99949,	51,	99949,	"51",	51.000	]
+[ 99948,	99948,	52,	99948,	52,	99948,	"52",	52.000	]
+[ 99947,	99947,	53,	99947,	53,	99947,	"53",	53.000	]
+[ 99946,	99946,	54,	99946,	54,	99946,	"54",	54.000	]
+[ 99945,	99945,	55,	99945,	55,	99945,	"55",	55.000	]
+[ 99944,	99944,	56,	99944,	56,	99944,	"56",	56.000	]
+[ 99943,	99943,	57,	99943,	57,	99943,	"57",	57.000	]
+[ 99942,	99942,	58,	99942,	58,	99942,	"58",	58.000	]
+[ 99941,	99941,	59,	99941,	59,	99941,	"59",	59.000	]
+[ 99940,	99940,	60,	9.994e+04,	60,	99940,	"60",	60.000	]
+[ 99939,	99939,	61,	99939,	61,	99939,	"61",	61.000	]
+[ 99938,	99938,	62,	99938,	62,	99938,	"62",	62.000	]
+[ 99937,	99937,	63,	99937,	63,	99937,	"63",	63.000	]
+[ 99936,	99936,	64,	99936,	64,	99936,	"64",	64.000	]
+[ 99935,	99935,	65,	99935,	65,	99935,	"65",	65.000	]
+[ 99934,	99934,	66,	99934,	66,	99934,	"66",	66.000	]
+[ 99933,	99933,	67,	99933,	67,	99933,	"67",	67.000	]
+[ 99932,	99932,	68,	99932,	68,	99932,	"68",	68.000	]
+[ 99931,	99931,	69,	99931,	69,	99931,	"69",	69.000	]
+[ 99930,	99930,	70,	9.993e+04,	70,	99930,	"70",	70.000	]
+[ 99929,	99929,	71,	99929,	71,	99929,	"71",	71.000	]
+[ 99928,	99928,	72,	99928,	72,	99928,	"72",	72.000	]
+[ 99927,	99927,	73,	99927,	73,	99927,	"73",	73.000	]
+[ 99926,	99926,	74,	99926,	74,	99926,	"74",	74.000	]
+[ 99925,	99925,	75,	99925,	75,	99925,	"75",	75.000	]
+[ 99924,	99924,	76,	99924,	76,	99924,	"76",	76.000	]
+[ 99923,	99923,	77,	99923,	77,	99923,	"77",	77.000	]
+[ 99922,	99922,	78,	99922,	78,	99922,	"78",	78.000	]
+[ 99921,	99921,	79,	99921,	79,	99921,	"79",	79.000	]
+[ 99920,	99920,	80,	9.992e+04,	80,	99920,	"80",	80.000	]
+[ 99919,	99919,	81,	99919,	81,	99919,	"81",	81.000	]
+[ 99918,	99918,	82,	99918,	82,	99918,	"82",	82.000	]
+[ 99917,	99917,	83,	99917,	83,	99917,	"83",	83.000	]
+[ 99916,	99916,	84,	99916,	84,	99916,	"84",	84.000	]
+[ 99915,	99915,	85,	99915,	85,	99915,	"85",	85.000	]
+[ 99914,	99914,	86,	99914,	86,	99914,	"86",	86.000	]
+[ 99913,	99913,	87,	99913,	87,	99913,	"87",	87.000	]
+[ 99912,	99912,	88,	99912,	88,	99912,	"88",	88.000	]
+[ 99911,	99911,	89,	99911,	89,	99911,	"89",	89.000	]
+[ 99910,	99910,	90,	9.991e+04,	90,	99910,	"90",	90.000	]
+[ 99909,	99909,	91,	99909,	91,	99909,	"91",	91.000	]
+[ 99908,	99908,	92,	99908,	92,	99908,	"92",	92.000	]
+[ 99907,	99907,	93,	99907,	93,	99907,	"93",	93.000	]
+[ 99906,	99906,	94,	99906,	94,	99906,	"94",	94.000	]
+[ 99905,	99905,	95,	99905,	95,	99905,	"95",	95.000	]
+[ 99904,	99904,	96,	99904,	96,	99904,	"96",	96.000	]
+[ 99903,	99903,	97,	99903,	97,	99903,	"97",	97.000	]
+[ 99902,	99902,	98,	99902,	98,	99902,	"98",	98.000	]
+[ 99901,	99901,	99,	99901,	99,	99901,	"99",	99.000	]
+#ROLLBACK;
+
+# 11:59:05 >  
+# 11:59:05 >  "Done."
+# 11:59:05 >  
+

@@ -73,8 +73,6 @@ MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 	(void) cntxt;
 
-	BUNappend(btech, "runlength blk", FALSE);
-	BUNappend(bcount, &cnt, FALSE);
 	input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: output = wordaligned( MosaicBlkSize + sizeof(bte),bte); break;
@@ -98,9 +96,12 @@ MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 		}
 		break;
 	}
-	BUNappend(binput, &input, FALSE);
-	BUNappend(boutput, &output, FALSE);
-	BUNappend(bproperties, "", FALSE);
+	if( BUNappend(btech, "runlength blk", FALSE) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, FALSE) != GDK_SUCCEED ||
+		BUNappend(binput, &input, FALSE) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, FALSE) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", FALSE) != GDK_SUCCEED )
+		return;
 }
 
 void
@@ -691,8 +692,9 @@ MOSprojection_runlength(Client cntxt,  MOStask task)
 	for(n = task->elm, o = 0; n -- > 0; w++,o++)\
 	if ( *w == *v)\
 		for(oo= (oid) first; oo < (oid) last; v++, oo++){\
-			BUNappend(task->lbat, &oo, FALSE);\
-			BUNappend(task->rbat, &o, FALSE);\
+			if(BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||\
+			BUNappend(task->rbat, &o, FALSE) != GDK_SUCCEED )\
+			throw(MAL,"mosaic.runlength",MAL_MALLOC_FAIL);\
 		}\
 }
 
@@ -725,8 +727,9 @@ MOSjoin_runlength(Client cntxt,  MOStask task)
 				for(n = task->elm, o = 0; n -- > 0; w++,o++)
 				if ( *w == *v)
 					for(oo= (oid) first; oo < (oid) last; v++, oo++){
-						BUNappend(task->lbat, &oo, FALSE);
-						BUNappend(task->rbat, &o, FALSE);
+						if( BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||
+						BUNappend(task->rbat, &o, FALSE) != GDK_SUCCEED )
+						throw(MAL,"mosaic.runlength",MAL_MALLOC_FAIL);
 					}
 			}
 			break;

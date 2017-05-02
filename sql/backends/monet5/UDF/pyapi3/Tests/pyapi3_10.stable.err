@@ -1,0 +1,64 @@
+stderr of test 'pyapi3_10` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
+
+
+# 15:32:31 >  
+# 15:32:31 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33372" "--set" "mapi_usock=/var/tmp/mtest-27693/.s.monetdb.33372" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 15:32:31 >  
+
+# builtin opt 	gdk_dbpath = /home/mytherin/opt/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33372
+# cmdline opt 	mapi_usock = /var/tmp/mtest-27693/.s.monetdb.33372
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/mytherin/opt/var/mTests_sql_backends_monet5
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = true
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:32:31 >  
+# 15:32:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27693" "--port=33372"
+# 15:32:31 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-30156/.s.monetdb.35525
+QUERY = SELECT AVG(pyapi10_error(i,j)) FROM pyapi10_random_table_nulls(5000);
+ERROR = !Could not parse Python code
+        !  
+        !  1. def pyfun(i,j,_columns,_column_types,_conn):
+        !> 2.     return(i*j 
+        !  3. 
+        !unexpected EOF while parsing (<string>, line 2)
+MAPI  = (monetdb) /var/tmp/mtest-56217/.s.monetdb.35996
+QUERY = SELECT AVG(pyapi10_indentation_error(i,j)) FROM pyapi10_random_table_nulls(5000);
+ERROR = !Could not parse Python code
+        !  7.     f = 6
+        !  8.     g = 7
+        !> 9.         h = 8
+        !  10.     i = 9
+        !  11.     j = 10
+        !unexpected indent (<string>, line 9)
+MAPI  = (monetdb) /var/tmp/mtest-30156/.s.monetdb.35525
+QUERY = SELECT AVG(pyapi10_runtime_exception(i,j)) FROM pyapi10_random_table_nulls(5000);
+ERROR = !Python exception
+        !  4.   mydivision = 0
+        !  5.   # comments
+        !> 6.   hello = myint / mydivision
+        !  7.   # comments
+        !  8.   return return_val
+        !division by zero
+
+# 15:32:31 >  
+# 15:32:31 >  "Done."
+# 15:32:31 >  
+

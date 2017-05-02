@@ -95,20 +95,22 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	MOSinitializeScan(cntxt,task,0,task->hdr->top);
 	// safe the general properties
 
-		BUNappend(btech, "ratio", FALSE);
-		BUNappend(bcount, &zero, FALSE);
-		BUNappend(binput, &zero, FALSE);
-		BUNappend(boutput, &zero , FALSE);
 		snprintf(buf,BUFSIZ,"%g", task->hdr->ratio);
-		BUNappend(bproperties, buf, FALSE);
+		if( BUNappend(btech, "ratio", FALSE) != GDK_SUCCEED ||
+			BUNappend(bcount, &zero, FALSE) != GDK_SUCCEED ||
+			BUNappend(binput, &zero, FALSE) != GDK_SUCCEED ||
+			BUNappend(bproperties, buf, FALSE) != GDK_SUCCEED ||
+			BUNappend(boutput, &zero , FALSE) != GDK_SUCCEED)
+				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 	for(i=0; i < MOSAIC_METHODS-1; i++){
 		lng zero = 0;
 		snprintf(buf,BUFSIZ,"%s blocks", MOSfiltername[i]);
-		BUNappend(btech, buf, FALSE);
-		BUNappend(bcount, &task->hdr->blks[i], FALSE);
-		BUNappend(binput, &task->hdr->elms[i], FALSE);
-		BUNappend(boutput, &zero , FALSE);
-		BUNappend(bproperties, "", FALSE);
+		if( BUNappend(btech, buf, FALSE) != GDK_SUCCEED ||
+			BUNappend(bcount, &task->hdr->blks[i], FALSE) != GDK_SUCCEED ||
+			BUNappend(binput, &task->hdr->elms[i], FALSE) != GDK_SUCCEED ||
+			BUNappend(boutput, &zero , FALSE) != GDK_SUCCEED ||
+			BUNappend(bproperties, "", FALSE) != GDK_SUCCEED)
+				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 	}
 	if( task->hdr->blks[MOSAIC_FRAME])
 		MOSlayout_frame_hdr(cntxt,task,btech,bcount,binput,boutput,bproperties);
@@ -117,11 +119,12 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	if( task->hdr->blks[MOSAIC_CALENDAR])
 		MOSlayout_calendar(cntxt,task,btech,bcount,binput,boutput,bproperties);
 
-	BUNappend(btech, "========", FALSE);
-	BUNappend(bcount, &zero, FALSE);
-	BUNappend(binput, &zero, FALSE);
-	BUNappend(boutput, &zero , FALSE);
-	BUNappend(bproperties, "", FALSE);
+	if( BUNappend(btech, "========", FALSE) != GDK_SUCCEED ||
+		BUNappend(bcount, &zero, FALSE) != GDK_SUCCEED ||
+		BUNappend(binput, &zero, FALSE) != GDK_SUCCEED ||
+		BUNappend(boutput, &zero , FALSE) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", FALSE) != GDK_SUCCEED)
+			throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 
 	while(task->start< task->stop){
 		switch(MOSgetTag(task->blk)){
@@ -1523,11 +1526,12 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 	// Collect the results in a table
 	for(i=0;i< CANDIDATES; i++){
 		if( pattern[i] && pat[i].xf >=0){
-			BUNappend(boutput,&pat[i].xsize,FALSE);
-			BUNappend(btech,pat[i].technique,FALSE);
-			BUNappend(bratio,&pat[i].xf,FALSE);
-			BUNappend(bcompress,&pat[i].clk1,FALSE);
-			BUNappend(bdecompress,&pat[i].clk2,FALSE);
+			if( BUNappend(boutput,&pat[i].xsize,FALSE) != GDK_SUCCEED ||
+				BUNappend(btech,pat[i].technique,FALSE) != GDK_SUCCEED ||
+				BUNappend(bratio,&pat[i].xf,FALSE) != GDK_SUCCEED ||
+				BUNappend(bcompress,&pat[i].clk1,FALSE) != GDK_SUCCEED ||
+				BUNappend(bdecompress,&pat[i].clk2,FALSE) != GDK_SUCCEED )
+					return;
 		}
 		if( pat[i].technique) GDKfree(pat[i].technique);
 	}

@@ -354,6 +354,49 @@ SQLrun(Client c, backend *be, mvc *m){
 	return msg;
 }
 
+/*
+ * Escape single quotes and backslashes. This is important to do before calling
+ * SQLstatementIntern, if we are pasting user provided strings into queries
+ * passed to the SQLstatementIntern. Otherwise we open ourselves to SQL
+ * injection attacks.
+ *
+ * It returns the input string with all the single quotes(') and the backslashes
+ * (\) doubled, or NULL, if it could not allocate enough space.
+ *
+ * The caller is responsible to free the returned value.
+ */
+str
+SQLescapeString(str s)
+{
+	str ret = NULL;
+	char *p, *q;
+	size_t len = 0;
+
+	if(!s) {
+		return NULL;
+	}
+
+	/* At most we will need 2*strlen(s) + 1 characters */
+	len = strlen(s);
+	ret = (str)GDKmalloc(2*len + 1);
+	if (!ret) {
+		return NULL;
+	}
+
+	for (p = s, q = ret; *p != '\0'; p++, q++) {
+		*q = *p;
+		if (*p == '\'') {
+			*(++q) = '\'';
+		}
+		else if (*p == '\\') {
+			*(++q) = '\\';
+		}
+	}
+
+	*q = '\0';
+	return ret;
+}
+
 str
 SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
@@ -369,12 +412,14 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	str msg = MAL_SUCCEED;
 	backend *be, *sql = (backend *) c->sqlcontext;
 	size_t len = strlen(*expr);
+	int inited = 0;
 
 #ifdef _SQL_COMPILE
 	mnstr_printf(c->fdout, "#SQLstatement:%s\n", *expr);
 #endif
 	if (!sql) {
-		msg = SQLinitEnvironment(c, NULL, NULL, NULL);
+		inited = 1;
+		msg = SQLinitClient(c);
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){
@@ -386,8 +431,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	m = sql->mvc;
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
-	if (!o)
+	if (!o) {
+		if (inited)
+			SQLresetClient(c);
 		throw(SQL, "SQLstatement", MAL_MALLOC_FAIL);
+	}
 	*o = *m;
 	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
 	m->qc = NULL;
@@ -559,8 +607,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					rname = e->rname;
 					if (!rname && e->type == e_column && e->l)
 						rname = e->l;
-					res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
-							t->scale, t->type->localtype, ptr);
+					if (res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
+							   t->scale, t->type->localtype, ptr) == NULL) {
+						msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+						goto endofcompile;
+					}
 				}
 				*result = res;
 			}
@@ -616,6 +667,8 @@ endofcompile:
 	m->vars = vars;
 	m->session->status = status;
 	m->session->auto_commit = ac;
+	if (inited)
+		SQLresetClient(c);
 	return msg;
 }
 

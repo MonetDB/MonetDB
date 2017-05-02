@@ -56,7 +56,7 @@ struct OPTcatalog {
 {"remap",		0,	0,	0},
 {"remote",		0,	0,	0},
 {"reorder",		0,	0,	0},
-{"replication",	0,	0,	0},
+{"wlcr",		0,	0,	0},
 {"pushselect",	0,	0,	0},
 { 0,	0,	0,	0}
 };
@@ -400,6 +400,8 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		
 	if( getModuleId(p) == pyapiRef ||
 		getModuleId(p) == pyapimapRef ||
+		getModuleId(p) == pyapi3Ref ||
+		getModuleId(p) == pyapi3mapRef ||
 		getModuleId(p) == rapiRef)
 		return TRUE;
 
@@ -437,6 +439,10 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 	if ( getModuleId(p) == sqlcatalogRef)
 		return TRUE;
 	if ( getModuleId(p) == oltpRef)
+		return TRUE;
+	if ( getModuleId(p) == wlrRef)
+		return TRUE;
+	if ( getModuleId(p) == wlcRef)
 		return TRUE;
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;
@@ -521,7 +527,8 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
-		 getModuleId(p) != batpyapiRef;
+		 getModuleId(p) != batpyapiRef &&
+		 getModuleId(p) != batpyapi3Ref;
 }
 
 int isLikeOp(InstrPtr p){

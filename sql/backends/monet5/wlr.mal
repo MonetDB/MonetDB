@@ -1,0 +1,260 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+
+module wlr;
+
+pattern replicate()
+address WLRreplicate
+comment "Roll the snapshot forward to an up-to-date clone";
+
+pattern replicate(ts:timestamp)
+address WLRreplicate
+comment "Roll the snapshot forward to an up-to-date clone";
+
+pattern replicate(dbname:str)
+address WLRreplicate
+comment "Roll the snapshot forward to an up-to-date clone";
+
+pattern replicate(dbname:str, ts:timestamp)
+address WLRreplicate
+comment "Roll the snapshot forward to the time TS";
+
+pattern replicate(dbname:str, id:bte)
+address WLRreplicate
+comment "Roll the snapshot forward to a specific transaction id";
+
+pattern replicate(dbname:str, id:sht)
+address WLRreplicate
+comment "Roll the snapshot forward to a specific transaction id";
+
+pattern replicate(dbname:str, id:int)
+address WLRreplicate
+comment "Roll the snapshot forward to a specific transaction id";
+
+pattern replicate(dbname:str, id:lng)
+address WLRreplicate
+comment "Roll the snapshot forward to a specific transaction id";
+
+pattern setreplicabeat(dur:int)
+address WLRsetreplicabeat
+comment "Threshold (in seconds) for re-running queries";
+
+pattern getreplicaclock():str
+address WLRgetreplicaclock
+comment "Timestamp of last replicated transaction.";
+
+pattern getreplicatick():lng
+address WLRgetreplicatick
+comment "Transaction identifier of the last replicated transaction.";
+
+pattern transaction(tid:lng, started:str, user:str)
+address WLRtransaction
+comment "Mark the beginning of the work unit which can be a compound transaction";
+
+pattern commit()
+address WLRcommit
+comment "Mark the end of the work unit";
+
+pattern rollback()
+address WLRrollback
+comment "Mark the end of the work unit";
+
+pattern catalog(q:str)
+address WLRcatalog
+comment "A catalog changing query";
+
+pattern action(q:str)
+address WLRaction
+comment "A query producing updates";
+
+
+pattern append(sname:str, tname:str, cname:str, ins:any...):int
+address WLRappend
+comment "Apply the insertions in the workload-capture-replay list";
+
+pattern update(sname:str, tname:str, cname:str, tid:oid, val:any):int
+address WLRupdate
+comment "Apply the update in the workload-capture-replay list";
+
+pattern delete(sname:str, tname:str, b:oid...):int
+address WLRdelete
+comment "Apply the deletions in the workload-capture-replay list";
+
+pattern clear_table(sname:str, tname:str):int
+address WLRclear_table
+comment "Destroy the tuples in the table";
+
+pattern create_seq( sname:str, seqname:str, action:int)
+address WLRgeneric
+comment "Catalog operation create_seq";
+
+pattern alter_seq( sname:str, seqname:str, val:lng)
+address WLRgeneric
+comment "Catalog operation alter_seq";
+
+pattern drop_seq( sname:str, nme:str, action:int)
+address WLRgeneric
+comment "Catalog operation drop_seq";
+
+pattern create_schema(sname:str, auth:str, action:int)
+address WLRgeneric
+comment "Catalog operation create_schema";
+
+pattern drop_schema( sname:str, s:str, action:int, ifexists:int)
+address WLRgeneric
+comment "Catalog operation drop_schema";
+
+pattern drop_schema( sname:str, s:str, action:int)
+address WLRgeneric
+comment "Catalog operation drop_schema";
+
+pattern create_table(sname:str, tname:str, temp:int)
+address WLRgeneric
+comment "Catalog operation create_table";
+
+pattern create_view(sname:str, tname:str, temp:int)
+address WLRgeneric
+comment "Catalog operation create_view";
+
+pattern drop_table( sname:str, name:str, action:int , ifexists:int)
+address WLRgeneric
+comment "Catalog operation drop_table";
+
+pattern drop_table( sname:str, name:str, action:int )
+address WLRgeneric
+comment "Catalog operation drop_table";
+pattern drop_view( sname:str, name:str, action:int, ifexists:int)
+address WLRgeneric
+comment "Catalog operation drop_view";
+
+pattern drop_view( sname:str, name:str, action:int)
+address WLRgeneric
+comment "Catalog operation drop_view";
+
+pattern drop_constraint( sname:str, name:str, action:int)
+address WLRgeneric
+comment "Catalog operation drop_constraint";
+
+pattern alter_table( sname:str, action:int)
+address WLRgeneric
+comment "Catalog operation alter_table";
+
+pattern create_type( sname:str, nme:str, impl:str)
+address WLRgeneric
+comment "Catalog operation create_type";
+
+pattern drop_type( sname:str, nme:str, action:int)
+address WLRgeneric
+comment "Catalog operation drop_type";
+
+pattern grant_roles( sname:str, auth:str, grantor:int, admin:int)
+address WLRgeneric
+comment "Catalog operation grant_roles";
+
+pattern revoke_roles( sname:str, auth:str, grantor:int, admin:int)
+address WLRgeneric
+comment "Catalog operation revoke_roles";
+
+pattern grant( sname:str, tbl:str, grantee:str, privs:int, cname:str, gr:int, grantor:int)
+address WLRgeneric
+comment "Catalog operation grant";
+
+pattern revoke ( sname:str, tbl:str, grantee:str, privs:int, cname:str,grant:int, grantor:int)
+address WLRgeneric
+comment "Catalog operation revoke";
+
+pattern grant_function( sname:str, fcnid:int, grantee:str, privs:int, grant:int, grantor:int)
+address WLRgeneric
+comment "Catalog operation grant_function";
+
+pattern revoke_function( sname:str, fcnid:int, grantee:str, privs:int, grant:int, grantor:int)
+address WLRgeneric
+comment "Catalog operation revoke_function";
+
+pattern create_user( sname:str, passwrd:str, enc:int, schema:str, fullname:str)
+address WLRgeneric
+comment "Catalog operation create_user";
+
+pattern drop_user(sname:str, action:int)
+address WLRgeneric
+comment "Catalog operation drop_user";
+
+pattern drop_user(sname:str, auth:str, action:int)
+address WLRgeneric
+comment "Catalog operation drop_user";
+
+
+pattern alter_user( sname:str, passwrd:str, enc:int, schema:str, oldpasswrd:str)
+address WLRgeneric
+comment "Catalog operation alter_user";
+
+pattern rename_user( sname:str, newnme:str, action:int)
+address WLRgeneric
+comment "Catalog operation rename_user";
+
+pattern create_role(sname:str,role:str,grator:int)
+address WLRgeneric
+comment "Catalog operation create_role";
+
+pattern drop_role( auth:str, role:str, action:int)
+address WLRgeneric
+comment "Catalog operation drop_role";
+pattern drop_role( role:str, action:int)
+address WLRgeneric
+comment "Catalog operation drop_role";
+
+pattern drop_index( sname:str, iname:str, action:int)
+address WLRgeneric
+comment "Catalog operation drop_index";
+
+pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
+address WLRgeneric
+comment "Catalog operation drop_function";
+
+pattern create_function( sname:str, fname:str)
+address WLRgeneric
+comment "Catalog operation create_function";
+
+pattern create_trigger( sname:str, tname:str, triggername:str, time:int, orientation:int, event:int, old:str, new:str, cond:str, qry:str)
+address WLRgeneric
+comment "Catalog operation create_trigger";
+
+pattern drop_trigger(sname:str,nme:str )
+address WLRgeneric
+comment "Catalog operation drop_trigger";
+
+pattern alter_add_table( sname:str, mtnme:str, psnme:str, ptnme:str, action:int)
+address WLRgeneric
+comment "Catalog operation alter_add_table";
+
+pattern alter_del_table( sname:str, mtnme:str, psnme:str, ptnme:str, action:int)
+address WLRgeneric
+comment "Catalog operation alter_del_table";
+
+pattern alter_set_table( sname:str, tnme:str, access:int)
+address WLRgeneric
+comment "Catalog operation alter_set_table";
+
+pattern transaction_release(chain:int,name:str):void
+address WLRgeneric
+comment "A transaction statement (type can be commit,release,rollback or start)";
+
+pattern transaction_commit(chain:int,name:str):void
+address WLRgeneric
+comment "A transaction statement (type can be commit,release,rollback or start)";
+
+pattern transaction_rollback(chain:int,name:str):void
+address WLRgeneric
+comment "A transaction statement (type can be commit,release,rollback or start)";
+
+pattern transaction_begin(chain:int,name:str):void
+address WLRgeneric
+comment "A transaction statement (type can be commit,release,rollback or start)";
+
+unsafe pattern transaction()
+address WLRgeneric
+comment "Start an autocommit transaction";
+

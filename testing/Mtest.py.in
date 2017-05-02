@@ -55,6 +55,23 @@ else:
     # no coloring if not to a tty
     RED = GREEN = PURPLE = BLACK = ''
 
+if os.path.exists('/usr/bin/coredumpctl'):
+    # probably Linux if /usr/bin/coredumpctl exists
+    # try raising the core dump size limit to infinite so that when we
+    # get a crash we have a chance to retrieve the stack trace
+    try:
+        import resource
+    except ImportError:
+        pass
+    else:
+        try:
+            resource.setrlimit(resource.RLIMIT_CORE,
+                               (resource.RLIM_INFINITY,
+                                resource.getrlimit(resource.RLIMIT_CORE)[1]))
+        except ValueError:
+            # if we can't raise the limit, just forget it
+            pass
+
 def ErrExit(msg):
     sys.stderr.write(msg + '\n')
     sys.exit(1)
@@ -309,6 +326,7 @@ CONDITIONALS = {
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
+    'HAVE_LIBPY3'          : "@HAVE_LIBPY3_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
@@ -1525,6 +1543,18 @@ def returnCode(proc, f = None):
         if proc.returncode == -signal.SIGSEGV:
             if f is not None:
                 f.write('\nSegmentation fault\n')
+                if os.path.exists('/usr/bin/coredumpctl'):
+                    # wait a few seconds for the core to be dumped
+                    time.sleep(10)
+                    if procdebug:
+                        print('Starting: coredumpctl info %d' % proc.pid)
+                    p = process.Popen(['coredumpctl', 'info', str(proc.pid)],
+                                      stdout = process.PIPE,
+                                      stderr = process.PIPE,
+                                      universal_newlines = True)
+                    out, err = p.communicate()
+                    if not err and out:
+                        f.write(out)
                 f.flush()
             return 'segfault'   # Segmentation fault
         if proc.returncode == -signal.SIGBUS:
@@ -1535,6 +1565,18 @@ def returnCode(proc, f = None):
         if proc.returncode == -signal.SIGABRT:
             if f is not None:
                 f.write('\nAborted\n')
+                if os.path.exists('/usr/bin/coredumpctl'):
+                    # wait a few seconds for the core to be dumped
+                    time.sleep(10)
+                    if procdebug:
+                        print('Starting: coredumpctl info %d' % proc.pid)
+                    p = process.Popen(['coredumpctl', 'info', str(proc.pid)],
+                                      stdout = process.PIPE,
+                                      stderr = process.PIPE,
+                                      universal_newlines = True)
+                    out, err = p.communicate()
+                    if not err and out:
+                        f.write(out)
                 f.flush()
             return 'abort'      # Aborted
         if proc.returncode == -signal.SIGINT:
@@ -2803,9 +2845,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if (not all_tests or (COND != None and "HAVE_LIBR" in COND)) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
-            # enable Python integration in server
-            if (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
+            if (COND != None and "HAVE_LIBPY3" in COND) and CONDITIONALS['HAVE_LIBPY3']:
+                # enable Python 3 integration in server
+                Srvr.extend(['--set', 'embedded_py=3'])
+            elif (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
+                # enable Python integration in server
                 Srvr.extend(['--set', 'embedded_py=true'])
+
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"

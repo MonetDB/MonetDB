@@ -156,7 +156,6 @@ malLoadScript(Client c, str name, bstream **fdin)
 	c->blkmode = oldblkmode; \
 	c->srcFile = oldsrcFile;
 
-
 #ifdef HAVE_EMBEDDED
 extern char* mal_init_inline;
 #endif
@@ -167,7 +166,7 @@ extern char* mal_init_inline;
 str
 malInclude(Client c, str name, int listing)
 {
-	str s= MAL_SUCCEED;
+	str s = MAL_SUCCEED;
 	str filename;
 	str p;
 
@@ -202,7 +201,7 @@ malInclude(Client c, str name, int listing)
 		c->bak = NULL;
 		c->fdin = bstream_create(mal_init_stream, mal_init_len);
 		bstream_next(c->fdin);
-		parseMAL(c, c->curprg, 1);
+		parseMAL(c, c->curprg, 1, INT_MAX);
 		free(mal_init_buf);
 		free(mal_init_stream);
 		free(c->fdin);
@@ -219,7 +218,7 @@ malInclude(Client c, str name, int listing)
 			c->yycur = 0;
 			c->bak = NULL;
 			if ((s = malLoadScript(c, filename, &c->fdin)) == MAL_SUCCEED) {
-				parseMAL(c, c->curprg, 1);
+				parseMAL(c, c->curprg, 1, INT_MAX);
 				bstream_destroy(c->fdin);
 			} else {
 				freeException(s); // not interested in error here

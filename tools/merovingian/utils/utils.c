@@ -135,6 +135,7 @@ defaultProperty(const char *property) {
 		strcmp(property, "mfunnel") == 0 ||
 		strcmp(property, "embedr") == 0 ||
 		strcmp(property, "embedpy") == 0 ||
+		strcmp(property, "embedpy3") == 0 ||
 		strcmp(property, "optpipe") == 0;
 }
 

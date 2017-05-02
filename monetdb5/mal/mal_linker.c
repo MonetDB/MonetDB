@@ -65,8 +65,7 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 {
 	void *dl;
 	MALfcn adr;
-	static int idx=0;
-
+	int idx=0;
 	static int prev= -1;
 
 	/* First try the last module loaded */
@@ -82,7 +81,9 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 	 * obtained from the source-file MAL script.
 	 */
 	for (idx =0; idx < lastfile; idx++)
-		if (filesLoaded[idx].handle) {
+		if (idx != prev &&		/* skip already searched module */
+			filesLoaded[idx].handle &&
+			(idx == 0 || filesLoaded[idx].handle != filesLoaded[0].handle)) {
 			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
 			if (adr != NULL)  {
 				prev = idx;
@@ -412,7 +413,17 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 int
 malLibraryEnabled(str name) {
 	if (strcmp(name, "pyapi") == 0) {
-		return GDKgetenv_istrue("embedded_py") || GDKgetenv_isyes("embedded_py");
+		char *val = GDKgetenv("embedded_py");
+		if (val && (strcasecmp(val, "2") == 0 || GDKgetenv_istrue("embedded_py") || GDKgetenv_istrue("embedded_py"))) {
+			return true;
+		}
+		return false;
+	} else if (strcmp(name, "pyapi3") == 0) {
+		char *val = GDKgetenv("embedded_py");
+		if (val && strcasecmp(val, "3") == 0) {
+			return true;
+		}
+		return false;
 	}
 	return true;
 }
@@ -420,7 +431,10 @@ malLibraryEnabled(str name) {
 char*
 malLibraryHowToEnable(str name) {
 	if (strcmp(name, "pyapi") == 0) {
-		return "Embedded Python has not been enabled. Start server with --set embedded_py=true";
+		return "Embedded Python 2 has not been enabled. Start server with --set embedded_py=2";
+	}
+	if (strcmp(name, "pyapi3") == 0) {
+		return "Embedded Python 3 has not been enabled. Start server with --set embedded_py=3";
 	}
 	return "";
 }

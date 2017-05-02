@@ -32,7 +32,7 @@ Ready.
 % sys.L2 # table_name
 % L2 # name
 % decimal # type
-% 41 # length
+% 40 # length
 [ 10.000000	]
 #select EXTRACT (SECOND FROM FIPS2) FROM A;
 % sys.L2 # table_name

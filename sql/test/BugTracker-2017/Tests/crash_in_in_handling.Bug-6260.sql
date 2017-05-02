@@ -1,0 +1,16 @@
+CREATE TABLE tab0(pk INTEGER PRIMARY KEY, col0 INTEGER, col1 FLOAT, col2 TEXT, col3 INTEGER, col4 FLOAT, col5 TEXT);
+
+INSERT INTO tab0 VALUES(0,698,169.42,'apdbu',431,316.15,'sqvis');
+INSERT INTO tab0 VALUES(1,538,676.36,'fuqeu',514,685.97,'bgwrq');
+INSERT INTO tab0 VALUES(2,90,205.26,'yrrzx',123,836.88,'kpuhc');
+INSERT INTO tab0 VALUES(3,620,864.8,'myrdv',877,820.98,'oxkuv');
+INSERT INTO tab0 VALUES(4,754,677.3,'iofrg',67,665.49,'bzqba');
+INSERT INTO tab0 VALUES(5,107,710.19,'lhfro',286,504.28,'kwwsg');
+INSERT INTO tab0 VALUES(6,904,193.16,'eozui',48,698.55,'ejyzs');
+INSERT INTO tab0 VALUES(7,606,650.64,'ovmce',417,962.43,'dvkbh');
+INSERT INTO tab0 VALUES(8,535,18.11,'ijika',630,489.63,'hpnyu');
+INSERT INTO tab0 VALUES(9,501,776.40,'cvygg',725,75.5,'etlyv');
+
+SELECT * FROM tab0 AS cor0 WHERE NOT NULL IN ( col3 );
+
+drop table tab0;

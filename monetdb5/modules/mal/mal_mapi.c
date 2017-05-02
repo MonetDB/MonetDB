@@ -127,10 +127,15 @@ doChallenge(void *data)
 	char *buf = (char *) GDKmalloc(BLOCK + 1);
 	char challenge[13];
 	char *algos;
+
 	stream *fdin = ((struct challengedata *) data)->in;
 	stream *fdout = ((struct challengedata *) data)->out;
 	bstream *bs;
 	ssize_t len = 0;
+	protocol_version protocol = PROTOCOL_9;
+	size_t buflen = BLOCK;
+	column_compression colcomp = COLUMN_COMPRESSION_NONE;
+	int compute_column_widths = 0;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -155,7 +160,8 @@ doChallenge(void *data)
 	/* generate the challenge string */
 	generateChallenge(challenge, 8, 12);
 	algos = mcrypt_getHashAlgorithms();
-	/* note that we claim to speak proto 9 here for hashed passwords */
+
+	// send the challenge over the block stream
 	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
 			challenge,
 			algos,
@@ -177,6 +183,81 @@ doChallenge(void *data)
 		return;
 	}
 	buf[len] = 0;
+
+	if (strstr(buf, "PROT10")) {
+		char *errmsg = NULL;
+		char *buflenstrend, *buflenstr = strstr(buf, "PROT10");
+		compression_method comp;
+		protocol = PROTOCOL_10;
+		buflenstr = strchr(buflenstr, ':') + 1;
+		buflenstr = strchr(buflenstr, ':') + 1;
+		if (!buflenstr) {
+			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
+		buflenstrend = strchr(buflenstr, ':');
+
+		if (buflenstrend) buflenstrend[0] = '\0';
+		buflen = atol(buflenstr);
+		if (buflenstrend) buflenstrend[0] = ':';
+
+		if (strstr(buf, "COMPUTECOLWIDTH")) {
+			compute_column_widths = 1;
+		}
+
+		if (buflen < BLOCK) {
+			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
+
+		comp = COMPRESSION_NONE;
+		if (strstr(buf, "COMPRESSION_SNAPPY")) {
+#ifdef HAVE_LIBSNAPPY
+			comp = COMPRESSION_SNAPPY;
+#else
+			errmsg = "!server does not support Snappy compression.\n";
+#endif
+		} else if (strstr(buf, "COMPRESSION_LZ4")) {
+#ifdef HAVE_LIBLZ4
+			comp = COMPRESSION_LZ4;
+#else
+			errmsg = "!server does not support LZ4 compression.\n";
+#endif
+		} else if (strstr(buf, "COMPRESSION_NONE")) {
+			comp = COMPRESSION_NONE;
+		} else {
+			errmsg = "!no compression type specified.\n";
+		}
+
+		if (errmsg) {
+			// incorrect compression type specified
+			mnstr_printf(fdout, "%s", errmsg);
+			close_stream(fdin);
+			close_stream(fdout);
+			return;
+		}
+
+		{
+			// convert the block_stream into a block_stream2
+			stream *from, *to;
+			from = bs_stealstream(fdin);
+			to = bs_stealstream(fdout);
+			close_stream(fdin);
+			close_stream(fdout);
+			fdin = block_stream2(from, buflen, comp, colcomp);
+			fdout = block_stream2(to, buflen, comp, colcomp);
+		}
+
+		if (fdin == NULL || fdout == NULL) {
+			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+			return;
+		}
+	}
+
 #ifdef DEBUG_SERVER
 	fprintf(stderr,"mal_mapi:Client accepted %s\n", buf);
 	fflush(stderr);
@@ -194,7 +275,7 @@ doChallenge(void *data)
 		return;
 	}
 	bs->eof = 1;
-	MSscheduleClient(buf, challenge, bs, fdout);
+	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen, compute_column_widths);
 }
 
 static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */

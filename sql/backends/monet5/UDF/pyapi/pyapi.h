@@ -16,26 +16,30 @@
 
 #include "pyheader.h"
 
-pyapi_export str PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							  InstrPtr pci);
-pyapi_export str PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							   InstrPtr pci);
-pyapi_export str PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-								 InstrPtr pci);
-pyapi_export str PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-								  InstrPtr pci);
-pyapi_export str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-								 InstrPtr pci);
+/* not using PYFUNCNAME macro here to help the malcheck test perform
+ * its work (it's a bit of a shame that we need to do this, but it's a
+ * valuable test) */
+pyapi_export str PYAPI2PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYAPI2PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYAPI2PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYAPI2PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYAPI2PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-pyapi_export str PyAPIprelude(void *ret);
+pyapi_export str PYAPI2PyAPIprelude(void *ret);
 
-int PyAPIEnabled(void);
-int PyAPIInitialized(void);
+
+pyapi_export str PYAPI3PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYAPI3PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYAPI3PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYAPI3PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+pyapi_export str PYAPI3PyAPIprelude(void *ret);
+
+int PYFUNCNAME(PyAPIInitialized)(void);
 
 str _loader_init(void);
 
 pyapi_export char *PyError_CreateException(char *error_text, char *pycall);
-
-#define pyapi_enableflag "embedded_py"
 
 #endif /* _PYPI_LIB_ */

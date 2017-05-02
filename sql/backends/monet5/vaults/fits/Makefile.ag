@@ -25,7 +25,7 @@ INCLUDES = .. \
 lib__fits = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = fits.c
+	SOURCES = fits.c fits.h
 	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
 	       $(cfitsio_LIBS)
 }
@@ -47,5 +47,3 @@ headers_fitsautoload = {
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 72_fits.mal
 }
-
-EXTRA_DIST = 72_fits.mal fits.mal 72_fits.sql fits.h

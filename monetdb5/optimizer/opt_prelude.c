@@ -16,6 +16,7 @@
 #include "optimizer_private.h"
 
 str abortRef;
+str actionRef;
 str affectedRowsRef;
 str aggrRef;
 str alarmRef;
@@ -68,6 +69,7 @@ str emptybindidxRef;
 str bpmRef;
 str bstreamRef;
 str calcRef;
+str catalogRef;
 str clear_tableRef;
 str closeRef;
 str columnRef;
@@ -228,6 +230,9 @@ str batrapiRef;
 str pyapiRef;
 str batpyapiRef;
 str pyapimapRef;
+str pyapi3Ref;
+str batpyapi3Ref;
+str pyapi3mapRef;
 str subeval_aggrRef;
 str rankRef;
 str dense_rankRef;
@@ -246,6 +251,7 @@ str reuseRef;
 str revoke_rolesRef;
 str revoke_functionRef;
 str revokeRef;
+str rollbackRef;
 str row_numberRef;
 str rpcRef;
 str rsColumnRef;
@@ -263,7 +269,6 @@ str sortRef;
 str sortReverseRef;
 str sqlRef;
 str sqlcatalogRef;
-str srvpoolRef;
 str streamsRef;
 str startRef;
 str starttraceRef;
@@ -290,6 +295,8 @@ str unlockRef;
 str unpackRef;
 str unpinRef;
 str updateRef;
+str wlcRef;
+str wlrRef;
 str timestampRef;
 str thetaselectRef;
 str likeselectRef;
@@ -301,6 +308,7 @@ str zero_or_oneRef;
 void optimizerInit(void)
 {
 	abortRef = putName("abort");
+	actionRef = putName("action");
 	affectedRowsRef = putName("affectedRows");
 	aggrRef = putName("aggr");
 	alarmRef = putName("alarm");
@@ -352,6 +360,7 @@ void optimizerInit(void)
 	bpmRef = putName("bpm");
 	bstreamRef = putName("bstream");
 	calcRef = putName("calc");
+	catalogRef = putName("catalog");
 	clear_tableRef = putName("clear_table");
 	compressRef = putName("compress");
 	decompressRef = putName("decompress");
@@ -509,6 +518,9 @@ void optimizerInit(void)
     pyapiRef = putName("pyapi");
     batpyapiRef = putName("batpyapi");
     pyapimapRef = putName("batpyapimap");
+    pyapi3Ref = putName("pyapi3");
+    batpyapi3Ref = putName("batpyapi3");
+    pyapi3mapRef = putName("batpyapi3map");
 	subeval_aggrRef = putName("subeval_aggr");
 	rankRef = putName("rank");
 	dense_rankRef = putName("dense_rank");
@@ -526,6 +538,7 @@ void optimizerInit(void)
 	revokeRef = putName("revoke");
 	reuseRef = putName("reuse");
 	revoke_rolesRef = putName("revoke_roles");
+	rollbackRef = putName("rollback");
 	revoke_functionRef = putName("revoke_function");
 	row_numberRef = putName("row_number");
 	rpcRef = putName("rpc");
@@ -545,7 +558,6 @@ void optimizerInit(void)
 	sortReverseRef = putName("sortReverse");
 	sqlRef = putName("sql");
 	sqlcatalogRef = putName("sqlcatalog");
-	srvpoolRef = putName("srvpool");
 	streamsRef = putName("streams");
 	startRef = putName("start");
 	starttraceRef = putName("starttrace");
@@ -573,6 +585,8 @@ void optimizerInit(void)
 	unpinRef = putName("unpin");
 	updateRef = putName("update");
 	userRef = putName("user");
+	wlcRef = putName("wlc");
+	wlrRef = putName("wlr");
 	selectRef = putName("select");
 	thetaselectRef = putName("thetaselect");
 	vectorRef = putName("vector");

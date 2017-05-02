@@ -13234,7 +13234,7 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 		return NULL;
 	if (checkbats(b, b2, "BATcalcifthenelse") != GDK_SUCCEED)
 		return NULL;
-	if (b->ttype != TYPE_bit || b1->ttype != b2->ttype) {
+	if (b->ttype != TYPE_bit || ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("BATcalcifthenelse: \"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
