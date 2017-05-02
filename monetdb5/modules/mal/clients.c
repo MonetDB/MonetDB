@@ -636,7 +636,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	last = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
 	qtimeout = COLnew(0, TYPE_lng, 0, TRANSIENT);
 	active = COLnew(0, TYPE_bit, 0, TRANSIENT);
-	if ( user == NULL || login == NULL || stimeout == NULL || qtimeout == NULL || active == NULL){
+	if ( user == NULL || login == NULL || stimeout == NULL || last == NULL || qtimeout == NULL || active == NULL){
 		if ( user) BBPunfix(user->batCacheid);
 		if ( login) BBPunfix(login->batCacheid);
 		if ( stimeout) BBPunfix(stimeout->batCacheid);

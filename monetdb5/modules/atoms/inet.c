@@ -122,7 +122,8 @@ INETfromString(const char *src, int *len, inet **retval)
 		*retval = GDKzalloc(sizeof(inet));
 		if( *retval == NULL){
 			GDKerror("INETfromString "MAL_MALLOC_FAIL);
-			goto error;
+			*len = 0;
+			return 0;
 		}
 	} else {
 		memset(*retval, 0, sizeof(inet));

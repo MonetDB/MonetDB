@@ -70,13 +70,19 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		} else if( stk)
 			val = &stk->stk[varid];
 
-		VALformat(&cv, val);
-		if (len + strlen(cv) >= maxlen)
-			buf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
-
-		if( buf == 0){
+		if (VALformat(&cv, val) <= 0) {
+			GDKfree(buf);
 			GDKerror("renderTerm:Failed to allocate");
 			return NULL;
+		}
+		if (len + strlen(cv) >= maxlen) {
+			char *nbuf = GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
+			if (nbuf == NULL) {
+				GDKfree(buf);
+				GDKerror("renderTerm:Failed to allocate");
+				return NULL;
+			}
+			buf = nbuf;
 		}
 
 		if( strcmp(cv,"nil") == 0){
@@ -93,7 +99,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			}
 			strcat(buf+len,cv);
 			len += strlen(buf+len);
-			if( cv) GDKfree(cv);
+			GDKfree(cv);
 
 			if( closequote ){
 				strcat(buf+len,"\"");
@@ -116,6 +122,11 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		strcat(buf + len,":");
 		len++;
 		tpe = getTypeName(getVarType(mb, varid));
+		if (tpe == NULL) {
+			GDKfree(buf);
+			GDKerror("renderTerm:Failed to allocate");
+			return NULL;
+		}
 		len += snprintf(buf+len,maxlen-len,"%s",tpe);
 		GDKfree(tpe);
 	}

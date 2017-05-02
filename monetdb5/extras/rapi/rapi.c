@@ -490,10 +490,12 @@ void* RAPIloopback(void *query) {
 			retlist = PROTECT(allocVector(VECSXP, ncols));
 			names = PROTECT(NEW_STRING(ncols));
 			for (i = 0; i < ncols; i++) {
-				if (!(varvalue = bat_to_sexp(BATdescriptor(output->cols[i].b)))) {
+				BAT *b = BATdescriptor(output->cols[i].b);
+				if (b == NULL || !(varvalue = bat_to_sexp(b))) {
 					UNPROTECT(i + 3);
 					return ScalarString(RSTR("Conversion error"));
 				}
+				BBPunfix(b->batCacheid);
 				SET_STRING_ELT(names, i, RSTR(output->cols[i].name));
 				SET_VECTOR_ELT(retlist, i, varvalue);
 			}
