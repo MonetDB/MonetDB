@@ -89,6 +89,7 @@ include tokenizer;
 
 include mal_mapi;
 include oltp;
+include wlc;
 
 # Any extensions (MAL scripts) that should be automatically loaded upon
 # startup can be placed in the autoload directory.  One typically finds

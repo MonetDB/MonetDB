@@ -36,6 +36,7 @@ lib_mal = {
 		mkey.c mkey.h \
 		manifold.c manifold.h \
 		oltp.c oltp.h \
+		wlc.c wlc.h \
 		pcre.c \
 		profiler.c profiler.h \
 		querylog.c querylog.h \
@@ -59,7 +60,7 @@ headers_mal = {
 		inspect.mal manual.mal mal_io.mal mkey.mal manifold.mal \
 		iterator.mal clients.mal \
 		factories.mal groupby.mal mdb.mal pcre.mal mat.mal \
-		transaction.mal oltp.mal \
+		transaction.mal oltp.mal wlc.mal \
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal \
 		tokenizer.mal sample.mal json_util.mal \

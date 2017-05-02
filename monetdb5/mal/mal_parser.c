@@ -1750,7 +1750,7 @@ part3:
 }
 
 int
-parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
+parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 {
 	int cntrl = 0;
 	/*Symbol curPrg= cntxt->curprg;*/
@@ -1759,9 +1759,10 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 
 	echoInput(cntxt);
 	/* here the work takes place */
-	while ((c = currChar(cntxt))) {
+	while ((c = currChar(cntxt)) && lines > 0) {
 		switch (c) {
 		case '\n': case '\r': case '\f':
+			lines -= c =='\n';
 			nextChar(cntxt);
 			echoInput(cntxt);
 			continue;

@@ -16,6 +16,7 @@
 #include "optimizer_private.h"
 
 str abortRef;
+str actionRef;
 str affectedRowsRef;
 str aggrRef;
 str alarmRef;
@@ -68,6 +69,7 @@ str emptybindidxRef;
 str bpmRef;
 str bstreamRef;
 str calcRef;
+str catalogRef;
 str clear_tableRef;
 str closeRef;
 str columnRef;
@@ -246,6 +248,7 @@ str reuseRef;
 str revoke_rolesRef;
 str revoke_functionRef;
 str revokeRef;
+str rollbackRef;
 str row_numberRef;
 str rpcRef;
 str rsColumnRef;
@@ -289,6 +292,8 @@ str unlockRef;
 str unpackRef;
 str unpinRef;
 str updateRef;
+str wlcRef;
+str wlrRef;
 str timestampRef;
 str thetaselectRef;
 str likeselectRef;
@@ -300,6 +305,7 @@ str zero_or_oneRef;
 void optimizerInit(void)
 {
 	abortRef = putName("abort");
+	actionRef = putName("action");
 	affectedRowsRef = putName("affectedRows");
 	aggrRef = putName("aggr");
 	alarmRef = putName("alarm");
@@ -351,6 +357,7 @@ void optimizerInit(void)
 	bpmRef = putName("bpm");
 	bstreamRef = putName("bstream");
 	calcRef = putName("calc");
+	catalogRef = putName("catalog");
 	clear_tableRef = putName("clear_table");
 	closeRef = putName("close");
 	columnRef = putName("column");
@@ -525,6 +532,7 @@ void optimizerInit(void)
 	revokeRef = putName("revoke");
 	reuseRef = putName("reuse");
 	revoke_rolesRef = putName("revoke_roles");
+	rollbackRef = putName("rollback");
 	revoke_functionRef = putName("revoke_function");
 	row_numberRef = putName("row_number");
 	rpcRef = putName("rpc");
@@ -571,6 +579,8 @@ void optimizerInit(void)
 	unpinRef = putName("unpin");
 	updateRef = putName("update");
 	userRef = putName("user");
+	wlcRef = putName("wlc");
+	wlrRef = putName("wlr");
 	selectRef = putName("select");
 	thetaselectRef = putName("thetaselect");
 	vectorRef = putName("vector");

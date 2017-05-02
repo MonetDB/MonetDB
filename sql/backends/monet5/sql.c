@@ -238,8 +238,9 @@ SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sql->session->auto_commit != 0)
 		throw(SQL, "sql.trans", "2DM30!COMMIT: not allowed in auto commit mode");
 	ret = mvc_commit(sql, 0, 0);
-	if (ret < 0)
+	if (ret < 0) {
 		throw(SQL, "sql.trans", "2D000!COMMIT: failed");
+	}
 	return msg;
 }
 
@@ -1129,11 +1130,11 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( tids && BATcount(tids) > 4096 && tids->batPersistence == PERSISTENT)
 		BATmsync(tids);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store_funcs.update_col(m->session->tr, c, tids, upd, tpe);
+		store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
-			store_funcs.update_idx(m->session->tr, i, tids, upd, tpe);
+			store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
 	}
 	BBPunfix(tids->batCacheid);
 	BBPunfix(upd->batCacheid);

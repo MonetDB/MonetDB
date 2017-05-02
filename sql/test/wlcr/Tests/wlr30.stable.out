@@ -1,0 +1,54 @@
+stdout of test 'wlr30` in directory 'sql/test/wlcr` itself:
+
+
+# 10:21:36 >  
+# 10:21:36 >  "/usr/bin/python2" "wlr30.py" "wlr30"
+# 10:21:36 >  
+
+# MonetDB 5 server v11.26.0 (hg id: cbfc9f47e58c)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_wlcr-clone', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:55121/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29054/.s.monetdb.55121
+# MonetDB/GIS module loaded
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone/../mTests_sql_test_wlcr/master/mTests_sql_test_wlcr_000000000010
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone/../mTests_sql_test_wlcr/master/mTests_sql_test_wlcr_000000000011
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone/../mTests_sql_test_wlcr/master/mTests_sql_test_wlcr_000000000012
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone/../mTests_sql_test_wlcr/master/mTests_sql_test_wlcr_000000000013
+# MonetDB/SQL module loaded
+#select * from tmp;
+% sys.tmp,	sys.tmp # table_name
+% i,	s # name
+% int,	clob # type
+% 1,	5 # length
+[ 1,	"hello"	]
+[ 2,	"world"	]
+[ 3,	"blah"	]
+[ 4,	"bloh"	]
+[ 5,	"red"	]
+[ 6,	"fox"	]
+#call replicate('mTests_sql_test_wlcr');
+#Waiting for replay scheduler to stop
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000004
+#replay log file:/export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000005
+#select * from tmp;
+% sys.tmp,	sys.tmp # table_name
+% i,	s # name
+% int,	clob # type
+% 1,	4 # length
+[ 3,	"blah"	]
+[ 2,	"blah"	]
+[ 3,	"blah"	]
+[ 4,	"blah"	]
+[ 5,	"blah"	]
+[ 6,	"blah"	]
+
+# 10:21:36 >  
+# 10:21:36 >  "Done."
+# 10:21:36 >  
+

@@ -9,6 +9,7 @@
 INCLUDES = ../include ../common ../storage \
 		   ../../monetdb5/mal \
 		   ../../monetdb5/modules/atoms \
+		   ../../monetdb5/modules/mal \
 		   ../../monetdb5/extras/rapi \
 		   ../../clients/mapilib \
 		   ../../common/options \

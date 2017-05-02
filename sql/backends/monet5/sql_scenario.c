@@ -35,6 +35,8 @@
 #include "mal_debugger.h"
 #include "mal_linker.h"
 #include "bat5.h"
+#include "wlc.h"
+#include "wlr.h"
 #include "msabaoth.h"
 #include <mtime.h>
 #include "optimizer.h"
@@ -262,6 +264,7 @@ SQLinit(void)
 		}
 		GDKregister(idlethread);
 	}
+	WLCinit();
 	return MAL_SUCCEED;
 }
 
@@ -390,7 +393,7 @@ SQLautocommit(Client c, mvc *m)
 			mvc_rollback(m, 0, NULL);
 		} else if (mvc_commit(m, 0, NULL) < 0) {
 			return handle_error(m, c->fdout, 0);
-		}
+		} 
 	}
 	return TRUE;
 }
@@ -436,6 +439,7 @@ SQLinitClient(Client c)
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	MT_lock_set(&sql_contextLock);
+	WLRinit();
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
