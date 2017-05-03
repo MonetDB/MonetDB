@@ -24,17 +24,6 @@ stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade-chain` itself:
 # MonetDB/R   module loaded
 
 Ready.
-Running database upgrade commands:
-set schema "sys";
-drop procedure sys.settimeout(bigint);
-drop procedure sys.settimeout(bigint,bigint);
-drop procedure sys.setsession(bigint);
-create procedure sys.settimeout("query" bigint) external name clients.settimeout;
-create procedure sys.settimeout("query" bigint, "session" bigint) external name clients.settimeout;
-create procedure sys.setsession("timeout" bigint) external name clients.setsession;
-insert into sys.systemfunctions (select id from sys.functions where name in ('settimeout', 'setsession') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-delete from systemfunctions where function_id not in (select id from functions);
-set schema "sys";
 
 # 15:41:19 >  
 # 15:41:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7576" "--port=32696"
