@@ -65,18 +65,6 @@ set schema "testschema";
 
 Running database upgrade commands:
 set schema "sys";
-drop procedure sys.settimeout(bigint);
-drop procedure sys.settimeout(bigint,bigint);
-drop procedure sys.setsession(bigint);
-create procedure sys.settimeout("query" bigint) external name clients.settimeout;
-create procedure sys.settimeout("query" bigint, "session" bigint) external name clients.settimeout;
-create procedure sys.setsession("timeout" bigint) external name clients.setsession;
-insert into sys.systemfunctions (select id from sys.functions where name in ('settimeout', 'setsession') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-delete from systemfunctions where function_id not in (select id from functions);
-set schema "testschema";
-
-Running database upgrade commands:
-set schema "sys";
 delete from sys._columns where table_id = (select id from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys'));
 delete from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys');
 drop function sys.malfunctions;
