@@ -79,37 +79,6 @@ void_bat_create(int adt, BUN nr)
 	return b;
 }
 
-static void *
-TABLETstrFrStr(Column *c, char *s, char *e)
-{
-	int len = (int) (e - s + 1);	/* 64bit: should check for overflow */
-
-	if (c->len < len) {
-		c->len = len;
-		c->data = GDKrealloc(c->data, len);
-	}
-
-	if (s == e) {
-		*(char *) c->data = 0;
-	} else if (GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s)) < 0) {
-		return NULL;
-	}
-	return c->data;
-}
-
-void *
-TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote)
-{
-	if (s == NULL || (!quote && strcmp(s, "nil") == 0)) {
-		memcpy(c->data, ATOMnilptr(type), c->nillen);
-	} else if (type == TYPE_str) {
-		return TABLETstrFrStr(c, s, e);
-	} else if ((*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data) < 0) {
-		return NULL;
-	}
-	return c->data;
-}
-
 int
 TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 {
