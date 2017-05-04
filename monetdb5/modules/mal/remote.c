@@ -814,7 +814,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 				mod, fcn);
 	} else {
 		/* we basically hope/assume this is a "doesn't exist" error */
-		GDKfree(msg);
+		freeException(msg);
 	}
 	if (mhdl)
 		mapi_close_handle(mhdl);

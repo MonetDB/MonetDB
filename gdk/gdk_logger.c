@@ -740,10 +740,14 @@ static int
 tr_grow(trans *tr)
 {
 	if (tr->nr == tr->sz) {
+		logaction *tmp;
 		tr->sz <<= 1;
+		tmp = tr->changes;
 		tr->changes = (logaction *) GDKrealloc(tr->changes, tr->sz * sizeof(logaction));
-		if (tr->changes == NULL)
+		if (tr->changes == NULL) {
+			GDKfree(tmp);
 			return 0;
+		}
 	}
 	/* cleanup the next */
 	tr->changes[tr->nr].name = NULL;

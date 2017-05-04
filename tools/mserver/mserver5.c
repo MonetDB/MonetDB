@@ -667,7 +667,7 @@ main(int argc, char **av)
 				if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
 					mal_exit();
 				fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
-				GDKfree(msg);
+				freeException(msg);
 			}
 			GDKfree(monet_script[i]);
 			monet_script[i] = 0;

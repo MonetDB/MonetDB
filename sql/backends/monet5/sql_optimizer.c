@@ -241,7 +241,7 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 		if (be->mvc->debug) {
 			msg = runMALDebugger(c, c->curprg->def);
 			if (msg != MAL_SUCCEED)
-				GDKfree(msg); /* ignore error */
+				freeException(msg); /* ignore error */
 		}
 		return NULL;
 	}

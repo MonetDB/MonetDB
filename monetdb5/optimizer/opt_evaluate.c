@@ -224,7 +224,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #ifdef DEBUG_OPT_EVALUATE
 				mnstr_printf(cntxt->fdout, "Evaluated %s\n", msg);
 #endif
-				GDKfree(msg);
+				freeException(msg);
 				mb->errors = 0;
 			}
 		}

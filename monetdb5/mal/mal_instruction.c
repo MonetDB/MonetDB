@@ -71,7 +71,6 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 
 	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
 	if (p == NULL) {
-		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return -1;
 	}
 	mb->stmt = p;
@@ -94,13 +93,11 @@ newMalBlk(int maxvars, int maxstmts)
 	*/
 	v = (VarPtr *) GDKzalloc(sizeof(VarPtr) * maxvars);
 	if (v == NULL) {
-		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
 	if (mb == NULL) {
 		GDKfree(v);
-		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 
@@ -142,28 +139,31 @@ void
 resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar)
 {
 	int i;
+	void *tmp;
 
 	if ( maxvar < maxstmt)
 		maxvar = maxstmt;
 	if ( mb->ssize > maxstmt && mb->vsize > maxvar)
-		return ;
+		return;
 
-	mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, maxstmt * sizeof(InstrPtr));
-	if ( mb->stmt == NULL)
+	tmp = GDKrealloc(mb->stmt, maxstmt * sizeof(InstrPtr));
+	if (tmp == NULL)
 		goto wrapup;
+	mb->stmt = tmp;
 	for ( i = mb->ssize; i < maxstmt; i++)
 		mb->stmt[i] = 0;
 	mb->ssize = maxstmt;
 
-	mb->var = (VarPtr*) GDKrealloc(mb->var, maxvar * sizeof (VarPtr));
-	if ( mb->var == NULL)
+	tmp = GDKrealloc(mb->var, maxvar * sizeof (VarPtr));
+	if (tmp == NULL)
 		goto wrapup;
+	mb->var = tmp;
 	for( i = mb->vsize; i < maxvar; i++)
 		mb->var[i] = 0;
 	mb->vsize = maxvar;
 	return;
 wrapup:
-	GDKerror("resizeMalBlk:" MAL_MALLOC_FAIL);
+	mb->errors++;
 }
 /* The resetMalBlk code removes instructions, but without freeing the
  * space. This way the structure is prepared for re-use */
@@ -224,7 +224,6 @@ copyMalBlk(MalBlkPtr old)
 
 	mb = (MalBlkPtr) GDKzalloc(sizeof(MalBlkRecord));
 	if (mb == NULL) {
-		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	mb->alternative = old->alternative;
@@ -236,7 +235,6 @@ copyMalBlk(MalBlkPtr old)
 
 	if (mb->var == NULL) {
 		GDKfree(mb);
-		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	mb->vsize = old->vsize;
@@ -258,7 +256,6 @@ copyMalBlk(MalBlkPtr old)
 	if (mb->stmt == NULL) {
 		GDKfree(mb->var);
 		GDKfree(mb);
-		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 
@@ -408,7 +405,7 @@ newInstruction(MalBlkPtr mb, int kind)
 	if (p == NULL) {
 		p = GDKzalloc(MAXARG * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
 		if (p == NULL) {
-			showException(GDKout, MAL, "pushEndInstruction", "memory allocation failure");
+			showException(GDKout, MAL, "pushEndInstruction", MAL_MALLOC_FAIL);
 			return NULL;
 		}
 		p->maxarg = MAXARG;
@@ -454,7 +451,6 @@ copyInstruction(InstrPtr p)
 	InstrPtr new;
 	new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->maxarg));
 	if( new == NULL) {
-		GDKerror("copyInstruction:failed to allocated space");
 		return new;
 	}
 	oldmoveInstruction(new, p);
@@ -729,7 +725,7 @@ makeVarSpace(MalBlkPtr mb)
 		new = GDKrealloc(mb->var, s * sizeof(VarPtr));
 		if (new == NULL) {
 			mb->errors++;
-			showScriptException(GDKout, mb, 0, MAL, "newMalBlk:no storage left\n");
+			showScriptException(GDKout, mb, 0, MAL, MAL_MALLOC_FAIL);
 			return -1;
 		}
 		memset(new + mb->vsize, 0, (s - mb->vsize) * sizeof(VarPtr));
@@ -754,7 +750,6 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) );
 		if ( getVar(mb,n) == NULL) {
 			mb->errors++;
-			GDKerror("newVariable:" MAL_MALLOC_FAIL);
 			return -1;
 		}
 	}
@@ -1243,7 +1238,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			GDKfree(ft);
 			GDKfree(tt);
 			mb->errors++;
-			GDKfree(msg);
+			freeException(msg);
 		} else {
 			assert(cst->vtype == type);
 		}
@@ -1508,7 +1503,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 
 		if (newblk == NULL) {
 			mb->errors++;
-			showException(GDKout, MAL, "pushInstruction", "out of memory (requested: %d bytes)", space);
+			showException(GDKout, MAL, "pushInstruction", MAL_MALLOC_FAIL " (requested: %d bytes)", space);
 			return;
 		}
 		memcpy(newblk, mb->stmt, mb->ssize * sizeof(InstrPtr));

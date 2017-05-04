@@ -216,12 +216,12 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 		/* try GDKrealloc if the heap size stays within
 		 * reasonable limits */
 		if (!must_mmap) {
-			void *p = h->base;
 			h->newstorage = h->storage = STORE_MEM;
 			h->base = GDKreallocmax(h->base, size, &h->size, 0);
-			HEAPDEBUG fprintf(stderr, "#HEAPextend: extending malloced heap " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->size, PTRFMTCAST p, PTRFMTCAST h->base);
+			HEAPDEBUG fprintf(stderr, "#HEAPextend: extending malloced heap " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->size, PTRFMTCAST bak.base, PTRFMTCAST h->base);
 			if (h->base)
 				return GDK_SUCCEED; /* success */
+			/* bak.base is still valid and may get restored */
 			failure = "h->storage == STORE_MEM && !must_map && !h->base";
 		}
 		/* too big: convert it to a disk-based temporary heap */
@@ -630,7 +630,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 {
 	size_t minsize;
 	int ret = 0;
-	char *srcpath, *dstpath;
+	char *srcpath, *dstpath, *tmp;
 	int t0;
 
 	h->storage = h->newstorage = h->size < 4 * GDK_mmap_pagesize ? STORE_MEM : STORE_MMAP;
@@ -677,7 +677,14 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	 * takes precedence. */
 	srcpath = GDKfilepath(h->farmid, BATDIR, nme, ext);
 	dstpath = GDKfilepath(h->farmid, BATDIR, nme, ext);
-	srcpath = GDKrealloc(srcpath, strlen(srcpath) + strlen(suffix) + 1);
+	if (srcpath == NULL ||
+	    dstpath == NULL ||
+	    (tmp = GDKrealloc(srcpath, strlen(srcpath) + strlen(suffix) + 1)) == NULL) {
+		GDKfree(srcpath);
+		GDKfree(dstpath);
+		return GDK_FAIL;
+	}
+	srcpath = tmp;
 	strcat(srcpath, suffix);
 
 	t0 = GDKms();

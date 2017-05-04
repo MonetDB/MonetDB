@@ -550,7 +550,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	cst.len = 0;
 	msg = convertConstant(idx, &cst);
 	if (msg != MAL_SUCCEED) {
-		GDKfree(msg);
+		freeException(msg);
 		return NULL;
 	}
 	_t = defConstant(mb,idx,&cst);
@@ -572,7 +572,7 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 	cst.len = 0;
 	msg = convertConstant(tpe, &cst);
 	if (msg != MAL_SUCCEED) {
-		GDKfree(msg);
+		freeException(msg);
 		return NULL;
 	}
 	_t = defConstant(mb,tpe,&cst);
@@ -595,7 +595,7 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 	cst.len = 0;
 	msg = convertConstant(tpe, &cst);
 	if (msg != MAL_SUCCEED) {
-		GDKfree(msg);
+		freeException(msg);
 		return NULL;
 	}
 	_t = defConstant(mb,tpe,&cst);

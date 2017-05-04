@@ -245,7 +245,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	{
 		str msg = AUTHgetUsername(&c->username, c);
 		if (msg)				/* shouldn't happen */
-			GDKfree(msg);
+			freeException(msg);
 	}
 #endif
 	MT_sema_init(&c->s, 0, "Client->s");
@@ -291,7 +291,7 @@ MCinitClientThread(Client c)
 	if (c->errbuf == NULL) {
 		char *n = GDKzalloc(GDKMAXERRLEN);
 		if ( n == NULL){
-			showException(GDKout, MAL, "initClientThread", "Failed to initialize client");
+			showException(GDKout, MAL, "initClientThread", MAL_MALLOC_FAIL);
 			return -1;
 		}
 		GDKsetbuf(n);

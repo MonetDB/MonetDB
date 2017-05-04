@@ -2424,6 +2424,8 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 			throw(MAL, "str.insert", MAL_MALLOC_FAIL);
 		}
 		v= *ret = GDKmalloc((int)strlen(*s)+(int)strlen(*s2)+1 );
+		if (v == NULL)
+			throw(MAL, "str.insert", MAL_MALLOC_FAIL);
 		strncpy(v, *s,strt);
 		v[strt]=0;
 		strcat(v,*s2);

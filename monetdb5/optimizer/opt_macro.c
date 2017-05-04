@@ -404,7 +404,7 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				if (getSignature(t)->token == FUNCTIONsymbol){
 					str msg = MACROprocessor(cntxt, target, t);
 					if( msg != MAL_SUCCEED)
-						GDKfree(msg);
+						freeException(msg);
 				}
 			}
 	}
@@ -451,7 +451,7 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol) {
 					msg =ORCAMprocessor(cntxt, target, t);
-					if( msg) GDKfree(msg);
+					if( msg) freeException(msg);
 				}
 			}
 	}

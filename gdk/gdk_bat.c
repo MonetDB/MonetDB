@@ -284,7 +284,14 @@ BATattach(int tt, const char *heapfile, int role)
 		while ((c = getc(f)) != EOF) {
 			if (n == m) {
 				m += 4096;
-				p = GDKrealloc(p, m);
+				s = GDKrealloc(p, m);
+				if (s == NULL) {
+					GDKfree(p);
+					BBPreclaim(bn);
+					fclose(f);
+					return NULL;
+				}
+				p = s;
 				s = p + n;
 			}
 			if (c == '\n' && n > 0 && s[-1] == '\r') {

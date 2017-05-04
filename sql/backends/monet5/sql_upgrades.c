@@ -1455,8 +1455,14 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 		return NULL;
 
 	geomupgrade = (*fixfunc)(olddb);
+	if (geomupgrade == NULL)
+		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
 	bufsize = strlen(geomupgrade) + 512;
 	buf = GDKmalloc(bufsize);
+	if (buf == NULL) {
+		GDKfree(geomupgrade);
+		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
+	}
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
 	GDKfree(geomupgrade);
@@ -2234,7 +2240,7 @@ SQLupgrades(Client c, mvc *m)
 	if (!sql_bind_func(m->sa, s, "md5", &tp, NULL, F_FUNC)) {
 		if ((err = sql_update_oct2014(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 	/* if table returning function sys.environment() does not
@@ -2242,7 +2248,7 @@ SQLupgrades(Client c, mvc *m)
 	if (!sql_bind_func(m->sa, s, "environment", NULL, NULL, F_UNION)) {
 		if ((err = sql_update_oct2014_sp1(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 	/* if sys.tablestoragemodel.auxillary exists, we need
@@ -2250,7 +2256,7 @@ SQLupgrades(Client c, mvc *m)
 	if (mvc_bind_column(m, mvc_bind_table(m, s, "tablestoragemodel"), "auxillary")) {
 		if ((err = sql_update_oct2014_sp2(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
@@ -2260,7 +2266,7 @@ SQLupgrades(Client c, mvc *m)
 	if (!sql_bind_func(m->sa, s, "left_shift", &tp, &tp, F_FUNC)) {
 		if ((err = sql_update_oct2014_sp3(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
@@ -2270,7 +2276,7 @@ SQLupgrades(Client c, mvc *m)
 		if (!sql_bind_aggr(m->sa, s, "var_pop", &tp)) {
 			if ((err = sql_update_hugeint(c, m)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
-				GDKfree(err);
+				freeException(err);
 			}
 		}
 	}
@@ -2281,21 +2287,21 @@ SQLupgrades(Client c, mvc *m)
 	if (!sql_bind_func(m->sa, s, "like", &tp, &tp, F_FILT)) {
 		if ((err = sql_update_jul2015(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
 	/* add missing epoch functions */
 	if ((err = sql_update_epoch(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
-		GDKfree(err);
+		freeException(err);
 	}
 
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!sql_bind_func(m->sa, s, "storage", &tp, NULL, F_UNION)) {
 		if ((err = sql_update_jun2016(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
@@ -2316,7 +2322,7 @@ SQLupgrades(Client c, mvc *m)
 		 * database */
 		if ((err = sql_update_geom(c, m, 1)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	} else if (geomsqlfix_get() != NULL) {
 		/* the geom module is loaded... */
@@ -2326,14 +2332,14 @@ SQLupgrades(Client c, mvc *m)
 			/* ... but the database is not geom-enabled */
 			if ((err = sql_update_geom(c, m, 0)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
-				GDKfree(err);
+				freeException(err);
 			}
 		}
 	}
 
 	if ((err = sql_update_median(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
-		GDKfree(err);
+		freeException(err);
 	}
 
 	if (sql_find_subtype(&tp, "geometry", 0, 0) &&
@@ -2341,7 +2347,7 @@ SQLupgrades(Client c, mvc *m)
 	    sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
 		if ((err = sql_update_geom_jun2016_sp2(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
@@ -2349,7 +2355,7 @@ SQLupgrades(Client c, mvc *m)
 	    sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
 		if ((err = sql_update_jun2016_sp2(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
@@ -2357,7 +2363,7 @@ SQLupgrades(Client c, mvc *m)
 	if (!sql_bind_func3(m->sa, s, "createorderindex", &tp, &tp, &tp, F_PROC)) {
 		if ((err = sql_update_dec2016(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
@@ -2365,13 +2371,13 @@ SQLupgrades(Client c, mvc *m)
 	if (sql_bind_func(m->sa, s, "median", &tp, NULL, F_AGGR)) {
 		if ((err = sql_update_nowrd(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 
 	if ((err = sql_update_dec2016_sp2(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
-		GDKfree(err);
+		freeException(err);
 	}
 
 	sql_find_subtype(&tp, "bigint", 0, 0);
@@ -2380,7 +2386,7 @@ SQLupgrades(Client c, mvc *m)
 	     f->func->sql && f->func->query && strstr(f->func->query, "sql") != NULL) {
 		if ((err = sql_update_dec2016_sp3(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 }

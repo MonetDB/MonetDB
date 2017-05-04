@@ -282,17 +282,14 @@ blob_fromstr(char *instr, int *l, blob **val)
 	}
 	++s;
 
-	if (*val == (blob *) NULL) {
-		*val = (blob *) GDKmalloc(nbytes);
-		*l = (int) nbytes;
-	} else if (*l < 0 || (size_t) * l < nbytes) {
+	if (*l < 0 || (size_t) * l < nbytes || *val == NULL) {
 		GDKfree(*val);
 		*val = (blob *) GDKmalloc(nbytes);
+		if( *val == NULL)
+			return 0;
 		*l = (int) nbytes;
 	}
-	if( *val == NULL)
-		return 0;
-	
+
 	result = *val;
 	result->nitems = nitems;
 
@@ -369,16 +366,13 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 	nitems = i / 2;
 	nbytes = blobsize(nitems);
 
-	if (*val == (blob *) NULL) {
-		*val = (blob *) GDKmalloc(nbytes);
-		*l = (int) nbytes;
-	} else if (*l < 0 || (size_t) * l < nbytes) {
+	if (*l < 0 || (size_t) * l < nbytes || *val == NULL) {
 		GDKfree(*val);
 		*val = (blob *) GDKmalloc(nbytes);
+		if( *val == NULL)
+			return 0;
 		*l = (int) nbytes;
 	}
-	if( *val == NULL)
-		return 0;
 	if (nil) {
 		**val = *blob_null();
 		return 0;

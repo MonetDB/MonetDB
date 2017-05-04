@@ -93,34 +93,35 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 {
 	char *r;
 	sz = round16(sz);
-	if (sz > SA_BLOCK) {
-		char *t;
-		r = GDKmalloc(sz);
-		if (sa->nr >= sa->size) {
-			sa->size *=2;
-			sa->blks = RENEW_ARRAY(char*,sa->blks,sa->size);
-		}
-		t = sa->blks[sa->nr-1];
-		sa->blks[sa->nr-1] = r;
-		sa->blks[sa->nr] = t;
-		sa->nr ++;
-		sa->usedmem += sz;
-		return r;
-	}
 	if (sz > (SA_BLOCK-sa->used)) {
-		r = GDKmalloc(SA_BLOCK);
+		r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
+		if (r == NULL)
+			return NULL;
 		if (sa->nr >= sa->size) {
+			char **tmp;
 			sa->size *=2;
-			sa->blks = RENEW_ARRAY(char*,sa->blks,sa->size);
+			tmp = RENEW_ARRAY(char*,sa->blks,sa->size);
+			if (tmp == NULL) {
+				sa->size /= 2; /* undo */
+				return NULL;
+			}
+			sa->blks = tmp;
 		}
-		sa->blks[sa->nr] = r;
-		sa->nr ++;
-		sa->used = sz;
-		sa->usedmem += SA_BLOCK;
-		return r;
+		if (sz > SA_BLOCK) {
+			sa->blks[sa->nr] = sa->blks[sa->nr-1];
+			sa->blks[sa->nr-1] = r;
+			sa->nr ++;
+			sa->usedmem += sz;
+		} else {
+			sa->blks[sa->nr] = r;
+			sa->nr ++;
+			sa->used = sz;
+			sa->usedmem += SA_BLOCK;
+		}
+	} else {
+		r = sa->blks[sa->nr-1] + sa->used;
+		sa->used += sz;
 	}
-	r = sa->blks[sa->nr-1] + sa->used;
-	sa->used += sz;
 	return r;
 }
 

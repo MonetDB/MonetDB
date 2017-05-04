@@ -135,22 +135,13 @@ doChallenge(void *data)
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif
-	if (buf == NULL || fdin == NULL || fdout == NULL){
-		if (fdin)
-			close_stream(fdin);
-		else
-			close_stream(((struct challengedata *) data)->in);
-		if (fdout)
-			close_stream(fdout);
-		else
-			close_stream(((struct challengedata *) data)->out);
+	GDKfree(data);
+	if (buf == NULL){
+		close_stream(fdin);
+		close_stream(fdout);
 		GDKfree(data);
-		if (buf)
-			GDKfree(buf);
-		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 		return;
 	}
-	GDKfree(data);
 
 	/* generate the challenge string */
 	generateChallenge(challenge, 8, 12);
@@ -373,8 +364,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
-			showException(GDKstdout, MAL, "initClient",
-						  "cannot allocate space");
+			showException(GDKstdout, MAL, "initClient", MAL_MALLOC_FAIL);
 			continue;
 		}
 		data->in = socket_rastream(msgsock, "Server read");

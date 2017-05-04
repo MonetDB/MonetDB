@@ -75,7 +75,7 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 	(void) clientid;
 	msg = SQLCacheRemove(MCgetClient(clientid), name);
 	if (msg)
-		GDKfree(msg);	/* do something with error? */
+		freeException(msg);	/* do something with error? */
 
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#monet5_free:%d\n", nr);

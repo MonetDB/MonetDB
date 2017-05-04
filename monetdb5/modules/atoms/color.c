@@ -80,11 +80,7 @@ color_fromstr(char *colorStr, int *len, color **c)
 	printf("  - *len: %d\n", *len);
 #endif
 
-	if (!*c) {
-		*c = (color *) GDKmalloc(sizeof(color));
-		if( *c == NULL)
-			return 0;
-	} else if (*len < (int) sizeof(color)) {
+	if (*len < (int) sizeof(color) || *c == NULL) {
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(color));
 		if( *c == NULL)
@@ -131,13 +127,13 @@ color_tostr(char **colorStr, int *len, color *c)
 
 	/* allocate and fill a new string */
 
-	if (*len < 11) {
+	if (*len < 11 || *colorStr == NULL) {
 		GDKfree(*colorStr);
 		*colorStr = GDKmalloc(11);
+		if( *colorStr == NULL)
+			return 0;
 		*len = 11;
 	}
-	if( *colorStr == NULL)
-		return 0;
 
 	if (sc == color_nil) {
 		strcpy(*colorStr, "nil");

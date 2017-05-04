@@ -1600,7 +1600,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL){
-		GDKerror("mergetable"MAL_MALLOC_FAIL);
 		return 0;
 	}
 	/* check for bailout conditions */
@@ -1947,7 +1946,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		mnstr_printf(GDKout,"#Result of multi table optimizer\n");
 		err= optimizerCheck(cntxt,mb,"merge test",1,0);
 		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
-		if( err) GDKfree(err);
+		if( err) freeException(err);
 	}
 #endif
 

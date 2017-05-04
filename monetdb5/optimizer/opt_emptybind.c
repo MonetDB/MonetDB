@@ -72,8 +72,11 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
 #endif
 
-	if ( newMalBlkStmt(mb, mb->ssize) < 0)
+	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
+		GDKfree(marked);
+		GDKfree(updated);
 		return 0;
+	}
 
 	/* Symbolic evaluation of the empty BAT variables */
 	/* by looking at empty BAT arguments */
@@ -103,8 +106,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		// any of these instructions leave a non-empty BAT behind
 		if(p && getModuleId(p) == sqlRef && isUpdateInstruction(p)){
 			if ( etop == esize){
+				InstrPtr *tmp = updated;
 				updated = (InstrPtr*) GDKrealloc( updated, (esize += 256) * sizeof(InstrPtr));
 				if( updated == NULL){
+					GDKfree(tmp);
 					GDKfree(marked);
 					return 0;
 				}

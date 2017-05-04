@@ -170,10 +170,8 @@ re_create(const char *pat, int nr)
 	char *p = x, *q = x;
 
 	if (x == NULL || r == NULL) {
-		if (x != NULL)
-			GDKfree(x);
-		if (r != NULL)
-			GDKfree(r);
+		GDKfree(x);
+		GDKfree(r);
 		return NULL;
 	}
 	r->n = NULL;
@@ -841,7 +839,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 	ppat = GDKmalloc(strlen(pat)*2+3 /* 3 = "^'the translated regexp'$0" */);
 	if (ppat == NULL)
-		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
+		throw(MAL, "pcre.sql2pcre", MAL_MALLOC_FAIL);
 
 	*r = ppat;
 	/* The escape character can be a char which is special in a PCRE

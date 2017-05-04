@@ -853,18 +853,18 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 	//store the points so that I do not have to read them multiple times using geos
 	if ((xCoords_org = GDKmalloc(pointsNum * sizeof(double))) == NULL) {
 		*outGeometry = NULL;
-		throw(MAL, "geom.Segmentize", "Could not allocate memory for %d double values", pointsNum);
+		throw(MAL, "geom.Segmentize", MAL_MALLOC_FAIL " for %d double values", pointsNum);
 	}
 	if ((yCoords_org = GDKmalloc(pointsNum * sizeof(double))) == NULL) {
 		GDKfree(xCoords_org);
 		*outGeometry = NULL;
-		throw(MAL, "geom.Segmentize", "Could not allocate memory for %d double values", pointsNum);
+		throw(MAL, "geom.Segmentize", MAL_MALLOC_FAIL " for %d double values", pointsNum);
 	}
 	if ((zCoords_org = GDKmalloc(pointsNum * sizeof(double))) == NULL) {
 		GDKfree(xCoords_org);
 		GDKfree(yCoords_org);
 		*outGeometry = NULL;
-		throw(MAL, "geom.Segmentize", "Could not allocate memory for %d double values", pointsNum);
+		throw(MAL, "geom.Segmentize", MAL_MALLOC_FAIL " for %d double values", pointsNum);
 	}
 
 	if (!GEOSCoordSeq_getX(gcs_old, 0, &xCoords_org[0])) {
@@ -1744,9 +1744,16 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 	int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 	str err = MAL_SUCCEED;
 
+	if (pointWKB == NULL)
+		throw(MAL, "geom.Dump", MAL_MALLOC_FAIL);
+
 	(*lvl)++;
 
 	newPath = GDKmalloc(pathLength + lvlDigitsNum + 1);
+	if (newPath == NULL) {
+		GDKfree(pointWKB);
+		throw(MAL, "geom.Dump", MAL_MALLOC_FAIL);
+	}
 	sprintf(newPath, "%s%u", path, *lvl);
 
 	if (BUNappend(idBAT, newPath, TRUE) != GDK_SUCCEED ||
@@ -1774,7 +1781,7 @@ dumpPointsLineString(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 	if (err != MAL_SUCCEED)
 		return err;
 
-	for (i = 0; i < pointsNum; i++) {
+	for (i = 0; i < pointsNum && err == MAL_SUCCEED; i++) {
 		GEOSGeometry *pointGeometry = GEOSGeomGetPointN(geosGeometry, i);
 
 		if (pointGeometry == NULL)
@@ -1801,12 +1808,14 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 
 	//get the exterior ring of the polygon
 	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
-	if (!exteriorRingGeometry)
+	if (exteriorRingGeometry == NULL)
 		throw(MAL, "geom.DumpPoints", "GEOSGetExteriorRing failed");
 
 	(*lvl)++;
 
 	newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
+	if (newPath == NULL)
+		throw(MAL, "geom.DumpPoints", MAL_MALLOC_FAIL);
 	sprintf(newPath, "%s%u%s", path, *lvl, extraStr);
 
 	//get the points in the exterior ring
@@ -1818,7 +1827,7 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	//check the interior rings
 	numInteriorRings = GEOSGetNumInteriorRings(geosGeometry);
 	if (numInteriorRings == -1)
-		throw(MAL, "geom.NumPoints", "GEOSGetNumInteriorRings failed");
+		throw(MAL, "geom.DumpPoints", "GEOSGetNumInteriorRings failed");
 
 	// iterate over the interiorRing and transform each one of them
 	for (i = 0; i < numInteriorRings; i++) {
@@ -1826,6 +1835,8 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 		lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 
 		newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
+		if (newPath == NULL)
+			throw(MAL, "geom.DumpPoints", MAL_MALLOC_FAIL);
 		sprintf(newPath, "%s%u%s", path, *lvl, extraStr);
 
 		err = dumpPointsLineString(idBAT, geomBAT, GEOSGetInteriorRingN(geosGeometry, i), newPath);
@@ -1859,6 +1870,8 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 		lvl++;
 
 		newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
+		if (newPath == NULL)
+			throw(MAL, "geom.DumpPoints", MAL_MALLOC_FAIL);
 		sprintf(newPath, "%s%u%s", path, lvl, extraStr);
 
 		//*secondLevel = 0;
@@ -2166,6 +2179,8 @@ wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid, size_t *nr
 		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface);
 		geomWKT_original = geomWKT;
 		geomWKT = GDKmalloc(sizeOfInfo + strlen(multiPolygon) + 1);
+		if (geomWKT == NULL)
+			throw(MAL, "wkb.FromText", MAL_MALLOC_FAIL);
 		strcpy(geomWKT, multiPolygon);
 		memcpy(geomWKT + strlen(multiPolygon), &geomWKT_original[strlen(polyhedralSurface)], sizeOfInfo);
 		geomWKT[sizeOfInfo + strlen(multiPolygon)] = '\0';
@@ -2173,13 +2188,23 @@ wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid, size_t *nr
 	////////////////////////// UP TO HERE ///////////////////////////
 
 	WKT_reader = GEOSWKTReader_create();
+	if (WKT_reader == NULL) {
+		if (geomWKT_original)
+			GDKfree(geomWKT);
+		throw(MAL, "wkb.FromText", "GEOSWKTReader_create failed");
+	}
 	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT);
 	GEOSWKTReader_destroy(WKT_reader);
 
-	if (geosGeometry == NULL)
+	if (geosGeometry == NULL) {
+		if (geomWKT_original)
+			GDKfree(geomWKT);
 		throw(MAL, "wkb.FromText", "GEOSWKTReader_read failed");
+	}
 
 	if (GEOSGeomTypeId(geosGeometry) == -1) {
+		if (geomWKT_original)
+			GDKfree(geomWKT);
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "wkb.FromText", "GEOSGeomTypeId failed");
 	}
@@ -2192,8 +2217,11 @@ wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid, size_t *nr
 	 * want to get the wkb out of it */
 	*geomWKB = geos2wkb(geosGeometry);
 	GEOSGeom_destroy(geosGeometry);
-	if (*geomWKB == NULL)
+	if (*geomWKB == NULL) {
+		if (geomWKT_original)
+			GDKfree(geomWKT);
 		throw(MAL, "wkb.FromText", "geos2wkb failed");
+	}
 
 	*len = (int) wkb_size((*geomWKB)->len);
 
@@ -2221,12 +2249,14 @@ wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
 	skipBytes += sizeof(int);
 
 	*toArray = GDKmalloc(wkba_size(items));
+	if (*toArray == NULL)
+		return 0;
 
 	for (i = 0; i < items; i++) {
 		size_t parsedBytes;
 		str err = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &(*toArray)->data[i], srid, &parsedBytes);
 		if (err != MAL_SUCCEED) {
-			GDKfree(err);
+			freeException(err);
 			return 0;
 		}
 		skipBytes += parsedBytes;
@@ -3263,7 +3293,7 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err) {
-			GDKfree(err);
+			freeException(err);
 			throw(MAL, "geom.MakeLine", MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
@@ -4214,7 +4244,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		if (err) {
-			GDKfree(err);
+			freeException(err);
 			throw(MAL, "geom.Union", MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
@@ -4596,10 +4626,14 @@ wkbBox2D(mbr **box, wkb **point1, wkb **point2)
 	} else {
 		//Assign the coordinates. Ensure that they are in correct order
 		*box = GDKmalloc(sizeof(mbr));
-		(*box)->xmin = (float) (xmin < xmax ? xmin : xmax);
-		(*box)->ymin = (float) (ymin < ymax ? ymin : ymax);
-		(*box)->xmax = (float) (xmax > xmin ? xmax : xmin);
-		(*box)->ymax = (float) (ymax > ymin ? ymax : ymin);
+		if (*box == NULL) {
+			err = createException(MAL, "geom.MakeBox2D", MAL_MALLOC_FAIL);
+		} else {
+			(*box)->xmin = (float) (xmin < xmax ? xmin : xmax);
+			(*box)->ymin = (float) (ymin < ymax ? ymin : ymax);
+			(*box)->xmax = (float) (xmax > xmin ? xmax : xmin);
+			(*box)->ymax = (float) (ymax > ymin ? ymax : ymin);
+		}
 	}
 	GEOSGeom_destroy(point1_geom);
 	GEOSGeom_destroy(point2_geom);
@@ -5053,17 +5087,21 @@ wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB)
 	}
 
 	if (wkt) {
-		if (*len < (int) dstStrLen + 1) {
+		if (*len < (int) dstStrLen + 1 || *geomWKT == NULL) {
 			*len = (int) dstStrLen + 1;
 			GDKfree(*geomWKT);
-			*geomWKT = GDKmalloc(*len);
+			if ((*geomWKT = GDKmalloc(*len)) == NULL) {
+				GEOSFree(wkt);
+				return 0;
+			}
 		}
 		snprintf(*geomWKT, *len, "\"%s\"", wkt);
 		GEOSFree(wkt);
 	} else {
-		if (*len < 4) {
+		if (*len < 4 || *geomWKT == NULL) {
 			GDKfree(*geomWKT);
-			*geomWKT = GDKmalloc(*len = 4);
+			if ((*geomWKT = GDKmalloc(*len = 4)) == NULL)
+				return 0;
 		}
 		strcpy(*geomWKT, "nil");
 	}
@@ -5080,7 +5118,7 @@ wkbFROMSTR(char *geomWKT, int *len, wkb **geomWKB)
 
 	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
 	if (err != MAL_SUCCEED) {
-		GDKfree(err);
+		freeException(err);
 		return 0;
 	}
 	return (int) parsedBytes;
@@ -5221,7 +5259,8 @@ mbrTOSTR(char **dst, int *len, mbr *atom)
 
 	if (*len < (int) dstStrLen + 1 || *dst == NULL) {
 		GDKfree(*dst);
-		*dst = GDKmalloc(*len = (int) dstStrLen + 1);
+		if ((*dst = GDKmalloc(*len = (int) dstStrLen + 1)) == NULL)
+			return 0;
 	}
 
 	if (dstStrLen > 3)
@@ -5259,10 +5298,10 @@ mbrFROMSTR(char *src, int *len, mbr **atom)
 	} else if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL)
 		return 0;
 
-	if (*len < (int) sizeof(mbr)) {
-		if (*atom)
-			GDKfree(*atom);
-		*atom = GDKmalloc(*len = sizeof(mbr));
+	if (*len < (int) sizeof(mbr) || *atom == NULL) {
+		GDKfree(*atom);
+		if ((*atom = GDKmalloc(*len = sizeof(mbr))) == NULL)
+			return 0;
 	}
 	if (nil) {
 		nchars = 3;
@@ -5390,15 +5429,31 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 	char *nilStr = "nil";
 	char *toStrPtr = NULL, *itemsNumStr = GDKmalloc((itemsNumDigits + 1) * sizeof(char));
 
+	if (itemsNumStr == NULL)
+		return 0;
+
 	sprintf(itemsNumStr, "%d", items);
 	dataSize = strlen(itemsNumStr);
 
 	//reserve space for an array with pointers to the partial strings, i.e. for each wkbTOSTR
 	partialStrs = GDKzalloc(items * sizeof(char *));
+	if (partialStrs == NULL) {
+		GDKfree(itemsNumStr);
+		return 0;
+	}
 	//create the string version of each wkb
 	for (i = 0; i < items; i++) {
 		int llen = 0;
-		dataSize += wkbTOSTR(&partialStrs[i], &llen, fromArray->data[i]) - 2;	//remove quotes
+		int ds;
+		ds = wkbTOSTR(&partialStrs[i], &llen, fromArray->data[i]);
+		if (ds <= 0) {
+			GDKfree(itemsNumStr);
+			while (i >= 0)
+				GDKfree(partialStrs[i--]);
+			GDKfree(partialStrs);
+			return 0;
+		}
+		dataSize += ds - 2;	//remove quotes
 
 		if (strcmp(partialStrs[i], nilStr) == 0) {
 			GDKfree(itemsNumStr);
@@ -5407,7 +5462,8 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 			GDKfree(partialStrs);
 			if (*len < 4 || *toStr == NULL) {
 				GDKfree(*toStr);
-				*toStr = GDKmalloc(*len = 4);
+				if ((*toStr = GDKmalloc(*len = 4)) == NULL)
+					return 0;
 			}
 			strcpy(*toStr, "nil");
 			return 3;
@@ -5423,6 +5479,13 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 	if (*len < (int) dataSize + 3 || *toStr == NULL) {
 		GDKfree(*toStr);
 		*toStr = GDKmalloc(*len = (int) dataSize + 3);	/* plus quotes + termination character */
+		if (*toStr == NULL) {
+			for (i = 0; i < items; i++)
+				GDKfree(partialStrs[i]);
+			GDKfree(partialStrs);
+			GDKfree(itemsNumStr);
+			return 0;
+		}
 	}
 	toStrPtr = *toStr;
 	*toStrPtr++ = '\"';
@@ -5773,6 +5836,10 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 	token = strtok_r(token, ")", &saveptr1);
 	vert_x = GDKmalloc(POLY_NUM_VERT * sizeof(double));
 	vert_y = GDKmalloc(POLY_NUM_VERT * sizeof(double));
+	if (vert_x == NULL || vert_y == NULL) {
+		err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 
 	for (str2 = token;; str2 = NULL) {
 		subtoken = strtok_r(str2, ",", &saveptr2);
@@ -5781,8 +5848,19 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 		sscanf(subtoken, "%lf %lf", &vert_x[nvert], &vert_y[nvert]);
 		nvert++;
 		if ((nvert % POLY_NUM_VERT) == 0) {
-			vert_x = GDKrealloc(vert_x, nvert * 2 * sizeof(double));
-			vert_y = GDKrealloc(vert_y, nvert * 2 * sizeof(double));
+			double *tmp;
+			tmp = GDKrealloc(vert_x, nvert * 2 * sizeof(double));
+			if (tmp == NULL) {
+				err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			vert_x = tmp;
+			tmp = GDKrealloc(vert_y, nvert * 2 * sizeof(double));
+			if (tmp == NULL) {
+				err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			vert_y = tmp;
 		}
 	}
 
@@ -5790,7 +5868,11 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 	if (token) {
 		holes_x = GDKzalloc(POLY_NUM_HOLE * sizeof(double *));
 		holes_y = GDKzalloc(POLY_NUM_HOLE * sizeof(double *));
-		holes_n = GDKzalloc(POLY_NUM_HOLE * sizeof(double *));
+		holes_n = GDKzalloc(POLY_NUM_HOLE * sizeof(int));
+		if (holes_x == NULL || holes_y == NULL || holes_n == NULL) {
+			err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 	}
 	/*Lets get all the holes */
 	while (token) {
@@ -5800,10 +5882,16 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 			break;
 		token++;
 
-		if (!holes_x[nholes])
-			holes_x[nholes] = GDKzalloc(POLY_NUM_VERT * sizeof(double));
-		if (!holes_y[nholes])
-			holes_y[nholes] = GDKzalloc(POLY_NUM_VERT * sizeof(double));
+		if (holes_x[nholes] == NULL &&
+		    (holes_x[nholes] = GDKzalloc(POLY_NUM_VERT * sizeof(double))) == NULL) {
+			err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		if (holes_y[nholes] == NULL &&
+		    (holes_y[nholes] = GDKzalloc(POLY_NUM_VERT * sizeof(double))) == NULL) {
+			err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 
 		for (str2 = token;; str2 = NULL) {
 			subtoken = strtok_r(str2, ",", &saveptr2);
@@ -5812,27 +5900,56 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 			sscanf(subtoken, "%lf %lf", &holes_x[nholes][nhole], &holes_y[nholes][nhole]);
 			nhole++;
 			if ((nhole % POLY_NUM_VERT) == 0) {
-				holes_x[nholes] = GDKrealloc(holes_x[nholes], nhole * 2 * sizeof(double));
-				holes_y[nholes] = GDKrealloc(holes_y[nholes], nhole * 2 * sizeof(double));
+				double *tmp;
+				tmp = GDKrealloc(holes_x[nholes], nhole * 2 * sizeof(double));
+				if (tmp == NULL) {
+					err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				holes_x[nholes] = tmp;
+				tmp = GDKrealloc(holes_y[nholes], nhole * 2 * sizeof(double));
+				if (tmp == NULL) {
+					err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				holes_y[nholes] = tmp;
 			}
 		}
 
 		holes_n[nholes] = nhole;
 		nholes++;
 		if ((nholes % POLY_NUM_HOLE) == 0) {
-			holes_x = GDKrealloc(holes_x, nholes * 2 * sizeof(double *));
-			holes_y = GDKrealloc(holes_y, nholes * 2 * sizeof(double *));
-			holes_n = GDKrealloc(holes_n, nholes * 2 * sizeof(int));
+			double **tmp;
+			int *itmp;
+			tmp = GDKrealloc(holes_x, nholes * 2 * sizeof(double *));
+			if (tmp == NULL) {
+				err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			holes_x = tmp;
+			tmp = GDKrealloc(holes_y, nholes * 2 * sizeof(double *));
+			if (tmp == NULL) {
+				err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			holes_y = tmp;
+			itmp = GDKrealloc(holes_n, nholes * 2 * sizeof(int));
+			if (itmp == NULL) {
+				err = createException(MAL, "geom.Contains", MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			holes_n = itmp;
 		}
 		token = strtok_r(NULL, ")", &saveptr1);
 	}
 
 	if (nholes)
-		err = pnpolyWithHoles(out, (int) nvert, vert_x, vert_y, nholes, holes_x, holes_y, holes_n, point_x, point_y);
+		err = pnpolyWithHoles(out, nvert, vert_x, vert_y, nholes, holes_x, holes_y, holes_n, point_x, point_y);
 	else {
-		err = pnpoly(out, (int) nvert, vert_x, vert_y, point_x, point_y);
+		err = pnpoly(out, nvert, vert_x, vert_y, point_x, point_y);
 	}
 
+  bailout:
 	GDKfree(geom_str);
 	GDKfree(vert_x);
 	GDKfree(vert_y);
@@ -5841,10 +5958,10 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 			GDKfree(holes_x[j]);
 			GDKfree(holes_y[j]);
 		}
-		GDKfree(holes_x);
-		GDKfree(holes_y);
-		GDKfree(holes_n);
 	}
+	GDKfree(holes_x);
+	GDKfree(holes_y);
+	GDKfree(holes_n);
 
 	return err;
 }

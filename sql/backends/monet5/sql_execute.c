@@ -410,7 +410,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){
-		GDKfree(msg);
+		freeException(msg);
 		throw(SQL, "SQLstatement", "Catalogue not available");
 	}
 
