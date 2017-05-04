@@ -312,7 +312,7 @@ CMDqgramnormalize(str *res, str *Input)
 	RETURN_NIL_IF(strNil(input), TYPE_str);
 	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 	if (*res == NULL)
-		throw(MAL,"qgram",MAL_MALLOC_FAIL);
+		throw(MAL, "txtsim.qgramnormalize", MAL_MALLOC_FAIL);
 
 	for (i = 0; input[i]; i++) {
 		c = toupper(input[i]);

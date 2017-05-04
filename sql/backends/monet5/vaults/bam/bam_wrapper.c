@@ -156,8 +156,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 				  file_location);
 		}
 		if ((bw->sam.header = (str)GDKmalloc(bufsize * sizeof(char))) == NULL) {
-			throw(MAL, "init_bam_wrapper",
-				  ERR_INIT_BAM_WRAPPER MAL_MALLOC_FAIL, file_location);
+			throw(MAL, "init_bam_wrapper", MAL_MALLOC_FAIL);
 		}
 		while (TRUE) {
 			int read = mnstr_readline(bw->sam.input, bw->sam.header + header_len, bufsize - header_len);
@@ -183,11 +182,12 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 			if (bw->sam.header[header_len+read-1] != '\n') {
 				/* This line was not completed. Increase buffer size, rewind stream
 				 * and try again */
+				str tmp;
 				bufsize *= 2;
-				if ((bw->sam.header = (str)GDKrealloc(bw->sam.header, bufsize * sizeof(char))) == NULL) {
-					throw(MAL, "init_bam_wrapper",
-						  ERR_INIT_BAM_WRAPPER MAL_MALLOC_FAIL, file_location);
+				if ((tmp = GDKrealloc(bw->sam.header, bufsize * sizeof(char))) == NULL) {
+					throw(MAL, "init_bam_wrapper", MAL_MALLOC_FAIL);
 				}
+				bw->sam.header = tmp;
 				if (mnstr_fsetpos(bw->sam.input, header_len) < 0) {
 					throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER "Could not read last line of SAM header",
@@ -651,11 +651,12 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 	}
 
 	/* real number of options is now known, shrink the options
-	 * array in the header line. We assume there will be no error,
-	 * since it is reduced in size. */
-	ret_hl->options =
-		GDKrealloc(ret_hl->options,
-			   ret_hl->nr_options * sizeof(bam_header_option));
+	 * array in the header line. */
+	opt = GDKrealloc(ret_hl->options,
+					 ret_hl->nr_options * sizeof(bam_header_option));
+	if (opt == NULL)
+		throw(MAL, "process_header_line", MAL_MALLOC_FAIL);
+	ret_hl->options = opt;
 
 	return MAL_SUCCEED;
 }
@@ -1280,6 +1281,7 @@ check_alignment_buffers(bam_wrapper *bw, alignment * alig, int qname_size,
 		int cigar_size, int seq_size)
 {
 	bit resized[] = { FALSE, FALSE, FALSE };
+	char *tmp;
 
 	assert (bw->type == BAM);
 
@@ -1297,19 +1299,27 @@ check_alignment_buffers(bam_wrapper *bw, alignment * alig, int qname_size,
 		resized[2] = TRUE;
 		alig->seq_size *= 2;
 	}
-	if (resized[0])
-		alig->cigar =
-			GDKrealloc(alig->cigar,
-				   alig->cigar_size * sizeof(char));
-	if (resized[1])
-		alig->cigar =
-			GDKrealloc(alig->cigar,
-				   alig->cigar_size * sizeof(char));
+	if (resized[0]) {
+		tmp = GDKrealloc(alig->cigar, alig->cigar_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->cigar = tmp;
+	}
+	if (resized[1]) {
+		tmp = GDKrealloc(alig->cigar, alig->cigar_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->cigar = tmp;
+	}
 	if (resized[2]) {
-		alig->seq =
-			GDKrealloc(alig->seq, alig->seq_size * sizeof(char));
-		alig->qual =
-			GDKrealloc(alig->qual, alig->seq_size * sizeof(char));
+		tmp = GDKrealloc(alig->seq, alig->seq_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->seq = tmp;
+		tmp = GDKrealloc(alig->qual, alig->seq_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->qual = tmp;
 	}
 
 #ifdef BAM_DEBUG
@@ -1338,9 +1348,12 @@ check_alignment_buffers(bam_wrapper *bw, alignment * alig, int qname_size,
 static inline bit
 check_qname_buffer(alignment * alig, int cur_size) {
 	if (cur_size + 1 >= alig->qname_size) {
+		char *tmp;
 		alig->qname_size *= 2;
-		alig->qname = GDKrealloc(alig->qname,
-			alig->qname_size * sizeof(char));
+		tmp = GDKrealloc(alig->qname, alig->qname_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->qname = tmp;
 		TO_LOG("<bam_loader> Increased size of qname buffer to %d characters\n", alig->qname_size);
 	}
 	return alig->qname != NULL;
@@ -1353,11 +1366,16 @@ check_qname_buffer(alignment * alig, int cur_size) {
 static inline bit
 check_rname_rnext_buffers(alignment * alig, int cur_size) {
 	if (cur_size + 1 >= alig->rname_size) {
+		char *tmp;
 		alig->rname_size *= 2;
-		alig->rname = GDKrealloc(alig->rname,
-			alig->rname_size * sizeof(char));
-		alig->rnext = GDKrealloc(alig->rnext,
-			alig->rname_size * sizeof(char));
+		tmp = GDKrealloc(alig->rname, alig->rname_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->rname = tmp;
+		tmp = GDKrealloc(alig->rnext, alig->rname_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->rnext = tmp;
 		TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->rname_size);
 	}
 	return alig->rname != NULL && alig->rnext != NULL;
@@ -1370,9 +1388,12 @@ check_rname_rnext_buffers(alignment * alig, int cur_size) {
 static inline bit
 check_cigar_buffer(alignment * alig, int cur_size) {
 	if (cur_size + 1 >= alig->cigar_size) {
+		char *tmp;
 		alig->cigar_size *= 2;
-		alig->cigar = GDKrealloc(alig->cigar,
-			alig->cigar_size * sizeof(char));
+		tmp = GDKrealloc(alig->cigar, alig->cigar_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->cigar = tmp;
 		TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->cigar_size);
 	}
 	return alig->cigar != NULL;
@@ -1384,11 +1405,16 @@ check_cigar_buffer(alignment * alig, int cur_size) {
 static inline bit
 check_seq_qual_buffers(alignment * alig, int cur_size) {
 	if (cur_size + 1 >= alig->seq_size) {
+		char *tmp;
 		alig->seq_size *= 2;
-		alig->seq = GDKrealloc(alig->seq,
-			alig->seq_size * sizeof(char));
-		alig->qual = GDKrealloc(alig->qual,
-			alig->seq_size * sizeof(char));
+		tmp = GDKrealloc(alig->seq, alig->seq_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->seq = tmp;
+		tmp = GDKrealloc(alig->qual, alig->seq_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->qual = tmp;
 		TO_LOG("<bam_loader> Increased size of seq and qual buffers to %d characters\n", alig->seq_size);
 	}
 	return alig->seq != NULL && alig->qual != NULL;
@@ -1400,9 +1426,12 @@ check_seq_qual_buffers(alignment * alig, int cur_size) {
 static inline bit
 check_aux_buffer(alignment * alig, int cur_size) {
 	if (cur_size + 1 >= alig->aux_size) {
+		char *tmp;
 		alig->aux_size *= 2;
-		alig->aux = GDKrealloc(alig->aux,
-			alig->aux_size * sizeof(char));
+		tmp = GDKrealloc(alig->aux, alig->aux_size * sizeof(char));
+		if (tmp == NULL)
+			return 0;
+		alig->aux = tmp;
 		TO_LOG("<bam_loader> Increased size of aux buffer to %d characters\n", alig->aux_size);
 	}
 	return alig->aux != NULL;
@@ -2251,17 +2280,20 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 				if (alig_index >= nr_aligs) {
 					/* Double the size of the aligs array */
 					int new_nr_aligs = 2 * nr_aligs;
+					alignment **tmp;
 
-					if ((aligs =
+					if ((tmp =
 						 GDKrealloc(aligs,
 							new_nr_aligs *
 							sizeof(alignment *))) ==
 						NULL) {
+						GDKfree(aligs);
 						msg = createException(MAL,
 									  "process_alignments",
 									  MAL_MALLOC_FAIL);
 						goto cleanup;
 					}
+					aligs = tmp;
 
 					/* Init newly allocated memory
 					 * to zero for cleanup */

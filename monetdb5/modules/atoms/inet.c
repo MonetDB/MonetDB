@@ -116,12 +116,10 @@ INETfromString(const char *src, int *len, inet **retval)
 	last = 0;
 	type = 0;
 
-	if (*len < (int)sizeof(inet)) {
-		if (*retval != NULL)
-			GDKfree(*retval);
+	if (*len < (int)sizeof(inet) || *retval == NULL) {
+		GDKfree(*retval);
 		*retval = GDKzalloc(sizeof(inet));
 		if( *retval == NULL){
-			GDKerror("INETfromString "MAL_MALLOC_FAIL);
 			*len = 0;
 			return 0;
 		}
@@ -229,9 +227,8 @@ INETtoString(str *retval, int *len, const inet *handle)
 {
 	const inet *value = (const inet *)handle;
 
-	if (*len < 19) {
-		if (*retval != NULL)
-			GDKfree(*retval);
+	if (*len < 19 || *retval == NULL) {
+		GDKfree(*retval);
 		*retval = GDKmalloc(sizeof(char) * (*len = 19));
 		if( *retval == NULL)
 			return 0;
@@ -754,8 +751,8 @@ INETabbrev(str *retval, const inet *val)
 		 * all zero, thus no bits on the right side of the mask
 		 */
 		ip = GDKmalloc(sizeof(char) * 19);
-		if( ip == NULL)
-			throw(MAL,"inet.abbrev", MAL_MALLOC_FAIL);
+		if (ip == NULL)
+			throw(MAL, "inet.abbrev", MAL_MALLOC_FAIL);
 
 		if (msk > 24) {
 			snprintf(ip, sizeof(char) * 19, "%d.%d.%d.%d/%d",

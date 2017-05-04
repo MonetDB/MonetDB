@@ -511,12 +511,14 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 			bunfastapp(bn, buf);
 		} else {
 			if (strlen(t) > size - 2 * len - 6) {
+				char *tmp;
 				size += strlen(t);
-				val = (char *) GDKrealloc(val, size + strlen(t));
-				if (val == NULL) {
+				tmp = (char *) GDKrealloc(val, size + strlen(t));
+				if (tmp == NULL) {
 					err = MAL_MALLOC_FAIL;
 					goto bunins_failed;
 				}
+				val = tmp;
 			}
 			snprintf(val + len + 2, size - len, "%s</%s>", t, *name);
 			bunfastapp(bn, val);
@@ -973,12 +975,14 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				continue;
 
 			if ((len = strlen(t)) >= size - offset) {
+				char *tmp;
 				size += len + 128;
-				buf = GDKrealloc(buf, size);
-				if (buf == NULL) {
+				tmp = GDKrealloc(buf, size);
+				if (tmp == NULL) {
 					err = MAL_MALLOC_FAIL;
 					goto bunins_failed;
 				}
+				buf = tmp;
 			}
 			if (offset == 0)
 				n = snprintf(buf, size, "%s", t);
@@ -1135,12 +1139,14 @@ BATXMLgroup(xml *ret, const bat *bid)
 			continue;
 		len = strlen(t) + 1;
 		if (len >= size - offset) {
+			char *tmp;
 			size += len + 128;
-			buf = GDKrealloc(buf, size);
-			if (buf == NULL) {
+			tmp = GDKrealloc(buf, size);
+			if (tmp == NULL) {
 				err= MAL_MALLOC_FAIL;
 				goto failed;
 			}
+			buf = tmp;
 		}
 		if (offset == 0)
 			n = snprintf(buf, size, "%s", t);
@@ -1186,6 +1192,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	char *buf = NULL;
 	size_t buflen, maxlen, len;
 	const char *err;
+	char *tmp;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
 								&cand, &candend)) != NULL) {
@@ -1282,11 +1289,12 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				len = strlen(v);
 				if (len >= maxlen - buflen) {
 					maxlen += len + BUFSIZ;
-					buf = GDKrealloc(buf, maxlen);
-					if (buf == NULL) {
+					tmp = GDKrealloc(buf, maxlen);
+					if (tmp == NULL) {
 						err = MAL_MALLOC_FAIL;
 						goto bunins_failed;
 					}
+					buf = tmp;
 				}
 				if (buflen == 0) {
 					strncpy(buf, v, maxlen);
@@ -1321,11 +1329,12 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			len = strlen(v);
 			if (len >= maxlen - buflen) {
 				maxlen += len + BUFSIZ;
-				buf = GDKrealloc(buf, maxlen);
-				if (buf == NULL) {
+				tmp = GDKrealloc(buf, maxlen);
+				if (tmp == NULL) {
 					err = MAL_MALLOC_FAIL;
 					goto bunins_failed;
 				}
+				buf = tmp;
 			}
 			if (buflen == 0) {
 				strncpy(buf, v, maxlen);

@@ -71,7 +71,6 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 
 	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
 	if (p == NULL) {
-		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return -1;
 	}
 	mb->stmt = p;
@@ -88,7 +87,6 @@ newMalBlk(int elements)
 
 	mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
 	if (mb == NULL) {
-		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 
@@ -97,7 +95,6 @@ newMalBlk(int elements)
 	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * (elements + 8) );
 	if (v == NULL) {
 		GDKfree(mb);
-		GDKerror("newMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	mb->var = v;
@@ -240,7 +237,6 @@ copyMalBlk(MalBlkPtr old)
 
 	mb = (MalBlkPtr) GDKzalloc(sizeof(MalBlkRecord));
 	if (mb == NULL) {
-		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	mb->alternative = old->alternative;
@@ -250,7 +246,6 @@ copyMalBlk(MalBlkPtr old)
 	mb->var = (VarRecord *) GDKzalloc(sizeof(VarRecord) * old->vsize);
 	if (mb->var == NULL) {
 		GDKfree(mb);
-		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 
@@ -279,7 +274,6 @@ copyMalBlk(MalBlkPtr old)
 			VALclear(&mb->var[i].value);
 		GDKfree(mb->var);
 		GDKfree(mb);
-		GDKerror("copyMalBlk:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 
@@ -424,7 +418,6 @@ copyInstruction(InstrPtr p)
 {
 	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->maxarg));
 	if(new == NULL) {
-		GDKerror("copyInstruction: failed to allocated space");
 		return new;
 	}
 	oldmoveInstruction(new, p);

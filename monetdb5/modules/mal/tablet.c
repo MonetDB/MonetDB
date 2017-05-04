@@ -495,10 +495,8 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 	BUN offset = as->offset;
 
 	if (buf == NULL || localbuf == NULL) {
-		if (buf)
-			GDKfree(buf);
-		if (localbuf)
-			GDKfree(localbuf);
+		GDKfree(buf);
+		GDKfree(localbuf);
 		return -1;
 	}
 	for (q = offset + as->nr, p = offset, id = order->hseqbase + offset; p < q; p++, id++) {
@@ -527,10 +525,8 @@ output_file_dense(Tablet *as, stream *fd)
 	BUN i = 0;
 
 	if (buf == NULL || localbuf == NULL) {
-		if (buf)
-			GDKfree(buf);
-		if (localbuf)
-			GDKfree(localbuf);
+		GDKfree(buf);
+		GDKfree(localbuf);
 		return -1;
 	}
 	for (i = 0; i < as->nr; i++) {
@@ -895,7 +891,10 @@ SQLinsert_val(READERtask *task, int col, int idx)
 				s = scpy;
 			}
 			MT_lock_set(&errorlock);
-			snprintf(buf, sizeof(buf), "line " LLFMT " field %s '%s' expected in '%s'", row, fmt->name?fmt->name:"", fmt->type, s ? s : buf);
+			snprintf(buf, sizeof(buf),
+					 "line " LLFMT " field %s '%s' expected%s%s%s",
+					 row, fmt->name ? fmt->name : "", fmt->type,
+					 s ? " in '" : "", s ? s : "", s ? "'" : "");
 			GDKfree(s);
 			buf[sizeof(buf)-1]=0;
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
@@ -906,7 +905,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 				BUNappend(task->cntxt->error_fld, &col, FALSE) != GDK_SUCCEED ||
 				BUNappend(task->cntxt->error_msg, buf, FALSE) != GDK_SUCCEED ||
 				BUNappend(task->cntxt->error_input, err, FALSE) != GDK_SUCCEED) {
-				GDKfree(err);
+				freeException(err);
 				task->besteffort = 0; /* no longer best effort */
 				MT_lock_unset(&errorlock);
 				return -1;
@@ -914,7 +913,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			MT_lock_unset(&errorlock);
 		}
 		ret = -!task->besteffort; /* yep, two unary operators ;-) */
-		GDKfree(err);
+		freeException(err);
 		/* replace it with a nil */
 		adt = fmt->nildata;
 		fmt->c->tnonil = 0;
@@ -931,7 +930,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			(err = SQLload_error(task, idx,task->as->nr_attrs)) == NULL ||
 			BUNappend(task->cntxt->error_input, err, FALSE) != GDK_SUCCEED)
 			task->besteffort = 0;
-		GDKfree(err);
+		freeException(err);
 		task->rowerror[idx]++;
 		task->errorcnt++;
 		MT_lock_unset(&errorlock);
@@ -1644,6 +1643,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	task->fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char **));
 	task->cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 	task->time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
+	if (task->fields == NULL || task->cols == NULL || task->time == NULL) {
+		tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file");
+		goto bailout;
+	}
 	task->cur = 0;
 	for (i = 0; i < MAXBUFFERS; i++) {
 		task->base[i] = GDKzalloc(MAXROWSIZE(2 * b->size) + 2);
@@ -2018,24 +2021,18 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	if (task) {
 		if (task->fields) {
 			for (i = 0; i < as->nr_attrs; i++) {
-				if (task->fields[i])
-					GDKfree(task->fields[i]);
+				GDKfree(task->fields[i]);
 			}
 			GDKfree(task->fields);
 		}
-		if (task->time)
-			GDKfree(task->time);
-		if (task->cols)
-			GDKfree(task->cols);
-		if (task->base[task->cur])
-			GDKfree(task->base[task->cur]);
-		if (task->rowerror)
-			GDKfree(task->rowerror);
+		GDKfree(task->time);
+		GDKfree(task->cols);
+		GDKfree(task->base[task->cur]);
+		GDKfree(task->rowerror);
 		GDKfree(task);
 	}
 	for (i = 0; i < MAXWORKERS; i++)
-		if (ptask[i].cols)
-			GDKfree(ptask[i].cols);
+		GDKfree(ptask[i].cols);
 #ifdef MLOCK_TST
 	munlockall();
 #endif
