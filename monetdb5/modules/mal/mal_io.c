@@ -166,15 +166,25 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * New implementation that repeatedly invokes sprintf => hacking the va_alist
  * for using vfsprintf proved to be too compiler-dependent (OLD approach).
  */
-#define writemem(X1)\
-	if (dst+X1 > buf+size) {\
-		ptrdiff_t offset = dst - buf;\
-		do {\
-			size *= 2;\
-		} while (dst+X1 > buf+size);\
-		buf = GDKrealloc(buf, size);\
-		dst = buf + offset;\
-	}
+#define writemem(X1)										\
+	do {													\
+		if (dst+X1 > buf+size) {							\
+			ptrdiff_t offset = dst - buf;					\
+			char *tmp;										\
+			do {											\
+				size *= 2;									\
+			} while (dst+X1 > buf+size);					\
+			tmp = GDKrealloc(buf, size);					\
+			if (tmp == NULL) {								\
+				va_end(ap);									\
+				GDKfree(buf);								\
+				GDKfree(add);								\
+				throw(MAL, "io.printf", MAL_MALLOC_FAIL);	\
+			}												\
+			buf = tmp;										\
+			dst = buf + offset;								\
+		}													\
+	} while (0)
 
 #define m5sprintf(X1)\
 	if (width > adds) {\
@@ -209,8 +219,12 @@ static char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expec
 static char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
 static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
 
-#define return_error(x)\
-	GDKfree(buf); GDKfree(add); throw(MAL,"io.printf", x,argc);
+#define return_error(x)							\
+	do {										\
+		GDKfree(buf);							\
+		GDKfree(add);							\
+		throw(MAL,"io.printf", x,argc);			\
+	} while (0)
 
 static char niltext[4] = "nil";
 
@@ -437,9 +451,9 @@ IOprintf_(str *res, str format, ...)
 		throw(MAL,"io.printf", "params %d and beyond ignored %s.\n",argc);
 	}
 */
-	va_end(ap);
 
 	writemem(1);
+	va_end(ap);
 	*dst = 0;
 	*res = buf;
 	GDKfree(add);
@@ -699,7 +713,13 @@ IOimport(void *ret, bat *bid, str *fnme)
 				if (buf+bufsize < dst+l) {
 					size_t len = dst - buf;
 					size_t inc = (size_t) ((dst+l) - buf);
-					buf = (char*) GDKrealloc((void*) buf, bufsize = MAX(inc,bufsize)*2);
+					char *tmp = GDKrealloc(buf, bufsize = MAX(inc,bufsize)*2);
+					if (tmp == NULL) {
+						BBPunfix(b->batCacheid);
+						GDKfree(buf);
+						throw(MAL, "io.imports", MAL_MALLOC_FAIL);
+					}
+					buf = tmp;
 					dst = buf + len;
 				}
 				memcpy(dst, src, l-1);
@@ -716,7 +736,13 @@ IOimport(void *ret, bat *bid, str *fnme)
 		if (buf+bufsize < dst+l) {
 			size_t len = dst - buf;
 			size_t inc = (size_t) ((dst+l) - buf);
-			buf = (char*) GDKrealloc((void*) buf, bufsize = MAX(inc,bufsize)*2);
+			char *tmp = GDKrealloc(buf, bufsize = MAX(inc,bufsize)*2);
+			if (tmp == NULL) {
+				BBPunfix(b->batCacheid);
+				GDKfree(buf);
+				throw(MAL, "io.imports", MAL_MALLOC_FAIL);
+			}
+			buf = tmp;
 			dst = buf + len;
 		}
 		memcpy(dst, src, l);

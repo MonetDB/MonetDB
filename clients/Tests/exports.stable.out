@@ -1801,7 +1801,6 @@ str SYSmem_usage(bat *ret, bat *ret2, const lng *minsize);
 str SYSsetmem_maxsize(void *ret, const lng *num);
 str SYSsetvm_maxsize(void *ret, const lng *num);
 str SYSvm_usage(bat *ret, bat *ret2, const lng *minsize);
-void *TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote);
 int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
 str TABLETcollect(BAT **bats, Tablet *as);
 str TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset);

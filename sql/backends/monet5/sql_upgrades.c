@@ -465,11 +465,15 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 		return NULL;
 
 	geomupgrade = (*fixfunc)(olddb);
+	if (geomupgrade == NULL)
+		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
 	bufsize = strlen(geomupgrade) + 512;
 	// FIXME unchecked_malloc GDKmalloc can return NULL
 	buf = GDKmalloc(bufsize);
-	if( buf== NULL)
+	if (buf == NULL) {
+		GDKfree(geomupgrade);
 		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
+	}
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
 	GDKfree(geomupgrade);
@@ -1517,7 +1521,7 @@ SQLupgrades(Client c, mvc *m)
 	     f->func->sql && f->func->query && strstr(f->func->query, "sql") != NULL) {
 		if ((err = sql_update_dec2016_sp3(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+			freeException(err);
 		}
 	}
 

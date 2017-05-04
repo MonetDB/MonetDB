@@ -178,7 +178,7 @@ geom_sql_upgrade(int olddb)
 	str buf;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		return "";
+		return NULL;
 
 	/* drop old functions */
 	if (olddb) {

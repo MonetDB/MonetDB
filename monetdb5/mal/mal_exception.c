@@ -205,7 +205,10 @@ createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, cons
 	i += vsnprintf(buf + i, GDKMAXERRLEN - 1 - i, format, ap);
 	buf[i] = '\0';
 
-	return GDKstrdup(buf);
+	s = GDKstrdup(buf);
+	if (s == NULL)				/* make sure we always return something */
+		s = M5OutOfMemory;
+	return s;
 }
 
 /**
