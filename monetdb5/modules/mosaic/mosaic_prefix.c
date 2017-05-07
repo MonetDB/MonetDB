@@ -77,8 +77,8 @@ void
 MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
-	BUN cnt = MOSgetCnt(blk), input=0, output= 0;
-	int bits =0, bytes=0;
+	BUN cnt = MOSgetCnt(blk), input=0, output= 0, bytes = 0;
+	int bits =0;
 	int size = ATOMsize(task->type);
 	char buf[32];
 
@@ -526,7 +526,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 {
 	BUN limit,  j =0 ;
 	int prefixbits;
-	lng bits,size;
+	lng size;
 	BitVector base;
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = task->blk;
@@ -541,7 +541,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	if( task->elm >=2 )
 	switch(size){
 	case 1:
-		{	unsigned char *v = ((unsigned char*) task->src) + task->start, *wlimit= v + limit, val1 = *v, mask;
+		{	unsigned char *v = ((unsigned char*) task->src) + task->start, *wlimit= v + limit, val1 = *v, mask, bits;
 			unsigned char *dst = (unsigned char*) MOScodevector(task);
 			findPrefixBit(cntxt, v, LOOKAHEAD, &prefixbits,&mask);
 			bits = 8-prefixbits;
@@ -557,7 +557,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			for(j=0  ; v < wlimit; v++, j++){
 				if ( val1  != (*v & mask) )
 					break;
-				compress(base, j, bits, (int) (*v & (~mask))); 
+				compress(base, j, (int) bits, (int) (*v & (~mask))); 
 #ifdef _DEBUG_PREFIX_
 				mnstr_printf(cntxt->fdout,"#compress %d store %d\n", *v,  (int) (*v & (~mask)));
 #endif
@@ -570,7 +570,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 2:
-		{	unsigned short *v = ((unsigned short*) task->src) + task->start, *wlimit= v + limit, val1, mask;
+		{	unsigned short *v = ((unsigned short*) task->src) + task->start, *wlimit= v + limit, val1, mask, bits;
 			unsigned short *dst = (unsigned short*) MOScodevector(task);
 
 			findPrefixSht(cntxt, v, LOOKAHEAD, &prefixbits,&mask);
@@ -586,7 +586,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			for(j=0  ; v < wlimit; v++, j++){
 				if ( val1  != (*v & mask) )
 					break;
-				compress(base, j, bits, (int) (*v & (~mask))); 
+				compress(base, j, (int) bits, (int) (*v & (~mask))); 
 #ifdef _DEBUG_PREFIX_
 				mnstr_printf(cntxt->fdout,"#compress %d store %d\n", *v,  (int) (*v & (~mask)));
 #endif
@@ -599,7 +599,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 4:
-		{	unsigned int *v = ((unsigned int*) task->src) + task->start, *wlimit=  v + limit, val1, mask;
+		{	unsigned int *v = ((unsigned int*) task->src) + task->start, *wlimit=  v + limit, val1, mask, bits;
 			unsigned int *dst = (unsigned int*)  MOScodevector(task);
 
 			findPrefixInt(cntxt, v, LOOKAHEAD, &prefixbits,&mask);
@@ -628,7 +628,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 		}
 		break;
 	case 8:
-		{	ulng *v = ((ulng*) task->src) + task->start, *wlimit = v + limit,  val1, mask;
+		{	ulng *v = ((ulng*) task->src) + task->start, *wlimit = v + limit,  val1, mask, bits;
 			ulng *dst = (ulng*)  MOScodevector(task);
 			
 			findPrefixLng(cntxt, v, LOOKAHEAD, &prefixbits,&mask);
@@ -645,7 +645,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 				for(j=0 ; v < wlimit ; v++, j++){
 					if ( val1  != (*v & mask) )
 						break;
-					compress(base,j,bits, (int)(*v  & (ulng)UINT_MAX & (~mask))); // at most 32 bits
+					compress(base,j, (int) bits, (int)(*v  & (ulng)UINT_MAX & (~mask))); // at most 32 bits
 					hdr->checksum.sumlng += *v;
 				}
 			}
