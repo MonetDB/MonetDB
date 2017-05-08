@@ -79,36 +79,6 @@ void_bat_create(int adt, BUN nr)
 	return b;
 }
 
-int
-TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
-{
-	(void) extra;
-	if (type == TYPE_str) {
-		char *dst, *src = a;
-		int l;
-
-		if (GDK_STRNIL(src)) {
-			src = "nil";
-		}
-		l = (int) strlen(src);
-		if (l + 3 > *len) {
-			GDKfree(*buf);
-			*len = 2 * l + 3;
-			*buf = GDKzalloc(*len);
-			if( *buf == NULL)
-				return 0;
-		}
-		dst = *buf;
-		dst[0] = '"';
-		strncpy(dst + 1, src, l);
-		dst[l + 1] = '"';
-		dst[l + 2] = 0;
-		return l + 2;
-	} else {
-		return (*BATatoms[type].atomToStr) (buf, len, a);
-	}
-}
-
 void
 TABLETdestroy_format(Tablet *as)
 {

@@ -79,7 +79,6 @@ mal_export str TABLETcollect(BAT **bats, Tablet *as);
 mal_export str TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset);
 mal_export void TABLETdestroy_format(Tablet *as);
 mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
-mal_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
 mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
