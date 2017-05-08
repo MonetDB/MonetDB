@@ -184,6 +184,10 @@ malAtomDefinition(stream *out, str name, int tpe)
 	if (strlen(name) >= sizeof(BATatoms[0].name))
 		return -1;
 	i = ATOMallocate(name);
+	if (i == int_nil) {
+		showException(out, TYPE, "atomDefinition", "Could not allocate atom '%s'", name);
+		return -1;
+	}
 	/* overload atom ? */
 	if (tpe) {
 		BATatoms[i] = BATatoms[tpe];
