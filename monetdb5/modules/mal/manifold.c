@@ -58,10 +58,11 @@ typedef struct{
 #define ManifoldLoop(Type, ...)											\
 	do {																\
 		Type *v = (Type*) mut->args[0].first;							\
-		oid oo, olimit = mut->args[mut->fvar].cnt;						\
-		for( oo= 0; oo < olimit; oo++){									\
+		for (;;) {														\
 			msg = (*mut->pci->fcn)(v, __VA_ARGS__);						\
 			if (msg) break;												\
+			if (++oo == olimit)											\
+				break;													\
 			for( i = mut->fvar; i<= mut->lvar; i++) {					\
 				if(ATOMstorage(mut->args[i].type) == TYPE_void ){		\
 					args[i] = (void*)  &mut->args[i].o;					\
@@ -104,13 +105,14 @@ typedef struct{
 		case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;			\
 		case TYPE_str:													\
 		default: {														\
-			oid oo, olimit = mut->args[mut->fvar].cnt;					\
-			for( oo= 0; oo < olimit; oo++){								\
+			for (;;) {													\
 				msg = (*mut->pci->fcn)(&y, __VA_ARGS__);				\
 				if (msg)												\
 					break;												\
 				bunfastapp(mut->args[0].b, (void*) y);					\
 				GDKfree(y); y = NULL;									\
+				if (++oo == olimit)										\
+					break;												\
 				for( i = mut->fvar; i<= mut->lvar; i++) {				\
 					if(ATOMstorage(mut->args[i].type) == TYPE_void ){ 	\
 						args[i] = (void*)  &mut->args[i].o;				\
@@ -143,6 +145,10 @@ MANIFOLDjob(MULTItask *mut)
 {	int i;
 	char **args;
 	str y = NULL, msg= MAL_SUCCEED;
+	oid oo = 0, olimit = mut->args[mut->fvar].cnt;
+
+	if (olimit == 0)
+		return msg;				/* nothing to do */
 
 	args = (char**) GDKzalloc(sizeof(char*) * mut->pci->argc);
 	if( args == NULL)
