@@ -715,6 +715,8 @@ _cleanupProfiler(void)
 	CLEANUPprofile(TRACE_id_event);
 	CLEANUPprofile(TRACE_id_time);
 	CLEANUPprofile(TRACE_id_pc);
+	CLEANUPprofile(TRACE_id_thread);
+	CLEANUPprofile(TRACE_id_ticks);
 	CLEANUPprofile(TRACE_id_rssMB);
 	CLEANUPprofile(TRACE_id_tmpspace);
 	CLEANUPprofile(TRACE_id_inblock);
@@ -722,7 +724,6 @@ _cleanupProfiler(void)
 	CLEANUPprofile(TRACE_id_minflt);
 	CLEANUPprofile(TRACE_id_majflt);
 	CLEANUPprofile(TRACE_id_nvcsw);
-	CLEANUPprofile(TRACE_id_thread);
 	CLEANUPprofile(TRACE_id_stmt);
 	TRACE_init = 0;
 }
