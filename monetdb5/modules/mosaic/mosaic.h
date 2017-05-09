@@ -180,7 +180,7 @@ typedef struct MOSTASK{
 
 #ifndef HAVE_NEXTAFTERF
 #define nextafter	_nextafter
-float nextafterf(float x, float y);
+mal_export float nextafterf(float x, float y);
 #endif
 
 #define PREVVALUEbit(x) ((x) - 1)

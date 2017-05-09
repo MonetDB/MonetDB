@@ -350,7 +350,7 @@ findPrefixLng(Client cntxt, ulng *v, int limit, int *bits, ulng *prefixmask)
 } 
 
 
-#define LOOKAHEAD  (limit <10? limit:10)
+#define LOOKAHEAD  (int)(limit <10? limit:10)
 // calculate the expected reduction 
 flt
 MOSestimate_prefix(Client cntxt, MOStask task)
