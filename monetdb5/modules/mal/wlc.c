@@ -751,6 +751,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p = pushStr(cntxt->wlc, p , BUNtail(bi,x));
 				k++;
 		} }
+		/* fall through */
 		default:
 			cntxt->wlc_kind = WLC_CATALOG;
 		}

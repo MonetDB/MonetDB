@@ -99,6 +99,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 			if (exps && list_length(exps))
 				return exps;
 		}
+		/* fall through */
 	default:
 		return NULL;
 	}

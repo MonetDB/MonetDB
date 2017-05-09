@@ -34,6 +34,7 @@ prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 	case SQL_SUCCESS_WITH_INFO:
 		if (msglen >= (signed int) sizeof(msg))
 			fprintf(stderr, "(message truncated)\n");
+		/* fall through */
 	case SQL_SUCCESS:
 		fprintf(stderr, "%s: %s: SQLstate %s, Errnr %d, Message %s\n", func, pref, (char*)state, (int)errnr, (char*)msg);
 		break;
