@@ -165,20 +165,25 @@ ATOMallocate(const char *id)
 {
 	int t;
 
+	if (strlen(id) >= IDLENGTH) {
+		GDKerror("ATOMallocate: name too long");
+		return int_nil;
+	}
+
 	MT_lock_set(&GDKthreadLock);
 	t = ATOMindex(id);
-
 	if (t < 0) {
 		t = -t;
 		if (t == GDKatomcnt) {
+			if (GDKatomcnt == MAXATOMS) {
+				MT_lock_unset(&GDKthreadLock);
+				GDKerror("ATOMallocate: too many types");
+				return int_nil;
+			}
 			GDKatomcnt++;
 		}
-		if (GDKatomcnt == MAXATOMS)
-			GDKfatal("ATOMallocate: too many types");
-		if (strlen(id) >= IDLENGTH)
-			GDKfatal("ATOMallocate: name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
-		snprintf(BATatoms[t].name, sizeof(BATatoms[t].name), "%s", id);
+		strcpy(BATatoms[t].name, id);
 		BATatoms[t].size = sizeof(int);		/* default */
 		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;			/* default */
