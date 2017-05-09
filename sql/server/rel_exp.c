@@ -1211,6 +1211,7 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 			}
 			return ne;
 		}
+		/* fall through */
 	case e_cmp:	
 	case e_psm:	
 		return NULL;

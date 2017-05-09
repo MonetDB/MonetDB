@@ -707,6 +707,7 @@ command_status(int argc, char *argv[])
 							i = argc;
 							break;
 						}
+						/* fall through */
 					default:
 						fprintf(stderr, "status: unknown option: -%c\n", *p);
 						command_help(2, &argv[-1]);
@@ -1011,6 +1012,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 							i = argc;
 							break;
 						}
+						/* fall through */
 					default:
 						fprintf(stderr, "%s: unknown option: -%c\n", type, *p);
 						command_help(2, &argv[-1]);
@@ -1115,6 +1117,7 @@ command_set(int argc, char *argv[], meroset type)
 							i = argc;
 							break;
 						}
+						/* fall through */
 					default:
 						fprintf(stderr, "%s: unknown option: -%c\n",
 								argv[0], *p);
@@ -1249,6 +1252,7 @@ command_get(int argc, char *argv[])
 							i = argc;
 							break;
 						}
+						/* fall through */
 					default:
 						fprintf(stderr, "get: unknown option: -%c\n", *p);
 						command_help(2, &argv[-1]);
@@ -1693,6 +1697,7 @@ main(int argc, char *argv[])
 					command_help(0, NULL);
 					return(0);
 				}
+				/* fall through */
 			default:
 				fprintf(stderr, "monetdb: unknown option: %s\n", argv[i]);
 				command_help(0, NULL);

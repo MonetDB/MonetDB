@@ -224,6 +224,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 		*p = rel;
 		if (rel->l)
 			return rel_bind_column_(sql, p, rel->l, cname);
+		/* fall through */
 	default:
 		return NULL;
 	}
@@ -894,6 +895,7 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 			assert(0);
 			break;
 		}
+		/* fall through */
 	case op_groupby:
 	case op_project:
 	case op_table:
