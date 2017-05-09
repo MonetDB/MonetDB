@@ -284,7 +284,7 @@ BBPunlock(void)
 }
 
 
-static void
+static gdk_return
 BBPinithash(int j)
 {
 	bat i = (bat) ATOMIC_GET(BBPsize, BBPsizeLock);
@@ -293,8 +293,10 @@ BBPinithash(int j)
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
 	BBP_hash = (bat *) GDKzalloc(BBP_mask * sizeof(bat));
-	if (BBP_hash == NULL)
-		GDKfatal("BBPinithash: cannot allocate memory\n");
+	if (BBP_hash == NULL) {
+		GDKerror("BBPinithash: cannot allocate memory\n");
+		return GDK_FAIL;
+	}
 	BBP_mask--;
 
 	while (--i > 0) {
@@ -311,6 +313,7 @@ BBPinithash(int j)
 				j = 0;
 		}
 	}
+	return GDK_SUCCEED;
 }
 
 int
@@ -360,7 +363,8 @@ BBPextend(int idx, int buildhash)
 		BBP_hash = NULL;
 		for (i = 0; i <= BBP_THREADMASK; i++)
 			BBP_free(i) = 0;
-		BBPinithash(idx);
+		if (BBPinithash(idx) != GDK_SUCCEED)
+			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }
@@ -1402,7 +1406,8 @@ BBPinit(void)
 	BBPreadEntries(fp, bbpversion);
 	fclose(fp);
 
-	BBPinithash(0);
+	if (BBPinithash(0) != GDK_SUCCEED)
+		GDKfatal("BBPinit: BBPinithash failed");
 
 	/* will call BBPrecover if needed */
 	if (BBPprepare(FALSE) != GDK_SUCCEED)

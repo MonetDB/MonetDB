@@ -67,14 +67,13 @@ int
 IDtoString(str *retval, int *len, identifier handle)
 {
 	int hl = (int)strlen(handle) + 1;
-	if (*len < hl) {
-		if (*retval != NULL)
-			GDKfree(*retval);
+	if (*len < hl || *retval == NULL) {
+		GDKfree(*retval);
 		*retval = GDKmalloc(sizeof(char) * hl);
 		if (*retval == NULL)
 			return 0;
+		*len = hl;
 	}
-	*len = hl;
 	memcpy(*retval, handle, hl);
 
 	return(*len);

@@ -701,31 +701,13 @@ Ready.
 % decimal # type
 % 20 # length
 [ 15.48654	]
-#select * from optimizer_stats() stats;
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
-
-# 11:48:06 >  
-# 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
-# 11:48:06 >  
 
 % sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.revenue0 # table_name
 % s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
 % int,	char,	varchar,	char,	decimal # type
 % 2,	25,	36,	15,	20 # length
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
-% .stats,	.stats # table_name
-% rewrite,	count # name
-% clob,	int # type
-% 7,	1 # length
-[ "joinidx",	0	]
-
-# 00:16:03 >  
-# 00:16:03 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=alf --port=39190  < /net/alf.ins.cwi.nl/export/scratch1/niels/rc/MonetDB/sql/src/benchmarks/tpch/16.sql
-# 00:16:03 >  
+#drop view revenue0;
 
 #select
 #	p_brand,

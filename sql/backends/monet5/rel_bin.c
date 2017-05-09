@@ -1330,6 +1330,7 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 	case op_groupby: 
 		if (rel->r) 
 			args = exps2bin_args(be, rel->r, args);
+		/* fall through */
 	case op_project:
 	case op_select: 
 	case op_topn: 

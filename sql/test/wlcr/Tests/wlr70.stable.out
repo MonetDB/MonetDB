@@ -20,12 +20,7 @@ stdout of test 'wlr70` in directory 'sql/test/wlcr` itself:
 #now 2017-05-02T13:16:47.000 tlimit 2017-05-02 11:16:47.000
 #call replicate(now());
 #Waiting for replay scheduler to stop
-#time limit 2017-05-02 11:16:47.000
-#select * from tmp70;
-% sys.tmp70,	sys.tmp70 # table_name
-% i,	s # name
-% int,	clob # type
-% 1,	0 # length
+#time limit 2017-05-09 19:45:37.000
 #call replicate();
 #Waiting for replay scheduler to stop
 #Waiting for replay scheduler to stop

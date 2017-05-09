@@ -312,7 +312,7 @@ address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
 unsafe pattern copy_from( t:ptr, 
-	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int) (:bat[:any]...)
+	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int, fwf:str) (:bat[:any]...)
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";

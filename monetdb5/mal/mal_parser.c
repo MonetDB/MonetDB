@@ -380,6 +380,7 @@ cstToken(Client cntxt, ValPtr cst)
 	case '-':
 		i++;
 		s++;
+		/* fall through */
 	case '0':
 		if ((s[1] == 'x' || s[1] == 'X')) {
 			/* deal with hex */
@@ -387,6 +388,7 @@ cstToken(Client cntxt, ValPtr cst)
 			i += 2;
 			s += 2;
 		}
+		/* fall through */
 	case '1': case '2': case '3': case '4': case '5':
 	case '6': case '7': case '8': case '9':
 		if (hex)
@@ -405,6 +407,7 @@ cstToken(Client cntxt, ValPtr cst)
 
 		if (hex)
 			goto handleInts;
+		/* fall through */
 	case '.':
 		if (*s == '.' && isdigit(*(s + 1))) {
 			i++;
@@ -1935,6 +1938,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				cntrl = YIELDsymbol;
 				goto allLeft;
 			}
+			/* fall through */
 		default: allLeft :
 			parseAssign(cntxt, cntrl);
 			cntrl = 0;

@@ -24,8 +24,8 @@ dce_bug-6177
 crash_on_NULL_ptr.Bug-6130
 HAVE_SAMTOOLS?sqlsmith01
 HAVE_NETCDF?sqlsmith02
-sqlsmith03
-sqlsmith04
+HAVE_GEOM?sqlsmith03
+HAVE_GEOM?sqlsmith04
 nested_with.Bug-6187
 prepare.Bug-6133
 null-quantile.Bug-6218
