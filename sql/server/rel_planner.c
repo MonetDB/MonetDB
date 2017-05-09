@@ -197,6 +197,7 @@ exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, lng count)
 	case e_convert:
 		if (e->l)
 			return exp_getdcount(sql, r, e->l, count);
+		/* fall through */
 	case e_func:
 	case e_aggr:
 	case e_atom:
@@ -224,6 +225,7 @@ exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, void **min, void **max)
 	case e_convert:
 		if (e->l)
 			return exp_getranges(sql, r, e->l, min, max);
+		/* fall through */
 	case e_func:
 	case e_aggr:
 	case e_atom:
@@ -434,6 +436,7 @@ rel_getsel(mvc *sql, sql_rel *rel, lng count)
 	case op_project:
 		if (rel->l)
 			return rel_getsel(sql, rel->l, count);
+		/* fall through */
 	default:
 		return 1.0;
 	}

@@ -70,6 +70,7 @@ db_glob(const char *expr, const char *haystack)
 					break;
 				}
 				/* do asterisk match if escaped */
+				/* fall through */
 			default:
 				if (*expr != *haystack) {
 					if (haymem != NULL) {

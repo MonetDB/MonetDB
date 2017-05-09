@@ -1418,6 +1418,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		if (rel && !rel_find_exp(rel, e)) 
 			return 0;
 		(*must) = 1;
+		/* fall through */
 	case e_atom:
 	default:
 		return 1;
@@ -2490,6 +2491,7 @@ exp_find_math_unsafe( sql_exp *e)
 					return 1;
 			}
 		}
+		/* fall through */
 	case e_convert:
 		return exp_find_math_unsafe(e->l);
 	case e_column: 
@@ -5144,6 +5146,7 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 		return e;
 	case e_func: 
 		list_split_aggr_and_project(sql, aexps, e->l);
+		return e;
 	case e_column: /* constants and columns shouldn't be rewriten */
 	case e_atom:
 	case e_psm:
@@ -5770,6 +5773,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 			rel_mark_used(sql, rel, proj);
 			break;
 		}
+		/* fall through */
 	case op_project:
 	case op_groupby: 
 		if (proj && rel->l) {
@@ -6069,6 +6073,7 @@ rel_dce_down(mvc *sql, sql_rel *rel, list *refs, int skip_proj)
 			rel->l = rel_dce_down(sql, rel->l, refs, 0);
 		if (!skip_proj)
 			rel_dce_sub(sql, rel, refs);
+		/* fall through */
 
 	case op_insert:
 	case op_ddl:
@@ -6247,6 +6252,7 @@ index_exp(sql_exp *e, sql_idx *i)
 		case oph_idx:
 			if (e->flag == cmp_equal)
 				return 0;
+			/* fall through */
 		case join_idx:
 		default:
 			return -1;
@@ -8156,6 +8162,7 @@ rel_find_conflicts(mvc *sql, sql_rel *rel, list *exps, list *conflicts)
 	case op_basetable:
 	case op_table: 
 		exps_mark_conflicts(sql, rel->exps, conflicts, 1); 
+		return rel;
 	case op_topn: 
 	case op_sample: 
 		return rel;

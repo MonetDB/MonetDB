@@ -86,8 +86,10 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	switch (argc) {
 	case 6:
 		col = *getArgReference_str(stk, pci, 5);
+		/* fall through */
 	case 5:
 		tbl = *getArgReference_str(stk, pci, 4);
+		/* fall through */
 	case 4:
 		sch = *getArgReference_str(stk, pci, 3);
 	}

@@ -154,9 +154,11 @@ int utf8_char_to_utf32_char(size_t position, Py_UNICODE *utf32_storage, int offs
         case 4: 
             bytes[3] = utf8_char[offset + 3];
             if (bytes[3] > 0xc0) return -1; //invalid utf8 character, the maximum value of the second, third and fourth bytes is 0xbf
+	    /* fall through */
         case 3: 
             bytes[2] = utf8_char[offset + 2];
             if (bytes[2] > 0xc0) return -1;
+	    /* fall through */
         case 2: 
             bytes[1] = utf8_char[offset + 1];
             if (bytes[1] > 0xc0) return -1;

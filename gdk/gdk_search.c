@@ -113,6 +113,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		case FIND_FIRST:
 			if (*(const oid *) v == oid_nil)
 				return lo;
+			/* fall through */
 		case FIND_LAST:
 			return hi;
 		default:

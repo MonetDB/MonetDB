@@ -170,8 +170,10 @@ INETfromString(const char *src, int *len, inet **retval)
 				switch (type) {
 					case 1:
 						(*retval)->q2 = (unsigned char) 0;
+						/* fall through */
 					case 2:
 						(*retval)->q3 = (unsigned char) 0;
+						/* fall through */
 					case 3:
 						(*retval)->q4 = (unsigned char) 0;
 					break;

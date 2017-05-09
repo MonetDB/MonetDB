@@ -179,6 +179,7 @@ void chkFlow(stream *out, MalBlkPtr mb)
 			}
 			yieldseen= TRUE;
 			 }
+			/* fall through */
 		case RETURNsymbol:
 			{
 				InstrPtr ps = getInstrPtr(mb, 0);
