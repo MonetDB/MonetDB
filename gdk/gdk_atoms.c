@@ -1129,9 +1129,12 @@ strHash(const char *s)
 void
 strCleanHash(Heap *h, int rebuild)
 {
+	char oldhash[GDK_STRHASHSIZE];
 	(void) rebuild;
 	if (!h->cleanhash)
 		return;
+	/* copy old hash table so we can check whether we changed it */
+	memcpy(oldhash, h->base, sizeof(oldhash));
 	h->cleanhash = 0;
 	if (!GDK_ELIMDOUBLES(h)) {
 		/* flush hash table for security */
@@ -1181,6 +1184,9 @@ strCleanHash(Heap *h, int rebuild)
 		}
 #endif
 	}
+	/* only set dirty flag if the hash table actually changed */
+	h->dirty |= memcmp(oldhash, h->base, sizeof(oldhash)) != 0;
+
 }
 
 /*
