@@ -107,7 +107,7 @@ out += r"select s.name, funcs.name, replace(replace(pcre_replace(pcre_replace(pc
 for i in range(0, MAXARGS):
     for k in args:
         if k == 'inout':
-            out += ", case arg%d.%s%d when 0 then 'in' when 1 then 'out' else null end as %s%d" % (MAXARGS, k, i, k, i)
+            out += ", case arg%d.%s%d when 1 then 'in' when 0 then 'out' else null end as %s%d" % (MAXARGS, k, i, k, i)
         else:
             out += ", arg%d.%s%d" % (MAXARGS, k, i)
 out += " from arg%d, sys.schemas s, funcs where s.id = funcs.schema_id and funcs.id = arg%d.id order by s.name, funcs.name" % (MAXARGS, MAXARGS)
