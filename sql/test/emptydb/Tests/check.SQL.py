@@ -110,7 +110,7 @@ for i in range(0, MAXARGS):
             out += ", case arg%d.%s%d when 1 then 'in' when 0 then 'out' else null end as %s%d" % (MAXARGS, k, i, k, i)
         else:
             out += ", arg%d.%s%d" % (MAXARGS, k, i)
-out += " from arg%d, sys.schemas s, funcs where s.id = funcs.schema_id and funcs.id = arg%d.id order by s.name, funcs.name" % (MAXARGS, MAXARGS)
+out += " from arg%d, sys.schemas s, funcs where s.id = funcs.schema_id and funcs.id = arg%d.id order by s.name, funcs.name, query" % (MAXARGS, MAXARGS)
 for i in range(0, MAXARGS):
     for k in args:
         out += ", arg%d.%s%d" % (MAXARGS, k, i)

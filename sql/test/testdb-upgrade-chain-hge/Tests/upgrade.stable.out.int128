@@ -27,6 +27,7 @@ Running database upgrade commands:
 set schema "sys";
 delete from sys._columns where table_id = (select id from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys'));
 delete from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys');
+update sys.functions set side_effect = false where name in ('like', 'ilike') and schema_id = (select id from sys.schemas where name = 'sys');
 drop function sys.malfunctions;
 create function sys.malfunctions() returns table("module" string, "function" string, "signature" string, "address" string, "comment" string) external name "manual"."functions";
 drop function sys.optimizer_stats();
