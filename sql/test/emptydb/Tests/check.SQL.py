@@ -85,13 +85,13 @@ MAXARGS = 16
 args = ['name', 'type', 'type_digits', 'type_scale', 'inout']
 
 out += "with\n"
-for i in range(1, MAXARGS + 1):
+for i in range(0, MAXARGS + 1):
     out += "arg%d (id" % i
-    for j in range(1, i + 1):
+    for j in range(0, i + 1):
         for k in ['id'] + args:
             out += ", %s%d" % (k, j)
     out += ") as (select "
-    if i == 1:
+    if i == 0:
         out += "f.id"
         for k in ['id'] + args:
             out += ", a%d.%s" % (i, k)
@@ -104,11 +104,14 @@ for i in range(1, MAXARGS + 1):
     out += " and a%d.number = %d),\n" % (i, i)
 out += "funcs as (select f.id, f.name, f.func, f.mod, f.language, ft.type, f.side_effect, f.varres, f.vararg, f.schema_id from sys.functions f left outer join (values ('function',1),('procedure',2),('aggregate',3),('filter function',4),('table function',5),('analytic function',6),('loader function',7)) as ft (type,id) on f.type = ft.id)\n"
 out += r"select s.name, funcs.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(funcs.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, funcs.mod, funcs.language, funcs.type, funcs.side_effect, funcs.varres, funcs.vararg"
-for i in range(1, MAXARGS):
+for i in range(0, MAXARGS):
     for k in args:
-        out += ", arg%d.%s%d" % (MAXARGS, k, i)
+        if k == 'inout':
+            out += ", case arg%d.%s%d when 0 then 'in' when 1 then 'out' else null end as %s%d" % (MAXARGS, k, i, k, i)
+        else:
+            out += ", arg%d.%s%d" % (MAXARGS, k, i)
 out += " from arg%d, sys.schemas s, funcs where s.id = funcs.schema_id and funcs.id = arg%d.id order by s.name, funcs.name" % (MAXARGS, MAXARGS)
-for i in range(1, MAXARGS):
+for i in range(0, MAXARGS):
     for k in args:
         out += ", arg%d.%s%d" % (MAXARGS, k, i)
 
