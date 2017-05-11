@@ -1,0 +1,50 @@
+stderr of test 'dbextra_lock_test` in directory 'sql/backends/monet5` itself:
+
+
+# 13:09:53 >  
+# 13:09:53 >  "/bin/python2" "dbextra_lock_test.py" "dbextra_lock_test"
+# 13:09:53 >  
+
+# builtin opt 	gdk_dbpath = /home/kutsurak/work/monet/sources/MonetDB/build/install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33511
+# cmdline opt 	mapi_usock = /var/tmp/mtest-25696/.s.monetdb.33511
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/kutsurak/work/monet/sources/MonetDB/build/install/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_debug = 536870922
+# builtin opt 	gdk_dbpath = /home/kutsurak/work/monet/sources/MonetDB/build/install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33511
+# cmdline opt 	mapi_usock = /var/tmp/mtest-25696/.s.monetdb.33511
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/kutsurak/work/monet/sources/MonetDB/build/install/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_debug = 536870922
+!FATAL: GDKlockHome: Database lock '.gdk_lock' denied
+
+
+
+
+# 13:09:53 >  
+# 13:09:53 >  "Done."
+# 13:09:53 >  
+
