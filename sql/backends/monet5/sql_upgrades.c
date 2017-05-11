@@ -1421,27 +1421,39 @@ sql_update_jul2017(Client c, mvc *sql)
 
 	/* 51_sys_schema_extensions.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
+			"ALTER TABLE sys.keywords SET READ ONLY;\n"
+			"ALTER TABLE sys.table_types SET READ ONLY;\n"
+			"ALTER TABLE sys.dependency_types SET READ ONLY;\n"
+
 			"CREATE TABLE sys.function_types (\n"
 			"function_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
 			"function_type_name VARCHAR(30) NOT NULL UNIQUE);\n"
 			"INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES\n"
 			"(1, 'Scalar function'), (2, 'Procedure'), (3, 'Aggregate function'), (4, 'Filter function'), (5, 'Function returning a table'),\n"
 			"(6, 'Analytic function'), (7, 'Loader function');\n"
+			"ALTER TABLE sys.function_types SET READ ONLY;\n"
+
 			"CREATE TABLE sys.function_languages (\n"
 			"language_id   SMALLINT NOT NULL PRIMARY KEY,\n"
 			"language_name VARCHAR(20) NOT NULL UNIQUE);\n"
 			"INSERT INTO sys.function_languages (language_id, language_name) VALUES\n"
 			"(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (4, 'C'), (5, 'Java'), (6, 'Python'), (7, 'Python Mapped');\n"
+			"ALTER TABLE sys.function_languages SET READ ONLY;\n"
+
 			"CREATE TABLE sys.key_types (\n"
 			"key_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
 			"key_type_name VARCHAR(15) NOT NULL UNIQUE);\n"
 			"INSERT INTO sys.key_types (key_type_id, key_type_name) VALUES\n"
 			"(0, 'Primary Key'), (1, 'Unique Key'), (2, 'Foreign Key');\n"
+			"ALTER TABLE sys.key_types SET READ ONLY;\n"
+
 			"CREATE TABLE sys.index_types (\n"
 			"index_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
 			"index_type_name VARCHAR(25) NOT NULL UNIQUE);\n"
 			"INSERT INTO sys.index_types (index_type_id, index_type_name) VALUES\n"
 			"(0, 'Hash'), (1, 'Join'), (2, 'Order preserving hash'), (3, 'No-index'), (4, 'Imprint'), (5, 'Ordered');\n"
+			"ALTER TABLE sys.index_types SET READ ONLY;\n"
+
 			"CREATE TABLE sys.privilege_codes (\n"
 			"privilege_code_id   INT NOT NULL PRIMARY KEY,\n"
 			"privilege_code_name VARCHAR(30) NOT NULL UNIQUE);\n"
@@ -1450,6 +1462,8 @@ sql_update_jul2017(Client c, mvc *sql)
 			"(3, 'SELECT,UPDATE'), (5, 'SELECT,INSERT'), (6, 'INSERT,UPDATE'), (7, 'SELECT,INSERT,UPDATE'),\n"
 			"(9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),\n"
 			"(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');\n"
+			"ALTER TABLE sys.privilege_codes SET READ ONLY;\n"
+
 			"update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	/* 75_shp.sql, if shp extension available */
