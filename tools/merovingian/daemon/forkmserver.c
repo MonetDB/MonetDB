@@ -481,7 +481,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			embeddedpy = "embedded_py=3";
 		}
 		kv = findConfKey(ckv, "dbextra");
-		if (kv->val != NULL) {
+		if (kv != NULL && kv->val != NULL) {
 			dbextra = kv->val;
 		}
 
