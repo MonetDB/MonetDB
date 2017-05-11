@@ -9,6 +9,10 @@ SELECT COUNT(*) AS duplicates, table_id, name FROM sys._columns GROUP BY table_i
 SELECT COUNT(*) AS duplicates, table_id, name FROM tmp._columns GROUP BY table_id, name HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, table_id, name FROM sys.columns GROUP BY table_id, name HAVING COUNT(*) > 1;
 
+-- The id values from sys.schemas, sys._tables, sys._columns and sys.functions combined must be exclusive (see FK from sys.privileges.obj_id)
+SELECT COUNT(*) AS duplicates, T.id FROM (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) T GROUP BY T.id HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, T.id FROM (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys.tables UNION ALL SELECT id FROM sys.columns UNION ALL SELECT id FROM sys.functions) T GROUP BY T.id HAVING COUNT(*) > 1;
+
 -- the next query returns duplicates for overloaded functions (same function but with different args), hence it has been disabled
 --SELECT COUNT(*) AS duplicates, schema_id, name, func, mod, language, type, side_effect, varres, vararg FROM sys.functions
 -- GROUP BY schema_id, name, func, mod, language, type, side_effect, varres, vararg HAVING COUNT(*) > 1;
