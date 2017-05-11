@@ -37,3 +37,4 @@ crash_in_in_handling.Bug-6260
 crash_correlated_subqueries_not_in_select.Bug-6290
 crash_function_returning_sample.Bug-6291
 nestedoperators.Bug-6292
+not_plus.Bug-6294
