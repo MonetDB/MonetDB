@@ -1,0 +1,7 @@
+SELECT  - 0 + - 12 * 2 - 0 AS col2;
+CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+SELECT ALL - CAST(COUNT ( * ) AS INT) + - 12 * - CAST(COUNT ( * ) AS INT) AS col2 FROM tab2, tab1 AS cor0;
+DROP TABLE tab2;
+DROP TABLE tab1;
+
