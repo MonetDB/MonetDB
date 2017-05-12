@@ -9,12 +9,15 @@
 TOPDIR = .
 srcdir = $(TOPDIR)\..
 
+# location of NT directory
+NT = $(srcdir)\NT
+
 prefix = $(MAKEDIR)
 
 # ensure "all" is first target
 all: _all
 
-!INCLUDE "$(TOPDIR)\..\NT\rules.msc"
+!INCLUDE "$(NT)\rules.msc"
 
 _all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h .monetdb
 	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
@@ -22,14 +25,15 @@ _all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd
 install: targetdirs all
 	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	$(INSTALL) .monetdb "$(sysconfdir)"
-	$(INSTALL) ..\NT\installer$(bits)\*.sln "$(prefix)"
-	$(INSTALL) ..\NT\installer$(bits)\*.vdproj "$(prefix)"
+	$(PYTHON) $(NT)\mksqlwxs.py $(VERSION) "$(MAKE_INCLUDEFILE)" "$(prefix)" > "$(prefix)\MonetDB5-SQL-Installer.wxs"
+	$(PYTHON) $(NT)\mkgeomwxs.py $(VERSION) "$(MAKE_INCLUDEFILE)" "$(prefix)" > "$(prefix)\MonetDB5-Geom-Installer.wxs"
+	$(PYTHON) $(NT)\mkodbcwxs.py $(VERSION) "$(MAKE_INCLUDEFILE)" "$(prefix)" > "$(prefix)\MonetDB-ODBC-Installer.wxs"
 
 $(srcdir)\Makefile.msc: "$(srcdir)\Makefile.ag"
         cd "$(srcdir)"&&set PYTHONPATH=buildtools\autogen&&$(PYTHON) buildtools\autogen\autogen.py
 
-monetdb_config.h: "$(TOPDIR)\winconfig_conds.py" "$(srcdir)\NT\monetdb_config.h.in"
-	$(CONFIGURE) "$(srcdir)\NT\monetdb_config.h.in" > monetdb_config.h
+monetdb_config.h: "$(TOPDIR)\winconfig_conds.py" "$(NT)\monetdb_config.h.in"
+	$(CONFIGURE) "$(NT)\monetdb_config.h.in" > monetdb_config.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h

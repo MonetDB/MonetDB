@@ -289,7 +289,14 @@ BATattach(int tt, const char *heapfile, int role)
 		while ((c = getc(f)) != EOF) {
 			if (n == m) {
 				m += 4096;
-				p = GDKrealloc(p, m);
+				s = GDKrealloc(p, m);
+				if (s == NULL) {
+					GDKfree(p);
+					BBPreclaim(bn);
+					fclose(f);
+					return NULL;
+				}
+				p = s;
 				s = p + n;
 			}
 			if (c == '\n' && n > 0 && s[-1] == '\r') {
@@ -1194,7 +1201,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 		b->tnorevsorted = 0;
 	if (((b->ttype != TYPE_void) & b->tkey & !b->tunique) && b->batCount > 1) {
 		BATkey(b, FALSE);
-	}
+	} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
+		b->tnokey[0] = b->tnokey[1] = 0;
 	if (b->tnonil)
 		b->tnonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 	b->theap.dirty = TRUE;

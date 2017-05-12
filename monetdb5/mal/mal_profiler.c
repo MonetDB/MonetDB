@@ -712,6 +712,8 @@ _cleanupProfiler(void)
 	CLEANUPprofile(TRACE_id_event);
 	CLEANUPprofile(TRACE_id_time);
 	CLEANUPprofile(TRACE_id_pc);
+	CLEANUPprofile(TRACE_id_thread);
+	CLEANUPprofile(TRACE_id_ticks);
 	CLEANUPprofile(TRACE_id_rssMB);
 	CLEANUPprofile(TRACE_id_tmpspace);
 	CLEANUPprofile(TRACE_id_inblock);
@@ -719,7 +721,6 @@ _cleanupProfiler(void)
 	CLEANUPprofile(TRACE_id_minflt);
 	CLEANUPprofile(TRACE_id_majflt);
 	CLEANUPprofile(TRACE_id_nvcsw);
-	CLEANUPprofile(TRACE_id_thread);
 	CLEANUPprofile(TRACE_id_stmt);
 	TRACE_init = 0;
 }
@@ -797,7 +798,6 @@ cleanupTraces(void)
 void
 cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	/* static struct Mallinfo prevMalloc; */
 	char buf[BUFSIZ]= {0};
 	int tid = (int)THRgettid();
 	lng v1 = 0, v2= 0, v3=0, v4=0, v5=0;
@@ -806,10 +806,8 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng rssMB = MT_getrss()/1024/1024;
 	lng tmpspace = pci->wbytes/1024/1024;
 	int errors = 0;
-	/* struct Mallinfo infoMalloc; */
 
 	clock = GDKusec();
-	/* infoMalloc = MT_mallinfo(); */
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif

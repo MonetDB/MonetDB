@@ -421,7 +421,8 @@ VIEWreset(BAT *b)
 		b->batCapacity = cnt;
 
 		/* insert all of v in b, and quit */
-		BATappend(b, v, NULL, FALSE);
+		if (BATappend(b, v, NULL, FALSE) != GDK_SUCCEED)
+			goto bailout;
 		BBPreclaim(v);
 	}
 	return GDK_SUCCEED;

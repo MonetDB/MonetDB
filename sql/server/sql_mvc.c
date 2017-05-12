@@ -19,6 +19,7 @@
 #include "sql_privileges.h"
 #include "rel_rel.h"
 #include "gdk_logger.h"
+#include "wlc.h"
 
 static int mvc_debug = 0;
 
@@ -306,6 +307,7 @@ mvc_commit(mvc *m, int chain, const char *name)
 			fprintf(stderr, "#mvc_savepoint\n");
 		store_lock();
 		m->session->tr = sql_trans_create(m->session->stk, tr, name);
+		WLCcommit(m->clientid);
 		store_unlock();
 		m->type = Q_TRANS;
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
@@ -341,6 +343,7 @@ build up the hash (not copied in the trans dup)) */
 		if (!chain) 
 			sql_trans_end(m->session);
 		m->type = Q_TRANS;
+		WLCcommit(m->clientid);
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
 		store_unlock();
@@ -373,6 +376,7 @@ build up the hash (not copied in the trans dup)) */
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
+	WLCcommit(m->clientid);
 	sql_trans_end(m->session);
 	if (chain) 
 		sql_trans_begin(m->session);
@@ -432,6 +436,7 @@ mvc_rollback(mvc *m, int chain, const char *name)
 		if (chain) 
 			sql_trans_begin(m->session);
 	}
+	WLCrollback(m->clientid);
 	store_unlock();
 	m->type = Q_TRANS;
 	if (mvc_debug)

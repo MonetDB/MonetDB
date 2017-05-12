@@ -35,6 +35,8 @@
 #include "mal_debugger.h"
 #include "mal_linker.h"
 #include "bat5.h"
+#include "wlc.h"
+#include "wlr.h"
 #include "msabaoth.h"
 #include <mtime.h>
 #include "optimizer.h"
@@ -262,6 +264,7 @@ SQLinit(void)
 		}
 		GDKregister(idlethread);
 	}
+	WLCinit();
 	return MAL_SUCCEED;
 }
 
@@ -390,7 +393,7 @@ SQLautocommit(Client c, mvc *m)
 			mvc_rollback(m, 0, NULL);
 		} else if (mvc_commit(m, 0, NULL) < 0) {
 			return handle_error(m, c->fdout, 0);
-		}
+		} 
 	}
 	return TRUE;
 }
@@ -436,6 +439,7 @@ SQLinitClient(Client c)
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	MT_lock_set(&sql_contextLock);
+	WLRinit();
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
@@ -599,13 +603,8 @@ SQLinitClient(Client c)
 }
 
 str
-SQLexitClient(Client c)
+SQLresetClient(Client c)
 {
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLexitClient\n");
-#endif
-	if (SQLinitialized == FALSE)
-		throw(SQL, "SQLexitClient", "Catalogue not available");
 	if (c->sqlcontext) {
 		backend *be = NULL;
 		mvc *m = NULL;
@@ -633,6 +632,20 @@ SQLexitClient(Client c)
 		c->sqlcontext = NULL;
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
+	return MAL_SUCCEED;
+}
+
+str
+SQLexitClient(Client c)
+{
+	str err;
+#ifdef _SQL_SCENARIO_DEBUG
+	fprintf(stderr, "#SQLexitClient\n");
+#endif
+	if (SQLinitialized == FALSE)
+		throw(SQL, "SQLexitClient", "Catalogue not available");
+	if ((err = SQLresetClient(c)) != MAL_SUCCEED)
+		return err;
 	MALexitClient(c);
 	return MAL_SUCCEED;
 }
@@ -644,10 +657,14 @@ SQLexitClient(Client c)
 str
 SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str err;
+
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return SQLinitClient(cntxt);
+	if ((err = SQLinitClient(cntxt)) == MAL_SUCCEED)
+		cntxt->phase[MAL_SCENARIO_EXITCLIENT] = SQLexitClient;
+	return err;
 }
 
 

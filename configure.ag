@@ -46,7 +46,7 @@ dnl  configure file, whereas comments starting with dnl are elided
 dnl  (including their trailing newline).
 
 AC_PREREQ([2.63])
-AC_INIT([MonetDB], [11.26.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
+AC_INIT([MonetDB], [11.28.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -1397,6 +1397,96 @@ AC_SUBST([BZ_CFLAGS])
 AC_SUBST([BZ_LIBS])
 AM_CONDITIONAL([HAVE_LIBBZ2], [test x$have_bz2 != xno])
 
+
+
+dnl  check for snappy (de)compression library
+org_have_snappy=auto
+have_snappy=$org_have_snappy
+snappy_CFLAGS=""
+snappy_LIBS=""
+AC_ARG_WITH([snappy],
+	[AS_HELP_STRING([--with-snappy=DIR],
+		[snappy library is installed in DIR])],
+	[have_snappy="$withval"])
+
+AS_CASE(["$have_snappy"],
+	[yes|no|auto], [],
+	[
+		snappy_CFLAGS="-I$withval/include"
+		snappy_LIBS="-L$withval/lib"])
+
+AC_MSG_CHECKING([for snappy])
+AS_VAR_IF([have_snappy], [no], [], [
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $snappy_CFLAGS"
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $snappy_LIBS -lsnappy"
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
+@%:@include <snappy-c.h>]], [[(void)snappy_max_compressed_length(42);]])],
+		snappy_LIBS="$snappy_LIBS -lsnappy",
+		[ AS_VAR_IF([have_snappy], [auto], [], [
+			AC_MSG_ERROR([snappy library not found])])
+		  have_snappy=no
+		  why_have_snappy="(snappy library not found)" ])
+	LIBS="$save_LIBS"
+	CPPFLAGS="$save_CPPFLAGS"])
+
+AS_VAR_IF([have_snappy], [no], [], [
+	AC_DEFINE([HAVE_LIBSNAPPY], 1, [Define if you have the snappy library])
+	AC_MSG_RESULT([yes: $snappy_LIBS])], [
+	snappy_CFLAGS=""
+	snappy_LIBS=""
+	AC_MSG_RESULT([no])])
+
+AC_SUBST([snappy_CFLAGS])
+AC_SUBST([snappy_LIBS])
+AM_CONDITIONAL([HAVE_LIBSNAPPY], [test x$have_snappy != xno])
+
+
+dnl  check for lz4 (de)compression library
+org_have_lz4=auto
+have_lz4=$org_have_lz4
+lz4_CFLAGS=""
+lz4_LIBS=""
+AC_ARG_WITH([lz4],
+	[AS_HELP_STRING([--with-lz4=DIR],
+		[lz4 library is installed in DIR])],
+	[have_lz4="$withval"])
+
+AS_CASE(["$have_lz4"],
+	[yes|no|auto], [],
+	[
+		lz4_CFLAGS="-I$withval/include"
+		lz4_LIBS="-L$withval/lib"])
+
+AC_MSG_CHECKING([for lz4])
+AS_VAR_IF([have_lz4], [no], [], [
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $lz4_CFLAGS"
+	save_LIBS="$LIBS"
+	LIBS="$LIBS $lz4_LIBS -llz4"
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
+@%:@include <lz4.h>]], [[(void)LZ4_compressBound(42);]])],
+		lz4_LIBS="$lz4_LIBS -llz4",
+		[ AS_VAR_IF([have_lz4], [auto], [], [
+			AC_MSG_ERROR([lz4 library not found])])
+		  have_lz4=no
+		  why_have_lz4="(lz4 library not found)" ])
+	LIBS="$save_LIBS"
+	CPPFLAGS="$save_CPPFLAGS"])
+
+AS_VAR_IF([have_lz4], [no], [], [
+	AC_DEFINE([HAVE_LIBLZ4], 1, [Define if you have the lz4 library])
+	AC_MSG_RESULT([yes: $lz4_LIBS])], [
+	lz4_CFLAGS=""
+	lz4_LIBS=""
+	AC_MSG_RESULT([no])])
+
+AC_SUBST([lz4_CFLAGS])
+AC_SUBST([lz4_LIBS])
+AM_CONDITIONAL([HAVE_LIBLZ4], [test x$have_lz4 != xno])
+
+
 DL_LIBS=""
 AC_CHECK_LIB([dl], [dlopen], [DL_LIBS="-ldl" ] )
 AC_SUBST([DL_LIBS])
@@ -1414,17 +1504,6 @@ AC_SUBST([MALLOC_LIBS])
 KVM_LIBS=""
 AC_CHECK_LIB([kvm], [kvm_open], [KVM_LIBS="-lkvm" ] )
 AC_SUBST([KVM_LIBS])
-
-save_LIBS="$LIBS"
-LIBS="$LIBS $MALLOC_LIBS"
-AC_CHECK_FUNCS([mallopt])
-AC_CHECK_FUNC([mallinfo],
-	[AC_COMPILE_IFELSE(
-		[AC_LANG_PROGRAM([[@%:@include <malloc.h>]],
-			[[struct mallinfo m;int x[1+sizeof(m.usmblks)-sizeof(void *)]]])],
-		[AC_DEFINE([HAVE_USEFUL_MALLINFO], 1,
-			[Define if you have mallinfo])])])
-LIBS="$save_LIBS"
 
 # libpthread
 org_have_pthread=auto
@@ -2303,6 +2382,21 @@ AS_CASE([$have_lidar],
 	AS_VAR_IF([have_liblas], [no], [], [
 		LIBLAS_INCS=`$LIBLAS_CONFIG --includes`
 		LIBLAS_LIBS=`$LIBLAS_CONFIG --libs`])
+	# liblas-config and liblas/capi/liblas.h could be in different
+	# packages (think Ubuntu) so we need to test for them both
+	AS_VAR_IF([have_liblas], [no], [], [
+		save_CPPFLAGS="$CPPFLAGS"
+		save_LDFLAGS="$LDFLAGS"
+		save_LIBS="$LIBS"
+		CPPFLAGS="$CPPFLAGS $LIBLAS_INCS"
+		LDFLAGS="$LDFLAGS $LIBLAS_LIBS"
+		LIBS=""
+		AC_CHECK_HEADER([liblas/capi/liblas.h], [],
+			[have_liblas=no
+			 why_have_liblas="(liblas/capi/liblas.h header file not found)"])
+		CPPFLAGS="$save_CPPFLAGS"
+		LDFLAGS="$save_LDFLAGS"
+		LIBS="$save_LIBS"])
 	# if lidar is enabled and liblas was not found abort
 	AS_VAR_IF([have_liblas], [no], [
 		AS_VAR_IF([have_lidar], [yes],
@@ -2323,11 +2417,8 @@ AC_SUBST([LIBLAS_RPM])
 
 AC_SUBST([LIBLAS_INCS])
 AC_SUBST([LIBLAS_LIBS])
-AC_MSG_CHECKING([enable lidar: $have_lidar])
 
 AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xauto])
-
-AC_MSG_CHECKING(['enable lidar: $have_lidar'])
 
 # gdal
 org_have_gdal="auto"
@@ -3139,6 +3230,7 @@ for comp in \
 	'liblzma      ' \
 	'libxml2      ' \
 	'lidar        ' \
+	'lz4          ' \
 	'netcdf       ' \
 	'openssl      ' \
 	'proj         ' \
@@ -3149,6 +3241,7 @@ for comp in \
 	'regex        ' \
 	'samtools     ' \
 	'shp          ' \
+	'snappy       ' \
 	'unixodbc     ' \
 	'valgrind     ' \
 	'zlib         ' \

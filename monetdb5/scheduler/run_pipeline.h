@@ -23,7 +23,6 @@
 #endif
 
 struct {
-	/*mallinfo memory; */
 	/* rusage memused; */
 	int cpuload;		/* hard to get */
 } runtime;

@@ -1422,6 +1422,7 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 		printStack(cntxt->fdout, mb, stk, 0);
 	}
 #endif
+	assert(mb->vtop <= mb->vsize);
 	(void) flag;
 	for (k = 0; k < mb->vtop; k++) {
 	//	if (isVarCleanup(mb, k) ){

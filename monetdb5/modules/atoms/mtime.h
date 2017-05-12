@@ -164,6 +164,8 @@ mal_export str MTIMEdaytime_diff(lng *ret, const daytime *v1, const daytime *v2)
 mal_export str MTIMEtimestamp_diff(lng *ret, const timestamp *v1, const timestamp *v2);
 mal_export str MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2);
 mal_export str MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z);
+mal_export str MTIMEepoch2lng(lng *res, const timestamp *ts);
+mal_export str MTIMEepoch_bulk(bat *ret, bat *bid);
 
 mal_export str MTIMEtimestamp_year(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_month(int *ret, const timestamp *t);

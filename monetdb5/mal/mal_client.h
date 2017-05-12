@@ -171,6 +171,14 @@ typedef struct CLIENT {
 	 */
 	bit		active;		/* processing a query or not */
 	Workset inprogress[THREADS];
+	/*
+	 * The workload for replication/replay is saved initially as a MAL block.
+	 * It is split into the capturing part (wlc) and the replay part (wlr).
+	 * This allows a single server to act as both a master and a replica.
+	 */
+	int wlc_kind;	// used by master to characterise the compound transaction
+	MalBlkPtr wlc;
+
 	/*	
 	 *	Errors during copy into are collected in a user specific column set
 	 */
@@ -178,6 +186,10 @@ typedef struct CLIENT {
 	BAT *error_fld;
 	BAT *error_msg;
 	BAT *error_input;
+
+	size_t blocksize;
+	protocol_version protocol;
+	int compute_column_widths;
 } *Client, ClientRec;
 
 mal_export void    MCinit(void);

@@ -244,6 +244,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->totaltime = 0;
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+	c->wlc_kind = 0;
+	c->wlc = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
 	{
 		str msg = AUTHgetUsername(&c->username, c);
@@ -251,6 +253,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 			freeException(msg);
 	}
 #endif
+	c->blocksize = BLOCK;
+	c->protocol = PROTOCOL_9;
+	c->compute_column_widths = 0;
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
 }
@@ -294,7 +299,7 @@ MCinitClientThread(Client c)
 	if (c->errbuf == NULL) {
 		char *n = GDKzalloc(GDKMAXERRLEN);
 		if ( n == NULL){
-			showException(GDKout, MAL, "initClientThread", "Failed to initialize client");
+			showException(GDKout, MAL, "initClientThread", MAL_MALLOC_FAIL);
 			return -1;
 		}
 		GDKsetbuf(n);
@@ -388,14 +393,20 @@ freeClient(Client c)
 		c->username = 0;
 	}
 	c->mythread = 0;
-	GDKfree(c->glb);
-	c->glb = NULL;
+	if (c->glb) {
+		freeStack(c->glb);
+		c->glb = NULL;
+	}
 	if( c->error_row){
 		BBPrelease(c->error_row->batCacheid);
 		BBPrelease(c->error_fld->batCacheid);
 		BBPrelease(c->error_msg->batCacheid);
 		BBPrelease(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+		if( c->wlc)
+			freeMalBlk(c->wlc);
+		c->wlc_kind = 0;
+		c->wlc = NULL;
 	}
 	if (t)
 		THRdel(t);  /* you may perform suicide */

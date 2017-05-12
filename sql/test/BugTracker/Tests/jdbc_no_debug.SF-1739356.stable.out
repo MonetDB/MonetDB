@@ -38,7 +38,7 @@ Ready.
 | | | | | ) [ _tables.id as tables.id ]                              |
 | | | | ) [  ] [ sys.count() NOT NULL as L41.L41 ]                   |
 | | | ) [ L41.L41 ]                                                  |
-| | ) [  ] [ sys.sum no nil (L41.L41) as L41.L41 ]                   |
+| | ) [  ] [ sys.sum no nil (L41.L41) COUNT  as L41.L41 ]            |
 | ) [ L41 NOT NULL as L42.L41 ]                                      |
 +--------------------------------------------------------------------+
 18 rows

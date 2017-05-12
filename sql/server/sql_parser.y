@@ -591,7 +591,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE COMMENT
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
-%token CALL LANGUAGE 
+%token CALL LANGUAGE
 %token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
@@ -5415,7 +5415,7 @@ schema_name_list: name_commalist ;
 
 
 comment_on_statement:
-	COMMENT ON catalog_object IS string 
+	COMMENT ON catalog_object IS string
 	{ dlist *l = L();
 	  append_symbol(l, $3);
 	  append_string(l, $5);
@@ -5448,7 +5448,7 @@ catalog_object:
 	;
 
 XML_value_expression:
-  XML_primary	
+  XML_primary
   ;
 
 XML_value_expression_list:

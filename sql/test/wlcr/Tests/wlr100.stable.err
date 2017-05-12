@@ -1,0 +1,29 @@
+stderr of test 'wlr100` in directory 'sql/test/wlcr` itself:
+
+
+# 21:26:02 >  
+# 21:26:02 >  "/usr/bin/python2" "wlr80.py" "wlr80"
+# 21:26:02 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/wlcr//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mapi_port = 42547
+# cmdline opt 	mapi_usock = /var/tmp/mtest-30891/.s.monetdb.42547
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
+# cmdline opt 	gdk_debug = 536870922
+
+# 21:26:05 >  
+# 21:26:05 >  "Done."
+# 21:26:05 >  
+

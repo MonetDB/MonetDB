@@ -340,10 +340,12 @@ write_header(stream *output, bam_field fields[11])
 		if (sq_table_count == sq_table_size - 1) {
 			/* Not enough space... */
 			int new_size = sq_table_size * 2;
-			if((sq_table = GDKrealloc(sq_table, new_size * sizeof(str))) == NULL) {
+			str *tmp;
+			if((tmp = GDKrealloc(sq_table, new_size * sizeof(str))) == NULL) {
 				msg = createException(MAL, "write_header", MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
+			sq_table = tmp;
 
 			sq_table_size = new_size;
 		}

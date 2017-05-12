@@ -223,7 +223,10 @@ escape_str(str *retval, str s)
 	}
 	res[y] = '\0';
 
-	*retval = GDKrealloc(res, strlen(res)+1);
+	if ((*retval = GDKrealloc(res, strlen(res)+1)) == NULL) {
+		GDKfree(res);
+		throw(MAL, "url.escape", MAL_MALLOC_FAIL);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -253,7 +256,10 @@ unescape_str(str *retval, str s)
 	}
 	res[y] = '\0';
 
-	*retval = GDKrealloc(res, strlen(res)+1);
+	if ((*retval = GDKrealloc(res, strlen(res)+1)) == NULL) {
+		GDKfree(res);
+		throw(MAL, "url.unescape", MAL_MALLOC_FAIL);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -305,7 +311,7 @@ URLtoString(str *s, int *len, str src)
 	l = (int) strlen(src) + 3;
 	/* if( !*s) *s= (str)GDKmalloc(*len = l); */
 
-	if (l >= *len) {
+	if (l >= *len || *s == NULL) {
 		GDKfree(*s);
 		*s = (str) GDKmalloc(l);
 		if (*s == NULL)
@@ -410,7 +416,7 @@ URLgetContent(str *retval, url *Str1)
 			if (oldbuf != NULL)
 				GDKfree(oldbuf);
 			mnstr_destroy(f);
-			throw(MAL, "url.getContent", "contents too large");
+			throw(MAL, "url.getContent", MAL_MALLOC_FAIL);
 		}
 		oldbuf = NULL;
 		(void)memcpy(retbuf + rlen, buf, len);

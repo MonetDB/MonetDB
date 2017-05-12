@@ -291,27 +291,6 @@ size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 int GDK_vm_trim = 1;
 
 #define SEG_SIZE(x,y)	((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
-#define MAX_BIT		((int) (sizeof(ssize_t)<<3))
-
-#if defined(GDK_MEM_KEEPHISTO) || defined(GDK_VM_KEEPHISTO)
-/* histogram update macro */
-#define GDKmallidx(idx, size)				\
-	do {						\
-		int _mask;				\
-							\
-		if (size < 128) {			\
-			_mask = (1<<6);			\
-			idx = 7;			\
-		} else {				\
-			_mask = (1<<(MAX_BIT-1));	\
-			idx = MAX_BIT;			\
-		}					\
-		while(idx-- > 4) {			\
-			if (_mask&size) break;		\
-			_mask >>=1;			\
-		}					\
-	} while (0)
-#endif
 
 /* This block is to provide atomic addition and subtraction to select
  * variables.  We use intrinsic functions (recognized and inlined by
@@ -324,12 +303,6 @@ static volatile ATOMIC_TYPE GDK_mallocedbytes_estimate = 0;
 static volatile lng GDK_malloc_success_count = -1;
 #endif
 static volatile ATOMIC_TYPE GDK_vm_cursize = 0;
-#ifdef GDK_VM_KEEPHISTO
-volatile ATOMIC_TYPE GDK_vm_nallocs[MAX_BIT] = { 0 };
-#endif
-#ifdef GDK_MEM_KEEPHISTO
-volatile ATOMIC_TYPE GDK_nmallocs[MAX_BIT] = { 0 };
-#endif
 #ifdef ATOMIC_LOCK
 static MT_Lock mbyteslock MT_LOCK_INITIALIZER("mbyteslock");
 static MT_Lock GDKstoppedLock MT_LOCK_INITIALIZER("GDKstoppedLock");
@@ -773,12 +746,6 @@ GDKreset(int status, int exit)
 		GDK_vm_cursize = 0;
 		_MT_pagesize = 0;
 		_MT_npages = 0;
-#ifdef GDK_VM_KEEPHISTO
-		memset((char*)GDK_vm_nallocs[MAX_BIT], 0, sizeof(GDK_vm_nallocs));
-#endif
-#ifdef GDK_MEM_KEEPHISTO
-		memset((char*)GDK_nmallocs[MAX_BIT], 0, sizeof(GDK_nmallocs));
-#endif
 		GDKnr_threads = 0;
 		GDKnrofthreads = 0;
 		close_stream((stream *) THRdata[0]);
@@ -1469,106 +1436,17 @@ GDKvm_cursize(void)
 	return (size_t) ATOMIC_GET(GDK_vm_cursize, mbyteslock) + GDKmem_cursize();
 }
 
-#ifdef GDK_MEM_KEEPHISTO
-#define heapinc(_memdelta)						\
-	do {								\
-		int _idx;						\
-									\
-		(void) ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock); \
-		GDKmallidx(_idx, _memdelta);				\
-		(void) ATOMIC_INC(GDK_nmallocs[_idx], mbyteslock);	\
-	} while (0)
-#define heapdec(memdelta)						\
-	do {								\
-		ssize_t _memdelta = (ssize_t) (memdelta);		\
-		int _idx;						\
-									\
-		(void) ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock); \
-		GDKmallidx(_idx, _memdelta);				\
-		(void) ATOMIC_DEC(GDK_nmallocs[_idx], mbyteslock);	\
-	} while (0)
-#else
 #define heapinc(_memdelta)						\
 	(void) ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock)
 #define heapdec(_memdelta)						\
 	(void) ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock)
-#endif
 
-#ifdef GDK_VM_KEEPHISTO
-#define meminc(vmdelta)							\
-	do {								\
-		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
-		int _idx;						\
-									\
-		GDKmallidx(_idx, _vmdelta);				\
-		(void) ATOMIC_INC(GDK_vm_nallocs[_idx], mbyteslock);	\
-		(void) ATOMIC_ADD(GDK_vm_cursize, _vmdelta, mbyteslock); \
-	} while (0)
-#define memdec(vmdelta)							\
-	do {								\
-		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
-		int _idx;						\
-									\
-		GDKmallidx(_idx, _vmdelta);				\
-		(void) ATOMIC_DEC(GDK_vm_nallocs[_idx], mbyteslock);	\
-		(void) ATOMIC_SUB(GDK_vm_cursize, _vmdelta, mbyteslock); \
-	} while (0)
-#else
 #define meminc(vmdelta)							\
 	(void) ATOMIC_ADD(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock)
 #define memdec(vmdelta)							\
 	(void) ATOMIC_SUB(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock)
-#endif
 
 #ifndef STATIC_CODE_ANALYSIS
-
-static void
-GDKmemdump(void)
-{
-	struct Mallinfo m = MT_mallinfo();
-
-	MEMDEBUG {
-		fprintf(stderr, "\n");
-		fprintf(stderr, "#mallinfo.arena = " SZFMT "\n", m.arena);
-		fprintf(stderr, "#mallinfo.ordblks = " SZFMT "\n", m.ordblks);
-		fprintf(stderr, "#mallinfo.smblks = " SZFMT "\n", m.smblks);
-		fprintf(stderr, "#mallinfo.hblkhd = " SZFMT "\n", m.hblkhd);
-		fprintf(stderr, "#mallinfo.hblks = " SZFMT "\n", m.hblks);
-		fprintf(stderr, "#mallinfo.usmblks = " SZFMT "\n", m.usmblks);
-		fprintf(stderr, "#mallinfo.fsmblks = " SZFMT "\n", m.fsmblks);
-		fprintf(stderr, "#mallinfo.uordblks = " SZFMT "\n", m.uordblks);
-		fprintf(stderr, "#mallinfo.fordblks = " SZFMT "\n", m.fordblks);
-	}
-#ifdef GDK_MEM_KEEPHISTO
-	{
-		int i;
-
-		fprintf(stderr, "#memory histogram\n");
-		for (i = 3; i < GDK_HISTO_MAX_BIT - 1; i++) {
-			size_t j = 1 << i;
-
-			fprintf(stderr, "# " SZFMT " " SZFMT "\n", j,
-				ATOMIC_GET(GDK_nmallocs[i],
-					   mbyteslock, "GDKmemdump"));
-		}
-	}
-#endif
-#ifdef GDK_VM_KEEPHISTO
-	{
-		int i;
-
-		fprintf(stderr, "\n#virtual memory histogram\n");
-		for (i = 12; i < GDK_HISTO_MAX_BIT - 1; i++) {
-			size_t j = 1 << i;
-
-			fprintf(stderr, "# " SZFMT " " SZFMT "\n", j,
-				ATOMIC_GET(GDK_vm_nallocs[i],
-					   mbyteslock, "GDKmemdump"));
-		}
-	}
-#endif
-}
-
 
 static void
 GDKmemfail(const char *s, size_t len)
@@ -1590,7 +1468,6 @@ GDKmemfail(const char *s, size_t len)
 	 */
 
 	fprintf(stderr, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
-	GDKmemdump();
 }
 
 /* Memory allocation

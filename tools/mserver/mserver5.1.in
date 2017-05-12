@@ -148,9 +148,9 @@ combination of):
                              (for join, select)
 .\"    8388608 = XPROPMASK    = extended property checking:
 .\"                             tells also about not set properties
-   16777216 = JOINPROPMASK = disable property checking with
-                             join & outerjoin (e.g., for
-                             performance measurements)
+.\"   16777216 = JOINPROPMASK = disable property checking with
+.\"                             join & outerjoin (e.g., for
+.\"                             performance measurements)
    33554432 = DEADBEEFMASK = disable "cleaning" of freed memory
                              in GDKfree() (e.g., for performance
                              measurements)
@@ -186,7 +186,7 @@ these debug flags as well:
   \-\-transactions  (TMMASK | DELTAMASK | TEMMASK)
   \-\-modules       (LOADMASK)
   \-\-algorithms    (ALGOMASK | ESTIMASK)
-  \-\-performance   (JOINPROPMASK | DEADBEEFMASK)
+  \-\-performance   (DEADBEEFMASK)
   \-\-optimizers    (OPTMASK)
   \-\-forcemito     (FORCEMITOMASK)
   \-\-trace[=stethoscope argument]

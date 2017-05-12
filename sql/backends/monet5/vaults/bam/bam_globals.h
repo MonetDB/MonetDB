@@ -93,11 +93,11 @@ hash_fprintf(FILE *f, const char *format, ...) {
  * and that msg points to the new exception afterwards.  I had a look
  * at rethrow but this does not achieve the right thing.
  */
-#define REUSE_EXCEPTION(msg, type, fnc, ...)				\
-	do {								\
+#define REUSE_EXCEPTION(msg, type, fnc, ...)					\
+	do {														\
 		str msg_tmp = createException(type, fnc, __VA_ARGS__);	\
-		freeException(msg);						\
-		msg = msg_tmp;						\
+		freeException(msg);										\
+		msg = msg_tmp;											\
 	} while (0)
 
 

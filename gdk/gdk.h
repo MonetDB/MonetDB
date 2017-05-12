@@ -469,8 +469,10 @@
 #define XPROPDEBUG	if (GDKdebug & XPROPMASK)
 */
 
+/* JOINPROPMASK not used anymore
 #define JOINPROPMASK	(1<<24)
 #define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
+*/
 #define DEADBEEFMASK	(1<<25)
 #define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
 
@@ -950,7 +952,8 @@ typedef struct BATiter {
  * These routines should be used to alloc free or extend heaps; they
  * isolate you from the different ways heaps can be accessed.
  */
-gdk_export gdk_return HEAPextend(Heap *h, size_t size, int mayshare);
+gdk_export gdk_return HEAPextend(Heap *h, size_t size, int mayshare)
+	__attribute__ ((__warn_unused_result__));
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 
@@ -1019,7 +1022,8 @@ gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, int role)
 	__attribute__((warn_unused_result));
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
 	__attribute__((warn_unused_result));
-gdk_export gdk_return BATextend(BAT *b, BUN newcap);
+gdk_export gdk_return BATextend(BAT *b, BUN newcap)
+	__attribute__ ((__warn_unused_result__));
 
 /* internal */
 gdk_export bte ATOMelmshift(int sz);
@@ -1258,15 +1262,22 @@ gdk_export bte ATOMelmshift(int sz);
 		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
 	} while (0)
 
-gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare);
-gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
-gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bit force);
+gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bit force)
+	__attribute__ ((__warn_unused_result__));
 
-gdk_export gdk_return BUNdelete(BAT *b, oid o);
-gdk_export gdk_return BATdel(BAT *b, BAT *d);
+gdk_export gdk_return BUNdelete(BAT *b, oid o)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return BATdel(BAT *b, BAT *d)
+	__attribute__ ((__warn_unused_result__));
 
-gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *right, bit force);
-gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force);
+gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *right, bit force)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force)
+	__attribute__ ((__warn_unused_result__));
 
 /* Functions to perform a binary search on a sorted BAT.
  * See gdk_search.c for details. */
@@ -1428,7 +1439,8 @@ gdk_export int BATgetaccess(BAT *b);
 gdk_export gdk_return BATclear(BAT *b, int force);
 gdk_export BAT *COLcopy(BAT *b, int tt, int writeable, int role);
 
-gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h);
+gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h)
+	__attribute__ ((__warn_unused_result__));
 
 /*
  * @- BAT Input/Output
@@ -1507,7 +1519,8 @@ gdk_export gdk_return BATprint(BAT *b);
 gdk_export int BATkeyed(BAT *b);
 gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
-gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable);
+gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable)
+	__attribute__ ((__warn_unused_result__));
 
 
 gdk_export void GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
@@ -1922,7 +1935,7 @@ gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
  * @- Multilevel Storage Modes
  *
  * We should bring in the compressed mode as the first, maybe
- * built-in, mode. We could than add for instance HTTP remote storage,
+ * built-in, mode. We could then add for instance HTTP remote storage,
  * SQL storage, and READONLY (cd-rom) storage.
  *
  * @+ GDK Utilities
@@ -1957,7 +1970,6 @@ gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
  * Compiled with -DMEMLEAKS the GDK memory management log their
  * activities, and are checked on inconsistent frees and memory leaks.
  */
-#define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
 gdk_export void *GDKmmap(const char *path, int mode, size_t len);
@@ -2321,8 +2333,10 @@ gdk_export void GDKclrerr(void);
 #include "gdk_utils.h"
 
 /* functions defined in gdk_bat.c */
-gdk_export BUN void_replace_bat(BAT *b, BAT *p, BAT *u, bit force);
-gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bit force);
+gdk_export BUN void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bit force)
+	__attribute__ ((__warn_unused_result__));
 gdk_export BAT *BATattach(int tt, const char *heapfile, int role);
 
 #ifdef NATIVE_WIN32
@@ -2802,16 +2816,24 @@ gdk_export BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, int li
 gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 
 gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, int role);
-gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr);
+gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
+	__attribute__ ((__warn_unused_result__));
 
-gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
-gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
-gdk_export gdk_return BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate);
-gdk_export gdk_return BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
+gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+	__attribute__ ((__warn_unused_result__));
 gdk_export BAT *BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
-gdk_export gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
-gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate);
-gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN estimate);
+gdk_export gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate)
+	__attribute__ ((__warn_unused_result__));
+gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN estimate)
+	__attribute__ ((__warn_unused_result__));
 gdk_export BAT *BATproject(BAT *l, BAT *r);
 gdk_export BAT *BATprojectchain(BAT **bats);
 
@@ -2822,7 +2844,8 @@ gdk_export BAT *BATunique(BAT *b, BAT *s);
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
 gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
 
-gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, int asc, int distinct);
+gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, int asc, int distinct)
+	__attribute__ ((__warn_unused_result__));
 
 #include "gdk_calc.h"
 

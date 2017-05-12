@@ -96,8 +96,10 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 void
 freeStack(MalStkPtr stk)
 {
-	clearStack(stk);
-	GDKfree(stk);
+	if (stk != NULL) {
+		clearStack(stk);
+		GDKfree(stk);
+	}
 }
 
 void
@@ -113,6 +115,10 @@ clearStack(MalStkPtr s)
 	for (v = s->stk; i >= 0; i--, v++)
 		if (ATOMextern(v->vtype) && v->val.pval) {
 			GDKfree(v->val.pval);
+			v->vtype = 0;
+			v->val.pval = NULL;
+		} else if (BATatoms[v->vtype].atomUnfix) {
+			BATatoms[v->vtype].atomUnfix(VALget(v));
 			v->vtype = 0;
 			v->val.pval = NULL;
 		}
