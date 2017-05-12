@@ -164,7 +164,7 @@ GDKsetenv(const char *name, const char *value)
  */
 #define GDKLOCK	".gdk_lock"
 
-#define GET_GDKLOCK(x) BBPfarms[BBPselectfarm((x), 0, 0)].lock_file
+#define GET_GDKLOCK(x) BBPfarms[BBPselectfarm((x), 0, offheap)].lock_file
 
 #define GDKLOGOFF	"LOGOFF"
 #define GDKFOUNDDEAD	"FOUND	DEAD"

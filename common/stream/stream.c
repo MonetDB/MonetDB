@@ -130,7 +130,6 @@
 #ifdef NATIVE_WIN32
 #define pclose _pclose
 #define fileno(fd) _fileno(fd)
-#define isatty(fd) _isatty(fd)
 #endif
 
 #define UTF8BOM		"\xEF\xBB\xBF" /* UTF-8 encoding of Unicode BOM */
