@@ -339,6 +339,11 @@ Ready.
 % login_id,	role_id # name
 % int,	int # type
 % 1,	1 # length
+#SELECT * FROM sys.privileges WHERE obj_id NOT IN (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions);
+% sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% obj_id,	auth_id,	privileges,	grantor,	grantable # name
+% int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1 # length
 #SELECT * FROM sys.privileges WHERE auth_id NOT IN (SELECT id FROM sys.auths);
 % sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
 % obj_id,	auth_id,	privileges,	grantor,	grantable # name
