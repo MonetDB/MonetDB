@@ -50,7 +50,7 @@ static char THRprintbuf[BUFSIZ];
 #endif
 
 static volatile ATOMIC_FLAG GDKstopped = ATOMIC_FLAG_INIT;
-static void GDKunlockHome(void);
+static void GDKunlockHome(int farmid);
 
 #undef malloc
 #undef calloc
@@ -164,7 +164,7 @@ GDKsetenv(const char *name, const char *value)
  */
 #define GDKLOCK	".gdk_lock"
 
-static FILE *GDKlockFile = 0;
+#define GET_GDKLOCK(x) BBPfarms[BBPselectfarm((x), 0, offheap)].lock_file
 
 #define GDKLOGOFF	"LOGOFF"
 #define GDKFOUNDDEAD	"FOUND	DEAD"
@@ -176,7 +176,7 @@ static FILE *GDKlockFile = 0;
  * process, thread and user ID, and the current time.
  */
 void
-GDKlog(const char *format, ...)
+GDKlog(FILE *lockFile, const char *format, ...)
 {
 	va_list ap;
 	char *p = 0, buf[1024];
@@ -186,7 +186,7 @@ GDKlog(const char *format, ...)
 #endif
 	char *ctm;
 
-	if (MT_pagesize() == 0 || GDKlockFile == NULL)
+	if (MT_pagesize() == 0 || lockFile == NULL)
 		return;
 
 	va_start(ap, format);
@@ -199,7 +199,7 @@ GDKlog(const char *format, ...)
 	for (p = buf; (p = strchr(p, '@')) != NULL; *p = ' ')
 		;
 
-	fseek(GDKlockFile, 0, SEEK_END);
+	fseek(lockFile, 0, SEEK_END);
 #ifndef HAVE_GETUID
 #define getuid() 0
 #endif
@@ -212,8 +212,8 @@ GDKlog(const char *format, ...)
 	ctm = ctime(&tm);
 #endif
 #endif
-	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%.24s @ %s\n", (int) getuid(), (int) getpid(), ctm, buf);
-	fflush(GDKlockFile);
+	fprintf(lockFile, "USR=%d PID=%d TIME=%.24s @ %s\n", (int) getuid(), (int) getpid(), ctm, buf);
+	fflush(lockFile);
 }
 
 /*
@@ -424,7 +424,7 @@ MT_init(void)
 #define CATNAP		50	/* time to sleep in ms for catnaps */
 
 static void THRinit(void);
-static void GDKlockHome(void);
+static void GDKlockHome(int farmid);
 
 #ifndef NDEBUG
 static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
@@ -437,6 +437,7 @@ GDKinit(opt *set, int setlen)
 	char *p;
 	opt *n;
 	int i, nlen = 0;
+	int persistent_farmid, transient_farmid;
 	char buf[16];
 
 	/* some sanity checks (should also find if symbols are not defined) */
@@ -496,7 +497,16 @@ GDKinit(opt *set, int setlen)
 #endif
 #endif
 	/* now try to lock the database */
-	GDKlockHome();
+	/* type and hptype are unused for now */
+	persistent_farmid = BBPselectfarm(PERSISTENT, 0, 0);
+	GDKlockHome(persistent_farmid);
+	transient_farmid = BBPselectfarm(TRANSIENT, 0, 0);
+	if (persistent_farmid != transient_farmid) {
+		/* Only lock the transient farm if it is different than the
+		 * persistent one.
+		 */
+		GDKlockHome(transient_farmid);
+	}
 
 	/* Mserver by default takes 80% of all memory as a default */
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
@@ -679,6 +689,7 @@ GDKreset(int status, int exit)
 	MT_Id pid = MT_getpid();
 	Thread t, s;
 	struct serverthread *st;
+	int persistent_farmid, transient_farmid;
 
 	if( GDKkey){
 		BBPunfix(GDKkey->batCacheid);
@@ -726,8 +737,14 @@ GDKreset(int status, int exit)
 			/* we can't clean up after killing threads */
 			BBPexit();
 		}
-		GDKlog(GDKLOGOFF);
-		GDKunlockHome();
+		GDKlog(GET_GDKLOCK(PERSISTENT), GDKLOGOFF);
+		persistent_farmid = BBPselectfarm(PERSISTENT, 0, 0);
+		transient_farmid = BBPselectfarm(TRANSIENT, 0, 0);
+		if (persistent_farmid != transient_farmid) {
+			GDKunlockHome(transient_farmid);
+		}
+		GDKunlockHome(persistent_farmid);
+
 #if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 		TEMDEBUG GDKlockstatistics(1);
 #endif
@@ -770,7 +787,7 @@ GDKreset(int status, int exit)
 void
 GDKexit(int status)
 {
-	if (GDKlockFile == NULL) {
+	if (GET_GDKLOCK(PERSISTENT) == NULL) {
 #ifdef HAVE_EMBEDDED
 		return;
 #endif
@@ -801,20 +818,20 @@ MT_Lock GDKtmLock MT_LOCK_INITIALIZER("GDKtmLock");
  * system.  First, it should be ensured that each database is
  * controlled by a single server process (group). Subsequent attempts
  * should be stopped.  This is regulated through file locking against
- * ".gdk_lock".  Furthermore, the server process is moved to the
- * database directory for improved speed.
+ * ".gdk_lock".
  *
  * Before the locks and threads are initiated, we cannot use the
  * normal routines yet. So we have a local fatal here instead of
  * GDKfatal.
  */
 static void
-GDKlockHome(void)
+GDKlockHome(int farmid)
 {
 	int fd;
 	struct stat st;
-	str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
+	str gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
 	char GDKdirStr[PATHLENGTH];
+	FILE *GDKlockFile = BBPfarms[farmid].lock_file;
 
 	assert(GDKlockFile == NULL);
 	assert(GDKdbpathStr != NULL);
@@ -847,14 +864,15 @@ GDKlockHome(void)
 	if (ftruncate(fileno(GDKlockFile), 0) < 0)
 		GDKfatal("GDKlockHome: Could not truncate %s\n", GDKLOCK);
 	fflush(GDKlockFile);
-	GDKlog(GDKLOGON);
+	GDKlog(GET_GDKLOCK(PERSISTENT), GDKLOGON);
 	GDKfree(gdklockpath);
 }
 
 
 static void
-GDKunlockHome(void)
+GDKunlockHome(int farmid)
 {
+	FILE *GDKlockFile = BBPfarms[farmid].lock_file;
 	if (GDKlockFile) {
 		str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
 		MT_lockf(gdklockpath, F_ULOCK, 4, 1);
@@ -1115,7 +1133,7 @@ GDKfatal(const char *format, ...)
 			MT_exit_thread(1);
 			/* exit(1); */
 		} else {
-			GDKlog("%s", message);
+			GDKlog(GET_GDKLOCK(PERSISTENT), "%s", message);
 	#ifdef COREDUMP
 			abort();
 	#else

@@ -341,8 +341,8 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
 
 def server(args = [], stdin = None, stdout = None, stderr = None,
            mapiport = None, dbname = os.getenv('TSTDB'), dbfarm = None,
-           dbinit = None, bufsize = 0, log = False, notrace = False,
-           notimeout = False):
+           dbinit = None, dbextra=None, bufsize = 0, log = False,
+           notrace = False, notimeout = False):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
@@ -396,6 +396,22 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
         dbpath = os.path.join(dbfarm, dbname)
     if dbpath is not None:
         cmd.append('--dbpath=%s' % dbpath)
+    for i in range(len(cmd)):
+        if cmd[i][:10] == '--dbextra=':
+            dbextra_path = cmd[i][10:]
+            del cmd[i]
+            break
+        elif cmd[i] == '--dbextra':
+            dbextra_path = cmd[i+1]
+            del cmd[i:i+2]
+            break
+    else:
+        dbextra_path = None
+    if dbextra is not None:
+        dbextra_path = dbextra
+    if dbextra_path is not None:
+        cmd.append('--dbextra=%s' % dbextra_path)
+
     if verbose:
         sys.stdout.write('Executing: ' + ' '.join(cmd +  args) + '\n')
         sys.stdout.flush()

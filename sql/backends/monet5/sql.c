@@ -3480,11 +3480,13 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (TRACEtable(t) != 13)
 		throw(SQL, "sql.dump_trace", "3F000!Profiler not started");
-	for(i=0; i< 13; i++){
+	for(i=0; i< 13; i++)
+	if( t[i]){
 		id = t[i]->batCacheid;
 		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
-	}
+	} else
+		throw(SQL,"dump_trace","Missing trace BAT ");
 	return MAL_SUCCEED;
 }
 
@@ -3503,12 +3505,14 @@ sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	QLOGcatalog(t);
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) 
+	if( t[i]){
 		bat id = t[i]->batCacheid;
 
 		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
-	}
+	} else
+		throw(SQL,"sql.querylog","Missing query catalog BAT");
 	return MAL_SUCCEED;
 }
 
@@ -3521,12 +3525,14 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	QLOGcalls(t);
-	for (i = 0; i < 9; i++) {
+	for (i = 0; i < 9; i++) 
+	if( t[i]){
 		bat id = t[i]->batCacheid;
 
 		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
-	}
+	} else
+		throw(SQL,"sql.querylog","Missing query call BAT");
 	return MAL_SUCCEED;
 }
 
