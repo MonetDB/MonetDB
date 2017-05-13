@@ -2784,7 +2784,7 @@ zero_or_one(ptr ret, const bat *bid)
 		p = BUNtail(bi, 0);
 	} else {
 		p = NULL;
-		throw(SQL, "zero_or_one", "21000!cardinality violation");
+		throw(SQL, "zero_or_one", "21000!cardinality violation, scalar value expected");
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
