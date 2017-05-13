@@ -4914,7 +4914,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 		sql_rel *fnd = NULL;
 
 		for (n = fl->h; n ; n = n->next) {
-			int lateral = check_is_lateral(n->data.sym);
+			int lateral = check_is_lateral(n->data.sym), lateral_used = 0;
 
 			fnd = table_ref(sql, NULL, n->data.sym, 0);
 			if (!fnd && (rel || lateral) && sql->session->status != -ERR_AMBIGUOUS) {
@@ -4938,6 +4938,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 					fnd = table_ref(sql, res, n->data.sym, lateral);
 					if (fnd && is_project(fnd->op)) 
 						fnd->exps = list_merge(fnd->exps, pre_exps, (fdup)NULL);
+					lateral_used = 1;
 				} else {
 					fnd = table_ref(sql, rel, n->data.sym, 0);
 				}
@@ -4946,7 +4947,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 
 			if (!fnd)
 				break;
-			if (res && !lateral)
+			if (res && !lateral_used)
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
 			else
 				res = fnd;
