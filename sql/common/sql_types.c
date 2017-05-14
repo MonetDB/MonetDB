@@ -1411,6 +1411,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "all", "sql", "all", ANY, ANY);
 	sql_create_aggr(sa, "exist", "aggr", "exist", ANY, BIT);
 	sql_create_aggr(sa, "not_exist", "aggr", "not_exist", ANY, BIT);
+	sql_create_func(sa, "sql_exists", "aggr", "exist", ANY, NULL, BIT, SCALE_NONE);
+	sql_create_func(sa, "sql_not_exists", "aggr", "not_exist", ANY, NULL, BIT, SCALE_NONE);
 	/* needed for relational version */
 	sql_create_func(sa, "in", "calc", "in", ANY, ANY, BIT, SCALE_NONE);
 	sql_create_func(sa, "identity", "calc", "identity", ANY, NULL, OID, SCALE_NONE);

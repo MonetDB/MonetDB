@@ -316,4 +316,7 @@ sql5_export str BATSTRstrings(bat *res, const bat *src);
 
 sql5_export str SQLflush_log(void *ret);
 
+sql5_export str SQLexist(bit *res, bat *id);
+sql5_export str SQLexist_val(bit *res, void *val);
+
 #endif /* _SQL_H */

@@ -94,6 +94,8 @@ Ready.
 [ "aggr",	"covar",	"function aggr.covar(e1:bat[:lng],e2:bat[:lng]):lng;",	"",	""	]
 [ "aggr",	"covar",	"function aggr.covar(e1:bat[:sht],e2:bat[:sht]):sht;",	"",	""	]
 [ "aggr",	"exist",	"command aggr.exist(b:bat[:any_2],h:any_1):bit ",	"ALGexist;",	""	]
+[ "aggr",	"exist",	"command aggr.exist(b:bat[:any_2]):bit ",	"SQLexist;",	""	]
+[ "aggr",	"exist",	"command aggr.exist(v:any_2):bit ",	"SQLexist_val;",	""	]
 [ "aggr",	"jsonaggr",	"command aggr.jsonaggr(val:bat[:dbl]):str ",	"JSONgroupStr;",	"Aggregate the double values to array."	]
 [ "aggr",	"jsonaggr",	"command aggr.jsonaggr(val:bat[:str]):str ",	"JSONgroupStr;",	"Aggregate the string values to array."	]
 [ "aggr",	"max",	"command aggr.max(b:bat[:any_1],g:bat[:oid],e:bat[:any_2]):bat[:any_1] ",	"AGGRmax3;",	""	]
