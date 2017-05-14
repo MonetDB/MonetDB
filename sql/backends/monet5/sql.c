@@ -2784,11 +2784,8 @@ zero_or_one(ptr ret, const bat *bid)
 		BATiter bi = bat_iterator(b);
 		p = BUNtail(bi, 0);
 	} else {
-		char buf[BUFSIZ];
-
 		p = NULL;
-		snprintf(buf, BUFSIZ, "21000!cardinality violation (" BUNFMT ">1)", c);
-		throw(SQL, "zero_or_one", "%s", buf);
+		throw(SQL, "zero_or_one", "21000!cardinality violation, scalar value expected");
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
