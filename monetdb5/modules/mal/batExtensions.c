@@ -71,7 +71,7 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b = COLnew(0,getArgType(mb,pci,1),0, TRANSIENT);
 	if( b == 0)
-		throw(MAL,"bat.single","Could not create it");
+		throw(MAL,"bat.single",MAL_MALLOC_FAIL);
 	if (ATOMextern(b->ttype))
 		u = (ptr) *(str *)u;
 	if (BUNappend(b, u, FALSE) != GDK_SUCCEED) {
