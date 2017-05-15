@@ -24,7 +24,7 @@
 	"# This file is used by monetdbd\n\n"
 
 /* these are the properties used for starting an mserver */
-static confkeyval _internal_prop_keys[50] = {
+static confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"type",     NULL, 0, STR},
 	{"shared",   NULL, 0, STR},
 	{"nthreads", NULL, 0, INT},

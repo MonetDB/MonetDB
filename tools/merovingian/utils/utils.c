@@ -77,10 +77,16 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
 	char *separator = "=";
 	char *err;
 	confkeyval *t = list;
+	int cnt = 0;
 
 	/* iterate until the end of the array */
 	while (list->key != NULL) {
+		/* If we already have PROPLENGTH entries, */
+		if (cnt >= PROPLENGTH - 1) {
+			break;
+		}
 		list++;
+		cnt++;
 	}
 	/* read the file a line at a time */
 	while (fgets(buf, sizeof(buf), cnf) != NULL) {
@@ -96,11 +102,18 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
 					free(err); /* ignore, just fall back to default */
 				}
 			} else {
+				/* If we already have more than PROPLENGTH entries, ignore every
+				 * ad hoc property
+				 */
+				if (cnt >= PROPLENGTH - 1) {
+					continue;
+				}
 				list->key = strdup(key);
 				list->val = strdup(val);
 				list->ival = 0;
 				list->type = STR;
 				list++;
+				cnt++;
 			}
 		}
 	}
