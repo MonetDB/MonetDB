@@ -20,8 +20,6 @@
 #include "gdk_private.h"
 #include "mutils.h"
 
-static char GDKdbpathStr[PATHLENGTH] = { "dbpath" };
-
 BAT *GDKkey = NULL;
 BAT *GDKval = NULL;
 int GDKdebug = 0;
@@ -87,9 +85,6 @@ GDKenvironment(const char *dbpath)
 		fprintf(stderr, "!GDKenvironment: directory not an absolute path: %s.\n", dbpath);
 		return 0;
 	}
-	strncpy(GDKdbpathStr, dbpath, PATHLENGTH);
-	/* make coverity happy: */
-	GDKdbpathStr[PATHLENGTH - 1] = 0;
 	return 1;
 }
 
@@ -437,7 +432,7 @@ GDKinit(opt *set, int setlen)
 	char *p;
 	opt *n;
 	int i, nlen = 0;
-	int persistent_farmid, transient_farmid;
+	int farmid;
 	char buf[16];
 
 	/* some sanity checks (should also find if symbols are not defined) */
@@ -496,16 +491,25 @@ GDKinit(opt *set, int setlen)
 	_set_error_mode(_OUT_TO_STDERR);
 #endif
 #endif
-	/* now try to lock the database */
-	/* type and hptype are unused for now */
-	persistent_farmid = BBPselectfarm(PERSISTENT, 0, 0);
-	GDKlockHome(persistent_farmid);
-	transient_farmid = BBPselectfarm(TRANSIENT, 0, 0);
-	if (persistent_farmid != transient_farmid) {
-		/* Only lock the transient farm if it is different than the
-		 * persistent one.
-		 */
-		GDKlockHome(transient_farmid);
+	MT_init();
+	BBPdirty(1);
+
+	/* now try to lock the database: go through all farms, and if
+	 * we see a new directory, lock it */
+	for (farmid = 0; farmid < MAXFARMS; farmid++) {
+		if (BBPfarms[farmid].dirname != NULL) {
+			int skip = 0;
+			int j;
+			for (j = 0; j < farmid; j++) {
+				if (BBPfarms[j].dirname != NULL &&
+				    strcmp(BBPfarms[farmid].dirname, BBPfarms[j].dirname) == 0) {
+					skip = 1;
+					break;
+				}
+			}
+			if (!skip)
+				GDKlockHome(farmid);
+		}
 	}
 
 	/* Mserver by default takes 80% of all memory as a default */
@@ -689,7 +693,7 @@ GDKreset(int status, int exit)
 	MT_Id pid = MT_getpid();
 	Thread t, s;
 	struct serverthread *st;
-	int persistent_farmid, transient_farmid;
+	int farmid;
 
 	if( GDKkey){
 		BBPunfix(GDKkey->batCacheid);
@@ -737,19 +741,28 @@ GDKreset(int status, int exit)
 			/* we can't clean up after killing threads */
 			BBPexit();
 		}
-		GDKlog(GET_GDKLOCK(PERSISTENT), GDKLOGOFF);
-		persistent_farmid = BBPselectfarm(PERSISTENT, 0, 0);
-		transient_farmid = BBPselectfarm(TRANSIENT, 0, 0);
-		if (persistent_farmid != transient_farmid) {
-			GDKunlockHome(transient_farmid);
+		GDKlog(GET_GDKLOCK(0), GDKLOGOFF);
+
+		for (farmid = 0; farmid < MAXFARMS; farmid++) {
+			if (BBPfarms[farmid].dirname != NULL) {
+				int skip = 0;
+				int j;
+				for (j = 0; j < farmid; j++) {
+					if (BBPfarms[j].dirname != NULL &&
+					    strcmp(BBPfarms[farmid].dirname, BBPfarms[j].dirname) == 0) {
+						skip = 1;
+						break;
+					}
+				}
+				if (!skip)
+					GDKunlockHome(farmid);
+			}
 		}
-		GDKunlockHome(persistent_farmid);
 
 #if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 		TEMDEBUG GDKlockstatistics(1);
 #endif
 		GDKdebug = 0;
-		strcpy(GDKdbpathStr,"dbpath");
 		GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;
 		GDK_mmap_minsize_transient = MMAP_MINSIZE_TRANSIENT;
 		GDK_mmap_pagesize = MMAP_PAGESIZE;
@@ -787,7 +800,7 @@ GDKreset(int status, int exit)
 void
 GDKexit(int status)
 {
-	if (GET_GDKLOCK(PERSISTENT) == NULL) {
+	if (GET_GDKLOCK(0) == NULL) {
 #ifdef HAVE_EMBEDDED
 		return;
 #endif
@@ -829,42 +842,44 @@ GDKlockHome(int farmid)
 {
 	int fd;
 	struct stat st;
-	str gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
-	char GDKdirStr[PATHLENGTH];
-	FILE *GDKlockFile = BBPfarms[farmid].lock_file;
+	char *gdklockpath;
+	FILE *GDKlockFile;
 
-	assert(GDKlockFile == NULL);
-	assert(GDKdbpathStr != NULL);
+	assert(BBPfarms[farmid].dirname != NULL);
+	assert(BBPfarms[farmid].lock_file == NULL);
 
-	snprintf(GDKdirStr, PATHLENGTH, "%s%c", GDKdbpathStr, DIR_SEP);
+	gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
+
 	/*
 	 * Obtain the global database lock.
 	 */
-	if (stat(GDKdbpathStr, &st) < 0 && GDKcreatedir(GDKdirStr) != GDK_SUCCEED) {
-		GDKfatal("GDKlockHome: could not create %s\n", GDKdbpathStr);
+	if (stat(BBPfarms[farmid].dirname, &st) < 0 &&
+	    GDKcreatedir(gdklockpath) != GDK_SUCCEED) {
+		GDKfatal("GDKlockHome: could not create %s\n",
+			 BBPfarms[farmid].dirname);
 	}
 	if ((fd = MT_lockf(gdklockpath, F_TLOCK, 4, 1)) < 0) {
-		GDKfatal("GDKlockHome: Database lock '%s' denied\n", GDKLOCK);
+		GDKfatal("GDKlockHome: Database lock '%s' denied\n",
+			 gdklockpath);
 	}
-	/* now we have the lock on the database */
+
+	/* now we have the lock on the database and are the only
+	 * process allowed in this section */
+
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
 		close(fd);
-		GDKfatal("GDKlockHome: Could not open %s\n", GDKLOCK);
+		GDKfatal("GDKlockHome: Could not fdopen %s\n", gdklockpath);
 	}
-	/*
-	 * We have the lock, are the only process currently allowed in
-	 * this section.
-	 */
-	MT_init();
-	BBPdirty(1);
+	BBPfarms[farmid].lock_file = GDKlockFile;
+
 	/*
 	 * Print the new process list in the global lock file.
 	 */
 	fseek(GDKlockFile, 0, SEEK_SET);
 	if (ftruncate(fileno(GDKlockFile), 0) < 0)
-		GDKfatal("GDKlockHome: Could not truncate %s\n", GDKLOCK);
+		GDKfatal("GDKlockHome: Could not truncate %s\n", gdklockpath);
 	fflush(GDKlockFile);
-	GDKlog(GET_GDKLOCK(PERSISTENT), GDKLOGON);
+	GDKlog(GDKlockFile, GDKLOGON);
 	GDKfree(gdklockpath);
 }
 
@@ -872,12 +887,11 @@ GDKlockHome(int farmid)
 static void
 GDKunlockHome(int farmid)
 {
-	FILE *GDKlockFile = BBPfarms[farmid].lock_file;
-	if (GDKlockFile) {
-		str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
+	if (BBPfarms[farmid].lock_file) {
+		char *gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
 		MT_lockf(gdklockpath, F_ULOCK, 4, 1);
-		fclose(GDKlockFile);
-		GDKlockFile = 0;
+		fclose(BBPfarms[farmid].lock_file);
+		BBPfarms[farmid].lock_file = NULL;
 		GDKfree(gdklockpath);
 	}
 }
@@ -1133,7 +1147,7 @@ GDKfatal(const char *format, ...)
 			MT_exit_thread(1);
 			/* exit(1); */
 		} else {
-			GDKlog(GET_GDKLOCK(PERSISTENT), "%s", message);
+			GDKlog(GET_GDKLOCK(0), "%s", message);
 	#ifdef COREDUMP
 			abort();
 	#else
