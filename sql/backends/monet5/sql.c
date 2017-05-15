@@ -4600,3 +4600,25 @@ SQLflush_log(void *ret)
 	store_flush_log();
 	return MAL_SUCCEED;
 }
+
+str
+SQLexist_val(bit *res, void *v)
+{
+	if (v) 
+		*res = TRUE;
+	else
+		*res = FALSE;
+	return MAL_SUCCEED;
+}
+
+str
+SQLexist(bit *res, bat *id)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*id)) == NULL)
+		throw(SQL, "aggr.exist", "Cannot access descriptor");
+	*res = BATcount(b);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
