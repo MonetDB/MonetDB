@@ -5573,7 +5573,7 @@ SQLexist(bit *res, bat *id)
 
 	if ((b = BATdescriptor(*id)) == NULL)
 		throw(SQL, "aggr.exist", "Cannot access descriptor");
-	*res = BATcount(b);
+	*res = BATcount(b) != 0;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
