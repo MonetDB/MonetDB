@@ -546,7 +546,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			if (list->val != NULL && !defaultProperty(list->key)) {
 				argv[c++] = "--set";
 				snprintf(property_other, sizeof(property_other), "%s=%s", list->key, list->val);
-				argv[c++] = property_other;
+				argv[c++] = strdup(property_other);
 			}
 			list++;
 		}
