@@ -838,17 +838,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		size_t nmelen;
 		Heap *hp = NULL;
 		BUN prb;
-		BUN mask = HASHmask(b->batCount) >> 3;
-		int bits = 3;
+		BUN mask;
+		int bits;
 
 		GDKclrerr();	/* not interested in BAThash errors */
-		/* when combining value and group-id hashes,
-		 * we left-shift one of them by half the hash-mask width
-		 * to better spread bits and use the entire hash-mask,
-		 * and thus reduce collisions */
-		while (mask >>= 1)
-			bits++;
-		bits /= 2;
 
 		/* not sorted, and no pre-existing hash table: we'll
 		 * build an incomplete hash table on the fly--also see
@@ -873,8 +866,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			mask = 1 << 16;
 			bits = 8;
 		} else {
+			/* when combining value and group-id hashes,
+			 * we left-shift one of them by half the
+			 * hash-mask width to better spread bits and
+			 * use the entire hash-mask, and thus reduce
+			 * collisions */
+			mask = HASHmask(b->batCount) >> 3;
+			bits = 3;
+			while (mask >>= 1)
+				bits++;
+			bits /= 2;
 			mask = HASHmask(b->batCount);
-			bits = 0;
 		}
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
