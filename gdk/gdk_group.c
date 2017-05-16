@@ -310,9 +310,9 @@
 						break;			\
 					}				\
 				}					\
-			}						\
-			if (hb == HASHnil(hs) || hb < lo) {		\
-				GRPnotfound();				\
+				if (hb == HASHnil(hs) || hb < lo) {	\
+					GRPnotfound();			\
+				}					\
 			}						\
 		}							\
 	} while(0)
@@ -464,12 +464,12 @@
 						break;			\
 					}				\
 				}					\
-			}						\
-			if (hb == HASHnil(hs) || hb < start) {		\
-				GRPnotfound();				\
-				/* enter new group into hash table */	\
-				HASHputlink(hs, p, HASHget(hs, prb));	\
-				HASHput(hs, prb, p);			\
+				if (hb == HASHnil(hs) || hb < start) {	\
+					GRPnotfound();			\
+					/* enter new group into hash table */ \
+					HASHputlink(hs, p, HASHget(hs, prb)); \
+					HASHput(hs, prb, p);		\
+				}					\
 			}						\
 		}							\
 	} while (0)
