@@ -43,10 +43,10 @@ Ready.
 [ "bit",	5	]
 [ "bit",	57	]
 [ "bit",	385	]
-[ "bit",	1539	]
-[ "bit",	1539	]
-[ "bit",	1539	]
-[ "bte",	4332	]
+[ "bit",	1541	]
+[ "bit",	1541	]
+[ "bit",	1541	]
+[ "bte",	4336	]
 [ "int",	0	]
 [ "int",	0	]
 [ "int",	0	]
@@ -119,18 +119,18 @@ Ready.
 [ "int",	385	]
 [ "int",	385	]
 [ "int",	385	]
-[ "int",	1539	]
-[ "int",	1539	]
-[ "int",	1539	]
-[ "int",	1539	]
-[ "int",	1539	]
+[ "int",	1541	]
+[ "int",	1541	]
+[ "int",	1541	]
+[ "int",	1541	]
+[ "int",	1541	]
 [ "int",	3911	]
 [ "int",	3911	]
-[ "int",	4332	]
-[ "int",	4332	]
-[ "int",	4332	]
-[ "int",	4332	]
-[ "int",	4332	]
+[ "int",	4336	]
+[ "int",	4336	]
+[ "int",	4336	]
+[ "int",	4336	]
+[ "int",	4336	]
 [ "lng",	0	]
 [ "lng",	0	]
 [ "lng",	0	]
@@ -289,25 +289,25 @@ Ready.
 [ "str",	385	]
 [ "str",	385	]
 [ "str",	385	]
-[ "str",	1539	]
-[ "str",	1539	]
-[ "str",	1539	]
+[ "str",	1541	]
+[ "str",	1541	]
+[ "str",	1541	]
 [ "str",	3911	]
 [ "str",	3911	]
 [ "str",	3911	]
-[ "str",	4332	]
-[ "str",	4332	]
+[ "str",	4336	]
+[ "str",	4336	]
 [ "timestamp",	0	]
 [ "timestamp",	0	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% .L2,	.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 9,	3 # length
 [ "transient",	160	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% .L2,	.L6 # table_name
+% L2,	L5 # name
 % char,	bigint # type
 % 10,	3 # length
 [ "persistent",	266	]
