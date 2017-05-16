@@ -833,7 +833,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		}
 	} else {
-		bit gc = g && (g->tsorted || g->trevsorted);
+		bit gc = g && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
 		size_t nmelen;
 		Heap *hp = NULL;
