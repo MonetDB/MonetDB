@@ -14,9 +14,11 @@ PYTHONPATH=${PWD:-$(pwd)}/buildtools/autogen${PYTHONPATH:+:$PYTHONPATH}
 export PYTHONPATH
 
 # cope with systems where libtool is not GNU libtool, e.g. Darwin
-type -P glibtoolize > /dev/null \
-	&& libtoolize=glibtoolize \
-	|| libtoolize=libtoolize
+if type -P glibtoolize > /dev/null; then
+    libtoolize=glibtoolize
+else
+    libtoolize=libtoolize
+fi
 
 # cope with systems where aclocal is known as aclocal-1.10 (and
 # automake as automake-1.10), e.g. OpenIndiana
@@ -40,22 +42,26 @@ if [[ -n ${M4DIRS} ]] ; then
 	done
 fi
 
-python buildtools/autogen/autogen.py &&
+python buildtools/autogen/autogen.py || exit $?
 (
 # replace the line starting with AC_CONFIG_FILES in configure.ag with
 # the command to substitute the configure results into the .in files,
 # making sure executable files remain executable.
-sed -n '/^AC_CONFIG_FILES/s/.*/AC_CONFIG_FILES([/;1,/^AC_CONFIG_FILES/p' configure.ag
-while read f; do [ -x $f.in ] || echo $f; done < acout.in
+sed -n '/^AC_CONFIG_FILES/s/.*/AC_CONFIG_FILES([/;1,/^AC_CONFIG_FILES/p' configure.ag || exit $?
+while read f; do
+    [ -x $f.in ] || echo $f
+done < acout.in
 echo '])'
-while read f; do [ -x $f.in ] && echo "AC_CONFIG_FILES([$f], [chmod +x $f])"; done < acout.in
+while read f; do
+    [ -x $f.in ] && echo "AC_CONFIG_FILES([$f], [chmod +x $f])"
+done < acout.in
 sed '1,/^AC_CONFIG_FILES/d' configure.ag
-) > configure.ac &&
-$libtoolize -c -f  &&
-aclocal$amv ${_m4_extra_dirs} &&
-autoheader  &&
-automake$amv --add-missing --copy --foreign  &&
-autoconf
+) > configure.ac || exit $?
+$libtoolize -c -f  || exit $?
+aclocal$amv ${_m4_extra_dirs} || exit $?
+autoheader  || exit $?
+automake$amv --add-missing --copy --foreign  || exit $?
+autoconf || exit $?
 if [ -f buildtools/conf/install-sh -a ! -x buildtools/conf/install-sh ]; then
     chmod +x buildtools/conf/install-sh
 fi
