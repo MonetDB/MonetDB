@@ -2084,7 +2084,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	mid->port = port;
 
 	/* this is in particular important for unix sockets */
-	parse_uri_query(mid, uri);
+	parse_uri_query(mid, dbname);
 
 	/* doing this here, because parse_uri_query will
 	 * terminate the string if a ? is in place */
