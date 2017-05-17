@@ -1930,7 +1930,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			q = newStmt(mb, groupRef, s->flag & GRP_DONE ? subgroupdoneRef : subgroupRef);
 
-			/* output variables extend and hist */
+			/* output variables extent and hist */
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, o1);
