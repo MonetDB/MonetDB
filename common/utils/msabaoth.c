@@ -1207,12 +1207,12 @@ msab_deserialise(sabdb **ret, char *sdb)
 	/* fill/create sabdb struct */
 
 	if (protover == '1') {
-		if ((dbname = strrchr(dbname, '/')) == NULL) {
+		if ((p = strrchr(dbname, '/')) == NULL) {
 			free(u);
 			snprintf(buf, sizeof(buf), "invalid path: %s", dbname);
 			return(strdup(buf));
 		}
-		dbname++;
+		dbname = p + 1;
 	}
 
 	s = malloc(sizeof(sabdb));
