@@ -131,16 +131,17 @@ MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BA
 	lng zero=0;
 	int i;
 	char buf[BUFSIZ];
+	char bufv[BUFSIZ];
 
 	(void) cntxt;
 	for(i=0; i< task->hdr->dictsize; i++){
 		snprintf(buf, BUFSIZ,"dictionary[%d]",i);
-		MOSdump_dictionaryInternal(buf, BUFSIZ, task,i);
+		MOSdump_dictionaryInternal(bufv, BUFSIZ, task,i);
 		if( BUNappend(btech, buf, FALSE) != GDK_SUCCEED ||
 			BUNappend(bcount, &zero, FALSE) != GDK_SUCCEED ||
 			BUNappend(binput, &zero, FALSE) != GDK_SUCCEED ||
 			BUNappend(boutput, &task->hdr->dictfreq[i], FALSE) != GDK_SUCCEED ||
-			BUNappend(bproperties, buf, FALSE) != GDK_SUCCEED)
+			BUNappend(bproperties, bufv, FALSE) != GDK_SUCCEED)
 		return;
 	}
 }

@@ -129,9 +129,9 @@ Ready.
 % function_id # name
 % int # type
 % 4 # length
-[ 6874	]
-[ 6884	]
-[ 6894	]
+[ 6875	]
+[ 6885	]
+[ 6895	]
 #SELECT * FROM sys.args WHERE func_id NOT IN (SELECT id FROM sys.functions);
 % sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
 % id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name

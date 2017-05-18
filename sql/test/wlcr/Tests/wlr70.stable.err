@@ -26,6 +26,7 @@ MAPI  = (monetdb) /var/tmp/mtest-23854/.s.monetdb.55397
 QUERY = select * from tmp70;
 
 
+
 # 13:16:48 >  
 # 13:16:48 >  "Done."
 # 13:16:48 >  
