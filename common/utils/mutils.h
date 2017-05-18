@@ -42,6 +42,10 @@ mutils_export int closedir(DIR *dir);
 
 mutils_export char *dirname(char *path);
 
+#ifndef HAVE_NEXTAFTERF
+mutils_export float nextafterf(float x, float y);
+#endif
+
 #endif
 
 #ifndef S_IWGRP

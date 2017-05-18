@@ -28,7 +28,8 @@ lib_mosaic = {
 		mosaic_linear.c mosaic_linear.h \
 		mosaic_frame.c mosaic_frame.h \
 		mosaic_calendar.c mosaic_calendar.h \
-		mosaic_prefix.c mosaic_prefix.h 
+		mosaic_prefix.c mosaic_prefix.h \
+		mosaic_private.h
 }
 
 headers_mal = {

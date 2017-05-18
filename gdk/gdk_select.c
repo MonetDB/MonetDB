@@ -14,7 +14,7 @@
 
 #ifndef HAVE_NEXTAFTERF
 #define nextafter	_nextafter
-float nextafterf(float x, float y);
+#include "mutils.h"		/* fnextafter */
 #endif
 
 /* auxiliary functions and structs for imprints */

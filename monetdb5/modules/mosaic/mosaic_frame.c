@@ -34,6 +34,7 @@
 #include "gdk_bitvector.h"
 #include "mosaic.h"
 #include "mosaic_frame.h"
+#include "mosaic_private.h"
 
 // we use longs as the basis for bit vectors
 #define chunk_size(Task,Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng)

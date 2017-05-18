@@ -25,6 +25,7 @@
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_raw.h"
+#include "mosaic_private.h"
 
 void
 MOSdump_raw(Client cntxt, MOStask task)

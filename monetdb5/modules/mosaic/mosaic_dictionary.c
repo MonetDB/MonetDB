@@ -32,6 +32,7 @@
 #include "gdk_bitvector.h"
 #include "mosaic.h"
 #include "mosaic_dictionary.h"
+#include "mosaic_private.h"
 
 void
 MOSadvance_dictionary(Client cntxt, MOStask task)

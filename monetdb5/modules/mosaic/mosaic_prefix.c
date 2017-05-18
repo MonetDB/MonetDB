@@ -30,6 +30,7 @@
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_prefix.h"
+#include "mosaic_private.h"
 #include "gdk_bitvector.h"
 
 /* Beware, the dump routines use the compressed part of the task */

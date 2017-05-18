@@ -25,6 +25,7 @@
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_delta.h"
+#include "mosaic_private.h"
 
 //#define _DEBUG_MOSAIC_
 

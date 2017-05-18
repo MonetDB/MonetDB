@@ -25,6 +25,7 @@
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_runlength.h"
+#include "mosaic_private.h"
 
 /* Beware, the dump routines use the compressed part of the task */
 void

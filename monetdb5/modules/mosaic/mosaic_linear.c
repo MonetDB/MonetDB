@@ -26,6 +26,7 @@
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_linear.h"
+#include "mosaic_private.h"
 
 #define linear_base(BLK) ((void*)(((char*) BLK)+ MosaicBlkSize))
 

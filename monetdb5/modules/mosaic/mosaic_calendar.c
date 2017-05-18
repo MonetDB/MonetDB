@@ -29,6 +29,7 @@
 #include "gdk_bitvector.h"
 #include "mosaic.h"
 #include "mosaic_calendar.h"
+#include "mosaic_private.h"
 
 #define MASKDAY 037
 #define MASKBITS 5
