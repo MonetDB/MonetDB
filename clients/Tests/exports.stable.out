@@ -454,6 +454,7 @@ char *msab_registerStop(void);
 char *msab_retreatScenario(const char *lang);
 char *msab_serialise(char **ret, const sabdb *db);
 char *msab_wildRetreat(void);
+float nextafterf(float x, float y);
 const oid oid_nil;
 DIR *opendir(const char *dirname);
 void print_trace(void);
