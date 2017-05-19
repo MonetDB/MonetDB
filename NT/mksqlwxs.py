@@ -144,7 +144,7 @@ def main():
               args = '/STARTED-FROM-MENU -lsql -Ecp437',
               sid = 'mclient_bat')
     id = comp(features, id, 12,
-              [r'MSQLServer.bat'],
+              [r'MSQLserver.bat'],
               name = 'MonetDB SQL Server',
               sid = 'msqlserver_bat')
     print(r'          </Directory>')
