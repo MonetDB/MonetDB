@@ -337,13 +337,12 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, int debug)
 		typewidth = ATOMsize(tpe) * 8; // size in bits
 		break;
 	default:
-		// don't compress it
 		BBPunfix(bsrc->batCacheid);
-		return MAL_SUCCEED;
+		throw(MAL,"mosaic.compress","Compression type not supported");
 	}
 
     if (BATcheckmosaic(bsrc)){
-		/* already compressed */
+		/* already compressed, silently ignore */
 		BBPunfix(bsrc->batCacheid);
 		return msg;
 	}
