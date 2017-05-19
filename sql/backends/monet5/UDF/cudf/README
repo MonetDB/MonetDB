@@ -1,7 +1,7 @@
 This directory is a template for extending SQL with a new user-defined
 function (UDF).  For further documentation, see the MonetDB website at
-http://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/UserDefinedFunction
+https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/UserDefinedFunction
 as well as the Mercurial repository at
-http://dev.monetdb.org/hg/MonetDB-extend
+https://dev.monetdb.org/hg/MonetDB-extend
 and especially the file reverse/README.rst in there, which contains a
 lot of hands-on information for creating a UDF.
