@@ -64,7 +64,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	getModuleList(&moduleList, &length);
 	for(j = -1; j < length; j++) {
-		s = j < 0 ? cntxt->nspace : moduleList[j];
+		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++) {
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -102,7 +102,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	getModuleList(&moduleList, &length);
 	for(j = -1; j < length; j++) {
-		s = j < 0 ? cntxt->nspace : moduleList[j];
+		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++) {
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -141,7 +141,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	getModuleList(&moduleList, &length);
 	for(j = -1; j < length; j++) {
-		s = j < 0 ? cntxt->nspace : moduleList[j];
+		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++) {
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -182,7 +182,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	getModuleList(&moduleList, &length);
 	for(j = -1; j < length; j++) {
-		s = j < 0 ? cntxt->nspace : moduleList[j];
+		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -223,7 +223,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	getModuleList(&moduleList, &length);
 	for(j = -1; j < length; j++) {
-		s = j < 0 ? cntxt->nspace : moduleList[j];
+		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -257,7 +257,7 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void)mb;
 
-	s = findSymbol(cntxt->nspace, putName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, putName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getDefinition", RUNTIME_SIGNATURE_MISSING);
 
@@ -299,7 +299,7 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getSignature", RUNTIME_SIGNATURE_MISSING);
 	b = COLnew(0, TYPE_str, 12, TRANSIENT);
@@ -349,7 +349,7 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getAddress", RUNTIME_SIGNATURE_MISSING);
 	b = COLnew(0, TYPE_str, 12, TRANSIENT);
@@ -401,7 +401,7 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getComment", RUNTIME_SIGNATURE_MISSING);
 	b = COLnew(0, TYPE_str, 12, TRANSIENT);
@@ -434,7 +434,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t len,lim;
 	(void) mb;
 
-	s = findSymbol( cntxt->nspace, getName(*mod), putName(*fcn));
+	s = findSymbol( cntxt->usermodule, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getSource", RUNTIME_SIGNATURE_MISSING);
 
@@ -619,7 +619,7 @@ INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Symbol s;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getSize", RUNTIME_SIGNATURE_MISSING);
 	*ret= INSPECTcalcSize(s->def);
@@ -643,7 +643,7 @@ INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = getArgName(mb, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(cntxt->nspace,getName(modnme), putName(fcnnme));
+	s = findSymbol(cntxt->usermodule,getName(modnme), putName(fcnnme));
 
 	if (s == NULL){
 		char buf[BUFSIZ];

@@ -90,9 +90,6 @@
  * defined for code modules in general.
  *
  */
-/*
- * @-
- */
 #include "monetdb_config.h"
 #include "mal_scenario.h"
 #include "mal_linker.h"		/* for getAddress() */
@@ -158,12 +155,8 @@ getFreeScenario(void)
 	MT_lock_set(&scenarioLock);
 	for (i = 0; i < MAXSCEN && scenarioRec[i].name; i++)
 		;
-
-	if (i == MAXSCEN) {
-		showException(GDKout, MAL,"freeScenario", "no scenario space left (%d); adjust MAXSCEN and recompile", MAXSCEN);
-	} else {
+	if (i < MAXSCEN) 
 		scen = scenarioRec + i;
-	}
 	MT_lock_unset(&scenarioLock);
 
 	return scen;
@@ -189,7 +182,7 @@ initScenario(Client c, Scenario s)
 	/* prepare for conclicts */
 	MT_lock_set(&mal_contextLock);
 	if (s->initSystem && s->initSystemCmd == 0) {
-		s->initSystemCmd = (MALfcn) getAddress(c->fdout, l, s->initSystem,0);
+		s->initSystemCmd = (MALfcn) getAddress(s->initSystem);
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else {
@@ -204,21 +197,21 @@ initScenario(Client c, Scenario s)
 	}
 
 	if (s->exitSystem && s->exitSystemCmd == 0)
-		s->exitSystemCmd = (MALfcn) getAddress(c->fdout, l, s->exitSystem,0);
+		s->exitSystemCmd = (MALfcn) getAddress(s->exitSystem);
 	if (s->initClient && s->initClientCmd == 0)
-		s->initClientCmd = (MALfcn) getAddress(c->fdout, l, s->initClient,0);
+		s->initClientCmd = (MALfcn) getAddress(s->initClient);
 	if (s->exitClient && s->exitClientCmd == 0)
-		s->exitClientCmd = (MALfcn) getAddress(c->fdout, l, s->exitClient,0);
+		s->exitClientCmd = (MALfcn) getAddress(s->exitClient);
 	if (s->reader && s->readerCmd == 0)
-		s->readerCmd = (MALfcn) getAddress(c->fdout, l, s->reader,0);
+		s->readerCmd = (MALfcn) getAddress(s->reader);
 	if (s->parser && s->parserCmd == 0)
-		s->parserCmd = (MALfcn) getAddress(c->fdout, l, s->parser,0);
+		s->parserCmd = (MALfcn) getAddress(s->parser);
 	if (s->optimizer && s->optimizerCmd == 0)
-		s->optimizerCmd = (MALfcn) getAddress(c->fdout, l, s->optimizer,0);
+		s->optimizerCmd = (MALfcn) getAddress(s->optimizer);
 	if (s->tactics && s->tacticsCmd == 0)
-		s->tacticsCmd = (MALfcn) getAddress(c->fdout, l, s->tactics,0);
+		s->tacticsCmd = (MALfcn) getAddress(s->tactics);
 	if (s->engine && s->engineCmd == 0)
-		s->engineCmd = (MALfcn) getAddress(c->fdout, l, s->engine,0);
+		s->engineCmd = (MALfcn) getAddress(s->engine);
 	MT_lock_unset(&mal_contextLock);
 	return(fillScenario(c, s));
 }
@@ -526,45 +519,37 @@ static str
 runScenarioBody(Client c)
 {
 	str msg= MAL_SUCCEED;
-	lng start;
 
 	c->exception_buf_initialized = 1;
 	if (setjmp( c->exception_buf) < 0)
 		c->mode = FINISHCLIENT;
-	while ((c->mode > FINISHCLIENT || msg != MAL_SUCCEED) && !GDKexiting()) {
+	while (c->mode > FINISHCLIENT && !GDKexiting()) {
+		// be aware that a MAL call  may initialize a different scenario
+		if ( !c->phase[0] && (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) ) 
+			goto wrapup;
+		if ( c->mode <= FINISHCLIENT ||  (msg = runPhase(c, MAL_SCENARIO_READER)) )
+			goto wrapup;
+		if ( c->mode <= FINISHCLIENT  || (msg = runPhase(c, MAL_SCENARIO_PARSER)) || c->blkmode)
+			goto wrapup;
+		if ( c->mode <= FINISHCLIENT ||  (msg = runPhase(c, MAL_SCENARIO_OPTIMIZE)) )
+			goto wrapup;
+		if ( c->mode <= FINISHCLIENT || (msg = runPhase(c, MAL_SCENARIO_SCHEDULER)))
+			goto wrapup;
+		if ( c->mode <= FINISHCLIENT || (msg = runPhase(c, MAL_SCENARIO_ENGINE)))
+			goto wrapup;
+	wrapup:
 		if (msg != MAL_SUCCEED){
-/* we should actually show it [postponed]
-			mnstr_printf(c->fdout,"!%s\n",msg);
-*/
+			mnstr_printf(c->fdout,"!%s%s",msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
 			freeException(msg);
 			msg = MAL_SUCCEED;
 		}
-		if (!c->state[0] &&
-		    (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) != MAL_SUCCEED)
-			continue;
-		if (c->mode <= FINISHCLIENT ||
-		    (msg = runPhase(c, MAL_SCENARIO_READER)) != MAL_SUCCEED)
-			continue;
-		c->lastcmd= time(0);
-		start= GDKusec();
-		if (c->mode <= FINISHCLIENT ||
-		    (msg = runPhase(c, MAL_SCENARIO_PARSER)) != MAL_SUCCEED)
-			continue;
-		if (c->mode <= FINISHCLIENT ||
-		    (msg = runPhase(c, MAL_SCENARIO_OPTIMIZE)) != MAL_SUCCEED)
-			continue;
-		if (c->mode <= FINISHCLIENT ||
-                    (msg = runPhase(c, MAL_SCENARIO_SCHEDULER)) != MAL_SUCCEED)
-			continue;
-		if (c->mode <= FINISHCLIENT ||
-		    (msg = runPhase(c, MAL_SCENARIO_ENGINE)) != MAL_SUCCEED)
-			continue;
+		if( GDKerrbuf && GDKerrbuf[0])
+			mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
+		assert(c->curprg->def->errors == NULL);
 		c->actions++;
-		start = GDKusec()-start;
-		c->totaltime += start;
 	}
 	if (c->phase[MAL_SCENARIO_EXITCLIENT])
-		(*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
+		msg = (*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
 	c->exception_buf_initialized = 0;
 	return msg;
 }

@@ -219,14 +219,15 @@ WLRprocess(void *arg)
 		// now parse the file line by line to reconstruct the WLR blocks
 		do{
 			pc = mb->stop;
-			if( parseMAL(c, c->curprg, 1, 1)  || mb->errors){
+			parseMAL(c, c->curprg, 1, 1);
+			mb = c->curprg->def; // needed
+			if( mb->errors){
 				char line[PATHLENGTH];
 				snprintf(line, PATHLENGTH,"#wlr.process:failed further parsing '%s':\n",path);
 				strncpy(wlr_error,line, PATHLENGTH);
 				mnstr_printf(GDKerr,"%s",line);
 				printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 			}
-			mb = c->curprg->def; // needed
 			q= getInstrPtr(mb, mb->stop-1);
 			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef && (currid = getVarConstant(mb, getArg(q,1)).val.lval) < wlr_tag){
 				/* skip already executed transactions */
@@ -254,9 +255,9 @@ WLRprocess(void *arg)
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef ){
 				pushEndInstruction(mb);
 				// execute this block if no errors are found
-				chkTypes(c->fdout,c->nspace, mb, FALSE);
-				chkFlow(c->fdout,mb);
-				chkDeclarations(c->fdout,mb);
+				chkTypes(c->usermodule, mb, FALSE);
+				chkFlow(mb);
+				chkDeclarations(mb);
 
 				if( mb->errors == 0){
 					sql->session->auto_commit = 0;

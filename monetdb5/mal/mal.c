@@ -36,6 +36,7 @@ int have_hge;
 #include "mal_runtime.h"
 #include "mal_resource.h"
 #include "wlc.h"
+#include "mal_atom.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
@@ -91,10 +92,12 @@ int mal_init(void){
 	MT_lock_init( &mal_oltpLock, "mal_beatLock");
 #endif
 
+/* Any error encountered here terminates the process
+ * with a message sent to stderr
+ */
 	tstAligned();
 	MCinit();
-	if (mdbInit()) 
-		return -1;
+	mdbInit();
 	monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
@@ -102,9 +105,7 @@ int mal_init(void){
 	initHeartbeat();
 #endif
 	initResource();
-	if( malBootstrap() == 0)
-		return -1;
-	/* set up the profiler if needed, output sent to console */
+	malBootstrap();
 	initProfiler();
 	return 0;
 }
@@ -142,26 +143,45 @@ void mserver_reset(int exit)
 	MTIMEreset();
 #endif
 */
+#ifdef HAVE_GEOM
+#include "geom.h"
+	{
+		int ret;
+		geom_epilogue(&ret);
+	}
+#endif
 	mal_factory_reset();
 	mal_dataflow_reset();
 	THRdel(mal_clients->mythread);
 	GDKfree(mal_clients->errbuf);
 	mal_clients->fdin->s = NULL;
 	bstream_destroy(mal_clients->fdin);
+	mal_clients->fdin = 0;
 	GDKfree(mal_clients->prompt);
+	mal_clients->prompt = 0;
 	GDKfree(mal_clients->username);
+	mal_clients->username = 0;
 	freeStack(mal_clients->glb);
+	mal_clients->glb = 0;
 	freeSymbol(mal_clients->curprg);
+	mal_clients->curprg = 0;
+	//if( mal_clients->usermodule && strcmp(mal_clients->usermodule->name,"user")==0)
+		freeModule(mal_clients->usermodule);
+	mal_clients->usermodule = 0;
 	mal_client_reset();
   	mal_linker_reset();
 	mal_resource_reset();
 	mal_runtime_reset();
 	mal_module_reset();
+	mal_atom_reset();
+	mdbExit();
+	GDKfree(mal_session_uuid);
 
 	memset((char*)monet_cwd,0, sizeof(monet_cwd));
 	monet_memory = 0;
 	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));
 	mal_trace = 0;
+	mal_namespace_reset();
 	/* No need to clean up the namespace, it will simply be extended
 	 * upon restart mal_namespace_reset(); */
 	GDKreset(0, exit);	// terminate all other threads

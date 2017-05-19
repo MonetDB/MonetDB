@@ -41,8 +41,7 @@ QUERY = # testing definition of new atom type based on ptr
         
         z:= mytype.l();
         io.print(z);
-ERROR = !SyntaxException:defConstant:constant coercion error from int to mytype
-        !TypeException:user.main[2]:'mytype.l' undefined in:     z:mytype := mytype.l();
+ERROR = !TypeException:mytype.l[0]:constant coercion error from int to mytype
 
 # 13:20:34 >  
 # 13:20:34 >  "Done."

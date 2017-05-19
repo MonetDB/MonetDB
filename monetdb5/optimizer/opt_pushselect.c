@@ -137,6 +137,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	subselect_t subselects;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	memset(&subselects, 0, sizeof(subselects));
 	if( mb->errors) 
@@ -428,6 +429,16 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 		 */
 				else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
 					q = copyInstruction(q);
+					if( q == NULL){
+						for (; i<limit; i++) 
+							if (old[i])
+								pushInstruction(mb,old[i]);
+						GDKfree(slices);
+						GDKfree(rslices);
+						GDKfree(old);
+						throw(MAL,"optimizer.pushselect", MAL_MALLOC_FAIL);
+					}
+
 					setFunctionId(q, projectdeltaRef);
 					getArg(q, 0) = getArg(p, 0); 
 					q = PushArgument(mb, q, getArg(p, 1), 1);
@@ -482,9 +493,25 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int var = getArg(p, 1);
 			InstrPtr q = old[vars[var]];
 			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == projectdeltaRef) {
-				InstrPtr r = copyInstruction(p);
-				InstrPtr s = copyInstruction(q);
+				InstrPtr r;
+				InstrPtr s;
 
+				r = copyInstruction(p);
+				if( r == NULL){
+					GDKfree(vars);
+					GDKfree(slices);
+					GDKfree(rslices);
+					GDKfree(old);
+					throw(MAL,"optimizer.pushselect",MAL_MALLOC_FAIL);
+				}
+				s = copyInstruction(q);
+				if( s == NULL){
+					GDKfree(vars);
+					GDKfree(slices);
+					GDKfree(rslices);
+					GDKfree(old);
+					throw(MAL,"optimizer.pushselect",MAL_MALLOC_FAIL);
+				}
 				/* keep new output of slice */
 				slices[getArg(s, 1)] = getArg(p, 0); 
 				rslices[getArg(p,0)] = 1;
@@ -550,11 +577,23 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				q = old[vars[var]]; 
 			}
 			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
-				InstrPtr r = copyInstruction(p);
-				InstrPtr s = copyInstruction(p);
-				InstrPtr t = copyInstruction(p);
-				InstrPtr u = copyInstruction(q);
+				InstrPtr r,s,t,u;
 		
+				r = copyInstruction(p);
+				s = copyInstruction(p);
+				t = copyInstruction(p);
+				u = copyInstruction(q);
+				if( r == NULL || s == NULL || t== NULL ||u == NULL){
+					freeInstruction(r);
+					freeInstruction(s);
+					freeInstruction(t);
+					freeInstruction(u);
+					GDKfree(vars);
+					GDKfree(slices);
+					GDKfree(rslices);
+					GDKfree(old);
+					throw(MAL,"optimizer.pushselect",MAL_MALLOC_FAIL);
+				}
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb,getArg(r,0));
 				getArg(r, 1) = getArg(q, 1); /* column */
@@ -602,9 +641,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
     }
 wrapup:
     /* keep all actions taken as a post block comment */
@@ -614,5 +653,5 @@ wrapup:
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return MAL_SUCCEED;
+	return msg;
 }

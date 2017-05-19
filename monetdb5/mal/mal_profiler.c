@@ -954,41 +954,6 @@ getDiskSpace(void)
 	return size;
 }
 
-//
-// Retrieve the io statistics for the complete process group
-// This information can only be obtained using root-permissions.
-//
-#ifdef GETIOSTAT
-static str getIOactivity(void){
-	Thread t,s;
-	FILE *fd;
-	char fnme[BUFSIZ], *buf;
-	int n,i=0;
-	size_t len=0;
-
-	buf= GDKzalloc(BUFSIZ);
-	if ( buf == NULL)
-		return 0;
-	buf[len++]='"';
-	//MT_lock_set(&GDKthreadLock);
-	for (t = GDKthreads, s = t + THREADS; t < s; t++, i++)
-		if (t->pid ){
-			(void) snprintf(fnme,BUFSIZ,"/proc/"SZFMT"/io",t->pid);
-			fd = fopen(fnme,"r");
-			if ( fd == NULL)
-				return buf;
-			(void) snprintf(buf+len, BUFSIZ-len-2,"thr %d ",i);
-			if ((n = fread(buf+len, 1, BUFSIZ-len-2,fd)) == 0 )
-				return  buf;
-			// extract the properties
-			mnstr_printf(GDKout,"#got io stat:%s\n",buf);
-			(void)fclose (fd);
-		 }
-	//MT_lock_unset(&GDKthreadLock);
-	buf[len++]='"';
-	return buf;
-}
-#endif
 
 void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {

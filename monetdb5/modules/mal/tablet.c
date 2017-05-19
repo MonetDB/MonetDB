@@ -1215,7 +1215,6 @@ static void
 SQLproducer(void *p)
 {
 	READERtask *task = (READERtask *) p;
-	str msg = 0;
 	int consoleinput = 0;
 	int cur = 0;		// buffer being filled
 	int blocked[MAXBUFFERS] = { 0 };
@@ -1252,8 +1251,6 @@ SQLproducer(void *p)
 		// warn the consumers
 		if (ateof[cur] && partial) {
 			if (partial) {
-				char msg[256];
-				snprintf(msg, sizeof(msg), "incomplete record at end of file:%s\n", s);
 				tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
 				task->b->pos += partial;
 			}
@@ -1261,9 +1258,8 @@ SQLproducer(void *p)
 		}
 
 		if (task->errbuf && task->errbuf[0]) {
-			msg = catchKernelException(task->cntxt, msg);
-			if (msg) {
-				tablet_error(task, lng_nil, int_nil, msg, "SQLload_file");
+			if (GDKerrbuf && GDKerrbuf[0]) {
+				tablet_error(task, lng_nil, int_nil, GDKerrbuf, "SQLload_file");
 #ifdef _DEBUG_TABLET_CNTRL
 				mnstr_printf(GDKout, "#bailout on SQLload %s\n", msg);
 #endif

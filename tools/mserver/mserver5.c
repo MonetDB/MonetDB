@@ -679,7 +679,7 @@ main(int argc, char **av)
 	emergencyBreakpoint();
 	if (monet_script)
 		for (i = 0; monet_script[i]; i++) {
-			str msg = evalFile(mal_clients, monet_script[i], listing);
+			str msg = evalFile(monet_script[i], listing);
 			/* check for internal exception message to terminate */
 			if (msg) {
 				if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)

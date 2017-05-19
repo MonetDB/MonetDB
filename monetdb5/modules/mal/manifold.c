@@ -235,7 +235,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	fprintInstruction(stderr,nmb,0,q,LIST_MAL_ALL);
 #endif
 	// Localize the underlying scalar operator
-	typeChecker(cntxt->fdout, cntxt->nspace, nmb, q, TRUE);
+	typeChecker(cntxt->usermodule, nmb, q, TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
 		(q->blk && q->blk->unsafeProp) )
 		fcn = NULL;

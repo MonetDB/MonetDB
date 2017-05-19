@@ -63,7 +63,7 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		modnme = getArgDefault(mb, pci, 1);
 		fcnnme = getArgDefault(mb, pci, 2);
 	}
-	s = findSymbol(cntxt->nspace, putName(modnme), fcnnme);
+	s = findSymbol(cntxt->usermodule, putName(modnme), fcnnme);
 	if (s == NULL)
 		throw(MAL, "optimizer.optimize", SEMANTIC_OPERATION_MISSING);
 	removeInstruction(mb, pci);

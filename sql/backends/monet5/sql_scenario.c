@@ -1171,7 +1171,7 @@ SQLparser(Client c)
 
 		pushEndInstruction(c->curprg->def);
 		/* check the query wrapper for errors */
-		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);
+		chkTypes(c->usermodule, c->curprg->def, TRUE);
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (opt ) {
@@ -1183,9 +1183,8 @@ SQLparser(Client c)
 			}
 		}
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
-		/* we know more in this case than chkProgram(c->fdout, c->nspace, c->curprg->def); */
+		/* we know more in this case than chkProgram(c->fdout, c->usermodule, c->curprg->def); */
 		if (c->curprg->def->errors) {
-			showErrors(c);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
@@ -1215,9 +1214,9 @@ SQLCacheRemove(Client c, str nme)
 	fprintf(stderr, "#SQLCacheRemove %s\n", nme);
 #endif
 
-	s = findSymbolInModule(c->nspace, nme);
+	s = findSymbolInModule(c->usermodule, nme);
 	if (s == NULL)
 		throw(MAL, "cache.remove", "internal error, symbol missing\n");
-	deleteSymbol(c->nspace, s);
+	deleteSymbol(c->usermodule, s);
 	return MAL_SUCCEED;
 }

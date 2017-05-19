@@ -41,7 +41,7 @@ QUERY = # Polymorphic function tests
         c:= bat.new(:str);
         user.test(c,"hello");
 ERROR = !TypeException:user.test[1]:'calc.+' undefined in:     k:any := calc.+(1:int, c:str);
-        !MALException:user.test[0]:Error in cloned function
+        !TypeException:user.main[0]:Error in cloned function
         !TypeException:user.main[4]:'user.test' undefined in:     user.test(c:bat[:str], "hello":str);
 
 # 09:29:51 >  

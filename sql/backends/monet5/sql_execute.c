@@ -176,7 +176,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 
 	pushInstruction(mb,resultset);
 	pushEndInstruction(mb);
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
+	chkTypes(cntxt->usermodule, mb, TRUE);
 }
 
 /*
@@ -728,7 +728,6 @@ cleanup_engine:
 		}
 		if (*o != 0)
 			mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
-		showErrors(c);
 		m->session->status = -10;
 	}
 

@@ -36,8 +36,8 @@ QUERY = function foo();
         io.printi;
         io.print(i);
         end foo;
-ERROR = !SyntaxException:parseError:io.printi;
-        !SyntaxException:parseError:        ^'(' expected
+ERROR = !SyntaxException:parseError:parseError:io.printi;
+        !SyntaxException:parseError:parseError:         ^'(' expected
 
 
 # 10:46:01 >  

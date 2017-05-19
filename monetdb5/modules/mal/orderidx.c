@@ -152,7 +152,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	q->barrier = EXITsymbol;
 	q->argv[0] = loopvar;
 	pushEndInstruction(smb);
-	chkProgram(cntxt->fdout, cntxt->nspace, smb);
+	chkProgram(cntxt->usermodule, smb);
 	//printFunction(THRdata[0], smb, 0 , 23);
 	if (smb->errors) {
 		msg = createException(MAL, "bat.orderidx",

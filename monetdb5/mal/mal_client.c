@@ -72,7 +72,7 @@ MCinit(void)
 	if (maxclients <= 0) {
 		maxclients = 64;
 		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
-			showException(GDKout, MAL, "MCinit", "GDKsetenv failed");
+			fprintf(stderr,"#MCinit: GDKsetenv failed");
 			mal_exit();
 		}
 	}
@@ -82,11 +82,12 @@ MCinit(void)
 		/* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
-		showException(GDKout, MAL, "MCinit",MAL_MALLOC_FAIL);
+		fprintf(stderr,"#MCinit:" MAL_MALLOC_FAIL);
 		mal_exit();
 	}
 }
 
+/* stack the files from which you read */
 int
 MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 {
@@ -220,10 +221,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	/* remove garbage from previous connection 
 	 * be aware, a user can introduce several modules 
 	 * that should be freed to avoid memory leaks */
-	if (c->nspace) {
-		freeModule(c->nspace);
-		c->nspace = 0;
-	}
+	c->usermodule = c->curmodule = 0;
 
 	c->father = NULL;
 	c->login = c->lastcmd = time(0);
@@ -241,7 +239,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->promptlength = strlen(prompt);
 
 	c->actions = 0;
-	c->totaltime = 0;
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->wlc_kind = 0;
@@ -284,7 +281,6 @@ MCinitClientThread(Client c)
 	cname[11] = '\0';
 	t = THRnew(cname);
 	if (t == 0) {
-		showException(c->fdout, MAL, "initClientThread", "Failed to initialize client");
 		MPresetProfiler(c->fdout);
 		return -1;
 	}
@@ -299,7 +295,7 @@ MCinitClientThread(Client c)
 	if (c->errbuf == NULL) {
 		char *n = GDKzalloc(GDKMAXERRLEN);
 		if ( n == NULL){
-			showException(GDKout, MAL, "initClientThread", MAL_MALLOC_FAIL);
+			MPresetProfiler(c->fdout);
 			return -1;
 		}
 		GDKsetbuf(n);
@@ -337,8 +333,8 @@ MCforkClient(Client father)
 		son->prompt = GDKstrdup(father->prompt);
 		son->promptlength = strlen(father->prompt);
 		/* reuse the scopes wherever possible */
-		if (son->nspace == 0)
-			son->nspace = newModule(NULL, putName("child"));
+		if (son->usermodule == 0)
+			son->usermodule = userModule();
 	}
 	return son;
 }
@@ -382,6 +378,9 @@ freeClient(Client c)
 			GDKfree(c->errbuf);
 		c->errbuf = 0;
 	}
+	if (c->usermodule)
+		freeModule(c->usermodule);
+	c->usermodule = c->curmodule = 0;
 	c->father = 0;
 	c->login = c->lastcmd = 0;
 	//c->active = 0;
@@ -393,10 +392,8 @@ freeClient(Client c)
 		c->username = 0;
 	}
 	c->mythread = 0;
-	if (c->glb) {
-		freeStack(c->glb);
-		c->glb = NULL;
-	}
+	freeStack(c->glb);
+	c->glb = NULL;
 	if( c->error_row){
 		BBPrelease(c->error_row->batCacheid);
 		BBPrelease(c->error_fld->batCacheid);

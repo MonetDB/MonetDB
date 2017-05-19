@@ -8,7 +8,7 @@
 
 #include "monetdb_config.h"
 #include "opt_garbageCollector.h"
-#include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_interpreter.h"
 #include "mal_builder.h"
 #include "mal_function.h"
 #include "opt_prelude.h"
@@ -30,6 +30,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 	//int *varlnk, *stmtlnk;
 
 	(void) pci;
@@ -137,7 +138,12 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
 			getVarName(mb,k), mb->var[k]->eolife,
 			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
-		chkFlow(cntxt->fdout,mb);
+		chkFlow(mb);
+		if ( mb->errors != MAL_SUCCEED ){
+			fprintf(stderr,"%s\n",mb->errors);
+			GDKfree(mb->errors);
+			mb->errors = MAL_SUCCEED;
+		}
 		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
 		fprintf(stderr, "End of GCoptimizer\n");
 	}
@@ -155,9 +161,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	setVariableScope(mb);
     /* Defense line against incorrect plans */
     if( actions+1 > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
@@ -166,6 +172,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return MAL_SUCCEED;
+	return msg;
 }
 

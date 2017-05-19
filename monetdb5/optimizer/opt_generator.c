@@ -17,13 +17,13 @@
 
 #define errorCheck(P,MOD,I) \
 setModuleId(P, generatorRef);\
-typeChecker(cntxt->fdout, cntxt->nspace, mb, P, TRUE);\
+typeChecker(cntxt->usermodule, mb, P, TRUE);\
 if(P->typechk == TYPE_UNKNOWN){\
 	setModuleId(P,MOD);\
-	typeChecker(cntxt->fdout, cntxt->nspace, mb, P, TRUE);\
+	typeChecker(cntxt->usermodule, mb, P, TRUE);\
 	setModuleId(series[I], generatorRef);\
 	setFunctionId(series[I], seriesRef);\
-	typeChecker(cntxt->fdout, cntxt->nspace, mb, series[I], TRUE);\
+	typeChecker(cntxt->usermodule, mb, series[I], TRUE);\
 }\
 pushInstruction(mb,P); 
 
@@ -33,20 +33,20 @@ pushInstruction(mb,P);
 			q= newInstruction(0,calcRef, TPE##Ref);\
 			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 			pushArgument(mb,q,getArg(series[k],1));\
-			typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
+			typeChecker(cntxt->usermodule, mb, q, TRUE);\
 			p = pushArgument(mb,p, getArg(q,0));\
 			pushInstruction(mb,q);\
 			q= newInstruction(0,calcRef,TPE##Ref);\
 			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 			pushArgument(mb,q,getArg(series[k],2));\
 			pushInstruction(mb,q);\
-			typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
+			typeChecker(cntxt->usermodule, mb, q, TRUE);\
 			p = pushArgument(mb,p, getArg(q,0));\
 			if( p->argc == 4){\
 				q= newInstruction(0,calcRef,TPE##Ref);\
 				setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 				pushArgument(mb,q,getArg(series[k],3));\
-				typeChecker(cntxt->fdout, cntxt->nspace, mb, q, TRUE);\
+				typeChecker(cntxt->usermodule, mb, q, TRUE);\
 				p = pushArgument(mb,p, getArg(q,0));\
 				pushInstruction(mb,q);\
 			}\
@@ -108,7 +108,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			series[getArg(p,0)] = p;
 			setModuleId(p, generatorRef);
 			setFunctionId(p, parametersRef);
-			typeChecker(cntxt->fdout, cntxt->nspace, mb, p, TRUE);
+			typeChecker(cntxt->usermodule, mb, p, TRUE);
 			pushInstruction(mb,p); 
 		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == selectRef && series[getArg(p,1)]){
 			errorCheck(p,algebraRef,getArg(p,1));
@@ -118,8 +118,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			errorCheck(p,algebraRef,getArg(p,2));
 		} else if ( getModuleId(p) == sqlRef && getFunctionId(p) ==  putName("exportValue") && isaBatType(getArgType(mb,p,0)) ){
 			// interface expects scalar type only, not expressable in MAL signature
-			mb->errors++;
-			showException(cntxt->fdout, MAL, "generate_series", "internal error, generate_series is a table producing function");
+			mb->errors=createException(MAL, "generate_series", "internal error, generate_series is a table producing function");
 		}else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == bteRef && series[getArg(p,1)] && p->argc == 2 ){
 			casting(bte);
 		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == shtRef && series[getArg(p,1)] && p->argc == 2 ){
@@ -140,13 +139,13 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			if( series[getArg(p,k)]){
 				m = getModuleId(p);
 				setModuleId(p, generatorRef);
-				typeChecker(cntxt->fdout, cntxt->nspace, mb, p, TRUE);
+				typeChecker(cntxt->usermodule, mb, p, TRUE);
 				if(p->typechk == TYPE_UNKNOWN){
 					setModuleId(p,m);
-					typeChecker(cntxt->fdout, cntxt->nspace, mb, p, TRUE);
+					typeChecker(cntxt->usermodule, mb, p, TRUE);
 					setModuleId(series[getArg(p,k)], generatorRef);
 					setFunctionId(series[getArg(p,k)], seriesRef);
-					typeChecker(cntxt->fdout, cntxt->nspace, mb, series[getArg(p,k)], TRUE);
+					typeChecker(cntxt->usermodule, mb, series[getArg(p,k)], TRUE);
 				}
 			}
 			pushInstruction(mb,p);
@@ -166,9 +165,9 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
     /* Defense line against incorrect plans */
 	/* all new/modified statements are already checked */
-	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	//chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	//chkTypes(cntxt->usermodule, mb, FALSE);
+	//chkFlow(mb);
+	//chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions, usec);

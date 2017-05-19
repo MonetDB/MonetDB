@@ -41,11 +41,10 @@ QUERY = # the multiplex code blocks. Testing syntax errors
         end;
         mdb.List("user","foo");
         user.foo();
-ERROR = !SyntaxException:parseError:d:= [+](b,c) ;;# parser bug
-        !SyntaxException:parseError:   ^operator expected
-        !SyntaxException:parseError:a:= b [+] b;
-        !SyntaxException:parseError:     ^operator expected
-        !TypeException:user.main[3]:'user.foo' undefined in:     user.foo();
+ERROR = !SyntaxException:parseError:parseError:d:= [+](b,c) ;;# parser bug
+        !SyntaxException:parseError:parseError:    ^operator expected
+        !SyntaxException:parseError:parseError:a:= b [+] b;
+        !SyntaxException:parseError:parseError:      ^operator expected
 
 # 12:36:20 >  
 # 12:36:20 >  "Done."

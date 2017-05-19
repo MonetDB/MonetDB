@@ -193,7 +193,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sym->name= putName(*fcn);
 		setModuleId(sig, putName(*mod));
 		setFunctionId(sig, sym->name);
-		insertSymbol(findModule(cntxt->nspace, getModuleId(sig)), sym);
+		insertSymbol(findModule(cntxt->usermodule, getModuleId(sig)), sym);
 	}
 	return msg;
 }
@@ -203,6 +203,7 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str s = *getArgReference_str(stk,pci,1);
 	char *msg = NULL;
 	(void) mb;
+	(void) cntxt;
 
 	if (s == 0) 
 		throw(MAL, "mal.evalFile", RUNTIME_FILE_NOT_FOUND "missing file name");
@@ -215,10 +216,10 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		strcpy(buf, monet_cwd);
 		strcat(buf, "/");
 		strcat(buf, s);
-		msg = evalFile(cntxt, buf, 0);
+		msg = evalFile(buf, 0);
 		GDKfree(buf);
 	} else 
-		msg = evalFile(cntxt, s, 0);
+		msg = evalFile(s, 0);
 	return msg;
 }
 /*

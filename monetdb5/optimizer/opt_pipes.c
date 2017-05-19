@@ -26,6 +26,8 @@
 #include "mal_listing.h"
 #include "mal_linker.h"
 
+/*#define _DEBUG_OPT_PIPES_*/
+
 #define MAXOPTPIPES 64
 
 static struct PIPELINES {
@@ -330,8 +332,12 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
-		if (pipes[i].prerequisite && getAddress(GDKout, NULL, pipes[i].prerequisite, TRUE) == NULL)
-			continue;
+		if (pipes[i].prerequisite && getAddress(pipes[i].prerequisite) == NULL){
+			BBPreclaim(b);
+			BBPreclaim(bn);
+			BBPreclaim(bs);
+			throw(MAL,"getPipeCatalog","#MAL.getAddress address of '%s' not found",pipes[i].name);
+		}
 		if (BUNappend(b, pipes[i].name, FALSE) != GDK_SUCCEED ||
 			BUNappend(bn, pipes[i].def, FALSE) != GDK_SUCCEED ||
 			BUNappend(bs, pipes[i].status, FALSE) != GDK_SUCCEED) {
@@ -427,11 +433,10 @@ compileOptimizer(Client cntxt, str name)
 
 	memset((char*)&c, 0, sizeof(c));
 	MT_lock_set(&pipeLock);
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
+	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) 
 		if (strcmp(pipes[i].name, name) == 0 && pipes[i].mb == 0) {
 			/* precompile the pipeline as MAL string */
 			MCinitClientRecord(&c, cntxt->user, 0, 0);
-			c.nspace = newModule(NULL, putName("user"));
 			c.father = cntxt;	/* to avoid conflicts on GDKin */
 			c.fdout = cntxt->fdout;
 			if (setScenario(&c, "mal")) {
@@ -444,7 +449,7 @@ compileOptimizer(Client cntxt, str name)
 			}
 			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
 				if (pipes[j].mb == NULL) {
-					if (pipes[j].prerequisite && getAddress(c.fdout, NULL, pipes[j].prerequisite, TRUE) == NULL)
+					if (pipes[j].prerequisite && getAddress(pipes[j].prerequisite) == NULL)
 						continue;
 					MSinitClientPrg(&c, "user", pipes[j].name);
 					msg = compileString(&sym, &c, pipes[j].def);
@@ -463,16 +468,15 @@ compileOptimizer(Client cntxt, str name)
 			free(c.fdin->buf);
 			free(c.fdin);
 			/* remove garbage from previous connection */
-			if (c.nspace) {
-				freeModule(c.nspace);
-				c.nspace = 0;
+			if (c.usermodule) {
+				freeModule(c.usermodule);
+				c.usermodule = 0;
 			}
 			MCcloseClient(&c);
 			if (msg != MAL_SUCCEED ||
 				(msg = validateOptimizerPipes()) != MAL_SUCCEED)
 				break;
 		}
-	}
 	MT_lock_unset(&pipeLock);
 	return msg;
 }
@@ -502,7 +506,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 			}
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
-			typeChecker(cntxt->fdout, cntxt->nspace, mb, p, FALSE);
+			typeChecker(cntxt->usermodule, mb, p, FALSE);
 			pushInstruction(mb, p);
 		}
 	}
