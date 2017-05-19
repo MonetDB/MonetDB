@@ -4466,7 +4466,7 @@ bs2_stealbuf(stream *ss)
 
 int 
 bs2_resizebuf(stream *ss, size_t bufsiz) {
-	size_t compress_bound;
+	ssize_t compress_bound;
 	bs2 *s = (bs2 *) ss->stream_data.p;
 	assert(ss->read == bs2_read);
 
