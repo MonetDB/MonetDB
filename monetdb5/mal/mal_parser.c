@@ -75,13 +75,12 @@ parseError(Client cntxt, str msg)
 {	
 	MalBlkPtr mb = cntxt->curprg->def;
 	char *old, *new;
-	char buf[1028];
+	char buf[1028]={0};
 	char *s = buf, *t, *line="", *marker="";
 	char *l = lastline(cntxt);
 	ssize_t i;
 
-	snprintf(buf,1028,"parseError:");
-	s= buf + strlen(buf);
+	s= buf;
     for (t = l; *t && *t != '\n' && s < buf+sizeof(buf)-4; t++) {
         *s++ = *t;
     }
@@ -90,8 +89,7 @@ parseError(Client cntxt, str msg)
 	line = createException( SYNTAX, "parseError", "%s", buf);
 
 	/* produce the position marker*/
-	snprintf(buf,1028,"parseError:");
-	s= buf + strlen(buf);
+	s= buf;
 	i = position(cntxt);
 	for (; i > 0 && s < buf+sizeof(buf)-4; i--) {
 		*s++ = ((l && *(l + 1) && *l++ != '\t')) ? ' ' : '\t';

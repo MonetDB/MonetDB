@@ -20,10 +20,10 @@ QUERY = #multiple atomary types
         j:= i+3;
         io.print(i);
         io.print(j);
-ERROR = !SyntaxException:parseError:parseError:atom myint:int;
-        !SyntaxException:parseError:parseError:              ^Atom redefinition
-        !SyntaxException:parseError:parseError:i:= 1:myint;
-        !SyntaxException:parseError:parseError:^';' expected
+ERROR = !SyntaxException:parseError:atom myint:int;
+        !SyntaxException:parseError:              ^Atom redefinition
+        !SyntaxException:parseError:i:= 1:myint;
+        !SyntaxException:parseError:^';' expected
 
 # 15:19:56 >  
 # 15:19:56 >  "Done."
