@@ -12,6 +12,8 @@
 #include <stdio.h>  /* FILE* */
 #include <sys/types.h>   /* time_t */
 
+#define PROPLENGTH 64 /* Max number of properties */
+
 enum valtype {
 	INVALID = 0,
 	INT,

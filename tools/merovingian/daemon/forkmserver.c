@@ -407,6 +407,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	if (pid == 0) {
 		char *sabdbfarm;
 		char dbpath[1024];
+		char dbextra_path[1024];
 		char port[24];
 		char muri[512]; /* possibly undersized */
 		char usock[512];
@@ -417,6 +418,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		char *readonly = NULL;
 		char *embeddedr = NULL;
 		char *embeddedpy = NULL;
+		char *dbextra = NULL;
 		char *argv[512];	/* for the exec arguments */
 		char property_other[1024];
 		int c = 0;
@@ -478,6 +480,10 @@ forkMserver(char *database, sabdb** stats, int force)
 			}
 			embeddedpy = "embedded_py=3";
 		}
+		kv = findConfKey(ckv, "dbextra");
+		if (kv != NULL && kv->val != NULL) {
+			dbextra = kv->val;
+		}
 
 
 
@@ -504,6 +510,11 @@ forkMserver(char *database, sabdb** stats, int force)
 		argv[c++] = _mero_mserver;
 		argv[c++] = dbpath;
 		argv[c++] = "--set"; argv[c++] = muri;
+		if (dbextra != NULL) {
+			snprintf(dbextra_path, sizeof(dbextra_path),
+					"--dbextra=%s", dbextra);
+			argv[c++] = dbextra_path;
+		}
 		if (mydoproxy == 1) {
 			struct sockaddr_un s; /* only for sizeof(s.sun_path) :( */
 			argv[c++] = "--set"; argv[c++] = "mapi_open=false";
@@ -557,7 +568,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			if (list->val != NULL && !defaultProperty(list->key)) {
 				argv[c++] = "--set";
 				snprintf(property_other, sizeof(property_other), "%s=%s", list->key, list->val);
-				argv[c++] = property_other;
+				argv[c++] = strdup(property_other);
 			}
 			list++;
 		}

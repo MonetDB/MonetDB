@@ -167,7 +167,7 @@ monet_hello(void)
 #endif
 	printf("# Copyright (c) 1993-July 2008 CWI.\n");
 	printf("# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved\n");
-	printf("# Visit http://www.monetdb.org/ for further information\n");
+	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
 	len = snprintf(monet_characteristics, sizeof(monet_characteristics)-1, "{\n\"version\":\"%s\",\n", VERSION);

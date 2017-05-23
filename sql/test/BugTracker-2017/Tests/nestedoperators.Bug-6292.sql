@@ -41,4 +41,5 @@ BEGIN
 	   WHERE r1.time = bounds.first and r2.time = bounds.last and r1.room = r2.room and r1.level = r2.level;
 END;
 
+DROP FUNCTION rooms_derivative;
 DROP TABLE rooms;

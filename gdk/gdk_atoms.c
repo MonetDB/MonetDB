@@ -1131,7 +1131,13 @@ strCleanHash(Heap *h, int rebuild)
 	}
 #endif
 	/* only set dirty flag if the hash table actually changed */
-	h->dirty |= memcmp(oldhash, h->base, sizeof(oldhash)) != 0;
+	if (!h->dirty &&
+	    memcmp(oldhash, h->base, sizeof(oldhash)) != 0) {
+		if (h->storage == STORE_MMAP)
+			(void) MT_msync(h->base, GDK_STRHASHSIZE);
+		else
+			h->dirty = 1;
+	}
 }
 
 /*

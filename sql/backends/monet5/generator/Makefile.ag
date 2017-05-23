@@ -16,6 +16,7 @@ INCLUDES = ../../../include \
 		   ../../../../monetdb5/scheduler \
 		   ../../../../common/options \
 		   ../../../../common/stream \
+		   ../../../../common/utils \
 		   ../../../../gdk
 
 lib__generator = {
@@ -23,8 +24,7 @@ lib__generator = {
 	DIR = libdir/monetdb5
 	SOURCES = generator.c  generator.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		   ../../../../gdk/libbat \
-		   ../../../../common/utils/libmutils
+		   ../../../../gdk/libbat
 }
 
 headers_mal = {
