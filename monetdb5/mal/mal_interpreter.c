@@ -523,7 +523,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		pci = getInstrPtr(mb, stkpc);
 		if (cntxt->mode == FINISHCLIENT){
 			stkpc = stoppc;
-			ret= mb->errors = createMalException(mb, stkpc, TYPE, "prematurely stopped client");
+			ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 			break;
 		}
 		if (cntxt->itrace || mb->trap || stk->status) {
@@ -552,7 +552,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (cntxt->fdin && !mnstr_isalive(cntxt->fdin->s)) {
 				cntxt->mode = FINISHCLIENT;
 				stkpc = stoppc;
-				ret= mb->errors = createMalException(mb, stkpc,TYPE, "prematurely stopped client");
+				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 				break;
 			}
 			lastcheck = runtimeProfile.ticks;
@@ -591,7 +591,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 		}
 
-		//freeException(ret);
+		freeException(ret);
 		ret = 0;
 		switch (pci->token) {
 		case ASSIGNsymbol:
@@ -617,12 +617,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (lhs->vtype == TYPE_bat && lhs->val.bval != bat_nil)
 					BBPretain(lhs->val.bval);
 			}
-			//freeException(ret);
+			freeException(ret);
 			ret = 0;
 			break;
 		case PATcall:
 			if (pci->fcn == NULL) {
-				ret = mb->errors = createMalException(mb, stkpc, MAL, "address of pattern %s.%s missing", pci->modname, pci->fcnname);
+				ret = createException(MAL,"interpreter", "address of pattern %s.%s missing", pci->modname, pci->fcnname);
 			} else {
 				ret = (*pci->fcn)(cntxt, mb, stk, pci);
 #ifndef NDEBUG
@@ -680,7 +680,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			 * counting.
 			 */
 			if (pci->blk == NULL)
-				ret = mb->errors =  createMalException(mb, stkpc, MAL, "reference to MAL function missing");
+				ret = createException(MAL,"interpreter", "%s.%s[%d] reference to MAL function missing", getModuleId(pci), getFunctionId(pci), pci->pc);
 			else {
 				/* show call before entering the factory */
 				if (cntxt->itrace || mb->trap) {
@@ -709,7 +709,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				stk->pcup = stkpc;
 				nstk = prepareMALstack(pci->blk, pci->blk->vsize);
 				if (nstk == 0){
-					ret= mb->errors = createMalException(mb,stkpc, TYPE ,MAL_STACK_FAIL);
+					ret= createException(MAL,"mal.interpreter",MAL_STACK_FAIL);
 					break;
 				}
 
@@ -718,13 +718,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				nstk->calldepth = stk->calldepth + 1;
 				nstk->up = stk;
 				if (nstk->calldepth > 256) {
-					ret= mb->errors =  createMalException(mb,stkpc, TYPE, MAL_CALLDEPTH_FAIL);
+					ret= createException(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
 					GDKfree(nstk);
 					break;
 				}
 				if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()){
 					/* we are running low on stack space */
-					ret= mb->errors = createMalException(mb, stkpc, TYPE, MAL_STACK_FAIL);
+					ret= createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
 					GDKfree(nstk);
 					break;
 				}
@@ -757,7 +757,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
 			if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
-				ret= mb->errors = createMalException(mb,0, TYPE, RUNTIME_QRY_TIMEOUT);
+				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 				break;
 			}
 			stkpc = mb->stop;	// force end of loop
@@ -769,10 +769,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				break;
 			}
 			w= instruction2str(mb, 0, pci, FALSE);
-			ret = createMalException(mb, stkpc, MAL, "unkown operation:%s",w);
+			ret = createException(MAL,"interpreter", "unkown operation:%s", w);
 			GDKfree(w);
 			if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
-				ret= mb->errors = createMalException(mb,stkpc,TYPE, RUNTIME_QRY_TIMEOUT);
+				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 				break;
 			}
 			stkpc= mb->stop;
@@ -809,7 +809,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, FALSE);
 						if (b == NULL) {
 							if (ret == MAL_SUCCEED)
-								ret = mb->errors = createMalException(mb, stkpc, TYPE, RUNTIME_OBJECT_MISSING);
+								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
 							continue;
 						}
 						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
@@ -864,7 +864,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* Detect any exception received from the implementation. */
 			/* The first identifier is an optional exception name */
 			if (strstr(ret, "!skip-to-end")) {
-				//freeException(ret);
+				freeException(ret);
 				ret = MAL_SUCCEED;
 				stkpc = mb->stop;
 				continue;
@@ -886,7 +886,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
 				if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
-					ret= mb->errors = createMalException(mb, stkpc, TYPE, RUNTIME_QRY_TIMEOUT);
+					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 				stkpc = mb->stop;
 				continue;
 			}
@@ -933,7 +933,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			if (stkpc == mb->stop) {
 				if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
-					ret= mb->errors = createMalException(mb, stkpc, TYPE, RUNTIME_QRY_TIMEOUT);
+					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
 				}
 				continue;
@@ -993,9 +993,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			default:
-				ret =mb->errors =  createMalException(mb, stkpc, MAL, 
-					"%s: Unknown barrier type",
-					getVarName(mb, getDestVar(pci)));
+				ret = createException(MAL,"interpreter", "%s: Unknown barrier type", getVarName(mb, getDestVar(pci)));
 			}
 			stkpc++;
 			break;
@@ -1090,8 +1088,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			//freeException(ret);
 			ret = NULL;
 			if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
-				ret = mb->errors = createMalException(mb, stkpc, MAL, 
-					"Exception: %s", stk->stk[getDestVar(pci)].val.sval);
+				char nme[256];
+				snprintf(nme,256,"%s.%s[%d]", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)), stkpc);
+				ret = createException(MAL, nme, "%s", stk->stk[getDestVar(pci)].val.sval);
 			}
 			/* skipToCatch(exceptionVar, @2, stk) */
 			if (stk->cmd == 'C' || mb->trap) {
@@ -1164,33 +1163,38 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 		if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
 			if (ret == MAL_SUCCEED)
-				ret= mb->errors  = createMalException(mb, stkpc,TYPE, RUNTIME_QRY_TIMEOUT);
+				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 			stkpc= mb->stop;
 		}
 	}
 
 	/* if we could not find the exception variable, cascade a new one */
 	if (exceptionVar >= 0) {
-		if (ret) {
-			mb->errors = createMalException(mb, mb->stop - 1,
-				getExceptionType(getVarName(mb, exceptionVar)),
-				ret, "Exception not caught\n");
-		} else {
-			if (stk->stk[exceptionVar].vtype == TYPE_str) {
-				mb->errors = createMalException(mb, mb->stop - 1, MAL,
-					stk->stk[exceptionVar].val.sval,
-					"Exception not caught\n");
-			} else {
-				mb->errors = createMalException(mb, mb->stop - 1, MAL, "Exception not caught\n");
+		char nme[256];
+		snprintf(nme,256,"%s.%s[%d]", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)), stkpc);
+		if (ret){
+			str new, n;
+			n = createException(MAL,nme,"exception not caught");
+			if( n) {
+				new = GDKzalloc(strlen(ret) + strlen(n) +16);
+				if( new){
+					strcpy(new, ret);
+					if( new[strlen(new)-1] != '\n')
+						strcat(new,"\n");
+					strcat(new,"!");
+					strcat(new,n);
+					//freeException(ret);
+					ret = new;
+				}
 			}
 		}
+		else 
+			ret = createException(MAL,nme,"Exception not caught");
 	}
 	if( startedProfileQueue)
 		runtimeProfileFinish(cntxt, mb, stk);
 	if ( backup != backups) GDKfree(backup);
 	if ( garbage != garbages) GDKfree(garbage);
-	ret = mb->errors;
-	mb->errors = 0;
 	return ret;
 }
 
@@ -1294,9 +1298,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  */
 str catchKernelException(MalBlkPtr mb, int pc)
 {
+	str msg= MAL_SUCCEED;
 	if (GDKerrbuf && GDKerrbuf[0]) 
-		mb->errors = createMalException(mb,pc,TYPE, "%s\n",GDKerrbuf);
-	return mb->errors;
+		msg = createException(MAL,"gdk.exception","%s.%s[%d]:%s\n", 
+				getModuleId(getInstrPtr(mb,0)),  getFunctionId(getInstrPtr(mb,0)), pc, GDKerrbuf);
+	return msg;
 }
 
 /*

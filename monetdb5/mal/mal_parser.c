@@ -1411,6 +1411,7 @@ parseEnd(Client cntxt)
 	Symbol curPrg = 0;
 	int l;
 	InstrPtr sig;
+	str errors = MAL_SUCCEED;
 
 	if (MALkeyword(cntxt, "end", 3)) {
 		curPrg = cntxt->curprg;
@@ -1440,14 +1441,18 @@ parseEnd(Client cntxt)
 			insertSymbol(cntxt->usermodule, cntxt->curprg);
 		else
 			insertSymbol(getModule(getModuleId(sig)), cntxt->curprg);
-		if( cntxt->curprg->def->errors == MAL_SUCCEED)
-			chkProgram(cntxt->usermodule, cntxt->curprg->def);
+		chkProgram(cntxt->usermodule, cntxt->curprg->def);
+		
+        if (cntxt->backup) 
+			errors = GDKstrdup(cntxt->curprg->def->errors);
         if (cntxt->backup) {
-			cntxt->backup->def->errors = GDKstrdup(cntxt->curprg->def->errors);
             cntxt->curprg = cntxt->backup;
+			cntxt->curprg->def->errors = errors;
             cntxt->backup = 0;
-        }  else
+        }  else{
 			(void) MSinitClientPrg(cntxt,"user","main");
+			cntxt->curprg->def->errors = errors;
+		}
 		return 1;
 	}
 	return 0;

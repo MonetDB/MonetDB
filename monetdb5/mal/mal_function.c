@@ -484,8 +484,6 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 				for(; j < p->argc; j++)
 					mnstr_printf(fd,"%d ",getArg(p,j));
 				// also show type check property
-				if( p->polymorphic)
-					mnstr_printf(fd," polymorphic");
 				if( p->typechk == TYPE_UNKNOWN)
 					mnstr_printf(fd," type check needed ");
 				mnstr_printf(fd,"\n");
