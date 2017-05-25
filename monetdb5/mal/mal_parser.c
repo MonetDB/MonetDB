@@ -802,12 +802,11 @@ helpInfo(Client cntxt, str *help)
 			*help = strCopy(cntxt, l);
 			if (*help)
 				advance(cntxt, l - 1);
-		} else {
+			skipToEnd(cntxt);
+		} else 
 			parseError(cntxt, "<string> expected\n");
-		}
 	} else if (currChar(cntxt) != ';')
 		parseError(cntxt, "';' expected\n");
-	skipToEnd(cntxt);
 }
 
 static InstrPtr
@@ -1032,7 +1031,6 @@ parseInclude(Client cntxt)
 
 	if (currChar(cntxt) != ';') {
 		parseError(cntxt, "';' expected\n");
-		skipToEnd(cntxt);
 		return 0;
 	}
 	skipToEnd(cntxt);
@@ -1086,7 +1084,6 @@ fcnHeader(Client cntxt, int kind)
 		l = idLength(cntxt);
 	if (l == 0) {
 		parseError(cntxt, "<identifier> | <operator> expected\n");
-		skipToEnd(cntxt);
 		return 0;
 	}
 
@@ -1098,7 +1095,6 @@ fcnHeader(Client cntxt, int kind)
 		modnme = fnme;
 		if( strcmp(modnme,"user") && getModule(modnme) == NULL){
 			parseError(cntxt, "<module> name not defined\n");
-			skipToEnd(cntxt);
 			return 0;
 		}
 		l = operatorLength(cntxt);
@@ -1106,7 +1102,6 @@ fcnHeader(Client cntxt, int kind)
 			l = idLength(cntxt);
 		if (l == 0){
 			parseError(cntxt, "<identifier> | <operator> expected\n");
-			skipToEnd(cntxt);
 			return 0;
 		}
 		fnme = putNameLen(((char *) CURRENT(cntxt)), l);
@@ -1117,12 +1112,10 @@ fcnHeader(Client cntxt, int kind)
 	/* temporary suspend capturing statements in main block */
 	if (cntxt->backup){
 		parseError(cntxt, "mal_parser: unexpected recursion\n");
-		skipToEnd(cntxt);
 		return 0;
 	}
 	if (currChar(cntxt) != '('){
 		parseError(cntxt, "function header '(' expected\n");
-		skipToEnd(cntxt);
 		return curBlk;
 	}
 	advance(cntxt, 1);
@@ -1156,7 +1149,6 @@ fcnHeader(Client cntxt, int kind)
 				curBlk = NULL;
 			}
 			parseError(cntxt, "',' expected\n");
-			skipToEnd(cntxt);
 			return curBlk;
 		} else
 			nextChar(cntxt);  /* skip ',' */
@@ -1164,7 +1156,7 @@ fcnHeader(Client cntxt, int kind)
 		ch = currChar(cntxt);
 	}
 	if (currChar(cntxt) != ')') {
-		freeInstruction(curInstr);
+		pushInstruction(curBlk, curInstr);
 		if (cntxt->backup) {
 			freeSymbol(cntxt->curprg);
 			cntxt->curprg = cntxt->backup;
@@ -1172,7 +1164,6 @@ fcnHeader(Client cntxt, int kind)
 			curBlk = NULL;
 		}
 		parseError(cntxt, "')' expected\n");
-		skipToEnd(cntxt);
 		return curBlk;
 	}
 	advance(cntxt, 1); /* skip ')' */
@@ -1215,7 +1206,6 @@ fcnHeader(Client cntxt, int kind)
 					curBlk = NULL;
 				}
 				parseError(cntxt, "',' expected\n");
-				skipToEnd(cntxt);
 				return curBlk;
 			} else {
 				nextChar(cntxt); /* skip ',' */
@@ -1234,7 +1224,6 @@ fcnHeader(Client cntxt, int kind)
 				cntxt->backup = 0;
 				curBlk = NULL;
 			}
-			skipToEnd(cntxt);
 			return curBlk;
 		}
 		for (i1 = retc; i1 < curInstr->argc; i1++)
@@ -1257,7 +1246,6 @@ fcnHeader(Client cntxt, int kind)
 				curBlk = NULL;
 			}
 			parseError(cntxt, "')' expected\n");
-			skipToEnd(cntxt);
 			return curBlk;
 		}
 		nextChar(cntxt); /* skip ')' */
@@ -1291,7 +1279,7 @@ parseCommandPattern(Client cntxt, int kind)
 	curInstr = getInstrPtr(curBlk, 0);
 
 	modnme = getModuleId(getInstrPtr(curBlk, 0));
-	if (modnme && getModule(modnme) == FALSE){
+	if (modnme && (getModule(modnme) == FALSE && strcmp(modnme,"user"))){
 		parseError(cntxt, "<module> not defined\n");
 		cntxt->blkmode = 0;
 		return curBlk;
@@ -1431,28 +1419,48 @@ parseEnd(Client cntxt)
 		}
 		/* parse fcn */
 		if ((l == (int) strlen(curPrg->name) &&
-			strncmp(CURRENT(cntxt), curPrg->name, l) == 0) || l == 0) {} else {
+			strncmp(CURRENT(cntxt), curPrg->name, l) == 0) || l == 0)
+				advance(cntxt, l);
+		else 
 			parseError(cntxt, "non matching end label\n");
-		}
-		advance(cntxt, l);
 		pushEndInstruction(cntxt->curprg->def);
 		cntxt->blkmode = 0;
 		if ( strcmp(getModuleId(sig),"user")== 0 )
 			insertSymbol(cntxt->usermodule, cntxt->curprg);
 		else
 			insertSymbol(getModule(getModuleId(sig)), cntxt->curprg);
+
+		if (cntxt->curprg->def->errors) {
+			errors = cntxt->curprg->def->errors;
+			cntxt->curprg->def->errors=0;
+		}
 		chkProgram(cntxt->usermodule, cntxt->curprg->def);
+		// check for newly identified errors
+		if (errors ==NULL){
+			errors = cntxt->curprg->def->errors;
+			cntxt->curprg->def->errors=0;
+		} else if( cntxt->curprg->def->errors){
+			//collect all errors for reporting
+			str new = GDKzalloc(strlen(errors) + strlen(cntxt->curprg->def->errors) +16);
+			if( new){
+				strcpy(new, errors);
+				if( new[strlen(new)-1] != '\n')
+					strcat(new,"\n");
+				strcat(new,"!");
+				strcat(new,cntxt->curprg->def->errors);
+				errors = new;
+			}
+			cntxt->curprg->def->errors=0;
+		}
 		
-        if (cntxt->backup) 
-			errors = GDKstrdup(cntxt->curprg->def->errors);
         if (cntxt->backup) {
             cntxt->curprg = cntxt->backup;
-			cntxt->curprg->def->errors = errors;
             cntxt->backup = 0;
         }  else{
-			(void) MSinitClientPrg(cntxt,"user","main");
-			cntxt->curprg->def->errors = errors;
+			(void) MSinitClientPrg(cntxt,cntxt->curmodule->name,"main");
 		}
+		// pass collected errors to context
+		cntxt->curprg->def->errors = errors;
 		return 1;
 	}
 	return 0;
@@ -1486,7 +1494,6 @@ parseArguments(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr)
 		default:
 			parseError(cntxt, "<factor> expected\n");
 			pushInstruction(curBlk, *curInstr);
-			skipToEnd(cntxt);
 			return 1;
 		}
 		if (currChar(cntxt) == ',')
@@ -1532,8 +1539,7 @@ parseAssign(Client cntxt, int cntrl)
 			i = cstToken(cntxt, &cst);
 			if (l == 0 || i) {
 				parseError(cntxt, "<identifier> expected\n");
-				skipToEnd(cntxt);
-				freeInstruction(curInstr);
+				pushInstruction(curBlk, curInstr);
 				return;
 			}
 			GETvariable;
@@ -1574,13 +1580,11 @@ parseAssign(Client cntxt, int cntrl)
 				pushInstruction(curBlk, curInstr);
 				if (currChar(cntxt) != ';')
 					parseError(cntxt, "<identifier> expected in control statement\n");
-				skipToEnd(cntxt);
 				return;
 			}
 			getArg(curInstr, 0) = newTmpVariable(curBlk, TYPE_any);
 			pushInstruction(curBlk, curInstr);
 			parseError(cntxt, "<identifier> expected\n");
-			skipToEnd(cntxt);
 			return;
 		}
 		/* Check if we are dealing with module.fcn call*/
@@ -1636,7 +1640,7 @@ parseAssign(Client cntxt, int cntrl)
 FCNcallparse:
 	if ((l = idLength(cntxt)) && CURRENT(cntxt)[l] == '(') {
 		/*  parseError(cntxt,"<module> expected\n");*/
-		setModuleId(curInstr, getModuleId(getInstrPtr(curBlk, 0)));
+		setModuleId(curInstr, cntxt->curmodule->name);
 		i = l;
 		goto FCNcallparse2;
 	} else if ((l = idLength(cntxt)) && CURRENT(cntxt)[l] == '.') {
@@ -1653,14 +1657,12 @@ FCNcallparse2:
 			advance(cntxt, i);
 		} else {
 			parseError(cntxt, "<functionname> expected\n");
-			skipToEnd(cntxt);
 			pushInstruction(curBlk, curInstr);
 			return;
 		}
 		skipSpace(cntxt);
 		if (currChar(cntxt) != '(') {
 			parseError(cntxt, "'(' expected\n");
-			skipToEnd(cntxt);
 			pushInstruction(curBlk, curInstr);
 			return;
 		}
@@ -1693,17 +1695,14 @@ part2:  /* consume <operator><term> part of expression */
 		case 3: goto part3;
 		}
 		parseError(cntxt, "<term> expected\n");
-		skipToEnd(cntxt);
 		pushInstruction(curBlk, curInstr);
 		return;
 	} else {
 		skipSpace(cntxt);
 		if (currChar(cntxt) == '(')
 			parseError(cntxt, "module name missing\n");
-		else if (currChar(cntxt) != ';' && currChar(cntxt) != '#') {
+		else if (currChar(cntxt) != ';' && currChar(cntxt) != '#') 
 			parseError(cntxt, "operator expected\n");
-			skipToEnd(cntxt);
-		}
 		pushInstruction(curBlk, curInstr);
 		return;
 	}
@@ -1711,7 +1710,6 @@ part3:
 	skipSpace(cntxt);
 	if (currChar(cntxt) != ';')
 		parseError(cntxt, "';' expected\n");
-	skipToEnd(cntxt);
 	pushInstruction(curBlk, curInstr);
 	if (cntrl == RETURNsymbol && !(curInstr->token == ASSIGNsymbol || getModuleId(curInstr) != 0))
 		parseError(cntxt, "return assignment expected\n");

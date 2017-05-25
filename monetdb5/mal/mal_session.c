@@ -672,9 +672,11 @@ MALengine(Client c)
 		throw(SYNTAX, "mal.engine", SYNTAX_SIGNATURE);
 
 	if (prg->def->errors != MAL_SUCCEED) {
+		msg = prg->def->errors;
+		prg->def->errors = NULL;
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
 		resetMalBlk(c->curprg->def, 1);
-		throw(MAL, "mal.engine", PROGRAM_GENERAL);
+		return msg;
 	}
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
 		return 0;   /* empty block */

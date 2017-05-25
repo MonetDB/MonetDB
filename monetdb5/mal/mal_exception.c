@@ -212,6 +212,8 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, const c
 		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s:%s.%s[%d]:",
 				exceptionNames[type], s, fcn, pc);
 	i += vsnprintf(buf + i, GDKMAXERRLEN - 1 - i, format, ap);
+	if( buf[i-1] != '\n')
+		buf[i++]= '\n';
 	buf[i] = '\0';
 
 	s = GDKstrdup(buf);

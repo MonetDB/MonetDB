@@ -189,7 +189,7 @@ void chkFlow(MalBlkPtr mb)
 						}
 					}
 			}
-			if (btop == 0)
+			//if (btop == 0)
 				retseen = 1;
 			break;
 	    case RAISEsymbol:
