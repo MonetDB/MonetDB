@@ -34,7 +34,6 @@ mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export str malCommandCall(MalStkPtr stk, InstrPtr pci);
 mal_export int isNotUsedIn(InstrPtr p, int start, int a);
-mal_export str catchKernelException(MalBlkPtr mb, int pc);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #if !defined(NDEBUG) && defined(__GNUC__)

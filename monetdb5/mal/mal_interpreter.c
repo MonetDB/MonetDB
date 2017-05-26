@@ -18,6 +18,7 @@
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"
 #include "mal_private.h"
+  
 
 /*
  * The struct alignment leads to 40% gain in simple instructions when set.
@@ -840,7 +841,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 		/* Exception handling */
 		if (localGDKerrbuf && localGDKerrbuf[0]) {
-			ret = catchKernelException(mb,stkpc);
+			if( ret == 0)
+				ret = createException(MAL,"mal.interpreter",GDK_EXCEPTION);
+			// TODO take properly care of the GDK exception
+			localGDKerrbuf[0]=0;
 		}
 
 		if (ret != MAL_SUCCEED) {
@@ -1296,14 +1300,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * encoding of the exceptional state encountered. This message
  * starts with the exception identifer, followed by contextual details.
  */
-str catchKernelException(MalBlkPtr mb, int pc)
-{
-	str msg= MAL_SUCCEED;
-	if (GDKerrbuf && GDKerrbuf[0]) 
-		msg = createException(MAL,"gdk.exception","%s.%s[%d]:%s\n", 
-				getModuleId(getInstrPtr(mb,0)),  getFunctionId(getInstrPtr(mb,0)), pc, GDKerrbuf);
-	return msg;
-}
 
 /*
  * Garbage collection

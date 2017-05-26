@@ -58,7 +58,7 @@ typedef struct SCENARIO {
 } *Scenario;
 
 mal_export str setScenario(Client c, str nme);
-mal_export str runScenario(Client c);
+mal_export str runScenario(Client c, int once);
 mal_export str getScenarioLanguage(Client c);
 mal_export Scenario getFreeScenario(void);
 

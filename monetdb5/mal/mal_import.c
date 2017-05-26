@@ -28,6 +28,7 @@
 #include "mal_import.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_linker.h"		/* for loadModuleLibrary() */
+#include "mal_scenario.h"
 #include "mal_parser.h"
 #include "mal_private.h"
 
@@ -257,7 +258,7 @@ evalFile(str fname, int listing)
 	}
 	MSinitClientPrg(c, "user", "main");
 
-	msg = runScenario(c);
+	msg = runScenario(c,0);
 	//MCcloseClient(c);
 	return msg;
 }
@@ -299,22 +300,24 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	}
 
 	buffer_init(b, qry, len);
-	c= MCinitClient((oid)0, bstream_create(buffer_rastream(b, "callString"), b->len),0);
+	c= MCinitClient((oid)0, bstream_create(buffer_rastream(b, "compileString"), b->len),0);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
 		throw(MAL,"mal.eval","Can not create user context");
 	}
-	c->curmodule = c->usermodule = userModule();
+	// compile in context of called
+	c->curmodule = c->usermodule = cntxt->usermodule;
 	c->promptlength = 0;
+	c->listing = 0;
 
     if ( (msg = defaultScenario(c)) ) {
+		c->usermodule= 0;
 		MCcloseClient(c);
 		throw(MAL,"mal.compile","%s",msg);
 	}
 
 	MSinitClientPrg(c, "user", "main");  /* create new context */
-	msg = (str) (*c->phase[MAL_SCENARIO_READER])(c);
 	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER])
 		msg = (str) (*c->phase[MAL_SCENARIO_PARSER])(c);
 	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_OPTIMIZE])
@@ -322,6 +325,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 
 	*fcn = c->curprg;
 	c->curprg = 0;
+	c->usermodule= 0;
 	/* restore IO channel */
 	MCcloseClient(c);
 	GDKfree(qry);
@@ -355,26 +359,20 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(qry);
 		throw(MAL,"mal.call","Can not create user context");
 	}
-	c->curmodule = c->usermodule = userModule();
+	c->curmodule = c->usermodule =  cntxt->usermodule;
 	c->promptlength = 0;
 	c->listing = listing;
 
     if ( (msg = defaultScenario(c)) ) {
+		c->usermodule = 0;
 		MCcloseClient(c);
 		throw(MAL,"mal.call","%s",msg);
 	}
 
 	MSinitClientPrg(c, "user", "main");  /* create new context */
-	msg = (str) (*c->phase[MAL_SCENARIO_READER])(c);
-	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER])
-		msg = (str) (*c->phase[MAL_SCENARIO_PARSER])(c);
-	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_OPTIMIZE])
-		msg = (str) (*c->phase[MAL_SCENARIO_OPTIMIZE])(c);
-	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_SCHEDULER])
-		msg = (str) (*c->phase[MAL_SCENARIO_SCHEDULER])(c);
-	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_ENGINE])
-		msg = (str) (*c->phase[MAL_SCENARIO_ENGINE])(c);
-	MCcloseClient(c);
+	runScenario(c,1);
+	c->usermodule = 0;
+	//MCcloseClient(c);
 	GDKfree(qry);
 	GDKfree(b);
 	return msg;

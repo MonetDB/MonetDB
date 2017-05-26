@@ -516,7 +516,7 @@ runPhase(Client c, int phase)
  * running a scenario should be explicitly permitted.
  */
 static str
-runScenarioBody(Client c)
+runScenarioBody(Client c, int once)
 {
 	str msg= MAL_SUCCEED;
 
@@ -547,21 +547,22 @@ runScenarioBody(Client c)
 			mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
 		assert(c->curprg->def->errors == NULL);
 		c->actions++;
+		if( once) break;
 	}
-	if (c->phase[MAL_SCENARIO_EXITCLIENT])
-		msg = (*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
 	c->exception_buf_initialized = 0;
+	if (once == 0 && c->phase[MAL_SCENARIO_EXITCLIENT])
+		msg = (*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
 	return msg;
 }
 
 str
-runScenario(Client c)
+runScenario(Client c, int once)
 {
 	str msg = MAL_SUCCEED;
 
 	if (c == 0 || c->phase[MAL_SCENARIO_READER] == 0)
 		return msg;
-	msg = runScenarioBody(c);
+	msg = runScenarioBody(c,once);
 	if (msg != MAL_SUCCEED &&
 			strcmp(msg,"MALException:client.quit:Server stopped."))
 		mnstr_printf(c->fdout,"!%s\n",msg);

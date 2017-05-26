@@ -447,6 +447,7 @@ compileOptimizer(Client cntxt, str name)
 				MT_lock_unset(&pipeLock);
 				throw(MAL, "optimizer.addOptimizerPipe", "failed to create client thread");
 			}
+			c.curmodule = c.usermodule = userModule();
 			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
 				if (pipes[j].mb == NULL) {
 					if (pipes[j].prerequisite && getAddress(pipes[j].prerequisite) == NULL)

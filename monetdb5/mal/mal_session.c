@@ -487,7 +487,7 @@ MSserveClient(void *dummy)
 	} else {
 		do {
 			do {
-				msg = runScenario(c);
+				msg = runScenario(c,0);
 				freeException(msg);
 				if (c->mode == FINISHCLIENT)
 					break;
