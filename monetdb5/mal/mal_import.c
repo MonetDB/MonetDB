@@ -293,20 +293,22 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	mal_unquote(qry = GDKstrdup(s));
 	if (old != s)
 		GDKfree(s);
-	b = (buffer *) GDKmalloc(sizeof(buffer));
+	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL) {
 		GDKfree(qry);
 		return MAL_MALLOC_FAIL;
 	}
 
-	buffer_init(b, qry, len);
-	c= MCinitClient((oid)0, bstream_create(buffer_rastream(b, "compileString"), b->len),0);
+	c= MCinitClient((oid)0, 0, 0);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
 		throw(MAL,"mal.eval","Can not create user context");
 	}
-	// compile in context of called
+	buffer_init(b, qry, len +1);
+	c->fdin = bstream_create(buffer_rastream(b, "compileString"), b->len);
+	strncpy(c->fdin->buf, qry, len+1);
+	// compile in context of called for
 	c->curmodule = c->usermodule = cntxt->usermodule;
 	c->promptlength = 0;
 	c->listing = 0;

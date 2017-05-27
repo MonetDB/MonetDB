@@ -11,9 +11,9 @@ i4 := inet.new("192.168.0.3/24");
 io.print(i4);
 
 i5 := inet.new("/0");
-catch AnyException:str;
+catch ParseException:str;
 io.printf("Caught parse exception\n");
-exit AnyException;
+exit ParseException;
 io.print(i5);
 
 i6 := inet.new("127/32");
