@@ -70,7 +70,6 @@ typedef struct CLIENT {
 	str     oldscenario;
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
-	sht	stage;	   /* keep track of the phase being ran */
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
 	/*

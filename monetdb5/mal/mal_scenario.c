@@ -506,7 +506,7 @@ static str
 runPhase(Client c, int phase)
 {
 	str msg = MAL_SUCCEED;
-	if (c->phase[c->stage = phase])
+	if (c->phase[phase])
 	    return msg = (str) (*c->phase[phase])(c);
 	return msg;
 }

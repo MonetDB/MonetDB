@@ -360,12 +360,18 @@ validatePipe(MalBlkPtr mb)
 	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE, garbage = FALSE, generator = FALSE, remap =  FALSE;
 	int i;
 
-	if (mb == NULL || getInstrPtr(mb, 1) == 0)
+	for( i=1; i< mb->stop; i++){
+		if ( functionExit(getInstrPtr(mb,i))){
+			i++;
+			break;
+		}
+	}
+	if (mb == NULL || getInstrPtr(mb, i) == 0)
 		throw(MAL, "optimizer.validate", "improper optimizer mal block\n");
-	if (getFunctionId(getInstrPtr(mb, 1)) == NULL || idcmp(getFunctionId(getInstrPtr(mb, 1)), "inline"))
+	if (getFunctionId(getInstrPtr(mb, i)) == NULL || idcmp(getFunctionId(getInstrPtr(mb, i)), "inline"))
 		throw(MAL, "optimizer.validate", "'inline' should be the first\n");
 
-	for (i = 1; i < mb->stop - 1; i++)
+	for (; i < mb->stop - 1; i++)
 		if (getFunctionId(getInstrPtr(mb, i)) != NULL) {
 			if (strcmp(getFunctionId(getInstrPtr(mb, i)), "deadcode") == 0)
 				deadcode = TRUE;
@@ -479,7 +485,8 @@ compileOptimizer(Client cntxt, str name)
 				break;
 		}
 	MT_lock_unset(&pipeLock);
-	return msg;
+	//return msg;  The error messages are simply ignored here
+	return MAL_SUCCEED;
 }
 
 str
