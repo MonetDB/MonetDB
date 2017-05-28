@@ -4312,11 +4312,12 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	append(args, pe);
 	append(args, oe);
 	if (fbe) {
-		/* for now skip unit */
+		append(args, list_fetch(fbe, 0)); /*units */
 		append(args, list_fetch(fbe, 1)); /*start */
 		append(args, list_fetch(fbe, 2)); /*end */
 		append(args, list_fetch(fbe, 3)); /*exclude */
 	} else if (aggr) {
+		append(args, exp_atom_int(sql->sa, 0)); /*ROWS */
 		append(args, exp_atom_int(sql->sa, -1)); /*start */
 		append(args, exp_atom_int(sql->sa, -1)); /*end */
 		append(args, exp_atom_int(sql->sa, 0)); /*exclude */

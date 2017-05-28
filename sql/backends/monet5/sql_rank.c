@@ -307,7 +307,7 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o,  Client cntxt, MalBlkPtr m
 	*r = *b = *p = *o = NULL;
 
 	(void)cntxt;
-	if (pci->argc != 7 || 
+	if (pci->argc != 8 || 
 		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
 		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
 		throw(SQL, mod, "%s", err);
@@ -349,12 +349,13 @@ SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *r, *b, *p, *o;
 	str res = SQLanalytics_args( &r, &b, &p, &o, cntxt, mb, stk, pci, "sql.min", "min(:any_1,:bit,:bit)");
 	int tpe = getArgType(mb, pci, 1); 
-	int start = *getArgReference_int(stk, pci, 4);
-	int end = *getArgReference_int(stk, pci, 5);
-	int excl = *getArgReference_int(stk, pci, 6);
+	int unit = *getArgReference_int(stk, pci, 4);
+	int start = *getArgReference_int(stk, pci, 5);
+	int end = *getArgReference_int(stk, pci, 6);
+	int excl = *getArgReference_int(stk, pci, 7);
 
-	if (excl != 0)
-		throw(SQL, "sql.min", "OVER currently only supports frame extends with unit ROWS");
+	if (unit != 0 || excl != 0)
+		throw(SQL, "sql.min", "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
 	(void)start;
 	(void)end;
 

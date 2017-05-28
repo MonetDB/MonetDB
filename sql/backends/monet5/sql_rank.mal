@@ -47,11 +47,11 @@ pattern batsql.dense_rank(b:bat[:any_1], p:any_2, o:any_3) :bat[:int]
 address SQLdense_rank
 comment "return the densely ranked groups";
 
-pattern sql.min(b:any_1, p:bit, o:bit, s:int, e:int, excl:int) :any_1 
+pattern sql.min(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :any_1 
 address SQLmin
 comment "return the minimum of groups";
 
-pattern batsql.min(b:bat[:any_1], p:any_2, o:any_3, s:int, e:int, exl:int) :bat[:any_1] 
+pattern batsql.min(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:any_1] 
 address SQLmin
 comment "return the minimum of groups";
 
