@@ -91,14 +91,17 @@
 #define RD_UPD_VAL 3
 #define QUICK  4
 
-#define FRAME_ROWS  0 
-#define FRAME_RANGE 1
+#define FRAME_ROWS  0 		/* number of rows (preceding/following) */
+#define FRAME_RANGE 1		/* logical range (based on the ordering column).
+				   Example:
+				   RANGE BETWEEN INTERVAL '1' MONTH PRECEDING  
+				             AND INTERVAL '1' MONTH FOLLOWING */
+#define FRAME_GROUPS 2		
 
-#define EXCLUDE_NONE 0
-#define EXCLUDE_CURRENT_ROW 1
-#define EXCLUDE_GROUP 2
-#define EXCLUDE_TIES 3
-#define EXCLUDE_NO_OTHERS 4
+#define EXCLUDE_NONE 0		/* nothing excluded (also the default) */
+#define EXCLUDE_CURRENT_ROW 1	/* exclude the current row */
+#define EXCLUDE_GROUP 2		/* exclude group */
+#define EXCLUDE_TIES 3		/* exclude group but not the current row */
 
 #define cur_user 1
 #define cur_role 2

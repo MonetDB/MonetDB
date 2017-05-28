@@ -404,6 +404,7 @@ scanner_init_keywords(void)
 	keywords_insert("EXCLUDE", EXCLUDE);
 	keywords_insert("OTHERS", OTHERS);
 	keywords_insert("TIES", TIES);
+	keywords_insert("GROUPS", GROUPS);
 
 	/* special SQL/XML keywords */
 	keywords_insert("XMLCOMMENT", XMLCOMMENT);

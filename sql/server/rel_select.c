@@ -4123,10 +4123,12 @@ rel_frame(mvc *sql, symbol *frame, list *exps)
 	/* units, extent, exclusion */
 	dnode *d = frame->data.lval->h;
 
-	/* RANGE vs UNITS */
+	/* ROWS, RANGE, GROUPS */
 	sql_exp *units = exp_atom_int(sql->sa, d->next->next->data.i_val);
-	sql_exp *start = exp_atom_int(sql->sa, d->data.i_val);
-	sql_exp *end   = exp_atom_int(sql->sa, d->next->data.i_val);
+	symbol *start_sym = d->data.sym;
+	symbol *end_sym = d->next->data.sym;
+	sql_exp *start = exp_atom_int(sql->sa, start_sym->data.i_val);
+	sql_exp *end   = exp_atom_int(sql->sa, end_sym->data.i_val);
 	sql_exp *excl  = exp_atom_int(sql->sa, d->next->next->next->data.i_val);
 	append(exps, units);
 	append(exps, start);
@@ -4166,7 +4168,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	sql_rel *r = *rel, *p;
 	list *gbe = NULL, *obe = NULL, *fbe = NULL, *args, *types;
 	sql_schema *s = sql->session->schema;
-	int distinct = 0, project_added = 0;
+	int distinct = 0, project_added = 0, aggr = 0;
 	
 	if (window_function->token == SQL_RANK) {
 		aname = qname_fname(window_function->data.lval);
@@ -4175,6 +4177,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		dnode *n = window_function->data.lval->h;
 		aname = qname_fname(n->data.lval);
 		sname = qname_schema(n->data.lval);
+		aggr = 1;
 	}
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
@@ -4226,6 +4229,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 	/* Frame */
 	if (window_specification->h->next->next->data.sym) {
+		if (!aggr)
+			return sql_error(sql, 02, "OVER: frame extend only possible with aggregation");
 		fbe = new_exp_list(sql->sa);
 		fbe = rel_frame(sql, window_specification->h->next->next->data.sym, fbe);
 		if (!fbe)
@@ -4306,6 +4311,16 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	append(args, e);
 	append(args, pe);
 	append(args, oe);
+	if (fbe) {
+		/* for now skip unit */
+		append(args, list_fetch(fbe, 1)); /*start */
+		append(args, list_fetch(fbe, 2)); /*end */
+		append(args, list_fetch(fbe, 3)); /*exclude */
+	} else if (aggr) {
+		append(args, exp_atom_int(sql->sa, -1)); /*start */
+		append(args, exp_atom_int(sql->sa, -1)); /*end */
+		append(args, exp_atom_int(sql->sa, 0)); /*exclude */
+	}
 	e = exp_op(sql->sa, args, wf);
 
 	r->l = p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));

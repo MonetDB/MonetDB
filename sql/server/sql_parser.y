@@ -610,7 +610,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token INDEX REPLACE
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
-%token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED
+%token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS
 
 %token X_BODY 
 %%
@@ -3847,20 +3847,19 @@ param:
 
 <window frame extent> ::= <window frame start> | <window frame between>
 
-<window frame start> ::= UNBOUNDED PRECEDING | <window frame preceding> | CURRENT ROW
+<window frame start> ::= 
+		UNBOUNDED PRECEDING 
+	| 	<window frame preceding> 
+	| 	CURRENT ROW
 
 <window frame preceding> ::= <unsigned value specification> PRECEDING
 
-<window frame between> ::= BETWEEN <window frame bound 1> AND <window frame bound 2>
+<window frame between> ::= BETWEEN <window frame start> AND <window frame end>
 
-<window frame bound 1> ::= <window frame bound>
-
-<window frame bound 2> ::= <window frame bound>
-
-<window frame bound> ::=
-                <window frame start>
-        |       UNBOUNDED FOLLOWING
+<window frame end> ::=
+                UNBOUNDED FOLLOWING
         |       <window frame following>
+	| 	CURRENT ROW
 
 <window frame following> ::= <unsigned value specification> FOLLOWING
 
@@ -3909,6 +3908,7 @@ window_frame_clause:
 window_frame_units:
 	ROWS		{ $$ = FRAME_ROWS; }
   |	RANGE		{ $$ = FRAME_RANGE; }
+  |	GROUPS		{ $$ = FRAME_GROUPS; }
   ;
 
 window_frame_extent:
@@ -3938,7 +3938,7 @@ window_frame_end:
   ;
 
 window_frame_following:
-	value_exp PRECEDING	{ $$ = $1; }
+	value_exp FOLLOWING	{ $$ = $1; }
   ;
 
 window_frame_exclusion:
@@ -3946,7 +3946,7 @@ window_frame_exclusion:
  |      EXCLUDE CURRENT ROW	{ $$ = EXCLUDE_CURRENT_ROW; }
  |      EXCLUDE sqlGROUP	{ $$ = EXCLUDE_GROUP; }
  |      EXCLUDE TIES		{ $$ = EXCLUDE_TIES; }
- |      EXCLUDE NO OTHERS	{ $$ = EXCLUDE_NO_OTHERS; }
+ |      EXCLUDE NO OTHERS	{ $$ = EXCLUDE_NONE; }
  ;
 	
 var_ref:

@@ -2426,6 +2426,8 @@ incref(bat i, int logical, int lock)
 			BAT *pb;
 			incref(tp, 0, lock);
 			pb = getBBPdescriptor(tp, lock);
+			if (!pb) 
+				return 0;
 			b->theap.base = pb->theap.base + (size_t) b->theap.base;
 			/* if we shared the hash before, share it
 			 * again note that if the parent's hash is
