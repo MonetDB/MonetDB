@@ -134,6 +134,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	bn->batDirty = TRUE;
 	return bn;
       bailout:
+	BBPclear(bn->batCacheid);
 	if (tt)
 		HEAPfree(&bn->theap, 1);
 	if (bn->tvheap) {
@@ -208,6 +209,7 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 	BBPcacheit(bn, 1);
 	return bn;
   bailout:
+	BBPclear(bn->batCacheid);
 	HEAPfree(&bn->theap, 1);
 	GDKfree(bn);
 	return NULL;
