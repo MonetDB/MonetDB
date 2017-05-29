@@ -137,8 +137,18 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 #define starthash(TYPE)							\
 	do {								\
 		TYPE *v = (TYPE *) BUNtloc(bi, 0);			\
+		if (s) {						\
+			oid *o = (oid *) Tloc(s,0);			\
+			starthash_cand(TYPE, v+o[r]);			\
+		} else {						\
+			starthash_cand(TYPE, v+r);			\
+		}							\
+	} while (0);
+
+#define starthash_cand(TYPE, VALUE)					\
+	do {								\
 		for (; r < p; r++) {					\
-			BUN c = (BUN) hash_##TYPE(h, v+r);		\
+			BUN c = (BUN) hash_##TYPE(h, VALUE);		\
 									\
 			if (HASHget(h, c) == HASHnil(h) && nslots-- == 0) \
 				break; /* mask too full */		\
@@ -146,11 +156,22 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 			HASHput(h, c, r);				\
 		}							\
 	} while (0)
-#define finishhash(TYPE)					\
+
+#define finishhash(TYPE)						\
+	do {								\
+		TYPE *v = (TYPE *) BUNtloc(bi, 0);			\
+		if (s) {						\
+			oid *o = (oid *) Tloc(s, 0);			\
+			finishhash_cand(TYPE, v+o[p]);			\
+		} else {						\
+			finishhash_cand(TYPE, v+p);			\
+		}							\
+	} while(0);
+
+#define finishhash_cand(TYPE, VALUE)					\
 	do {							\
-		TYPE *v = (TYPE *) BUNtloc(bi, 0);		\
 		for (; p < q; p++) {				\
-			BUN c = (BUN) hash_##TYPE(h, v + p);	\
+			BUN c = (BUN) hash_##TYPE(h, VALUE);	\
 								\
 			HASHputlink(h, p, HASHget(h, c));	\
 			HASHput(h, c, p);			\
@@ -320,10 +341,22 @@ BAThashsync(void *arg)
  * Its argument is the element type and the maximum number of BUNs be
  * stored under the hash function.
  */
+
 gdk_return
 BAThash(BAT *b, BUN masksize)
 {
+	return BATsubhash(b, NULL, masksize);
+}
+
+gdk_return
+BATsubhash(BAT *b, BAT *s, BUN masksize)
+{
 	lng t0 = 0, t1 = 0;
+	BAT *bval = b;
+
+	if (s) {
+		b = s;
+	}
 
 	assert(b->batCacheid > 0);
 	if (BATcheckhash(b)) {
@@ -331,7 +364,7 @@ BAThash(BAT *b, BUN masksize)
 	}
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (b->thash == NULL) {
-		unsigned int tpe = ATOMbasetype(b->ttype);
+		unsigned int tpe = ATOMbasetype(bval->ttype);
 		BUN cnt = BATcount(b);
 		BUN mask, maxmask = 0;
 		BUN p = 0, q = BUNlast(b), r;
@@ -339,7 +372,7 @@ BAThash(BAT *b, BUN masksize)
 		Heap *hp;
 		const char *nme = BBP_physical(b->batCacheid);
 		const char *ext = b->batCacheid > 0 ? "thash" : "hhash";
-		BATiter bi = bat_iterator(b);
+		BATiter bi = bat_iterator(bval);
 
 		ALGODEBUG fprintf(stderr, "#BAThash: create hash(%s#" BUNFMT ");\n", BATgetId(b), BATcount(b));
 		if ((hp = GDKzalloc(sizeof(*hp))) == NULL ||
