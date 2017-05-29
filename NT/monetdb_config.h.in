@@ -754,7 +754,7 @@
 #define MONETDB5_PASSWDHASH_TOKEN SHA512
 
 /* Release name or "unreleased" */
-#define MONETDB_RELEASE "Dec2016-SP5"
+#define MONETDB_RELEASE "unreleased"
 
 /* Suffix for C++ files */
 #define MX_CXX_SUFFIX "cxx"
@@ -772,13 +772,13 @@
 #define PACKAGE_NAME "MonetDB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "MonetDB 11.25.23"
+#define PACKAGE_STRING "MonetDB 11.25.24"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "MonetDB"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.25.23"
+#define PACKAGE_VERSION "11.25.24"
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL ""
