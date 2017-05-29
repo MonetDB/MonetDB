@@ -46,7 +46,7 @@ dnl  configure file, whereas comments starting with dnl are elided
 dnl  (including their trailing newline).
 
 AC_PREREQ([2.63])
-AC_INIT([MonetDB], [11.25.22], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
+AC_INIT([MonetDB], [11.25.23], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -60,7 +60,7 @@ AC_SUBST([CONFIG_H], [monetdb_config.h])
 HOST=[$target]
 AC_DEFINE_UNQUOTED([HOST], ["$HOST"], [Host identifier])
 
-AC_DEFINE([MONETDB_RELEASE], ["unreleased"], [Release name or "unreleased"])
+AC_DEFINE([MONETDB_RELEASE], ["Dec2016-SP5"], [Release name or "unreleased"])
 
 AS_VAR_IF([target_os], [cygwin],
 	[AC_DEFINE([WIN32], 1, [Define on Microsoft Windows (also under Cygwin)])])
