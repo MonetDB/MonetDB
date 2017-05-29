@@ -1,0 +1,45 @@
+stdout of test 'wlc40` in directory 'sql/test/wlcr` itself:
+
+
+# 13:02:54 >  
+# 13:02:54 >  "/usr/bin/python2" "wlc40.py" "wlc40"
+# 13:02:54 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_wlcr', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:34000/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24794/.s.monetdb.34000
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+#select * from tmp;
+% sys.tmp,	sys.tmp # table_name
+% i,	s # name
+% int,	clob # type
+% 1,	4 # length
+[ 3,	"blah"	]
+[ 2,	"blah"	]
+[ 3,	"blah"	]
+[ 4,	"blah"	]
+[ 5,	"blah"	]
+[ 6,	"blah"	]
+#delete from tmp where i < 4;
+[ 3	]
+#select * from tmp;
+% sys.tmp,	sys.tmp # table_name
+% i,	s # name
+% int,	clob # type
+% 1,	4 # length
+[ 4,	"blah"	]
+[ 5,	"blah"	]
+[ 6,	"blah"	]
+
+# 13:02:55 >  
+# 13:02:55 >  "Done."
+# 13:02:55 >  
+

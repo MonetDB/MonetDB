@@ -1426,6 +1426,7 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
 		str msg = MAL_SUCCEED;
+		PyObject *tmp;
 		Py_Initialize();
 		_import_array();
 		msg = _connection_init();
@@ -1440,7 +1441,9 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 		}
 		_pytypes_init();
 		_loader_init();
-		marshal_module = PyImport_Import(PyString_FromString("marshal"));
+		tmp = PyString_FromString("marshal");
+		marshal_module = PyImport_Import(tmp);
+		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
 			return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
 		}

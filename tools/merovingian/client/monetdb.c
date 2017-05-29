@@ -150,6 +150,17 @@ command_help(int argc, char *argv[])
 		printf("  Database Server.  Databases in this list can be connected\n");
 		printf("  to as well.  If expression is given, all entries are\n");
 		printf("  matched against a limited glob-style expression.\n");
+	} else if (strcmp(argv[1], "master") == 0) {
+		printf("Usage: monetdb master <dbname> [path]\n");
+		printf("  Sets the database <dbname> into master mode.\n");
+		printf("  This will actually stop the database take a snapshot\n");
+		printf("  set the server into master mode and restart it.\n");
+	} else if (strcmp(argv[1], "replica") == 0) {
+		printf("Usage: monetdb replica <dbname> <mastername>\n");
+		printf("  Creates a new replica with name <dbname> from the\n");
+		printf("  database <mastername> The database <mastername> must \n");
+		printf("  have been declared as master with the \"monetdb master\"\n");
+		printf("  command.\n");
 	} else if (strcmp(argv[1], "help") == 0) {
 		printf("Yeah , help on help, how desparate can you be? ;)\n");
 	} else if (strcmp(argv[1], "version") == 0) {
@@ -192,7 +203,7 @@ MEROgetStatus(sabdb **ret, char *database)
 	char *p;
 	char *buf;
 	char *e;
-	
+
 	if (database == NULL)
 		database = "#all";
 
@@ -597,7 +608,7 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glo
 		command_help(2, &argv[-1]);
 		exit(1);
 	}
-	
+
 	/* walk through the arguments and hunt for "options" */
 	for (i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "--") == 0) {
@@ -702,11 +713,12 @@ command_status(int argc, char *argv[])
 					break;
 					case '-':
 						if (p[1] == '\0') {
-							if (argc - 1 > i) 
+							if (argc - 1 > i)
 								doall = 0;
 							i = argc;
 							break;
 						}
+						/* fall through */
 					default:
 						fprintf(stderr, "status: unknown option: -%c\n", *p);
 						command_help(2, &argv[-1]);
@@ -760,7 +772,7 @@ command_status(int argc, char *argv[])
 		prev = NULL;
 		while (stats != NULL) {
 			if (stats->locked == curLock &&
-					(curLock == 1 || 
+					(curLock == 1 ||
 					 (curLock == 0 && stats->state == curMode)))
 			{
 				sabdb *next = stats->next;
@@ -1006,11 +1018,12 @@ command_startstop(int argc, char *argv[], startstop mode)
 					break;
 					case '-':
 						if (p[1] == '\0') {
-							if (argc - 1 > i) 
+							if (argc - 1 > i)
 								doall = 0;
 							i = argc;
 							break;
 						}
+						/* fall through */
 					default:
 						fprintf(stderr, "%s: unknown option: -%c\n", type, *p);
 						command_help(2, &argv[-1]);
@@ -1115,6 +1128,7 @@ command_set(int argc, char *argv[], meroset type)
 							i = argc;
 							break;
 						}
+						/* fall through */
 					default:
 						fprintf(stderr, "%s: unknown option: -%c\n",
 								argv[0], *p);
@@ -1244,11 +1258,12 @@ command_get(int argc, char *argv[])
 				switch (*p) {
 					case '-':
 						if (p[1] == '\0') {
-							if (argc - 1 > i) 
+							if (argc - 1 > i)
 								doall = 0;
 							i = argc;
 							break;
 						}
+						/* fall through */
 					default:
 						fprintf(stderr, "get: unknown option: -%c\n", *p);
 						command_help(2, &argv[-1]);
@@ -1308,7 +1323,7 @@ command_get(int argc, char *argv[])
 		exit(1);
 	}
 	readPropsBuf(defprops, buf + 3);
-	if( buf) 
+	if( buf)
 		free(buf);
 
 	if (twidth > 0) {
@@ -1503,18 +1518,18 @@ command_create(int argc, char *argv[])
 		size_t len = strlen("create mfunnel=") + strlen(mfunnel) + 1;
 		char *cmd = malloc(len);
 		snprintf(cmd, len, "create mfunnel=%s", mfunnel);
-		simple_argv_cmd(argv[0], orig, cmd, 
+		simple_argv_cmd(argv[0], orig, cmd,
 				"created multiplex-funnel in maintenance mode", NULL);
 		free(cmd);
 	} else if (password != NULL) {
 		size_t len = strlen("create password=") + strlen(password) + 1;
 		char *cmd = malloc(len);
 		snprintf(cmd, len, "create password=%s", password);
-		simple_argv_cmd(argv[0], orig, cmd, 
+		simple_argv_cmd(argv[0], orig, cmd,
 				"created database with password for monetdb user", NULL);
 		free(cmd);
 	} else {
-		simple_argv_cmd(argv[0], orig, "create", 
+		simple_argv_cmd(argv[0], orig, "create",
 				"created database in maintenance mode", NULL);
 	}
 	msab_freeStatus(&orig);
@@ -1609,7 +1624,6 @@ command_release(int argc, char *argv[])
 	simple_command(argc, argv, "release", "taken database out of maintenance mode", 1);
 }
 
-
 int
 main(int argc, char *argv[])
 {
@@ -1626,13 +1640,13 @@ main(int argc, char *argv[])
 	 * monetdb [monetdb_options] command [options] [database [...]]
 	 * this means we first scout for monetdb_options which stops as soon
 	 * as we find a non-option argument, which then must be command */
-	
+
 	/* first handle the simple no argument case */
 	if (argc <= 1) {
 		command_help(0, NULL);
 		return(1);
 	}
-	
+
 	/* handle monetdb_options */
 	for (i = 1; argc > i && argv[i][0] == '-'; i++) {
 		switch (argv[i][1]) {
@@ -1693,6 +1707,7 @@ main(int argc, char *argv[])
 					command_help(0, NULL);
 					return(0);
 				}
+				/* fall through */
 			default:
 				fprintf(stderr, "monetdb: unknown option: %s\n", argv[i]);
 				command_help(0, NULL);
@@ -1715,7 +1730,7 @@ main(int argc, char *argv[])
 		command_help(0, NULL);
 		return(1);
 	}
-	
+
 	/* commands that do not need merovingian to be running */
 	if (strcmp(argv[i], "help") == 0) {
 		command_help(argc - i, &argv[i]);

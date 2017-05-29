@@ -1,3 +1,19 @@
+monetdb (11.25.21) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6260: Sqlitelogictest crash
+  * BZ#6288: Function cannot find column in merge table
+  * BZ#6295: msqldump writes unescaped timestamp values when using inserts
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 25 Apr 2017 11:05:40 +0200
+
+monetdb (11.25.21) unstable; urgency=low
+
+  * monetdb5: Fixed a bug causing a crash during cleanup when mserver5 is stopped
+    with monetdb stop database.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 19 Apr 2017 11:05:40 +0200
+
 monetdb (11.25.19) unstable; urgency=low
 
   * Rebuilt.

@@ -1172,7 +1172,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 10, F_UNION, NULL);
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 11, F_UNION, NULL);
 	char* fwf_string = NULL;
 	
 	if (!f) /* we do expect copyfrom to be there */

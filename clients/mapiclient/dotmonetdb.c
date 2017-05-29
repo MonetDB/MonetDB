@@ -97,8 +97,7 @@ parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int
 			} else if (strcmp(buf, "language") == 0) {
 				/* make sure we don't set garbage */
 				if (strcmp(q, "sql") != 0 &&
-				    strcmp(q, "mal") != 0 &&
-				    strcmp(q, "jaql") != 0) {
+				    strcmp(q, "mal") != 0) {
 					fprintf(stderr, "%s:%d: unsupported "
 						"language: %s\n",
 						cfile, line, q);

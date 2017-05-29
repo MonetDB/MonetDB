@@ -323,44 +323,48 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	return MAL_SUCCEED;
 }
 
-#define transform_strbat(transform_fn) { \
-	BAT *input, *output; \
-	BATiter li; \
-	BUN p = 0, q = 0; \
- \
-	assert(ret != NULL && bid != NULL); \
- \
-	if ((input = BATdescriptor(*bid)) == NULL) \
-		throw(MAL, "reverse_seq_bat", RUNTIME_OBJECT_MISSING); \
- \
-	/* allocate result BAT */ \
+#define transform_strbat(transform_fn) {								\
+	BAT *input, *output;												\
+	BATiter li;															\
+	BUN p = 0, q = 0;													\
+																		\
+	assert(ret != NULL && bid != NULL);									\
+																		\
+	if ((input = BATdescriptor(*bid)) == NULL)							\
+		throw(MAL, "reverse_seq_bat", RUNTIME_OBJECT_MISSING);			\
+																		\
+	/* allocate result BAT */											\
 	output = COLnew(input->hseqbase, TYPE_str, BATcount(input), TRANSIENT); \
-	if (output == NULL) { \
-		BBPunfix(input->batCacheid); \
-		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL); \
-	} \
- \
-	li = bat_iterator(input); \
- \
-	BATloop(input, p, q) { \
-		str t = (str) BUNtail(li, p); \
-		str r, msg; \
- \
-		if ((msg = transform_fn(&r, &t)) != MAL_SUCCEED) { \
-			BBPunfix(input->batCacheid); \
-			BBPunfix(output->batCacheid); \
-			return msg; \
-		} \
-		BUNappend(output, (ptr) r, FALSE); \
-		GDKfree(r); \
-	} \
- \
-	/* release input BAT-descriptor */ \
-	BBPunfix(input->batCacheid); \
- \
-	BBPkeepref((*ret = output->batCacheid)); \
- \
-	return MAL_SUCCEED; \
+	if (output == NULL) {												\
+		BBPunfix(input->batCacheid);									\
+		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);					\
+	}																	\
+																		\
+	li = bat_iterator(input);											\
+																		\
+	BATloop(input, p, q) {												\
+		str t = (str) BUNtail(li, p);									\
+		str r, msg;														\
+																		\
+		if ((msg = transform_fn(&r, &t)) != MAL_SUCCEED) {				\
+			BBPunfix(input->batCacheid);								\
+			BBPunfix(output->batCacheid);								\
+			return msg;													\
+		}																\
+		if (BUNappend(output, (ptr) r, FALSE) != GDK_SUCCEED) {			\
+			BBPunfix(input->batCacheid);								\
+			BBPreclaim(output);											\
+			throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);				\
+		}																\
+		GDKfree(r);														\
+	}																	\
+																		\
+	/* release input BAT-descriptor */									\
+	BBPunfix(input->batCacheid);										\
+																		\
+	BBPkeepref((*ret = output->batCacheid));							\
+																		\
+	return MAL_SUCCEED;													\
 }
 
 str
@@ -471,7 +475,10 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 		if ((msg = seq_char(&r, ref_pos, &seq_val, pos_val, &cigar_val)) != MAL_SUCCEED) {
 			goto cleanup;
 		}
-		BUNappend(result, (ptr) r, FALSE);
+		if (BUNappend(result, (ptr) r, FALSE) != GDK_SUCCEED) {
+			msg = createException(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
 		GDKfree(r);
 		++seq;
 		++pos;

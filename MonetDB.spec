@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.26.0
+%define version 11.28.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -131,8 +131,8 @@ Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
 License: MPLv2.0
-URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Dec2016-SP4/%{name}-%{version}.tar.bz2
+URL: https://www.monetdb.org/
+Source: https://www.monetdb.org/downloads/sources/Dec2016-SP4/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -953,6 +953,16 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Apr 25 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.21-20170425
+- Rebuilt.
+- BZ#6260: Sqlitelogictest crash
+- BZ#6288: Function cannot find column in merge table
+- BZ#6295: msqldump writes unescaped timestamp values when using inserts
+
+* Wed Apr 19 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.21-20170425
+- monetdb5: Fixed a bug causing a crash during cleanup when mserver5 is stopped
+  with monetdb stop database.
+
 * Tue Apr 18 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.19-20170418
 - Rebuilt.
 - BZ#6259: crash on select query from sqlitelogictests

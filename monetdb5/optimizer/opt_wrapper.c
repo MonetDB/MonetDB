@@ -49,6 +49,7 @@
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
 #include "opt_volcano.h"
+#include "opt_wlc.h"
 
 struct{
 	str nme;
@@ -76,6 +77,7 @@ struct{
 	{"mitosis", &OPTmitosisImplementation,0,0},
 	{"multiplex", &OPTmultiplexImplementation,0,0},
 	{"oltp", &OPToltpImplementation,0,0},
+	{"wlc", &OPTwlcImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},
 	{"pushselect", &OPTpushselectImplementation,0,0},

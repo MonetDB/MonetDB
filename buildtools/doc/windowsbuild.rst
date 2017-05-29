@@ -278,6 +278,7 @@ a file ``version.rc`` to the sources for the ``pcre`` subproject.  The
 contents of the file are::
 
  #include <Windows.h>
+ LANGUAGE		LANG_ENGLISH, SUBLANG_ENGLISH_US
  VS_VERSION_INFO	VERSIONINFO
  FILEVERSION		8,37,0,0	// change as appropriate
  PRODUCTVERSION		8,37,0,0	// change as appropriate
@@ -374,6 +375,7 @@ a file ``version.rc`` in the ``win32`` folder.  The contents of the
 file are::
 
  #include <Windows.h>
+ LANGUAGE		LANG_ENGLISH, SUBLANG_ENGLISH_US
  VS_VERSION_INFO	VERSIONINFO
  FILEVERSION		2,9,2,0		// change as appropriate
  PRODUCTVERSION		2,9,2,0		// change as appropriate
@@ -445,6 +447,7 @@ a file ``version.rc`` in the ``src`` folder.  The contents of the
 file are::
 
  #include <Windows.h>
+ LANGUAGE		LANG_ENGLISH, SUBLANG_ENGLISH_US
  VS_VERSION_INFO	VERSIONINFO
  FILEVERSION		3,4,2,0		// change as appropriate
  PRODUCTVERSION		3,4,2,0		// change as appropriate
@@ -628,6 +631,7 @@ a file ``version.rc`` in the top-level folder.  The contents of the
 file are::
 
  #include <Windows.h>
+ LANGUAGE		LANG_ENGLISH, SUBLANG_ENGLISH_US
  VS_VERSION_INFO	VERSIONINFO
  FILEVERSION		1,0,6,0		// change as appropriate
  PRODUCTVERSION		1,0,6,0		// change as appropriate

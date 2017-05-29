@@ -72,7 +72,11 @@ batnil_2_timestamp(bat *res, const bat *bid)
 	}
 	BATloop(b, p, q) {
 		timestamp r = *timestamp_nil;
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -105,7 +109,11 @@ batstr_2_timestamp(bat *res, const bat *bid)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -159,7 +167,11 @@ batnil_2_daytime(bat *res, const bat *bid)
 	}
 	BATloop(b, p, q) {
 		daytime r = daytime_nil;
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -192,7 +204,11 @@ batstr_2_daytime(bat *res, const bat *bid)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -256,7 +272,11 @@ batnil_2_date(bat *res, const bat *bid)
 	}
 	BATloop(b, p, q) {
 		date r = date_nil;
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.date", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -289,7 +309,11 @@ batstr_2_date(bat *res, const bat *bid)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, &r, FALSE);
+		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.date", MAL_MALLOC_FAIL);
+		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -316,11 +340,11 @@ str_2_sqlblob(sqlblob **res, const str *val)
 }
 
 str
-SQLsqlblob_2_str(str *res, const sqlblob * val)
+SQLsqlblob_2_str(str *res, const sqlblob *val)
 {
 	char *p = NULL;
 	int len = 0;
-	sqlblob_tostr(&p, &len, val);
+	SQLBLOBtostr(&p, &len, val);
 	*res = p;
 	return MAL_SUCCEED;
 }
@@ -351,7 +375,11 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, r, FALSE);
+		if (BUNappend(dst, r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.blob", MAL_MALLOC_FAIL);
+		}
 		GDKfree(r);
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -459,7 +487,11 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		BUNappend(dst, r, FALSE);
+		if (BUNappend(dst, r, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.str_cast", MAL_MALLOC_FAIL);
+		}
 		GDKfree(r);
 		r = NULL;
 	}

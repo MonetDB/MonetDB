@@ -65,8 +65,7 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 {
 	void *dl;
 	MALfcn adr;
-	static int idx=0;
-
+	int idx=0;
 	static int prev= -1;
 
 	/* First try the last module loaded */
@@ -82,7 +81,9 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 	 * obtained from the source-file MAL script.
 	 */
 	for (idx =0; idx < lastfile; idx++)
-		if (filesLoaded[idx].handle) {
+		if (idx != prev &&		/* skip already searched module */
+			filesLoaded[idx].handle &&
+			(idx == 0 || filesLoaded[idx].handle != filesLoaded[0].handle)) {
 			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
 			if (adr != NULL)  {
 				prev = idx;
@@ -319,10 +320,14 @@ locate_file(const char *basename, const char *ext, bit recurse)
 			i = strlen(mod_path);
 		}
 		while (i + filelen + 2 > fullnamelen) {
+			char *tmp;
 			fullnamelen += 512;
-			fullname = GDKrealloc(fullname, fullnamelen);
-			if (fullname == NULL)
+			tmp = GDKrealloc(fullname, fullnamelen);
+			if (tmp == NULL) {
+				GDKfree(fullname);
 				return NULL;
+			}
+			fullname = tmp;
 		}
 		/* we are now sure the directory name, file
 		   base name, extension, and separator fit
@@ -358,8 +363,12 @@ locate_file(const char *basename, const char *ext, bit recurse)
 		} else {
 			strcat(fullname + i + 1, ext);
 			if ((fd = open(fullname, O_RDONLY)) >= 0) {
+				char *tmp;
 				close(fd);
-				return GDKrealloc(fullname, strlen(fullname) + 1);
+				tmp = GDKrealloc(fullname, strlen(fullname) + 1);
+				if (tmp == NULL)
+					GDKfree(fullname);
+				return tmp;
 			}
 		}
 		if ((mod_path = p) == NULL)
@@ -370,15 +379,17 @@ locate_file(const char *basename, const char *ext, bit recurse)
 	if (lasts > 0) {
 		size_t i = 0;
 		int c;
+		char *tmp;
 		/* assure that an ordering such as 10_first, 20_second works */
 		qsort(strs, lasts, sizeof(char *), cmpstr);
 		for (c = 0; c < lasts; c++)
 			i += strlen(strs[c]) + 1; /* PATH_SEP or \0 */
-		fullname = GDKrealloc(fullname, i);
-		if( fullname == NULL){
-			GDKerror("locate_file" MAL_MALLOC_FAIL);
+		tmp = GDKrealloc(fullname, i);
+		if( tmp == NULL){
+			GDKfree(fullname);
 			return NULL;
 		}
+		fullname = tmp;
 		i = 0;
 		for (c = 0; c < lasts; c++) {
 			if (strstr(fullname, strs[c]) == NULL) {

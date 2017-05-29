@@ -133,8 +133,11 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 		list[i]->pos2 = sz;
 		sz += list[i]->used;
 	}
-	uselist = GDKzalloc(sizeof(int)*sz);
-	if (!uselist) {
+	if (sz == 0 ||
+		(uselist = GDKzalloc(sizeof(int)*sz)) == NULL) {
+		/* there is no distinction between successfully finding
+		 * nothing and failure; in either case the caller doesn't do
+		 * anything */
 		OPTremoveDep(list, mb->stop);
 		GDKfree(var);
 		return NULL;

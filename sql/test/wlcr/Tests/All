@@ -1,0 +1,37 @@
+# This  is a scenario for continual replication
+# first create a master with some data
+wlcr00
+
+wlc01
+
+# create the clone synchronized with the master
+wlr01
+
+# add two sets of tuples to the master
+wlc20
+wlc21
+
+#and automatically roll forward the clone in 2 steps
+wlr20
+
+# prepare an update to the master
+wlc30
+
+# roll forward to clone
+wlr30
+
+#delete some tupples
+wlc40
+wlr40
+
+#clear the complete table
+wlc50
+wlr50
+
+# restart for timing based roll forward
+wlc70
+wlr70
+
+#stop the master
+wlc100
+wlr100

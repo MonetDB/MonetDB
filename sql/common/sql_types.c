@@ -1411,6 +1411,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "all", "sql", "all", ANY, ANY);
 	sql_create_aggr(sa, "exist", "aggr", "exist", ANY, BIT);
 	sql_create_aggr(sa, "not_exist", "aggr", "not_exist", ANY, BIT);
+	sql_create_func(sa, "sql_exists", "aggr", "exist", ANY, NULL, BIT, SCALE_NONE);
+	sql_create_func(sa, "sql_not_exists", "aggr", "not_exist", ANY, NULL, BIT, SCALE_NONE);
 	/* needed for relational version */
 	sql_create_func(sa, "in", "calc", "in", ANY, ANY, BIT, SCALE_NONE);
 	sql_create_func(sa, "identity", "calc", "identity", ANY, NULL, OID, SCALE_NONE);
@@ -1788,9 +1790,9 @@ sqltypeinit( sql_allocator *sa)
 				sres, FALSE, F_FUNC, SCALE_FIX);
 	}
 	sres = create_arg(sa, NULL, sql_create_subtype(sa, TABLE, 0, 0), ARG_OUT); 
-	/* copyfrom fname (arg 10) */
+	/* copyfrom fname (arg 11) */
 	f=sql_create_func_(sa, "copyfrom", "sql", "copy_from",
-	 	list_append( list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(list_append(sa_list(sa),
+	 	list_append( list_append( list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(list_append(sa_list(sa),
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
@@ -1799,6 +1801,7 @@ sqltypeinit( sql_allocator *sa)
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, LNG, 0, 0), ARG_IN)), 
+			create_arg(sa, NULL, sql_create_subtype(sa, INT, 0, 0), ARG_IN)),
 			create_arg(sa, NULL, sql_create_subtype(sa, INT, 0, 0), ARG_IN)),
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), sres, FALSE, F_UNION, SCALE_FIX);
 	f->varres = 1;

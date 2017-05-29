@@ -42,6 +42,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(sig);
 		BBPreclaim(adr);
 		BBPreclaim(com);
+		throw(MAL, "manual.functions", MAL_MALLOC_FAIL);
 	}
 
 	list[top++] = cntxt->nspace;

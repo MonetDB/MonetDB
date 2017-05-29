@@ -58,15 +58,16 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	int i;
 	str q;
+	QueryQueue tmp;
 
 	MT_lock_set(&mal_delayLock);
+	tmp = QRYqueue;
 	if ( QRYqueue == 0)
 		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 256));
-	else
-	if ( qtop +1 == qsize )
+	else if ( qtop +1 == qsize )
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize +=256));
 	if ( QRYqueue == NULL){
-		GDKerror("runtimeProfileInit" MAL_MALLOC_FAIL);
+		GDKfree(tmp);			/* may be NULL, but doesn't harm */
 		MT_lock_unset(&mal_delayLock);
 		return;
 	}

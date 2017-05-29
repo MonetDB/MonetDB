@@ -32,6 +32,7 @@ headers_sql = {
 		45_uuid.sql \
 		46_profiler.sql \
 		51_sys_schema_extension.sql \
+		60_wlcr.sql \
 		75_storagemodel.sql \
 		80_statistics.sql \
 		99_system.sql

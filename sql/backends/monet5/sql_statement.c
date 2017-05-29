@@ -216,7 +216,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 
 	q = newStmt(mb, groupRef, done ? grp ? subgroupdoneRef : groupdoneRef : grp ? subgroupRef : groupRef);
 
-	/* output variables extend and hist */
+	/* output variables extent and hist */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, s->nr);
@@ -2131,12 +2131,15 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case DDL_DROP_SEQ:	q = newStmt(mb, sqlcatalogRef, drop_seqRef); break;
 	case DDL_CREATE_SCHEMA:	q = newStmt(mb, sqlcatalogRef, create_schemaRef); break;
 	case DDL_DROP_SCHEMA_IF_EXISTS: if_exists =1;
+		/* fall through */
 	case DDL_DROP_SCHEMA:	q = newStmt(mb, sqlcatalogRef, drop_schemaRef); break;
 	case DDL_CREATE_TABLE:	q = newStmt(mb, sqlcatalogRef, create_tableRef); break;
 	case DDL_CREATE_VIEW:	q = newStmt(mb, sqlcatalogRef, create_viewRef); break;
 	case DDL_DROP_TABLE_IF_EXISTS: if_exists =1;
+		/* fall through */
 	case DDL_DROP_TABLE:	q = newStmt(mb, sqlcatalogRef, drop_tableRef); break;
 	case DDL_DROP_VIEW_IF_EXISTS: if_exists = 1;
+		/* fall through */
 	case DDL_DROP_VIEW:	q = newStmt(mb, sqlcatalogRef, drop_viewRef); break;
 	case DDL_DROP_CONSTRAINT:	q = newStmt(mb, sqlcatalogRef, drop_constraintRef); break;
 	case DDL_ALTER_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_tableRef); break;

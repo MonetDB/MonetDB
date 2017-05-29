@@ -3,8 +3,8 @@
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 1 VERSIONINFO
-  FILEVERSION 11,26,0,1
-  PRODUCTVERSION 11,26,0,1
+  FILEVERSION 11,28,0,1
+  PRODUCTVERSION 11,28,0,1
   FILEFLAGSMASK 0x3fL
   FILEFLAGS 0
   FILEOS VOS_NT_WINDOWS32
@@ -18,7 +18,7 @@ BEGIN
       VALUE "Comments", "\0"
       VALUE "CompanyName", "MonetDB B.V.\0"
       VALUE "FileDescription", "MonetDB5 Library DLL\0"
-      VALUE "FileVersion", "11.26.0\0"
+      VALUE "FileVersion", "11.28.0\0"
       //                    ^^^^^^^^
       // Maintained via vertoo. Please don't modify by hand!
       // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -28,7 +28,7 @@ BEGIN
       VALUE "OriginalFilename", "libmonetdb5.dll\0"
       VALUE "PrivateBuild", "\0"
       VALUE "ProductName", "MonetDB5 Server\0"
-      VALUE "ProductVersion", "11.26.0\0"
+      VALUE "ProductVersion", "11.28.0\0"
       //                       ^^^^^^^^
       // Maintained via vertoo. Please don't modify by hand!
       // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

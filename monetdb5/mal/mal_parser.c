@@ -380,6 +380,7 @@ cstToken(Client cntxt, ValPtr cst)
 	case '-':
 		i++;
 		s++;
+		/* fall through */
 	case '0':
 		if ((s[1] == 'x' || s[1] == 'X')) {
 			/* deal with hex */
@@ -387,6 +388,7 @@ cstToken(Client cntxt, ValPtr cst)
 			i += 2;
 			s += 2;
 		}
+		/* fall through */
 	case '1': case '2': case '3': case '4': case '5':
 	case '6': case '7': case '8': case '9':
 		if (hex)
@@ -405,6 +407,7 @@ cstToken(Client cntxt, ValPtr cst)
 
 		if (hex)
 			goto handleInts;
+		/* fall through */
 	case '.':
 		if (*s == '.' && isdigit(*(s + 1))) {
 			i++;
@@ -1750,7 +1753,7 @@ part3:
 }
 
 int
-parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
+parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 {
 	int cntrl = 0;
 	/*Symbol curPrg= cntxt->curprg;*/
@@ -1759,9 +1762,10 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 
 	echoInput(cntxt);
 	/* here the work takes place */
-	while ((c = currChar(cntxt))) {
+	while ((c = currChar(cntxt)) && lines > 0) {
 		switch (c) {
 		case '\n': case '\r': case '\f':
+			lines -= c =='\n';
 			nextChar(cntxt);
 			echoInput(cntxt);
 			continue;
@@ -1934,6 +1938,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments)
 				cntrl = YIELDsymbol;
 				goto allLeft;
 			}
+			/* fall through */
 		default: allLeft :
 			parseAssign(cntxt, cntrl);
 			cntrl = 0;
