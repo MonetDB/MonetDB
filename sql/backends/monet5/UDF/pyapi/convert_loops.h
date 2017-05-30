@@ -503,6 +503,10 @@
 					utf8_size = size;                                          \
 			}                                                                  \
 			utf8_string = GDKzalloc(utf8_size);                                \
+			if (utf8_string == NULL) {			\
+				msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL); \
+				goto wrapup;				\
+			}						\
 			for (iu = 0; iu < ret->count; iu++) {                              \
 				if (mask != NULL &&                                            \
 					(mask[index_offset * ret->count + iu]) == TRUE) {          \

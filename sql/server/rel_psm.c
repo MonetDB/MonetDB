@@ -453,7 +453,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 		list *oexps = rel->exps;
 		sql_rel *l = rel->l;
 
-		if (is_topn(rel->op))
+		if (is_topn(rel->op) || is_sample(rel->op))
 			oexps = l->exps;
 		for (n = oexps->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_exp *e = n->data;

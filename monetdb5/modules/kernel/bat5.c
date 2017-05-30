@@ -41,8 +41,11 @@ setaccess(BAT *b, int mode)
 	if (BATsetaccess(b, mode) != GDK_SUCCEED) {
 		if (b->batSharecnt && mode != BAT_READ) {
 			bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
-			if (bn != NULL)
-				BATsetaccess(bn, mode);
+			if (bn != NULL &&
+				BATsetaccess(bn, mode) != GDK_SUCCEED) {
+				BBPreclaim(bn);
+				bn = NULL;
+			}
 		} else {
 			bn = NULL;
 		}
@@ -143,15 +146,11 @@ infoHeap(BAT *bk, BAT*bv, Heap *hp, str nme)
 	return GDK_SUCCEED;
 }
 
-static char *
-oidtostr(oid i)
+static inline char *
+oidtostr(oid i, char *p, int len)
 {
-	int len = 48;
-	static char bf[48];
-	char *p = bf;
-
 	(void) OIDtoStr(&p, &len, &i);
-	return bf;
+	return p;
 }
 
 /*
@@ -670,6 +669,7 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 {
 	const char *mode, *accessmode;
 	BAT *bk = NULL, *bv= NULL, *b;
+	char bf[oidStrlen];
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getInfo", RUNTIME_OBJECT_MISSING);
@@ -734,14 +734,14 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bv, BATdirty(b) ? "dirty" : "clean", FALSE) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "hseqbase", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, oidtostr(b->hseqbase), FALSE) != GDK_SUCCEED ||
+	    BUNappend(bv, oidtostr(b->hseqbase, bf, (int) sizeof(bf)), FALSE) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "tident", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, b->tident, FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tdense", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t)(BATtdense(b))), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tseqbase", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, oidtostr(b->tseqbase), FALSE) != GDK_SUCCEED ||
+	    BUNappend(bv, oidtostr(b->tseqbase, bf, (int) sizeof(bf)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tsorted", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t)BATtordered(b)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "trevsorted", FALSE) != GDK_SUCCEED ||

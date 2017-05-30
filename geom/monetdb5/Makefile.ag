@@ -34,5 +34,3 @@ headers_autoload = {
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 30_geom.mal
 }
-
-EXTRA_DIST = 30_geom.mal geom.mal

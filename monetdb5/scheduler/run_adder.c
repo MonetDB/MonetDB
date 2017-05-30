@@ -85,6 +85,10 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	oldtop= mb->stop;
 	size = ((mb->stop+batch) < mb->ssize)? mb->ssize:(mb->stop+batch);
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
+	if (mb->stmt == NULL) {
+		mb->stmt = old;
+		throw(MAL, "adder.generate", MAL_MALLOC_FAIL);
+	}
 	mb->ssize = size;
 	memcpy( mb->stmt, old, sizeof(InstrPtr)*(pc+1));
 	mb->stop = pc+1;

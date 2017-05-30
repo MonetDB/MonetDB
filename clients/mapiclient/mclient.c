@@ -1158,7 +1158,10 @@ TESTrenderer(MapiHdl hdl)
 				   strcmp(tp, "dbl") == 0) {
 				char buf[32];
 				int j;
-				double v = strtod(s, NULL);
+				double v;
+				if (strcmp(s, "-0") == 0) /* normalize -0 */
+					s = "0";
+				v = strtod(s, NULL);
 				for (j = 4; j < 11; j++) {
 					snprintf(buf, sizeof(buf), "%.*g", j, v);
 					if (v == strtod(buf, NULL))
@@ -1168,10 +1171,13 @@ TESTrenderer(MapiHdl hdl)
 			} else if (strcmp(tp, "real") == 0) {
 				char buf[32];
 				int j;
+				float v;
+				if (strcmp(s, "-0") == 0) /* normalize -0 */
+					s = "0";
 #ifdef HAVE_STRTOF
-				float v = strtof(s, NULL);
+				v = strtof(s, NULL);
 #else
-				float v = (float) strtod(s, NULL);
+				v = (float) strtod(s, NULL);
 #endif
 				for (j = 4; j < 6; j++) {
 					snprintf(buf, sizeof(buf), "%.*g", j, v);
@@ -2202,7 +2208,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 #endif
 
 	(void) save_history;	/* not used if no readline */
-	if (getFile(fp) && isatty(fileno(getFile(fp)))
+	if (isatty(getFileNo(fp)) /* fails if not a FILE* */
 #ifdef WIN32			/* isatty may not give expected result */
 	    && formatter != TESTformatter
 #endif

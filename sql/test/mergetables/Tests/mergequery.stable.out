@@ -91,7 +91,7 @@ Ready.
 % 134 # length
 function user.s26_1():void;
     X_3:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;", "default_pipe", 64:int);
-barrier X_153 := language.dataflow();
+barrier X_154 := language.dataflow();
     X_71:bat[:dbl] := bat.new(nil:dbl);
     X_6 := sql.mvc();
     X_10:bat[:dbl] := sql.bind(X_6, "sys", "part1", "x", 0:int);
@@ -127,7 +127,7 @@ barrier X_153 := language.dataflow();
     language.pass(X_46);
     language.pass(C_36);
     language.pass(X_81);
-exit X_153;
+exit X_154;
     sql.affectedRows(X_90, X_92);
 end user.s26_1;
 #inline               actions= 0 time=2 usec 
@@ -169,7 +169,7 @@ end user.s26_1;
 % 156 # length
 function user.s28_1():void;
     X_5:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;", "default_pipe", 70:int);
-barrier X_163 := language.dataflow();
+barrier X_164 := language.dataflow();
     X_82:bat[:dbl] := bat.new(nil:dbl);
     X_8 := sql.mvc();
     X_12:bat[:dbl] := sql.bind(X_8, "sys", "part1", "x", 0:int);
@@ -209,7 +209,7 @@ barrier X_163 := language.dataflow();
     language.pass(C_44);
     language.pass(X_22);
     language.pass(X_91);
-exit X_163;
+exit X_164;
     sql.affectedRows(X_100, X_102);
 end user.s28_1;
 #inline               actions= 0 time=3 usec 

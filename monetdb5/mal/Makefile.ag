@@ -10,6 +10,7 @@ INCLUDES = ../../common/options \
 		   ../../clients/mapilib \
 		   ../../gdk \
 		   ../optimizer \
+		   ../modules/mal \
 		   $(openssl_CFLAGS)
 MTSAFE
 

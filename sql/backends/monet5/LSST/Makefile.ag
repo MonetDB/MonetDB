@@ -21,7 +21,7 @@ INCLUDES = .. \
 lib__lsst = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = lsst.c
+	SOURCES = lsst.c lsst.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		../../../../gdk/libbat
 }
@@ -44,5 +44,4 @@ headers_lsstautoload = {
 	SOURCES = 80_lsst.mal
 }
 
-EXTRA_DIST = lsst.h
 EXTRA_DIST_DIR = Tests

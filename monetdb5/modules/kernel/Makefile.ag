@@ -46,6 +46,4 @@ headers_hge = {
 	SOURCES = 00_aggr_hge.mal
 }
 
-EXTRA_DIST = alarm.mal logger.mal microbenchmark.mal aggr.mal 00_aggr_hge.mal group.mal algebra.mal
-
 EXTRA_DIST_DIR = Tests

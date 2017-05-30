@@ -99,6 +99,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 			if (exps && list_length(exps))
 				return exps;
 		}
+		/* fall through */
 	default:
 		return NULL;
 	}
@@ -4913,13 +4914,19 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 		sql_rel *fnd = NULL;
 
 		for (n = fl->h; n ; n = n->next) {
-			int lateral = check_is_lateral(n->data.sym);
+			int lateral = check_is_lateral(n->data.sym), lateral_used = 0;
 
+			/* just used current expression */
 			fnd = table_ref(sql, NULL, n->data.sym, 0);
 			if (!fnd && (rel || lateral) && sql->session->status != -ERR_AMBIGUOUS) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = 0;
+				/* here we have 2 cases; the query could be 
+				 * using the outer relation (correlated query)
+				 * or we could have a lateral query.
+				 * Also we could have both.
+				 */ 
 				if (used && rel)
 					rel = rel_dup(rel);
 				if (!used && (!sn->lateral && !lateral) && rel) {
@@ -4932,11 +4939,16 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 					/* create dummy single row project */
 					rel = rel_project(sql->sa, NULL, applyexps = rel_projections(sql, o, NULL, 1, 1)); 
 				}
+				if (lateral && rel) {
+					res = rel_crossproduct(sql->sa, res, rel, op_join);
+					rel = NULL;
+				}
 				if (lateral) {
 					list *pre_exps = rel_projections(sql, res, NULL, 1, 1);
 					fnd = table_ref(sql, res, n->data.sym, lateral);
 					if (fnd && is_project(fnd->op)) 
 						fnd->exps = list_merge(fnd->exps, pre_exps, (fdup)NULL);
+					lateral_used = 1;
 				} else {
 					fnd = table_ref(sql, rel, n->data.sym, 0);
 				}
@@ -4945,7 +4957,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 
 			if (!fnd)
 				break;
-			if (res && !lateral)
+			if (res && !lateral_used)
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
 			else
 				res = fnd;

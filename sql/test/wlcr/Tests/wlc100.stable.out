@@ -1,0 +1,32 @@
+stdout of test 'wlc100` in directory 'sql/test/wlcr` itself:
+
+
+# 21:26:01 >  
+# 21:26:01 >  "/usr/bin/python2" "wlc80.py" "wlc80"
+# 21:26:01 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_wlcr', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:31482/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30891/.s.monetdb.31482
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+#insert into tmp values(40,'after being stopped');
+[ 1	]
+#select * from tmp;
+% sys.tmp,	sys.tmp # table_name
+% i,	s # name
+% int,	clob # type
+% 2,	19 # length
+[ 40,	"after being stopped"	]
+
+# 21:26:02 >  
+# 21:26:02 >  "Done."
+# 21:26:02 >  
+

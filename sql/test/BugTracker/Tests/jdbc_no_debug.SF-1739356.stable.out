@@ -52,12 +52,12 @@ Operation successful
 |     X_4 := sql.mvc();                                                                                 |
 |     X_18:bat[:sht] := sql.bind(X_4, "sys", "_tables", "type", 0:int);                                 |
 |     C_5:bat[:oid] := sql.tid(X_4, "sys", "_tables");                                                  |
-|     C_84 := algebra.thetaselect(X_18, C_5, 2:sht, "!=");                                              |
+|     C_85 := algebra.thetaselect(X_18, C_5, 2:sht, "!=");                                              |
 |     (C_21:bat[:oid], X_22:bat[:sht]) := sql.bind(X_4, "sys", "_tables", "type", 2:int);               |
-|     C_85 := algebra.thetaselect(X_22, nil:bat[:oid], 2:sht, "!=");                                    |
+|     C_86 := algebra.thetaselect(X_22, nil:bat[:oid], 2:sht, "!=");                                    |
 |     X_20:bat[:sht] := sql.bind(X_4, "sys", "_tables", "type", 1:int);                                 |
-|     C_87 := algebra.thetaselect(X_20, C_5, 2:sht, "!=");                                              |
-|     C_27 := sql.subdelta(C_84, C_5, C_21, C_85, C_87);                                                |
+|     C_88 := algebra.thetaselect(X_20, C_5, 2:sht, "!=");                                              |
+|     C_27 := sql.subdelta(C_85, C_5, C_21, C_86, C_88);                                                |
 |     X_8:bat[:int] := sql.bind(X_4, "sys", "_tables", "id", 0:int);                                    |
 |     (C_13:bat[:oid], X_14:bat[:int]) := sql.bind(X_4, "sys", "_tables", "id", 2:int);                 |
 |     X_11:bat[:int] := sql.bind(X_4, "sys", "_tables", "id", 1:int);                                   |

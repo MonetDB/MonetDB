@@ -1,0 +1,24 @@
+stdout of test 'dbextra_lock_test` in directory 'sql/backends/monet5` itself:
+
+
+# 13:09:53 >  
+# 13:09:53 >  "/bin/python2" "dbextra_lock_test.py" "dbextra_lock_test"
+# 13:09:53 >  
+
+# MonetDB 5 server v11.27.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.520 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://zarquon.zarniwoop.org:33511/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25696/.s.monetdb.33511
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 13:09:53 >  
+# 13:09:53 >  "Done."
+# 13:09:53 >  
+

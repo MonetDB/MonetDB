@@ -950,7 +950,7 @@ logger_readlog(logger *lg, char *filename)
 		GDKdebug = dbg;
 		return GDK_SUCCEED;
 	}
-	if (fstat(fileno(getFile(lg->log)), &sb) < 0) {
+	if (fstat(getFileNo(lg->log), &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
 		mnstr_destroy(lg->log);
 		lg->log = NULL;
@@ -2557,7 +2557,7 @@ pre_allocate(logger *lg)
 	if (p + DBLKSZ > lg->end) {
 		p &= ~(DBLKSZ - 1);
 		p += SEGSZ;
-		if (GDKextendf(fileno(getFile(lg->log)), (size_t) p, "WAL file") != GDK_SUCCEED)
+		if (GDKextendf(getFileNo(lg->log), (size_t) p, "WAL file") != GDK_SUCCEED)
 			return GDK_FAIL;
 		lg->end = p;
 	}

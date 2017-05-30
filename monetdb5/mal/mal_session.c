@@ -15,8 +15,8 @@
 #include "mal_parser.h"	     /* for parseMAL() */
 #include "mal_namespace.h"
 #include "mal_readline.h"
-#include "mal_builder.h"
 #include "mal_authorize.h"
+#include "mal_builder.h"
 #include "mal_sabaoth.h"
 #include "mal_private.h"
 #include <gdk.h>	/* for opendir and friends */
@@ -579,10 +579,8 @@ MALparser(Client c)
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
 
-	if( prepareMalBlk(c->curprg->def, CURRENT(c))){
-		throw(MAL, "mal.parser", MAL_MALLOC_FAIL);
-	}
-	if (parseMAL(c, c->curprg, 0) || c->curprg->def->errors) {
+	prepareMalBlk(c->curprg->def, CURRENT(c));
+	if (parseMAL(c, c->curprg, 0, INT_MAX) || c->curprg->def->errors) {
 		/* just complete it for visibility */
 		pushEndInstruction(c->curprg->def);
 		/* caught errors */

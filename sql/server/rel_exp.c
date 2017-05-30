@@ -1211,6 +1211,7 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 			}
 			return ne;
 		}
+		/* fall through */
 	case e_cmp:	
 	case e_psm:	
 		return NULL;
@@ -1291,7 +1292,7 @@ exp_is_zero(mvc *sql, sql_exp *e)
 	if (e->type == e_atom) {
 		if (e->l) {
 			return atom_is_zero(e->l);
-		} else if(sql->emode == m_normal && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
+		} else if(sql->emode == m_normal && sql->argc > e->flag && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
 			return atom_is_zero(sql->args[e->flag]);
 		}
 	}

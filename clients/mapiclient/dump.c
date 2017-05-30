@@ -1141,7 +1141,9 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 	for (i = 0; i < cnt; i++) {
 		string[i] = (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
 			     strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "clob") == 0);
+			     strcmp(mapi_get_type(hdl, i), "clob") == 0 ||
+			     strcmp(mapi_get_type(hdl, i), "timestamp") == 0 ||
+			     strcmp(mapi_get_type(hdl, i), "timestamptz") == 0);
 	}
 	while (mapi_fetch_row(hdl)) {
 		char *s;
@@ -1229,7 +1231,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 		      "s.id = f.schema_id "
 		      "%s%s"
 		      "%s%s%s%s%s%s"
-		"ORDER BY f.id";
+		"ORDER BY f.func";
 	MapiHdl hdl;
 	char *q;
 	size_t l;

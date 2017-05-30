@@ -1,0 +1,37 @@
+stdout of test 'wlc21` in directory 'sql/test/wlcr` itself:
+
+
+# 21:28:52 >  
+# 21:28:52 >  "/usr/bin/python2" "wlc21.py" "wlc21"
+# 21:28:52 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_wlcr', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:31055/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7935/.s.monetdb.31055
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+#insert into tmp values(5,'red'),(6,'fox');
+[ 2	]
+#select * from tmp;
+% sys.tmp,	sys.tmp # table_name
+% i,	s # name
+% int,	clob # type
+% 1,	5 # length
+[ 1,	"hello"	]
+[ 2,	"world"	]
+[ 3,	"blah"	]
+[ 4,	"bloh"	]
+[ 5,	"red"	]
+[ 6,	"fox"	]
+
+# 21:28:52 >  
+# 21:28:52 >  "Done."
+# 21:28:52 >  
+

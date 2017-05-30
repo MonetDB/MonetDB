@@ -34,30 +34,24 @@
 str
 getTypeName(malType tpe)
 {
-	char buf[PATHLENGTH], *s;
-	size_t l = PATHLENGTH;
+	char buf[PATHLENGTH];
 	int k;
 
 	if (tpe == TYPE_any)
 		return GDKstrdup("any");
 	if (isaBatType(tpe)) {
-		snprintf(buf, l, "bat[");
-		l -= strlen(buf);
-		s = buf + strlen(buf);
 		k = getTypeIndex(tpe);
 		if (k)
-			snprintf(s, l, ":any%c%d]",TMPMARKER,  k);
+			snprintf(buf, sizeof(buf), "bat[:any%c%d]",TMPMARKER,  k);
 		else if (getBatType(tpe) == TYPE_any)
-			snprintf(s, l, ":any]");
+			snprintf(buf, sizeof(buf), "bat[:any]");
 		else
-			snprintf(s, l, ":%s]", ATOMname(getBatType(tpe)));
+			snprintf(buf, sizeof(buf), "bat[:%s]", ATOMname(getBatType(tpe)));
 		return GDKstrdup(buf);
 	}
 	if (isAnyExpression(tpe)) {
-		strncpy(buf, "any", 4);
-		if (isAnyExpression(tpe))
-			snprintf(buf + 3, PATHLENGTH - 3, "%c%d",
-					TMPMARKER, getTypeIndex(tpe));
+		snprintf(buf, sizeof(buf), "any%c%d",
+				 TMPMARKER, getTypeIndex(tpe));
 		return GDKstrdup(buf);
 	}
 	return GDKstrdup(ATOMname(tpe));

@@ -497,7 +497,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 #ifndef HAVE_NEXTAFTERF
 #define nextafter   _nextafter
-float nextafterf(float x, float y);
+#include "mutils.h"		/* nextafterf */
 #endif
 
 #define PREVVALUEbte(x) ((x) - 1)
@@ -829,11 +829,11 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		s = f<l? (TPE) 1: (TPE)-1;\
 	else s = * getArgReference_##TPE(stk, p, 3); \
 	incr = s > 0;\
-	v = (TPE*) Tloc(bl,0);\
+	v = (TPE*) Tloc(b,0);\
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
 		throw(MAL,"generator.join","Illegal range");\
 	for( ; cnt >0; cnt--,o++,v++){\
-		w = (BUN) floor( (double)(ABS(*v -f)/ABS(s)));\
+		w = (BUN) (ABS(*v -f)/ABS(s));\
 		if ( f + (TPE)(w * s) == *v ){\
 			*ol++ = (oid) w;\
 			*or++ = o;\
@@ -853,16 +853,30 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	// we assume at most one of the arguments to refer to the generator
 	p = findGeneratorDefinition(mb,pci,pci->argv[2]);
+	q = findGeneratorDefinition(mb,pci,pci->argv[3]);
+
+	if (p == NULL && q == NULL) {
+		bit zero = 0;
+		return ALGjoin(getArgReference_bat(stk, pci, 0),
+			       getArgReference_bat(stk, pci, 1),
+			       getArgReference_bat(stk, pci, 2),
+			       getArgReference_bat(stk, pci, 3),
+			       NULL,  /* left candidate */
+			       NULL,  /* right candidate */
+			       &zero, /* nil_matches */
+			       NULL); /* estimate */
+	}
+
 	if( p == NULL){
 		bl = BATdescriptor(*getArgReference_bat(stk,pci,2));
 		if( bl == NULL)
 			throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
 	}
-	q = findGeneratorDefinition(mb,pci,pci->argv[3]);
 	if ( q == NULL){
 		br = BATdescriptor(*getArgReference_bat(stk,pci,3));
 		if( br == NULL){
-			BBPunfix(bl->batCacheid);
+			if (bl)
+				BBPunfix(bl->batCacheid);
 			throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
 		}
 	}
@@ -900,26 +914,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* The actual join code for generators be injected here */
 	switch(tpe){
-	case TYPE_bte: //VLTjoin(bte,abs); break; 
-	{ bte f,l,s; bte *v; BUN w;
-	f = *getArgReference_bte(stk,p, 1);
-	l = *getArgReference_bte(stk,p, 2);
-	if ( p->argc == 3)
-		s = f<l? (bte) 1: (bte)-1;
-	else s = * getArgReference_bte(stk, p, 3);
-	incr = s > 0;
-	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
-		throw(MAL,"generator.join","Illegal range");
-	v = (bte*) Tloc(b,0);
-	for( ; cnt >0; cnt--,o++,v++){
-		w = (BUN) floor(abs(*v -f)/abs(s));
-		if ( f + (bte)( w * s) == *v ){
-			*ol++ = (oid) w;
-			*or++ = o;
-			c++;
-		}
-	} }
-	break;
+	case TYPE_bte: VLTjoin(bte,abs); break;
 	case TYPE_sht: VLTjoin(sht,abs); break;
 	case TYPE_int: VLTjoin(int,abs); break;
 	case TYPE_lng: VLTjoin(lng,llabs); break;

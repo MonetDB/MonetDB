@@ -1,0 +1,18 @@
+# ChangeLog file for sql
+# This file is updated with Maddlog
+
+* Thu Mar  2 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Made the operator precedence of % equal to those of * and /.  All three
+  are evaluated from left to right.
+
+* Mon Feb  6 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Removed table sys.connections.  It was a remnant of an experimental
+  change that had already been removed in 2012.
+
+* Tue Nov  8 2016 Martin Kersten <mk@cwi.nl>
+- Protect against runaway profiler events If you hit a barrier block
+  during profiling, the JSON event log may quickly become unwieldy. Event
+  production is protected using a high water mark, which ensures that
+  never within the single execution of MAL block the instruction causes
+  excessive event records.
+
