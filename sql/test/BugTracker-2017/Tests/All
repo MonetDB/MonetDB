@@ -57,3 +57,4 @@ type-resolution-error.Bugs-6313
 lateral02.Bug-6314
 exist-bigint-missing.Bug-6315
 coalesc-limit.Bug-6316
+limit.Bug-6322
