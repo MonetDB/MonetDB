@@ -34,9 +34,6 @@ pseudo(bat *ret, BAT *b, str X1,str X2) {
 	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
 		return -1;
 	BATroles(b,X2);
-	if (BATmode(b,TRANSIENT) != GDK_SUCCEED)
-		return -1;
-	BATfakeCommit(b);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return 0;
