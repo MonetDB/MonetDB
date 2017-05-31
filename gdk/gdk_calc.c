@@ -12,6 +12,11 @@
 #include "gdk_calc_private.h"
 #include <math.h>
 
+#ifndef HAVE_NEXTAFTERF
+#define nextafter       _nextafter
+#include "mutils.h"             /* nextafterf */
+#endif
+
 /* Define symbol FULL_IMPLEMENTATION to get implementations for all
  * sensible output types for +, -, *, /.  Without the symbol, all
  * combinations of input types are supported, but only output types
