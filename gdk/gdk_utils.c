@@ -142,8 +142,6 @@ GDKsetenv(str name, str value)
 {
 	BUNappend(GDKkey, name, FALSE);
 	BUNappend(GDKval, value, FALSE);
-	BATfakeCommit(GDKkey);
-	BATfakeCommit(GDKval);
 }
 
 

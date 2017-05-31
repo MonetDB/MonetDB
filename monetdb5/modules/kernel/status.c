@@ -39,10 +39,6 @@
 
 static void
 pseudo(bat *ret, bat *ret2, BAT *bn, BAT *b) {
-	BATmode(bn,TRANSIENT);
-	BATmode(b,TRANSIENT);
-	BATfakeCommit(b);
-	BATfakeCommit(bn);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	*ret2 = b->batCacheid;

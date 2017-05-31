@@ -53,8 +53,6 @@ pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	if (BBPindex(buf) <= 0)
 		BATname(b,buf);
 	BATroles(b,X2);
-	BATmode(b,TRANSIENT);
-	BATfakeCommit(b);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 }
