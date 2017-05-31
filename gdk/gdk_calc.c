@@ -893,9 +893,9 @@ BATcalcmaybenil(BAT *b, BAT *s, int notnil)
 	bit *restrict dst;
 	BUN i;
 
-	(void) nils;		/* not used in this function */
-
 	CALC_INIT(b);
+
+	(void) nils;		/* not used in this function */
 
 	bn = COLnew(hseq, TYPE_bit, cnt, TRANSIENT);
 	if (bn == NULL)
