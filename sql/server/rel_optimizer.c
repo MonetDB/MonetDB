@@ -7333,7 +7333,7 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 	       	e = rel->exps->h->data;
 		nll->exps = exps_copy(sql->sa, e->l);
 		nlr->exps = exps_copy(sql->sa, e->r);
-		nl = rel_or( sql, nll, nlr, NULL, NULL, NULL);
+		nl = rel_or( sql, NULL, nll, nlr, NULL, NULL, NULL);
 
 		if (rel->op == op_full) {
 			l = rel_dup(l);
