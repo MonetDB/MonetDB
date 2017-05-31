@@ -10,6 +10,14 @@ CREATE TABLE PART  ( P_PARTKEY     INTEGER NOT NULL,
                           P_COMMENT     VARCHAR(23) NOT NULL,
                           PRIMARY KEY   (P_PARTKEY) );
 
+CREATE TABLE PARTSUPP ( PS_PARTKEY     INTEGER NOT NULL,
+                             PS_SUPPKEY     INTEGER NOT NULL,
+                             PS_AVAILQTY    INTEGER NOT NULL,
+                             PS_SUPPLYCOST  DECIMAL(15,2)  NOT NULL,
+                             PS_COMMENT     VARCHAR(199) NOT NULL,
+                             PRIMARY KEY    (PS_PARTKEY,PS_SUPPKEY),
+                             FOREIGN KEY (PS_PARTKEY) references PART );
+
 select
   ref_0.message as c0
 from
