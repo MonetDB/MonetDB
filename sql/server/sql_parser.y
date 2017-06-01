@@ -2479,10 +2479,11 @@ drop_statement:
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- |  drop VIEW qname drop_action
+ |  drop VIEW if_exists qname drop_action
 	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_int(l, $4 );
+	  append_list(l, $4 );
+	  append_int(l, $5 );
+	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_VIEW, l ); }
  |  drop TYPE qname drop_action	 
 	{ dlist *l = L();
