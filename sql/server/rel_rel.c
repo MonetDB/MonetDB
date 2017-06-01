@@ -1095,9 +1095,9 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 }
 
 sql_rel *
-rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
+rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 {
-	sql_rel *rel, *ll = l->l, *rl = r->l;
+	sql_rel *ll = l->l, *rl = r->l;
 	list *ls, *rs;
 
 	assert(!lexps || l == r);
@@ -1115,7 +1115,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 
 	/* favor or expressions over union */
 	if (l->op == r->op && l->op == op_select &&
-	    ll == rl && !rel_is_ref(l) && !rel_is_ref(r)) {
+	    ll == rl && ll == rel && !rel_is_ref(l) && !rel_is_ref(r)) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
 		list *nl = new_exp_list(sql->sa); 
 		
@@ -1135,8 +1135,13 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 		return l;
 	}
 
-	ls = rel_projections(sql, l, NULL, 1, 1);
-	rs = rel_projections(sql, r, NULL, 1, 1);
+	if (rel) {
+		ls = rel_projections(sql, rel, NULL, 1, 1);
+		rs = rel_projections(sql, rel, NULL, 1, 1);
+	} else {
+		ls = rel_projections(sql, l, NULL, 1, 1);
+		rs = rel_projections(sql, r, NULL, 1, 1);
+	}
 	set_processed(l);
 	set_processed(r);
 	rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
