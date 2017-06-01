@@ -295,7 +295,7 @@ MNDBTables(ODBCStmt *stmt,
 			    "sys.env() e "
 		       "where s.id = t.schema_id and "
 			     "e.name = 'gdk_dbname'");
-		//assert(strlen(query) < 1100);
+		assert(strlen(query) < 1900);
 		query_end += strlen(query_end);
 
 		/* dependent on the input parameter values we must add a
