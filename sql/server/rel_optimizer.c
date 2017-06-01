@@ -2801,10 +2801,12 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			sql_exp *re = l->h->next->data;
 			if (exp_is_atom(le) && exp_is_zero(sql, le)) {
 				(*changes)++;
+				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
 				return re;
 			}
 			if (exp_is_atom(re) && exp_is_zero(sql, re)) {
 				(*changes)++;
+				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
 				return le;
 			}
 			if (exp_is_atom(le) && exp_is_atom(re)) {

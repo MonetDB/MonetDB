@@ -559,6 +559,84 @@ batToStr(char **dst, int *len, const bat *src)
  * incorrect syntax (not a number) result in the function returning 0
  * and setting the destination to nil.
  */
+struct maxdiv {
+	/* if we want to multiply a value with scale, the value must
+	 * be no larger than maxval for there to not be overflow */
+#ifdef HAVE_HGE
+	hge scale, maxval;
+#else
+	lng scale, maxval;
+#endif
+};
+static const struct maxdiv maxdiv[] = {
+#ifdef HAVE_HGE
+	/* maximum hge value: 170141183460469231731687303715884105727 (2**127-1)
+	 * GCC doesn't currently support integer constants that don't
+	 * fit in 8 bytes, so we split large values up*/
+	{(hge) LL_CONSTANT(1), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(10000000000000000000U)+ (hge) LL_CONSTANT(1687303715884105727)},
+	{(hge) LL_CONSTANT(10), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(1000000000000000000) + (hge) LL_CONSTANT(168730371588410572)},
+	{(hge) LL_CONSTANT(100), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(100000000000000000) + (hge) LL_CONSTANT(16873037158841057)},
+	{(hge) LL_CONSTANT(1000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(10000000000000000) + (hge) LL_CONSTANT(1687303715884105)},
+	{(hge) LL_CONSTANT(10000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(1000000000000000) + (hge) LL_CONSTANT(168730371588410)},
+	{(hge) LL_CONSTANT(100000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(100000000000000) + (hge) LL_CONSTANT(16873037158841)},
+	{(hge) LL_CONSTANT(1000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(10000000000000) + (hge) LL_CONSTANT(1687303715884)},
+	{(hge) LL_CONSTANT(10000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(1000000000000) + (hge) LL_CONSTANT(168730371588)},
+	{(hge) LL_CONSTANT(100000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(100000000000) + (hge) LL_CONSTANT(16873037158)},
+	{(hge) LL_CONSTANT(1000000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(10000000000) + (hge) LL_CONSTANT(1687303715)},
+	{(hge) LL_CONSTANT(10000000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(1000000000) + (hge) LL_CONSTANT(168730371)},
+	{(hge) LL_CONSTANT(100000000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(100000000) + (hge) LL_CONSTANT(16873037)},
+	{(hge) LL_CONSTANT(1000000000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(10000000) + (hge) LL_CONSTANT(1687303)},
+	{(hge) LL_CONSTANT(10000000000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(1000000) + (hge) LL_CONSTANT(168730)},
+	{(hge) LL_CONSTANT(100000000000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(100000) + (hge) LL_CONSTANT(16873)},
+	{(hge) LL_CONSTANT(1000000000000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(10000) + (hge) LL_CONSTANT(1687)},
+	{(hge) LL_CONSTANT(10000000000000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(1000) + (hge) LL_CONSTANT(168)},
+	{(hge) LL_CONSTANT(100000000000000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(100) + (hge) LL_CONSTANT(16)},
+	{(hge) LL_CONSTANT(1000000000000000000), (hge) LL_CONSTANT(17014118346046923173U) * LL_CONSTANT(10) + (hge) LL_CONSTANT(1)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1), (hge) LL_CONSTANT(17014118346046923173U)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10), (hge) LL_CONSTANT(1701411834604692317)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100), (hge) LL_CONSTANT(170141183460469231)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000), (hge) LL_CONSTANT(17014118346046923)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000), (hge) LL_CONSTANT(1701411834604692)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000), (hge) LL_CONSTANT(170141183460469)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000), (hge) LL_CONSTANT(17014118346046)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000), (hge) LL_CONSTANT(1701411834604)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000), (hge) LL_CONSTANT(170141183460)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000), (hge) LL_CONSTANT(17014118346)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000), (hge) LL_CONSTANT(1701411834)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000), (hge) LL_CONSTANT(170141183)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000), (hge) LL_CONSTANT(17014118)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000), (hge) LL_CONSTANT(1701411)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000), (hge) LL_CONSTANT(170141)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000), (hge) LL_CONSTANT(17014)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000), (hge) LL_CONSTANT(1701)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(100000000000000000), (hge) LL_CONSTANT(170)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(1000000000000000000), (hge) LL_CONSTANT(17)},
+	{(hge) LL_CONSTANT(10000000000000000000U) * LL_CONSTANT(10000000000000000000U),(hge) LL_CONSTANT(1)},
+#else
+	/* maximum lng value: 9223372036854775807 (2**63-1) */
+	{LL_CONSTANT(1), LL_CONSTANT(9223372036854775807)},
+	{LL_CONSTANT(10), LL_CONSTANT(922337203685477580)},
+	{LL_CONSTANT(100), LL_CONSTANT(92233720368547758)},
+	{LL_CONSTANT(1000), LL_CONSTANT(9223372036854775)},
+	{LL_CONSTANT(10000), LL_CONSTANT(922337203685477)},
+	{LL_CONSTANT(100000), LL_CONSTANT(92233720368547)},
+	{LL_CONSTANT(1000000), LL_CONSTANT(9223372036854)},
+	{LL_CONSTANT(10000000), LL_CONSTANT(922337203685)},
+	{LL_CONSTANT(100000000), LL_CONSTANT(92233720368)},
+	{LL_CONSTANT(1000000000), LL_CONSTANT(9223372036)},
+	{LL_CONSTANT(10000000000), LL_CONSTANT(922337203)},
+	{LL_CONSTANT(100000000000), LL_CONSTANT(92233720)},
+	{LL_CONSTANT(1000000000000), LL_CONSTANT(9223372)},
+	{LL_CONSTANT(10000000000000), LL_CONSTANT(922337)},
+	{LL_CONSTANT(100000000000000), LL_CONSTANT(92233)},
+	{LL_CONSTANT(1000000000000000), LL_CONSTANT(9223)},
+	{LL_CONSTANT(10000000000000000), LL_CONSTANT(922)},
+	{LL_CONSTANT(100000000000000000), LL_CONSTANT(92)},
+	{LL_CONSTANT(1000000000000000000), LL_CONSTANT(9)},
+#endif
+};
+static const int maxmod10 = 7;	/* (int) (maxdiv[0].maxval % 10) */
+
 static int
 numFromStr(const char *src, int *len, void **dst, int tp)
 {
@@ -566,16 +644,19 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	int sz = ATOMsize(tp);
 #ifdef HAVE_HGE
 	hge base = 0;
-	hge expbase = -1;
-	const hge maxdiv10 = GDK_hge_max / 10;
 #else
 	lng base = 0;
-	lng expbase = -1;
-	const lng maxdiv10 = LL_CONSTANT(922337203685477580); /*7*/
 #endif
-	const int maxmod10 = 7;	/* max value % 10 */
 	int sign = 1;
 
+	/* a valid number has the following syntax:
+	 * [-+]?[0-9]+([eE][0-9]+)?(LL)? -- PCRE syntax, or in other words
+	 * optional sign, one or more digits, optional exponent, optional LL
+	 * the exponent has the following syntax:
+	 * lower or upper case letter E, one or more digits
+	 * embedded spaces are not allowed
+	 * the optional LL at the end are only allowed for lng and hge
+	 * values */
 	atommem(void, sz);
 	while (GDKisspace(*p))
 		p++;
@@ -599,50 +680,45 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 		}
 		if (!num10(*p)) {
 			/* still not a number */
-			memcpy(*dst, ATOMnilptr(tp), sz);
-			return 0;
+			goto bailout;
 		}
 	}
 	do {
-		if (base > maxdiv10 ||
-		    (base == maxdiv10 && base10(*p) > maxmod10)) {
+		int dig = base10(*p);
+		if (base > maxdiv[1].maxval ||
+		    (base == maxdiv[1].maxval && dig > maxmod10)) {
 			/* overflow */
-			memcpy(*dst, ATOMnilptr(tp), sz);
-			return 0;
+			goto bailout;
 		}
-		base = 10 * base + base10(*p);
+		base = 10 * base + dig;
 		p++;
-		/* Special case: xEy = x*10^y handling part 1 */
-		if (*p == 'E' || *p == 'e') {
-			// if there is a second E in the string we give up
-			if (expbase > -1) {
-				memcpy(*dst, ATOMnilptr(tp), sz);
-				return 0;
-			}
-			expbase = base;
-			base = 0;
-			p++;
-		}
 	} while (num10(*p));
-	/* Special case: xEy = x*10^y handling part 2 */
-	if (expbase > -1) {
-#ifdef HAVE_HGE
-		hge res = expbase;
-#else
-		lng res = expbase;
-#endif
-		while (base > 0) {
-			if (res > maxdiv10) {
-				memcpy(*dst, ATOMnilptr(tp), sz);
-				return 0;
+	if ((*p == 'e' || *p == 'E') && num10(p[1])) {
+		p++;
+		if (base == 0) {
+			/* if base is 0, any exponent will do, the
+			 * result is still 0 */
+			while (num10(*p))
+				p++;
+		} else {
+			int exp = 0;
+			do {
+				/* this calculation cannot overflow */
+				exp = exp * 10 + base10(*p);
+				if (exp >= (int) (sizeof(maxdiv) / sizeof(maxdiv[0]))) {
+					/* overflow */
+					goto bailout;
+				}
+				p++;
+			} while (num10(*p));
+			if (base > maxdiv[exp].maxval) {
+				/* overflow */
+				goto bailout;
 			}
-			res *= 10L;
-			base--;
+			base *= maxdiv[exp].scale;
 		}
-		base = res;
 	}
 	base *= sign;
-
 	switch (sz) {
 	case 1: {
 		bte **dstbte = (bte **) dst;
@@ -697,6 +773,10 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	while (GDKisspace(*p))
 		p++;
 	return (int) (p - src);
+
+  bailout:
+	memcpy(*dst, ATOMnilptr(tp), sz);
+	return 0;
 }
 
 int
