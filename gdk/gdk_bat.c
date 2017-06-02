@@ -136,6 +136,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	bn->batDirty = TRUE;
 	return bn;
       bailout:
+	BBPclear(bn->batCacheid);
 	if (tt)
 		HEAPfree(&bn->theap, 1);
 	if (bn->tvheap) {
@@ -213,6 +214,7 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 	}
 	return bn;
   bailout:
+	BBPclear(bn->batCacheid);
 	HEAPfree(&bn->theap, 1);
 	GDKfree(bn);
 	return NULL;
@@ -506,22 +508,19 @@ BATclear(BAT *b, int force)
 
 	/* we must dispose of all inserted atoms */
 	if (force && BATatoms[b->ttype].atomDel == NULL) {
-		Heap th;
-
+		assert(b->tvheap == NULL || b->tvheap->parentid == b->batCacheid);
 		/* no stable elements: we do a quick heap clean */
 		/* need to clean heap which keeps data even though the
 		   BUNs got removed. This means reinitialize when
 		   free > 0
 		*/
-		memset(&th, 0, sizeof(th));
-		if (b->tvheap) {
-			th.farmid = b->tvheap->farmid;
-			if (b->tvheap->free > 0 &&
-			    ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
-				return GDK_FAIL;
-		}
-		assert(b->tvheap == NULL || b->tvheap->parentid == b->batCacheid);
 		if (b->tvheap && b->tvheap->free > 0) {
+			Heap th;
+
+			memset(&th, 0, sizeof(th));
+			th.farmid = b->tvheap->farmid;
+			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
+				return GDK_FAIL;
 			th.parentid = b->tvheap->parentid;
 			HEAPfree(b->tvheap, 0);
 			*b->tvheap = th;
@@ -535,7 +534,7 @@ BATclear(BAT *b, int force)
 		if (tatmdel) {
 			BATiter bi = bat_iterator(b);
 
-			for(p = b->batInserted, q = BUNlast(b); p < q; p++)
+			for (p = b->batInserted, q = BUNlast(b); p < q; p++)
 				(*tatmdel)(b->tvheap, (var_t*) BUNtloc(bi,p));
 		}
 	}

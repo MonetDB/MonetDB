@@ -169,7 +169,7 @@ control_authorise(
 	}
 	free(pwd);
 
-	mnstr_printf(fout, "=OK\n");
+	mnstr_printf(fout, "=OK");
 	mnstr_flush(fout);
 
 	return 1;

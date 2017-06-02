@@ -1,3 +1,24 @@
+monetdb (11.25.23) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6290: Crash (and assertion failure) with a correlated subquery with
+    NOT IN in the select-list
+  * BZ#6291: crash if executes a function with sample operator
+  * BZ#6294: Sqlitelogictest crash
+  * BZ#6296: Another sqllitelogictest crash :(
+  * BZ#6297: 7th sqllitelogictest crash :(
+  * BZ#6300: Protect against missing BATs (sqlsmith)
+  * BZ#6314: Lateral crash report (sqlsmith)
+  * BZ#6315: Exist operator on type bigint missing (sqlsmith)
+  * BZ#6316: Coalesc and limit error (sqlsmith)
+  * BZ#6317: Two-column integer aggregation extremely slow
+  * BZ#6318: Daemon crashes if .merovignian_properties for a database
+    contains more than 42 entries
+  * BZ#6320: The daemon ignores all but the last entry in the
+    .merovignian_properties file when spawning mserver5
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Mon, 29 May 2017 10:09:01 +0200
+
 monetdb (11.25.21) unstable; urgency=low
 
   * Rebuilt.

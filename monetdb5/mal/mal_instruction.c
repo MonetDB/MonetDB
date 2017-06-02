@@ -355,9 +355,36 @@ MalBlkPtr
 getMalBlkHistory(MalBlkPtr mb, int idx)
 {
 	MalBlkPtr h = mb;
+
 	while (h && idx-- >= 0)
 		h = h->history;
 	return h ? h : mb;
+}
+
+// Localize the plan using the optimizer name
+MalBlkPtr
+getMalBlkOptimized(MalBlkPtr mb, str name)
+{
+	MalBlkPtr h = mb->history;
+	InstrPtr p;
+	int i= 0;
+	char buf[IDLENGTH]= {0}, *n;
+
+	if( name == 0)
+		return mb;
+	strncpy(buf,name, IDLENGTH);
+	n = strchr(buf,']');
+	if( n) *n = 0;
+	
+	while (h ){
+		for( i = 1; i< h->stop; i++){
+			p = getInstrPtr(h,i);
+			if( p->token == REMsymbol && strstr(getVarConstant(h, getArg(p,0)).val.sval, buf)  )
+				return h;
+		}
+		h = h->history;
+	}
+	return 0;
 }
 
 

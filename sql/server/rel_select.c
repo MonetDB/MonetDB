@@ -1062,9 +1062,9 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel) {
 				sql_rel *gb = *rel;
 
-				while(gb->l && !is_groupby(gb->op))
+				while(gb->l && !is_groupby(gb->op) && is_project(gb->op))
 					gb = gb->l;
-				if (gb && gb->l && rel_bind_column2(sql, gb->l, tname, cname, f))
+				if (gb && is_groupby(gb->op) && gb->l && rel_bind_column2(sql, gb->l, tname, cname, f))
 					return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 			}
 			return sql_error(sql, 02, "42S22!SELECT: no such column '%s.%s'", tname, cname);
@@ -2353,6 +2353,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				rexps = rr->exps;
 				rr = rr->l;
 			}
+			rel = NULL;
 			sql->pushdown = pushdown;
 		} else {
 			lr = rel_logical_exp(sql, lr, lo, f);
@@ -2361,7 +2362,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (!lr || !rr)
 			return NULL;
-		return rel_or(sql, lr, rr, exps, lexps, rexps);
+		return rel_or(sql, rel, lr, rr, exps, lexps, rexps);
 	}
 	case SQL_AND:
 	{
