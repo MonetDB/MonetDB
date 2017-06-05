@@ -22,6 +22,7 @@
 #include "optimizer.h"
 #include "mal_debugger.h"
 #include "optimizer_private.h"
+#include "opt_pipes.h"
 
 /*
  * Upon loading the module it should inspect the scenario table
@@ -31,14 +32,13 @@
 str
 optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	(void) cntxt;
 	(void) stk;
 	(void) mb;
 	(void) p;
 	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
 	optPipeInit();
 	optimizerInit();
-	return MAL_SUCCEED;
+	return compileAllOptimizers(cntxt);
 }
 
 

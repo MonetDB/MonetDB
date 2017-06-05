@@ -433,67 +433,53 @@ str
 compileOptimizer(Client cntxt, str name)
 {
 	int i, j;
-	Symbol sym;
+	char buf[2048];
 	str msg = MAL_SUCCEED;
-	ClientRec c;
+	Symbol fcn, compiled;
 
-	memset((char*)&c, 0, sizeof(c));
 	MT_lock_set(&pipeLock);
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) 
 		if (strcmp(pipes[i].name, name) == 0 && pipes[i].mb == 0) {
-			/* precompile the pipeline as MAL string */
-			MCinitClientRecord(&c, cntxt->user, 0, 0);
-			c.father = cntxt;	/* to avoid conflicts on GDKin */
-			c.fdout = cntxt->fdout;
-			if (setScenario(&c, "mal")) {
-				MT_lock_unset(&pipeLock);
-				throw(MAL, "optimizer.addOptimizerPipe", "failed to set scenario");
-			}
-			if( MCinitClientThread(&c) < 0){
-				MT_lock_unset(&pipeLock);
-				throw(MAL, "optimizer.addOptimizerPipe", "failed to create client thread");
-			}
-			c.curmodule = c.usermodule = userModule();
+			/* precompile a pipeline as MAL string */
 			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
 				if (pipes[j].mb == NULL) {
 					if (pipes[j].prerequisite && getAddress(pipes[j].prerequisite) == NULL)
 						continue;
-					MSinitClientPrg(&c, "user", pipes[j].name);
-					msg = compileString(&sym, &c, pipes[j].def);
-					if (msg != MAL_SUCCEED) 
-						break;
-					pipes[j].mb = copyMalBlk(sym->def);
+					snprintf(buf,2048,"function optimizer.%s(); %s;end %s;", pipes[j].name,pipes[j].def,pipes[j].name);
+					msg = compileString(&fcn,cntxt, buf);
+					if( msg == MAL_SUCCEED){
+						compiled = findSymbol(cntxt->usermodule,getName("optimizer"), getName(pipes[j].name));
+						if( compiled){
+							pipes[j].mb = compiled->def;
+							//fprintFunction(stderr, pipes[j].mb, 0, LIST_MAL_ALL);
+						} 
+					}
 				}
 			}
-			/* don't cleanup thread info since the thread continues to
-			 * exist, just this client record is closed */
-			c.errbuf = NULL;
-			/* we must clear c.mythread because we're reusing a Thread
-			 * and must not delete that one */
-			c.mythread = 0;
-			/* destroy bstream using free */
-			free(c.fdin->buf);
-			free(c.fdin);
-			/* remove garbage from previous connection */
-			if (c.usermodule) {
-				freeModule(c.usermodule);
-				c.usermodule = 0;
-			}
-			MCcloseClient(&c);
 			if (msg != MAL_SUCCEED ||
 				(msg = validateOptimizerPipes()) != MAL_SUCCEED)
 				break;
 		}
 	MT_lock_unset(&pipeLock);
-	//return msg;  The error messages are simply ignored here
-	return MAL_SUCCEED;
+	return msg;
 }
 
+str
+compileAllOptimizers(Client cntxt)
+{
+    int i;
+    str msg = MAL_SUCCEED;
+
+    for(i=0;pipes[i].def && msg == MAL_SUCCEED; i++){
+        msg =compileOptimizer(cntxt,pipes[i].name);
+    }
+	return msg;
+}
 str
 addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 {
 	int i, j, k;
-	InstrPtr p;
+	InstrPtr p,q;
 	str msg = MAL_SUCCEED;
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
@@ -508,7 +494,10 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 
 	if (pipes[i].mb) {
 		for (j = 1; j < pipes[i].mb->stop - 1; j++) {
-			p = copyInstruction(pipes[i].mb->stmt[j]);
+			q= getInstrPtr(pipes[i].mb,j);
+			if( getModuleId(q) != optimizerRef)
+				continue;
+			p = copyInstruction(q);
 			if (!p) { // oh malloc you cruel mistress
 				throw(MAL, "optimizer.addOptimizerPipe", "Out of memory");
 			}
