@@ -32,13 +32,15 @@
 str
 optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	(void) cntxt;
 	(void) stk;
 	(void) mb;
 	(void) p;
 	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
 	optPipeInit();
 	optimizerInit();
-	return compileAllOptimizers(cntxt);
+	//return compileAllOptimizers(cntxt); causes problems
+	return MAL_SUCCEED;
 }
 
 

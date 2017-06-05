@@ -239,23 +239,23 @@ evalFile(str fname, int listing)
 	if (filename == NULL) 
 		throw(MAL, "mal.eval","could not open file: %s\n", fname);
 	fd = malOpenSource(filename);
+	GDKfree(filename);
 	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		if (fd)
 			mnstr_destroy(fd);
-		throw(MAL,"mal.eval", "WARNING: could not open file: %s\n", filename);
-		GDKfree(filename);
+		throw(MAL,"mal.eval", "WARNING: could not open file\n");
 	} 
 
 	c= MCinitClient((oid)0, bstream_create(fd, 128 * BLOCK),0);
-	if( c == NULL)
+	if( c == NULL){
 		throw(MAL,"mal.eval","Can not create user context");
+	}
 	c->curmodule = c->usermodule = userModule();
 	c->promptlength = 0;
 	c->listing = listing;
 
     if ( (msg = defaultScenario(c)) ) {
 		MCcloseClient(c);
-		GDKfree(filename);
 		throw(MAL,"mal.eval","%s",msg);
 	}
 	MSinitClientPrg(c, "user", "main");
@@ -349,7 +349,7 @@ callString(Client cntxt, str s, int listing)
 	mal_unquote(qry = GDKstrdup(s));
 	if (old != s)
 		GDKfree(s);
-	b = (buffer *) GDKmalloc(sizeof(buffer));
+	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL){
 		GDKfree(qry);
 		throw(MAL,"callstring",MAL_MALLOC_FAIL);
@@ -368,6 +368,8 @@ callString(Client cntxt, str s, int listing)
 
     if ( (msg = defaultScenario(c)) ) {
 		c->usermodule = 0;
+		GDKfree(b);
+		GDKfree(qry);
 		MCcloseClient(c);
 		throw(MAL,"mal.call","%s",msg);
 	}
@@ -376,7 +378,7 @@ callString(Client cntxt, str s, int listing)
 	runScenario(c,1);
 	// The command may have changed the environment of the calling client.
 	// These settings should be propagated for further use.
-	if( msg == MAL_SUCCEED){
+	//if( msg == MAL_SUCCEED){
 		cntxt->scenario = c->scenario;
 		c->scenario = 0;
 		cntxt->sqlcontext = c->sqlcontext;
@@ -387,13 +389,15 @@ callString(Client cntxt, str s, int listing)
 			cntxt->phase[i] = c->phase[i];
 			c->phase[i]  = 0;
 		}
-		if( cntxt->phase[0] != c->phase[0]){
+		if(msg == MAL_SUCCEED && cntxt->phase[0] != c->phase[0]){
 			cntxt->phase[0] = c->phase[0];
 			cntxt->state[0] = c->state[0];
 			msg = (str) (*cntxt->phase[0])(cntxt); 	// force re-initialize client context
 		}
-	}
-	c->usermodule = 0;
+	//}
+	c->usermodule = 0; // keep it around
+	bstream_destroy(c->fdin);
+	c->fdin = 0;
 	MCcloseClient(c);
 	GDKfree(qry);
 	GDKfree(b);
