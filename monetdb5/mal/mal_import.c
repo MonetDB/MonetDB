@@ -242,8 +242,8 @@ evalFile(str fname, int listing)
 	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		if (fd)
 			mnstr_destroy(fd);
-		GDKfree(filename);
 		throw(MAL,"mal.eval", "WARNING: could not open file: %s\n", filename);
+		GDKfree(filename);
 	} 
 
 	c= MCinitClient((oid)0, bstream_create(fd, 128 * BLOCK),0);
