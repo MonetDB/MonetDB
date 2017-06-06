@@ -1,0 +1,45 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+
+module cudf;
+
+# The generic CUDF interface
+pattern eval(fptr:ptr,expr:str):any
+address CUDFevalStd
+comment "Execute a simple CUDF script returning a single value";
+
+
+pattern eval(fptr:ptr,expr:str,arg:any...):any...
+address CUDFevalStd
+comment "Execute a simple CUDF script value";
+
+#grouped things
+pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address CUDFevalAggr
+comment "grouped aggregates through CUDF";
+
+pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address CUDFevalAggr
+comment "grouped aggregates through CUDF";
+
+# initializer code
+command prelude() :void address PYAPI2PyAPIprelude;
+pyapi.prelude();
+
+# The SQL compiler needs these functions for bat-wise operations
+module batcudf;
+
+pattern eval(fptr:ptr,expr:str,arg:any...):any...
+address CUDFevalStd
+comment "Execute a simple CUDF script value";
+
+pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address CUDFevalAggr
+comment "grouped aggregates through CUDF";
+
+pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
+address CUDFevalAggr
+comment "grouped aggregates through CUDF";
