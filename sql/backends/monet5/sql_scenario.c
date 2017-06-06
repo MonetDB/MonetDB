@@ -362,40 +362,48 @@ error(stream *out, char *str)
 
 #define TRANS_ABORTED "!25005!current transaction is aborted (please ROLLBACK)\n"
 
-int
-handle_error(mvc *m, stream *out, int pstatus)
+str
+handle_error(mvc *m, int pstatus, str msg)
 {
-	int go = 1;
-	char *buf = GDKerrbuf;
+	str new, newmsg= MAL_SUCCEED;
 
 	/* transaction already broken */
 	if (m->type != Q_TRANS && pstatus < 0) {
-		if (mnstr_write(out, TRANS_ABORTED, sizeof(TRANS_ABORTED) - 1, 1) != 1) {
-			go = !go;
-		}
-	} else {
-		if (error(out, m->errstr) < 0 || (buf && buf[0] && error(out, buf) < 0)) {
-			go = !go;
-		}
+		new = createException(SQL,"sql.execute",TRANS_ABORTED);
+	} else if( GDKerrbuf && GDKerrbuf[0]){
+		new = GDKstrdup(GDKerrbuf);
+		GDKerrbuf[0] = 0;
+	}else if( m->errstr){
+		new = GDKstrdup(m->errstr);
+		m->errstr[0] = 0;
 	}
-	/* reset error buffers */
-	m->errstr[0] = 0;
-	if (buf)
-		buf[0] = 0;
-	return go;
+	if( new && msg){
+		newmsg = GDKzalloc( strlen(msg) + strlen(new) + 64);
+		strcpy(newmsg, msg);
+		strcat(newmsg,"!");
+		strcat(newmsg,new);
+		GDKfree(new);
+		GDKfree(msg);
+	} else
+	if( new)
+		newmsg = new;
+	return newmsg;
 }
 
-int
-SQLautocommit(Client c, mvc *m)
+str
+SQLautocommit(mvc *m)
 {
+	str msg = MAL_SUCCEED;
+
 	if (m->session->auto_commit && m->session->active) {
 		if (mvc_status(m) < 0) {
 			mvc_rollback(m, 0, NULL);
 		} else if (mvc_commit(m, 0, NULL) < 0) {
-			return handle_error(m, c->fdout, 0);
-		} 
+			msg = handle_error(m, 0, 0);
+			m->errstr[0] = 0;
+		}
 	}
-	return TRUE;
+	return msg;
 }
 
 void
@@ -614,7 +622,8 @@ SQLinitClient(Client c)
 	/* send error from create scripts back to the first client */
 	if (msg) {
 		error(c->fdout, msg);
-		handle_error(m, c->fdout, 0);
+		msg = handle_error(m, 0, msg);
+		m->errstr[0] = 0;
 		sqlcleanup(m, mvc_status(m));
 	}
 	return msg;
@@ -623,6 +632,7 @@ SQLinitClient(Client c)
 str
 SQLresetClient(Client c)
 {
+	str msg = MAL_SUCCEED;
 	if (c->sqlcontext) {
 		backend *be = NULL;
 		mvc *m = NULL;
@@ -634,7 +644,7 @@ SQLresetClient(Client c)
 		assert(m->session);
 		if (m->session->auto_commit && m->session->active) {
 			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0)
-				(void) handle_error(m, c->fdout, 0);
+				msg = handle_error(m, 0, 0);
 		}
 		if (m->session->active) {
 			mvc_rollback(m, 0, NULL);
@@ -650,7 +660,7 @@ SQLresetClient(Client c)
 		c->sqlcontext = NULL;
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
@@ -780,6 +790,7 @@ str
 SQLreader(Client c)
 {
 	int go = TRUE;
+	str msg = MAL_SUCCEED;
 	int more = TRUE;
 	int commit_done = FALSE;
 	backend *be = (backend *) c->sqlcontext;
@@ -790,14 +801,14 @@ SQLreader(Client c)
 
 	if (SQLinitialized == FALSE) {
 		c->mode = FINISHCLIENT;
-		return NULL;
+		return MAL_SUCCEED;
 	}
 	if (!be || c->mode <= FINISHCLIENT) {
 #ifdef _SQL_READER_DEBUG
 		fprintf(stderr, "#SQL client finished\n");
 #endif
 		c->mode = FINISHCLIENT;
-		return NULL;
+		return MAL_SUCCEED;
 	}
 #ifdef _SQL_READER_DEBUG
 	fprintf(stderr, "#SQLparser: start reading SQL %s %s\n", (be->console ? " from console" : ""), (blocked ? "Blocked read" : ""));
@@ -827,7 +838,8 @@ SQLreader(Client c)
 		 */
 		/* auto_commit on end of statement */
 		if (m->scanner.mode == LINE_N && !commit_done) {
-			go = SQLautocommit(c, m);
+			msg = SQLautocommit(m);
+			go = msg == MAL_SUCCEED;
 			commit_done = TRUE;
 		}
 
@@ -850,7 +862,8 @@ SQLreader(Client c)
 				/* The rules of auto_commit require us to finish
 				   and start a transaction on the start of a new statement (s A;B; case) */
 				if (!(m->emod & mod_debug) && !commit_done) {
-					go = SQLautocommit(c, m);
+					msg = SQLautocommit(m);
+					go = msg == MAL_SUCCEED;
 					commit_done = TRUE;
 				}
 
@@ -868,7 +881,7 @@ SQLreader(Client c)
 				fprintf(stderr, "#rd %d  language %d eof %d\n", rd, language, in->eof);
 #endif
 				if (be->language == 'D' && in->eof == 0)
-					return 0;
+					return msg;
 
 				if (rd == 0 && language !=0 && in->eof && !be->console) {
 					/* we hadn't seen the EOF before, so just try again
@@ -899,9 +912,9 @@ SQLreader(Client c)
 	if ( (c->stimeout && (GDKusec() - c->session) > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHCLIENT;
-		return NULL;
+		return msg;
 	}
-	return 0;
+	return msg;
 }
 
 /*
@@ -1083,7 +1096,8 @@ SQLparser(Client c)
 			err = mvc_status(m);
 		if (err) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			handle_error(m, c->fdout, pstatus);
+			m->errstr[0] = 0;
+			msg = handle_error(m, pstatus, msg);
 		}
 		sqlcleanup(m, err);
 		goto finalize;
@@ -1103,14 +1117,16 @@ SQLparser(Client c)
 			err = -1;
 			mnstr_printf(out, "!07003!EXEC: no prepared statement with id: %d\n", m->sym->data.lval->h->data.i_val);
 			msg = createException(SQL, "PREPARE", "no prepared statement with id: %d", m->sym->data.lval->h->data.i_val);
-			handle_error(m, c->fdout, pstatus);
+			msg = handle_error(m, pstatus, msg);
+			m->errstr[0] = 0;
 			sqlcleanup(m, err);
 			goto finalize;
 		} else if (be->q->type != Q_PREPARE) {
 			err = -1;
 			mnstr_printf(out, "!07005!EXEC: given handle id is not for a " "prepared statement: %d\n", m->sym->data.lval->h->data.i_val);
 			msg = createException(SQL, "PREPARE", "is not a prepared statement: %d", m->sym->data.lval->h->data.i_val);
-			handle_error(m, c->fdout, pstatus);
+			msg = handle_error(m, pstatus, msg);
+			m->errstr[0] = 0;
 			sqlcleanup(m, err);
 			goto finalize;
 		}
@@ -1125,7 +1141,8 @@ SQLparser(Client c)
 
 		if (!r || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			handle_error(m, c->fdout, pstatus);
+			msg = handle_error(m, pstatus, msg);
+			m->errstr[0] = 0;
 			sqlcleanup(m, err);
 			goto finalize;
 		}

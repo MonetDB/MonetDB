@@ -528,7 +528,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		scanner_query_processed(&(m->scanner));
 		if ((err = mvc_status(m))) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			handle_error(m, c->fdout, status);
+			m->errstr[0]=0;
+			msg = handle_error(m, status, msg);
 			sqlcleanup(m, err);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
