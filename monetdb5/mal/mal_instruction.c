@@ -163,7 +163,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 {
 	int i;
 
-	assert(mb->vsize >= mb->ssize);
+	//assert(mb->vsize >= mb->ssize);
 	if( elements > mb->ssize){
 		InstrPtr *ostmt = mb->stmt;
 		mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, elements * sizeof(InstrPtr));
