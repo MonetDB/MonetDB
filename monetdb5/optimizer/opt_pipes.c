@@ -359,36 +359,34 @@ validatePipe(MalBlkPtr mb)
 {
 	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE, garbage = FALSE, generator = FALSE, remap =  FALSE;
 	int i;
+	InstrPtr p;
 
-	for( i=1; i< mb->stop; i++){
-		if ( functionExit(getInstrPtr(mb,i))){
-			i++;
-			break;
-		}
-	}
-	if (mb == NULL || getInstrPtr(mb, i) == 0)
-		throw(MAL, "optimizer.validate", "improper optimizer mal block\n");
-	if (getFunctionId(getInstrPtr(mb, i)) == NULL || idcmp(getFunctionId(getInstrPtr(mb, i)), "inline"))
+	if (mb == NULL )
+		throw(MAL, "optimizer.validate", "missing optimizer mal block\n");
+	p = getInstrPtr(mb,1);
+	if (getFunctionId(p) == NULL || idcmp(getFunctionId(p), "inline"))
 		throw(MAL, "optimizer.validate", "'inline' should be the first\n");
 
-	for (; i < mb->stop - 1; i++)
+	for (i = 1; i < mb->stop - 1; i++){
+		p = getInstrPtr(mb,i);
 		if (getFunctionId(getInstrPtr(mb, i)) != NULL) {
-			if (strcmp(getFunctionId(getInstrPtr(mb, i)), "deadcode") == 0)
+			if (strcmp(getFunctionId(p), "deadcode") == 0)
 				deadcode = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "remap") == 0)
+			else if (strcmp(getFunctionId(p), "remap") == 0)
 				remap = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "mitosis") == 0)
+			else if (strcmp(getFunctionId(p), "mitosis") == 0)
 				mitosis = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "mergetable") == 0)
+			else if (strcmp(getFunctionId(p), "mergetable") == 0)
 				mergetable = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "multiplex") == 0)
+			else if (strcmp(getFunctionId(p), "multiplex") == 0)
 				multiplex = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "generator") == 0)
+			else if (strcmp(getFunctionId(p), "generator") == 0)
 				generator = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "garbageCollector") == 0)
+			else if (strcmp(getFunctionId(p), "garbageCollector") == 0)
 				garbage = TRUE;
 		} else
 			throw(MAL, "optimizer.validate", "Missing optimizer call\n");
+	}
 
 	if (mitosis == TRUE && mergetable == FALSE)
 		throw(MAL, "optimizer.validate", "'mitosis' needs 'mergetable'\n");
