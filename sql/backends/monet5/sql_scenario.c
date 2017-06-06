@@ -543,7 +543,7 @@ SQLinitClient(Client c)
 		fullname = MSP_locate_sqlscript(path, 1);
 		if (fullname) {
 			str filename = fullname;
-			str p, n;
+			str p, n, newmsg= MAL_SUCCEED;
 			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
 			do {
 				p = strchr(filename, PATH_SEP);
@@ -564,18 +564,36 @@ SQLinitClient(Client c)
 					sz = getFileSize(fd);
 					if (sz > (size_t) 1 << 29) {
 						mnstr_destroy(fd);
-						msg = createException(MAL, "createdb", "file %s too large to process", filename);
+						newmsg = createException(MAL, "createdb", "file %s too large to process", filename);
 					} else {
 						bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz);
 						if (bfd && bstream_next(bfd) >= 0)
-							msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
+							newmsg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
 						bstream_destroy(bfd);
 					}
 					if (m->sa)
 						sa_destroy(m->sa);
 					m->sa = NULL;
-					if (msg)
-						p = NULL;
+					if( newmsg){
+						fprintf(stderr,"%s",newmsg);
+						GDKfree(newmsg);
+/*
+						if(msg == MAL_SUCCEED)
+							msg= newmsg;
+						else {
+							char *buf= GDKzalloc(strlen(newmsg) + strlen(msg) + 256);
+							strcpy(buf,msg);
+							strcat(buf,"!");
+							strcat(buf,n);
+							strcat(buf,":");
+							strcat(buf,newmsg);
+							GDKfree(msg);
+							GDKfree(newmsg);
+							msg = buf;
+						}
+						newmsg=  MAL_SUCCEED;
+*/
+					}
 				}
 			} while (p);
 			GDKfree(fullname);
