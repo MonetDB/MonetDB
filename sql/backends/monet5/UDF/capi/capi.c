@@ -27,5 +27,5 @@ str CUDFprelude(void *ret) {
 
 static str
 CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
-	
+	return MAL_SUCCEED;
 }

@@ -20,10 +20,10 @@ INCLUDES = \
 
 MTSAFE
 
-lib__cudf = {
+lib__capi = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = cudf.c cudf.h
+	SOURCES = capi.c capi.h
 	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
 	       ../../../../../gdk/libbat \
 	$(MALLOC_LIBS)
@@ -32,13 +32,13 @@ lib__cudf = {
 headers_cudf_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = cudf.mal
+	SOURCES = capi.mal
 }
 
 headers_autoload = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
-	SOURCES = 50_cudf.mal
+	SOURCES = 50_capi.mal
 }
 
 EXTRA_DIST_DIR = Tests
