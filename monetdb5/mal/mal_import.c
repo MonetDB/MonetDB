@@ -383,7 +383,7 @@ callString(Client cntxt, str s, int listing)
 		c->scenario = 0;
 		cntxt->sqlcontext = c->sqlcontext;
 		c->sqlcontext = 0;
-		for(i=1; i< 7; i++){
+		for(i=1; i< SCENARIO_PROPERTIES; i++){
 			cntxt->state[i] = c->state[i];
 			c->state[i]  = 0;
 			cntxt->phase[i] = c->phase[i];

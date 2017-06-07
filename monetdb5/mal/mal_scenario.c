@@ -403,19 +403,19 @@ setScenario(Client c, str nme)
 
 	if (c->scenario) {
 		c->oldscenario = c->scenario;
-		for (i = 0; i < 7; i++) {
+		for (i = 0; i < SCENARIO_PROPERTIES; i++) {
 			c->oldstate[i] = c->state[i];
 			c->oldphase[i] = c->phase[i];
 		}
 	}
-	for (i = 0; i < 7; i++)
+	for (i = 0; i < SCENARIO_PROPERTIES; i++)
 		c->state[i] = 0;
 
 	msg = initScenario(c, scen);
 	if (msg) {
 		/* error occurred, reset the scenario , assume default always works */
 		c->scenario = c->oldscenario;
-		for (i = 0; i < 7; i++) {
+		for (i = 0; i < SCENARIO_PROPERTIES; i++) {
 			c->state[i] = c->oldstate[i];
 			c->phase[i] = c->oldphase[i];
 			c->oldstate[i] = NULL;
@@ -454,7 +454,7 @@ resetScenario(Client c)
 		(*scen->exitClientCmd) (c);
 
 	c->scenario = c->oldscenario;
-	for (i = 0; i < 7; i++) {
+	for (i = 0; i < SCENARIO_PROPERTIES; i++) {
 		c->state[i] = c->oldstate[i];
 		c->phase[i] = c->oldphase[i];
 	}

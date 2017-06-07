@@ -15,6 +15,8 @@
 #include "mal_resolve.h"
 #include "mal_profiler.h"
 
+#define SCENARIO_PROPERTIES 7
+
 #define CONSOLE     0
 #define isAdministrator(X) (X==mal_clients)
 
@@ -68,8 +70,8 @@ typedef struct CLIENT {
 	 */
 	str     scenario;  /* scenario management references */
 	str     oldscenario;
-	void    *state[7], *oldstate[7];
-	MALfcn  phase[7], oldphase[7];
+	void    *state[SCENARIO_PROPERTIES], *oldstate[SCENARIO_PROPERTIES];
+	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
 	/*
