@@ -113,7 +113,8 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 	 "MALparser", (MALfcn) &MALparser, 0,
 	 "MALoptimizer", 0, 0,
 	 0, 0, 0,
-	 "MALengine", (MALfcn) &MALengine, 0, 0},
+	 "MALengine", (MALfcn) &MALengine, 0,
+	 "MALcallback", (MALfcn) &MALcallback, 0,0 },
 	{"profiler","profiler",			/* name */
 	 0, 0,			/* initClient */
 	 0, 0,			/* exitClient */
@@ -123,17 +124,19 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 	 "MALparser", (MALfcn) &MALparser, 0,		/* parser */
 	 0, 0, 0,		/* optimizer */
 	 0, 0, 0,		/* scheduler */
-	 0, 0, 0, 0		/* engine */
+	 0, 0, 0,		/* callback */
+	 0, 0, 0,0		/* engine */
 	 },
-	{0,0,			/* name */
-	 0, 0,			/* init */
-	 0, 0,			/* exit */
-	 0, 0,			/* initClient */
-	 0, 0,			/* exitClient */
+	{0, 0,		/* name */
+	 0, 0,		/* init */
+	 0, 0,		/* exit */
+	 0, 0,		/* initClient */
+	 0, 0,		/* exitClient */
 	 0, 0, 0,		/* reader */
 	 0, 0, 0,		/* parser */
 	 0, 0, 0,		/* optimizer */
 	 0, 0, 0,		/* scheduler */
+	 0, 0, 0,		/* callback */
 	 0, 0, 0, 0		/* engine */
 	 }
 };
@@ -210,6 +213,8 @@ initScenario(Client c, Scenario s)
 		s->optimizerCmd = (MALfcn) getAddress(s->optimizer);
 	if (s->tactics && s->tacticsCmd == 0)
 		s->tacticsCmd = (MALfcn) getAddress(s->tactics);
+	if (s->callback && s->callbackCmd == 0)
+		s->callbackCmd = (MALfcn) getAddress(s->callback);
 	if (s->engine && s->engineCmd == 0)
 		s->engineCmd = (MALfcn) getAddress(s->engine);
 	MT_lock_unset(&mal_contextLock);
@@ -251,6 +256,7 @@ showScenario(stream *f, Scenario scen)
 	print_scenarioCommand(f, scen->parser, scen->parserCmd);
 	print_scenarioCommand(f, scen->optimizer, scen->optimizerCmd);
 	print_scenarioCommand(f, scen->tactics, scen->tacticsCmd);
+	print_scenarioCommand(f, scen->callback, scen->callbackCmd);
 	print_scenarioCommand(f, scen->engine, scen->engineCmd);
 	mnstr_printf(f, "]\n");
 }
@@ -307,6 +313,10 @@ updateScenario(str nme, str fnme, MALfcn fcn)
 	if (scen->tactics && strcmp(scen->tactics, fnme) == 0) {
 		scen->tacticsCmd = fcn;
 		phase = MAL_SCENARIO_SCHEDULER;
+	}
+	if (scen->callback && strcmp(scen->callback, fnme) == 0) {
+		scen->callbackCmd = fcn;
+		phase = MAL_SCENARIO_CALLBACK;
 	}
 	if (scen->engine && strcmp(scen->engine, fnme) == 0) {
 		scen->engineCmd = fcn;
@@ -373,6 +383,7 @@ fillScenario(Client c, Scenario scen)
 	c->phase[MAL_SCENARIO_PARSER] = scen->parserCmd;
 	c->phase[MAL_SCENARIO_OPTIMIZE] = scen->optimizerCmd;
 	c->phase[MAL_SCENARIO_SCHEDULER] = scen->tacticsCmd;
+	c->phase[MAL_SCENARIO_CALLBACK] = scen->callbackCmd;
 	c->phase[MAL_SCENARIO_ENGINE] = scen->engineCmd;
 	c->phase[MAL_SCENARIO_INITCLIENT] = scen->initClientCmd;
 	c->phase[MAL_SCENARIO_EXITCLIENT] = scen->exitClientCmd;
@@ -539,9 +550,13 @@ runScenarioBody(Client c, int once)
 			goto wrapup;
 	wrapup:
 		if (msg != MAL_SUCCEED){
-			mnstr_printf(c->fdout,"!%s%s",msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
-			freeException(msg);
-			msg = MAL_SUCCEED;
+			if( c->phase[MAL_SCENARIO_CALLBACK])
+					msg = (str) (*c->phase[MAL_SCENARIO_CALLBACK])(c, msg);
+			if( msg){
+				mnstr_printf(c->fdout,"!%s%s",msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
+				freeException(msg);
+				msg = MAL_SUCCEED;
+			}
 		}
 		if( GDKerrbuf && GDKerrbuf[0])
 			mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);

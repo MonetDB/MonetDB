@@ -150,6 +150,7 @@ SQLprelude(void *ret)
 	s->reader = "SQLreader";
 	s->parser = "SQLparser";
 	s->engine = "SQLengine";
+	s->callback = "SQLcallback";
 
 	ms = getFreeScenario();
 	if (!ms)
@@ -166,6 +167,7 @@ SQLprelude(void *ret)
 	ms->optimizer = "MALoptimizer";
 	/* ms->tactics = .. */
 	ms->engine = "MALengine";
+	ms->callback = "MALcallback";
 	tmp = SQLinit();
 	if (tmp != MAL_SUCCEED) {
 		fprintf(stderr, "Fatal error during initialization:\n%s\n", tmp);
@@ -1218,4 +1220,9 @@ SQLCacheRemove(Client c, str nme)
 		throw(MAL, "cache.remove", "internal error, symbol missing\n");
 	deleteSymbol(c->usermodule, s);
 	return MAL_SUCCEED;
+}
+
+str
+SQLcallback(Client c, str msg){
+	return MALcallback(c,msg);
 }

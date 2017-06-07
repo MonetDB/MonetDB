@@ -18,6 +18,7 @@
 #define MAL_SCENARIO_ENGINE 4
 #define MAL_SCENARIO_INITCLIENT 5
 #define MAL_SCENARIO_EXITCLIENT 6
+#define MAL_SCENARIO_CALLBACK 7
 
 /*#define MAL_SCENARIO_DEBUG*/
 /*
@@ -54,6 +55,9 @@ typedef struct SCENARIO {
 	str engine;
 	MALfcn engineCmd;
 	void *engineState;
+	str callback;
+	MALfcn callbackCmd;
+	void *callbackState;
 	struct SCENARIO *next;
 } *Scenario;
 

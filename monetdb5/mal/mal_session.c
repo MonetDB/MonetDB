@@ -656,6 +656,16 @@ MALcommentsOnly(MalBlkPtr mb)
 }
 
 str
+MALcallback(Client c, str msg)
+{
+	if( msg){
+		mnstr_printf(c->fdout,"!%s%s",msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
+		freeException(msg);
+	}
+	return MAL_SUCCEED;
+}
+
+str
 MALengine(Client c)
 {
 	Symbol prg;
