@@ -274,8 +274,11 @@ SQLrun(Client c, backend *be, mvc *m){
 	int i,j, retc;
 	ValPtr val;
 			
-	if ( *m->errstr)
-		return createException(PARSE, "SQLparser", "%s", m->errstr);
+	if ( *m->errstr){
+		msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+		*m->errstr=0;
+		return msg;
+	}
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
 	if (!mb) {
@@ -499,9 +502,10 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 			if (!err)
 				err = mvc_status(m);
-			if (*m->errstr)
+			if (*m->errstr){
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			*m->errstr = 0;
+				*m->errstr = 0;
+			}
 			sqlcleanup(m, err);
 			execute = 0;
 			if (!err)
@@ -528,7 +532,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		scanner_query_processed(&(m->scanner));
 		if ((err = mvc_status(m))) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			m->errstr[0]=0;
+			*m->errstr=0;
 			msg = handle_error(m, status, msg);
 			sqlcleanup(m, err);
 			/* restore the state */
@@ -560,7 +564,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
-			msg = createException(SQL, "SQLparser", "Errors encountered in query");
+			msg = createException(SQL, "SQLparser", "Errors encountered in query %s", m->errstr?m->errstr:"");
+			if( m->errstr)
+				*m->errstr = 0;
 			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
 			c->glb = oldglb;
 			goto endofcompile;
@@ -690,8 +696,10 @@ SQLengineIntern(Client c, backend *be)
 
 	if (c->curprg->def->stop == 1) {
 		if (mvc_status(m)) {
-			if (*m->errstr)
+			if (*m->errstr){
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+				*m->errstr = 0;
+			}
 			goto cleanup_engine;
 		}
 		sqlcleanup(be->mvc, 0);
@@ -719,6 +727,7 @@ cleanup_engine:
 		qc_clean(m->qc);
 	if (msg) {
 		/* don't print exception decoration, just the message */
+/*
 		char *n = NULL;
 		char *o = msg;
 		while ((n = strchr(o, '\n')) != NULL) {
@@ -729,6 +738,7 @@ cleanup_engine:
 		}
 		if (*o != 0)
 			mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+*/
 		m->session->status = -10;
 	}
 

@@ -199,9 +199,11 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, const c
 	i = 0;
 
 	if (prev){
-		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s", prev);
-		if( buf[i-1] != '\n')
-			buf[i++]= '\n';
+		if( *prev){
+			i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s", prev);
+			if( buf[i-1] != '\n')
+				buf[i++]= '\n';
+		}
 		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "!%s:%s.%s[%d]:",
 				exceptionNames[type], s, fcn, pc);
 	} else

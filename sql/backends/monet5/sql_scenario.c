@@ -330,42 +330,12 @@ global_variables(mvc *sql, char *user, char *schema)
 	return 0;
 }
 
-static int
-error(stream *out, char *str)
-{
-	char *p;
-
-	if (!out)
-		out = GDKerr;
-
-	if (str == NULL)
-		return 0;
-
-	if (mnstr_errnr(out))
-		return -1;
-	while ((p = strchr(str, '\n')) != NULL) {
-		p++;		/* include newline */
-		if (*str !='!' && mnstr_write(out, "!", 1, 1) != 1)
-			return -1;
-		if (mnstr_write(out, str, p - str, 1) != 1)
-			 return -1;
-		str = p;
-	}
-	if (str &&*str) {
-		if (*str !='!' && mnstr_write(out, "!", 1, 1) != 1)
-			return -1;
-		if (mnstr_write(out, str, strlen(str), 1) != 1 || mnstr_write(out, "\n", 1, 1) != 1)
-			 return -1;
-	}
-	return 0;
-}
-
 #define TRANS_ABORTED "!25005!current transaction is aborted (please ROLLBACK)\n"
 
 str
 handle_error(mvc *m, int pstatus, str msg)
 {
-	str new, newmsg= MAL_SUCCEED;
+	str new = 0, newmsg= MAL_SUCCEED;
 
 	/* transaction already broken */
 	if (m->type != Q_TRANS && pstatus < 0) {
@@ -373,7 +343,7 @@ handle_error(mvc *m, int pstatus, str msg)
 	} else if( GDKerrbuf && GDKerrbuf[0]){
 		new = GDKstrdup(GDKerrbuf);
 		GDKerrbuf[0] = 0;
-	}else if( m->errstr){
+	}else if( m->errstr && *m->errstr){
 		new = GDKstrdup(m->errstr);
 		m->errstr[0] = 0;
 	}
@@ -385,6 +355,9 @@ handle_error(mvc *m, int pstatus, str msg)
 		GDKfree(new);
 		GDKfree(msg);
 	} else
+	if( msg)
+		newmsg = msg;
+	else
 	if( new)
 		newmsg = new;
 	return newmsg;
@@ -621,9 +594,8 @@ SQLinitClient(Client c)
 
 	/* send error from create scripts back to the first client */
 	if (msg) {
-		error(c->fdout, msg);
 		msg = handle_error(m, 0, msg);
-		m->errstr[0] = 0;
+		*m->errstr = 0;
 		sqlcleanup(m, mvc_status(m));
 	}
 	return msg;
@@ -972,15 +944,12 @@ SQLparser(Client c)
 
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
-		/* tell the client */
-		mnstr_printf(out, "!SQL state descriptor missing, aborting\n");
-		mnstr_flush(out);
 		/* leave a message in the log */
 		fprintf(stderr, "SQL state descriptor missing, cannot handle client!\n");
 		/* stop here, instead of printing the exception below to the
 		 * client in an endless loop */
 		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", "State descriptor missing");
+		throw(SQL, "SQLparser", "State descriptor missing, aborting");
 	}
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
@@ -1000,8 +969,6 @@ SQLparser(Client c)
 	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa) {
-		mnstr_printf(out, "!Could not create SQL allocator\n");
-		mnstr_flush(out);
 		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", MAL_MALLOC_FAIL " for SQL allocator");
 	}
@@ -1047,11 +1014,10 @@ SQLparser(Client c)
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
 				if (commit && mvc_commit(m, 0, NULL) < 0) {
-					mnstr_printf(out, "!COMMIT: commit failed while " "enabling auto_commit\n");
-					msg = createException(SQL, "SQLparser", "Xauto_commit (commit) failed");
+					msg = createException(SQL, "COMMIT", "commit failed while enabling auto_commit");
 				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
 					mnstr_printf(out, "!COMMIT: rollback failed while " "disabling auto_commit\n");
-					msg = createException(SQL, "SQLparser", "Xauto_commit (rollback) failed");
+					msg = createException(SQL, "COMMIT", "rollback failed while " "disabling auto_commit");
 				}
 			}
 			in->pos = in->len;	/* HACK: should use parsed length */
@@ -1079,13 +1045,11 @@ SQLparser(Client c)
 			c->mode = FINISHCLIENT;
 			return MAL_SUCCEED;
 		}
-		mnstr_printf(out, "!unrecognized X command: %s\n", in->buf + in->pos);
-		msg = createException(SQL, "SQLparser", "unrecognized X command");
+		msg = createException(SQL, "SQLparser", "unrecognized X command: %s\n", in->buf + in->pos);
 		goto finalize;
 	}
 	if (be->language !='S') {
-		mnstr_printf(out, "!unrecognized language prefix: %ci\n", be->language);
-		msg = createException(SQL, "SQLparser", "unrecognized language prefix: %c", be->language);
+		msg = createException(SQL, "SQLparser", "!unrecognized language prefix: %ci\n", be->language);
 		goto finalize;
 	}
 
@@ -1096,7 +1060,7 @@ SQLparser(Client c)
 			err = mvc_status(m);
 		if (err) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			m->errstr[0] = 0;
+			*m->errstr = 0;
 			msg = handle_error(m, pstatus, msg);
 		}
 		sqlcleanup(m, err);
@@ -1115,18 +1079,16 @@ SQLparser(Client c)
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
-			mnstr_printf(out, "!07003!EXEC: no prepared statement with id: %d\n", m->sym->data.lval->h->data.i_val);
-			msg = createException(SQL, "PREPARE", "no prepared statement with id: %d", m->sym->data.lval->h->data.i_val);
+			msg = createException(SQL, "EXEC", "07003!no prepared statement with id: %d\n", m->sym->data.lval->h->data.i_val);
+			*m->errstr = 0;
 			msg = handle_error(m, pstatus, msg);
-			m->errstr[0] = 0;
 			sqlcleanup(m, err);
 			goto finalize;
 		} else if (be->q->type != Q_PREPARE) {
 			err = -1;
-			mnstr_printf(out, "!07005!EXEC: given handle id is not for a " "prepared statement: %d\n", m->sym->data.lval->h->data.i_val);
-			msg = createException(SQL, "PREPARE", "is not a prepared statement: %d", m->sym->data.lval->h->data.i_val);
+			msg = createException(SQL, "EXEC", "07005!: given handle id is not for a " "prepared statement: %d\n", m->sym->data.lval->h->data.i_val);
+			*m->errstr = 0;
 			msg = handle_error(m, pstatus, msg);
-			m->errstr[0] = 0;
 			sqlcleanup(m, err);
 			goto finalize;
 		}
@@ -1141,8 +1103,8 @@ SQLparser(Client c)
 
 		if (!r || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+			*m->errstr = 0;
 			msg = handle_error(m, pstatus, msg);
-			m->errstr[0] = 0;
 			sqlcleanup(m, err);
 			goto finalize;
 		}
@@ -1224,7 +1186,9 @@ SQLparser(Client c)
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
 			c->curprg->def->errors = 0;
-			msg = createException(PARSE, "SQLparser", "M0M27!Semantic errors");
+			msg = createException(PARSE, "SQLparser", "M0M27!Semantic errors %s", m->errstr?m->errstr:"");
+			if( m->errstr)
+				*m->errstr = 0;
 		}
 	}
       finalize:

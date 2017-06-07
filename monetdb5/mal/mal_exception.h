@@ -38,18 +38,6 @@ enum malexception {
 #define rethrow(FCN, TMP, PRV) \
 	{if ((TMP = PRV) != MAL_SUCCEED) return(TMP);}
 
-#define addException(New)\
-    if(mb->errors == MAL_SUCCEED)\
-        mb->errors = New;\
-    else{\
-        str _msg = GDKzalloc(strlen(mb->errors) + strlen(New) + 8);\
-        strcpy(_msg,mb->errors);\
-        strcat(_msg,"!");\
-        strcat(_msg,New);\
-        GDKfree(mb->errors);\
-        mb->errors = _msg;\
-    }
-
 mal_export str	createException(enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
