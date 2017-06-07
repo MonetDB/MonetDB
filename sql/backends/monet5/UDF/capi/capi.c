@@ -46,6 +46,14 @@ WriteTextToFile(FILE* f, const char* data) {
 		goto wrapup; \
 	}
 
+
+#define ATTEMPT_TO_WRITE_DATA_TO_FILE(f, data, size) \
+	if (!WriteDataToFile(f, data, size)) { \
+		errno = 0; \
+		msg = createException(MAL, "cudf.eval", "Write error."); \
+		goto wrapup; \
+	}
+
 #define GENERATE_BAT_INPUT(b, tpe) {\
 	struct cudf_data_struct_##tpe* bat_data = GDKmalloc(sizeof(struct cudf_data_struct_##tpe)); \
 	if (!bat_data) { \
@@ -75,6 +83,8 @@ WriteTextToFile(FILE* f, const char* data) {
 	} \
 	*((tpe*)inputs[index]) = *((tpe*)getArgReference(stk, pci, i));
 
+const char *debug_flag = "capi_use_debug";
+const char *cc_flag = "capi_cc";
 
 #define JIT_COMPILER_NAME "clang"
 
@@ -88,7 +98,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = NULL;
 	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
-	int i = 0;
+	int i = 0, j = 0;
 	char argbuf[64];
 	char buf[BUFSIZ];
 	char fname[BUFSIZ];
@@ -115,7 +125,10 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	size_t output_count = 0;
 	BAT** input_bats = NULL;
 
-	const char* compilation_flags = "-g";
+	int debug_build = GDKgetenv_istrue(debug_flag) || GDKgetenv_isyes(debug_flag);
+
+	const char* compilation_flags = debug_build ? "-g -O0" : "-O2";
+	const char* c_compiler = GDKgetenv(cc_flag) ? GDKgetenv(cc_flag) : JIT_COMPILER_NAME;
 
 
 	if (!grouped) {
@@ -215,6 +228,38 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	ATTEMPT_TO_WRITE_TO_FILE(f, "typedef float flt;\n");
 	ATTEMPT_TO_WRITE_TO_FILE(f, "typedef double dbl;\n");
 	ATTEMPT_TO_WRITE_TO_FILE(f, "typedef char* str;\n");
+	// now we can exprStr for any preprocessor directives (#)
+	// we move these to the top of the file
+	{
+		int preprocessor_start = 0;
+		bool is_preprocessor_directive = false;
+		bool new_line = false;
+		for(i = 0; i < strlen(exprStr); i++) {
+			if (exprStr[i] == '\n') {
+				if (is_preprocessor_directive) {
+					// the previous line was a preprocessor directive
+					// write it to the file
+					ATTEMPT_TO_WRITE_DATA_TO_FILE(f, exprStr + preprocessor_start, i - preprocessor_start);
+					for(j = preprocessor_start; j < i; j++) {
+						// now overwrite the preprocessor directive in the expression string with spaces
+						exprStr[j] = ' ';
+					}
+				}
+				is_preprocessor_directive = false;
+				new_line = true;
+			} else if (exprStr[i] == ' ' || exprStr[i] == '\t') {
+				// skip any spaces
+				continue;
+			} else if (new_line) {
+				if (exprStr[i] == '#') {
+					preprocessor_start = i;
+					is_preprocessor_directive = true;
+				}
+				new_line = false;
+			}
+		}	
+	}
+
 	// create the actual function
 	ATTEMPT_TO_WRITE_TO_FILE(f, "\nchar* ");
 	ATTEMPT_TO_WRITE_TO_FILE(f, funcname);
@@ -268,7 +313,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 
 	// now it's time to try to compile the code
 	// we use popen to capture any error output
-	snprintf(buf, sizeof(buf), "%s -c -fPIC %s %s.c -o %s.o 2>&1 >/dev/null", JIT_COMPILER_NAME, compilation_flags, funcname, funcname);
+	snprintf(buf, sizeof(buf), "%s -c -fPIC %s %s.c -o %s.o 2>&1 >/dev/null", c_compiler, compilation_flags, funcname, funcname);
 	compiler = popen(buf, "r");
 	if (!compiler) {
 		goto wrapup;
@@ -289,7 +334,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		msg = createException(MAL, "cudf.eval", "Failed to compile C UDF:\n%s", total_error_buf);
 		goto wrapup;
 	}
-	snprintf(buf, sizeof(buf), "%s %s.o -shared -o %s", JIT_COMPILER_NAME, funcname, libname);
+	snprintf(buf, sizeof(buf), "%s %s.o -shared -o %s", c_compiler, funcname, libname);
 	compiler = popen(buf, "r");
 	if (!compiler) {
 		goto wrapup;
@@ -458,23 +503,34 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	msg = func(inputs, outputs, GDKmalloc);
 	if (msg) {
 		// failure in function
-		msg = createException(MAL, "cudf.eval", msg);
+		msg = createException(MAL, "cudf.eval", "%s", msg);
 		goto wrapup;
 	}
 
 
 	// FIXME: deal with strings
 	// FIXME: deal with SQL types
+
+	// create the output bats from the returned results
 	for (i = 0; i < pci->retc; i++) {
 		int bat_type = getBatType(getArgType(mb, pci, i));
-		// create bats, BBPkeepref, etc...
-		void* data = GetTypeData(bat_type, outputs[i]);
+		if (!outputs[i]) {
+			msg = createException(MAL, "cudf.eval", "No data returned.");
+			goto wrapup;
+		}
 		size_t count = GetTypeCount(bat_type, outputs[i]);
+		void* data = GetTypeData(bat_type, outputs[i]);
+		if (!data) {
+			msg = createException(MAL, "cudf.eval", "No data returned.");
+			goto wrapup;
+		}
 		BAT* b = COLnew(0, bat_type, count, TRANSIENT);
 		if (!b) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
+		// we pass the data we have directly into the BAT for simple numeric types
+		// this way we do not need to copy any data unnecessarily
 		b->tnil = 0;
 		b->tnonil = 0;
 		b->tkey = 0;
@@ -482,6 +538,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		b->trevsorted = 0;
 		// free the current (initial) storage
 		GDKfree(b->theap.base);
+		// set the heap to use the new storage
 		b->theap.base = data;
 		b->theap.size = count * b->twidth;
 		b->theap.free = b->theap.size;
@@ -491,33 +548,19 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		b->batCapacity = (BUN)count;
 		b->batCopiedtodisk = false;
 
+		// free the output value right now to prevent the internal data from being freed later
+		// as the internal data is now part of the bat we just created
 		GDKfree(outputs[i]);
 		outputs[i] = NULL;
 
+		// return the BAT from the 
 		*getArgReference_bat(stk, pci, i) = b->batCacheid;
 		BBPkeepref(b->batCacheid);
 	}
 
-/*
-		if (isaBatType(getArgType(mb, pci, i))) {
-			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b->batCacheid);
-		} else { // single value return, only for non-grouped aggregations
-			if (bat_type != TYPE_str) {
-				if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) ==
-					NULL)
-					msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
-			} else {
-				BATiter li = bat_iterator(b);
-				if (VALinit(&stk->stk[pci->argv[i]], bat_type,
-							BUNtail(li, 0)) == NULL)
-					msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
-			}
-		}
-		*/
-
-
 wrapup:
+	// cleanup
+	// argument names (input)
 	if (args) {
 		for(i = 0; i < pci->argc; i++) {
 			if (args[i]) {
@@ -526,6 +569,7 @@ wrapup:
 		}
 		GDKfree(args);
 	}
+	// output names
 	if (output_names) {
 		for(i = 0; i < pci->retc; i++) {
 			if (output_names[i]) {
@@ -534,6 +578,7 @@ wrapup:
 		}
 		GDKfree(output_names);
 	}
+	// input data
 	if (inputs) {
 		for(i = 0; i < input_count; i++) {
 			if (inputs[i]) {
@@ -542,6 +587,7 @@ wrapup:
 		}
 		GDKfree(inputs);
 	}
+	// output data
 	if (outputs) {
 		for(i = 0; i < output_count; i++) {
 			int bat_type = getBatType(getArgType(mb, pci, i));
@@ -555,12 +601,15 @@ wrapup:
 		}
 		GDKfree(outputs);
 	}
+	// close the file handle
 	if (f) {
 		fclose(f);
 	}
+	// close the dll
 	if (handle) {
 		dlclose(handle);
 	}
+	// close the compiler stream
 	if (compiler) {
 		pclose(compiler);
 	}
