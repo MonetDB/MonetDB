@@ -7,13 +7,8 @@ language C
 #include <math.h>
 
 	size_t count = inp;
-	i->count = count;
-	i->data = __malloc(i->count * sizeof(i->null_value));
-	d->count = count;
-	d->data = __malloc(d->count * sizeof(d->null_value));
-	if (!i->data || !d->data) {
-		return "Malloc failure";
-	}
+	i->initialize(i, count);
+	d->initialize(d, count);
 	for(size_t j = 0; j < count; j++) {
 		i->data[j] = j;
 		d->data[j] = round(j > 0 ? 42.0 / j : 42.0);

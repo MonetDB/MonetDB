@@ -10,6 +10,8 @@
 #include "cheader.h"
 #include "cheader.text.h"
 
+#include "mtime.h"
+
 static str
 CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped);
 
@@ -54,23 +56,62 @@ WriteTextToFile(FILE* f, const char* data) {
 		goto wrapup; \
 	}
 
-#define GENERATE_BAT_INPUT(b, tpe) {\
+
+#define GENERATE_BASE_HEADERS(type, tpename) \
+static int tpename##_is_null(type value); \
+static void tpename##_initialize(struct cudf_data_struct_##tpename* self, size_t count) { \
+	self->count = count; \
+	self->data = GDKmalloc(count * sizeof(self->null_value)); \
+	if (!self->data) { \
+		/* FIXME: longjmp */ \
+	} \
+}
+
+#define GENERATE_BASE_FUNCTIONS(tpe) \
+GENERATE_BASE_HEADERS(tpe, tpe); \
+static int tpe##_is_null(tpe value) { \
+	return value == tpe##_nil; \
+}
+
+GENERATE_BASE_FUNCTIONS(bte);
+GENERATE_BASE_FUNCTIONS(sht);
+GENERATE_BASE_FUNCTIONS(int);
+GENERATE_BASE_FUNCTIONS(lng);
+GENERATE_BASE_FUNCTIONS(flt);
+GENERATE_BASE_FUNCTIONS(dbl);
+
+GENERATE_BASE_HEADERS(cudf_data_date, date);
+GENERATE_BASE_HEADERS(cudf_data_time, time);
+GENERATE_BASE_HEADERS(cudf_data_timestamp, timestamp);
+
+
+#define GENERATE_BAT_INPUT_BASE(b, tpe) \
 	struct cudf_data_struct_##tpe* bat_data = GDKmalloc(sizeof(struct cudf_data_struct_##tpe)); \
 	if (!bat_data) { \
 		goto wrapup; \
 	} \
 	inputs[index] = bat_data; \
+	bat_data->is_null = tpe##_is_null;\
+	bat_data->initialize = (void (*)(void*, size_t)) tpe##_initialize;
+
+#define GENERATE_BAT_INPUT(b, tpe) {\
+	GENERATE_BAT_INPUT_BASE(b, tpe); \
 	bat_data->count = BATcount(b); \
 	bat_data->data = (tpe*) Tloc(b, 0); \
 	bat_data->null_value = tpe##_nil;\
 }
 
-#define GENERATE_BAT_OUTPUT(tpe) {\
+#define GENERATE_BAT_OUTPUT_BASE(tpe) \
 	struct cudf_data_struct_##tpe* bat_data = GDKmalloc(sizeof(struct cudf_data_struct_##tpe)); \
 	if (!bat_data) { \
 		goto wrapup; \
 	} \
 	outputs[index] = bat_data; \
+	bat_data->is_null = tpe##_is_null; \
+	bat_data->initialize = (void (*)(void*, size_t)) tpe##_initialize;
+
+#define GENERATE_BAT_OUTPUT(tpe) { \
+	GENERATE_BAT_OUTPUT_BASE(tpe); \
 	bat_data->count = 0; \
 	bat_data->data = NULL; \
 	bat_data->null_value = tpe##_nil;\
@@ -93,12 +134,19 @@ static void* GetTypeData(int type, void* struct_ptr);
 static const char* GetTypeDefinition(int type);
 static const char* GetTypeName(int type);
 
+static void data_from_date(date d, cudf_data_date* ptr);
+static date date_from_data(cudf_data_date* ptr);
+static void data_from_time(daytime d, cudf_data_time* ptr);
+static daytime time_from_data(cudf_data_time* ptr);
+static void data_from_timestamp(timestamp d, cudf_data_timestamp* ptr);
+static timestamp timestamp_from_data(cudf_data_timestamp* ptr);
+
 static str
 CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = NULL;
 	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
-	int i = 0, j = 0;
+	size_t i = 0, j = 0;
 	char argbuf[64];
 	char buf[BUFSIZ];
 	char fname[BUFSIZ];
@@ -173,7 +221,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	for(i = 0; i < pci->retc; i++) {
 		if (!output_names[i]) {
 			if (pci->retc > 1) {
-				snprintf(argbuf, sizeof(argbuf), "output%i", i);
+				snprintf(argbuf, sizeof(argbuf), "output%zu", i);
 			} else {
 				// just call it "output" if there is only one
 				snprintf(argbuf, sizeof(argbuf), "output");
@@ -192,7 +240,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 				}
 				seengrp = TRUE;
 			} else {
-				snprintf(argbuf, sizeof(argbuf), "arg%i", i - pci->retc - 1);
+				snprintf(argbuf, sizeof(argbuf), "arg%zu", i - pci->retc - 1);
 				args[i] = GDKstrdup(argbuf);
 				if (!args[i]) {
 					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
@@ -263,7 +311,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	// create the actual function
 	ATTEMPT_TO_WRITE_TO_FILE(f, "\nchar* ");
 	ATTEMPT_TO_WRITE_TO_FILE(f, funcname);
-	ATTEMPT_TO_WRITE_TO_FILE(f, "(void** __inputs, void** __outputs, malloc_function_ptr __malloc) {\n");
+	ATTEMPT_TO_WRITE_TO_FILE(f, "(void** __inputs, void** __outputs, malloc_function_ptr malloc) {\n");
 
 	const char* struct_prefix = "struct cudf_data_struct_";
 	// now we convert the input arguments from void** to the proper input/output of the function
@@ -276,15 +324,15 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 			const char* tpe = GetTypeDefinition(scalar_type);
 			assert(tpe);
 			if (tpe) {
-				snprintf(buf, sizeof(buf), "%s %s = *((%s*)__inputs[%d]);\n", tpe, args[i], tpe, i - (pci->retc + 2));
+				snprintf(buf, sizeof(buf), "%s %s = *((%s*)__inputs[%zu]);\n", tpe, args[i], tpe, i - (pci->retc + 2));
 				ATTEMPT_TO_WRITE_TO_FILE(f, buf);
 			}
 		} else {
-			int bat_type = ATOMstorage(getBatType(getArgType(mb, pci, i)));
+			int bat_type = getBatType(getArgType(mb, pci, i));
 			const char* tpe = GetTypeName(bat_type);
 			assert(tpe);
 			if (tpe) {
-				snprintf(buf, sizeof(buf), "%s%s %s = *((%s%s*)__inputs[%d]);\n", struct_prefix, tpe, args[i], struct_prefix, tpe, i - (pci->retc + 2));
+				snprintf(buf, sizeof(buf), "%s%s %s = *((%s%s*)__inputs[%zu]);\n", struct_prefix, tpe, args[i], struct_prefix, tpe, i - (pci->retc + 2));
 				ATTEMPT_TO_WRITE_TO_FILE(f, buf);
 			}
 		}
@@ -296,7 +344,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		const char* tpe = GetTypeName(bat_type);
 		assert(tpe);
 		if (tpe) {
-			snprintf(buf, sizeof(buf), "%s%s* %s = ((%s%s*)__outputs[%d]);\n", struct_prefix, tpe, output_names[i], struct_prefix, tpe, i);
+			snprintf(buf, sizeof(buf), "%s%s* %s = ((%s%s*)__outputs[%zu]);\n", struct_prefix, tpe, output_names[i], struct_prefix, tpe, i);
 			ATTEMPT_TO_WRITE_TO_FILE(f, buf);
 		}
 	}
@@ -316,6 +364,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	snprintf(buf, sizeof(buf), "%s -c -fPIC %s %s.c -o %s.o 2>&1 >/dev/null", c_compiler, compilation_flags, funcname, funcname);
 	compiler = popen(buf, "r");
 	if (!compiler) {
+		msg = createException(MAL, "cudf.eval", "Failed popen");
 		goto wrapup;
 	}
 	while (fgets(error_buf, sizeof(error_buf) - 1, compiler)) {
@@ -337,6 +386,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	snprintf(buf, sizeof(buf), "%s %s.o -shared -o %s", c_compiler, funcname, libname);
 	compiler = popen(buf, "r");
 	if (!compiler) {
+		msg = createException(MAL, "cudf.eval", "Failed popen");
 		goto wrapup;
 	}
 	while (fgets(error_buf, sizeof(error_buf) - 1, compiler)) {
@@ -374,6 +424,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	inputs = GDKzalloc(sizeof(void*) * input_count);
 	outputs = GDKzalloc(sizeof(void*) * output_count);
 	if (!inputs || !outputs || !input_bats) {
+		msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	// create the inputs
@@ -420,41 +471,74 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 			}
 		} else {
 			// deal with BAT input
-			int bat_type = ATOMstorage(getBatType(getArgType(mb, pci, i)));
+			int bat_type = getBatType(getArgType(mb, pci, i));
 			input_bats[index] = BATdescriptor(*getArgReference_bat(stk, pci, i));
-			switch(bat_type) {
-				case TYPE_bit:
-					GENERATE_BAT_INPUT(input_bats[index], bte);
-					break;
-				case TYPE_bte:
-					GENERATE_BAT_INPUT(input_bats[index], bte);
-					break;
-				case TYPE_sht:
-					GENERATE_BAT_INPUT(input_bats[index], sht);
-					break;
-				case TYPE_int:
-					GENERATE_BAT_INPUT(input_bats[index], int);
-					break;
-				case TYPE_oid:
-					assert(0);
-					//GENERATE_BAT_INPUT(input_bats[index], oid);
-					break;
-				case TYPE_lng:
-					GENERATE_BAT_INPUT(input_bats[index], lng);
-					break;
-				case TYPE_flt:
-					GENERATE_BAT_INPUT(input_bats[index], flt);
-					break;
-				case TYPE_dbl:
-					GENERATE_BAT_INPUT(input_bats[index], dbl);
-					break;
-				case TYPE_str:
-					assert(0);
-					// FIXME: strings
-					break;
-				default:
-					assert(0);
+
+			if (bat_type == TYPE_bit || bat_type == TYPE_bte) {
+				GENERATE_BAT_INPUT(input_bats[index], bte);
+			} else if (bat_type == TYPE_sht) {
+				GENERATE_BAT_INPUT(input_bats[index], sht);
+			} else if (bat_type == TYPE_int) {
+				GENERATE_BAT_INPUT(input_bats[index], int);
+			} else if (bat_type == TYPE_oid) {
+				assert(0);
+			} else if (bat_type == TYPE_lng) {
+				GENERATE_BAT_INPUT(input_bats[index], lng);
+			} else if (bat_type == TYPE_flt) {
+				GENERATE_BAT_INPUT(input_bats[index], flt);
+			} else if (bat_type == TYPE_dbl) {
+				GENERATE_BAT_INPUT(input_bats[index], dbl);
+			} else if (bat_type == TYPE_str) {
+				assert(0);
+			} else if (bat_type == TYPE_date) {
+				date* baseptr;
+				GENERATE_BAT_INPUT_BASE(input_bats[index], date);
+				bat_data->count = BATcount(input_bats[index]);
+				bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
+				if (!bat_data->data) {
+					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 					goto wrapup;
+				}
+
+				baseptr = (date*) Tloc(input_bats[index], 0);
+				for(j = 0; j < bat_data->count; j++) {
+					data_from_date(baseptr[j], bat_data->data + j);
+				}
+				data_from_date(date_nil, &bat_data->null_value);
+			} else if (bat_type == TYPE_daytime) {
+				daytime* baseptr;
+				GENERATE_BAT_INPUT_BASE(input_bats[index], time);
+				bat_data->count = BATcount(input_bats[index]);
+				bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
+				if (!bat_data->data) {
+					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+
+				baseptr = (daytime*) Tloc(input_bats[index], 0);
+				for(j = 0; j < bat_data->count; j++) {
+					data_from_time(baseptr[j], bat_data->data + j);
+				}
+				data_from_time(daytime_nil, &bat_data->null_value);
+			} else if (bat_type == TYPE_timestamp) {
+				timestamp* baseptr;
+				GENERATE_BAT_INPUT_BASE(input_bats[index], timestamp);
+				bat_data->count = BATcount(input_bats[index]);
+				bat_data->data = GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
+				if (!bat_data->data) {
+					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+
+				baseptr = (timestamp*) Tloc(input_bats[index], 0);
+				for(j = 0; j < bat_data->count; j++) {
+					data_from_timestamp(baseptr[j], bat_data->data + j);
+				}
+				data_from_timestamp(*timestamp_nil, &bat_data->null_value);
+			} else {
+				assert(0);
+				msg = createException(MAL, "cudf.eval", "Unknown input type");
+				goto wrapup;
 			}
 		}
 	}
@@ -463,39 +547,35 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	for (i = 0; i < output_count; i++) {
 		size_t index = i;
 		int bat_type = getBatType(getArgType(mb, pci, i));
-		switch(bat_type) {
-			case TYPE_bit:
-				GENERATE_BAT_OUTPUT(bte);
-				break;
-			case TYPE_bte:
-				GENERATE_BAT_OUTPUT(bte);
-				break;
-			case TYPE_sht:
-				GENERATE_BAT_OUTPUT(sht);
-				break;
-			case TYPE_int:
-				GENERATE_BAT_OUTPUT(int);
-				break;
-			case TYPE_oid:
-				assert(0);
-				//GENERATE_BAT_OUTPUT(oid);
-				break;
-			case TYPE_lng:
-				GENERATE_BAT_OUTPUT(lng);
-				break;
-			case TYPE_flt:
-				GENERATE_BAT_OUTPUT(flt);
-				break;
-			case TYPE_dbl:
-				GENERATE_BAT_OUTPUT(dbl);
-				break;
-			case TYPE_str:
-				assert(0);
-				// FIXME: strings
-				break;
-			default:
-				assert(0);
-				goto wrapup;
+		if (bat_type == TYPE_bit || bat_type == TYPE_bte) {
+			GENERATE_BAT_OUTPUT(bte);
+		} else if (bat_type == TYPE_sht) {
+			GENERATE_BAT_OUTPUT(sht);
+		} else if (bat_type == TYPE_int) {
+			GENERATE_BAT_OUTPUT(int);
+		} else if (bat_type == TYPE_oid) {
+			assert(0);
+		} else if (bat_type == TYPE_lng) {
+			GENERATE_BAT_OUTPUT(lng);
+		} else if (bat_type == TYPE_flt) {
+			GENERATE_BAT_OUTPUT(flt);
+		} else if (bat_type == TYPE_dbl) {
+			GENERATE_BAT_OUTPUT(dbl);
+		} else if (bat_type == TYPE_str) {
+			assert(0);
+		} else if (bat_type == TYPE_date) {
+			GENERATE_BAT_OUTPUT_BASE(date);
+			data_from_date(date_nil, &bat_data->null_value);
+		} else if (bat_type == TYPE_daytime) {
+			GENERATE_BAT_OUTPUT_BASE(time);
+			data_from_time(daytime_nil, &bat_data->null_value);
+		} else if (bat_type == TYPE_timestamp) {
+			GENERATE_BAT_OUTPUT_BASE(timestamp);
+			data_from_timestamp(*timestamp_nil, &bat_data->null_value);
+		} else {
+			assert(0);
+			msg = createException(MAL, "cudf.eval", "Unknown output type");
+			goto wrapup;
 		}
 	}
 
@@ -529,24 +609,57 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
-		// we pass the data we have directly into the BAT for simple numeric types
-		// this way we do not need to copy any data unnecessarily
 		b->tnil = 0;
 		b->tnonil = 0;
 		b->tkey = 0;
 		b->tsorted = 0;
 		b->trevsorted = 0;
-		// free the current (initial) storage
-		GDKfree(b->theap.base);
-		// set the heap to use the new storage
-		b->theap.base = data;
-		b->theap.size = count * b->twidth;
-		b->theap.free = b->theap.size;
-		b->theap.storage = STORE_MEM;
-		b->theap.newstorage = STORE_MEM;
-		b->batCount = (BUN)count;
-		b->batCapacity = (BUN)count;
-		b->batCopiedtodisk = false;
+
+		if (bat_type == TYPE_bit || bat_type == TYPE_bte || bat_type == TYPE_sht ||
+			bat_type == TYPE_int || bat_type == TYPE_oid || bat_type == TYPE_lng ||
+			bat_type == TYPE_flt || bat_type == TYPE_dbl) {
+			// we pass the data we have directly into the BAT for simple numeric types
+			// this way we do not need to copy any data unnecessarily
+			// free the current (initial) storage
+			GDKfree(b->theap.base);
+			// set the heap to use the new storage
+			b->theap.base = data;
+			b->theap.size = count * b->twidth;
+			b->theap.free = b->theap.size;
+			b->theap.storage = STORE_MEM;
+			b->theap.newstorage = STORE_MEM;
+			b->batCount = (BUN)count;
+			b->batCapacity = (BUN)count;
+			b->batCopiedtodisk = false;
+		} else if (bat_type == TYPE_date) {
+			date* baseptr = (date*) Tloc(b, 0);
+			cudf_data_date* source_base = (cudf_data_date*) data;
+			for(j = 0; j < count; j++) {
+				baseptr[j] = date_from_data(source_base + j);
+			}
+			BATsetcount(b, count);
+			GDKfree(data);
+		} else if (bat_type == TYPE_daytime) {
+			daytime* baseptr = (daytime*) Tloc(b, 0);
+			cudf_data_time* source_base = (cudf_data_time*) data;
+			for(j = 0; j < count; j++) {
+				baseptr[j] = time_from_data(source_base + j);
+			}
+			BATsetcount(b, count);
+			GDKfree(data);
+		} else if (bat_type == TYPE_timestamp) {
+			timestamp* baseptr = (timestamp*) Tloc(b, 0);
+			cudf_data_timestamp* source_base = (cudf_data_timestamp*) data;
+			for(j = 0; j < count; j++) {
+				baseptr[j] = timestamp_from_data(source_base + j);
+			}
+			BATsetcount(b, count);
+			GDKfree(data);
+		}  else {
+			msg = createException(MAL, "cudf.eval", "Unsupported output type");
+			BBPunfix(b->batCacheid);
+			goto wrapup;
+		}
 
 		// free the output value right now to prevent the internal data from being freed later
 		// as the internal data is now part of the bat we just created
@@ -619,130 +732,180 @@ wrapup:
 
 static const char* GetTypeDefinition(int type) {
 	const char* tpe = NULL;
-	switch(type) {
-		case TYPE_bit:
-			tpe = "bool";
-			break;
-		case TYPE_bte:
-			tpe = "signed char";
-			break;
-		case TYPE_sht:
-			tpe = "short";
-			break;
-		case TYPE_int:
-			tpe = "int";
-			break;
-		case TYPE_oid:
-			tpe = "long long";
-			break;
-		case TYPE_lng:
-			tpe = "long long";
-			break;
-		case TYPE_flt:
-			tpe = "float";
-			break;
-		case TYPE_dbl:
-			tpe = "double";
-			break;
-		case TYPE_str:
-			tpe = "char*";
-			break;
+	if (type == TYPE_bit) {
+		tpe = "bool";
+	} else if (type == TYPE_bte) {
+		tpe = "signed char";
+	} else if (type == TYPE_sht) {
+		tpe = "short";
+	} else if (type == TYPE_int) {
+		tpe = "int";
+	} else if (type == TYPE_oid) {
+		assert(0);
+	} else if (type == TYPE_lng) {
+		tpe = "lng";
+	} else if (type == TYPE_flt) {
+		tpe = "float";
+	} else if (type == TYPE_dbl) {
+		tpe = "double";
+	} else if (type == TYPE_str) {
+		tpe = "char*";
+	} else if (type == TYPE_date) {
+		tpe = "cudf_data_date";
+	} else if (type == TYPE_daytime) {
+		tpe = "cudf_data_time";
+	} else if (type == TYPE_timestamp) {
+		tpe = "cudf_data_timestamp";
+	} else {
+		assert(0);
 	}
 	return tpe;
 }
 
 static const char* GetTypeName(int type) {
 	const char* tpe = NULL;
-	switch(type) {
-		case TYPE_bit:
-		case TYPE_bte:
-			tpe = "bte";
-			break;
-		case TYPE_sht:
-			tpe = "short";
-			break;
-		case TYPE_int:
-			tpe = "int";
-			break;
-		case TYPE_oid:
-			tpe = "oid";
-			break;
-		case TYPE_lng:
-			tpe = "lng";
-			break;
-		case TYPE_flt:
-			tpe = "flt";
-			break;
-		case TYPE_dbl:
-			tpe = "dbl";
-			break;
-		case TYPE_str:
-			tpe = "str";
-			break;
+	if (type == TYPE_bit || type == TYPE_bte) {
+		tpe = "bte";
+	} else if (type == TYPE_sht) {
+		tpe = "short";
+	} else if (type == TYPE_int) {
+		tpe = "int";
+	} else if (type == TYPE_oid) {
+		assert(0);
+	} else if (type == TYPE_lng) {
+		tpe = "lng";
+	} else if (type == TYPE_flt) {
+		tpe = "flt";
+	} else if (type == TYPE_dbl) {
+		tpe = "dbl";
+	} else if (type == TYPE_str) {
+		tpe = "str";
+	} else if (type == TYPE_date) {
+		tpe = "date";
+	} else if (type == TYPE_daytime) {
+		tpe = "time";
+	} else if (type == TYPE_timestamp) {
+		tpe = "timestamp";
+	} else {
+		assert(0);
 	}
 	return tpe;
 }
 
 void* GetTypeData(int type, void* struct_ptr) {
 	void* data = NULL;
-	switch(type) {
-		case TYPE_bit:
-		case TYPE_bte:
-			data = ((struct cudf_data_struct_bte*)struct_ptr)->data;
-			break;
-		case TYPE_sht:
-			data = ((struct cudf_data_struct_sht*)struct_ptr)->data;
-			break;
-		case TYPE_int:
-			data = ((struct cudf_data_struct_int*)struct_ptr)->data;
-			break;
-		case TYPE_oid:
-			assert(0);
-			break;
-		case TYPE_lng:
-			data = ((struct cudf_data_struct_lng*)struct_ptr)->data;
-			break;
-		case TYPE_flt:
-			data = ((struct cudf_data_struct_flt*)struct_ptr)->data;
-			break;
-		case TYPE_dbl:
-			data = ((struct cudf_data_struct_dbl*)struct_ptr)->data;
-			break;
-		case TYPE_str:
-			assert(0);
-			break;
+
+	if (type == TYPE_bit || type == TYPE_bte) {
+		data = ((struct cudf_data_struct_bte*)struct_ptr)->data;
+	} else if (type == TYPE_sht) {
+		data = ((struct cudf_data_struct_sht*)struct_ptr)->data;
+	} else if (type == TYPE_int) {
+		data = ((struct cudf_data_struct_int*)struct_ptr)->data;
+	} else if (type == TYPE_oid) {
+		assert(0);
+	} else if (type == TYPE_lng) {
+		data = ((struct cudf_data_struct_lng*)struct_ptr)->data;
+	} else if (type == TYPE_flt) {
+		data = ((struct cudf_data_struct_flt*)struct_ptr)->data;
+	} else if (type == TYPE_dbl) {
+		data = ((struct cudf_data_struct_dbl*)struct_ptr)->data;
+	} else if (type == TYPE_str) {
+		data = ((struct cudf_data_struct_str*)struct_ptr)->data;
+	} else if (type == TYPE_date) {
+		data = ((struct cudf_data_struct_date*)struct_ptr)->data;
+	} else if (type == TYPE_daytime) {
+		data = ((struct cudf_data_struct_time*)struct_ptr)->data;
+	} else if (type == TYPE_timestamp) {
+		data = ((struct cudf_data_struct_timestamp*)struct_ptr)->data;
+	} else {
+		assert(0);
 	}
 	return data;
 }
 
 size_t GetTypeCount(int type, void* struct_ptr) {
 	size_t count = 0;
-	switch(type) {
-		case TYPE_bit:
-		case TYPE_bte:
-			count = ((struct cudf_data_struct_bte*)struct_ptr)->count;
-			break;
-		case TYPE_sht:
-			count = ((struct cudf_data_struct_sht*)struct_ptr)->count;
-			break;
-		case TYPE_int:
-			count = ((struct cudf_data_struct_int*)struct_ptr)->count;
-			break;
-		case TYPE_oid:
-			assert(0);
-			break;
-		case TYPE_lng:
-			count = ((struct cudf_data_struct_lng*)struct_ptr)->count;
-			break;
-		case TYPE_flt:
-			count = ((struct cudf_data_struct_flt*)struct_ptr)->count;
-			break;
-		case TYPE_dbl:
-			count = ((struct cudf_data_struct_dbl*)struct_ptr)->count;
-			break;
-		case TYPE_str:
-			assert(0);
-			break;
+	if (type == TYPE_bit || type == TYPE_bte) {
+		count = ((struct cudf_data_struct_bte*)struct_ptr)->count;
+	} else if (type == TYPE_sht) {
+		count = ((struct cudf_data_struct_sht*)struct_ptr)->count;
+	} else if (type == TYPE_int) {
+		count = ((struct cudf_data_struct_int*)struct_ptr)->count;
+	} else if (type == TYPE_oid) {
+		assert(0);
+	} else if (type == TYPE_lng) {
+		count = ((struct cudf_data_struct_lng*)struct_ptr)->count;
+	} else if (type == TYPE_flt) {
+		count = ((struct cudf_data_struct_flt*)struct_ptr)->count;
+	} else if (type == TYPE_dbl) {
+		count = ((struct cudf_data_struct_dbl*)struct_ptr)->count;
+	} else if (type == TYPE_str) {
+		count = ((struct cudf_data_struct_str*)struct_ptr)->count;
+	} else if (type == TYPE_date) {
+		count = ((struct cudf_data_struct_date*)struct_ptr)->count;
+	} else if (type == TYPE_daytime) {
+		count = ((struct cudf_data_struct_time*)struct_ptr)->count;
+	} else if (type == TYPE_timestamp) {
+		count = ((struct cudf_data_struct_timestamp*)struct_ptr)->count;
+	} else {
+		assert(0);
 	}
 	return count;
 }
+
+void data_from_date(date d, cudf_data_date* ptr) {
+	int day, month, year;
+	MTIMEfromdate(d, &day, &month, &year);
+	ptr->day = day;
+	ptr->month = month;
+	ptr->year = year;
+}
+
+date date_from_data(cudf_data_date* ptr) {
+	return MTIMEtodate(ptr->day, ptr->month, ptr->year);
+}
+
+void data_from_time(daytime d, cudf_data_time* ptr) {
+	int hour, min, sec, msec;
+	MTIMEfromtime(d, &hour, &min, &sec, &msec);
+	ptr->hours = hour;
+	ptr->minutes = min;
+	ptr->seconds = sec;
+	ptr->ms = msec;
+}
+
+daytime time_from_data(cudf_data_time* ptr) {
+	return MTIMEtotime(ptr->hours, ptr->minutes, ptr->seconds, ptr->ms);
+}
+
+void data_from_timestamp(timestamp d, cudf_data_timestamp* ptr) {
+	data_from_date(d.payload.p_days, &ptr->date);
+	data_from_time(d.payload.p_msecs, &ptr->time);
+}
+
+timestamp timestamp_from_data(cudf_data_timestamp* ptr) {
+	timestamp d;
+	d.payload.p_days = date_from_data(&ptr->date);
+	d.payload.p_msecs = time_from_data(&ptr->time);
+	return d;
+}
+
+int date_is_null(cudf_data_date value) {
+	cudf_data_date null_value;
+	data_from_date(date_nil, &null_value);
+	return value.year == null_value.year && value.month == null_value.month && value.day == null_value.day;
+}
+
+int time_is_null(cudf_data_time value) {
+	cudf_data_time null_value;
+	data_from_time(daytime_nil, &null_value);
+	return value.hours == null_value.hours &&
+		value.minutes == null_value.minutes &&
+		value.seconds == null_value.seconds &&
+		value.ms == null_value.ms;
+}
+
+int timestamp_is_null(cudf_data_timestamp value) {
+	return date_is_null(value.date) && time_is_null(value.time);
+}
+
