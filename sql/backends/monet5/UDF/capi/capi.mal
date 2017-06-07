@@ -4,7 +4,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
-module cudf;
+module capi;
 
 # The generic CUDF interface
 pattern eval(fptr:ptr,expr:str):any
@@ -26,11 +26,11 @@ address CUDFevalAggr
 comment "grouped aggregates through CUDF";
 
 # initializer code
-command prelude() :void address PYAPI2PyAPIprelude;
-pyapi.prelude();
+command prelude() :void address CUDFprelude;
+capi.prelude();
 
 # The SQL compiler needs these functions for bat-wise operations
-module batcudf;
+module batcapi;
 
 pattern eval(fptr:ptr,expr:str,arg:any...):any...
 address CUDFevalStd

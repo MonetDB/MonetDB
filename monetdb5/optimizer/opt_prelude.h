@@ -217,6 +217,8 @@ mal_export  str querylogRef;
 mal_export  str queryRef;
 mal_export  str rapiRef;
 mal_export  str batrapiRef;
+mal_export  str capiRef;
+mal_export  str batcapiRef;
 mal_export  str pyapiRef;
 mal_export  str batpyapiRef;
 mal_export  str pyapimapRef;

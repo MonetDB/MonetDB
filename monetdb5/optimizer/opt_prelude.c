@@ -224,6 +224,8 @@ str querylogRef;
 str queryRef;
 str rapiRef;
 str batrapiRef;
+str capiRef;
+str batcapiRef;
 str pyapiRef;
 str batpyapiRef;
 str pyapimapRef;
@@ -511,6 +513,8 @@ void optimizerInit(void)
 	batrapiRef = putName("batrapi");
     pyapiRef = putName("pyapi");
     batpyapiRef = putName("batpyapi");
+    capiRef = putName("capi");
+    batcapiRef = putName("batcapi");
     pyapimapRef = putName("batpyapimap");
     pyapi3Ref = putName("pyapi3");
     batpyapi3Ref = putName("batpyapi3");

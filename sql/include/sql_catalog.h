@@ -295,7 +295,7 @@ typedef struct sql_arg {
 #define FUNC_LANG_MAL 1 /* create sql external mod.func */
 #define FUNC_LANG_SQL 2 /* create ... sql function/procedure */
 #define FUNC_LANG_R   3 /* create .. language R */
-#define FUNC_LANG_C   4
+#define FUNC_LANG_C   4 /* create .. language C */
 #define FUNC_LANG_J   5
 // this should probably be done in a better way
 #define FUNC_LANG_PY  6 /* create .. language PYTHON */
