@@ -28,14 +28,14 @@ stderr of test 'ifexists-views` in directory 'sql/test` itself:
 # 10:36:23 >  
 
 MAPI  = (monetdb) /var/tmp/mtest-29186/.s.monetdb.32036
-QUERY = SELECT * FROM view1;
-
+QUERY = SELECT * FROM view1; -- should fail
+ERROR = !SELECT: no such table 'view1'
 MAPI  = (monetdb) /var/tmp/mtest-29186/.s.monetdb.32036
-QUERY = DROP VIEW view2;
-
+QUERY = DROP VIEW view2; -- should fail
+ERROR = !DROP VIEW: unknown view 'view2'
 MAPI  = (monetdb) /var/tmp/mtest-29186/.s.monetdb.32036
-QUERY = SELECT * FROM view2;
-
+QUERY = SELECT * FROM view2; -- should fail
+ERROR = !SELECT: no such table 'view2'
 
 # 10:36:23 >  
 # 10:36:23 >  "Done."

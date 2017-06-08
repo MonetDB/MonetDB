@@ -1,4 +1,4 @@
-# Test IF (NOT) EXISTS functionality for views
+# Test DROP VIEW IF EXISTS functionality
 
 CREATE TABLE tab0 (col0 INTEGER, col2 TEXT);
 INSERT INTO tab0 VALUES (1,'lekker'), (2, 'heerlijk'), (3, 'smullen');
