@@ -58,7 +58,6 @@ language C
 	result->initialize(result, d.count);
 	for(size_t i = 0; i < result->count; i++) {
 		if (d.is_null(d.data[i])) {
-			printf("Null value!\n");
 			result->data[i] = result->null_value;
 		} else {
 			result->data[i].date.year = d.data[i].date.year + 1;

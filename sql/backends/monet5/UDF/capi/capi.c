@@ -12,6 +12,10 @@
 
 #include "mtime.h"
 
+#include "setjmp.h"
+
+static __thread jmp_buf jump_buffer;
+
 static str
 CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped);
 
@@ -41,6 +45,60 @@ WriteTextToFile(FILE* f, const char* data) {
 	return WriteDataToFile(f, data, strlen(data));
 }
 
+static void handler(int sig, siginfo_t *si, void *unused) {
+	longjmp(jump_buffer, 1);
+}
+
+struct _mprotected_region;
+typedef struct _mprotected_region {
+	void* addr;
+	size_t len;
+	struct _mprotected_region* next;
+} mprotected_region;
+
+static char*
+mprotect_region(void* addr, size_t len, int flags, mprotected_region** regions) {
+#ifdef __APPLE__
+	// we don't mprotect on OSX for now
+	return NULL;
+#else
+	if (len == 0) return NULL;
+	// check if the region is page-aligned
+	
+	int pagesize = getpagesize();
+	void* page_begin = (void*)((size_t)addr - (size_t)addr % pagesize);
+	if (page_begin != addr) {
+		// data is not page-aligned
+		len += (addr - page_begin);
+		addr = page_begin;
+	}
+	// page align len
+	len = len % pagesize == 0 ? len : len - len % pagesize + pagesize;
+
+	mprotected_region* region = GDKmalloc(sizeof(mprotected_region));
+	if (!region) {
+		return MAL_MALLOC_FAIL;
+	}
+	if (mprotect(addr, len, PROT_READ) < 0) {
+		GDKfree(region);
+		return strerror(errno);
+	}
+	region->addr = addr;
+	region->len = len;
+	region->next = *regions;
+	*regions = region;
+	return NULL;
+#endif
+}
+
+static char*
+clear_mprotect(void* addr, size_t len) {
+	if (mprotect(addr, len, PROT_READ | PROT_WRITE) < 0) {
+		return strerror(errno);
+	}
+	return NULL;
+}
+
 #define ATTEMPT_TO_WRITE_TO_FILE(f, data) \
 	if (!WriteTextToFile(f, data)) { \
 		errno = 0; \
@@ -57,14 +115,19 @@ WriteTextToFile(FILE* f, const char* data) {
 	}
 
 
+void* wrapped_GDK_malloc(size_t size) {
+	void* ptr = GDKmalloc(size);
+	if (!ptr) {
+		longjmp(jump_buffer, 2);
+	}
+	return ptr;
+}
+
 #define GENERATE_BASE_HEADERS(type, tpename) \
 static int tpename##_is_null(type value); \
 static void tpename##_initialize(struct cudf_data_struct_##tpename* self, size_t count) { \
 	self->count = count; \
-	self->data = GDKmalloc(count * sizeof(self->null_value)); \
-	if (!self->data) { \
-		/* FIXME: longjmp */ \
-	} \
+	self->data = wrapped_GDK_malloc(count * sizeof(self->null_value)); \
 }
 
 #define GENERATE_BASE_FUNCTIONS(tpe) \
@@ -84,26 +147,34 @@ GENERATE_BASE_HEADERS(cudf_data_date, date);
 GENERATE_BASE_HEADERS(cudf_data_time, time);
 GENERATE_BASE_HEADERS(cudf_data_timestamp, timestamp);
 
-
 #define GENERATE_BAT_INPUT_BASE(b, tpe) \
 	struct cudf_data_struct_##tpe* bat_data = GDKmalloc(sizeof(struct cudf_data_struct_##tpe)); \
 	if (!bat_data) { \
+		msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL); \
 		goto wrapup; \
 	} \
 	inputs[index] = bat_data; \
 	bat_data->is_null = tpe##_is_null;\
 	bat_data->initialize = (void (*)(void*, size_t)) tpe##_initialize;
 
-#define GENERATE_BAT_INPUT(b, tpe) {\
+#define GENERATE_BAT_INPUT(b, tpe) { \
+	char* mprotect_retval; \
 	GENERATE_BAT_INPUT_BASE(b, tpe); \
 	bat_data->count = BATcount(b); \
 	bat_data->data = (tpe*) Tloc(b, 0); \
-	bat_data->null_value = tpe##_nil;\
+	bat_data->null_value = tpe##_nil; \
+	mprotect_retval = mprotect_region(bat_data->data, bat_data->count * sizeof(bat_data->null_value), PROT_READ, &regions); \
+	if (mprotect_retval) { \
+		msg = createException(MAL, "cudf.eval", "Failed to mprotect region: %s", mprotect_retval); \
+		goto wrapup; \
+	} \
 }
+
 
 #define GENERATE_BAT_OUTPUT_BASE(tpe) \
 	struct cudf_data_struct_##tpe* bat_data = GDKmalloc(sizeof(struct cudf_data_struct_##tpe)); \
 	if (!bat_data) { \
+		msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL); \
 		goto wrapup; \
 	} \
 	outputs[index] = bat_data; \
@@ -163,6 +234,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	FILE *f = NULL;
 	void* handle = NULL;
 	jitted_function func;
+	int ret;
 
 	FILE *compiler = NULL;
 	int compiler_return_code;
@@ -172,12 +244,22 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	void** outputs = NULL;
 	size_t output_count = 0;
 	BAT** input_bats = NULL;
+	mprotected_region* regions = NULL;
 
+	lng initial_output_count = -1;
+
+	struct sigaction sa;
+
+#ifdef NDEBUG
 	int debug_build = GDKgetenv_istrue(debug_flag) || GDKgetenv_isyes(debug_flag);
+#else
+	int debug_build = true;
+#endif
 
 	const char* compilation_flags = debug_build ? "-g -O0" : "-O2";
 	const char* c_compiler = GDKgetenv(cc_flag) ? GDKgetenv(cc_flag) : JIT_COMPILER_NAME;
 
+	memset(&sa, 0, sizeof(sa));
 
 	if (!grouped) {
 		sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc));
@@ -257,8 +339,8 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	// first generate the source file
 	f = fopen(fname, "w+");
 	if (!f) {
+		msg = createException(MAL, "cudf.eval", "Failed to open file for JIT compilation: %s", strerror(errno));
 		errno = 0;
-		msg = createException(MAL, "cudf.eval", "Failed to open file for JIT compilation.");
 		goto wrapup;
 	}
 
@@ -305,7 +387,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 				}
 				new_line = false;
 			}
-		}	
+		}
 	}
 
 	// create the actual function
@@ -420,12 +502,20 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	input_count = pci->argc - (pci->retc + 2);
 	output_count = pci->retc;
 
-	input_bats = GDKzalloc(sizeof(BAT*) * input_count);
-	inputs = GDKzalloc(sizeof(void*) * input_count);
-	outputs = GDKzalloc(sizeof(void*) * output_count);
-	if (!inputs || !outputs || !input_bats) {
-		msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
-		goto wrapup;
+	if (input_count > 0) {
+		input_bats = GDKzalloc(sizeof(BAT*) * input_count);
+		inputs = GDKzalloc(sizeof(void*) * input_count);
+		if (!inputs || !input_bats) {
+			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+			goto wrapup;
+		}
+	}
+	if (output_count > 0) {
+		outputs = GDKzalloc(sizeof(void*) * output_count);
+		if (!outputs) {
+			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+			goto wrapup;
+		}
 	}
 	// create the inputs
 	for (i = pci->retc + 2; i < pci->argc; i++) {
@@ -579,8 +669,51 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		}
 	}
 
+	// set up a longjmp point
+	// this longjmp point is used for some error handling in the C function
+	// such as failed mallocs
+	ret = setjmp(jump_buffer);
+	if (ret < 0) {
+		// error value
+		msg = createException(MAL, "cudf.eval", "Failed setjmp: %s", strerror(errno));
+		errno = 0;
+		goto wrapup;
+	} else if (ret > 0) {
+		if (ret == 1) {
+			msg = createException(MAL, "cudf.eval", "Attempting to write to read-only memory");
+			goto wrapup;
+		} else if (ret == 2) {
+			msg = createException(MAL, "cudf.eval", "Malloc failure in internal function!");
+			goto wrapup;
+		} else {
+			// we jumped here
+			msg = createException(MAL, "cudf.eval", "We longjumped here because of an error!.");
+			goto wrapup;
+		}
+	}
+
+	// set up the signal handler for catching segfaults
+    sa.sa_flags = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = handler;
+	if (sigaction(SIGSEGV, &sa, NULL) < 0 || sigaction(SIGBUS, &sa, NULL) < 0) {
+		msg = createException(MAL, "cudf.eval", "Failed to set signal handler: %s", strerror(errno));
+		errno = 0;
+		goto wrapup;
+	}
+
+
 	// call the actual jitted function
-	msg = func(inputs, outputs, GDKmalloc);
+	msg = func(inputs, outputs, wrapped_GDK_malloc);
+
+	// clear the signal handlers
+	if (sigaction(SIGSEGV, NULL, NULL) < 0 || sigaction(SIGBUS, NULL, NULL) < 0) {
+		msg = createException(MAL, "cudf.eval", "Failed to unset signal handler: %s", strerror(errno));
+		errno = 0;
+		goto wrapup;
+	}
+	memset(&sa, 0, sizeof (sa));
+
 	if (msg) {
 		// failure in function
 		msg = createException(MAL, "cudf.eval", "%s", msg);
@@ -602,6 +735,12 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		void* data = GetTypeData(bat_type, outputs[i]);
 		if (!data) {
 			msg = createException(MAL, "cudf.eval", "No data returned.");
+			goto wrapup;
+		}
+		if (initial_output_count < 0) {
+			initial_output_count = count;
+		} else if (initial_output_count != count) {
+			msg = createException(MAL, "cudf.eval", "Data has different cardinalities.");
 			goto wrapup;
 		}
 		BAT* b = COLnew(0, bat_type, count, TRANSIENT);
@@ -673,6 +812,20 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 
 wrapup:
 	// cleanup
+	// remove the signal handler, if any was set
+	if (sa.sa_sigaction) {
+		sigaction(SIGBUS, NULL, NULL);
+		sigaction(SIGSEGV, NULL, NULL);
+
+		memset(&sa, 0, sizeof (sa));
+	}
+	// clear any mprotected regions
+	while(regions) {
+		mprotected_region* next = regions->next;
+		clear_mprotect(regions->addr, regions->len);
+		GDKfree(regions);
+		regions = next;
+	}
 	// argument names (input)
 	if (args) {
 		for(i = 0; i < pci->argc; i++) {
