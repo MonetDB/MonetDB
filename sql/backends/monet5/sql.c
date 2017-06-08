@@ -176,12 +176,12 @@ checkSQLContext(Client cntxt)
 	backend *be;
 
 	if (cntxt == NULL)
-		throw(SQL, "mvc", "No client record");
+		throw(SQL, "mvc", "SQLSTATE ----- !""No client record");
 	if (cntxt->sqlcontext == NULL)
-		throw(SQL, "mvc", "SQL module not initialized");
+		throw(SQL, "mvc", "SQLSTATE ----- !""SQL module not initialized");
 	be = (backend *) cntxt->sqlcontext;
 	if (be->mvc == NULL)
-		throw(SQL, "mvc", "SQL module not initialized, mvc struct missing");
+		throw(SQL, "mvc", "SQLSTATE ----- !""SQL module not initialized, mvc struct missing");
 	return MAL_SUCCEED;
 }
 
@@ -192,12 +192,12 @@ getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b)
 	(void) mb;
 
 	if (cntxt == NULL)
-		throw(SQL, "mvc", "No client record");
+		throw(SQL, "mvc", "SQLSTATE ----- !""No client record");
 	if (cntxt->sqlcontext == NULL)
-		throw(SQL, "mvc", "SQL module not initialized");
+		throw(SQL, "mvc", "SQLSTATE ----- !""SQL module not initialized");
 	be = (backend *) cntxt->sqlcontext;
 	if (be->mvc == NULL)
-		throw(SQL, "mvc", "SQL module not initialized, mvc struct missing");
+		throw(SQL, "mvc", "SQLSTATE ----- !""SQL module not initialized, mvc struct missing");
 	if (c)
 		*c = be->mvc;
 	if (b)
@@ -236,10 +236,10 @@ SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (sql->session->auto_commit != 0)
-		throw(SQL, "sql.trans", "2DM30!COMMIT: not allowed in auto commit mode");
+		throw(SQL, "sql.trans", "SQLSTATE 2DM30 !""COMMIT: not allowed in auto commit mode");
 	ret = mvc_commit(sql, 0, 0);
 	if (ret < 0) {
-		throw(SQL, "sql.trans", "2D000!COMMIT: failed");
+		throw(SQL, "sql.trans", "SQLSTATE 2D000 !""COMMIT: failed");
 	}
 	return msg;
 }
@@ -315,7 +315,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
 			r = rel_parse(sql, s, buf, m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL)
-				throw(SQL, "sql.catalog", "%s", sql->errstr);
+				throw(SQL, "sql.catalog", "SQLSTATE ----- !""%s", sql->errstr);
 			rel_destroy(r);
 			sa_destroy(sql->sa);
 			sql->sa = NULL;
@@ -327,7 +327,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		if (mvc_copy_column(sql, nt, c) == NULL)
-			throw(SQL, "sql.catalog", "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
+			throw(SQL, "sql.catalog", "SQLSTATE ----- !""CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
 
 	}
 	if (t->idxs.set) {
@@ -488,13 +488,13 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	*res = 0;
 	if (mtype < 0 || mtype >= 255)
-		throw(SQL, "sql.setVariable", "failed");
+		throw(SQL, "sql.setVariable", "SQLSTATE ----- !""failed");
 	if (strcmp("optimizer", varname) == 0) {
 		str newopt = *getArgReference_str(stk, pci, 3);
 		if (newopt) {
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0) {
 				snprintf(buf, BUFSIZ, "optimizer '%s' unknown", newopt);
-				throw(SQL, "sql.setVariable", "%s", buf);
+				throw(SQL, "sql.setVariable", "SQLSTATE ----- !""%s", buf);
 			}
 			snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
@@ -514,12 +514,12 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL) {
 			snprintf(buf, BUFSIZ, "%s", msg);
 			_DELETE(msg);
-			throw(SQL, "sql.setVariable", "%s", buf);
+			throw(SQL, "sql.setVariable", "SQLSTATE ----- !""%s", buf);
 		}
 		stack_set_var(m, varname, src);
 	} else {
 		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
-		throw(SQL, "sql.setVariable", "%s", buf);
+		throw(SQL, "sql.setVariable", "SQLSTATE ----- !""%s", buf);
 	}
 	return MAL_SUCCEED;
 }
@@ -540,17 +540,17 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if (mtype < 0 || mtype >= 255)
-		throw(SQL, "sql.getVariable", "failed");
+		throw(SQL, "sql.getVariable", "SQLSTATE ----- !""failed");
 	a = stack_get_var(m, varname);
 	if (!a) {
 		char buf[BUFSIZ];
 		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
-		throw(SQL, "sql.getVariable", "%s", buf);
+		throw(SQL, "sql.getVariable", "SQLSTATE ----- !""%s", buf);
 	}
 	src = &a->data;
 	dst = &stk->stk[getArg(pci, 0)];
 	if (VALcopy(dst, src) == NULL)
-		throw(MAL, "sql.getVariable", MAL_MALLOC_FAIL);
+		throw(MAL, "sql.getVariable", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -570,11 +570,11 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	vars = COLnew(0, TYPE_str, m->topvars, TRANSIENT);
 	if (vars == NULL)
-		throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
+		throw(SQL, "sql.variables", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 	for (i = 0; i < m->topvars && !m->vars[i].frame; i++) {
 		if (BUNappend(vars, m->vars[i].name, FALSE) != GDK_SUCCEED) {
 			BBPreclaim(vars);
-			throw(SQL, "sql.variables", MAL_MALLOC_FAIL);
+			throw(SQL, "sql.variables", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		}
 	}
 	*res = vars->batCacheid;
@@ -629,7 +629,7 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return MAL_SUCCEED;
 		}
 	}
-	throw(SQL, "sql.next_value", "error");
+	throw(SQL, "sql.next_value", "SQLSTATE ----- !""error");
 }
 
 /* str mvc_bat_next_value(bat *res, int *sid, str *seqname); */
@@ -654,12 +654,12 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if ((b = BATdescriptor(*sid)) == NULL)
-		throw(SQL, "sql.next_value", "Cannot access descriptor");
+		throw(SQL, "sql.next_value", "SQLSTATE ----- !""Cannot access descriptor");
 
 	r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT);
 	if (!r) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.next_value", "Cannot create bat");
+		throw(SQL, "sql.next_value", "SQLSTATE ----- !""Cannot create bat");
 	}
 
 	if (!BATcount(b)) {
@@ -682,20 +682,20 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!s || (seq = find_sql_sequence(s, *seqname)) == NULL || !(sb = seqbulk_create(seq, BATcount(b)))) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(r->batCacheid);
-				throw(SQL, "sql.next_value", "error");
+				throw(SQL, "sql.next_value", "SQLSTATE ----- !""error");
 			}
 		}
 		if (!seqbulk_next_value(sb, &l)) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(r->batCacheid);
 			seqbulk_destroy(sb);
-			throw(SQL, "sql.next_value", "error");
+			throw(SQL, "sql.next_value", "SQLSTATE ----- !""error");
 		}
 		if (BUNappend(r, &l, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(r->batCacheid);
 			seqbulk_destroy(sb);
-			throw(SQL, "sql.next_value", MAL_MALLOC_FAIL);
+			throw(SQL, "sql.next_value", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		}
 	}
 	if (sb)
@@ -728,7 +728,7 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (seq && seq_get_value(seq, res))
 			return MAL_SUCCEED;
 	}
-	throw(SQL, "sql.get_value", "error");
+	throw(SQL, "sql.get_value", "SQLSTATE ----- !""error");
 }
 
 str
@@ -765,7 +765,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if (*start == lng_nil)
-		throw(SQL, "sql.restart", "cannot (re)start with NULL");
+		throw(SQL, "sql.restart", "SQLSTATE ----- !""cannot (re)start with NULL");
 	s = mvc_bind_schema(m, *sname);
 	if (s) {
 		sql_sequence *seq = find_sql_sequence(s, *seqname);
@@ -775,7 +775,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return MAL_SUCCEED;
 		}
 	}
-	throw(SQL, "sql.restart", "sequence %s not found", *sname);
+	throw(SQL, "sql.restart", "SQLSTATE ----- !""sequence %s not found", *sname);
 }
 
 static BAT *
@@ -838,7 +838,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	b = mvc_bind(m, *sname, *tname, *cname, *access);
 	if (b && b->ttype != coltype)
-		throw(SQL,"sql.bind","tail type mismatch");
+		throw(SQL,"sql.bind","SQLSTATE ----- !""tail type mismatch");
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
 			BUN cnt = BATcount(b), psz;
@@ -855,7 +855,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				oid l, h;
 				BAT *c = mvc_bind(m, *sname, *tname, *cname, 0);
 				if (c == NULL)
-					throw(SQL,"sql.bind","Cannot access the update column");
+					throw(SQL,"sql.bind","SQLSTATE ----- !""Cannot access the update column");
 
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
@@ -872,7 +872,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bat *uvl = getArgReference_bat(stk, pci, 1);
 
 			if (uv == NULL)
-				throw(SQL,"sql.bind","Cannot access the update column");
+				throw(SQL,"sql.bind","SQLSTATE ----- !""Cannot access the update column");
 			BBPkeepref(*bid = b->batCacheid);
 			BBPkeepref(*uvl = uv->batCacheid);
 			return MAL_SUCCEED;
@@ -886,9 +886,9 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *id;
 				BAT *vl;
 				if (ui == NULL)
-					throw(SQL,"sql.bind","Cannot access the insert column");
+					throw(SQL,"sql.bind","SQLSTATE ----- !""Cannot access the insert column");
 				if (uv == NULL)
-					throw(SQL,"sql.bind","Cannot access the update column");
+					throw(SQL,"sql.bind","SQLSTATE ----- !""Cannot access the update column");
 				id = BATproject(b, ui);
 				vl = BATproject(b, uv);
 				bat_destroy(ui);
@@ -896,7 +896,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (id == NULL || vl == NULL) {
 					bat_destroy(id);
 					bat_destroy(vl);
-					throw(SQL, "sql.bind", MAL_MALLOC_FAIL);
+					throw(SQL, "sql.bind", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 				}
 				assert(BATcount(id) == BATcount(vl));
 				BBPkeepref(*bid = id->batCacheid);
@@ -916,8 +916,8 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	if (*sname && strcmp(*sname, str_nil) != 0)
-		throw(SQL, "sql.bind", "unable to find %s.%s(%s)", *sname, *tname, *cname);
-	throw(SQL, "sql.bind", "unable to find %s(%s)", *tname, *cname);
+		throw(SQL, "sql.bind", "SQLSTATE ----- !""unable to find %s.%s(%s)", *sname, *tname, *cname);
+	throw(SQL, "sql.bind", "SQLSTATE ----- !""unable to find %s(%s)", *tname, *cname);
 }
 
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
@@ -941,7 +941,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
 	if (b && b->ttype != coltype)
-		throw(SQL,"sql.bind","tail type mismatch");
+		throw(SQL,"sql.bind","SQLSTATE ----- !""tail type mismatch");
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
 			BUN cnt = BATcount(b), psz;
@@ -958,7 +958,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				oid l, h;
 				BAT *c = mvc_bind_idxbat(m, *sname, *tname, *iname, 0);
 				if ( c == NULL)
-					throw(SQL,"sql.bindidx","can not access index column");
+					throw(SQL,"sql.bindidx","SQLSTATE ----- !""can not access index column");
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
@@ -973,7 +973,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BAT *uv = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_VAL);
 			bat *uvl = getArgReference_bat(stk, pci, 1);
 			if ( uv == NULL)
-				throw(SQL,"sql.bindidx","can not access index column");
+				throw(SQL,"sql.bindidx","SQLSTATE ----- !""can not access index column");
 			BBPkeepref(*bid = b->batCacheid);
 			BBPkeepref(*uvl = uv->batCacheid);
 			return MAL_SUCCEED;
@@ -986,9 +986,9 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *ui = mvc_bind_idxbat(m, *sname, *tname, *iname, RD_UPD_ID);
 				BAT *id, *vl;
 				if ( ui == NULL)
-					throw(SQL,"sql.bindidx","can not access index column");
+					throw(SQL,"sql.bindidx","SQLSTATE ----- !""can not access index column");
 				if ( uv == NULL)
-					throw(SQL,"sql.bindidx","can not access index column");
+					throw(SQL,"sql.bindidx","SQLSTATE ----- !""can not access index column");
 				id = BATproject(b, ui);
 				vl = BATproject(b, uv);
 				bat_destroy(ui);
@@ -996,7 +996,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (id == NULL || vl == NULL) {
 					bat_destroy(id);
 					bat_destroy(vl);
-					throw(SQL, "sql.idxbind", MAL_MALLOC_FAIL);
+					throw(SQL, "sql.idxbind", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 				}
 				assert(BATcount(id) == BATcount(vl));
 				BBPkeepref(*bid = id->batCacheid);
@@ -1015,14 +1015,14 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	if (*sname)
-		throw(SQL, "sql.idxbind", "unable to find index %s for %s.%s", *iname, *sname, *tname);
-	throw(SQL, "sql.idxbind", "unable to find index %s for %s", *iname, *tname);
+		throw(SQL, "sql.idxbind", "SQLSTATE ----- !""unable to find index %s for %s.%s", *iname, *sname, *tname);
+	throw(SQL, "sql.idxbind", "SQLSTATE ----- !""unable to find index %s for %s", *iname, *tname);
 }
 
 str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins) {
 	int res = store_funcs.append_col(t, c, ins, TYPE_bat);
 	if (res != 0) {
-		throw(SQL, "sql.append", "Cannot append values");
+		throw(SQL, "sql.append", "SQLSTATE ----- !""Cannot append values");
 	}
 	return MAL_SUCCEED;
 }
@@ -1052,17 +1052,17 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
 	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) ins)) == NULL)
-		throw(SQL, "sql.append", "Cannot access descriptor");
+		throw(SQL, "sql.append", "SQLSTATE ----- !""Cannot access descriptor");
 	if (ATOMextern(tpe))
 		ins = *(ptr *) ins;
 	if ( tpe == TYPE_bat)
 		b =  (BAT*) ins;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.append", "Schema missing");
+		throw(SQL, "sql.append", "SQLSTATE ----- !""Schema missing");
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.append", "Table missing");
+		throw(SQL, "sql.append", "SQLSTATE ----- !""Table missing");
 	if( b && BATcount(b) > 4096 && b->batPersistence == PERSISTENT)
 		BATmsync(b);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
@@ -1771,7 +1771,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"sql.resultset","Failed to access order column");
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, b);
 	if (res < 0)
-		msg = createException(SQL, "sql.resultSet", "failed");
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""failed");
 	BBPunfix(b->batCacheid);
 
 	tbl = BATdescriptor(tblId);
@@ -1795,15 +1795,15 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpename = BUNtail(itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
-			msg= createException(MAL,"sql.resultset","Failed to access result column");
+			msg= createException(MAL,"sql.resultset","SQLSTATE ----- !""Failed to access result column");
 		else if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
-			msg = createException(SQL, "sql.resultset", "mvc_result_column failed");
+			msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""mvc_result_column failed");
 		if( b)
 			BBPunfix(bid);
 	}
 	/* now sent it to the channel cntxt->fdout */
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
-		msg = createException(SQL, "sql.resultset", "failed");
+		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""failed");
   wrapup_result_set:
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -1859,18 +1859,18 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *getArgReference_bat(stk,pci,12);
 	order = BATdescriptor(bid);
 	if ( order == NULL)
-		throw(MAL,"sql.resultset","Failed to access order column");
+		throw(MAL,"sql.resultset", "SQLSTATE ---- !""Failed to access order column");
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 11), 1, order);
 	t = m->results;
 	if (res < 0){
-		msg = createException(SQL, "sql.resultSet", "failed");
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""failed");
 		goto wrapup_result_set1;
 	}
 
 	l = strlen((char *) (*T));
 	tsep = GDKmalloc(l + 1);
 	if(tsep == 0){
-		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		goto wrapup_result_set1;
 	}
 	GDKstrFromStr(tsep, *T, l);
@@ -1878,7 +1878,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) (*R));
 	rsep = GDKmalloc(l + 1);
 	if(rsep == 0){
-		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		goto wrapup_result_set1;
 	}
 	GDKstrFromStr(rsep, *R, l);
@@ -1886,7 +1886,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) (*S));
 	ssep = GDKmalloc(l + 1);
 	if(ssep == 0){
-		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		goto wrapup_result_set1;
 	}
 	GDKstrFromStr(ssep, *S, l);
@@ -1894,7 +1894,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) (*N));
 	ns = GDKmalloc(l + 1);
 	if(ns == 0){
-		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		goto wrapup_result_set1;
 	}
 	GDKstrFromStr(ns, *N, l);
@@ -1924,9 +1924,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpename = BUNtail(itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
-			msg= createException(MAL,"sql.resultset","Failed to access result column");
+			msg= createException(MAL,"sql.resultset","SQLSTATE ----- !""Failed to access result column");
 		else if (mvc_result_column(m, tblname, colname, tpename, *digits++, *scaledigits++, b))
-			msg = createException(SQL, "sql.resultset", "mvc_result_column failed");
+			msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""mvc_result_column failed");
 		if( b)
 			BBPunfix(bid);
 	}
@@ -1937,12 +1937,12 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int errnr = mnstr_errnr(s);
 		if (s)
 			mnstr_destroy(s);
-		msg=  createException(IO, "streams.open", "could not open file '%s': %s",
+		msg=  createException(IO, "streams.open", "SQLSTATE ----- !""could not open file '%s': %s",
 				      filename?filename:"stdout", strerror(errnr));
 		goto wrapup_result_set1;
 	}
 	if (mvc_export_result(cntxt->sqlcontext, s, res))
-		msg = createException(SQL, "sql.resultset", "failed");
+		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""failed");
 	if( s != cntxt->fdout)
 		close_stream(s);
   wrapup_result_set1:
@@ -2005,10 +2005,10 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ATOMextern(mtype))
 			v = *(ptr *) v;
 		if (mvc_result_value(m, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
-			throw(SQL, "sql.rsColumn", "failed");
+			throw(SQL, "sql.rsColumn", "SQLSTATE ----- !" "failed");
 	}
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
-		msg = createException(SQL, "sql.resultset", "failed");
+		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""failed");
   wrapup_result_set:
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2058,14 +2058,14 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	t = m->results;
 	if (res < 0){
-		msg = createException(SQL, "sql.resultSet", "failed");
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""failed");
 		goto wrapup_result_set;
 	}
 
 	l = strlen((char *) (*T));
 	tsep = GDKmalloc(l + 1);
 	if(tsep == 0){
-		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
 	GDKstrFromStr(tsep, *T, l);
@@ -2073,7 +2073,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) (*R));
 	rsep = GDKmalloc(l + 1);
 	if(rsep == 0){
-		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
 	GDKstrFromStr(rsep, *R, l);
@@ -2081,7 +2081,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) (*S));
 	ssep = GDKmalloc(l + 1);
 	if(ssep == 0){
-		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
 	GDKstrFromStr(ssep, *S, l);
@@ -2089,7 +2089,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) (*N));
 	ns = GDKmalloc(l + 1);
 	if(ns == 0){
-		msg = createException(SQL, "sql.resultSet", MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
 	GDKstrFromStr(ns, *N, l);
@@ -2122,7 +2122,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ATOMextern(mtype))
 			v = *(ptr *) v;
 		if (mvc_result_value(m, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
-			throw(SQL, "sql.rsColumn", "failed");
+			throw(SQL, "sql.rsColumn", "SQLSTATE ----- !" "failed");
 	}
 	/* now select the file channel */
 	if ( strcmp(filename,"stdout") == 0 )
@@ -2131,12 +2131,12 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int errnr = mnstr_errnr(s);
 		if (s)
 			mnstr_destroy(s);
-		msg=  createException(IO, "streams.open", "could not open file '%s': %s",
+		msg=  createException(IO, "streams.open", "SQLSTATE ----- !""could not open file '%s': %s",
 				      filename?filename:"stdout", strerror(errnr));
 		goto wrapup_result_set;
 	}
 	if (mvc_export_result(cntxt->sqlcontext, s, res))
-		msg = createException(SQL, "sql.resultset", "failed");
+		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""failed");
 	if( s != cntxt->fdout)
 		mnstr_close(s);
   wrapup_result_set:
@@ -2173,11 +2173,11 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if ((order = BATdescriptor(*order_bid)) == NULL) {
-		throw(SQL, "sql.resultSet", "Cannot access descriptor");
+		throw(SQL, "sql.resultSet", "SQLSTATE ----- !" "Cannot access descriptor");
 	}
 	*res_id = mvc_result_table(m, mb->tag, *nr_cols, *qtype, order);
 	if (*res_id < 0)
-		res = createException(SQL, "sql.resultSet", "failed");
+		res = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""failed");
 	BBPunfix(order->batCacheid);
 	return res;
 }
@@ -2198,7 +2198,7 @@ mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if (s == NULL)
-		throw(SQL, "sql.declared_table", "3F000!Schema missing");
+		throw(SQL, "sql.declared_table", "SQLSTATE 3F000 !""Schema missing");
 	(void) mvc_create_table(m, s, *name, tt_table, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
 	*res_id = 0;
 	return MAL_SUCCEED;
@@ -2226,17 +2226,17 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if (*rs != 0)
-		throw(SQL, "sql.dtColumn", "Cannot access declared table");
+		throw(SQL, "sql.dtColumn", "SQLSTATE ----- !""Cannot access declared table");
 	if (!sql_find_subtype(&tpe, *typename, *digits, *scale) && (type = mvc_bind_type(m, *typename)) == NULL)
-		throw(SQL, "sql.dtColumn", "Cannot find column type");
+		throw(SQL, "sql.dtColumn", "SQLSTATE ----- !""Cannot find column type");
 	if (type)
 		sql_init_subtype(&tpe, type, 0, 0);
 	s = mvc_bind_schema(m, dt_schema);
 	if (s == NULL)
-		throw(SQL, "sql.declared_table_column", "3F000!Schema missing");
+		throw(SQL, "sql.declared_table_column", "SQLSTATE 3F000 !""Schema missing");
 	t = mvc_bind_table(m, s, *tname);
 	if (t == NULL)
-		throw(SQL, "sql.declared_table_column", "42S02!Table missing");
+		throw(SQL, "sql.declared_table_column", "SQLSTATE 42S02 !""Table missing");
 	(void) mvc_create_column(m, t, *name, &tpe);
 	return MAL_SUCCEED;
 }
@@ -2256,10 +2256,10 @@ mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if (s == NULL)
-		throw(SQL, "sql.drop", "3F000!Schema missing");
+		throw(SQL, "sql.drop", "SQLSTATE 3F000 !""Schema missing");
 	t = mvc_bind_table(m, s, *name);
 	if (t == NULL)
-		throw(SQL, "sql.drop", "42S02!Table missing");
+		throw(SQL, "sql.drop", "SQLSTATE 42S02 !""Table missing");
 	(void) mvc_drop_table(m, s, t, 0);
 	return MAL_SUCCEED;
 }
@@ -2279,7 +2279,7 @@ mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if (s == NULL)
-		throw(SQL, "sql.drop", "3F000!Schema missing");
+		throw(SQL, "sql.drop", "SQLSTATE 3F000 !""Schema missing");
 	while (i && s->tables.set->t) {
 		t = s->tables.set->t->data;
 		(void) mvc_drop_table(m, s, t, 0);
@@ -2309,7 +2309,7 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = cntxt->sqlcontext;
 	error = mvc_export_affrows(b, b->out, nr, "", mb->tag);
 	if (error)
-		throw(SQL, "sql.affectedRows", "failed");
+		throw(SQL, "sql.affectedRows", "SQLSTATE ----- !""failed");
 	return MAL_SUCCEED;
 }
 
@@ -2327,7 +2327,7 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	b = cntxt->sqlcontext;
 	if (mvc_export_head(b, *s, *res_id, FALSE, TRUE))
-		throw(SQL, "sql.exportHead", "failed");
+		throw(SQL, "sql.exportHead", "SQLSTATE ----- !""failed");
 	return MAL_SUCCEED;
 }
 
@@ -2347,9 +2347,9 @@ mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( pci->argc > 5){
 		res_id = getArgReference_int(stk, pci, 2);
 		if (mvc_export_result(b, cntxt->fdout, *res_id))
-			throw(SQL, "sql.exportResult", "failed");
+			throw(SQL, "sql.exportResult", "SQLSTATE ----- !""failed");
 	} else if (mvc_export_result(b, *s, *res_id))
-		throw(SQL, "sql.exportResult", "failed");
+		throw(SQL, "sql.exportResult", "SQLSTATE ----- !""failed");
 	return MAL_SUCCEED;
 }
 
@@ -2374,7 +2374,7 @@ mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	b = cntxt->sqlcontext;
 	if (mvc_export_chunk(b, *s, *res_id, offset, nr))
-		throw(SQL, "sql.exportChunk", "failed");
+		throw(SQL, "sql.exportChunk", "SQLSTATE ----- !""failed");
 	return NULL;
 }
 
@@ -2392,7 +2392,7 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return msg;
 	b = cntxt->sqlcontext;
 	if (mvc_export_operation(b, b->out, ""))
-		throw(SQL, "sql.exportOperation", "failed");
+		throw(SQL, "sql.exportOperation", "SQLSTATE ----- !""failed");
 	return NULL;
 }
 
@@ -2420,12 +2420,12 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// scalar values are single-column result sets
 	res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL);
 	if (mvc_result_value(b->mvc, *tn, *cn, *type, *digits, *scale, p, mtype))
-		throw(SQL, "sql.exportValue", "failed");
+		throw(SQL, "sql.exportValue", "SQLSTATE ----- !""failed");
 	if (b->output_format == OFMT_NONE) {
 		return MAL_SUCCEED;
 	}
 	if (mvc_export_result(b, b->out, res_id) < 0) {
-		throw(SQL, "sql.exportValue", "failed");
+		throw(SQL, "sql.exportValue", "SQLSTATE ----- !""failed");
 	}
 	return MAL_SUCCEED;
 }
@@ -2485,13 +2485,13 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	be = cntxt->sqlcontext;
 	len = strlen((char *) (*T));
 	if ((tsep = GDKmalloc(len + 1)) == NULL)
-		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+		throw(MAL, "sql.copy_from", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 	GDKstrFromStr(tsep, *T, len);
 	len = 0;
 	len = strlen((char *) (*R));
 	if ((rsep = GDKmalloc(len + 1)) == NULL) {
 		GDKfree(tsep);
-		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+		throw(MAL, "sql.copy_from", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 	}
 	GDKstrFromStr(rsep, *R, len);
 	len = 0;
@@ -2500,7 +2500,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ((ssep = GDKmalloc(len + 1)) == NULL) {
 			GDKfree(tsep);
 			GDKfree(rsep);
-			throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+			throw(MAL, "sql.copy_from", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		}
 		GDKstrFromStr(ssep, *S, len);
 		len = 0;
@@ -2510,7 +2510,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(tsep);
 		GDKfree(rsep);
 		GDKfree(ssep);
-		throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+		throw(MAL, "sql.copy_from", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 	}
 	GDKstrFromStr(ns, *N, len);
 	len = 0;
@@ -2526,7 +2526,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(tsep);
 			GDKfree(rsep);
 			GDKfree(ssep);
-			throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+			throw(MAL, "sql.copy_from", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 		}
 #if defined(HAVE_EMBEDDED) && defined(WIN32)
 		// fix single backslash file separator on windows
@@ -2543,7 +2543,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(rsep);
 			GDKfree(ssep);
 			GDKfree(ns);
-			msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", fn, strerror(errnr));
+			msg = createException(IO, "sql.copy_from", "SQLSTATE ----- !""could not open file '%s': %s", fn, strerror(errnr));
 			GDKfree(fn);
 			return msg;
 		}
@@ -2565,7 +2565,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(rsep);
 				GDKfree(ssep);
 				GDKfree(ns);
-				throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+				throw(MAL, "sql.copy_from", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 			}
 			for (i = 0; i < width_len; i++) {
 				if (fixed_widths[i] == STREAM_FWF_FIELD_SEP) {
@@ -2580,7 +2580,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!ssep) {
 				ssep = GDKmalloc(2);
 				if(ssep == NULL)
-					throw(SQL, "sql.copy_from", MAL_MALLOC_FAIL);
+					throw(SQL, "sql.copy_from", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
 			}
 			ssep[0] = 0;
 
@@ -2673,7 +2673,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			throw(SQL, "sql", MAL_MALLOC_FAIL);
 		f = fopen(fn, "r");
 		if (f == NULL) {
-			msg = createException(SQL, "sql", "Failed to open file %s", fn);
+			msg = createException(SQL, "sql", "SQLSTATE ----- !""Failed to open file %s", fn);
 			GDKfree(fn);
 			return msg;
 		}
@@ -3570,7 +3570,7 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t == NULL)
 		throw(SQL, "sql.rowid", "42S02!Table missing");
 	if (!s || !t || !t->columns.set->h)
-		throw(SQL, "calc.rowid", "42S22!Cannot find column");
+		throw(SQL, "calc.rowid", "SQLSTATE 42S22 !""Cannot find column");
 	c = t->columns.set->h->data;
 	/* HACK, get insert bat */
 	b = store_funcs.bind_col(m->session->tr, c, RD_INS);

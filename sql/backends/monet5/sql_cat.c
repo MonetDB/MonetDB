@@ -724,7 +724,7 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mvc_set_schema(sql, osname);
 	} else {
 		mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", "function creation failed '%s'", func);
+		throw(SQL, "sql.catalog", "SQLSTATE ----- !""function creation failed '%s'", func);
 	}
 	return msg;
 }
@@ -756,7 +756,7 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mvc_set_schema(sql, osname);
 	} else {
 		mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", "view creation failed '%s'", view);
+		throw(SQL, "sql.catalog", "SQLSTATE ----- !""view creation failed '%s'", view);
 	}
 	return msg;
 }

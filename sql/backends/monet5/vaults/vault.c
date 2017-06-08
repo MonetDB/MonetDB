@@ -195,7 +195,7 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		curl_easy_cleanup(curl);
 
 		if(CURLE_OK != res)
-			msg = createException(MAL,"vault.import", "curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
+			msg = createException(MAL,"vault.import", "SQLSTATE ----- !""curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
 	}
 
 	if(ftpfile.stream)
@@ -205,7 +205,7 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #else
 	(void) source;
 	(void) target;
-	msg = createException(MAL,"vault.import", "No curl library");
+	msg = createException(MAL,"vault.import", "SQLSTATE ----- !""No curl library");
 #endif
 	if (msg)
 		return msg;
@@ -227,7 +227,7 @@ VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( vaultpath[0] == 0){
 		snprintf(vaultpath, PATHLENGTH, "%s%cvault", GDKgetenv("gdk_dbpath"), DIR_SEP);
 		if (mkdir(vaultpath, 0755) < 0 && errno != EEXIST)
-			return createException(MAL,"vault.getLocation", "can not access vault directory");
+			return createException(MAL,"vault.getLocation", "SQLSTATE ----- !""can not access vault directory");
 	}
 	(void) cntxt;
 	(void) mb;
@@ -246,7 +246,7 @@ VLTbasename(str *ret, str *fname, str *split)
 		*ret = GDKstrdup( r);
 		return MAL_SUCCEED;
 	}
-	throw(MAL,"vault.basename","Split of file failed:%s",*fname);
+	throw(MAL,"vault.basename","SQLSTATE ----- !""Split of file failed:%s",*fname);
 }
 
 str VLTremove(timestamp *ret, str *t)

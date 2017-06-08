@@ -40,7 +40,7 @@ SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
-		const char *sqlstate = "M0M29!";
+		const char *sqlstate = "SQLSTATE M0M29 !";
 		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 && (*msg)[5] == '!' && (('0' <= (*msg)[0] && (*msg)[0] <= '9') || ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) && (('0' <= (*msg)[1] && (*msg)[1] <= '9') || ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
 		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') || ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) && (('0' <= (*msg)[3] && (*msg)[3] <= '9') || ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) && (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
@@ -59,7 +59,7 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
-		const char *sqlstate = "M0M29!";
+		const char *sqlstate = "SQLSTATE M0M29 !";
 		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 && (*msg)[5] == '!' && (('0' <= (*msg)[0] && (*msg)[0] <= '9') || ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) && (('0' <= (*msg)[1] && (*msg)[1] <= '9') || ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
 		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') || ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) && (('0' <= (*msg)[3] && (*msg)[3] <= '9') || ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) && (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
@@ -78,7 +78,7 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
-		const char *sqlstate = "M0M29!";
+		const char *sqlstate = "SQLSTATE M0M29 !";
 		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 && (*msg)[5] == '!' && (('0' <= (*msg)[0] && (*msg)[0] <= '9') || ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) && (('0' <= (*msg)[1] && (*msg)[1] <= '9') || ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
 		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') || ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) && (('0' <= (*msg)[3] && (*msg)[3] <= '9') || ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) && (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
@@ -97,7 +97,7 @@ SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	(void)mb;
 	if (*flg){
-		const char *sqlstate = "M0M29!";
+		const char *sqlstate = "SQLSTATE M0M29 !";
 		/* mdbDump(mb,stk,pci);*/
 		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
 		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
