@@ -1089,6 +1089,6 @@ int time_is_null(cudf_data_time value) {
 }
 
 int timestamp_is_null(cudf_data_timestamp value) {
-	return date_is_null(value.date) && time_is_null(value.time);
+	return ts_isnil(timestamp_from_data(&value));
 }
 
