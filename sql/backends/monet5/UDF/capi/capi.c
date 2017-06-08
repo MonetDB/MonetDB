@@ -12,7 +12,15 @@
 
 #include "mtime.h"
 
-#include "setjmp.h"
+#include <setjmp.h>
+#include <signal.h>
+#include <stdio.h>
+#include <malloc.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <string.h>
 
 static __thread jmp_buf jump_buffer;
 
@@ -49,6 +57,7 @@ static void handler(int sig, siginfo_t *si, void *unused) {
 	(void) sig;
 	(void) si;
 	(void) unused;
+	// we caught a segfault or bus error
 	longjmp(jump_buffer, 1);
 }
 
@@ -61,24 +70,22 @@ typedef struct _mprotected_region {
 
 static char*
 mprotect_region(void* addr, size_t len, int flags, mprotected_region** regions) {
-#ifdef __APPLE__
-	// we don't mprotect on OSX for now
-	return NULL;
-#else
 	mprotected_region* region;
+	int pagesize;
+	void* page_begin;
 	if (len == 0) return NULL;
 	// check if the region is page-aligned
-	/*
-	int pagesize = getpagesize();
-	void* page_begin = (void*)((size_t)addr - (size_t)addr % pagesize);
+	
+	pagesize = getpagesize();
+	page_begin = (void*)((size_t)addr - (size_t)addr % pagesize);
 	if (page_begin != addr) {
 		// data is not page-aligned
-		len += (addr - page_begin);
+		len += ((size_t)addr - (size_t)page_begin);
 		addr = page_begin;
 	}
 	// page align len
 	len = len % pagesize == 0 ? len : len - len % pagesize + pagesize;
-*/
+
 	region = GDKmalloc(sizeof(mprotected_region));
 	if (!region) {
 		return MAL_MALLOC_FAIL;
@@ -92,7 +99,6 @@ mprotect_region(void* addr, size_t len, int flags, mprotected_region** regions) 
 	region->next = *regions;
 	*regions = region;
 	return NULL;
-#endif
 }
 
 static char*
@@ -202,7 +208,7 @@ GENERATE_BASE_HEADERS(cudf_data_timestamp, timestamp);
 const char *debug_flag = "capi_use_debug";
 const char *cc_flag = "capi_cc";
 
-#define JIT_COMPILER_NAME "clang"
+#define JIT_COMPILER_NAME "cc"
 
 static size_t GetTypeCount(int type, void* struct_ptr);
 static void* GetTypeData(int type, void* struct_ptr);
@@ -252,7 +258,8 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 
 	lng initial_output_count = -1;
 
-	struct sigaction sa;
+	struct sigaction sa, oldsa, oldsb;
+	sigset_t signal_set;
 
 #ifdef NDEBUG
 	int debug_build = GDKgetenv_istrue(debug_flag) || GDKgetenv_isyes(debug_flag);
@@ -266,6 +273,16 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	const char* struct_prefix = "struct cudf_data_struct_";
 
 	(void) cntxt;
+
+	// we need to be able to catch segfaults and bus errors
+	// so we can work with mprotect to prevent UDFs from changing
+	// the input data
+
+	// we remove them from the pthread_sigmask
+	(void) sigemptyset(&signal_set);
+	(void) sigaddset(&signal_set, SIGSEGV);
+	(void) sigaddset(&signal_set, SIGBUS);
+	(void) pthread_sigmask(SIG_UNBLOCK, &signal_set, NULL);
 
 	memset(&sa, 0, sizeof(sa));
 
@@ -687,7 +704,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		goto wrapup;
 	} else if (ret > 0) {
 		if (ret == 1) {
-			msg = createException(MAL, "cudf.eval", "Attempting to write to read-only memory");
+			msg = createException(MAL, "cudf.eval", "Attempting to write to the input or triggered a segfault/bus error");
 			goto wrapup;
 		} else if (ret == 2) {
 			msg = createException(MAL, "cudf.eval", "Malloc failure in internal function!");
@@ -700,10 +717,11 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	}
 
 	// set up the signal handler for catching segfaults
+	memset(&sa, 0, sizeof(sa));
     sa.sa_flags = SA_SIGINFO;
-    sigemptyset(&sa.sa_mask);
+    sigfillset(&sa.sa_mask);
     sa.sa_sigaction = handler;
-	if (sigaction(SIGSEGV, &sa, NULL) < 0 || sigaction(SIGBUS, &sa, NULL) < 0) {
+	if (sigaction(SIGSEGV, &sa, &oldsa) == -1 || sigaction(SIGBUS, &sa, &oldsb) == -1) {
 		msg = createException(MAL, "cudf.eval", "Failed to set signal handler: %s", strerror(errno));
 		errno = 0;
 		goto wrapup;
@@ -714,7 +732,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	msg = func(inputs, outputs, wrapped_GDK_malloc);
 
 	// clear the signal handlers
-	if (sigaction(SIGSEGV, NULL, NULL) < 0 || sigaction(SIGBUS, NULL, NULL) < 0) {
+	if (sigaction(SIGSEGV, &oldsa, NULL) == -1 || sigaction(SIGBUS, &oldsb, NULL) == -1) {
 		msg = createException(MAL, "cudf.eval", "Failed to unset signal handler: %s", strerror(errno));
 		errno = 0;
 		goto wrapup;
@@ -824,8 +842,8 @@ wrapup:
 	// cleanup
 	// remove the signal handler, if any was set
 	if (sa.sa_sigaction) {
-		sigaction(SIGBUS, NULL, NULL);
-		sigaction(SIGSEGV, NULL, NULL);
+		sigaction(SIGSEGV, &oldsa, NULL);
+		sigaction(SIGBUS, &oldsb, NULL);
 
 		memset(&sa, 0, sizeof (sa));
 	}
@@ -836,6 +854,8 @@ wrapup:
 		GDKfree(regions);
 		regions = next;
 	}
+	// block segfaults and bus errors again after we exit
+	(void) pthread_sigmask(SIG_BLOCK, &signal_set, NULL);
 	// argument names (input)
 	if (args) {
 		for(i = 0; i < (size_t) pci->argc; i++) {

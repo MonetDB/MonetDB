@@ -50,20 +50,35 @@ SELECT capi03(i) FROM integers;
 
 ROLLBACK;
 
--- START TRANSACTION;
+START TRANSACTION;
 
--- # Modify input data
--- CREATE FUNCTION capi03(inp INTEGER) RETURNS INTEGER LANGUAGE C {
--- 	inp.data[0] = 10;
--- 	result->initialize(result, inp.count);
--- 	for(size_t i = 0; i < inp.count; i++) {
--- 		result->data[i] = inp.data[i] * 2;
--- 	}
--- };
+# Modify input data
+CREATE FUNCTION capi03(inp INTEGER) RETURNS INTEGER LANGUAGE C {
+	inp.data[0] = 10;
+	result->initialize(result, inp.count);
+	for(size_t i = 0; i < inp.count; i++) {
+		result->data[i] = inp.data[i] * 2;
+	}
+};
 
--- CREATE TABLE integers(i INTEGER);
--- INSERT INTO integers VALUES (1), (2), (3), (4), (5);
+CREATE TABLE integers(i INTEGER);
+INSERT INTO integers VALUES (1), (2), (3), (4), (5);
 
--- SELECT capi03(i) FROM integers;
+SELECT capi03(i) FROM integers;
 
--- ROLLBACK;
+ROLLBACK;
+
+START TRANSACTION;
+
+# Trigger a segfault
+CREATE FUNCTION capi03(inp INTEGER) RETURNS INTEGER LANGUAGE C {
+	int x = *((int*)NULL);
+};
+
+CREATE TABLE integers(i INTEGER);
+INSERT INTO integers VALUES (1), (2), (3), (4), (5);
+
+SELECT capi03(i) FROM integers;
+
+ROLLBACK;
+
