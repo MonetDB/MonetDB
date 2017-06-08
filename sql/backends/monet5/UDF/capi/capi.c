@@ -46,6 +46,9 @@ WriteTextToFile(FILE* f, const char* data) {
 }
 
 static void handler(int sig, siginfo_t *si, void *unused) {
+	(void) sig;
+	(void) si;
+	(void) unused;
 	longjmp(jump_buffer, 1);
 }
 
@@ -62,9 +65,10 @@ mprotect_region(void* addr, size_t len, int flags, mprotected_region** regions) 
 	// we don't mprotect on OSX for now
 	return NULL;
 #else
+	mprotected_region* region;
 	if (len == 0) return NULL;
 	// check if the region is page-aligned
-	
+	/*
 	int pagesize = getpagesize();
 	void* page_begin = (void*)((size_t)addr - (size_t)addr % pagesize);
 	if (page_begin != addr) {
@@ -74,12 +78,12 @@ mprotect_region(void* addr, size_t len, int flags, mprotected_region** regions) 
 	}
 	// page align len
 	len = len % pagesize == 0 ? len : len - len % pagesize + pagesize;
-
-	mprotected_region* region = GDKmalloc(sizeof(mprotected_region));
+*/
+	region = GDKmalloc(sizeof(mprotected_region));
 	if (!region) {
 		return MAL_MALLOC_FAIL;
 	}
-	if (mprotect(addr, len, PROT_READ) < 0) {
+	if (mprotect(addr, len, flags) < 0) {
 		GDKfree(region);
 		return strerror(errno);
 	}
@@ -115,7 +119,7 @@ clear_mprotect(void* addr, size_t len) {
 	}
 
 
-void* wrapped_GDK_malloc(size_t size) {
+static void* wrapped_GDK_malloc(size_t size) {
 	void* ptr = GDKmalloc(size);
 	if (!ptr) {
 		longjmp(jump_buffer, 2);
@@ -259,6 +263,10 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	const char* compilation_flags = debug_build ? "-g -O0" : "-O2";
 	const char* c_compiler = GDKgetenv(cc_flag) ? GDKgetenv(cc_flag) : JIT_COMPILER_NAME;
 
+	const char* struct_prefix = "struct cudf_data_struct_";
+
+	(void) cntxt;
+
 	memset(&sa, 0, sizeof(sa));
 
 	if (!grouped) {
@@ -294,13 +302,13 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		}
 		// retrieve the output names
 		argnode = sqlfun->res->h;
-		for (i = 0; i < sqlfun->res->cnt; i++) {
+		for (i = 0; i < (size_t) sqlfun->res->cnt; i++) {
 			output_names[i] = GDKstrdup(((sql_arg *)argnode->data)->name);
 			argnode = argnode->next;
 		}
 	}
 	// name unnamed outputs
-	for(i = 0; i < pci->retc; i++) {
+	for(i = 0; i < (size_t) pci->retc; i++) {
 		if (!output_names[i]) {
 			if (pci->retc > 1) {
 				snprintf(argbuf, sizeof(argbuf), "output%zu", i);
@@ -312,7 +320,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		}
 	}
 	// the first unknown argument is the group, we don't really care for the rest.
-	for (i = pci->retc + 2; i < pci->argc; i++) {
+	for (i = pci->retc + 2; i < (size_t) pci->argc; i++) {
 		if (args[i] == NULL) {
 			if (!seengrp && grouped) {
 				args[i] = GDKstrdup("aggr_group");
@@ -395,11 +403,10 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	ATTEMPT_TO_WRITE_TO_FILE(f, funcname);
 	ATTEMPT_TO_WRITE_TO_FILE(f, "(void** __inputs, void** __outputs, malloc_function_ptr malloc) {\n");
 
-	const char* struct_prefix = "struct cudf_data_struct_";
 	// now we convert the input arguments from void** to the proper input/output of the function
 	// first convert the input
 	// FIXME: deal with SQL types
-	for (i = pci->retc + 2; i < pci->argc; i++) {
+	for (i = pci->retc + 2; i < (size_t) pci->argc; i++) {
 		if (!isaBatType(getArgType(mb, pci, i))) {
 			// scalar input
 			int scalar_type = getArgType(mb, pci, i);
@@ -421,7 +428,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	}
 	// output types
 	// FIXME: deal with SQL types
-	for (i = 0; i < pci->retc; i++) {
+	for (i = 0; i < (size_t) pci->retc; i++) {
 		int bat_type = getBatType(getArgType(mb, pci, i));
 		const char* tpe = GetTypeName(bat_type);
 		assert(tpe);
@@ -518,7 +525,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		}
 	}
 	// create the inputs
-	for (i = pci->retc + 2; i < pci->argc; i++) {
+	for (i = pci->retc + 2; i < (size_t) pci->argc; i++) {
 		size_t index = i - (pci->retc + 2);
 		if (!isaBatType(getArgType(mb, pci, i))) {
 			// deal with scalar input
@@ -725,25 +732,28 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	// FIXME: deal with SQL types
 
 	// create the output bats from the returned results
-	for (i = 0; i < pci->retc; i++) {
+	for (i = 0; i < (size_t) pci->retc; i++) {
 		int bat_type = getBatType(getArgType(mb, pci, i));
+		size_t count;
+		void* data;
+		BAT* b;
 		if (!outputs[i]) {
 			msg = createException(MAL, "cudf.eval", "No data returned.");
 			goto wrapup;
 		}
-		size_t count = GetTypeCount(bat_type, outputs[i]);
-		void* data = GetTypeData(bat_type, outputs[i]);
+		count = GetTypeCount(bat_type, outputs[i]);
+		data = GetTypeData(bat_type, outputs[i]);
 		if (!data) {
 			msg = createException(MAL, "cudf.eval", "No data returned.");
 			goto wrapup;
 		}
 		if (initial_output_count < 0) {
 			initial_output_count = count;
-		} else if (initial_output_count != count) {
+		} else if ((size_t) initial_output_count != count) {
 			msg = createException(MAL, "cudf.eval", "Data has different cardinalities.");
 			goto wrapup;
 		}
-		BAT* b = COLnew(0, bat_type, count, TRANSIENT);
+		b = COLnew(0, bat_type, count, TRANSIENT);
 		if (!b) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
@@ -828,7 +838,7 @@ wrapup:
 	}
 	// argument names (input)
 	if (args) {
-		for(i = 0; i < pci->argc; i++) {
+		for(i = 0; i < (size_t) pci->argc; i++) {
 			if (args[i]) {
 				GDKfree(args[i]);
 			}
@@ -837,7 +847,7 @@ wrapup:
 	}
 	// output names
 	if (output_names) {
-		for(i = 0; i < pci->retc; i++) {
+		for(i = 0; i < (size_t) pci->retc; i++) {
 			if (output_names[i]) {
 				GDKfree(output_names[i]);
 			}
@@ -846,7 +856,7 @@ wrapup:
 	}
 	// input data
 	if (inputs) {
-		for(i = 0; i < input_count; i++) {
+		for(i = 0; i < (size_t) input_count; i++) {
 			if (inputs[i]) {
 				GDKfree(inputs[i]);
 			}
@@ -855,7 +865,7 @@ wrapup:
 	}
 	// output data
 	if (outputs) {
-		for(i = 0; i < output_count; i++) {
+		for(i = 0; i < (size_t) output_count; i++) {
 			int bat_type = getBatType(getArgType(mb, pci, i));
 			if (outputs[i]) {
 				void* data = GetTypeData(bat_type, outputs[i]);
