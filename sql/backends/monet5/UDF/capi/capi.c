@@ -140,19 +140,20 @@ static void tpename##_initialize(struct cudf_data_struct_##tpename* self, size_t
 	self->data = wrapped_GDK_malloc(count * sizeof(self->null_value)); \
 }
 
-#define GENERATE_BASE_FUNCTIONS(tpe) \
-GENERATE_BASE_HEADERS(tpe, tpe); \
-static int tpe##_is_null(tpe value) { \
-	return value == tpe##_nil; \
+#define GENERATE_BASE_FUNCTIONS(tpe, tpename) \
+GENERATE_BASE_HEADERS(tpe, tpename); \
+static int tpename##_is_null(tpe value) { \
+	return value == tpename##_nil; \
 }
 
-GENERATE_BASE_FUNCTIONS(bte);
-GENERATE_BASE_FUNCTIONS(sht);
-GENERATE_BASE_FUNCTIONS(int);
-GENERATE_BASE_FUNCTIONS(lng);
-GENERATE_BASE_FUNCTIONS(flt);
-GENERATE_BASE_FUNCTIONS(dbl);
+GENERATE_BASE_FUNCTIONS(bte, bte);
+GENERATE_BASE_FUNCTIONS(sht, sht);
+GENERATE_BASE_FUNCTIONS(int, int);
+GENERATE_BASE_FUNCTIONS(lng, lng);
+GENERATE_BASE_FUNCTIONS(flt, flt);
+GENERATE_BASE_FUNCTIONS(dbl, dbl);
 
+GENERATE_BASE_HEADERS(char*, str);
 GENERATE_BASE_HEADERS(cudf_data_date, date);
 GENERATE_BASE_HEADERS(cudf_data_time, time);
 GENERATE_BASE_HEADERS(cudf_data_timestamp, timestamp);
@@ -195,7 +196,7 @@ GENERATE_BASE_HEADERS(cudf_data_timestamp, timestamp);
 	GENERATE_BAT_OUTPUT_BASE(tpe); \
 	bat_data->count = 0; \
 	bat_data->data = NULL; \
-	bat_data->null_value = tpe##_nil;\
+	bat_data->null_value = (tpe) tpe##_nil;\
 }
 
 #define GENERATE_SCALAR_INPUT(tpe) \
@@ -603,7 +604,31 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 			} else if (bat_type == TYPE_dbl) {
 				GENERATE_BAT_INPUT(input_bats[index], dbl);
 			} else if (bat_type == TYPE_str) {
-				assert(0);
+				BATiter li;
+				BUN p = 0, q = 0;
+				str mprotect_retval;
+				GENERATE_BAT_INPUT_BASE(input_bats[index], str);
+				bat_data->count = BATcount(input_bats[index]);
+				bat_data->data = GDKmalloc(sizeof(char*) * bat_data->count);
+				if (!bat_data->data) {
+					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+				j = 0;
+
+				li = bat_iterator(input_bats[index]);
+				BATloop(input_bats[index], p, q) {
+					char *t = (char *)BUNtail(li, p);
+					bat_data->data[j] = t;
+					j++;
+				}
+				// for string columns, mprotect the varheap of the BAT
+				assert(input_bats[index]->tvheap);
+				mprotect_retval = mprotect_region(input_bats[index]->tvheap->base, input_bats[index]->tvheap->size, PROT_READ, &regions);
+				if (mprotect_retval) {
+					msg = createException(MAL, "cudf.eval", "Failed to mprotect region: %s", mprotect_retval);
+					goto wrapup;
+				}
 			} else if (bat_type == TYPE_date) {
 				date* baseptr;
 				GENERATE_BAT_INPUT_BASE(input_bats[index], date);
@@ -657,7 +682,6 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		}
 	}
 	// output types
-	// FIXME: deal with SQL types
 	for (i = 0; i < output_count; i++) {
 		size_t index = i;
 		int bat_type = getBatType(getArgType(mb, pci, i));
@@ -676,7 +700,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		} else if (bat_type == TYPE_dbl) {
 			GENERATE_BAT_OUTPUT(dbl);
 		} else if (bat_type == TYPE_str) {
-			assert(0);
+			GENERATE_BAT_OUTPUT(str);
 		} else if (bat_type == TYPE_date) {
 			GENERATE_BAT_OUTPUT_BASE(date);
 			data_from_date(date_nil, &bat_data->null_value);
@@ -822,7 +846,23 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 			}
 			BATsetcount(b, count);
 			GDKfree(data);
-		}  else {
+		} else if (bat_type == TYPE_str) {
+			char** source_base = (char**) data;
+			for(j = 0; j < count; j++) {
+				const char* ptr = source_base[j];
+				if (!ptr) {
+					ptr = str_nil;
+				}
+				if (BUNappend(b, source_base[j], FALSE) != GDK_SUCCEED) {
+					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+				if (ptr != str_nil) {
+					GDKfree(source_base[j]);
+				}
+			}
+			GDKfree(data);
+		} else {
 			msg = createException(MAL, "cudf.eval", "Unsupported output type");
 			BBPunfix(b->batCacheid);
 			goto wrapup;
@@ -1091,4 +1131,9 @@ int time_is_null(cudf_data_time value) {
 int timestamp_is_null(cudf_data_timestamp value) {
 	return ts_isnil(timestamp_from_data(&value));
 }
+
+int str_is_null(char* value) {
+	return strcmp(value, str_nil) == 0;
+}
+
 
